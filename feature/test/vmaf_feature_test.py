@@ -1,4 +1,5 @@
-#!/usr/bin/python
+__copyright__ = "Copyright 2016, Netflix, Inc."
+__license__ = "LGPL Version 3"
 
 import unittest
 import os
