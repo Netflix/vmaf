@@ -1,3 +1,15 @@
-Add python directory to PYTHONPATH:
+Add project root and python directory to PYTHONPATH:
+export PYTHONPATH=[project root dir]:$PYTHONPATH
 
-export PYTHONPATH=$PYTHONPATH:[project_root]/python
+Copy config_template.py to config.py
+
+-----------------------------------------
+
+No need:
+
+In config.py, set ROOT to your project root directory
+ROOT = "/home/zli/Projects/stash/zli/vmaf_oss"
+
+Add VMAF executable to PATH:
+export PATH=[project root dir]/feature:$PATH
+

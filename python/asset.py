@@ -2,13 +2,15 @@ __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "LGPL Version 3"
 
 import os
+
 from common import Parallelizable
 from tools import get_file_name_without_extension
+from python.config import PYTHON_ROOT
 
 class Asset(Parallelizable):
 
     def __init__(self, dataset, ref_path, dis_path, asset_dict,
-                 workdir_root="../workspace/workdir"):
+                 workdir_root= PYTHON_ROOT + "/../workspace/workdir"):
         """
         :param dataset
         :param ref_path: path to reference video
@@ -22,6 +24,8 @@ class Asset(Parallelizable):
         self.ref_path = ref_path
         self.dis_path = dis_path
         self.asset_dict = asset_dict
+
+    # ==== width and height ====
 
     @property
     def ref_width_height(self):
@@ -52,10 +56,10 @@ class Asset(Parallelizable):
     @property
     def quality_width_height(self):
         """
-        :return: width and height at which the quality is measured at. If None,
-        it signals that that the quality should be measured at ref and dis
-        video's native width and height (provided ref_width_height and
-        dis_width_height are equal).
+        :return: width and height at which the quality is measured at. either
+        'quality_width' and 'quality_height' have to present in asset_dict,
+        or ref and dis's width and height must be equal, which will be used
+        as the default quality width and height.
         """
         assert ('quality_width' in self.asset_dict
                 and 'quality_height' in self.asset_dict) or \
@@ -64,7 +68,9 @@ class Asset(Parallelizable):
         if 'quality_width' in self.asset_dict and 'quality_height' in self.asset_dict:
             return self.asset_dict['quality_width'], self.asset_dict['quality_height']
         else:
-            return None
+            return self.ref_width_height
+
+    # ==== start and end frame ====
 
     @property
     def ref_start_end_frame(self):
@@ -112,6 +118,8 @@ class Asset(Parallelizable):
         else:
             return None
 
+    # ==== duration ====
+
     @property
     def ref_duration_sec(self):
         if 'duration_sec' in self.asset_dict:
@@ -140,6 +148,8 @@ class Asset(Parallelizable):
             else:
                 return None
 
+    # ==== str ====
+
     @property
     def ref_str(self):
         str = ""
@@ -156,20 +166,6 @@ class Asset(Parallelizable):
             str += "_{s}to{e}".format(s=s, e=e)
 
         return str
-
-    @property
-    def ref_workfile_path(self):
-        return "{workdir}/{ref_str}_{quality_str}".format(
-            workdir=self.workdir,
-            ref_str=self.ref_str,
-            quality_str=self.quality_str)
-
-    @property
-    def dis_workfile_path(self):
-        return "{workdir}/{dis_str}_{quality_str}".format(
-            workdir=self.workdir,
-            dis_str=self.dis_str,
-            quality_str=self.quality_str)
 
     @property
     def dis_str(self):
@@ -209,6 +205,24 @@ class Asset(Parallelizable):
 
         return str
 
+    # ==== workfile ====
+
+    @property
+    def ref_workfile_path(self):
+        return "{workdir}/ref_{ref_str}_{quality_str}".format(
+            workdir=self.workdir,
+            ref_str=self.ref_str,
+            quality_str=self.quality_str)
+
+    @property
+    def dis_workfile_path(self):
+        return "{workdir}/dis_{dis_str}_{quality_str}".format(
+            workdir=self.workdir,
+            dis_str=self.dis_str,
+            quality_str=self.quality_str)
+
+    # ==== bitrate ====
+
     @property
     def ref_bitrate_kbps_for_entire_file(self):
         """
@@ -232,3 +246,19 @@ class Asset(Parallelizable):
                    self.dis_duration_sec * 8.0 / 1000.0
         except:
             return None
+
+    @property
+    def yuv_type(self):
+        """
+        Assuming ref/dis files are both YUV and the same type, return the type
+        (yuv420, yuv422, yuv444)
+        :return:
+        """
+        if 'yuv_type' in self.asset_dict:
+            if self.asset_dict['yuv_type'] in ['yuv420', 'yuv422', 'yuv444']:
+                return self.asset_dict['yuv_type']
+            else:
+                assert False, "Unknown YUV type: {}".\
+                    format(self.asset_dict['yuv_type'])
+        else:
+            return 'yuv420'
