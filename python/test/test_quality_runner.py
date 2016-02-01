@@ -28,7 +28,29 @@ class QualityRunnerTest(unittest.TestCase):
                                  "_vs_disvideo_720x480_2to2_q_720x480"
         self.assertEquals(log_file_path, expected_log_file_path)
 
-    def test_run_vamf_runner_full(self):
+    def test_run_vamf_runner(self):
+        ref_path = PYTHON_ROOT + "/../resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = PYTHON_ROOT + "/../resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test",
+                      workdir_root="workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.runner = VmafQualityRunner([asset], None, pipe_mode=False,
+                                   log_file_dir="workspace/log_file_dir")
+        self.runner.run()
+
+        results = self.runner.results
+
+        # self.assertEqual(results[0]['VMAF_study_score'], 86.340347579075001)
+        self.assertEqual(np.mean(results[0]['vif_score']), 0.44417014583333336)
+        self.assertEqual(results[0]['motion_score'], 3.5916076041666667)
+        self.assertEqual(results[0]['adm_score'], 0.91552422916666665)
+        self.assertEqual(results[0]['ansnr_score'], 22.533456770833329)
+
+    @unittest.skip("As 02/01/2016, have not implemented scaling of source")
+    def test_run_vmaf_runner_with_scaling(self):
         ref_path = PYTHON_ROOT + "/../resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = PYTHON_ROOT + "/../resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test",
@@ -45,10 +67,11 @@ class QualityRunnerTest(unittest.TestCase):
         results = self.runner.results
 
         # self.assertEqual(results[0]['VMAF_study_score'], 86.340347579075001)
-        self.assertEqual(np.mean(results[0]['vif_score']), 0.50052374074074057)
-        self.assertEqual(results[0]['motion_score'], 47.291538425925928)
-        self.assertEqual(results[0]['adm_score'], 0.87104209259259258)
-        self.assertEqual(results[0]['ansnr_score'], 27.035377953703701)
+        self.assertEqual(np.mean(results[0]['vif_score']), 0.44417014583333336)
+        self.assertEqual(results[0]['motion_score'], 3.5916076041666667)
+        self.assertEqual(results[0]['adm_score'], 0.91552422916666665)
+        self.assertEqual(results[0]['ansnr_score'], 22.533456770833329)
+
 
 if __name__ == '__main__':
     unittest.main()
