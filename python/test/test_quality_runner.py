@@ -1,3 +1,5 @@
+from python.quality_runner import quality_runner_macro
+
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "LGPL Version 3"
 
@@ -5,7 +7,7 @@ import unittest
 
 from python.tools import get_stdout_logger, close_logger
 from python.asset import Asset
-from python.quality_runner import VmafQualityRunner
+from python.vmaf_quality_runner import VmafQualityRunner
 from python.config import PYTHON_ROOT
 import numpy as np
 
@@ -81,6 +83,48 @@ class QualityRunnerTest(unittest.TestCase):
 
         with self.assertRaises(AssertionError):
             self.runner.run()
+
+class ParallelQualityRunnerTest(unittest.TestCase):
+
+    def tearDown(self):
+        if hasattr(self, 'runners'):
+            for runner in self.runners:
+                runner.remove_logs()
+
+    def test_run_parallel_vamf_runner(self):
+        ref_path = PYTHON_ROOT + "/../resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = PYTHON_ROOT + "/../resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test",
+                      workdir_root="workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_reversed = Asset(dataset="test",
+                      workdir_root="workspace/workdir",
+                      ref_path=dis_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.runners, results = quality_runner_macro(
+            VmafQualityRunner,
+            [asset, asset_reversed],
+            log_file_dir="workspace/log_file_dir",
+            fifo_mode=True,
+            delete_workdir=True,
+            parallelize=True)
+
+        self.assertEqual(results[0]['VMAF_score'], 60.2689700696979)
+        self.assertEqual(np.mean(results[0]['vif_score']), 0.44417014583333336)
+        self.assertEqual(results[0]['motion_score'], 3.5916076041666667)
+        self.assertEqual(results[0]['adm_score'], 0.91552422916666665)
+        self.assertEqual(results[0]['ansnr_score'], 22.533456770833329)
+
+        self.assertEqual(results[1]['VMAF_score'], 70.308148178177063)
+        self.assertEqual(np.mean(results[1]['vif_score']), 0.48817572916666663)
+        self.assertEqual(results[1]['motion_score'], 3.2422333541666659)
+        self.assertEqual(results[1]['adm_score'], 0.94795422916666683)
+        self.assertEqual(results[1]['ansnr_score'], 24.228765083333332)
 
 
 if __name__ == '__main__':
