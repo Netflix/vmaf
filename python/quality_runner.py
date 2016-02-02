@@ -34,21 +34,60 @@ class QualityRunner(object):
                 "For each asset, if {type} log has not been generated, "
                 "run and generate {type} log file...".format(type=self.TYPE))
 
+        # run generate_log_file on each asset
+        map(self._run_and_generate_log_file_wrapper, self.assets)
+        # from pathos.pp_map import pp_map
+        # pp_map(self._run_and_generate_log_file_wrapper, self.assets)
+
+        if self.logger:
+            self.logger.info("Read {type} log file, get quality scores...".
+                             format(type=self.TYPE))
+
+        # collect result from each asset's log file
+        results = map(self._read_result, self.assets)
+
+        self.results = results
+
+    def remove_logs(self):
         for asset in self.assets:
+            self._remove_log(asset)
+            self._remove_time_file(asset)
 
-            # sanity check
-            self._sanity_check(asset)
+    def _run_and_generate_log_file(self, asset):
 
-            log_file_path = self._get_log_file_path(asset)
+        log_file_path = self._get_log_file_path(asset)
 
-            if os.path.isfile(log_file_path):
-                if self.logger:
-                    self.logger.info(
-                        '{type} log {log_file_path} exists. Skip {type} '
-                        'run.'.format(type=self.TYPE,
-                                              log_file_path=log_file_path))
-                continue
+        # touch (to start with a clean co)
+        with open(log_file_path, 'wt'):
+            pass
 
+        # add runner type and version
+        with open(log_file_path, 'at') as log_file:
+            log_file.write("{type} VERSION {version}\n\n".format(
+                type=self.TYPE, version=self.VERSION))
+
+    def _run_and_generate_log_file_wrapper(self, asset):
+        """
+        Wraper around the essential function _run_and_generate_log_file, to
+        do housekeeping work including 1) sanity check of asset, 2) skip run if
+        log already exist, 3) creating fifo, 4) delete work file and dir, and
+        5) log exec time.
+        :param asset:
+        :return:
+        """
+
+        # sanity check
+        self._sanity_check(asset)
+
+        log_file_path = self._get_log_file_path(asset)
+
+        if os.path.isfile(log_file_path):
+            if self.logger:
+                self.logger.info(
+                    '{type} log {log_file_path} exists. Skip {type} '
+                    'run.'.format(type=self.TYPE,
+                                  log_file_path=log_file_path))
+        else:
             start_time = time.time()
 
             # remove workfiles if exist
@@ -56,12 +95,10 @@ class QualityRunner(object):
             self._close_dis_workfile(asset)
 
             if self.fifo_mode:
-
-                # pool = multiprocessing.Pool(2)
-                # pool.map(mp_worker, data)
-
-                ref_p = multiprocessing.Process(target=self._open_ref_workfile, args=(asset, True))
-                dis_p = multiprocessing.Process(target=self._open_dis_workfile, args=(asset, True))
+                ref_p = multiprocessing.Process(target=self._open_ref_workfile,
+                                                args=(asset, True))
+                dis_p = multiprocessing.Process(target=self._open_dis_workfile,
+                                                args=(asset, True))
                 ref_p.start()
                 dis_p.start()
             else:
@@ -79,39 +116,29 @@ class QualityRunner(object):
             run_time = end_time - start_time
 
             if self.logger:
-                self.logger.info("Run time: {sec:.2f} sec.".format(sec=run_time))
+                self.logger.info(
+                    "Run time: {sec:.2f} sec.".format(sec=run_time))
 
             self._write_time_file(asset, run_time)
 
-        if self.logger:
-            self.logger.info("Read {type} log file, get quality scores...".
-                             format(type=self.TYPE))
-        results = []
-        for asset in self.assets:
+    def _read_result(self, asset):
 
-            result = {}
+        result = {}
 
-            # add quality scores
-            result.update(self._get_quality_scores(asset))
+        # add quality scores
+        result.update(self._get_quality_scores(asset))
 
-            # add run time
-            run_time = self._read_time_file(asset)
-            time_key = "{type}_time".format(type=self.TYPE)
-            result[time_key] = run_time
+        # add run time
+        run_time = self._read_time_file(asset)
+        time_key = "{type}_time".format(type=self.TYPE)
+        result[time_key] = run_time
 
-            # add dis video file bitrate (must be an entire file)
-            dis_bitrate_kbps = asset.dis_bitrate_kbps_for_entire_file
-            dis_bitrate_key = "dis_bitrate_kbps"
-            result[dis_bitrate_key] = dis_bitrate_kbps
+        # add dis video file bitrate (must be an entire file)
+        dis_bitrate_kbps = asset.dis_bitrate_kbps_for_entire_file
+        dis_bitrate_key = "dis_bitrate_kbps"
+        result[dis_bitrate_key] = dis_bitrate_kbps
 
-            results.append(result)
-
-        self.results = results
-
-    def remove_logs(self):
-        for asset in self.assets:
-            self._remove_log(asset)
-            self._remove_time_file(asset)
+        return result
 
     def _sanity_check(self, asset):
 
@@ -242,19 +269,6 @@ class QualityRunner(object):
         if os.path.exists(time_file_path):
             os.remove(time_file_path)
 
-    def _run_and_generate_log_file(self, asset):
-
-        log_file_path = self._get_log_file_path(asset)
-
-        # touch (to start with a clean co)
-        with open(log_file_path, 'wt'):
-            pass
-
-        # add runner type and version
-        with open(log_file_path, 'at') as log_file:
-            log_file.write("{type} VERSION {version}\n\n".format(
-                type=self.TYPE, version=self.VERSION))
-
 
 class VmafQualityRunner(QualityRunner):
 
@@ -310,13 +324,13 @@ class VmafQualityRunner(QualityRunner):
                                        feature_result['ansnr_scores'],
                                        feature_result['motion_scores']):
             xs = [[
-                self.rescale(vif, self.FEAT_RESCALE['vif'][0],
+                self._rescale(vif, self.FEAT_RESCALE['vif'][0],
                              self.FEAT_RESCALE['vif'][1]),
-                self.rescale(adm, self.FEAT_RESCALE['adm'][0],
+                self._rescale(adm, self.FEAT_RESCALE['adm'][0],
                              self.FEAT_RESCALE['adm'][1]),
-                self.rescale(ansnr, self.FEAT_RESCALE['ansnr'][0],
+                self._rescale(ansnr, self.FEAT_RESCALE['ansnr'][0],
                              self.FEAT_RESCALE['ansnr'][1]),
-                self.rescale(motion, self.FEAT_RESCALE['motion'][0],
+                self._rescale(motion, self.FEAT_RESCALE['motion'][0],
                              self.FEAT_RESCALE['motion'][1])
             ]]
 
@@ -342,7 +356,7 @@ class VmafQualityRunner(QualityRunner):
                                                               score=score))
 
     @staticmethod
-    def rescale(val, mi, ma):
+    def _rescale(val, mi, ma):
             val = np.double(val)
             val = (val - mi)/(ma - mi)
             if val < 0:
