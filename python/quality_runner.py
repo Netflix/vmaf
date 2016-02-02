@@ -5,21 +5,26 @@ __license__ = "LGPL Version 3"
 
 import time
 import os
-from multiprocessing import Process
+import multiprocessing
 import subprocess
 from python.config import PYTHON_ROOT
 from tools import get_dir_without_last_slash, make_parent_dirs_if_nonexist
 import numpy as np
+import sys
 
 class QualityRunner(object):
 
-    def __init__(self, assets, logger,
+    def __init__(self,
+                 assets,
+                 logger,
                  log_file_dir= PYTHON_ROOT + "/../workspace/log_file_dir",
-                 pipe_mode=True, delete_workdir=True):
+                 fifo_mode=True,
+                 delete_workdir=True):
+
         self.assets = assets
         self.logger = logger
         self.log_file_dir = log_file_dir
-        self.pipe_mode = pipe_mode
+        self.fifo_mode = fifo_mode
         self.delete_workdir = delete_workdir
 
     def run(self):
@@ -27,9 +32,12 @@ class QualityRunner(object):
         if self.logger:
             self.logger.info(
                 "For each asset, if {type} log has not been generated, "
-                "run and generate {type} log file...}").format(type=self.TYPE)
+                "run and generate {type} log file...".format(type=self.TYPE))
 
         for asset in self.assets:
+
+            # sanity check
+            self._sanity_check(asset)
 
             log_file_path = self._get_log_file_path(asset)
 
@@ -47,12 +55,18 @@ class QualityRunner(object):
             self._close_ref_workfile(asset)
             self._close_dis_workfile(asset)
 
-            if self.pipe_mode:
-                Process(target=self._open_ref_workfile, args=(asset, True)).start()
-                Process(target=self._open_dis_workfile, args=(asset, True)).start()
+            if self.fifo_mode:
+
+                # pool = multiprocessing.Pool(2)
+                # pool.map(mp_worker, data)
+
+                ref_p = multiprocessing.Process(target=self._open_ref_workfile, args=(asset, True))
+                dis_p = multiprocessing.Process(target=self._open_dis_workfile, args=(asset, True))
+                ref_p.start()
+                dis_p.start()
             else:
-                self._open_ref_workfile(asset, pipe_mode=False)
-                self._open_dis_workfile(asset, pipe_mode=False)
+                self._open_ref_workfile(asset, fifo_mode=False)
+                self._open_dis_workfile(asset, fifo_mode=False)
 
             self._run_and_generate_log_file(asset)
 
@@ -99,18 +113,27 @@ class QualityRunner(object):
             self._remove_log(asset)
             self._remove_time_file(asset)
 
+    def _sanity_check(self, asset):
+
+        # 1) for now, quality width/height has to agree with ref/dis width/height
+        assert asset.quality_width_height \
+               == asset.ref_width_height \
+               == asset.dis_width_height
+        # 2) ...
+        # 3) ...
+
     def _get_log_file_path(self, asset):
         return "{dir}/{type}/{str}".format(dir=self.log_file_dir,
                                            type=self.TYPE, str=str(asset))
 
     # ===== workfile =====
 
-    def _open_ref_workfile(self, asset, pipe_mode):
+    def _open_ref_workfile(self, asset, fifo_mode):
         """
         For now, only works for YUV format -- all need is to copy from ref file
         to ref workfile
         :param asset:
-        :param pipe_mode:
+        :param fifo_mode:
         :return:
         """
         src = asset.ref_path
@@ -122,19 +145,19 @@ class QualityRunner(object):
                              format(dst))
         make_parent_dirs_if_nonexist(dst)
 
-        # if pipe mode, mkfifo
-        if pipe_mode:
+        # if fifo mode, mkfifo
+        if fifo_mode:
             os.mkfifo(dst)
 
         # open ref file
         self._open_file(src, dst)
 
-    def _open_dis_workfile(self, asset, pipe_mode):
+    def _open_dis_workfile(self, asset, fifo_mode):
         """
         For now, only works for YUV format -- all need is to copy from dis file
         to dis workfile
         :param asset:
-        :param pipe_mode:
+        :param fifo_mode:
         :return:
         """
         src = asset.dis_path
@@ -146,8 +169,8 @@ class QualityRunner(object):
                              format(dst))
         make_parent_dirs_if_nonexist(dst)
 
-        # if pipe mode, mkfifo
-        if pipe_mode:
+        # if fifo mode, mkfifo
+        if fifo_mode:
             os.mkfifo(dst)
 
         # open dis file
@@ -170,7 +193,9 @@ class QualityRunner(object):
         :param dst:
         :return:
         """
-        cp_cmd = "cp {src} {dst}". \
+
+        # NOTE: & is required for fifo mode !!!!
+        cp_cmd = "cp {src} {dst} &". \
             format(src=src, dst=dst)
         if self.logger:
             self.logger.info(cp_cmd)
@@ -217,24 +242,47 @@ class QualityRunner(object):
         if os.path.exists(time_file_path):
             os.remove(time_file_path)
 
+    def _run_and_generate_log_file(self, asset):
+
+        log_file_path = self._get_log_file_path(asset)
+
+        # touch (to start with a clean co)
+        with open(log_file_path, 'wt'):
+            pass
+
+        # add runner type and version
+        with open(log_file_path, 'at') as log_file:
+            log_file.write("{type} VERSION {version}\n\n".format(
+                type=self.TYPE, version=self.VERSION))
+
+
 class VmafQualityRunner(QualityRunner):
 
     TYPE = 'VMAF'
     VERSION = '0.1'
-    VMAF = PYTHON_ROOT + "/../feature/vmaf"
 
-    # import svmutil
+    VMAF = PYTHON_ROOT + "/../feature/vmaf"
+    SVM_MODEL_FILE = PYTHON_ROOT + "/../resource/model/model_V8a.model"
+    FEAT_RESCALE = {'vif': (0.0, 1.0), 'adm': (0.4, 1.0),
+                    'ansnr': (10.0, 50.0), 'motion': (0.0, 20.0)}
+
+    sys.path.append(PYTHON_ROOT + "/../libsvm/python")
+    import svmutil
 
     def _run_and_generate_log_file(self, asset):
+
+        super(VmafQualityRunner, self)._run_and_generate_log_file(asset)
+
         log_file_path = self._get_log_file_path(asset)
 
         # if parent dir doesn't exist, create
         make_parent_dirs_if_nonexist(log_file_path)
 
-        # run VMAF command line
+        # run VMAF command line to extract features, 'APPEND' result (since
+        # super method already does something
         quality_width, quality_height = asset.quality_width_height
         vmaf_cmd = """
-        {vmaf} vif {yuv_type} {ref_path} {dis_path} {w} {h} > {log_file_path};
+        {vmaf} vif {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path};
         {vmaf} adm {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path};
         {vmaf} ansnr {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path};
         {vmaf} motion {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path};
@@ -253,8 +301,56 @@ class VmafQualityRunner(QualityRunner):
 
         subprocess.call(vmaf_cmd, shell=True)
 
-        # feature_result = self._get_feature_scores(asset)
-        # model = self.svmutil
+        # read feature from log file, run regressor prediction
+        feature_result = self._get_feature_scores(asset)
+        model = self.svmutil.svm_load_model(self.SVM_MODEL_FILE)
+        scores = []
+        for vif, adm, ansnr, motion in zip(feature_result['vif_scores'],
+                                       feature_result['adm_scores'],
+                                       feature_result['ansnr_scores'],
+                                       feature_result['motion_scores']):
+            xs = [[
+                self.rescale(vif, self.FEAT_RESCALE['vif'][0],
+                             self.FEAT_RESCALE['vif'][1]),
+                self.rescale(adm, self.FEAT_RESCALE['adm'][0],
+                             self.FEAT_RESCALE['adm'][1]),
+                self.rescale(ansnr, self.FEAT_RESCALE['ansnr'][0],
+                             self.FEAT_RESCALE['ansnr'][1]),
+                self.rescale(motion, self.FEAT_RESCALE['motion'][0],
+                             self.FEAT_RESCALE['motion'][1])
+            ]]
+
+            score = self.svmutil.svm_predict([0], xs, model)[0][0]
+
+            # post-SVM correction
+            if motion > 12.0:
+                val = motion
+                if val > 20.0:
+                    val = 20
+                score *= ((val - 12) * 0.015 + 1)
+            if score > 100.0:
+                score = 100.0
+            elif score < 0.0:
+                score = 0.0
+
+            scores.append(score)
+
+        # append final VMAF scores to log file
+        with open(log_file_path, 'at') as log_file:
+            for idx, score in enumerate(scores):
+                log_file.write("vmaf: {idx} {score}\n".format(idx=idx,
+                                                              score=score))
+
+    @staticmethod
+    def rescale(val, mi, ma):
+            val = np.double(val)
+            val = (val - mi)/(ma - mi)
+            if val < 0:
+                val = 0
+            elif val > 1:
+                val = 1
+            val = np.double(val)
+            return val
 
     def _get_quality_scores(self, asset):
 
@@ -262,12 +358,31 @@ class VmafQualityRunner(QualityRunner):
 
         result = {}
 
+        # individual feature scores
         result.update(feat_result)
 
+        # add aggregate feature scores
         result['vif_score'] = np.mean(feat_result['vif_scores'])
         result['adm_score'] = np.mean(feat_result['adm_scores'])
         result['ansnr_score'] = np.mean(feat_result['ansnr_scores'])
         result['motion_score'] = np.mean(feat_result['motion_scores'])
+
+        # read VMAF scores
+        log_file_path = self._get_log_file_path(asset)
+        vmaf_scores = []
+        vmaf_idx = 0
+        with open(log_file_path, 'rt') as log_file:
+            for line in log_file.readlines():
+                mo_vmaf = re.match(r"vmaf: ([0-9]+) ([0-9.]+)", line)
+                if mo_vmaf:
+                    cur_vmaf_idx = int(mo_vmaf.group(1))
+                    assert cur_vmaf_idx == vmaf_idx
+                    vmaf_scores.append(float(mo_vmaf.group(2)))
+                    vmaf_idx += 1
+
+        # add VMAF scores
+        result[self.TYPE + "_scores"] = vmaf_scores
+        result[self.TYPE + "_score"] = np.mean(vmaf_scores)
 
         return result
 

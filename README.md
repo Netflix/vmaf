@@ -3,6 +3,8 @@ export PYTHONPATH=[project root dir]:$PYTHONPATH
 
 Copy config_template.py to config.py
 
+make lib
+
 -----------------------------------------
 
 No need:

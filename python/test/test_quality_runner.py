@@ -3,6 +3,7 @@ __license__ = "LGPL Version 3"
 
 import unittest
 
+from python.tools import get_stdout_logger, close_logger
 from python.asset import Asset
 from python.quality_runner import VmafQualityRunner
 from python.config import PYTHON_ROOT
@@ -10,9 +11,12 @@ import numpy as np
 
 class QualityRunnerTest(unittest.TestCase):
 
+    def setUp(self):
+        self.logger = get_stdout_logger()
+
     def tearDown(self):
+        close_logger(self.logger)
         if hasattr(self, 'runner'): self.runner.remove_logs()
-        pass
 
     def test_get_log_file_path(self):
 
@@ -21,7 +25,7 @@ class QualityRunnerTest(unittest.TestCase):
                       asset_dict={'width':720, 'height':480,
                                   'start_frame':2, 'end_frame':2})
 
-        runner = VmafQualityRunner([asset], None,
+        runner = VmafQualityRunner([asset], self.logger,
                                    log_file_dir="log_file_dir")
         log_file_path = runner._get_log_file_path(asset)
         expected_log_file_path = "log_file_dir/VMAF/test_refvideo_720x480_2to2" \
@@ -37,19 +41,31 @@ class QualityRunnerTest(unittest.TestCase):
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
-        self.runner = VmafQualityRunner([asset], None, pipe_mode=False,
-                                   log_file_dir="workspace/log_file_dir")
+        asset_reversed = Asset(dataset="test",
+                      workdir_root="workspace/workdir",
+                      ref_path=dis_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.runner = VmafQualityRunner([asset, asset_reversed], self.logger,
+                                        fifo_mode=True,
+                                        log_file_dir="workspace/log_file_dir")
         self.runner.run()
 
         results = self.runner.results
 
-        # self.assertEqual(results[0]['VMAF_study_score'], 86.340347579075001)
+        self.assertEqual(results[0]['VMAF_score'], 60.2689700696979)
         self.assertEqual(np.mean(results[0]['vif_score']), 0.44417014583333336)
         self.assertEqual(results[0]['motion_score'], 3.5916076041666667)
         self.assertEqual(results[0]['adm_score'], 0.91552422916666665)
         self.assertEqual(results[0]['ansnr_score'], 22.533456770833329)
 
-    @unittest.skip("As 02/01/2016, have not implemented scaling of source")
+        self.assertEqual(results[1]['VMAF_score'], 70.308148178177063)
+        self.assertEqual(np.mean(results[1]['vif_score']), 0.48817572916666663)
+        self.assertEqual(results[1]['motion_score'], 3.2422333541666659)
+        self.assertEqual(results[1]['adm_score'], 0.94795422916666683)
+        self.assertEqual(results[1]['ansnr_score'], 24.228765083333332)
+
     def test_run_vmaf_runner_with_scaling(self):
         ref_path = PYTHON_ROOT + "/../resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = PYTHON_ROOT + "/../resource/yuv/src01_hrc01_576x324.yuv"
@@ -60,17 +76,11 @@ class QualityRunnerTest(unittest.TestCase):
                       asset_dict={'width':576, 'height':324,
                                   'quality_width':384, 'quality_height':216})
 
-        self.runner = VmafQualityRunner([asset], None, pipe_mode=False,
+        self.runner = VmafQualityRunner([asset], None, fifo_mode=False,
                                    log_file_dir="workspace/log_file_dir")
-        self.runner.run()
 
-        results = self.runner.results
-
-        # self.assertEqual(results[0]['VMAF_study_score'], 86.340347579075001)
-        self.assertEqual(np.mean(results[0]['vif_score']), 0.44417014583333336)
-        self.assertEqual(results[0]['motion_score'], 3.5916076041666667)
-        self.assertEqual(results[0]['adm_score'], 0.91552422916666665)
-        self.assertEqual(results[0]['ansnr_score'], 22.533456770833329)
+        with self.assertRaises(AssertionError):
+            self.runner.run()
 
 
 if __name__ == '__main__':

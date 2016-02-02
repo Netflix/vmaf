@@ -7,6 +7,8 @@ all:
 		cd $${dir}; $(MAKE); cd ..; \
 	done
 
+	cd libsvm; $(MAKE) lib; cd ..;
+
 clean:
 	-for dir in $(TARGETS); do \
 		cd $${dir}; $(MAKE) clean; cd ..; \
