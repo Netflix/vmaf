@@ -9,10 +9,11 @@ from python import config
 
 class Asset(Parallelizable):
 
-    def __init__(self, dataset, ref_path, dis_path, asset_dict,
+    def __init__(self, dataset, content_id, ref_path, dis_path, asset_dict,
                  workdir_root= config.ROOT + "/workspace/workdir"):
         """
         :param dataset
+        :param content_id: ID of content the asset correspond to within dataset
         :param ref_path: path to reference video
         :param dis_path: path to distorted video
         :param asset_dict: dictionary with additional asset properties
@@ -21,6 +22,7 @@ class Asset(Parallelizable):
         """
         super(Asset, self).__init__(workdir_root)
         self.dataset = dataset
+        self.content_id = content_id
         self.ref_path = ref_path
         self.dis_path = dis_path
         self.asset_dict = asset_dict
@@ -195,31 +197,48 @@ class Asset(Parallelizable):
 
         return str
 
-    def __str__(self):
-        str = "{dataset}_{ref_str}_vs_{dis_str}".format(dataset=self.dataset,
-                                                        ref_str=self.ref_str,
-                                                        dis_str=self.dis_str)
+    def to_string(self):
+        str = "{dataset}_{content_id}_{ref_str}_vs_{dis_str}".\
+            format(dataset=self.dataset,
+                   content_id=self.content_id,
+                   ref_str=self.ref_str,
+                   dis_str=self.dis_str)
         quality_str = self.quality_str
         if quality_str:
             str += "_q_{quality_str}".format(quality_str=quality_str)
-
         return str
+
+    def to_string_compact(self):
+        """
+        Since for a dataset and a content_id, there must be only one ref video,
+        ref_str can be ignored.
+        :return:
+        """
+        str = "{dataset}_{content_id}_{dis_str}".\
+            format(dataset=self.dataset,
+                   content_id=self.content_id,
+                   dis_str=self.dis_str)
+        quality_str = self.quality_str
+        if quality_str:
+            str += "_q_{quality_str}".format(quality_str=quality_str)
+        return str
+
+    def __str__(self):
+        return self.to_string_compact()
 
     # ==== workfile ====
 
     @property
     def ref_workfile_path(self):
-        return "{workdir}/ref_{ref_str}_{quality_str}".format(
+        return "{workdir}/ref_{str}".format(
             workdir=self.workdir,
-            ref_str=self.ref_str,
-            quality_str=self.quality_str)
+            str=str(self))
 
     @property
     def dis_workfile_path(self):
-        return "{workdir}/dis_{dis_str}_{quality_str}".format(
+        return "{workdir}/dis_{str}".format(
             workdir=self.workdir,
-            dis_str=self.dis_str,
-            quality_str=self.quality_str)
+            str=str(self))
 
     # ==== bitrate ====
 

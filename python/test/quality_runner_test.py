@@ -14,29 +14,29 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_get_log_file_path(self):
 
-        asset = Asset(dataset="test", ref_path="dir/refvideo.yuv",
-                      dis_path="dir/disvideo.yuv",
+        asset = Asset(dataset="test", content_id=0,
+                      ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
                       asset_dict={'width':720, 'height':480,
                                   'start_frame':2, 'end_frame':2})
 
         runner = VmafQualityRunner([asset], None,
                                    log_file_dir="log_file_dir")
         log_file_path = runner._get_log_file_path(asset)
-        expected_log_file_path = "log_file_dir/VMAF/test_refvideo_720x480_2to2" \
-                                 "_vs_disvideo_720x480_2to2_q_720x480"
+        expected_log_file_path = \
+            "log_file_dir/VMAF/test_0_disvideo_720x480_2to2_q_720x480"
         self.assertEquals(log_file_path, expected_log_file_path)
 
     def test_run_vamf_runner(self):
         print 'test on running VMAF runner...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
-        asset = Asset(dataset="test",
+        asset = Asset(dataset="test", content_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
-        asset_reversed = Asset(dataset="test",
+        asset_reversed = Asset(dataset="test", content_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=dis_path,
                       dis_path=ref_path,
@@ -65,7 +65,7 @@ class QualityRunnerTest(unittest.TestCase):
         print 'test on running VMAF runner in parallel...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
-        asset = Asset(dataset="test",
+        asset = Asset(dataset="test", content_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
                       dis_path=dis_path,
@@ -88,13 +88,13 @@ class ParallelQualityRunnerTest(unittest.TestCase):
     def test_run_parallel_vamf_runner(self):
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
-        asset = Asset(dataset="test",
+        asset = Asset(dataset="test", content_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
-        asset_reversed = Asset(dataset="test",
+        asset_reversed = Asset(dataset="test", content_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=dis_path,
                       dis_path=ref_path,
@@ -109,13 +109,13 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             parallelize=True)
 
         self.assertEqual(results[0]['VMAF_score'], 60.2689700696979)
-        self.assertEqual(np.mean(results[0]['vif_score']), 0.44417014583333336)
+        self.assertEqual(results[0]['vif_score'], 0.44417014583333336)
         self.assertEqual(results[0]['motion_score'], 3.5916076041666667)
         self.assertEqual(results[0]['adm_score'], 0.91552422916666665)
         self.assertEqual(results[0]['ansnr_score'], 22.533456770833329)
 
         self.assertEqual(results[1]['VMAF_score'], 70.308148178177063)
-        self.assertEqual(np.mean(results[1]['vif_score']), 0.48817572916666663)
+        self.assertEqual(results[1]['vif_score'], 0.48817572916666663)
         self.assertEqual(results[1]['motion_score'], 3.2422333541666659)
         self.assertEqual(results[1]['adm_score'], 0.94795422916666683)
         self.assertEqual(results[1]['ansnr_score'], 24.228765083333332)
