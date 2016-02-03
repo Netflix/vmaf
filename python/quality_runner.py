@@ -53,6 +53,9 @@ class QualityRunner(object):
 
         log_file_path = self._get_log_file_path(asset)
 
+        # if parent dir doesn't exist, create
+        make_parent_dirs_if_nonexist(log_file_path)
+
         # touch (to start with a clean co)
         with open(log_file_path, 'wt'):
             pass

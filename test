@@ -1,0 +1,7 @@
+#!/bin/sh
+
+echo "Run tests in feature/test..."
+python2 -m unittest discover -s feature/test -p '*_test.py'
+
+echo "Run tests in python/test..."
+python2 -m unittest discover -s python/test -p '*_test.py'

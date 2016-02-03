@@ -1,10 +1,11 @@
 __copyright__ = "Copyright 2016, Netflix, Inc."
-__license__ = "LGPL Version 3"
+__license__ = "Apache, Version 2.0"
 
 import unittest
 import os
 import re
 import subprocess
+from python import config
 
 def read_log(log_filename, type):
     scores = []
@@ -22,8 +23,8 @@ def read_log(log_filename, type):
 
 class CornerCaseTest(unittest.TestCase):
 
-    VMAF = "../vmaf"
-    LOG_FILENAME = "workspace/log"
+    VMAF = config.ROOT + "/feature/vmaf"
+    LOG_FILENAME = config.ROOT + "/workspace/log"
     CMD_TEMPLATE = """
         {vmaf} vif {fmt} {ref} {dis} {w} {h} > {log};
         {vmaf} adm {fmt} {ref} {dis} {w} {h} >> {log};
@@ -42,8 +43,8 @@ class CornerCaseTest(unittest.TestCase):
 
     def test_checkerboard_identical(self):
         print 'test on checkerboard pattern identical...'
-        ref_yuv = "../resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
-        dis_yuv = "../resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        ref_yuv = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_yuv = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
         yuv_fmt = "yuv420"
         yuv_width = 1920
         yuv_height = 1080
@@ -58,8 +59,8 @@ class CornerCaseTest(unittest.TestCase):
 
     def test_checkerboard_shifted_by_1(self):
         print 'test on checkerboard pattern shifted by 1...'
-        ref_yuv = "../resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
-        dis_yuv = "../resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv"
+        ref_yuv = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_yuv = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv"
         yuv_fmt = "yuv420"
         yuv_width = 1920
         yuv_height = 1080
@@ -74,8 +75,8 @@ class CornerCaseTest(unittest.TestCase):
 
     def test_checkerboard_opposite(self):
         print 'test on checkerboard pattern opposite...'
-        ref_yuv = "../resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
-        dis_yuv = "../resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
+        ref_yuv = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_yuv = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
         yuv_fmt = "yuv420"
         yuv_width = 1920
         yuv_height = 1080
@@ -90,8 +91,8 @@ class CornerCaseTest(unittest.TestCase):
 
     def test_flat_identical(self):
         print 'test on flat pattern identical...'
-        ref_yuv = "../resource/yuv/flat_1920_1080_0.yuv"
-        dis_yuv = "../resource/yuv/flat_1920_1080_0.yuv"
+        ref_yuv = config.ROOT + "//resource/yuv/flat_1920_1080_0.yuv"
+        dis_yuv = config.ROOT + "//resource/yuv/flat_1920_1080_0.yuv"
         yuv_fmt = "yuv420"
         yuv_width = 1920
         yuv_height = 1080
@@ -106,8 +107,8 @@ class CornerCaseTest(unittest.TestCase):
 
     def test_flat_identical(self):
         print 'test on flat pattern identical...'
-        ref_yuv = "../resource/yuv/flat_1920_1080_0.yuv"
-        dis_yuv = "../resource/yuv/flat_1920_1080_0.yuv"
+        ref_yuv = config.ROOT + "/resource/yuv/flat_1920_1080_0.yuv"
+        dis_yuv = config.ROOT + "/resource/yuv/flat_1920_1080_0.yuv"
         yuv_fmt = "yuv420"
         yuv_width = 1920
         yuv_height = 1080
@@ -122,8 +123,8 @@ class CornerCaseTest(unittest.TestCase):
 
     def test_flat_value10(self):
         print 'test on flat pattern of value 10...'
-        ref_yuv = "../resource/yuv/flat_1920_1080_0.yuv"
-        dis_yuv = "../resource/yuv/flat_1920_1080_10.yuv"
+        ref_yuv = config.ROOT + "/resource/yuv/flat_1920_1080_0.yuv"
+        dis_yuv = config.ROOT + "/resource/yuv/flat_1920_1080_10.yuv"
         yuv_fmt = "yuv420"
         yuv_width = 1920
         yuv_height = 1080
@@ -138,10 +139,10 @@ class CornerCaseTest(unittest.TestCase):
 
 class SingleFeatureTest(unittest.TestCase):
 
-    VMAF = "../vmaf"
-    LOG_FILENAME = "workspace/log"
-    REF_YUV = "../resource/yuv/src01_hrc00_576x324.yuv"
-    DIS_YUV = "../resource/yuv/src01_hrc01_576x324.yuv"
+    VMAF = config.ROOT + "/feature/vmaf"
+    LOG_FILENAME = config.ROOT + "/workspace/log"
+    REF_YUV = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+    DIS_YUV = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
     YUV_FMT = "yuv420"
     YUV_WIDTH = 576
     YUV_HEIGHT = 324
@@ -196,7 +197,7 @@ class SingleFeatureTest(unittest.TestCase):
         score, scores = read_log(self.LOG_FILENAME, "vif")
         self.assertEquals(score, 0.44417014583333336)
         self.assertEquals(scores[0], 0.574283)
-        self.assertEquals(scores[1], 0.574283)
+        self.assertEquals(scores[1], 0.491295)
 
 if __name__ == '__main__':
 

@@ -29,9 +29,6 @@ class VmafQualityRunner(QualityRunner):
 
         log_file_path = self._get_log_file_path(asset)
 
-        # if parent dir doesn't exist, create
-        make_parent_dirs_if_nonexist(log_file_path)
-
         # run VMAF command line to extract features, 'APPEND' result (since
         # super method already does something
         quality_width, quality_height = asset.quality_width_height

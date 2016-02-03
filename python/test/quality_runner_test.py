@@ -11,11 +11,7 @@ import numpy as np
 
 class QualityRunnerTest(unittest.TestCase):
 
-    def setUp(self):
-        self.logger = get_stdout_logger()
-
     def tearDown(self):
-        close_logger(self.logger)
         if hasattr(self, 'runner'): self.runner.remove_logs()
 
     def test_get_log_file_path(self):
@@ -25,7 +21,7 @@ class QualityRunnerTest(unittest.TestCase):
                       asset_dict={'width':720, 'height':480,
                                   'start_frame':2, 'end_frame':2})
 
-        runner = VmafQualityRunner([asset], self.logger,
+        runner = VmafQualityRunner([asset], None,
                                    log_file_dir="log_file_dir")
         log_file_path = runner._get_log_file_path(asset)
         expected_log_file_path = "log_file_dir/VMAF/test_refvideo_720x480_2to2" \
@@ -33,23 +29,24 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertEquals(log_file_path, expected_log_file_path)
 
     def test_run_vamf_runner(self):
+        print 'test on running VMAF runner...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test",
-                      workdir_root="workspace/workdir",
+                      workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_reversed = Asset(dataset="test",
-                      workdir_root="workspace/workdir",
+                      workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=dis_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
 
-        self.runner = VmafQualityRunner([asset, asset_reversed], self.logger,
+        self.runner = VmafQualityRunner([asset, asset_reversed], None,
                                         fifo_mode=True,
-                                        log_file_dir="workspace/log_file_dir")
+                                        log_file_dir=config.ROOT + "/workspace/log_file_dir")
         self.runner.run()
 
         results = self.runner.results
@@ -67,17 +64,18 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertEqual(results[1]['ansnr_score'], 24.228765083333332)
 
     def test_run_vmaf_runner_with_scaling(self):
+        print 'test on running VMAF runner in parallel...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test",
-                      workdir_root="workspace/workdir",
+                      workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324,
                                   'quality_width':384, 'quality_height':216})
 
         self.runner = VmafQualityRunner([asset], None, fifo_mode=False,
-                                   log_file_dir="workspace/log_file_dir")
+                                   log_file_dir=config.ROOT + "/workspace/log_file_dir")
 
         with self.assertRaises(AssertionError):
             self.runner.run()
@@ -93,13 +91,13 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test",
-                      workdir_root="workspace/workdir",
+                      workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_reversed = Asset(dataset="test",
-                      workdir_root="workspace/workdir",
+                      workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=dis_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
@@ -107,7 +105,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.runners, results = quality_runner_macro(
             VmafQualityRunner,
             [asset, asset_reversed],
-            log_file_dir="workspace/log_file_dir",
+            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
             delete_workdir=True,
             parallelize=True)
