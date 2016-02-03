@@ -11,6 +11,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, 'runner'): self.runner.remove_logs()
+        pass
 
     def test_get_log_file_path(self):
 
@@ -36,14 +37,14 @@ class QualityRunnerTest(unittest.TestCase):
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
-        asset_reversed = Asset(dataset="test", content_id=0,
+        asset_original = Asset(dataset="test", content_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
-                      ref_path=dis_path,
+                      ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
 
-        self.runner = VmafQualityRunner([asset, asset_reversed], None,
-                                        fifo_mode=True,
+        self.runner = VmafQualityRunner([asset, asset_original],
+                                        None, fifo_mode=True,
                                         log_file_dir=config.ROOT + "/workspace/log_file_dir")
         self.runner.run()
 
@@ -55,11 +56,11 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertEqual(results[0]['adm_score'], 0.91552422916666665)
         self.assertEqual(results[0]['ansnr_score'], 22.533456770833329)
 
-        self.assertEqual(results[1]['VMAF_score'], 70.308148178177063)
-        self.assertEqual(results[1]['vif_score'], 0.48817572916666663)
-        self.assertEqual(results[1]['motion_score'], 3.2422333541666659)
-        self.assertEqual(results[1]['adm_score'], 0.94795422916666683)
-        self.assertEqual(results[1]['ansnr_score'], 24.228765083333332)
+        self.assertEqual(results[1]['VMAF_score'], 95.65756240092503)
+        self.assertEqual(results[1]['vif_score'], 1.0)
+        self.assertEqual(results[1]['motion_score'], 3.5916076041666667)
+        self.assertEqual(results[1]['adm_score'], 1.0)
+        self.assertEqual(results[1]['ansnr_score'], 30.030914145833322)
 
     def test_run_vmaf_runner_with_scaling(self):
         print 'test on running VMAF runner in parallel...'
@@ -94,15 +95,15 @@ class ParallelQualityRunnerTest(unittest.TestCase):
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
-        asset_reversed = Asset(dataset="test", content_id=0,
+        asset_original = Asset(dataset="test", content_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
-                      ref_path=dis_path,
+                      ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
 
         self.runners, results = quality_runner_macro(
             VmafQualityRunner,
-            [asset, asset_reversed],
+            [asset, asset_original],
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
             delete_workdir=True,
@@ -114,11 +115,11 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertEqual(results[0]['adm_score'], 0.91552422916666665)
         self.assertEqual(results[0]['ansnr_score'], 22.533456770833329)
 
-        self.assertEqual(results[1]['VMAF_score'], 70.308148178177063)
-        self.assertEqual(results[1]['vif_score'], 0.48817572916666663)
-        self.assertEqual(results[1]['motion_score'], 3.2422333541666659)
-        self.assertEqual(results[1]['adm_score'], 0.94795422916666683)
-        self.assertEqual(results[1]['ansnr_score'], 24.228765083333332)
+        self.assertEqual(results[1]['VMAF_score'], 95.65756240092503)
+        self.assertEqual(results[1]['vif_score'], 1.0)
+        self.assertEqual(results[1]['motion_score'], 3.5916076041666667)
+        self.assertEqual(results[1]['adm_score'], 1.0)
+        self.assertEqual(results[1]['ansnr_score'], 30.030914145833322)
 
 
 if __name__ == '__main__':
