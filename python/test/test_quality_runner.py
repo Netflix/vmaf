@@ -1,10 +1,8 @@
-from python.quality_runner import quality_runner_macro
-
 __copyright__ = "Copyright 2016, Netflix, Inc."
-__license__ = "LGPL Version 3"
+__license__ = "Apache, Version 2.0"
 
 import unittest
-
+from python.quality_runner import quality_runner_macro
 from python.tools import get_stdout_logger, close_logger
 from python.asset import Asset
 from python.vmaf_quality_runner import VmafQualityRunner
