@@ -1,11 +1,11 @@
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
+import re
 import time
 import os
 import multiprocessing
 import subprocess
-
 import config
 from tools import get_dir_without_last_slash, make_parent_dirs_if_nonexist
 
@@ -24,6 +24,14 @@ class QualityRunner(object):
         self.fifo_mode = fifo_mode
         self.delete_workdir = delete_workdir
         self.results = []
+
+        self._sanity_check()
+
+    def _sanity_check(self):
+        assert hasattr(self, "TYPE")
+        assert hasattr(self, "VERSION")
+        assert re.match(r"[a-zA-Z0-9_]+", self.TYPE), \
+            "TYPE can only contains alphabets, numbers and _."
 
     def run(self):
 
@@ -76,7 +84,7 @@ class QualityRunner(object):
         """
 
         # sanity check
-        self._sanity_check(asset)
+        self._sanity_check_asset(asset)
 
         log_file_path = self._get_log_file_path(asset)
 
@@ -150,9 +158,9 @@ class QualityRunner(object):
         dis_bitrate_key = "dis_bitrate_kbps"
         result[dis_bitrate_key] = dis_bitrate_kbps
 
-        return result
+        return QualityRunnerResult(self.__class__, result)
 
-    def _sanity_check(self, asset):
+    def _sanity_check_asset(self, asset):
 
         # 1) for now, quality width/height has to agree with ref/dis width/height
         assert asset.quality_width_height \
@@ -257,6 +265,52 @@ class QualityRunner(object):
         time_file_path = self._get_time_file_path(asset)
         if os.path.exists(time_file_path):
             os.remove(time_file_path)
+
+class QualityRunnerResult(object):
+    """
+    Contains result returned by QualityRunner. Note that
+    it should be used in a read-only manner.
+    """
+
+    def __init__(self, quality_runner_class, result_dict):
+        self._quality_runner_class = quality_runner_class
+        self._result_dict = result_dict
+
+    @property
+    def type(self):
+        return self._quality_runner_class.TYPE
+
+    @property
+    def version(self):
+        return self._quality_runner_class.VERSION
+
+    def __str__(self):
+        # TODO
+        return str(self._result_dict)
+
+    # make access dictionary-like, i.e. can do: result['vif_score']
+    def __getitem__(self, key):
+        try:
+            return self._result_dict[key]
+        except KeyError as e:
+            return self._get_aggregate_score(key, e)
+
+    def _get_aggregate_score(self, score_key, error):
+        """
+        Get aggregate score from list of scores. Must follow the convention
+        that if the aggregate score uses key '*_score', then there must be
+        a corresponding list of scores that uses key '*_scores'. For example,
+        if the key is 'VMAF_score', there must exist a corresponding key
+        'VMAF_scores'.
+        :param score_key:
+        :return:
+        """
+        if re.search(r"_score$", score_key):
+            scores_key = score_key + 's' # e.g. 'VMAF_scores'
+            if scores_key in self._result_dict:
+                scores = self._result_dict[scores_key]
+                return float(sum(scores)) / len(scores)
+        raise KeyError(error)
 
 def quality_runner_macro(runner_class,
                          assets,

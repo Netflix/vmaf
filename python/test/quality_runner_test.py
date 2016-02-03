@@ -51,16 +51,16 @@ class QualityRunnerTest(unittest.TestCase):
         results = self.runner.results
 
         self.assertEqual(results[0]['VMAF_score'], 60.2689700696979)
-        self.assertEqual(results[0]['vif_score'], 0.44417014583333336)
-        self.assertEqual(results[0]['motion_score'], 3.5916076041666667)
-        self.assertEqual(results[0]['adm_score'], 0.91552422916666665)
-        self.assertEqual(results[0]['ansnr_score'], 22.533456770833329)
+        self.assertEqual(results[0]['VMAF_vif_score'], 0.44417014583333336)
+        self.assertEqual(results[0]['VMAF_motion_score'], 3.5916076041666667)
+        self.assertEqual(results[0]['VMAF_adm_score'], 0.91552422916666665)
+        self.assertEqual(results[0]['VMAF_ansnr_score'], 22.533456770833329)
 
         self.assertEqual(results[1]['VMAF_score'], 95.65756240092503)
-        self.assertEqual(results[1]['vif_score'], 1.0)
-        self.assertEqual(results[1]['motion_score'], 3.5916076041666667)
-        self.assertEqual(results[1]['adm_score'], 1.0)
-        self.assertEqual(results[1]['ansnr_score'], 30.030914145833322)
+        self.assertEqual(results[1]['VMAF_vif_score'], 1.0)
+        self.assertEqual(results[1]['VMAF_motion_score'], 3.5916076041666667)
+        self.assertEqual(results[1]['VMAF_adm_score'], 1.0)
+        self.assertEqual(results[1]['VMAF_ansnr_score'], 30.030914145833322)
 
     def test_run_vmaf_runner_with_scaling(self):
         print 'test on running VMAF runner in parallel...'
@@ -73,7 +73,7 @@ class QualityRunnerTest(unittest.TestCase):
                       asset_dict={'width':576, 'height':324,
                                   'quality_width':384, 'quality_height':216})
 
-        self.runner = VmafQualityRunner([asset], None, fifo_mode=False,
+        self.runner = VmafQualityRunner([asset], None, fifo_mode=True,
                                    log_file_dir=config.ROOT + "/workspace/log_file_dir")
 
         with self.assertRaises(AssertionError):
@@ -110,16 +110,16 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             parallelize=True)
 
         self.assertEqual(results[0]['VMAF_score'], 60.2689700696979)
-        self.assertEqual(results[0]['vif_score'], 0.44417014583333336)
-        self.assertEqual(results[0]['motion_score'], 3.5916076041666667)
-        self.assertEqual(results[0]['adm_score'], 0.91552422916666665)
-        self.assertEqual(results[0]['ansnr_score'], 22.533456770833329)
+        self.assertEqual(results[0]['VMAF_vif_score'], 0.44417014583333336)
+        self.assertEqual(results[0]['VMAF_motion_score'], 3.5916076041666667)
+        self.assertEqual(results[0]['VMAF_adm_score'], 0.91552422916666665)
+        self.assertEqual(results[0]['VMAF_ansnr_score'], 22.533456770833329)
 
         self.assertEqual(results[1]['VMAF_score'], 95.65756240092503)
-        self.assertEqual(results[1]['vif_score'], 1.0)
-        self.assertEqual(results[1]['motion_score'], 3.5916076041666667)
-        self.assertEqual(results[1]['adm_score'], 1.0)
-        self.assertEqual(results[1]['ansnr_score'], 30.030914145833322)
+        self.assertEqual(results[1]['VMAF_vif_score'], 1.0)
+        self.assertEqual(results[1]['VMAF_motion_score'], 3.5916076041666667)
+        self.assertEqual(results[1]['VMAF_adm_score'], 1.0)
+        self.assertEqual(results[1]['VMAF_ansnr_score'], 30.030914145833322)
 
 
 if __name__ == '__main__':

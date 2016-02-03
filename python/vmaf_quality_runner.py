@@ -56,13 +56,13 @@ class VmafQualityRunner(QualityRunner):
         model = self.svmutil.svm_load_model(self.SVM_MODEL_FILE)
 
         scaled_vif_scores = self._rescale(
-            feature_result['vif_scores'], self.FEAT_RESCALE['vif'])
+            feature_result[self.TYPE + '_vif_scores'], self.FEAT_RESCALE['vif'])
         scaled_adm_scores = self._rescale(
-            feature_result['adm_scores'], self.FEAT_RESCALE['adm'])
+            feature_result[self.TYPE + '_adm_scores'], self.FEAT_RESCALE['adm'])
         scaled_ansnr_scores = self._rescale(
-            feature_result['ansnr_scores'], self.FEAT_RESCALE['ansnr'])
+            feature_result[self.TYPE + '_ansnr_scores'], self.FEAT_RESCALE['ansnr'])
         scaled_motion_scores = self._rescale(
-            feature_result['motion_scores'], self.FEAT_RESCALE['motion'])
+            feature_result[self.TYPE + '_motion_scores'], self.FEAT_RESCALE['motion'])
 
         scores = []
         for vif, adm, ansnr, motion in zip(scaled_vif_scores,
@@ -110,12 +110,6 @@ class VmafQualityRunner(QualityRunner):
         # individual feature scores
         result.update(feat_result)
 
-        # add aggregate feature scores
-        result['vif_score'] = np.mean(feat_result['vif_scores'])
-        result['adm_score'] = np.mean(feat_result['adm_scores'])
-        result['ansnr_score'] = np.mean(feat_result['ansnr_scores'])
-        result['motion_score'] = np.mean(feat_result['motion_scores'])
-
         # read VMAF scores
         log_file_path = self._get_log_file_path(asset)
         vmaf_scores = []
@@ -131,7 +125,6 @@ class VmafQualityRunner(QualityRunner):
 
         # add VMAF scores
         result[self.TYPE + "_scores"] = vmaf_scores
-        result[self.TYPE + "_score"] = np.mean(vmaf_scores)
 
         return result
 
@@ -181,10 +174,10 @@ class VmafQualityRunner(QualityRunner):
 
         feat_result = {}
 
-        feat_result['vif_scores'] = vif_scores
-        feat_result['adm_scores'] = adm_scores
-        feat_result['ansnr_scores'] = ansnr_scores
-        feat_result['motion_scores'] = motion_scores
+        feat_result[self.TYPE + '_vif_scores'] = vif_scores
+        feat_result[self.TYPE + '_adm_scores'] = adm_scores
+        feat_result[self.TYPE + '_ansnr_scores'] = ansnr_scores
+        feat_result[self.TYPE + '_motion_scores'] = motion_scores
 
         return feat_result
 
