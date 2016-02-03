@@ -6,7 +6,7 @@ import os
 import multiprocessing
 import subprocess
 
-from python import config
+import config
 from tools import get_dir_without_last_slash, make_parent_dirs_if_nonexist
 
 class QualityRunner(object):

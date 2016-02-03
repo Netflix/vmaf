@@ -65,3 +65,7 @@ def make_parent_dirs_if_nonexist(path):
 def delete_dir_if_exists(dir):
     if os.path.isdir(dir):
         os.rmdir(dir)
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()

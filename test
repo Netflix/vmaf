@@ -1,5 +1,8 @@
 #!/bin/sh
 
+echo "Run doctests in python/tools..."
+python2 -m doctest python/tools.py
+
 echo "Run tests in feature/test..."
 python2 -m unittest discover -s feature/test -p '*_test.py'
 

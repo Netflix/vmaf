@@ -6,8 +6,8 @@ import re
 import subprocess
 import sys
 import numpy as np
-from python import config
-from python.quality_runner import QualityRunner
+import config
+from quality_runner import QualityRunner
 
 class VmafQualityRunner(QualityRunner):
 

@@ -2,10 +2,10 @@ __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import unittest
-from python.quality_runner import quality_runner_macro
-from python.asset import Asset
-from python.vmaf_quality_runner import VmafQualityRunner
-from python import config
+from quality_runner import quality_runner_macro
+from asset import Asset
+from vmaf_quality_runner import VmafQualityRunner
+import config
 
 class QualityRunnerTest(unittest.TestCase):
 

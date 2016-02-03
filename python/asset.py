@@ -5,7 +5,7 @@ import os
 
 from common import Parallelizable
 from tools import get_file_name_without_extension
-from python import config
+import config
 
 class Asset(Parallelizable):
 

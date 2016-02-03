@@ -1,5 +1,5 @@
 Add project root and python directory to PYTHONPATH:
-export PYTHONPATH=[project root dir]:$PYTHONPATH
+export PYTHONPATH=[project root dir]/python:$PYTHONPATH
 
 Copy config_template.py to config.py
 

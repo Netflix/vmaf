@@ -3,8 +3,8 @@ __license__ = "Apache, Version 2.0"
 
 import unittest
 
-from python import config
-from python.asset import Asset
+import config
+from asset import Asset
 
 class AssetTest(unittest.TestCase):
 
