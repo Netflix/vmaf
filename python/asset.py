@@ -5,12 +5,12 @@ import os
 
 from common import Parallelizable
 from tools import get_file_name_without_extension
-from python.config import PYTHON_ROOT
+from python import config
 
 class Asset(Parallelizable):
 
     def __init__(self, dataset, ref_path, dis_path, asset_dict,
-                 workdir_root= PYTHON_ROOT + "/../workspace/workdir"):
+                 workdir_root= config.ROOT + "/workspace/workdir"):
         """
         :param dataset
         :param ref_path: path to reference video

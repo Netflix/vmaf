@@ -6,7 +6,7 @@ import re
 import subprocess
 import sys
 import numpy as np
-from python.config import PYTHON_ROOT
+from python import config
 from python.quality_runner import QualityRunner
 from python.tools import make_parent_dirs_if_nonexist
 
@@ -15,12 +15,12 @@ class VmafQualityRunner(QualityRunner):
     TYPE = 'VMAF'
     VERSION = '0.1'
 
-    VMAF = PYTHON_ROOT + "/../feature/vmaf"
-    SVM_MODEL_FILE = PYTHON_ROOT + "/../resource/model/model_V8a.model"
+    VMAF = config.ROOT + "/feature/vmaf"
+    SVM_MODEL_FILE = config.ROOT + "/resource/model/model_V8a.model"
     FEAT_RESCALE = {'vif': (0.0, 1.0), 'adm': (0.4, 1.0),
                     'ansnr': (10.0, 50.0), 'motion': (0.0, 20.0)}
 
-    sys.path.append(PYTHON_ROOT + "/../libsvm/python")
+    sys.path.append(config.ROOT + "/libsvm/python")
     import svmutil
 
     def _run_and_generate_log_file(self, asset):

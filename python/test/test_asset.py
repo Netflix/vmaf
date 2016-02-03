@@ -3,7 +3,7 @@ __license__ = "LGPL Version 3"
 
 import unittest
 
-from python.config import PYTHON_ROOT
+from python import config
 from python.asset import Asset
 
 class AssetTest(unittest.TestCase):
@@ -102,8 +102,8 @@ class AssetTest(unittest.TestCase):
         self.assertEquals(asset.dis_duration_sec, 1.0)
 
     def test_bitrate(self):
-        ref_path = PYTHON_ROOT + "/../resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = PYTHON_ROOT + "/../resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
 
         asset = Asset(dataset="test", ref_path=ref_path, dis_path=dis_path,
                       asset_dict={'ref_start_frame':0, 'ref_end_frame':47,

@@ -8,7 +8,7 @@ import unittest
 from python.tools import get_stdout_logger, close_logger
 from python.asset import Asset
 from python.vmaf_quality_runner import VmafQualityRunner
-from python.config import PYTHON_ROOT
+from python import config
 import numpy as np
 
 class QualityRunnerTest(unittest.TestCase):
@@ -35,8 +35,8 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertEquals(log_file_path, expected_log_file_path)
 
     def test_run_vamf_runner(self):
-        ref_path = PYTHON_ROOT + "/../resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = PYTHON_ROOT + "/../resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test",
                       workdir_root="workspace/workdir",
                       ref_path=ref_path,
@@ -69,8 +69,8 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertEqual(results[1]['ansnr_score'], 24.228765083333332)
 
     def test_run_vmaf_runner_with_scaling(self):
-        ref_path = PYTHON_ROOT + "/../resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = PYTHON_ROOT + "/../resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test",
                       workdir_root="workspace/workdir",
                       ref_path=ref_path,
@@ -92,8 +92,8 @@ class ParallelQualityRunnerTest(unittest.TestCase):
                 runner.remove_logs()
 
     def test_run_parallel_vamf_runner(self):
-        ref_path = PYTHON_ROOT + "/../resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = PYTHON_ROOT + "/../resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test",
                       workdir_root="workspace/workdir",
                       ref_path=ref_path,

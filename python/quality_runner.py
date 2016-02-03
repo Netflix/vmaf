@@ -6,7 +6,7 @@ import os
 import multiprocessing
 import subprocess
 
-from python.config import PYTHON_ROOT
+from python import config
 from tools import get_dir_without_last_slash, make_parent_dirs_if_nonexist
 
 class QualityRunner(object):
@@ -14,7 +14,7 @@ class QualityRunner(object):
     def __init__(self,
                  assets,
                  logger,
-                 log_file_dir= PYTHON_ROOT + "/../workspace/log_file_dir",
+                 log_file_dir= config.ROOT + "/workspace/log_file_dir",
                  fifo_mode=True,
                  delete_workdir=True):
 
@@ -86,9 +86,13 @@ class QualityRunner(object):
         else:
             start_time = time.time()
 
-            # remove workfiles if exist
+            # remove workfiles if exist (do early here to avoid race condition
+            # when ref path and dis path have some overlap)
             self._close_ref_workfile(asset)
             self._close_dis_workfile(asset)
+
+            make_parent_dirs_if_nonexist(asset.ref_workfile_path)
+            make_parent_dirs_if_nonexist(asset.dis_workfile_path)
 
             if self.fifo_mode:
                 ref_p = multiprocessing.Process(target=self._open_ref_workfile,
@@ -106,7 +110,16 @@ class QualityRunner(object):
             if self.delete_workdir:
                 self._close_ref_workfile(asset)
                 self._close_dis_workfile(asset)
-                self._delete_workdir(asset)
+
+                ref_dir = get_dir_without_last_slash(asset.ref_workfile_path)
+                dis_dir = get_dir_without_last_slash(asset.dis_workfile_path)
+                os.rmdir(ref_dir)
+                try:
+                    os.rmdir(dis_dir)
+                except OSError as e:
+                    if e.errno == 2: # [Errno 2] No such file or directory
+                        # already removed by os.rmdir(ref_dir)
+                        pass
 
             end_time = time.time()
             run_time = end_time - start_time
@@ -162,12 +175,6 @@ class QualityRunner(object):
         src = asset.ref_path
         dst = asset.ref_workfile_path
 
-        # if dst dir doesn't exist, create
-        if self.logger:
-            self.logger.info("Make parent directory for ref workfile {}".
-                             format(dst))
-        make_parent_dirs_if_nonexist(dst)
-
         # if fifo mode, mkfifo
         if fifo_mode:
             os.mkfifo(dst)
@@ -186,28 +193,12 @@ class QualityRunner(object):
         src = asset.dis_path
         dst = asset.dis_workfile_path
 
-        # if dst dir doesn't exist, create
-        if self.logger:
-            self.logger.info("Make parent directory for dis workfile {}".
-                             format(dst))
-        make_parent_dirs_if_nonexist(dst)
-
         # if fifo mode, mkfifo
         if fifo_mode:
             os.mkfifo(dst)
 
         # open dis file
         self._open_file(src, dst)
-
-    def _delete_workdir(self, asset):
-        ref_dir = get_dir_without_last_slash(asset.ref_workfile_path)
-        dis_dir = get_dir_without_last_slash(asset.dis_workfile_path)
-
-        assert ref_dir == dis_dir
-        assert os.path.isdir(ref_dir)
-
-        os.rmdir(ref_dir)
-
 
     def _open_file(self, src, dst):
         """
@@ -216,7 +207,6 @@ class QualityRunner(object):
         :param dst:
         :return:
         """
-
         # NOTE: & is required for fifo mode !!!!
         cp_cmd = "cp {src} {dst} &". \
             format(src=src, dst=dst)
@@ -267,41 +257,32 @@ class QualityRunner(object):
 
 def quality_runner_macro(runner_class,
                          assets,
-                         log_file_dir=PYTHON_ROOT + "/../workspace/log_file_dir",
+                         log_file_dir=config.ROOT + "/workspace/log_file_dir",
                          fifo_mode=True,
                          delete_workdir=True,
                          parallelize=False):
 
-    def run_quality_runner(runnerclass_asset_logfiledir_fifomode_deleteworkdir):
-
-        runner_class, asset, log_file_dir, fifo_mode, delete_workdir = \
-            runnerclass_asset_logfiledir_fifomode_deleteworkdir
-
-        runner = runner_class([asset],
-                              None,
-                              log_file_dir,
-                              fifo_mode,
-                              delete_workdir)
+    def run_quality_runner(args):
+        runner_class, asset, log_file_dir, fifo_mode, delete_workdir = args
+        runner = runner_class(
+            [asset], None, log_file_dir, fifo_mode, delete_workdir)
         runner.run()
         return runner
 
-    list_runnerclass_asset_logfiledir_fifomode_deleteworkdir = []
+    # pack key arguments to be used as inputs to map function
+    list_args = []
     for asset in assets:
-        list_runnerclass_asset_logfiledir_fifomode_deleteworkdir.append([
-            runner_class,
-            asset,
-            log_file_dir,
-            fifo_mode,
-            delete_workdir])
+        list_args.append(
+            [runner_class, asset, log_file_dir, fifo_mode, delete_workdir])
 
+    # map arguments to func
     if parallelize:
         from pathos.pp_map import pp_map
-        runners = pp_map(run_quality_runner,
-                         list_runnerclass_asset_logfiledir_fifomode_deleteworkdir)
+        runners = pp_map(run_quality_runner, list_args)
     else:
-        runners = map(run_quality_runner,
-                      list_runnerclass_asset_logfiledir_fifomode_deleteworkdir)
+        runners =    map(run_quality_runner, list_args)
 
+    # aggregate results
     results = [runner.results[0] for runner in runners]
 
     return runners, results
