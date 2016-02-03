@@ -8,7 +8,6 @@ import sys
 import numpy as np
 from python import config
 from python.quality_runner import QualityRunner
-from python.tools import make_parent_dirs_if_nonexist
 
 class VmafQualityRunner(QualityRunner):
 

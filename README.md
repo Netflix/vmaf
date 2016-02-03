@@ -6,4 +6,4 @@ Copy config_template.py to config.py
 dependency: pathos
 if running in parallel, need pathos
 
-need python2
+need python2, numpy
