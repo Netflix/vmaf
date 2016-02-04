@@ -21,6 +21,68 @@ def read_log(log_filename, type):
     score = sum(scores) / float(len(scores))
     return score, scores
 
+class SingleFeatureTest(unittest.TestCase):
+
+    VMAF = config.ROOT + "/feature/vmaf"
+    LOG_FILENAME = config.ROOT + "/workspace/log"
+    REF_YUV = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+    DIS_YUV = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+    YUV_FMT = "yuv420"
+    YUV_WIDTH = 576
+    YUV_HEIGHT = 324
+
+    def setUp(self):
+        unittest.TestCase.setUp(self)
+        if os.path.exists(self.LOG_FILENAME):
+            os.remove(self.LOG_FILENAME)
+
+    def tearDown(self):
+        unittest.TestCase.tearDown(self)
+        if os.path.exists(self.LOG_FILENAME):
+            os.remove(self.LOG_FILENAME)
+
+    def test_adm(self):
+        print 'test adm...'
+        cmd = "{vmaf} adm {fmt} {ref} {dis} {w} {h} > {log}".format(
+            vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "adm")
+        self.assertEquals(score, 0.9155242291666666)
+
+    def test_ansnr(self):
+        print 'test ansnr...'
+        cmd = "{vmaf} ansnr {fmt} {ref} {dis} {w} {h} > {log}".format(
+            vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "ansnr")
+        self.assertEquals(score, 22.53345677083333)
+
+    def test_motion(self):
+        print 'test motion...'
+        cmd = "{vmaf} motion {fmt} {ref} {dis} {w} {h} > {log}".format(
+            vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "motion")
+        self.assertEquals(score, 3.5916076041666667)
+
+    def test_vif(self):
+        print 'test vif...'
+        cmd = "{vmaf} vif {fmt} {ref} {dis} {w} {h} > {log}".format(
+            vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "vif")
+        self.assertEquals(score, 0.44417014583333336)
+        self.assertEquals(scores[0], 0.574283)
+        self.assertEquals(scores[1], 0.491295)
+
 class CornerCaseTest(unittest.TestCase):
 
     VMAF = config.ROOT + "/feature/vmaf"
@@ -136,68 +198,6 @@ class CornerCaseTest(unittest.TestCase):
         self.assertEquals(read_log(self.LOG_FILENAME, "ansnr")[0], 5.0022209999999997)
         self.assertEquals(read_log(self.LOG_FILENAME, "motion")[0], 0.0)
         self.assertEquals(read_log(self.LOG_FILENAME, "vif")[0], 1.0)
-
-class SingleFeatureTest(unittest.TestCase):
-
-    VMAF = config.ROOT + "/feature/vmaf"
-    LOG_FILENAME = config.ROOT + "/workspace/log"
-    REF_YUV = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-    DIS_YUV = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
-    YUV_FMT = "yuv420"
-    YUV_WIDTH = 576
-    YUV_HEIGHT = 324
-
-    def setUp(self):
-        unittest.TestCase.setUp(self)
-        if os.path.exists(self.LOG_FILENAME):
-            os.remove(self.LOG_FILENAME)
-
-    def tearDown(self):
-        unittest.TestCase.tearDown(self)
-        if os.path.exists(self.LOG_FILENAME):
-            os.remove(self.LOG_FILENAME)
-
-    def test_adm(self):
-        print 'test adm...'
-        cmd = "{vmaf} adm {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
-            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
-        )
-        subprocess.call(cmd, shell=True)
-        score, scores = read_log(self.LOG_FILENAME, "adm")
-        self.assertEquals(score, 0.9155242291666666)
-
-    def test_ansnr(self):
-        print 'test ansnr...'
-        cmd = "{vmaf} ansnr {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
-            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
-        )
-        subprocess.call(cmd, shell=True)
-        score, scores = read_log(self.LOG_FILENAME, "ansnr")
-        self.assertEquals(score, 22.53345677083333)
-
-    def test_motion(self):
-        print 'test motion...'
-        cmd = "{vmaf} motion {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
-            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
-        )
-        subprocess.call(cmd, shell=True)
-        score, scores = read_log(self.LOG_FILENAME, "motion")
-        self.assertEquals(score, 3.5916076041666667)
-
-    def test_vif(self):
-        print 'test vif...'
-        cmd = "{vmaf} vif {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
-            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
-        )
-        subprocess.call(cmd, shell=True)
-        score, scores = read_log(self.LOG_FILENAME, "vif")
-        self.assertEquals(score, 0.44417014583333336)
-        self.assertEquals(scores[0], 0.574283)
-        self.assertEquals(scores[1], 0.491295)
 
 if __name__ == '__main__':
 

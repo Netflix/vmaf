@@ -1,3 +1,5 @@
+#!/usr/bin/env python2
+
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
@@ -8,12 +10,17 @@ import pprint
 from asset import Asset
 from vmaf_quality_runner import VmafQualityRunner
 
+FMTS = ['yuv420', 'yuv422', 'yuv444']
+
+def print_usage():
+    print "usage: " + os.path.basename(sys.argv[0]) \
+          + " [fmt] [width] [height] [ref_file] [dis_file]\n"
+    print "fmts:\n\t" + "\n\t".join(FMTS) +"\n"
+
 if __name__ == "__main__":
 
     if len(sys.argv) < 6:
-        print "usage: " + os.path.basename(sys.argv[0]) \
-              + " [fmt] [width] [height] [ref_file] [dis_file]"
-        print "fmts:\n\tyuv420\n\tyuv422\n\tyuv444\n"
+        print_usage()
         exit(0)
 
     fmt = sys.argv[1]
@@ -34,19 +41,15 @@ if __name__ == "__main__":
         assets, None, fifo_mode=True,
         log_file_dir=config.ROOT + "/workspace/log_file_dir")
 
-    # clear cache to force run
-    runner.remove_logs()
-
     # run
     runner.run()
-    results = runner.results
+    result = runner.results[0]
 
     # output
-    for asset, result in zip(assets, results):
-        print '========== Input: =========='
-        pprint.pprint(asset.__dict__)
-        print '========== Output: =========='
-        print str(result)
+    print '========== Input: =========='
+    pprint.pprint(asset.__dict__)
+    print '========== Output: =========='
+    print str(result)
 
     # clean up
     runner.remove_logs()
