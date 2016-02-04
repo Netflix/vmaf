@@ -29,7 +29,7 @@ if __name__ == "__main__":
     ref_file = sys.argv[4]
     dis_file = sys.argv[5]
 
-    asset = Asset(dataset="cmd", content_id=0,
+    asset = Asset(dataset="cmd", content_id=0, asset_id=0,
                   workdir_root=config.ROOT + "/workspace/workdir",
                   ref_path=ref_file,
                   dis_path=dis_file,
@@ -46,10 +46,12 @@ if __name__ == "__main__":
     result = runner.results[0]
 
     # output
-    print '========== Input: =========='
-    pprint.pprint(asset.__dict__)
-    print '========== Output: =========='
+    print 'Input:'
+    print asset.__dict__
+    print ''
+    print 'Output:'
     print str(result)
+    print ''
 
     # clean up
     runner.remove_logs()

@@ -9,11 +9,12 @@ import config
 
 class Asset(Parallelizable):
 
-    def __init__(self, dataset, content_id, ref_path, dis_path, asset_dict,
+    def __init__(self, dataset, content_id, asset_id, ref_path, dis_path, asset_dict,
                  workdir_root= config.ROOT + "/workspace/workdir"):
         """
         :param dataset
         :param content_id: ID of content the asset correspond to within dataset
+        :param asset_id: ID of asset
         :param ref_path: path to reference video
         :param dis_path: path to distorted video
         :param asset_dict: dictionary with additional asset properties
@@ -23,6 +24,7 @@ class Asset(Parallelizable):
         super(Asset, self).__init__(workdir_root)
         self.dataset = dataset
         self.content_id = content_id
+        self.asset_id = asset_id
         self.ref_path = ref_path
         self.dis_path = dis_path
         self.asset_dict = asset_dict
@@ -198,9 +200,10 @@ class Asset(Parallelizable):
         return str
 
     def to_string(self):
-        str = "{dataset}_{content_id}_{ref_str}_vs_{dis_str}".\
+        str = "{dataset}_{content_id}_{asset_id}_{ref_str}_vs_{dis_str}".\
             format(dataset=self.dataset,
                    content_id=self.content_id,
+                   asset_id=self.asset_id,
                    ref_str=self.ref_str,
                    dis_str=self.dis_str)
         quality_str = self.quality_str
@@ -214,9 +217,10 @@ class Asset(Parallelizable):
         ref_str can be ignored.
         :return:
         """
-        str = "{dataset}_{content_id}_{dis_str}".\
+        str = "{dataset}_{content_id}_{asset_id}_{dis_str}".\
             format(dataset=self.dataset,
                    content_id=self.content_id,
+                   asset_id=self.asset_id,
                    dis_str=self.dis_str)
         quality_str = self.quality_str
         if quality_str:

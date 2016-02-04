@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     assets = []
     with open(input_filename, "rt") as input_file:
-        for line in input_file.readlines():
+        for line_idx, line in enumerate(input_file.readlines()):
             # example: yuv420 576 324 ref.yuv dis.yuv
             mo = re.match(r"([\S]+) ([0-9]+) ([0-9]+) ([\S]+) ([\S]+)", line)
             if not mo or mo.group(1) not in FMTS:
@@ -44,7 +44,7 @@ if __name__ == "__main__":
             ref_file = mo.group(4)
             dis_file = mo.group(5)
 
-            asset = Asset(dataset="cmd", content_id=0,
+            asset = Asset(dataset="cmd", content_id=0, asset_id=line_idx,
                           workdir_root=config.ROOT + "/workspace/workdir",
                           ref_path=ref_file,
                           dis_path=dis_file,
@@ -70,10 +70,16 @@ if __name__ == "__main__":
 
     # output
     for asset, result in zip(assets, results):
-        print '========== Input: =========='
-        pprint.pprint(asset.__dict__)
-        print '========== Output: =========='
+        print '============================'
+        print 'Asset {asset_id}:'.format(asset_id=asset.asset_id)
+        print '============================'
+        print ''
+        print 'Input:'
+        print asset.__dict__
+        print ''
+        print 'Output:'
         print str(result)
+        print ''
 
     # clean up
     for runner in runners:

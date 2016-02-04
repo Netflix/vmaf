@@ -15,7 +15,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_get_log_file_path(self):
 
-        asset = Asset(dataset="test", content_id=0,
+        asset = Asset(dataset="test", content_id=0, asset_id=1,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
                       asset_dict={'width':720, 'height':480,
                                   'start_frame':2, 'end_frame':2})
@@ -24,20 +24,20 @@ class QualityRunnerTest(unittest.TestCase):
                                    log_file_dir="log_file_dir")
         log_file_path = runner._get_log_file_path(asset)
         expected_log_file_path = \
-            "log_file_dir/VMAF/test_0_disvideo_720x480_2to2_q_720x480"
+            "log_file_dir/VMAF/test_0_1_disvideo_720x480_2to2_q_720x480"
         self.assertEquals(log_file_path, expected_log_file_path)
 
     def test_run_vamf_runner(self):
         print 'test on running VMAF runner...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
-        asset = Asset(dataset="test", content_id=0,
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
-        asset_original = Asset(dataset="test", content_id=0,
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
                       dis_path=ref_path,
@@ -66,7 +66,7 @@ class QualityRunnerTest(unittest.TestCase):
         print 'test on running VMAF runner in parallel...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
-        asset = Asset(dataset="test", content_id=0,
+        asset = Asset(dataset="test", content_id=0, asset_id=1,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
                       dis_path=dis_path,
@@ -89,13 +89,13 @@ class ParallelQualityRunnerTest(unittest.TestCase):
     def test_run_parallel_vamf_runner(self):
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
-        asset = Asset(dataset="test", content_id=0,
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
-        asset_original = Asset(dataset="test", content_id=0,
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
                       dis_path=ref_path,
