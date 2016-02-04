@@ -5,15 +5,17 @@ VMAF is a software package developed by Netflix Inc. containing tools for percep
 
 The package has thus far been tested in Ubuntu 14.04 LTS.
 
+
+
 ##Dependency
 
 The VMAF package has its core feature extraction library written in C, and the rest glue code written in Python. It also incorporates an external C++ library named libsvm. To build the C/C++ code, you system must be pre-installed with cc and g++. To run commands, it assumes that your system has Python2 installed.
 
-To run VMAF calculation on multiple reference/distorted video pairs in parallel, you will need a Python package named pathos (>= 0.1a1). For example, run_vmaf_in_batch will first detect if pathos is installed. If not, it will fall back to sequential execution. To install pathos, in Ubuntu, run:
+To run VMAF calculation on multiple reference/distorted video pairs in parallel, you will need a Python package named pathos (>= 0.1a1). For example, run_vmaf_in_batch will first detect if pathos is installed. If not, it will fall back to sequential execution. To install pathos, in Ubuntu, run (assuming pip pre-installed):
 
 `pip install pathos`
 
-(assuming pip pre-installed).
+
 
 ##Installation
 After cloning repo to local, cd to repo directory and run:
@@ -24,11 +26,15 @@ There is a subdirectory named python. Add the path to the python subdirectory to
 
 `export PYTHONPATH=[path_to_repo_dir]/python:$PYTHONPATH`
 
+
+
 ##Testing
 
 After installation, run:
 
 `./test`
+
+
 
 ##Execution
 
@@ -51,6 +57,8 @@ To run VMAF in batch mode, create an input file with lines containing (check exa
 Then run:
 
 `./run_vmaf_in_batch input_file`
+
+
 
 ##To-do List
 
