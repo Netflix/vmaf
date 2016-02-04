@@ -1,3 +1,4 @@
+/obj/.keep
 *.o
 vmaf
 .cproject
