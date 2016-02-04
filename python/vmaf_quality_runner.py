@@ -1,3 +1,5 @@
+from functools import partial
+
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
@@ -5,7 +7,6 @@ import os
 import re
 import subprocess
 import sys
-import numpy as np
 import config
 from quality_runner import QualityRunner
 
@@ -93,13 +94,33 @@ class VmafQualityRunner(QualityRunner):
             score = 0.0
         return score
 
+    @classmethod
+    def _rescale(cls, vals, lower_upper_bound):
+        # import numpy as np
+        # lower_bound, upper_bound = lower_upper_bound
+        # vals = np.double(vals)
+        # vals = np.clip(vals, lower_bound, upper_bound)
+        # vals = (vals - lower_bound)/(upper_bound - lower_bound)
+        # return vals
+        # avoid dependency on numpy here:
+        _rescale_scaler_partial = \
+            partial(cls._rescale_scalar,
+                    lower_upper_bound=lower_upper_bound)
+        return map(_rescale_scaler_partial, vals)
+
     @staticmethod
-    def _rescale(vals, lower_upper_bound):
+    def _rescale_scalar(val, lower_upper_bound):
+        """
+        Scalar version of _rescale.
+        :param val:
+        :param lower_upper_bound:
+        :return:
+        """
         lower_bound, upper_bound = lower_upper_bound
-        vals = np.double(vals)
-        vals = np.clip(vals, lower_bound, upper_bound)
-        vals = (vals - lower_bound)/(upper_bound - lower_bound)
-        return vals
+        val = val if val > lower_bound else lower_bound
+        val = val if val < upper_bound else upper_bound
+        val = (float(val) - lower_bound) / (upper_bound - lower_bound)
+        return val
 
     def _get_quality_scores(self, asset):
 

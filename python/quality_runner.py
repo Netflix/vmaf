@@ -386,12 +386,14 @@ def run_quality_runners_in_parallel(runner_class,
         try:
             from pathos.pp_map import pp_map
             runners = pp_map(run_quality_runner, list_args)
-        except ImportError as e:
+        except ImportError:
             # fall back
+            msg = "pathos.pp_map cannot be imported, fall back to sequential " \
+                  "map(). Install pathos by: \npip install pathos"
             if logger:
-                msg = "{}\nFall back to plain map.".format(e)
-                print msg
                 logger.warn(msg)
+            else:
+                print 'Warn: {}'.format(msg)
             runners = map(run_quality_runner, list_args)
     else:
         runners = map(run_quality_runner, list_args)
