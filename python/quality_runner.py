@@ -350,11 +350,13 @@ class QualityRunnerResult(object):
         raise KeyError(error)
 
 def run_quality_runners_in_parallel(runner_class,
-                         assets,
-                         log_file_dir=config.ROOT + "/workspace/log_file_dir",
-                         fifo_mode=True,
-                         delete_workdir=True,
-                         parallelize=False):
+                                    assets,
+                                    log_file_dir=config.ROOT + "/workspace/log_file_dir",
+                                    fifo_mode=True,
+                                    delete_workdir=True,
+                                    parallelize=True,
+                                    logger=None
+                                    ):
     """
     Run multiple QualityRunner in parallel.
     :param runner_class:
@@ -381,10 +383,18 @@ def run_quality_runners_in_parallel(runner_class,
 
     # map arguments to func
     if parallelize:
-        from pathos.pp_map import pp_map
-        runners = pp_map(run_quality_runner, list_args)
+        try:
+            from pathos.pp_map import pp_map
+            runners = pp_map(run_quality_runner, list_args)
+        except ImportError as e:
+            # fall back
+            if logger:
+                msg = "{}\nFall back to plain map.".format(e)
+                print msg
+                logger.warn(msg)
+            runners = map(run_quality_runner, list_args)
     else:
-        runners =    map(run_quality_runner, list_args)
+        runners = map(run_quality_runner, list_args)
 
     # aggregate results
     results = [runner.results[0] for runner in runners]
