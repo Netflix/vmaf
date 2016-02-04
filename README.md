@@ -14,7 +14,7 @@ To perform VMAF computation in parallel on multiple reference/distorted video pa
 ##Installation
 After cloning VMAF repo to local, cd to the repo directory and run:
 
-`./make`
+`make`
 
 There is a subdirectory named python. Add the python subdirectory to PYTHONPATH:
 
