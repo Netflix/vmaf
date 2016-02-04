@@ -46,6 +46,7 @@ if __name__ == "__main__":
     result = runner.results[0]
 
     # output
+    print ''
     print 'Input:'
     print asset.__dict__
     print ''
