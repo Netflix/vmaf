@@ -3,8 +3,6 @@ VMAF - Video Multi-Method Assessment Fusion
 
 VMAF is a software package developed by Netflix Inc. containing tools for perceptual video quality measurement. VMAF is licensed under Apache License, Version 2.0.
 
-The package has thus far been tested in Ubuntu 14.04 LTS.
-
 ##Prerequisite
 
 The VMAF package has its core feature extraction library written in C, and the rest glue code written in Python. It also incorporates an external C++ library named libsvm. To build the C/C++ code, your system must be pre-installed with cc and g++. To run commands, it assumes that your system has Python2 installed.
@@ -24,13 +22,15 @@ There is a subdirectory named python. Add the python subdirectory to PYTHONPATH:
 
 ##Testing
 
+The package has thus far been tested in Ubuntu 14.04 LTS.
+
 After installation, run:
 
 `./test`
 
 ##Execution
 
-There are two execution modes to run VMAF: single mode and batch mode.
+There are two execution modes to run VMAF -- single mode and batch mode.
 
 To run VMAF on a single reference/distorted video pair, run:
 
