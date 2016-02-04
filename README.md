@@ -1,15 +1,58 @@
-Add project root and python directory to PYTHONPATH:
-export PYTHONPATH=[project root dir]/python:$PYTHONPATH
+VMAF - Video Multi-Method Assessment Fusion
+===================
 
-Copy config_template.py to config.py
+VMAF is a software package developed by Netflix Inc. containing tools for perceptual video quality measurement. VMAF is licensed under Apache License, Version 2.0.
 
-Optional python libraries
-dependency: pathos for parallel running VMAF calculation in batch mode
+The package has thus far been tested in Ubuntu 14.04 LTS.
 
-System setup has been tested on Ubuntu 14.04 VM with VMWare Fusion, running on
-host Mac OS X version e.g. 10.10.3
+##Dependency
 
-TODO:
+The VMAF package has its core feature extraction library written in C, and the rest glue code written in Python. It also incorporates an external C++ library named libsvm. To build the C/C++ code, you system must be pre-installed with cc and g++. To run commands, it assumes that your system has Python2 installed.
 
-1) Support for 10-bit YUV
-1) training/testing framework
+To run VMAF calculation on multiple reference/distorted video pairs in parallel, you will need a Python package named pathos (>= 0.1a1). For example, run_vmaf_in_batch will first detect if pathos is installed. If not, it will fall back to sequential execution. To install pathos, in Ubuntu, run:
+
+`pip install pathos`
+
+(assuming pip pre-installed).
+
+##Installation
+After cloning repo to local, cd to repo directory and run:
+
+`./make`
+
+There is a subdirectory named python. Add the path to the python subdirectory to PYTHONPATH:
+
+`export PYTHONPATH=[path_to_repo_dir]/python:$PYTHONPATH`
+
+##Testing
+
+After installation, run:
+
+`./test`
+
+##Execution
+
+There are two execution modes to run VMAF: single mode and batch mode.
+
+To run VMAF on a single reference/distorted video pair, run:
+
+`./run_vmaf [format] [width] [height] [ref_video] [dis_video]`
+
+where format is among yuv420, yuv422 and yuv444.
+
+For example:
+
+`./run_vmaf yuv420 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc00_576x324.yuv`
+
+To run VMAF in batch mode, create an input file with lines containing (check examples in example_batch_input):
+
+`[fmt] [width] [height] [ref_file] [dis_file]\n`
+
+Then run:
+
+`./run_vmaf_in_batch input_file`
+
+##To-do List
+
+- Support for 10-bit YUV input
+- Training/testing framework for model customization based on user's own video dataset

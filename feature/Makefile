@@ -34,9 +34,6 @@ OBJS = \
 
 all: vmaf
 
-CCLD  := $(CC)
-CXXLD := $(CXX)
-
 CFLAGS_COMMON = -g -O3 -fPIC -Wall -Wextra -pedantic
 
 CFLAGS   := -std=c99 $(CFLAGS_COMMON) $(CFLAGS)
