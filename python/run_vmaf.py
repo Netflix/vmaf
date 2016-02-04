@@ -4,6 +4,7 @@ __license__ = "Apache, Version 2.0"
 import sys
 import config
 import os
+import pprint
 from asset import Asset
 from vmaf_quality_runner import VmafQualityRunner
 
@@ -21,22 +22,33 @@ if __name__ == "__main__":
     ref_file = sys.argv[4]
     dis_file = sys.argv[5]
 
-    asset = Asset(dataset="single", content_id=0,
+    asset = Asset(dataset="cmd", content_id=0,
                   workdir_root=config.ROOT + "/workspace/workdir",
                   ref_path=ref_file,
                   dis_path=dis_file,
                   asset_dict={'width':width, 'height':height, 'yuv_type':fmt}
                   )
+    assets = [asset]
+
     runner = VmafQualityRunner(
-        [asset], None, fifo_mode=True,
+        assets, None, fifo_mode=True,
         log_file_dir=config.ROOT + "/workspace/log_file_dir")
 
-    # force run
+    # clear cache to force run
     runner.remove_logs()
 
+    # run
     runner.run()
+    results = runner.results
 
-    print map(lambda result:str(result), runner.results)
+    # output
+    for asset, result in zip(assets, results):
+        print '========== Input: =========='
+        pprint.pprint(asset.__dict__)
+        print '========== Output: =========='
+        print str(result)
 
     # clean up
     runner.remove_logs()
+
+    print 'Done.'

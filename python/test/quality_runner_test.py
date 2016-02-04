@@ -2,7 +2,7 @@ __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import unittest
-from quality_runner import quality_runner_macro
+from quality_runner import run_quality_runners_in_parallel
 from asset import Asset
 from vmaf_quality_runner import VmafQualityRunner
 import config
@@ -101,7 +101,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
 
-        self.runners, results = quality_runner_macro(
+        self.runners, results = run_quality_runners_in_parallel(
             VmafQualityRunner,
             [asset, asset_original],
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
