@@ -43,9 +43,10 @@ class QualityRunnerTest(unittest.TestCase):
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
 
-        self.runner = VmafQualityRunner([asset, asset_original],
-                                        None, fifo_mode=True,
-                                        log_file_dir=config.ROOT + "/workspace/log_file_dir")
+        self.runner = VmafQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            log_file_dir=config.ROOT + "/workspace/log_file_dir")
         self.runner.run()
 
         results = self.runner.results
@@ -63,7 +64,6 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertEqual(results[1]['VMAF_ansnr_score'], 30.030914145833322)
 
     def test_run_vmaf_runner_with_scaling(self):
-        print 'test on running VMAF runner in parallel...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=1,
@@ -73,11 +73,33 @@ class QualityRunnerTest(unittest.TestCase):
                       asset_dict={'width':576, 'height':324,
                                   'quality_width':384, 'quality_height':216})
 
-        self.runner = VmafQualityRunner([asset], None, fifo_mode=True,
-                                   log_file_dir=config.ROOT + "/workspace/log_file_dir")
+        self.runner = VmafQualityRunner(
+            [asset], None, fifo_mode=True,
+            log_file_dir=config.ROOT + "/workspace/log_file_dir")
 
         with self.assertRaises(AssertionError):
             self.runner.run()
+
+    def test_run_vmaf_runner_not_unique(self):
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        with self.assertRaises(AssertionError):
+            self.runner = VmafQualityRunner(
+                [asset, asset_original],
+                None, fifo_mode=True,
+                log_file_dir=config.ROOT + "/workspace/log_file_dir")
 
 class ParallelQualityRunnerTest(unittest.TestCase):
 

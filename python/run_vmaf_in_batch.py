@@ -6,7 +6,6 @@ __license__ = "Apache, Version 2.0"
 import os
 import sys
 import re
-import pprint
 from asset import Asset
 import config
 from quality_runner import run_quality_runners_in_parallel
@@ -29,8 +28,21 @@ if __name__ == "__main__":
     input_filename = sys.argv[1]
 
     assets = []
+    line_idx = 0
     with open(input_filename, "rt") as input_file:
-        for line_idx, line in enumerate(input_file.readlines()):
+        for line in input_file.readlines():
+
+            # match comment
+            mo = re.match(r"^#", line)
+            if mo:
+                print "Skip commented line: {}".format(line)
+                continue
+
+            # match whitespace
+            mo = re.match(r"[\s]+", line)
+            if mo:
+                continue
+
             # example: yuv420 576 324 ref.yuv dis.yuv
             mo = re.match(r"([\S]+) ([0-9]+) ([0-9]+) ([\S]+) ([\S]+)", line)
             if not mo or mo.group(1) not in FMTS:
@@ -51,6 +63,7 @@ if __name__ == "__main__":
                           asset_dict={'width':width, 'height':height, 'yuv_type':fmt}
                           )
             assets.append(asset)
+            line_idx += 1
 
     # construct an VmafQualityRunner object merely to remove logs
     VmafQualityRunner(assets,

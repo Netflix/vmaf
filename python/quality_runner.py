@@ -25,13 +25,20 @@ class QualityRunner(object):
         self.delete_workdir = delete_workdir
         self.results = []
 
-        self._sanity_check()
+        self._asserts()
 
-    def _sanity_check(self):
+    def _asserts(self):
         assert hasattr(self, "TYPE")
         assert hasattr(self, "VERSION")
+
         assert re.match(r"[a-zA-Z0-9_]+", self.TYPE), \
             "TYPE can only contains alphabets, numbers and _."
+
+        list_contentid_assetid_pair = \
+            map(lambda asset: (asset.content_id, asset.asset_id), self.assets)
+        assert len(list_contentid_assetid_pair) == \
+               len(set(list_contentid_assetid_pair)), \
+            "Pair of content_id and asset_id must be unique for each asset."
 
     def run(self):
 
@@ -76,15 +83,15 @@ class QualityRunner(object):
     def _run_and_generate_log_file_wrapper(self, asset):
         """
         Wraper around the essential function _run_and_generate_log_file, to
-        do housekeeping work including 1) sanity check of asset, 2) skip run if
+        do housekeeping work including 1) asserts of asset, 2) skip run if
         log already exist, 3) creating fifo, 4) delete work file and dir, and
         5) log exec time.
         :param asset:
         :return:
         """
 
-        # sanity check
-        self._sanity_check_asset(asset)
+        # asserts
+        self._asserts_asset(asset)
 
         log_file_path = self._get_log_file_path(asset)
 
@@ -160,7 +167,7 @@ class QualityRunner(object):
 
         return QualityRunnerResult(self.__class__, result)
 
-    def _sanity_check_asset(self, asset):
+    def _asserts_asset(self, asset):
 
         # 1) for now, quality width/height has to agree with ref/dis width/height
         assert asset.quality_width_height \
