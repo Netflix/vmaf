@@ -32,7 +32,10 @@ static void usage(void)
 		 "fmts:\n"
 		 "\tyuv420p\n"
 		 "\tyuv422p\n"
-		 "\tyuv444p"
+		 "\tyuv444p\n"
+		 "\tyuv420p10le\n"
+		 "\tyuv422p10le\n"
+		 "\tyuv444p10le"
 	);
 }
 

@@ -23,6 +23,14 @@ class VmafQualityRunner(QualityRunner):
     sys.path.append(config.ROOT + "/libsvm/python")
     import svmutil
 
+    def _asserts(self):
+        super(VmafQualityRunner, self)._asserts()
+
+        # for now, VMAF c code don't work in fifo mode yet
+        # TODO: fix fifo mode
+        assert self.fifo_mode is False, \
+            "For now, VmafQualityRunner do not support fifo mode."
+
     def _run_and_generate_log_file(self, asset):
 
         super(VmafQualityRunner, self)._run_and_generate_log_file(asset)
@@ -40,8 +48,8 @@ class VmafQualityRunner(QualityRunner):
         """.format(
             vmaf=self.VMAF,
             yuv_type=asset.yuv_type,
-            ref_path=asset.ref_path,
-            dis_path=asset.dis_path,
+            ref_path=asset.ref_workfile_path,
+            dis_path=asset.dis_workfile_path,
             w=quality_width,
             h=quality_height,
             log_file_path=log_file_path,

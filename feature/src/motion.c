@@ -33,11 +33,13 @@
 #ifdef MOTION_OPT_SINGLE_PRECISION
 	typedef float number_t;
 	#define read_image_b  read_image_b2s
+	#define read_image_w  read_image_w2s
 	#define convolution_f32_c convolution_f32_c_s
 
 #else
 	typedef double number_t;
 	#define read_image_b  read_image_b2d
+	#define read_image_w  read_image_w2d
 	#define convolution_f32_c convolution_f32_c_d
 #endif
 
@@ -154,7 +156,7 @@ int motion(const char *ref_path, int w, int h, const char *fmt)
 	}
 
 	size_t offset;
-	if (!strcmp(fmt, "yuv420p"))
+	if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv420p10le"))
 	{
 		if ((w * h) % 2 != 0)
 		{
@@ -164,11 +166,11 @@ int motion(const char *ref_path, int w, int h, const char *fmt)
 		}
 		offset = w * h / 2;
 	}
-	else if (!strcmp(fmt, "yuv422p"))
+	else if (!strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv422p10le"))
 	{
 		offset = w * h;
 	}
-	else if (!strcmp(fmt, "yuv444p"))
+	else if (!strcmp(fmt, "yuv444p") || !strcmp(fmt, "yuv444p10le"))
 	{
 		offset = w * h * 2;
 	}
@@ -182,18 +184,33 @@ int motion(const char *ref_path, int w, int h, const char *fmt)
 	int frm_idx = 0;
 	while (!feof(ref_rfile))
 	{
-		// read
-		if ((ret = read_image_b(ref_rfile, ref_buf, 0, w, h, stride)))
+		// ref read y
+		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+		{
+			ret = read_image_b(ref_rfile, ref_buf, 0, w, h, stride);
+		}
+		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+		{
+			ret = read_image_w(ref_rfile, ref_buf, 0, w, h, stride);
+		}
+		else
+		{
+			printf("error: unknown format %s.\n", fmt);
+			fflush(stdout);
+			goto fail_or_end;
+		}
+		if (ret)
 		{
 			goto fail_or_end;
 		}
 
+		// filter
 		// apply filtering (to eliminate effects film grain)
 		// stride input to convolution_f32_c is in terms of (sizeof(number_t) bytes)
 		// since stride = ALIGN_CEIL(w * sizeof(number_t)), stride divides sizeof(number_t)
 		convolution_f32_c(FILTER_5, 5, ref_buf, blur_buf, temp_buf, w, h, stride / sizeof(number_t), stride / sizeof(number_t));
 
-		// calculate
+		// compute
 		if (frm_idx == 0)
 		{
 			score = 0.0;
@@ -208,14 +225,29 @@ int motion(const char *ref_path, int w, int h, const char *fmt)
 			}
 		}
 
+		// print
 		printf("motion: %d %f\n", frm_idx, score);
 		fflush(stdout);
 
 		// copy to prev_buf
 		memcpy(prev_blur_buf, blur_buf, data_sz);
 
-		// skip u and v
-		if ((ret = fseek(ref_rfile, offset, SEEK_CUR)))
+		// ref skip u and v
+		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+		{
+			ret = fseek(ref_rfile, offset, SEEK_CUR);
+		}
+		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+		{
+			ret = fseek(ref_rfile, offset * 2, SEEK_CUR);
+		}
+		else
+		{
+			printf("error: unknown format %s.\n", fmt);
+			fflush(stdout);
+			goto fail_or_end;
+		}
+		if (ret)
 		{
 			printf("error: fseek failed.\n");
 			fflush(stdout);

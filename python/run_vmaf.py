@@ -38,7 +38,7 @@ if __name__ == "__main__":
     assets = [asset]
 
     runner = VmafQualityRunner(
-        assets, None, fifo_mode=True,
+        assets, None, fifo_mode=False,
         log_file_dir=config.ROOT + "/workspace/log_file_dir")
 
     # run

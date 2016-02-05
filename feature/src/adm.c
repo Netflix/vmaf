@@ -32,6 +32,7 @@
   typedef adm_dwt_band_t_s adm_dwt_band_t;
 
   #define read_image_b  read_image_b2s
+  #define read_image_w  read_image_w2s
   #define adm_dwt2      adm_dwt2_s
   #define adm_decouple  adm_decouple_s
   #define adm_csf       adm_csf_s
@@ -43,6 +44,7 @@
   typedef adm_dwt_band_t_d adm_dwt_band_t;
 
   #define read_image_b  read_image_b2d
+  #define read_image_w  read_image_w2d
   #define adm_dwt2      adm_dwt2_d
   #define adm_decouple  adm_decouple_d
   #define adm_csf       adm_csf_d
@@ -328,7 +330,7 @@ int adm(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 	}
 
 	size_t offset;
-	if (!strcmp(fmt, "yuv420p"))
+	if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv420p10le"))
 	{
 		if ((w * h) % 2 != 0)
 		{
@@ -338,11 +340,11 @@ int adm(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		}
 		offset = w * h / 2;
 	}
-	else if (!strcmp(fmt, "yuv422p"))
+	else if (!strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv422p10le"))
 	{
 		offset = w * h;
 	}
-	else if (!strcmp(fmt, "yuv444p"))
+	else if (!strcmp(fmt, "yuv444p") || !strcmp(fmt, "yuv444p10le"))
 	{
 		offset = w * h * 2;
 	}
@@ -356,15 +358,47 @@ int adm(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 	int frm_idx = 0;
 	while ((!feof(ref_rfile)) && (!feof(dis_rfile)))
 	{
-		if ((ret = read_image_b(ref_rfile, ref_buf, 0, w, h, stride)))
+		// read ref y
+		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
 		{
+			ret = read_image_b(ref_rfile, ref_buf, 0, w, h, stride);
+		}
+		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+		{
+			ret = read_image_w(ref_rfile, ref_buf, 0, w, h, stride);
+		}
+		else
+		{
+			printf("error: unknown format %s.\n", fmt);
+			fflush(stdout);
 			goto fail_or_end;
 		}
-		if ((ret = read_image_b(dis_rfile, dis_buf, 0, w, h, stride)))
+		if (ret)
 		{
 			goto fail_or_end;
 		}
 
+		// read dis y
+		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+		{
+			ret = read_image_b(dis_rfile, dis_buf, 0, w, h, stride);
+		}
+		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+		{
+			ret = read_image_w(dis_rfile, dis_buf, 0, w, h, stride);
+		}
+		else
+		{
+			printf("error: unknown format %s.\n", fmt);
+			fflush(stdout);
+			goto fail_or_end;
+		}
+		if (ret)
+		{
+			goto fail_or_end;
+		}
+
+		// compute
 		if ((ret = compute_dlm(ref_buf, dis_buf, w, h, stride, stride, &score)))
 		{
 			printf("error: compute_dlm failed.\n");
@@ -372,16 +406,48 @@ int adm(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 			goto fail_or_end;
 		}
 
+		// print
 		printf("adm: %d %f\n", frm_idx, score);
 		fflush(stdout);
 
-		if ((ret = fseek(ref_rfile, offset, SEEK_CUR)))
+		// ref skip u and v
+		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+		{
+			ret = fseek(ref_rfile, offset, SEEK_CUR);
+		}
+		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+		{
+			ret = fseek(ref_rfile, offset * 2, SEEK_CUR);
+		}
+		else
+		{
+			printf("error: unknown format %s.\n", fmt);
+			fflush(stdout);
+			goto fail_or_end;
+		}
+		if (ret)
 		{
 			printf("error: fseek failed.\n");
 			fflush(stdout);
 			goto fail_or_end;
 		}
-		if ((ret = fseek(dis_rfile, offset, SEEK_CUR)))
+
+		// dis skip u and v
+		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+		{
+			ret = fseek(dis_rfile, offset, SEEK_CUR);
+		}
+		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+		{
+			ret = fseek(dis_rfile, offset * 2, SEEK_CUR);
+		}
+		else
+		{
+			printf("error: unknown format %s.\n", fmt);
+			fflush(stdout);
+			goto fail_or_end;
+		}
+		if (ret)
 		{
 			printf("error: fseek failed.\n");
 			fflush(stdout);

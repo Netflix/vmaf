@@ -21,7 +21,8 @@ class QualityRunnerTest(unittest.TestCase):
                                   'start_frame':2, 'end_frame':2})
 
         runner = VmafQualityRunner([asset], None,
-                                   log_file_dir="log_file_dir")
+                                   log_file_dir="log_file_dir",
+                                   fifo_mode=False)
         log_file_path = runner._get_log_file_path(asset)
         expected_log_file_path = \
             "log_file_dir/VMAF/test_0_1_disvideo_720x480_2to2_q_720x480"
@@ -45,7 +46,7 @@ class QualityRunnerTest(unittest.TestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             log_file_dir=config.ROOT + "/workspace/log_file_dir")
         self.runner.run()
 
@@ -74,7 +75,7 @@ class QualityRunnerTest(unittest.TestCase):
                                   'quality_width':384, 'quality_height':216})
 
         self.runner = VmafQualityRunner(
-            [asset], None, fifo_mode=True,
+            [asset], None, fifo_mode=False,
             log_file_dir=config.ROOT + "/workspace/log_file_dir")
 
         with self.assertRaises(AssertionError):
@@ -127,9 +128,9 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             VmafQualityRunner,
             [asset, asset_original],
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
-            fifo_mode=True,
+            fifo_mode=False,
             delete_workdir=True,
-            parallelize=True)
+            parallelize=False)
 
         self.assertEqual(results[0]['VMAF_score'], 60.2689700696979)
         self.assertEqual(results[0]['VMAF_vif_score'], 0.44417014583333336)
