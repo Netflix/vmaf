@@ -83,6 +83,21 @@ class SingleFeatureTest(unittest.TestCase):
         self.assertEquals(scores[0], 0.574283)
         self.assertEquals(scores[1], 0.491295)
 
+    def test_motion_yuv420p10le(self):
+        print 'test motion using yuv420p source pretending it is yuv420p10le...'
+        cmd = "{vmaf} motion yuv420p10le {ref} {dis} {w} {h} > {log}".format(
+            vmaf=self.VMAF, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "motion")
+        self.assertEquals(score, 1054.5332310000001)
+        self.assertEquals(scores[0], 0.0)
+        self.assertEquals(scores[1], 1126.434448)
+        self.assertEquals(scores[23], 1297.848999)
+        # 28 frames yuv420p should be 24 frames in yuv420p10le
+        self.assertEquals(len(scores), 24)
+
 class CornerCaseTest(unittest.TestCase):
 
     VMAF = config.ROOT + "/feature/vmaf"
