@@ -10,7 +10,7 @@ import pprint
 from asset import Asset
 from vmaf_quality_runner import VmafQualityRunner
 
-FMTS = ['yuv420', 'yuv422', 'yuv444']
+FMTS = ['yuv420p', 'yuv422p', 'yuv444p']
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) \

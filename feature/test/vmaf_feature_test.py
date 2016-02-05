@@ -27,7 +27,7 @@ class SingleFeatureTest(unittest.TestCase):
     LOG_FILENAME = config.ROOT + "/workspace/log"
     REF_YUV = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
     DIS_YUV = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
-    YUV_FMT = "yuv420"
+    YUV_FMT = "yuv420p"
     YUV_WIDTH = 576
     YUV_HEIGHT = 324
 
@@ -107,7 +107,7 @@ class CornerCaseTest(unittest.TestCase):
         print 'test on checkerboard pattern identical...'
         ref_yuv = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
         dis_yuv = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
-        yuv_fmt = "yuv420"
+        yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080
         cmd = self.CMD_TEMPLATE.format(vmaf=self.VMAF, fmt=yuv_fmt, ref=ref_yuv,
@@ -123,7 +123,7 @@ class CornerCaseTest(unittest.TestCase):
         print 'test on checkerboard pattern shifted by 1...'
         ref_yuv = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
         dis_yuv = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv"
-        yuv_fmt = "yuv420"
+        yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080
         cmd = self.CMD_TEMPLATE.format(vmaf=self.VMAF, fmt=yuv_fmt, ref=ref_yuv,
@@ -139,7 +139,7 @@ class CornerCaseTest(unittest.TestCase):
         print 'test on checkerboard pattern opposite...'
         ref_yuv = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
         dis_yuv = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
-        yuv_fmt = "yuv420"
+        yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080
         cmd = self.CMD_TEMPLATE.format(vmaf=self.VMAF, fmt=yuv_fmt, ref=ref_yuv,
@@ -155,7 +155,7 @@ class CornerCaseTest(unittest.TestCase):
         print 'test on flat pattern identical...'
         ref_yuv = config.ROOT + "//resource/yuv/flat_1920_1080_0.yuv"
         dis_yuv = config.ROOT + "//resource/yuv/flat_1920_1080_0.yuv"
-        yuv_fmt = "yuv420"
+        yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080
         cmd = self.CMD_TEMPLATE.format(vmaf=self.VMAF, fmt=yuv_fmt, ref=ref_yuv,
@@ -171,7 +171,7 @@ class CornerCaseTest(unittest.TestCase):
         print 'test on flat pattern identical...'
         ref_yuv = config.ROOT + "/resource/yuv/flat_1920_1080_0.yuv"
         dis_yuv = config.ROOT + "/resource/yuv/flat_1920_1080_0.yuv"
-        yuv_fmt = "yuv420"
+        yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080
         cmd = self.CMD_TEMPLATE.format(vmaf=self.VMAF, fmt=yuv_fmt, ref=ref_yuv,
@@ -187,7 +187,7 @@ class CornerCaseTest(unittest.TestCase):
         print 'test on flat pattern of value 10...'
         ref_yuv = config.ROOT + "/resource/yuv/flat_1920_1080_0.yuv"
         dis_yuv = config.ROOT + "/resource/yuv/flat_1920_1080_10.yuv"
-        yuv_fmt = "yuv420"
+        yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080
         cmd = self.CMD_TEMPLATE.format(vmaf=self.VMAF, fmt=yuv_fmt, ref=ref_yuv,

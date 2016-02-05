@@ -328,7 +328,7 @@ int adm(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 	}
 
 	size_t offset;
-	if (!strcmp(fmt, "yuv420"))
+	if (!strcmp(fmt, "yuv420p"))
 	{
 		if ((w * h) % 2 != 0)
 		{
@@ -338,11 +338,11 @@ int adm(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		}
 		offset = w * h / 2;
 	}
-	else if (!strcmp(fmt, "yuv422"))
+	else if (!strcmp(fmt, "yuv422p"))
 	{
 		offset = w * h;
 	}
-	else if (!strcmp(fmt, "yuv444"))
+	else if (!strcmp(fmt, "yuv444p"))
 	{
 		offset = w * h * 2;
 	}

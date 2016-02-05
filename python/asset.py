@@ -274,14 +274,14 @@ class Asset(Parallelizable):
     def yuv_type(self):
         """
         Assuming ref/dis files are both YUV and the same type, return the type
-        (yuv420, yuv422, yuv444)
+        (yuv420p, yuv422p, yuv444p)
         :return:
         """
         if 'yuv_type' in self.asset_dict:
-            if self.asset_dict['yuv_type'] in ['yuv420', 'yuv422', 'yuv444']:
+            if self.asset_dict['yuv_type'] in ['yuv420p', 'yuv422p', 'yuv444p']:
                 return self.asset_dict['yuv_type']
             else:
                 assert False, "Unknown YUV type: {}".\
                     format(self.asset_dict['yuv_type'])
         else:
-            return 'yuv420'
+            return 'yuv420p'

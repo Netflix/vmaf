@@ -202,12 +202,12 @@ class AssetTest(unittest.TestCase):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
                       asset_dict={'fps':24, 'start_sec':2, 'end_sec': 3})
-        self.assertEquals(asset.yuv_type, 'yuv420')
+        self.assertEquals(asset.yuv_type, 'yuv420p')
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="", asset_dict={
-            'fps':24, 'start_sec':2, 'end_sec': 3, 'yuv_type':'yuv444'})
-        self.assertEquals(asset.yuv_type, 'yuv444')
+            'fps':24, 'start_sec':2, 'end_sec': 3, 'yuv_type':'yuv444p'})
+        self.assertEquals(asset.yuv_type, 'yuv444p')
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="", asset_dict={

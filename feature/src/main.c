@@ -30,9 +30,9 @@ static void usage(void)
 		 "\tmotion\n"
 	     "\tvif\n"
 		 "fmts:\n"
-		 "\tyuv420\n"
-		 "\tyuv422\n"
-		 "\tyuv444"
+		 "\tyuv420p\n"
+		 "\tyuv422p\n"
+		 "\tyuv444p"
 	);
 }
 

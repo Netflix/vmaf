@@ -36,11 +36,11 @@ To run VMAF on a single reference/distorted video pair, run:
 
 `./run_vmaf [format] [width] [height] [ref_video] [dis_video]`
 
-where format is among yuv420, yuv422 and yuv444.
+where format is among yuv420p, yuv422p and yuv444p.
 
 For example:
 
-`./run_vmaf yuv420 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc00_576x324.yuv`
+`./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc00_576x324.yuv`
 
 To run VMAF in batch mode, create an input text file with lines containing (check examples in example_batch_input):
 

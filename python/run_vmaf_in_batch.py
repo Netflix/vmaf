@@ -11,7 +11,7 @@ import config
 from quality_runner import run_quality_runners_in_parallel
 from vmaf_quality_runner import VmafQualityRunner
 
-FMTS = ['yuv420', 'yuv422', 'yuv444']
+FMTS = ['yuv420p', 'yuv422p', 'yuv444p']
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) + " [input_file]\n"
@@ -43,7 +43,7 @@ if __name__ == "__main__":
             if mo:
                 continue
 
-            # example: yuv420 576 324 ref.yuv dis.yuv
+            # example: yuv420p 576 324 ref.yuv dis.yuv
             mo = re.match(r"([\S]+) ([0-9]+) ([0-9]+) ([\S]+) ([\S]+)", line)
             if not mo or mo.group(1) not in FMTS:
                 print "Unknown format: {}".format(line)
