@@ -22,7 +22,7 @@ class QualityRunnerTest(unittest.TestCase):
 
         runner = VmafQualityRunner([asset], None,
                                    log_file_dir="log_file_dir",
-                                   fifo_mode=False)
+                                   fifo_mode=True)
         log_file_path = runner._get_log_file_path(asset)
         expected_log_file_path = \
             "log_file_dir/VMAF/test_0_1_disvideo_720x480_2to2_q_720x480"
@@ -46,14 +46,14 @@ class QualityRunnerTest(unittest.TestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=False,
+            None, fifo_mode=True,
             log_file_dir=config.ROOT + "/workspace/log_file_dir")
         self.runner.run()
 
         results = self.runner.results
 
-        self.assertEqual(results[0]['VMAF_score'], 60.2689847325771)
-        self.assertEqual(results[0]['VMAF_vif_score'], 0.4441715)
+        self.assertEqual(results[0]['VMAF_score'], 60.2689700696979)
+        self.assertEqual(results[0]['VMAF_vif_score'], 0.44417014583333336)
         self.assertEqual(results[0]['VMAF_motion_score'], 3.5916076041666667)
         self.assertEqual(results[0]['VMAF_adm_score'], 0.91552422916666665)
         self.assertEqual(results[0]['VMAF_ansnr_score'], 22.533456770833329)
@@ -75,7 +75,7 @@ class QualityRunnerTest(unittest.TestCase):
                                   'quality_width':384, 'quality_height':216})
 
         self.runner = VmafQualityRunner(
-            [asset], None, fifo_mode=False,
+            [asset], None, fifo_mode=True,
             log_file_dir=config.ROOT + "/workspace/log_file_dir")
 
         with self.assertRaises(AssertionError):
@@ -128,7 +128,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             VmafQualityRunner,
             [asset, asset_original],
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
-            fifo_mode=False,
+            fifo_mode=True,
             delete_workdir=True,
             parallelize=False)
 

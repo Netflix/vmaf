@@ -63,7 +63,6 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 	number_t *ref_buf = 0;
 	number_t *dis_buf = 0;
 
-	// prev_blur_buf, blur_buf, temp_buf for motion only
 	number_t *prev_blur_buf = 0;
 	number_t *blur_buf = 0;
 	number_t *temp_buf = 0;
@@ -101,7 +100,7 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		goto fail_or_end;
 	}
 
-	// prev_blur_buf, blur_buf, temp_buf for motion only
+	// prev_blur_buf, blur_buf for motion only
 	if (!(prev_blur_buf = aligned_malloc(data_sz, MAX_ALIGN)))
 	{
 		printf("error: aligned_malloc failed for prev_blur_buf.\n");
@@ -114,7 +113,9 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		fflush(stdout);
 		goto fail_or_end;
 	}
-	if (!(temp_buf = aligned_malloc(data_sz, MAX_ALIGN)))
+
+	// use temp_buf for convolution_f32_c, and fread u and v
+	if (!(temp_buf = aligned_malloc(data_sz * 2, MAX_ALIGN)))
 	{
 		printf("error: aligned_malloc failed for temp_buf.\n");
 		fflush(stdout);
@@ -270,21 +271,25 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		// ref skip u and v
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
 		{
-			ret = fseek(ref_rfile, offset, SEEK_CUR);
+			if (fread(temp_buf, 1, offset, ref_rfile) != (size_t)offset)
+			{
+				printf("error: ref fread u and v failed.\n");
+				fflush(stdout);
+				goto fail_or_end;
+			}
 		}
 		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
 		{
-			ret = fseek(ref_rfile, offset * 2, SEEK_CUR);
+			if (fread(temp_buf, 2, offset, ref_rfile) != (size_t)offset)
+			{
+				printf("error: ref fread u and v failed.\n");
+				fflush(stdout);
+				goto fail_or_end;
+			}
 		}
 		else
 		{
 			printf("error: unknown format %s.\n", fmt);
-			fflush(stdout);
-			goto fail_or_end;
-		}
-		if (ret)
-		{
-			printf("error: fseek failed.\n");
 			fflush(stdout);
 			goto fail_or_end;
 		}
@@ -292,21 +297,25 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		// dis skip u and v
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
 		{
-			ret = fseek(dis_rfile, offset, SEEK_CUR);
+			if (fread(temp_buf, 1, offset, dis_rfile) != (size_t)offset)
+			{
+				printf("error: dis fread u and v failed.\n");
+				fflush(stdout);
+				goto fail_or_end;
+			}
 		}
 		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
 		{
-			ret = fseek(dis_rfile, offset * 2, SEEK_CUR);
+			if (fread(temp_buf, 2, offset, dis_rfile) != (size_t)offset)
+			{
+				printf("error: dis fread u and v failed.\n");
+				fflush(stdout);
+				goto fail_or_end;
+			}
 		}
 		else
 		{
 			printf("error: unknown format %s.\n", fmt);
-			fflush(stdout);
-			goto fail_or_end;
-		}
-		if (ret)
-		{
-			printf("error: fseek failed.\n");
 			fflush(stdout);
 			goto fail_or_end;
 		}
@@ -328,7 +337,6 @@ fail_or_end:
 	aligned_free(ref_buf);
 	aligned_free(dis_buf);
 
-	// for motion
 	aligned_free(prev_blur_buf);
 	aligned_free(blur_buf);
 	aligned_free(temp_buf);

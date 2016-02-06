@@ -123,6 +123,7 @@ int ansnr(const char *ref_path, const char *dis_path, int w, int h, const char *
 	double score = 0;
 	number_t *ref_buf = 0;
 	number_t *dis_buf = 0;
+	number_t *temp_buf = 0;
 	FILE *ref_rfile = 0;
 	FILE *dis_rfile = 0;
 	size_t data_sz;
@@ -152,6 +153,12 @@ int ansnr(const char *ref_path, const char *dis_path, int w, int h, const char *
 	if (!(dis_buf = aligned_malloc(data_sz, MAX_ALIGN)))
 	{
 		printf("error: aligned_malloc failed for dis_buf.\n");
+		fflush(stdout);
+		goto fail_or_end;
+	}
+	if (!(temp_buf = aligned_malloc(data_sz * 2, MAX_ALIGN)))
+	{
+		printf("error: aligned_malloc failed for temp_buf.\n");
 		fflush(stdout);
 		goto fail_or_end;
 	}
@@ -253,21 +260,25 @@ int ansnr(const char *ref_path, const char *dis_path, int w, int h, const char *
 		// ref skip u and v
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
 		{
-			ret = fseek(ref_rfile, offset, SEEK_CUR);
+			if (fread(temp_buf, 1, offset, ref_rfile) != (size_t)offset)
+			{
+				printf("error: ref fread u and v failed.\n");
+				fflush(stdout);
+				goto fail_or_end;
+			}
 		}
 		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
 		{
-			ret = fseek(ref_rfile, offset * 2, SEEK_CUR);
+			if (fread(temp_buf, 2, offset, ref_rfile) != (size_t)offset)
+			{
+				printf("error: ref fread u and v failed.\n");
+				fflush(stdout);
+				goto fail_or_end;
+			}
 		}
 		else
 		{
 			printf("error: unknown format %s.\n", fmt);
-			fflush(stdout);
-			goto fail_or_end;
-		}
-		if (ret)
-		{
-			printf("error: fseek failed.\n");
 			fflush(stdout);
 			goto fail_or_end;
 		}
@@ -275,21 +286,25 @@ int ansnr(const char *ref_path, const char *dis_path, int w, int h, const char *
 		// dis skip u and v
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
 		{
-			ret = fseek(dis_rfile, offset, SEEK_CUR);
+			if (fread(temp_buf, 1, offset, dis_rfile) != (size_t)offset)
+			{
+				printf("error: dis fread u and v failed.\n");
+				fflush(stdout);
+				goto fail_or_end;
+			}
 		}
 		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
 		{
-			ret = fseek(dis_rfile, offset * 2, SEEK_CUR);
+			if (fread(temp_buf, 2, offset, dis_rfile) != (size_t)offset)
+			{
+				printf("error: dis fread u and v failed.\n");
+				fflush(stdout);
+				goto fail_or_end;
+			}
 		}
 		else
 		{
 			printf("error: unknown format %s.\n", fmt);
-			fflush(stdout);
-			goto fail_or_end;
-		}
-		if (ret)
-		{
-			printf("error: fseek failed.\n");
 			fflush(stdout);
 			goto fail_or_end;
 		}
@@ -310,6 +325,7 @@ fail_or_end:
 	}
 	aligned_free(ref_buf);
 	aligned_free(dis_buf);
+	aligned_free(temp_buf);
 
 	return ret;
 }

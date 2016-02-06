@@ -26,10 +26,7 @@ class VmafQualityRunner(QualityRunner):
     def _asserts(self):
         super(VmafQualityRunner, self)._asserts()
 
-        # for now, VMAF c code don't work in fifo mode yet
-        # TODO: fix fifo mode
-        assert self.fifo_mode is False, \
-            "For now, VmafQualityRunner do not support fifo mode."
+        pass
 
     def _run_and_generate_log_file(self, asset):
 

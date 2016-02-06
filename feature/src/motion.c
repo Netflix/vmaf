@@ -229,21 +229,25 @@ int motion(const char *ref_path, int w, int h, const char *fmt)
 		// ref skip u and v
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
 		{
-			ret = fseek(ref_rfile, offset, SEEK_CUR);
+			if (fread(temp_buf, 1, offset, ref_rfile) != (size_t)offset)
+			{
+				printf("error: ref fread u and v failed.\n");
+				fflush(stdout);
+				goto fail_or_end;
+			}
 		}
 		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
 		{
-			ret = fseek(ref_rfile, offset * 2, SEEK_CUR);
+			if (fread(temp_buf, 2, offset, ref_rfile) != (size_t)offset)
+			{
+				printf("error: ref fread u and v failed.\n");
+				fflush(stdout);
+				goto fail_or_end;
+			}
 		}
 		else
 		{
 			printf("error: unknown format %s.\n", fmt);
-			fflush(stdout);
-			goto fail_or_end;
-		}
-		if (ret)
-		{
-			printf("error: fseek failed.\n");
 			fflush(stdout);
 			goto fail_or_end;
 		}

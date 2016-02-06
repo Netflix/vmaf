@@ -77,7 +77,7 @@ if __name__ == "__main__":
         VmafQualityRunner,
         assets,
         log_file_dir=config.ROOT + "/workspace/log_file_dir",
-        fifo_mode=False,
+        fifo_mode=True,
         delete_workdir=True,
         parallelize=True)
 
