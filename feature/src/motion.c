@@ -225,12 +225,12 @@ int motion(const char *ref_path, int w, int h, const char *fmt)
 			}
 		}
 
+		// copy to prev_buf
+		memcpy(prev_blur_buf, blur_buf, data_sz);
+
 		// print
 		printf("motion: %d %f\n", frm_idx, score);
 		fflush(stdout);
-
-		// copy to prev_buf
-		memcpy(prev_blur_buf, blur_buf, data_sz);
 
 		// ref skip u and v
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))

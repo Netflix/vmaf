@@ -223,24 +223,6 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		printf("vif: %d %f\n", frm_idx, score);
 		fflush(stdout);
 
-//		// filter, compute and print for motion
-//		convolution_f32_c(FILTER_5, 5, ref_buf, blur_buf, temp_buf, w, h, stride / sizeof(number_t), stride / sizeof(number_t));
-//		if (frm_idx == 0)
-//		{
-//			score = 0.0;
-//		}
-//		else
-//		{
-//			if ((ret = compute_motion(prev_blur_buf, blur_buf, w, h, stride, stride, &score)))
-//			{
-//				printf("error: compute_motion failed.\n");
-//				fflush(stdout);
-//				goto fail_or_end;
-//			}
-//		}
-//		printf("motion: %d %f\n", frm_idx, score);
-//		fflush(stdout);
-
 		// ref skip u and v
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
 		{
