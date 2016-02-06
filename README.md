@@ -36,7 +36,7 @@ To run VMAF on a single reference/distorted video pair, run:
 
 `./run_vmaf [format] [width] [height] [ref_video] [dis_video]`
 
-where format is among yuv420p, yuv422p and yuv444p.
+where format is among yuv420p, yuv422p, yuv444p (8-bit) and yuv420p10le, yuv422p10le, yuv444p10le (10-bit little endian).
 
 For example:
 
@@ -52,5 +52,4 @@ After that, run:
 
 ##To-do List
 
-- Support for 10-bit YUV input
 - Training/testing framework for model customization based on user's own video dataset
