@@ -98,6 +98,22 @@ class SingleFeatureTest(unittest.TestCase):
         # 28 frames yuv420p should be 24 frames in yuv420p10le
         self.assertEquals(len(scores), 24)
 
+    def test_all(self):
+        print 'test all...'
+        cmd = "{vmaf} all {fmt} {ref} {dis} {w} {h} > {log}".format(
+            vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "vif")
+        self.assertEquals(score, 0.4441715)
+        score, scores = read_log(self.LOG_FILENAME, "motion")
+        self.assertEquals(score, 3.5916076041666667)
+        score, scores = read_log(self.LOG_FILENAME, "ansnr")
+        self.assertEquals(score, 22.53345677083333)
+        score, scores = read_log(self.LOG_FILENAME, "adm")
+        self.assertEquals(score, 0.9155242291666666)
+
 class CornerCaseTest(unittest.TestCase):
 
     VMAF = config.ROOT + "/feature/vmaf"
