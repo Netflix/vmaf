@@ -18,17 +18,14 @@
 
 #pragma once
 
-#ifndef MAIN_H_
-#define MAIN_H_
+#ifndef ALL_OPTIONS_H_
+#define ALL_OPTIONS_H_
 
-int adm(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
+/* Whether to use single precision for computation. Need to make sure that
+ * ALL_OPT_SINGLE_PRECISION is consistent with MOTION_OPT_SINGLE_PRECISION,
+ * ANSNR_OPT_SINGLE_PRECISION, ADM_OPT_SINGLE_PRECISION and
+ * VIF_OPT_SINGLE_PRECISION, if all() is called.*/
+#define ALL_OPT_SINGLE_PRECISION
+/* #define ALL_OPT_DOUBLE_PRECISION */
 
-int ansnr(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
-
-int vif(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
-
-int motion(const char *dis_path, int w, int h, const char *fmt);
-
-int all(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
-
-#endif /* MAIN_H_ */
+#endif /* ALL_OPTIONS_H_ */

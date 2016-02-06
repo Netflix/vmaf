@@ -32,6 +32,6 @@
 
 /* Whether to use single precision for computation. */
 #define ADM_OPT_SINGLE_PRECISION
-//#define ADM_OPT_DOUBLE_PRECISION
+/* #define ADM_OPT_DOUBLE_PRECISION */
 
 #endif /* ADM_OPTIONS_H_ */

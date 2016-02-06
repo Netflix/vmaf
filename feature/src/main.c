@@ -28,7 +28,8 @@ static void usage(void)
 	     "\tadm\n"
 	     "\tansnr\n"
 		 "\tmotion\n"
-	     "\tvif\n"
+		 "\tvif\n"
+		 "\tall\n"
 		 "fmts:\n"
 		 "\tyuv420p\n"
 		 "\tyuv422p\n"
@@ -72,6 +73,8 @@ int main(int argc, const char **argv)
 		ret = vif(ref_path, dis_path, w, h, fmt);
 	else if (!strcmp(app, "motion"))
 		ret = motion(ref_path, w, h, fmt);
+	else if (!strcmp(app, "all"))
+		ret = all(ref_path, dis_path, w, h, fmt);
 	else
 		return 2;
 

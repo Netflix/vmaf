@@ -23,6 +23,6 @@
 
 /* Whether to use single precision for computation. */
 #define MOTION_OPT_SINGLE_PRECISION
-//#define MOTION_OPT_DOUBLE_PRECISION
+/* #define MOTION_OPT_DOUBLE_PRECISION */
 
 #endif /* MOTION_OPTIONS_H_ */

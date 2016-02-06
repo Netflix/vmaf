@@ -56,7 +56,7 @@
   #define vif_statistic      vif_statistic_d
 #endif
 
-static int compute_vif(const number_t *ref, const number_t *dis, int w, int h, int ref_stride, int dis_stride, double *score)
+int compute_vif(const number_t *ref, const number_t *dis, int w, int h, int ref_stride, int dis_stride, double *score)
 {
 	number_t *data_buf = 0;
 	char *data_top;

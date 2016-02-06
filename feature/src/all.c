@@ -17,112 +17,49 @@
  */
 
 #include <limits.h>
-#include <math.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "all_options.h"
 #include "common/alloc.h"
 #include "common/file_io.h"
-#include "ansnr_options.h"
-#include "ansnr_tools.h"
 #include "main.h"
 
-#ifdef ANSNR_OPT_SINGLE_PRECISION
-  typedef float number_t;
+#ifdef ALL_OPT_SINGLE_PRECISION
+	typedef float number_t;
 
-  #define read_image_b       read_image_b2s
-  #define read_image_w       read_image_w2s
-  #define ansnr_filter1d_ref ansnr_filter1d_ref_s
-  #define ansnr_filter1d_dis ansnr_filter1d_dis_s
-  #define ansnr_filter2d_ref ansnr_filter2d_ref_s
-  #define ansnr_filter2d_dis ansnr_filter2d_dis_s
-  #define ansnr_filter1d     ansnr_filter1d_s
-  #define ansnr_filter2d     ansnr_filter2d_s
-  #define ansnr_mse          ansnr_mse_s
+	#define read_image_b       read_image_b2s
+	#define read_image_w       read_image_w2s
+	int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);
+	int compute_ansnr(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);
+	int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);
+
 #else
-  typedef double number_t;
+	typedef double number_t;
 
-  #define read_image_b       read_image_b2d
-  #define read_image_w       read_image_w2d
-  #define ansnr_filter1d_ref ansnr_filter1d_ref_d
-  #define ansnr_filter1d_dis ansnr_filter1d_dis_d
-  #define ansnr_filter2d_ref ansnr_filter2d_ref_d
-  #define ansnr_filter2d_dis ansnr_filter2d_dis_d
-  #define ansnr_filter1d     ansnr_filter1d_d
-  #define ansnr_filter2d     ansnr_filter2d_d
-  #define ansnr_mse          ansnr_mse_d
+	#define read_image_b       read_image_b2d
+	#define read_image_w       read_image_w2d
+	int compute_adm(const double *ref, const double *dis, int w, int h, int ref_stride, int dis_stride, double *score);
+	int compute_ansnr(const double *ref, const double *dis, int w, int h, int ref_stride, int dis_stride, double *score);
+	int compute_vif(const double *ref, const double *dis, int w, int h, int ref_stride, int dis_stride, double *score);
+
 #endif
 
-int compute_ansnr(const number_t *ref, const number_t *dis, int w, int h, int ref_stride, int dis_stride, double *score)
-{
-	number_t *data_buf = 0;
-	char *data_top;
 
-	number_t *ref_filtr;
-	number_t *ref_filtd;
-	number_t *dis_filtd;
 
-	number_t sig, noise, noise_min;
-
-	int buf_stride = ALIGN_CEIL(w * sizeof(number_t));
-	size_t buf_sz_one = (size_t)buf_stride * h;
-
-	int ret = 1;
-
-	if (SIZE_MAX / buf_sz_one < 3)
-	{
-		goto fail;
-	}
-
-	if (!(data_buf = aligned_malloc(buf_sz_one * 3, MAX_ALIGN)))
-	{
-		goto fail;
-	}
-
-	data_top = (char *)data_buf;
-
-	ref_filtr = (number_t *)data_top; data_top += buf_sz_one;
-	ref_filtd = (number_t *)data_top; data_top += buf_sz_one;
-	dis_filtd = (number_t *)data_top; data_top += buf_sz_one;
-
-#ifdef ANSNR_OPT_FILTER_1D
-	ansnr_filter1d(ansnr_filter1d_ref, ref, ref_filtr, w, h, ref_stride, buf_stride, ansnr_filter1d_ref_width);
-	ansnr_filter1d(ansnr_filter1d_dis, ref, ref_filtd, w, h, ref_stride, buf_stride, ansnr_filter1d_dis_width);
-	ansnr_filter1d(ansnr_filter1d_dis, dis, dis_filtd, w, h, dis_stride, buf_stride, ansnr_filter1d_dis_width);
-#else
-	ansnr_filter2d(ansnr_filter2d_ref, ref, ref_filtr, w, h, ref_stride, buf_stride, ansnr_filter2d_ref_width);
-	ansnr_filter2d(ansnr_filter2d_dis, ref, ref_filtd, w, h, ref_stride, buf_stride, ansnr_filter2d_dis_width);
-	ansnr_filter2d(ansnr_filter2d_dis, dis, dis_filtd, w, h, dis_stride, buf_stride, ansnr_filter2d_dis_width);
-#endif
-
-#ifdef ANSNR_OPT_DEBUG_DUMP
-	write_image("stage/ref_filtr.bin", ref_filtr, w, h, buf_stride, sizeof(number_t));
-	write_image("stage/ref_filtd.bin", ref_filtd, w, h, buf_stride, sizeof(number_t));
-	write_image("stage/dis_filtd.bin", dis_filtd, w, h, buf_stride, sizeof(number_t));
-#endif
-
-	ansnr_mse(ref_filtr, ref_filtd, 0, &noise_min, w, h, buf_stride, buf_stride);
-	ansnr_mse(ref_filtr, dis_filtd, &sig, &noise, w, h, buf_stride, buf_stride);
-
-#ifdef ANSNR_OPT_NORMALIZE
-	*score = 10.0 * log10(noise / (noise - noise_min));
-#else
-	*score = 10.0 * log10(sig / noise);
-#endif
-
-	ret = 0;
-fail:
-	aligned_free(data_buf);
-	return ret;
-}
-
-int ansnr(const char *ref_path, const char *dis_path, int w, int h, const char *fmt)
+int all(const char *ref_path, const char *dis_path, int w, int h, const char *fmt)
 {
 	double score = 0;
 	number_t *ref_buf = 0;
 	number_t *dis_buf = 0;
+
+	// prev_blur_buf, blur_buf, temp_buf for motion only
+	number_t *prev_blur_buf = 0;
+	number_t *blur_buf = 0;
+	number_t *temp_buf = 0;
+
 	FILE *ref_rfile = 0;
 	FILE *dis_rfile = 0;
 	size_t data_sz;
@@ -152,6 +89,26 @@ int ansnr(const char *ref_path, const char *dis_path, int w, int h, const char *
 	if (!(dis_buf = aligned_malloc(data_sz, MAX_ALIGN)))
 	{
 		printf("error: aligned_malloc failed for dis_buf.\n");
+		fflush(stdout);
+		goto fail_or_end;
+	}
+
+	// prev_blur_buf, blur_buf, temp_buf for motion only
+	if (!(prev_blur_buf = aligned_malloc(data_sz, MAX_ALIGN)))
+	{
+		printf("error: aligned_malloc failed for prev_blur_buf.\n");
+		fflush(stdout);
+		goto fail_or_end;
+	}
+	if (!(blur_buf = aligned_malloc(data_sz, MAX_ALIGN)))
+	{
+		printf("error: aligned_malloc failed for blur_buf.\n");
+		fflush(stdout);
+		goto fail_or_end;
+	}
+	if (!(temp_buf = aligned_malloc(data_sz, MAX_ALIGN)))
+	{
+		printf("error: aligned_malloc failed for temp_buf.\n");
 		fflush(stdout);
 		goto fail_or_end;
 	}
@@ -194,7 +151,7 @@ int ansnr(const char *ref_path, const char *dis_path, int w, int h, const char *
 		fflush(stdout);
 		goto fail_or_end;
 	}
-	
+
 	int frm_idx = 0;
 	while ((!feof(ref_rfile)) && (!feof(dis_rfile)))
 	{
@@ -238,17 +195,51 @@ int ansnr(const char *ref_path, const char *dis_path, int w, int h, const char *
 			goto fail_or_end;
 		}
 
-		// compute
+		// compute & print for adm, ansnr and vif
+		if ((ret = compute_adm(ref_buf, dis_buf, w, h, stride, stride, &score)))
+		{
+			printf("error: compute_adm failed.\n");
+			fflush(stdout);
+			goto fail_or_end;
+		}
+		printf("adm: %d %f\n", frm_idx, score);
+		fflush(stdout);
+
 		if ((ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score)))
 		{
 			printf("error: compute_ansnr failed.\n");
 			fflush(stdout);
 			goto fail_or_end;
 		}
-
-		// print
 		printf("ansnr: %d %f\n", frm_idx, score);
 		fflush(stdout);
+
+		if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score)))
+		{
+			printf("error: compute_vif failed.\n");
+			fflush(stdout);
+			goto fail_or_end;
+		}
+		printf("vif: %d %f\n", frm_idx, score);
+		fflush(stdout);
+
+//		// filter, compute and print for motion
+//		convolution_f32_c(FILTER_5, 5, ref_buf, blur_buf, temp_buf, w, h, stride / sizeof(number_t), stride / sizeof(number_t));
+//		if (frm_idx == 0)
+//		{
+//			score = 0.0;
+//		}
+//		else
+//		{
+//			if ((ret = compute_motion(prev_blur_buf, blur_buf, w, h, stride, stride, &score)))
+//			{
+//				printf("error: compute_motion failed.\n");
+//				fflush(stdout);
+//				goto fail_or_end;
+//			}
+//		}
+//		printf("motion: %d %f\n", frm_idx, score);
+//		fflush(stdout);
 
 		// ref skip u and v
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
@@ -310,6 +301,11 @@ fail_or_end:
 	}
 	aligned_free(ref_buf);
 	aligned_free(dis_buf);
+
+	// for motion
+	aligned_free(prev_blur_buf);
+	aligned_free(blur_buf);
+	aligned_free(temp_buf);
 
 	return ret;
 }

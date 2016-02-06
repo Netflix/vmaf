@@ -38,6 +38,6 @@
 
 /* Whether to use single precision for computation. */
 #define VIF_OPT_SINGLE_PRECISION
-//#define VIF_OPT_DOUBLE_PRECISION
+/* #define VIF_OPT_DOUBLE_PRECISION */
 
 #endif /* VIF_OPTIONS_H_ */

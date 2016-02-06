@@ -35,6 +35,6 @@
 
 /* Whether to use single precision for computation. */
 #define ANSNR_OPT_SINGLE_PRECISION
-//#define ANSNR_OPT_DOUBLE_PRECISION
+/* #define ANSNR_OPT_DOUBLE_PRECISION */
 
 #endif /* ANSNR_OPTIONS_H_ */

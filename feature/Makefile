@@ -17,7 +17,8 @@ HEADERS = \
 	$(SRCDIR)/common/macros.h \
 	$(SRCDIR)/common/alignment.h \
 	$(SRCDIR)/common/convolution.h \
-	$(SRCDIR)/common/convolution_internal.h
+	$(SRCDIR)/common/convolution_internal.h \
+	$(SRCDIR)/all_options.h
 
 OBJS = \
 	$(OBJDIR)/adm.o \
@@ -30,7 +31,8 @@ OBJS = \
 	$(OBJDIR)/vif.o \
 	$(OBJDIR)/vif_tools.o \
 	$(OBJDIR)/motion.o \
-	$(OBJDIR)/common/convolution.o
+	$(OBJDIR)/common/convolution.o \
+	$(OBJDIR)/all.o
 
 all: vmaf
 

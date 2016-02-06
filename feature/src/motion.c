@@ -73,7 +73,7 @@ number_t vmaf_image_sad_c(const number_t *img1, const number_t *img2, int width,
 /**
  * Note: ref_stride and dis_stride are in terms of bytes
  */
-static int compute_motion(const number_t *ref, const number_t *dis, int w, int h, int ref_stride, int dis_stride, double *score)
+int compute_motion(const number_t *ref, const number_t *dis, int w, int h, int ref_stride, int dis_stride, double *score)
 {
 
 	if (ref_stride % sizeof(number_t) != 0)
