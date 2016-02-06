@@ -40,12 +40,8 @@ class VmafQualityRunner(QualityRunner):
         # run VMAF command line to extract features, 'APPEND' result (since
         # super method already does something
         quality_width, quality_height = asset.quality_width_height
-        vmaf_cmd = """
-        {vmaf} vif {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path};
-        {vmaf} adm {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path};
-        {vmaf} ansnr {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path};
-        {vmaf} motion {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path};
-        """.format(
+        vmaf_cmd = "{vmaf} all {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
+        .format(
             vmaf=self.VMAF,
             yuv_type=asset.yuv_type,
             ref_path=asset.ref_workfile_path,

@@ -52,8 +52,8 @@ class QualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertEqual(results[0]['VMAF_score'], 60.2689700696979)
-        self.assertEqual(results[0]['VMAF_vif_score'], 0.44417014583333336)
+        self.assertEqual(results[0]['VMAF_score'], 60.2689847325771)
+        self.assertEqual(results[0]['VMAF_vif_score'], 0.4441715)
         self.assertEqual(results[0]['VMAF_motion_score'], 3.5916076041666667)
         self.assertEqual(results[0]['VMAF_adm_score'], 0.91552422916666665)
         self.assertEqual(results[0]['VMAF_ansnr_score'], 22.533456770833329)
@@ -132,8 +132,8 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             parallelize=False)
 
-        self.assertEqual(results[0]['VMAF_score'], 60.2689700696979)
-        self.assertEqual(results[0]['VMAF_vif_score'], 0.44417014583333336)
+        self.assertEqual(results[0]['VMAF_score'], 60.2689847325771)
+        self.assertEqual(results[0]['VMAF_vif_score'], 0.4441715)
         self.assertEqual(results[0]['VMAF_motion_score'], 3.5916076041666667)
         self.assertEqual(results[0]['VMAF_adm_score'], 0.91552422916666665)
         self.assertEqual(results[0]['VMAF_ansnr_score'], 22.533456770833329)
