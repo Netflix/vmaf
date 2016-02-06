@@ -35,21 +35,15 @@
 	#define read_image_b  read_image_b2s
 	#define read_image_w  read_image_w2s
 	#define convolution_f32_c convolution_f32_c_s
+	#define FILTER_5           FILTER_5_s
 
 #else
 	typedef double number_t;
 	#define read_image_b  read_image_b2d
 	#define read_image_w  read_image_w2d
 	#define convolution_f32_c convolution_f32_c_d
+	#define FILTER_5           FILTER_5_d
 #endif
-
-static const number_t FILTER_5[5] = {
-		(number_t)0.05448868454964433,
-		(number_t)0.24420134200323346,
-		(number_t)0.40261994689424435,
-		(number_t)0.24420134200323346,
-		(number_t)0.05448868454964433
-};
 
 /**
  * Note: img1_stride and img2_stride are in terms of (sizeof(number_t) bytes)

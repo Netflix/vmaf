@@ -26,28 +26,34 @@
 #include "common/alloc.h"
 #include "common/file_io.h"
 #include "main.h"
+#include "common/convolution.h"
+#include "common/convolution_internal.h"
 
 #ifdef ALL_OPT_SINGLE_PRECISION
 	typedef float number_t;
 
 	#define read_image_b       read_image_b2s
 	#define read_image_w       read_image_w2s
+	#define convolution_f32_c  convolution_f32_c_s
+	#define FILTER_5           FILTER_5_s
 	int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);
 	int compute_ansnr(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);
 	int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);
+	int compute_motion(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);
 
 #else
 	typedef double number_t;
 
 	#define read_image_b       read_image_b2d
 	#define read_image_w       read_image_w2d
+	#define convolution_f32_c convolution_f32_c_d
+	#define FILTER_5           FILTER_5_d
 	int compute_adm(const double *ref, const double *dis, int w, int h, int ref_stride, int dis_stride, double *score);
 	int compute_ansnr(const double *ref, const double *dis, int w, int h, int ref_stride, int dis_stride, double *score);
 	int compute_vif(const double *ref, const double *dis, int w, int h, int ref_stride, int dis_stride, double *score);
+	int compute_motion(const double *ref, const double *dis, int w, int h, int ref_stride, int dis_stride, double *score);
 
 #endif
-
-
 
 int all(const char *ref_path, const char *dis_path, int w, int h, const char *fmt)
 {
@@ -222,6 +228,38 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		}
 		printf("vif: %d %f\n", frm_idx, score);
 		fflush(stdout);
+
+		/* =========== motion ============== */
+
+		// filter
+		// apply filtering (to eliminate effects film grain)
+		// stride input to convolution_f32_c is in terms of (sizeof(number_t) bytes)
+		// since stride = ALIGN_CEIL(w * sizeof(number_t)), stride divides sizeof(number_t)
+		convolution_f32_c(FILTER_5, 5, ref_buf, blur_buf, temp_buf, w, h, stride / sizeof(number_t), stride / sizeof(number_t));
+
+		// compute
+		if (frm_idx == 0)
+		{
+			score = 0.0;
+		}
+		else
+		{
+			if ((ret = compute_motion(prev_blur_buf, blur_buf, w, h, stride, stride, &score)))
+			{
+				printf("error: compute_motion failed.\n");
+				fflush(stdout);
+				goto fail_or_end;
+			}
+		}
+
+		// copy to prev_buf
+		memcpy(prev_blur_buf, blur_buf, data_sz);
+
+		// print
+		printf("motion: %d %f\n", frm_idx, score);
+		fflush(stdout);
+
+		/* ========= end of motion ========= */
 
 		// ref skip u and v
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
