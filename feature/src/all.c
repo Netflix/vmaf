@@ -35,6 +35,7 @@
 	#define read_image_b       read_image_b2s
 	#define read_image_w       read_image_w2s
 	#define convolution_f32_c  convolution_f32_c_s
+	#define offset_image       offset_image_s
 	#define FILTER_5           FILTER_5_s
 	int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);
 	int compute_ansnr(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);
@@ -47,6 +48,7 @@
 	#define read_image_b       read_image_b2d
 	#define read_image_w       read_image_w2d
 	#define convolution_f32_c convolution_f32_c_d
+	#define offset_image       offset_image_d
 	#define FILTER_5           FILTER_5_d
 	int compute_adm(const double *ref, const double *dis, int w, int h, int ref_stride, int dis_stride, double *score);
 	int compute_ansnr(const double *ref, const double *dis, int w, int h, int ref_stride, int dis_stride, double *score);
@@ -201,7 +203,7 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 			goto fail_or_end;
 		}
 
-		// compute & print for adm, ansnr and vif
+		/* =========== adm ============== */
 		if ((ret = compute_adm(ref_buf, dis_buf, w, h, stride, stride, &score)))
 		{
 			printf("error: compute_adm failed.\n");
@@ -211,6 +213,7 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		printf("adm: %d %f\n", frm_idx, score);
 		fflush(stdout);
 
+		/* =========== ansnr ============== */
 		if ((ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score)))
 		{
 			printf("error: compute_ansnr failed.\n");
@@ -218,15 +221,6 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 			goto fail_or_end;
 		}
 		printf("ansnr: %d %f\n", frm_idx, score);
-		fflush(stdout);
-
-		if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score)))
-		{
-			printf("error: compute_vif failed.\n");
-			fflush(stdout);
-			goto fail_or_end;
-		}
-		printf("vif: %d %f\n", frm_idx, score);
 		fflush(stdout);
 
 		/* =========== motion ============== */
@@ -259,7 +253,19 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		printf("motion: %d %f\n", frm_idx, score);
 		fflush(stdout);
 
-		/* ========= end of motion ========= */
+		/* =========== vif ============== */
+		// compute vif last, because its input ref/dis must be offset by -128
+		offset_image(ref_buf, -128, w, h, stride);
+		offset_image(dis_buf, -128, w, h, stride);
+
+		if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score)))
+		{
+			printf("error: compute_vif failed.\n");
+			fflush(stdout);
+			goto fail_or_end;
+		}
+		printf("vif: %d %f\n", frm_idx, score);
+		fflush(stdout);
 
 		// ref skip u and v
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))

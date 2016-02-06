@@ -106,7 +106,7 @@ class SingleFeatureTest(unittest.TestCase):
         )
         subprocess.call(cmd, shell=True)
         score, scores = read_log(self.LOG_FILENAME, "vif")
-        self.assertEquals(score, 0.4441715)
+        self.assertEquals(score, 0.44417014583333336)
         score, scores = read_log(self.LOG_FILENAME, "motion")
         self.assertEquals(score, 3.5916076041666667)
         score, scores = read_log(self.LOG_FILENAME, "ansnr")
