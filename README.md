@@ -1,7 +1,7 @@
 VMAF - Video Multi-Method Assessment Fusion
 ===================
 
-VMAF is a software package developed by Netflix Inc. containing tools for perceptual video quality measurement. VMAF is licensed under Apache License, Version 2.0.
+VMAF is a software package developed by Netflix Inc. containing tools for perceptual video quality measurement.
 
 ##Prerequisite
 
