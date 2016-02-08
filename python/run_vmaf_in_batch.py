@@ -11,7 +11,7 @@ import config
 from quality_runner import run_quality_runners_in_parallel
 from vmaf_quality_runner import VmafQualityRunner
 
-FMTS = ['yuv420p', 'yuv422p', 'yuv444p']
+FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) + " [input_file]\n"

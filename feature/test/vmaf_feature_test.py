@@ -84,7 +84,7 @@ class SingleFeatureTest(unittest.TestCase):
         self.assertEquals(scores[1], 0.491295)
 
     def test_motion_yuv420p10le(self):
-        print 'test motion using yuv420p source pretending it is yuv420p10le...'
+        print 'test motion on yuv420p10le format...'
         cmd = "{vmaf} motion yuv420p10le {ref} {dis} {w} {h} > {log}".format(
             vmaf=self.VMAF, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
