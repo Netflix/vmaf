@@ -25,7 +25,8 @@ class QualityRunnerTest(unittest.TestCase):
                                    fifo_mode=True)
         log_file_path = runner._get_log_file_path(asset)
         expected_log_file_path = \
-            "log_file_dir/VMAF/test_0_1_disvideo_720x480_2to2_q_720x480"
+            "log_file_dir/VMAF/test_0_1_refvideo_720x480_2to2_vs_" \
+            "disvideo_720x480_2to2_q_720x480"
         self.assertEquals(log_file_path, expected_log_file_path)
 
     def test_run_vamf_runner(self):

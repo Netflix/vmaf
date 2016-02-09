@@ -211,24 +211,8 @@ class Asset(Parallelizable):
             str += "_q_{quality_str}".format(quality_str=quality_str)
         return str
 
-    def to_string_compact(self):
-        """
-        Since for a dataset and a content_id, there must be only one ref video,
-        ref_str can be ignored.
-        :return:
-        """
-        str = "{dataset}_{content_id}_{asset_id}_{dis_str}".\
-            format(dataset=self.dataset,
-                   content_id=self.content_id,
-                   asset_id=self.asset_id,
-                   dis_str=self.dis_str)
-        quality_str = self.quality_str
-        if quality_str:
-            str += "_q_{quality_str}".format(quality_str=quality_str)
-        return str
-
     def __str__(self):
-        return self.to_string_compact()
+        return self.to_string()
 
     # ==== workfile ====
 

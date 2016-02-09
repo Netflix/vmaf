@@ -138,32 +138,16 @@ class AssetTest(unittest.TestCase):
                       asset_dict={'width':720, 'height':480,
                                   'start_frame':2, 'end_frame':2})
         self.assertEquals(
-            asset.to_string(),
-            "test_0_0_refvideo_720x480_2to2_vs_disvideo_720x480_2to2_q_720x480"
-        )
-        self.assertEquals(
-            asset.to_string_compact(),
-            "test_0_0_disvideo_720x480_2to2_q_720x480"
-        )
-        self.assertEquals(
             str(asset),
-            "test_0_0_disvideo_720x480_2to2_q_720x480"
+            "test_0_0_refvideo_720x480_2to2_vs_disvideo_720x480_2to2_q_720x480"
         )
 
         asset = Asset(dataset="test", content_id=0, asset_id=1,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
                       asset_dict={'width':720, 'height':480,})
         self.assertEquals(
-            asset.to_string(),
-            "test_0_1_refvideo_720x480_vs_disvideo_720x480_q_720x480"
-        )
-        self.assertEquals(
-            asset.to_string_compact(),
-            "test_0_1_disvideo_720x480_q_720x480"
-        )
-        self.assertEquals(
             str(asset),
-            "test_0_1_disvideo_720x480_q_720x480"
+            "test_0_1_refvideo_720x480_vs_disvideo_720x480_q_720x480"
         )
 
         asset = Asset(dataset="test", content_id=0, asset_id=2,
@@ -171,16 +155,8 @@ class AssetTest(unittest.TestCase):
                       asset_dict={'width':720, 'height':480,
                                   'quality_width':1920, 'quality_height':1080})
         self.assertEquals(
-            asset.to_string(),
-            "test_0_2_refvideo_720x480_vs_disvideo_720x480_q_1920x1080"
-        )
-        self.assertEquals(
-            asset.to_string_compact(),
-            "test_0_2_disvideo_720x480_q_1920x1080"
-        )
-        self.assertEquals(
             str(asset),
-            "test_0_2_disvideo_720x480_q_1920x1080"
+            "test_0_2_refvideo_720x480_vs_disvideo_720x480_q_1920x1080"
         )
 
     def test_workfile_path(self):
@@ -192,9 +168,11 @@ class AssetTest(unittest.TestCase):
                                   'quality_width':1920, 'quality_height':1080},
                       workdir_root="workdir")
         expected_ref_workfile_path_re = \
-            r"^workdir/[a-zA-Z0-9-]+/ref_test_0_0_disvideo_720x480_2to2_q_1920x1080$"
+            r"^workdir/[a-zA-Z0-9-]+/" \
+            r"ref_test_0_0_refvideo_720x480_2to2_vs_disvideo_720x480_2to2_q_1920x1080"
         expected_dis_workfile_path_re = \
-            r"^workdir/[a-zA-Z0-9-]+/dis_test_0_0_disvideo_720x480_2to2_q_1920x1080"
+            r"^workdir/[a-zA-Z0-9-]+/" \
+            r"dis_test_0_0_refvideo_720x480_2to2_vs_disvideo_720x480_2to2_q_1920x1080"
         self.assertTrue(re.match(expected_ref_workfile_path_re, asset.ref_workfile_path))
         self.assertTrue(re.match(expected_dis_workfile_path_re, asset.dis_workfile_path))
 
