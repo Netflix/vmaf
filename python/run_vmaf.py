@@ -22,11 +22,15 @@ if __name__ == "__main__":
         print_usage()
         exit(0)
 
-    fmt = sys.argv[1]
-    width = int(sys.argv[2])
-    height = int(sys.argv[3])
-    ref_file = sys.argv[4]
-    dis_file = sys.argv[5]
+    try:
+        fmt = sys.argv[1]
+        width = int(sys.argv[2])
+        height = int(sys.argv[3])
+        ref_file = sys.argv[4]
+        dis_file = sys.argv[5]
+    except ValueError:
+        print_usage()
+        exit(0)
 
     asset = Asset(dataset="cmd", content_id=0, asset_id=0,
                   workdir_root=config.ROOT + "/workspace/workdir",
