@@ -4,7 +4,7 @@ __license__ = "Apache, Version 2.0"
 import re
 from tools import get_file_name_without_extension, get_file_name_with_extension
 
-class QualityRunnerResult(object):
+class QualityResult(object):
     """
     Contains result returned by QualityRunner. Note that
     it should be used in a read-only manner.
@@ -23,14 +23,24 @@ class QualityRunnerResult(object):
     def version(self):
         return self._quality_runner_class.VERSION
 
+    def __str__(self):
+        return self.to_string()
+
+    # make access dictionary-like, i.e. can do: result['vif_score']
+    def __getitem__(self, key):
+        try:
+            return self._result_dict[key]
+        except KeyError as e:
+            return self._get_aggregate_score(key, e)
+
     def to_string(self):
         str = ""
         str += "{type} VERSION {version}\n".format(type=self.type,
                                                    version=self.version)
-        str_perframe = self.to_perframe_score_str()
+        str_perframe = self._get_perframe_score_str()
         str += str_perframe
         str += '\n'
-        str_aggregate = self.to_aggregate_score_str()
+        str_aggregate = self._get_aggregate_score_str()
         str += str_aggregate
         return str
 
@@ -65,7 +75,7 @@ class QualityRunnerResult(object):
 
         return df
 
-    def to_perframe_score_str(self):
+    def _get_perframe_score_str(self):
         list_scores_key = self._get_list_scores_key()
         list_score_key = self._get_list_score_key()
         list_scores = map(lambda key: self._result_dict[key], list_scores_key)
@@ -83,7 +93,7 @@ class QualityRunnerResult(object):
         )
         return str_perframe
 
-    def to_aggregate_score_str(self):
+    def _get_aggregate_score_str(self):
         list_score_key = self._get_list_score_key()
         str_aggregate = "Aggregate: " + (", ".join(
             map(
@@ -108,16 +118,6 @@ class QualityRunnerResult(object):
         # e.g. ['VMAF_score', 'VMAF_vif_score']
         list_scores_key = self._get_list_scores_key()
         return map(lambda scores_key: scores_key[:-1], list_scores_key)
-
-    def __str__(self):
-        return self.to_string()
-
-    # make access dictionary-like, i.e. can do: result['vif_score']
-    def __getitem__(self, key):
-        try:
-            return self._result_dict[key]
-        except KeyError as e:
-            return self._get_aggregate_score(key, e)
 
     def _get_aggregate_score(self, key, error):
         """

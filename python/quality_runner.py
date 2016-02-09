@@ -1,4 +1,4 @@
-from quality_runner_result import QualityRunnerResult
+from quality_result import QualityResult
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -167,7 +167,7 @@ class QualityRunner(object):
         dis_bitrate_key = "dis_bitrate_kbps"
         result[dis_bitrate_key] = dis_bitrate_kbps
 
-        return QualityRunnerResult(self.__class__, asset, result)
+        return QualityResult(self.__class__, asset, result)
 
     def _asserts_asset(self, asset):
 

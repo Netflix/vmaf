@@ -7,7 +7,7 @@ __license__ = "Apache, Version 2.0"
 
 import unittest
 
-class QualityRunnerResultTest(unittest.TestCase):
+class QualityResultTest(unittest.TestCase):
 
     def setUp(self):
         ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
@@ -29,7 +29,7 @@ class QualityRunnerResultTest(unittest.TestCase):
         pass
 
     def test_to_dataframe(self):
-        print 'test on QualityRunnerResult.to_dataframe()...'
+        print 'test on quality result to dataframe...'
         df = self.result.to_dataframe()
         self.assertEquals(len(df), 15)
         self.assertEquals(df.loc[df['score_key'] == 'VMAF_score'] \
@@ -44,7 +44,7 @@ class QualityRunnerResultTest(unittest.TestCase):
                               ['score'].mean(), 12.418291000000002)
 
     def test_to_score_str(self):
-        print 'test on QualityRunnerResult._get_aggregate_score()...'
+        print 'test on quality result aggregate scores...'
         self.assertEquals(self.result._get_aggregate_score(
             'VMAF_score', None), 43.46099858503333)
         self.assertEquals(self.result._get_aggregate_score(
@@ -55,14 +55,14 @@ class QualityRunnerResultTest(unittest.TestCase):
             'VMAF_motion_score', None), 12.343795333333333)
         self.assertEquals(self.result._get_aggregate_score(
             'VMAF_ansnr_score', None), 12.418291000000002)
+
         with self.assertRaises(KeyError):
             self.result._get_aggregate_score('VVMAF_score', None)
         with self.assertRaises(KeyError):
             self.result._get_aggregate_score('VMAF_motion_scor', None)
 
-        print 'test on QualityRunnerResult.to_aggregate_score_str()...'
         self.assertEquals(
-            self.result.to_aggregate_score_str(),
+            self.result._get_aggregate_score_str(),
             "Aggregate: VMAF_adm_score:0.814, VMAF_vif_score:0.156, "
             "VMAF_motion_score:12.344, VMAF_score:43.461, "
             "VMAF_ansnr_score:12.418")

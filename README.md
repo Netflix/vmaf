@@ -11,7 +11,7 @@ To perform VMAF computation in parallel on multiple reference/distorted video pa
 
 `pip install pathos`
 
-The VMAF training/testing framework requires a Python data processing package named **pandas**. To install pandas, on Ubuntu, run:
+The VMAF training/testing framework requires a Python data processing package named **pandas** (>= 0.13.1). To install pandas, on Ubuntu, run:
 
 `pip install pandas`
 
