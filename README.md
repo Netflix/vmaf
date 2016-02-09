@@ -7,9 +7,13 @@ VMAF is a software package developed by Netflix Inc. containing tools for percep
 
 The VMAF package has its core feature extraction library written in C, and the rest glue code written in Python. It also incorporates an external C++ library named libsvm. To build the C/C++ code, it requires cc and g++. To run commands, it requires Python 2 installed.
 
-To perform VMAF computation in parallel on multiple reference/distorted video pairs, you will need a Python package named pathos (>= 0.1a1). For example, run_vmaf_in_batch will execute VMAF in parallel if it detects that pathos is installed; otherwise, it will fall back to sequential execution. To install pathos, in Ubuntu, run (assuming pip is pre-installed):
+To perform VMAF computation in parallel on multiple reference/distorted video pairs, you will need a Python package named **pathos** (>= 0.1a1). For example, run_vmaf_in_batch will execute VMAF in parallel if it detects that pathos is installed; otherwise, it will fall back to sequential execution. To install pathos, on Ubuntu, run (assuming pip pre-installed):
 
 `pip install pathos`
+
+The VMAF training/testing framework requires a Python data processing package named **pandas**. To install pandas, on Ubuntu, run:
+
+`pip install pandas`
 
 ##Installation
 After cloning VMAF repo to local, cd to the repo directory and run:
@@ -52,4 +56,4 @@ After that, run:
 
 ##To-do List
 
-- Training/testing framework for model customization based on user's own video dataset
+- Training/testing framework for customization based on user's own video dataset

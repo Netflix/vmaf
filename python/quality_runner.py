@@ -1,3 +1,5 @@
+from quality_runner_result import QualityRunnerResult
+
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
@@ -165,7 +167,7 @@ class QualityRunner(object):
         dis_bitrate_key = "dis_bitrate_kbps"
         result[dis_bitrate_key] = dis_bitrate_kbps
 
-        return QualityRunnerResult(self.__class__, result)
+        return QualityRunnerResult(self.__class__, asset, result)
 
     def _asserts_asset(self, asset):
 
@@ -273,88 +275,6 @@ class QualityRunner(object):
         if os.path.exists(time_file_path):
             os.remove(time_file_path)
 
-class QualityRunnerResult(object):
-    """
-    Contains result returned by QualityRunner. Note that
-    it should be used in a read-only manner.
-    """
-
-    def __init__(self, quality_runner_class, result_dict):
-        self._quality_runner_class = quality_runner_class
-        self._result_dict = result_dict
-
-    @property
-    def type(self):
-        return self._quality_runner_class.TYPE
-
-    @property
-    def version(self):
-        return self._quality_runner_class.VERSION
-
-    def __str__(self):
-        str = ""
-        str += "{type} VERSION {version}\n".format(type=self.type,
-                                                     version=self.version)
-        # e.g. ['VMAF_scores', 'VMAF_vif_scores']
-        list_scores_key = filter(lambda key: re.search(r"_scores$", key),
-                             self._result_dict.keys())
-        # e.g. ['VMAF_score', 'VMAF_vif_score']
-        list_score_key = map(lambda scores_key: scores_key[:-1], list_scores_key)
-
-        # e.g. [ result['VMAF_scores'], result['VMAF_vif_scores'] ]
-        list_scores = map(lambda key: self._result_dict[key], list_scores_key)
-
-        str += "\n".join(
-            map(
-                lambda (frame_num,scores):"Frame {}: ".format(frame_num)+(", ".join(
-                    map(
-                        lambda (score_key,score): "{score_key}:{score:.3f}".
-                            format(score_key=score_key, score=score),
-                        zip(list_score_key, scores))
-                    )),
-                enumerate(zip(*list_scores))
-            )
-        )
-
-        str += '\n'
-
-        str += "Aggregate: " + (", ".join(
-            map(
-                lambda (score_key,score): "{score_key}:{score:.3f}".
-                    format(score_key=score_key, score=score),
-                zip(
-                    list_score_key, map(
-                        lambda score_key:self[score_key],
-                        list_score_key)
-                    )
-                )
-        ))
-
-        return str
-
-    # make access dictionary-like, i.e. can do: result['vif_score']
-    def __getitem__(self, key):
-        try:
-            return self._result_dict[key]
-        except KeyError as e:
-            return self._get_aggregate_score(key, e)
-
-    def _get_aggregate_score(self, key, error):
-        """
-        Get aggregate score from list of scores. Must follow the convention
-        that if the aggregate score uses key '*_score', then there must be
-        a corresponding list of scores that uses key '*_scores'. For example,
-        if the key is 'VMAF_score', there must exist a corresponding key
-        'VMAF_scores'.
-        :param key:
-        :return:
-        """
-        if re.search(r"_score$", key):
-            scores_key = key + 's' # e.g. 'VMAF_scores'
-            if scores_key in self._result_dict:
-                scores = self._result_dict[scores_key]
-                return float(sum(scores)) / len(scores)
-        raise KeyError(error)
 
 def run_quality_runners_in_parallel(runner_class,
                                     assets,

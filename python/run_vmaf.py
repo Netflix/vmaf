@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
     # output
     print 'Input:'
-    print asset.__dict__
+    print result.asset.__dict__
     print ''
     print 'Output:'
     print str(result)

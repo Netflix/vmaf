@@ -82,13 +82,13 @@ if __name__ == "__main__":
         parallelize=True)
 
     # output
-    for asset, result in zip(assets, results):
+    for result in results:
         print '============================'
         print 'Asset {asset_id}:'.format(asset_id=asset.asset_id)
         print '============================'
         print ''
         print 'Input:'
-        print asset.__dict__
+        print result.asset.__dict__
         print ''
         print 'Output:'
         print str(result)
