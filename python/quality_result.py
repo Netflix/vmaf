@@ -6,8 +6,7 @@ from tools import get_file_name_without_extension, get_file_name_with_extension
 
 class QualityResult(object):
     """
-    Contains result returned by QualityRunner. Note that
-    it should be used in a read-only manner.
+    Contains read-only result returned by QualityRunner.
     """
 
     def __init__(self, quality_runner_class, asset, result_dict):
@@ -28,10 +27,7 @@ class QualityResult(object):
 
     # make access dictionary-like, i.e. can do: result['vif_score']
     def __getitem__(self, key):
-        try:
-            return self._result_dict[key]
-        except KeyError as e:
-            return self._get_aggregate_score(key, e)
+        return self.get_score(key)
 
     def to_string(self):
         str = ""
@@ -74,6 +70,8 @@ class QualityResult(object):
                 df.loc[len(df)] = row
 
         return df
+
+    # TODO: use QualityResult as a data format converter for
 
     def _get_perframe_score_str(self):
         list_scores_key = self._get_list_scores_key()
@@ -119,7 +117,13 @@ class QualityResult(object):
         list_scores_key = self._get_list_scores_key()
         return map(lambda scores_key: scores_key[:-1], list_scores_key)
 
-    def _get_aggregate_score(self, key, error):
+    def get_score(self, key):
+        try:
+            return self._result_dict[key]
+        except KeyError as e:
+            return self._try_get_aggregate_score(key, e)
+
+    def _try_get_aggregate_score(self, key, error):
         """
         Get aggregate score from list of scores. Must follow the convention
         that if the aggregate score uses key '*_score', then there must be

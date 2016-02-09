@@ -45,21 +45,21 @@ class QualityResultTest(unittest.TestCase):
 
     def test_to_score_str(self):
         print 'test on quality result aggregate scores...'
-        self.assertEquals(self.result._get_aggregate_score(
-            'VMAF_score', None), 43.46099858503333)
-        self.assertEquals(self.result._get_aggregate_score(
-            'VMAF_adm_score', None), 0.81386)
-        self.assertEquals(self.result._get_aggregate_score(
-            'VMAF_vif_score', None), 0.15612933333333334)
-        self.assertEquals(self.result._get_aggregate_score(
-            'VMAF_motion_score', None), 12.343795333333333)
-        self.assertEquals(self.result._get_aggregate_score(
-            'VMAF_ansnr_score', None), 12.418291000000002)
+        self.assertEquals(self.result.get_score('VMAF_score'),
+                          43.46099858503333)
+        self.assertEquals(self.result.get_score('VMAF_adm_score'),
+                          0.81386)
+        self.assertEquals(self.result.get_score('VMAF_vif_score'),
+                          0.15612933333333334)
+        self.assertEquals(self.result.get_score('VMAF_motion_score'),
+                          12.343795333333333)
+        self.assertEquals(self.result.get_score('VMAF_ansnr_score'),
+                          12.418291000000002)
 
         with self.assertRaises(KeyError):
-            self.result._get_aggregate_score('VVMAF_score', None)
+            self.result.get_score('VVMAF_score')
         with self.assertRaises(KeyError):
-            self.result._get_aggregate_score('VMAF_motion_scor', None)
+            self.result.get_score('VMAF_motion_scor')
 
         self.assertEquals(
             self.result._get_aggregate_score_str(),
