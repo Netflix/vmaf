@@ -26,7 +26,7 @@ There is a subdirectory named python. Add the python subdirectory to PYTHONPATH:
 
 ##Testing
 
-The package has thus far been tested in Ubuntu 14.04 LTS.
+The package has thus far been tested on Ubuntu 14.04 LTS and Mac OS X 10.10.5.
 
 After installation, run:
 
