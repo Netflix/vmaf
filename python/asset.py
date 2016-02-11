@@ -4,12 +4,15 @@ __license__ = "Apache, Version 2.0"
 import os
 
 from common import Parallelizable
-from tools import get_file_name_without_extension
+from tools import get_file_name_without_extension, get_file_name_with_extension, \
+    get_unique_str_from_recursive_dict
 import config
 
 class Asset(Parallelizable):
 
-    def __init__(self, dataset, content_id, asset_id, ref_path, dis_path, asset_dict,
+    def __init__(self, dataset, content_id, asset_id,
+                 ref_path, dis_path,
+                 asset_dict,
                  workdir_root= config.ROOT + "/workspace/workdir"):
         """
         :param dataset
@@ -29,6 +32,10 @@ class Asset(Parallelizable):
         self.dis_path = dis_path
         self.asset_dict = asset_dict
 
+    @staticmethod
+    def from_dict(asset_dict):
+        return {}
+
     # ==== width and height ====
 
     @property
@@ -37,10 +44,14 @@ class Asset(Parallelizable):
         :return: width and height of reference video. If None, it signals that
         width and height should be figured out in other means (e.g. FFMPEG).
         """
-        if 'ref_width' in self.asset_dict and 'ref_height' in self.asset_dict:
-            return self.asset_dict['ref_width'], self.asset_dict['ref_height']
-        elif 'width' in self.asset_dict and 'height' in self.asset_dict:
-            return self.asset_dict['width'], self.asset_dict['height']
+        if 'ref_width' in self.asset_dict \
+                and 'ref_height' in self.asset_dict:
+            return self.asset_dict['ref_width'], \
+                   self.asset_dict['ref_height']
+        elif 'width' in self.asset_dict \
+                and 'height' in self.asset_dict:
+            return self.asset_dict['width'], \
+                   self.asset_dict['height']
         else:
             return None
 
@@ -50,10 +61,14 @@ class Asset(Parallelizable):
         :return: width and height of distorted video. If None, it signals that
         width and height should be figured out in other means (e.g. FFMPEG)
         """
-        if 'dis_width' in self.asset_dict and 'dis_height' in self.asset_dict:
-            return self.asset_dict['dis_width'], self.asset_dict['dis_height']
-        elif 'width' in self.asset_dict and 'height' in self.asset_dict:
-            return self.asset_dict['width'], self.asset_dict['height']
+        if 'dis_width' in self.asset_dict \
+                and 'dis_height' in self.asset_dict:
+            return self.asset_dict['dis_width'], \
+                   self.asset_dict['dis_height']
+        elif 'width' in self.asset_dict \
+                and 'height' in self.asset_dict:
+            return self.asset_dict['width'], \
+                   self.asset_dict['height']
         else:
             return None
 
@@ -69,8 +84,10 @@ class Asset(Parallelizable):
                 and 'quality_height' in self.asset_dict) or \
                (self.ref_width_height == self.dis_width_height)
 
-        if 'quality_width' in self.asset_dict and 'quality_height' in self.asset_dict:
-            return self.asset_dict['quality_width'], self.asset_dict['quality_height']
+        if 'quality_width' in self.asset_dict \
+                and 'quality_height' in self.asset_dict:
+            return self.asset_dict['quality_width'], \
+                   self.asset_dict['quality_height']
         else:
             return self.ref_width_height
 
@@ -83,18 +100,27 @@ class Asset(Parallelizable):
         (inclusive). If None, it signals that the entire video should be
         processed.
         """
-        if 'ref_start_frame' in self.asset_dict and 'ref_end_frame' in self.asset_dict:
-            return self.asset_dict['ref_start_frame'], self.asset_dict['ref_end_frame']
-        elif 'start_frame' in self.asset_dict and 'end_frame' in self.asset_dict:
-            return self.asset_dict['start_frame'], self.asset_dict['end_frame']
-        elif 'start_sec' in self.asset_dict and 'end_sec' in self.asset_dict \
+        if 'ref_start_frame' in self.asset_dict \
+                and 'ref_end_frame' in self.asset_dict:
+            return self.asset_dict['ref_start_frame'], \
+                   self.asset_dict['ref_end_frame']
+        elif 'start_frame' in self.asset_dict \
+                and 'end_frame' in self.asset_dict:
+            return self.asset_dict['start_frame'], \
+                   self.asset_dict['end_frame']
+        elif 'start_sec' in self.asset_dict \
+                and 'end_sec' in self.asset_dict \
                 and 'fps' in self.asset_dict:
-            start_frame = int(round(self.asset_dict['start_sec'] * self.asset_dict['fps']))
-            end_frame = int(round(self.asset_dict['end_sec'] * self.asset_dict['fps'])) - 1
+            start_frame = int(round(self.asset_dict['start_sec'] *
+                                    self.asset_dict['fps']))
+            end_frame = int(round(self.asset_dict['end_sec'] *
+                                  self.asset_dict['fps'])) - 1
             return start_frame, end_frame
-        elif 'duration_sec' in self.asset_dict and 'fps' in self.asset_dict:
+        elif 'duration_sec' in self.asset_dict \
+                and 'fps' in self.asset_dict:
             start_frame = 0
-            end_frame = int(round(self.asset_dict['duration_sec'] * self.asset_dict['fps'])) - 1
+            end_frame = int(round(self.asset_dict['duration_sec'] *
+                                  self.asset_dict['fps'])) - 1
             return start_frame, end_frame
         else:
             return None
@@ -106,18 +132,27 @@ class Asset(Parallelizable):
         (inclusive). If None, it signals that the entire video should be
         processed.
         """
-        if 'dis_start_frame' in self.asset_dict and 'dis_end_frame' in self.asset_dict:
-            return self.asset_dict['dis_start_frame'], self.asset_dict['dis_end_frame']
-        elif 'start_frame' in self.asset_dict and 'end_frame' in self.asset_dict:
-            return self.asset_dict['start_frame'], self.asset_dict['end_frame']
-        elif 'start_sec' in self.asset_dict and 'end_sec' in self.asset_dict \
+        if 'dis_start_frame' in self.asset_dict and \
+                        'dis_end_frame' in self.asset_dict:
+            return self.asset_dict['dis_start_frame'], \
+                   self.asset_dict['dis_end_frame']
+        elif 'start_frame' in self.asset_dict and \
+                        'end_frame' in self.asset_dict:
+            return self.asset_dict['start_frame'], \
+                   self.asset_dict['end_frame']
+        elif 'start_sec' in self.asset_dict \
+                and 'end_sec' in self.asset_dict \
                 and 'fps' in self.asset_dict:
-            start_frame = int(round(self.asset_dict['start_sec'] * self.asset_dict['fps']))
-            end_frame = int(round(self.asset_dict['end_sec'] * self.asset_dict['fps'])) - 1
+            start_frame = int(round(self.asset_dict['start_sec'] *
+                                    self.asset_dict['fps']))
+            end_frame = int(round(self.asset_dict['end_sec'] *
+                                  self.asset_dict['fps'])) - 1
             return start_frame, end_frame
-        elif 'duration_sec' in self.asset_dict and 'fps' in self.asset_dict:
+        elif 'duration_sec' in self.asset_dict \
+                and 'fps' in self.asset_dict:
             start_frame = 0
-            end_frame = int(round(self.asset_dict['duration_sec'] * self.asset_dict['fps'])) - 1
+            end_frame = int(round(self.asset_dict['duration_sec'] *
+                                  self.asset_dict['fps'])) - 1
             return start_frame, end_frame
         else:
             return None
@@ -128,7 +163,8 @@ class Asset(Parallelizable):
     def ref_duration_sec(self):
         if 'duration_sec' in self.asset_dict:
             return self.asset_dict['duration_sec']
-        elif 'start_sec' in self.asset_dict and 'end_sec' in self.asset_dict:
+        elif 'start_sec' in self.asset_dict \
+                and 'end_sec' in self.asset_dict:
             return self.asset_dict['end_sec'] - self.asset_dict['start_sec']
         else:
             ref_start_end_frame = self.ref_start_end_frame
@@ -142,11 +178,13 @@ class Asset(Parallelizable):
     def dis_duration_sec(self):
         if 'duration_sec' in self.asset_dict:
             return self.asset_dict['duration_sec']
-        elif 'start_sec' in self.asset_dict and 'end_sec' in self.asset_dict:
+        elif 'start_sec' in self.asset_dict \
+                and 'end_sec' in self.asset_dict:
             return self.asset_dict['end_sec'] - self.asset_dict['start_sec']
         else:
             dis_start_end_frame = self.dis_start_end_frame
-            if dis_start_end_frame and 'fps' in self.asset_dict:
+            if dis_start_end_frame \
+                    and 'fps' in self.asset_dict:
                 s, e = dis_start_end_frame
                 return (e - s + 1) / float(self.asset_dict['fps'])
             else:
@@ -200,6 +238,11 @@ class Asset(Parallelizable):
         return str
 
     def to_string(self):
+        """
+        The unique string representation of asset, used by both __str__ and
+        __repr__.
+        :return:
+        """
         str = "{dataset}_{content_id}_{asset_id}_{ref_str}_vs_{dis_str}".\
             format(dataset=self.dataset,
                    content_id=self.content_id,
@@ -211,8 +254,42 @@ class Asset(Parallelizable):
             str += "_q_{quality_str}".format(quality_str=quality_str)
         return str
 
+    def to_normalized_dict(self):
+        """
+        Similar to self.__dict__ except for excluding workdir (which is random)
+        and dir part of ref_path/dis_path.
+        :return:
+        """
+        d = {}
+        for key in self.__dict__:
+            if key == 'workdir':
+                d[key] = ""
+            elif key == 'ref_path' or key == 'dis_path':
+                d[key] = get_file_name_with_extension(self.__dict__[key])
+            else:
+                d[key] = self.__dict__[key]
+        return d
+
     def __str__(self):
+        """
+        Use str(asset) for compact but unique description of asset, for example
+        use in file names
+        :return:
+        """
         return self.to_string()
+
+    def __repr__(self):
+        """
+        Use repr(asset) for serialization of asset (to be recovered later on)
+        :return:
+        """
+        return get_unique_str_from_recursive_dict(self.to_normalized_dict())
+
+    def __hash__(self):
+        return hash(repr(self))
+
+    def __eq__(self, other):
+        return repr(self) == repr(other)
 
     # ==== workfile ====
 
@@ -249,8 +326,8 @@ class Asset(Parallelizable):
         make sure ref_duration_sec covers the entire file.
         """
         try:
-            return os.path.getsize(self.dis_path) / \
-                   self.dis_duration_sec * 8.0 / 1000.0
+            return os.path.getsize(self.dis_path) \
+                   / self.dis_duration_sec * 8.0 / 1000.0
         except:
             return None
 
@@ -265,7 +342,7 @@ class Asset(Parallelizable):
             if self.asset_dict['yuv_type'] in ['yuv420p', 'yuv422p', 'yuv444p']:
                 return self.asset_dict['yuv_type']
             else:
-                assert False, "Unknown YUV type: {}".\
-                    format(self.asset_dict['yuv_type'])
+                assert False, "Unknown YUV type: {}".format(
+                    self.asset_dict['yuv_type'])
         else:
             return 'yuv420p'

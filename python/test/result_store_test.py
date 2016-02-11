@@ -1,5 +1,6 @@
 from asset import Asset
 import config
+from result_store import ResultStore
 from vmaf_quality_runner import VmafQualityRunner
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
@@ -66,3 +67,7 @@ class QualityResultTest(unittest.TestCase):
             "Aggregate: VMAF_adm_score:0.814, VMAF_vif_score:0.156, "
             "VMAF_motion_score:12.344, VMAF_score:43.461, "
             "VMAF_ansnr_score:12.418")
+
+    def test_from_dataframe(self):
+        df = self.result.to_dataframe()
+        result_recon = ResultStore.from_dataframe(df)

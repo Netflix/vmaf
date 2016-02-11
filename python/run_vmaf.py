@@ -16,6 +16,16 @@ def print_usage():
           + " [fmt] [width] [height] [ref_file] [dis_file]\n"
     print "fmts:\n\t" + "\n\t".join(FMTS) +"\n"
 
+def print_runner_result(runner_cls, rst):
+    print 'Input:'
+    print rst.asset.__dict__
+    print ''
+    print 'Output:'
+    print '{type} VERSION {version}'.format(type=runner_cls.TYPE,
+                                            version=runner_cls.VERSION)
+    print str(rst)
+    print ''
+
 if __name__ == "__main__":
 
     if len(sys.argv) < 6:
@@ -40,7 +50,9 @@ if __name__ == "__main__":
                   )
     assets = [asset]
 
-    runner = VmafQualityRunner(
+    runner_class = VmafQualityRunner
+
+    runner = runner_class(
         assets, None, fifo_mode=True,
         log_file_dir=config.ROOT + "/workspace/log_file_dir")
 
@@ -49,12 +61,7 @@ if __name__ == "__main__":
     result = runner.results[0]
 
     # output
-    print 'Input:'
-    print result.asset.__dict__
-    print ''
-    print 'Output:'
-    print str(result)
-    print ''
+    print_runner_result(runner_class, result)
 
     # clean up
     runner.remove_logs()

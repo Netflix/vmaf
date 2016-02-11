@@ -19,6 +19,16 @@ def print_usage():
     print "\t[fmt] [width] [height] [ref_file] [dis_file]\\n"
     print "fmts:\n\t" + "\n\t".join(FMTS) +"\n"
 
+def print_runner_result(runner_cls, rst):
+    print 'Input:'
+    print rst.asset.__dict__
+    print ''
+    print 'Output:'
+    print '{type} VERSION {version}'.format(type=runner_cls.TYPE,
+                                            version=runner_cls.VERSION)
+    print str(rst)
+    print ''
+
 if __name__ == "__main__":
 
     if len(sys.argv) < 2:
@@ -65,8 +75,10 @@ if __name__ == "__main__":
             assets.append(asset)
             line_idx += 1
 
-    # construct an VmafQualityRunner object merely to remove logs
-    VmafQualityRunner(assets,
+    runner_class = VmafQualityRunner
+
+    # construct an VmafQualityRunner object to assert assets, and to remove logs
+    runner_class(assets,
                       None,
                       log_file_dir=config.ROOT + "/workspace/log_file_dir",
                       fifo_mode=True,
@@ -74,7 +86,7 @@ if __name__ == "__main__":
 
     # run
     runners, results = run_quality_runners_in_parallel(
-        VmafQualityRunner,
+        runner_class,
         assets,
         log_file_dir=config.ROOT + "/workspace/log_file_dir",
         fifo_mode=True,
@@ -86,13 +98,7 @@ if __name__ == "__main__":
         print '============================'
         print 'Asset {asset_id}:'.format(asset_id=asset.asset_id)
         print '============================'
-        print ''
-        print 'Input:'
-        print result.asset.__dict__
-        print ''
-        print 'Output:'
-        print str(result)
-        print ''
+        print_runner_result(runner_class, result)
 
     # clean up
     for runner in runners:

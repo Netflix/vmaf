@@ -66,6 +66,28 @@ def delete_dir_if_exists(dir):
     if os.path.isdir(dir):
         os.rmdir(dir)
 
+def get_unique_str_from_recursive_dict(d):
+    """
+    String representation with sorted keys and values
+    >>> get_unique_str_from_recursive_dict({'a':1, 'b':2, 'c':{'x':'0', 'y':'1'}})
+    '{"a": 1, "b": 2, "c": {"x": "0", "y": "1"}}'
+    >>> get_unique_str_from_recursive_dict({'a':1, 'c':2, 'b':{'y':'1', 'x':'0', }})
+    '{"a": 1, "b": {"x": "0", "y": "1"}, "c": 2}'
+    """
+    from collections import OrderedDict
+    import json
+    def to_ordered_dict_recursively(d):
+        if isinstance(d, dict):
+            return OrderedDict(map(
+                                    lambda (k,v): (to_ordered_dict_recursively(k),
+                                                   to_ordered_dict_recursively(v)),
+                                    sorted(d.items())
+                                   )
+                              )
+        else:
+            return d
+    return json.dumps(to_ordered_dict_recursively(d))
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()

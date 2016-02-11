@@ -132,7 +132,25 @@ class AssetTest(unittest.TestCase):
         self.assertEquals(asset.dis_bitrate_kbps_for_entire_file,
                           53693.964287999996)
 
-    def test_ref_dis_str(self):
+    def test_to_normalized_dict(self):
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
+                      asset_dict={'width':720, 'height':480,
+                                  'start_frame':2, 'end_frame':2})
+        self.assertEquals(
+            asset.to_normalized_dict(),
+            {'asset_dict': {'end_frame': 2, 'height': 480,
+                            'start_frame': 2, 'width': 720},
+              'asset_id': 0,
+              'content_id': 0,
+              'dataset': 'test',
+              'dis_path': 'disvideo.yuv',
+              'ref_path': 'refvideo.yuv',
+              'workdir': ''
+             }
+        )
+
+    def test_str_repr(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
                       asset_dict={'width':720, 'height':480,
@@ -141,6 +159,12 @@ class AssetTest(unittest.TestCase):
             str(asset),
             "test_0_0_refvideo_720x480_2to2_vs_disvideo_720x480_2to2_q_720x480"
         )
+        self.assertEquals(
+            repr(asset),
+            '{"asset_dict": {"end_frame": 2, "height": 480, "start_frame": 2, '
+            '"width": 720}, "asset_id": 0, "content_id": 0, "dataset": "test", '
+            '"dis_path": "disvideo.yuv", "ref_path": "refvideo.yuv", "workdir": ""}'
+        )
 
         asset = Asset(dataset="test", content_id=0, asset_id=1,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
@@ -148,6 +172,12 @@ class AssetTest(unittest.TestCase):
         self.assertEquals(
             str(asset),
             "test_0_1_refvideo_720x480_vs_disvideo_720x480_q_720x480"
+        )
+        self.assertEquals(
+            repr(asset),
+            '{"asset_dict": {"height": 480, "width": 720}, "asset_id": 1, '
+            '"content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", '
+            '"ref_path": "refvideo.yuv", "workdir": ""}'
         )
 
         asset = Asset(dataset="test", content_id=0, asset_id=2,
@@ -158,6 +188,37 @@ class AssetTest(unittest.TestCase):
             str(asset),
             "test_0_2_refvideo_720x480_vs_disvideo_720x480_q_1920x1080"
         )
+        self.assertEquals(
+            repr(asset),
+            '{"asset_dict": {"height": 480, "quality_height": 1080, '
+            '"quality_width": 1920, "width": 720}, "asset_id": 2, '
+            '"content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", '
+            '"ref_path": "refvideo.yuv", "workdir": ""}'
+        )
+
+    def test_hash_equal(self):
+        asset1 = Asset(dataset="test", content_id=0, asset_id=2,
+                      ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
+                      asset_dict={'width':720, 'height':480,
+                                  'quality_width':1920, 'quality_height':1080})
+        asset2 = Asset(dataset="test", content_id=0, asset_id=2,
+                      ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
+                      asset_dict={'width':720, 'height':480,
+                                  'quality_width':1920, 'quality_height':1080})
+        asset3 = Asset(dataset="test", content_id=0, asset_id=2,
+                      ref_path="my/dir/refvideo.yuv", dis_path="my/dir/disvideo.yuv",
+                      asset_dict={'width':720, 'height':480,
+                                  'quality_width':1920, 'quality_height':1080})
+        asset4 = Asset(dataset="test", content_id=0, asset_id=2,
+                      ref_path="my/dir/refvideo.yuv", dis_path="my/dir/disvideo.avi",
+                      asset_dict={'width':720, 'height':480,
+                                  'quality_width':1920, 'quality_height':1080})
+
+        self.assertTrue(asset1 == asset2)
+        self.assertTrue(asset2 == asset3)
+        self.assertFalse(asset3 == asset4)
+        self.assertTrue(hash(asset2) == hash(asset3))
+        self.assertFalse(hash(asset1) == hash(asset4))
 
     def test_workfile_path(self):
         import re
