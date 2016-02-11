@@ -143,6 +143,7 @@ class ResultStore(object):
         # e.g. ['VMAF_scores', 'VMAF_vif_scores']
         list_scores_key = filter(lambda key: re.search(r"_scores$", key),
                                  self.result_dict.keys())
+        list_scores_key = sorted(list_scores_key)
         return list_scores_key
 
     def _get_list_score_key(self):

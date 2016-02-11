@@ -4,7 +4,6 @@ __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import re
-import time
 import os
 import multiprocessing
 import subprocess
@@ -64,7 +63,6 @@ class QualityRunner(object):
     def remove_logs(self):
         for asset in self.assets:
             self._remove_log(asset)
-            self._remove_time_file(asset)
 
     def _run_and_generate_log_file(self, asset):
 
@@ -86,8 +84,7 @@ class QualityRunner(object):
         """
         Wraper around the essential function _run_and_generate_log_file, to
         do housekeeping work including 1) asserts of asset, 2) skip run if
-        log already exist, 3) creating fifo, 4) delete work file and dir, and
-        5) log exec time.
+        log already exist, 3) creating fifo, 4) delete work file and dir
         :param asset:
         :return:
         """
@@ -104,8 +101,6 @@ class QualityRunner(object):
                     'run.'.format(type=self.TYPE,
                                   log_file_path=log_file_path))
         else:
-            start_time = time.time()
-
             # remove workfiles if exist (do early here to avoid race condition
             # when ref path and dis path have some overlap)
             self._close_ref_workfile(asset)
@@ -141,26 +136,12 @@ class QualityRunner(object):
                         # already removed by os.rmdir(ref_dir)
                         pass
 
-            end_time = time.time()
-            run_time = end_time - start_time
-
-            if self.logger:
-                self.logger.info(
-                    "Run time: {sec:.2f} sec.".format(sec=run_time))
-
-            self._write_time_file(asset, run_time)
-
     def _read_result(self, asset):
 
         result = {}
 
         # add quality scores
         result.update(self._get_quality_scores(asset))
-
-        # add run time
-        run_time = self._read_time_file(asset)
-        time_key = "{type}_time".format(type=self.TYPE)
-        result[time_key] = run_time
 
         # add dis video file bitrate (must be an entire file)
         dis_bitrate_kbps = asset.dis_bitrate_kbps_for_entire_file
@@ -245,36 +226,6 @@ class QualityRunner(object):
         path = asset.dis_workfile_path
         if os.path.exists(path):
             os.remove(path)
-
-    # ===== time file =====
-
-    def _get_time_file_path(self, asset):
-        return self._get_log_file_path(asset) + '.time'
-
-    def _write_time_file(self, asset, time):
-        time_file_path = self._get_time_file_path(asset)
-        if os.path.exists(time_file_path):
-            os.remove(time_file_path)
-        with open(time_file_path, 'wt') as time_file:
-            time_file.write(str(time))
-
-    def _read_time_file(self, asset):
-        time_file_path = self._get_time_file_path(asset)
-        try:
-            with open(time_file_path, 'rt') as time_file:
-                time = map(float, time_file)[0]
-        except RuntimeError as e:
-            # if reading time file fails, shouldn't be catastrophic
-            if self.logger:
-                self.logger.error("Error reading time file: {e}".format(e=e))
-            time = None
-        return time
-
-    def _remove_time_file(self, asset):
-        time_file_path = self._get_time_file_path(asset)
-        if os.path.exists(time_file_path):
-            os.remove(time_file_path)
-
 
 def run_quality_runners_in_parallel(runner_class,
                                     assets,

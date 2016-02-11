@@ -56,10 +56,7 @@ class QualityResultTest(unittest.TestCase):
         self.assertEquals(df.iloc[0]['dis_name'], 'checkerboard_1920_1080_10_3_1_0.yuv')
         self.assertEquals(
             df.iloc[0]['asset'],
-            '{"asset_dict": {"height": 1080, "width": 1920}, '
-            '"asset_id": 0, "content_id": 0, "dataset": "test", '
-            '"dis_path": "checkerboard_1920_1080_10_3_1_0.yuv", '
-            '"ref_path": "checkerboard_1920_1080_10_3_0_0.yuv", "workdir": ""}')
+            '{"asset_dict": {"height": 1080, "width": 1920}, "asset_id": 0, "content_id": 0, "dataset": "test", "dis_path": "checkerboard_1920_1080_10_3_1_0.yuv", "ref_path": "checkerboard_1920_1080_10_3_0_0.yuv", "workdir": ""}')
 
         ResultStore._assert_assert_dataframe(df)
 
@@ -87,7 +84,13 @@ class QualityResultTest(unittest.TestCase):
             self.result.get_score('VMAF_motion_scor')
 
         self.assertEquals(
+            self.result._get_perframe_score_str(),
+            'Frame 0: VMAF_adm_score:0.799, VMAF_ansnr_score:12.421, VMAF_motion_score:0.000, VMAF_score:42.112, VMAF_vif_score:0.156\n'
+            'Frame 1: VMAF_adm_score:0.843, VMAF_ansnr_score:12.418, VMAF_motion_score:18.489, VMAF_score:47.654, VMAF_vif_score:0.156\n'
+            'Frame 2: VMAF_adm_score:0.800, VMAF_ansnr_score:12.416, VMAF_motion_score:18.542, VMAF_score:40.617, VMAF_vif_score:0.156\n'
+        )
+
+        self.assertEquals(
             self.result._get_aggregate_score_str(),
-            "Aggregate: VMAF_adm_score:0.814, VMAF_vif_score:0.156, "
-            "VMAF_motion_score:12.344, VMAF_score:43.461, "
-            "VMAF_ansnr_score:12.418")
+            'Aggregate: VMAF_adm_score:0.814, VMAF_ansnr_score:12.418, VMAF_motion_score:12.344, VMAF_score:43.461, VMAF_vif_score:0.156'
+        )
