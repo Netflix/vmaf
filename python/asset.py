@@ -185,8 +185,8 @@ class Asset(Parallelizable):
             dis_start_end_frame = self.dis_start_end_frame
             if dis_start_end_frame \
                     and 'fps' in self.asset_dict:
-                s, e = dis_start_end_frame
-                return (e - s + 1) / float(self.asset_dict['fps'])
+                start, end = dis_start_end_frame
+                return (end - start + 1) / float(self.asset_dict['fps'])
             else:
                 return None
 
@@ -194,48 +194,48 @@ class Asset(Parallelizable):
 
     @property
     def ref_str(self):
-        str = ""
+        s = ""
 
         path = get_file_name_without_extension(self.ref_path)
-        str += "{path}".format(path=path)
+        s += "{path}".format(path=path)
 
         if self.ref_width_height:
             w, h = self.ref_width_height
-            str += "_{w}x{h}".format(w=w, h=h)
+            s += "_{w}x{h}".format(w=w, h=h)
 
         if self.ref_start_end_frame:
-            s, e = self.ref_start_end_frame
-            str += "_{s}to{e}".format(s=s, e=e)
+            start, end = self.ref_start_end_frame
+            s += "_{start}to{end}".format(start=start, end=end)
 
-        return str
+        return s
 
     @property
     def dis_str(self):
-        str = ""
+        s = ""
 
         path = get_file_name_without_extension(self.dis_path)
-        str += "{path}".format(path=path)
+        s += "{path}".format(path=path)
 
         w, h = self.dis_width_height
-        str += "_{w}x{h}".format(w=w, h=h)
+        s += "_{w}x{h}".format(w=w, h=h)
 
         if self.dis_start_end_frame:
-            s, e = self.dis_start_end_frame
-            str += "_{s}to{e}".format(s=s, e=e)
+            start, end = self.dis_start_end_frame
+            s += "_{start}to{end}".format(start=start, end=end)
 
-        return str
+        return s
 
     @property
     def quality_str(self):
-        str = ""
+        s = ""
 
         if self.quality_width_height:
             w, h = self.quality_width_height
-            if str != "":
-                str += "_"
-            str += "{w}x{h}".format(w=w, h=h)
+            if s != "":
+                s += "_"
+            s += "{w}x{h}".format(w=w, h=h)
 
-        return str
+        return s
 
     def to_string(self):
         """
@@ -243,7 +243,7 @@ class Asset(Parallelizable):
         __repr__.
         :return:
         """
-        str = "{dataset}_{content_id}_{asset_id}_{ref_str}_vs_{dis_str}".\
+        s = "{dataset}_{content_id}_{asset_id}_{ref_str}_vs_{dis_str}".\
             format(dataset=self.dataset,
                    content_id=self.content_id,
                    asset_id=self.asset_id,
@@ -251,8 +251,8 @@ class Asset(Parallelizable):
                    dis_str=self.dis_str)
         quality_str = self.quality_str
         if quality_str:
-            str += "_q_{quality_str}".format(quality_str=quality_str)
-        return str
+            s += "_q_{quality_str}".format(quality_str=quality_str)
+        return s
 
     def to_normalized_dict(self):
         """
@@ -290,6 +290,31 @@ class Asset(Parallelizable):
 
     def __eq__(self, other):
         return repr(self) == repr(other)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    @staticmethod
+    def from_repr(rp):
+        """
+        Reconstruct Asset from repr string.
+        :return:
+        """
+        d = eval(rp)
+        assert 'dataset' in d
+        assert 'content_id' in d
+        assert 'asset_id' in d
+        assert 'ref_path' in d
+        assert 'dis_path' in d
+        assert 'asset_dict' in d
+
+        return Asset(dataset=d['dataset'],
+                     content_id=d['content_id'],
+                     asset_id=d['asset_id'],
+                     ref_path=d['ref_path'],
+                     dis_path=d['dis_path'],
+                     asset_dict=d['asset_dict']
+                     )
 
     # ==== workfile ====
 

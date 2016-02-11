@@ -17,10 +17,6 @@ def print_usage():
     print "fmts:\n\t" + "\n\t".join(FMTS) +"\n"
 
 def print_runner_result(runner_cls, rst):
-    print 'Input:'
-    print rst.asset.__dict__
-    print ''
-    print 'Output:'
     print '{type} VERSION {version}'.format(type=runner_cls.TYPE,
                                             version=runner_cls.VERSION)
     print str(rst)

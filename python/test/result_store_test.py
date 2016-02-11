@@ -29,23 +29,47 @@ class QualityResultTest(unittest.TestCase):
         if hasattr(self, 'runner'): self.runner.remove_logs()
         pass
 
-    def test_to_dataframe(self):
-        print 'test on quality result to dataframe...'
+    def test_todataframe_fromdataframe(self):
+        import numpy as np
+        print 'test on result to/from dataframe...'
         df = self.result.to_dataframe()
-        self.assertEquals(len(df), 15)
-        self.assertEquals(df.loc[df['score_key'] == 'VMAF_score'] \
-                          ['score'].mean(), 43.46099858503333)
-        self.assertEquals(df.loc[df['score_key'] == 'VMAF_adm_score'] \
-                              ['score'].mean(), 0.81386)
-        self.assertEquals(df.loc[df['score_key'] == 'VMAF_vif_score'] \
-                              ['score'].mean(), 0.15612933333333334)
-        self.assertEquals(df.loc[df['score_key'] == 'VMAF_motion_score'] \
-                              ['score'].mean(), 12.343795333333333)
-        self.assertEquals(df.loc[df['score_key'] == 'VMAF_ansnr_score'] \
-                              ['score'].mean(), 12.418291000000002)
+        df_vmaf = df.loc[df['scores_key'] == 'VMAF_scores']
+        df_adm = df.loc[df['scores_key'] == 'VMAF_adm_scores']
+        df_vif = df.loc[df['scores_key'] == 'VMAF_vif_scores']
+        df_ansnr = df.loc[df['scores_key'] == 'VMAF_ansnr_scores']
+        df_motion = df.loc[df['scores_key'] == 'VMAF_motion_scores']
+        self.assertEquals(len(df), 5)
+        self.assertEquals(len(df_vmaf), 1)
+        self.assertEquals(len(df_adm), 1)
+        self.assertEquals(len(df_vif), 1)
+        self.assertEquals(len(df_ansnr), 1)
+        self.assertEquals(len(df_motion), 1)
+        self.assertEquals(np.mean(df_vmaf.iloc[0]['scores']), 43.46099858503333)
+        self.assertEquals(np.mean(df_adm.iloc[0]['scores']), 0.81386)
+        self.assertEquals(np.mean(df_vif.iloc[0]['scores']), 0.15612933333333334)
+        self.assertEquals(np.mean(df_ansnr.iloc[0]['scores']), 12.418291000000002)
+        self.assertEquals(np.mean(df_motion.iloc[0]['scores']), 12.343795333333333)
+        self.assertEquals(df.iloc[0]['dataset'], 'test')
+        self.assertEquals(df.iloc[0]['content_id'], 0)
+        self.assertEquals(df.iloc[0]['asset_id'], 0)
+        self.assertEquals(df.iloc[0]['ref_name'], 'checkerboard_1920_1080_10_3_0_0.yuv')
+        self.assertEquals(df.iloc[0]['dis_name'], 'checkerboard_1920_1080_10_3_1_0.yuv')
+        self.assertEquals(
+            df.iloc[0]['asset'],
+            '{"asset_dict": {"height": 1080, "width": 1920}, '
+            '"asset_id": 0, "content_id": 0, "dataset": "test", '
+            '"dis_path": "checkerboard_1920_1080_10_3_1_0.yuv", '
+            '"ref_path": "checkerboard_1920_1080_10_3_0_0.yuv", "workdir": ""}')
+
+        ResultStore._assert_assert_dataframe(df)
+
+        recon_result = ResultStore.from_dataframe(df)
+        self.assertEquals(self.result, recon_result)
+        self.assertTrue(self.result == recon_result)
+        self.assertFalse(self.result != recon_result)
 
     def test_to_score_str(self):
-        print 'test on quality result aggregate scores...'
+        print 'test on result aggregate scores...'
         self.assertEquals(self.result.get_score('VMAF_score'),
                           43.46099858503333)
         self.assertEquals(self.result.get_score('VMAF_adm_score'),
@@ -67,7 +91,3 @@ class QualityResultTest(unittest.TestCase):
             "Aggregate: VMAF_adm_score:0.814, VMAF_vif_score:0.156, "
             "VMAF_motion_score:12.344, VMAF_score:43.461, "
             "VMAF_ansnr_score:12.418")
-
-    def test_from_dataframe(self):
-        df = self.result.to_dataframe()
-        result_recon = ResultStore.from_dataframe(df)

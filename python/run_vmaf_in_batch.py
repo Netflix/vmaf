@@ -20,10 +20,6 @@ def print_usage():
     print "fmts:\n\t" + "\n\t".join(FMTS) +"\n"
 
 def print_runner_result(runner_cls, rst):
-    print 'Input:'
-    print rst.asset.__dict__
-    print ''
-    print 'Output:'
     print '{type} VERSION {version}'.format(type=runner_cls.TYPE,
                                             version=runner_cls.VERSION)
     print str(rst)
@@ -96,7 +92,7 @@ if __name__ == "__main__":
     # output
     for result in results:
         print '============================'
-        print 'Asset {asset_id}:'.format(asset_id=asset.asset_id)
+        print 'Asset {asset_id}:'.format(asset_id=result.asset.asset_id)
         print '============================'
         print_runner_result(runner_class, result)
 
