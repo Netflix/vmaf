@@ -25,7 +25,6 @@ class VmafQualityRunner(QualityRunner):
 
     def _asserts(self):
         super(VmafQualityRunner, self)._asserts()
-
         pass
 
     def _run_and_generate_log_file(self, asset):

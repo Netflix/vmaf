@@ -1,6 +1,6 @@
 from asset import Asset
 import config
-from result_store import ResultStore
+from result import Result
 from vmaf_quality_runner import VmafQualityRunner
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
@@ -8,7 +8,7 @@ __license__ = "Apache, Version 2.0"
 
 import unittest
 
-class QualityResultTest(unittest.TestCase):
+class ResultTest(unittest.TestCase):
 
     def setUp(self):
         ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
@@ -58,9 +58,9 @@ class QualityResultTest(unittest.TestCase):
             df.iloc[0]['asset'],
             '{"asset_dict": {"height": 1080, "width": 1920}, "asset_id": 0, "content_id": 0, "dataset": "test", "dis_path": "checkerboard_1920_1080_10_3_1_0.yuv", "ref_path": "checkerboard_1920_1080_10_3_0_0.yuv", "workdir": ""}')
 
-        ResultStore._assert_assert_dataframe(df)
+        Result._assert_assert_dataframe(df)
 
-        recon_result = ResultStore.from_dataframe(df)
+        recon_result = Result.from_dataframe(df)
         self.assertEquals(self.result, recon_result)
         self.assertTrue(self.result == recon_result)
         self.assertFalse(self.result != recon_result)

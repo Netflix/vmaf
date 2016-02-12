@@ -5,10 +5,11 @@ import re
 from tools import get_file_name_with_extension
 from asset import Asset
 
-class ResultStore(object):
+class Result(object):
     """
-    Stores read-only result generated on an asset by feature extraction or
-    train test model.
+    Stores read-only result generated on an Asset by a ResultGenerator. Its
+    derived classes (e.g. FileSystemPersistentResult) have data persistence
+    capability like save / load.
     """
     DATAFRAME_COLUMNS = (  'dataset',
                            'content_id',
@@ -20,8 +21,9 @@ class ResultStore(object):
                            'scores' # one score per unit - frame, chunk or else
                         )
 
-    def __init__(self, asset, result_dict):
+    def __init__(self, asset, executor_id, result_dict):
         self.asset = asset
+        self.executor_id = executor_id
         self.result_dict = result_dict
 
     def __eq__(self, other):
@@ -37,21 +39,6 @@ class ResultStore(object):
         return not self.__eq__(other)
 
     # TODO: add __repr__, __hash__
-
-    @classmethod
-    def from_dataframe(cls, df):
-
-        # first, make sure the df conform to the format for a single asset
-        cls._assert_assert_dataframe(df)
-
-        asset_repr = df.iloc[0]['asset']
-        asset = Asset.from_repr(asset_repr)
-
-        result_dict = {}
-        for _, row in df.iterrows():
-            result_dict[row['scores_key']] = row['scores']
-
-        return ResultStore(asset, result_dict)
 
     def __str__(self):
         return self.to_string()
@@ -81,6 +68,36 @@ class ResultStore(object):
         """
         Export to pandas dataframe with columns:
         dataset, content_id, asset_id, ref_name, dis_name, asset, scores_key, scores
+        Example:
+                                                       asset  asset_id  content_id  \
+        0  {"asset_dict": {"height": 1080, "width": 1920}...         0           0
+        1  {"asset_dict": {"height": 1080, "width": 1920}...         0           0
+        2  {"asset_dict": {"height": 1080, "width": 1920}...         0           0
+        3  {"asset_dict": {"height": 1080, "width": 1920}...         0           0
+        4  {"asset_dict": {"height": 1080, "width": 1920}...         0           0
+
+          dataset                             dis_name  \
+        0    test  checkerboard_1920_1080_10_3_1_0.yuv
+        1    test  checkerboard_1920_1080_10_3_1_0.yuv
+        2    test  checkerboard_1920_1080_10_3_1_0.yuv
+        3    test  checkerboard_1920_1080_10_3_1_0.yuv
+        4    test  checkerboard_1920_1080_10_3_1_0.yuv
+
+                                      ref_name  \
+        0  checkerboard_1920_1080_10_3_0_0.yuv
+        1  checkerboard_1920_1080_10_3_0_0.yuv
+        2  checkerboard_1920_1080_10_3_0_0.yuv
+        3  checkerboard_1920_1080_10_3_0_0.yuv
+        4  checkerboard_1920_1080_10_3_0_0.yuv
+
+                                                  scores          scores_key
+        0                  [0.798588, 0.84287, 0.800122]     VMAF_adm_scores
+        1               [12.420815, 12.41775, 12.416308]   VMAF_ansnr_scores
+        2                    [0.0, 18.489031, 18.542355]  VMAF_motion_scores
+        3  [42.1117149479, 47.6544689539, 40.6168118533]         VMAF_scores
+        4                 [0.156106, 0.156163, 0.156119]     VMAF_vif_scores
+
+        [5 rows x 8 columns]
         :return:
         """
         import pandas as pd
@@ -104,6 +121,21 @@ class ResultStore(object):
         df = pd.DataFrame(dict(zip(self.DATAFRAME_COLUMNS, zip(*rows))))
 
         return df
+
+    @classmethod
+    def from_dataframe(cls, df):
+
+        # first, make sure the df conform to the format for a single asset
+        cls._assert_assert_dataframe(df)
+
+        asset_repr = df.iloc[0]['asset']
+        asset = Asset.from_repr(asset_repr)
+
+        result_dict = {}
+        for _, row in df.iterrows():
+            result_dict[row['scores_key']] = row['scores']
+
+        return Result(asset, None, result_dict) # TODO
 
     def _get_perframe_score_str(self):
         list_scores_key = self._get_list_scores_key()
@@ -193,4 +225,18 @@ class ResultStore(object):
 
         # all scores should have equal length
         assert len(set(map(lambda x:len(x), df['scores'].tolist()))) == 1
+
+class FileSystemPersistentResult(Result):
+    """
+    Result that is persisted by a simple file-system that save/load result
+    in a directory. The directory has multiple subdirectories, each
+    corresponding to a result generator (e.g. a VMAF feature extractor, or a
+    NO19 feature extractor, or a VMAF quality runner, or a SSIM quality runner).
+    Each subdirectory contains multiple files, each file stores dataframe for
+    an asset, and has file name str(asset).
+    """
+
+    # TODO
+
+    pass
 

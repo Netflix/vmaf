@@ -29,6 +29,15 @@ class QualityRunnerTest(unittest.TestCase):
             "disvideo_720x480_2to2_q_720x480"
         self.assertEquals(log_file_path, expected_log_file_path)
 
+    def test_executor_id(self):
+        asset = Asset(dataset="test", content_id=0, asset_id=1,
+                      ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
+                      asset_dict={})
+        runner = VmafQualityRunner([asset], None,
+                                   log_file_dir="log_file_dir",
+                                   fifo_mode=True)
+        self.assertEquals(runner.executor_id, 'VMAF_V0.1')
+
     def test_run_vamf_runner(self):
         print 'test on running VMAF runner...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
@@ -134,7 +143,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             parallelize=False)
 
         self.assertEqual(results[0]['VMAF_score'], 60.2689700696979)
-        self.assertEqual(results[0]['VMAF_vif_score'], 0.44417014583333336)
+        self.assertEqual(results[0]['VMAF_vif_score'], 0.44417014583333336) # TODO: VMAF_feature_vif_score
         self.assertEqual(results[0]['VMAF_motion_score'], 3.5916076041666667)
         self.assertEqual(results[0]['VMAF_adm_score'], 0.91552422916666665)
         self.assertEqual(results[0]['VMAF_ansnr_score'], 22.533456770833329)

@@ -1,4 +1,5 @@
-from result_store import ResultStore
+from common import Executor
+from result import Result
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -10,7 +11,11 @@ import subprocess
 import config
 from tools import get_dir_without_last_slash, make_parent_dirs_if_nonexist
 
-class QualityRunner(object):
+class QualityRunner(Executor):
+    """
+    QualityRunner takes in a list of assets, and run quality calculation on
+    them, and returns a list of corresponding results.
+    """
 
     def __init__(self,
                  assets,
@@ -18,6 +23,8 @@ class QualityRunner(object):
                  log_file_dir= config.ROOT + "/workspace/log_file_dir",
                  fifo_mode=True,
                  delete_workdir=True):
+
+        Executor.__init__(self)
 
         self.assets = assets
         self.logger = logger
@@ -29,17 +36,16 @@ class QualityRunner(object):
         self._asserts()
 
     def _asserts(self):
-        assert hasattr(self, "TYPE")
-        assert hasattr(self, "VERSION")
 
         assert re.match(r"[a-zA-Z0-9_]+", self.TYPE), \
             "TYPE can only contains alphabets, numbers and _."
 
-        list_contentid_assetid_pair = \
-            map(lambda asset: (asset.content_id, asset.asset_id), self.assets)
-        assert len(list_contentid_assetid_pair) == \
-               len(set(list_contentid_assetid_pair)), \
-            "Pair of content_id and asset_id must be unique for each asset."
+        list_dataset_contentid_assetid = \
+            map(lambda asset: (asset.dataset, asset.content_id, asset.asset_id),
+                self.assets)
+        assert len(list_dataset_contentid_assetid) == \
+               len(set(list_dataset_contentid_assetid)), \
+            "Triplet of dataset, content_id and asset_id must be unique for each asset."
 
     def run(self):
 
@@ -148,7 +154,7 @@ class QualityRunner(object):
         dis_bitrate_key = "dis_bitrate_kbps"
         result[dis_bitrate_key] = dis_bitrate_kbps
 
-        return ResultStore(asset, result)
+        return Result(asset, self.executor_id, result)
 
     def _asserts_asset(self, asset):
 
