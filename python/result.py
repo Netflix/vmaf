@@ -49,6 +49,21 @@ class Result(object):
     def __getitem__(self, key):
         return self.get_score(key)
 
+    @staticmethod
+    def get_unique_from_dataframe(df, scores_key, column):
+        """
+        Convenience method to access dataframe. Do two things 1) make assertion
+        that only one row correspond to the scores_key, 2) retrive a column
+        from that row
+        :param df:
+        :param scores_key:
+        :param column:
+        :return:
+        """
+        _df = df.loc[df['scores_key'] == scores_key]
+        assert len(_df) == 1
+        return _df.iloc[0][column]
+
     def get_score(self, key):
         try:
             return self.result_dict[key]

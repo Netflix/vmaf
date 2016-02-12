@@ -49,6 +49,21 @@ class ResultTest(unittest.TestCase):
         self.assertEquals(np.mean(df_vif.iloc[0]['scores']), 0.15612933333333334)
         self.assertEquals(np.mean(df_ansnr.iloc[0]['scores']), 12.418291000000002)
         self.assertEquals(np.mean(df_motion.iloc[0]['scores']), 12.343795333333333)
+        self.assertEquals(
+            np.mean(Result.get_unique_from_dataframe(df, 'VMAF_scores', 'scores')),
+            43.46099858503333)
+        self.assertEquals(
+            np.mean(Result.get_unique_from_dataframe(df, 'VMAF_adm_scores', 'scores')),
+            0.81386)
+        self.assertEquals(
+            np.mean(Result.get_unique_from_dataframe(df, 'VMAF_vif_scores', 'scores')),
+            0.15612933333333334)
+        self.assertEquals(
+            np.mean(Result.get_unique_from_dataframe(df, 'VMAF_ansnr_scores', 'scores')),
+            12.418291000000002)
+        self.assertEquals(
+            np.mean(Result.get_unique_from_dataframe(df, 'VMAF_motion_scores', 'scores')),
+            12.343795333333333)
         self.assertEquals(df.iloc[0]['dataset'], 'test')
         self.assertEquals(df.iloc[0]['content_id'], 0)
         self.assertEquals(df.iloc[0]['asset_id'], 0)
