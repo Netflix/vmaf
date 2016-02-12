@@ -283,13 +283,19 @@ class Asset(Parallelizable):
         Use repr(asset) for serialization of asset (to be recovered later on)
         :return:
         """
+        return self.to_normalized_repr()
+
+    def to_full_repr(self):
+        return get_unique_str_from_recursive_dict(self.__dict__)
+
+    def to_normalized_repr(self):
         return get_unique_str_from_recursive_dict(self.to_normalized_dict())
 
     def __hash__(self):
-        return hash(repr(self))
+        return hash(self.to_normalized_repr())
 
     def __eq__(self, other):
-        return repr(self) == repr(other)
+        return self.to_normalized_repr() == other.to_normalized_repr()
 
     def __ne__(self, other):
         return not self.__eq__(other)

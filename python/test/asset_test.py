@@ -166,6 +166,8 @@ class AssetTest(unittest.TestCase):
         self.assertTrue(asset == recon_asset)
         self.assertFalse(asset != recon_asset)
 
+        self.assertEquals(asset.to_normalized_repr(), expected_repr)
+
         asset = Asset(dataset="test", content_id=0, asset_id=1,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
                       asset_dict={'width':720, 'height':480,})

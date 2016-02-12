@@ -57,6 +57,7 @@ class ResultTest(unittest.TestCase):
         self.assertEquals(
             df.iloc[0]['asset'],
             '{"asset_dict": {"height": 1080, "width": 1920}, "asset_id": 0, "content_id": 0, "dataset": "test", "dis_path": "checkerboard_1920_1080_10_3_1_0.yuv", "ref_path": "checkerboard_1920_1080_10_3_0_0.yuv", "workdir": ""}')
+        self.assertEquals(df.iloc[0]['executor_id'], 'VMAF_V0.1')
 
         Result._assert_assert_dataframe(df)
 

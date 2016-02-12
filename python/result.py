@@ -7,9 +7,7 @@ from asset import Asset
 
 class Result(object):
     """
-    Stores read-only result generated on an Asset by a ResultGenerator. Its
-    derived classes (e.g. FileSystemPersistentResult) have data persistence
-    capability like save / load.
+    Stores read-only result generated on an Asset by a Executor.
     """
     DATAFRAME_COLUMNS = (  'dataset',
                            'content_id',
@@ -17,6 +15,7 @@ class Result(object):
                            'ref_name',
                            'dis_name',
                            'asset',
+                           'executor_id',
                            'scores_key',
                            'scores' # one score per unit - frame, chunk or else
                         )
@@ -28,6 +27,8 @@ class Result(object):
 
     def __eq__(self, other):
         if self.asset != other.asset:
+            return False
+        if self.executor_id != other.executor_id:
             return False
         list_scores_key = self._get_list_scores_key()
         for scores_key in list_scores_key:
@@ -54,20 +55,21 @@ class Result(object):
             return self._try_get_aggregate_score(key, e)
 
     def to_string(self):
-        s = ""
-        s += 'Asset:\n'
-        s += str(self.asset.__dict__) + '\n'
-        s += 'Result:\n'
         str_perframe = self._get_perframe_score_str()
-        s += str_perframe
         str_aggregate = self._get_aggregate_score_str()
+        s = ""
+        s += 'Asset: '
+        s += self.asset.to_full_repr() + '\n' # unlike repr(asset), print workdir
+        s += 'Executor: {}\n'.format(self.executor_id)
+        s += 'Result:\n'
+        s += str_perframe
         s += str_aggregate
         return s
 
     def to_dataframe(self):
         """
-        Export to pandas dataframe with columns:
-        dataset, content_id, asset_id, ref_name, dis_name, asset, scores_key, scores
+        Export to pandas dataframe with columns: dataset, content_id, asset_id,
+        ref_name, dis_name, asset, executor_id, scores_key, scores
         Example:
                                                        asset  asset_id  content_id  \
         0  {"asset_dict": {"height": 1080, "width": 1920}...         0           0
@@ -76,12 +78,12 @@ class Result(object):
         3  {"asset_dict": {"height": 1080, "width": 1920}...         0           0
         4  {"asset_dict": {"height": 1080, "width": 1920}...         0           0
 
-          dataset                             dis_name  \
-        0    test  checkerboard_1920_1080_10_3_1_0.yuv
-        1    test  checkerboard_1920_1080_10_3_1_0.yuv
-        2    test  checkerboard_1920_1080_10_3_1_0.yuv
-        3    test  checkerboard_1920_1080_10_3_1_0.yuv
-        4    test  checkerboard_1920_1080_10_3_1_0.yuv
+          dataset                             dis_name executor_id  \
+        0    test  checkerboard_1920_1080_10_3_1_0.yuv   VMAF_V0.1
+        1    test  checkerboard_1920_1080_10_3_1_0.yuv   VMAF_V0.1
+        2    test  checkerboard_1920_1080_10_3_1_0.yuv   VMAF_V0.1
+        3    test  checkerboard_1920_1080_10_3_1_0.yuv   VMAF_V0.1
+        4    test  checkerboard_1920_1080_10_3_1_0.yuv   VMAF_V0.1
 
                                       ref_name  \
         0  checkerboard_1920_1080_10_3_0_0.yuv
@@ -97,11 +99,12 @@ class Result(object):
         3  [42.1117149479, 47.6544689539, 40.6168118533]         VMAF_scores
         4                 [0.156106, 0.156163, 0.156119]     VMAF_vif_scores
 
-        [5 rows x 8 columns]
+        [5 rows x 9 columns]
         :return:
         """
         import pandas as pd
         asset = self.asset
+        executor_id = self.executor_id
         list_scores_key = self._get_list_scores_key()
         list_scores = map(lambda key: self.result_dict[key], list_scores_key)
 
@@ -113,6 +116,7 @@ class Result(object):
                    get_file_name_with_extension(asset.ref_path),
                    get_file_name_with_extension(asset.dis_path),
                    repr(asset),
+                   executor_id,
                    scores_key,
                    scores]
             rows.append(row)
@@ -131,11 +135,40 @@ class Result(object):
         asset_repr = df.iloc[0]['asset']
         asset = Asset.from_repr(asset_repr)
 
+        executor_id = df.iloc[0]['executor_id']
+
         result_dict = {}
         for _, row in df.iterrows():
             result_dict[row['scores_key']] = row['scores']
 
-        return Result(asset, None, result_dict) # TODO
+        return Result(asset, executor_id, result_dict)
+
+    @classmethod
+    def _assert_assert_dataframe(cls, df):
+        """
+        Make sure the input dataframe conforms
+        :param df:
+        :return:
+        """
+        # check columns
+        for col in list(df.columns.values):
+            assert col in cls.DATAFRAME_COLUMNS
+
+        # all rows should have the same dataset, content_id, asset_id, ref_name,
+        # dis_name, asset and executor_id
+        assert len(set(df['dataset'].tolist())) == 1
+        assert len(set(df['content_id'].tolist())) == 1
+        assert len(set(df['asset_id'].tolist())) == 1
+        assert len(set(df['ref_name'].tolist())) == 1
+        assert len(set(df['dis_name'].tolist())) == 1
+        assert len(set(df['asset'].tolist())) == 1
+        assert len(set(df['executor_id'].tolist())) == 1
+
+        # each scores key must have one single row
+        assert len(df) == len(set(df['scores_key'].tolist()))
+
+        # all scores should have equal length
+        assert len(set(map(lambda x:len(x), df['scores'].tolist()))) == 1
 
     def _get_perframe_score_str(self):
         list_scores_key = self._get_list_scores_key()
@@ -200,43 +233,17 @@ class Result(object):
                 return float(sum(scores)) / len(scores)
         raise KeyError(error)
 
-    @classmethod
-    def _assert_assert_dataframe(cls, df):
-        """
-        Make sure the input dataframe conforms
-        :param df:
-        :return:
-        """
-        # check columns
-        for col in list(df.columns.values):
-            assert col in cls.DATAFRAME_COLUMNS
-
-        # all rows should have the same dataset, content_id, asset_id, ref_name,
-        # dis_name, asset
-        assert len(set(df['dataset'].tolist())) == 1
-        assert len(set(df['content_id'].tolist())) == 1
-        assert len(set(df['asset_id'].tolist())) == 1
-        assert len(set(df['ref_name'].tolist())) == 1
-        assert len(set(df['dis_name'].tolist())) == 1
-        assert len(set(df['asset'].tolist())) == 1
-
-        # each scores key must have one single row
-        assert len(df) == len(set(df['scores_key'].tolist()))
-
-        # all scores should have equal length
-        assert len(set(map(lambda x:len(x), df['scores'].tolist()))) == 1
-
-class FileSystemPersistentResult(Result):
-    """
-    Result that is persisted by a simple file-system that save/load result
-    in a directory. The directory has multiple subdirectories, each
-    corresponding to a result generator (e.g. a VMAF feature extractor, or a
-    NO19 feature extractor, or a VMAF quality runner, or a SSIM quality runner).
-    Each subdirectory contains multiple files, each file stores dataframe for
-    an asset, and has file name str(asset).
-    """
-
-    # TODO
-
-    pass
+# class FileSystemPersistentResult(Result):
+#     """
+#     Result that is persisted by a simple file-system that save/load result
+#     in a directory. The directory has multiple subdirectories, each
+#     corresponding to a result generator (e.g. a VMAF feature extractor, or a
+#     NO19 feature extractor, or a VMAF quality runner, or a SSIM quality runner).
+#     Each subdirectory contains multiple files, each file stores dataframe for
+#     an asset, and has file name str(asset).
+#     """
+#
+#     # TODO
+#
+#     pass
 

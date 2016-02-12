@@ -16,12 +16,6 @@ def print_usage():
           + " [fmt] [width] [height] [ref_file] [dis_file]\n"
     print "fmts:\n\t" + "\n\t".join(FMTS) +"\n"
 
-def print_runner_result(runner_cls, rst):
-    print '{type} VERSION {version}'.format(type=runner_cls.TYPE,
-                                            version=runner_cls.VERSION)
-    print str(rst)
-    print ''
-
 if __name__ == "__main__":
 
     if len(sys.argv) < 6:
@@ -57,7 +51,7 @@ if __name__ == "__main__":
     result = runner.results[0]
 
     # output
-    print_runner_result(runner_class, result)
+    print str(result)
 
     # clean up
     runner.remove_logs()
