@@ -23,8 +23,8 @@ class VmafQualityRunner(QualityRunner):
     sys.path.append(config.ROOT + "/libsvm/python")
     import svmutil
 
-    def _asserts(self):
-        super(VmafQualityRunner, self)._asserts()
+    def _assert_assets(self):
+        super(VmafQualityRunner, self)._assert_assets()
         pass
 
     def _run_and_generate_log_file(self, asset):

@@ -2,13 +2,21 @@ __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import os
-
-from common import Parallelizable
+from mixin import WorkdirEnabled
 from tools import get_file_name_without_extension, get_file_name_with_extension, \
     get_unique_str_from_recursive_dict
 import config
 
-class Asset(Parallelizable):
+class Asset(WorkdirEnabled):
+    """
+    Asset provide info about a distored video and its reference video, as well
+    as information on how its quality should be measured (e.g. start/end
+    frames, upscale to what resolution to its quality). It is used as an input
+    to an executor (e.g. a QualityRunner, or a FeatureExtractor). Asset is has
+    a unique working directory to enable thread safety.
+    """
+
+    # ==== constructor ====
 
     def __init__(self, dataset, content_id, asset_id,
                  ref_path, dis_path,
@@ -33,8 +41,26 @@ class Asset(Parallelizable):
         self.asset_dict = asset_dict
 
     @staticmethod
-    def from_dict(asset_dict):
-        return {}
+    def from_repr(rp):
+        """
+        Reconstruct Asset from repr string.
+        :return:
+        """
+        d = eval(rp)
+        assert 'dataset' in d
+        assert 'content_id' in d
+        assert 'asset_id' in d
+        assert 'ref_path' in d
+        assert 'dis_path' in d
+        assert 'asset_dict' in d
+
+        return Asset(dataset=d['dataset'],
+                     content_id=d['content_id'],
+                     asset_id=d['asset_id'],
+                     ref_path=d['ref_path'],
+                     dis_path=d['dis_path'],
+                     asset_dict=d['asset_dict']
+                     )
 
     # ==== width and height ====
 
@@ -239,8 +265,7 @@ class Asset(Parallelizable):
 
     def to_string(self):
         """
-        The unique string representation of asset, used by both __str__ and
-        __repr__.
+        The compact string representation of asset, used by __str__.
         :return:
         """
         s = "{dataset}_{content_id}_{asset_id}_{ref_str}_vs_{dis_str}".\
@@ -300,28 +325,6 @@ class Asset(Parallelizable):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    @staticmethod
-    def from_repr(rp):
-        """
-        Reconstruct Asset from repr string.
-        :return:
-        """
-        d = eval(rp)
-        assert 'dataset' in d
-        assert 'content_id' in d
-        assert 'asset_id' in d
-        assert 'ref_path' in d
-        assert 'dis_path' in d
-        assert 'asset_dict' in d
-
-        return Asset(dataset=d['dataset'],
-                     content_id=d['content_id'],
-                     asset_id=d['asset_id'],
-                     ref_path=d['ref_path'],
-                     dis_path=d['dis_path'],
-                     asset_dict=d['asset_dict']
-                     )
-
     # ==== workfile ====
 
     @property
@@ -361,6 +364,8 @@ class Asset(Parallelizable):
                    / self.dis_duration_sec * 8.0 / 1000.0
         except:
             return None
+
+    # ==== yuv format ====
 
     @property
     def yuv_type(self):

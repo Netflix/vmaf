@@ -7,7 +7,8 @@ from asset import Asset
 
 class Result(object):
     """
-    Stores read-only result generated on an Asset by a Executor.
+    Dictionary-like object that stores read-only result generated on an Asset
+    by a Executor.
     """
     DATAFRAME_COLUMNS = (  'dataset',
                            'content_id',
@@ -55,15 +56,13 @@ class Result(object):
             return self._try_get_aggregate_score(key, e)
 
     def to_string(self):
-        str_perframe = self._get_perframe_score_str()
-        str_aggregate = self._get_aggregate_score_str()
         s = ""
-        s += 'Asset: '
-        s += self.asset.to_full_repr() + '\n' # unlike repr(asset), print workdir
+        s += 'Asset: {}\n'.format( # unlike repr(asset), print workdir
+            self.asset.to_full_repr())
         s += 'Executor: {}\n'.format(self.executor_id)
         s += 'Result:\n'
-        s += str_perframe
-        s += str_aggregate
+        s += self._get_perframe_score_str()
+        s += self._get_aggregate_score_str()
         return s
 
     def to_dataframe(self):
@@ -130,7 +129,7 @@ class Result(object):
     def from_dataframe(cls, df):
 
         # first, make sure the df conform to the format for a single asset
-        cls._assert_assert_dataframe(df)
+        cls._assert_asset_dataframe(df)
 
         asset_repr = df.iloc[0]['asset']
         asset = Asset.from_repr(asset_repr)
@@ -144,9 +143,9 @@ class Result(object):
         return Result(asset, executor_id, result_dict)
 
     @classmethod
-    def _assert_assert_dataframe(cls, df):
+    def _assert_asset_dataframe(cls, df):
         """
-        Make sure the input dataframe conforms
+        Make sure that the input dataframe conforms w.r.t. an asset
         :param df:
         :return:
         """
@@ -233,17 +232,23 @@ class Result(object):
                 return float(sum(scores)) / len(scores)
         raise KeyError(error)
 
-# class FileSystemPersistentResult(Result):
-#     """
-#     Result that is persisted by a simple file-system that save/load result
-#     in a directory. The directory has multiple subdirectories, each
-#     corresponding to a result generator (e.g. a VMAF feature extractor, or a
-#     NO19 feature extractor, or a VMAF quality runner, or a SSIM quality runner).
-#     Each subdirectory contains multiple files, each file stores dataframe for
-#     an asset, and has file name str(asset).
-#     """
-#
-#     # TODO
-#
-#     pass
+class PersistentResultStore(object):
+    """
+    Provide capability to save and load a Result.
+    """
+    # TODO
+    pass
+
+class FileSystemPersistentResultStore(PersistentResultStore):
+    """
+    persist result by a simple file-system that save/load result in a directory.
+    The directory has multiple subdirectories, each corresponding to a result
+    generator (e.g. a VMAF feature extractor, or a NO19 feature extractor, or a
+    VMAF quality runner, or a SSIM quality runner). Each subdirectory contains
+    multiple files, each file stores dataframe for an asset, and has file name
+    str(asset).
+    """
+    # TODO
+    pass
+
 
