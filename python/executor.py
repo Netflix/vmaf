@@ -154,8 +154,9 @@ class Executor(TypeVersionEnabled):
                         pass
 
     def _get_log_file_path(self, asset):
-        return "{dir}/{type}/{str}".format(dir=self.log_file_dir,
-                                           type=self.TYPE, str=str(asset))
+        return "{dir}/{executor_id}/{str}".format(dir=self.log_file_dir,
+                                                  executor_id=self.executor_id,
+                                                  str=str(asset))
 
     # ===== workfile =====
 
