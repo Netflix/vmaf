@@ -30,16 +30,16 @@ class FeatureExtractorTest(unittest.TestCase):
                       asset_dict={'width':720, 'height':480,
                                   'start_frame':2, 'end_frame':2})
 
-        runner = VmafFeatureExtractor([asset], None,
+        fextractor = VmafFeatureExtractor([asset], None,
                                    log_file_dir="log_file_dir",
                                    fifo_mode=True)
-        log_file_path = runner._get_log_file_path(asset)
+        log_file_path = fextractor._get_log_file_path(asset)
         expected_log_file_path = \
             "log_file_dir/VMAF_feature_V0.1/test_0_1_refvideo_720x480_2to2_vs_" \
             "disvideo_720x480_2to2_q_720x480"
         self.assertEquals(log_file_path, expected_log_file_path)
 
-    def test_run_vamf_runner(self):
+    def test_run_vamf_fextractor(self):
         print 'test on running VMAF feature extractor...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
@@ -115,8 +115,8 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, 'fextractors'):
-            for fextractor in self.fextractors:
-                fextractor.remove_logs()
+            for fextractor in self.fextractors: fextractor.remove_logs()
+            pass
 
     def test_run_parallel_vamf_fextractor(self):
         print 'test on running VMAF feature extractor in parallel...'
@@ -134,13 +134,13 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
 
-        self.runners, results = run_executors_in_parallel(
+        self.fextractors, results = run_executors_in_parallel(
             VmafFeatureExtractor,
             [asset, asset_original],
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
             delete_workdir=True,
-            parallelize=False)
+            parallelize=True)
 
         self.assertEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)
         self.assertEqual(results[0]['VMAF_feature_motion_score'], 3.5916076041666667)

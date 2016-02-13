@@ -100,8 +100,8 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, 'runners'):
-            for runner in self.runners:
-                runner.remove_logs()
+            for runner in self.runners: runner.remove_logs()
+            pass
 
     def test_run_parallel_vamf_runner(self):
         print 'test on running VMAF quality runner in parallel...'
@@ -125,7 +125,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
             delete_workdir=True,
-            parallelize=False)
+            parallelize=True)
 
         self.assertEqual(results[0]['VMAF_score'], 60.268970069698035)
         self.assertEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)

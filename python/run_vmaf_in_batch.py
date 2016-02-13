@@ -8,7 +8,7 @@ import sys
 import re
 from asset import Asset
 import config
-from quality_runner import run_quality_runners_in_parallel
+from executor import run_executors_in_parallel
 from vmaf_quality_runner import VmafQualityRunner
 
 FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
@@ -75,7 +75,7 @@ if __name__ == "__main__":
                       delete_workdir=True).remove_logs()
 
     # run
-    runners, results = run_quality_runners_in_parallel(
+    runners, results = run_executors_in_parallel(
         runner_class,
         assets,
         log_file_dir=config.ROOT + "/workspace/log_file_dir",
