@@ -47,7 +47,7 @@ class Executor(TypeVersionEnabled):
                 "run and generate {type} log file...".format(type=self.TYPE))
 
         # run generate_log_file on each asset
-        map(self._run_and_generate_log_file_wrapper, self.assets)
+        map(self._run_on_asset, self.assets)
 
         if self.logger:
             self.logger.info("Read {type} log file, get quality scores...".
@@ -97,7 +97,7 @@ class Executor(TypeVersionEnabled):
             log_file.write("{type} VERSION {version}\n\n".format(
                 type=self.TYPE, version=self.VERSION))
 
-    def _run_and_generate_log_file_wrapper(self, asset):
+    def _run_on_asset(self, asset):
         """
         Wraper around the essential function _run_and_generate_log_file, to
         do housekeeping work including 1) asserts of asset, 2) skip run if
@@ -222,3 +222,56 @@ class Executor(TypeVersionEnabled):
         if os.path.exists(path):
             os.remove(path)
 
+def run_executors_in_parallel(executor_class,
+                                    assets,
+                                    log_file_dir=config.ROOT + "/workspace/log_file_dir",
+                                    fifo_mode=True,
+                                    delete_workdir=True,
+                                    parallelize=True,
+                                    logger=None
+                                    ):
+    """
+    Run multiple Executors in parallel.
+    :param executor_class:
+    :param assets:
+    :param log_file_dir:
+    :param fifo_mode:
+    :param delete_workdir:
+    :param parallelize:
+    :return:
+    """
+
+    def run_executor(args):
+        executor_class, asset, log_file_dir, fifo_mode, delete_workdir = args
+        executor = executor_class(
+            [asset], None, log_file_dir, fifo_mode, delete_workdir)
+        executor.run()
+        return executor
+
+    # pack key arguments to be used as inputs to map function
+    list_args = []
+    for asset in assets:
+        list_args.append(
+            [executor_class, asset, log_file_dir, fifo_mode, delete_workdir])
+
+    # map arguments to func
+    if parallelize:
+        try:
+            from pathos.pp_map import pp_map
+            executors = pp_map(run_executor, list_args)
+        except ImportError:
+            # fall back
+            msg = "pathos.pp_map cannot be imported, fall back to sequential " \
+                  "map(). Install pathos by: \npip install pathos"
+            if logger:
+                logger.warn(msg)
+            else:
+                print 'Warn: {}'.format(msg)
+            executors = map(run_executor, list_args)
+    else:
+        executors = map(run_executor, list_args)
+
+    # aggregate results
+    results = [executor.results[0] for executor in executors]
+
+    return executors, results
