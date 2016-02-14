@@ -67,6 +67,7 @@ class Asset(WorkdirEnabled):
     @property
     def ref_width_height(self):
         """
+        Width and height of reference video.
         :return: width and height of reference video. If None, it signals that
         width and height should be figured out in other means (e.g. FFMPEG).
         """
@@ -84,6 +85,7 @@ class Asset(WorkdirEnabled):
     @property
     def dis_width_height(self):
         """
+        Width and height of distorted video.
         :return: width and height of distorted video. If None, it signals that
         width and height should be figured out in other means (e.g. FFMPEG)
         """
@@ -101,6 +103,7 @@ class Asset(WorkdirEnabled):
     @property
     def quality_width_height(self):
         """
+        Width and height to scale distorted video to before quality calculation.
         :return: width and height at which the quality is measured at. either
         'quality_width' and 'quality_height' have to present in asset_dict,
         or ref and dis's width and height must be equal, which will be used
@@ -122,6 +125,7 @@ class Asset(WorkdirEnabled):
     @property
     def ref_start_end_frame(self):
         """
+        Start and end frame of reference video for quality calculation.
         :return: reference video's start frame and end frame for processing
         (inclusive). If None, it signals that the entire video should be
         processed.
@@ -154,6 +158,7 @@ class Asset(WorkdirEnabled):
     @property
     def dis_start_end_frame(self):
         """
+        Start and end frame of distorted video for quality calculation.
         :return: distorted video's start frame and end frame for processing
         (inclusive). If None, it signals that the entire video should be
         processed.
@@ -187,6 +192,10 @@ class Asset(WorkdirEnabled):
 
     @property
     def ref_duration_sec(self):
+        """
+        Reference video's duration in second used in quality calculation.
+        :return:
+        """
         if 'duration_sec' in self.asset_dict:
             return self.asset_dict['duration_sec']
         elif 'start_sec' in self.asset_dict \
@@ -202,6 +211,10 @@ class Asset(WorkdirEnabled):
 
     @property
     def dis_duration_sec(self):
+        """
+        Distorted video's duration in second used in quality calculation.
+        :return:
+        """
         if 'duration_sec' in self.asset_dict:
             return self.asset_dict['duration_sec']
         elif 'start_sec' in self.asset_dict \
@@ -220,6 +233,10 @@ class Asset(WorkdirEnabled):
 
     @property
     def ref_str(self):
+        """
+        String representation for reference video.
+        :return:
+        """
         s = ""
 
         path = get_file_name_without_extension(self.ref_path)
@@ -237,6 +254,10 @@ class Asset(WorkdirEnabled):
 
     @property
     def dis_str(self):
+        """
+        String representation for distorted video.
+        :return:
+        """
         s = ""
 
         path = get_file_name_without_extension(self.dis_path)
@@ -253,6 +274,10 @@ class Asset(WorkdirEnabled):
 
     @property
     def quality_str(self):
+        """
+        String representation for quality-related information
+        :return:
+        """
         s = ""
 
         if self.quality_width_height:
@@ -371,11 +396,13 @@ class Asset(WorkdirEnabled):
     def yuv_type(self):
         """
         Assuming ref/dis files are both YUV and the same type, return the type
-        (yuv420p, yuv422p, yuv444p)
+        (yuv420p, yuv422p, yuv444p, yuv420p10le, yuv422p10le, yuv444p10le)
         :return:
         """
         if 'yuv_type' in self.asset_dict:
-            if self.asset_dict['yuv_type'] in ['yuv420p', 'yuv422p', 'yuv444p']:
+            if self.asset_dict['yuv_type'] in ['yuv420p', 'yuv422p', 'yuv444p',
+                                               'yuv420p10le', 'yuv422p10le',
+                                               'yuv444p10le']:
                 return self.asset_dict['yuv_type']
             else:
                 assert False, "Unknown YUV type: {}".format(

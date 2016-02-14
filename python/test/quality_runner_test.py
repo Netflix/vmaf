@@ -96,6 +96,8 @@ class QualityRunnerTest(unittest.TestCase):
                 None, fifo_mode=True,
                 log_file_dir=config.ROOT + "/workspace/log_file_dir")
 
+
+
 class ParallelQualityRunnerTest(unittest.TestCase):
 
     def tearDown(self):

@@ -7,20 +7,13 @@ VMAF is a software package developed by Netflix Inc. containing tools for percep
 
 The VMAF package has its core feature extraction library written in C, and the rest glue code written in Python. It also incorporates an external C++ library named libsvm. To build the C/C++ code, it requires cc and g++. To run commands, it requires Python 2 installed.
 
-(Optional) To perform VMAF computation in parallel on multiple reference/distorted video pairs, you will need a Python package named [pathos](https://pypi.python.org/pypi/pathos) (>= 0.1a1). For example, run_vmaf_in_batch will execute VMAF in parallel if it detects that pathos is installed; otherwise, it will fall back to sequential execution. To install pathos, on Ubuntu, run (assuming pip pre-installed):
-
-`pip install pathos`
-
-(Optional) The VMAF training/testing framework requires a Python data processing package named [pandas](http://pandas.pydata.org/) (>= 0.13.1). To install pandas, on Ubuntu, run:
-
-`pip install pandas`
-
 ##Installation
+
 After cloning VMAF repo to local, cd to the repo directory and run:
 
 `make`
 
-There is a subdirectory named python. Add the python subdirectory to PYTHONPATH:
+There is a subdirectory named python. Add the python subdirectory to the environment variable PYTHONPATH:
 
 `export PYTHONPATH=[path_to_repo_dir]/python:$PYTHONPATH`
 
@@ -31,6 +24,22 @@ The package has thus far been tested in Ubuntu 14.04 LTS.
 After installation, run:
 
 `./test`
+
+##Optional Installation
+
+To perform VMAF computation in parallel on multiple reference/distorted video pairs, you will need a Python package named [pathos](https://pypi.python.org/pypi/pathos) (>= 0.1a1). For example, run_vmaf_in_batch will execute VMAF in parallel if it detects that pathos is installed; otherwise, it will fall back to sequential execution. To install pathos, on Ubuntu, run (assuming pip pre-installed):
+
+`pip install pathos`
+
+The VMAF training/testing framework requires a Python data processing package named [pandas](http://pandas.pydata.org/) (>= 0.13.1). To install pandas, on Ubuntu, run:
+
+`pip install pandas`
+
+<!--
+To call command-line quality metric executables available in [Daala codec](https://github.com/xiph/daala) from Python code (e.g. call AwcySsimQualityRunner), clone Daala source repo and build locally, and then add the directory where the executables sit to the environment variable DAALATOOLSPATH:
+
+`export DAALATOOLSPATH=[path_to_daala_codec_repo_dir]/tools`
+-->
 
 ##Execution
 

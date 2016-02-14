@@ -30,7 +30,18 @@ class ResultTest(unittest.TestCase):
         pass
 
     def test_todataframe_fromdataframe(self):
-        import numpy as np
+        try:
+            import pandas as pd
+        except ImportError:
+            print 'Warning: import pandas fails. Skip test.'
+            return
+
+        try:
+            import numpy as np
+        except ImportError:
+            print 'Warning: import numpy fails. Skip test.'
+            return
+
         print 'test on result to/from dataframe...'
         df = self.result.to_dataframe()
         df_vmaf = df.loc[df['scores_key'] == 'VMAF_scores']

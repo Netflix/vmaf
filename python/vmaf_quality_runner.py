@@ -1,7 +1,6 @@
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
-import re
 import sys
 import config
 from quality_runner import QualityRunner
