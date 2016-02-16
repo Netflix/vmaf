@@ -4,7 +4,7 @@ __license__ = "Apache, Version 2.0"
 import sys
 import config
 from quality_runner import QualityRunner
-from functools import partial
+import numpy as np
 from vmaf_feature_extractor import VmafFeatureExtractor
 
 class VmafQualityRunner(QualityRunner):
@@ -14,7 +14,7 @@ class VmafQualityRunner(QualityRunner):
 
     SVM_MODEL_FILE = config.ROOT + "/resource/model/model_V8a.model"
 
-    FEAT_RESCALE = {'vif': (0.0, 1.0), 'adm': (0.4, 1.0),
+    FEATURE_RESCALE = {'vif': (0.0, 1.0), 'adm': (0.4, 1.0),
                     'ansnr': (10.0, 50.0), 'motion': (0.0, 20.0)}
 
     sys.path.append(config.ROOT + "/libsvm/python")
@@ -40,17 +40,19 @@ class VmafQualityRunner(QualityRunner):
         vmaf_fextractor.run()
         feature_result = vmaf_fextractor.results[0]
 
+        assert feature_result.asset == asset
+
         # SVR predict
         model = self.svmutil.svm_load_model(self.SVM_MODEL_FILE)
 
         scaled_vif_scores = self._rescale(
-            feature_result[vmaf_fextractor.TYPE + '_vif_scores'], self.FEAT_RESCALE['vif'])
+            feature_result[vmaf_fextractor.TYPE + '_vif_scores'], self.FEATURE_RESCALE['vif'])
         scaled_adm_scores = self._rescale(
-            feature_result[vmaf_fextractor.TYPE + '_adm_scores'], self.FEAT_RESCALE['adm'])
+            feature_result[vmaf_fextractor.TYPE + '_adm_scores'], self.FEATURE_RESCALE['adm'])
         scaled_ansnr_scores = self._rescale(
-            feature_result[vmaf_fextractor.TYPE + '_ansnr_scores'], self.FEAT_RESCALE['ansnr'])
+            feature_result[vmaf_fextractor.TYPE + '_ansnr_scores'], self.FEATURE_RESCALE['ansnr'])
         scaled_motion_scores = self._rescale(
-            feature_result[vmaf_fextractor.TYPE + '_motion_scores'], self.FEAT_RESCALE['motion'])
+            feature_result[vmaf_fextractor.TYPE + '_motion_scores'], self.FEATURE_RESCALE['motion'])
 
         scores = []
         for vif, adm, ansnr, motion in zip(scaled_vif_scores,
@@ -92,31 +94,11 @@ class VmafQualityRunner(QualityRunner):
 
     @classmethod
     def _rescale(cls, vals, lower_upper_bound):
-        # import numpy as np
-        # lower_bound, upper_bound = lower_upper_bound
-        # vals = np.double(vals)
-        # vals = np.clip(vals, lower_bound, upper_bound)
-        # vals = (vals - lower_bound)/(upper_bound - lower_bound)
-        # return vals
-        # avoid dependency on numpy here:
-        _rescale_scaler_partial = \
-            partial(cls._rescale_scalar,
-                    lower_upper_bound=lower_upper_bound)
-        return map(_rescale_scaler_partial, vals)
-
-    @staticmethod
-    def _rescale_scalar(val, lower_upper_bound):
-        """
-        Scalar version of _rescale.
-        :param val:
-        :param lower_upper_bound:
-        :return:
-        """
         lower_bound, upper_bound = lower_upper_bound
-        val = val if val > lower_bound else lower_bound
-        val = val if val < upper_bound else upper_bound
-        val = (float(val) - lower_bound) / (upper_bound - lower_bound)
-        return val
+        vals = np.double(vals)
+        vals = np.clip(vals, lower_bound, upper_bound)
+        vals = (vals - lower_bound)/(upper_bound - lower_bound)
+        return vals
 
     def _get_quality_scores(self, asset):
         """

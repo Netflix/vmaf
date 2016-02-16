@@ -42,7 +42,6 @@ class Executor(TypeVersionEnabled):
         return TypeVersionEnabled.get_type_version_string(self)
 
     def run(self):
-
         if self.logger:
             self.logger.info(
                 "For each asset, if {id} result has not been generated, "

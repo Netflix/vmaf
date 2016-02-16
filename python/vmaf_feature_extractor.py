@@ -1,17 +1,18 @@
+__copyright__ = "Copyright 2016, Netflix, Inc."
+__license__ = "Apache, Version 2.0"
+
 import os
 import re
 import subprocess
 import config
 from feature_extractor import FeatureExtractor
 
-__copyright__ = "Copyright 2016, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
-
-
 class VmafFeatureExtractor(FeatureExtractor):
 
     TYPE = "VMAF_feature"
     VERSION = '0.1'
+
+    ATOM_FEATURES = {'vif', 'adm', 'ansnr', 'motion'}
 
     VMAF_FEATURE = config.ROOT + "/feature/vmaf"
 

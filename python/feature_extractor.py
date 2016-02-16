@@ -3,16 +3,6 @@ __license__ = "Apache, Version 2.0"
 
 from executor import Executor
 from result import Result
-import config
-
-class FeatureAssembler(object):
-    """
-    Assembles features for a input list of Assets on a input list of
-    FeatureExtractors, by either retrieve them from a ResultStore, or by
-    executing the FeatureExtractors.
-    """
-    # TODO
-    pass
 
 class FeatureExtractor(Executor):
     """
@@ -26,3 +16,4 @@ class FeatureExtractor(Executor):
         result = {}
         result.update(self._get_feature_scores(asset))
         return Result(asset, self.executor_id, result)
+

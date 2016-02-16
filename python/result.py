@@ -257,7 +257,7 @@ class ResultStore(object):
 
 class FileSystemResultStore(ResultStore):
     """
-    persist result by a simple file-system that save/load result in a directory.
+    persist result by a simple file system that save/load result in a directory.
     The directory has multiple subdirectories, each corresponding to a result
     generator (e.g. a VMAF feature extractor, or a NO19 feature extractor, or a
     VMAF quality runner, or a SSIM quality runner). Each subdirectory contains
@@ -314,3 +314,9 @@ class FileSystemResultStore(ResultStore):
         return "{dir}/{executor_id}/{str}".format(dir=self.result_store_dir,
                                                   executor_id=executor_id,
                                                   str=str(asset))
+
+class SqliteResultStore(ResultStore):
+    """
+    persist result by a SQLite engine that save/load result.
+    """
+    pass

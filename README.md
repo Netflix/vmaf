@@ -25,6 +25,8 @@ After installation, run:
 
 `./test`
 
+If you see warning messages, some tests have been skipped due to missing packages. You can resolve the warning messages by following the Optional Installation instructions below.
+
 ##Optional Installation
 
 To perform VMAF computation in parallel on multiple reference/distorted video pairs, you will need a Python package named [pathos](https://pypi.python.org/pypi/pathos) (>= 0.1a1). For example, run_vmaf_in_batch will execute VMAF in parallel if it detects that pathos is installed; otherwise, it will fall back to sequential execution. To install pathos, on Ubuntu, run (assuming pip pre-installed):
@@ -47,7 +49,7 @@ where format is among yuv420p, yuv422p, yuv444p (YUV 8-bit) and yuv420p10le, yuv
 
 For example:
 
-`./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc00_576x324.yuv`
+`./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv`
 
 To run VMAF in batch mode, create an input text file with each line of format (check examples in example_batch_input):
 
