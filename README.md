@@ -35,12 +35,6 @@ The VMAF training/testing framework requires a Python data processing package na
 
 `pip install pandas`
 
-<!--
-To call command-line quality metric executables available in [Daala codec](https://github.com/xiph/daala) from Python code (e.g. call AwcySsimQualityRunner), clone Daala source repo and build locally, and then add the directory where the executables sit to the environment variable DAALATOOLSPATH:
-
-`export DAALATOOLSPATH=[path_to_daala_codec_repo_dir]/tools`
--->
-
 ##Execution
 
 There are two execution modes to run VMAF -- single mode and batch mode.

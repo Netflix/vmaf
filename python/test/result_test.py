@@ -1,12 +1,11 @@
-from asset import Asset
-import config
-from result import Result
-from vmaf_quality_runner import VmafQualityRunner
-
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import unittest
+from asset import Asset
+import config
+from result import Result, FileSystemResultStore
+from vmaf_quality_runner import VmafQualityRunner
 
 class ResultTest(unittest.TestCase):
 
@@ -106,6 +105,41 @@ class ResultTest(unittest.TestCase):
             self.result._get_aggregate_score_str(),
             'Aggregate: VMAF_feature_adm_score:0.814, VMAF_feature_ansnr_score:12.418, VMAF_feature_motion_score:12.344, VMAF_feature_vif_score:0.156, VMAF_score:43.461'
         )
+
+class ResultStoreTest(unittest.TestCase):
+
+    def setUp(self):
+        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':1920, 'height':1080})
+
+        self.runner = VmafQualityRunner(
+            [asset], None, fifo_mode=True,
+            log_file_dir=config.ROOT + "/workspace/log_file_dir")
+        self.runner.run()
+        self.result = self.runner.results[0]
+
+    def tearDown(self):
+        if hasattr(self, 'runner'): self.runner.remove_logs()
+        if hasattr(self, 'result') and hasattr(self, 'result_store'):
+            self.result_store.delete(self.result.asset, self.result.executor_id)
+        pass
+
+    def test_file_system_result_store_save_load(self):
+        print 'test on file system result store save and load...'
+        self.result_store = FileSystemResultStore(logger=None)
+        asset = self.result.asset
+        executor_id = self.result.executor_id
+
+        self.result_store.save(self.result)
+
+        loaded_result = self.result_store.load(asset, executor_id)
+
+        self.assertEquals(self.result, loaded_result)
 
 if __name__ == '__main__':
     unittest.main()

@@ -46,7 +46,8 @@ class Asset(WorkdirEnabled):
         Reconstruct Asset from repr string.
         :return:
         """
-        d = eval(rp)
+        import ast
+        d = ast.literal_eval(rp)
         assert 'dataset' in d
         assert 'content_id' in d
         assert 'asset_id' in d
