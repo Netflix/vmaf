@@ -298,7 +298,7 @@ class FileSystemResultStore(ResultStore):
 
     def clean_up(self):
         """
-        WARNING: USE WITH CAUTION!!!
+        WARNING: RMOVE ENTIRE RESULT STORE, USE WITH CAUTION!!!
         :return:
         """
         import shutil

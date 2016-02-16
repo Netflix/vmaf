@@ -44,7 +44,10 @@ if __name__ == "__main__":
 
     runner = runner_class(
         assets, None, fifo_mode=True,
-        log_file_dir=config.ROOT + "/workspace/log_file_dir")
+        log_file_dir=config.ROOT + "/workspace/log_file_dir",
+        delete_workdir=True,
+        result_store=None
+    )
 
     # run
     runner.run()

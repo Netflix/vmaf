@@ -69,10 +69,12 @@ if __name__ == "__main__":
 
     # construct an VmafQualityRunner object to assert assets, and to remove logs
     runner_class(assets,
-                      None,
-                      log_file_dir=config.ROOT + "/workspace/log_file_dir",
-                      fifo_mode=True,
-                      delete_workdir=True).remove_logs()
+                 None,
+                 log_file_dir=config.ROOT + "/workspace/log_file_dir",
+                 fifo_mode=True,
+                 delete_workdir=True,
+                 result_store=None,
+                 ).remove_logs()
 
     # run
     runners, results = run_executors_in_parallel(
@@ -81,7 +83,9 @@ if __name__ == "__main__":
         log_file_dir=config.ROOT + "/workspace/log_file_dir",
         fifo_mode=True,
         delete_workdir=True,
-        parallelize=True)
+        parallelize=True,
+        result_store=None,
+    )
 
     # output
     for result in results:

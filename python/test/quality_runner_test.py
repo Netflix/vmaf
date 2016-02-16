@@ -1,11 +1,13 @@
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
+import os
 import unittest
 from asset import Asset
 from vmaf_quality_runner import VmafQualityRunner
 from executor import run_executors_in_parallel
 import config
+from result import FileSystemResultStore
 
 class QualityRunnerTest(unittest.TestCase):
 
@@ -17,9 +19,7 @@ class QualityRunnerTest(unittest.TestCase):
         asset = Asset(dataset="test", content_id=0, asset_id=1,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
                       asset_dict={})
-        runner = VmafQualityRunner([asset], None,
-                                   log_file_dir="log_file_dir",
-                                   fifo_mode=True)
+        runner = VmafQualityRunner([asset], None)
         self.assertEquals(runner.executor_id, 'VMAF_V0.1')
 
     def test_run_vamf_runner(self):
@@ -41,9 +41,63 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner = VmafQualityRunner(
             [asset, asset_original],
             None, fifo_mode=True,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir")
+            log_file_dir=config.ROOT + "/workspace/log_file_dir",
+            delete_workdir=True,
+            result_store=None
+        )
         self.runner.run()
 
+        results = self.runner.results
+
+        self.assertEqual(results[0]['VMAF_score'], 60.268970069698035)
+        self.assertEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)
+        self.assertEqual(results[0]['VMAF_feature_motion_score'], 3.5916076041666667)
+        self.assertEqual(results[0]['VMAF_feature_adm_score'], 0.91552422916666665)
+        self.assertEqual(results[0]['VMAF_feature_ansnr_score'], 22.533456770833329)
+
+        self.assertEqual(results[1]['VMAF_score'], 95.65756240092573)
+        self.assertEqual(results[1]['VMAF_feature_vif_score'], 1.0)
+        self.assertEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
+        self.assertEqual(results[1]['VMAF_feature_adm_score'], 1.0)
+        self.assertEqual(results[1]['VMAF_feature_ansnr_score'], 30.030914145833322)
+
+    def test_run_vamf_runner_with_result_store(self):
+        print 'test on running VMAF runner with result store...'
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        result_store = FileSystemResultStore(logger=None)
+
+        self.runner = VmafQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            log_file_dir=config.ROOT + "/workspace/log_file_dir",
+            delete_workdir=True,
+            result_store=result_store
+        )
+
+        print '    running for the first time with fresh calculation...'
+        self.runner.run()
+        result0, result1 = self.runner.results
+
+        # NOTE: since stored results are actually VMAF_feature's not VMAF's,
+        # the two paths below shouldn't exist
+        self.assertFalse(os.path.exists(result_store._get_result_file_path(result0)))
+        self.assertFalse(os.path.exists(result_store._get_result_file_path(result1)))
+
+        print '    running for the second time with stored results...'
+        self.runner.run()
         results = self.runner.results
 
         self.assertEqual(results[0]['VMAF_score'], 60.268970069698035)
@@ -96,8 +150,6 @@ class QualityRunnerTest(unittest.TestCase):
                 None, fifo_mode=True,
                 log_file_dir=config.ROOT + "/workspace/log_file_dir")
 
-
-
 class ParallelQualityRunnerTest(unittest.TestCase):
 
     def tearDown(self):
@@ -127,7 +179,9 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
             delete_workdir=True,
-            parallelize=True)
+            parallelize=True,
+            result_store=None
+        )
 
         self.assertEqual(results[0]['VMAF_score'], 60.268970069698035)
         self.assertEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)

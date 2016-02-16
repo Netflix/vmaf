@@ -20,7 +20,9 @@ class ResultTest(unittest.TestCase):
 
         self.runner = VmafQualityRunner(
             [asset], None, fifo_mode=True,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir")
+            log_file_dir=config.ROOT + "/workspace/log_file_dir",
+            delete_workdir=True, result_store=None,
+        )
         self.runner.run()
         self.result = self.runner.results[0]
 
@@ -119,7 +121,9 @@ class ResultStoreTest(unittest.TestCase):
 
         self.runner = VmafQualityRunner(
             [asset], None, fifo_mode=True,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir")
+            log_file_dir=config.ROOT + "/workspace/log_file_dir",
+            delete_workdir=True, result_store=None,
+        )
         self.runner.run()
         self.result = self.runner.results[0]
 

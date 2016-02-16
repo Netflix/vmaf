@@ -26,10 +26,5 @@ class QualityRunner(Executor):
 
         result = {}
         result.update(self._get_quality_scores(asset))
-
-        # # add dis video file bitrate (must be an entire file)
-        # dis_bitrate_kbps = asset.dis_bitrate_kbps_for_entire_file
-        # dis_bitrate_key = "dis_bitrate_kbps"
-        # result[dis_bitrate_key] = dis_bitrate_kbps
-
         return Result(asset, self.executor_id, result)
+

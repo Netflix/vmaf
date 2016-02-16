@@ -1,11 +1,10 @@
+__copyright__ = "Copyright 2016, Netflix, Inc."
+__license__ = "Apache, Version 2.0"
+
 import multiprocessing
 import os
 import subprocess
 from tools import make_parent_dirs_if_nonexist, get_dir_without_last_slash
-
-__copyright__ = "Copyright 2016, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
-
 from mixin import TypeVersionEnabled
 import config
 
@@ -20,9 +19,11 @@ class Executor(TypeVersionEnabled):
     def __init__(self,
                  assets,
                  logger,
-                 log_file_dir= config.ROOT + "/workspace/log_file_dir",
+                 log_file_dir=config.ROOT + "/workspace/log_file_dir",
                  fifo_mode=True,
-                 delete_workdir=True):
+                 delete_workdir=True,
+                 result_store=None,
+                 ):
 
         TypeVersionEnabled.__init__(self)
 
@@ -32,6 +33,7 @@ class Executor(TypeVersionEnabled):
         self.fifo_mode = fifo_mode
         self.delete_workdir = delete_workdir
         self.results = []
+        self.result_store = result_store
 
         self._assert_assets()
 
@@ -43,24 +45,21 @@ class Executor(TypeVersionEnabled):
 
         if self.logger:
             self.logger.info(
-                "For each asset, if {type} log has not been generated, "
-                "run and generate {type} log file...".format(type=self.TYPE))
+                "For each asset, if {id} result has not been generated, "
+                "run and generate {id} result...".format(type=self.executor_id))
 
         # run generate_log_file on each asset
-        map(self._run_on_asset, self.assets)
-
-        if self.logger:
-            self.logger.info("Read {type} log file, get quality scores...".
-                             format(type=self.TYPE))
-
-        # collect result from each asset's log file
-        results = map(self._read_result, self.assets)
+        results = map(self._run_on_asset, self.assets)
 
         self.results = results
 
     def remove_logs(self):
         for asset in self.assets:
             self._remove_log(asset)
+
+    def remove_results(self):
+        for asset in self.assets:
+            self._remove_result(asset)
 
     def _assert_assets(self):
 
@@ -88,7 +87,7 @@ class Executor(TypeVersionEnabled):
         # if parent dir doesn't exist, create
         make_parent_dirs_if_nonexist(log_file_path)
 
-        # touch (to start with a clean co)
+        # touch (to start with a clean file)
         with open(log_file_path, 'wt'):
             pass
 
@@ -109,15 +108,20 @@ class Executor(TypeVersionEnabled):
         # asserts
         self._assert_an_asset(asset)
 
-        log_file_path = self._get_log_file_path(asset)
-
-        if os.path.isfile(log_file_path):
-            if self.logger:
-                self.logger.info(
-                    '{type} log {log_file_path} exists. Skip {type} '
-                    'run.'.format(type=self.TYPE,
-                                  log_file_path=log_file_path))
+        if self.result_store:
+            result = self.result_store.load(asset, self.executor_id)
         else:
+            result = None
+
+        if result is not None:
+            if self.logger:
+                self.logger.info('{id} result exists. Skip {id} run.'.
+                                 format(id=self.executor_id))
+        else:
+            if self.logger:
+                self.logger.info('{id} result does\'t exist. Perform {id} '
+                                 'calculation.'.format(id=self.executor_id))
+
             # remove workfiles if exist (do early here to avoid race condition
             # when ref path and dis path have some overlap)
             self._close_ref_workfile(asset)
@@ -152,6 +156,19 @@ class Executor(TypeVersionEnabled):
                     if e.errno == 2: # [Errno 2] No such file or directory
                         # already removed by os.rmdir(ref_dir)
                         pass
+
+            if self.logger:
+                self.logger.info("Read {id} log file, get scores...".
+                                 format(type=self.executor_id))
+
+            # collect result from each asset's log file
+            result = self._read_result(asset)
+
+            # save result
+            if self.result_store:
+                self.result_store.save(result)
+
+        return result
 
     def _get_log_file_path(self, asset):
         return "{dir}/{executor_id}/{str}".format(dir=self.log_file_dir,
@@ -222,14 +239,19 @@ class Executor(TypeVersionEnabled):
         if os.path.exists(path):
             os.remove(path)
 
+    def _remove_result(self, asset):
+        if self.result_store:
+            self.result_store.delete(asset, self.executor_id)
+
 def run_executors_in_parallel(executor_class,
-                                    assets,
-                                    log_file_dir=config.ROOT + "/workspace/log_file_dir",
-                                    fifo_mode=True,
-                                    delete_workdir=True,
-                                    parallelize=True,
-                                    logger=None
-                                    ):
+                              assets,
+                              log_file_dir=config.ROOT + "/workspace/log_file_dir",
+                              fifo_mode=True,
+                              delete_workdir=True,
+                              parallelize=True,
+                              logger=None,
+                              result_store=None,
+                              ):
     """
     Run multiple Executors in parallel.
     :param executor_class:
@@ -242,9 +264,10 @@ def run_executors_in_parallel(executor_class,
     """
 
     def run_executor(args):
-        executor_class, asset, log_file_dir, fifo_mode, delete_workdir = args
+        executor_class, asset, log_file_dir, \
+        fifo_mode, delete_workdir, result_store = args
         executor = executor_class(
-            [asset], None, log_file_dir, fifo_mode, delete_workdir)
+            [asset], None, log_file_dir, fifo_mode, delete_workdir, result_store)
         executor.run()
         return executor
 
@@ -252,7 +275,8 @@ def run_executors_in_parallel(executor_class,
     list_args = []
     for asset in assets:
         list_args.append(
-            [executor_class, asset, log_file_dir, fifo_mode, delete_workdir])
+            [executor_class, asset, log_file_dir,
+             fifo_mode, delete_workdir, result_store])
 
     # map arguments to func
     if parallelize:

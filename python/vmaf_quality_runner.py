@@ -35,7 +35,8 @@ class VmafQualityRunner(QualityRunner):
                                                self.logger,
                                                self.log_file_dir,
                                                self.fifo_mode,
-                                               self.delete_workdir)
+                                               self.delete_workdir,
+                                               self.result_store)
         vmaf_fextractor.run()
         feature_result = vmaf_fextractor.results[0]
 
@@ -69,8 +70,12 @@ class VmafQualityRunner(QualityRunner):
         # add quality score
         quality_result[self.TYPE + '_scores'] = scores
 
-        # save to asset2quality_map
+        # save to asset2quality map
         self.asset2quality_map[repr(asset)] = quality_result
+
+        result = self._read_result(asset)
+
+        return result
 
     def _post_correction(self, motion, score):
         # post-SVM correction
@@ -115,7 +120,7 @@ class VmafQualityRunner(QualityRunner):
 
     def _get_quality_scores(self, asset):
         """
-        Since result already stored in asset2quality_map, just retrieve
+        Since result already stored in asset2quality map, just retrieve it
         :param asset:
         :return:
         """
@@ -133,5 +138,20 @@ class VmafQualityRunner(QualityRunner):
                                                self.logger,
                                                self.log_file_dir,
                                                self.fifo_mode,
-                                               self.delete_workdir)
+                                               self.delete_workdir,
+                                               self.result_store)
         vmaf_fextractor._remove_log(asset)
+
+    def _remove_result(self, asset):
+        """
+        Remove VmafFeatureExtractor's result instead
+        :param asset:
+        :return:
+        """
+        vmaf_fextractor = VmafFeatureExtractor([asset],
+                                               self.logger,
+                                               self.log_file_dir,
+                                               self.fifo_mode,
+                                               self.delete_workdir,
+                                               self.result_store)
+        vmaf_fextractor._remove_result(asset)
