@@ -38,16 +38,8 @@ class FeatureAssembler(object):
         # for each FeatureExtractor_type key in feature_dict, find the subclass
         # of FeatureExtractor, run, and put results in a dict
         for fextractor_type in self.feature_dict:
-            # find subclass corresponding to fextractor_type
-            fextractor_class = self._find_fextractor_subclass(fextractor_type)
 
-            fextractor = fextractor_class(self.assets,
-                                          self.logger,
-                                          self.log_file_dir,
-                                          self.fifo_mode,
-                                          self.delete_workdir,
-                                          self.result_store,
-                                          )
+            fextractor = self._get_fextractor_instance(fextractor_type)
             fextractor.run()
             self.type2results_dict[fextractor_type] = fextractor.results
 
@@ -74,33 +66,32 @@ class FeatureAssembler(object):
         # FeatureAssembler is NOT an Executor. The executor_id field will
         # be written by FeatureAssember's caller, which should be an executor.
         self.results = map(
-            lambda (asset, result_dict): Result(asset, None, result_dict),
+            lambda (asset, result_dict): Result(asset=asset,
+                                                executor_id=None,
+                                                result_dict=result_dict),
             zip(self.assets, output_result_dicts)
         )
 
     def remove_logs(self):
         for fextractor_type in self.feature_dict:
-            fextractor_class = self._find_fextractor_subclass(fextractor_type)
-            fextractor = fextractor_class(self.assets,
-                                          self.logger,
-                                          self.log_file_dir,
-                                          self.fifo_mode,
-                                          self.delete_workdir,
-                                          self.result_store,
-                                          )
+            fextractor = self._get_fextractor_instance(fextractor_type)
             fextractor.remove_logs()
 
     def remove_results(self):
         for fextractor_type in self.feature_dict:
-            fextractor_class = self._find_fextractor_subclass(fextractor_type)
-            fextractor = fextractor_class(self.assets,
-                                          self.logger,
-                                          self.log_file_dir,
-                                          self.fifo_mode,
-                                          self.delete_workdir,
-                                          self.result_store,
-                                          )
+            fextractor = self._get_fextractor_instance(fextractor_type)
             fextractor.remove_results()
+
+    def _get_fextractor_instance(self, fextractor_type):
+        fextractor_class = self._find_fextractor_subclass(fextractor_type)
+        fextractor = fextractor_class(self.assets,
+                                      self.logger,
+                                      self.log_file_dir,
+                                      self.fifo_mode,
+                                      self.delete_workdir,
+                                      self.result_store,
+                                      )
+        return fextractor
 
     @classmethod
     def _find_fextractor_subclass(cls, fextractor_type):

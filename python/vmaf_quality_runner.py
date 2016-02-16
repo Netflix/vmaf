@@ -5,7 +5,7 @@ import sys
 import config
 from quality_runner import QualityRunner
 import numpy as np
-from vmaf_feature_extractor import VmafFeatureExtractor
+from feature_assembler import FeatureAssembler
 
 class VmafQualityRunner(QualityRunner):
 
@@ -31,14 +31,9 @@ class VmafQualityRunner(QualityRunner):
         :param asset:
         :return:
         """
-        vmaf_fextractor = VmafFeatureExtractor([asset],
-                                               self.logger,
-                                               self.log_file_dir,
-                                               self.fifo_mode,
-                                               self.delete_workdir,
-                                               self.result_store)
-        vmaf_fextractor.run()
-        feature_result = vmaf_fextractor.results[0]
+        vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
+        vmaf_fassembler.run()
+        feature_result = vmaf_fassembler.results[0]
 
         assert feature_result.asset == asset
 
@@ -46,13 +41,13 @@ class VmafQualityRunner(QualityRunner):
         model = self.svmutil.svm_load_model(self.SVM_MODEL_FILE)
 
         scaled_vif_scores = self._rescale(
-            feature_result[vmaf_fextractor.TYPE + '_vif_scores'], self.FEATURE_RESCALE['vif'])
+            feature_result['VMAF_feature_vif_scores'], self.FEATURE_RESCALE['vif'])
         scaled_adm_scores = self._rescale(
-            feature_result[vmaf_fextractor.TYPE + '_adm_scores'], self.FEATURE_RESCALE['adm'])
+            feature_result['VMAF_feature_adm_scores'], self.FEATURE_RESCALE['adm'])
         scaled_ansnr_scores = self._rescale(
-            feature_result[vmaf_fextractor.TYPE + '_ansnr_scores'], self.FEATURE_RESCALE['ansnr'])
+            feature_result['VMAF_feature_ansnr_scores'], self.FEATURE_RESCALE['ansnr'])
         scaled_motion_scores = self._rescale(
-            feature_result[vmaf_fextractor.TYPE + '_motion_scores'], self.FEATURE_RESCALE['motion'])
+            feature_result['VMAF_feature_motion_scores'], self.FEATURE_RESCALE['motion'])
 
         scores = []
         for vif, adm, ansnr, motion in zip(scaled_vif_scores,
@@ -78,6 +73,18 @@ class VmafQualityRunner(QualityRunner):
         result = self._read_result(asset)
 
         return result
+
+    def _get_vmaf_feature_assembler_instance(self, asset):
+        vmaf_fassembler = FeatureAssembler(
+            feature_dict={'VMAF_feature': 'all'},
+            assets=[asset],
+            logger=self.logger,
+            log_file_dir=self.log_file_dir,
+            fifo_mode=self.fifo_mode,
+            delete_workdir=self.delete_workdir,
+            result_store=self.result_store
+        )
+        return vmaf_fassembler
 
     def _post_correction(self, motion, score):
         # post-SVM correction
@@ -116,13 +123,8 @@ class VmafQualityRunner(QualityRunner):
         :param asset:
         :return:
         """
-        vmaf_fextractor = VmafFeatureExtractor([asset],
-                                               self.logger,
-                                               self.log_file_dir,
-                                               self.fifo_mode,
-                                               self.delete_workdir,
-                                               self.result_store)
-        vmaf_fextractor._remove_log(asset)
+        vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
+        vmaf_fassembler.remove_logs()
 
     def _remove_result(self, asset):
         """
@@ -130,10 +132,5 @@ class VmafQualityRunner(QualityRunner):
         :param asset:
         :return:
         """
-        vmaf_fextractor = VmafFeatureExtractor([asset],
-                                               self.logger,
-                                               self.log_file_dir,
-                                               self.fifo_mode,
-                                               self.delete_workdir,
-                                               self.result_store)
-        vmaf_fextractor._remove_result(asset)
+        vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
+        vmaf_fassembler.remove_results()

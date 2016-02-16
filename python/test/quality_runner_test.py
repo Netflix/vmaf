@@ -12,7 +12,9 @@ from result import FileSystemResultStore
 class QualityRunnerTest(unittest.TestCase):
 
     def tearDown(self):
-        if hasattr(self, 'runner'): self.runner.remove_logs()
+        if hasattr(self, 'runner'):
+            self.runner.remove_logs()
+            self.runner.remove_results()
         pass
 
     def test_executor_id(self):

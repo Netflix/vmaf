@@ -60,27 +60,31 @@ class VmafFeatureExtractor(FeatureExtractor):
                     assert cur_vif_idx == vif_idx
                     vif_scores.append(float(mo_vif.group(2)))
                     vif_idx += 1
-                else:
-                    mo_adm = re.match(r"adm: ([0-9]+) ([0-9.]+)", line)
-                    if mo_adm:
-                        cur_adm_idx = int(mo_adm.group(1))
-                        assert cur_adm_idx == adm_idx
-                        adm_scores.append(float(mo_adm.group(2)))
-                        adm_idx += 1
-                    else:
-                        mo_ansnr = re.match(r"ansnr: ([0-9]+) ([0-9.-]+)", line)
-                        if mo_ansnr:
-                            cur_ansnr_idx = int(mo_ansnr.group(1))
-                            assert cur_ansnr_idx == ansnr_idx
-                            ansnr_scores.append(float(mo_ansnr.group(2)))
-                            ansnr_idx += 1
-                        else:
-                            mo_motion = re.match(r"motion: ([0-9]+) ([0-9.-]+)", line)
-                            if mo_motion:
-                                cur_motion_idx = int(mo_motion.group(1))
-                                assert cur_motion_idx == motion_idx
-                                motion_scores.append(float(mo_motion.group(2)))
-                                motion_idx += 1
+                    continue
+
+                mo_adm = re.match(r"adm: ([0-9]+) ([0-9.]+)", line)
+                if mo_adm:
+                    cur_adm_idx = int(mo_adm.group(1))
+                    assert cur_adm_idx == adm_idx
+                    adm_scores.append(float(mo_adm.group(2)))
+                    adm_idx += 1
+                    continue
+
+                mo_ansnr = re.match(r"ansnr: ([0-9]+) ([0-9.-]+)", line)
+                if mo_ansnr:
+                    cur_ansnr_idx = int(mo_ansnr.group(1))
+                    assert cur_ansnr_idx == ansnr_idx
+                    ansnr_scores.append(float(mo_ansnr.group(2)))
+                    ansnr_idx += 1
+                    continue
+
+                mo_motion = re.match(r"motion: ([0-9]+) ([0-9.-]+)", line)
+                if mo_motion:
+                    cur_motion_idx = int(mo_motion.group(1))
+                    assert cur_motion_idx == motion_idx
+                    motion_scores.append(float(mo_motion.group(2)))
+                    motion_idx += 1
+                    continue
 
         assert len(vif_scores) == len(adm_scores) == \
                len(ansnr_scores) == len(motion_scores)
