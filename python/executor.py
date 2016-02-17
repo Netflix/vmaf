@@ -242,6 +242,7 @@ class Executor(TypeVersionEnabled):
         if self.result_store:
             self.result_store.delete(asset, self.executor_id)
 
+
 def run_executors_in_parallel(executor_class,
                               assets,
                               log_file_dir=config.ROOT + "/workspace/log_file_dir",

@@ -1,3 +1,5 @@
+from result import BasicResult
+
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
@@ -45,8 +47,8 @@ class FeatureAssembler(object):
     @property
     def ordered_scores_key_list(self):
         """
-        CAUTION: order matters! ALWAYS use this ordered list to construct
-        feature vector for TrainTestModel from result.
+        CAUTION: order matters to TrainTestModel! ALWAYS use this ordered list
+        to construct feature vector for TrainTestModel from result.
         :return:
         """
         scores_key_list = []
@@ -78,7 +80,10 @@ class FeatureAssembler(object):
                                                           fextractor_type]):
                     result_dicts[result_index][scores_key] = result[scores_key]
 
-        self.result_dicts = result_dicts
+        self.results = map(
+            lambda (asset, result_dict): BasicResult(asset, result_dict),
+            zip(self.assets, result_dicts)
+        )
 
     def remove_logs(self):
         for fextractor_type in self.feature_dict:

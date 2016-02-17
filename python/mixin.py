@@ -17,6 +17,7 @@ class WorkdirEnabled(object):
         subdir = str(uuid.uuid4())
         self.workdir = "{root}/{subdir}".format(root=workdir_root, subdir=subdir)
 
+
 class TypeVersionEnabled(object):
     """
     Mandate a type name and a version string. Derived class (e.g. an Executor)

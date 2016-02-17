@@ -23,7 +23,7 @@
 
 static void usage(void)
 {
-	puts("usage: vmaf_study app fmt ref dis w h\n"
+	puts("usage: vmaf app fmt ref dis w h\n"
 	     "apps:\n"
 	     "\tadm\n"
 	     "\tansnr\n"

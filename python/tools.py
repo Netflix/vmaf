@@ -88,6 +88,18 @@ def get_unique_str_from_recursive_dict(d):
             return d
     return json.dumps(to_ordered_dict_recursively(d))
 
+def indices(a, func):
+    """
+    Get indices of elements in an array which satisfies func
+    >>> indices([1, 2, 3, 4], lambda x: x>2)
+    [2, 3]
+    >>> indices([1, 2, 3, 4], lambda x: x==2.5)
+    []
+    >>> indices([1, 2, 3, 4], lambda x: x>1 and x<=3)
+    [1, 2]
+    """
+    return [i for (i, val) in enumerate(a) if func(val)]
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()

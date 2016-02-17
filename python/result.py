@@ -7,7 +7,91 @@ from tools import get_file_name_with_extension, make_parent_dirs_if_nonexist
 from asset import Asset
 import config
 
-class Result(object):
+class BasicResult(object):
+    """
+    Has some basic functions, but don't need executor_id. To be used by
+    FeatureAssemler, which is not an Executor.
+    """
+    def __init__(self, asset, result_dict):
+        self.asset = asset
+        self.result_dict = result_dict
+
+    # make access dictionary-like, i.e. can do: result['vif_score']
+    def __getitem__(self, key):
+        return self.get_score(key)
+
+    def get_score(self, key):
+        try:
+            return self.result_dict[key]
+        except KeyError as e:
+            return self._try_get_aggregate_score(key, e)
+
+    def _try_get_aggregate_score(self, key, error):
+        """
+        Get aggregate score from list of scores. Must follow the convention
+        that if the aggregate score uses key '*_score', then there must be
+        a corresponding list of scores that uses key '*_scores'. For example,
+        if the key is 'VMAF_score', there must exist a corresponding key
+        'VMAF_scores'.
+        :param key:
+        :return:
+        """
+        if re.search(r"_score$", key):
+            scores_key = key + 's' # e.g. 'VMAF_scores'
+            if scores_key in self.result_dict:
+                scores = self.result_dict[scores_key]
+                return float(sum(scores)) / len(scores)
+        raise KeyError(error)
+
+    def _get_list_scores_key(self):
+        # e.g. ['VMAF_scores', 'VMAF_vif_scores']
+        list_scores_key = filter(lambda key: re.search(r"_scores$", key),
+                                 self.result_dict.keys())
+        list_scores_key = sorted(list_scores_key)
+        return list_scores_key
+
+    def _get_list_score_key(self):
+        # e.g. ['VMAF_score', 'VMAF_vif_score']
+        list_scores_key = self._get_list_scores_key()
+        return map(lambda scores_key: scores_key[:-1], list_scores_key)
+
+    def _get_perframe_score_str(self):
+        list_scores_key = self._get_list_scores_key()
+        list_score_key = self._get_list_score_key()
+        list_scores = map(lambda key: self.result_dict[key], list_scores_key)
+        str_perframe = "\n".join(
+            map(
+                lambda (frame_num, scores): "Frame {}: ".format(frame_num) + (
+                ", ".join(
+                    map(
+                        lambda (score_key, score): "{score_key}:{score:.3f}".
+                            format(score_key=score_key, score=score),
+                        zip(list_score_key, scores))
+                )),
+                enumerate(zip(*list_scores))
+            )
+        )
+        str_perframe += '\n'
+        return str_perframe
+
+    def _get_aggregate_score_str(self):
+        list_score_key = self._get_list_score_key()
+        str_aggregate = "Aggregate: " + (", ".join(
+            map(
+                lambda (score_key, score): "{score_key}:{score:.3f}".
+                    format(score_key=score_key, score=score),
+                zip(
+                    list_score_key, map(
+                        lambda score_key: self[score_key],
+                        list_score_key)
+                )
+            )
+        ))
+        return str_aggregate
+
+
+
+class Result(BasicResult):
     """
     Dictionary-like object that stores read-only result generated on an Asset
     by a Executor.
@@ -47,10 +131,6 @@ class Result(object):
     def __str__(self):
         return self.to_string()
 
-    # make access dictionary-like, i.e. can do: result['vif_score']
-    def __getitem__(self, key):
-        return self.get_score(key)
-
     @staticmethod
     def get_unique_from_dataframe(df, scores_key, column):
         """
@@ -65,12 +145,6 @@ class Result(object):
         _df = df.loc[df['scores_key'] == scores_key]
         assert len(_df) == 1
         return _df.iloc[0][column]
-
-    def get_score(self, key):
-        try:
-            return self.result_dict[key]
-        except KeyError as e:
-            return self._try_get_aggregate_score(key, e)
 
     def to_string(self):
         s = ""
@@ -186,74 +260,13 @@ class Result(object):
         # all scores should have equal length
         assert len(set(map(lambda x:len(x), df['scores'].tolist()))) == 1
 
-    def _get_perframe_score_str(self):
-        list_scores_key = self._get_list_scores_key()
-        list_score_key = self._get_list_score_key()
-        list_scores = map(lambda key: self.result_dict[key], list_scores_key)
-        str_perframe = "\n".join(
-            map(
-                lambda (frame_num, scores): "Frame {}: ".format(frame_num) + (
-                ", ".join(
-                    map(
-                        lambda (score_key, score): "{score_key}:{score:.3f}".
-                            format(score_key=score_key, score=score),
-                        zip(list_score_key, scores))
-                )),
-                enumerate(zip(*list_scores))
-            )
-        )
-        str_perframe += '\n'
-        return str_perframe
-
-    def _get_aggregate_score_str(self):
-        list_score_key = self._get_list_score_key()
-        str_aggregate = "Aggregate: " + (", ".join(
-            map(
-                lambda (score_key, score): "{score_key}:{score:.3f}".
-                    format(score_key=score_key, score=score),
-                zip(
-                    list_score_key, map(
-                        lambda score_key: self[score_key],
-                        list_score_key)
-                )
-            )
-        ))
-        return str_aggregate
-
-    def _get_list_scores_key(self):
-        # e.g. ['VMAF_scores', 'VMAF_vif_scores']
-        list_scores_key = filter(lambda key: re.search(r"_scores$", key),
-                                 self.result_dict.keys())
-        list_scores_key = sorted(list_scores_key)
-        return list_scores_key
-
-    def _get_list_score_key(self):
-        # e.g. ['VMAF_score', 'VMAF_vif_score']
-        list_scores_key = self._get_list_scores_key()
-        return map(lambda scores_key: scores_key[:-1], list_scores_key)
-
-    def _try_get_aggregate_score(self, key, error):
-        """
-        Get aggregate score from list of scores. Must follow the convention
-        that if the aggregate score uses key '*_score', then there must be
-        a corresponding list of scores that uses key '*_scores'. For example,
-        if the key is 'VMAF_score', there must exist a corresponding key
-        'VMAF_scores'.
-        :param key:
-        :return:
-        """
-        if re.search(r"_score$", key):
-            scores_key = key + 's' # e.g. 'VMAF_scores'
-            if scores_key in self.result_dict:
-                scores = self.result_dict[scores_key]
-                return float(sum(scores)) / len(scores)
-        raise KeyError(error)
 
 class ResultStore(object):
     """
     Provide capability to save and load a Result.
     """
     pass
+
 
 class FileSystemResultStore(ResultStore):
     """
@@ -314,6 +327,7 @@ class FileSystemResultStore(ResultStore):
         return "{dir}/{executor_id}/{str}".format(dir=self.result_store_dir,
                                                   executor_id=executor_id,
                                                   str=str(asset))
+
 
 class SqliteResultStore(ResultStore):
     """
