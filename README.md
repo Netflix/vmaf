@@ -27,16 +27,6 @@ After installation, run:
 
 If you see warning messages, some tests have been skipped due to missing packages. You can resolve the warning messages by following the Optional Installation instructions below.
 
-##Optional Installation
-
-To perform VMAF computation in parallel on multiple reference/distorted video pairs, you will need a Python package named [pathos](https://pypi.python.org/pypi/pathos) (>= 0.1a1). For example, run_vmaf_in_batch will execute VMAF in parallel if it detects that pathos is installed; otherwise, it will fall back to sequential execution. To install pathos, on Ubuntu, run (assuming pip pre-installed):
-
-`pip install pathos`
-
-The VMAF training/testing framework requires a Python data processing package named [pandas](http://pandas.pydata.org/) (>= 0.13.1). To install pandas, on Ubuntu, run:
-
-`pip install pandas`
-
 ##Execution
 
 There are two execution modes to run VMAF -- single mode and batch mode.
@@ -58,6 +48,16 @@ To run VMAF in batch mode, create an input text file with each line of format (c
 After that, run:
 
 `./run_vmaf_in_batch input_file`
+
+##Optional Installation
+
+To perform VMAF computation in parallel on multiple reference/distorted video pairs, you will need a Python package named [pathos](https://pypi.python.org/pypi/pathos) (>= 0.1a1). For example, run_vmaf_in_batch will execute VMAF in parallel if it detects that pathos is installed; otherwise, it will fall back to sequential execution. To install pathos, on Ubuntu, run (assuming pip pre-installed):
+
+`pip install pathos`
+
+The VMAF training/testing framework requires a Python data processing package named [pandas](http://pandas.pydata.org/) (>= 0.13.1). To install pandas, on Ubuntu, run:
+
+`pip install pandas`
 
 ##To-do List
 

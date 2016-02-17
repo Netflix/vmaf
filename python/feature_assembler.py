@@ -1,5 +1,3 @@
-from result import Result
-
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
@@ -8,8 +6,8 @@ from vmaf_feature_extractor import VmafFeatureExtractor
 class FeatureAssembler(object):
     """
     Assembles features for a input list of Assets on a input list of
-    FeatureExtractors, by either retrieve them from a ResultStore, or by
-    executing the FeatureExtractors.
+    FeatureExtractors. For each asset, it outputs a dictionary of feature
+    scores.
     """
 
     # add subclasses of FeatureExtractor to the list below for consideration
@@ -18,11 +16,19 @@ class FeatureAssembler(object):
     def __init__(self, feature_dict, assets, logger, log_file_dir,
                  fifo_mode, delete_workdir, result_store):
         """
-        :param feature_dict: in the format of: {FeatureExtractor_type:'all',} or
-        {FeatureExtractor_type:[atom_features,],}. For example, the below are
-        valid feature dicts:
+        :param feature_dict: in the format of:
+        {FeatureExtractor_type:'all',},
+        or
+        {FeatureExtractor_type:[atom_features,],}.
+        For example, the below are valid feature dicts:
         {'VMAF_feature':'all', 'BRISQUE_feature':'all'},
         {'VMAF_feature':['vif', 'ansnr'], 'BRISQUE_feature':'all'}
+        :param assets:
+        :param logger:
+        :param log_file_dir:
+        :param fifo_mode:
+        :param delete_workdir:
+        :param result_store:
         :return:
         """
         self.feature_dict = feature_dict
@@ -46,8 +52,7 @@ class FeatureAssembler(object):
         for fextractor_type in sorted(self.feature_dict.keys()):
             for atom_feature in sorted(self._get_atom_features(fextractor_type)):
 
-                scores_key = self._find_fextractor_subclass(fextractor_type).\
-                    _get_scores_key(atom_feature)
+                scores_key = self._get_scores_key(fextractor_type, atom_feature)
 
                 scores_key_list.append(scores_key)
         return scores_key_list
@@ -63,20 +68,16 @@ class FeatureAssembler(object):
 
         # assemble an output dict with demanded atom features
         # atom_features_dict = self.fextractor_atom_features_dict
-
-        output_result_dicts = [dict() for _ in self.assets]
+        result_dicts = [dict() for _ in self.assets]
         for fextractor_type in self.feature_dict:
             assert fextractor_type in self.type2results_dict
             for atom_feature in self._get_atom_features(fextractor_type):
+                scores_key = self._get_scores_key(fextractor_type, atom_feature)
+                for result_index, result in enumerate(self.type2results_dict[
+                                                          fextractor_type]):
+                    result_dicts[result_index][scores_key] = result[scores_key]
 
-                scores_key = self._find_fextractor_subclass(fextractor_type).\
-                    _get_scores_key(atom_feature)
-
-                for result_index, result in \
-                    enumerate(self.type2results_dict[fextractor_type]):
-                    output_result_dicts[result_index][scores_key] = result[scores_key]
-
-        self.result_dicts = output_result_dicts
+        self.result_dicts = result_dicts
 
     def remove_logs(self):
         for fextractor_type in self.feature_dict:
@@ -87,6 +88,11 @@ class FeatureAssembler(object):
         for fextractor_type in self.feature_dict:
             fextractor = self._get_fextractor_instance(fextractor_type)
             fextractor.remove_results()
+
+    def _get_scores_key(self, fextractor_type, atom_feature):
+        fextractor_subclass = self._find_fextractor_subclass(fextractor_type)
+        scores_key = fextractor_subclass._get_scores_key(atom_feature)
+        return scores_key
 
     def _get_atom_features(self, fextractor_type):
         if self.feature_dict[fextractor_type] == 'all':

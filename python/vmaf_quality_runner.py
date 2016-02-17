@@ -20,6 +20,8 @@ class VmafQualityRunner(QualityRunner):
                        'VMAF_feature_motion_scores': (0.0, 20.0)}
 
     SVM_MODEL_FILE = config.ROOT + "/resource/model/model_V8a.model"
+
+    # model_v8a.model is trained with customized feature order:
     SVM_MODEL_ORDERED_SCORES_KEYS = ['VMAF_feature_vif_scores',
                                      'VMAF_feature_adm_scores',
                                      'VMAF_feature_ansnr_scores',
@@ -29,6 +31,18 @@ class VmafQualityRunner(QualityRunner):
     import svmutil
 
     asset2quality_map = {}
+
+    def _get_vmaf_feature_assembler_instance(self, asset):
+        vmaf_fassembler = FeatureAssembler(
+            feature_dict=self.FEATURE_ASSEMBLER_DICT,
+            assets=[asset],
+            logger=self.logger,
+            log_file_dir=self.log_file_dir,
+            fifo_mode=self.fifo_mode,
+            delete_workdir=self.delete_workdir,
+            result_store=self.result_store
+        )
+        return vmaf_fassembler
 
     # override Executor._run_on_asset
     def _run_on_asset(self, asset):
@@ -74,18 +88,6 @@ class VmafQualityRunner(QualityRunner):
         result = self._read_result(asset)
 
         return result
-
-    def _get_vmaf_feature_assembler_instance(self, asset):
-        vmaf_fassembler = FeatureAssembler(
-            feature_dict=self.FEATURE_ASSEMBLER_DICT,
-            assets=[asset],
-            logger=self.logger,
-            log_file_dir=self.log_file_dir,
-            fifo_mode=self.fifo_mode,
-            delete_workdir=self.delete_workdir,
-            result_store=self.result_store
-        )
-        return vmaf_fassembler
 
     def _post_correction(self, motion, score):
         # post-SVM correction
