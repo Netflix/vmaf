@@ -1,7 +1,8 @@
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
-from vmaf_feature_extractor import VmafFeatureExtractor
+from feature_extractor import VmafFeatureExtractor
+
 
 class FeatureAssembler(object):
     """

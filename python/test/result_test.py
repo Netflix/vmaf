@@ -5,7 +5,8 @@ import unittest
 from asset import Asset
 import config
 from result import Result, FileSystemResultStore
-from vmaf_quality_runner import VmafQualityRunner
+from quality_runner import VmafQualityRunner
+
 
 class ResultTest(unittest.TestCase):
 

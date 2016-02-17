@@ -4,7 +4,7 @@ __license__ = "Apache, Version 2.0"
 import os
 import unittest
 from asset import Asset
-from vmaf_quality_runner import VmafQualityRunner
+from quality_runner import VmafQualityRunner
 from executor import run_executors_in_parallel
 import config
 from result import FileSystemResultStore
