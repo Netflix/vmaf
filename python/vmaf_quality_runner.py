@@ -12,10 +12,18 @@ class VmafQualityRunner(QualityRunner):
     TYPE = 'VMAF'
     VERSION = '0.1'
 
-    SVM_MODEL_FILE = config.ROOT + "/resource/model/model_V8a.model"
+    FEATURE_ASSEMBLER_DICT = {'VMAF_feature': 'all'}
 
-    FEATURE_RESCALE = {'vif': (0.0, 1.0), 'adm': (0.4, 1.0),
-                    'ansnr': (10.0, 50.0), 'motion': (0.0, 20.0)}
+    FEATURE_RESCALE = {'VMAF_feature_vif_scores': (0.0, 1.0),
+                       'VMAF_feature_adm_scores': (0.4, 1.0),
+                       'VMAF_feature_ansnr_scores': (10.0, 50.0),
+                       'VMAF_feature_motion_scores': (0.0, 20.0)}
+
+    SVM_MODEL_FILE = config.ROOT + "/resource/model/model_V8a.model"
+    SVM_MODEL_ORDERED_SCORES_KEYS = ['VMAF_feature_vif_scores',
+                                     'VMAF_feature_adm_scores',
+                                     'VMAF_feature_ansnr_scores',
+                                     'VMAF_feature_motion_scores']
 
     sys.path.append(config.ROOT + "/libsvm/python")
     import svmutil
@@ -40,20 +48,15 @@ class VmafQualityRunner(QualityRunner):
         # SVR predict
         model = self.svmutil.svm_load_model(self.SVM_MODEL_FILE)
 
-        scaled_vif_scores = self._rescale(
-            feature_result['VMAF_feature_vif_scores'], self.FEATURE_RESCALE['vif'])
-        scaled_adm_scores = self._rescale(
-            feature_result['VMAF_feature_adm_scores'], self.FEATURE_RESCALE['adm'])
-        scaled_ansnr_scores = self._rescale(
-            feature_result['VMAF_feature_ansnr_scores'], self.FEATURE_RESCALE['ansnr'])
-        scaled_motion_scores = self._rescale(
-            feature_result['VMAF_feature_motion_scores'], self.FEATURE_RESCALE['motion'])
+        ordered_scaled_scores_list = []
+        for scores_key in self.SVM_MODEL_ORDERED_SCORES_KEYS:
+            scaled_scores = self._rescale(feature_result[scores_key],
+                                          self.FEATURE_RESCALE[scores_key])
+            ordered_scaled_scores_list.append(scaled_scores)
 
         scores = []
-        for vif, adm, ansnr, motion in zip(scaled_vif_scores,
-                                           scaled_adm_scores,
-                                           scaled_ansnr_scores,
-                                           scaled_motion_scores):
+        for score_vector in zip(*ordered_scaled_scores_list):
+            vif, adm, ansnr, motion = score_vector
             xs = [[vif, adm, ansnr, motion]]
             score = self.svmutil.svm_predict([0], xs, model)[0][0]
             score = self._post_correction(motion, score)
@@ -65,7 +68,7 @@ class VmafQualityRunner(QualityRunner):
         quality_result.update(feature_result.result_dict)
 
         # add quality score
-        quality_result[self.TYPE + '_scores'] = scores
+        quality_result[self._get_scores_key()] = scores
 
         # save to asset2quality map
         self.asset2quality_map[repr(asset)] = quality_result
@@ -76,7 +79,7 @@ class VmafQualityRunner(QualityRunner):
 
     def _get_vmaf_feature_assembler_instance(self, asset):
         vmaf_fassembler = FeatureAssembler(
-            feature_dict={'VMAF_feature': 'all'},
+            feature_dict=self.FEATURE_ASSEMBLER_DICT,
             assets=[asset],
             logger=self.logger,
             log_file_dir=self.log_file_dir,

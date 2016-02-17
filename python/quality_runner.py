@@ -28,3 +28,6 @@ class QualityRunner(Executor):
         result.update(self._get_quality_scores(asset))
         return Result(asset, self.executor_id, result)
 
+    @classmethod
+    def _get_scores_key(cls):
+        return cls.TYPE + '_scores'

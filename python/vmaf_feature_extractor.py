@@ -12,7 +12,7 @@ class VmafFeatureExtractor(FeatureExtractor):
     TYPE = "VMAF_feature"
     VERSION = '0.1'
 
-    ATOM_FEATURES = {'vif', 'adm', 'ansnr', 'motion'}
+    ATOM_FEATURES = ['vif', 'adm', 'ansnr', 'motion']
 
     VMAF_FEATURE = config.ROOT + "/feature/vmaf"
 
@@ -44,57 +44,33 @@ class VmafFeatureExtractor(FeatureExtractor):
     def _get_feature_scores(self, asset):
         log_file_path = self._get_log_file_path(asset)
 
-        vif_scores = []
-        adm_scores = []
-        ansnr_scores = []
-        motion_scores = []
-        vif_idx = 0
-        adm_idx = 0
-        ansnr_idx = 0
-        motion_idx = 0
+        atom_feature_scores_dict = {}
+        atom_feature_idx_dict = {}
+        for atom_feature in self.ATOM_FEATURES:
+            atom_feature_scores_dict[atom_feature] = []
+            atom_feature_idx_dict[atom_feature] = 0
+
         with open(log_file_path, 'rt') as log_file:
             for line in log_file.readlines():
-                mo_vif = re.match(r"vif: ([0-9]+) ([0-9.]+)", line)
-                if mo_vif:
-                    cur_vif_idx = int(mo_vif.group(1))
-                    assert cur_vif_idx == vif_idx
-                    vif_scores.append(float(mo_vif.group(2)))
-                    vif_idx += 1
-                    continue
+                for atom_feature in self.ATOM_FEATURES:
+                    re_template = "{af}: ([0-9]+) ([0-9.-]+)".format(af=atom_feature)
+                    mo = re.match(re_template, line)
+                    if mo:
+                        cur_idx = int(mo.group(1))
+                        assert cur_idx == atom_feature_idx_dict[atom_feature]
+                        atom_feature_scores_dict[atom_feature].append(float(mo.group(2)))
+                        atom_feature_idx_dict[atom_feature] += 1
+                        continue
 
-                mo_adm = re.match(r"adm: ([0-9]+) ([0-9.]+)", line)
-                if mo_adm:
-                    cur_adm_idx = int(mo_adm.group(1))
-                    assert cur_adm_idx == adm_idx
-                    adm_scores.append(float(mo_adm.group(2)))
-                    adm_idx += 1
-                    continue
-
-                mo_ansnr = re.match(r"ansnr: ([0-9]+) ([0-9.-]+)", line)
-                if mo_ansnr:
-                    cur_ansnr_idx = int(mo_ansnr.group(1))
-                    assert cur_ansnr_idx == ansnr_idx
-                    ansnr_scores.append(float(mo_ansnr.group(2)))
-                    ansnr_idx += 1
-                    continue
-
-                mo_motion = re.match(r"motion: ([0-9]+) ([0-9.-]+)", line)
-                if mo_motion:
-                    cur_motion_idx = int(mo_motion.group(1))
-                    assert cur_motion_idx == motion_idx
-                    motion_scores.append(float(mo_motion.group(2)))
-                    motion_idx += 1
-                    continue
-
-        assert len(vif_scores) == len(adm_scores) == \
-               len(ansnr_scores) == len(motion_scores)
+        len_score = len(atom_feature_scores_dict[self.ATOM_FEATURES[0]])
+        for atom_feature in self.ATOM_FEATURES[1:]:
+            assert len_score == len(atom_feature_scores_dict[atom_feature])
 
         feature_result = {}
 
-        feature_result[self.TYPE + '_vif_scores'] = vif_scores
-        feature_result[self.TYPE + '_adm_scores'] = adm_scores
-        feature_result[self.TYPE + '_ansnr_scores'] = ansnr_scores
-        feature_result[self.TYPE + '_motion_scores'] = motion_scores
+        for atom_feature in self.ATOM_FEATURES:
+            scores_key = self._get_scores_key(atom_feature)
+            feature_result[scores_key] = atom_feature_scores_dict[atom_feature]
 
         return feature_result
 

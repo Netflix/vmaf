@@ -17,3 +17,8 @@ class FeatureExtractor(Executor):
         result.update(self._get_feature_scores(asset))
         return Result(asset, self.executor_id, result)
 
+    @classmethod
+    def _get_scores_key(cls, atom_feature):
+        return "{type}_{atom_feature}_scores".format(
+            type=cls.TYPE, atom_feature=atom_feature)
+
