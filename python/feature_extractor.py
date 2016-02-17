@@ -27,6 +27,7 @@ class FeatureExtractor(Executor):
         return "{type}_{atom_feature}_scores".format(
             type=cls.TYPE, atom_feature=atom_feature)
 
+
 class VmafFeatureExtractor(FeatureExtractor):
 
     TYPE = "VMAF_feature"
@@ -98,3 +99,11 @@ class VmafFeatureExtractor(FeatureExtractor):
         log_file_path = self._get_log_file_path(asset)
         if os.path.exists(log_file_path):
             os.remove(log_file_path)
+
+
+class BrisqueFeatureExtractor(FeatureExtractor):
+
+    TYPE = "BRISQUE_feature"
+    VERSION = '0.1'
+
+    pass

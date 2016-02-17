@@ -44,10 +44,10 @@ class VmafQualityRunner(QualityRunner):
 
     FEATURE_ASSEMBLER_DICT = {'VMAF_feature': 'all'}
 
-    FEATURE_RESCALE = {'VMAF_feature_vif_scores': (0.0, 1.0),
-                       'VMAF_feature_adm_scores': (0.4, 1.0),
-                       'VMAF_feature_ansnr_scores': (10.0, 50.0),
-                       'VMAF_feature_motion_scores': (0.0, 20.0)}
+    FEATURE_RESCALE_DICT = {'VMAF_feature_vif_scores': (0.0, 1.0),
+                            'VMAF_feature_adm_scores': (0.4, 1.0),
+                            'VMAF_feature_ansnr_scores': (10.0, 50.0),
+                            'VMAF_feature_motion_scores': (0.0, 20.0)}
 
     SVM_MODEL_FILE = config.ROOT + "/resource/model/model_V8a.model"
 
@@ -65,6 +65,7 @@ class VmafQualityRunner(QualityRunner):
     def _get_vmaf_feature_assembler_instance(self, asset):
         vmaf_fassembler = FeatureAssembler(
             feature_dict=self.FEATURE_ASSEMBLER_DICT,
+            feature_option_dict=None,
             assets=[asset],
             logger=self.logger,
             log_file_dir=self.log_file_dir,
@@ -93,7 +94,7 @@ class VmafQualityRunner(QualityRunner):
         ordered_scaled_scores_list = []
         for scores_key in self.SVM_MODEL_ORDERED_SCORES_KEYS:
             scaled_scores = self._rescale(feature_result_dict[scores_key],
-                                          self.FEATURE_RESCALE[scores_key])
+                                          self.FEATURE_RESCALE_DICT[scores_key])
             ordered_scaled_scores_list.append(scaled_scores)
 
         scores = []

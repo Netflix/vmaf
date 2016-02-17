@@ -5,6 +5,7 @@ import unittest
 from asset import Asset
 import config
 from feature_assembler import FeatureAssembler
+from feature_extractor import VmafFeatureExtractor, BrisqueFeatureExtractor
 import numpy as np
 
 class FeatureAssemblerTest(unittest.TestCase):
@@ -14,6 +15,12 @@ class FeatureAssemblerTest(unittest.TestCase):
             self.fassembler.remove_logs()
             self.fassembler.remove_results()
         pass
+
+    def test_get_fextractor_subclasses(self):
+        fextractor_subclasses = FeatureAssembler._get_fextractor_subclasses()
+        self.assertEquals(len(fextractor_subclasses), 2)
+        self.assertTrue(VmafFeatureExtractor in fextractor_subclasses)
+        self.assertTrue(BrisqueFeatureExtractor in fextractor_subclasses)
 
     def test_feature_assembler_whole_feature(self):
         print 'test on feature assembler with whole feature...'
@@ -33,6 +40,7 @@ class FeatureAssemblerTest(unittest.TestCase):
 
         self.fassembler = FeatureAssembler(
             feature_dict = {'VMAF_feature':'all'},
+            feature_option_dict = None,
             assets = [asset, asset_original],
             logger=None,
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
@@ -79,6 +87,7 @@ class FeatureAssemblerTest(unittest.TestCase):
 
         self.fassembler = FeatureAssembler(
             feature_dict = {'VMAF_feature':['vif', 'motion']},
+            feature_option_dict = None,
             assets = [asset, asset_original],
             logger=None,
             log_file_dir=config.ROOT + "/workspace/log_file_dir",

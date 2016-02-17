@@ -1,8 +1,7 @@
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
-from feature_extractor import VmafFeatureExtractor
-
+from feature_extractor import FeatureExtractor
 
 class FeatureAssembler(object):
     """
@@ -11,11 +10,8 @@ class FeatureAssembler(object):
     scores.
     """
 
-    # add subclasses of FeatureExtractor to the list below for consideration
-    FEATURE_EXTRACTOR_SUBCLASSES = [VmafFeatureExtractor,]
-
-    def __init__(self, feature_dict, assets, logger, log_file_dir,
-                 fifo_mode, delete_workdir, result_store):
+    def __init__(self, feature_dict, feature_option_dict, assets, logger,
+                 log_file_dir, fifo_mode, delete_workdir, result_store):
         """
         :param feature_dict: in the format of:
         {FeatureExtractor_type:'all',},
@@ -24,6 +20,9 @@ class FeatureAssembler(object):
         For example, the below are valid feature dicts:
         {'VMAF_feature':'all', 'BRISQUE_feature':'all'},
         {'VMAF_feature':['vif', 'ansnr'], 'BRISQUE_feature':'all'}
+        :param feature_option_dict: contains options to extract a particular
+        feature, for example:
+        {'VMAF_feature':{'force_extraction':True}, 'BRISQUE_feature':{}},
         :param assets:
         :param logger:
         :param log_file_dir:
@@ -33,6 +32,7 @@ class FeatureAssembler(object):
         :return:
         """
         self.feature_dict = feature_dict
+        self.feature_option_dict = feature_option_dict
         self.assets = assets
         self.logger = logger
         self.log_file_dir = log_file_dir
@@ -116,10 +116,12 @@ class FeatureAssembler(object):
     @classmethod
     def _find_fextractor_subclass(cls, fextractor_type):
         matched_fextractor_subclasses = []
-        for fextractor_subclass in cls.FEATURE_EXTRACTOR_SUBCLASSES:
+        for fextractor_subclass in cls._get_fextractor_subclasses():
             if fextractor_subclass.TYPE == fextractor_type:
                 matched_fextractor_subclasses.append(fextractor_subclass)
-
         assert len(matched_fextractor_subclasses) == 1
-
         return matched_fextractor_subclasses[0]
+
+    @staticmethod
+    def _get_fextractor_subclasses():
+        return FeatureExtractor.__subclasses__()
