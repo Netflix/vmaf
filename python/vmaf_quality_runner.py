@@ -41,16 +41,14 @@ class VmafQualityRunner(QualityRunner):
         """
         vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
         vmaf_fassembler.run()
-        feature_result = vmaf_fassembler.results[0]
-
-        assert feature_result.asset == asset
+        feature_result_dict = vmaf_fassembler.result_dicts[0]
 
         # SVR predict
         model = self.svmutil.svm_load_model(self.SVM_MODEL_FILE)
 
         ordered_scaled_scores_list = []
         for scores_key in self.SVM_MODEL_ORDERED_SCORES_KEYS:
-            scaled_scores = self._rescale(feature_result[scores_key],
+            scaled_scores = self._rescale(feature_result_dict[scores_key],
                                           self.FEATURE_RESCALE[scores_key])
             ordered_scaled_scores_list.append(scaled_scores)
 
@@ -65,7 +63,7 @@ class VmafQualityRunner(QualityRunner):
         quality_result = {}
 
         # add all feature result
-        quality_result.update(feature_result.result_dict)
+        quality_result.update(feature_result_dict)
 
         # add quality score
         quality_result[self._get_scores_key()] = scores

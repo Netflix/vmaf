@@ -5,6 +5,7 @@ import unittest
 from asset import Asset
 import config
 from feature_assembler import FeatureAssembler
+import numpy as np
 
 class FeatureAssemblerTest(unittest.TestCase):
 
@@ -48,17 +49,17 @@ class FeatureAssemblerTest(unittest.TestCase):
 
         self.fassembler.run()
 
-        results = self.fassembler.results
+        result_dicts = self.fassembler.result_dicts
 
-        self.assertEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)
-        self.assertEqual(results[0]['VMAF_feature_motion_score'], 3.5916076041666667)
-        self.assertEqual(results[0]['VMAF_feature_adm_score'], 0.91552422916666665)
-        self.assertEqual(results[0]['VMAF_feature_ansnr_score'], 22.533456770833329)
+        self.assertEqual(np.mean(result_dicts[0]['VMAF_feature_vif_scores']), 0.44417014583333336)
+        self.assertEqual(np.mean(result_dicts[0]['VMAF_feature_motion_scores']), 3.5916076041666667)
+        self.assertEqual(np.mean(result_dicts[0]['VMAF_feature_adm_scores']), 0.91552422916666665)
+        self.assertEqual(np.mean(result_dicts[0]['VMAF_feature_ansnr_scores']), 22.533456770833329)
 
-        self.assertEqual(results[1]['VMAF_feature_vif_score'], 1.0)
-        self.assertEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
-        self.assertEqual(results[1]['VMAF_feature_adm_score'], 1.0)
-        self.assertEqual(results[1]['VMAF_feature_ansnr_score'], 30.030914145833322)
+        self.assertEqual(np.mean(result_dicts[1]['VMAF_feature_vif_scores']), 1.0)
+        self.assertEqual(np.mean(result_dicts[1]['VMAF_feature_motion_scores']), 3.5916076041666667)
+        self.assertEqual(np.mean(result_dicts[1]['VMAF_feature_adm_scores']), 1.0)
+        self.assertEqual(np.mean(result_dicts[1]['VMAF_feature_ansnr_scores']), 30.030914145833322)
 
     def test_feature_assembler_selected_atom_feature(self):
         print 'test on feature assembler with selected atom features...'
@@ -92,17 +93,17 @@ class FeatureAssemblerTest(unittest.TestCase):
 
         self.fassembler.run()
 
-        results = self.fassembler.results
+        result_dicts = self.fassembler.result_dicts
 
-        self.assertEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)
-        self.assertEqual(results[0]['VMAF_feature_motion_score'], 3.5916076041666667)
+        self.assertEqual(np.mean(result_dicts[0]['VMAF_feature_vif_scores']), 0.44417014583333336)
+        self.assertEqual(np.mean(result_dicts[0]['VMAF_feature_motion_scores']), 3.5916076041666667)
 
-        self.assertEqual(results[1]['VMAF_feature_vif_score'], 1.0)
-        self.assertEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
+        self.assertEqual(np.mean(result_dicts[1]['VMAF_feature_vif_scores']), 1.0)
+        self.assertEqual(np.mean(result_dicts[1]['VMAF_feature_motion_scores']), 3.5916076041666667)
 
-        self.assertTrue('VMAF_feature_ansnr_scores' not in results[0].result_dict)
-        self.assertTrue('VMAF_feature_adm_scores' not in results[0].result_dict)
+        self.assertTrue('VMAF_feature_ansnr_scores' not in result_dicts[0])
+        self.assertTrue('VMAF_feature_adm_scores' not in result_dicts[0])
 
-        self.assertTrue('VMAF_feature_ansnr_scores' not in results[1].result_dict)
-        self.assertTrue('VMAF_feature_adm_scores' not in results[1].result_dict)
+        self.assertTrue('VMAF_feature_ansnr_scores' not in result_dicts[1])
+        self.assertTrue('VMAF_feature_adm_scores' not in result_dicts[1])
 

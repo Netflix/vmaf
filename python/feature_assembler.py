@@ -76,15 +76,7 @@ class FeatureAssembler(object):
                     enumerate(self.type2results_dict[fextractor_type]):
                     output_result_dicts[result_index][scores_key] = result[scores_key]
 
-        # result by FeatureAssembler doesn't have executor_id, since
-        # FeatureAssembler is NOT an Executor. The executor_id field will
-        # be written by FeatureAssember's caller, which should be an executor.
-        self.results = map(
-            lambda (asset, result_dict): Result(asset=asset,
-                                                executor_id=None,
-                                                result_dict=result_dict),
-            zip(self.assets, output_result_dicts)
-        )
+        self.result_dicts = output_result_dicts
 
     def remove_logs(self):
         for fextractor_type in self.feature_dict:
