@@ -19,19 +19,10 @@ class TrainTestModel(TypeVersionEnabled):
         self.param_dict = param_dict
         self.logger = logger
 
-        self.norm_type = param_dict['norm_type'] if 'norm_type' in param_dict else 'whiten'
-        self.mus = []
-        self.sds = []
-        self.fmins = []
-        self.fmaxs = []
-        self.model = None
-
         self.model_dict = {}
 
     def _assert_trained(self):
 
-        # usually get from Result._get_ordered_list_score_key() except for
-        # customly constructed
         assert 'feature_names' in self.model_dict
 
         assert 'model' in self.model_dict
@@ -51,71 +42,80 @@ class TrainTestModel(TypeVersionEnabled):
             assert 'fmin' in self.model_dict
             assert 'fmax' in self.model_dict
 
-    # @property
-    # def feature_names(self):
-    #     self._assert_trained()
-    #     return self.model_dict['feature_names']
-    #
-    # @feature_names.setter
-    # def feature_names(self, value):
-    #     self.model_dict['feature_names'] = value
-    #
-    # @property
-    # def norm_type(self):
-    #     self._assert_trained()
-    #     return self.model_dict['norm_type']
+    @property
+    def feature_names(self):
+        self._assert_trained()
+        return self.model_dict['feature_names']
+    @feature_names.setter
+    def feature_names(self, value):
+        self.model_dict['feature_names'] = value
 
+    @property
+    def norm_type(self):
+        return self.model_dict['norm_type']
+    @norm_type.setter
+    def norm_type(self, value):
+        self.model_dict['norm_type'] = value
+
+    @property
+    def mus(self):
+        return self.model_dict['mus']
+    @mus.setter
+    def mus(self, value):
+        self.model_dict['mus'] = value
+
+    @property
+    def sds(self):
+        return self.model_dict['sds']
+    @sds.setter
+    def sds(self, value):
+        self.model_dict['sds'] = value
+
+    @property
+    def fmins(self):
+        return self.model_dict['fmins']
+    @fmins.setter
+    def fmins(self, value):
+        self.model_dict['fmins'] = value
+
+    @property
+    def fmaxs(self):
+        return self.model_dict['fmaxs']
+    @fmaxs.setter
+    def fmaxs(self, value):
+        self.model_dict['fmaxs'] = value
+
+    @property
+    def model(self):
+        return self.model_dict['model']
+    @model.setter
+    def model(self, value):
+        self.model_dict['model'] = value
 
     def to_file(self, filename):
 
-        assert self.model is not None, "Nothing to save..."
-
-        model_info = {}
-        model_info['model'] = self.model
-        model_info['params'] = self.param_dict
-        model_info['mus'] = self.mus
-        model_info['sds'] = self.sds
-        model_info['fmins'] = self.fmins
-        model_info['fmaxs'] = self.fmaxs
-        model_info['norm_type'] = self.norm_type
-        model_info['feature_names'] = self.feature_names
-
+        self._assert_trained()
+        info_to_save = {'param_dict': self.param_dict,
+                        'model_dict': self.model_dict}
         import joblib
-        joblib.dump(model_info, filename, compress=9)
-
-        # self._assert_trained()
-        # info_to_save = {}
-        # info_to_save['param_dict'] = self.param_dict
-        # info_to_save['model_dict'] = self.model_dict
-        # import joblib
-        # joblib.dump(info_to_save, filename, compress=9)
+        joblib.dump(info_to_save, filename, compress=9)
 
     @classmethod
     def from_file(cls, filename, logger):
 
         train_test_model = cls(param_dict={}, logger=logger)
 
-        # import joblib
-        # info_loaded = joblib.load(filename)
-        # train_test_model.param_dict = info_loaded['param_dict']
-        # train_test_model.model_dict = info_loaded['model_dict']
-
         import joblib
-        model_info = joblib.load(filename)
-        train_test_model.param_dict = model_info['params']
-        train_test_model.model = model_info['model']
-        train_test_model.mus = model_info['mus']
-        train_test_model.sds = model_info['sds']
-        train_test_model.fmins = model_info['fmins']
-        train_test_model.fmaxs = model_info['fmaxs']
-        # self.feature_names = model_info['feature_names']
-        # for backward compatibility, use the following for older model files:
-        train_test_model.feature_names = model_info['feature_names'] \
-            if 'feature_names' in model_info else model_info['X_featurelabels']
-
-        train_test_model.norm_type = model_info['norm_type']
+        info_loaded = joblib.load(filename)
+        train_test_model.param_dict = info_loaded['param_dict']
+        train_test_model.model_dict = info_loaded['model_dict']
 
         return train_test_model
+
+    @staticmethod
+    def delete(filename):
+        if os.path.exists(filename):
+            os.remove(filename)
 
     @staticmethod
     def _predict(model, xs_2d):
@@ -124,20 +124,10 @@ class TrainTestModel(TypeVersionEnabled):
 
     def predict(self, xs):
 
-        # assert that xs is a dict
-        expected_input = '''
-           xs = {
-                 'feature': [...],
-                 'anotherfeature': [...],
-                 'yetanotherfeature': [...],
-           }
-        '''
-        assert type(xs) is dict, "predict only accepts named features passed " \
-                                "via a dictionary! Expected input: \n" + \
-                                expected_input
+        self._assert_trained()
 
         for name in self.feature_names:
-            assert name in xs, "Oops. " + name + " not found in feature dictionary."
+            assert name in xs
 
         xs_2d = []
         for name in self.feature_names:
@@ -150,6 +140,7 @@ class TrainTestModel(TypeVersionEnabled):
         # normalize xs
         xs_2d = self.normalize_xs(xs_2d)
 
+        # predict
         ys_label_pred = self._predict(self.model, xs_2d)
 
         # denormalize ys
@@ -159,31 +150,21 @@ class TrainTestModel(TypeVersionEnabled):
 
     @staticmethod
     def get_stats(ys_label, ys_label_pred):
-
         import scipy.stats
-
         # MSE
         mse = np.mean(np.power(np.array(ys_label) - np.array(ys_label_pred), 2.0))
-
         # spearman
         srcc, _ = scipy.stats.spearmanr(ys_label, ys_label_pred)
-
         # pearson
         pcc, _ = scipy.stats.pearsonr(ys_label, ys_label_pred)
-
         # kendall
         kendall, _ = scipy.stats.kendalltau(ys_label, ys_label_pred)
-
-        result = {}
-        result['MSE'] = mse
-        result['SRCC'] = srcc
-        result['PCC'] = pcc
-        result['KENDALL'] = kendall
-
-        # append raw
-        result['ys_label'] = list(ys_label)
-        result['ys_label_pred'] = list(ys_label_pred)
-
+        result = {'MSE': mse,
+                  'SRCC': srcc,
+                  'PCC': pcc,
+                  'KENDALL': kendall,
+                  'ys_label': list(ys_label),
+                  'ys_label_pred': list(ys_label_pred)}
         return result
 
     @classmethod
@@ -240,30 +221,15 @@ class TrainTestModel(TypeVersionEnabled):
         return self.get_stats(ys_label, ys_label_pred)
 
     def train(self, xys):
-        # xys should be dictionary of vectors like
-        expected_input = '''
-           xys = { 'label': [...],
-                 'content_id': [...],
-                 'feature': [...],
-                 'anotherfeature': [...],
-                 'yetanotherfeature': [...],
-           }
-       '''
-        # where you can add as many keys to X, but each should be set
-        # with the vector of the same length as label
-        assert type(xys) is dict, "train only accepts named features passed " \
-                                "via a dictionary! Pass in something like:\n" \
-                                + expected_input
 
-        assert 'label' in xys, "Must pass in a label vector for training... " \
-                             "i.e xys['label'] = [...] "
+        assert 'label' in xys
 
         ys_vec = xys['label']
 
         # this makes sure the order of features are normalized, and each
         # dimension of xys_2d is consistent with feature_names
-
         feature_names = sorted(xys.keys())
+
         feature_names.remove('label')
         feature_names.remove('content_id')
 
@@ -279,6 +245,8 @@ class TrainTestModel(TypeVersionEnabled):
         # combine them
         xys_2d = np.array(np.hstack((np.matrix(ys_vec).T, xs_2d)))
 
+        self.norm_type = self.param_dict['norm_type'] if 'norm_type' in self.param_dict else 'whiten'
+
         # calculate normalization parameters,
         self._calculate_normalization_params(xys_2d)
 
@@ -286,6 +254,7 @@ class TrainTestModel(TypeVersionEnabled):
         xys_2d = self._normalize_xys(xys_2d)
 
         model = self._train(self.param_dict, xys_2d)
+
         self.model = model
 
     def _calculate_normalization_params(self, xys_2d):
@@ -482,45 +451,32 @@ class LibsvmnusvrTrainTestModel(TrainTestModel):
 
     # override
     def to_file(self, filename):
-        assert self.model is not None, "Nothing to save..."
 
-        self.svmutil.svm_save_model(filename + '.model', self.model)
+        self._assert_trained()
 
-        model_info = {}
-        model_info['params'] = self.param_dict
-        model_info['mu'] = self.mus
-        model_info['sd'] = self.sds
-        model_info['fmin'] = self.fmins
-        model_info['fmax'] = self.fmaxs
-        model_info['norm_type'] = self.norm_type
-        model_info['feature_names'] = self.feature_names
+        # special handling of libsvmnusvr: save .model differently
+        model_dict_copy = self.model_dict.copy()
+        model_dict_copy['model'] = None
+        info_to_save = {'param_dict': self.param_dict,
+                        'model_dict': model_dict_copy}
+        self.svmutil.svm_save_model(filename + '.model', self.model_dict['model'])
 
         import joblib
-        joblib.dump(model_info, filename, compress=9)
+        joblib.dump(info_to_save, filename, compress=9)
 
     # override
     @classmethod
     def from_file(cls, filename, logger):
         train_test_model = cls(param_dict={}, logger=logger)
 
-        model = cls.svmutil.svm_load_model(filename + '.model')
-
         import joblib
-        model_info = joblib.load(filename)
+        info_loaded = joblib.load(filename)
+        train_test_model.param_dict = info_loaded['param_dict']
+        train_test_model.model_dict = info_loaded['model_dict']
 
-        train_test_model.param_dict = model_info['params']
-        train_test_model.model = model
-        train_test_model.mus = model_info['mu']
-        train_test_model.sds = model_info['sd']
-        train_test_model.fmins = model_info['fmin']
-        train_test_model.fmaxs = model_info['fmax']
-
-        # self.feature_names = model_info['feature_names']
-        # for backward compatibility, use the following for older model files:
-        train_test_model.feature_names = model_info['feature_names'] \
-            if 'feature_names' in model_info else model_info['X_featurelabels']
-
-        train_test_model.norm_type = model_info['norm_type']
+        # special handling of libsvmnusvr: load .model differently
+        model = cls.svmutil.svm_load_model(filename + '.model')
+        train_test_model.model_dict['model'] = model
 
         return train_test_model
 

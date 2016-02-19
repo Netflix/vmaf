@@ -14,8 +14,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
         print "test cross validation..."
 
         train_test_model_class = RandomForestTrainTestModel
-        model_param = {'norm_type':'whiten',
-                           'random_state': 0}
+        model_param = {'norm_type':'whiten', 'random_state': 0}
 
         feature_df_file = config.ROOT + \
             "/python/test/resource/sample_feature_extraction_results.json"
@@ -38,8 +37,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
         print "test k-fold cross validation on random forest..."
 
         train_test_model_class = RandomForestTrainTestModel
-        model_param = {'norm_type':'whiten',
-                           'random_state': 0}
+        model_param = {'norm_type':'whiten', 'random_state': 0}
 
         feature_df_file = config.ROOT + \
             "/python/test/resource/sample_feature_extraction_results.json"
@@ -58,7 +56,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
         print "test k-fold cross validation on libsvmnusvr..."
 
         train_test_model_class = LibsvmnusvrTrainTestModel
-        model_param = {'norm_type':'whiten'}
+        model_param = {'norm_type': 'whiten'}
 
         feature_df_file = config.ROOT + \
             "/python/test/resource/sample_feature_extraction_results.json"
@@ -77,8 +75,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
         print "test k-fold cross validation with list input..."
 
         train_test_model_class = RandomForestTrainTestModel
-        model_param = {'norm_type':'whiten',
-                           'random_state': 0}
+        model_param = {'norm_type':'whiten', 'random_state': 0}
 
         feature_df_file = config.ROOT + \
             "/python/test/resource/sample_feature_extraction_results.json"
@@ -96,8 +93,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
 
     def test_unroll_dict_of_lists(self):
         model_param_search_range = {'norm_type':['whiten', 'rescale_0to1'],
-         'n_estimators':[10, 50],
-         'random_state': [0]}
+                                    'n_estimators':[10, 50], 'random_state': [0]}
 
         dicts = FeatureCrossValidation._unroll_dict_of_lists(model_param_search_range)
 

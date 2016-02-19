@@ -22,9 +22,7 @@ class TrainTestModelTest(unittest.TestCase):
         if os.path.exists(self.model_filename): os.remove(self.model_filename)
 
     def tearDown(self):
-        unittest.TestCase.tearDown(self)
-
-        if os.path.exists(self.model_filename): os.remove(self.model_filename)
+        pass
 
     def test_get_xs_ys(self):
         xs = TrainTestModel.get_xs_from_dataframe(self.feature_df, [0, 1, 2])
@@ -85,6 +83,8 @@ class TrainTestModelTest(unittest.TestCase):
 
         result = loaded_model.evaluate(xs, ys)
         self.assertEquals(result['MSE'], 0.10432107750419255)
+
+        model.delete(self.model_filename)
 
     def test_train_save_load_predict_libsvmnusvr(self):
 
