@@ -2,7 +2,6 @@ __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import unittest
-from tools import get_stdout_logger, close_logger
 from train_test_model import RandomForestTrainTestModel, \
     LibsvmnusvrTrainTestModel
 from cross_validation import FeatureCrossValidation
@@ -11,15 +10,13 @@ import config
 
 class FeatureCrossValidationTest(unittest.TestCase):
 
-    def setUp(self):
-        unittest.TestCase.setUp(self)
-        self.logger = get_stdout_logger()
-
     def tearDown(self):
         unittest.TestCase.tearDown(self)
-        close_logger(self.logger)
 
     def test_run_cross_validation(self):
+
+        print "test cross validation..."
+
         train_test_model_class = RandomForestTrainTestModel
         model_param = {'norm_type':'whiten',
                            'random_state': 0}
@@ -41,6 +38,9 @@ class FeatureCrossValidationTest(unittest.TestCase):
         self.assertEquals(output['train_test_model'].TYPE, "randomforest")
 
     def test_run_kfold_cross_validation_randomforest(self):
+
+        print "test k-fold cross validation on random forest..."
+
         train_test_model_class = RandomForestTrainTestModel
         model_param = {'norm_type':'whiten',
                            'random_state': 0}
@@ -58,6 +58,9 @@ class FeatureCrossValidationTest(unittest.TestCase):
         self.assertEquals(output['aggregated_result']['MSE'], 0.13074137037037029)
 
     def test_run_kfold_cross_validation_libsvmnusvr(self):
+
+        print "test k-fold cross validation on libsvmnusvr..."
+
         train_test_model_class = LibsvmnusvrTrainTestModel
         model_param = {'norm_type':'whiten'}
 
@@ -74,6 +77,9 @@ class FeatureCrossValidationTest(unittest.TestCase):
         self.assertEquals(output['aggregated_result']['MSE'], 0.13658428803953349)
 
     def test_run_kfold_cross_validation_with_list_input(self):
+
+        print "test k-fold cross validation with list input..."
+
         train_test_model_class = RandomForestTrainTestModel
         model_param = {'norm_type':'whiten',
                            'random_state': 0}
@@ -125,6 +131,9 @@ class FeatureCrossValidationTest(unittest.TestCase):
         self.assertEquals(count, expected_count)
 
     def test_run_nested_kfold_cross_validation_randomforest(self):
+
+        print "test nested k-fold cross validation on random forest..."
+
         train_test_model_class = RandomForestTrainTestModel
         model_param_search_range = \
             {'norm_type':['whiten'],
@@ -155,6 +164,9 @@ class FeatureCrossValidationTest(unittest.TestCase):
         self.assertEquals(output['model_param_dominance'], expected_dominance)
 
     def test_run_nested_kfold_cross_validation_libsvmnusvr(self):
+
+        print "test nested k-fold cross validation on libsvmnusvr..."
+
         train_test_model_class = LibsvmnusvrTrainTestModel
         model_param_search_range = \
             {'norm_type':['whiten', 'rescale_0to1', 'rescale_minus1to1'],
@@ -188,6 +200,9 @@ class FeatureCrossValidationTest(unittest.TestCase):
         self.assertEquals(output['model_param_dominance'], expected_dominance)
 
     def test_run_nested_kfold_cross_validation_with_list_input(self):
+
+        print "test nested k-fold cross validation with list input..."
+
         train_test_model_class = RandomForestTrainTestModel
         model_param_search_range = \
             {'norm_type':['whiten'],
