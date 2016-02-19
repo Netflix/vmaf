@@ -59,7 +59,9 @@ The VMAF training/testing framework requires a Python data processing package na
 
 `pip install pandas`
 
-Also need: scipy, matplotlib, scikit-learn, ...
+Also need: scipy, matplotlib, sklearn, ...
+
+joblib
 
 ##To-do List
 

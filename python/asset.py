@@ -63,6 +63,18 @@ class Asset(WorkdirEnabled):
                      asset_dict=d['asset_dict']
                      )
 
+    # ==== groundtruth ====
+    @property
+    def groundtruth(self):
+        """
+        Ground truth score, e.g. MOS, DMOS
+        :return:
+        """
+        if 'groundtruth' in self.asset_dict:
+            return self.asset_dict['groundtruth']
+        else:
+            return None
+
     # ==== width and height ====
 
     @property

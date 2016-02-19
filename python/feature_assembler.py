@@ -44,21 +44,21 @@ class FeatureAssembler(object):
 
         self.type2results_dict = {}
 
-    @property
-    def ordered_scores_key_list(self):
-        """
-        CAUTION: order matters to TrainTestModel! ALWAYS use this ordered list
-        to construct feature vector for TrainTestModel from result.
-        :return:
-        """
-        scores_key_list = []
-        for fextractor_type in sorted(self.feature_dict.keys()):
-            for atom_feature in sorted(self._get_atom_features(fextractor_type)):
-
-                scores_key = self._get_scores_key(fextractor_type, atom_feature)
-
-                scores_key_list.append(scores_key)
-        return scores_key_list
+    # @property
+    # def ordered_scores_key_list(self):
+    #     """
+    #     CAUTION: order matters to TrainTestModel! ALWAYS use this ordered list
+    #     to construct feature vector for TrainTestModel from result.
+    #     :return:
+    #     """
+    #     scores_key_list = []
+    #     for fextractor_type in sorted(self.feature_dict.keys()):
+    #         for atom_feature in sorted(self._get_atom_features(fextractor_type)):
+    #
+    #             scores_key = self._get_scores_key(fextractor_type, atom_feature)
+    #
+    #             scores_key_list.append(scores_key)
+    #     return scores_key_list
 
     def run(self):
 
