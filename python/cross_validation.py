@@ -103,7 +103,7 @@ class FeatureCrossValidation(object):
         """
         Nested k-fold cross validation, given hyper-parameter search range. The
         search range is specified in the format of, e.g.:
-        {'norm_type':['whiten', 'rescale_0to1', 'rescale_minus1to1'],
+        {'norm_type':['normalize', 'clip_0to1', 'clip_minus1to1'],
          'n_estimators':[10, 50],
          'random_state': [0]}
         See more detail at:
@@ -223,12 +223,12 @@ class FeatureCrossValidation(object):
     def _unroll_dict_of_lists(dict_of_lists):
         """
         Unfold a dictionary of lists into a list of dictionaries. For example,
-        dict_of_lists = {'norm_type':['whiten'],
+        dict_of_lists = {'norm_type':['normalize'],
          'n_estimators':[10, 50],
          'random_state': [0]}
         the output list of dictionaries will be:
-        [{'norm_type':'whiten', 'n_estimators':10, 'random_state':0},
-         {'norm_type':'whiten', 'n_estimators':10, 'random_state':0}]
+        [{'norm_type':'normalize', 'n_estimators':10, 'random_state':0},
+         {'norm_type':'normalize', 'n_estimators':10, 'random_state':0}]
         :param dict_of_lists:
         :return:
         """

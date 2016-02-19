@@ -30,9 +30,9 @@ class TrainTestModel(TypeVersionEnabled):
         assert 'norm_type' in self.model_dict
         norm_type = self.model_dict['norm_type']
         assert (   norm_type == 'none'
-                or norm_type == 'whiten'
-                or norm_type == 'rescale_0to1'
-                or norm_type == 'rescale_minus1to1')
+                or norm_type == 'normalize'
+                or norm_type == 'clip_0to1'
+                or norm_type == 'clip_minus1to1')
 
         if norm_type == 'normal':
             assert 'mu' in self.model_dict
@@ -245,7 +245,7 @@ class TrainTestModel(TypeVersionEnabled):
         # combine them
         xys_2d = np.array(np.hstack((np.matrix(ys_vec).T, xs_2d)))
 
-        self.norm_type = self.param_dict['norm_type'] if 'norm_type' in self.param_dict else 'whiten'
+        self.norm_type = self.param_dict['norm_type'] if 'norm_type' in self.param_dict else 'normalize'
 
         # calculate normalization parameters,
         self._calculate_normalization_params(xys_2d)
@@ -258,13 +258,13 @@ class TrainTestModel(TypeVersionEnabled):
         self.model = model
 
     def _calculate_normalization_params(self, xys_2d):
-        if self.norm_type == 'whiten':
+        if self.norm_type == 'normalize':
             self.mus = np.mean(xys_2d, axis=0)
             self.sds = np.std(xys_2d, axis=0)
-        elif self.norm_type == 'rescale_0to1':
+        elif self.norm_type == 'clip_0to1':
             self.fmins = np.min(xys_2d, axis=0)
             self.fmaxs = np.max(xys_2d, axis=0)
-        elif self.norm_type == 'rescale_minus1to1':
+        elif self.norm_type == 'clip_minus1to1':
             self.fmins = np.min(xys_2d, axis=0)
             self.fmaxs = np.max(xys_2d, axis=0)
         elif self.norm_type == 'none':
@@ -274,12 +274,12 @@ class TrainTestModel(TypeVersionEnabled):
                 format(self.norm_type)
 
     def _normalize_xys(self, xys_2d):
-        if self.norm_type == 'whiten':
+        if self.norm_type == 'normalize':
             xys_2d -= self.mus
             xys_2d /= self.sds
-        elif self.norm_type == 'rescale_0to1':
+        elif self.norm_type == 'clip_0to1':
             xys_2d = 1.0 / (self.fmaxs - self.fmins) * (xys_2d - self.fmins)
-        elif self.norm_type == 'rescale_minus1to1':
+        elif self.norm_type == 'clip_minus1to1':
             xys_2d = 2.0 / (self.fmaxs - self.fmins) * (xys_2d - self.fmins) - 1
         elif self.norm_type == 'none':
             pass
@@ -289,17 +289,17 @@ class TrainTestModel(TypeVersionEnabled):
         return xys_2d
 
     def denormalize_ys(self, ys_vec):
-        if self.norm_type == 'whiten':
+        if self.norm_type == 'normalize':
             ys_vec *= self.sds[0]
             ys_vec += self.mus[0]
-        # elif self.norm_type == 'rescale_0to1':
+        # elif self.norm_type == 'clip_0to1':
         # for backward compatibility, use the following for older model files:
-        elif self.norm_type == 'rescale_0to1' or self.norm_type == 'rescale1':
+        elif self.norm_type == 'clip_0to1' or self.norm_type == 'rescale1':
             ys_vec *= (self.fmaxs[0] - self.fmins[0])
             ys_vec += self.fmins[0]
-        # elif self.norm_type == 'rescale_minus1to1':
+        # elif self.norm_type == 'clip_minus1to1':
         # for backward compatibility, use the following for older model files:
-        elif self.norm_type == 'rescale_minus1to1' or self.norm_type == 'rescale2':
+        elif self.norm_type == 'clip_minus1to1' or self.norm_type == 'rescale2':
             ys_vec += 1
             ys_vec /= 2.0
             ys_vec *= (self.fmaxs[0] - self.fmins[0])
@@ -312,17 +312,17 @@ class TrainTestModel(TypeVersionEnabled):
         return ys_vec
 
     def normalize_xs(self, xs_2d):
-        if self.norm_type == 'whiten':
+        if self.norm_type == 'normalize':
             xs_2d -= self.mus[1:]
             xs_2d /= self.sds[1:]
-        # elif self.norm_type == 'rescale_0to1':
+        # elif self.norm_type == 'clip_0to1':
         # for backward compatibility, use the following for older model files:
-        elif self.norm_type == 'rescale_0to1' or self.norm_type == 'rescale1':
+        elif self.norm_type == 'clip_0to1' or self.norm_type == 'rescale1':
             xs_2d = 1.0 / (self.fmaxs[1:] - self.fmins[1:]) * \
                     (xs_2d - self.fmins[1:])
-        # elif self.norm_type == 'rescale_minus1to1':
+        # elif self.norm_type == 'clip_minus1to1':
         # for backward compatibility, use the following for older model files:
-        elif self.norm_type == 'rescale_minus1to1' or self.norm_type == 'rescale2':
+        elif self.norm_type == 'clip_minus1to1' or self.norm_type == 'rescale2':
             xs_2d = 2.0 / (self.fmaxs[1:] - self.fmins[1:]) * \
                     (xs_2d - self.fmins[1:]) - 1
         elif self.norm_type == 'none':

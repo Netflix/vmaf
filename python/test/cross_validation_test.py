@@ -14,7 +14,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
         print "test cross validation..."
 
         train_test_model_class = RandomForestTrainTestModel
-        model_param = {'norm_type':'whiten', 'random_state': 0}
+        model_param = {'norm_type':'normalize', 'random_state': 0}
 
         feature_df_file = config.ROOT + \
             "/python/test/resource/sample_feature_extraction_results.json"
@@ -37,7 +37,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
         print "test k-fold cross validation on random forest..."
 
         train_test_model_class = RandomForestTrainTestModel
-        model_param = {'norm_type':'whiten', 'random_state': 0}
+        model_param = {'norm_type':'normalize', 'random_state': 0}
 
         feature_df_file = config.ROOT + \
             "/python/test/resource/sample_feature_extraction_results.json"
@@ -56,7 +56,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
         print "test k-fold cross validation on libsvmnusvr..."
 
         train_test_model_class = LibsvmnusvrTrainTestModel
-        model_param = {'norm_type': 'whiten'}
+        model_param = {'norm_type': 'normalize'}
 
         feature_df_file = config.ROOT + \
             "/python/test/resource/sample_feature_extraction_results.json"
@@ -75,7 +75,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
         print "test k-fold cross validation with list input..."
 
         train_test_model_class = RandomForestTrainTestModel
-        model_param = {'norm_type':'whiten', 'random_state': 0}
+        model_param = {'norm_type':'normalize', 'random_state': 0}
 
         feature_df_file = config.ROOT + \
             "/python/test/resource/sample_feature_extraction_results.json"
@@ -92,31 +92,31 @@ class FeatureCrossValidationTest(unittest.TestCase):
         self.assertEquals(output['aggregated_result']['MSE'], 0.17830466666666658)
 
     def test_unroll_dict_of_lists(self):
-        model_param_search_range = {'norm_type':['whiten', 'rescale_0to1'],
+        model_param_search_range = {'norm_type':['normalize', 'clip_0to1'],
                                     'n_estimators':[10, 50], 'random_state': [0]}
 
         dicts = FeatureCrossValidation._unroll_dict_of_lists(model_param_search_range)
 
         expected_dicts = [
-         {'norm_type':'whiten', 'n_estimators':10, 'random_state':0},
-         {'norm_type':'rescale_0to1', 'n_estimators':10, 'random_state':0},
-         {'norm_type':'whiten', 'n_estimators':50, 'random_state':0},
-         {'norm_type':'rescale_0to1', 'n_estimators':50, 'random_state':0},
+         {'norm_type':'normalize', 'n_estimators':10, 'random_state':0},
+         {'norm_type':'clip_0to1', 'n_estimators':10, 'random_state':0},
+         {'norm_type':'normalize', 'n_estimators':50, 'random_state':0},
+         {'norm_type':'clip_0to1', 'n_estimators':50, 'random_state':0},
         ]
 
         self.assertEquals(dicts, expected_dicts)
 
     def test_find_most_frequent_dict(self):
         dicts = [
-         {'norm_type':'whiten', 'n_estimators':10, 'random_state':0},
-         {'norm_type':'whiten', 'n_estimators':50, 'random_state':0},
-         {'norm_type':'rescale_0to1', 'n_estimators':10, 'random_state':0},
-         {'norm_type':'rescale_0to1', 'n_estimators':50, 'random_state':0},
-         {'norm_type':'rescale_0to1', 'n_estimators':50, 'random_state':0},
+         {'norm_type':'normalize', 'n_estimators':10, 'random_state':0},
+         {'norm_type':'normalize', 'n_estimators':50, 'random_state':0},
+         {'norm_type':'clip_0to1', 'n_estimators':10, 'random_state':0},
+         {'norm_type':'clip_0to1', 'n_estimators':50, 'random_state':0},
+         {'norm_type':'clip_0to1', 'n_estimators':50, 'random_state':0},
         ]
 
         dict, count = FeatureCrossValidation._find_most_frequent_dict(dicts)
-        expected_dict =  {'norm_type':'rescale_0to1', 'n_estimators':50, 'random_state':0}
+        expected_dict =  {'norm_type':'clip_0to1', 'n_estimators':50, 'random_state':0}
         expected_count = 2
 
         self.assertEquals(dict, expected_dict)
@@ -128,7 +128,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
 
         train_test_model_class = RandomForestTrainTestModel
         model_param_search_range = \
-            {'norm_type':['whiten'],
+            {'norm_type':['normalize'],
              'n_estimators':[10, 90],
              'max_depth':[None, 3],
              'random_state': [0]
@@ -146,7 +146,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
         self.assertEquals(output['aggregated_result']['KENDALL'], 0.77075614608695509)
         self.assertEquals(output['aggregated_result']['MSE'], 0.10560801834484414)
 
-        expected_model_param = {'norm_type':'whiten',
+        expected_model_param = {'norm_type':'normalize',
                                 'n_estimators':90,
                                 'max_depth':3,
                                 'random_state':0
@@ -161,7 +161,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
 
         train_test_model_class = LibsvmnusvrTrainTestModel
         model_param_search_range = \
-            {'norm_type':['whiten', 'rescale_0to1', 'rescale_minus1to1'],
+            {'norm_type':['normalize', 'clip_0to1', 'clip_minus1to1'],
              'kernel':['rbf'],
              'nu': [0.5, 1.0],
              'C': [1, 2],
@@ -180,7 +180,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
         self.assertEquals(output['aggregated_result']['KENDALL'], 0.77785381654919195)
         self.assertEquals(output['aggregated_result']['MSE'], 0.10909222874972166)
 
-        expected_model_param = {'norm_type':'rescale_0to1',
+        expected_model_param = {'norm_type':'clip_0to1',
                                 'kernel':'rbf',
                                 'nu':1.0,
                                 'C':1,
@@ -197,7 +197,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
 
         train_test_model_class = RandomForestTrainTestModel
         model_param_search_range = \
-            {'norm_type':['whiten'],
+            {'norm_type':['normalize'],
              'n_estimators':[10, 90],
              'max_depth':[None, 3],
              'random_state': [0]
@@ -218,7 +218,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
         self.assertEquals(output['aggregated_result']['KENDALL'], 0.76612289581523185)
         self.assertEquals(output['aggregated_result']['MSE'], 0.14346339074899395)
 
-        expected_model_param = {'norm_type':'whiten',
+        expected_model_param = {'norm_type':'normalize',
                                 'n_estimators':90,
                                 'max_depth':3,
                                 'random_state':0

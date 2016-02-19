@@ -73,7 +73,7 @@ class TrainTestModelTest(unittest.TestCase):
         xs = TrainTestModel.get_xs_from_dataframe(self.feature_df.iloc[-50:])
         ys = TrainTestModel.get_ys_from_dataframe(self.feature_df.iloc[-50:])
 
-        model = NusvrTrainTestModel({'norm_type':'whiten'}, None)
+        model = NusvrTrainTestModel({'norm_type':'normalize'}, None)
         model.train(xys)
 
         model.to_file(self.model_filename)
@@ -94,7 +94,7 @@ class TrainTestModelTest(unittest.TestCase):
         xs = TrainTestModel.get_xs_from_dataframe(self.feature_df.iloc[-50:])
         ys = TrainTestModel.get_ys_from_dataframe(self.feature_df.iloc[-50:])
 
-        model = LibsvmnusvrTrainTestModel({'norm_type':'whiten'}, None)
+        model = LibsvmnusvrTrainTestModel({'norm_type':'normalize'}, None)
         model.train(xys)
 
         model.to_file(self.model_filename)
@@ -122,19 +122,19 @@ class TrainTestModelTest(unittest.TestCase):
         ys = TrainTestModel.get_ys_from_dataframe(self.feature_df.iloc[-50:])
 
         model = NusvrTrainTestModel(
-            {'norm_type':'whiten'}, None)
+            {'norm_type':'normalize'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertEquals(result['MSE'], 0.10432107750419255)
 
         model = NusvrTrainTestModel(
-            {'norm_type':'rescale_0to1'}, None)
+            {'norm_type':'clip_0to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertEquals(result['MSE'], 0.1058434677183516)
 
         model = NusvrTrainTestModel(
-            {'norm_type':'rescale_minus1to1'}, None)
+            {'norm_type':'clip_minus1to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertEquals(result['MSE'], 0.096561628579762998)
@@ -156,19 +156,19 @@ class TrainTestModelTest(unittest.TestCase):
         ys = TrainTestModel.get_ys_from_dataframe(self.feature_df.iloc[-50:])
 
         model = LibsvmnusvrTrainTestModel(
-            {'norm_type':'whiten'}, None)
+            {'norm_type':'normalize'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertEquals(result['MSE'], 0.10432107750419255)
 
         model = LibsvmnusvrTrainTestModel(
-            {'norm_type':'rescale_0to1'}, None)
+            {'norm_type':'clip_0to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertEquals(result['MSE'], 0.1058434677183516)
 
         model = LibsvmnusvrTrainTestModel(
-            {'norm_type':'rescale_minus1to1'}, None)
+            {'norm_type':'clip_minus1to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertEquals(result['MSE'], 0.096561628579762998)
@@ -190,19 +190,19 @@ class TrainTestModelTest(unittest.TestCase):
         xs = TrainTestModel.get_xs_from_dataframe(self.feature_df.iloc[-50:])
         ys = TrainTestModel.get_ys_from_dataframe(self.feature_df.iloc[-50:])
 
-        model = RandomForestTrainTestModel({'norm_type':'whiten',
+        model = RandomForestTrainTestModel({'norm_type':'normalize',
                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertEquals(result['MSE'], 0.10431733333333336)
 
-        model = RandomForestTrainTestModel({'norm_type':'rescale_0to1',
+        model = RandomForestTrainTestModel({'norm_type':'clip_0to1',
                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertEquals(result['MSE'], 0.10431733333333339)
 
-        model = RandomForestTrainTestModel({'norm_type':'rescale_minus1to1',
+        model = RandomForestTrainTestModel({'norm_type':'clip_minus1to1',
                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
