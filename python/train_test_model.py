@@ -16,6 +16,8 @@ class TrainTestModel(TypeVersionEnabled):
         :param logger:
         :return:
         """
+        TypeVersionEnabled.__init__(self)
+
         self.param_dict = param_dict
         self.logger = logger
 
@@ -31,14 +33,9 @@ class TrainTestModel(TypeVersionEnabled):
 
         norm_type = self.model_dict['norm_type']
         assert (   norm_type == 'none'
-                or norm_type == 'normalize'
-                or norm_type == 'clip')
+                or norm_type == 'linear_rescale')
 
-        if norm_type == 'normalize':
-            assert 'mus' in self.model_dict
-            assert 'sds' in self.model_dict
-
-        if norm_type == 'clip':
+        if norm_type == 'linear_rescale':
             assert 'slopes' in self.model_dict
             assert 'intercepts' in self.model_dict
 
@@ -245,15 +242,6 @@ class TrainTestModel(TypeVersionEnabled):
         # combine them
         xys_2d = np.array(np.hstack((np.matrix(ys_vec).T, xs_2d)))
 
-        # # set model norm_type according to param norm_type
-        # if 'norm_type' not in self.param_dict:
-        #     self.norm_type = 'normalize'
-        # elif self.param_dict['norm_type'] == 'clip_0to1' \
-        #         or self.param_dict['norm_type'] == 'clip_minus1to1':
-        #     self.norm_type = 'clip'
-        # else:
-        #     self.norm_type = self.param_dict['norm_type']
-
         # calculate normalization parameters,
         self._calculate_normalization_params(xys_2d)
 
@@ -266,9 +254,11 @@ class TrainTestModel(TypeVersionEnabled):
 
     def _calculate_normalization_params(self, xys_2d):
         if self.param_dict['norm_type'] == 'normalize':
-            self.mus = np.mean(xys_2d, axis=0)
-            self.sds = np.std(xys_2d, axis=0)
-            self.norm_type = 'normalize'
+            mus = np.mean(xys_2d, axis=0)
+            sds = np.std(xys_2d, axis=0)
+            self.slopes = 1.0 / sds
+            self.intercepts = - mus / sds
+            self.norm_type = 'linear_rescale'
         elif self.param_dict['norm_type'] == 'clip_0to1':
             ub = 1.0
             lb = 0.0
@@ -276,7 +266,7 @@ class TrainTestModel(TypeVersionEnabled):
             fmaxs = np.max(xys_2d, axis=0)
             self.slopes = (ub - lb) / (fmaxs - fmins)
             self.intercepts = (lb*fmaxs - ub*fmins) / (fmaxs - fmins)
-            self.norm_type = 'clip'
+            self.norm_type = 'linear_rescale'
         elif self.param_dict['norm_type'] == 'clip_minus1to1':
             ub =  1.0
             lb = -1.0
@@ -284,7 +274,7 @@ class TrainTestModel(TypeVersionEnabled):
             fmaxs = np.max(xys_2d, axis=0)
             self.slopes = (ub - lb) / (fmaxs - fmins)
             self.intercepts = (lb*fmaxs - ub*fmins) / (fmaxs - fmins)
-            self.norm_type = 'clip'
+            self.norm_type = 'linear_rescale'
         elif self.param_dict['norm_type'] == 'none':
             self.norm_type = 'none'
         else:
@@ -292,10 +282,7 @@ class TrainTestModel(TypeVersionEnabled):
                 .format(self.param_dict['norm_type'])
 
     def _normalize_xys(self, xys_2d):
-        if self.norm_type == 'normalize':
-            xys_2d -= self.mus
-            xys_2d /= self.sds
-        elif self.norm_type == 'clip':
+        if self.norm_type == 'linear_rescale':
             xys_2d = self.slopes * xys_2d + self.intercepts
         elif self.norm_type == 'none':
             pass
@@ -305,10 +292,7 @@ class TrainTestModel(TypeVersionEnabled):
         return xys_2d
 
     def denormalize_ys(self, ys_vec):
-        if self.norm_type == 'normalize':
-            ys_vec *= self.sds[0]
-            ys_vec += self.mus[0]
-        elif self.norm_type == 'clip':
+        if self.norm_type == 'linear_rescale':
             ys_vec = (ys_vec - self.intercepts[0]) / self.slopes[0]
         elif self.norm_type == 'none':
             pass
@@ -318,10 +302,7 @@ class TrainTestModel(TypeVersionEnabled):
         return ys_vec
 
     def normalize_xs(self, xs_2d):
-        if self.norm_type == 'normalize':
-            xs_2d -= self.mus[1:]
-            xs_2d /= self.sds[1:]
-        elif self.norm_type == 'clip':
+        if self.norm_type == 'linear_rescale':
             xs_2d = self.slopes[1:] * xs_2d + self.intercepts[1:]
         elif self.norm_type == 'none':
             pass
@@ -329,6 +310,11 @@ class TrainTestModel(TypeVersionEnabled):
             assert False, 'Incorrect model norm type selected: {}' \
                 .format(self.norm_type)
         return xs_2d
+
+    # ========================== begin of legacy ===============================
+
+    # below is for the purpose of reading a legacy test text file, and to ensure
+    # the code in the class produces bit-exact test results as before
 
     @staticmethod
     def get_xs_from_dataframe(df, rows=None):
@@ -396,6 +382,58 @@ class TrainTestModel(TypeVersionEnabled):
         xys = {}
         xys.update(cls.get_xs_from_dataframe(df, rows))
         xys.update(cls.get_ys_from_dataframe(df, rows))
+        return xys
+
+    # ========================== end of legacy =================================
+
+    @staticmethod
+    def get_xs_from_results(results, indexs=None):
+        """
+        :param results: list of BasicResult
+        :param indexs: indices of results to be used
+        :return:
+        """
+        feature_names = results[0].get_ordered_list_score_key()
+        xs = {}
+        for name in feature_names:
+            if indexs is None:
+                _results = results
+            else:
+                _results = map(lambda i:results[i], indexs)
+            xs[name] = np.array(map(lambda result: result[name], _results))
+        return xs
+
+    @staticmethod
+    def get_ys_from_results(results, indexs=None):
+        """
+        :param results: list of BasicResult
+        :param indexs: indices of results to be used
+        :return:
+        """
+        ys = {}
+
+        if indexs is None:
+            _results = results
+        else:
+            _results = map(lambda i:results[i], indexs)
+
+        ys['label'] = \
+            np.array(map(lambda result: result.asset.groundtruth, _results))
+        ys['content_id'] = \
+            np.array(map(lambda result: result.asset.content_id, _results))
+
+        return ys
+
+    @classmethod
+    def get_xys_from_results(cls, results, indexs=None):
+        """
+        :param results: list of BasicResult
+        :param indexs: indices of results to be used
+        :return:
+        """
+        xys = {}
+        xys.update(cls.get_xs_from_results(results, indexs))
+        xys.update(cls.get_ys_from_results(results, indexs))
         return xys
 
 class NusvrTrainTestModel(TrainTestModel):
@@ -477,6 +515,16 @@ class LibsvmnusvrTrainTestModel(TrainTestModel):
         train_test_model.model_dict['model'] = model
 
         return train_test_model
+
+    @classmethod
+    def from_raw_file(cls, filename, additional_model_dict):
+        """
+        Construct from raw libsvm model file.
+        :param filename:
+        :param additional_model_dict:
+        :return:
+        """
+        pass
 
     # override
     @staticmethod
@@ -574,345 +622,3 @@ class RandomForestTrainTestModel(TrainTestModel):
 
         return model
 
-
-class TrainTestModel2(object):
-
-    def __init__(self, param_dict, logger=None):
-        """
-        :param param_dict: contains model parameters
-        :param logger:
-        :return:
-        """
-        self.param_dict = param_dict
-        self.logger = logger
-
-    def _assert_trained(self):
-
-        assert hasattr(self, 'model_dict'), \
-            "Must train first to generate model_dict."
-
-        # usually get from Result._get_ordered_list_score_key() except for
-        # customly constructed
-        assert 'ordered_feature_names' in self.model_dict
-
-        assert 'model' in self.model_dict
-
-        assert 'norm_type' in self.model_dict
-        norm_type = self.model_dict['norm_type']
-        assert (   norm_type == 'none'
-                or norm_type == 'normal'
-                or norm_type == 'clipped')
-
-        if norm_type == 'normal':
-            assert 'mus' in self.model_dict
-            assert 'sds' in self.model_dict
-
-        if norm_type == 'clipped':
-            assert 'slopes' in self.model_dict
-            assert 'intercepts' in self.model_dict
-
-    def to_file(self, filename):
-
-        self._assert_trained()
-
-        info_to_save = {}
-        info_to_save['param_dict'] = self.param_dict
-        info_to_save['model_dict'] = self.model_dict
-
-        import joblib
-        joblib.dump(info_to_save, filename, compress=9)
-
-    @property
-    def ordered_feature_names(self):
-        self._assert_trained()
-        return self.model_dict['ordered_feature_names']
-
-    @classmethod
-    def from_file(cls, filename, logger):
-
-        train_test_model = cls(param_dict={}, logger=logger)
-
-        import joblib
-        info_loaded = joblib.load(filename)
-
-        train_test_model.param_dict = info_loaded['param_dict']
-        train_test_model.model_dict = info_loaded['model_dict']
-
-        return train_test_model
-
-    # @staticmethod
-    # def get_xs_from_results(results, indexs=None):
-    #     """
-    #     :param results: list of BasicResult
-    #     :param indexs: indices of results to be used
-    #     :return:
-    #     """
-    #     feature_names = results[0].get_ordered_list_score_key()
-    #     xs = {}
-    #     for name in feature_names:
-    #         if indexs is None:
-    #             _results = results
-    #         else:
-    #             _results = map(lambda i:results[i], indexs)
-    #         xs[name] = np.array(map(lambda result: result[name], _results))
-    #     return xs
-    #
-    # @staticmethod
-    # def get_ys_from_results(results, indexs=None):
-    #     """
-    #     :param results: list of BasicResult
-    #     :param indexs: indices of results to be used
-    #     :return:
-    #     """
-    #     ys = {}
-    #
-    #     if indexs is None:
-    #         _results = results
-    #     else:
-    #         _results = map(lambda i:results[i], indexs)
-    #
-    #     ys['label'] = \
-    #         np.array(map(lambda result: result.asset.groundtruth, _results))
-    #     ys['content_id'] = \
-    #         np.array(map(lambda result: result.asset.content_id, _results))
-    #
-    #     return ys
-    #
-    # @classmethod
-    # def get_xys_from_results(cls, results, indexs=None):
-    #     """
-    #     :param results: list of BasicResult
-    #     :param indexs: indices of results to be used
-    #     :return:
-    #     """
-    #     xys = {}
-    #     xys.update(cls.get_xs_from_results(results, indexs))
-    #     xys.update(cls.get_ys_from_results(results, indexs))
-    #     return xys
-
-
-    # ========================== begin of legacy ===============================
-
-    # below is for the purpose of reading a legacy test text file, and to ensure
-    # the other code in the class produces bit-exact results as before
-
-    @staticmethod
-    def get_xs_from_dataframe(df, rows=None):
-        """Prepare xs (i.e. a dictionary of named features, e.g.
-        xs = {'vif_feat': [0.8, 0.9, 0.5], 'ssim_feat': [1.0, 0.5, 0.6]}),
-        which is to be used as input by predict(xs), from a pandas DataFrame
-        df, e.g.
-             ansnr_feat  content_id  distortion_id  ssim_feat     label
-        0     0.8           0              0        1.0           8.4
-        1     0.9           1              0        0.5           6.5
-        0     0.5           0              0        0.6           4.3
-        :param df:
-        :param rows: if None, take all rows from df, otherwise must be a list of
-        row indices
-        :return:
-        """
-        # by the rule of Extraction, features always end with '_feat'
-        feature_names = [name for name in df.columns.values if "_feat" in name]
-        xs = {}
-        for name in feature_names:
-            if rows is None:
-                xs[name] = np.array(df[name])
-            else:
-                xs[name] = np.array(df[name].iloc[rows])
-        return xs
-
-    @staticmethod
-    def get_ys_from_dataframe(df, rows=None):
-        """Prepare ys (i.e. a dictionary with key 'label' and labels, e.g.
-        ys = {'label': [8.4, 6.5, 4.3]}), from a pandas DataFrame df, e.g.
-             ansnr_feat  content_id  distortion_id  ssim_feat     label
-        0     0.8           0              0        1.0           8.4
-        1     0.9           1              0        0.5           6.5
-        0     0.5           0              0        0.6           4.3
-        :param df:
-        :param rows: if None, take all rows from df, otherwise must be a list of
-        row indices
-        :return:
-        """
-        # by the rule of Extraction, labels must have key 'label'
-        ys = {}
-        if rows is None:
-            ys['label'] = np.array(df['label'])
-            ys['content_id'] = np.array(df['content_id'])
-        else:
-            ys['label'] = np.array(df['label'].iloc[rows])
-            ys['content_id'] = np.array(df['content_id'].iloc[rows])
-        return ys
-
-    @classmethod
-    def get_xys_from_dataframe(cls, df, rows=None):
-        """Prepare xys (i.e. a dictionary of named features and labels, e.g.
-        xys = {'vif_feat': [0.8, 0.9, 0.5], 'ssim_feat': [1.0, 0.5, 0.6],
-        'label': [8.4, 6.5, 4.3]}), which is to be used as input by train(xys),
-        from a pandas DataFrame df, e.g.
-             ansnr_feat  content_id  distortion_id  ssim_feat     label
-        0     0.8           0              0        1.0           8.4
-        1     0.9           1              0        0.5           6.5
-        0     0.5           0              0        0.6           4.3
-        :param df:
-        :param rows: if None, take all rows from df, otherwise must be a list of
-        row indices
-        :return:
-        """
-        xys = {}
-        xys.update(cls.get_xs_from_dataframe(df, rows))
-        xys.update(cls.get_ys_from_dataframe(df, rows))
-        return xys
-
-    # ========================== end of legacy =================================
-
-    @staticmethod
-    def _predict(model, xs_2d):
-
-        ys_label_pred = model.predict(xs_2d)
-
-        return ys_label_pred
-
-    def train(self, xys):
-
-        assert 'label' in xys
-
-        ys_vec = xys['label']
-
-        # TODO: modify
-        # this makes sure the order of features are normalized, and each
-        # dimension of xys_2d is consistent with feature_names
-
-        feature_names = sorted(xys.keys())
-        feature_names.remove('label')
-        feature_names.remove('content_id')
-
-        # TODO: continue
-
-    def predict(self, xs):
-
-        self._assert_trained()
-
-        for name in self.ordered_feature_names:
-            assert name in xs
-
-        xs_2d = []
-        for name in self.ordered_feature_names:
-            if xs_2d == []:
-                xs_2d = np.matrix(xs[name]).T
-            else:
-                xs_2d = np.hstack((xs_2d, np.matrix(xs[name]).T))
-        xs_2d = np.array(xs_2d)
-
-        # normalize xs
-        xs_2d = self.normalize_xs(xs_2d)
-
-        # predict
-        model = self.model_dict['model']
-        ys_label_pred = self._predict(model, xs_2d)
-
-        # denormalize ys
-        ys_label_pred = self.denormalize_ys(ys_label_pred)
-
-        return ys_label_pred
-
-    @staticmethod
-    def get_stats(ys_label, ys_label_pred):
-
-        import scipy.stats
-
-        # MSE
-        mse = np.mean(np.power(np.array(ys_label) - np.array(ys_label_pred), 2.0))
-
-        # spearman
-        srcc, _ = scipy.stats.spearmanr(ys_label, ys_label_pred)
-
-        # pearson
-        pcc, _ = scipy.stats.pearsonr(ys_label, ys_label_pred)
-
-        # kendall
-        kendall, _ = scipy.stats.kendalltau(ys_label, ys_label_pred)
-
-        stats = {}
-        stats['MSE'] = mse
-        stats['SRCC'] = srcc
-        stats['PCC'] = pcc
-        stats['KENDALL'] = kendall
-
-        # append raw
-        stats['ys_label'] = list(ys_label)
-        stats['ys_label_pred'] = list(ys_label_pred)
-
-        return stats
-
-    @classmethod
-    def aggregate_stats_list(cls, stats_list):
-        aggregate_ys_label = []
-        aggregate_ys_label_pred = []
-        for stats in stats_list:
-            aggregate_ys_label += stats['ys_label']
-            aggregate_ys_label_pred += stats['ys_label_pred']
-        return cls.get_stats(aggregate_ys_label, aggregate_ys_label_pred)
-
-    @staticmethod
-    def get_objective_score(stats, type='SRCC'):
-        """
-        Objective score is something to MAXIMIZE. e.g. SRCC, or -MSE.
-        :param stats:
-        :param type:
-        :return:
-        """
-        if type == 'SRCC':
-            return stats['SRCC']
-        elif type == 'PCC':
-            return stats['PCC']
-        elif type == 'KENDALL':
-            return stats['KENDALL']
-        elif type == 'MSE':
-            return -stats['MSE']
-        else:
-            assert False, 'Unknow type: {} for get_objective_score().'.format(type)
-
-    @staticmethod
-    def plot_scatter(ax, stats, content_ids=None):
-        assert len(stats['ys_label']) == len(stats['ys_label_pred'])
-
-        if content_ids is None:
-            ax.scatter(stats['ys_label'], stats['ys_label_pred'])
-        else:
-            assert len(stats['ys_label']) == len(content_ids)
-
-            unique_content_ids = list(set(content_ids))
-            import matplotlib.pyplot as plt
-            cmap = plt.get_cmap()
-            colors = [cmap(i) for i in np.linspace(0, 1, len(unique_content_ids))]
-            for idx, curr_content_id in enumerate(unique_content_ids):
-                curr_idxs = indices(content_ids, lambda cid: cid==curr_content_id)
-                curr_ys_label = np.array(stats['ys_label'])[curr_idxs]
-                curr_ys_label_pred = np.array(stats['ys_label_pred'])[curr_idxs]
-                ax.scatter(curr_ys_label, curr_ys_label_pred,
-                           label=curr_content_id, color=colors[idx % len(colors)])
-
-    def evaluate(self, xs, ys):
-        ys_label_pred = self.predict(xs)
-        ys_label = ys['label']
-
-        return self.get_stats(ys_label, ys_label_pred)
-
-
-class LibsvmnusvrTrainTestModel2(TrainTestModel):
-
-    @classmethod
-    def from_raw_file(cls, filename, additional_model_dict):
-        """
-        Construct from raw libsvm model file.
-        :param filename:
-        :param additional_model_dict:
-        :return:
-        """
-        pass
-
-    pass
-
-class RandomForestTrainTestModel2(TrainTestModel):
-    pass

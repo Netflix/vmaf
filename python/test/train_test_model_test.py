@@ -82,7 +82,7 @@ class TrainTestModelTest(unittest.TestCase):
         loaded_model = NusvrTrainTestModel.from_file(self.model_filename, None)
 
         result = loaded_model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.10432107750419255)
+        self.assertEquals(result['MSE'], 0.10429561419142239)
 
         model.delete(self.model_filename)
 
@@ -104,11 +104,11 @@ class TrainTestModelTest(unittest.TestCase):
         loaded_model = LibsvmnusvrTrainTestModel.from_file(self.model_filename, None)
 
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'],        0.10432107750419255)
+        self.assertEquals(result['MSE'],        0.10429561419142239)
 
         # loaded model generates slight numerical difference
         result = loaded_model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'],        0.10432119255314735)
+        self.assertEquals(result['MSE'],        0.10429568955320398)
 
         model.delete(self.model_filename)
 
@@ -125,7 +125,7 @@ class TrainTestModelTest(unittest.TestCase):
             {'norm_type':'normalize'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.10432107750419255)
+        self.assertEquals(result['MSE'], 0.10429561419142239)
 
         model = NusvrTrainTestModel(
             {'norm_type':'clip_0to1'}, None)
@@ -159,7 +159,7 @@ class TrainTestModelTest(unittest.TestCase):
             {'norm_type':'normalize'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.10432107750419255)
+        self.assertEquals(result['MSE'], 0.10429561419142239)
 
         model = LibsvmnusvrTrainTestModel(
             {'norm_type':'clip_0to1'}, None)
@@ -194,7 +194,7 @@ class TrainTestModelTest(unittest.TestCase):
                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.10431733333333336)
+        self.assertEquals(result['MSE'], 0.10431733333333332)
 
         model = RandomForestTrainTestModel({'norm_type':'clip_0to1',
                                 'random_state': 0}, None)

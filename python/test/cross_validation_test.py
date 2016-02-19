@@ -27,9 +27,9 @@ class FeatureCrossValidationTest(unittest.TestCase):
             train_test_model_class, model_param, feature_df,
             indices_train, indices_test)
         self.assertEquals(output['result']['SRCC'], 0.93180728084703823)
-        self.assertEquals(output['result']['PCC'], 0.93897554632587255)
+        self.assertEquals(output['result']['PCC'], 0.93897554632587299)
         self.assertEquals(output['result']['KENDALL'], 0.7809321265529332)
-        self.assertEquals(output['result']['MSE'], 0.10431733333333336)
+        self.assertEquals(output['result']['MSE'], 0.10431733333333332)
         self.assertEquals(output['train_test_model'].TYPE, "randomforest")
 
     def test_run_kfold_cross_validation_randomforest(self):
@@ -46,9 +46,9 @@ class FeatureCrossValidationTest(unittest.TestCase):
         output = FeatureCrossValidation.run_kfold_cross_validation(
             train_test_model_class, model_param, feature_df, 6)
 
-        self.assertEquals(output['aggregated_result']['SRCC'], 0.92539541497742095)
-        self.assertEquals(output['aggregated_result']['PCC'], 0.93454811253831682)
-        self.assertEquals(output['aggregated_result']['KENDALL'], 0.75723518366221232)
+        self.assertEquals(output['aggregated_result']['SRCC'], 0.92541561799833183)
+        self.assertEquals(output['aggregated_result']['PCC'], 0.93454811253831693)
+        self.assertEquals(output['aggregated_result']['KENDALL'], 0.75702414684936781)
         self.assertEquals(output['aggregated_result']['MSE'], 0.13074137037037029)
 
     def test_run_kfold_cross_validation_libsvmnusvr(self):
@@ -66,9 +66,9 @@ class FeatureCrossValidationTest(unittest.TestCase):
             train_test_model_class, model_param, feature_df, 6)
 
         self.assertEquals(output['aggregated_result']['SRCC'], 0.92387451180595015)
-        self.assertEquals(output['aggregated_result']['PCC'], 0.93031583617209168)
+        self.assertEquals(output['aggregated_result']['PCC'], 0.93031460919267095)
         self.assertEquals(output['aggregated_result']['KENDALL'], 0.75416215405673581)
-        self.assertEquals(output['aggregated_result']['MSE'], 0.13658428803953349)
+        self.assertEquals(output['aggregated_result']['MSE'], 0.13658544000015024)
 
     def test_run_kfold_cross_validation_with_list_input(self):
 
@@ -86,10 +86,10 @@ class FeatureCrossValidationTest(unittest.TestCase):
             train_test_model_class, model_param, feature_df,
             [range(0,50), range(130, 200), range(50, 130)])
 
-        self.assertEquals(output['aggregated_result']['SRCC'], 0.91018788359355751)
-        self.assertEquals(output['aggregated_result']['PCC'], 0.91972795735430157)
-        self.assertEquals(output['aggregated_result']['KENDALL'], 0.73628369663417326)
-        self.assertEquals(output['aggregated_result']['MSE'], 0.17830466666666658)
+        self.assertEquals(output['aggregated_result']['SRCC'], 0.91024373536714864)
+        self.assertEquals(output['aggregated_result']['PCC'], 0.91972795735430202)
+        self.assertEquals(output['aggregated_result']['KENDALL'], 0.73613552120569792)
+        self.assertEquals(output['aggregated_result']['MSE'], 0.17830466666666656)
 
     def test_unroll_dict_of_lists(self):
         model_param_search_range = {'norm_type':['normalize', 'clip_0to1'],
@@ -142,9 +142,9 @@ class FeatureCrossValidationTest(unittest.TestCase):
             train_test_model_class, model_param_search_range, feature_df, 6)
 
         self.assertEquals(output['aggregated_result']['SRCC'], 0.93198668038126109)
-        self.assertEquals(output['aggregated_result']['PCC'], 0.94632827102849304)
+        self.assertEquals(output['aggregated_result']['PCC'], 0.94632827102849348)
         self.assertEquals(output['aggregated_result']['KENDALL'], 0.77075614608695509)
-        self.assertEquals(output['aggregated_result']['MSE'], 0.10560801834484414)
+        self.assertEquals(output['aggregated_result']['MSE'], 0.10560801834484417)
 
         expected_model_param = {'norm_type':'normalize',
                                 'n_estimators':90,
@@ -214,7 +214,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
         )
 
         self.assertEquals(output['aggregated_result']['SRCC'], 0.92795725021246278)
-        self.assertEquals(output['aggregated_result']['PCC'], 0.93579312926288383)
+        self.assertEquals(output['aggregated_result']['PCC'], 0.93579312926288372)
         self.assertEquals(output['aggregated_result']['KENDALL'], 0.76612289581523185)
         self.assertEquals(output['aggregated_result']['MSE'], 0.14346339074899395)
 
