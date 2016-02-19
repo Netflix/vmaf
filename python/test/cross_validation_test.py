@@ -175,10 +175,10 @@ class FeatureCrossValidationTest(unittest.TestCase):
         output = FeatureCrossValidation.run_nested_kfold_cross_validation(
             train_test_model_class, model_param_search_range, feature_df, 6)
 
-        self.assertEquals(output['aggregated_result']['SRCC'], 0.93701326738991675)
-        self.assertEquals(output['aggregated_result']['PCC'], 0.94445291268094322)
+        self.assertEquals(output['aggregated_result']['SRCC'], 0.93704238362264514)
+        self.assertEquals(output['aggregated_result']['PCC'], 0.94445422982552052)
         self.assertEquals(output['aggregated_result']['KENDALL'], 0.77785381654919195)
-        self.assertEquals(output['aggregated_result']['MSE'], 0.10909222874972166)
+        self.assertEquals(output['aggregated_result']['MSE'], 0.10909127221007306)
 
         expected_model_param = {'norm_type':'clip_0to1',
                                 'kernel':'rbf',

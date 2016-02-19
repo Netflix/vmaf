@@ -131,13 +131,13 @@ class TrainTestModelTest(unittest.TestCase):
             {'norm_type':'clip_0to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.1058434677183516)
+        self.assertEquals(result['MSE'], 0.10584346771835587)
 
         model = NusvrTrainTestModel(
             {'norm_type':'clip_minus1to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.096561628579762998)
+        self.assertEquals(result['MSE'], 0.09656162857976365)
 
         model = NusvrTrainTestModel(
             {'norm_type':'none',}, None)
@@ -165,13 +165,13 @@ class TrainTestModelTest(unittest.TestCase):
             {'norm_type':'clip_0to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.1058434677183516)
+        self.assertEquals(result['MSE'], 0.10584346771835587)
 
         model = LibsvmnusvrTrainTestModel(
             {'norm_type':'clip_minus1to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.096561628579762998)
+        self.assertEquals(result['MSE'], 0.09656162857976365)
 
         model = LibsvmnusvrTrainTestModel(
             {'norm_type':'none'}, None)
@@ -200,13 +200,13 @@ class TrainTestModelTest(unittest.TestCase):
                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.10431733333333339)
+        self.assertEquals(result['MSE'], 0.10431733333333326)
 
         model = RandomForestTrainTestModel({'norm_type':'clip_minus1to1',
                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.10431733333333339)
+        self.assertEquals(result['MSE'], 0.1043173333333333)
 
         model = RandomForestTrainTestModel({'norm_type':'none', 'random_state': 0}, None)
         model.train(xys)

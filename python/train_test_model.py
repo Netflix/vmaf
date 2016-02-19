@@ -28,19 +28,19 @@ class TrainTestModel(TypeVersionEnabled):
         assert 'model' in self.model_dict
 
         assert 'norm_type' in self.model_dict
+
         norm_type = self.model_dict['norm_type']
         assert (   norm_type == 'none'
                 or norm_type == 'normalize'
-                or norm_type == 'clip_0to1'
-                or norm_type == 'clip_minus1to1')
+                or norm_type == 'clip')
 
-        if norm_type == 'normal':
-            assert 'mu' in self.model_dict
-            assert 'sd' in self.model_dict
+        if norm_type == 'normalize':
+            assert 'mus' in self.model_dict
+            assert 'sds' in self.model_dict
 
-        if norm_type == 'clipped':
-            assert 'fmin' in self.model_dict
-            assert 'fmax' in self.model_dict
+        if norm_type == 'clip':
+            assert 'slopes' in self.model_dict
+            assert 'intercepts' in self.model_dict
 
     @property
     def feature_names(self):
@@ -72,18 +72,18 @@ class TrainTestModel(TypeVersionEnabled):
         self.model_dict['sds'] = value
 
     @property
-    def fmins(self):
-        return self.model_dict['fmins']
-    @fmins.setter
-    def fmins(self, value):
-        self.model_dict['fmins'] = value
+    def slopes(self):
+        return self.model_dict['slopes']
+    @slopes.setter
+    def slopes(self, value):
+        self.model_dict['slopes'] = value
 
     @property
-    def fmaxs(self):
-        return self.model_dict['fmaxs']
-    @fmaxs.setter
-    def fmaxs(self, value):
-        self.model_dict['fmaxs'] = value
+    def intercepts(self):
+        return self.model_dict['intercepts']
+    @intercepts.setter
+    def intercepts(self, value):
+        self.model_dict['intercepts'] = value
 
     @property
     def model(self):
@@ -245,7 +245,14 @@ class TrainTestModel(TypeVersionEnabled):
         # combine them
         xys_2d = np.array(np.hstack((np.matrix(ys_vec).T, xs_2d)))
 
-        self.norm_type = self.param_dict['norm_type'] if 'norm_type' in self.param_dict else 'normalize'
+        # # set model norm_type according to param norm_type
+        # if 'norm_type' not in self.param_dict:
+        #     self.norm_type = 'normalize'
+        # elif self.param_dict['norm_type'] == 'clip_0to1' \
+        #         or self.param_dict['norm_type'] == 'clip_minus1to1':
+        #     self.norm_type = 'clip'
+        # else:
+        #     self.norm_type = self.param_dict['norm_type']
 
         # calculate normalization parameters,
         self._calculate_normalization_params(xys_2d)
@@ -258,33 +265,42 @@ class TrainTestModel(TypeVersionEnabled):
         self.model = model
 
     def _calculate_normalization_params(self, xys_2d):
-        if self.norm_type == 'normalize':
+        if self.param_dict['norm_type'] == 'normalize':
             self.mus = np.mean(xys_2d, axis=0)
             self.sds = np.std(xys_2d, axis=0)
-        elif self.norm_type == 'clip_0to1':
-            self.fmins = np.min(xys_2d, axis=0)
-            self.fmaxs = np.max(xys_2d, axis=0)
-        elif self.norm_type == 'clip_minus1to1':
-            self.fmins = np.min(xys_2d, axis=0)
-            self.fmaxs = np.max(xys_2d, axis=0)
-        elif self.norm_type == 'none':
-            pass
+            self.norm_type = 'normalize'
+        elif self.param_dict['norm_type'] == 'clip_0to1':
+            ub = 1.0
+            lb = 0.0
+            fmins = np.min(xys_2d, axis=0)
+            fmaxs = np.max(xys_2d, axis=0)
+            self.slopes = (ub - lb) / (fmaxs - fmins)
+            self.intercepts = (lb*fmaxs - ub*fmins) / (fmaxs - fmins)
+            self.norm_type = 'clip'
+        elif self.param_dict['norm_type'] == 'clip_minus1to1':
+            ub =  1.0
+            lb = -1.0
+            fmins = np.min(xys_2d, axis=0)
+            fmaxs = np.max(xys_2d, axis=0)
+            self.slopes = (ub - lb) / (fmaxs - fmins)
+            self.intercepts = (lb*fmaxs - ub*fmins) / (fmaxs - fmins)
+            self.norm_type = 'clip'
+        elif self.param_dict['norm_type'] == 'none':
+            self.norm_type = 'none'
         else:
-            assert False, 'Incorrect feature normalization type selected: {}'. \
-                format(self.norm_type)
+            assert False, 'Incorrect parameter norm type selected: {}' \
+                .format(self.param_dict['norm_type'])
 
     def _normalize_xys(self, xys_2d):
         if self.norm_type == 'normalize':
             xys_2d -= self.mus
             xys_2d /= self.sds
-        elif self.norm_type == 'clip_0to1':
-            xys_2d = 1.0 / (self.fmaxs - self.fmins) * (xys_2d - self.fmins)
-        elif self.norm_type == 'clip_minus1to1':
-            xys_2d = 2.0 / (self.fmaxs - self.fmins) * (xys_2d - self.fmins) - 1
+        elif self.norm_type == 'clip':
+            xys_2d = self.slopes * xys_2d + self.intercepts
         elif self.norm_type == 'none':
             pass
         else:
-            assert False, 'Incorrect feature normalization type selected: {}' \
+            assert False, 'Incorrect model norm type selected: {}' \
                 .format(self.norm_type)
         return xys_2d
 
@@ -292,43 +308,25 @@ class TrainTestModel(TypeVersionEnabled):
         if self.norm_type == 'normalize':
             ys_vec *= self.sds[0]
             ys_vec += self.mus[0]
-        # elif self.norm_type == 'clip_0to1':
-        # for backward compatibility, use the following for older model files:
-        elif self.norm_type == 'clip_0to1' or self.norm_type == 'rescale1':
-            ys_vec *= (self.fmaxs[0] - self.fmins[0])
-            ys_vec += self.fmins[0]
-        # elif self.norm_type == 'clip_minus1to1':
-        # for backward compatibility, use the following for older model files:
-        elif self.norm_type == 'clip_minus1to1' or self.norm_type == 'rescale2':
-            ys_vec += 1
-            ys_vec /= 2.0
-            ys_vec *= (self.fmaxs[0] - self.fmins[0])
-            ys_vec += self.fmins[0]
+        elif self.norm_type == 'clip':
+            ys_vec = (ys_vec - self.intercepts[0]) / self.slopes[0]
         elif self.norm_type == 'none':
             pass
         else:
-            assert False, 'Incorrect feature normalization type selected: {}'. \
-                format(self.norm_type)
+            assert False, 'Incorrect model norm type selected: {}' \
+                .format(self.norm_type)
         return ys_vec
 
     def normalize_xs(self, xs_2d):
         if self.norm_type == 'normalize':
             xs_2d -= self.mus[1:]
             xs_2d /= self.sds[1:]
-        # elif self.norm_type == 'clip_0to1':
-        # for backward compatibility, use the following for older model files:
-        elif self.norm_type == 'clip_0to1' or self.norm_type == 'rescale1':
-            xs_2d = 1.0 / (self.fmaxs[1:] - self.fmins[1:]) * \
-                    (xs_2d - self.fmins[1:])
-        # elif self.norm_type == 'clip_minus1to1':
-        # for backward compatibility, use the following for older model files:
-        elif self.norm_type == 'clip_minus1to1' or self.norm_type == 'rescale2':
-            xs_2d = 2.0 / (self.fmaxs[1:] - self.fmins[1:]) * \
-                    (xs_2d - self.fmins[1:]) - 1
+        elif self.norm_type == 'clip':
+            xs_2d = self.slopes[1:] * xs_2d + self.intercepts[1:]
         elif self.norm_type == 'none':
             pass
         else:
-            assert False, 'Incorrect feature normalization type selected: {}' \
+            assert False, 'Incorrect model norm type selected: {}' \
                 .format(self.norm_type)
         return xs_2d
 
@@ -610,8 +608,8 @@ class TrainTestModel2(object):
             assert 'sds' in self.model_dict
 
         if norm_type == 'clipped':
-            assert 'fmins' in self.model_dict
-            assert 'fmaxs' in self.model_dict
+            assert 'slopes' in self.model_dict
+            assert 'intercepts' in self.model_dict
 
     def to_file(self, filename):
 
