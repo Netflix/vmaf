@@ -18,57 +18,103 @@ class TrainTestModel(object):
         self.param_dict = param_dict.copy() # keep original intact
         self.logger = logger
 
-        self.feature_norm_type = param_dict.setdefault('norm_type', 'whiten')
-        self.mu = []
-        self.sd = []
-        self.fmin = []
-        self.fmax = []
+        self.norm_type = param_dict.setdefault('norm_type', 'whiten')
+        self.mus = []
+        self.sds = []
+        self.fmins = []
+        self.fmaxs = []
         self.model = None
 
+        self.model_dict = {}
+
+    # def _assert_trained(self):
+    #
+    #     # usually get from Result._get_ordered_list_score_key() except for
+    #     # customly constructed
+    #     assert 'feature_names' in self.model_dict
+    #
+    #     assert 'model' in self.model_dict
+    #
+    #     assert 'norm_type' in self.model_dict
+    #     norm_type = self.model_dict['norm_type']
+    #     assert (   norm_type == 'none'
+    #             or norm_type == 'whiten'
+    #             or norm_type == 'rescale_0to1'
+    #             or norm_type == 'rescale_minus1to1')
+    #
+    #     if norm_type == 'normal':
+    #         assert 'mu' in self.model_dict
+    #         assert 'sd' in self.model_dict
+    #
+    #     if norm_type == 'clipped':
+    #         assert 'fmin' in self.model_dict
+    #         assert 'fmax' in self.model_dict
+
+    # @property
+    # def feature_names(self):
+    #     self._assert_trained()
+    #     return self.model_dict['feature_names']
+    #
+    # @feature_names.setter
+    # def feature_names(self, value):
+    #     self.model_dict['feature_names'] = value
+    #
+    # @property
+    # def norm_type(self):
+    #     self._assert_trained()
+    #     return self.model_dict['norm_type']
+
+
     def to_file(self, filename):
+
         assert self.model is not None, "Nothing to save..."
 
         model_info = {}
         model_info['model'] = self.model
         model_info['params'] = self.param_dict
-        model_info['mu'] = self.mu
-        model_info['sd'] = self.sd
-        model_info['fmin'] = self.fmin
-        model_info['fmax'] = self.fmax
-        model_info['feature_norm_type'] = self.feature_norm_type
+        model_info['mus'] = self.mus
+        model_info['sds'] = self.sds
+        model_info['fmins'] = self.fmins
+        model_info['fmaxs'] = self.fmaxs
+        model_info['norm_type'] = self.norm_type
         model_info['feature_names'] = self.feature_names
 
         import joblib
         joblib.dump(model_info, filename, compress=9)
+
+        # self._assert_trained()
+        # info_to_save = {}
+        # info_to_save['param_dict'] = self.param_dict
+        # info_to_save['model_dict'] = self.model_dict
+        # import joblib
+        # joblib.dump(info_to_save, filename, compress=9)
 
     @classmethod
     def from_file(cls, filename, logger):
 
         train_test_model = cls(param_dict={}, logger=logger)
 
+        # import joblib
+        # info_loaded = joblib.load(filename)
+        # train_test_model.param_dict = info_loaded['param_dict']
+        # train_test_model.model_dict = info_loaded['model_dict']
+
         import joblib
         model_info = joblib.load(filename)
-
         train_test_model.param_dict = model_info['params']
         train_test_model.model = model_info['model']
-        train_test_model.mu = model_info['mu']
-        train_test_model.sd = model_info['sd']
-        train_test_model.fmin = model_info['fmin']
-        train_test_model.fmax = model_info['fmax']
-
+        train_test_model.mus = model_info['mus']
+        train_test_model.sds = model_info['sds']
+        train_test_model.fmins = model_info['fmins']
+        train_test_model.fmaxs = model_info['fmaxs']
         # self.feature_names = model_info['feature_names']
         # for backward compatibility, use the following for older model files:
         train_test_model.feature_names = model_info['feature_names'] \
             if 'feature_names' in model_info else model_info['X_featurelabels']
 
-        train_test_model.feature_norm_type = model_info['feature_norm_type']
+        train_test_model.norm_type = model_info['norm_type']
 
         return train_test_model
-
-    # @staticmethod
-    # def delete(filename):
-    #     if os.path.exists(filename):
-    #         os.remove(filename)
 
     @staticmethod
     def _predict(model, xs_2d):
@@ -242,82 +288,78 @@ class TrainTestModel(object):
         self.model = model
 
     def _calculate_normalization_params(self, xys_2d):
-        if self.feature_norm_type == 'whiten':
-            self.mu = np.mean(xys_2d, axis=0)
-            self.sd = np.std(xys_2d, axis=0)
-        elif self.feature_norm_type == 'rescale_0to1':
-            self.fmin = np.min(xys_2d, axis=0)
-            self.fmax = np.max(xys_2d, axis=0)
-        elif self.feature_norm_type == 'rescale_minus1to1':
-            self.fmin = np.min(xys_2d, axis=0)
-            self.fmax = np.max(xys_2d, axis=0)
-        elif self.feature_norm_type == 'none':
+        if self.norm_type == 'whiten':
+            self.mus = np.mean(xys_2d, axis=0)
+            self.sds = np.std(xys_2d, axis=0)
+        elif self.norm_type == 'rescale_0to1':
+            self.fmins = np.min(xys_2d, axis=0)
+            self.fmaxs = np.max(xys_2d, axis=0)
+        elif self.norm_type == 'rescale_minus1to1':
+            self.fmins = np.min(xys_2d, axis=0)
+            self.fmaxs = np.max(xys_2d, axis=0)
+        elif self.norm_type == 'none':
             pass
         else:
             assert False, 'Incorrect feature normalization type selected: {}'. \
-                format(self.feature_norm_type)
+                format(self.norm_type)
 
     def _normalize_xys(self, xys_2d):
-        if self.feature_norm_type == 'whiten':
-            xys_2d -= self.mu
-            xys_2d /= self.sd
-        elif self.feature_norm_type == 'rescale_0to1':
-            xys_2d = 1.0 / (self.fmax - self.fmin) * (xys_2d - self.fmin)
-        elif self.feature_norm_type == 'rescale_minus1to1':
-            xys_2d = 2.0 / (self.fmax - self.fmin) * (xys_2d - self.fmin) - 1
-        elif self.feature_norm_type == 'none':
+        if self.norm_type == 'whiten':
+            xys_2d -= self.mus
+            xys_2d /= self.sds
+        elif self.norm_type == 'rescale_0to1':
+            xys_2d = 1.0 / (self.fmaxs - self.fmins) * (xys_2d - self.fmins)
+        elif self.norm_type == 'rescale_minus1to1':
+            xys_2d = 2.0 / (self.fmaxs - self.fmins) * (xys_2d - self.fmins) - 1
+        elif self.norm_type == 'none':
             pass
         else:
             assert False, 'Incorrect feature normalization type selected: {}' \
-                .format(self.feature_norm_type)
+                .format(self.norm_type)
         return xys_2d
 
     def denormalize_ys(self, ys_vec):
-        if self.feature_norm_type == 'whiten':
-            ys_vec *= self.sd[0]
-            ys_vec += self.mu[0]
-        # elif self.feature_norm_type == 'rescale_0to1':
+        if self.norm_type == 'whiten':
+            ys_vec *= self.sds[0]
+            ys_vec += self.mus[0]
+        # elif self.norm_type == 'rescale_0to1':
         # for backward compatibility, use the following for older model files:
-        elif self.feature_norm_type == 'rescale_0to1' or \
-                        self.feature_norm_type == 'rescale1':
-            ys_vec *= (self.fmax[0] - self.fmin[0])
-            ys_vec += self.fmin[0]
-        # elif self.feature_norm_type == 'rescale_minus1to1':
+        elif self.norm_type == 'rescale_0to1' or self.norm_type == 'rescale1':
+            ys_vec *= (self.fmaxs[0] - self.fmins[0])
+            ys_vec += self.fmins[0]
+        # elif self.norm_type == 'rescale_minus1to1':
         # for backward compatibility, use the following for older model files:
-        elif self.feature_norm_type == 'rescale_minus1to1' or \
-                        self.feature_norm_type == 'rescale2':
+        elif self.norm_type == 'rescale_minus1to1' or self.norm_type == 'rescale2':
             ys_vec += 1
             ys_vec /= 2.0
-            ys_vec *= (self.fmax[0] - self.fmin[0])
-            ys_vec += self.fmin[0]
-        elif self.feature_norm_type == 'none':
+            ys_vec *= (self.fmaxs[0] - self.fmins[0])
+            ys_vec += self.fmins[0]
+        elif self.norm_type == 'none':
             pass
         else:
             assert False, 'Incorrect feature normalization type selected: {}'. \
-                format(self.feature_norm_type)
+                format(self.norm_type)
         return ys_vec
 
     def normalize_xs(self, xs_2d):
-        if self.feature_norm_type == 'whiten':
-            xs_2d -= self.mu[1:]
-            xs_2d /= self.sd[1:]
-        # elif self.feature_norm_type == 'rescale_0to1':
+        if self.norm_type == 'whiten':
+            xs_2d -= self.mus[1:]
+            xs_2d /= self.sds[1:]
+        # elif self.norm_type == 'rescale_0to1':
         # for backward compatibility, use the following for older model files:
-        elif self.feature_norm_type == 'rescale_0to1' or \
-                        self.feature_norm_type == 'rescale1':
-            xs_2d = 1.0 / (self.fmax[1:] - self.fmin[1:]) * \
-                    (xs_2d - self.fmin[1:])
-        # elif self.feature_norm_type == 'rescale_minus1to1':
+        elif self.norm_type == 'rescale_0to1' or self.norm_type == 'rescale1':
+            xs_2d = 1.0 / (self.fmaxs[1:] - self.fmins[1:]) * \
+                    (xs_2d - self.fmins[1:])
+        # elif self.norm_type == 'rescale_minus1to1':
         # for backward compatibility, use the following for older model files:
-        elif self.feature_norm_type == 'rescale_minus1to1' or \
-                        self.feature_norm_type == 'rescale2':
-            xs_2d = 2.0 / (self.fmax[1:] - self.fmin[1:]) * \
-                    (xs_2d - self.fmin[1:]) - 1
-        elif self.feature_norm_type == 'none':
+        elif self.norm_type == 'rescale_minus1to1' or self.norm_type == 'rescale2':
+            xs_2d = 2.0 / (self.fmaxs[1:] - self.fmins[1:]) * \
+                    (xs_2d - self.fmins[1:]) - 1
+        elif self.norm_type == 'none':
             pass
         else:
             assert False, 'Incorrect feature normalization type selected: {}' \
-                .format(self.feature_norm_type)
+                .format(self.norm_type)
         return xs_2d
 
     @staticmethod
@@ -443,11 +485,11 @@ class LibsvmnusvrTrainTestModel(TrainTestModel):
 
         model_info = {}
         model_info['params'] = self.param_dict
-        model_info['mu'] = self.mu
-        model_info['sd'] = self.sd
-        model_info['fmin'] = self.fmin
-        model_info['fmax'] = self.fmax
-        model_info['feature_norm_type'] = self.feature_norm_type
+        model_info['mu'] = self.mus
+        model_info['sd'] = self.sds
+        model_info['fmin'] = self.fmins
+        model_info['fmax'] = self.fmaxs
+        model_info['norm_type'] = self.norm_type
         model_info['feature_names'] = self.feature_names
 
         import joblib
@@ -465,17 +507,17 @@ class LibsvmnusvrTrainTestModel(TrainTestModel):
 
         train_test_model.param_dict = model_info['params']
         train_test_model.model = model
-        train_test_model.mu = model_info['mu']
-        train_test_model.sd = model_info['sd']
-        train_test_model.fmin = model_info['fmin']
-        train_test_model.fmax = model_info['fmax']
+        train_test_model.mus = model_info['mu']
+        train_test_model.sds = model_info['sd']
+        train_test_model.fmins = model_info['fmin']
+        train_test_model.fmaxs = model_info['fmax']
 
         # self.feature_names = model_info['feature_names']
         # for backward compatibility, use the following for older model files:
         train_test_model.feature_names = model_info['feature_names'] \
             if 'feature_names' in model_info else model_info['X_featurelabels']
 
-        train_test_model.feature_norm_type = model_info['feature_norm_type']
+        train_test_model.norm_type = model_info['norm_type']
 
         return train_test_model
 

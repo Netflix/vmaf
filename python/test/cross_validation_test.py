@@ -2,16 +2,12 @@ __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import unittest
-from train_test_model import RandomForestTrainTestModel, \
-    LibsvmnusvrTrainTestModel
+from train_test_model import RandomForestTrainTestModel, LibsvmnusvrTrainTestModel
 from cross_validation import FeatureCrossValidation
 import pandas as pd
 import config
 
 class FeatureCrossValidationTest(unittest.TestCase):
-
-    def tearDown(self):
-        unittest.TestCase.tearDown(self)
 
     def test_run_cross_validation(self):
 

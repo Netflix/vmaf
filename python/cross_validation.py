@@ -7,34 +7,6 @@ import itertools
 
 class FeatureCrossValidation(object):
 
-    def __init__(self, train_test_model_class, extraction_receipt,
-                 model_param_search_range, logger):
-        '''
-        :param train_test_model_class: class of TrainTestModel, e.g.
-        SvrTrainTestModel
-        :param extraction_receipt: ExtractionReceipt object, e.g. returned by
-        extraction.run().
-        :param logger: logger.
-        :return:
-        '''
-        self.train_test_model_class = train_test_model_class
-        self.extraction_receipt = extraction_receipt
-        self.model_param_search_range = model_param_search_range
-        self.logger = logger
-
-    def run(self, kfold=5):
-        dataframes = self.extraction_receipt.get_feature_dataframes()
-        outputs = []
-        for dataframe in dataframes:
-            output = self.run_nested_kfold_cross_validation(
-                self.train_test_model_class,
-                self.model_param_search_range,
-                dataframe,
-                kfold
-            )
-            outputs.append(output)
-        return outputs
-
     @staticmethod
     def run_cross_validation(train_test_model_class, model_param,
                              dataframe, train_indices, test_indices):
