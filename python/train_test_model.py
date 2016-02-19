@@ -6,8 +6,9 @@ import numpy as np
 from tools import indices
 import sys
 import config
+from mixin import TypeVersionEnabled
 
-class TrainTestModel(object):
+class TrainTestModel(TypeVersionEnabled):
 
     def __init__(self, param_dict, logger=None):
         """
@@ -15,10 +16,10 @@ class TrainTestModel(object):
         :param logger:
         :return:
         """
-        self.param_dict = param_dict.copy() # keep original intact
+        self.param_dict = param_dict
         self.logger = logger
 
-        self.norm_type = param_dict.setdefault('norm_type', 'whiten')
+        self.norm_type = param_dict['norm_type'] if 'norm_type' in param_dict else 'whiten'
         self.mus = []
         self.sds = []
         self.fmins = []
@@ -27,28 +28,28 @@ class TrainTestModel(object):
 
         self.model_dict = {}
 
-    # def _assert_trained(self):
-    #
-    #     # usually get from Result._get_ordered_list_score_key() except for
-    #     # customly constructed
-    #     assert 'feature_names' in self.model_dict
-    #
-    #     assert 'model' in self.model_dict
-    #
-    #     assert 'norm_type' in self.model_dict
-    #     norm_type = self.model_dict['norm_type']
-    #     assert (   norm_type == 'none'
-    #             or norm_type == 'whiten'
-    #             or norm_type == 'rescale_0to1'
-    #             or norm_type == 'rescale_minus1to1')
-    #
-    #     if norm_type == 'normal':
-    #         assert 'mu' in self.model_dict
-    #         assert 'sd' in self.model_dict
-    #
-    #     if norm_type == 'clipped':
-    #         assert 'fmin' in self.model_dict
-    #         assert 'fmax' in self.model_dict
+    def _assert_trained(self):
+
+        # usually get from Result._get_ordered_list_score_key() except for
+        # customly constructed
+        assert 'feature_names' in self.model_dict
+
+        assert 'model' in self.model_dict
+
+        assert 'norm_type' in self.model_dict
+        norm_type = self.model_dict['norm_type']
+        assert (   norm_type == 'none'
+                or norm_type == 'whiten'
+                or norm_type == 'rescale_0to1'
+                or norm_type == 'rescale_minus1to1')
+
+        if norm_type == 'normal':
+            assert 'mu' in self.model_dict
+            assert 'sd' in self.model_dict
+
+        if norm_type == 'clipped':
+            assert 'fmin' in self.model_dict
+            assert 'fmax' in self.model_dict
 
     # @property
     # def feature_names(self):
@@ -433,6 +434,7 @@ class TrainTestModel(object):
 class NusvrTrainTestModel(TrainTestModel):
 
     TYPE = 'nusvr'
+    VERSION = "0.1"
 
     @staticmethod
     def _train(model_param, xys_2d):
@@ -441,17 +443,17 @@ class NusvrTrainTestModel(TrainTestModel):
         :param xys_2d:
         :return:
         """
-        kernel = model_param.setdefault('kernel', 'rbf')
-        degree = model_param.setdefault('degree', 3)
-        gamma = model_param.setdefault('gamma', 0.0)
-        coef0 = model_param.setdefault('coef0', 0.0)
-        tol = model_param.setdefault('tol', 0.001)
-        C = model_param.setdefault('C', 1.0)
-        nu = model_param.setdefault('nu', 0.5)
-        shrinking = model_param.setdefault('shrinking', True)
-        cache_size= model_param.setdefault('cache_size', 200)
-        verbose= model_param.setdefault('verbose', False)
-        max_iter= model_param.setdefault('max_iter', -1)
+        kernel = model_param['kernel'] if 'kernel' in model_param else 'rbf'
+        degree = model_param['degree'] if 'degree' in model_param else 3
+        gamma = model_param['gamma'] if 'gamma' in model_param else 0.0
+        coef0 = model_param['coef0'] if 'coef0' in model_param else 0.0
+        tol = model_param['tol'] if 'tol' in model_param else 0.001
+        C = model_param['C'] if 'C' in model_param else 1.0
+        nu = model_param['nu'] if 'nu' in model_param else 0.5
+        shrinking = model_param['shrinking'] if 'shrinking' in model_param else True
+        cache_size = model_param['cache_size'] if 'cache_size' in model_param else 200
+        verbose = model_param['verbose'] if 'verbose' in model_param else False
+        max_iter = model_param['max_iter'] if 'max_iter' in model_param else  -1
 
         from sklearn.svm import NuSVR
         model = NuSVR(kernel=kernel,
@@ -473,6 +475,7 @@ class NusvrTrainTestModel(TrainTestModel):
 class LibsvmnusvrTrainTestModel(TrainTestModel):
 
     TYPE = 'libsvmnusvr'
+    VERSION = "0.1"
 
     sys.path.append(config.ROOT + "/libsvm/python")
     import svmutil
@@ -546,20 +549,11 @@ class LibsvmnusvrTrainTestModel(TrainTestModel):
         :param xys_2d:
         :return:
         """
-        # m = svm_load_model(svm_file)
-        # score, _, _ = svm_predict([0], X, m)
-        # invoke the libsvm python script, for retraining purposes
-        kernel = model_param.setdefault('kernel', 'rbf')
-        # degree = model_param.setdefault('degree', 3)
-        gamma = model_param.setdefault('gamma', 0.0)
-        # coef0 = model_param.setdefault('coef0', 0.0)
-        # tol = model_param.setdefault('tol', 0.001)
-        C = model_param.setdefault('C', 1.0)
-        nu = model_param.setdefault('nu', 0.5)
-        # shrinking = model_param.setdefault('shrinking', True)
-        cache_size= model_param.setdefault('cache_size', 200)
-        # verbose= model_param.setdefault('verbose', False)
-        # max_iter= model_param.setdefault('max_iter', -1)
+        kernel = model_param['kernel'] if 'kernel' in model_param else 'rbf'
+        gamma = model_param['gamma'] if 'gamma' in model_param else 0.0
+        C = model_param['C'] if 'C' in model_param else 1.0
+        nu = model_param['nu'] if 'nu' in model_param else 0.5
+        cache_size = model_param['cache_size'] if 'cache_size' in model_param else 200
 
         if kernel == 'rbf':
             ktype_int = cls.svmutil.RBF
@@ -569,12 +563,12 @@ class LibsvmnusvrTrainTestModel(TrainTestModel):
             assert False, 'ktype = ' + str(kernel) + ' not implemented'
 
         param = cls.svmutil.svm_parameter(['-s', 4,
-                                        '-t', ktype_int,
-                                        '-c', C,
-                                        '-g', gamma,
-                                        '-n',nu,
-                                        '-m', cache_size])
-        # convert to list! (silly step)
+                                           '-t', ktype_int,
+                                           '-c', C,
+                                           '-g', gamma,
+                                           '-n', nu,
+                                           '-m', cache_size])
+
         f = list(xys_2d[:, 1:])
         for i, item in enumerate(f):
             f[i] = list(item)
@@ -586,6 +580,7 @@ class LibsvmnusvrTrainTestModel(TrainTestModel):
 class RandomForestTrainTestModel(TrainTestModel):
 
     TYPE = 'randomforest'
+    VERSION = "0.1"
 
     @staticmethod
     def _train(model_param, xys_2d):
@@ -596,20 +591,17 @@ class RandomForestTrainTestModel(TrainTestModel):
         :param xys_2d:
         :return:
         """
-        n_estimators = model_param.setdefault('n_estimators', 10)
-        criterion = model_param.setdefault('criterion', 'mse')
-        max_depth = model_param.setdefault('max_depth', None)
-        min_samples_split = model_param.setdefault('min_samples_split', 2)
-        min_samples_leaf = model_param.setdefault('min_samples_leaf', 1)
-        min_weight_fraction_leaf = model_param.setdefault('min_weight_fraction_leaf', 0.0)
-        max_features = model_param.setdefault('max_features', 'auto')
-        max_leaf_nodes = model_param.setdefault('max_leaf_nodes', None)
-        bootstrap = model_param.setdefault('bootstrap', True)
-        oob_score = model_param.setdefault('oob_score', False)
-        n_jobs = model_param.setdefault('n_jobs', 1)
-        random_state = model_param.setdefault('random_state', None)
-        verbose = model_param.setdefault('verbose', 0)
-        #warm_start = model_param.setdefault('warm_start', False)
+        n_estimators = model_param['n_estimators'] if 'n_estimators' in model_param else 10
+        criterion = model_param['criterion'] if 'criterion' in model_param else 'mse'
+        max_depth = model_param['max_depth'] if 'max_depth' in model_param else None
+        min_samples_split = model_param['min_samples_split'] if 'min_samples_split' in model_param else 2
+        min_samples_leaf = model_param['min_samples_leaf'] if 'min_samples_leaf' in model_param else 1
+        max_features = model_param['max_features'] if 'max_features' in model_param else 'auto'
+        bootstrap = model_param['bootstrap'] if 'bootstrap' in model_param else True
+        oob_score = model_param['oob_score'] if 'oob_score' in model_param else False
+        n_jobs = model_param['n_jobs'] if 'n_jobs' in model_param else 1
+        random_state = model_param['random_state'] if 'random_state' in model_param else None
+        verbose = model_param['verbose'] if 'verbose' in model_param else 0
 
         from sklearn import ensemble
         model = ensemble.RandomForestRegressor(
@@ -617,9 +609,7 @@ class RandomForestTrainTestModel(TrainTestModel):
             criterion=criterion, max_depth=max_depth,
             min_samples_split=min_samples_split,
             min_samples_leaf=min_samples_leaf,
-            # min_weight_fraction_leaf=min_weight_fraction_leaf,
             max_features=max_features,
-            # max_leaf_nodes=max_leaf_nodes,
             bootstrap=bootstrap,
             oob_score=oob_score,
             n_jobs=n_jobs,
