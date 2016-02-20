@@ -1,18 +1,13 @@
-import sys
-import numpy as np
-from feature_assembler import FeatureAssembler
-
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
-import os
-import multiprocessing
-import subprocess
 import config
-from tools import get_dir_without_last_slash, make_parent_dirs_if_nonexist
 from executor import Executor
 from result import Result
-
+import sys
+import numpy as np
+from feature_assembler import FeatureAssembler
+from train_test_model import LibsvmnusvrTrainTestModel
 
 class QualityRunner(Executor):
     """
@@ -89,6 +84,8 @@ class VmafQualityRunner(QualityRunner):
         vmaf_fassembler.run()
         feature_result = vmaf_fassembler.results[0]
 
+        # =====================================================================
+
         # SVR predict
         model = self.svmutil.svm_load_model(self.SVM_MODEL_FILE)
 
@@ -105,6 +102,50 @@ class VmafQualityRunner(QualityRunner):
             score = self.svmutil.svm_predict([0], xs, model)[0][0]
             score = self._post_correction(motion, score)
             scores.append(score)
+
+        # ============== new: =================
+
+        # y_slope = 1.0
+        # y_intercept = 0.0
+        # slopes = [y_slope,]
+        # intercepts = [y_intercept,]
+        # for key in self.SVM_MODEL_ORDERED_SCORES_KEYS:
+        #     fmin, fmax = self.FEATURE_RESCALE_DICT[key]
+        #     ub = 1.0
+        #     lb = 0.0
+        #     x_slope = (ub - lb) / (fmax - fmin)
+        #     x_intercept = (lb*fmax - ub*fmin) / (fmax - fmin)
+        #     slopes.append(x_slope)
+        #     intercepts.append(x_intercept)
+        #
+        # add_model_dict = {
+        #     'feature_names': self.SVM_MODEL_ORDERED_SCORES_KEYS,
+        #     'norm_type': 'linear_rescale',
+        #     'slopes': slopes,
+        #     'intercepts': intercepts,
+        #     'lbound': 0.0,
+        #     'ubound': 1.0,
+        # }
+        #
+        # # construct LibsvmnusvrTrainTestModel using existing model that Joe has
+        # # trained, with additional clipping at lower and upper bound
+        # libsvmnusvr_model = LibsvmnusvrTrainTestModel.from_raw_file(
+        #     model_filename=self.SVM_MODEL_FILE,
+        #     additional_model_dict=add_model_dict,
+        #     logger=self.logger
+        # )
+        #
+        # xs = LibsvmnusvrTrainTestModel.get_perframe_xs_from_result(feature_result)
+        #
+        # scores = libsvmnusvr_model.predict(xs)
+        #
+        # # apply _post_correction to scores
+        # scores = map(
+        #     lambda (motion, score): self._post_correction(motion, score),
+        #     zip(motions, scores)
+        # )
+
+        # =====================================================================
 
         quality_result = {}
 
@@ -139,7 +180,7 @@ class VmafQualityRunner(QualityRunner):
         lower_bound, upper_bound = lower_upper_bound
         vals = np.double(vals)
         vals = np.clip(vals, lower_bound, upper_bound)
-        vals = (vals - lower_bound)/(upper_bound - lower_bound)
+        vals = (vals - lower_bound) / (upper_bound - lower_bound)
         return vals
 
     def _get_quality_scores(self, asset):

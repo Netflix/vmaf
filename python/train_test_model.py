@@ -89,6 +89,20 @@ class TrainTestModel(TypeVersionEnabled):
     def model(self, value):
         self.model_dict['model'] = value
 
+    # @property
+    # def lbound(self):
+    #     return self.model_dict['lbound'] if 'lbound' in self.model_dict else None
+    # @lbound.setter
+    # def lbound(self, value):
+    #     self.model_dict['lbound'] = value
+
+    # @property
+    # def ubound(self):
+    #     return self.model_dict['ubound'] if 'ubound' in self.model_dict else None
+    # @ubound.setter
+    # def ubound(self, value):
+    #     self.model_dict['ubound'] = value
+
     def to_file(self, filename):
 
         self._assert_trained()
@@ -136,6 +150,11 @@ class TrainTestModel(TypeVersionEnabled):
 
         # normalize xs
         xs_2d = self.normalize_xs(xs_2d)
+
+        # # (optional) clip
+        # # lbound and ubound must be specified simultaneously
+        # if self.lbound is not None and self.ubound is not None:
+        #     xs_2d = np.clip(xs_2d, self.lbound, self.ubound)
 
         # predict
         ys_label_pred = self._predict(self.model, xs_2d)
@@ -309,6 +328,7 @@ class TrainTestModel(TypeVersionEnabled):
         else:
             assert False, 'Incorrect model norm type selected: {}' \
                 .format(self.norm_type)
+
         return xs_2d
 
     # ========================== begin of legacy ===============================
@@ -401,6 +421,19 @@ class TrainTestModel(TypeVersionEnabled):
             else:
                 _results = map(lambda i:results[i], indexs)
             xs[name] = np.array(map(lambda result: result[name], _results))
+        return xs
+
+    @staticmethod
+    def get_perframe_xs_from_result(result):
+        """
+        :param result: one BasicResult
+        :param indexs: indices of results to be used
+        :return:
+        """
+        feature_names = result._get_ordered_list_scores_key()
+        xs = {}
+        for name in feature_names:
+            xs[name] = np.array(result[name])
         return xs
 
     @staticmethod
@@ -517,14 +550,34 @@ class LibsvmnusvrTrainTestModel(TrainTestModel):
         return train_test_model
 
     @classmethod
-    def from_raw_file(cls, filename, additional_model_dict):
+    def from_raw_file(cls, model_filename, additional_model_dict, logger):
         """
         Construct from raw libsvm model file.
-        :param filename:
-        :param additional_model_dict:
+        :param model_filename:
+        :param additional_model_dict: must contain keys feature_names, norm_type
+        and optional slopes and intercepts
+        :param logger:
         :return:
         """
-        pass
+
+        # assert additional_model_dict
+        assert 'feature_names' in additional_model_dict
+        assert 'norm_type' in additional_model_dict
+        norm_type = additional_model_dict['norm_type']
+        assert (   norm_type == 'none'
+                or norm_type == 'linear_rescale')
+        if norm_type == 'linear_rescale':
+            assert 'slopes' in additional_model_dict
+            assert 'intercepts' in additional_model_dict
+
+        train_test_model = cls(param_dict={}, logger=logger)
+
+        train_test_model.model_dict.update(additional_model_dict)
+
+        model = cls.svmutil.svm_load_model(model_filename)
+        train_test_model.model_dict['model'] = model
+
+        return train_test_model
 
     # override
     @staticmethod
