@@ -7,6 +7,7 @@ import subprocess
 from tools import make_parent_dirs_if_nonexist, get_dir_without_last_slash
 from mixin import TypeVersionEnabled
 import config
+from time import sleep
 
 class Executor(TypeVersionEnabled):
     """
@@ -81,17 +82,23 @@ class Executor(TypeVersionEnabled):
 
     def _run_and_generate_log_file(self, asset):
 
+        # wait til workfile paths being generated
+        # FIXME: use proper mutex
+        for i in range(10):
+            if os.path.exists(asset.ref_workfile_path) and \
+                    os.path.exists(asset.dis_workfile_path):
+                break
+            sleep(0.1)
+        else:
+            raise RuntimeError("ref or dis video workfile path is missing.")
+
         log_file_path = self._get_log_file_path(asset)
 
         # if parent dir doesn't exist, create
         make_parent_dirs_if_nonexist(log_file_path)
 
-        # touch (to start with a clean file)
-        with open(log_file_path, 'wt'):
-            pass
-
         # add runner type and version
-        with open(log_file_path, 'at') as log_file:
+        with open(log_file_path, 'wt') as log_file:
             log_file.write("{type} VERSION {version}\n\n".format(
                 type=self.TYPE, version=self.VERSION))
 

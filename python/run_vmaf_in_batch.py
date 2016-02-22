@@ -67,35 +67,35 @@ if __name__ == "__main__":
 
     runner_class = VmafQualityRunner
 
-    # construct an VmafQualityRunner object to assert assets, and to remove logs
-    runner_class(assets,
+    # construct an VmafQualityRunner object to assert assets, and to remove
+    runner = runner_class(assets,
                  None,
                  log_file_dir=config.ROOT + "/workspace/log_file_dir",
                  fifo_mode=True,
                  delete_workdir=True,
                  result_store=None,
-                 ).remove_logs()
+                 )
 
-    # run
-    runners, results = run_executors_in_parallel(
-        runner_class,
-        assets,
-        log_file_dir=config.ROOT + "/workspace/log_file_dir",
-        fifo_mode=True,
-        delete_workdir=True,
-        parallelize=True,
-        result_store=None,
-    )
+    try:
+        # run
+        runners, results = run_executors_in_parallel(
+            runner_class,
+            assets,
+            log_file_dir=config.ROOT + "/workspace/log_file_dir",
+            fifo_mode=True,
+            delete_workdir=True,
+            parallelize=True,
+            result_store=None,
+        )
 
-    # output
-    for result in results:
-        print '============================'
-        print 'Asset {asset_id}:'.format(asset_id=result.asset.asset_id)
-        print '============================'
-        print str(result)
+        # output
+        for result in results:
+            print '============================'
+            print 'Asset {asset_id}:'.format(asset_id=result.asset.asset_id)
+            print '============================'
+            print str(result)
 
-    # clean up
-    for runner in runners:
+    finally:
         runner.remove_logs()
 
     print 'Done.'

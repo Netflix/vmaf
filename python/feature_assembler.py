@@ -44,22 +44,6 @@ class FeatureAssembler(object):
 
         self.type2results_dict = {}
 
-    # @property
-    # def ordered_scores_key_list(self):
-    #     """
-    #     CAUTION: order matters to TrainTestModel! ALWAYS use this ordered list
-    #     to construct feature vector for TrainTestModel from result.
-    #     :return:
-    #     """
-    #     scores_key_list = []
-    #     for fextractor_type in sorted(self.feature_dict.keys()):
-    #         for atom_feature in sorted(self._get_atom_features(fextractor_type)):
-    #
-    #             scores_key = self._get_scores_key(fextractor_type, atom_feature)
-    #
-    #             scores_key_list.append(scores_key)
-    #     return scores_key_list
-
     def run(self):
 
         # for each FeatureExtractor_type key in feature_dict, find the subclass
@@ -97,7 +81,7 @@ class FeatureAssembler(object):
 
     def _get_scores_key(self, fextractor_type, atom_feature):
         fextractor_subclass = self._find_fextractor_subclass(fextractor_type)
-        scores_key = fextractor_subclass._get_scores_key(atom_feature)
+        scores_key = fextractor_subclass.get_scores_key(atom_feature)
         return scores_key
 
     def _get_atom_features(self, fextractor_type):

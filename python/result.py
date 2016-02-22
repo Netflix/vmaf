@@ -278,7 +278,7 @@ class FileSystemResultStore(ResultStore):
     str(asset).
     """
     def __init__(self,
-                 logger,
+                 logger=None,
                  result_store_dir=config.ROOT +
                                 "/workspace/result_store_dir/file_result_store"
                  ):

@@ -29,9 +29,12 @@ class QualityRunner(Executor):
         return Result(asset, self.executor_id, result)
 
     @classmethod
-    def _get_scores_key(cls):
+    def get_scores_key(cls):
         return cls.TYPE + '_scores'
 
+    @classmethod
+    def get_score_key(cls):
+        return cls.TYPE + '_score'
 
 class VmafQualityRunner(QualityRunner):
 
@@ -153,7 +156,7 @@ class VmafQualityRunner(QualityRunner):
         quality_result.update(feature_result.result_dict)
 
         # add quality score
-        quality_result[self._get_scores_key()] = scores
+        quality_result[self.get_scores_key()] = scores
 
         # save to asset2quality map
         self.asset2quality_map[repr(asset)] = quality_result

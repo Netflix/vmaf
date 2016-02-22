@@ -23,7 +23,7 @@ class FeatureExtractor(Executor):
         return Result(asset, self.executor_id, result)
 
     @classmethod
-    def _get_scores_key(cls, atom_feature):
+    def get_scores_key(cls, atom_feature):
         return "{type}_{atom_feature}_scores".format(
             type=cls.TYPE, atom_feature=atom_feature)
 
@@ -84,13 +84,14 @@ class VmafFeatureExtractor(FeatureExtractor):
                         continue
 
         len_score = len(atom_feature_scores_dict[self.ATOM_FEATURES[0]])
+        assert len_score != 0
         for atom_feature in self.ATOM_FEATURES[1:]:
             assert len_score == len(atom_feature_scores_dict[atom_feature])
 
         feature_result = {}
 
         for atom_feature in self.ATOM_FEATURES:
-            scores_key = self._get_scores_key(atom_feature)
+            scores_key = self.get_scores_key(atom_feature)
             feature_result[scores_key] = atom_feature_scores_dict[atom_feature]
 
         return feature_result
