@@ -2,13 +2,13 @@ __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import sys
-
 import config
 from asset import Asset
 from executor import run_executors_in_parallel
 from result import FileSystemResultStore
+from train_test_model import TrainTestModel
 
-def read_dataset(dataset):
+def read_dataset(dataset, train_or_test):
 
     data_set_name = dataset.dataset_name
     yuv_fmt = dataset.yuv_fmt
@@ -35,7 +35,8 @@ def read_dataset(dataset):
                                   'groundtruth':dis_video['dmos']
                                   }
                       )
-        assets.append(asset)
+        if train_or_test == 'all' or dis_video['train_or_test'] == train_or_test:
+            assets.append(asset)
 
     return assets
 
@@ -44,24 +45,27 @@ def plot_scatter(assets, results, runner_class):
     assert len(assets) == len(results)
 
     groundtruths = map(lambda asset: asset.groundtruth, assets)
-
     predictions = map(lambda result: result[runner_class.get_score_key()], results)
-
+    content_ids = map(lambda asset: asset.content_id, assets)
+    stats = TrainTestModel.get_stats(groundtruths, predictions)
     import matplotlib.pylab as plt
-    plt.scatter(groundtruths, predictions)
-
-    plt.xlabel('Ground Truth')
+    fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
+    TrainTestModel.plot_scatter(ax, stats, content_ids)
+    plt.xlabel('Groundtruth (DMOS)')
     plt.ylabel("Prediction")
-    plt.title("Dataset: {dataset} Runner: {runner}".format(
+    plt.grid()
+    plt.title("Dataset: {dataset}, Runner: {runner}\n{stats}".format(
         dataset=assets[0].dataset,
-        runner=results[0].executor_id)
-    )
+        runner=results[0].executor_id,
+        stats=TrainTestModel.format_stats(
+            TrainTestModel.get_stats(groundtruths, predictions))
+    ))
     plt.show()
 
 
-def validate_dataset(dataset, quality_runner_class):
+def validate_dataset(dataset, quality_runner_class, train_or_test='all'):
 
-    assets = read_dataset(dataset)
+    assets = read_dataset(dataset, train_or_test)
     result_store = FileSystemResultStore()
 
     # construct an VmafQualityRunner object only to assert assets, and to remove
@@ -104,6 +108,8 @@ if __name__ == '__main__':
 
     from quality_runner import VmafQualityRunner as runner_class
 
-    validate_dataset(dataset, runner_class)
+    # validate_dataset(dataset, runner_class)
+    # validate_dataset(dataset, runner_class, train_or_test='train')
+    validate_dataset(dataset, runner_class, train_or_test='test')
 
     print 'Done.'

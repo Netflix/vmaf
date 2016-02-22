@@ -216,8 +216,8 @@ class FeatureCrossValidation(object):
 
     @staticmethod
     def format_result(result):
-        return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, MSE: {mse:.3f})'.format(
-            srcc=result['SRCC'], pcc=result['PCC'], mse=result['MSE'])
+        return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, MSE: {rmse:.3f})'.format(
+            srcc=result['SRCC'], pcc=result['PCC'], rmse=result['RMSE'])
 
     @staticmethod
     def _unroll_dict_of_lists(dict_of_lists):

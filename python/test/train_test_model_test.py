@@ -82,7 +82,7 @@ class TrainTestModelTest(unittest.TestCase):
         loaded_model = NusvrTrainTestModel.from_file(self.model_filename, None)
 
         result = loaded_model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.10429561419142239)
+        self.assertEquals(result['RMSE'], 0.32294831504657584)
 
         model.delete(self.model_filename)
 
@@ -104,11 +104,11 @@ class TrainTestModelTest(unittest.TestCase):
         loaded_model = LibsvmnusvrTrainTestModel.from_file(self.model_filename, None)
 
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'],        0.10429561419142239)
+        self.assertEquals(result['RMSE'],        0.32294831504657584)
 
         # loaded model generates slight numerical difference
         result = loaded_model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'],        0.10429568955320398)
+        self.assertEquals(result['RMSE'],        0.32294843172432958)
 
         model.delete(self.model_filename)
 
@@ -125,25 +125,25 @@ class TrainTestModelTest(unittest.TestCase):
             {'norm_type':'normalize'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.10429561419142239)
+        self.assertEquals(result['RMSE'], 0.32294831504657584)
 
         model = NusvrTrainTestModel(
             {'norm_type':'clip_0to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.10584346771835587)
+        self.assertEquals(result['RMSE'], 0.32533593056770699)
 
         model = NusvrTrainTestModel(
             {'norm_type':'clip_minus1to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.09656162857976365)
+        self.assertEquals(result['RMSE'], 0.31074367021672966)
 
         model = NusvrTrainTestModel(
             {'norm_type':'none',}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.35463953349016142)
+        self.assertEquals(result['RMSE'], 0.59551619078759011)
 
     def test_train_predict_libsvmnusvr(self):
 
@@ -159,25 +159,25 @@ class TrainTestModelTest(unittest.TestCase):
             {'norm_type':'normalize'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.10429561419142239)
+        self.assertEquals(result['RMSE'], 0.32294831504657584)
 
         model = LibsvmnusvrTrainTestModel(
             {'norm_type':'clip_0to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.10584346771835587)
+        self.assertEquals(result['RMSE'], 0.32533593056770699)
 
         model = LibsvmnusvrTrainTestModel(
             {'norm_type':'clip_minus1to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.09656162857976365)
+        self.assertEquals(result['RMSE'], 0.31074367021672966)
 
         model = LibsvmnusvrTrainTestModel(
             {'norm_type':'none'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.35463953349016142)
+        self.assertEquals(result['RMSE'], 0.59551619078759011)
 
 
     def test_train_predict_randomforest(self):
@@ -194,24 +194,24 @@ class TrainTestModelTest(unittest.TestCase):
                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.10431733333333332)
+        self.assertEquals(result['RMSE'], 0.32298193963956146)
 
         model = RandomForestTrainTestModel({'norm_type':'clip_0to1',
                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.10431733333333326)
+        self.assertEquals(result['RMSE'], 0.32298193963956134)
 
         model = RandomForestTrainTestModel({'norm_type':'clip_minus1to1',
                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.1043173333333333)
+        self.assertEquals(result['RMSE'], 0.32298193963956146)
 
         model = RandomForestTrainTestModel({'norm_type':'none', 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertEquals(result['MSE'], 0.10431733333333341)
+        self.assertEquals(result['RMSE'], 0.32298193963956162)
 
 
 class TrainTestModelTest2(unittest.TestCase):

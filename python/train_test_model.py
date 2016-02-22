@@ -168,48 +168,35 @@ class TrainTestModel(TypeVersionEnabled):
     def get_stats(ys_label, ys_label_pred):
         import scipy.stats
         # MSE
-        mse = np.mean(np.power(np.array(ys_label) - np.array(ys_label_pred), 2.0))
+        rmse = np.sqrt(np.mean(np.power(np.array(ys_label)
+                                        - np.array(ys_label_pred), 2.0)))
         # spearman
         srcc, _ = scipy.stats.spearmanr(ys_label, ys_label_pred)
         # pearson
         pcc, _ = scipy.stats.pearsonr(ys_label, ys_label_pred)
         # kendall
         kendall, _ = scipy.stats.kendalltau(ys_label, ys_label_pred)
-        result = {'MSE': mse,
+        stats = { 'RMSE': rmse,
                   'SRCC': srcc,
                   'PCC': pcc,
                   'KENDALL': kendall,
                   'ys_label': list(ys_label),
                   'ys_label_pred': list(ys_label_pred)}
-        return result
-
-    @classmethod
-    def aggregate_stats_list(cls, results):
-        aggregate_ys_label = []
-        aggregate_ys_label_pred = []
-        for result in results:
-            aggregate_ys_label += result['ys_label']
-            aggregate_ys_label_pred += result['ys_label_pred']
-        return cls.get_stats(aggregate_ys_label, aggregate_ys_label_pred)
+        return stats
 
     @staticmethod
-    def get_objective_score(result, type='SRCC'):
-        """
-        Objective score is something to MAXIMIZE. e.g. SRCC, or -MSE.
-        :param result:
-        :param type:
-        :return:
-        """
-        if type == 'SRCC':
-            return result['SRCC']
-        elif type == 'PCC':
-            return result['PCC']
-        elif type == 'KENDALL':
-            return result['KENDALL']
-        elif type == 'MSE':
-            return -result['MSE']
-        else:
-            assert False, 'Unknow type: {} for get_score().'.format(type)
+    def format_stats(stats):
+        return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f})'.format(
+            srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
+
+    @classmethod
+    def aggregate_stats_list(cls, stats_list):
+        aggregate_ys_label = []
+        aggregate_ys_label_pred = []
+        for stats in stats_list:
+            aggregate_ys_label += stats['ys_label']
+            aggregate_ys_label_pred += stats['ys_label_pred']
+        return cls.get_stats(aggregate_ys_label, aggregate_ys_label_pred)
 
     @staticmethod
     def plot_scatter(ax, stats, content_ids=None):
@@ -230,6 +217,25 @@ class TrainTestModel(TypeVersionEnabled):
                 curr_ys_label_pred = np.array(stats['ys_label_pred'])[curr_idxs]
                 ax.scatter(curr_ys_label, curr_ys_label_pred,
                            label=curr_content_id, color=colors[idx % len(colors)])
+
+    @staticmethod
+    def get_objective_score(result, type='SRCC'):
+        """
+        Objective score is something to MAXIMIZE. e.g. SRCC, or -RMSE.
+        :param result:
+        :param type:
+        :return:
+        """
+        if type == 'SRCC':
+            return result['SRCC']
+        elif type == 'PCC':
+            return result['PCC']
+        elif type == 'KENDALL':
+            return result['KENDALL']
+        elif type == 'RMSE':
+            return -result['RMSE']
+        else:
+            assert False, 'Unknow type: {} for get_score().'.format(type)
 
     def evaluate(self, xs, ys):
         ys_label_pred = self.predict(xs)
