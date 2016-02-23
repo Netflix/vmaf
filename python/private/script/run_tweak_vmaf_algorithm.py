@@ -6,7 +6,7 @@ import config
 import matplotlib.pyplot as plt
 from run_validate_dataset import validate_dataset
 
-if __name__ == '__main__':
+def run_joe_vmaf():
 
     sys.path.append(config.ROOT + '/python/private/script')
 
@@ -30,5 +30,9 @@ if __name__ == '__main__':
 
     plt.tight_layout()
     plt.show()
+
+if __name__ == '__main__':
+
+    run_joe_vmaf()
 
     print 'Done.'
