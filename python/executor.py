@@ -45,8 +45,8 @@ class Executor(TypeVersionEnabled):
     def run(self):
         if self.logger:
             self.logger.info(
-                "For each asset, if {id} result has not been generated, "
-                "run and generate {id} result...".format(type=self.executor_id))
+                "For each asset, if {type} result has not been generated, "
+                "run and generate {type} result...".format(type=self.executor_id))
 
         # run generate_log_file on each asset
         results = map(self._run_on_asset, self.assets)

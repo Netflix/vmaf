@@ -13,7 +13,7 @@ from train_test_model import TrainTestModel
 import matplotlib.pylab as plt
 from tools import get_dir_without_last_slash, get_file_name_without_extension
 
-def read_dataset(dataset, train_or_test):
+def read_dataset(dataset, train_or_test='all'):
 
     data_set_name = dataset.dataset_name
     yuv_fmt = dataset.yuv_fmt
@@ -61,8 +61,7 @@ def plot_scatter(ax, assets, results, runner_class):
     ax.set_title( "Dataset: {dataset}, Runner: {runner}\n{stats}".format(
         dataset=assets[0].dataset,
         runner=results[0].executor_id,
-        stats=TrainTestModel.format_stats(
-            TrainTestModel.get_stats(groundtruths, predictions))
+        stats=TrainTestModel.format_stats(stats)
     ))
 
 

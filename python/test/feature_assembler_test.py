@@ -49,12 +49,6 @@ class FeatureAssemblerTest(unittest.TestCase):
             result_store=None
         )
 
-        # self.assertEquals(self.fassembler.ordered_scores_key_list,
-        #                   ['VMAF_feature_adm_scores',
-        #                    'VMAF_feature_ansnr_scores',
-        #                    'VMAF_feature_motion_scores',
-        #                    'VMAF_feature_vif_scores'])
-
         self.fassembler.run()
 
         results = self.fassembler.results
