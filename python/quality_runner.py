@@ -7,7 +7,8 @@ from result import Result
 import sys
 import numpy as np
 from feature_assembler import FeatureAssembler
-from train_test_model import LibsvmnusvrTrainTestModel
+from train_test_model import LibsvmnusvrTrainTestModel, TrainTestModel
+
 
 class QualityRunner(Executor):
     """
@@ -79,7 +80,7 @@ class VmafQualityRunner(QualityRunner):
         """
         Override Executor._run_on_asset to bypass calling
         _run_and_generate_log_file() itself. Instead, initiate a
-        VmafFeatureExtractor object and run, which will do the work.
+        FeatureAssembler object and run, which will do the work.
         :param asset:
         :return:
         """
@@ -105,50 +106,6 @@ class VmafQualityRunner(QualityRunner):
             score = self.svmutil.svm_predict([0], xs, model)[0][0]
             score = self._post_correction(motion, score)
             scores.append(score)
-
-        # ============== new: =================
-
-        # y_slope = 1.0
-        # y_intercept = 0.0
-        # slopes = [y_slope,]
-        # intercepts = [y_intercept,]
-        # for key in self.SVM_MODEL_ORDERED_SCORES_KEYS:
-        #     fmin, fmax = self.FEATURE_RESCALE_DICT[key]
-        #     ub = 1.0
-        #     lb = 0.0
-        #     x_slope = (ub - lb) / (fmax - fmin)
-        #     x_intercept = (lb*fmax - ub*fmin) / (fmax - fmin)
-        #     slopes.append(x_slope)
-        #     intercepts.append(x_intercept)
-        #
-        # add_model_dict = {
-        #     'feature_names': self.SVM_MODEL_ORDERED_SCORES_KEYS,
-        #     'norm_type': 'linear_rescale',
-        #     'slopes': slopes,
-        #     'intercepts': intercepts,
-        #     'lbound': 0.0,
-        #     'ubound': 1.0,
-        # }
-        #
-        # # construct LibsvmnusvrTrainTestModel using existing model that Joe has
-        # # trained, with additional clipping at lower and upper bound
-        # libsvmnusvr_model = LibsvmnusvrTrainTestModel.from_raw_file(
-        #     model_filename=self.SVM_MODEL_FILE,
-        #     additional_model_dict=add_model_dict,
-        #     logger=self.logger
-        # )
-        #
-        # xs = LibsvmnusvrTrainTestModel.get_perframe_xs_from_result(feature_result)
-        #
-        # scores = libsvmnusvr_model.predict(xs)
-        #
-        # # apply _post_correction to scores
-        # scores = map(
-        #     lambda (motion, score): self._post_correction(motion, score),
-        #     zip(motions, scores)
-        # )
-
-        # =====================================================================
 
         quality_result = {}
 
@@ -185,6 +142,92 @@ class VmafQualityRunner(QualityRunner):
         vals = np.clip(vals, lower_bound, upper_bound)
         vals = (vals - lower_bound) / (upper_bound - lower_bound)
         return vals
+
+    def _get_quality_scores(self, asset):
+        """
+        Since result already stored in asset2quality map, just retrieve it
+        :param asset:
+        :return:
+        """
+        repr_asset = repr(asset)
+        assert repr_asset in self.asset2quality_map
+        return self.asset2quality_map[repr_asset]
+
+    def _remove_log(self, asset):
+        """
+        Remove VmafFeatureExtractor's log instead
+        :param asset:
+        :return:
+        """
+        vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
+        vmaf_fassembler.remove_logs()
+
+    def _remove_result(self, asset):
+        """
+        Remove VmafFeatureExtractor's result instead
+        :param asset:
+        :return:
+        """
+        vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
+        vmaf_fassembler.remove_results()
+
+class Vmaf2QualityRunner(QualityRunner):
+    TYPE = 'VMAF2'
+    VERSION = '0.1'
+
+    FEATURE_ASSEMBLER_DICT = {'VMAF_feature': 'all'}
+
+    SVM_MODEL_FILE = config.ROOT + "/resource/model/model_v9.model"
+
+    def _get_vmaf_feature_assembler_instance(self, asset):
+        vmaf_fassembler = FeatureAssembler(
+            feature_dict=self.FEATURE_ASSEMBLER_DICT,
+            feature_option_dict=None,
+            assets=[asset],
+            logger=self.logger,
+            log_file_dir=self.log_file_dir,
+            fifo_mode=self.fifo_mode,
+            delete_workdir=self.delete_workdir,
+            result_store=self.result_store
+        )
+        return vmaf_fassembler
+
+    asset2quality_map = {}
+
+    # override Executor._run_on_asset
+    def _run_on_asset(self, asset):
+        """
+        Override Executor._run_on_asset to bypass calling
+        _run_and_generate_log_file() itself. Instead, initiate a
+        FeatureAssembler object and run, which will do the work.
+        :param asset:
+        :return:
+        """
+        vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
+        vmaf_fassembler.run()
+        feature_result = vmaf_fassembler.results[0]
+
+        xs = LibsvmnusvrTrainTestModel.get_perframe_xs_from_result(feature_result)
+
+        model = LibsvmnusvrTrainTestModel.from_file(self.SVM_MODEL_FILE, None)
+
+        ys_pred = model.predict(xs)
+        ys_pred = np.clip(ys_pred, 0.0, 100.0)
+
+        quality_result = {}
+
+        # add all feature result
+        quality_result.update(feature_result.result_dict)
+
+        # add quality score
+        quality_result[self.get_scores_key()] = ys_pred
+
+        # save to asset2quality map
+        self.asset2quality_map[repr(asset)] = quality_result
+
+        result = self._read_result(asset)
+
+        return result
 
     def _get_quality_scores(self, asset):
         """

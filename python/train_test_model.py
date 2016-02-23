@@ -432,14 +432,18 @@ class TrainTestModel(TypeVersionEnabled):
     @staticmethod
     def get_perframe_xs_from_result(result):
         """
+        Similar to get_xs_from_results(), except that instead of intake a list
+        of Result, each corresponding to an aggregate score, this function takes
+        a single Result, and interpret its per-frame score as an aggregate score.
         :param result: one BasicResult
         :param indexs: indices of results to be used
         :return:
         """
         feature_names = result._get_ordered_list_scores_key()
+        new_feature_names = result.get_ordered_list_score_key()
         xs = {}
-        for name in feature_names:
-            xs[name] = np.array(result[name])
+        for name, new_name in zip(feature_names, new_feature_names):
+            xs[new_name] = np.array(result[name])
         return xs
 
     @staticmethod

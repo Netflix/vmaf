@@ -4,7 +4,7 @@ __license__ = "Apache, Version 2.0"
 import os
 import unittest
 from asset import Asset
-from quality_runner import VmafQualityRunner
+from quality_runner import VmafQualityRunner, Vmaf2QualityRunner
 from executor import run_executors_in_parallel
 import config
 from result import FileSystemResultStore
@@ -151,6 +151,45 @@ class QualityRunnerTest(unittest.TestCase):
                 [asset, asset_original],
                 None, fifo_mode=True,
                 log_file_dir=config.ROOT + "/workspace/log_file_dir")
+
+    def test_run_vamf2_runner(self):
+        print 'test on running VMAF2 runner...'
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.runner = Vmaf2QualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            log_file_dir=config.ROOT + "/workspace/log_file_dir",
+            delete_workdir=True,
+            result_store=None
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertEqual(results[0]['VMAF2_score'], 65.97151503152334)
+        self.assertEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)
+        self.assertEqual(results[0]['VMAF_feature_motion_score'], 3.5916076041666667)
+        self.assertEqual(results[0]['VMAF_feature_adm_score'], 0.91552422916666665)
+        self.assertEqual(results[0]['VMAF_feature_ansnr_score'], 22.533456770833329)
+
+        self.assertEqual(results[1]['VMAF2_score'], 95.10965270432149)
+        self.assertEqual(results[1]['VMAF_feature_vif_score'], 1.0)
+        self.assertEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
+        self.assertEqual(results[1]['VMAF_feature_adm_score'], 1.0)
+        self.assertEqual(results[1]['VMAF_feature_ansnr_score'], 30.030914145833322)
 
 class ParallelQualityRunnerTest(unittest.TestCase):
 
