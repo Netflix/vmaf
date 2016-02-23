@@ -316,7 +316,7 @@ def run_quality_runners_in_parallel(runner_class,
         except ImportError:
             # fall back
             msg = "pathos.pp_map cannot be imported, fall back to sequential " \
-                  "map(). Install pathos by: \npip install pathos"
+                  "map(). On Ubuntu, install pathos by: \npip install pathos"
             if logger:
                 logger.warn(msg)
             else:

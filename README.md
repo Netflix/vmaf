@@ -44,7 +44,7 @@ where format is among yuv420p, yuv422p, yuv444p (YUV 8-bit) and yuv420p10le, yuv
 
 For example:
 
-`./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc00_576x324.yuv`
+`./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv`
 
 To run VMAF in batch mode, create an input text file with each line of format (check examples in example_batch_input):
 
@@ -53,6 +53,10 @@ To run VMAF in batch mode, create an input text file with each line of format (c
 After that, run:
 
 `./run_vmaf_in_batch input_file`
+
+For example:
+
+`./run_vmaf_in_batch example_batch_input`
 
 ##To-do List
 
