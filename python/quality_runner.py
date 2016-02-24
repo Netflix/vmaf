@@ -8,6 +8,8 @@ import sys
 import numpy as np
 from feature_assembler import FeatureAssembler
 from train_test_model import LibsvmnusvrTrainTestModel, TrainTestModel
+import subprocess
+import re
 
 
 class QualityRunner(Executor):
@@ -171,8 +173,8 @@ class VmafQualityRunner(QualityRunner):
         vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
 
-class Vmaf2QualityRunner(QualityRunner):
-    TYPE = 'VMAF2'
+class VmaftQualityRunner(QualityRunner):
+    TYPE = 'VMAFT'
     VERSION = '0.1'
 
     FEATURE_ASSEMBLER_DICT = {'VMAF_feature': 'all'}
@@ -256,3 +258,57 @@ class Vmaf2QualityRunner(QualityRunner):
         """
         vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
+
+class PsnrQualityRunner(QualityRunner):
+
+    TYPE = 'PSNR'
+    VERSION = '1.0'
+
+    PSNR = config.ROOT + "/feature/psnr"
+
+    def _run_and_generate_log_file(self, asset):
+
+        super(PsnrQualityRunner, self)._run_and_generate_log_file(asset)
+
+        log_file_path = self._get_log_file_path(asset)
+
+        # run VMAF command line to extract features, 'APPEND' result (since
+        # super method already does something
+        quality_width, quality_height = asset.quality_width_height
+        psnr_cmd = "{psnr} {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
+        .format(
+            psnr=self.PSNR,
+            yuv_type=asset.yuv_type,
+            ref_path=asset.ref_workfile_path,
+            dis_path=asset.dis_workfile_path,
+            w=quality_width,
+            h=quality_height,
+            log_file_path=log_file_path,
+        )
+
+        if self.logger:
+            self.logger.info(psnr_cmd)
+
+        subprocess.call(psnr_cmd, shell=True)
+
+    def _get_quality_scores(self, asset):
+        log_file_path = self._get_log_file_path(asset)
+
+        psnr_scores = []
+        counter = 0
+        with open(log_file_path, 'rt') as log_file:
+            for line in log_file.readlines():
+                mo = re.match(r"psnr: ([0-9]+) ([0-9.-]+)", line)
+                if mo:
+                    cur_idx = int(mo.group(1))
+                    assert cur_idx == counter
+                    psnr_scores.append(float(mo.group(2)))
+                    counter += 1
+
+        assert len(psnr_scores) != 0
+
+        scores_key = self.get_scores_key()
+        quality_result = {
+            scores_key:psnr_scores
+        }
+        return quality_result

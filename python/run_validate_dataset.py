@@ -96,7 +96,7 @@ def validate_dataset(dataset, quality_runner_class, ax, result_store, train_or_t
     except Exception as e:
         print "Error: " + str(e)
 
-QUALITY_RUNNERS = ['VMAF', 'VMAF2']
+QUALITY_RUNNERS = ['VMAF', 'VMAFT']
 CACHE_RESULT = ['yes', 'no']
 
 def print_usage():
@@ -133,8 +133,8 @@ if __name__ == '__main__':
 
     if quality_runner_name == 'VMAF':
         from quality_runner import VmafQualityRunner as runner_class
-    elif quality_runner_name == 'VMAF2':
-        from quality_runner import Vmaf2QualityRunner as runner_class
+    elif quality_runner_name == 'VMAFT':
+        from quality_runner import VmaftQualityRunner as runner_class
     else:
         print_usage()
         exit(0)

@@ -245,6 +245,11 @@ class Executor(TypeVersionEnabled):
         if os.path.exists(path):
             os.remove(path)
 
+    def _remove_log(self, asset):
+        log_file_path = self._get_log_file_path(asset)
+        if os.path.exists(log_file_path):
+            os.remove(log_file_path)
+
     def _remove_result(self, asset):
         if self.result_store:
             self.result_store.delete(asset, self.executor_id)

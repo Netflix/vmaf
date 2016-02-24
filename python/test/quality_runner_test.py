@@ -4,7 +4,8 @@ __license__ = "Apache, Version 2.0"
 import os
 import unittest
 from asset import Asset
-from quality_runner import VmafQualityRunner, Vmaf2QualityRunner
+from quality_runner import VmafQualityRunner, VmaftQualityRunner, \
+    PsnrQualityRunner
 from executor import run_executors_in_parallel
 import config
 from result import FileSystemResultStore
@@ -153,7 +154,7 @@ class QualityRunnerTest(unittest.TestCase):
                 log_file_dir=config.ROOT + "/workspace/log_file_dir")
 
     def test_run_vamf2_runner(self):
-        print 'test on running VMAF2 runner...'
+        print 'test on running VMAFT runner...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -168,7 +169,7 @@ class QualityRunnerTest(unittest.TestCase):
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
 
-        self.runner = Vmaf2QualityRunner(
+        self.runner = VmaftQualityRunner(
             [asset, asset_original],
             None, fifo_mode=False,
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
@@ -179,17 +180,46 @@ class QualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertEqual(results[0]['VMAF2_score'], 65.97151503152334)
+        self.assertEqual(results[0]['VMAFT_score'], 65.97151503152334)
         self.assertEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)
         self.assertEqual(results[0]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertEqual(results[0]['VMAF_feature_adm_score'], 0.91552422916666665)
         self.assertEqual(results[0]['VMAF_feature_ansnr_score'], 22.533456770833329)
 
-        self.assertEqual(results[1]['VMAF2_score'], 95.10965270432149)
+        self.assertEqual(results[1]['VMAFT_score'], 95.10965270432149)
         self.assertEqual(results[1]['VMAF_feature_vif_score'], 1.0)
         self.assertEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertEqual(results[1]['VMAF_feature_adm_score'], 1.0)
         self.assertEqual(results[1]['VMAF_feature_ansnr_score'], 30.030914145833322)
+
+    def test_run_psnr_runner(self):
+        print 'test on running PSNR runner...'
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.runner = PsnrQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            log_file_dir=config.ROOT + "/workspace/log_file_dir",
+            delete_workdir=True,
+            result_store=None
+        )
+        self.runner.run()
+
+        results = self.runner.results
+        self.assertEqual(results[0]['PSNR_score'], 30.755063979166664)
+        self.assertEqual(results[1]['PSNR_score'], 80.0)
 
 class ParallelQualityRunnerTest(unittest.TestCase):
 
@@ -235,6 +265,35 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertEqual(results[1]['VMAF_feature_adm_score'], 1.0)
         self.assertEqual(results[1]['VMAF_feature_ansnr_score'], 30.030914145833322)
+
+    def test_run_parallel_vamf_runner(self):
+        print 'test on running PSNR quality runner in parallel...'
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.runners, results = run_executors_in_parallel(
+            PsnrQualityRunner,
+            [asset, asset_original],
+            log_file_dir=config.ROOT + "/workspace/log_file_dir",
+            fifo_mode=True,
+            delete_workdir=True,
+            parallelize=True,
+            result_store=None
+        )
+
+        self.assertEqual(results[0]['PSNR_score'], 30.755063979166664)
+        self.assertEqual(results[1]['PSNR_score'], 80.0)
 
 if __name__ == '__main__':
     unittest.main()

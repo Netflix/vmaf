@@ -96,12 +96,6 @@ class VmafFeatureExtractor(FeatureExtractor):
 
         return feature_result
 
-    def _remove_log(self, asset):
-        log_file_path = self._get_log_file_path(asset)
-        if os.path.exists(log_file_path):
-            os.remove(log_file_path)
-
-
 class BrisqueFeatureExtractor(FeatureExtractor):
 
     TYPE = "BRISQUE_feature"
