@@ -23,7 +23,7 @@ class TypeVersionEnabled(object):
     Mandate a type name and a version string. Derived class (e.g. an Executor)
     then has a unique string combining type and version. The string is useful in
     identifying a Result by which Executor it is generated (e.g. VMAF_V0.1,
-    SSIM_V0.1, or VMAF_feature_V0.1).
+    PSNR_V1.0, or VMAF_feature_V0.1).
     """
 
     def __init__(self):
@@ -40,4 +40,9 @@ class TypeVersionEnabled(object):
             "VERSION can only contains alphabets, numbers and dot (.)."
 
     def get_type_version_string(self):
-        return "{type}_V{version}".format(type=self.TYPE, version=self.VERSION)
+        return "{type}_V{version}".format(type=self.TYPE,
+                                          version=self.VERSION)
+
+    def get_cozy_type_version_string(self):
+        return "{type} VERSION {version}".format(type=self.TYPE,
+                                                 version=self.VERSION)

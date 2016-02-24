@@ -8,17 +8,15 @@ from feature_extractor import FeatureExtractor
 class FeatureAssembler(object):
     """
     Assembles features for a input list of Assets on a input list of
-    FeatureExtractors. For each asset, it outputs a dictionary of feature
-    scores.
+    FeatureExtractors. For each asset, it outputs a BasicResult object.
     """
 
     def __init__(self, feature_dict, feature_option_dict, assets, logger,
                  log_file_dir, fifo_mode, delete_workdir, result_store):
         """
         :param feature_dict: in the format of:
-        {FeatureExtractor_type:'all',},
-        or
-        {FeatureExtractor_type:[atom_features,],}.
+        {FeatureExtractor_type:'all', ...}, or
+        {FeatureExtractor_type:[atom_features,], ...}.
         For example, the below are valid feature dicts:
         {'VMAF_feature':'all', 'BRISQUE_feature':'all'},
         {'VMAF_feature':['vif', 'ansnr'], 'BRISQUE_feature':'all'}
@@ -45,6 +43,10 @@ class FeatureAssembler(object):
         self.type2results_dict = {}
 
     def run(self):
+        """
+        Do all the calculation here.
+        :return:
+        """
 
         # for each FeatureExtractor_type key in feature_dict, find the subclass
         # of FeatureExtractor, run, and put results in a dict
@@ -70,11 +72,20 @@ class FeatureAssembler(object):
         )
 
     def remove_logs(self):
+        """
+        Remove all the intermediate log files if no need for inspection.
+        :return:
+        """
         for fextractor_type in self.feature_dict:
             fextractor = self._get_fextractor_instance(fextractor_type)
             fextractor.remove_logs()
 
     def remove_results(self):
+        """
+        Remove all relevant Results stored in ResultStore, which is specified
+        at the constructor.
+        :return:
+        """
         for fextractor_type in self.feature_dict:
             fextractor = self._get_fextractor_instance(fextractor_type)
             fextractor.remove_results()

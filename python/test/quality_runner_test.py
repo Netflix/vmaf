@@ -43,7 +43,7 @@ class QualityRunnerTest(unittest.TestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
             delete_workdir=True,
             result_store=None
