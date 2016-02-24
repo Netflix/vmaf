@@ -239,7 +239,37 @@ class VmaftQualityRunner(QualityRunner):
 
     FEATURE_ASSEMBLER_DICT = {'VMAF_feature': 'all'}
 
-    SVM_MODEL_FILE = config.ROOT + "/resource/model/model_v9.model"
+    def __init__(self,
+                 assets,
+                 logger,
+                 log_file_dir=config.ROOT + "/workspace/log_file_dir",
+                 fifo_mode=True,
+                 delete_workdir=True,
+                 result_store=None,
+                 svm_model_file=config.ROOT + "/resource/model/model_v9.model"
+                 ):
+        """
+        Override Executor.__init__(). Has one more argument svm_model_file
+        than Executor.
+        :param assets:
+        :param logger:
+        :param log_file_dir:
+        :param fifo_mode:
+        :param delete_workdir:
+        :param result_store:
+        :param svm_model_file:
+        :return:
+        """
+
+        super(VmaftQualityRunner, self).__init__(
+            assets=assets,
+            logger=logger,
+            log_file_dir=log_file_dir,
+            fifo_mode=fifo_mode,
+            delete_workdir=delete_workdir,
+            result_store=result_store
+        )
+        self.svm_model_file = svm_model_file
 
     def _get_vmaf_feature_assembler_instance(self, asset):
         vmaf_fassembler = FeatureAssembler(
@@ -267,7 +297,7 @@ class VmaftQualityRunner(QualityRunner):
 
         xs = LibsvmnusvrTrainTestModel.get_perframe_xs_from_result(feature_result)
 
-        model = LibsvmnusvrTrainTestModel.from_file(self.SVM_MODEL_FILE, None)
+        model = LibsvmnusvrTrainTestModel.from_file(self.svm_model_file, None)
 
         ys_pred = model.predict(xs)
         ys_pred = np.clip(ys_pred, 0.0, 100.0)
