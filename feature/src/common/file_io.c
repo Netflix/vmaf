@@ -169,7 +169,7 @@ fail_or_end:
 }
 
 /**
- * Note: stride is in terms of bytes
+ * Note: stride is in terms of bytes; image is 10-bit little-endian
  */
 int read_image_w2s(FILE * rfile, float *buf, float off, int width, int height, int stride)
 {
@@ -202,7 +202,7 @@ int read_image_w2s(FILE * rfile, float *buf, float off, int width, int height, i
 
 		for (j = 0; j < width; ++j)
 		{
-			row_ptr[j] = tmp_buf[j] + off;
+			row_ptr[j] = tmp_buf[j] / 4.0 + off; // '/4' to convert from 10 to 8-bit
 		}
 
 		byte_ptr += stride;
@@ -216,7 +216,7 @@ fail_or_end:
 }
 
 /**
- * Note: stride is in terms of bytes
+ * Note: stride is in terms of bytes, image is 10-bit little endian
  */
 int read_image_w2d(FILE *rfile, double *buf, double off, int width, int height, int stride)
 {
@@ -249,7 +249,8 @@ int read_image_w2d(FILE *rfile, double *buf, double off, int width, int height, 
 
 		for (j = 0; j < width; ++j)
 		{
-			row_ptr[j] = tmp_buf[j] + off;
+			row_ptr[j] = tmp_buf[j] / 4.0 + off; // '/4' to convert from 10 to 8-bit
+
 		}
 
 		byte_ptr += stride;
@@ -285,7 +286,6 @@ int offset_image_s(float *buf, float off, int width, int height, int stride)
 
 	ret = 0;
 
-fail_or_end:
 	return ret;
 }
 
@@ -312,7 +312,7 @@ int offset_image_d(double *buf, double off, int width, int height, int stride)
 
 	ret = 0;
 
-fail_or_end:
 	return ret;
+
 }
 

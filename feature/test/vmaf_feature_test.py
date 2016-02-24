@@ -24,6 +24,7 @@ def read_log(log_filename, type):
 class SingleFeatureTest(unittest.TestCase):
 
     VMAF = config.ROOT + "/feature/vmaf"
+    PSNR = config.ROOT + "/feature/psnr"
     LOG_FILENAME = config.ROOT + "/workspace/log"
     REF_YUV = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
     DIS_YUV = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
@@ -91,10 +92,10 @@ class SingleFeatureTest(unittest.TestCase):
         )
         subprocess.call(cmd, shell=True)
         score, scores = read_log(self.LOG_FILENAME, "motion")
-        self.assertEquals(score, 1054.5332310000001)
+        self.assertEquals(score, 263.27415975)
         self.assertEquals(scores[0], 0.0)
-        self.assertEquals(scores[1], 1126.434448)
-        self.assertEquals(scores[23], 1297.848999)
+        self.assertEquals(scores[1], 281.234406)
+        self.assertEquals(scores[23], 324.084839)
         # 28 frames yuv420p should be 24 frames in yuv420p10le
         self.assertEquals(len(scores), 24)
 
@@ -113,6 +114,19 @@ class SingleFeatureTest(unittest.TestCase):
         self.assertEquals(score, 22.53345677083333)
         score, scores = read_log(self.LOG_FILENAME, "adm")
         self.assertEquals(score, 0.9155242291666666)
+
+    def test_psnr(self):
+        print 'test psnr...'
+        cmd = "{psnr} {fmt} {ref} {dis} {w} {h} > {log}".format(
+            psnr=self.PSNR, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "psnr")
+        self.assertEquals(score, 30.755063979166664)
+        self.assertEquals(scores[0], 34.760779)
+        self.assertEquals(scores[1], 31.883227)
+
 
 class CornerCaseTest(unittest.TestCase):
 
