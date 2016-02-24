@@ -219,7 +219,7 @@ class QualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
         self.assertEqual(results[0]['PSNR_score'], 30.755063979166664)
-        self.assertEqual(results[1]['PSNR_score'], 80.0)
+        self.assertEqual(results[1]['PSNR_score'], 60.0)
 
 class ParallelQualityRunnerTest(unittest.TestCase):
 
@@ -293,7 +293,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         )
 
         self.assertEqual(results[0]['PSNR_score'], 30.755063979166664)
-        self.assertEqual(results[1]['PSNR_score'], 80.0)
+        self.assertEqual(results[1]['PSNR_score'], 60.0)
 
 if __name__ == '__main__':
     unittest.main()
