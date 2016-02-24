@@ -203,12 +203,14 @@ int psnr(const char *ref_path, const char *dis_path, int w, int h, const char *f
 		// compute
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
 		{
-			ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, 255.0, 80.0);
+			// max psnr 60.0 for 8-bit per Ioannis
+			ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, 255.0, 60.0);
 		}
 		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
 		{
-			 // 10 bit gets normalized to 8 bit, peak is 1023 / 4.0 = 255.75
-			ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, 255.75, 80.0);
+			// 10 bit gets normalized to 8 bit, peak is 1023 / 4.0 = 255.75
+			// max psnr 72.0 for 10-bit per Ioannis
+			ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, 255.75, 72.0);
 		}
 		else
 		{
