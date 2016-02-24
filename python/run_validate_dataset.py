@@ -96,13 +96,13 @@ def validate_dataset(dataset, quality_runner_class, ax, result_store, train_or_t
     except Exception as e:
         print "Error: " + str(e)
 
-QUALITY_RUNNERS = ['VMAF', 'VMAFT']
+QUALITY_TYPES = ['VMAF', 'VMAFT', 'PSNR']
 CACHE_RESULT = ['yes', 'no']
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) + \
-          " [quality_runner] [dataset_file] [cache_result]\n"
-    print "quality_runners:\n\t" + "\n\t".join(QUALITY_RUNNERS) +"\n"
+          " [quality_type] [dataset_file] [cache_result]\n"
+    print "quality_types:\n\t" + "\n\t".join(QUALITY_TYPES) +"\n"
     print "cache_result:\n\t" + "\n\t".join(CACHE_RESULT) +"\n"
 
 if __name__ == '__main__':
@@ -112,7 +112,7 @@ if __name__ == '__main__':
         exit(0)
 
     try:
-        quality_runner_name = sys.argv[1]
+        quality_type = sys.argv[1]
         dataset_filepath = sys.argv[2]
         cache_result = sys.argv[3]
 
@@ -131,10 +131,12 @@ if __name__ == '__main__':
         print "Error: " + str(e)
         exit(1)
 
-    if quality_runner_name == 'VMAF':
+    if quality_type == 'VMAF':
         from quality_runner import VmafQualityRunner as runner_class
-    elif quality_runner_name == 'VMAFT':
+    elif quality_type == 'VMAFT':
         from quality_runner import VmaftQualityRunner as runner_class
+    elif quality_type == 'PSNR':
+        from quality_runner import PsnrQualityRunner as runner_class
     else:
         print_usage()
         exit(0)
