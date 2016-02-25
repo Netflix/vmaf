@@ -1,17 +1,20 @@
-from cross_validation import FeatureCrossValidation
-
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import sys
-import config
+
 import matplotlib.pyplot as plt
+import numpy as np
+
+import config
 from run_validate_dataset import validate_dataset, read_dataset
 from feature_assembler import FeatureAssembler
 from result import FileSystemResultStore
 from train_test_model import TrainTestModel, LibsvmnusvrTrainTestModel
-from tools import get_stdout_logger, close_logger, indices
-import numpy as np
+from tools import get_stdout_logger, close_logger, indices, \
+    import_python_file
+from cross_validation import FeatureCrossValidation
+
 
 def run_joe_vmaf():
 
@@ -36,29 +39,16 @@ def run_joe_vmaf():
 
     plt.tight_layout()
 
-def run_vmaf_train_test():
+def run_vmaf_train_test(dataset_filepath, model_param_filepath):
 
     logger = get_stdout_logger()
     result_store = FileSystemResultStore()
+
     sys.path.append(config.ROOT + '/python/private/script')
     import NFLX_dataset as dataset
 
-    libsvmnusr_param_dict = {
-
-        # 'norm_type':'none', # default
-        'norm_type':'clip_0to1', # Joe's - select
-        # 'norm_type':'clip_minus1to1',
-        # 'norm_type':'normalize',
-
-        # 'gamma':0.0, # default
-        'gamma':0.85, # Joe's - select
-
-        'C':1.0, # default - select
-
-        'nu':0.5, # default - select
-
-        'cache_size':200 # default - select
-    }
+    dataset = import_python_file(dataset_filepath)
+    model_param = import_python_file(model_param_filepath)
 
     # === train model on training dataset, also test on training dataset ===
     train_assets = read_dataset(dataset, train_or_test='train')
@@ -76,7 +66,9 @@ def run_vmaf_train_test():
     train_xys = TrainTestModel.get_xys_from_results(train_features)
     train_xs = TrainTestModel.get_xs_from_results(train_features)
     train_ys = TrainTestModel.get_ys_from_results(train_features)
-    model = LibsvmnusvrTrainTestModel(libsvmnusr_param_dict, logger)
+
+    model_class = TrainTestModel.find_subclass(model_param.model_type)
+    model = model_class(model_param.model_param_dict, logger)
     model.train(train_xys)
 
     train_ys_pred = model.predict(train_xs)
@@ -146,10 +138,12 @@ def run_vmaf_train_test():
     # === clean up ===
     close_logger(logger)
 
+
 def run_vmaf_tough_test():
 
     logger = get_stdout_logger()
     result_store = FileSystemResultStore()
+
     sys.path.append(config.ROOT + '/python/private/script')
     import NFLX_dataset as dataset
 
@@ -205,7 +199,10 @@ if __name__ == '__main__':
     # run_joe_vmaf()
 
     # Retrain and test VMAF using NFLX dataset
-    run_vmaf_train_test()
+    run_vmaf_train_test(
+        dataset_filepath=config.ROOT + '/python/private/script/NFLX_dataset',
+        model_param_filepath=config.ROOT + '/resource/model_param/libsvmnusvr.py',
+    )
 
     # Run cross validation across genres (tough test)
     # run_vmaf_tough_test()

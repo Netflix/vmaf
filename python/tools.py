@@ -100,6 +100,20 @@ def indices(a, func):
     """
     return [i for (i, val) in enumerate(a) if func(val)]
 
+def import_python_file(filepath):
+    """
+    Import a python file as a module.
+    :param filepath:
+    :return:
+    """
+    filedir = get_dir_without_last_slash(filepath)
+    filename = get_file_name_without_extension(filepath)
+    sys.path.append(filedir)
+    ret = __import__(filename)
+    return ret
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
+
+

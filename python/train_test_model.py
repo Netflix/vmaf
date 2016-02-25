@@ -675,7 +675,8 @@ class RandomForestTrainTestModel(TrainTestModel):
         from sklearn import ensemble
         model = ensemble.RandomForestRegressor(
             n_estimators=n_estimators,
-            criterion=criterion, max_depth=max_depth,
+            criterion=criterion,
+            max_depth=max_depth,
             min_samples_split=min_samples_split,
             min_samples_leaf=min_samples_leaf,
             max_features=max_features,

@@ -125,10 +125,10 @@ if __name__ == '__main__':
     sys.path.append(config.ROOT + '/python/private/script')
 
     try:
-        database_file_dir = get_dir_without_last_slash(dataset_filepath)
-        database_file_name = get_file_name_without_extension(dataset_filepath)
-        sys.path.append(database_file_dir)
-        dataset = __import__(database_file_name)
+        database_filedir = get_dir_without_last_slash(dataset_filepath)
+        database_filename = get_file_name_without_extension(dataset_filepath)
+        sys.path.append(database_filedir)
+        dataset = __import__(database_filename)
     except Exception as e:
         print "Error: " + str(e)
         exit(1)

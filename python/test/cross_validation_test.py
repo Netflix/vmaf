@@ -30,7 +30,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
         self.assertEquals(output['result']['PCC'], 0.93897554632587299)
         self.assertEquals(output['result']['KENDALL'], 0.7809321265529332)
         self.assertEquals(output['result']['RMSE'], 0.32298193963956146)
-        self.assertEquals(output['train_test_model'].TYPE, "randomforest")
+        self.assertEquals(output['train_test_model'].TYPE, "RANDOMFOREST")
 
     def test_run_kfold_cross_validation_randomforest(self):
 
