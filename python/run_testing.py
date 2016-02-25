@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
@@ -66,15 +67,16 @@ def plot_scatter(ax, assets, results, runner_class):
         stats=TrainTestModel.format_stats(stats)
     ))
 
-def test_on_dataset(dataset, quality_runner_class, ax, result_store, model_filepath):
+def test_on_dataset(test_dataset, quality_runner_class, ax, result_store, model_filepath):
 
-    assets = read_dataset(dataset)
+    test_assets = read_dataset(test_dataset)
 
     optional_dict = {
         'model_filepath':model_filepath
     }
 
-    runner = quality_runner_class(assets,
+    # construct an quality runner object to assert assets only
+    runner = quality_runner_class(test_assets,
                  None,
                  log_file_dir=config.ROOT + "/workspace/log_file_dir",
                  fifo_mode=True,
@@ -86,7 +88,7 @@ def test_on_dataset(dataset, quality_runner_class, ax, result_store, model_filep
         # run
         _, results = run_executors_in_parallel(
             quality_runner_class,
-            assets,
+            test_assets,
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
             delete_workdir=True,
@@ -96,7 +98,7 @@ def test_on_dataset(dataset, quality_runner_class, ax, result_store, model_filep
         )
 
         # plot
-        plot_scatter(ax, assets, results, quality_runner_class)
+        plot_scatter(ax, test_assets, results, quality_runner_class)
 
     except Exception as e:
         print "Error: " + str(e)
@@ -104,18 +106,12 @@ def test_on_dataset(dataset, quality_runner_class, ax, result_store, model_filep
 
 def print_usage():
     # quality_runner_types = map(lambda runner: runner.TYPE, QualityRunner.get_subclasses())
-    quality_runner_types = map(lambda runner: runner.TYPE,
-                               [PsnrQualityRunner,
-                                VmafQualityRunner,
-                                VmaftQualityRunner,
-                                ])
+    quality_runner_types = ['PSNR', 'VMAF', 'VMAFT']
     cache_result = ['yes', 'no']
     print "usage: " + os.path.basename(sys.argv[0]) + \
-          " quality_type cache_result dataset_file [model_file]\n"
+          " quality_type cache_result test_dataset_file [VMAFT_model_file]\n"
     print "quality_types:\n\t" + "\n\t".join(quality_runner_types) +"\n"
     print "cache_result:\n\t" + "\n\t".join(cache_result) +"\n"
-    print "dataset_file:\n\t" + 'dataset to run test on' +"\n"
-    print "model_file:\n\t" + 'custom model for VMAFT only' +"\n"
 
 if __name__ == '__main__':
 
@@ -126,7 +122,7 @@ if __name__ == '__main__':
     try:
         quality_type = sys.argv[1]
         cache_result = sys.argv[2]
-        dataset_filepath = sys.argv[3]
+        test_dataset_filepath = sys.argv[3]
     except ValueError:
         print_usage()
         exit(2)
@@ -137,13 +133,12 @@ if __name__ == '__main__':
         model_filepath = None
 
     if model_filepath is not None and quality_type != VmaftQualityRunner.TYPE:
+        print "Input error: only quality_type VMAFT accepts VMAFT_model_file."
         print_usage()
         exit(2)
 
-    sys.path.append(config.ROOT + '/python/private/script')
-
     try:
-        dataset = import_python_file(dataset_filepath)
+        test_dataset = import_python_file(test_dataset_filepath)
     except Exception as e:
         print "Error: " + str(e)
         exit(1)
@@ -163,7 +158,7 @@ if __name__ == '__main__':
         exit(2)
 
     fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
-    test_on_dataset(dataset, runner_class, ax, result_store, model_filepath)
+    test_on_dataset(test_dataset, runner_class, ax, result_store, model_filepath)
     plt.tight_layout()
     plt.show()
 
