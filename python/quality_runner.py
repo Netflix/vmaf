@@ -247,7 +247,7 @@ class VmaftQualityRunner(QualityRunner):
                  fifo_mode=True,
                  delete_workdir=True,
                  result_store=None,
-                 svm_model_file=config.ROOT + "/resource/model/model_v9.model"
+                 svm_model_file=config.ROOT + "/resource/model/VMAFT_v1.model"
                  ):
         """
         Override Executor.__init__(). Has one more argument svm_model_file
@@ -301,7 +301,6 @@ class VmaftQualityRunner(QualityRunner):
         model = LibsvmnusvrTrainTestModel.from_file(self.svm_model_file, None)
 
         ys_pred = model.predict(xs)
-        ys_pred = np.clip(ys_pred, 0.0, 100.0)
 
         result_dict = {}
         # add all feature result

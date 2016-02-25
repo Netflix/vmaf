@@ -89,19 +89,12 @@ class TrainTestModel(TypeVersionEnabled):
     def model(self, value):
         self.model_dict['model'] = value
 
-    # @property
-    # def lbound(self):
-    #     return self.model_dict['lbound'] if 'lbound' in self.model_dict else None
-    # @lbound.setter
-    # def lbound(self, value):
-    #     self.model_dict['lbound'] = value
-
-    # @property
-    # def ubound(self):
-    #     return self.model_dict['ubound'] if 'ubound' in self.model_dict else None
-    # @ubound.setter
-    # def ubound(self, value):
-    #     self.model_dict['ubound'] = value
+    @property
+    def score_clip(self):
+        return self.model_dict['score_clip']
+    @score_clip.setter
+    def score_clip(self, value):
+        self.model_dict['score_clip'] = value
 
     def to_file(self, filename):
 
@@ -151,16 +144,16 @@ class TrainTestModel(TypeVersionEnabled):
         # normalize xs
         xs_2d = self.normalize_xs(xs_2d)
 
-        # # (optional) clip
-        # # lbound and ubound must be specified simultaneously
-        # if self.lbound is not None and self.ubound is not None:
-        #     xs_2d = np.clip(xs_2d, self.lbound, self.ubound)
-
         # predict
         ys_label_pred = self._predict(self.model, xs_2d)
 
         # denormalize ys
         ys_label_pred = self.denormalize_ys(ys_label_pred)
+
+        score_clip = self.score_clip
+        if score_clip is not None:
+            lb, ub = score_clip
+            ys_label_pred = np.clip(ys_label_pred, lb, ub)
 
         return ys_label_pred
 
@@ -276,6 +269,9 @@ class TrainTestModel(TypeVersionEnabled):
         model = self._train(self.param_dict, xys_2d)
 
         self.model = model
+
+        self.score_clip = self.param_dict['score_clip'] \
+            if 'score_clip' in self.param_dict else None
 
     def _calculate_normalization_params(self, xys_2d):
 

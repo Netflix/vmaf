@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import config
-from run_validate_dataset import validate_dataset, read_dataset
+from run_validate_on_dataset import validate_dataset, read_dataset
 from feature_assembler import FeatureAssembler
 from result import FileSystemResultStore
 from train_test_model import TrainTestModel, LibsvmnusvrTrainTestModel
@@ -39,7 +39,10 @@ def run_joe_vmaf():
 
     plt.tight_layout()
 
-def run_vmaf_train_test(dataset_filepath, model_param_filepath):
+def run_vmaf_train_test(dataset_filepath,
+                        feature_param_filepath,
+                        model_param_filepath,
+                        output_model_filepath):
 
     logger = get_stdout_logger()
     result_store = FileSystemResultStore()
@@ -48,12 +51,13 @@ def run_vmaf_train_test(dataset_filepath, model_param_filepath):
     import NFLX_dataset as dataset
 
     dataset = import_python_file(dataset_filepath)
+    feature_param = import_python_file(feature_param_filepath)
     model_param = import_python_file(model_param_filepath)
 
     # === train model on training dataset, also test on training dataset ===
     train_assets = read_dataset(dataset, train_or_test='train')
     train_fassembler = FeatureAssembler(
-        feature_dict = {'VMAF_feature':'all'},
+        feature_dict = feature_param.feature_dict,
         feature_option_dict = None,
         assets = train_assets,
         logger=logger,
@@ -72,7 +76,7 @@ def run_vmaf_train_test(dataset_filepath, model_param_filepath):
     model.train(train_xys)
 
     train_ys_pred = model.predict(train_xs)
-    train_ys_pred = np.clip(train_ys_pred, 0.0, 100.0)
+    # train_ys_pred = np.clip(train_ys_pred, 0.0, 100.0)
     train_stats = TrainTestModel.get_stats(train_ys['label'], train_ys_pred)
 
     # === test model on test dataset ===
@@ -92,7 +96,7 @@ def run_vmaf_train_test(dataset_filepath, model_param_filepath):
     test_ys = TrainTestModel.get_ys_from_results(test_features)
 
     test_ys_pred = model.predict(test_xs)
-    test_ys_pred = np.clip(test_ys_pred, 0.0, 100.0)
+    # test_ys_pred = np.clip(test_ys_pred, 0.0, 100.0)
     test_stats = TrainTestModel.get_stats(test_ys['label'], test_ys_pred)
 
     # === plot scatter ===
@@ -132,12 +136,11 @@ def run_vmaf_train_test(dataset_filepath, model_param_filepath):
     plt.tight_layout()
 
     # save model
-    retrained_vmaf_model_path = config.ROOT + '/workspace/model/model_v9.model'
+    retrained_vmaf_model_path = output_model_filepath
     model.to_file(retrained_vmaf_model_path)
 
     # === clean up ===
     close_logger(logger)
-
 
 def run_vmaf_tough_test():
 
@@ -201,7 +204,9 @@ if __name__ == '__main__':
     # Retrain and test VMAF using NFLX dataset
     run_vmaf_train_test(
         dataset_filepath=config.ROOT + '/python/private/script/NFLX_dataset',
+        feature_param_filepath=config.ROOT + '/resource/feature_param/vmaf_feature.py',
         model_param_filepath=config.ROOT + '/resource/model_param/libsvmnusvr.py',
+        output_model_filepath=config.ROOT + '/workspace/model/VMAFT_v1.model'
     )
 
     # Run cross validation across genres (tough test)

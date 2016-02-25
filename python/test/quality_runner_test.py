@@ -153,7 +153,7 @@ class QualityRunnerTest(unittest.TestCase):
                 None, fifo_mode=True,
                 log_file_dir=config.ROOT + "/workspace/log_file_dir")
 
-    def test_run_vamf2_runner(self):
+    def test_run_vmaft_runner(self):
         print 'test on running VMAFT runner...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
@@ -180,13 +180,13 @@ class QualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertEqual(results[0]['VMAFT_score'], 65.97151503152334)
+        self.assertEqual(results[0]['VMAFT_score'], 70.2921902679039)
         self.assertEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)
         self.assertEqual(results[0]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertEqual(results[0]['VMAF_feature_adm_score'], 0.91552422916666665)
         self.assertEqual(results[0]['VMAF_feature_ansnr_score'], 22.533456770833329)
 
-        self.assertEqual(results[1]['VMAFT_score'], 95.10965270432149)
+        self.assertEqual(results[1]['VMAFT_score'], 100.0)
         self.assertEqual(results[1]['VMAF_feature_vif_score'], 1.0)
         self.assertEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertEqual(results[1]['VMAF_feature_adm_score'], 1.0)
@@ -254,13 +254,13 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             result_store=None
         )
 
-        self.assertEqual(results[0]['VMAF_score'], 60.268970069698035)
+        self.assertEqual(results[0]['VMAF_score'], 70.2921902679039)
         self.assertEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)
         self.assertEqual(results[0]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertEqual(results[0]['VMAF_feature_adm_score'], 0.91552422916666665)
         self.assertEqual(results[0]['VMAF_feature_ansnr_score'], 22.533456770833329)
 
-        self.assertEqual(results[1]['VMAF_score'], 95.65756240092573)
+        self.assertEqual(results[1]['VMAF_score'], 100.0)
         self.assertEqual(results[1]['VMAF_feature_vif_score'], 1.0)
         self.assertEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertEqual(results[1]['VMAF_feature_adm_score'], 1.0)

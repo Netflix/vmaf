@@ -56,8 +56,8 @@ def plot_scatter(ax, assets, results, runner_class):
     stats = TrainTestModel.get_stats(groundtruths, predictions)
 
     TrainTestModel.plot_scatter(ax, stats, content_ids)
-    ax.set_xlabel('Groundtruth (DMOS)')
-    ax.set_ylabel("Prediction")
+    ax.set_xlabel('DMOS')
+    ax.set_ylabel("Predicted Score")
     ax.grid()
     ax.set_title( "Dataset: {dataset}, Runner: {runner}\n{stats}".format(
         dataset=assets[0].dataset,
@@ -103,7 +103,7 @@ def print_usage():
         map(lambda runner: runner.TYPE, QualityRunner.get_subclasses())
     cache_result = ['yes', 'no']
     print "usage: " + os.path.basename(sys.argv[0]) + \
-          " [quality_type] [dataset_file] [cache_result]\n"
+          " quality_type dataset_file cache_result\n"
     print "quality_types:\n\t" + "\n\t".join(quality_runner_types) +"\n"
     print "cache_result:\n\t" + "\n\t".join(cache_result) +"\n"
 

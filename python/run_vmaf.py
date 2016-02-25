@@ -13,7 +13,7 @@ FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p1
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) \
-          + " [fmt] [width] [height] [ref_file] [dis_file]\n"
+          + " fmt width height ref_file dis_file\n"
     print "fmts:\n\t" + "\n\t".join(FMTS) +"\n"
 
 if __name__ == "__main__":
