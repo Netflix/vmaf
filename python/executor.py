@@ -24,6 +24,7 @@ class Executor(TypeVersionEnabled):
                  fifo_mode=True,
                  delete_workdir=True,
                  result_store=None,
+                 optional_dict=None,
                  ):
 
         TypeVersionEnabled.__init__(self)
@@ -35,6 +36,7 @@ class Executor(TypeVersionEnabled):
         self.delete_workdir = delete_workdir
         self.results = []
         self.result_store = result_store
+        self.optional_dict = optional_dict
 
         self._assert_assets()
 
@@ -261,6 +263,7 @@ def run_executors_in_parallel(executor_class,
                               parallelize=True,
                               logger=None,
                               result_store=None,
+                              optional_dict=None,
                               ):
     """
     Run multiple Executors in parallel.
@@ -270,14 +273,17 @@ def run_executors_in_parallel(executor_class,
     :param fifo_mode:
     :param delete_workdir:
     :param parallelize:
+    :param logger:
+    :param result_store:
+    :param optional_dict:
     :return:
     """
 
     def run_executor(args):
-        executor_class, asset, log_file_dir, \
-        fifo_mode, delete_workdir, result_store = args
-        executor = executor_class(
-            [asset], None, log_file_dir, fifo_mode, delete_workdir, result_store)
+        executor_class, asset, log_file_dir, fifo_mode, \
+        delete_workdir, result_store, optional_dict = args
+        executor = executor_class([asset], None, log_file_dir, fifo_mode,
+                                  delete_workdir, result_store, optional_dict)
         executor.run()
         return executor
 
@@ -285,8 +291,8 @@ def run_executors_in_parallel(executor_class,
     list_args = []
     for asset in assets:
         list_args.append(
-            [executor_class, asset, log_file_dir,
-             fifo_mode, delete_workdir, result_store])
+            [executor_class, asset, log_file_dir, fifo_mode,
+             delete_workdir, result_store, optional_dict])
 
     # map arguments to func
     if parallelize:

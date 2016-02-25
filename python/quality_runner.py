@@ -235,46 +235,23 @@ class VmafQualityRunner(QualityRunner):
 
 
 class VmaftQualityRunner(QualityRunner):
+
     TYPE = 'VMAFT'
     VERSION = '0.1'
 
-    FEATURE_ASSEMBLER_DICT = {'VMAF_feature': 'all'}
-
-    def __init__(self,
-                 assets,
-                 logger,
-                 log_file_dir=config.ROOT + "/workspace/log_file_dir",
-                 fifo_mode=True,
-                 delete_workdir=True,
-                 result_store=None,
-                 svm_model_file=config.ROOT + "/resource/model/VMAFT_v1.model"
-                 ):
-        """
-        Override Executor.__init__(). Has one more argument svm_model_file
-        than Executor.
-        :param assets:
-        :param logger:
-        :param log_file_dir:
-        :param fifo_mode:
-        :param delete_workdir:
-        :param result_store:
-        :param svm_model_file:
-        :return:
-        """
-
-        super(VmaftQualityRunner, self).__init__(
-            assets=assets,
-            logger=logger,
-            log_file_dir=log_file_dir,
-            fifo_mode=fifo_mode,
-            delete_workdir=delete_workdir,
-            result_store=result_store
-        )
-        self.svm_model_file = svm_model_file
+    DEFAULT_FEATURE_DICT = {'VMAF_feature': 'all'}
+    DEFAULT_MODEL_TYPE = 'LIBSVMNUSVR'
+    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/VMAFT_v1.model"
 
     def _get_vmaf_feature_assembler_instance(self, asset):
+
+        feature_dict = self.optional_dict['feature_dict'] \
+            if (self.optional_dict is not None
+                and 'feature_dict' in self.optional_dict) \
+            else self.DEFAULT_FEATURE_DICT
+
         vmaf_fassembler = FeatureAssembler(
-            feature_dict=self.FEATURE_ASSEMBLER_DICT,
+            feature_dict=feature_dict,
             feature_option_dict=None,
             assets=[asset],
             logger=self.logger,
@@ -296,9 +273,21 @@ class VmaftQualityRunner(QualityRunner):
         vmaf_fassembler.run()
         feature_result = vmaf_fassembler.results[0]
 
-        xs = LibsvmnusvrTrainTestModel.get_perframe_xs_from_result(feature_result)
+        xs = TrainTestModel.get_perframe_xs_from_result(feature_result)
 
-        model = LibsvmnusvrTrainTestModel.from_file(self.svm_model_file, None)
+        model_type = self.optional_dict['model_type'] \
+            if (self.optional_dict is not None
+                and 'model_type' in self.optional_dict) \
+            else self.DEFAULT_MODEL_TYPE
+
+        model_class = TrainTestModel.find_subclass(model_type)
+
+        model_filepath = self.optional_dict['model_filepath'] \
+            if (self.optional_dict is not None
+                and 'model_filepath' in self.optional_dict) \
+            else self.DEFAULT_MODEL_FILEPATH
+
+        model = model_class.from_file(model_filepath, self.logger)
 
         ys_pred = model.predict(xs)
 

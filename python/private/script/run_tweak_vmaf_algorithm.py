@@ -14,21 +14,22 @@ from tools import get_stdout_logger, close_logger, indices, \
     import_python_file
 from cross_validation import FeatureCrossValidation
 
-def run_joe_vmaf(dataset_filepath):
+def run_joe_vmaf(train_dataset_filepath, test_dataset_filepath):
 
-    # Joe's
+    # Joe's VMAF
     from quality_runner import VmafQualityRunner as runner_class
 
-    dataset = import_python_file(dataset_filepath)
+    train_dataset = import_python_file(train_dataset_filepath)
+    test_dataset = import_python_file(test_dataset_filepath)
+
     result_store = FileSystemResultStore()
 
     nrows = 1
     ncols = 2
     fig, axs = plt.subplots(figsize=(5*ncols, 5*nrows), nrows=nrows, ncols=ncols)
 
-    # FIXME
-    # test_on_dataset(dataset, runner_class, axs[0], result_store, 'train')
-    # test_on_dataset(dataset, runner_class, axs[1], result_store, 'test')
+    test_on_dataset(train_dataset, runner_class, axs[0], result_store)
+    test_on_dataset(test_dataset, runner_class, axs[1], result_store)
 
     bbox = {'facecolor':'white', 'alpha':1, 'pad':20}
     axs[0].text(80, 10, "Training Set", bbox=bbox)
@@ -36,7 +37,8 @@ def run_joe_vmaf(dataset_filepath):
 
     plt.tight_layout()
 
-def run_vmaf_train_test(dataset_filepath,
+def run_vmaf_train_test(train_dataset_filepath,
+                        test_dataset_filepath,
                         feature_param_filepath,
                         model_param_filepath,
                         output_model_filepath):
@@ -44,12 +46,14 @@ def run_vmaf_train_test(dataset_filepath,
     logger = get_stdout_logger()
     result_store = FileSystemResultStore()
 
-    dataset = import_python_file(dataset_filepath)
+    train_dataset = import_python_file(train_dataset_filepath)
+    test_dataset = import_python_file(test_dataset_filepath)
+
     feature_param = import_python_file(feature_param_filepath)
     model_param = import_python_file(model_param_filepath)
 
     # === train model on training dataset, also test on training dataset ===
-    train_assets = read_dataset(dataset, train_or_test='train')
+    train_assets = read_dataset(train_dataset)
     train_fassembler = FeatureAssembler(
         feature_dict = feature_param.feature_dict,
         feature_option_dict = None,
@@ -73,9 +77,9 @@ def run_vmaf_train_test(dataset_filepath,
     train_stats = TrainTestModel.get_stats(train_ys['label'], train_ys_pred)
 
     # === test model on test dataset ===
-    test_assets = read_dataset(dataset, train_or_test='test')
+    test_assets = read_dataset(test_dataset)
     test_fassembler = FeatureAssembler(
-        feature_dict = {'VMAF_feature':'all'},
+        feature_dict = feature_param.feature_dict,
         feature_option_dict = None,
         assets = test_assets,
         logger=logger,
@@ -98,14 +102,14 @@ def run_vmaf_train_test(dataset_filepath,
 
     train_content_ids = map(lambda asset: asset.content_id, train_assets)
     TrainTestModel.plot_scatter(axs[0], train_stats, train_content_ids)
-    axs[0].set_xlabel('Groundtruth (DMOS)')
-    axs[0].set_ylabel("Prediction")
+    axs[0].set_xlabel('DMOS')
+    axs[0].set_ylabel("Predicted Score")
     axs[0].grid()
     axs[0].set_xlim([0, 120])
     axs[0].set_ylim([0, 120])
-    axs[0].set_title( "Dataset: {dataset}, Runner: {runner}\n{stats}".format(
-        dataset=dataset.dataset_name,
-        runner="VMAF (retrained)",
+    axs[0].set_title( "Dataset: {dataset}, Model: {model}\n{stats}".format(
+        dataset=train_dataset.dataset_name,
+        model=model.model_id,
         stats=TrainTestModel.format_stats(train_stats)
     ))
 
@@ -116,9 +120,9 @@ def run_vmaf_train_test(dataset_filepath,
     axs[1].grid()
     axs[1].set_xlim([0, 120])
     axs[1].set_ylim([0, 120])
-    axs[1].set_title( "Dataset: {dataset}, Runner: {runner}\n{stats}".format(
-        dataset=dataset.dataset_name,
-        runner="VMAF (retrained)",
+    axs[1].set_title( "Dataset: {dataset}, Model: {model}\n{stats}".format(
+        dataset=test_dataset.dataset_name,
+        model=model.model_id,
         stats=TrainTestModel.format_stats(test_stats)
     ))
 
@@ -191,14 +195,26 @@ def run_vmaf_tough_test():
 if __name__ == '__main__':
 
     # Run Joe's VMAF on NFLX dataset
-    # run_joe_vmaf(dataset_filepath=config.ROOT + '/python/private/dataset/NFLX_dataset.py')
+    # run_joe_vmaf(
+    #     train_dataset_filepath=config.ROOT + '/python/private/dataset/NFLX_dataset_training.py',
+    #     test_dataset_filepath=config.ROOT + '/python/private/dataset/NFLX_dataset_testing.py',
+    # )
 
     # Retrain and test VMAF using NFLX dataset
+    # run_vmaf_train_test(
+    #     train_dataset_filepath=config.ROOT + '/python/private/dataset/NFLX_dataset_training.py',
+    #     test_dataset_filepath=config.ROOT + '/python/private/dataset/NFLX_dataset_testing.py',
+    #     feature_param_filepath=config.ROOT + '/resource/feature_param/vmaf_feature_v1.py',
+    #     model_param_filepath=config.ROOT + '/resource/model_param/libsvmnusvr_v1.py',
+    #     output_model_filepath=config.ROOT + '/workspace/model/nflx_vmaff_libsvmnusvr_v1.model'
+    # )
+
     run_vmaf_train_test(
-        dataset_filepath=config.ROOT + '/python/private/dataset/NFLX_dataset.py',
-        feature_param_filepath=config.ROOT + '/resource/feature_param/vmaf_feature.py',
-        model_param_filepath=config.ROOT + '/resource/model_param/libsvmnusvr.py',
-        output_model_filepath=config.ROOT + '/workspace/model/VMAFT_v1.model'
+        train_dataset_filepath=config.ROOT + '/python/private/dataset/NFLX_dataset_training.py',
+        test_dataset_filepath=config.ROOT + '/python/private/dataset/NFLX_dataset_testing.py',
+        feature_param_filepath=config.ROOT + '/resource/feature_param/vmaf_feature_v1.py',
+        model_param_filepath=config.ROOT + '/resource/model_param/randomforest_v1.py',
+        output_model_filepath=config.ROOT + '/workspace/model/nflx_vmaff_rf_v1.model'
     )
 
     # Run cross validation across genres (tough test)

@@ -171,7 +171,7 @@ class QualityRunnerTest(unittest.TestCase):
 
         self.runner = VmaftQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=False,
+            None, fifo_mode=True,
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
             delete_workdir=True,
             result_store=None
@@ -187,6 +187,49 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertEqual(results[0]['VMAF_feature_ansnr_score'], 22.533456770833329)
 
         self.assertEqual(results[1]['VMAFT_score'], 100.0)
+        self.assertEqual(results[1]['VMAF_feature_vif_score'], 1.0)
+        self.assertEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
+        self.assertEqual(results[1]['VMAF_feature_adm_score'], 1.0)
+        self.assertEqual(results[1]['VMAF_feature_ansnr_score'], 30.030914145833322)
+
+    def test_run_vmaft_runner_with_model(self):
+        print 'test on running VMAFT runner with custom input model...'
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.runner = VmaftQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            log_file_dir=config.ROOT + "/workspace/log_file_dir",
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={
+                'model_type':'RANDOMFOREST',
+                'model_filepath':config.ROOT + "/resource/model/nflx_vmaff_rf_v1.model",
+            }
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertEqual(results[0]['VMAFT_score'], 72.8888888888889)
+        self.assertEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)
+        self.assertEqual(results[0]['VMAF_feature_motion_score'], 3.5916076041666667)
+        self.assertEqual(results[0]['VMAF_feature_adm_score'], 0.91552422916666665)
+        self.assertEqual(results[0]['VMAF_feature_ansnr_score'], 22.533456770833329)
+
+        self.assertEqual(results[1]['VMAFT_score'], 98.68923611111109)
         self.assertEqual(results[1]['VMAF_feature_vif_score'], 1.0)
         self.assertEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertEqual(results[1]['VMAF_feature_adm_score'], 1.0)
@@ -266,7 +309,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertEqual(results[1]['VMAF_feature_adm_score'], 1.0)
         self.assertEqual(results[1]['VMAF_feature_ansnr_score'], 30.030914145833322)
 
-    def test_run_parallel_vamf_runner(self):
+    def test_run_parallel_psnr_runner(self):
         print 'test on running PSNR quality runner in parallel...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
@@ -294,6 +337,48 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
         self.assertEqual(results[0]['PSNR_score'], 30.755063979166664)
         self.assertEqual(results[1]['PSNR_score'], 60.0)
+
+    def test_run_parallel_vamft_runner_with_model(self):
+        print 'test on running VMAFT quality runner in parallel with custom model...'
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.runners, results = run_executors_in_parallel(
+            VmafQualityRunner,
+            [asset, asset_original],
+            log_file_dir=config.ROOT + "/workspace/log_file_dir",
+            fifo_mode=True,
+            delete_workdir=True,
+            parallelize=True,
+            result_store=None,
+            optional_dict={
+                'model_type':'RANDOMFOREST',
+                'model_filepath':config.ROOT + "/resource/model/nflx_vmaff_rf_v1.model",
+            }
+        )
+
+        self.assertEqual(results[0]['VMAF_score'], 72.8888888888889)
+        self.assertEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)
+        self.assertEqual(results[0]['VMAF_feature_motion_score'], 3.5916076041666667)
+        self.assertEqual(results[0]['VMAF_feature_adm_score'], 0.91552422916666665)
+        self.assertEqual(results[0]['VMAF_feature_ansnr_score'], 22.533456770833329)
+
+        self.assertEqual(results[1]['VMAF_score'], 98.68923611111109)
+        self.assertEqual(results[1]['VMAF_feature_vif_score'], 1.0)
+        self.assertEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
+        self.assertEqual(results[1]['VMAF_feature_adm_score'], 1.0)
+        self.assertEqual(results[1]['VMAF_feature_ansnr_score'], 30.030914145833322)
 
 if __name__ == '__main__':
     unittest.main()
