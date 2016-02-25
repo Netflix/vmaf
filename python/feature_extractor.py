@@ -108,6 +108,7 @@ class VmafFeatureExtractor(FeatureExtractor):
 
         return feature_result
 
+
 class BrisqueFeatureExtractor(FeatureExtractor):
 
     TYPE = "BRISQUE_feature"

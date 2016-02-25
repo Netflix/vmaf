@@ -233,6 +233,7 @@ class VmafQualityRunner(QualityRunner):
         vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
 
+
 class VmaftQualityRunner(QualityRunner):
     TYPE = 'VMAFT'
     VERSION = '0.1'

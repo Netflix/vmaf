@@ -21,7 +21,7 @@ class WorkdirEnabled(object):
 class TypeVersionEnabled(object):
     """
     Mandate a type name and a version string. Derived class (e.g. an Executor)
-    then has a unique string combining type and version. The string is useful in
+    has a unique string combining type and version. The string is useful in
     identifying a Result by which Executor it is generated (e.g. VMAF_V0.1,
     PSNR_V1.0, or VMAF_feature_V0.1).
     """
@@ -46,3 +46,19 @@ class TypeVersionEnabled(object):
     def get_cozy_type_version_string(self):
         return "{type} VERSION {version}".format(type=self.TYPE,
                                                  version=self.VERSION)
+
+    @classmethod
+    def find_subclass(cls, subclass_type):
+        matched_subclasses = []
+        for subclass in cls.get_subclasses():
+            if subclass.TYPE == subclass_type:
+                matched_subclasses.append(subclass)
+        assert len(matched_subclasses) == 1, \
+            "Must have one and only one subclass of {class_name} with type " \
+            "{type}".format(class_name=cls.__name__, type=subclass_type)
+        return matched_subclasses[0]
+
+    @classmethod
+    def get_subclasses(cls):
+        return cls.__subclasses__()
+

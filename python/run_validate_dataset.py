@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from quality_runner import QualityRunner
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -69,7 +70,7 @@ def validate_dataset(dataset, quality_runner_class, ax, result_store, train_or_t
 
     assets = read_dataset(dataset, train_or_test)
 
-    # construct an VmafQualityRunner object only to assert assets, and to remove
+    # construct an VmafQualityRunner object only to assert assets
     runner = quality_runner_class(assets,
                  None,
                  log_file_dir=config.ROOT + "/workspace/log_file_dir",
@@ -96,20 +97,21 @@ def validate_dataset(dataset, quality_runner_class, ax, result_store, train_or_t
     except Exception as e:
         print "Error: " + str(e)
 
-QUALITY_TYPES = ['VMAF', 'VMAFT', 'PSNR']
-CACHE_RESULT = ['yes', 'no']
 
 def print_usage():
+    quality_runner_types = \
+        map(lambda runner: runner.TYPE, QualityRunner.get_subclasses())
+    cache_result = ['yes', 'no']
     print "usage: " + os.path.basename(sys.argv[0]) + \
           " [quality_type] [dataset_file] [cache_result]\n"
-    print "quality_types:\n\t" + "\n\t".join(QUALITY_TYPES) +"\n"
-    print "cache_result:\n\t" + "\n\t".join(CACHE_RESULT) +"\n"
+    print "quality_types:\n\t" + "\n\t".join(quality_runner_types) +"\n"
+    print "cache_result:\n\t" + "\n\t".join(cache_result) +"\n"
 
 if __name__ == '__main__':
 
     if len(sys.argv) < 4:
         print_usage()
-        exit(0)
+        exit(2)
 
     try:
         quality_type = sys.argv[1]
@@ -118,7 +120,7 @@ if __name__ == '__main__':
 
     except ValueError:
         print_usage()
-        exit(0)
+        exit(2)
 
     sys.path.append(config.ROOT + '/python/private/script')
 
@@ -131,15 +133,11 @@ if __name__ == '__main__':
         print "Error: " + str(e)
         exit(1)
 
-    if quality_type == 'VMAF':
-        from quality_runner import VmafQualityRunner as runner_class
-    elif quality_type == 'VMAFT':
-        from quality_runner import VmaftQualityRunner as runner_class
-    elif quality_type == 'PSNR':
-        from quality_runner import PsnrQualityRunner as runner_class
-    else:
+    try:
+        runner_class = QualityRunner.find_subclass(quality_type)
+    except:
         print_usage()
-        exit(0)
+        exit(2)
 
     if cache_result == 'yes':
         result_store = FileSystemResultStore()
@@ -147,7 +145,7 @@ if __name__ == '__main__':
         result_store = None
     else:
         print_usage()
-        exit(0)
+        exit(2)
 
     fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
     validate_dataset(dataset, runner_class, ax, result_store)
@@ -155,3 +153,5 @@ if __name__ == '__main__':
     plt.show()
 
     print 'Done.'
+
+    exit(0)

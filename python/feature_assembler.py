@@ -1,9 +1,8 @@
-from result import BasicResult
-
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 from feature_extractor import FeatureExtractor
+from result import BasicResult
 
 class FeatureAssembler(object):
     """
@@ -91,20 +90,20 @@ class FeatureAssembler(object):
             fextractor.remove_results()
 
     def _get_scores_key(self, fextractor_type, atom_feature):
-        fextractor_subclass = self._find_fextractor_subclass(fextractor_type)
+        fextractor_subclass = FeatureExtractor.find_subclass(fextractor_type)
         scores_key = fextractor_subclass.get_scores_key(atom_feature)
         return scores_key
 
     def _get_atom_features(self, fextractor_type):
         if self.feature_dict[fextractor_type] == 'all':
-            fextractor_class = self._find_fextractor_subclass(fextractor_type)
+            fextractor_class = FeatureExtractor.find_subclass(fextractor_type)
             atom_features = fextractor_class.ATOM_FEATURES
         else:
             atom_features = self.feature_dict[fextractor_type]
         return atom_features
 
     def _get_fextractor_instance(self, fextractor_type):
-        fextractor_class = self._find_fextractor_subclass(fextractor_type)
+        fextractor_class = FeatureExtractor.find_subclass(fextractor_type)
         fextractor = fextractor_class(self.assets,
                                       self.logger,
                                       self.log_file_dir,
@@ -113,15 +112,3 @@ class FeatureAssembler(object):
                                       self.result_store)
         return fextractor
 
-    @classmethod
-    def _find_fextractor_subclass(cls, fextractor_type):
-        matched_fextractor_subclasses = []
-        for fextractor_subclass in cls._get_fextractor_subclasses():
-            if fextractor_subclass.TYPE == fextractor_type:
-                matched_fextractor_subclasses.append(fextractor_subclass)
-        assert len(matched_fextractor_subclasses) == 1
-        return matched_fextractor_subclasses[0]
-
-    @staticmethod
-    def _get_fextractor_subclasses():
-        return FeatureExtractor.__subclasses__()

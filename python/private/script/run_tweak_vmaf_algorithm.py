@@ -21,12 +21,14 @@ def run_joe_vmaf():
 
     from quality_runner import VmafQualityRunner as runner_class
 
+    result_store = FileSystemResultStore()
+
     nrows = 1
     ncols = 2
     fig, axs = plt.subplots(figsize=(5*ncols, 5*nrows), nrows=nrows, ncols=ncols)
 
-    validate_dataset(dataset, runner_class, axs[0], train_or_test='train')
-    validate_dataset(dataset, runner_class, axs[1], train_or_test='test')
+    validate_dataset(dataset, runner_class, axs[0], result_store, 'train')
+    validate_dataset(dataset, runner_class, axs[1], result_store, 'test')
 
     bbox = {'facecolor':'white', 'alpha':1, 'pad':20}
     axs[0].text(80, 10, "Training Set", bbox=bbox)
@@ -40,6 +42,23 @@ def run_vmaf_train_test():
     result_store = FileSystemResultStore()
     sys.path.append(config.ROOT + '/python/private/script')
     import NFLX_dataset as dataset
+
+    libsvmnusr_param_dict = {
+
+        # 'norm_type':'none', # default
+        'norm_type':'clip_0to1', # Joe's - select
+        # 'norm_type':'clip_minus1to1',
+        # 'norm_type':'normalize',
+
+        # 'gamma':0.0, # default
+        'gamma':0.85, # Joe's - select
+
+        'C':1.0, # default - select
+
+        'nu':0.5, # default - select
+
+        'cache_size':200 # default - select
+    }
 
     # === train model on training dataset, also test on training dataset ===
     train_assets = read_dataset(dataset, train_or_test='train')
@@ -57,7 +76,7 @@ def run_vmaf_train_test():
     train_xys = TrainTestModel.get_xys_from_results(train_features)
     train_xs = TrainTestModel.get_xs_from_results(train_features)
     train_ys = TrainTestModel.get_ys_from_results(train_features)
-    model = LibsvmnusvrTrainTestModel({'norm_type':'normalize'}, logger)
+    model = LibsvmnusvrTrainTestModel(libsvmnusr_param_dict, logger)
     model.train(train_xys)
 
     train_ys_pred = model.predict(train_xs)
@@ -94,6 +113,8 @@ def run_vmaf_train_test():
     axs[0].set_xlabel('Groundtruth (DMOS)')
     axs[0].set_ylabel("Prediction")
     axs[0].grid()
+    axs[0].set_xlim([0, 120])
+    axs[0].set_ylim([0, 120])
     axs[0].set_title( "Dataset: {dataset}, Runner: {runner}\n{stats}".format(
         dataset=dataset.dataset_name,
         runner="VMAF (retrained)",
@@ -105,6 +126,8 @@ def run_vmaf_train_test():
     axs[1].set_xlabel('Groundtruth (DMOS)')
     axs[1].set_ylabel("Prediction")
     axs[1].grid()
+    axs[1].set_xlim([0, 120])
+    axs[1].set_ylim([0, 120])
     axs[1].set_title( "Dataset: {dataset}, Runner: {runner}\n{stats}".format(
         dataset=dataset.dataset_name,
         runner="VMAF (retrained)",
@@ -174,10 +197,12 @@ def run_vmaf_tough_test():
         kfold
     )
 
+    # TODO: finish this...
+
 if __name__ == '__main__':
 
     # Run Joe's VMAF on NFLX dataset
-    run_joe_vmaf()
+    # run_joe_vmaf()
 
     # Retrain and test VMAF using NFLX dataset
     run_vmaf_train_test()

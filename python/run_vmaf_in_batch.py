@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) < 2:
         print_usage()
-        exit(0)
+        exit(2)
 
     input_filename = sys.argv[1]
 
@@ -48,7 +48,7 @@ if __name__ == "__main__":
             if not mo or mo.group(1) not in FMTS:
                 print "Unknown format: {}".format(line)
                 print_usage()
-                exit(0)
+                exit(1)
 
             fmt = mo.group(1)
             width = int(mo.group(2))

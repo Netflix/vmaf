@@ -278,13 +278,17 @@ class TrainTestModel(TypeVersionEnabled):
         self.model = model
 
     def _calculate_normalization_params(self, xys_2d):
-        if self.param_dict['norm_type'] == 'normalize':
+
+        norm_type = self.param_dict['norm_type'] \
+            if 'norm_type' in self.param_dict else 'none'
+
+        if norm_type == 'normalize':
             mus = np.mean(xys_2d, axis=0)
             sds = np.std(xys_2d, axis=0)
             self.slopes = 1.0 / sds
             self.intercepts = - mus / sds
             self.norm_type = 'linear_rescale'
-        elif self.param_dict['norm_type'] == 'clip_0to1':
+        elif norm_type == 'clip_0to1':
             ub = 1.0
             lb = 0.0
             fmins = np.min(xys_2d, axis=0)
@@ -292,7 +296,7 @@ class TrainTestModel(TypeVersionEnabled):
             self.slopes = (ub - lb) / (fmaxs - fmins)
             self.intercepts = (lb*fmaxs - ub*fmins) / (fmaxs - fmins)
             self.norm_type = 'linear_rescale'
-        elif self.param_dict['norm_type'] == 'clip_minus1to1':
+        elif norm_type == 'clip_minus1to1':
             ub =  1.0
             lb = -1.0
             fmins = np.min(xys_2d, axis=0)
@@ -300,7 +304,7 @@ class TrainTestModel(TypeVersionEnabled):
             self.slopes = (ub - lb) / (fmaxs - fmins)
             self.intercepts = (lb*fmaxs - ub*fmins) / (fmaxs - fmins)
             self.norm_type = 'linear_rescale'
-        elif self.param_dict['norm_type'] == 'none':
+        elif norm_type == 'none':
             self.norm_type = 'none'
         else:
             assert False, 'Incorrect parameter norm type selected: {}' \
@@ -481,7 +485,7 @@ class TrainTestModel(TypeVersionEnabled):
 
 class NusvrTrainTestModel(TrainTestModel):
 
-    TYPE = 'nusvr'
+    TYPE = 'NUSVR'
     VERSION = "0.1"
 
     @staticmethod
@@ -522,7 +526,7 @@ class NusvrTrainTestModel(TrainTestModel):
 
 class LibsvmnusvrTrainTestModel(TrainTestModel):
 
-    TYPE = 'libsvmnusvr'
+    TYPE = 'LIBSVMNUSVR'
     VERSION = "0.1"
 
     sys.path.append(config.ROOT + "/libsvm/python")
@@ -644,7 +648,7 @@ class LibsvmnusvrTrainTestModel(TrainTestModel):
 
 class RandomForestTrainTestModel(TrainTestModel):
 
-    TYPE = 'randomforest'
+    TYPE = 'RANDOMFOREST'
     VERSION = "0.1"
 
     @staticmethod

@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) < 6:
         print_usage()
-        exit(0)
+        exit(2)
 
     try:
         fmt = sys.argv[1]
@@ -30,7 +30,7 @@ if __name__ == "__main__":
         dis_file = sys.argv[5]
     except ValueError:
         print_usage()
-        exit(0)
+        exit(2)
 
     asset = Asset(dataset="cmd", content_id=0, asset_id=0,
                   workdir_root=config.ROOT + "/workspace/workdir",
@@ -60,3 +60,5 @@ if __name__ == "__main__":
     runner.remove_logs()
 
     print 'Done.'
+
+    exit(0)
