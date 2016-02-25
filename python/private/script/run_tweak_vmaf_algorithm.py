@@ -4,10 +4,9 @@ __license__ = "Apache, Version 2.0"
 import sys
 
 import matplotlib.pyplot as plt
-import numpy as np
 
 import config
-from run_validate_on_dataset import validate_dataset, read_dataset
+from run_testing import test_on_dataset, read_dataset
 from feature_assembler import FeatureAssembler
 from result import FileSystemResultStore
 from train_test_model import TrainTestModel, LibsvmnusvrTrainTestModel
@@ -15,23 +14,21 @@ from tools import get_stdout_logger, close_logger, indices, \
     import_python_file
 from cross_validation import FeatureCrossValidation
 
+def run_joe_vmaf(dataset_filepath):
 
-def run_joe_vmaf():
-
-    sys.path.append(config.ROOT + '/python/private/script')
-
-    import NFLX_dataset as dataset
-
+    # Joe's
     from quality_runner import VmafQualityRunner as runner_class
 
+    dataset = import_python_file(dataset_filepath)
     result_store = FileSystemResultStore()
 
     nrows = 1
     ncols = 2
     fig, axs = plt.subplots(figsize=(5*ncols, 5*nrows), nrows=nrows, ncols=ncols)
 
-    validate_dataset(dataset, runner_class, axs[0], result_store, 'train')
-    validate_dataset(dataset, runner_class, axs[1], result_store, 'test')
+    # FIXME
+    # test_on_dataset(dataset, runner_class, axs[0], result_store, 'train')
+    # test_on_dataset(dataset, runner_class, axs[1], result_store, 'test')
 
     bbox = {'facecolor':'white', 'alpha':1, 'pad':20}
     axs[0].text(80, 10, "Training Set", bbox=bbox)
@@ -46,9 +43,6 @@ def run_vmaf_train_test(dataset_filepath,
 
     logger = get_stdout_logger()
     result_store = FileSystemResultStore()
-
-    sys.path.append(config.ROOT + '/python/private/script')
-    import NFLX_dataset as dataset
 
     dataset = import_python_file(dataset_filepath)
     feature_param = import_python_file(feature_param_filepath)
@@ -76,7 +70,6 @@ def run_vmaf_train_test(dataset_filepath,
     model.train(train_xys)
 
     train_ys_pred = model.predict(train_xs)
-    # train_ys_pred = np.clip(train_ys_pred, 0.0, 100.0)
     train_stats = TrainTestModel.get_stats(train_ys['label'], train_ys_pred)
 
     # === test model on test dataset ===
@@ -96,7 +89,6 @@ def run_vmaf_train_test(dataset_filepath,
     test_ys = TrainTestModel.get_ys_from_results(test_features)
 
     test_ys_pred = model.predict(test_xs)
-    # test_ys_pred = np.clip(test_ys_pred, 0.0, 100.0)
     test_stats = TrainTestModel.get_stats(test_ys['label'], test_ys_pred)
 
     # === plot scatter ===
@@ -148,7 +140,7 @@ def run_vmaf_tough_test():
     result_store = FileSystemResultStore()
 
     sys.path.append(config.ROOT + '/python/private/script')
-    import NFLX_dataset as dataset
+    from private.dataset import NFLX_dataset as dataset
 
     assets = read_dataset(dataset, train_or_test='all')
     fassembler = FeatureAssembler(
@@ -199,11 +191,11 @@ def run_vmaf_tough_test():
 if __name__ == '__main__':
 
     # Run Joe's VMAF on NFLX dataset
-    # run_joe_vmaf()
+    # run_joe_vmaf(dataset_filepath=config.ROOT + '/python/private/dataset/NFLX_dataset.py')
 
     # Retrain and test VMAF using NFLX dataset
     run_vmaf_train_test(
-        dataset_filepath=config.ROOT + '/python/private/script/NFLX_dataset',
+        dataset_filepath=config.ROOT + '/python/private/dataset/NFLX_dataset.py',
         feature_param_filepath=config.ROOT + '/resource/feature_param/vmaf_feature.py',
         model_param_filepath=config.ROOT + '/resource/model_param/libsvmnusvr.py',
         output_model_filepath=config.ROOT + '/workspace/model/VMAFT_v1.model'

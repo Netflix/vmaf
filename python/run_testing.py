@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-from quality_runner import QualityRunner
-
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
@@ -13,8 +11,9 @@ from result import FileSystemResultStore
 from train_test_model import TrainTestModel
 import matplotlib.pylab as plt
 from tools import get_dir_without_last_slash, get_file_name_without_extension
+from quality_runner import QualityRunner, VmaftQualityRunner
 
-def read_dataset(dataset, train_or_test='all'):
+def read_dataset(dataset):
 
     data_set_name = dataset.dataset_name
     yuv_fmt = dataset.yuv_fmt
@@ -41,8 +40,7 @@ def read_dataset(dataset, train_or_test='all'):
                                   'groundtruth':dis_video['dmos']
                                   }
                       )
-        if train_or_test == 'all' or dis_video['train_or_test'] == train_or_test:
-            assets.append(asset)
+        assets.append(asset)
 
     return assets
 
@@ -65,12 +63,12 @@ def plot_scatter(ax, assets, results, runner_class):
         stats=TrainTestModel.format_stats(stats)
     ))
 
+def test_on_dataset(dataset, quality_runner_class, ax, result_store):
 
-def validate_dataset(dataset, quality_runner_class, ax, result_store, train_or_test='all'):
+    assets = read_dataset(dataset)
 
-    assets = read_dataset(dataset, train_or_test)
+    # if quality_runner_class == VmaftQualityRunner and model_filepath is not None:
 
-    # construct an VmafQualityRunner object only to assert assets
     runner = quality_runner_class(assets,
                  None,
                  log_file_dir=config.ROOT + "/workspace/log_file_dir",
@@ -99,13 +97,15 @@ def validate_dataset(dataset, quality_runner_class, ax, result_store, train_or_t
 
 
 def print_usage():
-    quality_runner_types = \
-        map(lambda runner: runner.TYPE, QualityRunner.get_subclasses())
+    # quality_runner_types = map(lambda runner: runner.TYPE, QualityRunner.get_subclasses())
+    quality_runner_types = ['PSNR', 'VMAF', 'VMAFT']
     cache_result = ['yes', 'no']
     print "usage: " + os.path.basename(sys.argv[0]) + \
-          " quality_type dataset_file cache_result\n"
+          " quality_type cache_result dataset_file [model_file]\n"
     print "quality_types:\n\t" + "\n\t".join(quality_runner_types) +"\n"
     print "cache_result:\n\t" + "\n\t".join(cache_result) +"\n"
+    print "dataset_file:\n\t" + 'testing dataset' +"\n"
+    print "model_file:\n\t" + 'custom model for VMAFT only' +"\n"
 
 if __name__ == '__main__':
 
@@ -115,12 +115,17 @@ if __name__ == '__main__':
 
     try:
         quality_type = sys.argv[1]
-        dataset_filepath = sys.argv[2]
-        cache_result = sys.argv[3]
+        cache_result = sys.argv[2]
+        dataset_filepath = sys.argv[3]
 
     except ValueError:
         print_usage()
         exit(2)
+
+    if len(sys.argv) >= 5:
+        model_filepath = sys.argv[4]
+    else:
+        model_filepath = None
 
     sys.path.append(config.ROOT + '/python/private/script')
 
@@ -148,7 +153,7 @@ if __name__ == '__main__':
         exit(2)
 
     fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
-    validate_dataset(dataset, runner_class, ax, result_store)
+    test_on_dataset(dataset, runner_class, ax, result_store)
     plt.tight_layout()
     plt.show()
 

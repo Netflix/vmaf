@@ -6,7 +6,7 @@ import sys
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) + \
-        " d"
+        " dataset"
 
 if __name__ == '__main__':
 
