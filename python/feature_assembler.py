@@ -11,7 +11,7 @@ class FeatureAssembler(object):
     """
 
     def __init__(self, feature_dict, feature_option_dict, assets, logger,
-                 log_file_dir, fifo_mode, delete_workdir, result_store):
+                 log_file_dir, fifo_mode, delete_workdir, result_store, optional_dict=None):
         """
         :param feature_dict: in the format of:
         {FeatureExtractor_type:'all', ...}, or
@@ -28,6 +28,7 @@ class FeatureAssembler(object):
         :param fifo_mode:
         :param delete_workdir:
         :param result_store:
+        :param optional_dict:
         :return:
         """
         self.feature_dict = feature_dict
@@ -38,6 +39,7 @@ class FeatureAssembler(object):
         self.fifo_mode = fifo_mode
         self.delete_workdir = delete_workdir
         self.result_store = result_store
+        self.optional_dict = optional_dict
 
         self.type2results_dict = {}
 
@@ -104,11 +106,13 @@ class FeatureAssembler(object):
 
     def _get_fextractor_instance(self, fextractor_type):
         fextractor_class = FeatureExtractor.find_subclass(fextractor_type)
-        fextractor = fextractor_class(self.assets,
-                                      self.logger,
-                                      self.log_file_dir,
-                                      self.fifo_mode,
-                                      self.delete_workdir,
-                                      self.result_store)
+        fextractor = fextractor_class(assets=self.assets,
+                                      logger=self.logger,
+                                      log_file_dir=self.log_file_dir,
+                                      fifo_mode=self.fifo_mode,
+                                      delete_workdir=self.delete_workdir,
+                                      result_store=self.result_store,
+                                      optional_dict=self.optional_dict
+                                      )
         return fextractor
 

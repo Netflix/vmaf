@@ -11,7 +11,7 @@ from result import FileSystemResultStore
 from train_test_model import TrainTestModel
 import matplotlib.pylab as plt
 from tools import get_dir_without_last_slash, get_file_name_without_extension
-from quality_runner import QualityRunner, VmaftQualityRunner
+from quality_runner import QualityRunner
 
 def read_dataset(dataset):
 

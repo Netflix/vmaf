@@ -271,7 +271,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             for runner in self.runners: runner.remove_logs()
             pass
 
-    def test_run_parallel_vamf_runner(self):
+    def test_run_parallel_vmaf_runner(self):
         print 'test on running VMAF quality runner in parallel...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
@@ -297,13 +297,13 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             result_store=None
         )
 
-        self.assertEqual(results[0]['VMAF_score'], 70.2921902679039)
+        self.assertEqual(results[0]['VMAF_score'], 60.268970069698035)
         self.assertEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)
         self.assertEqual(results[0]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertEqual(results[0]['VMAF_feature_adm_score'], 0.91552422916666665)
         self.assertEqual(results[0]['VMAF_feature_ansnr_score'], 22.533456770833329)
 
-        self.assertEqual(results[1]['VMAF_score'], 100.0)
+        self.assertEqual(results[1]['VMAF_score'], 95.65756240092573)
         self.assertEqual(results[1]['VMAF_feature_vif_score'], 1.0)
         self.assertEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertEqual(results[1]['VMAF_feature_adm_score'], 1.0)
