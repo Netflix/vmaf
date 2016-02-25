@@ -29,6 +29,8 @@ class TrainTestModel(TypeVersionEnabled):
 
     def _assert_trained(self):
 
+        assert 'model_type' in self.model_dict # need this to recover class
+
         assert 'feature_names' in self.model_dict
 
         assert 'model' in self.model_dict
@@ -50,6 +52,13 @@ class TrainTestModel(TypeVersionEnabled):
     @feature_names.setter
     def feature_names(self, value):
         self.model_dict['feature_names'] = value
+
+    @property
+    def model_type(self):
+        return self.model_dict['model_type']
+    @model_type.setter
+    def model_type(self, value):
+        self.model_dict['model_type'] = value
 
     @property
     def norm_type(self):
@@ -108,15 +117,26 @@ class TrainTestModel(TypeVersionEnabled):
         import joblib
         joblib.dump(info_to_save, filename, compress=9)
 
-    @classmethod
-    def from_file(cls, filename, logger):
-
-        train_test_model = cls(param_dict={}, logger=logger)
+    @staticmethod
+    def from_file(filename, logger):
 
         import joblib
         info_loaded = joblib.load(filename)
-        train_test_model.param_dict = info_loaded['param_dict']
-        train_test_model.model_dict = info_loaded['model_dict']
+
+        model_type = info_loaded['model_dict']['model_type']
+
+        if model_type == LibsvmnusvrTrainTestModel.TYPE:
+            train_test_model = LibsvmnusvrTrainTestModel(param_dict={}, logger=logger)
+            train_test_model.param_dict = info_loaded['param_dict']
+            train_test_model.model_dict = info_loaded['model_dict']
+            # == special handling of libsvmnusvr: load .model differently ==
+            model = LibsvmnusvrTrainTestModel.svmutil.svm_load_model(filename + '.model')
+            train_test_model.model_dict['model'] = model
+        else:
+            model_class = TrainTestModel.find_subclass(model_type)
+            train_test_model = model_class(param_dict={}, logger=logger)
+            train_test_model.param_dict = info_loaded['param_dict']
+            train_test_model.model_dict = info_loaded['model_dict']
 
         return train_test_model
 
@@ -240,6 +260,8 @@ class TrainTestModel(TypeVersionEnabled):
         return self.get_stats(ys_label, ys_label_pred)
 
     def train(self, xys):
+
+        self.model_type = self.TYPE
 
         assert 'label' in xys
 
@@ -546,22 +568,6 @@ class LibsvmnusvrTrainTestModel(TrainTestModel):
 
         import joblib
         joblib.dump(info_to_save, filename, compress=9)
-
-    # override
-    @classmethod
-    def from_file(cls, filename, logger):
-        train_test_model = cls(param_dict={}, logger=logger)
-
-        import joblib
-        info_loaded = joblib.load(filename)
-        train_test_model.param_dict = info_loaded['param_dict']
-        train_test_model.model_dict = info_loaded['model_dict']
-
-        # special handling of libsvmnusvr: load .model differently
-        model = cls.svmutil.svm_load_model(filename + '.model')
-        train_test_model.model_dict['model'] = model
-
-        return train_test_model
 
     @classmethod
     def from_raw_file(cls, model_filename, additional_model_dict, logger):

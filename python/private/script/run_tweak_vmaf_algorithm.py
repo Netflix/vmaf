@@ -194,13 +194,13 @@ def run_vmaf_tough_test():
 
 if __name__ == '__main__':
 
-    # Run Joe's VMAF on NFLX dataset
+    # ==== Run Joe's VMAF on NFLX dataset ====
     # run_joe_vmaf(
     #     train_dataset_filepath=config.ROOT + '/python/private/dataset/NFLX_dataset_training.py',
     #     test_dataset_filepath=config.ROOT + '/python/private/dataset/NFLX_dataset_testing.py',
     # )
 
-    # Retrain and test VMAF using NFLX dataset
+    # # ==== Retrain and test VMAF using NFLX dataset ====
     # run_vmaf_train_test(
     #     train_dataset_filepath=config.ROOT + '/python/private/dataset/NFLX_dataset_training.py',
     #     test_dataset_filepath=config.ROOT + '/python/private/dataset/NFLX_dataset_testing.py',

@@ -210,12 +210,11 @@ class QualityRunnerTest(unittest.TestCase):
 
         self.runner = VmaftQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_type':'RANDOMFOREST',
                 'model_filepath':config.ROOT + "/resource/model/nflx_vmaff_rf_v1.model",
             }
         )
@@ -363,7 +362,6 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             parallelize=True,
             result_store=None,
             optional_dict={
-                'model_type':'RANDOMFOREST',
                 'model_filepath':config.ROOT + "/resource/model/nflx_vmaff_rf_v1.model",
             }
         )

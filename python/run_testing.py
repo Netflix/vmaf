@@ -10,8 +10,11 @@ from executor import run_executors_in_parallel
 from result import FileSystemResultStore
 from train_test_model import TrainTestModel
 import matplotlib.pylab as plt
-from tools import get_dir_without_last_slash, get_file_name_without_extension
-from quality_runner import QualityRunner
+from tools import get_dir_without_last_slash, get_file_name_without_extension, \
+    import_python_file
+from quality_runner import QualityRunner, VmaftQualityRunner, PsnrQualityRunner, \
+    VmafQualityRunner
+
 
 def read_dataset(dataset):
 
@@ -63,11 +66,13 @@ def plot_scatter(ax, assets, results, runner_class):
         stats=TrainTestModel.format_stats(stats)
     ))
 
-def test_on_dataset(dataset, quality_runner_class, ax, result_store):
+def test_on_dataset(dataset, quality_runner_class, ax, result_store, model_filepath):
 
     assets = read_dataset(dataset)
 
-    # if quality_runner_class == VmaftQualityRunner and model_filepath is not None:
+    optional_dict = {
+        'model_filepath':model_filepath
+    }
 
     runner = quality_runner_class(assets,
                  None,
@@ -75,8 +80,8 @@ def test_on_dataset(dataset, quality_runner_class, ax, result_store):
                  fifo_mode=True,
                  delete_workdir=True,
                  result_store=result_store,
+                 optional_dict=optional_dict,
                  )
-
     try:
         # run
         _, results = run_executors_in_parallel(
@@ -87,6 +92,7 @@ def test_on_dataset(dataset, quality_runner_class, ax, result_store):
             delete_workdir=True,
             parallelize=True,
             result_store=result_store,
+            optional_dict=optional_dict,
         )
 
         # plot
@@ -98,13 +104,17 @@ def test_on_dataset(dataset, quality_runner_class, ax, result_store):
 
 def print_usage():
     # quality_runner_types = map(lambda runner: runner.TYPE, QualityRunner.get_subclasses())
-    quality_runner_types = ['PSNR', 'VMAF', 'VMAFT']
+    quality_runner_types = map(lambda runner: runner.TYPE,
+                               [PsnrQualityRunner,
+                                VmafQualityRunner,
+                                VmaftQualityRunner,
+                                ])
     cache_result = ['yes', 'no']
     print "usage: " + os.path.basename(sys.argv[0]) + \
           " quality_type cache_result dataset_file [model_file]\n"
     print "quality_types:\n\t" + "\n\t".join(quality_runner_types) +"\n"
     print "cache_result:\n\t" + "\n\t".join(cache_result) +"\n"
-    print "dataset_file:\n\t" + 'testing dataset' +"\n"
+    print "dataset_file:\n\t" + 'dataset to run test on' +"\n"
     print "model_file:\n\t" + 'custom model for VMAFT only' +"\n"
 
 if __name__ == '__main__':
@@ -117,7 +127,6 @@ if __name__ == '__main__':
         quality_type = sys.argv[1]
         cache_result = sys.argv[2]
         dataset_filepath = sys.argv[3]
-
     except ValueError:
         print_usage()
         exit(2)
@@ -127,13 +136,14 @@ if __name__ == '__main__':
     else:
         model_filepath = None
 
+    if model_filepath is not None and quality_type != VmaftQualityRunner.TYPE:
+        print_usage()
+        exit(2)
+
     sys.path.append(config.ROOT + '/python/private/script')
 
     try:
-        database_filedir = get_dir_without_last_slash(dataset_filepath)
-        database_filename = get_file_name_without_extension(dataset_filepath)
-        sys.path.append(database_filedir)
-        dataset = __import__(database_filename)
+        dataset = import_python_file(dataset_filepath)
     except Exception as e:
         print "Error: " + str(e)
         exit(1)
@@ -153,7 +163,7 @@ if __name__ == '__main__':
         exit(2)
 
     fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
-    test_on_dataset(dataset, runner_class, ax, result_store)
+    test_on_dataset(dataset, runner_class, ax, result_store, model_filepath)
     plt.tight_layout()
     plt.show()
 

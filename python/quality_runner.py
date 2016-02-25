@@ -240,8 +240,7 @@ class VmaftQualityRunner(QualityRunner):
     VERSION = '0.1'
 
     DEFAULT_FEATURE_DICT = {'VMAF_feature': 'all'}
-    DEFAULT_MODEL_TYPE = 'LIBSVMNUSVR'
-    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/VMAFT_v1.model"
+    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflx_vmaff_libsvmnusvr_v1.model"
 
     def _get_vmaf_feature_assembler_instance(self, asset):
 
@@ -275,19 +274,14 @@ class VmaftQualityRunner(QualityRunner):
 
         xs = TrainTestModel.get_perframe_xs_from_result(feature_result)
 
-        model_type = self.optional_dict['model_type'] \
-            if (self.optional_dict is not None
-                and 'model_type' in self.optional_dict) \
-            else self.DEFAULT_MODEL_TYPE
-
-        model_class = TrainTestModel.find_subclass(model_type)
-
         model_filepath = self.optional_dict['model_filepath'] \
             if (self.optional_dict is not None
-                and 'model_filepath' in self.optional_dict) \
+                and 'model_filepath' in self.optional_dict
+                and self.optional_dict['model_filepath'] is not None
+                ) \
             else self.DEFAULT_MODEL_FILEPATH
 
-        model = model_class.from_file(model_filepath, self.logger)
+        model = TrainTestModel.from_file(model_filepath, self.logger)
 
         ys_pred = model.predict(xs)
 
