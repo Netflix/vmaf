@@ -355,7 +355,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
                       asset_dict={'width':576, 'height':324})
 
         self.runners, results = run_executors_in_parallel(
-            VmafQualityRunner,
+            VmaftQualityRunner,
             [asset, asset_original],
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
@@ -368,13 +368,13 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             }
         )
 
-        self.assertEqual(results[0]['VMAF_score'], 72.8888888888889)
+        self.assertEqual(results[0]['VMAFT_score'], 72.8888888888889)
         self.assertEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)
         self.assertEqual(results[0]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertEqual(results[0]['VMAF_feature_adm_score'], 0.91552422916666665)
         self.assertEqual(results[0]['VMAF_feature_ansnr_score'], 22.533456770833329)
 
-        self.assertEqual(results[1]['VMAF_score'], 98.68923611111109)
+        self.assertEqual(results[1]['VMAFT_score'], 98.68923611111109)
         self.assertEqual(results[1]['VMAF_feature_vif_score'], 1.0)
         self.assertEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertEqual(results[1]['VMAF_feature_adm_score'], 1.0)
