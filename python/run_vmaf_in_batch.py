@@ -14,21 +14,33 @@ from quality_runner import VmafQualityRunner
 FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
 
 def print_usage():
-    print "usage: " + os.path.basename(sys.argv[0]) + " input_file [optional_model_file]\n"
+    parallelize = ['yes', 'no']
+    print "usage: " + os.path.basename(sys.argv[0]) + \
+          " parallelize input_file [optional_model_file]\n"
+    print "parallelize:\n\t" + "\n\t".join(parallelize) +"\n"
     print "input_file contains lines of:"
     print "\tfmt width height ref_file dis_file\\n"
     print "fmts:\n\t" + "\n\t".join(FMTS) +"\n"
 
 if __name__ == "__main__":
 
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 3:
         print_usage()
         exit(2)
 
-    input_filename = sys.argv[1]
+    do_parallelize = sys.argv[1]
+    if do_parallelize == 'yes':
+        parallelize = True
+    elif do_parallelize == 'no':
+        parallelize = False
+    else:
+        print_usage()
+        exit(2)
 
-    if len(sys.argv) >= 3:
-        model_filepath = sys.argv[2]
+    input_filename = sys.argv[2]
+
+    if len(sys.argv) >= 4:
+        model_filepath = sys.argv[3]
     else:
         model_filepath = None
 
@@ -94,7 +106,7 @@ if __name__ == "__main__":
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
             delete_workdir=True,
-            parallelize=True,
+            parallelize=parallelize,
             result_store=None,
             optional_dict=optional_dict,
         )

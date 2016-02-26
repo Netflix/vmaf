@@ -64,7 +64,8 @@ def plot_scatter(ax, assets, results, runner_class):
         stats=TrainTestModel.format_stats(stats)
     ))
 
-def test_on_dataset(test_dataset, quality_runner_class, ax, result_store, model_filepath):
+def test_on_dataset(test_dataset, quality_runner_class, ax,
+                    result_store, model_filepath, parallelize=True):
 
     test_assets = read_dataset(test_dataset)
 
@@ -89,7 +90,7 @@ def test_on_dataset(test_dataset, quality_runner_class, ax, result_store, model_
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
             delete_workdir=True,
-            parallelize=True,
+            parallelize=parallelize,
             result_store=result_store,
             optional_dict=optional_dict,
         )
@@ -105,27 +106,38 @@ def print_usage():
     # quality_runner_types = map(lambda runner: runner.TYPE, QualityRunner.get_subclasses())
     quality_runner_types = ['PSNR', 'VMAF']
     cache_result = ['yes', 'no']
+    parallelize = ['yes', 'no']
     print "usage: " + os.path.basename(sys.argv[0]) + \
-          " quality_type cache_result test_dataset_file [optional_VMAF_model_file]\n"
+          " quality_type cache_result parallelize test_dataset_file [optional_VMAF_model_file]\n"
     print "quality_types:\n\t" + "\n\t".join(quality_runner_types) +"\n"
     print "cache_result:\n\t" + "\n\t".join(cache_result) +"\n"
+    print "parallelize:\n\t" + "\n\t".join(parallelize) +"\n"
 
 if __name__ == '__main__':
 
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 5:
         print_usage()
         exit(2)
 
     try:
         quality_type = sys.argv[1]
         cache_result = sys.argv[2]
-        test_dataset_filepath = sys.argv[3]
+        do_parallelize = sys.argv[3]
+        test_dataset_filepath = sys.argv[4]
     except ValueError:
         print_usage()
         exit(2)
 
-    if len(sys.argv) >= 5:
-        model_filepath = sys.argv[4]
+    if do_parallelize == 'yes':
+        parallelize = True
+    elif do_parallelize == 'no':
+        parallelize = False
+    else:
+        print_usage()
+        exit(2)
+
+    if len(sys.argv) >= 6:
+        model_filepath = sys.argv[5]
     else:
         model_filepath = None
 
@@ -155,7 +167,8 @@ if __name__ == '__main__':
         exit(2)
 
     fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
-    test_on_dataset(test_dataset, runner_class, ax, result_store, model_filepath)
+    test_on_dataset(test_dataset, runner_class, ax,
+                    result_store, model_filepath, parallelize)
     plt.tight_layout()
     plt.show()
 
