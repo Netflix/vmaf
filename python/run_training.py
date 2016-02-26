@@ -14,7 +14,7 @@ from feature_assembler import FeatureAssembler
 from train_test_model import TrainTestModel
 
 def train_on_dataset(train_dataset, feature_param, model_param,
-                     ax, result_store, output_model_filepath):
+                     ax, result_store, output_model_filepath, parallelize=False):
 
     logger = get_stdout_logger()
 
@@ -27,7 +27,9 @@ def train_on_dataset(train_dataset, feature_param, model_param,
         log_file_dir=config.ROOT + "/workspace/log_file_dir",
         fifo_mode=True,
         delete_workdir=True,
-        result_store=result_store)
+        result_store=result_store,
+        parallelize=parallelize,
+    )
     train_fassembler.run()
     train_features = train_fassembler.results
     train_xys = TrainTestModel.get_xys_from_results(train_features)
@@ -62,22 +64,25 @@ def train_on_dataset(train_dataset, feature_param, model_param,
 
 def print_usage():
     cache_result = ['yes', 'no']
+    parallelize = ['yes', 'no']
     print "usage: " + os.path.basename(sys.argv[0]) + \
-        " cache_result train_dataset_file feature_param_file model_param_file output_model_file\n"
+        " cache_result parallelize train_dataset_file feature_param_file model_param_file output_model_file\n"
     print "cache_result:\n\t" + "\n\t".join(cache_result) +"\n"
+    print "parallelize:\n\t" + "\n\t".join(parallelize) +"\n"
 
 if __name__ == '__main__':
 
-    if len(sys.argv) < 6:
+    if len(sys.argv) < 7:
         print_usage()
         exit(2)
 
     try:
         cache_result = sys.argv[1]
-        train_dataset_filepath = sys.argv[2]
-        feature_param_filepath = sys.argv[3]
-        model_param_filepath = sys.argv[4]
-        output_model_filepath = sys.argv[5]
+        do_parallelize = sys.argv[2]
+        train_dataset_filepath = sys.argv[3]
+        feature_param_filepath = sys.argv[4]
+        model_param_filepath = sys.argv[5]
+        output_model_filepath = sys.argv[6]
     except ValueError:
         print_usage()
         exit(2)
@@ -90,6 +95,14 @@ if __name__ == '__main__':
         print "Error: " + str(e)
         exit(1)
 
+    if do_parallelize == 'yes':
+        parallelize = True
+    elif do_parallelize == 'no':
+        parallelize = False
+    else:
+        print_usage()
+        exit(2)
+
     if cache_result == 'yes':
         result_store = FileSystemResultStore()
     elif cache_result == 'no':
@@ -100,7 +113,7 @@ if __name__ == '__main__':
 
     fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
     train_on_dataset(train_dataset, feature_param, model_param, ax,
-                     result_store, output_model_filepath)
+                     result_store, output_model_filepath, parallelize)
     plt.tight_layout()
     plt.show()
 

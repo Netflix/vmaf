@@ -3,6 +3,7 @@ __license__ = "Apache, Version 2.0"
 
 from feature_extractor import FeatureExtractor
 from result import BasicResult
+from executor import run_executors_in_parallel
 
 class FeatureAssembler(object):
     """
@@ -11,7 +12,8 @@ class FeatureAssembler(object):
     """
 
     def __init__(self, feature_dict, feature_option_dict, assets, logger,
-                 log_file_dir, fifo_mode, delete_workdir, result_store, optional_dict=None):
+                 log_file_dir, fifo_mode, delete_workdir, result_store,
+                 optional_dict=None, parallelize=False):
         """
         :param feature_dict: in the format of:
         {FeatureExtractor_type:'all', ...}, or
@@ -29,6 +31,7 @@ class FeatureAssembler(object):
         :param delete_workdir:
         :param result_store:
         :param optional_dict:
+        :param parallelize:
         :return:
         """
         self.feature_dict = feature_dict
@@ -40,6 +43,7 @@ class FeatureAssembler(object):
         self.delete_workdir = delete_workdir
         self.result_store = result_store
         self.optional_dict = optional_dict
+        self.parallelize = parallelize
 
         self.type2results_dict = {}
 
@@ -52,9 +56,24 @@ class FeatureAssembler(object):
         # for each FeatureExtractor_type key in feature_dict, find the subclass
         # of FeatureExtractor, run, and put results in a dict
         for fextractor_type in self.feature_dict:
-            fextractor = self._get_fextractor_instance(fextractor_type)
-            fextractor.run()
-            self.type2results_dict[fextractor_type] = fextractor.results
+
+            # fextractor = self._get_fextractor_instance(fextractor_type)
+            # fextractor.run()
+            # results = fextractor.results
+
+            fextractor_class = FeatureExtractor.find_subclass(fextractor_type)
+            _, results = run_executors_in_parallel(
+                fextractor_class,
+                assets=self.assets,
+                log_file_dir=self.log_file_dir,
+                fifo_mode=self.fifo_mode,
+                delete_workdir=self.delete_workdir,
+                parallelize=self.parallelize,
+                result_store=self.result_store,
+                optional_dict=self.optional_dict,
+            )
+
+            self.type2results_dict[fextractor_type] = results
 
         # assemble an output dict with demanded atom features
         # atom_features_dict = self.fextractor_atom_features_dict

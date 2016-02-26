@@ -47,7 +47,8 @@ class FeatureAssemblerTest(unittest.TestCase):
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
             delete_workdir=True,
-            result_store=None
+            result_store=None,
+            parallelize=True,
         )
 
         self.fassembler.run()
@@ -88,12 +89,9 @@ class FeatureAssemblerTest(unittest.TestCase):
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
             delete_workdir=True,
-            result_store=None
+            result_store=None,
+            parallelize=True,
         )
-
-        # self.assertEquals(self.fassembler.ordered_scores_key_list,
-        #                   ['VMAF_feature_motion_scores',
-        #                    'VMAF_feature_vif_scores'])
 
         self.fassembler.run()
 
