@@ -160,9 +160,9 @@ class TrainTestModel(TypeVersionEnabled):
         for name in self.feature_names:
             assert name in xs
 
-        xs_2d = []
+        xs_2d = None
         for name in self.feature_names:
-            if xs_2d == []:
+            if xs_2d is None:
                 xs_2d = np.matrix(xs[name]).T
             else:
                 xs_2d = np.hstack((xs_2d, np.matrix(xs[name]).T))

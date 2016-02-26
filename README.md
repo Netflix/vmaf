@@ -13,8 +13,8 @@ It also requires a number of Python packages:
   - [scipy](http://www.scipy.org/) (>=0.13.3)
   - [scikit-learn](http://scikit-learn.org/stable/) (==0.14.1)
   - [pandas](http://pandas.pydata.org/) (>=0.13.1)
-  
-To install, run (need Python package manager pip pre-installed):
+
+To start, install *pip* - the Python package manager. (It is also recommended to start with a clean Python environment using *virtualenv* with the *--no-site-package* option.) After that, run:
 
 `pip install numpy scipy scikit-learn==0.14.1 pandas`
 
