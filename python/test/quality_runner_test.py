@@ -215,7 +215,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath':config.ROOT + "/resource/model/nflx_vmaff_rf_v1.model",
+                'model_filepath':config.ROOT + "/resource/model/nflx_vmaff_rf_v1.pkl",
             }
         )
         self.runner.run()
@@ -362,7 +362,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             parallelize=True,
             result_store=None,
             optional_dict={
-                'model_filepath':config.ROOT + "/resource/model/nflx_vmaff_rf_v1.model",
+                'model_filepath':config.ROOT + "/resource/model/nflx_vmaff_rf_v1.pkl",
             }
         )
 

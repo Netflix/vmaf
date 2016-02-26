@@ -1,11 +1,31 @@
 VMAF - Video Multi-Method Assessment Fusion
 ===================
 
-VMAF is a software package developed by Netflix Inc. containing tools for perceptual video quality measurement.
+VMAF is a software package developed by Netflix Inc. containing tools for perceptual video quality assessment.
 
 ##Prerequisite
 
-The VMAF package has its core feature extraction library written in C, and the rest glue code written in Python. It also incorporates an external C++ library named libsvm. To build the C/C++ code, it requires cc and g++. To run commands, it requires Python 2 installed.
+The VMAF package has its core feature extraction library written in C, and the rest glue code written in Python. It also incorporates an external C++ library [libsvm](https://www.csie.ntu.edu.tw/~cjlin/libsvm/). To build the C/C++ code, it requires cc and g++. To run commands, it requires Python 2 (>= 2.7) installed.
+
+It also requires a number of Python packages:
+
+  - [numpy](http://www.numpy.org/) (>=1.8.2)
+  - [scipy](http://www.scipy.org/) (>=0.13.3)
+  - [scikit-learn](http://scikit-learn.org/stable/) (==0.14.1)
+  - [pandas](http://pandas.pydata.org/) (>=0.13.1)
+  
+To install, run (need Python package manager pip pre-installed):
+
+`pip install numpy scipy scikit-learn==0.14.1 pandas`
+
+Two additional packages can be installed optionally:
+
+  - [matplotlib](http://matplotlib.org/1.3.1/index.html) (>=1.3.1) -- for result visualization
+  - [pathos](https://pypi.python.org/pypi/pathos) (>=0.1a1) -- for execution parallelization
+
+To install, run:
+
+`pip install matplotlib pathos`
 
 ##Installation
 
@@ -13,29 +33,29 @@ After cloning VMAF repo to local, cd to the repo directory and run:
 
 `make`
 
+to build the binaries.
+
 There is a subdirectory named python. Add the python subdirectory to the environment variable PYTHONPATH:
 
 `export PYTHONPATH=[path_to_repo_dir]/python:$PYTHONPATH`
 
 ##Testing
 
-The package has thus far been tested in Ubuntu 14.04 LTS.
+The package has thus far been tested in Ubuntu 14.04 LTS and Mac OS X 10.10.5.
 
 After installation, run:
 
-`./test`
+`./unittest`
 
-If you see warning messages, some tests have been skipped due to missing packages. You can resolve the warning messages by following the Optional Installation instructions below.
+##Basic Usage
 
-##Execution
-
-There are two execution modes to run VMAF -- single mode and batch mode.
+There are two basic execution modes to run VMAF -- single mode and batch mode.
 
 To run VMAF on a single reference/distorted video pair, run:
 
-`./run_vmaf [format] [width] [height] [ref_video] [dis_video]`
+`./run_vmaf format width height reference_path distorted_path`
 
-where format is among yuv420p, yuv422p, yuv444p (YUV 8-bit) and yuv420p10le, yuv422p10le, yuv444p10le (YUV 10-bit little endian).
+where 'format' is among yuv420p, yuv422p, yuv444p (YUV 8-bit) and yuv420p10le, yuv422p10le, yuv444p10le (YUV 10-bit little endian).
 
 For example:
 
@@ -43,26 +63,34 @@ For example:
 
 To run VMAF in batch mode, create an input text file with each line of format (check examples in example_batch_input):
 
-`[fmt] [width] [height] [ref_file] [dis_file]`
+`format width height reference_path distorted_path`
 
 After that, run:
 
-`./run_vmaf_in_batch input_file`
+`./run_vmaf_in_batch parallelize input_file`
 
-##Optional Installation
+where 'parallelize' is either 'yes' or 'no'. 
 
-To perform VMAF computation in parallel on multiple reference/distorted video pairs, you will need a Python package named [pathos](https://pypi.python.org/pypi/pathos) (>= 0.1a1). For example, run_vmaf_in_batch will execute VMAF in parallel if it detects that pathos is installed; otherwise, it will fall back to sequential execution. To install pathos, on Ubuntu, run (assuming pip pre-installed):
+For example:
 
-`pip install pathos`
+`./run_vmaf_in_batch yes example_batch_input`
 
-The VMAF training/testing framework requires a Python data processing package named [pandas](http://pandas.pydata.org/) (>= 0.13.1). To install pandas, on Ubuntu, run:
+##Advanced Usage
 
-`pip install pandas`
+VMAF follows a machine-learning based approach to first extract a number of quality-relevant features from both a distorted video and its reference, followed by fusing the features into a final quality score using a non-linear regressor (e.g. a SVM regressor), hence the name 'Video Multi-method Assessment Fusion'.
 
-Also need: scipy, matplotlib, sklearn==0.14.1, joblib, ...
+In addition to the basic executors, the VMAF package also provides a framework to allow any users to train their own perceptual quality models. For example, directory resource/model contains a number of pre-trained models, which can be loaded by the aforementioned VMAF executors:
 
-pip install scikit-learn==0.14.1
+`./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv resource/model/nflx_vmaff_rf_v1.pkl`
 
-##To-do List
+or 
 
-- Training/testing framework for customization based on user's own video dataset
+`./run_vmaf_in_batch yes example_batch_input resource/model/nflx_vmaff_rf_v1.pkl`
+
+A user can customize the model based on:
+
+  - The video dataset it is trained against
+  - The features selected
+  - The regressor used (and their hyperparameters)
+  
+Once a model is trained, the VMAF package also provides tools to cross validate its performance on another dataset, and visualize the result.

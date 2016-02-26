@@ -8,6 +8,7 @@ import sys
 import config
 from mixin import TypeVersionEnabled
 import pickle
+import scipy.stats
 
 class TrainTestModel(TypeVersionEnabled):
 
@@ -185,10 +186,9 @@ class TrainTestModel(TypeVersionEnabled):
 
     @staticmethod
     def get_stats(ys_label, ys_label_pred):
-        import scipy.stats
         # MSE
-        rmse = np.sqrt(np.mean(np.power(np.array(ys_label)
-                                        - np.array(ys_label_pred), 2.0)))
+        rmse = np.sqrt(np.mean(
+            np.power(np.array(ys_label) - np.array(ys_label_pred), 2.0)))
         # spearman
         srcc, _ = scipy.stats.spearmanr(ys_label, ys_label_pred)
         # pearson

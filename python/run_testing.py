@@ -10,7 +10,6 @@ from asset import Asset
 from executor import run_executors_in_parallel
 from result import FileSystemResultStore
 from train_test_model import TrainTestModel
-import matplotlib.pylab as plt
 from tools import import_python_file
 from quality_runner import QualityRunner, VmafQualityRunner
 
@@ -54,15 +53,16 @@ def plot_scatter(ax, assets, results, runner_class):
     content_ids = map(lambda asset: asset.content_id, assets)
     stats = TrainTestModel.get_stats(groundtruths, predictions)
 
-    TrainTestModel.plot_scatter(ax, stats, content_ids)
-    ax.set_xlabel('DMOS')
-    ax.set_ylabel("Predicted Score")
-    ax.grid()
-    ax.set_title( "Dataset: {dataset}, Runner: {runner}\n{stats}".format(
-        dataset=assets[0].dataset,
-        runner=results[0].executor_id,
-        stats=TrainTestModel.format_stats(stats)
-    ))
+    if ax is not None:
+        TrainTestModel.plot_scatter(ax, stats, content_ids)
+        ax.set_xlabel('DMOS')
+        ax.set_ylabel("Predicted Score")
+        ax.grid()
+        ax.set_title( "Dataset: {dataset}, Runner: {runner}\n{stats}".format(
+            dataset=assets[0].dataset,
+            runner=results[0].executor_id,
+            stats=TrainTestModel.format_stats(stats)
+        ))
 
 def test_on_dataset(test_dataset, quality_runner_class, ax,
                     result_store, model_filepath, parallelize=True):
@@ -166,11 +166,18 @@ if __name__ == '__main__':
         print_usage()
         exit(2)
 
-    fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
-    test_on_dataset(test_dataset, runner_class, ax,
-                    result_store, model_filepath, parallelize)
-    plt.tight_layout()
-    plt.show()
+    try:
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
+        test_on_dataset(test_dataset, runner_class, ax,
+                        result_store, model_filepath, parallelize)
+        plt.tight_layout()
+        plt.show()
+    except ImportError:
+        print "Warning: cannot import matplotlib, no picture displayed. " \
+              "Install by: \npip install matplotlib"
+        test_on_dataset(test_dataset, runner_class, None,
+                        result_store, model_filepath, parallelize)
 
     print 'Done.'
 

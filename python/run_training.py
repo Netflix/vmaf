@@ -7,7 +7,6 @@ import os
 import sys
 from tools import import_python_file, get_stdout_logger, close_logger
 from result import FileSystemResultStore
-import matplotlib.pyplot as plt
 from run_testing import read_dataset, plot_scatter
 import config
 from feature_assembler import FeatureAssembler
@@ -45,15 +44,16 @@ def train_on_dataset(train_dataset, feature_param, model_param,
 
     # plot
     train_content_ids = map(lambda asset: asset.content_id, train_assets)
-    TrainTestModel.plot_scatter(ax, train_stats, train_content_ids)
-    ax.set_xlabel('DMOS')
-    ax.set_ylabel("Predicted Score")
-    ax.grid()
-    ax.set_title( "Dataset: {dataset}, Model: {model}\n{stats}".format(
-        dataset=train_dataset.dataset_name,
-        model=model.model_id,
-        stats=TrainTestModel.format_stats(train_stats)
-    ))
+    if ax is not None:
+        TrainTestModel.plot_scatter(ax, train_stats, train_content_ids)
+        ax.set_xlabel('DMOS')
+        ax.set_ylabel("Predicted Score")
+        ax.grid()
+        ax.set_title( "Dataset: {dataset}, Model: {model}\n{stats}".format(
+            dataset=train_dataset.dataset_name,
+            model=model.model_id,
+            stats=TrainTestModel.format_stats(train_stats)
+        ))
 
     # save model
     model.to_file(output_model_filepath)
@@ -111,11 +111,18 @@ if __name__ == '__main__':
         print_usage()
         exit(2)
 
-    fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
-    train_on_dataset(train_dataset, feature_param, model_param, ax,
-                     result_store, output_model_filepath, parallelize)
-    plt.tight_layout()
-    plt.show()
+    try:
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
+        train_on_dataset(train_dataset, feature_param, model_param, ax,
+                         result_store, output_model_filepath, parallelize)
+        plt.tight_layout()
+        plt.show()
+    except ImportError:
+        print "Warning: cannot import matplotlib, no picture displayed. " \
+              "Install by: \npip install matplotlib"
+        train_on_dataset(train_dataset, feature_param, model_param, None,
+                         result_store, output_model_filepath, parallelize)
 
     print 'Done.'
 
