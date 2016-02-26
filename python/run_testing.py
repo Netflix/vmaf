@@ -64,6 +64,9 @@ def plot_scatter(ax, assets, results, runner_class):
             stats=TrainTestModel.format_stats(stats)
         ))
 
+        bbox = {'facecolor':'white', 'alpha':1, 'pad':20}
+        ax.annotate('Testing Set', xy=(0.1, 0.85), xycoords='axes fraction', bbox=bbox)
+
 def test_on_dataset(test_dataset, quality_runner_class, ax,
                     result_store, model_filepath, parallelize=True):
 

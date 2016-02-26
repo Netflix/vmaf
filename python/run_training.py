@@ -55,6 +55,9 @@ def train_on_dataset(train_dataset, feature_param, model_param,
             stats=TrainTestModel.format_stats(train_stats)
         ))
 
+        bbox = {'facecolor':'white', 'alpha':1, 'pad':20}
+        ax.annotate('Training Set', xy=(0.1, 0.85), xycoords='axes fraction', bbox=bbox)
+
     # save model
     model.to_file(output_model_filepath)
 
