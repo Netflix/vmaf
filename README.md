@@ -42,7 +42,8 @@ The package has thus far been tested in Ubuntu 14.04 LTS and Mac OS X 10.10.5.
 
 After installation, run:
 
-```./unittest```
+```./unittest
+```
 
 ##Basic Usage
 
@@ -50,31 +51,37 @@ There are two basic execution modes to run VMAF -- a single mode and a batch mod
 
 To run VMAF on a single reference/distorted video pair, run:
 
-```./run_vmaf format width height reference_path distorted_path```
+```./run_vmaf format width height reference_path distorted_path
+```
 
 where `format` is among `yuv420p`, `yuv422p`, `yuv444p` (YUV 8-bit) and `yuv420p10le`, `yuv422p10le`, `yuv444p10le` (YUV 10-bit little endian).
 
 For example:
 
-```./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv```
+```./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv
+```
 
 To run VMAF in batch mode, create an input text file with each line of format (check examples in example_batch_input):
 
-```format width height reference_path distorted_path```
+```format width height reference_path distorted_path
+```
 
 For example:
 
-```yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv```
+```yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv
+```
 
 After that, run:
 
-```./run_vmaf_in_batch parallelize input_file```
+```./run_vmaf_in_batch parallelize input_file
+```
 
 where `parallelize` is either `yes` or `no`. (Parallel execution is available only when *pathos* is installed. Refer to Section 'Optional Setup for Parallel Execution'.)
 
 For example:
 
-```./run_vmaf_in_batch yes example_batch_input```
+```./run_vmaf_in_batch yes example_batch_input
+```
 
 ##Advanced Usage
 
@@ -112,7 +119,8 @@ See directory `resource/dataset` for more examples. Also refer to the 'Datasets'
 
 Once a dataset is created, first validate the dataset using existing VMAF or other (e.g. PSNR) metrics. Run:
 
-```./run_testing quality_type cache_result parallelize test_dataset_file [optional_VMAF_model_file]```
+```./run_testing quality_type cache_result parallelize test_dataset_file [optional_VMAF_model_file]
+```
 
 where `quality_type` can be `VMAF` or `PSNR`. 
 
@@ -122,7 +130,8 @@ where `quality_type` can be `VMAF` or `PSNR`.
 
 For example:
 
-```./run_testing VMAF yes yes example_dataset.py```
+```./run_testing VMAF yes yes example_dataset.py
+```
 
 Make sure *matplotlib* is installed to visualize the DMOS-prediction scatter plot and inspect the statistics: 
 
@@ -134,13 +143,15 @@ Make sure *matplotlib* is installed to visualize the DMOS-prediction scatter plo
 
 Now that we are confident that the dataset is created correctly and we have some benchmark result on existing metrics, we proceed to train a new quality assessment model. Run:
 
-```./run_training cache_result parallelize train_dataset_file feature_param_file model_param_file output_model_file```
+```./run_training cache_result parallelize train_dataset_file feature_param_file model_param_file output_model_file
+```
 
 Here `cache_result` is either `yes` or `no`, `parallelize` is either `yes` or `no`, similar as before. 
 
 For example:
 
-```./run_training yes yes example_dataset.py resource/feature_param/vmaf_feature_v1.py resource/model_param/libsvmnusvr_v1.py workspace/model/test_model.pkl```
+```./run_training yes yes example_dataset.py resource/feature_param/vmaf_feature_v1.py resource/model_param/libsvmnusvr_v1.py workspace/model/test_model.pkl
+```
 
 `feature_param_file` defines the set of features used. For example, both dictionaries
 
@@ -164,7 +175,8 @@ Above are two example scatter plots obtained from running the `run_training` and
 
 For parallel feature extraction, an additional package [pathos](https://pypi.python.org/pypi/pathos) (>=0.1a1) can be installed optionally. To install, run:
 
-`easy_install -f . pathos`
+```easy_install -f . pathos
+```
 
 ##Datasets
 
