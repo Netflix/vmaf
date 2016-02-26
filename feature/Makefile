@@ -18,23 +18,29 @@ HEADERS = \
 	$(SRCDIR)/common/alignment.h \
 	$(SRCDIR)/common/convolution.h \
 	$(SRCDIR)/common/convolution_internal.h \
-	$(SRCDIR)/all_options.h
+	$(SRCDIR)/all_options.h \
+	$(SRCDIR)/psnr_options.h
 
-OBJS = \
+OBJS_VMAF = \
+	$(OBJDIR)/common/alloc.o \
+	$(OBJDIR)/common/file_io.o \
+	$(OBJDIR)/common/convolution.o \
 	$(OBJDIR)/adm.o \
 	$(OBJDIR)/adm_tools.o \
 	$(OBJDIR)/ansnr.o \
 	$(OBJDIR)/ansnr_tools.o \
-	$(OBJDIR)/common/alloc.o \
-	$(OBJDIR)/common/file_io.o \
-	$(OBJDIR)/main.o \
 	$(OBJDIR)/vif.o \
 	$(OBJDIR)/vif_tools.o \
 	$(OBJDIR)/motion.o \
-	$(OBJDIR)/common/convolution.o \
-	$(OBJDIR)/all.o
+	$(OBJDIR)/all.o \
+	$(OBJDIR)/main.o
 
-all: vmaf
+OBJS_PSNR = \
+	$(OBJDIR)/common/alloc.o \
+	$(OBJDIR)/common/file_io.o \
+	$(OBJDIR)/psnr.o
+
+all: vmaf psnr
 
 CFLAGS_COMMON = -g -O3 -fPIC -Wall -Wextra -pedantic
 
@@ -47,12 +53,15 @@ LDFLAGS  := $(LDFLAGS)
 $(OBJDIR)/%.o: $(SRCDIR)/%.c $(HEADERS)
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
-vmaf: $(OBJS)
+vmaf: $(OBJS_VMAF)
+	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
+
+psnr: $(OBJS_PSNR)
 	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
 
 clean:
 	rm -f $(OBJDIR)/*.o
 	rm -f $(OBJDIR)/common/*.o
-	rm -f vmaf
+	rm -f vmaf psnr
 
 .PHONY: all clean

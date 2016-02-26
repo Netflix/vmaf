@@ -18,4 +18,7 @@ echo "run vif:"
 echo "run all:"
 ./vmaf all yuv420p ../resource/yuv/src01_hrc00_576x324.yuv ../resource/yuv/src01_hrc01_576x324.yuv 576 324
 
+echo "run psnr:"
+./psnr yuv420p ../resource/yuv/src01_hrc00_576x324.yuv ../resource/yuv/src01_hrc01_576x324.yuv 576 324
+
 echo "done."

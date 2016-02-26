@@ -88,6 +88,32 @@ def get_unique_str_from_recursive_dict(d):
             return d
     return json.dumps(to_ordered_dict_recursively(d))
 
+def indices(a, func):
+    """
+    Get indices of elements in an array which satisfies func
+    >>> indices([1, 2, 3, 4], lambda x: x>2)
+    [2, 3]
+    >>> indices([1, 2, 3, 4], lambda x: x==2.5)
+    []
+    >>> indices([1, 2, 3, 4], lambda x: x>1 and x<=3)
+    [1, 2]
+    """
+    return [i for (i, val) in enumerate(a) if func(val)]
+
+def import_python_file(filepath):
+    """
+    Import a python file as a module.
+    :param filepath:
+    :return:
+    """
+    filedir = get_dir_without_last_slash(filepath)
+    filename = get_file_name_without_extension(filepath)
+    sys.path.append(filedir)
+    ret = __import__(filename)
+    return ret
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
+
+

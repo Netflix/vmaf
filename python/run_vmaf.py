@@ -7,30 +7,20 @@ import sys
 import config
 import os
 from asset import Asset
-from vmaf_quality_runner import VmafQualityRunner
+from quality_runner import VmafQualityRunner
 
 FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) \
-          + " [fmt] [width] [height] [ref_file] [dis_file]\n"
+          + " fmt width height ref_file dis_file [optional_model_file]\n"
     print "fmts:\n\t" + "\n\t".join(FMTS) +"\n"
-
-def print_runner_result(runner_cls, rst):
-    print 'Input:'
-    print rst.asset.__dict__
-    print ''
-    print 'Output:'
-    print '{type} VERSION {version}'.format(type=runner_cls.TYPE,
-                                            version=runner_cls.VERSION)
-    print str(rst)
-    print ''
 
 if __name__ == "__main__":
 
     if len(sys.argv) < 6:
         print_usage()
-        exit(0)
+        exit(2)
 
     try:
         fmt = sys.argv[1]
@@ -40,7 +30,12 @@ if __name__ == "__main__":
         dis_file = sys.argv[5]
     except ValueError:
         print_usage()
-        exit(0)
+        exit(2)
+
+    if len(sys.argv) >= 7:
+        model_filepath = sys.argv[6]
+    else:
+        model_filepath = None
 
     asset = Asset(dataset="cmd", content_id=0, asset_id=0,
                   workdir_root=config.ROOT + "/workspace/workdir",
@@ -52,18 +47,28 @@ if __name__ == "__main__":
 
     runner_class = VmafQualityRunner
 
+    optional_dict = {
+        'model_filepath':model_filepath
+    }
+
     runner = runner_class(
         assets, None, fifo_mode=True,
-        log_file_dir=config.ROOT + "/workspace/log_file_dir")
+        log_file_dir=config.ROOT + "/workspace/log_file_dir",
+        delete_workdir=True,
+        result_store=None,
+        optional_dict=optional_dict,
+    )
 
     # run
     runner.run()
     result = runner.results[0]
 
     # output
-    print_runner_result(runner_class, result)
+    print str(result)
 
     # clean up
     runner.remove_logs()
 
     print 'Done.'
+
+    exit(0)

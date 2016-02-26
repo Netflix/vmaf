@@ -31,6 +31,8 @@ int motion(const char *dis_path, int w, int h, const char *fmt);
 
 int all(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
 
+int psnr(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
+
 static const float FILTER_5_s[5] = {
 		0.054488685,
 		0.244201342,

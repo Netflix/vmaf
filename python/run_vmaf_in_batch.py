@@ -8,34 +8,41 @@ import sys
 import re
 from asset import Asset
 import config
-from quality_runner import run_quality_runners_in_parallel
-from vmaf_quality_runner import VmafQualityRunner
+from executor import run_executors_in_parallel
+from quality_runner import VmafQualityRunner
 
 FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
 
 def print_usage():
-    print "usage: " + os.path.basename(sys.argv[0]) + " [input_file]\n"
+    parallelize = ['yes', 'no']
+    print "usage: " + os.path.basename(sys.argv[0]) + \
+          " parallelize input_file [optional_model_file]\n"
+    print "parallelize:\n\t" + "\n\t".join(parallelize) +"\n"
     print "input_file contains lines of:"
-    print "\t[fmt] [width] [height] [ref_file] [dis_file]\\n"
+    print "\tfmt width height ref_file dis_file\\n"
     print "fmts:\n\t" + "\n\t".join(FMTS) +"\n"
-
-def print_runner_result(runner_cls, rst):
-    print 'Input:'
-    print rst.asset.__dict__
-    print ''
-    print 'Output:'
-    print '{type} VERSION {version}'.format(type=runner_cls.TYPE,
-                                            version=runner_cls.VERSION)
-    print str(rst)
-    print ''
 
 if __name__ == "__main__":
 
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 3:
         print_usage()
-        exit(0)
+        exit(2)
 
-    input_filename = sys.argv[1]
+    do_parallelize = sys.argv[1]
+    if do_parallelize == 'yes':
+        parallelize = True
+    elif do_parallelize == 'no':
+        parallelize = False
+    else:
+        print_usage()
+        exit(2)
+
+    input_filename = sys.argv[2]
+
+    if len(sys.argv) >= 4:
+        model_filepath = sys.argv[3]
+    else:
+        model_filepath = None
 
     assets = []
     line_idx = 0
@@ -58,7 +65,7 @@ if __name__ == "__main__":
             if not mo or mo.group(1) not in FMTS:
                 print "Unknown format: {}".format(line)
                 print_usage()
-                exit(0)
+                exit(1)
 
             fmt = mo.group(1)
             width = int(mo.group(2))
@@ -77,31 +84,41 @@ if __name__ == "__main__":
 
     runner_class = VmafQualityRunner
 
-    # construct an VmafQualityRunner object to assert assets, and to remove logs
-    runner_class(assets,
-                      None,
-                      log_file_dir=config.ROOT + "/workspace/log_file_dir",
-                      fifo_mode=True,
-                      delete_workdir=True).remove_logs()
+    optional_dict = {
+        'model_filepath':model_filepath
+    }
 
-    # run
-    runners, results = run_quality_runners_in_parallel(
-        runner_class,
-        assets,
-        log_file_dir=config.ROOT + "/workspace/log_file_dir",
-        fifo_mode=True,
-        delete_workdir=True,
-        parallelize=True)
+    # construct an VmafQualityRunner object to assert assets, and to remove
+    runner = runner_class(assets,
+                 None,
+                 log_file_dir=config.ROOT + "/workspace/log_file_dir",
+                 fifo_mode=True,
+                 delete_workdir=True,
+                 result_store=None,
+                 optional_dict=optional_dict,
+                 )
 
-    # output
-    for result in results:
-        print '============================'
-        print 'Asset {asset_id}:'.format(asset_id=asset.asset_id)
-        print '============================'
-        print_runner_result(runner_class, result)
+    try:
+        # run
+        runners, results = run_executors_in_parallel(
+            runner_class,
+            assets,
+            log_file_dir=config.ROOT + "/workspace/log_file_dir",
+            fifo_mode=True,
+            delete_workdir=True,
+            parallelize=parallelize,
+            result_store=None,
+            optional_dict=optional_dict,
+        )
 
-    # clean up
-    for runner in runners:
+        # output
+        for result in results:
+            print '============================'
+            print 'Asset {asset_id}:'.format(asset_id=result.asset.asset_id)
+            print '============================'
+            print str(result)
+
+    finally:
         runner.remove_logs()
 
     print 'Done.'

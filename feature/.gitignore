@@ -1,5 +1,6 @@
 /obj/.keep
 *.o
 vmaf
+psnr
 .cproject
 .project

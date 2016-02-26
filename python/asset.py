@@ -2,13 +2,21 @@ __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import os
-
-from common import Parallelizable
+from mixin import WorkdirEnabled
 from tools import get_file_name_without_extension, get_file_name_with_extension, \
     get_unique_str_from_recursive_dict
 import config
 
-class Asset(Parallelizable):
+class Asset(WorkdirEnabled):
+    """
+    Asset provide info about a distored video and its reference video, as well
+    as information on how its quality should be measured (e.g. start/end
+    frames, upscale to what resolution to its quality). It is used as an input
+    to an executor (e.g. a QualityRunner, or a FeatureExtractor). Asset is has
+    a unique working directory to enable thread safety.
+    """
+
+    # ==== constructor ====
 
     def __init__(self, dataset, content_id, asset_id,
                  ref_path, dis_path,
@@ -33,14 +41,46 @@ class Asset(Parallelizable):
         self.asset_dict = asset_dict
 
     @staticmethod
-    def from_dict(asset_dict):
-        return {}
+    def from_repr(rp):
+        """
+        Reconstruct Asset from repr string.
+        :return:
+        """
+        import ast
+        d = ast.literal_eval(rp)
+        assert 'dataset' in d
+        assert 'content_id' in d
+        assert 'asset_id' in d
+        assert 'ref_path' in d
+        assert 'dis_path' in d
+        assert 'asset_dict' in d
+
+        return Asset(dataset=d['dataset'],
+                     content_id=d['content_id'],
+                     asset_id=d['asset_id'],
+                     ref_path=d['ref_path'],
+                     dis_path=d['dis_path'],
+                     asset_dict=d['asset_dict']
+                     )
+
+    # ==== groundtruth ====
+    @property
+    def groundtruth(self):
+        """
+        Ground truth score, e.g. MOS, DMOS
+        :return:
+        """
+        if 'groundtruth' in self.asset_dict:
+            return self.asset_dict['groundtruth']
+        else:
+            return None
 
     # ==== width and height ====
 
     @property
     def ref_width_height(self):
         """
+        Width and height of reference video.
         :return: width and height of reference video. If None, it signals that
         width and height should be figured out in other means (e.g. FFMPEG).
         """
@@ -58,6 +98,7 @@ class Asset(Parallelizable):
     @property
     def dis_width_height(self):
         """
+        Width and height of distorted video.
         :return: width and height of distorted video. If None, it signals that
         width and height should be figured out in other means (e.g. FFMPEG)
         """
@@ -75,6 +116,7 @@ class Asset(Parallelizable):
     @property
     def quality_width_height(self):
         """
+        Width and height to scale distorted video to before quality calculation.
         :return: width and height at which the quality is measured at. either
         'quality_width' and 'quality_height' have to present in asset_dict,
         or ref and dis's width and height must be equal, which will be used
@@ -96,6 +138,7 @@ class Asset(Parallelizable):
     @property
     def ref_start_end_frame(self):
         """
+        Start and end frame of reference video for quality calculation.
         :return: reference video's start frame and end frame for processing
         (inclusive). If None, it signals that the entire video should be
         processed.
@@ -128,6 +171,7 @@ class Asset(Parallelizable):
     @property
     def dis_start_end_frame(self):
         """
+        Start and end frame of distorted video for quality calculation.
         :return: distorted video's start frame and end frame for processing
         (inclusive). If None, it signals that the entire video should be
         processed.
@@ -161,6 +205,10 @@ class Asset(Parallelizable):
 
     @property
     def ref_duration_sec(self):
+        """
+        Reference video's duration in second used in quality calculation.
+        :return:
+        """
         if 'duration_sec' in self.asset_dict:
             return self.asset_dict['duration_sec']
         elif 'start_sec' in self.asset_dict \
@@ -176,6 +224,10 @@ class Asset(Parallelizable):
 
     @property
     def dis_duration_sec(self):
+        """
+        Distorted video's duration in second used in quality calculation.
+        :return:
+        """
         if 'duration_sec' in self.asset_dict:
             return self.asset_dict['duration_sec']
         elif 'start_sec' in self.asset_dict \
@@ -185,8 +237,8 @@ class Asset(Parallelizable):
             dis_start_end_frame = self.dis_start_end_frame
             if dis_start_end_frame \
                     and 'fps' in self.asset_dict:
-                s, e = dis_start_end_frame
-                return (e - s + 1) / float(self.asset_dict['fps'])
+                start, end = dis_start_end_frame
+                return (end - start + 1) / float(self.asset_dict['fps'])
             else:
                 return None
 
@@ -194,56 +246,67 @@ class Asset(Parallelizable):
 
     @property
     def ref_str(self):
-        str = ""
+        """
+        String representation for reference video.
+        :return:
+        """
+        s = ""
 
         path = get_file_name_without_extension(self.ref_path)
-        str += "{path}".format(path=path)
+        s += "{path}".format(path=path)
 
         if self.ref_width_height:
             w, h = self.ref_width_height
-            str += "_{w}x{h}".format(w=w, h=h)
+            s += "_{w}x{h}".format(w=w, h=h)
 
         if self.ref_start_end_frame:
-            s, e = self.ref_start_end_frame
-            str += "_{s}to{e}".format(s=s, e=e)
+            start, end = self.ref_start_end_frame
+            s += "_{start}to{end}".format(start=start, end=end)
 
-        return str
+        return s
 
     @property
     def dis_str(self):
-        str = ""
+        """
+        String representation for distorted video.
+        :return:
+        """
+        s = ""
 
         path = get_file_name_without_extension(self.dis_path)
-        str += "{path}".format(path=path)
+        s += "{path}".format(path=path)
 
         w, h = self.dis_width_height
-        str += "_{w}x{h}".format(w=w, h=h)
+        s += "_{w}x{h}".format(w=w, h=h)
 
         if self.dis_start_end_frame:
-            s, e = self.dis_start_end_frame
-            str += "_{s}to{e}".format(s=s, e=e)
+            start, end = self.dis_start_end_frame
+            s += "_{start}to{end}".format(start=start, end=end)
 
-        return str
+        return s
 
     @property
     def quality_str(self):
-        str = ""
+        """
+        String representation for quality-related information
+        :return:
+        """
+        s = ""
 
         if self.quality_width_height:
             w, h = self.quality_width_height
-            if str != "":
-                str += "_"
-            str += "{w}x{h}".format(w=w, h=h)
+            if s != "":
+                s += "_"
+            s += "{w}x{h}".format(w=w, h=h)
 
-        return str
+        return s
 
     def to_string(self):
         """
-        The unique string representation of asset, used by both __str__ and
-        __repr__.
+        The compact string representation of asset, used by __str__.
         :return:
         """
-        str = "{dataset}_{content_id}_{asset_id}_{ref_str}_vs_{dis_str}".\
+        s = "{dataset}_{content_id}_{asset_id}_{ref_str}_vs_{dis_str}".\
             format(dataset=self.dataset,
                    content_id=self.content_id,
                    asset_id=self.asset_id,
@@ -251,8 +314,8 @@ class Asset(Parallelizable):
                    dis_str=self.dis_str)
         quality_str = self.quality_str
         if quality_str:
-            str += "_q_{quality_str}".format(quality_str=quality_str)
-        return str
+            s += "_q_{quality_str}".format(quality_str=quality_str)
+        return s
 
     def to_normalized_dict(self):
         """
@@ -283,13 +346,22 @@ class Asset(Parallelizable):
         Use repr(asset) for serialization of asset (to be recovered later on)
         :return:
         """
+        return self.to_normalized_repr()
+
+    def to_full_repr(self):
+        return get_unique_str_from_recursive_dict(self.__dict__)
+
+    def to_normalized_repr(self):
         return get_unique_str_from_recursive_dict(self.to_normalized_dict())
 
     def __hash__(self):
-        return hash(repr(self))
+        return hash(self.to_normalized_repr())
 
     def __eq__(self, other):
-        return repr(self) == repr(other)
+        return self.to_normalized_repr() == other.to_normalized_repr()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     # ==== workfile ====
 
@@ -331,15 +403,19 @@ class Asset(Parallelizable):
         except:
             return None
 
+    # ==== yuv format ====
+
     @property
     def yuv_type(self):
         """
         Assuming ref/dis files are both YUV and the same type, return the type
-        (yuv420p, yuv422p, yuv444p)
+        (yuv420p, yuv422p, yuv444p, yuv420p10le, yuv422p10le, yuv444p10le)
         :return:
         """
         if 'yuv_type' in self.asset_dict:
-            if self.asset_dict['yuv_type'] in ['yuv420p', 'yuv422p', 'yuv444p']:
+            if self.asset_dict['yuv_type'] in ['yuv420p', 'yuv422p', 'yuv444p',
+                                               'yuv420p10le', 'yuv422p10le',
+                                               'yuv444p10le']:
                 return self.asset_dict['yuv_type']
             else:
                 assert False, "Unknown YUV type: {}".format(

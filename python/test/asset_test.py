@@ -2,7 +2,6 @@ __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import unittest
-
 import config
 from asset import Asset
 
@@ -127,9 +126,9 @@ class AssetTest(unittest.TestCase):
                       asset_dict={'ref_start_frame':0, 'ref_end_frame':47,
                                   'dis_start_frame':0, 'dis_end_frame':47,
                                   'fps':23.976},)
-        self.assertEquals(asset.ref_bitrate_kbps_for_entire_file,
+        self.assertAlmostEquals(asset.ref_bitrate_kbps_for_entire_file,
                           53693.964287999996)
-        self.assertEquals(asset.dis_bitrate_kbps_for_entire_file,
+        self.assertAlmostEquals(asset.dis_bitrate_kbps_for_entire_file,
                           53693.964287999996)
 
     def test_to_normalized_dict(self):
@@ -159,12 +158,14 @@ class AssetTest(unittest.TestCase):
             str(asset),
             "test_0_0_refvideo_720x480_2to2_vs_disvideo_720x480_2to2_q_720x480"
         )
-        self.assertEquals(
-            repr(asset),
-            '{"asset_dict": {"end_frame": 2, "height": 480, "start_frame": 2, '
-            '"width": 720}, "asset_id": 0, "content_id": 0, "dataset": "test", '
-            '"dis_path": "disvideo.yuv", "ref_path": "refvideo.yuv", "workdir": ""}'
-        )
+        expected_repr = '{"asset_dict": {"end_frame": 2, "height": 480, "start_frame": 2, "width": 720}, "asset_id": 0, "content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", "ref_path": "refvideo.yuv", "workdir": ""}'
+        self.assertEquals(repr(asset), expected_repr)
+        recon_asset = Asset.from_repr(expected_repr)
+        self.assertEquals(asset, recon_asset)
+        self.assertTrue(asset == recon_asset)
+        self.assertFalse(asset != recon_asset)
+
+        self.assertEquals(asset.to_normalized_repr(), expected_repr)
 
         asset = Asset(dataset="test", content_id=0, asset_id=1,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
@@ -173,12 +174,10 @@ class AssetTest(unittest.TestCase):
             str(asset),
             "test_0_1_refvideo_720x480_vs_disvideo_720x480_q_720x480"
         )
-        self.assertEquals(
-            repr(asset),
-            '{"asset_dict": {"height": 480, "width": 720}, "asset_id": 1, '
-            '"content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", '
-            '"ref_path": "refvideo.yuv", "workdir": ""}'
-        )
+        expected_repr = '{"asset_dict": {"height": 480, "width": 720}, "asset_id": 1, "content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", "ref_path": "refvideo.yuv", "workdir": ""}'
+        self.assertEquals(repr(asset), expected_repr)
+        recon_asset = Asset.from_repr(expected_repr)
+        self.assertEquals(asset, recon_asset)
 
         asset = Asset(dataset="test", content_id=0, asset_id=2,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
@@ -188,13 +187,10 @@ class AssetTest(unittest.TestCase):
             str(asset),
             "test_0_2_refvideo_720x480_vs_disvideo_720x480_q_1920x1080"
         )
-        self.assertEquals(
-            repr(asset),
-            '{"asset_dict": {"height": 480, "quality_height": 1080, '
-            '"quality_width": 1920, "width": 720}, "asset_id": 2, '
-            '"content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", '
-            '"ref_path": "refvideo.yuv", "workdir": ""}'
-        )
+        expected_repr = '{"asset_dict": {"height": 480, "quality_height": 1080, "quality_width": 1920, "width": 720}, "asset_id": 2, "content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", "ref_path": "refvideo.yuv", "workdir": ""}'
+        self.assertEquals(repr(asset), expected_repr)
+        recon_asset = Asset.from_repr(expected_repr)
+        self.assertEquals(asset, recon_asset)
 
     def test_hash_equal(self):
         asset1 = Asset(dataset="test", content_id=0, asset_id=2,
