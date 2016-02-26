@@ -145,6 +145,10 @@ Now that we are confident that the dataset is created correctly and we have some
 
 Here 'cache_result' is either 'yes' or 'no', 'parallelize' is either 'yes' or 'no', similar as before. 
 
+For example:
+
+`./run_training yes yes example_dataset.py resource/feature_param/vmaf_feature_v1.py resource/model_param/libsvmnusvr_v1.py workspace/model/test_model.pkl`
+
 'feature_param_file' defines the set of features used. For example, both dictionaries
 
 `feature_dict = {'VMAF_feature':'all', }`
@@ -156,10 +160,6 @@ and
 are valid specifications of selected features. Here 'VMAF_feature' is an 'aggregate' feature type, and 'vif', 'adm' are the 'atomic' feature types within the aggregate type. In the first case, 'all' specifies that all atomic features of 'VMAF_feature' are selected. A feature_dict dictionary can also contain more than one aggregate feature types.
 
 'model_param_file' defines the type and hyper-parameters of the regressor to be used. For details, refer to the self-explanatory examples in directory *resource/model_param*.
-
-For example:
-
-`./run_training yes yes example_dataset.py resource/feature_param/vmaf_feature_v1.py resource/model_param/libsvmnusvr_v1.py workspace/model/test_model.pkl`
 
 The trained model is output to 'output_model_file'. Once it is obtained, it can be used by the *run_vmaf* or *run_vmaf_in_batch* executors, or used by *run_test* to validate another dataset.
 
