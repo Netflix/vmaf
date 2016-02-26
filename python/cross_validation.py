@@ -106,8 +106,6 @@ class FeatureCrossValidation(object):
         {'norm_type':['normalize', 'clip_0to1', 'clip_minus1to1'],
          'n_estimators':[10, 50],
          'random_state': [0]}
-        See more detail at:
-        https://sites.google.com/a/netflix.com/encoding-technology/etc/scratch-pad/zli/-nested-cross-validation-formulation
         :param train_test_model_class:
         :param model_param_search_range:
         :param dataframe:
