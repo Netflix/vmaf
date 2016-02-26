@@ -7,7 +7,7 @@ import sys
 import config
 import os
 from asset import Asset
-from quality_runner import VmaftQualityRunner
+from quality_runner import VmafQualityRunner
 
 FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
 
@@ -45,7 +45,7 @@ if __name__ == "__main__":
                   )
     assets = [asset]
 
-    runner_class = VmaftQualityRunner
+    runner_class = VmafQualityRunner
 
     optional_dict = {
         'model_filepath':model_filepath

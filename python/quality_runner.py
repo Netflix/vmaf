@@ -47,7 +47,7 @@ class QualityRunner(Executor):
         FeatureAssembler.
         4) Override _remove_result(self, asset) by redirecting it to the
         FeatureAssembler.
-    For an example, follow VmaftQualityRunner.
+    For an example, follow VmafQualityRunner.
     """
 
     def _read_result(self, asset):
@@ -234,9 +234,9 @@ class VmafLegacyQualityRunner(QualityRunner):
         vmaf_fassembler.remove_results()
 
 
-class VmaftQualityRunner(QualityRunner):
+class VmafQualityRunner(QualityRunner):
 
-    TYPE = 'VMAFT'
+    TYPE = 'VMAF'
     VERSION = '0.1'
 
     DEFAULT_FEATURE_DICT = {'VMAF_feature': 'all'}

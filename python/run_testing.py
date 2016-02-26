@@ -12,7 +12,7 @@ from result import FileSystemResultStore
 from train_test_model import TrainTestModel
 import matplotlib.pylab as plt
 from tools import import_python_file
-from quality_runner import QualityRunner, VmaftQualityRunner
+from quality_runner import QualityRunner, VmafQualityRunner
 
 def read_dataset(dataset):
 
@@ -103,10 +103,10 @@ def test_on_dataset(test_dataset, quality_runner_class, ax, result_store, model_
 
 def print_usage():
     # quality_runner_types = map(lambda runner: runner.TYPE, QualityRunner.get_subclasses())
-    quality_runner_types = ['PSNR', 'VMAFT']
+    quality_runner_types = ['PSNR', 'VMAF']
     cache_result = ['yes', 'no']
     print "usage: " + os.path.basename(sys.argv[0]) + \
-          " quality_type cache_result test_dataset_file [optional_VMAFT_model_file]\n"
+          " quality_type cache_result test_dataset_file [optional_VMAF_model_file]\n"
     print "quality_types:\n\t" + "\n\t".join(quality_runner_types) +"\n"
     print "cache_result:\n\t" + "\n\t".join(cache_result) +"\n"
 
@@ -129,8 +129,8 @@ if __name__ == '__main__':
     else:
         model_filepath = None
 
-    if model_filepath is not None and quality_type != VmaftQualityRunner.TYPE:
-        print "Input error: only quality_type VMAFT accepts optional_VMAFT_model_file."
+    if model_filepath is not None and quality_type != VmafQualityRunner.TYPE:
+        print "Input error: only quality_type VMAF accepts optional_VMAF_model_file."
         print_usage()
         exit(2)
 

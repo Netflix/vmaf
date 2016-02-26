@@ -4,7 +4,7 @@ __license__ = "Apache, Version 2.0"
 import os
 import unittest
 from asset import Asset
-from quality_runner import VmafLegacyQualityRunner, VmaftQualityRunner, \
+from quality_runner import VmafLegacyQualityRunner, VmafQualityRunner, \
     PsnrQualityRunner
 from executor import run_executors_in_parallel
 import config
@@ -153,8 +153,8 @@ class QualityRunnerTest(unittest.TestCase):
                 None, fifo_mode=True,
                 log_file_dir=config.ROOT + "/workspace/log_file_dir")
 
-    def test_run_vmaft_runner(self):
-        print 'test on running VMAFT runner...'
+    def test_run_vmaf_runner(self):
+        print 'test on running VMAF runner...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -169,7 +169,7 @@ class QualityRunnerTest(unittest.TestCase):
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
 
-        self.runner = VmaftQualityRunner(
+        self.runner = VmafQualityRunner(
             [asset, asset_original],
             None, fifo_mode=True,
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
@@ -180,20 +180,20 @@ class QualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertEqual(results[0]['VMAFT_score'], 70.2921902679039)
+        self.assertEqual(results[0]['VMAF_score'], 70.2921902679039)
         self.assertEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)
         self.assertEqual(results[0]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertEqual(results[0]['VMAF_feature_adm_score'], 0.91552422916666665)
         self.assertEqual(results[0]['VMAF_feature_ansnr_score'], 22.533456770833329)
 
-        self.assertEqual(results[1]['VMAFT_score'], 100.0)
+        self.assertEqual(results[1]['VMAF_score'], 100.0)
         self.assertEqual(results[1]['VMAF_feature_vif_score'], 1.0)
         self.assertEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertEqual(results[1]['VMAF_feature_adm_score'], 1.0)
         self.assertEqual(results[1]['VMAF_feature_ansnr_score'], 30.030914145833322)
 
-    def test_run_vmaft_runner_with_model(self):
-        print 'test on running VMAFT runner with custom input model...'
+    def test_run_vmaf_runner_with_model(self):
+        print 'test on running VMAF runner with custom input model...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -208,7 +208,7 @@ class QualityRunnerTest(unittest.TestCase):
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
 
-        self.runner = VmaftQualityRunner(
+        self.runner = VmafQualityRunner(
             [asset, asset_original],
             None, fifo_mode=False,
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
@@ -222,13 +222,13 @@ class QualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertEqual(results[0]['VMAFT_score'], 72.8888888888889)
+        self.assertEqual(results[0]['VMAF_score'], 72.8888888888889)
         self.assertEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)
         self.assertEqual(results[0]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertEqual(results[0]['VMAF_feature_adm_score'], 0.91552422916666665)
         self.assertEqual(results[0]['VMAF_feature_ansnr_score'], 22.533456770833329)
 
-        self.assertEqual(results[1]['VMAFT_score'], 98.68923611111109)
+        self.assertEqual(results[1]['VMAF_score'], 98.68923611111109)
         self.assertEqual(results[1]['VMAF_feature_vif_score'], 1.0)
         self.assertEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertEqual(results[1]['VMAF_feature_adm_score'], 1.0)
@@ -337,8 +337,8 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertEqual(results[0]['PSNR_score'], 30.755063979166664)
         self.assertEqual(results[1]['PSNR_score'], 60.0)
 
-    def test_run_parallel_vamft_runner_with_model(self):
-        print 'test on running VMAFT quality runner in parallel with custom model...'
+    def test_run_parallel_vamf_runner_with_model(self):
+        print 'test on running VMAF quality runner in parallel with custom model...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -354,7 +354,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
                       asset_dict={'width':576, 'height':324})
 
         self.runners, results = run_executors_in_parallel(
-            VmaftQualityRunner,
+            VmafQualityRunner,
             [asset, asset_original],
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
@@ -366,13 +366,13 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             }
         )
 
-        self.assertEqual(results[0]['VMAFT_score'], 72.8888888888889)
+        self.assertEqual(results[0]['VMAF_score'], 72.8888888888889)
         self.assertEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)
         self.assertEqual(results[0]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertEqual(results[0]['VMAF_feature_adm_score'], 0.91552422916666665)
         self.assertEqual(results[0]['VMAF_feature_ansnr_score'], 22.533456770833329)
 
-        self.assertEqual(results[1]['VMAFT_score'], 98.68923611111109)
+        self.assertEqual(results[1]['VMAF_score'], 98.68923611111109)
         self.assertEqual(results[1]['VMAF_feature_vif_score'], 1.0)
         self.assertEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertEqual(results[1]['VMAF_feature_adm_score'], 1.0)
