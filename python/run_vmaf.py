@@ -7,13 +7,13 @@ import sys
 import config
 import os
 from asset import Asset
-from quality_runner import VmafQualityRunner
+from quality_runner import VmaftQualityRunner
 
 FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) \
-          + " fmt width height ref_file dis_file\n"
+          + " fmt width height ref_file dis_file [optional_model_file]\n"
     print "fmts:\n\t" + "\n\t".join(FMTS) +"\n"
 
 if __name__ == "__main__":
@@ -32,6 +32,11 @@ if __name__ == "__main__":
         print_usage()
         exit(2)
 
+    if len(sys.argv) >= 7:
+        model_filepath = sys.argv[6]
+    else:
+        model_filepath = None
+
     asset = Asset(dataset="cmd", content_id=0, asset_id=0,
                   workdir_root=config.ROOT + "/workspace/workdir",
                   ref_path=ref_file,
@@ -40,13 +45,18 @@ if __name__ == "__main__":
                   )
     assets = [asset]
 
-    runner_class = VmafQualityRunner
+    runner_class = VmaftQualityRunner
+
+    optional_dict = {
+        'model_filepath':model_filepath
+    }
 
     runner = runner_class(
         assets, None, fifo_mode=True,
         log_file_dir=config.ROOT + "/workspace/log_file_dir",
         delete_workdir=True,
-        result_store=None
+        result_store=None,
+        optional_dict=optional_dict,
     )
 
     # run

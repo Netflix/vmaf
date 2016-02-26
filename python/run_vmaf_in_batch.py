@@ -9,12 +9,12 @@ import re
 from asset import Asset
 import config
 from executor import run_executors_in_parallel
-from quality_runner import VmafQualityRunner
+from quality_runner import VmaftQualityRunner
 
 FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
 
 def print_usage():
-    print "usage: " + os.path.basename(sys.argv[0]) + " input_file\n"
+    print "usage: " + os.path.basename(sys.argv[0]) + " input_file [optional_model_file]\n"
     print "input_file contains lines of:"
     print "\tfmt width height ref_file dis_file\\n"
     print "fmts:\n\t" + "\n\t".join(FMTS) +"\n"
@@ -26,6 +26,11 @@ if __name__ == "__main__":
         exit(2)
 
     input_filename = sys.argv[1]
+
+    if len(sys.argv) >= 3:
+        model_filepath = sys.argv[2]
+    else:
+        model_filepath = None
 
     assets = []
     line_idx = 0
@@ -65,7 +70,11 @@ if __name__ == "__main__":
             assets.append(asset)
             line_idx += 1
 
-    runner_class = VmafQualityRunner
+    runner_class = VmaftQualityRunner
+
+    optional_dict = {
+        'model_filepath':model_filepath
+    }
 
     # construct an VmafQualityRunner object to assert assets, and to remove
     runner = runner_class(assets,
@@ -74,6 +83,7 @@ if __name__ == "__main__":
                  fifo_mode=True,
                  delete_workdir=True,
                  result_store=None,
+                 optional_dict=optional_dict,
                  )
 
     try:
@@ -86,6 +96,7 @@ if __name__ == "__main__":
             delete_workdir=True,
             parallelize=True,
             result_store=None,
+            optional_dict=optional_dict,
         )
 
         # output
