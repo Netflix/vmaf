@@ -11,21 +11,15 @@ It also requires a number of Python packages:
 
   - [numpy](http://www.numpy.org/) (>=1.8.2)
   - [scipy](http://www.scipy.org/) (>=0.13.3)
-  - [scikit-learn](http://scikit-learn.org/stable/) (==0.14.1)
+  - [scikit-learn](http://scikit-learn.org/stable/) (>=0.14.1)
   - [pandas](http://pandas.pydata.org/) (>=0.13.1)
+  - [matplotlib](http://matplotlib.org/1.3.1/index.html) (>=1.3.1)
 
-To start, install *pip* - the Python package manager. (It is also recommended to start with a clean Python environment using *virtualenv* with the *--no-site-package* option.) After that, run:
+To start, install *pip* - the Python package manager. It is also recommended to start with a clean Python environment using *virtualenv* with the *--no-site-package* option. After that, run:
 
-`pip install numpy scipy scikit-learn==0.14.1 pandas`
+`pip install numpy==1.8.2 scipy==0.13.3 scikit-learn==0.14.1 pandas==0.13.1 matplotlib==1.3.1`
 
-Two additional packages can be installed optionally:
-
-  - [matplotlib](http://matplotlib.org/1.3.1/index.html) (>=1.3.1) -- for result visualization
-  - [pathos](https://pypi.python.org/pypi/pathos) (>=0.1a1) -- for execution parallelization
-
-To install, run:
-
-`pip install matplotlib pathos`
+(For now, fix the version numbers so that the unittest result will exactly match).
 
 ##Installation
 
@@ -39,7 +33,7 @@ There is a subdirectory named python. Add the python subdirectory to the environ
 
 `export PYTHONPATH=[path_to_repo_dir]/python:$PYTHONPATH`
 
-(You can also add it to environment permanently. On Ubuntu, append the line above to ~/.bashrc and 'source ~/.bashrc'. On Mac OS X, append it to ~/.profile and source.)
+(You can also add it to environment permanently. On Ubuntu, append the line above to ~/.bashrc and run *source ~/.bashrc*. On Mac OS X, append it to ~/.profile and source.)
 
 ##Testing
 
@@ -168,6 +162,13 @@ The trained model is output to 'output_model_file'. Once it is obtained, it can 
 
 Above are two example scatter plots obtained from running the *run_traing* and *run_testing* executors on a training and a testing dataset, respectively.
 
+##Optional Setup for Parallel Execution
+
+For parallel feature extraction, an additional package [pathos](https://pypi.python.org/pypi/pathos) (>=0.1a1) can be installed optionally. To install, run:
+
+`easy_install -f . pathos`
+
+(If you see warning messages during installation, follow the instructions provided to resolve them.)
 
 ##Datasets
 

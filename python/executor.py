@@ -301,8 +301,7 @@ def run_executors_in_parallel(executor_class,
             executors = pp_map(run_executor, list_args)
         except ImportError:
             # fall back
-            msg = "pathos.pp_map cannot be imported, fall back to sequential " \
-                  "map(). Install pathos by: \npip install pathos"
+            msg = "pathos.pp_map cannot be imported for parallel execution, fall back to sequential map()."
             if logger:
                 logger.warn(msg)
             else:
