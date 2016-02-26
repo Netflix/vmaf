@@ -200,7 +200,7 @@ if __name__ == '__main__':
     #     test_dataset_filepath=config.ROOT + '/python/private/dataset/NFLX_dataset_testing.py',
     # )
 
-    # # ==== Retrain and test VMAF using NFLX dataset ====
+    # ==== Retrain and test VMAF using NFLX dataset ====
     # run_vmaf_train_test(
     #     train_dataset_filepath=config.ROOT + '/python/private/dataset/NFLX_dataset_training.py',
     #     test_dataset_filepath=config.ROOT + '/python/private/dataset/NFLX_dataset_testing.py',

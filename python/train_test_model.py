@@ -7,6 +7,7 @@ from tools import indices
 import sys
 import config
 from mixin import TypeVersionEnabled
+import pickle
 
 class TrainTestModel(TypeVersionEnabled):
 
@@ -114,14 +115,15 @@ class TrainTestModel(TypeVersionEnabled):
         self._assert_trained()
         info_to_save = {'param_dict': self.param_dict,
                         'model_dict': self.model_dict}
-        import joblib
-        joblib.dump(info_to_save, filename, compress=9)
+
+        with open(filename, 'wb') as file:
+            pickle.dump(info_to_save, file)
 
     @staticmethod
     def from_file(filename, logger):
 
-        import joblib
-        info_loaded = joblib.load(filename)
+        with open(filename, 'rb') as file:
+            info_loaded = pickle.load(file)
 
         model_type = info_loaded['model_dict']['model_type']
 
@@ -566,8 +568,8 @@ class LibsvmnusvrTrainTestModel(TrainTestModel):
                         'model_dict': model_dict_copy}
         self.svmutil.svm_save_model(filename + '.model', self.model_dict['model'])
 
-        import joblib
-        joblib.dump(info_to_save, filename, compress=9)
+        with open(filename, 'wb') as file:
+            pickle.dump(info_to_save, file)
 
     @classmethod
     def from_raw_file(cls, model_filename, additional_model_dict, logger):
