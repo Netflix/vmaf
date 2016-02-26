@@ -55,7 +55,7 @@ There is a subdirectory named python. Add the python subdirectory to the environ
 export PYTHONPATH=[path_to_repo_dir]/python:$PYTHONPATH
 ```
 
-You can also add it to environment permanently. On Ubuntu, append the line above to *~/.bashrc* and run `source ~/.bashrc`. On Mac OS X, append it to *~/.profile* and run `source ~/.profile`.
+You can also add it to environment permanently. On Ubuntu, append the line above to *~/.bashrc* and run `source ~/.bashrc`. On Mac OS X, append it to *~/.bash_profile* and run `source ~/.bash_profile`.
 
 ##Testing
 
