@@ -39,6 +39,8 @@ There is a subdirectory named python. Add the python subdirectory to the environ
 
 `export PYTHONPATH=[path_to_repo_dir]/python:$PYTHONPATH`
 
+(You can also add it to environment permanently. On Ubuntu, append the line above to ~/.bashrc and 'source ~/.bashrc'. On Mac OS X, append it to ~/.profile and source.)
+
 ##Testing
 
 The package has thus far been tested in Ubuntu 14.04 LTS and Mac OS X 10.10.5.
@@ -49,7 +51,7 @@ After installation, run:
 
 ##Basic Usage
 
-There are two basic execution modes to run VMAF -- single mode and batch mode.
+There are two basic execution modes to run VMAF -- a single mode and a batch mode.
 
 To run VMAF on a single reference/distorted video pair, run:
 
@@ -65,6 +67,10 @@ To run VMAF in batch mode, create an input text file with each line of format (c
 
 `format width height reference_path distorted_path`
 
+For example:
+
+`yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv`
+
 After that, run:
 
 `./run_vmaf_in_batch parallelize input_file`
@@ -77,9 +83,9 @@ For example:
 
 ##Advanced Usage
 
-VMAF follows a machine-learning based approach to first extract a number of quality-relevant features from both a distorted video and its reference full-quality video, followed by fusing the features into a final quality score using a non-linear regressor (e.g. a SVM regressor), hence the name 'Video Multi-method Assessment Fusion'.
+VMAF follows a machine-learning based approach to first extract a number of quality-relevant features from both a distorted video and its reference full-quality video, followed by fusing them into a final quality score using a non-linear regressor (e.g. a SVM regressor), hence the name 'Video Multi-method Assessment Fusion'.
 
-In addition to the basic executors, the VMAF package also provides a framework to allow any user to train his/her own perceptual quality assessment model. For example, directory resource/model contains a number of pre-trained models, which can be loaded by the aforementioned VMAF executors:
+In addition to the basic executors, the VMAF package also provides a framework to allow any user to train his/her own perceptual quality assessment model. For example, directory *resource/model* contains a number of pre-trained models, which can be loaded by the aforementioned VMAF executors:
 
 `./run_vmaf format width height reference_path distorted_path [optional_VMAF_model_file]`
 
@@ -107,7 +113,7 @@ Once a model is trained, the VMAF package also provides tools to cross validate 
 
 To begin with, create a dataset file following the format of example_dataset.py. A dataset is a collection of distorted videos, each has a unique asset ID and a corresponding reference video, identified by a unique content ID. Each distorted video is also associated with a DMOS (differential mean opinion score), which is obtained through subjective experiments.
 
-See directory resource/dataset for more examples. Also refer to the 'Datasets' section regarding publicly available datasets.
+See directory *resource/dataset* for more examples. Also refer to the 'Datasets' section regarding publicly available datasets.
 
 ###Validate a Dataset
 
@@ -139,7 +145,7 @@ Now that we are confident that the dataset is created correctly and we have some
 
 Here 'cache_result' is either 'yes' or 'no', 'parallelize' is either 'yes' or 'no', similar as before. 
 
-'feature_param_file' defines the set of features used. For example, both
+'feature_param_file' defines the set of features used. For example, both dictionaries
 
 `feature_dict = {'VMAF_feature':'all', }`
 
@@ -147,17 +153,22 @@ and
 
 `feature_dict = {'VMAF_feature':['vif', 'adm'], }`
 
-are valid specifications of selected features. Here 'VMAF_feature' is an 'aggregate' feature type, and 'vif', 'adm' are its 'atomic' feature types. In the first case, 'all' specifies that all atomic features of 'VMAF_feature' are selected. A feature_dict can also contain more than one aggregate feature types.
+are valid specifications of selected features. Here 'VMAF_feature' is an 'aggregate' feature type, and 'vif', 'adm' are the 'atomic' feature types within the aggregate type. In the first case, 'all' specifies that all atomic features of 'VMAF_feature' are selected. A feature_dict dictionary can also contain more than one aggregate feature types.
 
-'model_param_file' defines the type and hyper-parameters of the regressor to be used. For details, refer to the self-explanatory examples in directory resource/model_param.
+'model_param_file' defines the type and hyper-parameters of the regressor to be used. For details, refer to the self-explanatory examples in directory *resource/model_param*.
 
 For example:
 
 `./run_training yes yes example_dataset.py resource/feature_param/vmaf_feature_v1.py resource/model_param/libsvmnusvr_v1.py workspace/model/test_model.pkl`
 
-The trained model is output to 'output_model_file'. Once it is obtained, it can be used by the run_vmaf or run_vmaf_in_batch executors, or used by run_test to validate another dataset.
+The trained model is output to 'output_model_file'. Once it is obtained, it can be used by the *run_vmaf* or *run_vmaf_in_batch* executors, or used by *run_test* to validate another dataset.
+
+![training scatter](/resource/images/scatter_training.png)
+![testing scatter](/resource/images/scatter_testing.png)
+
+Above are two example scatter plots obtained from running the *run_traing* and *run_testing* executors on a training and a testing dataset, respectively.
 
 
 ##Datasets
 
-(To do)
+To be completed...
