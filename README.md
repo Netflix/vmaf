@@ -17,19 +17,22 @@ It also requires a number of Python packages:
 
 To start, install *pip* - the Python package manager. It is also recommended to start with a clean Python environment using *virtualenv* with the `--no-site-package` option. After that, run:
 
-```pip install numpy scipy scikit-learn==0.14.1 pandas matplotlib```
+```pip install numpy scipy scikit-learn==0.14.1 pandas matplotlib
+```
 
 ##Installation
 
 After cloning VMAF repo to local, cd to the repo directory and run:
 
-```make```
+```make
+```
 
 to build the binaries.
 
 There is a subdirectory named python. Add the python subdirectory to the environment variable PYTHONPATH:
 
-```export PYTHONPATH=[path_to_repo_dir]/python:$PYTHONPATH```
+```export PYTHONPATH=[path_to_repo_dir]/python:$PYTHONPATH
+```
 
 You can also add it to environment permanently. On Ubuntu, append the line above to ~/.bashrc and run `source ~/.bashrc`. On Mac OS X, append it to ~/.profile and `source ~/.profile`.
 
