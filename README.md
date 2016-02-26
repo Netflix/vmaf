@@ -185,16 +185,36 @@ For example:
 ./run_training yes yes example_dataset.py resource/feature_param/vmaf_feature_v1.py resource/model_param/libsvmnusvr_v1.py workspace/model/test_model.pkl
 ```
 
-*feature_param_file* defines the set of features used. For example, both dictionaries
+*feature_param_file* defines the set of features used. For example, both dictionaries below:
 
 ```
 feature_dict = {'VMAF_feature':'all', }
+```
+
+and
+
+```
 feature_dict = {'VMAF_feature':['vif', 'adm'], }
 ```
 
 are valid specifications of selected features. Here *VMAF_feature* is an 'aggregate' feature type, and *vif*, *adm* are the 'atomic' feature types within the aggregate type. In the first case, *all* specifies that all atomic features of *VMAF_feature* are selected. A feature_dict dictionary can also contain more than one aggregate feature types.
 
-*model_param_file* defines the type and hyper-parameters of the regressor to be used. For details, refer to the self-explanatory examples in directory *resource/model_param*.
+*model_param_file* defines the type and hyper-parameters of the regressor to be used. For details, refer to the self-explanatory examples in directory *resource/model_param*. One example is:
+
+```
+model_type = "LIBSVMNUSVR"
+model_param_dict = {
+    # ==== preprocess: normalize each feature ==== #
+    'norm_type':'clip_0to1', # rescale to within [0, 1]
+    # ==== postprocess: clip final quality score ==== #
+    'score_clip':[0.0, 100.0], # clip to within [0, 100]
+    # ==== libsvmnusvr parameters ==== #
+    'gamma':0.85, # selected
+    'C':1.0, # default
+    'nu':0.5, # default
+    'cache_size':200 # default
+}
+```
 
 The trained model is output to *output_model_file*. Once it is obtained, it can be used by the *run_vmaf* or *run_vmaf_in_batch*, or used by *run_test* to validate another dataset.
 
