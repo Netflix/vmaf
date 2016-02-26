@@ -122,10 +122,10 @@ class PsnrQualityRunner(QualityRunner):
         return quality_result
 
 
-class VmafQualityRunner(QualityRunner):
+class VmafLegacyQualityRunner(QualityRunner):
 
-    TYPE = 'VMAF'
-    VERSION = '0.1'
+    TYPE = 'VMAF_legacy'
+    VERSION = '1.0'
 
     FEATURE_ASSEMBLER_DICT = {'VMAF_feature': 'all'}
 

@@ -103,7 +103,7 @@ def test_on_dataset(test_dataset, quality_runner_class, ax, result_store, model_
 
 def print_usage():
     # quality_runner_types = map(lambda runner: runner.TYPE, QualityRunner.get_subclasses())
-    quality_runner_types = ['PSNR', 'VMAF', 'VMAFT']
+    quality_runner_types = ['PSNR', 'VMAFT']
     cache_result = ['yes', 'no']
     print "usage: " + os.path.basename(sys.argv[0]) + \
           " quality_type cache_result test_dataset_file [optional_VMAFT_model_file]\n"

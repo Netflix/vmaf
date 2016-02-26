@@ -17,7 +17,7 @@ from cross_validation import FeatureCrossValidation
 def run_joe_vmaf(train_dataset_filepath, test_dataset_filepath):
 
     # Joe's VMAF
-    from quality_runner import VmafQualityRunner as runner_class
+    from quality_runner import VmafLegacyQualityRunner as runner_class
 
     train_dataset = import_python_file(train_dataset_filepath)
     test_dataset = import_python_file(test_dataset_filepath)
