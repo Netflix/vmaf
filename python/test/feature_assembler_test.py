@@ -5,9 +5,8 @@ import unittest
 from asset import Asset
 import config
 from feature_assembler import FeatureAssembler
-from feature_extractor import VmafFeatureExtractor, BrisqueFeatureExtractor, \
-    FeatureExtractor
-import numpy as np
+from feature_extractor import VmafFeatureExtractor, FeatureExtractor, \
+    MomentFeatureExtractor
 
 class FeatureAssemblerTest(unittest.TestCase):
 
@@ -21,7 +20,7 @@ class FeatureAssemblerTest(unittest.TestCase):
         fextractor_subclasses = FeatureExtractor.get_subclasses()
         self.assertEquals(len(fextractor_subclasses), 2)
         self.assertTrue(VmafFeatureExtractor in fextractor_subclasses)
-        self.assertTrue(BrisqueFeatureExtractor in fextractor_subclasses)
+        self.assertTrue(MomentFeatureExtractor in fextractor_subclasses)
 
     def test_feature_assembler_whole_feature(self):
         print 'test on feature assembler with whole feature...'

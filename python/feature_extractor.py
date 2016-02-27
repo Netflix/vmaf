@@ -1,11 +1,9 @@
-import os
-import re
-import subprocess
-import config
-
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
+import re
+import subprocess
+import config
 from executor import Executor
 from result import Result
 
