@@ -133,47 +133,56 @@ class Executor(TypeVersionEnabled):
                 self.logger.info('{id} result exists. Skip {id} run.'.
                                  format(id=self.executor_id))
         else:
-            if self.logger:
-                self.logger.info('{id} result does\'t exist. Perform {id} '
-                                 'calculation.'.format(id=self.executor_id))
 
-            # remove workfiles if exist (do early here to avoid race condition
-            # when ref path and dis path have some overlap)
-            self._close_ref_workfile(asset)
-            self._close_dis_workfile(asset)
+            log_file_path = self._get_log_file_path(asset)
+            if os.path.exists(log_file_path):
+                if self.logger:
+                    self.logger.info('{id} log file exists. Skip run and log file'
+                                     ' generation.'.format(id=self.executor_id))
 
-            make_parent_dirs_if_nonexist(asset.ref_workfile_path)
-            make_parent_dirs_if_nonexist(asset.dis_workfile_path)
-
-            if self.fifo_mode:
-                ref_p = multiprocessing.Process(target=self._open_ref_workfile,
-                                                args=(asset, True))
-                dis_p = multiprocessing.Process(target=self._open_dis_workfile,
-                                                args=(asset, True))
-                ref_p.start()
-                dis_p.start()
             else:
-                self._open_ref_workfile(asset, fifo_mode=False)
-                self._open_dis_workfile(asset, fifo_mode=False)
 
-            self._wait_for_workfiles(asset)
-            self._prepare_log_file(asset)
+                if self.logger:
+                    self.logger.info('{id} result does\'t exist. Perform {id} '
+                                     'calculation.'.format(id=self.executor_id))
 
-            self._run_and_generate_log_file(asset)
-
-            if self.delete_workdir:
+                # remove workfiles if exist (do early here to avoid race condition
+                # when ref path and dis path have some overlap)
                 self._close_ref_workfile(asset)
                 self._close_dis_workfile(asset)
 
-                ref_dir = get_dir_without_last_slash(asset.ref_workfile_path)
-                dis_dir = get_dir_without_last_slash(asset.dis_workfile_path)
-                os.rmdir(ref_dir)
-                try:
-                    os.rmdir(dis_dir)
-                except OSError as e:
-                    if e.errno == 2: # [Errno 2] No such file or directory
-                        # already removed by os.rmdir(ref_dir)
-                        pass
+                make_parent_dirs_if_nonexist(asset.ref_workfile_path)
+                make_parent_dirs_if_nonexist(asset.dis_workfile_path)
+
+                if self.fifo_mode:
+                    ref_p = multiprocessing.Process(target=self._open_ref_workfile,
+                                                    args=(asset, True))
+                    dis_p = multiprocessing.Process(target=self._open_dis_workfile,
+                                                    args=(asset, True))
+                    ref_p.start()
+                    dis_p.start()
+                else:
+                    self._open_ref_workfile(asset, fifo_mode=False)
+                    self._open_dis_workfile(asset, fifo_mode=False)
+
+                self._wait_for_workfiles(asset)
+                self._prepare_log_file(asset)
+
+                self._run_and_generate_log_file(asset)
+
+                if self.delete_workdir:
+                    self._close_ref_workfile(asset)
+                    self._close_dis_workfile(asset)
+
+                    ref_dir = get_dir_without_last_slash(asset.ref_workfile_path)
+                    dis_dir = get_dir_without_last_slash(asset.dis_workfile_path)
+                    os.rmdir(ref_dir)
+                    try:
+                        os.rmdir(dis_dir)
+                    except OSError as e:
+                        if e.errno == 2: # [Errno 2] No such file or directory
+                            # already removed by os.rmdir(ref_dir)
+                            pass
 
             if self.logger:
                 self.logger.info("Read {id} log file, get scores...".

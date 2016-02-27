@@ -267,7 +267,9 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, 'runners'):
-            for runner in self.runners: runner.remove_logs()
+            for runner in self.runners:
+                runner.remove_logs()
+                runner.remove_results()
             pass
 
     def test_run_parallel_vmaf_legacy_runner(self):
