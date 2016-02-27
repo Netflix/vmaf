@@ -177,7 +177,7 @@ class FeatureExtractorTest(unittest.TestCase):
 
         self.fextractor = MomentFeatureExtractor(
             [asset, asset_original],
-            None, fifo_mode=False,
+            None, fifo_mode=True,
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
             result_store=None
         )
@@ -295,6 +295,42 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_score'], 1.0)
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 30.030914145833322)
+
+    def test_run_parallel_moment_fextractor(self):
+        print 'test on running Moment feature extractor in parallel...'
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.fextractors, results = run_executors_in_parallel(
+            MomentFeatureExtractor,
+            [asset, asset_original],
+            log_file_dir=config.ROOT + "/workspace/log_file_dir",
+            fifo_mode=True,
+            delete_workdir=True,
+            parallelize=True,
+            result_store=None,
+        )
+
+        self.assertAlmostEqual(results[0]['Moment_feature_ref1st_score'], 59.788567354166666)
+        self.assertAlmostEqual(results[0]['Moment_feature_ref2nd_score'], 4696.668388125001)
+        self.assertAlmostEqual(results[0]['Moment_feature_dis1st_score'], 61.332006624999984)
+        self.assertAlmostEqual(results[0]['Moment_feature_dis2nd_score'], 4798.659574041666)
+
+        self.assertAlmostEqual(results[1]['Moment_feature_ref1st_score'], 59.788567354166666)
+        self.assertAlmostEqual(results[1]['Moment_feature_ref2nd_score'], 4696.668388125001)
+        self.assertAlmostEqual(results[1]['Moment_feature_dis1st_score'], 59.788567354166666)
+        self.assertAlmostEqual(results[1]['Moment_feature_dis2nd_score'], 4696.668388125001)
 
 if __name__ == '__main__':
     unittest.main()
