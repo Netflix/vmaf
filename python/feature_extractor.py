@@ -35,6 +35,115 @@ class FeatureExtractor(Executor):
         return "{type}_{atom_feature}_scores".format(
             type=cls.TYPE, atom_feature=atom_feature)
 
+class MomentFeatureExtractor(FeatureExtractor):
+
+    TYPE = "Moment_feature"
+    VERSION = "1.0"
+
+    ATOM_FEATURES = ['ref1st', 'ref2nd', 'dis1st', 'dis2nd']
+
+    MOMENT = config.ROOT + "/feature/moment"
+
+    def _run_and_generate_log_file(self, asset):
+        # routine to call the command-line executable and generate feature
+        # scores in the log file.
+
+        log_file_path = self._get_log_file_path(asset)
+
+        quality_width, quality_height = asset.quality_width_height
+
+        # run MOMENT command line to extract features, APPEND (>>) result (since
+        # _prepare_generate_log_file method has already created the file and
+        # written something in advance).
+        with open(log_file_path, 'at') as log_file:
+            log_file.write("=== ref: ===\n")
+        ref_moment_cmd = "{moment} 2 {yuv_type} {ref_path} {w} {h} >> {log_file_path}" \
+        .format(
+            moment=self.MOMENT,
+            yuv_type=asset.yuv_type,
+            ref_path=asset.ref_workfile_path,
+            w=quality_width,
+            h=quality_height,
+            log_file_path=log_file_path,
+        )
+        if self.logger:
+            self.logger.info(ref_moment_cmd)
+        subprocess.call(ref_moment_cmd, shell=True)
+
+        with open(log_file_path, 'at') as log_file:
+            log_file.write("=== dis: ===\n")
+        dis_moment_cmd = "{moment} 2 {yuv_type} {dis_path} {w} {h} >> {log_file_path}" \
+        .format(
+            moment=self.MOMENT,
+            yuv_type=asset.yuv_type,
+            dis_path=asset.dis_workfile_path,
+            w=quality_width,
+            h=quality_height,
+            log_file_path=log_file_path,
+        )
+        if self.logger:
+            self.logger.info(dis_moment_cmd)
+        subprocess.call(dis_moment_cmd, shell=True)
+
+    def _get_feature_scores(self, asset):
+        # routine to read the feature scores from the log file, and return
+        # the scores in a dictionary format.
+
+        log_file_path = self._get_log_file_path(asset)
+
+        atom_feature_scores_dict = {}
+        atom_feature_idx_dict = {}
+        for atom_feature in self.ATOM_FEATURES:
+            atom_feature_scores_dict[atom_feature] = []
+            atom_feature_idx_dict[atom_feature] = 0
+
+        ref_or_dis = None
+
+        with open(log_file_path, 'rt') as log_file:
+            for line in log_file.readlines():
+                mo = re.match(r"=== ref: ===", line)
+                if mo:
+                    ref_or_dis = 'ref'
+                    continue
+
+                mo = re.match(r"=== dis: ===", line)
+                if mo:
+                    ref_or_dis = 'dis'
+                    continue
+
+                mo = re.match(r"1stmoment: ([0-9]+) ([0-9.-]+)", line)
+                if mo:
+                    cur_idx = int(mo.group(1))
+                    assert ref_or_dis is not None
+                    atom_feature = ref_or_dis + '1st'
+                    assert cur_idx == atom_feature_idx_dict[atom_feature]
+                    atom_feature_scores_dict[atom_feature].append(float(mo.group(2)))
+                    atom_feature_idx_dict[atom_feature] += 1
+                    continue
+
+                mo = re.match(r"2ndmoment: ([0-9]+) ([0-9.-]+)", line)
+                if mo:
+                    cur_idx = int(mo.group(1))
+                    assert ref_or_dis is not None
+                    atom_feature = ref_or_dis + '2nd'
+                    assert cur_idx == atom_feature_idx_dict[atom_feature]
+                    atom_feature_scores_dict[atom_feature].append(float(mo.group(2)))
+                    atom_feature_idx_dict[atom_feature] += 1
+                    continue
+
+        len_score = len(atom_feature_scores_dict[self.ATOM_FEATURES[0]])
+        assert len_score != 0
+        for atom_feature in self.ATOM_FEATURES[1:]:
+            assert len_score == len(atom_feature_scores_dict[atom_feature])
+
+        feature_result = {}
+
+        for atom_feature in self.ATOM_FEATURES:
+            scores_key = self.get_scores_key(atom_feature)
+            feature_result[scores_key] = atom_feature_scores_dict[atom_feature]
+
+        return feature_result
+
 
 class VmafFeatureExtractor(FeatureExtractor):
 
@@ -108,10 +217,3 @@ class VmafFeatureExtractor(FeatureExtractor):
 
         return feature_result
 
-
-class BrisqueFeatureExtractor(FeatureExtractor):
-
-    TYPE = "BRISQUE_feature"
-    VERSION = '0.1'
-
-    pass

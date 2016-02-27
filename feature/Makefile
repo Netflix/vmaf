@@ -40,7 +40,12 @@ OBJS_PSNR = \
 	$(OBJDIR)/common/file_io.o \
 	$(OBJDIR)/psnr.o
 
-all: vmaf psnr
+OBJS_MOMENT = \
+	$(OBJDIR)/common/alloc.o \
+	$(OBJDIR)/common/file_io.o \
+	$(OBJDIR)/moment.o
+
+all: vmaf psnr moment
 
 CFLAGS_COMMON = -g -O3 -fPIC -Wall -Wextra -pedantic
 
@@ -59,9 +64,12 @@ vmaf: $(OBJS_VMAF)
 psnr: $(OBJS_PSNR)
 	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
 
+moment: $(OBJS_MOMENT)
+	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
+
 clean:
 	rm -f $(OBJDIR)/*.o
 	rm -f $(OBJDIR)/common/*.o
-	rm -f vmaf psnr
+	rm -f vmaf psnr moment
 
 .PHONY: all clean

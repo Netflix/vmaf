@@ -25,6 +25,7 @@ class SingleFeatureTest(unittest.TestCase):
 
     VMAF = config.ROOT + "/feature/vmaf"
     PSNR = config.ROOT + "/feature/psnr"
+    MOMENT = config.ROOT + "/feature/moment"
     LOG_FILENAME = config.ROOT + "/workspace/log"
     REF_YUV = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
     DIS_YUV = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
@@ -127,6 +128,17 @@ class SingleFeatureTest(unittest.TestCase):
         self.assertAlmostEquals(scores[0], 34.760779)
         self.assertAlmostEquals(scores[1], 31.883227)
 
+    def test_2nd_moment(self):
+        print 'test 2nd moment...'
+        cmd = "{moment} 2 {fmt} {dis} {w} {h} > {log}".format(
+            moment=self.MOMENT, fmt=self.YUV_FMT, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "1stmoment")
+        self.assertAlmostEquals(score, 61.332006624999984)
+        score, scores = read_log(self.LOG_FILENAME, "2ndmoment")
+        self.assertAlmostEquals(score, 4798.659574041666)
 
 class CornerCaseTest(unittest.TestCase):
 

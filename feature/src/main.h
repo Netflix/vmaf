@@ -33,6 +33,8 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 
 int psnr(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
 
+int moment(const char *path, int w, int h, const char *fmt, int order);
+
 static const float FILTER_5_s[5] = {
 		0.054488685,
 		0.244201342,
