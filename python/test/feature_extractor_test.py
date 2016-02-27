@@ -187,13 +187,17 @@ class FeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['Moment_feature_ref1st_score'], 59.788567354166666)
         self.assertAlmostEqual(results[0]['Moment_feature_ref2nd_score'], 4696.668388125001)
+        self.assertAlmostEqual(results[0]['Moment_feature_refvar_score'], 1121.5199106042544)
         self.assertAlmostEqual(results[0]['Moment_feature_dis1st_score'], 61.332006624999984)
         self.assertAlmostEqual(results[0]['Moment_feature_dis2nd_score'], 4798.659574041666)
+        self.assertAlmostEqual(results[0]['Moment_feature_disvar_score'], 1036.837178665506)
 
         self.assertAlmostEqual(results[1]['Moment_feature_ref1st_score'], 59.788567354166666)
         self.assertAlmostEqual(results[1]['Moment_feature_ref2nd_score'], 4696.668388125001)
+        self.assertAlmostEqual(results[1]['Moment_feature_refvar_score'], 1121.5199106042544)
         self.assertAlmostEqual(results[1]['Moment_feature_dis1st_score'], 59.788567354166666)
         self.assertAlmostEqual(results[1]['Moment_feature_dis2nd_score'], 4696.668388125001)
+        self.assertAlmostEqual(results[1]['Moment_feature_disvar_score'], 1121.5199106042544)
 
 class ParallelFeatureExtractorTest(unittest.TestCase):
 
@@ -324,13 +328,17 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['Moment_feature_ref1st_score'], 59.788567354166666)
         self.assertAlmostEqual(results[0]['Moment_feature_ref2nd_score'], 4696.668388125001)
+        self.assertAlmostEqual(results[0]['Moment_feature_refvar_score'], 1121.5199106042544)
         self.assertAlmostEqual(results[0]['Moment_feature_dis1st_score'], 61.332006624999984)
         self.assertAlmostEqual(results[0]['Moment_feature_dis2nd_score'], 4798.659574041666)
+        self.assertAlmostEqual(results[0]['Moment_feature_disvar_score'], 1036.837178665506)
 
         self.assertAlmostEqual(results[1]['Moment_feature_ref1st_score'], 59.788567354166666)
         self.assertAlmostEqual(results[1]['Moment_feature_ref2nd_score'], 4696.668388125001)
+        self.assertAlmostEqual(results[1]['Moment_feature_refvar_score'], 1121.5199106042544)
         self.assertAlmostEqual(results[1]['Moment_feature_dis1st_score'], 59.788567354166666)
         self.assertAlmostEqual(results[1]['Moment_feature_dis2nd_score'], 4696.668388125001)
+        self.assertAlmostEqual(results[1]['Moment_feature_disvar_score'], 1121.5199106042544)
 
 if __name__ == '__main__':
     unittest.main()

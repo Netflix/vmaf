@@ -112,7 +112,7 @@ class MomentFeatureExtractor(FeatureExtractor):
     TYPE = "Moment_feature"
     VERSION = "1.0"
 
-    ATOM_FEATURES = ['ref1st', 'ref2nd', 'dis1st', 'dis2nd']
+    ATOM_FEATURES = ['ref1st', 'ref2nd', 'refvar', 'dis1st', 'dis2nd', 'disvar']
 
     MOMENT = config.ROOT + "/feature/moment"
 
@@ -169,8 +169,8 @@ class MomentFeatureExtractor(FeatureExtractor):
             atom_feature_scores_dict[atom_feature] = []
             atom_feature_idx_dict[atom_feature] = 0
 
+        # read ref1st, ref2nd, dis1st, dis2nd
         ref_or_dis = None
-
         with open(log_file_path, 'rt') as log_file:
             for line in log_file.readlines():
                 mo = re.match(r"=== ref: ===", line)
@@ -203,6 +203,16 @@ class MomentFeatureExtractor(FeatureExtractor):
                     atom_feature_idx_dict[atom_feature] += 1
                     continue
 
+        # calculate refvar and disvar from ref1st, ref2nd, dis1st, dis2nd
+        get_var = lambda (m1, m2): m2 - m1 * m1
+        atom_feature_scores_dict['refvar'] = \
+            map(get_var, zip(atom_feature_scores_dict['ref1st'],
+                             atom_feature_scores_dict['ref2nd']))
+        atom_feature_scores_dict['disvar'] = \
+            map(get_var, zip(atom_feature_scores_dict['dis1st'],
+                             atom_feature_scores_dict['dis2nd']))
+
+        # assert lengths
         len_score = len(atom_feature_scores_dict[self.ATOM_FEATURES[0]])
         assert len_score != 0
         for atom_feature in self.ATOM_FEATURES[1:]:
