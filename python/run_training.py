@@ -13,9 +13,8 @@ from feature_assembler import FeatureAssembler
 from train_test_model import TrainTestModel
 
 def train_on_dataset(train_dataset, feature_param, model_param,
-                     ax, result_store, output_model_filepath, parallelize=False):
-
-    logger = get_stdout_logger()
+                     ax, result_store, output_model_filepath,
+                     parallelize=False, fifo_mode=True, logger=None):
 
     train_assets = read_dataset(train_dataset)
     train_fassembler = FeatureAssembler(
@@ -24,7 +23,7 @@ def train_on_dataset(train_dataset, feature_param, model_param,
         assets = train_assets,
         logger=logger,
         log_file_dir=config.ROOT + "/workspace/log_file_dir",
-        fifo_mode=True,
+        fifo_mode=fifo_mode,
         delete_workdir=True,
         result_store=result_store,
         parallelize=parallelize,
@@ -61,9 +60,7 @@ def train_on_dataset(train_dataset, feature_param, model_param,
     # save model
     model.to_file(output_model_filepath)
 
-    # clean up
-    close_logger(logger)
-
+    return train_fassembler, train_ys_pred
 
 def print_usage():
     cache_result = ['yes', 'no']

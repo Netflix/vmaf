@@ -33,6 +33,10 @@ class FeatureExtractor(Executor):
         return "{type}_{atom_feature}_scores".format(
             type=cls.TYPE, atom_feature=atom_feature)
 
+    @classmethod
+    def get_score_key(cls, atom_feature):
+        return "{type}_{atom_feature}_score".format(
+            type=cls.TYPE, atom_feature=atom_feature)
 
 class VmafFeatureExtractor(FeatureExtractor):
 

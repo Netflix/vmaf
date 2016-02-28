@@ -3,12 +3,14 @@ __license__ = "Apache, Version 2.0"
 
 import os
 import numpy as np
-from tools import indices
 import sys
 import config
-from mixin import TypeVersionEnabled
 import pickle
 import scipy.stats
+from tools import indices
+from mixin import TypeVersionEnabled
+from feature_extractor import MomentFeatureExtractor
+
 
 class TrainTestModel(TypeVersionEnabled):
 
@@ -106,10 +108,21 @@ class TrainTestModel(TypeVersionEnabled):
 
     @property
     def score_clip(self):
-        return self.model_dict['score_clip']
+        return self.model_dict['score_clip'] \
+            if 'score_clip' in self.model_dict \
+            else None
     @score_clip.setter
     def score_clip(self, value):
         self.model_dict['score_clip'] = value
+
+    @property
+    def dis1st_thr(self):
+        return self.model_dict['dis1st_thr'] \
+            if 'dis1st_thr' in self.model_dict \
+            else None
+    @dis1st_thr.setter
+    def dis1st_thr(self, value):
+        self.model_dict['dis1st_thr'] = value
 
     def to_file(self, filename):
 
@@ -181,6 +194,20 @@ class TrainTestModel(TypeVersionEnabled):
         if score_clip is not None:
             lb, ub = score_clip
             ys_label_pred = np.clip(ys_label_pred, lb, ub)
+
+        dis1st_thr = self.dis1st_thr
+        dis1st_score_key = MomentFeatureExtractor.get_score_key('dis1st')
+        if dis1st_thr is not None \
+                and score_clip is not None \
+                and dis1st_score_key in xs:
+            y_max = score_clip[1]
+            dis1sts = xs[dis1st_score_key] # FIXME
+            assert len(dis1sts) == len(ys_label_pred)
+            ys_label_pred = map(
+                lambda (y, dis1st): y_max - dis1st * (y_max - y)
+                        / dis1st_thr if dis1st < dis1st_thr else y,
+                zip(ys_label_pred, dis1sts)
+            )
 
         return ys_label_pred
 
@@ -300,6 +327,9 @@ class TrainTestModel(TypeVersionEnabled):
 
         self.score_clip = self.param_dict['score_clip'] \
             if 'score_clip' in self.param_dict else None
+
+        self.dis1st_thr = self.param_dict['dis1st_thr'] \
+            if 'dis1st_thr' in self.param_dict else None
 
     def _calculate_normalization_params(self, xys_2d):
 

@@ -18,11 +18,10 @@ class TrainTestModelTest(unittest.TestCase):
         self.feature_df = \
             pd.DataFrame.from_dict(eval(open(feature_df_file, "r").read()))
 
-        self.model_filename = config.ROOT + "/workspace/test_save_load.pkl"
-        if os.path.exists(self.model_filename): os.remove(self.model_filename)
+        self.model_filename = config.ROOT + "/workspace/model/test_save_load.pkl"
 
     def tearDown(self):
-        pass
+        if os.path.exists(self.model_filename): os.remove(self.model_filename)
 
     def test_get_xs_ys(self):
         xs = TrainTestModel.get_xs_from_dataframe(self.feature_df, [0, 1, 2])
