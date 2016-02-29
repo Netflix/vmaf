@@ -6,6 +6,7 @@ import re
 from tools import get_file_name_with_extension, make_parent_dirs_if_nonexist
 from asset import Asset
 import config
+import numpy as np
 
 class BasicResult(object):
     """
@@ -25,6 +26,50 @@ class BasicResult(object):
             return self.result_dict[key]
         except KeyError as e:
             return self._try_get_aggregate_score(key, e)
+
+    def _get_score_list_key(self, key):
+        if re.search(r"_scores", key):
+            return key
+        elif re.search(r"_score$", key):
+            return key + 's' # e.g. 'VMAF_scores'
+        else:
+            return None
+
+    def min(self, key):
+        scores_key = self._get_score_list_key(key)
+        scores = self.result_dict[scores_key]
+        return np.min(scores)
+
+    def max(self, key):
+        scores_key = self._get_score_list_key(key)
+        scores = self.result_dict[scores_key]
+        return np.max(scores)
+
+    def median(self, key):
+        scores_key = self._get_score_list_key(key)
+        scores = self.result_dict[scores_key]
+        return np.median(scores)
+
+    def mean(self, key):
+        scores_key = self._get_score_list_key(key)
+        scores = self.result_dict[scores_key]
+        return np.mean(scores)
+
+    def stddev(self, key):
+        scores_key = self._get_score_list_key(key)
+        scores = self.result_dict[scores_key]
+        return np.std(scores)
+
+    def var(self, key):
+        scores_key = self._get_score_list_key(key)
+        scores = self.result_dict[scores_key]
+        return np.var(scores)
+
+    def percentile(self, key, q):
+        scores_key = self._get_score_list_key(key)
+        scores = self.result_dict[scores_key]
+        return np.percentile(scores,q)
+
 
     def _try_get_aggregate_score(self, key, error):
         """
