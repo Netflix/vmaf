@@ -11,32 +11,18 @@ It also requires a number of Python packages:
 
   - [numpy](http://www.numpy.org/) (>=1.8.2)
   - [scipy](http://www.scipy.org/) (>=0.13.3)
-  - [scikit-learn](http://scikit-learn.org/stable/) (==0.14.1)
   - [pandas](http://pandas.pydata.org/) (>=0.13.1)
   - [matplotlib](http://matplotlib.org/1.3.1/index.html) (>=1.3.1)
+  - [scikit-learn](http://scikit-learn.org/stable/) (==0.14.1)
 
-To start, install *pip* - the Python package manager:
-
-```
-sudo easy_install pip
-```
-
-It is also highly recommended to start with a clean Python environment using *virtualenv* with the *--no-site-package* option:
+To install them on Ubuntu, run:
 
 ```
-sudo pip install virtualenv
-mkdir [your_venv_dir]
-cd [your_venv_dir]
-virtualenv -p /usr/bin/python2.7 --no-site-package venv
-source venv/bin/activate
-```
-
-This will create and activate a clean-slate virtual environment for you (later on you can always deactivate it by running `deactivate`).
-
-After this, run:
-
-```
-pip install numpy scipy scikit-learn==0.14.1 pandas matplotlib
+sudo apt-get install python-numpy 
+sudo apt-get install python-scipy 
+sudo apt-get install python-matplotlib 
+sudo apt-get install python-pandas
+sudo pip install scikit-learn==0.14.1
 ```
 
 ##Installation
