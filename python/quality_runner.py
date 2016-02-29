@@ -1,15 +1,17 @@
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
-import config
-from executor import Executor
-from result import Result
 import sys
-import numpy as np
-from feature_assembler import FeatureAssembler
-from train_test_model import LibsvmnusvrTrainTestModel, TrainTestModel
 import subprocess
 import re
+import config
+import numpy as np
+from executor import Executor
+from result import Result
+from feature_assembler import FeatureAssembler
+from train_test_model import TrainTestModel
+from feature_extractor import MomentFeatureExtractor
+
 
 class QualityRunner(Executor):
     """
@@ -246,7 +248,7 @@ class VmafQualityRunner(QualityRunner):
 
         # load TrainTestModel only to retrieve its 'feature_dict' extra info
         model = self._load_model()
-        feature_dict = model.load_info('feature_dict')
+        feature_dict = model.get_appended_info('feature_dict')
         if feature_dict is None:
             feature_dict = self.DEFAULT_FEATURE_DICT
 
@@ -279,6 +281,12 @@ class VmafQualityRunner(QualityRunner):
 
         ys_pred = model.predict(xs)
 
+        # 'score_clip'
+        ys_pred = self.clip_score(model, ys_pred)
+
+        # 'dis1st_thr'
+        ys_pred = self.warp_score(model, xs, ys_pred)
+
         result_dict = {}
         # add all feature result
         result_dict.update(feature_result.result_dict)
@@ -286,6 +294,70 @@ class VmafQualityRunner(QualityRunner):
         result_dict[self.get_scores_key()] = ys_pred
 
         return Result(asset, self.executor_id, result_dict)
+
+    @staticmethod
+    def set_clip_score(model, score_clip):
+        """
+        Enable post processing: clip final quality score within e.g. [0, 100]
+        :param model:
+        :param score_clip:
+        :return:
+        """
+        model.append_info('score_clip', score_clip)
+
+    @staticmethod
+    def clip_score(model, ys_pred):
+        """
+        Do post processing: clip final quality score within e.g. [0, 100]
+        :param model:
+        :param ys_pred:
+        :return:
+        """
+        score_clip = model.get_appended_info('score_clip')
+        if score_clip is not None:
+            lb, ub = score_clip
+            ys_pred = np.clip(ys_pred, lb, ub)
+
+        return ys_pred
+
+    @staticmethod
+    def set_warp_score(model, dis1st_thr):
+        """
+        Enable post processing: for pixel mean (luma) below certain threshold
+        (i.e. dis1st_thr, or threshold for distorted video's first moment),
+        warp the score towards highest score (e.g. 100).
+        :param model:
+        :param dis1st_thr:
+        :return:
+        """
+        model.append_info('dis1st_thr', dis1st_thr)
+
+    @staticmethod
+    def warp_score(model, xs, ys_pred):
+        """
+        Do post processing: for pixel mean (luma) below certain threshold
+        (i.e. dis1st_thr, or threshold for distorted video's first moment),
+        warp the score towards highest score (e.g. 100).
+        :param model:
+        :param xs:
+        :param ys_pred:
+        :return:
+        """
+        score_clip = model.get_appended_info('score_clip')
+        dis1st_thr = model.get_appended_info('dis1st_thr')
+        dis1st_score_key = MomentFeatureExtractor.get_score_key('dis1st')
+        if dis1st_thr is not None \
+                and score_clip is not None \
+                and dis1st_score_key in xs:
+            y_max = score_clip[1]
+            dis1sts = xs[dis1st_score_key]
+            assert len(dis1sts) == len(ys_pred)
+            ys_pred = map(
+                lambda (y, dis1st): y_max - dis1st * (y_max - y)
+                                            / dis1st_thr if dis1st < dis1st_thr else y,
+                zip(ys_pred, dis1sts)
+            )
+        return ys_pred
 
     def _load_model(self):
         model_filepath = self.optional_dict['model_filepath'] \

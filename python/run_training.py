@@ -5,12 +5,14 @@ __license__ = "Apache, Version 2.0"
 
 import os
 import sys
-from tools import import_python_file, get_stdout_logger, close_logger
+from tools import import_python_file
 from result import FileSystemResultStore
-from run_testing import read_dataset, plot_scatter
+from run_testing import read_dataset
 import config
 from feature_assembler import FeatureAssembler
 from train_test_model import TrainTestModel
+from quality_runner import VmafQualityRunner
+
 
 def train_on_dataset(train_dataset, feature_param, model_param,
                      ax, result_store, output_model_filepath,
@@ -30,17 +32,35 @@ def train_on_dataset(train_dataset, feature_param, model_param,
     )
     train_fassembler.run()
     train_features = train_fassembler.results
+
     train_xys = TrainTestModel.get_xys_from_results(train_features)
+
     train_xs = TrainTestModel.get_xs_from_results(train_features)
+
     train_ys = TrainTestModel.get_ys_from_results(train_features)
 
-    model_class = TrainTestModel.find_subclass(model_param.model_type)
-    model = model_class(model_param.model_param_dict, logger)
+    model_type = model_param.model_type
+    model_param_dict = model_param.model_param_dict
+
+    model_class = TrainTestModel.find_subclass(model_type)
+    model = model_class(model_param_dict, logger)
+
     model.train(train_xys)
 
-    model.add_info('feature_dict', feature_param.feature_dict)
+    # append additional information to model before saving, so that
+    # VmafQualityRunner can read and process
+    model.append_info('feature_dict', feature_param.feature_dict)
+    if 'score_clip' in model_param_dict:
+        VmafQualityRunner.set_clip_score(model, model_param_dict['score_clip'])
+    if 'dis1st_thr' in model_param_dict:
+        VmafQualityRunner.set_warp_score(model, model_param_dict['dis1st_thr'])
 
     train_ys_pred = model.predict(train_xs)
+
+    # apply instructions indicated in the appended info
+    train_ys_pred = VmafQualityRunner.clip_score(model, train_ys_pred)
+    train_ys_pred = VmafQualityRunner.warp_score(model, train_xs, train_ys_pred)
+
     train_stats = TrainTestModel.get_stats(train_ys['label'], train_ys_pred)
 
     # plot

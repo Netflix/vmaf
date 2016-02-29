@@ -41,6 +41,5 @@ class TestTrainOnDataset(unittest.TestCase):
                                  95.577344864265129, 90.255945341860439])
 
 
-
 if __name__ == '__main__':
     unittest.main()

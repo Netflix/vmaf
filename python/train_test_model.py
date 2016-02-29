@@ -49,7 +49,7 @@ class TrainTestModel(TypeVersionEnabled):
             assert 'slopes' in self.model_dict
             assert 'intercepts' in self.model_dict
 
-    def add_info(self, key, value):
+    def append_info(self, key, value):
         """
         Useful for adding extra info to model before saving. For example,
         save feature_dict to model so that when the model is loaded by a
@@ -60,7 +60,12 @@ class TrainTestModel(TypeVersionEnabled):
         """
         self.model_dict[key] = value
 
-    def load_info(self, key):
+    def get_appended_info(self, key):
+        """
+        Retrieve info added via the append_info method.
+        :param key:
+        :return:
+        """
         return self.model_dict[key] if key in self.model_dict else None
 
     @property
@@ -119,24 +124,6 @@ class TrainTestModel(TypeVersionEnabled):
     @model.setter
     def model(self, value):
         self.model_dict['model'] = value
-
-    @property
-    def score_clip(self):
-        return self.model_dict['score_clip'] \
-            if 'score_clip' in self.model_dict \
-            else None
-    @score_clip.setter
-    def score_clip(self, value):
-        self.model_dict['score_clip'] = value
-
-    @property
-    def dis1st_thr(self):
-        return self.model_dict['dis1st_thr'] \
-            if 'dis1st_thr' in self.model_dict \
-            else None
-    @dis1st_thr.setter
-    def dis1st_thr(self, value):
-        self.model_dict['dis1st_thr'] = value
 
     def to_file(self, filename):
 
@@ -203,25 +190,6 @@ class TrainTestModel(TypeVersionEnabled):
 
         # denormalize ys
         ys_label_pred = self.denormalize_ys(ys_label_pred)
-
-        score_clip = self.score_clip
-        if score_clip is not None:
-            lb, ub = score_clip
-            ys_label_pred = np.clip(ys_label_pred, lb, ub)
-
-        dis1st_thr = self.dis1st_thr
-        dis1st_score_key = MomentFeatureExtractor.get_score_key('dis1st')
-        if dis1st_thr is not None \
-                and score_clip is not None \
-                and dis1st_score_key in xs:
-            y_max = score_clip[1]
-            dis1sts = xs[dis1st_score_key]
-            assert len(dis1sts) == len(ys_label_pred)
-            ys_label_pred = map(
-                lambda (y, dis1st): y_max - dis1st * (y_max - y)
-                        / dis1st_thr if dis1st < dis1st_thr else y,
-                zip(ys_label_pred, dis1sts)
-            )
 
         return ys_label_pred
 
@@ -338,12 +306,6 @@ class TrainTestModel(TypeVersionEnabled):
         model = self._train(self.param_dict, xys_2d)
 
         self.model = model
-
-        self.score_clip = self.param_dict['score_clip'] \
-            if 'score_clip' in self.param_dict else None
-
-        self.dis1st_thr = self.param_dict['dis1st_thr'] \
-            if 'dis1st_thr' in self.param_dict else None
 
     def _calculate_normalization_params(self, xys_2d):
 
