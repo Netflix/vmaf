@@ -15,13 +15,10 @@ It also requires a number of Python packages:
   - [matplotlib](http://matplotlib.org/1.3.1/index.html) (>=1.3.1)
   - [scikit-learn](http://scikit-learn.org/stable/) (==0.14.1)
 
-To install them on Ubuntu, run:
+To install on Ubuntu, run:
 
 ```
-sudo apt-get install python-numpy 
-sudo apt-get install python-scipy 
-sudo apt-get install python-matplotlib 
-sudo apt-get install python-pandas
+sudo apt-get install python-numpy python-scipy python-matplotlib python-pandas
 sudo pip install scikit-learn==0.14.1
 ```
 
