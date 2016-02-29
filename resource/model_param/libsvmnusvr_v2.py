@@ -12,15 +12,20 @@ model_param_dict = {
     # 'score_clip':None, # default: do nothing
     'score_clip':[0.0, 100.0], # clip to within [0, 100]
 
+    'dis1st_thr':40.0, # wrap score towards score_clip[1] if luma <= dis1st_thr,
+                       # active when score_clip is specified and
+                       # Moment:dis1st (pixel mean) is one of the features
+                       # specified in feature_param
+
     # ==== libsvmnusvr parameters ==== #
 
     # 'gamma':0.0, # default
-    'gamma':0.85, # selected
+    'gamma':0.6, # selected
 
-    'C':1.0, # default
+    # 'C':1.0, # default
+    'C':1.5, # default
 
     'nu':0.5, # default
 
     'cache_size':200 # default
-
 }
