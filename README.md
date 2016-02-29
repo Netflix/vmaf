@@ -11,14 +11,19 @@ It also requires a number of Python packages:
 
   - [numpy](http://www.numpy.org/) (>=1.8.2)
   - [scipy](http://www.scipy.org/) (>=0.13.3)
-  - [pandas](http://pandas.pydata.org/) (>=0.13.1)
   - [matplotlib](http://matplotlib.org/1.3.1/index.html) (>=1.3.1)
+  - [pandas](http://pandas.pydata.org/) (>=0.13.1)
   - [scikit-learn](http://scikit-learn.org/stable/) (==0.14.1)
 
-To install on Ubuntu, run:
+Follow [this link](http://www.scipy.org/install.html) to install *numpy/scipy/matplotlib/pandas* on your system. You can verify if a package is installed properly and its version by:
 
 ```
-sudo apt-get install python-numpy python-scipy python-matplotlib python-pandas
+python -c 'import [package name]; print [package name].__version__'
+```
+
+To install scikit-learn, first [install](http://python-packaging-user-guide.readthedocs.org/en/latest/installing/) the package manager *pip*, then run:
+
+```
 sudo pip install scikit-learn==0.14.1
 ```
 
