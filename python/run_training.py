@@ -38,6 +38,8 @@ def train_on_dataset(train_dataset, feature_param, model_param,
     model = model_class(model_param.model_param_dict, logger)
     model.train(train_xys)
 
+    model.add_info('feature_dict', feature_param.feature_dict)
+
     train_ys_pred = model.predict(train_xs)
     train_stats = TrainTestModel.get_stats(train_ys['label'], train_ys_pred)
 

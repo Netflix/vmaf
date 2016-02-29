@@ -244,10 +244,11 @@ class VmafQualityRunner(QualityRunner):
 
     def _get_vmaf_feature_assembler_instance(self, asset):
 
-        feature_dict = self.optional_dict['feature_dict'] \
-            if (self.optional_dict is not None
-                and 'feature_dict' in self.optional_dict) \
-            else self.DEFAULT_FEATURE_DICT
+        # load TrainTestModel only to retrieve its 'feature_dict' extra info
+        model = self._load_model()
+        feature_dict = model.load_info('feature_dict')
+        if feature_dict is None:
+            feature_dict = self.DEFAULT_FEATURE_DICT
 
         vmaf_fassembler = FeatureAssembler(
             feature_dict=feature_dict,
@@ -274,14 +275,7 @@ class VmafQualityRunner(QualityRunner):
 
         xs = TrainTestModel.get_perframe_xs_from_result(feature_result)
 
-        model_filepath = self.optional_dict['model_filepath'] \
-            if (self.optional_dict is not None
-                and 'model_filepath' in self.optional_dict
-                and self.optional_dict['model_filepath'] is not None
-                ) \
-            else self.DEFAULT_MODEL_FILEPATH
-
-        model = TrainTestModel.from_file(model_filepath, self.logger)
+        model = self._load_model()
 
         ys_pred = model.predict(xs)
 
@@ -292,6 +286,16 @@ class VmafQualityRunner(QualityRunner):
         result_dict[self.get_scores_key()] = ys_pred
 
         return Result(asset, self.executor_id, result_dict)
+
+    def _load_model(self):
+        model_filepath = self.optional_dict['model_filepath'] \
+            if (self.optional_dict is not None
+                and 'model_filepath' in self.optional_dict
+                and self.optional_dict['model_filepath'] is not None
+                ) \
+            else self.DEFAULT_MODEL_FILEPATH
+        model = TrainTestModel.from_file(model_filepath, self.logger)
+        return model
 
     def _remove_log(self, asset):
         # Override Executor._remove_log(self, asset) by redirecting it to the

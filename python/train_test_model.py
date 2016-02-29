@@ -49,6 +49,20 @@ class TrainTestModel(TypeVersionEnabled):
             assert 'slopes' in self.model_dict
             assert 'intercepts' in self.model_dict
 
+    def add_info(self, key, value):
+        """
+        Useful for adding extra info to model before saving. For example,
+        save feature_dict to model so that when the model is loaded by a
+        QualityRunner, it knows when features to extract.
+        :param key:
+        :param value:
+        :return:
+        """
+        self.model_dict[key] = value
+
+    def load_info(self, key):
+        return self.model_dict[key] if key in self.model_dict else None
+
     @property
     def feature_names(self):
         self._assert_trained()
