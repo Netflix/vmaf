@@ -215,7 +215,7 @@ class TrainTestModel(TypeVersionEnabled):
                 and score_clip is not None \
                 and dis1st_score_key in xs:
             y_max = score_clip[1]
-            dis1sts = xs[dis1st_score_key] # FIXME
+            dis1sts = xs[dis1st_score_key]
             assert len(dis1sts) == len(ys_label_pred)
             ys_label_pred = map(
                 lambda (y, dis1st): y_max - dis1st * (y_max - y)

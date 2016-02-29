@@ -240,7 +240,7 @@ class VmafQualityRunner(QualityRunner):
     VERSION = '0.1'
 
     DEFAULT_FEATURE_DICT = {'VMAF_feature': 'all'}
-    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflx_vmaff_libsvmnusvr_v1.pkl"
+    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflx_v2.pkl"
 
     def _get_vmaf_feature_assembler_instance(self, asset):
 

@@ -16,7 +16,7 @@ class QualityRunnerTest(unittest.TestCase):
         if hasattr(self, 'runner'):
             self.runner.remove_logs()
             self.runner.remove_results()
-        pass
+            pass
 
     def test_executor_id(self):
         asset = Asset(dataset="test", content_id=0, asset_id=1,
@@ -180,17 +180,19 @@ class QualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAF_score'], 70.2921902679039)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 67.71349125877346)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)
         self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertAlmostEqual(results[0]['VMAF_feature_adm_score'], 0.91552422916666665)
         self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 22.533456770833329)
+        self.assertAlmostEqual(results[0]['Moment_feature_dis1st_score'], 61.332006624999984)
 
-        self.assertAlmostEqual(results[1]['VMAF_score'], 100.0)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 99.97766752709886)
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0)
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_score'], 1.0)
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 30.030914145833322)
+        self.assertAlmostEqual(results[1]['Moment_feature_dis1st_score'], 59.788567354166666)
 
     def test_run_vmaf_runner_with_model(self):
         print 'test on running VMAF runner with custom input model...'
