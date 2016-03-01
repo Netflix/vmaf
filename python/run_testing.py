@@ -106,6 +106,12 @@ def test_on_dataset(test_dataset, quality_runner_class, ax,
     except Exception as e:
         print "Error: " + str(e)
 
+def print_matplotlib_warning():
+    print "Warning: cannot import matplotlib, no picture displayed. " \
+          "If you are on Mac OS and have installed matplotlib, you " \
+          "possibly need to run: \nsudo pip uninstall python-dateutil \n" \
+          "sudo pip install python-dateutil==2.2 \n" \
+          "Refer to: http://stackoverflow.com/questions/27630114/matplotlib-issue-on-os-x-importerror-cannot-import-name-thread"
 
 def print_usage():
     # quality_runner_types = map(lambda runner: runner.TYPE, QualityRunner.get_subclasses())
@@ -179,8 +185,7 @@ if __name__ == '__main__':
         plt.tight_layout()
         plt.show()
     except ImportError:
-        print "Warning: cannot import matplotlib, no picture displayed. " \
-              "Install by: \npip install matplotlib"
+        print_matplotlib_warning()
         test_on_dataset(test_dataset, runner_class, None,
                         result_store, model_filepath, parallelize)
 

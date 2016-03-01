@@ -7,7 +7,7 @@ import os
 import sys
 from tools import import_python_file
 from result import FileSystemResultStore
-from run_testing import read_dataset
+from run_testing import read_dataset, print_matplotlib_warning
 import config
 from feature_assembler import FeatureAssembler
 from train_test_model import TrainTestModel
@@ -143,8 +143,7 @@ if __name__ == '__main__':
         plt.tight_layout()
         plt.show()
     except ImportError:
-        print "Warning: cannot import matplotlib, no picture displayed. " \
-              "Install by: \npip install matplotlib"
+        print_matplotlib_warning()
         train_on_dataset(train_dataset, feature_param, model_param, None,
                          result_store, output_model_filepath, parallelize)
 
