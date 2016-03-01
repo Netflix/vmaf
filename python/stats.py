@@ -6,51 +6,51 @@ import numpy as np
 class StatsList(object):
 
     @staticmethod
-    def min(dict):
-        return np.min(dict)
+    def min(list):
+        return np.min(list)
 
     @staticmethod
-    def max(dict):
-        return np.max(dict)
+    def max(list):
+        return np.max(list)
 
     @staticmethod
-    def median(dict):
-        return np.median(dict)
+    def median(list):
+        return np.median(list)
 
     @staticmethod
-    def mean(dict):
-        return np.mean(dict)
+    def mean(list):
+        return np.mean(list)
 
     @staticmethod
-    def stddev(dict):
-        return np.std(dict)
+    def stddev(list):
+        return np.std(list)
 
     @staticmethod
-    def var(dict):
-        return np.var(dict)
+    def var(list):
+        return np.var(list)
 
     @staticmethod
-    def percentile(dict, q):
-        return np.percentile(dict,q)
+    def percentile(list, q):
+        return np.percentile(list,q)
 
     @staticmethod
-    def total_var(dict):
-        abs_diff_scores = np.absolute(np.diff(dict))
+    def total_var(list):
+        abs_diff_scores = np.absolute(np.diff(list))
         return np.mean(abs_diff_scores)
 
     @staticmethod
-    def moving_average(dict, n, type='exponential'):
+    def moving_average(list, n, type='exponential', decay=-1):
         """
         compute an n period moving average.
 
         type is 'simple' | 'exponential'
 
         """
-        x = np.asarray(dict)
+        x = np.asarray(list)
         if type == 'simple':
             weights = np.ones(n)
         else:
-            weights = np.exp(np.linspace(-1., 0., n))
+            weights = np.exp(np.linspace(decay, 0., n))
 
         weights /= weights.sum()
 
