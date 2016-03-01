@@ -7,6 +7,7 @@ from tools import get_file_name_with_extension, make_parent_dirs_if_nonexist
 from asset import Asset
 import config
 import numpy as np
+from itertools import izip
 
 class BasicResult(object):
     """
@@ -30,10 +31,7 @@ class BasicResult(object):
     def _get_score_list_key(self, key):
         if re.search(r"_scores", key):
             return key
-        elif re.search(r"_score$", key):
-            return key + 's' # e.g. 'VMAF_scores'
-        else:
-            return None
+        raise KeyError("Try adding s to your score")
 
     def min(self, key):
         scores_key = self._get_score_list_key(key)
@@ -70,6 +68,34 @@ class BasicResult(object):
         scores = self.result_dict[scores_key]
         return np.percentile(scores,q)
 
+    def total_var(self, key):
+        scores_key = self._get_score_list_key(key)
+        scores = self.result_dict[scores_key]
+        abs_sum = 0
+        for curr,next in zip(scores[:-1],scores[1:]):
+            abs_sum += abs(curr - next)
+        return abs_sum / len(zip(scores[:-1],scores[1:]))
+
+    def moving_average(self, key, n, type='exponential'):
+        """
+        compute an n period moving average.
+
+        type is 'simple' | 'exponential'
+
+        """
+        scores_key = self._get_score_list_key(key)
+        scores = self.result_dict[scores_key]
+        x = np.asarray(scores)
+        if type == 'simple':
+            weights = np.ones(n)
+        else:
+            weights = np.exp(np.linspace(-1., 0., n))
+
+        weights /= weights.sum()
+
+        a = np.convolve(x, weights, mode='full')[:len(x)]
+        a[:n] = a[n]
+        return a
 
     def _try_get_aggregate_score(self, key, error):
         """
