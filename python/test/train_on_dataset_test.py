@@ -36,7 +36,7 @@ class TestTrainOnDataset(unittest.TestCase):
                          )
         self.train_fassembler = train_fassembler
         self.assertTrue(os.path.exists(self.output_model_filepath))
-        self.assertAlmostEquals(train_ys_pred,
+        self.assertItemsEqual(train_ys_pred,
                                 [91.707522376672316, 58.277822562766268,
                                  95.577344864265129, 90.255945341860439])
 

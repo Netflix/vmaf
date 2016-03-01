@@ -226,3 +226,6 @@ class FeatureCrossValidationTest(unittest.TestCase):
         expected_dominance = 0.6666666666666666
         self.assertEquals(output['dominated_model_param'], expected_model_param)
         self.assertEquals(output['model_param_dominance'], expected_dominance)
+
+if __name__ == '__main__':
+    unittest.main()

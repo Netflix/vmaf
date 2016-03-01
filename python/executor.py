@@ -325,7 +325,7 @@ def run_executors_in_parallel(executor_class,
             if logger:
                 logger.warn(msg)
             else:
-                print 'Warn: {}'.format(msg)
+                print 'Warning: {}'.format(msg)
             executors = map(run_executor, list_args)
     else:
         executors = map(run_executor, list_args)

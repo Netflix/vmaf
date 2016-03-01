@@ -135,5 +135,6 @@ class ResultStoreTest(unittest.TestCase):
 
         self.assertEquals(self.result, loaded_result)
 
+
 if __name__ == '__main__':
     unittest.main()

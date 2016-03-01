@@ -340,5 +340,6 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['Moment_feature_dis2nd_score'], 4696.668388125001)
         self.assertAlmostEqual(results[1]['Moment_feature_disvar_score'], 1121.5199106042544)
 
+
 if __name__ == '__main__':
     unittest.main()
