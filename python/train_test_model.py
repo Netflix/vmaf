@@ -513,46 +513,6 @@ class TrainTestModel(TypeVersionEnabled):
         xys.update(cls.get_ys_from_results(results, indexs))
         return xys
 
-class NusvrTrainTestModel(TrainTestModel):
-
-    TYPE = 'NUSVR'
-    VERSION = "0.1"
-
-    @staticmethod
-    def _train(model_param, xys_2d):
-        """
-        :param model_param:
-        :param xys_2d:
-        :return:
-        """
-        kernel = model_param['kernel'] if 'kernel' in model_param else 'rbf'
-        degree = model_param['degree'] if 'degree' in model_param else 3
-        gamma = model_param['gamma'] if 'gamma' in model_param else 0.0
-        coef0 = model_param['coef0'] if 'coef0' in model_param else 0.0
-        tol = model_param['tol'] if 'tol' in model_param else 0.001
-        C = model_param['C'] if 'C' in model_param else 1.0
-        nu = model_param['nu'] if 'nu' in model_param else 0.5
-        shrinking = model_param['shrinking'] if 'shrinking' in model_param else True
-        cache_size = model_param['cache_size'] if 'cache_size' in model_param else 200
-        verbose = model_param['verbose'] if 'verbose' in model_param else False
-        max_iter = model_param['max_iter'] if 'max_iter' in model_param else  -1
-
-        from sklearn.svm import NuSVR
-        model = NuSVR(kernel=kernel,
-                      degree=degree,
-                      nu=nu,
-                      gamma=gamma,
-                      coef0=coef0,
-                      tol=tol,
-                      C=C,
-                      shrinking=shrinking,
-                      cache_size=cache_size,
-                      verbose=verbose,
-                      max_iter=max_iter
-                      )
-        model.fit(xys_2d[:, 1:], np.ravel(xys_2d[:, 0]))
-
-        return model
 
 class LibsvmnusvrTrainTestModel(TrainTestModel):
 
@@ -668,7 +628,7 @@ class RandomForestTrainTestModel(TrainTestModel):
     @staticmethod
     def _train(model_param, xys_2d):
         """
-        random forest regression
+        random forest regression (interface scikit-learn 0.17.1
         http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html
         :param model_param:
         :param xys_2d:
@@ -679,12 +639,15 @@ class RandomForestTrainTestModel(TrainTestModel):
         max_depth = model_param['max_depth'] if 'max_depth' in model_param else None
         min_samples_split = model_param['min_samples_split'] if 'min_samples_split' in model_param else 2
         min_samples_leaf = model_param['min_samples_leaf'] if 'min_samples_leaf' in model_param else 1
+        min_weight_fraction_leaf = model_param['min_weight_fraction_leaf'] if 'min_weight_fraction_leaf' in model_param else 0
         max_features = model_param['max_features'] if 'max_features' in model_param else 'auto'
+        max_leaf_nodes = model_param['max_leaf_nodes'] if 'max_leaf_nodes' in model_param else None
         bootstrap = model_param['bootstrap'] if 'bootstrap' in model_param else True
         oob_score = model_param['oob_score'] if 'oob_score' in model_param else False
         n_jobs = model_param['n_jobs'] if 'n_jobs' in model_param else 1
         random_state = model_param['random_state'] if 'random_state' in model_param else None
         verbose = model_param['verbose'] if 'verbose' in model_param else 0
+        warm_start = model_param['warm_start'] if 'warm_start' in model_param else False
 
         from sklearn import ensemble
         model = ensemble.RandomForestRegressor(
@@ -693,12 +656,15 @@ class RandomForestTrainTestModel(TrainTestModel):
             max_depth=max_depth,
             min_samples_split=min_samples_split,
             min_samples_leaf=min_samples_leaf,
+            min_weight_fraction_leaf=min_weight_fraction_leaf,
             max_features=max_features,
+            max_leaf_nodes=max_leaf_nodes,
             bootstrap=bootstrap,
             oob_score=oob_score,
             n_jobs=n_jobs,
             random_state=random_state,
-            verbose=verbose
+            verbose=verbose,
+            warm_start=warm_start,
         )
         model.fit(xys_2d[:, 1:], np.ravel(xys_2d[:, 0]))
 

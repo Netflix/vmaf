@@ -5,7 +5,7 @@ VMAF is a software package developed by Netflix Inc. containing tools for percep
 
 ##Prerequisite
 
-The VMAF package has its core feature extraction library written in C, and the rest glue code written in Python. It also incorporates an external C++ library [libsvm](https://www.csie.ntu.edu.tw/~cjlin/libsvm/). To build the C/C++ code, it requires cc and g++. To run commands, it requires Python 2 (>= 2.7) installed.
+The VMAF package has its core feature extraction library written in C, and the rest glue code written in Python. It also incorporates an external C++ library [libsvm](https://www.csie.ntu.edu.tw/~cjlin/libsvm/). To build the C/C++ code, it requires *cc* and *g++*. To run scripts and tests, it requires Python 2 (>= 2.7) installed.
 
 It also requires a number of Python packages:
 
@@ -13,18 +13,26 @@ It also requires a number of Python packages:
   - [scipy](http://www.scipy.org/) (>=0.13.3)
   - [matplotlib](http://matplotlib.org/1.3.1/index.html) (>=1.3.1)
   - [pandas](http://pandas.pydata.org/) (>=0.13.1)
-  - [scikit-learn](http://scikit-learn.org/stable/) (==0.14.1)
+  - [scikit-learn](http://scikit-learn.org/stable/) (>=0.17.1)
 
-Follow [this link](http://www.scipy.org/install.html) to install *numpy/scipy/matplotlib/pandas* on your system. You can verify if a package is installed properly and its version by:
-
-```
-python -c 'import [package name]; print [package name].__version__'
-```
-
-To install scikit-learn, first [install](http://python-packaging-user-guide.readthedocs.org/en/latest/installing/) the package manager *pip*, then run:
+Follow [this link](http://www.scipy.org/install.html) to install the *numpy/scipy/matplotlib/pandas* suite on your system. To install *scikit-learn*, first [install](http://python-packaging-user-guide.readthedocs.org/en/latest/installing/) package manager *pip*, then run:
 
 ```
-sudo pip install scikit-learn==0.14.1
+sudo pip install scikit-learn==0.17.1
+```
+
+####Troubleshooting
+
+You can verify if a package is properly installed and its version/location by:
+
+```
+python -c 'import [package_name] as pkg; print pkg.__version__; print pkg.__file__'
+```
+
+Note that for *scikit-learn*, the package name is *sklearn*. Also note that sometimes a previously installed package version may overshadow the new one. Make sure that the new one's path appears early in the path list (or simply delete the old one), which can be printed by:
+
+```
+python -c 'import sys; print sys.path'
 ```
 
 ##Installation
@@ -37,7 +45,7 @@ make
 
 to build the binaries.
 
-There is a subdirectory named python. Add the python subdirectory to the environment variable PYTHONPATH:
+There is a subdirectory named *python*. Add the *python* subdirectory to the environment variable PYTHONPATH:
 
 ```
 export PYTHONPATH=[path_to_repo_dir]/python:$PYTHONPATH

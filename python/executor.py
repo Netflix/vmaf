@@ -115,6 +115,12 @@ class Executor(TypeVersionEnabled):
             log_file.write("{type_version_str}\n\n".format(
                 type_version_str=self.get_cozy_type_version_string()))
 
+    def _assert_paths(self, asset):
+        assert os.path.exists(asset.ref_path), \
+            "Reference path {} does not exist.".format(asset.ref_path)
+        assert os.path.exists(asset.ref_path), \
+            "Distorted path {} does not exist.".format(asset.dis_path)
+
     def _run_on_asset(self, asset):
         # Wraper around the essential function _run_and_generate_log_file, to
         # do housekeeping work including 1) asserts of asset, 2) skip run if
@@ -145,6 +151,11 @@ class Executor(TypeVersionEnabled):
                 if self.logger:
                     self.logger.info('{id} result does\'t exist. Perform {id} '
                                      'calculation.'.format(id=self.executor_id))
+
+                # at this stage, it is certain that asset.ref_path and
+                # asset.dis_path will be used. must early determine that
+                # they exists
+                self._assert_paths(asset)
 
                 # remove workfiles if exist (do early here to avoid race condition
                 # when ref path and dis path have some overlap)

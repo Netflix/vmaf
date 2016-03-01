@@ -63,6 +63,8 @@ def train_on_dataset(train_dataset, feature_param, model_param,
 
     train_stats = TrainTestModel.get_stats(train_ys['label'], train_ys_pred)
 
+    print 'Stats on training data: {}'.format(TrainTestModel.format_stats(train_stats))
+
     # plot
     train_content_ids = map(lambda asset: asset.content_id, train_assets)
     if ax is not None:
