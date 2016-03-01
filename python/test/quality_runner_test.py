@@ -212,25 +212,25 @@ class QualityRunnerTest(unittest.TestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=False,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
+            None, fifo_mode=True,
+            log_file_dir=config.ROOT + "/resource/log_file_dir",
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath':config.ROOT + "/resource/model/nflx_vmaff_rf_v1.pkl",
+                'model_filepath':config.ROOT + "/workspace/model/nflx_vmaff_rf_v1.pkl",
             }
         )
         self.runner.run()
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAF_score'], 72.8888888888889)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 73.79861111111113)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)
         self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertAlmostEqual(results[0]['VMAF_feature_adm_score'], 0.91552422916666665)
         self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 22.533456770833329)
 
-        self.assertAlmostEqual(results[1]['VMAF_score'], 98.68923611111109)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 98.22048611111109)
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0)
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_score'], 1.0)
@@ -370,13 +370,13 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             }
         )
 
-        self.assertAlmostEqual(results[0]['VMAF_score'], 72.8888888888889)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 73.79861111111113)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)
         self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertAlmostEqual(results[0]['VMAF_feature_adm_score'], 0.91552422916666665)
         self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 22.533456770833329)
 
-        self.assertAlmostEqual(results[1]['VMAF_score'], 98.68923611111109)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 98.22048611111109)
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0)
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_score'], 1.0)

@@ -49,6 +49,11 @@ class TypeVersionEnabled(object):
 
     @classmethod
     def find_subclass(cls, subclass_type):
+        """
+        Find subclass by TYPE.
+        :param subclass_type:
+        :return:
+        """
         matched_subclasses = []
         for subclass in cls.get_subclasses():
             if subclass.TYPE == subclass_type:

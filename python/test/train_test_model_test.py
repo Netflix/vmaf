@@ -4,7 +4,7 @@ __license__ = "LGPL Version 3"
 import os
 import unittest
 import config
-from train_test_model import TrainTestModel, NusvrTrainTestModel, \
+from train_test_model import TrainTestModel, \
     LibsvmnusvrTrainTestModel, RandomForestTrainTestModel
 import pandas as pd
 import numpy as np
@@ -72,16 +72,16 @@ class TrainTestModelTest(unittest.TestCase):
         xs = TrainTestModel.get_xs_from_dataframe(self.feature_df.iloc[-50:])
         ys = TrainTestModel.get_ys_from_dataframe(self.feature_df.iloc[-50:])
 
-        model = NusvrTrainTestModel({'norm_type':'normalize'}, None)
+        model = RandomForestTrainTestModel({'norm_type':'normalize', 'random_state':0}, None)
         model.train(xys)
 
         model.to_file(self.model_filename)
         self.assertTrue(os.path.exists(self.model_filename))
 
-        loaded_model = NusvrTrainTestModel.from_file(self.model_filename, None)
+        loaded_model = RandomForestTrainTestModel.from_file(self.model_filename, None)
 
         result = loaded_model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.32294831504657584)
+        self.assertAlmostEquals(result['RMSE'], 0.32160327527353727)
 
         model.delete(self.model_filename)
 
@@ -110,39 +110,6 @@ class TrainTestModelTest(unittest.TestCase):
         self.assertAlmostEquals(result['RMSE'],        0.32294843172432958)
 
         model.delete(self.model_filename)
-
-    def test_train_predict_nusvr(self):
-
-        print "test nusvr train and predict..."
-        # svr is quite sensitive to data normalization
-
-        xys = TrainTestModel.get_xys_from_dataframe(self.feature_df.iloc[:-50])
-        xs = TrainTestModel.get_xs_from_dataframe(self.feature_df.iloc[-50:])
-        ys = TrainTestModel.get_ys_from_dataframe(self.feature_df.iloc[-50:])
-
-        model = NusvrTrainTestModel(
-            {'norm_type':'normalize'}, None)
-        model.train(xys)
-        result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.32294831504657584)
-
-        model = NusvrTrainTestModel(
-            {'norm_type':'clip_0to1'}, None)
-        model.train(xys)
-        result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.32533593056770699)
-
-        model = NusvrTrainTestModel(
-            {'norm_type':'clip_minus1to1'}, None)
-        model.train(xys)
-        result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.31074367021672966)
-
-        model = NusvrTrainTestModel(
-            {'norm_type':'none',}, None)
-        model.train(xys)
-        result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.59551619078759011)
 
     def test_train_predict_libsvmnusvr(self):
 

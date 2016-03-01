@@ -53,6 +53,8 @@ def plot_scatter(ax, assets, results, runner_class):
     content_ids = map(lambda asset: asset.content_id, assets)
     stats = TrainTestModel.get_stats(groundtruths, predictions)
 
+    print 'Stats on testing data: {}'.format(TrainTestModel.format_stats(stats))
+
     if ax is not None:
         TrainTestModel.plot_scatter(ax, stats, content_ids)
         ax.set_xlabel('DMOS')
