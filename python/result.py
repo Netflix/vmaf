@@ -6,6 +6,9 @@ import re
 from tools import get_file_name_with_extension, make_parent_dirs_if_nonexist
 from asset import Asset
 import config
+import numpy as np
+from stats import StatsList
+from itertools import izip
 
 class BasicResult(object):
     """
@@ -25,6 +28,38 @@ class BasicResult(object):
             return self.result_dict[key]
         except KeyError as e:
             return self._try_get_aggregate_score(key, e)
+
+    def _get_score_list_from_key(self, key):
+        if re.search(r"_scores", key):
+            return self.result_dict[key]
+        raise KeyError("Try adding s to your score")
+
+    def min(self, key):
+        return StatsList.min(self._get_score_list_from_key(key))
+
+    def max(self, key):
+        return StatsList.max(self._get_score_list_from_key(key))
+
+    def median(self, key):
+        return StatsList.median(self._get_score_list_from_key(key))
+
+    def mean(self, key):
+        return StatsList.mean(self._get_score_list_from_key(key))
+
+    def stddev(self, key):
+        return StatsList.stddev(self._get_score_list_from_key(key))
+
+    def var(self, key):
+        return StatsList.var(self._get_score_list_from_key(key))
+
+    def percentile(self, key, q):
+        return StatsList.percentile(self._get_score_list_from_key(key),q)
+
+    def total_var(self, key):
+        return StatsList.total_var(self._get_score_list_from_key(key))
+
+    def moving_average(self, key, n, type='exponential'):
+        return StatsList.moving_average(self._get_score_list_from_key(key),n,type)
 
     def _try_get_aggregate_score(self, key, error):
         """
