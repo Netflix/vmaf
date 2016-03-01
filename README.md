@@ -15,7 +15,7 @@ It also requires a number of Python packages:
   - [pandas](http://pandas.pydata.org/) (>=0.13.1)
   - [scikit-learn](http://scikit-learn.org/stable/) (>=0.17.1)
 
-Follow [this link](http://www.scipy.org/install.html) to install *numpy/scipy/matplotlib/pandas* suite on your system. To install *scikit-learn*, first [install](http://python-packaging-user-guide.readthedocs.org/en/latest/installing/) package manager *pip*, then run:
+Follow [this link](http://www.scipy.org/install.html) to install the *numpy/scipy/matplotlib/pandas* suite on your system. To install *scikit-learn*, first [install](http://python-packaging-user-guide.readthedocs.org/en/latest/installing/) package manager *pip*, then run:
 
 ```
 sudo pip install scikit-learn==0.17.1
@@ -29,7 +29,7 @@ You can verify if a package is properly installed and its version/location by:
 python -c 'import [package_name] as pkg; print pkg.__version__; print pkg.__file__'
 ```
 
-Note that for *scikit-learn*, the package name is *sklearn*. Also note that sometimes a previously installed package version may overshadow the new one. Make sure that the new one's path appears early in the path list, which can be printed by:
+Note that for *scikit-learn*, the package name is *sklearn*. Also note that sometimes a previously installed package version may overshadow the new one. Make sure that the new one's path appears early in the path list (or simply delete the old one), which can be printed by:
 
 ```
 python -c 'import sys; print sys.path'
