@@ -81,11 +81,8 @@ class ResultTest(unittest.TestCase):
         self.assertAlmostEquals(self.result.get_score('VMAF_feature_motion_score'), 12.343795333333333)
         self.assertAlmostEquals(self.result.get_score('VMAF_feature_ansnr_score'), 12.418291000000002)
 
-        blah = self.result.total_var('VMAF_legacy_scores')
-
         self.assertAlmostEquals(self.result.min('VMAF_legacy_scores'), 40.6168118533)
         self.assertAlmostEquals(self.result.max('VMAF_legacy_scores'), 47.6544689539)
-
         self.assertAlmostEquals(self.result.median('VMAF_legacy_scores'), 42.1117149479)
         self.assertAlmostEquals(self.result.mean('VMAF_legacy_scores'), 43.460998585)
         self.assertAlmostEquals(self.result.stddev('VMAF_legacy_scores'), 3.02738381185)
@@ -93,8 +90,7 @@ class ResultTest(unittest.TestCase):
         self.assertAlmostEquals(self.result.percentile('VMAF_legacy_scores',50), 42.1117149479)
         self.assertAlmostEquals(self.result.percentile('VMAF_legacy_scores',80), 45.4373673515)
         self.assertAlmostEquals(self.result.total_var('VMAF_legacy_scores'), 6.29020555326)
-
-        #TODO: Verify moving average
+        self.assertItemsEqual(self.result.moving_average('VMAF_legacy_scores',2), [45.76175145010879,45.76175145010879,45.76175145010879])
 
         with self.assertRaises(KeyError):
             self.result.min('VMAF_legacy_score')

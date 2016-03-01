@@ -7,6 +7,7 @@ from tools import get_file_name_with_extension, make_parent_dirs_if_nonexist
 from asset import Asset
 import config
 import numpy as np
+from stats import StatsList
 from itertools import izip
 
 class BasicResult(object):
@@ -28,74 +29,37 @@ class BasicResult(object):
         except KeyError as e:
             return self._try_get_aggregate_score(key, e)
 
-    def _get_score_list_key(self, key):
+    def _get_score_list_from_key(self, key):
         if re.search(r"_scores", key):
-            return key
+            return self.result_dict[key]
         raise KeyError("Try adding s to your score")
 
     def min(self, key):
-        scores_key = self._get_score_list_key(key)
-        scores = self.result_dict[scores_key]
-        return np.min(scores)
+        return StatsList.min(self._get_score_list_from_key(key))
 
     def max(self, key):
-        scores_key = self._get_score_list_key(key)
-        scores = self.result_dict[scores_key]
-        return np.max(scores)
+        return StatsList.max(self._get_score_list_from_key(key))
 
     def median(self, key):
-        scores_key = self._get_score_list_key(key)
-        scores = self.result_dict[scores_key]
-        return np.median(scores)
+        return StatsList.median(self._get_score_list_from_key(key))
 
     def mean(self, key):
-        scores_key = self._get_score_list_key(key)
-        scores = self.result_dict[scores_key]
-        return np.mean(scores)
+        return StatsList.mean(self._get_score_list_from_key(key))
 
     def stddev(self, key):
-        scores_key = self._get_score_list_key(key)
-        scores = self.result_dict[scores_key]
-        return np.std(scores)
+        return StatsList.stddev(self._get_score_list_from_key(key))
 
     def var(self, key):
-        scores_key = self._get_score_list_key(key)
-        scores = self.result_dict[scores_key]
-        return np.var(scores)
+        return StatsList.var(self._get_score_list_from_key(key))
 
     def percentile(self, key, q):
-        scores_key = self._get_score_list_key(key)
-        scores = self.result_dict[scores_key]
-        return np.percentile(scores,q)
+        return StatsList.percentile(self._get_score_list_from_key(key),q)
 
     def total_var(self, key):
-        scores_key = self._get_score_list_key(key)
-        scores = self.result_dict[scores_key]
-        abs_sum = 0
-        for curr,next in zip(scores[:-1],scores[1:]):
-            abs_sum += abs(curr - next)
-        return abs_sum / len(zip(scores[:-1],scores[1:]))
+        return StatsList.total_var(self._get_score_list_from_key(key))
 
     def moving_average(self, key, n, type='exponential'):
-        """
-        compute an n period moving average.
-
-        type is 'simple' | 'exponential'
-
-        """
-        scores_key = self._get_score_list_key(key)
-        scores = self.result_dict[scores_key]
-        x = np.asarray(scores)
-        if type == 'simple':
-            weights = np.ones(n)
-        else:
-            weights = np.exp(np.linspace(-1., 0., n))
-
-        weights /= weights.sum()
-
-        a = np.convolve(x, weights, mode='full')[:len(x)]
-        a[:n] = a[n]
-        return a
+        return StatsList.moving_average(self._get_score_list_from_key(key),n,type)
 
     def _try_get_aggregate_score(self, key, error):
         """
