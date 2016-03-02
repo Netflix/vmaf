@@ -9,10 +9,10 @@ The VMAF package has its core feature extraction library written in C, and the r
 
 It also requires a number of Python packages:
 
-  - [numpy](http://www.numpy.org/) (>=1.8.2)
-  - [scipy](http://www.scipy.org/) (>=0.13.3)
-  - [matplotlib](http://matplotlib.org/1.3.1/index.html) (>=1.3.1)
-  - [pandas](http://pandas.pydata.org/) (>=0.13.1)
+  - [numpy](http://www.numpy.org/) (>=1.10.4)
+  - [scipy](http://www.scipy.org/) (>=0.17.0)
+  - [matplotlib](http://matplotlib.org/1.3.1/index.html) (>=1.5.1)
+  - [pandas](http://pandas.pydata.org/) (>=0.17.1)
   - [scikit-learn](http://scikit-learn.org/stable/) (>=0.17.1)
 
 Follow [this link](http://www.scipy.org/install.html) to install the *numpy/scipy/matplotlib/pandas* suite on your system. To install *scikit-learn*, first [install](http://python-packaging-user-guide.readthedocs.org/en/latest/installing/) package manager *pip*, then run:
@@ -29,11 +29,13 @@ You can verify if a package is properly installed and its version/location by:
 python -c 'import [package_name] as pkg; print pkg.__version__; print pkg.__file__'
 ```
 
-Note that for *scikit-learn*, the package name is *sklearn*. Also note that sometimes a previously installed package version may overshadow the new one. Make sure that the new one's path appears early in the path list (or simply delete the old one), which can be printed by:
+Note that for *scikit-learn*, the package name is *sklearn*. If you see that printed version number is old, it could suggest that a previously installed package with the same name but older version may have overshadowed the new one. Make sure that the new one's path appears early in the path list, which can be printed by:
 
 ```
 python -c 'import sys; print sys.path'
 ```
+
+(Or simply delete the old one).
 
 ##Installation
 
