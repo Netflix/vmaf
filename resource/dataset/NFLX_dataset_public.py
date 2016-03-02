@@ -3,8 +3,8 @@ yuv_fmt = 'yuv420p'
 width = 1920
 height = 1080
 
-ref_dir = '/mnt/hgfs/zli/Data/NETFLIX_database/reference_videos/training_videos_public'
-dis_dir = '/mnt/hgfs/zli/Data/NETFLIXyuv'
+ref_dir = '[path to dataset videos]/ref'
+dis_dir = '[path to dataset videos]/dis'
 
 ref_videos = [{'content_id': 0,
   'content_name': 'BigBuckBunny',

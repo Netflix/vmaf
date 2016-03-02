@@ -3,7 +3,7 @@ yuv_fmt = 'yuv420p'
 width = 1920
 height = 1080
 
-yuv420_dir = '/mnt/hgfs/ZLI-NFLX-2/vqeghd3_yuv420'
+yuv420_dir = '[path to vqeghd3 yuv420p dir]'
 
 ref_videos = [{'content_id': 1,
   'content_name': 'vqeghd3_src01',
