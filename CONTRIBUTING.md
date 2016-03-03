@@ -22,9 +22,9 @@ By contributing your code, you agree to license your contribution under the term
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- ```
+```
 
-##Repo Structure
+##Repository Structure
 
 ```
 ├── feature: C/C++ source code for extraction of features
