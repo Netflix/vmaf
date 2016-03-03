@@ -65,6 +65,14 @@ After installation, run:
 ./unittest
 ```
 
+##Optional Setup for Parallel Execution
+
+For parallel feature extraction, an additional package [pathos](https://pypi.python.org/pypi/pathos) (>=0.1a1) can be installed optionally. To install, run:
+
+```
+easy_install -f . pathos
+```
+
 ##Basic Usage
 
 There are two basic execution modes to run VMAF -- a single mode and a batch mode.
@@ -112,7 +120,7 @@ For example:
 
 ##Advanced Usage
 
-VMAF follows a machine-learning based approach to first extract a number of quality-relevant features from both a distorted video and its reference full-quality video, followed by fusing them into a final quality score using a non-linear regressor (e.g. a SVM regressor), hence the name 'Video Multi-method Assessment Fusion'.
+VMAF follows a machine-learning based approach to first extract a number of quality-relevant features from a distorted video and its reference full-quality video, followed by fusing them into a final quality score using a non-linear regressor (e.g. a SVM regressor), hence the name 'Video Multi-method Assessment Fusion'.
 
 In addition to the basic executors, the VMAF package also provides a framework to allow any user to train his/her own perceptual quality assessment model. For example, directory *resource/model* contains a number of pre-trained models, which can be loaded by the aforementioned VMAF executors:
 
@@ -222,13 +230,13 @@ The trained model is output to *output_model_file*. Once it is obtained, it can 
 
 Above are two example scatter plots obtained from running the *run_training* and *run_testing* executors on a training and a testing dataset, respectively.
 
-##Optional Setup for Parallel Execution
+###Creating New Features And Regressors
 
-For parallel feature extraction, an additional package [pathos](https://pypi.python.org/pypi/pathos) (>=0.1a1) can be installed optionally. To install, run:
+You can also customize VMAF by plugging in third-party features or inventing new features, and specify them in the *feature_param_file*. Essentially, the 'aggregate' feature type (e.g. VMAF_feature) specified in the *feature_dict* corresponds to the *TYPE* field of a FeatureExtractor subclass (e.g. VmafFeatureExtractor). All you need to do is to create a new class extending the FeatureExtractor base class.
 
-```
-easy_install -f . pathos
-```
+Similarly, you can plug in a third-party regressor or inventing a new regressor and specify them in the *model_param_file*. The *model_type* (e.g. LIBSVMNUSVR) corresponds to the *TYPE* field of a TrainTestModel sublass (e.g. LibsvmnusvrTrainTestModel). All needed is to create a new class extending the TrainTestModel base class.
+
+For instructions on how to extending the FeatureExtractor and TrainTestModel base classes, refer to CONTRIBUTING.md. 
 
 ##Datasets
 
