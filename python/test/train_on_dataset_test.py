@@ -11,17 +11,22 @@ from tools.misc import import_python_file
 class TestTrainOnDataset(unittest.TestCase):
 
     def setUp(self):
-        self.train_dataset = import_python_file(config.ROOT + '/python/test/resource/dataset_sample.py')
-        self.output_model_filepath = config.ROOT + "/workspace/model/test_output_model.pkl"
+        self.train_dataset = import_python_file(
+            config.ROOT + '/python/test/resource/dataset_sample.py')
+        self.output_model_filepath = \
+            config.ROOT + "/workspace/model/test_output_model.pkl"
 
     def tearDown(self):
         if hasattr(self, 'train_fassembler'):
             self.train_fassembler.remove_logs()
-        if os.path.exists(self.output_model_filepath): os.remove(self.output_model_filepath)
+        if os.path.exists(self.output_model_filepath):
+            os.remove(self.output_model_filepath)
 
     def test_train_on_dataset_with_dis1st_thr(self):
-        feature_param = import_python_file(config.ROOT + '/python/test/resource/feature_param_sample.py')
-        model_param = import_python_file(config.ROOT + '/python/teset/resource/model_param_sample.py')
+        feature_param = import_python_file(
+            config.ROOT + '/python/test/resource/feature_param_sample.py')
+        model_param = import_python_file(
+            config.ROOT + '/python/teset/resource/model_param_sample.py')
         train_fassembler, train_ys_pred = \
             train_on_dataset(train_dataset=self.train_dataset,
                          feature_param=feature_param,

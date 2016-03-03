@@ -11,11 +11,16 @@ import config
 
 class Asset(WorkdirEnabled):
     """
-    Asset provide info about a distored video and its reference video, as well
-    as information on how its quality should be measured (e.g. start/end
-    frames, upscale to what resolution to its quality). It is used as an input
-    to an executor (e.g. a QualityRunner, or a FeatureExtractor). Asset is has
-    a unique working directory to enable thread safety.
+    An Asset is the most basic unit with sufficient information to perform an
+    execution task. It includes basic information about a distorted video and
+    its undistorted reference video, as well as the frame range on which to
+    extract features/calculate quality results (*dis_start_end_frame* and
+    *ref_start_end_frame*), and at what resolution to perform such feature
+    extraction (each video frame is upscaled to the resolution specified by
+    *quality_width_hight* before processing).
+
+    Asset extends WorkdirEnabled mixin, which comes with a thread-safe working
+    directory to facilitate parallel execution.
     """
 
     # ==== constructor ====

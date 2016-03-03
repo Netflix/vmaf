@@ -21,7 +21,7 @@ Follow [this link](http://www.scipy.org/install.html) to install the *numpy/scip
 sudo pip install scikit-learn==0.17.1
 ```
 
-####Troubleshooting
+###Troubleshooting
 
 You can verify if a package is properly installed and its version/location by:
 

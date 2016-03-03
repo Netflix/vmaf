@@ -25,8 +25,8 @@ class SqliteResultStore(ResultStore):
 class FileSystemResultStore(ResultStore):
     """
     persist result by a simple file system that save/load result in a directory.
-    The directory has multiple subdirectories, each corresponding to a result
-    generator (e.g. a VMAF feature extractor, or a NO19 feature extractor, or a
+    The directory has multiple subdirectories, each corresponding to an Executor
+    (e.g. a VMAF feature extractor, or a NO19 feature extractor, or a
     VMAF quality runner, or a SSIM quality runner). Each subdirectory contains
     multiple files, each file stores dataframe for an asset, and has file name
     str(asset).

@@ -10,7 +10,7 @@ from tools.stats import StatsList
 
 class BasicResult(object):
     """
-    Has some basic functions, but don't need executor_id. To be used by
+    Has some basic functions, but don't need asset or executor_id. To be used by
     FeatureAssemler, which is not an Executor.
     """
     def __init__(self, asset, result_dict):
@@ -51,13 +51,14 @@ class BasicResult(object):
         return StatsList.var(self._get_score_list_from_key(key))
 
     def percentile(self, key, q):
-        return StatsList.percentile(self._get_score_list_from_key(key),q)
+        return StatsList.percentile(self._get_score_list_from_key(key), q)
 
     def total_var(self, key):
         return StatsList.total_var(self._get_score_list_from_key(key))
 
     def moving_average(self, key, n, type='exponential'):
-        return StatsList.moving_average(self._get_score_list_from_key(key),n,type)
+        return StatsList.moving_average(
+            self._get_score_list_from_key(key), n, type)
 
     def _try_get_aggregate_score(self, key, error):
         """
@@ -141,9 +142,8 @@ class Result(BasicResult):
                         )
 
     def __init__(self, asset, executor_id, result_dict):
-        self.asset = asset
+        super(Result, self).__init__(asset, result_dict)
         self.executor_id = executor_id
-        self.result_dict = result_dict
 
     def __eq__(self, other):
         if self.asset != other.asset:
