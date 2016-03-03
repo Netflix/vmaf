@@ -2,11 +2,13 @@ __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import unittest
-from asset import Asset
+
+from core.asset import Asset
 import config
-from feature_assembler import FeatureAssembler
-from feature_extractor import VmafFeatureExtractor, FeatureExtractor, \
+from core.feature_assembler import FeatureAssembler
+from core.feature_extractor import VmafFeatureExtractor, FeatureExtractor, \
     MomentFeatureExtractor
+
 
 class FeatureAssemblerTest(unittest.TestCase):
 

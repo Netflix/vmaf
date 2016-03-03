@@ -234,7 +234,7 @@ Above are two example scatter plots obtained from running the *run_training* and
 
 You can also customize VMAF by plugging in third-party features or inventing new features, and specify them in the *feature_param_file*. Essentially, the 'aggregate' feature type (e.g. VMAF_feature) specified in the *feature_dict* corresponds to the *TYPE* field of a FeatureExtractor subclass (e.g. VmafFeatureExtractor). All you need to do is to create a new class extending the FeatureExtractor base class.
 
-Similarly, you can plug in a third-party regressor or inventing a new regressor and specify them in the *model_param_file*. The *model_type* (e.g. LIBSVMNUSVR) corresponds to the *TYPE* field of a TrainTestModel sublass (e.g. LibsvmnusvrTrainTestModel). All needed is to create a new class extending the TrainTestModel base class.
+Similarly, you can plug in a third-party regressor or invent a new regressor and specify them in the *model_param_file*. The *model_type* (e.g. LIBSVMNUSVR) corresponds to the *TYPE* field of a TrainTestModel sublass (e.g. LibsvmnusvrTrainTestModel). All needed is to create a new class extending the TrainTestModel base class.
 
 For instructions on how to extending the FeatureExtractor and TrainTestModel base classes, refer to CONTRIBUTING.md. 
 

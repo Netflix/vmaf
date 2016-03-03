@@ -23,3 +23,16 @@ By contributing your code, you agree to license your contribution under the term
  * limitations under the License.
  */
  ```
+
+##Repository Organization
+ 
+##Basic Classes
+
+##Extending Classes
+
+###Creating a New QualityRunner Subclass
+
+###Creating a New FeatureExtractor Subclass
+
+###Creating a New TrainTestModel Subclass
+

@@ -6,10 +6,11 @@ __license__ = "Apache, Version 2.0"
 import os
 import sys
 import re
-from asset import Asset
+
+from core.asset import Asset
 import config
-from executor import run_executors_in_parallel
-from quality_runner import VmafQualityRunner
+from core.executor import run_executors_in_parallel
+from core.quality_runner import VmafQualityRunner
 
 FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
 

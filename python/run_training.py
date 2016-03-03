@@ -5,13 +5,14 @@ __license__ = "Apache, Version 2.0"
 
 import os
 import sys
-from tools import import_python_file
-from result import FileSystemResultStore
+
+from tools.misc import import_python_file
+from core.result_store import FileSystemResultStore
 from run_testing import read_dataset, print_matplotlib_warning
 import config
-from feature_assembler import FeatureAssembler
-from train_test_model import TrainTestModel
-from quality_runner import VmafQualityRunner
+from core.feature_assembler import FeatureAssembler
+from core.train_test_model import TrainTestModel
+from core.quality_runner import VmafQualityRunner
 
 
 def train_on_dataset(train_dataset, feature_param, model_param,

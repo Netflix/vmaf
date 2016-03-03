@@ -1,9 +1,11 @@
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
-from train_test_model import TrainTestModel
 from math import floor
 import itertools
+
+from core.train_test_model import TrainTestModel
+
 
 class FeatureCrossValidation(object):
 

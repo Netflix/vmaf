@@ -4,13 +4,15 @@ __license__ = "Apache, Version 2.0"
 import sys
 import subprocess
 import re
-import config
+
 import numpy as np
-from executor import Executor
-from result import Result
-from feature_assembler import FeatureAssembler
-from train_test_model import TrainTestModel
-from feature_extractor import MomentFeatureExtractor
+
+import config
+from core.executor import Executor
+from core.result import Result
+from core.feature_assembler import FeatureAssembler
+from core.train_test_model import TrainTestModel
+from core.feature_extractor import MomentFeatureExtractor
 
 
 class QualityRunner(Executor):

@@ -3,12 +3,14 @@ __license__ = "Apache, Version 2.0"
 
 import os
 import unittest
-from asset import Asset
-from quality_runner import VmafLegacyQualityRunner, VmafQualityRunner, \
+
+from core.asset import Asset
+from core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner, \
     PsnrQualityRunner
-from executor import run_executors_in_parallel
+from core.executor import run_executors_in_parallel
 import config
-from result import FileSystemResultStore
+from core.result_store import FileSystemResultStore
+
 
 class QualityRunnerTest(unittest.TestCase):
 

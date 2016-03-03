@@ -4,9 +4,8 @@ __license__ = "LGPL Version 3"
 import os
 import unittest
 import config
-from run_testing import read_dataset
 from run_training import train_on_dataset
-from tools import import_python_file
+from tools.misc import import_python_file
 
 
 class TestTrainOnDataset(unittest.TestCase):

@@ -3,9 +3,11 @@ __license__ = "Apache, Version 2.0"
 
 import re
 import subprocess
+
 import config
-from executor import Executor
-from result import Result
+from core.executor import Executor
+from core.result import Result
+
 
 class FeatureExtractor(Executor):
     """

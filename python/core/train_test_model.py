@@ -2,14 +2,15 @@ __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import os
-import numpy as np
 import sys
-import config
 import pickle
+
 import scipy.stats
-from tools import indices
-from mixin import TypeVersionEnabled
-from feature_extractor import MomentFeatureExtractor
+import numpy as np
+
+import config
+from tools.misc import indices
+from core.mixin import TypeVersionEnabled
 
 
 class TrainTestModel(TypeVersionEnabled):

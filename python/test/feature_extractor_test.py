@@ -3,11 +3,13 @@ __license__ = "Apache, Version 2.0"
 
 import os
 import unittest
+
 import config
-from feature_extractor import VmafFeatureExtractor, MomentFeatureExtractor
-from asset import Asset
-from executor import run_executors_in_parallel
-from result import FileSystemResultStore
+from core.feature_extractor import VmafFeatureExtractor, MomentFeatureExtractor
+from core.asset import Asset
+from core.executor import run_executors_in_parallel
+from core.result_store import FileSystemResultStore
+
 
 class FeatureExtractorTest(unittest.TestCase):
 

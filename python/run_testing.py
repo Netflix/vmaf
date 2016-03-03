@@ -5,13 +5,15 @@ __license__ = "Apache, Version 2.0"
 
 import os
 import sys
+
 import config
-from asset import Asset
-from executor import run_executors_in_parallel
-from result import FileSystemResultStore
-from train_test_model import TrainTestModel
-from tools import import_python_file
-from quality_runner import QualityRunner, VmafQualityRunner
+from core.asset import Asset
+from core.executor import run_executors_in_parallel
+from core.result_store import FileSystemResultStore
+from core.train_test_model import TrainTestModel
+from tools.misc import import_python_file
+from core.quality_runner import QualityRunner, VmafQualityRunner
+
 
 def read_dataset(dataset):
 

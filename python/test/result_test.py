@@ -2,11 +2,15 @@ __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import unittest
-from asset import Asset
-import config
-from result import Result, FileSystemResultStore
-from quality_runner import VmafLegacyQualityRunner
+
 import numpy as np
+
+from core.asset import Asset
+import config
+from core.result import Result
+from core.result_store import FileSystemResultStore
+from core.quality_runner import VmafLegacyQualityRunner
+
 
 class ResultTest(unittest.TestCase):
 

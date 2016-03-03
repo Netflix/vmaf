@@ -1,9 +1,9 @@
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
-from feature_extractor import FeatureExtractor
-from result import BasicResult
-from executor import run_executors_in_parallel
+from core.feature_extractor import FeatureExtractor
+from core.result import BasicResult
+from core.executor import run_executors_in_parallel
 
 class FeatureAssembler(object):
     """

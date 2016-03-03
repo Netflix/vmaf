@@ -3,11 +3,14 @@ __license__ = "LGPL Version 3"
 
 import os
 import unittest
-import config
-from train_test_model import TrainTestModel, \
-    LibsvmnusvrTrainTestModel, RandomForestTrainTestModel
+
 import pandas as pd
 import numpy as np
+
+import config
+from core.train_test_model import TrainTestModel, \
+    LibsvmnusvrTrainTestModel, RandomForestTrainTestModel
+
 
 class TrainTestModelTest(unittest.TestCase):
 
