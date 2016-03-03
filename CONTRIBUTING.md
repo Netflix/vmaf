@@ -86,7 +86,7 @@ FeatureExtractor subclasses Executor, and is specifically for extracting feature
 
 ####FeatureAssembler
 
-FeatureAssembler assembles features for an input list of Assets on a input list of FeatureExtractor subclasses. The constructor argument *feature_dict* specifies the list of FeatureExtractor subclasses (i.e. the 'aggregate' feature) and the selected 'atom' features. For each asset on a FeatureExtractor, it outputs a BasicResult object. FeatureAssembler is used by a QualityRunner to assemble the vector of features to be used by a TrainTestModel.
+FeatureAssembler assembles features for an input list of Assets on a input list of FeatureExtractor subclasses. The constructor argument *feature_dict* specifies the list of FeatureExtractor subclasses (i.e. the 'aggregate' feature) and selected 'atom' features. For each asset on a FeatureExtractor, it outputs a BasicResult object. FeatureAssembler is used by a QualityRunner to assemble the vector of features to be used by a TrainTestModel.
 
 ####TrainTestModel
 
@@ -98,45 +98,62 @@ Like a Executor, a TrainTestModel must specify a unique type and version combina
 
 ####CrossValidation
 
-CrossValidation provides a collection of static methods to facilitate verification of a TrainTestModel object. As such, it also provides means to search the optimal hyper-parameter for a TrainTestModel object.
+CrossValidation provides a collection of static methods to facilitate validation of a TrainTestModel object. As such, it also provides means to search the optimal hyper-parameter set for a TrainTestModel object.
 
 ####QualityRunner
 
-QualityRunner subclasses Executor, and is specifically for evaluating the quality score for Assets. Any concrete implementation to generate the final quality score should extend the QualityRunner base class (e.g. VmafQualityRunner).
+QualityRunner subclasses Executor, and is specifically for evaluating the quality score for Assets. Any concrete implementation to generate the final quality score should extend the QualityRunner base class (e.g. VmafQualityRunner, PsnrQualityRunner).
 
-There are two ways to extend a QualityRunner base class -- either by directly implementing the quality calculation (e.g. by calling a C executable), or by calling a FeatureAssembler (with indirectly calls a FeatureExtractor) and a TrainTestModel subclass. For more details, refer to Section 'Extending Class'.
+There are two ways to extend a QualityRunner base class -- either by directly implementing the quality calculation (e.g. by calling a C executable, as in PsnrQualityRunner), or by calling a FeatureAssembler (with indirectly calls a FeatureExtractor) and a TrainTestModel subclass (as in VmafQualityRunner). For more details, refer to Section 'Extending Classes'.
 
 ##Extending Classes
+
+####Extending FeatureExtractor
+
+A derived class of FeatureExtractor must:
+
+  - Override *TYPE* and *VERSION* fields.
+  - Override *_run_and_generate_log_file(self, asset)*, which call a command-line executable and generate feature scores in a log file.
+  - Override *_get_feature_scores(self, asset)*, which read the feature scores from the log file, and return the scores in a dictionary format.
+
+Follow the example of VmafFeatureExtractor.
+
+####Extending TrainTestModel
+
+A derived class of TrainTestModel must:
+
+  - Override *TYPE* and *VERSION* fields.
+  - Override *_train(model_param, xys_2d)*, which implements the training logic.
+  
+A basic example of wrapping the scikit-learn Ensemble.RandomForest class can be found in RandomForestTrainTestModel.
+
+The scikit-learn Python package has already provided many regressor tools to choose from. But if you do not want to call from scikit-learn but rather integrating/creating other regressor implementation, you will need some additional steps. Besides the two step above, you also need to:
+
+  - Override *to_file(self, filename)*, which must properly save the trained model and parameters to a file(s).
+  - Adding to the base-class static method TrainTestModel.from_file specific treatment for your subclass.
+  - Override static method *delete(filename)* if you have more than one file to delete.
+  - Override *_predict(cls, method, xs_2d)* with your customized prediction function.
+  
+For this type of subclassing, refer to the example of LibsvmnusvrTrainTestModel.
 
 ####Extending QualityRunner
 
 There are two ways to create a derived class of QualityRunner:
 
-  a) Call a command-line exectuable directly, very similar to what FeatureExtractor does. You must:
+The first way is to call a command-line exectuable directly, very similar to what FeatureExtractor does. A derived class must:
     
-    1) Override TYPE and VERSION
+  - Override *TYPE* and *VERSION* fields.
+  - Override *_run_and_generate_log_file(self, asset)*, which call a command-line executable and generate quality scores in a log file.
+  - Override *_get_quality_scores(self, asset)*, which read the quality scores from the log file, and return the scores in a dictionary format.
+  - If necessary, override *_remove_log(self, asset)* if *Executor._remove_log(self, asset)* does not work for you (sometimes the command-line executable could generate output log files in some different format, such as in multiple files).
     
-    2) Override _run_and_generate_log_file(self, asset), which call a command-line executable and generate quality scores in a log file.
-    
-    3) Override _get_quality_scores(self, asset), which read the quality scores from the log file, and return the scores in a dictionary format.
-    
-    4) If necessary, override _remove_log(self, asset) if Executor._remove_log(self, asset) doesn't work for your purpose (sometimes the command-line executable could generate output log files in some different format, like multiple files).
-    
-  For an example, follow PsnrQualityRunner.
+For an example, follow PsnrQualityRunner.
 
-  b) Override the Executor._run_on_asset(self, asset) method to bypass the regular routine, but instead, in the method construct a FeatureAssembler (which calls a FeatureExtractor (or many) and assembles a list of features, followed by using a TrainTestModel (pre-trained somewhere else) to predict the final quality score. You must:
+The second way is to override the Executor._run_on_asset(self, asset) method to bypass the regular routine, but instead, in the method construct a FeatureAssembler (which calls a FeatureExtractor or many) and assembles a list of features, followed by using a TrainTestModel (pre-trained somewhere else) to predict the final quality score. A derived class must:
     
-    1) Override TYPE and VERSION
-    
-    2) Override _run_on_asset(self, asset), which runs a FeatureAssembler, collect a feature vector, run TrainTestModel.predict() on it, and return a Result object (in this case, both Executor._run_on_asset(self, asset) and QualityRunner._read_result(self, asset) get bypassed.
-    
-    3) Override _remove_log(self, asset) by redirecting it to the FeatureAssembler.
-    
-    4) Override _remove_result(self, asset) by redirecting it to the FeatureAssembler.
+  - Override *TYPE* and *VERSION* fields.    
+  - Override *_run_on_asset(self, asset)*, which runs a FeatureAssembler, collect a feature vector, run *TrainTestModel.predict()* on it, and return a Result object (in this case, both *Executor._run_on_asset(self, asset)* and *QualityRunner._read_result(self, asset)* get bypassed.    
+  - Override *_remove_log(self, asset)* by redirecting it to the FeatureAssembler.    
+  - Override *_remove_result(self, asset)* by redirecting it to the FeatureAssembler.
   
-  For an example, follow VmafQualityRunner.
-
-####Extending FeatureExtractor
-
-####Extending TrainTestModel
-
+For an example, follow VmafQualityRunner.
