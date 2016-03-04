@@ -28,14 +28,14 @@ class ModelCrossValidation(object):
         xs_test = TrainTestModel.get_xs_from_results(results_or_df, test_indices)
         ys_test = TrainTestModel.get_ys_from_results(results_or_df, test_indices)
 
-        train_test_model = train_test_model_class(model_param, None)
-        train_test_model.train(xys_train)
-        stats = train_test_model.evaluate(xs_test, ys_test)
+        model = train_test_model_class(model_param, None)
+        model.train(xys_train)
+        stats = model.evaluate(xs_test, ys_test)
 
         output = {}
         output['stats'] = stats
-        output['train_test_model'] = train_test_model
-        output['content_id'] = ys_test['content_id']
+        output['model'] = model
+        output['contentids'] = ys_test['content_id'] # for plotting purpose
 
         return output
 
@@ -78,9 +78,9 @@ class ModelCrossValidation(object):
         assert len(kfold) >= 2, 'kfold list must have length >= 2 for k-fold ' \
                                 'cross validation.'
 
-        stats_list = []
-        train_test_models = []
-        content_ids = []
+        statss = []
+        models = []
+        contentids = []
 
         for fold in range(len(kfold)):
 
@@ -97,22 +97,22 @@ class ModelCrossValidation(object):
                                               test_index_range)
 
             stats = output['stats']
-            train_test_model = output['train_test_model']
+            model = output['model']
 
-            stats_list.append(stats)
-            train_test_models.append(train_test_model)
+            statss.append(stats)
+            models.append(model)
 
-            content_ids += list(output['content_id'])
+            contentids += list(output['contentids'])
 
-        aggregated_stats = TrainTestModel.aggregate_stats_list(stats_list)
+        aggr_stats = TrainTestModel.aggregate_stats_list(statss)
 
         output = {}
-        output['aggregated_stats'] = aggregated_stats
-        output['stats_list'] = stats_list
-        output['train_test_models'] = train_test_models
+        output['aggr_stats'] = aggr_stats
+        output['statss'] = statss
+        output['models'] = models
 
-        assert content_ids is not None
-        output['content_id'] = content_ids
+        assert contentids is not None
+        output['contentids'] = contentids
 
         return output
 
@@ -161,9 +161,9 @@ class ModelCrossValidation(object):
 
         list_model_param = cls._unroll_dict_of_lists(model_param_search_range)
 
-        stats_list = []
+        statss = []
         model_params = []
-        content_ids = []
+        contentids = []
 
         for fold in range(len(kfold)):
             test_index_range = kfold[fold]
@@ -179,10 +179,12 @@ class ModelCrossValidation(object):
             best_model_param = None
             best_stats = None
             for model_param in list_model_param:
-                output = cls.run_kfold_cross_validation(
-                    train_test_model_class, model_param, results_or_df,
-                    train_index_range_in_list_of_indices)
-                stats = output['aggregated_stats']
+                output = \
+                    cls.run_kfold_cross_validation(train_test_model_class,
+                                                   model_param,
+                                                   results_or_df,
+                                                   train_index_range_in_list_of_indices)
+                stats = output['aggr_stats']
 
                 if (best_stats is None) or (
                     TrainTestModel.get_objective_score(stats, type='SRCC')
@@ -193,45 +195,45 @@ class ModelCrossValidation(object):
                     best_model_param = model_param
 
             # run cross validation based on best model parameters
-            cv_output = cls.run_cross_validation(train_test_model_class,
-                                                 best_model_param,
-                                                 results_or_df,
-                                                 train_index_range,
-                                                 test_index_range)
-            cv_stats = cv_output['stats']
+            output_ = cls.run_cross_validation(train_test_model_class,
+                                              best_model_param,
+                                              results_or_df,
+                                              train_index_range,
+                                              test_index_range)
+            stats_ = output_['stats']
 
-            stats_list.append(cv_stats)
+            statss.append(stats_)
             model_params.append(best_model_param)
 
-            content_ids += list(cv_output['content_id'])
+            contentids += list(output_['contentids'])
 
-        aggregated_stats = TrainTestModel.aggregate_stats_list(stats_list)
-        dominated_model_param, count = cls._find_most_frequent_dict(model_params)
+        aggr_stats = TrainTestModel.aggregate_stats_list(statss)
+        top_model_param, count = cls._find_most_frequent_dict(model_params)
 
-        output = {}
-        output['aggregated_stats'] = aggregated_stats
-        output['dominated_model_param'] = dominated_model_param
-        output['model_param_dominance'] = float(count) / len(model_params)
-        output['stats_list'] = stats_list
-        output['model_params'] = model_params
+        assert contentids is not None
+        output__ = {
+            'aggr_stats':aggr_stats,
+            'top_model_param':top_model_param,
+            'top_ratio':float(count) / len(model_params),
+            'statss':statss,
+            'model_params':model_params,
+            'contentids':contentids,
+        }
 
-        assert content_ids is not None
-        output['content_id'] = content_ids
-
-        return output
+        return output__
 
     @classmethod
     def print_output(cls, output):
         if 'stats' in output:
             print 'Stats: {}'.format(cls.format_stats(output['stats']))
-        if 'aggregated_stats' in output:
-            print 'Aggregated stats: {}'.format(cls.format_stats(output['aggregated_stats']))
-        if 'dominated_model_param' in output:
-            print 'Dominated model param ({dominance:.3f}): {modelparam}'.format(
-                dominance=output['model_param_dominance'],
-                modelparam=output['dominated_model_param'])
-        if 'stats_list' in output and 'model_params' in output:
-            for fold, (stats, model_param) in enumerate(zip(output['stats_list'], output['model_params'])):
+        if 'aggr_stats' in output:
+            print 'Aggregated stats: {}'.format(cls.format_stats(output['aggr_stats']))
+        if 'top_model_param' in output:
+            print 'Top model param ({ratio:.3f}): {modelparam}'.format(
+                ratio=output['top_ratio'],
+                modelparam=output['top_model_param'])
+        if 'statss' in output and 'model_params' in output:
+            for fold, (stats, model_param) in enumerate(zip(output['statss'], output['model_params'])):
                 print 'Fold {fold}: {model_param}, {stats}'.format(fold=fold, model_param=model_param, stats=cls.format_stats(stats))
 
     @staticmethod
