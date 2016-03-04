@@ -16,12 +16,14 @@ class StatsList(object):
     8.0
     >>> StatsList.stddev(test_dict)
     5.196152422706632
-    >>> StatsList.var(test_dict)
+    >>> StatsList.variance(test_dict)
     27.0
     >>> StatsList.percentile(test_dict, 50)
     8.0
     >>> StatsList.percentile(test_dict, 80)
     13.200000000000001
+    >>> StatsList.total_variation(test_dict)
+    1.5555555555555556
     >>> StatsList.moving_average(test_dict, 2)
     array([  2.26894142,   2.26894142,   2.26894142,   3.26894142,
              4.26894142,   6.61364853,  11.26894142,  12.26894142,
@@ -30,6 +32,12 @@ class StatsList(object):
     array([  4.08330969,   4.08330969,   4.08330969,   4.08330969,
              4.08330969,   4.08330969,   5.81552983,   7.7557191 ,
              9.96294602,  12.51305607])
+
+    >>> StatsList.print_stats(test_dict)
+    Min: 1, Max: 15, Median: 8.0, Mean: 8.0, Variance: 27.0, Total_variation: 1.55555555556
+
+    >>> StatsList.print_moving_average_stats(test_dict, 3)
+    Min: 2.67984333217, Max: 13.6798433322, Median: 4.64565264023, Mean: 6.61976499826, Variance: 18.625918874, Total_variation: 1.22222222222
     """
 
     @staticmethod
@@ -53,7 +61,7 @@ class StatsList(object):
         return np.std(list)
 
     @staticmethod
-    def var(list):
+    def variance(list):
         return np.var(list)
 
     @staticmethod
@@ -61,7 +69,7 @@ class StatsList(object):
         return np.percentile(list, q)
 
     @staticmethod
-    def total_var(list):
+    def total_variation(list):
         abs_diff_scores = np.absolute(np.diff(list))
         return np.mean(abs_diff_scores)
 
@@ -88,6 +96,21 @@ class StatsList(object):
         a = np.convolve(x, weights, mode='full')[:len(x)]
         a[:n] = a[n]
         return a
+
+    @staticmethod
+    def print_stats(list):
+        print "Min: {min}, Max: {max}, Median: {median}, Mean: {mean}," \
+              " Variance: {var}, Total_variation: {total_var}".format(
+            min=StatsList.min(list), max=StatsList.max(list),
+            median=StatsList.median(list), mean=StatsList.mean(list),
+            var=StatsList.variance(list),
+            total_var=StatsList.total_variation(list))
+
+    @staticmethod
+    def print_moving_average_stats(list, n, type='exponential', decay=-1):
+        moving_avg_list = StatsList.moving_average(list, n, type, decay)
+        StatsList.print_stats(moving_avg_list)
+
 
 if __name__ == '__main__':
     import doctest
