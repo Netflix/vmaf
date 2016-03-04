@@ -6,7 +6,7 @@ import unittest
 import pandas as pd
 
 from core.train_test_model import RandomForestTrainTestModel, LibsvmnusvrTrainTestModel
-from core.cross_validation import FeatureCrossValidation
+from core.cross_validation import ModelCrossValidation
 import config
 
 
@@ -26,7 +26,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
         indices_train = range(250)
         indices_test = range(250, 300)
 
-        output = FeatureCrossValidation.run_cross_validation(
+        output = ModelCrossValidation.run_cross_validation(
             train_test_model_class, model_param, feature_df,
             indices_train, indices_test)
         self.assertAlmostEquals(output['result']['SRCC'], 0.93493301443051136)
@@ -46,7 +46,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
             "/python/test/resource/sample_feature_extraction_results.json"
         feature_df = pd.DataFrame.from_dict(eval(open(feature_df_file, "r").read()))
 
-        output = FeatureCrossValidation.run_kfold_cross_validation(
+        output = ModelCrossValidation.run_kfold_cross_validation(
             train_test_model_class, model_param, feature_df, 6)
 
         self.assertAlmostEquals(output['aggregated_result']['SRCC'], 0.92697842906067462)
@@ -65,7 +65,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
             "/python/test/resource/sample_feature_extraction_results.json"
         feature_df = pd.DataFrame.from_dict(eval(open(feature_df_file, "r").read()))
 
-        output = FeatureCrossValidation.run_kfold_cross_validation(
+        output = ModelCrossValidation.run_kfold_cross_validation(
             train_test_model_class, model_param, feature_df, 6)
 
         self.assertAlmostEquals(output['aggregated_result']['SRCC'], 0.92387451180595015)
@@ -85,7 +85,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
         feature_df = pd.DataFrame.from_dict(eval(open(feature_df_file, "r").read()))
 
         feature_df = feature_df[:200]
-        output = FeatureCrossValidation.run_kfold_cross_validation(
+        output = ModelCrossValidation.run_kfold_cross_validation(
             train_test_model_class, model_param, feature_df,
             [range(0,50), range(130, 200), range(50, 130)])
 
@@ -98,7 +98,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
         model_param_search_range = {'norm_type':['normalize', 'clip_0to1'],
                                     'n_estimators':[10, 50], 'random_state': [0]}
 
-        dicts = FeatureCrossValidation._unroll_dict_of_lists(model_param_search_range)
+        dicts = ModelCrossValidation._unroll_dict_of_lists(model_param_search_range)
 
         expected_dicts = [
          {'norm_type':'normalize', 'n_estimators':10, 'random_state':0},
@@ -118,7 +118,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
          {'norm_type':'clip_0to1', 'n_estimators':50, 'random_state':0},
         ]
 
-        dict, count = FeatureCrossValidation._find_most_frequent_dict(dicts)
+        dict, count = ModelCrossValidation._find_most_frequent_dict(dicts)
         expected_dict =  {'norm_type':'clip_0to1', 'n_estimators':50, 'random_state':0}
         expected_count = 2
 
@@ -141,7 +141,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
             "/python/test/resource/sample_feature_extraction_results.json"
         feature_df = pd.DataFrame.from_dict(eval(open(feature_df_file, "r").read()))
 
-        output = FeatureCrossValidation.run_nested_kfold_cross_validation(
+        output = ModelCrossValidation.run_nested_kfold_cross_validation(
             train_test_model_class, model_param_search_range, feature_df, 6)
 
         self.assertAlmostEquals(output['aggregated_result']['SRCC'], 0.92805802153293737)
@@ -175,7 +175,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
             "/python/test/resource/sample_feature_extraction_results.json"
         feature_df = pd.DataFrame.from_dict(eval(open(feature_df_file, "r").read()))
 
-        output = FeatureCrossValidation.run_nested_kfold_cross_validation(
+        output = ModelCrossValidation.run_nested_kfold_cross_validation(
             train_test_model_class, model_param_search_range, feature_df, 6)
 
         self.assertAlmostEquals(output['aggregated_result']['SRCC'], 0.93704238362264514)
@@ -211,7 +211,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
         feature_df = pd.DataFrame.from_dict(eval(open(feature_df_file, "r").read()))
 
         feature_df = feature_df[:200]
-        output = FeatureCrossValidation.run_nested_kfold_cross_validation(
+        output = ModelCrossValidation.run_nested_kfold_cross_validation(
             train_test_model_class, model_param_search_range, feature_df,
             [range(0,50), range(130, 200), range(50, 130)]
         )

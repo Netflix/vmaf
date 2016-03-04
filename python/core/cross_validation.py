@@ -7,14 +7,23 @@ import itertools
 from core.train_test_model import TrainTestModel
 
 
-class FeatureCrossValidation(object):
+class ModelCrossValidation(object):
 
     @staticmethod
-    def run_cross_validation(train_test_model_class, model_param,
-                             dataframe, train_indices, test_indices):
-        xys_train = TrainTestModel.get_xys_from_dataframe(dataframe, train_indices)
-        xs_test = TrainTestModel.get_xs_from_dataframe(dataframe, test_indices)
-        ys_test = TrainTestModel.get_ys_from_dataframe(dataframe, test_indices)
+    def run_cross_validation(train_test_model_class, model_param, results_or_df,
+                             train_indices, test_indices):
+        """
+        Simple cross validation.
+        :param train_test_model_class:
+        :param model_param:
+        :param results_or_df: list of BasicResult, or pandas.DataFrame
+        :param train_indices:
+        :param test_indices:
+        :return:
+        """
+        xys_train = TrainTestModel.get_xys_from_results(results_or_df, train_indices)
+        xs_test = TrainTestModel.get_xs_from_results(results_or_df, test_indices)
+        ys_test = TrainTestModel.get_ys_from_results(results_or_df, test_indices)
 
         train_test_model = train_test_model_class(model_param, None)
         train_test_model.train(xys_train)
@@ -28,12 +37,12 @@ class FeatureCrossValidation(object):
         return output
 
     @classmethod
-    def run_kfold_cross_validation(cls, train_test_model_class, model_param, dataframe, kfold):
+    def run_kfold_cross_validation(cls, train_test_model_class, model_param, results_or_df, kfold):
         """
         Standard k-fold cross validation, given hyper-parameter set model_param
         :param train_test_model_class:
         :param model_param:
-        :param dataframe:
+        :param results_or_df: list of BasicResult, or pandas.DataFrame
         :param kfold: if it is an integer, it is the number of folds; if it is
         list of indices, then each list contains row indices of the dataframe
         selected as one fold
@@ -51,7 +60,7 @@ class FeatureCrossValidation(object):
         # format
         if kfold_type == 'int':
             num_fold = kfold
-            dataframe_size = len(dataframe)
+            dataframe_size = len(results_or_df)
             fold_size = int(floor(dataframe_size / num_fold))
             kfold = []
             for fold in range(num_fold):
@@ -75,7 +84,7 @@ class FeatureCrossValidation(object):
                     train_index_range += kfold[train_fold]
 
             output = cls.run_cross_validation(
-                train_test_model_class, model_param, dataframe,
+                train_test_model_class, model_param, results_or_df,
                 train_index_range, test_index_range)
 
             result = output['result']
@@ -101,7 +110,7 @@ class FeatureCrossValidation(object):
     @classmethod
     def run_nested_kfold_cross_validation(cls, train_test_model_class,
                                           model_param_search_range,
-                                          dataframe, kfold):
+                                          results_or_df, kfold):
         """
         Nested k-fold cross validation, given hyper-parameter search range. The
         search range is specified in the format of, e.g.:
@@ -110,7 +119,7 @@ class FeatureCrossValidation(object):
          'random_state': [0]}
         :param train_test_model_class:
         :param model_param_search_range:
-        :param dataframe:
+        :param results_or_df: list of BasicResult, or pandas.DataFrame
         :param kfold: if it is an integer, it is the number of folds; if it is
         lists of indices, then each list contains row indices of the dataframe
         selected as one fold
@@ -128,7 +137,7 @@ class FeatureCrossValidation(object):
         # format
         if kfold_type == 'int':
             num_fold = kfold
-            dataframe_size = len(dataframe)
+            dataframe_size = len(results_or_df)
             fold_size = int(floor(dataframe_size / num_fold))
             kfold = []
             for fold in range(num_fold):
@@ -160,7 +169,7 @@ class FeatureCrossValidation(object):
             best_result = None
             for model_param in list_model_param:
                 output = cls.run_kfold_cross_validation(
-                    train_test_model_class, model_param, dataframe,
+                    train_test_model_class, model_param, results_or_df,
                     train_index_range_in_list_of_indices)
                 result = output['aggregated_result']
 
@@ -175,7 +184,7 @@ class FeatureCrossValidation(object):
             # run cross validation based on best model parameters
             cv_output = cls.run_cross_validation(train_test_model_class,
                                                  best_model_param,
-                                                 dataframe,
+                                                 results_or_df,
                                                  train_index_range,
                                                  test_index_range)
             cv_result = cv_output['result']
@@ -241,7 +250,8 @@ class FeatureCrossValidation(object):
                 key_value_pairs.append((key, value))
             list_of_key_value_pairs.append(key_value_pairs)
 
-        list_of_key_value_pairs_rearranged = itertools.product(*list_of_key_value_pairs)
+        list_of_key_value_pairs_rearranged = \
+            itertools.product(*list_of_key_value_pairs)
 
         list_of_dicts = []
         for key_value_pairs in list_of_key_value_pairs_rearranged:

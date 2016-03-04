@@ -7,6 +7,7 @@ import pickle
 
 import scipy.stats
 import numpy as np
+import pandas as pd
 
 import config
 from tools.misc import indices
@@ -372,6 +373,78 @@ class TrainTestModel(TypeVersionEnabled):
 
         return xs_2d
 
+    @classmethod
+    def get_xs_from_results(cls, results_or_df, indexs=None):
+        """
+        :param results_or_df: list of BasicResult, or pandas.DataFrame
+        :param indexs: indices of results to be used
+        :return:
+        """
+
+        if results_or_df.__class__ == pd.DataFrame:
+            return cls.get_xs_from_dataframe(df=results_or_df, rows=indexs)
+
+        feature_names = results_or_df[0].get_ordered_list_score_key()
+        xs = {}
+        for name in feature_names:
+            _results = map(lambda i:results_or_df[i], indexs) \
+                if indexs is not None \
+                else results_or_df
+            xs[name] = np.array(map(lambda result: result[name], _results))
+        return xs
+
+    @staticmethod
+    def get_perframe_xs_from_result(result):
+        """
+        Similar to get_xs_from_results(), except that instead of intake a list
+        of Result, each corresponding to an aggregate score, this function takes
+        a single Result, and interpret its per-frame score as an aggregate score.
+        :param result: one BasicResult
+        :param indexs: indices of results to be used
+        :return:
+        """
+        feature_names = result._get_ordered_list_scores_key()
+        new_feature_names = result.get_ordered_list_score_key()
+        xs = {}
+        for name, new_name in zip(feature_names, new_feature_names):
+            xs[new_name] = np.array(result[name])
+        return xs
+
+    @classmethod
+    def get_ys_from_results(cls, results_or_df, indexs=None):
+        """
+        :param results_or_df: list of BasicResult, or pandas.DataFrame
+        :param indexs: indices of results to be used
+        :return:
+        """
+        if results_or_df.__class__ == pd.DataFrame:
+            return cls.get_ys_from_dataframe(df=results_or_df, rows=indexs)
+
+        ys = {}
+        _results = map(lambda i:results_or_df[i], indexs) \
+            if indexs is not None \
+            else results_or_df
+        ys['label'] = \
+            np.array(map(lambda result: result.asset.groundtruth, _results))
+        ys['content_id'] = \
+            np.array(map(lambda result: result.asset.content_id, _results))
+        return ys
+
+    @classmethod
+    def get_xys_from_results(cls, results_or_df, indexs=None):
+        """
+        :param results_or_df: list of BasicResult, or pandas.DataFrame
+        :param indexs: indices of results to be used
+        :return:
+        """
+        if results_or_df.__class__ == pd.DataFrame:
+            return cls.get_xys_from_dataframe(df=results_or_df, rows=indexs)
+
+        xys = {}
+        xys.update(cls.get_xs_from_results(results_or_df, indexs))
+        xys.update(cls.get_ys_from_results(results_or_df, indexs))
+        return xys
+
     # ========================== begin of legacy ===============================
 
     # below is for the purpose of reading a legacy test text file, and to ensure
@@ -446,73 +519,6 @@ class TrainTestModel(TypeVersionEnabled):
         return xys
 
     # ========================== end of legacy =================================
-
-    @staticmethod
-    def get_xs_from_results(results, indexs=None):
-        """
-        :param results: list of BasicResult
-        :param indexs: indices of results to be used
-        :return:
-        """
-        feature_names = results[0].get_ordered_list_score_key()
-        xs = {}
-        for name in feature_names:
-            if indexs is None:
-                _results = results
-            else:
-                _results = map(lambda i:results[i], indexs)
-            xs[name] = np.array(map(lambda result: result[name], _results))
-        return xs
-
-    @staticmethod
-    def get_perframe_xs_from_result(result):
-        """
-        Similar to get_xs_from_results(), except that instead of intake a list
-        of Result, each corresponding to an aggregate score, this function takes
-        a single Result, and interpret its per-frame score as an aggregate score.
-        :param result: one BasicResult
-        :param indexs: indices of results to be used
-        :return:
-        """
-        feature_names = result._get_ordered_list_scores_key()
-        new_feature_names = result.get_ordered_list_score_key()
-        xs = {}
-        for name, new_name in zip(feature_names, new_feature_names):
-            xs[new_name] = np.array(result[name])
-        return xs
-
-    @staticmethod
-    def get_ys_from_results(results, indexs=None):
-        """
-        :param results: list of BasicResult
-        :param indexs: indices of results to be used
-        :return:
-        """
-        ys = {}
-
-        if indexs is None:
-            _results = results
-        else:
-            _results = map(lambda i:results[i], indexs)
-
-        ys['label'] = \
-            np.array(map(lambda result: result.asset.groundtruth, _results))
-        ys['content_id'] = \
-            np.array(map(lambda result: result.asset.content_id, _results))
-
-        return ys
-
-    @classmethod
-    def get_xys_from_results(cls, results, indexs=None):
-        """
-        :param results: list of BasicResult
-        :param indexs: indices of results to be used
-        :return:
-        """
-        xys = {}
-        xys.update(cls.get_xs_from_results(results, indexs))
-        xys.update(cls.get_ys_from_results(results, indexs))
-        return xys
 
 
 class LibsvmnusvrTrainTestModel(TrainTestModel):
