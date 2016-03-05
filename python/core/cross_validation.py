@@ -1,6 +1,7 @@
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
+import random
 from math import floor
 import itertools
 
@@ -44,7 +45,8 @@ class ModelCrossValidation(object):
                                    train_test_model_class,
                                    model_param,
                                    results_or_df,
-                                   kfold):
+                                   kfold,
+                                   logger=None):
         """
         Standard k-fold cross validation, given hyper-parameter set model_param
         :param train_test_model_class:
@@ -84,6 +86,8 @@ class ModelCrossValidation(object):
 
         for fold in range(len(kfold)):
 
+            if logger: logger.info("Fold {}...".format(fold))
+
             test_index_range = kfold[fold]
             train_index_range = []
             for train_fold in range(len(kfold)):
@@ -121,7 +125,10 @@ class ModelCrossValidation(object):
                                           train_test_model_class,
                                           model_param_search_range,
                                           results_or_df,
-                                          kfold):
+                                          kfold,
+                                          search_strategy='grid',
+                                          random_search_times=100,
+                                          logger=None):
         """
         Nested k-fold cross validation, given hyper-parameter search range. The
         search range is specified in the format of, e.g.:
@@ -134,6 +141,7 @@ class ModelCrossValidation(object):
         :param kfold: if it is an integer, it is the number of folds; if it is
         lists of indices, then each list contains row indices of the dataframe
         selected as one fold
+        :param search_strategy: either 'grid' or 'random'
         :return: output
         """
 
@@ -159,13 +167,25 @@ class ModelCrossValidation(object):
         assert len(kfold) >= 3, 'kfold list must have length >= 2 for nested ' \
                                 'k-fold cross validation.'
 
-        list_model_param = cls._unroll_dict_of_lists(model_param_search_range)
+        if search_strategy == 'grid':
+            cls._assert_grid_search(model_param_search_range)
+            list_model_param = cls._unroll_dict_of_lists(
+                model_param_search_range)
+        elif search_strategy == 'random':
+            cls._assert_random_search(model_param_search_range)
+            list_model_param = cls._sample_model_param_list(
+                model_param_search_range, random_search_times)
+        else:
+            assert False, "Unknown search_strategy: {}".format(search_strategy)
 
         statss = []
         model_params = []
         contentids = []
 
         for fold in range(len(kfold)):
+
+            if logger: logger.info("Fold {}...".format(fold))
+
             test_index_range = kfold[fold]
             train_index_range = []
             train_index_range_in_list_of_indices = []
@@ -179,6 +199,9 @@ class ModelCrossValidation(object):
             best_model_param = None
             best_stats = None
             for model_param in list_model_param:
+
+                if logger: logger.info("\tModel parameter: {}".format(model_param))
+
                 output = \
                     cls.run_kfold_cross_validation(train_test_model_class,
                                                    model_param,
@@ -223,6 +246,26 @@ class ModelCrossValidation(object):
         return output__
 
     @classmethod
+    def _assert_grid_search(cls, model_param_search_range):
+        assert isinstance(model_param_search_range, dict)
+        # for grid search, model_param_search_range's values must all be lists
+        # or tuples
+        for v in model_param_search_range.itervalues():
+            assert isinstance(v, (list, tuple))
+
+    @classmethod
+    def _assert_random_search(cls, model_param_search_range):
+        assert isinstance(model_param_search_range, dict)
+        # for random search, model_param_search_range's values must either be
+        # lists/tuples, or dictionary containing 'low' and 'high' bounds.
+        for v in model_param_search_range.itervalues():
+            assert (isinstance(v, (list, tuple))
+                    or
+                    (isinstance(v, dict) and 'low' in v
+                     and 'high' in v and 'decimal' in v)
+                    )
+
+    @classmethod
     def print_output(cls, output):
         if 'stats' in output:
             print 'Stats: {}'.format(cls.format_stats(output['stats']))
@@ -233,8 +276,11 @@ class ModelCrossValidation(object):
                 ratio=output['top_ratio'],
                 modelparam=output['top_model_param'])
         if 'statss' in output and 'model_params' in output:
-            for fold, (stats, model_param) in enumerate(zip(output['statss'], output['model_params'])):
-                print 'Fold {fold}: {model_param}, {stats}'.format(fold=fold, model_param=model_param, stats=cls.format_stats(stats))
+            for fold, (stats, model_param) in \
+                    enumerate(zip(output['statss'], output['model_params'])):
+                print 'Fold {fold}: {model_param}, {stats}'.format(
+                    fold=fold, model_param=model_param,
+                    stats=cls.format_stats(stats))
 
     @staticmethod
     def format_stats(stats):
@@ -269,6 +315,28 @@ class ModelCrossValidation(object):
         list_of_dicts = []
         for key_value_pairs in list_of_key_value_pairs_rearranged:
             list_of_dicts.append(dict(key_value_pairs))
+
+        return list_of_dicts
+
+    @staticmethod
+    def _sample_model_param_list(model_param_search_range, random_search_times):
+        keys = sorted(model_param_search_range.keys()) # normalize order
+        list_of_dicts = []
+        for i in range(random_search_times):
+            d = {}
+            for k in keys:
+                v = model_param_search_range[k]
+                if isinstance(v, (list, tuple)):
+                    d[k] = random.choice(v)
+                elif isinstance(v, dict) and 'low' in v \
+                    and 'high' in v and 'decimal' in v:
+                    num = random.uniform(v['low'], v['high'])
+                    scale = (10**v['decimal'])
+                    num = int(num * scale) / float(scale)
+                    d[k] = num
+                else:
+                    assert False
+            list_of_dicts.append(d)
 
         return list_of_dicts
 

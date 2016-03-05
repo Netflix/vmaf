@@ -109,6 +109,35 @@ class FeatureCrossValidationTest(unittest.TestCase):
 
         self.assertEquals(dicts, expected_dicts)
 
+    def test_sample_model_param_list(self):
+        import random
+        random.seed(0)
+
+        model_param_search_range = {'norm_type':['normalize', 'clip_0to1'],
+                                    'n_estimators':[10, 50], 'random_state': [0]}
+        dicts = ModelCrossValidation._sample_model_param_list(
+            model_param_search_range, 4)
+        expected_dicts = [
+         {'norm_type':'clip_0to1', 'n_estimators':50, 'random_state':0},
+         {'norm_type':'clip_0to1', 'n_estimators':10, 'random_state':0},
+         {'norm_type':'normalize', 'n_estimators':50, 'random_state':0},
+         {'norm_type':'clip_0to1', 'n_estimators':50, 'random_state':0},
+        ]
+        self.assertEquals(dicts, expected_dicts)
+
+        model_param_search_range = {'norm_type':['normalize', 'clip_0to1'],
+                                    'n_estimators':{'low':10, 'high':50, 'decimal':0},
+                                    'random_state': [0]}
+        dicts = ModelCrossValidation._sample_model_param_list(
+            model_param_search_range, 4)
+        expected_dicts = [
+         {'norm_type':'clip_0to1', 'n_estimators':21, 'random_state':0},
+         {'norm_type':'clip_0to1', 'n_estimators':20, 'random_state':0},
+         {'norm_type':'clip_0to1', 'n_estimators':42, 'random_state':0},
+         {'norm_type':'clip_0to1', 'n_estimators':39, 'random_state':0},
+        ]
+        self.assertEquals(dicts, expected_dicts)
+
     def test_find_most_frequent_dict(self):
         dicts = [
          {'norm_type':'normalize', 'n_estimators':10, 'random_state':0},
@@ -149,14 +178,14 @@ class FeatureCrossValidationTest(unittest.TestCase):
         self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.76196220071567478)
         self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.33035493012810879)
 
-        expected_model_param = {'norm_type':'normalize',
+        expected_top_model_param = {'norm_type':'normalize',
                                 'n_estimators':90,
                                 'max_depth':None,
                                 'random_state':0
                                 }
-        expected_dominance = 0.5
-        # self.assertEquals(output['top_model_param'], expected_model_param)
-        self.assertEquals(output['top_ratio'], expected_dominance)
+        expected_top_ratio = 0.5
+        # self.assertEquals(output['top_model_param'], expected_top_model_param)
+        self.assertEquals(output['top_ratio'], expected_top_ratio)
 
     def test_run_nested_kfold_cross_validation_libsvmnusvr(self):
 
@@ -183,16 +212,16 @@ class FeatureCrossValidationTest(unittest.TestCase):
         self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.77785381654919195)
         self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.33028967923638342)
 
-        expected_model_param = {'norm_type':'clip_0to1',
+        expected_top_model_param = {'norm_type':'clip_0to1',
                                 'kernel':'rbf',
                                 'nu':1.0,
                                 'C':1,
                                 'gamma':0.0,
                                 }
-        expected_dominance = 0.5
+        expected_top_ratio = 0.5
 
-        self.assertEquals(output['top_model_param'], expected_model_param)
-        self.assertEquals(output['top_ratio'], expected_dominance)
+        self.assertEquals(output['top_model_param'], expected_top_model_param)
+        self.assertEquals(output['top_ratio'], expected_top_ratio)
 
     def test_run_nested_kfold_cross_validation_with_list_input(self):
 
@@ -221,14 +250,14 @@ class FeatureCrossValidationTest(unittest.TestCase):
         self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.76385104263763215)
         self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.37845025070768784)
 
-        expected_model_param = {'norm_type':'normalize',
-                                'n_estimators':90,
-                                'max_depth':3,
-                                'random_state':0
-                                }
-        expected_dominance = 0.6666666666666666
-        self.assertEquals(output['top_model_param'], expected_model_param)
-        self.assertEquals(output['top_ratio'], expected_dominance)
+        expected_top_model_param = {'norm_type':'normalize',
+                                    'n_estimators':90,
+                                    'max_depth':3,
+                                    'random_state':0
+                                    }
+        expected_top_ratio = 0.6666666666666666
+        self.assertEquals(output['top_model_param'], expected_top_model_param)
+        self.assertEquals(output['top_ratio'], expected_top_ratio)
 
 if __name__ == '__main__':
     unittest.main()

@@ -48,13 +48,13 @@ class BasicResult(object):
         return StatsList.stddev(self._get_score_list_from_key(key))
 
     def var(self, key):
-        return StatsList.var(self._get_score_list_from_key(key))
+        return StatsList.variance(self._get_score_list_from_key(key))
 
     def percentile(self, key, q):
         return StatsList.percentile(self._get_score_list_from_key(key), q)
 
     def total_var(self, key):
-        return StatsList.total_var(self._get_score_list_from_key(key))
+        return StatsList.total_variation(self._get_score_list_from_key(key))
 
     def moving_average(self, key, n, type='exponential'):
         return StatsList.moving_average(
