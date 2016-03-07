@@ -102,7 +102,9 @@ class VmafFeatureExtractor(FeatureExtractor):
         len_score = len(atom_feature_scores_dict[self.ATOM_FEATURES[0]])
         assert len_score != 0
         for atom_feature in self.ATOM_FEATURES[1:]:
-            assert len_score == len(atom_feature_scores_dict[atom_feature])
+            assert len_score == len(atom_feature_scores_dict[atom_feature]), \
+                "Feature data possibly corrupt. Run cleanup script and try " \
+                "again"
 
         feature_result = {}
 
