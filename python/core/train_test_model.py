@@ -219,6 +219,11 @@ class TrainTestModel(TypeVersionEnabled):
         return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f})'.format(
             srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
 
+    @staticmethod
+    def format_stats2(stats):
+        return 'SRCC: {srcc:.3f}\nPCC: {pcc:.3f}\nRMSE: {rmse:.3f}'.format(
+            srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
+
     @classmethod
     def aggregate_stats_list(cls, stats_list):
         aggregate_ys_label = []
