@@ -357,3 +357,11 @@ def cv_on_dataset(dataset, feature_param, model_param, ax, result_store, content
         ))
 
     return assets, cv_output
+
+
+def run_remove_results_for_dataset(result_store, dataset, executor_class):
+    assets = read_dataset(dataset)
+    executor = executor_class(assets=assets,
+                                logger=None,
+                                result_store=result_store)
+    executor.remove_results()
