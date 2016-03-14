@@ -140,6 +140,9 @@ class Executor(TypeVersionEnabled):
         else:
             result = None
 
+        # if result can be retrieved from result_store, skip log file
+        # generation and reading result from log file, but directly return
+        # return the retrieved result
         if result is not None:
             if self.logger:
                 self.logger.info('{id} result exists. Skip {id} run.'.
@@ -147,11 +150,21 @@ class Executor(TypeVersionEnabled):
         else:
 
             log_file_path = self._get_log_file_path(asset)
-            if os.path.exists(log_file_path):
+
+            # ------------------------------------------------------------------
+            # if os.path.exists(log_file_path):
+            # ------------------------------------------------------------------
+            # ABOVE: check log file existence -- if yes, skip log generation
+            # and jump to reading result from log file
+            # BELOW: don't check existence of log file, just directly go to
+            # log generation
+            # ------------------------------------------------------------------
+            if False:
+            # ------------------------------------------------------------------
+
                 if self.logger:
                     self.logger.info('{id} log file exists. Skip run and log file'
                                      ' generation.'.format(id=self.executor_id))
-
             else:
 
                 if self.logger:
