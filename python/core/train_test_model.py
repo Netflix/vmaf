@@ -221,7 +221,7 @@ class TrainTestModel(TypeVersionEnabled):
 
     @staticmethod
     def format_stats2(stats):
-        return 'SRCC: {srcc:.3f}\nPCC: {pcc:.3f}\nRMSE: {rmse:.3f}'.format(
+        return 'RMSE: {rmse:.3f}\nPCC: {pcc:.3f}\nSRCC: {srcc:.3f}'.format(
             srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
 
     @classmethod
