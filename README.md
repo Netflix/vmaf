@@ -5,7 +5,7 @@ VMAF is a software package developed by Netflix Inc. containing tools for percep
 
 ##Prerequisite
 
-The VMAF package has its core feature extraction library written in C, and the rest glue code written in Python. It also incorporates an external C++ library [libsvm](https://www.csie.ntu.edu.tw/~cjlin/libsvm/). To build the C/C++ code, it requires *cc* and *g++*. To run scripts and tests, it requires Python 2 (>= 2.7) installed.
+The VMAF package has its core feature extraction library written in C, and the rest glue code written in Python. It also incorporates an external C++ library [libsvm](https://www.csie.ntu.edu.tw/~cjlin/libsvm/). To build the C/C++ code, it requires *cc* and *g++*. To run scripts and tests, it requires Python2 (>= 2.7) installed.
 
 It also requires a number of Python packages:
 
@@ -29,7 +29,7 @@ You can verify if a package is properly installed and its version/location by:
 python -c 'import [package_name] as pkg; print pkg.__version__; print pkg.__file__'
 ```
 
-Note that for *scikit-learn*, the package name is *sklearn*. If you see that printed version number is old, it could suggest that a previously installed package with the same name but older version may have overshadowed the new one. Make sure that the new one's path appears early in the path list, which can be printed by:
+Note that for *scikit-learn*, the package name is *sklearn*. If you see that printed version number is older than the ones above, it could suggest that a previously installed package with the same name but older version may have overshadowed the new one. Make sure that the new one's path appears early in the path list, which can be printed by:
 
 ```
 python -c 'import sys; print sys.path'
@@ -144,13 +144,13 @@ A user can customize the model based on:
   
 Once a model is trained, the VMAF package also provides tools to cross validate it on a different dataset and visualization.
 
-####Create a Dataset
+###Create a Dataset
 
 To begin with, create a dataset file following the format in *example_dataset.py*. A dataset is a collection of distorted videos, each has a unique asset ID and a corresponding reference video, identified by a unique content ID. Each distorted video is also associated with a DMOS (differential mean opinion score), which is obtained through subjective experiments.
 
 See directory *resource/dataset* for more examples. Also refer to the 'Datasets' section regarding publicly available datasets.
 
-####Validate a Dataset
+###Validate a Dataset
 
 Once a dataset is created, first validate the dataset using existing VMAF or other (e.g. PSNR) metrics. Run:
 
@@ -175,8 +175,24 @@ Make sure *matplotlib* is installed to visualize the DMOS-prediction scatter plo
   - PCC - Pearson correlation coefficient
   - SRCC - Spearman rank correlation coefficient
   - RMSE - root mean squared error
+  
+####Troubleshooting
 
-####Train a New Model
+When creating a dataset file, one may make errors (for example, having a typo in a file path) that could go unnoticed but make the execution of `run_testing` fail. For debugging purpose, it is recommended to turn *parallelize* mode to *no*. 
+
+If problem persists, one may need to run the script: 
+
+```
+./run_cleaning_cache quality_type test_dataset_file
+``` 
+
+to clean up corrupted results in the store before retrying. For example:
+ 
+```
+./run_cleaning_cache VMAF example_dataset.py
+```
+
+###Train a New Model
 
 Now that we are confident that the dataset is created correctly and we have some benchmark result on existing metrics, we proceed to train a new quality assessment model. Run:
 
@@ -230,7 +246,7 @@ The trained model is output to *output_model_file*. Once it is obtained, it can 
 
 Above are two example scatter plots obtained from running the *run_training* and *run_testing* executors on a training and a testing dataset, respectively.
 
-####Creating New Features And Regressors
+###Creating New Features And Regressors
 
 You can also customize VMAF by plugging in third-party features or inventing new features, and specify them in the *feature_param_file*. Essentially, the 'aggregate' feature type (e.g. VMAF_feature) specified in the *feature_dict* corresponds to the *TYPE* field of a FeatureExtractor subclass (e.g. VmafFeatureExtractor). All you need to do is to create a new class extending the FeatureExtractor base class.
 
@@ -240,10 +256,10 @@ For instructions on how to extending the FeatureExtractor and TrainTestModel bas
 
 ##Datasets
 
-#### Netflix Public Dataset
+### Netflix Public Dataset
 
 We provide a dataset publicly available to the community for training, testing and verification of results purposes. The dataset file can be found at `resource/dataset/NFLX_dataset_public.py`, and the videos (in YUV420P format) can be downloaded [here](https://drive.google.com/folderview?id=0B3YWNICYMBIweGdJbERlUG9zc0k&usp=sharing).
 
-#### VQEG HD3 Dataset
+### VQEG HD3 Dataset
 
 We also provide an example dataset file containing video file names from VQEG (Video Quality Expert Group) HD3 videos. The dataset file can be found at `resource/dataset/VQEGHD3_dataset.py`, and the videos is available for downloading from [http://www.cdvl.org/](http://www.cdvl.org/). After login, choose menu 'find videos', and search use keyword 'vqeghd3'. The dataset file includes from src01 to src09 except for src04, which overlaps with the Netflix Public Dataset, and hrc04, hrc07, hrc16, hrc17, hrc18, hrc19, hrc20 and hrc21, which are the mostly relevant distortion types to adaptive streaming. After downloading the videos, convert them to YUV420P format. 

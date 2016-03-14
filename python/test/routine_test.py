@@ -23,6 +23,7 @@ class TestTrainOnDataset(unittest.TestCase):
         if os.path.exists(self.output_model_filepath):
             os.remove(self.output_model_filepath)
 
+    @unittest.skip("train_on_dataset is deprecated")
     def test_train_on_dataset_with_dis1st_thr(self):
         feature_param = import_python_file(
             config.ROOT + '/python/test/resource/feature_param_sample.py')
