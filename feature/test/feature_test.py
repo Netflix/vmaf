@@ -5,6 +5,7 @@ import os
 import re
 import subprocess
 import unittest
+
 import config
 
 def read_log(log_filename, type):
@@ -34,12 +35,10 @@ class SingleFeatureTest(unittest.TestCase):
     YUV_HEIGHT = 324
 
     def setUp(self):
-        unittest.TestCase.setUp(self)
         if os.path.exists(self.LOG_FILENAME):
             os.remove(self.LOG_FILENAME)
 
     def tearDown(self):
-        unittest.TestCase.tearDown(self)
         if os.path.exists(self.LOG_FILENAME):
             os.remove(self.LOG_FILENAME)
 
