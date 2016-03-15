@@ -238,36 +238,28 @@ class Executor(TypeVersionEnabled):
         # For now, only works for YUV format -- all need is to copy from ref
         # file to ref workfile
 
-        src = asset.ref_path
-        dst = asset.ref_workfile_path
-
         # if fifo mode, mkfifo
         if fifo_mode:
-            os.mkfifo(dst)
+            os.mkfifo(asset.ref_workfile_path)
 
-        # open ref file
-        self._open_file(src, dst)
+        # NOTE: & is required for fifo mode !!!!
+        cp_cmd = "cp {src} {dst} &". \
+            format(src=asset.ref_path, dst=asset.ref_workfile_path)
+        if self.logger:
+            self.logger.info(cp_cmd)
+        subprocess.call(cp_cmd, shell=True)
 
     def _open_dis_workfile(self, asset, fifo_mode):
         # For now, only works for YUV format -- all need is to copy from dis
         # file to dis workfile
 
-        src = asset.dis_path
-        dst = asset.dis_workfile_path
-
         # if fifo mode, mkfifo
         if fifo_mode:
-            os.mkfifo(dst)
-
-        # open dis file
-        self._open_file(src, dst)
-
-    def _open_file(self, src, dst):
-        # For now, only works if source is YUV -- all needed is to copy
+            os.mkfifo(asset.dis_workfile_path)
 
         # NOTE: & is required for fifo mode !!!!
         cp_cmd = "cp {src} {dst} &". \
-            format(src=src, dst=dst)
+            format(src=asset.dis_path, dst=asset.dis_workfile_path)
         if self.logger:
             self.logger.info(cp_cmd)
         subprocess.call(cp_cmd, shell=True)
