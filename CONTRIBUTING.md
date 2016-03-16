@@ -115,6 +115,7 @@ There are two ways to extend a QualityRunner base class -- either by directly im
 A derived class of FeatureExtractor must:
 
   - Override *TYPE* and *VERSION* fields.
+  - Override *ATOM_FEATURES* field.
   - Override *_run_and_generate_log_file(self, asset)*, which call a command-line executable and generate feature scores in a log file.
   - Override *_get_feature_scores(self, asset)*, which read the feature scores from the log file, and return the scores in a dictionary format.
 
