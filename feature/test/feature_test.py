@@ -22,7 +22,7 @@ def read_log(log_filename, type):
     score = sum(scores) / float(len(scores))
     return score, scores
 
-class SingleFeatureTest(unittest.TestCase):
+class FeatureTest(unittest.TestCase):
 
     VMAF = config.ROOT + "/feature/vmaf"
     PSNR = config.ROOT + "/feature/psnr"
@@ -84,21 +84,6 @@ class SingleFeatureTest(unittest.TestCase):
         self.assertAlmostEquals(scores[0], 0.574283)
         self.assertAlmostEquals(scores[1], 0.491295)
 
-    def test_motion_yuv420p10le(self):
-        print 'test motion on yuv420p10le format...'
-        cmd = "{vmaf} motion yuv420p10le {ref} {dis} {w} {h} > {log}".format(
-            vmaf=self.VMAF, ref=self.REF_YUV, dis=self.DIS_YUV,
-            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
-        )
-        subprocess.call(cmd, shell=True)
-        score, scores = read_log(self.LOG_FILENAME, "motion")
-        self.assertAlmostEquals(score, 263.27415975)
-        self.assertAlmostEquals(scores[0], 0.0)
-        self.assertAlmostEquals(scores[1], 281.234406)
-        self.assertAlmostEquals(scores[23], 324.084839)
-        # 28 frames yuv420p should be 24 frames in yuv420p10le
-        self.assertAlmostEquals(len(scores), 24)
-
     def test_all(self):
         print 'test all...'
         cmd = "{vmaf} all {fmt} {ref} {dis} {w} {h} > {log}".format(
@@ -138,6 +123,109 @@ class SingleFeatureTest(unittest.TestCase):
         self.assertAlmostEquals(score, 61.332006624999984)
         score, scores = read_log(self.LOG_FILENAME, "2ndmoment")
         self.assertAlmostEquals(score, 4798.659574041666)
+
+class FeatureTestYuv422p10le(unittest.TestCase):
+
+    VMAF = config.ROOT + "/feature/vmaf"
+    PSNR = config.ROOT + "/feature/psnr"
+    MOMENT = config.ROOT + "/feature/moment"
+    LOG_FILENAME = config.ROOT + "/workspace/log"
+    REF_YUV = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv422p10le.yuv"
+    DIS_YUV = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv422p10le.yuv"
+    YUV_FMT = "yuv422p10le"
+    YUV_WIDTH = 576
+    YUV_HEIGHT = 324
+
+    def setUp(self):
+        if os.path.exists(self.LOG_FILENAME):
+            os.remove(self.LOG_FILENAME)
+
+    def tearDown(self):
+        if os.path.exists(self.LOG_FILENAME):
+            os.remove(self.LOG_FILENAME)
+
+    def test_adm(self):
+        print 'test adm on yuv422p10le...'
+        cmd = "{vmaf} adm {fmt} {ref} {dis} {w} {h} > {log}".format(
+            vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "adm")
+        self.assertAlmostEquals(score, 0.9155242291666666)
+
+    def test_ansnr(self):
+        print 'test ansnr on yuv422p10le...'
+        cmd = "{vmaf} ansnr {fmt} {ref} {dis} {w} {h} > {log}".format(
+            vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "ansnr")
+        self.assertAlmostEquals(score, 22.53345677083333)
+
+    def test_motion(self):
+        print 'test motion on yuv422p10le...'
+        cmd = "{vmaf} motion {fmt} {ref} {dis} {w} {h} > {log}".format(
+            vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "motion")
+        self.assertAlmostEquals(score, 3.5916076041666667)
+
+    def test_vif(self):
+        print 'test vif on yuv422p10le...'
+        cmd = "{vmaf} vif {fmt} {ref} {dis} {w} {h} > {log}".format(
+            vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "vif")
+        self.assertAlmostEquals(score, 0.44417014583333336)
+        self.assertAlmostEquals(scores[0], 0.574283)
+        self.assertAlmostEquals(scores[1], 0.491295)
+
+    def test_all(self):
+        print 'test all on yuv422p10le...'
+        cmd = "{vmaf} all {fmt} {ref} {dis} {w} {h} > {log}".format(
+            vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "vif")
+        self.assertAlmostEquals(score, 0.44417014583333336)
+        score, scores = read_log(self.LOG_FILENAME, "motion")
+        self.assertAlmostEquals(score, 3.5916076041666667)
+        score, scores = read_log(self.LOG_FILENAME, "ansnr")
+        self.assertAlmostEquals(score, 22.53345677083333)
+        score, scores = read_log(self.LOG_FILENAME, "adm")
+        self.assertAlmostEquals(score, 0.9155242291666666)
+
+    def test_psnr(self):
+        print 'test psnr on yuv422p10le...'
+        cmd = "{psnr} {fmt} {ref} {dis} {w} {h} > {log}".format(
+            psnr=self.PSNR, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "psnr")
+        self.assertAlmostEquals(score, 30.78057329166666)
+        self.assertAlmostEquals(scores[0], 34.786288)
+        self.assertAlmostEquals(scores[1], 31.908737)
+
+    def test_2nd_moment(self):
+        print 'test 2nd moment on yuv422p10le...'
+        cmd = "{moment} 2 {fmt} {dis} {w} {h} > {log}".format(
+            moment=self.MOMENT, fmt=self.YUV_FMT, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "1stmoment")
+        self.assertAlmostEquals(score, 61.332006624999984)
+        score, scores = read_log(self.LOG_FILENAME, "2ndmoment")
+        self.assertAlmostEquals(score, 4798.659574041666)
+
 
 class CornerCaseTest(unittest.TestCase):
 
