@@ -151,6 +151,25 @@ class AssetTest(unittest.TestCase):
              }
         )
 
+    def test_to_normalized_dict_10le(self):
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="dir/refvideo.yuv420p10le.yuv",
+                      dis_path="dir/disvideo.yuv420p10le.yuv",
+                      asset_dict={'width':720, 'height':480,
+                                  'start_frame':2, 'end_frame':2})
+        self.assertEquals(
+            asset.to_normalized_dict(),
+            {'asset_dict': {'end_frame': 2, 'height': 480,
+                            'start_frame': 2, 'width': 720},
+              'asset_id': 0,
+              'content_id': 0,
+              'dataset': 'test',
+              'dis_path': 'disvideo.yuv420p10le.yuv',
+              'ref_path': 'refvideo.yuv420p10le.yuv',
+              'workdir': ''
+             }
+        )
+
     def test_str_repr(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
@@ -190,6 +209,34 @@ class AssetTest(unittest.TestCase):
             "test_0_2_refvideo_720x480_vs_disvideo_720x480_q_1920x1080"
         )
         expected_repr = '{"asset_dict": {"height": 480, "quality_height": 1080, "quality_width": 1920, "width": 720}, "asset_id": 2, "content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", "ref_path": "refvideo.yuv", "workdir": ""}'
+        self.assertEquals(repr(asset), expected_repr)
+        recon_asset = Asset.from_repr(expected_repr)
+        self.assertEquals(asset, recon_asset)
+
+        asset = Asset(dataset="test", content_id=0, asset_id=2,
+                      ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
+                      asset_dict={'width':720, 'height':480,
+                                  'quality_width':1920, 'quality_height':1080,
+                                  'yuv_type':'yuv422p'})
+        self.assertEquals(
+            str(asset),
+            "test_0_2_refvideo_720x480_yuv422p_vs_disvideo_720x480_yuv422p_q_1920x1080"
+        )
+        expected_repr = '{"asset_dict": {"height": 480, "quality_height": 1080, "quality_width": 1920, "width": 720, "yuv_type": "yuv422p"}, "asset_id": 2, "content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", "ref_path": "refvideo.yuv", "workdir": ""}'
+        self.assertEquals(repr(asset), expected_repr)
+        recon_asset = Asset.from_repr(expected_repr)
+        self.assertEquals(asset, recon_asset)
+
+        asset = Asset(dataset="test", content_id=0, asset_id=2,
+                      ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
+                      asset_dict={'width':720, 'height':480,
+                                  'quality_width':1920, 'quality_height':1080,
+                                  'resampling_type':'lanczos'})
+        self.assertEquals(
+            str(asset),
+            "test_0_2_refvideo_720x480_vs_disvideo_720x480_q_1920x1080_lanczos"
+        )
+        expected_repr = '{"asset_dict": {"height": 480, "quality_height": 1080, "quality_width": 1920, "resampling_type": "lanczos", "width": 720}, "asset_id": 2, "content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", "ref_path": "refvideo.yuv", "workdir": ""}'
         self.assertEquals(repr(asset), expected_repr)
         recon_asset = Asset.from_repr(expected_repr)
         self.assertEquals(asset, recon_asset)
@@ -252,6 +299,24 @@ class AssetTest(unittest.TestCase):
         with self.assertRaises(AssertionError):
             print asset.yuv_type
 
+    def test_resampling_type(self):
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'fps':24, 'start_sec':2, 'end_sec': 3})
+        self.assertEquals(asset.resampling_type, 'bilinear')
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'fps':24, 'start_sec':2, 'end_sec': 3,
+                                  'resampling_type':'lanczos'})
+        self.assertEquals(asset.resampling_type, 'lanczos')
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'fps':24, 'start_sec':2, 'end_sec': 3,
+                                  'resampling_type':'bicubic'})
+        with self.assertRaises(AssertionError):
+            print asset.resampling_type
 
 if __name__ == '__main__':
     unittest.main()

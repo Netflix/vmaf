@@ -123,23 +123,6 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_score'], 1.0)
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 30.030914145833322)
 
-    def test_run_vmaf_fextractor_with_scaling(self):
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
-        asset = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=config.ROOT + "/workspace/workdir",
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324,
-                                  'quality_width':384, 'quality_height':216})
-
-        self.fextractor = VmafFeatureExtractor(
-            [asset], None, fifo_mode=True,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir")
-
-        with self.assertRaises(AssertionError):
-            self.fextractor.run()
-
     def test_run_vmaf_fextractor_not_unique(self):
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"

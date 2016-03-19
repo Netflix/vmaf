@@ -91,12 +91,12 @@ class Executor(TypeVersionEnabled):
     @staticmethod
     def _assert_an_asset(asset):
 
-        # 1) for now, quality width/height has to agree with ref/dis width/height
-        assert asset.quality_width_height \
-               == asset.ref_width_height \
-               == asset.dis_width_height
-        # 2) ...
-        # 3) ...
+        # # 1) for now, quality width/height has to agree with ref/dis width/height
+        # assert asset.quality_width_height \
+        #        == asset.ref_width_height \
+        #        == asset.dis_width_height
+
+        pass
 
     def _wait_for_workfiles(self, asset):
         # wait til workfile paths being generated
@@ -242,12 +242,34 @@ class Executor(TypeVersionEnabled):
         if fifo_mode:
             os.mkfifo(asset.ref_workfile_path)
 
-        # NOTE: & is required for fifo mode !!!!
-        cp_cmd = "cp {src} {dst} &". \
-            format(src=asset.ref_path, dst=asset.ref_workfile_path)
-        if self.logger:
-            self.logger.info(cp_cmd)
-        subprocess.call(cp_cmd, shell=True)
+        if asset.quality_width_height == asset.ref_width_height:
+            # NOTE: & is required for fifo mode !!!!
+            cp_cmd = "cp {src} {dst} &". \
+                format(src=asset.ref_path, dst=asset.ref_workfile_path)
+            if self.logger:
+                self.logger.info(cp_cmd)
+            subprocess.call(cp_cmd, shell=True)
+        else:
+            width, height = asset.ref_width_height
+            quality_width, quality_height = asset.quality_width_height
+            yuv_type = asset.yuv_type
+            resampling_type = asset.resampling_type
+
+            src_fmt_cmd = '-f rawvideo -pix_fmt {yuv_fmt} -s {width}x{height}'.\
+                format(yuv_fmt=asset.yuv_type, width=width, height=height)
+
+            from private.config import FFMPEG_PATH
+            ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
+                         '-pix_fmt {yuv_type} -s {width}x{height} -f rawvideo ' \
+                         '-sws_flags {resampling_type} -y {dst}'.format(
+                ffmpeg=FFMPEG_PATH, src=asset.ref_path, dst=asset.ref_workfile_path,
+                width=quality_width, height=quality_height,
+                src_fmt_cmd=src_fmt_cmd,
+                yuv_type=yuv_type,
+                resampling_type=resampling_type)
+            if self.logger:
+                self.logger.info(ffmpeg_cmd)
+            subprocess.call(ffmpeg_cmd, shell=True)
 
     def _open_dis_workfile(self, asset, fifo_mode):
         # For now, only works for YUV format -- all need is to copy from dis
@@ -257,12 +279,34 @@ class Executor(TypeVersionEnabled):
         if fifo_mode:
             os.mkfifo(asset.dis_workfile_path)
 
-        # NOTE: & is required for fifo mode !!!!
-        cp_cmd = "cp {src} {dst} &". \
-            format(src=asset.dis_path, dst=asset.dis_workfile_path)
-        if self.logger:
-            self.logger.info(cp_cmd)
-        subprocess.call(cp_cmd, shell=True)
+        if asset.quality_width_height == asset.dis_width_height:
+            # NOTE: & is required for fifo mode !!!!
+            cp_cmd = "cp {src} {dst} &". \
+                format(src=asset.dis_path, dst=asset.dis_workfile_path)
+            if self.logger:
+                self.logger.info(cp_cmd)
+            subprocess.call(cp_cmd, shell=True)
+        else:
+            width, height = asset.dis_width_height
+            quality_width, quality_height = asset.quality_width_height
+            yuv_type = asset.yuv_type
+            resampling_type = asset.resampling_type
+
+            src_fmt_cmd = '-f rawvideo -pix_fmt {yuv_fmt} -s {width}x{height}'.\
+                format(yuv_fmt=asset.yuv_type, width=width, height=height)
+
+            from private.config import FFMPEG_PATH
+            ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
+                         '-pix_fmt {yuv_type} -s {width}x{height} -f rawvideo ' \
+                         '-sws_flags {resampling_type} -y {dst}'.format(
+                ffmpeg=FFMPEG_PATH, src=asset.dis_path, dst=asset.dis_workfile_path,
+                width=quality_width, height=quality_height,
+                src_fmt_cmd=src_fmt_cmd,
+                yuv_type=yuv_type,
+                resampling_type=resampling_type)
+            if self.logger:
+                self.logger.info(ffmpeg_cmd)
+            subprocess.call(ffmpeg_cmd, shell=True)
 
     @staticmethod
     def _close_ref_workfile(asset):

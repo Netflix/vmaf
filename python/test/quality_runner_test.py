@@ -66,6 +66,47 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_score'], 1.0)
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 30.030914145833322)
 
+    def test_run_vamf_legacy_runner_10le(self):
+        print 'test on running VMAF (legacy) runner on 10 bit le...'
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv422p10le.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv422p10le.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324,
+                                  'yuv_type':'yuv422p10le'})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324,
+                                  'yuv_type':'yuv422p10le'})
+
+        self.runner = VmafLegacyQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            log_file_dir=config.ROOT + "/workspace/log_file_dir",
+            delete_workdir=True,
+            result_store=None
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAF_legacy_score'], 60.268970069698035)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)
+        self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 3.5916076041666667)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_score'], 0.91552422916666665)
+        self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 22.533456770833329)
+
+        self.assertAlmostEqual(results[1]['VMAF_legacy_score'], 95.65756240092573)
+        self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0)
+        self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm_score'], 1.0)
+        self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 30.030914145833322)
+
     def test_run_vamf_legacy_runner_with_result_store(self):
         print 'test on running VMAF (legacy) runner with result store...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
@@ -116,23 +157,6 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_score'], 1.0)
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 30.030914145833322)
-
-    def test_run_vmaf_legacy_runner_with_scaling(self):
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
-        asset = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=config.ROOT + "/workspace/workdir",
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324,
-                                  'quality_width':384, 'quality_height':216})
-
-        self.runner = VmafLegacyQualityRunner(
-            [asset], None, fifo_mode=True,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir")
-
-        with self.assertRaises(AssertionError):
-            self.runner.run()
 
     def test_run_vmaf_legacy_runner_not_unique(self):
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"

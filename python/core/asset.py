@@ -23,6 +23,13 @@ class Asset(WorkdirEnabled):
     directory to facilitate parallel execution.
     """
 
+    SUPPORTED_YUV_TYPES = ['yuv420p', 'yuv422p', 'yuv444p',
+                           'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
+    DEFAULT_YUV_TYPE = 'yuv420p'
+
+    SUPPORTED_RESAMPLING_TYPES = ['lanczos', 'bilinear']
+    DEFAULT_RESAMPLING_TYPE = 'bilinear'
+
     # ==== constructor ====
 
     def __init__(self, dataset, content_id, asset_id,
@@ -266,6 +273,9 @@ class Asset(WorkdirEnabled):
             w, h = self.ref_width_height
             s += "_{w}x{h}".format(w=w, h=h)
 
+        if self.yuv_type != self.DEFAULT_YUV_TYPE:
+            s += "_{}".format(self.yuv_type)
+
         if self.ref_start_end_frame:
             start, end = self.ref_start_end_frame
             s += "_{start}to{end}".format(start=start, end=end)
@@ -286,6 +296,9 @@ class Asset(WorkdirEnabled):
         w, h = self.dis_width_height
         s += "_{w}x{h}".format(w=w, h=h)
 
+        if self.yuv_type != self.DEFAULT_YUV_TYPE:
+            s += "_{}".format(self.yuv_type)
+
         if self.dis_start_end_frame:
             start, end = self.dis_start_end_frame
             s += "_{start}to{end}".format(start=start, end=end)
@@ -305,6 +318,11 @@ class Asset(WorkdirEnabled):
             if s != "":
                 s += "_"
             s += "{w}x{h}".format(w=w, h=h)
+
+        if self.resampling_type != self.DEFAULT_RESAMPLING_TYPE:
+            if s != "":
+                s += "_"
+            s += "{}".format(self.resampling_type)
 
         return s
 
@@ -420,12 +438,21 @@ class Asset(WorkdirEnabled):
         :return:
         """
         if 'yuv_type' in self.asset_dict:
-            if self.asset_dict['yuv_type'] in ['yuv420p', 'yuv422p', 'yuv444p',
-                                               'yuv420p10le', 'yuv422p10le',
-                                               'yuv444p10le']:
+            if self.asset_dict['yuv_type'] in self.SUPPORTED_YUV_TYPES:
                 return self.asset_dict['yuv_type']
             else:
-                assert False, "Unknown YUV type: {}".format(
+                assert False, "Unsupported YUV type: {}".format(
                     self.asset_dict['yuv_type'])
         else:
-            return 'yuv420p'
+            return self.DEFAULT_YUV_TYPE
+
+    @property
+    def resampling_type(self):
+        if 'resampling_type' in self.asset_dict:
+            if self.asset_dict['resampling_type'] in self.SUPPORTED_RESAMPLING_TYPES:
+                return self.asset_dict['resampling_type']
+            else:
+                assert False, "Unsupported resampling type: {}".format(
+                    self.asset_dict['resampling_type'])
+        else:
+            return self.DEFAULT_RESAMPLING_TYPE
