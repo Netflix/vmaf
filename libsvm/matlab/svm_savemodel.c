@@ -14,7 +14,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     const char *error_msg;
     int status;
 
-    // check input
+    /* check input */
     if(nrhs != 2) {
         mexPrintf("Usage: svm_savemodel(model, 'filename');\n");
         fake_answer(plhs);
@@ -31,7 +31,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         return;
     }
 
-    // convert MATLAB struct to C struct
+    /* convert MATLAB struct to C struct */
     model = matlab_matrix_to_model(prhs[0], &error_msg);
     if(model == NULL) {
         mexPrintf("Error: can't read model: %s\n", error_msg);
@@ -39,20 +39,20 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         return;
     }
 
-    // get filename
+    /* get filename */
     filename = mxArrayToString(prhs[1]);
 
-    // save model to file
+    /* save model to file */
     status = svm_save_model(filename,model);
     if (status != 0) {
         mexWarnMsgTxt("Error occured while writing to file.");
     }
 
-    // destroy model
+    /* destroy model */
     svm_free_and_destroy_model(&model);
     mxFree(filename);
 
-    // return status value (0: success, -1: failure)
+    /* return status value (0: success, -1: failure) */
     plhs[0] = mxCreateDoubleScalar(status);
 
     return;
