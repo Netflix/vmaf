@@ -17,7 +17,7 @@ def print_usage():
           + " fmt width height ref_file dis_file\n"
     print "fmts:\n\t" + "\n\t".join(FMTS) +"\n"
 
-if __name__ == "__main__":
+if __name__ == "__main__": 
 
     if len(sys.argv) < 6:
         print_usage()
