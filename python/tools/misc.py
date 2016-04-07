@@ -114,6 +114,20 @@ def import_python_file(filepath):
     ret = __import__(filename)
     return ret
 
+def make_absolute_path(path, current_dir):
+    '''
+
+    >>> make_absolute_path('abc/cde.fg', '/xyz/')
+    '/xyz/abc/cde.fg'
+    >>> make_absolute_path('/abc/cde.fg', '/xyz/')
+    '/abc/cde.fg'
+
+    '''
+    if path[0] == '/':
+        return path
+    else:
+        return current_dir + path
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
