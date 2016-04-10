@@ -20,7 +20,7 @@ class FeatureAssemblerTest(unittest.TestCase):
 
     def test_get_fextractor_subclasses(self):
         fextractor_subclasses = FeatureExtractor.get_subclasses()
-        self.assertEquals(len(fextractor_subclasses), 2)
+        self.assertEquals(len(fextractor_subclasses), 3)
         self.assertTrue(VmafFeatureExtractor in fextractor_subclasses)
         self.assertTrue(MomentFeatureExtractor in fextractor_subclasses)
 
