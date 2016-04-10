@@ -286,9 +286,6 @@ class VmafQualityRunner(QualityRunner):
         # 'score_clip'
         ys_pred = self.clip_score(model, ys_pred)
 
-        # 'dis1st_thr'
-        ys_pred = self.warp_score(model, xs, ys_pred)
-
         result_dict = {}
         # add all feature result
         result_dict.update(feature_result.result_dict)
@@ -321,18 +318,6 @@ class VmafQualityRunner(QualityRunner):
             ys_pred = np.clip(ys_pred, lb, ub)
 
         return ys_pred
-
-    @staticmethod
-    def set_warp_score(model, dis1st_thr):
-        """
-        Enable post processing: for pixel mean (luma) below certain threshold
-        (i.e. dis1st_thr, or threshold for distorted video's first moment),
-        warp the score towards highest score (e.g. 100).
-        :param model:
-        :param dis1st_thr:
-        :return:
-        """
-        model.append_info('dis1st_thr', dis1st_thr)
 
     @staticmethod
     def warp_score(model, xs, ys_pred):

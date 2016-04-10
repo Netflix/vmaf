@@ -145,14 +145,11 @@ def train_test_on_dataset(train_dataset, test_dataset,
     model.append_info('feature_dict', feature_param.feature_dict)
     if 'score_clip' in model_param_dict:
         VmafQualityRunner.set_clip_score(model, model_param_dict['score_clip'])
-    if 'dis1st_thr' in model_param_dict:
-        VmafQualityRunner.set_warp_score(model, model_param_dict['dis1st_thr'])
 
     train_ys_pred = model.predict(train_xs)
 
     # apply instructions indicated in the appended info
     train_ys_pred = VmafQualityRunner.clip_score(model, train_ys_pred)
-    train_ys_pred = VmafQualityRunner.warp_score(model, train_xs, train_ys_pred)
 
     train_stats = TrainTestModel.get_stats(train_ys['label'], train_ys_pred)
 
@@ -205,7 +202,6 @@ def train_test_on_dataset(train_dataset, test_dataset,
 
         # apply instructions indicated in the appended info
         test_ys_pred = VmafQualityRunner.clip_score(model, test_ys_pred)
-        test_ys_pred = VmafQualityRunner.warp_score(model, test_xs, test_ys_pred)
 
         test_stats = TrainTestModel.get_stats(test_ys['label'], test_ys_pred)
 

@@ -221,50 +221,6 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_score'], 1.0)
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 30.030914145833322)
 
-    def test_run_vmaf_runner_with_v2_model(self):
-        print 'test on running VMAF runner with v2 model...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.ROOT + "/workspace/workdir",
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=config.ROOT + "/workspace/workdir",
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
-
-        self.runner = VmafQualityRunner(
-            [asset, asset_original],
-            None, fifo_mode=True,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
-            delete_workdir=True,
-            result_store=None,
-            optional_dict={
-                'model_filepath':config.ROOT + "/resource/model/nflx_v2.pkl",
-            }
-        )
-        self.runner.run()
-
-        results = self.runner.results
-
-        self.assertAlmostEqual(results[0]['VMAF_score'], 67.71349125877346)
-        self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.44417014583333336)
-        self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 3.5916076041666667)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_score'], 0.91552422916666665)
-        self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 22.533456770833329)
-        self.assertAlmostEqual(results[0]['Moment_feature_dis1st_score'], 61.332006624999984)
-
-        self.assertAlmostEqual(results[1]['VMAF_score'], 99.97766752709886)
-        self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0)
-        self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 3.5916076041666667)
-        self.assertAlmostEqual(results[1]['VMAF_feature_adm_score'], 1.0)
-        self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 30.030914145833322)
-        self.assertAlmostEqual(results[1]['Moment_feature_dis1st_score'], 59.788567354166666)
-
     def test_run_vmaf_runner(self):
         print 'test on running VMAF runner...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
