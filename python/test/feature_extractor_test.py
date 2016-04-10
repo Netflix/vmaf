@@ -5,7 +5,8 @@ import os
 import unittest
 
 import config
-from core.feature_extractor import VmafFeatureExtractor, MomentFeatureExtractor
+from core.feature_extractor import VmafFeatureExtractor, MomentFeatureExtractor, \
+    PsnrFeatureExtractor
 from core.asset import Asset
 from core.executor import run_executors_in_parallel
 from core.result_store import FileSystemResultStore
@@ -183,6 +184,35 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['Moment_feature_dis1st_score'], 59.788567354166666)
         self.assertAlmostEqual(results[1]['Moment_feature_dis2nd_score'], 4696.668388125001)
         self.assertAlmostEqual(results[1]['Moment_feature_disvar_score'], 1121.5199106042544)
+
+    def test_run_psnr_fextractor(self):
+        print 'test on running PSNR feature extractor...'
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.fextractor = PsnrFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            log_file_dir=config.ROOT + "/workspace/log_file_dir",
+            result_store=None
+        )
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['PSNR_feature_psnr_score'], 30.755063979166664)
+        self.assertAlmostEqual(results[1]['PSNR_feature_psnr_score'], 60.0)
 
 class ParallelFeatureExtractorTest(unittest.TestCase):
 
