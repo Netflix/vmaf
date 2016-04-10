@@ -222,7 +222,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 30.030914145833322)
 
     def test_run_vmaf_runner_with_v2_model(self):
-        print 'test on running VMAF runner...'
+        print 'test on running VMAF runner with v2 model...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -305,7 +305,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 30.030914145833322)
 
     def test_run_vmaf_runner_checkerboard(self):
-        print 'test on running VMAF runner...'
+        print 'test on running VMAF runner on checkerboard pattern...'
         ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
         dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -344,7 +344,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 25.583514666666662)
 
     def test_run_vmaf_runner_flat(self):
-        print 'test on running VMAF runner...'
+        print 'test on running VMAF runner on flat pattern...'
         ref_path = config.ROOT + "/resource/yuv/flat_1920_1080_0.yuv"
         dis_path = config.ROOT + "/resource/yuv/flat_1920_1080_10.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
