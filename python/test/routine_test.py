@@ -24,10 +24,10 @@ class TestTrainOnDataset(unittest.TestCase):
             os.remove(self.output_model_filepath)
 
     def test_train_test_on_dataset_with_dis1st_thr(self):
+        model_param = import_python_file(
+            config.ROOT + '/python/test/resource/model_param_sample.py')
         feature_param = import_python_file(
             config.ROOT + '/python/test/resource/feature_param_sample.py')
-        model_param = import_python_file(
-            config.ROOT + '/python/teset/resource/model_param_sample.py')
         train_fassembler, train_assets, train_stats, \
         test_fassembler, test_assets, test_stats = \
             train_test_on_dataset(
@@ -43,7 +43,7 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertTrue(os.path.exists(self.output_model_filepath))
         self.assertItemsEqual(train_stats['ys_label_pred'],
                                 [91.707522376672316, 58.277822562766268,
-                                 95.577344864265129, 90.255945341860439])
+                                 91.707521620497104, 88.307134410232536])
 
 if __name__ == '__main__':
     unittest.main()
