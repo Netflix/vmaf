@@ -56,7 +56,7 @@
   #define vif_statistic      vif_statistic_d
 #endif
 
-int compute_vif(const number_t *ref, const number_t *dis, int w, int h, int ref_stride, int dis_stride, double *score)
+int compute_vif(const number_t *ref, const number_t *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den)
 {
 	number_t *data_buf = 0;
 	char *data_top;
@@ -291,6 +291,8 @@ int compute_vif(const number_t *ref, const number_t *dis, int w, int h, int ref_
 	{
 		*score = num / den;
 	}
+	*score_num = num;
+	*score_den = den;
 
 	ret = 0;
 fail_or_end:
@@ -301,6 +303,8 @@ fail_or_end:
 int vif(const char *ref_path, const char *dis_path, int w, int h, const char *fmt)
 {
 	double score = 0;
+	double score_num = 0;
+	double score_den = 0;
 	number_t *ref_buf = 0;
 	number_t *dis_buf = 0;
 	number_t *temp_buf = 0;
@@ -426,7 +430,7 @@ int vif(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		}
 
 		// compute
-		if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score)))
+		if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den)))
 		{
 			printf("error: compute_vif failed.\n");
 			fflush(stdout);
@@ -435,6 +439,10 @@ int vif(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 
 		// print
 		printf("vif: %d %f\n", frm_idx, score);
+		fflush(stdout);
+		printf("vif_num: %d %f\n", frm_idx, score_num);
+		fflush(stdout);
+		printf("vif_den: %d %f\n", frm_idx, score_den);
 		fflush(stdout);
 
 		// ref skip u and v

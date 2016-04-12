@@ -37,9 +37,9 @@
 	#define convolution_f32_c  convolution_f32_c_s
 	#define offset_image       offset_image_s
 	#define FILTER_5           FILTER_5_s
-	int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);
-	int compute_ansnr(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);
-	int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);
+	int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den);
+	int compute_ansnr(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_psnr, double peak, double psnr_max);
+	int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den);
 	int compute_motion(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);
 
 #else
@@ -50,9 +50,9 @@
 	#define convolution_f32_c convolution_f32_c_d
 	#define offset_image       offset_image_d
 	#define FILTER_5           FILTER_5_d
-	int compute_adm(const double *ref, const double *dis, int w, int h, int ref_stride, int dis_stride, double *score);
-	int compute_ansnr(const double *ref, const double *dis, int w, int h, int ref_stride, int dis_stride, double *score);
-	int compute_vif(const double *ref, const double *dis, int w, int h, int ref_stride, int dis_stride, double *score);
+	int compute_adm(const double *ref, const double *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den);
+	int compute_ansnr(const double *ref, const double *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_psnr, double peak, double psnr_max);
+	int compute_vif(const double *ref, const double *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den);
 	int compute_motion(const double *ref, const double *dis, int w, int h, int ref_stride, int dis_stride, double *score);
 
 #endif
@@ -60,6 +60,9 @@
 int all(const char *ref_path, const char *dis_path, int w, int h, const char *fmt)
 {
 	double score = 0;
+	double score_num = 0;
+	double score_den = 0;
+	double score_psnr = 0;
 	number_t *ref_buf = 0;
 	number_t *dis_buf = 0;
 
@@ -205,7 +208,7 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		}
 
 		/* =========== adm ============== */
-		if ((ret = compute_adm(ref_buf, dis_buf, w, h, stride, stride, &score)))
+		if ((ret = compute_adm(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den)))
 		{
 			printf("error: compute_adm failed.\n");
 			fflush(stdout);
@@ -213,15 +216,39 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		}
 		printf("adm: %d %f\n", frm_idx, score);
 		fflush(stdout);
+		printf("adm_num: %d %f\n", frm_idx, score_num);
+		fflush(stdout);
+		printf("adm_den: %d %f\n", frm_idx, score_den);
+		fflush(stdout);
 
 		/* =========== ansnr ============== */
-		if ((ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score)))
+		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+		{
+			// max psnr 60.0 for 8-bit per Ioannis
+			ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score, &score_psnr, 255.0, 60.0);
+		}
+		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+		{
+			// 10 bit gets normalized to 8 bit, peak is 1023 / 4.0 = 255.75
+			// max psnr 72.0 for 10-bit per Ioannis
+			ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score, &score_psnr, 255.75, 72.0);
+		}
+		else
+		{
+			printf("error: unknown format %s.\n", fmt);
+			fflush(stdout);
+			goto fail_or_end;
+		}
+		if (ret)
 		{
 			printf("error: compute_ansnr failed.\n");
 			fflush(stdout);
 			goto fail_or_end;
 		}
+
 		printf("ansnr: %d %f\n", frm_idx, score);
+		fflush(stdout);
+		printf("anpsnr: %d %f\n", frm_idx, score_psnr);
 		fflush(stdout);
 
 		/* =========== motion ============== */
@@ -259,13 +286,17 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		offset_image(ref_buf, -128, w, h, stride);
 		offset_image(dis_buf, -128, w, h, stride);
 
-		if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score)))
+		if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den)))
 		{
 			printf("error: compute_vif failed.\n");
 			fflush(stdout);
 			goto fail_or_end;
 		}
 		printf("vif: %d %f\n", frm_idx, score);
+		fflush(stdout);
+		printf("vif_num: %d %f\n", frm_idx, score_num);
+		fflush(stdout);
+		printf("vif_den: %d %f\n", frm_idx, score_den);
 		fflush(stdout);
 
 		// ref skip u and v

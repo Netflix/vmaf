@@ -62,7 +62,7 @@ static char *init_dwt_band(adm_dwt_band_t *band, char *data_top, size_t buf_sz_o
 	return data_top;
 }
 
-int compute_adm(const number_t *ref, const number_t *dis, int w, int h, int ref_stride, int dis_stride, double *score)
+int compute_adm(const number_t *ref, const number_t *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den)
 {
 #ifdef ADM_OPT_SINGLE_PRECISION
 	double numden_limit = 1e-2 * (w * h) / (1920.0 * 1080.0);
@@ -270,6 +270,8 @@ int compute_adm(const number_t *ref, const number_t *dis, int w, int h, int ref_
 	{
 		*score = num / den;
 	}
+	*score_num = num;
+	*score_den = den;
 
 	ret = 0;
 
@@ -281,6 +283,8 @@ fail:
 int adm(const char *ref_path, const char *dis_path, int w, int h, const char *fmt)
 {
 	double score = 0;
+	double score_num = 0;
+	double score_den = 0;
 	number_t *ref_buf = 0;
 	number_t *dis_buf = 0;
 	number_t *temp_buf = 0;
@@ -406,7 +410,7 @@ int adm(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		}
 
 		// compute
-		if ((ret = compute_adm(ref_buf, dis_buf, w, h, stride, stride, &score)))
+		if ((ret = compute_adm(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den)))
 		{
 			printf("error: compute_adm failed.\n");
 			fflush(stdout);
@@ -415,6 +419,10 @@ int adm(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 
 		// print
 		printf("adm: %d %f\n", frm_idx, score);
+		fflush(stdout);
+		printf("adm_num: %d %f\n", frm_idx, score_num);
+		fflush(stdout);
+		printf("adm_den: %d %f\n", frm_idx, score_den);
 		fflush(stdout);
 
 		// ref skip u and v

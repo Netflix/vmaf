@@ -29,6 +29,9 @@
 #include "ansnr_tools.h"
 #include "main.h"
 
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+
 #ifdef ANSNR_OPT_SINGLE_PRECISION
   typedef float number_t;
 
@@ -55,7 +58,7 @@
   #define ansnr_mse          ansnr_mse_d
 #endif
 
-int compute_ansnr(const number_t *ref, const number_t *dis, int w, int h, int ref_stride, int dis_stride, double *score)
+int compute_ansnr(const number_t *ref, const number_t *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_psnr, double peak, double psnr_max)
 {
 	number_t *data_buf = 0;
 	char *data_top;
@@ -103,14 +106,17 @@ int compute_ansnr(const number_t *ref, const number_t *dis, int w, int h, int re
 	write_image("stage/dis_filtd.bin", dis_filtd, w, h, buf_stride, sizeof(number_t));
 #endif
 
-	ansnr_mse(ref_filtr, ref_filtd, 0, &noise_min, w, h, buf_stride, buf_stride);
 	ansnr_mse(ref_filtr, dis_filtd, &sig, &noise, w, h, buf_stride, buf_stride);
 
 #ifdef ANSNR_OPT_NORMALIZE
+	ansnr_mse(ref_filtr, ref_filtd, 0, &noise_min, w, h, buf_stride, buf_stride);
 	*score = 10.0 * log10(noise / (noise - noise_min));
 #else
 	*score = 10.0 * log10(sig / noise);
 #endif
+
+	double eps = 1e-10;
+	*score_psnr = MIN(10 * log10(peak * peak * w * h / MAX(noise, eps)), psnr_max);
 
 	ret = 0;
 fail:
@@ -121,6 +127,7 @@ fail:
 int ansnr(const char *ref_path, const char *dis_path, int w, int h, const char *fmt)
 {
 	double score = 0;
+	double score_psnr = 0;
 	number_t *ref_buf = 0;
 	number_t *dis_buf = 0;
 	number_t *temp_buf = 0;
@@ -245,8 +252,24 @@ int ansnr(const char *ref_path, const char *dis_path, int w, int h, const char *
 			goto fail_or_end;
 		}
 
-		// compute
-		if ((ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score)))
+		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+		{
+			// max psnr 60.0 for 8-bit per Ioannis
+			ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score, &score_psnr, 255.0, 60.0);
+		}
+		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+		{
+			// 10 bit gets normalized to 8 bit, peak is 1023 / 4.0 = 255.75
+			// max psnr 72.0 for 10-bit per Ioannis
+			ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score, &score_psnr, 255.75, 72.0);
+		}
+		else
+		{
+			printf("error: unknown format %s.\n", fmt);
+			fflush(stdout);
+			goto fail_or_end;
+		}
+		if (ret)
 		{
 			printf("error: compute_ansnr failed.\n");
 			fflush(stdout);
@@ -255,6 +278,8 @@ int ansnr(const char *ref_path, const char *dis_path, int w, int h, const char *
 
 		// print
 		printf("ansnr: %d %f\n", frm_idx, score);
+		fflush(stdout);
+		printf("anpsnr: %d %f\n", frm_idx, score_psnr);
 		fflush(stdout);
 
 		// ref skip u and v

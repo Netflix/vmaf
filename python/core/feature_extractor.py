@@ -43,9 +43,12 @@ class FeatureExtractor(Executor):
 class VmafFeatureExtractor(FeatureExtractor):
 
     TYPE = "VMAF_feature"
-    VERSION = '0.1'
 
-    ATOM_FEATURES = ['vif', 'adm', 'ansnr', 'motion']
+    # VERSION = '0.1' # vmaf_study; Anush's VIF fix
+    VERSION = '0.2' # expose vif_num, vif_den, adm_num, adm_den, anpsnr
+
+    ATOM_FEATURES = ['vif', 'adm', 'ansnr', 'motion',
+                     'vif_num', 'vif_den', 'adm_num', 'adm_den', 'anpsnr']
 
     VMAF_FEATURE = config.ROOT + "/feature/vmaf"
 
@@ -103,8 +106,7 @@ class VmafFeatureExtractor(FeatureExtractor):
         assert len_score != 0
         for atom_feature in self.ATOM_FEATURES[1:]:
             assert len_score == len(atom_feature_scores_dict[atom_feature]), \
-                "Feature data possibly corrupt. Run cleanup script and try " \
-                "again"
+                "Feature data possibly corrupt. Run cleanup script and try again."
 
         feature_result = {}
 

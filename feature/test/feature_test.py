@@ -51,6 +51,10 @@ class FeatureTest(unittest.TestCase):
         subprocess.call(cmd, shell=True)
         score, scores = read_log(self.LOG_FILENAME, "adm")
         self.assertAlmostEquals(score, 0.9155242291666666)
+        score, scores = read_log(self.LOG_FILENAME, "adm_num")
+        self.assertAlmostEquals(score, 6899.815530270836)
+        score, scores = read_log(self.LOG_FILENAME, "adm_den")
+        self.assertAlmostEquals(score, 7535.801140312499)
 
     def test_ansnr(self):
         print 'test ansnr...'
@@ -61,6 +65,8 @@ class FeatureTest(unittest.TestCase):
         subprocess.call(cmd, shell=True)
         score, scores = read_log(self.LOG_FILENAME, "ansnr")
         self.assertAlmostEquals(score, 22.53345677083333)
+        score, scores = read_log(self.LOG_FILENAME, "anpsnr")
+        self.assertAlmostEquals(score, 34.15266368750002)
 
     def test_motion(self):
         print 'test motion...'
@@ -83,6 +89,10 @@ class FeatureTest(unittest.TestCase):
         self.assertAlmostEquals(score, 0.44455808333333313)
         self.assertAlmostEquals(scores[0], 0.574563)
         self.assertAlmostEquals(scores[1], 0.491594)
+        score, scores = read_log(self.LOG_FILENAME, "vif_num")
+        self.assertAlmostEquals(score, 644527.3311971038)
+        score, scores = read_log(self.LOG_FILENAME, "vif_den")
+        self.assertAlmostEquals(score, 1449635.3812459996)
 
     def test_all(self):
         print 'test all...'
@@ -99,6 +109,16 @@ class FeatureTest(unittest.TestCase):
         self.assertAlmostEquals(score, 22.53345677083333)
         score, scores = read_log(self.LOG_FILENAME, "adm")
         self.assertAlmostEquals(score, 0.9155242291666666)
+        score, scores = read_log(self.LOG_FILENAME, "adm_num")
+        self.assertAlmostEquals(score, 6899.815530270836)
+        score, scores = read_log(self.LOG_FILENAME, "adm_den")
+        self.assertAlmostEquals(score, 7535.801140312499)
+        score, scores = read_log(self.LOG_FILENAME, "vif_num")
+        self.assertAlmostEquals(score, 644527.3311971038)
+        score, scores = read_log(self.LOG_FILENAME, "vif_den")
+        self.assertAlmostEquals(score, 1449635.3812459996)
+        score, scores = read_log(self.LOG_FILENAME, "anpsnr")
+        self.assertAlmostEquals(score, 34.15266368750002)
 
     def test_psnr(self):
         print 'test psnr...'
@@ -153,6 +173,10 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         subprocess.call(cmd, shell=True)
         score, scores = read_log(self.LOG_FILENAME, "adm")
         self.assertAlmostEquals(score, 0.9155242291666666)
+        score, scores = read_log(self.LOG_FILENAME, "adm_num")
+        self.assertAlmostEquals(score, 6899.815530270836)
+        score, scores = read_log(self.LOG_FILENAME, "adm_den")
+        self.assertAlmostEquals(score, 7535.801140312499)
 
     def test_ansnr(self):
         print 'test ansnr on yuv422p10le...'
@@ -163,6 +187,8 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         subprocess.call(cmd, shell=True)
         score, scores = read_log(self.LOG_FILENAME, "ansnr")
         self.assertAlmostEquals(score, 22.53345677083333)
+        score, scores = read_log(self.LOG_FILENAME, "anpsnr")
+        self.assertAlmostEquals(score, 34.17817281250001)
 
     def test_motion(self):
         print 'test motion on yuv422p10le...'
@@ -185,6 +211,10 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         self.assertAlmostEquals(score, 0.44455808333333313)
         self.assertAlmostEquals(scores[0], 0.574563)
         self.assertAlmostEquals(scores[1], 0.491594)
+        score, scores = read_log(self.LOG_FILENAME, "vif_num")
+        self.assertAlmostEquals(score, 644527.3311971038)
+        score, scores = read_log(self.LOG_FILENAME, "vif_den")
+        self.assertAlmostEquals(score, 1449635.3812459996)
 
     def test_all(self):
         print 'test all on yuv422p10le...'
@@ -201,6 +231,16 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         self.assertAlmostEquals(score, 22.53345677083333)
         score, scores = read_log(self.LOG_FILENAME, "adm")
         self.assertAlmostEquals(score, 0.9155242291666666)
+        score, scores = read_log(self.LOG_FILENAME, "adm_num")
+        self.assertAlmostEquals(score, 6899.815530270836)
+        score, scores = read_log(self.LOG_FILENAME, "adm_den")
+        self.assertAlmostEquals(score, 7535.801140312499)
+        score, scores = read_log(self.LOG_FILENAME, "vif_num")
+        self.assertAlmostEquals(score, 644527.3311971038)
+        score, scores = read_log(self.LOG_FILENAME, "vif_den")
+        self.assertAlmostEquals(score, 1449635.3812459996)
+        score, scores = read_log(self.LOG_FILENAME, "anpsnr")
+        self.assertAlmostEquals(score, 34.17817281250001)
 
     def test_psnr(self):
         print 'test psnr on yuv422p10le...'
@@ -262,6 +302,11 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "ansnr")[0], 25.583514666666662)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "motion")[0], 12.343795333333333)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif")[0], 1.0)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm_num")[0], 30814.90966033333)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm_den")[0], 30814.90966033333)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_num")[0], 32164040.489583332)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_den")[0], 32164035.723958332)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "anpsnr")[0], 29.840877000000003)
 
     def test_checkerboard_shifted_by_1(self):
         print 'test on checkerboard pattern shifted by 1...'
@@ -278,6 +323,11 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "ansnr")[0], 12.418291000000002)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "motion")[0], 12.343795333333333)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif")[0], 0.15612933333333334)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm_num")[0], 25079.63600833334)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm_den")[0], 30814.90966033333)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_num")[0], 5021740.846354)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_den")[0], 32164035.723958332)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "anpsnr")[0], 16.675653999999998)
 
     def test_checkerboard_opposite(self):
         print 'test on checkerboard pattern opposite...'
@@ -294,22 +344,11 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "ansnr")[0], -1.2655523333333332)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "motion")[0], 12.343795333333333)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif")[0], 0.0)
-
-    def test_flat_identical(self):
-        print 'test on flat pattern identical...'
-        ref_yuv = config.ROOT + "//resource/yuv/flat_1920_1080_0.yuv"
-        dis_yuv = config.ROOT + "//resource/yuv/flat_1920_1080_0.yuv"
-        yuv_fmt = "yuv420p"
-        yuv_width = 1920
-        yuv_height = 1080
-        cmd = self.CMD_TEMPLATE.format(vmaf=self.VMAF, fmt=yuv_fmt, ref=ref_yuv,
-                                       dis=dis_yuv, w=yuv_width, h=yuv_height,
-                                       log=self.LOG_FILENAME)
-        subprocess.call(cmd, shell=True)
-        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm")[0], 1.0)
-        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "ansnr")[0], 49.967601999999999)
-        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "motion")[0], 0.0)
-        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif")[0], 1.0)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm_num")[0], 0.0)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm_den")[0], 30814.90966033333)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_num")[0], 0.0)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_den")[0], 32164035.723958332)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "anpsnr")[0], 2.9918100000000005)
 
     def test_flat_identical(self):
         print 'test on flat pattern identical...'
@@ -326,6 +365,11 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "ansnr")[0], 49.967601999999999)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "motion")[0], 0.0)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif")[0], 1.0)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm_num")[0], 0.0)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm_den")[0], 0.0)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_num")[0], 1694463.882812)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_den")[0], 1694463.882812)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "anpsnr")[0], 60.0)
 
     def test_flat_value10(self):
         print 'test on flat pattern of value 10...'
@@ -342,6 +386,11 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "ansnr")[0], 5.0022209999999997)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "motion")[0], 0.0)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif")[0], 1.0)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm_num")[0], 0.0)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm_den")[0], 0.0)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_num")[0], 1694463.882812)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_den")[0], 1694463.882812)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "anpsnr")[0], 29.056124)
 
 if __name__ == '__main__':
 
