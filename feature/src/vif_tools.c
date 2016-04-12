@@ -363,6 +363,7 @@ void vif_statistic_s(const float *mu1_sq, const float *mu2_sq, const float *mu1_
 {
 	const float sigma_nsq = 2;
 	const float eps = 1e-2;
+	const float eps_sigma = sigma_nsq;
 
 	int mu1_sq_px_stride  = mu1_sq_stride / sizeof(float);
 	int mu2_sq_px_stride  = mu2_sq_stride / sizeof(float);
@@ -409,8 +410,15 @@ void vif_statistic_s(const float *mu1_sq, const float *mu2_sq, const float *mu1_
 			if (sigma12 < 0)
 				g = sv_sq;
 
-			num_val = log2f(sv_sq / g);
-			den_val = log2f(1.0f + sigma1_sq / sigma_nsq);
+			if (sigma1_sq < eps_sigma) {
+				num_val = (exp(-sigma2_sq/(255*255)) - exp(-1));
+				den_val = (1-exp(-1));
+			}
+			else {
+				num_val = log2f(sv_sq / g);
+				den_val = log2f(1.0f + sigma1_sq / sigma_nsq);
+			}
+
 #else // prod code that has numerical instability ?
 			g     = sigma12 / (sigma1_sq + eps);
 			sv_sq = sigma2_sq - g * sigma12;
@@ -442,6 +450,7 @@ void vif_statistic_d(const double *mu1_sq, const double *mu2_sq, const double *m
 {
 	const double sigma_nsq = 2;
 	const double eps = 1e-10;
+	const double eps_sigma = sigma_nsq;
 
 	int mu1_sq_px_stride  = mu1_sq_stride / sizeof(double);
 	int mu2_sq_px_stride  = mu2_sq_stride / sizeof(double);
@@ -481,15 +490,22 @@ void vif_statistic_d(const double *mu1_sq, const double *mu2_sq, const double *m
 			sv_sq = (sigma2_sq + sigma_nsq) * sigma1_sq;
 			g = sv_sq - sigma12 * sigma12;
 
-			if (sigma1_sq < eps)
-				sigma1_sq = 0;
-			if (sv_sq < eps)
+			if (sv_sq < eps) // eps is 1e-10 in Matlab code (and for double ?)
 				sv_sq = eps;
 			if (g < eps)
 				g = eps;
+			if (sigma12 < 0)
+				g = sv_sq;
 
-			num_val = log2(sv_sq / g);
-			den_val = log2(1 + sigma1_sq / sigma_nsq);
+			if (sigma1_sq < eps_sigma) {
+				num_val = (exp(-sigma2_sq/(255*255)) - exp(-1));
+				den_val = (1-exp(-1));
+			}
+			else {
+				num_val = log2f(sv_sq / g);
+				den_val = log2f(1.0f + sigma1_sq / sigma_nsq);
+			}
+
 #else
 			g     = sigma12 / (sigma1_sq + eps);
 			sv_sq = sigma2_sq - g * sigma12;
