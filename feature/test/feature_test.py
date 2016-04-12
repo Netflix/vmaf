@@ -80,9 +80,9 @@ class FeatureTest(unittest.TestCase):
         )
         subprocess.call(cmd, shell=True)
         score, scores = read_log(self.LOG_FILENAME, "vif")
-        self.assertAlmostEquals(score, 0.44417014583333336)
-        self.assertAlmostEquals(scores[0], 0.574283)
-        self.assertAlmostEquals(scores[1], 0.491295)
+        self.assertAlmostEquals(score, 0.44455808333333313)
+        self.assertAlmostEquals(scores[0], 0.574563)
+        self.assertAlmostEquals(scores[1], 0.491594)
 
     def test_all(self):
         print 'test all...'
@@ -92,7 +92,7 @@ class FeatureTest(unittest.TestCase):
         )
         subprocess.call(cmd, shell=True)
         score, scores = read_log(self.LOG_FILENAME, "vif")
-        self.assertAlmostEquals(score, 0.44417014583333336)
+        self.assertAlmostEquals(score, 0.44455808333333313)
         score, scores = read_log(self.LOG_FILENAME, "motion")
         self.assertAlmostEquals(score, 3.5916076041666667)
         score, scores = read_log(self.LOG_FILENAME, "ansnr")
@@ -182,9 +182,9 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         )
         subprocess.call(cmd, shell=True)
         score, scores = read_log(self.LOG_FILENAME, "vif")
-        self.assertAlmostEquals(score, 0.44417014583333336)
-        self.assertAlmostEquals(scores[0], 0.574283)
-        self.assertAlmostEquals(scores[1], 0.491295)
+        self.assertAlmostEquals(score, 0.44455808333333313)
+        self.assertAlmostEquals(scores[0], 0.574563)
+        self.assertAlmostEquals(scores[1], 0.491594)
 
     def test_all(self):
         print 'test all on yuv422p10le...'
@@ -194,7 +194,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         )
         subprocess.call(cmd, shell=True)
         score, scores = read_log(self.LOG_FILENAME, "vif")
-        self.assertAlmostEquals(score, 0.44417014583333336)
+        self.assertAlmostEquals(score, 0.44455808333333313)
         score, scores = read_log(self.LOG_FILENAME, "motion")
         self.assertAlmostEquals(score, 3.5916076041666667)
         score, scores = read_log(self.LOG_FILENAME, "ansnr")
