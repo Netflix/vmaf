@@ -225,6 +225,13 @@ class Executor(TypeVersionEnabled):
             if self.result_store:
                 self.result_store.save(result)
 
+        result = self._post_process_result(result)
+
+        return result
+
+    @classmethod
+    def _post_process_result(cls, result):
+        # do nothing, wait to be overridden
         return result
 
     def _get_log_file_path(self, asset):

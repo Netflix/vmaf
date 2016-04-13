@@ -3,6 +3,7 @@ __license__ = "Apache, Version 2.0"
 
 import re
 import subprocess
+import numpy as np
 
 import config
 from core.executor import Executor
@@ -51,6 +52,8 @@ class VmafFeatureExtractor(FeatureExtractor):
                      'vif_num', 'vif_den', 'adm_num', 'adm_den', 'anpsnr']
 
     VMAF_FEATURE = config.ROOT + "/feature/vmaf"
+
+    ADM_CONSTANT = 1000
 
     def _run_and_generate_log_file(self, asset):
         # routine to call the command-line executable and generate feature
@@ -115,6 +118,22 @@ class VmafFeatureExtractor(FeatureExtractor):
             feature_result[scores_key] = atom_feature_scores_dict[atom_feature]
 
         return feature_result
+
+    @classmethod
+    def _post_process_result(cls, result):
+        # override Executor._Post_process_result(result)
+
+        # replace adm score with:
+        # (adm_num + ADM_CONSTANT) / (adm_den + ADM_CONSTANT)
+        adm_scores_key = cls.get_scores_key('adm')
+        adm_num_scores_key = cls.get_scores_key('adm_num')
+        adm_den_scores_key = cls.get_scores_key('adm_den')
+        result.result_dict[adm_scores_key] = list(
+            (np.array(result.result_dict[adm_num_scores_key]) + cls.ADM_CONSTANT) /
+            (np.array(result.result_dict[adm_den_scores_key]) + cls.ADM_CONSTANT)
+        )
+
+        return result
 
 class PsnrFeatureExtractor(FeatureExtractor):
 
