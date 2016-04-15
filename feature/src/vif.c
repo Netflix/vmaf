@@ -56,7 +56,7 @@
   #define vif_statistic      vif_statistic_d
 #endif
 
-int compute_vif(const number_t *ref, const number_t *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den)
+int compute_vif(const number_t *ref, const number_t *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores)
 {
 	number_t *data_buf = 0;
 	char *data_top;
@@ -275,24 +275,34 @@ int compute_vif(const number_t *ref, const number_t *dis, int w, int h, int ref_
 		sprintf(pathbuf, "stage/den_array[%d].bin", scale);
 		write_image(pathbuf, den_array_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(number_t));
 #endif
-		num += vif_sum(num_array_adj, buf_valid_w, buf_valid_h, buf_stride);
-		den += vif_sum(den_array_adj, buf_valid_w, buf_valid_h, buf_stride);
+
+		num = vif_sum(num_array_adj, buf_valid_w, buf_valid_h, buf_stride);
+		den = vif_sum(den_array_adj, buf_valid_w, buf_valid_h, buf_stride);
+
+		scores[2*scale] = num;
+		scores[2*scale+1] = den;
+
 #ifdef VIF_OPT_DEBUG_DUMP
 		printf("num[%d]: %e\n", scale, num);
 		printf("den[%d]: %e\n", scale, den);
 #endif
 	}
 
-	if (den == 0)
+	*score_num = 0.0;
+	*score_den = 0.0;
+	for (scale = 0; scale < 4; ++scale)
+	{
+		*score_num += scores[2*scale];
+		*score_den += scores[2*scale+1];
+	}
+	if (*score_den == 0.0)
 	{
 		*score = 1.0f;
 	}
 	else
 	{
-		*score = num / den;
+		*score = (*score_num) / (*score_den);
 	}
-	*score_num = num;
-	*score_den = den;
 
 	ret = 0;
 fail_or_end:
@@ -303,6 +313,7 @@ fail_or_end:
 int vif(const char *ref_path, const char *dis_path, int w, int h, const char *fmt)
 {
 	double score = 0;
+	double scores[4*2];
 	double score_num = 0;
 	double score_den = 0;
 	number_t *ref_buf = 0;
@@ -430,7 +441,7 @@ int vif(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		}
 
 		// compute
-		if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den)))
+		if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores)))
 		{
 			printf("error: compute_vif failed.\n");
 			fflush(stdout);
@@ -444,6 +455,11 @@ int vif(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		fflush(stdout);
 		printf("vif_den: %d %f\n", frm_idx, score_den);
 		fflush(stdout);
+		for(int scale=0;scale<4;scale++){
+			printf("vif_num_scale%d: %d %f\n", scale, frm_idx, scores[2*scale]);
+			printf("vif_den_scale%d: %d %f\n", scale, frm_idx, scores[2*scale+1]);
+		}
+
 
 		// ref skip u and v
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
