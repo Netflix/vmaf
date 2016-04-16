@@ -245,8 +245,8 @@ class VmafQualityRunner(QualityRunner):
     # VERSION = '0.1' # using model nflxall_vmafv1.pkl, VmafFeatureExtractor VERSION 0.1
     VERSION = '0.2' # using model nflxall_vmafv2.pkl, VmafFeatureExtractor VERSION 0.2.1
 
-    # DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv1.pkl" # trained with private/resource/param/vmaf_v1.py on private/resource/dataset/NFLX_dataset.py
-    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv2.pkl" # trained with private/resource/param/vmaf_v2.py on private/resource/dataset/NFLX_dataset.py
+    # DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv1.pkl" # trained with resource/param/vmaf_v1.py on private/resource/dataset/NFLX_dataset.py
+    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv2.pkl" # trained with resource/param/vmaf_v2.py on private/resource/dataset/NFLX_dataset.py
 
     DEFAULT_FEATURE_DICT = {'VMAF_feature': ['vif', 'adm', 'motion', 'ansnr']}
 
