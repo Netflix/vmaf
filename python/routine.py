@@ -45,7 +45,8 @@ def read_dataset(dataset):
     return assets
 
 def test_on_dataset(test_dataset, runner_class, ax,
-                    result_store, model_filepath, parallelize=True):
+                    result_store, model_filepath,
+                    parallelize=True, fifo_mode=True):
 
     test_assets = read_dataset(test_dataset)
 
@@ -57,7 +58,7 @@ def test_on_dataset(test_dataset, runner_class, ax,
     runner = runner_class(test_assets,
                  None,
                  log_file_dir=config.ROOT + "/workspace/log_file_dir",
-                 fifo_mode=True,
+                 fifo_mode=fifo_mode,
                  delete_workdir=True,
                  result_store=result_store,
                  optional_dict=optional_dict,
@@ -68,7 +69,7 @@ def test_on_dataset(test_dataset, runner_class, ax,
             runner_class,
             test_assets,
             log_file_dir=config.ROOT + "/workspace/log_file_dir",
-            fifo_mode=True,
+            fifo_mode=fifo_mode,
             delete_workdir=True,
             parallelize=parallelize,
             result_store=result_store,
