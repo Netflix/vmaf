@@ -88,8 +88,8 @@ class Executor(TypeVersionEnabled):
                len(set(list_dataset_contentid_assetid)), \
             "Triplet of dataset, content_id and asset_id must be unique for each asset."
 
-    @staticmethod
-    def _assert_an_asset(asset):
+    @classmethod
+    def _assert_an_asset(cls, asset):
 
         # # 1) for now, quality width/height has to agree with ref/dis width/height
         # assert asset.quality_width_height \

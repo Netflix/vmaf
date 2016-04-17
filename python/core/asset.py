@@ -35,7 +35,7 @@ class Asset(WorkdirEnabled):
     def __init__(self, dataset, content_id, asset_id,
                  ref_path, dis_path,
                  asset_dict,
-                 workdir_root= config.ROOT + "/workspace/workdir"):
+                 workdir_root=config.ROOT + "/workspace/workdir"):
         """
         :param dataset
         :param content_id: ID of content the asset correspond to within dataset
@@ -255,6 +255,10 @@ class Asset(WorkdirEnabled):
                 return (end - start + 1) / float(self.asset_dict['fps'])
             else:
                 return None
+
+    @property
+    def fps(self):
+        return self.asset_dict['fps'] if 'fps' in self.asset_dict else None
 
     # ==== str ====
 

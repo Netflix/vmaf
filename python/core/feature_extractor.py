@@ -130,7 +130,9 @@ class VmafFeatureExtractor(FeatureExtractor):
 
     @classmethod
     def _post_process_result(cls, result):
-        # override Executor._Post_process_result(result)
+        # override Executor._post_process_result(result)
+
+        result = super(VmafFeatureExtractor, cls)._post_process_result(result)
 
         # adm2 =
         # (adm_num + ADM_CONSTANT) / (adm_den + ADM_CONSTANT)
