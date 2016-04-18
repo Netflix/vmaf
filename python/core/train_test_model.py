@@ -7,6 +7,7 @@ import pickle
 
 import scipy.stats
 import numpy as np
+from numpy.linalg import lstsq
 import pandas as pd
 
 import config
@@ -196,7 +197,33 @@ class TrainTestModel(TypeVersionEnabled):
         return ys_label_pred
 
     @staticmethod
-    def get_stats(ys_label, ys_label_pred):
+    def sigmoid_adjust(xs, ys):
+        ys_max = np.max(ys) + 10
+        ys_min = np.min(ys) - 10
+
+        # normalize to [0, 1]
+        ys = list((np.array(ys) - ys_min) / (ys_max - ys_min))
+
+        zs = -np.log(1.0 / np.array(ys).T - 1.0)
+        Y_mtx = np.matrix((np.ones(len(ys)), zs)).T
+        x_vec = np.matrix(xs).T
+        a_b = lstsq(Y_mtx, x_vec)[0]
+        a = a_b.item(0)
+        b = a_b.item(1)
+
+        xs = 1.0 / (1.0 + np.exp(- (np.array(xs) - a) / b))
+
+        # denormalize
+        xs = xs * (ys_max - ys_min) + ys_min
+
+        return xs
+
+    @classmethod
+    def get_stats(cls, ys_label, ys_label_pred):
+
+        # do adustment with sigmoid function
+        # ys_label_pred = cls.sigmoid_adjust(ys_label_pred, ys_label)
+
         # MSE
         rmse = np.sqrt(np.mean(
             np.power(np.array(ys_label) - np.array(ys_label_pred), 2.0)))
@@ -222,6 +249,11 @@ class TrainTestModel(TypeVersionEnabled):
     @staticmethod
     def format_stats2(stats):
         return 'RMSE: {rmse:.3f}\nPCC: {pcc:.3f}\nSRCC: {srcc:.3f}'.format(
+            srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
+
+    @staticmethod
+    def format_stats3(stats):
+        return 'SRCC: {srcc:.3f}, PCC: {pcc:.3f}'.format(
             srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
 
     @classmethod

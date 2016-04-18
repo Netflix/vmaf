@@ -56,7 +56,7 @@ class TypeVersionEnabled(object):
         """
         matched_subclasses = []
         for subclass in cls.get_subclasses():
-            if subclass.TYPE == subclass_type:
+            if hasattr(subclass, 'TYPE') and subclass.TYPE == subclass_type:
                 matched_subclasses.append(subclass)
         assert len(matched_subclasses) == 1, \
             "Must have one and only one subclass of {class_name} with type " \
