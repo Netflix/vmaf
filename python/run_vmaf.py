@@ -9,6 +9,8 @@ import os
 import config
 from core.asset import Asset
 from core.quality_runner import VmafQualityRunner
+from core.result_store import FileSystemResultStore
+from tools.misc import get_file_name_without_extension
 
 FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
 
@@ -35,10 +37,23 @@ if __name__ == "__main__":
 
     if len(sys.argv) >= 7:
         model_filepath = sys.argv[6]
+        if model_filepath == 'none':
+            model_filepath = None
     else:
         model_filepath = None
 
-    asset = Asset(dataset="cmd", content_id=0, asset_id=0,
+    if len(sys.argv) >= 8:
+        cache_result = sys.argv[7]
+        if cache_result == 'yes':
+            result_store = FileSystemResultStore()
+        else:
+            result_store = None
+    else:
+        result_store = None
+
+    asset = Asset(dataset="run_vmaf",
+                  content_id=abs(hash(get_file_name_without_extension(ref_file))) % (10 ** 16),
+                  asset_id=abs(hash(get_file_name_without_extension(ref_file))) % (10 ** 16),
                   workdir_root=config.ROOT + "/workspace/workdir",
                   ref_path=ref_file,
                   dis_path=dis_file,
@@ -56,7 +71,7 @@ if __name__ == "__main__":
         assets, None, fifo_mode=True,
         log_file_dir=config.ROOT + "/workspace/log_file_dir",
         delete_workdir=True,
-        result_store=None,
+        result_store=result_store,
         optional_dict=optional_dict,
     )
 
