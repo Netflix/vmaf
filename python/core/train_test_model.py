@@ -198,8 +198,8 @@ class TrainTestModel(TypeVersionEnabled):
 
     @staticmethod
     def sigmoid_adjust(xs, ys):
-        ys_max = np.max(ys) + 10
-        ys_min = np.min(ys) - 10
+        ys_max = np.max(ys) + 0.1
+        ys_min = np.min(ys) - 0.1
 
         # normalize to [0, 1]
         ys = list((np.array(ys) - ys_min) / (ys_max - ys_min))
@@ -222,17 +222,17 @@ class TrainTestModel(TypeVersionEnabled):
     def get_stats(cls, ys_label, ys_label_pred):
 
         # do adustment with sigmoid function
-        # ys_label_pred = cls.sigmoid_adjust(ys_label_pred, ys_label)
+        ys_label_pred_adjusted = cls.sigmoid_adjust(ys_label_pred, ys_label)
 
         # MSE
         rmse = np.sqrt(np.mean(
-            np.power(np.array(ys_label) - np.array(ys_label_pred), 2.0)))
+            np.power(np.array(ys_label) - np.array(ys_label_pred_adjusted), 2.0)))
         # spearman
-        srcc, _ = scipy.stats.spearmanr(ys_label, ys_label_pred)
+        srcc, _ = scipy.stats.spearmanr(ys_label, ys_label_pred_adjusted)
         # pearson
-        pcc, _ = scipy.stats.pearsonr(ys_label, ys_label_pred)
+        pcc, _ = scipy.stats.pearsonr(ys_label, ys_label_pred_adjusted)
         # kendall
-        kendall, _ = scipy.stats.kendalltau(ys_label, ys_label_pred)
+        kendall, _ = scipy.stats.kendalltau(ys_label, ys_label_pred_adjusted)
         stats = { 'RMSE': rmse,
                   'SRCC': srcc,
                   'PCC': pcc,
