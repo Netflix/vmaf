@@ -84,7 +84,7 @@ class TrainTestModelTest(unittest.TestCase):
         loaded_model = RandomForestTrainTestModel.from_file(self.model_filename, None)
 
         result = loaded_model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.32160327527353727)
+        self.assertAlmostEquals(result['RMSE'], 0.32357946626958406)
 
         model.delete(self.model_filename)
 
@@ -106,11 +106,11 @@ class TrainTestModelTest(unittest.TestCase):
         loaded_model = LibsvmnusvrTrainTestModel.from_file(self.model_filename, None)
 
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'],        0.32294831504657584)
+        self.assertAlmostEquals(result['RMSE'],        0.30977055639849227)
 
         # loaded model generates slight numerical difference
         result = loaded_model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'],        0.32294843172432958)
+        self.assertAlmostEquals(result['RMSE'],        0.30977055639849227)
 
         model.delete(self.model_filename)
 
@@ -128,25 +128,25 @@ class TrainTestModelTest(unittest.TestCase):
             {'norm_type':'normalize'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.32294831504657584)
+        self.assertAlmostEquals(result['RMSE'], 0.30977055639849227)
 
         model = LibsvmnusvrTrainTestModel(
             {'norm_type':'clip_0to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.32533593056770699)
+        self.assertAlmostEquals(result['RMSE'], 0.28066350351974495)
 
         model = LibsvmnusvrTrainTestModel(
             {'norm_type':'clip_minus1to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.31074367021672966)
+        self.assertAlmostEquals(result['RMSE'], 0.28651275022085743)
 
         model = LibsvmnusvrTrainTestModel(
             {'norm_type':'none'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.59551619078759011)
+        self.assertAlmostEquals(result['RMSE'], 0.64219197018248542)
 
 
     def test_train_predict_randomforest(self):
@@ -163,24 +163,24 @@ class TrainTestModelTest(unittest.TestCase):
                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.32160327527353727)
+        self.assertAlmostEquals(result['RMSE'], 0.32357946626958406)
 
         model = RandomForestTrainTestModel({'norm_type':'clip_0to1',
                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.32871365451813322)
+        self.assertAlmostEquals(result['RMSE'], 0.33807954580885896)
 
         model = RandomForestTrainTestModel({'norm_type':'clip_minus1to1',
                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.31192342365109776)
+        self.assertAlmostEquals(result['RMSE'], 0.31798315556627982)
 
         model = RandomForestTrainTestModel({'norm_type':'none', 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.32468104006513504)
+        self.assertAlmostEquals(result['RMSE'], 0.33660273277405978)
 
 
 class TrainTestModelTest2(unittest.TestCase):

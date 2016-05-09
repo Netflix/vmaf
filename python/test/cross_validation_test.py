@@ -30,9 +30,9 @@ class FeatureCrossValidationTest(unittest.TestCase):
             train_test_model_class, model_param, feature_df,
             indices_train, indices_test)
         self.assertAlmostEquals(output['stats']['SRCC'], 0.93493301443051136)
-        self.assertAlmostEquals(output['stats']['PCC'], 0.94079231290641085)
+        self.assertAlmostEquals(output['stats']['PCC'], 0.9413390374529329)
         self.assertAlmostEquals(output['stats']['KENDALL'], 0.78029280419726044)
-        self.assertAlmostEquals(output['stats']['RMSE'], 0.32160327527353727)
+        self.assertAlmostEquals(output['stats']['RMSE'], 0.32357946626958406)
         self.assertEquals(output['model'].TYPE, "RANDOMFOREST")
 
     def test_run_kfold_cross_validation_randomforest(self):
@@ -49,10 +49,10 @@ class FeatureCrossValidationTest(unittest.TestCase):
         output = ModelCrossValidation.run_kfold_cross_validation(
             train_test_model_class, model_param, feature_df, 6)
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.92697842906067462)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.93658616699423192)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.76020279166142302)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.35557834996377785)
+        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.92695443548602008)
+        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.93189074441713937)
+        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.76031309571294092)
+        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.40381451586590256)
 
     def test_run_kfold_cross_validation_libsvmnusvr(self):
 
@@ -69,9 +69,9 @@ class FeatureCrossValidationTest(unittest.TestCase):
             train_test_model_class, model_param, feature_df, 6)
 
         self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.92387451180595015)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.93031460919267095)
+        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.92481147926825724)
         self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.75416215405673581)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.3695746744572066)
+        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.42231775639097513)
 
     def test_run_kfold_cross_validation_with_list_input(self):
 
@@ -89,10 +89,10 @@ class FeatureCrossValidationTest(unittest.TestCase):
             train_test_model_class, model_param, feature_df,
             [range(0,50), range(130, 200), range(50, 130)])
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.90647193665960557)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.91500332886595026)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.72942845351741448)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.43506136221099773)
+        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.90636761259756715)
+        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.90819953685397914)
+        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.72937284548325965)
+        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.49899297305829415)
 
     def test_unroll_dict_of_lists(self):
         model_param_search_range = {'norm_type':['normalize', 'clip_0to1'],
@@ -174,9 +174,9 @@ class FeatureCrossValidationTest(unittest.TestCase):
             train_test_model_class, model_param_search_range, feature_df, 6)
 
         self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.92805802153293737)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.94461176436695726)
+        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.94066838465382363)
         self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.76196220071567478)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.33035493012810879)
+        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.37660623901376861)
 
         expected_top_model_param = {'norm_type':'normalize',
                                 'n_estimators':90,
@@ -208,9 +208,9 @@ class FeatureCrossValidationTest(unittest.TestCase):
             train_test_model_class, model_param_search_range, feature_df, 6)
 
         self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.93704238362264514)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.94445422982552052)
+        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.94734024567912978)
         self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.77785381654919195)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.33028967923638342)
+        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.34039563991411448)
 
         expected_top_model_param = {'norm_type':'clip_0to1',
                                 'kernel':'rbf',
@@ -246,9 +246,9 @@ class FeatureCrossValidationTest(unittest.TestCase):
         )
 
         self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.92549459243170684)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.93588036209380732)
+        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.93070443071372855)
         self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.76385104263763215)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.37845025070768784)
+        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.43223946862572299)
 
         expected_top_model_param = {'norm_type':'normalize',
                                     'n_estimators':90,
