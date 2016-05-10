@@ -279,7 +279,9 @@ class MomentFeatureExtractor(FeatureExtractor):
     TYPE = "Moment_feature"
     VERSION = "1.0"
 
-    ATOM_FEATURES = ['ref1st', 'ref2nd', 'refvar', 'dis1st', 'dis2nd', 'disvar']
+    ATOM_FEATURES = ['ref1st', 'ref2nd', 'dis1st', 'dis2nd', ]
+
+    DERIVED_ATOM_FEATURES = ['refvar', 'disvar', ]
 
     MOMENT = config.ROOT + "/feature/moment"
 
@@ -370,15 +372,6 @@ class MomentFeatureExtractor(FeatureExtractor):
                     atom_feature_idx_dict[atom_feature] += 1
                     continue
 
-        # calculate refvar and disvar from ref1st, ref2nd, dis1st, dis2nd
-        get_var = lambda (m1, m2): m2 - m1 * m1
-        atom_feature_scores_dict['refvar'] = \
-            map(get_var, zip(atom_feature_scores_dict['ref1st'],
-                             atom_feature_scores_dict['ref2nd']))
-        atom_feature_scores_dict['disvar'] = \
-            map(get_var, zip(atom_feature_scores_dict['dis1st'],
-                             atom_feature_scores_dict['dis2nd']))
-
         # assert lengths
         len_score = len(atom_feature_scores_dict[self.ATOM_FEATURES[0]])
         assert len_score != 0
@@ -393,3 +386,29 @@ class MomentFeatureExtractor(FeatureExtractor):
 
         return feature_result
 
+    @classmethod
+    def _post_process_result(cls, result):
+        # override Executor._post_process_result(result)
+
+        result = super(MomentFeatureExtractor, cls)._post_process_result(result)
+
+        # calculate refvar and disvar from ref1st, ref2nd, dis1st, dis2nd
+        refvar_scores_key = cls.get_scores_key('refvar')
+        ref1st_scores_key = cls.get_scores_key('ref1st')
+        ref2nd_scores_key = cls.get_scores_key('ref2nd')
+        disvar_scores_key = cls.get_scores_key('disvar')
+        dis1st_scores_key = cls.get_scores_key('dis1st')
+        dis2nd_scores_key = cls.get_scores_key('dis2nd')
+        get_var = lambda (m1, m2): m2 - m1 * m1
+        result.result_dict[refvar_scores_key] = \
+            map(get_var, zip(result.result_dict[ref1st_scores_key],
+                             result.result_dict[ref2nd_scores_key]))
+        result.result_dict[disvar_scores_key] = \
+            map(get_var, zip(result.result_dict[dis1st_scores_key],
+                             result.result_dict[dis2nd_scores_key]))
+
+        # validate
+        for feature in cls.DERIVED_ATOM_FEATURES:
+            assert cls.get_scores_key(feature) in result.result_dict
+
+        return result
