@@ -206,14 +206,17 @@ class Executor(TypeVersionEnabled):
 
                     ref_dir = get_dir_without_last_slash(asset.ref_workfile_path)
                     dis_dir = get_dir_without_last_slash(asset.dis_workfile_path)
-                    os.rmdir(ref_dir)
+                    assert ref_dir == dis_dir, 'ref_dir and dis_dir should be the same one.'
                     try:
-                        os.rmdir(dis_dir)
+                        os.rmdir(ref_dir)
                     except OSError as e:
-                        if e.errno == 2: # [Errno 2] No such file or directory
-                            # already removed by os.rmdir(ref_dir)
+                        if e.errno == 39: # [Errno 39] Directory not empty
+                            # VQM could generate an error file with non-critical
+                            # information like: '3 File is longer than 15 seconds.
+                            # Results will be calculated using first 15 seconds
+                            # only.' In this case, want to keep this
+                            # informational file and pass
                             pass
-
             if self.logger:
                 self.logger.info("Read {id} log file, get scores...".
                                  format(type=self.executor_id))
