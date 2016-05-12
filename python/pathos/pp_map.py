@@ -48,7 +48,7 @@ restrictions (arguments must be serializable, etc.)
 import time
 import __builtin__
 
-import pp
+from pp import pp
 
 __STATE = {'server': None}
 
