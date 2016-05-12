@@ -3,6 +3,7 @@ __license__ = "Apache, Version 2.0"
 
 import multiprocessing
 import os
+import sys
 import subprocess
 from time import sleep
 
@@ -366,7 +367,8 @@ def run_executors_in_parallel(executor_class,
             executors = pp_map(run_executor, list_args)
         except ImportError:
             # fall back
-            msg = "pathos.pp_map cannot be imported for parallel execution, fall back to sequential map()."
+            msg = "pathos.pp_map cannot be imported for parallel execution, " \
+                  "fall back to sequential map()."
             if logger:
                 logger.warn(msg)
             else:
