@@ -155,7 +155,6 @@ class VmafLegacyQualityRunner(QualityRunner):
             feature_option_dict=None,
             assets=[asset],
             logger=self.logger,
-            log_file_dir=self.log_file_dir,
             fifo_mode=self.fifo_mode,
             delete_workdir=self.delete_workdir,
             result_store=self.result_store
@@ -222,14 +221,6 @@ class VmafLegacyQualityRunner(QualityRunner):
         return vals
 
     # override
-    def _remove_log(self, asset):
-        # Override Executor._remove_log(self, asset) by redirecting it to the
-        # FeatureAssembler.
-
-        vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
-        vmaf_fassembler.remove_logs()
-
-    # override
     def _remove_result(self, asset):
         # Override Executor._remove_result(self, asset) by redirecting it to the
         # FeatureAssembler.
@@ -263,7 +254,6 @@ class VmafQualityRunner(QualityRunner):
             feature_option_dict=None,
             assets=[asset],
             logger=self.logger,
-            log_file_dir=self.log_file_dir,
             fifo_mode=self.fifo_mode,
             delete_workdir=self.delete_workdir,
             result_store=self.result_store
@@ -359,13 +349,6 @@ class VmafQualityRunner(QualityRunner):
             else self.DEFAULT_MODEL_FILEPATH
         model = TrainTestModel.from_file(model_filepath, self.logger)
         return model
-
-    def _remove_log(self, asset):
-        # Override Executor._remove_log(self, asset) by redirecting it to the
-        # FeatureAssembler.
-
-        vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
-        vmaf_fassembler.remove_logs()
 
     def _remove_result(self, asset):
         # Override Executor._remove_result(self, asset) by redirecting it to the

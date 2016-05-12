@@ -12,7 +12,7 @@ class FeatureAssembler(object):
     """
 
     def __init__(self, feature_dict, feature_option_dict, assets, logger,
-                 log_file_dir, fifo_mode, delete_workdir, result_store,
+                 fifo_mode, delete_workdir, result_store,
                  optional_dict=None, parallelize=False):
         """
         :param feature_dict: in the format of:
@@ -26,7 +26,6 @@ class FeatureAssembler(object):
         {'VMAF_feature':{'force_extraction':True}, 'BRISQUE_feature':{}},
         :param assets:
         :param logger:
-        :param log_file_dir:
         :param fifo_mode:
         :param delete_workdir:
         :param result_store:
@@ -38,7 +37,6 @@ class FeatureAssembler(object):
         self.feature_option_dict = feature_option_dict
         self.assets = assets
         self.logger = logger
-        self.log_file_dir = log_file_dir
         self.fifo_mode = fifo_mode
         self.delete_workdir = delete_workdir
         self.result_store = result_store
@@ -65,7 +63,6 @@ class FeatureAssembler(object):
             _, results = run_executors_in_parallel(
                 fextractor_class,
                 assets=self.assets,
-                log_file_dir=self.log_file_dir,
                 fifo_mode=self.fifo_mode,
                 delete_workdir=self.delete_workdir,
                 parallelize=self.parallelize,
@@ -90,15 +87,6 @@ class FeatureAssembler(object):
             lambda (asset, result_dict): BasicResult(asset, result_dict),
             zip(self.assets, result_dicts)
         )
-
-    def remove_logs(self):
-        """
-        Remove all the intermediate log files if no need for inspection.
-        :return:
-        """
-        for fextractor_type in self.feature_dict:
-            fextractor = self._get_fextractor_instance(fextractor_type)
-            fextractor.remove_logs()
 
     def remove_results(self):
         """
@@ -128,7 +116,6 @@ class FeatureAssembler(object):
         fextractor_class = FeatureExtractor.find_subclass(fextractor_type)
         fextractor = fextractor_class(assets=self.assets,
                                       logger=self.logger,
-                                      log_file_dir=self.log_file_dir,
                                       fifo_mode=self.fifo_mode,
                                       delete_workdir=self.delete_workdir,
                                       result_store=self.result_store,

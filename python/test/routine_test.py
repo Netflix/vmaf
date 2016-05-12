@@ -18,8 +18,6 @@ class TestTrainOnDataset(unittest.TestCase):
             config.ROOT + "/workspace/model/test_output_model.pkl"
 
     def tearDown(self):
-        if hasattr(self, 'train_fassembler'):
-            self.train_fassembler.remove_logs()
         if os.path.exists(self.output_model_filepath):
             os.remove(self.output_model_filepath)
 

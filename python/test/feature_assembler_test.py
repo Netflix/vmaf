@@ -14,7 +14,6 @@ class FeatureAssemblerTest(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, 'fassembler'):
-            self.fassembler.remove_logs()
             self.fassembler.remove_results()
         pass
 
@@ -45,7 +44,6 @@ class FeatureAssemblerTest(unittest.TestCase):
             feature_option_dict = None,
             assets = [asset, asset_original],
             logger=None,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
             delete_workdir=True,
             result_store=None,
@@ -87,7 +85,6 @@ class FeatureAssemblerTest(unittest.TestCase):
             feature_option_dict = None,
             assets = [asset, asset_original],
             logger=None,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
             delete_workdir=True,
             result_store=None,

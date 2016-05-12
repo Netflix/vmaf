@@ -25,7 +25,6 @@ class ResultTest(unittest.TestCase):
 
         self.runner = VmafLegacyQualityRunner(
             [asset], None, fifo_mode=True,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             delete_workdir=True, result_store=FileSystemResultStore(),
         )
         self.runner.run()
@@ -33,7 +32,6 @@ class ResultTest(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, 'runner'):
-            self.runner.remove_logs()
             self.runner.remove_results()
             pass
 
@@ -134,14 +132,12 @@ class ResultStoreTest(unittest.TestCase):
 
         self.runner = VmafLegacyQualityRunner(
             [asset], None, fifo_mode=True,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             delete_workdir=True, result_store=None,
         )
         self.runner.run()
         self.result = self.runner.results[0]
 
     def tearDown(self):
-        if hasattr(self, 'runner'): self.runner.remove_logs()
         if hasattr(self, 'result') and hasattr(self, 'result_store'):
             self.result_store.delete(self.result.asset, self.result.executor_id)
         pass

@@ -3,6 +3,7 @@ __license__ = "Apache, Version 2.0"
 
 import os
 import unittest
+import re
 
 import config
 from core.feature_extractor import VmafFeatureExtractor, MomentFeatureExtractor, \
@@ -16,7 +17,6 @@ class FeatureExtractorTest(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, 'fextractor'):
-            self.fextractor.remove_logs()
             self.fextractor.remove_results()
         pass
 
@@ -32,15 +32,12 @@ class FeatureExtractorTest(unittest.TestCase):
         asset = Asset(dataset="test", content_id=0, asset_id=1,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
                       asset_dict={'width':720, 'height':480,
-                                  'start_frame':2, 'end_frame':2})
+                                  'start_frame':2, 'end_frame':2},
+                      workdir_root="my_workdir_root")
 
-        fextractor = VmafFeatureExtractor([asset], None,
-                                   log_file_dir="log_file_dir")
+        fextractor = VmafFeatureExtractor([asset], None)
         log_file_path = fextractor._get_log_file_path(asset)
-        expected_log_file_path = \
-            "log_file_dir/VMAF_feature_V0.2.1/test_0_1_refvideo_720x480_2to2_vs_" \
-            "disvideo_720x480_2to2_q_720x480"
-        self.assertEquals(log_file_path, expected_log_file_path)
+        self.assertTrue(re.match(r"^my_workdir_root/[a-zA-Z0-9-]+/VMAF_feature_V0.2.1_test_0_1_refvideo_720x480_2to2_vs_disvideo_720x480_2to2_q_720x480$", log_file_path))
 
     def test_run_vamf_fextractor(self):
         print 'test on running VMAF feature extractor...'
@@ -61,7 +58,6 @@ class FeatureExtractorTest(unittest.TestCase):
         self.fextractor = VmafFeatureExtractor(
             [asset, asset_original],
             None, fifo_mode=True,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             result_store=None
         )
         self.fextractor.run()
@@ -122,7 +118,6 @@ class FeatureExtractorTest(unittest.TestCase):
         self.fextractor = VmafFeatureExtractor(
             [asset, asset_original],
             None, fifo_mode=True,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             result_store=result_store
         )
 
@@ -187,8 +182,7 @@ class FeatureExtractorTest(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.fextractor = VmafFeatureExtractor(
                 [asset, asset_original],
-                None, fifo_mode=True,
-                log_file_dir=config.ROOT + "/workspace/log_file_dir")
+                None, fifo_mode=True)
 
     def test_run_moment_fextractor(self):
         print 'test on running Moment feature extractor...'
@@ -209,7 +203,6 @@ class FeatureExtractorTest(unittest.TestCase):
         self.fextractor = MomentFeatureExtractor(
             [asset, asset_original],
             None, fifo_mode=True,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             result_store=None
         )
         self.fextractor.run()
@@ -249,7 +242,6 @@ class FeatureExtractorTest(unittest.TestCase):
         self.fextractor = PsnrFeatureExtractor(
             [asset, asset_original],
             None, fifo_mode=True,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             result_store=None
         )
         self.fextractor.run()
@@ -264,7 +256,6 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
     def tearDown(self):
         if hasattr(self, 'fextractors'):
             for fextractor in self.fextractors:
-                fextractor.remove_logs()
                 fextractor.remove_results()
             pass
 
@@ -287,7 +278,6 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
         self.fextractors, results = run_executors_in_parallel(
             VmafFeatureExtractor,
             [asset, asset_original],
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
             delete_workdir=True,
             parallelize=True,
@@ -349,7 +339,6 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
         self.fextractors, results = run_executors_in_parallel(
             VmafFeatureExtractor,
             [asset, asset_original],
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
             delete_workdir=True,
             parallelize=True,
@@ -365,7 +354,6 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
         _, results = run_executors_in_parallel(
             VmafFeatureExtractor,
             [asset, asset_original],
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
             delete_workdir=True,
             parallelize=True,
@@ -423,7 +411,6 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
         self.fextractors, results = run_executors_in_parallel(
             MomentFeatureExtractor,
             [asset, asset_original],
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
             delete_workdir=True,
             parallelize=True,

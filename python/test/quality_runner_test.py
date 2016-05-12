@@ -16,7 +16,6 @@ class QualityRunnerTest(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, 'runner'):
-            self.runner.remove_logs()
             self.runner.remove_results()
             pass
 
@@ -49,7 +48,6 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner = VmafLegacyQualityRunner(
             [asset, asset_original],
             None, fifo_mode=True,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             delete_workdir=True,
             result_store=None
         )
@@ -90,7 +88,6 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner = VmafLegacyQualityRunner(
             [asset, asset_original],
             None, fifo_mode=False,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             delete_workdir=True,
             result_store=None
         )
@@ -131,7 +128,6 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner = VmafLegacyQualityRunner(
             [asset, asset_original],
             None, fifo_mode=True,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             delete_workdir=True,
             result_store=result_store
         )
@@ -179,8 +175,7 @@ class QualityRunnerTest(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.runner = VmafLegacyQualityRunner(
                 [asset, asset_original],
-                None, fifo_mode=True,
-                log_file_dir=config.ROOT + "/workspace/log_file_dir")
+                None, fifo_mode=True)
 
     def test_run_vmaf_runner_v1_model(self):
         print 'test on running VMAF runner...'
@@ -201,7 +196,6 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner = VmafQualityRunner(
             [asset, asset_original],
             None, fifo_mode=True,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             delete_workdir=True,
             result_store=None,
             optional_dict={
@@ -243,7 +237,6 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner = VmafQualityRunner(
             [asset, asset_original],
             None, fifo_mode=True,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             delete_workdir=True,
             result_store=None,
         )
@@ -298,7 +291,6 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner = VmafQualityRunner(
             [asset, asset_original, asset2],
             None, fifo_mode=True,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             delete_workdir=True,
             result_store=self.result_store,
         )
@@ -352,7 +344,6 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner = VmafQualityRunner(
             [asset, asset_original],
             None, fifo_mode=True,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             delete_workdir=True,
             result_store=self.result_store,
         )
@@ -397,7 +388,6 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner = VmafQualityRunner(
             [asset, asset_original],
             None, fifo_mode=True,
-            log_file_dir=config.ROOT + "/resource/log_file_dir",
             delete_workdir=True,
             result_store=self.result_store,
             optional_dict={
@@ -439,7 +429,6 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner = PsnrQualityRunner(
             [asset, asset_original],
             None, fifo_mode=True,
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             delete_workdir=True,
             result_store=None
         )
@@ -454,7 +443,6 @@ class ParallelQualityRunnerTest(unittest.TestCase):
     def tearDown(self):
         if hasattr(self, 'runners'):
             for runner in self.runners:
-                runner.remove_logs()
                 runner.remove_results()
             pass
 
@@ -477,7 +465,6 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.runners, results = run_executors_in_parallel(
             VmafLegacyQualityRunner,
             [asset, asset_original],
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
             delete_workdir=True,
             parallelize=True,
@@ -515,7 +502,6 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.runners, results = run_executors_in_parallel(
             PsnrQualityRunner,
             [asset, asset_original],
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
             delete_workdir=True,
             parallelize=True,
@@ -544,7 +530,6 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.runners, results = run_executors_in_parallel(
             VmafQualityRunner,
             [asset, asset_original],
-            log_file_dir=config.ROOT + "/workspace/log_file_dir",
             fifo_mode=True,
             delete_workdir=True,
             parallelize=True,

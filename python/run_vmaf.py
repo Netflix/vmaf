@@ -69,7 +69,6 @@ if __name__ == "__main__":
 
     runner = runner_class(
         assets, None, fifo_mode=True,
-        log_file_dir=config.ROOT + "/workspace/log_file_dir",
         delete_workdir=True,
         result_store=result_store,
         optional_dict=optional_dict,
@@ -81,9 +80,6 @@ if __name__ == "__main__":
 
     # output
     print str(result)
-
-    # clean up
-    runner.remove_logs()
 
     print 'Done.'
 

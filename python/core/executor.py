@@ -26,7 +26,6 @@ class Executor(TypeVersionEnabled):
     def __init__(self,
                  assets,
                  logger,
-                 log_file_dir=config.ROOT + "/workspace/log_file_dir",
                  fifo_mode=True,
                  delete_workdir=True,
                  result_store=None,
@@ -37,7 +36,6 @@ class Executor(TypeVersionEnabled):
 
         self.assets = assets
         self.logger = logger
-        self.log_file_dir = log_file_dir
         self.fifo_mode = fifo_mode
         self.delete_workdir = delete_workdir
         self.results = []
@@ -61,14 +59,6 @@ class Executor(TypeVersionEnabled):
                 "and generate {type} result...".format(type=self.executor_id))
 
         self.results = map(self._run_on_asset, self.assets)
-
-    def remove_logs(self):
-        """
-        Remove all the intermediate log files if no need for inspection.
-        :return:
-        """
-        for asset in self.assets:
-            self._remove_log(asset)
 
     def remove_results(self):
         """
@@ -149,74 +139,44 @@ class Executor(TypeVersionEnabled):
                                  format(id=self.executor_id))
         else:
 
-            log_file_path = self._get_log_file_path(asset)
+            if self.logger:
+                self.logger.info('{id} result does\'t exist. Perform {id} '
+                                 'calculation.'.format(id=self.executor_id))
 
-            # ------------------------------------------------------------------
-            # if os.path.exists(log_file_path):
-            # ------------------------------------------------------------------
-            # ABOVE: check log file existence -- if yes, skip log generation
-            # and jump to reading result from log file
-            # BELOW: don't check existence of log file, just directly go to
-            # log generation
-            # ------------------------------------------------------------------
-            if False:
-            # ------------------------------------------------------------------
+            # at this stage, it is certain that asset.ref_path and
+            # asset.dis_path will be used. must early determine that
+            # they exists
+            self._assert_paths(asset)
 
-                if self.logger:
-                    self.logger.info('{id} log file exists. Skip run and log file'
-                                     ' generation.'.format(id=self.executor_id))
+            # remove workfiles if exist (do early here to avoid race condition
+            # when ref path and dis path have some overlap)
+            self._close_ref_workfile(asset)
+            self._close_dis_workfile(asset)
+
+            make_parent_dirs_if_nonexist(asset.ref_workfile_path)
+            make_parent_dirs_if_nonexist(asset.dis_workfile_path)
+
+            if self.fifo_mode:
+                ref_p = multiprocessing.Process(target=self._open_ref_workfile,
+                                                args=(asset, True))
+                dis_p = multiprocessing.Process(target=self._open_dis_workfile,
+                                                args=(asset, True))
+                ref_p.start()
+                dis_p.start()
             else:
+                self._open_ref_workfile(asset, fifo_mode=False)
+                self._open_dis_workfile(asset, fifo_mode=False)
 
-                if self.logger:
-                    self.logger.info('{id} result does\'t exist. Perform {id} '
-                                     'calculation.'.format(id=self.executor_id))
+            self._wait_for_workfiles(asset)
+            self._prepare_log_file(asset)
 
-                # at this stage, it is certain that asset.ref_path and
-                # asset.dis_path will be used. must early determine that
-                # they exists
-                self._assert_paths(asset)
+            self._run_and_generate_log_file(asset)
 
-                # remove workfiles if exist (do early here to avoid race condition
-                # when ref path and dis path have some overlap)
+            # clean up workfiles
+            if self.delete_workdir:
                 self._close_ref_workfile(asset)
                 self._close_dis_workfile(asset)
 
-                make_parent_dirs_if_nonexist(asset.ref_workfile_path)
-                make_parent_dirs_if_nonexist(asset.dis_workfile_path)
-
-                if self.fifo_mode:
-                    ref_p = multiprocessing.Process(target=self._open_ref_workfile,
-                                                    args=(asset, True))
-                    dis_p = multiprocessing.Process(target=self._open_dis_workfile,
-                                                    args=(asset, True))
-                    ref_p.start()
-                    dis_p.start()
-                else:
-                    self._open_ref_workfile(asset, fifo_mode=False)
-                    self._open_dis_workfile(asset, fifo_mode=False)
-
-                self._wait_for_workfiles(asset)
-                self._prepare_log_file(asset)
-
-                self._run_and_generate_log_file(asset)
-
-                if self.delete_workdir:
-                    self._close_ref_workfile(asset)
-                    self._close_dis_workfile(asset)
-
-                    ref_dir = get_dir_without_last_slash(asset.ref_workfile_path)
-                    dis_dir = get_dir_without_last_slash(asset.dis_workfile_path)
-                    assert ref_dir == dis_dir, 'ref_dir and dis_dir should be the same one.'
-                    try:
-                        os.rmdir(ref_dir)
-                    except OSError as e:
-                        if e.errno == 39: # [Errno 39] Directory not empty
-                            # VQM could generate an error file with non-critical
-                            # information like: '3 File is longer than 15 seconds.
-                            # Results will be calculated using first 15 seconds
-                            # only.' In this case, want to keep this
-                            # informational file and pass
-                            pass
             if self.logger:
                 self.logger.info("Read {id} log file, get scores...".
                                  format(type=self.executor_id))
@@ -228,6 +188,28 @@ class Executor(TypeVersionEnabled):
             if self.result_store:
                 self.result_store.save(result)
 
+            # clean up workdir and log files in it
+            if self.delete_workdir:
+                ref_dir = get_dir_without_last_slash(asset.ref_workfile_path)
+                dis_dir = get_dir_without_last_slash(asset.dis_workfile_path)
+                assert ref_dir == dis_dir, \
+                    'ref_dir and dis_dir should be the same one.'
+
+                # remove log file
+                self._remove_log(asset)
+
+                # remove dir
+                try:
+                    os.rmdir(ref_dir)
+                except OSError as e:
+                    if e.errno == 39: # [Errno 39] Directory not empty
+                        # VQM could generate an error file with non-critical
+                        # information like: '3 File is longer than 15 seconds.
+                        # Results will be calculated using first 15 seconds
+                        # only.' In this case, want to keep this
+                        # informational file and pass
+                        pass
+
         result = self._post_process_result(result)
 
         return result
@@ -238,9 +220,9 @@ class Executor(TypeVersionEnabled):
         return result
 
     def _get_log_file_path(self, asset):
-        return "{dir}/{executor_id}/{str}".format(dir=self.log_file_dir,
-                                                  executor_id=self.executor_id,
-                                                  str=str(asset))
+        return "{workdir}/{executor_id}_{str}".format(workdir=asset.workdir,
+                                                      executor_id=self.executor_id,
+                                                      str=str(asset))
 
     # ===== workfile =====
 
@@ -342,7 +324,6 @@ class Executor(TypeVersionEnabled):
 
 def run_executors_in_parallel(executor_class,
                               assets,
-                              log_file_dir=config.ROOT + "/workspace/log_file_dir",
                               fifo_mode=True,
                               delete_workdir=True,
                               parallelize=True,
@@ -354,7 +335,6 @@ def run_executors_in_parallel(executor_class,
     Run multiple Executors in parallel.
     :param executor_class:
     :param assets:
-    :param log_file_dir:
     :param fifo_mode:
     :param delete_workdir:
     :param parallelize:
@@ -365,9 +345,9 @@ def run_executors_in_parallel(executor_class,
     """
 
     def run_executor(args):
-        executor_class, asset, log_file_dir, fifo_mode, \
+        executor_class, asset, fifo_mode, \
         delete_workdir, result_store, optional_dict = args
-        executor = executor_class([asset], None, log_file_dir, fifo_mode,
+        executor = executor_class([asset], None, fifo_mode,
                                   delete_workdir, result_store, optional_dict)
         executor.run()
         return executor
@@ -376,7 +356,7 @@ def run_executors_in_parallel(executor_class,
     list_args = []
     for asset in assets:
         list_args.append(
-            [executor_class, asset, log_file_dir, fifo_mode,
+            [executor_class, asset, fifo_mode,
              delete_workdir, result_store, optional_dict])
 
     # map arguments to func
