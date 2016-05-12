@@ -65,14 +65,6 @@ After installation, run:
 ./unittest
 ```
 
-##Optional Setup for Parallel Execution
-
-For parallel feature extraction, an additional package [pathos](https://pypi.python.org/pypi/pathos) (>=0.1a1) can be installed optionally. To install, run:
-
-```
-easy_install -f . pathos
-```
-
 ##Basic Usage
 
 There are two basic execution modes to run VMAF -- a single mode and a batch mode.
