@@ -106,8 +106,9 @@ class FeatureAssembler(object):
     def _get_atom_features(self, fextractor_type):
         if self.feature_dict[fextractor_type] == 'all':
             fextractor_class = FeatureExtractor.find_subclass(fextractor_type)
-            atom_features = fextractor_class.ATOM_FEATURES + \
-                            fextractor_class.DERIVED_ATOM_FEATURES
+            atom_features = fextractor_class.ATOM_FEATURES
+            if hasattr(fextractor_class, 'DERIVED_ATOM_FEATURES'):
+                atom_features += fextractor_class.DERIVED_ATOM_FEATURES
         else:
             atom_features = self.feature_dict[fextractor_type]
         return atom_features

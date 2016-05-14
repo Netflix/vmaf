@@ -18,7 +18,7 @@ class FeatureAssemblerTest(unittest.TestCase):
         pass
 
     def test_get_fextractor_subclasses(self):
-        fextractor_subclasses = FeatureExtractor.get_subclasses()
+        fextractor_subclasses = FeatureExtractor.get_subclasses_recursively()
         self.assertEquals(len(fextractor_subclasses), 3)
         self.assertTrue(VmafFeatureExtractor in fextractor_subclasses)
         self.assertTrue(MomentFeatureExtractor in fextractor_subclasses)

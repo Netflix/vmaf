@@ -55,7 +55,7 @@ class TypeVersionEnabled(object):
         :return:
         """
         matched_subclasses = []
-        for subclass in cls.get_subclasses():
+        for subclass in cls.get_subclasses_recursively():
             if hasattr(subclass, 'TYPE') and subclass.TYPE == subclass_type:
                 matched_subclasses.append(subclass)
         assert len(matched_subclasses) == 1, \
@@ -64,6 +64,10 @@ class TypeVersionEnabled(object):
         return matched_subclasses[0]
 
     @classmethod
-    def get_subclasses(cls):
-        return cls.__subclasses__()
+    def get_subclasses_recursively(cls):
+        subclasses = cls.__subclasses__()
+        subsubclasses = []
+        for subclass in subclasses:
+            subsubclasses += subclass.__subclasses__()
+        return subclasses + subsubclasses
 
