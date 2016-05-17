@@ -98,7 +98,11 @@ class Executor(TypeVersionEnabled):
                 break
             sleep(0.1)
         else:
-            raise RuntimeError("ref or dis video workfile path is missing.")
+            raise RuntimeError(
+                "ref or dis video workfile path {ref} or {dis} is missing.".
+                    format(ref=asset.ref_workfile_path,
+                           dis=asset.dis_workfile_path)
+            )
 
     def _prepare_log_file(self, asset):
 
@@ -149,34 +153,50 @@ class Executor(TypeVersionEnabled):
             # they exists
             self._assert_paths(asset)
 
+            # if no rescaling is involved, directly work on ref_path/dis_path,
+            # instead of opening workfiles
+            self._set_asset_use_path_as_workpath(asset)
+
             # remove workfiles if exist (do early here to avoid race condition
             # when ref path and dis path have some overlap)
-            self._close_ref_workfile(asset)
-            self._close_dis_workfile(asset)
-
-            make_parent_dirs_if_nonexist(asset.ref_workfile_path)
-            make_parent_dirs_if_nonexist(asset.dis_workfile_path)
-
-            if self.fifo_mode:
-                ref_p = multiprocessing.Process(target=self._open_ref_workfile,
-                                                args=(asset, True))
-                dis_p = multiprocessing.Process(target=self._open_dis_workfile,
-                                                args=(asset, True))
-                ref_p.start()
-                dis_p.start()
+            if asset.use_path_as_workpath:
+                # do nothing
+                pass
             else:
-                self._open_ref_workfile(asset, fifo_mode=False)
-                self._open_dis_workfile(asset, fifo_mode=False)
+                self._close_ref_workfile(asset)
+                self._close_dis_workfile(asset)
 
-            self._wait_for_workfiles(asset)
+            log_file_path = self._get_log_file_path(asset)
+            make_parent_dirs_if_nonexist(log_file_path)
+
+            if asset.use_path_as_workpath:
+                # do nothing
+                pass
+            else:
+                if self.fifo_mode:
+                    ref_p = multiprocessing.Process(target=self._open_ref_workfile,
+                                                    args=(asset, True))
+                    dis_p = multiprocessing.Process(target=self._open_dis_workfile,
+                                                    args=(asset, True))
+                    ref_p.start()
+                    dis_p.start()
+                    self._wait_for_workfiles(asset)
+                else:
+                    self._open_ref_workfile(asset, fifo_mode=False)
+                    self._open_dis_workfile(asset, fifo_mode=False)
+
             self._prepare_log_file(asset)
 
             self._run_and_generate_log_file(asset)
 
             # clean up workfiles
             if self.delete_workdir:
-                self._close_ref_workfile(asset)
-                self._close_dis_workfile(asset)
+                if asset.use_path_as_workpath:
+                    # do nothing
+                    pass
+                else:
+                    self._close_ref_workfile(asset)
+                    self._close_dis_workfile(asset)
 
             if self.logger:
                 self.logger.info("Read {id} log file, get scores...".
@@ -191,17 +211,15 @@ class Executor(TypeVersionEnabled):
 
             # clean up workdir and log files in it
             if self.delete_workdir:
-                ref_dir = get_dir_without_last_slash(asset.ref_workfile_path)
-                dis_dir = get_dir_without_last_slash(asset.dis_workfile_path)
-                assert ref_dir == dis_dir, \
-                    'ref_dir and dis_dir should be the same one.'
 
                 # remove log file
                 self._remove_log(asset)
 
                 # remove dir
+                log_file_path = self._get_log_file_path(asset)
+                log_dir = get_dir_without_last_slash(log_file_path)
                 try:
-                    os.rmdir(ref_dir)
+                    os.rmdir(log_dir)
                 except OSError as e:
                     if e.errno == 39: # [Errno 39] Directory not empty
                         # VQM could generate an error file with non-critical
@@ -214,6 +232,13 @@ class Executor(TypeVersionEnabled):
         result = self._post_process_result(result)
 
         return result
+
+    @staticmethod
+    def _set_asset_use_path_as_workpath(asset):
+        # if no rescaling is involved, directly work on ref_path/dis_path,
+        # instead of opening workfiles
+        if asset.quality_width_height == asset.ref_width_height:
+            asset.use_path_as_workpath = True
 
     @classmethod
     def _post_process_result(cls, result):
@@ -231,87 +256,89 @@ class Executor(TypeVersionEnabled):
         # For now, only works for YUV format -- all need is to copy from ref
         # file to ref workfile
 
+        # only need to open ref workfile if the path is different from ref path
+        assert asset.use_path_as_workpath == False \
+               and asset.ref_path != asset.ref_workfile_path
+
         # if fifo mode, mkfifo
         if fifo_mode:
             os.mkfifo(asset.ref_workfile_path)
 
-        if asset.quality_width_height == asset.ref_width_height:
-            # NOTE: & is required for fifo mode !!!!
-            cp_cmd = "cp {src} {dst} &". \
-                format(src=asset.ref_path, dst=asset.ref_workfile_path)
-            if self.logger:
-                self.logger.info(cp_cmd)
-            subprocess.call(cp_cmd, shell=True)
-        else:
-            width, height = asset.ref_width_height
-            quality_width, quality_height = asset.quality_width_height
-            yuv_type = asset.yuv_type
-            resampling_type = asset.resampling_type
+        width, height = asset.ref_width_height
+        quality_width, quality_height = asset.quality_width_height
+        yuv_type = asset.yuv_type
+        resampling_type = asset.resampling_type
 
-            src_fmt_cmd = '-f rawvideo -pix_fmt {yuv_fmt} -s {width}x{height}'.\
-                format(yuv_fmt=asset.yuv_type, width=width, height=height)
+        src_fmt_cmd = '-f rawvideo -pix_fmt {yuv_fmt} -s {width}x{height}'.\
+            format(yuv_fmt=asset.yuv_type, width=width, height=height)
 
-            from private.config import FFMPEG_PATH
-            ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
-                         '-pix_fmt {yuv_type} -s {width}x{height} -f rawvideo ' \
-                         '-sws_flags {resampling_type} -y {dst}'.format(
-                ffmpeg=FFMPEG_PATH, src=asset.ref_path, dst=asset.ref_workfile_path,
-                width=quality_width, height=quality_height,
-                src_fmt_cmd=src_fmt_cmd,
-                yuv_type=yuv_type,
-                resampling_type=resampling_type)
-            if self.logger:
-                self.logger.info(ffmpeg_cmd)
-            subprocess.call(ffmpeg_cmd, shell=True)
+        from private.config import FFMPEG_PATH
+        ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
+                     '-pix_fmt {yuv_type} -s {width}x{height} -f rawvideo ' \
+                     '-sws_flags {resampling_type} -y {dst}'.format(
+            ffmpeg=FFMPEG_PATH, src=asset.ref_path, dst=asset.ref_workfile_path,
+            width=quality_width, height=quality_height,
+            src_fmt_cmd=src_fmt_cmd,
+            yuv_type=yuv_type,
+            resampling_type=resampling_type)
+        if self.logger:
+            self.logger.info(ffmpeg_cmd)
+        subprocess.call(ffmpeg_cmd, shell=True)
 
     def _open_dis_workfile(self, asset, fifo_mode):
         # For now, only works for YUV format -- all need is to copy from dis
         # file to dis workfile
 
+        # only need to open dis workfile if the path is different from dis path
+        assert asset.use_path_as_workpath == False \
+               and asset.dis_path != asset.dis_workfile_path
+
         # if fifo mode, mkfifo
         if fifo_mode:
             os.mkfifo(asset.dis_workfile_path)
 
-        if asset.quality_width_height == asset.dis_width_height:
-            # NOTE: & is required for fifo mode !!!!
-            cp_cmd = "cp {src} {dst} &". \
-                format(src=asset.dis_path, dst=asset.dis_workfile_path)
-            if self.logger:
-                self.logger.info(cp_cmd)
-            subprocess.call(cp_cmd, shell=True)
-        else:
-            width, height = asset.dis_width_height
-            quality_width, quality_height = asset.quality_width_height
-            yuv_type = asset.yuv_type
-            resampling_type = asset.resampling_type
+        width, height = asset.dis_width_height
+        quality_width, quality_height = asset.quality_width_height
+        yuv_type = asset.yuv_type
+        resampling_type = asset.resampling_type
 
-            src_fmt_cmd = '-f rawvideo -pix_fmt {yuv_fmt} -s {width}x{height}'.\
-                format(yuv_fmt=asset.yuv_type, width=width, height=height)
+        src_fmt_cmd = '-f rawvideo -pix_fmt {yuv_fmt} -s {width}x{height}'.\
+            format(yuv_fmt=asset.yuv_type, width=width, height=height)
 
-            from private.config import FFMPEG_PATH
-            ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
-                         '-pix_fmt {yuv_type} -s {width}x{height} -f rawvideo ' \
-                         '-sws_flags {resampling_type} -y {dst}'.format(
-                ffmpeg=FFMPEG_PATH, src=asset.dis_path, dst=asset.dis_workfile_path,
-                width=quality_width, height=quality_height,
-                src_fmt_cmd=src_fmt_cmd,
-                yuv_type=yuv_type,
-                resampling_type=resampling_type)
-            if self.logger:
-                self.logger.info(ffmpeg_cmd)
-            subprocess.call(ffmpeg_cmd, shell=True)
+        from private.config import FFMPEG_PATH
+        ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
+                     '-pix_fmt {yuv_type} -s {width}x{height} -f rawvideo ' \
+                     '-sws_flags {resampling_type} -y {dst}'.format(
+            ffmpeg=FFMPEG_PATH, src=asset.dis_path, dst=asset.dis_workfile_path,
+            width=quality_width, height=quality_height,
+            src_fmt_cmd=src_fmt_cmd,
+            yuv_type=yuv_type,
+            resampling_type=resampling_type)
+        if self.logger:
+            self.logger.info(ffmpeg_cmd)
+        subprocess.call(ffmpeg_cmd, shell=True)
 
     @staticmethod
     def _close_ref_workfile(asset):
-        path = asset.ref_workfile_path
-        if os.path.exists(path):
-            os.remove(path)
+
+        # only need to close ref workfile if the path is different from ref path
+        assert asset.use_path_as_workpath is False \
+               and asset.ref_path != asset.ref_workfile_path
+
+        # caution: never remove ref file!!!!!!!!!!!!!!!
+        if os.path.exists(asset.ref_workfile_path):
+            os.remove(asset.ref_workfile_path)
 
     @staticmethod
     def _close_dis_workfile(asset):
-        path = asset.dis_workfile_path
-        if os.path.exists(path):
-            os.remove(path)
+
+        # only need to close dis workfile if the path is different from dis path
+        assert asset.use_path_as_workpath is False \
+               and asset.dis_path != asset.dis_workfile_path
+
+        # caution: never remove dis file!!!!!!!!!!!!!!
+        if os.path.exists(asset.dis_workfile_path):
+            os.remove(asset.dis_workfile_path)
 
     def _remove_log(self, asset):
         log_file_path = self._get_log_file_path(asset)

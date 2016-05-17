@@ -2,6 +2,7 @@ __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import unittest
+import re
 
 import config
 from core.asset import Asset
@@ -266,7 +267,6 @@ class AssetTest(unittest.TestCase):
         self.assertFalse(hash(asset1) == hash(asset4))
 
     def test_workfile_path(self):
-        import re
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
                       asset_dict={'width':720, 'height':480,
@@ -317,6 +317,29 @@ class AssetTest(unittest.TestCase):
                                   'resampling_type':'bicubic'})
         with self.assertRaises(AssertionError):
             print asset.resampling_type
+
+    def test_use_path_as_workpath(self):
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
+                      asset_dict={'width':720, 'height':480,
+                                  'start_frame':2, 'end_frame':2,
+                                  'quality_width':1920, 'quality_height':1080},
+                      workdir_root="workdir")
+        expected_ref_workfile_path_re = \
+            r"^workdir/[a-zA-Z0-9-]+/" \
+            r"ref_test_0_0_refvideo_720x480_2to2_vs_disvideo_720x480_2to2_q_1920x1080"
+        expected_dis_workfile_path_re = \
+            r"^workdir/[a-zA-Z0-9-]+/" \
+            r"dis_test_0_0_refvideo_720x480_2to2_vs_disvideo_720x480_2to2_q_1920x1080"
+        self.assertTrue(re.match(expected_ref_workfile_path_re, asset.ref_workfile_path))
+        self.assertTrue(re.match(expected_dis_workfile_path_re, asset.dis_workfile_path))
+        self.assertFalse('use_path_as_workpath' in asset.asset_dict)
+
+        asset.use_path_as_workpath = True
+        self.assertTrue('use_path_as_workpath' in asset.asset_dict)
+        self.assertTrue(asset.asset_dict['use_path_as_workpath'])
+        self.assertEquals(asset.ref_workfile_path, 'dir/refvideo.yuv')
+        self.assertEquals(asset.dis_workfile_path, 'dir/disvideo.yuv')
 
 if __name__ == '__main__':
     unittest.main()

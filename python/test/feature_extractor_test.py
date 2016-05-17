@@ -96,7 +96,6 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_scale2_score'], 0.9999998649680067)
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_scale3_score'], 0.9999998102499)
 
-
     def test_run_vamf_fextractor_with_result_store(self):
         print 'test on running VMAF feature extractor with result store...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"

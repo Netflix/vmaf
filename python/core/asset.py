@@ -396,15 +396,21 @@ class Asset(WorkdirEnabled):
 
     @property
     def ref_workfile_path(self):
-        return "{workdir}/ref_{str}".format(
-            workdir=self.workdir,
-            str=str(self))
+        if self.use_path_as_workpath:
+            return self.ref_path
+        else:
+            return "{workdir}/ref_{str}".format(
+                workdir=self.workdir,
+                str=str(self))
 
     @property
     def dis_workfile_path(self):
-        return "{workdir}/dis_{str}".format(
-            workdir=self.workdir,
-            str=str(self))
+        if self.use_path_as_workpath:
+            return self.dis_path
+        else:
+            return "{workdir}/dis_{str}".format(
+                workdir=self.workdir,
+                str=str(self))
 
     # ==== bitrate ====
 
@@ -460,3 +466,29 @@ class Asset(WorkdirEnabled):
                     self.asset_dict['resampling_type'])
         else:
             return self.DEFAULT_RESAMPLING_TYPE
+
+    @property
+    def use_path_as_workpath(self):
+        """
+        If True, use ref_path as ref_workfile_path, and dis_path as
+        dis_workfile_path.
+        """
+        if 'use_path_as_workpath' in self.asset_dict:
+            if self.asset_dict['use_path_as_workpath'] == 1:
+                return True
+            elif self.asset_dict['use_path_as_workpath'] == 0:
+                return False
+            else:
+                assert False
+        else:
+            return False
+
+    @use_path_as_workpath.setter
+    def use_path_as_workpath(self, bool_value):
+        # cannot just assign True/False for ResultStore reason:
+        # df = pd.DataFrame.from_dict(ast.literal_eval(result_file.read()))
+        # cannot read true/false
+        if bool_value is True:
+            self.asset_dict['use_path_as_workpath'] = 1
+        else:
+            self.asset_dict['use_path_as_workpath'] = 0
