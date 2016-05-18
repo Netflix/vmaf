@@ -237,7 +237,8 @@ class Executor(TypeVersionEnabled):
     def _set_asset_use_path_as_workpath(asset):
         # if no rescaling is involved, directly work on ref_path/dis_path,
         # instead of opening workfiles
-        if asset.quality_width_height == asset.ref_width_height:
+        if asset.quality_width_height == asset.ref_width_height \
+                and asset.quality_width_height == asset.dis_width_height:
             asset.use_path_as_workpath = True
 
     @classmethod

@@ -33,7 +33,7 @@ python -c 'import pandas as pkg; print pkg.__version__; print pkg.__file__'
 python -c 'import sklearn as pkg; print pkg.__version__; print pkg.__file__'
 ```
 
-If you see that printed version number is older than the ones above, it could suggest that a previously installed package with the same name but older version at a different location may have overshadowed the new one. Make sure that the new one's path appears early in the path list, which can be printed by:
+If you see that the printed version number is older than the ones aforementioned, it could suggest that a previously installed package with the same name but older version at a different location may have overshadowed the new one. Make sure that the new one's path appears early in the path list, which can be printed by:
 
 ```
 python -c 'import sys; print sys.path'
