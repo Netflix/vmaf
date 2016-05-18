@@ -4,11 +4,12 @@ __license__ = "Apache, Version 2.0"
 import re
 import subprocess
 import numpy as np
+import ast
 
 import config
 from core.executor import Executor
 from core.result import Result
-
+from tools.reader import YuvReader
 
 class FeatureExtractor(Executor):
     """
@@ -277,7 +278,9 @@ class PsnrFeatureExtractor(FeatureExtractor):
 class MomentFeatureExtractor(FeatureExtractor):
 
     TYPE = "Moment_feature"
-    VERSION = "1.0"
+
+    # VERSION = "1.0" # call executable
+    VERSION = "1.1" # python only
 
     ATOM_FEATURES = ['ref1st', 'ref2nd', 'dis1st', 'dis2nd', ]
 
@@ -289,42 +292,42 @@ class MomentFeatureExtractor(FeatureExtractor):
         # routine to call the command-line executable and generate feature
         # scores in the log file.
 
+        quality_w, quality_h = asset.quality_width_height
+
+        ref_scores_mtx = None
+        with YuvReader(filepath=asset.ref_workfile_path, width=quality_w,
+                       height=quality_h, yuv_type=asset.yuv_type) as ref_yuv_reader:
+            scores_mtx_list = []
+            i = 0
+            for ref_yuv in ref_yuv_reader:
+                ref_y = ref_yuv[0]
+                firstm = ref_y.mean()
+                secondm = ref_y.var() + firstm**2
+                scores_mtx_list.append(np.hstack(([firstm], [secondm])))
+                i += 1
+            ref_scores_mtx = np.vstack(scores_mtx_list)
+
+        dis_scores_mtx = None
+        with YuvReader(filepath=asset.dis_workfile_path, width=quality_w,
+                       height=quality_h, yuv_type=asset.yuv_type) as dis_yuv_reader:
+            scores_mtx_list = []
+            i = 0
+            for dis_yuv in dis_yuv_reader:
+                dis_y = dis_yuv[0]
+                firstm = dis_y.mean()
+                secondm = dis_y.var() + firstm**2
+                scores_mtx_list.append(np.hstack(([firstm], [secondm])))
+                i += 1
+            dis_scores_mtx = np.vstack(scores_mtx_list)
+
+        assert ref_scores_mtx is not None and dis_scores_mtx is not None
+
+        log_dict = {'ref_scores_mtx': ref_scores_mtx.tolist(),
+                    'dis_scores_mtx': dis_scores_mtx.tolist()}
+
         log_file_path = self._get_log_file_path(asset)
-
-        quality_width, quality_height = asset.quality_width_height
-
-        # run MOMENT command line to extract features, APPEND (>>) result (since
-        # _prepare_generate_log_file method has already created the file and
-        # written something in advance).
-        with open(log_file_path, 'at') as log_file:
-            log_file.write("=== ref: ===\n")
-        ref_moment_cmd = "{moment} 2 {yuv_type} {ref_path} {w} {h} >> {log_file_path}" \
-        .format(
-            moment=self.MOMENT,
-            yuv_type=asset.yuv_type,
-            ref_path=asset.ref_workfile_path,
-            w=quality_width,
-            h=quality_height,
-            log_file_path=log_file_path,
-        )
-        if self.logger:
-            self.logger.info(ref_moment_cmd)
-        subprocess.call(ref_moment_cmd, shell=True)
-
-        with open(log_file_path, 'at') as log_file:
-            log_file.write("=== dis: ===\n")
-        dis_moment_cmd = "{moment} 2 {yuv_type} {dis_path} {w} {h} >> {log_file_path}" \
-        .format(
-            moment=self.MOMENT,
-            yuv_type=asset.yuv_type,
-            dis_path=asset.dis_workfile_path,
-            w=quality_width,
-            h=quality_height,
-            log_file_path=log_file_path,
-        )
-        if self.logger:
-            self.logger.info(dis_moment_cmd)
-        subprocess.call(dis_moment_cmd, shell=True)
+        with open(log_file_path, 'wt') as log_file:
+            log_file.write(str(log_dict))
 
     def _get_feature_scores(self, asset):
         # routine to read the feature scores from the log file, and return
@@ -332,57 +335,22 @@ class MomentFeatureExtractor(FeatureExtractor):
 
         log_file_path = self._get_log_file_path(asset)
 
-        atom_feature_scores_dict = {}
-        atom_feature_idx_dict = {}
-        for atom_feature in self.ATOM_FEATURES:
-            atom_feature_scores_dict[atom_feature] = []
-            atom_feature_idx_dict[atom_feature] = 0
-
-        # read ref1st, ref2nd, dis1st, dis2nd
-        ref_or_dis = None
         with open(log_file_path, 'rt') as log_file:
-            for line in log_file.readlines():
-                mo = re.match(r"=== ref: ===", line)
-                if mo:
-                    ref_or_dis = 'ref'
-                    continue
+            log_str = log_file.read()
+            log_dict = ast.literal_eval(log_str)
+        ref_scores_mtx = np.array(log_dict['ref_scores_mtx'])
+        dis_scores_mtx = np.array(log_dict['dis_scores_mtx'])
 
-                mo = re.match(r"=== dis: ===", line)
-                if mo:
-                    ref_or_dis = 'dis'
-                    continue
-
-                mo = re.match(r"1stmoment: ([0-9]+) ([0-9.-]+)", line)
-                if mo:
-                    cur_idx = int(mo.group(1))
-                    assert ref_or_dis is not None
-                    atom_feature = ref_or_dis + '1st'
-                    assert cur_idx == atom_feature_idx_dict[atom_feature]
-                    atom_feature_scores_dict[atom_feature].append(float(mo.group(2)))
-                    atom_feature_idx_dict[atom_feature] += 1
-                    continue
-
-                mo = re.match(r"2ndmoment: ([0-9]+) ([0-9.-]+)", line)
-                if mo:
-                    cur_idx = int(mo.group(1))
-                    assert ref_or_dis is not None
-                    atom_feature = ref_or_dis + '2nd'
-                    assert cur_idx == atom_feature_idx_dict[atom_feature]
-                    atom_feature_scores_dict[atom_feature].append(float(mo.group(2)))
-                    atom_feature_idx_dict[atom_feature] += 1
-                    continue
-
-        # assert lengths
-        len_score = len(atom_feature_scores_dict[self.ATOM_FEATURES[0]])
-        assert len_score != 0
-        for atom_feature in self.ATOM_FEATURES[1:]:
-            assert len_score == len(atom_feature_scores_dict[atom_feature])
+        _, num_ref_features = ref_scores_mtx.shape
+        assert num_ref_features == 2 # ref1st, ref2nd
+        _, num_dis_features = dis_scores_mtx.shape
+        assert num_dis_features == 2 # dis1st, dis2nd
 
         feature_result = {}
-
-        for atom_feature in self.ATOM_FEATURES:
-            scores_key = self.get_scores_key(atom_feature)
-            feature_result[scores_key] = atom_feature_scores_dict[atom_feature]
+        feature_result[self.get_scores_key('ref1st')] = list(ref_scores_mtx[:, 0])
+        feature_result[self.get_scores_key('ref2nd')] = list(ref_scores_mtx[:, 1])
+        feature_result[self.get_scores_key('dis1st')] = list(dis_scores_mtx[:, 0])
+        feature_result[self.get_scores_key('dis2nd')] = list(dis_scores_mtx[:, 1])
 
         return feature_result
 
