@@ -30,6 +30,15 @@ def read_dataset(dataset):
 
     assets = []
     for dis_video in dis_videos:
+
+        if 'dmos' in dis_video:
+            groundtruth = dis_video['dmos']
+        elif 'mos' in dis_video:
+            groundtruth = dis_video['mos']
+        else:
+            assert False, 'Each distorted video entry must provide either ' \
+                          'a mos or dmos score.'
+
         asset = Asset(dataset=data_set_name,
                       content_id=dis_video['content_id'],
                       asset_id=dis_video['asset_id'],
@@ -39,7 +48,7 @@ def read_dataset(dataset):
                       asset_dict={'width':width,
                                   'height':height,
                                   'yuv_type':yuv_fmt,
-                                  'groundtruth':dis_video['dmos']
+                                  'groundtruth': groundtruth,
                                   }
                       )
         assets.append(asset)

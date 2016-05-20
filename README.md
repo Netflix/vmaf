@@ -142,7 +142,7 @@ Once a model is trained, the VMAF package also provides tools to cross validate 
 
 ###Create a Dataset
 
-To begin with, create a dataset file following the format in *example_dataset.py*. A dataset is a collection of distorted videos, each has a unique asset ID and a corresponding reference video, identified by a unique content ID. Each distorted video is also associated with a DMOS (differential mean opinion score), which is obtained through subjective experiments.
+To begin with, create a dataset file following the format in *example_dataset.py*. A dataset is a collection of distorted videos, each has a unique asset ID and a corresponding reference video, identified by a unique content ID. Each distorted video is also associated with a MOS (mean opinion score), or differential MOS (DMOS), which is obtained through subjective experiments.
 
 See directory *resource/dataset* for more examples. Also refer to the 'Datasets' section regarding publicly available datasets.
 
@@ -166,7 +166,7 @@ For example:
 ./run_testing VMAF yes yes example_dataset.py
 ```
 
-Make sure *matplotlib* is installed to visualize the DMOS-prediction scatter plot and inspect the statistics: 
+Make sure *matplotlib* is installed to visualize the MOS-prediction scatter plot and inspect the statistics: 
 
   - PCC - Pearson correlation coefficient
   - SRCC - Spearman rank correlation coefficient
