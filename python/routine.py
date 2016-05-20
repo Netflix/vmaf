@@ -57,7 +57,8 @@ def read_dataset(dataset):
 
 def test_on_dataset(test_dataset, runner_class, ax,
                     result_store, model_filepath,
-                    parallelize=True, fifo_mode=True):
+                    parallelize=True, fifo_mode=True,
+                    aggregate_method=np.mean):
 
     test_assets = read_dataset(test_dataset)
 
@@ -84,6 +85,9 @@ def test_on_dataset(test_dataset, runner_class, ax,
             result_store=result_store,
             optional_dict=optional_dict,
         )
+
+        for result in results:
+            result.set_aggregate_method(aggregate_method)
 
         # plot
         groundtruths = map(lambda asset: asset.groundtruth, test_assets)

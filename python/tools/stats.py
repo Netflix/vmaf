@@ -16,6 +16,18 @@ class ListStats(object):
     array([  4.08330969,   4.08330969,   4.08330969,   4.08330969,
              4.08330969,   4.08330969,   5.81552983,   7.7557191 ,
              9.96294602,  12.51305607])
+    >>> ListStats.harmonic_mean(test_list)
+    4.5222635212015483
+    >>> np.mean(test_list)
+    8.0
+    >>> np.median(test_list)
+    8.0
+    >>> ListStats.lp_norm(test_list, 2.0)
+    9.5393920141694561
+    >>> ListStats.lp_norm(test_list, 1.0)
+    8.0
+    >>> ListStats.lp_norm(test_list, 3.0)
+    10.507175744985801
 
     >>> ListStats.print_stats(test_list)
     Min: 1, Max: 15, Median: 8.0, Mean: 8.0, Variance: 27.0, Total_variation: 1.55555555556
@@ -56,6 +68,10 @@ class ListStats(object):
     @staticmethod
     def harmonic_mean(my_list):
         return 1.0 / np.mean(1.0 / (np.array(my_list) + 1.0)) - 1.0
+
+    @staticmethod
+    def lp_norm(my_list, p):
+        return np.power(np.mean(np.power(np.array(my_list), p)), 1.0 / p)
 
     @staticmethod
     def print_stats(my_list):
