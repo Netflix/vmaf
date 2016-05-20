@@ -3,9 +3,10 @@ __license__ = "Apache, Version 2.0"
 
 import re
 
+import numpy as np
+
 from tools.misc import get_file_name_with_extension
 from core.asset import Asset
-from tools.stats import StatsList
 
 
 class BasicResult(object):
@@ -17,6 +18,11 @@ class BasicResult(object):
         self.asset = asset
         self.result_dict = result_dict
 
+        self.aggregate_method = np.mean
+
+    def set_aggregate_method(self, aggregate_method):
+        self.aggregate_method = aggregate_method
+
     # make access dictionary-like, i.e. can do: result['vif_score']
     def __getitem__(self, key):
         return self.get_score(key)
@@ -27,39 +33,6 @@ class BasicResult(object):
         except KeyError as e:
             return self._try_get_aggregate_score(key, e)
 
-    def _get_score_list_from_key(self, key):
-        if re.search(r"_scores", key):
-            return self.result_dict[key]
-        raise KeyError("Try adding s to your score")
-
-    def min(self, key):
-        return StatsList.min(self._get_score_list_from_key(key))
-
-    def max(self, key):
-        return StatsList.max(self._get_score_list_from_key(key))
-
-    def median(self, key):
-        return StatsList.median(self._get_score_list_from_key(key))
-
-    def mean(self, key):
-        return StatsList.mean(self._get_score_list_from_key(key))
-
-    def stddev(self, key):
-        return StatsList.stddev(self._get_score_list_from_key(key))
-
-    def var(self, key):
-        return StatsList.variance(self._get_score_list_from_key(key))
-
-    def percentile(self, key, q):
-        return StatsList.percentile(self._get_score_list_from_key(key), q)
-
-    def total_var(self, key):
-        return StatsList.total_variation(self._get_score_list_from_key(key))
-
-    def moving_average(self, key, n, type='exponential'):
-        return StatsList.moving_average(
-            self._get_score_list_from_key(key), n, type)
-
     def _try_get_aggregate_score(self, key, error):
         """
         Get aggregate score from list of scores. Must follow the convention
@@ -67,14 +40,12 @@ class BasicResult(object):
         a corresponding list of scores that uses key '*_scores'. For example,
         if the key is 'VMAF_score', there must exist a corresponding key
         'VMAF_scores'.
-        :param key:
-        :return:
         """
         if re.search(r"_score$", key):
             scores_key = key + 's' # e.g. 'VMAF_scores'
             if scores_key in self.result_dict:
                 scores = self.result_dict[scores_key]
-                return float(sum(scores)) / len(scores)
+                return self.aggregate_method(scores)
         raise KeyError(error)
 
     def _get_ordered_list_scores_key(self):
@@ -122,7 +93,6 @@ class BasicResult(object):
             )
         ))
         return str_aggregate
-
 
 
 class Result(BasicResult):

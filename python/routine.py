@@ -7,6 +7,8 @@ from tools.misc import indices
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
+import numpy as np
+
 import config
 from core.asset import Asset
 from core.executor import run_executors_in_parallel
@@ -235,7 +237,8 @@ def construct_kfold_list(assets, contentid_groups):
     return kfold
 
 
-def cv_on_dataset(dataset, feature_param, model_param, ax, result_store, contentid_groups, logger=None):
+def cv_on_dataset(dataset, feature_param, model_param, ax, result_store,
+                  contentid_groups, logger=None, aggregate_method=np.mean):
 
     assets = read_dataset(dataset)
     kfold = construct_kfold_list(assets, contentid_groups)
@@ -253,6 +256,8 @@ def cv_on_dataset(dataset, feature_param, model_param, ax, result_store, content
     fassembler.run()
     results = fassembler.results
 
+    for result in results:
+        result.set_aggregate_method(aggregate_method)
 
     # run nested kfold cv for each combintation
     cv_output = ModelCrossValidation.run_kfold_cross_validation(

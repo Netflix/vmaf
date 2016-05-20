@@ -324,9 +324,6 @@ class TrainTestModel(TypeVersionEnabled):
         feature_names.remove('label')
         feature_names.remove('content_id')
 
-        # temp
-        # feature_names = ['VMAF_feature_vif_score', 'VMAF_feature_adm_score', 'VMAF_feature_ansnr_score', 'VMAF_feature_motion_score']
-
         self.feature_names = feature_names
 
         xs_2d = []
