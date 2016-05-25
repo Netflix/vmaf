@@ -128,8 +128,8 @@ In addition to the basic executors, the VMAF package also provides a framework t
 For example:
 
 ```
-./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv resource/model/nflx_vmaff_rf_v1.pkl
-./run_vmaf_in_batch yes example_batch_input resource/model/nflx_vmaff_rf_v1.pkl
+./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv resource/model/nflxtrain_vmafv3.pkl
+./run_vmaf_in_batch yes example_batch_input resource/model/nflxtrain_vmafv3.pkl
 ```
 
 A user can customize the model based on:
@@ -201,7 +201,7 @@ Here *cache_result* is either *yes* or *no*, *parallelize* is either *yes* or *n
 For example:
 
 ```
-./run_training yes yes example_dataset.py resource/feature_param/vmaf_feature_v1.py resource/model_param/libsvmnusvr_v1.py workspace/model/test_model.pkl
+./run_training yes yes example_dataset.py resource/feature_param/vmaf_feature_v2.py resource/model_param/libsvmnusvr_v2.py workspace/model/test_model.pkl
 ```
 
 *feature_param_file* defines the set of features used. For example, both dictionaries below:
@@ -248,7 +248,7 @@ You can also customize VMAF by plugging in third-party features or inventing new
 
 Similarly, you can plug in a third-party regressor or invent a new regressor and specify them in the *model_param_file*. The *model_type* (e.g. LIBSVMNUSVR) corresponds to the *TYPE* field of a TrainTestModel sublass (e.g. LibsvmnusvrTrainTestModel). All needed is to create a new class extending the TrainTestModel base class.
 
-For instructions on how to extending the FeatureExtractor and TrainTestModel base classes, refer to CONTRIBUTING.md. 
+For instructions on how to extending the FeatureExtractor and TrainTestModel base classes, refer to [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ##Datasets
 
