@@ -29,7 +29,15 @@ int vif(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 
 int motion(const char *dis_path, int w, int h, const char *fmt);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int all(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
+
+#ifdef __cplusplus
+}
+#endif
 
 int psnr(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
 
