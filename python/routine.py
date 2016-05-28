@@ -108,6 +108,7 @@ def test_on_dataset(test_dataset, runner_class, ax,
                 # runner=results[0].executor_id,
                 runner=runner_class.TYPE,
                 stats=TrainTestModel.format_stats(stats),
+                # stats="",
                 # stats=TrainTestModel.format_stats3(stats),
             ))
 

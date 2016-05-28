@@ -283,6 +283,7 @@ class TrainTestModel(TypeVersionEnabled):
                 curr_ys_label = np.array(stats['ys_label'])[curr_idxs]
                 curr_ys_label_pred = np.array(stats['ys_label_pred'])[curr_idxs]
                 ax.scatter(curr_ys_label, curr_ys_label_pred,
+                # ax.plot(curr_ys_label, curr_ys_label_pred, 'x-',
                            label=curr_content_id, color=colors[idx % len(colors)])
 
     @staticmethod
