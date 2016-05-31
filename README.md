@@ -142,7 +142,24 @@ Once a model is trained, the VMAF package also provides tools to cross validate 
 
 ###Create a Dataset
 
-To begin with, create a dataset file following the format in *example_dataset.py*. A dataset is a collection of distorted videos, each has a unique asset ID and a corresponding reference video, identified by a unique content ID. Each distorted video is also associated with a MOS (mean opinion score), or differential MOS (DMOS), which is obtained through subjective experiments.
+To begin with, create a dataset file following the format in *example_dataset.py*. A dataset is a collection of distorted videos, each has a unique asset ID and a corresponding reference video, identified by a unique content ID. Each distorted video is also associated with a MOS (mean opinion score), or differential MOS (DMOS), which is obtained through subjective experiments. An example code snippets that defines a dataset is as follows:
+
+```
+dataset_name = 'example'
+yuv_fmt = 'yuv420p'
+width = 1920
+height = 1080
+ref_videos = [
+    {'content_id':0, 'path':'checkerboard.yuv'},
+    {'content_id':1, 'path':'flat.yuv'},
+]
+dis_videos = [
+    {'content_id':0, 'asset_id': 0, 'dmos':100, 'path':'checkerboard.yuv'}, # ref
+    {'content_id':0, 'asset_id': 1, 'dmos':50,  'path':'checkerboard_dis.yuv'},
+    {'content_id':1, 'asset_id': 2, 'dmos':100,  'path':'flat.yuv'}, # ref
+    {'content_id':1, 'asset_id': 3, 'dmos':80,  'path':'flat_dis.yuv'},
+]
+```
 
 See directory *resource/dataset* for more examples. Also refer to the 'Datasets' section regarding publicly available datasets.
 
