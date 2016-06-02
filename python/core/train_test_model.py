@@ -282,9 +282,19 @@ class TrainTestModel(TypeVersionEnabled):
                 curr_idxs = indices(content_ids, lambda cid: cid==curr_content_id)
                 curr_ys_label = np.array(stats['ys_label'])[curr_idxs]
                 curr_ys_label_pred = np.array(stats['ys_label_pred'])[curr_idxs]
+
                 ax.scatter(curr_ys_label, curr_ys_label_pred,
-                # ax.plot(curr_ys_label, curr_ys_label_pred, 'x-',
                            label=curr_content_id, color=colors[idx % len(colors)])
+
+                # lab = curr_content_id
+                # if lab == 11:
+                #     lab = 'CG Animation'
+                # elif lab == 7:
+                #     lab = 'TV Drama'
+                # elif lab == 31:
+                #     lab = 'High Noise'
+                # ax.plot(curr_ys_label, curr_ys_label_pred, 'x-',
+                #            label=lab, color=colors[idx % len(colors)])
 
     @staticmethod
     def get_objective_score(result, type='SRCC'):
