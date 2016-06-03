@@ -1,11 +1,11 @@
 VMAF - Video Multi-Method Assessment Fusion
 ===================
 
-VMAF is a software package developed by Netflix Inc. containing tools for perceptual video quality assessment.
+VMAF is a perceptual video quality assessment algorithm developed by Netflix Inc. VMAF Development Kit (VDK) is a software package that contains the VMAF algorithm implementation, as well as a set of tools that allows a user to train and test a custom VMAF model.
 
 ##Prerequisite
 
-The VMAF package has its core feature extraction library written in C, and the rest glue code written in Python. It also incorporates an external C++ library [libsvm](https://www.csie.ntu.edu.tw/~cjlin/libsvm/). To build the C/C++ code, it requires *cc* and *g++*. To run scripts and tests, it requires Python2 (>= 2.7) installed.
+The VDK package has its core feature extraction library written in C, and the rest glue code written in Python. It also incorporates an external C++ library [libsvm](https://www.csie.ntu.edu.tw/~cjlin/libsvm/). To build the C/C++ code, it requires *cc* and *g++*. To run scripts and tests, it requires Python2 (>= 2.7) installed.
 
 It also requires a number of Python packages:
 
@@ -87,7 +87,7 @@ For example:
 ./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv
 ```
 
-To run VMAF in batch mode, create an input text file with each line of format (check examples in example_batch_input):
+To run VMAF in batch mode, create an input text file with each line of format (check examples in [example_batch_input](example_batch_input)):
 
 ```
 format width height reference_path distorted_path
@@ -106,7 +106,7 @@ After that, run:
 ./run_vmaf_in_batch parallelize input_file
 ```
 
-where *parallelize* is either *yes* or *no*. (Parallel execution is available only when *pathos* is installed. Refer to Section 'Optional Setup for Parallel Execution'.)
+where *parallelize* is either *yes* or *no*.
 
 For example:
 
@@ -118,7 +118,7 @@ For example:
 
 VMAF follows a machine-learning based approach to first extract a number of quality-relevant features from a distorted video and its reference full-quality video, followed by fusing them into a final quality score using a non-linear regressor (e.g. a SVM regressor), hence the name 'Video Multi-method Assessment Fusion'.
 
-In addition to the basic executors, the VMAF package also provides a framework to allow any user to train his/her own perceptual quality assessment model. For example, directory *resource/model* contains a number of pre-trained models, which can be loaded by the aforementioned VMAF executors:
+In addition to the basic executors, the VMAF package also provides a framework to allow any user to train his/her own perceptual quality assessment model. For example, directory [resource/model]([resource/model]) contains a number of pre-trained models, which can be loaded by the aforementioned VMAF executors:
 
 ```
 ./run_vmaf format width height reference_path distorted_path [optional_VMAF_model_file]
@@ -142,7 +142,7 @@ Once a model is trained, the VMAF package also provides tools to cross validate 
 
 ###Create a Dataset
 
-To begin with, create a dataset file following the format in *example_dataset.py*. A dataset is a collection of distorted videos, each has a unique asset ID and a corresponding reference video, identified by a unique content ID. Each distorted video is also associated with a MOS (mean opinion score), or differential MOS (DMOS), which is obtained through subjective experiments. An example code snippets that defines a dataset is as follows:
+To begin with, create a dataset file following the format in [example_dataset.py](example_dataset.py). A dataset is a collection of distorted videos, each has a unique asset ID and a corresponding reference video, identified by a unique content ID. Each distorted video is also associated with a MOS (mean opinion score), or differential MOS (DMOS), which is obtained through subjective experiments. An example code snippets that defines a dataset is as follows:
 
 ```
 dataset_name = 'example'
@@ -161,7 +161,7 @@ dis_videos = [
 ]
 ```
 
-See directory *resource/dataset* for more examples. Also refer to the 'Datasets' section regarding publicly available datasets.
+See directory [resource/dataset](resource/dataset) for more examples. Also refer to the [Datasets](##Datasets) section regarding publicly available datasets.
 
 ###Validate a Dataset
 
@@ -259,11 +259,15 @@ The trained model is output to *output_model_file*. Once it is obtained, it can 
 
 Above are two example scatter plots obtained from running the *run_training* and *run_testing* executors on a training and a testing dataset, respectively.
 
+###Cross Validation
+
+[python/script/run_vmaf_cross_validation.py](python/script/run_vmaf_cross_validation.py) provides tools for cross validation of parameters and models. *run_vmaf_cv* runs training on a training dataset using hyper-parameters specified in a parameter file, output a trained model file, and then test the trained model on another test dataset and report testing correlation scores.
+
 ###Creating New Features And Regressors
 
-You can also customize VMAF by plugging in third-party features or inventing new features, and specify them in the *feature_param_file*. Essentially, the 'aggregate' feature type (e.g. VMAF_feature) specified in the *feature_dict* corresponds to the *TYPE* field of a FeatureExtractor subclass (e.g. VmafFeatureExtractor). All you need to do is to create a new class extending the FeatureExtractor base class.
+You can also customize VMAF by plugging in third-party features or inventing new features, and specify them in a *feature_param_file*. Essentially, the 'aggregate' feature type (e.g. VMAF_feature) specified in the *feature_dict* corresponds to the *TYPE* field of a FeatureExtractor subclass (e.g. VmafFeatureExtractor). All you need to do is to create a new class extending the FeatureExtractor base class.
 
-Similarly, you can plug in a third-party regressor or invent a new regressor and specify them in the *model_param_file*. The *model_type* (e.g. LIBSVMNUSVR) corresponds to the *TYPE* field of a TrainTestModel sublass (e.g. LibsvmnusvrTrainTestModel). All needed is to create a new class extending the TrainTestModel base class.
+Similarly, you can plug in a third-party regressor or invent a new regressor and specify them in a *model_param_file*. The *model_type* (e.g. LIBSVMNUSVR) corresponds to the *TYPE* field of a TrainTestModel sublass (e.g. LibsvmnusvrTrainTestModel). All needed is to create a new class extending the TrainTestModel base class.
 
 For instructions on how to extending the FeatureExtractor and TrainTestModel base classes, refer to [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -271,8 +275,8 @@ For instructions on how to extending the FeatureExtractor and TrainTestModel bas
 
 ### Netflix Public Dataset
 
-We provide a dataset publicly available to the community for training, testing and verification of results purposes. The dataset file can be found at `resource/dataset/NFLX_dataset_public.py`, and the videos (in YUV420P format) can be downloaded [here](https://drive.google.com/folderview?id=0B3YWNICYMBIweGdJbERlUG9zc0k&usp=sharing).
+We provide a dataset publicly available to the community for training, testing and verification of results purposes. The dataset file is at [resource/dataset/NFLX_dataset_public.py](resource/dataset/NFLX_dataset_public.py), and the videos (in YUV420P format) can be downloaded [here](https://drive.google.com/folderview?id=0B3YWNICYMBIweGdJbERlUG9zc0k&usp=sharing).
 
 ### VQEG HD3 Dataset
 
-We also provide an example dataset file containing video file names from VQEG (Video Quality Expert Group) HD3 videos. The dataset file can be found at `resource/dataset/VQEGHD3_dataset.py`, and the videos is available for downloading from [http://www.cdvl.org/](http://www.cdvl.org/). After login, choose menu 'find videos', and search use keyword 'vqeghd3'. The dataset file includes from src01 to src09 except for src04, which overlaps with the Netflix Public Dataset, and hrc04, hrc07, hrc16, hrc17, hrc18, hrc19, hrc20 and hrc21, which are the mostly relevant distortion types to adaptive streaming. After downloading the videos, convert them to YUV420P format. 
+We also provide an example dataset file containing video file names from VQEG (Video Quality Expert Group) HD3 videos. The dataset file is at [resource/dataset/VQEGHD3_dataset.py](resource/dataset/VQEGHD3_dataset.py), and the videos is available for downloading from [http://www.cdvl.org/](http://www.cdvl.org/). After login, choose menu 'find videos', and search use keyword 'vqeghd3'. The dataset file includes from src01 to src09 except for src04, which overlaps with the Netflix Public Dataset, and hrc04, hrc07, hrc16, hrc17, hrc18, hrc19, hrc20 and hrc21, which are the mostly relevant distortion types to adaptive streaming. After downloading the videos, convert them to YUV420P format. 
