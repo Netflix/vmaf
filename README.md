@@ -261,7 +261,9 @@ Above are two example scatter plots obtained from running the *run_training* and
 
 ###Cross Validation
 
-[python/script/run_vmaf_cross_validation.py](python/script/run_vmaf_cross_validation.py) provides tools for cross validation of parameters and models. *run_vmaf_cv* runs training on a training dataset using hyper-parameters specified in a parameter file, output a trained model file, and then test the trained model on another test dataset and report testing correlation scores.
+[python/script/run_vmaf_cross_validation.py](python/script/run_vmaf_cross_validation.py) provides tools for cross validation of hyper-parameters and models. *run_vmaf_cv* runs training on a training dataset using hyper-parameters specified in a parameter file, output a trained model file, and then test the trained model on another test dataset and report testing correlation scores. 
+
+*run_vmaf_kfold_cv* takes in a dataset file, a parameter file, and a data structure (list of lists) that specifies the folds based on video content's IDs, and run k-fold cross valiation on the video dataset. This can be useful for manually tuning the model parameters.
 
 ###Creating New Features And Regressors
 

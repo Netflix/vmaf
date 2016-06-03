@@ -99,8 +99,8 @@ if __name__ == '__main__':
     param_filepath = config.ROOT + '/resource/param/vmaf_v3.py'
 
     aggregate_method = np.mean
-    aggregate_method = ListStats.harmonic_mean
-    aggregate_method = partial(ListStats.lp_norm, p=2.0)
+    # aggregate_method = ListStats.harmonic_mean
+    # aggregate_method = partial(ListStats.lp_norm, p=2.0)
 
     run_vmaf_kfold_cv(
         dataset_filepath=nflx_dataset_path,
