@@ -88,7 +88,7 @@ ResultStore provides capability to save and load a Result. Current implementatio
 
 ####FeatureExtractor
 
-FeatureExtractor subclasses Executor, and is specifically for extracting features from Assets. Any concrete feature extraction implementation should extend the FeatureExtractor base class (e.g. VmafFeatureExtractor). The *TYPE* field corresponds to the 'aggregate' feature name, and the 'ATOM_FEATURES' field corresponds to the 'atom' feature names.
+FeatureExtractor subclasses Executor, and is specifically for extracting features from Assets. Any concrete feature extraction implementation should extend the FeatureExtractor base class (e.g. VmafFeatureExtractor). The *TYPE* field corresponds to the 'aggregate' feature name, and the 'ATOM_FEATURES'/'DERIVED_ATOM_FEATURES' field corresponds to the 'atom' feature names.
 
 ####FeatureAssembler
 
@@ -120,8 +120,10 @@ A derived class of FeatureExtractor must:
 
   - Override *TYPE* and *VERSION* fields.
   - Override *ATOM_FEATURES* field.
+  - Optionally, override *DERIVED_FEATURES* field. These are the features that are 'derived' from the ATOM_FEATURES.
   - Override *_run_and_generate_log_file(self, asset)*, which call a command-line executable and generate feature scores in a log file.
   - Override *_get_feature_scores(self, asset)*, which read the feature scores from the log file, and return the scores in a dictionary format.
+  - Optionally, if you have override *DERIVED FEATURES* field, also override *_post_process_result(cls, result)* and put the calculation of the derived attom features here.
 
 Follow the example of VmafFeatureExtractor.
 
