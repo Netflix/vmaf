@@ -1,8 +1,11 @@
+from matplotlib import pyplot as plt
 from core.cross_validation import ModelCrossValidation
 from core.feature_assembler import FeatureAssembler
 from core.quality_runner import VmafQualityRunner
+from core.result_store import FileSystemResultStore
 from tools.decorator import deprecated
-from tools.misc import indices
+from tools.misc import indices, get_stdout_logger, import_python_file, \
+    close_logger
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -307,3 +310,66 @@ def run_remove_results_for_dataset(result_store, dataset, executor_class):
                                 logger=None,
                                 result_store=result_store)
     executor.remove_results()
+
+
+def run_vmaf_cv(train_dataset_filepath,
+                test_dataset_filepath,
+                param_filepath,
+                output_model_filepath=None):
+
+    logger = get_stdout_logger()
+    result_store = FileSystemResultStore()
+
+    train_dataset = import_python_file(train_dataset_filepath)
+    test_dataset = import_python_file(test_dataset_filepath)
+
+    param = import_python_file(param_filepath)
+
+    # === plot scatter ===
+
+    nrows = 1
+    ncols = 2
+    fig, axs = plt.subplots(figsize=(5*ncols, 5*nrows), nrows=nrows, ncols=ncols)
+
+    train_test_on_dataset(train_dataset, test_dataset, param, param, axs[0], axs[1],
+                          result_store, parallelize=False, logger=None,
+                          output_model_filepath=output_model_filepath)
+
+    axs[0].set_xlim([0, 120])
+    axs[0].set_ylim([0, 120])
+
+    axs[1].set_xlim([0, 120])
+    axs[1].set_ylim([0, 120])
+
+    bbox = {'facecolor':'white', 'alpha':1, 'pad':20}
+    axs[0].annotate('Training Set', xy=(0.1, 0.85), xycoords='axes fraction', bbox=bbox)
+    axs[1].annotate('Testing Set', xy=(0.1, 0.85), xycoords='axes fraction', bbox=bbox)
+
+    plt.tight_layout()
+
+    # === clean up ===
+    close_logger(logger)
+
+
+def run_vmaf_kfold_cv(dataset_filepath,
+                      contentid_groups,
+                      param_filepath,
+                      aggregate_method,
+                      ):
+
+    logger = get_stdout_logger()
+    result_store = FileSystemResultStore()
+    dataset = import_python_file(dataset_filepath)
+    param = import_python_file(param_filepath)
+
+    fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
+
+    cv_on_dataset(dataset, param, param, ax, result_store, contentid_groups,
+                  logger, aggregate_method)
+
+    ax.set_xlim([0, 120])
+    ax.set_ylim([0, 120])
+    plt.tight_layout()
+
+    # === clean up ===
+    close_logger(logger)
