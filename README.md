@@ -118,7 +118,7 @@ For example:
 
 VMAF follows a machine-learning based approach to first extract a number of quality-relevant features from a distorted video and its reference full-quality video, followed by fusing them into a final quality score using a non-linear regressor (e.g. a SVM regressor), hence the name 'Video Multi-method Assessment Fusion'.
 
-In addition to the basic executors, the VMAF package also provides a framework to allow any user to train his/her own perceptual quality assessment model. For example, directory [resource/model]([resource/model]) contains a number of pre-trained models, which can be loaded by the aforementioned VMAF executors:
+In addition to the basic executors, the VMAF package also provides a framework to allow any user to train his/her own perceptual quality assessment model. For example, directory [resource/model](resource/model) contains a number of pre-trained models, which can be loaded by the aforementioned VMAF executors:
 
 ```
 ./run_vmaf format width height reference_path distorted_path [optional_VMAF_model_file]
@@ -161,7 +161,7 @@ dis_videos = [
 ]
 ```
 
-See directory [resource/dataset](resource/dataset) for more examples. Also refer to the [Datasets](##Datasets) section regarding publicly available datasets.
+See directory [resource/dataset](resource/dataset) for more examples. Also refer to the [Datasets](#Datasets) section regarding publicly available datasets.
 
 ###Validate a Dataset
 
