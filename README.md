@@ -161,7 +161,7 @@ dis_videos = [
 ]
 ```
 
-See directory [resource/dataset](resource/dataset) for more examples. Also refer to the [Datasets](#Datasets) section regarding publicly available datasets.
+See directory [resource/dataset](resource/dataset) for more examples. Also refer to the [Datasets](#datasets) section regarding publicly available datasets.
 
 ###Validate a Dataset
 
