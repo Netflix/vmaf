@@ -6,7 +6,8 @@ height = 1080
 ref_dir = '[path to dataset videos]/ref'
 dis_dir = '[path to dataset videos]/dis'
 
-ref_videos = [{'content_id': 0,
+ref_videos = [
+ {'content_id': 0,
   'content_name': 'BigBuckBunny',
   'path': ref_dir + '/BigBuckBunny_25fps.yuv'},
  {'content_id': 1,
@@ -32,7 +33,8 @@ ref_videos = [{'content_id': 0,
   'path': ref_dir + '/Seeking_25fps.yuv'},
  {'content_id': 8,
   'content_name': 'Tennis',
-  'path': ref_dir + '/Tennis_24fps.yuv'}]
+  'path': ref_dir + '/Tennis_24fps.yuv'}
+]
 
 dis_videos = [{'asset_id': 0,
   'content_id': 0,
