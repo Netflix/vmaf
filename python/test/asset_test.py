@@ -130,9 +130,9 @@ class AssetTest(unittest.TestCase):
                                   'dis_start_frame':0, 'dis_end_frame':47,
                                   'fps':23.976},)
         self.assertAlmostEquals(asset.ref_bitrate_kbps_for_entire_file,
-                          53693.964287999996)
+                          53693.964287999996, places=4)
         self.assertAlmostEquals(asset.dis_bitrate_kbps_for_entire_file,
-                          53693.964287999996)
+                          53693.964287999996, places=4)
 
     def test_to_normalized_dict(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
