@@ -335,11 +335,11 @@ def run_vmaf_cv(train_dataset_filepath,
                           result_store, parallelize=False, logger=None,
                           output_model_filepath=output_model_filepath)
 
-    axs[0].set_xlim([0, 120])
-    axs[0].set_ylim([0, 120])
+    # axs[0].set_xlim([0, 120])
+    # axs[0].set_ylim([0, 120])
 
-    axs[1].set_xlim([0, 120])
-    axs[1].set_ylim([0, 120])
+    # axs[1].set_xlim([0, 120])
+    # axs[1].set_ylim([0, 120])
 
     bbox = {'facecolor':'white', 'alpha':1, 'pad':20}
     axs[0].annotate('Training Set', xy=(0.1, 0.85), xycoords='axes fraction', bbox=bbox)
