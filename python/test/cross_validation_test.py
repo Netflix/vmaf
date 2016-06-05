@@ -91,8 +91,8 @@ class FeatureCrossValidationTest(unittest.TestCase):
 
         self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.90636761259756715, places=4)
         self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.90819953685397914, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.72937284548325965, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.49899297305829415, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.72937284548325965, places=3)
+        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.49899297305829415, places=3)
 
     def test_unroll_dict_of_lists(self):
         model_param_search_range = {'norm_type':['normalize', 'clip_0to1'],

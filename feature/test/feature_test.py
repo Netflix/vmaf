@@ -391,15 +391,15 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "ansnr")[0], 12.418291000000002, places=4)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "motion")[0], 12.343795333333333, places=4)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif")[0], 0.15612933333333334, places=4)
-        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm_num")[0], 25079.63600833334, places=4)
-        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm_den")[0], 30814.90966033333, places=4)
-        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_num")[0], 5021740.846354, places=4)
-        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_den")[0], 32164035.723958332, places=4)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm_num")[0], 25079.63600833334, places=3)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm_den")[0], 30814.90966033333, places=3)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_num")[0], 5021740.846354, places=3)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_den")[0], 32164035.723958332, places=3)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "anpsnr")[0], 16.675653999999998, places=4)
-        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_num_scale0")[0], 2838609.75, places=4)
-        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_den_scale0")[0], 25175551.333333332, places=4)
-        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_num_scale3")[0], 121630.71093733334, places=4)
-        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_den_scale3")[0], 243578.015625, places=4)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_num_scale0")[0], 2838609.75, places=3)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_den_scale0")[0], 25175551.333333332, places=3)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_num_scale3")[0], 121630.71093733334, places=3)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_den_scale3")[0], 243578.015625, places=3)
 
     def test_checkerboard_opposite(self):
         print 'test on checkerboard pattern opposite...'
@@ -417,14 +417,14 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "motion")[0], 12.343795333333333, places=4)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif")[0], 0.0, places=4)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm_num")[0], 0.0, places=4)
-        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm_den")[0], 30814.90966033333, places=4)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm_den")[0], 30814.90966033333, places=3)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_num")[0], 0.0, places=4)
-        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_den")[0], 32164035.723958332, places=4)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_den")[0], 32164035.723958332, places=3)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "anpsnr")[0], 2.9918100000000005, places=4)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_num_scale0")[0], 0.0, places=4)
-        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_den_scale0")[0], 25175551.333333332, places=4)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_den_scale0")[0], 25175551.333333332, places=3)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_num_scale3")[0], 0.0, places=4)
-        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_den_scale3")[0], 243578.015625, places=4)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_den_scale3")[0], 243578.015625, places=3)
 
     def test_flat_identical(self):
         print 'test on flat pattern identical...'
