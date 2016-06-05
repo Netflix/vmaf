@@ -367,7 +367,7 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "motion")[0], 12.343795333333333, places=4)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif")[0], 1.0, places=4)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm_num")[0], 30814.90966033333, places=3)
-        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm_den")[0], 30814.90966033333, places=4)
+        self.assertAlmostEquals(read_log(self.LOG_FILENAME, "adm_den")[0], 30814.90966033333, places=3)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_num")[0], 32164040.489583332, places=3)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "vif_den")[0], 32164035.723958332, places=3)
         self.assertAlmostEquals(read_log(self.LOG_FILENAME, "anpsnr")[0], 29.840877000000003, places=3)
