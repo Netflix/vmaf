@@ -158,7 +158,7 @@ int moment(const char *path, int w, int h, const char *fmt, int order)
 	}
 
 	int frm_idx = 0;
-	while (!feof(rfile))
+	while (1)
 	{
 		// read pic y
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
@@ -177,6 +177,10 @@ int moment(const char *path, int w, int h, const char *fmt, int order)
 		}
 		if (ret)
 		{
+			if (feof(rfile))
+			{
+				ret = 0; // OK if end of file
+			}
 			goto fail_or_end;
 		}
 

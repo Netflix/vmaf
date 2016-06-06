@@ -176,7 +176,7 @@ int motion(const char *ref_path, int w, int h, const char *fmt)
 	}
 
 	int frm_idx = 0;
-	while (!feof(ref_rfile))
+	while (1)
 	{
 		// ref read y
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
@@ -195,6 +195,10 @@ int motion(const char *ref_path, int w, int h, const char *fmt)
 		}
 		if (ret)
 		{
+			if (feof(ref_rfile))
+			{
+				ret = 0; // OK if end of file
+			}
 			goto fail_or_end;
 		}
 

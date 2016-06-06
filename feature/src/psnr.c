@@ -158,7 +158,7 @@ int psnr(const char *ref_path, const char *dis_path, int w, int h, const char *f
 	}
 
 	int frm_idx = 0;
-	while ((!feof(ref_rfile)) && (!feof(dis_rfile)))
+	while (1)
 	{
 		// read ref y
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
@@ -177,6 +177,10 @@ int psnr(const char *ref_path, const char *dis_path, int w, int h, const char *f
 		}
 		if (ret)
 		{
+			if (feof(ref_rfile))
+			{
+				ret = 0; // OK if end of file
+			}
 			goto fail_or_end;
 		}
 
@@ -197,6 +201,10 @@ int psnr(const char *ref_path, const char *dis_path, int w, int h, const char *f
 		}
 		if (ret)
 		{
+			if (feof(dis_rfile))
+			{
+				ret = 0; // OK if end of file
+			}
 			goto fail_or_end;
 		}
 
