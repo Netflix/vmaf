@@ -18,7 +18,7 @@ It also requires a number of Python packages:
 Follow [this link](http://www.scipy.org/install.html) to install the *numpy/scipy/matplotlib/pandas* suite on your system. To install *scikit-learn*, first [install](http://python-packaging-user-guide.readthedocs.org/en/latest/installing/) package manager *pip*, then run:
 
 ```
-sudo pip install scikit-learn==0.17.1
+sudo pip install --upgrade scikit-learn
 ```
 
 ####Troubleshooting
