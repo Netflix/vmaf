@@ -2,6 +2,7 @@ __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import os
+import hashlib
 
 import config
 from core.result import Result
@@ -73,11 +74,11 @@ class FileSystemResultStore(ResultStore):
             shutil.rmtree(self.result_store_dir)
 
     def _get_result_file_path(self, result):
-        return "{dir}/{executor_id}/{str}".format(dir=self.result_store_dir,
-                                                  executor_id=result.executor_id,
-                                                  str=str(result.asset))
+        return "{dir}/{executor_id}/{str}".format(
+            dir=self.result_store_dir, executor_id=result.executor_id,
+            str=hashlib.sha1(str(result.asset)).hexdigest())
 
     def _get_result_file_path2(self, asset, executor_id):
-        return "{dir}/{executor_id}/{str}".format(dir=self.result_store_dir,
-                                                  executor_id=executor_id,
-                                                  str=str(asset))
+        return "{dir}/{executor_id}/{str}".format(
+            dir=self.result_store_dir, executor_id=executor_id,
+            str=hashlib.sha1(str(asset)).hexdigest())
