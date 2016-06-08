@@ -4,23 +4,6 @@ SRCDIR  = $(TOP)/src
 OBJDIR  = $(TOP)/obj
 TOOLDIR = $(TOP)/tool
 
-HEADERS = \
-	$(SRCDIR)/adm_options.h \
-	$(SRCDIR)/adm_tools.h \
-	$(SRCDIR)/ansnr_options.h \
-	$(SRCDIR)/ansnr_tools.h \
-	$(SRCDIR)/common/alloc.h \
-	$(SRCDIR)/common/file_io.h \
-	$(SRCDIR)/main.h \
-	$(SRCDIR)/vif_options.h \
-	$(SRCDIR)/vif_tools.h \
-	$(SRCDIR)/common/macros.h \
-	$(SRCDIR)/common/alignment.h \
-	$(SRCDIR)/common/convolution.h \
-	$(SRCDIR)/common/convolution_internal.h \
-	$(SRCDIR)/all_options.h \
-	$(SRCDIR)/psnr_options.h
-
 OBJS_VMAF = \
 	$(OBJDIR)/common/alloc.o \
 	$(OBJDIR)/common/file_io.o \
@@ -55,7 +38,7 @@ CPPFLAGS := $(CPPFLAGS)
 LIBS     := $(LIBS) -lm
 LDFLAGS  := $(LDFLAGS)
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.c $(HEADERS)
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 vmaf: $(OBJS_VMAF)
