@@ -6,6 +6,7 @@ import os
 import sys
 import subprocess
 from time import sleep
+import hashlib
 
 from tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_slash
 from core.mixin import TypeVersionEnabled
@@ -246,10 +247,15 @@ class Executor(TypeVersionEnabled):
         # do nothing, wait to be overridden
         return result
 
-    def _get_log_file_path(self, asset):
-        return "{workdir}/{executor_id}_{str}".format(workdir=asset.workdir,
-                                                      executor_id=self.executor_id,
-                                                      str=str(asset))
+    def _get_log_file_path(self, asset, use_hash=True):
+        if use_hash:
+            return "{workdir}/{executor_id}_{str}".format(
+                workdir=asset.workdir, executor_id=self.executor_id,
+                str=hashlib.sha1(str(asset)).hexdigest())
+        else:
+            return "{workdir}/{executor_id}_{str}".format(
+                workdir=asset.workdir, executor_id=self.executor_id,
+                str=str(asset))
 
     # ===== workfile =====
 

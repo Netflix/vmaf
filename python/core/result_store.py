@@ -2,6 +2,7 @@ __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import os
+import hashlib
 
 import config
 from core.result import Result
@@ -72,12 +73,26 @@ class FileSystemResultStore(ResultStore):
         if os.path.isdir(self.result_store_dir):
             shutil.rmtree(self.result_store_dir)
 
-    def _get_result_file_path(self, result):
-        return "{dir}/{executor_id}/{str}".format(dir=self.result_store_dir,
-                                                  executor_id=result.executor_id,
-                                                  str=str(result.asset))
+    def _get_result_file_path(self, result, use_hash=True):
+        if use_hash:
+            return "{dir}/{executor_id}/{dataset}/{content_id}/{str}".format(
+                dir=self.result_store_dir, executor_id=result.executor_id,
+                dataset=result.asset.dataset,
+                content_id=result.asset.content_id,
+                str=hashlib.sha1(str(result.asset)).hexdigest())
+        else:
+            return "{dir}/{executor_id}/{str}".format(
+                dir=self.result_store_dir, executor_id=result.executor_id,
+                str=str(result.asset))
 
-    def _get_result_file_path2(self, asset, executor_id):
-        return "{dir}/{executor_id}/{str}".format(dir=self.result_store_dir,
-                                                  executor_id=executor_id,
-                                                  str=str(asset))
+    def _get_result_file_path2(self, asset, executor_id, use_hash=True):
+        if use_hash:
+            return "{dir}/{executor_id}/{dataset}/{content_id}/{str}".format(
+                dir=self.result_store_dir, executor_id=executor_id,
+                dataset=asset.dataset,
+                content_id=asset.content_id,
+                str=hashlib.sha1(str(asset)).hexdigest())
+        else:
+            return "{dir}/{executor_id}/{str}".format(
+                dir=self.result_store_dir, executor_id=executor_id,
+                str=str(asset))
