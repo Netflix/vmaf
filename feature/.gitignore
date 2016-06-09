@@ -3,5 +3,7 @@
 vmaf
 psnr
 moment
+ssim
+msssim
 .cproject
 .project
