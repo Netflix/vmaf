@@ -39,101 +39,10 @@
 #include "math_utils.h"
 #include "ssim.h"
 
-
 /* Forward declarations. */
 IQA_INLINE static double _calc_luminance(float, float, float, float);
 IQA_INLINE static double _calc_contrast(double, float, float, float, float);
 IQA_INLINE static double _calc_structure(float, double, float, float, float, float);
-
-/* 
- * SSIM(x,y)=(2*ux*uy + C1)*(2sxy + C2) / (ux^2 + uy^2 + C1)*(sx^2 + sy^2 + C2)
- * where,
- *  ux = SUM(w*x)
- *  sx = (SUM(w*(x-ux)^2)^0.5
- *  sxy = SUM(w*(x-ux)*(y-uy))
- *
- * Returns mean SSIM. MSSIM(X,Y) = 1/M * SUM(SSIM(x,y))
- */
-float iqa_ssim(const unsigned char *ref, const unsigned char *cmp, int w, int h,
-		int stride, int gaussian, const struct iqa_ssim_args *args)
-{
-    int scale;
-    int x,y,src_offset,offset;
-    float *ref_f,*cmp_f;
-    struct _kernel low_pass;
-    struct _kernel window;
-    float result;
-    double ssim_sum=0.0;
-    struct _map_reduce mr;
-
-    /* Initialize algorithm parameters */
-    scale = _max( 1, _round( (float)_min(w,h) / 256.0f ) );
-    if (args) {
-        if(args->f)
-            scale = args->f;
-        mr.map     = _ssim_map;
-        mr.reduce  = _ssim_reduce;
-        mr.context = (void*)&ssim_sum;
-    }
-    window.kernel = (float*)g_square_window;
-    window.w = window.h = SQUARE_LEN;
-    window.normalized = 1;
-    window.bnd_opt = KBND_SYMMETRIC;
-    if (gaussian) {
-        window.kernel = (float*)g_gaussian_window;
-        window.w = window.h = GAUSSIAN_LEN;
-    }
-
-    /* Convert image values to floats. Forcing stride = width. */
-    ref_f = (float*)malloc(w*h*sizeof(float));
-    cmp_f = (float*)malloc(w*h*sizeof(float));
-    if (!ref_f || !cmp_f) {
-        if (ref_f) free(ref_f);
-        if (cmp_f) free(cmp_f);
-        return INFINITY;
-    }
-    for (y=0; y<h; ++y) {
-        src_offset = y*stride;
-        offset = y*w;
-        for (x=0; x<w; ++x, ++offset, ++src_offset) {
-            ref_f[offset] = (float)ref[src_offset];
-            cmp_f[offset] = (float)cmp[src_offset];
-        }
-    }
-
-    /* Scale the images down if required */
-    if (scale > 1) {
-        /* Generate simple low-pass filter */
-        low_pass.kernel = (float*)malloc(scale*scale*sizeof(float));
-        if (!low_pass.kernel) {
-            free(ref_f);
-            free(cmp_f);
-            return INFINITY;
-        }
-        low_pass.w = low_pass.h = scale;
-        low_pass.normalized = 0;
-        low_pass.bnd_opt = KBND_SYMMETRIC;
-        for (offset=0; offset<scale*scale; ++offset)
-            low_pass.kernel[offset] = 1.0f/(scale*scale);
-
-        /* Resample */
-        if (_iqa_decimate(ref_f, w, h, scale, &low_pass, 0, 0, 0) ||
-            _iqa_decimate(cmp_f, w, h, scale, &low_pass, 0, &w, &h)) { /* Update w/h */
-            free(ref_f);
-            free(cmp_f);
-            free(low_pass.kernel);
-            return INFINITY;
-        }
-        free(low_pass.kernel);
-    }
-
-    result = _iqa_ssim(ref_f, cmp_f, w, h, &window, &mr, args);
-    
-    free(ref_f);
-    free(cmp_f);
-
-    return result;
-}
 
 /* _iqa_ssim */
 float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k,
