@@ -134,6 +134,7 @@ int compute_ms_ssim(const number_t *ref, const number_t *cmp, int w, int h,
     int offset,src_offset;
     float **ref_imgs, **cmp_imgs; /* Array of pointers to scaled images */
     float msssim;
+    float l, c, s;
     struct _kernel lpf, window;
     struct iqa_ssim_args s_args;
     struct _map_reduce mr;
@@ -269,19 +270,25 @@ int compute_ms_ssim(const number_t *ref, const number_t *cmp, int w, int h,
             s_args.L  = 255;
             s_args.f  = 1; /* Don't resize */
             mr.context = &ms_ctx;
-            msssim *= _iqa_ssim(ref_imgs[idx], cmp_imgs[idx], cur_w, cur_h, &window, &mr, &s_args);
+            msssim *= _iqa_ssim(ref_imgs[idx], cmp_imgs[idx], cur_w, cur_h, &window, &mr, &s_args, &l, &c, &s);
         }
         else {
             /* MS-SSIM (Wang) */
-            s_args.alpha = 1.0f;
-            s_args.beta  = 1.0f;
-            s_args.gamma = 1.0f;
-            s_args.K1 = 0.01f;
-            s_args.K2 = 0.03f;
-            s_args.L  = 255;
-            s_args.f  = 1; /* Don't resize */
-            mr.context = &ms_ctx;
-            msssim *= _iqa_ssim(ref_imgs[idx], cmp_imgs[idx], cur_w, cur_h, &window, &mr, &s_args);
+
+        	// s_args.alpha = 1.0f;
+            // s_args.beta  = 1.0f;
+        	// s_args.gamma = 1.0f;
+        	// s_args.K1 = 0.01f;
+        	// s_args.K2 = 0.03f;
+        	// s_args.L  = 255;
+        	// s_args.f  = 1; /* Don't resize */
+            // mr.context = &ms_ctx;
+            // msssim *= _iqa_ssim(ref_imgs[idx], cmp_imgs[idx], cur_w, cur_h, &window, &mr, &s_args, &l, &c, &s);
+
+        	/* above is equivalent to passing default parameter */
+
+        	msssim *= _iqa_ssim(ref_imgs[idx], cmp_imgs[idx], cur_w, cur_h, &window, NULL, NULL, &l, &c, &s);
+
         }
 
         if (msssim == INFINITY) {

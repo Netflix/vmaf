@@ -369,6 +369,18 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         self.assertAlmostEquals(score, 0.863251375, places=4)
         self.assertAlmostEquals(scores[0], 0.925038, places=4)
         self.assertAlmostEquals(scores[1], 0.892013, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ssim_l")
+        self.assertAlmostEquals(score, 0.9981474999999999, places=4)
+        self.assertAlmostEquals(scores[0], 0.999524, places=4)
+        self.assertAlmostEquals(scores[1], 0.998983, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ssim_c")
+        self.assertAlmostEquals(score, 0.9613223958333336, places=4)
+        self.assertAlmostEquals(scores[0], 0.979661, places=4)
+        self.assertAlmostEquals(scores[1], 0.969862, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ssim_s")
+        self.assertAlmostEquals(score, 0.8977076041666665, places=4)
+        self.assertAlmostEquals(scores[0], 0.943931, places=4)
+        self.assertAlmostEquals(scores[1], 0.919474, places=4)
 
     def test_ms_ssim(self):
         print 'test ms_ssim on yuv422p10le...'

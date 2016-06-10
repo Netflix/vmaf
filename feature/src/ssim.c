@@ -43,7 +43,8 @@ typedef float number_t;
 #define read_image_w  read_image_w2s
 
 int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h,
-		int ref_stride, int cmp_stride, double *score)
+		int ref_stride, int cmp_stride, double *score,
+		double *l_score, double *c_score, double *s_score)
 {
 
 	int ret = 1;
@@ -54,6 +55,7 @@ int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h,
     struct _kernel low_pass;
     struct _kernel window;
     float result = INFINITY;
+    float l, c, s;
     double ssim_sum=0.0;
     struct _map_reduce mr;
 
@@ -139,12 +141,15 @@ int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h,
         free(low_pass.kernel);
     }
 
-	result = _iqa_ssim(ref_f, cmp_f, w, h, &window, &mr, args);
+	result = _iqa_ssim(ref_f, cmp_f, w, h, &window, &mr, args, &l, &c, &s);
 
     free(ref_f);
     free(cmp_f);
 
 	*score = (double)result;
+	*l_score = (double)l;
+	*c_score = (double)c;
+	*s_score = (double)s;
 
 	ret = 0;
 fail_or_end:
@@ -155,6 +160,7 @@ fail_or_end:
 int ssim(const char *ref_path, const char *dis_path, int w, int h, const char *fmt)
 {
 	double score = 0;
+	double l_score = 0, c_score = 0, s_score = 0;
 	number_t *ref_buf = 0;
 	number_t *dis_buf = 0;
 	number_t *temp_buf = 0;
@@ -289,7 +295,7 @@ int ssim(const char *ref_path, const char *dis_path, int w, int h, const char *f
 		}
 
 		// compute
-		ret = compute_ssim(ref_buf, dis_buf, w, h, stride, stride, &score);
+		ret = compute_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, &l_score, &c_score, &s_score);
 		if (ret)
 		{
 			printf("error: compute_ssim failed.\n");
@@ -299,6 +305,9 @@ int ssim(const char *ref_path, const char *dis_path, int w, int h, const char *f
 
 		// print
 		printf("ssim: %d %f\n", frm_idx, score);
+		printf("ssim_l: %d %f\n", frm_idx, l_score);
+		printf("ssim_c: %d %f\n", frm_idx, c_score);
+		printf("ssim_s: %d %f\n", frm_idx, s_score);
 		fflush(stdout);
 
 		// ref skip u and v

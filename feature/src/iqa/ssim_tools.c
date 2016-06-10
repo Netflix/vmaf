@@ -29,10 +29,15 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * (06/10/2016) Updated by zli-nflx (zli@netflix.com) to output mean luminence,
+ * contrast and structure.
  */
 
 #include <stdlib.h>
 #include <math.h>
+#include <assert.h> /* zli-nflx */
+
 #include "iqa.h"
 #include "convolve.h"
 #include "decimate.h"
@@ -46,7 +51,9 @@ IQA_INLINE static double _calc_structure(float, double, float, float, float, flo
 
 /* _iqa_ssim */
 float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k,
-		const struct _map_reduce *mr, const struct iqa_ssim_args *args)
+		const struct _map_reduce *mr, const struct iqa_ssim_args *args
+		, float *l_mean, float *c_mean, float *s_mean /* zli-nflx */
+		)
 {
     float alpha=1.0f, beta=1.0f, gamma=1.0f;
     int L=255;
@@ -54,9 +61,13 @@ float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k,
     float C1,C2,C3;
     int x,y,offset;
     float *ref_mu,*cmp_mu,*ref_sigma_sqd,*cmp_sigma_sqd,*sigma_both;
-    double ssim_sum, numerator, denominator;
+    double ssim_sum;
+    // double numerator, denominator; /* zli-nflx */
     double luminance_comp, contrast_comp, structure_comp, sigma_root;
     struct _ssim_int sint;
+    double l_sum, c_sum, s_sum, l, c, s, sigma_ref_sigma_cmp; /* zli-nflx */
+
+    assert(!args); /* zli-nflx: for now only works for default case */
 
     /* Initialize algorithm parameters */
     if (args) {
@@ -116,16 +127,30 @@ float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k,
     }
 
     ssim_sum = 0.0;
+    l_sum = 0.0; /* zli-nflx */
+    c_sum = 0.0; /* zli-nflx */
+    s_sum = 0.0; /* zli-nflx */
     for (y=0; y<h; ++y) {
         offset = y*w;
         for (x=0; x<w; ++x, ++offset) {
 
             if (!args) {
-                /* The default case */
-                numerator   = (2.0 * ref_mu[offset] * cmp_mu[offset] + C1) * (2.0 * sigma_both[offset] + C2);
-                denominator = (ref_mu[offset]*ref_mu[offset] + cmp_mu[offset]*cmp_mu[offset] + C1) * 
-                    (ref_sigma_sqd[offset] + cmp_sigma_sqd[offset] + C2);
-                ssim_sum += numerator / denominator;
+            	/* zli-nflx */
+            	/* The default case */
+                // numerator   = (2.0 * ref_mu[offset] * cmp_mu[offset] + C1) * (2.0 * sigma_both[offset] + C2);
+                // denominator = (ref_mu[offset]*ref_mu[offset] + cmp_mu[offset]*cmp_mu[offset] + C1) *
+                //     (ref_sigma_sqd[offset] + cmp_sigma_sqd[offset] + C2);
+                // ssim_sum += numerator / denominator;
+
+                /* zli-nflx: */
+                sigma_ref_sigma_cmp = sqrt(ref_sigma_sqd[offset] * cmp_sigma_sqd[offset]);
+                l = (2.0 * ref_mu[offset] * cmp_mu[offset] + C1) / (ref_mu[offset]*ref_mu[offset] + cmp_mu[offset]*cmp_mu[offset] + C1);
+                c = (2.0 * sigma_ref_sigma_cmp + C2) /  (ref_sigma_sqd[offset] + cmp_sigma_sqd[offset] + C2);
+                s = (sigma_both[offset] + C2 / 2.0) / (sigma_ref_sigma_cmp + C2 / 2.0);
+                ssim_sum += l * c * s;
+                l_sum += l;
+                c_sum += c;
+                s_sum += s;
             }
             else {
                 /* User tweaked alpha, beta, or gamma */
@@ -157,8 +182,12 @@ float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k,
     free(cmp_sigma_sqd);
     free(sigma_both);
 
-    if (!args)
+    if (!args) {
+    	*l_mean = (float)(l_sum / (double)(w*h)); /* zli-nflx */
+    	*c_mean = (float)(c_sum / (double)(w*h)); /* zli-nflx */
+    	*s_mean = (float)(s_sum / (double)(w*h)); /* zli-nflx */
         return (float)(ssim_sum / (double)(w*h));
+    }
     return mr->reduce(w, h, mr->context);
 }
 

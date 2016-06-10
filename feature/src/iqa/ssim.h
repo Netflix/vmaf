@@ -113,7 +113,10 @@ struct _map_reduce {
  *             Defaults are a=b=g=1.0, L=255, K1=0.01, K2=0.03
  * @return The mean SSIM over the entire image (MSSIM), or NAN if error.
  */
-float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k, const struct _map_reduce *mr, const struct iqa_ssim_args *args);
+float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k,
+		const struct _map_reduce *mr, const struct iqa_ssim_args *args
+		, float *l_mean, float *c_mean, float *s_mean /* zli-nflx */
+		);
 
 /* _ssim_map */
 int _ssim_map(const struct _ssim_int *si, void *ctx);
