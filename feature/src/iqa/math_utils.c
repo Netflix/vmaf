@@ -33,23 +33,23 @@
 
 #include "math_utils.h"
 
-int _round(float a)
+inline int _round(float a)
 {
     int sign_a = a > 0.0f ? 1 : -1;
     return a-(int)a >= 0.5 ? (int)a + sign_a : (int)a;
 }
 
-int _max(int x, int y)
+inline int _max(int x, int y)
 {
     return x >= y ? x : y;
 }
 
-int _min(int x, int y)
+inline int _min(int x, int y)
 {
     return x <= y ? x : y;
 }
 
-int _cmp_float(float a, float b, int digits)
+inline int _cmp_float(float a, float b, int digits)
 {
     /* Round */
     int sign_a = a > 0.0f ? 1 : -1;
@@ -64,7 +64,7 @@ int _cmp_float(float a, float b, int digits)
     return ai == bi ? 0 : 1;
 }
 
-int _matrix_cmp(const float *a, const float *b, int w, int h, int digits)
+inline int _matrix_cmp(const float *a, const float *b, int w, int h, int digits)
 {
     int offset;
     int result=0;

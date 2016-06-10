@@ -274,7 +274,6 @@ class PsnrFeatureExtractor(FeatureExtractor):
 
         return feature_result
 
-
 class MomentFeatureExtractor(FeatureExtractor):
 
     TYPE = "Moment_feature"
@@ -380,3 +379,65 @@ class MomentFeatureExtractor(FeatureExtractor):
             assert cls.get_scores_key(feature) in result.result_dict
 
         return result
+
+class SsimFeatureExtractor(FeatureExtractor):
+
+    TYPE = "SSIM_feature"
+    VERSION = "1.0"
+
+    ATOM_FEATURES = ['ssim']
+
+    SSIM = config.ROOT + "/feature/ssim"
+
+    def _run_and_generate_log_file(self, asset):
+        # routine to call the command-line executable and generate quality
+        # scores in the log file.
+
+        log_file_path = self._get_log_file_path(asset)
+
+        # run VMAF command line to extract features, 'APPEND' result (since
+        # super method already does something
+        quality_width, quality_height = asset.quality_width_height
+        psnr_cmd = "{ssim} {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
+        .format(
+            ssim=self.SSIM,
+            yuv_type=asset.yuv_type,
+            ref_path=asset.ref_workfile_path,
+            dis_path=asset.dis_workfile_path,
+            w=quality_width,
+            h=quality_height,
+            log_file_path=log_file_path,
+        )
+
+        if self.logger:
+            self.logger.info(psnr_cmd)
+
+        subprocess.call(psnr_cmd, shell=True)
+
+    def _get_feature_scores(self, asset):
+        # routine to read the feature scores from the log file, and return
+        # the scores in a dictionary format.
+
+        log_file_path = self._get_log_file_path(asset)
+
+        ssim_scores = []
+        counter = 0
+        with open(log_file_path, 'rt') as log_file:
+            for line in log_file.readlines():
+                mo = re.match(r"ssim: ([0-9]+) ([0-9.-]+)", line)
+                if mo:
+                    cur_idx = int(mo.group(1))
+                    assert cur_idx == counter
+                    ssim_scores.append(float(mo.group(2)))
+                    counter += 1
+
+        assert len(ssim_scores) != 0
+
+        feature_result = {}
+
+        assert len(self.ATOM_FEATURES) == 1
+        atom_feature = self.ATOM_FEATURES[0]
+        scores_key = self.get_scores_key(atom_feature)
+        feature_result[scores_key] = ssim_scores
+
+        return feature_result

@@ -27,6 +27,7 @@ class FeatureTest(unittest.TestCase):
     VMAF = config.ROOT + "/feature/vmaf"
     PSNR = config.ROOT + "/feature/psnr"
     MOMENT = config.ROOT + "/feature/moment"
+    SSIM = config.ROOT + "/feature/ssim"
     LOG_FILENAME = config.ROOT + "/workspace/log"
     REF_YUV = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
     DIS_YUV = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
@@ -176,11 +177,24 @@ class FeatureTest(unittest.TestCase):
         score, scores = read_log(self.LOG_FILENAME, "2ndmoment")
         self.assertAlmostEquals(score, 4798.659574041666, places=4)
 
+    def test_ssim(self):
+        print 'test ssim...'
+        cmd = "{ssim} {fmt} {ref} {dis} {w} {h} > {log}".format(
+            ssim=self.SSIM, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "ssim")
+        self.assertAlmostEquals(score, 0.863251375, places=4)
+        self.assertAlmostEquals(scores[0], 0.925038, places=4)
+        self.assertAlmostEquals(scores[1], 0.892013, places=4)
+
 class FeatureTestYuv422p10le(unittest.TestCase):
 
     VMAF = config.ROOT + "/feature/vmaf"
     PSNR = config.ROOT + "/feature/psnr"
     MOMENT = config.ROOT + "/feature/moment"
+    SSIM = config.ROOT + "/feature/ssim"
     LOG_FILENAME = config.ROOT + "/workspace/log"
     REF_YUV = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv422p10le.yuv"
     DIS_YUV = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv422p10le.yuv"
@@ -329,6 +343,18 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         self.assertAlmostEquals(score, 61.332006624999984, places=4)
         score, scores = read_log(self.LOG_FILENAME, "2ndmoment")
         self.assertAlmostEquals(score, 4798.659574041666, places=4)
+
+    def test_ssim(self):
+        print 'test ssim on yuv422p10le...'
+        cmd = "{ssim} {fmt} {ref} {dis} {w} {h} > {log}".format(
+            ssim=self.SSIM, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "ssim")
+        self.assertAlmostEquals(score, 0.863251375, places=4)
+        self.assertAlmostEquals(scores[0], 0.925038, places=4)
+        self.assertAlmostEquals(scores[1], 0.892013, places=4)
 
 
 class CornerCaseTest(unittest.TestCase):
