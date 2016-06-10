@@ -22,13 +22,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "all_options.h"
+
 #include "common/alloc.h"
 #include "common/file_io.h"
-#include "feature.h"
 #include "common/convolution.h"
 #include "common/convolution_internal.h"
 #include "motion_tools.h"
+#include "all_options.h"
+#include "feature.h"
 
 #ifdef ALL_OPT_SINGLE_PRECISION
 	typedef float number_t;

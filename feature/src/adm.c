@@ -21,10 +21,11 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include "adm_options.h"
-#include "adm_tools.h"
+
 #include "common/alloc.h"
 #include "common/file_io.h"
+#include "adm_options.h"
+#include "adm_tools.h"
 #include "feature.h"
 
 #ifdef ADM_OPT_SINGLE_PRECISION

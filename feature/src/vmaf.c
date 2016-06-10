@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "feature.h"
 
 static void usage(void)

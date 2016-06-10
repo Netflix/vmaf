@@ -24,9 +24,10 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
-#include "psnr_options.h"
+
 #include "common/alloc.h"
 #include "common/file_io.h"
+#include "psnr_options.h"
 #include "feature.h"
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))

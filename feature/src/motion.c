@@ -22,13 +22,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+
 #include "motion_options.h"
 #include "common/alloc.h"
 #include "common/file_io.h"
 #include "feature.h"
 #include "common/convolution.h"
 #include "common/convolution_internal.h"
-#include <stdbool.h>
 #include "motion_tools.h"
 
 #ifdef MOTION_OPT_SINGLE_PRECISION
