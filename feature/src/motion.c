@@ -29,6 +29,7 @@
 #include "common/convolution.h"
 #include "common/convolution_internal.h"
 #include <stdbool.h>
+#include "motion_tools.h"
 
 #ifdef MOTION_OPT_SINGLE_PRECISION
 	typedef float number_t;
