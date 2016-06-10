@@ -68,7 +68,7 @@ int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h, int ref
 
 	/* specify some default parameters */
 	const struct iqa_ssim_args *args = 0; /* 0 for default */
-	int gaussian = 0; /* 0 for 8x8 square window - default */
+	int gaussian = 1; /* 0 for 8x8 square window, 1 for 11x11 circular-symmetric Gaussian window (default) */
 
     /* initialize algorithm parameters */
     scale = _max( 1, _round( (float)_min(w,h) / 256.0f ) );
