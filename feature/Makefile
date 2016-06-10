@@ -16,7 +16,7 @@ OBJS_VMAF = \
 	$(OBJDIR)/vif_tools.o \
 	$(OBJDIR)/motion.o \
 	$(OBJDIR)/all.o \
-	$(OBJDIR)/main.o \
+	$(OBJDIR)/vmaf.o \
 
 OBJS_PSNR = \
 	$(OBJDIR)/common/alloc.o \

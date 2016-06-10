@@ -27,7 +27,7 @@
 #include "common/file_io.h"
 #include "ansnr_options.h"
 #include "ansnr_tools.h"
-#include "main.h"
+#include "feature.h"
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))

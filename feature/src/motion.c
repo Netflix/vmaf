@@ -25,7 +25,7 @@
 #include "motion_options.h"
 #include "common/alloc.h"
 #include "common/file_io.h"
-#include "main.h"
+#include "feature.h"
 #include "common/convolution.h"
 #include "common/convolution_internal.h"
 #include <stdbool.h>

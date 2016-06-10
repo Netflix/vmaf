@@ -25,7 +25,7 @@
 #include "adm_tools.h"
 #include "common/alloc.h"
 #include "common/file_io.h"
-#include "main.h"
+#include "feature.h"
 
 #ifdef ADM_OPT_SINGLE_PRECISION
   typedef float number_t;
