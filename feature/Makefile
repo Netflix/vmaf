@@ -37,7 +37,16 @@ OBJS_SSIM = \
 	$(OBJDIR)/iqa/ssim.o \
 	$(OBJDIR)/ssim_main.o \
 
-all: vmaf psnr moment ssim
+OBJS_MS_SSIM = \
+	$(OBJDIR)/common/alloc.o \
+	$(OBJDIR)/common/file_io.o \
+	$(OBJDIR)/iqa/math_utils.o \
+	$(OBJDIR)/iqa/convolve.o \
+	$(OBJDIR)/iqa/decimate.o \
+	$(OBJDIR)/iqa/ssim.o \
+	$(OBJDIR)/ms_ssim_main.o \
+
+all: vmaf psnr moment ssim ms_ssim
 
 CFLAGS_COMMON = -g -O3 -fPIC -Wall -Wextra -pedantic
 #CFLAGS_COMMON = -g -O0 -fPIC -Wall -Wextra -pedantic -D BUILD_O0
@@ -63,10 +72,13 @@ moment: $(OBJS_MOMENT)
 ssim: $(OBJS_SSIM)
 	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
 
+ms_ssim: $(OBJS_MS_SSIM)
+	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
+
 clean:
 	rm -f $(OBJDIR)/*.o
 	rm -f $(OBJDIR)/common/*.o
 	rm -f $(OBJDIR)/iqa/*.o
-	rm -f vmaf psnr moment ssim
+	rm -f vmaf psnr moment ssim ms_ssim
 
 .PHONY: all clean

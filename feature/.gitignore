@@ -4,7 +4,7 @@ vmaf
 psnr
 moment
 ssim
-msssim
+ms_ssim
 .cproject
 .project
 .pydevproject

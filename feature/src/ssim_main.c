@@ -42,7 +42,8 @@ typedef float number_t;
 #define read_image_b  read_image_b2s
 #define read_image_w  read_image_w2s
 
-int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h, int ref_stride, int cmp_stride, double *score)
+int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h,
+		int ref_stride, int cmp_stride, double *score)
 {
 
 	int ret = 1;
@@ -64,7 +65,7 @@ int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h, int ref
 		fflush(stdout);
 		goto fail_or_end;
 	}
-	int stride_ = stride / sizeof(float); /* stride_ in pixels */
+	stride /= sizeof(float); /* stride_ in pixels */
 
 	/* specify some default parameters */
 	const struct iqa_ssim_args *args = 0; /* 0 for default */
@@ -95,13 +96,13 @@ int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h, int ref
     if (!ref_f || !cmp_f) {
         if (ref_f) free(ref_f);
         if (cmp_f) free(cmp_f);
-		printf("error: unable to malloc ref_f or cmp_f.\n");
+        printf("error: unable to malloc ref_f or cmp_f.\n");
 		fflush(stdout);
 		goto fail_or_end;
     }
     for (y=0; y<h; ++y) {
-        src_offset = y * stride_;
-        offset = y*w;
+        src_offset = y * stride;
+        offset = y * w;
         for (x=0; x<w; ++x, ++offset, ++src_offset) {
             ref_f[offset] = (float)ref[src_offset];
             cmp_f[offset] = (float)cmp[src_offset];
@@ -115,9 +116,9 @@ int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h, int ref
         if (!low_pass.kernel) {
             free(ref_f);
             free(cmp_f);
-    		printf("error: unable to malloc low-pass filter kernel.\n");
-    		fflush(stdout);
-    		goto fail_or_end;
+            printf("error: unable to malloc low-pass filter kernel.\n");
+            fflush(stdout);
+            goto fail_or_end;
         }
         low_pass.w = low_pass.h = scale;
         low_pass.normalized = 0;
@@ -131,9 +132,9 @@ int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h, int ref
             free(ref_f);
             free(cmp_f);
             free(low_pass.kernel);
-    		printf("error: resampling fails on ref_f or cmp_f.\n");
-    		fflush(stdout);
-    		goto fail_or_end;
+            printf("error: decimation fails on ref_f or cmp_f.\n");
+            fflush(stdout);
+            goto fail_or_end;
         }
         free(low_pass.kernel);
     }
