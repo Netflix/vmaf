@@ -63,8 +63,10 @@ int main(int argc, const char **argv)
 	w        = atoi(argv[5]);
 	h        = atoi(argv[6]);
 
-	if (w <= 0 || h <= 0)
+	if (w <= 0 || h <= 0) {
+		usage();
 		return 2;
+	}
 
 	if (!strcmp(app, "adm"))
 		ret = adm(ref_path, dis_path, w, h, fmt);

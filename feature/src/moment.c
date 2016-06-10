@@ -294,8 +294,10 @@ int main(int argc, const char **argv)
 	w        = atoi(argv[4]);
 	h        = atoi(argv[5]);
 
-	if (w <= 0 || h <= 0)
+	if (w <= 0 || h <= 0) {
+		usage();
 		return 2;
+	}
 
 	if (!(order == 1 || order == 2))
 	{
