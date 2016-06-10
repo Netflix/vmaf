@@ -7,7 +7,7 @@ import re
 
 import config
 from core.feature_extractor import VmafFeatureExtractor, MomentFeatureExtractor, \
-    PsnrFeatureExtractor, SsimFeatureExtractor
+    PsnrFeatureExtractor, SsimFeatureExtractor, MsSsimFeatureExtractor
 from core.asset import Asset
 from core.executor import run_executors_in_parallel
 from core.result_store import FileSystemResultStore
@@ -278,6 +278,34 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['SSIM_feature_ssim_score'], 0.86325137500000004, places=4)
         self.assertAlmostEqual(results[1]['SSIM_feature_ssim_score'], 1.0, places=4)
 
+    def test_run_ms_ssim_fextractor(self):
+        print 'test on running MS-SSIM feature extractor...'
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.fextractor = MsSsimFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['MS_SSIM_feature_ms_ssim_score'], 0.96324620833333319, places=4)
+        self.assertAlmostEqual(results[1]['MS_SSIM_feature_ms_ssim_score'], 1.0, places=4)
+
 class ParallelFeatureExtractorTest(unittest.TestCase):
 
     def tearDown(self):
@@ -458,6 +486,33 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['Moment_feature_dis2nd_score'], 4696.668388042269, places=4)
         self.assertAlmostEqual(results[1]['Moment_feature_disvar_score'], 1121.519917231203, places=4)
 
+    def test_run_parallel_ssim_fextractor(self):
+        print 'test on running SSIM feature extractor in parallel...'
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.fextractors, results = run_executors_in_parallel(
+            SsimFeatureExtractor,
+            [asset, asset_original],
+            fifo_mode=True,
+            delete_workdir=True,
+            parallelize=True,
+            result_store=None,
+        )
+
+        self.assertAlmostEqual(results[0]['SSIM_feature_ssim_score'], 0.86325137500000004, places=4)
+        self.assertAlmostEqual(results[1]['SSIM_feature_ssim_score'], 1.0, places=4)
 
 if __name__ == '__main__':
     unittest.main()
