@@ -332,7 +332,7 @@ def run_vmaf_cv(train_dataset_filepath,
     fig, axs = plt.subplots(figsize=(5*ncols, 5*nrows), nrows=nrows, ncols=ncols)
 
     train_test_on_dataset(train_dataset, test_dataset, param, param, axs[0], axs[1],
-                          result_store, parallelize=False, logger=None,
+                          result_store, parallelize=True, logger=None,
                           output_model_filepath=output_model_filepath)
 
     # axs[0].set_xlim([0, 120])
