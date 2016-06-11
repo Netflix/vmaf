@@ -135,7 +135,7 @@ float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k,
         for (x=0; x<w; ++x, ++offset) {
 
             if (!args) {
-            	/* zli-nflx */
+
             	/* The default case */
                 // numerator   = (2.0 * ref_mu[offset] * cmp_mu[offset] + C1) * (2.0 * sigma_both[offset] + C2);
                 // denominator = (ref_mu[offset]*ref_mu[offset] + cmp_mu[offset]*cmp_mu[offset] + C1) *

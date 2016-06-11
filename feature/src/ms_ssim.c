@@ -121,7 +121,8 @@ int _alloc_buffers(float **buf, int w, int h, int scales)
 }
 
 int compute_ms_ssim(const number_t *ref, const number_t *cmp, int w, int h,
-		int ref_stride, int cmp_stride, double *score)
+		int ref_stride, int cmp_stride, double *score,
+		double* l_scores, double* c_scores, double* s_scores)
 {
 
 	int ret = 1;
@@ -133,7 +134,7 @@ int compute_ms_ssim(const number_t *ref, const number_t *cmp, int w, int h,
     int idx,x,y,cur_w,cur_h;
     int offset,src_offset;
     float **ref_imgs, **cmp_imgs; /* Array of pointers to scaled images */
-    float msssim;
+    double msssim;
     float l, c, s;
     struct _kernel lpf, window;
     struct iqa_ssim_args s_args;
@@ -270,26 +271,31 @@ int compute_ms_ssim(const number_t *ref, const number_t *cmp, int w, int h,
             s_args.L  = 255;
             s_args.f  = 1; /* Don't resize */
             mr.context = &ms_ctx;
-            msssim *= _iqa_ssim(ref_imgs[idx], cmp_imgs[idx], cur_w, cur_h, &window, &mr, &s_args, &l, &c, &s);
+            _iqa_ssim(ref_imgs[idx], cmp_imgs[idx], cur_w, cur_h, &window, &mr, &s_args, &l, &c, &s);
         }
         else {
             /* MS-SSIM (Wang) */
+        	/*
+			s_args.alpha = 1.0f;
+			s_args.beta  = 1.0f;
+			s_args.gamma = 1.0f;
+			s_args.K1 = 0.01f;
+			s_args.K2 = 0.03f;
+			s_args.L  = 255;
+			s_args.f  = 1; // Don't resize
+			mr.context = &ms_ctx;
+			msssim *= _iqa_ssim(ref_imgs[idx], cmp_imgs[idx], cur_w, cur_h, &window, &mr, &s_args, &l, &c, &s);
+			*/
 
-        	// s_args.alpha = 1.0f;
-            // s_args.beta  = 1.0f;
-        	// s_args.gamma = 1.0f;
-        	// s_args.K1 = 0.01f;
-        	// s_args.K2 = 0.03f;
-        	// s_args.L  = 255;
-        	// s_args.f  = 1; /* Don't resize */
-            // mr.context = &ms_ctx;
-            // msssim *= _iqa_ssim(ref_imgs[idx], cmp_imgs[idx], cur_w, cur_h, &window, &mr, &s_args, &l, &c, &s);
-
-        	/* above is equivalent to passing default parameter */
-
-        	msssim *= _iqa_ssim(ref_imgs[idx], cmp_imgs[idx], cur_w, cur_h, &window, NULL, NULL, &l, &c, &s);
+        	/* above is equivalent to passing default parameter: */
+        	_iqa_ssim(ref_imgs[idx], cmp_imgs[idx], cur_w, cur_h, &window, NULL, NULL, &l, &c, &s);
 
         }
+
+        msssim *= pow(l, alphas[idx]) * pow(c, betas[idx]) * pow(s, gammas[idx]);
+        l_scores[idx] = l;
+        c_scores[idx] = c;
+        s_scores[idx] = s;
 
         if (msssim == INFINITY) {
             _free_buffers(ref_imgs, scales);
@@ -309,7 +315,7 @@ int compute_ms_ssim(const number_t *ref, const number_t *cmp, int w, int h,
     free(ref_imgs);
     free(cmp_imgs);
 
-	*score = (double)msssim;
+	*score = msssim;
 
 	ret = 0;
 fail_or_end:
@@ -320,6 +326,7 @@ fail_or_end:
 int ms_ssim(const char *ref_path, const char *dis_path, int w, int h, const char *fmt)
 {
 	double score = 0;
+	double l_scores[SCALES], c_scores[SCALES], s_scores[SCALES];
 	number_t *ref_buf = 0;
 	number_t *dis_buf = 0;
 	number_t *temp_buf = 0;
@@ -454,7 +461,7 @@ int ms_ssim(const char *ref_path, const char *dis_path, int w, int h, const char
 		}
 
 		// compute
-		ret = compute_ms_ssim(ref_buf, dis_buf, w, h, stride, stride, &score);
+		ret = compute_ms_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, l_scores, c_scores, s_scores);
 		if (ret)
 		{
 			printf("error: compute_ms_ssim failed.\n");
@@ -464,6 +471,12 @@ int ms_ssim(const char *ref_path, const char *dis_path, int w, int h, const char
 
 		// print
 		printf("ms_ssim: %d %f\n", frm_idx, score);
+		for (int scale=0; scale<SCALES; scale++)
+		{
+			printf("ms_ssim_l_scale%d: %d %f\n", scale, frm_idx, l_scores[scale]);
+			printf("ms_ssim_c_scale%d: %d %f\n", scale, frm_idx, c_scores[scale]);
+			printf("ms_ssim_s_scale%d: %d %f\n", scale, frm_idx, s_scores[scale]);
+		}
 		fflush(stdout);
 
 		// ref skip u and v

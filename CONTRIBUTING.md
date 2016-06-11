@@ -122,7 +122,7 @@ A derived class of FeatureExtractor must:
   - Override *ATOM_FEATURES* field.
   - Optionally, override *DERIVED_FEATURES* field. These are the features that are 'derived' from the ATOM_FEATURES.
   - Override *_run_and_generate_log_file(self, asset)*, which call a command-line executable and generate feature scores in a log file.
-  - Override *_get_feature_scores(self, asset)*, which read the feature scores from the log file, and return the scores in a dictionary format.
+  - Optionally, override *_get_feature_scores(self, asset)*, which read the feature scores from the log file, and return the scores in a dictionary format. FeatureExtractor base class provides a template _get_feature_scores method, which has been used by VmafFeatureExtractor as an example. If your log file format is incompatible with VmafFeatureExtractor's, consider overriding this method for your custom case.
   - Optionally, if you have override *DERIVED FEATURES* field, also override *_post_process_result(cls, result)* and put the calculation of the derived attom features here.
 
 Follow the example of VmafFeatureExtractor.
