@@ -27,6 +27,8 @@ class FeatureTest(unittest.TestCase):
     VMAF = config.ROOT + "/feature/vmaf"
     PSNR = config.ROOT + "/feature/psnr"
     MOMENT = config.ROOT + "/feature/moment"
+    SSIM = config.ROOT + "/feature/ssim"
+    MS_SSIM = config.ROOT + "/feature/ms_ssim"
     LOG_FILENAME = config.ROOT + "/workspace/log"
     REF_YUV = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
     DIS_YUV = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
@@ -176,11 +178,79 @@ class FeatureTest(unittest.TestCase):
         score, scores = read_log(self.LOG_FILENAME, "2ndmoment")
         self.assertAlmostEquals(score, 4798.659574041666, places=4)
 
+    def test_ssim(self):
+        print 'test ssim...'
+        cmd = "{ssim} {fmt} {ref} {dis} {w} {h} > {log}".format(
+            ssim=self.SSIM, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "ssim")
+        self.assertAlmostEquals(score, 0.863251375, places=4)
+        self.assertAlmostEquals(scores[0], 0.925038, places=4)
+        self.assertAlmostEquals(scores[1], 0.892013, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ssim_l")
+        self.assertAlmostEquals(score, 0.9981474999999999, places=4)
+        self.assertAlmostEquals(scores[0], 0.999524, places=4)
+        self.assertAlmostEquals(scores[1], 0.998983, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ssim_c")
+        self.assertAlmostEquals(score, 0.9613223958333336, places=4)
+        self.assertAlmostEquals(scores[0], 0.979661, places=4)
+        self.assertAlmostEquals(scores[1], 0.969862, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ssim_s")
+        self.assertAlmostEquals(score, 0.8977076041666665, places=4)
+        self.assertAlmostEquals(scores[0], 0.943931, places=4)
+        self.assertAlmostEquals(scores[1], 0.919474, places=4)
+
+    def test_ms_ssim(self):
+        print 'test ms_ssim...'
+        cmd = "{ms_ssim} {fmt} {ref} {dis} {w} {h} > {log}".format(
+            ms_ssim=self.MS_SSIM, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim")
+        self.assertAlmostEquals(score, 0.963246, places=4)
+        self.assertAlmostEquals(scores[0], 0.981976, places=4)
+        self.assertAlmostEquals(scores[1], 0.973374, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_l_scale0")
+        self.assertAlmostEquals(score, 0.9981474999999999, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_c_scale0")
+        self.assertAlmostEquals(score, 0.9613223958333336, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_s_scale0")
+        self.assertAlmostEquals(score, 0.8977076041666665, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_l_scale1")
+        self.assertAlmostEquals(score, 0.9989961250000002, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_c_scale1")
+        self.assertAlmostEquals(score, 0.9858215416666668, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_s_scale1")
+        self.assertAlmostEquals(score, 0.9411672708333335, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_l_scale2")
+        self.assertAlmostEquals(score, 0.9992356458333332, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_c_scale2")
+        self.assertAlmostEquals(score, 0.9970406458333333, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_s_scale2")
+        self.assertAlmostEquals(score, 0.9779967291666667, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_l_scale3")
+        self.assertAlmostEquals(score, 0.9992921041666665, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_c_scale3")
+        self.assertAlmostEquals(score, 0.9995884375000003, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_s_scale3")
+        self.assertAlmostEquals(score, 0.9938731666666668, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_l_scale4")
+        self.assertAlmostEquals(score, 0.99940356249999995, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_c_scale4")
+        self.assertAlmostEquals(score, 0.99990762500000008, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_s_scale4")
+        self.assertAlmostEquals(score, 0.99822306250000004, places=4)
+
 class FeatureTestYuv422p10le(unittest.TestCase):
 
     VMAF = config.ROOT + "/feature/vmaf"
     PSNR = config.ROOT + "/feature/psnr"
     MOMENT = config.ROOT + "/feature/moment"
+    SSIM = config.ROOT + "/feature/ssim"
+    MS_SSIM = config.ROOT + "/feature/ms_ssim"
     LOG_FILENAME = config.ROOT + "/workspace/log"
     REF_YUV = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv422p10le.yuv"
     DIS_YUV = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv422p10le.yuv"
@@ -329,6 +399,72 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         self.assertAlmostEquals(score, 61.332006624999984, places=4)
         score, scores = read_log(self.LOG_FILENAME, "2ndmoment")
         self.assertAlmostEquals(score, 4798.659574041666, places=4)
+
+    def test_ssim(self):
+        print 'test ssim on yuv422p10le...'
+        cmd = "{ssim} {fmt} {ref} {dis} {w} {h} > {log}".format(
+            ssim=self.SSIM, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "ssim")
+        self.assertAlmostEquals(score, 0.863251375, places=4)
+        self.assertAlmostEquals(scores[0], 0.925038, places=4)
+        self.assertAlmostEquals(scores[1], 0.892013, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ssim_l")
+        self.assertAlmostEquals(score, 0.9981474999999999, places=4)
+        self.assertAlmostEquals(scores[0], 0.999524, places=4)
+        self.assertAlmostEquals(scores[1], 0.998983, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ssim_c")
+        self.assertAlmostEquals(score, 0.9613223958333336, places=4)
+        self.assertAlmostEquals(scores[0], 0.979661, places=4)
+        self.assertAlmostEquals(scores[1], 0.969862, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ssim_s")
+        self.assertAlmostEquals(score, 0.8977076041666665, places=4)
+        self.assertAlmostEquals(scores[0], 0.943931, places=4)
+        self.assertAlmostEquals(scores[1], 0.919474, places=4)
+
+    def test_ms_ssim(self):
+        print 'test ms_ssim on yuv422p10le...'
+        cmd = "{ms_ssim} {fmt} {ref} {dis} {w} {h} > {log}".format(
+            ms_ssim=self.MS_SSIM, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=self.LOG_FILENAME
+        )
+        subprocess.call(cmd, shell=True)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim")
+        self.assertAlmostEquals(score, 0.963246, places=4)
+        self.assertAlmostEquals(scores[0], 0.981976, places=4)
+        self.assertAlmostEquals(scores[1], 0.973374, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_l_scale0")
+        self.assertAlmostEquals(score, 0.9981474999999999, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_c_scale0")
+        self.assertAlmostEquals(score, 0.9613223958333336, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_s_scale0")
+        self.assertAlmostEquals(score, 0.8977076041666665, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_l_scale1")
+        self.assertAlmostEquals(score, 0.9989961250000002, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_c_scale1")
+        self.assertAlmostEquals(score, 0.9858215416666668, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_s_scale1")
+        self.assertAlmostEquals(score, 0.9411672708333335, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_l_scale2")
+        self.assertAlmostEquals(score, 0.9992356458333332, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_c_scale2")
+        self.assertAlmostEquals(score, 0.9970406458333333, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_s_scale2")
+        self.assertAlmostEquals(score, 0.9779967291666667, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_l_scale3")
+        self.assertAlmostEquals(score, 0.9992921041666665, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_c_scale3")
+        self.assertAlmostEquals(score, 0.9995884375000003, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_s_scale3")
+        self.assertAlmostEquals(score, 0.9938731666666668, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_l_scale4")
+        self.assertAlmostEquals(score, 0.99940356249999995, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_c_scale4")
+        self.assertAlmostEquals(score, 0.99990762500000008, places=4)
+        score, scores = read_log(self.LOG_FILENAME, "ms_ssim_s_scale4")
+        self.assertAlmostEquals(score, 0.99822306250000004, places=4)
 
 
 class CornerCaseTest(unittest.TestCase):

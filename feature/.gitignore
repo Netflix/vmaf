@@ -3,5 +3,8 @@
 vmaf
 psnr
 moment
+ssim
+ms_ssim
 .cproject
 .project
+.pydevproject

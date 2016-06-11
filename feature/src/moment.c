@@ -24,10 +24,11 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
-#include "moment_options.h"
+
 #include "common/alloc.h"
 #include "common/file_io.h"
-#include "main.h"
+#include "moment_options.h"
+#include "feature.h"
 
 #ifdef MOMENT_OPT_SINGLE_PRECISION
   typedef float number_t;
@@ -293,8 +294,10 @@ int main(int argc, const char **argv)
 	w        = atoi(argv[4]);
 	h        = atoi(argv[5]);
 
-	if (w <= 0 || h <= 0)
+	if (w <= 0 || h <= 0) {
+		usage();
 		return 2;
+	}
 
 	if (!(order == 1 || order == 2))
 	{

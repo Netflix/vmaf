@@ -18,22 +18,8 @@
 
 #pragma once
 
-#ifndef MAIN_H_
-#define MAIN_H_
-
-int adm(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
-
-int ansnr(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
-
-int vif(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
-
-int motion(const char *dis_path, int w, int h, const char *fmt);
-
-int all(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
-
-int psnr(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
-
-int moment(const char *path, int w, int h, const char *fmt, int order);
+#ifndef MOTION_TOOLS_H_
+#define MOTION_TOOLS_H_
 
 static const float FILTER_5_s[5] = {
 		0.054488685,
@@ -49,4 +35,4 @@ static const double FILTER_5_d[5] = {
 		0.24420134200323346,
 		0.05448868454964433};
 
-#endif /* MAIN_H_ */
+#endif /* MOTION_TOOLS_H_ */

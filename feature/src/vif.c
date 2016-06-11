@@ -22,11 +22,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "common/alloc.h"
 #include "common/file_io.h"
-#include "main.h"
 #include "vif_options.h"
 #include "vif_tools.h"
+#include "feature.h"
 
 #ifdef VIF_OPT_SINGLE_PRECISION
   typedef float number_t;

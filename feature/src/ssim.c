@@ -27,60 +27,144 @@
 
 #include "common/alloc.h"
 #include "common/file_io.h"
-#include "psnr_options.h"
+#include "iqa/ssim.h"
+#include "iqa/convolve.h"
+#include "iqa/iqa.h"
+#include "iqa/decimate.h"
+#include "iqa/math_utils.h"
 #include "feature.h"
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
-#ifdef PSNR_OPT_SINGLE_PRECISION
-  typedef float number_t;
+// unlike psnr, ssim only works with single precision
+typedef float number_t;
+#define read_image_b  read_image_b2s
+#define read_image_w  read_image_w2s
 
-  #define read_image_b  read_image_b2s
-  #define read_image_w  read_image_w2s
-
-#else
-  typedef double number_t;
-
-	#define read_image_b  read_image_b2d
-	#define read_image_w  read_image_w2d
-
-#endif
-
-int compute_psnr(const number_t *ref, const number_t *dis, int w, int h,
-		int ref_stride, int dis_stride, double *score, double peak, double psnr_max)
+int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h,
+		int ref_stride, int cmp_stride, double *score,
+		double *l_score, double *c_score, double *s_score)
 {
 
-	double noise_ = 0;
+	int ret = 1;
 
-	int ref_stride_ = ref_stride / sizeof(number_t);
-	int dis_stride_ = dis_stride / sizeof(number_t);
+    int scale;
+    int x,y,src_offset,offset;
+    float *ref_f,*cmp_f;
+    struct _kernel low_pass;
+    struct _kernel window;
+    float result = INFINITY;
+    float l, c, s;
+    double ssim_sum=0.0;
+    struct _map_reduce mr;
 
-	for (int i = 0; i < h; ++i)
+    /* check stride */
+	int stride = ref_stride; /* stride in bytes */
+	if (stride != cmp_stride)
 	{
-		for (int j = 0; j < w; ++j)
-		{
-			number_t ref_ = ref[i * ref_stride_ + j];
-			number_t dis_ = dis[i * dis_stride_ + j];
-			number_t diff = ref_ - dis_;
-			noise_ += diff * diff;
-		}
+		printf("error: for ssim, ref_stride (%d) != dis_stride (%d) bytes.\n", ref_stride, cmp_stride);
+		fflush(stdout);
+		goto fail_or_end;
 	}
-	noise_ /= (w * h);
+	stride /= sizeof(float); /* stride_ in pixels */
 
-	double eps = 1e-10;
-	*score = MIN(10 * log10(peak * peak / MAX(noise_, eps)), psnr_max);
+	/* specify some default parameters */
+	const struct iqa_ssim_args *args = 0; /* 0 for default */
+	int gaussian = 1; /* 0 for 8x8 square window, 1 for 11x11 circular-symmetric Gaussian window (default) */
 
-	return 0;
+    /* initialize algorithm parameters */
+    scale = _max( 1, _round( (float)_min(w,h) / 256.0f ) );
+    if (args) {
+        if(args->f) {
+            scale = args->f;
+        }
+        mr.map     = _ssim_map;
+        mr.reduce  = _ssim_reduce;
+        mr.context = (void*)&ssim_sum;
+    }
+    window.kernel = (float*)g_square_window;
+    window.w = window.h = SQUARE_LEN;
+    window.normalized = 1;
+    window.bnd_opt = KBND_SYMMETRIC;
+    if (gaussian) {
+        window.kernel = (float*)g_gaussian_window;
+        window.w = window.h = GAUSSIAN_LEN;
+    }
+
+    /* convert image values to floats, forcing stride = width. */
+    ref_f = (float*)malloc(w*h*sizeof(float));
+    cmp_f = (float*)malloc(w*h*sizeof(float));
+    if (!ref_f || !cmp_f) {
+        if (ref_f) free(ref_f);
+        if (cmp_f) free(cmp_f);
+        printf("error: unable to malloc ref_f or cmp_f.\n");
+		fflush(stdout);
+		goto fail_or_end;
+    }
+    for (y=0; y<h; ++y) {
+        src_offset = y * stride;
+        offset = y * w;
+        for (x=0; x<w; ++x, ++offset, ++src_offset) {
+            ref_f[offset] = (float)ref[src_offset];
+            cmp_f[offset] = (float)cmp[src_offset];
+        }
+    }
+
+    /* scale the images down if required */
+    if (scale > 1) {
+        /* generate simple low-pass filter */
+        low_pass.kernel = (float*)malloc(scale*scale*sizeof(float));
+        if (!low_pass.kernel) {
+            free(ref_f);
+            free(cmp_f);
+            printf("error: unable to malloc low-pass filter kernel.\n");
+            fflush(stdout);
+            goto fail_or_end;
+        }
+        low_pass.w = low_pass.h = scale;
+        low_pass.normalized = 0;
+        low_pass.bnd_opt = KBND_SYMMETRIC;
+        for (offset=0; offset<scale*scale; ++offset)
+            low_pass.kernel[offset] = 1.0f/(scale*scale);
+
+        /* resample */
+        if (_iqa_decimate(ref_f, w, h, scale, &low_pass, 0, 0, 0) ||
+            _iqa_decimate(cmp_f, w, h, scale, &low_pass, 0, &w, &h)) { /* update w/h */
+            free(ref_f);
+            free(cmp_f);
+            free(low_pass.kernel);
+            printf("error: decimation fails on ref_f or cmp_f.\n");
+            fflush(stdout);
+            goto fail_or_end;
+        }
+        free(low_pass.kernel);
+    }
+
+	result = _iqa_ssim(ref_f, cmp_f, w, h, &window, &mr, args, &l, &c, &s);
+
+    free(ref_f);
+    free(cmp_f);
+
+	*score = (double)result;
+	*l_score = (double)l;
+	*c_score = (double)c;
+	*s_score = (double)s;
+
+	ret = 0;
+fail_or_end:
+	return ret;
 
 }
 
-int psnr(const char *ref_path, const char *dis_path, int w, int h, const char *fmt)
+int ssim(const char *ref_path, const char *dis_path, int w, int h, const char *fmt)
 {
 	double score = 0;
+	double l_score = 0, c_score = 0, s_score = 0;
 	number_t *ref_buf = 0;
 	number_t *dis_buf = 0;
 	number_t *temp_buf = 0;
+
 	FILE *ref_rfile = 0;
 	FILE *dis_rfile = 0;
 	size_t data_sz;
@@ -211,32 +295,19 @@ int psnr(const char *ref_path, const char *dis_path, int w, int h, const char *f
 		}
 
 		// compute
-		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
-		{
-			// max psnr 60.0 for 8-bit per Ioannis
-			ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, 255.0, 60.0);
-		}
-		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-		{
-			// 10 bit gets normalized to 8 bit, peak is 1023 / 4.0 = 255.75
-			// max psnr 72.0 for 10-bit per Ioannis
-			ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, 255.75, 72.0);
-		}
-		else
-		{
-			printf("error: unknown format %s.\n", fmt);
-			fflush(stdout);
-			goto fail_or_end;
-		}
+		ret = compute_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, &l_score, &c_score, &s_score);
 		if (ret)
 		{
-			printf("error: compute_psnr failed.\n");
+			printf("error: compute_ssim failed.\n");
 			fflush(stdout);
 			goto fail_or_end;
 		}
 
 		// print
-		printf("psnr: %d %f\n", frm_idx, score);
+		printf("ssim: %d %f\n", frm_idx, score);
+		printf("ssim_l: %d %f\n", frm_idx, l_score);
+		printf("ssim_c: %d %f\n", frm_idx, c_score);
+		printf("ssim_s: %d %f\n", frm_idx, s_score);
 		fflush(stdout);
 
 		// ref skip u and v
@@ -315,7 +386,7 @@ fail_or_end:
 
 static void usage(void)
 {
-	puts("usage: psnr fmt ref dis w h\n"
+	puts("usage: ssim fmt ref dis w h\n"
 		 "fmts:\n"
 		 "\tyuv420p\n"
 		 "\tyuv422p\n"
@@ -351,7 +422,7 @@ int main(int argc, const char **argv)
 		return 2;
 	}
 
-	ret = psnr(ref_path, dis_path, w, h, fmt);
+	ret = ssim(ref_path, dis_path, w, h, fmt);
 
 	if (ret)
 		return ret;

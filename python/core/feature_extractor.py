@@ -42,6 +42,45 @@ class FeatureExtractor(Executor):
         return "{type}_{atom_feature}_score".format(
             type=cls.TYPE, atom_feature=atom_feature)
 
+    def _get_feature_scores(self, asset):
+        # routine to read the feature scores from the log file, and return
+        # the scores in a dictionary format.
+
+        log_file_path = self._get_log_file_path(asset)
+
+        atom_feature_scores_dict = {}
+        atom_feature_idx_dict = {}
+        for atom_feature in self.ATOM_FEATURES:
+            atom_feature_scores_dict[atom_feature] = []
+            atom_feature_idx_dict[atom_feature] = 0
+
+        with open(log_file_path, 'rt') as log_file:
+            for line in log_file.readlines():
+                for atom_feature in self.ATOM_FEATURES:
+                    re_template = "{af}: ([0-9]+) ([0-9.-]+)".format(af=atom_feature)
+                    mo = re.match(re_template, line)
+                    if mo:
+                        cur_idx = int(mo.group(1))
+                        assert cur_idx == atom_feature_idx_dict[atom_feature]
+                        atom_feature_scores_dict[atom_feature].append(float(mo.group(2)))
+                        atom_feature_idx_dict[atom_feature] += 1
+                        continue
+
+        len_score = len(atom_feature_scores_dict[self.ATOM_FEATURES[0]])
+        assert len_score != 0
+        for atom_feature in self.ATOM_FEATURES[1:]:
+            assert len_score == len(atom_feature_scores_dict[atom_feature]), \
+                "Feature data possibly corrupt. Run cleanup script and try again."
+
+        feature_result = {}
+
+        for atom_feature in self.ATOM_FEATURES:
+            scores_key = self.get_scores_key(atom_feature)
+            feature_result[scores_key] = atom_feature_scores_dict[atom_feature]
+
+        return feature_result
+
+
 class VmafFeatureExtractor(FeatureExtractor):
 
     TYPE = "VMAF_feature"
@@ -90,44 +129,6 @@ class VmafFeatureExtractor(FeatureExtractor):
             self.logger.info(vmaf_feature_cmd)
 
         subprocess.call(vmaf_feature_cmd, shell=True)
-
-    def _get_feature_scores(self, asset):
-        # routine to read the feature scores from the log file, and return
-        # the scores in a dictionary format.
-
-        log_file_path = self._get_log_file_path(asset)
-
-        atom_feature_scores_dict = {}
-        atom_feature_idx_dict = {}
-        for atom_feature in self.ATOM_FEATURES:
-            atom_feature_scores_dict[atom_feature] = []
-            atom_feature_idx_dict[atom_feature] = 0
-
-        with open(log_file_path, 'rt') as log_file:
-            for line in log_file.readlines():
-                for atom_feature in self.ATOM_FEATURES:
-                    re_template = "{af}: ([0-9]+) ([0-9.-]+)".format(af=atom_feature)
-                    mo = re.match(re_template, line)
-                    if mo:
-                        cur_idx = int(mo.group(1))
-                        assert cur_idx == atom_feature_idx_dict[atom_feature]
-                        atom_feature_scores_dict[atom_feature].append(float(mo.group(2)))
-                        atom_feature_idx_dict[atom_feature] += 1
-                        continue
-
-        len_score = len(atom_feature_scores_dict[self.ATOM_FEATURES[0]])
-        assert len_score != 0
-        for atom_feature in self.ATOM_FEATURES[1:]:
-            assert len_score == len(atom_feature_scores_dict[atom_feature]), \
-                "Feature data possibly corrupt. Run cleanup script and try again."
-
-        feature_result = {}
-
-        for atom_feature in self.ATOM_FEATURES:
-            scores_key = self.get_scores_key(atom_feature)
-            feature_result[scores_key] = atom_feature_scores_dict[atom_feature]
-
-        return feature_result
 
     @classmethod
     def _post_process_result(cls, result):
@@ -246,35 +247,6 @@ class PsnrFeatureExtractor(FeatureExtractor):
 
         subprocess.call(psnr_cmd, shell=True)
 
-    def _get_feature_scores(self, asset):
-        # routine to read the feature scores from the log file, and return
-        # the scores in a dictionary format.
-
-        log_file_path = self._get_log_file_path(asset)
-
-        psnr_scores = []
-        counter = 0
-        with open(log_file_path, 'rt') as log_file:
-            for line in log_file.readlines():
-                mo = re.match(r"psnr: ([0-9]+) ([0-9.-]+)", line)
-                if mo:
-                    cur_idx = int(mo.group(1))
-                    assert cur_idx == counter
-                    psnr_scores.append(float(mo.group(2)))
-                    counter += 1
-
-        assert len(psnr_scores) != 0
-
-        feature_result = {}
-
-        assert len(self.ATOM_FEATURES) == 1
-        atom_feature = self.ATOM_FEATURES[0]
-        scores_key = self.get_scores_key(atom_feature)
-        feature_result[scores_key] = psnr_scores
-
-        return feature_result
-
-
 class MomentFeatureExtractor(FeatureExtractor):
 
     TYPE = "Moment_feature"
@@ -380,3 +352,78 @@ class MomentFeatureExtractor(FeatureExtractor):
             assert cls.get_scores_key(feature) in result.result_dict
 
         return result
+
+class SsimFeatureExtractor(FeatureExtractor):
+
+    TYPE = "SSIM_feature"
+    VERSION = "1.0"
+
+    ATOM_FEATURES = ['ssim', 'ssim_l', 'ssim_c', 'ssim_s']
+
+    SSIM = config.ROOT + "/feature/ssim"
+
+    def _run_and_generate_log_file(self, asset):
+        # routine to call the command-line executable and generate quality
+        # scores in the log file.
+
+        log_file_path = self._get_log_file_path(asset)
+
+        # run VMAF command line to extract features, 'APPEND' result (since
+        # super method already does something
+        quality_width, quality_height = asset.quality_width_height
+        ssim_cmd = "{ssim} {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
+        .format(
+            ssim=self.SSIM,
+            yuv_type=asset.yuv_type,
+            ref_path=asset.ref_workfile_path,
+            dis_path=asset.dis_workfile_path,
+            w=quality_width,
+            h=quality_height,
+            log_file_path=log_file_path,
+        )
+
+        if self.logger:
+            self.logger.info(ssim_cmd)
+
+        subprocess.call(ssim_cmd, shell=True)
+
+class MsSsimFeatureExtractor(FeatureExtractor):
+
+    TYPE = "MS_SSIM_feature"
+    VERSION = "1.0"
+
+    ATOM_FEATURES = ['ms_ssim',
+                     'ms_ssim_l_scale0', 'ms_ssim_c_scale0', 'ms_ssim_s_scale0',
+                     'ms_ssim_l_scale1', 'ms_ssim_c_scale1', 'ms_ssim_s_scale1',
+                     'ms_ssim_l_scale2', 'ms_ssim_c_scale2', 'ms_ssim_s_scale2',
+                     'ms_ssim_l_scale3', 'ms_ssim_c_scale3', 'ms_ssim_s_scale3',
+                     'ms_ssim_l_scale4', 'ms_ssim_c_scale4', 'ms_ssim_s_scale4',
+                     ]
+
+    MS_SSIM = config.ROOT + "/feature/ms_ssim"
+
+    def _run_and_generate_log_file(self, asset):
+        # routine to call the command-line executable and generate quality
+        # scores in the log file.
+
+        log_file_path = self._get_log_file_path(asset)
+
+        # run VMAF command line to extract features, 'APPEND' result (since
+        # super method already does something
+        quality_width, quality_height = asset.quality_width_height
+        ms_ssim_cmd = "{ms_ssim} {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
+        .format(
+            ms_ssim=self.MS_SSIM,
+            yuv_type=asset.yuv_type,
+            ref_path=asset.ref_workfile_path,
+            dis_path=asset.dis_workfile_path,
+            w=quality_width,
+            h=quality_height,
+            log_file_path=log_file_path,
+        )
+
+        if self.logger:
+            self.logger.info(ms_ssim_cmd)
+
+        subprocess.call(ms_ssim_cmd, shell=True)
+
