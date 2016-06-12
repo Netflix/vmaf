@@ -265,10 +265,10 @@ def cv_on_dataset(dataset, feature_param, model_param, ax, result_store,
         feature_option_dict = None,
         assets = assets,
         logger=logger,
-        fifo_mode=True,
         delete_workdir=True,
         result_store=result_store,
-        parallelize=False
+        parallelize=True, fifo_mode=True,
+        # parallelize=False, fifo_mode=False, # VQM
     )
     fassembler.run()
     results = fassembler.results
