@@ -28,6 +28,7 @@ OBJS_MOMENT = \
 	$(OBJDIR)/common/alloc.o \
 	$(OBJDIR)/common/file_io.o \
 	$(OBJDIR)/moment.o \
+	$(OBJDIR)/moment_main.o \
 
 OBJS_SSIM = \
 	$(OBJDIR)/common/alloc.o \
