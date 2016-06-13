@@ -34,20 +34,66 @@
  * contrast and structure.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h> /* zli-nflx */
 
 #include "iqa.h"
 #include "convolve.h"
-#include "decimate.h"
-#include "math_utils.h"
-#include "ssim.h"
+#include "ssim_tools.h"
 
-/* Forward declarations. */
-IQA_INLINE static double _calc_luminance(float, float, float, float);
-IQA_INLINE static double _calc_contrast(double, float, float, float, float);
-IQA_INLINE static double _calc_structure(float, double, float, float, float, float);
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+
+/* _calc_luminance */
+IQA_INLINE static double _calc_luminance(float mu1, float mu2, float C1, float alpha)
+{
+    double result;
+    float sign;
+    /* For MS-SSIM* */
+    if (C1 == 0 && mu1*mu1 == 0 && mu2*mu2 == 0)
+        return 1.0;
+    result = (2.0 * mu1 * mu2 + C1) / (mu1*mu1 + mu2*mu2 + C1);
+    if (alpha == 1.0f)
+        return result;
+    sign = result < 0.0 ? -1.0f : 1.0f;
+    return sign * pow(fabs(result),(double)alpha);
+}
+
+/* _calc_contrast */
+IQA_INLINE static double _calc_contrast(double sigma_comb_12, float sigma1_sqd, float sigma2_sqd, float C2, float beta)
+{
+    double result;
+    float sign;
+    /* For MS-SSIM* */
+    if (C2 == 0 && sigma1_sqd + sigma2_sqd == 0)
+        return 1.0;
+    result = (2.0 * sigma_comb_12 + C2) / (sigma1_sqd + sigma2_sqd + C2);
+    if (beta == 1.0f)
+        return result;
+    sign = result < 0.0 ? -1.0f : 1.0f;
+    return sign * pow(fabs(result),(double)beta);
+}
+
+/* _calc_structure */
+IQA_INLINE static double _calc_structure(float sigma_12, double sigma_comb_12, float sigma1, float sigma2, float C3, float gamma)
+{
+    double result;
+    float sign;
+    /* For MS-SSIM* */
+    if (C3 == 0 && sigma_comb_12 == 0) {
+        if (sigma1 == 0 && sigma2 == 0)
+            return 1.0;
+        else if (sigma1 == 0 || sigma2 == 0)
+            return 0.0;
+    }
+    result = (sigma_12 + C3) / (sigma_comb_12 + C3);
+    if (gamma == 1.0f)
+        return result;
+    sign = result < 0.0 ? -1.0f : 1.0f;
+    return sign * pow(fabs(result),(double)gamma);
+}
 
 /* _iqa_ssim */
 float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k,
@@ -191,68 +237,3 @@ float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k,
     return mr->reduce(w, h, mr->context);
 }
 
-
-/* _ssim_map */
-int _ssim_map(const struct _ssim_int *si, void *ctx)
-{
-    double *ssim_sum = (double*)ctx;
-    *ssim_sum += si->l * si->c * si->s;
-    return 0;
-}
-
-/* _ssim_reduce */
-float _ssim_reduce(int w, int h, void *ctx)
-{
-    double *ssim_sum = (double*)ctx;
-    return (float)(*ssim_sum / (double)(w*h));
-}
-
-
-/* _calc_luminance */
-IQA_INLINE static double _calc_luminance(float mu1, float mu2, float C1, float alpha)
-{
-    double result;
-    float sign;
-    /* For MS-SSIM* */
-    if (C1 == 0 && mu1*mu1 == 0 && mu2*mu2 == 0)
-        return 1.0;
-    result = (2.0 * mu1 * mu2 + C1) / (mu1*mu1 + mu2*mu2 + C1);
-    if (alpha == 1.0f)
-        return result;
-    sign = result < 0.0 ? -1.0f : 1.0f;
-    return sign * pow(fabs(result),(double)alpha);
-}
-
-/* _calc_contrast */
-IQA_INLINE static double _calc_contrast(double sigma_comb_12, float sigma1_sqd, float sigma2_sqd, float C2, float beta)
-{
-    double result;
-    float sign;
-    /* For MS-SSIM* */
-    if (C2 == 0 && sigma1_sqd + sigma2_sqd == 0)
-        return 1.0;
-    result = (2.0 * sigma_comb_12 + C2) / (sigma1_sqd + sigma2_sqd + C2);
-    if (beta == 1.0f)
-        return result;
-    sign = result < 0.0 ? -1.0f : 1.0f;
-    return sign * pow(fabs(result),(double)beta);
-}
-
-/* _calc_structure */
-IQA_INLINE static double _calc_structure(float sigma_12, double sigma_comb_12, float sigma1, float sigma2, float C3, float gamma)
-{
-    double result;
-    float sign;
-    /* For MS-SSIM* */
-    if (C3 == 0 && sigma_comb_12 == 0) {
-        if (sigma1 == 0 && sigma2 == 0)
-            return 1.0;
-        else if (sigma1 == 0 || sigma2 == 0)
-            return 0.0;
-    }
-    result = (sigma_12 + C3) / (sigma_comb_12 + C3);
-    if (gamma == 1.0f)
-        return result;
-    sign = result < 0.0 ? -1.0f : 1.0f;
-    return sign * pow(fabs(result),(double)gamma);
-}

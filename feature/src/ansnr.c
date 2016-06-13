@@ -28,7 +28,6 @@
 #include "common/file_io.h"
 #include "ansnr_options.h"
 #include "ansnr_tools.h"
-#include "feature.h"
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
@@ -68,7 +67,11 @@ int compute_ansnr(const number_t *ref, const number_t *dis, int w, int h, int re
 	number_t *ref_filtd;
 	number_t *dis_filtd;
 
-	number_t sig, noise, noise_min;
+	number_t sig, noise;
+
+#ifdef ANSNR_OPT_NORMALIZE
+	number_t noise_min;
+#endif
 
 	int buf_stride = ALIGN_CEIL(w * sizeof(number_t));
 	size_t buf_sz_one = (size_t)buf_stride * h;

@@ -29,13 +29,19 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * (06/10/2016) Updated by zli-nflx (zli@netflix.com) to output mean luminence,
+ * contrast and structure.
  */
 
-#ifndef _SSIM_H_
-#define _SSIM_H_
+#ifndef _SSIM_TOOLS_H_
+#define _SSIM_TOOLS_H_
 
 #include "iqa.h"
 #include "convolve.h"
+
+/* Default number of scales for ms_ssim*/
+#define SCALES  5
 
 /*
  * Circular-symmetric Gaussian weighting.
@@ -91,39 +97,9 @@ struct _map_reduce {
     void *context;
 };
 
-/**
- * Private method that calculates the SSIM value on a pre-processed image.
- *
- * The input images must have stride==width. This method does not scale.
- *
- * @note Image buffers are modified.
- *
- * Map-reduce is used for doing the final SSIM calculation. The map function is
- * called for every pixel, and the reduce is called at the end. The context is
- * caller-defined and *not* modified by this method.
- *
- * @param ref Original reference image
- * @param cmp Distorted image
- * @param w Width of the images
- * @param h Height of the images
- * @param k The kernel used as the window function
- * @param mr Optional map-reduce functions to use to calculate SSIM. Required
- *           if 'args' is not null. Ignored if 'args' is null.
- * @param args Optional SSIM arguments for fine control of the algorithm. 0 for defaults.
- *             Defaults are a=b=g=1.0, L=255, K1=0.01, K2=0.03
- * @return The mean SSIM over the entire image (MSSIM), or NAN if error.
- */
 float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k,
 		const struct _map_reduce *mr, const struct iqa_ssim_args *args
 		, float *l_mean, float *c_mean, float *s_mean /* zli-nflx */
 		);
 
-/* _ssim_map */
-int _ssim_map(const struct _ssim_int *si, void *ctx);
-
-/* _ssim_reduce */
-float _ssim_reduce(int w, int h, void *ctx);
-
-
-
-#endif /* _SSIM_H_ */
+#endif /* _SSIM_TOOLS_H_ */

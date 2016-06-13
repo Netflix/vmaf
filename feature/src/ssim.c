@@ -27,20 +27,30 @@
 
 #include "common/alloc.h"
 #include "common/file_io.h"
-#include "iqa/ssim.h"
-#include "iqa/convolve.h"
-#include "iqa/iqa.h"
-#include "iqa/decimate.h"
 #include "iqa/math_utils.h"
-#include "feature.h"
+#include "iqa/decimate.h"
+#include "iqa/ssim_tools.h"
 
-#define MAX(x, y) (((x) > (y)) ? (x) : (y))
-#define MIN(x, y) (((x) < (y)) ? (x) : (y))
-
-// unlike psnr, ssim only works with single precision
+// unlike psnr, ssim/ms-ssim only works with single precision
 typedef float number_t;
+
 #define read_image_b  read_image_b2s
 #define read_image_w  read_image_w2s
+
+/* _ssim_map */
+int _ssim_map(const struct _ssim_int *si, void *ctx)
+{
+    double *ssim_sum = (double*)ctx;
+    *ssim_sum += si->l * si->c * si->s;
+    return 0;
+}
+
+/* _ssim_reduce */
+float _ssim_reduce(int w, int h, void *ctx)
+{
+    double *ssim_sum = (double*)ctx;
+    return (float)(*ssim_sum / (double)(w*h));
+}
 
 int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h,
 		int ref_stride, int cmp_stride, double *score,
@@ -383,49 +393,3 @@ fail_or_end:
 	return ret;
 }
 
-
-static void usage(void)
-{
-	puts("usage: ssim fmt ref dis w h\n"
-		 "fmts:\n"
-		 "\tyuv420p\n"
-		 "\tyuv422p\n"
-		 "\tyuv444p\n"
-		 "\tyuv420p10le\n"
-		 "\tyuv422p10le\n"
-		 "\tyuv444p10le"
-	);
-}
-
-int main(int argc, const char **argv)
-{
-	const char *ref_path;
-	const char *dis_path;
-	const char *fmt;
-	int w;
-	int h;
-	int ret;
-
-	if (argc < 6) {
-		usage();
-		return 2;
-	}
-
-	fmt		 = argv[1];
-	ref_path = argv[2];
-	dis_path = argv[3];
-	w        = atoi(argv[4]);
-	h        = atoi(argv[5]);
-
-	if (w <= 0 || h <= 0) {
-		usage();
-		return 2;
-	}
-
-	ret = ssim(ref_path, dis_path, w, h, fmt);
-
-	if (ret)
-		return ret;
-
-	return 0;
-}

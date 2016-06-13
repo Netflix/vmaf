@@ -16,17 +16,19 @@ OBJS_VMAF = \
 	$(OBJDIR)/vif_tools.o \
 	$(OBJDIR)/motion.o \
 	$(OBJDIR)/all.o \
-	$(OBJDIR)/vmaf.o \
+	$(OBJDIR)/vmaf_main.o \
 
 OBJS_PSNR = \
 	$(OBJDIR)/common/alloc.o \
 	$(OBJDIR)/common/file_io.o \
 	$(OBJDIR)/psnr.o \
+	$(OBJDIR)/psnr_main.o \
 
 OBJS_MOMENT = \
 	$(OBJDIR)/common/alloc.o \
 	$(OBJDIR)/common/file_io.o \
 	$(OBJDIR)/moment.o \
+	$(OBJDIR)/moment_main.o \
 
 OBJS_SSIM = \
 	$(OBJDIR)/common/alloc.o \
@@ -36,6 +38,7 @@ OBJS_SSIM = \
 	$(OBJDIR)/iqa/decimate.o \
 	$(OBJDIR)/iqa/ssim_tools.o \
 	$(OBJDIR)/ssim.o \
+	$(OBJDIR)/ssim_main.o \
 
 OBJS_MS_SSIM = \
 	$(OBJDIR)/common/alloc.o \
@@ -45,6 +48,7 @@ OBJS_MS_SSIM = \
 	$(OBJDIR)/iqa/decimate.o \
 	$(OBJDIR)/iqa/ssim_tools.o \
 	$(OBJDIR)/ms_ssim.o \
+	$(OBJDIR)/ms_ssim_main.o \
 
 all: vmaf psnr moment ssim ms_ssim
 
