@@ -8,3 +8,8 @@
 
 **New features:**
 - Add SsimFeatureExtractor and MsSsimFeatureExtractor with intermediate features (luminence, contrast, structure).
+
+## [1.0.2]
+
+**New features:**
+- Refactor feature code to expose ssim/ms-ssim.
