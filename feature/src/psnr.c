@@ -26,8 +26,49 @@
 
 #include "common/alloc.h"
 #include "common/file_io.h"
-#include "psnr_tools.h"
-#include "feature.h"
+#include "psnr_options.h"
+
+#ifdef PSNR_OPT_SINGLE_PRECISION
+  typedef float number_t;
+
+  #define read_image_b  read_image_b2s
+  #define read_image_w  read_image_w2s
+
+#else
+  typedef double number_t;
+
+	#define read_image_b  read_image_b2d
+	#define read_image_w  read_image_w2d
+
+#endif
+
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+
+int compute_psnr(const number_t *ref, const number_t *dis, int w, int h, int ref_stride, int dis_stride, double *score, double peak, double psnr_max)
+{
+	double noise_ = 0;
+
+	int ref_stride_ = ref_stride / sizeof(number_t);
+	int dis_stride_ = dis_stride / sizeof(number_t);
+
+	for (int i = 0; i < h; ++i)
+	{
+		for (int j = 0; j < w; ++j)
+		{
+			number_t ref_ = ref[i * ref_stride_ + j];
+			number_t dis_ = dis[i * dis_stride_ + j];
+			number_t diff = ref_ - dis_;
+			noise_ += diff * diff;
+		}
+	}
+	noise_ /= (w * h);
+
+	double eps = 1e-10;
+	*score = MIN(10 * log10(peak * peak / MAX(noise_, eps)), psnr_max);
+
+	return 0;
+}
 
 int psnr(const char *ref_path, const char *dis_path, int w, int h, const char *fmt)
 {
@@ -267,48 +308,3 @@ fail_or_end:
 }
 
 
-static void usage(void)
-{
-	puts("usage: psnr fmt ref dis w h\n"
-		 "fmts:\n"
-		 "\tyuv420p\n"
-		 "\tyuv422p\n"
-		 "\tyuv444p\n"
-		 "\tyuv420p10le\n"
-		 "\tyuv422p10le\n"
-		 "\tyuv444p10le"
-	);
-}
-
-int main(int argc, const char **argv)
-{
-	const char *ref_path;
-	const char *dis_path;
-	const char *fmt;
-	int w;
-	int h;
-	int ret;
-
-	if (argc < 6) {
-		usage();
-		return 2;
-	}
-
-	fmt		 = argv[1];
-	ref_path = argv[2];
-	dis_path = argv[3];
-	w        = atoi(argv[4]);
-	h        = atoi(argv[5]);
-
-	if (w <= 0 || h <= 0) {
-		usage();
-		return 2;
-	}
-
-	ret = psnr(ref_path, dis_path, w, h, fmt);
-
-	if (ret)
-		return ret;
-
-	return 0;
-}

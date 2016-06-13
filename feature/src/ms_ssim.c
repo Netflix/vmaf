@@ -27,7 +27,6 @@
 
 #include "common/alloc.h"
 #include "common/file_io.h"
-#include "feature.h"
 
 #include "iqa/ssim_tools.h"
 

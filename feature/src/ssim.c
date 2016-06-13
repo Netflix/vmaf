@@ -27,8 +27,6 @@
 
 #include "common/alloc.h"
 #include "common/file_io.h"
-#include "feature.h"
-
 #include "iqa/ssim_tools.h"
 
 int ssim(const char *ref_path, const char *dis_path, int w, int h, const char *fmt)

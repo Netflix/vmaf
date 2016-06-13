@@ -29,7 +29,6 @@
 #include "common/convolution_internal.h"
 #include "motion_tools.h"
 #include "all_options.h"
-#include "feature.h"
 
 #ifdef ALL_OPT_SINGLE_PRECISION
 	typedef float number_t;

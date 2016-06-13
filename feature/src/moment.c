@@ -28,7 +28,6 @@
 #include "common/alloc.h"
 #include "common/file_io.h"
 #include "moment_options.h"
-#include "feature.h"
 
 #ifdef MOMENT_OPT_SINGLE_PRECISION
   typedef float number_t;
