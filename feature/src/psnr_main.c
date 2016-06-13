@@ -16,6 +16,9 @@
  *
  */
 
+#include <stdlib.h>
+#include <stdio.h>
+
 int psnr(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
 
 static void usage(void)

@@ -23,6 +23,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 #include "common/alloc.h"
 #include "common/file_io.h"
