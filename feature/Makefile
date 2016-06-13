@@ -37,6 +37,7 @@ OBJS_SSIM = \
 	$(OBJDIR)/iqa/decimate.o \
 	$(OBJDIR)/iqa/ssim_tools.o \
 	$(OBJDIR)/ssim.o \
+	$(OBJDIR)/ssim_main.o \
 
 OBJS_MS_SSIM = \
 	$(OBJDIR)/common/alloc.o \
@@ -46,6 +47,7 @@ OBJS_MS_SSIM = \
 	$(OBJDIR)/iqa/decimate.o \
 	$(OBJDIR)/iqa/ssim_tools.o \
 	$(OBJDIR)/ms_ssim.o \
+	$(OBJDIR)/ms_ssim_main.o \
 
 all: vmaf psnr moment ssim ms_ssim
 

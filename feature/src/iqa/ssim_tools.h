@@ -40,14 +40,8 @@
 #include "iqa.h"
 #include "convolve.h"
 
-/* Default number of scales */
+/* Default number of scales for ms_ssim*/
 #define SCALES  5
-
-// unlike psnr, ssim/ms-ssim only works with single precision
-typedef float number_t;
-
-#define read_image_b  read_image_b2s
-#define read_image_w  read_image_w2s
 
 /*
  * Circular-symmetric Gaussian weighting.
@@ -103,12 +97,9 @@ struct _map_reduce {
     void *context;
 };
 
-int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h,
-		int ref_stride, int cmp_stride, double *score,
-		double *l_score, double *c_score, double *s_score);
-
-int compute_ms_ssim(const number_t *ref, const number_t *cmp, int w, int h,
-		int ref_stride, int cmp_stride, double *score,
-		double* l_scores, double* c_scores, double* s_scores);
+float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k,
+		const struct _map_reduce *mr, const struct iqa_ssim_args *args
+		, float *l_mean, float *c_mean, float *s_mean /* zli-nflx */
+		);
 
 #endif /* _SSIM_TOOLS_H_ */
