@@ -25,9 +25,9 @@
 #include <string.h>
 #include <math.h>
 #include "psnr_options.h"
-#include "common/alloc.h"
-#include "common/file_io.h"
-#include "main.h"
+#include "alloc.h"
+#include "file_io.h"
+//#include "main.h"
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))

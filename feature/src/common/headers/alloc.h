@@ -21,6 +21,8 @@
 #ifndef ALLOC_H_
 #define ALLOC_H_
 
+#include <stddef.h>
+
 #define MAX_ALIGN 32
 
 #define ALIGN_FLOOR(x) ((x) - (x) % MAX_ALIGN)

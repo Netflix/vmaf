@@ -21,6 +21,8 @@
 #ifndef FILE_IO_H_
 #define FILE_IO_H_
 
+#include <stdio.h>
+
 int read_image(FILE *rfile, void *buf, int width, int height, int stride, int elem_size);
 int write_image(FILE *wfile, const void *buf, int width, int height, int stride, int elem_size);
 

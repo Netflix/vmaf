@@ -17,7 +17,7 @@
  */
 
 #include <stddef.h>
-#include "common/alloc.h"
+#include "alloc.h"
 #include "ansnr_options.h"
 #include "ansnr_tools.h"
 

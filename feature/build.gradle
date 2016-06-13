@@ -3,7 +3,7 @@ apply plugin: 'c'
 model {
     components {
         common(NativeLibrarySpec)
-        vmaf(NativeExecutableSpec) {
+        vmaf(NativeLibrarySpec) {
             sources {
                 c.lib library: 'common'
             }
@@ -16,6 +16,7 @@ model {
         moment(NativeExecutableSpec) {
             sources {
                 c.lib library: 'common'
+                c.lib library: 'vmaf'
             }
         }
     }

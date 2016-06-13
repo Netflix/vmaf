@@ -25,8 +25,8 @@
 #include <string.h>
 #include <math.h>
 #include "moment_options.h"
-#include "common/alloc.h"
-#include "common/file_io.h"
+#include "alloc.h"
+#include "file_io.h"
 #include "main.h"
 
 #ifdef MOMENT_OPT_SINGLE_PRECISION

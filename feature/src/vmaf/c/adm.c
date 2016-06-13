@@ -23,8 +23,8 @@
 #include <string.h>
 #include "adm_options.h"
 #include "adm_tools.h"
-#include "common/alloc.h"
-#include "common/file_io.h"
+#include "alloc.h"
+#include "file_io.h"
 #include "main.h"
 
 #ifdef ADM_OPT_SINGLE_PRECISION

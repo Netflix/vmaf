@@ -21,7 +21,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include "common/alloc.h"
+#include "alloc.h"
 #include "vif_options.h"
 #include "vif_tools.h"
 
