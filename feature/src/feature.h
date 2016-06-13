@@ -26,6 +26,7 @@ int ansnr(const char *ref_path, const char *dis_path, int w, int h, const char *
 int vif(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
 int motion(const char *dis_path, int w, int h, const char *fmt);
 int all(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
+
 int psnr(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
 int moment(const char *path, int w, int h, const char *fmt, int order);
 int ssim(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);

@@ -21,6 +21,7 @@ OBJS_VMAF = \
 OBJS_PSNR = \
 	$(OBJDIR)/common/alloc.o \
 	$(OBJDIR)/common/file_io.o \
+	$(OBJDIR)/psnr_tools.o \
 	$(OBJDIR)/psnr.o \
 
 OBJS_MOMENT = \

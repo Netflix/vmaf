@@ -23,57 +23,11 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include <math.h>
 
 #include "common/alloc.h"
 #include "common/file_io.h"
-#include "psnr_options.h"
+#include "psnr_tools.h"
 #include "feature.h"
-
-#define MAX(x, y) (((x) > (y)) ? (x) : (y))
-#define MIN(x, y) (((x) < (y)) ? (x) : (y))
-
-#ifdef PSNR_OPT_SINGLE_PRECISION
-  typedef float number_t;
-
-  #define read_image_b  read_image_b2s
-  #define read_image_w  read_image_w2s
-
-#else
-  typedef double number_t;
-
-	#define read_image_b  read_image_b2d
-	#define read_image_w  read_image_w2d
-
-#endif
-
-int compute_psnr(const number_t *ref, const number_t *dis, int w, int h,
-		int ref_stride, int dis_stride, double *score, double peak, double psnr_max)
-{
-
-	double noise_ = 0;
-
-	int ref_stride_ = ref_stride / sizeof(number_t);
-	int dis_stride_ = dis_stride / sizeof(number_t);
-
-	for (int i = 0; i < h; ++i)
-	{
-		for (int j = 0; j < w; ++j)
-		{
-			number_t ref_ = ref[i * ref_stride_ + j];
-			number_t dis_ = dis[i * dis_stride_ + j];
-			number_t diff = ref_ - dis_;
-			noise_ += diff * diff;
-		}
-	}
-	noise_ /= (w * h);
-
-	double eps = 1e-10;
-	*score = MIN(10 * log10(peak * peak / MAX(noise_, eps)), psnr_max);
-
-	return 0;
-
-}
 
 int psnr(const char *ref_path, const char *dis_path, int w, int h, const char *fmt)
 {
