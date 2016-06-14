@@ -58,7 +58,7 @@ struct _kernel {
  * @brief Applies the specified kernel to the image.
  * The kernel will be applied to all areas where it fits completely within
  * the image. The resulting image will be smaller by half the kernel width 
- * and height (w - kw/2 and h - kh/2).
+ * and height on each side (w - kw + 1 and h - kh + 1).
  *
  * @param img Image to modify
  * @param w Image width

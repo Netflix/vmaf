@@ -29,6 +29,8 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * (06/10/2016) Updated by zli-nflx (zli@netflix.com) to optimize _iqa_convolve.
  */
 
 #include "convolve.h"
@@ -80,6 +82,55 @@ static float _calc_scale(const struct _kernel *k)
 
 void _iqa_convolve(float *img, int w, int h, const struct _kernel *k, float *result, int *rw, int *rh)
 {
+
+	/* ======== */
+	/* original */
+	/* ======== */
+
+//	int x,y,kx,ky,u,v;
+//    int uc = k->w/2;
+//    int vc = k->h/2;
+//    int kw_even = (k->w&1)?0:1;
+//    int kh_even = (k->h&1)?0:1;
+//    int dst_w = w - k->w + 1;
+//    int dst_h = h - k->h + 1;
+//    int img_offset,k_offset;
+//    double sum;
+//    float scale, *dst=result;
+//
+//    if (!dst)
+//        dst = img; /* Convolve in-place */
+//
+//    /* Kernel is applied to all positions where the kernel is fully contained
+//     * in the image */
+//    scale = _calc_scale(k);
+//    for (y=0; y < dst_h; ++y) {
+//        for (x=0; x < dst_w; ++x) {
+//            sum = 0.0;
+//            k_offset = 0;
+//            ky = y+vc;
+//            kx = x+uc;
+//
+//
+//            for (v=-vc; v <= vc-kh_even; ++v)
+//            {
+//                img_offset = (ky+v)*w + kx;
+//                for (u=-uc; u <= uc-kw_even; ++u, ++k_offset)
+//                {
+//                    sum += img[img_offset+u] * k->kernel[k_offset];
+//                }
+//            }
+//            dst[y*dst_w + x] = (float)(sum * scale);
+//        }
+//    }
+//
+//	if (rw) *rw = dst_w;
+//	if (rh) *rh = dst_h;
+
+	/* ================================================================= */
+	/* zli-nflx: optimized by accummulating sum per kernel height values */
+	/* ================================================================= */
+
     int x,y,kx,ky,u,v;
     int uc = k->w/2;
     int vc = k->h/2;
@@ -88,14 +139,15 @@ void _iqa_convolve(float *img, int w, int h, const struct _kernel *k, float *res
     int dst_w = w - k->w + 1;
     int dst_h = h - k->h + 1;
     int img_offset,k_offset;
-    double sum;
+    float sum;
     float scale, *dst=result;
 
     if (!dst)
         dst = img; /* Convolve in-place */
 
-    /* Kernel is applied to all positions where the kernel is fully contained
-     * in the image */
+    int i;
+    int kh = k->h;
+    float* sum_h = (double*)malloc(kh*sizeof(float));
     scale = _calc_scale(k);
     for (y=0; y < dst_h; ++y) {
         for (x=0; x < dst_w; ++x) {
@@ -105,16 +157,21 @@ void _iqa_convolve(float *img, int w, int h, const struct _kernel *k, float *res
             kx = x+uc;
             for (v=-vc; v <= vc-kh_even; ++v) {
                 img_offset = (ky+v)*w + kx;
-                for (u=-uc; u <= uc-kw_even; ++u, ++k_offset) {
-                    sum += img[img_offset+u] * k->kernel[k_offset];
+				sum_h[v+vc] = img[img_offset-uc] * k->kernel[k_offset++];
+				for (u=-uc+1; u <= uc-kw_even; ++u, ++k_offset) {
+                    sum_h[v+vc] += img[img_offset+u] * k->kernel[k_offset];
                 }
             }
+            for (i=0; i<kh; ++i)
+            	sum += sum_h[i];
             dst[y*dst_w + x] = (float)(sum * scale);
         }
     }
+    free(sum_h);
 
     if (rw) *rw = dst_w;
     if (rh) *rh = dst_h;
+
 }
 
 int _iqa_img_filter(float *img, int w, int h, const struct _kernel *k, float *result)
