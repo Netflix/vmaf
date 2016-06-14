@@ -47,6 +47,8 @@ float KBND_CONSTANT(const float *img, int w, int h, int x, int y, float bnd_cons
 /** Defines a convolution kernel */
 struct _kernel {
     float *kernel;          /**< Pointer to the kernel values */
+    float *kernel_h;        /**< Pointer to horizontal 1D kernel values (zli-nflx) */
+    float *kernel_v;        /**< Pointer to vertical 1D kernel values (zli-nflx) */
     int w;                  /**< The kernel width */
     int h;                  /**< The kernel height */
     int normalized;         /**< 1 if the kernel values add up to 1. 0 otherwise */
