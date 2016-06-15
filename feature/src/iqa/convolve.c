@@ -105,16 +105,18 @@ void _iqa_convolve(float *img, int w, int h, const struct _kernel *k, float *res
     float scale, *dst;
     float *img_cache;
 
-    dst = (float*)calloc(dst_w*dst_h, sizeof(float));
-
     /* Kernel is applied to all positions where the kernel is fully contained
      * in the image */
     scale = _calc_scale(k);
 
     /* create cache */
+    dst = (float*)calloc(dst_w*dst_h, sizeof(float));
     img_cache = (float *)calloc(w*h, sizeof(float));
-    if (!img_cache)
+    if (!img_cache || !dst) {
+        if (dst) free(dst);
+        if (img_cache) free(img_cache);
         assert(0);
+    }
 
     /* filter horizontally */
     for (y=-vc; y<dst_h+vc; ++y) {
