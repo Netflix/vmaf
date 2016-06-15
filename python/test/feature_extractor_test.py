@@ -279,7 +279,7 @@ class FeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['SSIM_feature_ssim_score'], 0.86325137500000004, places=4)
         self.assertAlmostEqual(results[0]['SSIM_feature_ssim_l_score'], 0.99814749999999997, places=4)
-        self.assertAlmostEqual(results[0]['SSIM_feature_ssim_c_score'], 0.96132239583333323, places=4)
+        self.assertAlmostEqual(results[0]['SSIM_feature_ssim_c_score'], 0.96126793750000006, places=4)
         self.assertAlmostEqual(results[0]['SSIM_feature_ssim_s_score'], 0.89770760416666662, places=4)
 
         self.assertAlmostEqual(results[1]['SSIM_feature_ssim_score'], 1.0, places=4)
@@ -314,7 +314,7 @@ class FeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['MS_SSIM_feature_ms_ssim_score'], 0.96324620833333319, places=4)
         self.assertAlmostEqual(results[0]['MS_SSIM_feature_ms_ssim_l_scale0_score'], 0.9981474999999999, places=4)
-        self.assertAlmostEqual(results[0]['MS_SSIM_feature_ms_ssim_c_scale0_score'], 0.9613223958333336, places=4)
+        self.assertAlmostEqual(results[0]['MS_SSIM_feature_ms_ssim_c_scale0_score'], 0.96126793750000006, places=4)
         self.assertAlmostEqual(results[0]['MS_SSIM_feature_ms_ssim_s_scale0_score'], 0.8977076041666665, places=4)
         self.assertAlmostEqual(results[0]['MS_SSIM_feature_ms_ssim_l_scale1_score'], 0.9989961250000002, places=4)
         self.assertAlmostEqual(results[0]['MS_SSIM_feature_ms_ssim_c_scale1_score'], 0.9858215416666668, places=4)
@@ -553,7 +553,7 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['SSIM_feature_ssim_score'], 0.86325137500000004, places=4)
         self.assertAlmostEqual(results[0]['SSIM_feature_ssim_l_score'], 0.99814749999999997, places=4)
-        self.assertAlmostEqual(results[0]['SSIM_feature_ssim_c_score'], 0.96132239583333323, places=4)
+        self.assertAlmostEqual(results[0]['SSIM_feature_ssim_c_score'], 0.96126793750000006, places=4)
         self.assertAlmostEqual(results[0]['SSIM_feature_ssim_s_score'], 0.89770760416666662, places=4)
 
         self.assertAlmostEqual(results[1]['SSIM_feature_ssim_score'], 1.0, places=4)
@@ -589,7 +589,7 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['MS_SSIM_feature_ms_ssim_score'], 0.96324620833333319, places=4)
         self.assertAlmostEqual(results[0]['MS_SSIM_feature_ms_ssim_l_scale0_score'], 0.9981474999999999, places=4)
-        self.assertAlmostEqual(results[0]['MS_SSIM_feature_ms_ssim_c_scale0_score'], 0.9613223958333336, places=4)
+        self.assertAlmostEqual(results[0]['MS_SSIM_feature_ms_ssim_c_scale0_score'], 0.96126793750000006, places=4)
         self.assertAlmostEqual(results[0]['MS_SSIM_feature_ms_ssim_s_scale0_score'], 0.8977076041666665, places=4)
         self.assertAlmostEqual(results[0]['MS_SSIM_feature_ms_ssim_l_scale1_score'], 0.9989961250000002, places=4)
         self.assertAlmostEqual(results[0]['MS_SSIM_feature_ms_ssim_c_scale1_score'], 0.9858215416666668, places=4)
