@@ -94,11 +94,15 @@ int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h,
         mr.context = (void*)&ssim_sum;
     }
     window.kernel = (float*)g_square_window;
+    window.kernel_h = (float*)g_square_window_h;
+    window.kernel_v = (float*)g_square_window_v;
     window.w = window.h = SQUARE_LEN;
     window.normalized = 1;
     window.bnd_opt = KBND_SYMMETRIC;
     if (gaussian) {
         window.kernel = (float*)g_gaussian_window;
+        window.kernel_h = (float*)g_gaussian_window_h;
+        window.kernel_v = (float*)g_gaussian_window_v;
         window.w = window.h = GAUSSIAN_LEN;
     }
 
@@ -125,9 +129,14 @@ int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h,
     if (scale > 1) {
         /* generate simple low-pass filter */
         low_pass.kernel = (float*)malloc(scale*scale*sizeof(float));
-        if (!low_pass.kernel) {
+        low_pass.kernel_h = (float*)malloc(scale*sizeof(float)); /* zli-nflx */
+        low_pass.kernel_v = (float*)malloc(scale*sizeof(float)); /* zli-nflx */
+        if (!(low_pass.kernel && low_pass.kernel_h && low_pass.kernel_v)) { /* zli-nflx */
             free(ref_f);
             free(cmp_f);
+            if (low_pass.kernel) free(low_pass.kernel); /* zli-nflx */
+            if (low_pass.kernel_h) free(low_pass.kernel_h); /* zli-nflx */
+            if (low_pass.kernel_v) free(low_pass.kernel_v); /* zli-nflx */
             printf("error: unable to malloc low-pass filter kernel.\n");
             fflush(stdout);
             goto fail_or_end;
@@ -137,6 +146,10 @@ int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h,
         low_pass.bnd_opt = KBND_SYMMETRIC;
         for (offset=0; offset<scale*scale; ++offset)
             low_pass.kernel[offset] = 1.0f/(scale*scale);
+        for (offset=0; offset<scale; ++offset)  /* zli-nflx */
+            low_pass.kernel_h[offset] = 1.0f/(scale); /* zli-nflx */
+        for (offset=0; offset<scale; ++offset) /* zli-nflx */
+            low_pass.kernel_v[offset] = 1.0f/(scale); /* zli-nflx */
 
         /* resample */
         if (_iqa_decimate(ref_f, w, h, scale, &low_pass, 0, 0, 0) ||
@@ -144,11 +157,15 @@ int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h,
             free(ref_f);
             free(cmp_f);
             free(low_pass.kernel);
+            free(low_pass.kernel_h); /* zli-nflx */
+            free(low_pass.kernel_v); /* zli-nflx */
             printf("error: decimation fails on ref_f or cmp_f.\n");
             fflush(stdout);
             goto fail_or_end;
         }
         free(low_pass.kernel);
+        free(low_pass.kernel_h); /* zli-nflx */
+        free(low_pass.kernel_v); /* zli-nflx */
     }
 
 	result = _iqa_ssim(ref_f, cmp_f, w, h, &window, &mr, args, &l, &c, &s);

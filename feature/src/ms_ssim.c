@@ -51,6 +51,14 @@ static const float g_lpf[LPF_LEN][LPF_LEN] = {
    { 0.000714f,-0.000450f,-0.002090f, 0.007132f, 0.016114f, 0.007132f,-0.002090f,-0.000450f, 0.000714f},
 };
 
+static const float g_lpf_h[LPF_LEN] = {
+	0.026727f, -0.016828f, -0.078201f, 0.266846f, 0.602914f, 0.266846f, -0.078201f, -0.016828f, 0.026727f
+};
+
+static const float g_lpf_v[LPF_LEN] = {
+	0.026727f, -0.016828f, -0.078201f, 0.266846f, 0.602914f, 0.266846f, -0.078201f, -0.016828f, 0.026727f
+};
+
 /* Alpha, beta, and gamma values for each scale */
 static float g_alphas[] = { 0.0000f, 0.0000f, 0.0000f, 0.0000f, 0.1333f };
 static float g_betas[]  = { 0.0448f, 0.2856f, 0.3001f, 0.2363f, 0.1333f };
@@ -173,11 +181,15 @@ int compute_ms_ssim(const number_t *ref, const number_t *cmp, int w, int h,
     }
 
     window.kernel = (float*)g_square_window;
+    window.kernel_h = (float*)g_square_window_h; /* zli-nflx */
+    window.kernel_v = (float*)g_square_window_v; /* zli-nflx */
     window.w = window.h = SQUARE_LEN;
     window.normalized = 1;
     window.bnd_opt = KBND_SYMMETRIC;
     if (gauss) {
         window.kernel = (float*)g_gaussian_window;
+        window.kernel_h = (float*)g_gaussian_window_h; /* zli-nflx */
+        window.kernel_v = (float*)g_gaussian_window_v; /* zli-nflx */
         window.w = window.h = GAUSSIAN_LEN;
     }
 
@@ -224,6 +236,8 @@ int compute_ms_ssim(const number_t *ref, const number_t *cmp, int w, int h,
     cur_w=w;
     cur_h=h;
     lpf.kernel = (float*)g_lpf;
+    lpf.kernel_h = (float*)g_lpf_h; /* zli-nflx */
+    lpf.kernel_v = (float*)g_lpf_v; /* zli-nflx */
     lpf.w = lpf.h = LPF_LEN;
     lpf.normalized = 1;
     lpf.bnd_opt = KBND_SYMMETRIC;

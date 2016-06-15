@@ -47,6 +47,8 @@ float KBND_CONSTANT(const float *img, int w, int h, int x, int y, float bnd_cons
 /** Defines a convolution kernel */
 struct _kernel {
     float *kernel;          /**< Pointer to the kernel values */
+    float *kernel_h;        /**< Pointer to horizontal 1D kernel values (zli-nflx) */
+    float *kernel_v;        /**< Pointer to vertical 1D kernel values (zli-nflx) */
     int w;                  /**< The kernel width */
     int h;                  /**< The kernel height */
     int normalized;         /**< 1 if the kernel values add up to 1. 0 otherwise */
@@ -58,7 +60,7 @@ struct _kernel {
  * @brief Applies the specified kernel to the image.
  * The kernel will be applied to all areas where it fits completely within
  * the image. The resulting image will be smaller by half the kernel width 
- * and height (w - kw/2 and h - kh/2).
+ * and height on each side (w - kw + 1 and h - kh + 1).
  *
  * @param img Image to modify
  * @param w Image width

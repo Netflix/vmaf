@@ -158,9 +158,9 @@ float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k,
     }
 
     /* Calculate sigma */
-    _iqa_convolve(ref_sigma_sqd, w, h, k, 0, 0, 0);
-    _iqa_convolve(cmp_sigma_sqd, w, h, k, 0, 0, 0);
-    _iqa_convolve(sigma_both, w, h, k, 0, &w, &h); /* Update the width and height */
+    _iqa_convolve(ref_sigma_sqd, w, h, k, 0,  0,  0);
+    _iqa_convolve(cmp_sigma_sqd, w, h, k, 0,  0,  0);
+    _iqa_convolve(sigma_both,    w, h, k, 0, &w, &h); /* Update the width and height */
 
     /* The convolution results are smaller by the kernel width and height */
     for (y=0; y<h; ++y) {
@@ -168,6 +168,10 @@ float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k,
         for (x=0; x<w; ++x, ++offset) {
             ref_sigma_sqd[offset] -= ref_mu[offset] * ref_mu[offset];
             cmp_sigma_sqd[offset] -= cmp_mu[offset] * cmp_mu[offset];
+
+            ref_sigma_sqd[offset] = MAX(0.0, ref_sigma_sqd[offset]); /* zli-nflx */
+            cmp_sigma_sqd[offset] = MAX(0.0, cmp_sigma_sqd[offset]); /* zli-nflx */
+
             sigma_both[offset] -= ref_mu[offset] * cmp_mu[offset];
         }
     }

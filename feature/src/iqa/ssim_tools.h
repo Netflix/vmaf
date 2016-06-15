@@ -63,6 +63,14 @@ static const float g_gaussian_window[GAUSSIAN_LEN][GAUSSIAN_LEN] = {
     {0.000001f, 0.000008f, 0.000037f, 0.000112f, 0.000219f, 0.000274f, 0.000219f, 0.000112f, 0.000037f, 0.000008f, 0.000001f},
 };
 
+static const float g_gaussian_window_h[GAUSSIAN_LEN] = {
+	0.001028f, 0.007599f, 0.036001f, 0.109361f, 0.213006f, 0.266012f, 0.213006f, 0.109361f, 0.036001f, 0.007599f, 0.001028f
+};
+
+static const float g_gaussian_window_v[GAUSSIAN_LEN] = {
+	0.001028f, 0.007599f, 0.036001f, 0.109361f, 0.213006f, 0.266012f, 0.213006f, 0.109361f, 0.036001f, 0.007599f, 0.001028f
+};
+
 /*
  * Equal weight square window.
  * Each pixel is equally weighted (1/64) so that SUM(x) = 1.0
@@ -77,6 +85,14 @@ static const float g_square_window[SQUARE_LEN][SQUARE_LEN] = {
     {0.015625f, 0.015625f, 0.015625f, 0.015625f, 0.015625f, 0.015625f, 0.015625f, 0.015625f},
     {0.015625f, 0.015625f, 0.015625f, 0.015625f, 0.015625f, 0.015625f, 0.015625f, 0.015625f},
     {0.015625f, 0.015625f, 0.015625f, 0.015625f, 0.015625f, 0.015625f, 0.015625f, 0.015625f},
+};
+
+static const float g_square_window_h[SQUARE_LEN] = {
+	0.125f, 0.125f, 0.125f, 0.125f, 0.125f, 0.125f, 0.125f, 0.125f
+};
+
+static const float g_square_window_v[SQUARE_LEN] = {
+	0.125f, 0.125f, 0.125f, 0.125f, 0.125f, 0.125f, 0.125f, 0.125f
 };
 
 /* Holds intermediate SSIM values for map-reduce operation. */

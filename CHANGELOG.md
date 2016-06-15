@@ -12,4 +12,4 @@
 ## [1.0.2]
 
 **New features:**
-- Refactor feature code to expose ssim/ms-ssim.
+- Refactor feature code to expose ssim/ms-ssim, speed up ssim/ms-ssim
