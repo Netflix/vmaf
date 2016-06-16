@@ -33,7 +33,6 @@
  * (06/10/2016) Updated by zli-nflx (zli@netflix.com) to optimize _iqa_convolve.
  */
 
-#include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 #include "convolve.h"
@@ -110,13 +109,13 @@ void _iqa_convolve(float *img, int w, int h, const struct _kernel *k, float *res
     scale = _calc_scale(k);
 
     /* create cache */
-    dst = (float*)calloc(dst_w*dst_h, sizeof(float));
     img_cache = (float *)calloc(w*h, sizeof(float));
-    if (!img_cache || !dst) {
-        if (dst) free(dst);
-        if (img_cache) free(img_cache);
+    if (!img_cache)
         assert(0);
-    }
+
+    dst = result;
+    if (!dst)
+        dst = img; /* Convolve in-place */
 
     /* filter horizontally */
     for (y=-vc; y<dst_h+vc; ++y) {
@@ -148,17 +147,10 @@ void _iqa_convolve(float *img, int w, int h, const struct _kernel *k, float *res
         }
     }
 
-    /* if result is not null, copy dst to result, else copy to img */
-    if (result)
-        memcpy(result, dst, dst_w*dst_h*sizeof(float));
-    else
-        memcpy(img,    dst, dst_w*dst_h*sizeof(float));
-
     /* free cache */
     free(img_cache);
-    free(dst);
 
-#else
+#else /* use 2D filter */
 
     int x,y,kx,ky,u,v;
     int uc = k->w/2;
