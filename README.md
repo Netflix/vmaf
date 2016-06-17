@@ -87,6 +87,14 @@ For example:
 ./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv
 ```
 
+This will generate output like:
+
+```
+Aggregate: VMAF_feature_adm2_score:0.925, VMAF_feature_motion_score:3.592, VMAF_feature_vif_scale0_score:0.366, VMAF_feature_vif_scale1_score:0.772, VMAF_feature_vif_scale2_score:0.868, VMAF_feature_vif_scale3_score:0.921, VMAF_score:66.628
+```
+
+where *VMAF_score* is the final score and the others are the scores for elementary metrics. *adm2*, *vif_scalex* scores range from 0 (worst) to 1 (best), and *motion* score typically ranges from 0 (static) to 20 (high-motion).
+
 To run VMAF in batch mode, create an input text file with each line of format (check examples in [example_batch_input](example_batch_input)):
 
 ```
