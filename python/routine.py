@@ -1,22 +1,19 @@
-from matplotlib import pyplot as plt
-from core.cross_validation import ModelCrossValidation
-from core.feature_assembler import FeatureAssembler
-from core.quality_runner import VmafQualityRunner
-from core.result_store import FileSystemResultStore
-from tools.decorator import deprecated
-from tools.misc import indices, get_stdout_logger, import_python_file, \
-    close_logger
-
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import numpy as np
+from matplotlib import pyplot as plt
 
+from core.cross_validation import ModelCrossValidation
+from core.feature_assembler import FeatureAssembler
+from core.quality_runner import VmafQualityRunner
+from core.result_store import FileSystemResultStore
+from tools.misc import indices, get_stdout_logger, import_python_file, \
+    close_logger
 import config
 from core.asset import Asset
 from core.executor import run_executors_in_parallel
 from core.train_test_model import TrainTestModel
-
 
 def read_dataset(dataset):
 
