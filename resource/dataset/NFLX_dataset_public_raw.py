@@ -2,6 +2,7 @@ dataset_name = 'NFLX_public'
 yuv_fmt = 'yuv420p'
 width = 1920
 height = 1080
+ref_score = 5.0
 
 ref_dir = '[path to dataset videos]/ref'
 dis_dir = '[path to dataset videos]/dis'
