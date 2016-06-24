@@ -397,8 +397,15 @@ void vif_statistic_s(const float *mu1_sq, const float *mu2_sq, const float *mu1_
 			}
 			else {
 			        sv_sq = (sigma2_sq + sigma_nsq) * sigma1_sq;
-			        g = sv_sq - sigma12 * sigma12;
-				num_val = log2f(sv_sq / g);
+                                if( sigma12 < 0 )
+                                {
+                                    num_val = 0.0;
+                                }
+                                else
+                                {
+			            g = sv_sq - sigma12 * sigma12;
+				    num_val = log2f(sv_sq / g);
+                                }
 				den_val = log2f(1.0f + sigma1_sq / sigma_nsq);
 			}
 
@@ -447,8 +454,15 @@ void vif_statistic_d(const double *mu1_sq, const double *mu2_sq, const double *m
 			}
 			else {
 			        sv_sq = (sigma2_sq + sigma_nsq) * sigma1_sq;
-			        g = sv_sq - sigma12 * sigma12;
-				num_val = log2f(sv_sq / g);
+                                if( sigma12 < 0 )
+                                {
+                                    num_val = 0.0;
+                                }
+                                else
+                                {
+			            g = sv_sq - sigma12 * sigma12;
+				    num_val = log2f(sv_sq / g);
+                                }
 				den_val = log2f(1.0f + sigma1_sq / sigma_nsq);
 			}
 
