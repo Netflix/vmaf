@@ -54,12 +54,14 @@ number_t vmaf_image_sad_c(const number_t *img1, const number_t *img2, int width,
 	number_t accum = (number_t)0.0;
 
 	for (int i = 0; i < height; ++i) {
+                number_t accum_line = (number_t)0.0;
 		for (int j = 0; j < width; ++j) {
 			number_t img1px = img1[i * img1_stride + j];
 			number_t img2px = img2[i * img2_stride + j];
 
-			accum += abs(img1px - img2px);
+			accum_line += abs(img1px - img2px);
 		}
+                accum += accum_line;
 	}
 
 	return (number_t) (accum / (width * height));
