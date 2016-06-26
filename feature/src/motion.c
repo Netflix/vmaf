@@ -59,7 +59,7 @@ number_t vmaf_image_sad_c(const number_t *img1, const number_t *img2, int width,
 			number_t img1px = img1[i * img1_stride + j];
 			number_t img2px = img2[i * img2_stride + j];
 
-			accum_line += abs(img1px - img2px);
+			accum_line += fabs(img1px - img2px);
 		}
                 accum += accum_line;
 	}
