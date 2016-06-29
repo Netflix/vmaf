@@ -491,7 +491,7 @@ void vif_filter1d_s(const float *f, const float *src, float *dst, int w, int h, 
 				fcoeff = f[fi];
 
 				ii = i - fwidth / 2 + fi;
-				ii = ii < 0 ? 0 : (ii > h - 1 ? h - 1 : ii);
+				ii = ii < 0 ? -ii : (ii >= h ? 2 * h - ii - 1 : ii);
 
 				imgcoeff = src[ii * src_px_stride + j];
 
@@ -509,7 +509,7 @@ void vif_filter1d_s(const float *f, const float *src, float *dst, int w, int h, 
 				fcoeff = f[fj];
 
 				jj = j - fwidth / 2 + fj;
-				jj = jj < 0 ? 0 : (jj >= w ? w - 1 : jj);
+				jj = jj < 0 ? -jj : (jj >= w ? 2 * w - jj - 1 : jj);
 
 				imgcoeff = tmp[jj];
 
@@ -542,7 +542,7 @@ void vif_filter1d_d(const double *f, const double *src, double *dst, int w, int 
 				fcoeff = f[fi];
 
 				ii = i - fwidth / 2 + fi;
-				ii = ii < 0 ? 0 : (ii > h - 1 ? h - 1 : ii);
+				ii = ii < 0 ? -ii : (ii >= h ? 2 * h - ii - 1 : ii);
 
 				imgcoeff = src[ii * src_px_stride + j];
 
@@ -560,7 +560,7 @@ void vif_filter1d_d(const double *f, const double *src, double *dst, int w, int 
 				fcoeff = f[fj];
 
 				jj = j - fwidth / 2 + fj;
-				jj = jj < 0 ? 0 : (jj > w - 1 ? w - 1 : jj);
+				jj = jj < 0 ? -jj : (jj >= w ? 2 * w - jj - 1 : jj);
 
 				imgcoeff = tmp[jj];
 
@@ -595,8 +595,8 @@ void vif_filter2d_s(const float *f, const float *src, float *dst, int w, int h, 
 					ii = i - fwidth / 2 + fi;
 					jj = j - fwidth / 2 + fj;
 
-					ii = ii < 0 ? 0 : (ii > h - 1 ? h - 1 : ii);
-					jj = jj < 0 ? 0 : (jj > w - 1 ? w - 1 : jj);
+					ii = ii < 0 ? -ii : (ii >= h ? 2 * h - ii - 1 : ii);
+					jj = jj < 0 ? -jj : (jj >= w ? 2 * w - jj - 1 : jj);
 
 					imgcoeff = src[ii * src_px_stride + jj];
 
@@ -632,8 +632,8 @@ void vif_filter2d_d(const double *f, const double *src, double *dst, int w, int 
 					ii = i - fwidth / 2 + fi;
 					jj = j - fwidth / 2 + fj;
 
-					ii = ii < 0 ? 0 : (ii > h - 1 ? h - 1 : ii);
-					jj = jj < 0 ? 0 : (jj > w - 1 ? w - 1 : jj);
+					ii = ii < 0 ? -ii : (ii >= h ? 2 * h - ii - 1 : ii);
+					jj = jj < 0 ? -jj : (jj >= w ? 2 * w - jj - 1 : jj);
 
 					imgcoeff = src[ii * src_px_stride + jj];
 
