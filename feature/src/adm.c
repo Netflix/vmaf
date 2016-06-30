@@ -140,6 +140,9 @@ int compute_adm(const number_t *ref, const number_t *dis, int w, int h, int ref_
 #ifdef ADM_OPT_DEBUG_DUMP
 		char pathbuf[256];
 #endif
+		float num_scale = 0.0;
+		float den_scale = 0.0;
+
 		adm_dwt2(curr_ref_scale, &ref_dwt2, w, h, curr_ref_stride, buf_stride);
 		adm_dwt2(curr_dis_scale, &dis_dwt2, w, h, curr_dis_stride, buf_stride);
 
@@ -237,13 +240,16 @@ int compute_adm(const number_t *ref, const number_t *dis, int w, int h, int ref_
 		sprintf(pathbuf, "stage/cm_r[%d]_d.yuv", scale);
 		write_image(pathbuf, cm_r.band_d, w, h, buf_stride, sizeof(number_t));
 #endif
-		num += adm_sum_cube(cm_r.band_h, w, h, buf_stride);
-		num += adm_sum_cube(cm_r.band_v, w, h, buf_stride);
-		num += adm_sum_cube(cm_r.band_d, w, h, buf_stride);
+		num_scale += adm_sum_cube(cm_r.band_h, w, h, buf_stride);
+		num_scale += adm_sum_cube(cm_r.band_v, w, h, buf_stride);
+		num_scale += adm_sum_cube(cm_r.band_d, w, h, buf_stride);
 
-		den += adm_sum_cube(csf_o.band_h, w, h, buf_stride);
-		den += adm_sum_cube(csf_o.band_v, w, h, buf_stride);
-		den += adm_sum_cube(csf_o.band_d, w, h, buf_stride);
+		den_scale += adm_sum_cube(csf_o.band_h, w, h, buf_stride);
+		den_scale += adm_sum_cube(csf_o.band_v, w, h, buf_stride);
+		den_scale += adm_sum_cube(csf_o.band_d, w, h, buf_stride);
+
+		num += num_scale;
+		den += den_scale;
 
 		/* Copy DWT2 approximation band to buffer for next scale. */
 		adm_buffer_copy(ref_dwt2.band_a, ref_scale, w * sizeof(number_t), h, buf_stride, buf_stride);

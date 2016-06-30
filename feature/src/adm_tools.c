@@ -424,11 +424,16 @@ void adm_cm_thresh_s(const adm_dwt_band_t_s *src, float *dst, int w, int h, int 
 						ii = i - 1 + fi;
 						jj = j - 1 + fj;
 
-						/* Border handling by zero-extension. */
-						if (ii < 0 || ii > h - 1 || jj < 0 || jj > w - 1)
-							imgcoeff = 0;
-						else
-							imgcoeff = fabsf(src_ptr[ii * src_px_stride + jj]);
+						/* Border handling by mirroring. */
+						if (ii < 0)
+							ii = -ii;
+						else if (ii >= h)
+							ii = 2 * h - ii - 1;
+						if (jj < 0)
+							jj = -jj;
+						else if (jj >= w)
+							jj = 2 * w - jj - 1;
+						imgcoeff = fabsf(src_ptr[ii * src_px_stride + jj]);
 
 						accum += fcoeff * imgcoeff;
 					}
@@ -472,11 +477,16 @@ void adm_cm_thresh_d(const adm_dwt_band_t_d *src, double *dst, int w, int h, int
 						ii = i - 1 + fi;
 						jj = j - 1 + fj;
 
-						/* Border handling by zero-extension. */
-						if (ii < 0 || ii > h - 1 || jj < 0 || jj > w - 1)
-							imgcoeff = 0;
-						else
-							imgcoeff = fabs(src_ptr[ii * src_px_stride + jj]);
+						/* Border handling by mirroring. */
+						if (ii < 0)
+							ii = -ii;
+						else if (ii >= h)
+							ii = 2 * h - ii - 1;
+						if (jj < 0)
+							jj = -jj;
+						else if (jj >= w)
+							jj = 2 * w - jj - 1;
+						imgcoeff = fabsf(src_ptr[ii * src_px_stride + jj]);
 
 						accum += fcoeff * imgcoeff;
 					}
@@ -577,13 +587,13 @@ void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int w, int h, int
 				fcoeff_lo = filter_lo[fi];
 				fcoeff_hi = filter_hi[fi];
 
-				/* Wraparound border handling. */
+				/* Border handling by mirroring. */
 				ii = 2 * i - 1 + fi;
-				
+
 				if (ii < 0)
-					ii = h + ii;
-				if (ii > h - 1)
-					ii = (ii - h % 2) % h;
+					ii = -ii;
+				else if (ii >= h)
+					ii = 2 * h - ii - 1;
 
 				imgcoeff = src[ii * src_px_stride + j];
 
@@ -604,13 +614,13 @@ void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int w, int h, int
 				fcoeff_lo = filter_lo[fj];
 				fcoeff_hi = filter_hi[fj];
 
-				/* Wraparound border handling. */
+				/* Border handling by mirroring. */
 				jj = 2 * j - 1 + fj;
-				
+
 				if (jj < 0)
-					jj = w + jj;
-				if (jj > w - 1)
-					jj = (jj - w % 2) % w;
+					jj = -jj;
+				else if (jj >= w)
+					jj = 2 * w - jj - 1;
 
 				imgcoeff = tmplo[jj];
 
@@ -631,13 +641,13 @@ void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int w, int h, int
 				fcoeff_lo = filter_lo[fj];
 				fcoeff_hi = filter_hi[fj];
 
-				/* Wraparound border handling. */
+				/* Border handling by mirroring. */
 				jj = 2 * j - 1 + fj;
-				
+
 				if (jj < 0)
-					jj = w + jj;
-				if (jj > w - 1)
-					jj = (jj - w % 2) % w;
+					jj = -jj;
+				else if (jj >= w)
+					jj = 2 * w - jj - 1;
 
 				imgcoeff = tmphi[jj];
 
@@ -679,13 +689,13 @@ void adm_dwt2_d(const double *src, const adm_dwt_band_t_d *dst, int w, int h, in
 				fcoeff_lo = filter_lo[fi];
 				fcoeff_hi = filter_hi[fi];
 
-				/* Wraparound border handling. */
+				/* Border handling by mirroring. */
 				ii = 2 * i - 1 + fi;
-				
+
 				if (ii < 0)
-					ii = h + ii;
-				if (ii > h - 1)
-					ii = (ii - h % 2) % h;
+					ii = -ii;
+				else if (ii >= h)
+					ii = 2 * h - ii - 1;
 
 				imgcoeff = src[ii * src_px_stride + j];
 
@@ -706,13 +716,13 @@ void adm_dwt2_d(const double *src, const adm_dwt_band_t_d *dst, int w, int h, in
 				fcoeff_lo = filter_lo[fj];
 				fcoeff_hi = filter_hi[fj];
 
-				/* Wraparound border handling. */
+				/* Border handling by mirroring. */
 				jj = 2 * j - 1 + fj;
-				
+
 				if (jj < 0)
-					jj = w + jj;
-				if (jj > w - 1)
-					jj = (jj - w % 2) % w;
+					jj = -jj;
+				else if (jj >= w)
+					jj = 2 * w - jj - 1;
 
 				imgcoeff = tmplo[jj];
 
@@ -733,13 +743,13 @@ void adm_dwt2_d(const double *src, const adm_dwt_band_t_d *dst, int w, int h, in
 				fcoeff_lo = filter_lo[fj];
 				fcoeff_hi = filter_hi[fj];
 
-				/* Wraparound border handling. */
+				/* Border handling by mirroring. */
 				jj = 2 * j - 1 + fj;
-				
+
 				if (jj < 0)
-					jj = w + jj;
-				if (jj > w - 1)
-					jj = (jj - w % 2) % w;
+					jj = -jj;
+				else if (jj >= w)
+					jj = 2 * w - jj - 1;
 
 				imgcoeff = tmphi[jj];
 
