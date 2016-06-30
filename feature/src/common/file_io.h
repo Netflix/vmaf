@@ -21,6 +21,10 @@
 #ifndef FILE_IO_H_
 #define FILE_IO_H_
 
+/* Whether to use [0,255] or [-128,127] input pixel range. */
+//#define OPT_RANGE_PIXEL_OFFSET 0
+#define OPT_RANGE_PIXEL_OFFSET (-128)
+
 int read_image(FILE *rfile, void *buf, int width, int height, int stride, int elem_size);
 int write_image(FILE *wfile, const void *buf, int width, int height, int stride, int elem_size);
 

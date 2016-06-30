@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <math.h>
 
 #include "motion_options.h"
 #include "common/alloc.h"
@@ -184,11 +185,11 @@ int motion(const char *ref_path, int w, int h, const char *fmt)
 		// ref read y
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
 		{
-			ret = read_image_b(ref_rfile, ref_buf, 0, w, h, stride);
+			ret = read_image_b(ref_rfile, ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
 		}
 		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
 		{
-			ret = read_image_w(ref_rfile, ref_buf, 0, w, h, stride);
+			ret = read_image_w(ref_rfile, ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
 		}
 		else
 		{

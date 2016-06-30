@@ -40,7 +40,4 @@
 #define VIF_OPT_SINGLE_PRECISION
 //#define VIF_OPT_DOUBLE_PRECISION
 
-/* Whether to use [0,255] or [-128,127] input pixel range. */
-#define VIF_OPT_RANGE_0_255
-
 #endif /* VIF_OPTIONS_H_ */

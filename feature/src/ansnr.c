@@ -219,11 +219,11 @@ int ansnr(const char *ref_path, const char *dis_path, int w, int h, const char *
 		// read ref y
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
 		{
-			ret = read_image_b(ref_rfile, ref_buf, 0, w, h, stride);
+			ret = read_image_b(ref_rfile, ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
 		}
 		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
 		{
-			ret = read_image_w(ref_rfile, ref_buf, 0, w, h, stride);
+			ret = read_image_w(ref_rfile, ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
 		}
 		else
 		{
@@ -243,11 +243,11 @@ int ansnr(const char *ref_path, const char *dis_path, int w, int h, const char *
 		// read dis y
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
 		{
-			ret = read_image_b(dis_rfile, dis_buf, 0, w, h, stride);
+			ret = read_image_b(dis_rfile, dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
 		}
 		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
 		{
-			ret = read_image_w(dis_rfile, dis_buf, 0, w, h, stride);
+			ret = read_image_w(dis_rfile, dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
 		}
 		else
 		{

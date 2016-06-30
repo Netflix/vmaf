@@ -173,11 +173,11 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		// read ref y
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
 		{
-			ret = read_image_b(ref_rfile, ref_buf, 0, w, h, stride);
+			ret = read_image_b(ref_rfile, ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
 		}
 		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
 		{
-			ret = read_image_w(ref_rfile, ref_buf, 0, w, h, stride);
+			ret = read_image_w(ref_rfile, ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
 		}
 		else
 		{
@@ -197,11 +197,11 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		// read dis y
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
 		{
-			ret = read_image_b(dis_rfile, dis_buf, 0, w, h, stride);
+			ret = read_image_b(dis_rfile, dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
 		}
 		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
 		{
-			ret = read_image_w(dis_rfile, dis_buf, 0, w, h, stride);
+			ret = read_image_w(dis_rfile, dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
 		}
 		else
 		{
@@ -294,11 +294,6 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 
 		/* =========== vif ============== */
 		// compute vif last, because its input ref/dis might be offset by -128
-#ifdef VIF_OPT_RANGE_0_255
-#else
-		offset_image(ref_buf, -128, w, h, stride);
-		offset_image(dis_buf, -128, w, h, stride);
-#endif
 
 		if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores)))
 		{
