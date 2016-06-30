@@ -29,6 +29,7 @@
 #include "common/convolution_internal.h"
 #include "motion_tools.h"
 #include "all_options.h"
+#include "vif_options.h"
 
 #ifdef ALL_OPT_SINGLE_PRECISION
 	typedef float number_t;
@@ -292,9 +293,12 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		fflush(stdout);
 
 		/* =========== vif ============== */
-		// compute vif last, because its input ref/dis must be offset by -128
+		// compute vif last, because its input ref/dis might be offset by -128
+#ifdef VIF_OPT_RANGE_0_255
+#else
 		offset_image(ref_buf, -128, w, h, stride);
 		offset_image(dis_buf, -128, w, h, stride);
+#endif
 
 		if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores)))
 		{
