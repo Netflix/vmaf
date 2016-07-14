@@ -129,7 +129,7 @@ class PsnrQualityRunner(QualityRunner):
 class VmafLegacyQualityRunner(QualityRunner):
 
     TYPE = 'VMAF_legacy'
-    VERSION = '1.0'
+    VERSION = '1.1'
 
     FEATURE_ASSEMBLER_DICT = {'VMAF_feature': 'all'}
 
@@ -242,7 +242,7 @@ class VmafQualityRunner(QualityRunner):
     # VERSION = '0.3' # using model nflxall_vmafv3.pkl, VmafFeatureExtractor VERSION 0.2.1
     # DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv3.pkl" # trained with resource/param/vmaf_v3.py on private/resource/dataset/NFLX_dataset.py (30 subjects)
 
-    VERSION = '0.3.1' # using model nflxall_vmafv3.pkl, VmafFeatureExtractor VERSION 0.2.1, NFLX_dataset with 26 subjects (last 4 outliers removed)
+    VERSION = '0.3.2' # using model nflxall_vmafv3.pkl, VmafFeatureExtractor VERSION 0.2.1, NFLX_dataset with 26 subjects (last 4 outliers removed)
     DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv3a.pkl" # trained with resource/param/vmaf_v3.py on private/resource/dataset/NFLX_dataset.py (26 subjects)
 
     DEFAULT_FEATURE_DICT = {'VMAF_feature': ['vif', 'adm', 'motion', 'ansnr']}
