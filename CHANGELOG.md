@@ -20,3 +20,10 @@
 - Add base class NorefFeatureExtractor for any feature extractor that do not use a reference video.
 - Add MomentNorefFeatureExtractor subclassing NorefFeatureExtractor as an example implementation.
 - Add block processing property blockproc_params to Asset.
+
+## (07/21/2016) [1.0.4]
+
+**Fixed bugs:**
+- Fix a series of numerical issues in VMAF features, increment VmafFeatureExtractor version number.
+- Retrain VmafQualityRunner after feature update, increment version number.
+
