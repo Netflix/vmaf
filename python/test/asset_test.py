@@ -242,6 +242,37 @@ class AssetTest(unittest.TestCase):
         recon_asset = Asset.from_repr(expected_repr)
         self.assertEquals(asset, recon_asset)
 
+        asset = Asset(dataset="test", content_id=0, asset_id=2,
+                      ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
+                      asset_dict={'width':720, 'height':480,
+                                  'quality_width':1920, 'quality_height':1080,
+                                  'resampling_type':'lanczos',
+                                  'blockproc_block_wh': (100, 100)})
+        self.assertEquals(
+            str(asset),
+            "test_0_2_refvideo_720x480_vs_disvideo_720x480_q_1920x1080_lanczos_blk100_100_100_100"
+        )
+        expected_repr = '{"asset_dict": {"blockproc_block_wh": [100, 100], "height": 480, "quality_height": 1080, "quality_width": 1920, "resampling_type": "lanczos", "width": 720}, "asset_id": 2, "content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", "ref_path": "refvideo.yuv", "workdir": ""}'
+        self.assertEquals(repr(asset), expected_repr)
+        recon_asset = Asset.from_repr(expected_repr)
+        self.assertEquals(asset, recon_asset)
+
+        asset = Asset(dataset="test", content_id=0, asset_id=2,
+                      ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
+                      asset_dict={'width':720, 'height':480,
+                                  'quality_width':1920, 'quality_height':1080,
+                                  'resampling_type':'lanczos',
+                                  'blockproc_block_wh': (100, 200),
+                                  'blockproc_shift_wh': (10, 50),})
+        self.assertEquals(
+            str(asset),
+            "test_0_2_refvideo_720x480_vs_disvideo_720x480_q_1920x1080_lanczos_blk100_200_10_50"
+        )
+        expected_repr = '{"asset_dict": {"blockproc_block_wh": [100, 200], "blockproc_shift_wh": [10, 50], "height": 480, "quality_height": 1080, "quality_width": 1920, "resampling_type": "lanczos", "width": 720}, "asset_id": 2, "content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", "ref_path": "refvideo.yuv", "workdir": ""}'
+        self.assertEquals(repr(asset), expected_repr)
+        recon_asset = Asset.from_repr(expected_repr)
+        self.assertEquals(asset, recon_asset)
+
     def test_hash_equal(self):
         asset1 = Asset(dataset="test", content_id=0, asset_id=2,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",

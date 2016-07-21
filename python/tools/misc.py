@@ -108,10 +108,10 @@ def import_python_file(filepath):
     :param filepath:
     :return:
     """
-    filedir = get_dir_without_last_slash(filepath)
+    import imp
     filename = get_file_name_without_extension(filepath)
-    sys.path.append(filedir)
-    ret = __import__(filename)
+    ret = imp.load_source(filename, filepath)
+
     return ret
 
 def make_absolute_path(path, current_dir):
