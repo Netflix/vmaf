@@ -44,6 +44,7 @@ class Executor(TypeVersionEnabled):
         self.result_store = result_store
         self.optional_dict = optional_dict
 
+        self._assert_args()
         self._assert_assets()
 
     @property
@@ -70,6 +71,9 @@ class Executor(TypeVersionEnabled):
         """
         for asset in self.assets:
             self._remove_result(asset)
+
+    def _assert_args(self):
+        pass
 
     def _assert_assets(self):
 
