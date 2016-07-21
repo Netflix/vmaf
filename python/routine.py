@@ -17,16 +17,25 @@ from core.train_test_model import TrainTestModel
 
 def read_dataset(dataset):
 
+    # asserts, can add more to the list...
+    assert hasattr(dataset, 'dataset_name')
+    assert hasattr(dataset, 'yuv_fmt')
+    assert hasattr(dataset, 'ref_videos')
+    assert hasattr(dataset, 'dis_videos')
+    assert hasattr(dataset, 'width') or 'width' in dataset.ref_videos[0]
+    assert hasattr(dataset, 'height') or 'height' in dataset.ref_videos[0]
+
     data_set_name = dataset.dataset_name
     yuv_fmt = dataset.yuv_fmt
-    width = dataset.width
-    height = dataset.height
     ref_videos = dataset.ref_videos
     dis_videos = dataset.dis_videos
 
-    ref_path_dict = {} # dictionary of content_id -> path for ref videos
+    width = dataset.width if hasattr(dataset, 'width') else None
+    height = dataset.height if hasattr(dataset, 'height') else None
+
+    ref_dict = {} # dictionary of content_id -> path for ref videos
     for ref_video in ref_videos:
-        ref_path_dict[ref_video['content_id']] = ref_video['path']
+        ref_dict[ref_video['content_id']] = ref_video
 
     assets = []
     for dis_video in dis_videos:
@@ -36,20 +45,28 @@ def read_dataset(dataset):
         elif 'mos' in dis_video:
             groundtruth = dis_video['mos']
         else:
-            assert False, 'Each distorted video entry must provide either ' \
-                          'a mos or dmos score.'
+            groundtruth = None
+            # assert False, 'Each distorted video entry must provide either ' \
+            #               'a mos or dmos score.'
+
+        ref_path = ref_dict[dis_video['content_id']]['path']
+        width_ = width if width is not None else ref_dict[dis_video['content_id']]['width']
+        height_ = height if height is not None else ref_dict[dis_video['content_id']]['height']
+
+        asset_dict = {'width': width_,
+                      'height': height_,
+                      'yuv_type': yuv_fmt,
+                      }
+        if groundtruth is not None:
+            asset_dict['groundtruth'] = groundtruth
 
         asset = Asset(dataset=data_set_name,
                       content_id=dis_video['content_id'],
                       asset_id=dis_video['asset_id'],
                       workdir_root=config.ROOT + "/workspace/workdir",
-                      ref_path=ref_path_dict[dis_video['content_id']],
+                      ref_path=ref_path,
                       dis_path=dis_video['path'],
-                      asset_dict={'width':width,
-                                  'height':height,
-                                  'yuv_type':yuv_fmt,
-                                  'groundtruth': groundtruth,
-                                  }
+                      asset_dict=asset_dict,
                       )
         assets.append(asset)
 
