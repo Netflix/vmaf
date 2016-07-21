@@ -361,9 +361,8 @@ void vif_xx_yy_xy_d(const double *x, const double *y, double *xx, double *yy, do
 void vif_statistic_s(const float *mu1_sq, const float *mu2_sq, const float *mu1_mu2, const float *xx_filt, const float *yy_filt, const float *xy_filt, float *num, float *den,
                      int w, int h, int mu1_sq_stride, int mu2_sq_stride, int mu1_mu2_stride, int xx_filt_stride, int yy_filt_stride, int xy_filt_stride, int num_stride, int den_stride)
 {
-	const float sigma_nsq = 2;
-	const float eps = 1e-2;
-	const float eps_sigma = sigma_nsq;
+	static const float sigma_nsq = 2;
+	static const float sigma_max_inv = 4.0/(255.0*255.0);
 
 	int mu1_sq_px_stride  = mu1_sq_stride / sizeof(float);
 	int mu2_sq_px_stride  = mu2_sq_stride / sizeof(float);
@@ -392,53 +391,24 @@ void vif_statistic_s(const float *mu1_sq, const float *mu2_sq, const float *mu1_
 			sigma2_sq = yy_filt_val - mu2_sq_val;
 			sigma12   = xy_filt_val - mu1_mu2_val;
 
-			if (sigma1_sq < 0)
-				sigma1_sq = 0;
-			if (sigma2_sq < 0)
-				sigma2_sq = 0;
-#ifdef VIF_OPT_ALTERNATE_STATISTIC // fix? use alternating pattern or fixed pattern (all 0, all 0.5 etc. baboon image) to sanity check
-			if (sigma1_sq < eps)
-				sigma1_sq = 0;
-
-			sv_sq = (sigma2_sq + sigma_nsq) * sigma1_sq;
-			g = sv_sq - sigma12 * sigma12;
-
-			if (sv_sq < eps) // eps is 1e-10 in Matlab code (and for double ?)
-				sv_sq = eps;
-			if (g < eps)
-				g = eps;
-			if (sigma12 < 0)
-				g = sv_sq;
-
-			if (sigma1_sq < eps_sigma) {
-				num_val = (exp(-sigma2_sq/(255*255)) - exp(-1));
-				den_val = (1-exp(-1));
+			if (sigma1_sq < sigma_nsq) {
+				num_val = 1.0 - sigma2_sq*sigma_max_inv;
+				den_val = 1.0;
 			}
 			else {
-				num_val = log2f(sv_sq / g);
+			        sv_sq = (sigma2_sq + sigma_nsq) * sigma1_sq;
+                                if( sigma12 < 0 )
+                                {
+                                    num_val = 0.0;
+                                }
+                                else
+                                {
+			            g = sv_sq - sigma12 * sigma12;
+				    num_val = log2f(sv_sq / g);
+                                }
 				den_val = log2f(1.0f + sigma1_sq / sigma_nsq);
 			}
 
-#else // prod code that has numerical instability ?
-			g     = sigma12 / (sigma1_sq + eps);
-			sv_sq = sigma2_sq - g * sigma12;
-
-			if (sigma1_sq < eps)
-				g = 0;
-			if (sigma1_sq < eps)
-				sv_sq = sigma2_sq;
-			if (sigma1_sq < eps)
-				sigma1_sq = 0;
-			if (g < 0)
-				sv_sq = sigma2_sq;
-			if (g < 0)
-				g = 0;
-			if (sv_sq <= eps)
-				sv_sq = eps;
-
-			num_val = log2f(1.0f + g * g * sigma1_sq / (sv_sq + sigma_nsq));
-			den_val = log2f(1.0f + sigma1_sq / sigma_nsq);
-#endif
 			num[i * num_px_stride + j] = num_val;
 			den[i * den_px_stride + j] = den_val;
 		}
@@ -448,9 +418,8 @@ void vif_statistic_s(const float *mu1_sq, const float *mu2_sq, const float *mu1_
 void vif_statistic_d(const double *mu1_sq, const double *mu2_sq, const double *mu1_mu2, const double *xx_filt, const double *yy_filt, const double *xy_filt, double *num, double *den,
                      int w, int h, int mu1_sq_stride, int mu2_sq_stride, int mu1_mu2_stride, int xx_filt_stride, int yy_filt_stride, int xy_filt_stride, int num_stride, int den_stride)
 {
-	const double sigma_nsq = 2;
-	const double eps = 1e-10;
-	const double eps_sigma = sigma_nsq;
+	static const double sigma_nsq = 2;
+	static const double sigma_max_inv = 4.0/(255.0*255.0);
 
 	int mu1_sq_px_stride  = mu1_sq_stride / sizeof(double);
 	int mu2_sq_px_stride  = mu2_sq_stride / sizeof(double);
@@ -468,7 +437,7 @@ void vif_statistic_d(const double *mu1_sq, const double *mu2_sq, const double *m
 
 	for (i = 0; i < h; ++i) {
 		for (j = 0; j < w; ++j) {
-			mu1_sq_val  = mu1_sq[i * mu1_sq_px_stride + j];
+			mu1_sq_val  = mu1_sq[i * mu1_sq_px_stride + j]; // same name as the Matlab code vifp_mscale.m
 			mu2_sq_val  = mu2_sq[i * mu2_sq_px_stride + j];
 			mu1_mu2_val = mu1_mu2[i * mu1_mu2_px_stride + j];
 			xx_filt_val = xx_filt[i * xx_filt_px_stride + j];
@@ -479,53 +448,24 @@ void vif_statistic_d(const double *mu1_sq, const double *mu2_sq, const double *m
 			sigma2_sq = yy_filt_val - mu2_sq_val;
 			sigma12   = xy_filt_val - mu1_mu2_val;
 
-			if (sigma1_sq < 0)
-				sigma1_sq = 0;
-			if (sigma2_sq < 0)
-				sigma2_sq = 0;
-#ifdef VIF_OPT_ALTERNATE_STATISTIC
-			if (sigma1_sq < eps)
-				sigma1_sq = 0;
-
-			sv_sq = (sigma2_sq + sigma_nsq) * sigma1_sq;
-			g = sv_sq - sigma12 * sigma12;
-
-			if (sv_sq < eps) // eps is 1e-10 in Matlab code (and for double ?)
-				sv_sq = eps;
-			if (g < eps)
-				g = eps;
-			if (sigma12 < 0)
-				g = sv_sq;
-
-			if (sigma1_sq < eps_sigma) {
-				num_val = (exp(-sigma2_sq/(255*255)) - exp(-1));
-				den_val = (1-exp(-1));
+			if (sigma1_sq < sigma_nsq) {
+				num_val = 1.0 - sigma2_sq*sigma_max_inv;
+				den_val = 1.0;
 			}
 			else {
-				num_val = log2f(sv_sq / g);
+			        sv_sq = (sigma2_sq + sigma_nsq) * sigma1_sq;
+                                if( sigma12 < 0 )
+                                {
+                                    num_val = 0.0;
+                                }
+                                else
+                                {
+			            g = sv_sq - sigma12 * sigma12;
+				    num_val = log2f(sv_sq / g);
+                                }
 				den_val = log2f(1.0f + sigma1_sq / sigma_nsq);
 			}
 
-#else
-			g     = sigma12 / (sigma1_sq + eps);
-			sv_sq = sigma2_sq - g * sigma12;
-
-			if (sigma1_sq < eps)
-				g = 0;
-			if (sigma1_sq < eps)
-				sv_sq = sigma2_sq;
-			if (sigma1_sq < eps)
-				sigma1_sq = 0;
-			if (g < 0)
-				sv_sq = sigma2_sq;
-			if (g < 0)
-				g = 0;
-			if (sv_sq <= eps)
-				sv_sq = eps;
-
-			num_val = log2(1 + g * g * sigma1_sq / (sv_sq + sigma_nsq));
-			den_val = log2(1 + sigma1_sq / sigma_nsq);
-#endif
 			num[i * num_px_stride + j] = num_val;
 			den[i * den_px_stride + j] = den_val;
 		}
@@ -551,7 +491,7 @@ void vif_filter1d_s(const float *f, const float *src, float *dst, int w, int h, 
 				fcoeff = f[fi];
 
 				ii = i - fwidth / 2 + fi;
-				ii = ii < 0 ? 0 : (ii > h - 1 ? h - 1 : ii);
+				ii = ii < 0 ? -ii : (ii >= h ? 2 * h - ii - 1 : ii);
 
 				imgcoeff = src[ii * src_px_stride + j];
 
@@ -569,7 +509,7 @@ void vif_filter1d_s(const float *f, const float *src, float *dst, int w, int h, 
 				fcoeff = f[fj];
 
 				jj = j - fwidth / 2 + fj;
-				jj = jj < 0 ? 0 : (jj >= w ? w - 1 : jj);
+				jj = jj < 0 ? -jj : (jj >= w ? 2 * w - jj - 1 : jj);
 
 				imgcoeff = tmp[jj];
 
@@ -602,7 +542,7 @@ void vif_filter1d_d(const double *f, const double *src, double *dst, int w, int 
 				fcoeff = f[fi];
 
 				ii = i - fwidth / 2 + fi;
-				ii = ii < 0 ? 0 : (ii > h - 1 ? h - 1 : ii);
+				ii = ii < 0 ? -ii : (ii >= h ? 2 * h - ii - 1 : ii);
 
 				imgcoeff = src[ii * src_px_stride + j];
 
@@ -620,7 +560,7 @@ void vif_filter1d_d(const double *f, const double *src, double *dst, int w, int 
 				fcoeff = f[fj];
 
 				jj = j - fwidth / 2 + fj;
-				jj = jj < 0 ? 0 : (jj > w - 1 ? w - 1 : jj);
+				jj = jj < 0 ? -jj : (jj >= w ? 2 * w - jj - 1 : jj);
 
 				imgcoeff = tmp[jj];
 
@@ -655,8 +595,8 @@ void vif_filter2d_s(const float *f, const float *src, float *dst, int w, int h, 
 					ii = i - fwidth / 2 + fi;
 					jj = j - fwidth / 2 + fj;
 
-					ii = ii < 0 ? 0 : (ii > h - 1 ? h - 1 : ii);
-					jj = jj < 0 ? 0 : (jj > w - 1 ? w - 1 : jj);
+					ii = ii < 0 ? -ii : (ii >= h ? 2 * h - ii - 1 : ii);
+					jj = jj < 0 ? -jj : (jj >= w ? 2 * w - jj - 1 : jj);
 
 					imgcoeff = src[ii * src_px_stride + jj];
 
@@ -692,8 +632,8 @@ void vif_filter2d_d(const double *f, const double *src, double *dst, int w, int 
 					ii = i - fwidth / 2 + fi;
 					jj = j - fwidth / 2 + fj;
 
-					ii = ii < 0 ? 0 : (ii > h - 1 ? h - 1 : ii);
-					jj = jj < 0 ? 0 : (jj > w - 1 ? w - 1 : jj);
+					ii = ii < 0 ? -ii : (ii >= h ? 2 * h - ii - 1 : ii);
+					jj = jj < 0 ? -jj : (jj >= w ? 2 * w - jj - 1 : jj);
 
 					imgcoeff = src[ii * src_px_stride + jj];
 

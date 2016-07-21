@@ -40,8 +40,8 @@ class TestTrainOnDataset(unittest.TestCase):
         self.train_fassembler = train_fassembler
         self.assertTrue(os.path.exists(self.output_model_filepath))
         self.assertItemsEqual(train_stats['ys_label_pred'],
-                                [91.707522376672316, 58.277822562766268,
-                                 91.707521620497104, 88.307134410232536])
+                                [90.753010402770798, 59.223801498461015,
+                                 90.753011435798058, 89.270176556597008])
 
 if __name__ == '__main__':
     unittest.main()

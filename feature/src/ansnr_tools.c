@@ -149,7 +149,9 @@ void ansnr_filter1d_s(const float *f, const float *src, float *dst, int w, int h
 				ii = ii < 0 ? 0 : (ii > h - 1 ? h - 1 : ii);
 				imgcoeff = src[ii * src_px_stride + j];
 #else
-				imgcoeff = (ii < 0 || ii > h - 1) ? 0 : src[ii * src_px_stride + j];
+				if (ii < 0) ii = -ii;
+				else if (ii >= h) ii = 2 * h - ii - 1;
+				imgcoeff = src[ii * src_px_stride + j];
 #endif
 				accum += fcoeff * imgcoeff;
 			}
@@ -169,7 +171,9 @@ void ansnr_filter1d_s(const float *f, const float *src, float *dst, int w, int h
 				jj = jj < 0 ? 0 : (jj > w - 1 ? w - 1 : jj);
 				imgcoeff = tmp[jj];
 #else
-				imgcoeff = (jj < 0 || jj > w - 1) ? 0 : tmp[jj];
+				if (jj < 0) jj = -jj;
+				else if (jj >= w) jj = 2 * w - jj - 1;
+				imgcoeff = tmp[jj];
 #endif
 				accum += fcoeff * imgcoeff;
 			}
@@ -204,7 +208,9 @@ void ansnr_filter1d_d(const double *f, const double *src, double *dst, int w, in
 				ii = ii < 0 ? 0 : (ii > h - 1 ? h - 1 : ii);
 				imgcoeff = src[ii * src_px_stride + j];
 #else
-				imgcoeff = (ii < 0 || ii > h - 1) ? 0 : src[ii * src_px_stride + j];
+				if (ii < 0) ii = -ii;
+				else if (ii >= h) ii = 2 * h - ii - 1;
+				imgcoeff = src[ii * src_px_stride + j];
 #endif
 				accum += fcoeff * imgcoeff;
 			}
@@ -224,7 +230,9 @@ void ansnr_filter1d_d(const double *f, const double *src, double *dst, int w, in
 				jj = jj < 0 ? 0 : (jj > w - 1 ? w - 1 : jj);
 				imgcoeff = tmp[jj];
 #else
-				imgcoeff = (jj < 0 || jj > w - 1) ? 0 : tmp[jj];
+				if (jj < 0) jj = -jj;
+				else if (jj >= w) jj = 2 * w - jj - 1;
+				imgcoeff = tmp[jj];
 #endif
 				accum += fcoeff * imgcoeff;
 			}
@@ -261,7 +269,11 @@ void ansnr_filter2d_s(const float *f, const float *src, float *dst, int w, int h
 					jj = jj < 0 ? 0 : (jj > w - 1 ? w - 1 : jj);
 					imgcoeff = src[ii * src_px_stride + jj];
 #else
-					imgcoeff = (ii < 0 || ii > h - 1 || jj < 0 || jj > w - 1) ? 0 : src[ii * src_px_stride + jj];
+					if (ii < 0) ii = -ii;
+					else if (ii >= h) ii = 2 * h - ii - 1;
+					if (jj < 0) jj = -jj;
+					else if (jj >= w) jj = 2 * w - jj - 1;
+					imgcoeff = src[ii * src_px_stride + jj];
 #endif
 					accum_inner += fcoeff * imgcoeff;
 				}
@@ -299,7 +311,11 @@ void ansnr_filter2d_d(const double *f, const double *src, double *dst, int w, in
 					jj = jj < 0 ? 0 : (jj > w - 1 ? w - 1 : jj);
 					imgcoeff = src[ii * src_px_stride + jj];
 #else
-					imgcoeff = (ii < 0 || ii > h - 1 || jj < 0 || jj > w - 1) ? 0 : src[ii * src_px_stride + jj];
+					if (ii < 0) ii = -ii;
+					else if (ii >= h) ii = 2 * h - ii - 1;
+					if (jj < 0) jj = -jj;
+					else if (jj >= w) jj = 2 * w - jj - 1;
+					imgcoeff = src[ii * src_px_stride + jj];
 #endif
 					accum_inner += fcoeff * imgcoeff;
 				}

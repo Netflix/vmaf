@@ -31,7 +31,7 @@
 /* #define VIF_OPT_DEBUG_DUMP */
 
 /* Whether to keep the borders of the image after filtering. */
-/* #define VIF_OPT_HANDLE_BORDERS */
+#define VIF_OPT_HANDLE_BORDERS
 
 /* Whether to use a 1-D formulation of the Gaussian filter. */
 #define VIF_OPT_FILTER_1D

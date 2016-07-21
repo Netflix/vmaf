@@ -69,7 +69,7 @@ class BasicResult(object):
                 lambda (frame_num, scores): "Frame {}: ".format(frame_num) + (
                 ", ".join(
                     map(
-                        lambda (score_key, score): "{score_key}:{score:.3f}".
+                        lambda (score_key, score): "{score_key}:{score:.6f}".
                             format(score_key=score_key, score=score),
                         zip(list_score_key, scores))
                 )),
@@ -83,7 +83,7 @@ class BasicResult(object):
         list_score_key = self.get_ordered_list_score_key()
         str_aggregate = "Aggregate: " + (", ".join(
             map(
-                lambda (score_key, score): "{score_key}:{score:.3f}".
+                lambda (score_key, score): "{score_key}:{score:.6f}".
                     format(score_key=score_key, score=score),
                 zip(
                     list_score_key, map(
