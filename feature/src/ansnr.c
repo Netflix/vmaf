@@ -116,7 +116,7 @@ int compute_ansnr(const number_t *ref, const number_t *dis, int w, int h, int re
 	ansnr_mse(ref_filtr, ref_filtd, 0, &noise_min, w, h, buf_stride, buf_stride);
 	*score = 10.0 * log10(noise / (noise - noise_min));
 #else
-	*score = 10.0 * log10(sig / noise);
+	*score = noise==0 ? psnr_max : 10.0 * log10(sig / noise);
 #endif
 
 	double eps = 1e-10;
@@ -288,7 +288,7 @@ int ansnr(const char *ref_path, const char *dis_path, int w, int h, const char *
 			goto fail_or_end;
 		}
 
-		// print
+
 		printf("ansnr: %d %f\n", frm_idx, score);
 		fflush(stdout);
 		printf("anpsnr: %d %f\n", frm_idx, score_psnr);
