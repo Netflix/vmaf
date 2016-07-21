@@ -346,6 +346,22 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['MS_SSIM_feature_ms_ssim_c_scale4_score'], 1., places=4)
         self.assertAlmostEqual(results[1]['MS_SSIM_feature_ms_ssim_s_scale4_score'], 1., places=4)
 
+    def test_run_vmaf_fextractor_blockproc(self):
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324,
+                                  'blockproc_block_wh': (100, 100)})
+
+        with self.assertRaises(AssertionError):
+            self.fextractor = VmafFeatureExtractor(
+                [asset],
+                None, fifo_mode=True)
+            self.fextractor.run()
+
 class ParallelFeatureExtractorTest(unittest.TestCase):
 
     def tearDown(self):

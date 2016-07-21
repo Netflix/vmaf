@@ -9,7 +9,6 @@ from core.feature_assembler import FeatureAssembler
 from core.feature_extractor import VmafFeatureExtractor, FeatureExtractor, \
     MomentFeatureExtractor
 
-
 class FeatureAssemblerTest(unittest.TestCase):
 
     def tearDown(self):
@@ -18,8 +17,9 @@ class FeatureAssemblerTest(unittest.TestCase):
         pass
 
     def test_get_fextractor_subclasses(self):
+        from core.noref_feature_extractor import NorefFeatureExtractor
         fextractor_subclasses = FeatureExtractor.get_subclasses_recursively()
-        self.assertEquals(len(fextractor_subclasses), 5)
+        self.assertEquals(len(fextractor_subclasses), 7)
         self.assertTrue(VmafFeatureExtractor in fextractor_subclasses)
         self.assertTrue(MomentFeatureExtractor in fextractor_subclasses)
 

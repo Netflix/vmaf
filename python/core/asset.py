@@ -328,6 +328,11 @@ class Asset(WorkdirEnabled):
                 s += "_"
             s += "{}".format(self.resampling_type)
 
+        if self.blockproc_params is not None:
+            if s != "":
+                s += "_"
+            s += "blk{}".format('_'.join(str(x) for x in self.blockproc_params))
+
         return s
 
     def to_string(self):
@@ -492,3 +497,54 @@ class Asset(WorkdirEnabled):
             self.asset_dict['use_path_as_workpath'] = 1
         else:
             self.asset_dict['use_path_as_workpath'] = 0
+
+    @property
+    def blockproc_params(self):
+        """
+        return None (if no block processing involved, so that the processing
+        will be frame-by-frame) or a tuple of four numbers (block_w, block_h,
+        block_shift_w, block_shift_h)
+        """
+        if 'blockproc_block_wh' in self.asset_dict \
+                and 'blockproc_shift_wh' not in self.asset_dict:
+            block_w, block_h = self.asset_dict['blockproc_block_wh']
+            shift_w = block_w
+            shift_h = block_h
+            return block_w, block_h, shift_w, shift_h
+        elif 'blockproc_block_wh' in self.asset_dict \
+                and 'blockproc_shift_wh' in self.asset_dict:
+            block_w, block_h = self.asset_dict['blockproc_block_wh']
+            shift_w, shift_h = self.asset_dict['blockproc_shift_wh']
+            return block_w, block_h, shift_w, shift_h
+        else:
+            return None
+
+
+class NorefAsset(Asset):
+    """
+    NorefAsset is similar to Asset except that it does not have a reference
+    video path ref_path.
+    """
+
+    # ==== constructor ====
+
+    def __init__(self, dataset, content_id, asset_id,
+                 dis_path,
+                 asset_dict,
+                 workdir_root=config.ROOT + "/workspace/workdir"):
+        """
+        :param dataset
+        :param content_id: ID of content the asset correspond to within dataset
+        :param asset_id: ID of asset
+        :param dis_path: path to distorted video
+        :param asset_dict: dictionary with additional asset properties
+        :param workdir_root:
+        :return:
+        """
+        super(Asset, self).__init__(workdir_root)
+        self.dataset = dataset
+        self.content_id = content_id
+        self.asset_id = asset_id
+        self.ref_path = dis_path # just assign ref_path same as dis_path
+        self.dis_path = dis_path
+        self.asset_dict = asset_dict
