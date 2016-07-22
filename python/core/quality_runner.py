@@ -4,6 +4,7 @@ __license__ = "Apache, Version 2.0"
 import sys
 import subprocess
 import re
+import hashlib
 
 import numpy as np
 
@@ -57,7 +58,15 @@ class QualityRunner(Executor):
     def _read_result(self, asset):
         result = {}
         result.update(self._get_quality_scores(asset))
-        return Result(asset, self.executor_id, result)
+        executor_id = self.executor_id
+        if self.optional_dict is not None:
+            executor_id += '_{}'.format(
+                '_'.join(
+                    map(lambda k: '{k}_{v}'.format(k=k,v=self.optional_dict[k]),
+                        sorted(self.optional_dict.keys()))
+                )
+            ) # include optional_dict info in executor_id for result store
+        return Result(asset, executor_id, result)
 
     @classmethod
     def get_scores_key(cls):

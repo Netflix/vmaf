@@ -5,6 +5,7 @@ import re
 import subprocess
 import numpy as np
 import ast
+import hashlib
 
 import config
 from core.executor import Executor
@@ -27,21 +28,18 @@ class FeatureExtractor(Executor):
     For an example, follow VmafFeatureExtractor.
     """
 
-    def _assert_args(self):
-        super(FeatureExtractor, self)._assert_args()
-
-        # for feature extractor, if ResultStore is used (not None), then
-        # it cannot use optional_dict. This is because setting optional_dict
-        # may change results, but the key used in ResultStore is currently not
-        # a function of optional_dict yet (it is only a function of asset).
-        # TODO: if want to lift this constraint, make ResultStore key a fuction
-        # of optional_dict
-        assert not (self.optional_dict is not None and self.result_store is not None)
-
     def _read_result(self, asset):
         result = {}
         result.update(self._get_feature_scores(asset))
-        return Result(asset, self.executor_id, result)
+        executor_id = self.executor_id
+        if self.optional_dict is not None:
+            executor_id += '_{}'.format(
+                '_'.join(
+                    map(lambda k: '{k}_{v}'.format(k=k,v=self.optional_dict[k]),
+                        sorted(self.optional_dict.keys()))
+                )
+            ) # include optional_dict info in executor_id for result store
+        return Result(asset, executor_id, result)
 
     @classmethod
     def get_scores_key(cls, atom_feature):

@@ -74,15 +74,18 @@ class FileSystemResultStore(ResultStore):
             shutil.rmtree(self.result_store_dir)
 
     def _get_result_file_path(self, result):
+        str_to_hash = str(result.asset)
+
         return "{dir}/{executor_id}/{dataset}/{content_id}/{str}".format(
             dir=self.result_store_dir, executor_id=result.executor_id,
             dataset=result.asset.dataset,
             content_id=result.asset.content_id,
-            str=hashlib.sha1(str(result.asset)).hexdigest())
+            str=hashlib.sha1(str_to_hash).hexdigest())
 
     def _get_result_file_path2(self, asset, executor_id):
+        str_to_hash = str(asset)
         return "{dir}/{executor_id}/{dataset}/{content_id}/{str}".format(
             dir=self.result_store_dir, executor_id=executor_id,
             dataset=asset.dataset,
             content_id=asset.content_id,
-            str=hashlib.sha1(str(asset)).hexdigest())
+            str=hashlib.sha1(str_to_hash).hexdigest())
