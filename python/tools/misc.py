@@ -128,6 +128,9 @@ def make_absolute_path(path, current_dir):
     else:
         return current_dir + path
 
+def empty_object():
+    return type('', (), {})()
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
