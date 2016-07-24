@@ -18,16 +18,9 @@ from core.mixin import TypeVersionEnabled
 class TrainTestModel(TypeVersionEnabled):
 
     def __init__(self, param_dict, logger=None):
-        """
-        :param param_dict: contains input parameters
-        :param logger:
-        :return:
-        """
         TypeVersionEnabled.__init__(self)
-
         self.param_dict = param_dict
         self.logger = logger
-
         self.model_dict = {}
 
     @property
@@ -35,18 +28,13 @@ class TrainTestModel(TypeVersionEnabled):
         return TypeVersionEnabled.get_type_version_string(self)
 
     def _assert_trained(self):
-
         assert 'model_type' in self.model_dict # need this to recover class
-
         assert 'feature_names' in self.model_dict
-
         assert 'model' in self.model_dict
-
         assert 'norm_type' in self.model_dict
 
         norm_type = self.model_dict['norm_type']
-        assert (   norm_type == 'none'
-                or norm_type == 'linear_rescale')
+        assert norm_type == 'none' or norm_type == 'linear_rescale'
 
         if norm_type == 'linear_rescale':
             assert 'slopes' in self.model_dict
@@ -57,17 +45,12 @@ class TrainTestModel(TypeVersionEnabled):
         Useful for adding extra info to model before saving. For example,
         save feature_dict to model so that when the model is loaded by a
         QualityRunner, it knows when features to extract.
-        :param key:
-        :param value:
-        :return:
         """
         self.model_dict[key] = value
 
     def get_appended_info(self, key):
         """
         Retrieve info added via the append_info method.
-        :param key:
-        :return:
         """
         return self.model_dict[key] if key in self.model_dict else None
 
@@ -129,17 +112,14 @@ class TrainTestModel(TypeVersionEnabled):
         self.model_dict['model'] = value
 
     def to_file(self, filename):
-
         self._assert_trained()
         info_to_save = {'param_dict': self.param_dict,
                         'model_dict': self.model_dict}
-
         with open(filename, 'wb') as file:
             pickle.dump(info_to_save, file)
 
     @staticmethod
     def from_file(filename, logger):
-
         with open(filename, 'rb') as file:
             info_loaded = pickle.load(file)
 
@@ -149,6 +129,7 @@ class TrainTestModel(TypeVersionEnabled):
             train_test_model = LibsvmnusvrTrainTestModel(param_dict={}, logger=logger)
             train_test_model.param_dict = info_loaded['param_dict']
             train_test_model.model_dict = info_loaded['model_dict']
+
             # == special handling of libsvmnusvr: load .model differently ==
             model = LibsvmnusvrTrainTestModel.svmutil.svm_load_model(filename + '.model')
             train_test_model.model_dict['model'] = model
@@ -171,19 +152,15 @@ class TrainTestModel(TypeVersionEnabled):
         return ys_label_pred
 
     def predict(self, xs):
-
         self._assert_trained()
 
         for name in self.feature_names:
             assert name in xs
 
-        xs_2d = None
+        xs_2d = []
         for name in self.feature_names:
-            if xs_2d is None:
-                xs_2d = np.matrix(xs[name]).T
-            else:
-                xs_2d = np.hstack((xs_2d, np.matrix(xs[name]).T))
-        xs_2d = np.array(xs_2d)
+            xs_2d.append(np.array(xs[name]))
+        xs_2d = np.vstack(xs_2d).T
 
         # normalize xs
         xs_2d = self.normalize_xs(xs_2d)
@@ -285,17 +262,6 @@ class TrainTestModel(TypeVersionEnabled):
 
                 ax.scatter(curr_ys_label, curr_ys_label_pred,
                            label=curr_content_id, color=colors[idx % len(colors)])
-
-                # lab = curr_content_id
-                # if lab == 11:
-                #     lab = 'CG Animation'
-                # elif lab == 7:
-                #     lab = 'TV Drama'
-                # elif lab == 31:
-                #     lab = 'High Noise'
-                # ax.plot(curr_ys_label, curr_ys_label_pred, 'x-',
-                #            label=lab, color=colors[idx % len(colors)])
-
     @staticmethod
     def get_objective_score(result, type='SRCC'):
         """
@@ -337,9 +303,9 @@ class TrainTestModel(TypeVersionEnabled):
 
         self.feature_names = feature_names
 
-        xs_2d = []
+        xs_2d = None
         for name in feature_names:
-            if xs_2d == []:
+            if xs_2d is None:
                 xs_2d = np.matrix(xys[name]).T
             else:
                 xs_2d = np.hstack((xs_2d, np.matrix(xys[name]).T))
@@ -354,7 +320,6 @@ class TrainTestModel(TypeVersionEnabled):
         xys_2d = self._normalize_xys(xys_2d)
 
         model = self._train(self.param_dict, xys_2d)
-
         self.model = model
 
     def _calculate_normalization_params(self, xys_2d):
@@ -435,9 +400,10 @@ class TrainTestModel(TypeVersionEnabled):
         feature_names = results_or_df[0].get_ordered_list_score_key()
         xs = {}
         for name in feature_names:
-            _results = map(lambda i:results_or_df[i], indexs) \
-                if indexs is not None \
-                else results_or_df
+            if indexs is not None:
+                _results = map(lambda i:results_or_df[i], indexs)
+            else:
+                _results = results_or_df
             xs[name] = np.array(map(lambda result: result[name], _results))
         return xs
 
@@ -469,9 +435,12 @@ class TrainTestModel(TypeVersionEnabled):
             return cls.get_ys_from_dataframe(df=results_or_df, rows=indexs)
 
         ys = {}
-        _results = map(lambda i:results_or_df[i], indexs) \
-            if indexs is not None \
-            else results_or_df
+
+        if indexs is not None:
+            _results = map(lambda i:results_or_df[i], indexs)
+        else:
+            _results = results_or_df
+
         ys['label'] = \
             np.array(map(lambda result: result.asset.groundtruth, _results))
         ys['content_id'] = \
@@ -577,8 +546,10 @@ class LibsvmnusvrTrainTestModel(TrainTestModel):
     sys.path.append(config.ROOT + "/libsvm/python")
     import svmutil
 
-    # override
     def to_file(self, filename):
+        """
+        override TrainTestModel.to_file(self, filename)
+        """
 
         self._assert_trained()
 
@@ -622,17 +593,19 @@ class LibsvmnusvrTrainTestModel(TrainTestModel):
 
         return train_test_model
 
-    # override
     @staticmethod
     def delete(filename):
+        """
+        override TrainTestModel.delete(filename)
+        """
         if os.path.exists(filename):
             os.remove(filename)
         if os.path.exists(filename + '.model'):
             os.remove(filename + '.model')
 
-    # override
     @classmethod
     def _predict(cls, model, xs_2d):
+        # override TrainTestModel._predict(cls, model, xs_2d)
         f = list(xs_2d)
         for i, item in enumerate(f):
             f[i] = list(item)
