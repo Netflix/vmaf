@@ -49,8 +49,17 @@ class Executor(TypeVersionEnabled):
 
     @property
     def executor_id(self):
-        return TypeVersionEnabled.get_type_version_string(self)
+        executor_id_ = TypeVersionEnabled.get_type_version_string(self)
 
+        if self.optional_dict is not None:
+            executor_id_ += '_{}'.format(
+                '_'.join(
+                    map(lambda k: '{k}_{v}'.format(k=k,v=self.optional_dict[k]),
+                        sorted(self.optional_dict.keys()))
+                )
+            ) # include optional_dict info in executor_id for result store
+
+        return executor_id_
     def run(self):
         """
         Do all the calculation here.

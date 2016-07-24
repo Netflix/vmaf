@@ -71,6 +71,6 @@ class TypeVersionEnabled(object):
         subclasses = cls.__subclasses__()
         subsubclasses = []
         for subclass in subclasses:
-            subsubclasses += subclass.__subclasses__()
+            subsubclasses += subclass.get_subclasses_recursively()
         return subclasses + subsubclasses
 

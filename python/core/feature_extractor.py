@@ -32,13 +32,6 @@ class FeatureExtractor(Executor):
         result = {}
         result.update(self._get_feature_scores(asset))
         executor_id = self.executor_id
-        if self.optional_dict is not None:
-            executor_id += '_{}'.format(
-                '_'.join(
-                    map(lambda k: '{k}_{v}'.format(k=k,v=self.optional_dict[k]),
-                        sorted(self.optional_dict.keys()))
-                )
-            ) # include optional_dict info in executor_id for result store
         return Result(asset, executor_id, result)
 
     @classmethod
