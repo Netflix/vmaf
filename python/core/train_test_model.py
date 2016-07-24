@@ -198,6 +198,10 @@ class TrainTestModel(TypeVersionEnabled):
     @classmethod
     def get_stats(cls, ys_label, ys_label_pred):
 
+        # cannot have None
+        assert all(x is not None for x in ys_label)
+        assert all(x is not None for x in ys_label_pred)
+
         # do adustment with sigmoid function
         ys_label_pred_adjusted = cls.sigmoid_adjust(ys_label_pred, ys_label)
 
@@ -220,8 +224,11 @@ class TrainTestModel(TypeVersionEnabled):
 
     @staticmethod
     def format_stats(stats):
-        return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f})'.format(
-            srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
+        if stats is None:
+            return '(Invalid Stats)'
+        else:
+            return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f})'.format(
+                srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
 
     @staticmethod
     def format_stats2(stats):
