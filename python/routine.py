@@ -119,14 +119,10 @@ def test_on_dataset(test_dataset, runner_class, ax,
             ax.set_xlabel('DMOS')
             ax.set_ylabel("Predicted Score")
             ax.grid()
-            # ax.set_title( "Dataset: {dataset}, Runner: {runner}\n{stats}".format(
             ax.set_title( "{runner}\n{stats}".format(
                 dataset=test_assets[0].dataset,
-                # runner=results[0].executor_id,
                 runner=runner_class.TYPE,
                 stats=TrainTestModel.format_stats(stats),
-                # stats="",
-                # stats=TrainTestModel.format_stats3(stats),
             ))
 
     except Exception as e:
