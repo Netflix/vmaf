@@ -62,7 +62,7 @@ class Executor(TypeVersionEnabled):
         return executor_id_
     def run(self):
         """
-        Do all the calculation here.
+        Do all the computation here.
         :return:
         """
         if self.logger:
@@ -101,16 +101,7 @@ class Executor(TypeVersionEnabled):
         #        == asset.ref_width_height \
         #        == asset.dis_width_height
 
-        # 2) for general case, won't allow block processing, unless otherwise stated
-        cls._assert_blockproc(asset)
-
         pass
-
-    @staticmethod
-    def _assert_blockproc(asset):
-        # by default, asset with block processing is not allowed, unless being
-        # overridden
-        assert asset.blockproc_params is None
 
     def _wait_for_workfiles(self, asset):
         # wait til workfile paths being generated
