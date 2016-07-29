@@ -137,7 +137,7 @@ class Executor(TypeVersionEnabled):
             "Distorted path {} does not exist.".format(asset.dis_path)
 
     def _run_on_asset(self, asset):
-        # Wraper around the essential function _run_and_generate_log_file, to
+        # Wraper around the essential function _generate_result, to
         # do housekeeping work including 1) asserts of asset, 2) skip run if
         # log already exist, 3) creating fifo, 4) delete work file and dir
 
@@ -201,7 +201,7 @@ class Executor(TypeVersionEnabled):
 
             self._prepare_log_file(asset)
 
-            self._run_and_generate_log_file(asset)
+            self._generate_result(asset)
 
             # clean up workfiles
             if self.delete_workdir:

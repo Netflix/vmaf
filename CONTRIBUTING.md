@@ -121,7 +121,7 @@ A derived class of FeatureExtractor must:
   - Override *TYPE* and *VERSION* fields.
   - Override *ATOM_FEATURES* field.
   - Optionally, override *DERIVED_FEATURES* field. These are the features that are 'derived' from the ATOM_FEATURES.
-  - Override *_run_and_generate_log_file(self, asset)*, which call a command-line executable and generate feature scores in a log file.
+  - Override *_generate_result(self, asset)*, which call a command-line executable and generate feature scores in a log file.
   - Optionally, override *_get_feature_scores(self, asset)*, which read the feature scores from the log file, and return the scores in a dictionary format. FeatureExtractor base class provides a template _get_feature_scores method, which has been used by VmafFeatureExtractor as an example. If your log file format is incompatible with VmafFeatureExtractor's, consider overriding this method for your custom case.
   - Optionally, if you have override *DERIVED FEATURES* field, also override *_post_process_result(cls, result)* and put the calculation of the derived attom features here.
 
@@ -152,7 +152,7 @@ There are two ways to create a derived class of QualityRunner:
 The first way is to call a command-line exectuable directly, very similar to what FeatureExtractor does. A derived class must:
     
   - Override *TYPE* and *VERSION* fields.
-  - Override *_run_and_generate_log_file(self, asset)*, which call a command-line executable and generate quality scores in a log file.
+  - Override *_generate_result(self, asset)*, which call a command-line executable and generate quality scores in a log file.
   - Override *_get_quality_scores(self, asset)*, which read the quality scores from the log file, and return the scores in a dictionary format.
   - If necessary, override *_remove_log(self, asset)* if *Executor._remove_log(self, asset)* does not work for you (sometimes the command-line executable could generate output log files in some different format, such as in multiple files).
     

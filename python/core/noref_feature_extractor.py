@@ -94,7 +94,7 @@ class NorefFeatureExtractor(FeatureExtractor):
 
             self._prepare_log_file(asset)
 
-            self._run_and_generate_log_file(asset)
+            self._generate_result(asset)
 
             # clean up workfiles
             if self.delete_workdir:
@@ -148,7 +148,7 @@ class MomentNorefFeatureExtractor(NorefFeatureExtractor):
 
     DERIVED_ATOM_FEATURES = ['var', ]
 
-    def _run_and_generate_log_file(self, asset):
+    def _generate_result(self, asset):
         # routine to call the command-line executable and generate feature
         # scores in the log file.
 

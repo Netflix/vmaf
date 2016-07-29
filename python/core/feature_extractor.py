@@ -21,7 +21,7 @@ class FeatureExtractor(Executor):
 
     A derived class of FeatureExtractor must:
         1) Override TYPE and VERSION
-        2) Override _run_and_generate_log_file(self, asset), which call a
+        2) Override _generate_result(self, asset), which call a
         command-line executable and generate feature scores in a log file.
         3) Override _get_feature_scores(self, asset), which read the feature
         scores from the log file, and return the scores in a dictionary format.
@@ -107,7 +107,7 @@ class VmafFeatureExtractor(FeatureExtractor):
 
     ADM_CONSTANT = 1000
 
-    def _run_and_generate_log_file(self, asset):
+    def _generate_result(self, asset):
         # routine to call the command-line executable and generate feature
         # scores in the log file.
 
@@ -225,7 +225,7 @@ class PsnrFeatureExtractor(FeatureExtractor):
 
     PSNR = config.ROOT + "/feature/psnr"
 
-    def _run_and_generate_log_file(self, asset):
+    def _generate_result(self, asset):
         # routine to call the command-line executable and generate quality
         # scores in the log file.
 
@@ -263,7 +263,7 @@ class MomentFeatureExtractor(FeatureExtractor):
 
     MOMENT = config.ROOT + "/feature/moment"
 
-    def _run_and_generate_log_file(self, asset):
+    def _generate_result(self, asset):
         # routine to call the command-line executable and generate feature
         # scores in the log file.
 
@@ -365,7 +365,7 @@ class SsimFeatureExtractor(FeatureExtractor):
 
     SSIM = config.ROOT + "/feature/ssim"
 
-    def _run_and_generate_log_file(self, asset):
+    def _generate_result(self, asset):
         # routine to call the command-line executable and generate quality
         # scores in the log file.
 
@@ -405,7 +405,7 @@ class MsSsimFeatureExtractor(FeatureExtractor):
 
     MS_SSIM = config.ROOT + "/feature/ms_ssim"
 
-    def _run_and_generate_log_file(self, asset):
+    def _generate_result(self, asset):
         # routine to call the command-line executable and generate quality
         # scores in the log file.
 

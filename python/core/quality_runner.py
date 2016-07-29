@@ -28,7 +28,7 @@ class QualityRunner(Executor):
     a) Call a command-line exectuable directly, very similar to what
     FeatureExtractor does. You must:
         1) Override TYPE and VERSION
-        2) Override _run_and_generate_log_file(self, asset), which call a
+        2) Override _generate_result(self, asset), which call a
         command-line executable and generate quality scores in a log file.
         3) Override _get_quality_scores(self, asset), which read the quality
         scores from the log file, and return the scores in a dictionary format.
@@ -77,7 +77,7 @@ class PsnrQualityRunner(QualityRunner):
 
     PSNR = config.ROOT + "/feature/psnr"
 
-    def _run_and_generate_log_file(self, asset):
+    def _generate_result(self, asset):
         # routine to call the command-line executable and generate quality
         # scores in the log file.
 
