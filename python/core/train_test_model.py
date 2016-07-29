@@ -401,7 +401,7 @@ class TrainTestModel(TypeVersionEnabled):
         if aggregate:
             feature_names = results[0].get_ordered_list_score_key()
         else:
-            feature_names = results[0]._get_ordered_list_scores_key()
+            feature_names = results[0].get_ordered_list_scores_key()
         xs = {}
         for name in feature_names:
             if indexs is not None:
@@ -420,7 +420,7 @@ class TrainTestModel(TypeVersionEnabled):
         :param result: one BasicResult
         :param indexs: indices of results to be used
         """
-        feature_names = result._get_ordered_list_scores_key()
+        feature_names = result.get_ordered_list_scores_key()
         new_feature_names = result.get_ordered_list_score_key()
         xs = {}
         for name, new_name in zip(feature_names, new_feature_names):

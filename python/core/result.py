@@ -47,7 +47,7 @@ class BasicResult(object):
                 return self.aggregate_method(scores)
         raise KeyError(error)
 
-    def _get_ordered_list_scores_key(self):
+    def get_ordered_list_scores_key(self):
         # e.g. ['VMAF_scores', 'VMAF_vif_scores']
         list_scores_key = filter(lambda key: re.search(r"_scores$", key),
                                  self.result_dict.keys())
@@ -56,11 +56,11 @@ class BasicResult(object):
 
     def get_ordered_list_score_key(self):
         # e.g. ['VMAF_score', 'VMAF_vif_score']
-        list_scores_key = self._get_ordered_list_scores_key()
+        list_scores_key = self.get_ordered_list_scores_key()
         return map(lambda scores_key: scores_key[:-1], list_scores_key)
 
     def _get_perframe_score_str(self):
-        list_scores_key = self._get_ordered_list_scores_key()
+        list_scores_key = self.get_ordered_list_scores_key()
         list_score_key = self.get_ordered_list_score_key()
         list_scores = map(lambda key: self.result_dict[key], list_scores_key)
         str_perframe = "\n".join(
@@ -119,7 +119,7 @@ class Result(BasicResult):
             return False
         if self.executor_id != other.executor_id:
             return False
-        list_scores_key = self._get_ordered_list_scores_key()
+        list_scores_key = self.get_ordered_list_scores_key()
         for scores_key in list_scores_key:
             if self.result_dict[scores_key] != other.result_dict[scores_key]:
                 return False
@@ -197,7 +197,7 @@ class Result(BasicResult):
         import pandas as pd
         asset = self.asset
         executor_id = self.executor_id
-        list_scores_key = self._get_ordered_list_scores_key()
+        list_scores_key = self.get_ordered_list_scores_key()
         list_scores = map(lambda key: self.result_dict[key], list_scores_key)
 
         rows = []
