@@ -3,14 +3,31 @@ __license__ = "Apache, Version 2.0"
 
 import unittest
 
-import pandas as pd
-
 from core.train_test_model import RandomForestTrainTestModel, LibsvmnusvrTrainTestModel
 from core.cross_validation import ModelCrossValidation
 import config
-
+from core.executor import run_executors_in_parallel
+from core.noref_feature_extractor import MomentNorefFeatureExtractor
+from routine import read_dataset
+from tools.misc import import_python_file
 
 class FeatureCrossValidationTest(unittest.TestCase):
+
+    def setUp(self):
+
+        train_dataset_path = config.ROOT + '/python/test/resource/BSDS500_dataset.py'
+        train_dataset = import_python_file(train_dataset_path)
+        train_assets = read_dataset(train_dataset)
+
+        _, self.features = run_executors_in_parallel(
+            MomentNorefFeatureExtractor,
+            train_assets,
+            fifo_mode=True,
+            delete_workdir=True,
+            parallelize=True,
+            result_store=None,
+            optional_dict=None,
+        )
 
     def test_run_cross_validation(self):
 
@@ -19,20 +36,16 @@ class FeatureCrossValidationTest(unittest.TestCase):
         train_test_model_class = RandomForestTrainTestModel
         model_param = {'norm_type':'normalize', 'random_state': 0}
 
-        feature_df_file = config.ROOT + \
-            "/python/test/resource/sample_feature_extraction_results.json"
-        feature_df = pd.DataFrame.from_dict(eval(open(feature_df_file, "r").read()))
-
-        indices_train = range(250)
-        indices_test = range(250, 300)
+        indices_train = range(5)
+        indices_test = range(5)
 
         output = ModelCrossValidation.run_cross_validation(
-            train_test_model_class, model_param, feature_df,
+            train_test_model_class, model_param, self.features,
             indices_train, indices_test)
-        self.assertAlmostEquals(output['stats']['SRCC'], 0.93493301443051136, places=4)
-        self.assertAlmostEquals(output['stats']['PCC'], 0.9413390374529329, places=4)
-        self.assertAlmostEquals(output['stats']['KENDALL'], 0.78029280419726044, places=4)
-        self.assertAlmostEquals(output['stats']['RMSE'], 0.32357946626958406, places=4)
+        self.assertAlmostEquals(output['stats']['SRCC'], 1.0, places=4)
+        self.assertAlmostEquals(output['stats']['PCC'], 0.98915736773708851, places=4)
+        self.assertAlmostEquals(output['stats']['KENDALL'], 1.0, places=4)
+        self.assertAlmostEquals(output['stats']['RMSE'], 0.26497837611988789, places=4)
         self.assertEquals(output['model'].TYPE, "RANDOMFOREST")
 
     def test_run_kfold_cross_validation_randomforest(self):
@@ -42,17 +55,13 @@ class FeatureCrossValidationTest(unittest.TestCase):
         train_test_model_class = RandomForestTrainTestModel
         model_param = {'norm_type':'normalize', 'random_state': 0}
 
-        feature_df_file = config.ROOT + \
-            "/python/test/resource/sample_feature_extraction_results.json"
-        feature_df = pd.DataFrame.from_dict(eval(open(feature_df_file, "r").read()))
-
         output = ModelCrossValidation.run_kfold_cross_validation(
-            train_test_model_class, model_param, feature_df, 6)
+            train_test_model_class, model_param, self.features, 5)
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.92695443548602008, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.93189074441713937, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.76031309571294092, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.40381451586590256, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.8999999999999998, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.95636260884698576, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.79999999999999982, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.52346177899173219, places=4)
 
     def test_run_kfold_cross_validation_libsvmnusvr(self):
 
@@ -61,17 +70,13 @@ class FeatureCrossValidationTest(unittest.TestCase):
         train_test_model_class = LibsvmnusvrTrainTestModel
         model_param = {'norm_type': 'normalize'}
 
-        feature_df_file = config.ROOT + \
-            "/python/test/resource/sample_feature_extraction_results.json"
-        feature_df = pd.DataFrame.from_dict(eval(open(feature_df_file, "r").read()))
-
         output = ModelCrossValidation.run_kfold_cross_validation(
-            train_test_model_class, model_param, feature_df, 6)
+            train_test_model_class, model_param, self.features, 5)
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.92387451180595015, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.92481147926825724, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.75416215405673581, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.42231775639097513, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 1.0, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.95877329342682471, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 1.0, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.49959985942859997, places=4)
 
     def test_run_kfold_cross_validation_with_list_input(self):
 
@@ -80,19 +85,14 @@ class FeatureCrossValidationTest(unittest.TestCase):
         train_test_model_class = RandomForestTrainTestModel
         model_param = {'norm_type':'normalize', 'random_state': 0}
 
-        feature_df_file = config.ROOT + \
-            "/python/test/resource/sample_feature_extraction_results.json"
-        feature_df = pd.DataFrame.from_dict(eval(open(feature_df_file, "r").read()))
-
-        feature_df = feature_df[:200]
         output = ModelCrossValidation.run_kfold_cross_validation(
-            train_test_model_class, model_param, feature_df,
-            [range(0,50), range(130, 200), range(50, 130)])
+            train_test_model_class, model_param, self.features,
+            [[0, 3], [2, 1], [4, ]])
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.90636761259756715, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.90819953685397914, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.72937284548325965, places=3)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.49899297305829415, places=3)
+        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.69999999999999996, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.72607133059769025, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.59999999999999987, places=3)
+        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.1817080521192824, places=3)
 
     def test_unroll_dict_of_lists(self):
         model_param_search_range = {'norm_type':['normalize', 'clip_0to1'],
@@ -163,28 +163,23 @@ class FeatureCrossValidationTest(unittest.TestCase):
             {'norm_type':['normalize'],
              'n_estimators':[10, 90],
              'max_depth':[None, 3],
-             'random_state': [0]
-             }
-
-        feature_df_file = config.ROOT + \
-            "/python/test/resource/sample_feature_extraction_results.json"
-        feature_df = pd.DataFrame.from_dict(eval(open(feature_df_file, "r").read()))
+             'random_state': [0]}
 
         output = ModelCrossValidation.run_nested_kfold_cross_validation(
-            train_test_model_class, model_param_search_range, feature_df, 6)
+            train_test_model_class, model_param_search_range, self.features, 5)
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.92805802153293737, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.94066838465382363, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.76196220071567478, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.37660623901376861, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.9, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.96225772597726533, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.79999999999999982, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.47861603467158437, places=4)
 
         expected_top_model_param = {'norm_type':'normalize',
                                 'n_estimators':90,
                                 'max_depth':None,
                                 'random_state':0
                                 }
-        expected_top_ratio = 0.5
-        # self.assertEquals(output['top_model_param'], expected_top_model_param)
+        expected_top_ratio = 0.6
+        self.assertEquals(output['top_model_param'], expected_top_model_param)
         self.assertEquals(output['top_ratio'], expected_top_ratio)
 
     def test_run_nested_kfold_cross_validation_libsvmnusvr(self):
@@ -200,25 +195,21 @@ class FeatureCrossValidationTest(unittest.TestCase):
              'gamma': [0.0]
              }
 
-        feature_df_file = config.ROOT + \
-            "/python/test/resource/sample_feature_extraction_results.json"
-        feature_df = pd.DataFrame.from_dict(eval(open(feature_df_file, "r").read()))
-
         output = ModelCrossValidation.run_nested_kfold_cross_validation(
-            train_test_model_class, model_param_search_range, feature_df, 6)
+            train_test_model_class, model_param_search_range, self.features, 5)
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.93704238362264514, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.94734024567912978, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.77785381654919195, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.34039563991411448, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 1.0, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.96096817671162149, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 1.0, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.48460918155650223, places=4)
 
-        expected_top_model_param = {'norm_type':'clip_0to1',
+        expected_top_model_param = {'norm_type':'normalize',
                                 'kernel':'rbf',
-                                'nu':1.0,
+                                'nu':0.5,
                                 'C':1,
                                 'gamma':0.0,
                                 }
-        expected_top_ratio = 0.5
+        expected_top_ratio = 0.8
 
         self.assertEquals(output['top_model_param'], expected_top_model_param)
         self.assertEquals(output['top_ratio'], expected_top_ratio)
@@ -229,33 +220,28 @@ class FeatureCrossValidationTest(unittest.TestCase):
 
         train_test_model_class = RandomForestTrainTestModel
         model_param_search_range = \
-            {'norm_type':['normalize'],
+            {'norm_type':['none'],
              'n_estimators':[10, 90],
              'max_depth':[None, 3],
              'random_state': [0]
              }
 
-        feature_df_file = config.ROOT + \
-            "/python/test/resource/sample_feature_extraction_results.json"
-        feature_df = pd.DataFrame.from_dict(eval(open(feature_df_file, "r").read()))
-
-        feature_df = feature_df[:200]
         output = ModelCrossValidation.run_nested_kfold_cross_validation(
-            train_test_model_class, model_param_search_range, feature_df,
-            [range(0,50), range(130, 200), range(50, 130)]
+            train_test_model_class, model_param_search_range, self.features,
+            [[0, 3], [2, 1], [4, ]]
         )
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.92549459243170684, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.93070443071372855, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.76385104263763215, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.43223946862572299, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.7, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.72607133059769058, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.6, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.1817080521192824, places=4)
 
-        expected_top_model_param = {'norm_type':'normalize',
-                                    'n_estimators':90,
-                                    'max_depth':3,
+        expected_top_model_param = {'norm_type':'none',
+                                    'n_estimators':10,
+                                    'max_depth':None,
                                     'random_state':0
                                     }
-        expected_top_ratio = 0.6666666666666666
+        expected_top_ratio = 1.0
         self.assertEquals(output['top_model_param'], expected_top_model_param)
         self.assertEquals(output['top_ratio'], expected_top_ratio)
 

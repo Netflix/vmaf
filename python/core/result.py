@@ -17,7 +17,6 @@ class BasicResult(object):
     def __init__(self, asset, result_dict):
         self.asset = asset
         self.result_dict = result_dict
-
         self.aggregate_method = np.mean
 
     def set_aggregate_method(self, aggregate_method):

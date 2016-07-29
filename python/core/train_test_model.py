@@ -8,7 +8,6 @@ import pickle
 import scipy.stats
 import numpy as np
 from numpy.linalg import lstsq
-import pandas as pd
 
 import config
 from tools.misc import indices
@@ -246,7 +245,6 @@ class TrainTestModel(TypeVersionEnabled):
         else:
             assert False, 'Incorrect model norm type selected: {}' \
                 .format(self.norm_type)
-
         return xs_2d
 
     def predict(self, xs):
@@ -367,7 +365,6 @@ class TrainTestModel(TypeVersionEnabled):
                 curr_idxs = indices(content_ids, lambda cid: cid==curr_content_id)
                 curr_ys_label = np.array(stats['ys_label'])[curr_idxs]
                 curr_ys_label_pred = np.array(stats['ys_label_pred'])[curr_idxs]
-
                 ax.scatter(curr_ys_label, curr_ys_label_pred,
                            label=curr_content_id, color=colors[idx % len(colors)])
     @staticmethod
@@ -395,23 +392,22 @@ class TrainTestModel(TypeVersionEnabled):
             os.remove(filename)
 
     @classmethod
-    def get_xs_from_results(cls, results_or_df, indexs=None):
+    def get_xs_from_results(cls, results, indexs=None, aggregate=True):
         """
-        :param results_or_df: list of BasicResult, or pandas.DataFrame
+        :param results: list of BasicResult, or pandas.DataFrame
         :param indexs: indices of results to be used
-        :return:
+        :param aggregate: if True, return aggregate score, otherwise per-frame/per-block
         """
-
-        if results_or_df.__class__ == pd.DataFrame:
-            return cls.get_xs_from_dataframe(df=results_or_df, rows=indexs)
-
-        feature_names = results_or_df[0].get_ordered_list_score_key()
+        if aggregate:
+            feature_names = results[0].get_ordered_list_score_key()
+        else:
+            feature_names = results[0]._get_ordered_list_scores_key()
         xs = {}
         for name in feature_names:
             if indexs is not None:
-                _results = map(lambda i:results_or_df[i], indexs)
+                _results = map(lambda i:results[i], indexs)
             else:
-                _results = results_or_df
+                _results = results
             xs[name] = np.array(map(lambda result: result[name], _results))
         return xs
 
@@ -423,7 +419,6 @@ class TrainTestModel(TypeVersionEnabled):
         a single Result, and interpret its per-frame score as an aggregate score.
         :param result: one BasicResult
         :param indexs: indices of results to be used
-        :return:
         """
         feature_names = result._get_ordered_list_scores_key()
         new_feature_names = result.get_ordered_list_score_key()
@@ -433,22 +428,16 @@ class TrainTestModel(TypeVersionEnabled):
         return xs
 
     @classmethod
-    def get_ys_from_results(cls, results_or_df, indexs=None):
+    def get_ys_from_results(cls, results, indexs=None):
         """
-        :param results_or_df: list of BasicResult, or pandas.DataFrame
+        :param results: list of BasicResult, or pandas.DataFrame
         :param indexs: indices of results to be used
-        :return:
         """
-        if results_or_df.__class__ == pd.DataFrame:
-            return cls.get_ys_from_dataframe(df=results_or_df, rows=indexs)
-
         ys = {}
-
         if indexs is not None:
-            _results = map(lambda i:results_or_df[i], indexs)
+            _results = map(lambda i:results[i], indexs)
         else:
-            _results = results_or_df
-
+            _results = results
         ys['label'] = \
             np.array(map(lambda result: result.asset.groundtruth, _results))
         ys['content_id'] = \
@@ -456,94 +445,15 @@ class TrainTestModel(TypeVersionEnabled):
         return ys
 
     @classmethod
-    def get_xys_from_results(cls, results_or_df, indexs=None):
+    def get_xys_from_results(cls, results, indexs=None, aggregate=True):
         """
-        :param results_or_df: list of BasicResult, or pandas.DataFrame
+        :param results: list of BasicResult, or pandas.DataFrame
         :param indexs: indices of results to be used
-        :return:
-        """
-        if results_or_df.__class__ == pd.DataFrame:
-            return cls.get_xys_from_dataframe(df=results_or_df, rows=indexs)
-
-        xys = {}
-        xys.update(cls.get_xs_from_results(results_or_df, indexs))
-        xys.update(cls.get_ys_from_results(results_or_df, indexs))
-        return xys
-
-    # ========================== begin of legacy ===============================
-
-    # below is for the purpose of reading a legacy test text file, and to ensure
-    # the code in the class produces bit-exact test results as before
-
-    @staticmethod
-    def get_xs_from_dataframe(df, rows=None):
-        """Prepare xs (i.e. a dictionary of named features, e.g.
-        xs = {'vif_feat': [0.8, 0.9, 0.5], 'ssim_feat': [1.0, 0.5, 0.6]}),
-        which is to be used as input by predict(xs), from a pandas DataFrame
-        df, e.g.
-             ansnr_feat  content_id  distortion_id  ssim_feat     label
-        0     0.8           0              0        1.0           8.4
-        1     0.9           1              0        0.5           6.5
-        0     0.5           0              0        0.6           4.3
-        :param df:
-        :param rows: if None, take all rows from df, otherwise must be a list of
-        row indices
-        :return:
-        """
-        # by the rule of Extraction, features always end with '_feat'
-        feature_names = [name for name in df.columns.values if "_feat" in name]
-        xs = {}
-        for name in feature_names:
-            if rows is None:
-                xs[name] = np.array(df[name])
-            else:
-                xs[name] = np.array(df[name].iloc[rows])
-        return xs
-
-    @staticmethod
-    def get_ys_from_dataframe(df, rows=None):
-        """Prepare ys (i.e. a dictionary with key 'label' and labels, e.g.
-        ys = {'label': [8.4, 6.5, 4.3]}), from a pandas DataFrame df, e.g.
-             ansnr_feat  content_id  distortion_id  ssim_feat     label
-        0     0.8           0              0        1.0           8.4
-        1     0.9           1              0        0.5           6.5
-        0     0.5           0              0        0.6           4.3
-        :param df:
-        :param rows: if None, take all rows from df, otherwise must be a list of
-        row indices
-        :return:
-        """
-        # by the rule of Extraction, labels must have key 'label'
-        ys = {}
-        if rows is None:
-            ys['label'] = np.array(df['label'])
-            ys['content_id'] = np.array(df['content_id'])
-        else:
-            ys['label'] = np.array(df['label'].iloc[rows])
-            ys['content_id'] = np.array(df['content_id'].iloc[rows])
-        return ys
-
-    @classmethod
-    def get_xys_from_dataframe(cls, df, rows=None):
-        """Prepare xys (i.e. a dictionary of named features and labels, e.g.
-        xys = {'vif_feat': [0.8, 0.9, 0.5], 'ssim_feat': [1.0, 0.5, 0.6],
-        'label': [8.4, 6.5, 4.3]}), which is to be used as input by train(xys),
-        from a pandas DataFrame df, e.g.
-             ansnr_feat  content_id  distortion_id  ssim_feat     label
-        0     0.8           0              0        1.0           8.4
-        1     0.9           1              0        0.5           6.5
-        0     0.5           0              0        0.6           4.3
-        :param df:
-        :param rows: if None, take all rows from df, otherwise must be a list of
-        row indices
-        :return:
         """
         xys = {}
-        xys.update(cls.get_xs_from_dataframe(df, rows))
-        xys.update(cls.get_ys_from_dataframe(df, rows))
+        xys.update(cls.get_xs_from_results(results, indexs, aggregate))
+        xys.update(cls.get_ys_from_results(results, indexs))
         return xys
-
-    # ========================== end of legacy =================================
 
 
 class LibsvmnusvrTrainTestModel(TrainTestModel):

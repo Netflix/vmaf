@@ -4,76 +4,69 @@ __license__ = "Apache, Version 2.0"
 import os
 import unittest
 
-import pandas as pd
 import numpy as np
 
 import config
 from core.train_test_model import TrainTestModel, \
     LibsvmnusvrTrainTestModel, RandomForestTrainTestModel
-
+from core.executor import run_executors_in_parallel
+from core.noref_feature_extractor import MomentNorefFeatureExtractor
+from routine import read_dataset
+from tools.misc import import_python_file, empty_object
 
 class TrainTestModelTest(unittest.TestCase):
 
     def setUp(self):
-        feature_df_file = \
-            config.ROOT + \
-            "/python/test/resource/sample_feature_extraction_results.json"
-        self.feature_df = \
-            pd.DataFrame.from_dict(eval(open(feature_df_file, "r").read()))
+
+        train_dataset_path = config.ROOT + '/python/test/resource/BSDS500_dataset.py'
+        train_dataset = import_python_file(train_dataset_path)
+        train_assets = read_dataset(train_dataset)
+
+        _, self.features = run_executors_in_parallel(
+            MomentNorefFeatureExtractor,
+            train_assets,
+            fifo_mode=True,
+            delete_workdir=True,
+            parallelize=True,
+            result_store=None,
+            optional_dict=None,
+        )
 
         self.model_filename = config.ROOT + "/workspace/model/test_save_load.pkl"
 
     def tearDown(self):
-        if os.path.exists(self.model_filename): os.remove(self.model_filename)
+        if os.path.exists(self.model_filename):
+            os.remove(self.model_filename)
 
     def test_get_xs_ys(self):
-        xs = TrainTestModel.get_xs_from_dataframe(self.feature_df, [0, 1, 2])
-        expected_xs = { 'ansnr_feat': np.array([46.364271863296779,
-                                                42.517841772700201,
-                                                35.967123359308225]),
-                        'dlm_feat': np.array([ 1.,  1.,  1.]),
-                        'ti_feat': np.array([12.632675462694392,
-                                             3.7917434352421662,
-                                             2.0189066771371684]),
-                        'vif_feat': np.array([0.99999999995691546,
-                                              0.99999999994743127,
-                                              0.9999999999735345])}
-        for key in xs: self.assertTrue(all(xs[key] == expected_xs[key]))
+        xs = TrainTestModel.get_xs_from_results(self.features, [0, 1, 2])
 
-        xs = TrainTestModel.get_xs_from_dataframe(self.feature_df)
-        for key in xs: self.assertEquals(len(xs[key]), 300)
+        self.assertEquals(len(xs['Moment_noref_feature_1st_score']), 3)
+        self.assertAlmostEquals(np.mean(xs['Moment_noref_feature_1st_score']), 128.26146851380497, places=4)
+        self.assertEquals(len(xs['Moment_noref_feature_var_score']), 3)
+        self.assertAlmostEquals(np.mean(xs['Moment_noref_feature_var_score']), 1569.2395085695462, places=4)
 
-        ys = TrainTestModel.get_ys_from_dataframe(self.feature_df, [0, 1, 2])
-        expected_ys = {'label': np.array([4.5333333333333332,
-                                          4.7000000000000002,
-                                          4.4000000000000004]),
-                       'content_id': np.array([0, 1, 10])}
+        xs = TrainTestModel.get_xs_from_results(self.features)
+        self.assertEquals(len(xs['Moment_noref_feature_1st_score']), 5)
+        self.assertAlmostEquals(np.mean(xs['Moment_noref_feature_1st_score']), 123.39289900972145, places=4)
+        self.assertEquals(len(xs['Moment_noref_feature_var_score']), 5)
+        self.assertAlmostEquals(np.mean(xs['Moment_noref_feature_var_score']), 2001.278680332854, places=4)
+
+        ys = TrainTestModel.get_ys_from_results(self.features, [0, 1, 2])
+        expected_ys = {'label': np.array([1.0,
+                                          2.0,
+                                          3.0]),
+                       'content_id': np.array([0, 1, 2])}
         self.assertTrue(all(ys['label'] == expected_ys['label']))
-
-        xys = TrainTestModel.get_xys_from_dataframe(self.feature_df, [0, 1, 2])
-        expected_xys = { 'ansnr_feat': np.array([46.364271863296779,
-                                                 42.517841772700201,
-                                                 35.967123359308225]),
-                         'dlm_feat': np.array([ 1.,  1.,  1.]),
-                         'ti_feat': np.array([12.632675462694392,
-                                             3.7917434352421662,
-                                             2.0189066771371684]),
-                         'vif_feat': np.array([0.99999999995691546,
-                                              0.99999999994743127,
-                                              0.9999999999735345]),
-                         'label': np.array([4.5333333333333332,
-                                            4.7000000000000002,
-                                            4.4000000000000004]),
-                         'content_id': np.array([0, 1, 10])}
-        for key in xys: self.assertTrue(all(xys[key] == expected_xys[key]))
+        self.assertTrue(all(ys['content_id'] == expected_ys['content_id']))
 
     def test_train_save_load_predict(self):
 
         print "test train, save, load and predict..."
 
-        xys = TrainTestModel.get_xys_from_dataframe(self.feature_df.iloc[:-50])
-        xs = TrainTestModel.get_xs_from_dataframe(self.feature_df.iloc[-50:])
-        ys = TrainTestModel.get_ys_from_dataframe(self.feature_df.iloc[-50:])
+        xs = TrainTestModel.get_xs_from_results(self.features)
+        ys = TrainTestModel.get_ys_from_results(self.features)
+        xys = TrainTestModel.get_xys_from_results(self.features)
 
         model = RandomForestTrainTestModel({'norm_type':'normalize', 'random_state':0}, None)
         model.train(xys)
@@ -84,7 +77,7 @@ class TrainTestModelTest(unittest.TestCase):
         loaded_model = RandomForestTrainTestModel.from_file(self.model_filename, None)
 
         result = loaded_model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.32357946626958406, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.26497837611988789, places=4)
 
         model.delete(self.model_filename)
 
@@ -92,9 +85,9 @@ class TrainTestModelTest(unittest.TestCase):
 
         print "test libsvmnusvr train, save, load and predict..."
 
-        xys = TrainTestModel.get_xys_from_dataframe(self.feature_df.iloc[:-50])
-        xs = TrainTestModel.get_xs_from_dataframe(self.feature_df.iloc[-50:])
-        ys = TrainTestModel.get_ys_from_dataframe(self.feature_df.iloc[-50:])
+        xs = TrainTestModel.get_xs_from_results(self.features)
+        ys = TrainTestModel.get_ys_from_results(self.features)
+        xys = TrainTestModel.get_xys_from_results(self.features)
 
         model = LibsvmnusvrTrainTestModel({'norm_type':'normalize'}, None)
         model.train(xys)
@@ -106,11 +99,11 @@ class TrainTestModelTest(unittest.TestCase):
         loaded_model = LibsvmnusvrTrainTestModel.from_file(self.model_filename, None)
 
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'],        0.30977055639849227, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.36148223562418469, places=4)
 
         # loaded model generates slight numerical difference
         result = loaded_model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'],        0.30977055639849227, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.36148223562418469, places=4)
 
         model.delete(self.model_filename)
 
@@ -120,34 +113,33 @@ class TrainTestModelTest(unittest.TestCase):
 
         # libsvmnusvr is bit exact to nusvr
 
-        xys = TrainTestModel.get_xys_from_dataframe(self.feature_df.iloc[:-50])
-        xs = TrainTestModel.get_xs_from_dataframe(self.feature_df.iloc[-50:])
-        ys = TrainTestModel.get_ys_from_dataframe(self.feature_df.iloc[-50:])
+        xs = TrainTestModel.get_xs_from_results(self.features)
+        ys = TrainTestModel.get_ys_from_results(self.features)
+        xys = TrainTestModel.get_xys_from_results(self.features)
 
         model = LibsvmnusvrTrainTestModel(
             {'norm_type':'normalize'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.30977055639849227, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.36148223562418469, places=4)
 
         model = LibsvmnusvrTrainTestModel(
             {'norm_type':'clip_0to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.28066350351974495, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.59592227645562434, places=4)
 
         model = LibsvmnusvrTrainTestModel(
             {'norm_type':'clip_minus1to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.28651275022085743, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.4132364711542591, places=4)
 
         model = LibsvmnusvrTrainTestModel(
             {'norm_type':'none'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.64219197018248542, places=4)
-
+        self.assertAlmostEquals(result['RMSE'], 0.052948346525209113, places=4)
 
     def test_train_predict_randomforest(self):
 
@@ -155,93 +147,32 @@ class TrainTestModelTest(unittest.TestCase):
 
         # random forest don't need proper data normalization
 
-        xys = TrainTestModel.get_xys_from_dataframe(self.feature_df.iloc[:-50])
-        xs = TrainTestModel.get_xs_from_dataframe(self.feature_df.iloc[-50:])
-        ys = TrainTestModel.get_ys_from_dataframe(self.feature_df.iloc[-50:])
+        xs = TrainTestModel.get_xs_from_results(self.features)
+        ys = TrainTestModel.get_ys_from_results(self.features)
+        xys = TrainTestModel.get_xys_from_results(self.features)
 
         model = RandomForestTrainTestModel({'norm_type':'normalize',
-                                'random_state': 0}, None)
+                                            'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.32357946626958406, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.26497837611988789, places=4)
 
         model = RandomForestTrainTestModel({'norm_type':'clip_0to1',
                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.33807954580885896, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.26497837611988784, places=4)
 
         model = RandomForestTrainTestModel({'norm_type':'clip_minus1to1',
                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.31798315556627982, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.26497837611988784, places=4)
 
         model = RandomForestTrainTestModel({'norm_type':'none', 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.33660273277405978, places=4)
-
-
-class TrainTestModelTest2(unittest.TestCase):
-
-    def test_read_xs_ys_from_dataframe(self):
-
-        try:
-            import pandas as pd
-        except ImportError:
-            print 'Warning: import pandas fails. Skip test.'
-            return
-
-        try:
-            import numpy as np
-        except ImportError:
-            print 'Warning: import numpy fails. Skip test.'
-            return
-
-        feature_df_file = config.ROOT + "/python/test/resource/sample_feature_extraction_results.json"
-        feature_df = pd.DataFrame.from_dict(eval(open(feature_df_file, "r").read()))
-
-        xs = TrainTestModel.get_xs_from_dataframe(feature_df, [0, 1, 2])
-        expected_xs = { 'ansnr_feat': np.array([46.364271863296779,
-                                                42.517841772700201,
-                                                35.967123359308225]),
-                        'dlm_feat': np.array([ 1.,  1.,  1.]),
-                        'ti_feat': np.array([12.632675462694392,
-                                             3.7917434352421662,
-                                             2.0189066771371684]),
-                        'vif_feat': np.array([0.99999999995691546,
-                                              0.99999999994743127,
-                                              0.9999999999735345])}
-        for key in xs: self.assertTrue(all(xs[key] == expected_xs[key]))
-
-        xs = TrainTestModel.get_xs_from_dataframe(feature_df)
-        for key in xs: self.assertEquals(len(xs[key]), 300)
-
-        ys = TrainTestModel.get_ys_from_dataframe(feature_df, [0, 1, 2])
-        expected_ys = {'label': np.array([4.5333333333333332,
-                                          4.7000000000000002,
-                                          4.4000000000000004]),
-                       'content_id': np.array([0, 1, 10])}
-        self.assertTrue(all(ys['label'] == expected_ys['label']))
-
-        xys = TrainTestModel.get_xys_from_dataframe(feature_df, [0, 1, 2])
-        expected_xys = { 'ansnr_feat': np.array([46.364271863296779,
-                                                 42.517841772700201,
-                                                 35.967123359308225]),
-                         'dlm_feat': np.array([ 1.,  1.,  1.]),
-                         'ti_feat': np.array([12.632675462694392,
-                                             3.7917434352421662,
-                                             2.0189066771371684]),
-                         'vif_feat': np.array([0.99999999995691546,
-                                              0.99999999994743127,
-                                              0.9999999999735345]),
-                         'label': np.array([4.5333333333333332,
-                                            4.7000000000000002,
-                                            4.4000000000000004]),
-                         'content_id': np.array([0, 1, 10])}
-        for key in xys: self.assertTrue(all(xys[key] == expected_xys[key]))
-
+        self.assertAlmostEquals(result['RMSE'], 0.26497837611988784, places=4)
 
 if __name__ == '__main__':
     unittest.main()
