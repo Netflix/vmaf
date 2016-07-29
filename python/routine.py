@@ -104,7 +104,7 @@ def test_on_dataset(test_dataset, runner_class, ax,
         )
 
         for result in results:
-            result.set_aggregate_method(aggregate_method)
+            result.set_score_aggregate_method(aggregate_method)
 
         # plot
         groundtruths = map(lambda asset: asset.groundtruth, test_assets)
@@ -284,7 +284,7 @@ def cv_on_dataset(dataset, feature_param, model_param, ax, result_store,
     results = fassembler.results
 
     for result in results:
-        result.set_aggregate_method(aggregate_method)
+        result.set_score_aggregate_method(aggregate_method)
 
     # run nested kfold cv for each combintation
     cv_output = ModelCrossValidation.run_kfold_cross_validation(
