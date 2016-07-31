@@ -27,6 +27,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
             parallelize=True,
             result_store=None,
             optional_dict=None,
+            optional_dict2=None,
         )
 
     def test_run_cross_validation(self):

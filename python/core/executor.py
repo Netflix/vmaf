@@ -32,7 +32,13 @@ class Executor(TypeVersionEnabled):
                  delete_workdir=True,
                  result_store=None,
                  optional_dict=None,
+                 optional_dict2=None,
                  ):
+        """
+        Use optional_dict for parameters that would impact result (e.g. model,
+        patch size), and use optional_dict2 for parameters that would NOT
+        impact result (e.g. path to data cache file).
+        """
 
         TypeVersionEnabled.__init__(self)
 
@@ -43,6 +49,7 @@ class Executor(TypeVersionEnabled):
         self.results = []
         self.result_store = result_store
         self.optional_dict = optional_dict
+        self.optional_dict2 = optional_dict2
 
         self._assert_args()
         self._assert_assets()
@@ -52,12 +59,14 @@ class Executor(TypeVersionEnabled):
         executor_id_ = TypeVersionEnabled.get_type_version_string(self)
 
         if self.optional_dict is not None:
+            # include optional_dict info in executor_id for result store,
+            # as parameters in optional_dict will impact result
             executor_id_ += '_{}'.format(
                 '_'.join(
                     map(lambda k: '{k}_{v}'.format(k=k,v=self.optional_dict[k]),
                         sorted(self.optional_dict.keys()))
                 )
-            ) # include optional_dict info in executor_id for result store
+            )
 
         return executor_id_
     def run(self):
@@ -373,25 +382,18 @@ def run_executors_in_parallel(executor_class,
                               logger=None,
                               result_store=None,
                               optional_dict=None,
+                              optional_dict2=None,
                               ):
     """
     Run multiple Executors in parallel.
-    :param executor_class:
-    :param assets:
-    :param fifo_mode:
-    :param delete_workdir:
-    :param parallelize:
-    :param logger:
-    :param result_store:
-    :param optional_dict:
-    :return:
     """
 
     def run_executor(args):
         executor_class, asset, fifo_mode, \
-        delete_workdir, result_store, optional_dict = args
+        delete_workdir, result_store, optional_dict, optional_dict2 = args
         executor = executor_class([asset], None, fifo_mode,
-                                  delete_workdir, result_store, optional_dict)
+                                  delete_workdir, result_store,
+                                  optional_dict, optional_dict2)
         executor.run()
         return executor
 
@@ -400,7 +402,7 @@ def run_executors_in_parallel(executor_class,
     for asset in assets:
         list_args.append(
             [executor_class, asset, fifo_mode,
-             delete_workdir, result_store, optional_dict])
+             delete_workdir, result_store, optional_dict, optional_dict2])
 
     # map arguments to func
     if parallelize:

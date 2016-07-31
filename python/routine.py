@@ -90,6 +90,7 @@ def test_on_dataset(test_dataset, runner_class, ax,
                  delete_workdir=True,
                  result_store=result_store,
                  optional_dict=optional_dict,
+                 optional_dict2=None,
                  )
     try:
         # run
@@ -101,6 +102,7 @@ def test_on_dataset(test_dataset, runner_class, ax,
             parallelize=parallelize,
             result_store=result_store,
             optional_dict=optional_dict,
+            optional_dict2=None,
         )
 
         for result in results:

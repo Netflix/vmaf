@@ -30,6 +30,7 @@ class TrainTestModelTest(unittest.TestCase):
             parallelize=True,
             result_store=None,
             optional_dict=None,
+            optional_dict2=None,
         )
 
         self.model_filename = config.ROOT + "/workspace/model/test_save_load.pkl"

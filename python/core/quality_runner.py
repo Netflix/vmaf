@@ -353,12 +353,12 @@ class VmafQualityRunner(QualityRunner):
         return ys_pred
 
     def _load_model(self):
-        model_filepath = self.optional_dict['model_filepath'] \
-            if (self.optional_dict is not None
-                and 'model_filepath' in self.optional_dict
-                and self.optional_dict['model_filepath'] is not None
-                ) \
-            else self.DEFAULT_MODEL_FILEPATH
+        if self.optional_dict is not None \
+                and 'model_filepath' in self.optional_dict \
+                and self.optional_dict['model_filepath'] is not None:
+            model_filepath = self.optional_dict['model_filepath']
+        else:
+            model_filepath = self.DEFAULT_MODEL_FILEPATH
         model = TrainTestModel.from_file(model_filepath, self.logger)
         return model
 
