@@ -39,7 +39,7 @@
 	#define convolution_f32_c  convolution_f32_c_s
 	#define offset_image       offset_image_s
 	#define FILTER_5           FILTER_5_s
-	int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den);
+	int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores);
 	int compute_ansnr(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_psnr, double peak, double psnr_max);
 	int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores);
 	int compute_motion(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);
@@ -219,7 +219,7 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		}
 
 		/* =========== adm ============== */
-		if ((ret = compute_adm(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den)))
+		if ((ret = compute_adm(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores)))
 		{
 			printf("error: compute_adm failed.\n");
 			fflush(stdout);
@@ -231,6 +231,10 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		fflush(stdout);
 		printf("adm_den: %d %f\n", frm_idx, score_den);
 		fflush(stdout);
+		for(int scale=0;scale<4;scale++){
+			printf("adm_num_scale%d: %d %f\n", scale, frm_idx, scores[2*scale]);
+			printf("adm_den_scale%d: %d %f\n", scale, frm_idx, scores[2*scale+1]);
+		}
 
 		/* =========== ansnr ============== */
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))

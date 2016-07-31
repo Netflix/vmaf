@@ -35,8 +35,8 @@ typedef struct adm_dwt_band_t_d {
 	double *band_d; /* High-pass V + high-pass H. */
 } adm_dwt_band_t_d;
 
-float adm_sum_cube_s(const float *x, int w, int h, int stride);
-double adm_sum_cube_d(const double *x, int w, int h, int stride);
+float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_factor);
+double adm_sum_cube_d(const double *x, int w, int h, int stride, double border_factor);
 
 void adm_decouple_s(const adm_dwt_band_t_s *ref, const adm_dwt_band_t_s *dis, const adm_dwt_band_t_s *r, const adm_dwt_band_t_s *a, int w, int h, int ref_stride, int dis_stride, int r_stride, int a_stride);
 void adm_decouple_d(const adm_dwt_band_t_d *ref, const adm_dwt_band_t_d *dis, const adm_dwt_band_t_d *r, const adm_dwt_band_t_d *a, int w, int h, int ref_stride, int dis_stride, int r_stride, int a_stride);
