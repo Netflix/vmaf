@@ -11,9 +11,16 @@ class FeatureAssembler(object):
     FeatureExtractors. For each asset, it outputs a BasicResult object.
     """
 
-    def __init__(self, feature_dict, feature_option_dict, assets, logger,
-                 fifo_mode, delete_workdir, result_store,
-                 optional_dict=None, optional_dict2=None,
+    def __init__(self,
+                 feature_dict,
+                 feature_option_dict,
+                 assets, 
+                 logger,
+                 fifo_mode,
+                 delete_workdir,
+                 result_store,
+                 optional_dict=None,
+                 optional_dict2=None,
                  parallelize=False):
         """
         :param feature_dict: in the format of:

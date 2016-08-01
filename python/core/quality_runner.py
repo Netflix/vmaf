@@ -160,7 +160,10 @@ class VmafLegacyQualityRunner(QualityRunner):
             logger=self.logger,
             fifo_mode=self.fifo_mode,
             delete_workdir=self.delete_workdir,
-            result_store=self.result_store
+            result_store=self.result_store,
+            optional_dict=None,
+            optional_dict2=None,
+            # parallelize=True,
         )
         return vmaf_fassembler
 
@@ -268,7 +271,10 @@ class VmafQualityRunner(QualityRunner):
             logger=self.logger,
             fifo_mode=self.fifo_mode,
             delete_workdir=self.delete_workdir,
-            result_store=self.result_store
+            result_store=self.result_store,
+            optional_dict=None,
+            optional_dict2=None,
+            # parallelize=True,
         )
         return vmaf_fassembler
 

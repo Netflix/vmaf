@@ -155,6 +155,8 @@ def train_test_on_dataset(train_dataset, test_dataset,
         fifo_mode=fifo_mode,
         delete_workdir=True,
         result_store=result_store,
+        optional_dict=None,
+        optional_dict2=None,
         parallelize=parallelize,
     )
     train_fassembler.run()
@@ -221,6 +223,8 @@ def train_test_on_dataset(train_dataset, test_dataset,
             fifo_mode=fifo_mode,
             delete_workdir=True,
             result_store=result_store,
+            optional_dict=None,
+            optional_dict2=None,
             parallelize=True,
         )
         test_fassembler.run()
@@ -279,6 +283,8 @@ def cv_on_dataset(dataset, feature_param, model_param, ax, result_store,
         logger=logger,
         delete_workdir=True,
         result_store=result_store,
+        optional_dict=None,
+        optional_dict2=None,
         parallelize=True, fifo_mode=True,
         # parallelize=False, fifo_mode=False, # VQM
     )
