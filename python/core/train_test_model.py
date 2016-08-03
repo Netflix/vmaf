@@ -155,8 +155,7 @@ class TrainTestModel(TypeVersionEnabled):
         self.model_type = self.TYPE
 
         assert 'label' in xys
-
-        ys_vec = xys['label']
+        assert 'content_id' in xys
 
         # this makes sure the order of features are normalized, and each
         # dimension of xys_2d is consistent with feature_names
@@ -167,15 +166,7 @@ class TrainTestModel(TypeVersionEnabled):
 
         self.feature_names = feature_names
 
-        xs_2d = None
-        for name in feature_names:
-            if xs_2d is None:
-                xs_2d = np.matrix(xys[name]).T
-            else:
-                xs_2d = np.hstack((xs_2d, np.matrix(xys[name]).T))
-
-        # combine them
-        xys_2d = np.array(np.hstack((np.matrix(ys_vec).T, xs_2d)))
+        xys_2d = self._to_tabular_form(feature_names, xys)
 
         # calculate normalization parameters,
         self._calculate_normalization_params(xys_2d)
@@ -185,6 +176,19 @@ class TrainTestModel(TypeVersionEnabled):
 
         model = self._train(self.param_dict, xys_2d)
         self.model = model
+
+    def _to_tabular_form(self, xkeys, xys):
+        xs_2d = None
+        for name in xkeys:
+            if xs_2d is None:
+                xs_2d = np.matrix(xys[name]).T
+            else:
+                xs_2d = np.hstack((xs_2d, np.matrix(xys[name]).T))
+
+        # combine them
+        ys_vec = xys['label']
+        xys_2d = np.array(np.hstack((np.matrix(ys_vec).T, xs_2d)))
+        return xys_2d
 
     def _calculate_normalization_params(self, xys_2d):
 
@@ -642,20 +646,3 @@ class RandomForestTrainTestModel(SklearnTrainTestModel):
 
         return model
 
-class DisYMomentTrainTestModel(TrainTestModel):
-    """
-    Compute moments based on the input distorted Y channel image and then call a
-    RandomForestTrainTestModel. For demo purpose only.
-    """
-
-    TYPE = 'Moment'
-    VERSION = "1.0"
-
-    @classmethod
-    def _assert_dimension(cls, feature_names, results):
-        # Override TrainTestModel._assert_dimension. allow input to be a numpy
-        # ndarray or equivalent (e.g. H5py object) -- they must have attribute
-        # shape
-        assert hasattr(results[0][feature_names[0]], 'shape')
-
-        pass
