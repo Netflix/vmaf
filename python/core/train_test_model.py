@@ -166,7 +166,7 @@ class TrainTestModel(TypeVersionEnabled):
 
         self.feature_names = feature_names
 
-        xys_2d = self._to_tabular_form(feature_names, xys)
+        xys_2d = self._to_tabular_xys(feature_names, xys)
 
         # calculate normalization parameters,
         self._calculate_normalization_params(xys_2d)
@@ -176,19 +176,6 @@ class TrainTestModel(TypeVersionEnabled):
 
         model = self._train(self.param_dict, xys_2d)
         self.model = model
-
-    def _to_tabular_form(self, xkeys, xys):
-        xs_2d = None
-        for name in xkeys:
-            if xs_2d is None:
-                xs_2d = np.matrix(xys[name]).T
-            else:
-                xs_2d = np.hstack((xs_2d, np.matrix(xys[name]).T))
-
-        # combine them
-        ys_vec = xys['label']
-        xys_2d = np.array(np.hstack((np.matrix(ys_vec).T, xs_2d)))
-        return xys_2d
 
     def _calculate_normalization_params(self, xys_2d):
 
@@ -259,10 +246,9 @@ class TrainTestModel(TypeVersionEnabled):
         for name in self.feature_names:
             assert name in xs
 
-        xs_2d = []
-        for name in self.feature_names:
-            xs_2d.append(np.array(xs[name]))
-        xs_2d = np.vstack(xs_2d).T
+        feature_names = self.feature_names
+
+        xs_2d = self._to_tabular_xs(feature_names, xs)
 
         # normalize xs
         xs_2d = self.normalize_xs(xs_2d)
@@ -274,6 +260,28 @@ class TrainTestModel(TypeVersionEnabled):
         ys_label_pred = self.denormalize_ys(ys_label_pred)
 
         return ys_label_pred
+
+    @classmethod
+    def _to_tabular_xys(cls, xkeys, xys):
+        xs_2d = None
+        for name in xkeys:
+            if xs_2d is None:
+                xs_2d = np.matrix(xys[name]).T
+            else:
+                xs_2d = np.hstack((xs_2d, np.matrix(xys[name]).T))
+
+        # combine them
+        ys_vec = xys['label']
+        xys_2d = np.array(np.hstack((np.matrix(ys_vec).T, xs_2d)))
+        return xys_2d
+
+    @classmethod
+    def _to_tabular_xs(cls, xkeys, xs):
+        xs_2d = []
+        for name in xkeys:
+            xs_2d.append(np.array(xs[name]))
+        xs_2d = np.vstack(xs_2d).T
+        return xs_2d
 
     def evaluate(self, xs, ys):
         ys_label_pred = self.predict(xs)
@@ -423,7 +431,7 @@ class TrainTestModel(TypeVersionEnabled):
                 _results = map(lambda i:results[i], indexs)
             else:
                 _results = results
-            xs[name] = np.array(map(lambda result: result[name], _results))
+            xs[name] = map(lambda result: result[name], _results)
         return xs
 
     @classmethod
@@ -588,7 +596,7 @@ class LibsvmnusvrTrainTestModel(TrainTestModel):
 
         return model
 
-class SklearnTrainTestModel(TrainTestModel):
+class SklearnTrainTestModel(object):
 
     @staticmethod
     def _predict(model, xs_2d):
@@ -596,7 +604,7 @@ class SklearnTrainTestModel(TrainTestModel):
         ys_label_pred = model.predict(xs_2d)
         return ys_label_pred
 
-class RandomForestTrainTestModel(SklearnTrainTestModel):
+class RandomForestTrainTestModel(SklearnTrainTestModel, TrainTestModel):
 
     TYPE = 'RANDOMFOREST'
     VERSION = "0.1"

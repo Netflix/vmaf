@@ -36,8 +36,8 @@ class TrainTestModelTest(unittest.TestCase):
         self.model_filename = config.ROOT + "/workspace/model/test_save_load.pkl"
 
     def tearDown(self):
-        if os.path.exists(self.model_filename):
-            os.remove(self.model_filename)
+        if hasattr(self, 'model'):
+            self.model.delete(self.model_filename)
 
     def test_get_xs_ys(self):
         xs = TrainTestModel.get_xs_from_results(self.features, [0, 1, 2])
@@ -67,18 +67,16 @@ class TrainTestModelTest(unittest.TestCase):
         ys = TrainTestModel.get_ys_from_results(self.features)
         xys = TrainTestModel.get_xys_from_results(self.features)
 
-        model = RandomForestTrainTestModel({'norm_type':'normalize', 'random_state':0}, None)
-        model.train(xys)
+        self.model = RandomForestTrainTestModel({'norm_type':'normalize', 'random_state':0}, None)
+        self.model.train(xys)
 
-        model.to_file(self.model_filename)
+        self.model.to_file(self.model_filename)
         self.assertTrue(os.path.exists(self.model_filename))
 
         loaded_model = RandomForestTrainTestModel.from_file(self.model_filename, None)
 
         result = loaded_model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.15106640142026415, places=4)
-
-        model.delete(self.model_filename)
 
     def test_train_save_load_predict_libsvmnusvr(self):
 
@@ -88,23 +86,21 @@ class TrainTestModelTest(unittest.TestCase):
         ys = TrainTestModel.get_ys_from_results(self.features)
         xys = TrainTestModel.get_xys_from_results(self.features)
 
-        model = LibsvmnusvrTrainTestModel({'norm_type':'normalize'}, None)
-        model.train(xys)
+        self.model = LibsvmnusvrTrainTestModel({'norm_type':'normalize'}, None)
+        self.model.train(xys)
 
-        model.to_file(self.model_filename)
+        self.model.to_file(self.model_filename)
         self.assertTrue(os.path.exists(self.model_filename))
         self.assertTrue(os.path.exists(self.model_filename + '.model'))
 
         loaded_model = LibsvmnusvrTrainTestModel.from_file(self.model_filename, None)
 
-        result = model.evaluate(xs, ys)
+        result = self.model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.39650837698192637, places=4)
 
         # loaded model generates slight numerical difference
         result = loaded_model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.39650837698192637, places=4)
-
-        model.delete(self.model_filename)
 
     def test_train_predict_libsvmnusvr(self):
 
