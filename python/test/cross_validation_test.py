@@ -11,7 +11,7 @@ from core.noref_feature_extractor import MomentNorefFeatureExtractor
 from routine import read_dataset
 from tools.misc import import_python_file
 
-class FeatureCrossValidationTest(unittest.TestCase):
+class CrossValidationTest(unittest.TestCase):
 
     def setUp(self):
 
