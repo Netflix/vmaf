@@ -28,7 +28,7 @@ class QualityRunner(Executor):
     a) Call a command-line exectuable directly, very similar to what
     FeatureExtractor does. You must:
         1) Override TYPE and VERSION
-        2) Override _run_and_generate_log_file(self, asset), which call a
+        2) Override _generate_result(self, asset), which call a
         command-line executable and generate quality scores in a log file.
         3) Override _get_quality_scores(self, asset), which read the quality
         scores from the log file, and return the scores in a dictionary format.
@@ -77,7 +77,7 @@ class PsnrQualityRunner(QualityRunner):
 
     PSNR = config.ROOT + "/feature/psnr"
 
-    def _run_and_generate_log_file(self, asset):
+    def _generate_result(self, asset):
         # routine to call the command-line executable and generate quality
         # scores in the log file.
 
@@ -160,7 +160,10 @@ class VmafLegacyQualityRunner(QualityRunner):
             logger=self.logger,
             fifo_mode=self.fifo_mode,
             delete_workdir=self.delete_workdir,
-            result_store=self.result_store
+            result_store=self.result_store,
+            optional_dict=None,
+            optional_dict2=None,
+            # parallelize=True,
         )
         return vmaf_fassembler
 
@@ -268,7 +271,10 @@ class VmafQualityRunner(QualityRunner):
             logger=self.logger,
             fifo_mode=self.fifo_mode,
             delete_workdir=self.delete_workdir,
-            result_store=self.result_store
+            result_store=self.result_store,
+            optional_dict=None,
+            optional_dict2=None,
+            # parallelize=True,
         )
         return vmaf_fassembler
 
@@ -353,12 +359,12 @@ class VmafQualityRunner(QualityRunner):
         return ys_pred
 
     def _load_model(self):
-        model_filepath = self.optional_dict['model_filepath'] \
-            if (self.optional_dict is not None
-                and 'model_filepath' in self.optional_dict
-                and self.optional_dict['model_filepath'] is not None
-                ) \
-            else self.DEFAULT_MODEL_FILEPATH
+        if self.optional_dict is not None \
+                and 'model_filepath' in self.optional_dict \
+                and self.optional_dict['model_filepath'] is not None:
+            model_filepath = self.optional_dict['model_filepath']
+        else:
+            model_filepath = self.DEFAULT_MODEL_FILEPATH
         model = TrainTestModel.from_file(model_filepath, self.logger)
         return model
 

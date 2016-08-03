@@ -1,3 +1,5 @@
+from numbers import Number
+
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
@@ -132,13 +134,13 @@ class TrainTestModel(TypeVersionEnabled):
 
         model_type = info_loaded['model_dict']['model_type']
 
-        if model_type == LibsvmnusvrTrainTestModel.TYPE:
-            train_test_model = LibsvmnusvrTrainTestModel(param_dict={}, logger=logger)
+        if model_type == LibsvmNusvrTrainTestModel.TYPE:
+            train_test_model = LibsvmNusvrTrainTestModel(param_dict={}, logger=logger)
             train_test_model.param_dict = info_loaded['param_dict']
             train_test_model.model_dict = info_loaded['model_dict']
 
             # == special handling of libsvmnusvr: load .model differently ==
-            model = LibsvmnusvrTrainTestModel.svmutil.svm_load_model(filename + '.model')
+            model = LibsvmNusvrTrainTestModel.svmutil.svm_load_model(filename + '.model')
             train_test_model.model_dict['model'] = model
         else:
             model_class = TrainTestModel.find_subclass(model_type)
@@ -153,8 +155,7 @@ class TrainTestModel(TypeVersionEnabled):
         self.model_type = self.TYPE
 
         assert 'label' in xys
-
-        ys_vec = xys['label']
+        assert 'content_id' in xys
 
         # this makes sure the order of features are normalized, and each
         # dimension of xys_2d is consistent with feature_names
@@ -165,15 +166,7 @@ class TrainTestModel(TypeVersionEnabled):
 
         self.feature_names = feature_names
 
-        xs_2d = None
-        for name in feature_names:
-            if xs_2d is None:
-                xs_2d = np.matrix(xys[name]).T
-            else:
-                xs_2d = np.hstack((xs_2d, np.matrix(xys[name]).T))
-
-        # combine them
-        xys_2d = np.array(np.hstack((np.matrix(ys_vec).T, xs_2d)))
+        xys_2d = self._to_tabular_xys(feature_names, xys)
 
         # calculate normalization parameters,
         self._calculate_normalization_params(xys_2d)
@@ -253,10 +246,9 @@ class TrainTestModel(TypeVersionEnabled):
         for name in self.feature_names:
             assert name in xs
 
-        xs_2d = []
-        for name in self.feature_names:
-            xs_2d.append(np.array(xs[name]))
-        xs_2d = np.vstack(xs_2d).T
+        feature_names = self.feature_names
+
+        xs_2d = self._to_tabular_xs(feature_names, xs)
 
         # normalize xs
         xs_2d = self.normalize_xs(xs_2d)
@@ -268,6 +260,28 @@ class TrainTestModel(TypeVersionEnabled):
         ys_label_pred = self.denormalize_ys(ys_label_pred)
 
         return ys_label_pred
+
+    @classmethod
+    def _to_tabular_xys(cls, xkeys, xys):
+        xs_2d = None
+        for name in xkeys:
+            if xs_2d is None:
+                xs_2d = np.matrix(xys[name]).T
+            else:
+                xs_2d = np.hstack((xs_2d, np.matrix(xys[name]).T))
+
+        # combine them
+        ys_vec = xys['label']
+        xys_2d = np.array(np.hstack((np.matrix(ys_vec).T, xs_2d)))
+        return xys_2d
+
+    @classmethod
+    def _to_tabular_xs(cls, xkeys, xs):
+        xs_2d = []
+        for name in xkeys:
+            xs_2d.append(np.array(xs[name]))
+        xs_2d = np.vstack(xs_2d).T
+        return xs_2d
 
     def evaluate(self, xs, ys):
         ys_label_pred = self.predict(xs)
@@ -398,18 +412,34 @@ class TrainTestModel(TypeVersionEnabled):
         :param indexs: indices of results to be used
         :param aggregate: if True, return aggregate score, otherwise per-frame/per-block
         """
-        if aggregate:
-            feature_names = results[0].get_ordered_list_score_key()
-        else:
-            feature_names = results[0]._get_ordered_list_scores_key()
+        try:
+            if aggregate:
+                feature_names = results[0].get_ordered_list_score_key()
+            else:
+                feature_names = results[0].get_ordered_list_scores_key()
+        except AttributeError:
+            # if RawResult, will not have either get_ordered_list_score_key
+            # or get_ordered_list_scores_key. Instead, just get the sorted keys
+            feature_names = results[0].get_ordered_results()
+
+        cls._assert_dimension(feature_names, results)
+
+        # collect results into xs
         xs = {}
         for name in feature_names:
             if indexs is not None:
                 _results = map(lambda i:results[i], indexs)
             else:
                 _results = results
-            xs[name] = np.array(map(lambda result: result[name], _results))
+            xs[name] = map(lambda result: result[name], _results)
         return xs
+
+    @classmethod
+    def _assert_dimension(cls, feature_names, results):
+        # by default, only accept result[feature_name] that is a scalar
+        for name in feature_names:
+            for result in results:
+                assert isinstance(result[name], Number)
 
     @staticmethod
     def get_perframe_xs_from_result(result):
@@ -420,7 +450,7 @@ class TrainTestModel(TypeVersionEnabled):
         :param result: one BasicResult
         :param indexs: indices of results to be used
         """
-        feature_names = result._get_ordered_list_scores_key()
+        feature_names = result.get_ordered_list_scores_key()
         new_feature_names = result.get_ordered_list_score_key()
         xs = {}
         for name, new_name in zip(feature_names, new_feature_names):
@@ -456,7 +486,7 @@ class TrainTestModel(TypeVersionEnabled):
         return xys
 
 
-class LibsvmnusvrTrainTestModel(TrainTestModel):
+class LibsvmNusvrTrainTestModel(TrainTestModel):
 
     TYPE = 'LIBSVMNUSVR'
     VERSION = "0.1"
@@ -522,16 +552,6 @@ class LibsvmnusvrTrainTestModel(TrainTestModel):
             os.remove(filename + '.model')
 
     @classmethod
-    def _predict(cls, model, xs_2d):
-        # override TrainTestModel._predict(cls, model, xs_2d)
-        f = list(xs_2d)
-        for i, item in enumerate(f):
-            f[i] = list(item)
-        score, _, _ = cls.svmutil.svm_predict([0] * len(f), f, model)
-        ys_label_pred = np.array(score)
-        return ys_label_pred
-
-    @classmethod
     def _train(cls, model_param, xys_2d):
         """
         :param model_param:
@@ -566,15 +586,18 @@ class LibsvmnusvrTrainTestModel(TrainTestModel):
 
         return model
 
-class SklearnTrainTestModel(TrainTestModel):
-
-    @staticmethod
-    def _predict(model, xs_2d):
-        # directly call sklearn's model's predict() function
-        ys_label_pred = model.predict(xs_2d)
+    @classmethod
+    def _predict(cls, model, xs_2d):
+        # override TrainTestModel._predict(cls, model, xs_2d)
+        f = list(xs_2d)
+        for i, item in enumerate(f):
+            f[i] = list(item)
+        score, _, _ = cls.svmutil.svm_predict([0] * len(f), f, model)
+        ys_label_pred = np.array(score)
         return ys_label_pred
 
-class RandomForestTrainTestModel(SklearnTrainTestModel):
+
+class SklearnRandomForestTrainTestModel(TrainTestModel):
 
     TYPE = 'RANDOMFOREST'
     VERSION = "0.1"
@@ -623,4 +646,12 @@ class RandomForestTrainTestModel(SklearnTrainTestModel):
         model.fit(xys_2d[:, 1:], np.ravel(xys_2d[:, 0]))
 
         return model
+
+    @staticmethod
+    def _predict(model, xs_2d):
+        # directly call sklearn's model's predict() function
+        ys_label_pred = model.predict(xs_2d)
+        return ys_label_pred
+
+
 

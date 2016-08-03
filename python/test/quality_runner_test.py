@@ -200,7 +200,8 @@ class QualityRunnerTest(unittest.TestCase):
             result_store=None,
             optional_dict={
                 'model_filepath':config.ROOT + "/resource/model/nflx_v1.pkl",
-            }
+            },
+            optional_dict2=None,
         )
         self.runner.run()
 
@@ -388,7 +389,8 @@ class QualityRunnerTest(unittest.TestCase):
             result_store=self.result_store,
             optional_dict={
                 'model_filepath':config.ROOT + "/resource/model/nflx_vmaff_rf_v1.pkl",
-            }
+            },
+            optional_dict2=None,
         )
         self.runner.run()
 
@@ -532,7 +534,8 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             result_store=None,
             optional_dict={
                 'model_filepath':config.ROOT + "/resource/model/nflx_vmaff_rf_v1.pkl",
-            }
+            },
+            optional_dict2=None,
         )
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.44609306249999997, places=4)

@@ -11,9 +11,17 @@ class FeatureAssembler(object):
     FeatureExtractors. For each asset, it outputs a BasicResult object.
     """
 
-    def __init__(self, feature_dict, feature_option_dict, assets, logger,
-                 fifo_mode, delete_workdir, result_store,
-                 optional_dict=None, parallelize=False):
+    def __init__(self,
+                 feature_dict,
+                 feature_option_dict,
+                 assets, 
+                 logger,
+                 fifo_mode,
+                 delete_workdir,
+                 result_store,
+                 optional_dict=None,
+                 optional_dict2=None,
+                 parallelize=False):
         """
         :param feature_dict: in the format of:
         {FeatureExtractor_type:'all', ...}, or
@@ -41,6 +49,7 @@ class FeatureAssembler(object):
         self.delete_workdir = delete_workdir
         self.result_store = result_store
         self.optional_dict = optional_dict
+        self.optional_dict2 = optional_dict2
         self.parallelize = parallelize
 
         self.type2results_dict = {}
@@ -68,6 +77,7 @@ class FeatureAssembler(object):
                 parallelize=self.parallelize,
                 result_store=self.result_store,
                 optional_dict=self.optional_dict,
+                optional_dict2=self.optional_dict2,
             )
 
             self.type2results_dict[fextractor_type] = results
@@ -121,7 +131,8 @@ class FeatureAssembler(object):
                                       fifo_mode=self.fifo_mode,
                                       delete_workdir=self.delete_workdir,
                                       result_store=self.result_store,
-                                      optional_dict=self.optional_dict
+                                      optional_dict=self.optional_dict,
+                                      optional_dict2=self.optional_dict2,
                                       )
         return fextractor
 
