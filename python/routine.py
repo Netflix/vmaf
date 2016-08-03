@@ -44,6 +44,8 @@ def read_dataset(dataset):
             groundtruth = dis_video['dmos']
         elif 'mos' in dis_video:
             groundtruth = dis_video['mos']
+        elif 'groundtruth' in dis_video:
+            groundtruth = dis_video['groundtruth']
         else:
             groundtruth = None
             # assert False, 'Each distorted video entry must provide either ' \

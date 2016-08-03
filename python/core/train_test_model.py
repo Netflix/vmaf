@@ -18,10 +18,16 @@ from core.mixin import TypeVersionEnabled
 
 class TrainTestModel(TypeVersionEnabled):
 
-    def __init__(self, param_dict, logger=None):
+    def __init__(self, param_dict, logger=None, optional_dict2=None):
+        '''
+        Put in optional_dict2 optionals that would not impact result, e.g.
+        path to checkpoint file directories, or h5py file
+        '''
         TypeVersionEnabled.__init__(self)
         self.param_dict = param_dict
         self.logger = logger
+        self.optional_dict2 = optional_dict2
+
         self.model_dict = {}
 
     @property
@@ -128,7 +134,7 @@ class TrainTestModel(TypeVersionEnabled):
             pickle.dump(info_to_save, file)
 
     @staticmethod
-    def from_file(filename, logger):
+    def from_file(filename, logger=None):
         with open(filename, 'rb') as file:
             info_loaded = pickle.load(file)
 
