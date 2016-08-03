@@ -18,7 +18,7 @@ class TrainTestModelTest(unittest.TestCase):
 
     def setUp(self):
 
-        train_dataset_path = config.ROOT + '/python/test/resource/test_image_dataset.py'
+        train_dataset_path = config.ROOT + '/python/test/resource/test_image_dataset_diff_wh.py'
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
 
@@ -48,10 +48,10 @@ class TrainTestModelTest(unittest.TestCase):
         self.assertAlmostEquals(np.mean(xs['Moment_noref_feature_var_score']), 1569.2395085695462, places=4)
 
         xs = TrainTestModel.get_xs_from_results(self.features)
-        self.assertEquals(len(xs['Moment_noref_feature_1st_score']), 8)
-        self.assertAlmostEquals(np.mean(xs['Moment_noref_feature_1st_score']), 121.06282180814893, places=4)
-        self.assertEquals(len(xs['Moment_noref_feature_var_score']), 8)
-        self.assertAlmostEquals(np.mean(xs['Moment_noref_feature_var_score']), 1991.6255558247362, places=4)
+        self.assertEquals(len(xs['Moment_noref_feature_1st_score']), 9)
+        self.assertAlmostEquals(np.mean(xs['Moment_noref_feature_1st_score']), 111.59099599173773, places=4)
+        self.assertEquals(len(xs['Moment_noref_feature_var_score']), 9)
+        self.assertAlmostEquals(np.mean(xs['Moment_noref_feature_var_score']), 1806.8620377229011, places=4)
 
         ys = TrainTestModel.get_ys_from_results(self.features, [0, 1, 2])
         expected_ys = {'label': np.array([2.5, 3.9, 5.0]),
@@ -76,7 +76,7 @@ class TrainTestModelTest(unittest.TestCase):
         loaded_model = RandomForestTrainTestModel.from_file(self.model_filename, None)
 
         result = loaded_model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.15106640142026415, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.17634739353518517, places=4)
 
     def test_train_save_load_predict_libsvmnusvr(self):
 
@@ -96,11 +96,11 @@ class TrainTestModelTest(unittest.TestCase):
         loaded_model = LibsvmnusvrTrainTestModel.from_file(self.model_filename, None)
 
         result = self.model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.39650837698192637, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.62263086620058783, places=4)
 
         # loaded model generates slight numerical difference
         result = loaded_model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.39650837698192637, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.62263139871631323, places=4)
 
     def test_train_predict_libsvmnusvr(self):
 
@@ -116,25 +116,25 @@ class TrainTestModelTest(unittest.TestCase):
             {'norm_type':'normalize'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.39650837698192637, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.62263086620058783, places=4)
 
         model = LibsvmnusvrTrainTestModel(
             {'norm_type':'clip_0to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.89839762651581445, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.84243141087114626, places=4)
 
         model = LibsvmnusvrTrainTestModel(
             {'norm_type':'clip_minus1to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.81759338742714127, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.8314352752340991, places=4)
 
         model = LibsvmnusvrTrainTestModel(
             {'norm_type':'none'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.21885719456686764, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.23294283650716496, places=4)
 
     def test_train_predict_randomforest(self):
 
