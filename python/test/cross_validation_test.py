@@ -3,7 +3,7 @@ __license__ = "Apache, Version 2.0"
 
 import unittest
 
-from core.train_test_model import RandomForestTrainTestModel, LibsvmnusvrTrainTestModel
+from core.train_test_model import SklearnRandomForestTrainTestModel, LibsvmNusvrTrainTestModel
 from core.cross_validation import ModelCrossValidation
 import config
 from core.executor import run_executors_in_parallel
@@ -34,7 +34,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
 
         print "test cross validation..."
 
-        train_test_model_class = RandomForestTrainTestModel
+        train_test_model_class = SklearnRandomForestTrainTestModel
         model_param = {'norm_type':'normalize', 'random_state': 0}
 
         indices_train = range(9)
@@ -53,7 +53,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
 
         print "test k-fold cross validation on random forest..."
 
-        train_test_model_class = RandomForestTrainTestModel
+        train_test_model_class = SklearnRandomForestTrainTestModel
         model_param = {'norm_type':'normalize', 'random_state': 0}
 
         output = ModelCrossValidation.run_kfold_cross_validation(
@@ -68,7 +68,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
 
         print "test k-fold cross validation on libsvmnusvr..."
 
-        train_test_model_class = LibsvmnusvrTrainTestModel
+        train_test_model_class = LibsvmNusvrTrainTestModel
         model_param = {'norm_type': 'normalize'}
 
         output = ModelCrossValidation.run_kfold_cross_validation(
@@ -83,7 +83,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
 
         print "test k-fold cross validation with list input..."
 
-        train_test_model_class = RandomForestTrainTestModel
+        train_test_model_class = SklearnRandomForestTrainTestModel
         model_param = {'norm_type':'normalize', 'random_state': 0}
 
         output = ModelCrossValidation.run_kfold_cross_validation(
@@ -159,7 +159,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
 
         print "test nested k-fold cross validation on random forest..."
 
-        train_test_model_class = RandomForestTrainTestModel
+        train_test_model_class = SklearnRandomForestTrainTestModel
         model_param_search_range = \
             {'norm_type':['normalize'],
              'n_estimators':[10, 90],
@@ -187,7 +187,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
 
         print "test nested k-fold cross validation on libsvmnusvr..."
 
-        train_test_model_class = LibsvmnusvrTrainTestModel
+        train_test_model_class = LibsvmNusvrTrainTestModel
         model_param_search_range = \
             {'norm_type':['normalize', 'clip_0to1', 'clip_minus1to1'],
              'kernel':['rbf'],
@@ -219,7 +219,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
 
         print "test nested k-fold cross validation with list input..."
 
-        train_test_model_class = RandomForestTrainTestModel
+        train_test_model_class = SklearnRandomForestTrainTestModel
         model_param_search_range = \
             {'norm_type':['none'],
              'n_estimators':[10, 90],

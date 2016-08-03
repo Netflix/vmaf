@@ -134,13 +134,13 @@ class TrainTestModel(TypeVersionEnabled):
 
         model_type = info_loaded['model_dict']['model_type']
 
-        if model_type == LibsvmnusvrTrainTestModel.TYPE:
-            train_test_model = LibsvmnusvrTrainTestModel(param_dict={}, logger=logger)
+        if model_type == LibsvmNusvrTrainTestModel.TYPE:
+            train_test_model = LibsvmNusvrTrainTestModel(param_dict={}, logger=logger)
             train_test_model.param_dict = info_loaded['param_dict']
             train_test_model.model_dict = info_loaded['model_dict']
 
             # == special handling of libsvmnusvr: load .model differently ==
-            model = LibsvmnusvrTrainTestModel.svmutil.svm_load_model(filename + '.model')
+            model = LibsvmNusvrTrainTestModel.svmutil.svm_load_model(filename + '.model')
             train_test_model.model_dict['model'] = model
         else:
             model_class = TrainTestModel.find_subclass(model_type)
@@ -486,7 +486,7 @@ class TrainTestModel(TypeVersionEnabled):
         return xys
 
 
-class LibsvmnusvrTrainTestModel(TrainTestModel):
+class LibsvmNusvrTrainTestModel(TrainTestModel):
 
     TYPE = 'LIBSVMNUSVR'
     VERSION = "0.1"
@@ -552,16 +552,6 @@ class LibsvmnusvrTrainTestModel(TrainTestModel):
             os.remove(filename + '.model')
 
     @classmethod
-    def _predict(cls, model, xs_2d):
-        # override TrainTestModel._predict(cls, model, xs_2d)
-        f = list(xs_2d)
-        for i, item in enumerate(f):
-            f[i] = list(item)
-        score, _, _ = cls.svmutil.svm_predict([0] * len(f), f, model)
-        ys_label_pred = np.array(score)
-        return ys_label_pred
-
-    @classmethod
     def _train(cls, model_param, xys_2d):
         """
         :param model_param:
@@ -596,15 +586,18 @@ class LibsvmnusvrTrainTestModel(TrainTestModel):
 
         return model
 
-class SklearnTrainTestModel(object):
-
-    @staticmethod
-    def _predict(model, xs_2d):
-        # directly call sklearn's model's predict() function
-        ys_label_pred = model.predict(xs_2d)
+    @classmethod
+    def _predict(cls, model, xs_2d):
+        # override TrainTestModel._predict(cls, model, xs_2d)
+        f = list(xs_2d)
+        for i, item in enumerate(f):
+            f[i] = list(item)
+        score, _, _ = cls.svmutil.svm_predict([0] * len(f), f, model)
+        ys_label_pred = np.array(score)
         return ys_label_pred
 
-class RandomForestTrainTestModel(SklearnTrainTestModel, TrainTestModel):
+
+class SklearnRandomForestTrainTestModel(TrainTestModel):
 
     TYPE = 'RANDOMFOREST'
     VERSION = "0.1"
@@ -653,4 +646,12 @@ class RandomForestTrainTestModel(SklearnTrainTestModel, TrainTestModel):
         model.fit(xys_2d[:, 1:], np.ravel(xys_2d[:, 0]))
 
         return model
+
+    @staticmethod
+    def _predict(model, xs_2d):
+        # directly call sklearn's model's predict() function
+        ys_label_pred = model.predict(xs_2d)
+        return ys_label_pred
+
+
 

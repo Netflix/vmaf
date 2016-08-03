@@ -8,7 +8,7 @@ import numpy as np
 
 import config
 from core.train_test_model import TrainTestModel, \
-    LibsvmnusvrTrainTestModel, RandomForestTrainTestModel
+    LibsvmNusvrTrainTestModel, SklearnRandomForestTrainTestModel
 from core.executor import run_executors_in_parallel
 from core.noref_feature_extractor import MomentNorefFeatureExtractor
 from routine import read_dataset
@@ -67,13 +67,13 @@ class TrainTestModelTest(unittest.TestCase):
         ys = TrainTestModel.get_ys_from_results(self.features)
         xys = TrainTestModel.get_xys_from_results(self.features)
 
-        self.model = RandomForestTrainTestModel({'norm_type':'normalize', 'random_state':0}, None)
+        self.model = SklearnRandomForestTrainTestModel({'norm_type':'normalize', 'random_state':0}, None)
         self.model.train(xys)
 
         self.model.to_file(self.model_filename)
         self.assertTrue(os.path.exists(self.model_filename))
 
-        loaded_model = RandomForestTrainTestModel.from_file(self.model_filename, None)
+        loaded_model = SklearnRandomForestTrainTestModel.from_file(self.model_filename, None)
 
         result = loaded_model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.17634739353518517, places=4)
@@ -86,14 +86,14 @@ class TrainTestModelTest(unittest.TestCase):
         ys = TrainTestModel.get_ys_from_results(self.features)
         xys = TrainTestModel.get_xys_from_results(self.features)
 
-        self.model = LibsvmnusvrTrainTestModel({'norm_type':'normalize'}, None)
+        self.model = LibsvmNusvrTrainTestModel({'norm_type':'normalize'}, None)
         self.model.train(xys)
 
         self.model.to_file(self.model_filename)
         self.assertTrue(os.path.exists(self.model_filename))
         self.assertTrue(os.path.exists(self.model_filename + '.model'))
 
-        loaded_model = LibsvmnusvrTrainTestModel.from_file(self.model_filename, None)
+        loaded_model = LibsvmNusvrTrainTestModel.from_file(self.model_filename, None)
 
         result = self.model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.62263086620058783, places=4)
@@ -112,25 +112,25 @@ class TrainTestModelTest(unittest.TestCase):
         ys = TrainTestModel.get_ys_from_results(self.features)
         xys = TrainTestModel.get_xys_from_results(self.features)
 
-        model = LibsvmnusvrTrainTestModel(
+        model = LibsvmNusvrTrainTestModel(
             {'norm_type':'normalize'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.62263086620058783, places=4)
 
-        model = LibsvmnusvrTrainTestModel(
+        model = LibsvmNusvrTrainTestModel(
             {'norm_type':'clip_0to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.84243141087114626, places=4)
 
-        model = LibsvmnusvrTrainTestModel(
+        model = LibsvmNusvrTrainTestModel(
             {'norm_type':'clip_minus1to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.8314352752340991, places=4)
 
-        model = LibsvmnusvrTrainTestModel(
+        model = LibsvmNusvrTrainTestModel(
             {'norm_type':'none'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
@@ -146,25 +146,25 @@ class TrainTestModelTest(unittest.TestCase):
         ys = TrainTestModel.get_ys_from_results(self.features, [0, 1, 2])
         xys = TrainTestModel.get_xys_from_results(self.features, [0, 1, 2])
 
-        model = RandomForestTrainTestModel({'norm_type':'normalize',
+        model = SklearnRandomForestTrainTestModel({'norm_type':'normalize',
                                             'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.051804171170643766, places=4)
 
-        model = RandomForestTrainTestModel({'norm_type':'clip_0to1',
+        model = SklearnRandomForestTrainTestModel({'norm_type':'clip_0to1',
                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.051804171170643752, places=4)
 
-        model = RandomForestTrainTestModel({'norm_type':'clip_minus1to1',
+        model = SklearnRandomForestTrainTestModel({'norm_type':'clip_minus1to1',
                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.051804171170643752, places=4)
 
-        model = RandomForestTrainTestModel({'norm_type':'none', 'random_state': 0}, None)
+        model = SklearnRandomForestTrainTestModel({'norm_type':'none', 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.051804171170643752, places=4)
