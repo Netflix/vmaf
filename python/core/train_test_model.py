@@ -1,3 +1,5 @@
+from numbers import Number
+
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
@@ -398,10 +400,19 @@ class TrainTestModel(TypeVersionEnabled):
         :param indexs: indices of results to be used
         :param aggregate: if True, return aggregate score, otherwise per-frame/per-block
         """
-        if aggregate:
-            feature_names = results[0].get_ordered_list_score_key()
-        else:
-            feature_names = results[0].get_ordered_list_scores_key()
+        try:
+            if aggregate:
+                feature_names = results[0].get_ordered_list_score_key()
+            else:
+                feature_names = results[0].get_ordered_list_scores_key()
+        except AttributeError:
+            # if RawResult, will not have either get_ordered_list_score_key
+            # or get_ordered_list_scores_key. Instead, just get the sorted keys
+            feature_names = results[0].get_ordered_results()
+
+        cls._assert_dimension(feature_names, results)
+
+        # collect results into xs
         xs = {}
         for name in feature_names:
             if indexs is not None:
@@ -410,6 +421,13 @@ class TrainTestModel(TypeVersionEnabled):
                 _results = results
             xs[name] = np.array(map(lambda result: result[name], _results))
         return xs
+
+    @classmethod
+    def _assert_dimension(cls, feature_names, results):
+        # by default, only accept result[feature_name] that is a scalar
+        for name in feature_names:
+            for result in results:
+                assert isinstance(result[name], Number)
 
     @staticmethod
     def get_perframe_xs_from_result(result):
@@ -624,3 +642,20 @@ class RandomForestTrainTestModel(SklearnTrainTestModel):
 
         return model
 
+class DisYMomentTrainTestModel(TrainTestModel):
+    """
+    Compute moments based on the input distorted Y channel image and then call a
+    RandomForestTrainTestModel. For demo purpose only.
+    """
+
+    TYPE = 'Moment'
+    VERSION = "1.0"
+
+    @classmethod
+    def _assert_dimension(cls, feature_names, results):
+        # Override TrainTestModel._assert_dimension. allow input to be a numpy
+        # ndarray or equivalent (e.g. H5py object) -- they must have attribute
+        # shape
+        assert hasattr(results[0][feature_names[0]], 'shape')
+
+        pass

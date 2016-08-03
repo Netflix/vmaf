@@ -18,7 +18,7 @@ class TrainTestModelTest(unittest.TestCase):
 
     def setUp(self):
 
-        train_dataset_path = config.ROOT + '/python/test/resource/BSDS500_dataset.py'
+        train_dataset_path = config.ROOT + '/python/test/resource/test_image_dataset.py'
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
 
@@ -48,15 +48,13 @@ class TrainTestModelTest(unittest.TestCase):
         self.assertAlmostEquals(np.mean(xs['Moment_noref_feature_var_score']), 1569.2395085695462, places=4)
 
         xs = TrainTestModel.get_xs_from_results(self.features)
-        self.assertEquals(len(xs['Moment_noref_feature_1st_score']), 5)
-        self.assertAlmostEquals(np.mean(xs['Moment_noref_feature_1st_score']), 123.39289900972145, places=4)
-        self.assertEquals(len(xs['Moment_noref_feature_var_score']), 5)
-        self.assertAlmostEquals(np.mean(xs['Moment_noref_feature_var_score']), 2001.278680332854, places=4)
+        self.assertEquals(len(xs['Moment_noref_feature_1st_score']), 8)
+        self.assertAlmostEquals(np.mean(xs['Moment_noref_feature_1st_score']), 121.06282180814893, places=4)
+        self.assertEquals(len(xs['Moment_noref_feature_var_score']), 8)
+        self.assertAlmostEquals(np.mean(xs['Moment_noref_feature_var_score']), 1991.6255558247362, places=4)
 
         ys = TrainTestModel.get_ys_from_results(self.features, [0, 1, 2])
-        expected_ys = {'label': np.array([1.0,
-                                          2.0,
-                                          3.0]),
+        expected_ys = {'label': np.array([2.5, 3.9, 5.0]),
                        'content_id': np.array([0, 1, 2])}
         self.assertTrue(all(ys['label'] == expected_ys['label']))
         self.assertTrue(all(ys['content_id'] == expected_ys['content_id']))
@@ -78,7 +76,7 @@ class TrainTestModelTest(unittest.TestCase):
         loaded_model = RandomForestTrainTestModel.from_file(self.model_filename, None)
 
         result = loaded_model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.26497837611988789, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.15106640142026415, places=4)
 
         model.delete(self.model_filename)
 
@@ -100,11 +98,11 @@ class TrainTestModelTest(unittest.TestCase):
         loaded_model = LibsvmnusvrTrainTestModel.from_file(self.model_filename, None)
 
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.36148223562418469, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.39650837698192637, places=4)
 
         # loaded model generates slight numerical difference
         result = loaded_model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.36148223562418469, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.39650837698192637, places=4)
 
         model.delete(self.model_filename)
 
@@ -122,25 +120,25 @@ class TrainTestModelTest(unittest.TestCase):
             {'norm_type':'normalize'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.36148223562418469, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.39650837698192637, places=4)
 
         model = LibsvmnusvrTrainTestModel(
             {'norm_type':'clip_0to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.59592227645562434, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.89839762651581445, places=4)
 
         model = LibsvmnusvrTrainTestModel(
             {'norm_type':'clip_minus1to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.4132364711542591, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.81759338742714127, places=4)
 
         model = LibsvmnusvrTrainTestModel(
             {'norm_type':'none'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.052948346525209113, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.21885719456686764, places=4)
 
     def test_train_predict_randomforest(self):
 
@@ -148,32 +146,32 @@ class TrainTestModelTest(unittest.TestCase):
 
         # random forest don't need proper data normalization
 
-        xs = TrainTestModel.get_xs_from_results(self.features)
-        ys = TrainTestModel.get_ys_from_results(self.features)
-        xys = TrainTestModel.get_xys_from_results(self.features)
+        xs = TrainTestModel.get_xs_from_results(self.features, [0, 1, 2])
+        ys = TrainTestModel.get_ys_from_results(self.features, [0, 1, 2])
+        xys = TrainTestModel.get_xys_from_results(self.features, [0, 1, 2])
 
         model = RandomForestTrainTestModel({'norm_type':'normalize',
                                             'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.26497837611988789, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.051804171170643766, places=4)
 
         model = RandomForestTrainTestModel({'norm_type':'clip_0to1',
                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.26497837611988784, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.051804171170643752, places=4)
 
         model = RandomForestTrainTestModel({'norm_type':'clip_minus1to1',
                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.26497837611988784, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.051804171170643752, places=4)
 
         model = RandomForestTrainTestModel({'norm_type':'none', 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
-        self.assertAlmostEquals(result['RMSE'], 0.26497837611988784, places=4)
+        self.assertAlmostEquals(result['RMSE'], 0.051804171170643752, places=4)
 
 if __name__ == '__main__':
     unittest.main()
