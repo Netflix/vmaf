@@ -30,6 +30,11 @@ class TrainTestModel(TypeVersionEnabled):
 
         self.model_dict = {}
 
+        self._assert_args()
+
+    def _assert_args(self):
+        pass
+
     @property
     def model_id(self):
         return TypeVersionEnabled.get_type_version_string(self)
@@ -37,8 +42,8 @@ class TrainTestModel(TypeVersionEnabled):
     def _assert_trained(self):
         assert 'model_type' in self.model_dict # need this to recover class
         assert 'feature_names' in self.model_dict
-        assert 'model' in self.model_dict
         assert 'norm_type' in self.model_dict
+        assert 'model' in self.model_dict
 
         norm_type = self.model_dict['norm_type']
         assert norm_type == 'none' or norm_type == 'linear_rescale'
