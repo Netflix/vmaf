@@ -3,7 +3,7 @@ __license__ = "Apache, Version 2.0"
 
 import unittest
 
-from core.train_test_model import RandomForestTrainTestModel, LibsvmnusvrTrainTestModel
+from core.train_test_model import SklearnRandomForestTrainTestModel, LibsvmNusvrTrainTestModel
 from core.cross_validation import ModelCrossValidation
 import config
 from core.executor import run_executors_in_parallel
@@ -15,7 +15,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
 
     def setUp(self):
 
-        train_dataset_path = config.ROOT + '/python/test/resource/BSDS500_dataset.py'
+        train_dataset_path = config.ROOT + '/python/test/resource/test_image_dataset_diff_wh.py'
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
 
@@ -27,72 +27,73 @@ class FeatureCrossValidationTest(unittest.TestCase):
             parallelize=True,
             result_store=None,
             optional_dict=None,
+            optional_dict2=None,
         )
 
     def test_run_cross_validation(self):
 
         print "test cross validation..."
 
-        train_test_model_class = RandomForestTrainTestModel
+        train_test_model_class = SklearnRandomForestTrainTestModel
         model_param = {'norm_type':'normalize', 'random_state': 0}
 
-        indices_train = range(5)
-        indices_test = range(5)
+        indices_train = range(9)
+        indices_test = range(9)
 
         output = ModelCrossValidation.run_cross_validation(
             train_test_model_class, model_param, self.features,
             indices_train, indices_test)
-        self.assertAlmostEquals(output['stats']['SRCC'], 1.0, places=4)
-        self.assertAlmostEquals(output['stats']['PCC'], 0.98915736773708851, places=4)
-        self.assertAlmostEquals(output['stats']['KENDALL'], 1.0, places=4)
-        self.assertAlmostEquals(output['stats']['RMSE'], 0.26497837611988789, places=4)
+        self.assertAlmostEquals(output['stats']['SRCC'], 0.93333333333333324, places=4)
+        self.assertAlmostEquals(output['stats']['PCC'], 0.97754442316039469, places=4)
+        self.assertAlmostEquals(output['stats']['KENDALL'], 0.83333333333333337, places=4)
+        self.assertAlmostEquals(output['stats']['RMSE'], 0.17634739353518517, places=4)
         self.assertEquals(output['model'].TYPE, "RANDOMFOREST")
 
     def test_run_kfold_cross_validation_randomforest(self):
 
         print "test k-fold cross validation on random forest..."
 
-        train_test_model_class = RandomForestTrainTestModel
+        train_test_model_class = SklearnRandomForestTrainTestModel
         model_param = {'norm_type':'normalize', 'random_state': 0}
 
         output = ModelCrossValidation.run_kfold_cross_validation(
-            train_test_model_class, model_param, self.features, 5)
+            train_test_model_class, model_param, self.features, 3)
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.8999999999999998, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.95636260884698576, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.79999999999999982, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.52346177899173219, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.28452131897694583, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.1689046198483892, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.084515425472851652, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.344683833136588, places=4)
 
     def test_run_kfold_cross_validation_libsvmnusvr(self):
 
         print "test k-fold cross validation on libsvmnusvr..."
 
-        train_test_model_class = LibsvmnusvrTrainTestModel
+        train_test_model_class = LibsvmNusvrTrainTestModel
         model_param = {'norm_type': 'normalize'}
 
         output = ModelCrossValidation.run_kfold_cross_validation(
-            train_test_model_class, model_param, self.features, 5)
+            train_test_model_class, model_param, self.features, 3)
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 1.0, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.95877329342682471, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 1.0, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.49959985942859997, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.31666666666666665, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.33103132578536021, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.27777777777777779, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.2855099934718619, places=4)
 
     def test_run_kfold_cross_validation_with_list_input(self):
 
         print "test k-fold cross validation with list input..."
 
-        train_test_model_class = RandomForestTrainTestModel
+        train_test_model_class = SklearnRandomForestTrainTestModel
         model_param = {'norm_type':'normalize', 'random_state': 0}
 
         output = ModelCrossValidation.run_kfold_cross_validation(
             train_test_model_class, model_param, self.features,
-            [[0, 3], [2, 1], [4, ]])
+            [[0, 3, 8], [2, 1, 5], [4, 6, 7]])
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.69999999999999996, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.72607133059769025, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.59999999999999987, places=3)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.1817080521192824, places=3)
+        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.18333333333333335, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.35513638509959689, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.1111111111111111, places=3)
+        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.2740400878438387, places=3)
 
     def test_unroll_dict_of_lists(self):
         model_param_search_range = {'norm_type':['normalize', 'clip_0to1'],
@@ -158,7 +159,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
 
         print "test nested k-fold cross validation on random forest..."
 
-        train_test_model_class = RandomForestTrainTestModel
+        train_test_model_class = SklearnRandomForestTrainTestModel
         model_param_search_range = \
             {'norm_type':['normalize'],
              'n_estimators':[10, 90],
@@ -166,19 +167,19 @@ class FeatureCrossValidationTest(unittest.TestCase):
              'random_state': [0]}
 
         output = ModelCrossValidation.run_nested_kfold_cross_validation(
-            train_test_model_class, model_param_search_range, self.features, 5)
+            train_test_model_class, model_param_search_range, self.features, 3)
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.9, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.96225772597726533, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.79999999999999982, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.47861603467158437, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.40167715620274708, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.11009919053282299, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.14085904245475275, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.3681348274719265, places=4)
 
         expected_top_model_param = {'norm_type':'normalize',
-                                'n_estimators':90,
+                                'n_estimators':10,
                                 'max_depth':None,
                                 'random_state':0
                                 }
-        expected_top_ratio = 0.6
+        expected_top_ratio = 0.6666666666666666
         self.assertEquals(output['top_model_param'], expected_top_model_param)
         self.assertEquals(output['top_ratio'], expected_top_ratio)
 
@@ -186,30 +187,30 @@ class FeatureCrossValidationTest(unittest.TestCase):
 
         print "test nested k-fold cross validation on libsvmnusvr..."
 
-        train_test_model_class = LibsvmnusvrTrainTestModel
+        train_test_model_class = LibsvmNusvrTrainTestModel
         model_param_search_range = \
             {'norm_type':['normalize', 'clip_0to1', 'clip_minus1to1'],
              'kernel':['rbf'],
-             'nu': [0.5, 1.0],
+             'nu': [0.5],
              'C': [1, 2],
              'gamma': [0.0]
              }
 
         output = ModelCrossValidation.run_nested_kfold_cross_validation(
-            train_test_model_class, model_param_search_range, self.features, 5)
+            train_test_model_class, model_param_search_range, self.features, 3)
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 1.0, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.96096817671162149, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 1.0, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 0.48460918155650223, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.30962614123961751, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['PCC'], -0.1535643705229309, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.14085904245475275, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.5853397658781734, places=4)
 
-        expected_top_model_param = {'norm_type':'normalize',
+        expected_top_model_param = {'norm_type':'clip_0to1',
                                 'kernel':'rbf',
                                 'nu':0.5,
                                 'C':1,
                                 'gamma':0.0,
                                 }
-        expected_top_ratio = 0.8
+        expected_top_ratio = 1.0
 
         self.assertEquals(output['top_model_param'], expected_top_model_param)
         self.assertEquals(output['top_ratio'], expected_top_ratio)
@@ -218,7 +219,7 @@ class FeatureCrossValidationTest(unittest.TestCase):
 
         print "test nested k-fold cross validation with list input..."
 
-        train_test_model_class = RandomForestTrainTestModel
+        train_test_model_class = SklearnRandomForestTrainTestModel
         model_param_search_range = \
             {'norm_type':['none'],
              'n_estimators':[10, 90],
@@ -228,20 +229,19 @@ class FeatureCrossValidationTest(unittest.TestCase):
 
         output = ModelCrossValidation.run_nested_kfold_cross_validation(
             train_test_model_class, model_param_search_range, self.features,
-            [[0, 3], [2, 1], [4, ]]
-        )
+            [[0, 3, 2], [8, 6, 5], [4, 1, 7]])
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.7, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.72607133059769058, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.6, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.1817080521192824, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.26666666666666666, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.15272340058922063, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.22222222222222221, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.452887116343635, places=4)
 
         expected_top_model_param = {'norm_type':'none',
                                     'n_estimators':10,
                                     'max_depth':None,
                                     'random_state':0
                                     }
-        expected_top_ratio = 1.0
+        expected_top_ratio = 0.6666666666666666
         self.assertEquals(output['top_model_param'], expected_top_model_param)
         self.assertEquals(output['top_ratio'], expected_top_ratio)
 

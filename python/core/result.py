@@ -8,7 +8,6 @@ import numpy as np
 from tools.misc import get_file_name_with_extension
 from core.asset import Asset
 
-
 class BasicResult(object):
     """
     Has some basic functions, but don't need asset or executor_id. To be used by
@@ -17,16 +16,16 @@ class BasicResult(object):
     def __init__(self, asset, result_dict):
         self.asset = asset
         self.result_dict = result_dict
-        self.aggregate_method = np.mean
+        self.score_aggregate_method = np.mean
 
-    def set_aggregate_method(self, aggregate_method):
-        self.aggregate_method = aggregate_method
+    def set_score_aggregate_method(self, score_aggregate_method):
+        self.score_aggregate_method = score_aggregate_method
 
     # make access dictionary-like, i.e. can do: result['vif_score']
     def __getitem__(self, key):
-        return self.get_score(key)
+        return self.get_result(key)
 
-    def get_score(self, key):
+    def get_result(self, key):
         try:
             return self.result_dict[key]
         except KeyError as e:
@@ -44,10 +43,10 @@ class BasicResult(object):
             scores_key = key + 's' # e.g. 'VMAF_scores'
             if scores_key in self.result_dict:
                 scores = self.result_dict[scores_key]
-                return self.aggregate_method(scores)
+                return self.score_aggregate_method(scores)
         raise KeyError(error)
 
-    def _get_ordered_list_scores_key(self):
+    def get_ordered_list_scores_key(self):
         # e.g. ['VMAF_scores', 'VMAF_vif_scores']
         list_scores_key = filter(lambda key: re.search(r"_scores$", key),
                                  self.result_dict.keys())
@@ -56,16 +55,17 @@ class BasicResult(object):
 
     def get_ordered_list_score_key(self):
         # e.g. ['VMAF_score', 'VMAF_vif_score']
-        list_scores_key = self._get_ordered_list_scores_key()
+        list_scores_key = self.get_ordered_list_scores_key()
         return map(lambda scores_key: scores_key[:-1], list_scores_key)
 
-    def _get_perframe_score_str(self):
-        list_scores_key = self._get_ordered_list_scores_key()
+    def _get_scores_str(self, unit_name='Frame'):
+        list_scores_key = self.get_ordered_list_scores_key()
         list_score_key = self.get_ordered_list_score_key()
         list_scores = map(lambda key: self.result_dict[key], list_scores_key)
         str_perframe = "\n".join(
             map(
-                lambda (frame_num, scores): "Frame {}: ".format(frame_num) + (
+                lambda (frame_num, scores): "{unit} {num}: ".format(
+                    unit=unit_name, num=frame_num) + (
                 ", ".join(
                     map(
                         lambda (score_key, score): "{score_key}:{score:.6f}".
@@ -119,7 +119,7 @@ class Result(BasicResult):
             return False
         if self.executor_id != other.executor_id:
             return False
-        list_scores_key = self._get_ordered_list_scores_key()
+        list_scores_key = self.get_ordered_list_scores_key()
         for scores_key in list_scores_key:
             if self.result_dict[scores_key] != other.result_dict[scores_key]:
                 return False
@@ -154,7 +154,7 @@ class Result(BasicResult):
             self.asset.to_full_repr())
         s += 'Executor: {}\n'.format(self.executor_id)
         s += 'Result:\n'
-        s += self._get_perframe_score_str()
+        s += self._get_scores_str()
         s += self._get_aggregate_score_str()
         return s
 
@@ -197,7 +197,7 @@ class Result(BasicResult):
         import pandas as pd
         asset = self.asset
         executor_id = self.executor_id
-        list_scores_key = self._get_ordered_list_scores_key()
+        list_scores_key = self.get_ordered_list_scores_key()
         list_scores = map(lambda key: self.result_dict[key], list_scores_key)
 
         rows = []

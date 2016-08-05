@@ -90,6 +90,7 @@ def test_on_dataset(test_dataset, runner_class, ax,
                  delete_workdir=True,
                  result_store=result_store,
                  optional_dict=optional_dict,
+                 optional_dict2=None,
                  )
     try:
         # run
@@ -101,10 +102,11 @@ def test_on_dataset(test_dataset, runner_class, ax,
             parallelize=parallelize,
             result_store=result_store,
             optional_dict=optional_dict,
+            optional_dict2=None,
         )
 
         for result in results:
-            result.set_aggregate_method(aggregate_method)
+            result.set_score_aggregate_method(aggregate_method)
 
         # plot
         groundtruths = map(lambda asset: asset.groundtruth, test_assets)
@@ -153,6 +155,8 @@ def train_test_on_dataset(train_dataset, test_dataset,
         fifo_mode=fifo_mode,
         delete_workdir=True,
         result_store=result_store,
+        optional_dict=None,
+        optional_dict2=None,
         parallelize=parallelize,
     )
     train_fassembler.run()
@@ -219,6 +223,8 @@ def train_test_on_dataset(train_dataset, test_dataset,
             fifo_mode=fifo_mode,
             delete_workdir=True,
             result_store=result_store,
+            optional_dict=None,
+            optional_dict2=None,
             parallelize=True,
         )
         test_fassembler.run()
@@ -277,6 +283,8 @@ def cv_on_dataset(dataset, feature_param, model_param, ax, result_store,
         logger=logger,
         delete_workdir=True,
         result_store=result_store,
+        optional_dict=None,
+        optional_dict2=None,
         parallelize=True, fifo_mode=True,
         # parallelize=False, fifo_mode=False, # VQM
     )
@@ -284,7 +292,7 @@ def cv_on_dataset(dataset, feature_param, model_param, ax, result_store,
     results = fassembler.results
 
     for result in results:
-        result.set_aggregate_method(aggregate_method)
+        result.set_score_aggregate_method(aggregate_method)
 
     # run nested kfold cv for each combintation
     cv_output = ModelCrossValidation.run_kfold_cross_validation(

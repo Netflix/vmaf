@@ -47,6 +47,8 @@ class FeatureAssemblerTest(unittest.TestCase):
             fifo_mode=True,
             delete_workdir=True,
             result_store=None,
+            optional_dict=None,
+            optional_dict2=None,
             parallelize=True,
         )
 
@@ -88,6 +90,8 @@ class FeatureAssemblerTest(unittest.TestCase):
             fifo_mode=True,
             delete_workdir=True,
             result_store=None,
+            optional_dict=None,
+            optional_dict2=None,
             parallelize=True,
         )
 

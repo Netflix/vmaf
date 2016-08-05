@@ -82,39 +82,39 @@ class ResultTest(unittest.TestCase):
 
     def test_to_score_str(self):
         print 'test on result aggregate scores...'
-        self.assertAlmostEquals(self.result.get_score('VMAF_legacy_score'), 44.494230894688833 , places=4)
+        self.assertAlmostEquals(self.result.get_result('VMAF_legacy_score'), 44.494230894688833 , places=4)
         self.assertAlmostEquals(self.result['VMAF_legacy_score'], 44.494230894688833, places=4)
-        self.assertAlmostEquals(self.result.get_score('VMAF_feature_adm_score'), 0.81386, places=4)
+        self.assertAlmostEquals(self.result.get_result('VMAF_feature_adm_score'), 0.81386, places=4)
         self.assertAlmostEquals(self.result['VMAF_feature_adm_score'], 0.81386, places=4)
         self.assertAlmostEquals(self.result['VMAF_feature_vif_score'], 0.15683466666666665 , places=4)
         self.assertAlmostEquals(self.result['VMAF_feature_motion_score'], 12.5548366667, places=4)
         self.assertAlmostEquals(self.result['VMAF_feature_ansnr_score'], 7.92623066667, places=4)
-        self.result.set_aggregate_method(np.min)
-        self.assertAlmostEquals(self.result.get_score('VMAF_legacy_score'), 42.084764558485965, places=4)
-        self.result.set_aggregate_method(np.max)
-        self.assertAlmostEquals(self.result.get_score('VMAF_legacy_score'), 48.701976416017928, places=4)
-        self.result.set_aggregate_method(np.median)
-        self.assertAlmostEquals(self.result.get_score('VMAF_legacy_score'), 42.695951709562614, places=4)
-        self.result.set_aggregate_method(np.mean)
-        self.assertAlmostEquals(self.result.get_score('VMAF_legacy_score'), 44.494230894688833, places=4)
-        self.result.set_aggregate_method(np.std)
-        self.assertAlmostEquals(self.result.get_score('VMAF_legacy_score'), 2.9857694946316129, places=4)
-        self.result.set_aggregate_method(np.var)
-        self.assertAlmostEquals(self.result.get_score('VMAF_legacy_score'), 8.9148194750727168, places=4)
-        self.result.set_aggregate_method(partial(np.percentile, q=50))
-        self.assertAlmostEquals(self.result.get_score('VMAF_legacy_score'), 42.695951709562614, places=4)
-        self.result.set_aggregate_method(partial(np.percentile, q=80))
-        self.assertAlmostEquals(self.result.get_score('VMAF_legacy_score'), 46.299566533435808, places=4)
-        self.result.set_aggregate_method(ListStats.total_variation)
-        self.assertAlmostEquals(self.result.get_score('VMAF_legacy_score'), 6.3116182819936384, places=4)
-        self.result.set_aggregate_method(partial(ListStats.moving_average, n=2))
-        self.assertItemsEqual(self.result.get_score('VMAF_legacy_score'),
+        self.result.set_score_aggregate_method(np.min)
+        self.assertAlmostEquals(self.result.get_result('VMAF_legacy_score'), 42.084764558485965, places=4)
+        self.result.set_score_aggregate_method(np.max)
+        self.assertAlmostEquals(self.result.get_result('VMAF_legacy_score'), 48.701976416017928, places=4)
+        self.result.set_score_aggregate_method(np.median)
+        self.assertAlmostEquals(self.result.get_result('VMAF_legacy_score'), 42.695951709562614, places=4)
+        self.result.set_score_aggregate_method(np.mean)
+        self.assertAlmostEquals(self.result.get_result('VMAF_legacy_score'), 44.494230894688833, places=4)
+        self.result.set_score_aggregate_method(np.std)
+        self.assertAlmostEquals(self.result.get_result('VMAF_legacy_score'), 2.9857694946316129, places=4)
+        self.result.set_score_aggregate_method(np.var)
+        self.assertAlmostEquals(self.result.get_result('VMAF_legacy_score'), 8.9148194750727168, places=4)
+        self.result.set_score_aggregate_method(partial(np.percentile, q=50))
+        self.assertAlmostEquals(self.result.get_result('VMAF_legacy_score'), 42.695951709562614, places=4)
+        self.result.set_score_aggregate_method(partial(np.percentile, q=80))
+        self.assertAlmostEquals(self.result.get_result('VMAF_legacy_score'), 46.299566533435808, places=4)
+        self.result.set_score_aggregate_method(ListStats.total_variation)
+        self.assertAlmostEquals(self.result.get_result('VMAF_legacy_score'), 6.3116182819936384, places=4)
+        self.result.set_score_aggregate_method(partial(ListStats.moving_average, n=2))
+        self.assertItemsEqual(self.result.get_result('VMAF_legacy_score'),
                               [46.922334053546891,  46.922334053546891,  46.922334053546891])
 
         with self.assertRaises(KeyError):
-            self.result.get_score('VVMAF_legacy_score')
+            self.result.get_result('VVMAF_legacy_score')
         with self.assertRaises(KeyError):
-            self.result.get_score('VMAF_motion_scor')
+            self.result.get_result('VMAF_motion_scor')
 
 class ResultStoreTest(unittest.TestCase):
 

@@ -48,6 +48,7 @@ if __name__ == "__main__":
         delete_workdir=True,
         result_store=None,
         optional_dict={},
+        optional_dict2={},
     )
 
     # run

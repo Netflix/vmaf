@@ -32,10 +32,8 @@ class FileSystemResultStore(ResultStore):
     multiple files, each file stores dataframe for an asset, and has file name
     str(asset).
     """
-    def __init__(self,
-                 logger=None,
-                 result_store_dir=config.ROOT +
-                                "/workspace/result_store_dir/file_result_store"
+    def __init__(self, logger=None,
+                 result_store_dir=config.ROOT + "/workspace/result_store_dir/file_result_store"
                  ):
         self.logger = logger
         self.result_store_dir = result_store_dir
