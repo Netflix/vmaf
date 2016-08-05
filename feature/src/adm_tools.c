@@ -67,8 +67,8 @@ static const double dwt2_db2_coeffs_hi_d[4] = { -0x1.0907dc192d6ddp-3, -0x1.cb0b
 float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_factor)
 {
 	int px_stride = stride / sizeof(float);
-	int left   = w * border_factor;
-	int top    = h * border_factor;
+	int left   = w * border_factor - 0.5;
+	int top    = h * border_factor - 0.5;
 	int right  = w - left;
 	int bottom = h - top;
 
@@ -95,8 +95,8 @@ float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_fac
 double adm_sum_cube_d(const double *x, int w, int h, int stride, double border_factor)
 {
 	int px_stride = stride / sizeof(double);
-	int left   = w * border_factor;
-	int top    = h * border_factor;
+	int left   = w * border_factor - 0.5;
+	int top    = h * border_factor - 0.5;
 	int right  = w - left;
 	int bottom = h - top;
 
