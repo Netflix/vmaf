@@ -64,11 +64,11 @@ static const float dwt2_db2_coeffs_hi_s[4] = { -0.129409522550921, -0.2241438680
 static const double dwt2_db2_coeffs_lo_d[4] = { 0x1.ee8dd4748ca11p-2, 0x1.ac4bdd6e3f184p-1, 0x1.cb0bf0b6b5b13p-3, -0x1.0907dc192d6ddp-3 };
 static const double dwt2_db2_coeffs_hi_d[4] = { -0x1.0907dc192d6ddp-3, -0x1.cb0bf0b6b5b13p-3, 0x1.ac4bdd6e3f184p-1, -0x1.ee8dd4748ca11p-2 };
 
-float adm_sum_cube_s(const float *x, int w, int h, int stride)
+float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_factor)
 {
 	int px_stride = stride / sizeof(float);
-	int left   = w * 0.1 - 0.5;
-	int top    = h * 0.1 - 0.5;
+	int left   = w * border_factor - 0.5;
+	int top    = h * border_factor - 0.5;
 	int right  = w - left;
 	int bottom = h - top;
 
@@ -92,11 +92,11 @@ float adm_sum_cube_s(const float *x, int w, int h, int stride)
 	return powf(accum, 1.0f / 3.0f);
 }
 
-double adm_sum_cube_d(const double *x, int w, int h, int stride)
+double adm_sum_cube_d(const double *x, int w, int h, int stride, double border_factor)
 {
 	int px_stride = stride / sizeof(double);
-	int left   = w * 0.1 - 0.5;
-	int top    = h * 0.1 - 0.5;
+	int left   = w * border_factor - 0.5;
+	int top    = h * border_factor - 0.5;
 	int right  = w - left;
 	int bottom = h - top;
 
