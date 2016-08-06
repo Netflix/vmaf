@@ -138,15 +138,16 @@ class TrainTestModel(TypeVersionEnabled):
         with open(filename, 'wb') as file:
             pickle.dump(info_to_save, file)
 
-    @staticmethod
-    def from_file(filename, logger=None):
+    @classmethod
+    def from_file(cls, filename, logger=None, optional_dict2=None):
         with open(filename, 'rb') as file:
             info_loaded = pickle.load(file)
 
         model_type = info_loaded['model_dict']['model_type']
 
         if model_type == LibsvmNusvrTrainTestModel.TYPE:
-            train_test_model = LibsvmNusvrTrainTestModel(param_dict={}, logger=logger)
+            train_test_model = LibsvmNusvrTrainTestModel(
+                param_dict={}, logger=logger, optional_dict2=optional_dict2)
             train_test_model.param_dict = info_loaded['param_dict']
             train_test_model.model_dict = info_loaded['model_dict']
 
@@ -155,7 +156,8 @@ class TrainTestModel(TypeVersionEnabled):
             train_test_model.model_dict['model'] = model
         else:
             model_class = TrainTestModel.find_subclass(model_type)
-            train_test_model = model_class(param_dict={}, logger=logger)
+            train_test_model = model_class(
+                param_dict={}, logger=logger, optional_dict2=optional_dict2)
             train_test_model.param_dict = info_loaded['param_dict']
             train_test_model.model_dict = info_loaded['model_dict']
 
@@ -505,63 +507,6 @@ class LibsvmNusvrTrainTestModel(TrainTestModel):
     sys.path.append(config.ROOT + "/libsvm/python")
     import svmutil
 
-    def to_file(self, filename):
-        """
-        override TrainTestModel.to_file(self, filename)
-        """
-
-        self._assert_trained()
-
-        # special handling of libsvmnusvr: save .model differently
-        model_dict_copy = self.model_dict.copy()
-        model_dict_copy['model'] = None
-        info_to_save = {'param_dict': self.param_dict,
-                        'model_dict': model_dict_copy}
-        self.svmutil.svm_save_model(filename + '.model', self.model_dict['model'])
-
-        with open(filename, 'wb') as file:
-            pickle.dump(info_to_save, file)
-
-    @classmethod
-    def from_raw_file(cls, model_filename, additional_model_dict, logger):
-        """
-        Construct from raw libsvm model file.
-        :param model_filename:
-        :param additional_model_dict: must contain keys feature_names, norm_type
-        and optional slopes and intercepts
-        :param logger:
-        :return:
-        """
-
-        # assert additional_model_dict
-        assert 'feature_names' in additional_model_dict
-        assert 'norm_type' in additional_model_dict
-        norm_type = additional_model_dict['norm_type']
-        assert (   norm_type == 'none'
-                or norm_type == 'linear_rescale')
-        if norm_type == 'linear_rescale':
-            assert 'slopes' in additional_model_dict
-            assert 'intercepts' in additional_model_dict
-
-        train_test_model = cls(param_dict={}, logger=logger)
-
-        train_test_model.model_dict.update(additional_model_dict)
-
-        model = cls.svmutil.svm_load_model(model_filename)
-        train_test_model.model_dict['model'] = model
-
-        return train_test_model
-
-    @staticmethod
-    def delete(filename):
-        """
-        override TrainTestModel.delete(filename)
-        """
-        if os.path.exists(filename):
-            os.remove(filename)
-        if os.path.exists(filename + '.model'):
-            os.remove(filename + '.model')
-
     @classmethod
     def _train(cls, model_param, xys_2d):
         """
@@ -607,6 +552,62 @@ class LibsvmNusvrTrainTestModel(TrainTestModel):
         ys_label_pred = np.array(score)
         return ys_label_pred
 
+    def to_file(self, filename):
+        """
+        override TrainTestModel.to_file(self, filename)
+        """
+
+        self._assert_trained()
+
+        # special handling of libsvmnusvr: save .model differently
+        model_dict_copy = self.model_dict.copy()
+        model_dict_copy['model'] = None
+        info_to_save = {'param_dict': self.param_dict,
+                        'model_dict': model_dict_copy}
+        self.svmutil.svm_save_model(filename + '.model', self.model_dict['model'])
+
+        with open(filename, 'wb') as file:
+            pickle.dump(info_to_save, file)
+
+    @staticmethod
+    def delete(filename):
+        """
+        override TrainTestModel.delete(filename)
+        """
+        if os.path.exists(filename):
+            os.remove(filename)
+        if os.path.exists(filename + '.model'):
+            os.remove(filename + '.model')
+
+    @classmethod
+    def from_raw_file(cls, model_filename, additional_model_dict, logger):
+        """
+        Construct from raw libsvm model file.
+        :param model_filename:
+        :param additional_model_dict: must contain keys feature_names, norm_type
+        and optional slopes and intercepts
+        :param logger:
+        :return:
+        """
+
+        # assert additional_model_dict
+        assert 'feature_names' in additional_model_dict
+        assert 'norm_type' in additional_model_dict
+        norm_type = additional_model_dict['norm_type']
+        assert (   norm_type == 'none'
+                or norm_type == 'linear_rescale')
+        if norm_type == 'linear_rescale':
+            assert 'slopes' in additional_model_dict
+            assert 'intercepts' in additional_model_dict
+
+        train_test_model = cls(param_dict={}, logger=logger)
+
+        train_test_model.model_dict.update(additional_model_dict)
+
+        model = cls.svmutil.svm_load_model(model_filename)
+        train_test_model.model_dict['model'] = model
+
+        return train_test_model
 
 class SklearnRandomForestTrainTestModel(TrainTestModel):
 
