@@ -609,6 +609,7 @@ class LibsvmNusvrTrainTestModel(TrainTestModel):
 
         return train_test_model
 
+
 class SklearnRandomForestTrainTestModel(TrainTestModel):
 
     TYPE = 'RANDOMFOREST'

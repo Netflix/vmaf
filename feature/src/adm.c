@@ -62,7 +62,7 @@ static char *init_dwt_band(adm_dwt_band_t *band, char *data_top, size_t buf_sz_o
 	return data_top;
 }
 
-int compute_adm(const number_t *ref, const number_t *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den)
+int compute_adm(const number_t *ref, const number_t *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores, double border_factor)
 {
 #ifdef ADM_OPT_SINGLE_PRECISION
 	double numden_limit = 1e-2 * (w * h) / (1920.0 * 1080.0);
@@ -240,13 +240,13 @@ int compute_adm(const number_t *ref, const number_t *dis, int w, int h, int ref_
 		sprintf(pathbuf, "stage/cm_r[%d]_d.yuv", scale);
 		write_image(pathbuf, cm_r.band_d, w, h, buf_stride, sizeof(number_t));
 #endif
-		num_scale += adm_sum_cube(cm_r.band_h, w, h, buf_stride);
-		num_scale += adm_sum_cube(cm_r.band_v, w, h, buf_stride);
-		num_scale += adm_sum_cube(cm_r.band_d, w, h, buf_stride);
+		num_scale += adm_sum_cube(cm_r.band_h, w, h, buf_stride, border_factor);
+		num_scale += adm_sum_cube(cm_r.band_v, w, h, buf_stride, border_factor);
+		num_scale += adm_sum_cube(cm_r.band_d, w, h, buf_stride, border_factor);
 
-		den_scale += adm_sum_cube(csf_o.band_h, w, h, buf_stride);
-		den_scale += adm_sum_cube(csf_o.band_v, w, h, buf_stride);
-		den_scale += adm_sum_cube(csf_o.band_d, w, h, buf_stride);
+		den_scale += adm_sum_cube(csf_o.band_h, w, h, buf_stride, border_factor);
+		den_scale += adm_sum_cube(csf_o.band_v, w, h, buf_stride, border_factor);
+		den_scale += adm_sum_cube(csf_o.band_d, w, h, buf_stride, border_factor);
 
 		num += num_scale;
 		den += den_scale;
@@ -263,6 +263,8 @@ int compute_adm(const number_t *ref, const number_t *dis, int w, int h, int ref_
 		printf("num: %f\n", num);
 		printf("den: %f\n", den);
 #endif
+		scores[2*scale+0] = num_scale;
+		scores[2*scale+1] = den_scale;
 	}
 
 	num = num < numden_limit ? 0 : num;
@@ -291,6 +293,7 @@ int adm(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 	double score = 0;
 	double score_num = 0;
 	double score_den = 0;
+	double scores[2*4];
 	number_t *ref_buf = 0;
 	number_t *dis_buf = 0;
 	number_t *temp_buf = 0;
@@ -424,7 +427,7 @@ int adm(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		}
 
 		// compute
-		if ((ret = compute_adm(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den)))
+		if ((ret = compute_adm(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores, ADM_BORDER_FACTOR)))
 		{
 			printf("error: compute_adm failed.\n");
 			fflush(stdout);
@@ -438,6 +441,12 @@ int adm(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 		fflush(stdout);
 		printf("adm_den: %d %f\n", frm_idx, score_den);
 		fflush(stdout);
+		for(int scale=0;scale<4;scale++) {
+			printf("adm_num_scale%d: %d %f\n", scale, frm_idx, scores[2*scale]);
+			fflush(stdout);
+			printf("adm_den_scale%d: %d %f\n", scale, frm_idx, scores[2*scale+1]);
+			fflush(stdout);
+		}
 
 		// ref skip u and v
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
