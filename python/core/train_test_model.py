@@ -1,11 +1,10 @@
-from numbers import Number
-
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import os
 import sys
 import pickle
+from numbers import Number
 
 import scipy.stats
 import numpy as np
