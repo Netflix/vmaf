@@ -187,11 +187,10 @@ def train_test_on_dataset(train_dataset, test_dataset,
     # apply instructions indicated in the appended info
     train_ys_pred = VmafQualityRunner.clip_score(model, train_ys_pred)
 
-    train_stats = TrainTestModel.get_stats(train_ys['label'], train_ys_pred)
+    train_stats = model.get_stats(train_ys['label'], train_ys_pred)
 
     if logger:
-        logger.info('Stats on training data: {}'.format(TrainTestModel.
-                                                        format_stats(train_stats)))
+        logger.info('Stats on training data: {}'.format(model.format_stats(train_stats)))
 
     # save model
     if output_model_filepath is not None:

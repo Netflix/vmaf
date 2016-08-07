@@ -7,6 +7,7 @@ import pickle
 from numbers import Number
 
 import scipy.stats
+from sklearn.metrics import f1_score
 import numpy as np
 from numpy.linalg import lstsq
 
@@ -14,6 +15,184 @@ import config
 from tools.misc import indices
 from core.mixin import TypeVersionEnabled
 
+class RegressorMixin(object):
+
+    @staticmethod
+    def sigmoid_adjust(xs, ys):
+        ys_max = np.max(ys) + 0.1
+        ys_min = np.min(ys) - 0.1
+
+        # normalize to [0, 1]
+        ys = list((np.array(ys) - ys_min) / (ys_max - ys_min))
+
+        zs = -np.log(1.0 / np.array(ys).T - 1.0)
+        Y_mtx = np.matrix((np.ones(len(ys)), zs)).T
+        x_vec = np.matrix(xs).T
+        a_b = lstsq(Y_mtx, x_vec)[0]
+        a = a_b.item(0)
+        b = a_b.item(1)
+
+        xs = 1.0 / (1.0 + np.exp(- (np.array(xs) - a) / b))
+
+        # denormalize
+        xs = xs * (ys_max - ys_min) + ys_min
+
+        return xs
+
+    @classmethod
+    def get_stats(cls, ys_label, ys_label_pred):
+
+        # cannot have None
+        assert all(x is not None for x in ys_label)
+        assert all(x is not None for x in ys_label_pred)
+
+        # do adustment with sigmoid function
+        ys_label_pred_adjusted = cls.sigmoid_adjust(ys_label_pred, ys_label)
+
+        # MSE
+        rmse = np.sqrt(np.mean(
+            np.power(np.array(ys_label) - np.array(ys_label_pred_adjusted), 2.0)))
+        # spearman
+        srcc, _ = scipy.stats.spearmanr(ys_label, ys_label_pred_adjusted)
+        # pearson
+        pcc, _ = scipy.stats.pearsonr(ys_label, ys_label_pred_adjusted)
+        # kendall
+        kendall, _ = scipy.stats.kendalltau(ys_label, ys_label_pred_adjusted)
+        stats = { 'RMSE': rmse,
+                  'SRCC': srcc,
+                  'PCC': pcc,
+                  'KENDALL': kendall,
+                  'ys_label': list(ys_label),
+                  'ys_label_pred': list(ys_label_pred)}
+        return stats
+
+    @staticmethod
+    def format_stats(stats):
+        if stats is None:
+            return '(Invalid Stats)'
+        else:
+            return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f})'.format(
+                srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
+
+    @staticmethod
+    def format_stats2(stats):
+        if stats is None:
+            return 'Invalid Stats'
+        else:
+            return 'RMSE: {rmse:.3f}\nPCC: {pcc:.3f}\nSRCC: {srcc:.3f}'.format(
+                srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
+
+    @classmethod
+    def aggregate_stats_list(cls, stats_list):
+        aggregate_ys_label = []
+        aggregate_ys_label_pred = []
+        for stats in stats_list:
+            aggregate_ys_label += stats['ys_label']
+            aggregate_ys_label_pred += stats['ys_label_pred']
+        return cls.get_stats(aggregate_ys_label, aggregate_ys_label_pred)
+
+    @staticmethod
+    def plot_scatter(ax, stats, content_ids=None):
+        assert len(stats['ys_label']) == len(stats['ys_label_pred'])
+
+        if content_ids is None:
+            ax.scatter(stats['ys_label'], stats['ys_label_pred'])
+        else:
+            assert len(stats['ys_label']) == len(content_ids)
+
+            unique_content_ids = list(set(content_ids))
+            import matplotlib.pyplot as plt
+            cmap = plt.get_cmap()
+            colors = [cmap(i) for i in np.linspace(0, 1, len(unique_content_ids))]
+            for idx, curr_content_id in enumerate(unique_content_ids):
+                curr_idxs = indices(content_ids, lambda cid: cid==curr_content_id)
+                curr_ys_label = np.array(stats['ys_label'])[curr_idxs]
+                curr_ys_label_pred = np.array(stats['ys_label_pred'])[curr_idxs]
+                ax.scatter(curr_ys_label, curr_ys_label_pred,
+                           label=curr_content_id, color=colors[idx % len(colors)])
+    @staticmethod
+    def get_objective_score(result, type='SRCC'):
+        """
+        Objective score is something to MAXIMIZE. e.g. SRCC, or -RMSE.
+        :param result:
+        :param type:
+        :return:
+        """
+        if type == 'SRCC':
+            return result['SRCC']
+        elif type == 'PCC':
+            return result['PCC']
+        elif type == 'KENDALL':
+            return result['KENDALL']
+        elif type == 'RMSE':
+            return -result['RMSE']
+        else:
+            assert False, 'Unknow type: {} for get_objective_score().'.format(type)
+
+class ClassifierMixin(object):
+
+    @classmethod
+    def get_stats(cls, ys_label, ys_label_pred):
+
+        # cannot have None
+        assert all(x is not None for x in ys_label)
+        assert all(x is not None for x in ys_label_pred)
+
+        # RMSE
+        rmse = np.sqrt(np.mean(
+            np.power(np.array(ys_label) - np.array(ys_label_pred), 2.0)))
+        # f1
+        f1 = f1_score(ys_label_pred, ys_label)
+        # error rate
+        errorrate = np.mean(np.array(ys_label) != np.array(ys_label_pred))
+        stats = { 'RMSE': rmse,
+                  'f1': f1,
+                  'errorrate': errorrate,
+                  'ys_label': list(ys_label),
+                  'ys_label_pred': list(ys_label_pred)}
+        return stats
+
+    @staticmethod
+    def format_stats(stats):
+        if stats is None:
+            return '(Invalid Stats)'
+        else:
+            return '(F1: {f1:.3f}, Error: {err:.3f}, RMSE: {rmse:.3f})'.format(
+                f1=stats['f1'], err=stats['errorrate'], rmse=stats['RMSE'])
+
+    @staticmethod
+    def format_stats2(stats):
+        if stats is None:
+            return 'Invalid Stats'
+        else:
+            return 'RMSE: {rmse:.3f}\nF1: {f1:.3f}\nError: {err:.3f}'.format(
+                f1=stats['f1'], err=stats['errorrate'], rmse=stats['RMSE'])
+
+    @classmethod
+    def aggregate_stats_list(cls, stats_list):
+        aggregate_ys_label = []
+        aggregate_ys_label_pred = []
+        for stats in stats_list:
+            aggregate_ys_label += stats['ys_label']
+            aggregate_ys_label_pred += stats['ys_label_pred']
+        return cls.get_stats(aggregate_ys_label, aggregate_ys_label_pred)
+
+    @staticmethod
+    def get_objective_score(result, type='RMSE'):
+        """
+        Objective score is something to MAXIMIZE. e.g. f1, or -errorrate, or -RMSE.
+        :param result:
+        :param type:
+        :return:
+        """
+        if type == 'f1':
+            return result['f1']
+        elif type == 'errorrate':
+            return -result['errorrate']
+        elif type == 'RMSE':
+            return -result['RMSE']
+        else:
+            assert False, 'Unknow type: {} for get_objective_score().'.format(type)
 
 class TrainTestModel(TypeVersionEnabled):
 
@@ -301,118 +480,6 @@ class TrainTestModel(TypeVersionEnabled):
         return self.get_stats(ys_label, ys_label_pred)
 
     @staticmethod
-    def sigmoid_adjust(xs, ys):
-        ys_max = np.max(ys) + 0.1
-        ys_min = np.min(ys) - 0.1
-
-        # normalize to [0, 1]
-        ys = list((np.array(ys) - ys_min) / (ys_max - ys_min))
-
-        zs = -np.log(1.0 / np.array(ys).T - 1.0)
-        Y_mtx = np.matrix((np.ones(len(ys)), zs)).T
-        x_vec = np.matrix(xs).T
-        a_b = lstsq(Y_mtx, x_vec)[0]
-        a = a_b.item(0)
-        b = a_b.item(1)
-
-        xs = 1.0 / (1.0 + np.exp(- (np.array(xs) - a) / b))
-
-        # denormalize
-        xs = xs * (ys_max - ys_min) + ys_min
-
-        return xs
-
-    @classmethod
-    def get_stats(cls, ys_label, ys_label_pred):
-
-        # cannot have None
-        assert all(x is not None for x in ys_label)
-        assert all(x is not None for x in ys_label_pred)
-
-        # do adustment with sigmoid function
-        ys_label_pred_adjusted = cls.sigmoid_adjust(ys_label_pred, ys_label)
-
-        # MSE
-        rmse = np.sqrt(np.mean(
-            np.power(np.array(ys_label) - np.array(ys_label_pred_adjusted), 2.0)))
-        # spearman
-        srcc, _ = scipy.stats.spearmanr(ys_label, ys_label_pred_adjusted)
-        # pearson
-        pcc, _ = scipy.stats.pearsonr(ys_label, ys_label_pred_adjusted)
-        # kendall
-        kendall, _ = scipy.stats.kendalltau(ys_label, ys_label_pred_adjusted)
-        stats = { 'RMSE': rmse,
-                  'SRCC': srcc,
-                  'PCC': pcc,
-                  'KENDALL': kendall,
-                  'ys_label': list(ys_label),
-                  'ys_label_pred': list(ys_label_pred)}
-        return stats
-
-    @staticmethod
-    def format_stats(stats):
-        if stats is None:
-            return '(Invalid Stats)'
-        else:
-            return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f})'.format(
-                srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
-
-    @staticmethod
-    def format_stats2(stats):
-        if stats is None:
-            return 'Invalid Stats'
-        else:
-            return 'RMSE: {rmse:.3f}\nPCC: {pcc:.3f}\nSRCC: {srcc:.3f}'.format(
-                srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
-
-    @classmethod
-    def aggregate_stats_list(cls, stats_list):
-        aggregate_ys_label = []
-        aggregate_ys_label_pred = []
-        for stats in stats_list:
-            aggregate_ys_label += stats['ys_label']
-            aggregate_ys_label_pred += stats['ys_label_pred']
-        return cls.get_stats(aggregate_ys_label, aggregate_ys_label_pred)
-
-    @staticmethod
-    def plot_scatter(ax, stats, content_ids=None):
-        assert len(stats['ys_label']) == len(stats['ys_label_pred'])
-
-        if content_ids is None:
-            ax.scatter(stats['ys_label'], stats['ys_label_pred'])
-        else:
-            assert len(stats['ys_label']) == len(content_ids)
-
-            unique_content_ids = list(set(content_ids))
-            import matplotlib.pyplot as plt
-            cmap = plt.get_cmap()
-            colors = [cmap(i) for i in np.linspace(0, 1, len(unique_content_ids))]
-            for idx, curr_content_id in enumerate(unique_content_ids):
-                curr_idxs = indices(content_ids, lambda cid: cid==curr_content_id)
-                curr_ys_label = np.array(stats['ys_label'])[curr_idxs]
-                curr_ys_label_pred = np.array(stats['ys_label_pred'])[curr_idxs]
-                ax.scatter(curr_ys_label, curr_ys_label_pred,
-                           label=curr_content_id, color=colors[idx % len(colors)])
-    @staticmethod
-    def get_objective_score(result, type='SRCC'):
-        """
-        Objective score is something to MAXIMIZE. e.g. SRCC, or -RMSE.
-        :param result:
-        :param type:
-        :return:
-        """
-        if type == 'SRCC':
-            return result['SRCC']
-        elif type == 'PCC':
-            return result['PCC']
-        elif type == 'KENDALL':
-            return result['KENDALL']
-        elif type == 'RMSE':
-            return -result['RMSE']
-        else:
-            assert False, 'Unknow type: {} for get_score().'.format(type)
-
-    @staticmethod
     def delete(filename):
         if os.path.exists(filename):
             os.remove(filename)
@@ -498,7 +565,7 @@ class TrainTestModel(TypeVersionEnabled):
         return xys
 
 
-class LibsvmNusvrTrainTestModel(TrainTestModel):
+class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
 
     TYPE = 'LIBSVMNUSVR'
     VERSION = "0.1"
@@ -609,7 +676,7 @@ class LibsvmNusvrTrainTestModel(TrainTestModel):
         return train_test_model
 
 
-class SklearnRandomForestTrainTestModel(TrainTestModel):
+class SklearnRandomForestTrainTestModel(TrainTestModel, RegressorMixin):
 
     TYPE = 'RANDOMFOREST'
     VERSION = "0.1"
