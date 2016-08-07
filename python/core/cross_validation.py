@@ -12,7 +12,9 @@ class ModelCrossValidation(object):
                              model_param,
                              results_or_df,
                              train_indices,
-                             test_indices):
+                             test_indices,
+                             optional_dict2=None
+                             ):
         """
         Simple cross validation.
         :param train_test_model_class:
@@ -26,14 +28,14 @@ class ModelCrossValidation(object):
         xs_test = train_test_model_class.get_xs_from_results(results_or_df, test_indices)
         ys_test = train_test_model_class.get_ys_from_results(results_or_df, test_indices)
 
-        model = train_test_model_class(model_param, None)
+        model = train_test_model_class(model_param,
+                                       logger=None,
+                                       optional_dict2=optional_dict2)
         model.train(xys_train)
         stats = model.evaluate(xs_test, ys_test)
 
-        output = {}
-        output['stats'] = stats
-        output['model'] = model
-        output['contentids'] = ys_test['content_id'] # for plotting purpose
+        output = {'stats': stats, 'model': model,
+                  'contentids': ys_test['content_id']}
 
         return output
 
@@ -43,7 +45,8 @@ class ModelCrossValidation(object):
                                    model_param,
                                    results_or_df,
                                    kfold,
-                                   logger=None):
+                                   logger=None,
+                                   optional_dict2=None):
         """
         Standard k-fold cross validation, given hyper-parameter set model_param
         :param train_test_model_class:
@@ -95,7 +98,8 @@ class ModelCrossValidation(object):
                                               model_param,
                                               results_or_df,
                                               train_index_range,
-                                              test_index_range)
+                                              test_index_range,
+                                              optional_dict2)
 
             stats = output['stats']
             model = output['model']
@@ -107,10 +111,7 @@ class ModelCrossValidation(object):
 
         aggr_stats = train_test_model_class.aggregate_stats_list(statss)
 
-        output = {}
-        output['aggr_stats'] = aggr_stats
-        output['statss'] = statss
-        output['models'] = models
+        output = {'aggr_stats': aggr_stats, 'statss': statss, 'models': models}
 
         assert contentids is not None
         output['contentids'] = contentids
@@ -125,7 +126,9 @@ class ModelCrossValidation(object):
                                           kfold,
                                           search_strategy='grid',
                                           random_search_times=100,
-                                          logger=None):
+                                          logger=None,
+                                          optional_dict2=None,
+                                          ):
         """
         Nested k-fold cross validation, given hyper-parameter search range. The
         search range is specified in the format of, e.g.:
@@ -203,7 +206,8 @@ class ModelCrossValidation(object):
                     cls.run_kfold_cross_validation(train_test_model_class,
                                                    model_param,
                                                    results_or_df,
-                                                   train_index_range_in_list_of_indices)
+                                                   train_index_range_in_list_of_indices,
+                                                   optional_dict2)
                 stats = output['aggr_stats']
 
                 if (best_stats is None) or (
@@ -219,7 +223,8 @@ class ModelCrossValidation(object):
                                               best_model_param,
                                               results_or_df,
                                               train_index_range,
-                                              test_index_range)
+                                              test_index_range,
+                                               optional_dict2)
             stats_ = output_['stats']
 
             statss.append(stats_)
