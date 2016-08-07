@@ -5,9 +5,6 @@ import random
 from math import floor
 import itertools
 
-from core.train_test_model import TrainTestModel
-
-
 class ModelCrossValidation(object):
 
     @staticmethod
@@ -25,9 +22,9 @@ class ModelCrossValidation(object):
         :param test_indices:
         :return:
         """
-        xys_train = TrainTestModel.get_xys_from_results(results_or_df, train_indices)
-        xs_test = TrainTestModel.get_xs_from_results(results_or_df, test_indices)
-        ys_test = TrainTestModel.get_ys_from_results(results_or_df, test_indices)
+        xys_train = train_test_model_class.get_xys_from_results(results_or_df, train_indices)
+        xs_test = train_test_model_class.get_xs_from_results(results_or_df, test_indices)
+        ys_test = train_test_model_class.get_ys_from_results(results_or_df, test_indices)
 
         model = train_test_model_class(model_param, None)
         model.train(xys_train)
@@ -108,7 +105,7 @@ class ModelCrossValidation(object):
 
             contentids += list(output['contentids'])
 
-        aggr_stats = TrainTestModel.aggregate_stats_list(statss)
+        aggr_stats = train_test_model_class.aggregate_stats_list(statss)
 
         output = {}
         output['aggr_stats'] = aggr_stats
@@ -210,9 +207,9 @@ class ModelCrossValidation(object):
                 stats = output['aggr_stats']
 
                 if (best_stats is None) or (
-                    TrainTestModel.get_objective_score(stats, type='SRCC')
+                    train_test_model_class.get_objective_score(stats, type='SRCC')
                     >
-                    TrainTestModel.get_objective_score(best_stats, type='SRCC')
+                    train_test_model_class.get_objective_score(best_stats, type='SRCC')
                 ):
                     best_stats = stats
                     best_model_param = model_param
@@ -230,7 +227,7 @@ class ModelCrossValidation(object):
 
             contentids += list(output_['contentids'])
 
-        aggr_stats = TrainTestModel.aggregate_stats_list(statss)
+        aggr_stats = train_test_model_class.aggregate_stats_list(statss)
         top_model_param, count = cls._find_most_frequent_dict(model_params)
 
         assert contentids is not None
