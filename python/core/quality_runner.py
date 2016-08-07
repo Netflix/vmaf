@@ -289,9 +289,9 @@ class VmafQualityRunner(QualityRunner):
         vmaf_fassembler.run()
         feature_result = vmaf_fassembler.results[0]
 
-        xs = TrainTestModel.get_perframe_xs_from_result(feature_result)
-
         model = self._load_model()
+
+        xs = model.get_perframe_xs_from_result(feature_result)
 
         ys_pred = model.predict(xs)
 

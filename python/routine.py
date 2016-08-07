@@ -13,7 +13,9 @@ from tools.misc import indices, get_stdout_logger, import_python_file, \
 import config
 from core.asset import Asset
 from core.executor import run_executors_in_parallel
-from core.train_test_model import TrainTestModel
+from core.train_test_model import TrainTestModel, RegressorMixin, \
+    ClassifierMixin
+
 
 def read_dataset(dataset):
 
@@ -77,7 +79,16 @@ def read_dataset(dataset):
 def test_on_dataset(test_dataset, runner_class, ax,
                     result_store, model_filepath,
                     parallelize=True, fifo_mode=True,
-                    aggregate_method=np.mean):
+                    aggregate_method=np.mean,
+                    type = 'regressor'
+                    ):
+
+    if type == 'regressor':
+        model_type = RegressorMixin
+    elif type == 'classifier':
+        model_type = ClassifierMixin
+    else:
+        assert False
 
     test_assets = read_dataset(test_dataset)
 
@@ -113,24 +124,25 @@ def test_on_dataset(test_dataset, runner_class, ax,
         # plot
         groundtruths = map(lambda asset: asset.groundtruth, test_assets)
         predictions = map(lambda result: result[runner_class.get_score_key()], results)
-        stats = TrainTestModel.get_stats(groundtruths, predictions)
+        stats = model_type.get_stats(groundtruths, predictions)
 
-        print 'Stats on testing data: {}'.format(TrainTestModel.format_stats(stats))
+        print 'Stats on testing data: {}'.format(model_type.format_stats(stats))
 
         if ax is not None:
             content_ids = map(lambda asset: asset.content_id, test_assets)
-            TrainTestModel.plot_scatter(ax, stats, content_ids)
+            model_type.plot_scatter(ax, stats, content_ids)
             ax.set_xlabel('DMOS')
             ax.set_ylabel("Predicted Score")
             ax.grid()
             ax.set_title( "{runner}\n{stats}".format(
                 dataset=test_assets[0].dataset,
                 runner=runner_class.TYPE,
-                stats=TrainTestModel.format_stats(stats),
+                stats=model_type.format_stats(stats),
             ))
 
     except Exception as e:
         print "Error: " + str(e)
+        raise e
 
     return test_assets, results
 
@@ -164,14 +176,15 @@ def train_test_on_dataset(train_dataset, test_dataset,
     train_fassembler.run()
     train_features = train_fassembler.results
 
-    train_xys = TrainTestModel.get_xys_from_results(train_features)
-    train_xs = TrainTestModel.get_xs_from_results(train_features)
-    train_ys = TrainTestModel.get_ys_from_results(train_features)
-
     model_type = model_param.model_type
     model_param_dict = model_param.model_param_dict
 
     model_class = TrainTestModel.find_subclass(model_type)
+
+    train_xys = model_class.get_xys_from_results(train_features)
+    train_xs = model_class.get_xs_from_results(train_features)
+    train_ys = model_class.get_ys_from_results(train_features)
+
     model = model_class(model_param_dict, logger)
 
     model.train(train_xys)
@@ -198,14 +211,14 @@ def train_test_on_dataset(train_dataset, test_dataset,
 
     if train_ax is not None:
         train_content_ids = map(lambda asset: asset.content_id, train_assets)
-        TrainTestModel.plot_scatter(train_ax, train_stats, train_content_ids)
+        model_class.plot_scatter(train_ax, train_stats, train_content_ids)
         train_ax.set_xlabel('DMOS')
         train_ax.set_ylabel("Predicted Score")
         train_ax.grid()
         train_ax.set_title( "Dataset: {dataset}, Model: {model}\n{stats}".format(
             dataset=train_dataset.dataset_name,
             model=model.model_id,
-            stats=TrainTestModel.format_stats(train_stats)
+            stats=model_class.format_stats(train_stats)
         ))
 
     # === test model on test dataset ===
@@ -231,30 +244,30 @@ def train_test_on_dataset(train_dataset, test_dataset,
         test_fassembler.run()
         test_features = test_fassembler.results
 
-        test_xs = TrainTestModel.get_xs_from_results(test_features)
-        test_ys = TrainTestModel.get_ys_from_results(test_features)
+        test_xs = model_class.get_xs_from_results(test_features)
+        test_ys = model_class.get_ys_from_results(test_features)
 
         test_ys_pred = model.predict(test_xs)
 
         # apply instructions indicated in the appended info
         test_ys_pred = VmafQualityRunner.clip_score(model, test_ys_pred)
 
-        test_stats = TrainTestModel.get_stats(test_ys['label'], test_ys_pred)
+        test_stats = model_class.get_stats(test_ys['label'], test_ys_pred)
 
         if logger:
             logger.info('Stats on testing data: {}'.format(
-                TrainTestModel.format_stats(test_stats)))
+                model_class.format_stats(test_stats)))
 
         if test_ax is not None:
             test_content_ids = map(lambda asset: asset.content_id, test_assets)
-            TrainTestModel.plot_scatter(test_ax, test_stats, test_content_ids)
+            model_class.plot_scatter(test_ax, test_stats, test_content_ids)
             test_ax.set_xlabel('DMOS')
             test_ax.set_ylabel("Predicted Score")
             test_ax.grid()
             test_ax.set_title( "Dataset: {dataset}, Model: {model}\n{stats}".format(
                 dataset=test_dataset.dataset_name,
                 model=model.model_id,
-                stats=TrainTestModel.format_stats(test_stats)
+                stats=model_class.format_stats(test_stats)
             ))
 
     return train_fassembler, train_assets, train_stats, \
@@ -295,9 +308,10 @@ def cv_on_dataset(dataset, feature_param, model_param, ax, result_store,
     for result in results:
         result.set_score_aggregate_method(aggregate_method)
 
+    model_class = TrainTestModel.find_subclass(model_param.model_type)
     # run nested kfold cv for each combintation
     cv_output = ModelCrossValidation.run_kfold_cross_validation(
-        TrainTestModel.find_subclass(model_param.model_type),
+        model_class,
         model_param.model_param_dict,
         results,
         kfold,
@@ -307,17 +321,17 @@ def cv_on_dataset(dataset, feature_param, model_param, ax, result_store,
     print 'Feature parameters: {}'.format(feature_param.feature_dict)
     print 'Model type: {}'.format(model_param.model_type)
     print 'Model parameters: {}'.format(model_param.model_param_dict)
-    print 'Stats: {}'.format(TrainTestModel.format_stats(cv_output['aggr_stats']))
+    print 'Stats: {}'.format(model_class.format_stats(cv_output['aggr_stats']))
 
     if ax is not None:
-        TrainTestModel.plot_scatter(ax, cv_output['aggr_stats'], cv_output['contentids'])
+        model_class.plot_scatter(ax, cv_output['aggr_stats'], cv_output['contentids'])
         ax.set_xlabel('DMOS')
         ax.set_ylabel("Predicted Score")
         ax.grid()
         ax.set_title( "Dataset: {dataset}, Model: {model},\n{stats}".format(
             dataset=dataset.dataset_name,
             model=model_param.model_type,
-            stats=TrainTestModel.format_stats(cv_output['aggr_stats'])
+            stats=model_class.format_stats(cv_output['aggr_stats'])
         ))
 
     return assets, cv_output
