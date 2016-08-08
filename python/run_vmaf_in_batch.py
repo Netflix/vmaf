@@ -85,9 +85,10 @@ if __name__ == "__main__":
 
     runner_class = VmafQualityRunner
 
-    optional_dict = {
-        'model_filepath':model_filepath
-    }
+    if model_filepath is None:
+        optional_dict = None
+    else:
+        optional_dict = {'model_filepath':model_filepath}
 
     # construct an VmafQualityRunner object to assert assets, and to remove
     runner = runner_class(assets,

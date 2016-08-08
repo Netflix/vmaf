@@ -5,7 +5,7 @@ import os
 import unittest
 
 import config
-from routine import train_test_on_dataset
+from routine import train_test_vmaf_on_dataset
 from tools.misc import import_python_file
 
 
@@ -28,7 +28,7 @@ class TestTrainOnDataset(unittest.TestCase):
             config.ROOT + '/python/test/resource/feature_param_sample.py')
         train_fassembler, train_assets, train_stats, \
         test_fassembler, test_assets, test_stats = \
-            train_test_on_dataset(
+            train_test_vmaf_on_dataset(
                 train_dataset=self.train_dataset, test_dataset=None,
                          feature_param=feature_param, model_param=model_param,
                          train_ax=None, test_ax=None, result_store=None,

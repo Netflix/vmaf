@@ -47,8 +47,8 @@ if __name__ == "__main__":
         assets, None, fifo_mode=True,
         delete_workdir=True,
         result_store=None,
-        optional_dict={},
-        optional_dict2={},
+        optional_dict=None,
+        optional_dict2=None,
     )
 
     # run

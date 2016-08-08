@@ -154,11 +154,11 @@ def print_matplotlib_warning():
           "Refer to: http://stackoverflow.com/questions/27630114/matplotlib-issue-on-os-x-importerror-cannot-import-name-thread"
 
 
-def train_test_on_dataset(train_dataset, test_dataset,
-                          feature_param, model_param,
-                          train_ax, test_ax, result_store,
-                          parallelize=True, logger=None, fifo_mode=True,
-                          output_model_filepath=None):
+def train_test_vmaf_on_dataset(train_dataset, test_dataset,
+                               feature_param, model_param,
+                               train_ax, test_ax, result_store,
+                               parallelize=True, logger=None, fifo_mode=True,
+                               output_model_filepath=None):
 
     train_assets = read_dataset(train_dataset)
     train_fassembler = FeatureAssembler(
@@ -364,9 +364,9 @@ def run_vmaf_cv(train_dataset_filepath,
     ncols = 2
     fig, axs = plt.subplots(figsize=(5*ncols, 5*nrows), nrows=nrows, ncols=ncols)
 
-    train_test_on_dataset(train_dataset, test_dataset, param, param, axs[0], axs[1],
-                          result_store, parallelize=True, logger=None,
-                          output_model_filepath=output_model_filepath)
+    train_test_vmaf_on_dataset(train_dataset, test_dataset, param, param, axs[0], axs[1],
+                               result_store, parallelize=True, logger=None,
+                               output_model_filepath=output_model_filepath)
 
     # axs[0].set_xlim([0, 120])
     # axs[0].set_ylim([0, 120])

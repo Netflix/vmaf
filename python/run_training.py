@@ -8,7 +8,7 @@ import sys
 
 from tools.misc import import_python_file
 from core.result_store import FileSystemResultStore
-from routine import print_matplotlib_warning, train_test_on_dataset
+from routine import print_matplotlib_warning, train_test_vmaf_on_dataset
 
 
 def print_usage():
@@ -64,13 +64,13 @@ if __name__ == '__main__':
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
 
-        train_test_on_dataset(train_dataset=train_dataset, test_dataset=None,
-                              feature_param=feature_param, model_param=model_param,
-                              train_ax=ax, test_ax=None,
-                              result_store=result_store,
-                              parallelize=parallelize,
-                              output_model_filepath=output_model_filepath
-                              )
+        train_test_vmaf_on_dataset(train_dataset=train_dataset, test_dataset=None,
+                                   feature_param=feature_param, model_param=model_param,
+                                   train_ax=ax, test_ax=None,
+                                   result_store=result_store,
+                                   parallelize=parallelize,
+                                   output_model_filepath=output_model_filepath
+                                   )
 
         bbox = {'facecolor':'white', 'alpha':1, 'pad':20}
         ax.annotate('Training Set', xy=(0.1, 0.85), xycoords='axes fraction', bbox=bbox)
@@ -79,13 +79,13 @@ if __name__ == '__main__':
         plt.show()
     except ImportError:
         print_matplotlib_warning()
-        train_test_on_dataset(train_dataset=train_dataset, test_dataset=None,
-                              feature_param=feature_param, model_param=model_param,
-                              train_ax=None, test_ax=None,
-                              result_store=result_store,
-                              parallelize=parallelize,
-                              output_model_filepath=output_model_filepath
-                              )
+        train_test_vmaf_on_dataset(train_dataset=train_dataset, test_dataset=None,
+                                   feature_param=feature_param, model_param=model_param,
+                                   train_ax=None, test_ax=None,
+                                   result_store=result_store,
+                                   parallelize=parallelize,
+                                   output_model_filepath=output_model_filepath
+                                   )
 
     print 'Done.'
 
