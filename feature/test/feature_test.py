@@ -51,7 +51,6 @@ class FeatureTest(unittest.TestCase):
             for filename in filenames:
                 os.remove(os.path.join(logPath, filename))
 
-
     def test_adm(self):
         ADM_LOG = self.LOG_FILENAME + '_adm'
         print 'test adm...'
@@ -60,15 +59,12 @@ class FeatureTest(unittest.TestCase):
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ADM_LOG
         )
         subprocess.call(cmd, shell=True)
-        subprocess.call(cmd, shell=True)
         score, scores = read_log(ADM_LOG, "adm")
         self.assertAlmostEquals(score, 0.915509520833, places=4)
         score, scores = read_log(ADM_LOG, "adm_num")
         self.assertAlmostEquals(score, 6899.24648475, places=4)
         score, scores = read_log(ADM_LOG, "adm_den")
         self.assertAlmostEquals(score, 7535.29963308, places=4)
-
-
 
     def test_ansnr(self):
         ANSNR_LOG = self.LOG_FILENAME + '_ansnr'
@@ -82,7 +78,6 @@ class FeatureTest(unittest.TestCase):
         self.assertAlmostEquals(score, 23.5095715208, places=4)
         score, scores = read_log(ANSNR_LOG, "anpsnr")
         self.assertAlmostEquals(score, 34.164776875, places=4)
-
 
     def test_motion(self):
         MOTION_LOG = self.LOG_FILENAME + '_motion'
@@ -420,7 +415,6 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         self.assertAlmostEquals(score, 30.7805732917, places=4)
         self.assertAlmostEquals(scores[0], 34.786288, places=4)
         self.assertAlmostEquals(scores[1], 31.908737, places=4)
-
 
     def test_ssim(self):
         SSIM_LOG = self.LOG_FILENAME + '_ssim'
