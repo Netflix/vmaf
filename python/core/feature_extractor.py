@@ -90,7 +90,8 @@ class VmafFeatureExtractor(FeatureExtractor):
     # VERSION = '0.1' # vmaf_study; Anush's VIF fix
     # VERSION = '0.2' # expose vif_num, vif_den, adm_num, adm_den, anpsnr
     # VERSION = '0.2.1' # expose vif num/den of each scale
-    VERSION = '0.2.2'  # adm abs-->fabs, corrected border handling, uniform reading with option of offset for input YUV, updated VIF corner case
+    # VERSION = '0.2.2'  # adm abs-->fabs, corrected border handling, uniform reading with option of offset for input YUV, updated VIF corner case
+    VERSION = '0.2.2b'  # expose adm_den/num_scalex
 
     ATOM_FEATURES = ['vif', 'adm', 'ansnr', 'motion',
                      'vif_num', 'vif_den', 'adm_num', 'adm_den', 'anpsnr',
@@ -98,14 +99,22 @@ class VmafFeatureExtractor(FeatureExtractor):
                      'vif_num_scale1', 'vif_den_scale1',
                      'vif_num_scale2', 'vif_den_scale2',
                      'vif_num_scale3', 'vif_den_scale3',
+                     'adm_num_scale0', 'adm_den_scale0',
+                     'adm_num_scale1', 'adm_den_scale1',
+                     'adm_num_scale2', 'adm_den_scale2',
+                     'adm_num_scale3', 'adm_den_scale3',
                      ]
 
     DERIVED_ATOM_FEATURES = ['vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
-                             'vif2', 'adm2',]
+                             'vif2', 'adm2',
+                             'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
+                             ]
 
     VMAF_FEATURE = config.ROOT + "/feature/vmaf"
 
     ADM_CONSTANT = 1000
+
+    ADM_SCALE_CONSTANT = 1
 
     def _generate_result(self, asset):
         # routine to call the command-line executable and generate feature
@@ -209,6 +218,36 @@ class VmafFeatureExtractor(FeatureExtractor):
         #          / np.array(result.result_dict[vif_den_scale3_scores_key]))
         #     )
         # )
+
+        # adm_scalei = adm_num_scalei / adm_den_scalei, i = 0, 1, 2, 3
+        adm_num_scale0_scores_key = cls.get_scores_key('adm_num_scale0')
+        adm_den_scale0_scores_key = cls.get_scores_key('adm_den_scale0')
+        adm_num_scale1_scores_key = cls.get_scores_key('adm_num_scale1')
+        adm_den_scale1_scores_key = cls.get_scores_key('adm_den_scale1')
+        adm_num_scale2_scores_key = cls.get_scores_key('adm_num_scale2')
+        adm_den_scale2_scores_key = cls.get_scores_key('adm_den_scale2')
+        adm_num_scale3_scores_key = cls.get_scores_key('adm_num_scale3')
+        adm_den_scale3_scores_key = cls.get_scores_key('adm_den_scale3')
+        adm_scale0_scores_key = cls.get_scores_key('adm_scale0')
+        adm_scale1_scores_key = cls.get_scores_key('adm_scale1')
+        adm_scale2_scores_key = cls.get_scores_key('adm_scale2')
+        adm_scale3_scores_key = cls.get_scores_key('adm_scale3')
+        result.result_dict[adm_scale0_scores_key] = list(
+            (np.array(result.result_dict[adm_num_scale0_scores_key]) + cls.ADM_SCALE_CONSTANT)
+             / (np.array(result.result_dict[adm_den_scale0_scores_key]) + cls.ADM_SCALE_CONSTANT)
+        )
+        result.result_dict[adm_scale1_scores_key] = list(
+            (np.array(result.result_dict[adm_num_scale1_scores_key]) + cls.ADM_SCALE_CONSTANT)
+             / (np.array(result.result_dict[adm_den_scale1_scores_key]) + cls.ADM_SCALE_CONSTANT)
+        )
+        result.result_dict[adm_scale2_scores_key] = list(
+            (np.array(result.result_dict[adm_num_scale2_scores_key]) + cls.ADM_SCALE_CONSTANT)
+             / (np.array(result.result_dict[adm_den_scale2_scores_key]) + cls.ADM_SCALE_CONSTANT)
+        )
+        result.result_dict[adm_scale3_scores_key] = list(
+            (np.array(result.result_dict[adm_num_scale3_scores_key]) + cls.ADM_SCALE_CONSTANT)
+             / (np.array(result.result_dict[adm_den_scale3_scores_key]) + cls.ADM_SCALE_CONSTANT)
+        )
 
         # validate
         for feature in cls.DERIVED_ATOM_FEATURES:

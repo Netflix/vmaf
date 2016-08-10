@@ -46,7 +46,7 @@ class ResultTest(unittest.TestCase):
         df_ansnr = df.loc[df['scores_key'] == 'VMAF_feature_ansnr_scores']
         df_motion = df.loc[df['scores_key'] == 'VMAF_feature_motion_scores']
         df_adm_den = df.loc[df['scores_key'] == 'VMAF_feature_adm_den_scores']
-        self.assertEquals(len(df), 24)
+        self.assertEquals(len(df), 36)
         self.assertEquals(len(df_vmaf), 1)
         self.assertEquals(len(df_adm), 1)
         self.assertEquals(len(df_vif), 1)
