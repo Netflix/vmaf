@@ -564,6 +564,12 @@ class TrainTestModel(TypeVersionEnabled):
         xys.update(cls.get_ys_from_results(results, indexs))
         return xys
 
+    @classmethod
+    def reset(cls):
+        # placeholder for adding any reset mechanism to avoid interference
+        # between experiments
+        pass
+
 
 class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
 

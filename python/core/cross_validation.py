@@ -86,6 +86,10 @@ class ModelCrossValidation(object):
 
         for fold in range(len(kfold)):
 
+            # to avoid interference among folds
+            if hasattr(train_test_model_class, 'reset'):
+                train_test_model_class.reset()
+
             if logger: logger.info("Fold {}...".format(fold))
 
             test_index_range = kfold[fold]
