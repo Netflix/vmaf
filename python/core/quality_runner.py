@@ -284,26 +284,16 @@ class VmafQualityRunner(QualityRunner):
         # TrainTestModel.predict() on it, and return a Result object
         # (in this case, both Executor._run_on_asset(self, asset) and
         # QualityRunner._read_result(self, asset) get bypassed.
-
         vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
         vmaf_fassembler.run()
         feature_result = vmaf_fassembler.results[0]
-
         model = self._load_model()
-
         xs = model.get_perframe_xs_from_result(feature_result)
-
         ys_pred = model.predict(xs)
-
-        # 'score_clip'
         ys_pred = self.clip_score(model, ys_pred)
-
         result_dict = {}
-        # add all feature result
-        result_dict.update(feature_result.result_dict)
-        # add quality score
-        result_dict[self.get_scores_key()] = ys_pred
-
+        result_dict.update(feature_result.result_dict) # add feature result
+        result_dict[self.get_scores_key()] = ys_pred # add quality score
         return Result(asset, self.executor_id, result_dict)
 
     @staticmethod
@@ -329,33 +319,6 @@ class VmafQualityRunner(QualityRunner):
             lb, ub = score_clip
             ys_pred = np.clip(ys_pred, lb, ub)
 
-        return ys_pred
-
-    @staticmethod
-    def warp_score(model, xs, ys_pred):
-        """
-        Do post processing: for pixel mean (luma) below certain threshold
-        (i.e. dis1st_thr, or threshold for distorted video's first moment),
-        warp the score towards highest score (e.g. 100).
-        :param model:
-        :param xs:
-        :param ys_pred:
-        :return:
-        """
-        score_clip = model.get_appended_info('score_clip')
-        dis1st_thr = model.get_appended_info('dis1st_thr')
-        dis1st_score_key = MomentFeatureExtractor.get_score_key('dis1st')
-        if dis1st_thr is not None \
-                and score_clip is not None \
-                and dis1st_score_key in xs:
-            y_max = score_clip[1]
-            dis1sts = xs[dis1st_score_key]
-            assert len(dis1sts) == len(ys_pred)
-            ys_pred = map(
-                lambda (y, dis1st): y_max - dis1st * (y_max - y)
-                                            / dis1st_thr if dis1st < dis1st_thr else y,
-                zip(ys_pred, dis1sts)
-            )
         return ys_pred
 
     def _load_model(self):
