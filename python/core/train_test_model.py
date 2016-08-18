@@ -521,14 +521,15 @@ class TrainTestModel(TypeVersionEnabled):
                 assert isinstance(result[name], Number)
 
     @staticmethod
-    def get_perframe_xs_from_result(result):
+    def get_per_unit_xs_from_a_result(result):
         """
         Similar to get_xs_from_results(), except that instead of intake a list
         of Result, each corresponding to an aggregate score, this function takes
         a single Result, and interpret its per-frame score as an aggregate score.
         :param result: one BasicResult
-        :param indexs: indices of results to be used
         """
+        # need to substitute the score key (e.g. motion_score -> motion_scores)
+        # to ensure compatibility
         feature_names = result.get_ordered_list_scores_key()
         new_feature_names = result.get_ordered_list_score_key()
         xs = {}

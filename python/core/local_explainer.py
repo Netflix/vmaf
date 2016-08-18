@@ -40,7 +40,8 @@ class LocalExplainer(object):
 
         :param train_test_model: a trained TrainTestModel object
         :param xs: same xs as in TrainTestModel.predict(xs)
-        :return:
+        :return: feature_weights: a num_sample x num_feature 2-D array where
+        the element is the weight of feature
         """
 
         train_test_model._assert_trained()
@@ -63,6 +64,8 @@ class LocalExplainer(object):
         n_sample, n_feature = xs_2d.shape
         feature_weights = np.zeros([n_sample, n_feature])
         for i_sample in range(n_sample):
+
+            # generate neighborhood samples
             x_row = xs_2d[i_sample, :]
             xs_2d_neighbor = np.random.randn(self.neighbor_samples, n_feature) \
                              * self.neighbor_std
@@ -104,7 +107,7 @@ class VmafQualityRunnerWithLocalExplainer(VmafQualityRunner):
         vmaf_fassembler.run()
         feature_result = vmaf_fassembler.results[0]
         model = self._load_model()
-        xs = model.get_perframe_xs_from_result(feature_result)
+        xs = model.get_per_unit_xs_from_a_result(feature_result)
         ys_pred = model.predict(xs)
         ys_pred = self.clip_score(model, ys_pred)
 

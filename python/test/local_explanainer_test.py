@@ -1,10 +1,16 @@
+import unittest
+
 import numpy as np
 
-import unittest
 import config
 from core.asset import Asset
+from core.executor import run_executors_in_parallel
 from core.local_explainer import VmafQualityRunnerWithLocalExplainer, \
     LocalExplainer
+from core.noref_feature_extractor import MomentNorefFeatureExtractor
+from core.train_test_model import SklearnRandomForestTrainTestModel
+from routine import read_dataset
+from tools.misc import import_python_file
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -18,6 +24,42 @@ class LocalExplainerTest(unittest.TestCase):
 
     def setUp(self):
         pass
+
+    def test_explain_train_test_model(self):
+
+        model_class = SklearnRandomForestTrainTestModel
+
+        train_dataset_path = config.ROOT + '/python/test/resource/' \
+                                           'test_image_dataset_diffdim.py'
+        train_dataset = import_python_file(train_dataset_path)
+        train_assets = read_dataset(train_dataset)
+        _, self.features = run_executors_in_parallel(
+            MomentNorefFeatureExtractor,
+            train_assets,
+            fifo_mode=True,
+            delete_workdir=True,
+            parallelize=True,
+            result_store=None,
+            optional_dict=None,
+            optional_dict2=None,
+        )
+
+        xys = model_class.get_xys_from_results(self.features[:7])
+        model = model_class({'norm_type':'normalize', 'random_state':0}, None)
+        model.train(xys)
+
+        np.random.seed(0)
+
+        xs = model_class.get_xs_from_results(self.features[7:])
+        explainer = LocalExplainer(neighbor_samples=1000)
+        weights = explainer.explain(model, xs)
+
+        self.assertAlmostEqual(weights[0, 0], -0.12416246498968669, places=4)
+        self.assertAlmostEqual(weights[0, 1], -0.20931449130428709, places=4)
+        self.assertAlmostEqual(weights[0, 2],  0.023223653487980878, places=4)
+        self.assertAlmostEqual(weights[1, 0],  0.00076151300148399642, places=4)
+        self.assertAlmostEqual(weights[1, 1], -0.012459539082079829, places=4)
+        self.assertAlmostEqual(weights[1, 2], 0.036730224198045454, places=4)
 
     def test_explain_vmaf_results(self):
         print 'test on running VMAF runner with local explainer...'
@@ -40,9 +82,7 @@ class LocalExplainerTest(unittest.TestCase):
             None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
-            optional_dict2={'explainer': LocalExplainer(neighbor_samples=100,
-                                                        neighbor_std=1.0
-                                                        )}
+            optional_dict2={'explainer': LocalExplainer(neighbor_samples=100)}
         )
 
         np.random.seed(0)
@@ -53,6 +93,13 @@ class LocalExplainerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_score'], 65.4488588759, places=4)
         self.assertAlmostEqual(results[1]['VMAF_score'], 99.2259317881, places=4)
 
+        expected_feature_names = ['VMAF_feature_adm2_score',
+                                  'VMAF_feature_motion_score',
+                                  'VMAF_feature_vif_scale0_score',
+                                  'VMAF_feature_vif_scale1_score',
+                                  'VMAF_feature_vif_scale2_score',
+                                  'VMAF_feature_vif_scale3_score']
+
         weights = np.mean(results[0]['VMAF_scores_exp']['feature_weights'], axis=0)
         self.assertAlmostEqual(weights[0], 0.75441663, places=4)
         self.assertAlmostEqual(weights[1], 0.06816105, places=4)
@@ -61,6 +108,9 @@ class LocalExplainerTest(unittest.TestCase):
         self.assertAlmostEqual(weights[4], 0.12517884, places=4)
         self.assertAlmostEqual(weights[5], 0.04639162, places=4)
 
+        self.assertEqual(results[0]['VMAF_scores_exp']['feature_names'],
+                         expected_feature_names)
+
         weights = np.mean(results[1]['VMAF_scores_exp']['feature_weights'], axis=0)
         self.assertAlmostEqual(weights[0], 0.77096087, places=4)
         self.assertAlmostEqual(weights[1], 0.01491754, places=4)
@@ -68,3 +118,6 @@ class LocalExplainerTest(unittest.TestCase):
         self.assertAlmostEqual(weights[3], 0.2511188, places=4)
         self.assertAlmostEqual(weights[4], 0.14953561, places=4)
         self.assertAlmostEqual(weights[5], 0.07960753, places=4)
+
+        self.assertEqual(results[1]['VMAF_scores_exp']['feature_names'],
+                         expected_feature_names)
