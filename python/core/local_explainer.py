@@ -10,8 +10,9 @@ __license__ = "Apache, Version 2.0"
 
 class LocalExplainer(object):
     """Explains a TrainTestModel on a local data point.
-    Adapted from: Lime: Explaining the predictions of any machine learning classifier
-    https://github.com/marcotcr/lime."""
+    Adapted from:
+    Lime: Explaining the predictions of any machine learning classifier
+    https://github.com/marcotcr/lime"""
 
     def __init__(self,
                  neighbor_std=1.0,
@@ -35,20 +36,27 @@ class LocalExplainer(object):
         self.model_regressor = Ridge(alpha=1, fit_intercept=True) \
                                if model_regressor is None else model_regressor
 
+    def _assert_model(self, train_test_model):
+
+        train_test_model._assert_trained()
+
+        assert hasattr(train_test_model, '_to_tabular_xs'), \
+            'train_test_model must have a method _to_tabular_xs().'
+
+        assert train_test_model.norm_type != 'none', \
+            'If train_test_model has not been normalized, ' \
+            'the sampled neighborhood may not be of the right shape.'
+
     def explain(self, train_test_model, xs):
         """Explain data points.
 
         :param train_test_model: a trained TrainTestModel object
         :param xs: same xs as in TrainTestModel.predict(xs)
-        :return: feature_weights: a num_sample x num_feature 2-D array where
-        the element is the weight of feature
+        :return: exps: explanations, where exps['feature_weights'] has the
+        feature weights (in num_sample x num_feature 2D array)
         """
 
-        train_test_model._assert_trained()
-
-        assert train_test_model.norm_type != 'none', \
-            'If train_test_model has not been normalized, ' \
-            'the sampled neighborhood may not be of the right shape.'
+        self._assert_model(train_test_model)
 
         feature_names = train_test_model.feature_names
         for name in feature_names:
@@ -56,10 +64,12 @@ class LocalExplainer(object):
 
         xs_2d = train_test_model._to_tabular_xs(feature_names, xs)
 
+        xs_2d_unnormalized = xs_2d.copy()
+
         # normalize xs
         xs_2d = train_test_model.normalize_xs(xs_2d)
 
-        # for each row of xs, repreating feature of a unit (e.g. frame),
+        # for each row of xs, repreat feature of a unit (e.g. frame),
         # generate a new 2d_array by sampling its neighborhood
         n_sample, n_feature = xs_2d.shape
         feature_weights = np.zeros([n_sample, n_feature])
@@ -93,7 +103,14 @@ class LocalExplainer(object):
             feature_weight = self.model_regressor.coef_.copy()
             feature_weights[i_sample, :] = feature_weight
 
-        return feature_weights
+        exps = {
+            'feature_weights': feature_weights,
+            'features': xs_2d_unnormalized,
+            'features_normalized': xs_2d,
+            'feature_names': feature_names
+        }
+
+        return exps
 
 
 class VmafQualityRunnerWithLocalExplainer(VmafQualityRunner):
@@ -117,15 +134,9 @@ class VmafQualityRunnerWithLocalExplainer(VmafQualityRunner):
         else:
             explainer = LocalExplainer()
 
-        feature_weights = explainer.explain(model, xs)
-        exp = {
-            'feature_weights': feature_weights,
-            'feature_names': model.feature_names,
-        }
+        exps = explainer.explain(model, xs)
         result_dict = {}
         result_dict.update(feature_result.result_dict) # add feature result
         result_dict[self.get_scores_key()] = ys_pred # add quality score
-        result_dict[self.get_scores_key() + '_exp'] = exp # add local explanations
+        result_dict[self.get_scores_key() + '_exps'] = exps # add local explanations
         return Result(asset, self.executor_id, result_dict)
-
-

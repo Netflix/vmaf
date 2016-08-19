@@ -27,7 +27,7 @@ class TestTrainOnDataset(unittest.TestCase):
         feature_param = import_python_file(
             config.ROOT + '/python/test/resource/feature_param_sample.py')
         train_fassembler, train_assets, train_stats, \
-        test_fassembler, test_assets, test_stats = \
+        test_fassembler, test_assets, test_stats, _ = \
             train_test_vmaf_on_dataset(
                 train_dataset=self.train_dataset, test_dataset=None,
                          feature_param=feature_param, model_param=model_param,
