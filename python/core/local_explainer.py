@@ -1,9 +1,12 @@
 import numpy as np
 import sklearn.metrics
 from sklearn.linear_model import Ridge
+import matplotlib.pyplot as plt
 
 from core.quality_runner import VmafQualityRunner
 from core.result import Result
+from tools.misc import get_file_name_without_extension
+from tools.reader import YuvReader
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -112,6 +115,113 @@ class LocalExplainer(object):
 
         return exps
 
+    @staticmethod
+    def _assert_explanations(assets, exps, ys, ys_pred):
+        N = exps['feature_weights'].shape[0]
+        assert N == exps['features_normalized'].shape[0]
+        if assets is not None:
+            assert N == len(assets)
+        if ys is not None:
+            assert N == len(ys['label'])
+        if ys_pred is not None:
+            assert N == len(ys_pred)
+        return N
+
+    @classmethod
+    def print_explanations(cls, exps, assets=None, ys=None, ys_pred=None):
+
+        # asserts
+        N = cls._assert_explanations(assets, exps, ys, ys_pred)
+
+        print "Features: {}".format(exps['feature_names'])
+
+        for n in range(N):
+            weights = exps['feature_weights'][n]
+            features = exps['features_normalized'][n]
+
+            asset = assets[n] if assets is not None else None
+            y = ys['label'][n] if ys is not None else None
+            y_pred = ys_pred[n] if ys_pred is not None else None
+
+            print "{ref}".format(
+                ref=get_file_name_without_extension(asset.ref_path) if
+                asset is not None else "Asset {}".format(n))
+            if asset is not None:
+                print "\tDistorted: {dis}".format(
+                    dis=get_file_name_without_extension(asset.dis_path))
+            if y is not None:
+                print "\tground truth: {y:.3f}".format(y=y)
+            if y_pred is not None:
+                print "\tpredicted: {y_pred:.3f}".format(y_pred=y_pred)
+            print "\tfeature value: {}".format(features)
+            print "\tfeature weight: {}".format(weights)
+
+    @classmethod
+    def plot_explanations(cls, exps, assets=None, ys=None, ys_pred=None):
+
+        # asserts
+        N = cls._assert_explanations(assets, exps, ys, ys_pred)
+
+        figs = []
+        for n in range(N):
+            weights = exps['feature_weights'][n]
+            features = exps['features_normalized'][n]
+
+            asset = assets[n] if assets is not None else None
+            y = ys['label'][n] if ys is not None else None
+            y_pred = ys_pred[n] if ys_pred is not None else None
+
+            img = None
+            if asset is not None:
+                w, h = asset.dis_width_height
+                with YuvReader(filepath=asset.dis_path, width=w, height=h,
+                               yuv_type=asset.yuv_type) as yuv_reader:
+                    for yuv in yuv_reader:
+                        img, _, _ = yuv
+                        break
+                assert img is not None
+
+            title = ""
+            if asset is not None:
+                title += "{}\n".format(get_file_name_without_extension(asset.ref_path))
+            if y is not None:
+                title += "ground truth: {:.3f}\n".format(y)
+            if y_pred is not None:
+                title += "predicted: {:.3f}\n".format(y_pred)
+            if title != "" and title[-1] == '\n':
+                title = title[:-1]
+
+            assert len(weights) == len(features)
+            M = len(weights)
+
+            fig = plt.figure()
+
+            ax_top = plt.subplot(2, 1, 1)
+            ax_left = plt.subplot(2, 2, 3)
+            ax_right = plt.subplot(2, 2, 4, sharey=ax_left)
+
+            if img is not None:
+                ax_top.imshow(img, cmap='Greys_r')
+            ax_top.get_xaxis().set_visible(False)
+            ax_top.get_yaxis().set_visible(False)
+            ax_top.set_title(title)
+
+            pos = np.arange(M) + 0.1
+            ax_left.barh(pos, features, color='b', label='feature')
+            ax_left.set_xticks(np.arange(0, 1.1, 0.2))
+            ax_left.set_yticks(pos + 0.35)
+            ax_left.set_yticklabels(exps['feature_names'])
+            ax_left.set_title('feature')
+
+            ax_right.barh(pos, weights, color='r', label='weight')
+            ax_right.get_yaxis().set_visible(False)
+            ax_right.set_title('weight')
+
+            plt.tight_layout()
+
+            figs.append(fig)
+
+        return figs
 
 class VmafQualityRunnerWithLocalExplainer(VmafQualityRunner):
     """Same as VmafQualityRunner, except it outputs additional LocalExplainer
