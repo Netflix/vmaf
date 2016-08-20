@@ -141,3 +141,7 @@ class LocalExplainerTest(unittest.TestCase):
 
         self.assertEqual(results[1]['VMAF_scores_exps']['feature_names'],
                          expected_feature_names)
+
+        # self.runner.show_local_explanations(results)
+        # import matplotlib.pyplot as plt
+        # plt.show()
