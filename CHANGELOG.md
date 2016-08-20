@@ -26,3 +26,8 @@
 - Fix a series of numerical issues in VMAF features, increment VmafFeatureExtractor version number.
 - Retrain VmafQualityRunner after feature update, increment version number.
 
+## (08/20/2016) [1.0.5]
+
+**New features:**
+- Add LocalExplainer class.
+- Add show_local_explanation option to run_vmaf script.

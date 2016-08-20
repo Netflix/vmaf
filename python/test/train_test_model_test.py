@@ -63,9 +63,9 @@ class TrainTestModelTest(unittest.TestCase):
 
         print "test train, save, load and predict..."
 
-        xs = TrainTestModel.get_xs_from_results(self.features)
-        ys = TrainTestModel.get_ys_from_results(self.features)
-        xys = TrainTestModel.get_xys_from_results(self.features)
+        xs = SklearnRandomForestTrainTestModel.get_xs_from_results(self.features)
+        ys = SklearnRandomForestTrainTestModel.get_ys_from_results(self.features)
+        xys = SklearnRandomForestTrainTestModel.get_xys_from_results(self.features)
 
         self.model = SklearnRandomForestTrainTestModel({'norm_type':'normalize', 'random_state':0}, None)
         self.model.train(xys)
@@ -82,9 +82,9 @@ class TrainTestModelTest(unittest.TestCase):
 
         print "test libsvmnusvr train, save, load and predict..."
 
-        xs = TrainTestModel.get_xs_from_results(self.features)
-        ys = TrainTestModel.get_ys_from_results(self.features)
-        xys = TrainTestModel.get_xys_from_results(self.features)
+        xs = LibsvmNusvrTrainTestModel.get_xs_from_results(self.features)
+        ys = LibsvmNusvrTrainTestModel.get_ys_from_results(self.features)
+        xys = LibsvmNusvrTrainTestModel.get_xys_from_results(self.features)
 
         self.model = LibsvmNusvrTrainTestModel({'norm_type':'normalize'}, None)
         self.model.train(xys)
@@ -108,9 +108,9 @@ class TrainTestModelTest(unittest.TestCase):
 
         # libsvmnusvr is bit exact to nusvr
 
-        xs = TrainTestModel.get_xs_from_results(self.features)
-        ys = TrainTestModel.get_ys_from_results(self.features)
-        xys = TrainTestModel.get_xys_from_results(self.features)
+        xs = LibsvmNusvrTrainTestModel.get_xs_from_results(self.features)
+        ys = LibsvmNusvrTrainTestModel.get_ys_from_results(self.features)
+        xys = LibsvmNusvrTrainTestModel.get_xys_from_results(self.features)
 
         model = LibsvmNusvrTrainTestModel(
             {'norm_type':'normalize'}, None)
@@ -142,9 +142,9 @@ class TrainTestModelTest(unittest.TestCase):
 
         # random forest don't need proper data normalization
 
-        xs = TrainTestModel.get_xs_from_results(self.features, [0, 1, 2])
-        ys = TrainTestModel.get_ys_from_results(self.features, [0, 1, 2])
-        xys = TrainTestModel.get_xys_from_results(self.features, [0, 1, 2])
+        xs = SklearnRandomForestTrainTestModel.get_xs_from_results(self.features, [0, 1, 2])
+        ys = SklearnRandomForestTrainTestModel.get_ys_from_results(self.features, [0, 1, 2])
+        xys = SklearnRandomForestTrainTestModel.get_xys_from_results(self.features, [0, 1, 2])
 
         model = SklearnRandomForestTrainTestModel({'norm_type':'normalize',
                                             'random_state': 0}, None)

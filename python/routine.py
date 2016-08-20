@@ -271,7 +271,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
             ))
 
     return train_fassembler, train_assets, train_stats, \
-           test_fassembler, test_assets, test_stats
+           test_fassembler, test_assets, test_stats, model
 
 
 def construct_kfold_list(assets, contentid_groups):
