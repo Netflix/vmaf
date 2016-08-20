@@ -272,10 +272,11 @@ class VmafQualityRunnerWithLocalExplainer(VmafQualityRunner):
 
     @classmethod
     def show_local_explanations(cls, results, indexs=None):
-        """Print and plot local explanations of results
+        """Plot local explanations of results
 
         :param results:
-        :param indexs: a list of indices, or None. If None, will take the second frame
+        :param indexs: a list of frame indices, or None. If None, will take the
+        second frame.
         :return: figures of local explanation plots
         """
 
@@ -300,7 +301,7 @@ class VmafQualityRunnerWithLocalExplainer(VmafQualityRunner):
             N2 = LocalExplainer.assert_explanations(exps2)
             assets2 = [asset for _ in range(N2)]
 
-            LocalExplainer.print_explanations(exps2, assets=assets2, ys=None, ys_pred=ys_pred)
+            # LocalExplainer.print_explanations(exps2, assets=assets2, ys=None, ys_pred=ys_pred)
             figs = LocalExplainer.plot_explanations(exps2, assets=assets2, ys=None, ys_pred=ys_pred)
             figss.append(figs)
 
