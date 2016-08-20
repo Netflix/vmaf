@@ -275,7 +275,7 @@ class VmafQualityRunner(QualityRunner):
             result_store=self.result_store,
             optional_dict=None,
             optional_dict2=None,
-            parallelize=True,
+            # parallelize=True,
         )
         return vmaf_fassembler
 
