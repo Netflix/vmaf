@@ -167,3 +167,6 @@ class YuvReaderTest10le(unittest.TestCase):
         self.assertEquals(len(y_2ndmoments), 48)
         self.assertAlmostEquals(np.mean(y_1stmoments), 61.332006624999984, places=4)
         self.assertAlmostEquals(np.mean(y_2ndmoments), 4798.659574041666, places=4)
+
+if __name__ == '__main__':
+    unittest.main()

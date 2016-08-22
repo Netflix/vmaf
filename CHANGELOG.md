@@ -31,3 +31,10 @@
 **New features:**
 - Add LocalExplainer class.
 - Add show_local_explanation option to run_vmaf script.
+
+## (08/20/2016) [1.0.6]
+
+**New features:**
+- Add DisYUVRawVideoExtractor and related classes.
+- Add NeuralNetworkTrainTestModel base class that integrates TensorFlow.
+- Add example class ToddNoiseClassifierTrainTestModel.

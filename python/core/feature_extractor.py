@@ -5,7 +5,6 @@ import re
 import subprocess
 import numpy as np
 import ast
-import hashlib
 
 import config
 from core.executor import Executor

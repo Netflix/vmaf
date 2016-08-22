@@ -1,3 +1,4 @@
+import os
 import unittest
 
 import numpy as np
@@ -8,12 +9,15 @@ from core.executor import run_executors_in_parallel
 from core.local_explainer import VmafQualityRunnerWithLocalExplainer, \
     LocalExplainer
 from core.noref_feature_extractor import MomentNorefFeatureExtractor
-from core.train_test_model import SklearnRandomForestTrainTestModel
+from core.raw_extractor import DisYUVRawVideoExtractor
+from core.train_test_model import SklearnRandomForestTrainTestModel, \
+    MomentRandomForestTrainTestModel
 from routine import read_dataset
 from tools.misc import import_python_file
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
+
 
 class LocalExplainerTest(unittest.TestCase):
 
@@ -145,3 +149,80 @@ class LocalExplainerTest(unittest.TestCase):
         self.runner.show_local_explanations(results, indexs=[2, 3])
         # import matplotlib.pyplot as plt
         # plt.show()
+
+
+class LocalExplainerMomentRandomForestTest(unittest.TestCase):
+
+    def setUp(self):
+        train_dataset_path = config.ROOT + '/python/test/resource/test_image_dataset_diffdim.py'
+        train_dataset = import_python_file(train_dataset_path)
+        train_assets = read_dataset(train_dataset)
+
+        self.h5py_filepath = config.ROOT + '/workspace/workdir/test.hdf5'
+        self.h5py_file = DisYUVRawVideoExtractor.open_h5py_file(self.h5py_filepath)
+        optional_dict2 = {'h5py_file': self.h5py_file}
+
+        _, self.features = run_executors_in_parallel(
+            DisYUVRawVideoExtractor,
+            train_assets,
+            fifo_mode=True,
+            delete_workdir=True,
+            parallelize=False, # CAN ONLY USE SERIAL MODE FOR DisYRawVideoExtractor
+            result_store=None,
+            optional_dict=None,
+            optional_dict2=optional_dict2,
+        )
+
+    def tearDown(self):
+        if hasattr(self, 'h5py_file'):
+            DisYUVRawVideoExtractor.close_h5py_file(self.h5py_file)
+        if os.path.exists(self.h5py_filepath):
+            os.remove(self.h5py_filepath)
+
+    def test_explain_train_test_model(self):
+
+        model_class = MomentRandomForestTrainTestModel
+
+        xys = model_class.get_xys_from_results(self.features[:7])
+        del xys['dis_u']
+        del xys['dis_v']
+
+        model = model_class({'norm_type':'normalize', 'random_state':0})
+        model.train(xys)
+
+        np.random.seed(0)
+
+        xs = model_class.get_xs_from_results(self.features[7:])
+        del xs['dis_u']
+        del xs['dis_v']
+
+        explainer = LocalExplainer(neighbor_samples=1000)
+        exps = explainer.explain(model, xs)
+
+        self.assertAlmostEqual(exps['feature_weights'][0, 0], -0.12416, places=4)
+        self.assertAlmostEqual(exps['feature_weights'][1, 0], 0.00076, places=4)
+        self.assertAlmostEqual(exps['feature_weights'][0, 1], -0.20931, places=4)
+        self.assertAlmostEqual(exps['feature_weights'][1, 1], -0.01245, places=4)
+        self.assertAlmostEqual(exps['feature_weights'][0, 2], 0.02322, places=4)
+        self.assertAlmostEqual(exps['feature_weights'][1, 2], 0.03673, places=4)
+
+        self.assertAlmostEqual(exps['features'][0, 0], 107.73501, places=4)
+        self.assertAlmostEqual(exps['features'][1, 0], 35.81638, places=4)
+        self.assertAlmostEqual(exps['features'][0, 1], 13691.23881, places=4)
+        self.assertAlmostEqual(exps['features'][1, 1], 1611.56764, places=4)
+        self.assertAlmostEqual(exps['features'][0, 2], 2084.40542, places=4)
+        self.assertAlmostEqual(exps['features'][1, 2], 328.75389, places=4)
+
+        self.assertAlmostEqual(exps['features_normalized'][0, 0], -0.65527, places=4)
+        self.assertAlmostEqual(exps['features_normalized'][1, 0], -3.74922, places=4)
+        self.assertAlmostEqual(exps['features_normalized'][0, 1], -0.68872, places=4)
+        self.assertAlmostEqual(exps['features_normalized'][1, 1], -2.79586, places=4)
+        self.assertAlmostEqual(exps['features_normalized'][0, 2], 0.08524, places=4)
+        self.assertAlmostEqual(exps['features_normalized'][1, 2], -1.32625, places=4)
+
+        self.assertEqual(exps['feature_names'], ['dis_y'])
+        # TODO: fix feature name to 'Moment_noref_feature_1st_score', ...
+
+
+if __name__ == '__main__':
+    unittest.main()
