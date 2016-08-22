@@ -740,4 +740,75 @@ class SklearnRandomForestTrainTestModel(TrainTestModel, RegressorMixin):
         return ys_label_pred
 
 
+class RawVideoTrainTestModelMixin(object):
+    """
+    Contains some key methods to handle input being RawVideoExtractor results.
+    """
 
+    @classmethod
+    def _assert_dimension(cls, feature_names, results):
+        # Override TrainTestModel._assert_dimension. Allow input to be a numpy
+        # ndarray or equivalent (e.g. H5py object) -- they must have attribute
+        # 'shape', and the shape must be 3-dimensional (frames, height, width)
+        assert hasattr(results[0][feature_names[0]], 'shape')
+        for result in results:
+            for feature_name in feature_names:
+                # esult[feature_name] is video of dims: frames, height, width
+                assert len(result[feature_name].shape) == 3
+
+
+class MomentRandomForestTrainTestModel(RawVideoTrainTestModelMixin,
+                                       # : order affects whose _assert_dimension
+                                       # gets called
+                                       SklearnRandomForestTrainTestModel,
+                                       RegressorMixin,
+                                       ):
+    """
+    Compute moments based on the input videos (each video of form frames x
+     width x height 3D-array) and then call a RandomForestTrainTestModel.
+     For demo purpose only.
+    """
+
+    TYPE = 'MOMENTRANDOMFOREST'
+    VERSION = "0.1"
+
+    @classmethod
+    def _to_tabular_xys(cls, xkeys, xys):
+        # Override TrainTestModel._to_tabular_xys. For each image, extract
+        # 1st, 2nd moment and var
+
+        # get xs first
+        xs_2d = cls._to_tabular_xs(xkeys, xys)
+
+        # combine with ys
+        ys_vec = xys['label']
+        xys_2d = np.array(np.hstack((np.matrix(ys_vec).T, xs_2d)))
+
+        return xys_2d
+
+    @classmethod
+    def _to_tabular_xs(cls, xkeys, xs):
+        # Override TrainTestModel._to_tabular_xs
+        # from raw video to 1st, 2nd moment and var, format xs properly in
+        # tabular form
+        sorted_xkeys = sorted(xkeys)
+
+        xs_list = []
+        for key in sorted_xkeys:
+            videos = xs[key]
+            video_stats_list = []
+            for video in videos:
+                nframes = video.shape[0]
+                frame_stats = np.zeros((nframes, 3))
+                for iframe, frame in enumerate(video):
+                    firstm = frame.mean()
+                    variance = frame.var()
+                    secondm = variance + firstm**2
+                    frame_stats[iframe] = (firstm, secondm, variance)
+                video_stats = np.mean(frame_stats, axis=0)
+                video_stats_list.append(video_stats)
+            video_stats_2d = np.vstack(video_stats_list)
+            xs_list.append(video_stats_2d)
+        xs_2d = np.hstack(xs_list)
+
+        return xs_2d

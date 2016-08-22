@@ -4,7 +4,6 @@ __license__ = "Apache, Version 2.0"
 import sys
 import subprocess
 import re
-import hashlib
 
 import numpy as np
 
@@ -13,7 +12,6 @@ from core.executor import Executor
 from core.result import Result
 from core.feature_assembler import FeatureAssembler
 from core.train_test_model import TrainTestModel
-from core.feature_extractor import MomentFeatureExtractor
 
 
 class QualityRunner(Executor):
@@ -164,7 +162,7 @@ class VmafLegacyQualityRunner(QualityRunner):
             result_store=self.result_store,
             optional_dict=None,
             optional_dict2=None,
-            # parallelize=True,
+            parallelize=False, # parallelization already in a higher level
         )
         return vmaf_fassembler
 
@@ -275,7 +273,7 @@ class VmafQualityRunner(QualityRunner):
             result_store=self.result_store,
             optional_dict=None,
             optional_dict2=None,
-            # parallelize=True,
+            parallelize=False, # parallelization already in a higher level
         )
         return vmaf_fassembler
 

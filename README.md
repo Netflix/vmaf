@@ -14,11 +14,18 @@ It also requires a number of Python packages:
   - [matplotlib](http://matplotlib.org/1.3.1/index.html) (>=1.5.1)
   - [pandas](http://pandas.pydata.org/) (>=0.17.1)
   - [scikit-learn](http://scikit-learn.org/stable/) (>=0.17.1)
+  - [h5py](http://http://www.h5py.org/) (>=2.2.1)
 
 Follow [this link](http://www.scipy.org/install.html) to install the *numpy/scipy/matplotlib/pandas* suite on your system. To install *scikit-learn*, first [install](http://python-packaging-user-guide.readthedocs.org/en/latest/installing/) package manager *pip*, then run:
 
 ```
 sudo pip install --upgrade scikit-learn
+```
+
+To install *h5py*, run:
+
+```
+sudo pip install --upgrade h5py
 ```
 
 ####Troubleshooting
@@ -31,6 +38,7 @@ python -c 'import scipy as pkg; print pkg.__version__; print pkg.__file__'
 python -c 'import matplotlib as pkg; print pkg.__version__; print pkg.__file__'
 python -c 'import pandas as pkg; print pkg.__version__; print pkg.__file__'
 python -c 'import sklearn as pkg; print pkg.__version__; print pkg.__file__'
+python -c 'import h5py as pkg; print pkg.__version__; print pkg.__file__'
 ```
 
 If you see that the printed version number is older than the ones aforementioned, it could suggest that a previously installed package with the same name but older version at a different location may have overshadowed the new one. Make sure that the new one's path appears early in the path list, which can be printed by:
