@@ -14,7 +14,7 @@ It also requires a number of Python packages:
   - [matplotlib](http://matplotlib.org/1.3.1/index.html) (>=1.5.1)
   - [pandas](http://pandas.pydata.org/) (>=0.17.1)
   - [scikit-learn](http://scikit-learn.org/stable/) (>=0.17.1)
-  - [h5py](http://http://www.h5py.org/) (>=2.2.1)
+  - [h5py](http://www.h5py.org/) (>=2.2.1)
 
 Follow [this link](http://www.scipy.org/install.html) to install the *numpy/scipy/matplotlib/pandas* suite on your system. To install *scikit-learn*, first [install](http://python-packaging-user-guide.readthedocs.org/en/latest/installing/) package manager *pip*, then run:
 
