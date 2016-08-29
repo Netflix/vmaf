@@ -80,7 +80,8 @@ if __name__ == '__main__':
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
         test_on_dataset(test_dataset, runner_class, ax,
-                        result_store, model_filepath, parallelize)
+                        result_store, model_filepath,
+                        parallelize=parallelize)
 
         bbox = {'facecolor':'white', 'alpha':1, 'pad':20}
         ax.annotate('Testing Set', xy=(0.1, 0.85), xycoords='axes fraction', bbox=bbox)
@@ -90,7 +91,8 @@ if __name__ == '__main__':
     except ImportError:
         print_matplotlib_warning()
         test_on_dataset(test_dataset, runner_class, None,
-                        result_store, model_filepath, parallelize)
+                        result_store, model_filepath,
+                        parallelize=parallelize)
 
     print 'Done.'
 
