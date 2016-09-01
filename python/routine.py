@@ -366,7 +366,7 @@ def run_vmaf_cv(train_dataset_filepath,
     result_store = FileSystemResultStore()
 
     train_dataset = import_python_file(train_dataset_filepath)
-    test_dataset = import_python_file(test_dataset_filepath)
+    test_dataset = import_python_file(test_dataset_filepath) if test_dataset_filepath is not None else None
 
     param = import_python_file(param_filepath)
 
