@@ -17,7 +17,11 @@ from core.train_test_model import TrainTestModel, RegressorMixin, \
     ClassifierMixin
 
 
-def read_dataset(dataset):
+def read_dataset(dataset, **kwargs):
+
+    groundtruth_key = kwargs['groundtruth_key'] if 'groundtruth_key' in kwargs else None
+    skip_asset_with_none_groundtruth = kwargs['skip_asset_with_none_groundtruth'] \
+        if 'skip_asset_with_none_groundtruth' in kwargs else False
 
     # asserts, can add more to the list...
     assert hasattr(dataset, 'dataset_name')
@@ -42,16 +46,19 @@ def read_dataset(dataset):
     assets = []
     for dis_video in dis_videos:
 
-        if 'dmos' in dis_video:
-            groundtruth = dis_video['dmos']
-        elif 'mos' in dis_video:
-            groundtruth = dis_video['mos']
-        elif 'groundtruth' in dis_video:
-            groundtruth = dis_video['groundtruth']
+        if groundtruth_key is not None:
+            groundtruth = dis_video[groundtruth_key]
         else:
-            groundtruth = None
-            # assert False, 'Each distorted video entry must provide either ' \
-            #               'a mos or dmos score.'
+            if 'dmos' in dis_video:
+                groundtruth = dis_video['dmos']
+            elif 'mos' in dis_video:
+                groundtruth = dis_video['mos']
+            elif 'groundtruth' in dis_video:
+                groundtruth = dis_video['groundtruth']
+            else:
+                groundtruth = None
+                # assert False, 'Each distorted video entry must provide either ' \
+                #               'a mos or dmos score.'
 
         ref_path = ref_dict[dis_video['content_id']]['path']
         width_ = width if width is not None else ref_dict[dis_video['content_id']]['width']
@@ -64,15 +71,18 @@ def read_dataset(dataset):
         if groundtruth is not None:
             asset_dict['groundtruth'] = groundtruth
 
-        asset = Asset(dataset=data_set_name,
-                      content_id=dis_video['content_id'],
-                      asset_id=dis_video['asset_id'],
-                      workdir_root=config.ROOT + "/workspace/workdir",
-                      ref_path=ref_path,
-                      dis_path=dis_video['path'],
-                      asset_dict=asset_dict,
-                      )
-        assets.append(asset)
+        if groundtruth is None and skip_asset_with_none_groundtruth:
+            pass
+        else:
+            asset = Asset(dataset=data_set_name,
+                          content_id=dis_video['content_id'],
+                          asset_id=dis_video['asset_id'],
+                          workdir_root=config.ROOT + "/workspace/workdir",
+                          ref_path=ref_path,
+                          dis_path=dis_video['path'],
+                          asset_dict=asset_dict,
+                          )
+            assets.append(asset)
 
     return assets
 
@@ -80,8 +90,8 @@ def test_on_dataset(test_dataset, runner_class, ax,
                     result_store, model_filepath,
                     parallelize=True, fifo_mode=True,
                     aggregate_method=np.mean,
-                    type = 'regressor'
-                    ):
+                    type = 'regressor',
+                    **kwargs):
 
     if type == 'regressor':
         model_type = RegressorMixin
@@ -90,7 +100,7 @@ def test_on_dataset(test_dataset, runner_class, ax,
     else:
         assert False
 
-    test_assets = read_dataset(test_dataset)
+    test_assets = read_dataset(test_dataset, **kwargs)
 
     optional_dict = {
         'model_filepath':model_filepath
@@ -131,7 +141,7 @@ def test_on_dataset(test_dataset, runner_class, ax,
         if ax is not None:
             content_ids = map(lambda asset: asset.content_id, test_assets)
             model_type.plot_scatter(ax, stats, content_ids)
-            ax.set_xlabel('DMOS')
+            ax.set_xlabel('True Score')
             ax.set_ylabel("Predicted Score")
             ax.grid()
             ax.set_title( "{runner}\n{stats}".format(
@@ -158,9 +168,10 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
                                feature_param, model_param,
                                train_ax, test_ax, result_store,
                                parallelize=True, logger=None, fifo_mode=True,
-                               output_model_filepath=None):
+                               output_model_filepath=None,
+                               **kwargs):
 
-    train_assets = read_dataset(train_dataset)
+    train_assets = read_dataset(train_dataset, **kwargs)
     train_fassembler = FeatureAssembler(
         feature_dict = feature_param.feature_dict,
         feature_option_dict = None,
@@ -212,7 +223,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
     if train_ax is not None:
         train_content_ids = map(lambda asset: asset.content_id, train_assets)
         model_class.plot_scatter(train_ax, train_stats, train_content_ids)
-        train_ax.set_xlabel('DMOS')
+        train_ax.set_xlabel('True Score')
         train_ax.set_ylabel("Predicted Score")
         train_ax.grid()
         train_ax.set_title( "Dataset: {dataset}, Model: {model}\n{stats}".format(
@@ -228,7 +239,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         test_stats = None
         test_fassembler = None
     else:
-        test_assets = read_dataset(test_dataset)
+        test_assets = read_dataset(test_dataset, **kwargs)
         test_fassembler = FeatureAssembler(
             feature_dict = feature_param.feature_dict,
             feature_option_dict = None,
@@ -261,7 +272,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         if test_ax is not None:
             test_content_ids = map(lambda asset: asset.content_id, test_assets)
             model_class.plot_scatter(test_ax, test_stats, test_content_ids)
-            test_ax.set_xlabel('DMOS')
+            test_ax.set_xlabel('True Score')
             test_ax.set_ylabel("Predicted Score")
             test_ax.grid()
             test_ax.set_title( "Dataset: {dataset}, Model: {model}\n{stats}".format(
@@ -271,7 +282,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
             ))
 
     return train_fassembler, train_assets, train_stats, \
-           test_fassembler, test_assets, test_stats
+           test_fassembler, test_assets, test_stats, model
 
 
 def construct_kfold_list(assets, contentid_groups):
@@ -325,7 +336,7 @@ def cv_on_dataset(dataset, feature_param, model_param, ax, result_store,
 
     if ax is not None:
         model_class.plot_scatter(ax, cv_output['aggr_stats'], cv_output['contentids'])
-        ax.set_xlabel('DMOS')
+        ax.set_xlabel('True Score')
         ax.set_ylabel("Predicted Score")
         ax.grid()
         ax.set_title( "Dataset: {dataset}, Model: {model},\n{stats}".format(
@@ -348,13 +359,14 @@ def run_remove_results_for_dataset(result_store, dataset, executor_class):
 def run_vmaf_cv(train_dataset_filepath,
                 test_dataset_filepath,
                 param_filepath,
-                output_model_filepath=None):
+                output_model_filepath=None,
+                **kwargs):
 
     logger = get_stdout_logger()
     result_store = FileSystemResultStore()
 
     train_dataset = import_python_file(train_dataset_filepath)
-    test_dataset = import_python_file(test_dataset_filepath)
+    test_dataset = import_python_file(test_dataset_filepath) if test_dataset_filepath is not None else None
 
     param = import_python_file(param_filepath)
 
@@ -366,7 +378,8 @@ def run_vmaf_cv(train_dataset_filepath,
 
     train_test_vmaf_on_dataset(train_dataset, test_dataset, param, param, axs[0], axs[1],
                                result_store, parallelize=True, logger=None,
-                               output_model_filepath=output_model_filepath)
+                               output_model_filepath=output_model_filepath,
+                               **kwargs)
 
     # axs[0].set_xlim([0, 120])
     # axs[0].set_ylim([0, 120])

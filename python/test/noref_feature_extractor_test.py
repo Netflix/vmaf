@@ -4,6 +4,7 @@ __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import unittest
+
 import config
 from core.asset import NorefAsset, Asset
 from core.noref_feature_extractor import MomentNorefFeatureExtractor
@@ -117,3 +118,6 @@ class ParallelNorefFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['Moment_noref_feature_2nd_score'], 4696.668388042271)
         self.assertAlmostEqual(results[1]['Moment_noref_feature_var_score'], 1121.519917231207)
 
+
+if __name__ == '__main__':
+    unittest.main()

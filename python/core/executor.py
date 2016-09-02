@@ -3,14 +3,12 @@ __license__ = "Apache, Version 2.0"
 
 import multiprocessing
 import os
-import sys
 import subprocess
 from time import sleep
 import hashlib
 
 from tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_slash
 from core.mixin import TypeVersionEnabled
-import config
 
 
 class Executor(TypeVersionEnabled):

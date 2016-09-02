@@ -263,3 +263,28 @@ class Result(BasicResult):
         assert len(set(map(lambda x:len(x), df['scores'].tolist()))) == 1
 
 
+class RawResult(object):
+    """
+    Other than sharing the name 'Result' and have same initialization interface,
+    RawResult is very different from core.result.Result class -- it won't be
+    stored using ResultStore, neither it has aggregation method like
+    result['vmaf_score'] (which calls _try_get_aggregate_score()).
+    """
+
+    def __init__(self, asset, executor_id, result_dict):
+        # same interface as Result
+        self.asset = asset
+        self.result_dict = result_dict
+        self.executor_id = executor_id
+
+    # make access dictionary-like, i.e. can do: result['pixels'], result['asset']
+    def __getitem__(self, key):
+        return self.get_result(key)
+
+    def get_result(self, key):
+        # different from BasicResult.get_result, it won't try to get
+        # aggregate score
+        return self.result_dict[key]
+
+    def get_ordered_results(self):
+        return sorted(self.result_dict.keys())

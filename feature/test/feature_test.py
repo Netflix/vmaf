@@ -51,7 +51,6 @@ class FeatureTest(unittest.TestCase):
             for filename in filenames:
                 os.remove(os.path.join(logPath, filename))
 
-
     def test_adm(self):
         ADM_LOG = self.LOG_FILENAME + '_adm'
         print 'test adm...'
@@ -84,7 +83,6 @@ class FeatureTest(unittest.TestCase):
         score, scores = read_log(ADM_LOG, "adm_den_scale3")
         self.assertAlmostEquals(score, 3108.4869029375, places=4)
 
-
     def test_ansnr(self):
         ANSNR_LOG = self.LOG_FILENAME + '_ansnr'
         print 'test ansnr...'
@@ -97,7 +95,6 @@ class FeatureTest(unittest.TestCase):
         self.assertAlmostEquals(score, 23.5095715208, places=4)
         score, scores = read_log(ANSNR_LOG, "anpsnr")
         self.assertAlmostEquals(score, 34.164776875, places=4)
-
 
     def test_motion(self):
         MOTION_LOG = self.LOG_FILENAME + '_motion'
@@ -478,7 +475,6 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         self.assertAlmostEquals(score, 30.7805732917, places=4)
         self.assertAlmostEquals(scores[0], 34.786288, places=4)
         self.assertAlmostEquals(scores[1], 31.908737, places=4)
-
 
     def test_ssim(self):
         SSIM_LOG = self.LOG_FILENAME + '_ssim'

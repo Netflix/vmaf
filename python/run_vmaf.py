@@ -9,15 +9,17 @@ import os
 import config
 from core.asset import Asset
 from core.quality_runner import VmafQualityRunner
-from core.result_store import FileSystemResultStore
+from core.local_explainer import VmafQualityRunnerWithLocalExplainer
 from tools.misc import get_file_name_without_extension
 
 FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
+SHOW_LOCAL_EXPLANATION = ['yes', 'no']
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) \
-          + " fmt width height ref_file dis_file [optional_model_file]\n"
-    print "fmts:\n\t" + "\n\t".join(FMTS) +"\n"
+          + " fmt width height ref_file dis_file [optional_model_file or none] [show_local_explanation]\n"
+    print "fmts:\n\t" + "\n\t".join(FMTS) + "\n"
+    print "show_local_explanation:\n\t" + "\n\t".join(SHOW_LOCAL_EXPLANATION) + "\n"
 
 if __name__ == "__main__":
 
@@ -43,13 +45,16 @@ if __name__ == "__main__":
         model_filepath = None
 
     if len(sys.argv) >= 8:
-        cache_result = sys.argv[7]
-        if cache_result == 'yes':
-            result_store = FileSystemResultStore()
+        show_local_explanation = sys.argv[7]
+        if show_local_explanation == 'yes':
+            show_local_explanation = True
+        elif show_local_explanation == 'no':
+            show_local_explanation = False
         else:
-            result_store = None
+            print_usage()
+            exit(2)
     else:
-        result_store = None
+        show_local_explanation = False
 
     asset = Asset(dataset="run_vmaf",
                   content_id=abs(hash(get_file_name_without_extension(ref_file))) % (10 ** 16),
@@ -61,7 +66,10 @@ if __name__ == "__main__":
                   )
     assets = [asset]
 
-    runner_class = VmafQualityRunner
+    if not show_local_explanation:
+        runner_class = VmafQualityRunner
+    else:
+        runner_class = VmafQualityRunnerWithLocalExplainer
 
     if model_filepath is None:
         optional_dict = None
@@ -71,7 +79,7 @@ if __name__ == "__main__":
     runner = runner_class(
         assets, None, fifo_mode=True,
         delete_workdir=True,
-        result_store=result_store,
+        result_store=None,
         optional_dict=optional_dict,
         optional_dict2=None,
     )
@@ -82,6 +90,12 @@ if __name__ == "__main__":
 
     # output
     print str(result)
+
+    # local explanation
+    if show_local_explanation:
+        import matplotlib.pyplot as plt
+        runner.show_local_explanations([result])
+        plt.show()
 
     print 'Done.'
 
