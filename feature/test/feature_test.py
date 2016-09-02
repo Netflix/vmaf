@@ -65,6 +65,23 @@ class FeatureTest(unittest.TestCase):
         self.assertAlmostEquals(score, 6899.24648475, places=4)
         score, scores = read_log(ADM_LOG, "adm_den")
         self.assertAlmostEquals(score, 7535.29963308, places=4)
+        score, scores = read_log(ADM_LOG, "adm_num_scale0")
+        self.assertAlmostEquals(score, 280.8532403958333, places=4)
+
+        score, scores = read_log(ADM_LOG, "adm_den_scale0")
+        self.assertAlmostEquals(score, 362.16940943749995, places=4)
+        score, scores = read_log(ADM_LOG, "adm_num_scale1")
+        self.assertAlmostEquals(score, 1288.2366028125, places=4)
+        score, scores = read_log(ADM_LOG, "adm_den_scale1")
+        self.assertAlmostEquals(score, 1509.703552229167, places=4)
+        score, scores = read_log(ADM_LOG, "adm_num_scale2")
+        self.assertAlmostEquals(score, 2343.150772125, places=4)
+        score, scores = read_log(ADM_LOG, "adm_den_scale2")
+        self.assertAlmostEquals(score, 2554.939768562501, places=4)
+        score, scores = read_log(ADM_LOG, "adm_num_scale3")
+        self.assertAlmostEquals(score, 2987.005869583334, places=4)
+        score, scores = read_log(ADM_LOG, "adm_den_scale3")
+        self.assertAlmostEquals(score, 3108.4869029375, places=4)
 
     def test_ansnr(self):
         ANSNR_LOG = self.LOG_FILENAME + '_ansnr'
@@ -165,6 +182,20 @@ class FeatureTest(unittest.TestCase):
         self.assertAlmostEquals(score, 55149.8169759, places=4)
         score, scores = read_log(ALL_LOG, "vif_den_scale3")
         self.assertAlmostEquals(score, 13087.2657267, places=4)
+        score, scores = read_log(ALL_LOG, "adm_den_scale0")
+        self.assertAlmostEquals(score, 362.16940943749995, places=4)
+        score, scores = read_log(ALL_LOG, "adm_num_scale1")
+        self.assertAlmostEquals(score, 1288.2366028125, places=4)
+        score, scores = read_log(ALL_LOG, "adm_den_scale1")
+        self.assertAlmostEquals(score, 1509.703552229167, places=4)
+        score, scores = read_log(ALL_LOG, "adm_num_scale2")
+        self.assertAlmostEquals(score, 2343.150772125, places=4)
+        score, scores = read_log(ALL_LOG, "adm_den_scale2")
+        self.assertAlmostEquals(score, 2554.939768562501, places=4)
+        score, scores = read_log(ALL_LOG, "adm_num_scale3")
+        self.assertAlmostEquals(score, 2987.005869583334, places=4)
+        score, scores = read_log(ALL_LOG, "adm_den_scale3")
+        self.assertAlmostEquals(score, 3108.4869029375, places=4)
 
     def test_psnr(self):
         PSNR_LOG = self.LOG_FILENAME + '_psnr'
@@ -303,6 +334,21 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         score, scores = read_log(ADM_LOG, "adm_den")
         self.assertAlmostEquals(score, 7535.29963308, places=4)
 
+        score, scores = read_log(ADM_LOG, "adm_den_scale0")
+        self.assertAlmostEquals(score, 362.16940943749995, places=4)
+        score, scores = read_log(ADM_LOG, "adm_num_scale1")
+        self.assertAlmostEquals(score, 1288.2366028125, places=4)
+        score, scores = read_log(ADM_LOG, "adm_den_scale1")
+        self.assertAlmostEquals(score, 1509.703552229167, places=4)
+        score, scores = read_log(ADM_LOG, "adm_num_scale2")
+        self.assertAlmostEquals(score, 2343.150772125, places=4)
+        score, scores = read_log(ADM_LOG, "adm_den_scale2")
+        self.assertAlmostEquals(score, 2554.939768562501, places=4)
+        score, scores = read_log(ADM_LOG, "adm_num_scale3")
+        self.assertAlmostEquals(score, 2987.005869583334, places=4)
+        score, scores = read_log(ADM_LOG, "adm_den_scale3")
+        self.assertAlmostEquals(score, 3108.4869029375, places=4)
+
     def test_ansnr(self):
         ANSNR_LOG = self. LOG_FILENAME + '_ansnr'
         print 'test ansnr on yuv422p10le...'
@@ -402,6 +448,20 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         self.assertAlmostEquals(score, 55149.8169759, places=4)
         score, scores = read_log(ALL_LOG, "vif_den_scale3")
         self.assertAlmostEquals(score, 13087.2657267, places=4)
+        score, scores = read_log(ALL_LOG, "adm_den_scale0")
+        self.assertAlmostEquals(score, 362.16940943749995, places=4)
+        score, scores = read_log(ALL_LOG, "adm_num_scale1")
+        self.assertAlmostEquals(score, 1288.2366028125, places=4)
+        score, scores = read_log(ALL_LOG, "adm_den_scale1")
+        self.assertAlmostEquals(score, 1509.703552229167, places=4)
+        score, scores = read_log(ALL_LOG, "adm_num_scale2")
+        self.assertAlmostEquals(score, 2343.150772125, places=4)
+        score, scores = read_log(ALL_LOG, "adm_den_scale2")
+        self.assertAlmostEquals(score, 2554.939768562501, places=4)
+        score, scores = read_log(ALL_LOG, "adm_num_scale3")
+        self.assertAlmostEquals(score, 2987.005869583334, places=4)
+        score, scores = read_log(ALL_LOG, "adm_den_scale3")
+        self.assertAlmostEquals(score, 3108.4869029375, places=4)
 
     def test_psnr(self):
         PSNR_LOG = self.LOG_FILENAME + '_psnr'
@@ -538,6 +598,11 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "vif_num_scale3")[0], 259774.958333, places=3)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "vif_den_scale3")[0], 259774.9375, places=3)
 
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_num_scale0")[0], 5.380622, places=3)
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_den_scale0")[0], 5.380622, places=3)
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_num_scale3")[0], 19622.156901, places=3)
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_den_scale3")[0], 19622.156901, places=3)
+
     def test_checkerboard_shifted_by_1(self):
         print 'test on checkerboard pattern shifted by 1...'
         LOCAL_LOG_FILENAME = self.LOG_FILENAME + '_checkerboard_shifted_by_1'
@@ -563,6 +628,11 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "vif_den_scale0")[0], 25757473.3333, places=3)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "vif_num_scale3")[0], 128957.796875, places=3)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "vif_den_scale3")[0], 259774.9375, places=3)
+
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_num_scale0")[0], 3.679394, places=3)
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_den_scale0")[0], 5.380622, places=3)
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_num_scale3")[0], 16194.536132666666, places=3)
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_den_scale3")[0], 19622.156901, places=3)
 
     def test_checkerboard_opposite(self):
         print 'test on checkerboard pattern opposite...'
@@ -590,6 +660,11 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "vif_num_scale3")[0], 0.0, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "vif_den_scale3")[0], 259774.9375, places=3)
 
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_num_scale0")[0], 0.0, places=3)
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_den_scale0")[0], 5.380622, places=3)
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_num_scale3")[0], 0.0, places=3)
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_den_scale3")[0], 19622.156901, places=3)
+
     def test_flat_identical(self):
         print 'test on flat pattern identical...'
         LOCAL_LOG_FILENAME = self.LOG_FILENAME + '_flat_identical'
@@ -615,6 +690,11 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "vif_den_scale0")[0], 2073600.000, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "vif_num_scale3")[0], 32400.0, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "vif_den_scale3")[0], 32400.0, places=4)
+
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_num_scale0")[0], 0.0, places=3)
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_den_scale0")[0], 0.0, places=3)
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_num_scale3")[0], 0.0006910000000000001, places=3)
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_den_scale3")[0], 0.0006910000000000001, places=3)
 
     def test_flat_value10(self):
         print 'test on flat pattern of value 10...'
@@ -642,6 +722,10 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "vif_num_scale3")[0], 32400.0, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "vif_den_scale3")[0], 32400.0, places=4)
 
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_num_scale0")[0], 0.0, places=3)
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_den_scale0")[0], 0.0, places=3)
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_num_scale3")[0], 0.0, places=3)
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_den_scale3")[0], 0.0006910000000000001, places=3)
 
 if __name__ == '__main__':
 

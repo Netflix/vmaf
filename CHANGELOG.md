@@ -38,3 +38,8 @@
 - Add DisYUVRawVideoExtractor and related classes.
 - Add NeuralNetworkTrainTestModel base class that integrates TensorFlow.
 - Add example class ToddNoiseClassifierTrainTestModel.
+
+## (08/20/2016) [1.0.7]
+
+**New features:**
+- Update VmafFeatureExtractor to 0.2.2b with scaled ADM features exposed (adm_scale0-3).
