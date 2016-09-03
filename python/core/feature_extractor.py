@@ -113,7 +113,7 @@ class VmafFeatureExtractor(FeatureExtractor):
 
     ADM_CONSTANT = 1000
 
-    ADM_SCALE_CONSTANT = 1
+    ADM_SCALE_CONSTANT = 200
 
     def _generate_result(self, asset):
         # routine to call the command-line executable and generate feature
