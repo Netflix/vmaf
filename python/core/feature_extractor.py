@@ -111,9 +111,8 @@ class VmafFeatureExtractor(FeatureExtractor):
 
     VMAF_FEATURE = config.ROOT + "/feature/vmaf"
 
-    ADM_CONSTANT = 1000
-
-    ADM_SCALE_CONSTANT = 200
+    ADM2_CONSTANT = 1000
+    ADM_SCALE_CONSTANT = 250
 
     def _generate_result(self, asset):
         # routine to call the command-line executable and generate feature
@@ -148,13 +147,13 @@ class VmafFeatureExtractor(FeatureExtractor):
         result = super(VmafFeatureExtractor, cls)._post_process_result(result)
 
         # adm2 =
-        # (adm_num + ADM_CONSTANT) / (adm_den + ADM_CONSTANT)
+        # (adm_num + ADM2_CONSTANT) / (adm_den + ADM2_CONSTANT)
         adm2_scores_key = cls.get_scores_key('adm2')
         adm_num_scores_key = cls.get_scores_key('adm_num')
         adm_den_scores_key = cls.get_scores_key('adm_den')
         result.result_dict[adm2_scores_key] = list(
-            (np.array(result.result_dict[adm_num_scores_key]) + cls.ADM_CONSTANT) /
-            (np.array(result.result_dict[adm_den_scores_key]) + cls.ADM_CONSTANT)
+            (np.array(result.result_dict[adm_num_scores_key]) + cls.ADM2_CONSTANT) /
+            (np.array(result.result_dict[adm_den_scores_key]) + cls.ADM2_CONSTANT)
         )
 
         # vif_scalei = vif_num_scalei / vif_den_scalei, i = 0, 1, 2, 3
