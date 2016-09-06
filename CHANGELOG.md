@@ -43,3 +43,8 @@
 
 **New features:**
 - Update VmafFeatureExtractor to 0.2.2b with scaled ADM features exposed (adm_scale0-3).
+
+## (08/20/2016) [1.0.8]
+
+**New features:**
+- Generalize read_dataset to allow specifying width and height at which to calculate quality.
