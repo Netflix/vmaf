@@ -39,6 +39,9 @@ def read_dataset(dataset, **kwargs):
     width = dataset.width if hasattr(dataset, 'width') else None
     height = dataset.height if hasattr(dataset, 'height') else None
 
+    quality_width = dataset.quality_width if hasattr(dataset, 'quality_width') else None
+    quality_height = dataset.quality_height if hasattr(dataset, 'quality_height') else None
+
     ref_dict = {} # dictionary of content_id -> path for ref videos
     for ref_video in ref_videos:
         ref_dict[ref_video['content_id']] = ref_video
@@ -57,12 +60,24 @@ def read_dataset(dataset, **kwargs):
                 groundtruth = dis_video['groundtruth']
             else:
                 groundtruth = None
-                # assert False, 'Each distorted video entry must provide either ' \
-                #               'a mos or dmos score.'
 
         ref_path = ref_dict[dis_video['content_id']]['path']
         width_ = width if width is not None else ref_dict[dis_video['content_id']]['width']
         height_ = height if height is not None else ref_dict[dis_video['content_id']]['height']
+
+        if quality_width is not None:
+            quality_width_ = quality_width
+        elif 'quality_width' in dis_video:
+            quality_width_ = dis_video['quality_width']
+        else:
+            quality_width_ = None
+
+        if quality_height is not None:
+            quality_height_ = quality_height
+        elif 'quality_height' in dis_video:
+            quality_height_ = dis_video['quality_height']
+        else:
+            quality_height_ = None
 
         asset_dict = {'width': width_,
                       'height': height_,
@@ -70,6 +85,10 @@ def read_dataset(dataset, **kwargs):
                       }
         if groundtruth is not None:
             asset_dict['groundtruth'] = groundtruth
+        if quality_width_ is not None:
+            asset_dict['quality_width'] = quality_width_
+        if quality_height_ is not None:
+            asset_dict['quality_height'] = quality_height_
 
         if groundtruth is None and skip_asset_with_none_groundtruth:
             pass
