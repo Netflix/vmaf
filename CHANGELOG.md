@@ -44,8 +44,9 @@
 **New features:**
 - Update VmafFeatureExtractor to 0.2.2b with scaled ADM features exposed (adm_scale0-3).
 
-## (08/20/2016) [1.0.8]
+## (09/07/2016) [1.0.8]
 
 **New features:**
 - Generalize read_dataset to allow specifying width, height and resampling method on which to calculate quality.
 - Add bicubic to SUPPORTED_RESAMPLING_TYPES for Asset.
+- Update Asset rule with resampling_type in __str__ to avoid duplicates in data store.
