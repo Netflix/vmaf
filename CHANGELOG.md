@@ -47,4 +47,5 @@
 ## (08/20/2016) [1.0.8]
 
 **New features:**
-- Generalize read_dataset to allow specifying width and height at which to calculate quality.
+- Generalize read_dataset to allow specifying width, height and resampling method on which to calculate quality.
+- Add bicubic to SUPPORTED_RESAMPLING_TYPES for Asset.
