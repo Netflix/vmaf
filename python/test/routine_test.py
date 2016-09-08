@@ -9,6 +9,55 @@ from routine import train_test_vmaf_on_dataset, read_dataset
 from tools.misc import import_python_file
 
 
+class TestReadDataset(unittest.TestCase):
+
+    def test_read_dataset(self):
+        train_dataset_path = config.ROOT + '/python/test/resource/test_image_dataset_diffdim.py'
+        train_dataset = import_python_file(train_dataset_path)
+        train_assets = read_dataset(train_dataset)
+
+        self.assertEquals(len(train_assets), 9)
+        self.assertTrue('groundtruth' in train_assets[0].asset_dict.keys())
+        self.assertTrue('os' not in train_assets[0].asset_dict.keys())
+        self.assertTrue('width' in train_assets[0].asset_dict.keys())
+        self.assertTrue('height' in train_assets[0].asset_dict.keys())
+        self.assertTrue('quality_width' not in train_assets[0].asset_dict.keys())
+        self.assertTrue('quality_height' not in train_assets[0].asset_dict.keys())
+
+    def test_read_dataset_qualitywh(self):
+        train_dataset_path = config.ROOT + '/python/test/resource/test_image_dataset_diffdim_qualitywh.py'
+        train_dataset = import_python_file(train_dataset_path)
+        train_assets = read_dataset(train_dataset)
+
+        self.assertTrue('quality_width' in train_assets[0].asset_dict.keys())
+        self.assertTrue('quality_height' in train_assets[0].asset_dict.keys())
+        self.assertTrue('resampling_type' in train_assets[0].asset_dict.keys())
+        self.assertTrue('quality_width' in train_assets[1].asset_dict.keys())
+        self.assertTrue('quality_height' in train_assets[1].asset_dict.keys())
+        self.assertTrue('resampling_type' in train_assets[1].asset_dict.keys())
+        self.assertEqual(train_assets[0].asset_dict['quality_width'], 200)
+        self.assertEqual(train_assets[0].asset_dict['quality_height'], 100)
+        self.assertEqual(train_assets[0].asset_dict['resampling_type'], 'bicubic')
+        self.assertEqual(train_assets[1].asset_dict['quality_width'], 200)
+        self.assertEqual(train_assets[1].asset_dict['quality_height'], 100)
+        self.assertEqual(train_assets[1].asset_dict['resampling_type'], 'bicubic')
+
+    def test_read_dataset_qualitywh2(self):
+        train_dataset_path = config.ROOT + '/python/test/resource/test_image_dataset_diffdim_qualitywh2.py'
+        train_dataset = import_python_file(train_dataset_path)
+        train_assets = read_dataset(train_dataset)
+
+        self.assertTrue('quality_width' in train_assets[0].asset_dict.keys())
+        self.assertTrue('quality_height' in train_assets[0].asset_dict.keys())
+        self.assertTrue('resampling_type' in train_assets[0].asset_dict.keys())
+        self.assertTrue('quality_width' not in train_assets[1].asset_dict.keys())
+        self.assertTrue('quality_height' not in train_assets[1].asset_dict.keys())
+        self.assertTrue('resampling_type' not in train_assets[1].asset_dict.keys())
+        self.assertEqual(train_assets[0].asset_dict['quality_width'], 200)
+        self.assertEqual(train_assets[0].asset_dict['quality_height'], 100)
+        self.assertEqual(train_assets[0].asset_dict['resampling_type'], 'bicubic')
+
+
 class TestTrainOnDataset(unittest.TestCase):
 
     def setUp(self):
@@ -43,46 +92,6 @@ class TestTrainOnDataset(unittest.TestCase):
                                 [90.753010402770798, 59.223801498461015,
                                  90.753011435798058, 89.270176556597008])
 
-class TestReadDataset(unittest.TestCase):
-
-    def test_read_dataset(self):
-        train_dataset_path = config.ROOT + '/python/test/resource/test_image_dataset_diffdim.py'
-        train_dataset = import_python_file(train_dataset_path)
-        train_assets = read_dataset(train_dataset)
-
-        self.assertEquals(len(train_assets), 9)
-        self.assertTrue('groundtruth' in train_assets[0].asset_dict.keys())
-        self.assertTrue('os' not in train_assets[0].asset_dict.keys())
-        self.assertTrue('width' in train_assets[0].asset_dict.keys())
-        self.assertTrue('height' in train_assets[0].asset_dict.keys())
-        self.assertTrue('quality_width' not in train_assets[0].asset_dict.keys())
-        self.assertTrue('quality_height' not in train_assets[0].asset_dict.keys())
-
-    def test_read_dataset_qualitywh(self):
-        train_dataset_path = config.ROOT + '/python/test/resource/test_image_dataset_diffdim_qualitywh.py'
-        train_dataset = import_python_file(train_dataset_path)
-        train_assets = read_dataset(train_dataset)
-
-        self.assertTrue('quality_width' in train_assets[0].asset_dict.keys())
-        self.assertTrue('quality_height' in train_assets[0].asset_dict.keys())
-        self.assertTrue('quality_width' in train_assets[1].asset_dict.keys())
-        self.assertTrue('quality_height' in train_assets[1].asset_dict.keys())
-        self.assertEqual(train_assets[0].asset_dict['quality_width'], 200)
-        self.assertEqual(train_assets[0].asset_dict['quality_height'], 100)
-        self.assertEqual(train_assets[1].asset_dict['quality_width'], 200)
-        self.assertEqual(train_assets[1].asset_dict['quality_height'], 100)
-
-    def test_read_dataset_qualitywh2(self):
-        train_dataset_path = config.ROOT + '/python/test/resource/test_image_dataset_diffdim_qualitywh2.py'
-        train_dataset = import_python_file(train_dataset_path)
-        train_assets = read_dataset(train_dataset)
-
-        self.assertTrue('quality_width' in train_assets[0].asset_dict.keys())
-        self.assertTrue('quality_height' in train_assets[0].asset_dict.keys())
-        self.assertTrue('quality_width' not in train_assets[1].asset_dict.keys())
-        self.assertTrue('quality_height' not in train_assets[1].asset_dict.keys())
-        self.assertEqual(train_assets[0].asset_dict['quality_width'], 200)
-        self.assertEqual(train_assets[0].asset_dict['quality_height'], 100)
 
 if __name__ == '__main__':
     unittest.main()

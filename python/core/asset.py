@@ -27,7 +27,7 @@ class Asset(WorkdirEnabled):
                            'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
     DEFAULT_YUV_TYPE = 'yuv420p'
 
-    SUPPORTED_RESAMPLING_TYPES = ['lanczos', 'bilinear']
+    SUPPORTED_RESAMPLING_TYPES = ['bilinear', 'bicubic', 'lanczos']
     DEFAULT_RESAMPLING_TYPE = 'bilinear'
 
     # ==== constructor ====

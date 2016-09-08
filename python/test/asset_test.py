@@ -315,8 +315,7 @@ class AssetTest(unittest.TestCase):
                       ref_path="", dis_path="",
                       asset_dict={'fps':24, 'start_sec':2, 'end_sec': 3,
                                   'resampling_type':'bicubic'})
-        with self.assertRaises(AssertionError):
-            print asset.resampling_type
+        self.assertEquals(asset.resampling_type, 'bicubic')
 
     def test_use_path_as_workpath(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,

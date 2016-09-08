@@ -57,6 +57,7 @@ dis_videos = [
  {'asset_id': 0,
   'content_id': 0,
   'path': dataset_dir + '/100007.yuv', 'mos': 2.5,
+  'resampling_type': 'bicubic',
   'quality_width': 200,
   'quality_height': 100},
  {'asset_id': 1,

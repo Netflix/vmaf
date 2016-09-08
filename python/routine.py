@@ -1,3 +1,5 @@
+from core.local_explainer import LocalExplainer
+
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
@@ -9,7 +11,7 @@ from core.feature_assembler import FeatureAssembler
 from core.quality_runner import VmafQualityRunner
 from core.result_store import FileSystemResultStore
 from tools.misc import indices, get_stdout_logger, import_python_file, \
-    close_logger
+    close_logger, get_file_name_without_extension
 import config
 from core.asset import Asset
 from core.executor import run_executors_in_parallel
@@ -41,6 +43,7 @@ def read_dataset(dataset, **kwargs):
 
     quality_width = dataset.quality_width if hasattr(dataset, 'quality_width') else None
     quality_height = dataset.quality_height if hasattr(dataset, 'quality_height') else None
+    resampling_type = dataset.resampling_type if hasattr(dataset, 'resampling_type') else None
 
     ref_dict = {} # dictionary of content_id -> path for ref videos
     for ref_video in ref_videos:
@@ -79,6 +82,13 @@ def read_dataset(dataset, **kwargs):
         else:
             quality_height_ = None
 
+        if resampling_type is not None:
+            resampling_type_ = resampling_type
+        elif 'resampling_type' in dis_video:
+            resampling_type_ = dis_video['resampling_type']
+        else:
+            resampling_type_ = None
+
         asset_dict = {'width': width_,
                       'height': height_,
                       'yuv_type': yuv_fmt,
@@ -89,6 +99,8 @@ def read_dataset(dataset, **kwargs):
             asset_dict['quality_width'] = quality_width_
         if quality_height_ is not None:
             asset_dict['quality_height'] = quality_height_
+        if resampling_type_ is not None:
+            asset_dict['resampling_type'] = resampling_type_
 
         if groundtruth is None and skip_asset_with_none_groundtruth:
             pass
@@ -438,3 +450,45 @@ def run_vmaf_kfold_cv(dataset_filepath,
 
     # === clean up ===
     close_logger(logger)
+
+
+def explain_model_on_dataset(model, test_assets_selected_indexs,
+                             test_dataset_filepath):
+
+    def print_assets(test_assets):
+        print '\n'.join(map(
+            lambda (i, asset): "Asset {i}: {name}".format(
+                i=i, name=get_file_name_without_extension(asset.dis_path)),
+            enumerate(test_assets)
+        ))
+
+    test_dataset = import_python_file(test_dataset_filepath)
+    test_assets = read_dataset(test_dataset)
+    print_assets(test_assets)
+    print "Assets selected for local explanation: {}".format(
+        test_assets_selected_indexs)
+    result_store = FileSystemResultStore()
+    test_assets = [test_assets[i] for i in test_assets_selected_indexs]
+    test_fassembler = FeatureAssembler(
+        feature_dict=model.model_dict['feature_dict'],
+        feature_option_dict=None,
+        assets=test_assets,
+        logger=None,
+        fifo_mode=True,
+        delete_workdir=True,
+        result_store=result_store,
+        optional_dict=None,
+        optional_dict2=None,
+        parallelize=True,
+    )
+    test_fassembler.run()
+    test_feature_results = test_fassembler.results
+    test_xs = model.get_xs_from_results(test_feature_results)
+    test_ys = model.get_ys_from_results(test_feature_results)
+    test_ys_pred = model.predict(test_xs)
+    explainer = LocalExplainer(neighbor_samples=1000)
+    test_exps = explainer.explain(model, test_xs)
+
+    explainer.print_explanations(test_exps, assets=test_assets, ys=test_ys, ys_pred=test_ys_pred)
+    explainer.plot_explanations(test_exps, assets=test_assets, ys=test_ys, ys_pred=test_ys_pred)
+    plt.show()

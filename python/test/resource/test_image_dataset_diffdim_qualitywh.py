@@ -7,6 +7,7 @@ dataset_dir = config.ROOT + '/python/test/resource/test_image_yuv'
 
 quality_width = 200
 quality_height = 100
+resampling_type = 'bicubic'
 
 ref_videos = [
  {'content_id': 0,
