@@ -275,8 +275,7 @@ class VmafQualityRunnerWithLocalExplainer(VmafQualityRunner):
         feature_result = vmaf_fassembler.results[0]
         model = self._load_model()
         xs = model.get_per_unit_xs_from_a_result(feature_result)
-        ys_pred = model.predict(xs)
-        ys_pred = self.clip_score(model, ys_pred)
+        ys_pred = self.predict_with_model(model, xs)
 
         if self.optional_dict2 is not None and \
            'explainer' in self.optional_dict2:

@@ -288,12 +288,20 @@ class VmafQualityRunner(QualityRunner):
         feature_result = vmaf_fassembler.results[0]
         model = self._load_model()
         xs = model.get_per_unit_xs_from_a_result(feature_result)
-        ys_pred = model.predict(xs)
-        ys_pred = self.clip_score(model, ys_pred)
+        ys_pred = self.predict_with_model(model, xs)
         result_dict = {}
         result_dict.update(feature_result.result_dict) # add feature result
         result_dict[self.get_scores_key()] = ys_pred # add quality score
         return Result(asset, self.executor_id, result_dict)
+
+    @classmethod
+    def predict_with_model(cls, model, xs, **kwargs):
+        ys_pred = model.predict(xs)
+        if 'disable_clip_score' in kwargs and kwargs['disable_clip_score'] is True:
+            pass
+        else:
+            ys_pred = cls.clip_score(model, ys_pred)
+        return ys_pred
 
     @staticmethod
     def set_clip_score(model, score_clip):

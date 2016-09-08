@@ -133,9 +133,10 @@ def test_on_dataset(test_dataset, runner_class, ax,
 
     test_assets = read_dataset(test_dataset, **kwargs)
 
-    optional_dict = {
-        'model_filepath':model_filepath
-    }
+    if model_filepath is not None:
+        optional_dict = {'model_filepath': model_filepath}
+    else:
+        optional_dict = None
 
     # construct an quality runner object to assert assets only
     runner = runner_class(test_assets,
@@ -237,10 +238,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
     if 'score_clip' in model_param_dict:
         VmafQualityRunner.set_clip_score(model, model_param_dict['score_clip'])
 
-    train_ys_pred = model.predict(train_xs)
-
-    # apply instructions indicated in the appended info
-    train_ys_pred = VmafQualityRunner.clip_score(model, train_ys_pred)
+    train_ys_pred = VmafQualityRunner.predict_with_model(model, train_xs, **kwargs)
 
     train_stats = model.get_stats(train_ys['label'], train_ys_pred)
 
@@ -289,10 +287,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         test_xs = model_class.get_xs_from_results(test_features)
         test_ys = model_class.get_ys_from_results(test_features)
 
-        test_ys_pred = model.predict(test_xs)
-
-        # apply instructions indicated in the appended info
-        test_ys_pred = VmafQualityRunner.clip_score(model, test_ys_pred)
+        test_ys_pred = VmafQualityRunner.predict_with_model(model, test_xs, **kwargs)
 
         test_stats = model_class.get_stats(test_ys['label'], test_ys_pred)
 

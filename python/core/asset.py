@@ -323,7 +323,11 @@ class Asset(WorkdirEnabled):
                 s += "_"
             s += "{w}x{h}".format(w=w, h=h)
 
-        if self.resampling_type != self.DEFAULT_RESAMPLING_TYPE:
+        # if resolutions are consistent, no resampling is taking place, so
+        # specificying resampling type should be ignored
+        if self.resampling_type != self.DEFAULT_RESAMPLING_TYPE and \
+                not (self.ref_width_height == self.quality_width_height
+                     and self.dis_width_height == self.quality_width_height):
             if s != "":
                 s += "_"
             s += "{}".format(self.resampling_type)
