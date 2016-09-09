@@ -407,11 +407,13 @@ def run_vmaf_cv(train_dataset_filepath,
                                output_model_filepath=output_model_filepath,
                                **kwargs)
 
-    # axs[0].set_xlim([0, 120])
-    # axs[0].set_ylim([0, 120])
+    if 'xlim' in kwargs:
+        axs[0].set_xlim(kwargs['xlim'])
+        axs[1].set_xlim(kwargs['xlim'])
 
-    # axs[1].set_xlim([0, 120])
-    # axs[1].set_ylim([0, 120])
+    if 'ylim' in kwargs:
+        axs[0].set_ylim(kwargs['ylim'])
+        axs[1].set_ylim(kwargs['ylim'])
 
     bbox = {'facecolor':'white', 'alpha':1, 'pad':20}
     axs[0].annotate('Training Set', xy=(0.1, 0.85), xycoords='axes fraction', bbox=bbox)

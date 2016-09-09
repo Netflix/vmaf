@@ -186,7 +186,8 @@ class LocalExplainer(object):
         figs = []
         for n in range(N):
             weights = exps['feature_weights'][n]
-            features = exps['features_normalized'][n]
+            features = exps['features'][n]
+            normalized = exps['features_normalized'][n]
 
             asset = assets[n] if assets is not None else None
             y = ys['label'][n] if ys is not None else None
@@ -218,8 +219,9 @@ class LocalExplainer(object):
             fig = plt.figure()
 
             ax_top = plt.subplot(2, 1, 1)
-            ax_left = plt.subplot(2, 2, 3)
-            ax_right = plt.subplot(2, 2, 4, sharey=ax_left)
+            ax_left = plt.subplot(2, 3, 4)
+            ax_mid = plt.subplot(2, 3, 5, sharey=ax_left)
+            ax_right = plt.subplot(2, 3, 6, sharey=ax_left)
 
             if img is not None:
                 ax_top.imshow(img, cmap='Greys_r')
@@ -233,6 +235,10 @@ class LocalExplainer(object):
             ax_left.set_yticks(pos + 0.35)
             ax_left.set_yticklabels(exps['feature_names'])
             ax_left.set_title('feature')
+
+            ax_mid.barh(pos, normalized, color='g', label='fnormal')
+            ax_mid.get_yaxis().set_visible(False)
+            ax_mid.set_title('fnormal')
 
             ax_right.barh(pos, weights, color='r', label='weight')
             ax_right.get_yaxis().set_visible(False)
