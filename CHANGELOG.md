@@ -50,3 +50,9 @@
 - Generalize read_dataset to allow specifying width, height and resampling method on which to calculate quality.
 - Add bicubic to SUPPORTED_RESAMPLING_TYPES for Asset.
 - Update Asset rule with resampling_type in __str__ to avoid duplicates in data store.
+
+## (09/09/2016) [1.0.9]
+
+**Fixed bugs:**
+- Move VmafQualityRunnerWithLocalExplainer to quality_runner_adhoc to resolve multiple instances of VMAF found when calling QualityRunner.find_subclass.
+
