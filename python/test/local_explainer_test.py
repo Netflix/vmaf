@@ -6,8 +6,8 @@ import numpy as np
 import config
 from core.asset import Asset
 from core.executor import run_executors_in_parallel
-from core.local_explainer import VmafQualityRunnerWithLocalExplainer, \
-    LocalExplainer
+from core.local_explainer import LocalExplainer
+from core.quality_runner_adhoc import VmafQualityRunnerWithLocalExplainer
 from core.noref_feature_extractor import MomentNorefFeatureExtractor
 from core.raw_extractor import DisYUVRawVideoExtractor
 from core.train_test_model import SklearnRandomForestTrainTestModel, \

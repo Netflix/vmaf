@@ -9,7 +9,7 @@ import os
 import config
 from core.asset import Asset
 from core.quality_runner import VmafQualityRunner
-from core.local_explainer import VmafQualityRunnerWithLocalExplainer
+from core.quality_runner_adhoc import VmafQualityRunnerWithLocalExplainer
 from tools.misc import get_file_name_without_extension
 
 FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
