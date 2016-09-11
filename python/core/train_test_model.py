@@ -691,43 +691,55 @@ class SklearnRandomForestTrainTestModel(TrainTestModel, RegressorMixin):
     @staticmethod
     def _train(model_param, xys_2d):
         """
-        random forest regression (interface scikit-learn 0.17.1
+        random forest regression
         http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html
         :param model_param:
         :param xys_2d:
         :return:
         """
-        n_estimators = model_param['n_estimators'] if 'n_estimators' in model_param else 10
-        criterion = model_param['criterion'] if 'criterion' in model_param else 'mse'
-        max_depth = model_param['max_depth'] if 'max_depth' in model_param else None
-        min_samples_split = model_param['min_samples_split'] if 'min_samples_split' in model_param else 2
-        min_samples_leaf = model_param['min_samples_leaf'] if 'min_samples_leaf' in model_param else 1
-        min_weight_fraction_leaf = model_param['min_weight_fraction_leaf'] if 'min_weight_fraction_leaf' in model_param else 0
-        max_features = model_param['max_features'] if 'max_features' in model_param else 'auto'
-        max_leaf_nodes = model_param['max_leaf_nodes'] if 'max_leaf_nodes' in model_param else None
-        bootstrap = model_param['bootstrap'] if 'bootstrap' in model_param else True
-        oob_score = model_param['oob_score'] if 'oob_score' in model_param else False
-        n_jobs = model_param['n_jobs'] if 'n_jobs' in model_param else 1
-        random_state = model_param['random_state'] if 'random_state' in model_param else None
-        verbose = model_param['verbose'] if 'verbose' in model_param else 0
-        warm_start = model_param['warm_start'] if 'warm_start' in model_param else False
+        model_param_ = model_param.copy()
+        if 'norm_type' in model_param_:
+            del model_param_['norm_type']
+        if 'score_clip' in model_param_:
+            del model_param_['score_clip']
 
         from sklearn import ensemble
         model = ensemble.RandomForestRegressor(
-            n_estimators=n_estimators,
-            criterion=criterion,
-            max_depth=max_depth,
-            min_samples_split=min_samples_split,
-            min_samples_leaf=min_samples_leaf,
-            min_weight_fraction_leaf=min_weight_fraction_leaf,
-            max_features=max_features,
-            max_leaf_nodes=max_leaf_nodes,
-            bootstrap=bootstrap,
-            oob_score=oob_score,
-            n_jobs=n_jobs,
-            random_state=random_state,
-            verbose=verbose,
-            warm_start=warm_start,
+            **model_param_
+        )
+        model.fit(xys_2d[:, 1:], np.ravel(xys_2d[:, 0]))
+
+        return model
+
+    @staticmethod
+    def _predict(model, xs_2d):
+        # directly call sklearn's model's predict() function
+        ys_label_pred = model.predict(xs_2d)
+        return ys_label_pred
+
+class SklearnExtraTreesTrainTestModel(TrainTestModel, RegressorMixin):
+
+    TYPE = 'EXTRATREES'
+    VERSION = "0.1"
+
+    @staticmethod
+    def _train(model_param, xys_2d):
+        """
+        extremely random trees
+        http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesRegressor.html
+        :param model_param:
+        :param xys_2d:
+        :return:
+        """
+        model_param_ = model_param.copy()
+        if 'norm_type' in model_param_:
+            del model_param_['norm_type']
+        if 'score_clip' in model_param_:
+            del model_param_['score_clip']
+
+        from sklearn import ensemble
+        model = ensemble.ExtraTreesRegressor(
+            **model_param_
         )
         model.fit(xys_2d[:, 1:], np.ravel(xys_2d[:, 0]))
 

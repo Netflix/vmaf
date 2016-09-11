@@ -1,8 +1,3 @@
-from core.raw_extractor import DisYUVRawVideoExtractor
-
-__copyright__ = "Copyright 2016, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
-
 import os
 import unittest
 
@@ -11,11 +6,15 @@ import numpy as np
 import config
 from core.train_test_model import TrainTestModel, \
     LibsvmNusvrTrainTestModel, SklearnRandomForestTrainTestModel, \
-    MomentRandomForestTrainTestModel
+    MomentRandomForestTrainTestModel, SklearnExtraTreesTrainTestModel
 from core.executor import run_executors_in_parallel
 from core.noref_feature_extractor import MomentNorefFeatureExtractor
 from routine import read_dataset
 from tools.misc import import_python_file
+from core.raw_extractor import DisYUVRawVideoExtractor
+
+__copyright__ = "Copyright 2016, Netflix, Inc."
+__license__ = "Apache, Version 2.0"
 
 class TrainTestModelTest(unittest.TestCase):
 
@@ -172,6 +171,38 @@ class TrainTestModelTest(unittest.TestCase):
         result = model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.051804171170643752, places=4)
 
+    def test_train_predict_extratrees(self):
+
+        print "test extra trees train and predict..."
+
+        # extra trees don't need proper data normalization
+
+        xs = SklearnExtraTreesTrainTestModel.get_xs_from_results(self.features, [0, 1, 2])
+        ys = SklearnExtraTreesTrainTestModel.get_ys_from_results(self.features, [0, 1, 2])
+        xys = SklearnExtraTreesTrainTestModel.get_xys_from_results(self.features, [0, 1, 2])
+
+        model = SklearnExtraTreesTrainTestModel({'norm_type':'normalize',
+                                            'random_state': 0}, None)
+        model.train(xys)
+        result = model.evaluate(xs, ys)
+        self.assertAlmostEquals(result['RMSE'], 0.042867322777879642, places=4)
+
+        model = SklearnExtraTreesTrainTestModel({'norm_type':'clip_0to1',
+                                'random_state': 0}, None)
+        model.train(xys)
+        result = model.evaluate(xs, ys)
+        self.assertAlmostEquals(result['RMSE'], 0.042867322777879642, places=4)
+
+        model = SklearnExtraTreesTrainTestModel({'norm_type':'clip_minus1to1',
+                                'random_state': 0}, None)
+        model.train(xys)
+        result = model.evaluate(xs, ys)
+        self.assertAlmostEquals(result['RMSE'], 0.042867322777879642, places=4)
+
+        model = SklearnExtraTreesTrainTestModel({'norm_type':'none', 'random_state': 0}, None)
+        model.train(xys)
+        result = model.evaluate(xs, ys)
+        self.assertAlmostEquals(result['RMSE'], 0.042867322777879642, places=4)
 
 class TrainTestModelWithDisYRawVideoExtractorTest(unittest.TestCase):
 

@@ -3,7 +3,8 @@ __license__ = "Apache, Version 2.0"
 
 import unittest
 
-from core.train_test_model import SklearnRandomForestTrainTestModel, LibsvmNusvrTrainTestModel
+from core.train_test_model import SklearnRandomForestTrainTestModel, LibsvmNusvrTrainTestModel, \
+    SklearnExtraTreesTrainTestModel
 from core.cross_validation import ModelCrossValidation
 import config
 from core.executor import run_executors_in_parallel
@@ -63,6 +64,21 @@ class CrossValidationTest(unittest.TestCase):
         self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.1689046198483892, places=4)
         self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.084515425472851652, places=4)
         self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.344683833136588, places=4)
+
+    def test_run_kfold_cross_validation_extratrees(self):
+
+        print "test k-fold cross validation on extra trees..."
+
+        train_test_model_class = SklearnExtraTreesTrainTestModel
+        model_param = {'norm_type':'normalize', 'random_state': 0}
+
+        output = ModelCrossValidation.run_kfold_cross_validation(
+            train_test_model_class, model_param, self.features, 3)
+
+        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.17320508075688773, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.33023719320146966, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.14907119849998599, places=4)
+        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.3279056191361394, places=4)
 
     def test_run_kfold_cross_validation_libsvmnusvr(self):
 
