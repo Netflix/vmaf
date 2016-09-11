@@ -56,3 +56,5 @@
 **Fixed bugs:**
 - Move VmafQualityRunnerWithLocalExplainer to quality_runner_adhoc to resolve multiple instances of VMAF found when calling QualityRunner.find_subclass.
 
+**New features:**
+- Add custom_clip_0to1 to TrainTestModel.
