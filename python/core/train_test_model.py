@@ -380,13 +380,9 @@ class TrainTestModel(TypeVersionEnabled):
             self.intercepts = - mus / sds
             self.norm_type = 'linear_rescale'
         elif norm_type == 'clip_0to1':
-            ub = 1.0
-            lb = 0.0
-            fmins = np.min(xys_2d, axis=0)
-            fmaxs = np.max(xys_2d, axis=0)
-            self.slopes = (ub - lb) / (fmaxs - fmins)
-            self.intercepts = (lb*fmaxs - ub*fmins) / (fmaxs - fmins)
-            self.norm_type = 'linear_rescale'
+            self._calculate_normalization_params_clip_0to1(xys_2d)
+        elif norm_type == 'custom_clip_0to1':
+            self._calculate_normalization_params_custom_clip_0to1(xys_2d)
         elif norm_type == 'clip_minus1to1':
             ub =  1.0
             lb = -1.0
@@ -400,6 +396,39 @@ class TrainTestModel(TypeVersionEnabled):
         else:
             assert False, 'Incorrect parameter norm type selected: {}' \
                 .format(self.param_dict['norm_type'])
+
+    def _calculate_normalization_params_clip_0to1(self, xys_2d):
+        ub = 1.0
+        lb = 0.0
+        fmins = np.min(xys_2d, axis=0)
+        fmaxs = np.max(xys_2d, axis=0)
+
+        self.slopes = (ub - lb) / (fmaxs - fmins)
+        self.intercepts = (lb * fmaxs - ub * fmins) / (fmaxs - fmins)
+        self.norm_type = 'linear_rescale'
+
+    def _calculate_normalization_params_custom_clip_0to1(self, xys_2d):
+        # linearly map the range specified to [0, 1]; if unspecified, use clip_0to1
+        ub = 1.0
+        lb = 0.0
+        fmins = np.min(xys_2d, axis=0)
+        fmaxs = np.max(xys_2d, axis=0)
+
+        if 'custom_clip_0to1_map' in self.param_dict:
+            custom_map = self.param_dict['custom_clip_0to1_map']
+            features = self.model_dict['feature_names']
+            for feature in custom_map:
+                if feature in features:
+                    fmin, fmax = custom_map[feature]
+                    idx = features.index(feature)
+                    assert len(fmins) == len(features) + 1 # fmins[0] is for y
+                    assert len(fmins) == len(features) + 1 # fmaxs[0] is for y
+                    fmins[idx + 1] = fmin
+                    fmaxs[idx + 1] = fmax
+
+        self.slopes = (ub - lb) / (fmaxs - fmins)
+        self.intercepts = (lb * fmaxs - ub * fmins) / (fmaxs - fmins)
+        self.norm_type = 'linear_rescale'
 
     def _normalize_xys(self, xys_2d):
         if self.norm_type == 'linear_rescale':
@@ -698,10 +727,14 @@ class SklearnRandomForestTrainTestModel(TrainTestModel, RegressorMixin):
         :return:
         """
         model_param_ = model_param.copy()
+
+        # remove keys unassociated with sklearn
         if 'norm_type' in model_param_:
             del model_param_['norm_type']
         if 'score_clip' in model_param_:
             del model_param_['score_clip']
+        if 'custom_clip_0to1_map' in model_param_:
+            del model_param_['custom_clip_0to1_map']
 
         from sklearn import ensemble
         model = ensemble.RandomForestRegressor(
@@ -732,10 +765,14 @@ class SklearnExtraTreesTrainTestModel(TrainTestModel, RegressorMixin):
         :return:
         """
         model_param_ = model_param.copy()
+
+        # remove keys unassociated with sklearn
         if 'norm_type' in model_param_:
             del model_param_['norm_type']
         if 'score_clip' in model_param_:
             del model_param_['score_clip']
+        if 'custom_clip_0to1_map' in model_param_:
+            del model_param_['custom_clip_0to1_map']
 
         from sklearn import ensemble
         model = ensemble.ExtraTreesRegressor(

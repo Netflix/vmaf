@@ -127,6 +127,16 @@ class TrainTestModelTest(unittest.TestCase):
         self.assertAlmostEquals(result['RMSE'], 0.84243141087114626, places=4)
 
         model = LibsvmNusvrTrainTestModel(
+            {'norm_type': 'custom_clip_0to1',
+             'custom_clip_0to1_map': {
+                'Moment_noref_feature_1st_score': [0.0, 100.0],
+              },
+             }, None)
+        model.train(xys)
+        result = model.evaluate(xs, ys)
+        self.assertAlmostEquals(result['RMSE'], 0.84639162766546994, places=4)
+
+        model = LibsvmNusvrTrainTestModel(
             {'norm_type':'clip_minus1to1'}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
@@ -160,6 +170,17 @@ class TrainTestModelTest(unittest.TestCase):
         result = model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.051804171170643752, places=4)
 
+        model = SklearnRandomForestTrainTestModel(
+            {'norm_type': 'custom_clip_0to1',
+             'custom_clip_0to1_map': {
+                'Moment_noref_feature_1st_score': [0.0, 100.0],
+              },
+             'random_state': 0
+             }, None)
+        model.train(xys)
+        result = model.evaluate(xs, ys)
+        self.assertAlmostEquals(result['RMSE'], 0.051804171170643752, places=4)
+
         model = SklearnRandomForestTrainTestModel({'norm_type':'clip_minus1to1',
                                 'random_state': 0}, None)
         model.train(xys)
@@ -189,6 +210,17 @@ class TrainTestModelTest(unittest.TestCase):
 
         model = SklearnExtraTreesTrainTestModel({'norm_type':'clip_0to1',
                                 'random_state': 0}, None)
+        model.train(xys)
+        result = model.evaluate(xs, ys)
+        self.assertAlmostEquals(result['RMSE'], 0.042867322777879642, places=4)
+
+        model = SklearnExtraTreesTrainTestModel(
+            {'norm_type': 'custom_clip_0to1',
+             'custom_clip_0to1_map': {
+                'Moment_noref_feature_1st_score': [0.0, 100.0],
+              },
+             'random_state': 0
+             }, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.042867322777879642, places=4)
