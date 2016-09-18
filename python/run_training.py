@@ -72,7 +72,7 @@ if __name__ == '__main__':
                                    output_model_filepath=output_model_filepath
                                    )
 
-        bbox = {'facecolor':'white', 'alpha':1, 'pad':20}
+        bbox = {'facecolor':'white', 'alpha':0.5, 'pad':20}
         ax.annotate('Training Set', xy=(0.1, 0.85), xycoords='axes fraction', bbox=bbox)
 
         # ax.set_xlim([-10, 110])

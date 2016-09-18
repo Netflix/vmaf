@@ -83,7 +83,7 @@ if __name__ == '__main__':
                         result_store, model_filepath,
                         parallelize=parallelize)
 
-        bbox = {'facecolor':'white', 'alpha':1, 'pad':20}
+        bbox = {'facecolor':'white', 'alpha':0.5, 'pad':20}
         ax.annotate('Testing Set', xy=(0.1, 0.85), xycoords='axes fraction', bbox=bbox)
 
         # ax.set_xlim([-10, 110])
