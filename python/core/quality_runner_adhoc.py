@@ -20,7 +20,7 @@ class VmafQualityRunnerWithLocalExplainer(VmafQualityRunner):
         vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
         vmaf_fassembler.run()
         feature_result = vmaf_fassembler.results[0]
-        model = self._load_model()
+        model = self._load_model(asset)
         xs = model.get_per_unit_xs_from_a_result(feature_result)
         ys_pred = self.predict_with_model(model, xs)
 

@@ -253,13 +253,12 @@ class VmafQualityRunner(QualityRunner):
     VERSION = '0.3.2'  # using model nflxall_vmafv4.pkl, VmafFeatureExtractor VERSION 0.2.2, NFLX_dataset with 26 subjects (last 4 outliers removed)
     DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv4.pkl"  # trained with resource/param/vmaf_v4.py on private/resource/dataset/NFLX_dataset.py (26 subjects)
 
-    DEFAULT_FEATURE_DICT = {'VMAF_feature': ['vif', 'adm', 'motion', 'ansnr']}
+    DEFAULT_FEATURE_DICT = {'VMAF_feature': ['vif', 'adm', 'motion', 'ansnr']} # for backward-compatible with older model only
 
     def _get_vmaf_feature_assembler_instance(self, asset):
 
         # load TrainTestModel only to retrieve its 'feature_dict' extra info
-        model = self._load_model()
-        feature_dict = model.get_appended_info('feature_dict')
+        feature_dict = self._load_model(asset).get_appended_info('feature_dict')
         if feature_dict is None:
             feature_dict = self.DEFAULT_FEATURE_DICT
 
@@ -286,7 +285,7 @@ class VmafQualityRunner(QualityRunner):
         vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
         vmaf_fassembler.run()
         feature_result = vmaf_fassembler.results[0]
-        model = self._load_model()
+        model = self._load_model(asset)
         xs = model.get_per_unit_xs_from_a_result(feature_result)
         ys_pred = self.predict_with_model(model, xs)
         result_dict = {}
@@ -328,7 +327,7 @@ class VmafQualityRunner(QualityRunner):
 
         return ys_pred
 
-    def _load_model(self):
+    def _load_model(self, asset):
         if self.optional_dict is not None \
                 and 'model_filepath' in self.optional_dict \
                 and self.optional_dict['model_filepath'] is not None:
