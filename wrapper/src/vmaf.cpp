@@ -31,6 +31,7 @@
 #include "svm.h"
 #include "pugixml/pugixml.hpp"
 #include "timer.h"
+#include "chooseser.h"
 
 int Asset::getWidth()
 {
@@ -239,6 +240,40 @@ Result VmafRunner::run(Asset asset)
 #ifdef PRINT_PROGRESS
 	printf("Normalize features, SVM regression, denormalize score, clip...\n");
 #endif
+
+    Val slopes, intercepts, score_clip;
+
+    /*  TrainTestModel._assert_trained() in Python:
+     *  assert 'model_type' in self.model_dict # need this to recover class
+        assert 'feature_names' in self.model_dict
+        assert 'norm_type' in self.model_dict
+        assert 'model' in self.model_dict
+
+        norm_type = self.model_dict['norm_type']
+        assert norm_type == 'none' or norm_type == 'linear_rescale'
+
+        if norm_type == 'linear_rescale':
+            assert 'slopes' in self.model_dict
+            assert 'intercepts' in self.model_dict
+     */
+    Val model, model_type, feature_names, norm_type;
+    try
+	{
+//        LoadValFromFile(model_path, model, SERIALIZE_P0);
+
+//        model_type = model["model_dict"]["model_type"];
+//        feature_names = model["model_dict"]["feature_names"];
+//        norm_type = model["model_dict"]["norm_type"];
+
+//        slopes = model["model_dict"]["slopes"];
+//        intercepts = model["model_dict"]["intercepts"];
+//        score_clip = model["model_dict"]["score_clip"];
+    }
+    catch (std::runtime_error& e)
+    {
+        printf("Input model at %s cannot be read successfully.\n", model_path);
+        throw e;
+    }
 
     std::unique_ptr<svm_model, SvmDelete> svm_model_ptr{svm_load_model(libsvm_model_path)};
     if (!svm_model_ptr)
