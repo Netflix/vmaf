@@ -4,6 +4,8 @@ TARGETS = \
 	wrapper
 
 all:
+	cd ptools; $(MAKE) libptools.so; cd ..;
+
 	-for dir in $(TARGETS); do \
 		cd $${dir}; $(MAKE); cd ..; \
 	done
@@ -11,6 +13,8 @@ all:
 	cd libsvm; $(MAKE) lib; cd ..;
 
 clean:
+	cd ptools; $(MAKE) clean; cd ..;
+
 	-for dir in $(TARGETS); do \
 		cd $${dir}; $(MAKE) clean; cd ..; \
 	done
