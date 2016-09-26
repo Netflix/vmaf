@@ -110,6 +110,54 @@ const double* VmafRunner::SCORE_CLIP = cSCORE_CLIP;
 Result VmafRunner::run(Asset asset)
 {
 
+#ifdef PRINT_PROGRESS
+	printf("Read input model...\n");
+#endif
+
+    Val slopes, intercepts, score_clip;
+
+    /*  TrainTestModel._assert_trained() in Python:
+     *  assert 'model_type' in self.model_dict # need this to recover class
+        assert 'feature_names' in self.model_dict
+        assert 'norm_type' in self.model_dict
+        assert 'model' in self.model_dict
+
+        norm_type = self.model_dict['norm_type']
+        assert norm_type == 'none' or norm_type == 'linear_rescale'
+
+        if norm_type == 'linear_rescale':
+            assert 'slopes' in self.model_dict
+            assert 'intercepts' in self.model_dict
+     */
+    Val model, model_type, feature_names, norm_type;
+    try
+	{
+        LoadValFromFile(model_path, model, SERIALIZE_P0);
+
+        model_type = model["model_dict"]["model_type"];
+        feature_names = model["model_dict"]["feature_names"];
+        norm_type = model["model_dict"]["norm_type"];
+
+        slopes = model["model_dict"]["slopes"];
+        intercepts = model["model_dict"]["intercepts"];
+        score_clip = model["model_dict"]["score_clip"];
+    }
+    catch (std::runtime_error& e)
+    {
+        printf("Input model at %s cannot be read successfully.\n", model_path);
+        throw e;
+    }
+
+    std::unique_ptr<svm_model, SvmDelete> svm_model_ptr{svm_load_model(libsvm_model_path)};
+    if (!svm_model_ptr)
+    {
+        throw std::runtime_error{"error loading SVM model"};
+    }
+
+#ifdef PRINT_PROGRESS
+	printf("Initialize storage arrays...\n");
+#endif
+
 	int w = asset.getWidth();
 	int h = asset.getHeight();
 	const char* ref_path = asset.getRefPath();
@@ -241,79 +289,48 @@ Result VmafRunner::run(Asset asset)
 	printf("Normalize features, SVM regression, denormalize score, clip...\n");
 #endif
 
-    Val slopes, intercepts, score_clip;
-
-    /*  TrainTestModel._assert_trained() in Python:
-     *  assert 'model_type' in self.model_dict # need this to recover class
-        assert 'feature_names' in self.model_dict
-        assert 'norm_type' in self.model_dict
-        assert 'model' in self.model_dict
-
-        norm_type = self.model_dict['norm_type']
-        assert norm_type == 'none' or norm_type == 'linear_rescale'
-
-        if norm_type == 'linear_rescale':
-            assert 'slopes' in self.model_dict
-            assert 'intercepts' in self.model_dict
-     */
-    Val model, model_type, feature_names, norm_type;
-    try
-	{
-//        LoadValFromFile(model_path, model, SERIALIZE_P0);
-
-//        model_type = model["model_dict"]["model_type"];
-//        feature_names = model["model_dict"]["feature_names"];
-//        norm_type = model["model_dict"]["norm_type"];
-
-//        slopes = model["model_dict"]["slopes"];
-//        intercepts = model["model_dict"]["intercepts"];
-//        score_clip = model["model_dict"]["score_clip"];
-    }
-    catch (std::runtime_error& e)
-    {
-        printf("Input model at %s cannot be read successfully.\n", model_path);
-        throw e;
-    }
-
-    std::unique_ptr<svm_model, SvmDelete> svm_model_ptr{svm_load_model(libsvm_model_path)};
-    if (!svm_model_ptr)
-    {
-        throw std::runtime_error{"error loading SVM model"};
-    }
+	/* IMPORTANT: always allocate one more spot and put a -1 in node.index,
+	 * so that libsvm will stop looping when seeing the -1 !!! */
+	svm_node nodes[6 + 1];
 
 	for (size_t i=0; i<num_frms; i++)
 	{
-	    svm_node node[6];
 
 	    /* 1. adm2 */
-	    node[0].index = 1;
-	    node[0].value = SLOPES[1] * adm2.at(i) + INTERCEPTS[1];
+	    nodes[0].index = 1;
+	    nodes[0].value = SLOPES[1] * adm2.at(i) + INTERCEPTS[1];
 
 	    /* 2. motion */
-	    node[1].index = 2;
-	    node[1].value = SLOPES[2] * motion.at(i) + INTERCEPTS[2];
+	    nodes[1].index = 2;
+	    nodes[1].value = SLOPES[2] * motion.at(i) + INTERCEPTS[2];
 
 	    /* 3. vif_scale0 */
-	    node[2].index = 3;
-	    node[2].value = SLOPES[3] * vif_scale0.at(i) + INTERCEPTS[3];
+	    nodes[2].index = 3;
+	    nodes[2].value = SLOPES[3] * vif_scale0.at(i) + INTERCEPTS[3];
 
 	    /* 4. vif_scale1 */
-	    node[3].index = 4;
-	    node[3].value = SLOPES[4] * vif_scale1.at(i) + INTERCEPTS[4];
+	    nodes[3].index = 4;
+	    nodes[3].value = SLOPES[4] * vif_scale1.at(i) + INTERCEPTS[4];
 
 	    /* 5. vif_scale2 */
-	    node[4].index = 5;
-	    node[4].value = SLOPES[5] * vif_scale2.at(i) + INTERCEPTS[5];
+	    nodes[4].index = 5;
+	    nodes[4].value = SLOPES[5] * vif_scale2.at(i) + INTERCEPTS[5];
 
 	    /* 6. vif_scale3 */
-	    node[5].index = 6;
-	    node[5].value = SLOPES[6] * vif_scale3.at(i) + INTERCEPTS[6];
+	    nodes[5].index = 6;
+	    nodes[5].value = SLOPES[6] * vif_scale3.at(i) + INTERCEPTS[6];
+
+	    nodes[6].index = -1;
 
 	    /* feed to svm_predict */
-	    double prediction = svm_predict(svm_model_ptr.get(), node);
+	    double prediction = svm_predict(svm_model_ptr.get(), nodes);
 
 	    /* denormalize */
 	    prediction = (prediction - INTERCEPTS[0]) / SLOPES[0];
+
+	    // printf("svm predict: %f, %f, %f, %f, %f, %f => %f\n",
+	    //        node[0].value, node[1].value, node[2].value,
+	    //        node[3].value, node[4].value, node[5].value, prediction);
 
 	    /* clip */
 	    if (prediction < SCORE_CLIP[0])
