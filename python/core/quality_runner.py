@@ -382,9 +382,9 @@ class VmafossExecQualityRunner(QualityRunner):
 
         log_file_path = self._get_log_file_path(asset)
 
-        # Usage: vmafossexec width height input_ref input_dis svm_model [ignored] [logFile]
+        # Usage: vmafossexec width height input_ref input_dis svm_model [logFile]
         quality_width, quality_height = asset.quality_width_height
-        vmafossexec_cmd = "{exe} {w} {h} {ref_path} {dis_path} {svm_model} ignored {log_file_path}" \
+        vmafossexec_cmd = "{exe} {w} {h} {ref_path} {dis_path} {svm_model} {log_file_path}" \
         .format(
             exe=self.VMAFOSSEXEC,
             w=quality_width,

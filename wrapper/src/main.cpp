@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 
     if (argc < 6)
     {
-        fprintf(stderr, "Usage: %s width height input_ref input_dis svm_model [ignored] [logFile]\n", argv[0]);
+        fprintf(stderr, "Usage: %s width height input_ref input_dis svm_model [logFile]\n", argv[0]);
         return -1;
     }
 
@@ -47,9 +47,9 @@ int main(int argc, char *argv[])
             fprintf(stderr, "%s: Invalid frame resolution %dx%d\n", argv[0], width, height);
         }
 
-        if(argc >= 8)
+        if(argc >= 7)
         {
-            log_file_path = argv[7];
+            log_file_path = argv[6];
         }
 
         /* Run VMAF */
