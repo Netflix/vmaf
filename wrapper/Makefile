@@ -3,6 +3,7 @@ TOP = $(shell pwd)
 SRCDIR = $(TOP)/src
 OBJDIR = $(TOP)/obj
 FEATURESRCDIR = $(TOP)/../feature/src
+PTOOLSDIR = $(TOP)/../ptools
 
 OBJS = \
 	$(OBJDIR)/alloc.o \
@@ -32,11 +33,12 @@ OBJS = \
 all: vmafossexec
 
 CFLAGS_COMMON = -g -O3 -fPIC -Wall -Wextra -pedantic #-D PRINT_PROGRESS
+# CFLAGS_COMMON = -g -O0 -fPIC -Wall -Wextra -pedantic -D BUILD_O0
 
 CFLAGS   := -std=c99 $(CFLAGS_COMMON) $(CFLAGS)
 CXXFLAGS := -std=c++11 $(CFLAGS_COMMON) $(CXXFLAGS)
 CPPFLAGS := $(CPPFLAGS)
-LIBS     := $(LIBS) -lm
+LIBS     := $(LIBS) -lm -lpthread -lptools
 LDFLAGS  := $(LDFLAGS)
 
 $(OBJDIR)/alloc.o: $(FEATURESRCDIR)/common/alloc.c
@@ -90,9 +92,17 @@ $(OBJDIR)/ssim.o: $(FEATURESRCDIR)/ssim.c
 $(OBJDIR)/ms_ssim.o: $(FEATURESRCDIR)/ms_ssim.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
+$(OBJDIR)/svm.o: $(SRCDIR)/svm.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
-	
+
+$(OBJDIR)/main.o: $(SRCDIR)/main.cpp
+	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
+
+$(OBJDIR)/vmaf.o: $(SRCDIR)/vmaf.cpp
+	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) \
+	-DOC_NEW_STYLE_INCLUDES -I $(PTOOLSDIR) \
+	-I $(PTOOLSDIR)/opencontainers_1_8_4/include  $<
+
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) -I $(FEATURESRCDIR) $<
 
@@ -100,7 +110,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/pugixml/%.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
 
 vmafossexec: $(OBJS)
-	$(CXX) -o $@ $(LDFLAGS) $^ $(LIBS)
+	$(CXX) -o $@ $(LDFLAGS) $^ -L$(PTOOLSDIR) $(LIBS) -Wl,-rpath=$(PTOOLSDIR)
 
 clean:
 	rm -f $(OBJDIR)/*.o
