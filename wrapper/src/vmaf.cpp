@@ -240,7 +240,7 @@ Result VmafRunner::run(Asset asset)
 	printf("Normalize features, SVM regression, denormalize score, clip...\n");
 #endif
 
-    std::unique_ptr<svm_model, SvmDelete> svm_model_ptr{svm_load_model(model_path)};
+    std::unique_ptr<svm_model, SvmDelete> svm_model_ptr{svm_load_model(libsvm_model_path)};
     if (!svm_model_ptr)
     {
         throw std::runtime_error{"error loading SVM model"};
@@ -359,7 +359,7 @@ double RunVmaf(int width, int height, const char *src, const char *dis, const ch
 
     size_t num_frames = result.get_scores("score").size();
     double aggregate_score = result.get_score("score");
-    double processing_fps = (double)num_frames / timer.elapsed();
+    double processing_fps = (double)num_frames / (double)timer.elapsed();
 
     /* output to xml */
     pugi::xml_document xml;

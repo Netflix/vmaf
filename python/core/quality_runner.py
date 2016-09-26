@@ -358,7 +358,8 @@ class VmafossExecQualityRunner(QualityRunner):
     # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv3a.pkl.model"
 
     VERSION = '0.3.2'
-    DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv4.pkl.model"
+    # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv4.pkl.model"
+    DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv4.pkl"
 
     VMAFOSSEXEC = config.ROOT + "/wrapper/vmafossexec"
 

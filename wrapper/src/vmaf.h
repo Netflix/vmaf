@@ -27,6 +27,7 @@
 #include <iostream>
 #include <sstream>
 #include <exception>
+#include <cstring>
 
 double RunVmaf(int width, int height, const char *src, const char *dis, const char *model, const char *report);
 
@@ -83,10 +84,18 @@ private:
 class VmafRunner
 {
 public:
-	VmafRunner(const char *model_path): model_path(model_path) {}
+	VmafRunner(const char *model_path): model_path(model_path)
+	{
+		/* follow the convention that if model_path is a/b.c, the
+		 * libsvm_model_path is always a/b.c.model */
+		libsvm_model_path = new char[strlen(model_path) + 10];
+		sprintf(libsvm_model_path, "%s.model", model_path);
+	}
+	~VmafRunner() { delete[] libsvm_model_path; }
 	Result run(Asset asset);
 private:
 	const char *model_path;
+	char *libsvm_model_path;
 	static const int INIT_FRAMES = 1000;
 	static const double* INTERCEPTS;
 	static const double* SLOPES;
