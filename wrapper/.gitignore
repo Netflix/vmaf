@@ -1,0 +1,4 @@
+*.o
+vmafossexec
+.cproject
+.project

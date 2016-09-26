@@ -1,3 +1,5 @@
+from xml.etree import ElementTree
+
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
@@ -343,3 +345,106 @@ class VmafQualityRunner(QualityRunner):
 
         vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
+
+
+class VmafossExecQualityRunner(QualityRunner):
+
+    TYPE = 'VMAFOSSEXEC'
+
+    # VERSION = '0.3'
+    # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv3.pkl.model"
+
+    # VERSION = '0.3.1'
+    # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv3a.pkl.model"
+
+    VERSION = '0.3.2'
+    DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv4.pkl.model"
+
+    VMAFOSSEXEC = config.ROOT + "/wrapper/vmafossexec"
+
+    @classmethod
+    def _assert_an_asset(cls, asset):
+        # override Executor.assert_an_asset(cls, asset)
+
+        super(VmafossExecQualityRunner, cls)._assert_an_asset(asset)
+
+        # for Vmafoss, asset type must be yuv420p
+        assert asset.yuv_type == 'yuv420p'
+
+    @classmethod
+    def get_feature_scores_key(cls, atom_feature):
+        return "{type}_{atom_feature}_scores".format(
+            type=cls.TYPE, atom_feature=atom_feature)
+
+    def _generate_result(self, asset):
+        # routine to call the command-line executable and generate quality
+        # scores in the log file.
+
+        log_file_path = self._get_log_file_path(asset)
+
+        # Usage: vmafossexec width height input_ref input_dis svm_model [ignored] [logFile]
+        quality_width, quality_height = asset.quality_width_height
+        vmafossexec_cmd = "{exe} {w} {h} {ref_path} {dis_path} {svm_model} ignored {log_file_path}" \
+        .format(
+            exe=self.VMAFOSSEXEC,
+            w=quality_width,
+            h=quality_height,
+            ref_path=asset.ref_workfile_path,
+            dis_path=asset.dis_workfile_path,
+            svm_model=self.DEFAULT_MODEL_FILEPATH_DOTMODEL,
+            log_file_path=log_file_path,
+        )
+
+        if self.logger:
+            self.logger.info(vmafossexec_cmd)
+
+        subprocess.call(vmafossexec_cmd, shell=True)
+
+    def _get_quality_scores(self, asset):
+        # routine to read the quality scores from the log file, and return
+        # the scores in a dictionary format.
+
+        log_file_path = self._get_log_file_path(asset)
+
+        tree = ElementTree.parse(log_file_path)
+        root = tree.getroot()
+        scores = []
+        adm2_scores = []
+        motion_scores = []
+        vif_scale0_scores = []
+        vif_scale1_scores = []
+        vif_scale2_scores = []
+        vif_scale3_scores = []
+        vif_scores = []
+        psnr_scores = []
+        ssim_scores = []
+        ms_ssim_scores = []
+        for frame in root.findall('Frames/Frame'):
+            scores.append(float(frame.attrib['score']))
+            adm2_scores.append(float(frame.attrib['adm2']))
+            motion_scores.append(float(frame.attrib['motion']))
+            vif_scale0_scores.append(float(frame.attrib['vif_scale0']))
+            vif_scale1_scores.append(float(frame.attrib['vif_scale1']))
+            vif_scale2_scores.append(float(frame.attrib['vif_scale2']))
+            vif_scale3_scores.append(float(frame.attrib['vif_scale3']))
+            vif_scores.append(float(frame.attrib['vif']))
+            psnr_scores.append(float(frame.attrib['psnr']))
+            ssim_scores.append(float(frame.attrib['ssim']))
+            ms_ssim_scores.append(float(frame.attrib['ms_ssim']))
+
+        assert len(scores) != 0
+
+        quality_result = {
+            self.get_scores_key(): scores,
+            self.get_feature_scores_key('adm2'): adm2_scores,
+            self.get_feature_scores_key('motion'): motion_scores,
+            self.get_feature_scores_key('vif_scale0'): vif_scale0_scores,
+            self.get_feature_scores_key('vif_scale1'): vif_scale1_scores,
+            self.get_feature_scores_key('vif_scale2'): vif_scale2_scores,
+            self.get_feature_scores_key('vif_scale3'): vif_scale3_scores,
+            self.get_feature_scores_key('vif'): vif_scores,
+            self.get_feature_scores_key('psnr'): psnr_scores,
+            self.get_feature_scores_key('ssim'): ssim_scores,
+            self.get_feature_scores_key('ms_ssim'): ms_ssim_scores,
+        }
+        return quality_result

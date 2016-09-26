@@ -1,6 +1,7 @@
 TARGETS = \
 	feature \
-	libsvm
+	libsvm \
+	wrapper
 
 all:
 	-for dir in $(TARGETS); do \
