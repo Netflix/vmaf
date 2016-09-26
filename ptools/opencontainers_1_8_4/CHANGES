@@ -1,0 +1,602 @@
+
+See CHANGES at top of PicklingTools release for changes to OpenContainers.
+
+Changes as of 1.8.0
+-------------------
+
+Fixed a bug in CQ/CQT when doing a timed enqueue: was using the wrong value
+for the timer.
+
+Fixed a bug that OCProxy coul NOT instantiate certain Arrays.
+
+Changes as of 1.7.9
+-------------------
+Added updated permutations generator: about 10% faster than STLs, your mileage
+may vary. Added example for it as well.
+
+
+Changes as of 1.7.8
+-------------------
+
+Updated OCThread to check if thread is started before starting,
+templatatized the occq class
+
+Changes as of 1.7.7
+-------------------
+
+Get rid of unused variables warning for -Wextra
+
+Changes as of 1.7.5
+-------------------
+
+      * Added FILEPointerReader so we can deal with FILE* as input for XML
+      * Updated ocport.h to add a new switch so that "long" can be supported
+        with Val, i.e.:  Val v = long(1);  long vl = v;
+        This works on some platforms, but not all.  We discovered when
+        mixing with Python (where longs are everywhere)
+      * Enabled using long, unsigned long, long long, unsigned long long with 
+        Val.  Any conversions to and from these types will now work correctly
+        from Val.  I.e., "Val v = long(1); long ll = v;" should work fine
+        (before you would have to change to one of int_4 or whatever).
+      * Updated the int_n and int_un to work with strings better:
+        before the syntax was "int_un a = MakeBugUIntFromString("123");"
+        Now, we can use "int_un a = "123";".  This is a delicate balance
+        of overloaded constructors and Val overloading.
+      * Updated a bunch of tests to test these features and make sure
+        we didn't break anything.
+      * Major surgery on BigUInt and BigInt to fix conversion problems
+        and mixing ints/int_un (see major headlines above).  Fixing
+        these required adding a bunch of default constructors for all
+        different types, instantiating all the mathops and comp. operations
+        (so they could participate in overloading better), and removing
+        the user-defined operations.  
+      * Also cleaned-up BigUInt and BigInt to work better with the
+        shared memory allocator pool.
+      * Updated array so that 0 length arrays DO NOT allocate resources:
+        this helps speed up the empty array construction and destruction
+
+Changes as of 1.7.4
+-------------------
+
+Made it so occircularbuffer can specify allocator
+Made it so CQ can specify allocator, have timed wait interface
+Made it so ocsynchronizer timedwait works, added timedwait_sec
+StreamingPool has to be able to use cross process Mutexes
+
+Changes as of 1.7.3
+-------------------
+
+Sped up int_un/int_n division using the Knuth division algorithm.
+Added Conformance checking to see if a tab "conforms" to the spec of another
+Added conformance checks tests, and updated a few failing tests
+
+Changes as of 1.7.2
+-------------------
+
+Added Python-like string manipulation functions: Split, Strip, and Lower/
+Upper which behave like their namesake in Python.  Added tests as well.
+
+Moved the "signal a worker" code to a function on the SychronizedWorker
+(called startUp) and "wait for worker to finish" (called waitUp).  This
+cleaned up the code in the SynchronizedWorker and also allows us to 
+work with each worker individually: this is useful for the HTTPServer.
+
+Changes as of 1.7.1
+-------------------
+
+Added ocmove.h:  "Tried" to use SFINAE techniques, but found inconsistencies
+among C++ compilers and platforms (G++ and Intel C++) where it works in
+one case, doesn't compile in another case, and compiles but gives the wrong
+answer.  So, in the end, just specialized MoveArray for multiple datatypes.
+Maybe in the future we can revisit.
+
+occomplex.h: Added MoveArray specialization for complex_8 and 16
+
+ocarray.h: When resizing an array, how do you move items from
+one array to another?  With POD stuff, you can just memcpy,
+and same with some data structures, but most of the time
+you have to copy and then destroy the original.  When you specialize
+the MoveArray template, you can do the appropriate thing for your 
+datatype.  (When rvalue-references are more available, we'll use those)
+
+ocproxy.cc:  Took inline off of some templates
+
+ocvalreader.h: Made it so we can return "false" if an Eval fails instead of 
+throwing an exception.  In the XML tools case, this made a significant 
+speed difference.  Also made it so you don't have to copy the
+input, you can just refer to the original input by reference,
+as well as turn off the context for error messages.
+
+ocordavlhasht.h: minor change so you can have default empty node
+
+ocval.h: Added specialization of MoveArray for Val 
+
+ocreader.h: Allow the context to be turned off so that Syntax Errors
+can be faster
+
+array_test.cc:  updated array test to make sure the new MoveArray
+apecializations work
+
+README: So shows added new ocmove.h
+
+
+Changes as of 1.7.0
+-------------------
+
+Added "pushback" and "drop" to CircularBuffer, both infinite and finite mode:
+also added new tests for new feature
+
+Added "pushback" to ReaderA infrastructure and cleaned up string code
+to handle 0xff codes on stream: this is needed for the XML parsing.
+
+Fixed minor syntax error that MySQL finds when processes include file
+for ocport, plus changed version numbers.
+
+Fixed minor bug when parsing complex numbers
+
+Fixed output of Vals to more correspond to Python:
+    L on big ints
+    strings output like Python (prefer ' as quotes, but use " if
+                                string itself contains only ' quote marks)
+
+Updated tests for new output
+
+Changes as of 1.6.9
+-------------------
+
+Workaround to work with Intel 10.0.12
+
+
+Changes as of 1.6.7
+-------------------
+
+Added the ability of the OpenContainers baseline to be compiled
+with full namespace support:  by default, everything lives in the
+global namespace, but if you compile with -DOC_FORCE_NAMESPACE
+or set OC_FORCE_NAMESPACE in the ocport.h, you force everything 
+in the OC baseline to be in the OC namespace.
+ 
+All the tests include some conditional code so they compile
+with or without namespaces:
+
+  #if defined(OC_FORCE_NAMESPACE)
+   using namespace OC;
+  #endif
+
+The scripts to runall the tests/examples have been updated to try both in
+namespace mode and no namespace mode.
+
+The c++ compiler (g++ 4.4.3) on Fedora Core 12 found lots of minor 
+warnings with char* that should be const char*: Fixed.
+
+
+Changes as of 1.6.6
+-------------------
+
+The template classes for supporting multiple threads (the
+WorkerCoordinatorT and the ThreadedWorkerT) from 1.6.5 didn't work
+with X-Midas option trees.  Since they are simple templates, the
+easiest thing to do is force them to use the simple template inclusion
+model: that is; include all code from the .cc in the .h) to avoid any
+strange template instantiation linking.
+
+Updated a few comments in the SynchronizedWorker.
+
+Changes as of 1.6.5
+-------------------
+
+CircularBuffer: augmented the put method: instead of returning
+void, it returns a T&, indicating where it put the data in the
+circular buffer.  This gives more information that can be relevant.
+
+Added binary search and a test.
+
+Added the Combinations class and a test: This allows a user to 
+compute all n choose k distinct combinations of 1..n.  
+
+Changes as of 1.6.4
+-------------------
+
+A potential backwards-compatibility issue: When printing Vals as
+doubles/real_8 (or pretty printing, or opal printing, or printing in
+Tabs), real_8 use 15 places of precision.  This is a conservative
+estimate, as you can argue the number of decimal digits of precision
+of a real_8 is between 15 and 16 digits: log10(2^53) is about 15.95,
+where 53 is the number of bits (with hidden bit) in the mantissa).
+After discussion, it probably makes sense by default to make it print
+16 digits, but we allow the user to select 15 in cases there are
+issues.  The value is encapsulated in the new macro OC_DBL_DIGITS,
+which if not set from the compile command line, will be 16.  Note that
+there exists a OC_FLT_DIGITS as well, but it's pretty firmly
+established that a float has a good 7 decimal digits of precision
+(log10(2^24) is about 7.22).  
+
+Updated valreader_test to reflect new 16 decimal digits of precision
+(in general, this is the only test that failed for opencontainers,
+hopefully giving us some confidence that the ripple is pretty small).
+
+
+
+Changes as of 1.6.3
+-------------------
+
+Minor changes throughout to support -Wall (turn on all
+warnings).  By default, the tests area now use -Wall 
+
+On some platforms using X-Midas (64-bit), the size_t does not
+correspond to either and int_u4 or an int_8 (in particular, an
+int_u8 is an unsigned long long and a size_t is a an unsigned long,
+but they are still the same size).  Thus, code like
+         size_t ii = 17;  Val v = ii;  // Used to cause overload problems
+used to cause compiler errors because, strictly speaking, int_u8
+and size_t and int_u4 are all different types.   To handle this,
+we detect that size_t isn't either an int_u4 or int_u8 and
+make Val recognize size_t (and turn it into an int_u8).  This
+all happens automatically and shouldn't require the user to do
+anything ... if you are using a compiler that can't use Modern
+C++ Design template tricks, you can explicitly set -DOC_SIZE_T_ADD
+to 0 or 1 (see ocport.h) to get the same effect.
+
+
+The StreamReader would put EOF (which became a -1 and unprintable
+character) in the output of the syntax error.  Fixed so that EOF
+(-1) is detected and not put in.
+
+
+Changes as of 1.6.2
+-------------------
+
+Updated prettyPrint for Arr and Tab to allow optional indentation
+amount.  Added test to make sure this works.  
+
+Updated so you no longer HAVE to specify OC_BYTES_IN_POINTER
+or OC_LONGINT_IS_64BIT.  The system will figure it out automatically
+at compile time using "Modern C++ Design" template tricks.
+The old defines still work and force what you expect, so this
+shouldn't break backward compatibility.  If you do NOT
+set OC_BYTES_IN_POINTER, it will automatically set up typedefs
+correctly.
+
+Added MakeTab: a new global method which will convert its Val
+to a Tab in the way that makes the most sense.  Added a test
+for this.
+
+Added a "get" method to Tab which will lookup a key and return
+the value if it's there, otherwise return a default value 
+specified by the function: This is similar to Python's get.
+Updated tab_test to test this feature.
+
+
+Changes as of 1.6.1
+-------------------
+
+Updated the occonvert.h so that ConvertAllArrsToTabs uses a default
+argument consistently for ConvertAllArrsToTabs (like all other  
+bool keys_as_strings=false).  This is not an interface change,
+just an interface augmentation ... all code from 1.6.0 should still work.
+
+Changes as of 1.6.0
+-------------------
+
+(Note we skipped to 1.6.0 because this is such a major release)
+
+Added Proxy support to BytesToSerialize/Serialize global methods: in
+other words, the OpenContainers serialization can handle Proxies well.
+As part of that effort, we implemented the serialization in a different
+way.  That implementation shows that the BytesToSerialize/Serialize
+method of serialization is faster in general than dynamically resizing
+a buffer to serialize into.  We have the kept the "other" implementation
+to compare against as a good test case for serialization.
+
+Added a test to make sure the new serialization routines (above) work
+with the old ones.
+
+*** Added Proxy class to Val Framework: Val's can now contain
+"adopted" memory so that they can shared tables and arrays.  (For the
+examples below, when we use a "Tab", we can use an "Arr" or "Array"
+with a Proxy the same way.)  For example:
+
+  Proxy p = new Tab("{'a': 1 }");
+  Proxy copy = p;  // Have a shared table between p and copy
+
+When Proxy goes out of scope, the new table will be deleted correctly
+the proxy counts how many values are using it (aka reference counting).
+Created as above, the Proxy does plain reference counting:  if there
+are threads sharing this item, you want to make sure you use a "locked"
+reference counting scheme.  The Proxy supports that:
+
+  Proxy p = Locked(new Tab("{'a': 1 }"));  // Lock reference count when update
+  Proxy copy = p;    // Atomically copy proxy
+
+Copies of proxies happen atomically (when using locked), but when you
+need to update a shared table, and wish to lock it, you can using the
+class "TransactionLock":  While the TransactionLock is constructed,
+it will lock the proxy so no one else can use it:
+
+  Proxy p = Locked(new Tab("{'a': 1 }"));  // Lock reference count when update
+  {
+     TransactionLock tl(p);  // While inside here, only this thread read/write
+     
+     Tab& t = p;  // Get a reference to the shared table
+     if (t("a")==1) {      // read to table
+       t["UPDATE"] = 777;  // write to table
+     }
+  }
+
+A table (or Arr or Array<POD>) can also be created in a shared memory:
+
+  Proxy p = Shared(shm, Tab("{'a':1}"));
+  
+Vals can now contain proxies, and this is usually they way they are
+used:
+
+  Val v = new Tab("{'a':1}"); // Implicitly creates Proxy inside v
+  
+Once inside a Val, they should feel like a plain Tab:
+
+  Val v = new Tab("{'a':1}"); // Implicitly creates Proxy inside v
+  v[0] = "new item";   // insert into tab
+  cout << v << endl;   // looks like a Tab
+ 
+The shared table can easily be extracted, but be aware that the
+table is only alive as long as the Proxy is:
+
+  Tab& t = v;  // v contains a Proxy to a Tab, allow to see Tab& underneath
+  t[0] = "new item";  // t valid as long as v valid
+
+A major feature of this release is that the Vals and Tabs and Arrs can
+all be used with a shared memory pool.  In other words, rather than
+using the explicit "new" and "delete". you can use your own memory
+pool.  All Tab, Arr, Array, Val classes have been "augmented" to have
+an allocator associated with them.  This is important because when a
+Tab destructs, it has to know WHERE to give the memory back to.  It's
+also important on allocation so we know WHERE to get memory from!
+
+To help use the memory pool feature, a generic memory pool allocator
+called "StreamingPool" has been created in the include area.
+
+Tests for the Proxy and StreamingPool have been created (with
+corresponding output) in the tests area.
+
+Added helper classes to perform Barrier Synchronization and Pipeline
+Synchronization.  Examples of this are available in the full
+PicklingTools release.  Also added a simple class for queuing and
+dequeuing from a queue when multiple threads are involved.
+
+Implementation from 1.5.6 for AVLHashT for operator== was incorrect
+(the error rarely, if ever, showed itself, but was nonetheless there).
+Reverted to slower but more correct version.
+
+Added a #define for OC_USE_OC (which is the version, eg. 1_6_0) to
+indicate we are using OpenContainers
+
+Added Eval function (simple wrapper for ValReader) for converting
+strings to Val easily:  Val v = Eval("1.0");
+
+Added the length (and entries) field to Val:  If the underlying 
+data is a container (Tab, Arr, Array<POD> or Proxy to), then it
+returns the length, otherwise throws a runtime exception.
+
+Added IsProxy so you can tell if a val is Proxy or not: note that
+it leaves the tag and subtype the same, so the only way to tell
+the difference is to call the IsProxy routine
+
+Added the Proxyize method to Val:  This allows to you turn a
+Val (Tab or Arr or Array<POD>) from contained by value to contained
+by reference in O(1) time.
+
+Added the contains method to Val to allow Tab and Array<T> to 
+get to it with an outconversion first.
+
+Added the fill method to Array<T> as a convenience to support
+appending the same item into the Array multiple times.
+
+Changes as of 1.5.6
+-------------------
+
+Performance update: rewrote the operator== for AVLHashT to have both
+iterators iterate in unison: Even though the structures may be
+different, they will still iterate in the same order.  Tests
+in valreader_test help test this.
+
+Performance update: removeAll removes from the end rather than the front.
+The array_test tests this feature.
+
+Updated the ValReaders so that they give a better message when
+a syntax error happens:  the new message is tucked into the
+.what() of the logic_error that gets thrown when a syntax error happens
+
+Refactored the ValReader and it's stream/string readers into separate
+classes that can be reused: The PicklingTools OpalReader class uses
+these classes to share the "better error reporting at syntax errors"
+
+Updated the valreader_test.output to reflect the new error messages.
+
+
+Changes as of 1.5.5
+-------------------
+
+Bug: When using ReadTabFromFile or WriteTabFrom file, no exceptions
+where thrown if there were problems opening the file.  Added
+a test to valreader_test and added failure checking code that
+throws an exception.
+
+Changes as of 1.5.4
+-------------------
+
+Bug: Very large integers were truncated to 0 when reading Tab literals;
+they will be attempted to turn into int_8s if they are small enough,
+otherwise they become real_8s.  Added some tests to the valreader_test
+to test this.
+
+Made it so you can have extraneous commas on the Tabs and Arr
+literals.  Added some tests to the valreader_test to test this.
+
+Stringize of real_4 and real_8 outputs in the proper precision (7 places
+or 15 respectively) and output of real_4 and real_8 looks more like
+python:  if them item would look like an int, it adds a ".0" to 
+make it clear the value is a real value.  For example: 
+Val v = 1.0; // Internally, a real_8
+cout << v;   // OLD WAY:  1    NEW WAY:  1.0
+This is more like what Python does.
+
+
+Changes as of 1.5.3
+-------------------
+
+Fixed a bug in Val::prettyPrint so that complex numbers output
+correctly in X-Midas (if you have OC_SUPPORT_XM defined).  If you
+aren't using X-Midas, this bug shouldn't affect you.
+
+Added a new method to Tab: appendStr.  Rather than appending a new
+entry whose key is an integer, it appends the same key as a string.  
+(Thus Tab t; t.appendStr(777) ends up { "0":777 } 
+ vs.  Tab t; t.append(888); ends up { 0: 888 } )
+
+
+Changes as of 1.5.2
+-------------------
+
+Fixed bug in swap AVLNR so sorted iterators work properly
+
+Made the operator() od the HashTableT, AVLTreeT, and AVLHashT classes
+const, as it has no side effects
+
+Added '#include "ocstringtools.h' to ocvalreader.h
+
+Added #ifndef protection to ocstringtools.h
+
+
+Changes as of 1.5.1
+-------------------
+
+Added swap to AVLNR (helper class), both member and global function
+so sorted iterators works properly
+
+Fixed AVLHashT to swap roots correctly
+
+Changed swap for CircularBuffer to be non-const argument,
+and use the array swap directly.
+
+To make sure swap is the namespace on a New Style ANSI/C++
+compiler, included <algorithm> to force swap into the namespace
+
+Fixed craziness on Tru64 so errno.h would recognize ETIMEDOUT
+
+Added a typedef for extern "C" linkage of a main-thread so truly
+pedantic compilers won't signal a warning
+
+
+
+Changes as of 1.5.0
+-------------------
+
+The new minor version represents a new addition: wrappers for some
+POSIX thread concepts.
+
+Added OCThread as a wrapper for POSIX Threads.  Currently a simple
+wrapper.
+
+Added Mutex as a wrapper for POSIX mutexes.  Also added the
+ProtectScope as a "side-effect" class that locks a mutex on
+construction and unlocks it on destruction: this allows mutexes to be
+released in the event of exceptions.  The Mutex can also exist in
+process space as well.
+
+Added Synchronizer as a wrapper for POSIX CondVars: both the Mutex and
+CondVar are part of the same structure as they tend to be used
+together with CondVars.
+
+Added append to Tab and Val methods, with a few new tests.
+
+Added the constant None for Val usage (Ex. Val v = None;)
+
+Added "swap" method to most OC classes:  This allows you to
+do an O(1) swap of most OC classes.  The reason is to improve
+the speed of the sorting routines as well as allowing the swap
+idiom for exception safety.  Note that sorting routines now
+use a global "swap" instead of OCSwap so that it can take advantage
+of the O(1) swapping in the sorting routines.  Also added tests
+for the swaps.
+
+Added the CircularBuffer class: used mostly as a caching buffer for
+I/O at this point, it also implements either a finite or an infinite
+circular buffer.  Also added a test for the circular buffer as well.
+
+Added a StreamValReader to allow reading of Vals from streams (files,
+string streams, etc).  Also added a few helper routines
+ReadTabFromFile and WriteTabToFile to allow syntactic sugar for
+reading and writing Tabs to files (based on StreamValReader of
+course).  This precipitated factoring code and rewriting the tests so
+they all use the reasonable exhaustive testing on both strings and
+streams.
+
+Changes as of 1.4.4
+-------------------
+Added prettyPrint method for Vals, Tabs and Arrs to give nice, nested
+printer.  For Tabs, we use the Sorted Iterator so output is always
+in sorted order (and "pretty").
+
+Added Image function which returns the 'printable version' of a string
+(handling escapes and the like) and DeImage function which takes a
+'printable version' of a string and processes escapes.  This is in 
+the new include "ocstringtools.h".  Most string-printing uses
+Image.  The way to get the "underlying string" is to:  Val v="123"; string s=v; cout << s;
+
+Had ValReader use DeImage to handle strings more consistently.
+
+Use Image for most string printing so strings are handled more consistently.
+
+Added logic to allow the ValReader to read comments (comments start
+with a # and end at the end of the line)
+
+Added tests for comments in valreader_test
+
+Added more support for X-Midas so that we include the X-Midas complexes
+instead of the OC complexes.  Also had to change the == and < to construct
+temporaries differently to support X-Midas.
+
+
+Changes as of 1.4.3
+--------------------
+Added operator() to AVLHashT, HashTableT and AVLTreeT (and descendants)
+to throw an out_of_range exception if the given key is not in the table.
+
+Also added operator() to Val so that it can throw an out_of_range
+exception as well.
+
+Added Array<> operator <, <=, >, >=
+
+Added all comparisons for Val:
+
+  None < (all numeric types) < (all other types, which get stringized)
+
+  All Numeric types get converted up to the largest containing type
+  and compared that way.  None is less than everything.  All other
+  types get converted to strings and compared that way (except
+  for Array<Val> which get compared element by element using the
+  same metric described here).
+
+  This puts a total ordering on Val: this was a bug when using the
+  Sit (sorted iterator).  Now fixed so that all vals can be sorted
+  using a total ordering.
+
+Added a new porting flag -DOC_FACTOR_INTO_H_AND_CC so that the
+Val and Serialize routines can be compiled into .o and linked
+against to avoid excessive code bloat.
+
+Cleaned up the exception for array out_of_range errors so it reports
+more information.
+
+Added Stringize at the top level (ocport.h) so any routines can
+stringize values in a standard way (especially useful for better
+exception errors)
+
+Added more tests for all the new things: especially for the
+comparisons.
+
+Added None, True and False so that ValReader can accept those
+values (e.g., Tab t = " { 1:True, 0:None, 'a':False } ").
+
+
+

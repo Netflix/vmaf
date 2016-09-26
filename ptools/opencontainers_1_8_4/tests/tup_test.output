@@ -1,0 +1,388 @@
+cx? u0
+int? u0
+uint? u0
+is numeric? u0
+((1, 2, 3))
+(1, 2, 3)
+(1, 2, 3)
+()
+( )
+ .. reversing process
+ ... stringized tup:()
+  from stream:()
+  from prettyPrint:( )
+
+(1)
+(
+    1
+)
+ .. reversing process
+ ... stringized tup:(1)
+  from stream:(1)
+  from prettyPrint:(
+    1
+)
+
+1
+1
+(1, 2)
+(
+    1,
+    2
+)
+ .. reversing process
+ ... stringized tup:(1, 2)
+  from stream:(1, 2)
+  from prettyPrint:(
+    1,
+    2
+)
+
+1
+1
+2
+2
+(1, 2, 3)
+(
+    1,
+    2,
+    3
+)
+ .. reversing process
+ ... stringized tup:(1, 2, 3)
+  from stream:(1, 2, 3)
+  from prettyPrint:(
+    1,
+    2,
+    3
+)
+
+1
+1
+2
+2
+3
+3
+(1, 2, 3, 4)
+(
+    1,
+    2,
+    3,
+    4
+)
+ .. reversing process
+ ... stringized tup:(1, 2, 3, 4)
+  from stream:(1, 2, 3, 4)
+  from prettyPrint:(
+    1,
+    2,
+    3,
+    4
+)
+
+1
+1
+2
+2
+3
+3
+4
+4
+(1, 2, 3, 4, 5)
+(
+    1,
+    2,
+    3,
+    4,
+    5
+)
+ .. reversing process
+ ... stringized tup:(1, 2, 3, 4, 5)
+  from stream:(1, 2, 3, 4, 5)
+  from prettyPrint:(
+    1,
+    2,
+    3,
+    4,
+    5
+)
+
+1
+1
+2
+2
+3
+3
+4
+4
+5
+5
+(1, 2, 3, 4, 5, 6)
+(
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+)
+ .. reversing process
+ ... stringized tup:(1, 2, 3, 4, 5, 6)
+  from stream:(1, 2, 3, 4, 5, 6)
+  from prettyPrint:(
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+)
+
+1
+1
+2
+2
+3
+3
+4
+4
+5
+5
+6
+6
+(1, 2, 3, 4, 5, 6, 7)
+(
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+)
+ .. reversing process
+ ... stringized tup:(1, 2, 3, 4, 5, 6, 7)
+  from stream:(1, 2, 3, 4, 5, 6, 7)
+  from prettyPrint:(
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+)
+
+1
+1
+2
+2
+3
+3
+4
+4
+5
+5
+6
+6
+7
+7
+(1, 2, 3, 4, 5, 6, 7, 8)
+(
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+)
+ .. reversing process
+ ... stringized tup:(1, 2, 3, 4, 5, 6, 7, 8)
+  from stream:(1, 2, 3, 4, 5, 6, 7, 8)
+  from prettyPrint:(
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+)
+
+1
+1
+2
+2
+3
+3
+4
+4
+5
+5
+6
+6
+7
+7
+8
+8
+(1, 2, 3, 4, 5, 6, 7, 8, 9)
+(
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+)
+ .. reversing process
+ ... stringized tup:(1, 2, 3, 4, 5, 6, 7, 8, 9)
+  from stream:(1, 2, 3, 4, 5, 6, 7, 8, 9)
+  from prettyPrint:(
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+)
+
+1
+1
+2
+2
+3
+3
+4
+4
+5
+5
+6
+6
+7
+7
+8
+8
+9
+9
+(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+(
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+)
+ .. reversing process
+ ... stringized tup:(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+  from stream:(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+  from prettyPrint:(
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+)
+
+1
+1
+2
+2
+3
+3
+4
+4
+5
+5
+6
+6
+7
+7
+8
+8
+9
+9
+10
+10
+Expected exception:array: attempting to access element:10 in array of length:10
+** Make sure you can compare Tup
+(1, 2, 3) (1, 2)
+0
+1
+0
+0
+1
+1
+('a', 'b', 'c') ('a', 'c', 'd')
+0
+1
+1
+1
+0
+0
+('a', ('b', 2), 'c') ('a', ('b', 3), 'c')
+0
+1
+1
+1
+0
+0
+('a', ('b', 3), 'c') ('a', ('b', 3), 'c')
+1
+0
+0
+1
+1
+0
+** Testing proxies
+123
+456
+Expected exception:No conversion from:(4, 5, 6) to table.
+Expected exception:No conversion from:(4, 5, 6) to table.
+Expected exception:No conversion from:(4, 5, 6) to table.
+Expected exception:Can't do remove on Tup, use Arr instead
+Expected exception:Can't do appendStr on Tup, use Arr instead
+('change', 5, 6)
+1
+1
+0
+0
+** Test cascading lookup and changes
+((1, 2, 3), 5, 6)
+(17, 2, 3)
+17
+Expected exception:array: attempting to access element:17 in array of length:3
+Expected exception:array: attempting to access element:17 in array of length:3
+No conversion from:17 to table.
+**Test operator(), which should throw exceptions if not there
+((1, 2, 3), 5, 6)
+(17, 2, 3)
+17
+Expected exception:array: attempting to access element:17 in array of length:3
+Expected exception:array: attempting to access element:17 in array of length:3
+Expected exception:No conversion from:17 to table.
+** Should use for loops to iterate through, but can use It
+0 'a'
+1 'b'
+2 'c'
+0 'd'
+1 'e'
+2 'f'

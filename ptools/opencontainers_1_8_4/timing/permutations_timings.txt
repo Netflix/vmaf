@@ -1,0 +1,103 @@
+
+Comparing STL to OC permutations is a little like comparing apples
+to oranges.  They both generate all permutations, but the STL
+gives you the permutations in "sorted" order (i.e., if you sorted
+all the permutations generated, you would get them in order from
+STL), whereas the OpenContainers has relaxed this constraint 
+for speed. You still get all the permutations, but in a different
+order.
+
+Here's the comparison programs we use:
+
+OpenContainers:
+#include "ocpermutations.h"
+int minify(const int* cp, int len)
+{
+  int m = 0;
+  for (int ii=0; ii<len; ii++) {
+    if (cp[ii]<m) {
+        m = cp[ii];
+     }
+  }
+  return m;
+}
+
+int main()
+{
+  int sum = 0;
+  Permutations p(13);
+  while (p.next()) {
+    const int*cp = p.currentPermutation();
+    int m = minify(cp, 13);
+    sum += m;
+  }
+  cout << sum << endl; 
+}
+
+
+STL:
+
+
+#include <algorithm>
+#include <iostream>
+using namespace std;
+
+int minify(const int* cp, int len)
+{
+  int m = 0;
+  for (int ii=0; ii<len; ii++) {
+    if (cp[ii]<m) {
+        m = cp[ii];
+     }
+  }
+  return m;
+}
+
+int main()
+{
+  int v[]= {1,2,3,4,5,6,7,8,9,10,11,12,13};
+  int sum = 0;
+  while (next_permutation(v, v+13)) {
+    int m = minify(v, 13);
+    sum += m;
+  }
+  cout << sum << endl; 
+}
+
+
+Note that we don't do any IO until the very end: Just straight
+permutation generation.  Also note make sure that we "use" the entire
+permutation (OC has an advantage that it doesn't actually have to
+touch the entire permutation which gave it an unfair advantage in
+early tests).
+
+Here's what we see (we compile with -O4 on all systems): We use the
+same compiler running on the same machine, just the two different
+programs above. (Below 10! is really in the noise, the accuracy of
+process-startup, etc. intereferes with timing).
+
+DECUNIX: 500 MHz ES45 running DECUnix 5.0 (time in seconds)
+    9! perms:  OC:     .050  STL:     .050
+   10! perms:  OC:     .497  STL:     .556
+   11! perms:  OC:    5.631  STL:    6.208
+   12! perms:  OC:   76.758  STL:   83.006
+   13! perms:  OC: 1040.000  STL: 1118.335
+   14! perms:  OC:11871.597  STL:13504.302
+
+Linux 9.0:  833 MHZ pentium machine with g++ (time in seconds)
+    9! perms:  OC:     .050  STL:     .050
+   10! perms:  OC:     .520  STL:     .560
+   11! perms:  OC:    5.840  STL:    6.28
+   12! perms:  OC:   66.23   STL:   84.090
+   13! perms:  OC:  890.61   STL: 1040.22
+   14! perms:  OC:12919.950  STL:15056.340
+
+Solaris:  (STL not supported)
+
+
+So, we're about 10%-15% faster, depending on the platform you are on.
+When you are computing algorithms that search a state space of n!,
+that extra savings can make a significant difference in hours, days or
+weeks.
+
+

@@ -1,0 +1,77 @@
+
+This directory contains a bunch of tests for you to run to make sure
+your container classes are working correctly.
+
+
+For each test, there is a .cc file and a .output file: If you build
+and run the .cc file and capture it's output, it should be identical
+to the .output file: if it's not, something is wrong.
+
+Starting off
+------------
+
+The first program you should build is "port_test.cc".  This program is
+to make sure you get all the fundamental decisions (based on your
+platform) correct so you can try out all the other tests.
+
+All these decisions are encapsulated in the "include/ocport.h" file.
+Take a look at both "include/ocport.h" and "tests/port_test.cc" now.
+
+Take your compiler and try to build: the only thing you need to start
+is the location of the OpenContainer classes.  Something like:
+
+ CC -I/home/opencontainers/include port_test.cc
+
+(The only macro you HAVE to define on the command line is OC_BYTES_IN_POINTER:
+ it indicates how many bytes are in a pointer: Almost always 4 or 8)
+
+
+Here's some example platforms:
+------------------------------
+For Solaris 5.6, using  C++ compiler:
+CC: WorkShop Compilers 4.2 16 Jun 1998 C++ 4.2 patch 104631-07
+
+ CC -I/home/opencontainers/include -DOC_NEEDS_BOOL -DOC_BYTES_IN_POINTER=4 -DOC_USE_OC_STRING -DOC_USE_OC_EXCEPTIONS port_test.cc
+ (You may need -DOC_STATIC_ISSUES if you want to build with -g)
+  
+For DECUNIX 5.1B, using C++ compiler:
+Compaq C++ V6.5-033 for Compaq Tru64 UNIX V5.1B (Rev. 2650)
+
+ cxx -I/home/opencontainers/include -DOC_BYTES_IN_POINTER=8 port_test.cc
+
+For Linux RedHat 9.0, using GNU's C++ compiler:
+g++ (GCC) 3.3.2 20031022 (Red Hat Linux 3.3.2-1)
+
+ g++ -I/home/opencontainers/include -DOC_BYTES_IN_POINTER=4 -DOC_NEW_STYLE_INCLUDES -Wno-deprecated port_test.cc
+
+
+You can either (a) edit "include/ocport.h" to do the right thing or
+(b) add some -D (defines) on the command line to define the proper
+macros.  I would suggest using the -D method: that way you don't have
+to change any code: only the way you invoke it.
+
+Once built:
+----------
+
+Once the port_test is built, run it and compare it's output against
+port_test.output to make sure everything else works.
+
+For example, from any UNIX box:
+% port_test > /tmp/port_test.result
+% diff port_test.output /tmp/port_test.result
+
+If there are no differences, you can move on and try to build all
+the other tests. (There is a script called "runall" which you can
+"source runall", once you adjust the compiler flags in the script).
+
+
+Building the other tests:
+-------------------------
+
+The rest of the tests are there to give you confidence that everything
+is working correctly: they are also there for later: if we discover a
+bug later, we can always incorporate it into a test and make sure we
+always test for that problem in the future.  Build and run any of the
+tests just like port_test.cc.
+
+

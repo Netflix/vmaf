@@ -1,0 +1,75 @@
+#!/usr/local/bin/tcsh
+
+# Simply source this file (from csh) to run all tests
+#  % source runall
+# The ser_test and pool_test are slower tests.
+# ... Although this runs all tests, you should run the port_test first to get
+# a sense if everything is set-up okay.
+
+echo "Running all tests ..."
+
+# Assumes you are running the tests in this directory
+setenv OCINC ./../include
+
+# Solaris
+#setenv COMP "CC -g -I${OCINC} -DOC_NEEDS_BOOL -DOC_BYTES_IN_POINTER=4 -DOC_USE_OC_STRING -DOC_USE_OC_EXCEPTIONS"
+
+# DECUNIX/Tru64
+## OLD WAY ### setenv COMP "cxx -O4 -I${OCINC} -DOSF1_ -DOC_NEW_STYLE_INCLUDES -DOC_BYTES_IN_POINTER=8 -DOC_LONG_INT_IS_64BIT -tlocal -pthread"
+############setenv COMP "cxx -O -I${OCINC} -DOSF1_ -DOC_NEW_STYLE_INCLUDES -tlocal -pthread"
+
+# GCC on Linux .. should work for both 64 and 32 bit now
+### 32bit OLD WAY #### setenv COMP "g++ -O -I${OCINC} -DOC_BYTES_IN_POINTER=4 -DOC_NEW_STYLE_INCLUDES -lrt"
+### 64bit OLD WAY #### setenv COMP "g++ -O4 -I${OCINC} -DOC_BYTES_IN_POINTER=8 -DOC_NEW_STYLE_INCLUDES -DOC_LONG_INT_IS_64BIT -lrt"
+
+# Right way to GCC on Linux
+echo "...be careful with -O3 / -O4 on some platforms: make sure all the tests"
+echo "   pass with -O3 and -O4 if you want to use that high of optimization."
+echo "   We recommend -O to be sure."
+setenv COMP "g++ -O -Wall -DLINUX_ -I${OCINC} -DOC_NEW_STYLE_INCLUDES -pthread -lrt"
+
+setenv list_of_tests "array_test avlhash_test avltree_test bag_test bsearch_test bigint_test biguint_test circularbuffer_test combinations_test complex_test conform_test faststringize_test fsa_test hashtable_test items_test iter_test maketab_test ordavlhash_test ordavlhasht_test otab_test permutations_test port_test pretty_test proxy_test randomizer_test ser_test sort_test split_test string_test tab_test tup_test valbigint_test valreader_test"
+
+# Go through all tests and run/compare: uses OC namespace, but with a 
+# default using namespace OC so all code should be backwards compatible.
+foreach x ($list_of_tests)
+  echo "* Building ${x}"
+  $COMP ${x}.cc -o ${x} 
+  echo "* ...testing ${x}"
+  ./${x} >&! /tmp/output.${x}
+  diff $x.output /tmp/output.${x}
+  if ($status) echo "Test ${x} FAILED!"
+  rm ${x} /tmp/output.${x}
+end
+
+# Build them all with OC_FORCE_NAMESPACE: Note that all the tests
+# detect that and do a simple 'using namespace oc' to make sure this
+# works.
+echo '**** BUILDING WITH -DOC_FORCE_NAMESPACE: '
+echo '     this forces all the code to deal with the OC namespace'
+foreach x ($list_of_tests)
+  echo "* Building ${x}"
+  $COMP -DOC_FORCE_NAMESPACE ${x}.cc -o ${x} 
+  echo "* ...testing ${x}"
+  ./${x} >&! /tmp/output.${x}
+  diff $x.output /tmp/output.${x}
+  if ($status) echo "Test ${x} FAILED!"
+  rm ${x} /tmp/output.${x}
+end
+
+# Build them all with OC_NAMESPACE_EXPERT__NO_NAMESPACES: This should
+# cause all code to build with ALL namespace constructs turned off.
+echo '**** BUILDING WITH -DOC_NAMESPACE_EXPERT__NO_NAMESPACES'
+echo '     this forces all code to compile without OC any namespace constucts'
+echo '     at all.'
+foreach x ($list_of_tests)
+  echo "* Building ${x}"
+  $COMP -DOC_NAMESPACE_EXPERT__NO_NAMESPACES ${x}.cc -o ${x} 
+  echo "* ...testing ${x}"
+  ./${x} >&! /tmp/output.${x}
+  diff $x.output /tmp/output.${x}
+  if ($status) echo "Test ${x} FAILED!"
+  rm ${x} /tmp/output.${x}
+end
+
+

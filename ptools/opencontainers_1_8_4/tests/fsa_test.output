@@ -1,0 +1,35 @@
+Is Pristine?1
+FREELIST:1
+1:F 
+FREELIST:0
+1:I 
+Is Pristine?0
+FREELIST:1
+1:F 
+Is Pristine?1
+FREELIST:0
+1:I 
+Is Pristine?0
+Is this piece of memory from here? .. should be yes ...1
+FREELIST:0
+1:I 
+Is Pristine?0
+Is NULL from here?  ... should be no ...0
+FREELIST:1
+1:F 2:F 3:F 4:F 5:F 6:F 7:F 8:F 9:F 10:F 11:F 
+FREELIST:1
+1:F 2:F 3:F 4:F 5:F 6:F 7:F 8:F 9:F 10:F 11:F 
+FREELIST:5
+1:F 2:F 3:F 4:F 5:F 6:F 7:F 8:F 9:F 10:F 11:F 
+FREELIST:2
+1:F 2:F 3:F 4:F 5:F 6:F 7:F 8:F 9:F 10:F 11:F 
+FREELIST:3
+1:F 2:F 3:F 4:F 5:F 6:F 7:F 8:F 9:F 10:F 11:F 
+FREELIST:5
+1:F 2:F 3:F 4:F 5:F 6:F 7:F 8:F 9:F 10:F 11:F 
+FREELIST:8
+1:F 2:F 3:F 4:F 5:F 6:F 7:F 8:F 9:F 10:F 11:F 
+FREELIST:6
+1:F 2:F 3:F 4:F 5:F 6:F 7:F 8:F 9:F 10:F 11:F 
+FREELIST:5
+1:F 2:F 3:F 4:F 5:F 6:F 7:F 8:F 9:F 10:F 11:F 

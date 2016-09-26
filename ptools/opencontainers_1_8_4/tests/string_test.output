@@ -1,0 +1,36 @@
+Empty String:""
+Another Empty string:""
+Constructing a string from a C-style string:"Hello There Everyone"
+Constructing same string from a C-style string:"Hello There Everyone"
+Okay!  s3 and s2 compared correctly
+Okay!  s3 and c-style string compared correctly
+Okay!  c-style string and s3 compared correctly
+Okay!  s3 and s4 compared correctly
+Okay!  s4 and c-style string compared correctly
+Okay!  c-style string and 43 compared correctly
+Okay!  sc and s3 should be same from copy construction
+Before assignment: ss= and sc=Hello There Everyone
+After assignment:  ss=Hello There Everyone and sc=Hello There Everyone
+Assignment okay
+Before +=:  a1 is "Blue"
+Before +=:  a2 is "Snowcone"
+After  +=:  a1 is "BlueSnowcone"
+After  +=:  a2 is "Snowcone"
+Before concatenate: c1="Stone"
+Before concatenate: c2="Wall"
+After concatenate: c1+c2="StoneWall"
+After concatenate: c1="Stone"
+After  concatenate: c2="Wall"
+Correct:  Same string still after concatenate
+Correct:  Straight string same as concatenated string
+ijk = 0:s
+ijk = 1:o
+ijk = 2:m
+ijk = 3:e
+ijk = 4:t
+ijk = 5:h
+ijk = 6:i
+ijk = 7:n
+ijk = 8:g
+ijk = 9:ijk=9 is correctly out of range
+ijk = 10:ijk=10 is correctly out of range

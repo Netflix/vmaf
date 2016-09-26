@@ -1,0 +1,106 @@
+This directory contains all sorts of C++ code and examples for using
+the MidasTalker and MidasServer (client and server over TCP/IP socket)
+and MidasListener and MidasYeller (client and server over UDP).
+
+All the C++ code should have reasonable documentation in the .h files,
+but there are several examples (ending with _ex*.cc) to show you how
+to use the C++ code.  The examples are built using the Makefile.OsType
+provided (currently only Linux and OSF1 (aka Tru64)).  For example, to
+build midastalker_ex2 on Linux, you would type:
+  % make -f Makefile.Linux midastalker_ex2
+
+Most of the examples (ending with _ex*.cc) support several options for
+controlling how data is sent around.  By default, all data is
+serialized using Python Pickling Protocol 0, which is the most
+backwards compatible protocol but also the slowest.  You can manually
+change how data flows in all the examples by setting one of three
+options on the command line:
+
+
+      --ser=n    - Set the serialization type of how the example sends data
+                   over the socket:  this can have a huge performance
+                   difference.  The options are:
+                    0 :  Use Python Pickling Protocol 0
+                         - slower, but works w/all versions of PTOOLS, Python
+                    1 :  Use no serialization (just send the string data)
+                         - useful if you want to send raw data
+                    2 :  Use Python Pickling Protocol 2
+                         - fast, but doesn't work with all versions
+                   -2 :  As Python Pickling Protocol 2, but as Python 2.2.x
+                         - Python 2.2.x dumps Protocol 2 subtlely differently
+                           so this allows you to talk to older versions
+                    4 : Use Midas 2k Binary Serialization.  Currently,
+                        ONLY the C++ clients and servers (besides, of course,
+                        M2k) can use this serialization.  Python clients
+                        and servers do not currently support this.
+                    5 : Use OpenContainers serialization.  Currently,
+                        ONLY the M2k and C++ clients and servers can use this 
+                        serialization.  Python clients and server support
+			this if the Python C Extension module pyoceser is
+			compiled.
+                        Prefer this for speed and preservation.
+                    6 : This will "stringize" the given Val on dump
+                        and "eval" the string on load.  This is all text
+                        based so quite slow, but very readable.
+                    7 : As 6, but prettyPrints instead of stringizes.
+                    8 : Converts the given Val to XML and sends it over
+                        and attempts to reconstruct a Val on the
+                        other side.  (Not all XML can be expressed as
+                        key-value pairs:  If you truly want to send
+                        full XML, use the SERIALIZE_NONE (1) option: 
+                        you will have to manually XML/unXML your data)
+
+                   The default is Python Pickling Protocol 0 for backwards
+                   compatibility but it is strongly suggested moving to
+                   Protocol 2 for speed.
+
+     --sock=n    - Set whether socket communications use dual socket
+                   (--sock=2) or single socket (--sock=1) mode.  To get
+                   around a bug in VMS TCP/IP, dual sockets needed to
+                   be used for biderectional communication.  Modern
+                   sockets don't have this problem.  Dual socket is the
+                   usual default, as that's the default of Midas 2K
+                   and X-Midas, but we suggest using Single Socket mode
+                   when you can.  Most examples default to --sock=2
+
+                   New feature: This can also be 777 (which means 
+                   NORMAL_SOCKET) and avoids all the Midas socket
+                   protocol nonsense.  With 777, you can talk to normal
+                   sockets that do typical socket stuff (like CURL, etc.)
+
+     --arrdisp=n - Set the array disposition if you use Python serialization
+                   (--ser=0 or 2 or -2). This is how the examples sends
+                   'homogeneous data' around the system (i.e., M2k Vectors,
+                   PTOOLS Arrays, Python arrays, Numeric arrays).
+                   The options are:
+                    0 : Shuttle all homogeneous data as Numeric Arrays
+                        (like the Numeric package from Python)
+                    1 : Shuttle all homogeneous data as Python Lists
+                        (this loses their 'array-like' quality but
+                         is the most backwards compatible because all
+                         versions of PTOOLS and Python support Python Lists)
+                    2 : Shuttle all homogeneous data as Python Arrays
+                        (like the Array package from Python):DEPRECATED!!!
+                    3: Not supported
+                    4 : NumPy
+                   The default is 1 for backwards compatibility.
+                   NumPy has replaced Numeric as the de-facto standard
+                   (as Numeric is out of maintenance and NumPy is active),
+                   so 4 is probably your best option: make sure you have
+                   NumPy installed (import numpy).
+                   If you are using XMPY<4.0.0, Numeric comes built and it is 
+                   recommended to use 0 (for speed). 
+		   After XMPY 4.XX, NUMPY is preferred.
+
+     --compat=1  - This option is really only necessary if you are talking
+                   to some pre-exisiting (pre 1.2.0) PTOOLS installations.  
+                   Set the compatibility mode to True if you want
+                   to convert OTab->Tab, Tup->Arr, BigInt->Str.  This
+                   is for backwards compatibility with pre-existing PTOOLS
+                   installations that don't have those data structures 
+	           implemented.  By default, the value is false, which
+                   means OTab/Tup/BigInt are NOT converted (i.e, they
+                   as passed as is).  NOTE: if you use SERIALIZE_M2k,
+                   conversion ALWAYS happens because there is no
+                   equivalent in M2k.
+

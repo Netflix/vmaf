@@ -1,0 +1,195 @@
+empty:1 full:0 length:0 capacity:1
+
+
+empty:0 full:1 length:1 capacity:1
+100 
+
+Expected: Circular Buffer full
+empty:0 full:1 length:1 capacity:1
+100 
+
+100empty:1 full:0 length:0 capacity:1
+
+
+Expected: Circular Buffer Empty
+empty:1 full:0 length:0 capacity:1
+
+
+empty:1 full:0 length:0 capacity:1
+
+
+empty:0 full:1 length:1 capacity:1
+the 
+
+Expected: Circular Buffer full
+empty:0 full:1 length:1 capacity:1
+the 
+
+theempty:1 full:0 length:0 capacity:1
+
+
+Expected: Circular Buffer Empty
+empty:1 full:0 length:0 capacity:1
+
+
+empty:1 full:0 length:0 capacity:2
+
+
+empty:0 full:0 length:1 capacity:2
+100 
+
+empty:0 full:1 length:2 capacity:2
+100 200 
+
+empty:0 full:0 length:3 capacity:4
+100 200 300 
+
+g100
+empty:0 full:0 length:2 capacity:4
+200 300 
+
+empty:0 full:0 length:3 capacity:4
+200 300 400 
+
+empty:0 full:1 length:4 capacity:4
+200 300 400 500 
+
+empty:0 full:0 length:5 capacity:8
+200 300 400 500 600 
+
+empty:1 full:0 length:0 capacity:2
+
+
+empty:0 full:0 length:1 capacity:2
+a100 
+
+empty:0 full:1 length:2 capacity:2
+a100 a200 
+
+empty:0 full:0 length:3 capacity:4
+a100 a200 a300 
+
+ga100
+empty:0 full:0 length:2 capacity:4
+a200 a300 
+
+empty:0 full:0 length:3 capacity:4
+a200 a300 a400 
+
+empty:0 full:1 length:4 capacity:4
+a200 a300 a400 a500 
+
+empty:0 full:0 length:5 capacity:8
+a200 a300 a400 a500 a600 
+
+empty:1 full:0 length:0 capacity:1
+
+
+empty:0 full:1 length:1 capacity:1
+100 
+
+empty:0 full:1 length:2 capacity:2
+100 200 
+
+100empty:0 full:0 length:1 capacity:2
+200 
+
+empty:1 full:0 length:0 capacity:2
+
+
+empty:1 full:0 length:0 capacity:1
+
+
+empty:0 full:1 length:1 capacity:1
+the 
+
+empty:0 full:1 length:2 capacity:2
+the quick 
+
+theempty:0 full:0 length:1 capacity:2
+quick 
+
+empty:1 full:0 length:0 capacity:2
+
+
+0:one
+1:two
+2:three
+3:four
+Trying to peek beyond the end of the Circ. Buff
+Consuming:0
+one two three four 
+... done consuming0
+Consuming:1
+two three four 
+... done consuming1
+Consuming:2
+three four 
+... done consuming2
+Consuming:3
+four 
+... done consuming3
+Consuming:4
+
+... done consuming4
+Consuming:5
+Trying to consume more data than in Circ. Buff
+... done consuming5
+**** Putback tests
+100
+Trying to peek beyond the end of the Circ. Buff
+100
+Trying to peek beyond the end of the Circ. Buff
+200
+100
+Trying to peek beyond the end of the Circ. Buff
+Circular Buffer full
+Circular Buffer full
+0:zero
+1:one
+2:two
+3:three
+4:four
+Trying to peek beyond the end of the Circ. Buff
+0:zero
+1:one
+2:two
+3:three
+4:four
+Trying to peek beyond the end of the Circ. Buff
+0:zero
+1:one
+2:two
+3:three
+4:four
+Trying to peek beyond the end of the Circ. Buff
+300
+200
+100
+400
+300
+200
+100
+500
+400
+300
+200
+100
+Expected empty exception:Circular Buffer Empty
+len:1 with 100
+... dropped 100
+len:0
+len:2 with 200
+... dropped 300
+len:1 with 200
+... dropped 200
+Expected empty exception:Circular Buffer Empty
+Expected empty exception:Circular Buffer Empty
+len:1 with 100
+... dropped 100
+len:0
+len:2 with 200
+... dropped 300
+len:1 with 200
+... dropped 200
+Expected empty exception:Circular Buffer Empty

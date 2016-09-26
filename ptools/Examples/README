@@ -1,0 +1,103 @@
+
+README
+
+This directory contains a complex example demonstrating how to build a
+threaded system using the PicklingTools.  The system is reminiscent of
+Midas 2k, a threaded, component-based architecture for composing Digital
+Signal Processing applications.
+
+  The original purpose of this simple framework was to time and test
+how fast we can do FFT processing and you will need FFTW installed to
+get all examples to work (see below).
+
+  The architecture is simple: A component is an analogue to a
+real-world piece of Digital Signal processing equipment (Spectrum
+Analyzer, Signal Generator, etc.).  Each component has a simple
+interface: It can be started, stopped, and waited for.  Each component
+also has "knobs and dials" that can be set and inspected.
+
+  Example:
+ 
+   Constant c("constant1");  // Create a component that generates data
+   c.set("iter", 100);         // How many times it runs before shuts off.
+   c.set("DataLength", 1024);  //  How big each packet is
+
+   MaxMin m("maxmin");      // Create a component that reads data
+   m.set("iter", 100);  
+   cout << c.get("Max") << endl;  // Look at the value
+
+  The components can be connected so that data can flow from one component
+to another. 
+
+   CQ* conduit = new CQ(4);  // Queue of length 4
+   c.connect(0, conduit);
+   m.connect(conduit, 0);
+
+   c.start();                  // Starts generating packets of data   
+   m.start();                  // Starts accepting packets and reading them
+
+ 
+  Take a look at the "baseline_test.cc" for a full example.  Build it
+with 'make -f Makefile.Linux baseline_test' or whichever makefile is
+relevant to your system.
+
+  There are three basic types of components: Generators (which write
+data), Transformers (which read data, operate on said data, then write
+data), and finally Analyzers (which read data).  They are all
+components, but have slightly different interfaces corresponding to
+whether or not they read or write data.
+
+  Implementation Details:
+
+ Each component has a thread which "animates" it: think of the thread
+as the battery to the component, giving it power.  The data flowing
+through the system is simply packets, where each packet is just a Val.
+A Val can be as complex as needed, but usually is a Table with two
+keys: HEADER and DATA.  The header is just another Table describing
+meta-properties of the data (such as time generated).  The data is
+usually a Proxy to an Array<complex_8> data.  
+
+  It's important that the data be a Proxy because we don't wish to
+make a full copy of the data each time we copy a packet. In this way,
+we can stream data through the system quickly because the data is not
+copied, just a pointer.  It's also important that the Proxy be a
+"thread-aware" Proxy (created with Locked) so that the reference-count
+will be incremented atomically in the threaded system.
+
+  Inside each of the components, a TransactionLock is used to open up
+the Packet.  This makes sure that only thread is inside the packet at
+a time, avoiding race conditions and synchronization problems.
+
+
+   Working with FFTW:
+
+   Some of these examples can't be built without having installed
+FFTW.  FFTW is an open source package for computing FFTs (see fftw.org
+for instructions on usage and installation).  If you wish to install
+FFTW to try out these examples, make sure you change the appropriate
+Makefile so that it points to the proper include and lib directories
+on your machine.
+
+   In fact, the whole reason for this mini-framework was to time and
+test how fast FFTW was in certain contexts: straight FFTs, pipeline
+FFTS, barrier synchronizing with multiple FFTs.  These examples do
+work (and explain why they are populated with timing information).
+   
+   The pipeline synchronization examples refer to taking in packets,
+handing them off to individual threads, then reassembling the packets
+in order.  In other words, it's a way to achieve parallelism if you
+know the state of each packet does NOT depend on the state of the
+previous packet.
+
+   The barrier synchronization example works by putting all of its
+workers on a single packet: dividing that one packet up into pieces so
+that multiple threads can work on it, then waiting until all threads
+are done before the packet goes out.  This only works if a packet can
+be divided into pieces.
+
+   Pipeline synchronization works well usually, but latency suffers
+(as you have to wait for the first packet to come out of the
+pipeline).  Barrier synchronization usually has better latency (as you
+assign all your workers at once to one packet), but typically
+parallizes poorly.
+   

@@ -1,0 +1,40 @@
+
+Comparing sorts.  Compiled with -O4.
+
+OpenContainers and STL (uncomment out the appropriate line)
+
+#include "ocsort.h"
+#include <algorithm>
+#define SIZE 1000000
+int main ()
+{
+   int* a = new int[SIZE];
+   int* b = new int[SIZE];
+   for (int ii=0; ii<SIZE; ii++)          
+     a[ii] = ((ii % 32767 + 13567) + ii*17) % SIZE;
+
+   for (int jj=0; jj<1e2; jj++) {
+     memcpy(b,a,SIZE*sizeof(a[0]));
+     OCQuickSort(b, 0, SIZE);        // OC
+//   sort(b, b+SIZE);                // STL
+   }
+     
+}
+
+
+
+Timings:
+
+DecUNIX - compiled with -O4.  Time is in seconds.
+---------------------------
+SIZE:      OC    STL 
+100000     2.39   2.599
+1000000   29.64  31.37
+10000000 416.59 447.36
+
+Linux - compiled with g++ -O4.  Time is in seconds
+-----------------------------
+SIZE:      OC    STL 
+100000     2.39   2.36
+1000000   32.39  30.22
+10000000 412.290 369.38
