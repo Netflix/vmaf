@@ -97,9 +97,6 @@ private:
 	const char *model_path;
 	char *libsvm_model_path;
 	static const int INIT_FRAMES = 1000;
-	static const double* INTERCEPTS;
-	static const double* SLOPES;
-	static const double* SCORE_CLIP;
 };
 
 struct SvmDelete {

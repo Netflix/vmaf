@@ -101,16 +101,6 @@ void SvmDelete::operator()(void *svm)
 	svm_free_model_content((svm_model *)svm);
 }
 
-/* the first intercept/slope number is for the vmaf score, the rest 6 are for
- * adm2, motion, vif_scale0, vif_scale1, vif_scale2, vif_scale3 in order. The
-  current slops and intercpets match nflxtrain_vmafv3a.pkl*/
-static const double cINTERCEPTS[] = {-0.0181818181818, -1.97150772696, -0.0367108449062, -0.0820391009278, -0.285805849112, -0.48016754306, -0.776475692049};
-static const double cSLOPES[] = {0.00945454545455, 2.97150772696, 0.0524677881284, 1.08203909458, 1.28580617639, 1.48016828489, 1.7764765384};
-static const double cSCORE_CLIP[] = {0.0, 100.0};
-const double* VmafRunner::INTERCEPTS = cINTERCEPTS;
-const double* VmafRunner::SLOPES = cSLOPES;
-const double* VmafRunner::SCORE_CLIP = cSCORE_CLIP;
-
 Result VmafRunner::run(Asset asset)
 {
 
@@ -134,7 +124,6 @@ Result VmafRunner::run(Asset asset)
             assert 'intercepts' in self.model_dict
      */
     Val model, model_type, feature_names, norm_type;
-    Val test; // tmp
     try
 	{
         LoadValFromFile(model_path, model, SERIALIZE_P0);
@@ -146,8 +135,6 @@ Result VmafRunner::run(Asset asset)
         slopes = model["model_dict"]["slopes"];
         intercepts = model["model_dict"]["intercepts"];
         score_clip = model["model_dict"]["score_clip"];
-
-        test = model["test"];
     }
     catch (std::runtime_error& e)
     {
@@ -191,22 +178,6 @@ Result VmafRunner::run(Asset asset)
         printf("score_clip in model must be either None or list.\n");
         throw std::runtime_error{"Incompatible score_clip"};
     }
-
-    // temp
-    cout << model["param_dict"]["gamma"] << endl;
-    cout << model_type << endl;
-    cout << feature_names[2] << endl;
-    cout << feature_names.length() << endl;
-    cout << norm_type << endl;
-    cout << slopes[1] << endl;
-    cout << intercepts[1] << endl;
-    cout << test << endl;
-    cout << score_clip[1] << endl;
-    printf("norm_type: %s\n", Stringize(norm_type).c_str());
-    printf("intercepts[3]: %.3f\n", double(intercepts[3]));
-    cout << Stringize(model_type).compare("'LIBSVMNUSVR'") << endl;
-    cout << strcmp(Stringize(model_type).c_str(), "'LIBSVMNUSVR'") << endl;
-    cout << Stringize(norm_type).compare("'linear_rescale'") << endl;
 
 #ifdef PRINT_PROGRESS
 	printf("Read input model (libsvm)...\n");
