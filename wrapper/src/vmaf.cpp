@@ -33,9 +33,9 @@
 #include "timer.h"
 #include "chooseser.h"
 
-#define VAL_EQUAL_STR(V,S) Stringize((V)).compare((S))==0
-#define VAL_IS_LIST(V) (V).tag=='n' /* check ocval.cc */
-#define VAL_IS_NONE(V) (V).tag=='Z' /* check ocval.cc */
+#define VAL_EQUAL_STR(V,S) (Stringize((V)).compare((S))==0)
+#define VAL_IS_LIST(V) ((V).tag=='n') /* check ocval.cc */
+#define VAL_IS_NONE(V) ((V).tag=='Z') /* check ocval.cc */
 
 int Asset::getWidth()
 {
@@ -159,13 +159,13 @@ Result VmafRunner::run(Asset asset)
     {
         printf("Current vmafossexec only accepts model type LIBSVMNUSVR, "
                 "but got %s\n", Stringize(model_type).c_str());
-        throw "Incompatible model_type";
+        throw std::runtime_error{"Incompatible model_type"};
     }
 
     if (!VAL_IS_LIST(feature_names))
     {
         printf("feature_names in model must be a list.\n");
-        throw "Incompatible feature_names";
+        throw std::runtime_error{"Incompatible feature_names"};
     }
 
     if (!(VAL_EQUAL_STR(norm_type, "'none'") ||
@@ -174,7 +174,7 @@ Result VmafRunner::run(Asset asset)
         )
     {
         printf("norm_type in model must be either 'none' or 'linear_rescale'.\n");
-        throw "Incompatible norm_type";
+        throw std::runtime_error{"Incompatible norm_type"};
     }
 
     if ( VAL_EQUAL_STR(norm_type, "'linear_rescale'") &&
@@ -183,7 +183,13 @@ Result VmafRunner::run(Asset asset)
     {
         printf("if norm_type in model is 'linear_rescale', "
                 "both slopes and intercepts must be a list.\n");
-        throw "Incompatible slopes or intercepts";
+        throw std::runtime_error{"Incompatible slopes or intercepts"};
+    }
+
+    if (!(VAL_IS_NONE(score_clip) || VAL_IS_LIST(score_clip)))
+    {
+        printf("score_clip in model must be either None or list.\n");
+        throw std::runtime_error{"Incompatible score_clip"};
     }
 
     // temp
@@ -356,27 +362,27 @@ Result VmafRunner::run(Asset asset)
 
 	    /* 1. adm2 */
 	    nodes[0].index = 1;
-	    nodes[0].value = SLOPES[1] * adm2.at(i) + INTERCEPTS[1];
+	    nodes[0].value = double(slopes[1]) * adm2.at(i) + double(intercepts[1]);
 
 	    /* 2. motion */
 	    nodes[1].index = 2;
-	    nodes[1].value = SLOPES[2] * motion.at(i) + INTERCEPTS[2];
+	    nodes[1].value = double(slopes[2]) * motion.at(i) + double(intercepts[2]);
 
 	    /* 3. vif_scale0 */
 	    nodes[2].index = 3;
-	    nodes[2].value = SLOPES[3] * vif_scale0.at(i) + INTERCEPTS[3];
+	    nodes[2].value = double(slopes[3]) * vif_scale0.at(i) + double(intercepts[3]);
 
 	    /* 4. vif_scale1 */
 	    nodes[3].index = 4;
-	    nodes[3].value = SLOPES[4] * vif_scale1.at(i) + INTERCEPTS[4];
+	    nodes[3].value = double(slopes[4]) * vif_scale1.at(i) + double(intercepts[4]);
 
 	    /* 5. vif_scale2 */
 	    nodes[4].index = 5;
-	    nodes[4].value = SLOPES[5] * vif_scale2.at(i) + INTERCEPTS[5];
+	    nodes[4].value = double(slopes[5]) * vif_scale2.at(i) + double(intercepts[5]);
 
 	    /* 6. vif_scale3 */
 	    nodes[5].index = 6;
-	    nodes[5].value = SLOPES[6] * vif_scale3.at(i) + INTERCEPTS[6];
+	    nodes[5].value = double(slopes[6]) * vif_scale3.at(i) + double(intercepts[6]);
 
 	    nodes[6].index = -1;
 
@@ -384,21 +390,24 @@ Result VmafRunner::run(Asset asset)
 	    double prediction = svm_predict(svm_model_ptr.get(), nodes);
 
 	    /* denormalize */
-	    prediction = (prediction - INTERCEPTS[0]) / SLOPES[0];
+	    prediction = (prediction - double(intercepts[0])) / double(slopes[0]);
+
+	    /* clip */
+	    if (!VAL_IS_NONE(score_clip))
+	    {
+            if (prediction < double(score_clip[0]))
+            {
+                prediction = double(score_clip[0]);
+            }
+            else if (prediction > double(score_clip[1]))
+            {
+                prediction = double(score_clip[1]);
+            }
+	    }
 
 	    // printf("svm predict: %f, %f, %f, %f, %f, %f => %f\n",
 	    //        node[0].value, node[1].value, node[2].value,
 	    //        node[3].value, node[4].value, node[5].value, prediction);
-
-	    /* clip */
-	    if (prediction < SCORE_CLIP[0])
-	    {
-	    	prediction = SCORE_CLIP[0];
-	    }
-	    else if (prediction > SCORE_CLIP[1])
-		{
-	    	prediction = SCORE_CLIP[1];
-		}
 
 #ifdef PRINT_PROGRESS
 	    printf("frame: %zu, ", i);
