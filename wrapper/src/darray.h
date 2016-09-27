@@ -28,9 +28,9 @@ extern "C" {
 
 typedef struct
 {
-	double *array;
-	size_t used;
-	size_t size;
+    double *array;
+    size_t used;
+    size_t size;
 } DArray;
 
 void init_array(DArray *a, size_t init_size);

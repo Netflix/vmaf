@@ -39,7 +39,7 @@
 
 void SvmDelete::operator()(void *svm)
 {
-	svm_free_model_content((svm_model *)svm);
+    svm_free_model_content((svm_model *)svm);
 }
 
 void _read_and_assert_model(const char *model_path, Val& feature_names,
@@ -61,7 +61,7 @@ void _read_and_assert_model(const char *model_path, Val& feature_names,
     Val model, model_type;
     char errmsg[1024];
     try
-	{
+    {
         LoadValFromFile(model_path, model, SERIALIZE_P0);
 
         model_type = model["model_dict"]["model_type"];
@@ -121,14 +121,14 @@ Result VmafRunner::run(Asset asset)
 {
 
 #ifdef PRINT_PROGRESS
-	printf("Read input model (pkl)...\n");
+    printf("Read input model (pkl)...\n");
 #endif
 
     Val feature_names, norm_type, slopes, intercepts, score_clip;
     _read_and_assert_model(model_path, feature_names, norm_type, slopes, intercepts, score_clip);
 
 #ifdef PRINT_PROGRESS
-	printf("Read input model (libsvm)...\n");
+    printf("Read input model (libsvm)...\n");
 #endif
 
     std::unique_ptr<svm_model, SvmDelete> svm_model_ptr{svm_load_model(libsvm_model_path)};
@@ -139,163 +139,163 @@ Result VmafRunner::run(Asset asset)
     }
 
 #ifdef PRINT_PROGRESS
-	printf("Initialize storage arrays...\n");
+    printf("Initialize storage arrays...\n");
 #endif
 
-	int w = asset.getWidth();
-	int h = asset.getHeight();
-	const char* ref_path = asset.getRefPath();
-	const char* dis_path = asset.getDisPath();
-	const char* fmt = asset.getFmt();
-	char errmsg[1024];
+    int w = asset.getWidth();
+    int h = asset.getHeight();
+    const char* ref_path = asset.getRefPath();
+    const char* dis_path = asset.getDisPath();
+    const char* fmt = asset.getFmt();
+    char errmsg[1024];
 
-	DArray adm_num_array,
-		   adm_den_array,
-		   motion_array,
-		   vif_num_scale0_array,
-		   vif_den_scale0_array,
-		   vif_num_scale1_array,
-		   vif_den_scale1_array,
-		   vif_num_scale2_array,
-		   vif_den_scale2_array,
-		   vif_num_scale3_array,
-		   vif_den_scale3_array,
-		   vif_array,
-		   psnr_array,
-		   ssim_array,
-		   ms_ssim_array;
+    DArray adm_num_array,
+           adm_den_array,
+           motion_array,
+           vif_num_scale0_array,
+           vif_den_scale0_array,
+           vif_num_scale1_array,
+           vif_den_scale1_array,
+           vif_num_scale2_array,
+           vif_den_scale2_array,
+           vif_num_scale3_array,
+           vif_den_scale3_array,
+           vif_array,
+           psnr_array,
+           ssim_array,
+           ms_ssim_array;
 
     /* use the following ptrs as flags to turn on/off optional metrics */
     DArray *psnr_array_ptr, *ssim_array_ptr, *ms_ssim_array_ptr;
 
-	init_array(&adm_num_array, INIT_FRAMES);
-	init_array(&adm_den_array, INIT_FRAMES);
-	init_array(&motion_array, INIT_FRAMES);
-	init_array(&vif_num_scale0_array, INIT_FRAMES);
-	init_array(&vif_den_scale0_array, INIT_FRAMES);
-	init_array(&vif_num_scale1_array, INIT_FRAMES);
-	init_array(&vif_den_scale1_array, INIT_FRAMES);
-	init_array(&vif_num_scale2_array, INIT_FRAMES);
-	init_array(&vif_den_scale2_array, INIT_FRAMES);
-	init_array(&vif_num_scale3_array, INIT_FRAMES);
-	init_array(&vif_den_scale3_array, INIT_FRAMES);
-	init_array(&vif_array, INIT_FRAMES);
-	init_array(&psnr_array, INIT_FRAMES);
-	init_array(&ssim_array, INIT_FRAMES);
-	init_array(&ms_ssim_array, INIT_FRAMES);
+    init_array(&adm_num_array, INIT_FRAMES);
+    init_array(&adm_den_array, INIT_FRAMES);
+    init_array(&motion_array, INIT_FRAMES);
+    init_array(&vif_num_scale0_array, INIT_FRAMES);
+    init_array(&vif_den_scale0_array, INIT_FRAMES);
+    init_array(&vif_num_scale1_array, INIT_FRAMES);
+    init_array(&vif_den_scale1_array, INIT_FRAMES);
+    init_array(&vif_num_scale2_array, INIT_FRAMES);
+    init_array(&vif_den_scale2_array, INIT_FRAMES);
+    init_array(&vif_num_scale3_array, INIT_FRAMES);
+    init_array(&vif_den_scale3_array, INIT_FRAMES);
+    init_array(&vif_array, INIT_FRAMES);
+    init_array(&psnr_array, INIT_FRAMES);
+    init_array(&ssim_array, INIT_FRAMES);
+    init_array(&ms_ssim_array, INIT_FRAMES);
 
     /* optional output arrays */
 //    psnr_array_ptr = NULL;
-	psnr_array_ptr = &psnr_array;
+    psnr_array_ptr = &psnr_array;
 
 //    ssim_array_ptr = NULL;
-	ssim_array_ptr = &ssim_array;
+    ssim_array_ptr = &ssim_array;
 
 //    ms_ssim_array_ptr = NULL;
-	ms_ssim_array_ptr = &ms_ssim_array;
+    ms_ssim_array_ptr = &ms_ssim_array;
 
 #ifdef PRINT_PROGRESS
-	printf("Extract atom features...\n");
+    printf("Extract atom features...\n");
 #endif
 
-	int ret = combo(ref_path, dis_path, w, h, fmt,
-			&adm_num_array,
-			&adm_den_array,
-			&motion_array,
-			&vif_num_scale0_array,
-			&vif_den_scale0_array,
-			&vif_num_scale1_array,
-			&vif_den_scale1_array,
-			&vif_num_scale2_array,
-			&vif_den_scale2_array,
-			&vif_num_scale3_array,
-			&vif_den_scale3_array,
-			&vif_array,
-			psnr_array_ptr,
-			ssim_array_ptr,
-			ms_ssim_array_ptr,
-			errmsg);
-	if (ret)
-	{
+    int ret = combo(ref_path, dis_path, w, h, fmt,
+            &adm_num_array,
+            &adm_den_array,
+            &motion_array,
+            &vif_num_scale0_array,
+            &vif_den_scale0_array,
+            &vif_num_scale1_array,
+            &vif_den_scale1_array,
+            &vif_num_scale2_array,
+            &vif_den_scale2_array,
+            &vif_num_scale3_array,
+            &vif_den_scale3_array,
+            &vif_array,
+            psnr_array_ptr,
+            ssim_array_ptr,
+            ms_ssim_array_ptr,
+            errmsg);
+    if (ret)
+    {
         throw VmafException(errmsg);
-	}
+    }
 
-	size_t num_frms = motion_array.used;
-	bool num_frms_is_consistent =
-	           (adm_num_array.used == num_frms)
-			&& (adm_den_array.used == num_frms)
-			&& (vif_num_scale0_array.used == num_frms)
-			&& (vif_den_scale0_array.used == num_frms)
-			&& (vif_num_scale1_array.used == num_frms)
-			&& (vif_den_scale1_array.used == num_frms)
-			&& (vif_num_scale2_array.used == num_frms)
-			&& (vif_den_scale2_array.used == num_frms)
-			&& (vif_num_scale3_array.used == num_frms)
-			&& (vif_den_scale3_array.used == num_frms)
-			&& (vif_array.used == num_frms);
-	if (psnr_array_ptr != NULL) { num_frms_is_consistent = num_frms_is_consistent && (psnr_array.used == num_frms); }
-	if (ssim_array_ptr != NULL) { num_frms_is_consistent = num_frms_is_consistent && (ssim_array.used == num_frms); }
-	if (ms_ssim_array_ptr != NULL) { num_frms_is_consistent = num_frms_is_consistent && (ms_ssim_array.used == num_frms); }
-	if (!num_frms_is_consistent)
-	{
-		sprintf(errmsg, "Output feature vectors are of inconsistent dimensions: "
-				"motion (%zu), adm_num (%zu), adm_den (%zu), vif_num_scale0 (%zu), "
-				"vif_den_scale0 (%zu), vif_num_scale1 (%zu), vif_den_scale1 (%zu), "
-				"vif_num_scale2 (%zu), vif_den_scale2 (%zu), vif_num_scale3 (%zu), "
-				"vif_den_scale3 (%zu), vif (%zu), psnr (%zu), ssim (%zu), ms_ssim (%zu)",
-				motion_array.used,
-				adm_num_array.used,
-				adm_den_array.used,
-				vif_num_scale0_array.used,
-				vif_den_scale0_array.used,
-				vif_num_scale1_array.used,
-				vif_den_scale1_array.used,
-				vif_num_scale2_array.used,
-				vif_den_scale2_array.used,
-				vif_num_scale3_array.used,
-				vif_num_scale3_array.used,
-				vif_array.used,
+    size_t num_frms = motion_array.used;
+    bool num_frms_is_consistent =
+               (adm_num_array.used == num_frms)
+            && (adm_den_array.used == num_frms)
+            && (vif_num_scale0_array.used == num_frms)
+            && (vif_den_scale0_array.used == num_frms)
+            && (vif_num_scale1_array.used == num_frms)
+            && (vif_den_scale1_array.used == num_frms)
+            && (vif_num_scale2_array.used == num_frms)
+            && (vif_den_scale2_array.used == num_frms)
+            && (vif_num_scale3_array.used == num_frms)
+            && (vif_den_scale3_array.used == num_frms)
+            && (vif_array.used == num_frms);
+    if (psnr_array_ptr != NULL) { num_frms_is_consistent = num_frms_is_consistent && (psnr_array.used == num_frms); }
+    if (ssim_array_ptr != NULL) { num_frms_is_consistent = num_frms_is_consistent && (ssim_array.used == num_frms); }
+    if (ms_ssim_array_ptr != NULL) { num_frms_is_consistent = num_frms_is_consistent && (ms_ssim_array.used == num_frms); }
+    if (!num_frms_is_consistent)
+    {
+        sprintf(errmsg, "Output feature vectors are of inconsistent dimensions: "
+                "motion (%zu), adm_num (%zu), adm_den (%zu), vif_num_scale0 (%zu), "
+                "vif_den_scale0 (%zu), vif_num_scale1 (%zu), vif_den_scale1 (%zu), "
+                "vif_num_scale2 (%zu), vif_den_scale2 (%zu), vif_num_scale3 (%zu), "
+                "vif_den_scale3 (%zu), vif (%zu), psnr (%zu), ssim (%zu), ms_ssim (%zu)",
+                motion_array.used,
+                adm_num_array.used,
+                adm_den_array.used,
+                vif_num_scale0_array.used,
+                vif_den_scale0_array.used,
+                vif_num_scale1_array.used,
+                vif_den_scale1_array.used,
+                vif_num_scale2_array.used,
+                vif_den_scale2_array.used,
+                vif_num_scale3_array.used,
+                vif_num_scale3_array.used,
+                vif_array.used,
                 psnr_array.used,
                 ssim_array.used,
                 ms_ssim_array.used
-				);
+                );
 
-		throw VmafException(errmsg);
-	}
+        throw VmafException(errmsg);
+    }
 
 #ifdef PRINT_PROGRESS
-	printf("Generate final features (including derived atom features)...\n");
+    printf("Generate final features (including derived atom features)...\n");
 #endif
 
-	StatVector adm2, motion, vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, score;
-	StatVector psnr, ssim, ms_ssim;
-	for (size_t i=0; i<num_frms; i++)
-	{
-		adm2.append((get_at(&adm_num_array, i) + 1000.0) / (get_at(&adm_den_array, i) + 1000.0));
-		motion.append(get_at(&motion_array, i));
-		vif_scale0.append(get_at(&vif_num_scale0_array, i) / get_at(&vif_den_scale0_array, i));
-		vif_scale1.append(get_at(&vif_num_scale1_array, i) / get_at(&vif_den_scale1_array, i));
-		vif_scale2.append(get_at(&vif_num_scale2_array, i) / get_at(&vif_den_scale2_array, i));
-		vif_scale3.append(get_at(&vif_num_scale3_array, i) / get_at(&vif_den_scale3_array, i));
-		vif.append(get_at(&vif_array, i));
+    StatVector adm2, motion, vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, score;
+    StatVector psnr, ssim, ms_ssim;
+    for (size_t i=0; i<num_frms; i++)
+    {
+        adm2.append((get_at(&adm_num_array, i) + 1000.0) / (get_at(&adm_den_array, i) + 1000.0));
+        motion.append(get_at(&motion_array, i));
+        vif_scale0.append(get_at(&vif_num_scale0_array, i) / get_at(&vif_den_scale0_array, i));
+        vif_scale1.append(get_at(&vif_num_scale1_array, i) / get_at(&vif_den_scale1_array, i));
+        vif_scale2.append(get_at(&vif_num_scale2_array, i) / get_at(&vif_den_scale2_array, i));
+        vif_scale3.append(get_at(&vif_num_scale3_array, i) / get_at(&vif_den_scale3_array, i));
+        vif.append(get_at(&vif_array, i));
 
         if (psnr_array_ptr != NULL) { psnr.append(get_at(&psnr_array, i)); }
         if (ssim_array_ptr != NULL) { ssim.append(get_at(&ssim_array, i)); }
         if (ms_ssim_array_ptr != NULL) { ms_ssim.append(get_at(&ms_ssim_array, i)); }
-	}
+    }
 
 #ifdef PRINT_PROGRESS
-	printf("Normalize features, SVM regression, denormalize score, clip...\n");
+    printf("Normalize features, SVM regression, denormalize score, clip...\n");
 #endif
 
-	/* IMPORTANT: always allocate one more spot and put a -1 at the last one's
-	 * index, so that libsvm will stop looping when seeing the -1 !!!
-	 * see https://github.com/cjlin1/libsvm */
+    /* IMPORTANT: always allocate one more spot and put a -1 at the last one's
+     * index, so that libsvm will stop looping when seeing the -1 !!!
+     * see https://github.com/cjlin1/libsvm */
     svm_node nodes[feature_names.length() + 1];
     nodes[feature_names.length()].index = -1;
 
-	for (size_t i=0; i<num_frms; i++)
-	{
+    for (size_t i=0; i<num_frms; i++)
+    {
 
         if (VAL_EQUAL_STR(norm_type, "'linear_rescale'"))
         {
@@ -350,8 +350,8 @@ Result VmafRunner::run(Asset asset)
             }
         }
 
-	    /* feed to svm_predict */
-	    double prediction = svm_predict(svm_model_ptr.get(), nodes);
+        /* feed to svm_predict */
+        double prediction = svm_predict(svm_model_ptr.get(), nodes);
 
         if (VAL_EQUAL_STR(norm_type, "'linear_rescale'"))
         {
@@ -363,9 +363,9 @@ Result VmafRunner::run(Asset asset)
             ;
         }
 
-	    /* clip */
-	    if (!VAL_IS_NONE(score_clip))
-	    {
+        /* clip */
+        if (!VAL_IS_NONE(score_clip))
+        {
             if (prediction < double(score_clip[0]))
             {
                 prediction = double(score_clip[0]);
@@ -374,65 +374,65 @@ Result VmafRunner::run(Asset asset)
             {
                 prediction = double(score_clip[1]);
             }
-	    }
+        }
 
-	    // printf("svm predict: %f, %f, %f, %f, %f, %f => %f\n",
-	    //        node[0].value, node[1].value, node[2].value,
-	    //        node[3].value, node[4].value, node[5].value, prediction);
+        // printf("svm predict: %f, %f, %f, %f, %f, %f => %f\n",
+        //        node[0].value, node[1].value, node[2].value,
+        //        node[3].value, node[4].value, node[5].value, prediction);
 
 #ifdef PRINT_PROGRESS
-	    printf("frame: %zu, ", i);
-		printf("score: %f, ", prediction);
-		printf("adm2: %f, ", adm2.at(i));
-		printf("motion: %f, ", motion.at(i));
-		printf("vif_scale0: %f, ", vif_scale0.at(i));
-		printf("vif_scale1: %f, ", vif_scale1.at(i));
-		printf("vif_scale2: %f, ", vif_scale2.at(i));
-		printf("vif_scale3: %f, ", vif_scale3.at(i));
-		printf("vif: %f, ", vif.at(i));
+        printf("frame: %zu, ", i);
+        printf("score: %f, ", prediction);
+        printf("adm2: %f, ", adm2.at(i));
+        printf("motion: %f, ", motion.at(i));
+        printf("vif_scale0: %f, ", vif_scale0.at(i));
+        printf("vif_scale1: %f, ", vif_scale1.at(i));
+        printf("vif_scale2: %f, ", vif_scale2.at(i));
+        printf("vif_scale3: %f, ", vif_scale3.at(i));
+        printf("vif: %f, ", vif.at(i));
 
-		if (psnr_array_ptr != NULL) { printf("psnr: %f, ", psnr.at(i)); }
-		if (ssim_array_ptr != NULL) { printf("ssim: %f, ", ssim.at(i)); }
-		if (ms_ssim_array_ptr != NULL) { printf("ms_ssim: %f, ", ms_ssim.at(i)); }
+        if (psnr_array_ptr != NULL) { printf("psnr: %f, ", psnr.at(i)); }
+        if (ssim_array_ptr != NULL) { printf("ssim: %f, ", ssim.at(i)); }
+        if (ms_ssim_array_ptr != NULL) { printf("ms_ssim: %f, ", ms_ssim.at(i)); }
 
-		printf("\n");
+        printf("\n");
 #endif
 
-		score.append(prediction);
-	}
+        score.append(prediction);
+    }
 
-	Result result{};
-	result.set_scores("adm2", adm2);
-	result.set_scores("motion", motion);
-	result.set_scores("vif_scale0", vif_scale0);
-	result.set_scores("vif_scale1", vif_scale1);
-	result.set_scores("vif_scale2", vif_scale2);
-	result.set_scores("vif_scale3", vif_scale3);
-	result.set_scores("vif", vif);
-	result.set_scores("score", score);
+    Result result{};
+    result.set_scores("adm2", adm2);
+    result.set_scores("motion", motion);
+    result.set_scores("vif_scale0", vif_scale0);
+    result.set_scores("vif_scale1", vif_scale1);
+    result.set_scores("vif_scale2", vif_scale2);
+    result.set_scores("vif_scale3", vif_scale3);
+    result.set_scores("vif", vif);
+    result.set_scores("score", score);
 
-	if (psnr_array_ptr != NULL) { result.set_scores("psnr", psnr); }
-	if (ssim_array_ptr != NULL) { result.set_scores("ssim", ssim); }
-	if (ms_ssim_array_ptr != NULL) { result.set_scores("ms_ssim", ms_ssim); }
+    if (psnr_array_ptr != NULL) { result.set_scores("psnr", psnr); }
+    if (ssim_array_ptr != NULL) { result.set_scores("ssim", ssim); }
+    if (ms_ssim_array_ptr != NULL) { result.set_scores("ms_ssim", ms_ssim); }
 
-	free_array(&adm_num_array);
-	free_array(&adm_den_array);
-	free_array(&motion_array);
-	free_array(&vif_num_scale0_array);
-	free_array(&vif_den_scale0_array);
-	free_array(&vif_num_scale1_array);
-	free_array(&vif_den_scale1_array);
-	free_array(&vif_num_scale2_array);
-	free_array(&vif_den_scale2_array);
-	free_array(&vif_num_scale3_array);
-	free_array(&vif_den_scale3_array);
-	free_array(&vif_array);
+    free_array(&adm_num_array);
+    free_array(&adm_den_array);
+    free_array(&motion_array);
+    free_array(&vif_num_scale0_array);
+    free_array(&vif_den_scale0_array);
+    free_array(&vif_num_scale1_array);
+    free_array(&vif_den_scale1_array);
+    free_array(&vif_num_scale2_array);
+    free_array(&vif_den_scale2_array);
+    free_array(&vif_num_scale3_array);
+    free_array(&vif_den_scale3_array);
+    free_array(&vif_array);
 
-	free_array(&psnr_array);
-	free_array(&ssim_array);
-	free_array(&ms_ssim_array);
+    free_array(&psnr_array);
+    free_array(&ssim_array);
+    free_array(&ms_ssim_array);
 
-	return result;
+    return result;
 }
 
 // static const char VMAFOSS_XML_VERSION[] = "0.3.1";
@@ -443,13 +443,13 @@ static const char VMAFOSS_XML_VERSION[] = "0.3.2"; // fix slopes and intercepts 
 double RunVmaf(int width, int height, const char *src, const char *dis, const char *model, const char *report)
 {
 
-	Asset asset(width, height, src, dis);
-	VmafRunner runner{model};
-	Timer timer;
+    Asset asset(width, height, src, dis);
+    VmafRunner runner{model};
+    Timer timer;
 
-	timer.start();
-	Result result = runner.run(asset);
-	timer.stop();
+    timer.start();
+    Result result = runner.run(asset);
+    timer.stop();
 
     size_t num_frames = result.get_scores("score").size();
     double aggregate_score = result.get_score("score");
@@ -463,7 +463,7 @@ double RunVmaf(int width, int height, const char *src, const char *dis, const ch
     auto frames_node = xml_root.append_child("Frames");
     for (size_t i=0; i<num_frames; i++)
     {
-    	auto node = frames_node.append_child("Frame");
+        auto node = frames_node.append_child("Frame");
         node.append_attribute("num") = (int)i;
         node.append_attribute("score") = result.get_scores("score").at(i);
         node.append_attribute("adm2") = result.get_scores("adm2").at(i);
@@ -486,7 +486,7 @@ double RunVmaf(int width, int height, const char *src, const char *dis, const ch
 
     if (report)
     {
-    	xml.save_file(report);
+        xml.save_file(report);
     }
 
     return aggregate_score;

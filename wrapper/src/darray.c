@@ -21,29 +21,29 @@
 
 void init_array(DArray *a, size_t init_size)
 {
-	a->array = (double *)malloc(init_size * sizeof(double));
-	a->used = 0;
-	a->size = init_size;
+    a->array = (double *)malloc(init_size * sizeof(double));
+    a->used = 0;
+    a->size = init_size;
 }
 
 void insert_array(DArray *a, double e)
 {
-	if (a->used == a->size)
-	{
-		a->size *= 2;
-		a->array = (double *)realloc(a->array, a->size * sizeof(double));
-	}
-	a->array[a->used++] = e;
+    if (a->used == a->size)
+    {
+        a->size *= 2;
+        a->array = (double *)realloc(a->array, a->size * sizeof(double));
+    }
+    a->array[a->used++] = e;
 }
 
 double get_at(DArray *a, int pos)
 {
-	return a->array[pos];
+    return a->array[pos];
 }
 
 void free_array(DArray *a)
 {
-	free(a->array);
-	a->array = NULL;
-	a->used = a->size = 0;
+    free(a->array);
+    a->array = NULL;
+    a->used = a->size = 0;
 }

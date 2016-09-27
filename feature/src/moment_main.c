@@ -23,55 +23,55 @@ int moment(const char *path, int w, int h, const char *fmt, int order);
 
 static void usage(void)
 {
-	puts("usage: moment order fmt video w h\n"
-		 "order:\n"
-		 "\t1\n"
-		 "\t2\n"
-		 "fmts:\n"
-		 "\tyuv420p\n"
-		 "\tyuv422p\n"
-		 "\tyuv444p\n"
-		 "\tyuv420p10le\n"
-		 "\tyuv422p10le\n"
-		 "\tyuv444p10le"
-	);
+    puts("usage: moment order fmt video w h\n"
+         "order:\n"
+         "\t1\n"
+         "\t2\n"
+         "fmts:\n"
+         "\tyuv420p\n"
+         "\tyuv422p\n"
+         "\tyuv444p\n"
+         "\tyuv420p10le\n"
+         "\tyuv422p10le\n"
+         "\tyuv444p10le"
+    );
 }
 
 int main(int argc, const char **argv)
 {
-	const char *video_path;
-	int order;
-	const char *fmt;
-	int w;
-	int h;
-	int ret;
+    const char *video_path;
+    int order;
+    const char *fmt;
+    int w;
+    int h;
+    int ret;
 
-	if (argc < 6) {
-		usage();
-		return 2;
-	}
+    if (argc < 6) {
+        usage();
+        return 2;
+    }
 
-	order	 = atoi(argv[1]);
-	fmt		 = argv[2];
-	video_path = argv[3];
-	w        = atoi(argv[4]);
-	h        = atoi(argv[5]);
+    order     = atoi(argv[1]);
+    fmt         = argv[2];
+    video_path = argv[3];
+    w        = atoi(argv[4]);
+    h        = atoi(argv[5]);
 
-	if (w <= 0 || h <= 0) {
-		usage();
-		return 2;
-	}
+    if (w <= 0 || h <= 0) {
+        usage();
+        return 2;
+    }
 
-	if (!(order == 1 || order == 2))
-	{
-		usage();
-		return 2;
-	}
+    if (!(order == 1 || order == 2))
+    {
+        usage();
+        return 2;
+    }
 
-	ret = moment(video_path, w, h, fmt, order);
+    ret = moment(video_path, w, h, fmt, order);
 
-	if (ret)
-		return ret;
+    if (ret)
+        return ret;
 
-	return 0;
+    return 0;
 }

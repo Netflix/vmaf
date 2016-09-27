@@ -53,11 +53,11 @@ float _ssim_reduce(int w, int h, void *ctx)
 }
 
 int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h,
-		int ref_stride, int cmp_stride, double *score,
-		double *l_score, double *c_score, double *s_score)
+        int ref_stride, int cmp_stride, double *score,
+        double *l_score, double *c_score, double *s_score)
 {
 
-	int ret = 1;
+    int ret = 1;
 
     int scale;
     int x,y,src_offset,offset;
@@ -70,18 +70,18 @@ int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h,
     struct _map_reduce mr;
 
     /* check stride */
-	int stride = ref_stride; /* stride in bytes */
-	if (stride != cmp_stride)
-	{
-		printf("error: for ssim, ref_stride (%d) != dis_stride (%d) bytes.\n", ref_stride, cmp_stride);
-		fflush(stdout);
-		goto fail_or_end;
-	}
-	stride /= sizeof(float); /* stride_ in pixels */
+    int stride = ref_stride; /* stride in bytes */
+    if (stride != cmp_stride)
+    {
+        printf("error: for ssim, ref_stride (%d) != dis_stride (%d) bytes.\n", ref_stride, cmp_stride);
+        fflush(stdout);
+        goto fail_or_end;
+    }
+    stride /= sizeof(float); /* stride_ in pixels */
 
-	/* specify some default parameters */
-	const struct iqa_ssim_args *args = 0; /* 0 for default */
-	int gaussian = 1; /* 0 for 8x8 square window, 1 for 11x11 circular-symmetric Gaussian window (default) */
+    /* specify some default parameters */
+    const struct iqa_ssim_args *args = 0; /* 0 for default */
+    int gaussian = 1; /* 0 for 8x8 square window, 1 for 11x11 circular-symmetric Gaussian window (default) */
 
     /* initialize algorithm parameters */
     scale = _max( 1, _round( (float)_min(w,h) / 256.0f ) );
@@ -113,8 +113,8 @@ int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h,
         if (ref_f) free(ref_f);
         if (cmp_f) free(cmp_f);
         printf("error: unable to malloc ref_f or cmp_f.\n");
-		fflush(stdout);
-		goto fail_or_end;
+        fflush(stdout);
+        goto fail_or_end;
     }
     for (y=0; y<h; ++y) {
         src_offset = y * stride;
@@ -168,245 +168,245 @@ int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h,
         free(low_pass.kernel_v); /* zli-nflx */
     }
 
-	result = _iqa_ssim(ref_f, cmp_f, w, h, &window, &mr, args, &l, &c, &s);
+    result = _iqa_ssim(ref_f, cmp_f, w, h, &window, &mr, args, &l, &c, &s);
 
     free(ref_f);
     free(cmp_f);
 
-	*score = (double)result;
-	*l_score = (double)l;
-	*c_score = (double)c;
-	*s_score = (double)s;
+    *score = (double)result;
+    *l_score = (double)l;
+    *c_score = (double)c;
+    *s_score = (double)s;
 
-	ret = 0;
+    ret = 0;
 fail_or_end:
-	return ret;
+    return ret;
 
 }
 
 int ssim(const char *ref_path, const char *dis_path, int w, int h, const char *fmt)
 {
-	double score = 0;
-	double l_score = 0, c_score = 0, s_score = 0;
-	number_t *ref_buf = 0;
-	number_t *dis_buf = 0;
-	number_t *temp_buf = 0;
+    double score = 0;
+    double l_score = 0, c_score = 0, s_score = 0;
+    number_t *ref_buf = 0;
+    number_t *dis_buf = 0;
+    number_t *temp_buf = 0;
 
-	FILE *ref_rfile = 0;
-	FILE *dis_rfile = 0;
-	size_t data_sz;
-	int stride;
-	int ret = 1;
+    FILE *ref_rfile = 0;
+    FILE *dis_rfile = 0;
+    size_t data_sz;
+    int stride;
+    int ret = 1;
 
-	if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(number_t))
-	{
-		goto fail_or_end;
-	}
+    if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(number_t))
+    {
+        goto fail_or_end;
+    }
 
-	stride = ALIGN_CEIL(w * sizeof(number_t));
+    stride = ALIGN_CEIL(w * sizeof(number_t));
 
-	if ((size_t)h > SIZE_MAX / stride)
-	{
-		goto fail_or_end;
-	}
+    if ((size_t)h > SIZE_MAX / stride)
+    {
+        goto fail_or_end;
+    }
 
-	data_sz = (size_t)stride * h;
+    data_sz = (size_t)stride * h;
 
-	if (!(ref_buf = aligned_malloc(data_sz, MAX_ALIGN)))
-	{
-		printf("error: aligned_malloc failed for ref_buf.\n");
-		fflush(stdout);
-		goto fail_or_end;
-	}
-	if (!(dis_buf = aligned_malloc(data_sz, MAX_ALIGN)))
-	{
-		printf("error: aligned_malloc failed for dis_buf.\n");
-		fflush(stdout);
-		goto fail_or_end;
-	}
-	if (!(temp_buf = aligned_malloc(data_sz * 2, MAX_ALIGN)))
-	{
-		printf("error: aligned_malloc failed for temp_buf.\n");
-		fflush(stdout);
-		goto fail_or_end;
-	}
+    if (!(ref_buf = aligned_malloc(data_sz, MAX_ALIGN)))
+    {
+        printf("error: aligned_malloc failed for ref_buf.\n");
+        fflush(stdout);
+        goto fail_or_end;
+    }
+    if (!(dis_buf = aligned_malloc(data_sz, MAX_ALIGN)))
+    {
+        printf("error: aligned_malloc failed for dis_buf.\n");
+        fflush(stdout);
+        goto fail_or_end;
+    }
+    if (!(temp_buf = aligned_malloc(data_sz * 2, MAX_ALIGN)))
+    {
+        printf("error: aligned_malloc failed for temp_buf.\n");
+        fflush(stdout);
+        goto fail_or_end;
+    }
 
-	if (!(ref_rfile = fopen(ref_path, "rb")))
-	{
-		printf("error: fopen ref_path %s failed\n", ref_path);
-		fflush(stdout);
-		goto fail_or_end;
-	}
-	if (!(dis_rfile = fopen(dis_path, "rb")))
-	{
-		printf("error: fopen dis_path %s failed.\n", dis_path);
-		fflush(stdout);
-		goto fail_or_end;
-	}
+    if (!(ref_rfile = fopen(ref_path, "rb")))
+    {
+        printf("error: fopen ref_path %s failed\n", ref_path);
+        fflush(stdout);
+        goto fail_or_end;
+    }
+    if (!(dis_rfile = fopen(dis_path, "rb")))
+    {
+        printf("error: fopen dis_path %s failed.\n", dis_path);
+        fflush(stdout);
+        goto fail_or_end;
+    }
 
-	size_t offset;
-	if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv420p10le"))
-	{
-		if ((w * h) % 2 != 0)
-		{
-			printf("error: (w * h) %% 2 != 0, w = %d, h = %d.\n", w, h);
-			fflush(stdout);
-			goto fail_or_end;
-		}
-		offset = w * h / 2;
-	}
-	else if (!strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv422p10le"))
-	{
-		offset = w * h;
-	}
-	else if (!strcmp(fmt, "yuv444p") || !strcmp(fmt, "yuv444p10le"))
-	{
-		offset = w * h * 2;
-	}
-	else
-	{
-		printf("error: unknown format %s.\n", fmt);
-		fflush(stdout);
-		goto fail_or_end;
-	}
+    size_t offset;
+    if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv420p10le"))
+    {
+        if ((w * h) % 2 != 0)
+        {
+            printf("error: (w * h) %% 2 != 0, w = %d, h = %d.\n", w, h);
+            fflush(stdout);
+            goto fail_or_end;
+        }
+        offset = w * h / 2;
+    }
+    else if (!strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv422p10le"))
+    {
+        offset = w * h;
+    }
+    else if (!strcmp(fmt, "yuv444p") || !strcmp(fmt, "yuv444p10le"))
+    {
+        offset = w * h * 2;
+    }
+    else
+    {
+        printf("error: unknown format %s.\n", fmt);
+        fflush(stdout);
+        goto fail_or_end;
+    }
 
-	int frm_idx = 0;
-	while (1)
-	{
-		// read ref y
-		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
-		{
-			ret = read_image_b(ref_rfile, ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
-		}
-		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-		{
-			ret = read_image_w(ref_rfile, ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
-		}
-		else
-		{
-			printf("error: unknown format %s.\n", fmt);
-			fflush(stdout);
-			goto fail_or_end;
-		}
-		if (ret)
-		{
-			if (feof(ref_rfile))
-			{
-				ret = 0; // OK if end of file
-			}
-			goto fail_or_end;
-		}
+    int frm_idx = 0;
+    while (1)
+    {
+        // read ref y
+        if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+        {
+            ret = read_image_b(ref_rfile, ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+        }
+        else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+        {
+            ret = read_image_w(ref_rfile, ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+        }
+        else
+        {
+            printf("error: unknown format %s.\n", fmt);
+            fflush(stdout);
+            goto fail_or_end;
+        }
+        if (ret)
+        {
+            if (feof(ref_rfile))
+            {
+                ret = 0; // OK if end of file
+            }
+            goto fail_or_end;
+        }
 
-		// read dis y
-		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
-		{
-			ret = read_image_b(dis_rfile, dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
-		}
-		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-		{
-			ret = read_image_w(dis_rfile, dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
-		}
-		else
-		{
-			printf("error: unknown format %s.\n", fmt);
-			fflush(stdout);
-			goto fail_or_end;
-		}
-		if (ret)
-		{
-			if (feof(dis_rfile))
-			{
-				ret = 0; // OK if end of file
-			}
-			goto fail_or_end;
-		}
+        // read dis y
+        if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+        {
+            ret = read_image_b(dis_rfile, dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+        }
+        else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+        {
+            ret = read_image_w(dis_rfile, dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+        }
+        else
+        {
+            printf("error: unknown format %s.\n", fmt);
+            fflush(stdout);
+            goto fail_or_end;
+        }
+        if (ret)
+        {
+            if (feof(dis_rfile))
+            {
+                ret = 0; // OK if end of file
+            }
+            goto fail_or_end;
+        }
 
-		// compute
-		ret = compute_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, &l_score, &c_score, &s_score);
-		if (ret)
-		{
-			printf("error: compute_ssim failed.\n");
-			fflush(stdout);
-			goto fail_or_end;
-		}
+        // compute
+        ret = compute_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, &l_score, &c_score, &s_score);
+        if (ret)
+        {
+            printf("error: compute_ssim failed.\n");
+            fflush(stdout);
+            goto fail_or_end;
+        }
 
-		// print
-		printf("ssim: %d %f\n", frm_idx, score);
-		printf("ssim_l: %d %f\n", frm_idx, l_score);
-		printf("ssim_c: %d %f\n", frm_idx, c_score);
-		printf("ssim_s: %d %f\n", frm_idx, s_score);
-		fflush(stdout);
+        // print
+        printf("ssim: %d %f\n", frm_idx, score);
+        printf("ssim_l: %d %f\n", frm_idx, l_score);
+        printf("ssim_c: %d %f\n", frm_idx, c_score);
+        printf("ssim_s: %d %f\n", frm_idx, s_score);
+        fflush(stdout);
 
-		// ref skip u and v
-		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
-		{
-			if (fread(temp_buf, 1, offset, ref_rfile) != (size_t)offset)
-			{
-				printf("error: ref fread u and v failed.\n");
-				fflush(stdout);
-				goto fail_or_end;
-			}
-		}
-		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-		{
-			if (fread(temp_buf, 2, offset, ref_rfile) != (size_t)offset)
-			{
-				printf("error: ref fread u and v failed.\n");
-				fflush(stdout);
-				goto fail_or_end;
-			}
-		}
-		else
-		{
-			printf("error: unknown format %s.\n", fmt);
-			fflush(stdout);
-			goto fail_or_end;
-		}
+        // ref skip u and v
+        if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+        {
+            if (fread(temp_buf, 1, offset, ref_rfile) != (size_t)offset)
+            {
+                printf("error: ref fread u and v failed.\n");
+                fflush(stdout);
+                goto fail_or_end;
+            }
+        }
+        else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+        {
+            if (fread(temp_buf, 2, offset, ref_rfile) != (size_t)offset)
+            {
+                printf("error: ref fread u and v failed.\n");
+                fflush(stdout);
+                goto fail_or_end;
+            }
+        }
+        else
+        {
+            printf("error: unknown format %s.\n", fmt);
+            fflush(stdout);
+            goto fail_or_end;
+        }
 
-		// dis skip u and v
-		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
-		{
-			if (fread(temp_buf, 1, offset, dis_rfile) != (size_t)offset)
-			{
-				printf("error: dis fread u and v failed.\n");
-				fflush(stdout);
-				goto fail_or_end;
-			}
-		}
-		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-		{
-			if (fread(temp_buf, 2, offset, dis_rfile) != (size_t)offset)
-			{
-				printf("error: dis fread u and v failed.\n");
-				fflush(stdout);
-				goto fail_or_end;
-			}
-		}
-		else
-		{
-			printf("error: unknown format %s.\n", fmt);
-			fflush(stdout);
-			goto fail_or_end;
-		}
+        // dis skip u and v
+        if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+        {
+            if (fread(temp_buf, 1, offset, dis_rfile) != (size_t)offset)
+            {
+                printf("error: dis fread u and v failed.\n");
+                fflush(stdout);
+                goto fail_or_end;
+            }
+        }
+        else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+        {
+            if (fread(temp_buf, 2, offset, dis_rfile) != (size_t)offset)
+            {
+                printf("error: dis fread u and v failed.\n");
+                fflush(stdout);
+                goto fail_or_end;
+            }
+        }
+        else
+        {
+            printf("error: unknown format %s.\n", fmt);
+            fflush(stdout);
+            goto fail_or_end;
+        }
 
-		frm_idx++;
-	}
+        frm_idx++;
+    }
 
-	ret = 0;
+    ret = 0;
 
 fail_or_end:
-	if (ref_rfile)
-	{
-		fclose(ref_rfile);
-	}
-	if (dis_rfile)
-	{
-		fclose(dis_rfile);
-	}
-	aligned_free(ref_buf);
-	aligned_free(dis_buf);
-	aligned_free(temp_buf);
+    if (ref_rfile)
+    {
+        fclose(ref_rfile);
+    }
+    if (dis_rfile)
+    {
+        fclose(dis_rfile);
+    }
+    aligned_free(ref_buf);
+    aligned_free(dis_buf);
+    aligned_free(temp_buf);
 
-	return ret;
+    return ret;
 }
 
