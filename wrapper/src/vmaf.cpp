@@ -59,6 +59,7 @@ void _read_and_assert_model(const char *model_path, Val& feature_names,
             assert 'intercepts' in self.model_dict
      */
     Val model, model_type;
+    char errmsg[1024];
     try
 	{
         LoadValFromFile(model_path, model, SERIALIZE_P0);
@@ -74,20 +75,21 @@ void _read_and_assert_model(const char *model_path, Val& feature_names,
     catch (std::runtime_error& e)
     {
         printf("Input model at %s cannot be read successfully.\n", model_path);
-        throw e;
+        sprintf(errmsg, "Error loading model (.pkl): %s", e.what());
+        throw VmafException(errmsg);
     }
 
     if (!VAL_EQUAL_STR(model_type, "'LIBSVMNUSVR'"))
     {
         printf("Current vmafossexec only accepts model type LIBSVMNUSVR, "
                 "but got %s\n", Stringize(model_type).c_str());
-        throw std::runtime_error{"Incompatible model_type"};
+        throw VmafException("Incompatible model_type");
     }
 
     if (!VAL_IS_LIST(feature_names))
     {
         printf("feature_names in model must be a list.\n");
-        throw std::runtime_error{"Incompatible feature_names"};
+        throw VmafException("Incompatible feature_names");
     }
 
     if (!(VAL_EQUAL_STR(norm_type, "'none'") ||
@@ -96,7 +98,7 @@ void _read_and_assert_model(const char *model_path, Val& feature_names,
         )
     {
         printf("norm_type in model must be either 'none' or 'linear_rescale'.\n");
-        throw std::runtime_error{"Incompatible norm_type"};
+        throw VmafException("Incompatible norm_type");
     }
 
     if ( VAL_EQUAL_STR(norm_type, "'linear_rescale'") &&
@@ -105,13 +107,13 @@ void _read_and_assert_model(const char *model_path, Val& feature_names,
     {
         printf("if norm_type in model is 'linear_rescale', "
                 "both slopes and intercepts must be a list.\n");
-        throw std::runtime_error{"Incompatible slopes or intercepts"};
+        throw VmafException("Incompatible slopes or intercepts");
     }
 
     if (!(VAL_IS_NONE(score_clip) || VAL_IS_LIST(score_clip)))
     {
         printf("score_clip in model must be either None or list.\n");
-        throw std::runtime_error{"Incompatible score_clip"};
+        throw VmafException("Incompatible score_clip");
     }
 }
 
@@ -132,7 +134,7 @@ Result VmafRunner::run(Asset asset)
     std::unique_ptr<svm_model, SvmDelete> svm_model_ptr{svm_load_model(libsvm_model_path)};
     if (!svm_model_ptr)
     {
-        throw std::runtime_error{"error loading SVM model"};
+        throw VmafException("Error loading SVM model");
     }
 
 #ifdef PRINT_PROGRESS
@@ -221,7 +223,7 @@ Result VmafRunner::run(Asset asset)
 			&& ms_ssim_array.used == num_frms
 		))
 	{
-		sprintf(errmsg, "all2 outputs feature vectors of inconsistent dimensions: "
+		sprintf(errmsg, "Output feature vectors are of inconsistent dimensions: "
 				"motion (%zu), adm_num (%zu), adm_den (%zu), vif_num_scale0 (%zu), "
 				"vif_den_scale0 (%zu), vif_num_scale1 (%zu), vif_den_scale1 (%zu), "
 				"vif_num_scale2 (%zu), vif_den_scale2 (%zu), vif_num_scale3 (%zu), "
