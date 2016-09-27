@@ -271,35 +271,39 @@ class TrainTestModel(TypeVersionEnabled):
 
     @property
     def mus(self):
-        return self.model_dict['mus']
+        return np.array(self.model_dict['mus'])
 
     @mus.setter
     def mus(self, value):
-        self.model_dict['mus'] = value
+        # forcing float, to be used by PicklingTools and read in C++
+        self.model_dict['mus'] = map(lambda x: float(x), list(value))
 
     @property
     def sds(self):
-        return self.model_dict['sds']
+        return np.array(self.model_dict['sds'])
 
     @sds.setter
     def sds(self, value):
-        self.model_dict['sds'] = value
+        # forcing float, to be used by PicklingTools and read in C++
+        self.model_dict['sds'] = map(lambda x: float(x), list(value))
 
     @property
     def slopes(self):
-        return self.model_dict['slopes']
+        return np.array(self.model_dict['slopes'])
 
     @slopes.setter
     def slopes(self, value):
-        self.model_dict['slopes'] = value
+        # forcing float, to be used by PicklingTools and read in C++
+        self.model_dict['slopes'] = map(lambda x: float(x), list(value))
 
     @property
     def intercepts(self):
-        return self.model_dict['intercepts']
+        return np.array(self.model_dict['intercepts'])
 
     @intercepts.setter
     def intercepts(self, value):
-        self.model_dict['intercepts'] = value
+        # forcing float, to be used by PicklingTools and read in C++
+        self.model_dict['intercepts'] = map(lambda x: float(x), list(value))
 
     @property
     def model(self):

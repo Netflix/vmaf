@@ -111,7 +111,7 @@ Result VmafRunner::run(Asset asset)
 {
 
 #ifdef PRINT_PROGRESS
-	printf("Read input model...\n");
+	printf("Read input model (pkl)...\n");
 #endif
 
     Val slopes, intercepts, score_clip;
@@ -130,6 +130,7 @@ Result VmafRunner::run(Asset asset)
             assert 'intercepts' in self.model_dict
      */
     Val model, model_type, feature_names, norm_type;
+//    Val test; // tmp
     try
 	{
         LoadValFromFile(model_path, model, SERIALIZE_P0);
@@ -141,12 +142,64 @@ Result VmafRunner::run(Asset asset)
         slopes = model["model_dict"]["slopes"];
         intercepts = model["model_dict"]["intercepts"];
         score_clip = model["model_dict"]["score_clip"];
+
+//        test = model["test"];
     }
     catch (std::runtime_error& e)
     {
         printf("Input model at %s cannot be read successfully.\n", model_path);
         throw e;
     }
+
+    if (!Stringize(model_type).compare("'LIBSVMNUSVR'") == 0)
+    {
+        printf("Current vmafossexec only accepts model type LIBSVMNUSVR, "
+                "but got %s\n", Stringize(model_type).c_str());
+        throw "Incompatible model_type";
+    }
+
+    if (feature_names.tag != 'n') /* 'n': must be list */
+    {
+        printf("feature_names in model must be a list.\n");
+        throw "Incompatible feature_names";
+    }
+
+    if (!(Stringize(norm_type).compare("'none'") == 0 ||
+          Stringize(norm_type).compare("'linear_rescale'") == 0)
+    )
+    {
+        printf("norm_type in model must be either 'none' or 'linear_rescale'.\n");
+        throw "Incompatible norm_type";
+    }
+
+    if (Stringize(norm_type).compare("'linear_rescale'") == 0 &&
+        (slopes.tag != 'n' || intercepts.tag != 'n') /* 'n': must be list */
+    )
+    {
+        printf("if norm_type in model is 'linear_rescale', "
+                "both slopes and intercepts must be a list.\n");
+        throw "Incompatible slopes or intercepts";
+    }
+
+//    // temp
+//    cout << model["param_dict"]["gamma"] << endl;
+//    cout << model_type << endl;
+//    cout << feature_names[2] << endl;
+//    cout << feature_names.length() << endl;
+//    cout << norm_type << endl;
+//    cout << slopes[1] << endl;
+//    cout << intercepts[1] << endl;
+//    cout << test << endl;
+//    cout << score_clip[1] << endl;
+//    printf("norm_type: %s\n", Stringize(norm_type).c_str());
+//    printf("intercepts[3]: %.3f\n", double(intercepts[3]));
+//    cout << Stringize(model_type).compare("'LIBSVMNUSVR'") << endl;
+//    cout << strcmp(Stringize(model_type).c_str(), "'LIBSVMNUSVR'") << endl;
+//    cout << Stringize(norm_type).compare("'linear_rescale'") << endl;
+
+#ifdef PRINT_PROGRESS
+	printf("Read input model (libsvm)...\n");
+#endif
 
     std::unique_ptr<svm_model, SvmDelete> svm_model_ptr{svm_load_model(libsvm_model_path)};
     if (!svm_model_ptr)
