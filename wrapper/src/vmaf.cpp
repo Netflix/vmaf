@@ -101,15 +101,9 @@ void SvmDelete::operator()(void *svm)
 	svm_free_model_content((svm_model *)svm);
 }
 
-Result VmafRunner::run(Asset asset)
+void _read_and_assert_model(const char *model_path, Val& feature_names,
+     Val& norm_type, Val& slopes, Val& intercepts, Val& score_clip)
 {
-
-#ifdef PRINT_PROGRESS
-	printf("Read input model (pkl)...\n");
-#endif
-
-    Val slopes, intercepts, score_clip;
-
     /*  TrainTestModel._assert_trained() in Python:
      *  assert 'model_type' in self.model_dict # need this to recover class
         assert 'feature_names' in self.model_dict
@@ -123,7 +117,7 @@ Result VmafRunner::run(Asset asset)
             assert 'slopes' in self.model_dict
             assert 'intercepts' in self.model_dict
      */
-    Val model, model_type, feature_names, norm_type;
+    Val model, model_type;
     try
 	{
         LoadValFromFile(model_path, model, SERIALIZE_P0);
@@ -178,6 +172,17 @@ Result VmafRunner::run(Asset asset)
         printf("score_clip in model must be either None or list.\n");
         throw std::runtime_error{"Incompatible score_clip"};
     }
+}
+
+Result VmafRunner::run(Asset asset)
+{
+
+#ifdef PRINT_PROGRESS
+	printf("Read input model (pkl)...\n");
+#endif
+
+    Val feature_names, norm_type, slopes, intercepts, score_clip;
+    _read_and_assert_model(model_path, feature_names, norm_type, slopes, intercepts, score_clip);
 
 #ifdef PRINT_PROGRESS
 	printf("Read input model (libsvm)...\n");
@@ -325,43 +330,80 @@ Result VmafRunner::run(Asset asset)
 #endif
 
 	/* IMPORTANT: always allocate one more spot and put a -1 in node.index,
-	 * so that libsvm will stop looping when seeing the -1 !!! */
+	 * so that libsvm will stop looping when seeing the -1 !!!
+	 * see https://github.com/cjlin1/libsvm */
 	svm_node nodes[6 + 1];
 
 	for (size_t i=0; i<num_frms; i++)
 	{
 
-	    /* 1. adm2 */
-	    nodes[0].index = 1;
-	    nodes[0].value = double(slopes[1]) * adm2.at(i) + double(intercepts[1]);
+        if (VAL_EQUAL_STR(norm_type, "'linear_rescale'"))
+        {
+            /* 1. adm2 */
+            nodes[0].index = 1;
+            nodes[0].value = double(slopes[1]) * adm2.at(i) + double(intercepts[1]);
 
-	    /* 2. motion */
-	    nodes[1].index = 2;
-	    nodes[1].value = double(slopes[2]) * motion.at(i) + double(intercepts[2]);
+            /* 2. motion */
+            nodes[1].index = 2;
+            nodes[1].value = double(slopes[2]) * motion.at(i) + double(intercepts[2]);
 
-	    /* 3. vif_scale0 */
-	    nodes[2].index = 3;
-	    nodes[2].value = double(slopes[3]) * vif_scale0.at(i) + double(intercepts[3]);
+            /* 3. vif_scale0 */
+            nodes[2].index = 3;
+            nodes[2].value = double(slopes[3]) * vif_scale0.at(i) + double(intercepts[3]);
 
-	    /* 4. vif_scale1 */
-	    nodes[3].index = 4;
-	    nodes[3].value = double(slopes[4]) * vif_scale1.at(i) + double(intercepts[4]);
+            /* 4. vif_scale1 */
+            nodes[3].index = 4;
+            nodes[3].value = double(slopes[4]) * vif_scale1.at(i) + double(intercepts[4]);
 
-	    /* 5. vif_scale2 */
-	    nodes[4].index = 5;
-	    nodes[4].value = double(slopes[5]) * vif_scale2.at(i) + double(intercepts[5]);
+            /* 5. vif_scale2 */
+            nodes[4].index = 5;
+            nodes[4].value = double(slopes[5]) * vif_scale2.at(i) + double(intercepts[5]);
 
-	    /* 6. vif_scale3 */
-	    nodes[5].index = 6;
-	    nodes[5].value = double(slopes[6]) * vif_scale3.at(i) + double(intercepts[6]);
+            /* 6. vif_scale3 */
+            nodes[5].index = 6;
+            nodes[5].value = double(slopes[6]) * vif_scale3.at(i) + double(intercepts[6]);
+        }
+        else
+        {
+            /* 1. adm2 */
+            nodes[0].index = 1;
+            nodes[0].value = adm2.at(i);
+
+            /* 2. motion */
+            nodes[1].index = 2;
+            nodes[1].value = motion.at(i);
+
+            /* 3. vif_scale0 */
+            nodes[2].index = 3;
+            nodes[2].value = vif_scale0.at(i);
+
+            /* 4. vif_scale1 */
+            nodes[3].index = 4;
+            nodes[3].value = vif_scale1.at(i);
+
+            /* 5. vif_scale2 */
+            nodes[4].index = 5;
+            nodes[4].value = vif_scale2.at(i);
+
+            /* 6. vif_scale3 */
+            nodes[5].index = 6;
+            nodes[5].value = vif_scale3.at(i);
+        }
 
 	    nodes[6].index = -1;
 
 	    /* feed to svm_predict */
 	    double prediction = svm_predict(svm_model_ptr.get(), nodes);
 
-	    /* denormalize */
-	    prediction = (prediction - double(intercepts[0])) / double(slopes[0]);
+        if (VAL_EQUAL_STR(norm_type, "'linear_rescale'"))
+        {
+            /* denormalize */
+            prediction = (prediction - double(intercepts[0])) / double(slopes[0]);
+        }
+        else
+        {
+            ;
+        }
 
 	    /* clip */
 	    if (!VAL_IS_NONE(score_clip))

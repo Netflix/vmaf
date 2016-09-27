@@ -358,7 +358,7 @@ class VmafossExecQualityRunner(QualityRunner):
 
     VERSION = '0.3.2'
     # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv4.pkl.model"
-    DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv4.pkl"
+    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv4.pkl"
 
     VMAFOSSEXEC = config.ROOT + "/wrapper/vmafossexec"
 
@@ -382,16 +382,23 @@ class VmafossExecQualityRunner(QualityRunner):
 
         log_file_path = self._get_log_file_path(asset)
 
-        # Usage: vmafossexec width height input_ref input_dis svm_model [logFile]
+        if self.optional_dict is not None \
+                and 'model_filepath' in self.optional_dict \
+                and self.optional_dict['model_filepath'] is not None:
+            model_filepath = self.optional_dict['model_filepath']
+        else:
+            model_filepath = self.DEFAULT_MODEL_FILEPATH
+
+        # Usage: vmafossexec width height input_ref input_dis model [logFile]
         quality_width, quality_height = asset.quality_width_height
-        vmafossexec_cmd = "{exe} {w} {h} {ref_path} {dis_path} {svm_model} {log_file_path}" \
+        vmafossexec_cmd = "{exe} {w} {h} {ref_path} {dis_path} {model} {log_file_path}" \
         .format(
             exe=self.VMAFOSSEXEC,
             w=quality_width,
             h=quality_height,
             ref_path=asset.ref_workfile_path,
             dis_path=asset.dis_workfile_path,
-            svm_model=self.DEFAULT_MODEL_FILEPATH_DOTMODEL,
+            model=model_filepath,
             log_file_path=log_file_path,
         )
 
