@@ -164,6 +164,9 @@ Result VmafRunner::run(Asset asset)
 		   ssim_array,
 		   ms_ssim_array;
 
+    /* use the following ptrs as flags to turn on/off optional metrics */
+    DArray *psnr_array_ptr, *ssim_array_ptr, *ms_ssim_array_ptr;
+
 	init_array(&adm_num_array, INIT_FRAMES);
 	init_array(&adm_den_array, INIT_FRAMES);
 	init_array(&motion_array, INIT_FRAMES);
@@ -179,6 +182,16 @@ Result VmafRunner::run(Asset asset)
 	init_array(&psnr_array, INIT_FRAMES);
 	init_array(&ssim_array, INIT_FRAMES);
 	init_array(&ms_ssim_array, INIT_FRAMES);
+
+    /* optional output arrays */
+//    psnr_array_ptr = NULL;
+	psnr_array_ptr = &psnr_array;
+
+//    ssim_array_ptr = NULL;
+	ssim_array_ptr = &ssim_array;
+
+//    ms_ssim_array_ptr = NULL;
+	ms_ssim_array_ptr = &ms_ssim_array;
 
 #ifdef PRINT_PROGRESS
 	printf("Extract atom features...\n");
@@ -197,9 +210,9 @@ Result VmafRunner::run(Asset asset)
 			&vif_num_scale3_array,
 			&vif_den_scale3_array,
 			&vif_array,
-			&psnr_array,
-			&ssim_array,
-			&ms_ssim_array,
+			psnr_array_ptr,
+			ssim_array_ptr,
+			ms_ssim_array_ptr,
 			errmsg);
 	if (ret)
 	{
@@ -207,21 +220,22 @@ Result VmafRunner::run(Asset asset)
 	}
 
 	size_t num_frms = motion_array.used;
-	if (!(     adm_num_array.used == num_frms
-			&& adm_den_array.used == num_frms
-			&& vif_num_scale0_array.used == num_frms
-			&& vif_den_scale0_array.used == num_frms
-			&& vif_num_scale1_array.used == num_frms
-			&& vif_den_scale1_array.used == num_frms
-			&& vif_num_scale2_array.used == num_frms
-			&& vif_den_scale2_array.used == num_frms
-			&& vif_num_scale3_array.used == num_frms
-			&& vif_den_scale3_array.used == num_frms
-			&& vif_array.used == num_frms
-			&& psnr_array.used == num_frms
-			&& ssim_array.used == num_frms
-			&& ms_ssim_array.used == num_frms
-		))
+	bool num_frms_is_consistent =
+	           (adm_num_array.used == num_frms)
+			&& (adm_den_array.used == num_frms)
+			&& (vif_num_scale0_array.used == num_frms)
+			&& (vif_den_scale0_array.used == num_frms)
+			&& (vif_num_scale1_array.used == num_frms)
+			&& (vif_den_scale1_array.used == num_frms)
+			&& (vif_num_scale2_array.used == num_frms)
+			&& (vif_den_scale2_array.used == num_frms)
+			&& (vif_num_scale3_array.used == num_frms)
+			&& (vif_den_scale3_array.used == num_frms)
+			&& (vif_array.used == num_frms);
+	if (psnr_array_ptr != NULL) { num_frms_is_consistent = num_frms_is_consistent && (psnr_array.used == num_frms); }
+	if (ssim_array_ptr != NULL) { num_frms_is_consistent = num_frms_is_consistent && (ssim_array.used == num_frms); }
+	if (ms_ssim_array_ptr != NULL) { num_frms_is_consistent = num_frms_is_consistent && (ms_ssim_array.used == num_frms); }
+	if (!num_frms_is_consistent)
 	{
 		sprintf(errmsg, "Output feature vectors are of inconsistent dimensions: "
 				"motion (%zu), adm_num (%zu), adm_den (%zu), vif_num_scale0 (%zu), "
@@ -240,9 +254,9 @@ Result VmafRunner::run(Asset asset)
 				vif_num_scale3_array.used,
 				vif_num_scale3_array.used,
 				vif_array.used,
-				psnr_array.used,
-				ssim_array.used,
-				ms_ssim_array.used
+                psnr_array.used,
+                ssim_array.used,
+                ms_ssim_array.used
 				);
 
 		throw VmafException(errmsg);
@@ -252,7 +266,8 @@ Result VmafRunner::run(Asset asset)
 	printf("Generate final features (including derived atom features)...\n");
 #endif
 
-	StatVector adm2, motion, vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, score, psnr, ssim, ms_ssim;
+	StatVector adm2, motion, vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, score;
+	StatVector psnr, ssim, ms_ssim;
 	for (size_t i=0; i<num_frms; i++)
 	{
 		adm2.append((get_at(&adm_num_array, i) + 1000.0) / (get_at(&adm_den_array, i) + 1000.0));
@@ -262,9 +277,11 @@ Result VmafRunner::run(Asset asset)
 		vif_scale2.append(get_at(&vif_num_scale2_array, i) / get_at(&vif_den_scale2_array, i));
 		vif_scale3.append(get_at(&vif_num_scale3_array, i) / get_at(&vif_den_scale3_array, i));
 		vif.append(get_at(&vif_array, i));
-		psnr.append(get_at(&psnr_array, i));
-		ssim.append(get_at(&ssim_array, i));
-		ms_ssim.append(get_at(&ms_ssim_array, i));
+
+        if (psnr_array_ptr != NULL) { psnr.append(get_at(&psnr_array, i)); }
+        if (ssim_array_ptr != NULL) { ssim.append(get_at(&ssim_array, i)); }
+        if (ms_ssim_array_ptr != NULL) { ms_ssim.append(get_at(&ms_ssim_array, i)); }
+
 	}
 
 
@@ -375,9 +392,11 @@ Result VmafRunner::run(Asset asset)
 		printf("vif_scale2: %f, ", vif_scale2.at(i));
 		printf("vif_scale3: %f, ", vif_scale3.at(i));
 		printf("vif: %f, ", vif.at(i));
-		printf("psnr: %f, ", psnr.at(i));
-		printf("ssim: %f, ", ssim.at(i));
-		printf("ms_ssim: %f, ", ms_ssim.at(i));
+
+		if (psnr_array_ptr != NULL) { printf("psnr: %f, ", psnr.at(i)); }
+		if (ssim_array_ptr != NULL) { printf("ssim: %f, ", ssim.at(i)); }
+		if (ms_ssim_array_ptr != NULL) { printf("ms_ssim: %f, ", ms_ssim.at(i)); }
+
 		printf("\n");
 #endif
 
@@ -393,9 +412,10 @@ Result VmafRunner::run(Asset asset)
 	result.set_scores("vif_scale3", vif_scale3);
 	result.set_scores("vif", vif);
 	result.set_scores("score", score);
-	result.set_scores("psnr", psnr);
-	result.set_scores("ssim", ssim);
-	result.set_scores("ms_ssim", ms_ssim);
+
+	if (psnr_array_ptr != NULL) { result.set_scores("psnr", psnr); }
+	if (ssim_array_ptr != NULL) { result.set_scores("ssim", ssim); }
+	if (ms_ssim_array_ptr != NULL) { result.set_scores("ms_ssim", ms_ssim); }
 
 	free_array(&adm_num_array);
 	free_array(&adm_den_array);
@@ -409,6 +429,7 @@ Result VmafRunner::run(Asset asset)
 	free_array(&vif_num_scale3_array);
 	free_array(&vif_den_scale3_array);
 	free_array(&vif_array);
+
 	free_array(&psnr_array);
 	free_array(&ssim_array);
 	free_array(&ms_ssim_array);
@@ -454,9 +475,10 @@ double RunVmaf(int width, int height, const char *src, const char *dis, const ch
         node.append_attribute("vif_scale2") = result.get_scores("vif_scale2").at(i);
         node.append_attribute("vif_scale3") = result.get_scores("vif_scale3").at(i);
         node.append_attribute("vif") = result.get_scores("vif").at(i);
-        node.append_attribute("psnr") = result.get_scores("psnr").at(i);
-        node.append_attribute("ssim") = result.get_scores("ssim").at(i);
-        node.append_attribute("ms_ssim") = result.get_scores("ms_ssim").at(i);
+
+        if (result.has_scores("psnr")) { node.append_attribute("psnr") = result.get_scores("psnr").at(i); }
+        if (result.has_scores("ssim")) { node.append_attribute("ssim") = result.get_scores("ssim").at(i); }
+        if (result.has_scores("ms_ssim")) { node.append_attribute("ms_ssim") = result.get_scores("ms_ssim").at(i); }
     }
     info_node.append_attribute("numOfFrames") = (int)num_frames;
     info_node.append_attribute("aggregateScore") = aggregate_score;

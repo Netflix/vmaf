@@ -275,34 +275,36 @@ int combo(const char *ref_path, const char *dis_path, int w, int h, const char *
 
 #endif
 
-		/* =========== psnr ============== */
-		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
-		{
-			// max psnr 60.0 for 8-bit per Ioannis
-			ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, 255.0, 60.0);
-		}
-		else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-		{
-			// 10 bit gets normalized to 8 bit, peak is 1023 / 4.0 = 255.75
-			// max psnr 72.0 for 10-bit per Ioannis
-			ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, 255.75, 72.0);
-		}
-		else
-		{
-			sprintf(errmsg, "unknown format %s.\n", fmt);
-			goto fail_or_end;
-		}
-		if (ret)
-		{
-			sprintf(errmsg, "compute_psnr failed.\n");
-			goto fail_or_end;
-		}
+        if (psnr_array != NULL)
+        {
+            /* =========== psnr ============== */
+            if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+            {
+                // max psnr 60.0 for 8-bit per Ioannis
+                ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, 255.0, 60.0);
+            }
+            else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+            {
+                // 10 bit gets normalized to 8 bit, peak is 1023 / 4.0 = 255.75
+                // max psnr 72.0 for 10-bit per Ioannis
+                ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, 255.75, 72.0);
+            }
+            else
+            {
+                sprintf(errmsg, "unknown format %s.\n", fmt);
+                goto fail_or_end;
+            }
+            if (ret)
+            {
+                sprintf(errmsg, "compute_psnr failed.\n");
+                goto fail_or_end;
+            }
 
 #ifdef PRINT_PROGRESS
-		printf("psnr: %.3f, ", score);
+            printf("psnr: %.3f, ", score);
 #endif
-
-		insert_array(psnr_array, score);
+            insert_array(psnr_array, score);
+        }
 
 		/* =========== motion ============== */
 
@@ -370,31 +372,38 @@ int combo(const char *ref_path, const char *dis_path, int w, int h, const char *
 		insert_array(vif_den_scale3_array, scores[7]);
 		insert_array(vif_array, score);
 
-		/* =========== ssim ============== */
-		if ((ret = compute_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, &l_score, &c_score, &s_score)))
-		{
-			sprintf(errmsg, "compute_ssim failed.\n");
-			goto fail_or_end;
-		}
+        if (ssim_array != NULL)
+        {
+
+            /* =========== ssim ============== */
+            if ((ret = compute_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, &l_score, &c_score, &s_score)))
+            {
+                sprintf(errmsg, "compute_ssim failed.\n");
+                goto fail_or_end;
+            }
 
 #ifdef PRINT_PROGRESS
-		printf("ssim: %.3f, ", score);
+            printf("ssim: %.3f, ", score);
 #endif
 
-		insert_array(ssim_array, score);
+            insert_array(ssim_array, score);
+        }
 
-		/* =========== ms-ssim ============== */
-		if ((ret = compute_ms_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, l_scores, c_scores, s_scores)))
-		{
-			sprintf(errmsg, "compute_ms_ssim failed.\n");
-			goto fail_or_end;
-		}
+        if (ms_ssim_array != NULL)
+        {
+            /* =========== ms-ssim ============== */
+            if ((ret = compute_ms_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, l_scores, c_scores, s_scores)))
+            {
+                sprintf(errmsg, "compute_ms_ssim failed.\n");
+                goto fail_or_end;
+            }
 
 #ifdef PRINT_PROGRESS
-		printf("ms_ssim: %.3f, ", score);
+            printf("ms_ssim: %.3f, ", score);
 #endif
 
-		insert_array(ms_ssim_array, score);
+            insert_array(ms_ssim_array, score);
+		}
 
 		// ref skip u and v
 		if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))

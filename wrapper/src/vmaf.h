@@ -75,6 +75,7 @@ public:
 	Result() {}
 	void set_scores(const std::string &key, const StatVector &scores) { d[key] = scores; }
 	StatVector get_scores(const std::string &key) { return d[key]; }
+	bool has_scores(const std::string &key) { return d.find(key) != d.end(); }
 	double get_score(const std::string &key)
 	{
         StatVector list = get_scores(key);
