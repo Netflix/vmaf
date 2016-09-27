@@ -134,6 +134,7 @@ Result VmafRunner::run(Asset asset)
     std::unique_ptr<svm_model, SvmDelete> svm_model_ptr{svm_load_model(libsvm_model_path)};
     if (!svm_model_ptr)
     {
+        printf("Error loading SVM model.\n");
         throw VmafException("Error loading SVM model");
     }
 
@@ -281,76 +282,73 @@ Result VmafRunner::run(Asset asset)
         if (psnr_array_ptr != NULL) { psnr.append(get_at(&psnr_array, i)); }
         if (ssim_array_ptr != NULL) { ssim.append(get_at(&ssim_array, i)); }
         if (ms_ssim_array_ptr != NULL) { ms_ssim.append(get_at(&ms_ssim_array, i)); }
-
 	}
-
 
 #ifdef PRINT_PROGRESS
 	printf("Normalize features, SVM regression, denormalize score, clip...\n");
 #endif
 
-	/* IMPORTANT: always allocate one more spot and put a -1 in node.index,
-	 * so that libsvm will stop looping when seeing the -1 !!!
+	/* IMPORTANT: always allocate one more spot and put a -1 at the last one's
+	 * index, so that libsvm will stop looping when seeing the -1 !!!
 	 * see https://github.com/cjlin1/libsvm */
-	svm_node nodes[6 + 1];
+    svm_node nodes[feature_names.length() + 1];
+    nodes[feature_names.length()].index = -1;
 
 	for (size_t i=0; i<num_frms; i++)
 	{
 
         if (VAL_EQUAL_STR(norm_type, "'linear_rescale'"))
         {
-            /* 1. adm2 */
-            nodes[0].index = 1;
-            nodes[0].value = double(slopes[1]) * adm2.at(i) + double(intercepts[1]);
-
-            /* 2. motion */
-            nodes[1].index = 2;
-            nodes[1].value = double(slopes[2]) * motion.at(i) + double(intercepts[2]);
-
-            /* 3. vif_scale0 */
-            nodes[2].index = 3;
-            nodes[2].value = double(slopes[3]) * vif_scale0.at(i) + double(intercepts[3]);
-
-            /* 4. vif_scale1 */
-            nodes[3].index = 4;
-            nodes[3].value = double(slopes[4]) * vif_scale1.at(i) + double(intercepts[4]);
-
-            /* 5. vif_scale2 */
-            nodes[4].index = 5;
-            nodes[4].value = double(slopes[5]) * vif_scale2.at(i) + double(intercepts[5]);
-
-            /* 6. vif_scale3 */
-            nodes[5].index = 6;
-            nodes[5].value = double(slopes[6]) * vif_scale3.at(i) + double(intercepts[6]);
+            for (size_t j=0; j<feature_names.length(); j++)
+            {
+                nodes[j].index = j + 1;
+                if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_adm2_score'") == 0)
+                    nodes[j].value = double(slopes[j + 1]) * adm2.at(i) + double(intercepts[j + 1]);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_motion_score'") == 0)
+                    nodes[j].value = double(slopes[j + 1]) * motion.at(i) + double(intercepts[j + 1]);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_vif_scale0_score'") == 0)
+                    nodes[j].value = double(slopes[j + 1]) * vif_scale0.at(i) + double(intercepts[j + 1]);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_vif_scale1_score'") == 0)
+                    nodes[j].value = double(slopes[j + 1]) * vif_scale1.at(i) + double(intercepts[j + 1]);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_vif_scale2_score'") == 0)
+                    nodes[j].value = double(slopes[j + 1]) * vif_scale2.at(i) + double(intercepts[j + 1]);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_vif_scale3_score'") == 0)
+                    nodes[j].value = double(slopes[j + 1]) * vif_scale3.at(i) + double(intercepts[j + 1]);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_vif_score'") == 0)
+                    nodes[j].value = double(slopes[j + 1]) * vif.at(i) + double(intercepts[j + 1]);
+                else
+                {
+                    printf("Unknown feature name: %s.\n", Stringize(feature_names[j]).c_str());
+                    throw VmafException("Unknown feature name");
+                }
+            }
         }
         else
         {
-            /* 1. adm2 */
-            nodes[0].index = 1;
-            nodes[0].value = adm2.at(i);
-
-            /* 2. motion */
-            nodes[1].index = 2;
-            nodes[1].value = motion.at(i);
-
-            /* 3. vif_scale0 */
-            nodes[2].index = 3;
-            nodes[2].value = vif_scale0.at(i);
-
-            /* 4. vif_scale1 */
-            nodes[3].index = 4;
-            nodes[3].value = vif_scale1.at(i);
-
-            /* 5. vif_scale2 */
-            nodes[4].index = 5;
-            nodes[4].value = vif_scale2.at(i);
-
-            /* 6. vif_scale3 */
-            nodes[5].index = 6;
-            nodes[5].value = vif_scale3.at(i);
+            for (size_t j=0; j<feature_names.length(); j++)
+            {
+                nodes[j].index = j + 1;
+                if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_adm2_score'") == 0)
+                    nodes[j].value = adm2.at(i);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_motion_score'") == 0)
+                    nodes[j].value = motion.at(i);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_vif_scale0_score'") == 0)
+                    nodes[j].value = vif_scale0.at(i);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_vif_scale1_score'") == 0)
+                    nodes[j].value = vif_scale1.at(i);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_vif_scale2_score'") == 0)
+                    nodes[j].value = vif_scale2.at(i);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_vif_scale3_score'") == 0)
+                    nodes[j].value = vif_scale3.at(i);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_vif_score'") == 0)
+                    nodes[j].value = vif.at(i);
+                else
+                {
+                    printf("Unknown feature name: %s.\n", Stringize(feature_names[j]).c_str());
+                    throw VmafException("Unknown feature name");
+                }
+            }
         }
-
-	    nodes[6].index = -1;
 
 	    /* feed to svm_predict */
 	    double prediction = svm_predict(svm_model_ptr.get(), nodes);
