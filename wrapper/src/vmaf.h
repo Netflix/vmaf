@@ -73,9 +73,13 @@ class Result
 {
 public:
 	Result() {}
-	void set_scores(const std::string &key, const StatVector &scores);
-	StatVector get_scores(const std::string &key);
-	double get_score(const std::string &key);
+	void set_scores(const std::string &key, const StatVector &scores) { d[key] = scores; }
+	StatVector get_scores(const std::string &key) { return d[key]; }
+	double get_score(const std::string &key)
+	{
+        StatVector list = get_scores(key);
+        return list.mean();
+	}
 private:
 	std::map<std::string, StatVector> d;
 };
@@ -87,6 +91,10 @@ public:
 	virtual const char* what() const throw () { return msg.c_str(); }
 private:
 	std::string msg;
+};
+
+struct SvmDelete {
+    void operator()(void *svm);
 };
 
 class VmafRunner
@@ -105,10 +113,6 @@ private:
 	const char *model_path;
 	char *libsvm_model_path;
 	static const int INIT_FRAMES = 1000;
-};
-
-struct SvmDelete {
-    void operator()(void *svm);
 };
 
 #endif /* VMAF_H_ */

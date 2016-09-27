@@ -37,22 +37,6 @@
 #define VAL_IS_LIST(V) ((V).tag=='n') /* check ocval.cc */
 #define VAL_IS_NONE(V) ((V).tag=='Z') /* check ocval.cc */
 
-void Result::set_scores(const std::string &key, const StatVector &scores)
-{
-	d[key] = scores;
-}
-
-StatVector Result::get_scores(const std::string &key)
-{
-	return d[key];
-}
-
-double Result::get_score(const std::string &key)
-{
-	StatVector list = get_scores(key);
-	return list.mean();
-}
-
 void SvmDelete::operator()(void *svm)
 {
 	svm_free_model_content((svm_model *)svm);
