@@ -37,49 +37,6 @@
 #define VAL_IS_LIST(V) ((V).tag=='n') /* check ocval.cc */
 #define VAL_IS_NONE(V) ((V).tag=='Z') /* check ocval.cc */
 
-int Asset::getWidth()
-{
-	return w;
-}
-int Asset::getHeight()
-{
-	return h;
-}
-const char* Asset::getRefPath()
-{
-	return ref_path;
-}
-const char* Asset::getDisPath()
-{
-	return dis_path;
-}
-const char* Asset::getFmt()
-{
-	return fmt;
-}
-
-double StatVector::mean()
-{
-	double sum = 0.0;
-	for (double e : l)
-	{
-		sum += e;
-	}
-	return sum / l.size();
-}
-void StatVector::append(double e)
-{
-	l.push_back(e);
-}
-double StatVector::at(size_t idx)
-{
-	return l.at(idx);
-}
-size_t StatVector::size()
-{
-	return l.size();
-}
-
 void Result::set_scores(const std::string &key, const StatVector &scores)
 {
 	d[key] = scores;

@@ -38,11 +38,11 @@ public:
 		w(w), h(h), ref_path(ref_path), dis_path(dis_path), fmt(fmt) {}
 	Asset(int w, int h, const char *ref_path, const char *dis_path):
 		w(w), h(h), ref_path(ref_path), dis_path(dis_path), fmt("yuv420p") {}
-	int getWidth();
-	int getHeight();
-	const char* getRefPath();
-	const char* getDisPath();
-	const char* getFmt();
+	int getWidth() { return w; }
+	int getHeight() { return h; }
+	const char* getRefPath() { return ref_path; }
+	const char* getDisPath() { return dis_path; }
+	const char* getFmt() { return fmt; }
 private:
 	const int w, h;
 	const char *ref_path, *dis_path, *fmt;
@@ -53,10 +53,18 @@ class StatVector
 public:
 	StatVector() {}
 	StatVector(std::vector<double> l): l(l) {}
-	double mean();
-	void append(double e);
-	double at(size_t idx);
-	size_t size();
+	double mean()
+	{
+        double sum = 0.0;
+        for (double e : l)
+        {
+            sum += e;
+        }
+        return sum / l.size();
+	}
+	void append(double e) { l.push_back(e); }
+	double at(size_t idx) { return l.at(idx); }
+	size_t size() { return l.size(); }
 private:
 	std::vector<double> l;
 };
