@@ -32,10 +32,14 @@
 #include "pugixml/pugixml.hpp"
 #include "timer.h"
 #include "chooseser.h"
+#include "jsonprint.h"
 
 #define VAL_EQUAL_STR(V,S) (Stringize((V)).compare((S))==0)
 #define VAL_IS_LIST(V) ((V).tag=='n') /* check ocval.cc */
 #define VAL_IS_NONE(V) ((V).tag=='Z') /* check ocval.cc */
+
+inline double _round_to_digit(double val, int digit);
+string _get_file_name(const std::string& s);
 
 void SvmDelete::operator()(void *svm)
 {
@@ -563,7 +567,6 @@ double RunVmaf(const char* fmt, int width, int height,
                const char *log_path, const char *log_fmt,
                bool disable_clip, bool do_psnr, bool do_ssim, bool do_ms_ssim)
 {
-
     printf("Start calculating VMAF score...\n");
 
     Asset asset(width, height, ref_path, dis_path, fmt);
@@ -580,46 +583,108 @@ double RunVmaf(const char* fmt, int width, int height,
     printf("Exec FPS: %f\n", exec_fps);
     printf("VMAF score = %f\n", aggregate_score);
 
-    /* output to xml */
     if (log_path != NULL && log_fmt !=NULL && (strcmp(log_fmt, "xml")==0))
     {
+        /* output to xml */
+
+        std::vector<std::string> result_keys = result.get_keys();
         pugi::xml_document xml;
-        pugi::xml_node xml_root = xml.append_child("VMAFOSSCalculator");
+        pugi::xml_node xml_root = xml.append_child("VMAF");
         xml_root.append_attribute("version") = VMAFOSS_XML_VERSION;
-        auto info_node = xml_root.append_child("Info");
-        auto frames_node = xml_root.append_child("Frames");
-        for (size_t i=0; i<num_frames; i++)
-        {
-            auto node = frames_node.append_child("Frame");
 
-            node.append_attribute("num") = (int)i;
+        auto params_node = xml_root.append_child("params");
+        params_node.append_attribute("model") = _get_file_name(std::string(model_path)).c_str();
+        params_node.append_attribute("scaledWidth") = width;
+        params_node.append_attribute("scaledHeight") = height;
 
-            if (result.has_scores("score")) { node.append_attribute("score") = result.get_scores("score").at(i); }
-            if (result.has_scores("adm2")) { node.append_attribute("adm2") = result.get_scores("adm2").at(i); }
-            if (result.has_scores("adm_scale0")) { node.append_attribute("adm_scale0") = result.get_scores("adm_scale0").at(i); }
-            if (result.has_scores("adm_scale1")) { node.append_attribute("adm_scale1") = result.get_scores("adm_scale1").at(i); }
-            if (result.has_scores("adm_scale2")) { node.append_attribute("adm_scale2") = result.get_scores("adm_scale2").at(i); }
-            if (result.has_scores("adm_scale3")) { node.append_attribute("adm_scale3") = result.get_scores("adm_scale3").at(i); }
-            if (result.has_scores("motion")) { node.append_attribute("motion") = result.get_scores("motion").at(i); }
-            if (result.has_scores("vif_scale0")) { node.append_attribute("vif_scale0") = result.get_scores("vif_scale0").at(i); }
-            if (result.has_scores("vif_scale1")) { node.append_attribute("vif_scale1") = result.get_scores("vif_scale1").at(i); }
-            if (result.has_scores("vif_scale2")) { node.append_attribute("vif_scale2") = result.get_scores("vif_scale2").at(i); }
-            if (result.has_scores("vif_scale3")) { node.append_attribute("vif_scale3") = result.get_scores("vif_scale3").at(i); }
-            if (result.has_scores("vif")) { node.append_attribute("vif") = result.get_scores("vif").at(i); }
-            if (result.has_scores("psnr")) { node.append_attribute("psnr") = result.get_scores("psnr").at(i); }
-            if (result.has_scores("ssim")) { node.append_attribute("ssim") = result.get_scores("ssim").at(i); }
-            if (result.has_scores("ms_ssim")) { node.append_attribute("ms_ssim") = result.get_scores("ms_ssim").at(i); }
-        }
+        auto info_node = xml_root.append_child("fyi");
         info_node.append_attribute("numOfFrames") = (int)num_frames;
         info_node.append_attribute("aggregateScore") = aggregate_score;
         info_node.append_attribute("execFps") = exec_fps;
+
+        auto frames_node = xml_root.append_child("frames");
+        for (size_t i=0; i<num_frames; i++)
+        {
+            auto node = frames_node.append_child("frame");
+            node.append_attribute("frameNum") = (int)i;
+            for (size_t j=0; j<result_keys.size(); j++)
+            {
+                node.append_attribute(result_keys[j].c_str()) = result.get_scores(result_keys[j].c_str()).at(i);
+            }
+        }
 
         xml.save_file(log_path);
     }
     else if (log_path != NULL)
     {
-        printf("output in json format.\n");
+        /* output to json */
+
+        std::vector<std::string> result_keys = result.get_keys();
+        double value;
+
+        OTab params;
+        params["model"] = _get_file_name(std::string(model_path));
+        params["scaledWidth"] = width;
+        params["scaledHeight"] = height;
+
+        Arr metrics;
+        for (size_t j=0; j<result_keys.size(); j++)
+        {
+            metrics.append(result_keys[j]);
+        }
+
+        Arr frames;
+        for (size_t i=0; i<num_frames; i++)
+        {
+            OTab frame;
+            frame["frameNum"] = i;
+            OTab metrics_scores;
+            for (size_t j=0; j<result_keys.size(); j++)
+            {
+                value = result.get_scores(result_keys[j].c_str()).at(i);
+                value = _round_to_digit(value, 5);
+                metrics_scores[result_keys[j].c_str()] = value;
+            }
+            frame["metrics"] = metrics_scores;
+            frames.append(frame);
+        }
+
+        Val top = OTab();
+        top["version"] = VMAFOSS_XML_VERSION;
+        top["params"] = params;
+        top["metrics"] = metrics;
+        top["frames"] = frames;
+
+        std::ofstream log_file(log_path);
+        JSONPrint(top, log_file, 0, true, 2);
+        log_file.close();
     }
 
     return aggregate_score;
 }
+
+inline double _round(double val)
+{
+    if( val < 0 ) return ceil(val - 0.5);
+    return floor(val + 0.5);
+}
+
+inline double _round_to_digit(double val, int digit)
+{
+    size_t m = pow10(digit);
+    return _round(val * m) / m;
+}
+
+string _get_file_name(const std::string& s)
+{
+   char sep = '/';
+#ifdef _WIN32
+   sep = '\\';
+#endif
+   size_t i = s.rfind(sep, s.length());
+   if (i != string::npos) {
+      return(s.substr(i+1, s.length() - i));
+   }
+   return("");
+}
+

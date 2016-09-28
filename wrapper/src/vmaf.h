@@ -84,6 +84,15 @@ public:
         StatVector list = get_scores(key);
         return list.mean();
     }
+    std::vector<std::string> get_keys()
+    {
+        std::vector<std::string> v;
+        for (std::map<std::string, StatVector>::iterator it = d.begin(); it != d.end(); ++it)
+        {
+            v.push_back(it->first);
+        }
+        return v;
+    }
 private:
     std::map<std::string, StatVector> d;
 };
