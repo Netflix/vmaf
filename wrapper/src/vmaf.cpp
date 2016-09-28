@@ -558,13 +558,15 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssi
 //static const char VMAFOSS_XML_VERSION[] = "0.3.3"; // fix slopes and intercepts to match nflxtrain_vmafv3a.pkl
 static const char VMAFOSS_XML_VERSION[] = "0.3.2"; // fix slopes and intercepts to match nflxall_vmafv4.pkl
 
-double RunVmaf(int width, int height, const char *src, const char *dis,
-               const char *model, const char *report, bool disable_clip,
+double RunVmaf(int width, int height, const char *ref_path, const char *dis_path,
+               const char *model_path, const char *log_path, bool disable_clip,
                bool do_psnr, bool do_ssim, bool do_ms_ssim)
 {
 
-    Asset asset(width, height, src, dis);
-    VmafRunner runner{model};
+    printf("Start calculating VMAF score...\n");
+
+    Asset asset(width, height, ref_path, dis_path);
+    VmafRunner runner{model_path};
     Timer timer;
 
     timer.start();
@@ -573,45 +575,45 @@ double RunVmaf(int width, int height, const char *src, const char *dis,
 
     size_t num_frames = result.get_scores("score").size();
     double aggregate_score = result.get_score("score");
-    double processing_fps = (double)num_frames / (double)timer.elapsed();
+    double exec_fps = (double)num_frames / (double)timer.elapsed();
+    printf("Exec FPS: %f\n", exec_fps);
+    printf("VMAF score = %f\n", aggregate_score);
 
     /* output to xml */
-    pugi::xml_document xml;
-    pugi::xml_node xml_root = xml.append_child("VMAFOSSCalculator");
-    xml_root.append_attribute("version") = VMAFOSS_XML_VERSION;
-    auto info_node = xml_root.append_child("Info");
-    auto frames_node = xml_root.append_child("Frames");
-    for (size_t i=0; i<num_frames; i++)
+    if (log_path)
     {
-        auto node = frames_node.append_child("Frame");
+        pugi::xml_document xml;
+        pugi::xml_node xml_root = xml.append_child("VMAFOSSCalculator");
+        xml_root.append_attribute("version") = VMAFOSS_XML_VERSION;
+        auto info_node = xml_root.append_child("Info");
+        auto frames_node = xml_root.append_child("Frames");
+        for (size_t i=0; i<num_frames; i++)
+        {
+            auto node = frames_node.append_child("Frame");
 
-        node.append_attribute("num") = (int)i;
+            node.append_attribute("num") = (int)i;
 
-        if (result.has_scores("score")) { node.append_attribute("score") = result.get_scores("score").at(i); }
-        if (result.has_scores("adm2")) { node.append_attribute("adm2") = result.get_scores("adm2").at(i); }
-        if (result.has_scores("adm_scale0")) { node.append_attribute("adm_scale0") = result.get_scores("adm_scale0").at(i); }
-        if (result.has_scores("adm_scale1")) { node.append_attribute("adm_scale1") = result.get_scores("adm_scale1").at(i); }
-        if (result.has_scores("adm_scale2")) { node.append_attribute("adm_scale2") = result.get_scores("adm_scale2").at(i); }
-        if (result.has_scores("adm_scale3")) { node.append_attribute("adm_scale3") = result.get_scores("adm_scale3").at(i); }
-        if (result.has_scores("motion")) { node.append_attribute("motion") = result.get_scores("motion").at(i); }
-        if (result.has_scores("vif_scale0")) { node.append_attribute("vif_scale0") = result.get_scores("vif_scale0").at(i); }
-        if (result.has_scores("vif_scale1")) { node.append_attribute("vif_scale1") = result.get_scores("vif_scale1").at(i); }
-        if (result.has_scores("vif_scale2")) { node.append_attribute("vif_scale2") = result.get_scores("vif_scale2").at(i); }
-        if (result.has_scores("vif_scale3")) { node.append_attribute("vif_scale3") = result.get_scores("vif_scale3").at(i); }
-        if (result.has_scores("vif")) { node.append_attribute("vif") = result.get_scores("vif").at(i); }
-        if (result.has_scores("psnr")) { node.append_attribute("psnr") = result.get_scores("psnr").at(i); }
-        if (result.has_scores("ssim")) { node.append_attribute("ssim") = result.get_scores("ssim").at(i); }
-        if (result.has_scores("ms_ssim")) { node.append_attribute("ms_ssim") = result.get_scores("ms_ssim").at(i); }
-    }
-    info_node.append_attribute("numOfFrames") = (int)num_frames;
-    info_node.append_attribute("aggregateScore") = aggregate_score;
-    info_node.append_attribute("fps") = processing_fps;
+            if (result.has_scores("score")) { node.append_attribute("score") = result.get_scores("score").at(i); }
+            if (result.has_scores("adm2")) { node.append_attribute("adm2") = result.get_scores("adm2").at(i); }
+            if (result.has_scores("adm_scale0")) { node.append_attribute("adm_scale0") = result.get_scores("adm_scale0").at(i); }
+            if (result.has_scores("adm_scale1")) { node.append_attribute("adm_scale1") = result.get_scores("adm_scale1").at(i); }
+            if (result.has_scores("adm_scale2")) { node.append_attribute("adm_scale2") = result.get_scores("adm_scale2").at(i); }
+            if (result.has_scores("adm_scale3")) { node.append_attribute("adm_scale3") = result.get_scores("adm_scale3").at(i); }
+            if (result.has_scores("motion")) { node.append_attribute("motion") = result.get_scores("motion").at(i); }
+            if (result.has_scores("vif_scale0")) { node.append_attribute("vif_scale0") = result.get_scores("vif_scale0").at(i); }
+            if (result.has_scores("vif_scale1")) { node.append_attribute("vif_scale1") = result.get_scores("vif_scale1").at(i); }
+            if (result.has_scores("vif_scale2")) { node.append_attribute("vif_scale2") = result.get_scores("vif_scale2").at(i); }
+            if (result.has_scores("vif_scale3")) { node.append_attribute("vif_scale3") = result.get_scores("vif_scale3").at(i); }
+            if (result.has_scores("vif")) { node.append_attribute("vif") = result.get_scores("vif").at(i); }
+            if (result.has_scores("psnr")) { node.append_attribute("psnr") = result.get_scores("psnr").at(i); }
+            if (result.has_scores("ssim")) { node.append_attribute("ssim") = result.get_scores("ssim").at(i); }
+            if (result.has_scores("ms_ssim")) { node.append_attribute("ms_ssim") = result.get_scores("ms_ssim").at(i); }
+        }
+        info_node.append_attribute("numOfFrames") = (int)num_frames;
+        info_node.append_attribute("aggregateScore") = aggregate_score;
+        info_node.append_attribute("execFps") = exec_fps;
 
-    printf("Processing FPS: %f\n", processing_fps);
-
-    if (report)
-    {
-        xml.save_file(report);
+        xml.save_file(log_path);
     }
 
     return aggregate_score;

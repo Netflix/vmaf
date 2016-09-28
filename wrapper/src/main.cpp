@@ -41,7 +41,12 @@ bool cmdOptionExists(char** begin, char** end, const std::string& option)
 int main(int argc, char *argv[])
 {
     double score;
-    char *log_file_path = NULL;
+    int width;
+    int height;
+    char *ref_path;
+    char *dis_path;
+    char *model_path;
+    char *log_path = NULL;
     bool disable_clip = false;
     bool do_psnr = false;
     bool do_ssim = false;
@@ -51,24 +56,24 @@ int main(int argc, char *argv[])
 
     if (argc < 6)
     {
-        fprintf(stderr, "Usage: %s width height input_ref input_dis model [-f log] [--disable-clip] [--psnr] [--ssim] [--ms-ssim]\n", argv[0]);
+        fprintf(stderr, "Usage: %s width height ref_path dis_path model_path [--log log_path] [--disable-clip] [--psnr] [--ssim] [--ms-ssim]\n", argv[0]);
         return -1;
     }
 
     try
     {
-        int width = std::stoi(argv[1]);
-        int height = std::stoi(argv[2]);
-        char *ref_path = argv[3];
-        char *dis_path = argv[4];
-        char *svm_model_path = argv[5];
+        width = std::stoi(argv[1]);
+        height = std::stoi(argv[2]);
+        ref_path = argv[3];
+        dis_path = argv[4];
+        model_path = argv[5];
 
         if (width <= 0 || height <= 0)
         {
             fprintf(stderr, "%s: Invalid frame resolution %dx%d\n", argv[0], width, height);
         }
 
-        log_file_path = getCmdOption(argv + 6, argv + argc, "-f");
+        log_path = getCmdOption(argv + 6, argv + argc, "--log");
 
         if (cmdOptionExists(argv + 6, argv + argc, "--disable-clip"))
         {
@@ -91,10 +96,7 @@ int main(int argc, char *argv[])
         }
 
         /* Run VMAF */
-
-        printf("Start calculating VMAF score\n");
-        score = RunVmaf(width, height, ref_path, dis_path, svm_model_path, log_file_path, disable_clip, do_psnr, do_ssim, do_ms_ssim);
-        printf("VMAF score = %f\n", score);
+        score = RunVmaf(width, height, ref_path, dis_path, model_path, log_path, disable_clip, do_psnr, do_ssim, do_ms_ssim);
 
     }
     catch (const std::exception &e)
