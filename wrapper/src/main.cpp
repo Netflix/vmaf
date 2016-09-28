@@ -41,12 +41,14 @@ bool cmdOptionExists(char** begin, char** end, const std::string& option)
 int main(int argc, char *argv[])
 {
     double score;
+    char* fmt;
     int width;
     int height;
     char *ref_path;
     char *dis_path;
     char *model_path;
     char *log_path = NULL;
+    char *log_fmt = NULL;
     bool disable_clip = false;
     bool do_psnr = false;
     bool do_ssim = false;
@@ -56,47 +58,57 @@ int main(int argc, char *argv[])
 
     if (argc < 6)
     {
-        fprintf(stderr, "Usage: %s width height ref_path dis_path model_path [--log log_path] [--disable-clip] [--psnr] [--ssim] [--ms-ssim]\n", argv[0]);
+        fprintf(stderr, "Usage: %s fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--disable-clip] [--psnr] [--ssim] [--ms-ssim]\n", argv[0]);
+        fprintf(stderr, "fmt:\n\tyuv420p\n\tyuv422p\n\tyuv444p\n\tyuv420p10le\n\tyuv422p10le\n\tyuv444p10le\n\n");
+        fprintf(stderr, "log_fmt:\n\tjson (default)\n\txml\n\n");
         return -1;
     }
 
     try
     {
-        width = std::stoi(argv[1]);
-        height = std::stoi(argv[2]);
-        ref_path = argv[3];
-        dis_path = argv[4];
-        model_path = argv[5];
+        fmt = argv[1];
+        width = std::stoi(argv[2]);
+        height = std::stoi(argv[3]);
+        ref_path = argv[4];
+        dis_path = argv[5];
+        model_path = argv[6];
 
         if (width <= 0 || height <= 0)
         {
             fprintf(stderr, "%s: Invalid frame resolution %dx%d\n", argv[0], width, height);
         }
 
-        log_path = getCmdOption(argv + 6, argv + argc, "--log");
+        log_path = getCmdOption(argv + 7, argv + argc, "--log");
 
-        if (cmdOptionExists(argv + 6, argv + argc, "--disable-clip"))
+        log_fmt = getCmdOption(argv + 7, argv + argc, "--log-fmt");
+        if (log_fmt != NULL && !(strcmp(log_fmt, "xml")==0 || strcmp(log_fmt, "json")==0))
+        {
+            fprintf(stderr, "error: log_fmt must be xml or json, but is %s\n", log_fmt);
+            return -1;
+        }
+
+        if (cmdOptionExists(argv + 7, argv + argc, "--disable-clip"))
         {
             disable_clip = true;
         }
 
-        if (cmdOptionExists(argv + 6, argv + argc, "--psnr"))
+        if (cmdOptionExists(argv + 7, argv + argc, "--psnr"))
         {
             do_psnr = true;
         }
 
-        if (cmdOptionExists(argv + 6, argv + argc, "--ssim"))
+        if (cmdOptionExists(argv + 7, argv + argc, "--ssim"))
         {
             do_ssim = true;
         }
 
-        if (cmdOptionExists(argv + 6, argv + argc, "--ms-ssim"))
+        if (cmdOptionExists(argv + 7, argv + argc, "--ms-ssim"))
         {
             do_ms_ssim = true;
         }
 
         /* Run VMAF */
-        score = RunVmaf(width, height, ref_path, dis_path, model_path, log_path, disable_clip, do_psnr, do_ssim, do_ms_ssim);
+        score = RunVmaf(fmt, width, height, ref_path, dis_path, model_path, log_path, log_fmt, disable_clip, do_psnr, do_ssim, do_ms_ssim);
 
     }
     catch (const std::exception &e)

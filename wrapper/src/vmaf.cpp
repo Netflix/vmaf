@@ -558,14 +558,15 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssi
 //static const char VMAFOSS_XML_VERSION[] = "0.3.3"; // fix slopes and intercepts to match nflxtrain_vmafv3a.pkl
 static const char VMAFOSS_XML_VERSION[] = "0.3.2"; // fix slopes and intercepts to match nflxall_vmafv4.pkl
 
-double RunVmaf(int width, int height, const char *ref_path, const char *dis_path,
-               const char *model_path, const char *log_path, bool disable_clip,
-               bool do_psnr, bool do_ssim, bool do_ms_ssim)
+double RunVmaf(const char* fmt, int width, int height,
+               const char *ref_path, const char *dis_path, const char *model_path,
+               const char *log_path, const char *log_fmt,
+               bool disable_clip, bool do_psnr, bool do_ssim, bool do_ms_ssim)
 {
 
     printf("Start calculating VMAF score...\n");
 
-    Asset asset(width, height, ref_path, dis_path);
+    Asset asset(width, height, ref_path, dis_path, fmt);
     VmafRunner runner{model_path};
     Timer timer;
 
@@ -580,7 +581,7 @@ double RunVmaf(int width, int height, const char *ref_path, const char *dis_path
     printf("VMAF score = %f\n", aggregate_score);
 
     /* output to xml */
-    if (log_path)
+    if (log_path != NULL && log_fmt !=NULL && (strcmp(log_fmt, "xml")==0))
     {
         pugi::xml_document xml;
         pugi::xml_node xml_root = xml.append_child("VMAFOSSCalculator");
@@ -614,6 +615,10 @@ double RunVmaf(int width, int height, const char *ref_path, const char *dis_path
         info_node.append_attribute("execFps") = exec_fps;
 
         xml.save_file(log_path);
+    }
+    else if (log_path != NULL)
+    {
+        printf("output in json format.\n");
     }
 
     return aggregate_score;

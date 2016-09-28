@@ -29,9 +29,10 @@
 #include <exception>
 #include <cstring>
 
-double RunVmaf(int width, int height, const char *ref_path, const char *dis_path,
-               const char *model_path, const char *log_path, bool disable_clip,
-               bool do_psnr, bool do_ssim, bool do_ms_ssim);
+double RunVmaf(const char* fmt, int width, int height,
+               const char *ref_path, const char *dis_path, const char *model_path,
+               const char *log_path, const char *log_fmt,
+               bool disable_clip, bool do_psnr, bool do_ssim, bool do_ms_ssim);
 
 class Asset
 {

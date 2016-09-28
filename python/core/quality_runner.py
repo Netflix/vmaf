@@ -372,9 +372,6 @@ class VmafossExecQualityRunner(QualityRunner):
 
         super(VmafossExecQualityRunner, cls)._assert_an_asset(asset)
 
-        # for Vmafoss, asset type must be yuv420p
-        assert asset.yuv_type == 'yuv420p'
-
     @classmethod
     def get_feature_scores_key(cls, atom_feature):
         return "{type}_{atom_feature}_scores".format(
@@ -393,11 +390,12 @@ class VmafossExecQualityRunner(QualityRunner):
         else:
             model_filepath = self.DEFAULT_MODEL_FILEPATH
 
-        # Usage: vmafossexec width height ref_path dis_path model_path [--log log_path] [--disable-clip] [--psnr] [--ssim] [--ms-ssim]
+        # Usage: vmafossexec fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--disable-clip] [--psnr] [--ssim] [--ms-ssim]
         quality_width, quality_height = asset.quality_width_height
-        vmafossexec_cmd = "{exe} {w} {h} {ref_path} {dis_path} {model} --log {log_file_path} --psnr --ssim --ms-ssim" \
+        vmafossexec_cmd = "{exe} {fmt} {w} {h} {ref_path} {dis_path} {model} --log {log_file_path} --log-fmt xml --psnr --ssim --ms-ssim" \
         .format(
             exe=self.VMAFOSSEXEC,
+            fmt=asset.yuv_type,
             w=quality_width,
             h=quality_height,
             ref_path=asset.ref_workfile_path,
