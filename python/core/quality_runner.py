@@ -389,7 +389,7 @@ class VmafossExecQualityRunner(QualityRunner):
         else:
             model_filepath = self.DEFAULT_MODEL_FILEPATH
 
-        # Usage: vmafossexec width height input_ref input_dis model [logFile]
+        # Usage: vmafossexec width height input_ref input_dis model [-f log] [--disable-clip] [--psnr] [--ssim] [--ms-ssim]
         quality_width, quality_height = asset.quality_width_height
         vmafossexec_cmd = "{exe} {w} {h} {ref_path} {dis_path} {model} -f {log_file_path} --psnr --ssim --ms-ssim" \
         .format(
