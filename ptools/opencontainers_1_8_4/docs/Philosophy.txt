@@ -1,0 +1,181 @@
+
+Section 1: Introduction
+ 
+ Philosophy.
+ 
+What are OpenContainers?  They are a small collection of C++ container
+classes that are easy to to use.  OpenContainers (OC) are freely
+distributable and freely modifiable.
+
+The OpenContainers (OC) philosophy:
+ 
+(0) Open! [we have the source]
+(1) One implementation [same implementation across platforms]
+(2) Inline code only [no linkage issues]
+(3) Simple, but fast [It is mostly readable, but may trade for efficiency]
+
+ All the classes in the OC come from a C++ framework: The classes have
+been been debugged, optimized, purified and tested in real world
+applications that run 24/7.  They have a 7 year legacy of testing
+(except for the Val container).  Generally, the OC classes are faster
+than their STL counterparts, but they do not have the same interface:
+this is because they (mostly) predate the STL.  Version 2.0 should
+have all STL interfaces.
+
+OpenContainers (OC) can be summed up in a single page:  See Figure 1.1.
+
+---------Figure 1.1: OpenContainers Summary------------------
+#include "opencontainers.h" // Bring in all the OpenContainers classes
+int main ()
+{
+  // Strings: OC gives us strings (subset of STL) even if C++ compiler doesn't
+  string empty; 
+  string s = "open" + empty;
+
+  // Arrays:  Homogeneous, resizing, by-value containers
+  Array<char> a(2);   // completely empty:capacity of 2, resizes if necessary 
+  for (int ii=0; ii<s.length(); ii++) 
+    a.append(s[ii]);  // Append value to end of array
+  for (int ii=0; ii<a.length(); ii++)
+    cout << a[ii] << " ";  // Output: o p e n
+  cout << endl;
+
+  // Sorting: Sorts OC Arrays or C-Style arrays
+  char cc[] = "open";
+  OCInsertionSort(a, 0, a.length()); // Inplace sort for small, ordered data
+  OCQuickSort(cc, 0, 4);             // Inplace sort for larger, unordered 
+  char m; OCMedian(cc,0,4,m);        // Sort, returns median
+
+  // Permutations: Generate all n! possibilities (for testing)
+  Permutations p(3);
+  while (p.next()) {
+    const int* perm = p.currentPermutation();  // Read-Only access to perm
+    for (int ii=0; ii<3; ii++) cout << perm[ii];
+    cout << endl;
+  } // Output: 123 213 321 132 312 231
+
+  // Tables:  Insert/lookup/delete key/value pairs 
+
+  // * HashTableT:  Useful when HashFunction available, static table sizes
+  HashTableT<string, real_8, 8> hash_table; // Expect 8 to 2*8 elements
+  hash_table["Jenny"] = 867.5309;
+  HashTableTIterator<string, real_8, 8> ii(hash_table); // Iterator
+  while (ii.next()) { cout << ii.key() << " " << ii.value() << endl; }
+
+  // * AVLTreeT:  Useful when want sorted iteration, dynamic table sizes
+  AVLTreeT<string, real_8, 8> avl_tree;
+  avl_tree["Jenny"] = 867.5309;
+  AVLTreeTIterator<string, real_8, 8> jj(avl_tree);    // Iterator
+  while (jj.next()) { cout << jj.key() << " " << jj.value() << endl; }
+
+  // * AVLHashT:  Useful when want speed, dynamic table sizes
+  AVLHashT<string, real_8, 8> avl_hash;
+  avl_hash["Jenny"] = 867.5309;
+  AVLHashTIterator<string, real_8, 8> kk(avl_hash);   // Iterator
+  while (kk.next()) { cout << kk.key() << " " << kk.value() << endl; }
+
+  // Val/Tab/Str:  Heterogeneous, Recursive Containers
+  Tab t;    t["1"] = 10; t["2"] = 3.1415; t["3"]="hello";
+  Tab nest; nest["1"] = int_u4(1); // Tables contain most numeric types 
+  t["nested_table"] = nest;        // Tables contain tables
+  t["nested_table"]["1"] = "hi";   // Cascading insert
+  cout << t << endl; 
+  // Output:  {'3': 'hello', 'nested_table': {'1': 'hi'}, '1': 10, '2': 3.1415}
+}
+---------------------------------------------------------------------
+
+ A lot of the optimization work in the OC is based on the assumptions
+of the Midas 2k (a C++ Digital Signal Processing framework).  These
+assumptions guided the development of the OC, and although these
+assumptions are generally applicable, mileage may vary.  See below:
+"OpenContainers Assumptions".
+
+--------------Sidebar: OpenContainers Assumptions---------------------
+
+ (0) Portability: The OC has to work on a variety of platforms
+(Solaris, IRIX, Linux, Tru64, Windows): some that have STL, some that
+didn't.  More than that, the OC has to work the same on all platforms
+(performance, correctness and thread assumptions, see below) so that
+applications port quickly and easily.  The STL is more portable and
+prevelant today, but there are still platforms that don't support the
+it. Also, different implementation of STL may not have the same
+assumptions across platforms (see 1-5 below).
+ 
+ (1) Thread-Safety: The OC containers are NOT thread-safe: this is on
+purpose.  There was a time when our C++ framework had thread-safety in
+most classes (Tables and strings especially) and it simply didn't
+scale well: Every operation would lock a mutex when (most of the time)
+it didn't need to.  There was also the collateral damage of forcing
+synchronization across platforms (syncing caches). With a back of the
+envelope calculation of 10 cycles for synchronization and typical op
+of 20 cycles, this cost us 1.5x in performance.  Tables, strings,
+etc. are all low-level data structures and synchronization (for
+performance reasons) should probably be done at a higher level [10]
+("transactions" or at the component level).
+
+ (2) Re-entrancy (or "thread neutrality").  The OC containers ARE
+re-entrant (inasmuch as anything that uses the heap is re-entrant):
+two threads in different instances of the same class will not
+interfere with performance or correctness of another thread.
+
+ (3) Recursion: We avoid recursion for two main reasons.  The first is
+to avoid overrunning the stack: this is even more critical in our
+applications because we allocate 100s of threads in the same address
+space and we have to be judicious to not waste address space on each
+stack.  The second reason is performance: An iterative solution tends
+to be faster than a recursive solution (because managing stack frames
+can be expensive if we aren't careful).  The only class that uses
+recursion directly is the Val Serialize and Deserialize.  NO other
+classes use "stack" recursion.
+
+ (4) Dynamic Memory Allocation: We don't avoid using the heap, but we
+avoid calling "malloc/new" excessively if we can.  We tend to run on
+shared memory, multiple CPU machines.  On those, the heap is a shared
+resource used by ALL CPUS in the same address space.  The pressure on
+the heap will kill us: If 4 CPUs try to call malloc all at once, they
+can get locked out or suffer performance penalties waiting to get
+in. In the earliest versions of malloc on most systems, there was a
+single lock that allowed only one thread in the heap at a time.  Thus
+all mallocs would serialize behind each other, crippling a 4 CPU
+machine.  Implementations of malloc got better of course, but they
+mitigate the problem rather than solve it.  This one factor was
+CRITICAL in the scalability of our framework and spawned several
+techniques below.
+
+  (a) Use Stack space: Allocating stack space is trivial: a single add
+      for the stack frame with NO THREAD LOCKING at all.  Compare this
+      to "malloc" which must be use some form of synchronization for
+      allocation.  This technique is very cheap and scales
+      trivially. [This doesn't contradict (3) above: We only put
+      small items in the current stack frame as opposed to potentially
+      rampant stack usage of a recursive routine].
+  
+ (b) Use Lookaside Caches.  Add another 32 bytes or so to an object and
+     put information there instead of going to the heap.  We use this
+     technique extensively (in OCString, Val, and HashTableT). Note
+     that this explicitly breaks rules from [9] for two extremely
+     important reasons: Performance (by keeping "locality of
+     reference" and avoiding extra levels of indirection via
+     pointers/handles) and scalability (by avoiding the heap).  See
+     the "ocval.h" code for more discussion of this technique.
+
+ (c) Use unions.  With unions we can re-use memory that we already
+     have and avoid the heap. (Val and OCString use this technique)
+
+ (d) Group Allocations. If we DO have to go to the heap, allocate a
+     bunch of items at once so that we don't have to go back to the
+     heap anytime soon.  Most OC classes allocate internal items in
+     groups of 8 or so.  Note that two different instances of any
+     class DO NOT share these groups: that would require
+     thread-safety.  Every instance has its own local list of chunks.
+     This technique is for both scalability (stay out of the heap) and
+     performance. All Tables use this technique.
+
+ (5) Inlined Code Only: All OC code is inline. This is partially to
+avoid a complex "bootstrap process" (we have to build tools that we
+need to build tools), but inline code avoids linkage issues (which can
+be problematic building with someone else's library).  Code bloat can
+be an issue (it wasn't too much in our framework), but we can refactor
+code if necessary because we have the source. Inline code tends to be
+the best single optimization compilers can do [12].
+-------------------------------------------------------------------------

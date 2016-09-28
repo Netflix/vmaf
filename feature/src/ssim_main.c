@@ -23,46 +23,46 @@ int ssim(const char *ref_path, const char *dis_path, int w, int h, const char *f
 
 static void usage(void)
 {
-	puts("usage: ssim fmt ref dis w h\n"
-		 "fmts:\n"
-		 "\tyuv420p\n"
-		 "\tyuv422p\n"
-		 "\tyuv444p\n"
-		 "\tyuv420p10le\n"
-		 "\tyuv422p10le\n"
-		 "\tyuv444p10le"
-	);
+    puts("usage: ssim fmt ref dis w h\n"
+         "fmts:\n"
+         "\tyuv420p\n"
+         "\tyuv422p\n"
+         "\tyuv444p\n"
+         "\tyuv420p10le\n"
+         "\tyuv422p10le\n"
+         "\tyuv444p10le"
+    );
 }
 
 int main(int argc, const char **argv)
 {
-	const char *ref_path;
-	const char *dis_path;
-	const char *fmt;
-	int w;
-	int h;
-	int ret;
+    const char *ref_path;
+    const char *dis_path;
+    const char *fmt;
+    int w;
+    int h;
+    int ret;
 
-	if (argc < 6) {
-		usage();
-		return 2;
-	}
+    if (argc < 6) {
+        usage();
+        return 2;
+    }
 
-	fmt		 = argv[1];
-	ref_path = argv[2];
-	dis_path = argv[3];
-	w        = atoi(argv[4]);
-	h        = atoi(argv[5]);
+    fmt         = argv[1];
+    ref_path = argv[2];
+    dis_path = argv[3];
+    w        = atoi(argv[4]);
+    h        = atoi(argv[5]);
 
-	if (w <= 0 || h <= 0) {
-		usage();
-		return 2;
-	}
+    if (w <= 0 || h <= 0) {
+        usage();
+        return 2;
+    }
 
-	ret = ssim(ref_path, dis_path, w, h, fmt);
+    ret = ssim(ref_path, dis_path, w, h, fmt);
 
-	if (ret)
-		return ret;
+    if (ret)
+        return ret;
 
-	return 0;
+    return 0;
 }

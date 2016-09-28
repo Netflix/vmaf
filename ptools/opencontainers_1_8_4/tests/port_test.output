@@ -1,0 +1,19 @@
+DECISION:  Do we have a bool on this platform?
+ ok.  This compiled.  OC_NEEDS_BOOL is correct
+DECISION: Type of includes?
+ ok.  This compiled.  OC_NEW_STYLE_INCLUDES is correct
+DECISION: make sure we have ints right size
+ ok: The size of your int_1 is correct.
+ ok: The size of your int_u1 is correct.
+ ok: The size of your int_2 is correct.
+ ok: The size of your int_u2 is correct.
+ ok: The size of your int_4 is correct.
+ ok: The size of your int_u4 is correct.
+ ok: The size of your int_8 is correct.
+ ok: The size of your int_u8 is correct.
+DECISION: Make sure an int_1 can hold negative values properly
+--> ii had better be -127 and a should be < 0: ii=-127 a<0 = 1
+DECISION: size of your int_8 
+ ok. 8 bytes correct, so your OC_LONG_INT_IS_64BIT is probably correct
+DECISION: sizeof pointers 
+ ok. your OC_BYTES_IN_POINTER is set correctly

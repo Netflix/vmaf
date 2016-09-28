@@ -1,0 +1,14 @@
+
+What Am I?:
+
+OpenContainers (aka OC) is an open C++ containers library, similar to
+the C++ Standard Template Library (aka the C++ STL or STL) or Boost
+library. OpenContainers addresses threading issues (see below) that
+the STL has not addressed (until very recently: C++0x added support
+for threads[1]). The OC also has tools to make the C++ environment
+feel more like Python (much like some of the tools in the Boost
+libraries).
+
+See the Documentation at http://www.picklingtools.com
+
+

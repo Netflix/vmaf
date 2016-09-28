@@ -1,0 +1,5 @@
+*.o
+vmafossexec
+.cproject
+.project
+.DS_Store

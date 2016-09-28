@@ -1,0 +1,13 @@
+{'TBL': { 'Measurements': { 0: { 
+                                 'TapeMeas2': {
+                                                'ReallyBigLadder' : {
+                                                                      'Repeated':
+             { 'coordinates' : 'Cartesian',
+               'frame' : 'BRK',
+               'gha' : 0,
+               'type' : 'Repeated',
+               'valid' : 1,
+               'z' : { 'Units': 'm/s',
+               'Value' : -3.8536511629123198}}},
+           'Wow' : 1651195000.0},
+     }}}}

@@ -1,0 +1,911 @@
+-9223372036854775809Lq
+-9223372036854775808x
+-9223372036854775807x
+-922337203685477580x
+9223372036854775807x
+9223372036854775808X
+92233720368547758080LQ
+922337203685477580800LQ
+18446744073709551615X
+18446744073709551616LQ
+100LQ
+-100Lq
+Input is 
+EXCEPTION:Expected numeric digit or '.' for number, but saw 'EOF'
+Output is None type = Z
+Input is 0
+Output is 0 type = l
+Input is  0
+Output is 0 type = l
+Input is   0 
+Output is 0 type = l
+Input is  123456
+Output is 123456 type = l
+Input is 123456
+Output is 123456 type = l
+Input is 123456789
+Output is 123456789 type = l
+Input is +0
+Output is 0 type = l
+Input is  +0
+Output is 0 type = l
+Input is  -0
+Output is 0 type = l
+Input is -0
+Output is 0 type = l
+Input is  +-0
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   +
+---^
+Expected numeric digit or '.' for number, but saw '-'
+Output is None type = Z
+Input is +-0
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  +
+--^
+Expected numeric digit or '.' for number, but saw '-'
+Output is None type = Z
+Input is -1
+Output is -1 type = l
+Input is -1 
+Output is -1 type = l
+Input is  -1
+Output is -1 type = l
+Input is  - 1
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   -
+---^
+Expected numeric digit or '.' for number, but saw ' '
+Output is None type = Z
+Input is +1
+Output is 1 type = l
+Input is +1 
+Output is 1 type = l
+Input is  +1
+Output is 1 type = l
+Input is  + 1
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   +
+---^
+Expected numeric digit or '.' for number, but saw ' '
+Output is None type = Z
+Input is 1e6
+Output is 1000000.0 type = d
+Input is  1e6
+Output is 1000000.0 type = d
+Input is  1 e 6
+Output is 1 type = l
+Input is 1 e 6
+Output is 1 type = l
+Input is 1e 6
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  1e
+---^
+Expected '+', '-' or digits after an exponent, but saw ' '
+Output is None type = Z
+Input is 1 e6
+Output is 1 type = l
+Input is 1.
+Output is 1.0 type = d
+Input is  1.
+Output is 1.0 type = d
+Input is  -1.
+Output is -1.0 type = d
+Input is  +1. 
+Output is 1.0 type = d
+Input is -1.
+Output is -1.0 type = d
+Input is +1.
+Output is 1.0 type = d
+Input is .
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  .
+--^
+Expecting some digits after a decimal point, but saw 'EOF'
+Output is None type = Z
+Input is  . 
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   .
+---^
+Expecting some digits after a decimal point, but saw ' '
+Output is None type = Z
+Input is  .
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   .
+---^
+Expecting some digits after a decimal point, but saw 'EOF'
+Output is None type = Z
+Input is 0.
+Output is 0.0 type = d
+Input is .09
+Output is 0.09 type = d
+Input is  .01
+Output is 0.01 type = d
+Input is  . 0
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   .
+---^
+Expecting some digits after a decimal point, but saw ' '
+Output is None type = Z
+Input is  1 . 
+Output is 1 type = l
+Input is 1.e
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  1.e
+----^
+Expected numeric digit or ' ' for number, but saw 'EOF'
+Output is None type = Z
+Input is  1. e
+Output is 1.0 type = d
+Input is  1.e-
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   1.e-
+------^
+Expected numeric digit or ' ' for number, but saw 'EOF'
+Output is None type = Z
+Input is 1.e-1
+Output is 0.1 type = d
+Input is 1.e+
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  1.e+
+-----^
+Expected numeric digit or ' ' for number, but saw 'EOF'
+Output is None type = Z
+Input is  1.e +
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   1.e
+-----^
+Expected '+', '-' or digits after an exponent, but saw ' '
+Output is None type = Z
+Input is 1e+1
+Output is 10.0 type = d
+Input is (1+1j)
+Output is (1+1j) type = D
+Input is  ( 1 + 1j)
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   ( 1 +
+-------^
+Expected:'j', but saw '+' on input
+Output is None type = Z
+Input is  (1+1j
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   (1+1j
+-------^
+Expected:')', but saw 'EOF' on input
+Output is None type = Z
+Input is 1l
+Output is 1L type = Q
+Input is 1 l
+Output is 1 type = l
+Input is  4000000000L
+Output is 4000000000L type = Q
+Input is 100000000000
+Output is 100000000000 type = x
+Input is -100000000000
+Output is -100000000000 type = x
+Input is 10000000000000000000000000000
+Output is 10000000000000000000000000000L type = Q
+Input is -10000000000000000000000000000
+Output is -10000000000000000000000000000L type = q
+Input is 9223372036854775807
+Output is 9223372036854775807 type = x
+Input is 9223372036854775807.0
+Output is 9223372036854775808.0 type = d
+Input is 9223372036854775808
+Output is 9223372036854775808 type = X
+Input is -9223372036854775808
+Output is -9223372036854775808 type = x
+Input is -9223372036854775809
+Output is -9223372036854775809L type = q
+Input is 18446744073709551615
+Output is 18446744073709551615 type = X
+Input is 18446744073709551616
+Output is 18446744073709551616L type = Q
+Input is ''
+Output is 
+Input is  ''
+Output is 
+Input is '' 
+Output is 
+Input is  '' 
+Output is 
+Input is '
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  '
+--^
+Unexpected EOF inside of string
+Output is 
+Input is  '
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   '
+---^
+Unexpected EOF inside of string
+Output is 
+Input is  ' '
+Output is  
+Input is ""
+Output is 
+Input is 'a'
+Output is a
+Input is  'a'
+Output is a
+Input is  'a' 
+Output is a
+Input is '\"'
+Output is "
+Input is '\''
+Output is '
+Input is  'some \'quotes\''
+Output is some 'quotes'
+Input is 'This is a normal string'
+Output is This is a normal string
+Input is 'Hello \n'
+Output is Hello 
+
+Input is []
+Output is []
+Input is [ 1 ]
+Output is [1]
+Input is [1]
+Output is [1]
+Input is [ 1]
+Output is [1]
+Input is [ 1 ] 
+Output is [1]
+Input is [ 1,2]
+Output is [1, 2]
+Input is [1,2]
+Output is [1, 2]
+Input is [1, 2 ]
+Output is [1, 2]
+Input is [ 1, 2]
+Output is [1, 2]
+Input is [1,2,3]
+Output is [1, 2, 3]
+Input is [1., (1+2j), 3.0,3.1]
+Output is [1.0, (1+2j), 3.0, 3.1]
+Input is [1., 2., 3., 3., 4., 5]
+Output is [1.0, 2.0, 3.0, 3.0, 4.0, 5]
+Input is  [[]]
+Output is [[]]
+Input is  [ [] ]
+Output is [[]]
+Input is  [[ ]]
+Output is [[]]
+Input is [1,2,[3,4,5], 6,[7]]
+Output is [1, 2, [3, 4, 5], 6, [7]]
+Input is  ]
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   ]
+---^
+Expected:'[', but saw ']' on input
+Output is []
+Input is [
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  [
+--^
+Expected numeric digit or '.' for number, but saw 'EOF'
+Output is [None]
+Input is [1,2,3,]
+Output is [1, 2, 3]
+Input is [1,]
+Output is [1]
+Input is [,]
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  [
+--^
+Expected numeric digit or '.' for number, but saw ','
+Output is [None]
+Input is  
+ [                              
+     'a',                   
+     {                   
+       'c': None          
+     },                   
+     'd'                  
+ ]                              
+
+Output is ['a', {'c': None}, 'd']
+Input is  
+ 
+ [  # This is the Fred Table   
+     'a',               # Fred's name    
+     {                   
+       'c': None        # Fred's table  
+     },                   
+     'd'                # fred's #   
+ ]                              
+
+Output is ['a', {'c': None}, 'd']
+Input is {}
+Output is {}
+Input is  {}
+Output is {}
+Input is  { } 
+Output is {}
+Input is  {
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   {
+---^
+Expected numeric digit or '.' for number, but saw 'EOF'
+Output is {}
+Input is {
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  {
+--^
+Expected numeric digit or '.' for number, but saw 'EOF'
+Output is {}
+Input is }
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  }
+--^
+Expected:'{', but saw '}' on input
+Output is {}
+Input is { 'a':1 }
+Output is {'a': 1}
+Input is  { 'a':'test', 1:'sub'}
+Output is {1: 'sub', 'a': 'test'}
+Input is { 'sub': {}, 'yo':1.2, 2:[1,2,3] }
+Output is {2: [1, 2, 3], 'yo': 1.2, 'sub': {}}
+Input is 
+EXCEPTION:Expected:'{', but saw 'EOF' on input
+Output is {}
+Input is {,}
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  {
+--^
+Expected numeric digit or '.' for number, but saw ','
+Output is {}
+Input is  }
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   }
+---^
+Expected:'{', but saw '}' on input
+Output is {}
+Input is {a:'}
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  {a:
+----^
+Expected:'r', but saw ':' on input
+Output is {}
+Input is { 1:1,2:2,3:3 }
+Output is {1: 1, 2: 2, 3: 3}
+Input is { 'a': 1, 'b':2, }
+Output is {'a': 1, 'b': 2}
+Input is { 'a': 1, }
+Output is {'a': 1}
+Input is { ,}
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  { 
+---^
+Expected numeric digit or '.' for number, but saw ','
+Output is {}
+Input is  
+ {                              
+     'a' : 1,                   
+     'b' : {                    
+             'c': None          
+           },                   
+     'd' : 3.14159265           
+ }                              
+
+Output is {'a': 1, 'b': {'c': None}, 'd': 3.14159265}
+Input is  
+ { # Simple table with comments      
+     'a' : 1,                        
+     'b' : {   # Nested              
+             'c': None           
+           },                    
+     'd' : 3.14159265  # real #s 
+ } # End of scope                   
+
+Output is {'a': 1, 'b': {'c': None}, 'd': 3.14159265}
+Input is array([])
+Output is array([], 'i')
+Input is array([1,2,3])
+Output is array([1,2,3], 'i')
+Input is array([1.1])
+Output is array([1.1], 'd')
+Input is array([(1+2j), (3+5.6j)])
+Output is array([(1+2j),(3+5.6j)], 'D')
+Input is 
+EXCEPTION:Expected numeric digit or '.' for number, but saw 'EOF'
+Output is None type = Z
+Input is 0
+Output is 0 type = l
+Input is  0
+Output is 0 type = l
+Input is   0 
+Output is 0 type = l
+Input is  123456
+Output is 123456 type = l
+Input is 123456
+Output is 123456 type = l
+Input is 123456789
+Output is 123456789 type = l
+Input is +0
+Output is 0 type = l
+Input is  +0
+Output is 0 type = l
+Input is  -0
+Output is 0 type = l
+Input is -0
+Output is 0 type = l
+Input is  +-0
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   +
+---^
+Expected numeric digit or '.' for number, but saw '-'
+Output is None type = Z
+Input is +-0
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  +
+--^
+Expected numeric digit or '.' for number, but saw '-'
+Output is None type = Z
+Input is -1
+Output is -1 type = l
+Input is -1 
+Output is -1 type = l
+Input is  -1
+Output is -1 type = l
+Input is  - 1
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   -
+---^
+Expected numeric digit or '.' for number, but saw ' '
+Output is None type = Z
+Input is +1
+Output is 1 type = l
+Input is +1 
+Output is 1 type = l
+Input is  +1
+Output is 1 type = l
+Input is  + 1
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   +
+---^
+Expected numeric digit or '.' for number, but saw ' '
+Output is None type = Z
+Input is 1e6
+Output is 1000000.0 type = d
+Input is  1e6
+Output is 1000000.0 type = d
+Input is  1 e 6
+Output is 1 type = l
+Input is 1 e 6
+Output is 1 type = l
+Input is 1e 6
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  1e
+---^
+Expected '+', '-' or digits after an exponent, but saw ' '
+Output is None type = Z
+Input is 1 e6
+Output is 1 type = l
+Input is 1.
+Output is 1.0 type = d
+Input is  1.
+Output is 1.0 type = d
+Input is  -1.
+Output is -1.0 type = d
+Input is  +1. 
+Output is 1.0 type = d
+Input is -1.
+Output is -1.0 type = d
+Input is +1.
+Output is 1.0 type = d
+Input is .
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  .
+--^
+Expecting some digits after a decimal point, but saw 'EOF'
+Output is None type = Z
+Input is  . 
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   .
+---^
+Expecting some digits after a decimal point, but saw ' '
+Output is None type = Z
+Input is  .
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   .
+---^
+Expecting some digits after a decimal point, but saw 'EOF'
+Output is None type = Z
+Input is 0.
+Output is 0.0 type = d
+Input is .09
+Output is 0.09 type = d
+Input is  .01
+Output is 0.01 type = d
+Input is  . 0
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   .
+---^
+Expecting some digits after a decimal point, but saw ' '
+Output is None type = Z
+Input is  1 . 
+Output is 1 type = l
+Input is 1.e
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  1.e
+----^
+Expected numeric digit or ' ' for number, but saw 'EOF'
+Output is None type = Z
+Input is  1. e
+Output is 1.0 type = d
+Input is  1.e-
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   1.e-
+------^
+Expected numeric digit or ' ' for number, but saw 'EOF'
+Output is None type = Z
+Input is 1.e-1
+Output is 0.1 type = d
+Input is 1.e+
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  1.e+
+-----^
+Expected numeric digit or ' ' for number, but saw 'EOF'
+Output is None type = Z
+Input is  1.e +
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   1.e
+-----^
+Expected '+', '-' or digits after an exponent, but saw ' '
+Output is None type = Z
+Input is 1e+1
+Output is 10.0 type = d
+Input is (1+1j)
+Output is (1+1j) type = D
+Input is  ( 1 + 1j)
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   ( 1 +
+-------^
+Expected:'j', but saw '+' on input
+Output is None type = Z
+Input is  (1+1j
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   (1+1j
+-------^
+Expected:')', but saw 'EOF' on input
+Output is None type = Z
+Input is 1l
+Output is 1L type = Q
+Input is 1 l
+Output is 1 type = l
+Input is  4000000000L
+Output is 4000000000L type = Q
+Input is 100000000000
+Output is 100000000000 type = x
+Input is -100000000000
+Output is -100000000000 type = x
+Input is 10000000000000000000000000000
+Output is 10000000000000000000000000000L type = Q
+Input is -10000000000000000000000000000
+Output is -10000000000000000000000000000L type = q
+Input is 9223372036854775807
+Output is 9223372036854775807 type = x
+Input is 9223372036854775807.0
+Output is 9223372036854775808.0 type = d
+Input is 9223372036854775808
+Output is 9223372036854775808 type = X
+Input is -9223372036854775808
+Output is -9223372036854775808 type = x
+Input is -9223372036854775809
+Output is -9223372036854775809L type = q
+Input is 18446744073709551615
+Output is 18446744073709551615 type = X
+Input is 18446744073709551616
+Output is 18446744073709551616L type = Q
+Input is ''
+Output is 
+Input is  ''
+Output is 
+Input is '' 
+Output is 
+Input is  '' 
+Output is 
+Input is '
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  '
+--^
+Unexpected EOF inside of string
+Output is 
+Input is  '
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   '
+---^
+Unexpected EOF inside of string
+Output is 
+Input is  ' '
+Output is  
+Input is ""
+Output is 
+Input is 'a'
+Output is a
+Input is  'a'
+Output is a
+Input is  'a' 
+Output is a
+Input is '\"'
+Output is "
+Input is '\''
+Output is '
+Input is  'some \'quotes\''
+Output is some 'quotes'
+Input is 'This is a normal string'
+Output is This is a normal string
+Input is 'Hello \n'
+Output is Hello 
+
+Input is []
+Output is []
+Input is [ 1 ]
+Output is [1]
+Input is [1]
+Output is [1]
+Input is [ 1]
+Output is [1]
+Input is [ 1 ] 
+Output is [1]
+Input is [ 1,2]
+Output is [1, 2]
+Input is [1,2]
+Output is [1, 2]
+Input is [1, 2 ]
+Output is [1, 2]
+Input is [ 1, 2]
+Output is [1, 2]
+Input is [1,2,3]
+Output is [1, 2, 3]
+Input is [1., (1+2j), 3.0,3.1]
+Output is [1.0, (1+2j), 3.0, 3.1]
+Input is [1., 2., 3., 3., 4., 5]
+Output is [1.0, 2.0, 3.0, 3.0, 4.0, 5]
+Input is  [[]]
+Output is [[]]
+Input is  [ [] ]
+Output is [[]]
+Input is  [[ ]]
+Output is [[]]
+Input is [1,2,[3,4,5], 6,[7]]
+Output is [1, 2, [3, 4, 5], 6, [7]]
+Input is  ]
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   ]
+---^
+Expected:'[', but saw ']' on input
+Output is []
+Input is [
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  [
+--^
+Expected numeric digit or '.' for number, but saw 'EOF'
+Output is [None]
+Input is [1,2,3,]
+Output is [1, 2, 3]
+Input is [1,]
+Output is [1]
+Input is [,]
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  [
+--^
+Expected numeric digit or '.' for number, but saw ','
+Output is [None]
+Input is  
+ [                              
+     'a',                   
+     {                   
+       'c': None          
+     },                   
+     'd'                  
+ ]                              
+
+Output is ['a', {'c': None}, 'd']
+Input is  
+ 
+ [  # This is the Fred Table   
+     'a',               # Fred's name    
+     {                   
+       'c': None        # Fred's table  
+     },                   
+     'd'                # fred's #   
+ ]                              
+
+Output is ['a', {'c': None}, 'd']
+Input is {}
+Output is {}
+Input is  {}
+Output is {}
+Input is  { } 
+Output is {}
+Input is  {
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   {
+---^
+Expected numeric digit or '.' for number, but saw 'EOF'
+Output is {}
+Input is {
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  {
+--^
+Expected numeric digit or '.' for number, but saw 'EOF'
+Output is {}
+Input is }
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  }
+--^
+Expected:'{', but saw '}' on input
+Output is {}
+Input is { 'a':1 }
+Output is {'a': 1}
+Input is  { 'a':'test', 1:'sub'}
+Output is {1: 'sub', 'a': 'test'}
+Input is { 'sub': {}, 'yo':1.2, 2:[1,2,3] }
+Output is {2: [1, 2, 3], 'yo': 1.2, 'sub': {}}
+Input is 
+EXCEPTION:Expected:'{', but saw 'EOF' on input
+Output is {}
+Input is {,}
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  {
+--^
+Expected numeric digit or '.' for number, but saw ','
+Output is {}
+Input is  }
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   }
+---^
+Expected:'{', but saw '}' on input
+Output is {}
+Input is {a:'}
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  {a:
+----^
+Expected:'r', but saw ':' on input
+Output is {}
+Input is { 1:1,2:2,3:3 }
+Output is {1: 1, 2: 2, 3: 3}
+Input is { 'a': 1, 'b':2, }
+Output is {'a': 1, 'b': 2}
+Input is { 'a': 1, }
+Output is {'a': 1}
+Input is { ,}
+EXCEPTION:****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  { 
+---^
+Expected numeric digit or '.' for number, but saw ','
+Output is {}
+Input is  
+ {                              
+     'a' : 1,                   
+     'b' : {                    
+             'c': None          
+           },                   
+     'd' : 3.14159265           
+ }                              
+
+Output is {'a': 1, 'b': {'c': None}, 'd': 3.14159265}
+Input is  
+ { # Simple table with comments      
+     'a' : 1,                        
+     'b' : {   # Nested              
+             'c': None           
+           },                    
+     'd' : 3.14159265  # real #s 
+ } # End of scope                   
+
+Output is {'a': 1, 'b': {'c': None}, 'd': 3.14159265}
+Input is array([])
+Output is array([], 'i')
+Input is array([1,2,3])
+Output is array([1,2,3], 'i')
+Input is array([1.1])
+Output is array([1.1], 'd')
+Input is array([(1+2j), (3+5.6j)])
+Output is array([(1+2j),(3+5.6j)], 'D')
+{
+    4:{
+        'nest':None
+    },
+    5:[
+        1,
+        2.2,
+        'three'
+    ],
+    6:array([1,2,3], 'i'),
+    'a':1,
+    'b':2.2,
+    'c':'three'
+}
+Same? 1
+Try to read from a file that doesn't exist
+Trouble reading file:/tmp/doesnotexists
+tag:n subtype:f
+array([1.123457], 'f')
+tag:n subtype:d
+array([1.123456789123457], 'd')
+tag:n subtype:F
+array([(1.123457+0j)], 'F')
+tag:n subtype:F
+array([(1.123457+0j)], 'F')
+tag:n subtype:s
+array([1,2,-3], '1')
+tag:n subtype:S
+array([1,2,253], 'b')
+tag:n subtype:i
+array([1,2,-3], 's')
+tag:n subtype:I
+array([1,2,65533], 'w')
+tag:n subtype:l
+array([1,2,-3], 'i')
+tag:n subtype:L
+array([1,2,4294967293], 'u')
+tag:n subtype:x
+array([1,2,-3], 'l')
+tag:n subtype:f
+array([1.0,2.0,-3.0], 'f')
+tag:n subtype:d
+array([1.0,2.0,-3.0], 'd')
+tag:n subtype:F
+array([(1+0j),(2+0j),(-3+0j)], 'F')
+tag:n subtype:D
+array([(1+0j),(2+0j),(-3+0j)], 'D')
+tag:n subtype:D
+array([(1+1j),(-2-2j),(-3+3j),(4+4j),(5-5j)], 'D')
+1
+****** Input is: 
+'{}'
+{}
+****** Input is: 
+'{} {}'
+{}
+{}
+****** Input is: 
+'{'a':1}
+{'b':2}'
+{'a': 1}
+{'b': 2}
+****** Input is: 
+'{'
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  {
+--^
+Expected numeric digit or '.' for number, but saw 'EOF'
+****** Input is: 
+'{} {'
+{}
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  {} {
+-----^
+Expected numeric digit or '.' for number, but saw 'EOF'
+****** Input is: 
+'{ 'a' '
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  { 'a' 
+-------^
+Expected:':', but saw 'EOF' on input
+****** Input is: 
+'{ 'a':1 }
+{'b':1}
+   {'
+{'a': 1}
+{'b': 1}
+****Syntax Error on line:3 Last 3 lines of input (lines 1-3) shown below****
+  { 'a':1 }
+  {'b':1}
+     {
+------^
+Expected numeric digit or '.' for number, but saw 'EOF'
+tag:D
+(1+2j)
+tag:D
+(-1+2j)
+tag:D
+(-1-2j)
+tag:D
+(1-2j)
+tag:D
+(1-2j)

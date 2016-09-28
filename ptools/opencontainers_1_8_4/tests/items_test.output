@@ -1,0 +1,52 @@
+Here's the container:
+{ }
+Here's the keys:[]
+Here's the values:[]
+Here's the items:[]
+Here's the container:
+{
+    'a':1,
+    'b':2.2,
+    'c':'three'
+}
+Here's the keys:['a', 'b', 'c']
+Here's the values:[1, 2.2, 'three']
+Here's the items:[('a', 1), ('b', 2.2), ('c', 'three')]
+Here's the container:
+o{ }
+Here's the keys:[]
+Here's the values:[]
+Here's the items:[]
+Here's the container:
+o{
+    'a':1,
+    'b':2.2,
+    'c':'three'
+}
+Here's the keys:['a', 'b', 'c']
+Here's the values:[1, 2.2, 'three']
+Here's the items:[('a', 1), ('b', 2.2), ('c', 'three')]
+Here's the container:
+{
+    'a':1,
+    'b':2,
+    'c':'three',
+    'nested':{
+        'd':3
+    }
+}
+Here's the keys:['nested', 'a', 'b', 'c']
+Here's the values:[{'d': 3}, 1, 2, 'three']
+Here's the items:[('nested', {'d': 3}), ('a', 1), ('b', 2), ('c', 'three')]
+'nested'
+{'d': 3}
+key:'nested' value:{'d': 3}
+'a'
+1
+key:'a' value:1
+'b'
+2
+key:'b' value:2
+'c'
+'three'
+key:'c' value:'three'

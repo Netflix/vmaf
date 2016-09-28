@@ -1,9 +1,7 @@
-__copyright__ = "Copyright 2016, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
-
 import sys
 import subprocess
 import re
+from xml.etree import ElementTree
 
 import numpy as np
 
@@ -12,7 +10,10 @@ from core.executor import Executor
 from core.result import Result
 from core.feature_assembler import FeatureAssembler
 from core.train_test_model import TrainTestModel
+from core.feature_extractor import SsimFeatureExtractor, MsSsimFeatureExtractor
 
+__copyright__ = "Copyright 2016, Netflix, Inc."
+__license__ = "Apache, Version 2.0"
 
 class QualityRunner(Executor):
     """
@@ -343,3 +344,161 @@ class VmafQualityRunner(QualityRunner):
 
         vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
+
+
+class VmafossExecQualityRunner(QualityRunner):
+
+    TYPE = 'VMAFOSSEXEC'
+
+    # VERSION = '0.3'
+    # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv3.pkl.model"
+
+    # VERSION = '0.3.1'
+    # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv3a.pkl.model"
+
+    VERSION = '0.3.2'
+    # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv4.pkl.model"
+    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv4.pkl"
+
+    VMAFOSSEXEC = config.ROOT + "/wrapper/vmafossexec"
+
+    FEATURES = ['adm2', 'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
+                'motion', 'vif_scale0', 'vif_scale1', 'vif_scale2',
+                'vif_scale3', 'vif', 'psnr', 'ssim', 'ms_ssim']
+
+    @classmethod
+    def _assert_an_asset(cls, asset):
+        # override Executor.assert_an_asset(cls, asset)
+
+        super(VmafossExecQualityRunner, cls)._assert_an_asset(asset)
+
+    @classmethod
+    def get_feature_scores_key(cls, atom_feature):
+        return "{type}_{atom_feature}_scores".format(
+            type=cls.TYPE, atom_feature=atom_feature)
+
+    def _generate_result(self, asset):
+        # routine to call the command-line executable and generate quality
+        # scores in the log file.
+
+        log_file_path = self._get_log_file_path(asset)
+
+        if self.optional_dict is not None \
+                and 'model_filepath' in self.optional_dict \
+                and self.optional_dict['model_filepath'] is not None:
+            model_filepath = self.optional_dict['model_filepath']
+        else:
+            model_filepath = self.DEFAULT_MODEL_FILEPATH
+
+        # Usage: vmafossexec fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--disable-clip] [--psnr] [--ssim] [--ms-ssim]
+        quality_width, quality_height = asset.quality_width_height
+        vmafossexec_cmd = "{exe} {fmt} {w} {h} {ref_path} {dis_path} {model} --log {log_file_path} --log-fmt xml --psnr --ssim --ms-ssim" \
+        .format(
+            exe=self.VMAFOSSEXEC,
+            fmt=asset.yuv_type,
+            w=quality_width,
+            h=quality_height,
+            ref_path=asset.ref_workfile_path,
+            dis_path=asset.dis_workfile_path,
+            model=model_filepath,
+            log_file_path=log_file_path,
+        )
+
+        if self.logger:
+            self.logger.info(vmafossexec_cmd)
+
+        subprocess.call(vmafossexec_cmd, shell=True)
+
+    def _get_quality_scores(self, asset):
+        # routine to read the quality scores from the log file, and return
+        # the scores in a dictionary format.
+        log_file_path = self._get_log_file_path(asset)
+        tree = ElementTree.parse(log_file_path)
+        root = tree.getroot()
+        scores = []
+        feature_scores = [[] for _ in self.FEATURES]
+        for frame in root.findall('frames/frame'):
+            scores.append(float(frame.attrib['vmaf']))
+            for i_feature, feature in enumerate(self.FEATURES):
+                try:
+                    feature_scores[i_feature].append(float(frame.attrib[feature]))
+                except KeyError:
+                    pass # some features may be missing
+        assert len(scores) != 0
+        quality_result = {
+            self.get_scores_key(): scores,
+        }
+        for i_feature, feature in enumerate(self.FEATURES):
+            if len(feature_scores[i_feature]) != 0:
+                quality_result[self.get_feature_scores_key(feature)] = feature_scores[i_feature]
+        return quality_result
+
+class SsimQualityRunner(QualityRunner):
+
+    TYPE = 'SSIM'
+    VERSION = '1.0'
+
+    def _get_feature_assembler_instance(self, asset):
+
+        feature_dict = {SsimFeatureExtractor.TYPE: SsimFeatureExtractor.ATOM_FEATURES}
+
+        feature_assembler = FeatureAssembler(
+            feature_dict=feature_dict,
+            feature_option_dict=None,
+            assets=[asset],
+            logger=self.logger,
+            fifo_mode=self.fifo_mode,
+            delete_workdir=self.delete_workdir,
+            result_store=self.result_store,
+            optional_dict=None,
+            optional_dict2=None,
+            parallelize=False, # parallelization already in a higher level
+        )
+        return feature_assembler
+
+    def _run_on_asset(self, asset):
+        # Override Executor._run_on_asset(self, asset)
+        vmaf_fassembler = self._get_feature_assembler_instance(asset)
+        vmaf_fassembler.run()
+        feature_result = vmaf_fassembler.results[0]
+        result_dict = {}
+        result_dict.update(feature_result.result_dict.copy()) # add feature result
+        result_dict[self.get_scores_key()] = feature_result.result_dict[
+            SsimFeatureExtractor.get_scores_key('ssim')] # add ssim score
+        del result_dict[SsimFeatureExtractor.get_scores_key('ssim')] # delete redundant
+        return Result(asset, self.executor_id, result_dict)
+
+class MsSsimQualityRunner(QualityRunner):
+
+    TYPE = 'MS_SSIM'
+    VERSION = '1.0'
+
+    def _get_feature_assembler_instance(self, asset):
+
+        feature_dict = {MsSsimFeatureExtractor.TYPE: MsSsimFeatureExtractor.ATOM_FEATURES}
+
+        feature_assembler = FeatureAssembler(
+            feature_dict=feature_dict,
+            feature_option_dict=None,
+            assets=[asset],
+            logger=self.logger,
+            fifo_mode=self.fifo_mode,
+            delete_workdir=self.delete_workdir,
+            result_store=self.result_store,
+            optional_dict=None,
+            optional_dict2=None,
+            parallelize=False, # parallelization already in a higher level
+        )
+        return feature_assembler
+
+    def _run_on_asset(self, asset):
+        # Override Executor._run_on_asset(self, asset)
+        vmaf_fassembler = self._get_feature_assembler_instance(asset)
+        vmaf_fassembler.run()
+        feature_result = vmaf_fassembler.results[0]
+        result_dict = {}
+        result_dict.update(feature_result.result_dict.copy()) # add feature result
+        result_dict[self.get_scores_key()] = feature_result.result_dict[
+            MsSsimFeatureExtractor.get_scores_key('ms_ssim')] # add ssim score
+        del result_dict[MsSsimFeatureExtractor.get_scores_key('ms_ssim')] # delete redundant
+        return Result(asset, self.executor_id, result_dict)

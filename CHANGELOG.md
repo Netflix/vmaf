@@ -58,3 +58,9 @@
 
 **New features:**
 - Add custom_clip_0to1 to TrainTestModel.
+
+## (09/28/2016) [1.1.0]
+
+**New features:**
+- Update wrapper/vmafossexec: 1) it now takes pkl model file as input, so that slopes/intercepts are no longer hard-coded; 2) it now takes multiple YUV input formats; 3) add flag to enable/disable VMAF score clipping at 0/100; 4) allow customly running PSNR/SSIM/MS-SSIM; 5) allow customly outputing XML/JSON
+- Add SSIM/MS-SSIM option in run_testing.

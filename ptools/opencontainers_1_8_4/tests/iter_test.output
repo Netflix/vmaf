@@ -1,0 +1,90 @@
+Empty ArrIt
+[1, 2.2, 'three']
+0 1
+1 2.2
+2 'three'
+Single ArrIt:['single']
+0 'single'
+Empty ArrIt:[]
+Empty ArrSIt
+Some ArrSit:[1, 2.2, 'three']
+0 1
+1 2.2
+2 'three'
+Single ArrSit:['single']
+0 'single'
+Empty ArrSit:[]
+Empty TabIt
+Empty tab{}
+{'a': 1, 'b': 2.2, 'c': 'three'}
+'a' 1
+'b' 2.2
+'c' 'three'
+Single{'a': 1}
+'a' 1
+Empty TabSit
+Empty tab for TabSit{}
+tabSit:{'a': 1, 'b': 2.2, 'c': 'three'}
+'a' 1
+'b' 2.2
+'c' 'three'
+Single TabSit{'a': 1}
+'a' 1
+It; Arr empty
+It; single
+0 'single'
+It; single
+0 1
+1 'three'
+2 2.2
+SIt; Arr empty
+Sit; single
+0 'single'
+Sit; single
+0 1
+1 2.2
+2 'three'
+It; Tab empty
+It; single
+'single' 1
+It; single
+1 1
+2.2 2.2
+'three' 'three'
+SIt; Tab empty
+Sit; single
+'single' 1
+Sit; single
+1 1
+2.2 'two'
+'three' 3
+Expected exception:Can only iterate through Tab, OTab, Tup & Arr:  If you need to iterate through an Array<POD>, then  use a for-loop
+Expected exception:Can only iterate through Tab, OTab, Tup & Arr:  If you need to iterate through an Array<POD>, then  use a for-loop
+'a' 1
+'b' 2
+'a' 1
+'b' 2
+0 'a'
+1 1
+2 'b'
+3 2
+0 1
+1 2
+2 'a'
+3 'b'
+'a' 1
+'b' 2
+OrderedDict([('a', 1), ('b', 2)])
+'a' 2
+'b' 1
+OrderedDict([('b', 1), ('a', 2)])
+0 97
+1 1
+2 98
+3 2
+(97, 1, 98, 2)
+0 1
+1 2
+2 97
+3 98
+(97, 1, 98, 2)

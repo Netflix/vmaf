@@ -1,0 +1,82 @@
+
+CC = cxx 
+
+CFLAGS = -Wall  -fpic -O -DOSF1_ -DOC_NEW_STYLE_INCLUDES -I./opencontainers_1_8_4/include -pthread -tlocal
+CCFLAGS = -pthread -tlocal -lm
+
+COM_OBJS = m2pythontools.o valpython.o midassocket.o valprotocol2.o m2ser.o m2streamdataenc.o m2convertrep.o timeconv.o
+
+
+all: midasserver_ex permutation_server permutation_client midastalker_ex midastalker_ex2 load save opal2dict dict2opal opaltest midasyeller_ex midaslistener_ex p2_test valgetopt_ex ready_test
+
+.cc.o:
+	$(CC) $(CFLAGS) -c $<
+
+libptools.so : $(COM_OBJS) 
+	$(CC) $(CCFLAGS) $(COM_OBJS) -shared -o libptools.so
+
+midasserver_ex :$(COM_OBJS) midasserver_ex.o 
+	$(CC) $(CCFLAGS) $(COM_OBJS) midasserver_ex.o -o midasserver_ex
+
+midasyeller_ex :$(COM_OBJS) midasyeller_ex.o 
+	$(CC) $(CCFLAGS) $(COM_OBJS) midasyeller_ex.o -o midasyeller_ex
+
+midaslistener_ex :$(COM_OBJS) midaslistener_ex.o 
+	$(CC) $(CCFLAGS) $(COM_OBJS) midaslistener_ex.o -o midaslistener_ex
+
+permutation_server :$(COM_OBJS) permutation_server.o 
+	$(CC) $(CCFLAGS) $(COM_OBJS) permutation_server.o -o permutation_server
+
+permutation_client :$(COM_OBJS) permutation_client.o 
+	$(CC) $(CCFLAGS) $(COM_OBJS) permutation_client.o -o permutation_client
+
+midastalker_ex :$(COM_OBJS) midastalker_ex.o 
+	$(CC) $(CCFLAGS) $(COM_OBJS) midastalker_ex.o -o midastalker_ex
+
+midastalker_ex2 :$(COM_OBJS) midastalker_ex2.o 
+	$(CC) $(CCFLAGS) $(COM_OBJS) midastalker_ex2.o -o midastalker_ex2
+
+load : $(COM_OBJS) load.o 
+	$(CC) $(CCFLAGS) $(COM_OBJS) load.o -o load
+
+save : $(COM_OBJS) save.o
+	$(CC) $(CCFLAGS) $(COM_OBJS) save.o -o save
+
+xmldump_test :  $(COM_OBJS) xmldump_test.o 
+	$(CC) $(CCFLAGS) $(COM_OBJS) xmldump_test.o -o xmldump_test -lrt
+
+xmldump_ex :  $(COM_OBJS) xmldump_ex.o 
+	$(CC) $(CCFLAGS) $(COM_OBJS) xmldump_ex.o -o xmldump_ex -lrt
+
+xmlload_test :  $(COM_OBJS) xmlload_test.o 
+	$(CC) $(CCFLAGS) $(COM_OBJS) xmlload_test.o -o xmlload_test -lrt
+
+xmlload_ex :  $(COM_OBJS) xmlload_ex.o 
+	$(CC) $(CCFLAGS) $(COM_OBJS) xmlload_ex.o -o xmlload_ex -lrt
+
+opal2dict : $(COM_OBJS) opal2dict.o
+	$(CC) $(CCFLAGS) $(COM_OBJS) opal2dict.o -o opal2dict
+
+opaltest : $(COM_OBJS) opaltest.o
+	$(CC) $(CCFLAGS) $(COM_OBJS) opaltest.o -o opaltest
+
+ready_test : $(COM_OBJS) ready_test.o 
+	$(CC) $(CCFLAGS) $(COM_OBJS) ready_test.o -o ready_test
+
+dict2opal : $(COM_OBJS) dict2opal.o
+	$(CC) $(CCFLAGS) $(COM_OBJS) dict2opal.o -o dict2opal
+
+p2_test :  $(COM_OBJS) p2_test.o
+	$(CC) $(CCFLAGS) $(COM_OBJS) p2_test.o -o p2_test
+
+valgetopt_ex :  $(COM_OBJS) valgetopt_ex.o
+	$(CC) $(CCFLAGS) $(COM_OBJS) valgetopt_ex.o -o valgetopt_ex
+
+# Only the tests that REALLY uses UNIX shared memory need the -lrt
+sharedmem_test :  $(COM_OBJS) sharedmem_test.o sharedmem.o
+	$(CC) $(CCFLAGS) $(COM_OBJS) sharedmem.o -lrt sharedmem_test.o -o sharedmem_test
+
+
+
+clean :
+	/bin/rm -rf *.o *.so *~ midasyeller_ex midaslistener_ex midasserver_ex permutation_server permutation_client midastalker_ex midastalker_ex2 load save cxx_repository opal2dict dict2opal opaltest p2_test valgetopt_ex sharedmem_test ready_test xmlload_test xmload_ex xmldump_test xmldump_ex speed_test pickleloader_test chooseser_test

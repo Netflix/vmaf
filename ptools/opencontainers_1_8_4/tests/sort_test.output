@@ -1,0 +1,122 @@
+** Test if sorted **
+-> Searching Permutations of length 0 for sorted
+-> Searching Permutations of length 1 for sorted
+[1]
+-> Searching Permutations of length 2 for sorted
+[1][2]
+-> Searching Permutations of length 3 for sorted
+[1][2][3]
+-> Searching Permutations of length 4 for sorted
+[1][2][3][4]
+-> Searching Permutations of length 5 for sorted
+[1][2][3][4][5]
+** Test HardCodedSort2 ** 
+SUCCESS sorting: 1 2 ->1 2 
+SUCCESS sorting: 1 2 ->2 1 
+SUCCESS for OCHardCodedSort2 
+** Test HardCodedSort3 ** 
+SUCCESS sorting: 1 2 ->1 2 
+SUCCESS sorting: 1 2 ->2 1 
+SUCCESS sorting: 1 2 ->3 2 
+SUCCESS sorting: 1 2 ->1 3 
+SUCCESS sorting: 1 2 ->3 1 
+SUCCESS sorting: 1 2 ->2 3 
+SUCCESS for OCHardCodedSort3 
+** Test HardCodedSort4 ** 
+SUCCESS sorting: 1 2 3 4 ->1 2 3 4 
+SUCCESS sorting: 1 2 3 4 ->2 1 3 4 
+SUCCESS sorting: 1 2 3 4 ->3 2 1 4 
+SUCCESS sorting: 1 2 3 4 ->4 2 3 1 
+SUCCESS sorting: 1 2 3 4 ->1 3 2 4 
+SUCCESS sorting: 1 2 3 4 ->3 1 2 4 
+SUCCESS sorting: 1 2 3 4 ->2 3 1 4 
+SUCCESS sorting: 1 2 3 4 ->4 3 2 1 
+SUCCESS sorting: 1 2 3 4 ->1 4 3 2 
+SUCCESS sorting: 1 2 3 4 ->4 1 3 2 
+SUCCESS sorting: 1 2 3 4 ->3 4 1 2 
+SUCCESS sorting: 1 2 3 4 ->2 4 3 1 
+SUCCESS sorting: 1 2 3 4 ->1 2 4 3 
+SUCCESS sorting: 1 2 3 4 ->2 1 4 3 
+SUCCESS sorting: 1 2 3 4 ->4 2 1 3 
+SUCCESS sorting: 1 2 3 4 ->3 2 4 1 
+SUCCESS sorting: 1 2 3 4 ->1 4 2 3 
+SUCCESS sorting: 1 2 3 4 ->4 1 2 3 
+SUCCESS sorting: 1 2 3 4 ->2 4 1 3 
+SUCCESS sorting: 1 2 3 4 ->3 4 2 1 
+SUCCESS sorting: 1 2 3 4 ->1 3 4 2 
+SUCCESS sorting: 1 2 3 4 ->3 1 4 2 
+SUCCESS sorting: 1 2 3 4 ->4 3 1 2 
+SUCCESS sorting: 1 2 3 4 ->2 3 4 1 
+SUCCESS for OCHardCodedSort4 
+** Test Insertion Sort ** 
+SUCCESS for Insertion sort on length:0
+SUCCESS for Insertion sort on length:1
+SUCCESS for Insertion sort on length:2
+SUCCESS for Insertion sort on length:3
+SUCCESS for Insertion sort on length:4
+SUCCESS for Insertion sort on length:5
+SUCCESS for Insertion sort on length:6
+SUCCESS for Insertion sort on length:7
+SUCCESS for Insertion sort on length:8
+SUCCESS for Insertion sort on length:9
+** Testing median of 3 **
+median at front: 2 1 3 ->1 2 3 
+median at front: 2 1 3 ->2 1 3 
+median at front: 2 1 3 ->3 2 1 
+median at front: 2 1 3 ->1 3 2 
+median at front: 2 1 3 ->3 1 2 
+median at front: 2 1 3 ->2 3 1 
+** Test Quick Sort ** 
+SUCCESS for Quick sort on length:0
+SUCCESS for Quick sort on length:1
+SUCCESS for Quick sort on length:2
+SUCCESS for Quick sort on length:3
+SUCCESS for Quick sort on length:4
+SUCCESS for Quick sort on length:5
+SUCCESS for Quick sort on length:6
+SUCCESS for Quick sort on length:7
+SUCCESS for Quick sort on length:8
+SUCCESS for Quick sort on length:9
+SUCCESS for Quick sort on length:10
+SUCCESS for Quick sort on length:11
+** Lots of randomness testing ** 
+Sorting array of length: 10000
+SUCCESS sorting!
+Sorting array of length: 20000
+SUCCESS sorting!
+Sorting array of length: 30000
+SUCCESS sorting!
+Sorting array of length: 40000
+SUCCESS sorting!
+Sorting array of length: 50000
+SUCCESS sorting!
+Sorting array of length: 60000
+SUCCESS sorting!
+Sorting array of length: 70000
+SUCCESS sorting!
+Sorting array of length: 80000
+SUCCESS sorting!
+Sorting array of length: 90000
+SUCCESS sorting!
+Sorting array of length: 100000
+SUCCESS sorting!
+Sorting array of length: 110000
+SUCCESS sorting!
+Sorting array of length: 120000
+SUCCESS sorting!
+Sorting array of length: 130000
+SUCCESS sorting!
+Sorting array of length: 140000
+SUCCESS sorting!
+Sorting array of length: 150000
+SUCCESS sorting!
+Sorting array of length: 160000
+SUCCESS sorting!
+Sorting array of length: 170000
+SUCCESS sorting!
+Sorting array of length: 180000
+SUCCESS sorting!
+Sorting array of length: 190000
+SUCCESS sorting!
+Sorting array of length: 200000
+SUCCESS sorting!

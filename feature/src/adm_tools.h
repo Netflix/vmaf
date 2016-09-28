@@ -22,17 +22,17 @@
 #define ADM_TOOLS_H_
 
 typedef struct adm_dwt_band_t_s {
-	float *band_a; /* Low-pass V + low-pass H. */
-	float *band_v; /* Low-pass V + high-pass H. */
-	float *band_h; /* High-pass V + low-pass H. */
-	float *band_d; /* High-pass V + high-pass H. */
+    float *band_a; /* Low-pass V + low-pass H. */
+    float *band_v; /* Low-pass V + high-pass H. */
+    float *band_h; /* High-pass V + low-pass H. */
+    float *band_d; /* High-pass V + high-pass H. */
 } adm_dwt_band_t_s;
 
 typedef struct adm_dwt_band_t_d {
-	double *band_a; /* Low-pass V + low-pass H. */
-	double *band_v; /* Low-pass V + high-pass H. */
-	double *band_h; /* High-pass V + low-pass H. */
-	double *band_d; /* High-pass V + high-pass H. */
+    double *band_a; /* Low-pass V + low-pass H. */
+    double *band_v; /* Low-pass V + high-pass H. */
+    double *band_h; /* High-pass V + low-pass H. */
+    double *band_d; /* High-pass V + high-pass H. */
 } adm_dwt_band_t_d;
 
 float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_factor);

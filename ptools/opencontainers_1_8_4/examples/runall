@@ -1,0 +1,49 @@
+#!/bin/tcsh
+echo "Running all examples ..."
+
+# Assumes you are running the tests in this directory
+setenv OCINC ./../include
+
+# Solaris
+## setenv COMP "CC -g -I${OCINC} -DOC_NEEDS_BOOL -DOC_BYTES_IN_POINTER=4 -DOC_USE_OC_STRING -DOC_USE_OC_EXCEPTIONS"
+
+# DECUNIX/Tru64
+### setenv COMP "cxx -DOSF1_ -I${OCINC} -DOC_NEW_STYLE_INCLUDES -pthread"
+
+
+# GCC on Linux: automagically figures out sizes of ints (both 32/64 bit)
+setenv COMP "g++ -O4 -I${OCINC} -DOC_NEW_STYLE_INCLUDES -lrt"
+
+
+setenv list_of_exs "array_ex avltreet_ex complex_ex sort_ex avlhash_ex hashtable_ex string_ex avlhasht_ex hashtablet_ex tab_ex avltree_ex permutations_ex val_ex permute_ex"
+# Go through all tests and run/compare
+foreach x ($list_of_exs)
+  echo "* Building ${x}"
+  $COMP ${x}.cc -o ${x} 
+  echo "* ...running ${x}"
+  ${x}
+  rm ${x} 
+end
+
+# Go through all tests and run/compare
+echo ' *** -DOC_FORCE_NAMESPACE '
+foreach x ($list_of_exs)
+  echo "* Building ${x}"
+  $COMP -DOC_FORCE_NAMESPACE ${x}.cc -o ${x} 
+  echo "* ...running ${x}"
+  ${x}
+  rm ${x} 
+end
+
+# Go through all tests and run/compare
+echo ' *** -DOC_NAMESPACE_EXPERT__NO_NAMESPACES'
+foreach x ($list_of_exs)
+  echo "* Building ${x}"
+  $COMP -DOC_NAMESPACE_EXPERT__NO_NAMESPACES ${x}.cc -o ${x} 
+  echo "* ...running ${x}"
+  ${x}
+  rm ${x} 
+end
+
+
+

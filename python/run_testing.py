@@ -14,7 +14,7 @@ from routine import test_on_dataset, print_matplotlib_warning
 
 def print_usage():
     # quality_runner_types = map(lambda runner: runner.TYPE, QualityRunner.get_subclasses())
-    quality_runner_types = ['PSNR', 'VMAF']
+    quality_runner_types = ['VMAF', 'PSNR', 'SSIM', 'MS_SSIM']
     cache_result = ['yes', 'no']
     parallelize = ['yes', 'no']
     print "usage: " + os.path.basename(sys.argv[0]) + \

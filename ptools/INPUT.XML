@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+  <list__>
+    <data arraytype__="d">100.0,200.0</data>
+    <data arraytype__="D">(100-100j),(600+1j)</data>
+    <here>1</here>
+  </list__>
+  <list__>7</list__>
+  <list__>(1-2j)</list__>
+</root>

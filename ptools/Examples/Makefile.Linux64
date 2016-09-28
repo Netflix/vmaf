@@ -1,0 +1,47 @@
+CC = g++
+CFLAGS = -O4 -I/home/rts/fftwtests/fftw3/include -DLINUX_ -DOC_NEW_STYLE_INCLUDES -DOC_BYTES_IN_POINTER=8 -I../opencontainers_1_6_0/include
+CCFLAGS = -pthread
+
+all : baseline_test
+
+.cc.o:
+	$(CC) $(CFLAGS) -c $<
+
+# Just use FFTWs "multiple threads" per single FFT to see what kind of
+# speed up we can get.
+multiplethreadsperfft_test : multiplethreadsperfft_test.o
+	$(CC) $(CCFLAGS) multiplethreadsperfft_test.o -L/home/rts/fftwtests/fftw3/lib -lfftw3f_threads -lfftw3f -lm -o multiplethreadsperfft_test
+
+
+# How fast can we ship data through a simple system:  Constant generates
+# the data in ALL the tests below
+baseline_test : baseline_test.o
+	$(CC) $(CCFLAGS) baseline_test.o -o baseline_test 
+
+# Just computes straights FFTs in a system (no extra parallelism)
+fft_test : fft_test.o
+	$(CC) $(CCFLAGS) fft_test.o -L/home/rts/fftwtests/fftw3/lib -lfftw3f_threads -lfftw3f -lm -o fft_test 
+
+
+# Pipelining data: multiplying each packet, not much work per packet
+pipelinemult_test : pipelinemult_test.o
+	$(CC) $(CCFLAGS) pipelinemult_test.o -o pipelinemult_test 
+
+
+# Pipeline data: FFT each packet, much more work per packet
+pipelinefft_test : pipelinefft_test.o
+	$(CC) $(CCFLAGS) pipelinefft_test.o -L/home/rts/fftwtests/fftw3/lib -lfftw3f_threads -lfftw3f -lm -o pipelinefft_test 
+
+
+# Dividing each packet up so multiple threads can work on:  better latency
+barriermult_test : barriermult_test.o
+	$(CC) $(CCFLAGS) barriermult_test.o  -o barriermult_test 
+
+
+# Dividing each packet for FFTs
+barrierfft_test : barrierfft_test.o
+	$(CC) $(CCFLAGS) barrierfft_test.o -L/home/rts/fftwtests/fftw3/lib -lfftw3f_threads -lfftw3f -lm -o barrierfft_test 
+
+
+clean : 
+	/bin/rm -f *.o baseline_test multiplethreadsperfft_test barriermult_test barrierfft_test pipelinemult_test pipelinefft_test

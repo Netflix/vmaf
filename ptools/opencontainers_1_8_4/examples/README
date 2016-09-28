@@ -1,0 +1,7 @@
+
+This directory can example programs showing how
+to use the classes in the OpenContainers collection.
+Look at the testing directory first to see how to
+compile for your platform (It's important to get
+"port_test.cc" compiled and running before proceeding).
+
