@@ -362,6 +362,10 @@ class VmafossExecQualityRunner(QualityRunner):
 
     VMAFOSSEXEC = config.ROOT + "/wrapper/vmafossexec"
 
+    FEATURES = ['adm2', 'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
+                'motion', 'vif_scale0', 'vif_scale1', 'vif_scale2',
+                'vif_scale3', 'vif', 'psnr', 'ssim', 'ms_ssim']
+
     @classmethod
     def _assert_an_asset(cls, asset):
         # override Executor.assert_an_asset(cls, asset)
@@ -410,50 +414,25 @@ class VmafossExecQualityRunner(QualityRunner):
     def _get_quality_scores(self, asset):
         # routine to read the quality scores from the log file, and return
         # the scores in a dictionary format.
-
         log_file_path = self._get_log_file_path(asset)
-
         tree = ElementTree.parse(log_file_path)
         root = tree.getroot()
         scores = []
-        adm2_scores = []
-        motion_scores = []
-        vif_scale0_scores = []
-        vif_scale1_scores = []
-        vif_scale2_scores = []
-        vif_scale3_scores = []
-        vif_scores = []
-        psnr_scores = []
-        ssim_scores = []
-        ms_ssim_scores = []
+        feature_scores = [[] for _ in self.FEATURES]
         for frame in root.findall('Frames/Frame'):
             scores.append(float(frame.attrib['score']))
-            adm2_scores.append(float(frame.attrib['adm2']))
-            motion_scores.append(float(frame.attrib['motion']))
-            vif_scale0_scores.append(float(frame.attrib['vif_scale0']))
-            vif_scale1_scores.append(float(frame.attrib['vif_scale1']))
-            vif_scale2_scores.append(float(frame.attrib['vif_scale2']))
-            vif_scale3_scores.append(float(frame.attrib['vif_scale3']))
-            vif_scores.append(float(frame.attrib['vif']))
-            psnr_scores.append(float(frame.attrib['psnr']))
-            ssim_scores.append(float(frame.attrib['ssim']))
-            ms_ssim_scores.append(float(frame.attrib['ms_ssim']))
-
+            for i_feature, feature in enumerate(self.FEATURES):
+                try:
+                    feature_scores[i_feature].append(float(frame.attrib[feature]))
+                except KeyError:
+                    pass # some features may be missing
         assert len(scores) != 0
-
         quality_result = {
             self.get_scores_key(): scores,
-            self.get_feature_scores_key('adm2'): adm2_scores,
-            self.get_feature_scores_key('motion'): motion_scores,
-            self.get_feature_scores_key('vif_scale0'): vif_scale0_scores,
-            self.get_feature_scores_key('vif_scale1'): vif_scale1_scores,
-            self.get_feature_scores_key('vif_scale2'): vif_scale2_scores,
-            self.get_feature_scores_key('vif_scale3'): vif_scale3_scores,
-            self.get_feature_scores_key('vif'): vif_scores,
-            self.get_feature_scores_key('psnr'): psnr_scores,
-            self.get_feature_scores_key('ssim'): ssim_scores,
-            self.get_feature_scores_key('ms_ssim'): ms_ssim_scores,
         }
+        for i_feature, feature in enumerate(self.FEATURES):
+            if len(feature_scores[i_feature]) != 0:
+                quality_result[self.get_feature_scores_key(feature)] = feature_scores[i_feature]
         return quality_result
 
 class SsimQualityRunner(QualityRunner):

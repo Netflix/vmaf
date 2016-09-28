@@ -53,6 +53,14 @@ int compute_ms_ssim(const number_t *ref, const number_t *cmp, int w, int h, int 
 int combo(const char *ref_path, const char *dis_path, int w, int h, const char *fmt,
         DArray *adm_num_array,
         DArray *adm_den_array,
+        DArray *adm_num_scale0_array,
+        DArray *adm_den_scale0_array,
+        DArray *adm_num_scale1_array,
+        DArray *adm_den_scale1_array,
+        DArray *adm_num_scale2_array,
+        DArray *adm_den_scale2_array,
+        DArray *adm_num_scale3_array,
+        DArray *adm_den_scale3_array,
         DArray *motion_array,
         DArray *vif_num_scale0_array,
         DArray *vif_den_scale0_array,
@@ -238,10 +246,26 @@ int combo(const char *ref_path, const char *dis_path, int w, int h, const char *
         printf("adm: %.3f, ", score);
         printf("adm_num: %.3f, ", score_num);
         printf("adm_den: %.3f, ", score_den);
+        printf("adm_num_scale0: %.3f, ", scores[0]);
+        printf("adm_den_scale0: %.3f, ", scores[1]);
+        printf("adm_num_scale1: %.3f, ", scores[2]);
+        printf("adm_den_scale1: %.3f, ", scores[3]);
+        printf("adm_num_scale2: %.3f, ", scores[4]);
+        printf("adm_den_scale2: %.3f, ", scores[5]);
+        printf("adm_num_scale3: %.3f, ", scores[6]);
+        printf("adm_den_scale3: %.3f, ", scores[7]);
 #endif
 
         insert_array(adm_num_array, score_num);
         insert_array(adm_den_array, score_den);
+        insert_array(adm_num_scale0_array, scores[0]);
+        insert_array(adm_den_scale0_array, scores[1]);
+        insert_array(adm_num_scale1_array, scores[2]);
+        insert_array(adm_den_scale1_array, scores[3]);
+        insert_array(adm_num_scale2_array, scores[4]);
+        insert_array(adm_den_scale2_array, scores[5]);
+        insert_array(adm_num_scale3_array, scores[6]);
+        insert_array(adm_den_scale3_array, scores[7]);
 
 #ifdef COMPUTE_ANSNR
 

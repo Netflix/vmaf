@@ -151,6 +151,14 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssi
 
     DArray adm_num_array,
            adm_den_array,
+           adm_num_scale0_array,
+           adm_den_scale0_array,
+           adm_num_scale1_array,
+           adm_den_scale1_array,
+           adm_num_scale2_array,
+           adm_den_scale2_array,
+           adm_num_scale3_array,
+           adm_den_scale3_array,
            motion_array,
            vif_num_scale0_array,
            vif_den_scale0_array,
@@ -170,6 +178,14 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssi
 
     init_array(&adm_num_array, INIT_FRAMES);
     init_array(&adm_den_array, INIT_FRAMES);
+    init_array(&adm_num_scale0_array, INIT_FRAMES);
+    init_array(&adm_den_scale0_array, INIT_FRAMES);
+    init_array(&adm_num_scale1_array, INIT_FRAMES);
+    init_array(&adm_den_scale1_array, INIT_FRAMES);
+    init_array(&adm_num_scale2_array, INIT_FRAMES);
+    init_array(&adm_den_scale2_array, INIT_FRAMES);
+    init_array(&adm_num_scale3_array, INIT_FRAMES);
+    init_array(&adm_den_scale3_array, INIT_FRAMES);
     init_array(&motion_array, INIT_FRAMES);
     init_array(&vif_num_scale0_array, INIT_FRAMES);
     init_array(&vif_den_scale0_array, INIT_FRAMES);
@@ -219,6 +235,14 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssi
     int ret = combo(ref_path, dis_path, w, h, fmt,
             &adm_num_array,
             &adm_den_array,
+            &adm_num_scale0_array,
+            &adm_den_scale0_array,
+            &adm_num_scale1_array,
+            &adm_den_scale1_array,
+            &adm_num_scale2_array,
+            &adm_den_scale2_array,
+            &adm_num_scale3_array,
+            &adm_den_scale3_array,
             &motion_array,
             &vif_num_scale0_array,
             &vif_den_scale0_array,
@@ -242,6 +266,14 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssi
     bool num_frms_is_consistent =
                (adm_num_array.used == num_frms)
             && (adm_den_array.used == num_frms)
+            && (adm_num_scale0_array.used == num_frms)
+            && (adm_den_scale0_array.used == num_frms)
+            && (adm_num_scale1_array.used == num_frms)
+            && (adm_den_scale1_array.used == num_frms)
+            && (adm_num_scale2_array.used == num_frms)
+            && (adm_den_scale2_array.used == num_frms)
+            && (adm_num_scale3_array.used == num_frms)
+            && (adm_den_scale3_array.used == num_frms)
             && (vif_num_scale0_array.used == num_frms)
             && (vif_den_scale0_array.used == num_frms)
             && (vif_num_scale1_array.used == num_frms)
@@ -260,7 +292,11 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssi
                 "motion (%zu), adm_num (%zu), adm_den (%zu), vif_num_scale0 (%zu), "
                 "vif_den_scale0 (%zu), vif_num_scale1 (%zu), vif_den_scale1 (%zu), "
                 "vif_num_scale2 (%zu), vif_den_scale2 (%zu), vif_num_scale3 (%zu), "
-                "vif_den_scale3 (%zu), vif (%zu), psnr (%zu), ssim (%zu), ms_ssim (%zu)",
+                "vif_den_scale3 (%zu), vif (%zu), "
+                "psnr (%zu), ssim (%zu), ms_ssim (%zu), "
+                "adm_num_scale0 (%zu), adm_den_scale0 (%zu), adm_num_scale1 (%zu), "
+                "adm_den_scale1 (%zu), adm_num_scale2 (%zu), adm_den_scale2 (%zu), "
+                "adm_num_scale3 (%zu), adm_den_scale3 (%zu)",
                 motion_array.used,
                 adm_num_array.used,
                 adm_den_array.used,
@@ -275,7 +311,15 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssi
                 vif_array.used,
                 psnr_array.used,
                 ssim_array.used,
-                ms_ssim_array.used
+                ms_ssim_array.used,
+                adm_num_scale0_array.used,
+                adm_den_scale0_array.used,
+                adm_num_scale1_array.used,
+                adm_den_scale1_array.used,
+                adm_num_scale2_array.used,
+                adm_den_scale2_array.used,
+                adm_num_scale3_array.used,
+                adm_num_scale3_array.used
                 );
 
         throw VmafException(errmsg);
@@ -285,11 +329,18 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssi
     printf("Generate final features (including derived atom features)...\n");
 #endif
 
+    double ADM2_CONSTANT = 1000.0;
+    double ADM_SCALE_CONSTANT = 250.0;
     StatVector adm2, motion, vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, score;
+    StatVector adm_scale0, adm_scale1, adm_scale2, adm_scale3;
     StatVector psnr, ssim, ms_ssim;
     for (size_t i=0; i<num_frms; i++)
     {
-        adm2.append((get_at(&adm_num_array, i) + 1000.0) / (get_at(&adm_den_array, i) + 1000.0));
+        adm2.append((get_at(&adm_num_array, i) + ADM2_CONSTANT) / (get_at(&adm_den_array, i) + ADM2_CONSTANT));
+        adm_scale0.append((get_at(&adm_num_scale0_array, i) + ADM_SCALE_CONSTANT) / (get_at(&adm_den_scale0_array, i) + ADM_SCALE_CONSTANT));
+        adm_scale1.append((get_at(&adm_num_scale1_array, i) + ADM_SCALE_CONSTANT) / (get_at(&adm_den_scale1_array, i) + ADM_SCALE_CONSTANT));
+        adm_scale2.append((get_at(&adm_num_scale2_array, i) + ADM_SCALE_CONSTANT) / (get_at(&adm_den_scale2_array, i) + ADM_SCALE_CONSTANT));
+        adm_scale3.append((get_at(&adm_num_scale3_array, i) + ADM_SCALE_CONSTANT) / (get_at(&adm_den_scale3_array, i) + ADM_SCALE_CONSTANT));
         motion.append(get_at(&motion_array, i));
         vif_scale0.append(get_at(&vif_num_scale0_array, i) / get_at(&vif_den_scale0_array, i));
         vif_scale1.append(get_at(&vif_num_scale1_array, i) / get_at(&vif_den_scale1_array, i));
@@ -322,6 +373,14 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssi
                 nodes[j].index = j + 1;
                 if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_adm2_score'") == 0)
                     nodes[j].value = double(slopes[j + 1]) * adm2.at(i) + double(intercepts[j + 1]);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_adm_scale0_score'") == 0)
+                    nodes[j].value = double(slopes[j + 1]) * adm_scale0.at(i) + double(intercepts[j + 1]);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_adm_scale1_score'") == 0)
+                    nodes[j].value = double(slopes[j + 1]) * adm_scale1.at(i) + double(intercepts[j + 1]);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_adm_scale2_score'") == 0)
+                    nodes[j].value = double(slopes[j + 1]) * adm_scale2.at(i) + double(intercepts[j + 1]);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_adm_scale3_score'") == 0)
+                    nodes[j].value = double(slopes[j + 1]) * adm_scale3.at(i) + double(intercepts[j + 1]);
                 else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_motion_score'") == 0)
                     nodes[j].value = double(slopes[j + 1]) * motion.at(i) + double(intercepts[j + 1]);
                 else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_vif_scale0_score'") == 0)
@@ -348,6 +407,14 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssi
                 nodes[j].index = j + 1;
                 if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_adm2_score'") == 0)
                     nodes[j].value = adm2.at(i);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_adm_scale0_score'") == 0)
+                    nodes[j].value = adm_scale0.at(i);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_adm_scale1_score'") == 0)
+                    nodes[j].value = adm_scale1.at(i);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_adm_scale2_score'") == 0)
+                    nodes[j].value = adm_scale2.at(i);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_adm_scale3_score'") == 0)
+                    nodes[j].value = adm_scale3.at(i);
                 else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_motion_score'") == 0)
                     nodes[j].value = motion.at(i);
                 else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_vif_scale0_score'") == 0)
@@ -402,6 +469,10 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssi
         printf("frame: %zu, ", i);
         printf("score: %f, ", prediction);
         printf("adm2: %f, ", adm2.at(i));
+        printf("adm_scale0: %f, ", adm_scale0.at(i));
+        printf("adm_scale1: %f, ", adm_scale1.at(i));
+        printf("adm_scale2: %f, ", adm_scale2.at(i));
+        printf("adm_scale3: %f, ", adm_scale3.at(i));
         printf("motion: %f, ", motion.at(i));
         printf("vif_scale0: %f, ", vif_scale0.at(i));
         printf("vif_scale1: %f, ", vif_scale1.at(i));
@@ -420,21 +491,51 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssi
     }
 
     Result result{};
-    result.set_scores("adm2", adm2);
-    result.set_scores("motion", motion);
-    result.set_scores("vif_scale0", vif_scale0);
-    result.set_scores("vif_scale1", vif_scale1);
-    result.set_scores("vif_scale2", vif_scale2);
-    result.set_scores("vif_scale3", vif_scale3);
-    result.set_scores("vif", vif);
     result.set_scores("score", score);
-
+    for (size_t j=0; j<feature_names.length(); j++)
+    {
+        if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_adm2_score'") == 0)
+            result.set_scores("adm2", adm2);
+        else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_adm_scale0_score'") == 0)
+            result.set_scores("adm_scale0", adm_scale0);
+        else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_adm_scale1_score'") == 0)
+            result.set_scores("adm_scale1", adm_scale1);
+        else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_adm_scale2_score'") == 0)
+            result.set_scores("adm_scale2", adm_scale2);
+        else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_adm_scale3_score'") == 0)
+            result.set_scores("adm_scale3", adm_scale3);
+        else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_motion_score'") == 0)
+            result.set_scores("motion", motion);
+        else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_vif_scale0_score'") == 0)
+            result.set_scores("vif_scale0", vif_scale0);
+        else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_vif_scale1_score'") == 0)
+            result.set_scores("vif_scale1", vif_scale1);
+        else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_vif_scale2_score'") == 0)
+            result.set_scores("vif_scale2", vif_scale2);
+        else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_vif_scale3_score'") == 0)
+            result.set_scores("vif_scale3", vif_scale3);
+        else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_vif_score'") == 0)
+            result.set_scores("vif", vif);
+        else
+        {
+            printf("Unknown feature name: %s.\n", Stringize(feature_names[j]).c_str());
+            throw VmafException("Unknown feature name");
+        }
+    }
     if (psnr_array_ptr != NULL) { result.set_scores("psnr", psnr); }
     if (ssim_array_ptr != NULL) { result.set_scores("ssim", ssim); }
     if (ms_ssim_array_ptr != NULL) { result.set_scores("ms_ssim", ms_ssim); }
 
     free_array(&adm_num_array);
     free_array(&adm_den_array);
+    free_array(&adm_num_scale0_array);
+    free_array(&adm_den_scale0_array);
+    free_array(&adm_num_scale1_array);
+    free_array(&adm_den_scale1_array);
+    free_array(&adm_num_scale2_array);
+    free_array(&adm_den_scale2_array);
+    free_array(&adm_num_scale3_array);
+    free_array(&adm_den_scale3_array);
     free_array(&motion_array);
     free_array(&vif_num_scale0_array);
     free_array(&vif_den_scale0_array);
@@ -445,7 +546,6 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssi
     free_array(&vif_num_scale3_array);
     free_array(&vif_den_scale3_array);
     free_array(&vif_array);
-
     free_array(&psnr_array);
     free_array(&ssim_array);
     free_array(&ms_ssim_array);
@@ -484,16 +584,21 @@ double RunVmaf(int width, int height, const char *src, const char *dis,
     for (size_t i=0; i<num_frames; i++)
     {
         auto node = frames_node.append_child("Frame");
-        node.append_attribute("num") = (int)i;
-        node.append_attribute("score") = result.get_scores("score").at(i);
-        node.append_attribute("adm2") = result.get_scores("adm2").at(i);
-        node.append_attribute("motion") = result.get_scores("motion").at(i);
-        node.append_attribute("vif_scale0") = result.get_scores("vif_scale0").at(i);
-        node.append_attribute("vif_scale1") = result.get_scores("vif_scale1").at(i);
-        node.append_attribute("vif_scale2") = result.get_scores("vif_scale2").at(i);
-        node.append_attribute("vif_scale3") = result.get_scores("vif_scale3").at(i);
-        node.append_attribute("vif") = result.get_scores("vif").at(i);
 
+        node.append_attribute("num") = (int)i;
+
+        if (result.has_scores("score")) { node.append_attribute("score") = result.get_scores("score").at(i); }
+        if (result.has_scores("adm2")) { node.append_attribute("adm2") = result.get_scores("adm2").at(i); }
+        if (result.has_scores("adm_scale0")) { node.append_attribute("adm_scale0") = result.get_scores("adm_scale0").at(i); }
+        if (result.has_scores("adm_scale1")) { node.append_attribute("adm_scale1") = result.get_scores("adm_scale1").at(i); }
+        if (result.has_scores("adm_scale2")) { node.append_attribute("adm_scale2") = result.get_scores("adm_scale2").at(i); }
+        if (result.has_scores("adm_scale3")) { node.append_attribute("adm_scale3") = result.get_scores("adm_scale3").at(i); }
+        if (result.has_scores("motion")) { node.append_attribute("motion") = result.get_scores("motion").at(i); }
+        if (result.has_scores("vif_scale0")) { node.append_attribute("vif_scale0") = result.get_scores("vif_scale0").at(i); }
+        if (result.has_scores("vif_scale1")) { node.append_attribute("vif_scale1") = result.get_scores("vif_scale1").at(i); }
+        if (result.has_scores("vif_scale2")) { node.append_attribute("vif_scale2") = result.get_scores("vif_scale2").at(i); }
+        if (result.has_scores("vif_scale3")) { node.append_attribute("vif_scale3") = result.get_scores("vif_scale3").at(i); }
+        if (result.has_scores("vif")) { node.append_attribute("vif") = result.get_scores("vif").at(i); }
         if (result.has_scores("psnr")) { node.append_attribute("psnr") = result.get_scores("psnr").at(i); }
         if (result.has_scores("ssim")) { node.append_attribute("ssim") = result.get_scores("ssim").at(i); }
         if (result.has_scores("ms_ssim")) { node.append_attribute("ms_ssim") = result.get_scores("ms_ssim").at(i); }
