@@ -335,7 +335,7 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssi
 
     double ADM2_CONSTANT = 1000.0;
     double ADM_SCALE_CONSTANT = 250.0;
-    StatVector adm2, motion, vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, score;
+    StatVector adm2, motion, vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, vmaf;
     StatVector adm_scale0, adm_scale1, adm_scale2, adm_scale3;
     StatVector psnr, ssim, ms_ssim;
     for (size_t i=0; i<num_frms; i++)
@@ -471,7 +471,7 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssi
 
 #ifdef PRINT_PROGRESS
         printf("frame: %zu, ", i);
-        printf("score: %f, ", prediction);
+        printf("vmaf: %f, ", prediction);
         printf("adm2: %f, ", adm2.at(i));
         printf("adm_scale0: %f, ", adm_scale0.at(i));
         printf("adm_scale1: %f, ", adm_scale1.at(i));
@@ -491,11 +491,11 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssi
         printf("\n");
 #endif
 
-        score.append(prediction);
+        vmaf.append(prediction);
     }
 
     Result result{};
-    result.set_scores("score", score);
+    result.set_scores("vmaf", vmaf);
     for (size_t j=0; j<feature_names.length(); j++)
     {
         if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_adm2_score'") == 0)
@@ -577,45 +577,13 @@ double RunVmaf(const char* fmt, int width, int height,
     Result result = runner.run(asset, disable_clip, do_psnr, do_ssim, do_ms_ssim);
     timer.stop();
 
-    size_t num_frames = result.get_scores("score").size();
-    double aggregate_score = result.get_score("score");
+    size_t num_frames = result.get_scores("vmaf").size();
+    double aggregate_vmaf = result.get_score("vmaf");
     double exec_fps = (double)num_frames / (double)timer.elapsed();
     printf("Exec FPS: %f\n", exec_fps);
-    printf("VMAF score = %f\n", aggregate_score);
+    printf("VMAF score = %f\n", aggregate_vmaf);
 
-    if (log_path != NULL && log_fmt !=NULL && (strcmp(log_fmt, "xml")==0))
-    {
-        /* output to xml */
-
-        std::vector<std::string> result_keys = result.get_keys();
-        pugi::xml_document xml;
-        pugi::xml_node xml_root = xml.append_child("VMAF");
-        xml_root.append_attribute("version") = VMAFOSS_XML_VERSION;
-
-        auto params_node = xml_root.append_child("params");
-        params_node.append_attribute("model") = _get_file_name(std::string(model_path)).c_str();
-        params_node.append_attribute("scaledWidth") = width;
-        params_node.append_attribute("scaledHeight") = height;
-
-        auto info_node = xml_root.append_child("fyi");
-        info_node.append_attribute("numOfFrames") = (int)num_frames;
-        info_node.append_attribute("aggregateScore") = aggregate_score;
-        info_node.append_attribute("execFps") = exec_fps;
-
-        auto frames_node = xml_root.append_child("frames");
-        for (size_t i=0; i<num_frames; i++)
-        {
-            auto node = frames_node.append_child("frame");
-            node.append_attribute("frameNum") = (int)i;
-            for (size_t j=0; j<result_keys.size(); j++)
-            {
-                node.append_attribute(result_keys[j].c_str()) = result.get_scores(result_keys[j].c_str()).at(i);
-            }
-        }
-
-        xml.save_file(log_path);
-    }
-    else if (log_path != NULL)
+    if (log_path != NULL && log_fmt !=NULL && (strcmp(log_fmt, "json")==0))
     {
         /* output to json */
 
@@ -659,8 +627,40 @@ double RunVmaf(const char* fmt, int width, int height,
         JSONPrint(top, log_file, 0, true, 2);
         log_file.close();
     }
+    else if (log_path != NULL)
+    {
+        /* output to xml */
 
-    return aggregate_score;
+        std::vector<std::string> result_keys = result.get_keys();
+        pugi::xml_document xml;
+        pugi::xml_node xml_root = xml.append_child("VMAF");
+        xml_root.append_attribute("version") = VMAFOSS_XML_VERSION;
+
+        auto params_node = xml_root.append_child("params");
+        params_node.append_attribute("model") = _get_file_name(std::string(model_path)).c_str();
+        params_node.append_attribute("scaledWidth") = width;
+        params_node.append_attribute("scaledHeight") = height;
+
+        auto info_node = xml_root.append_child("fyi");
+        info_node.append_attribute("numOfFrames") = (int)num_frames;
+        info_node.append_attribute("aggregateVMAF") = aggregate_vmaf;
+        info_node.append_attribute("execFps") = exec_fps;
+
+        auto frames_node = xml_root.append_child("frames");
+        for (size_t i=0; i<num_frames; i++)
+        {
+            auto node = frames_node.append_child("frame");
+            node.append_attribute("frameNum") = (int)i;
+            for (size_t j=0; j<result_keys.size(); j++)
+            {
+                node.append_attribute(result_keys[j].c_str()) = result.get_scores(result_keys[j].c_str()).at(i);
+            }
+        }
+
+        xml.save_file(log_path);
+    }
+
+    return aggregate_vmaf;
 }
 
 inline double _round(double val)

@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
     {
         fprintf(stderr, "Usage: %s fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--disable-clip] [--psnr] [--ssim] [--ms-ssim]\n", argv[0]);
         fprintf(stderr, "fmt:\n\tyuv420p\n\tyuv422p\n\tyuv444p\n\tyuv420p10le\n\tyuv422p10le\n\tyuv444p10le\n\n");
-        fprintf(stderr, "log_fmt:\n\tjson (default)\n\txml\n\n");
+        fprintf(stderr, "log_fmt:\n\txml (default)\n\tjson\n\n");
         return -1;
     }
 

@@ -417,8 +417,8 @@ class VmafossExecQualityRunner(QualityRunner):
         root = tree.getroot()
         scores = []
         feature_scores = [[] for _ in self.FEATURES]
-        for frame in root.findall('Frames/Frame'):
-            scores.append(float(frame.attrib['score']))
+        for frame in root.findall('frames/frame'):
+            scores.append(float(frame.attrib['vmaf']))
             for i_feature, feature in enumerate(self.FEATURES):
                 try:
                     feature_scores[i_feature].append(float(frame.attrib[feature]))
