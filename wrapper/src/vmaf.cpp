@@ -117,7 +117,7 @@ void _read_and_assert_model(const char *model_path, Val& feature_names,
     }
 }
 
-Result VmafRunner::run(Asset asset)
+Result VmafRunner::run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssim, bool do_ms_ssim)
 {
 
 #ifdef PRINT_PROGRESS
@@ -185,14 +185,32 @@ Result VmafRunner::run(Asset asset)
     init_array(&ms_ssim_array, INIT_FRAMES);
 
     /* optional output arrays */
-//    psnr_array_ptr = NULL;
-    psnr_array_ptr = &psnr_array;
+    if (do_psnr)
+    {
+        psnr_array_ptr = &psnr_array;
+    }
+    else
+    {
+        psnr_array_ptr = NULL;
+    }
 
-//    ssim_array_ptr = NULL;
-    ssim_array_ptr = &ssim_array;
+    if (do_ssim)
+    {
+        ssim_array_ptr = &ssim_array;
+    }
+    else
+    {
+        ssim_array_ptr = NULL;
+    }
 
-//    ms_ssim_array_ptr = NULL;
-    ms_ssim_array_ptr = &ms_ssim_array;
+    if (do_ms_ssim)
+    {
+        ms_ssim_array_ptr = &ms_ssim_array;
+    }
+    else
+    {
+        ms_ssim_array_ptr = NULL;
+    }
 
 #ifdef PRINT_PROGRESS
     printf("Extract atom features...\n");
@@ -364,7 +382,7 @@ Result VmafRunner::run(Asset asset)
         }
 
         /* clip */
-        if (!VAL_IS_NONE(score_clip))
+        if (!disable_clip && !VAL_IS_NONE(score_clip))
         {
             if (prediction < double(score_clip[0]))
             {
@@ -440,7 +458,9 @@ Result VmafRunner::run(Asset asset)
 //static const char VMAFOSS_XML_VERSION[] = "0.3.3"; // fix slopes and intercepts to match nflxtrain_vmafv3a.pkl
 static const char VMAFOSS_XML_VERSION[] = "0.3.2"; // fix slopes and intercepts to match nflxall_vmafv4.pkl
 
-double RunVmaf(int width, int height, const char *src, const char *dis, const char *model, const char *report)
+double RunVmaf(int width, int height, const char *src, const char *dis,
+               const char *model, const char *report, bool disable_clip,
+               bool do_psnr, bool do_ssim, bool do_ms_ssim)
 {
 
     Asset asset(width, height, src, dis);
@@ -448,7 +468,7 @@ double RunVmaf(int width, int height, const char *src, const char *dis, const ch
     Timer timer;
 
     timer.start();
-    Result result = runner.run(asset);
+    Result result = runner.run(asset, disable_clip, do_psnr, do_ssim, do_ms_ssim);
     timer.stop();
 
     size_t num_frames = result.get_scores("score").size();

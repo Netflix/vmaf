@@ -19,18 +19,39 @@
 #include <cstdio>
 #include <exception>
 #include <string>
+#include <algorithm>
+
 #include "vmaf.h"
+
+char* getCmdOption(char ** begin, char ** end, const std::string & option)
+{
+    char ** itr = std::find(begin, end, option);
+    if (itr != end && ++itr != end)
+    {
+        return *itr;
+    }
+    return 0;
+}
+
+bool cmdOptionExists(char** begin, char** end, const std::string& option)
+{
+    return std::find(begin, end, option) != end;
+}
 
 int main(int argc, char *argv[])
 {
     double score;
     char *log_file_path = NULL;
+    bool disable_clip = false;
+    bool do_psnr = false;
+    bool do_ssim = false;
+    bool do_ms_ssim = false;
 
     /* Check parameters */
 
     if (argc < 6)
     {
-        fprintf(stderr, "Usage: %s width height input_ref input_dis svm_model [logFile]\n", argv[0]);
+        fprintf(stderr, "Usage: %s width height input_ref input_dis model [-f log] [--disable-clip] [--psnr] [--ssim] [--ms-ssim]\n", argv[0]);
         return -1;
     }
 
@@ -47,15 +68,32 @@ int main(int argc, char *argv[])
             fprintf(stderr, "%s: Invalid frame resolution %dx%d\n", argv[0], width, height);
         }
 
-        if(argc >= 7)
+        log_file_path = getCmdOption(argv + 6, argv + argc, "-f");
+
+        if (cmdOptionExists(argv + 6, argv + argc, "--disable-clip"))
         {
-            log_file_path = argv[6];
+            disable_clip = true;
+        }
+
+        if (cmdOptionExists(argv + 6, argv + argc, "--psnr"))
+        {
+            do_psnr = true;
+        }
+
+        if (cmdOptionExists(argv + 6, argv + argc, "--ssim"))
+        {
+            do_ssim = true;
+        }
+
+        if (cmdOptionExists(argv + 6, argv + argc, "--ms-ssim"))
+        {
+            do_ms_ssim = true;
         }
 
         /* Run VMAF */
 
         printf("Start calculating VMAF score\n");
-        score = RunVmaf(width, height, ref_path, dis_path, svm_model_path, log_file_path);
+        score = RunVmaf(width, height, ref_path, dis_path, svm_model_path, log_file_path, disable_clip, do_psnr, do_ssim, do_ms_ssim);
         printf("VMAF score = %f\n", score);
 
     }

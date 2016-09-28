@@ -391,7 +391,7 @@ class VmafossExecQualityRunner(QualityRunner):
 
         # Usage: vmafossexec width height input_ref input_dis model [logFile]
         quality_width, quality_height = asset.quality_width_height
-        vmafossexec_cmd = "{exe} {w} {h} {ref_path} {dis_path} {model} {log_file_path}" \
+        vmafossexec_cmd = "{exe} {w} {h} {ref_path} {dis_path} {model} -f {log_file_path} --psnr --ssim --ms-ssim" \
         .format(
             exe=self.VMAFOSSEXEC,
             w=quality_width,

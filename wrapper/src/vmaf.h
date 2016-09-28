@@ -29,7 +29,9 @@
 #include <exception>
 #include <cstring>
 
-double RunVmaf(int width, int height, const char *src, const char *dis, const char *model, const char *report);
+double RunVmaf(int width, int height, const char *src, const char *dis,
+               const char *model, const char *report, bool disable_clip,
+               bool do_psnr, bool do_ssim, bool do_ms_ssim);
 
 class Asset
 {
@@ -109,7 +111,7 @@ public:
         sprintf(libsvm_model_path, "%s.model", model_path);
     }
     ~VmafRunner() { delete[] libsvm_model_path; }
-    Result run(Asset asset);
+    Result run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssim, bool do_ms_ssim);
 private:
     const char *model_path;
     char *libsvm_model_path;
