@@ -38,6 +38,13 @@ bool cmdOptionExists(char** begin, char** end, const std::string& option)
     return std::find(begin, end, option) != end;
 }
 
+void print_usage(int argc, char *argv[])
+{
+    fprintf(stderr, "Usage: %s fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--disable-clip] [--psnr] [--ssim] [--ms-ssim]\n", argv[0]);
+    fprintf(stderr, "fmt:\n\tyuv420p\n\tyuv422p\n\tyuv444p\n\tyuv420p10le\n\tyuv422p10le\n\tyuv444p10le\n\n");
+    fprintf(stderr, "log_fmt:\n\txml (default)\n\tjson\n\n");
+}
+
 int main(int argc, char *argv[])
 {
     double score;
@@ -58,9 +65,7 @@ int main(int argc, char *argv[])
 
     if (argc < 6)
     {
-        fprintf(stderr, "Usage: %s fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--disable-clip] [--psnr] [--ssim] [--ms-ssim]\n", argv[0]);
-        fprintf(stderr, "fmt:\n\tyuv420p\n\tyuv422p\n\tyuv444p\n\tyuv420p10le\n\tyuv422p10le\n\tyuv444p10le\n\n");
-        fprintf(stderr, "log_fmt:\n\txml (default)\n\tjson\n\n");
+        print_usage(argc, argv);
         return -1;
     }
 
@@ -75,7 +80,9 @@ int main(int argc, char *argv[])
 
         if (width <= 0 || height <= 0)
         {
-            fprintf(stderr, "%s: Invalid frame resolution %dx%d\n", argv[0], width, height);
+            fprintf(stderr, "Error: Invalid frame resolution %d x %d\n", width, height);
+            print_usage(argc, argv);
+            return -1;
         }
 
         log_path = getCmdOption(argv + 7, argv + argc, "--log");
@@ -83,7 +90,7 @@ int main(int argc, char *argv[])
         log_fmt = getCmdOption(argv + 7, argv + argc, "--log-fmt");
         if (log_fmt != NULL && !(strcmp(log_fmt, "xml")==0 || strcmp(log_fmt, "json")==0))
         {
-            fprintf(stderr, "error: log_fmt must be xml or json, but is %s\n", log_fmt);
+            fprintf(stderr, "Error: log_fmt must be xml or json, but is %s\n", log_fmt);
             return -1;
         }
 
@@ -113,7 +120,8 @@ int main(int argc, char *argv[])
     }
     catch (const std::exception &e)
     {
-        fprintf(stderr, "error: %s\n", e.what());
+        fprintf(stderr, "Error: %s\n", e.what());
+        print_usage(argc, argv);
         return -1;
     }
 

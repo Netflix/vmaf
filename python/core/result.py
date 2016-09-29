@@ -158,6 +158,14 @@ class Result(BasicResult):
         s += self._get_aggregate_score_str()
         return s
 
+    def to_xml(self):
+        # TODO
+        pass
+
+    def to_json(self):
+        # TODO
+        pass
+
     def to_dataframe(self):
         """
         Export to pandas dataframe with columns: dataset, content_id, asset_id,
