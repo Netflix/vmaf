@@ -1,12 +1,16 @@
-__copyright__ = "Copyright 2016, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
-
 import re
+from xml.etree import ElementTree
+from xml.dom import minidom
 
 import numpy as np
 
 from tools.misc import get_file_name_with_extension
 from core.asset import Asset
+from core.executor import Executor
+
+__copyright__ = "Copyright 2016, Netflix, Inc."
+__license__ = "Apache, Version 2.0"
+
 
 class BasicResult(object):
     """
@@ -159,8 +163,30 @@ class Result(BasicResult):
         return s
 
     def to_xml(self):
-        # TODO
-        pass
+
+        def prettify(elem):
+            rough_string = ElementTree.tostring(elem, 'utf-8')
+            reparsed = minidom.parseString(rough_string)
+            return reparsed.toprettyxml(indent="  ")
+
+        top = ElementTree.Element('Result')
+        top.set('executorId', self.executor_id)
+
+        asset = ElementTree.SubElement(top, 'asset')
+        asset.set('dict', repr(self.asset))
+
+        fyi = ElementTree.SubElement(top, 'fyi')
+        fyi.set('numOfFrames', '_')
+        fyi.set('aggregateVMAF', '_')
+        fyi.set('execFps', '_')
+
+        frames = ElementTree.SubElement(top, 'frames')
+        for i in range(3):
+            frame = ElementTree.SubElement(frames, 'frame')
+            frame.set('frameNum', str(i))
+            frame.set('adm2', '0.99')
+
+        return prettify(top)
 
     def to_json(self):
         # TODO

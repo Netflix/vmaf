@@ -56,7 +56,8 @@ if __name__ == "__main__":
     result = runner.results[0]
 
     # output
-    print str(result)
+    # print str(result)
+    print result.to_xml()
 
     print 'Done.'
 
