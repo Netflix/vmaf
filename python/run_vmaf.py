@@ -14,7 +14,7 @@ from tools.misc import get_file_name_without_extension, get_cmd_option, \
     cmd_option_exists
 
 FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
-OUT_FMTS = ['json (default)', 'xml', 'text']
+OUT_FMTS = ['text (default)', 'xml', 'json']
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) \
@@ -58,7 +58,7 @@ def main():
 
     show_local_explanation = cmd_option_exists(sys.argv, 6, len(sys.argv), '--local-explain')
 
-    asset = Asset(dataset="run_vmaf",
+    asset = Asset(dataset="cmd",
                   content_id=abs(hash(get_file_name_without_extension(ref_file))) % (10 ** 16),
                   asset_id=abs(hash(get_file_name_without_extension(ref_file))) % (10 ** 16),
                   workdir_root=config.ROOT + "/workspace/workdir",
@@ -93,10 +93,10 @@ def main():
     # output
     if out_fmt == 'xml':
         print result.to_xml()
-    elif out_fmt == 'text':
-        print str(result)
-    else: # None or 'json'
+    elif out_fmt == 'json':
         print result.to_json()
+    else: # None or 'text'
+        print str(result)
 
     # local explanation
     if show_local_explanation:

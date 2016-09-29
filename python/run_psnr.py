@@ -12,7 +12,7 @@ __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
-OUT_FMTS = ['json (default)', 'xml', 'text']
+OUT_FMTS = ['text (default)', 'xml', 'json']
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) \
@@ -77,10 +77,10 @@ def main():
     # output
     if out_fmt == 'xml':
         print result.to_xml()
-    elif out_fmt == 'text':
-        print str(result)
-    else: # None or 'json'
+    elif out_fmt == 'json':
         print result.to_json()
+    else: # None or 'text'
+        print str(result)
 
     return 0
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from tools.misc import cmd_option_exists, get_cmd_option
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -13,41 +14,38 @@ from core.executor import run_executors_in_parallel
 from core.quality_runner import VmafQualityRunner
 
 FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
+OUT_FMTS = ['text (default)', 'xml', 'json']
 
 def print_usage():
-    parallelize = ['yes', 'no']
     print "usage: " + os.path.basename(sys.argv[0]) + \
-          " parallelize input_file [optional_model_file]\n"
-    print "parallelize:\n\t" + "\n\t".join(parallelize) +"\n"
+          " input_file [--model model_path] [--out-fmt out_fmt] [--parallelize]\n"
+    print "out_fmt:\n\t" + "\n\t".join(OUT_FMTS) + "\n"
     print "input_file contains lines of:"
-    print "\tfmt width height ref_file dis_file\\n"
-    print "fmts:\n\t" + "\n\t".join(FMTS) +"\n"
+    print "\tfmt width height ref_path dis_path\\n"
+    print "fmt:\n\t" + "\n\t".join(FMTS) + "\n"
 
-if __name__ == "__main__":
-
-    if len(sys.argv) < 3:
+def main():
+    if len(sys.argv) < 2:
         print_usage()
-        exit(2)
+        return 2
 
-    do_parallelize = sys.argv[1]
-    if do_parallelize == 'yes':
-        parallelize = True
-    elif do_parallelize == 'no':
-        parallelize = False
-    else:
+    input_filepath = sys.argv[1]
+
+    model_path = get_cmd_option(sys.argv, 2, len(sys.argv), '--model')
+
+    out_fmt = get_cmd_option(sys.argv, 2, len(sys.argv), '--out-fmt')
+    if not (out_fmt is None
+            or out_fmt == 'xml'
+            or out_fmt == 'json'
+            or out_fmt == 'text'):
         print_usage()
-        exit(2)
+        return 2
 
-    input_filename = sys.argv[2]
-
-    if len(sys.argv) >= 4:
-        model_filepath = sys.argv[3]
-    else:
-        model_filepath = None
+    parallelize = cmd_option_exists(sys.argv, 2, len(sys.argv), '--parallelize')
 
     assets = []
     line_idx = 0
-    with open(input_filename, "rt") as input_file:
+    with open(input_filepath, "rt") as input_file:
         for line in input_file.readlines():
 
             # match comment
@@ -66,7 +64,7 @@ if __name__ == "__main__":
             if not mo or mo.group(1) not in FMTS:
                 print "Unknown format: {}".format(line)
                 print_usage()
-                exit(1)
+                return 1
 
             fmt = mo.group(1)
             width = int(mo.group(2))
@@ -74,7 +72,9 @@ if __name__ == "__main__":
             ref_file = mo.group(4)
             dis_file = mo.group(5)
 
-            asset = Asset(dataset="cmd", content_id=0, asset_id=line_idx,
+            asset = Asset(dataset="cmd",
+                          content_id=0,
+                          asset_id=line_idx,
                           workdir_root=config.ROOT + "/workspace/workdir",
                           ref_path=ref_file,
                           dis_path=dis_file,
@@ -85,13 +85,13 @@ if __name__ == "__main__":
 
     runner_class = VmafQualityRunner
 
-    if model_filepath is None:
+    if model_path is None:
         optional_dict = None
     else:
-        optional_dict = {'model_filepath':model_filepath}
+        optional_dict = {'model_filepath':model_path}
 
     # construct an VmafQualityRunner object to assert assets, and to remove
-    runner = runner_class(assets,
+    _ = runner_class(assets,
                  None,
                  fifo_mode=True,
                  delete_workdir=True,
@@ -100,27 +100,32 @@ if __name__ == "__main__":
                  optional_dict2=None,
                  )
 
-    try:
-        # run
-        runners, results = run_executors_in_parallel(
-            runner_class,
-            assets,
-            fifo_mode=True,
-            delete_workdir=True,
-            parallelize=parallelize,
-            result_store=None,
-            optional_dict=optional_dict,
-            optional_dict2=None,
-        )
+    runners, results = run_executors_in_parallel(
+        runner_class,
+        assets,
+        fifo_mode=True,
+        delete_workdir=True,
+        parallelize=parallelize,
+        result_store=None,
+        optional_dict=optional_dict,
+        optional_dict2=None,
+    )
 
-        # output
-        for result in results:
+    # output
+    for result in results:
+        if out_fmt == 'xml':
+            print result.to_xml()
+        elif out_fmt == 'json':
+            print result.to_json()
+        else: # None or 'json'
             print '============================'
             print 'Asset {asset_id}:'.format(asset_id=result.asset.asset_id)
             print '============================'
             print str(result)
 
-    finally:
-        pass
+    return 0
 
+if __name__ == "__main__":
+    ret = main()
+    exit(ret)
     print 'Done.'
