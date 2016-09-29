@@ -19,7 +19,7 @@ def print_usage():
     parallelize = ['yes', 'no']
     print "usage: " + os.path.basename(sys.argv[0]) + \
           " quality_type cache_result parallelize test_dataset_file [optional_VMAF_model_file]\n"
-    print "quality_types:\n\t" + "\n\t".join(quality_runner_types) +"\n"
+    print "quality_type:\n\t" + "\n\t".join(quality_runner_types) +"\n"
     print "cache_result:\n\t" + "\n\t".join(cache_result) +"\n"
     print "parallelize:\n\t" + "\n\t".join(parallelize) +"\n"
 

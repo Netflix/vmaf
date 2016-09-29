@@ -1,12 +1,10 @@
+from collections import OrderedDict
 import re
-from xml.etree import ElementTree
-from xml.dom import minidom
 
 import numpy as np
 
 from tools.misc import get_file_name_with_extension
 from core.asset import Asset
-from core.executor import Executor
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -153,6 +151,15 @@ class Result(BasicResult):
         return _df.iloc[0][column]
 
     def to_string(self):
+        """Example:
+        Asset: {"asset_dict": {"height": 1080, "width": 1920}, "asset_id": 0, "content_id": 0, "dataset": "test", "dis_path": "/home/zli/Projects/stash/MCE/transcoder/vmaf_oss/vmaf/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv", "ref_path": "/home/zli/Projects/stash/MCE/transcoder/vmaf_oss/vmaf/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv", "workdir": "/home/zli/Projects/stash/MCE/transcoder/vmaf_oss/vmaf/workspace/workdir/d26050af-bd92-46a7-8519-7482306aa7fe"}
+        Executor: SSIM_V1.0
+        Result:
+        Frame 0: SSIM_feature_ssim_c_score:0.997404, SSIM_feature_ssim_l_score:0.965512, SSIM_feature_ssim_s_score:0.935803, SSIM_score:0.901161
+        Frame 1: SSIM_feature_ssim_c_score:0.997404, SSIM_feature_ssim_l_score:0.965512, SSIM_feature_ssim_s_score:0.935803, SSIM_score:0.901160
+        Frame 2: SSIM_feature_ssim_c_score:0.997404, SSIM_feature_ssim_l_score:0.965514, SSIM_feature_ssim_s_score:0.935804, SSIM_score:0.901163
+        Aggregate: SSIM_feature_ssim_c_score:0.997404, SSIM_feature_ssim_l_score:0.965513, SSIM_feature_ssim_s_score:0.935803, SSIM_score:0.901161
+        """
         s = ""
         s += 'Asset: {}\n'.format( # unlike repr(asset), print workdir
             self.asset.to_full_repr())
@@ -163,34 +170,115 @@ class Result(BasicResult):
         return s
 
     def to_xml(self):
+        """Example:
+        <?xml version="1.0" ?>
+        <result executorId="SSIM_V1.0">
+          <asset identifier="test_0_0_checkerboard_1920_1080_10_3_0_0_1920x1080_vs_checkerboard_1920_1080_10_3_1_0_1920x1080_q_1920x1080"/>
+          <frames>
+            <frame SSIM_feature_ssim_c_score="0.997404" SSIM_feature_ssim_l_score="0.965512" SSIM_feature_ssim_s_score="0.935803" SSIM_score="0.901161" frameNum="0"/>
+            <frame SSIM_feature_ssim_c_score="0.997404" SSIM_feature_ssim_l_score="0.965512" SSIM_feature_ssim_s_score="0.935803" SSIM_score="0.90116" frameNum="1"/>
+            <frame SSIM_feature_ssim_c_score="0.997404" SSIM_feature_ssim_l_score="0.965514" SSIM_feature_ssim_s_score="0.935804" SSIM_score="0.901163" frameNum="2"/>
+          </frames>
+          <aggregate SSIM_feature_ssim_c_score="0.997404" SSIM_feature_ssim_l_score="0.965512666667" SSIM_feature_ssim_s_score="0.935803333333" SSIM_score="0.901161333333"/>
+        </result>
+        """
+
+        from xml.etree import ElementTree
+        from xml.dom import minidom
+
+        list_scores_key = self.get_ordered_list_scores_key()
+        list_score_key = self.get_ordered_list_score_key()
+        list_scores = map(lambda key: self.result_dict[key], list_scores_key)
+        list_aggregate_score = map(lambda key: self[key], list_score_key)
+        list_scores_reordered = zip(*list_scores)
 
         def prettify(elem):
             rough_string = ElementTree.tostring(elem, 'utf-8')
             reparsed = minidom.parseString(rough_string)
             return reparsed.toprettyxml(indent="  ")
 
-        top = ElementTree.Element('Result')
+        top = ElementTree.Element('result')
         top.set('executorId', self.executor_id)
 
         asset = ElementTree.SubElement(top, 'asset')
-        asset.set('dict', repr(self.asset))
-
-        fyi = ElementTree.SubElement(top, 'fyi')
-        fyi.set('numOfFrames', '_')
-        fyi.set('aggregateVMAF', '_')
-        fyi.set('execFps', '_')
+        asset.set('identifier', str(self.asset))
 
         frames = ElementTree.SubElement(top, 'frames')
-        for i in range(3):
+        for i, list_score in enumerate(list_scores_reordered):
             frame = ElementTree.SubElement(frames, 'frame')
             frame.set('frameNum', str(i))
-            frame.set('adm2', '0.99')
+            for score_key, score in zip(list_score_key, list_score):
+                frame.set(score_key, str(score))
+
+        aggregate = ElementTree.SubElement(top, 'aggregate')
+        for score_key, score in zip(list_score_key, list_aggregate_score):
+            aggregate.set(score_key, str(score))
 
         return prettify(top)
 
     def to_json(self):
-        # TODO
-        pass
+        """Example:
+        {
+            "executorId": "SSIM_V1.0",
+            "asset": {
+                "identifier": "test_0_0_checkerboard_1920_1080_10_3_0_0_1920x1080_vs_checkerboard_1920_1080_10_3_1_0_1920x1080_q_1920x1080"
+            },
+            "frames": [
+                {
+                    "frameNum": 0,
+                    "SSIM_feature_ssim_c_score": 0.997404,
+                    "SSIM_feature_ssim_l_score": 0.965512,
+                    "SSIM_feature_ssim_s_score": 0.935803,
+                    "SSIM_score": 0.901161
+                },
+                {
+                    "frameNum": 1,
+                    "SSIM_feature_ssim_c_score": 0.997404,
+                    "SSIM_feature_ssim_l_score": 0.965512,
+                    "SSIM_feature_ssim_s_score": 0.935803,
+                    "SSIM_score": 0.90116
+                },
+                {
+                    "frameNum": 2,
+                    "SSIM_feature_ssim_c_score": 0.997404,
+                    "SSIM_feature_ssim_l_score": 0.965514,
+                    "SSIM_feature_ssim_s_score": 0.935804,
+                    "SSIM_score": 0.901163
+                }
+            ],
+            "aggregate": {
+                "SSIM_feature_ssim_c_score": 0.99740399999999996,
+                "SSIM_feature_ssim_l_score": 0.96551266666666669,
+                "SSIM_feature_ssim_s_score": 0.93580333333333332,
+                "SSIM_score": 0.90116133333333337
+            }
+        }
+        """
+        import json
+
+        list_scores_key = self.get_ordered_list_scores_key()
+        list_score_key = self.get_ordered_list_score_key()
+        list_scores = map(lambda key: self.result_dict[key], list_scores_key)
+        list_aggregate_score = map(lambda key: self[key], list_score_key)
+        list_scores_reordered = zip(*list_scores)
+
+        top = OrderedDict()
+        top['executorId'] = self.executor_id
+        top['asset'] = {'identifier': str(self.asset)}
+
+        top['frames'] = []
+        for i, list_score in enumerate(list_scores_reordered):
+            frame = OrderedDict()
+            frame['frameNum'] = i
+            for score_key, score in zip(list_score_key, list_score):
+                frame[score_key] = score
+            top['frames'].append(frame)
+        top['aggregate'] = OrderedDict()
+
+        for score_key, score in zip(list_score_key, list_aggregate_score):
+            top['aggregate'][score_key] = score
+
+        return json.dumps(top, sort_keys=False, indent=4)
 
     def to_dataframe(self):
         """

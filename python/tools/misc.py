@@ -131,6 +131,52 @@ def make_absolute_path(path, current_dir):
 def empty_object():
     return type('', (), {})()
 
+def get_cmd_option(argv, begin, end, option):
+    '''
+
+    >>> get_cmd_option(['a', 'b', 'c', '--xyz', '123'], 3, 5, '--xyz')
+    '123'
+    >>> get_cmd_option(['a', 'b', 'c', '--xyz', '123'], 0, 5, '--xyz')
+    '123'
+    >>> get_cmd_option(['a', 'b', 'c', '--xyz', '123'], 4, 5, '--xyz')
+    >>> get_cmd_option(['a', 'b', 'c', '--xyz', '123'], 5, 5, '--xyz')
+    >>> get_cmd_option(['a', 'b', 'c', '--xyz', '123'], 6, 5, '--xyz')
+    >>> get_cmd_option(['a', 'b', 'c', '--xyz', '123'], 0, 5, 'a')
+    'b'
+    >>> get_cmd_option(['a', 'b', 'c', '--xyz', '123'], 0, 5, 'b')
+    'c'
+
+    '''
+    itr = None
+    for itr in range(begin, end):
+        if argv[itr] == option:
+            break
+    if itr is not None and itr != end and (itr + 1) != end:
+        return argv[itr + 1]
+    return None
+
+def cmd_option_exists(argv, begin, end, option):
+    '''
+
+    >>> cmd_option_exists(['a', 'b', 'c', 'd'], 2, 4, 'c')
+    True
+    >>> cmd_option_exists(['a', 'b', 'c', 'd'], 3, 4, 'c')
+    False
+    >>> cmd_option_exists(['a', 'b', 'c', 'd'], 3, 4, 'd')
+    True
+    >>> cmd_option_exists(['a', 'b', 'c', 'd'], 2, 4, 'a')
+    False
+    >>> cmd_option_exists(['a', 'b', 'c', 'd'], 2, 4, 'b')
+    False
+
+    '''
+    found = False
+    for itr in range(begin, end):
+        if argv[itr] == option:
+            found = True
+            break
+    return found
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()

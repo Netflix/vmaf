@@ -10,7 +10,7 @@ from core.asset import Asset
 import config
 from core.result import Result
 from core.result_store import FileSystemResultStore
-from core.quality_runner import VmafLegacyQualityRunner
+from core.quality_runner import VmafLegacyQualityRunner, SsimQualityRunner
 from tools.stats import ListStats
 
 class ResultTest(unittest.TestCase):
@@ -115,6 +115,37 @@ class ResultTest(unittest.TestCase):
             self.result.get_result('VVMAF_legacy_score')
         with self.assertRaises(KeyError):
             self.result.get_result('VMAF_motion_scor')
+
+class ResultFormattingTest(unittest.TestCase):
+
+    def setUp(self):
+        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':1920, 'height':1080})
+
+        self.runner = SsimQualityRunner(
+            [asset], None, fifo_mode=True,
+            delete_workdir=True, result_store=FileSystemResultStore(),
+        )
+        self.runner.run()
+        self.result = self.runner.results[0]
+
+    def tearDown(self):
+        if hasattr(self, 'runner'):
+            self.runner.remove_results()
+
+    def test_to_xml(self):
+        self.assertEquals(self.result.to_xml(),
+                          u'<?xml version="1.0" ?>\n<result executorId="SSIM_V1.0">\n  <asset identifier="test_0_0_checkerboard_1920_1080_10_3_0_0_1920x1080_vs_checkerboard_1920_1080_10_3_1_0_1920x1080_q_1920x1080"/>\n  <frames>\n    <frame SSIM_feature_ssim_c_score="0.997404" SSIM_feature_ssim_l_score="0.965512" SSIM_feature_ssim_s_score="0.935803" SSIM_score="0.901161" frameNum="0"/>\n    <frame SSIM_feature_ssim_c_score="0.997404" SSIM_feature_ssim_l_score="0.965512" SSIM_feature_ssim_s_score="0.935803" SSIM_score="0.90116" frameNum="1"/>\n    <frame SSIM_feature_ssim_c_score="0.997404" SSIM_feature_ssim_l_score="0.965514" SSIM_feature_ssim_s_score="0.935804" SSIM_score="0.901163" frameNum="2"/>\n  </frames>\n  <aggregate SSIM_feature_ssim_c_score="0.997404" SSIM_feature_ssim_l_score="0.965512666667" SSIM_feature_ssim_s_score="0.935803333333" SSIM_score="0.901161333333"/>\n</result>\n')
+
+    def test_to_json(self):
+        self.assertEquals(self.result.to_json(),
+                          '{\n    "executorId": "SSIM_V1.0", \n    "asset": {\n        "identifier": "test_0_0_checkerboard_1920_1080_10_3_0_0_1920x1080_vs_checkerboard_1920_1080_10_3_1_0_1920x1080_q_1920x1080"\n    }, \n    "frames": [\n        {\n            "frameNum": 0, \n            "SSIM_feature_ssim_c_score": 0.997404, \n            "SSIM_feature_ssim_l_score": 0.965512, \n            "SSIM_feature_ssim_s_score": 0.935803, \n            "SSIM_score": 0.901161\n        }, \n        {\n            "frameNum": 1, \n            "SSIM_feature_ssim_c_score": 0.997404, \n            "SSIM_feature_ssim_l_score": 0.965512, \n            "SSIM_feature_ssim_s_score": 0.935803, \n            "SSIM_score": 0.90116\n        }, \n        {\n            "frameNum": 2, \n            "SSIM_feature_ssim_c_score": 0.997404, \n            "SSIM_feature_ssim_l_score": 0.965514, \n            "SSIM_feature_ssim_s_score": 0.935804, \n            "SSIM_score": 0.901163\n        }\n    ], \n    "aggregate": {\n        "SSIM_feature_ssim_c_score": 0.99740399999999996, \n        "SSIM_feature_ssim_l_score": 0.96551266666666669, \n        "SSIM_feature_ssim_s_score": 0.93580333333333332, \n        "SSIM_score": 0.90116133333333337\n    }\n}')
+
 
 class ResultStoreTest(unittest.TestCase):
 
