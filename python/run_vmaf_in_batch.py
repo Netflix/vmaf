@@ -128,4 +128,3 @@ def main():
 if __name__ == "__main__":
     ret = main()
     exit(ret)
-    print 'Done.'

@@ -1,40 +1,33 @@
 #!/usr/bin/env python
 
-__copyright__ = "Copyright 2016, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
-
 import os
 import sys
 
-from tools.misc import import_python_file
+from tools.misc import import_python_file, cmd_option_exists
 from core.result_store import FileSystemResultStore
 from routine import print_matplotlib_warning, train_test_vmaf_on_dataset
 
+__copyright__ = "Copyright 2016, Netflix, Inc."
+__license__ = "Apache, Version 2.0"
 
 def print_usage():
-    cache_result = ['yes', 'no']
-    parallelize = ['yes', 'no']
     print "usage: " + os.path.basename(sys.argv[0]) + \
-        " cache_result parallelize train_dataset_file feature_param_file model_param_file output_model_file\n"
-    print "cache_result:\n\t" + "\n\t".join(cache_result) +"\n"
-    print "parallelize:\n\t" + "\n\t".join(parallelize) +"\n"
+        " train_dataset_filepath feature_param_filepath model_param_filepath output_model_filepath [--cache-result] [--parallelize]\n"
 
-if __name__ == '__main__':
+def main():
 
-    if len(sys.argv) < 7:
+    if len(sys.argv) < 5:
         print_usage()
-        exit(2)
+        return 2
 
     try:
-        cache_result = sys.argv[1]
-        do_parallelize = sys.argv[2]
-        train_dataset_filepath = sys.argv[3]
-        feature_param_filepath = sys.argv[4]
-        model_param_filepath = sys.argv[5]
-        output_model_filepath = sys.argv[6]
+        train_dataset_filepath = sys.argv[1]
+        feature_param_filepath = sys.argv[2]
+        model_param_filepath = sys.argv[3]
+        output_model_filepath = sys.argv[4]
     except ValueError:
         print_usage()
-        exit(2)
+        return 2
 
     try:
         train_dataset = import_python_file(train_dataset_filepath)
@@ -42,23 +35,15 @@ if __name__ == '__main__':
         model_param = import_python_file(model_param_filepath)
     except Exception as e:
         print "Error: " + str(e)
-        exit(1)
+        return 1
 
-    if do_parallelize == 'yes':
-        parallelize = True
-    elif do_parallelize == 'no':
-        parallelize = False
-    else:
-        print_usage()
-        exit(2)
+    cache_result = cmd_option_exists(sys.argv, 3, len(sys.argv), '--cache-result')
+    parallelize = cmd_option_exists(sys.argv, 3, len(sys.argv), '--parallelize')
 
-    if cache_result == 'yes':
+    if cache_result:
         result_store = FileSystemResultStore()
-    elif cache_result == 'no':
-        result_store = None
     else:
-        print_usage()
-        exit(2)
+        result_store = None
 
     try:
         import matplotlib.pyplot as plt
@@ -90,6 +75,8 @@ if __name__ == '__main__':
                                    output_model_filepath=output_model_filepath
                                    )
 
-    print 'Done.'
+    return 0
 
-    exit(0)
+if __name__ == '__main__':
+    ret = main()
+    exit(ret)
