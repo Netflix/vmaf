@@ -3,12 +3,18 @@
 import os
 import sys
 
-from tools.misc import import_python_file, cmd_option_exists
+import numpy as np
+
+from tools.misc import import_python_file, cmd_option_exists, get_cmd_option, \
+    get_stdout_logger
 from core.result_store import FileSystemResultStore
 from routine import print_matplotlib_warning, train_test_vmaf_on_dataset
+from tools.stats import ListStats
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
+
+POOL_METHODS = ['mean', 'harmonic_mean', 'min']
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) + \
@@ -40,10 +46,26 @@ def main():
     cache_result = cmd_option_exists(sys.argv, 3, len(sys.argv), '--cache-result')
     parallelize = cmd_option_exists(sys.argv, 3, len(sys.argv), '--parallelize')
 
+    pool_method = get_cmd_option(sys.argv, 3, len(sys.argv), '--pool')
+    if not (pool_method is None
+            or pool_method in POOL_METHODS):
+        print_usage()
+        return 2
+
     if cache_result:
         result_store = FileSystemResultStore()
     else:
         result_store = None
+
+    # pooling
+    if pool_method == 'harmonic_mean':
+        aggregate_method = ListStats.harmonic_mean
+    elif pool_method == 'min':
+        aggregate_method = np.min
+    else: # None or 'mean'
+        aggregate_method = np.mean
+
+    logger = None
 
     try:
         import matplotlib.pyplot as plt
@@ -54,7 +76,9 @@ def main():
                                    train_ax=ax, test_ax=None,
                                    result_store=result_store,
                                    parallelize=parallelize,
-                                   output_model_filepath=output_model_filepath
+                                   logger=logger,
+                                   output_model_filepath=output_model_filepath,
+                                   aggregate_method=aggregate_method
                                    )
 
         bbox = {'facecolor':'white', 'alpha':0.5, 'pad':20}
@@ -72,7 +96,9 @@ def main():
                                    train_ax=None, test_ax=None,
                                    result_store=result_store,
                                    parallelize=parallelize,
-                                   output_model_filepath=output_model_filepath
+                                   logger=logger,
+                                   output_model_filepath=output_model_filepath,
+                                   aggregate_method=aggregate_method
                                    )
 
     return 0

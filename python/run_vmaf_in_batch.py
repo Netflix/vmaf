@@ -1,20 +1,24 @@
 #!/usr/bin/env python
-from tools.misc import cmd_option_exists, get_cmd_option
-
-__copyright__ = "Copyright 2016, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
 
 import os
 import sys
 import re
 
+import numpy as np
+
 from core.asset import Asset
 import config
 from core.executor import run_executors_in_parallel
 from core.quality_runner import VmafQualityRunner
+from tools.misc import cmd_option_exists, get_cmd_option
+from tools.stats import ListStats
+
+__copyright__ = "Copyright 2016, Netflix, Inc."
+__license__ = "Apache, Version 2.0"
 
 FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
 OUT_FMTS = ['text (default)', 'xml', 'json']
+POOL_METHODS = ['mean', 'harmonic_mean', 'min']
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) + \
@@ -38,6 +42,12 @@ def main():
             or out_fmt == 'xml'
             or out_fmt == 'json'
             or out_fmt == 'text'):
+        print_usage()
+        return 2
+
+    pool_method = get_cmd_option(sys.argv, 2, len(sys.argv), '--pool')
+    if not (pool_method is None
+            or pool_method in POOL_METHODS):
         print_usage()
         return 2
 
@@ -113,6 +123,15 @@ def main():
 
     # output
     for result in results:
+
+        # pooling
+        if pool_method == 'harmonic_mean':
+            result.set_score_aggregate_method(ListStats.harmonic_mean)
+        if pool_method == 'min':
+            result.set_score_aggregate_method(np.min)
+        else: # None or 'mean'
+            pass
+
         if out_fmt == 'xml':
             print result.to_xml()
         elif out_fmt == 'json':

@@ -3,13 +3,18 @@
 import os
 import sys
 
+import numpy as np
+
 from core.result_store import FileSystemResultStore
 from tools.misc import import_python_file, get_cmd_option, cmd_option_exists
 from core.quality_runner import QualityRunner, VmafQualityRunner
 from routine import test_on_dataset, print_matplotlib_warning
+from tools.stats import ListStats
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
+
+POOL_METHODS = ['mean', 'harmonic_mean', 'min']
 
 def print_usage():
     quality_runner_types = ['VMAF', 'PSNR', 'SSIM', 'MS_SSIM']
@@ -33,6 +38,12 @@ def main():
     cache_result = cmd_option_exists(sys.argv, 3, len(sys.argv), '--cache-result')
     parallelize = cmd_option_exists(sys.argv, 3, len(sys.argv), '--parallelize')
 
+    pool_method = get_cmd_option(sys.argv, 3, len(sys.argv), '--pool')
+    if not (pool_method is None
+            or pool_method in POOL_METHODS):
+        print_usage()
+        return 2
+
     if vmaf_model_path is not None and quality_type != VmafQualityRunner.TYPE:
         print "Input error: only quality_type of VMAF accepts --vmaf-model."
         print_usage()
@@ -55,12 +66,21 @@ def main():
     else:
         result_store = None
 
+    # pooling
+    if pool_method == 'harmonic_mean':
+        aggregate_method = ListStats.harmonic_mean
+    elif pool_method == 'min':
+        aggregate_method = np.min
+    else: # None or 'mean'
+        aggregate_method = np.mean
+
     try:
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
         test_on_dataset(test_dataset, runner_class, ax,
                         result_store, vmaf_model_path,
-                        parallelize=parallelize)
+                        parallelize=parallelize,
+                        aggregate_method=aggregate_method)
 
         bbox = {'facecolor':'white', 'alpha':0.5, 'pad':20}
         ax.annotate('Testing Set', xy=(0.1, 0.85), xycoords='axes fraction', bbox=bbox)
@@ -74,7 +94,8 @@ def main():
         print_matplotlib_warning()
         test_on_dataset(test_dataset, runner_class, None,
                         result_store, vmaf_model_path,
-                        parallelize=parallelize)
+                        parallelize=parallelize,
+                        aggregate_method=aggregate_method)
 
     return 0
 

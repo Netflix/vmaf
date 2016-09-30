@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 
-__copyright__ = "Copyright 2016, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
-
 import sys
 import os
+
+import numpy as np
 
 import config
 from core.asset import Asset
@@ -12,9 +11,14 @@ from core.quality_runner import VmafQualityRunner
 from core.quality_runner_adhoc import VmafQualityRunnerWithLocalExplainer
 from tools.misc import get_file_name_without_extension, get_cmd_option, \
     cmd_option_exists
+from tools.stats import ListStats
+
+__copyright__ = "Copyright 2016, Netflix, Inc."
+__license__ = "Apache, Version 2.0"
 
 FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
 OUT_FMTS = ['text (default)', 'xml', 'json']
+POOL_METHODS = ['mean', 'harmonic_mean', 'min']
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) \
@@ -56,6 +60,12 @@ def main():
         print_usage()
         return 2
 
+    pool_method = get_cmd_option(sys.argv, 6, len(sys.argv), '--pool')
+    if not (pool_method is None
+            or pool_method in POOL_METHODS):
+        print_usage()
+        return 2
+
     show_local_explanation = cmd_option_exists(sys.argv, 6, len(sys.argv), '--local-explain')
 
     asset = Asset(dataset="cmd",
@@ -89,6 +99,14 @@ def main():
     # run
     runner.run()
     result = runner.results[0]
+
+    # pooling
+    if pool_method == 'harmonic_mean':
+        result.set_score_aggregate_method(ListStats.harmonic_mean)
+    if pool_method == 'min':
+        result.set_score_aggregate_method(np.min)
+    else: # None or 'mean'
+        pass
 
     # output
     if out_fmt == 'xml':
