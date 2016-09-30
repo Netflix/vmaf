@@ -64,3 +64,8 @@
 **New features:**
 - Update wrapper/vmafossexec: 1) it now takes pkl model file as input, so that slopes/intercepts are no longer hard-coded; 2) it now takes multiple YUV input formats; 3) add flag to enable/disable VMAF score clipping at 0/100; 4) allow customly running PSNR/SSIM/MS-SSIM; 5) allow customly outputing XML/JSON
 - Add SSIM/MS-SSIM option in run_testing.
+
+## (09/29/2016) [1.1.1]
+
+**New features:**
+- Update command lines run_vmaf, run_psnr, run_vmaf_in_batch, run_cleaning_cache, run_vmaf_training and run_testing.
