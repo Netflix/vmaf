@@ -22,7 +22,7 @@ POOL_METHODS = ['mean', 'harmonic_mean', 'min']
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) \
-          + " fmt width height ref_path dis_path [--model model_path] [--out-fmt out_fmt] [--local-explain]\n"
+          + " fmt width height ref_path dis_path [--model model_path] [--out-fmt out_fmt]\n"
     print "fmt:\n\t" + "\n\t".join(FMTS) + "\n"
     print "out_fmt:\n\t" + "\n\t".join(OUT_FMTS) + "\n"
 
