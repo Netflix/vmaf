@@ -5,7 +5,7 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix Inc
 
 ##What's New
 
-- (9/30/2016) Added *vmafossexec* -- a Python-independent C++ implementation under [wrapper/](wrapper). Refer to [Python-independent Implementation](##Python-independent Implementation) for details.
+- (9/30/2016) Added *vmafossexec* -- a Python-independent C++ implementation under [wrapper/](wrapper). Refer to [Python-independent Implementation](##Python-independent-implementation) for details.
 - (9/30/2016) Commands *run_vmaf*, *run_vmaf_in_batch* and *vmafossexec* all support outputing result in XML and JSON format.
 
 ##Prerequisite
