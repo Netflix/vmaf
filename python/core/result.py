@@ -82,7 +82,7 @@ class BasicResult(object):
 
     def _get_aggregate_score_str(self):
         list_score_key = self.get_ordered_list_score_key()
-        str_aggregate = "Aggregate: " + (", ".join(
+        str_aggregate = "Aggregate ({}): ".format(self.score_aggregate_method.__name__) + (", ".join(
             map(
                 lambda (score_key, score): "{score_key}:{score:.6f}".
                     format(score_key=score_key, score=score),
@@ -211,6 +211,7 @@ class Result(BasicResult):
                 frame.set(score_key, str(score))
 
         aggregate = ElementTree.SubElement(top, 'aggregate')
+        aggregate.set('method', self.score_aggregate_method.__name__)
         for score_key, score in zip(list_score_key, list_aggregate_score):
             aggregate.set(score_key, str(score))
 
@@ -277,6 +278,7 @@ class Result(BasicResult):
 
         for score_key, score in zip(list_score_key, list_aggregate_score):
             top['aggregate'][score_key] = score
+        top['aggregate']['method'] = self.score_aggregate_method.__name__
 
         return json.dumps(top, sort_keys=False, indent=4)
 

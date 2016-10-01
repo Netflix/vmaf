@@ -1,18 +1,23 @@
 #!/usr/bin/env python
+from functools import partial
 
 import sys
 import os
+
+import numpy as np
 
 import config
 from core.asset import Asset
 from core.quality_runner import PsnrQualityRunner
 from tools.misc import get_cmd_option
+from tools.stats import ListStats
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
-OUT_FMTS = ['json (default)', 'xml', 'text']
+OUT_FMTS = ['text (default)', 'xml', 'json']
+POOL_METHODS = ['mean', 'harmonic_mean', 'min']
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) \
@@ -52,6 +57,12 @@ def main():
         print_usage()
         return 2
 
+    pool_method = get_cmd_option(sys.argv, 6, len(sys.argv), '--pool')
+    if not (pool_method is None
+            or pool_method in POOL_METHODS):
+        print_usage()
+        return 2
+
     asset = Asset(dataset="cmd", content_id=0, asset_id=0,
                   workdir_root=config.ROOT + "/workspace/workdir",
                   ref_path=ref_path,
@@ -74,13 +85,21 @@ def main():
     runner.run()
     result = runner.results[0]
 
+    # pooling
+    if pool_method == 'harmonic_mean':
+        result.set_score_aggregate_method(ListStats.harmonic_mean)
+    if pool_method == 'min':
+        result.set_score_aggregate_method(np.min)
+    else: # None or 'mean'
+        pass
+
     # output
     if out_fmt == 'xml':
         print result.to_xml()
-    elif out_fmt == 'text':
-        print str(result)
-    else: # None or 'json'
+    elif out_fmt == 'json':
         print result.to_json()
+    else: # None or 'text'
+        print str(result)
 
     return 0
 

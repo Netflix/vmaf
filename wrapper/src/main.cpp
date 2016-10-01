@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
     bool do_psnr = false;
     bool do_ssim = false;
     bool do_ms_ssim = false;
+    char *pool_method = NULL;
 
     /* Check parameters */
 
@@ -114,8 +115,15 @@ int main(int argc, char *argv[])
             do_ms_ssim = true;
         }
 
+        pool_method = getCmdOption(argv + 7, argv + argc, "--pool");
+        if (pool_method != NULL && !(strcmp(pool_method, "min")==0 || strcmp(pool_method, "harmonic_mean")==0 || strcmp(pool_method, "mean")==0))
+        {
+            fprintf(stderr, "Error: pool_method must be min, harmonic_mean or mean, but is %s\n", pool_method);
+            return -1;
+        }
+
         /* Run VMAF */
-        score = RunVmaf(fmt, width, height, ref_path, dis_path, model_path, log_path, log_fmt, disable_clip, do_psnr, do_ssim, do_ms_ssim);
+        score = RunVmaf(fmt, width, height, ref_path, dis_path, model_path, log_path, log_fmt, disable_clip, do_psnr, do_ssim, do_ms_ssim, pool_method);
 
     }
     catch (const std::exception &e)

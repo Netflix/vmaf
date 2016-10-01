@@ -565,7 +565,8 @@ static const char VMAFOSS_XML_VERSION[] = "0.3.2"; // fix slopes and intercepts 
 double RunVmaf(const char* fmt, int width, int height,
                const char *ref_path, const char *dis_path, const char *model_path,
                const char *log_path, const char *log_fmt,
-               bool disable_clip, bool do_psnr, bool do_ssim, bool do_ms_ssim)
+               bool disable_clip, bool do_psnr, bool do_ssim, bool do_ms_ssim,
+               const char *pool_method)
 {
     printf("Start calculating VMAF score...\n");
 
@@ -577,11 +578,32 @@ double RunVmaf(const char* fmt, int width, int height,
     Result result = runner.run(asset, disable_clip, do_psnr, do_ssim, do_ms_ssim);
     timer.stop();
 
+    if (pool_method != NULL && (strcmp(pool_method, "min")==0))
+    {
+        result.setScoreAggregateMethod(MIN);
+    }
+    else if (pool_method != NULL && (strcmp(pool_method, "harmonic_mean")==0))
+    {
+        result.setScoreAggregateMethod(HARMONIC_MEAN);
+    }
+    else // mean or default
+    {
+        result.setScoreAggregateMethod(MEAN);
+    }
+
     size_t num_frames = result.get_scores("vmaf").size();
     double aggregate_vmaf = result.get_score("vmaf");
     double exec_fps = (double)num_frames / (double)timer.elapsed();
     printf("Exec FPS: %f\n", exec_fps);
-    printf("VMAF score = %f\n", aggregate_vmaf);
+
+    if (pool_method)
+    {
+        printf("VMAF score (%s) = %f\n", pool_method, aggregate_vmaf);
+    }
+    else // default
+    {
+        printf("VMAF score = %f\n", aggregate_vmaf);
+    }
 
     if (log_path != NULL && log_fmt !=NULL && (strcmp(log_fmt, "json")==0))
     {

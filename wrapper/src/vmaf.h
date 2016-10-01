@@ -32,7 +32,8 @@
 double RunVmaf(const char* fmt, int width, int height,
                const char *ref_path, const char *dis_path, const char *model_path,
                const char *log_path, const char *log_fmt,
-               bool disable_clip, bool do_psnr, bool do_ssim, bool do_ms_ssim);
+               bool disable_clip, bool do_psnr, bool do_ssim, bool do_ms_ssim,
+               const char *pool_method);
 
 class Asset
 {
@@ -65,6 +66,27 @@ public:
         }
         return sum / l.size();
     }
+    double min()
+    {
+        double min_ = l[0];
+        for (double e : l)
+        {
+            if (e < min_)
+            {
+                min_ = e;
+            }
+        }
+        return min_;
+    }
+    double harmonic_mean()
+    {
+        double sum = 0.0;
+        for (double e: l)
+        {
+            sum += 1.0 / (e + 1.0);
+        }
+        return 1.0 / (sum / l.size()) - 1.0;
+    }
     void append(double e) { l.push_back(e); }
     double at(size_t idx) { return l.at(idx); }
     size_t size() { return l.size(); }
@@ -72,17 +94,35 @@ private:
     std::vector<double> l;
 };
 
+enum ScoreAggregateMethod
+{
+    MEAN,
+    HARMONIC_MEAN,
+    MIN
+};
+
 class Result
 {
 public:
-    Result() {}
+    Result(): score_aggregate_method(MEAN) {}
     void set_scores(const std::string &key, const StatVector &scores) { d[key] = scores; }
     StatVector get_scores(const std::string &key) { return d[key]; }
     bool has_scores(const std::string &key) { return d.find(key) != d.end(); }
     double get_score(const std::string &key)
     {
         StatVector list = get_scores(key);
-        return list.mean();
+        if (score_aggregate_method == MIN)
+        {
+            return list.min();
+        }
+        else if (score_aggregate_method == HARMONIC_MEAN)
+        {
+            return list.harmonic_mean();
+        }
+        else // MEAN
+        {
+            return list.mean();
+        }
     }
     std::vector<std::string> get_keys()
     {
@@ -93,8 +133,13 @@ public:
         }
         return v;
     }
+    void setScoreAggregateMethod(ScoreAggregateMethod scoreAggregateMethod)
+    {
+        score_aggregate_method = scoreAggregateMethod;
+    }
 private:
     std::map<std::string, StatVector> d;
+    ScoreAggregateMethod score_aggregate_method;
 };
 
 class VmafException: public std::exception

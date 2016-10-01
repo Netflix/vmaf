@@ -199,6 +199,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
                                train_ax, test_ax, result_store,
                                parallelize=True, logger=None, fifo_mode=True,
                                output_model_filepath=None,
+                               aggregate_method=np.mean,
                                **kwargs):
 
     train_assets = read_dataset(train_dataset, **kwargs)
@@ -216,6 +217,9 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
     )
     train_fassembler.run()
     train_features = train_fassembler.results
+
+    for result in train_features:
+        result.set_score_aggregate_method(aggregate_method)
 
     model_type = model_param.model_type
     model_param_dict = model_param.model_param_dict
@@ -240,8 +244,11 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
 
     train_stats = model.get_stats(train_ys['label'], train_ys_pred)
 
+    log = 'Stats on training data: {}'.format(model.format_stats(train_stats))
     if logger:
-        logger.info('Stats on training data: {}'.format(model.format_stats(train_stats)))
+        logger.info(log)
+    else:
+        print log
 
     # save model
     if output_model_filepath is not None:
@@ -282,6 +289,9 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         test_fassembler.run()
         test_features = test_fassembler.results
 
+        for result in test_features:
+            result.set_score_aggregate_method(aggregate_method)
+
         test_xs = model_class.get_xs_from_results(test_features)
         test_ys = model_class.get_ys_from_results(test_features)
 
@@ -289,9 +299,11 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
 
         test_stats = model_class.get_stats(test_ys['label'], test_ys_pred)
 
+        log = 'Stats on testing data: {}'.format(model_class.format_stats(test_stats))
         if logger:
-            logger.info('Stats on testing data: {}'.format(
-                model_class.format_stats(test_stats)))
+            logger.info(log)
+        else:
+            print log
 
         if test_ax is not None:
             test_content_ids = map(lambda asset: asset.content_id, test_assets)
