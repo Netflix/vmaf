@@ -3,6 +3,11 @@ VMAF - Video Multi-Method Assessment Fusion
 
 VMAF is a perceptual video quality assessment algorithm developed by Netflix Inc. VMAF Development Kit (VDK) is a software package that contains the VMAF algorithm implementation, as well as a set of tools that allows a user to train and test a custom VMAF model. Read [this](http://techblog.netflix.com/2016/06/toward-practical-perceptual-video.html) tech blog post for an overview.
 
+##What's New
+
+- (9/30/2016) Added *vmafossexec* -- a Python-independent C++ implementation under [wrapper/](wrapper). Refer to [Python-independent Implementation](##Python-independent Implementation) for details.
+- (9/30/2016) Commands *run_vmaf*, *run_vmaf_in_batch* and *vmafossexec* all support outputing result in XML and JSON format.
+
 ##Prerequisite
 
 The VDK package has its core feature extraction library written in C, and the rest glue code written in Python. It also incorporates an external C++ library [libsvm](https://www.csie.ntu.edu.tw/~cjlin/libsvm/). To build the C/C++ code, it requires *cc* and *g++*. To run scripts and tests, it requires Python2 (>= 2.7) installed.
@@ -298,3 +303,7 @@ We provide a dataset publicly available to the community for training, testing a
 ### VQEG HD3 Dataset
 
 We also provide an example dataset file containing video file names from VQEG (Video Quality Expert Group) HD3 videos. The dataset file is at [resource/dataset/VQEGHD3_dataset.py](resource/dataset/VQEGHD3_dataset.py), and the videos is available for downloading from [http://www.cdvl.org/](http://www.cdvl.org/). After login, choose menu 'find videos', and search use keyword 'vqeghd3'. The dataset file includes from src01 to src09 except for src04, which overlaps with the Netflix Public Dataset, and hrc04, hrc07, hrc16, hrc17, hrc18, hrc19, hrc20 and hrc21, which are the mostly relevant distortion types to adaptive streaming. After downloading the videos, convert them to YUV420P format. 
+
+##Python-independent Implementation
+
+We have recently added a C++ implementation that has zero Python-dependency under [wrapper/](wrapper).
