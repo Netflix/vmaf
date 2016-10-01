@@ -1,6 +1,6 @@
 # Frequently Asked Questions
 
-**Q: When computing VMAF on low-resolution videos (480 height, for example), why the score look so high, even when there are visible artifacts?**
+**Q: When computing VMAF on low-resolution videos (480 height, for example), why the scores look so high, even when there are visible artifacts?**
 
 A: It is associated with the underlying assumption of VMAF on the subject viewing distance and display size.
 
