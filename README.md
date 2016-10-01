@@ -1,16 +1,17 @@
 VMAF - Video Multi-Method Assessment Fusion
 ===================
 
-VMAF is a perceptual video quality assessment algorithm developed by Netflix Inc. VMAF Development Kit (VDK) is a software package that contains the VMAF algorithm implementation, as well as a set of tools that allows a user to train and test a custom VMAF model. Read [this](http://techblog.netflix.com/2016/06/toward-practical-perceptual-video.html) tech blog post for an overview.
+VMAF is a perceptual video quality assessment algorithm developed by Netflix. VMAF Development Kit (VDK) is a software package that contains the VMAF algorithm implementation, as well as a set of tools that allows a user to train and test a custom VMAF model. Read [this](http://techblog.netflix.com/2016/06/toward-practical-perceptual-video.html) tech blog post for an overview.
 
 ##What's New
 
-- (9/30/2016) Added *vmafossexec* -- a Python-independent C++ implementation under [wrapper/](wrapper). Refer to [Python-independent Implementation](#python-independent-implementation) for details.
-- (9/30/2016) Commands *run_vmaf*, *run_vmaf_in_batch* and *vmafossexec* all support outputing result in XML and JSON format.
+- (9/30/16) Added a [FAQ](FAQ.md) page.
+- (9/30/16) Commands *run_vmaf*, *run_vmaf_in_batch* and *vmafossexec* now all support output in XML and JSON format.
+- (9/30/16) Added *vmafossexec* -- a Python-independent implementation under [wrapper](wrapper). Refer to [Python-independent Implementation](#python-independent-implementation) for details.
 
 ##Prerequisite
 
-The VDK package has its core feature extraction library written in C, and the rest glue code written in Python. It also incorporates an external C++ library [libsvm](https://www.csie.ntu.edu.tw/~cjlin/libsvm/). To build the C/C++ code, it requires *cc* and *g++*. To run scripts and tests, it requires Python2 (>= 2.7) installed.
+The VDK package has its core feature extraction library written in C, and the rest control code written in Python. It also has a stand-alone C++ implementation that is Python-independent. To build the C/C++ code, it requires *cc* and *g++*. To run scripts and tests, it requires Python2 (>= 2.7) installed.
 
 It also requires a number of Python packages:
 
@@ -89,21 +90,30 @@ There are two basic execution modes to run VMAF -- a single mode and a batch mod
 To run VMAF on a single reference/distorted video pair, run:
 
 ```
-./run_vmaf format width height reference_path distorted_path
+./run_vmaf format width height reference_path distorted_path [--out-fmt output_format]
 ```
 
-where *format* is among *yuv420p*, *yuv422p*, *yuv444p* (YUV 8-bit) and *yuv420p10le*, *yuv422p10le*, *yuv444p10le* (YUV 10-bit little endian).
+where *format* is among *yuv420p*, *yuv422p*, *yuv444p* (YUV 8-bit) and *yuv420p10le*, *yuv422p10le*, *yuv444p10le* (YUV 10-bit little endian), and *output_format* is among *text*, *xml* and *json*.
 
 For example:
 
 ```
-./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv
+./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv --out-fmt json
 ```
 
 This will generate output like:
 
 ```
-Aggregate: VMAF_feature_adm2_score:0.925, VMAF_feature_motion_score:3.592, VMAF_feature_vif_scale0_score:0.366, VMAF_feature_vif_scale1_score:0.772, VMAF_feature_vif_scale2_score:0.868, VMAF_feature_vif_scale3_score:0.921, VMAF_score:66.628
+"aggregate": {
+    "VMAF_feature_adm2_score": 0.92542107502749982, 
+    "VMAF_feature_motion_score": 4.0498253541666669, 
+    "VMAF_feature_vif_scale0_score": 0.36342048943884936, 
+    "VMAF_feature_vif_scale1_score": 0.76664754213485187, 
+    "VMAF_feature_vif_scale2_score": 0.86285466690193247, 
+    "VMAF_feature_vif_scale3_score": 0.91597177803640772, 
+    "VMAF_score": 65.44885887590759, 
+    "method": "mean"
+}
 ```
 
 where *VMAF_score* is the final score and the others are the scores for elementary metrics. *adm2*, *vif_scalex* scores range from 0 (worst) to 1 (best), and *motion* score typically ranges from 0 (static) to 20 (high-motion).
@@ -124,33 +134,33 @@ yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc00_57
 After that, run:
 
 ```
-./run_vmaf_in_batch parallelize input_file
+./run_vmaf_in_batch input_file [--out-fmt out_fmt] [--parallelize]
 ```
 
-where *parallelize* is either *yes* or *no*.
+where enabling *--parallelize* allows execution on multiple reference-distorted video pairs in parallel.
 
 For example:
 
 ```
-./run_vmaf_in_batch yes example_batch_input
+./run_vmaf_in_batch example_batch_input --parallelize
 ```
 
 ##Advanced Usage
 
-VMAF follows a machine-learning based approach to first extract a number of quality-relevant features from a distorted video and its reference full-quality video, followed by fusing them into a final quality score using a non-linear regressor (e.g. a SVM regressor), hence the name 'Video Multi-method Assessment Fusion'.
+VMAF follows a machine-learning based approach to first extract a number of quality-relevant features (or elementary metrics) from a distorted video and its reference full-quality video, followed by fusing them into a final quality score using a non-linear regressor (e.g. a SVM regressor), hence the name 'Video Multi-method Assessment Fusion'.
 
-In addition to the basic executors, the VMAF package also provides a framework to allow any user to train his/her own perceptual quality assessment model. For example, directory [resource/model](resource/model) contains a number of pre-trained models, which can be loaded by the aforementioned VMAF executors:
+In addition to the basic commands, the VMAF package also provides a framework to allow any user to train his/her own perceptual quality assessment model. For example, directory [resource/model](resource/model) contains a number of pre-trained models, which can be loaded by the aforementioned commands:
 
 ```
-./run_vmaf format width height reference_path distorted_path [optional_VMAF_model_file]
-./run_vmaf_in_batch parallelize input_file [optional_VMAF_model_file]
+./run_vmaf format width height reference_path distorted_path [--model model_path]
+./run_vmaf_in_batch input_file [--model model_path] --parallelize
 ```
 
 For example:
 
 ```
-./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv resource/model/nflxtrain_vmafv3.pkl
-./run_vmaf_in_batch yes example_batch_input resource/model/nflxtrain_vmafv3.pkl
+./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv --model resource/model/nflxtrain_vmafv3.pkl
+./run_vmaf_in_batch example_batch_input --model resource/model/nflxtrain_vmafv3.pkl --parallelize
 ```
 
 A user can customize the model based on:
@@ -163,7 +173,7 @@ Once a model is trained, the VMAF package also provides tools to cross validate 
 
 ###Create a Dataset
 
-To begin with, create a dataset file following the format in [example_dataset.py](example_dataset.py). A dataset is a collection of distorted videos, each has a unique asset ID and a corresponding reference video, identified by a unique content ID. Each distorted video is also associated with a MOS (mean opinion score), or differential MOS (DMOS), which is obtained through subjective experiments. An example code snippets that defines a dataset is as follows:
+To begin with, create a dataset file following the format in [example_dataset.py](example_dataset.py). A dataset is a collection of distorted videos, each has a unique asset ID and a corresponding reference video, identified by a unique content ID. Each distorted video is also associated with subjective quality score, typically a MOS (mean opinion score), obtained through subjective study. An example code snippets that defines a dataset is as follows:
 
 ```
 dataset_name = 'example'
@@ -186,33 +196,33 @@ See directory [resource/dataset](resource/dataset) for more examples. Also refer
 
 ###Validate a Dataset
 
-Once a dataset is created, first validate the dataset using existing VMAF or other (e.g. PSNR) metrics. Run:
+Once a dataset is created, first validate the dataset using existing VMAF or other (PSNR, SSIM or MS-SSIM) metrics. Run:
 
 ```
-./run_testing quality_type cache_result parallelize test_dataset_file [optional_VMAF_model_file]
+./run_testing quality_type test_dataset_file [--vmaf-model optional_VMAF_model_path] [--cache-result] [--parallelize]
 ```
 
-where *quality_type* can be *VMAF* or *PSNR*. 
+where *quality_type* can be *VMAF*, *PSNR*, *SSIM* or *MS_SSIM*.
 
-*cache_result* is either *yes* or *no* specifying if to store the extracted feature results in a data store to be re-used later on (since feature extraction is the most expensive operations here). 
+Enabling *--cache-result* allows storing/retrieving extracted features (or elementary quality metrics) in a data store (since feature extraction is the most expensive operations here). 
 
-*parallelize* is either *yes* or *no* specifying if to parallelize feature extraction to speed things up. Sometimes it is desirable to disable parallelization for debugging purpose (e.g. some error messages can only be displayed when parallel execution is disabled).
+Enabling *--parallelize* allows execution on multiple reference-distorted video pairs in parallel. Sometimes it is desirable to disable parallelization for debugging purpose (e.g. some error messages can only be displayed when parallel execution is disabled).
 
 For example:
 
 ```
-./run_testing VMAF yes yes example_dataset.py
+./run_testing VMAF example_dataset.py --cache-result --parallelize
 ```
 
 Make sure *matplotlib* is installed to visualize the MOS-prediction scatter plot and inspect the statistics: 
 
   - PCC - Pearson correlation coefficient
-  - SRCC - Spearman rank correlation coefficient
+  - SRCC - Spearman rank order correlation coefficient
   - RMSE - root mean squared error
   
 ####Troubleshooting
 
-When creating a dataset file, one may make errors (for example, having a typo in a file path) that could go unnoticed but make the execution of `run_testing` fail. For debugging purpose, it is recommended to turn *parallelize* mode to *no*. 
+When creating a dataset file, one may make errors (for example, having a typo in a file path) that could go unnoticed but make the execution of `run_testing` fail. For debugging purpose, it is recommended to disable *--parallelize*.
 
 If problem persists, one may need to run the script: 
 
@@ -231,15 +241,13 @@ to clean up corrupted results in the store before retrying. For example:
 Now that we are confident that the dataset is created correctly and we have some benchmark result on existing metrics, we proceed to train a new quality assessment model. Run:
 
 ```
-./run_training cache_result parallelize train_dataset_file feature_param_file model_param_file output_model_file
+./run_vmaf_training train_dataset_filepath feature_param_file model_param_file output_model_file [--cache-result] [--parallelize]
 ```
-
-Here *cache_result* is either *yes* or *no*, *parallelize* is either *yes* or *no*, similar as before. 
 
 For example:
 
 ```
-./run_training yes yes example_dataset.py resource/feature_param/vmaf_feature_v2.py resource/model_param/libsvmnusvr_v2.py workspace/model/test_model.pkl
+./run_vmaf_training example_dataset.py resource/feature_param/vmaf_feature_v2.py resource/model_param/libsvmnusvr_v2.py workspace/model/test_model.pkl --cache-result --parallelize
 ```
 
 *feature_param_file* defines the set of features used. For example, both dictionaries below:
@@ -273,12 +281,12 @@ model_param_dict = {
 }
 ```
 
-The trained model is output to *output_model_file*. Once it is obtained, it can be used by the *run_vmaf* or *run_vmaf_in_batch*, or used by *run_test* to validate another dataset.
+The trained model is output to *output_model_file*. Once it is obtained, it can be used by the *run_vmaf* or *run_vmaf_in_batch*, or used by *run_testing* to validate another dataset.
 
 ![training scatter](/resource/images/scatter_training.png)
 ![testing scatter](/resource/images/scatter_testing.png)
 
-Above are two example scatter plots obtained from running the *run_training* and *run_testing* executors on a training and a testing dataset, respectively.
+Above are two example scatter plots obtained from running the *run_vmaf_training* and *run_testing* commands on a training and a testing dataset, respectively.
 
 ###Cross Validation
 
@@ -306,4 +314,7 @@ We also provide an example dataset file containing video file names from VQEG (V
 
 ##Python-independent Implementation
 
-We have recently added a C++ implementation that has zero Python-dependency under [wrapper/](wrapper).
+The VDK package combines feature extraction implementation in C and the rest control code implementation in Python. Python control code allows fast prototyping, but sometimes deploying the Python dependency in production could be a pain.
+Under [wrapper](wrapper), we provide a C++ implementation *vmafossexec* that has no dependency on Python.
+
+Note that *vmafossexec* depends on a shared library *ptools/libptools.so*. If you move the executable, make sure to include the shared library in *LD_LIBRARY_PATH*.
