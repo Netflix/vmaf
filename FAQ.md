@@ -18,4 +18,4 @@ If, say, for a distorted video of 480 resolution, we still want to predict its q
 
 **Q: Why the included SSIM tool produces numerical results off compared to other tools?**
 
-A: The ssim implementation in the VMAF package includes an empirical downsampling process, as described at the Suggested Usage section of [SSIM](https://ece.uwaterloo.ca/~z70wang/research/ssim/). The other implementations, such as the SSIM filter in FFmpeg, does not include this step.
+A: The SSIM implementation in the VMAF package includes an empirical downsampling process, as described at the Suggested Usage section of [SSIM](https://ece.uwaterloo.ca/~z70wang/research/ssim/). The other implementations, such as the SSIM filter in FFmpeg, does not include this step.

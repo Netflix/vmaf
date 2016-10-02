@@ -314,7 +314,7 @@ We also provide an example dataset file containing video file names from VQEG (V
 
 ##Python-independent Implementation
 
-The VDK package combines feature extraction implementation in C and the rest control code implementation in Python. The layer of Python code allows fast prototyping, but sometimes deploying the Python dependency in production is a pain.
+The VDK package combines feature extraction implementation in C and the rest control code in Python. The layer of Python code allows fast prototyping, but sometimes deploying the Python dependency in production is a pain.
 Under [wrapper](wrapper), we provide a C++ implementation *vmafossexec* that has no dependency on Python.
 
 Note that *vmafossexec* depends on a shared library *ptools/libptools.so*. If you move the executable, make sure to include the shared library in *LD_LIBRARY_PATH*.
