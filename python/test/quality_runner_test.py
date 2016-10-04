@@ -391,7 +391,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=self.result_store,
             optional_dict={
-                'model_filepath':config.ROOT + "/resource/model/nflx_vmaff_rf_v1.pkl",
+                'model_filepath':config.ROOT + "/resource/model/nflx_vmaff_rf_v2.pkl",
             },
             optional_dict2=None,
         )
@@ -399,13 +399,13 @@ class QualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAF_score'], 73.8142361111, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 70.957532051282058, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.4460930625, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 4.04982535417, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_adm_score'], 0.91550952083333337, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 23.5095715208, places=4)
 
-        self.assertAlmostEqual(results[1]['VMAF_score'], 98.5538194444, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 100.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'],4.04982535417, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_score'], 1.0, places=4)
@@ -876,22 +876,22 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             parallelize=True,
             result_store=None,
             optional_dict={
-                'model_filepath':config.ROOT + "/resource/model/nflx_vmaff_rf_v1.pkl",
+                'model_filepath':config.ROOT + "/resource/model/nflx_vmaff_rf_v2.pkl",
             },
             optional_dict2=None,
         )
 
-        self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.44609306249999997, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 70.957532051282058, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.4460930625, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 4.04982535417, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_score'], 0.915509520833, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_score'], 0.91550952083333337, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 23.5095715208, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_score'], 73.8142361111111, places=4)
 
+        self.assertAlmostEqual(results[1]['VMAF_score'], 100.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 4.04982535417, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'],4.04982535417, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 31.2714392708, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_score'], 98.553819444444457, places=4)
 
     def test_run_parallel_ssim_runner(self):
         print 'test on running SSIM quality runner in parallel...'
