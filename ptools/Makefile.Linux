@@ -20,7 +20,9 @@ CFLAGS = -Wall -Wextra -fpic -O -fno-strict-aliasing -DLINUX_ -DOC_NEW_STYLE_INC
 
 CCFLAGS = -pthread $(CFLAGS)
 
-COM_OBJS = m2pythontools.o valpython.o midassocket.o valprotocol2.o m2ser.o m2streamdataenc.o m2convertrep.o timeconv.o fdtools.o
+##COM_OBJS = m2pythontools.o valpython.o midassocket.o valprotocol2.o m2ser.o m2streamdataenc.o m2convertrep.o timeconv.o fdtools.o
+COM_OBJS = m2pythontools.o valpython.o midassocket.o valprotocol2.o m2ser.o m2streamdataenc.o m2convertrep.o timeconv.o
+
 OBJS = midastalker_ex.o midastalker_ex2.o httpclient_ex.o httpserver_ex.o $(COM_OBJS) load.o save.o sharedmemory.o 
 
 all: midasyeller_ex midastalker_ex midastalker_ex2 httpclient_ex midasserver_ex permutation_server permutation_client load save opal2dict dict2opal opaltest midasyeller_ex midaslistener_ex p2_test valgetopt_ex sharedmem_test ready_test xmlload_test xmlload_ex xmldump_test xmldump_ex speed_test pickleloader_test chooseser_test xml2dict dict2xml serverside_ex clientside_ex middleside_ex

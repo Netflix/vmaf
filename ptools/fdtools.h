@@ -81,7 +81,7 @@ inline void debugArray_ (Array<char>& buffer, const char* routine)
 }
 
 // Handle 8 byte Network Host Order
-inline int_u8 htonll (int_u8 bytes)
+inline int_u8 (htonll) (int_u8 bytes)
 {
   int_u8 check = 1;
   char *check1 = reinterpret_cast<char*>(&check);
@@ -100,7 +100,7 @@ inline int_u8 htonll (int_u8 bytes)
 }
 
 // Handle 8 byte Network Host Order
-inline int_u8 ntohll (int_u8 bytes)
+inline int_u8 (ntohll) (int_u8 bytes)
 {
   int_u8 check = 1;
   char *check1 = reinterpret_cast<char*>(&check);
