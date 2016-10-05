@@ -69,3 +69,9 @@
 
 **New features:**
 - Update command lines run_vmaf, run_psnr, run_vmaf_in_batch, run_cleaning_cache, run_vmaf_training and run_testing.
+
+## (10/5/2016) [1.1.2]
+
+**Fixed bugs:**
+- Make ptools work under Mac OS.
+- Update SklearnRandomForestTrainTestModel test with sklearn 0.18.
