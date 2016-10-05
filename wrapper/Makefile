@@ -110,7 +110,11 @@ $(OBJDIR)/%.o: $(SRCDIR)/pugixml/%.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
 
 vmafossexec: $(OBJS)
+ifeq ($(shell uname),Darwin)
+	$(CXX) -o $@ $(LDFLAGS) $^ -L$(PTOOLSDIR) $(LIBS) -Wl
+else
 	$(CXX) -o $@ $(LDFLAGS) $^ -L$(PTOOLSDIR) $(LIBS) -Wl,-rpath=$(PTOOLSDIR)
+endif
 
 clean:
 	rm -f $(OBJDIR)/*.o
