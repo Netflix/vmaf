@@ -181,7 +181,7 @@ class QualityRunnerTest(unittest.TestCase):
                 None, fifo_mode=True)
 
     def test_run_vmaf_runner_v1_model(self):
-        print 'test on running VMAF runner...'
+        print 'test on running VMAF runner (v1 model)...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -729,7 +729,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['MS_SSIM_feature_ms_ssim_s_scale4_score'], 1., places=4)
 
     def test_run_vmaf_runner_pool_harmonic_mean(self):
-        print 'test on running VMAF runner...'
+        print 'test on running VMAF runner (pool harmonic mean)...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,

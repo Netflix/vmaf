@@ -4,7 +4,7 @@ TARGETS = \
 	wrapper
 
 all:
-	cd ptools; $(MAKE) libptools.so; cd ..;
+	cd ptools; $(MAKE) libptools; cd ..;
 
 	-for dir in $(TARGETS); do \
 		cd $${dir}; $(MAKE); cd ..; \

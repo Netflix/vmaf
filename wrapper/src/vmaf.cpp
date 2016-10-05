@@ -24,6 +24,7 @@
 #include <iostream>
 #include <sstream>
 #include <memory>
+#include <cmath>
 
 #include "vmaf.h"
 #include "darray.h"
@@ -693,7 +694,7 @@ inline double _round(double val)
 
 inline double _round_to_digit(double val, int digit)
 {
-    size_t m = pow10(digit);
+    size_t m = pow(10.0, digit);
     return _round(val * m) / m;
 }
 
