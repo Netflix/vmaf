@@ -57,6 +57,20 @@ class TestReadDataset(unittest.TestCase):
         self.assertEqual(train_assets[0].asset_dict['quality_height'], 100)
         self.assertEqual(train_assets[0].asset_dict['resampling_type'], 'bicubic')
 
+    def test_read_dataset_diffyuv(self):
+        train_dataset_path = config.ROOT + '/python/test/resource/test_dataset_diffyuv.py'
+        train_dataset = import_python_file(train_dataset_path)
+        train_assets = read_dataset(train_dataset)
+
+        self.assertEquals(len(train_assets), 4)
+        self.assertEquals(train_assets[0].ref_width_height, (1920, 1080))
+        self.assertEquals(train_assets[0].dis_width_height, (1920, 1080))
+        self.assertEquals(train_assets[0].quality_width_height, (1920, 1080))
+        self.assertEquals(train_assets[0].yuv_type, 'yuv420p')
+        self.assertEquals(train_assets[2].ref_width_height, (1280, 720))
+        self.assertEquals(train_assets[2].dis_width_height, (1280, 720))
+        self.assertEquals(train_assets[2].quality_width_height, (1280, 720))
+        self.assertEquals(train_assets[2].yuv_type, 'yuv420p10le')
 
 class TestTrainOnDataset(unittest.TestCase):
 

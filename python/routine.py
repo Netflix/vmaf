@@ -25,19 +25,20 @@ def read_dataset(dataset, **kwargs):
 
     # asserts, can add more to the list...
     assert hasattr(dataset, 'dataset_name')
-    assert hasattr(dataset, 'yuv_fmt')
     assert hasattr(dataset, 'ref_videos')
     assert hasattr(dataset, 'dis_videos')
-    assert hasattr(dataset, 'width') or 'width' in dataset.ref_videos[0]
-    assert hasattr(dataset, 'height') or 'height' in dataset.ref_videos[0]
+
+    assert hasattr(dataset, 'width') or all(['width' in ref_video for ref_video in dataset.ref_videos])
+    assert hasattr(dataset, 'height') or all(['height' in ref_video for ref_video in dataset.ref_videos])
+    assert hasattr(dataset, 'yuv_fmt') or all(['yuv_fmt' in ref_video for ref_video in dataset.ref_videos])
 
     data_set_name = dataset.dataset_name
-    yuv_fmt = dataset.yuv_fmt
     ref_videos = dataset.ref_videos
     dis_videos = dataset.dis_videos
 
     width = dataset.width if hasattr(dataset, 'width') else None
     height = dataset.height if hasattr(dataset, 'height') else None
+    yuv_fmt = dataset.yuv_fmt if hasattr(dataset, 'yuv_fmt') else None
 
     quality_width = dataset.quality_width if hasattr(dataset, 'quality_width') else None
     quality_height = dataset.quality_height if hasattr(dataset, 'quality_height') else None
@@ -65,6 +66,7 @@ def read_dataset(dataset, **kwargs):
         ref_path = ref_dict[dis_video['content_id']]['path']
         width_ = width if width is not None else ref_dict[dis_video['content_id']]['width']
         height_ = height if height is not None else ref_dict[dis_video['content_id']]['height']
+        yuv_fmt_ = yuv_fmt if yuv_fmt is not None else ref_dict[dis_video['content_id']]['yuv_fmt']
 
         if quality_width is not None:
             quality_width_ = quality_width
@@ -89,7 +91,7 @@ def read_dataset(dataset, **kwargs):
 
         asset_dict = {'width': width_,
                       'height': height_,
-                      'yuv_type': yuv_fmt,
+                      'yuv_type': yuv_fmt_,
                       }
         if groundtruth is not None:
             asset_dict['groundtruth'] = groundtruth
