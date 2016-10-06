@@ -75,3 +75,8 @@
 **Fixed bugs:**
 - Make ptools work under Mac OS.
 - Update SklearnRandomForestTrainTestModel test with sklearn 0.18.
+
+## (09/29/2016) [1.1.3]
+
+**New features:**
+- Generalize dataset format to allow per-content YUV format.
