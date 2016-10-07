@@ -91,22 +91,21 @@ If you want to extract the YUV from your files (specifically the color space yuv
 
 ```
 
-# go to src (where you see [src] fill with the path to your rep, ex: /Users/user/src/vmaf)
+# go to src (where you see [src] fill with the path where you'll download the assets, ex: /Users/user/src/vmaf)
 cd [src]
 
-# getting the pivo and the video to check the score
-
+# getting the pivot (bitrate 1000kpbs, vcodec MPEG-4 Visual (similar to h264))
 wget http://www.sample-videos.com/video/mp4/360/big_buck_bunny_360p_5mb.mp4
-wget http://www.sample-videos.com/video/mp4/360/big_buck_bunny_360p_10mb.mp4
+
+# encoding it to vp9 (bitrate 700kpbs, vcodec VP9)
+docker run -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p_5mb.mp4 -c:v libvpx-vp9 -b:v 700K -c:a libvorbis /files/big_buck_bunny_360p.webm
 
 # extracting the yuv
-
-docker run -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p_10mb.mp4 -c:v rawvideo -pix_fmt yuv420p /files/360p_10mb.yuv
-docker run -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p_5mb.mp4 -c:v rawvideo -pix_fmt yuv420p /files/360p_5mb.yuv
+docker run -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p_5mb.mp4 -c:v rawvideo -pix_fmt yuv420p /files/360p_mpeg4-v_1000.yuv
+docker run -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p.webm -c:v rawvideo -pix_fmt yuv420p /files/360p_vp9_700.yuv
 
 # checking the WMAF score
-
-docker run -v [src]:/files vmaf yuv420p 640 368 /files/360p_10mb.yuv /files/360p_5mb.yuv json
+docker run -v [src]:/files vmaf yuv420p 640 368 /files/360p_mpeg4-v_1000.yuv /files/360p_vp9_700.yuv json
 ```
 
 ##Testing
