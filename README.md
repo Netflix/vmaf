@@ -87,7 +87,7 @@ And to use it, just run:
 docker run vmaf
 ```
 
-If you want to extract from your files to the color space yuv420p, you can run:
+If you want to extract the YUV from your files (specifically the color space yuv420p), you can run:
 
 ```
 
