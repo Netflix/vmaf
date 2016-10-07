@@ -73,6 +73,42 @@ export PYTHONPATH=[path_to_repo_dir]/python:$PYTHONPATH
 
 You can also add it to environment permanently. On Ubuntu, append the line above to *~/.bashrc* and run `source ~/.bashrc`. On Mac OS X, append it to *~/.bash_profile* and run `source ~/.bash_profile`.
 
+##Usage through Docker
+
+After cloning the WMAF repo, cd to the repo directory and run:
+
+```
+docker build -t vmaf .
+```
+
+And to use it, just run:
+
+```
+docker run vmaf
+```
+
+If you want to extract from your files to the color space yuv420p, you can run:
+
+```
+
+# go to src (where you see [src] fill with the path to your rep, ex: /Users/user/src/vmaf)
+cd [src]
+
+# getting the pivo and the video to check the score
+
+wget http://www.sample-videos.com/video/mp4/360/big_buck_bunny_360p_5mb.mp4
+wget http://www.sample-videos.com/video/mp4/360/big_buck_bunny_360p_10mb.mp4
+
+# extracting the yuv
+
+docker run -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p_10mb.mp4 -c:v rawvideo -pix_fmt yuv420p /files/360p_10mb.yuv
+docker run -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p_5mb.mp4 -c:v rawvideo -pix_fmt yuv420p /files/360p_5mb.yuv
+
+# checking the WMAF score
+
+docker run -v [src]:/files vmaf yuv420p 640 368 /files/360p_10mb.yuv /files/360p_5mb.yuv json
+```
+
 ##Testing
 
 The package has thus far been tested on Ubuntu 14.04 LTS and Mac OS X 10.10.5.
