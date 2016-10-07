@@ -20,8 +20,7 @@ CFLAGS = -Wall -Wextra -fpic -O -fno-strict-aliasing -DLINUX_ -DOC_NEW_STYLE_INC
 
 CCFLAGS = -pthread $(CFLAGS)
 
-##COM_OBJS = m2pythontools.o valpython.o midassocket.o valprotocol2.o m2ser.o m2streamdataenc.o m2convertrep.o timeconv.o fdtools.o
-COM_OBJS = m2pythontools.o valpython.o midassocket.o valprotocol2.o m2ser.o m2streamdataenc.o m2convertrep.o timeconv.o
+COM_OBJS = m2pythontools.o valpython.o midassocket.o valprotocol2.o m2ser.o m2streamdataenc.o m2convertrep.o timeconv.o fdtools.o
 
 OBJS = midastalker_ex.o midastalker_ex2.o httpclient_ex.o httpserver_ex.o $(COM_OBJS) load.o save.o sharedmemory.o 
 
@@ -30,12 +29,8 @@ all: midasyeller_ex midastalker_ex midastalker_ex2 httpclient_ex midasserver_ex 
 .cc.o:
 	$(CC) $(CFLAGS) -c $<
 
-libptools : $(COM_OBJS)
-ifeq ($(shell uname),Darwin)
-	$(CC) $(CCFLAGS) $(COM_OBJS) -dynamiclib -install_name $(shell pwd)/libptools.dylib -o libptools.dylib
-else
+libptools.so : $(COM_OBJS)
 	$(CC) $(CCFLAGS) $(COM_OBJS) -shared -o libptools.so
-endif
 
 midasserver_ex : $(COM_OBJS) midasserver_ex.o
 	$(CC) $(CCFLAGS) $(COM_OBJS) midasserver_ex.o -pthread -o midasserver_ex
@@ -141,5 +136,5 @@ checkshm_test :  $(COM_OBJS) checkshm_test.o sharedmem.o
 
 
 clean :
-	/bin/rm -rf *.o *.so *.dylib *~ midastalker_ex midastalker_ex2 httpserver_ex httpclient_ex midasserver_ex midasyeller_ex midaslistener_ex permutation_server permutation_client load save cxx_repository opal2dict opaltest dict2opal p2_test valgetopt_ex json_ex sharedmem_test ready_test speed_test pickleloader_test chooseser_test xmldump_test xmldump_ex xmlload_test xmlload_ex xml2dict dict2xml samplehttpserver_ex serverside_ex clientside_ex middleside_ex checkshm_test
+	/bin/rm -rf *.o *.so *~ midastalker_ex midastalker_ex2 httpserver_ex httpclient_ex midasserver_ex midasyeller_ex midaslistener_ex permutation_server permutation_client load save cxx_repository opal2dict opaltest dict2opal p2_test valgetopt_ex json_ex sharedmem_test ready_test speed_test pickleloader_test chooseser_test xmldump_test xmldump_ex xmlload_test xmlload_ex xml2dict dict2xml samplehttpserver_ex serverside_ex clientside_ex middleside_ex checkshm_test
 
