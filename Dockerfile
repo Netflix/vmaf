@@ -1,8 +1,8 @@
 FROM        ubuntu
 RUN apt-get update -qq && apt-get install -y \
-      	build-essential git gcc python-numpy python-scipy python-matplotlib \
-	ipython ipython-notebook python-pandas python-sympy python-nose \
-        python2.7 python-setuptools python-dev
+      build-essential git gcc python-numpy python-scipy python-matplotlib \
+      ipython ipython-notebook python-pandas python-sympy python-nose \
+      python2.7 python-setuptools python-dev
 RUN easy_install pip
 RUN pip install --upgrade scikit-learn
 RUN pip install --upgrade h5py
