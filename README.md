@@ -75,7 +75,7 @@ You can also add it to environment permanently. On Ubuntu, append the line above
 
 ##Usage through Docker
 
-After cloning the WMAF repo, cd to the repo directory and run:
+After cloning the VMAF repo, cd to the repo directory and run:
 
 ```
 docker build -t vmaf .
@@ -84,28 +84,27 @@ docker build -t vmaf .
 And to use it, just run:
 
 ```
-docker run vmaf
+docker run --rm vmaf
 ```
 
 If you want to extract the YUV from your files (specifically the color space yuv420p), you can run:
 
 ```
-
 # go to src (where you see [src] fill with the path where you'll download the assets, ex: /Users/user/src/vmaf)
 cd [src]
 
 # getting the pivot (bitrate 1000kpbs, vcodec MPEG-4 Visual (similar to h264))
 wget http://www.sample-videos.com/video/mp4/360/big_buck_bunny_360p_5mb.mp4
 
-# encoding it to vp9 (bitrate 700kpbs, vcodec VP9)
-docker run -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p_5mb.mp4 -c:v libvpx-vp9 -b:v 700K -c:a libvorbis /files/big_buck_bunny_360p.webm
+# transcodes it to vp9 (bitrate 700kpbs, vcodec VP9)
+docker run --rm -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p_5mb.mp4 -c:v libvpx-vp9 -b:v 600K -c:a libvorbis /files/big_buck_bunny_360p.webm
 
 # extracting the yuv
-docker run -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p_5mb.mp4 -c:v rawvideo -pix_fmt yuv420p /files/360p_mpeg4-v_1000.yuv
-docker run -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p.webm -c:v rawvideo -pix_fmt yuv420p /files/360p_vp9_700.yuv
+docker run --rm -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p_5mb.mp4 -c:v rawvideo -pix_fmt yuv420p /files/360p_mpeg4-v_1000.yuv
+docker run --rm -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p.webm -c:v rawvideo -pix_fmt yuv420p /files/360p_vp9_700.yuv
 
-# checking the WMAF score
-docker run -v [src]:/files vmaf yuv420p 640 368 /files/360p_mpeg4-v_1000.yuv /files/360p_vp9_700.yuv json
+# checking the VMAF score
+docker run --rm -v [src]:/files vmaf yuv420p 640 368 /files/360p_mpeg4-v_1000.yuv /files/360p_vp9_700.yuv --out-fmt json
 ```
 
 ##Testing
