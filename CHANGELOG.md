@@ -85,3 +85,8 @@
 
 **Fixed bugs:**
 - Issue #29: Make ptools build under Fedora.
+
+## (10/8/2016) [1.1.5]
+
+**New features:**
+- Add support for docker usage (#30).

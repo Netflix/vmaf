@@ -5,6 +5,7 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ##What's New
 
+- (10/8/16) Added support for docker usage. Refer to [Usage through Docker](#usage-through-docker).
 - (9/30/16) Added a [FAQ](FAQ.md) page.
 - (9/30/16) Commands *run_vmaf*, *run_vmaf_in_batch* and *vmafossexec* now all support output in XML and JSON format.
 - (9/30/16) Added *vmafossexec* -- a Python-independent implementation under [wrapper](wrapper). Refer to [Python-independent Implementation](#python-independent-implementation) for details.
@@ -72,40 +73,6 @@ export PYTHONPATH=[path_to_repo_dir]/python:$PYTHONPATH
 ```
 
 You can also add it to environment permanently. On Ubuntu, append the line above to *~/.bashrc* and run `source ~/.bashrc`. On Mac OS X, append it to *~/.bash_profile* and run `source ~/.bash_profile`.
-
-##Usage through Docker
-
-After cloning the VMAF repo, cd to the repo directory and run:
-
-```
-docker build -t vmaf .
-```
-
-And to use it, just run:
-
-```
-docker run --rm vmaf
-```
-
-If you want to extract the YUV from your files (specifically the color space yuv420p), you can run:
-
-```
-# go to src (where you see [src] fill with the path where you'll download the assets, ex: /Users/user/src/vmaf)
-cd [src]
-
-# getting the pivot (bitrate 1000kpbs, vcodec MPEG-4 Visual (similar to h264))
-wget http://www.sample-videos.com/video/mp4/360/big_buck_bunny_360p_5mb.mp4
-
-# transcodes it to vp9 (bitrate 700kpbs, vcodec VP9)
-docker run --rm -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p_5mb.mp4 -c:v libvpx-vp9 -b:v 600K -c:a libvorbis /files/big_buck_bunny_360p.webm
-
-# extracting the yuv
-docker run --rm -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p_5mb.mp4 -c:v rawvideo -pix_fmt yuv420p /files/360p_mpeg4-v_1000.yuv
-docker run --rm -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p.webm -c:v rawvideo -pix_fmt yuv420p /files/360p_vp9_700.yuv
-
-# checking the VMAF score
-docker run --rm -v [src]:/files vmaf yuv420p 640 368 /files/360p_mpeg4-v_1000.yuv /files/360p_vp9_700.yuv --out-fmt json
-```
 
 ##Testing
 
@@ -352,3 +319,46 @@ The VDK package combines feature extraction implementation in C and the rest con
 Under [wrapper](wrapper), we provide a C++ implementation *vmafossexec* that has no dependency on Python.
 
 Note that *vmafossexec* depends on a shared library *ptools/libptools.so*. If you move the executable, make sure to include the shared library in *LD_LIBRARY_PATH*.
+
+##Usage through Docker
+
+After cloning the VMAF repo, cd to the repo directory and run:
+
+```
+docker build -t vmaf .
+```
+
+And to use it, just run:
+
+```
+docker run --rm vmaf
+```
+
+If you want to extract the YUV from your files (specifically the color space yuv420p), you can run:
+
+Go to src (where you see [src] fill with the path where you'll download the assets, ex: /Users/user/src/vmaf):
+```
+cd [src]
+```
+
+Getting the pivot (bitrate 1000kpbs, vcodec MPEG-4 Visual (similar to H264)):
+```
+wget http://www.sample-videos.com/video/mp4/360/big_buck_bunny_360p_5mb.mp4
+```
+
+Transcodes it to VP9 (bitrate 700kpbs, vcodec VP9):
+```
+docker run --rm -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p_5mb.mp4 -c:v libvpx-vp9 -b:v 600K -c:a libvorbis /files/big_buck_bunny_360p.webm
+```
+
+Extracting the YUV:
+```
+docker run --rm -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p_5mb.mp4 -c:v rawvideo -pix_fmt yuv420p /files/360p_mpeg4-v_1000.yuv
+docker run --rm -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p.webm -c:v rawvideo -pix_fmt yuv420p /files/360p_vp9_700.yuv
+```
+
+Checking the VMAF score:
+```
+docker run --rm -v [src]:/files vmaf yuv420p 640 368 /files/360p_mpeg4-v_1000.yuv /files/360p_vp9_700.yuv --out-fmt json
+```
+
