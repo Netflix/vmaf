@@ -324,7 +324,9 @@ Under root, run *vmafossexec* as:
 wrapper/vmafossexec yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv resource/model/nflxall_vmafv4.pkl --log vmaf_output.xml
 ```
 
-Note that *vmafossexec* depends on a shared library *ptools/libptools.so*. If you move the executable, make sure to include the shared library in *LD_LIBRARY_PATH*.
+For VMAF v0.3.2, the model file is *resource/model/nflxall_vmafv4.pkl*. The correspondence is documented [here](python/core/quality_runner.py#L254).
+
+Note that *vmafossexec* depends on a shared library *ptools/libptools.so* (or on Mac OS, *ptools/libptools.dylib*). If you move the executable, make sure to include the shared library in *LD_LIBRARY_PATH* (or on Mac OS, *DYLD_LIBRARY_PATH*).
 
 ##Usage through Docker
 
