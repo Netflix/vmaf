@@ -331,7 +331,8 @@ docker build -t vmaf .
 And to use it, just run:
 
 ```
-docker run --rm vmaf
+# CLI being: [run_vmaf, run_cleaning_cache, run_vmaf_training, run_vmaf_in_batch, run_testing, run_psnr, vmafossexec]
+docker run --rm vmaf [CLI]
 ```
 
 If you want to extract the YUV from your files (specifically the color space yuv420p), you can run:
@@ -359,6 +360,9 @@ docker run --rm -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p
 
 Checking the VMAF score:
 ```
-docker run --rm -v [src]:/files vmaf yuv420p 640 368 /files/360p_mpeg4-v_1000.yuv /files/360p_vp9_700.yuv --out-fmt json
+docker run --rm -v [src]:/files vmaf run_vmaf yuv420p 640 368 /files/360p_mpeg4-v_1000.yuv /files/360p_vp9_700.yuv --out-fmt json
+
+# checking the VMAF score using existent model
+docker run --rm -v [src]:/files vmaf run_vmaf yuv420p 640 368 /files/360p_mpeg4-v_1000.yuv /files/360p_vp9_700.yuv --out-fmt json  --model /files/resource/model/nflxall_vmafv4.pkl
 ```
 
