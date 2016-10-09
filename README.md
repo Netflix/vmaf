@@ -341,13 +341,13 @@ And to use it, just run:
 docker run --rm vmaf [CLI]
 ```
 
-For example, to run *run_vmaf* on a sample reference/distorted video pair under *resource/yuv*:
+For example, if you are under root, to run *run_vmaf* on a sample reference/distorted video pair under *resource/yuv*:
 
 ```
 docker run --rm -v $(PWD):/files vmaf run_psnr yuv420p 576 324 /files/resource/yuv/src01_hrc00_576x324.yuv /files/resource/yuv/src01_hrc01_576x324.yuv --out-fmt json
 ```
 
-To run *vmafossexec* with a specified model file:
+Under root, to run *vmafossexec* with a specified model file:
 
 ```
 docker run --rm -v $(PWD):/files vmaf vmafossexec yuv420p 576 324 /files/resource/yuv/src01_hrc00_576x324.yuv /files/resource/yuv/src01_hrc01_576x324.yuv /files/resource/model/nflxall_vmafv4.pkl
