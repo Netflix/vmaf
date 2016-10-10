@@ -315,10 +315,18 @@ We also provide an example dataset file containing video file names from VQEG (V
 
 ##Python-independent Implementation
 
-The VDK package combines feature extraction implementation in C and the rest control code in Python. The layer of Python code allows fast prototyping, but sometimes deploying the Python dependency in production is a pain.
+The VDK package combines feature extraction implementation in C and the rest control code in Python. The Python layer allows fast prototyping, but sometimes deploying the Python dependency in production is a pain.
 Under [wrapper](wrapper), we provide a C++ implementation *vmafossexec* that has no dependency on Python.
 
-Note that *vmafossexec* depends on a shared library *ptools/libptools.so*. If you move the executable, make sure to include the shared library in *LD_LIBRARY_PATH*.
+Under root, run *vmafossexec* as:
+
+```
+wrapper/vmafossexec yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv resource/model/nflxall_vmafv4.pkl --log vmaf_output.xml
+```
+
+For VMAF v0.3.2, the model file is *resource/model/nflxall_vmafv4.pkl*. The correspondence is documented [here](python/core/quality_runner.py#L254).
+
+Note that *vmafossexec* depends on a shared library *ptools/libptools.so* (or on Mac OS, *ptools/libptools.dylib*). If you move the executable, make sure to include the shared library in *LD_LIBRARY_PATH* (or on Mac OS, *DYLD_LIBRARY_PATH*).
 
 ##Usage through Docker
 
@@ -331,34 +339,18 @@ docker build -t vmaf .
 And to use it, just run:
 
 ```
-docker run --rm vmaf
+# CLI being: [run_vmaf, run_cleaning_cache, run_vmaf_training, run_vmaf_in_batch, run_testing, run_psnr, vmafossexec]
+docker run --rm vmaf [CLI]
 ```
 
-If you want to extract the YUV from your files (specifically the color space yuv420p), you can run:
+For example, if you are under root, to run *run_vmaf* on a sample reference/distorted video pair under *resource/yuv*:
 
-Go to src (where you see [src] fill with the path where you'll download the assets, ex: /Users/user/src/vmaf):
 ```
-cd [src]
-```
-
-Getting the pivot (bitrate 1000kpbs, vcodec MPEG-4 Visual (similar to H264)):
-```
-wget http://www.sample-videos.com/video/mp4/360/big_buck_bunny_360p_5mb.mp4
+docker run --rm -v $(PWD):/files vmaf run_psnr yuv420p 576 324 /files/resource/yuv/src01_hrc00_576x324.yuv /files/resource/yuv/src01_hrc01_576x324.yuv --out-fmt json
 ```
 
-Transcodes it to VP9 (bitrate 700kpbs, vcodec VP9):
-```
-docker run --rm -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p_5mb.mp4 -c:v libvpx-vp9 -b:v 600K -c:a libvorbis /files/big_buck_bunny_360p.webm
-```
+Under root, to run *vmafossexec* with a specified model file:
 
-Extracting the YUV:
 ```
-docker run --rm -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p_5mb.mp4 -c:v rawvideo -pix_fmt yuv420p /files/360p_mpeg4-v_1000.yuv
-docker run --rm -v [src]:/files jrottenberg/ffmpeg -i /files/big_buck_bunny_360p.webm -c:v rawvideo -pix_fmt yuv420p /files/360p_vp9_700.yuv
+docker run --rm -v $(PWD):/files vmaf vmafossexec yuv420p 576 324 /files/resource/yuv/src01_hrc00_576x324.yuv /files/resource/yuv/src01_hrc01_576x324.yuv /files/resource/model/nflxall_vmafv4.pkl
 ```
-
-Checking the VMAF score:
-```
-docker run --rm -v [src]:/files vmaf yuv420p 640 368 /files/360p_mpeg4-v_1000.yuv /files/360p_vp9_700.yuv --out-fmt json
-```
-
