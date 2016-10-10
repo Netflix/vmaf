@@ -95,3 +95,4 @@
 
 **New features:**
 - Add Xcode project support.
+- Add more pooling options (median, percx) to CLIs.
