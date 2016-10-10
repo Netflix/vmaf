@@ -19,3 +19,9 @@ If, say, for a distorted video of 480 resolution, we still want to predict its q
 **Q: Why the included SSIM tool produces numerical results off compared to other tools?**
 
 A: The SSIM implementation in the VMAF package includes an empirical downsampling process, as described at the Suggested Usage section of [SSIM](https://ece.uwaterloo.ca/~z70wang/research/ssim/). The other implementations, such as the SSIM filter in FFmpeg, does not include this step.
+
+**Q: Why the aggregate VMAF score sometimes may bias "easy" content too much? [Issue #20](vmaf/issues/20)**
+
+A: By default, the VMAF output reports the aggregate score as the average (i.e. mean) per-frame score mostly for its simplicity, as well as for consistency with other metrics (e.g. mean PSNR). There are psycho-visual evidences, however, suggest that human viewers tend to weigh more heavily towards the worst-quality frames. It is an open question what the optimal way to pool the per-frame scores is, as it also depends on many factors, such as the time scale of the pooling (seconds vs minutes).
+
+To provide some flexibility, in CLIs *run_vmaf*, *run_psnr*, *run_vmaf_in_batch*, *run_vmaf_training* and *run_testing*, there is an hidden option *--pool poo_method*, where *pool_method* is among *mean*, *harmonic_mean*, *median*, *min*, *perc5*, *perc10* and *perc20* (percx means x-percentile).
