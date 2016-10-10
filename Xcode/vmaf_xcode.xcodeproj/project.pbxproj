@@ -1,0 +1,1006 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		C7FEEB811DAA2826001FC78F /* adm_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB781DAA2826001FC78F /* adm_tools.c */; };
+		C7FEEB821DAA2826001FC78F /* adm.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB7A1DAA2826001FC78F /* adm.c */; };
+		C7FEEB831DAA2826001FC78F /* all.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB7C1DAA2826001FC78F /* all.c */; };
+		C7FEEB841DAA2826001FC78F /* ansnr_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB7E1DAA2826001FC78F /* ansnr_tools.c */; };
+		C7FEEB851DAA2826001FC78F /* ansnr.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB801DAA2826001FC78F /* ansnr.c */; };
+		C7FEEB991DAA2844001FC78F /* moment.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB881DAA2844001FC78F /* moment.c */; };
+		C7FEEB9A1DAA2844001FC78F /* motion.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB8B1DAA2844001FC78F /* motion.c */; };
+		C7FEEB9C1DAA2844001FC78F /* ms_ssim.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB8D1DAA2844001FC78F /* ms_ssim.c */; };
+		C7FEEB9E1DAA2844001FC78F /* psnr.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB901DAA2844001FC78F /* psnr.c */; };
+		C7FEEBA01DAA2844001FC78F /* ssim.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB921DAA2844001FC78F /* ssim.c */; };
+		C7FEEBA11DAA2844001FC78F /* vif_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB941DAA2844001FC78F /* vif_tools.c */; };
+		C7FEEBA21DAA2844001FC78F /* vif.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB961DAA2844001FC78F /* vif.c */; };
+		C7FEEBA31DAA2844001FC78F /* vmaf_main.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB971DAA2844001FC78F /* vmaf_main.c */; };
+		C7FEEBB61DAA28D1001FC78F /* convolve.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAB1DAA28D1001FC78F /* convolve.c */; };
+		C7FEEBB71DAA28D1001FC78F /* decimate.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAD1DAA28D1001FC78F /* decimate.c */; };
+		C7FEEBB81DAA28D1001FC78F /* math_utils.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB21DAA28D1001FC78F /* math_utils.c */; };
+		C7FEEBB91DAA28D1001FC78F /* ssim_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB41DAA28D1001FC78F /* ssim_tools.c */; };
+		C7FEEBC31DAA28E2001FC78F /* alloc.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBB1DAA28E2001FC78F /* alloc.c */; };
+		C7FEEBC41DAA28E2001FC78F /* convolution.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBE1DAA28E2001FC78F /* convolution.c */; };
+		C7FEEBC51DAA28E2001FC78F /* file_io.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBC01DAA28E2001FC78F /* file_io.c */; };
+		C7FEEBC61DAA292C001FC78F /* alignment.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBA1DAA28E2001FC78F /* alignment.h */; };
+		C7FEEBC71DAA292C001FC78F /* alloc.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBC1DAA28E2001FC78F /* alloc.h */; };
+		C7FEEBC81DAA292C001FC78F /* convolution_internal.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBD1DAA28E2001FC78F /* convolution_internal.h */; };
+		C7FEEBC91DAA292C001FC78F /* convolution.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBF1DAA28E2001FC78F /* convolution.h */; };
+		C7FEEBCA1DAA292C001FC78F /* file_io.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBC11DAA28E2001FC78F /* file_io.h */; };
+		C7FEEBCB1DAA292C001FC78F /* macros.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBC21DAA28E2001FC78F /* macros.h */; };
+		C7FEEBCC1DAA2934001FC78F /* convolve.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAC1DAA28D1001FC78F /* convolve.h */; };
+		C7FEEBCD1DAA2934001FC78F /* decimate.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAE1DAA28D1001FC78F /* decimate.h */; };
+		C7FEEBCE1DAA2934001FC78F /* iqa_options.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAF1DAA28D1001FC78F /* iqa_options.h */; };
+		C7FEEBCF1DAA2934001FC78F /* iqa_os.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB01DAA28D1001FC78F /* iqa_os.h */; };
+		C7FEEBD01DAA2934001FC78F /* iqa.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB11DAA28D1001FC78F /* iqa.h */; };
+		C7FEEBD11DAA2934001FC78F /* math_utils.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB31DAA28D1001FC78F /* math_utils.h */; };
+		C7FEEBD21DAA2934001FC78F /* ssim_tools.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB51DAA28D1001FC78F /* ssim_tools.h */; };
+		C7FEEBD61DAA29C8001FC78F /* convolve.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAC1DAA28D1001FC78F /* convolve.h */; };
+		C7FEEBD71DAA29C8001FC78F /* decimate.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAE1DAA28D1001FC78F /* decimate.h */; };
+		C7FEEBD81DAA29C8001FC78F /* iqa_options.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAF1DAA28D1001FC78F /* iqa_options.h */; };
+		C7FEEBD91DAA29C8001FC78F /* iqa_os.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB01DAA28D1001FC78F /* iqa_os.h */; };
+		C7FEEBDA1DAA29C8001FC78F /* iqa.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB11DAA28D1001FC78F /* iqa.h */; };
+		C7FEEBDB1DAA29C8001FC78F /* math_utils.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB31DAA28D1001FC78F /* math_utils.h */; };
+		C7FEEBDC1DAA29C8001FC78F /* ssim_tools.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB51DAA28D1001FC78F /* ssim_tools.h */; };
+		C7FEEBDD1DAA29C8001FC78F /* alignment.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBA1DAA28E2001FC78F /* alignment.h */; };
+		C7FEEBDE1DAA29C8001FC78F /* alloc.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBC1DAA28E2001FC78F /* alloc.h */; };
+		C7FEEBDF1DAA29C8001FC78F /* convolution_internal.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBD1DAA28E2001FC78F /* convolution_internal.h */; };
+		C7FEEBE01DAA29C8001FC78F /* convolution.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBF1DAA28E2001FC78F /* convolution.h */; };
+		C7FEEBE11DAA29C8001FC78F /* file_io.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBC11DAA28E2001FC78F /* file_io.h */; };
+		C7FEEBE21DAA29C8001FC78F /* macros.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBC21DAA28E2001FC78F /* macros.h */; };
+		C7FEEBE31DAA29C8001FC78F /* vif_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB941DAA2844001FC78F /* vif_tools.c */; };
+		C7FEEBE41DAA29C8001FC78F /* ansnr.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB801DAA2826001FC78F /* ansnr.c */; };
+		C7FEEBE51DAA29C8001FC78F /* ssim.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB921DAA2844001FC78F /* ssim.c */; };
+		C7FEEBE61DAA29C8001FC78F /* convolution.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBE1DAA28E2001FC78F /* convolution.c */; };
+		C7FEEBE71DAA29C8001FC78F /* ansnr_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB7E1DAA2826001FC78F /* ansnr_tools.c */; };
+		C7FEEBE81DAA29C8001FC78F /* file_io.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBC01DAA28E2001FC78F /* file_io.c */; };
+		C7FEEBE91DAA29C8001FC78F /* ssim_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB41DAA28D1001FC78F /* ssim_tools.c */; };
+		C7FEEBEA1DAA29C8001FC78F /* all.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB7C1DAA2826001FC78F /* all.c */; };
+		C7FEEBEB1DAA29C8001FC78F /* adm.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB7A1DAA2826001FC78F /* adm.c */; };
+		C7FEEBEC1DAA29C8001FC78F /* psnr.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB901DAA2844001FC78F /* psnr.c */; };
+		C7FEEBED1DAA29C8001FC78F /* vif.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB961DAA2844001FC78F /* vif.c */; };
+		C7FEEBEE1DAA29C8001FC78F /* moment.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB881DAA2844001FC78F /* moment.c */; };
+		C7FEEBEF1DAA29C8001FC78F /* ms_ssim.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB8D1DAA2844001FC78F /* ms_ssim.c */; };
+		C7FEEBF01DAA29C8001FC78F /* math_utils.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB21DAA28D1001FC78F /* math_utils.c */; };
+		C7FEEBF11DAA29C8001FC78F /* decimate.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAD1DAA28D1001FC78F /* decimate.c */; };
+		C7FEEBF21DAA29C8001FC78F /* adm_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB781DAA2826001FC78F /* adm_tools.c */; };
+		C7FEEBF31DAA29C8001FC78F /* motion.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB8B1DAA2844001FC78F /* motion.c */; };
+		C7FEEBF41DAA29C8001FC78F /* convolve.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAB1DAA28D1001FC78F /* convolve.c */; };
+		C7FEEBF51DAA29C8001FC78F /* alloc.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBB1DAA28E2001FC78F /* alloc.c */; };
+		C7FEEBFC1DAA29EC001FC78F /* moment_main.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB861DAA2844001FC78F /* moment_main.c */; };
+		C7FEEC001DAA2A4A001FC78F /* convolve.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAC1DAA28D1001FC78F /* convolve.h */; };
+		C7FEEC011DAA2A4A001FC78F /* decimate.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAE1DAA28D1001FC78F /* decimate.h */; };
+		C7FEEC021DAA2A4A001FC78F /* iqa_options.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAF1DAA28D1001FC78F /* iqa_options.h */; };
+		C7FEEC031DAA2A4A001FC78F /* iqa_os.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB01DAA28D1001FC78F /* iqa_os.h */; };
+		C7FEEC041DAA2A4A001FC78F /* iqa.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB11DAA28D1001FC78F /* iqa.h */; };
+		C7FEEC051DAA2A4A001FC78F /* math_utils.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB31DAA28D1001FC78F /* math_utils.h */; };
+		C7FEEC061DAA2A4A001FC78F /* ssim_tools.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB51DAA28D1001FC78F /* ssim_tools.h */; };
+		C7FEEC071DAA2A4A001FC78F /* alignment.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBA1DAA28E2001FC78F /* alignment.h */; };
+		C7FEEC081DAA2A4A001FC78F /* alloc.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBC1DAA28E2001FC78F /* alloc.h */; };
+		C7FEEC091DAA2A4A001FC78F /* convolution_internal.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBD1DAA28E2001FC78F /* convolution_internal.h */; };
+		C7FEEC0A1DAA2A4A001FC78F /* convolution.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBF1DAA28E2001FC78F /* convolution.h */; };
+		C7FEEC0B1DAA2A4A001FC78F /* file_io.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBC11DAA28E2001FC78F /* file_io.h */; };
+		C7FEEC0C1DAA2A4A001FC78F /* macros.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBC21DAA28E2001FC78F /* macros.h */; };
+		C7FEEC0D1DAA2A4A001FC78F /* vif_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB941DAA2844001FC78F /* vif_tools.c */; };
+		C7FEEC0E1DAA2A4A001FC78F /* ansnr.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB801DAA2826001FC78F /* ansnr.c */; };
+		C7FEEC0F1DAA2A4A001FC78F /* ssim.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB921DAA2844001FC78F /* ssim.c */; };
+		C7FEEC101DAA2A4A001FC78F /* convolution.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBE1DAA28E2001FC78F /* convolution.c */; };
+		C7FEEC111DAA2A4A001FC78F /* ansnr_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB7E1DAA2826001FC78F /* ansnr_tools.c */; };
+		C7FEEC121DAA2A4A001FC78F /* file_io.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBC01DAA28E2001FC78F /* file_io.c */; };
+		C7FEEC131DAA2A4A001FC78F /* ssim_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB41DAA28D1001FC78F /* ssim_tools.c */; };
+		C7FEEC141DAA2A4A001FC78F /* all.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB7C1DAA2826001FC78F /* all.c */; };
+		C7FEEC151DAA2A4A001FC78F /* adm.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB7A1DAA2826001FC78F /* adm.c */; };
+		C7FEEC161DAA2A4A001FC78F /* psnr.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB901DAA2844001FC78F /* psnr.c */; };
+		C7FEEC171DAA2A4A001FC78F /* vif.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB961DAA2844001FC78F /* vif.c */; };
+		C7FEEC181DAA2A4A001FC78F /* moment.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB881DAA2844001FC78F /* moment.c */; };
+		C7FEEC191DAA2A4A001FC78F /* ms_ssim.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB8D1DAA2844001FC78F /* ms_ssim.c */; };
+		C7FEEC1A1DAA2A4A001FC78F /* math_utils.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB21DAA28D1001FC78F /* math_utils.c */; };
+		C7FEEC1B1DAA2A4A001FC78F /* decimate.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAD1DAA28D1001FC78F /* decimate.c */; };
+		C7FEEC1C1DAA2A4A001FC78F /* adm_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB781DAA2826001FC78F /* adm_tools.c */; };
+		C7FEEC1D1DAA2A4A001FC78F /* motion.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB8B1DAA2844001FC78F /* motion.c */; };
+		C7FEEC1E1DAA2A4A001FC78F /* convolve.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAB1DAA28D1001FC78F /* convolve.c */; };
+		C7FEEC1F1DAA2A4A001FC78F /* alloc.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBB1DAA28E2001FC78F /* alloc.c */; };
+		C7FEEC291DAA2A4B001FC78F /* convolve.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAC1DAA28D1001FC78F /* convolve.h */; };
+		C7FEEC2A1DAA2A4B001FC78F /* decimate.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAE1DAA28D1001FC78F /* decimate.h */; };
+		C7FEEC2B1DAA2A4B001FC78F /* iqa_options.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAF1DAA28D1001FC78F /* iqa_options.h */; };
+		C7FEEC2C1DAA2A4B001FC78F /* iqa_os.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB01DAA28D1001FC78F /* iqa_os.h */; };
+		C7FEEC2D1DAA2A4B001FC78F /* iqa.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB11DAA28D1001FC78F /* iqa.h */; };
+		C7FEEC2E1DAA2A4B001FC78F /* math_utils.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB31DAA28D1001FC78F /* math_utils.h */; };
+		C7FEEC2F1DAA2A4B001FC78F /* ssim_tools.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB51DAA28D1001FC78F /* ssim_tools.h */; };
+		C7FEEC301DAA2A4B001FC78F /* alignment.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBA1DAA28E2001FC78F /* alignment.h */; };
+		C7FEEC311DAA2A4B001FC78F /* alloc.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBC1DAA28E2001FC78F /* alloc.h */; };
+		C7FEEC321DAA2A4B001FC78F /* convolution_internal.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBD1DAA28E2001FC78F /* convolution_internal.h */; };
+		C7FEEC331DAA2A4B001FC78F /* convolution.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBF1DAA28E2001FC78F /* convolution.h */; };
+		C7FEEC341DAA2A4B001FC78F /* file_io.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBC11DAA28E2001FC78F /* file_io.h */; };
+		C7FEEC351DAA2A4B001FC78F /* macros.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBC21DAA28E2001FC78F /* macros.h */; };
+		C7FEEC361DAA2A4B001FC78F /* vif_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB941DAA2844001FC78F /* vif_tools.c */; };
+		C7FEEC371DAA2A4B001FC78F /* ansnr.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB801DAA2826001FC78F /* ansnr.c */; };
+		C7FEEC381DAA2A4B001FC78F /* ssim.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB921DAA2844001FC78F /* ssim.c */; };
+		C7FEEC391DAA2A4B001FC78F /* convolution.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBE1DAA28E2001FC78F /* convolution.c */; };
+		C7FEEC3A1DAA2A4B001FC78F /* ansnr_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB7E1DAA2826001FC78F /* ansnr_tools.c */; };
+		C7FEEC3B1DAA2A4B001FC78F /* file_io.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBC01DAA28E2001FC78F /* file_io.c */; };
+		C7FEEC3C1DAA2A4B001FC78F /* ssim_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB41DAA28D1001FC78F /* ssim_tools.c */; };
+		C7FEEC3D1DAA2A4B001FC78F /* all.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB7C1DAA2826001FC78F /* all.c */; };
+		C7FEEC3E1DAA2A4B001FC78F /* adm.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB7A1DAA2826001FC78F /* adm.c */; };
+		C7FEEC3F1DAA2A4B001FC78F /* psnr.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB901DAA2844001FC78F /* psnr.c */; };
+		C7FEEC401DAA2A4B001FC78F /* vif.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB961DAA2844001FC78F /* vif.c */; };
+		C7FEEC411DAA2A4B001FC78F /* moment.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB881DAA2844001FC78F /* moment.c */; };
+		C7FEEC421DAA2A4B001FC78F /* ms_ssim.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB8D1DAA2844001FC78F /* ms_ssim.c */; };
+		C7FEEC431DAA2A4B001FC78F /* math_utils.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB21DAA28D1001FC78F /* math_utils.c */; };
+		C7FEEC441DAA2A4B001FC78F /* decimate.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAD1DAA28D1001FC78F /* decimate.c */; };
+		C7FEEC451DAA2A4B001FC78F /* adm_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB781DAA2826001FC78F /* adm_tools.c */; };
+		C7FEEC461DAA2A4B001FC78F /* motion.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB8B1DAA2844001FC78F /* motion.c */; };
+		C7FEEC471DAA2A4B001FC78F /* convolve.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAB1DAA28D1001FC78F /* convolve.c */; };
+		C7FEEC481DAA2A4B001FC78F /* alloc.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBB1DAA28E2001FC78F /* alloc.c */; };
+		C7FEEC521DAA2A50001FC78F /* convolve.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAC1DAA28D1001FC78F /* convolve.h */; };
+		C7FEEC531DAA2A50001FC78F /* decimate.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAE1DAA28D1001FC78F /* decimate.h */; };
+		C7FEEC541DAA2A50001FC78F /* iqa_options.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAF1DAA28D1001FC78F /* iqa_options.h */; };
+		C7FEEC551DAA2A50001FC78F /* iqa_os.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB01DAA28D1001FC78F /* iqa_os.h */; };
+		C7FEEC561DAA2A50001FC78F /* iqa.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB11DAA28D1001FC78F /* iqa.h */; };
+		C7FEEC571DAA2A50001FC78F /* math_utils.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB31DAA28D1001FC78F /* math_utils.h */; };
+		C7FEEC581DAA2A50001FC78F /* ssim_tools.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB51DAA28D1001FC78F /* ssim_tools.h */; };
+		C7FEEC591DAA2A50001FC78F /* alignment.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBA1DAA28E2001FC78F /* alignment.h */; };
+		C7FEEC5A1DAA2A50001FC78F /* alloc.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBC1DAA28E2001FC78F /* alloc.h */; };
+		C7FEEC5B1DAA2A50001FC78F /* convolution_internal.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBD1DAA28E2001FC78F /* convolution_internal.h */; };
+		C7FEEC5C1DAA2A50001FC78F /* convolution.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBF1DAA28E2001FC78F /* convolution.h */; };
+		C7FEEC5D1DAA2A50001FC78F /* file_io.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBC11DAA28E2001FC78F /* file_io.h */; };
+		C7FEEC5E1DAA2A50001FC78F /* macros.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBC21DAA28E2001FC78F /* macros.h */; };
+		C7FEEC5F1DAA2A50001FC78F /* vif_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB941DAA2844001FC78F /* vif_tools.c */; };
+		C7FEEC601DAA2A50001FC78F /* ansnr.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB801DAA2826001FC78F /* ansnr.c */; };
+		C7FEEC611DAA2A50001FC78F /* ssim.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB921DAA2844001FC78F /* ssim.c */; };
+		C7FEEC621DAA2A50001FC78F /* convolution.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBE1DAA28E2001FC78F /* convolution.c */; };
+		C7FEEC631DAA2A50001FC78F /* ansnr_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB7E1DAA2826001FC78F /* ansnr_tools.c */; };
+		C7FEEC641DAA2A50001FC78F /* file_io.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBC01DAA28E2001FC78F /* file_io.c */; };
+		C7FEEC651DAA2A50001FC78F /* ssim_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB41DAA28D1001FC78F /* ssim_tools.c */; };
+		C7FEEC661DAA2A50001FC78F /* all.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB7C1DAA2826001FC78F /* all.c */; };
+		C7FEEC671DAA2A50001FC78F /* adm.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB7A1DAA2826001FC78F /* adm.c */; };
+		C7FEEC681DAA2A50001FC78F /* psnr.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB901DAA2844001FC78F /* psnr.c */; };
+		C7FEEC691DAA2A50001FC78F /* vif.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB961DAA2844001FC78F /* vif.c */; };
+		C7FEEC6A1DAA2A50001FC78F /* moment.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB881DAA2844001FC78F /* moment.c */; };
+		C7FEEC6B1DAA2A50001FC78F /* ms_ssim.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB8D1DAA2844001FC78F /* ms_ssim.c */; };
+		C7FEEC6C1DAA2A50001FC78F /* math_utils.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB21DAA28D1001FC78F /* math_utils.c */; };
+		C7FEEC6D1DAA2A50001FC78F /* decimate.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAD1DAA28D1001FC78F /* decimate.c */; };
+		C7FEEC6E1DAA2A50001FC78F /* adm_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB781DAA2826001FC78F /* adm_tools.c */; };
+		C7FEEC6F1DAA2A50001FC78F /* motion.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB8B1DAA2844001FC78F /* motion.c */; };
+		C7FEEC701DAA2A50001FC78F /* convolve.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAB1DAA28D1001FC78F /* convolve.c */; };
+		C7FEEC711DAA2A50001FC78F /* alloc.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBB1DAA28E2001FC78F /* alloc.c */; };
+		C7FEEC781DAA2A68001FC78F /* ms_ssim_main.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB8C1DAA2844001FC78F /* ms_ssim_main.c */; };
+		C7FEEC791DAA2A7C001FC78F /* psnr_main.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB8E1DAA2844001FC78F /* psnr_main.c */; };
+		C7FEEC7A1DAA2A8E001FC78F /* ssim_main.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB911DAA2844001FC78F /* ssim_main.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		C71B6A691DAA2775007252E5 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		C7FEEBF71DAA29C8001FC78F /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		C7FEEC211DAA2A4A001FC78F /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		C7FEEC4A1DAA2A4B001FC78F /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		C7FEEC731DAA2A50001FC78F /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		C71B6A6B1DAA2775007252E5 /* vmaf */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = vmaf; sourceTree = BUILT_PRODUCTS_DIR; };
+		C7FEEB771DAA2826001FC78F /* adm_options.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = adm_options.h; path = ../feature/src/adm_options.h; sourceTree = "<group>"; };
+		C7FEEB781DAA2826001FC78F /* adm_tools.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = adm_tools.c; path = ../feature/src/adm_tools.c; sourceTree = "<group>"; };
+		C7FEEB791DAA2826001FC78F /* adm_tools.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = adm_tools.h; path = ../feature/src/adm_tools.h; sourceTree = "<group>"; };
+		C7FEEB7A1DAA2826001FC78F /* adm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = adm.c; path = ../feature/src/adm.c; sourceTree = "<group>"; };
+		C7FEEB7B1DAA2826001FC78F /* all_options.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = all_options.h; path = ../feature/src/all_options.h; sourceTree = "<group>"; };
+		C7FEEB7C1DAA2826001FC78F /* all.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = all.c; path = ../feature/src/all.c; sourceTree = "<group>"; };
+		C7FEEB7D1DAA2826001FC78F /* ansnr_options.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ansnr_options.h; path = ../feature/src/ansnr_options.h; sourceTree = "<group>"; };
+		C7FEEB7E1DAA2826001FC78F /* ansnr_tools.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ansnr_tools.c; path = ../feature/src/ansnr_tools.c; sourceTree = "<group>"; };
+		C7FEEB7F1DAA2826001FC78F /* ansnr_tools.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ansnr_tools.h; path = ../feature/src/ansnr_tools.h; sourceTree = "<group>"; };
+		C7FEEB801DAA2826001FC78F /* ansnr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ansnr.c; path = ../feature/src/ansnr.c; sourceTree = "<group>"; };
+		C7FEEB861DAA2844001FC78F /* moment_main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = moment_main.c; path = ../feature/src/moment_main.c; sourceTree = "<group>"; };
+		C7FEEB871DAA2844001FC78F /* moment_options.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = moment_options.h; path = ../feature/src/moment_options.h; sourceTree = "<group>"; };
+		C7FEEB881DAA2844001FC78F /* moment.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = moment.c; path = ../feature/src/moment.c; sourceTree = "<group>"; };
+		C7FEEB891DAA2844001FC78F /* motion_options.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = motion_options.h; path = ../feature/src/motion_options.h; sourceTree = "<group>"; };
+		C7FEEB8A1DAA2844001FC78F /* motion_tools.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = motion_tools.h; path = ../feature/src/motion_tools.h; sourceTree = "<group>"; };
+		C7FEEB8B1DAA2844001FC78F /* motion.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = motion.c; path = ../feature/src/motion.c; sourceTree = "<group>"; };
+		C7FEEB8C1DAA2844001FC78F /* ms_ssim_main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ms_ssim_main.c; path = ../feature/src/ms_ssim_main.c; sourceTree = "<group>"; };
+		C7FEEB8D1DAA2844001FC78F /* ms_ssim.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ms_ssim.c; path = ../feature/src/ms_ssim.c; sourceTree = "<group>"; };
+		C7FEEB8E1DAA2844001FC78F /* psnr_main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = psnr_main.c; path = ../feature/src/psnr_main.c; sourceTree = "<group>"; };
+		C7FEEB8F1DAA2844001FC78F /* psnr_options.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = psnr_options.h; path = ../feature/src/psnr_options.h; sourceTree = "<group>"; };
+		C7FEEB901DAA2844001FC78F /* psnr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = psnr.c; path = ../feature/src/psnr.c; sourceTree = "<group>"; };
+		C7FEEB911DAA2844001FC78F /* ssim_main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ssim_main.c; path = ../feature/src/ssim_main.c; sourceTree = "<group>"; };
+		C7FEEB921DAA2844001FC78F /* ssim.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ssim.c; path = ../feature/src/ssim.c; sourceTree = "<group>"; };
+		C7FEEB931DAA2844001FC78F /* vif_options.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vif_options.h; path = ../feature/src/vif_options.h; sourceTree = "<group>"; };
+		C7FEEB941DAA2844001FC78F /* vif_tools.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = vif_tools.c; path = ../feature/src/vif_tools.c; sourceTree = "<group>"; };
+		C7FEEB951DAA2844001FC78F /* vif_tools.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vif_tools.h; path = ../feature/src/vif_tools.h; sourceTree = "<group>"; };
+		C7FEEB961DAA2844001FC78F /* vif.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = vif.c; path = ../feature/src/vif.c; sourceTree = "<group>"; };
+		C7FEEB971DAA2844001FC78F /* vmaf_main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = vmaf_main.c; path = ../feature/src/vmaf_main.c; sourceTree = "<group>"; };
+		C7FEEBAB1DAA28D1001FC78F /* convolve.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = convolve.c; path = ../feature/src/iqa/convolve.c; sourceTree = "<group>"; };
+		C7FEEBAC1DAA28D1001FC78F /* convolve.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = convolve.h; path = ../feature/src/iqa/convolve.h; sourceTree = "<group>"; };
+		C7FEEBAD1DAA28D1001FC78F /* decimate.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = decimate.c; path = ../feature/src/iqa/decimate.c; sourceTree = "<group>"; };
+		C7FEEBAE1DAA28D1001FC78F /* decimate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = decimate.h; path = ../feature/src/iqa/decimate.h; sourceTree = "<group>"; };
+		C7FEEBAF1DAA28D1001FC78F /* iqa_options.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iqa_options.h; path = ../feature/src/iqa/iqa_options.h; sourceTree = "<group>"; };
+		C7FEEBB01DAA28D1001FC78F /* iqa_os.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iqa_os.h; path = ../feature/src/iqa/iqa_os.h; sourceTree = "<group>"; };
+		C7FEEBB11DAA28D1001FC78F /* iqa.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iqa.h; path = ../feature/src/iqa/iqa.h; sourceTree = "<group>"; };
+		C7FEEBB21DAA28D1001FC78F /* math_utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = math_utils.c; path = ../feature/src/iqa/math_utils.c; sourceTree = "<group>"; };
+		C7FEEBB31DAA28D1001FC78F /* math_utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = math_utils.h; path = ../feature/src/iqa/math_utils.h; sourceTree = "<group>"; };
+		C7FEEBB41DAA28D1001FC78F /* ssim_tools.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ssim_tools.c; path = ../feature/src/iqa/ssim_tools.c; sourceTree = "<group>"; };
+		C7FEEBB51DAA28D1001FC78F /* ssim_tools.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ssim_tools.h; path = ../feature/src/iqa/ssim_tools.h; sourceTree = "<group>"; };
+		C7FEEBBA1DAA28E2001FC78F /* alignment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = alignment.h; path = ../feature/src/common/alignment.h; sourceTree = "<group>"; };
+		C7FEEBBB1DAA28E2001FC78F /* alloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = alloc.c; path = ../feature/src/common/alloc.c; sourceTree = "<group>"; };
+		C7FEEBBC1DAA28E2001FC78F /* alloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = alloc.h; path = ../feature/src/common/alloc.h; sourceTree = "<group>"; };
+		C7FEEBBD1DAA28E2001FC78F /* convolution_internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = convolution_internal.h; path = ../feature/src/common/convolution_internal.h; sourceTree = "<group>"; };
+		C7FEEBBE1DAA28E2001FC78F /* convolution.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = convolution.c; path = ../feature/src/common/convolution.c; sourceTree = "<group>"; };
+		C7FEEBBF1DAA28E2001FC78F /* convolution.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = convolution.h; path = ../feature/src/common/convolution.h; sourceTree = "<group>"; };
+		C7FEEBC01DAA28E2001FC78F /* file_io.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = file_io.c; path = ../feature/src/common/file_io.c; sourceTree = "<group>"; };
+		C7FEEBC11DAA28E2001FC78F /* file_io.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = file_io.h; path = ../feature/src/common/file_io.h; sourceTree = "<group>"; };
+		C7FEEBC21DAA28E2001FC78F /* macros.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = macros.h; path = ../feature/src/common/macros.h; sourceTree = "<group>"; };
+		C7FEEBFB1DAA29C8001FC78F /* moment */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = moment; sourceTree = BUILT_PRODUCTS_DIR; };
+		C7FEEC251DAA2A4A001FC78F /* ms_ssim */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ms_ssim; sourceTree = BUILT_PRODUCTS_DIR; };
+		C7FEEC4E1DAA2A4B001FC78F /* psnr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = psnr; sourceTree = BUILT_PRODUCTS_DIR; };
+		C7FEEC771DAA2A50001FC78F /* ssim */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ssim; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C71B6A681DAA2775007252E5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C7FEEBF61DAA29C8001FC78F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C7FEEC201DAA2A4A001FC78F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C7FEEC491DAA2A4B001FC78F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C7FEEC721DAA2A50001FC78F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		C71B6A621DAA2775007252E5 = {
+			isa = PBXGroup;
+			children = (
+				C71B6A6C1DAA2775007252E5 /* Products */,
+				C71B6AA41DAA2803007252E5 /* lib */,
+				C7FEEBA81DAA287C001FC78F /* moment */,
+				C7FEEBA71DAA286C001FC78F /* ms_ssim */,
+				C7FEEBA91DAA288B001FC78F /* psnr */,
+				C7FEEBAA1DAA28B0001FC78F /* ssim */,
+				C7FEEBA61DAA285B001FC78F /* vmaf */,
+			);
+			sourceTree = "<group>";
+		};
+		C71B6A6C1DAA2775007252E5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C71B6A6B1DAA2775007252E5 /* vmaf */,
+				C7FEEBFB1DAA29C8001FC78F /* moment */,
+				C7FEEC251DAA2A4A001FC78F /* ms_ssim */,
+				C7FEEC4E1DAA2A4B001FC78F /* psnr */,
+				C7FEEC771DAA2A50001FC78F /* ssim */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		C71B6AA41DAA2803007252E5 /* lib */ = {
+			isa = PBXGroup;
+			children = (
+				C7FEEBA51DAA2851001FC78F /* common */,
+				C7FEEBA41DAA2849001FC78F /* iqa */,
+				C7FEEB871DAA2844001FC78F /* moment_options.h */,
+				C7FEEB881DAA2844001FC78F /* moment.c */,
+				C7FEEB891DAA2844001FC78F /* motion_options.h */,
+				C7FEEB8A1DAA2844001FC78F /* motion_tools.h */,
+				C7FEEB8B1DAA2844001FC78F /* motion.c */,
+				C7FEEB8D1DAA2844001FC78F /* ms_ssim.c */,
+				C7FEEB8F1DAA2844001FC78F /* psnr_options.h */,
+				C7FEEB901DAA2844001FC78F /* psnr.c */,
+				C7FEEB921DAA2844001FC78F /* ssim.c */,
+				C7FEEB931DAA2844001FC78F /* vif_options.h */,
+				C7FEEB941DAA2844001FC78F /* vif_tools.c */,
+				C7FEEB951DAA2844001FC78F /* vif_tools.h */,
+				C7FEEB961DAA2844001FC78F /* vif.c */,
+				C7FEEB771DAA2826001FC78F /* adm_options.h */,
+				C7FEEB781DAA2826001FC78F /* adm_tools.c */,
+				C7FEEB791DAA2826001FC78F /* adm_tools.h */,
+				C7FEEB7A1DAA2826001FC78F /* adm.c */,
+				C7FEEB7B1DAA2826001FC78F /* all_options.h */,
+				C7FEEB7C1DAA2826001FC78F /* all.c */,
+				C7FEEB7D1DAA2826001FC78F /* ansnr_options.h */,
+				C7FEEB7E1DAA2826001FC78F /* ansnr_tools.c */,
+				C7FEEB7F1DAA2826001FC78F /* ansnr_tools.h */,
+				C7FEEB801DAA2826001FC78F /* ansnr.c */,
+			);
+			name = lib;
+			sourceTree = "<group>";
+		};
+		C7FEEBA41DAA2849001FC78F /* iqa */ = {
+			isa = PBXGroup;
+			children = (
+				C7FEEBAB1DAA28D1001FC78F /* convolve.c */,
+				C7FEEBAC1DAA28D1001FC78F /* convolve.h */,
+				C7FEEBAD1DAA28D1001FC78F /* decimate.c */,
+				C7FEEBAE1DAA28D1001FC78F /* decimate.h */,
+				C7FEEBAF1DAA28D1001FC78F /* iqa_options.h */,
+				C7FEEBB01DAA28D1001FC78F /* iqa_os.h */,
+				C7FEEBB11DAA28D1001FC78F /* iqa.h */,
+				C7FEEBB21DAA28D1001FC78F /* math_utils.c */,
+				C7FEEBB31DAA28D1001FC78F /* math_utils.h */,
+				C7FEEBB41DAA28D1001FC78F /* ssim_tools.c */,
+				C7FEEBB51DAA28D1001FC78F /* ssim_tools.h */,
+			);
+			name = iqa;
+			sourceTree = "<group>";
+		};
+		C7FEEBA51DAA2851001FC78F /* common */ = {
+			isa = PBXGroup;
+			children = (
+				C7FEEBBA1DAA28E2001FC78F /* alignment.h */,
+				C7FEEBBB1DAA28E2001FC78F /* alloc.c */,
+				C7FEEBBC1DAA28E2001FC78F /* alloc.h */,
+				C7FEEBBD1DAA28E2001FC78F /* convolution_internal.h */,
+				C7FEEBBE1DAA28E2001FC78F /* convolution.c */,
+				C7FEEBBF1DAA28E2001FC78F /* convolution.h */,
+				C7FEEBC01DAA28E2001FC78F /* file_io.c */,
+				C7FEEBC11DAA28E2001FC78F /* file_io.h */,
+				C7FEEBC21DAA28E2001FC78F /* macros.h */,
+			);
+			name = common;
+			sourceTree = "<group>";
+		};
+		C7FEEBA61DAA285B001FC78F /* vmaf */ = {
+			isa = PBXGroup;
+			children = (
+				C7FEEB971DAA2844001FC78F /* vmaf_main.c */,
+			);
+			name = vmaf;
+			sourceTree = "<group>";
+		};
+		C7FEEBA71DAA286C001FC78F /* ms_ssim */ = {
+			isa = PBXGroup;
+			children = (
+				C7FEEB8C1DAA2844001FC78F /* ms_ssim_main.c */,
+			);
+			name = ms_ssim;
+			sourceTree = "<group>";
+		};
+		C7FEEBA81DAA287C001FC78F /* moment */ = {
+			isa = PBXGroup;
+			children = (
+				C7FEEB861DAA2844001FC78F /* moment_main.c */,
+			);
+			name = moment;
+			sourceTree = "<group>";
+		};
+		C7FEEBA91DAA288B001FC78F /* psnr */ = {
+			isa = PBXGroup;
+			children = (
+				C7FEEB8E1DAA2844001FC78F /* psnr_main.c */,
+			);
+			name = psnr;
+			sourceTree = "<group>";
+		};
+		C7FEEBAA1DAA28B0001FC78F /* ssim */ = {
+			isa = PBXGroup;
+			children = (
+				C7FEEB911DAA2844001FC78F /* ssim_main.c */,
+			);
+			name = ssim;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		C71B6A6A1DAA2775007252E5 /* vmaf */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C71B6A721DAA2775007252E5 /* Build configuration list for PBXNativeTarget "vmaf" */;
+			buildPhases = (
+				C71B6A671DAA2775007252E5 /* Sources */,
+				C71B6A681DAA2775007252E5 /* Frameworks */,
+				C71B6A691DAA2775007252E5 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = vmaf;
+			productName = Xcode;
+			productReference = C71B6A6B1DAA2775007252E5 /* vmaf */;
+			productType = "com.apple.product-type.tool";
+		};
+		C7FEEBD31DAA29C8001FC78F /* moment */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C7FEEBF81DAA29C8001FC78F /* Build configuration list for PBXNativeTarget "moment" */;
+			buildPhases = (
+				C7FEEBD41DAA29C8001FC78F /* Sources */,
+				C7FEEBF61DAA29C8001FC78F /* Frameworks */,
+				C7FEEBF71DAA29C8001FC78F /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = moment;
+			productName = Xcode;
+			productReference = C7FEEBFB1DAA29C8001FC78F /* moment */;
+			productType = "com.apple.product-type.tool";
+		};
+		C7FEEBFD1DAA2A4A001FC78F /* ms_ssim */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C7FEEC221DAA2A4A001FC78F /* Build configuration list for PBXNativeTarget "ms_ssim" */;
+			buildPhases = (
+				C7FEEBFE1DAA2A4A001FC78F /* Sources */,
+				C7FEEC201DAA2A4A001FC78F /* Frameworks */,
+				C7FEEC211DAA2A4A001FC78F /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ms_ssim;
+			productName = Xcode;
+			productReference = C7FEEC251DAA2A4A001FC78F /* ms_ssim */;
+			productType = "com.apple.product-type.tool";
+		};
+		C7FEEC261DAA2A4B001FC78F /* psnr */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C7FEEC4B1DAA2A4B001FC78F /* Build configuration list for PBXNativeTarget "psnr" */;
+			buildPhases = (
+				C7FEEC271DAA2A4B001FC78F /* Sources */,
+				C7FEEC491DAA2A4B001FC78F /* Frameworks */,
+				C7FEEC4A1DAA2A4B001FC78F /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = psnr;
+			productName = Xcode;
+			productReference = C7FEEC4E1DAA2A4B001FC78F /* psnr */;
+			productType = "com.apple.product-type.tool";
+		};
+		C7FEEC4F1DAA2A50001FC78F /* ssim */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C7FEEC741DAA2A50001FC78F /* Build configuration list for PBXNativeTarget "ssim" */;
+			buildPhases = (
+				C7FEEC501DAA2A50001FC78F /* Sources */,
+				C7FEEC721DAA2A50001FC78F /* Frameworks */,
+				C7FEEC731DAA2A50001FC78F /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ssim;
+			productName = Xcode;
+			productReference = C7FEEC771DAA2A50001FC78F /* ssim */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C71B6A631DAA2775007252E5 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0800;
+				ORGANIZATIONNAME = Netflix;
+				TargetAttributes = {
+					C71B6A6A1DAA2775007252E5 = {
+						CreatedOnToolsVersion = 8.0;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = C71B6A661DAA2775007252E5 /* Build configuration list for PBXProject "vmaf_xcode" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = C71B6A621DAA2775007252E5;
+			productRefGroup = C71B6A6C1DAA2775007252E5 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C71B6A6A1DAA2775007252E5 /* vmaf */,
+				C7FEEBD31DAA29C8001FC78F /* moment */,
+				C7FEEBFD1DAA2A4A001FC78F /* ms_ssim */,
+				C7FEEC261DAA2A4B001FC78F /* psnr */,
+				C7FEEC4F1DAA2A50001FC78F /* ssim */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C71B6A671DAA2775007252E5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C7FEEBA31DAA2844001FC78F /* vmaf_main.c in Sources */,
+				C7FEEBCC1DAA2934001FC78F /* convolve.h in Sources */,
+				C7FEEBCD1DAA2934001FC78F /* decimate.h in Sources */,
+				C7FEEBCE1DAA2934001FC78F /* iqa_options.h in Sources */,
+				C7FEEBCF1DAA2934001FC78F /* iqa_os.h in Sources */,
+				C7FEEBD01DAA2934001FC78F /* iqa.h in Sources */,
+				C7FEEBD11DAA2934001FC78F /* math_utils.h in Sources */,
+				C7FEEBD21DAA2934001FC78F /* ssim_tools.h in Sources */,
+				C7FEEBC61DAA292C001FC78F /* alignment.h in Sources */,
+				C7FEEBC71DAA292C001FC78F /* alloc.h in Sources */,
+				C7FEEBC81DAA292C001FC78F /* convolution_internal.h in Sources */,
+				C7FEEBC91DAA292C001FC78F /* convolution.h in Sources */,
+				C7FEEBCA1DAA292C001FC78F /* file_io.h in Sources */,
+				C7FEEBCB1DAA292C001FC78F /* macros.h in Sources */,
+				C7FEEBA11DAA2844001FC78F /* vif_tools.c in Sources */,
+				C7FEEB851DAA2826001FC78F /* ansnr.c in Sources */,
+				C7FEEBA01DAA2844001FC78F /* ssim.c in Sources */,
+				C7FEEBC41DAA28E2001FC78F /* convolution.c in Sources */,
+				C7FEEB841DAA2826001FC78F /* ansnr_tools.c in Sources */,
+				C7FEEBC51DAA28E2001FC78F /* file_io.c in Sources */,
+				C7FEEBB91DAA28D1001FC78F /* ssim_tools.c in Sources */,
+				C7FEEB831DAA2826001FC78F /* all.c in Sources */,
+				C7FEEB821DAA2826001FC78F /* adm.c in Sources */,
+				C7FEEB9E1DAA2844001FC78F /* psnr.c in Sources */,
+				C7FEEBA21DAA2844001FC78F /* vif.c in Sources */,
+				C7FEEB991DAA2844001FC78F /* moment.c in Sources */,
+				C7FEEB9C1DAA2844001FC78F /* ms_ssim.c in Sources */,
+				C7FEEBB81DAA28D1001FC78F /* math_utils.c in Sources */,
+				C7FEEBB71DAA28D1001FC78F /* decimate.c in Sources */,
+				C7FEEB811DAA2826001FC78F /* adm_tools.c in Sources */,
+				C7FEEB9A1DAA2844001FC78F /* motion.c in Sources */,
+				C7FEEBB61DAA28D1001FC78F /* convolve.c in Sources */,
+				C7FEEBC31DAA28E2001FC78F /* alloc.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C7FEEBD41DAA29C8001FC78F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C7FEEBFC1DAA29EC001FC78F /* moment_main.c in Sources */,
+				C7FEEBD61DAA29C8001FC78F /* convolve.h in Sources */,
+				C7FEEBD71DAA29C8001FC78F /* decimate.h in Sources */,
+				C7FEEBD81DAA29C8001FC78F /* iqa_options.h in Sources */,
+				C7FEEBD91DAA29C8001FC78F /* iqa_os.h in Sources */,
+				C7FEEBDA1DAA29C8001FC78F /* iqa.h in Sources */,
+				C7FEEBDB1DAA29C8001FC78F /* math_utils.h in Sources */,
+				C7FEEBDC1DAA29C8001FC78F /* ssim_tools.h in Sources */,
+				C7FEEBDD1DAA29C8001FC78F /* alignment.h in Sources */,
+				C7FEEBDE1DAA29C8001FC78F /* alloc.h in Sources */,
+				C7FEEBDF1DAA29C8001FC78F /* convolution_internal.h in Sources */,
+				C7FEEBE01DAA29C8001FC78F /* convolution.h in Sources */,
+				C7FEEBE11DAA29C8001FC78F /* file_io.h in Sources */,
+				C7FEEBE21DAA29C8001FC78F /* macros.h in Sources */,
+				C7FEEBE31DAA29C8001FC78F /* vif_tools.c in Sources */,
+				C7FEEBE41DAA29C8001FC78F /* ansnr.c in Sources */,
+				C7FEEBE51DAA29C8001FC78F /* ssim.c in Sources */,
+				C7FEEBE61DAA29C8001FC78F /* convolution.c in Sources */,
+				C7FEEBE71DAA29C8001FC78F /* ansnr_tools.c in Sources */,
+				C7FEEBE81DAA29C8001FC78F /* file_io.c in Sources */,
+				C7FEEBE91DAA29C8001FC78F /* ssim_tools.c in Sources */,
+				C7FEEBEA1DAA29C8001FC78F /* all.c in Sources */,
+				C7FEEBEB1DAA29C8001FC78F /* adm.c in Sources */,
+				C7FEEBEC1DAA29C8001FC78F /* psnr.c in Sources */,
+				C7FEEBED1DAA29C8001FC78F /* vif.c in Sources */,
+				C7FEEBEE1DAA29C8001FC78F /* moment.c in Sources */,
+				C7FEEBEF1DAA29C8001FC78F /* ms_ssim.c in Sources */,
+				C7FEEBF01DAA29C8001FC78F /* math_utils.c in Sources */,
+				C7FEEBF11DAA29C8001FC78F /* decimate.c in Sources */,
+				C7FEEBF21DAA29C8001FC78F /* adm_tools.c in Sources */,
+				C7FEEBF31DAA29C8001FC78F /* motion.c in Sources */,
+				C7FEEBF41DAA29C8001FC78F /* convolve.c in Sources */,
+				C7FEEBF51DAA29C8001FC78F /* alloc.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C7FEEBFE1DAA2A4A001FC78F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C7FEEC781DAA2A68001FC78F /* ms_ssim_main.c in Sources */,
+				C7FEEC001DAA2A4A001FC78F /* convolve.h in Sources */,
+				C7FEEC011DAA2A4A001FC78F /* decimate.h in Sources */,
+				C7FEEC021DAA2A4A001FC78F /* iqa_options.h in Sources */,
+				C7FEEC031DAA2A4A001FC78F /* iqa_os.h in Sources */,
+				C7FEEC041DAA2A4A001FC78F /* iqa.h in Sources */,
+				C7FEEC051DAA2A4A001FC78F /* math_utils.h in Sources */,
+				C7FEEC061DAA2A4A001FC78F /* ssim_tools.h in Sources */,
+				C7FEEC071DAA2A4A001FC78F /* alignment.h in Sources */,
+				C7FEEC081DAA2A4A001FC78F /* alloc.h in Sources */,
+				C7FEEC091DAA2A4A001FC78F /* convolution_internal.h in Sources */,
+				C7FEEC0A1DAA2A4A001FC78F /* convolution.h in Sources */,
+				C7FEEC0B1DAA2A4A001FC78F /* file_io.h in Sources */,
+				C7FEEC0C1DAA2A4A001FC78F /* macros.h in Sources */,
+				C7FEEC0D1DAA2A4A001FC78F /* vif_tools.c in Sources */,
+				C7FEEC0E1DAA2A4A001FC78F /* ansnr.c in Sources */,
+				C7FEEC0F1DAA2A4A001FC78F /* ssim.c in Sources */,
+				C7FEEC101DAA2A4A001FC78F /* convolution.c in Sources */,
+				C7FEEC111DAA2A4A001FC78F /* ansnr_tools.c in Sources */,
+				C7FEEC121DAA2A4A001FC78F /* file_io.c in Sources */,
+				C7FEEC131DAA2A4A001FC78F /* ssim_tools.c in Sources */,
+				C7FEEC141DAA2A4A001FC78F /* all.c in Sources */,
+				C7FEEC151DAA2A4A001FC78F /* adm.c in Sources */,
+				C7FEEC161DAA2A4A001FC78F /* psnr.c in Sources */,
+				C7FEEC171DAA2A4A001FC78F /* vif.c in Sources */,
+				C7FEEC181DAA2A4A001FC78F /* moment.c in Sources */,
+				C7FEEC191DAA2A4A001FC78F /* ms_ssim.c in Sources */,
+				C7FEEC1A1DAA2A4A001FC78F /* math_utils.c in Sources */,
+				C7FEEC1B1DAA2A4A001FC78F /* decimate.c in Sources */,
+				C7FEEC1C1DAA2A4A001FC78F /* adm_tools.c in Sources */,
+				C7FEEC1D1DAA2A4A001FC78F /* motion.c in Sources */,
+				C7FEEC1E1DAA2A4A001FC78F /* convolve.c in Sources */,
+				C7FEEC1F1DAA2A4A001FC78F /* alloc.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C7FEEC271DAA2A4B001FC78F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C7FEEC791DAA2A7C001FC78F /* psnr_main.c in Sources */,
+				C7FEEC291DAA2A4B001FC78F /* convolve.h in Sources */,
+				C7FEEC2A1DAA2A4B001FC78F /* decimate.h in Sources */,
+				C7FEEC2B1DAA2A4B001FC78F /* iqa_options.h in Sources */,
+				C7FEEC2C1DAA2A4B001FC78F /* iqa_os.h in Sources */,
+				C7FEEC2D1DAA2A4B001FC78F /* iqa.h in Sources */,
+				C7FEEC2E1DAA2A4B001FC78F /* math_utils.h in Sources */,
+				C7FEEC2F1DAA2A4B001FC78F /* ssim_tools.h in Sources */,
+				C7FEEC301DAA2A4B001FC78F /* alignment.h in Sources */,
+				C7FEEC311DAA2A4B001FC78F /* alloc.h in Sources */,
+				C7FEEC321DAA2A4B001FC78F /* convolution_internal.h in Sources */,
+				C7FEEC331DAA2A4B001FC78F /* convolution.h in Sources */,
+				C7FEEC341DAA2A4B001FC78F /* file_io.h in Sources */,
+				C7FEEC351DAA2A4B001FC78F /* macros.h in Sources */,
+				C7FEEC361DAA2A4B001FC78F /* vif_tools.c in Sources */,
+				C7FEEC371DAA2A4B001FC78F /* ansnr.c in Sources */,
+				C7FEEC381DAA2A4B001FC78F /* ssim.c in Sources */,
+				C7FEEC391DAA2A4B001FC78F /* convolution.c in Sources */,
+				C7FEEC3A1DAA2A4B001FC78F /* ansnr_tools.c in Sources */,
+				C7FEEC3B1DAA2A4B001FC78F /* file_io.c in Sources */,
+				C7FEEC3C1DAA2A4B001FC78F /* ssim_tools.c in Sources */,
+				C7FEEC3D1DAA2A4B001FC78F /* all.c in Sources */,
+				C7FEEC3E1DAA2A4B001FC78F /* adm.c in Sources */,
+				C7FEEC3F1DAA2A4B001FC78F /* psnr.c in Sources */,
+				C7FEEC401DAA2A4B001FC78F /* vif.c in Sources */,
+				C7FEEC411DAA2A4B001FC78F /* moment.c in Sources */,
+				C7FEEC421DAA2A4B001FC78F /* ms_ssim.c in Sources */,
+				C7FEEC431DAA2A4B001FC78F /* math_utils.c in Sources */,
+				C7FEEC441DAA2A4B001FC78F /* decimate.c in Sources */,
+				C7FEEC451DAA2A4B001FC78F /* adm_tools.c in Sources */,
+				C7FEEC461DAA2A4B001FC78F /* motion.c in Sources */,
+				C7FEEC471DAA2A4B001FC78F /* convolve.c in Sources */,
+				C7FEEC481DAA2A4B001FC78F /* alloc.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C7FEEC501DAA2A50001FC78F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C7FEEC7A1DAA2A8E001FC78F /* ssim_main.c in Sources */,
+				C7FEEC521DAA2A50001FC78F /* convolve.h in Sources */,
+				C7FEEC531DAA2A50001FC78F /* decimate.h in Sources */,
+				C7FEEC541DAA2A50001FC78F /* iqa_options.h in Sources */,
+				C7FEEC551DAA2A50001FC78F /* iqa_os.h in Sources */,
+				C7FEEC561DAA2A50001FC78F /* iqa.h in Sources */,
+				C7FEEC571DAA2A50001FC78F /* math_utils.h in Sources */,
+				C7FEEC581DAA2A50001FC78F /* ssim_tools.h in Sources */,
+				C7FEEC591DAA2A50001FC78F /* alignment.h in Sources */,
+				C7FEEC5A1DAA2A50001FC78F /* alloc.h in Sources */,
+				C7FEEC5B1DAA2A50001FC78F /* convolution_internal.h in Sources */,
+				C7FEEC5C1DAA2A50001FC78F /* convolution.h in Sources */,
+				C7FEEC5D1DAA2A50001FC78F /* file_io.h in Sources */,
+				C7FEEC5E1DAA2A50001FC78F /* macros.h in Sources */,
+				C7FEEC5F1DAA2A50001FC78F /* vif_tools.c in Sources */,
+				C7FEEC601DAA2A50001FC78F /* ansnr.c in Sources */,
+				C7FEEC611DAA2A50001FC78F /* ssim.c in Sources */,
+				C7FEEC621DAA2A50001FC78F /* convolution.c in Sources */,
+				C7FEEC631DAA2A50001FC78F /* ansnr_tools.c in Sources */,
+				C7FEEC641DAA2A50001FC78F /* file_io.c in Sources */,
+				C7FEEC651DAA2A50001FC78F /* ssim_tools.c in Sources */,
+				C7FEEC661DAA2A50001FC78F /* all.c in Sources */,
+				C7FEEC671DAA2A50001FC78F /* adm.c in Sources */,
+				C7FEEC681DAA2A50001FC78F /* psnr.c in Sources */,
+				C7FEEC691DAA2A50001FC78F /* vif.c in Sources */,
+				C7FEEC6A1DAA2A50001FC78F /* moment.c in Sources */,
+				C7FEEC6B1DAA2A50001FC78F /* ms_ssim.c in Sources */,
+				C7FEEC6C1DAA2A50001FC78F /* math_utils.c in Sources */,
+				C7FEEC6D1DAA2A50001FC78F /* decimate.c in Sources */,
+				C7FEEC6E1DAA2A50001FC78F /* adm_tools.c in Sources */,
+				C7FEEC6F1DAA2A50001FC78F /* motion.c in Sources */,
+				C7FEEC701DAA2A50001FC78F /* convolve.c in Sources */,
+				C7FEEC711DAA2A50001FC78F /* alloc.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		C71B6A701DAA2775007252E5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVES = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		C71B6A711DAA2775007252E5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVES = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		C71B6A731DAA2775007252E5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		C71B6A741DAA2775007252E5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_OPTIMIZATION_LEVEL = fast;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		C7FEEBF91DAA29C8001FC78F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		C7FEEBFA1DAA29C8001FC78F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_OPTIMIZATION_LEVEL = fast;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		C7FEEC231DAA2A4A001FC78F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		C7FEEC241DAA2A4A001FC78F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_OPTIMIZATION_LEVEL = fast;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		C7FEEC4C1DAA2A4B001FC78F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		C7FEEC4D1DAA2A4B001FC78F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_OPTIMIZATION_LEVEL = fast;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		C7FEEC751DAA2A50001FC78F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		C7FEEC761DAA2A50001FC78F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_OPTIMIZATION_LEVEL = fast;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		C71B6A661DAA2775007252E5 /* Build configuration list for PBXProject "vmaf_xcode" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C71B6A701DAA2775007252E5 /* Debug */,
+				C71B6A711DAA2775007252E5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C71B6A721DAA2775007252E5 /* Build configuration list for PBXNativeTarget "vmaf" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C71B6A731DAA2775007252E5 /* Debug */,
+				C71B6A741DAA2775007252E5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C7FEEBF81DAA29C8001FC78F /* Build configuration list for PBXNativeTarget "moment" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C7FEEBF91DAA29C8001FC78F /* Debug */,
+				C7FEEBFA1DAA29C8001FC78F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C7FEEC221DAA2A4A001FC78F /* Build configuration list for PBXNativeTarget "ms_ssim" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C7FEEC231DAA2A4A001FC78F /* Debug */,
+				C7FEEC241DAA2A4A001FC78F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C7FEEC4B1DAA2A4B001FC78F /* Build configuration list for PBXNativeTarget "psnr" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C7FEEC4C1DAA2A4B001FC78F /* Debug */,
+				C7FEEC4D1DAA2A4B001FC78F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C7FEEC741DAA2A50001FC78F /* Build configuration list for PBXNativeTarget "ssim" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C7FEEC751DAA2A50001FC78F /* Debug */,
+				C7FEEC761DAA2A50001FC78F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = C71B6A631DAA2775007252E5 /* Project object */;
+}
