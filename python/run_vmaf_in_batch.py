@@ -18,7 +18,7 @@ __license__ = "Apache, Version 2.0"
 
 FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
 OUT_FMTS = ['text (default)', 'xml', 'json']
-POOL_METHODS = ['mean', 'harmonic_mean', 'min']
+POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'perc20']
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) + \
@@ -48,7 +48,7 @@ def main():
     pool_method = get_cmd_option(sys.argv, 2, len(sys.argv), '--pool')
     if not (pool_method is None
             or pool_method in POOL_METHODS):
-        print_usage()
+        print '--pool can only have option among {}'.format(', '.join(POOL_METHODS))
         return 2
 
     parallelize = cmd_option_exists(sys.argv, 2, len(sys.argv), '--parallelize')
@@ -127,8 +127,16 @@ def main():
         # pooling
         if pool_method == 'harmonic_mean':
             result.set_score_aggregate_method(ListStats.harmonic_mean)
-        if pool_method == 'min':
+        elif pool_method == 'min':
             result.set_score_aggregate_method(np.min)
+        elif pool_method == 'median':
+            result.set_score_aggregate_method(np.median)
+        elif pool_method == 'perc5':
+            result.set_score_aggregate_method(ListStats.perc5)
+        elif pool_method == 'perc10':
+            result.set_score_aggregate_method(ListStats.perc10)
+        elif pool_method == 'perc20':
+            result.set_score_aggregate_method(ListStats.perc20)
         else: # None or 'mean'
             pass
 

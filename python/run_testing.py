@@ -14,7 +14,7 @@ from tools.stats import ListStats
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
-POOL_METHODS = ['mean', 'harmonic_mean', 'min']
+POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'perc20']
 
 def print_usage():
     quality_runner_types = ['VMAF', 'PSNR', 'SSIM', 'MS_SSIM']
@@ -41,7 +41,7 @@ def main():
     pool_method = get_cmd_option(sys.argv, 3, len(sys.argv), '--pool')
     if not (pool_method is None
             or pool_method in POOL_METHODS):
-        print_usage()
+        print '--pool can only have option among {}'.format(', '.join(POOL_METHODS))
         return 2
 
     if vmaf_model_path is not None and quality_type != VmafQualityRunner.TYPE:
@@ -71,6 +71,14 @@ def main():
         aggregate_method = ListStats.harmonic_mean
     elif pool_method == 'min':
         aggregate_method = np.min
+    elif pool_method == 'median':
+        aggregate_method = np.median
+    elif pool_method == 'perc5':
+        aggregate_method = ListStats.perc5
+    elif pool_method == 'perc10':
+        aggregate_method = ListStats.perc10
+    elif pool_method == 'perc20':
+        aggregate_method = ListStats.perc20
     else: # None or 'mean'
         aggregate_method = np.mean
 
