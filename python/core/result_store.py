@@ -40,7 +40,13 @@ class FileSystemResultStore(ResultStore):
 
     def save(self, result):
         result_file_path = self._get_result_file_path(result)
-        make_parent_dirs_if_nonexist(result_file_path)
+        try:
+            make_parent_dirs_if_nonexist(result_file_path)
+        except OSError as e:
+            print 'make_parent_dirs_if_nonexist {path} fails: {e}'.format(
+                path=result_file_path,
+                e=str(e))
+            pass
         with open(result_file_path, "wt") as result_file:
             result_file.write(str(result.to_dataframe().to_dict()))
 
