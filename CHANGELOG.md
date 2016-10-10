@@ -90,3 +90,8 @@
 
 **New features:**
 - Add support for docker usage (#30).
+
+## (10/10/2016) [1.1.6]
+
+**New features:**
+- Add Xcode project support.
