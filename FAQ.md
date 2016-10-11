@@ -25,3 +25,9 @@ A: The SSIM implementation in the VMAF package includes an empirical downsamplin
 A: By default, the VMAF output reports the aggregate score as the average (i.e. mean) per-frame score mostly for its simplicity, as well as for consistency with other metrics (e.g. mean PSNR). There are psycho-visual evidences, however, suggest that human opinions tend to weigh more heavily towards the worst-quality frames. It is an open question what the optimal way to pool the per-frame scores is, as it also depends on many factors, such as the time scale of the pooling (seconds vs minutes).
 
 To provide some flexibility, in CLIs *run_vmaf*, *run_psnr*, *run_vmaf_in_batch*, *run_vmaf_training* and *run_testing*, we added a hidden option *--pool pool_method*, where *pool_method* is among *mean*, *harmonic_mean*, *median*, *min*, *perc5*, *perc10* and *perc20* (percx means x-percentile).
+
+**Q: Will VMAF work on 4K videos?**
+
+A: The current VMAF model (v0.3.2) was trained on videos encoded at *up to* 1080p resolution. It is still useful for measuring 4K videos, if you are interested in a relative score. In other words, for two 4K videos A and B with A perceptually better than B, the VMAF scores will tell you so too. However, if you are interested in an absolute score, say if a 4K video is perceptually acceptable, you may not get an accurate answer.
+
+The future plan is to publish a model specifically trained on 4K videos.
