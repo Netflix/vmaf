@@ -5,10 +5,10 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ##What's New
 
-- (10/8/16) Added support for docker usage. Refer to [Usage through Docker](#usage-through-docker).
+- (10/8/16) Added support for [docker usage](#usage-through-docker).
 - (9/30/16) Added a [FAQ](FAQ.md) page.
-- (9/30/16) Commands *run_vmaf*, *run_vmaf_in_batch* and *vmafossexec* now all support output in XML and JSON format.
-- (9/30/16) Added *vmafossexec* -- a Python-independent implementation under [wrapper](wrapper). Refer to [Python-independent Implementation](#python-independent-implementation) for details.
+- (9/30/16) CLIs *run_vmaf*, *run_vmaf_in_batch* and *vmafossexec* now support output in XML and JSON.
+- (9/30/16) Added *vmafossexec* -- a C++ wrapper under [wrapper](wrapper). Refer to [Python-independent Implementation](#python-independent-implementation) for details.
 
 ##Prerequisite
 
