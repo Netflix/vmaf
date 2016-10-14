@@ -156,7 +156,6 @@ The first way is to call a command-line exectuable directly, very similar to wha
   - Override *TYPE* and *VERSION* fields.
   - Override *_generate_result(self, asset)*, which call a command-line executable and generate quality scores in a log file.
   - Override *_get_quality_scores(self, asset)*, which read the quality scores from the log file, and return the scores in a dictionary format.
-  - If necessary, override *_remove_log(self, asset)* if *Executor._remove_log(self, asset)* does not work for you (sometimes the command-line executable could generate output log files in some different format, such as in multiple files).
     
 For an example, follow PsnrQualityRunner.
 
@@ -164,7 +163,6 @@ The second way is to override the Executor._run_on_asset(self, asset) method to 
     
   - Override *TYPE* and *VERSION* fields.    
   - Override *_run_on_asset(self, asset)*, which runs a FeatureAssembler, collect a feature vector, run *TrainTestModel.predict()* on it, and return a Result object (in this case, both *Executor._run_on_asset(self, asset)* and *QualityRunner._read_result(self, asset)* get bypassed.    
-  - Override *_remove_log(self, asset)* by redirecting it to the FeatureAssembler.    
   - Override *_remove_result(self, asset)* by redirecting it to the FeatureAssembler.
   
 For an example, follow VmafQualityRunner.

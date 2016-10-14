@@ -468,6 +468,13 @@ class SsimQualityRunner(QualityRunner):
         del result_dict[SsimFeatureExtractor.get_scores_key('ssim')] # delete redundant
         return Result(asset, self.executor_id, result_dict)
 
+    def _remove_result(self, asset):
+        # Override Executor._remove_result(self, asset) by redirecting it to the
+        # FeatureAssembler.
+
+        vmaf_fassembler = self._get_feature_assembler_instance(asset)
+        vmaf_fassembler.remove_results()
+
 class MsSsimQualityRunner(QualityRunner):
 
     TYPE = 'MS_SSIM'
@@ -502,3 +509,10 @@ class MsSsimQualityRunner(QualityRunner):
             MsSsimFeatureExtractor.get_scores_key('ms_ssim')] # add ssim score
         del result_dict[MsSsimFeatureExtractor.get_scores_key('ms_ssim')] # delete redundant
         return Result(asset, self.executor_id, result_dict)
+
+    def _remove_result(self, asset):
+        # Override Executor._remove_result(self, asset) by redirecting it to the
+        # FeatureAssembler.
+
+        vmaf_fassembler = self._get_feature_assembler_instance(asset)
+        vmaf_fassembler.remove_results()
