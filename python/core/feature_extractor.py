@@ -415,7 +415,8 @@ class MomentFeatureExtractor(FeatureExtractor):
 class SsimFeatureExtractor(FeatureExtractor):
 
     TYPE = "SSIM_feature"
-    VERSION = "1.0"
+    # VERSION = "1.0"
+    VERSION = "1.1" # fix OPT_RANGE_PIXEL_OFFSET = 0
 
     ATOM_FEATURES = ['ssim', 'ssim_l', 'ssim_c', 'ssim_s']
 
@@ -449,7 +450,8 @@ class SsimFeatureExtractor(FeatureExtractor):
 class MsSsimFeatureExtractor(FeatureExtractor):
 
     TYPE = "MS_SSIM_feature"
-    VERSION = "1.0"
+    # VERSION = "1.0"
+    VERSION = "1.1" # fix OPT_RANGE_PIXEL_OFFSET = 0
 
     ATOM_FEATURES = ['ms_ssim',
                      'ms_ssim_l_scale0', 'ms_ssim_c_scale0', 'ms_ssim_s_scale0',

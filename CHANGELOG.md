@@ -96,3 +96,8 @@
 **New features:**
 - Add Xcode project support.
 - Add more pooling options (median, percx) to CLIs.
+
+## (10/14/2016) [1.1.7]
+
+**Fixed bugs:**
+- Issue #36: SSIM and MS-SSIM sometimes get negative values.
