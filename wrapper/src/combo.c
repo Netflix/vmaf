@@ -188,11 +188,11 @@ int combo(const char *ref_path, const char *dis_path, int w, int h, const char *
         // read ref y
         if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
         {
-            ret = read_image_b(ref_rfile, ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+            ret = read_image_b(ref_rfile, ref_buf, 0, w, h, stride);
         }
         else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
         {
-            ret = read_image_w(ref_rfile, ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+            ret = read_image_w(ref_rfile, ref_buf, 0, w, h, stride);
         }
         else
         {
@@ -211,11 +211,11 @@ int combo(const char *ref_path, const char *dis_path, int w, int h, const char *
         // read dis y
         if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
         {
-            ret = read_image_b(dis_rfile, dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+            ret = read_image_b(dis_rfile, dis_buf, 0, w, h, stride);
         }
         else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
         {
-            ret = read_image_w(dis_rfile, dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+            ret = read_image_w(dis_rfile, dis_buf, 0, w, h, stride);
         }
         else
         {
@@ -234,6 +234,81 @@ int combo(const char *ref_path, const char *dis_path, int w, int h, const char *
 #ifdef PRINT_PROGRESS
         printf("frame: %d, ", frm_idx);
 #endif
+
+        // ===============================================================
+        // for the PSNR, SSIM and MS-SSIM, offset are 0 - do them first
+        // ===============================================================
+
+        if (psnr_array != NULL)
+        {
+            /* =========== psnr ============== */
+            if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+            {
+                // max psnr 60.0 for 8-bit per Ioannis
+                ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, 255.0, 60.0);
+            }
+            else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+            {
+                // 10 bit gets normalized to 8 bit, peak is 1023 / 4.0 = 255.75
+                // max psnr 72.0 for 10-bit per Ioannis
+                ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, 255.75, 72.0);
+            }
+            else
+            {
+                sprintf(errmsg, "unknown format %s.\n", fmt);
+                goto fail_or_end;
+            }
+            if (ret)
+            {
+                sprintf(errmsg, "compute_psnr failed.\n");
+                goto fail_or_end;
+            }
+
+#ifdef PRINT_PROGRESS
+            printf("psnr: %.3f, ", score);
+#endif
+            insert_array(psnr_array, score);
+        }
+
+        if (ssim_array != NULL)
+        {
+
+            /* =========== ssim ============== */
+            if ((ret = compute_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, &l_score, &c_score, &s_score)))
+            {
+                sprintf(errmsg, "compute_ssim failed.\n");
+                goto fail_or_end;
+            }
+
+#ifdef PRINT_PROGRESS
+            printf("ssim: %.3f, ", score);
+#endif
+
+            insert_array(ssim_array, score);
+        }
+
+        if (ms_ssim_array != NULL)
+        {
+            /* =========== ms-ssim ============== */
+            if ((ret = compute_ms_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, l_scores, c_scores, s_scores)))
+            {
+                sprintf(errmsg, "compute_ms_ssim failed.\n");
+                goto fail_or_end;
+            }
+
+#ifdef PRINT_PROGRESS
+            printf("ms_ssim: %.3f, ", score);
+#endif
+
+            insert_array(ms_ssim_array, score);
+        }
+
+        // ===============================================================
+        // for the rest, offset pixel by OPT_RANGE_PIXEL_OFFSET
+        // ===============================================================
+
+        offset_image(ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+        offset_image(dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
 
         /* =========== adm ============== */
         if ((ret = compute_adm(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores, ADM_BORDER_FACTOR)))
@@ -299,37 +374,6 @@ int combo(const char *ref_path, const char *dis_path, int w, int h, const char *
 
 #endif
 
-        if (psnr_array != NULL)
-        {
-            /* =========== psnr ============== */
-            if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
-            {
-                // max psnr 60.0 for 8-bit per Ioannis
-                ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, 255.0, 60.0);
-            }
-            else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-            {
-                // 10 bit gets normalized to 8 bit, peak is 1023 / 4.0 = 255.75
-                // max psnr 72.0 for 10-bit per Ioannis
-                ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, 255.75, 72.0);
-            }
-            else
-            {
-                sprintf(errmsg, "unknown format %s.\n", fmt);
-                goto fail_or_end;
-            }
-            if (ret)
-            {
-                sprintf(errmsg, "compute_psnr failed.\n");
-                goto fail_or_end;
-            }
-
-#ifdef PRINT_PROGRESS
-            printf("psnr: %.3f, ", score);
-#endif
-            insert_array(psnr_array, score);
-        }
-
         /* =========== motion ============== */
 
         // filter
@@ -362,9 +406,6 @@ int combo(const char *ref_path, const char *dis_path, int w, int h, const char *
         insert_array(motion_array, score);
 
         /* =========== vif ============== */
-        // compute vif last, because its input ref/dis must be offset by -128
-        offset_image(ref_buf, -128, w, h, stride);
-        offset_image(dis_buf, -128, w, h, stride);
 
         if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores)))
         {
@@ -395,39 +436,6 @@ int combo(const char *ref_path, const char *dis_path, int w, int h, const char *
         insert_array(vif_num_scale3_array, scores[6]);
         insert_array(vif_den_scale3_array, scores[7]);
         insert_array(vif_array, score);
-
-        if (ssim_array != NULL)
-        {
-
-            /* =========== ssim ============== */
-            if ((ret = compute_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, &l_score, &c_score, &s_score)))
-            {
-                sprintf(errmsg, "compute_ssim failed.\n");
-                goto fail_or_end;
-            }
-
-#ifdef PRINT_PROGRESS
-            printf("ssim: %.3f, ", score);
-#endif
-
-            insert_array(ssim_array, score);
-        }
-
-        if (ms_ssim_array != NULL)
-        {
-            /* =========== ms-ssim ============== */
-            if ((ret = compute_ms_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, l_scores, c_scores, s_scores)))
-            {
-                sprintf(errmsg, "compute_ms_ssim failed.\n");
-                goto fail_or_end;
-            }
-
-#ifdef PRINT_PROGRESS
-            printf("ms_ssim: %.3f, ", score);
-#endif
-
-            insert_array(ms_ssim_array, score);
-        }
 
         // ref skip u and v
         if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
