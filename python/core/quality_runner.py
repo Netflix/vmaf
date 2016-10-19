@@ -10,7 +10,8 @@ from core.executor import Executor
 from core.result import Result
 from core.feature_assembler import FeatureAssembler
 from core.train_test_model import TrainTestModel
-from core.feature_extractor import SsimFeatureExtractor, MsSsimFeatureExtractor
+from core.feature_extractor import SsimFeatureExtractor, MsSsimFeatureExtractor, \
+    VmafFeatureExtractor
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -516,3 +517,67 @@ class MsSsimQualityRunner(QualityRunner):
 
         vmaf_fassembler = self._get_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
+
+class VmafSingleFeatureQualityRunner(VmafQualityRunner):
+
+    VERSION = '{}-0'.format(VmafFeatureExtractor.VERSION)
+
+    def _get_vmaf_feature_assembler_instance(self, asset):
+
+        vmaf_fassembler = FeatureAssembler(
+            feature_dict={'VMAF_feature': [self.FEATURE_NAME]},
+            feature_option_dict=None,
+            assets=[asset],
+            logger=self.logger,
+            fifo_mode=self.fifo_mode,
+            delete_workdir=self.delete_workdir,
+            result_store=self.result_store,
+            optional_dict=None,
+            optional_dict2=None,
+            parallelize=False, # parallelization already in a higher level
+        )
+        return vmaf_fassembler
+
+    def _run_on_asset(self, asset):
+        # Override Executor._run_on_asset(self, asset)
+        vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
+        vmaf_fassembler.run()
+        feature_result = vmaf_fassembler.results[0]
+        result_dict = {
+            self.get_scores_key(): feature_result[VmafFeatureExtractor.get_scores_key(self.FEATURE_NAME)]
+        }
+
+        return Result(asset, self.executor_id, result_dict)
+
+    def _remove_result(self, asset):
+        # Override Executor._remove_result(self, asset) by redirecting it to the
+        # FeatureAssembler.
+
+        vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
+        vmaf_fassembler.remove_results()
+
+class Adm2QualityRunner(VmafSingleFeatureQualityRunner):
+    # TYPE = 'ADM2'
+    TYPE = 'DLM'
+    FEATURE_NAME = 'adm2'
+
+class VifScale0QualityRunner(VmafSingleFeatureQualityRunner):
+    TYPE = 'VIF_SCALE0'
+    FEATURE_NAME = 'vif_scale0'
+
+class VifScale1QualityRunner(VmafSingleFeatureQualityRunner):
+    TYPE = 'VIF_SCALE1'
+    FEATURE_NAME = 'vif_scale1'
+
+class VifScale2QualityRunner(VmafSingleFeatureQualityRunner):
+    TYPE = 'VIF_SCALE2'
+    FEATURE_NAME = 'vif_scale2'
+
+class VifScale3QualityRunner(VmafSingleFeatureQualityRunner):
+    TYPE = 'VIF_SCALE3'
+    FEATURE_NAME = 'vif_scale3'
+
+class MotionQualityRunner(VmafSingleFeatureQualityRunner):
+    # TYPE = 'MOTION'
+    TYPE = 'TI'
+    FEATURE_NAME = 'motion'

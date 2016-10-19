@@ -9,7 +9,7 @@ import unittest
 from core.asset import Asset
 from core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner, \
     PsnrQualityRunner, VmafossExecQualityRunner, MsSsimQualityRunner, \
-    SsimQualityRunner
+    SsimQualityRunner, Adm2QualityRunner
 from core.executor import run_executors_in_parallel
 import config
 from core.result_store import FileSystemResultStore
@@ -829,6 +829,35 @@ class QualityRunnerTest(unittest.TestCase):
 
         with self.assertRaises(KeyError):
             self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 1.0, places=4)
+
+    def test_run_adm2_runner(self):
+        print 'test on running ADM2 runner...'
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.runner = Adm2QualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['ADM2_score'], 0.925421075027, places=4)
+        self.assertAlmostEqual(results[1]['ADM2_score'], 1.0, places=4)
 
 class ParallelQualityRunnerTest(unittest.TestCase):
 
