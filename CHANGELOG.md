@@ -101,3 +101,9 @@
 
 **Fixed bugs:**
 - Issue #36: SSIM and MS-SSIM sometimes get negative values.
+
+## (10/19/2016) [1.1.8]
+
+**New features:**
+- Add quality runners for each individual VMAF elementary metrics.
+
