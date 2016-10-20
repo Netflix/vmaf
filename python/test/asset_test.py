@@ -148,7 +148,8 @@ class AssetTest(unittest.TestCase):
               'dataset': 'test',
               'dis_path': 'disvideo.yuv',
               'ref_path': 'refvideo.yuv',
-              'workdir': ''
+              'workdir': '',
+              'file_type': 'yuv'
              }
         )
 
@@ -167,7 +168,8 @@ class AssetTest(unittest.TestCase):
               'dataset': 'test',
               'dis_path': 'disvideo.yuv420p10le.yuv',
               'ref_path': 'refvideo.yuv420p10le.yuv',
-              'workdir': ''
+              'workdir': '',
+              'file_type': 'yuv'
              }
         )
 
@@ -180,7 +182,7 @@ class AssetTest(unittest.TestCase):
             str(asset),
             "test_0_0_refvideo_720x480_2to2_vs_disvideo_720x480_2to2_q_720x480"
         )
-        expected_repr = '{"asset_dict": {"end_frame": 2, "height": 480, "start_frame": 2, "width": 720}, "asset_id": 0, "content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", "ref_path": "refvideo.yuv", "workdir": ""}'
+        expected_repr = '{"asset_dict": {"end_frame": 2, "height": 480, "start_frame": 2, "width": 720}, "asset_id": 0, "content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", "file_type": "yuv", "ref_path": "refvideo.yuv", "workdir": ""}'
         self.assertEquals(repr(asset), expected_repr)
         recon_asset = Asset.from_repr(expected_repr)
         self.assertEquals(asset, recon_asset)
@@ -196,7 +198,7 @@ class AssetTest(unittest.TestCase):
             str(asset),
             "test_0_1_refvideo_720x480_vs_disvideo_720x480_q_720x480"
         )
-        expected_repr = '{"asset_dict": {"height": 480, "width": 720}, "asset_id": 1, "content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", "ref_path": "refvideo.yuv", "workdir": ""}'
+        expected_repr = '{"asset_dict": {"height": 480, "width": 720}, "asset_id": 1, "content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", "file_type": "yuv", "ref_path": "refvideo.yuv", "workdir": ""}'
         self.assertEquals(repr(asset), expected_repr)
         recon_asset = Asset.from_repr(expected_repr)
         self.assertEquals(asset, recon_asset)
@@ -209,7 +211,7 @@ class AssetTest(unittest.TestCase):
             str(asset),
             "test_0_2_refvideo_720x480_vs_disvideo_720x480_q_1920x1080"
         )
-        expected_repr = '{"asset_dict": {"height": 480, "quality_height": 1080, "quality_width": 1920, "width": 720}, "asset_id": 2, "content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", "ref_path": "refvideo.yuv", "workdir": ""}'
+        expected_repr = '{"asset_dict": {"height": 480, "quality_height": 1080, "quality_width": 1920, "width": 720}, "asset_id": 2, "content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", "file_type": "yuv", "ref_path": "refvideo.yuv", "workdir": ""}'
         self.assertEquals(repr(asset), expected_repr)
         recon_asset = Asset.from_repr(expected_repr)
         self.assertEquals(asset, recon_asset)
@@ -223,7 +225,7 @@ class AssetTest(unittest.TestCase):
             str(asset),
             "test_0_2_refvideo_720x480_yuv422p_vs_disvideo_720x480_yuv422p_q_1920x1080"
         )
-        expected_repr = '{"asset_dict": {"height": 480, "quality_height": 1080, "quality_width": 1920, "width": 720, "yuv_type": "yuv422p"}, "asset_id": 2, "content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", "ref_path": "refvideo.yuv", "workdir": ""}'
+        expected_repr = '{"asset_dict": {"height": 480, "quality_height": 1080, "quality_width": 1920, "width": 720, "yuv_type": "yuv422p"}, "asset_id": 2, "content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", "file_type": "yuv", "ref_path": "refvideo.yuv", "workdir": ""}'
         self.assertEquals(repr(asset), expected_repr)
         recon_asset = Asset.from_repr(expected_repr)
         self.assertEquals(asset, recon_asset)
@@ -237,7 +239,7 @@ class AssetTest(unittest.TestCase):
             str(asset),
             "test_0_2_refvideo_720x480_vs_disvideo_720x480_q_1920x1080_lanczos"
         )
-        expected_repr = '{"asset_dict": {"height": 480, "quality_height": 1080, "quality_width": 1920, "resampling_type": "lanczos", "width": 720}, "asset_id": 2, "content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", "ref_path": "refvideo.yuv", "workdir": ""}'
+        expected_repr = '{"asset_dict": {"height": 480, "quality_height": 1080, "quality_width": 1920, "resampling_type": "lanczos", "width": 720}, "asset_id": 2, "content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", "file_type": "yuv", "ref_path": "refvideo.yuv", "workdir": ""}'
         self.assertEquals(repr(asset), expected_repr)
         recon_asset = Asset.from_repr(expected_repr)
         self.assertEquals(asset, recon_asset)

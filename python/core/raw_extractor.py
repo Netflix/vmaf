@@ -2,7 +2,6 @@ import os
 from time import sleep
 
 from core.mixin import H5pyMixin
-from tools.reader import YuvReader
 from core.executor import Executor
 from core.result import RawResult
 
@@ -97,14 +96,12 @@ class DisYUVRawVideoExtractor(H5pyMixin, RawExtractor):
                 asset.dis_workfile_path))
 
     def _generate_result(self, asset):
-        quality_w, quality_h = asset.quality_width_height
 
         # count number of frames
         dis_ys = []
         dis_us = []
         dis_vs = []
-        with YuvReader(filepath=asset.dis_workfile_path, width=quality_w,
-                       height=quality_h, yuv_type=asset.yuv_type) as dis_yuv_reader:
+        with asset.get_reader() as dis_yuv_reader:
             for dis_yuv in dis_yuv_reader:
                 dis_y, dis_u, dis_v = dis_yuv
                 dis_ys.append(dis_y)
