@@ -518,7 +518,7 @@ class MsSsimQualityRunner(QualityRunner):
         vmaf_fassembler = self._get_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
 
-class VmafSingleFeatureQualityRunner(VmafQualityRunner):
+class VmafSingleFeatureQualityRunner(QualityRunner):
 
     VERSION = '{}-0'.format(VmafFeatureExtractor.VERSION)
 
@@ -557,8 +557,8 @@ class VmafSingleFeatureQualityRunner(VmafQualityRunner):
         vmaf_fassembler.remove_results()
 
 class Adm2QualityRunner(VmafSingleFeatureQualityRunner):
-    # TYPE = 'ADM2'
-    TYPE = 'DLM'
+    TYPE = 'ADM2'
+    # TYPE = 'DLM'
     FEATURE_NAME = 'adm2'
 
 class VifScale0QualityRunner(VmafSingleFeatureQualityRunner):
@@ -578,6 +578,6 @@ class VifScale3QualityRunner(VmafSingleFeatureQualityRunner):
     FEATURE_NAME = 'vif_scale3'
 
 class MotionQualityRunner(VmafSingleFeatureQualityRunner):
-    # TYPE = 'MOTION'
-    TYPE = 'TI'
+    TYPE = 'MOTION'
+    # TYPE = 'TI'
     FEATURE_NAME = 'motion'
