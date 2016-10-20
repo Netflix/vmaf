@@ -5,8 +5,7 @@ import os
 
 import numpy as np
 
-class YuvReader(object):
-
+class Reader(object):
     SUPPORTED_YUV_8BIT_TYPES = ['yuv420p',
                                 'yuv422p',
                                 'yuv444p',
@@ -25,6 +24,27 @@ class YuvReader(object):
                                         'yuv422p10le': (0.5, 1.0),
                                         'yuv444p10le': (1.0, 1.0),
                                         }
+
+    def _assert_yuv_type(self):
+        assert (self.yuv_type in self.SUPPORTED_YUV_8BIT_TYPES
+                or self.yuv_type in self.SUPPORTED_YUV_10BIT_LE_TYPES), \
+            'Unsupported YUV type: {}'.format(self.yuv_type)
+
+    def _assert_file_exist(self):
+        assert os.path.exists(self.filepath), \
+            "File does not exist: {}".format(self.filepath)
+
+    def _get_uv_width_height_multiplier(self):
+        self._assert_yuv_type()
+        return self.UV_WIDTH_HEIGHT_MULTIPLIERS_DICT[self.yuv_type]
+
+    def _is_8bit(self):
+        return self.yuv_type in self.SUPPORTED_YUV_8BIT_TYPES
+
+    def _is_10bitle(self):
+        return self.yuv_type in self.SUPPORTED_YUV_10BIT_LE_TYPES
+
+class YuvReader(Reader):
 
     def __init__(self, filepath, width, height, yuv_type):
 
@@ -82,19 +102,6 @@ class YuvReader(object):
 
         return int(num_frms)
 
-    def _get_uv_width_height_multiplier(self):
-        self._assert_yuv_type()
-        return self.UV_WIDTH_HEIGHT_MULTIPLIERS_DICT[self.yuv_type]
-
-    def _assert_yuv_type(self):
-        assert (self.yuv_type in self.SUPPORTED_YUV_8BIT_TYPES
-                or self.yuv_type in self.SUPPORTED_YUV_10BIT_LE_TYPES), \
-            'Unsupported YUV type: {}'.format(self.yuv_type)
-
-    def _assert_file_exist(self):
-        assert os.path.exists(self.filepath), \
-            "File does not exist: {}".format(self.filepath)
-
     def _asserts(self):
 
         # assert YUV type
@@ -105,12 +112,6 @@ class YuvReader(object):
 
         # assert file size: if consists of integer number of frames
         num_frms = self.num_frms
-
-    def _is_8bit(self):
-        return self.yuv_type in self.SUPPORTED_YUV_8BIT_TYPES
-
-    def _is_10bitle(self):
-        return self.yuv_type in self.SUPPORTED_YUV_10BIT_LE_TYPES
 
     def next_y_u_v(self):
 
@@ -126,6 +127,122 @@ class YuvReader(object):
             pix_type = np.uint8
         else:
             assert False
+
+        y = np.fromfile(self.file, pix_type, count=y_width*y_height)
+        if y.size == 0:
+            raise EOFError
+        u = np.fromfile(self.file, pix_type, count=uv_width*uv_height)
+        if u.size == 0:
+            raise EOFError
+        v = np.fromfile(self.file, pix_type, count=uv_width*uv_height)
+        if v.size == 0:
+            raise EOFError
+
+        y = y.reshape(y_height, y_width)
+        u = u.reshape(uv_height, uv_width)
+        v = v.reshape(uv_height, uv_width)
+
+        if self._is_10bitle():
+            return y.astype(np.double) / 4.0, \
+                   u.astype(np.double) / 4.0, \
+                   v.astype(np.double) / 4.0
+        elif self._is_8bit():
+            return y.astype(np.double), \
+                   u.astype(np.double), \
+                   v.astype(np.double)
+        else:
+            assert False
+
+class Y4mReader(Reader):
+
+    def __init__(self, filepath):
+
+        self.filepath = filepath
+
+        self._assert_file_exists()
+
+        self.file = open(self.filepath, 'rb')
+
+        y4m_header = self.file.readline(1024)
+        self.header_len = len(y4m_header)
+        y4m_opts = y4m_header.split()
+        for opt in y4m_opts:
+            if opt[0] == 'C':
+                if opt[1:] == '420' or opt[1:] == '420jpeg':
+                    self.yuv_type = 'yuv420p'
+                else:
+                    self.yuv_type = 'yuv' + opt[1:]
+            elif opt[0] == 'W':
+                self.width = int(opt[1:])
+            elif opt[0] == 'H':
+                self.width = int(opt[1:])
+            else:
+                continue
+        self._assert_yuv_type()
+
+    def close(self):
+        self.file.close()
+
+    # make YuvReader withable, e.g.:
+    # with YuvReader(...) as yuv_reader:
+    #     ...
+    def __enter__(self):
+        return self
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+    # make YuvReader iterable, e.g.:
+    # for y, u, v in yuv_reader:
+    #    ...
+    def __iter__(self):
+        return self
+    def next(self):
+        try:
+            return self.next_y_u_v()
+        except EOFError:
+            raise StopIteration
+
+    @property
+    def num_bytes(self):
+        self._assert_file_exist()
+        return os.path.getsize(self.filepath)
+
+    @property
+    def num_frms(self):
+        w_multiplier, h_multiplier = self._get_uv_width_height_multiplier()
+        # y4m has a variable size header per frame, which makes getting the
+        # exact number of frames difficult, however virtually all tools
+        # only write 'FRAME\n' making the following estimation work
+        if self._is_10bitle():
+            frame_size = 6 + self.width * self.height \
+                       * (1.0 + w_multiplier * h_multiplier * 2) * 2
+        elif self._is_8bit():
+            frame_size = 6 + self.width * self.height \
+                       * (1.0 + w_multiplier * h_multiplier * 2)
+        else:
+            assert False
+
+        num_frms = (self.num_bytes - self.header_size) / frame_size
+
+        return int(num_frms)
+
+    def next_y_u_v(self):
+
+        y_width = self.width
+        y_height = self.height
+        uv_w_multiplier, uv_h_multiplier = self._get_uv_width_height_multiplier()
+        uv_width = int(y_width * uv_w_multiplier)
+        uv_height = int(y_height * uv_h_multiplier)
+
+        if self._is_10bitle():
+            pix_type = np.uint16
+        elif self._is_8bit():
+            pix_type = np.uint8
+        else:
+            assert False
+
+        frame_header = self.file.readline()
+        assert frame_header[0:5] == 'FRAME', "Lost y4m sync, corrupt file?"
 
         y = np.fromfile(self.file, pix_type, count=y_width*y_height)
         if y.size == 0:
