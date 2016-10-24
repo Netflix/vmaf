@@ -508,7 +508,13 @@ class Asset(WorkdirEnabled):
         elif self.file_type == 'y4m':
             return Y4mReader(filepath=self.dis_workfile_path)
         else:
-            assert 1
+            assert False
+
+    def init_from_reader(self):
+        reader = Y4mReader(filepath=self.ref_path)
+        self.asset_dict['width'] = reader.width
+        self.asset_dict['height'] = reader.height
+        self.asset_dict['yuv_type'] = reader.yuv_type
 
 class NorefAsset(Asset):
     """
