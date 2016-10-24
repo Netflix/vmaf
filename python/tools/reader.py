@@ -159,10 +159,10 @@ class Y4mReader(Reader):
 
         self.filepath = filepath
 
-        self._assert_file_exists()
+        self._assert_file_exist()
 
         self.file = open(self.filepath, 'rb')
-
+        self.yuv_type = 'yuv420p' # y4m default
         y4m_header = self.file.readline(1024)
         self.header_len = len(y4m_header)
         y4m_opts = y4m_header.split()
@@ -175,7 +175,7 @@ class Y4mReader(Reader):
             elif opt[0] == 'W':
                 self.width = int(opt[1:])
             elif opt[0] == 'H':
-                self.width = int(opt[1:])
+                self.height = int(opt[1:])
             else:
                 continue
         self._assert_yuv_type()
@@ -227,7 +227,6 @@ class Y4mReader(Reader):
         return int(num_frms)
 
     def next_y_u_v(self):
-
         y_width = self.width
         y_height = self.height
         uv_w_multiplier, uv_h_multiplier = self._get_uv_width_height_multiplier()
@@ -241,7 +240,7 @@ class Y4mReader(Reader):
         else:
             assert False
 
-        frame_header = self.file.readline()
+        frame_header = self.file.readline(1024)
         assert frame_header[0:5] == 'FRAME', "Lost y4m sync, corrupt file?"
 
         y = np.fromfile(self.file, pix_type, count=y_width*y_height)
