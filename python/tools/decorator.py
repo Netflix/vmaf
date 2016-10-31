@@ -1,9 +1,12 @@
+import os
+
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import warnings
 import json
 import hashlib
+import sys
 
 def deprecated(func):
     """
@@ -47,10 +50,13 @@ def persist_to_file(file_name):
 
     def decorator(original_func):
 
-        try:
-            cache = json.load(open(file_name, 'r'))
-        except (IOError, ValueError):
+        if not os.path.exists(file_name):
             cache = {}
+        else:
+            try:
+                cache = json.load(open(file_name, 'r'))
+            except (IOError, ValueError):
+                sys.exit(1)
 
         def new_func(*args):
             h = hashlib.sha1(str(original_func.__name__) + str(args)).hexdigest()
