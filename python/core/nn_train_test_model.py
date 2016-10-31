@@ -167,8 +167,7 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
                 del self.h5py_file['patches']
             except KeyError:
                 pass
-        patches_cache = self.h5py_file.create_dataset('patches', patches_dims,
-                                                      dtype='float')
+        patches_cache = self.h5py_file.create_dataset('patches', patches_dims, dtype='float')
         patches_cache.dims[0].label = 'batch'
         patches_cache.dims[1].label = 'height'
         patches_cache.dims[2].label = 'width'
@@ -180,8 +179,7 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
                 del self.h5py_file['labels']
             except KeyError:
                 pass
-        labels_cache = self.h5py_file.create_dataset('labels', labels_dims,
-                                                     dtype='uint8')
+        labels_cache = self.h5py_file.create_dataset('labels', labels_dims, dtype='uint8')
 
         return patches_cache, labels_cache
 
