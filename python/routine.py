@@ -5,6 +5,7 @@ from core.cross_validation import ModelCrossValidation
 from core.feature_assembler import FeatureAssembler
 from core.quality_runner import VmafQualityRunner
 from core.result_store import FileSystemResultStore
+from mos.dataset_reader import RawDatasetReader
 from tools.misc import indices, get_stdout_logger, import_python_file, \
     close_logger, get_file_name_without_extension
 import config
@@ -501,3 +502,144 @@ def explain_model_on_dataset(model, test_assets_selected_indexs,
     explainer.print_explanations(test_exps, assets=test_assets, ys=test_ys, ys_pred=test_ys_pred)
     explainer.plot_explanations(test_exps, assets=test_assets, ys=test_ys, ys_pred=test_ys_pred)
     plt.show()
+
+
+def run_subjective_models(dataset_filepath, subjective_model_classes, do_plot=None, **kwargs):
+
+    if do_plot is None:
+        do_plot = []
+
+    if 'dataset_reader_class' in kwargs:
+        dataset_reader_class = kwargs['dataset_reader_class']
+    else:
+        dataset_reader_class = RawDatasetReader
+
+    if 'dataset_reader_info_dict' in kwargs:
+        dataset_reader_info_dict = kwargs['dataset_reader_info_dict']
+    else:
+        dataset_reader_info_dict = {}
+
+    dataset = import_python_file(dataset_filepath)
+    dataset_reader = dataset_reader_class(dataset, input_dict=dataset_reader_info_dict)
+
+    subjective_models = map(
+        lambda subjective_model_class: subjective_model_class(dataset_reader),
+        subjective_model_classes
+    )
+
+    results = map(
+        lambda subjective_model: subjective_model.run_modeling(**kwargs),
+        subjective_models
+    )
+
+    if do_plot == 'all' or 'raw_scores' in do_plot:
+        # ===== plot raw scores
+        plt.figure(figsize=(5, 2.5))
+        mtx = dataset_reader.opinion_score_2darray.T
+        S, E = mtx.shape
+        plt.imshow(mtx, interpolation='nearest')
+        # xs = np.array(range(S)) + 1
+        # my_xticks = map(lambda x: "#{}".format(x), xs)
+        # plt.yticks(np.array(xs), my_xticks, rotation=0)
+        plt.title(r'Raw Opinion Scores ($x_{es}$)')
+        plt.xlabel(r'Impaired Video Encodes ($e$)')
+        plt.ylabel(r'Test Subjects ($s$)')
+        plt.set_cmap('gray')
+        plt.tight_layout()
+
+    if do_plot == 'all' or 'quality_scores' in do_plot:
+        # ===== plot quality scores =====
+        bar_width = 0.4
+        fig, ax_quality = plt.subplots(figsize=(10, 2.5), nrows=1)
+        xs = None
+        shift_count = 0
+        colors = ['black', 'white', 'blue', 'red']
+        my_xticks = None
+        for subjective_model, result in zip(subjective_models, results):
+            if 'quality_scores' in result:
+                quality = result['quality_scores']
+                xs = range(len(quality))
+                # plt.plot(result['quality_scores'], label=subjective_model.TAG)
+                ax_quality.bar(np.array(xs)+shift_count*bar_width, quality,
+                            width=bar_width,
+                            color=colors[shift_count],
+                            label=subjective_model.TAG)
+                ax_quality.set_xlabel(r'Impaired Video Encodes ($e$)')
+                ax_quality.set_title(r'Recovered Quality Score ($x_e$)')
+                ax_quality.set_xlim([min(xs), max(xs)+1])
+                shift_count += 1
+        ax_quality.legend(loc=4, ncol=2, frameon=True)
+        plt.tight_layout()
+
+    if do_plot == 'all' or 'subject_scores' in do_plot:
+
+        # ===== plot subject bias and inconsistency =====
+        bar_width = 0.4
+        fig, (ax_bias, ax_inconsty) = plt.subplots(figsize=(5, 3.5), nrows=2, sharex=True)
+        xs = None
+        shift_count = 0
+        colors = ['black', 'white', 'blue', 'red']
+        my_xticks = None
+        for subjective_model, result in zip(subjective_models, results):
+
+            if 'observer_bias' in result:
+                bias = result['observer_bias']
+                xs = range(len(bias))
+                ax_bias.bar(np.array(xs)+shift_count*bar_width, bias,
+                            width=bar_width,
+                            color=colors[shift_count],
+                            label=subjective_model.TAG)
+                ax_inconsty.set_xlim([min(xs), max(xs)+1])
+                ax_bias.set_title(r'Subject Bias ($b_s$)')
+
+                if 'observers' in result:
+                    observers = result['observers']
+                    assert len(bias) == len(observers)
+                    my_xticks = observers
+                    plt.xticks(np.array(xs) + 0.5, my_xticks, rotation=90)
+
+            if 'observer_inconsistency' in result:
+                inconsty = result['observer_inconsistency']
+                xs = range(len(inconsty))
+                ax_inconsty.bar(np.array(xs)+shift_count*bar_width, inconsty,
+                                width=bar_width,
+                                color=colors[shift_count],
+                                label=subjective_model.TAG)
+                ax_inconsty.set_xlim([min(xs), max(xs)+1])
+                ax_inconsty.set_title(r'Subject Inconsisency ($v_s$)')
+
+            if 'observer_bias' in result:
+                shift_count += 1
+
+        if xs and my_xticks is None:
+            my_xticks = map(lambda x: "#{}".format(x+1), xs)
+            plt.xticks(np.array(xs) + 0.3, my_xticks, rotation=90)
+        # ax_bias.legend(loc=1, ncol=2, frameon=False, prop={'size':12})
+        plt.tight_layout()
+
+    if do_plot == 'all' or 'content_scores' in do_plot:
+
+        # ===== plot content ambiguity =====
+        bar_width = 0.7
+        fig, ax_ambgty = plt.subplots(figsize=(5, 3.5), nrows=1)
+        xs = None
+        shift_count = 0
+        colors = ['black', 'white', 'blue', 'red']
+        for subjective_model, result in zip(subjective_models, results):
+            if 'content_ambiguity' in result:
+                ambgty = result['content_ambiguity']
+                xs = range(len(ambgty))
+                ax_ambgty.bar(xs, ambgty,
+                              width=bar_width,
+                              color=colors[shift_count],
+                              label=subjective_model.TAG)
+                shift_count += 1
+                ax_ambgty.set_title(r'Content Ambiguity ($a_c$)')
+        if xs:
+            my_xticks = map(lambda ref_video: ref_video['content_name'],
+                            dataset_reader.dataset.ref_videos)
+            plt.xticks(np.array(xs) + 0.5, my_xticks, rotation=75)
+        # ax_ambgty.legend(loc=1, ncol=2, frameon=False, prop={'size':12})
+        plt.tight_layout()
+
+    return dataset, subjective_models, results
