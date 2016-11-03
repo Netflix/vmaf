@@ -107,3 +107,7 @@
 **New features:**
 - Add quality runners for each individual VMAF elementary metrics.
 
+## (11/02/2016) [1.1.9]
+
+**New features:**
+- Add DatasetReader and subclasses; add SubjectiveModel and subclasses.
