@@ -54,7 +54,7 @@ def persist_to_file(file_name):
             cache = {}
         else:
             try:
-                cache = json.load(open(file_name, 'r'))
+                cache = json.load(open(file_name, 'rt'))
             except (IOError, ValueError):
                 sys.exit(1)
 
@@ -62,7 +62,7 @@ def persist_to_file(file_name):
             h = hashlib.sha1(str(original_func.__name__) + str(args)).hexdigest()
             if h not in cache:
                 cache[h] = original_func(*args)
-                json.dump(cache, open(file_name, 'w'))
+                json.dump(cache, open(file_name, 'wt'))
             return cache[h]
 
         return new_func
