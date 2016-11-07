@@ -10,17 +10,21 @@ from tools.misc import import_python_file, get_cmd_option, cmd_option_exists
 from core.quality_runner import QualityRunner, VmafQualityRunner
 from routine import test_on_dataset, print_matplotlib_warning
 from tools.stats import ListStats
+from mos.subjective_model import SubjectiveModel
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'perc20']
 
+SUBJECTIVE_MODELS = ['DMOS (default)', 'DMOS_MLE', 'MLE', 'MOS', 'SR_DMOS', 'SR_MOS', 'ZS_SR_DMOS', 'ZS_SR_MOS']
+
 def print_usage():
     quality_runner_types = ['VMAF', 'PSNR', 'SSIM', 'MS_SSIM']
     print "usage: " + os.path.basename(sys.argv[0]) + \
-          " quality_type test_dataset_filepath [--vmaf-model VMAF_model_path] [--cache-result] [--parallelize]\n"
+          " quality_type test_dataset_filepath [--vmaf-model VMAF_model_path] [--subj-model subjective_model] [--cache-result] [--parallelize]\n"
     print "quality_type:\n\t" + "\n\t".join(quality_runner_types) +"\n"
+    print "subjective_model:\n\t" + "\n\t".join(SUBJECTIVE_MODELS) + "\n"
 
 def main():
     if len(sys.argv) < 3:
@@ -43,6 +47,17 @@ def main():
             or pool_method in POOL_METHODS):
         print '--pool can only have option among {}'.format(', '.join(POOL_METHODS))
         return 2
+
+    subj_model = get_cmd_option(sys.argv, 3, len(sys.argv), '--subj-model')
+
+    try:
+        if subj_model is not None:
+            subj_model_class = SubjectiveModel.find_subclass(subj_model)
+        else:
+            subj_model_class = None
+    except Exception as e:
+        print "Error: " + str(e)
+        return 1
 
     if vmaf_model_path is not None and quality_type != VmafQualityRunner.TYPE:
         print "Input error: only quality_type of VMAF accepts --vmaf-model."
@@ -88,7 +103,9 @@ def main():
         test_on_dataset(test_dataset, runner_class, ax,
                         result_store, vmaf_model_path,
                         parallelize=parallelize,
-                        aggregate_method=aggregate_method)
+                        aggregate_method=aggregate_method,
+                        subj_model_class=subj_model_class,
+                        )
 
         bbox = {'facecolor':'white', 'alpha':0.5, 'pad':20}
         ax.annotate('Testing Set', xy=(0.1, 0.85), xycoords='axes fraction', bbox=bbox)
@@ -103,7 +120,9 @@ def main():
         test_on_dataset(test_dataset, runner_class, None,
                         result_store, vmaf_model_path,
                         parallelize=parallelize,
-                        aggregate_method=aggregate_method)
+                        aggregate_method=aggregate_method,
+                        subj_model_class=subj_model_class,
+                        )
 
     return 0
 

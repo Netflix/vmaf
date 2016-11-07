@@ -139,7 +139,7 @@ def test_on_dataset(test_dataset, runner_class, ax,
             assert test_asset.groundtruth is not None
     except AssertionError:
         # no groundtruth, try do subjective modeling
-        subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs else DmosModel
+        subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs and kwargs['subj_model_class'] is not None else DmosModel
         subjective_model = subj_model_class(RawDatasetReader(test_dataset))
         subjective_model.run_modeling(**kwargs)
         test_dataset_aggregate = subjective_model.to_aggregated_dataset(**kwargs)
@@ -217,7 +217,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
             assert train_asset.groundtruth is not None
     except AssertionError:
         # no groundtruth, try do subjective modeling
-        subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs else DmosModel
+        subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs and kwargs['subj_model_class'] is not None else DmosModel
         subjective_model = subj_model_class(RawDatasetReader(train_dataset))
         subjective_model.run_modeling(**kwargs)
         train_dataset_aggregate = subjective_model.to_aggregated_dataset(**kwargs)
@@ -299,7 +299,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
                 assert test_asset.groundtruth is not None
         except AssertionError:
             # no groundtruth, try do subjective modeling
-            subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs else DmosModel
+            subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs and kwargs['subj_model_class'] is not None else DmosModel
             subjective_model = subj_model_class(RawDatasetReader(test_dataset))
             subjective_model.run_modeling(**kwargs)
             test_dataset_aggregate = subjective_model.to_aggregated_dataset(**kwargs)
