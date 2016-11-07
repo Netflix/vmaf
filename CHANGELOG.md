@@ -111,3 +111,8 @@
 
 **New features:**
 - Add DatasetReader and subclasses; add SubjectiveModel and subclasses.
+
+## (11/07/2016) [1.1.10]
+
+**New features:**
+- Add options to use custom subjective models in run_vmaf_training and run_testing commands.
