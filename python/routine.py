@@ -6,6 +6,7 @@ from core.feature_assembler import FeatureAssembler
 from core.quality_runner import VmafQualityRunner
 from core.result_store import FileSystemResultStore
 from mos.dataset_reader import RawDatasetReader
+from mos.subjective_model import DmosModel
 from tools.misc import indices, get_stdout_logger, import_python_file, \
     close_logger, get_file_name_without_extension
 import config
@@ -133,6 +134,16 @@ def test_on_dataset(test_dataset, runner_class, ax,
         assert False
 
     test_assets = read_dataset(test_dataset, **kwargs)
+    try:
+        for test_asset in test_assets:
+            assert test_asset.groundtruth is not None
+    except AssertionError:
+        # no groundtruth, try do subjective modeling
+        subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs else DmosModel
+        subjective_model = subj_model_class(RawDatasetReader(test_dataset))
+        subjective_model.run_modeling(**kwargs)
+        test_dataset_aggregate = subjective_model.to_aggregated_dataset(**kwargs)
+        test_assets = read_dataset(test_dataset_aggregate, **kwargs)
 
     if model_filepath is not None:
         optional_dict = {'model_filepath': model_filepath}
@@ -148,44 +159,39 @@ def test_on_dataset(test_dataset, runner_class, ax,
                  optional_dict=optional_dict,
                  optional_dict2=None,
                  )
-    try:
-        # run
-        _, results = run_executors_in_parallel(
-            runner_class,
-            test_assets,
-            fifo_mode=fifo_mode,
-            delete_workdir=True,
-            parallelize=parallelize,
-            result_store=result_store,
-            optional_dict=optional_dict,
-            optional_dict2=None,
-        )
+    # run
+    _, results = run_executors_in_parallel(
+        runner_class,
+        test_assets,
+        fifo_mode=fifo_mode,
+        delete_workdir=True,
+        parallelize=parallelize,
+        result_store=result_store,
+        optional_dict=optional_dict,
+        optional_dict2=None,
+    )
 
-        for result in results:
-            result.set_score_aggregate_method(aggregate_method)
+    for result in results:
+        result.set_score_aggregate_method(aggregate_method)
 
-        # plot
-        groundtruths = map(lambda asset: asset.groundtruth, test_assets)
-        predictions = map(lambda result: result[runner_class.get_score_key()], results)
-        stats = model_type.get_stats(groundtruths, predictions)
+    # plot
+    groundtruths = map(lambda asset: asset.groundtruth, test_assets)
+    predictions = map(lambda result: result[runner_class.get_score_key()], results)
+    stats = model_type.get_stats(groundtruths, predictions)
 
-        print 'Stats on testing data: {}'.format(model_type.format_stats(stats))
+    print 'Stats on testing data: {}'.format(model_type.format_stats(stats))
 
-        if ax is not None:
-            content_ids = map(lambda asset: asset.content_id, test_assets)
-            model_type.plot_scatter(ax, stats, content_ids)
-            ax.set_xlabel('True Score')
-            ax.set_ylabel("Predicted Score")
-            ax.grid()
-            ax.set_title( "{runner}\n{stats}".format(
-                dataset=test_assets[0].dataset,
-                runner=runner_class.TYPE,
-                stats=model_type.format_stats(stats),
-            ))
-
-    except Exception as e:
-        print "Error: " + str(e)
-        raise e
+    if ax is not None:
+        content_ids = map(lambda asset: asset.content_id, test_assets)
+        model_type.plot_scatter(ax, stats, content_ids)
+        ax.set_xlabel('True Score')
+        ax.set_ylabel("Predicted Score")
+        ax.grid()
+        ax.set_title( "{runner}\n{stats}".format(
+            dataset=test_assets[0].dataset,
+            runner=runner_class.TYPE,
+            stats=model_type.format_stats(stats),
+        ))
 
     return test_assets, results
 
@@ -206,6 +212,17 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
                                **kwargs):
 
     train_assets = read_dataset(train_dataset, **kwargs)
+    try:
+        for train_asset in train_assets:
+            assert train_asset.groundtruth is not None
+    except AssertionError:
+        # no groundtruth, try do subjective modeling
+        subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs else DmosModel
+        subjective_model = subj_model_class(RawDatasetReader(train_dataset))
+        subjective_model.run_modeling(**kwargs)
+        train_dataset_aggregate = subjective_model.to_aggregated_dataset(**kwargs)
+        train_assets = read_dataset(train_dataset_aggregate, **kwargs)
+
     train_fassembler = FeatureAssembler(
         feature_dict = feature_param.feature_dict,
         feature_option_dict = None,
@@ -277,6 +294,17 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         test_fassembler = None
     else:
         test_assets = read_dataset(test_dataset, **kwargs)
+        try:
+            for test_asset in test_assets:
+                assert test_asset.groundtruth is not None
+        except AssertionError:
+            # no groundtruth, try do subjective modeling
+            subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs else DmosModel
+            subjective_model = subj_model_class(RawDatasetReader(test_dataset))
+            subjective_model.run_modeling(**kwargs)
+            test_dataset_aggregate = subjective_model.to_aggregated_dataset(**kwargs)
+            test_assets = read_dataset(test_dataset_aggregate, **kwargs)
+
         test_fassembler = FeatureAssembler(
             feature_dict = feature_param.feature_dict,
             feature_option_dict = None,

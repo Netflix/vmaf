@@ -48,6 +48,17 @@ class SubjectiveModelTest(unittest.TestCase):
         self.assertTrue('os' not in dis_video)
         self.assertAlmostEquals(dis_video['groundtruth'], 4.884615384615385, places=4)
 
+    def test_mos_subjective_model_output2(self):
+        dataset = import_python_file(self.dataset_filepath)
+        dataset_reader = RawDatasetReader(dataset)
+        subjective_model = MosModel(dataset_reader)
+        subjective_model.run_modeling()
+        dataset2 = subjective_model.to_aggregated_dataset()
+        dis_video = dataset2.dis_videos[0]
+        self.assertTrue('groundtruth' in dis_video)
+        self.assertTrue('os' not in dis_video)
+        self.assertAlmostEquals(dis_video['groundtruth'], 4.884615384615385, places=4)
+
     def test_mos_subjective_model_normalize_final(self):
         dataset = import_python_file(self.dataset_filepath)
         dataset_reader = RawDatasetReader(dataset)

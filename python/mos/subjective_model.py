@@ -39,6 +39,11 @@ class SubjectiveModel(TypeVersionEnabled):
         self.model_result = model_result
         return model_result
 
+    def to_aggregated_dataset(self, **kwargs):
+        self._assert_modeled()
+        return self.dataset_reader.to_aggregated_dataset(
+            self.model_result['quality_scores'], **kwargs)
+
     def to_aggregated_dataset_file(self, dataset_filepath, **kwargs):
         self._assert_modeled()
         self.dataset_reader.to_aggregated_dataset_file(

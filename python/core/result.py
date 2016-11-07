@@ -21,7 +21,10 @@ class BasicResult(object):
         self.score_aggregate_method = np.mean
 
     def set_score_aggregate_method(self, score_aggregate_method):
-        self.score_aggregate_method = score_aggregate_method
+        if score_aggregate_method is not None:
+            self.score_aggregate_method = score_aggregate_method
+        else:
+            self.score_aggregate_method = np.mean
 
     # make access dictionary-like, i.e. can do: result['vif_score']
     def __getitem__(self, key):
