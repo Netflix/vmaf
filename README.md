@@ -5,9 +5,8 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ##What's New
 
-- (10/8/16) Added support for [docker usage](#usage-through-docker).
+- (11/7/16) *./run_vmaf_training* and *./run_testing* now support custom subjective models (MOS, DMOS, MLE and more). Read [this](resource/doc/dcc17.pdf) paper for some background, and see [this](#using-custom-subjective-models) section for usage.
 - (9/30/16) Added a [FAQ](FAQ.md) page.
-- (9/30/16) CLIs *run_vmaf*, *run_vmaf_in_batch* and *vmafossexec* now support output in XML and JSON.
 - (9/30/16) Added *vmafossexec* -- a C++ wrapper under [wrapper](wrapper). Refer to [Python-independent Implementation](#python-independent-implementation).
 
 ##Prerequisite
@@ -228,13 +227,13 @@ When creating a dataset file, one may make errors (for example, having a typo in
 If problem persists, one may need to run the script: 
 
 ```
-./run_cleaning_cache quality_type test_dataset_file
+python python/run_cleaning_cache quality_type test_dataset_file
 ``` 
 
 to clean up corrupted results in the store before retrying. For example:
  
 ```
-./run_cleaning_cache VMAF example_dataset.py
+python python/run_cleaning_cache VMAF example_dataset.py
 ```
 
 ###Train a New Model
@@ -289,6 +288,19 @@ The trained model is output to *output_model_file*. Once it is obtained, it can 
 
 Above are two example scatter plots obtained from running the *run_vmaf_training* and *run_testing* commands on a training and a testing dataset, respectively.
 
+###Using Custom Subjective Models
+
+The commands *./run_vmaf_training* and *./run_testing* also support custom subjective models (e.g. MOS, DMOS (default), MLE and more). Read [this](resource/doc/dcc17.pdf) paper for some background.
+
+The subjective model option can be specified with option *--subj-model subjective_model*, for example:
+
+```
+./run_vmaf_training example_raw_dataset.py resource/feature_param/vmaf_feature_v2.py resource/model_param/libsvmnusvr_v2.py workspace/model/test_model.pkl --subj-model MLE --cache-result --parallelize
+./run_testing VMAF example_raw_dataset.py --subj-model MLE --cache-result --parallelize
+```
+
+Note that for the *--subj-model* option to have effect, the input dataset file must follow a format similar to *example_raw_dataset.py*. Specifically, for each dictionary element in dis_videos, instead of having a key named 'dmos' or 'groundtruth', it must have a key named 'os' (stand for opinion score), and the value must be a list of numbers. This is the 'raw opinion score' collected from subjective experiments, which is used as the input to the custom subjective models.
+
 ###Cross Validation
 
 [python/script/run_vmaf_cross_validation.py](python/script/run_vmaf_cross_validation.py) provides tools for cross validation of hyper-parameters and models. *run_vmaf_cv* runs training on a training dataset using hyper-parameters specified in a parameter file, output a trained model file, and then test the trained model on another test dataset and report testing correlation scores. 
@@ -326,6 +338,8 @@ wrapper/vmafossexec yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resourc
 
 For VMAF v0.3.2, the model file is *resource/model/nflxall_vmafv4.pkl*. The correspondence is documented [here](python/core/quality_runner.py#L254).
 
+#### Troubleshooting
+
 Note that *vmafossexec* depends on a shared library *ptools/libptools.so* (or on Mac OS, *ptools/libptools.dylib*). If you move the executable, make sure to include the shared library in *LD_LIBRARY_PATH* (or on Mac OS, *DYLD_LIBRARY_PATH*).
 
 ##Usage through Docker
@@ -339,14 +353,14 @@ docker build -t vmaf .
 And to use it, just run:
 
 ```
-# CLI being: [run_vmaf, run_cleaning_cache, run_vmaf_training, run_vmaf_in_batch, run_testing, run_psnr, vmafossexec]
+# CLI being: [run_vmaf, run_vmaf_training, run_vmaf_in_batch, run_testing, vmafossexec]
 docker run --rm vmaf [CLI]
 ```
 
 For example, if you are under root, to run *run_vmaf* on a sample reference/distorted video pair under *resource/yuv*:
 
 ```
-docker run --rm -v $(PWD):/files vmaf run_psnr yuv420p 576 324 /files/resource/yuv/src01_hrc00_576x324.yuv /files/resource/yuv/src01_hrc01_576x324.yuv --out-fmt json
+docker run --rm -v $(PWD):/files vmaf run_vmaf yuv420p 576 324 /files/resource/yuv/src01_hrc00_576x324.yuv /files/resource/yuv/src01_hrc01_576x324.yuv --out-fmt json
 ```
 
 Under root, to run *vmafossexec* with a specified model file:
