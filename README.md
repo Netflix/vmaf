@@ -5,7 +5,7 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ##What's New
 
-- (11/7/16) *./run_vmaf_training* and *./run_testing* now support custom subjective models (MOS, DMOS, MLE and more). Read [this](resource/doc/dcc17.pdf) paper for some background, and see [this](#using-custom-subjective-models) section for usage.
+- (11/7/16) Custom subjective models (MOS, DMOS, MLE and more) are now supported. Read [this](resource/doc/dcc17.pdf) paper for some background, and see [this](#using-custom-subjective-models) section for usage.
 - (9/30/16) Added a [FAQ](FAQ.md) page.
 - (9/30/16) Added *vmafossexec* -- a C++ wrapper under [wrapper](wrapper). Refer to [Python-independent Implementation](#python-independent-implementation).
 
