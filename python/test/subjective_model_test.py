@@ -46,6 +46,7 @@ class SubjectiveModelTest(unittest.TestCase):
         dis_video = dataset2.dis_videos[0]
         self.assertTrue('groundtruth' in dis_video)
         self.assertTrue('os' not in dis_video)
+        self.assertAlmostEquals(dis_video['groundtruth'], 4.884615384615385, places=4)
 
     def test_mos_subjective_model_normalize_final(self):
         dataset = import_python_file(self.dataset_filepath)
