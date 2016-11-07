@@ -5,13 +5,14 @@ from scipy import linalg
 from scipy import stats
 import pandas as pd
 
+from core.mixin import TypeVersionEnabled
 from tools.misc import import_python_file, indices
 from mos.dataset_reader import RawDatasetReader
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
-class SubjectiveModel(object):
+class SubjectiveModel(TypeVersionEnabled):
     """
     Base class for any model that takes the input of a subjective quality test
     experiment dataset with raw scores (dis_video must has key of 'os' (opinion
@@ -23,6 +24,7 @@ class SubjectiveModel(object):
     """
 
     def __init__(self, dataset_reader):
+        TypeVersionEnabled.__init__(self)
         self.dataset_reader = dataset_reader
 
     @classmethod
@@ -177,7 +179,8 @@ class MosModel(SubjectiveModel):
     """
     Mean Opinion Score (MOS) subjective model.
     """
-    TAG = 'MOS'
+    TYPE = 'MOS'
+    VERSION = '1.0'
 
     @classmethod
     def _run_modeling(cls, dataset_reader, **kwargs):
@@ -193,7 +196,8 @@ class DmosModel(MosModel):
     Use the formula:
     DMOS = MOS + ref_score (e.g. 5.0) - MOS_of_ref_video
     """
-    TAG = 'DMOS'
+    TYPE = 'DMOS'
+    VERSION = '1.0'
 
     def run_modeling(self, **kwargs):
         # override SubjectiveModel._run_modeling
@@ -216,7 +220,8 @@ class LiveDmosModel(SubjectiveModel):
     instead of
     DMOS = MOS_of_ref_video - MOS
     """
-    TAG = 'LIVE DMOS'
+    TYPE = 'LIVE_DMOS'
+    VERSION = '1.0'
 
     @classmethod
     def _run_modeling(cls, dataset_reader, **kwargs):
@@ -249,7 +254,8 @@ class LeastSquaresModel(SubjectiveModel):
     Solve by forming linear systems and find least squares solution
     can recover q_e and b_s
     """
-    TAG = 'LS'
+    TYPE = 'LS'
+    VERSION = '0.1'
 
     @classmethod
     def _run_modeling(cls, dataset_reader, **kwargs):
@@ -302,8 +308,9 @@ class MaximumLikelihoodEstimationModelReduced(SubjectiveModel):
     content.
     """
 
-    # TAG = 'Subject-Aware'
-    TAG = "MLE"
+    # TYPE = 'Subject-Aware'
+    TYPE = "MLER"
+    VERSION = '0.1'
 
     @classmethod
     def _run_modeling(cls, dataset_reader, **kwargs):
@@ -424,8 +431,9 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
     via likelihood maximization and belief propagation.
     """
 
-    # TAG = 'Subject/Content-Aware'
-    TAG = 'MLE' # maximum likelihood estimation
+    # TYPE = 'Subject/Content-Aware'
+    TYPE = 'MLE' # maximum likelihood estimation
+    VERSION = '0.1'
 
     @classmethod
     def _run_modeling(cls, dataset_reader, **kwargs):
@@ -616,22 +624,10 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
 
         return result
 
-class MaximumLikelihoodEstimationDmosModel(MaximumLikelihoodEstimationModel):
-
-    TAG = 'DMOS-MLE'
-
-    def run_modeling(self, **kwargs):
-        # override SubjectiveModel._run_modeling
-        if 'dscore_mode' in kwargs and kwargs['dscore_mode'] is True:
-            assert False, 'SubjectAndContentAwareGenerativeDmosModel is ' \
-                          'already doing dscoring, no need to repeat.'
-        kwargs2 = kwargs.copy()
-        kwargs2['dscore_mode'] = True
-        return super(MaximumLikelihoodEstimationDmosModel, self).run_modeling(**kwargs2)
-
 class SubjrejMosModel(MosModel):
 
-    TAG = 'SR-MOS'
+    TYPE = 'SR_MOS'
+    VERSION = '0.1'
 
     def run_modeling(self, **kwargs):
         # override SubjectiveModel._run_modeling
@@ -644,7 +640,8 @@ class SubjrejMosModel(MosModel):
 
 class ZscoringSubjrejMosModel(MosModel):
 
-    TAG = 'ZS-SR-MOS'
+    TYPE = 'ZS_SR_MOS'
+    VERSION = '0.1'
 
     def run_modeling(self, **kwargs):
         # override SubjectiveModel._run_modeling
@@ -658,3 +655,57 @@ class ZscoringSubjrejMosModel(MosModel):
         kwargs2['zscore_mode'] = True
         kwargs2['subject_rejection'] = True
         return super(ZscoringSubjrejMosModel, self).run_modeling(**kwargs2)
+
+class MaximumLikelihoodEstimationDmosModel(MaximumLikelihoodEstimationModel):
+
+    TYPE = 'DMOS_MLE'
+    VERSION = '0.1'
+
+    def run_modeling(self, **kwargs):
+        # override SubjectiveModel._run_modeling
+        if 'dscore_mode' in kwargs and kwargs['dscore_mode'] is True:
+            assert False, 'SubjectAndContentAwareGenerativeDmosModel is ' \
+                          'already doing dscoring, no need to repeat.'
+        kwargs2 = kwargs.copy()
+        kwargs2['dscore_mode'] = True
+        return super(MaximumLikelihoodEstimationDmosModel, self).run_modeling(**kwargs2)
+
+class SubjrejDmosModel(MosModel):
+
+    TYPE = 'SR_DMOS'
+    VERSION = '0.1'
+
+    def run_modeling(self, **kwargs):
+        # override SubjectiveModel._run_modeling
+        if 'dscore_mode' in kwargs and kwargs['dscore_mode'] is True:
+            assert False, 'SubjrejDmosModel is ' \
+                          'already doing dscoring, no need to repeat.'
+        if 'subject_rejection' in kwargs and kwargs['subject_rejection'] is True:
+            assert False, 'SubjrejDmosModel is ' \
+                          'already doing subject rejection, no need to repeat.'
+        kwargs2 = kwargs.copy()
+        kwargs2['dscore_mode'] = True
+        kwargs2['subject_rejection'] = True
+        return super(SubjrejDmosModel, self).run_modeling(**kwargs2)
+
+class ZscoringSubjrejDmosModel(MosModel):
+
+    TYPE = 'ZS_SR_DMOS'
+    VERSION = '0.1'
+
+    def run_modeling(self, **kwargs):
+        # override SubjectiveModel._run_modeling
+        if 'dscore_mode' in kwargs and kwargs['dscore_mode'] is True:
+            assert False, 'ZscoringSubjrejDmosModel is ' \
+                          'already doing dscoring, no need to repeat.'
+        if 'zscore_mode' in kwargs and kwargs['zscore_mode'] is True:
+            assert False, 'ZscoringSubjrejDmosModel is ' \
+                          'already doing zscoring, no need to repeat.'
+        if 'subject_rejection' in kwargs and kwargs['subject_rejection'] is True:
+            assert False, 'ZscoringSubjrejDmosModel is ' \
+                          'already doing subject rejection, no need to repeat.'
+        kwargs2 = kwargs.copy()
+        kwargs2['dscore_mode'] = True
+        kwargs2['zscore_mode'] = True
+        kwargs2['subject_rejection'] = True
+        return super(ZscoringSubjrejDmosModel, self).run_modeling(**kwargs2)

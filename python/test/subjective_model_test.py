@@ -7,7 +7,8 @@ from mos.dataset_reader import RawDatasetReader, MissingDataRawDatasetReader, \
 from mos.subjective_model import MosModel, DmosModel, \
     MaximumLikelihoodEstimationModelReduced, MaximumLikelihoodEstimationModel, \
     LiveDmosModel, MaximumLikelihoodEstimationDmosModel, LeastSquaresModel, \
-    SubjrejMosModel, ZscoringSubjrejMosModel
+    SubjrejMosModel, ZscoringSubjrejMosModel, SubjrejDmosModel, \
+    ZscoringSubjrejDmosModel
 from tools.misc import import_python_file
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
@@ -499,6 +500,34 @@ class SubjectiveModelTest(unittest.TestCase):
 
         self.assertAlmostEquals(np.mean(scores), 0, places=4)
         self.assertAlmostEquals(np.var(scores), 0.66670826882879042, places=4) # 1.4012220200639218
+
+    def test_subjrejdmos_subjective_model_corruptdata_subjreject(self):
+        dataset = import_python_file(self.dataset_filepath)
+        np.random.seed(0)
+        info_dict = {
+            'selected_subjects': range(5),
+        }
+        dataset_reader = CorruptSubjectRawDatasetReader(dataset, input_dict=info_dict)
+        subjective_model = SubjrejDmosModel(dataset_reader)
+        result = subjective_model.run_modeling()
+        scores = result['quality_scores']
+
+        self.assertAlmostEquals(np.mean(scores), 4.0246673158065542, places=4)
+        self.assertAlmostEquals(np.var(scores), 1.0932580358187849, places=4) # 1.4012220200639218
+
+    def test_zscoresubjrejdmos_subjective_model_corruptdata_subjreject(self):
+        dataset = import_python_file(self.dataset_filepath)
+        np.random.seed(0)
+        info_dict = {
+            'selected_subjects': range(5),
+        }
+        dataset_reader = CorruptSubjectRawDatasetReader(dataset, input_dict=info_dict)
+        subjective_model = ZscoringSubjrejDmosModel(dataset_reader)
+        result = subjective_model.run_modeling()
+        scores = result['quality_scores']
+
+        self.assertAlmostEquals(np.mean(scores), 0, places=4)
+        self.assertAlmostEquals(np.var(scores), 0.66405245792414114, places=4) # 1.4012220200639218
 
 if __name__ == '__main__':
     unittest.main()

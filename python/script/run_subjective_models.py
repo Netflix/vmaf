@@ -48,7 +48,7 @@ def _validate_with_synthetic_dataset(subjective_model_classes, dataset_filepath,
         for subjective_model_class, result, idx in zip(
                 subjective_model_classes, results, range(len(results))):
 
-            model_name = subjective_model_class.TAG
+            model_name = subjective_model_class.TYPE
 
             ax = axs.item(0)
             if 'quality_scores' in result and 'quality_scores' in synthetic_result:
@@ -209,7 +209,7 @@ def run_datasize_growth(dataset_filepaths):
         for i, model_class in enumerate(model_classes):
             plt.plot(np.mean(np.asarray(datasizesss[i]), axis=0),
                      np.mean(np.asarray(perfsss[i]), axis=0),
-                     label=model_class.TAG,
+                     label=model_class.TYPE,
                      linestyle=linestyles[i],
                      linewidth=linewidths[i],
                      color='black',
@@ -310,7 +310,7 @@ def run_subject_corruption_growth(dataset_filepaths):
         for i, model_class in enumerate(model_classes):
             plt.plot(np.mean(np.asarray(datasizesss[i]), axis=0),
                      np.mean(np.asarray(perfsss[i]), axis=0),
-                     label=model_class.TAG,
+                     label=model_class.TYPE,
                      linestyle=linestyles[i],
                      linewidth=linewidths[i],
                      color='black',
@@ -415,7 +415,7 @@ def run_missing_growth(dataset_filepaths):
         for i, model_class in enumerate(model_classes):
             plt.plot(np.mean(np.asarray(datasizesss[i]), axis=0),
                      np.mean(np.asarray(perfsss[i]), axis=0),
-                     label=model_class.TAG,
+                     label=model_class.TYPE,
                      linestyle=linestyles[i],
                      linewidth=linewidths[i],
                      color='black',
@@ -521,7 +521,7 @@ def run_random_corruption_growth(dataset_filepaths):
         for i, model_class in enumerate(model_classes):
             plt.plot(np.mean(np.asarray(datasizesss[i]), axis=0),
                      np.mean(np.asarray(perfsss[i]), axis=0),
-                     label=model_class.TAG,
+                     label=model_class.TYPE,
                      linestyle=linestyles[i],
                      linewidth=linewidths[i],
                      color='black',
@@ -624,7 +624,7 @@ def run_subject_partial_corruption_growth(dataset_filepaths):
         for i, model_class in enumerate(model_classes):
             plt.plot(np.mean(np.asarray(datasizesss[i]), axis=0),
                      np.mean(np.asarray(perfsss[i]), axis=0),
-                     label=model_class.TAG,
+                     label=model_class.TYPE,
                      linestyle=linestyles[i],
                      linewidth=linewidths[i],
                      color='black',

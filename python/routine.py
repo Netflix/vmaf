@@ -559,11 +559,11 @@ def run_subjective_models(dataset_filepath, subjective_model_classes, do_plot=No
             if 'quality_scores' in result:
                 quality = result['quality_scores']
                 xs = range(len(quality))
-                # plt.plot(result['quality_scores'], label=subjective_model.TAG)
+                # plt.plot(result['quality_scores'], label=subjective_model.TYPE)
                 ax_quality.bar(np.array(xs)+shift_count*bar_width, quality,
                             width=bar_width,
                             color=colors[shift_count],
-                            label=subjective_model.TAG)
+                            label=subjective_model.TYPE)
                 ax_quality.set_xlabel(r'Impaired Video Encodes ($e$)')
                 ax_quality.set_title(r'Recovered Quality Score ($x_e$)')
                 ax_quality.set_xlim([min(xs), max(xs)+1])
@@ -588,7 +588,7 @@ def run_subjective_models(dataset_filepath, subjective_model_classes, do_plot=No
                 ax_bias.bar(np.array(xs)+shift_count*bar_width, bias,
                             width=bar_width,
                             color=colors[shift_count],
-                            label=subjective_model.TAG)
+                            label=subjective_model.TYPE)
                 ax_inconsty.set_xlim([min(xs), max(xs)+1])
                 ax_bias.set_title(r'Subject Bias ($b_s$)')
 
@@ -604,7 +604,7 @@ def run_subjective_models(dataset_filepath, subjective_model_classes, do_plot=No
                 ax_inconsty.bar(np.array(xs)+shift_count*bar_width, inconsty,
                                 width=bar_width,
                                 color=colors[shift_count],
-                                label=subjective_model.TAG)
+                                label=subjective_model.TYPE)
                 ax_inconsty.set_xlim([min(xs), max(xs)+1])
                 ax_inconsty.set_title(r'Subject Inconsisency ($v_s$)')
 
@@ -632,7 +632,7 @@ def run_subjective_models(dataset_filepath, subjective_model_classes, do_plot=No
                 ax_ambgty.bar(xs, ambgty,
                               width=bar_width,
                               color=colors[shift_count],
-                              label=subjective_model.TAG)
+                              label=subjective_model.TYPE)
                 shift_count += 1
                 ax_ambgty.set_title(r'Content Ambiguity ($a_c$)')
         if xs:
