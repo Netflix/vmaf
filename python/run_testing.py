@@ -22,7 +22,7 @@ SUBJECTIVE_MODELS = ['DMOS (default)', 'DMOS_MLE', 'MLE', 'MOS', 'SR_DMOS', 'SR_
 def print_usage():
     quality_runner_types = ['VMAF', 'PSNR', 'SSIM', 'MS_SSIM']
     print "usage: " + os.path.basename(sys.argv[0]) + \
-          " quality_type test_dataset_filepath [--vmaf-model VMAF_model_path] [--subj-model subjective_model] [--cache-result] [--parallelize]\n"
+          " quality_type test_dataset_filepath [--vmaf-model VMAF_model_path] [--subj-model subjective_model] [--cache-result] [--parallelize] [--print-result]\n"
     print "quality_type:\n\t" + "\n\t".join(quality_runner_types) +"\n"
     print "subjective_model:\n\t" + "\n\t".join(SUBJECTIVE_MODELS) + "\n"
 
@@ -41,6 +41,7 @@ def main():
     vmaf_model_path = get_cmd_option(sys.argv, 3, len(sys.argv), '--vmaf-model')
     cache_result = cmd_option_exists(sys.argv, 3, len(sys.argv), '--cache-result')
     parallelize = cmd_option_exists(sys.argv, 3, len(sys.argv), '--parallelize')
+    print_result = cmd_option_exists(sys.argv, 3, len(sys.argv), '--print-result')
 
     pool_method = get_cmd_option(sys.argv, 3, len(sys.argv), '--pool')
     if not (pool_method is None
@@ -100,7 +101,7 @@ def main():
     try:
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
-        test_on_dataset(test_dataset, runner_class, ax,
+        assets, results = test_on_dataset(test_dataset, runner_class, ax,
                         result_store, vmaf_model_path,
                         parallelize=parallelize,
                         aggregate_method=aggregate_method,
@@ -117,12 +118,17 @@ def main():
         plt.show()
     except ImportError:
         print_matplotlib_warning()
-        test_on_dataset(test_dataset, runner_class, None,
+        assets, results = test_on_dataset(test_dataset, runner_class, None,
                         result_store, vmaf_model_path,
                         parallelize=parallelize,
                         aggregate_method=aggregate_method,
                         subj_model_class=subj_model_class,
                         )
+
+    if print_result:
+        for result in results:
+            print result
+            print ''
 
     return 0
 
