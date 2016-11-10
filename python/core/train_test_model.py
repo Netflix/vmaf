@@ -49,7 +49,7 @@ class RegressorMixin(object):
         # do adustment with sigmoid function
         ys_label_pred_adjusted = cls.sigmoid_adjust(ys_label_pred, ys_label)
 
-        # MSE
+        # RMSE
         rmse = np.sqrt(np.mean(
             np.power(np.array(ys_label) - np.array(ys_label_pred_adjusted), 2.0)))
         # spearman
