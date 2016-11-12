@@ -116,3 +116,8 @@
 
 **New features:**
 - Add options to use custom subjective models in run_vmaf_training and run_testing commands.
+
+## (11/11/2016) [1.1.11]
+
+**New features:**
+- Add implementation of KFLK - quality metric evaluation method based on AUC. Refer to: L. Krasula, K. Fliegel, P. Le Callet, M.Klima, "On the accuracy of objective image and video quality models: New methodology for performance evaluation", QoMEX 2016.
