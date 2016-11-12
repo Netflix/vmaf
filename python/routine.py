@@ -65,6 +65,11 @@ def read_dataset(dataset, **kwargs):
             else:
                 groundtruth = None
 
+        if 'os' in dis_video:
+            raw_groundtruth = dis_video['os']
+        else:
+            raw_groundtruth = None
+
         ref_path = ref_dict[dis_video['content_id']]['path']
         width_ = width if width is not None else ref_dict[dis_video['content_id']]['width']
         height_ = height if height is not None else ref_dict[dis_video['content_id']]['height']
@@ -97,6 +102,8 @@ def read_dataset(dataset, **kwargs):
                       }
         if groundtruth is not None:
             asset_dict['groundtruth'] = groundtruth
+        if raw_groundtruth is not None:
+            asset_dict['raw_groundtruth'] = raw_groundtruth
         if quality_width_ is not None:
             asset_dict['quality_width'] = quality_width_
         if quality_height_ is not None:
@@ -134,6 +141,7 @@ def test_on_dataset(test_dataset, runner_class, ax,
         assert False
 
     test_assets = read_dataset(test_dataset, **kwargs)
+    test_raw_assets = None
     try:
         for test_asset in test_assets:
             assert test_asset.groundtruth is not None
@@ -143,6 +151,7 @@ def test_on_dataset(test_dataset, runner_class, ax,
         subjective_model = subj_model_class(RawDatasetReader(test_dataset))
         subjective_model.run_modeling(**kwargs)
         test_dataset_aggregate = subjective_model.to_aggregated_dataset(**kwargs)
+        test_raw_assets = test_assets
         test_assets = read_dataset(test_dataset_aggregate, **kwargs)
 
     if model_filepath is not None:
@@ -177,7 +186,9 @@ def test_on_dataset(test_dataset, runner_class, ax,
     # plot
     groundtruths = map(lambda asset: asset.groundtruth, test_assets)
     predictions = map(lambda result: result[runner_class.get_score_key()], results)
-    stats = model_type.get_stats(groundtruths, predictions)
+    raw_grountruths = None if test_raw_assets is None else \
+        map(lambda asset: asset.raw_groundtruth, test_raw_assets)
+    stats = model_type.get_stats(groundtruths, predictions, ys_label_raw=raw_grountruths)
 
     print 'Stats on testing data: {}'.format(model_type.format_stats(stats))
 
@@ -212,6 +223,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
                                **kwargs):
 
     train_assets = read_dataset(train_dataset, **kwargs)
+    train_raw_assets = None
     try:
         for train_asset in train_assets:
             assert train_asset.groundtruth is not None
@@ -221,6 +233,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         subjective_model = subj_model_class(RawDatasetReader(train_dataset))
         subjective_model.run_modeling(**kwargs)
         train_dataset_aggregate = subjective_model.to_aggregated_dataset(**kwargs)
+        train_raw_assets = train_assets
         train_assets = read_dataset(train_dataset_aggregate, **kwargs)
 
     train_fassembler = FeatureAssembler(
@@ -262,7 +275,11 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
 
     train_ys_pred = VmafQualityRunner.predict_with_model(model, train_xs, **kwargs)
 
-    train_stats = model.get_stats(train_ys['label'], train_ys_pred)
+    raw_groundtruths = None if train_raw_assets is None else \
+        map(lambda asset: asset.raw_groundtruth, train_raw_assets)
+
+    train_stats = model.get_stats(train_ys['label'], train_ys_pred,
+                                  ys_label_raw=raw_groundtruths)
 
     log = 'Stats on training data: {}'.format(model.format_stats(train_stats))
     if logger:
@@ -294,6 +311,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         test_fassembler = None
     else:
         test_assets = read_dataset(test_dataset, **kwargs)
+        test_raw_assets = None
         try:
             for test_asset in test_assets:
                 assert test_asset.groundtruth is not None
@@ -303,6 +321,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
             subjective_model = subj_model_class(RawDatasetReader(test_dataset))
             subjective_model.run_modeling(**kwargs)
             test_dataset_aggregate = subjective_model.to_aggregated_dataset(**kwargs)
+            test_raw_assets = test_assets
             test_assets = read_dataset(test_dataset_aggregate, **kwargs)
 
         test_fassembler = FeatureAssembler(
@@ -328,7 +347,11 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
 
         test_ys_pred = VmafQualityRunner.predict_with_model(model, test_xs, **kwargs)
 
-        test_stats = model_class.get_stats(test_ys['label'], test_ys_pred)
+        raw_groundtruths = None if test_raw_assets is None else \
+            map(lambda asset: asset.raw_groundtruth, test_raw_assets)
+
+        test_stats = model_class.get_stats(test_ys['label'], test_ys_pred,
+                                           ys_label_raw=raw_groundtruths)
 
         log = 'Stats on testing data: {}'.format(model_class.format_stats(test_stats))
         if logger:
