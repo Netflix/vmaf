@@ -1,6 +1,3 @@
-__copyright__ = "Copyright 2016, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
-
 import os
 import sys
 import pickle
@@ -14,56 +11,50 @@ from numpy.linalg import lstsq
 import config
 from tools.misc import indices
 from core.mixin import TypeVersionEnabled
+from core.perf_metric import RmsePerfMetric, SrccPerfMetric, PccPerfMetric, \
+    KendallPerfMetric, KflkPerfMetric
+
+__copyright__ = "Copyright 2016, Netflix, Inc."
+__license__ = "Apache, Version 2.0"
 
 class RegressorMixin(object):
 
-    @staticmethod
-    def sigmoid_adjust(xs, ys):
-        ys_max = np.max(ys) + 0.1
-        ys_min = np.min(ys) - 0.1
-
-        # normalize to [0, 1]
-        ys = list((np.array(ys) - ys_min) / (ys_max - ys_min))
-
-        zs = -np.log(1.0 / np.array(ys).T - 1.0)
-        Y_mtx = np.matrix((np.ones(len(ys)), zs)).T
-        x_vec = np.matrix(xs).T
-        a_b = lstsq(Y_mtx, x_vec)[0]
-        a = a_b.item(0)
-        b = a_b.item(1)
-
-        xs = 1.0 / (1.0 + np.exp(- (np.array(xs) - a) / b))
-
-        # denormalize
-        xs = xs * (ys_max - ys_min) + ys_min
-
-        return xs
-
     @classmethod
-    def get_stats(cls, ys_label, ys_label_pred):
+    def get_stats(cls, ys_label, ys_label_pred, ys_label_raw=None):
 
         # cannot have None
         assert all(x is not None for x in ys_label)
         assert all(x is not None for x in ys_label_pred)
 
-        # do adustment with sigmoid function
-        ys_label_pred_adjusted = cls.sigmoid_adjust(ys_label_pred, ys_label)
-
         # RMSE
-        rmse = np.sqrt(np.mean(
-            np.power(np.array(ys_label) - np.array(ys_label_pred_adjusted), 2.0)))
+        rmse = RmsePerfMetric(ys_label, ys_label_pred) \
+            .evaluate(enable_mapping=True)['score']
+
         # spearman
-        srcc, _ = scipy.stats.spearmanr(ys_label, ys_label_pred_adjusted)
+        srcc = SrccPerfMetric(ys_label, ys_label_pred) \
+            .evaluate(enable_mapping=True)['score']
+
         # pearson
-        pcc, _ = scipy.stats.pearsonr(ys_label, ys_label_pred_adjusted)
+        pcc = PccPerfMetric(ys_label, ys_label_pred) \
+            .evaluate(enable_mapping=True)['score']
+
         # kendall
-        kendall, _ = scipy.stats.kendalltau(ys_label, ys_label_pred_adjusted)
+        kendall = KendallPerfMetric(ys_label, ys_label_pred) \
+            .evaluate(enable_mapping=True)['score']
+
         stats = { 'RMSE': rmse,
                   'SRCC': srcc,
                   'PCC': pcc,
                   'KENDALL': kendall,
                   'ys_label': list(ys_label),
                   'ys_label_pred': list(ys_label_pred)}
+
+        if ys_label_raw is not None:
+            # KFLK
+            kflk = KflkPerfMetric(ys_label_raw, ys_label_pred) \
+                .evaluate()['score']
+            stats['KFLK'] = kflk
+
         return stats
 
     @staticmethod
@@ -71,8 +62,12 @@ class RegressorMixin(object):
         if stats is None:
             return '(Invalid Stats)'
         else:
-            return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f})'.format(
-                srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
+            if 'KFLK' in stats:
+                return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, KFLK: {kflk:.3f})'. \
+                    format(srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'], kflk=stats['KFLK'])
+            else:
+                return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f})'. \
+                    format(srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
 
     @staticmethod
     def format_stats2(stats):

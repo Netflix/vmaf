@@ -95,7 +95,8 @@ class KflkPerfMetric(RawScorePerfMetric):
     @staticmethod
     def _metrics_performance(objScoDif, signif):
         """
-        mirroring matlab function [results] = Metrics_performance(objScoDif, signif, doPlot)
+        mirroring matlab function:
+        %[results] = Metrics_performance(objScoDif, signif, doPlot)
         % INPUT:    objScoDif   : differences of objective scores [M,N]
         %                         M : number of metrics
         %                         N : number of pairs

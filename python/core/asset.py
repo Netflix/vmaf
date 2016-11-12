@@ -89,6 +89,17 @@ class Asset(WorkdirEnabled):
         else:
             return None
 
+    @property
+    def raw_groundtruth(self):
+        """
+        Raw ground truth scores, e.g. opinion score (OS)
+        :return:
+        """
+        if 'raw_groundtruth' in self.asset_dict:
+            return self.asset_dict['raw_groundtruth']
+        else:
+            return None
+
     # ==== width and height ====
 
     @property
