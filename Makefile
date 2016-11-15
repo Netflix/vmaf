@@ -16,4 +16,7 @@ clean:
 		cd $${dir}; $(MAKE) clean; cd ..; \
 	done
 
+test:
+	@echo hello;
+
 .PHONY: clean $(TARGETS)
