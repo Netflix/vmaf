@@ -1,2 +1,8 @@
-language: c
+language: cpp
+compiler: gcc
+addons:
+  apt:
+    packages:
+      - gcc-4.8
+      - g++-4.8
 script: make && make test
