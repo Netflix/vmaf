@@ -14,4 +14,9 @@ install:
 script:
   - make
   - export PYTHONPATH=$PWD/python:$PYTHONPATH
-  - ./unittest
+  - python -m doctest python/tools/misc.py
+  - python -m doctest python/tools/stats.py
+  - python -m unittest discover -s feature/test -p '*_test.py'
+  - cd python
+  - python -m unittest discover -s test -p '*_test.py'
+  - cd ..
