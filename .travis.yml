@@ -8,7 +8,7 @@ before_install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
 install:
   - pip install --upgrade pip
-  - pip install --user numpy scipy matplotlib pandas
+  - pip install numpy scipy matplotlib pandas
   - pip install scikit-learn
   - pip install h5py
 script:
