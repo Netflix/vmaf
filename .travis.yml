@@ -14,4 +14,4 @@ install:
 script:
   - make
   - export PYTHONPATH=$PWD/python:$PYTHONPATH
-#  - ./unittest
+  - ./unittest
