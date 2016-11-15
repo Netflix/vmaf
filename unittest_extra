@@ -1,7 +1,0 @@
-#!/usr/bin/env sh
-
-echo "Prerequisite: install TensorFlow. Refer to:"
-echo "https://www.tensorflow.org/versions/r0.10/get_started/os_setup.html"
-
-echo "Run tests in python/test/extra..."
-python -m unittest discover -s python/test/extra -p '*_test.py'
