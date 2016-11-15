@@ -121,3 +121,8 @@
 
 **New features:**
 - Add implementation of KFLK - quality metric evaluation method based on AUC. Refer to: L. Krasula, K. Fliegel, P. Le Callet, M.Klima, "On the accuracy of objective image and video quality models: New methodology for performance evaluation", QoMEX 2016.
+
+## (11/15/2016) [1.1.12]
+
+**New features:**
+- Add Travis continuous integration.

@@ -1,0 +1,22 @@
+language: python
+python:
+  - "2.7"
+before_install:
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq g++-4.8
+  - export CXX="g++-4.8" CC="gcc-4.8"
+install:
+  - pip install --upgrade pip
+  - pip install --upgrade numpy scipy matplotlib pandas
+  - pip install --upgrade scikit-learn
+  - pip install --upgrade h5py
+script:
+  - make
+  - export PYTHONPATH=$PWD/python:$PYTHONPATH
+  - python -m doctest python/tools/misc.py
+  - python -m doctest python/tools/stats.py
+  - python -m unittest discover -s feature/test -p '*_test.py'
+  - cd python
+  - python -m unittest discover -s test -p '*_test.py'
+  - cd ..
