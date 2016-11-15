@@ -181,7 +181,7 @@ def index_and_value_of_min(l):
     '''
 
     >>> index_and_value_of_min([2, 0, 3])
-    (1, 1)
+    (1, 0)
 
     '''
     return min(enumerate(l), key=lambda x: x[1])

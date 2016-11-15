@@ -60,7 +60,7 @@ class FeatureTest(unittest.TestCase):
         )
         subprocess.call(cmd, shell=True)
         score, scores = read_log(ADM_LOG, "adm")
-        self.assertAlmostEquals(score, 0.815509520833, places=4)
+        self.assertAlmostEquals(score, 0.915509520833, places=4)
         score, scores = read_log(ADM_LOG, "adm_num")
         self.assertAlmostEquals(score, 6899.24648475, places=4)
         score, scores = read_log(ADM_LOG, "adm_den")
