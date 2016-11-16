@@ -367,11 +367,11 @@ class VmafossExecQualityRunner(QualityRunner):
                 'motion', 'vif_scale0', 'vif_scale1', 'vif_scale2',
                 'vif_scale3', 'vif', 'psnr', 'ssim', 'ms_ssim']
 
-    @classmethod
-    def _assert_an_asset(cls, asset):
-        # override Executor.assert_an_asset(cls, asset)
-
-        super(VmafossExecQualityRunner, cls)._assert_an_asset(asset)
+    # @classmethod
+    # def _assert_an_asset(cls, asset):
+    #     # override Executor.assert_an_asset(cls, asset)
+    #
+    #     super(VmafossExecQualityRunner, cls)._assert_an_asset(asset)
 
     @classmethod
     def get_feature_scores_key(cls, atom_feature):
