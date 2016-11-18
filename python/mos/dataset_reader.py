@@ -186,7 +186,7 @@ class RawDatasetReader(DatasetReader):
         with open(dataset_filepath, 'wt') as output_file:
             for key in aggregate_dataset.__dict__.keys():
                 if key!='ref_videos' or key!='dis_videos':
-                    output_file.write('{} = '.format(key) + repr(self.dataset.__dict__[key]) + '\n')
+                    output_file.write('{} = '.format(key) + repr(aggregate_dataset.__dict__[key]) + '\n')
 
             output_file.write('\n')
             output_file.write('ref_videos = ' + pprint.pformat(aggregate_dataset.ref_videos) + '\n')

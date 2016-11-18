@@ -20,10 +20,13 @@ class SubjectiveModelTest(unittest.TestCase):
     def setUp(self):
         self.dataset_filepath = config.ROOT + '/python/test/resource/NFLX_dataset_public_raw.py'
         self.output_dataset_filepath = config.ROOT + '/workspace/workdir/NFLX_dataset_public_test.py'
+        self.output_dataset_pyc_filepath = config.ROOT + '/workspace/workdir/NFLX_dataset_public_test.pyc'
 
     def tearDown(self):
         if os.path.exists(self.output_dataset_filepath):
             os.remove(self.output_dataset_filepath)
+        if os.path.exists(self.output_dataset_pyc_filepath):
+            os.remove(self.output_dataset_pyc_filepath)
 
     def test_mos_subjective_model(self):
         dataset = import_python_file(self.dataset_filepath)
@@ -43,6 +46,22 @@ class SubjectiveModelTest(unittest.TestCase):
         subjective_model.to_aggregated_dataset_file(self.output_dataset_filepath)
         self.assertTrue(os.path.exists(self.output_dataset_filepath))
         dataset2 = import_python_file(self.output_dataset_filepath)
+        dis_video = dataset2.dis_videos[0]
+        self.assertTrue('groundtruth' in dis_video)
+        self.assertTrue('os' not in dis_video)
+        self.assertAlmostEquals(dis_video['groundtruth'], 4.884615384615385, places=4)
+
+    def test_mos_subjective_model_output_custom_resampling(self):
+        dataset = import_python_file(self.dataset_filepath)
+        dataset_reader = RawDatasetReader(dataset)
+        subjective_model = MosModel(dataset_reader)
+        subjective_model.run_modeling()
+        subjective_model.to_aggregated_dataset_file(self.output_dataset_filepath, resampling_type='lanczos')
+        self.assertTrue(os.path.exists(self.output_dataset_filepath))
+        dataset2 = import_python_file(self.output_dataset_filepath)
+        self.assertFalse(hasattr(dataset2, 'quality_height'))
+        self.assertFalse(hasattr(dataset2, 'quality_width'))
+        self.assertEquals(dataset2.resampling_type, 'lanczos')
         dis_video = dataset2.dis_videos[0]
         self.assertTrue('groundtruth' in dis_video)
         self.assertTrue('os' not in dis_video)
