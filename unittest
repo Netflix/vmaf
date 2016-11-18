@@ -8,6 +8,4 @@ echo "Run tests in feature/test..."
 python -m unittest discover -s feature/test -p '*_test.py'
 
 echo "Run tests in python/test..."
-cd python
-python -m unittest discover -s test -p '*_test.py'
-cd ..
+python -m unittest discover -s python/test -p '*_test.py'
