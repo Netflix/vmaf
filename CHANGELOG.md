@@ -126,3 +126,8 @@
 
 **New features:**
 - Add Travis continuous integration.
+
+## (11/18/2016) [1.1.13]
+
+**Fixed bug:**
+- Fix a bug in DatasetReader.to_aggregated_dataset_file.
