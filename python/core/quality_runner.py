@@ -299,29 +299,50 @@ class VmafQualityRunner(QualityRunner):
     @classmethod
     def predict_with_model(cls, model, xs, **kwargs):
         ys_pred = model.predict(xs)
+
+        if 'enable_transform_score' in kwargs and kwargs['enable_transform_score'] is True:
+            ys_pred = cls.transform_score(model, ys_pred)
+        else:
+            pass
+
         if 'disable_clip_score' in kwargs and kwargs['disable_clip_score'] is True:
             pass
         else:
             ys_pred = cls.clip_score(model, ys_pred)
+
         return ys_pred
 
     @staticmethod
+    def set_transform_score(model, score_transform):
+        model.append_info('score_transform', score_transform)
+
+    @staticmethod
     def set_clip_score(model, score_clip):
-        """
-        Enable post processing: clip final quality score within e.g. [0, 100]
-        :param model:
-        :param score_clip:
-        :return:
-        """
         model.append_info('score_clip', score_clip)
+
+    @staticmethod
+    def transform_score(model, ys_pred):
+        """
+        Do post processing: transform final quality score e.g. via polynomial
+        {'p0': 1, 'p1': 1, 'p2': 0.5} means transform through 1 + x + 0.5 * x^2.
+        For now, only support polynomail up to 2nd-order.
+        """
+        transform_dict = model.get_appended_info('score_transform')
+        y_in = ys_pred
+        y_out = np.zeros(ys_pred.shape)
+        if 'p0' in transform_dict:
+            y_out += transform_dict['p0']
+        if 'p1' in transform_dict:
+            y_out += transform_dict['p1'] * y_in
+        if 'p2' in transform_dict:
+            y_out += transform_dict['p2'] * y_in * y_in
+
+        return y_out
 
     @staticmethod
     def clip_score(model, ys_pred):
         """
         Do post processing: clip final quality score within e.g. [0, 100]
-        :param model:
-        :param ys_pred:
-        :return:
         """
         score_clip = model.get_appended_info('score_clip')
         if score_clip is not None:
@@ -674,6 +695,33 @@ class VmafQualityRunnerDisableClip(VmafQualityRunner):
 
         # ----------- change --------------
         ys_pred = self.predict_with_model(model, xs, disable_clip_score=True)
+        # ----------- change ------------------
+
+        result_dict = {}
+        result_dict.update(feature_result.result_dict) # add feature result
+        result_dict[self.get_scores_key()] = ys_pred # add quality score
+        return Result(asset, self.executor_id, result_dict)
+
+class VmafQualityRunnerEnableTransform(VmafQualityRunner):
+
+    TYPE = VmafQualityRunner.TYPE + '_TRSFM'
+
+    VERSION = '{}-1'.format(VmafQualityRunner.VERSION)
+
+    def _run_on_asset(self, asset):
+        # Override Executor._run_on_asset(self, asset), which runs a
+        # FeatureAssembler, collect a feature vector, run
+        # TrainTestModel.predict() on it, and return a Result object
+        # (in this case, both Executor._run_on_asset(self, asset) and
+        # QualityRunner._read_result(self, asset) get bypassed.
+        vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
+        vmaf_fassembler.run()
+        feature_result = vmaf_fassembler.results[0]
+        model = self._load_model(asset)
+        xs = model.get_per_unit_xs_from_a_result(feature_result)
+
+        # ----------- change --------------
+        ys_pred = self.predict_with_model(model, xs, enable_transform_score=True)
         # ----------- change ------------------
 
         result_dict = {}

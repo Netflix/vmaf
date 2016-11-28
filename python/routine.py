@@ -272,6 +272,8 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
     model.append_info('feature_dict', feature_param.feature_dict)
     if 'score_clip' in model_param_dict:
         VmafQualityRunner.set_clip_score(model, model_param_dict['score_clip'])
+    if 'score_transform' in model_param_dict:
+        VmafQualityRunner.set_transform_score(model, model_param_dict['score_transform'])
 
     train_ys_pred = VmafQualityRunner.predict_with_model(model, train_xs, **kwargs)
 
