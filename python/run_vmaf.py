@@ -7,8 +7,8 @@ import numpy as np
 
 import config
 from core.asset import Asset
-from core.quality_runner import VmafQualityRunner
-from core.quality_runner_adhoc import VmafQualityRunnerWithLocalExplainer
+from core.quality_runner import VmafQualityRunner, \
+    VmafQualityRunnerWithLocalExplainer
 from tools.misc import get_file_name_without_extension, get_cmd_option, \
     cmd_option_exists
 from tools.stats import ListStats

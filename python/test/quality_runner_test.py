@@ -9,7 +9,7 @@ import unittest
 from core.asset import Asset
 from core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner, \
     PsnrQualityRunner, VmafossExecQualityRunner, MsSsimQualityRunner, \
-    SsimQualityRunner, Adm2QualityRunner
+    SsimQualityRunner, Adm2QualityRunner, VmafQualityRunnerDisableClip
 from core.executor import run_executors_in_parallel
 import config
 from core.result_store import FileSystemResultStore
@@ -269,6 +269,34 @@ class QualityRunnerTest(unittest.TestCase):
 
         with self.assertRaises(KeyError):
             self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 1.0, places=4)
+
+    def test_run_vmaf_runner_without_clip_score(self):
+        print 'test on running VMAF runner on checkerboard pattern...'
+        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':1920, 'height':1080})
+
+        self.runner = VmafQualityRunnerDisableClip(
+            [asset],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=self.result_store,
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAF_NOCLIP_score'], -15.907707065572817, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale1_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale2_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale3_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 12.5548366667, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'], 0.0314318502995, places=4)
 
     def test_run_vmaf_runner_checkerboard(self):
         print 'test on running VMAF runner on checkerboard pattern...'
