@@ -131,3 +131,8 @@
 
 **Fixed bug:**
 - Fix a bug in DatasetReader.to_aggregated_dataset_file.
+
+## (11/28/2016) [1.1.14]
+
+**New features:**
+- Add VmafQualityRunnerEnableTransform and VmafossExecQualityRunnerEnableTransform.
