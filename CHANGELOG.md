@@ -135,4 +135,4 @@
 ## (11/28/2016) [1.1.14]
 
 **New features:**
-- Add VmafQualityRunnerEnableTransform and VmafossExecQualityRunnerEnableTransform.
+- Add enable_transform_score option to VmafQualityRunner, VmafossExecQualityRunner.

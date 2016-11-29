@@ -9,8 +9,7 @@ import unittest
 from core.asset import Asset
 from core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner, \
     PsnrQualityRunner, VmafossExecQualityRunner, MsSsimQualityRunner, \
-    SsimQualityRunner, Adm2QualityRunner, VmafQualityRunnerDisableClip, \
-    VmafQualityRunnerEnableTransform, VmafossExecQualityRunnerEnableTransform
+    SsimQualityRunner, Adm2QualityRunner
 from core.executor import run_executors_in_parallel
 import config
 from core.result_store import FileSystemResultStore
@@ -870,17 +869,18 @@ class QualityRunnerTest(unittest.TestCase):
                       dis_path=dis_path,
                       asset_dict={'width':1920, 'height':1080})
 
-        self.runner = VmafQualityRunnerDisableClip(
+        self.runner = VmafQualityRunner(
             [asset],
             None, fifo_mode=True,
             delete_workdir=True,
             result_store=self.result_store,
+            optional_dict={'disable_clip_score': True}
         )
         self.runner.run()
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAF_NOCLIP_score'], -15.907707065572817, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], -15.907707065572817, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.0, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale1_score'], 0.0, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale2_score'], 0.0, places=4)
@@ -898,12 +898,13 @@ class QualityRunnerTest(unittest.TestCase):
                       dis_path=dis_path,
                       asset_dict={'width':1920, 'height':1080})
 
-        self.runner = VmafQualityRunnerEnableTransform(
+        self.runner = VmafQualityRunner(
             [asset],
             None, fifo_mode=True,
             delete_workdir=True,
             optional_dict={
                 'model_filepath':config.ROOT + "/python/test/resource/test_model_transform_add40.pkl",
+                'enable_transform_score':True,
             },
             result_store=self.result_store,
         )
@@ -911,7 +912,42 @@ class QualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAF_TRSFM_score'], -21.850170839605671 + 40.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], -21.850170839605671 + 40.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale1_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale2_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale3_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 12.5548366667, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale0_score'], 0.97893299124710176, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale1_score'], 0.25251438307139423, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale2_score'], 0.023372320595957088, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale3_score'], 0.012580424770670265, places=4)
+
+    def test_run_vmaf_runner_with_transform_score_disabled(self):
+        print 'test on running VMAF runner with score transforming disabled...'
+        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':1920, 'height':1080})
+
+        self.runner = VmafQualityRunner(
+            [asset],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            optional_dict={
+                'model_filepath':config.ROOT + "/python/test/resource/test_model_transform_add40.pkl",
+                'enable_transform_score':False,
+            },
+            result_store=self.result_store,
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAF_score'], 0.0, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.0, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale1_score'], 0.0, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale2_score'], 0.0, places=4)
@@ -932,18 +968,20 @@ class QualityRunnerTest(unittest.TestCase):
                       dis_path=dis_path,
                       asset_dict={'width':1920, 'height':1080})
 
-        self.runner = VmafQualityRunnerEnableTransform(
+        self.runner = VmafQualityRunner(
             [asset],
             None, fifo_mode=True,
             delete_workdir=True,
-            optional_dict={},
+            optional_dict={
+                'enable_transform_score':True,
+            },
             result_store=self.result_store,
         )
         self.runner.run()
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAF_TRSFM_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 0.0, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.0, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale1_score'], 0.0, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale2_score'], 0.0, places=4)
@@ -961,12 +999,13 @@ class QualityRunnerTest(unittest.TestCase):
                       dis_path=dis_path,
                       asset_dict={'width':1920, 'height':1080})
 
-        self.runner = VmafossExecQualityRunnerEnableTransform(
+        self.runner = VmafossExecQualityRunner(
             [asset],
             None, fifo_mode=True,
             delete_workdir=True,
             optional_dict={
                 'model_filepath':config.ROOT + "/python/test/resource/test_model_transform_add40.pkl",
+                'enable_transform_score':True,
             },
             result_store=self.result_store,
         )
@@ -974,16 +1013,51 @@ class QualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_TRSFM_score'], -21.850170839605671 + 40.0, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_TRSFM_vif_scale0_score'], 0.0, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_TRSFM_vif_scale1_score'], 0.0, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_TRSFM_vif_scale2_score'], 0.0, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_TRSFM_vif_scale3_score'], 0.0, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_TRSFM_motion_score'], 12.5548366667, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_TRSFM_adm_scale0_score'], 0.97893299124710176, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_TRSFM_adm_scale1_score'], 0.25251438307139423, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_TRSFM_adm_scale2_score'], 0.023372320595957088, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_TRSFM_adm_scale3_score'], 0.012580424770670265, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], -21.850170839605671 + 40.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale0_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale1_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale2_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale3_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_motion_score'], 12.5548366667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm_scale0_score'], 0.97893299124710176, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm_scale1_score'], 0.25251438307139423, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm_scale2_score'], 0.023372320595957088, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm_scale3_score'], 0.012580424770670265, places=4)
+
+    def test_run_vmafossexec_runner_with_transform_score_disabled(self):
+        print 'test on running VMAFOSSEXEC runner with score transforming disabled...'
+        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':1920, 'height':1080})
+
+        self.runner = VmafossExecQualityRunner(
+            [asset],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            optional_dict={
+                'model_filepath':config.ROOT + "/python/test/resource/test_model_transform_add40.pkl",
+                'enable_transform_score':False,
+            },
+            result_store=self.result_store,
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale0_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale1_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale2_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale3_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_motion_score'], 12.5548366667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm_scale0_score'], 0.97893299124710176, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm_scale1_score'], 0.25251438307139423, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm_scale2_score'], 0.023372320595957088, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm_scale3_score'], 0.012580424770670265, places=4)
 
     def test_run_vmafossexec_runner_with_transform_score_no_transform_info(self):
         print 'test on running VMAFOSSEXEC runner with score transforming without info...'
@@ -995,24 +1069,26 @@ class QualityRunnerTest(unittest.TestCase):
                       dis_path=dis_path,
                       asset_dict={'width':1920, 'height':1080})
 
-        self.runner = VmafossExecQualityRunnerEnableTransform(
+        self.runner = VmafossExecQualityRunner(
             [asset],
             None, fifo_mode=False,
             delete_workdir=True,
-            optional_dict={},
+            optional_dict={
+                'enable_transform_score':True,
+            },
             result_store=self.result_store,
         )
         self.runner.run()
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_TRSFM_score'], 0.0, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_TRSFM_vif_scale0_score'], 0.0, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_TRSFM_vif_scale1_score'], 0.0, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_TRSFM_vif_scale2_score'], 0.0, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_TRSFM_vif_scale3_score'], 0.0, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_TRSFM_motion_score'], 12.5548366667, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_TRSFM_adm2_score'], 0.031431850299466178, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale0_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale1_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale2_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale3_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_motion_score'], 12.5548366667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm2_score'], 0.031431850299466178, places=4)
 
 
 class ParallelQualityRunnerTest(unittest.TestCase):

@@ -290,7 +290,20 @@ class VmafQualityRunner(QualityRunner):
         feature_result = vmaf_fassembler.results[0]
         model = self._load_model(asset)
         xs = model.get_per_unit_xs_from_a_result(feature_result)
-        ys_pred = self.predict_with_model(model, xs)
+
+        if 'disable_clip_score' in self.optional_dict:
+            disable_clip_score = self.optional_dict['disable_clip_score']
+        else:
+            disable_clip_score = False
+
+        if 'enable_transform_score' in self.optional_dict:
+            enable_transform_score = self.optional_dict['enable_transform_score']
+        else:
+            enable_transform_score = False
+
+        ys_pred = self.predict_with_model(model, xs,
+                                          disable_clip_score=disable_clip_score,
+                                          enable_transform_score=enable_transform_score)
         result_dict = {}
         result_dict.update(feature_result.result_dict) # add feature result
         result_dict[self.get_scores_key()] = ys_pred # add quality score
@@ -418,8 +431,15 @@ class VmafossExecQualityRunner(QualityRunner):
         subprocess.call(vmafossexec_cmd, shell=True)
 
     def _get_vmafossexec_cmd(self, asset, model_filepath, log_file_path):
+
+        if 'enable_transform_score' in self.optional_dict:
+            enable_transform_score = self.optional_dict['enable_transform_score']
+        else:
+            enable_transform_score = False
+
         # Usage: vmafossexec fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--disable-clip] [--psnr] [--ssim] [--ms-ssim]
         quality_width, quality_height = asset.quality_width_height
+
         vmafossexec_cmd = "{exe} {fmt} {w} {h} {ref_path} {dis_path} {model} --log {log_file_path} --log-fmt xml --psnr --ssim --ms-ssim" \
             .format(
             exe=self.VMAFOSSEXEC,
@@ -431,6 +451,10 @@ class VmafossExecQualityRunner(QualityRunner):
             model=model_filepath,
             log_file_path=log_file_path,
         )
+
+        if enable_transform_score:
+            vmafossexec_cmd += ' --enable-transform'
+
         return vmafossexec_cmd
 
     def _get_quality_scores(self, asset):
@@ -610,6 +634,7 @@ class VmafQualityRunnerWithLocalExplainer(VmafQualityRunner):
     """Same as VmafQualityRunner, except it outputs additional LocalExplainer
     results."""
 
+    # TYPE = 'VMAF' # make same as parent class, as results won't get impacted
     VERSION = '{}-le1'.format(VmafQualityRunner.VERSION)
 
     @classmethod
@@ -675,80 +700,3 @@ class VmafQualityRunnerWithLocalExplainer(VmafQualityRunner):
             figss.append(figs)
 
         return figss
-
-
-class VmafQualityRunnerDisableClip(VmafQualityRunner):
-
-    TYPE = VmafQualityRunner.TYPE + '_NOCLIP'
-
-    VERSION = '{}-1'.format(VmafQualityRunner.VERSION)
-
-    def _run_on_asset(self, asset):
-        # Override Executor._run_on_asset(self, asset), which runs a
-        # FeatureAssembler, collect a feature vector, run
-        # TrainTestModel.predict() on it, and return a Result object
-        # (in this case, both Executor._run_on_asset(self, asset) and
-        # QualityRunner._read_result(self, asset) get bypassed.
-        vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
-        vmaf_fassembler.run()
-        feature_result = vmaf_fassembler.results[0]
-        model = self._load_model(asset)
-        xs = model.get_per_unit_xs_from_a_result(feature_result)
-
-        # ----------- change --------------
-        ys_pred = self.predict_with_model(model, xs, disable_clip_score=True)
-        # ----------- change ------------------
-
-        result_dict = {}
-        result_dict.update(feature_result.result_dict) # add feature result
-        result_dict[self.get_scores_key()] = ys_pred # add quality score
-        return Result(asset, self.executor_id, result_dict)
-
-class VmafQualityRunnerEnableTransform(VmafQualityRunner):
-
-    TYPE = VmafQualityRunner.TYPE + '_TRSFM'
-
-    VERSION = '{}-1'.format(VmafQualityRunner.VERSION)
-
-    def _run_on_asset(self, asset):
-        # Override Executor._run_on_asset(self, asset), which runs a
-        # FeatureAssembler, collect a feature vector, run
-        # TrainTestModel.predict() on it, and return a Result object
-        # (in this case, both Executor._run_on_asset(self, asset) and
-        # QualityRunner._read_result(self, asset) get bypassed.
-        vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
-        vmaf_fassembler.run()
-        feature_result = vmaf_fassembler.results[0]
-        model = self._load_model(asset)
-        xs = model.get_per_unit_xs_from_a_result(feature_result)
-
-        # ----------- change --------------
-        ys_pred = self.predict_with_model(model, xs, enable_transform_score=True)
-        # ----------- change ------------------
-
-        result_dict = {}
-        result_dict.update(feature_result.result_dict) # add feature result
-        result_dict[self.get_scores_key()] = ys_pred # add quality score
-        return Result(asset, self.executor_id, result_dict)
-
-class VmafossExecQualityRunnerEnableTransform(VmafossExecQualityRunner):
-
-    TYPE = VmafossExecQualityRunner.TYPE + '_TRSFM'
-
-    VERSION = '{}-1'.format(VmafossExecQualityRunner.VERSION)
-
-    def _get_vmafossexec_cmd(self, asset, model_filepath, log_file_path):
-        # Usage: vmafossexec fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--disable-clip] [--enable-transform] [--psnr] [--ssim] [--ms-ssim]
-        quality_width, quality_height = asset.quality_width_height
-        vmafossexec_cmd = "{exe} {fmt} {w} {h} {ref_path} {dis_path} {model} --log {log_file_path} --log-fmt xml --enable-transform --psnr --ssim --ms-ssim" \
-            .format(
-            exe=self.VMAFOSSEXEC,
-            fmt=asset.yuv_type,
-            w=quality_width,
-            h=quality_height,
-            ref_path=asset.ref_workfile_path,
-            dis_path=asset.dis_workfile_path,
-            model=model_filepath,
-            log_file_path=log_file_path,
-        )
-        return vmafossexec_cmd
