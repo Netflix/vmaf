@@ -56,7 +56,7 @@ class Executor(TypeVersionEnabled):
     def executor_id(self):
         executor_id_ = TypeVersionEnabled.get_type_version_string(self)
 
-        if self.optional_dict is not None:
+        if self.optional_dict is not None and len(self.optional_dict) > 0:
             # include optional_dict info in executor_id for result store,
             # as parameters in optional_dict will impact result
             executor_id_ += '_{}'.format(
