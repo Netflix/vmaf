@@ -291,12 +291,12 @@ class VmafQualityRunner(QualityRunner):
         model = self._load_model(asset)
         xs = model.get_per_unit_xs_from_a_result(feature_result)
 
-        if 'disable_clip_score' in self.optional_dict:
+        if self.optional_dict is not None and 'disable_clip_score' in self.optional_dict:
             disable_clip_score = self.optional_dict['disable_clip_score']
         else:
             disable_clip_score = False
 
-        if 'enable_transform_score' in self.optional_dict:
+        if self.optional_dict is not None and 'enable_transform_score' in self.optional_dict:
             enable_transform_score = self.optional_dict['enable_transform_score']
         else:
             enable_transform_score = False
@@ -432,7 +432,7 @@ class VmafossExecQualityRunner(QualityRunner):
 
     def _get_vmafossexec_cmd(self, asset, model_filepath, log_file_path):
 
-        if 'enable_transform_score' in self.optional_dict:
+        if self.optional_dict is not None and 'enable_transform_score' in self.optional_dict:
             enable_transform_score = self.optional_dict['enable_transform_score']
         else:
             enable_transform_score = False
