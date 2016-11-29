@@ -126,7 +126,7 @@ void _read_and_assert_model(const char *model_path, Val& feature_names,
     if (!(VAL_IS_NONE(score_transform) || VAL_IS_DICT(score_transform)))
     {
         printf("score_transform in model must be either None or dictionary (table).\n");
-        throw VmafException("Incompatible score_clip");
+        throw VmafException("Incompatible score_transform");
     }
 
 }
