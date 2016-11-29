@@ -57,6 +57,7 @@ int main(int argc, char *argv[])
     char *log_path = NULL;
     char *log_fmt = NULL;
     bool disable_clip = false;
+    bool enable_transform = false;
     bool do_psnr = false;
     bool do_ssim = false;
     bool do_ms_ssim = false;
@@ -100,6 +101,11 @@ int main(int argc, char *argv[])
             disable_clip = true;
         }
 
+        if (cmdOptionExists(argv + 7, argv + argc, "--enable-transform"))
+        {
+            enable_transform = true;
+        }
+
         if (cmdOptionExists(argv + 7, argv + argc, "--psnr"))
         {
             do_psnr = true;
@@ -123,7 +129,7 @@ int main(int argc, char *argv[])
         }
 
         /* Run VMAF */
-        score = RunVmaf(fmt, width, height, ref_path, dis_path, model_path, log_path, log_fmt, disable_clip, do_psnr, do_ssim, do_ms_ssim, pool_method);
+        score = RunVmaf(fmt, width, height, ref_path, dis_path, model_path, log_path, log_fmt, disable_clip, enable_transform, do_psnr, do_ssim, do_ms_ssim, pool_method);
 
     }
     catch (const std::exception &e)

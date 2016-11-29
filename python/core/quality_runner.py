@@ -328,6 +328,10 @@ class VmafQualityRunner(QualityRunner):
         For now, only support polynomail up to 2nd-order.
         """
         transform_dict = model.get_appended_info('score_transform')
+
+        if transform_dict is None:
+            return ys_pred
+
         y_in = ys_pred
         y_out = np.zeros(ys_pred.shape)
         if 'p0' in transform_dict:
@@ -388,12 +392,6 @@ class VmafossExecQualityRunner(QualityRunner):
                 'motion', 'vif_scale0', 'vif_scale1', 'vif_scale2',
                 'vif_scale3', 'vif', 'psnr', 'ssim', 'ms_ssim']
 
-    # @classmethod
-    # def _assert_an_asset(cls, asset):
-    #     # override Executor.assert_an_asset(cls, asset)
-    #
-    #     super(VmafossExecQualityRunner, cls)._assert_an_asset(asset)
-
     @classmethod
     def get_feature_scores_key(cls, atom_feature):
         return "{type}_{atom_feature}_scores".format(
@@ -412,10 +410,18 @@ class VmafossExecQualityRunner(QualityRunner):
         else:
             model_filepath = self.DEFAULT_MODEL_FILEPATH
 
+        vmafossexec_cmd = self._get_vmafossexec_cmd(asset, model_filepath, log_file_path)
+
+        if self.logger:
+            self.logger.info(vmafossexec_cmd)
+
+        subprocess.call(vmafossexec_cmd, shell=True)
+
+    def _get_vmafossexec_cmd(self, asset, model_filepath, log_file_path):
         # Usage: vmafossexec fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--disable-clip] [--psnr] [--ssim] [--ms-ssim]
         quality_width, quality_height = asset.quality_width_height
         vmafossexec_cmd = "{exe} {fmt} {w} {h} {ref_path} {dis_path} {model} --log {log_file_path} --log-fmt xml --psnr --ssim --ms-ssim" \
-        .format(
+            .format(
             exe=self.VMAFOSSEXEC,
             fmt=asset.yuv_type,
             w=quality_width,
@@ -425,11 +431,7 @@ class VmafossExecQualityRunner(QualityRunner):
             model=model_filepath,
             log_file_path=log_file_path,
         )
-
-        if self.logger:
-            self.logger.info(vmafossexec_cmd)
-
-        subprocess.call(vmafossexec_cmd, shell=True)
+        return vmafossexec_cmd
 
     def _get_quality_scores(self, asset):
         # routine to read the quality scores from the log file, and return
@@ -728,3 +730,25 @@ class VmafQualityRunnerEnableTransform(VmafQualityRunner):
         result_dict.update(feature_result.result_dict) # add feature result
         result_dict[self.get_scores_key()] = ys_pred # add quality score
         return Result(asset, self.executor_id, result_dict)
+
+class VmafossExecQualityRunnerEnableTransform(VmafossExecQualityRunner):
+
+    TYPE = VmafossExecQualityRunner.TYPE + '_TRSFM'
+
+    VERSION = '{}-1'.format(VmafossExecQualityRunner.VERSION)
+
+    def _get_vmafossexec_cmd(self, asset, model_filepath, log_file_path):
+        # Usage: vmafossexec fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--disable-clip] [--enable-transform] [--psnr] [--ssim] [--ms-ssim]
+        quality_width, quality_height = asset.quality_width_height
+        vmafossexec_cmd = "{exe} {fmt} {w} {h} {ref_path} {dis_path} {model} --log {log_file_path} --log-fmt xml --enable-transform --psnr --ssim --ms-ssim" \
+            .format(
+            exe=self.VMAFOSSEXEC,
+            fmt=asset.yuv_type,
+            w=quality_width,
+            h=quality_height,
+            ref_path=asset.ref_workfile_path,
+            dis_path=asset.dis_workfile_path,
+            model=model_filepath,
+            log_file_path=log_file_path,
+        )
+        return vmafossexec_cmd

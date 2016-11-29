@@ -38,6 +38,7 @@
 #define VAL_EQUAL_STR(V,S) (Stringize((V)).compare((S))==0)
 #define VAL_IS_LIST(V) ((V).tag=='n') /* check ocval.cc */
 #define VAL_IS_NONE(V) ((V).tag=='Z') /* check ocval.cc */
+#define VAL_IS_DICT(V) ((V).tag=='t') /* check ocval.cc */
 
 inline double _round_to_digit(double val, int digit);
 string _get_file_name(const std::string& s);
@@ -48,7 +49,7 @@ void SvmDelete::operator()(void *svm)
 }
 
 void _read_and_assert_model(const char *model_path, Val& feature_names,
-     Val& norm_type, Val& slopes, Val& intercepts, Val& score_clip)
+     Val& norm_type, Val& slopes, Val& intercepts, Val& score_clip, Val& score_transform)
 {
     /*  TrainTestModel._assert_trained() in Python:
      *  assert 'model_type' in self.model_dict # need this to recover class
@@ -76,6 +77,7 @@ void _read_and_assert_model(const char *model_path, Val& feature_names,
         slopes = model["model_dict"]["slopes"];
         intercepts = model["model_dict"]["intercepts"];
         score_clip = model["model_dict"]["score_clip"];
+        score_transform = model["model_dict"]["score_transform"];
     }
     catch (std::runtime_error& e)
     {
@@ -120,17 +122,25 @@ void _read_and_assert_model(const char *model_path, Val& feature_names,
         printf("score_clip in model must be either None or list.\n");
         throw VmafException("Incompatible score_clip");
     }
+
+    if (!(VAL_IS_NONE(score_transform) || VAL_IS_DICT(score_transform)))
+    {
+        printf("score_transform in model must be either None or dictionary (table).\n");
+        throw VmafException("Incompatible score_clip");
+    }
+
 }
 
-Result VmafRunner::run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssim, bool do_ms_ssim)
+Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
+                       bool do_psnr, bool do_ssim, bool do_ms_ssim)
 {
 
 #ifdef PRINT_PROGRESS
     printf("Read input model (pkl)...\n");
 #endif
 
-    Val feature_names, norm_type, slopes, intercepts, score_clip;
-    _read_and_assert_model(model_path, feature_names, norm_type, slopes, intercepts, score_clip);
+    Val feature_names, norm_type, slopes, intercepts, score_clip, score_transform;
+    _read_and_assert_model(model_path, feature_names, norm_type, slopes, intercepts, score_clip, score_transform);
 
 #ifdef PRINT_PROGRESS
     printf("Read input model (libsvm)...\n");
@@ -453,7 +463,26 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool do_psnr, bool do_ssi
             ;
         }
 
-        /* clip */
+        /* score transform */
+        if (enable_transform && !VAL_IS_NONE(score_transform))
+        {
+            double value = 0.0;
+            if (!VAL_IS_NONE(score_transform["p0"]))
+            {
+                value += double(score_transform["p0"]);
+            }
+            if (!VAL_IS_NONE(score_transform["p1"]))
+            {
+                value += double(score_transform["p1"]) * prediction;
+            }
+            if (!VAL_IS_NONE(score_transform["p2"]))
+            {
+                value += double(score_transform["p2"]) * prediction * prediction;
+            }
+            prediction = value;
+        }
+
+        /* score clip */
         if (!disable_clip && !VAL_IS_NONE(score_clip))
         {
             if (prediction < double(score_clip[0]))
@@ -566,7 +595,8 @@ static const char VMAFOSS_XML_VERSION[] = "0.3.2"; // fix slopes and intercepts 
 double RunVmaf(const char* fmt, int width, int height,
                const char *ref_path, const char *dis_path, const char *model_path,
                const char *log_path, const char *log_fmt,
-               bool disable_clip, bool do_psnr, bool do_ssim, bool do_ms_ssim,
+               bool disable_clip, bool enable_transform,
+               bool do_psnr, bool do_ssim, bool do_ms_ssim,
                const char *pool_method)
 {
     printf("Start calculating VMAF score...\n");
@@ -576,7 +606,7 @@ double RunVmaf(const char* fmt, int width, int height,
     Timer timer;
 
     timer.start();
-    Result result = runner.run(asset, disable_clip, do_psnr, do_ssim, do_ms_ssim);
+    Result result = runner.run(asset, disable_clip, enable_transform, do_psnr, do_ssim, do_ms_ssim);
     timer.stop();
 
     if (pool_method != NULL && (strcmp(pool_method, "min")==0))
