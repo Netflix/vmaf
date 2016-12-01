@@ -605,3 +605,12 @@ void svm_free_model_content(svm_model* model_ptr)
     model_ptr->nSV = NULL;
 }
 
+void svm_free_and_destroy_model(svm_model** model_ptr_ptr)
+{
+	if(model_ptr_ptr != NULL && *model_ptr_ptr != NULL)
+	{
+		svm_free_model_content(*model_ptr_ptr);
+		free(*model_ptr_ptr);
+		*model_ptr_ptr = NULL;
+	}
+}

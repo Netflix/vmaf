@@ -45,7 +45,7 @@ string _get_file_name(const std::string& s);
 
 void SvmDelete::operator()(void *svm)
 {
-    svm_free_model_content((svm_model *)svm);
+    svm_free_and_destroy_model((svm_model **)&svm);
 }
 
 void _read_and_assert_model(const char *model_path, Val& feature_names,
