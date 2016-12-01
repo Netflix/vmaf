@@ -136,3 +136,8 @@
 
 **New features:**
 - Add enable_transform_score option to VmafQualityRunner, VmafossExecQualityRunner.
+
+## (11/30/2016) [1.1.15]
+
+**Fixed bug:**
+- Fix vmafossexec memory leakage.
