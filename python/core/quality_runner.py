@@ -347,12 +347,22 @@ class VmafQualityRunner(QualityRunner):
 
         y_in = ys_pred
         y_out = np.zeros(ys_pred.shape)
+
+        # quadratic transform
         if 'p0' in transform_dict:
             y_out += transform_dict['p0']
         if 'p1' in transform_dict:
             y_out += transform_dict['p1'] * y_in
         if 'p2' in transform_dict:
             y_out += transform_dict['p2'] * y_in * y_in
+
+        # rectification
+        if 'out_lte_in' in transform_dict and transform_dict['out_lte_in'] == 'true':
+            # output must be less than or equal to input
+            y_out = np.minimum(y_out, y_in)
+        if 'out_gte_in' in transform_dict and transform_dict['out_gte_in'] == 'true':
+            # output must be greater than or equal to input
+            y_out = np.maximum(y_out, y_in)
 
         return y_out
 

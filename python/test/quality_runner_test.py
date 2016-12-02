@@ -923,6 +923,42 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale2_score'], 0.023372320595957088, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale3_score'], 0.012580424770670265, places=4)
 
+    def test_run_vmaf_runner_with_transform_score_2(self):
+        print 'test on running VMAF runner with score transforming (2)...'
+        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':1920, 'height':1080})
+
+        self.runner = VmafQualityRunner(
+            [asset],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            optional_dict={
+                'model_filepath': config.ROOT + "/python/test/resource/test_model_transform_add40_outltein.pkl",
+                'enable_transform_score': True,
+                'disable_clip_score': True,
+            },
+            result_store=self.result_store,
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAF_score'], -21.850170839605671, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale1_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale2_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale3_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 12.5548366667, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale0_score'], 0.97893299124710176, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale1_score'], 0.25251438307139423, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale2_score'], 0.023372320595957088, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale3_score'], 0.012580424770670265, places=4)
+
     def test_run_vmaf_runner_with_transform_score_disabled(self):
         print 'test on running VMAF runner with score transforming disabled...'
         ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
