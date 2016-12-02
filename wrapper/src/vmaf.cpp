@@ -467,6 +467,8 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
         if (enable_transform && !VAL_IS_NONE(score_transform))
         {
             double value = 0.0;
+
+            /* quadratic transform */
             if (!VAL_IS_NONE(score_transform["p0"]))
             {
                 value += double(score_transform["p0"]);
@@ -479,6 +481,23 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
             {
                 value += double(score_transform["p2"]) * prediction * prediction;
             }
+
+            /* rectification */
+            if (!VAL_IS_NONE(score_transform["out_lte_in"]) && VAL_EQUAL_STR(score_transform["out_lte_in"], "'true'"))
+            {
+                if (value > prediction)
+                {
+                    value = prediction;
+                }
+            }
+            if (!VAL_IS_NONE(score_transform["out_gte_in"]) && VAL_EQUAL_STR(score_transform["out_gte_in"], "'true'"))
+            {
+                if (value < prediction)
+                {
+                    value = prediction;
+                }
+            }
+
             prediction = value;
         }
 
