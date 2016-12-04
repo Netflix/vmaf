@@ -472,10 +472,18 @@ void vif_statistic_d(const double *mu1_sq, const double *mu2_sq, const double *m
     }
 }
 
-void vif_filter1d_s(const float *f, const float *src, float *dst, int w, int h, int src_stride, int dst_stride, int fwidth)
+void vif_filter1d_s(const float *f, const float *src, float *dst, float *tmpbuf, int w, int h, int src_stride, int dst_stride, int fwidth)
 {
+
     int src_px_stride = src_stride / sizeof(float);
     int dst_px_stride = dst_stride / sizeof(float);
+
+    /* if support avx */
+
+    convolution_f32_avx_s(f, fwidth, src, dst, tmpbuf, w, h, src_px_stride, dst_px_stride);
+    return;
+
+    /* fall back */
 
     float *tmp = aligned_malloc(ALIGN_CEIL(w * sizeof(float)), MAX_ALIGN);
     float fcoeff, imgcoeff;
@@ -523,7 +531,7 @@ void vif_filter1d_s(const float *f, const float *src, float *dst, int w, int h, 
     aligned_free(tmp);
 }
 
-void vif_filter1d_d(const double *f, const double *src, double *dst, int w, int h, int src_stride, int dst_stride, int fwidth)
+void vif_filter1d_d(const double *f, const double *src, double *dst, double *tmpbuf, int w, int h, int src_stride, int dst_stride, int fwidth)
 {
     int src_px_stride = src_stride / sizeof(double);
     int dst_px_stride = dst_stride / sizeof(double);

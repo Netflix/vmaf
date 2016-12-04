@@ -48,8 +48,8 @@ void vif_statistic_s(const float *mu1_sq, const float *mu2_sq, const float *mu1_
 void vif_statistic_d(const double *mu1_sq, const double *mu2_sq, const double *mu1_mu2, const double *xx_filt, const double *yy_filt, const double *xy_filt, double *num, double *den,
                      int w, int h, int mu1_sq_stride, int mu2_sq_stride, int mu1_mu2_stride, int xx_filt_stride, int yy_filt_stride, int xy_filt_stride, int num_stride, int den_stride);
 
-void vif_filter1d_s(const float *f, const float *src, float *dst, int w, int h, int src_stride, int dst_stride, int fwidth);
-void vif_filter1d_d(const double *f, const double *src, double *dst, int w, int h, int src_stride, int dst_stride, int fwidth);
+void vif_filter1d_s(const float *f, const float *src, float *dst, float *tmpbuf, int w, int h, int src_stride, int dst_stride, int fwidth);
+void vif_filter1d_d(const double *f, const double *src, double *dst, double *tmpbuf, int w, int h, int src_stride, int dst_stride, int fwidth);
 
 void vif_filter2d_s(const float *f, const float *src, float *dst, int w, int h, int src_stride, int dst_stride, int fwidth);
 void vif_filter2d_d(const double *f, const double *src, double *dst, int w, int h, int src_stride, int dst_stride, int fwidth);

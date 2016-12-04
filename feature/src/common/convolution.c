@@ -74,6 +74,13 @@ void convolution_y_c_s(const float *filter, int filter_width, const float *src, 
 
 void convolution_f32_c_s(const float *filter, int filter_width, const float *src, float *dst, float *tmp, int width, int height, int src_stride, int dst_stride)
 {
+    /* if support avx */
+
+    convolution_f32_avx_s(filter, filter_width, src, dst, tmp, width, height, src_stride, dst_stride);
+    return;
+
+    /* fall back */
+
 	// convolve along y first then x
 	convolution_y_c_s(filter, filter_width, src, tmp, width, height, src_stride, dst_stride, 1);
 	convolution_x_c_s(filter, filter_width, tmp, dst, width, height, src_stride, dst_stride, 1);
