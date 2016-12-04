@@ -8,6 +8,7 @@ OBJS_VMAF = \
 	$(OBJDIR)/common/alloc.o \
 	$(OBJDIR)/common/file_io.o \
 	$(OBJDIR)/common/convolution.o \
+	$(OBJDIR)/common/convolution_avx.o \
 	$(OBJDIR)/adm.o \
 	$(OBJDIR)/adm_tools.o \
 	$(OBJDIR)/ansnr.o \

@@ -50,6 +50,9 @@ $(OBJDIR)/file_io.o: $(FEATURESRCDIR)/common/file_io.c
 $(OBJDIR)/convolution.o: $(FEATURESRCDIR)/common/convolution.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
+$(OBJDIR)/convolution_avx.o: $(FEATURESRCDIR)/common/convolution_avx.c
+	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+
 $(OBJDIR)/adm.o: $(FEATURESRCDIR)/adm.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 

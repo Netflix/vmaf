@@ -36,4 +36,6 @@
 void convolution_f32_c_s(const float *filter, int filter_width, const float *src, float *dst, float *tmp, int width, int height, int src_stride, int dst_stride);
 void convolution_f32_c_d(const double *filter, int filter_width, const double *src, double *dst, double *tmp, int width, int height, int src_stride, int dst_stride);
 
+void convolution_f32_avx_s(const float *filter, int filter_width, const float *src, float *dst, float *tmp, int width, int height, int src_stride, int dst_stride);
+
 #endif // CONVOLUTION_H_

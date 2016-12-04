@@ -19,6 +19,9 @@
 #ifndef ALIGNMENT_H_
 #define ALIGNMENT_H_
 
+/* Required for AVX. */
+#define VMAF_ALIGNMENT 32
+
 #ifdef BUILD_O0
 int vmaf_floorn(int n, int m) // O0
 #else
