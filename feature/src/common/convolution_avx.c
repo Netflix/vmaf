@@ -69,105 +69,120 @@ FORCE_INLINE inline static void convolution_f32_avx_s_3x3_2d_scanline(const floa
 }
 
 // Filter a single scanline.
-template <int N>
-FORCE_INLINE inline static void convolution_f32_avx_s_1d_h_scanline(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end)
+FORCE_INLINE inline static void convolution_f32_avx_s_1d_h_scanline(int N, const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end)
 {
-	int radius = filter_width / 2;
 
-	for (int x = 0; x < filter_width; x += 9) {
-		__m256 f0, f1, f2, f3, f4, f5, f6, f7, f8;
+	if (N == 5)
+	{
+		convolution_f32_avx_s_1d_h_scanline_5(filter, filter_width, src, dst, j_end);
+	}
+	else if (N == 9)
+	{
+		convolution_f32_avx_s_1d_h_scanline_9(filter, filter_width, src, dst, j_end);
+	}
+	else if (N == 17)
+	{
+		convolution_f32_avx_s_1d_h_scanline_17(filter, filter_width, src, dst, j_end);
+	}
+	else {
 
-		f0 = _mm256_setzero_ps();
-		f1 = _mm256_setzero_ps();
-		f2 = _mm256_setzero_ps();
-		f3 = _mm256_setzero_ps();
-		f5 = _mm256_setzero_ps();
-		f6 = _mm256_setzero_ps();
-		f7 = _mm256_setzero_ps();
-		f8 = _mm256_setzero_ps();
+		int radius = filter_width / 2;
 
-		switch (filter_width - x) {
-		default:
-			f8 = _mm256_broadcast_ss(filter + x + 8);
-		case 8:
-			f7 = _mm256_broadcast_ss(filter + x + 7);
-		case 7:
-			f6 = _mm256_broadcast_ss(filter + x + 6);
-		case 6:
-			f5 = _mm256_broadcast_ss(filter + x + 5);
-		case 5:
-			f4 = _mm256_broadcast_ss(filter + x + 4);
-		case 4:
-			f3 = _mm256_broadcast_ss(filter + x + 3);
-		case 3:
-			f2 = _mm256_broadcast_ss(filter + x + 2);
-		case 2:
-			f1 = _mm256_broadcast_ss(filter + x + 1);
-		case 1:
-			f0 = _mm256_broadcast_ss(filter + x + 0);
-		}
+		for (int x = 0; x < filter_width; x += 9) {
+			__m256 f0, f1, f2, f3, f4, f5, f6, f7, f8;
 
-		for (int j = 0; j < j_end; j += 8) {
-			__m256 accum = _mm256_setzero_ps();
-			__m256 sum0, sum1, sum2, sum3;
-			__m256 g;
-
-			sum0 = _mm256_setzero_ps();
-			sum1 = _mm256_setzero_ps();
-			sum2 = _mm256_setzero_ps();
-			sum3 = _mm256_setzero_ps();
+			f0 = _mm256_setzero_ps();
+			f1 = _mm256_setzero_ps();
+			f2 = _mm256_setzero_ps();
+			f3 = _mm256_setzero_ps();
+			f5 = _mm256_setzero_ps();
+			f6 = _mm256_setzero_ps();
+			f7 = _mm256_setzero_ps();
+			f8 = _mm256_setzero_ps();
 
 			switch (filter_width - x) {
 			default:
-				g = _mm256_loadu_ps(src + j + x + 8);
-				sum0 = _mm256_mul_ps(f8, g);
+				f8 = _mm256_broadcast_ss(filter + x + 8);
 			case 8:
-				g = _mm256_loadu_ps(src + j + x + 7);
-				sum3 = _mm256_mul_ps(f7, g);
+				f7 = _mm256_broadcast_ss(filter + x + 7);
 			case 7:
-				g = _mm256_loadu_ps(src + j + x + 6);
-				sum2 = _mm256_mul_ps(f6, g);
+				f6 = _mm256_broadcast_ss(filter + x + 6);
 			case 6:
-				g = _mm256_loadu_ps(src + j + x + 5);
-				sum1 = _mm256_mul_ps(f5, g);
+				f5 = _mm256_broadcast_ss(filter + x + 5);
 			case 5:
-				g = _mm256_loadu_ps(src + j + x + 4);
-				g = _mm256_mul_ps(f4, g);
-				sum0 = _mm256_add_ps(sum0, g);
+				f4 = _mm256_broadcast_ss(filter + x + 4);
 			case 4:
-				g = _mm256_loadu_ps(src + j + x + 3);
-				g = _mm256_mul_ps(f3, g);
-				sum3 = _mm256_add_ps(sum3, g);
+				f3 = _mm256_broadcast_ss(filter + x + 3);
 			case 3:
-				g = _mm256_loadu_ps(src + j + x + 2);
-				g = _mm256_mul_ps(f2, g);
-				sum2 = _mm256_add_ps(sum2, g);
+				f2 = _mm256_broadcast_ss(filter + x + 2);
 			case 2:
-				g = _mm256_loadu_ps(src + j + x + 1);
-				g = _mm256_mul_ps(f1, g);
-				sum1 = _mm256_add_ps(sum1, g);
+				f1 = _mm256_broadcast_ss(filter + x + 1);
 			case 1:
-				g = _mm256_loadu_ps(src + j + x + 0);
-				g = _mm256_mul_ps(f0, g);
-				sum0 = _mm256_add_ps(sum0, g);
+				f0 = _mm256_broadcast_ss(filter + x + 0);
 			}
 
-			sum0 = _mm256_add_ps(sum0, sum2);
-			sum1 = _mm256_add_ps(sum1, sum3);
+			for (int j = 0; j < j_end; j += 8) {
+				__m256 accum = _mm256_setzero_ps();
+				__m256 sum0, sum1, sum2, sum3;
+				__m256 g;
 
-			sum0 = _mm256_add_ps(sum0, sum1);
-			accum = _mm256_add_ps(accum, sum0);
+				sum0 = _mm256_setzero_ps();
+				sum1 = _mm256_setzero_ps();
+				sum2 = _mm256_setzero_ps();
+				sum3 = _mm256_setzero_ps();
 
-			if (x)
-				accum = _mm256_add_ps(accum, _mm256_loadu_ps(dst + j + radius));
+				switch (filter_width - x) {
+				default:
+					g = _mm256_loadu_ps(src + j + x + 8);
+					sum0 = _mm256_mul_ps(f8, g);
+				case 8:
+					g = _mm256_loadu_ps(src + j + x + 7);
+					sum3 = _mm256_mul_ps(f7, g);
+				case 7:
+					g = _mm256_loadu_ps(src + j + x + 6);
+					sum2 = _mm256_mul_ps(f6, g);
+				case 6:
+					g = _mm256_loadu_ps(src + j + x + 5);
+					sum1 = _mm256_mul_ps(f5, g);
+				case 5:
+					g = _mm256_loadu_ps(src + j + x + 4);
+					g = _mm256_mul_ps(f4, g);
+					sum0 = _mm256_add_ps(sum0, g);
+				case 4:
+					g = _mm256_loadu_ps(src + j + x + 3);
+					g = _mm256_mul_ps(f3, g);
+					sum3 = _mm256_add_ps(sum3, g);
+				case 3:
+					g = _mm256_loadu_ps(src + j + x + 2);
+					g = _mm256_mul_ps(f2, g);
+					sum2 = _mm256_add_ps(sum2, g);
+				case 2:
+					g = _mm256_loadu_ps(src + j + x + 1);
+					g = _mm256_mul_ps(f1, g);
+					sum1 = _mm256_add_ps(sum1, g);
+				case 1:
+					g = _mm256_loadu_ps(src + j + x + 0);
+					g = _mm256_mul_ps(f0, g);
+					sum0 = _mm256_add_ps(sum0, g);
+				}
 
-			_mm256_storeu_ps(dst + j + radius, accum);
+				sum0 = _mm256_add_ps(sum0, sum2);
+				sum1 = _mm256_add_ps(sum1, sum3);
+
+				sum0 = _mm256_add_ps(sum0, sum1);
+				accum = _mm256_add_ps(accum, sum0);
+
+				if (x)
+					accum = _mm256_add_ps(accum, _mm256_loadu_ps(dst + j + radius));
+
+				_mm256_storeu_ps(dst + j + radius, accum);
+			}
 		}
+
 	}
 }
 
-template <>
-FORCE_INLINE inline void convolution_f32_avx_s_1d_h_scanline<17>(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end)
+FORCE_INLINE inline void convolution_f32_avx_s_1d_h_scanline_17(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end)
 {
 	__m256 f0, f1, f2, f3, f4, f5, f6, f7, f8;
 
@@ -290,8 +305,7 @@ FORCE_INLINE inline void convolution_f32_avx_s_1d_h_scanline<17>(const float * R
 	}
 }
 
-template <>
-FORCE_INLINE inline void convolution_f32_avx_s_1d_h_scanline<9>(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end)
+FORCE_INLINE inline void convolution_f32_avx_s_1d_h_scanline_9(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end)
 {
 	__m256 f0, f1, f2, f3, f4, f5, f6, f7, f8;
 
@@ -356,8 +370,7 @@ FORCE_INLINE inline void convolution_f32_avx_s_1d_h_scanline<9>(const float * RE
 	}
 }
 
-template <>
-FORCE_INLINE inline void convolution_f32_avx_s_1d_h_scanline<5>(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end)
+FORCE_INLINE inline void convolution_f32_avx_s_1d_h_scanline_5(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end)
 {
 	__m256 f0, f1, f2, f3, f4;
 
@@ -403,106 +416,120 @@ FORCE_INLINE inline void convolution_f32_avx_s_1d_h_scanline<5>(const float * RE
 }
 
 // Filter a single scanline.
-template <int N>
-FORCE_INLINE inline static void convolution_f32_avx_s_1d_v_scanline(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end)
+FORCE_INLINE inline static void convolution_f32_avx_s_1d_v_scanline(int N, const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end)
 {
-	int radius = filter_width / 2;
-	src -= radius * src_stride;
 
-	for (int y = 0; y < filter_width; y += 9) {
-		__m256 f0, f1, f2, f3, f4, f5, f6, f7, f8;
+	if (N == 5)
+	{
+		convolution_f32_avx_s_1d_v_scanline_5(filter, filter_width, src, dst, src_stride, j_end);
+	}
+	else if (N == 9)
+	{
+		convolution_f32_avx_s_1d_v_scanline_9(filter, filter_width, src, dst, src_stride, j_end);
+	}
+	else if (N == 17)
+	{
+		convolution_f32_avx_s_1d_v_scanline_17(filter, filter_width, src, dst, src_stride, j_end);
+	}
+	else {
 
-		f0 = _mm256_setzero_ps();
-		f1 = _mm256_setzero_ps();
-		f2 = _mm256_setzero_ps();
-		f3 = _mm256_setzero_ps();
-		f5 = _mm256_setzero_ps();
-		f6 = _mm256_setzero_ps();
-		f7 = _mm256_setzero_ps();
-		f8 = _mm256_setzero_ps();
+		int radius = filter_width / 2;
+		src -= radius * src_stride;
 
-		switch (filter_width - y) {
-		default:
-			f8 = _mm256_broadcast_ss(filter + y + 8);
-		case 8:
-			f7 = _mm256_broadcast_ss(filter + y + 7);
-		case 7:
-			f6 = _mm256_broadcast_ss(filter + y + 6);
-		case 6:
-			f5 = _mm256_broadcast_ss(filter + y + 5);
-		case 5:
-			f4 = _mm256_broadcast_ss(filter + y + 4);
-		case 4:
-			f3 = _mm256_broadcast_ss(filter + y + 3);
-		case 3:
-			f2 = _mm256_broadcast_ss(filter + y + 2);
-		case 2:
-			f1 = _mm256_broadcast_ss(filter + y + 1);
-		case 1:
-			f0 = _mm256_broadcast_ss(filter + y + 0);
-		}
+		for (int y = 0; y < filter_width; y += 9) {
+			__m256 f0, f1, f2, f3, f4, f5, f6, f7, f8;
 
-		for (int j = 0; j < j_end; j += 8) {
-			__m256 accum = _mm256_setzero_ps();
-			__m256 sum0, sum1, sum2, sum3;
-			__m256 g;
-
-			sum0 = _mm256_setzero_ps();
-			sum1 = _mm256_setzero_ps();
-			sum2 = _mm256_setzero_ps();
-			sum3 = _mm256_setzero_ps();
+			f0 = _mm256_setzero_ps();
+			f1 = _mm256_setzero_ps();
+			f2 = _mm256_setzero_ps();
+			f3 = _mm256_setzero_ps();
+			f5 = _mm256_setzero_ps();
+			f6 = _mm256_setzero_ps();
+			f7 = _mm256_setzero_ps();
+			f8 = _mm256_setzero_ps();
 
 			switch (filter_width - y) {
 			default:
-				g = _mm256_load_ps(src + (y + 8) * src_stride + j);
-				sum0 = _mm256_mul_ps(f8, g);
+				f8 = _mm256_broadcast_ss(filter + y + 8);
 			case 8:
-				g = _mm256_load_ps(src + (y + 7) * src_stride + j);
-				sum3 = _mm256_mul_ps(f7, g);
+				f7 = _mm256_broadcast_ss(filter + y + 7);
 			case 7:
-				g = _mm256_load_ps(src + (y + 6) * src_stride + j);
-				sum2 = _mm256_mul_ps(f6, g);
+				f6 = _mm256_broadcast_ss(filter + y + 6);
 			case 6:
-				g = _mm256_load_ps(src + (y + 5) * src_stride + j);
-				sum1 = _mm256_mul_ps(f5, g);
+				f5 = _mm256_broadcast_ss(filter + y + 5);
 			case 5:
-				g = _mm256_load_ps(src + (y + 4) * src_stride + j);
-				g = _mm256_mul_ps(f4, g);
-				sum0 = _mm256_add_ps(sum0, g);
+				f4 = _mm256_broadcast_ss(filter + y + 4);
 			case 4:
-				g = _mm256_load_ps(src + (y + 3) * src_stride + j);
-				g = _mm256_mul_ps(f3, g);
-				sum3 = _mm256_add_ps(sum3, g);
+				f3 = _mm256_broadcast_ss(filter + y + 3);
 			case 3:
-				g = _mm256_load_ps(src + (y + 2) * src_stride + j);
-				g = _mm256_mul_ps(f2, g);
-				sum2 = _mm256_add_ps(sum2, g);
+				f2 = _mm256_broadcast_ss(filter + y + 2);
 			case 2:
-				g = _mm256_load_ps(src + (y + 1) * src_stride + j);
-				g = _mm256_mul_ps(f1, g);
-				sum1 = _mm256_add_ps(sum1, g);
+				f1 = _mm256_broadcast_ss(filter + y + 1);
 			case 1:
-				g = _mm256_load_ps(src + (y + 0) * src_stride + j);
-				g = _mm256_mul_ps(f0, g);
-				sum0 = _mm256_add_ps(sum0, g);
+				f0 = _mm256_broadcast_ss(filter + y + 0);
 			}
 
-			sum0 = _mm256_add_ps(sum0, sum2);
-			sum1 = _mm256_add_ps(sum1, sum3);
+			for (int j = 0; j < j_end; j += 8) {
+				__m256 accum = _mm256_setzero_ps();
+				__m256 sum0, sum1, sum2, sum3;
+				__m256 g;
 
-			sum0 = _mm256_add_ps(sum0, sum1);
-			accum = _mm256_add_ps(accum, sum0);
+				sum0 = _mm256_setzero_ps();
+				sum1 = _mm256_setzero_ps();
+				sum2 = _mm256_setzero_ps();
+				sum3 = _mm256_setzero_ps();
 
-			if (y)
-				accum = _mm256_add_ps(accum, _mm256_load_ps(dst + j));
+				switch (filter_width - y) {
+				default:
+					g = _mm256_load_ps(src + (y + 8) * src_stride + j);
+					sum0 = _mm256_mul_ps(f8, g);
+				case 8:
+					g = _mm256_load_ps(src + (y + 7) * src_stride + j);
+					sum3 = _mm256_mul_ps(f7, g);
+				case 7:
+					g = _mm256_load_ps(src + (y + 6) * src_stride + j);
+					sum2 = _mm256_mul_ps(f6, g);
+				case 6:
+					g = _mm256_load_ps(src + (y + 5) * src_stride + j);
+					sum1 = _mm256_mul_ps(f5, g);
+				case 5:
+					g = _mm256_load_ps(src + (y + 4) * src_stride + j);
+					g = _mm256_mul_ps(f4, g);
+					sum0 = _mm256_add_ps(sum0, g);
+				case 4:
+					g = _mm256_load_ps(src + (y + 3) * src_stride + j);
+					g = _mm256_mul_ps(f3, g);
+					sum3 = _mm256_add_ps(sum3, g);
+				case 3:
+					g = _mm256_load_ps(src + (y + 2) * src_stride + j);
+					g = _mm256_mul_ps(f2, g);
+					sum2 = _mm256_add_ps(sum2, g);
+				case 2:
+					g = _mm256_load_ps(src + (y + 1) * src_stride + j);
+					g = _mm256_mul_ps(f1, g);
+					sum1 = _mm256_add_ps(sum1, g);
+				case 1:
+					g = _mm256_load_ps(src + (y + 0) * src_stride + j);
+					g = _mm256_mul_ps(f0, g);
+					sum0 = _mm256_add_ps(sum0, g);
+				}
 
-			_mm256_store_ps(dst + j, accum);
+				sum0 = _mm256_add_ps(sum0, sum2);
+				sum1 = _mm256_add_ps(sum1, sum3);
+
+				sum0 = _mm256_add_ps(sum0, sum1);
+				accum = _mm256_add_ps(accum, sum0);
+
+				if (y)
+					accum = _mm256_add_ps(accum, _mm256_load_ps(dst + j));
+
+				_mm256_store_ps(dst + j, accum);
+			}
 		}
 	}
 }
 
-template <>
-FORCE_INLINE inline void convolution_f32_avx_s_1d_v_scanline<17>(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end)
+FORCE_INLINE inline void convolution_f32_avx_s_1d_v_scanline_17(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end)
 {
 	__m256 f0, f1, f2, f3, f4, f5, f6, f7, f8;
 	src -= 8 * src_stride; // radius = 8
@@ -622,8 +649,7 @@ FORCE_INLINE inline void convolution_f32_avx_s_1d_v_scanline<17>(const float * R
 	}
 }
 
-template <>
-FORCE_INLINE inline void convolution_f32_avx_s_1d_v_scanline<9>(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end)
+FORCE_INLINE inline void convolution_f32_avx_s_1d_v_scanline_9(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end)
 {
 	__m256 f0, f1, f2, f3, f4, f5, f6, f7, f8;
 	src -= 4 * src_stride; // radius = 4
@@ -688,8 +714,7 @@ FORCE_INLINE inline void convolution_f32_avx_s_1d_v_scanline<9>(const float * RE
 	}
 }
 
-template <>
-FORCE_INLINE inline void convolution_f32_avx_s_1d_v_scanline<5>(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end)
+FORCE_INLINE inline void convolution_f32_avx_s_1d_v_scanline_5(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end)
 {
 	__m256 f0, f1, f2, f3, f4;
 	src -= 2 * src_stride; // radius = 2
@@ -734,8 +759,8 @@ FORCE_INLINE inline void convolution_f32_avx_s_1d_v_scanline<5>(const float * RE
 	}
 }
 
-template <int N>
 void convolution_f32_avx_s_1d(
+	int N,
 	const float * RESTRICT filter,
 	int filter_width,
 	const float * RESTRICT src,
@@ -760,7 +785,7 @@ void convolution_f32_avx_s_1d(
 		}
 	}
 	for (int i = radius; i < i_vec_end; ++i) {
-		convolution_f32_avx_s_1d_v_scanline<N>(filter, filter_width, src + i * src_stride, tmp + i * tmp_stride, src_stride, width_mod8);
+		convolution_f32_avx_s_1d_v_scanline(N, filter, filter_width, src + i * src_stride, tmp + i * tmp_stride, src_stride, width_mod8);
 
 		for (int j = width_mod8; j < width; ++j) {
 			tmp[i * tmp_stride + j] = convolution_edge_s(false, filter, filter_width, src, width, height, src_stride, i, j);
@@ -778,7 +803,7 @@ void convolution_f32_avx_s_1d(
 			dst[i * dst_stride + j] = convolution_edge_s(true, filter, filter_width, tmp, width, height, tmp_stride, i, j);
 		}
 
-		convolution_f32_avx_s_1d_h_scanline<N>(filter, filter_width, tmp + i * tmp_stride, dst + i * dst_stride, j_vec_end);
+		convolution_f32_avx_s_1d_h_scanline(N, filter, filter_width, tmp + i * tmp_stride, dst + i * dst_stride, j_vec_end);
 
 		for (int j = j_vec_end + radius; j < width; ++j) {
 			dst[i * dst_stride + j] = convolution_edge_s(true, filter, filter_width, tmp, width, height, tmp_stride, i, j);
@@ -790,19 +815,19 @@ void convolution_f32_avx_s(const float *filter, int filter_width, const float *s
 {
 	switch (filter_width) {
 	case 17:
-		convolution_f32_avx_s_1d<17>(filter, filter_width, src, dst, tmp, width, height, src_stride, dst_stride);
+		convolution_f32_avx_s_1d(17, filter, filter_width, src, dst, tmp, width, height, src_stride, dst_stride);
 		break;
 	case 9:
-		convolution_f32_avx_s_1d<9>(filter, filter_width, src, dst, tmp, width, height, src_stride, dst_stride);
+		convolution_f32_avx_s_1d(9, filter, filter_width, src, dst, tmp, width, height, src_stride, dst_stride);
 		break;
 	case 5:
-		convolution_f32_avx_s_1d<5>(filter, filter_width, src, dst, tmp, width, height, src_stride, dst_stride);
+		convolution_f32_avx_s_1d(5, filter, filter_width, src, dst, tmp, width, height, src_stride, dst_stride);
 		break;
 	case 3:
-		convolution_f32_avx_s_1d<3>(filter, filter_width, src, dst, tmp, width, height, src_stride, dst_stride);
+		convolution_f32_avx_s_1d(3, filter, filter_width, src, dst, tmp, width, height, src_stride, dst_stride);
 		break;
 	default:
-		convolution_f32_avx_s_1d<0>(filter, filter_width, src, dst, tmp, width, height, src_stride, dst_stride);
+		convolution_f32_avx_s_1d(0, filter, filter_width, src, dst, tmp, width, height, src_stride, dst_stride);
 		break;
 	}
 }
