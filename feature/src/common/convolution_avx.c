@@ -21,6 +21,13 @@
 #include "convolution.h"
 #include "convolution_internal.h"
 
+FORCE_INLINE inline void convolution_f32_avx_s_1d_h_scanline_5(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end);
+FORCE_INLINE inline void convolution_f32_avx_s_1d_h_scanline_9(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end);
+FORCE_INLINE inline void convolution_f32_avx_s_1d_h_scanline_17(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end);
+FORCE_INLINE inline void convolution_f32_avx_s_1d_v_scanline_5(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end);
+FORCE_INLINE inline void convolution_f32_avx_s_1d_v_scanline_9(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end);
+FORCE_INLINE inline void convolution_f32_avx_s_1d_v_scanline_17(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end);
+
 FORCE_INLINE inline static void convolution_f32_avx_s_3x3_2d_scanline(const float * RESTRICT filter, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end)
 {
 	__m256 f00, f01, f02, f10, f11, f12, f20, f21, f22;
