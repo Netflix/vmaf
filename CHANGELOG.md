@@ -141,3 +141,9 @@
 
 **Fixed bug:**
 - Fix vmafossexec memory leakage.
+
+## (12/5/2016) [1.1.16]
+
+**New features:**
+- Speed up VMAF convolution operation by AVX.
+
