@@ -24,6 +24,9 @@
 #include "common/alloc.h"
 #include "vif_options.h"
 #include "vif_tools.h"
+#include "common/cpu.h"
+
+extern enum vmaf_cpu cpu;
 
 #ifdef VIF_OPT_FAST_LOG2 // option to replace log2 calculation with faster speed
 
@@ -480,8 +483,11 @@ void vif_filter1d_s(const float *f, const float *src, float *dst, float *tmpbuf,
 
     /* if support avx */
 
-    convolution_f32_avx_s(f, fwidth, src, dst, tmpbuf, w, h, src_px_stride, dst_px_stride);
-    return;
+    if (cpu >= VMAF_CPU_AVX)
+    {
+        convolution_f32_avx_s(f, fwidth, src, dst, tmpbuf, w, h, src_px_stride, dst_px_stride);
+        return;
+    }
 
     /* fall back */
 

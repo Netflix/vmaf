@@ -21,7 +21,10 @@
 #include <string>
 #include <algorithm>
 
+#include "cpu.h"
 #include "vmaf.h"
+
+enum vmaf_cpu cpu; // global
 
 char* getCmdOption(char ** begin, char ** end, const std::string & option)
 {
@@ -40,7 +43,7 @@ bool cmdOptionExists(char** begin, char** end, const std::string& option)
 
 void print_usage(int argc, char *argv[])
 {
-    fprintf(stderr, "Usage: %s fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--disable-clip] [--psnr] [--ssim] [--ms-ssim]\n", argv[0]);
+    fprintf(stderr, "Usage: %s fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--disable-clip] [--disable-avx] [--psnr] [--ssim] [--ms-ssim]\n", argv[0]);
     fprintf(stderr, "fmt:\n\tyuv420p\n\tyuv422p\n\tyuv444p\n\tyuv420p10le\n\tyuv422p10le\n\tyuv444p10le\n\n");
     fprintf(stderr, "log_fmt:\n\txml (default)\n\tjson\n\n");
 }
@@ -57,6 +60,7 @@ int main(int argc, char *argv[])
     char *log_path = NULL;
     char *log_fmt = NULL;
     bool disable_clip = false;
+    bool disable_avx = false;
     bool enable_transform = false;
     bool do_psnr = false;
     bool do_ssim = false;
@@ -101,6 +105,11 @@ int main(int argc, char *argv[])
             disable_clip = true;
         }
 
+        if (cmdOptionExists(argv + 7, argv + argc, "--disable-avx"))
+        {
+            disable_avx = true;
+        }
+
         if (cmdOptionExists(argv + 7, argv + argc, "--enable-transform"))
         {
             enable_transform = true;
@@ -126,6 +135,13 @@ int main(int argc, char *argv[])
         {
             fprintf(stderr, "Error: pool_method must be min, harmonic_mean or mean, but is %s\n", pool_method);
             return -1;
+        }
+
+        cpu = cpu_autodetect();
+
+        if (disable_avx)
+        {
+            cpu = VMAF_CPU_NONE;
         }
 
         /* Run VMAF */

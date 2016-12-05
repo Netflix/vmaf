@@ -19,6 +19,9 @@
 #include "alignment.h"
 #include "convolution.h"
 #include "convolution_internal.h"
+#include "cpu.h"
+
+extern enum vmaf_cpu cpu;
 
 void convolution_x_c_s(const float *filter, int filter_width, const float *src, float *dst, int width, int height, int src_stride, int dst_stride, int step)
 {
@@ -76,8 +79,11 @@ void convolution_f32_c_s(const float *filter, int filter_width, const float *src
 {
     /* if support avx */
 
-    convolution_f32_avx_s(filter, filter_width, src, dst, tmp, width, height, src_stride, dst_stride);
-    return;
+    if (cpu >= VMAF_CPU_AVX)
+    {
+        convolution_f32_avx_s(filter, filter_width, src, dst, tmp, width, height, src_stride, dst_stride);
+        return;
+    }
 
     /* fall back */
 

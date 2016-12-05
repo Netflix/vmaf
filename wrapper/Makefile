@@ -8,6 +8,7 @@ PTOOLSDIR = $(TOP)/../ptools
 OBJS = \
 	$(OBJDIR)/alloc.o \
 	$(OBJDIR)/file_io.o \
+	$(OBJDIR)/cpu.o \
 	$(OBJDIR)/convolution.o \
 	$(OBJDIR)/convolution_avx.o \
 	$(OBJDIR)/adm.o \
@@ -54,6 +55,9 @@ $(OBJDIR)/file_io.o: $(FEATURESRCDIR)/common/file_io.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/convolution.o: $(FEATURESRCDIR)/common/convolution.c
+	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+
+$(OBJDIR)/cpu.o: $(FEATURESRCDIR)/common/cpu.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/convolution_avx.o: $(FEATURESRCDIR)/common/convolution_avx.c
@@ -105,7 +109,7 @@ $(OBJDIR)/svm.o: $(SRCDIR)/svm.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/main.o: $(SRCDIR)/main.cpp
-	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
+	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common $<
 
 $(OBJDIR)/vmaf.o: $(SRCDIR)/vmaf.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) \

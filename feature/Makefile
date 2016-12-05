@@ -18,6 +18,7 @@ OBJS_VMAF = \
 	$(OBJDIR)/motion.o \
 	$(OBJDIR)/all.o \
 	$(OBJDIR)/vmaf_main.o \
+	$(OBJDIR)/common/cpu.o \
 
 AVX_OBJS := \
 	$(OBJDIR)/common/convolution_avx.o \
