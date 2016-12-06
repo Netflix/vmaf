@@ -12,7 +12,7 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ##Prerequisite
 
-The VDK package has its core feature extraction library written in C, and the rest control code written in Python. It also has a stand-alone C++ implementation that is Python-independent. To build the C/C++ code, it requires *gcc* and *g++* (>=4.8). To run scripts and tests, it requires Python2 (>= 2.7) installed.
+The VDK package has its core feature extraction library written in C, and the rest scripting code written in Python. It also has a stand-alone C++ implementation that is Python-independent. To build the C/C++ code, it requires *gcc* and *g++* (>=4.8). To run scripts and tests, it requires Python2 (>= 2.7) installed.
 
 It also requires a number of Python packages:
 
@@ -328,7 +328,7 @@ We also provide an example dataset file containing video file names from VQEG (V
 
 ##Python-independent Implementation
 
-The VDK package combines feature extraction implementation in C and the rest control code in Python. The Python layer allows fast prototyping, but sometimes deploying the Python dependency in production is a pain.
+The VDK package combines feature extraction implementation in C and the rest scripting code in Python. The Python layer allows fast prototyping, but sometimes deploying the Python dependency in production is a pain.
 Under [wrapper](wrapper), we provide a C++ implementation *vmafossexec* that has no dependency on Python.
 
 Under root, run *vmafossexec* as:

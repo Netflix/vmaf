@@ -104,12 +104,8 @@ class TestTrainOnDataset(unittest.TestCase):
                          )
         self.train_fassembler = train_fassembler
         self.assertTrue(os.path.exists(self.output_model_filepath))
-        self.assertItemsEqual(train_stats['ys_label_pred'],
-                                [90.753010402770798, 59.223801498461015,
-                                 90.753011435798058, 89.270176556597008])
-        self.assertItemsEqual(test_stats['ys_label_pred'],
-                                [90.753010402770798, 59.223801498461015,
-                                 90.753011435798058, 89.270176556597008])
+        self.assertAlmostEqual(train_stats['ys_label_pred'][0], 90.753010402770798, places=3)
+        self.assertAlmostEqual(test_stats['ys_label_pred'][0],  90.753010402770798, places=3)
 
     def test_train_test_on_raw_dataset_with_dis1st_thr(self):
         train_dataset = import_python_file(
@@ -130,12 +126,8 @@ class TestTrainOnDataset(unittest.TestCase):
                          output_model_filepath=self.output_model_filepath)
         self.train_fassembler = train_fassembler
         self.assertTrue(os.path.exists(self.output_model_filepath))
-        self.assertItemsEqual(train_stats['ys_label_pred'],
-                                [93.565459224020742, 60.451618249440827,
-                                 93.565460383297108, 92.417462071278933])
-        self.assertItemsEqual(test_stats['ys_label_pred'],
-                                [93.565459224020742, 60.451618249440827,
-                                 93.565460383297108, 92.417462071278933])
+        self.assertAlmostEqual(train_stats['ys_label_pred'][0], 93.565459224020742, places=3)
+        self.assertAlmostEqual(test_stats['ys_label_pred'][0],  93.565459224020742, places=3)
 
     def test_test_on_dataset(self):
         test_dataset = import_python_file(

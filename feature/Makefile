@@ -8,6 +8,7 @@ OBJS_VMAF = \
 	$(OBJDIR)/common/alloc.o \
 	$(OBJDIR)/common/file_io.o \
 	$(OBJDIR)/common/convolution.o \
+	$(OBJDIR)/common/convolution_avx.o \
 	$(OBJDIR)/adm.o \
 	$(OBJDIR)/adm_tools.o \
 	$(OBJDIR)/ansnr.o \
@@ -17,6 +18,10 @@ OBJS_VMAF = \
 	$(OBJDIR)/motion.o \
 	$(OBJDIR)/all.o \
 	$(OBJDIR)/vmaf_main.o \
+	$(OBJDIR)/common/cpu.o \
+
+AVX_OBJS := \
+	$(OBJDIR)/common/convolution_avx.o \
 
 OBJS_PSNR = \
 	$(OBJDIR)/common/alloc.o \
@@ -61,8 +66,10 @@ CPPFLAGS := $(CPPFLAGS)
 LIBS     := $(LIBS) -lm
 LDFLAGS  := $(LDFLAGS)
 
+$(AVX_OBJS): EXTRA_CFLAGS := -mavx
+
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+	$(CC) $(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 vmaf: $(OBJS_VMAF)
 	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)

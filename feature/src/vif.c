@@ -77,6 +77,7 @@ int compute_vif(const number_t *ref, const number_t *dis, int w, int h, int ref_
     number_t *ref_dis_filt;
     number_t *num_array;
     number_t *den_array;
+    number_t *tmpbuf;
 
     /* Offset pointers to adjust for convolution border handling. */
     number_t *mu1_adj = 0;
@@ -116,7 +117,7 @@ int compute_vif(const number_t *ref, const number_t *dis, int w, int h, int ref_
         goto fail_or_end;
     }
 
-    if (!(data_buf = aligned_malloc(buf_sz_one * 15, MAX_ALIGN)))
+    if (!(data_buf = aligned_malloc(buf_sz_one * 16, MAX_ALIGN)))
     {
         printf("error: aligned_malloc failed for data_buf.\n");
         fflush(stdout);
@@ -130,7 +131,6 @@ int compute_vif(const number_t *ref, const number_t *dis, int w, int h, int ref_
     ref_sq    = (number_t *)data_top; data_top += buf_sz_one;
     dis_sq    = (number_t *)data_top; data_top += buf_sz_one;
     ref_dis   = (number_t *)data_top; data_top += buf_sz_one;
-
     mu1          = (number_t *)data_top; data_top += buf_sz_one;
     mu2          = (number_t *)data_top; data_top += buf_sz_one;
     mu1_sq       = (number_t *)data_top; data_top += buf_sz_one;
@@ -141,6 +141,7 @@ int compute_vif(const number_t *ref, const number_t *dis, int w, int h, int ref_
     ref_dis_filt = (number_t *)data_top; data_top += buf_sz_one;
     num_array    = (number_t *)data_top; data_top += buf_sz_one;
     den_array    = (number_t *)data_top; data_top += buf_sz_one;
+    tmpbuf    = (number_t *)data_top; data_top += buf_sz_one;
 
     for (scale = 0; scale < 4; ++scale)
     {
@@ -172,8 +173,8 @@ int compute_vif(const number_t *ref, const number_t *dis, int w, int h, int ref_
         if (scale > 0)
         {
 #ifdef VIF_OPT_FILTER_1D
-            vif_filter1d(filter, curr_ref_scale, mu1, w, h, curr_ref_stride, buf_stride, filter_width);
-            vif_filter1d(filter, curr_dis_scale, mu2, w, h, curr_dis_stride, buf_stride, filter_width);
+            vif_filter1d(filter, curr_ref_scale, mu1, tmpbuf, w, h, curr_ref_stride, buf_stride, filter_width);
+            vif_filter1d(filter, curr_dis_scale, mu2, tmpbuf, w, h, curr_dis_stride, buf_stride, filter_width);
 #else
             vif_filter2d(filter, curr_ref_scale, mu1, w, h, curr_ref_stride, buf_stride, filter_width);
             vif_filter2d(filter, curr_dis_scale, mu2, w, h, curr_dis_stride, buf_stride, filter_width);
@@ -199,9 +200,10 @@ int compute_vif(const number_t *ref, const number_t *dis, int w, int h, int ref_
             curr_ref_stride = buf_stride;
             curr_dis_stride = buf_stride;
         }
+
 #ifdef VIF_OPT_FILTER_1D
-        vif_filter1d(filter, curr_ref_scale, mu1, w, h, curr_ref_stride, buf_stride, filter_width);
-        vif_filter1d(filter, curr_dis_scale, mu2, w, h, curr_dis_stride, buf_stride, filter_width);
+        vif_filter1d(filter, curr_ref_scale, mu1, tmpbuf, w, h, curr_ref_stride, buf_stride, filter_width);
+        vif_filter1d(filter, curr_dis_scale, mu2, tmpbuf, w, h, curr_dis_stride, buf_stride, filter_width);
 #else
         vif_filter2d(filter, curr_ref_scale, mu1, w, h, curr_ref_stride, buf_stride, filter_width);
         vif_filter2d(filter, curr_dis_scale, mu2, w, h, curr_dis_stride, buf_stride, filter_width);
@@ -210,9 +212,9 @@ int compute_vif(const number_t *ref, const number_t *dis, int w, int h, int ref_
 
         vif_xx_yy_xy(curr_ref_scale, curr_dis_scale, ref_sq, dis_sq, ref_dis, w, h, curr_ref_stride, curr_dis_stride, buf_stride, buf_stride, buf_stride);
 #ifdef VIF_OPT_FILTER_1D
-        vif_filter1d(filter, ref_sq, ref_sq_filt, w, h, buf_stride, buf_stride, filter_width);
-        vif_filter1d(filter, dis_sq, dis_sq_filt, w, h, buf_stride, buf_stride, filter_width);
-        vif_filter1d(filter, ref_dis, ref_dis_filt, w, h, buf_stride, buf_stride, filter_width);
+        vif_filter1d(filter, ref_sq, ref_sq_filt, tmpbuf, w, h, buf_stride, buf_stride, filter_width);
+        vif_filter1d(filter, dis_sq, dis_sq_filt, tmpbuf, w, h, buf_stride, buf_stride, filter_width);
+        vif_filter1d(filter, ref_dis, ref_dis_filt, tmpbuf, w, h, buf_stride, buf_stride, filter_width);
 #else
         vif_filter2d(filter, ref_sq, ref_sq_filt, w, h, buf_stride, buf_stride, filter_width);
         vif_filter2d(filter, dis_sq, dis_sq_filt, w, h, buf_stride, buf_stride, filter_width);

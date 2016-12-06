@@ -8,7 +8,9 @@ PTOOLSDIR = $(TOP)/../ptools
 OBJS = \
 	$(OBJDIR)/alloc.o \
 	$(OBJDIR)/file_io.o \
+	$(OBJDIR)/cpu.o \
 	$(OBJDIR)/convolution.o \
+	$(OBJDIR)/convolution_avx.o \
 	$(OBJDIR)/adm.o \
 	$(OBJDIR)/adm_tools.o \
 	$(OBJDIR)/ansnr.o \
@@ -30,6 +32,9 @@ OBJS = \
     $(OBJDIR)/main.o \
 	$(OBJDIR)/pugixml.o \
 
+AVX_OBJS := \
+	$(OBJDIR)/convolution_avx.o \
+
 all: vmafossexec
 
 CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic
@@ -41,6 +46,8 @@ CPPFLAGS := $(CPPFLAGS)
 LIBS     := $(LIBS) -lm -lpthread -lptools
 LDFLAGS  := $(LDFLAGS)
 
+$(AVX_OBJS): EXTRA_CFLAGS := -mavx
+
 $(OBJDIR)/alloc.o: $(FEATURESRCDIR)/common/alloc.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
@@ -49,6 +56,12 @@ $(OBJDIR)/file_io.o: $(FEATURESRCDIR)/common/file_io.c
 
 $(OBJDIR)/convolution.o: $(FEATURESRCDIR)/common/convolution.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+
+$(OBJDIR)/cpu.o: $(FEATURESRCDIR)/common/cpu.c
+	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+
+$(OBJDIR)/convolution_avx.o: $(FEATURESRCDIR)/common/convolution_avx.c
+	$(CC) -c -o $@ $(EXTRA_CFLAGS) $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/adm.o: $(FEATURESRCDIR)/adm.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
@@ -96,7 +109,7 @@ $(OBJDIR)/svm.o: $(SRCDIR)/svm.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/main.o: $(SRCDIR)/main.cpp
-	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
+	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common $<
 
 $(OBJDIR)/vmaf.o: $(SRCDIR)/vmaf.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) \

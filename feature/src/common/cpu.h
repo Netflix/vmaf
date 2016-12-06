@@ -16,28 +16,25 @@
  *
  */
 
-#ifndef ALIGNMENT_H_
-#define ALIGNMENT_H_
+#pragma once
 
-/* Required for AVX. */
-#define VMAF_ALIGNMENT 32
+#ifndef CPU_H_
+#define CPU_H_
 
-#ifdef BUILD_O0
-int vmaf_floorn(int n, int m) // O0
-#else
-static inline int vmaf_floorn(int n, int m) // O1, O2, ...
+enum vmaf_cpu {
+	VMAF_CPU_NONE,
+	VMAF_CPU_SSE2,
+	VMAF_CPU_AVX
+};
+
+#ifdef __cplusplus
+extern "C" {
 #endif
-{
-	return n - n % m;
-}
 
-#ifdef BUILD_O0
-int vmaf_ceiln(int n, int m) // O0
-#else
-static inline int vmaf_ceiln(int n, int m) // O1, O2, ...
+enum vmaf_cpu cpu_autodetect();
+
+#ifdef __cplusplus
+}
 #endif
-{
-	return n % m ? n + (m - n % m) : n;
-}
 
-#endif // ALIGNMENT_H_
+#endif // CPU_H_

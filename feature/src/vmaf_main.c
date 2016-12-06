@@ -20,11 +20,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "common/cpu.h"
+
 int adm(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
 int ansnr(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
 int vif(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
 int motion(const char *dis_path, int w, int h, const char *fmt);
 int all(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
+
+enum vmaf_cpu cpu; // global
 
 static void usage(void)
 {
@@ -71,6 +75,8 @@ int main(int argc, const char **argv)
         usage();
         return 2;
     }
+
+    cpu = cpu_autodetect();
 
     if (!strcmp(app, "adm"))
         ret = adm(ref_path, dis_path, w, h, fmt);

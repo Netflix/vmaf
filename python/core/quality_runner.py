@@ -452,6 +452,11 @@ class VmafossExecQualityRunner(QualityRunner):
         else:
             enable_transform_score = False
 
+        if self.optional_dict is not None and 'disable_avx' in self.optional_dict:
+            disable_avx = self.optional_dict['disable_avx']
+        else:
+            disable_avx = False
+
         # Usage: vmafossexec fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--disable-clip] [--psnr] [--ssim] [--ms-ssim]
         quality_width, quality_height = asset.quality_width_height
 
@@ -472,6 +477,9 @@ class VmafossExecQualityRunner(QualityRunner):
 
         if enable_transform_score:
             vmafossexec_cmd += ' --enable-transform'
+
+        if disable_avx:
+            vmafossexec_cmd += ' --disable-avx'
 
         return vmafossexec_cmd
 
