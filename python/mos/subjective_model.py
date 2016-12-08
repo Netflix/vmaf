@@ -725,7 +725,7 @@ class PerSubjectModel(SubjectiveModel):
 
     @classmethod
     def _run_modeling(cls, dataset_reader, **kwargs):
-        result = {'quality_scores': None}
+        result = {'quality_scores': []}
         return result
 
     def to_aggregated_dataset(self, **kwargs):
