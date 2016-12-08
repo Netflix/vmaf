@@ -193,7 +193,7 @@ class RawDatasetReader(DatasetReader):
             output_file.write('\n')
             output_file.write('dis_videos = ' + pprint.pformat(aggregate_dataset.dis_videos) + '\n')
 
-    def to_persubject_dataset(self, **kwargs):
+    def to_persubject_dataset(self, quality_scores, **kwargs):
 
         newone = empty_object()
         newone.dataset_name = self.dataset.dataset_name
@@ -221,8 +221,13 @@ class RawDatasetReader(DatasetReader):
 
         # dis_videos: use input aggregate scores
         dis_videos = []
-        for dis_video in self.dataset.dis_videos:
+        for dis_video, quality_score in zip(self.dataset.dis_videos, quality_scores):
             assert 'os' in dis_video
+
+            # quality_score should be a 1-D array with (processed) per-subject scores
+            assert hasattr(quality_score, '__len__')
+            assert len(dis_video['os']) == len(quality_score)
+
             for persubject_score in dis_video['os']:
                 dis_video2 = copy.deepcopy(dis_video)
                 if 'os' in dis_video2: # remove 'os' - opinion score
@@ -233,9 +238,9 @@ class RawDatasetReader(DatasetReader):
 
         return newone
 
-    def to_persubject_dataset_file(self, dataset_filepath, **kwargs):
+    def to_persubject_dataset_file(self, dataset_filepath, quality_scores, **kwargs):
 
-        persubject_dataset = self.to_persubject_dataset(**kwargs)
+        persubject_dataset = self.to_persubject_dataset(quality_scores, **kwargs)
 
         assert(hasattr(persubject_dataset, 'ref_videos'))
         assert(hasattr(persubject_dataset, 'dis_videos'))

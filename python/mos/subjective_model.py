@@ -167,7 +167,7 @@ class SubjectiveModel(TypeVersionEnabled):
             pass
         else:
             quality_scores = np.array(result['quality_scores'])
-            output_scores = np.zeros(len(quality_scores))
+            output_scores = np.zeros(quality_scores.shape)
             if 'p2' in transform_final:
                 # polynomial coef of order 2
                 output_scores += transform_final['p2'] * quality_scores * quality_scores
@@ -725,14 +725,15 @@ class PerSubjectModel(SubjectiveModel):
 
     @classmethod
     def _run_modeling(cls, dataset_reader, **kwargs):
-        result = {'quality_scores': []}
+        os_2darray = cls._get_opinion_score_2darray_with_preprocessing(dataset_reader, **kwargs)
+        result = {'quality_scores': os_2darray}
         return result
 
     def to_aggregated_dataset(self, **kwargs):
         self._assert_modeled()
-        return self.dataset_reader.to_persubject_dataset(**kwargs)
+        return self.dataset_reader.to_persubject_dataset(self.model_result['quality_scores'], **kwargs)
 
     def to_aggregated_dataset_file(self, dataset_filepath, **kwargs):
         self._assert_modeled()
-        self.dataset_reader.to_persubject_dataset_file(dataset_filepath, **kwargs)
+        self.dataset_reader.to_persubject_dataset_file(dataset_filepath, self.model_result['quality_scores'], **kwargs)
 

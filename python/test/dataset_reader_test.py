@@ -39,8 +39,13 @@ class RawDatasetReaderTest(unittest.TestCase):
     def test_ref_score(self):
         self.assertEqual(self.dataset_reader.ref_score, 5.0)
 
+    def test_to_persubject_dataset_wrong_dim(self):
+        with self.assertRaises(AssertionError):
+            dataset = self.dataset_reader.to_persubject_dataset(np.zeros(3000))
+            self.assertEqual(len(dataset.dis_videos), 2054)
+
     def test_to_persubject_dataset(self):
-        dataset = self.dataset_reader.to_persubject_dataset()
+        dataset = self.dataset_reader.to_persubject_dataset(np.zeros([79, 26]))
         self.assertEqual(len(dataset.dis_videos), 2054)
 
 class SyntheticDatasetReaderTest(unittest.TestCase):
