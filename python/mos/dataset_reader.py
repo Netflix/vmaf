@@ -185,7 +185,7 @@ class RawDatasetReader(DatasetReader):
         # write out
         with open(dataset_filepath, 'wt') as output_file:
             for key in aggregate_dataset.__dict__.keys():
-                if key!='ref_videos' or key!='dis_videos':
+                if key!='ref_videos' and key!='dis_videos':
                     output_file.write('{} = '.format(key) + repr(aggregate_dataset.__dict__[key]) + '\n')
 
             output_file.write('\n')
@@ -193,6 +193,63 @@ class RawDatasetReader(DatasetReader):
             output_file.write('\n')
             output_file.write('dis_videos = ' + pprint.pformat(aggregate_dataset.dis_videos) + '\n')
 
+    def to_persubject_dataset(self, **kwargs):
+
+        newone = empty_object()
+        newone.dataset_name = self.dataset.dataset_name
+        newone.yuv_fmt = self.dataset.yuv_fmt
+        newone.width = self.dataset.width
+        newone.height = self.dataset.height
+
+        if 'quality_width' in kwargs and kwargs['quality_width'] is not None:
+            newone.quality_width = kwargs['quality_width']
+        elif hasattr(self.dataset, 'quality_width'):
+            newone.quality_width = self.dataset.quality_width
+
+        if 'quality_height' in kwargs and kwargs['quality_height'] is not None:
+            newone.quality_height = kwargs['quality_height']
+        elif hasattr(self.dataset, 'quality_height'):
+            newone.quality_height = self.dataset.quality_height
+
+        if 'resampling_type' in kwargs and kwargs['resampling_type'] is not None:
+            newone.resampling_type = kwargs['resampling_type']
+        elif hasattr(self.dataset, 'resampling_type'):
+            newone.resampling_type = self.dataset.resampling_type
+
+        # ref_videos: deepcopy
+        newone.ref_videos = copy.deepcopy(self.dataset.ref_videos)
+
+        # dis_videos: use input aggregate scores
+        dis_videos = []
+        for dis_video in self.dataset.dis_videos:
+            assert 'os' in dis_video
+            for persubject_score in dis_video['os']:
+                dis_video2 = copy.deepcopy(dis_video)
+                if 'os' in dis_video2: # remove 'os' - opinion score
+                    del dis_video2['os']
+                dis_video2['groundtruth'] = persubject_score
+                dis_videos.append(dis_video2)
+        newone.dis_videos = dis_videos
+
+        return newone
+
+    def to_persubject_dataset_file(self, dataset_filepath, **kwargs):
+
+        persubject_dataset = self.to_persubject_dataset(**kwargs)
+
+        assert(hasattr(persubject_dataset, 'ref_videos'))
+        assert(hasattr(persubject_dataset, 'dis_videos'))
+
+        # write out
+        with open(dataset_filepath, 'wt') as output_file:
+            for key in persubject_dataset.__dict__.keys():
+                if key!='ref_videos' and key!='dis_videos':
+                    output_file.write('{} = '.format(key) + repr(persubject_dataset.__dict__[key]) + '\n')
+
+            output_file.write('\n')
+            output_file.write('ref_videos = ' + pprint.pformat(persubject_dataset.ref_videos) + '\n')
+            output_file.write('\n')
+            output_file.write('dis_videos = ' + pprint.pformat(persubject_dataset.dis_videos) + '\n')
 
 class MockedRawDatasetReader(RawDatasetReader):
 

@@ -714,3 +714,25 @@ class ZscoringSubjrejDmosModel(MosModel):
         kwargs2['zscore_mode'] = True
         kwargs2['subject_rejection'] = True
         return super(ZscoringSubjrejDmosModel, self).run_modeling(**kwargs2)
+
+class PerSubjectModel(SubjectiveModel):
+    """
+    Subjective model that takes a raw dataset and output a 'per-subject dataset'
+    with repeated disvideos, each assigned a per-subject score
+    """
+    TYPE = 'PERSUBJECT'
+    VERSION = '1.0'
+
+    @classmethod
+    def _run_modeling(cls, dataset_reader, **kwargs):
+        result = {'quality_scores': None}
+        return result
+
+    def to_aggregated_dataset(self, **kwargs):
+        self._assert_modeled()
+        return self.dataset_reader.to_persubject_dataset(**kwargs)
+
+    def to_aggregated_dataset_file(self, dataset_filepath, **kwargs):
+        self._assert_modeled()
+        self.dataset_reader.to_persubject_dataset_file(dataset_filepath, **kwargs)
+

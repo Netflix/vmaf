@@ -8,7 +8,7 @@ from mos.subjective_model import MosModel, DmosModel, \
     MaximumLikelihoodEstimationModelReduced, MaximumLikelihoodEstimationModel, \
     LiveDmosModel, MaximumLikelihoodEstimationDmosModel, LeastSquaresModel, \
     SubjrejMosModel, ZscoringSubjrejMosModel, SubjrejDmosModel, \
-    ZscoringSubjrejDmosModel
+    ZscoringSubjrejDmosModel, PerSubjectModel
 from tools.misc import import_python_file
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
@@ -559,6 +559,19 @@ class SubjectiveModelTest(unittest.TestCase):
 
         self.assertAlmostEquals(np.mean(scores), 0, places=4)
         self.assertAlmostEquals(np.var(scores), 0.66405245792414114, places=4) # 1.4012220200639218
+
+    def test_persubject_subjective_model_output(self):
+        dataset = import_python_file(self.dataset_filepath)
+        dataset_reader = RawDatasetReader(dataset)
+        subjective_model = PerSubjectModel(dataset_reader)
+        subjective_model.run_modeling()
+        subjective_model.to_aggregated_dataset_file(self.output_dataset_filepath)
+        self.assertTrue(os.path.exists(self.output_dataset_filepath))
+        dataset2 = import_python_file(self.output_dataset_filepath)
+        dis_video = dataset2.dis_videos[0]
+        self.assertTrue('groundtruth' in dis_video)
+        self.assertTrue('os' not in dis_video)
+        self.assertAlmostEquals(dis_video['groundtruth'], 5.0, places=4)
 
 if __name__ == '__main__':
     unittest.main()

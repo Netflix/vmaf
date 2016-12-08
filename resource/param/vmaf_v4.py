@@ -23,7 +23,7 @@ model_param_dict = {
     'gamma': 0.05, #vmaf_v3, vmaf_v4
 
     # 'C': 1.0, # default
-    'C': 4.0,
+    'C': 4.0, # vmaf_v4
 
     # 'nu': 0.5, # default
     'nu': 0.9, # vmafv4
