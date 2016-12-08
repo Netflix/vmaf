@@ -42,6 +42,7 @@ def main():
     cache_result = cmd_option_exists(sys.argv, 3, len(sys.argv), '--cache-result')
     parallelize = cmd_option_exists(sys.argv, 3, len(sys.argv), '--parallelize')
     print_result = cmd_option_exists(sys.argv, 3, len(sys.argv), '--print-result')
+    suppress_plot = cmd_option_exists(sys.argv, 3, len(sys.argv), '--suppress-plot')
 
     pool_method = get_cmd_option(sys.argv, 3, len(sys.argv), '--pool')
     if not (pool_method is None
@@ -99,8 +100,12 @@ def main():
         aggregate_method = np.mean
 
     try:
+        if suppress_plot:
+            raise AssertionError
+
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
+
         assets, results = test_on_dataset(test_dataset, runner_class, ax,
                         result_store, vmaf_model_path,
                         parallelize=parallelize,
@@ -118,6 +123,13 @@ def main():
         plt.show()
     except ImportError:
         print_matplotlib_warning()
+        assets, results = test_on_dataset(test_dataset, runner_class, None,
+                        result_store, vmaf_model_path,
+                        parallelize=parallelize,
+                        aggregate_method=aggregate_method,
+                        subj_model_class=subj_model_class,
+                        )
+    except AssertionError:
         assets, results = test_on_dataset(test_dataset, runner_class, None,
                         result_store, vmaf_model_path,
                         parallelize=parallelize,

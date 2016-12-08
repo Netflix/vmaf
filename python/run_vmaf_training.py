@@ -49,6 +49,7 @@ def main():
 
     cache_result = cmd_option_exists(sys.argv, 3, len(sys.argv), '--cache-result')
     parallelize = cmd_option_exists(sys.argv, 3, len(sys.argv), '--parallelize')
+    suppress_plot = cmd_option_exists(sys.argv, 3, len(sys.argv), '--suppress-plot')
 
     pool_method = get_cmd_option(sys.argv, 3, len(sys.argv), '--pool')
     if not (pool_method is None
@@ -91,6 +92,9 @@ def main():
     logger = None
 
     try:
+        if suppress_plot:
+            raise AssertionError
+
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
 
@@ -115,6 +119,17 @@ def main():
         plt.show()
     except ImportError:
         print_matplotlib_warning()
+        train_test_vmaf_on_dataset(train_dataset=train_dataset, test_dataset=None,
+                                   feature_param=feature_param, model_param=model_param,
+                                   train_ax=None, test_ax=None,
+                                   result_store=result_store,
+                                   parallelize=parallelize,
+                                   logger=logger,
+                                   output_model_filepath=output_model_filepath,
+                                   aggregate_method=aggregate_method,
+                                   subj_model_class=subj_model_class,
+                                   )
+    except AssertionError:
         train_test_vmaf_on_dataset(train_dataset=train_dataset, test_dataset=None,
                                    feature_param=feature_param, model_param=model_param,
                                    train_ax=None, test_ax=None,

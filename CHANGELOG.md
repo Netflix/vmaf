@@ -1,5 +1,10 @@
 # Change Log
 
+## (12/8/2016) [1.1.17]
+
+**Fixed bug:**
+- Fix command line run_testing issue. Add command line test cases.
+
 ## (12/5/2016) [1.1.16]
 
 **New features:**
