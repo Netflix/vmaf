@@ -228,7 +228,7 @@ class RawDatasetReader(DatasetReader):
             assert hasattr(quality_score, '__len__')
             assert len(dis_video['os']) == len(quality_score)
 
-            for persubject_score in dis_video['os']:
+            for persubject_score in quality_score:
                 dis_video2 = copy.deepcopy(dis_video)
                 if 'os' in dis_video2: # remove 'os' - opinion score
                     del dis_video2['os']
