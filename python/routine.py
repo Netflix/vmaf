@@ -159,15 +159,6 @@ def test_on_dataset(test_dataset, runner_class, ax,
     else:
         optional_dict = None
 
-    # construct an quality runner object to assert assets only
-    runner = runner_class(test_assets,
-                 None,
-                 fifo_mode=fifo_mode,
-                 delete_workdir=True,
-                 result_store=result_store,
-                 optional_dict=optional_dict,
-                 optional_dict2=None,
-                 )
     # run
     _, results = run_executors_in_parallel(
         runner_class,

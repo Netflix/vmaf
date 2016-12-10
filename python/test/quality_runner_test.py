@@ -1402,6 +1402,31 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['PSNR_score'], 30.755063979166664, places=4)
         self.assertAlmostEqual(results[1]['PSNR_score'], 60.0, places=4)
 
+    def test_run_parallel_runner_with_repeated_asset(self):
+        print 'test on running PSNR quality runner in parallel...'
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        with self.assertRaises(AssertionError):
+            self.runners, results = run_executors_in_parallel(
+                PsnrQualityRunner,
+                [asset, asset_original],
+                fifo_mode=True,
+                delete_workdir=True,
+                parallelize=True,
+                result_store=None)
+
     def test_run_parallel_vamf_runner_with_rf_model(self):
         print 'test on running VMAF quality runner in parallel with RF model...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"

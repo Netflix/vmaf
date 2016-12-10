@@ -387,6 +387,15 @@ def run_executors_in_parallel(executor_class,
     Run multiple Executors in parallel.
     """
 
+    # construct an executor object just to call _assert_assets() only
+    _ = executor_class(assets,
+                 logger,
+                 fifo_mode=fifo_mode,
+                 delete_workdir=True,
+                 result_store=result_store,
+                 optional_dict=optional_dict,
+                 optional_dict2=optional_dict2)
+
     def run_executor(args):
         executor_class, asset, fifo_mode, \
         delete_workdir, result_store, optional_dict, optional_dict2 = args

@@ -100,16 +100,6 @@ def main():
     else:
         optional_dict = {'model_filepath':model_path}
 
-    # construct an VmafQualityRunner object to assert assets, and to remove
-    _ = runner_class(assets,
-                 None,
-                 fifo_mode=True,
-                 delete_workdir=True,
-                 result_store=None,
-                 optional_dict=optional_dict,
-                 optional_dict2=None,
-                 )
-
     runners, results = run_executors_in_parallel(
         runner_class,
         assets,
