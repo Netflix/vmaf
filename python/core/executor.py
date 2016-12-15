@@ -444,13 +444,7 @@ def run_executors_in_parallel(executor_class,
 
     # run
     if parallelize:
-        procs = []
-        for args in list_args:
-            proc = multiprocessing.Process(target=run_executor, args=(args,))
-            proc.start()
-            procs.append(proc)
-        for proc in procs:
-            proc.join()
+        parallel_map(run_executor, list_args)
     else:
         map(run_executor, list_args)
 
@@ -460,3 +454,32 @@ def run_executors_in_parallel(executor_class,
     results = [executor.results[0] for executor in executors]
 
     return executors, results
+
+def parallel_map(func, list_args, processes=None):
+    """
+    Build my own parallelized map function since multiprocessing's Process(),
+    or Pool.map() cannot meet my both needs:
+    1) be able to control the maximum number of processes in parallel
+    2) be able to take in non-picklable objects as arguments
+    """
+
+    if processes is None:
+        processes = multiprocessing.cpu_count()
+
+    procs = []
+    for args in list_args:
+        proc = multiprocessing.Process(target=func, args=(args,))
+        procs.append(proc)
+
+    for proc in procs:
+        proc.start()
+
+    # wait until all done
+    while True:
+        all_done = True
+        for proc in procs:
+            if proc.is_alive():
+                all_done = False
+        if all_done:
+            break
+        sleep(1)
