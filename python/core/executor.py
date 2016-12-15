@@ -463,23 +463,36 @@ def parallel_map(func, list_args, processes=None):
     2) be able to take in non-picklable objects as arguments
     """
 
-    if processes is None:
-        processes = multiprocessing.cpu_count()
+    max_active_procs = processes if processes is not None else multiprocessing.cpu_count()
 
     procs = []
     for args in list_args:
         proc = multiprocessing.Process(target=func, args=(args,))
         procs.append(proc)
 
-    for proc in procs:
-        proc.start()
+    waiting_procs = set(procs)
+    active_procs = set([])
 
-    # wait until all done
+    # for proc in procs:
+    #     proc.start()
+
+    # processing
     while True:
-        all_done = True
-        for proc in procs:
-            if proc.is_alive():
-                all_done = False
-        if all_done:
+
+        # check if any procs in active_procs is done; if yes, remove them
+        for p in active_procs.copy():
+            if not p.is_alive():
+                active_procs.remove(p)
+
+        # check if can add a proc to active_procs (add gradually one per loop)
+        if len(active_procs) < max_active_procs and len(waiting_procs) > 0:
+            # move one proc from waiting_procs to active_procs
+            p = waiting_procs.pop()
+            active_procs.add(p)
+            p.start()
+
+        # if both waiting_procs and active_procs are empty, can terminate
+        if len(waiting_procs) == 0 and len(active_procs) == 0:
             break
-        sleep(1)
+
+        sleep(1) # check every one sec
