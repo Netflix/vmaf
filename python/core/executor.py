@@ -420,8 +420,12 @@ def run_executors_in_parallel(executor_class,
              result_store, optional_dict, optional_dict2, lock, idx]
         )
 
-    # create shared dictionary
-    return_executor_dict = multiprocessing.Manager().dict()
+    if parallelize:
+        # create shared dictionary
+        return_executor_dict = multiprocessing.Manager().dict()
+    else:
+        # create regular dictionary
+        return_executor_dict = {}
 
     # define runner function
     def run_executor(args):
@@ -436,26 +440,13 @@ def run_executors_in_parallel(executor_class,
 
     # run
     if parallelize:
-        try:
-            # from pathos.pp_map import pp_map
-            # executors = pp_map(run_executor, list_args)
-            procs = []
-            for args in list_args:
-                proc = multiprocessing.Process(target=run_executor, args=(args,))
-                proc.start()
-                procs.append(proc)
-            for proc in procs:
-                proc.join()
-
-        except ImportError:
-            # fall back
-            msg = "pathos.pp_map cannot be imported for parallel execution, " \
-                  "fall back to sequential map()."
-            if logger:
-                logger.warn(msg)
-            else:
-                print 'Warning: {}'.format(msg)
-            map(run_executor, list_args)
+        procs = []
+        for args in list_args:
+            proc = multiprocessing.Process(target=run_executor, args=(args,))
+            proc.start()
+            procs.append(proc)
+        for proc in procs:
+            proc.join()
     else:
         map(run_executor, list_args)
 
