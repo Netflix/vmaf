@@ -197,26 +197,6 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_vif2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm3_score'], 1.0, places=4)
 
-    def test_run_vmaf_fextractor_not_unique(self):
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.ROOT + "/workspace/workdir",
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.ROOT + "/workspace/workdir",
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
-
-        with self.assertRaises(AssertionError):
-            self.fextractor = VmafFeatureExtractor(
-                [asset, asset_original],
-                None, fifo_mode=True)
-
     def test_run_moment_fextractor(self):
         print 'test on running Moment feature extractor...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"

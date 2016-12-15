@@ -94,12 +94,14 @@ class Executor(TypeVersionEnabled):
 
     def _assert_assets(self):
 
-        list_dataset_contentid_assetid = \
-            map(lambda asset: (asset.dataset, asset.content_id, asset.asset_id),
-                self.assets)
-        assert len(list_dataset_contentid_assetid) == \
-               len(set(list_dataset_contentid_assetid)), \
-            "Triplet of dataset, content_id and asset_id must be unique for each asset."
+        # list_dataset_contentid_assetid = \
+        #     map(lambda asset: (asset.dataset, asset.content_id, asset.asset_id),
+        #         self.assets)
+        # assert len(list_dataset_contentid_assetid) == \
+        #        len(set(list_dataset_contentid_assetid)), \
+        #     "Triplet of dataset, content_id and asset_id must be unique for each asset."
+
+        pass
 
     @classmethod
     def _assert_an_asset(cls, asset):
@@ -396,27 +398,49 @@ def run_executors_in_parallel(executor_class,
                  optional_dict=optional_dict,
                  optional_dict2=optional_dict2)
 
-    def run_executor(args):
-        executor_class, asset, fifo_mode, \
-        delete_workdir, result_store, optional_dict, optional_dict2 = args
-        executor = executor_class([asset], None, fifo_mode,
-                                  delete_workdir, result_store,
-                                  optional_dict, optional_dict2)
-        executor.run()
-        return executor
+    # create locks for unique assets
+    map_asset_lock = {}
+    locks = []
+    for asset in assets:
+        asset_str = str(asset)
+        if asset_str not in map_asset_lock:
+            map_asset_lock[asset_str] = multiprocessing.Lock()
+        locks.append(map_asset_lock[asset_str])
 
     # pack key arguments to be used as inputs to map function
     list_args = []
-    for asset in assets:
+    for asset, lock, idx in zip(assets, locks, range(len(assets))):
         list_args.append(
-            [executor_class, asset, fifo_mode,
-             delete_workdir, result_store, optional_dict, optional_dict2])
+            [executor_class, asset, fifo_mode, delete_workdir,
+             result_store, optional_dict, optional_dict2, lock, idx]
+        )
+
+    return_executor_dict = multiprocessing.Manager().dict()
+
+    def run_executor(args):
+        executor_class, asset, fifo_mode, delete_workdir, \
+        result_store, optional_dict, optional_dict2, lock, idx = args
+        lock.acquire()
+        executor = executor_class([asset], None, fifo_mode, delete_workdir,
+                                  result_store, optional_dict, optional_dict2)
+        executor.run()
+        lock.release()
+        return_executor_dict[idx] = executor
 
     # map arguments to func
     if parallelize:
         try:
-            from pathos.pp_map import pp_map
-            executors = pp_map(run_executor, list_args)
+            # from pathos.pp_map import pp_map
+            # executors = pp_map(run_executor, list_args)
+            procs = []
+            for args in list_args:
+                proc = multiprocessing.Process(target=run_executor, args=(args,))
+                proc.start()
+                procs.append(proc)
+            for proc in procs:
+                proc.join()
+            executors = map(lambda idx: return_executor_dict[idx], range(len(assets)))
+
         except ImportError:
             # fall back
             msg = "pathos.pp_map cannot be imported for parallel execution, " \
