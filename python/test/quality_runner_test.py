@@ -160,26 +160,6 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 31.271439270833337, places=4)
         self.assertAlmostEqual(results[1]['VMAF_legacy_score'], 96.444658329804156, places=4)
 
-    def test_run_vmaf_legacy_runner_not_unique(self):
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.ROOT + "/workspace/workdir",
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.ROOT + "/workspace/workdir",
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
-
-        with self.assertRaises(AssertionError):
-            self.runner = VmafLegacyQualityRunner(
-                [asset, asset_original],
-                None, fifo_mode=True)
-
     def test_run_vmaf_runner_v1_model(self):
         print 'test on running VMAF runner (v1 model)...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
@@ -1290,6 +1270,9 @@ class QualityRunnerTest(unittest.TestCase):
 
 class ParallelQualityRunnerTest(unittest.TestCase):
 
+    def setUp(self):
+        self.result_store = FileSystemResultStore()
+
     def tearDown(self):
         if hasattr(self, 'runners'):
             for runner in self.runners:
@@ -1314,7 +1297,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
         self.runners, results = run_executors_in_parallel(
             VmafLegacyQualityRunner,
-            [asset, asset_original],
+            [asset, asset_original, asset_original],
             fifo_mode=True,
             delete_workdir=True,
             parallelize=True,
@@ -1332,6 +1315,8 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 31.271439270833337, places=4)
         self.assertAlmostEqual(results[1]['VMAF_legacy_score'], 96.444658329804156, places=4)
+
+        self.assertAlmostEqual(results[2]['VMAF_legacy_score'], 96.444658329804156, places=4)
 
     def test_run_parallel_vmaf_runner(self):
         print 'test on running VMAF quality runner in parallel...'
@@ -1351,11 +1336,11 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
         self.runners, results = run_executors_in_parallel(
             VmafQualityRunner,
-            [asset, asset_original],
+            [asset, asset_original, asset, asset_original],
             fifo_mode=True,
             delete_workdir=True,
             parallelize=True,
-            result_store=None,
+            result_store=self.result_store,
         )
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.363420489439, places=4)
@@ -1373,6 +1358,9 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 4.04982535417, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_score'], 99.2259317881, places=4)
+
+        self.assertAlmostEqual(results[2]['VMAF_score'], 65.4488588759, places=4)
+        self.assertAlmostEqual(results[3]['VMAF_score'], 99.2259317881, places=4)
 
     def test_run_parallel_psnr_runner(self):
         print 'test on running PSNR quality runner in parallel...'
@@ -1402,31 +1390,6 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['PSNR_score'], 30.755063979166664, places=4)
         self.assertAlmostEqual(results[1]['PSNR_score'], 60.0, places=4)
 
-    def test_run_parallel_runner_with_repeated_asset(self):
-        print 'test on running PSNR quality runner in parallel...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.ROOT + "/workspace/workdir",
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.ROOT + "/workspace/workdir",
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
-
-        with self.assertRaises(AssertionError):
-            self.runners, results = run_executors_in_parallel(
-                PsnrQualityRunner,
-                [asset, asset_original],
-                fifo_mode=True,
-                delete_workdir=True,
-                parallelize=True,
-                result_store=None)
-
     def test_run_parallel_vamf_runner_with_rf_model(self):
         print 'test on running VMAF quality runner in parallel with RF model...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
@@ -1445,11 +1408,11 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
         self.runners, results = run_executors_in_parallel(
             VmafQualityRunner,
-            [asset, asset_original],
+            [asset, asset_original, asset, asset, asset],
             fifo_mode=True,
             delete_workdir=True,
             parallelize=True,
-            result_store=None,
+            result_store=self.result_store,
             optional_dict={
                 'model_filepath':config.ROOT + "/resource/model/nflx_vmaff_rf_v2.pkl",
             },
@@ -1467,6 +1430,10 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'],4.04982535417, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 31.2714392708, places=4)
+
+        self.assertAlmostEqual(results[2]['VMAF_score'], 70.957532051282058, places=4)
+        self.assertAlmostEqual(results[3]['VMAF_score'], 70.957532051282058, places=4)
+        self.assertAlmostEqual(results[4]['VMAF_score'], 70.957532051282058, places=4)
 
     def test_run_parallel_ssim_runner(self):
         print 'test on running SSIM quality runner in parallel...'
@@ -1486,11 +1453,11 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
         self.runners, results = run_executors_in_parallel(
             SsimQualityRunner,
-            [asset, asset_original],
+            [asset, asset_original, asset, asset],
             fifo_mode=True,
             delete_workdir=True,
             parallelize=True,
-            result_store=None
+            result_store=self.result_store
         )
 
         self.assertAlmostEqual(results[0]['SSIM_score'], 0.86322654166666657, places=4)
@@ -1502,6 +1469,9 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['SSIM_feature_ssim_l_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['SSIM_feature_ssim_c_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['SSIM_feature_ssim_s_score'], 1.0, places=4)
+
+        self.assertAlmostEqual(results[2]['SSIM_score'], 0.86322654166666657, places=4)
+        self.assertAlmostEqual(results[3]['SSIM_score'], 0.86322654166666657, places=4)
 
     def test_run_parallel_msssim_runner(self):
         print 'test on running MS-SSIM quality runner in parallel...'
@@ -1521,7 +1491,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
         self.runners, results = run_executors_in_parallel(
             MsSsimQualityRunner,
-            [asset, asset_original],
+            [asset, asset_original, asset],
             fifo_mode=True,
             delete_workdir=True,
             parallelize=True,
@@ -1562,6 +1532,38 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['MS_SSIM_feature_ms_ssim_c_scale4_score'], 1., places=4)
         self.assertAlmostEqual(results[1]['MS_SSIM_feature_ms_ssim_s_scale4_score'], 1., places=4)
 
+        self.assertAlmostEqual(results[2]['MS_SSIM_score'], 0.9632498125, places=4)
+
+    def test_run_parallel_msssim_runner_with_result_store(self):
+        print 'test on running MS-SSIM quality runner in parallel...'
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.runners, results = run_executors_in_parallel(
+            MsSsimQualityRunner,
+            [asset, asset_original, asset, asset],
+            fifo_mode=True,
+            delete_workdir=True,
+            parallelize=True,
+            result_store=self.result_store
+        )
+
+        self.assertAlmostEqual(results[0]['MS_SSIM_score'], 0.9632498125, places=4)
+        self.assertAlmostEqual(results[1]['MS_SSIM_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[2]['MS_SSIM_score'], 0.9632498125, places=4)
+        self.assertAlmostEqual(results[3]['MS_SSIM_score'], 0.9632498125, places=4)
+
     def test_run_parallel_runner_with_repeated_assets(self):
         print 'test on running PSNR quality runner in parallel with repeated assets...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
@@ -1584,6 +1586,36 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             fifo_mode=True,
             delete_workdir=True,
             parallelize=True,
+            result_store=None
+        )
+
+        self.assertAlmostEqual(results[0]['PSNR_score'], 30.755063979166664, places=4)
+        self.assertAlmostEqual(results[1]['PSNR_score'], 60.0, places=4)
+        self.assertAlmostEqual(results[2]['PSNR_score'], 30.755063979166664, places=4)
+        self.assertAlmostEqual(results[3]['PSNR_score'], 30.755063979166664, places=4)
+
+    def test_run_parallel_runner_with_parallel_disabled(self):
+        print 'test on running PSNR quality runner in parallel with parallelization disabled...'
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.runners, results = run_executors_in_parallel(
+            PsnrQualityRunner,
+            [asset, asset_original, asset, asset],
+            fifo_mode=True,
+            delete_workdir=True,
+            parallelize=False,
             result_store=None
         )
 

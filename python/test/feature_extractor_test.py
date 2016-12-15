@@ -384,7 +384,7 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
         self.fextractors, results = run_executors_in_parallel(
             VmafFeatureExtractor,
-            [asset, asset_original],
+            [asset, asset_original, asset],
             fifo_mode=True,
             delete_workdir=True,
             parallelize=True,
@@ -438,6 +438,8 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm3_score'], 1.0, places=4)
+
+        self.assertAlmostEqual(results[2]['VMAF_feature_vif_num_score'], 712650.023478, places=0)
 
     def test_run_parallel_vamf_fextractor_with_result_store(self):
         print 'test on running VMAF feature extractor with result store ' \
@@ -476,7 +478,7 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
         print '    running for the second time with stored results...'
         _, results = run_executors_in_parallel(
             VmafFeatureExtractor,
-            [asset, asset_original],
+            [asset, asset_original, asset],
             fifo_mode=True,
             delete_workdir=True,
             parallelize=True,
@@ -531,6 +533,8 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_vif2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm3_score'], 1.0, places=4)
 
+        self.assertAlmostEqual(results[2]['VMAF_feature_vif_score'], 0.4460930625, places=4)
+
     def test_run_parallel_moment_fextractor(self):
         print 'test on running Moment feature extractor in parallel...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
@@ -549,7 +553,7 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
         self.fextractors, results = run_executors_in_parallel(
             MomentFeatureExtractor,
-            [asset, asset_original],
+            [asset, asset_original, asset],
             fifo_mode=True,
             delete_workdir=True,
             parallelize=True,
@@ -570,6 +574,8 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['Moment_feature_dis2nd_score'], 4696.668388042269, places=4)
         self.assertAlmostEqual(results[1]['Moment_feature_disvar_score'], 1121.519917231203, places=4)
 
+        self.assertAlmostEqual(results[2]['Moment_feature_ref1st_score'], 59.788567297525134, places=4)
+
     def test_run_parallel_ssim_fextractor(self):
         print 'test on running SSIM feature extractor in parallel...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
@@ -588,7 +594,7 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
         self.fextractors, results = run_executors_in_parallel(
             SsimFeatureExtractor,
-            [asset, asset_original],
+            [asset, asset_original, asset],
             fifo_mode=True,
             delete_workdir=True,
             parallelize=True,
@@ -604,6 +610,8 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['SSIM_feature_ssim_l_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['SSIM_feature_ssim_c_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['SSIM_feature_ssim_s_score'], 1.0, places=4)
+
+        self.assertAlmostEqual(results[2]['SSIM_feature_ssim_score'], 0.86322654166666657, places=4)
 
     def test_run_parallel_ms_ssim_fextractor(self):
         print 'test on running MS-SSIM feature extractor in parallel...'

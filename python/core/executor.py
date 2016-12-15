@@ -90,10 +90,15 @@ class Executor(TypeVersionEnabled):
             self._remove_result(asset)
 
     def _assert_args(self):
+
         pass
 
     def _assert_assets(self):
 
+        # ===============================================
+        # after using lock in run_executors_in_parallel,
+        # no longer need constraint below
+        # ===============================================
         # list_dataset_contentid_assetid = \
         #     map(lambda asset: (asset.dataset, asset.content_id, asset.asset_id),
         #         self.assets)
@@ -415,8 +420,10 @@ def run_executors_in_parallel(executor_class,
              result_store, optional_dict, optional_dict2, lock, idx]
         )
 
+    # create shared dictionary
     return_executor_dict = multiprocessing.Manager().dict()
 
+    # define runner function
     def run_executor(args):
         executor_class, asset, fifo_mode, delete_workdir, \
         result_store, optional_dict, optional_dict2, lock, idx = args
@@ -427,7 +434,7 @@ def run_executors_in_parallel(executor_class,
         lock.release()
         return_executor_dict[idx] = executor
 
-    # map arguments to func
+    # run
     if parallelize:
         try:
             # from pathos.pp_map import pp_map
@@ -439,7 +446,6 @@ def run_executors_in_parallel(executor_class,
                 procs.append(proc)
             for proc in procs:
                 proc.join()
-            executors = map(lambda idx: return_executor_dict[idx], range(len(assets)))
 
         except ImportError:
             # fall back
@@ -449,9 +455,11 @@ def run_executors_in_parallel(executor_class,
                 logger.warn(msg)
             else:
                 print 'Warning: {}'.format(msg)
-            executors = map(run_executor, list_args)
+            map(run_executor, list_args)
     else:
-        executors = map(run_executor, list_args)
+        map(run_executor, list_args)
+
+    executors = map(lambda idx: return_executor_dict[idx], range(len(assets)))
 
     # aggregate results
     results = [executor.results[0] for executor in executors]
