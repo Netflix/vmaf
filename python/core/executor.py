@@ -96,7 +96,7 @@ class Executor(TypeVersionEnabled):
     def _assert_assets(self):
 
         # ===============================================
-        # after using lock in run_executors_in_parallel,
+        # after using locks in run_executors_in_parallel,
         # no longer need constraint below
         # ===============================================
         # list_dataset_contentid_assetid = \
@@ -111,6 +111,10 @@ class Executor(TypeVersionEnabled):
     @classmethod
     def _assert_an_asset(cls, asset):
 
+        # ===============================================
+        # constraint no longer applies after allowing
+        # piping FFmpeg
+        # ===============================================
         # # 1) for now, quality width/height has to agree with ref/dis width/height
         # assert asset.quality_width_height \
         #        == asset.ref_width_height \
@@ -403,7 +407,7 @@ def run_executors_in_parallel(executor_class,
                  optional_dict=optional_dict,
                  optional_dict2=optional_dict2)
 
-    # create locks for unique assets
+    # create locks for unique assets (uniqueness is identified by str(asset))
     map_asset_lock = {}
     locks = []
     for asset in assets:

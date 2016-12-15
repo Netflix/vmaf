@@ -35,11 +35,6 @@ Files in the repository follow the structure below:
 ├── python
 │   ├── config.py: configuration information such as global paths, parameters, etc. 
 │   ├── core: core classes and functions
-│   ├── dill: dependency package for pathos
-│   ├── journal: dependency package for pathos
-│   ├── pathos: package for running executors in parallel
-│   ├── pp: dependency package for pathos
-│   ├── pyre: dependency package for pathos
 │   ├── script: scripts for executing specific tasks
 │   ├── test: unit/functional test cases
 │   └── tools: common reusable classes and functions
