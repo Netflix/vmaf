@@ -444,7 +444,7 @@ def run_executors_in_parallel(executor_class,
 
     # run
     if parallelize:
-        parallel_map(run_executor, list_args)
+        parallel_map(run_executor, list_args, processes=None)
     else:
         map(run_executor, list_args)
 
@@ -473,9 +473,6 @@ def parallel_map(func, list_args, processes=None):
     waiting_procs = set(procs)
     active_procs = set([])
 
-    # for proc in procs:
-    #     proc.start()
-
     # processing
     while True:
 
@@ -495,4 +492,4 @@ def parallel_map(func, list_args, processes=None):
         if len(waiting_procs) == 0 and len(active_procs) == 0:
             break
 
-        sleep(1) # check every one sec
+        sleep(0.1) # check every 0.1 sec
