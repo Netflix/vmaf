@@ -1,5 +1,10 @@
 # Change Log
 
+## (12/8/2016) [1.1.18]
+
+**Fixed bug:**
+- Replace pathos with custom function for parallel executor running.
+
 ## (12/8/2016) [1.1.17]
 
 **Fixed bug:**
