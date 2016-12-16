@@ -1624,5 +1624,36 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[2]['PSNR_score'], 30.755063979166664, places=4)
         self.assertAlmostEqual(results[3]['PSNR_score'], 30.755063979166664, places=4)
 
+    def test_run_parallel_vmafossexec_runner_with_repeated_assets(self):
+        print 'test on running VMAFOSSEXEC quality runner in parallel with repeated assets...'
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.runners, results = run_executors_in_parallel(
+            VmafossExecQualityRunner,
+            [asset, asset_original, asset, asset],
+            fifo_mode=True,
+            delete_workdir=True,
+            parallelize=True,
+            result_store=None
+        )
+
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 65.448877083333329, places=3)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.225939583333343, places=4)
+        self.assertAlmostEqual(results[2]['VMAFOSSEXEC_score'], 65.448877083333329, places=3)
+        self.assertAlmostEqual(results[3]['VMAFOSSEXEC_score'], 65.448877083333329, places=3)
+
+
 if __name__ == '__main__':
     unittest.main()
