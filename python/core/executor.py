@@ -424,6 +424,16 @@ def run_executors_in_parallel(executor_class,
              result_store, optional_dict, optional_dict2, lock, idx]
         )
 
+    def run_executor(args):
+        executor_class, asset, fifo_mode, delete_workdir, \
+        result_store, optional_dict, optional_dict2, lock = args
+        lock.acquire()
+        executor = executor_class([asset], None, fifo_mode, delete_workdir,
+                                  result_store, optional_dict, optional_dict2)
+        executor.run()
+        lock.release()
+        return executor
+
     if parallelize:
         # create shared dictionary
         return_executor_dict = multiprocessing.Manager().dict()
@@ -432,21 +442,20 @@ def run_executors_in_parallel(executor_class,
         return_executor_dict = {}
 
     # define runner function
-    def run_executor(args):
+    def run_executor_wrapper(args):
         executor_class, asset, fifo_mode, delete_workdir, \
         result_store, optional_dict, optional_dict2, lock, idx = args
-        lock.acquire()
-        executor = executor_class([asset], None, fifo_mode, delete_workdir,
-                                  result_store, optional_dict, optional_dict2)
-        executor.run()
-        lock.release()
+
+        executor = run_executor((executor_class, asset, fifo_mode, delete_workdir,
+        result_store, optional_dict, optional_dict2, lock),)
+
         return_executor_dict[idx] = executor
 
     # run
     if parallelize:
-        parallel_map(run_executor, list_args, processes=None)
+        parallel_map(run_executor_wrapper, list_args, processes=None)
     else:
-        map(run_executor, list_args)
+        map(run_executor_wrapper, list_args)
 
     executors = map(lambda idx: return_executor_dict[idx], range(len(assets)))
 
