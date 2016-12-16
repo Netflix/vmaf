@@ -418,10 +418,10 @@ def run_executors_in_parallel(executor_class,
 
     # pack key arguments to be used as inputs to map function
     list_args = []
-    for asset, lock, idx in zip(assets, locks, range(len(assets))):
+    for asset, lock in zip(assets, locks):
         list_args.append(
             [executor_class, asset, fifo_mode, delete_workdir,
-             result_store, optional_dict, optional_dict2, lock, idx]
+             result_store, optional_dict, optional_dict2, lock]
         )
 
     def run_executor(args):
@@ -434,30 +434,11 @@ def run_executors_in_parallel(executor_class,
         lock.release()
         return executor
 
-    if parallelize:
-        # create shared dictionary
-        return_executor_dict = multiprocessing.Manager().dict()
-    else:
-        # create regular dictionary
-        return_executor_dict = {}
-
-    # define runner function
-    def run_executor_wrapper(args):
-        executor_class, asset, fifo_mode, delete_workdir, \
-        result_store, optional_dict, optional_dict2, lock, idx = args
-
-        executor = run_executor((executor_class, asset, fifo_mode, delete_workdir,
-        result_store, optional_dict, optional_dict2, lock),)
-
-        return_executor_dict[idx] = executor
-
     # run
     if parallelize:
-        parallel_map(run_executor_wrapper, list_args, processes=None)
+        executors = parallel_map(run_executor, list_args, processes=None)
     else:
-        map(run_executor_wrapper, list_args)
-
-    executors = map(lambda idx: return_executor_dict[idx], range(len(assets)))
+        executors = map(run_executor, list_args)
 
     # aggregate results
     results = [executor.results[0] for executor in executors]
@@ -472,11 +453,26 @@ def parallel_map(func, list_args, processes=None):
     2) be able to take in non-picklable objects as arguments
     """
 
+    # get maximum number of active processes that can be used
     max_active_procs = processes if processes is not None else multiprocessing.cpu_count()
 
+    # create shared dictionary
+    return_executor_dict = multiprocessing.Manager().dict()
+
+    # define runner function
+    def run_executor_wrapper(idx_args):
+        idx, args = idx_args
+        executor = func(args)
+        return_executor_dict[idx] = executor
+
+    # add idx to args
+    list_idx_args = []
+    for idx, args in enumerate(list_args):
+        list_idx_args.append((idx, args))
+
     procs = []
-    for args in list_args:
-        proc = multiprocessing.Process(target=func, args=(args,))
+    for idx_args in list_idx_args:
+        proc = multiprocessing.Process(target=run_executor_wrapper, args=(idx_args,))
         procs.append(proc)
 
     waiting_procs = set(procs)
@@ -502,3 +498,8 @@ def parallel_map(func, list_args, processes=None):
             break
 
         sleep(0.1) # check every 0.1 sec
+
+    # finally, collect results
+    executors = map(lambda idx: return_executor_dict[idx], range(len(list_args)))
+
+    return executors
