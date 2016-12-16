@@ -7,7 +7,8 @@ import subprocess
 from time import sleep
 import hashlib
 
-from tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_slash
+from tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_slash, \
+    parallel_map
 from core.mixin import TypeVersionEnabled
 
 
@@ -90,20 +91,31 @@ class Executor(TypeVersionEnabled):
             self._remove_result(asset)
 
     def _assert_args(self):
+
         pass
 
     def _assert_assets(self):
 
-        list_dataset_contentid_assetid = \
-            map(lambda asset: (asset.dataset, asset.content_id, asset.asset_id),
-                self.assets)
-        assert len(list_dataset_contentid_assetid) == \
-               len(set(list_dataset_contentid_assetid)), \
-            "Triplet of dataset, content_id and asset_id must be unique for each asset."
+        # ===============================================
+        # after using locks in run_executors_in_parallel,
+        # no longer need constraint below
+        # ===============================================
+        # list_dataset_contentid_assetid = \
+        #     map(lambda asset: (asset.dataset, asset.content_id, asset.asset_id),
+        #         self.assets)
+        # assert len(list_dataset_contentid_assetid) == \
+        #        len(set(list_dataset_contentid_assetid)), \
+        #     "Triplet of dataset, content_id and asset_id must be unique for each asset."
+
+        pass
 
     @classmethod
     def _assert_an_asset(cls, asset):
 
+        # ===============================================
+        # constraint no longer applies after allowing
+        # piping FFmpeg
+        # ===============================================
         # # 1) for now, quality width/height has to agree with ref/dis width/height
         # assert asset.quality_width_height \
         #        == asset.ref_width_height \
@@ -396,36 +408,35 @@ def run_executors_in_parallel(executor_class,
                  optional_dict=optional_dict,
                  optional_dict2=optional_dict2)
 
-    def run_executor(args):
-        executor_class, asset, fifo_mode, \
-        delete_workdir, result_store, optional_dict, optional_dict2 = args
-        executor = executor_class([asset], None, fifo_mode,
-                                  delete_workdir, result_store,
-                                  optional_dict, optional_dict2)
-        executor.run()
-        return executor
+    # create locks for unique assets (uniqueness is identified by str(asset))
+    map_asset_lock = {}
+    locks = []
+    for asset in assets:
+        asset_str = str(asset)
+        if asset_str not in map_asset_lock:
+            map_asset_lock[asset_str] = multiprocessing.Lock()
+        locks.append(map_asset_lock[asset_str])
 
     # pack key arguments to be used as inputs to map function
     list_args = []
-    for asset in assets:
+    for asset, lock in zip(assets, locks):
         list_args.append(
-            [executor_class, asset, fifo_mode,
-             delete_workdir, result_store, optional_dict, optional_dict2])
+            [executor_class, asset, fifo_mode, delete_workdir,
+             result_store, optional_dict, optional_dict2, lock])
 
-    # map arguments to func
+    def run_executor(args):
+        executor_class, asset, fifo_mode, delete_workdir, \
+        result_store, optional_dict, optional_dict2, lock = args
+        lock.acquire()
+        executor = executor_class([asset], None, fifo_mode, delete_workdir,
+                                  result_store, optional_dict, optional_dict2)
+        executor.run()
+        lock.release()
+        return executor
+
+    # run
     if parallelize:
-        try:
-            from pathos.pp_map import pp_map
-            executors = pp_map(run_executor, list_args)
-        except ImportError:
-            # fall back
-            msg = "pathos.pp_map cannot be imported for parallel execution, " \
-                  "fall back to sequential map()."
-            if logger:
-                logger.warn(msg)
-            else:
-                print 'Warning: {}'.format(msg)
-            executors = map(run_executor, list_args)
+        executors = parallel_map(run_executor, list_args, processes=None)
     else:
         executors = map(run_executor, list_args)
 
@@ -433,3 +444,4 @@ def run_executors_in_parallel(executor_class,
     results = [executor.results[0] for executor in executors]
 
     return executors, results
+
