@@ -421,8 +421,7 @@ def run_executors_in_parallel(executor_class,
     for asset, lock in zip(assets, locks):
         list_args.append(
             [executor_class, asset, fifo_mode, delete_workdir,
-             result_store, optional_dict, optional_dict2, lock]
-        )
+             result_store, optional_dict, optional_dict2, lock])
 
     def run_executor(args):
         executor_class, asset, fifo_mode, delete_workdir, \
@@ -457,13 +456,13 @@ def parallel_map(func, list_args, processes=None):
     max_active_procs = processes if processes is not None else multiprocessing.cpu_count()
 
     # create shared dictionary
-    return_executor_dict = multiprocessing.Manager().dict()
+    return_dict = multiprocessing.Manager().dict()
 
     # define runner function
-    def run_executor_wrapper(idx_args):
+    def func_wrapper(idx_args):
         idx, args = idx_args
         executor = func(args)
-        return_executor_dict[idx] = executor
+        return_dict[idx] = executor
 
     # add idx to args
     list_idx_args = []
@@ -472,7 +471,7 @@ def parallel_map(func, list_args, processes=None):
 
     procs = []
     for idx_args in list_idx_args:
-        proc = multiprocessing.Process(target=run_executor_wrapper, args=(idx_args,))
+        proc = multiprocessing.Process(target=func_wrapper, args=(idx_args,))
         procs.append(proc)
 
     waiting_procs = set(procs)
@@ -500,6 +499,6 @@ def parallel_map(func, list_args, processes=None):
         sleep(0.1) # check every 0.1 sec
 
     # finally, collect results
-    executors = map(lambda idx: return_executor_dict[idx], range(len(list_args)))
+    rets = map(lambda idx: return_dict[idx], range(len(list_args)))
 
-    return executors
+    return rets
