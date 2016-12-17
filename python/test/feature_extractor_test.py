@@ -680,13 +680,6 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
             self.fextractor.remove_results()
         pass
 
-    def test_executor_id(self):
-        asset = Asset(dataset="test", content_id=0, asset_id=1,
-                      ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
-                      asset_dict={})
-        fextractor = VmafFeatureExtractor([asset], None)
-        self.assertEquals(fextractor.executor_id, "VMAF_feature_V0.2.2b")
-
     def test_run_vamf_fextractor_with_result_store(self):
         print 'test on running VMAF feature extractor with result store...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
@@ -787,7 +780,7 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
                       asset_dict={'width':576, 'height':324})
 
         self.fextractor = MomentFeatureExtractor(
-            [asset, asset_original],
+            [asset, asset_original, asset, asset_original],
             None, fifo_mode=True,
             result_store=None
         )
@@ -808,6 +801,9 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[1]['Moment_feature_dis1st_score'], 59.788567297525134, places=4)
         self.assertAlmostEqual(results[1]['Moment_feature_dis2nd_score'], 4696.668388042269, places=4)
         self.assertAlmostEqual(results[1]['Moment_feature_disvar_score'], 1121.519917231203, places=4)
+
+        self.assertAlmostEqual(results[2]['Moment_feature_ref1st_score'], 59.788567297525134, places=4)
+        self.assertAlmostEqual(results[3]['Moment_feature_ref1st_score'], 59.788567297525134, places=4)
 
     def test_run_psnr_fextractor(self):
         print 'test on running PSNR feature extractor...'

@@ -1681,7 +1681,7 @@ class ParallelQualityRunnerTestNew(unittest.TestCase):
                       asset_dict={'width':576, 'height':324})
 
         self.runner = VmafLegacyQualityRunner(
-            [asset, asset_original],
+            [asset, asset_original, asset, asset_original],
             None, fifo_mode=True,
             delete_workdir=True,
             result_store=None
@@ -1701,6 +1701,9 @@ class ParallelQualityRunnerTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 31.271439270833337, places=4)
         self.assertAlmostEqual(results[1]['VMAF_legacy_score'], 96.444658329804156, places=4)
+
+        self.assertAlmostEqual(results[2]['VMAF_legacy_score'], 60.51196309317455, places=4)
+        self.assertAlmostEqual(results[3]['VMAF_legacy_score'], 96.444658329804156, places=4)
 
     def test_run_vamf_legacy_runner_10le(self):
         print 'test on running VMAF (legacy) runner on 10 bit le...'
@@ -1851,7 +1854,7 @@ class ParallelQualityRunnerTestNew(unittest.TestCase):
                       asset_dict={'width':576, 'height':324})
 
         self.runner = VmafQualityRunner(
-            [asset, asset_original],
+            [asset, asset_original, asset, asset_original],
             None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
@@ -1876,6 +1879,9 @@ class ParallelQualityRunnerTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_score'], 99.2259317881, places=4)
 
+        self.assertAlmostEqual(results[2]['VMAF_score'], 65.4488588759, places=4)
+        self.assertAlmostEqual(results[3]['VMAF_score'], 99.2259317881, places=4)
+
         with self.assertRaises(KeyError):
             self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0, places=4)
 
@@ -1899,7 +1905,7 @@ class ParallelQualityRunnerTestNew(unittest.TestCase):
                       asset_dict={'width':576, 'height':324})
 
         self.runner = PsnrQualityRunner(
-            [asset, asset_original],
+            [asset, asset_original, asset_original],
             None, fifo_mode=True,
             delete_workdir=True,
             result_store=None
@@ -1909,6 +1915,7 @@ class ParallelQualityRunnerTestNew(unittest.TestCase):
         results = self.runner.results
         self.assertAlmostEqual(results[0]['PSNR_score'], 30.755063979166664, places=4)
         self.assertAlmostEqual(results[1]['PSNR_score'], 60.0, places=4)
+        self.assertAlmostEqual(results[2]['PSNR_score'], 60.0, places=4)
 
     def test_run_vmafossexec_runner(self):
         print 'test on running VMAFOSSEXEC runner...'
