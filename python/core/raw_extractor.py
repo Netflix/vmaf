@@ -75,6 +75,17 @@ class DisYUVRawVideoExtractor(H5pyMixin, RawExtractor):
             assert channels.issubset(set('yuv'))
             return ''.join(channels)
 
+    def run(self, **kwargs):
+        # override Executor.run()
+        if 'parallelize' in kwargs:
+            parallelize = kwargs['parallelize']
+        else:
+            parallelize = False
+
+        assert parallelize is False, "DisYUVRawVideoExtractor cannot parallelize."
+
+        super(DisYUVRawVideoExtractor, self).run(**kwargs)
+
     def _assert_args(self):
         super(DisYUVRawVideoExtractor, self)._assert_args()
         self.assert_h5py_file()

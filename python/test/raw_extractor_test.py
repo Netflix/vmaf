@@ -43,6 +43,12 @@ class RawExtractorTest(unittest.TestCase):
         self.assertEqual(str(results[0]['asset']), 'test_0_1_src01_hrc00_576x324_576x324_vs_src01_hrc01_576x324_576x324_q_160x90')
         self.assertEqual(str(results[1]['asset']), 'test_0_2_src01_hrc00_576x324_576x324_vs_src01_hrc00_576x324_576x324_q_160x90')
 
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        self.assertEqual(str(results[0]['asset']), 'test_0_1_src01_hrc00_576x324_576x324_vs_src01_hrc01_576x324_576x324_q_160x90')
+        self.assertEqual(str(results[1]['asset']), 'test_0_2_src01_hrc00_576x324_576x324_vs_src01_hrc00_576x324_576x324_q_160x90')
 
 class DisYUVRawVideoExtractorTest(unittest.TestCase):
 
@@ -91,6 +97,34 @@ class DisYUVRawVideoExtractorTest(unittest.TestCase):
 
         DisYUVRawVideoExtractor.close_h5py_file(h5py_file)
 
+    def test_run_dis_yuv_raw_video_extractor_parallel(self):
+        print 'test on running dis YUV raw video extractor...'
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=2,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        h5py_file = DisYUVRawVideoExtractor.open_h5py_file(self.h5py_filepath)
+
+        self.fextractor = DisYUVRawVideoExtractor(
+            [asset, asset_original], None, fifo_mode=False,
+            optional_dict={'channels': 'yu'},
+            optional_dict2={'h5py_file': h5py_file}
+        )
+
+        with self.assertRaises(AssertionError):
+            self.fextractor.run(parallelize=True)
+
+        DisYUVRawVideoExtractor.close_h5py_file(h5py_file)
 
 class ParallelDisYRawVideoExtractorTest(unittest.TestCase):
 

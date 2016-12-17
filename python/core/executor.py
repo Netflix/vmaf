@@ -85,7 +85,29 @@ class Executor(TypeVersionEnabled):
             parallelize = False
 
         if parallelize:
-            self.results = parallel_map(self._run_on_asset, self.assets)
+            # create locks for unique assets (uniqueness is identified by str(asset))
+            map_asset_lock = {}
+            locks = []
+            for asset in self.assets:
+                asset_str = str(asset)
+                if asset_str not in map_asset_lock:
+                    map_asset_lock[asset_str] = multiprocessing.Lock()
+                locks.append(map_asset_lock[asset_str])
+
+            # pack key arguments to be used as inputs to map function
+            list_args = []
+            for asset, lock in zip(self.assets, locks):
+                list_args.append(
+                    [asset, lock])
+
+            def _run(asset_lock):
+                asset, lock = asset_lock
+                lock.acquire()
+                result = self._run_on_asset(asset)
+                lock.release()
+                return result
+
+            self.results = parallel_map(_run, list_args)
         else:
             self.results = map(self._run_on_asset, self.assets)
 
