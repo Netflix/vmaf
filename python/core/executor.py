@@ -69,7 +69,7 @@ class Executor(TypeVersionEnabled):
 
         return executor_id_
     
-    def run(self):
+    def run(self, **kwargs):
         """
         Do all the computation here.
         :return:
@@ -79,7 +79,15 @@ class Executor(TypeVersionEnabled):
                 "For each asset, if {type} result has not been generated, run "
                 "and generate {type} result...".format(type=self.executor_id))
 
-        self.results = map(self._run_on_asset, self.assets)
+        if 'parallelize' in kwargs:
+            parallelize = kwargs['parallelize']
+        else:
+            parallelize = False
+
+        if parallelize:
+            self.results = parallel_map(self._run_on_asset, self.assets)
+        else:
+            self.results = map(self._run_on_asset, self.assets)
 
     def remove_results(self):
         """

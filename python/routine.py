@@ -160,16 +160,16 @@ def test_on_dataset(test_dataset, runner_class, ax,
         optional_dict = None
 
     # run
-    _, results = run_executors_in_parallel(
-        runner_class,
+    runner = runner_class(
         test_assets,
-        fifo_mode=fifo_mode,
+        None, fifo_mode=fifo_mode,
         delete_workdir=True,
-        parallelize=parallelize,
         result_store=result_store,
         optional_dict=optional_dict,
         optional_dict2=None,
     )
+    runner.run(parallelize=parallelize)
+    results = runner.results
 
     for result in results:
         result.set_score_aggregate_method(aggregate_method)

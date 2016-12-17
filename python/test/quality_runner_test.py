@@ -1654,6 +1654,5 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[2]['VMAFOSSEXEC_score'], 65.448877083333329, places=3)
         self.assertAlmostEqual(results[3]['VMAFOSSEXEC_score'], 65.448877083333329, places=3)
 
-
 if __name__ == '__main__':
     unittest.main()
