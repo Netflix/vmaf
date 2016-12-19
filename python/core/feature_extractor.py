@@ -9,7 +9,6 @@ import ast
 import config
 from core.executor import Executor
 from core.result import Result
-from tools.reader import YuvReader
 
 class FeatureExtractor(Executor):
     """
@@ -323,11 +322,8 @@ class MomentFeatureExtractor(FeatureExtractor):
         # routine to call the command-line executable and generate feature
         # scores in the log file.
 
-        quality_w, quality_h = asset.quality_width_height
-
         ref_scores_mtx = None
-        with YuvReader(filepath=asset.ref_workfile_path, width=quality_w,
-                       height=quality_h, yuv_type=asset.yuv_type) as ref_yuv_reader:
+        with asset.get_reader() as ref_yuv_reader:
             scores_mtx_list = []
             i = 0
             for ref_yuv in ref_yuv_reader:
@@ -339,8 +335,7 @@ class MomentFeatureExtractor(FeatureExtractor):
             ref_scores_mtx = np.vstack(scores_mtx_list)
 
         dis_scores_mtx = None
-        with YuvReader(filepath=asset.dis_workfile_path, width=quality_w,
-                       height=quality_h, yuv_type=asset.yuv_type) as dis_yuv_reader:
+        with asset.get_reader() as dis_yuv_reader:
             scores_mtx_list = []
             i = 0
             for dis_yuv in dis_yuv_reader:
@@ -487,4 +482,3 @@ class MsSsimFeatureExtractor(FeatureExtractor):
             self.logger.info(ms_ssim_cmd)
 
         subprocess.call(ms_ssim_cmd, shell=True)
-

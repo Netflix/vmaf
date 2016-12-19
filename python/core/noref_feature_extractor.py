@@ -9,8 +9,6 @@ import numpy as np
 
 from tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_slash
 from core.feature_extractor import FeatureExtractor
-from tools.reader import YuvReader
-
 
 class NorefFeatureExtractor(FeatureExtractor):
     """
@@ -149,9 +147,7 @@ class MomentNorefFeatureExtractor(NorefFeatureExtractor):
         # routine to call the command-line executable and generate feature
         # scores in the log file.
 
-        quality_w, quality_h = asset.quality_width_height
-        with YuvReader(filepath=asset.dis_workfile_path, width=quality_w,
-                       height=quality_h, yuv_type=asset.yuv_type) as dis_yuv_reader:
+        with asset.get_reader() as dis_yuv_reader:
             scores_mtx_list = []
             i = 0
             for dis_yuv in dis_yuv_reader:
@@ -206,4 +202,3 @@ class MomentNorefFeatureExtractor(NorefFeatureExtractor):
             assert cls.get_scores_key(feature) in result.result_dict
 
         return result
-

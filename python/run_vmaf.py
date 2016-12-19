@@ -23,36 +23,44 @@ POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'pe
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) \
           + " fmt width height ref_path dis_path [--model model_path] [--out-fmt out_fmt]\n"
+    print "or: " + os.path.basename(sys.argv[0]) \
+          + " y4m ref_path dis_path [--model model_path] [--out-fmt out_fmt]\n"
     print "fmt:\n\t" + "\n\t".join(FMTS) + "\n"
     print "out_fmt:\n\t" + "\n\t".join(OUT_FMTS) + "\n"
 
 def main():
-    if len(sys.argv) < 6:
+    if len(sys.argv) < 4:
         print_usage()
         return 2
 
     try:
         fmt = sys.argv[1]
-        width = int(sys.argv[2])
-        height = int(sys.argv[3])
-        ref_file = sys.argv[4]
-        dis_file = sys.argv[5]
+        if fmt == 'y4m':
+            ref_file = sys.argv[2]
+            dis_file = sys.argv[3]
+            arg_start = 4
+        else:
+            width = int(sys.argv[2])
+            height = int(sys.argv[3])
+            ref_file = sys.argv[4]
+            dis_file = sys.argv[5]
+            arg_start = 6
+
+            if width < 0 or height < 0:
+                print "width and height must be non-negative, but are {w} and {h}".format(w=width, h=height)
+                print_usage()
+                return 2
+
+            if fmt not in FMTS:
+                print_usage()
+                return 2
     except ValueError:
         print_usage()
         return 2
 
-    if width < 0 or height < 0:
-        print "width and height must be non-negative, but are {w} and {h}".format(w=width, h=height)
-        print_usage()
-        return 2
+    model_path = get_cmd_option(sys.argv, arg_start, len(sys.argv), '--model')
 
-    if fmt not in FMTS:
-        print_usage()
-        return 2
-
-    model_path = get_cmd_option(sys.argv, 6, len(sys.argv), '--model')
-
-    out_fmt = get_cmd_option(sys.argv, 6, len(sys.argv), '--out-fmt')
+    out_fmt = get_cmd_option(sys.argv, arg_start, len(sys.argv), '--out-fmt')
     if not (out_fmt is None
             or out_fmt == 'xml'
             or out_fmt == 'json'
@@ -60,22 +68,34 @@ def main():
         print_usage()
         return 2
 
-    pool_method = get_cmd_option(sys.argv, 6, len(sys.argv), '--pool')
+    pool_method = get_cmd_option(sys.argv, arg_start, len(sys.argv), '--pool')
     if not (pool_method is None
             or pool_method in POOL_METHODS):
         print '--pool can only have option among {}'.format(', '.join(POOL_METHODS))
         return 2
 
-    show_local_explanation = cmd_option_exists(sys.argv, 6, len(sys.argv), '--local-explain')
+    show_local_explanation = cmd_option_exists(sys.argv, arg_start, len(sys.argv), '--local-explain')
 
-    asset = Asset(dataset="cmd",
-                  content_id=abs(hash(get_file_name_without_extension(ref_file))) % (10 ** 16),
-                  asset_id=abs(hash(get_file_name_without_extension(ref_file))) % (10 ** 16),
-                  workdir_root=config.ROOT + "/workspace/workdir",
-                  ref_path=ref_file,
-                  dis_path=dis_file,
-                  asset_dict={'width':width, 'height':height, 'yuv_type':fmt}
-                  )
+    if fmt == 'y4m':
+        asset = Asset(dataset="cmd",
+                      content_id=abs(hash(get_file_name_without_extension(ref_file))) % (10 ** 16),
+                      asset_id=abs(hash(get_file_name_without_extension(ref_file))) % (10 ** 16),
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_file,
+                      dis_path=dis_file,
+                      asset_dict={},
+                      file_type='y4m'
+                      )
+        asset.init_from_reader()
+    else:
+        asset = Asset(dataset="cmd",
+                      content_id=abs(hash(get_file_name_without_extension(ref_file))) % (10 ** 16),
+                      asset_id=abs(hash(get_file_name_without_extension(ref_file))) % (10 ** 16),
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_file,
+                      dis_path=dis_file,
+                      asset_dict={'width':width, 'height':height, 'yuv_type':fmt}
+                      )
     assets = [asset]
 
     if not show_local_explanation:

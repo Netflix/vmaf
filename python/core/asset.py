@@ -6,6 +6,7 @@ import os
 from core.mixin import WorkdirEnabled
 from tools.misc import get_file_name_without_extension, \
     get_file_name_with_extension, get_unique_str_from_recursive_dict
+from tools.reader import YuvReader, Y4mReader
 import config
 
 
@@ -35,7 +36,8 @@ class Asset(WorkdirEnabled):
     def __init__(self, dataset, content_id, asset_id,
                  ref_path, dis_path,
                  asset_dict,
-                 workdir_root=config.ROOT + "/workspace/workdir"):
+                 workdir_root=config.ROOT + "/workspace/workdir",
+                 file_type='yuv'):
         """
         :param dataset
         :param content_id: ID of content the asset correspond to within dataset
@@ -53,6 +55,7 @@ class Asset(WorkdirEnabled):
         self.ref_path = ref_path
         self.dis_path = dis_path
         self.asset_dict = asset_dict
+        self.file_type = file_type
 
     @staticmethod
     def from_repr(rp):
@@ -508,6 +511,21 @@ class Asset(WorkdirEnabled):
         else:
             self.asset_dict['use_path_as_workpath'] = 0
 
+    def get_reader(self):
+        if self.file_type == 'yuv':
+            quality_w, quality_h = self.quality_width_height
+            return YuvReader(filepath=self.dis_workfile_path, width=quality_w,
+                           height=quality_h, yuv_type=self.yuv_type)
+        elif self.file_type == 'y4m':
+            return Y4mReader(filepath=self.dis_workfile_path)
+        else:
+            assert False
+
+    def init_from_reader(self):
+        reader = Y4mReader(filepath=self.ref_path)
+        self.asset_dict['width'] = reader.width
+        self.asset_dict['height'] = reader.height
+        self.asset_dict['yuv_type'] = reader.yuv_type
 
 class NorefAsset(Asset):
     """
@@ -520,7 +538,8 @@ class NorefAsset(Asset):
     def __init__(self, dataset, content_id, asset_id,
                  dis_path,
                  asset_dict,
-                 workdir_root=config.ROOT + "/workspace/workdir"):
+                 workdir_root=config.ROOT + "/workspace/workdir",
+                 file_type='yuv'):
         """
         :param dataset
         :param content_id: ID of content the asset correspond to within dataset
@@ -537,3 +556,4 @@ class NorefAsset(Asset):
         self.ref_path = dis_path # just assign ref_path same as dis_path
         self.dis_path = dis_path
         self.asset_dict = asset_dict
+        self.file_type = file_type

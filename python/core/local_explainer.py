@@ -4,8 +4,6 @@ from sklearn.linear_model import Ridge
 import matplotlib.pyplot as plt
 
 from tools.misc import get_file_name_without_extension
-from tools.reader import YuvReader
-
 
 # Copyright (c) 2016, Marco Tulio Correia Ribeiro
 # All rights reserved.
@@ -194,9 +192,7 @@ class LocalExplainer(object):
 
             img = None
             if asset is not None:
-                w, h = asset.dis_width_height
-                with YuvReader(filepath=asset.dis_path, width=w, height=h,
-                               yuv_type=asset.yuv_type) as yuv_reader:
+                with asset.get_reader() as yuv_reader:
                     for yuv in yuv_reader:
                         img, _, _ = yuv
                         break
@@ -262,5 +258,3 @@ class LocalExplainer(object):
             'feature_names': exps['feature_names']
         }
         return exps2
-
-
