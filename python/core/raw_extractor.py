@@ -29,6 +29,11 @@ class AssetExtractor(RawExtractor):
     TYPE = 'Asset'
     VERSION = '1.0'
 
+    @classmethod
+    def _assert_an_asset(cls, asset):
+        # override Executor._assert_an_asset() bypassing ffmpeg check
+        pass
+
     def _open_ref_workfile(self, asset, fifo_mode):
         # override Executor._open_ref_workfile(self, asset, fifo_mode)
         # do nothing
