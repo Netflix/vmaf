@@ -508,6 +508,19 @@ class Asset(WorkdirEnabled):
         else:
             self.asset_dict['use_path_as_workpath'] = 0
 
+    @property
+    def crop_cmd(self):
+        if 'crop_cmd' in self.asset_dict:
+            return self.asset_dict['crop_cmd']
+        else:
+            return None
+
+    @property
+    def pad_cmd(self):
+        if 'pad_cmd' in self.asset_dict:
+            return self.asset_dict['pad_cmd']
+        else:
+            return None
 
 class NorefAsset(Asset):
     """

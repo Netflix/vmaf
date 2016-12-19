@@ -17,4 +17,4 @@ def get_and_assert_ffmpeg():
     except (ImportError, AssertionError):
         msg = 'Must install ffmpeg and set FFMPEG_PATH in ' \
               '{python_path}/externals.py.'.format(python_path=PYTHON_ROOT)
-        raise Exception(msg)
+        raise AssertionError(msg)

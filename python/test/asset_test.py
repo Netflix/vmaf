@@ -392,5 +392,27 @@ class AssetTest(unittest.TestCase):
         self.assertEquals(asset.ref_workfile_path, 'dir/refvideo.yuv')
         self.assertEquals(asset.dis_workfile_path, 'dir/disvideo.yuv')
 
+    def test_crop_cmd(self):
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'crop_cmd':'570:320:3:2'})
+        self.assertEquals(asset.crop_cmd, '570:320:3:2')
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={})
+        self.assertTrue(asset.crop_cmd is None)
+
+    def test_pad_cmd(self):
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'pad_cmd':'iw+6:ih+4:3:2'})
+        self.assertEquals(asset.pad_cmd, 'iw+6:ih+4:3:2')
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={})
+        self.assertTrue(asset.pad_cmd is None)
+
 if __name__ == '__main__':
     unittest.main()

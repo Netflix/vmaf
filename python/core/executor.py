@@ -151,6 +151,15 @@ class Executor(TypeVersionEnabled):
                 or asset.quality_width_height != asset.dis_width_height:
             get_and_assert_ffmpeg()
 
+        # if crop_cmd or pad_cmd is specified, make sure quality_width and
+        # quality_height are EXPLICITLY specified in asset_dict
+        if asset.crop_cmd is not None:
+            assert 'quality_width' in asset.asset_dict and 'quality_height' in asset.asset_dict, \
+                'If crop_cmd is specified, must also EXPLICITLY specify quality_width and quality_height.'
+        if asset.pad_cmd is not None:
+            assert 'quality_width' in asset.asset_dict and 'quality_height' in asset.asset_dict, \
+                'If pad_cmd is specified, must also EXPLICITLY specify quality_width and quality_height.'
+
         pass
 
     def _wait_for_workfiles(self, asset):
@@ -296,10 +305,12 @@ class Executor(TypeVersionEnabled):
 
     @staticmethod
     def _set_asset_use_path_as_workpath(asset):
-        # if no rescaling is involved, directly work on ref_path/dis_path,
-        # instead of opening workfiles
+        # if no rescaling or croping or padding is involved, directly work on
+        # ref_path/dis_path, instead of opening workfiles
         if asset.quality_width_height == asset.ref_width_height \
-                and asset.quality_width_height == asset.dis_width_height:
+                and asset.quality_width_height == asset.dis_width_height\
+                and asset.crop_cmd is None\
+                and asset.pad_cmd is None:
             asset.use_path_as_workpath = True
 
     @classmethod
@@ -326,21 +337,25 @@ class Executor(TypeVersionEnabled):
         if fifo_mode:
             os.mkfifo(asset.ref_workfile_path)
 
-        width, height = asset.ref_width_height
         quality_width, quality_height = asset.quality_width_height
         yuv_type = asset.yuv_type
         resampling_type = asset.resampling_type
 
-        src_fmt_cmd = '-f rawvideo -pix_fmt {yuv_fmt} -s {width}x{height}'.\
-            format(yuv_fmt=asset.yuv_type, width=width, height=height)
+        width, height = asset.ref_width_height
+        src_fmt_cmd = self._get_src_fmt_cmd(asset, height, width)
+
+        crop_cmd = self._get_crop_cmd(asset)
+        pad_cmd = self._get_pad_cmd(asset)
 
         ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
-                     '-pix_fmt {yuv_type} -vf scale={width}x{height} -f rawvideo ' \
+                     '-pix_fmt {yuv_type} -vf {crop_cmd}{pad_cmd}scale={width}x{height} -f rawvideo ' \
                      '-sws_flags {resampling_type} -y {dst}'.format(
             ffmpeg=get_and_assert_ffmpeg(),
             src=asset.ref_path, dst=asset.ref_workfile_path,
             width=quality_width, height=quality_height,
             src_fmt_cmd=src_fmt_cmd,
+            crop_cmd=crop_cmd,
+            pad_cmd=pad_cmd,
             yuv_type=yuv_type,
             resampling_type=resampling_type)
         if self.logger:
@@ -359,26 +374,45 @@ class Executor(TypeVersionEnabled):
         if fifo_mode:
             os.mkfifo(asset.dis_workfile_path)
 
-        width, height = asset.dis_width_height
         quality_width, quality_height = asset.quality_width_height
         yuv_type = asset.yuv_type
         resampling_type = asset.resampling_type
 
-        src_fmt_cmd = '-f rawvideo -pix_fmt {yuv_fmt} -s {width}x{height}'.\
-            format(yuv_fmt=asset.yuv_type, width=width, height=height)
+        width, height = asset.dis_width_height
+        src_fmt_cmd = self._get_src_fmt_cmd(asset, height, width)
+
+        crop_cmd = self._get_crop_cmd(asset)
+        pad_cmd = self._get_pad_cmd(asset)
 
         ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
-                     '-pix_fmt {yuv_type} -vf scale={width}x{height} -f rawvideo ' \
+                     '-pix_fmt {yuv_type} -vf {crop_cmd}{pad_cmd}scale={width}x{height} -f rawvideo ' \
                      '-sws_flags {resampling_type} -y {dst}'.format(
             ffmpeg=get_and_assert_ffmpeg(),
             src=asset.dis_path, dst=asset.dis_workfile_path,
             width=quality_width, height=quality_height,
             src_fmt_cmd=src_fmt_cmd,
+            crop_cmd=crop_cmd,
+            pad_cmd=pad_cmd,
             yuv_type=yuv_type,
             resampling_type=resampling_type)
         if self.logger:
             self.logger.info(ffmpeg_cmd)
         subprocess.call(ffmpeg_cmd, shell=True)
+
+    def _get_src_fmt_cmd(self, asset, height, width):
+        src_fmt_cmd = '-f rawvideo -pix_fmt {yuv_fmt} -s {width}x{height}'. \
+            format(yuv_fmt=asset.yuv_type, width=width, height=height)
+        return src_fmt_cmd
+
+    def _get_crop_cmd(self, asset):
+        crop_cmd = "crop={},".format(
+            asset.crop_cmd) if asset.crop_cmd is not None else ""
+        return crop_cmd
+
+    def _get_pad_cmd(self, asset):
+        pad_cmd = "pad2={},".format(
+            asset.pad_cmd) if asset.pad_cmd is not None else ""
+        return pad_cmd
 
     @staticmethod
     def _close_ref_workfile(asset):
