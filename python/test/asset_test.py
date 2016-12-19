@@ -395,24 +395,38 @@ class AssetTest(unittest.TestCase):
     def test_crop_cmd(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'crop_cmd':'570:320:3:2'})
+                      asset_dict={'width':720, 'height':480,
+                                  'quality_width':720, 'quality_height':320,
+                                  'yuv_type':'yuv422p',
+                                  'crop_cmd':'570:320:3:2'})
         self.assertEquals(asset.crop_cmd, '570:320:3:2')
+        self.assertEquals(str(asset), "test_0_0__720x480_yuv422p_vs__720x480_yuv422p_q_720x320_crop570:320:3:2")
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={})
+                      asset_dict={'width':720, 'height':480,
+                                  'quality_width':720, 'quality_height':320,
+                                  'yuv_type':'yuv422p',})
         self.assertTrue(asset.crop_cmd is None)
+        self.assertEquals(str(asset), "test_0_0__720x480_yuv422p_vs__720x480_yuv422p_q_720x320")
 
     def test_pad_cmd(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'pad_cmd':'iw+6:ih+4:3:2'})
+                      asset_dict={'width':720, 'height':480,
+                                  'quality_width':720, 'quality_height':320,
+                                  'yuv_type':'yuv422p',
+                                  'pad_cmd':'iw+6:ih+4:3:2'})
         self.assertEquals(asset.pad_cmd, 'iw+6:ih+4:3:2')
+        self.assertEquals(str(asset), "test_0_0__720x480_yuv422p_vs__720x480_yuv422p_q_720x320_padiw+6:ih+4:3:2")
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={})
+                      asset_dict={'width':720, 'height':480,
+                                  'quality_width':720, 'quality_height':320,
+                                  'yuv_type':'yuv422p',})
         self.assertTrue(asset.pad_cmd is None)
+        self.assertEquals(str(asset), "test_0_0__720x480_yuv422p_vs__720x480_yuv422p_q_720x320")
 
 if __name__ == '__main__':
     unittest.main()

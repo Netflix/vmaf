@@ -45,6 +45,8 @@ def read_dataset(dataset, **kwargs):
     quality_width = dataset.quality_width if hasattr(dataset, 'quality_width') else None
     quality_height = dataset.quality_height if hasattr(dataset, 'quality_height') else None
     resampling_type = dataset.resampling_type if hasattr(dataset, 'resampling_type') else None
+    crop_cmd = dataset.crop_cmd if hasattr(dataset, 'crop_cmd') else None
+    pad_cmd = dataset.pad_cmd if hasattr(dataset, 'pad_cmd') else None
 
     ref_dict = {} # dictionary of content_id -> path for ref videos
     for ref_video in ref_videos:
@@ -96,6 +98,20 @@ def read_dataset(dataset, **kwargs):
         else:
             resampling_type_ = None
 
+        if crop_cmd is not None:
+            crop_cmd_ = crop_cmd
+        elif 'crop_cmd' in dis_video:
+            crop_cmd_ = dis_video['crop_cmd']
+        else:
+            crop_cmd_ = None
+
+        if pad_cmd is not None:
+            pad_cmd_ = pad_cmd
+        elif 'pad_cmd' in dis_video:
+            pad_cmd_ = dis_video['pad_cmd']
+        else:
+            pad_cmd_ = None
+
         asset_dict = {'width': width_,
                       'height': height_,
                       'yuv_type': yuv_fmt_,
@@ -110,6 +126,10 @@ def read_dataset(dataset, **kwargs):
             asset_dict['quality_height'] = quality_height_
         if resampling_type_ is not None:
             asset_dict['resampling_type'] = resampling_type_
+        if crop_cmd_ is not None:
+            asset_dict['crop_cmd'] = crop_cmd_
+        if pad_cmd_ is not None:
+            asset_dict['pad_cmd'] = pad_cmd_
 
         if groundtruth is None and skip_asset_with_none_groundtruth:
             pass

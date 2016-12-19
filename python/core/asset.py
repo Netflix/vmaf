@@ -343,6 +343,16 @@ class Asset(WorkdirEnabled):
                 s += "_"
             s += "{}".format(self.resampling_type)
 
+        if self.crop_cmd is not None:
+            if s!= "":
+                s += "_"
+            s += "crop{}".format(self.crop_cmd)
+
+        if self.pad_cmd is not None:
+            if s!= "":
+                s += "_"
+            s += "pad{}".format(self.pad_cmd)
+
         return s
 
     def to_string(self):
