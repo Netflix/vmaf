@@ -335,7 +335,7 @@ class Executor(TypeVersionEnabled):
             format(yuv_fmt=asset.yuv_type, width=width, height=height)
 
         ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
-                     '-pix_fmt {yuv_type} -s {width}x{height} -f rawvideo ' \
+                     '-pix_fmt {yuv_type} -vf scale={width}x{height} -f rawvideo ' \
                      '-sws_flags {resampling_type} -y {dst}'.format(
             ffmpeg=get_and_assert_ffmpeg(),
             src=asset.ref_path, dst=asset.ref_workfile_path,
@@ -368,7 +368,7 @@ class Executor(TypeVersionEnabled):
             format(yuv_fmt=asset.yuv_type, width=width, height=height)
 
         ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
-                     '-pix_fmt {yuv_type} -s {width}x{height} -f rawvideo ' \
+                     '-pix_fmt {yuv_type} -vf scale={width}x{height} -f rawvideo ' \
                      '-sws_flags {resampling_type} -y {dst}'.format(
             ffmpeg=get_and_assert_ffmpeg(),
             src=asset.dis_path, dst=asset.dis_workfile_path,
