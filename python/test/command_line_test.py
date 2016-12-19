@@ -107,3 +107,6 @@ class CommandLineTest(unittest.TestCase):
             exe=exe, dataset=self.dataset_filename)
         ret = subprocess.call(cmd, shell=True)
         self.assertEquals(ret, 0)
+
+if __name__ == '__main__':
+    unittest.main()

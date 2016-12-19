@@ -39,9 +39,6 @@ class NorefFeatureExtractor(FeatureExtractor):
     def _run_on_asset(self, asset):
         # Override Executor._run_on_asset to skip working on ref video
 
-        # asserts
-        self._assert_an_asset(asset)
-
         if self.result_store:
             result = self.result_store.load(asset, self.executor_id)
         else:

@@ -1,7 +1,20 @@
+import os
+
+from tools.misc import check_program_exist
+
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
-import os
-
 PYTHON_ROOT = os.path.dirname(os.path.realpath(__file__))
 ROOT = os.path.abspath(os.path.join(PYTHON_ROOT, '..',))
+
+def get_and_assert_ffmpeg():
+    try:
+        import externals
+        assert hasattr(externals, 'FFMPEG_PATH')
+        assert check_program_exist(externals.FFMPEG_PATH)
+        return externals.FFMPEG_PATH
+    except (ImportError, AssertionError):
+        msg = 'Must install ffmpeg and set FFMPEG_PATH in ' \
+              '{python_path}/externals.py.'.format(python_path=PYTHON_ROOT)
+        raise Exception(msg)

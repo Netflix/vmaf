@@ -1,4 +1,5 @@
 import multiprocessing
+import subprocess
 from time import sleep
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
@@ -189,11 +190,6 @@ def index_and_value_of_min(l):
     '''
     return min(enumerate(l), key=lambda x: x[1])
 
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod()
-
-
 def parallel_map(func, list_args, processes=None):
     """
     Build my own parallelized map function since multiprocessing's Process(),
@@ -252,3 +248,29 @@ def parallel_map(func, list_args, processes=None):
     rets = map(lambda idx: return_dict[idx], range(len(list_args)))
 
     return rets
+
+def check_program_exist(program):
+    '''
+
+    >>> check_program_exist("xxxafasd34df")
+    False
+    >>> check_program_exist("ls")
+    True
+    >>> check_program_exist("pwd")
+    True
+
+    '''
+    try:
+        subprocess.call(program, stdout=open(os.devnull, 'wb'))
+        return True
+    except OSError as e:
+        if e.errno == os.errno.ENOENT:
+            return False
+        else:
+            # Something else went wrong while trying to run `wget`
+            raise
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
+

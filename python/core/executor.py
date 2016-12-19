@@ -1,6 +1,3 @@
-__copyright__ = "Copyright 2016, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
-
 import multiprocessing
 import os
 import subprocess
@@ -8,9 +5,12 @@ from time import sleep
 import hashlib
 
 from tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_slash, \
-    parallel_map
+    parallel_map, check_program_exist
 from core.mixin import TypeVersionEnabled
+from config import get_and_assert_ffmpeg
 
+__copyright__ = "Copyright 2016, Netflix, Inc."
+__license__ = "Apache, Version 2.0"
 
 class Executor(TypeVersionEnabled):
     """
@@ -126,6 +126,9 @@ class Executor(TypeVersionEnabled):
 
     def _assert_assets(self):
 
+        for asset in self.assets:
+            self._assert_an_asset(asset)
+
         # ===============================================
         # after using locks in run_executors_in_parallel,
         # no longer need constraint below
@@ -142,14 +145,11 @@ class Executor(TypeVersionEnabled):
     @classmethod
     def _assert_an_asset(cls, asset):
 
-        # ===============================================
-        # constraint no longer applies after allowing
-        # piping FFmpeg
-        # ===============================================
-        # # 1) for now, quality width/height has to agree with ref/dis width/height
-        # assert asset.quality_width_height \
-        #        == asset.ref_width_height \
-        #        == asset.dis_width_height
+        # if quality width/height do not to agree with ref/dis width/height,
+        # must rely on ffmpeg for scaling
+        if asset.quality_width_height != asset.ref_width_height \
+                or asset.quality_width_height != asset.dis_width_height:
+            get_and_assert_ffmpeg()
 
         pass
 
@@ -190,9 +190,6 @@ class Executor(TypeVersionEnabled):
         # Wraper around the essential function _generate_result, to
         # do housekeeping work including 1) asserts of asset, 2) skip run if
         # log already exist, 3) creating fifo, 4) delete work file and dir
-
-        # asserts
-        self._assert_an_asset(asset)
 
         if self.result_store:
             result = self.result_store.load(asset, self.executor_id)
@@ -337,11 +334,11 @@ class Executor(TypeVersionEnabled):
         src_fmt_cmd = '-f rawvideo -pix_fmt {yuv_fmt} -s {width}x{height}'.\
             format(yuv_fmt=asset.yuv_type, width=width, height=height)
 
-        from private.config import FFMPEG_PATH
         ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
                      '-pix_fmt {yuv_type} -s {width}x{height} -f rawvideo ' \
                      '-sws_flags {resampling_type} -y {dst}'.format(
-            ffmpeg=FFMPEG_PATH, src=asset.ref_path, dst=asset.ref_workfile_path,
+            ffmpeg=get_and_assert_ffmpeg(),
+            src=asset.ref_path, dst=asset.ref_workfile_path,
             width=quality_width, height=quality_height,
             src_fmt_cmd=src_fmt_cmd,
             yuv_type=yuv_type,
@@ -370,11 +367,11 @@ class Executor(TypeVersionEnabled):
         src_fmt_cmd = '-f rawvideo -pix_fmt {yuv_fmt} -s {width}x{height}'.\
             format(yuv_fmt=asset.yuv_type, width=width, height=height)
 
-        from private.config import FFMPEG_PATH
         ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
                      '-pix_fmt {yuv_type} -s {width}x{height} -f rawvideo ' \
                      '-sws_flags {resampling_type} -y {dst}'.format(
-            ffmpeg=FFMPEG_PATH, src=asset.dis_path, dst=asset.dis_workfile_path,
+            ffmpeg=get_and_assert_ffmpeg(),
+            src=asset.dis_path, dst=asset.dis_workfile_path,
             width=quality_width, height=quality_height,
             src_fmt_cmd=src_fmt_cmd,
             yuv_type=yuv_type,

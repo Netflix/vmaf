@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+
+echo "Run tests in python/extra/test..."
+python -m unittest discover -s python/test/extra -p '*_test.py'
