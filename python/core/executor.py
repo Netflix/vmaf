@@ -410,7 +410,7 @@ class Executor(TypeVersionEnabled):
         return crop_cmd
 
     def _get_pad_cmd(self, asset):
-        pad_cmd = "pad2={},".format(
+        pad_cmd = "pad={},".format(
             asset.pad_cmd) if asset.pad_cmd is not None else ""
         return pad_cmd
 
