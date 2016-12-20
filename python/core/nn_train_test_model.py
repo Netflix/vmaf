@@ -260,7 +260,7 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
 
     def to_file(self, filename):
         """
-        override TrainTestModel.to_file(self, filename)
+        override TrainTestModel.to_file
         """
 
         self._assert_trained()
@@ -315,7 +315,7 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
     @staticmethod
     def delete(filename):
         """
-        override TrainTestModel.delete(filename)
+        override TrainTestModel.delete
         """
         if os.path.exists(filename):
             os.remove(filename)

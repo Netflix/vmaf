@@ -50,6 +50,7 @@ class Executor(TypeVersionEnabled):
         self.optional_dict = optional_dict
         self.optional_dict2 = optional_dict2
 
+        self._assert_class()
         self._assert_args()
         self._assert_assets()
 
@@ -120,8 +121,11 @@ class Executor(TypeVersionEnabled):
         for asset in self.assets:
             self._remove_result(asset)
 
-    def _assert_args(self):
+    @classmethod
+    def _assert_class(cls):
+        pass
 
+    def _assert_args(self):
         pass
 
     def _assert_assets(self):
@@ -142,13 +146,19 @@ class Executor(TypeVersionEnabled):
 
         pass
 
+    @staticmethod
+    def _need_ffmpeg(asset):
+        return asset.quality_width_height != asset.ref_width_height \
+               or asset.quality_width_height != asset.dis_width_height \
+               or asset.crop_cmd is not None \
+               or asset.pad_cmd is not None
+
     @classmethod
     def _assert_an_asset(cls, asset):
 
         # if quality width/height do not to agree with ref/dis width/height,
         # must rely on ffmpeg for scaling
-        if asset.quality_width_height != asset.ref_width_height \
-                or asset.quality_width_height != asset.dis_width_height:
+        if cls._need_ffmpeg(asset):
             get_and_assert_ffmpeg()
 
         # if crop_cmd or pad_cmd is specified, make sure quality_width and
@@ -164,7 +174,6 @@ class Executor(TypeVersionEnabled):
 
     def _wait_for_workfiles(self, asset):
         # wait til workfile paths being generated
-        # FIXME: use proper mutex (?)
         for i in range(10):
             if os.path.exists(asset.ref_workfile_path) and \
                     os.path.exists(asset.dis_workfile_path):
@@ -303,14 +312,11 @@ class Executor(TypeVersionEnabled):
 
         return result
 
-    @staticmethod
-    def _set_asset_use_path_as_workpath(asset):
+    @classmethod
+    def _set_asset_use_path_as_workpath(cls, asset):
         # if no rescaling or croping or padding is involved, directly work on
         # ref_path/dis_path, instead of opening workfiles
-        if asset.quality_width_height == asset.ref_width_height \
-                and asset.quality_width_height == asset.dis_width_height\
-                and asset.crop_cmd is None\
-                and asset.pad_cmd is None:
+        if not cls._need_ffmpeg(asset):
             asset.use_path_as_workpath = True
 
     @classmethod

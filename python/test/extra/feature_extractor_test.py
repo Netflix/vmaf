@@ -1,10 +1,11 @@
 import unittest
 import config
 from core.asset import Asset
-from core.feature_extractor import VmafFeatureExtractor
+from core.feature_extractor import VmafFeatureExtractor, StrredFeatureExtractor
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
+
 
 class ParallelFeatureExtractorTestNew(unittest.TestCase):
 
@@ -171,6 +172,38 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 0.7203213958333331, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 40.280504208333333, places=4)
+
+    def test_run_strred_fextractor(self):
+        print 'test on running STRRED feature extractor...'
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.fextractor = StrredFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['STRRED_feature_srred_score'], 4.8845008541666664, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_trred_score'], 8.9429378333333336, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_strred_score'], 44.002554138184131, places=4)
+        self.assertAlmostEqual(results[1]['STRRED_feature_srred_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[1]['STRRED_feature_trred_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[1]['STRRED_feature_strred_score'], 0.0, places=4)
 
 if __name__ == '__main__':
     unittest.main()

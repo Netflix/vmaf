@@ -27,7 +27,6 @@ class NorefFeatureExtractor(FeatureExtractor):
     def _wait_for_workfiles(self, asset):
         # Override Executor._wait_for_workfiles to skip ref_workfile_path
         # wait til workfile paths being generated
-        # FIXME: use proper mutex (?)
         for i in range(10):
             if os.path.exists(asset.dis_workfile_path):
                 break
@@ -188,7 +187,7 @@ class MomentNorefFeatureExtractor(NorefFeatureExtractor):
 
     @classmethod
     def _post_process_result(cls, result):
-        # override Executor._post_process_result(result)
+        # override Executor._post_process_result
 
         result = super(MomentNorefFeatureExtractor, cls)._post_process_result(result)
 
