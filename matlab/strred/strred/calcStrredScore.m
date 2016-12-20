@@ -1,49 +1,51 @@
-function [rreds rredt]=calcStrredScore(rname,dname,nFramesPerSeg,rows,colms)
+function calcStrredScore(rname,dname,rows,colms)
 
-rreds=zeros(1,numel(1:nFramesPerSeg));
-rredt=zeros(1,numel(1:nFramesPerSeg));
-rredssn=zeros(1,numel(1:nFramesPerSeg));
-rredtsn=zeros(1,numel(1:nFramesPerSeg));
+rfid=fopen(rname);
+dfid=fopen(dname);
 
-for k = 1 : (nFramesPerSeg - 1)
-
-    disp(sprintf('Process frame %d...', k));
-
-    %Read successive frames in the reference
-    [yr1,cbr,crr]=readframe(rname,k,rows,colms);
-    yr1=reshape(yr1,colms,rows)';
-    [yr2,cbr,crr]=readframe(rname,k+1,rows,colms);
-    yr2=reshape(yr2,colms,rows)';
-    %Extract temporal and spatial information from the frames
-    [spatial_ref temporal_ref] = extract_info(yr1,yr2);
+iframe = -1;
+while 1
     
-    %Read successive frames in the distorted
-    [yd1,cbr,crr]=readframe(dname,k,rows,colms);
-    yd1=reshape(yd1,colms,rows)';
-    [yd2,cbr,crr]=readframe(dname,k+1,rows,colms);
-    yd2=reshape(yd2,colms,rows)';
-    %Extract temporal and spatial information from the frames
-    [spatial_dis temporal_dis] = extract_info(yd1,yd2);
+    [yr,cbr,crr]=readframefromfid(rfid,rows,colms);
+    [yd,cbr,crr]=readframefromfid(dfid,rows,colms);
     
-    %figure;subplot(2,2,1);imagesc(yr1);colormap gray;colorbar;subplot(2,2,2);imagesc(yd1-yr1);colormap gray;colorbar;subplot(2,2,3);imagesc(yr2);colormap gray;colorbar;subplot(2,2,4);imagesc(yd2-yr2);colormap gray;colorbar;title(sprintf('STRRED %f',strred))
+    if feof(rfid) || feof(dfid)
+        break;
+    end
     
-    rreds(k) = mean2(abs(spatial_ref-spatial_dis)); %spatial RRED for frame k
-    rredt(k) = mean2(abs(temporal_ref-temporal_dis));% temporal RRED for frame k
-    rredssn(k) = abs(mean2(spatial_ref-spatial_dis));% spaial RRED using 1 number for frame k
-    rredtsn(k) = abs(mean2(temporal_ref-temporal_dis)); % temporal RRED using 1 number for frame k
+    % read successful, can then reshape
+    yr=reshape(yr,colms,rows)';
+    yd=reshape(yd,colms,rows)';
+    
+    if iframe == -1        
+        yr_prev=yr;
+        yd_prev=yd;
+        iframe=iframe+1;
+        continue;
+    end
+    
+    [spatial_ref temporal_ref] = extract_info(yr_prev,yr);
+    [spatial_dis temporal_dis] = extract_info(yd_prev,yd);
+
+    %figure;subplot(2,2,1);imagesc(yr_prev);colormap gray;colorbar;subplot(2,2,2);imagesc(yd_prev-yr_prev);colormap gray;colorbar;subplot(2,2,3);imagesc(yr);colormap gray;colorbar;subplot(2,2,4);imagesc(yd-yr);colormap gray;colorbar;title(sprintf('STRRED %f',strred));
+
+    srred = mean2(abs(spatial_ref-spatial_dis));
+    trred = mean2(abs(temporal_ref-temporal_dis));
+    
+    disp(sprintf('srred: %d %f', iframe, srred));
+    disp(sprintf('trred: %d %f', iframe, trred));
+    
+    yr_prev=yr;
+    yd_prev=yd;
+    iframe=iframe+1;
 
 end
 
-% pad the last frame's numbers
-rreds(nFramesPerSeg) = rreds(nFramesPerSeg-1);
-rredt(nFramesPerSeg) = rredt(nFramesPerSeg-1);
-rredssn(nFramesPerSeg) = rredssn(nFramesPerSeg-1);
-rredtsn(nFramesPerSeg) = rredtsn(nFramesPerSeg-1);
+% repeat reading for last frame
+disp(sprintf('srred: %d %f', iframe, srred));
+disp(sprintf('trred: %d %f', iframe, trred));
 
-srred=mean(rreds); %spatial RRED
-trred=mean(rredt); %temporal RRED
-srredsn=mean(rredssn); %single no. spatial RRED
-trredsn=mean(rredtsn); %single no. temporal RRED
+fclose(rfid);
+fclose(dfid);
 
-strred = srred*trred; %spatiotemporal RRED
-strredsn = srredsn*trredsn; %spatiotemporal RRED
+end

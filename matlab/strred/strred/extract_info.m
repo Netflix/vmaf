@@ -20,8 +20,8 @@ function [spatial temporal] = extract_info(frame1,frame2)
 
 % The code used herein is developed using code already developed for the
 % algorithms in the following two papers:
-% H. R. Sheikh and A. C. Bovik, “Image information and visual quality,” IEEE Trans. Image Process., vol. 15, no. 2, pp. 430–444, Feb. 2006
-% Q. Li and Z. Wang, “Reduced-reference image quality assessment using divisive normalization-based image representation,” IEEE Journal of Selected Topics in Signal Processing: Special issue on Visual Media Quality Assessment, vol. 3, pp. 202– 211, 2009.
+% H. R. Sheikh and A. C. Bovik, "Image information and visual quality," IEEE Trans. Image Process., vol. 15, no. 2, Feb. 2006
+% Q. Li and Z. Wang, "Reduced-reference image quality assessment using divisive normalization-based image representation," IEEE Journal of Selected Topics in Signal Processing: Special issue on Visual Media Quality Assessment, vol. 3, 2009.
 
 % 'spatial' and 'temporal' refer to the spatial and temporal scaled entropy information
 % for different blocks in the subband
