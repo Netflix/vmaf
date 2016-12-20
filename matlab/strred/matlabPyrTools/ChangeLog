@@ -1,0 +1,430 @@
+	   Log of changes made to matlabPyrTools code
+		(important changes marked with **)
+-----------------------------------------------------------------------	
+2004-10-14  Eero Simoncelli  <eero@sesto.cns.nyu.edu>
+
+	* Made new tarfile (version 1.3) 
+	
+	* Incorporated complex-valued steerable pyramid code (buildSCFpyr,
+	buildSCFpyrLevs,reconSCFpyr) written by Javier Portilla in 9/97,
+	and used in our work on texture representation/synthesis
+	(Portilla&Simoncelli, Int'l Journal of Computer Vision,
+	40(1):49-71, Dec 2000).
+	
+	* Incorporated imGradient.m from personal code.
+	
+	* reagan.pgm out.  feynam.pgm in
+	
+2004-03-20  Eero Simoncelli  <eero@sesto.cns.nyu.edu>
+
+	* blur.m added (just calls blurDn and then upBlur).
+	
+2003-08-06  Eero Simoncelli  <eero@sesto.cns.nyu.edu>
+
+	* blurDn.m (filt): Forced correct scaling of filters in  1D
+
+2003-05-28  Eero Simoncelli  <eero@ferrando.cns.nyu.edu>
+
+	* incorporated setPyrBand.m from local code
+
+2002-10-01  Eero Simoncelli  <eero.simoncelli@nyu.edu>
+
+	* incorporated clip.m from local code
+
+2002-09-18  Eero Simoncelli  <eero.simoncelli@nyu.edu>
+
+	* pointOp.m: Added the new 'extrap' option for matlab's interp1 to
+	  make this m-file version more compatible with the mex version.
+
+Wed Aug 28 2002  Eero Simoncelli  <eero.simoncelli@nyu.edu>
+
+	* var2.m: now returns zero (instead of error) for matrix of size 1.
+	* function VECTORIZE renamed to VECTIFY, since it was colliding
+   	  with a function introduced in standard matlab.
+	
+Dec 27 2001  Eero Simoncelli  <eero.simoncelli@nyu.edu>
+
+	* Modified calls to upConv in reconSpyr.m and reconSpyrLevs.m so
+	that the returned result is bound.  Previously, had relied on the
+	MEX version of upConv to destructively modify the result array,
+	users had been getting errors because they were using the m-file
+	version of upConv.
+	
+Wed Sep 19 2001  Eero Simoncelli  <eero.simoncelli@nyu.edu>
+	
+	* buildSFpyrLevs/reconSFpyrLevs: replace use of "i" with sqrt(-1), to
+   	  avoid  problems if user rebinds it!
+	
+Wed Mar 28 10:22:01 2001  Eero Simoncelli  <eero.simoncelli@nyu.edu>
+
+	* Moved innerProd.m and all associated MEX files from the
+	matlabLocal source tree into matlabPyrTools.  
+	* Added innerProd to Contents.m
+	* Updated/clarified WARNINGS in all *.m files that have MEX versions.
+	
+Tue Mar 27 11:21:53 2001  Eero Simoncelli  <eero.simoncelli@nyu.edu>
+
+	* Incorporated Windows MEX files (*.dll) into MEX subdirectory.
+	 Windows users should either copy these into the main directory,
+	 or put the MEX subdirectory in their matlab path.
+	
+Fri Mar 23 14:46:16 2001  Eero Simoncelli  <eero.simoncelli@nyu.edu>
+
+	* buildSFpyrLevs.m, reconSFpyrLevs.m: shift the raised-cosine
+ 	lookup table (Xrcos) instead of incrementing the log-radial image
+ 	(log_rad).  THis is more efficient...
+
+Fri Oct  1 19:37:03 1999  Eero Simoncelli  <eero.simoncelli@nyu.edu>
+
+	* upConv.m: Did not return correct size result when STOP argument
+ 	was passed.  Thanks to hertzman@mrl.nyu.edu for pointing this out.
+	
+Fri Sep 17 15:53:26 1999  Eero Simoncelli  <eero.simoncelli@nyu.edu>
+
+	* buildSFpyrLevs.m: Changed lutsize to 1024, giving a slight
+	increase in accuracy.
+
+Thu Feb 25 18:10:38 1999  Eero Simoncelli  <eero.simoncelli@nyu.edu>
+
+	* histo1.m: Modified histo.m to be more compatible (but still not
+ 	exactly the same) as the MEX file version.
+
+Fri Jun 12 21:15:39 1998  Eero Simoncelli  <eero.simoncelli@nyu.edu>
+
+	* TUTORIALS pyramids.m upgraded.
+
+Tue Feb 17 13:22:28 1998  Eero Simoncelli  <eero.simoncelli@nyu.edu>
+
+	* showIm.m: Dims are now printed followed by the zoom factor.
+
+Mon Oct 13 14:49:51 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	* mkSquare.m: Modified to do raised-cosine soft threshold
+ 	transitions.
+
+Tue Oct  7 10:13:51 1997  Eero Simoncelli  <eero@chrysothemis.cims.nyu.edu>
+
+	* upConv.m: Argument order was wrong (this function is not used
+ 	anyway, unless you don't compile the MEX code). - Thanks to
+ 	farid@psyche.mit.edu for pointing this out.
+
+Thu Sep 25 16:09:49 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	* MEX/wrap.c: Changed #include <malloc.h> to <stdlib.h>, as
+ 	suggested by David Brainard.  * Incorporated Mac-compiled mex
+ 	files, courtesy of David Brainard.
+	
+Sat Sep  6 16:10:25 1997  Eero Simoncelli  <eero@chrysothemis.cims.nyu.edu>
+
+	* MEX/convolve.h:  abstracted out type of images with typedef image_type.
+	Added ansi declarations.
+	
+Fri Aug 29 13:49:16 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	** showIm.m: Modified to behave better under resizing (and printing):
+	resets axis units to "normalized".
+
+Thu Aug 28 22:56:52 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	** MEX/edges.c: reflect1, reflect2, repeat, extend upgraded to work
+ 	properly for non-symmetric filters.  reflect2 and extend were also
+ 	broken for upConv.  Added qreflect2 to handle even-length QMF's
+ 	which broke under the reflect2 modification.
+	* Added example code to TUTORIALS/matlabPyrTools to illustrate the
+	boundary-handling behavior...
+	
+Thu Aug 21 13:34:17 1997  Eero Simoncelli  <eero@chrysothemis.cims.nyu.edu>
+
+	* var2, skew2, kurt2: modified to return complex values for complex images.
+	* imStats.m: now gives an error for complex args.
+
+Thu Aug 14 15:24:29 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	* Modified shift.m: negated the meaning of the offset parameter,
+	such that RES=shift(MTX,OFFSET) means RES(POS)=MTX(POS-OFFSET)
+	(this is more intuitive).
+
+Thu Jul 10 17:06:52 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	* Modified MEX/Makefile-* to be consistent with matlab5:
+	   - call mex instead of cmex
+	   - use -V4 flag (creating matlab v4 compatible binaries)
+	
+	* showIm.m (xlbl_offset): Modified to use "points" units, so that
+	printed images look correct.  Still slightly busted for arbitrary figure
+	window sizes and for printing.
+	
+	* Modified upConv.c: does not return ANYTHING if you pass a result
+ 	argument (this had been causing occasional problems with matlab's 
+	memory manager).
+	
+Mon Jun 30 12:09:30 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	* reconSFpyr.m (res): now returns real part (oops).
+
+	* reconSpyrLevs.m (maxLev): got rid of superfluous nbands argument
+ 	(can be calculated from bfilts).
+
+Mon May 26 12:29:54 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	* showIm.m/pgmWrite.m: Modified 'auto3'-scaling to use a
+ 	histogram.  This gives a significant speedup.
+
+	* fixed a few minor bugs in the TUTORIALS, having to do with 
+	matching image sizes to the machine speed...
+
+Sat May 10 17:27:25 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	* pgmWrite.m: fixed auto-scaling bug.  Added new scaling
+	calculations, parallel to those of imShow.
+
+Fri May  9 09:02:56 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	* buildSFpyr.m: Changed NBANDS argument to be ORDER, which is one
+ 	less than the number of orientation bands.  This is consistent
+ 	with the derivative order, and the labels on the spNFilters files.
+
+Tue May  6 19:08:18 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	** Added buildSFpyr, reconSFpyr: Steerable pyramids constructed
+        in the Fourier domain.  Radial functions tile, with a
+	raised-cosine falloff.  Angular functions are
+        cos(theta-k\pi/(K+1))^K, where K is the order (number of bands
+	minus 1).  Compared to the convolution version:
+	    + Reconstruction is exact (within floating point errors) 
+	    + Can produce any number of orientation bands. 
+	    - Typically slower.
+	    - Boundary-handling must be circular.
+	Could be made much more efficient by taking advantage of symmetries in
+	the fft!
+	
+	* Added example usage of Fourier steerable pyramid to TUTORIALS/pyramids.m
+	
+	* steer.m:  fixed for harmonic lists including zero.
+
+Sun May  4 15:16:10 1997  Eero Simoncelli  <eero@ferrando.cns.nyu.edu>
+
+	* MEX/Makefile-linux: created.
+	
+	* spyrHt, spyrNumBands: Modified to return 0 for pyramids of height 0.
+	
+	* reconWpyr.m: utilize desctructive addition in calls to upConv.
+	
+	* reconSpyr.m: Added error check to ensure consistancy between
+	pyramid and filter file.  Utilize destructive addition in upConv
+	call on highpass band.  Modified to work properly with pyramids of
+	height 0.
+	
+Mon Apr 28 13:38:10 1997  Eero Simoncelli  <eero@ferrando.cns.nyu.edu>
+
+	* lplot.m: modified to handle complex vectors,  use standard MatLab 
+	  indices, and show minimal axes.  Added xrange parameter to allow
+	  adjustment of X axis labeling.
+
+Sun Apr 27 20:20:41 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	* var2, skew2, kurt2: enhanced to work on complex matrices.
+	
+Sat Apr 26 11:16:12 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	* Changed parent directory (and distribution) name:
+		   matlabImTools -> matlabPyrTools
+
+	* namedFilter.m: Added two more Daubechies filters, and modified
+	names to match the reference (e.g., daub2 is now a 4-tap filter).
+
+        * Added vectorize.m: trivial function to pack matrix into vector (i.e., 
+	computes mtx(:)).
+	
+	* Added upBlur.m: Upsample and blur (parallels blurDn).
+
+Sun Apr 13 14:23:38 1997  Eero Simoncelli  <eero@chrysothemis.cims.nyu.edu>
+
+	* TUTORIALS/pyramids.m: Added plots of Fourier spectra for Wavelet bases.
+	
+	* make-tar-file: switched from compress to  gzip  for the
+	distribution tarfile.
+
+	* namedFilter.m: Added a few even-length QMF's from Johnston80.
+
+Fri Apr 11 19:16:21 1997  Eero Simoncelli  <eero@chrysothemis.cims.nyu.edu>
+
+	* buildWpyr.m, reconWpyr.m: Modified slightly, so that subsampling
+	lattice is better for even-length filters.
+	
+	* TUTORIALS/pyramids.m: Substantially overhauled.
+	
+Thu Apr 10 15:20:23 1997  Eero Simoncelli  <eero@chrysothemis.cims.nyu.edu>
+
+	* blurDn.m: added this function to downsample an image by a factor
+ 	2^L.
+
+	* Fixed minor bug in upConv.m: errors in image size checking.
+
+Mon Apr  7 13:25:37 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	* Changed TUTORIALS/matlabImTools.m to use histo.mex instead of
+ 	matlab's hist.
+
+Wed Apr  2 13:20:55 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	** Incorporated Denis Pelli's ThinkC and MetroWorks projects for
+ 	Macintosh versions of the MEX code, along with MEX binaries.  These
+ 	are included as an HQX'ed self-extracting archive
+ 	(Macintosh-MEX.sit.hqx), in the MEX subdirectory.
+
+Tue Apr  1 15:35:31 1997  Eero Simoncelli  <eero@chrysothemis.cims.nyu.edu>
+
+	* edges.c: modified by Denis Pelli to support THINK C.  * edges.c:
+	
+ 	* histo.c, upConv.c, corrDn.c: minor changes in error message
+ 	printouts, to work around bugs in THINK C.
+	
+	* Included Denis Pelli's MacReadMe file in the MEX subdirectory,
+ 	which gives instructions for MEX file compilation on a MacIntosh
+ 	(PPC or 68k).
+	
+	* wrap.c, convolve.c, edges.c: added explicit int function
+ 	declarations, and return values.
+
+	* range2.m/range2.c: A MEX function for fast min/max computation.
+  	Adjusted entropy2.m, histo.m, imStats.m, pgmWrite.m, showIm.m,
+ 	showLpyr.m, showSpyr.m, showWpyr.m to call it.
+	  
+Thu Mar 27 17:23:05 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	** histo.m/histo.c: Added MEX function HISTO, a fast replacement
+ 	for matlab's HIST function.  Modified histoMatch.m, entropy2.m to
+ 	call it.
+	
+	* Changed main directory  name to matlabImTools.
+	
+	* Added TUTORIALS/README file.
+	
+Wed Mar 19 14:19:51 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	* Changed directory name: MEX_SRC -> MEX
+
+Wed Mar 12 17:00:03 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	* mkGaussian.m: fixed another (X,Y) bug: both dimensions and 
+	cov/mean are now specified in [y,x] order.
+
+Tue Mar 11 19:08:17 1997  Eero Simoncelli  <eero@chrysothemis.cims.nyu.edu>
+
+	* showSpyr.m: Fixed a bug that was dropping display of one
+	orientation band when there were more than 2 of them!
+
+Mon Mar 10 19:08:24 1997  Eero Simoncelli  <eero@chrysothemis.cims.nyu.edu>
+
+	* Added shift.m
+	
+	* makeSteerMtx -> steerDir2HarmMtx
+	
+	* Added TUTORIALS/matlab-EPS.m: examples using the code in this
+ 	distribution.
+
+Sun Mar  9 17:49:18 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	** showIm.m:  
+	  - args: changed order so that NSHADES is last.
+	  - TITLES: Can now pass a string for IM, which will be evaluated
+ 	    in the global environment to get the matrix.  The string is
+ 	    used as a title.  MATLAB v.5 ONLY!!!
+          - Added 'auto3' RANGE value, that scales based on percentiles.
+	    THis is more robust to outliers than 'auto2' or 'auto1'.
+	
+	* pixelAxes.m: Made a more serious attempt to reverse-engineer
+ 	  Mathworks' image pixelization.  It is improved, but still makes
+ 	  occasional errors.
+	
+	* Added skew2.m.
+	
+Fri Mar  7 10:11:07 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	* pixelAxes.m: Modified to take an optional
+	ZOOM argument.  Fixed dimension ordering bug
+	(positions are reported (x,y), but mtx dims are (y,x)!)
+	
+	* showIm.m: Added an optional ZOOM argument.
+
+Thu Mar  6 14:17:19 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	* Added showLpyr, showWpyr, showSpyr.  Modified
+ 	TUTORIALS/pyramids.m to use them.
+	
+	* added pixelAxes.m: Adjusts size (in pixels) of currently
+	displayed image to be a multiple of the matrix dimensions, 
+	thus eliminating display aliasing artifacts.
+	 This is now called by all the "show" commands.
+
+Mon Mar  3 17:33:25 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	* Fixed bug in pgmWrite (dimensions were written in reverse order).
+
+	* Fixed bug in showIm (X and Y coords were swapped on label display).
+	
+	* Fixed bug in reconLpyr (swapped X and Y coords on int_sz)
+	
+	* Changed calls to "reshape" to pass dimensions individually --
+	older version of matlab do not accept the reshape(mtx,[y x]) form.
+	
+	* Fixed bug in mkDisc: sz a scalar.
+	
+	* Added ifftshift.m
+	
+Fri Feb 28 11:07:20 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+	
+	* Re-worked TUTORIALS/pyramids.m
+
+	* buildGpyr and buildLpyr now use 1+maxPyrHt for default height.
+	
+	* Fixed buildGpyr to work on 1D signals.
+	
+	** Gaussian/Laplacian/Wavelet pyramid build and recon functions:
+	  - work properly with new corrDn/upConv.
+	  - use separable convolutions 
+	  - use destructive modification ability of upConv (less memory
+ 	  allocation)
+	
+	* modulateFlipShift -> modulateFlip.
+	
+	* added lpyrHt, wpyrHt, spyrHt to return number of levels in a pyramid.
+	
+Thu Feb 27 15:39:53 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	* Changed angular coordinate systems to CLOCKWISE in mkRamp,
+ 	mkTheta, mkSine, mkSquare.  This is unnatural for screen viewing,
+ 	but consistent with an origin in the upper left corner of the
+ 	image, which is the way one addresses the underlying matrix.
+
+	* mkSine and mkSquare can now take a frequency vector or the 
+	  period and direction args
+	
+Tue Feb 25 11:58:33 1997  Eero Simoncelli  <eero@servilia.cns.nyu.edu>
+
+	** Rewrote corrDn/upConv C routines:
+	  - more efficient
+	  - changed START parameters to have [1 1] origin, consistent with
+    	    matlab
+	  - added STOP parameters
+	  - upConv allows destructive modification of a result arg
+	  - changed order of other params (sorry)
+	  - wrote test file conv_test.m
+	* wrote zconv2.m
+
+Wed Aug 19 20:39:15 1996  Eero Simoncelli  (eero@tarpon.cis.upenn.edu)
+
+	** Added "pointOp" function (MUCH faster than interp1).
+	** Added "histoMatch" function.
+
+Fri Aug  2 00:56:31 1996  Eero Simoncelli  (eero@tarpon.cis.upenn.edu)
+
+	* Changed all function/file-names to be of the form "fooBar".  *
+ 	Fixed entropy2.m (busted due to typo).
+
+Original convolution code was written in Spring 1986, and comes from
+OBVIUS (Object-Based Vision and Image Understanding System), an
+interactive image-processing system written in Common Lisp (with calls
+to C code).
+	
