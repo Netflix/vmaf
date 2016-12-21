@@ -30,7 +30,7 @@ class FeatureTest(unittest.TestCase):
     MOMENT = config.ROOT + "/feature/moment"
     SSIM = config.ROOT + "/feature/ssim"
     MS_SSIM = config.ROOT + "/feature/ms_ssim"
-    LOG_FILENAME = config.ROOT + "/workspace/logFeatureTest"
+    LOG_FILENAME = config.ROOT + "/workspace/workdir/logFeatureTest"
     REF_YUV = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
     DIS_YUV = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
     YUV_FMT = "yuv420p"
@@ -298,7 +298,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
     MOMENT = config.ROOT + "/feature/moment"
     SSIM = config.ROOT + "/feature/ssim"
     MS_SSIM = config.ROOT + "/feature/ms_ssim"
-    LOG_FILENAME = config.ROOT + "/workspace/logFeatureTestYuv422p10le"
+    LOG_FILENAME = config.ROOT + "/workspace/workdir/logFeatureTestYuv422p10le"
     REF_YUV = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv422p10le.yuv"
     DIS_YUV = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv422p10le.yuv"
     YUV_FMT = "yuv422p10le"
@@ -549,7 +549,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
 class CornerCaseTest(unittest.TestCase):
 
     VMAF = config.ROOT + "/feature/vmaf"
-    LOG_FILENAME = config.ROOT + "/workspace/logCornerCaseTest"
+    LOG_FILENAME = config.ROOT + "/workspace/workdir/logCornerCaseTest"
     CMD_TEMPLATE = """
         {vmaf} vif {fmt} {ref} {dis} {w} {h} > {log};
         {vmaf} adm {fmt} {ref} {dis} {w} {h} >> {log};
