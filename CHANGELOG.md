@@ -1,5 +1,10 @@
 # Change Log
 
+## (12/20/2016) [1.1.20]
+
+**New features:**
+- Add STRRED runner.
+
 ## (12/19/2016) [1.1.19]
 
 **New features:**
