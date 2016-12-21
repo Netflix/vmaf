@@ -645,7 +645,7 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
 
     @classmethod
     def _predict(cls, model, xs_2d):
-        # override TrainTestModel._predict(cls, model, xs_2d)
+        # override TrainTestModel._predict
         f = list(xs_2d)
         for i, item in enumerate(f):
             f[i] = list(item)
@@ -655,7 +655,7 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
 
     def to_file(self, filename):
         """
-        override TrainTestModel.to_file(self, filename)
+        override TrainTestModel.to_file
         """
 
         self._assert_trained()
@@ -673,7 +673,7 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
     @staticmethod
     def delete(filename):
         """
-        override TrainTestModel.delete(filename)
+        override TrainTestModel.delete
         """
         if os.path.exists(filename):
             os.remove(filename)

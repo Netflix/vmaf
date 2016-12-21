@@ -11,7 +11,7 @@ from core.result import Result
 from core.feature_assembler import FeatureAssembler
 from core.train_test_model import TrainTestModel
 from core.feature_extractor import SsimFeatureExtractor, MsSsimFeatureExtractor, \
-    VmafFeatureExtractor
+    VmafFeatureExtractor, StrredFeatureExtractor
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -229,7 +229,7 @@ class VmafLegacyQualityRunner(QualityRunner):
 
     # override
     def _remove_result(self, asset):
-        # Override Executor._remove_result(self, asset) by redirecting it to the
+        # Override Executor._remove_result by redirecting it to the
         # FeatureAssembler.
 
         vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
@@ -653,3 +653,51 @@ class MotionQualityRunner(VmafSingleFeatureQualityRunner):
     TYPE = 'MOTION'
     # TYPE = 'TI'
     FEATURE_NAME = 'motion'
+
+
+class StrredQualityRunner(QualityRunner):
+
+    TYPE = 'STRRED'
+    VERSION = '1.0'
+
+    def _get_feature_assembler_instance(self, asset):
+
+        feature_dict = {StrredFeatureExtractor.TYPE:
+                            StrredFeatureExtractor.ATOM_FEATURES +
+                            (StrredFeatureExtractor.DERIVED_ATOM_FEATURES if
+                             hasattr(StrredFeatureExtractor, 'DERIVED_ATOM_FEATURES')
+                             else [])
+                        }
+
+        feature_assembler = FeatureAssembler(
+            feature_dict=feature_dict,
+            feature_option_dict=None,
+            assets=[asset],
+            logger=self.logger,
+            fifo_mode=self.fifo_mode,
+            delete_workdir=self.delete_workdir,
+            result_store=self.result_store,
+            optional_dict=None,
+            optional_dict2=None,
+            parallelize=False, # parallelization already in a higher level
+        )
+        return feature_assembler
+
+    def _run_on_asset(self, asset):
+        # Override Executor._run_on_asset(self, asset)
+        vmaf_fassembler = self._get_feature_assembler_instance(asset)
+        vmaf_fassembler.run()
+        feature_result = vmaf_fassembler.results[0]
+        result_dict = {}
+        result_dict.update(feature_result.result_dict.copy()) # add feature result
+        result_dict[self.get_scores_key()] = feature_result.result_dict[
+            StrredFeatureExtractor.get_scores_key('strred')] # add strred score
+        del result_dict[StrredFeatureExtractor.get_scores_key('strred')] # delete redundant
+        return Result(asset, self.executor_id, result_dict)
+
+    def _remove_result(self, asset):
+        # Override Executor._remove_result(self, asset) by redirecting it to the
+        # FeatureAssembler.
+
+        vmaf_fassembler = self._get_feature_assembler_instance(asset)
+        vmaf_fassembler.remove_results()

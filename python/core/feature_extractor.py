@@ -1,3 +1,6 @@
+import os
+from tools.misc import make_absolute_path
+
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
@@ -142,7 +145,7 @@ class VmafFeatureExtractor(FeatureExtractor):
 
     @classmethod
     def _post_process_result(cls, result):
-        # override Executor._post_process_result(result)
+        # override Executor._post_process_result
 
         result = super(VmafFeatureExtractor, cls)._post_process_result(result)
 
@@ -387,7 +390,7 @@ class MomentFeatureExtractor(FeatureExtractor):
 
     @classmethod
     def _post_process_result(cls, result):
-        # override Executor._post_process_result(result)
+        # override Executor._post_process_result
 
         result = super(MomentFeatureExtractor, cls)._post_process_result(result)
 
@@ -488,3 +491,81 @@ class MsSsimFeatureExtractor(FeatureExtractor):
 
         subprocess.call(ms_ssim_cmd, shell=True)
 
+class MatlabFeatureExtractor(FeatureExtractor):
+
+    @classmethod
+    def _assert_class(cls):
+        # override Executor._assert_class
+        super(MatlabFeatureExtractor, cls)._assert_class()
+        config.get_and_assert_matlab()
+
+class StrredFeatureExtractor(MatlabFeatureExtractor):
+
+    TYPE = 'STRRED_feature'
+    VERSION = '1.0'
+
+    ATOM_FEATURES = ['srred', 'trred', ]
+
+    DERIVED_ATOM_FEATURES = ['strred', ]
+
+    MATLAB_WORKSPACE = config.ROOT + '/matlab/strred'
+
+    @classmethod
+    def _assert_an_asset(cls, asset):
+        super(StrredFeatureExtractor, cls)._assert_an_asset(asset)
+        assert asset.yuv_type == 'yuv420p', \
+            'STRRED feature extractor only supports yuv420p for now.'
+
+    def _generate_result(self, asset):
+        # routine to call the command-line executable and generate quality
+        # scores in the log file.
+
+        ref_workfile_path = asset.ref_workfile_path
+        dis_workfile_path = asset.dis_workfile_path
+        log_file_path = self._get_log_file_path(asset)
+
+        current_dir = os.getcwd() + '/'
+
+        ref_workfile_path = make_absolute_path(ref_workfile_path, current_dir)
+        dis_workfile_path = make_absolute_path(dis_workfile_path, current_dir)
+        log_file_path = make_absolute_path(log_file_path, current_dir)
+
+        quality_width, quality_height = asset.quality_width_height
+
+        strred_cmd = '''{matlab} -nodisplay -nosplash -nodesktop -r "run_strred('{ref}', '{dis}', {h}, {w}); exit;" >> {log_file_path}'''.format(
+            matlab=config.get_and_assert_matlab(),
+            ref=ref_workfile_path,
+            dis=dis_workfile_path,
+            w=quality_width,
+            h=quality_height,
+            log_file_path=log_file_path,
+        )
+        if self.logger:
+            self.logger.info(strred_cmd)
+
+        os.chdir(self.MATLAB_WORKSPACE)
+        subprocess.call(strred_cmd, shell=True)
+        os.chdir(current_dir)
+
+    @classmethod
+    def _post_process_result(cls, result):
+        # override Executor._post_process_result
+
+        result = super(StrredFeatureExtractor, cls)._post_process_result(result)
+
+        # calculate refvar and disvar from ref1st, ref2nd, dis1st, dis2nd
+        srred_scores_key = cls.get_scores_key('srred')
+        trred_scores_key = cls.get_scores_key('trred')
+        strred_scores_key = cls.get_scores_key('strred')
+
+        # compute strred scores
+        srred_scores = result.result_dict[srred_scores_key]
+        trred_scores = result.result_dict[trred_scores_key]
+        strred_scores = map(lambda (x, y): x*y, zip(srred_scores, trred_scores))
+        result.result_dict[strred_scores_key] = strred_scores
+
+        # validate
+        for feature in cls.DERIVED_ATOM_FEATURES:
+            assert cls.get_scores_key(feature) in result.result_dict
+
+        return result

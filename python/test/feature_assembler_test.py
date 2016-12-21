@@ -19,7 +19,7 @@ class FeatureAssemblerTest(unittest.TestCase):
     def test_get_fextractor_subclasses(self):
         from core.noref_feature_extractor import NorefFeatureExtractor
         fextractor_subclasses = FeatureExtractor.get_subclasses_recursively()
-        self.assertEquals(len(fextractor_subclasses), 7)
+        self.assertEquals(len(fextractor_subclasses), 9)
         self.assertTrue(VmafFeatureExtractor in fextractor_subclasses)
         self.assertTrue(MomentFeatureExtractor in fextractor_subclasses)
 

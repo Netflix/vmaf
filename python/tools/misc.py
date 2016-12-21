@@ -254,14 +254,18 @@ def check_program_exist(program):
 
     >>> check_program_exist("xxxafasd34df")
     False
+    >>> check_program_exist("xxxafasd34df f899")
+    False
     >>> check_program_exist("ls")
+    True
+    >>> check_program_exist("ls -all")
     True
     >>> check_program_exist("pwd")
     True
 
     '''
     try:
-        subprocess.call(program, stdout=open(os.devnull, 'wb'))
+        subprocess.call(program.split(), stdout=open(os.devnull, 'wb'))
         return True
     except OSError as e:
         if e.errno == os.errno.ENOENT:
