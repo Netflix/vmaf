@@ -50,3 +50,6 @@ class ParallelQualityRunnerTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[1]['STRRED_feature_trred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_score'], 0.0, places=4)
 
+if __name__ == '__main__':
+    unittest.main()
+
