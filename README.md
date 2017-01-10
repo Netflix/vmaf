@@ -7,7 +7,7 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 ##What's New
 
 - (12/5/16) Speed up VMAF convolution operation by AVX.
-- (11/7/16) Custom subjective models (MOS, DMOS, MLE and more) are now supported. Read [this](resource/doc/dcc17.pdf) paper for some background, and see [this](#using-custom-subjective-models) section for usage.
+- (11/7/16) Custom subjective models (MOS, DMOS, MLE and more) are now supported. Read [this](resource/doc/dcc17v2.pdf) paper for some background, and see [this](#using-custom-subjective-models) section for usage.
 - (9/30/16) Added a [FAQ](FAQ.md) page.
 - (9/30/16) Added *vmafossexec* -- a C++ wrapper under [wrapper](wrapper). Refer to [Python-independent Implementation](#python-independent-implementation).
 
@@ -292,7 +292,7 @@ Above are two example scatter plots obtained from running the *run_vmaf_training
 
 ###Using Custom Subjective Models
 
-The commands *./run_vmaf_training* and *./run_testing* also support custom subjective models (e.g. DMOS (default), MLE and more). Read [this](resource/doc/dcc17.pdf) paper for some background.
+The commands *./run_vmaf_training* and *./run_testing* also support custom subjective models (e.g. DMOS (default), MLE and more). Read [this](resource/doc/dcc17v2.pdf) paper for some background.
 
 The subjective model option can be specified with option *--subj-model subjective_model*, for example:
 
