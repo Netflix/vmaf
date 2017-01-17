@@ -31,3 +31,11 @@ To provide some flexibility, in CLIs *run_vmaf*, *run_psnr*, *run_vmaf_in_batch*
 A: The current VMAF model (v0.3.2) was trained on videos encoded at *up to* 1080p resolution. It is still useful for measuring 4K videos, if you are interested in a relative score. In other words, for two 4K videos A and B with A perceptually better than B, the VMAF scores will tell you so too. However, if you are interested in an absolute score, say if a 4K video is perceptually acceptable, you may not get an accurate answer.
 
 The future plan is to publish a model specifically trained on 4K videos.
+
+**Q: Will VMAF work on applications other than HTTP adaptive streaming?**
+
+A: VMAF was designed with HTTP adaptive streaming in mind. Correspondingly, in terms of the types of video artifacts, it only considers compression artifact and scaling artifact (read [this](http://techblog.netflix.com/2016/06/toward-practical-perceptual-video.html) tech blog post for more details). The perceptual quality of other artifacts (for example, artifacts due to packet losses or transmission errors) may be predicted inaccurately.
+
+**Q: Can I pass encoded H264/VP9/H265 to VMAF as input? [Issue #55](https://github.com/Netflix/vmaf/issues/55)**
+
+A: Yes, you can. You can transcode an encoded video to raw YUV stream (e.g. by FFmpeg) and pipe it to VMAF. An example can be found [here](https://github.com/Netflix/vmaf/blob/master/ffmpeg2vmaf).
