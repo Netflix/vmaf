@@ -21,10 +21,15 @@ class Asset(WorkdirEnabled):
 
     Asset extends WorkdirEnabled mixin, which comes with a thread-safe working
     directory to facilitate parallel execution.
+
+    The ref_path/dis_path points to the reference/distorted video files. For now,
+    it supports YUV video files (yuvxxx), or encoded video files (notyuv) that
+    can be decoded by ffmpeg.
     """
 
     SUPPORTED_YUV_TYPES = ['yuv420p', 'yuv422p', 'yuv444p',
-                           'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
+                           'yuv420p10le', 'yuv422p10le', 'yuv444p10le',
+                           'notyuv']
     DEFAULT_YUV_TYPE = 'yuv420p'
 
     SUPPORTED_RESAMPLING_TYPES = ['bilinear', 'bicubic', 'lanczos']
@@ -53,6 +58,18 @@ class Asset(WorkdirEnabled):
         self.ref_path = ref_path
         self.dis_path = dis_path
         self.asset_dict = asset_dict
+
+        self._assert()
+
+    def _assert(self):
+        # if YUV is notyuv, then ref/dis width and height should not be given,
+        # since it must be encoded video and the information should be already
+        # in included in the header of the video files
+        if self.yuv_type == 'notyuv':
+            assert self.ref_width_height is None \
+                   and self.dis_width_height is None, \
+                'For yuv_type nonyuv, ' \
+                'ref_wdith_height and dis_width_height must not be specified.'
 
     @staticmethod
     def from_repr(rp):
@@ -109,14 +126,10 @@ class Asset(WorkdirEnabled):
         :return: width and height of reference video. If None, it signals that
         width and height should be figured out in other means (e.g. FFMPEG).
         """
-        if 'ref_width' in self.asset_dict \
-                and 'ref_height' in self.asset_dict:
-            return self.asset_dict['ref_width'], \
-                   self.asset_dict['ref_height']
-        elif 'width' in self.asset_dict \
-                and 'height' in self.asset_dict:
-            return self.asset_dict['width'], \
-                   self.asset_dict['height']
+        if 'ref_width' in self.asset_dict and 'ref_height' in self.asset_dict:
+            return self.asset_dict['ref_width'], self.asset_dict['ref_height']
+        elif 'width' in self.asset_dict and 'height' in self.asset_dict:
+            return self.asset_dict['width'], self.asset_dict['height']
         else:
             return None
 
@@ -127,14 +140,10 @@ class Asset(WorkdirEnabled):
         :return: width and height of distorted video. If None, it signals that
         width and height should be figured out in other means (e.g. FFMPEG)
         """
-        if 'dis_width' in self.asset_dict \
-                and 'dis_height' in self.asset_dict:
-            return self.asset_dict['dis_width'], \
-                   self.asset_dict['dis_height']
-        elif 'width' in self.asset_dict \
-                and 'height' in self.asset_dict:
-            return self.asset_dict['width'], \
-                   self.asset_dict['height']
+        if 'dis_width' in self.asset_dict and 'dis_height' in self.asset_dict:
+            return self.asset_dict['dis_width'], self.asset_dict['dis_height']
+        elif 'width' in self.asset_dict and 'height' in self.asset_dict:
+            return self.asset_dict['width'], self.asset_dict['height']
         else:
             return None
 
