@@ -454,11 +454,21 @@ class AssetTest(unittest.TestCase):
                           })
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      ref_path="", dis_path="",
+                      ref_path="refvideo", dis_path="disvideo",
                       asset_dict={
                           'yuv_type': 'notyuv',
                       })
         self.assertTrue(asset.quality_width_height is None)
+        self.assertEquals(str(asset), "test_0_0_refvideo_notyuv_vs_disvideo_notyuv")
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="refvideo", dis_path="disvideo",
+                      asset_dict={
+                          'yuv_type': 'notyuv',
+                          'quality_width': 720, 'quality_height': 480,
+                      })
+        self.assertEquals(asset.quality_width_height, (720, 480))
+        self.assertEquals(str(asset), "test_0_0_refvideo_notyuv_vs_disvideo_notyuv_q_720x480")
 
 if __name__ == '__main__':
     unittest.main()

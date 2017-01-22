@@ -130,7 +130,7 @@ class VmafFeatureExtractor(FeatureExtractor):
         vmaf_feature_cmd = "{vmaf} all {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
         .format(
             vmaf=self.VMAF_FEATURE,
-            yuv_type=asset.yuv_type,
+            yuv_type=self._get_workfile_yuv_type(asset.yuv_type),
             ref_path=asset.ref_workfile_path,
             dis_path=asset.dis_workfile_path,
             w=quality_width,

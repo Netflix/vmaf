@@ -7,7 +7,8 @@ import multiprocessing
 
 import numpy as np
 
-from tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_slash
+from tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_slash, \
+    match_any_files
 from core.feature_extractor import FeatureExtractor
 from tools.reader import YuvReader
 
@@ -21,7 +22,7 @@ class NorefFeatureExtractor(FeatureExtractor):
 
     def _assert_paths(self, asset):
         # Override Executor._assert_paths to skip asserting on ref_path
-        assert os.path.exists(asset.dis_path), \
+        assert os.path.exists(asset.dis_path) or match_any_files(asset.dis_path), \
             "Distorted path {} does not exist.".format(asset.dis_path)
 
     def _wait_for_workfiles(self, asset):
@@ -150,7 +151,9 @@ class MomentNorefFeatureExtractor(NorefFeatureExtractor):
 
         quality_w, quality_h = asset.quality_width_height
         with YuvReader(filepath=asset.dis_workfile_path, width=quality_w,
-                       height=quality_h, yuv_type=asset.yuv_type) as dis_yuv_reader:
+                       height=quality_h,
+                       yuv_type=self._get_workfile_yuv_type(asset.yuv_type)) \
+                as dis_yuv_reader:
             scores_mtx_list = []
             i = 0
             for dis_yuv in dis_yuv_reader:

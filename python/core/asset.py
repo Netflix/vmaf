@@ -317,8 +317,9 @@ class Asset(WorkdirEnabled):
         path = get_file_name_without_extension(self.dis_path)
         s += "{path}".format(path=path)
 
-        w, h = self.dis_width_height
-        s += "_{w}x{h}".format(w=w, h=h)
+        if self.dis_width_height:
+            w, h = self.dis_width_height
+            s += "_{w}x{h}".format(w=w, h=h)
 
         if self.yuv_type != self.DEFAULT_YUV_TYPE:
             s += "_{}".format(self.yuv_type)
@@ -433,9 +434,7 @@ class Asset(WorkdirEnabled):
         if self.use_path_as_workpath:
             return self.ref_path
         else:
-            return "{workdir}/ref_{str}".format(
-                workdir=self.workdir,
-                str=str(self))
+            return "{workdir}/ref_{str}".format(workdir=self.workdir,str=str(self))
 
     @property
     def dis_workfile_path(self):

@@ -8,6 +8,8 @@ __license__ = "Apache, Version 2.0"
 import sys
 import os
 
+from tools.scanf import sscanf, IncompleteCaptureError, FormatError
+
 def get_stdout_logger():
     import logging
     logger = logging.getLogger()
@@ -273,6 +275,37 @@ def check_program_exist(program):
         else:
             # Something else went wrong while trying to run `wget`
             raise
+
+def check_scanf_match(string, template):
+    '''
+    >>> check_scanf_match('frame00000000.icpf', 'frame%08d.icpf')
+    True
+    >>> check_scanf_match('frame00000003.icpf', 'frame%08d.icpf')
+    True
+    >>> check_scanf_match('frame0000001.icpf', 'frame%08d.icpf')
+    True
+    >>> check_scanf_match('frame00000001.icpff', 'frame%08d.icpf')
+    True
+    >>> check_scanf_match('gframe00000001.icpff', 'frame%08d.icpf')
+    False
+    >>> check_scanf_match('fyrame00000001.icpff', 'frame%08d.icpf')
+    False
+    >>> check_scanf_match("-1-2+3-4", "%d%d%d%d")
+    True
+    '''
+    try:
+        sscanf(string, template)
+        return True
+    except (FormatError, IncompleteCaptureError):
+        return False
+
+def match_any_files(template):
+    dir_ = os.path.dirname(template)
+    for filename in os.listdir(dir_):
+        filepath = dir_ + '/' + filename
+        if check_scanf_match(filepath, template):
+            return True
+    return False
 
 if __name__ == '__main__':
     import doctest
