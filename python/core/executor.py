@@ -151,10 +151,15 @@ class Executor(TypeVersionEnabled):
         return asset.quality_width_height != asset.ref_width_height \
                or asset.quality_width_height != asset.dis_width_height \
                or asset.crop_cmd is not None \
-               or asset.pad_cmd is not None
+               or asset.pad_cmd is not None \
+               or asset.yuv_type == 'notyuv'
 
     @classmethod
     def _assert_an_asset(cls, asset):
+
+        # needed by _generate_result, and by _open_ref_workfile or
+        # _open_dis_workfile if called
+        assert asset.quality_width_height is not None
 
         # if quality width/height do not to agree with ref/dis width/height,
         # must rely on ffmpeg for scaling
@@ -201,7 +206,7 @@ class Executor(TypeVersionEnabled):
     def _assert_paths(self, asset):
         assert os.path.exists(asset.ref_path), \
             "Reference path {} does not exist.".format(asset.ref_path)
-        assert os.path.exists(asset.ref_path), \
+        assert os.path.exists(asset.dis_path), \
             "Distorted path {} does not exist.".format(asset.dis_path)
 
     def _run_on_asset(self, asset):

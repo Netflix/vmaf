@@ -21,7 +21,7 @@ class NorefFeatureExtractor(FeatureExtractor):
 
     def _assert_paths(self, asset):
         # Override Executor._assert_paths to skip asserting on ref_path
-        assert os.path.exists(asset.ref_path), \
+        assert os.path.exists(asset.dis_path), \
             "Distorted path {} does not exist.".format(asset.dis_path)
 
     def _wait_for_workfiles(self, asset):

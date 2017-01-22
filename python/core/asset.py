@@ -69,7 +69,7 @@ class Asset(WorkdirEnabled):
             assert self.ref_width_height is None \
                    and self.dis_width_height is None, \
                 'For yuv_type nonyuv, ' \
-                'ref_wdith_height and dis_width_height must not be specified.'
+                'ref_width_height and dis_width_height must not be specified.'
 
     @staticmethod
     def from_repr(rp):

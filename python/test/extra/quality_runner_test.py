@@ -1,11 +1,43 @@
 import unittest
 import config
 from core.asset import Asset
-from core.quality_runner import StrredQualityRunner
+from core.quality_runner import StrredQualityRunner, PsnrQualityRunner
 from core.result_store import FileSystemResultStore
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
+
+class QualityRunnerTest(unittest.TestCase):
+
+    def tearDown(self):
+        if hasattr(self, 'runner'):
+            self.runner.remove_results()
+            pass
+
+    def setUp(self):
+        self.result_store = FileSystemResultStore()
+
+    def test_run_psnr_runner_with_notyuv(self):
+        print 'test on running PSNR runner...'
+        ref_path = config.ROOT + "/python/test/resource/icpf/frame%08d.icpf"
+        dis_path = config.ROOT + "/python/test/resource/icpf/frame%08d.icpf"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'yuv_type': 'notyuv',
+                                  'quality_width': 720, 'quality_height': 480,
+                                  })
+        self.runner = PsnrQualityRunner(
+            [asset],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None
+        )
+        self.runner.run()
+
+        results = self.runner.results
+        self.assertAlmostEqual(results[0]['PSNR_score'], 60.0, places=4)
 
 class ParallelQualityRunnerTestNew(unittest.TestCase):
 
