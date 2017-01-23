@@ -462,7 +462,7 @@ class VmafossExecQualityRunner(QualityRunner):
         vmafossexec_cmd = "{exe} {fmt} {w} {h} {ref_path} {dis_path} {model} --log {log_file_path} --log-fmt xml --psnr --ssim --ms-ssim" \
             .format(
             exe=self.VMAFOSSEXEC,
-            fmt=asset.yuv_type,
+            fmt=self._get_workfile_yuv_type(asset.yuv_type),
             w=quality_width,
             h=quality_height,
             ref_path=asset.ref_workfile_path,

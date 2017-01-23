@@ -2,7 +2,7 @@ import unittest
 import config
 from core.asset import Asset
 from core.quality_runner import StrredQualityRunner, PsnrQualityRunner, \
-    VmafQualityRunner
+    VmafQualityRunner, VmafossExecQualityRunner
 from core.result_store import FileSystemResultStore
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
@@ -61,6 +61,28 @@ class QualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
         self.assertAlmostEqual(results[0]['VMAF_score'], 98.860796771266365, places=4)
+
+    def test_run_vmafossexec_runner_with_notyuv(self):
+        print 'test on running VMAF runner...'
+        ref_path = config.ROOT + "/python/test/resource/icpf/frame%08d.icpf"
+        dis_path = config.ROOT + "/python/test/resource/icpf/frame%08d.icpf"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'yuv_type': 'notyuv',
+                                  'quality_width': 720, 'quality_height': 480,
+                                  })
+        self.runner = VmafossExecQualityRunner(
+            [asset],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None
+        )
+        self.runner.run()
+
+        results = self.runner.results
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 98.860796771266365, places=4)
 
 class ParallelQualityRunnerTestNew(unittest.TestCase):
 

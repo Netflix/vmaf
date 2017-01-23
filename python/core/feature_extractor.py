@@ -296,7 +296,7 @@ class PsnrFeatureExtractor(FeatureExtractor):
         psnr_cmd = "{psnr} {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
         .format(
             psnr=self.PSNR,
-            yuv_type=asset.yuv_type,
+            yuv_type=self._get_workfile_yuv_type(asset.yuv_type),
             ref_path=asset.ref_workfile_path,
             dis_path=asset.dis_workfile_path,
             w=quality_width,
@@ -329,8 +329,8 @@ class MomentFeatureExtractor(FeatureExtractor):
         quality_w, quality_h = asset.quality_width_height
 
         ref_scores_mtx = None
-        with YuvReader(filepath=asset.ref_workfile_path, width=quality_w,
-                       height=quality_h, yuv_type=asset.yuv_type) as ref_yuv_reader:
+        with YuvReader(filepath=asset.ref_workfile_path, width=quality_w, height=quality_h,
+                       yuv_type=self._get_workfile_yuv_type(asset.yuv_type)) as ref_yuv_reader:
             scores_mtx_list = []
             i = 0
             for ref_yuv in ref_yuv_reader:
@@ -342,8 +342,8 @@ class MomentFeatureExtractor(FeatureExtractor):
             ref_scores_mtx = np.vstack(scores_mtx_list)
 
         dis_scores_mtx = None
-        with YuvReader(filepath=asset.dis_workfile_path, width=quality_w,
-                       height=quality_h, yuv_type=asset.yuv_type) as dis_yuv_reader:
+        with YuvReader(filepath=asset.dis_workfile_path, width=quality_w, height=quality_h,
+                       yuv_type=self._get_workfile_yuv_type(asset.yuv_type)) as dis_yuv_reader:
             scores_mtx_list = []
             i = 0
             for dis_yuv in dis_yuv_reader:
@@ -437,7 +437,7 @@ class SsimFeatureExtractor(FeatureExtractor):
         ssim_cmd = "{ssim} {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
         .format(
             ssim=self.SSIM,
-            yuv_type=asset.yuv_type,
+            yuv_type=self._get_workfile_yuv_type(asset.yuv_type),
             ref_path=asset.ref_workfile_path,
             dis_path=asset.dis_workfile_path,
             w=quality_width,
@@ -478,7 +478,7 @@ class MsSsimFeatureExtractor(FeatureExtractor):
         ms_ssim_cmd = "{ms_ssim} {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
         .format(
             ms_ssim=self.MS_SSIM,
-            yuv_type=asset.yuv_type,
+            yuv_type=self._get_workfile_yuv_type(asset.yuv_type),
             ref_path=asset.ref_workfile_path,
             dis_path=asset.dis_workfile_path,
             w=quality_width,
