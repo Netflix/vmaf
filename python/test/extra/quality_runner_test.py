@@ -5,7 +5,7 @@ from core.quality_runner import StrredQualityRunner, PsnrQualityRunner, \
     VmafQualityRunner, VmafossExecQualityRunner
 from core.result_store import FileSystemResultStore
 
-__copyright__ = "Copyright 2016, Netflix, Inc."
+__copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 class QualityRunnerTest(unittest.TestCase):

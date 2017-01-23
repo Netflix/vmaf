@@ -9,7 +9,7 @@ from core.mixin import TypeVersionEnabled
 from tools.misc import import_python_file, indices
 from mos.dataset_reader import RawDatasetReader
 
-__copyright__ = "Copyright 2016, Netflix, Inc."
+__copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 class SubjectiveModel(TypeVersionEnabled):

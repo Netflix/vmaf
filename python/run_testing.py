@@ -12,7 +12,7 @@ from routine import test_on_dataset, print_matplotlib_warning
 from tools.stats import ListStats
 from mos.subjective_model import SubjectiveModel
 
-__copyright__ = "Copyright 2016, Netflix, Inc."
+__copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'perc20']

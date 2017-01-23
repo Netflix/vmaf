@@ -2,7 +2,7 @@ import multiprocessing
 import subprocess
 from time import sleep
 
-__copyright__ = "Copyright 2016, Netflix, Inc."
+__copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import sys

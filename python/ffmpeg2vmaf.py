@@ -13,7 +13,7 @@ from tools.misc import get_file_name_without_extension, get_cmd_option, \
     cmd_option_exists
 from tools.stats import ListStats
 
-__copyright__ = "Copyright 2016, Netflix, Inc."
+__copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 OUT_FMTS = ['text (default)', 'xml', 'json']

@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
 import numpy as np
 
-__copyright__ = "Copyright 2016, Netflix, Inc."
+__copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 

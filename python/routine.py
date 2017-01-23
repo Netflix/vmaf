@@ -16,7 +16,7 @@ from core.train_test_model import TrainTestModel, RegressorMixin, \
     ClassifierMixin
 from core.local_explainer import LocalExplainer
 
-__copyright__ = "Copyright 2016, Netflix, Inc."
+__copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 def read_dataset(dataset, **kwargs):

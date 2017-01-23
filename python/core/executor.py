@@ -10,7 +10,7 @@ from tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_slash,
 from core.mixin import TypeVersionEnabled
 from config import get_and_assert_ffmpeg
 
-__copyright__ = "Copyright 2016, Netflix, Inc."
+__copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 class Executor(TypeVersionEnabled):

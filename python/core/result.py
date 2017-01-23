@@ -6,7 +6,7 @@ import numpy as np
 from tools.misc import get_file_name_with_extension
 from core.asset import Asset
 
-__copyright__ = "Copyright 2016, Netflix, Inc."
+__copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 
