@@ -2235,5 +2235,15 @@ class ParallelQualityRunnerTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ssim_score'], 1.0, places=5)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ms_ssim_score'], 1.0, places=5)
 
+class QualityRunnerVersionTest(unittest.TestCase):
+
+    def test_vmaf_quality_runner_version(self):
+        self.assertEquals(VmafQualityRunner.VERSION, '0.3.2')
+        self.assertEquals(VmafQualityRunner.ALGO_VERSION, 0)
+
+    def test_vmafossexec_quality_runner_version(self):
+        self.assertEquals(VmafossExecQualityRunner.VERSION, '0.3.2')
+        self.assertEquals(VmafossExecQualityRunner.ALGO_VERSION, 0)
+
 if __name__ == '__main__':
     unittest.main()
