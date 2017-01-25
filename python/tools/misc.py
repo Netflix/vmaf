@@ -49,6 +49,22 @@ def get_file_name_with_extension(path):
     """
     return path.split("/")[-1]
 
+def get_normalized_path(dir_):
+    """
+
+    >>> get_normalized_path('abc/xyz/')
+    'abc/xyz'
+    >>> get_normalized_path('abc/xyz')
+    'abc/xyz'
+    >>> get_normalized_path('abc/xyz.txt')
+    'abc/xyz.txt'
+
+    """
+    if dir_[-1] == '/':
+        return dir_[:-1]
+    else:
+        return dir_
+
 def get_dir_without_last_slash(path):
     """
 
@@ -57,6 +73,8 @@ def get_dir_without_last_slash(path):
     >>> get_dir_without_last_slash('src01_hrc01.yuv')
     ''
     >>> get_dir_without_last_slash('abc/xyz/src01_hrc01.yuv')
+    'abc/xyz'
+    >>> get_dir_without_last_slash('abc/xyz/')
     'abc/xyz'
 
     """
@@ -289,6 +307,12 @@ def check_scanf_match(string, template):
     >>> check_scanf_match('gframe00000001.icpff', 'frame%08d.icpf')
     False
     >>> check_scanf_match('fyrame00000001.icpff', 'frame%08d.icpf')
+    False
+    >>> check_scanf_match('xx/yy/frame00000000.icpf', 'xx/yy/frame%08d.icpf')
+    True
+    >>> check_scanf_match('xx/yy//frame00000000.icpf', 'xx/yy/frame%08d.icpf')
+    False
+    >>> check_scanf_match('xx/yy/frame00000000.icpf', 'xx/yy//frame%08d.icpf')
     False
     >>> check_scanf_match("-1-2+3-4", "%d%d%d%d")
     True
