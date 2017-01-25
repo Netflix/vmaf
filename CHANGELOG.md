@@ -1,11 +1,16 @@
 # Change Log
 
-## (12/20/2016) [1.1.22]
+## (1/24/2017) [1.1.23]
+
+**Fixed bugs:**
+- Replace subprocess.call with run_process (checking return value).
+
+## (1/22/2017) [1.1.22]
 
 **New features:**
 - Add command line ffmpeg2vmaf, which takes encoded videos as input.
 
-## (12/20/2016) [1.1.21]
+## (1/18/2017) [1.1.21]
 
 **New features:**
 - Allow processing non-YUV input videos.
