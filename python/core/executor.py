@@ -6,7 +6,7 @@ import hashlib
 from core.asset import Asset
 
 from tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_slash, \
-    parallel_map, check_program_exist, match_any_files
+    parallel_map, check_program_exist, match_any_files, run_process
 from core.mixin import TypeVersionEnabled
 from config import get_and_assert_ffmpeg
 
@@ -378,7 +378,7 @@ class Executor(TypeVersionEnabled):
             resampling_type=resampling_type)
         if self.logger:
             self.logger.info(ffmpeg_cmd)
-        subprocess.call(ffmpeg_cmd, shell=True)
+        run_process(ffmpeg_cmd, shell=True)
 
     def _get_workfile_yuv_type(self, yuv_type):
         workfile_yuv_type = yuv_type if yuv_type != 'notyuv' else Asset.DEFAULT_YUV_TYPE
@@ -425,7 +425,7 @@ class Executor(TypeVersionEnabled):
             resampling_type=resampling_type)
         if self.logger:
             self.logger.info(ffmpeg_cmd)
-        subprocess.call(ffmpeg_cmd, shell=True)
+        run_process(ffmpeg_cmd, shell=True)
 
     def _get_src_fmt_cmd(self, asset, height, width):
         src_fmt_cmd = '-f rawvideo -pix_fmt {yuv_fmt} -s {width}x{height}'. \

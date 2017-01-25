@@ -1,5 +1,5 @@
 import os
-from tools.misc import make_absolute_path
+from tools.misc import make_absolute_path, run_process
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -141,7 +141,7 @@ class VmafFeatureExtractor(FeatureExtractor):
         if self.logger:
             self.logger.info(vmaf_feature_cmd)
 
-        subprocess.call(vmaf_feature_cmd, shell=True)
+        run_process(vmaf_feature_cmd, shell=True)
 
     @classmethod
     def _post_process_result(cls, result):
@@ -307,7 +307,7 @@ class PsnrFeatureExtractor(FeatureExtractor):
         if self.logger:
             self.logger.info(psnr_cmd)
 
-        subprocess.call(psnr_cmd, shell=True)
+        run_process(psnr_cmd, shell=True)
 
 class MomentFeatureExtractor(FeatureExtractor):
 
@@ -448,7 +448,7 @@ class SsimFeatureExtractor(FeatureExtractor):
         if self.logger:
             self.logger.info(ssim_cmd)
 
-        subprocess.call(ssim_cmd, shell=True)
+        run_process(ssim_cmd, shell=True)
 
 class MsSsimFeatureExtractor(FeatureExtractor):
 
@@ -489,7 +489,7 @@ class MsSsimFeatureExtractor(FeatureExtractor):
         if self.logger:
             self.logger.info(ms_ssim_cmd)
 
-        subprocess.call(ms_ssim_cmd, shell=True)
+        run_process(ms_ssim_cmd, shell=True)
 
 class MatlabFeatureExtractor(FeatureExtractor):
 
@@ -544,7 +544,7 @@ class StrredFeatureExtractor(MatlabFeatureExtractor):
             self.logger.info(strred_cmd)
 
         os.chdir(self.MATLAB_WORKSPACE)
-        subprocess.call(strred_cmd, shell=True)
+        run_process(strred_cmd, shell=True)
         os.chdir(current_dir)
 
     @classmethod

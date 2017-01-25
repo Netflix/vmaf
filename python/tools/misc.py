@@ -267,7 +267,7 @@ def check_program_exist(program):
 
     '''
     try:
-        subprocess.call(program.split(), stdout=open(os.devnull, 'wb'))
+        run_process(program.split(), stdout=open(os.devnull, 'wb'))
         return True
     except OSError as e:
         if e.errno == os.errno.ENOENT:
@@ -306,6 +306,11 @@ def match_any_files(template):
         if check_scanf_match(filepath, template):
             return True
     return False
+
+def run_process(cmd, **kwargs):
+    ret = subprocess.call(cmd, **kwargs)
+    assert ret == 0, 'Process returned {ret}, cmd: {cmd}'.format(ret=ret, cmd=cmd)
+    return ret
 
 if __name__ == '__main__':
     import doctest

@@ -1,3 +1,5 @@
+from tools.misc import run_process
+
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
@@ -58,7 +60,7 @@ class FeatureTest(unittest.TestCase):
             vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ADM_LOG
         )
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         score, scores = read_log(ADM_LOG, "adm")
         self.assertAlmostEquals(score, 0.915509520833, places=4)
         score, scores = read_log(ADM_LOG, "adm_num")
@@ -90,7 +92,7 @@ class FeatureTest(unittest.TestCase):
             vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ANSNR_LOG
         )
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         score, scores = read_log(ANSNR_LOG, "ansnr")
         self.assertAlmostEquals(score, 23.5095715208, places=4)
         score, scores = read_log(ANSNR_LOG, "anpsnr")
@@ -103,7 +105,7 @@ class FeatureTest(unittest.TestCase):
             vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MOTION_LOG
         )
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         score, scores = read_log(MOTION_LOG, "motion")
         self.assertAlmostEquals(score, 4.04982535417, places=4)
 
@@ -114,7 +116,7 @@ class FeatureTest(unittest.TestCase):
             vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=VIF_LOG
         )
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         score, scores = read_log(VIF_LOG, "vif")
         self.assertAlmostEquals(score, 0.4460930625000001, places=4)
         self.assertAlmostEquals(scores[0], 0.580304, places=4)
@@ -147,7 +149,7 @@ class FeatureTest(unittest.TestCase):
             vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log= ALL_LOG
         )
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         score, scores = read_log(ALL_LOG, "vif")
         self.assertAlmostEquals(score, 0.4460930625, places=4)
         score, scores = read_log(ALL_LOG, "motion")
@@ -204,7 +206,7 @@ class FeatureTest(unittest.TestCase):
             psnr=self.PSNR, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=PSNR_LOG
         )
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         score, scores = read_log(PSNR_LOG, "psnr")
         self.assertAlmostEquals(score, 30.7550639792, places=4)
         self.assertAlmostEquals(scores[0], 34.760779, places=4)
@@ -217,7 +219,7 @@ class FeatureTest(unittest.TestCase):
             moment=self.MOMENT, fmt=self.YUV_FMT, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MOMENT_LOG
         )
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         score, scores = read_log(MOMENT_LOG, "1stmoment")
         self.assertAlmostEquals(score, 61.332006624999984, places=4)
         score, scores = read_log(MOMENT_LOG, "2ndmoment")
@@ -230,7 +232,7 @@ class FeatureTest(unittest.TestCase):
             ssim=self.SSIM, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=SSIM_LOG
         )
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         score, scores = read_log(SSIM_LOG, "ssim")
         self.assertAlmostEquals(score, 0.863226541666667, places=4)
         self.assertAlmostEquals(scores[0], 0.925023, places=4)
@@ -255,7 +257,7 @@ class FeatureTest(unittest.TestCase):
             ms_ssim=self.MS_SSIM, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MS_SSIM_LOG
         )
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         score, scores = read_log(MS_SSIM_LOG, "ms_ssim")
         self.assertAlmostEquals(score, 0.9632498125, places=4)
         self.assertAlmostEquals(scores[0], 0.981968, places=4)
@@ -326,7 +328,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
             vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ADM_LOG
         )
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         score, scores = read_log(ADM_LOG, "adm")
         self.assertAlmostEquals(score, 0.915509520833, places=4)
         score, scores = read_log(ADM_LOG, "adm_num")
@@ -356,7 +358,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
             vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ANSNR_LOG
         )
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         score, scores = read_log(ANSNR_LOG, "ansnr")
         self.assertAlmostEquals(score, 23.5095715208, places=4)
         score, scores = read_log(ANSNR_LOG, "anpsnr")
@@ -369,7 +371,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
             vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MOTION_LOG
         )
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         score, scores = read_log(MOTION_LOG, "motion")
         self.assertAlmostEquals(score, 4.04982535417, places=4)
 
@@ -380,7 +382,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
             vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=VIF_LOG
         )
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         score, scores = read_log(VIF_LOG, "vif")
         self.assertAlmostEquals(score, 0.4460930625, places=4)
         self.assertAlmostEquals(scores[0], 0.580304, places=4)
@@ -413,7 +415,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
             vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ALL_LOG
         )
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         score, scores = read_log(ALL_LOG, "vif")
         self.assertAlmostEquals(score, 0.4460930625, places=4)
         score, scores = read_log(ALL_LOG, "motion")
@@ -470,7 +472,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
             psnr=self.PSNR, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=PSNR_LOG
         )
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         score, scores = read_log(PSNR_LOG, "psnr")
         self.assertAlmostEquals(score, 30.7805732917, places=4)
         self.assertAlmostEquals(scores[0], 34.786288, places=4)
@@ -483,7 +485,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
             ssim=self.SSIM, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=SSIM_LOG
         )
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         score, scores = read_log(SSIM_LOG, "ssim")
         self.assertAlmostEquals(score, 0.863226541666667, places=4)
         self.assertAlmostEquals(scores[0], 0.925023, places=4)
@@ -508,7 +510,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
             ms_ssim=self.MS_SSIM, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MS_SSIM_LOG
         )
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         score, scores = read_log(MS_SSIM_LOG, "ms_ssim")
         self.assertAlmostEquals(score, 0.9632498125, places=4)
         self.assertAlmostEquals(scores[0], 0.981968, places=4)
@@ -583,7 +585,7 @@ class CornerCaseTest(unittest.TestCase):
         cmd = self.CMD_TEMPLATE.format(vmaf=self.VMAF, fmt=yuv_fmt, ref=ref_yuv,
                                        dis=dis_yuv, w=yuv_width, h=yuv_height,
                                        log=LOCAL_LOG_FILENAME)
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm")[0], 1.0, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "ansnr")[0], 21.1138813333, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "motion")[0], 12.554836666666667, places=4)
@@ -614,7 +616,7 @@ class CornerCaseTest(unittest.TestCase):
         cmd = self.CMD_TEMPLATE.format(vmaf=self.VMAF, fmt=yuv_fmt, ref=ref_yuv,
                                        dis=dis_yuv, w=yuv_width, h=yuv_height,
                                        log=LOCAL_LOG_FILENAME)
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm")[0], 0.81386000000000003, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "ansnr")[0], 7.92623066667, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "motion")[0], 12.5548366667, places=4)
@@ -645,7 +647,7 @@ class CornerCaseTest(unittest.TestCase):
         cmd = self.CMD_TEMPLATE.format(vmaf=self.VMAF, fmt=yuv_fmt, ref=ref_yuv,
                                        dis=dis_yuv, w=yuv_width, h=yuv_height,
                                        log=LOCAL_LOG_FILENAME)
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm")[0], 0.0, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "ansnr")[0], -5.758091333333334, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "motion")[0], 12.554836666666667, places=4)
@@ -676,7 +678,7 @@ class CornerCaseTest(unittest.TestCase):
         cmd = self.CMD_TEMPLATE.format(vmaf=self.VMAF, fmt=yuv_fmt, ref=ref_yuv,
                                        dis=dis_yuv, w=yuv_width, h=yuv_height,
                                        log=LOCAL_LOG_FILENAME)
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm")[0], 1.0, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "ansnr")[0], 60.0, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "motion")[0], 0.0, places=4)
@@ -707,7 +709,7 @@ class CornerCaseTest(unittest.TestCase):
         cmd = self.CMD_TEMPLATE.format(vmaf=self.VMAF, fmt=yuv_fmt, ref=ref_yuv,
                                        dis=dis_yuv, w=yuv_width, h=yuv_height,
                                        log=LOCAL_LOG_FILENAME)
-        subprocess.call(cmd, shell=True)
+        run_process(cmd, shell=True)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm")[0], 1.0, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "ansnr")[0], 21.899511, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "motion")[0], 0.0, places=4)

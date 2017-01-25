@@ -12,6 +12,7 @@ from core.feature_assembler import FeatureAssembler
 from core.train_test_model import TrainTestModel
 from core.feature_extractor import SsimFeatureExtractor, MsSsimFeatureExtractor, \
     VmafFeatureExtractor, StrredFeatureExtractor
+from tools.misc import run_process
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -101,7 +102,7 @@ class PsnrQualityRunner(QualityRunner):
         if self.logger:
             self.logger.info(psnr_cmd)
 
-        subprocess.call(psnr_cmd, shell=True)
+        run_process(psnr_cmd, shell=True)
 
     def _get_quality_scores(self, asset):
         # routine to read the quality scores from the log file, and return
@@ -439,7 +440,7 @@ class VmafossExecQualityRunner(QualityRunner):
         if self.logger:
             self.logger.info(vmafossexec_cmd)
 
-        subprocess.call(vmafossexec_cmd, shell=True)
+        run_process(vmafossexec_cmd, shell=True)
 
     def _get_vmafossexec_cmd(self, asset, model_filepath, log_file_path):
 

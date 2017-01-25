@@ -3,6 +3,7 @@ import unittest
 import subprocess
 
 import config
+from tools.misc import run_process
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -28,21 +29,21 @@ class CommandLineTest(unittest.TestCase):
         exe = config.ROOT + '/run_testing'
         cmd = "{exe} VMAF {dataset} --parallelize --suppress-plot".format(
             exe=exe, dataset=self.dataset_filename)
-        ret = subprocess.call(cmd, shell=True)
+        ret = run_process(cmd, shell=True)
         self.assertEquals(ret, 0)
 
     def test_run_testing_vmaf_raw_dataset(self):
         exe = config.ROOT + '/run_testing'
         cmd = "{exe} VMAF {dataset} --parallelize --suppress-plot".format(
             exe=exe, dataset=self.raw_dataset_filename)
-        ret = subprocess.call(cmd, shell=True)
+        ret = run_process(cmd, shell=True)
         self.assertEquals(ret, 0)
 
     def test_run_testing_psnr(self):
         exe = config.ROOT + '/run_testing'
         cmd = "{exe} PSNR {dataset} --parallelize --suppress-plot".format(
             exe=exe, dataset=self.dataset_filename)
-        ret = subprocess.call(cmd, shell=True)
+        ret = run_process(cmd, shell=True)
         self.assertEquals(ret, 0)
 
     def test_run_vmaf_training(self):
@@ -52,7 +53,7 @@ class CommandLineTest(unittest.TestCase):
             dataset=self.dataset_filename,
             param=self.param_filename,
             output=self.out_model_filepath)
-        ret = subprocess.call(cmd, shell=True)
+        ret = run_process(cmd, shell=True)
         self.assertEquals(ret, 0)
 
     def test_run_vmaf_training_raw_dataset(self):
@@ -62,7 +63,7 @@ class CommandLineTest(unittest.TestCase):
             dataset=self.raw_dataset_filename,
             param=self.param_filename,
             output=self.out_model_filepath)
-        ret = subprocess.call(cmd, shell=True)
+        ret = run_process(cmd, shell=True)
         self.assertEquals(ret, 0)
 
     def test_run_vmaf_in_batch(self):
@@ -70,13 +71,13 @@ class CommandLineTest(unittest.TestCase):
                '{root}/resource/yuv/src01_hrc01_576x324.yuv'.format(root=config.ROOT)
         cmd = 'echo "{line}" > {batch_filename}'.format(
             line=line, batch_filename=self.batch_filename)
-        ret = subprocess.call(cmd, shell=True)
+        ret = run_process(cmd, shell=True)
         self.assertEquals(ret, 0)
 
         exe = config.ROOT + '/run_vmaf_in_batch'
         cmd = "{exe} {input} --parallelize >/dev/null 2>&1".format(
             exe=exe, input=self.batch_filename)
-        ret = subprocess.call(cmd, shell=True)
+        ret = run_process(cmd, shell=True)
         self.assertEquals(ret, 0)
 
     def test_run_vmaf(self):
@@ -84,7 +85,7 @@ class CommandLineTest(unittest.TestCase):
         line = 'yuv420p 576 324 {root}/resource/yuv/src01_hrc00_576x324.yuv ' \
                '{root}/resource/yuv/src01_hrc01_576x324.yuv'.format(root=config.ROOT)
         cmd = "{exe} {line} >/dev/null 2>&1".format(line=line, exe=exe)
-        ret = subprocess.call(cmd, shell=True)
+        ret = run_process(cmd, shell=True)
         self.assertEquals(ret, 0)
 
     def test_run_psnr(self):
@@ -92,20 +93,20 @@ class CommandLineTest(unittest.TestCase):
         line = 'yuv420p 576 324 {root}/resource/yuv/src01_hrc00_576x324.yuv ' \
                '{root}/resource/yuv/src01_hrc01_576x324.yuv'.format(root=config.ROOT)
         cmd = "{exe} {line} >/dev/null 2>&1".format(line=line, exe=exe)
-        ret = subprocess.call(cmd, shell=True)
+        ret = run_process(cmd, shell=True)
         self.assertEquals(ret, 0)
 
     def test_run_cleaning_cache_psnr(self):
         exe = config.ROOT + '/run_testing'
         cmd = "{exe} PSNR {dataset} --parallelize --cache-result --suppress-plot".format(
             exe=exe, dataset=self.dataset_filename)
-        ret = subprocess.call(cmd, shell=True)
+        ret = run_process(cmd, shell=True)
         self.assertEquals(ret, 0)
 
         exe = config.ROOT + '/python/run_cleaning_cache.py'
         cmd = "{exe} PSNR {dataset}".format(
             exe=exe, dataset=self.dataset_filename)
-        ret = subprocess.call(cmd, shell=True)
+        ret = run_process(cmd, shell=True)
         self.assertEquals(ret, 0)
 
 if __name__ == '__main__':
