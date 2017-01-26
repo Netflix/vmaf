@@ -49,6 +49,17 @@ def get_file_name_with_extension(path):
     """
     return path.split("/")[-1]
 
+def get_file_name_extension(path):
+    '''
+    >>> get_file_name_extension("file:///mnt/zli/test.txt")
+    'txt'
+    >>> get_file_name_extension("test.txt")
+    'txt'
+    >>> get_file_name_extension("abc")
+    'abc'
+    '''
+    return path.split('.')[-1]
+
 def get_normalized_path(dir_):
     """
 
@@ -315,6 +326,8 @@ def check_scanf_match(string, template):
     >>> check_scanf_match('xx/yy/frame00000000.icpf', 'xx/yy//frame%08d.icpf')
     False
     >>> check_scanf_match("-1-2+3-4", "%d%d%d%d")
+    True
+    >>> check_scanf_match('frame00000240.icpf', 'frame%08d.icpf')
     True
     '''
     try:
