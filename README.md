@@ -6,7 +6,7 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ##What's New
 
-- (2/22/17) Publish vmaf to pypi repo
+- (2/25/17) Refactored code in preparation for publishing to pypi 
 - (2/20/17) Updated VMAF model to version v0.6.1. Changes include: 
     - Added a custom quality model for cellular phone screen viewing. See [this](#predict-quality-on-a-cellular-phone-screen) section for details.
     - Trained using a new dataset, covering more difficult content.

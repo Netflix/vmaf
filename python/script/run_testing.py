@@ -117,7 +117,6 @@ def main():
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
 
-
         assets, results = run_test_on_dataset(test_dataset, runner_class, ax,
                                           result_store, vmaf_model_path,
                                           parallelize=parallelize,
