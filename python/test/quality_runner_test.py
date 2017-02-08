@@ -283,6 +283,10 @@ class QualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale0_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale1_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale2_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale3_score'], 0.0, places=4)
         self.assertAlmostEqual(results[0]['VMAF_score'], 0.0, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.0, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale1_score'], 0.0, places=4)

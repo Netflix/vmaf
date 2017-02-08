@@ -93,7 +93,10 @@ class VmafFeatureExtractor(FeatureExtractor):
     # VERSION = '0.2' # expose vif_num, vif_den, adm_num, adm_den, anpsnr
     # VERSION = '0.2.1' # expose vif num/den of each scale
     # VERSION = '0.2.2'  # adm abs-->fabs, corrected border handling, uniform reading with option of offset for input YUV, updated VIF corner case
-    VERSION = '0.2.2b'  # expose adm_den/num_scalex
+    # VERSION = '0.2.2b'  # expose adm_den/num_scalex
+    # VERSION = '0.2.3'  # AVX for VMAF convolution; update adm features by folding noise floor into per coef
+    # VERSION = '0.2.4'  # Fix a bug in adm feature passing scale into dwt_quant_step
+    VERSION = '0.2.4b'  # Modify by adding ADM noise floor outside cube root
 
     ATOM_FEATURES = ['vif', 'adm', 'ansnr', 'motion',
                      'vif_num', 'vif_den', 'adm_num', 'adm_den', 'anpsnr',
@@ -114,8 +117,8 @@ class VmafFeatureExtractor(FeatureExtractor):
 
     VMAF_FEATURE = config.ROOT + "/feature/vmaf"
 
-    ADM2_CONSTANT = 1000
-    ADM_SCALE_CONSTANT = 250
+    ADM2_CONSTANT = 0
+    ADM_SCALE_CONSTANT = 0
 
     def _generate_result(self, asset):
         # routine to call the command-line executable and generate feature

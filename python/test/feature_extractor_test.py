@@ -41,7 +41,7 @@ class FeatureExtractorTest(unittest.TestCase):
         h = hashlib.sha1("test_0_1_refvideo_720x480_2to2_vs_disvideo_720x480_2to2_q_720x480").hexdigest()
         self.assertTrue(re.match(r"^my_workdir_root/[a-zA-Z0-9-]+/VMAF_feature_V0.2.2b_{}$".format(h), log_file_path))
 
-    def test_run_vamf_fextractor(self):
+    def test_run_vmaf_fextractor(self):
         print 'test on running VMAF feature extractor...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
@@ -68,13 +68,13 @@ class FeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.4460930625, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 4.04982535417, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'],0.925421075027, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'],0.93458780728708746, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 23.5095715208, places=4)
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_num_score'], 712650.023478, places=0)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_den_score'], 1597314.95249, places=0)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_num_score'], 6899.24648475, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_den_score'], 7535.29963308, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_num_score'], 371.83541406249998, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_den_score'], 397.83378972916671, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_anpsnr_score'], 34.164776875, places=4)
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.363420489439, places=4)
@@ -82,13 +82,13 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale2_score'], 0.862854666902, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale3_score'], 0.915971778036, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale0_score'], 0.86711114907261122, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale1_score'], 0.87407085185224942, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale2_score'], 0.92448300466700284, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale3_score'], 0.96367203202196239, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale0_score'], 0.90791933424090698, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale1_score'], 0.89395660507453423, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale2_score'], 0.93010045185439161, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale3_score'], 0.96503534602850938, places=4)
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif2_score'], 0.72722361912801026, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm3_score'], 0.90733425940345658, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm3_score'], 0.92425293429958566, places=4)
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 4.04982535417, places=4)
@@ -97,8 +97,8 @@ class FeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_num_score'], 1597314.86733, places=0)
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_den_score'], 1597314.95249, places=0)
-        self.assertAlmostEqual(results[1]['VMAF_feature_adm_num_score'], 7535.29963308, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_feature_adm_den_score'], 7535.29963308, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm_num_score'], 397.83378972916671, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm_den_score'], 397.83378972916671, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_anpsnr_score'], 41.9266444375, places=4)
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_scale0_score'], 1.0, places=4)
@@ -357,6 +357,91 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['MS_SSIM_feature_ms_ssim_l_scale4_score'], 1., places=4)
         self.assertAlmostEqual(results[1]['MS_SSIM_feature_ms_ssim_c_scale4_score'], 1., places=4)
         self.assertAlmostEqual(results[1]['MS_SSIM_feature_ms_ssim_s_scale4_score'], 1., places=4)
+
+    def test_run_vmaf_fextractor_checkerboard(self):
+        print 'test on running VMAF feature extractor on checkerboard...'
+
+        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
+        dis_path2 = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':1920, 'height':1080})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':1920, 'height':1080})
+
+        asset2 = Asset(dataset="test", content_id=0, asset_id=2,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path2,
+                      asset_dict={'width':1920, 'height':1080})
+
+        self.fextractor = VmafFeatureExtractor(
+            [asset, asset_original, asset2],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale0_score'], 0.23738393128710478, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale1_score'], 0.08524788663335138, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale2_score'], 0.024058909404945077, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale3_score'], 0.018034879735107798, places=4)
+
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm_scale0_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm_scale1_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm_scale2_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm_scale3_score'], 1.0, places=4)
+
+        self.assertAlmostEqual(results[2]['VMAF_feature_adm_scale0_score'], 0.72132189911792899, places=4)
+        self.assertAlmostEqual(results[2]['VMAF_feature_adm_scale1_score'], 0.69259738857522501, places=4)
+        self.assertAlmostEqual(results[2]['VMAF_feature_adm_scale2_score'], 0.80415911639244586, places=4)
+        self.assertAlmostEqual(results[2]['VMAF_feature_adm_scale3_score'], 0.82791889676239039, places=4)
+
+    def test_run_vmaf_fextractor_flat(self):
+        print 'test on running VMAF feature extractor on flat pattern...'
+
+        ref_path = config.ROOT + "/resource/yuv/flat_1920_1080_0.yuv"
+        dis_path = config.ROOT + "/resource/yuv/flat_1920_1080_10.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':1920, 'height':1080})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':1920, 'height':1080})
+
+        self.fextractor = VmafFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale0_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale1_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale2_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale3_score'], 1.0, places=4)
+
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm_scale0_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm_scale1_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm_scale2_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm_scale3_score'], 1.0, places=4)
+
 
 class ParallelFeatureExtractorTest(unittest.TestCase):
 

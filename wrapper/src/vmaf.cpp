@@ -344,8 +344,8 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
     printf("Generate final features (including derived atom features)...\n");
 #endif
 
-    double ADM2_CONSTANT = 1000.0;
-    double ADM_SCALE_CONSTANT = 250.0;
+    double ADM2_CONSTANT = 0.0;
+    double ADM_SCALE_CONSTANT = 0.0;
     StatVector adm2, motion, vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, vmaf;
     StatVector adm_scale0, adm_scale1, adm_scale2, adm_scale3;
     StatVector psnr, ssim, ms_ssim;
