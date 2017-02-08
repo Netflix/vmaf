@@ -8,7 +8,7 @@ import numpy as np
 from core.result_store import FileSystemResultStore
 from tools.misc import import_python_file, get_cmd_option, cmd_option_exists
 from core.quality_runner import QualityRunner, VmafQualityRunner
-from routine import test_on_dataset, print_matplotlib_warning
+from routine import run_test_on_dataset, print_matplotlib_warning
 from tools.stats import ListStats
 from mos.subjective_model import SubjectiveModel
 
@@ -106,7 +106,7 @@ def main():
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
 
-        assets, results = test_on_dataset(test_dataset, runner_class, ax,
+        assets, results = run_test_on_dataset(test_dataset, runner_class, ax,
                         result_store, vmaf_model_path,
                         parallelize=parallelize,
                         aggregate_method=aggregate_method,
@@ -123,14 +123,14 @@ def main():
         plt.show()
     except ImportError:
         print_matplotlib_warning()
-        assets, results = test_on_dataset(test_dataset, runner_class, None,
+        assets, results = run_test_on_dataset(test_dataset, runner_class, None,
                         result_store, vmaf_model_path,
                         parallelize=parallelize,
                         aggregate_method=aggregate_method,
                         subj_model_class=subj_model_class,
                         )
     except AssertionError:
-        assets, results = test_on_dataset(test_dataset, runner_class, None,
+        assets, results = run_test_on_dataset(test_dataset, runner_class, None,
                         result_store, vmaf_model_path,
                         parallelize=parallelize,
                         aggregate_method=aggregate_method,

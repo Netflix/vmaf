@@ -2,7 +2,7 @@ import os
 import unittest
 
 import config
-from routine import train_test_vmaf_on_dataset, read_dataset, test_on_dataset
+from routine import train_test_vmaf_on_dataset, read_dataset, run_test_on_dataset
 from tools.misc import import_python_file
 from core.quality_runner import VmafQualityRunner
 from mos.subjective_model import MosModel
@@ -132,7 +132,7 @@ class TestTrainOnDataset(unittest.TestCase):
     def test_test_on_dataset(self):
         test_dataset = import_python_file(
             config.ROOT + '/python/test/resource/dataset_sample.py')
-        test_assets, results = test_on_dataset(test_dataset, VmafQualityRunner, None,
+        test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
                         None, None,
                         parallelize=True,
                         aggregate_method=None)
@@ -149,7 +149,7 @@ class TestTrainOnDataset(unittest.TestCase):
     def test_test_on_dataset_raw(self):
         test_dataset = import_python_file(
             config.ROOT + '/python/test/resource/raw_dataset_sample.py')
-        test_assets, results = test_on_dataset(test_dataset, VmafQualityRunner, None,
+        test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
                         None, None,
                         parallelize=True,
                         aggregate_method=None)
@@ -166,7 +166,7 @@ class TestTrainOnDataset(unittest.TestCase):
     def test_test_on_dataset_mle(self):
         test_dataset = import_python_file(
             config.ROOT + '/python/test/resource/raw_dataset_sample.py')
-        test_assets, results = test_on_dataset(test_dataset, VmafQualityRunner, None,
+        test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
                         None, None,
                         parallelize=True,
                         aggregate_method=None,

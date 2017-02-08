@@ -1,4 +1,7 @@
 import numpy as np
+import matplotlib
+matplotlib.use('TkAgg')
+
 from matplotlib import pyplot as plt
 
 from core.cross_validation import ModelCrossValidation
@@ -146,12 +149,15 @@ def read_dataset(dataset, **kwargs):
 
     return assets
 
-def test_on_dataset(test_dataset, runner_class, ax,
+def run_test_on_dataset(test_dataset, runner_class, ax,
                     result_store, model_filepath,
                     parallelize=True, fifo_mode=True,
                     aggregate_method=np.mean,
                     type = 'regressor',
                     **kwargs):
+    """
+    TODO: move this function under test/
+    """
 
     if type == 'regressor':
         model_type = RegressorMixin

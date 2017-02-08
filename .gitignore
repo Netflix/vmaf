@@ -1,2 +1,18 @@
-.idea
+# Caches
+.DS_Store
+.cache/
+.gradle/
+.idea/
+__pycache__/
+
+# Build artifacts
+activate
+build/
+
+# Code coverage reports
+.coverage*
+coverage.xml
+htmlcov/
+
+*.egg-info
 *.pyc

@@ -1,0 +1,40 @@
+plugins {
+    // See info/pygradle-notes.md in this project
+    // This section could be replaced with an "apply plugin: 'netflix.python-cli'"
+    // The plugin would come from nebula
+    id "com.linkedin.python-cli" version "0.4.1"
+}
+
+// These settings are the default, shown there for info
+python.pex.fatPex = true
+python.cli.generateCompletions = false
+
+// Turn off sorting, so the dependencies get built in order specified below
+// We need this because scikit-learn depends on scipy, but without explicitly stating so
+project.tasks.findByName('installPythonRequirements').sorted = false
+
+dependencies {
+    python 'pypi:functools32:3.2.3-2'   // Needed for python2 only
+
+    python 'pypi:numpy:1.12.0'          // 1.10.4
+    python 'pypi:pandas:0.19.2'         // 0.17.1
+    python 'pypi:scipy:0.17.1'          // 0.17.0
+    python 'pypi:h5py:2.6.0'
+    python 'pypi:matplotlib:2.0.0'      // 1.5.1
+    python 'pypi:scikit-learn:0.18.1'   // 0.18
+    test 'pypi:mock:2.0.0'
+}
+
+repositories {
+    //pyGradlePyPi()
+    // This could be removed if we had a netflix.python* set of plugins, this repo would be defined by those plugins
+    ivy {
+        name 'python-local'
+        url 'https://artifacts.netflix.com/python-local'
+        layout "pattern", {
+            ivy "[organisation]/[module]/[revision]/[module]-[revision].ivy"
+            artifact "[organisation]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]"
+            m2compatible = true
+        }
+    }
+}
