@@ -25,7 +25,7 @@ class FeatureExtractorTest(unittest.TestCase):
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
                       asset_dict={'width': 720, 'height': 480})
         fextractor = VmafFeatureExtractor([asset], None)
-        self.assertEquals(fextractor.executor_id, "VMAF_feature_V0.2.2b")
+        self.assertEquals(fextractor.executor_id, "VMAF_feature_V0.2.4b")
 
     def test_get_log_file_path(self):
         import hashlib
@@ -39,7 +39,7 @@ class FeatureExtractorTest(unittest.TestCase):
         fextractor = VmafFeatureExtractor([asset], None)
         log_file_path = fextractor._get_log_file_path(asset)
         h = hashlib.sha1("test_0_1_refvideo_720x480_2to2_vs_disvideo_720x480_2to2_q_720x480").hexdigest()
-        self.assertTrue(re.match(r"^my_workdir_root/[a-zA-Z0-9-]+/VMAF_feature_V0.2.2b_{}$".format(h), log_file_path))
+        self.assertTrue(re.match(r"^my_workdir_root/[a-zA-Z0-9-]+/VMAF_feature_V0.2.4b_{}$".format(h), log_file_path))
 
     def test_run_vmaf_fextractor(self):
         print 'test on running VMAF feature extractor...'
@@ -151,13 +151,13 @@ class FeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.4460930625, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 4.04982535417, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'],0.925421075027, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'],0.93458780728708746, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 23.5095715208, places=4)
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_num_score'], 712650.023478, places=0)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_den_score'], 1597314.95249, places=0)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_num_score'], 6899.24648475, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_den_score'], 7535.29963308, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_num_score'], 371.83541406249998, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_den_score'], 397.83378972916671, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_anpsnr_score'], 34.164776875, places=4)
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.363420489439, places=4)
@@ -165,13 +165,13 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale2_score'], 0.862854666902, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale3_score'], 0.915971778036, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale0_score'], 0.86711114907261122, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale1_score'], 0.87407085185224942, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale2_score'], 0.92448300466700284, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale3_score'], 0.96367203202196239, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale0_score'], 0.90791933424090698, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale1_score'], 0.89395660507453423, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale2_score'], 0.93010045185439161, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale3_score'], 0.96503534602850938, places=4)
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif2_score'], 0.72722361912801026, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm3_score'], 0.90733425940345658, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm3_score'], 0.92425293429958566, places=4)
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 4.04982535417, places=4)
@@ -180,8 +180,8 @@ class FeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_num_score'], 1597314.86733, places=0)
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_den_score'], 1597314.95249, places=0)
-        self.assertAlmostEqual(results[1]['VMAF_feature_adm_num_score'], 7535.29963308, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_feature_adm_den_score'], 7535.29963308, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm_num_score'], 397.83378972916671, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm_den_score'], 397.83378972916671, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_anpsnr_score'], 41.9266444375, places=4)
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_scale0_score'], 1.0, places=4)
@@ -451,7 +451,7 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
                 fextractor.remove_results()
             pass
 
-    def test_run_parallel_vamf_fextractor(self):
+    def test_run_parallel_vmaf_fextractor(self):
         print 'test on running VMAF feature extractor in parallel...'
         ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
         dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
@@ -478,13 +478,13 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.4460930625, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 4.04982535417, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'],0.925421075027, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'],0.93458780728708746, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 23.5095715208, places=4)
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_num_score'], 712650.023478, places=0)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_den_score'], 1597314.95249, places=0)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_num_score'], 6899.24648475, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_den_score'], 7535.29963308, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_num_score'], 371.83541406249998, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_den_score'], 397.83378972916671, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_anpsnr_score'], 34.164776875, places=4)
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.363420489439, places=4)
@@ -492,13 +492,13 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale2_score'], 0.862854666902, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale3_score'], 0.915971778036, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale0_score'], 0.86711114907261122, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale1_score'], 0.87407085185224942, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale2_score'], 0.92448300466700284, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale3_score'], 0.96367203202196239, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale0_score'], 0.90791933424090698, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale1_score'], 0.89395660507453423, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale2_score'], 0.93010045185439161, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale3_score'], 0.96503534602850938, places=4)
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif2_score'], 0.72722361912801026, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm3_score'], 0.90733425940345658, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm3_score'], 0.92425293429958566, places=4)
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 4.04982535417, places=4)
@@ -507,8 +507,8 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_num_score'], 1597314.86733, places=0)
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_den_score'], 1597314.95249, places=0)
-        self.assertAlmostEqual(results[1]['VMAF_feature_adm_num_score'], 7535.29963308, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_feature_adm_den_score'], 7535.29963308, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm_num_score'], 397.83378972916671, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm_den_score'], 397.83378972916671, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_anpsnr_score'], 41.9266444375, places=4)
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_scale0_score'], 1.0, places=4)
@@ -572,13 +572,13 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.4460930625, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 4.04982535417, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'],0.925421075027, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'],0.93458780728708746, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 23.5095715208, places=4)
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_num_score'], 712650.023478, places=0)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_den_score'], 1597314.95249, places=0)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_num_score'], 6899.24648475, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_den_score'], 7535.29963308, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_num_score'], 371.83541406249998, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_den_score'], 397.83378972916671, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_anpsnr_score'], 34.164776875, places=4)
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.363420489439, places=4)
@@ -586,13 +586,13 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale2_score'], 0.862854666902, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale3_score'], 0.915971778036, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale0_score'], 0.86711114907261122, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale1_score'], 0.87407085185224942, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale2_score'], 0.92448300466700284, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale3_score'], 0.96367203202196239, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale0_score'], 0.90791933424090698, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale1_score'], 0.89395660507453423, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale2_score'], 0.93010045185439161, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale3_score'], 0.96503534602850938, places=4)
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif2_score'], 0.72722361912801026, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm3_score'], 0.90733425940345658, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm3_score'], 0.92425293429958566, places=4)
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 4.04982535417, places=4)
@@ -601,8 +601,8 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_num_score'], 1597314.86733, places=0)
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_den_score'], 1597314.95249, places=0)
-        self.assertAlmostEqual(results[1]['VMAF_feature_adm_num_score'], 7535.29963308, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_feature_adm_den_score'], 7535.29963308, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm_num_score'], 397.83378972916671, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm_den_score'], 397.83378972916671, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_anpsnr_score'], 41.9266444375, places=4)
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_scale0_score'], 1.0, places=4)
@@ -802,13 +802,13 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.4460930625, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 4.04982535417, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'],0.925421075027, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'],0.93458780728708746, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 23.5095715208, places=4)
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_num_score'], 712650.023478, places=0)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_den_score'], 1597314.95249, places=0)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_num_score'], 6899.24648475, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_den_score'], 7535.29963308, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_num_score'], 371.83541406249998, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_den_score'], 397.83378972916671, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_anpsnr_score'], 34.164776875, places=4)
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.363420489439, places=4)
@@ -816,13 +816,13 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale2_score'], 0.862854666902, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale3_score'], 0.915971778036, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale0_score'], 0.86711114907261122, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale1_score'], 0.87407085185224942, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale2_score'], 0.92448300466700284, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale3_score'], 0.96367203202196239, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale0_score'], 0.90791933424090698, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale1_score'], 0.89395660507453423, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale2_score'], 0.93010045185439161, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale3_score'], 0.96503534602850938, places=4)
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif2_score'], 0.72722361912801026, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm3_score'], 0.90733425940345658, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm3_score'], 0.92425293429958566, places=4)
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 4.04982535417, places=4)
@@ -831,8 +831,8 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_num_score'], 1597314.86733, places=0)
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_den_score'], 1597314.95249, places=0)
-        self.assertAlmostEqual(results[1]['VMAF_feature_adm_num_score'], 7535.29963308, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_feature_adm_den_score'], 7535.29963308, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm_num_score'], 397.83378972916671, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm_den_score'], 397.83378972916671, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_anpsnr_score'], 41.9266444375, places=4)
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_scale0_score'], 1.0, places=4)
