@@ -113,6 +113,7 @@ class VmafFeatureExtractor(FeatureExtractor):
     DERIVED_ATOM_FEATURES = ['vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
                              'vif2', 'adm2', 'adm3',
                              'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
+                             'motion2',
                              ]
 
     VMAF_FEATURE = config.ROOT + "/feature/vmaf"
@@ -271,6 +272,14 @@ class VmafFeatureExtractor(FeatureExtractor):
                  / (np.array(result.result_dict[adm_den_scale3_scores_key]) + cls.ADM_SCALE_CONSTANT))
             ) / 4.0
         )
+
+        # motion2: motion2[i] = min(motion[i], motion[i+1])
+        motion2_scores_key = cls.get_scores_key('motion2')
+        motion_scores_key = cls.get_scores_key('motion')
+        motion_scores = result.result_dict[motion_scores_key]
+        motion_scores_2 = motion_scores[1:] + [motion_scores[-1]]
+        motion2_scores = np.minimum(motion_scores, motion_scores_2)
+        result.result_dict[motion2_scores_key] = motion2_scores
 
         # validate
         for feature in cls.DERIVED_ATOM_FEATURES:

@@ -415,7 +415,7 @@ class VmafossExecQualityRunner(QualityRunner):
 
     FEATURES = ['adm2', 'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
                 'motion', 'vif_scale0', 'vif_scale1', 'vif_scale2',
-                'vif_scale3', 'vif', 'psnr', 'ssim', 'ms_ssim']
+                'vif_scale3', 'vif', 'psnr', 'ssim', 'ms_ssim', 'motion2']
 
     @classmethod
     def get_feature_scores_key(cls, atom_feature):

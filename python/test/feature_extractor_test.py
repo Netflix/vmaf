@@ -68,6 +68,7 @@ class FeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.4460930625, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 4.04982535417, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_motion2_score'], 3.8953518541666665, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_adm_score'],0.93458780728708746, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'],0.93458780728708746, places=4) # at version 0.2.4b (ioannis adm fix), adm and adm2 are now identical
         self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 23.5095715208, places=4)
@@ -93,6 +94,7 @@ class FeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 4.04982535417, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_motion2_score'], 3.8953518541666665, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 31.2714392708, places=4)
@@ -153,6 +155,7 @@ class FeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.4460930625, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 4.04982535417, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_motion2_score'], 3.8953518541666665, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'],0.93458780728708746, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 23.5095715208, places=4)
 
@@ -177,6 +180,7 @@ class FeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 4.04982535417, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_motion2_score'], 3.8953518541666665, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 31.2714392708, places=4)
 
@@ -399,6 +403,8 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale1_score'], 0.08524788663335138, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale2_score'], 0.024058909404945077, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_adm_scale3_score'], 0.018034879735107798, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 12.554836666666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_motion2_score'], 12.554836666666667, places=4)
 
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
@@ -406,6 +412,8 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_scale1_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_scale2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_scale3_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 12.554836666666667, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_motion2_score'], 12.554836666666667, places=4)
 
         self.assertAlmostEqual(results[2]['VMAF_feature_adm_score'], 0.78533833333333336, places=4)
         self.assertAlmostEqual(results[2]['VMAF_feature_adm2_score'], 0.7853384465157921, places=4)
@@ -413,6 +421,8 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[2]['VMAF_feature_adm_scale1_score'], 0.69259738857522501, places=4)
         self.assertAlmostEqual(results[2]['VMAF_feature_adm_scale2_score'], 0.80415911639244586, places=4)
         self.assertAlmostEqual(results[2]['VMAF_feature_adm_scale3_score'], 0.82791889676239039, places=4)
+        self.assertAlmostEqual(results[2]['VMAF_feature_motion_score'], 12.554836666666667, places=4)
+        self.assertAlmostEqual(results[2]['VMAF_feature_motion2_score'], 12.554836666666667, places=4)
 
     def test_run_vmaf_fextractor_flat(self):
         print 'test on running VMAF feature extractor on flat pattern...'

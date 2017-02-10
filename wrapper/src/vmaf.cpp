@@ -40,6 +40,10 @@
 #define VAL_IS_NONE(V) ((V).tag=='Z') /* check ocval.cc */
 #define VAL_IS_DICT(V) ((V).tag=='t') /* check ocval.cc */
 
+#define MIN(A,B) ((A)<(B)?(A):(B))
+
+template <class T> static inline T min(T x,T y) { return (x<y)?x:y; }
+
 inline double _round_to_digit(double val, int digit);
 string _get_file_name(const std::string& s);
 
@@ -346,7 +350,7 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
 
     double ADM2_CONSTANT = 0.0;
     double ADM_SCALE_CONSTANT = 0.0;
-    StatVector adm2, motion, vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, vmaf;
+    StatVector adm2, motion, vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, vmaf, motion2;
     StatVector adm_scale0, adm_scale1, adm_scale2, adm_scale3;
     StatVector psnr, ssim, ms_ssim;
     for (size_t i=0; i<num_frms; i++)
@@ -367,6 +371,12 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
         if (ssim_array_ptr != NULL) { ssim.append(get_at(&ssim_array, i)); }
         if (ms_ssim_array_ptr != NULL) { ms_ssim.append(get_at(&ms_ssim_array, i)); }
     }
+
+    for (size_t i=0; i<num_frms-1; i++)
+    {
+        motion2.append(MIN(get_at(&motion_array, i), get_at(&motion_array, i+1)));
+    }
+    motion2.append(get_at(&motion_array, num_frms-1));
 
 #ifdef PRINT_PROGRESS
     printf("Normalize features, SVM regression, denormalize score, clip...\n");
@@ -408,6 +418,8 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
                     nodes[j].value = double(slopes[j + 1]) * vif_scale3.at(i) + double(intercepts[j + 1]);
                 else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_vif_score'") == 0)
                     nodes[j].value = double(slopes[j + 1]) * vif.at(i) + double(intercepts[j + 1]);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_motion2_score'") == 0)
+                    nodes[j].value = double(slopes[j + 1]) * motion2.at(i) + double(intercepts[j + 1]);
                 else
                 {
                     printf("Unknown feature name: %s.\n", Stringize(feature_names[j]).c_str());
@@ -442,6 +454,8 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
                     nodes[j].value = vif_scale3.at(i);
                 else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_vif_score'") == 0)
                     nodes[j].value = vif.at(i);
+                else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_motion2_score'") == 0)
+                    nodes[j].value = motion2.at(i);
                 else
                 {
                     printf("Unknown feature name: %s.\n", Stringize(feature_names[j]).c_str());
@@ -532,6 +546,7 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
         printf("vif_scale2: %f, ", vif_scale2.at(i));
         printf("vif_scale3: %f, ", vif_scale3.at(i));
         printf("vif: %f, ", vif.at(i));
+        printf("motion2: %f, ", motion2.at(i));
 
         if (psnr_array_ptr != NULL) { printf("psnr: %f, ", psnr.at(i)); }
         if (ssim_array_ptr != NULL) { printf("ssim: %f, ", ssim.at(i)); }
@@ -569,6 +584,8 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
             result.set_scores("vif_scale3", vif_scale3);
         else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_vif_score'") == 0)
             result.set_scores("vif", vif);
+        else if (strcmp(Stringize(feature_names[j]).c_str(), "'VMAF_feature_motion2_score'") == 0)
+            result.set_scores("motion2", motion2);
         else
         {
             printf("Unknown feature name: %s.\n", Stringize(feature_names[j]).c_str());
