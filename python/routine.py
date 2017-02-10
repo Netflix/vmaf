@@ -176,6 +176,10 @@ def test_on_dataset(test_dataset, runner_class, ax,
 
     if model_filepath is not None:
         optional_dict = {'model_filepath': model_filepath}
+        if 'model_720_filepath' in kwargs and kwargs['model_720_filepath'] is not None:
+            optional_dict['720model_filepath'] = kwargs['model_720_filepath']
+        if 'model_480_filepath' in kwargs and kwargs['model_480_filepath'] is not None:
+            optional_dict['480model_filepath'] = kwargs['model_480_filepath']
     else:
         optional_dict = None
 
