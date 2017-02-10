@@ -262,6 +262,10 @@ class VmafQualityRunner(QualityRunner):
     ALGO_VERSION = 1
     DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv4.pkl"  # trained with resource/param/vmaf_v4.py on private/resource/dataset/NFLX_dataset.py (26 subjects)
 
+    # VERSION = 'F'+ VmafFeatureExtractor.VERSION + '-0.6.0'
+    # ALGO_VERSION = 1
+    # DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/vmaf_v0.6.0.pkl"  # trained with resource/param/vmaf_v6.py on private/resource/dataset/NFLX_dataset.py (26 subjects, last 4 outliners removed)
+
     DEFAULT_FEATURE_DICT = {'VMAF_feature': ['vif', 'adm', 'motion', 'ansnr']} # for backward-compatible with older model only
 
     def _get_vmaf_feature_assembler_instance(self, asset):
