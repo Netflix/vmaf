@@ -19,7 +19,7 @@ model_param_dict = {
 
     # ==== libsvmnusvr parameters ==== #
 
-    'gamma': 0.05,
+    'gamma': 0.04,
     'C': 4.0,
 
     'nu': 0.9,
