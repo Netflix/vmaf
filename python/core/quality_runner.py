@@ -258,13 +258,9 @@ class VmafQualityRunner(QualityRunner):
     # ALGO_VERSION = 0
     # DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv4.pkl"  # trained with resource/param/vmaf_v4.py on private/resource/dataset/NFLX_dataset.py (26 subjects)
 
-    VERSION = 'F'+ VmafFeatureExtractor.VERSION + '-0.3.2'  # using model nflxall_vmafv4.pkl, VmafFeatureExtractor VERSION 0.2.2, NFLX_dataset with 26 subjects (last 4 outliers removed)
+    VERSION = 'F'+ VmafFeatureExtractor.VERSION + '-0.6.0'
     ALGO_VERSION = 1
-    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv4.pkl"  # trained with resource/param/vmaf_v4.py on private/resource/dataset/NFLX_dataset.py (26 subjects)
-
-    # VERSION = 'F'+ VmafFeatureExtractor.VERSION + '-0.6.0'
-    # ALGO_VERSION = 1
-    # DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/vmaf_v0.6.0.pkl"  # trained with resource/param/vmaf_v6.py on private/resource/dataset/NFLX_dataset.py (26 subjects, last 4 outliners removed)
+    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/vmaf_v0.6.0.pkl"  # trained with resource/param/vmaf_v6.py on private/user/zli/resource/dataset/NFLX_dataset_raw.py (26 subjects, last 4 outliners removed), DMOS
 
     DEFAULT_FEATURE_DICT = {'VMAF_feature': ['vif', 'adm', 'motion', 'ansnr']} # for backward-compatible with older model only
 
@@ -415,10 +411,14 @@ class VmafossExecQualityRunner(QualityRunner):
     # VERSION = '0.3.1'
     # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv3a.pkl.model"
 
-    VERSION = '0.3.2'
-    ALGO_VERSION = 0
-    # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv4.pkl.model"
-    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv4.pkl"
+    # VERSION = '0.3.2'
+    # ALGO_VERSION = 0
+    # # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv4.pkl.model"
+    # DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv4.pkl"
+
+    VERSION = 'F'+ VmafFeatureExtractor.VERSION + '-0.6.0'
+    ALGO_VERSION = 1
+    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/vmaf_v0.6.0.pkl"  # trained with resource/param/vmaf_v6.py on private/user/zli/resource/dataset/NFLX_dataset_raw.py (26 subjects, last 4 outliners removed), DMOS
 
     VMAFOSSEXEC = config.ROOT + "/wrapper/vmafossexec"
 
