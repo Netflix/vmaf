@@ -2307,12 +2307,12 @@ class ParallelQualityRunnerTestNew(unittest.TestCase):
 class QualityRunnerVersionTest(unittest.TestCase):
 
     def test_vmaf_quality_runner_version(self):
-        self.assertEquals(VmafQualityRunner.VERSION, '0.3.2')
-        self.assertEquals(VmafQualityRunner.ALGO_VERSION, 0)
+        self.assertEquals(VmafQualityRunner.VERSION, 'F0.2.4b-0.6.1')
+        self.assertEquals(VmafQualityRunner.ALGO_VERSION, 1)
 
     def test_vmafossexec_quality_runner_version(self):
-        self.assertEquals(VmafossExecQualityRunner.VERSION, '0.3.2')
-        self.assertEquals(VmafossExecQualityRunner.ALGO_VERSION, 0)
+        self.assertEquals(VmafossExecQualityRunner.VERSION, 'F0.2.4b-0.6.1')
+        self.assertEquals(VmafossExecQualityRunner.ALGO_VERSION, 1)
 
 if __name__ == '__main__':
     unittest.main()
