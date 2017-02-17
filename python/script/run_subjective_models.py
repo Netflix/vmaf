@@ -1,7 +1,7 @@
 import scipy
 
 from routine import run_subjective_models
-from tools.decorator import persist_to_file
+from vmaf.tools.decorator import persist_to_file
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -11,11 +11,11 @@ import numpy as np
 import scipy.stats
 
 import config
-from tools.misc import import_python_file
-from mos.dataset_reader import RawDatasetReader, SyntheticRawDatasetReader, \
+from vmaf.tools.misc import import_python_file
+from vmaf.mos.dataset_reader import RawDatasetReader, SyntheticRawDatasetReader, \
     MissingDataRawDatasetReader, SelectSubjectRawDatasetReader, \
     CorruptSubjectRawDatasetReader, CorruptDataRawDatasetReader
-from mos.subjective_model import MosModel, DmosModel, \
+from vmaf.mos.subjective_model import MosModel, DmosModel, \
     MaximumLikelihoodEstimationModelReduced, MaximumLikelihoodEstimationModel, \
     MaximumLikelihoodEstimationDmosModel, SubjrejMosModel, ZscoringSubjrejMosModel
 

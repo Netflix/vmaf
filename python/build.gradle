@@ -2,12 +2,12 @@ plugins {
     // See info/pygradle-notes.md in this project
     // This section could be replaced with an "apply plugin: 'netflix.python-cli'"
     // The plugin would come from nebula
-    id "com.linkedin.python-cli" version "0.4.1"
+    id "com.linkedin.python-sdist" version "0.4.1"
 }
 
 // These settings are the default, shown there for info
-python.pex.fatPex = true
-python.cli.generateCompletions = false
+//python.pex.fatPex = true
+//python.cli.generateCompletions = false
 
 // Turn off sorting, so the dependencies get built in order specified below
 // We need this because scikit-learn depends on scipy, but without explicitly stating so
@@ -38,3 +38,9 @@ repositories {
         }
     }
 }
+
+task cleanPYCFiles(type: Exec) {
+    commandLine 'find', '.', '-name', '*.pyc', '-exec', 'rm', '-f', '{}', ';'   
+}
+     
+clean.dependsOn cleanPYCFiles

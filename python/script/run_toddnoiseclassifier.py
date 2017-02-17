@@ -6,11 +6,11 @@ import os
 import numpy as np
 
 import config
-from core.executor import run_executors_in_parallel
-from core.raw_extractor import DisYUVRawVideoExtractor
-from core.nn_train_test_model import ToddNoiseClassifierTrainTestModel
+from vmaf.core.executor import run_executors_in_parallel
+from vmaf.core.raw_extractor import DisYUVRawVideoExtractor
+from vmaf.core.nn_train_test_model import ToddNoiseClassifierTrainTestModel
 from routine import read_dataset
-from tools.misc import import_python_file
+from vmaf.tools.misc import import_python_file
 
 
 # parameters

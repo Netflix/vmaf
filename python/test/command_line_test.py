@@ -3,7 +3,7 @@ import unittest
 import subprocess
 
 import config
-from tools.misc import run_process
+from vmaf.tools.misc import run_process
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -103,7 +103,7 @@ class CommandLineTest(unittest.TestCase):
         ret = run_process(cmd, shell=True)
         self.assertEquals(ret, 0)
 
-        exe = config.ROOT + '/python/run_cleaning_cache.py'
+        exe = config.ROOT + '/python/script/run_cleaning_cache.py'
         cmd = "{exe} PSNR {dataset}".format(
             exe=exe, dataset=self.dataset_filename)
         ret = run_process(cmd, shell=True)

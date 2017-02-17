@@ -1,9 +1,9 @@
 import unittest
 import config
-from core.asset import Asset
-from core.quality_runner import StrredQualityRunner, PsnrQualityRunner, \
+from vmaf.core.asset import Asset
+from vmaf.core.quality_runner import StrredQualityRunner, PsnrQualityRunner, \
     VmafQualityRunner, VmafossExecQualityRunner
-from core.result_store import FileSystemResultStore
+from vmaf.core.result_store import FileSystemResultStore
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"

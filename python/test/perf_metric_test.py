@@ -4,7 +4,7 @@ import numpy as np
 import scipy.io
 
 import config
-from core.perf_metric import RmsePerfMetric, SrccPerfMetric, PccPerfMetric, \
+from vmaf.core.perf_metric import RmsePerfMetric, SrccPerfMetric, PccPerfMetric, \
     KendallPerfMetric, KflkPerfMetric
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."

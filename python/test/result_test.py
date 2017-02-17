@@ -6,12 +6,12 @@ from functools import partial
 
 import numpy as np
 
-from core.asset import Asset
+from vmaf.core.asset import Asset
 import config
-from core.result import Result
-from core.result_store import FileSystemResultStore
-from core.quality_runner import VmafLegacyQualityRunner, SsimQualityRunner
-from tools.stats import ListStats
+from vmaf.core.result import Result
+from vmaf.core.result_store import FileSystemResultStore
+from vmaf.core.quality_runner import VmafLegacyQualityRunner, SsimQualityRunner
+from vmaf.tools.stats import ListStats
 
 class ResultTest(unittest.TestCase):
 

@@ -1,4 +1,4 @@
-from core.executor import run_executors_in_parallel
+from vmaf.core.executor import run_executors_in_parallel
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -6,8 +6,8 @@ __license__ = "Apache, Version 2.0"
 import unittest
 
 import config
-from core.asset import NorefAsset, Asset
-from core.noref_feature_extractor import MomentNorefFeatureExtractor
+from vmaf.core.asset import NorefAsset, Asset
+from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
 
 class NorefFeatureExtractorTest(unittest.TestCase):
 

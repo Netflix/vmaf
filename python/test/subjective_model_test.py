@@ -2,14 +2,14 @@ import os
 import unittest
 import numpy as np
 import config
-from mos.dataset_reader import RawDatasetReader, MissingDataRawDatasetReader, \
+from vmaf.mos.dataset_reader import RawDatasetReader, MissingDataRawDatasetReader, \
     SyntheticRawDatasetReader, CorruptSubjectRawDatasetReader
-from mos.subjective_model import MosModel, DmosModel, \
+from vmaf.mos.subjective_model import MosModel, DmosModel, \
     MaximumLikelihoodEstimationModelReduced, MaximumLikelihoodEstimationModel, \
     LiveDmosModel, MaximumLikelihoodEstimationDmosModel, LeastSquaresModel, \
     SubjrejMosModel, ZscoringSubjrejMosModel, SubjrejDmosModel, \
     ZscoringSubjrejDmosModel, PerSubjectModel
-from tools.misc import import_python_file
+from vmaf.tools.misc import import_python_file
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"

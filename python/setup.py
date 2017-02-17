@@ -90,7 +90,7 @@ class GradleDistribution(Distribution, object):
     excluded_platform_packages = {}
 
     def __init__(self, attrs):
-        attrs['name'] = os.getenv('PYGRADLE_PROJECT_NAME')
+        attrs['name'] = 'vmaf'
         attrs['version'] = self.get_version()
         attrs['install_requires'] = list(self.load_pinned_deps())
         super(GradleDistribution, self).__init__(attrs)
@@ -151,13 +151,7 @@ class GradleDistribution(Distribution, object):
 
 setup(
    distclass=GradleDistribution,
-   package_dir={'': '.'},
-   packages=find_packages('.'),
+   package_dir={'':'src'},
+   packages=find_packages('src'),
    include_package_data=True,
-
-   # entry_points={
-   #     'console_scripts': [
-   #         'hello_world = foo.hello:main',
-   #     ],
-   # }
 )

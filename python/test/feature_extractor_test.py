@@ -6,11 +6,11 @@ import unittest
 import re
 
 import config
-from core.feature_extractor import VmafFeatureExtractor, MomentFeatureExtractor, \
+from vmaf.core.feature_extractor import VmafFeatureExtractor, MomentFeatureExtractor, \
     PsnrFeatureExtractor, SsimFeatureExtractor, MsSsimFeatureExtractor
-from core.asset import Asset
-from core.executor import run_executors_in_parallel
-from core.result_store import FileSystemResultStore
+from vmaf.core.asset import Asset
+from vmaf.core.executor import run_executors_in_parallel
+from vmaf.core.result_store import FileSystemResultStore
 
 
 class FeatureExtractorTest(unittest.TestCase):

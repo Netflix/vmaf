@@ -5,7 +5,7 @@ import unittest
 import re
 
 import config
-from core.asset import Asset
+from vmaf.core.asset import Asset
 
 
 class AssetTest(unittest.TestCase):

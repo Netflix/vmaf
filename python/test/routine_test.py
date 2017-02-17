@@ -3,9 +3,9 @@ import unittest
 
 import config
 from routine import train_test_vmaf_on_dataset, read_dataset, run_test_on_dataset
-from tools.misc import import_python_file
-from core.quality_runner import VmafQualityRunner
-from mos.subjective_model import MosModel
+from vmaf.tools.misc import import_python_file
+from vmaf.core.quality_runner import VmafQualityRunner
+from vmaf.mos.subjective_model import MosModel
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"

@@ -3,10 +3,10 @@ __license__ = "Apache, Version 2.0"
 
 import unittest
 
-from core.asset import Asset
+from vmaf.core.asset import Asset
 import config
-from core.feature_assembler import FeatureAssembler
-from core.feature_extractor import VmafFeatureExtractor, FeatureExtractor, \
+from vmaf.core.feature_assembler import FeatureAssembler
+from vmaf.core.feature_extractor import VmafFeatureExtractor, FeatureExtractor, \
     MomentFeatureExtractor
 
 class FeatureAssemblerTest(unittest.TestCase):
@@ -17,7 +17,7 @@ class FeatureAssemblerTest(unittest.TestCase):
         pass
 
     def test_get_fextractor_subclasses(self):
-        from core.noref_feature_extractor import NorefFeatureExtractor
+        from vmaf.core.noref_feature_extractor import NorefFeatureExtractor
         fextractor_subclasses = FeatureExtractor.get_subclasses_recursively()
         self.assertEquals(len(fextractor_subclasses), 9)
         self.assertTrue(VmafFeatureExtractor in fextractor_subclasses)

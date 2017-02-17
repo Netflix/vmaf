@@ -1,8 +1,8 @@
 import unittest
 
 import config
-from core.asset import NorefAsset
-from core.noref_feature_extractor import MomentNorefFeatureExtractor
+from vmaf.core.asset import NorefAsset
+from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
