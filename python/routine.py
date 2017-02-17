@@ -183,6 +183,11 @@ def test_on_dataset(test_dataset, runner_class, ax,
     else:
         optional_dict = None
 
+    if 'enable_transform_score' in kwargs and kwargs['enable_transform_score'] is not None:
+        if not optional_dict:
+            optional_dict = {}
+        optional_dict['enable_transform_score'] = kwargs['enable_transform_score']
+
     # run
     runner = runner_class(
         test_assets,
@@ -711,3 +716,11 @@ def run_subjective_models(dataset_filepath, subjective_model_classes, do_plot=No
         plt.tight_layout()
 
     return dataset, subjective_models, results
+
+
+def generate_dataset_from_raw(raw_dataset_filepath, output_dataset_filepath, **kwargs):
+    if raw_dataset_filepath:
+        subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs else DmosModel
+        subjective_model = subj_model_class.from_dataset_file(raw_dataset_filepath)
+        subjective_model.run_modeling(**kwargs)
+        subjective_model.to_aggregated_dataset_file(output_dataset_filepath, **kwargs)

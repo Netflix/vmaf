@@ -2,7 +2,8 @@ import os
 import unittest
 
 import config
-from routine import train_test_vmaf_on_dataset, read_dataset, test_on_dataset
+from routine import train_test_vmaf_on_dataset, read_dataset, test_on_dataset, \
+    generate_dataset_from_raw
 from tools.misc import import_python_file
 from core.quality_runner import VmafQualityRunner
 from mos.subjective_model import MosModel
@@ -180,6 +181,32 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(test_assets[1].groundtruth, 50, places=4)
         self.assertAlmostEqual(test_assets[2].groundtruth, 90, places=4)
         self.assertAlmostEqual(test_assets[3].groundtruth, 80, places=4)
+
+class TestGenerateDatasetFromRaw(unittest.TestCase):
+
+    def setUp(self):
+        self.raw_dataset_filepath = config.ROOT + '/resource/dataset/NFLX_dataset_public_raw.py'
+        self.derived_dataset_path = config.ROOT + '/workspace/workdir/test_derived_dataset.py'
+        self.derived_dataset_path_pyc = config.ROOT + '/workspace/workdir/test_derived_dataset.pyc'
+
+    def tearDown(self):
+        if os.path.exists(self.derived_dataset_path):
+            os.remove(self.derived_dataset_path)
+        if os.path.exists(self.derived_dataset_path_pyc):
+            os.remove(self.derived_dataset_path_pyc)
+
+    def test_generate_dataset_from_raw_default(self): # DMOS
+        generate_dataset_from_raw(raw_dataset_filepath=self.raw_dataset_filepath,
+                         output_dataset_filepath=self.derived_dataset_path)
+        dataset = import_python_file(self.derived_dataset_path)
+        self.assertAlmostEqual(dataset.dis_videos[0]['groundtruth'], 1.42307692308, places=4)
+
+    def test_generate_dataset_from_raw_mos(self):
+        generate_dataset_from_raw(raw_dataset_filepath=self.raw_dataset_filepath,
+                                  output_dataset_filepath=self.derived_dataset_path,
+                                  subj_model_class=MosModel)
+        dataset = import_python_file(self.derived_dataset_path)
+        self.assertAlmostEqual(dataset.dis_videos[0]['groundtruth'], 1.3076923076923077, places=4)
 
 if __name__ == '__main__':
     unittest.main()
