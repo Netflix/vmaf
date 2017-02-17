@@ -93,6 +93,11 @@ class GradleDistribution(Distribution, object):
         attrs['name'] = 'vmaf'
         attrs['version'] = self.get_version()
         attrs['install_requires'] = list(self.load_pinned_deps())
+        attrs['description']  = 'VMAF - Video Multi-Method Assessment Fusion'
+        attrs['author'] = 'Zhi Li'
+        attrs['author_email'] = 'zli@netflix.com'
+        attrs['license'] = 'Apache License'
+        attrs['url'] = "http://github.com/netflix/vmaf" 
         super(GradleDistribution, self).__init__(attrs)
 
     def get_version(self):
