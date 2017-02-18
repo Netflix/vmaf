@@ -279,7 +279,9 @@ class VmafFeatureExtractor(FeatureExtractor):
         motion_scores = result.result_dict[motion_scores_key]
         motion_scores_2 = motion_scores[1:] + [motion_scores[-1]]
         motion2_scores = np.minimum(motion_scores, motion_scores_2)
-        result.result_dict[motion2_scores_key] = motion2_scores
+        result.result_dict[motion2_scores_key] = list( # !! list(.) so that ast.literal_eval could handle in FileSystemResultStore
+            motion2_scores
+        )
 
         # validate
         for feature in cls.DERIVED_ATOM_FEATURES:
