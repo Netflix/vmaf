@@ -149,7 +149,12 @@ For example:
 
 ###Predict Quality on a Cellular Phone Screen
 
-VMAF v0.6.1 now supports a custom quality model for cellular phone screen viewing. This model can be invoked by adding *--phone-model* option in the commands *run_vmaf*, *run_vmaf_in_batch*, including *run_testing* and *vmafossexec* to be mentioned in latter sections.
+VMAF v0.6.1 and onwards now support a custom quality model for cellular phone screen viewing. This model can be invoked by adding *--phone-model* option in the commands *run_vmaf*, *run_vmaf_in_batch* (including *run_testing* and *vmafossexec* in the following sections):
+
+```
+./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv --phone-model
+./run_vmaf_in_batch example_batch_input --parallelize --phone-model
+```
 
 
 ##Advanced Usage
