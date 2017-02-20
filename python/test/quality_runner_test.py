@@ -258,6 +258,38 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_score'], 76.699271272486044, places=4)
         self.assertAlmostEqual(results[1]['VMAF_score'], 99.946416604585025, places=4)
 
+    def test_run_vmaf_runner_with_phone_score(self):
+        print 'test on running VMAF runner with phone score...'
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.runner = VmafQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={
+                'enable_transform_score': True,
+            }
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAF_score'], 92.542390144364546, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 100.0, places=4)
+
     def test_run_vmaf_runner_checkerboard(self):
         print 'test on running VMAF runner on checkerboard pattern...'
         ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
@@ -525,6 +557,38 @@ class QualityRunnerTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.699271272486044, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'],99.946416604585025, places=4)
+
+    def test_run_vmafossexec_runner_with_phone_score(self):
+        print 'test on running VMAFOSSEXEC runner with phone score...'
+        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.runner = VmafossExecQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={
+                'enable_transform_score': True,
+            }
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 92.542390144364546, places=4)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 100.0, places=4)
 
     def test_run_vmafossexec_runner_norm_type_none(self):
         print 'test on running VMAFOSSEXEC runner with norm type none...'
@@ -965,8 +1029,8 @@ class QualityRunnerTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAF_score'], 0.0, places=4)
 
-    def test_run_vmaf_runner_with_transform_score_no_transform_info(self):
-        print 'test on running VMAF runner with score transforming without info...'
+    def test_run_vmaf_runner_with_transform_for_phone(self):
+        print 'test on running VMAF runner with transform for phone...'
         ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
         dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -995,7 +1059,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_feature_motion2_score'], 12.5548366667, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'], 0.053996580527295335, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAF_score'], 7.985956215118768, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 14.982837886251568, places=4)
 
     def test_run_vmafossexec_runner_with_transform_score(self):
         print 'test on running VMAFOSSEXEC runner with score transforming...'
@@ -1106,8 +1170,8 @@ class QualityRunnerTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 0.0, places=4)
 
-    def test_run_vmafossexec_runner_with_transform_score_no_transform_info(self):
-        print 'test on running VMAFOSSEXEC runner with score transforming without info...'
+    def test_run_vmafossexec_runner_with_transform_for_phone(self):
+        print 'test on running VMAFOSSEXEC runner with transform for phone...'
         ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
         dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -1136,7 +1200,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_motion2_score'], 12.5548366667, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm2_score'], 0.053996566666666669, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 7.9859466666666661, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 14.982840000000001, places=4)
 
     def test_run_vmafossexec_runner_disable_avx_precise(self):
         print 'test on running VMAFOSSEXEC runner disabling AVX (precise)...'

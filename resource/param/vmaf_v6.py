@@ -1,6 +1,7 @@
 feature_dict = {
 
-   'VMAF_feature': ['vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3', 'adm2', 'motion2',],
+   'VMAF_feature': ['vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
+                    'adm2', 'motion2',],
 
 }
 
@@ -17,10 +18,12 @@ model_param_dict = {
     # 'score_clip': None, # default: do nothing
     'score_clip': [0.0, 100.0], # clip to within [0, 100]
 
+    # ==== postprocess: transform final quality score ==== #
+    'score_transform': {'p0':1.70674692, 'p1':1.72643844, 'p2':-0.00705305, 'out_gte_in':'true'}, # laptop vs. mobile transform
+
     # ==== libsvmnusvr parameters ==== #
 
     'gamma': 0.04,
     'C': 4.0,
-
     'nu': 0.9,
 }
