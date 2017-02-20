@@ -6,10 +6,10 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ##What's New
 
-- (12/5/16) Speed up VMAF convolution operation by AVX.
-- (11/7/16) Custom subjective models (MOS, DMOS, MLE and more) are now supported. Read [this](resource/doc/dcc17v2.pdf) paper for some background, and see [this](#using-custom-subjective-models) section for usage.
+- (2/20/17) Added custom quality model for cellular phone screen viewing. See [this](#predict-quality-on-a-cellular-phone-screen) section for details.
+- (2/20/17) Updated VMAF model to version v0.6.1. Changes include: 1) trained using new dataset, covering more difficult content; 2) added a custom model for cellular phone screen viewing; 3) elementary metric fixes: ADM behavior at near-black frames, motion behaviro at scene boundaries; 4) compressed quality score range by 20% to accommodate higher dynamic range; 5) Use MLE instead of DMOS as subjective model.
+- (11/7/16) Custom subjective models (MOS, DMOS, MLE and more) are now supported. Read [this](resource/doc/dcc17v2.pdf) paper for some background, and see [this](#using-custom-subjective-models) section for usage. 
 - (9/30/16) Added a [FAQ](FAQ.md) page.
-- (9/30/16) Added *vmafossexec* -- a C++ wrapper under [wrapper](wrapper). Refer to [Python-independent Implementation](#python-independent-implementation).
 
 ##Prerequisite
 
@@ -146,6 +146,11 @@ For example:
 ```
 ./run_vmaf_in_batch example_batch_input --parallelize
 ```
+
+###Predict Quality on a Cellular Phone Screen
+
+VMAF v0.6.1 now supports a custom quality model for cellular phone screen viewing. This model can be invoked by adding *--phone-model* option in the commands *run_vmaf*, *run_vmaf_in_batch*, including *run_testing* and *vmafossexec* to be mentioned in latter sections.
+
 
 ##Advanced Usage
 
