@@ -463,6 +463,11 @@ class VmafossExecQualityRunner(QualityRunner):
         else:
             enable_transform_score = False
 
+        if self.optional_dict is not None and 'phone_model' in self.optional_dict:
+            phone_model = self.optional_dict['phone_model']
+        else:
+            phone_model = False
+
         if self.optional_dict is not None and 'disable_avx' in self.optional_dict:
             disable_avx = self.optional_dict['disable_avx']
         else:
@@ -486,7 +491,7 @@ class VmafossExecQualityRunner(QualityRunner):
         if disable_clip_score:
             vmafossexec_cmd += ' --disable-clip'
 
-        if enable_transform_score:
+        if enable_transform_score or phone_model:
             vmafossexec_cmd += ' --enable-transform'
 
         if disable_avx:

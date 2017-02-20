@@ -22,7 +22,7 @@ POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'pe
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) \
-          + " fmt width height ref_path dis_path [--model model_path] [--out-fmt out_fmt]\n"
+          + " fmt width height ref_path dis_path [--model model_path] [--out-fmt out_fmt] [--phone-model]\n"
     print "fmt:\n\t" + "\n\t".join(FMTS) + "\n"
     print "out_fmt:\n\t" + "\n\t".join(OUT_FMTS) + "\n"
 
@@ -68,6 +68,8 @@ def main():
 
     show_local_explanation = cmd_option_exists(sys.argv, 6, len(sys.argv), '--local-explain')
 
+    phone_model = cmd_option_exists(sys.argv, 6, len(sys.argv), '--phone-model')
+
     asset = Asset(dataset="cmd",
                   content_id=abs(hash(get_file_name_without_extension(ref_file))) % (10 ** 16),
                   asset_id=abs(hash(get_file_name_without_extension(ref_file))) % (10 ** 16),
@@ -87,6 +89,11 @@ def main():
         optional_dict = None
     else:
         optional_dict = {'model_filepath':model_path}
+
+    if phone_model:
+        if optional_dict is None:
+            optional_dict = {}
+        optional_dict['enable_transform_score'] = True
 
     runner = runner_class(
         assets, None, fifo_mode=True,
