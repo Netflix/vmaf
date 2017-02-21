@@ -22,7 +22,7 @@ POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'pe
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) + \
-          " input_file [--model model_path] [--out-fmt out_fmt] [--parallelize]\n"
+          " input_file [--model model_path] [--out-fmt out_fmt] [--parallelize] [--phone-model]\n"
     print "out_fmt:\n\t" + "\n\t".join(OUT_FMTS) + "\n"
     print "input_file contains lines of:"
     print "\tfmt width height ref_path dis_path\\n"
@@ -52,6 +52,8 @@ def main():
         return 2
 
     parallelize = cmd_option_exists(sys.argv, 2, len(sys.argv), '--parallelize')
+
+    phone_model = cmd_option_exists(sys.argv, 2, len(sys.argv), '--phone-model')
 
     assets = []
     line_idx = 0
@@ -100,16 +102,21 @@ def main():
     else:
         optional_dict = {'model_filepath':model_path}
 
-    runners, results = run_executors_in_parallel(
-        runner_class,
+    if phone_model:
+        if optional_dict is None:
+            optional_dict = {}
+        optional_dict['enable_transform_score'] = True
+
+    runner = runner_class(
         assets,
-        fifo_mode=True,
+        None, fifo_mode=True,
         delete_workdir=True,
-        parallelize=parallelize,
         result_store=None,
         optional_dict=optional_dict,
         optional_dict2=None,
     )
+    runner.run(parallelize=parallelize)
+    results = runner.results
 
     # output
     for result in results:

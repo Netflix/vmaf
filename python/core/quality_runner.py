@@ -133,8 +133,9 @@ class PsnrQualityRunner(QualityRunner):
 class VmafLegacyQualityRunner(QualityRunner):
 
     TYPE = 'VMAF_legacy'
-    #VERSION = '1.1'
-    VERSION = '1.2' # update since adm, ansnr, vif feature computation has changed
+
+    # VERSION = '1.1'
+    VERSION = 'F' + VmafFeatureExtractor.VERSION + '-1.1'
 
     FEATURE_ASSEMBLER_DICT = {'VMAF_feature': 'all'}
 
@@ -253,9 +254,13 @@ class VmafQualityRunner(QualityRunner):
     # VERSION = '0.3.1' # using model nflxall_vmafv3.pkl, VmafFeatureExtractor VERSION 0.2.1, NFLX_dataset with 26 subjects (last 4 outliers removed)
     # DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv3a.pkl" # trained with resource/param/vmaf_v3.py on private/resource/dataset/NFLX_dataset.py (26 subjects)
 
-    VERSION = '0.3.2'  # using model nflxall_vmafv4.pkl, VmafFeatureExtractor VERSION 0.2.2, NFLX_dataset with 26 subjects (last 4 outliers removed)
-    ALGO_VERSION = 0
-    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv4.pkl"  # trained with resource/param/vmaf_v4.py on private/resource/dataset/NFLX_dataset.py (26 subjects)
+    # VERSION = '0.3.2'  # using model nflxall_vmafv4.pkl, VmafFeatureExtractor VERSION 0.2.2, NFLX_dataset with 26 subjects (last 4 outliers removed)
+    # ALGO_VERSION = 0
+    # DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv4.pkl"  # trained with resource/param/vmaf_v4.py on private/resource/dataset/NFLX_dataset.py (26 subjects)
+
+    VERSION = 'F'+ VmafFeatureExtractor.VERSION + '-0.6.1'
+    ALGO_VERSION = 2
+    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/vmaf_v0.6.1.pkl"  # trained with resource/param/vmaf_v6.py on private/user/zli/resource/dataset/dataset/derived/vmafplusstudy_laptop_raw_generalandcornercase.py, MLER, y=x+17
 
     DEFAULT_FEATURE_DICT = {'VMAF_feature': ['vif', 'adm', 'motion', 'ansnr']} # for backward-compatible with older model only
 
@@ -406,16 +411,20 @@ class VmafossExecQualityRunner(QualityRunner):
     # VERSION = '0.3.1'
     # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv3a.pkl.model"
 
-    VERSION = '0.3.2'
-    ALGO_VERSION = 0
-    # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv4.pkl.model"
-    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv4.pkl"
+    # VERSION = '0.3.2'
+    # ALGO_VERSION = 0
+    # # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv4.pkl.model"
+    # DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv4.pkl"
+
+    VERSION = 'F'+ VmafFeatureExtractor.VERSION + '-0.6.1'
+    ALGO_VERSION = 2
+    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/vmaf_v0.6.1.pkl"  # trained with resource/param/vmaf_v6.py on private/user/zli/resource/dataset/dataset/derived/vmafplusstudy_laptop_raw_generalandcornercase.py, MLER, y=x+17
 
     VMAFOSSEXEC = config.ROOT + "/wrapper/vmafossexec"
 
     FEATURES = ['adm2', 'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
                 'motion', 'vif_scale0', 'vif_scale1', 'vif_scale2',
-                'vif_scale3', 'vif', 'psnr', 'ssim', 'ms_ssim']
+                'vif_scale3', 'vif', 'psnr', 'ssim', 'ms_ssim', 'motion2']
 
     @classmethod
     def get_feature_scores_key(cls, atom_feature):
@@ -454,6 +463,11 @@ class VmafossExecQualityRunner(QualityRunner):
         else:
             enable_transform_score = False
 
+        if self.optional_dict is not None and 'phone_model' in self.optional_dict:
+            phone_model = self.optional_dict['phone_model']
+        else:
+            phone_model = False
+
         if self.optional_dict is not None and 'disable_avx' in self.optional_dict:
             disable_avx = self.optional_dict['disable_avx']
         else:
@@ -477,7 +491,7 @@ class VmafossExecQualityRunner(QualityRunner):
         if disable_clip_score:
             vmafossexec_cmd += ' --disable-clip'
 
-        if enable_transform_score:
+        if enable_transform_score or phone_model:
             vmafossexec_cmd += ' --enable-transform'
 
         if disable_avx:
@@ -595,7 +609,7 @@ class MsSsimQualityRunner(QualityRunner):
 
 class VmafSingleFeatureQualityRunner(QualityRunner):
 
-    VERSION = '{}-0'.format(VmafFeatureExtractor.VERSION)
+    VERSION = 'F{}-0'.format(VmafFeatureExtractor.VERSION)
 
     def _get_vmaf_feature_assembler_instance(self, asset):
 

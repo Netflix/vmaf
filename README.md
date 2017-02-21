@@ -6,10 +6,14 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ##What's New
 
-- (12/5/16) Speed up VMAF convolution operation by AVX.
-- (11/7/16) Custom subjective models (MOS, DMOS, MLE and more) are now supported. Read [this](resource/doc/dcc17v2.pdf) paper for some background, and see [this](#using-custom-subjective-models) section for usage.
+- (2/20/17) Updated VMAF model to version v0.6.1. Changes include: 
+    - Added a custom quality model for cellular phone screen viewing. See [this](#predict-quality-on-a-cellular-phone-screen) section for details.
+    - Trained using a new dataset, covering more difficult content.
+    - Elementary metric fixes: ADM behavior at near-black frames, and motion behavior at scene boundaries.
+    - Compressed quality score range by 20% to accommodate higher dynamic range.
+    - Use MLE instead of DMOS for subjective model.
+- (11/7/16) Custom subjective models (MOS, DMOS, MLE and more) are now supported. Read [this](resource/doc/dcc17v2.pdf) paper for some background, and see [this](#using-custom-subjective-models) section for usage. 
 - (9/30/16) Added a [FAQ](FAQ.md) page.
-- (9/30/16) Added *vmafossexec* -- a C++ wrapper under [wrapper](wrapper). Refer to [Python-independent Implementation](#python-independent-implementation).
 
 ##Prerequisite
 
@@ -24,7 +28,7 @@ It also requires a number of Python packages:
   - [scikit-learn](http://scikit-learn.org/stable/) (>=0.18)
   - [h5py](http://www.h5py.org/) (>=2.2.1)
 
-Follow [this link](http://www.scipy.org/install.html) to install the *numpy/scipy/matplotlib/pandas* suite on your system. To install *scikit-learn*, first [install](http://python-packaging-user-guide.readthedocs.org/en/latest/installing/) package manager *pip*, then run:
+Follow [this link](http://www.scipy.org/install.html) to install the *numpy/scipy/matplotlib/pandas* suite. To install *scikit-learn*, first [install](http://python-packaging-user-guide.readthedocs.org/en/latest/installing/) package manager *pip*, then run:
 
 ```
 sudo pip install --upgrade scikit-learn
@@ -108,7 +112,7 @@ This will generate output like:
 ```
 "aggregate": {
     "VMAF_feature_adm2_score": 0.92542107502749982, 
-    "VMAF_feature_motion_score": 4.0498253541666669, 
+    "VMAF_feature_motion2_score": 4.0498253541666669, 
     "VMAF_feature_vif_scale0_score": 0.36342048943884936, 
     "VMAF_feature_vif_scale1_score": 0.76664754213485187, 
     "VMAF_feature_vif_scale2_score": 0.86285466690193247, 
@@ -118,7 +122,7 @@ This will generate output like:
 }
 ```
 
-where *VMAF_score* is the final score and the others are the scores for elementary metrics. *adm2*, *vif_scalex* scores range from 0 (worst) to 1 (best), and *motion* score typically ranges from 0 (static) to 20 (high-motion).
+where *VMAF_score* is the final score and the others are the scores for elementary metrics. *adm2*, *vif_scalex* scores range from 0 (worst) to 1 (best), and *motion2* score typically ranges from 0 (static) to 20 (high-motion).
 
 To run VMAF in batch mode, create an input text file with each line of format (check examples in [example_batch_input](example_batch_input)):
 
@@ -146,6 +150,21 @@ For example:
 ```
 ./run_vmaf_in_batch example_batch_input --parallelize
 ```
+
+###Predict Quality on a Cellular Phone Screen
+
+VMAF v0.6.1 and later now support a custom quality model for cellular phone screen viewing. This model can be invoked by adding *--phone-model* option in the commands *run_vmaf*, *run_vmaf_in_batch* (also in *run_testing* and *vmafossexec* introduced the following sections):
+
+```
+./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv --phone-model
+./run_vmaf_in_batch example_batch_input --parallelize --phone-model
+```
+
+Invoking the phone model will generate VMAF scores higher than in the regular model, which is more suitable for laptop, TV, etc. viewing conditions. An example VMAF-bitrate relationship for the two models is shown below:
+
+![regular vs phone model](/resource/images/phone_model.png)
+
+It should be interpreted that due to the factors of screen size and viewing distance, the same distorted video would be perceived as having a higher quality when viewed on a phone screen than on a laptop/TV screen, and when the quality score reaches its maximum (100), further increasing the encoding bitrate would not result in any perceptual improvement in quality.
 
 ##Advanced Usage
 
