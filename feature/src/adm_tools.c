@@ -89,7 +89,7 @@ float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_fac
         accum += accum_inner;
     }
 
-    return powf(accum, 1.0f / 3.0f);
+    return powf(accum, 1.0f / 3.0f) + powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
 }
 
 double adm_sum_cube_d(const double *x, int w, int h, int stride, double border_factor)
@@ -117,7 +117,7 @@ double adm_sum_cube_d(const double *x, int w, int h, int stride, double border_f
         accum += accum_inner;
     }
 
-    return pow(accum, 1.0 / 3.0);
+    return pow(accum, 1.0 / 3.0) + pow((bottom - top) * (right - left) / 32.0, 1.0 / 3.0);
 }
 
 void adm_decouple_s(const adm_dwt_band_t_s *ref, const adm_dwt_band_t_s *dis, const adm_dwt_band_t_s *r, const adm_dwt_band_t_s *a, int w, int h, int ref_stride, int dis_stride, int r_stride, int a_stride)
@@ -318,24 +318,20 @@ void adm_decouple_d(const adm_dwt_band_t_d *ref, const adm_dwt_band_t_d *dis, co
 
 void adm_csf_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, int orig_h, int scale, int w, int h, int src_stride, int dst_stride)
 {
-    const float view_dis = 4;
-    const float a = 0.31;
-    const float b = 0.69;
-    const float c = 0.29;
-
     const float *src_angles[3] = { src->band_h, src->band_v, src->band_d };
     float *dst_angles[3]       = { dst->band_h, dst->band_v, dst->band_d };
-    float p[3]                 = { 1, 1, -1 };
 
     const float *src_ptr;
     float *dst_ptr;
 
-    float f1 = M_PI * orig_h * view_dis / (180 * 1 << (scale + 1));
-    float f2;
-    float factor;
-
     int src_px_stride = src_stride / sizeof(float);
     int dst_px_stride = dst_stride / sizeof(float);
+
+    // for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
+    // 1 to 4 (from finest scale to coarsest scale).
+    float factor1 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1);
+    float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2);
+    float rfactor[3] = {1.0f / factor1, 1.0f / factor1, 1.0f / factor2};
 
     int i, j, theta;
 
@@ -343,12 +339,9 @@ void adm_csf_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, int ori
         src_ptr = src_angles[theta];
         dst_ptr = dst_angles[theta];
 
-        f2     = f1 / (0.15 * p[theta] + 0.85);
-        factor = (a + b * f2) * exp(-c * f2);
-
         for (i = 0; i < h; ++i) {
             for (j = 0; j < w; ++j) {
-                dst_ptr[i * dst_px_stride + j] = factor * src_ptr[i * src_px_stride + j];
+                dst_ptr[i * dst_px_stride + j] = rfactor[theta] * src_ptr[i * src_px_stride + j];
             }
         }
     }
@@ -356,24 +349,20 @@ void adm_csf_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, int ori
 
 void adm_csf_d(const adm_dwt_band_t_d *src, const adm_dwt_band_t_d *dst, int orig_h, int scale, int w, int h, int src_stride, int dst_stride)
 {
-    const double view_dis = 4;
-    const double a = 0.31;
-    const double b = 0.69;
-    const double c = 0.29;
-
     const double *src_angles[3] = { src->band_h, src->band_v, src->band_d };
     double *dst_angles[3]       = { dst->band_h, dst->band_v, dst->band_d };
-    double p[3]                 = { 1, 1, -1 };
 
     const double *src_ptr;
     double *dst_ptr;
 
-    double f1 = M_PI * orig_h * view_dis / (180 * 1 << (scale + 1));
-    double f2;
-    double factor;
-
     int src_px_stride = src_stride / sizeof(double);
     int dst_px_stride = dst_stride / sizeof(double);
+
+    // for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
+    // 1 to 4 (from finest scale to coarsest scale).
+    double factor1 = (double)dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1);
+    double factor2 = (double)dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2);
+    double rfactor[3] = {1.0 / factor1, 1.0 / factor1, 1.0 / factor2};
 
     int i, j, theta;
 
@@ -381,12 +370,9 @@ void adm_csf_d(const adm_dwt_band_t_d *src, const adm_dwt_band_t_d *dst, int ori
         src_ptr = src_angles[theta];
         dst_ptr = dst_angles[theta];
 
-        f2     = f1 / (0.15 * p[theta] + 0.85);
-        factor = (a + b * f2) * exp(-c * f2);
-
         for (i = 0; i < h; ++i) {
             for (j = 0; j < w; ++j) {
-                dst_ptr[i * dst_px_stride + j] = factor * src_ptr[i * src_px_stride + j];
+                dst_ptr[i * dst_px_stride + j] = rfactor[theta] * src_ptr[i * src_px_stride + j];
             }
         }
     }

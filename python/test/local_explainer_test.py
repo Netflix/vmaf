@@ -114,34 +114,34 @@ class LocalExplainerTest(unittest.TestCase):
         self.runner.run()
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAF_score'], 65.4488588759, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_score'], 99.2259317881, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 76.699271272486044, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 99.946416604585025, places=4)
 
         expected_feature_names = ['VMAF_feature_adm2_score',
-                                  'VMAF_feature_motion_score',
+                                  'VMAF_feature_motion2_score',
                                   'VMAF_feature_vif_scale0_score',
                                   'VMAF_feature_vif_scale1_score',
                                   'VMAF_feature_vif_scale2_score',
                                   'VMAF_feature_vif_scale3_score']
 
         weights = np.mean(results[0]['VMAF_scores_exps']['feature_weights'], axis=0)
-        self.assertAlmostEqual(weights[0], 0.75441663, places=4)
-        self.assertAlmostEqual(weights[1], 0.06816105, places=4)
-        self.assertAlmostEqual(weights[2], -0.10934421, places=4)
-        self.assertAlmostEqual(weights[3], 0.22051127, places=4)
-        self.assertAlmostEqual(weights[4], 0.12517884, places=4)
-        self.assertAlmostEqual(weights[5], 0.04639162, places=4)
+        self.assertAlmostEqual(weights[0], 0.66021689480916868, places=4)
+        self.assertAlmostEqual(weights[1], 0.14691682562211777, places=4)
+        self.assertAlmostEqual(weights[2], -0.023682744847036086, places=4)
+        self.assertAlmostEqual(weights[3], -0.029779341850172818, places=4)
+        self.assertAlmostEqual(weights[4], 0.19149485210137338, places=4)
+        self.assertAlmostEqual(weights[5], 0.31890978778344126, places=4)
 
         self.assertEqual(results[0]['VMAF_scores_exps']['feature_names'],
                          expected_feature_names)
 
         weights = np.mean(results[1]['VMAF_scores_exps']['feature_weights'], axis=0)
-        self.assertAlmostEqual(weights[0], 0.77096087, places=4)
-        self.assertAlmostEqual(weights[1], 0.01491754, places=4)
-        self.assertAlmostEqual(weights[2], -0.08025557, places=4)
-        self.assertAlmostEqual(weights[3], 0.2511188, places=4)
-        self.assertAlmostEqual(weights[4], 0.14953561, places=4)
-        self.assertAlmostEqual(weights[5], 0.07960753, places=4)
+        self.assertAlmostEqual(weights[0], 0.69597961598838509, places=4)
+        self.assertAlmostEqual(weights[1], 0.18256016705513464, places=4)
+        self.assertAlmostEqual(weights[2], 0.0090048099912423147, places=4)
+        self.assertAlmostEqual(weights[3], 0.028671810808880094, places=4)
+        self.assertAlmostEqual(weights[4], 0.21935602577417926, places=4)
+        self.assertAlmostEqual(weights[5], 0.34190431429767715, places=4)
 
         self.assertEqual(results[1]['VMAF_scores_exps']['feature_names'],
                          expected_feature_names)

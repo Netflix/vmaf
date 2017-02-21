@@ -93,7 +93,10 @@ class VmafFeatureExtractor(FeatureExtractor):
     # VERSION = '0.2' # expose vif_num, vif_den, adm_num, adm_den, anpsnr
     # VERSION = '0.2.1' # expose vif num/den of each scale
     # VERSION = '0.2.2'  # adm abs-->fabs, corrected border handling, uniform reading with option of offset for input YUV, updated VIF corner case
-    VERSION = '0.2.2b'  # expose adm_den/num_scalex
+    # VERSION = '0.2.2b'  # expose adm_den/num_scalex
+    # VERSION = '0.2.3'  # AVX for VMAF convolution; update adm features by folding noise floor into per coef
+    # VERSION = '0.2.4'  # Fix a bug in adm feature passing scale into dwt_quant_step
+    VERSION = '0.2.4b'  # Modify by adding ADM noise floor outside cube root; add derived feature motion2
 
     ATOM_FEATURES = ['vif', 'adm', 'ansnr', 'motion',
                      'vif_num', 'vif_den', 'adm_num', 'adm_den', 'anpsnr',
@@ -110,12 +113,13 @@ class VmafFeatureExtractor(FeatureExtractor):
     DERIVED_ATOM_FEATURES = ['vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
                              'vif2', 'adm2', 'adm3',
                              'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
+                             'motion2',
                              ]
 
     VMAF_FEATURE = config.ROOT + "/feature/vmaf"
 
-    ADM2_CONSTANT = 1000
-    ADM_SCALE_CONSTANT = 250
+    ADM2_CONSTANT = 0
+    ADM_SCALE_CONSTANT = 0
 
     def _generate_result(self, asset):
         # routine to call the command-line executable and generate feature
@@ -267,6 +271,16 @@ class VmafFeatureExtractor(FeatureExtractor):
                 ((np.array(result.result_dict[adm_num_scale3_scores_key]) + cls.ADM_SCALE_CONSTANT)
                  / (np.array(result.result_dict[adm_den_scale3_scores_key]) + cls.ADM_SCALE_CONSTANT))
             ) / 4.0
+        )
+
+        # motion2: motion2[i] = min(motion[i], motion[i+1])
+        motion2_scores_key = cls.get_scores_key('motion2')
+        motion_scores_key = cls.get_scores_key('motion')
+        motion_scores = result.result_dict[motion_scores_key]
+        motion_scores_2 = motion_scores[1:] + [motion_scores[-1]]
+        motion2_scores = np.minimum(motion_scores, motion_scores_2)
+        result.result_dict[motion2_scores_key] = list( # !! list(.) so that ast.literal_eval could handle in FileSystemResultStore
+            motion2_scores
         )
 
         # validate

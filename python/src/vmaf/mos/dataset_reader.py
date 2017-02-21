@@ -195,6 +195,8 @@ class RawDatasetReader(DatasetReader):
 
     def to_persubject_dataset(self, quality_scores, **kwargs):
 
+        import math
+
         newone = empty_object()
         newone.dataset_name = self.dataset.dataset_name
         newone.yuv_fmt = self.dataset.yuv_fmt
@@ -226,6 +228,12 @@ class RawDatasetReader(DatasetReader):
 
             # quality_score should be a 1-D array with (processed) per-subject scores
             assert hasattr(quality_score, '__len__')
+
+            # new style: opinion is specified as a dict: user -> score. In this
+            # case, quality_score may contain nan. In this case: filter them out
+            if isinstance(dis_video['os'], dict):
+                quality_score = filter(lambda x: not math.isnan(x), quality_score)
+
             assert len(dis_video['os']) == len(quality_score)
 
             for persubject_score in quality_score:

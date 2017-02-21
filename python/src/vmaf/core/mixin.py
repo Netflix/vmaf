@@ -36,11 +36,11 @@ class TypeVersionEnabled(object):
         assert hasattr(self, 'TYPE')
         assert hasattr(self, 'VERSION')
 
-        assert re.match(r"[a-zA-Z0-9_]+", self.TYPE), \
+        assert re.match(r"^[a-zA-Z0-9_]+$", self.TYPE), \
             "TYPE can only contains alphabets, numbers and underscore (_)."
 
-        assert re.match(r"[a-zA-Z0-9.]+", self.VERSION), \
-            "VERSION can only contains alphabets, numbers and dot (.)."
+        assert re.match(r"^[a-zA-Z0-9._-]+$", self.VERSION), \
+            "VERSION can only contains alphabets, numbers, dot (.), hyphen(-) and underscore (_)."
 
     def get_type_version_string(self):
         return "{type}_V{version}".format(type=self.TYPE,

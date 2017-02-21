@@ -625,6 +625,10 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
             ktype_int = cls.svmutil.RBF
         elif kernel == 'linear':
             ktype_int = cls.svmutil.LINEAR
+        elif kernel == 'poly':
+            ktype_int = cls.svmutil.POLY
+        elif kernel == 'sigmoid':
+            ktype_int = cls.svmutil.SIGMOID
         else:
             assert False, 'ktype = ' + str(kernel) + ' not implemented'
 

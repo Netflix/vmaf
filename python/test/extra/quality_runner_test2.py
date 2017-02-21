@@ -60,7 +60,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner.run()
 
         results = self.runner.results
-        self.assertAlmostEqual(results[0]['VMAF_score'], 98.860796771266365, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 97.428042396173609, places=4)
 
     def test_run_vmafossexec_runner_with_notyuv(self):
         print 'test on running VMAF runner...'
@@ -82,9 +82,9 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner.run()
 
         results = self.runner.results
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 98.860796771266365, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 97.427999999999997, places=4)
 
-class ParallelQualityRunnerTestNew(unittest.TestCase):
+class ParallelQualityRunnerTest(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, 'runner'):

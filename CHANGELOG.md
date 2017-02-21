@@ -1,5 +1,10 @@
 # Change Log
 
+## (2/20/2017) [1.2.0]
+
+**New features:**
+- Updated VMAF model to version v0.6.1. Changes include: 1) added a custom model for cellular phone screen viewing; 2) trained using new dataset, covering more difficult content; 3) elementary metric fixes: ADM behavior at near-black frames, motion behavior at scene boundaries; 4) compressed quality score range by 20% to accommodate higher dynamic range; 5) Use MLE instead of DMOS as subjective model.
+
 ## (1/24/2017) [1.1.23]
 
 **Fixed bugs:**

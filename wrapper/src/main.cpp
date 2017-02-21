@@ -43,7 +43,7 @@ bool cmdOptionExists(char** begin, char** end, const std::string& option)
 
 void print_usage(int argc, char *argv[])
 {
-    fprintf(stderr, "Usage: %s fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--disable-clip] [--disable-avx] [--psnr] [--ssim] [--ms-ssim]\n", argv[0]);
+    fprintf(stderr, "Usage: %s fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--disable-clip] [--disable-avx] [--psnr] [--ssim] [--ms-ssim] [--phone-model]\n", argv[0]);
     fprintf(stderr, "fmt:\n\tyuv420p\n\tyuv422p\n\tyuv444p\n\tyuv420p10le\n\tyuv422p10le\n\tyuv444p10le\n\n");
     fprintf(stderr, "log_fmt:\n\txml (default)\n\tjson\n\n");
 }
@@ -110,7 +110,8 @@ int main(int argc, char *argv[])
             disable_avx = true;
         }
 
-        if (cmdOptionExists(argv + 7, argv + argc, "--enable-transform"))
+        if (cmdOptionExists(argv + 7, argv + argc, "--enable-transform") ||
+            cmdOptionExists(argv + 7, argv + argc, "--phone-model"))
         {
             enable_transform = true;
         }

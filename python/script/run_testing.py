@@ -22,7 +22,7 @@ SUBJECTIVE_MODELS = ['DMOS (default)', 'DMOS_MLE', 'MLE', 'MOS', 'SR_DMOS', 'SR_
 def print_usage():
     quality_runner_types = ['VMAF', 'PSNR', 'SSIM', 'MS_SSIM']
     print "usage: " + os.path.basename(sys.argv[0]) + \
-          " quality_type test_dataset_filepath [--vmaf-model VMAF_model_path] [--subj-model subjective_model] [--cache-result] [--parallelize] [--print-result]\n"
+          " quality_type test_dataset_filepath [--vmaf-model VMAF_model_path] [--vmaf-phone-model] [--subj-model subjective_model] [--cache-result] [--parallelize] [--print-result]\n"
     print "quality_type:\n\t" + "\n\t".join(quality_runner_types) +"\n"
     print "subjective_model:\n\t" + "\n\t".join(SUBJECTIVE_MODELS) + "\n"
 
@@ -43,6 +43,7 @@ def main():
     parallelize = cmd_option_exists(sys.argv, 3, len(sys.argv), '--parallelize')
     print_result = cmd_option_exists(sys.argv, 3, len(sys.argv), '--print-result')
     suppress_plot = cmd_option_exists(sys.argv, 3, len(sys.argv), '--suppress-plot')
+    vmaf_phone_model = cmd_option_exists(sys.argv, 3, len(sys.argv), '--vmaf-phone-model')
 
     pool_method = get_cmd_option(sys.argv, 3, len(sys.argv), '--pool')
     if not (pool_method is None
@@ -63,6 +64,11 @@ def main():
 
     if vmaf_model_path is not None and quality_type != VmafQualityRunner.TYPE:
         print "Input error: only quality_type of VMAF accepts --vmaf-model."
+        print_usage()
+        return 2
+
+    if vmaf_phone_model and quality_type != VmafQualityRunner.TYPE:
+        print "Input error: only quality_type of VMAF accepts --vmaf-phone-model."
         print_usage()
         return 2
 
@@ -99,6 +105,11 @@ def main():
     else: # None or 'mean'
         aggregate_method = np.mean
 
+    if vmaf_phone_model:
+        enable_transform_score = True
+    else:
+        enable_transform_score = None
+
     try:
         if suppress_plot:
             raise AssertionError
@@ -106,12 +117,14 @@ def main():
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
 
+
         assets, results = run_test_on_dataset(test_dataset, runner_class, ax,
-                        result_store, vmaf_model_path,
-                        parallelize=parallelize,
-                        aggregate_method=aggregate_method,
-                        subj_model_class=subj_model_class,
-                        )
+                                          result_store, vmaf_model_path,
+                                          parallelize=parallelize,
+                                          aggregate_method=aggregate_method,
+                                          subj_model_class=subj_model_class,
+                                          enable_transform_score=enable_transform_score
+                                          )
 
         bbox = {'facecolor':'white', 'alpha':0.5, 'pad':20}
         ax.annotate('Testing Set', xy=(0.1, 0.85), xycoords='axes fraction', bbox=bbox)
@@ -124,18 +137,20 @@ def main():
     except ImportError:
         print_matplotlib_warning()
         assets, results = run_test_on_dataset(test_dataset, runner_class, None,
-                        result_store, vmaf_model_path,
-                        parallelize=parallelize,
-                        aggregate_method=aggregate_method,
-                        subj_model_class=subj_model_class,
-                        )
+                                          result_store, vmaf_model_path,
+                                          parallelize=parallelize,
+                                          aggregate_method=aggregate_method,
+                                          subj_model_class=subj_model_class,
+                                          enable_transform_score=enable_transform_score
+                                          )
     except AssertionError:
         assets, results = run_test_on_dataset(test_dataset, runner_class, None,
-                        result_store, vmaf_model_path,
-                        parallelize=parallelize,
-                        aggregate_method=aggregate_method,
-                        subj_model_class=subj_model_class,
-                        )
+                                          result_store, vmaf_model_path,
+                                          parallelize=parallelize,
+                                          aggregate_method=aggregate_method,
+                                          subj_model_class=subj_model_class,
+                                          enable_transform_score=enable_transform_score
+                                          )
 
     if print_result:
         for result in results:
