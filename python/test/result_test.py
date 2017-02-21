@@ -9,13 +9,14 @@ import numpy as np
 from vmaf.core.asset import Asset
 from vmaf import config
 from vmaf.core.result import Result
-from vmaf.core.result_store import FileSystemResultStore
+from vmaf.core.result_store import FileSystemResultStore, ResultStore
 from vmaf.core.quality_runner import VmafLegacyQualityRunner, SsimQualityRunner
 from vmaf.tools.stats import ListStats
 
 class ResultTest(unittest.TestCase):
 
     def setUp(self):
+
         ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
         dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -29,12 +30,12 @@ class ResultTest(unittest.TestCase):
             delete_workdir=True, result_store=FileSystemResultStore(),
         )
         self.runner.run()
+
         self.result = self.runner.results[0]
 
     def tearDown(self):
         if hasattr(self, 'runner'):
             self.runner.remove_results()
-            pass
 
     def test_todataframe_fromdataframe(self):
 
@@ -119,24 +120,29 @@ class ResultTest(unittest.TestCase):
 class ResultFormattingTest(unittest.TestCase):
 
     def setUp(self):
-        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
-        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv"
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.ROOT + "/workspace/workdir",
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':1920, 'height':1080})
 
-        self.runner = SsimQualityRunner(
-            [asset], None, fifo_mode=True,
-            delete_workdir=True, result_store=FileSystemResultStore(),
-        )
-        self.runner.run()
-        self.result = self.runner.results[0]
+        # ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        # dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv"
+        # asset = Asset(dataset="test", content_id=0, asset_id=0,
+        #               workdir_root=config.ROOT + "/workspace/workdir",
+        #               ref_path=ref_path,
+        #               dis_path=dis_path,
+        #               asset_dict={'width':1920, 'height':1080})
+        #
+        # self.runner = SsimQualityRunner(
+        #     [asset], None, fifo_mode=True,
+        #     delete_workdir=True, result_store=FileSystemResultStore(),
+        # )
+        # self.runner.run()
+        #
+        # FileSystemResultStore.save_result(self.runner.results[0], config.ROOT + '/python/test/resource/ssim_result_for_test.txt')
+
+        self.result = FileSystemResultStore.load_result(config.ROOT + '/python/test/resource/ssim_result_for_test.txt')
 
     def tearDown(self):
-        if hasattr(self, 'runner'):
-            self.runner.remove_results()
+        # if hasattr(self, 'runner'):
+        #     self.runner.remove_results()
+        pass
 
     def test_to_xml(self):
         self.assertEquals(self.result.to_xml(),

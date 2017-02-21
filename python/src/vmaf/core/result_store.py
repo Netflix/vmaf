@@ -1,13 +1,15 @@
-__copyright__ = "Copyright 2016-2017, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
-
 import os
 import hashlib
+import ast
+
+import pandas as pd
 
 from vmaf import config
 from vmaf.core.result import Result
 from vmaf.tools.misc import make_parent_dirs_if_nonexist
 
+__copyright__ = "Copyright 2016-2017, Netflix, Inc."
+__license__ = "Apache, Version 2.0"
 
 class ResultStore(object):
     """
@@ -47,17 +49,23 @@ class FileSystemResultStore(ResultStore):
                 path=result_file_path,
                 e=str(e))
             pass
+
+        self.save_result(result, result_file_path)
+
+    def load(self, asset, executor_id):
+        result_file_path = self._get_result_file_path2(asset, executor_id)
+        if not os.path.isfile(result_file_path):
+            return None
+        result = self.load_result(result_file_path)
+        return result
+
+    @staticmethod
+    def save_result(result, result_file_path):
         with open(result_file_path, "wt") as result_file:
             result_file.write(str(result.to_dataframe().to_dict()))
 
-    def load(self, asset, executor_id):
-        import pandas as pd
-        import ast
-        result_file_path = self._get_result_file_path2(asset, executor_id)
-
-        if not os.path.isfile(result_file_path):
-            return None
-
+    @staticmethod
+    def load_result(result_file_path):
         with open(result_file_path, "rt") as result_file:
             df = pd.DataFrame.from_dict(ast.literal_eval(result_file.read()))
             result = Result.from_dataframe(df)
