@@ -153,18 +153,18 @@ For example:
 
 ###Predict Quality on a Cellular Phone Screen
 
-VMAF v0.6.1 and later versions now support a custom quality model for cellular phone screen viewing. This model can be invoked by adding *--phone-model* option in the commands *run_vmaf*, *run_vmaf_in_batch* (also in *run_testing* and *vmafossexec* introduced the following sections):
+VMAF v0.6.1 and later now support a custom quality model for cellular phone screen viewing. This model can be invoked by adding *--phone-model* option in the commands *run_vmaf*, *run_vmaf_in_batch* (also in *run_testing* and *vmafossexec* introduced the following sections):
 
 ```
 ./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv --phone-model
 ./run_vmaf_in_batch example_batch_input --parallelize --phone-model
 ```
 
-Invoking the phone model will generate VMAF scores higher than in the regular model, which is suitable for laptop, TV viewing conditions and etc. For example:
+Invoking the phone model will generate VMAF scores higher than in the regular model, which is more suitable for laptop, TV, etc. viewing conditions. An example VMAF-bitrate relationship for the two models is shown below:
 
 ![regular vs phone model](/resource/images/phone_model.png)
 
-It should be interpreted that due to screen size and viewing distance, the same distorted video would be perceived as having a higher quality when viewed on a phone screen than on a laptop/TV screen, and when the quality score reaches its maximum (100), further increasing the encoding bitrate would not result in any improvement in perceptual quality.
+It should be interpreted that due to the factors of screen size and viewing distance, the same distorted video would be perceived as having a higher quality when viewed on a phone screen than on a laptop/TV screen, and when the quality score reaches its maximum (100), further increasing the encoding bitrate would not result in any perceptual improvement in quality.
 
 ##Advanced Usage
 
