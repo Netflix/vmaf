@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Convenience script to build/start a docker image for development
+
+[[ -f /.dockerenv ]] && echo "Already in docker" && exit 1
+
+BASE_DIR=`cd $(dirname $0); pwd`
+
+if [[ -z `docker images | grep vmaf` ]]; then
+    # Build image if it's not already there
+    docker build -t vmaf-dev -f Dockerfile.dev .
+fi
+
+# Map $BASE_DIR as /vmaf, and start bash session into container in /vmaf
+docker run -it -v$BASE_DIR:/vmaf vmaf-dev
