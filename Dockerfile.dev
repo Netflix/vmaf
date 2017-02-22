@@ -1,13 +1,13 @@
 FROM ubuntu:latest
 
-# Docker container usable to iterate/validate building of vmaf itself via pygradle
+# Docker container usable to iterate/validate building of vmaf itself, with full build from source
 
 RUN apt-get update -yqq && apt-get install -yqq \
     # Add essentials, as we're using a rather minimal "ubuntu" base
     build-essential python-pip \
 
     # Prerequisites to compile libraries that vmaf uses
-    pkg-config gfortran libhdf5-dev libfreetype6-dev \
+    pkg-config gfortran libhdf5-dev libfreetype6-dev liblapack-dev python-tk \
 
     # For development
     ipython ipython-notebook less git vim \
