@@ -103,14 +103,14 @@ class GradleDistribution(Distribution, object):
     def get_version(self):
         """ Return version from version.properties file """
         try:
-            with open('version.properties') as fh:
+            with open('../VERSION') as fh:
                 for line in fh:
-                    if line.startswith('version='):
-                        return line[8:].strip()
-        except Exception as e:
+                    if line.startswith('VMAF Development'):
+                        return line.strip().rpartition(' ')[2]
+        except Exception:
             pass
 
-        return os.getenv('PYGRADLE_PROJECT_VERSION', '1.0')
+        return '0.0-dev'
 
     def get_command_class(self, command):
         """Return a customized command class or the base one."""
