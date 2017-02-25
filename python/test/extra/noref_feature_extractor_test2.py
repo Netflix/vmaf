@@ -18,7 +18,7 @@ class NorefFeatureExtractorTest(unittest.TestCase):
     def test_noref_moment_fextractor_with_noref_asset_notyuv(self):
         print 'test on running Moment noref feature extractor on NorefAssets ' \
               '(non-YUV)...'
-        dis_path = config.ROOT + "/python/test/resource/icpf/frame%08d.icpf"
+        dis_path = config.ROOT + "/python/test/resource/mp4/Seeking_10_288_375.mp4"
         asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       dis_path=dis_path,
@@ -35,6 +35,6 @@ class NorefFeatureExtractorTest(unittest.TestCase):
 
         results = self.fextractor.results
 
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_1st_score'], 16.123958333333334)
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_2nd_score'], 260.09062499999999)
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_var_score'], 0.10859266493054065)
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_1st_score'], 63.763580381944436, places=4)
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_2nd_score'], 5158.9407083526221, places=4)
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_var_score'], 1084.1635630076041, places=4)

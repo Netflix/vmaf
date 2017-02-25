@@ -20,8 +20,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_psnr_runner_with_notyuv(self):
         print 'test on running PSNR runner...'
-        ref_path = config.ROOT + "/python/test/resource/icpf/frame%08d.icpf"
-        dis_path = config.ROOT + "/python/test/resource/icpf/frame%08d.icpf"
+        ref_path = config.ROOT + "/python/test/resource/mp4/Seeking_10_288_375.mp4"
+        dis_path = config.ROOT + "/python/test/resource/mp4/Seeking_10_288_375.mp4"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -42,14 +42,14 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner_with_notyuv(self):
         print 'test on running VMAF runner...'
-        ref_path = config.ROOT + "/python/test/resource/icpf/frame%08d.icpf"
-        dis_path = config.ROOT + "/python/test/resource/icpf/frame%08d.icpf"
+        ref_path = config.ROOT + "/python/test/resource/mp4/Seeking_30_480_1050.mp4"
+        dis_path = config.ROOT + "/python/test/resource/mp4/Seeking_10_288_375.mp4"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'yuv_type': 'notyuv',
-                                  'quality_width': 720, 'quality_height': 480,
+                                  'quality_width': 360, 'quality_height': 240,
                                   })
         self.runner = VmafQualityRunner(
             [asset],
@@ -60,18 +60,18 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner.run()
 
         results = self.runner.results
-        self.assertAlmostEqual(results[0]['VMAF_score'], 97.428042396173609, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 79.052553444706504, places=4)
 
     def test_run_vmafossexec_runner_with_notyuv(self):
         print 'test on running VMAF runner...'
-        ref_path = config.ROOT + "/python/test/resource/icpf/frame%08d.icpf"
-        dis_path = config.ROOT + "/python/test/resource/icpf/frame%08d.icpf"
+        ref_path = config.ROOT + "/python/test/resource/mp4/Seeking_30_480_1050.mp4"
+        dis_path = config.ROOT + "/python/test/resource/mp4/Seeking_10_288_375.mp4"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'yuv_type': 'notyuv',
-                                  'quality_width': 720, 'quality_height': 480,
+                                  'quality_width': 360, 'quality_height': 240,
                                   })
         self.runner = VmafossExecQualityRunner(
             [asset],
@@ -82,7 +82,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner.run()
 
         results = self.runner.results
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 97.427999999999997, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 79.052553444706504, places=4)
 
 class ParallelQualityRunnerTest(unittest.TestCase):
 
