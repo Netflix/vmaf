@@ -325,7 +325,7 @@ def check_scanf_match(string, template):
     False
     >>> check_scanf_match('xx/yy/frame00000000.icpf', 'xx/yy//frame%08d.icpf')
     False
-    >>> check_scanf_match("-1-2+3-4", "%d%d%d%d")
+    >>> check_scanf_match("-1-2+3-4", "%02d%02d%02d%02d")
     True
     >>> check_scanf_match('frame00000240.icpf', 'frame%08d.icpf')
     True
