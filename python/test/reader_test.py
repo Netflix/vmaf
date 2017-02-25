@@ -5,7 +5,7 @@ import unittest
 
 import numpy as np
 
-import config
+from vmaf import config
 from vmaf.tools.reader import YuvReader
 
 class YuvReaderTest(unittest.TestCase):

@@ -7,7 +7,7 @@ from functools import partial
 import numpy as np
 
 from vmaf.core.asset import Asset
-import config
+from vmaf import config
 from vmaf.core.result import Result
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.core.quality_runner import VmafLegacyQualityRunner, SsimQualityRunner

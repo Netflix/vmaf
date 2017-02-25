@@ -5,7 +5,7 @@ from xml.etree import ElementTree
 
 import numpy as np
 
-import config
+from vmaf import config
 from vmaf.core.executor import Executor
 from vmaf.core.result import Result
 from vmaf.core.feature_assembler import FeatureAssembler

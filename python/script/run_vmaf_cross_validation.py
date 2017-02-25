@@ -4,8 +4,8 @@ __license__ = "Apache, Version 2.0"
 import matplotlib.pyplot as plt
 import numpy as np
 
-import config
-from routine import run_vmaf_cv, run_vmaf_kfold_cv
+from vmaf import config
+from vmaf.routine import run_vmaf_cv, run_vmaf_kfold_cv
 
 if __name__ == '__main__':
 

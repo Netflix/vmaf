@@ -5,7 +5,7 @@ import unittest
 
 import numpy as np
 
-import config
+from vmaf import config
 from vmaf.tools.misc import import_python_file, indices
 from vmaf.mos.dataset_reader import RawDatasetReader, SyntheticRawDatasetReader, \
     MissingDataRawDatasetReader, SelectSubjectRawDatasetReader, \

@@ -3,7 +3,7 @@ import scipy.misc
 import scipy.ndimage
 import scipy.stats
 import scipy.io
-import config
+from vmaf import config
 from vmaf.tools.misc import index_and_value_of_min
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."

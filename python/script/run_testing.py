@@ -8,7 +8,7 @@ import numpy as np
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.tools.misc import import_python_file, get_cmd_option, cmd_option_exists
 from vmaf.core.quality_runner import QualityRunner, VmafQualityRunner
-from routine import run_test_on_dataset, print_matplotlib_warning
+from vmaf.routine import run_test_on_dataset, print_matplotlib_warning
 from vmaf.tools.stats import ListStats
 from vmaf.mos.subjective_model import SubjectiveModel
 

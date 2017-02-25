@@ -9,7 +9,7 @@ from vmaf.tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_s
     parallel_map, check_program_exist, match_any_files, run_process, \
     get_file_name_extension
 from vmaf.core.mixin import TypeVersionEnabled
-from config import get_and_assert_ffmpeg
+from vmaf.config import get_and_assert_ffmpeg
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"

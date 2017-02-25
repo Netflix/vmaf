@@ -1,8 +1,8 @@
 import os
 import unittest
 
-import config
-from routine import train_test_vmaf_on_dataset, read_dataset, run_test_on_dataset, generate_dataset_from_raw
+from vmaf import config
+from vmaf.routine import train_test_vmaf_on_dataset, read_dataset, run_test_on_dataset, generate_dataset_from_raw
 from vmaf.tools.misc import import_python_file
 from vmaf.core.quality_runner import VmafQualityRunner
 from vmaf.mos.subjective_model import MosModel

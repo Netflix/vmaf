@@ -4,7 +4,7 @@ __license__ = "Apache, Version 2.0"
 import unittest
 import re
 
-import config
+from vmaf import config
 from vmaf.core.asset import Asset
 
 

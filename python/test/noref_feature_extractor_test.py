@@ -5,7 +5,7 @@ __license__ = "Apache, Version 2.0"
 
 import unittest
 
-import config
+from vmaf import config
 from vmaf.core.asset import NorefAsset, Asset
 from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
 

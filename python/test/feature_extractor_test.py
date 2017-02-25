@@ -5,7 +5,7 @@ import os
 import unittest
 import re
 
-import config
+from vmaf import config
 from vmaf.core.feature_extractor import VmafFeatureExtractor, MomentFeatureExtractor, \
     PsnrFeatureExtractor, SsimFeatureExtractor, MsSsimFeatureExtractor
 from vmaf.core.asset import Asset

@@ -1,5 +1,5 @@
 import unittest
-import config
+from vmaf import config
 from vmaf.core.asset import Asset
 from vmaf.core.quality_runner import StrredQualityRunner, PsnrQualityRunner, \
     VmafQualityRunner, VmafossExecQualityRunner

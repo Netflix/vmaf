@@ -8,7 +8,7 @@ import re
 import subprocess
 import unittest
 
-import config
+from vmaf import config
 REMOVE_LOG = 1 # for debug, make this 0
 
 def read_log(log_filename, type):

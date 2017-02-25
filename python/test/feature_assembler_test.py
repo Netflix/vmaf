@@ -4,7 +4,7 @@ __license__ = "Apache, Version 2.0"
 import unittest
 
 from vmaf.core.asset import Asset
-import config
+from vmaf import config
 from vmaf.core.feature_assembler import FeatureAssembler
 from vmaf.core.feature_extractor import VmafFeatureExtractor, FeatureExtractor, \
     MomentFeatureExtractor

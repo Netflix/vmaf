@@ -12,7 +12,7 @@ from vmaf.mos.dataset_reader import RawDatasetReader
 from vmaf.mos.subjective_model import DmosModel
 from vmaf.tools.misc import indices, get_stdout_logger, import_python_file, \
     close_logger, get_file_name_without_extension
-import config
+from vmaf import config
 from vmaf.core.asset import Asset
 from vmaf.core.executor import run_executors_in_parallel
 from vmaf.core.train_test_model import TrainTestModel, RegressorMixin, \

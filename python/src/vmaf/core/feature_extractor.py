@@ -9,7 +9,7 @@ import subprocess
 import numpy as np
 import ast
 
-import config
+from vmaf import config
 from vmaf.core.executor import Executor
 from vmaf.core.result import Result
 from vmaf.tools.reader import YuvReader

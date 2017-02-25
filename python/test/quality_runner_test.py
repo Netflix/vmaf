@@ -11,7 +11,7 @@ from vmaf.core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner,
     PsnrQualityRunner, VmafossExecQualityRunner, MsSsimQualityRunner, \
     SsimQualityRunner, Adm2QualityRunner
 from vmaf.core.executor import run_executors_in_parallel
-import config
+from vmaf import config
 from vmaf.core.result_store import FileSystemResultStore
 
 

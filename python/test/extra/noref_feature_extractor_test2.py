@@ -1,6 +1,6 @@
 import unittest
 
-import config
+from vmaf import config
 from vmaf.core.asset import NorefAsset
 from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
 

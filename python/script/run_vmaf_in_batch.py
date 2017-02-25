@@ -7,7 +7,7 @@ import re
 import numpy as np
 
 from vmaf.core.asset import Asset
-import config
+from vmaf import config
 from vmaf.core.executor import run_executors_in_parallel
 from vmaf.core.quality_runner import VmafQualityRunner
 from vmaf.tools.misc import cmd_option_exists, get_cmd_option

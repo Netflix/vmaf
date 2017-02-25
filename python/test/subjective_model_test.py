@@ -1,7 +1,7 @@
 import os
 import unittest
 import numpy as np
-import config
+from vmaf import config
 from vmaf.mos.dataset_reader import RawDatasetReader, MissingDataRawDatasetReader, \
     SyntheticRawDatasetReader, CorruptSubjectRawDatasetReader
 from vmaf.mos.subjective_model import MosModel, DmosModel, \

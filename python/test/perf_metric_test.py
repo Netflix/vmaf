@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import scipy.io
 
-import config
+from vmaf import config
 from vmaf.core.perf_metric import RmsePerfMetric, SrccPerfMetric, PccPerfMetric, \
     KendallPerfMetric, KflkPerfMetric
 

@@ -8,7 +8,7 @@ from sklearn.metrics import f1_score
 import numpy as np
 from numpy.linalg import lstsq
 
-import config
+from vmaf import config
 from vmaf.tools.misc import indices
 from vmaf.core.mixin import TypeVersionEnabled
 from vmaf.core.perf_metric import RmsePerfMetric, SrccPerfMetric, PccPerfMetric, \

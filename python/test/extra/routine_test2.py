@@ -1,6 +1,6 @@
 import unittest
-import config
-from routine import read_dataset
+from vmaf import config
+from vmaf.routine import read_dataset
 from vmaf.tools.misc import import_python_file
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."

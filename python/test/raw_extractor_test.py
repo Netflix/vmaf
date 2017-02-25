@@ -8,7 +8,7 @@ import os
 
 import numpy as np
 
-import config
+from vmaf import config
 from vmaf.core.asset import Asset
 from vmaf.core.raw_extractor import AssetExtractor, DisYUVRawVideoExtractor
 

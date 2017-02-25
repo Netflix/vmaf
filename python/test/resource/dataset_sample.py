@@ -4,7 +4,7 @@ yuv_fmt = 'yuv420p'
 width = 1920
 height = 1080
 
-import config
+from vmaf import config
 
 ref_videos = [
     {'content_id':0, 'path':config.ROOT+'/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv'},

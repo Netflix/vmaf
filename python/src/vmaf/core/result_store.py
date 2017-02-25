@@ -4,7 +4,7 @@ __license__ = "Apache, Version 2.0"
 import os
 import hashlib
 
-import config
+from vmaf import config
 from vmaf.core.result import Result
 from vmaf.tools.misc import make_parent_dirs_if_nonexist
 

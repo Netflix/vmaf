@@ -6,7 +6,7 @@ import os
 from vmaf.core.mixin import WorkdirEnabled
 from vmaf.tools.misc import get_file_name_without_extension, \
     get_file_name_with_extension, get_unique_str_from_recursive_dict
-import config
+from vmaf import config
 
 
 class Asset(WorkdirEnabled):

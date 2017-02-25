@@ -6,10 +6,10 @@ import unittest
 from vmaf.core.train_test_model import SklearnRandomForestTrainTestModel, LibsvmNusvrTrainTestModel, \
     SklearnExtraTreesTrainTestModel
 from vmaf.core.cross_validation import ModelCrossValidation
-import config
+from vmaf import config
 from vmaf.core.executor import run_executors_in_parallel
 from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
-from routine import read_dataset
+from vmaf.routine import read_dataset
 from vmaf.tools.misc import import_python_file
 
 class CrossValidationTest(unittest.TestCase):

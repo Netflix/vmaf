@@ -1,6 +1,6 @@
 import scipy
 
-from routine import run_subjective_models
+from vmaf.routine import run_subjective_models
 from vmaf.tools.decorator import persist_to_file
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats
 
-import config
+from vmaf import config
 from vmaf.tools.misc import import_python_file
 from vmaf.mos.dataset_reader import RawDatasetReader, SyntheticRawDatasetReader, \
     MissingDataRawDatasetReader, SelectSubjectRawDatasetReader, \

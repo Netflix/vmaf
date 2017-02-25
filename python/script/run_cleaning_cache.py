@@ -3,7 +3,7 @@ import os
 import sys
 from vmaf.core.quality_runner import QualityRunner
 from vmaf.core.result_store import FileSystemResultStore
-from routine import run_remove_results_for_dataset
+from vmaf.routine import run_remove_results_for_dataset
 from vmaf.tools.misc import import_python_file
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."

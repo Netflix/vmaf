@@ -1,4 +1,4 @@
-import config
+from vmaf import config
 
 dataset_name = 'test_image'
 yuv_fmt = 'yuv444p'

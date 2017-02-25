@@ -3,7 +3,7 @@ import unittest
 
 import numpy as np
 
-import config
+from vmaf import config
 from vmaf.core.asset import Asset
 from vmaf.core.executor import run_executors_in_parallel
 from vmaf.core.local_explainer import LocalExplainer
@@ -12,7 +12,7 @@ from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
 from vmaf.core.raw_extractor import DisYUVRawVideoExtractor
 from vmaf.core.train_test_model import SklearnRandomForestTrainTestModel, \
     MomentRandomForestTrainTestModel
-from routine import read_dataset
+from vmaf.routine import read_dataset
 from vmaf.tools.misc import import_python_file
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."

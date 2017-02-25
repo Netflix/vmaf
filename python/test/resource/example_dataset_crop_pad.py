@@ -6,7 +6,7 @@ height = 324
 quality_width = 576
 quality_height = 324
 
-import config
+from vmaf import config
 
 ref_videos = [
     {'content_id':0, 'path':config.ROOT+'/resource/yuv/src01_hrc00_576x324.yuv'},
