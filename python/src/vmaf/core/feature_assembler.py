@@ -14,7 +14,7 @@ class FeatureAssembler(object):
     def __init__(self,
                  feature_dict,
                  feature_option_dict,
-                 assets, 
+                 assets,
                  logger,
                  fifo_mode,
                  delete_workdir,

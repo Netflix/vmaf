@@ -104,15 +104,15 @@ class Result(BasicResult):
     Dictionary-like object that stores read-only result generated on an Asset
     by a Executor.
     """
-    DATAFRAME_COLUMNS = (  'dataset',
-                           'content_id',
-                           'asset_id',
-                           'ref_name',
-                           'dis_name',
-                           'asset',
-                           'executor_id',
-                           'scores_key',
-                           'scores' # one score per unit - frame, chunk or else
+    DATAFRAME_COLUMNS = ('dataset',
+                         'content_id',
+                         'asset_id',
+                         'ref_name',
+                         'dis_name',
+                         'asset',
+                         'executor_id',
+                         'scores_key',
+                         'scores' # one score per unit - frame, chunk or else
                         )
 
     def __init__(self, asset, executor_id, result_dict):

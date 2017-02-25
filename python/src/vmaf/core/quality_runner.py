@@ -258,7 +258,7 @@ class VmafQualityRunner(QualityRunner):
     # ALGO_VERSION = 0
     # DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv4.pkl"  # trained with resource/param/vmaf_v4.py on private/resource/dataset/NFLX_dataset.py (26 subjects)
 
-    VERSION = 'F'+ VmafFeatureExtractor.VERSION + '-0.6.1'
+    VERSION = 'F' + VmafFeatureExtractor.VERSION + '-0.6.1'
     ALGO_VERSION = 2
     DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/vmaf_v0.6.1.pkl"  # trained with resource/param/vmaf_v6.py on private/user/zli/resource/dataset/dataset/derived/vmafplusstudy_laptop_raw_generalandcornercase.py, MLER, y=x+17
 
@@ -416,7 +416,7 @@ class VmafossExecQualityRunner(QualityRunner):
     # # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv4.pkl.model"
     # DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv4.pkl"
 
-    VERSION = 'F'+ VmafFeatureExtractor.VERSION + '-0.6.1'
+    VERSION = 'F' + VmafFeatureExtractor.VERSION + '-0.6.1'
     ALGO_VERSION = 2
     DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/vmaf_v0.6.1.pkl"  # trained with resource/param/vmaf_v6.py on private/user/zli/resource/dataset/dataset/derived/vmafplusstudy_laptop_raw_generalandcornercase.py, MLER, y=x+17
 

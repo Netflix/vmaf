@@ -539,15 +539,14 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
             mu_c = mu_c * (1.0 - REFRESH_RATE) + mu_c_new * REFRESH_RATE
 
             # if mode == 'NO_CONTENT':
-            if True: # disabling mu_c permanently, since will never able to
-                     # distinguish mu_c from q_e
+            if True: # disabling mu_c permanently, since will never able to distinguish mu_c from q_e
                 mu_c = np.zeros(C) # forcing zero, hence disabling
 
             # (14) sigma_s
             mu_c_e = np.array(map(lambda i: mu_c[i], dataset_reader.content_id_of_dis_videos))
             delta_c_e = np.array(map(lambda i: delta_c[i], dataset_reader.content_id_of_dis_videos))
             a_es = z_es - np.tile(q_e, (S, 1)).T - np.tile(b_s, (E, 1)) - np.tile(mu_c_e, (S, 1)).T
-            s2_add_d2   = np.tile(sigma_s**2, (E, 1)) + np.tile(delta_c_e**2, (S, 1)).T
+            s2_add_d2 = np.tile(sigma_s**2, (E, 1)) + np.tile(delta_c_e**2, (S, 1)).T
             s2_minus_d2 = np.tile(sigma_s**2, (E, 1)) - np.tile(delta_c_e**2, (S, 1)).T
             num = - np.tile(sigma_s, (E, 1)) / s2_add_d2 + np.tile(sigma_s, (E, 1)) * a_es**2 / s2_add_d2**2
             num = pd.DataFrame(num).sum(axis=0) # sum over e
@@ -569,7 +568,7 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
             mu_c_e = np.array(map(lambda i: mu_c[i], dataset_reader.content_id_of_dis_videos))
             delta_c_e = np.array(map(lambda i: delta_c[i], dataset_reader.content_id_of_dis_videos))
             a_es = z_es - np.tile(q_e, (S, 1)).T - np.tile(b_s, (E, 1)) - np.tile(mu_c_e, (S, 1)).T
-            s2_add_d2   = np.tile(sigma_s**2, (E, 1)) + np.tile(delta_c_e**2, (S, 1)).T
+            s2_add_d2 = np.tile(sigma_s**2, (E, 1)) + np.tile(delta_c_e**2, (S, 1)).T
             s2_minus_d2 = np.tile(sigma_s**2, (E, 1)) - np.tile(delta_c_e**2, (S, 1)).T
             num = - np.tile(delta_c_e, (S, 1)).T / s2_add_d2 + np.tile(delta_c_e, (S, 1)).T * a_es**2 / s2_add_d2**2
             num = pd.DataFrame(num).sum(axis=1) # sum over s

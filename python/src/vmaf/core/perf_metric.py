@@ -131,8 +131,8 @@ class KflkPerfMetric(RawScorePerfMetric):
         # samples.ratings = [D,S];
 
         M = objScoDif.shape[0]
-        D = np.abs(objScoDif[:, indices(signif[0], lambda x: x!=0)])
-        S = np.abs(objScoDif[:, indices(signif[0], lambda x: x==0)])
+        D = np.abs(objScoDif[:, indices(signif[0], lambda x: x != 0)])
+        S = np.abs(objScoDif[:, indices(signif[0], lambda x: x == 0)])
         samples = empty_object()
         samples.spsizes = [D.shape[1], S.shape[1]]
         samples.ratings = np.hstack([D, S])
@@ -170,8 +170,8 @@ class KflkPerfMetric(RawScorePerfMetric):
         # W = -B;
         # samples.ratings = [B,W];
         # samples.spsizes = [size(B,2),size(W,2)];
-        B1 = objScoDif[:, indices(signif[0], lambda x: x== 1)]
-        B2 = objScoDif[:, indices(signif[0], lambda x: x==-1)]
+        B1 = objScoDif[:, indices(signif[0], lambda x: x == 1)]
+        B2 = objScoDif[:, indices(signif[0], lambda x: x == -1)]
         B = np.hstack([B1, -B2])
         W = -B
         samples = empty_object()
@@ -193,7 +193,7 @@ class KflkPerfMetric(RawScorePerfMetric):
         L = B.shape[1] + W.shape[1]
         CC_0 = np.zeros(M)
         for m in range(M):
-            CC_0[m] = float(np.sum(B[m,:]>0) + np.sum(W[m,:]<0)) / L
+            CC_0[m] = float(np.sum(B[m,:] > 0) + np.sum(W[m,:] < 0)) / L
 
         # % significance calculation
 
@@ -284,7 +284,7 @@ class KflkPerfMetric(RawScorePerfMetric):
             z = (mos_a - mos_b) / np.sqrt(var_a/n_a + var_b/n_b)
             if z < -2:
                 return -1
-            elif z> 2:
+            elif z > 2:
                 return 1
             else:
                 return 0

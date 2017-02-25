@@ -90,7 +90,8 @@ class ModelCrossValidation(object):
             if hasattr(train_test_model_class, 'reset'):
                 train_test_model_class.reset()
 
-            if logger: logger.info("Fold {}...".format(fold))
+            if logger:
+                logger.info("Fold {}...".format(fold))
 
             test_index_range = kfold[fold]
             train_index_range = []
@@ -188,12 +189,14 @@ class ModelCrossValidation(object):
 
         for fold in range(len(kfold)):
 
-            if logger: logger.info("Fold {}...".format(fold))
+            if logger:
+                logger.info("Fold {}...".format(fold))
 
             test_index_range = kfold[fold]
             train_index_range = []
             train_index_range_in_list_of_indices = []
-                        # in this case, train_index_range is list of lists
+
+            # in this case, train_index_range is list of lists
             for train_fold in range(len(kfold)):
                 if train_fold != fold:
                     train_index_range += kfold[train_fold]
@@ -204,7 +207,8 @@ class ModelCrossValidation(object):
             best_stats = None
             for model_param in list_model_param:
 
-                if logger: logger.info("\tModel parameter: {}".format(model_param))
+                if logger:
+                    logger.info("\tModel parameter: {}".format(model_param))
 
                 output = \
                     cls.run_kfold_cross_validation(train_test_model_class,
@@ -334,8 +338,7 @@ class ModelCrossValidation(object):
                 v = model_param_search_range[k]
                 if isinstance(v, (list, tuple)):
                     d[k] = random.choice(v)
-                elif isinstance(v, dict) and 'low' in v \
-                    and 'high' in v and 'decimal' in v:
+                elif isinstance(v, dict) and 'low' in v and 'high' in v and 'decimal' in v:
                     num = random.uniform(v['low'], v['high'])
                     scale = (10**v['decimal'])
                     num = int(num * scale) / float(scale)
@@ -368,8 +371,7 @@ class ModelCrossValidation(object):
         most_frequent_dict_count = None
         for hash in dict_count:
             curr_count = len(dict_count[hash])
-            if (most_frequent_dict_count is None) or \
-                (most_frequent_dict_count < curr_count):
+            if most_frequent_dict_count is None or most_frequent_dict_count < curr_count:
                 most_frequent_dict_hash = hash
                 most_frequent_dict_count = curr_count
 

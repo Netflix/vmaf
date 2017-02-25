@@ -42,12 +42,12 @@ class RegressorMixin(object):
         kendall = KendallPerfMetric(ys_label, ys_label_pred) \
             .evaluate(enable_mapping=True)['score']
 
-        stats = { 'RMSE': rmse,
-                  'SRCC': srcc,
-                  'PCC': pcc,
-                  'KENDALL': kendall,
-                  'ys_label': list(ys_label),
-                  'ys_label_pred': list(ys_label_pred)}
+        stats = {'RMSE': rmse,
+                 'SRCC': srcc,
+                 'PCC': pcc,
+                 'KENDALL': kendall,
+                 'ys_label': list(ys_label),
+                 'ys_label_pred': list(ys_label_pred)}
 
         if ys_label_raw is not None:
             # KFLK
@@ -100,11 +100,12 @@ class RegressorMixin(object):
             cmap = plt.get_cmap()
             colors = [cmap(i) for i in np.linspace(0, 1, len(unique_content_ids))]
             for idx, curr_content_id in enumerate(unique_content_ids):
-                curr_idxs = indices(content_ids, lambda cid: cid==curr_content_id)
+                curr_idxs = indices(content_ids, lambda cid: cid == curr_content_id)
                 curr_ys_label = np.array(stats['ys_label'])[curr_idxs]
                 curr_ys_label_pred = np.array(stats['ys_label_pred'])[curr_idxs]
                 ax.scatter(curr_ys_label, curr_ys_label_pred,
                            label=curr_content_id, color=colors[idx % len(colors)])
+
     @staticmethod
     def get_objective_score(result, type='SRCC'):
         """
@@ -140,11 +141,11 @@ class ClassifierMixin(object):
         f1 = f1_score(ys_label_pred, ys_label)
         # error rate
         errorrate = np.mean(np.array(ys_label) != np.array(ys_label_pred))
-        stats = { 'RMSE': rmse,
-                  'f1': f1,
-                  'errorrate': errorrate,
-                  'ys_label': list(ys_label),
-                  'ys_label_pred': list(ys_label_pred)}
+        stats = {'RMSE': rmse,
+                 'f1': f1,
+                 'errorrate': errorrate,
+                 'ys_label': list(ys_label),
+                 'ys_label_pred': list(ys_label_pred)}
         return stats
 
     @staticmethod

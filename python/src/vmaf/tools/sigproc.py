@@ -240,7 +240,7 @@ def significanceHM(A, B, AUCs):
             aa, _ = index_and_value_of_min(abs(AA - AA_vec).ravel())
             r = Table_HM[rr, aa]
 
-            z = abs(AUCs[i-1] - AUCs[j-1]) / np.sqrt( SE1**2 + SE2**2 + 2*r*SE1*SE2 )
+            z = abs(AUCs[i - 1] - AUCs[j - 1]) / np.sqrt(SE1 ** 2 + SE2 ** 2 + 2 * r * SE1 * SE2)
             pHM[i-1, j-1] = 1.0 - scipy.stats.norm.cdf(z)
             pHM[j-1, i-1] = pHM[i-1, j-1]
 

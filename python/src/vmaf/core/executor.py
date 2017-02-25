@@ -71,7 +71,7 @@ class Executor(TypeVersionEnabled):
             )
 
         return executor_id_
-    
+
     def run(self, **kwargs):
         """
         Do all the computation here.
@@ -343,8 +343,7 @@ class Executor(TypeVersionEnabled):
         # file to ref workfile
 
         # only need to open ref workfile if the path is different from ref path
-        assert asset.use_path_as_workpath == False \
-               and asset.ref_path != asset.ref_workfile_path
+        assert asset.use_path_as_workpath is False and asset.ref_path != asset.ref_workfile_path
 
         # if fifo mode, mkfifo
         if fifo_mode:
@@ -390,8 +389,7 @@ class Executor(TypeVersionEnabled):
         # file to dis workfile
 
         # only need to open dis workfile if the path is different from dis path
-        assert asset.use_path_as_workpath == False \
-               and asset.dis_path != asset.dis_workfile_path
+        assert asset.use_path_as_workpath is False and asset.dis_path != asset.dis_workfile_path
 
         # if fifo mode, mkfifo
         if fifo_mode:
@@ -443,8 +441,7 @@ class Executor(TypeVersionEnabled):
         else:
             assert False, 'ref_or_dis cannot be {}'.format(ref_or_dis)
 
-        if 'icpf' == get_file_name_extension(path) or \
-            'j2c' == get_file_name_extension(path):
+        if 'icpf' == get_file_name_extension(path) or 'j2c' == get_file_name_extension(path):
             # 2147483647 is INT_MAX if int is 4 bytes
             return "-start_number_range 2147483647"
         else:

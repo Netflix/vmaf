@@ -185,7 +185,7 @@ class RawDatasetReader(DatasetReader):
         # write out
         with open(dataset_filepath, 'wt') as output_file:
             for key in aggregate_dataset.__dict__.keys():
-                if key!='ref_videos' and key!='dis_videos':
+                if key != 'ref_videos' and key != 'dis_videos':
                     output_file.write('{} = '.format(key) + repr(aggregate_dataset.__dict__[key]) + '\n')
 
             output_file.write('\n')
@@ -256,7 +256,7 @@ class RawDatasetReader(DatasetReader):
         # write out
         with open(dataset_filepath, 'wt') as output_file:
             for key in persubject_dataset.__dict__.keys():
-                if key!='ref_videos' and key!='dis_videos':
+                if key != 'ref_videos' and key != 'dis_videos':
                     output_file.write('{} = '.format(key) + repr(persubject_dataset.__dict__[key]) + '\n')
 
             output_file.write('\n')

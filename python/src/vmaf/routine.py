@@ -224,7 +224,7 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
         ax.set_xlabel('True Score')
         ax.set_ylabel("Predicted Score")
         ax.grid()
-        ax.set_title( "{runner}\n{stats}".format(
+        ax.set_title("{runner}\n{stats}".format(
             dataset=test_assets[0].dataset,
             runner=runner_class.TYPE,
             stats=model_type.format_stats(stats),
@@ -325,7 +325,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         train_ax.set_xlabel('True Score')
         train_ax.set_ylabel("Predicted Score")
         train_ax.grid()
-        train_ax.set_title( "Dataset: {dataset}, Model: {model}\n{stats}".format(
+        train_ax.set_title("Dataset: {dataset}, Model: {model}\n{stats}".format(
             dataset=train_dataset.dataset_name,
             model=model.model_id,
             stats=model_class.format_stats(train_stats)
@@ -393,7 +393,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
             test_ax.set_xlabel('True Score')
             test_ax.set_ylabel("Predicted Score")
             test_ax.grid()
-            test_ax.set_title( "Dataset: {dataset}, Model: {model}\n{stats}".format(
+            test_ax.set_title("Dataset: {dataset}, Model: {model}\n{stats}".format(
                 dataset=test_dataset.dataset_name,
                 model=model.model_id,
                 stats=model_class.format_stats(test_stats)
@@ -457,7 +457,7 @@ def cv_on_dataset(dataset, feature_param, model_param, ax, result_store,
         ax.set_xlabel('True Score')
         ax.set_ylabel("Predicted Score")
         ax.grid()
-        ax.set_title( "Dataset: {dataset}, Model: {model},\n{stats}".format(
+        ax.set_title("Dataset: {dataset}, Model: {model},\n{stats}".format(
             dataset=dataset.dataset_name,
             model=model_param.model_type,
             stats=model_class.format_stats(cv_output['aggr_stats'])

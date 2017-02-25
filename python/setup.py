@@ -85,7 +85,7 @@ class GradleDistribution(Distribution, object):
         super(GradleDistribution, self).__init__(attrs)
 
     def get_version(self):
-        """ Return version from version.properties file """
+        """ Return version from project's VERSION file """
         try:
             with open('../VERSION') as fh:
                 for line in fh:
