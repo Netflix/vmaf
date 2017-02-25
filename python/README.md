@@ -79,10 +79,10 @@ make
 
 to build the binaries.
 
-There is a subdirectory named *python*. Add the *python* subdirectory to the environment variable PYTHONPATH:
+There is a subdirectory named *python*. Add the *python/src* subdirectory to the environment variable PYTHONPATH:
 
 ```
-export PYTHONPATH=[path_to_repo_dir]/python:$PYTHONPATH
+export PYTHONPATH=[path_to_repo_dir]/python/src:$PYTHONPATH
 ```
 
 You can also add it to environment permanently. On Ubuntu, append the line above to *~/.bashrc* and run `source ~/.bashrc`. On Mac OS X, append it to *~/.bash_profile* and run `source ~/.bash_profile`.
