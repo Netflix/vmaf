@@ -1,12 +1,11 @@
 import multiprocessing
 import os
-import subprocess
 from time import sleep
 import hashlib
 from vmaf.core.asset import Asset
 
 from vmaf.tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_slash, \
-    parallel_map, check_program_exist, match_any_files, run_process, \
+    parallel_map, match_any_files, run_process, \
     get_file_name_extension
 from vmaf.core.mixin import TypeVersionEnabled
 from vmaf.config import get_and_assert_ffmpeg
@@ -151,10 +150,10 @@ class Executor(TypeVersionEnabled):
     @staticmethod
     def _need_ffmpeg(asset):
         return asset.quality_width_height != asset.ref_width_height \
-               or asset.quality_width_height != asset.dis_width_height \
-               or asset.crop_cmd is not None \
-               or asset.pad_cmd is not None \
-               or asset.yuv_type == 'notyuv'
+            or asset.quality_width_height != asset.dis_width_height \
+            or asset.crop_cmd is not None \
+            or asset.pad_cmd is not None \
+            or asset.yuv_type == 'notyuv'
 
     @classmethod
     def _assert_an_asset(cls, asset):
@@ -187,11 +186,7 @@ class Executor(TypeVersionEnabled):
                 break
             sleep(0.1)
         else:
-            raise RuntimeError(
-                "ref or dis video workfile path {ref} or {dis} is missing.".
-                    format(ref=asset.ref_workfile_path,
-                           dis=asset.dis_workfile_path)
-            )
+            raise RuntimeError("ref or dis video workfile path {ref} or {dis} is missing.".format(ref=asset.ref_workfile_path, dis=asset.dis_workfile_path))
 
     def _prepare_log_file(self, asset):
 
@@ -365,19 +360,23 @@ class Executor(TypeVersionEnabled):
         crop_cmd = self._get_crop_cmd(asset)
         pad_cmd = self._get_pad_cmd(asset)
 
-        ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
-                     '-pix_fmt {yuv_type} -vf {crop_cmd}{pad_cmd}scale={width}x{height} -f rawvideo ' \
-                     '-sws_flags {resampling_type} -y {dst}'.format(
+        ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 -pix_fmt {yuv_type} -vf {crop_cmd}{pad_cmd}scale={width}x{height} -f rawvideo -sws_flags {resampling_type} -y {dst}'
+        ffmpeg_cmd = ffmpeg_cmd.format(
             ffmpeg=get_and_assert_ffmpeg(),
-            src=asset.ref_path, dst=asset.ref_workfile_path,
-            width=quality_width, height=quality_height,
+            src=asset.ref_path,
+            dst=asset.ref_workfile_path,
+            width=quality_width,
+            height=quality_height,
             src_fmt_cmd=src_fmt_cmd,
             crop_cmd=crop_cmd,
             pad_cmd=pad_cmd,
             yuv_type=workfile_yuv_type,
-            resampling_type=resampling_type)
+            resampling_type=resampling_type
+        )
+
         if self.logger:
             self.logger.info(ffmpeg_cmd)
+
         run_process(ffmpeg_cmd, shell=True)
 
     def _get_workfile_yuv_type(self, yuv_type):
@@ -461,8 +460,7 @@ class Executor(TypeVersionEnabled):
     def _close_ref_workfile(asset):
 
         # only need to close ref workfile if the path is different from ref path
-        assert asset.use_path_as_workpath is False \
-               and asset.ref_path != asset.ref_workfile_path
+        assert asset.use_path_as_workpath is False and asset.ref_path != asset.ref_workfile_path
 
         # caution: never remove ref file!!!!!!!!!!!!!!!
         if os.path.exists(asset.ref_workfile_path):
@@ -472,8 +470,7 @@ class Executor(TypeVersionEnabled):
     def _close_dis_workfile(asset):
 
         # only need to close dis workfile if the path is different from dis path
-        assert asset.use_path_as_workpath is False \
-               and asset.dis_path != asset.dis_workfile_path
+        assert asset.use_path_as_workpath is False and asset.dis_path != asset.dis_workfile_path
 
         # caution: never remove dis file!!!!!!!!!!!!!!
         if os.path.exists(asset.dis_workfile_path):
@@ -504,13 +501,15 @@ def run_executors_in_parallel(executor_class,
     """
 
     # construct an executor object just to call _assert_assets() only
-    _ = executor_class(assets,
-                 logger,
-                 fifo_mode=fifo_mode,
-                 delete_workdir=True,
-                 result_store=result_store,
-                 optional_dict=optional_dict,
-                 optional_dict2=optional_dict2)
+    executor_class(
+        assets,
+        logger,
+        fifo_mode=fifo_mode,
+        delete_workdir=True,
+        result_store=result_store,
+        optional_dict=optional_dict,
+        optional_dict2=optional_dict2
+    )
 
     # create locks for unique assets (uniqueness is identified by str(asset))
     map_asset_lock = {}
@@ -548,4 +547,3 @@ def run_executors_in_parallel(executor_class,
     results = [executor.results[0] for executor in executors]
 
     return executors, results
-

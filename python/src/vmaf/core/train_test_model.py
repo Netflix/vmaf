@@ -1,14 +1,11 @@
 import os
-import sys
 import pickle
 from numbers import Number
 
-import scipy.stats
 from sklearn.metrics import f1_score
 import numpy as np
-from numpy.linalg import lstsq
 
-from vmaf import config
+from vmaf import svmutil
 from vmaf.tools.misc import indices
 from vmaf.core.mixin import TypeVersionEnabled
 from vmaf.core.perf_metric import RmsePerfMetric, SrccPerfMetric, PccPerfMetric, \
@@ -330,7 +327,7 @@ class TrainTestModel(TypeVersionEnabled):
             train_test_model.model_dict = info_loaded['model_dict']
 
             # == special handling of libsvmnusvr: load .model differently ==
-            model = LibsvmNusvrTrainTestModel.svmutil.svm_load_model(filename + '.model')
+            model = svmutil.svm_load_model(filename + '.model')
             train_test_model.model_dict['model'] = model
         else:
             model_class = TrainTestModel.find_subclass(model_type)
@@ -384,7 +381,7 @@ class TrainTestModel(TypeVersionEnabled):
         elif norm_type == 'custom_clip_0to1':
             self._calculate_normalization_params_custom_clip_0to1(xys_2d)
         elif norm_type == 'clip_minus1to1':
-            ub =  1.0
+            ub = 1.0
             lb = -1.0
             fmins = np.min(xys_2d, axis=0)
             fmaxs = np.max(xys_2d, axis=0)
@@ -606,9 +603,6 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
     TYPE = 'LIBSVMNUSVR'
     VERSION = "0.1"
 
-    sys.path.append(config.ROOT + "/libsvm/python")
-    import svmutil
-
     @classmethod
     def _train(cls, model_param, xys_2d):
         """
@@ -623,28 +617,30 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
         cache_size = model_param['cache_size'] if 'cache_size' in model_param else 200
 
         if kernel == 'rbf':
-            ktype_int = cls.svmutil.RBF
+            ktype_int = svmutil.RBF
         elif kernel == 'linear':
-            ktype_int = cls.svmutil.LINEAR
+            ktype_int = svmutil.LINEAR
         elif kernel == 'poly':
-            ktype_int = cls.svmutil.POLY
+            ktype_int = svmutil.POLY
         elif kernel == 'sigmoid':
-            ktype_int = cls.svmutil.SIGMOID
+            ktype_int = svmutil.SIGMOID
         else:
             assert False, 'ktype = ' + str(kernel) + ' not implemented'
 
-        param = cls.svmutil.svm_parameter(['-s', 4,
-                                           '-t', ktype_int,
-                                           '-c', C,
-                                           '-g', gamma,
-                                           '-n', nu,
-                                           '-m', cache_size])
+        param = svmutil.svm_parameter([
+            '-s', 4,
+            '-t', ktype_int,
+            '-c', C,
+            '-g', gamma,
+            '-n', nu,
+            '-m', cache_size
+        ])
 
         f = list(xys_2d[:, 1:])
         for i, item in enumerate(f):
             f[i] = list(item)
-        prob = cls.svmutil.svm_problem(xys_2d[:, 0], f)
-        model = cls.svmutil.svm_train(prob, param)
+        prob = svmutil.svm_problem(xys_2d[:, 0], f)
+        model = svmutil.svm_train(prob, param)
 
         return model
 
@@ -654,7 +650,7 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
         f = list(xs_2d)
         for i, item in enumerate(f):
             f[i] = list(item)
-        score, _, _ = cls.svmutil.svm_predict([0] * len(f), f, model)
+        score, _, _ = svmutil.svm_predict([0] * len(f), f, model)
         ys_label_pred = np.array(score)
         return ys_label_pred
 
@@ -670,7 +666,7 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
         model_dict_copy['model'] = None
         info_to_save = {'param_dict': self.param_dict,
                         'model_dict': model_dict_copy}
-        self.svmutil.svm_save_model(filename + '.model', self.model_dict['model'])
+        svmutil.svm_save_model(filename + '.model', self.model_dict['model'])
 
         with open(filename, 'wb') as file:
             pickle.dump(info_to_save, file)
@@ -700,8 +696,7 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
         assert 'feature_names' in additional_model_dict
         assert 'norm_type' in additional_model_dict
         norm_type = additional_model_dict['norm_type']
-        assert (   norm_type == 'none'
-                or norm_type == 'linear_rescale')
+        assert norm_type == 'none' or norm_type == 'linear_rescale'
         if norm_type == 'linear_rescale':
             assert 'slopes' in additional_model_dict
             assert 'intercepts' in additional_model_dict
@@ -710,7 +705,7 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
 
         train_test_model.model_dict.update(additional_model_dict)
 
-        model = cls.svmutil.svm_load_model(model_filename)
+        model = svmutil.svm_load_model(model_filename)
         train_test_model.model_dict['model'] = model
 
         return train_test_model

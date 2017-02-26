@@ -1,6 +1,5 @@
 import os
 import unittest
-import subprocess
 
 from vmaf import config
 from vmaf.tools.misc import run_process

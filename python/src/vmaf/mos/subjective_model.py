@@ -82,15 +82,15 @@ class SubjectiveModel(TypeVersionEnabled):
 
         # dscore_mode: True - do differential-scoring
         #              False - don't do differential-scoring
-        dscore_mode= kwargs['dscore_mode'] if 'dscore_mode' in kwargs else False
+        dscore_mode = kwargs['dscore_mode'] if 'dscore_mode' in kwargs else False
 
         # zscore_mode: True - do z-scoring (normalizing to 0-mean 1-std)
         #              False - don't do z-scoring
-        zscore_mode= kwargs['zscore_mode'] if 'zscore_mode' in kwargs else False
+        zscore_mode = kwargs['zscore_mode'] if 'zscore_mode' in kwargs else False
 
         # subject_rejection: True - do subject rejection
         #              False - don't do subject rejection
-        subject_rejection= kwargs['subject_rejection'] if 'subject_rejection' in kwargs else False
+        subject_rejection = kwargs['subject_rejection'] if 'subject_rejection' in kwargs else False
 
         if dscore_mode is True:
             E, S = s_es.shape
@@ -133,8 +133,7 @@ class SubjectiveModel(TypeVersionEnabled):
             rejections = []
             acceptions = []
             for idx_s, subject in zip(range(S), range(S)):
-                if (ps[idx_s] + qs[idx_s]) / E > 0.05 and \
-                    np.abs((ps[idx_s] - qs[idx_s]) / (ps[idx_s] + qs[idx_s])) < 0.3:
+                if (ps[idx_s] + qs[idx_s]) / E > 0.05 and np.abs((ps[idx_s] - qs[idx_s]) / (ps[idx_s] + qs[idx_s])) < 0.3:
                     rejections.append(subject)
                 else:
                     acceptions.append(subject)
@@ -147,11 +146,11 @@ class SubjectiveModel(TypeVersionEnabled):
 
         # normalize_final: True - do normalization on final quality score
         #                  False - don't do
-        normalize_final= kwargs['normalize_final'] if 'normalize_final' in kwargs else False
+        normalize_final = kwargs['normalize_final'] if 'normalize_final' in kwargs else False
 
         # transform_final: True - do (linear or other) transform on final quality score
         #                  False - don't do
-        transform_final= kwargs['transform_final'] if 'transform_final' in kwargs else None
+        transform_final = kwargs['transform_final'] if 'transform_final' in kwargs else None
 
         assert 'quality_scores' in result
 
@@ -446,7 +445,7 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
         # mode: DEFAULT - subject and content-aware
         #       NO_SUBJECT - subject-unaware
         #       NO_CONTENT - content-unaware
-        mode= kwargs['mode'] if 'mode' in kwargs else 'DEFAULT'
+        mode = kwargs['mode'] if 'mode' in kwargs else 'DEFAULT'
 
         if 'subject_rejection' in kwargs and kwargs['subject_rejection'] is True:
             assert False, 'SubjectAndContentAwareGenerativeModel must not ' \
@@ -550,9 +549,9 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
             s2_minus_d2 = np.tile(sigma_s**2, (E, 1)) - np.tile(delta_c_e**2, (S, 1)).T
             num = - np.tile(sigma_s, (E, 1)) / s2_add_d2 + np.tile(sigma_s, (E, 1)) * a_es**2 / s2_add_d2**2
             num = pd.DataFrame(num).sum(axis=0) # sum over e
-            poly_term =       np.tile(delta_c_e**4, (S, 1)).T \
-                        - 3 * np.tile(sigma_s**4, (E, 1)) \
-                        - 2 * np.tile(sigma_s**2, (E, 1)) * np.tile(delta_c_e**2, (S, 1)).T
+            poly_term = np.tile(delta_c_e**4, (S, 1)).T \
+                  - 3 * np.tile(sigma_s**4, (E, 1)) \
+                  - 2 * np.tile(sigma_s**2, (E, 1)) * np.tile(delta_c_e**2, (S, 1)).T
             den = s2_minus_d2 / s2_add_d2**2 + a_es**2 * poly_term / s2_add_d2**4
             den = pd.DataFrame(den).sum(axis=0) # sum over e
             sigma_s_new = sigma_s - num / den
@@ -573,9 +572,9 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
             num = - np.tile(delta_c_e, (S, 1)).T / s2_add_d2 + np.tile(delta_c_e, (S, 1)).T * a_es**2 / s2_add_d2**2
             num = pd.DataFrame(num).sum(axis=1) # sum over s
             num = sum_over_content_id(num, dataset_reader.content_id_of_dis_videos) # sum over e:c(e)=c
-            poly_term =       np.tile(sigma_s**4, (E, 1)) \
-                        - 3 * np.tile(delta_c_e**4, (S, 1)).T \
-                        - 2 * np.tile(sigma_s**2, (E, 1)) * np.tile(delta_c_e**2, (S, 1)).T
+            poly_term = np.tile(sigma_s**4, (E, 1)) \
+                  - 3 * np.tile(delta_c_e**4, (S, 1)).T \
+                  - 2 * np.tile(sigma_s**2, (E, 1)) * np.tile(delta_c_e**2, (S, 1)).T
             den = - s2_minus_d2 / s2_add_d2**2 + a_es**2 * poly_term / s2_add_d2**4
             den = pd.DataFrame(den).sum(axis=1) # sum over s
             den = sum_over_content_id(den, dataset_reader.content_id_of_dis_videos) # sum over e:c(e)=c
@@ -735,4 +734,3 @@ class PerSubjectModel(SubjectiveModel):
     def to_aggregated_dataset_file(self, dataset_filepath, **kwargs):
         self._assert_modeled()
         self.dataset_reader.to_persubject_dataset_file(dataset_filepath, self.model_result['quality_scores'], **kwargs)
-

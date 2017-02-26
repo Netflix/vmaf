@@ -208,4 +208,3 @@ class MomentNorefFeatureExtractor(NorefFeatureExtractor):
             assert cls.get_scores_key(feature) in result.result_dict
 
         return result
-

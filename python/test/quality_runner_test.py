@@ -6,12 +6,11 @@ __license__ = "Apache, Version 2.0"
 import os
 import unittest
 
+from vmaf import config
 from vmaf.core.asset import Asset
 from vmaf.core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner, \
     PsnrQualityRunner, VmafossExecQualityRunner, MsSsimQualityRunner, \
     SsimQualityRunner, Adm2QualityRunner
-from vmaf.core.executor import run_executors_in_parallel
-from vmaf import config
 from vmaf.core.result_store import FileSystemResultStore
 
 

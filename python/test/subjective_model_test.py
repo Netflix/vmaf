@@ -460,7 +460,7 @@ class SubjectiveModelTest(unittest.TestCase):
         dataset_reader = CorruptSubjectRawDatasetReader(dataset, input_dict=info_dict)
         subjective_model = MaximumLikelihoodEstimationModelReduced(dataset_reader)
         with self.assertRaises(AssertionError):
-            result = subjective_model.run_modeling(subject_rejection=True)
+            subjective_model.run_modeling(subject_rejection=True)
 
     def test_observer_content_aware_subjective_model_subjreject(self):
         dataset = import_python_file(self.dataset_filepath)
@@ -471,7 +471,7 @@ class SubjectiveModelTest(unittest.TestCase):
         dataset_reader = CorruptSubjectRawDatasetReader(dataset, input_dict=info_dict)
         subjective_model = MaximumLikelihoodEstimationModel(dataset_reader)
         with self.assertRaises(AssertionError):
-            result = subjective_model.run_modeling(subject_rejection=True)
+            subjective_model.run_modeling(subject_rejection=True)
 
     def test_observer_content_aware_subjective_dmos_model(self):
         subjective_model = MaximumLikelihoodEstimationDmosModel.from_dataset_file(

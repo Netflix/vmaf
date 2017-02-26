@@ -10,8 +10,8 @@ ref_videos = [
 
 dis_videos = [
     {'content_id':0, 'asset_id': 0, 'groundtruth':100, 'path':config.ROOT+'/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv'}, # ref
-    {'content_id':0, 'asset_id': 1, 'groundtruth':50,  'path':config.ROOT+'/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv'},
+    {'content_id':0, 'asset_id': 1, 'groundtruth':50, 'path':config.ROOT+'/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv'},
 
-    {'content_id':1, 'asset_id': 2, 'groundtruth':100,  'path':config.ROOT+'/resource/yuv/flat_1280_720_0.yuv'}, # ref
-    {'content_id':1, 'asset_id': 3, 'groundtruth':80,  'path':config.ROOT+'/resource/yuv/flat_1280_720_10.yuv'},
+    {'content_id':1, 'asset_id': 2, 'groundtruth':100, 'path':config.ROOT+'/resource/yuv/flat_1280_720_0.yuv'}, # ref
+    {'content_id':1, 'asset_id': 3, 'groundtruth':80, 'path':config.ROOT+'/resource/yuv/flat_1280_720_10.yuv'},
 ]

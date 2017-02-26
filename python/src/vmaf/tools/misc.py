@@ -111,14 +111,13 @@ def get_unique_str_from_recursive_dict(d):
     """
     from collections import OrderedDict
     import json
+
     def to_ordered_dict_recursively(d):
         if isinstance(d, dict):
             return OrderedDict(map(
-                                    lambda (k,v): (to_ordered_dict_recursively(k),
-                                                   to_ordered_dict_recursively(v)),
-                                    sorted(d.items())
-                                   )
-                              )
+                lambda (k,v): (to_ordered_dict_recursively(k), to_ordered_dict_recursively(v)),
+                sorted(d.items())
+            ))
         else:
             return d
     return json.dumps(to_ordered_dict_recursively(d))
@@ -352,4 +351,3 @@ def run_process(cmd, **kwargs):
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
-

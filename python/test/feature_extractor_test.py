@@ -9,7 +9,6 @@ from vmaf import config
 from vmaf.core.feature_extractor import VmafFeatureExtractor, MomentFeatureExtractor, \
     PsnrFeatureExtractor, SsimFeatureExtractor, MsSsimFeatureExtractor
 from vmaf.core.asset import Asset
-from vmaf.core.executor import run_executors_in_parallel
 from vmaf.core.result_store import FileSystemResultStore
 
 

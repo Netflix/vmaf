@@ -5,8 +5,7 @@ import sys
 
 import numpy as np
 
-from vmaf.tools.misc import import_python_file, cmd_option_exists, get_cmd_option, \
-    get_stdout_logger
+from vmaf.tools.misc import import_python_file, cmd_option_exists, get_cmd_option
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.routine import print_matplotlib_warning, train_test_vmaf_on_dataset
 from vmaf.tools.stats import ListStats

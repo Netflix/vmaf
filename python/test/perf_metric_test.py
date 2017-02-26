@@ -90,8 +90,7 @@ class AggrScorePerfMetricTest(unittest.TestCase):
 
     def test_kflk_perf_metric(self):
         np.random.seed(0)
-        groundtruths = np.random.normal(0, 1.0, [4, 10]) + \
-                      np.tile(np.array([1, 2, 3, 4]), [10, 1]).T
+        groundtruths = np.random.normal(0, 1.0, [4, 10]) + np.tile(np.array([1, 2, 3, 4]), [10, 1]).T
         predictions = [1, 2, 3, 4]
         metric = KflkPerfMetric(groundtruths, predictions)
         result = metric.evaluate()

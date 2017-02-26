@@ -17,7 +17,6 @@ class FeatureAssemblerTest(unittest.TestCase):
         pass
 
     def test_get_fextractor_subclasses(self):
-        from vmaf.core.noref_feature_extractor import NorefFeatureExtractor
         fextractor_subclasses = FeatureExtractor.get_subclasses_recursively()
         self.assertEquals(len(fextractor_subclasses), 9)
         self.assertTrue(VmafFeatureExtractor in fextractor_subclasses)
@@ -40,9 +39,9 @@ class FeatureAssemblerTest(unittest.TestCase):
                       asset_dict={'width':576, 'height':324})
 
         self.fassembler = FeatureAssembler(
-            feature_dict = {'VMAF_feature':'all'},
-            feature_option_dict = None,
-            assets = [asset, asset_original],
+            feature_dict={'VMAF_feature':'all'},
+            feature_option_dict=None,
+            assets=[asset, asset_original],
             logger=None,
             fifo_mode=True,
             delete_workdir=True,
@@ -62,7 +61,7 @@ class FeatureAssemblerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 23.509571520833333, places=4)
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 4.0498253541666669 , places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 4.0498253541666669, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 31.271439270833337, places=4)
 
@@ -83,9 +82,9 @@ class FeatureAssemblerTest(unittest.TestCase):
                       asset_dict={'width':576, 'height':324})
 
         self.fassembler = FeatureAssembler(
-            feature_dict = {'VMAF_feature':['vif', 'motion']},
-            feature_option_dict = None,
-            assets = [asset, asset_original],
+            feature_dict={'VMAF_feature':['vif', 'motion']},
+            feature_option_dict=None,
+            assets=[asset, asset_original],
             logger=None,
             fifo_mode=True,
             delete_workdir=True,

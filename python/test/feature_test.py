@@ -5,7 +5,6 @@ __license__ = "Apache, Version 2.0"
 
 import os
 import re
-import subprocess
 import unittest
 
 from vmaf import config
@@ -147,7 +146,7 @@ class FeatureTest(unittest.TestCase):
         print 'test all...'
         cmd = "{vmaf} all {fmt} {ref} {dis} {w} {h} > {log}".format(
             vmaf=self.VMAF, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
-            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log= ALL_LOG
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ALL_LOG
         )
         run_process(cmd, shell=True)
         score, scores = read_log(ALL_LOG, "vif")
@@ -167,7 +166,7 @@ class FeatureTest(unittest.TestCase):
         score, scores = read_log(ALL_LOG, "vif_den")
         self.assertAlmostEquals(score, 1597314.95249, places=0)
         score, scores = read_log(ALL_LOG, "anpsnr")
-        self.assertAlmostEquals(score,  34.164776874999994, places=4)
+        self.assertAlmostEquals(score, 34.164776874999994, places=4)
         score, scores = read_log(ALL_LOG, "vif_num_scale0")
         self.assertAlmostEquals(score, 468101.509766, places=0)
         score, scores = read_log(ALL_LOG, "vif_num_scale1")
@@ -236,7 +235,7 @@ class FeatureTest(unittest.TestCase):
         score, scores = read_log(SSIM_LOG, "ssim")
         self.assertAlmostEquals(score, 0.863226541666667, places=4)
         self.assertAlmostEquals(scores[0], 0.925023, places=4)
-        self.assertAlmostEquals(scores[1],  0.891992, places=4)
+        self.assertAlmostEquals(scores[1], 0.891992, places=4)
         score, scores = read_log(SSIM_LOG, "ssim_l")
         self.assertAlmostEquals(score, 0.998147458333333, places=4)
         self.assertAlmostEquals(scores[0], 0.999524, places=4)
@@ -261,7 +260,7 @@ class FeatureTest(unittest.TestCase):
         score, scores = read_log(MS_SSIM_LOG, "ms_ssim")
         self.assertAlmostEquals(score, 0.9632498125, places=4)
         self.assertAlmostEquals(scores[0], 0.981968, places=4)
-        self.assertAlmostEquals(scores[1],  0.973366, places=4)
+        self.assertAlmostEquals(scores[1], 0.973366, places=4)
         score, scores = read_log(MS_SSIM_LOG, "ms_ssim_l_scale0")
         self.assertAlmostEquals(score, 0.998147458333333, places=4)
         score, scores = read_log(MS_SSIM_LOG, "ms_ssim_c_scale0")
@@ -386,7 +385,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         score, scores = read_log(VIF_LOG, "vif")
         self.assertAlmostEquals(score, 0.4460930625, places=4)
         self.assertAlmostEquals(scores[0], 0.580304, places=4)
-        self.assertAlmostEquals(scores[1],  0.492477, places=4)
+        self.assertAlmostEquals(scores[1], 0.492477, places=4)
         score, scores = read_log(VIF_LOG, "vif_num")
         self.assertAlmostEquals(score, 712650.023478, places=0)
         score, scores = read_log(VIF_LOG, "vif_den")
@@ -493,11 +492,11 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         score, scores = read_log(SSIM_LOG, "ssim_l")
         self.assertAlmostEquals(score,0.998147458333333, places=4)
         self.assertAlmostEquals(scores[0], 0.999524, places=4)
-        self.assertAlmostEquals(scores[1],  0.998983, places=4)
+        self.assertAlmostEquals(scores[1], 0.998983, places=4)
         score, scores = read_log(SSIM_LOG, "ssim_c")
         self.assertAlmostEquals(score, 0.9612679375000001, places=4)
         self.assertAlmostEquals(scores[0], 0.979614, places=4)
-        self.assertAlmostEquals(scores[1],  0.96981, places=4)
+        self.assertAlmostEquals(scores[1], 0.96981, places=4)
         score, scores = read_log(SSIM_LOG, "ssim_s")
         self.assertAlmostEquals(score, 0.8977363333333335, places=4)
         self.assertAlmostEquals(scores[0], 0.943966, places=4)
@@ -526,7 +525,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         score, scores = read_log(MS_SSIM_LOG, "ms_ssim_c_scale1")
         self.assertAlmostEquals(score, 0.9857694375, places=4)
         score, scores = read_log(MS_SSIM_LOG, "ms_ssim_s_scale1")
-        self.assertAlmostEquals(score,  0.941185875, places=4)
+        self.assertAlmostEquals(score, 0.941185875, places=4)
         score, scores = read_log(MS_SSIM_LOG, "ms_ssim_l_scale2")
         self.assertAlmostEquals(score, 0.9992356458333332, places=4)
         score, scores = read_log(MS_SSIM_LOG, "ms_ssim_c_scale2")
@@ -540,12 +539,11 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         score, scores = read_log(MS_SSIM_LOG, "ms_ssim_s_scale3")
         self.assertAlmostEquals(score, 0.9938712499999998, places=4)
         score, scores = read_log(MS_SSIM_LOG, "ms_ssim_l_scale4")
-        self.assertAlmostEquals(score,  0.9994035625000003, places=4)
+        self.assertAlmostEquals(score, 0.9994035625000003, places=4)
         score, scores = read_log(MS_SSIM_LOG, "ms_ssim_c_scale4")
         self.assertAlmostEquals(score, 0.999907625, places=4)
         score, scores = read_log(MS_SSIM_LOG, "ms_ssim_s_scale4")
         self.assertAlmostEquals(score,0.998222583333, places=4)
-
 
 
 class CornerCaseTest(unittest.TestCase):

@@ -45,6 +45,7 @@ class YuvReader(object):
     #     ...
     def __enter__(self):
         return self
+
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
 
@@ -53,6 +54,7 @@ class YuvReader(object):
     #    ...
     def __iter__(self):
         return self
+
     def next(self):
         try:
             return self.next_y_u_v()
@@ -69,16 +71,15 @@ class YuvReader(object):
         w_multiplier, h_multiplier = self._get_uv_width_height_multiplier()
 
         if self._is_10bitle():
-            num_frms = float(self.num_bytes) / self.width / self.height \
-                       / (1.0 + w_multiplier * h_multiplier * 2) / 2
+            num_frms = float(self.num_bytes) / self.width / self.height / (1.0 + w_multiplier * h_multiplier * 2) / 2
+
         elif self._is_8bit():
-            num_frms = float(self.num_bytes) / self.width / self.height \
-                       / (1.0 + w_multiplier * h_multiplier * 2)
+            num_frms = float(self.num_bytes) / self.width / self.height / (1.0 + w_multiplier * h_multiplier * 2)
+
         else:
             assert False
 
-        assert num_frms.is_integer(), \
-            'Number of frames is not integer: {}'.format(num_frms)
+        assert num_frms.is_integer(), 'Number of frames is not integer: {}'.format(num_frms)
 
         return int(num_frms)
 
@@ -104,7 +105,7 @@ class YuvReader(object):
         self._assert_file_exist()
 
         # assert file size: if consists of integer number of frames
-        num_frms = self.num_frms
+        assert isinstance(self.num_frms, int)
 
     def _is_8bit(self):
         return self.yuv_type in self.SUPPORTED_YUV_8BIT_TYPES
@@ -142,12 +143,10 @@ class YuvReader(object):
         v = v.reshape(uv_height, uv_width)
 
         if self._is_10bitle():
-            return y.astype(np.double) / 4.0, \
-                   u.astype(np.double) / 4.0, \
-                   v.astype(np.double) / 4.0
+            return y.astype(np.double) / 4.0, u.astype(np.double) / 4.0, v.astype(np.double) / 4.0
+
         elif self._is_8bit():
-            return y.astype(np.double), \
-                   u.astype(np.double), \
-                   v.astype(np.double)
+            return y.astype(np.double), u.astype(np.double), v.astype(np.double)
+
         else:
             assert False

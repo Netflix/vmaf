@@ -79,9 +79,7 @@ class RawDatasetReader(DatasetReader):
         # be iterable (list, tuple or dictionary)
         for dis_video in self.dataset.dis_videos:
             assert 'os' in dis_video, "dis_video must have key 'os' (opinion score)"
-            assert isinstance(dis_video['os'], list) \
-                   or isinstance(dis_video['os'], tuple) \
-                   or isinstance(dis_video['os'], dict)
+            assert isinstance(dis_video['os'], (list, tuple, dict))
 
         # make sure each dis video has equal number of observers
         if isinstance(self.dataset.dis_videos[0]['os'], list) or isinstance(self.dataset.dis_videos[0]['os'], tuple):
@@ -125,13 +123,13 @@ class RawDatasetReader(DatasetReader):
         if isinstance(self.dataset.dis_videos[0]['os'], list) \
                 or isinstance(self.dataset.dis_videos[0]['os'], tuple):
             for i_dis_video, dis_video in enumerate(self.dataset.dis_videos):
-                score_mtx[i_dis_video , :] = dis_video['os']
+                score_mtx[i_dis_video, :] = dis_video['os']
         elif isinstance(self.dataset.dis_videos[0]['os'], dict):
             list_observers = self._get_list_observers
             for i_dis_video, dis_video in enumerate(self.dataset.dis_videos):
                 for i_observer, observer in enumerate(list_observers):
                     if observer in dis_video['os']:
-                        score_mtx[i_dis_video , i_observer] = dis_video['os'][observer]
+                        score_mtx[i_dis_video, i_observer] = dis_video['os'][observer]
         else:
             assert False
         return score_mtx
@@ -399,7 +397,7 @@ class SelectSubjectRawDatasetReader(MockedRawDatasetReader):
         selected_subjects = self.input_dict['selected_subjects']
         score_mtx = np.zeros([self.num_dis_videos, self.num_observers])
         for i_dis_video, dis_video in enumerate(self.dataset.dis_videos):
-            score_mtx[i_dis_video , :] = np.array(dis_video['os'])[selected_subjects]
+            score_mtx[i_dis_video, :] = np.array(dis_video['os'])[selected_subjects]
         return score_mtx
 
 class CorruptSubjectRawDatasetReader(MockedRawDatasetReader):

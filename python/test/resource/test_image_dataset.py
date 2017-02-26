@@ -46,7 +46,7 @@ ref_videos = [
   'height': 321,
   'path': dataset_dir + '/102062.yuv',
   'width': 481},
- ]
+]
 
 dis_videos = [
  {'asset_id': 0,
@@ -73,4 +73,4 @@ dis_videos = [
  {'asset_id': 12,
   'content_id': 12,
   'path': dataset_dir + '/102062.yuv', 'mos': 3.3},
- ]
+]

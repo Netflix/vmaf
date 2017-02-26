@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import json
 import re
 
 import numpy as np
@@ -73,8 +74,7 @@ class BasicResult(object):
                     unit=unit_name, num=frame_num) + (
                 ", ".join(
                     map(
-                        lambda (score_key, score): "{score_key}:{score:.6f}".
-                            format(score_key=score_key, score=score),
+                        lambda (score_key, score): "{score_key}:{score:.6f}".format(score_key=score_key, score=score),
                         zip(list_score_key, scores))
                 )),
                 enumerate(zip(*list_scores))
@@ -87,8 +87,7 @@ class BasicResult(object):
         list_score_key = self.get_ordered_list_score_key()
         str_aggregate = "Aggregate ({}): ".format(self.score_aggregate_method.__name__) + (", ".join(
             map(
-                lambda (score_key, score): "{score_key}:{score:.6f}".
-                    format(score_key=score_key, score=score),
+                lambda (score_key, score): "{score_key}:{score:.6f}".format(score_key=score_key, score=score),
                 zip(
                     list_score_key, map(
                         lambda score_key: self[score_key],
@@ -104,16 +103,17 @@ class Result(BasicResult):
     Dictionary-like object that stores read-only result generated on an Asset
     by a Executor.
     """
-    DATAFRAME_COLUMNS = ('dataset',
-                         'content_id',
-                         'asset_id',
-                         'ref_name',
-                         'dis_name',
-                         'asset',
-                         'executor_id',
-                         'scores_key',
-                         'scores' # one score per unit - frame, chunk or else
-                        )
+    DATAFRAME_COLUMNS = (
+        'dataset',
+        'content_id',
+        'asset_id',
+        'ref_name',
+        'dis_name',
+        'asset',
+        'executor_id',
+        'scores_key',
+        'scores' # one score per unit - frame, chunk or else
+    )
 
     def __init__(self, asset, executor_id, result_dict):
         super(Result, self).__init__(asset, result_dict)
@@ -155,7 +155,10 @@ class Result(BasicResult):
 
     def to_string(self):
         """Example:
-        Asset: {"asset_dict": {"height": 1080, "width": 1920}, "asset_id": 0, "content_id": 0, "dataset": "test", "dis_path": "/home/zli/Projects/stash/MCE/transcoder/vmaf_oss/vmaf/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv", "ref_path": "/home/zli/Projects/stash/MCE/transcoder/vmaf_oss/vmaf/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv", "workdir": "/home/zli/Projects/stash/MCE/transcoder/vmaf_oss/vmaf/workspace/workdir/d26050af-bd92-46a7-8519-7482306aa7fe"}
+        Asset: {"asset_dict": {"height": 1080, "width": 1920}, "asset_id": 0, "content_id": 0, "dataset": "test",
+            "dis_path": ".../vmaf/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv",
+            "ref_path": ".../vmaf/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv",
+            "workdir": ".../vmaf/workspace/workdir/d26050af-bd92-46a7-8519-7482306aa7fe"}
         Executor: SSIM_V1.0
         Result:
         Frame 0: SSIM_feature_ssim_c_score:0.997404, SSIM_feature_ssim_l_score:0.965512, SSIM_feature_ssim_s_score:0.935803, SSIM_score:0.901161
@@ -220,7 +223,7 @@ class Result(BasicResult):
 
         return prettify(top)
 
-    def to_json(self):
+    def to_dict(self):
         """Example:
         {
             "executorId": "SSIM_V1.0",
@@ -258,8 +261,6 @@ class Result(BasicResult):
             }
         }
         """
-        import json
-
         list_scores_key = self.get_ordered_list_scores_key()
         list_score_key = self.get_ordered_list_score_key()
         list_scores = map(lambda key: self.result_dict[key], list_scores_key)
@@ -283,7 +284,13 @@ class Result(BasicResult):
             top['aggregate'][score_key] = score
         top['aggregate']['method'] = self.score_aggregate_method.__name__
 
-        return json.dumps(top, sort_keys=False, indent=4)
+        return top
+
+    def to_json(self):
+        """
+        :return str: JSON representation
+        """
+        return json.dumps(self.to_dict(), sort_keys=False, indent=4)
 
     def to_dataframe(self):
         """

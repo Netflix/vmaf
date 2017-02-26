@@ -66,10 +66,7 @@ class Asset(WorkdirEnabled):
         # since it must be encoded video and the information should be already
         # in included in the header of the video files
         if self.yuv_type == 'notyuv':
-            assert self.ref_width_height is None \
-                   and self.dis_width_height is None, \
-                'For yuv_type nonyuv, ' \
-                'ref_width_height and dis_width_height must not be specified.'
+            assert self.ref_width_height is None and self.dis_width_height is None, 'For yuv_type nonyuv, ref_width_height and dis_width_height must not be specified.'
 
     @staticmethod
     def from_repr(rp):
@@ -156,14 +153,10 @@ class Asset(WorkdirEnabled):
         or ref and dis's width and height must be equal, which will be used
         as the default quality width and height.
         """
-        assert ('quality_width' in self.asset_dict
-                and 'quality_height' in self.asset_dict) or \
-               (self.ref_width_height == self.dis_width_height)
+        assert ('quality_width' in self.asset_dict and 'quality_height' in self.asset_dict) or self.ref_width_height == self.dis_width_height
 
-        if 'quality_width' in self.asset_dict \
-                and 'quality_height' in self.asset_dict:
-            return self.asset_dict['quality_width'], \
-                   self.asset_dict['quality_height']
+        if 'quality_width' in self.asset_dict and 'quality_height' in self.asset_dict:
+            return self.asset_dict['quality_width'], self.asset_dict['quality_height']
         else:
             return self.ref_width_height
 
@@ -177,28 +170,22 @@ class Asset(WorkdirEnabled):
         (inclusive). If None, it signals that the entire video should be
         processed.
         """
-        if 'ref_start_frame' in self.asset_dict \
-                and 'ref_end_frame' in self.asset_dict:
-            return self.asset_dict['ref_start_frame'], \
-                   self.asset_dict['ref_end_frame']
-        elif 'start_frame' in self.asset_dict \
-                and 'end_frame' in self.asset_dict:
-            return self.asset_dict['start_frame'], \
-                   self.asset_dict['end_frame']
-        elif 'start_sec' in self.asset_dict \
-                and 'end_sec' in self.asset_dict \
-                and 'fps' in self.asset_dict:
-            start_frame = int(round(self.asset_dict['start_sec'] *
-                                    self.asset_dict['fps']))
-            end_frame = int(round(self.asset_dict['end_sec'] *
-                                  self.asset_dict['fps'])) - 1
+        if 'ref_start_frame' in self.asset_dict and 'ref_end_frame' in self.asset_dict:
+            return self.asset_dict['ref_start_frame'], self.asset_dict['ref_end_frame']
+
+        elif 'start_frame' in self.asset_dict and 'end_frame' in self.asset_dict:
+            return self.asset_dict['start_frame'], self.asset_dict['end_frame']
+
+        elif 'start_sec' in self.asset_dict and 'end_sec' in self.asset_dict and 'fps' in self.asset_dict:
+            start_frame = int(round(self.asset_dict['start_sec'] * self.asset_dict['fps']))
+            end_frame = int(round(self.asset_dict['end_sec'] * self.asset_dict['fps'])) - 1
             return start_frame, end_frame
-        elif 'duration_sec' in self.asset_dict \
-                and 'fps' in self.asset_dict:
+
+        elif 'duration_sec' in self.asset_dict and 'fps' in self.asset_dict:
             start_frame = 0
-            end_frame = int(round(self.asset_dict['duration_sec'] *
-                                  self.asset_dict['fps'])) - 1
+            end_frame = int(round(self.asset_dict['duration_sec'] * self.asset_dict['fps'])) - 1
             return start_frame, end_frame
+
         else:
             return None
 
@@ -210,28 +197,22 @@ class Asset(WorkdirEnabled):
         (inclusive). If None, it signals that the entire video should be
         processed.
         """
-        if 'dis_start_frame' in self.asset_dict and \
-                        'dis_end_frame' in self.asset_dict:
-            return self.asset_dict['dis_start_frame'], \
-                   self.asset_dict['dis_end_frame']
-        elif 'start_frame' in self.asset_dict and \
-                        'end_frame' in self.asset_dict:
-            return self.asset_dict['start_frame'], \
-                   self.asset_dict['end_frame']
-        elif 'start_sec' in self.asset_dict \
-                and 'end_sec' in self.asset_dict \
-                and 'fps' in self.asset_dict:
-            start_frame = int(round(self.asset_dict['start_sec'] *
-                                    self.asset_dict['fps']))
-            end_frame = int(round(self.asset_dict['end_sec'] *
-                                  self.asset_dict['fps'])) - 1
+        if 'dis_start_frame' in self.asset_dict and 'dis_end_frame' in self.asset_dict:
+            return self.asset_dict['dis_start_frame'], self.asset_dict['dis_end_frame']
+
+        elif 'start_frame' in self.asset_dict and 'end_frame' in self.asset_dict:
+            return self.asset_dict['start_frame'], self.asset_dict['end_frame']
+
+        elif 'start_sec' in self.asset_dict and 'end_sec' in self.asset_dict and 'fps' in self.asset_dict:
+            start_frame = int(round(self.asset_dict['start_sec'] * self.asset_dict['fps']))
+            end_frame = int(round(self.asset_dict['end_sec'] * self.asset_dict['fps'])) - 1
             return start_frame, end_frame
-        elif 'duration_sec' in self.asset_dict \
-                and 'fps' in self.asset_dict:
+
+        elif 'duration_sec' in self.asset_dict and 'fps' in self.asset_dict:
             start_frame = 0
-            end_frame = int(round(self.asset_dict['duration_sec'] *
-                                  self.asset_dict['fps'])) - 1
+            end_frame = int(round(self.asset_dict['duration_sec'] * self.asset_dict['fps'])) - 1
             return start_frame, end_frame
+
         else:
             return None
 
@@ -454,8 +435,7 @@ class Asset(WorkdirEnabled):
         make sure ref_duration_sec covers the entire file.
         """
         try:
-            return os.path.getsize(self.ref_path) / \
-                   self.ref_duration_sec * 8.0 / 1000.0
+            return os.path.getsize(self.ref_path) / self.ref_duration_sec * 8.0 / 1000.0
         except:
             return None
 
@@ -466,8 +446,7 @@ class Asset(WorkdirEnabled):
         make sure ref_duration_sec covers the entire file.
         """
         try:
-            return os.path.getsize(self.dis_path) \
-                   / self.dis_duration_sec * 8.0 / 1000.0
+            return os.path.getsize(self.dis_path) / self.dis_duration_sec * 8.0 / 1000.0
         except:
             return None
 

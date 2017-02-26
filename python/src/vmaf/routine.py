@@ -14,7 +14,6 @@ from vmaf.tools.misc import indices, get_stdout_logger, import_python_file, \
     close_logger, get_file_name_without_extension
 from vmaf import config
 from vmaf.core.asset import Asset
-from vmaf.core.executor import run_executors_in_parallel
 from vmaf.core.train_test_model import TrainTestModel, RegressorMixin, \
     ClassifierMixin
 from vmaf.core.local_explainer import LocalExplainer
@@ -153,7 +152,7 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
                     result_store, model_filepath,
                     parallelize=True, fifo_mode=True,
                     aggregate_method=np.mean,
-                    type = 'regressor',
+                    type='regressor',
                     **kwargs):
     """
     TODO: move this function under test/
@@ -224,7 +223,7 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
         ax.set_xlabel('True Score')
         ax.set_ylabel("Predicted Score")
         ax.grid()
-        ax.set_title( "{runner}\n{stats}".format(
+        ax.set_title("{runner}\n{stats}".format(
             dataset=test_assets[0].dataset,
             runner=runner_class.TYPE,
             stats=model_type.format_stats(stats),
@@ -263,9 +262,9 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         train_assets = read_dataset(train_dataset_aggregate, **kwargs)
 
     train_fassembler = FeatureAssembler(
-        feature_dict = feature_param.feature_dict,
-        feature_option_dict = None,
-        assets = train_assets,
+        feature_dict=feature_param.feature_dict,
+        feature_option_dict=None,
+        assets=train_assets,
         logger=logger,
         fifo_mode=fifo_mode,
         delete_workdir=True,
@@ -325,7 +324,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         train_ax.set_xlabel('True Score')
         train_ax.set_ylabel("Predicted Score")
         train_ax.grid()
-        train_ax.set_title( "Dataset: {dataset}, Model: {model}\n{stats}".format(
+        train_ax.set_title("Dataset: {dataset}, Model: {model}\n{stats}".format(
             dataset=train_dataset.dataset_name,
             model=model.model_id,
             stats=model_class.format_stats(train_stats)
@@ -353,9 +352,9 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
             test_assets = read_dataset(test_dataset_aggregate, **kwargs)
 
         test_fassembler = FeatureAssembler(
-            feature_dict = feature_param.feature_dict,
-            feature_option_dict = None,
-            assets = test_assets,
+            feature_dict=feature_param.feature_dict,
+            feature_option_dict=None,
+            assets=test_assets,
             logger=logger,
             fifo_mode=fifo_mode,
             delete_workdir=True,
@@ -393,14 +392,13 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
             test_ax.set_xlabel('True Score')
             test_ax.set_ylabel("Predicted Score")
             test_ax.grid()
-            test_ax.set_title( "Dataset: {dataset}, Model: {model}\n{stats}".format(
+            test_ax.set_title("Dataset: {dataset}, Model: {model}\n{stats}".format(
                 dataset=test_dataset.dataset_name,
                 model=model.model_id,
                 stats=model_class.format_stats(test_stats)
             ))
 
-    return train_fassembler, train_assets, train_stats, \
-           test_fassembler, test_assets, test_stats, model
+    return train_fassembler, train_assets, train_stats, test_fassembler, test_assets, test_stats, model
 
 
 def construct_kfold_list(assets, contentid_groups):
@@ -420,9 +418,9 @@ def cv_on_dataset(dataset, feature_param, model_param, ax, result_store,
     kfold = construct_kfold_list(assets, contentid_groups)
 
     fassembler = FeatureAssembler(
-        feature_dict = feature_param.feature_dict,
-        feature_option_dict = None,
-        assets = assets,
+        feature_dict=feature_param.feature_dict,
+        feature_option_dict=None,
+        assets=assets,
         logger=logger,
         delete_workdir=True,
         result_store=result_store,
@@ -457,7 +455,7 @@ def cv_on_dataset(dataset, feature_param, model_param, ax, result_store,
         ax.set_xlabel('True Score')
         ax.set_ylabel("Predicted Score")
         ax.grid()
-        ax.set_title( "Dataset: {dataset}, Model: {model},\n{stats}".format(
+        ax.set_title("Dataset: {dataset}, Model: {model},\n{stats}".format(
             dataset=dataset.dataset_name,
             model=model_param.model_type,
             stats=model_class.format_stats(cv_output['aggr_stats'])
@@ -468,9 +466,7 @@ def cv_on_dataset(dataset, feature_param, model_param, ax, result_store,
 
 def run_remove_results_for_dataset(result_store, dataset, executor_class):
     assets = read_dataset(dataset)
-    executor = executor_class(assets=assets,
-                                logger=None,
-                                result_store=result_store)
+    executor = executor_class(assets=assets, logger=None, result_store=result_store)
     executor.remove_results()
 
 

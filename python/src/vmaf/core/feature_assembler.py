@@ -84,13 +84,12 @@ class FeatureAssembler(object):
 
         # assemble an output dict with demanded atom features
         # atom_features_dict = self.fextractor_atom_features_dict
-        result_dicts = [dict() for _ in self.assets]
+        result_dicts = map(lambda x: dict(), self.assets)
         for fextractor_type in self.feature_dict:
             assert fextractor_type in self.type2results_dict
             for atom_feature in self._get_atom_features(fextractor_type):
                 scores_key = self._get_scores_key(fextractor_type, atom_feature)
-                for result_index, result in enumerate(self.type2results_dict[
-                                                          fextractor_type]):
+                for result_index, result in enumerate(self.type2results_dict[fextractor_type]):
                     result_dicts[result_index][scores_key] = result[scores_key]
 
         self.results = map(
@@ -116,12 +115,11 @@ class FeatureAssembler(object):
     def _get_atom_features(self, fextractor_type):
         if self.feature_dict[fextractor_type] == 'all':
             fextractor_class = FeatureExtractor.find_subclass(fextractor_type)
-            atom_features = fextractor_class.ATOM_FEATURES + \
-                            (fextractor_class.DERIVED_ATOM_FEATURES
-                             if hasattr(fextractor_class, 'DERIVED_ATOM_FEATURES')
-                             else [])
+            atom_features = fextractor_class.ATOM_FEATURES + getattr(fextractor_class, 'DERIVED_ATOM_FEATURES', [])
+
         else:
             atom_features = self.feature_dict[fextractor_type]
+
         return atom_features
 
     def _get_fextractor_instance(self, fextractor_type):
@@ -135,4 +133,3 @@ class FeatureAssembler(object):
                                       optional_dict2=self.optional_dict2,
                                       )
         return fextractor
-

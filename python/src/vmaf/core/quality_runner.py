@@ -1,11 +1,9 @@
-import sys
-import subprocess
 import re
 from xml.etree import ElementTree
 
 import numpy as np
 
-from vmaf import config
+from vmaf import config, svmutil
 from vmaf.core.executor import Executor
 from vmaf.core.result import Result
 from vmaf.core.feature_assembler import FeatureAssembler
@@ -152,9 +150,6 @@ class VmafLegacyQualityRunner(QualityRunner):
                                      'VMAF_feature_ansnr_scores',
                                      'VMAF_feature_motion_scores']
 
-    sys.path.append(config.ROOT + "/libsvm/python")
-    import svmutil
-
     def _get_vmaf_feature_assembler_instance(self, asset):
         vmaf_fassembler = FeatureAssembler(
             feature_dict=self.FEATURE_ASSEMBLER_DICT,
@@ -184,7 +179,7 @@ class VmafLegacyQualityRunner(QualityRunner):
         # =====================================================================
 
         # SVR predict
-        model = self.svmutil.svm_load_model(self.SVM_MODEL_FILE)
+        model = svmutil.svm_load_model(self.SVM_MODEL_FILE)
 
         ordered_scaled_scores_list = []
         for scores_key in self.SVM_MODEL_ORDERED_SCORES_KEYS:
@@ -196,7 +191,7 @@ class VmafLegacyQualityRunner(QualityRunner):
         for score_vector in zip(*ordered_scaled_scores_list):
             vif, adm, ansnr, motion = score_vector
             xs = [[vif, adm, ansnr, motion]]
-            score = self.svmutil.svm_predict([0], xs, model)[0][0]
+            score = svmutil.svm_predict([0], xs, model)[0][0]
             score = self._post_correction(motion, score)
             scores.append(score)
 
@@ -260,7 +255,9 @@ class VmafQualityRunner(QualityRunner):
 
     VERSION = 'F' + VmafFeatureExtractor.VERSION + '-0.6.1'
     ALGO_VERSION = 2
-    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/vmaf_v0.6.1.pkl"  # trained with resource/param/vmaf_v6.py on private/user/zli/resource/dataset/dataset/derived/vmafplusstudy_laptop_raw_generalandcornercase.py, MLER, y=x+17
+
+    # trained with resource/param/vmaf_v6.py on private/user/zli/resource/dataset/dataset/derived/vmafplusstudy_laptop_raw_generalandcornercase.py, MLER, y=x+17
+    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/vmaf_v0.6.1.pkl"
 
     DEFAULT_FEATURE_DICT = {'VMAF_feature': ['vif', 'adm', 'motion', 'ansnr']} # for backward-compatible with older model only
 
@@ -418,7 +415,9 @@ class VmafossExecQualityRunner(QualityRunner):
 
     VERSION = 'F' + VmafFeatureExtractor.VERSION + '-0.6.1'
     ALGO_VERSION = 2
-    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/vmaf_v0.6.1.pkl"  # trained with resource/param/vmaf_v6.py on private/user/zli/resource/dataset/dataset/derived/vmafplusstudy_laptop_raw_generalandcornercase.py, MLER, y=x+17
+
+    # trained with resource/param/vmaf_v6.py on private/user/zli/resource/dataset/dataset/derived/vmafplusstudy_laptop_raw_generalandcornercase.py, MLER, y=x+17
+    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/vmaf_v0.6.1.pkl"
 
     VMAFOSSEXEC = config.ROOT + "/wrapper/vmafossexec"
 
@@ -679,12 +678,7 @@ class StrredQualityRunner(QualityRunner):
 
     def _get_feature_assembler_instance(self, asset):
 
-        feature_dict = {StrredFeatureExtractor.TYPE:
-                            StrredFeatureExtractor.ATOM_FEATURES +
-                            (StrredFeatureExtractor.DERIVED_ATOM_FEATURES if
-                             hasattr(StrredFeatureExtractor, 'DERIVED_ATOM_FEATURES')
-                             else [])
-                        }
+        feature_dict = {StrredFeatureExtractor.TYPE: StrredFeatureExtractor.ATOM_FEATURES + getattr(StrredFeatureExtractor, 'DERIVED_ATOM_FEATURES', [])}
 
         feature_assembler = FeatureAssembler(
             feature_dict=feature_dict,

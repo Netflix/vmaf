@@ -59,8 +59,7 @@ class LocalExplainer(object):
         self.neighbor_samples = neighbor_samples
         self.distance_metric = distance_metric
         self.kernel_fn = lambda d: np.sqrt(np.exp(-(d**2) / kernel_width ** 2))
-        self.model_regressor = Ridge(alpha=1, fit_intercept=True) \
-                               if model_regressor is None else model_regressor
+        self.model_regressor = Ridge(alpha=1, fit_intercept=True) if model_regressor is None else model_regressor
 
     def _assert_model(self, train_test_model):
 
@@ -103,8 +102,7 @@ class LocalExplainer(object):
 
             # generate neighborhood samples
             x_row = xs_2d[i_sample, :]
-            xs_2d_neighbor = np.random.randn(self.neighbor_samples, n_feature) \
-                             * self.neighbor_std
+            xs_2d_neighbor = np.random.randn(self.neighbor_samples, n_feature) * self.neighbor_std
             xs_2d_neighbor += np.tile(x_row, (self.neighbor_samples, 1))
 
             # add center to first row
@@ -119,8 +117,7 @@ class LocalExplainer(object):
             sample_weight = self.kernel_fn(distances)
 
             # predict
-            ys_label_pred_neighbor = train_test_model._predict(
-                                     train_test_model.model, xs_2d_neighbor)
+            ys_label_pred_neighbor = train_test_model._predict(train_test_model.model, xs_2d_neighbor)
 
             # take xs_2d_neighbor and ys_label_pred_neighbor, train a linear
             # model
@@ -265,5 +262,3 @@ class LocalExplainer(object):
             'feature_names': exps['feature_names']
         }
         return exps2
-
-

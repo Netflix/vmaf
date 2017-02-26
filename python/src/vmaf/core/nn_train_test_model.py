@@ -236,8 +236,8 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
 
                 patches_found = 0
                 for (y, x) in zip(iv, jv):
-                    patches_cache[patch_idx] = img[y : y + self.patch_height,
-                                                   x : x + self.patch_width]
+                    patches_cache[patch_idx] = img[y: y + self.patch_height,
+                                                   x: x + self.patch_width]
                     if mode == 'train':
                         labels_cache[patch_idx] = label
 
@@ -543,5 +543,4 @@ class ToddNoiseClassifierTrainTestModel(NeuralNetTrainTestModel, ClassifierMixin
         loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits, y_))
         train_step = tf.train.AdamOptimizer(learning_rate).minimize(loss)
 
-        return input_image_batch, logits, y_, y_p, \
-               W_conv0, W_conv1, loss, train_step
+        return input_image_batch, logits, y_, y_p, W_conv0, W_conv1, loss, train_step

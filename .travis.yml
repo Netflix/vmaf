@@ -14,6 +14,4 @@ install:
 script:
   - make
   - export PYTHONPATH=$PWD/python/src:$PYTHONPATH
-  - python -m doctest python/src/vmaf/tools/misc.py
-  - python -m doctest python/src/vmaf/tools/stats.py
   - python -m unittest discover -s python/test -p '*_test.py'

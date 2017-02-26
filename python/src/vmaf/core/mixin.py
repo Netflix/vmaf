@@ -99,8 +99,7 @@ class H5pyMixin(object):
             assert False
 
     def assert_h5py_file(self):
-        assert self.optional_dict2 is not None \
-               and 'h5py_file' in self.optional_dict2
+        assert self.optional_dict2 is not None and 'h5py_file' in self.optional_dict2
 
     @property
     def h5py_file(self):

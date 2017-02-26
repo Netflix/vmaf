@@ -91,21 +91,25 @@ class TestTrainOnDataset(unittest.TestCase):
             config.ROOT + '/python/test/resource/model_param_sample.py')
         feature_param = import_python_file(
             config.ROOT + '/python/test/resource/feature_param_sample.py')
-        train_fassembler, train_assets, train_stats, \
-        test_fassembler, test_assets, test_stats, _ = \
-            train_test_vmaf_on_dataset(
-                train_dataset=train_dataset, test_dataset=train_dataset,
-                         feature_param=feature_param, model_param=model_param,
-                         train_ax=None, test_ax=None, result_store=None,
-                         parallelize=True,
-                         logger=None,
-                         fifo_mode=True,
-                         output_model_filepath=self.output_model_filepath,
-                         )
+
+        train_fassembler, train_assets, train_stats, test_fassembler, test_assets, test_stats, _ = train_test_vmaf_on_dataset(
+            train_dataset=train_dataset,
+            test_dataset=train_dataset,
+            feature_param=feature_param,
+            model_param=model_param,
+            train_ax=None,
+            test_ax=None,
+            result_store=None,
+            parallelize=True,
+            logger=None,
+            fifo_mode=True,
+            output_model_filepath=self.output_model_filepath,
+        )
+
         self.train_fassembler = train_fassembler
         self.assertTrue(os.path.exists(self.output_model_filepath))
         self.assertAlmostEqual(train_stats['ys_label_pred'][0], 90.753010402770798, places=3)
-        self.assertAlmostEqual(test_stats['ys_label_pred'][0],  90.753010402770798, places=3)
+        self.assertAlmostEqual(test_stats['ys_label_pred'][0], 90.753010402770798, places=3)
 
     def test_train_test_on_raw_dataset_with_dis1st_thr(self):
         train_dataset = import_python_file(
@@ -114,20 +118,25 @@ class TestTrainOnDataset(unittest.TestCase):
             config.ROOT + '/python/test/resource/model_param_sample.py')
         feature_param = import_python_file(
             config.ROOT + '/python/test/resource/feature_param_sample.py')
-        train_fassembler, train_assets, train_stats, \
-        test_fassembler, test_assets, test_stats, _ = \
-            train_test_vmaf_on_dataset(
-                train_dataset=train_dataset, test_dataset=train_dataset,
-                         feature_param=feature_param, model_param=model_param,
-                         train_ax=None, test_ax=None, result_store=None,
-                         parallelize=True,
-                         logger=None,
-                         fifo_mode=True,
-                         output_model_filepath=self.output_model_filepath)
+
+        train_fassembler, train_assets, train_stats, test_fassembler, test_assets, test_stats, _ = train_test_vmaf_on_dataset(
+            train_dataset=train_dataset,
+            test_dataset=train_dataset,
+            feature_param=feature_param,
+            model_param=model_param,
+            train_ax=None,
+            test_ax=None,
+            result_store=None,
+            parallelize=True,
+            logger=None,
+            fifo_mode=True,
+            output_model_filepath=self.output_model_filepath
+        )
+
         self.train_fassembler = train_fassembler
         self.assertTrue(os.path.exists(self.output_model_filepath))
         self.assertAlmostEqual(train_stats['ys_label_pred'][0], 93.565459224020742, places=3)
-        self.assertAlmostEqual(test_stats['ys_label_pred'][0],  93.565459224020742, places=3)
+        self.assertAlmostEqual(test_stats['ys_label_pred'][0], 93.565459224020742, places=3)
 
     def test_test_on_dataset(self):
         test_dataset = import_python_file(
