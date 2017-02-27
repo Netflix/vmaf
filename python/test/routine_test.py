@@ -1,12 +1,11 @@
 import os
 import unittest
 
-import config
-from routine import train_test_vmaf_on_dataset, read_dataset, test_on_dataset, \
-    generate_dataset_from_raw
-from tools.misc import import_python_file
-from core.quality_runner import VmafQualityRunner
-from mos.subjective_model import MosModel
+from vmaf import config
+from vmaf.routine import train_test_vmaf_on_dataset, read_dataset, run_test_on_dataset, generate_dataset_from_raw
+from vmaf.tools.misc import import_python_file
+from vmaf.core.quality_runner import VmafQualityRunner
+from vmaf.mos.subjective_model import MosModel
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -92,21 +91,25 @@ class TestTrainOnDataset(unittest.TestCase):
             config.ROOT + '/python/test/resource/model_param_sample.py')
         feature_param = import_python_file(
             config.ROOT + '/python/test/resource/feature_param_sample.py')
-        train_fassembler, train_assets, train_stats, \
-        test_fassembler, test_assets, test_stats, _ = \
-            train_test_vmaf_on_dataset(
-                train_dataset=train_dataset, test_dataset=train_dataset,
-                         feature_param=feature_param, model_param=model_param,
-                         train_ax=None, test_ax=None, result_store=None,
-                         parallelize=True,
-                         logger=None,
-                         fifo_mode=True,
-                         output_model_filepath=self.output_model_filepath,
-                         )
+
+        train_fassembler, train_assets, train_stats, test_fassembler, test_assets, test_stats, _ = train_test_vmaf_on_dataset(
+            train_dataset=train_dataset,
+            test_dataset=train_dataset,
+            feature_param=feature_param,
+            model_param=model_param,
+            train_ax=None,
+            test_ax=None,
+            result_store=None,
+            parallelize=True,
+            logger=None,
+            fifo_mode=True,
+            output_model_filepath=self.output_model_filepath,
+        )
+
         self.train_fassembler = train_fassembler
         self.assertTrue(os.path.exists(self.output_model_filepath))
         self.assertAlmostEqual(train_stats['ys_label_pred'][0], 90.753010402770798, places=3)
-        self.assertAlmostEqual(test_stats['ys_label_pred'][0],  90.753010402770798, places=3)
+        self.assertAlmostEqual(test_stats['ys_label_pred'][0], 90.753010402770798, places=3)
 
     def test_train_test_on_raw_dataset_with_dis1st_thr(self):
         train_dataset = import_python_file(
@@ -115,25 +118,30 @@ class TestTrainOnDataset(unittest.TestCase):
             config.ROOT + '/python/test/resource/model_param_sample.py')
         feature_param = import_python_file(
             config.ROOT + '/python/test/resource/feature_param_sample.py')
-        train_fassembler, train_assets, train_stats, \
-        test_fassembler, test_assets, test_stats, _ = \
-            train_test_vmaf_on_dataset(
-                train_dataset=train_dataset, test_dataset=train_dataset,
-                         feature_param=feature_param, model_param=model_param,
-                         train_ax=None, test_ax=None, result_store=None,
-                         parallelize=True,
-                         logger=None,
-                         fifo_mode=True,
-                         output_model_filepath=self.output_model_filepath)
+
+        train_fassembler, train_assets, train_stats, test_fassembler, test_assets, test_stats, _ = train_test_vmaf_on_dataset(
+            train_dataset=train_dataset,
+            test_dataset=train_dataset,
+            feature_param=feature_param,
+            model_param=model_param,
+            train_ax=None,
+            test_ax=None,
+            result_store=None,
+            parallelize=True,
+            logger=None,
+            fifo_mode=True,
+            output_model_filepath=self.output_model_filepath
+        )
+
         self.train_fassembler = train_fassembler
         self.assertTrue(os.path.exists(self.output_model_filepath))
         self.assertAlmostEqual(train_stats['ys_label_pred'][0], 93.565459224020742, places=3)
-        self.assertAlmostEqual(test_stats['ys_label_pred'][0],  93.565459224020742, places=3)
+        self.assertAlmostEqual(test_stats['ys_label_pred'][0], 93.565459224020742, places=3)
 
     def test_test_on_dataset(self):
         test_dataset = import_python_file(
             config.ROOT + '/python/test/resource/dataset_sample.py')
-        test_assets, results = test_on_dataset(test_dataset, VmafQualityRunner, None,
+        test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
                         None, None,
                         parallelize=True,
                         aggregate_method=None)
@@ -150,7 +158,7 @@ class TestTrainOnDataset(unittest.TestCase):
     def test_test_on_dataset_raw(self):
         test_dataset = import_python_file(
             config.ROOT + '/python/test/resource/raw_dataset_sample.py')
-        test_assets, results = test_on_dataset(test_dataset, VmafQualityRunner, None,
+        test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
                         None, None,
                         parallelize=True,
                         aggregate_method=None)
@@ -167,7 +175,7 @@ class TestTrainOnDataset(unittest.TestCase):
     def test_test_on_dataset_mle(self):
         test_dataset = import_python_file(
             config.ROOT + '/python/test/resource/raw_dataset_sample.py')
-        test_assets, results = test_on_dataset(test_dataset, VmafQualityRunner, None,
+        test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
                         None, None,
                         parallelize=True,
                         aggregate_method=None,

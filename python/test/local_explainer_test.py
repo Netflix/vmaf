@@ -3,17 +3,17 @@ import unittest
 
 import numpy as np
 
-import config
-from core.asset import Asset
-from core.executor import run_executors_in_parallel
-from core.local_explainer import LocalExplainer
-from core.quality_runner_extra import VmafQualityRunnerWithLocalExplainer
-from core.noref_feature_extractor import MomentNorefFeatureExtractor
-from core.raw_extractor import DisYUVRawVideoExtractor
-from core.train_test_model import SklearnRandomForestTrainTestModel, \
+from vmaf import config
+from vmaf.core.asset import Asset
+from vmaf.core.executor import run_executors_in_parallel
+from vmaf.core.local_explainer import LocalExplainer
+from vmaf.core.quality_runner_extra import VmafQualityRunnerWithLocalExplainer
+from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
+from vmaf.core.raw_extractor import DisYUVRawVideoExtractor
+from vmaf.core.train_test_model import SklearnRandomForestTrainTestModel, \
     MomentRandomForestTrainTestModel
-from routine import read_dataset
-from tools.misc import import_python_file
+from vmaf.routine import read_dataset
+from vmaf.tools.misc import import_python_file
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"

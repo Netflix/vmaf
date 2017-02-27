@@ -1,17 +1,18 @@
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
+import json
 import unittest
 from functools import partial
 
 import numpy as np
 
-from core.asset import Asset
-import config
-from core.result import Result
-from core.result_store import FileSystemResultStore, ResultStore
-from core.quality_runner import VmafLegacyQualityRunner, SsimQualityRunner
-from tools.stats import ListStats
+from vmaf.core.asset import Asset
+from vmaf import config
+from vmaf.core.result import Result
+from vmaf.core.result_store import FileSystemResultStore
+from vmaf.core.quality_runner import VmafLegacyQualityRunner
+from vmaf.tools.stats import ListStats
 
 class ResultTest(unittest.TestCase):
 
@@ -71,7 +72,7 @@ class ResultTest(unittest.TestCase):
         self.assertEquals(df.iloc[0]['dis_name'], 'checkerboard_1920_1080_10_3_1_0.yuv')
         self.assertEquals(
             df.iloc[0]['asset'],
-            '{"asset_dict": {"height": 1080, "use_path_as_workpath": 1, "width": 1920}, "asset_id": 0, "content_id": 0, "dataset": "test", "dis_path": "checkerboard_1920_1080_10_3_1_0.yuv", "ref_path": "checkerboard_1920_1080_10_3_0_0.yuv", "workdir": ""}')
+            '{"asset_dict": {"height": 1080, "use_path_as_workpath": 1, "width": 1920}, "asset_id": 0, "content_id": 0, "dataset": "test", "dis_path": "checkerboard_1920_1080_10_3_1_0.yuv", "ref_path": "checkerboard_1920_1080_10_3_0_0.yuv", "workdir": ""}') # noqa
         self.assertEquals(df.iloc[0]['executor_id'], 'VMAF_legacy_VF0.2.4b-1.1')
 
         Result._assert_asset_dataframe(df)
@@ -83,11 +84,11 @@ class ResultTest(unittest.TestCase):
 
     def test_to_score_str(self):
         print 'test on result aggregate scores...'
-        self.assertAlmostEquals(self.result.get_result('VMAF_legacy_score'), 40.421899030550769 , places=4)
+        self.assertAlmostEquals(self.result.get_result('VMAF_legacy_score'), 40.421899030550769, places=4)
         self.assertAlmostEquals(self.result['VMAF_legacy_score'], 40.421899030550769, places=4)
         self.assertAlmostEquals(self.result.get_result('VMAF_feature_adm_score'), 0.78533833333333336, places=4)
         self.assertAlmostEquals(self.result['VMAF_feature_adm_score'], 0.78533833333333336, places=4)
-        self.assertAlmostEquals(self.result['VMAF_feature_vif_score'], 0.15683466666666665 , places=4)
+        self.assertAlmostEquals(self.result['VMAF_feature_vif_score'], 0.15683466666666665, places=4)
         self.assertAlmostEquals(self.result['VMAF_feature_motion_score'], 12.5548366667, places=4)
         self.assertAlmostEquals(self.result['VMAF_feature_ansnr_score'], 7.92623066667, places=4)
         self.result.set_score_aggregate_method(np.min)
@@ -110,7 +111,7 @@ class ResultTest(unittest.TestCase):
         self.assertAlmostEquals(self.result.get_result('VMAF_legacy_score'), 6.5901873052628375, places=4)
         self.result.set_score_aggregate_method(partial(ListStats.moving_average, n=2))
         self.assertItemsEqual(self.result.get_result('VMAF_legacy_score'),
-                              [42.86773029545774,  42.86773029545774,  42.86773029545774])
+                              [42.86773029545774, 42.86773029545774, 42.86773029545774])
 
         with self.assertRaises(KeyError):
             self.result.get_result('VVMAF_legacy_score')
@@ -145,12 +146,58 @@ class ResultFormattingTest(unittest.TestCase):
         pass
 
     def test_to_xml(self):
-        self.assertEquals(self.result.to_xml(),
-                          u'<?xml version="1.0" ?>\n<result executorId="SSIM_V1.0">\n  <asset identifier="test_0_0_checkerboard_1920_1080_10_3_0_0_1920x1080_vs_checkerboard_1920_1080_10_3_1_0_1920x1080_q_1920x1080"/>\n  <frames>\n    <frame SSIM_feature_ssim_c_score="0.997404" SSIM_feature_ssim_l_score="0.999983" SSIM_feature_ssim_s_score="0.935802" SSIM_score="0.933353" frameNum="0"/>\n    <frame SSIM_feature_ssim_c_score="0.997404" SSIM_feature_ssim_l_score="0.999983" SSIM_feature_ssim_s_score="0.935802" SSIM_score="0.933353" frameNum="1"/>\n    <frame SSIM_feature_ssim_c_score="0.997404" SSIM_feature_ssim_l_score="0.999983" SSIM_feature_ssim_s_score="0.935803" SSIM_score="0.933354" frameNum="2"/>\n  </frames>\n  <aggregate SSIM_feature_ssim_c_score="0.997404" SSIM_feature_ssim_l_score="0.999983" SSIM_feature_ssim_s_score="0.935802333333" SSIM_score="0.933353333333" method="mean"/>\n</result>\n')
+        self.assertEquals(self.result.to_xml().strip(), """
+<?xml version="1.0" ?>
+<result executorId="SSIM_V1.0">
+  <asset identifier="test_0_0_checkerboard_1920_1080_10_3_0_0_1920x1080_vs_checkerboard_1920_1080_10_3_1_0_1920x1080_q_1920x1080"/>
+  <frames>
+    <frame SSIM_feature_ssim_c_score="0.997404" SSIM_feature_ssim_l_score="0.999983" SSIM_feature_ssim_s_score="0.935802" SSIM_score="0.933353" frameNum="0"/>
+    <frame SSIM_feature_ssim_c_score="0.997404" SSIM_feature_ssim_l_score="0.999983" SSIM_feature_ssim_s_score="0.935802" SSIM_score="0.933353" frameNum="1"/>
+    <frame SSIM_feature_ssim_c_score="0.997404" SSIM_feature_ssim_l_score="0.999983" SSIM_feature_ssim_s_score="0.935803" SSIM_score="0.933354" frameNum="2"/>
+  </frames>
+  <aggregate SSIM_feature_ssim_c_score="0.997404" SSIM_feature_ssim_l_score="0.999983" SSIM_feature_ssim_s_score="0.935802333333" SSIM_score="0.933353333333" method="mean"/>
+</result>
+        """.strip())
 
     def test_to_json(self):
-        self.assertEquals(self.result.to_json(),
-                          '{\n    "executorId": "SSIM_V1.0", \n    "asset": {\n        "identifier": "test_0_0_checkerboard_1920_1080_10_3_0_0_1920x1080_vs_checkerboard_1920_1080_10_3_1_0_1920x1080_q_1920x1080"\n    }, \n    "frames": [\n        {\n            "frameNum": 0, \n            "SSIM_feature_ssim_c_score": 0.997404, \n            "SSIM_feature_ssim_l_score": 0.999983, \n            "SSIM_feature_ssim_s_score": 0.935802, \n            "SSIM_score": 0.933353\n        }, \n        {\n            "frameNum": 1, \n            "SSIM_feature_ssim_c_score": 0.997404, \n            "SSIM_feature_ssim_l_score": 0.999983, \n            "SSIM_feature_ssim_s_score": 0.935802, \n            "SSIM_score": 0.933353\n        }, \n        {\n            "frameNum": 2, \n            "SSIM_feature_ssim_c_score": 0.997404, \n            "SSIM_feature_ssim_l_score": 0.999983, \n            "SSIM_feature_ssim_s_score": 0.935803, \n            "SSIM_score": 0.933354\n        }\n    ], \n    "aggregate": {\n        "SSIM_feature_ssim_c_score": 0.99740399999999996, \n        "SSIM_feature_ssim_l_score": 0.99998299999999996, \n        "SSIM_feature_ssim_s_score": 0.93580233333333329, \n        "SSIM_score": 0.93335333333333337, \n        "method": "mean"\n    }\n}')
+        self.assertEquals(self.result.to_dict(), json.loads("""
+{
+    "executorId": "SSIM_V1.0",
+    "asset": {
+        "identifier": "test_0_0_checkerboard_1920_1080_10_3_0_0_1920x1080_vs_checkerboard_1920_1080_10_3_1_0_1920x1080_q_1920x1080"
+    },
+    "frames": [
+        {
+            "frameNum": 0,
+            "SSIM_feature_ssim_c_score": 0.997404,
+            "SSIM_feature_ssim_l_score": 0.999983,
+            "SSIM_feature_ssim_s_score": 0.935802,
+            "SSIM_score": 0.933353
+        },
+        {
+            "frameNum": 1,
+            "SSIM_feature_ssim_c_score": 0.997404,
+            "SSIM_feature_ssim_l_score": 0.999983,
+            "SSIM_feature_ssim_s_score": 0.935802,
+            "SSIM_score": 0.933353
+        },
+        {
+            "frameNum": 2,
+            "SSIM_feature_ssim_c_score": 0.997404,
+            "SSIM_feature_ssim_l_score": 0.999983,
+            "SSIM_feature_ssim_s_score": 0.935803,
+            "SSIM_score": 0.933354
+        }
+    ],
+    "aggregate": {
+        "SSIM_feature_ssim_c_score": 0.99740399999999996,
+        "SSIM_feature_ssim_l_score": 0.99998299999999996,
+        "SSIM_feature_ssim_s_score": 0.93580233333333329,
+        "SSIM_score": 0.93335333333333337,
+        "method": "mean"
+    }
+}
+        """))
 
 
 class ResultStoreTest(unittest.TestCase):

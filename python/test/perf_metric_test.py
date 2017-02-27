@@ -3,8 +3,8 @@ import unittest
 import numpy as np
 import scipy.io
 
-import config
-from core.perf_metric import RmsePerfMetric, SrccPerfMetric, PccPerfMetric, \
+from vmaf import config
+from vmaf.core.perf_metric import RmsePerfMetric, SrccPerfMetric, PccPerfMetric, \
     KendallPerfMetric, KflkPerfMetric
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
@@ -90,8 +90,7 @@ class AggrScorePerfMetricTest(unittest.TestCase):
 
     def test_kflk_perf_metric(self):
         np.random.seed(0)
-        groundtruths = np.random.normal(0, 1.0, [4, 10]) + \
-                      np.tile(np.array([1, 2, 3, 4]), [10, 1]).T
+        groundtruths = np.random.normal(0, 1.0, [4, 10]) + np.tile(np.array([1, 2, 3, 4]), [10, 1]).T
         predictions = [1, 2, 3, 4]
         metric = KflkPerfMetric(groundtruths, predictions)
         result = metric.evaluate()

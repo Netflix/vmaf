@@ -1,4 +1,4 @@
-from core.executor import run_executors_in_parallel
+from vmaf.core.executor import run_executors_in_parallel
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -8,9 +8,9 @@ import os
 
 import numpy as np
 
-import config
-from core.asset import Asset
-from core.raw_extractor import AssetExtractor, DisYUVRawVideoExtractor
+from vmaf import config
+from vmaf.core.asset import Asset
+from vmaf.core.raw_extractor import AssetExtractor, DisYUVRawVideoExtractor
 
 
 class RawExtractorTest(unittest.TestCase):

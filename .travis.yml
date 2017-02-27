@@ -13,8 +13,5 @@ install:
   - pip install --upgrade h5py
 script:
   - make
-  - export PYTHONPATH=$PWD/python:$PYTHONPATH
-  - python -m doctest python/tools/misc.py
-  - python -m doctest python/tools/stats.py
-  - python -m unittest discover -s feature/test -p '*_test.py'
+  - export PYTHONPATH=$PWD/python/src:$PYTHONPATH
   - python -m unittest discover -s python/test -p '*_test.py'

@@ -1,4 +1,4 @@
-from tools.stats import ListStats
+from vmaf.tools.stats import ListStats
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -6,13 +6,12 @@ __license__ = "Apache, Version 2.0"
 import os
 import unittest
 
-from core.asset import Asset
-from core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner, \
+from vmaf import config
+from vmaf.core.asset import Asset
+from vmaf.core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner, \
     PsnrQualityRunner, VmafossExecQualityRunner, MsSsimQualityRunner, \
     SsimQualityRunner, Adm2QualityRunner
-from core.executor import run_executors_in_parallel
-import config
-from core.result_store import FileSystemResultStore
+from vmaf.core.result_store import FileSystemResultStore
 
 
 class QualityRunnerTest(unittest.TestCase):

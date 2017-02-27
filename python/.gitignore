@@ -1,2 +1,3 @@
 *.pyc
 externals.py
+.pypirc

@@ -3,14 +3,14 @@ __license__ = "Apache, Version 2.0"
 
 import unittest
 
-from core.train_test_model import SklearnRandomForestTrainTestModel, LibsvmNusvrTrainTestModel, \
+from vmaf.core.train_test_model import SklearnRandomForestTrainTestModel, LibsvmNusvrTrainTestModel, \
     SklearnExtraTreesTrainTestModel
-from core.cross_validation import ModelCrossValidation
-import config
-from core.executor import run_executors_in_parallel
-from core.noref_feature_extractor import MomentNorefFeatureExtractor
-from routine import read_dataset
-from tools.misc import import_python_file
+from vmaf.core.cross_validation import ModelCrossValidation
+from vmaf import config
+from vmaf.core.executor import run_executors_in_parallel
+from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
+from vmaf.routine import read_dataset
+from vmaf.tools.misc import import_python_file
 
 class CrossValidationTest(unittest.TestCase):
 
@@ -165,7 +165,7 @@ class CrossValidationTest(unittest.TestCase):
         ]
 
         dict, count = ModelCrossValidation._find_most_frequent_dict(dicts)
-        expected_dict =  {'norm_type':'clip_0to1', 'n_estimators':50, 'random_state':0}
+        expected_dict = {'norm_type':'clip_0to1', 'n_estimators':50, 'random_state':0}
         expected_count = 2
 
         self.assertEquals(dict, expected_dict)
@@ -190,11 +190,12 @@ class CrossValidationTest(unittest.TestCase):
         self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.14085904245475275, places=4)
         self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.3681348274719265, places=4)
 
-        expected_top_model_param = {'norm_type':'normalize',
-                                'n_estimators':10,
-                                'max_depth':None,
-                                'random_state':0
-                                }
+        expected_top_model_param = {
+            'norm_type': 'normalize',
+            'n_estimators': 10,
+            'max_depth': None,
+            'random_state': 0
+        }
         expected_top_ratio = 0.6666666666666666
         self.assertEquals(output['top_model_param'], expected_top_model_param)
         self.assertEquals(output['top_ratio'], expected_top_ratio)
@@ -220,12 +221,13 @@ class CrossValidationTest(unittest.TestCase):
         self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.14085904245475275, places=4)
         self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.5853397658781734, places=4)
 
-        expected_top_model_param = {'norm_type':'clip_0to1',
-                                'kernel':'rbf',
-                                'nu':0.5,
-                                'C':1,
-                                'gamma':0.0,
-                                }
+        expected_top_model_param = {
+            'norm_type': 'clip_0to1',
+            'kernel': 'rbf',
+            'nu': 0.5,
+            'C': 1,
+            'gamma': 0.0,
+        }
         expected_top_ratio = 1.0
 
         self.assertEquals(output['top_model_param'], expected_top_model_param)

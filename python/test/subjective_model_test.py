@@ -1,15 +1,15 @@
 import os
 import unittest
 import numpy as np
-import config
-from mos.dataset_reader import RawDatasetReader, MissingDataRawDatasetReader, \
+from vmaf import config
+from vmaf.mos.dataset_reader import RawDatasetReader, MissingDataRawDatasetReader, \
     SyntheticRawDatasetReader, CorruptSubjectRawDatasetReader
-from mos.subjective_model import MosModel, DmosModel, \
+from vmaf.mos.subjective_model import MosModel, DmosModel, \
     MaximumLikelihoodEstimationModelReduced, MaximumLikelihoodEstimationModel, \
     LiveDmosModel, MaximumLikelihoodEstimationDmosModel, LeastSquaresModel, \
     SubjrejMosModel, ZscoringSubjrejMosModel, SubjrejDmosModel, \
     ZscoringSubjrejDmosModel, PerSubjectModel
-from tools.misc import import_python_file
+from vmaf.tools.misc import import_python_file
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -460,7 +460,7 @@ class SubjectiveModelTest(unittest.TestCase):
         dataset_reader = CorruptSubjectRawDatasetReader(dataset, input_dict=info_dict)
         subjective_model = MaximumLikelihoodEstimationModelReduced(dataset_reader)
         with self.assertRaises(AssertionError):
-            result = subjective_model.run_modeling(subject_rejection=True)
+            subjective_model.run_modeling(subject_rejection=True)
 
     def test_observer_content_aware_subjective_model_subjreject(self):
         dataset = import_python_file(self.dataset_filepath)
@@ -471,7 +471,7 @@ class SubjectiveModelTest(unittest.TestCase):
         dataset_reader = CorruptSubjectRawDatasetReader(dataset, input_dict=info_dict)
         subjective_model = MaximumLikelihoodEstimationModel(dataset_reader)
         with self.assertRaises(AssertionError):
-            result = subjective_model.run_modeling(subject_rejection=True)
+            subjective_model.run_modeling(subject_rejection=True)
 
     def test_observer_content_aware_subjective_dmos_model(self):
         subjective_model = MaximumLikelihoodEstimationDmosModel.from_dataset_file(

@@ -5,8 +5,8 @@ import unittest
 
 import numpy as np
 
-import config
-from tools.reader import YuvReader
+from vmaf import config
+from vmaf.tools.reader import YuvReader
 
 class YuvReaderTest(unittest.TestCase):
 
@@ -155,8 +155,7 @@ class YuvReaderTest10le(unittest.TestCase):
         y_2ndmoments = []
 
         with YuvReader(
-                filepath=config.ROOT +
-                        "/resource/yuv/src01_hrc01_576x324.yuv422p10le.yuv",
+                filepath=config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv422p10le.yuv",
                 width=576, height=324, yuv_type='yuv422p10le') as yuv_reader:
 
             for y, u, v in yuv_reader:

@@ -6,6 +6,7 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ##What's New
 
+- (2/25/17) Refactored code in preparation for publishing to pypi 
 - (2/20/17) Updated VMAF model to version v0.6.1. Changes include: 
     - Added a custom quality model for cellular phone screen viewing. See [this](#predict-quality-on-a-cellular-phone-screen) section for details.
     - Trained using a new dataset, covering more difficult content.
@@ -21,12 +22,23 @@ The VDK package has its core feature extraction library written in C, and the re
 
 It also requires a number of Python packages:
 
-  - [numpy](http://www.numpy.org/) (>=1.10.4)
-  - [scipy](http://www.scipy.org/) (>=0.17.0)
-  - [matplotlib](http://matplotlib.org/1.3.1/index.html) (>=1.5.1)
-  - [pandas](http://pandas.pydata.org/) (>=0.17.1)
-  - [scikit-learn](http://scikit-learn.org/stable/) (>=0.18)
-  - [h5py](http://www.h5py.org/) (>=2.2.1)
+  - [numpy](http://www.numpy.org/) (>=1.12.0)
+  - [scipy](http://www.scipy.org/) (>=0.17.1)
+  - [matplotlib](http://matplotlib.org/1.3.1/index.html) (>=2.0.0)
+  - [pandas](http://pandas.pydata.org/) (>=0.19.2)
+  - [scikit-learn](http://scikit-learn.org/stable/) (>=0.18.1)
+  - [h5py](http://www.h5py.org/) (>=2.6.0)
+
+You will need to install gfortran, freetype, pkg-config, freetype and hdf5 (these can't be compiled from source here):
+- on OSX:
+    - `brew install gcc freetype pkg-config homebrew/science/hdf5` (`gcc` has the `gfortran` compiler needed for scipy)
+    - `echo "backend: TkAgg" > ~/.matplotlib/matplotlibrc` (TODO: how can matplotlib work on OSX without this? see http://matplotlib.org/faq/usage_faq.html#what-is-a-backend)
+- on linux: `sudo apt-get install -y gfortran libfreetype6-dev libhdf5-dev` (TODO: test this)
+
+Why is this needed?
+- gfortran compiler is needed in order to compile scipy
+- freetype and pkg-config are required by matplotlib
+- hdf5 is required by h5py (C header files needed)
 
 Follow [this link](http://www.scipy.org/install.html) to install the *numpy/scipy/matplotlib/pandas* suite. To install *scikit-learn*, first [install](http://python-packaging-user-guide.readthedocs.org/en/latest/installing/) package manager *pip*, then run:
 
