@@ -8,6 +8,8 @@ from vmaf.core.result_store import FileSystemResultStore
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
+
+@unittest.skipIf(not config.ffmpeg_path(), "ffmpeg not installed")
 class QualityRunnerTest(unittest.TestCase):
 
     def tearDown(self):
@@ -84,6 +86,8 @@ class QualityRunnerTest(unittest.TestCase):
         results = self.runner.results
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 79.052553444706504, places=4)
 
+
+@unittest.skipIf(not config.matlab_path(), "matlab not installed")
 class ParallelQualityRunnerTest(unittest.TestCase):
 
     def tearDown(self):
@@ -126,6 +130,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['STRRED_feature_srred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_trred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_score'], 0.0, places=4)
+
 
 if __name__ == '__main__':
     unittest.main()
