@@ -6,26 +6,50 @@ __license__ = "Apache, Version 2.0"
 PYTHON_ROOT = os.path.dirname(os.path.realpath(__file__))
 ROOT = os.path.abspath(os.path.join(PYTHON_ROOT, '../../..',))
 
-def get_and_assert_ffmpeg():
+_MISSING_EXTERNAL_MESSAGE = """
+Must install {name} and set {key} in %s/externals.py, e.g. add a line like
+{key} = "[path to ffmpeg]/{name}"
+""" % PYTHON_ROOT
+
+
+def _path_from_external(name):
+    """
+    :param str name: Name of external configuration to look up
+    :return str: Configured path, if any
+    """
     try:
         import externals
-        assert hasattr(externals, 'FFMPEG_PATH')
-        assert os.path.exists(externals.FFMPEG_PATH)
-        return externals.FFMPEG_PATH
-    except (ImportError, AssertionError):
-        msg = 'Must install ffmpeg and set FFMPEG_PATH in ' \
-              '{python_path}/externals.py, e.g. add a line like\n' \
-              'FFMPEG_PATH = "[path to ffmpeg]/ffmpeg"'.format(python_path=PYTHON_ROOT)
-        raise AssertionError(msg)
+        path = getattr(externals, name, None)
+        if path and os.path.exists(path):
+            return path
+
+    except ImportError:
+        pass
+
+    return None
+
+
+def ffmpeg_path():
+    """
+    :return str: Path to ffmpeg, if installed and configured via `externals` module
+    """
+    return _path_from_external('FFMPEG_PATH')
+
+
+def matlab_path():
+    """
+    :return str: Path to matlab, if installed and configured via `externals` module
+    """
+    return _path_from_external('MATLAB_PATH')
+
+
+def get_and_assert_ffmpeg():
+    path = ffmpeg_path()
+    assert path is not None, _MISSING_EXTERNAL_MESSAGE.format(name='ffmpeg', key='FFMPEG_PATH')
+    return path
+
 
 def get_and_assert_matlab():
-    try:
-        import externals
-        assert hasattr(externals, 'MATLAB_PATH')
-        assert os.path.exists(externals.MATLAB_PATH)
-        return externals.MATLAB_PATH
-    except (ImportError, AssertionError):
-        msg = 'Must install matlab and set MATLAB_PATH in ' \
-              '{python_path}/externals.py, e.g. add a line like\n' \
-              'MATLAB_PATH = "[path to matlab]/matlab"'.format(python_path=PYTHON_ROOT)
-        raise AssertionError(msg)
+    path = matlab_path()
+    assert path is not None, _MISSING_EXTERNAL_MESSAGE.format(name='matlab', key='MATLAB_PATH')
+    return path

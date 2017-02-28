@@ -83,10 +83,10 @@ make
 
 to build the binaries.
 
-There is a subdirectory named *python*. Add the *python* subdirectory to the environment variable PYTHONPATH:
+There is a subdirectory named *python/src*. Add the *python/src* subdirectory to the environment variable PYTHONPATH:
 
 ```
-export PYTHONPATH=[path_to_repo_dir]/python:$PYTHONPATH
+export PYTHONPATH=[path_to_repo_dir]/python/src:$PYTHONPATH
 ```
 
 You can also add it to environment permanently. On Ubuntu, append the line above to *~/.bashrc* and run `source ~/.bashrc`. On Mac OS X, append it to *~/.bash_profile* and run `source ~/.bash_profile`.
@@ -260,13 +260,13 @@ When creating a dataset file, one may make errors (for example, having a typo in
 If problem persists, one may need to run the script: 
 
 ```
-python python/run_cleaning_cache quality_type test_dataset_file
+python python/script/run_cleaning_cache.py quality_type test_dataset_file
 ``` 
 
 to clean up corrupted results in the store before retrying. For example:
  
 ```
-python python/run_cleaning_cache VMAF example_dataset.py
+python python/script/run_cleaning_cache.py VMAF example_dataset.py
 ```
 
 ###Train a New Model
@@ -369,7 +369,7 @@ Under root, run *vmafossexec* as:
 wrapper/vmafossexec yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv resource/model/nflxall_vmafv4.pkl --log vmaf_output.xml
 ```
 
-For VMAF v0.3.2, the model file is *resource/model/nflxall_vmafv4.pkl*. The correspondence is documented [here](python/core/quality_runner.py#L254).
+For VMAF v0.3.2, the model file is *resource/model/nflxall_vmafv4.pkl*. The correspondence is documented [here](python/src/vmaf/core/quality_runner.py#L254).
 
 #### Troubleshooting
 
