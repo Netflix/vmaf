@@ -6,8 +6,8 @@ RUN apt-get update -yqq && apt-get install -yqq \
     # Add essentials, as we're using a rather minimal "ubuntu" base
     build-essential python-pip \
 
-    # Prerequisites to compile libraries that vmaf uses
-    pkg-config gfortran libhdf5-dev libfreetype6-dev liblapack-dev python-tk \
+    # Prerequisites to fully compile vmaf from source (including the libraries it uses)
+    pkg-config gfortran libhdf5-dev libfreetype6-dev liblapack-dev \
 
     # For development
     ipython ipython-notebook less git vim \

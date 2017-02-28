@@ -31,7 +31,7 @@ It also requires a number of Python packages:
 
 You will need to install gfortran, freetype, pkg-config, freetype and hdf5 (these can't be compiled from source here):
 - on OSX: `brew install gcc freetype pkg-config homebrew/science/hdf5` (`gcc` has the `gfortran` compiler needed for scipy)
-- on linux: `sudo apt-get install -y gfortran libfreetype6-dev libhdf5-dev` (TODO: test this)
+- on linux: `sudo apt-get install -y pkg-config gfortran libhdf5-dev libfreetype6-dev liblapack-dev`
 
 Why is this needed?
 - gfortran compiler is needed in order to compile scipy
