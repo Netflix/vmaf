@@ -140,7 +140,7 @@ class GradleDistribution(Distribution, object):
 
 setup(
    distclass=GradleDistribution,
-   package_dir={'':'src'},
+   package_dir={'': 'src'},
    packages=find_packages('src'),
    include_package_data=True,
 )
