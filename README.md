@@ -30,9 +30,7 @@ It also requires a number of Python packages:
   - [h5py](http://www.h5py.org/) (>=2.6.0)
 
 You will need to install gfortran, freetype, pkg-config, freetype and hdf5 (these can't be compiled from source here):
-- on OSX:
-    - `brew install gcc freetype pkg-config homebrew/science/hdf5` (`gcc` has the `gfortran` compiler needed for scipy)
-    - `echo "backend: TkAgg" > ~/.matplotlib/matplotlibrc` (TODO: how can matplotlib work on OSX without this? see http://matplotlib.org/faq/usage_faq.html#what-is-a-backend)
+- on OSX: `brew install gcc freetype pkg-config homebrew/science/hdf5` (`gcc` has the `gfortran` compiler needed for scipy)
 - on linux: `sudo apt-get install -y gfortran libfreetype6-dev libhdf5-dev` (TODO: test this)
 
 Why is this needed?

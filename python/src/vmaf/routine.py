@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib
-matplotlib.use('TkAgg')
+matplotlib.use('ps')
 
 from matplotlib import pyplot as plt
 

@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib
-matplotlib.use('TkAgg')
+matplotlib.use('ps')
 
 import sklearn.metrics
 from sklearn.linear_model import Ridge
