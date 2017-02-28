@@ -1,5 +1,10 @@
 # Change Log
 
+## (2/27/2017) [1.2.1]
+
+**Tasks:**
+- Refactor to prepare for pypi packaging.
+
 ## (2/20/2017) [1.2.0]
 
 **New features:**
