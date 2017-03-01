@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+
+"""
+VMAF - Video Multimethod Assessment Fusion
+
+VMAF is a perceptual video quality assessment algorithm developed by Netflix.
+VMAF Development Kit (VDK) is a software package that contains the VMAF algorithm implementation,
+as well as a set of tools that allows a user to train and test a custom VMAF model.
+"""
+
 from __future__ import print_function
 
 import os
@@ -10,6 +20,29 @@ from setuptools.command.install_egg_info import install_egg_info as _install_egg
 from setuptools.dist import Distribution
 
 
+DOCLINES = __doc__.strip().split("\n")
+os.chdir(os.path.dirname(os.path.abspath(__file__)))        # setup.py should be ran from its folder, just in case one tries to execute it from a different folder
+
+CLASSIFIERS = """\
+Development Status :: 5 - Production/Stable
+Intended Audience :: Science/Research
+Intended Audience :: Developers
+License :: OSI Approved :: Apache License
+Programming Language :: C
+Programming Language :: Python
+Programming Language :: Python :: 2.7
+Programming Language :: Python :: 3.4
+Programming Language :: Python :: 3.5
+Programming Language :: Python :: 3.6
+Topic :: Software Development
+Topic :: Scientific/Engineering
+Operating System :: Microsoft :: Windows
+Operating System :: POSIX
+Operating System :: Unix
+Operating System :: MacOS
+"""
+
+
 class EntryPoints(Command):
     description = 'get entrypoints for a distribution'
     user_options = [
@@ -20,7 +53,7 @@ class EntryPoints(Command):
         self.dist = self.distribution.get_name()
 
     def finalize_options(self):
-        """Abstract method that is required to be overwritten"""
+        """ This command doesn't need to finalize its options """
 
     def run(self):
         req_entry_points = pkg_resources.get_entry_map(self.dist)
@@ -31,16 +64,8 @@ class EntryPoints(Command):
 
 class install_egg_info(_install_egg_info):  # noqa
     """Override the setuptools namespace package templates.
-
-    Customizes the "nspkg.pth" files so that they're compatible with
-    "--editable" packages.
-
-    See this pip issue for details:
-
-        https://github.com/pypa/pip/issues/3
-
-    Modifications to the original implementation are marked with CHANGED
-
+    Customizes the "nspkg.pth" files so that they're compatible with "--editable" packages.
+    See this pip issue for details: https://github.com/pypa/pip/issues/3 (modifications to the original implementation are marked with CHANGED)
     """
     _nspkg_tmpl = (
         # CHANGED: Add the import of pkgutil needed on the last line.
@@ -67,22 +92,16 @@ class install_egg_info(_install_egg_info):  # noqa
     "additional line(s) when a parent package is indicated"
 
 
-class GradleDistribution(Distribution, object):
+class VmafDistribution(Distribution, object):
 
     PINNED_TXT = 'pinned.txt'
 
     excluded_platform_packages = {}
 
     def __init__(self, attrs):
-        attrs['name'] = 'vmaf'
         attrs['version'] = self.get_version()
         attrs['install_requires'] = list(self.load_pinned_deps())
-        attrs['description']  = 'VMAF - Video Multi-Method Assessment Fusion'
-        attrs['author'] = 'Zhi Li'
-        attrs['author_email'] = 'zli@netflix.com'
-        attrs['license'] = 'Apache License'
-        attrs['url'] = "http://github.com/netflix/vmaf" 
-        super(GradleDistribution, self).__init__(attrs)
+        super(VmafDistribution, self).__init__(attrs)
 
     def get_version(self):
         """ Return version from project's VERSION file """
@@ -103,7 +122,7 @@ class GradleDistribution(Distribution, object):
         elif command == 'entrypoints':
             return EntryPoints
 
-        return super(GradleDistribution, self).get_command_class(command)
+        return super(VmafDistribution, self).get_command_class(command)
 
     @property
     def excluded_packages(self):
@@ -139,8 +158,21 @@ class GradleDistribution(Distribution, object):
             raise StopIteration
 
 setup(
-   distclass=GradleDistribution,
-   package_dir={'': 'src'},
-   packages=find_packages('src'),
-   include_package_data=True,
+    distclass=VmafDistribution,
+
+    name='vmaf',
+    description=DOCLINES[0],
+    long_description='\n'.join(DOCLINES[2:]),
+    author='Zhi Li',
+    author_email='zli@netflix.com',
+    license='Apache License',
+    url="http://github.com/netflix/vmaf",
+    download_url='https://github.com/scipy/scipy/releases',
+
+    classifiers=[line for line in CLASSIFIERS.split('\n') if line],
+    platforms=["Windows", "Linux", "Mac OS-X", "Unix"],
+
+    package_dir={'': 'src'},
+    packages=find_packages('src'),
+    include_package_data=True,
 )
