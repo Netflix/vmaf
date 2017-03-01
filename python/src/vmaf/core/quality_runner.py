@@ -3,7 +3,7 @@ from xml.etree import ElementTree
 
 import numpy as np
 
-from vmaf import config, svmutil
+from vmaf import config, svmutil, ExternalProgram
 from vmaf.core.executor import Executor
 from vmaf.core.result import Result
 from vmaf.core.feature_assembler import FeatureAssembler
@@ -75,8 +75,6 @@ class PsnrQualityRunner(QualityRunner):
     TYPE = 'PSNR'
     VERSION = '1.0'
 
-    PSNR = config.ROOT + "/feature/psnr"
-
     def _generate_result(self, asset):
         # routine to call the command-line executable and generate quality
         # scores in the log file.
@@ -88,7 +86,7 @@ class PsnrQualityRunner(QualityRunner):
         quality_width, quality_height = asset.quality_width_height
         psnr_cmd = "{psnr} {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
         .format(
-            psnr=self.PSNR,
+            psnr=ExternalProgram.psnr,
             yuv_type=self._get_workfile_yuv_type(asset.yuv_type),
             ref_path=asset.ref_workfile_path,
             dis_path=asset.dis_workfile_path,
@@ -419,8 +417,6 @@ class VmafossExecQualityRunner(QualityRunner):
     # trained with resource/param/vmaf_v6.py on private/user/zli/resource/dataset/dataset/derived/vmafplusstudy_laptop_raw_generalandcornercase.py, MLER, y=x+17
     DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/vmaf_v0.6.1.pkl"
 
-    VMAFOSSEXEC = config.ROOT + "/wrapper/vmafossexec"
-
     FEATURES = ['adm2', 'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
                 'motion', 'vif_scale0', 'vif_scale1', 'vif_scale2',
                 'vif_scale3', 'vif', 'psnr', 'ssim', 'ms_ssim', 'motion2']
@@ -477,7 +473,7 @@ class VmafossExecQualityRunner(QualityRunner):
 
         vmafossexec_cmd = "{exe} {fmt} {w} {h} {ref_path} {dis_path} {model} --log {log_file_path} --log-fmt xml --psnr --ssim --ms-ssim" \
             .format(
-            exe=self.VMAFOSSEXEC,
+            exe=ExternalProgram.vmafossexec,
             fmt=self._get_workfile_yuv_type(asset.yuv_type),
             w=quality_width,
             h=quality_height,
