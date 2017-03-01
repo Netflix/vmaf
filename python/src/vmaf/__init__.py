@@ -15,7 +15,7 @@ def project_path(relative_path, required=None):
     :return str: Full path to program
     """
     path = os.path.join(VMAF_PROJECT, relative_path)
-    if not os.path.exists(path) and required:
+    if required and not os.path.exists(path):
         raise Exception("%s does not exist %s" % (path, required))
     return path
 
