@@ -32,8 +32,6 @@ def read_dataset(dataset, **kwargs):
     assert hasattr(dataset, 'ref_videos')
     assert hasattr(dataset, 'dis_videos')
 
-    assert hasattr(dataset, 'width') or all(['width' in ref_video for ref_video in dataset.ref_videos])
-    assert hasattr(dataset, 'height') or all(['height' in ref_video for ref_video in dataset.ref_videos])
     assert hasattr(dataset, 'yuv_fmt') or all(['yuv_fmt' in ref_video for ref_video in dataset.ref_videos])
 
     data_set_name = dataset.dataset_name
@@ -75,9 +73,21 @@ def read_dataset(dataset, **kwargs):
             raw_groundtruth = None
 
         ref_path = ref_dict[dis_video['content_id']]['path']
-        width_ = width if width is not None else ref_dict[dis_video['content_id']]['width']
-        height_ = height if height is not None else ref_dict[dis_video['content_id']]['height']
         yuv_fmt_ = yuv_fmt if yuv_fmt is not None else ref_dict[dis_video['content_id']]['yuv_fmt']
+
+        if width is not None:
+            width_ = width
+        elif 'width' in dis_video:
+            width_ = dis_video['width']
+        else:
+            width_ = None
+
+        if height is not None:
+            height_ = height
+        elif 'height' in dis_video:
+            height_ = dis_video['height']
+        else:
+            height_ = None
 
         if quality_width is not None:
             quality_width_ = quality_width
@@ -114,10 +124,11 @@ def read_dataset(dataset, **kwargs):
         else:
             pad_cmd_ = None
 
-        asset_dict = {'width': width_,
-                      'height': height_,
-                      'yuv_type': yuv_fmt_,
-                      }
+        asset_dict = {'yuv_type': yuv_fmt_}
+        if width_ is not None:
+            asset_dict['width'] = width_
+        if height_ is not None:
+            asset_dict['height'] = height_
         if groundtruth is not None:
             asset_dict['groundtruth'] = groundtruth
         if raw_groundtruth is not None:
