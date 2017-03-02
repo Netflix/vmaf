@@ -8,7 +8,7 @@ import re
 import numpy as np
 import ast
 
-from vmaf import config
+from vmaf import config, ExternalProgram
 from vmaf.core.executor import Executor
 from vmaf.core.result import Result
 from vmaf.tools.reader import YuvReader
@@ -122,8 +122,6 @@ class VmafFeatureExtractor(FeatureExtractor):
                              'motion2',
                              ]
 
-    VMAF_FEATURE = config.ROOT + "/feature/vmaf"
-
     ADM2_CONSTANT = 0
     ADM_SCALE_CONSTANT = 0
 
@@ -139,7 +137,7 @@ class VmafFeatureExtractor(FeatureExtractor):
         quality_width, quality_height = asset.quality_width_height
         vmaf_feature_cmd = "{vmaf} all {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
         .format(
-            vmaf=self.VMAF_FEATURE,
+            vmaf=ExternalProgram.vmaf,
             yuv_type=self._get_workfile_yuv_type(asset.yuv_type),
             ref_path=asset.ref_workfile_path,
             dis_path=asset.dis_workfile_path,
@@ -302,8 +300,6 @@ class PsnrFeatureExtractor(FeatureExtractor):
 
     ATOM_FEATURES = ['psnr']
 
-    PSNR = config.ROOT + "/feature/psnr"
-
     def _generate_result(self, asset):
         # routine to call the command-line executable and generate quality
         # scores in the log file.
@@ -315,7 +311,7 @@ class PsnrFeatureExtractor(FeatureExtractor):
         quality_width, quality_height = asset.quality_width_height
         psnr_cmd = "{psnr} {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
         .format(
-            psnr=self.PSNR,
+            psnr=ExternalProgram.psnr,
             yuv_type=self._get_workfile_yuv_type(asset.yuv_type),
             ref_path=asset.ref_workfile_path,
             dis_path=asset.dis_workfile_path,
@@ -339,8 +335,6 @@ class MomentFeatureExtractor(FeatureExtractor):
     ATOM_FEATURES = ['ref1st', 'ref2nd', 'dis1st', 'dis2nd', ]
 
     DERIVED_ATOM_FEATURES = ['refvar', 'disvar', ]
-
-    MOMENT = config.ROOT + "/feature/moment"
 
     def _generate_result(self, asset):
         # routine to call the command-line executable and generate feature
@@ -443,8 +437,6 @@ class SsimFeatureExtractor(FeatureExtractor):
 
     ATOM_FEATURES = ['ssim', 'ssim_l', 'ssim_c', 'ssim_s']
 
-    SSIM = config.ROOT + "/feature/ssim"
-
     def _generate_result(self, asset):
         # routine to call the command-line executable and generate quality
         # scores in the log file.
@@ -456,7 +448,7 @@ class SsimFeatureExtractor(FeatureExtractor):
         quality_width, quality_height = asset.quality_width_height
         ssim_cmd = "{ssim} {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
         .format(
-            ssim=self.SSIM,
+            ssim=ExternalProgram.ssim,
             yuv_type=self._get_workfile_yuv_type(asset.yuv_type),
             ref_path=asset.ref_workfile_path,
             dis_path=asset.dis_workfile_path,
@@ -484,7 +476,7 @@ class MsSsimFeatureExtractor(FeatureExtractor):
                      'ms_ssim_l_scale4', 'ms_ssim_c_scale4', 'ms_ssim_s_scale4',
                      ]
 
-    MS_SSIM = config.ROOT + "/feature/ms_ssim"
+    MS_SSIM = ExternalProgram.ms_ssim
 
     def _generate_result(self, asset):
         # routine to call the command-line executable and generate quality
