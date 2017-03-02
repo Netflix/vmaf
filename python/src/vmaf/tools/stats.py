@@ -40,6 +40,14 @@ class ListStats(object):
 
     >>> ListStats.print_moving_average_stats(test_list, 3)
     Min: 2.67984333217, Max: 13.6798433322, Median: 4.64565264023, Mean: 6.61976499826, Variance: 18.625918874, Total_variation: 1.22222222222
+
+    >>> ListStats.nonemean([None, None, 1, 2])
+    1.5
+    >>> ListStats.nonemean([3, 4, 1, 2])
+    2.5
+    >>> ListStats.nonemean([None, None, None])
+    nan
+
     """
 
     @staticmethod
@@ -105,6 +113,9 @@ class ListStats(object):
         moving_avg_list = ListStats.moving_average(my_list, n, type, decay)
         ListStats.print_stats(moving_avg_list)
 
+    @staticmethod
+    def nonemean(my_list):
+        return np.mean(filter(lambda x: x is not None, my_list))
 
 if __name__ == '__main__':
     import doctest

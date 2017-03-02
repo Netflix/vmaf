@@ -235,6 +235,13 @@ class ResultStoreTest(unittest.TestCase):
 
         self.assertEquals(self.result, loaded_result)
 
+class ResultStoreTestWithNone(unittest.TestCase):
+
+    def test_load_result_with_none(self):
+        print 'test on file system result store load result with None...'
+        result = FileSystemResultStore.load_result(config.ROOT + '/python/test/resource/result_with_none.txt')
+        result.set_score_aggregate_method(ListStats.nonemean)
+        self.assertAlmostEqual(result['STRRED_feature_srred_score'], 5829.2644469999996, places=4)
 
 if __name__ == '__main__':
     unittest.main()

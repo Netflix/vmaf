@@ -1,5 +1,10 @@
 # Change Log
 
+## (3/1/2017) [1.2.2]
+
+**New features:**
+- Generalize Result and FileSystemResultStore to allow None values.
+
 ## (2/27/2017) [1.2.1]
 
 **Tasks:**

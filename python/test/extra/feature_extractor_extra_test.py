@@ -2,6 +2,7 @@ import unittest
 from vmaf import config
 from vmaf.core.asset import Asset
 from vmaf.core.feature_extractor import VmafFeatureExtractor, StrredFeatureExtractor
+from vmaf.tools.stats import ListStats
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -205,6 +206,55 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[1]['STRRED_feature_srred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_trred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_strred_score'], 0.0, places=4)
+
+    def test_run_strred_fextractor_blackframes(self):
+        print 'test on running STRRED feature extractor on flat frames...'
+        ref_path = config.ROOT + "/resource/yuv/flat_1920_1080_0.yuv"
+        dis_path = config.ROOT + "/resource/yuv/flat_1920_1080_10.yuv"
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=config.ROOT + "/workspace/workdir",
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        from vmaf.core.result_store import FileSystemResultStore
+        result_store = FileSystemResultStore(logger=None)
+
+        self.fextractor = StrredFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=result_store
+        )
+
+        print '    running for the first time with fresh calculation...'
+        self.fextractor.run(parallelize=True)
+
+        result0, result1 = self.fextractor.results
+        import os
+        self.assertTrue(os.path.exists(result_store._get_result_file_path(result0)))
+        self.assertTrue(os.path.exists(result_store._get_result_file_path(result1)))
+
+        print '    running for the second time with stored results...'
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+
+        # ignore NaN
+        for result in results:
+            result.set_score_aggregate_method(ListStats.nonemean)
+
+        self.assertAlmostEqual(results[0]['STRRED_feature_srred_score'], 5829.2644469999996, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_trred_score'], 13086.862734, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_strred_score'], 62207779.127545856, places=4)
+        self.assertAlmostEqual(results[1]['STRRED_feature_srred_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[1]['STRRED_feature_trred_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[1]['STRRED_feature_strred_score'], 0.0, places=4)
+
 
 if __name__ == '__main__':
     unittest.main()

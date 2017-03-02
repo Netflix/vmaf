@@ -60,12 +60,19 @@ class FeatureExtractor(Executor):
         with open(log_file_path, 'rt') as log_file:
             for line in log_file.readlines():
                 for atom_feature in self.ATOM_FEATURES:
-                    re_template = "{af}: ([0-9]+) ([0-9.-]+)".format(af=atom_feature)
+                    re_template = "{af}: ([0-9]+) ([0-9.-a-zA-Z]+)".format(af=atom_feature)
                     mo = re.match(re_template, line)
                     if mo:
+
                         cur_idx = int(mo.group(1))
                         assert cur_idx == atom_feature_idx_dict[atom_feature]
-                        atom_feature_scores_dict[atom_feature].append(float(mo.group(2)))
+
+                        # parse value, allowing NaN and inf
+                        val = float(mo.group(2))
+                        if np.isnan(val) or np.isinf(val):
+                            val = None
+
+                        atom_feature_scores_dict[atom_feature].append(val)
                         atom_feature_idx_dict[atom_feature] += 1
                         continue
 
@@ -564,6 +571,13 @@ class StrredFeatureExtractor(MatlabFeatureExtractor):
     def _post_process_result(cls, result):
         # override Executor._post_process_result
 
+        def _strred(srred_trred):
+            srred, trred = srred_trred
+            try:
+                return srred * trred
+            except TypeError: # possible either srred or trred is None
+                return None
+
         result = super(StrredFeatureExtractor, cls)._post_process_result(result)
 
         # calculate refvar and disvar from ref1st, ref2nd, dis1st, dis2nd
@@ -574,7 +588,7 @@ class StrredFeatureExtractor(MatlabFeatureExtractor):
         # compute strred scores
         srred_scores = result.result_dict[srred_scores_key]
         trred_scores = result.result_dict[trred_scores_key]
-        strred_scores = map(lambda (x, y): x*y, zip(srred_scores, trred_scores))
+        strred_scores = map(_strred, zip(srred_scores, trred_scores))
         result.result_dict[strred_scores_key] = strred_scores
 
         # validate
