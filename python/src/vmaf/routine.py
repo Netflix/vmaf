@@ -72,20 +72,22 @@ def read_dataset(dataset, **kwargs):
         else:
             raw_groundtruth = None
 
-        ref_path = ref_dict[dis_video['content_id']]['path']
+        ref_video = ref_dict[dis_video['content_id']]
+
+        ref_path = ref_video['path']
         yuv_fmt_ = yuv_fmt if yuv_fmt is not None else ref_dict[dis_video['content_id']]['yuv_fmt']
 
         if width is not None:
             width_ = width
-        elif 'width' in dis_video:
-            width_ = dis_video['width']
+        elif 'width' in ref_video:
+            width_ = ref_video['width'] # NOTE: width in ref_video not dis_video
         else:
             width_ = None
 
         if height is not None:
             height_ = height
-        elif 'height' in dis_video:
-            height_ = dis_video['height']
+        elif 'height' in ref_video:
+            height_ = ref_video['height']  # NOTE: height in ref_video not dis_video
         else:
             height_ = None
 
