@@ -1,3 +1,4 @@
+from fnmatch import fnmatch
 import multiprocessing
 import subprocess
 from time import sleep
@@ -328,12 +329,20 @@ def check_scanf_match(string, template):
     True
     >>> check_scanf_match('frame00000240.icpf', 'frame%08d.icpf')
     True
+    >>> check_scanf_match('/mnt/hgfs/ZLI-NFLX-10/USCJND/ref/1920x1080/videoSRC001_1920x1080_30.yuv.avi', '/mnt/hgfs/ZLI-NFLX-10/USCJND/ref/1920x1080/videoSRC001_1920x1080_*.yuv.avi')
+    True
     '''
+    ret = False
     try:
         sscanf(string, template)
         return True
     except (FormatError, IncompleteCaptureError):
-        return False
+        pass
+
+    if fnmatch(string, template):
+        return True
+
+    return False
 
 def match_any_files(template):
     dir_ = os.path.dirname(template)
