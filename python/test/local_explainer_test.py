@@ -87,8 +87,8 @@ class LocalExplainerTest(unittest.TestCase):
 
     def test_explain_vmaf_results(self):
         print 'test on running VMAF runner with local explainer...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,

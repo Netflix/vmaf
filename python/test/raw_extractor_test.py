@@ -17,8 +17,8 @@ class RawExtractorTest(unittest.TestCase):
 
     def test_run_asset_extractor(self):
         print 'test on running asset extractor...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=1,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -61,8 +61,8 @@ class DisYUVRawVideoExtractorTest(unittest.TestCase):
 
     def test_run_dis_yuv_raw_video_extractor(self):
         print 'test on running dis YUV raw video extractor...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=1,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -99,8 +99,8 @@ class DisYUVRawVideoExtractorTest(unittest.TestCase):
 
     def test_run_dis_yuv_raw_video_extractor_parallel(self):
         print 'test on running dis YUV raw video extractor...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=1,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -137,8 +137,8 @@ class ParallelDisYRawVideoExtractorTest(unittest.TestCase):
 
     def test_run_parallel_dis_y_fextractor(self):
         print 'test on running dis YUV raw video extractor in parallel (disabled)...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=1,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,

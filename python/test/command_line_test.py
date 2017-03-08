@@ -66,8 +66,8 @@ class CommandLineTest(unittest.TestCase):
         self.assertEquals(ret, 0)
 
     def test_run_vmaf_in_batch(self):
-        line = 'yuv420p 576 324 {root}/resource/yuv/src01_hrc00_576x324.yuv ' \
-               '{root}/resource/yuv/src01_hrc01_576x324.yuv'.format(root=config.ROOT)
+        line = 'yuv420p 576 324 {root}/python/test/resource/yuv/src01_hrc00_576x324.yuv ' \
+               '{root}/python/test/resource/yuv/src01_hrc01_576x324.yuv'.format(root=config.ROOT)
         cmd = 'echo "{line}" > {batch_filename}'.format(
             line=line, batch_filename=self.batch_filename)
         ret = run_process(cmd, shell=True)
@@ -81,16 +81,16 @@ class CommandLineTest(unittest.TestCase):
 
     def test_run_vmaf(self):
         exe = config.ROOT + '/run_vmaf'
-        line = 'yuv420p 576 324 {root}/resource/yuv/src01_hrc00_576x324.yuv ' \
-               '{root}/resource/yuv/src01_hrc01_576x324.yuv'.format(root=config.ROOT)
+        line = 'yuv420p 576 324 {root}/python/test/resource/yuv/src01_hrc00_576x324.yuv ' \
+               '{root}/python/test/resource/yuv/src01_hrc01_576x324.yuv'.format(root=config.ROOT)
         cmd = "{exe} {line} >/dev/null 2>&1".format(line=line, exe=exe)
         ret = run_process(cmd, shell=True)
         self.assertEquals(ret, 0)
 
     def test_run_psnr(self):
         exe = config.ROOT + '/run_psnr'
-        line = 'yuv420p 576 324 {root}/resource/yuv/src01_hrc00_576x324.yuv ' \
-               '{root}/resource/yuv/src01_hrc01_576x324.yuv'.format(root=config.ROOT)
+        line = 'yuv420p 576 324 {root}/python/test/resource/yuv/src01_hrc00_576x324.yuv ' \
+               '{root}/python/test/resource/yuv/src01_hrc01_576x324.yuv'.format(root=config.ROOT)
         cmd = "{exe} {line} >/dev/null 2>&1".format(line=line, exe=exe)
         ret = run_process(cmd, shell=True)
         self.assertEquals(ret, 0)

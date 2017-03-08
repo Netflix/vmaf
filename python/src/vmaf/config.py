@@ -53,3 +53,18 @@ def get_and_assert_matlab():
     path = matlab_path()
     assert path is not None, _MISSING_EXTERNAL_MESSAGE.format(name='matlab', key='MATLAB_PATH')
     return path
+
+
+# class VmafConfig(object):
+#
+#     @classmethod
+#     def config_root_path(cls, *components):
+#         return os.path.join(ROOT, *components)
+#
+#     @classmethod
+#     def workspace_path(cls, *components):
+#         return cls.config_root_path('workspace', *components)
+#
+#     @classmethod
+#     def result_store_path(cls, *components):
+#         return cls.workspace_path('result_store_dir', *components)

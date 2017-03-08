@@ -18,8 +18,8 @@ class ResultTest(unittest.TestCase):
 
     def setUp(self):
 
-        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
-        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -122,8 +122,8 @@ class ResultFormattingTest(unittest.TestCase):
 
     def setUp(self):
 
-        # ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
-        # dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv"
+        # ref_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        # dis_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv"
         # asset = Asset(dataset="test", content_id=0, asset_id=0,
         #               workdir_root=config.ROOT + "/workspace/workdir",
         #               ref_path=ref_path,
@@ -203,8 +203,8 @@ class ResultFormattingTest(unittest.TestCase):
 class ResultStoreTest(unittest.TestCase):
 
     def setUp(self):
-        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
-        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,

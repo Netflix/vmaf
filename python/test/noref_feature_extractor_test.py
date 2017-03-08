@@ -18,8 +18,8 @@ class NorefFeatureExtractorTest(unittest.TestCase):
 
     def test_noref_moment_fextractor(self):
         print 'test on running Moment noref feature extractor on Assets...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -51,8 +51,8 @@ class NorefFeatureExtractorTest(unittest.TestCase):
 
     def test_noref_moment_fextractor_with_noref_asset(self):
         print 'test on running Moment noref feature extractor on NorefAssets...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       dis_path=dis_path,
@@ -90,8 +90,8 @@ class ParallelNorefFeatureExtractorTest(unittest.TestCase):
 
     def test_run_parallel_moment_noref_fextractor(self):
         print 'test on running Moment noref feature extractor on NorefAssets in parallel...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       dis_path=dis_path,
@@ -127,8 +127,8 @@ class ParallelNorefFeatureExtractorTestNew(unittest.TestCase):
 
     def test_noref_moment_fextractor(self):
         print 'test on running Moment noref feature extractor on Assets...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -160,8 +160,8 @@ class ParallelNorefFeatureExtractorTestNew(unittest.TestCase):
 
     def test_noref_moment_fextractor_with_noref_asset(self):
         print 'test on running Moment noref feature extractor on NorefAssets...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       dis_path=dis_path,

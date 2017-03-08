@@ -114,7 +114,7 @@ where *format* is among *yuv420p*, *yuv422p*, *yuv444p* (YUV 8-bit) and *yuv420p
 For example:
 
 ```
-./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv --out-fmt json
+./run_vmaf yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv python/test/resource/yuv/src01_hrc01_576x324.yuv --out-fmt json
 ```
 
 This will generate output like:
@@ -143,8 +143,8 @@ format width height reference_path distorted_path
 For example:
 
 ```
-yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv
-yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc00_576x324.yuv
+yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv python/test/resource/yuv/src01_hrc01_576x324.yuv
+yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv python/test/resource/yuv/src01_hrc00_576x324.yuv
 ```
 
 After that, run:
@@ -166,7 +166,7 @@ For example:
 VMAF v0.6.1 and later now support a custom quality model for cellular phone screen viewing. This model can be invoked by adding *--phone-model* option in the commands *run_vmaf*, *run_vmaf_in_batch* (also in *run_testing* and *vmafossexec* introduced the following sections):
 
 ```
-./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv --phone-model
+./run_vmaf yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv python/test/resource/yuv/src01_hrc01_576x324.yuv --phone-model
 ./run_vmaf_in_batch example_batch_input --parallelize --phone-model
 ```
 
@@ -190,7 +190,7 @@ In addition to the basic commands, the VMAF package also provides a framework to
 For example:
 
 ```
-./run_vmaf yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv --model resource/model/nflxtrain_vmafv3.pkl
+./run_vmaf yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv python/test/resource/yuv/src01_hrc01_576x324.yuv --model resource/model/nflxtrain_vmafv3.pkl
 ./run_vmaf_in_batch example_batch_input --model resource/model/nflxtrain_vmafv3.pkl --parallelize
 ```
 
@@ -364,7 +364,7 @@ Under [wrapper](wrapper), we provide a C++ implementation *vmafossexec* that has
 Under root, run *vmafossexec* as:
 
 ```
-wrapper/vmafossexec yuv420p 576 324 resource/yuv/src01_hrc00_576x324.yuv resource/yuv/src01_hrc01_576x324.yuv resource/model/nflxall_vmafv4.pkl --log vmaf_output.xml
+wrapper/vmafossexec yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv python/test/resource/yuv/src01_hrc01_576x324.yuv resource/model/nflxall_vmafv4.pkl --log vmaf_output.xml
 ```
 
 For VMAF v0.3.2, the model file is *resource/model/nflxall_vmafv4.pkl*. The correspondence is documented [here](python/src/vmaf/core/quality_runner.py#L254).
@@ -391,11 +391,11 @@ docker run --rm vmaf [CLI]
 For example, if you are under root, to run *run_vmaf* on a sample reference/distorted video pair under *resource/yuv*:
 
 ```
-docker run --rm -v $(PWD):/files vmaf run_vmaf yuv420p 576 324 /files/resource/yuv/src01_hrc00_576x324.yuv /files/resource/yuv/src01_hrc01_576x324.yuv --out-fmt json
+docker run --rm -v $(PWD):/files vmaf run_vmaf yuv420p 576 324 /files/python/test/resource/yuv/src01_hrc00_576x324.yuv /files/python/test/resource/yuv/src01_hrc01_576x324.yuv --out-fmt json
 ```
 
 Under root, to run *vmafossexec* with a specified model file:
 
 ```
-docker run --rm -v $(PWD):/files vmaf vmafossexec yuv420p 576 324 /files/resource/yuv/src01_hrc00_576x324.yuv /files/resource/yuv/src01_hrc01_576x324.yuv /files/resource/model/nflxall_vmafv4.pkl
+docker run --rm -v $(PWD):/files vmaf vmafossexec yuv420p 576 324 /files/python/test/resource/yuv/src01_hrc00_576x324.yuv /files/python/test/resource/yuv/src01_hrc01_576x324.yuv /files/resource/model/nflxall_vmafv4.pkl
 ```

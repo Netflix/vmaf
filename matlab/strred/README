@@ -18,6 +18,6 @@ Command run_strred takes in arguments:
 ref_yuv_file_path dis_yuv_file_path width height
 
 After installing Matlab and setting path, run STRRED in command line:
-matlab -nodisplay -nosplash -nodesktop -r "run_strred('../../resource/yuv/src01_hrc00_576x324.yuv', '../../resource/yuv/src01_hrc01_576x324.yuv', 576, 324); exit;"
+matlab -nodisplay -nosplash -nodesktop -r "run_strred('../../python/test/resource/yuv/src01_hrc00_576x324.yuv', '../../python/test/resource/yuv/src01_hrc01_576x324.yuv', 576, 324); exit;"
 
 

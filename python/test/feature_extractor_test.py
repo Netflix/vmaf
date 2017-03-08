@@ -42,8 +42,8 @@ class FeatureExtractorTest(unittest.TestCase):
 
     def test_run_vmaf_fextractor(self):
         print 'test on running VMAF feature extractor...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -119,8 +119,8 @@ class FeatureExtractorTest(unittest.TestCase):
 
     def test_run_vmaf_fextractor_with_result_store(self):
         print 'test on running VMAF feature extractor with result store...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -204,8 +204,8 @@ class FeatureExtractorTest(unittest.TestCase):
 
     def test_run_moment_fextractor(self):
         print 'test on running Moment feature extractor...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -243,8 +243,8 @@ class FeatureExtractorTest(unittest.TestCase):
 
     def test_run_psnr_fextractor(self):
         print 'test on running PSNR feature extractor...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -271,8 +271,8 @@ class FeatureExtractorTest(unittest.TestCase):
 
     def test_run_ssim_fextractor(self):
         print 'test on running SSIM feature extractor...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -306,8 +306,8 @@ class FeatureExtractorTest(unittest.TestCase):
 
     def test_run_ms_ssim_fextractor(self):
         print 'test on running MS-SSIM feature extractor...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -366,9 +366,9 @@ class FeatureExtractorTest(unittest.TestCase):
     def test_run_vmaf_fextractor_checkerboard(self):
         print 'test on running VMAF feature extractor on checkerboard...'
 
-        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
-        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
-        dis_path2 = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
+        dis_path2 = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -426,8 +426,8 @@ class FeatureExtractorTest(unittest.TestCase):
     def test_run_vmaf_fextractor_flat(self):
         print 'test on running VMAF feature extractor on flat pattern...'
 
-        ref_path = config.ROOT + "/resource/yuv/flat_1920_1080_0.yuv"
-        dis_path = config.ROOT + "/resource/yuv/flat_1920_1080_10.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/flat_1920_1080_0.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/flat_1920_1080_10.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -474,8 +474,8 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
     def test_run_parallel_vmaf_fextractor(self):
         print 'test on running VMAF feature extractor in parallel...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -549,8 +549,8 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
     def test_run_parallel_vamf_fextractor_with_result_store(self):
         print 'test on running VMAF feature extractor with result store ' \
               'in parallel...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -640,8 +640,8 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
     def test_run_parallel_moment_fextractor(self):
         print 'test on running Moment feature extractor in parallel...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -680,8 +680,8 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
     def test_run_parallel_ssim_fextractor(self):
         print 'test on running SSIM feature extractor in parallel...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -716,8 +716,8 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
     def test_run_parallel_ms_ssim_fextractor(self):
         print 'test on running MS-SSIM feature extractor in parallel...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,

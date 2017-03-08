@@ -156,8 +156,8 @@ class Result(BasicResult):
     def to_string(self):
         """Example:
         Asset: {"asset_dict": {"height": 1080, "width": 1920}, "asset_id": 0, "content_id": 0, "dataset": "test",
-            "dis_path": ".../vmaf/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv",
-            "ref_path": ".../vmaf/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv",
+            "dis_path": ".../vmaf/python/test/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv",
+            "ref_path": ".../vmaf/python/test/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv",
             "workdir": ".../vmaf/workspace/workdir/d26050af-bd92-46a7-8519-7482306aa7fe"}
         Executor: SSIM_V1.0
         Result:

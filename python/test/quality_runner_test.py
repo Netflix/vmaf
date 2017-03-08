@@ -33,8 +33,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vamf_legacy_runner(self):
         print 'test on running VMAF (legacy) runner...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -72,8 +72,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vamf_legacy_runner_10le(self):
         print 'test on running VMAF (legacy) runner on 10 bit le...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv422p10le.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv422p10le.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv422p10le.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv422p10le.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -113,8 +113,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vamf_legacy_runner_with_result_store(self):
         print 'test on running VMAF (legacy) runner with result store...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -164,8 +164,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner_v1_model(self):
         print 'test on running VMAF runner (v1 model)...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -207,8 +207,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner(self):
         print 'test on running VMAF runner...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -259,8 +259,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner_with_phone_score(self):
         print 'test on running VMAF runner with phone score...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -291,9 +291,9 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner_checkerboard(self):
         print 'test on running VMAF runner on checkerboard pattern...'
-        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
-        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
-        dis_path2 = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
+        dis_path2 = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_1_0.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -349,8 +349,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner_flat(self):
         print 'test on running VMAF runner on flat pattern...'
-        ref_path = config.ROOT + "/resource/yuv/flat_1920_1080_0.yuv"
-        dis_path = config.ROOT + "/resource/yuv/flat_1920_1080_10.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/flat_1920_1080_0.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/flat_1920_1080_10.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -392,8 +392,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner_with_rf_model(self):
         print 'test on running VMAF runner with custom input model...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -435,8 +435,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vamf_runner_with_norm_type_none(self):
         print 'test on running VMAF quality runner with custom model...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -482,8 +482,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_psnr_runner(self):
         print 'test on running PSNR runner...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -510,8 +510,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner(self):
         print 'test on running VMAFOSSEXEC runner...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -559,8 +559,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner_with_phone_score(self):
         print 'test on running VMAFOSSEXEC runner with phone score...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -591,8 +591,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner_norm_type_none(self):
         print 'test on running VMAFOSSEXEC runner with norm type none...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -643,8 +643,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner_yuv422p10le(self):
         print 'test on running VMAFOSSEXEC runner on 10 bit le...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv422p10le.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv422p10le.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv422p10le.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv422p10le.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -694,8 +694,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_ssim_runner(self):
         print 'test on running SSIM runner...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -729,8 +729,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_ms_ssim_runner(self):
         print 'test on running MS-SSIM runner...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -788,8 +788,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner_pool_harmonic_mean(self):
         print 'test on running VMAF runner (pool harmonic mean)...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -840,8 +840,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner_pool_perc10(self):
         print 'test on running VMAF runner (pool 10-perctile)...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -892,8 +892,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_adm2_runner(self):
         print 'test on running ADM2 runner...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -921,8 +921,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner_with_transform_score(self):
         print 'test on running VMAF runner with score transforming...'
-        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
-        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -957,8 +957,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner_with_transform_score_2(self):
         print 'test on running VMAF runner with score transforming (2)...'
-        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
-        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -994,8 +994,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner_with_transform_score_disabled(self):
         print 'test on running VMAF runner with score transforming disabled...'
-        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
-        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -1030,8 +1030,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner_with_transform_for_phone(self):
         print 'test on running VMAF runner with transform for phone...'
-        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
-        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -1062,8 +1062,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner_with_transform_score(self):
         print 'test on running VMAFOSSEXEC runner with score transforming...'
-        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
-        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -1098,8 +1098,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner_with_transform_score_2(self):
         print 'test on running VMAFOSSEXEC runner with score transforming...'
-        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
-        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -1135,8 +1135,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner_with_transform_score_disabled(self):
         print 'test on running VMAFOSSEXEC runner with score transforming disabled...'
-        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
-        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -1171,8 +1171,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner_with_transform_for_phone(self):
         print 'test on running VMAFOSSEXEC runner with transform for phone...'
-        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
-        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -1203,8 +1203,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner_with_phone_model(self):
         print 'test on running VMAFOSSEXEC runner with transform for phone...'
-        ref_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
-        dis_path = config.ROOT + "/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_0_0.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/checkerboard_1920_1080_10_3_10_0.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -1235,8 +1235,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner_disable_avx_precise(self):
         print 'test on running VMAFOSSEXEC runner disabling AVX (precise)...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -1285,8 +1285,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner_enable_avx_precise(self):
         print 'test on running VMAFOSSEXEC runner enabling AVX (precise)...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -1334,8 +1334,8 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner_with_motion2(self):
         print 'test on running VMAFOSSEXEC runner with motion2 feature...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -1383,8 +1383,8 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_parallel_vmaf_legacy_runner(self):
         print 'test on running VMAF (legacy) quality runner in parallel...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -1422,8 +1422,8 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_parallel_vmaf_runner(self):
         print 'test on running VMAF quality runner in parallel...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -1466,8 +1466,8 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_parallel_psnr_runner(self):
         print 'test on running PSNR quality runner in parallel...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -1494,8 +1494,8 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_parallel_vamf_runner_with_rf_model(self):
         print 'test on running VMAF quality runner in parallel with RF model...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -1539,8 +1539,8 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_parallel_ssim_runner(self):
         print 'test on running SSIM quality runner in parallel...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -1577,8 +1577,8 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_parallel_msssim_runner(self):
         print 'test on running MS-SSIM quality runner in parallel...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -1638,8 +1638,8 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_parallel_msssim_runner_with_result_store(self):
         print 'test on running MS-SSIM quality runner in parallel...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -1668,8 +1668,8 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_parallel_runner_with_repeated_assets(self):
         print 'test on running PSNR quality runner in parallel with repeated assets...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -1698,8 +1698,8 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_parallel_runner_with_parallel_disabled(self):
         print 'test on running PSNR quality runner in parallel with parallelization disabled...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
@@ -1728,8 +1728,8 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_parallel_vmafossexec_runner_with_repeated_assets(self):
         print 'test on running VMAFOSSEXEC quality runner in parallel with repeated assets...'
-        ref_path = config.ROOT + "/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
+        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=config.ROOT + "/workspace/workdir",
                       ref_path=ref_path,
