@@ -184,7 +184,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath':config.ROOT + "/resource/model/nflx_v1.pkl",
+                'model_filepath':config.ROOT + "/model/nflx_v1.pkl",
             },
             optional_dict2=None,
         )
@@ -412,7 +412,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=self.result_store,
             optional_dict={
-                'model_filepath':config.ROOT + "/resource/model/nflx_vmaff_rf_v2.pkl",
+                'model_filepath':config.ROOT + "/model/nflx_vmaff_rf_v2.pkl",
             },
             optional_dict2=None,
         )
@@ -455,7 +455,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=self.result_store,
             optional_dict={
-                'model_filepath':config.ROOT + "/resource/model/nflxtrain_norm_type_none.pkl",
+                'model_filepath':config.ROOT + "/model/nflxtrain_norm_type_none.pkl",
             },
             optional_dict2=None,
         )
@@ -611,7 +611,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath':config.ROOT + "/resource/model/nflxtrain_norm_type_none.pkl",
+                'model_filepath':config.ROOT + "/model/nflxtrain_norm_type_none.pkl",
             },
         )
         self.runner.run()
@@ -1514,7 +1514,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath':config.ROOT + "/resource/model/nflx_vmaff_rf_v2.pkl",
+                'model_filepath':config.ROOT + "/model/nflx_vmaff_rf_v2.pkl",
             },
             optional_dict2=None,
         )

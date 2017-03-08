@@ -140,7 +140,7 @@ class VmafLegacyQualityRunner(QualityRunner):
                             'VMAF_feature_ansnr_scores': (10.0, 50.0),
                             'VMAF_feature_motion_scores': (0.0, 20.0)}
 
-    SVM_MODEL_FILE = config.ROOT + "/resource/model/model_V8a.model"
+    SVM_MODEL_FILE = config.ROOT + "/model/model_V8a.model"
 
     # model_v8a.model is trained with customized feature order:
     SVM_MODEL_ORDERED_SCORES_KEYS = ['VMAF_feature_vif_scores',
@@ -236,26 +236,26 @@ class VmafQualityRunner(QualityRunner):
     TYPE = 'VMAF'
 
     # VERSION = '0.1' # using model nflxall_vmafv1.pkl, VmafFeatureExtractor VERSION 0.1
-    # DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv1.pkl" # trained with resource/param/vmaf_v1.py on private/resource/dataset/NFLX_dataset.py (30 subjects)
+    # DEFAULT_MODEL_FILEPATH = config.ROOT + "/model/nflxall_vmafv1.pkl" # trained with resource/param/vmaf_v1.py on private/resource/dataset/NFLX_dataset.py (30 subjects)
 
     # VERSION = '0.2' # using model nflxall_vmafv2.pkl, VmafFeatureExtractor VERSION 0.2.1
-    # DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv2.pkl" # trained with resource/param/vmaf_v2.py on private/resource/dataset/NFLX_dataset.py (30 subjects)
+    # DEFAULT_MODEL_FILEPATH = config.ROOT + "/model/nflxall_vmafv2.pkl" # trained with resource/param/vmaf_v2.py on private/resource/dataset/NFLX_dataset.py (30 subjects)
 
     # VERSION = '0.3' # using model nflxall_vmafv3.pkl, VmafFeatureExtractor VERSION 0.2.1
-    # DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv3.pkl" # trained with resource/param/vmaf_v3.py on private/resource/dataset/NFLX_dataset.py (30 subjects)
+    # DEFAULT_MODEL_FILEPATH = config.ROOT + "/model/nflxall_vmafv3.pkl" # trained with resource/param/vmaf_v3.py on private/resource/dataset/NFLX_dataset.py (30 subjects)
 
     # VERSION = '0.3.1' # using model nflxall_vmafv3.pkl, VmafFeatureExtractor VERSION 0.2.1, NFLX_dataset with 26 subjects (last 4 outliers removed)
-    # DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv3a.pkl" # trained with resource/param/vmaf_v3.py on private/resource/dataset/NFLX_dataset.py (26 subjects)
+    # DEFAULT_MODEL_FILEPATH = config.ROOT + "/model/nflxall_vmafv3a.pkl" # trained with resource/param/vmaf_v3.py on private/resource/dataset/NFLX_dataset.py (26 subjects)
 
     # VERSION = '0.3.2'  # using model nflxall_vmafv4.pkl, VmafFeatureExtractor VERSION 0.2.2, NFLX_dataset with 26 subjects (last 4 outliers removed)
     # ALGO_VERSION = 0
-    # DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv4.pkl"  # trained with resource/param/vmaf_v4.py on private/resource/dataset/NFLX_dataset.py (26 subjects)
+    # DEFAULT_MODEL_FILEPATH = config.ROOT + "/model/nflxall_vmafv4.pkl"  # trained with resource/param/vmaf_v4.py on private/resource/dataset/NFLX_dataset.py (26 subjects)
 
     VERSION = 'F' + VmafFeatureExtractor.VERSION + '-0.6.1'
     ALGO_VERSION = 2
 
     # trained with resource/param/vmaf_v6.py on private/user/zli/resource/dataset/dataset/derived/vmafplusstudy_laptop_raw_generalandcornercase.py, MLER, y=x+17
-    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/vmaf_v0.6.1.pkl"
+    DEFAULT_MODEL_FILEPATH = config.ROOT + "/model/vmaf_v0.6.1.pkl"
 
     DEFAULT_FEATURE_DICT = {'VMAF_feature': ['vif', 'adm', 'motion', 'ansnr']} # for backward-compatible with older model only
 
@@ -401,21 +401,21 @@ class VmafossExecQualityRunner(QualityRunner):
     TYPE = 'VMAFOSSEXEC'
 
     # VERSION = '0.3'
-    # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv3.pkl.model"
+    # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/model/nflxall_vmafv3.pkl.model"
 
     # VERSION = '0.3.1'
-    # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv3a.pkl.model"
+    # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/model/nflxall_vmafv3a.pkl.model"
 
     # VERSION = '0.3.2'
     # ALGO_VERSION = 0
-    # # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/resource/model/nflxall_vmafv4.pkl.model"
-    # DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/nflxall_vmafv4.pkl"
+    # # DEFAULT_MODEL_FILEPATH_DOTMODEL = config.ROOT + "/model/nflxall_vmafv4.pkl.model"
+    # DEFAULT_MODEL_FILEPATH = config.ROOT + "/model/nflxall_vmafv4.pkl"
 
     VERSION = 'F' + VmafFeatureExtractor.VERSION + '-0.6.1'
     ALGO_VERSION = 2
 
     # trained with resource/param/vmaf_v6.py on private/user/zli/resource/dataset/dataset/derived/vmafplusstudy_laptop_raw_generalandcornercase.py, MLER, y=x+17
-    DEFAULT_MODEL_FILEPATH = config.ROOT + "/resource/model/vmaf_v0.6.1.pkl"
+    DEFAULT_MODEL_FILEPATH = config.ROOT + "/model/vmaf_v0.6.1.pkl"
 
     FEATURES = ['adm2', 'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
                 'motion', 'vif_scale0', 'vif_scale1', 'vif_scale2',

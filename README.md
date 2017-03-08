@@ -190,8 +190,8 @@ In addition to the basic commands, the VMAF package also provides a framework to
 For example:
 
 ```
-./run_vmaf yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv python/test/resource/yuv/src01_hrc01_576x324.yuv --model resource/model/nflxtrain_vmafv3.pkl
-./run_vmaf_in_batch example_batch_input --model resource/model/nflxtrain_vmafv3.pkl --parallelize
+./run_vmaf yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv python/test/resource/yuv/src01_hrc01_576x324.yuv --model model/nflxtrain_vmafv3.pkl
+./run_vmaf_in_batch example_batch_input --model model/nflxtrain_vmafv3.pkl --parallelize
 ```
 
 A user can customize the model based on:
@@ -364,10 +364,10 @@ Under [wrapper](wrapper), we provide a C++ implementation *vmafossexec* that has
 Under root, run *vmafossexec* as:
 
 ```
-wrapper/vmafossexec yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv python/test/resource/yuv/src01_hrc01_576x324.yuv resource/model/nflxall_vmafv4.pkl --log vmaf_output.xml
+wrapper/vmafossexec yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv python/test/resource/yuv/src01_hrc01_576x324.yuv model/nflxall_vmafv4.pkl --log vmaf_output.xml
 ```
 
-For VMAF v0.3.2, the model file is *resource/model/nflxall_vmafv4.pkl*. The correspondence is documented [here](python/src/vmaf/core/quality_runner.py#L254).
+For VMAF v0.3.2, the model file is *model/nflxall_vmafv4.pkl*. The correspondence is documented [here](python/src/vmaf/core/quality_runner.py#L254).
 
 #### Troubleshooting
 
@@ -397,5 +397,5 @@ docker run --rm -v $(PWD):/files vmaf run_vmaf yuv420p 576 324 /files/python/tes
 Under root, to run *vmafossexec* with a specified model file:
 
 ```
-docker run --rm -v $(PWD):/files vmaf vmafossexec yuv420p 576 324 /files/python/test/resource/yuv/src01_hrc00_576x324.yuv /files/python/test/resource/yuv/src01_hrc01_576x324.yuv /files/resource/model/nflxall_vmafv4.pkl
+docker run --rm -v $(PWD):/files vmaf vmafossexec yuv420p 576 324 /files/python/test/resource/yuv/src01_hrc00_576x324.yuv /files/python/test/resource/yuv/src01_hrc01_576x324.yuv /files/model/nflxall_vmafv4.pkl
 ```
