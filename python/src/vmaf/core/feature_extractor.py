@@ -509,7 +509,7 @@ class MatlabFeatureExtractor(FeatureExtractor):
     def _assert_class(cls):
         # override Executor._assert_class
         super(MatlabFeatureExtractor, cls)._assert_class()
-        config.get_and_assert_matlab()
+        config.VmafExternalConfig.get_and_assert_matlab()
 
 class StrredFeatureExtractor(MatlabFeatureExtractor):
 
@@ -545,7 +545,7 @@ class StrredFeatureExtractor(MatlabFeatureExtractor):
         quality_width, quality_height = asset.quality_width_height
 
         strred_cmd = '''{matlab} -nodisplay -nosplash -nodesktop -r "run_strred('{ref}', '{dis}', {h}, {w}); exit;" >> {log_file_path}'''.format(
-            matlab=config.get_and_assert_matlab(),
+            matlab=config.VmafExternalConfig.get_and_assert_matlab(),
             ref=ref_workfile_path,
             dis=dis_workfile_path,
             w=quality_width,

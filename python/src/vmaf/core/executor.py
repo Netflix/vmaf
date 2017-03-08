@@ -8,7 +8,7 @@ from vmaf.tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_s
     parallel_map, match_any_files, run_process, \
     get_file_name_extension
 from vmaf.core.mixin import TypeVersionEnabled
-from vmaf.config import get_and_assert_ffmpeg
+from vmaf.config import VmafExternalConfig
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -165,7 +165,7 @@ class Executor(TypeVersionEnabled):
         # if quality width/height do not to agree with ref/dis width/height,
         # must rely on ffmpeg for scaling
         if cls._need_ffmpeg(asset):
-            get_and_assert_ffmpeg()
+            VmafExternalConfig.get_and_assert_ffmpeg()
 
         # if crop_cmd or pad_cmd is specified, make sure quality_width and
         # quality_height are EXPLICITLY specified in asset_dict
@@ -362,7 +362,7 @@ class Executor(TypeVersionEnabled):
 
         ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 -pix_fmt {yuv_type} -vf {crop_cmd}{pad_cmd}scale={width}x{height} -f rawvideo -sws_flags {resampling_type} -y {dst}'
         ffmpeg_cmd = ffmpeg_cmd.format(
-            ffmpeg=get_and_assert_ffmpeg(),
+            ffmpeg=VmafExternalConfig.get_and_assert_ffmpeg(),
             src=asset.ref_path,
             dst=asset.ref_workfile_path,
             width=quality_width,
@@ -413,7 +413,7 @@ class Executor(TypeVersionEnabled):
         ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
                      '-pix_fmt {yuv_type} -vf {crop_cmd}{pad_cmd}scale={width}x{height} -f rawvideo ' \
                      '-sws_flags {resampling_type} -y {dst}'.format(
-            ffmpeg=get_and_assert_ffmpeg(),
+            ffmpeg=VmafExternalConfig.get_and_assert_ffmpeg(),
             src=asset.dis_path, dst=asset.dis_workfile_path,
             width=quality_width, height=quality_height,
             src_fmt_cmd=src_fmt_cmd,

@@ -9,7 +9,7 @@ __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 
-@unittest.skipIf(not config.ffmpeg_path(), "ffmpeg not installed")
+@unittest.skipIf(not config.VmafExternalConfig.ffmpeg_path(), "ffmpeg not installed")
 class QualityRunnerTest(unittest.TestCase):
 
     def tearDown(self):
@@ -87,7 +87,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 79.052553444706504, places=4)
 
 
-@unittest.skipIf(not config.matlab_path(), "matlab not installed")
+@unittest.skipIf(not config.VmafExternalConfig.matlab_path(), "matlab not installed")
 class ParallelQualityRunnerTest(unittest.TestCase):
 
     def tearDown(self):

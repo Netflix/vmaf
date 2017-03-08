@@ -8,7 +8,7 @@ __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 
-@unittest.skipIf(not config.ffmpeg_path(), "ffmpeg not installed")
+@unittest.skipIf(not config.VmafExternalConfig.ffmpeg_path(), "ffmpeg not installed")
 class NorefFeatureExtractorTest(unittest.TestCase):
 
     def tearDown(self):

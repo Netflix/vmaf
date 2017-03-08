@@ -8,7 +8,7 @@ __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 
-@unittest.skipIf(not config.matlab_path(), "matlab not installed")
+@unittest.skipIf(not config.VmafExternalConfig.matlab_path(), "matlab not installed")
 class ParallelFeatureExtractorTestNew(unittest.TestCase):
 
     def tearDown(self):
