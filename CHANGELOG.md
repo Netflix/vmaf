@@ -1,5 +1,10 @@
 # Change Log
 
+## (3/8/2017) [1.2.3]
+
+**New features:**
+- Refactor to replace config.ROOT with config.VmafConfig.
+
 ## (3/1/2017) [1.2.2]
 
 **New features:**
