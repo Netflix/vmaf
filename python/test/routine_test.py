@@ -14,7 +14,7 @@ __license__ = "Apache, Version 2.0"
 class TestReadDataset(unittest.TestCase):
 
     def test_read_dataset(self):
-        train_dataset_path = config.ROOT + '/python/test/resource/test_image_dataset_diffdim.py'
+        train_dataset_path = config.VmafConfig.test_resource_path('test_image_dataset_diffdim.py')
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
 
@@ -27,7 +27,7 @@ class TestReadDataset(unittest.TestCase):
         self.assertTrue('quality_height' not in train_assets[0].asset_dict.keys())
 
     def test_read_dataset_qualitywh(self):
-        train_dataset_path = config.ROOT + '/python/test/resource/test_image_dataset_diffdim_qualitywh.py'
+        train_dataset_path = config.VmafConfig.test_resource_path('test_image_dataset_diffdim_qualitywh.py')
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
 
@@ -45,7 +45,7 @@ class TestReadDataset(unittest.TestCase):
         self.assertEqual(train_assets[1].asset_dict['resampling_type'], 'bicubic')
 
     def test_read_dataset_qualitywh2(self):
-        train_dataset_path = config.ROOT + '/python/test/resource/test_image_dataset_diffdim_qualitywh2.py'
+        train_dataset_path = config.VmafConfig.test_resource_path('test_image_dataset_diffdim_qualitywh2.py')
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
 
@@ -60,7 +60,7 @@ class TestReadDataset(unittest.TestCase):
         self.assertEqual(train_assets[0].asset_dict['resampling_type'], 'bicubic')
 
     def test_read_dataset_diffyuv(self):
-        train_dataset_path = config.ROOT + '/python/test/resource/test_dataset_diffyuv.py'
+        train_dataset_path = config.VmafConfig.test_resource_path('test_dataset_diffyuv.py')
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
 
@@ -77,8 +77,7 @@ class TestReadDataset(unittest.TestCase):
 class TestTrainOnDataset(unittest.TestCase):
 
     def setUp(self):
-        self.output_model_filepath = \
-            config.ROOT + "/workspace/model/test_output_model.pkl"
+        self.output_model_filepath = config.VmafConfig.workspace_path("model", "test_output_model.pkl")
 
     def tearDown(self):
         if os.path.exists(self.output_model_filepath):
@@ -86,11 +85,11 @@ class TestTrainOnDataset(unittest.TestCase):
 
     def test_train_test_on_dataset_with_dis1st_thr(self):
         train_dataset = import_python_file(
-            config.ROOT + '/python/test/resource/dataset_sample.py')
+            config.VmafConfig.test_resource_path('dataset_sample.py'))
         model_param = import_python_file(
-            config.ROOT + '/python/test/resource/model_param_sample.py')
+            config.VmafConfig.test_resource_path('model_param_sample.py'))
         feature_param = import_python_file(
-            config.ROOT + '/python/test/resource/feature_param_sample.py')
+            config.VmafConfig.test_resource_path('feature_param_sample.py'))
 
         train_fassembler, train_assets, train_stats, test_fassembler, test_assets, test_stats, _ = train_test_vmaf_on_dataset(
             train_dataset=train_dataset,
@@ -113,11 +112,11 @@ class TestTrainOnDataset(unittest.TestCase):
 
     def test_train_test_on_raw_dataset_with_dis1st_thr(self):
         train_dataset = import_python_file(
-            config.ROOT + '/python/test/resource/raw_dataset_sample.py')
+            config.VmafConfig.test_resource_path('raw_dataset_sample.py'))
         model_param = import_python_file(
-            config.ROOT + '/python/test/resource/model_param_sample.py')
+            config.VmafConfig.test_resource_path('model_param_sample.py'))
         feature_param = import_python_file(
-            config.ROOT + '/python/test/resource/feature_param_sample.py')
+            config.VmafConfig.test_resource_path('feature_param_sample.py'))
 
         train_fassembler, train_assets, train_stats, test_fassembler, test_assets, test_stats, _ = train_test_vmaf_on_dataset(
             train_dataset=train_dataset,
@@ -140,7 +139,7 @@ class TestTrainOnDataset(unittest.TestCase):
 
     def test_test_on_dataset(self):
         test_dataset = import_python_file(
-            config.ROOT + '/python/test/resource/dataset_sample.py')
+            config.VmafConfig.test_resource_path('dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
                         None, None,
                         parallelize=True,
@@ -157,7 +156,7 @@ class TestTrainOnDataset(unittest.TestCase):
 
     def test_test_on_dataset_raw(self):
         test_dataset = import_python_file(
-            config.ROOT + '/python/test/resource/raw_dataset_sample.py')
+            config.VmafConfig.test_resource_path('raw_dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
                         None, None,
                         parallelize=True,
@@ -174,7 +173,7 @@ class TestTrainOnDataset(unittest.TestCase):
 
     def test_test_on_dataset_mle(self):
         test_dataset = import_python_file(
-            config.ROOT + '/python/test/resource/raw_dataset_sample.py')
+            config.VmafConfig.test_resource_path('raw_dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
                         None, None,
                         parallelize=True,
@@ -193,9 +192,9 @@ class TestTrainOnDataset(unittest.TestCase):
 class TestGenerateDatasetFromRaw(unittest.TestCase):
 
     def setUp(self):
-        self.raw_dataset_filepath = config.ROOT + '/resource/dataset/NFLX_dataset_public_raw.py'
-        self.derived_dataset_path = config.ROOT + '/workspace/workdir/test_derived_dataset.py'
-        self.derived_dataset_path_pyc = config.ROOT + '/workspace/workdir/test_derived_dataset.pyc'
+        self.raw_dataset_filepath = config.VmafConfig.resource_path("dataset", "NFLX_dataset_public_raw.py")
+        self.derived_dataset_path = config.VmafConfig.workdir_path("test_derived_dataset.py")
+        self.derived_dataset_path_pyc = config.VmafConfig.workdir_path("test_derived_dataset.pyc")
 
     def tearDown(self):
         if os.path.exists(self.derived_dataset_path):

@@ -17,17 +17,17 @@ class RawExtractorTest(unittest.TestCase):
 
     def test_run_asset_extractor(self):
         print 'test on running asset extractor...'
-        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=config.ROOT + "/workspace/workdir",
+                      workdir_root=config.VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324,
                                   'quality_width':160, 'quality_height':90})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=2,
-                      workdir_root=config.ROOT + "/workspace/workdir",
+                      workdir_root=config.VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324,
@@ -53,7 +53,7 @@ class RawExtractorTest(unittest.TestCase):
 class DisYUVRawVideoExtractorTest(unittest.TestCase):
 
     def setUp(self):
-        self.h5py_filepath = config.ROOT + '/workspace/workdir/test.hdf5'
+        self.h5py_filepath = config.VmafConfig.workdir_path('test.hdf5')
 
     def tearDown(self):
         if os.path.exists(self.h5py_filepath):
@@ -61,16 +61,16 @@ class DisYUVRawVideoExtractorTest(unittest.TestCase):
 
     def test_run_dis_yuv_raw_video_extractor(self):
         print 'test on running dis YUV raw video extractor...'
-        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=config.ROOT + "/workspace/workdir",
+                      workdir_root=config.VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=2,
-                      workdir_root=config.ROOT + "/workspace/workdir",
+                      workdir_root=config.VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
@@ -99,16 +99,16 @@ class DisYUVRawVideoExtractorTest(unittest.TestCase):
 
     def test_run_dis_yuv_raw_video_extractor_parallel(self):
         print 'test on running dis YUV raw video extractor...'
-        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=config.ROOT + "/workspace/workdir",
+                      workdir_root=config.VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=2,
-                      workdir_root=config.ROOT + "/workspace/workdir",
+                      workdir_root=config.VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
@@ -129,7 +129,7 @@ class DisYUVRawVideoExtractorTest(unittest.TestCase):
 class ParallelDisYRawVideoExtractorTest(unittest.TestCase):
 
     def setUp(self):
-        self.h5py_filepath = config.ROOT + '/workspace/workdir/test.hdf5'
+        self.h5py_filepath = config.VmafConfig.workdir_path('test.hdf5')
 
     def tearDown(self):
         if os.path.exists(self.h5py_filepath):
@@ -137,16 +137,16 @@ class ParallelDisYRawVideoExtractorTest(unittest.TestCase):
 
     def test_run_parallel_dis_y_fextractor(self):
         print 'test on running dis YUV raw video extractor in parallel (disabled)...'
-        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=config.ROOT + "/workspace/workdir",
+                      workdir_root=config.VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=2,
-                      workdir_root=config.ROOT + "/workspace/workdir",
+                      workdir_root=config.VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})

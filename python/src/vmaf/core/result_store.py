@@ -35,7 +35,7 @@ class FileSystemResultStore(ResultStore):
     str(asset).
     """
     def __init__(self, logger=None,
-                 result_store_dir=config.ROOT + "/workspace/result_store_dir/file_result_store"
+                 result_store_dir=config.VmafConfig.file_result_store_path()
                  ):
         self.logger = logger
         self.result_store_dir = result_store_dir

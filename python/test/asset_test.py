@@ -121,8 +121,8 @@ class AssetTest(unittest.TestCase):
         self.assertEquals(asset.dis_duration_sec, 1.0)
 
     def test_bitrate(self):
-        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.VmafConfig.test_resource_path('yuv/', 'src01_hrc00_576x324.yuv')
+        dis_path = config.VmafConfig.test_resource_path('yuv', 'src01_hrc01_576x324.yuv')
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path=ref_path, dis_path=dis_path,

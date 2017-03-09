@@ -20,7 +20,7 @@ class TrainTestModelTest(unittest.TestCase):
 
     def setUp(self):
 
-        train_dataset_path = config.ROOT + '/python/test/resource/test_image_dataset_diffdim.py'
+        train_dataset_path = config.VmafConfig.test_resource_path('test_image_dataset_diffdim.py')
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
 
@@ -35,7 +35,7 @@ class TrainTestModelTest(unittest.TestCase):
             optional_dict2=None,
         )
 
-        self.model_filename = config.ROOT + "/workspace/model/test_save_load.pkl"
+        self.model_filename = config.VmafConfig.model_path("test_save_load.pkl")
 
     def tearDown(self):
         if hasattr(self, 'model'):
@@ -240,11 +240,11 @@ class TrainTestModelWithDisYRawVideoExtractorTest(unittest.TestCase):
 
     def setUp(self):
 
-        train_dataset_path = config.ROOT + '/python/test/resource/test_image_dataset_diffdim.py'
+        train_dataset_path = config.VmafConfig.test_resource_path('test_image_dataset_diffdim.py')
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
 
-        self.h5py_filepath = config.ROOT + '/workspace/workdir/test.hdf5'
+        self.h5py_filepath = config.VmafConfig.workdir_path('test.hdf5')
         self.h5py_file = DisYUVRawVideoExtractor.open_h5py_file(self.h5py_filepath)
         optional_dict2 = {'h5py_file': self.h5py_file}
 
@@ -259,7 +259,7 @@ class TrainTestModelWithDisYRawVideoExtractorTest(unittest.TestCase):
             optional_dict2=optional_dict2,
         )
 
-        self.model_filename = config.ROOT + "/workspace/model/test_save_load.pkl"
+        self.model_filename = config.VmafConfig.workspace_path("model", "test_save_load.pkl")
 
     def tearDown(self):
         if hasattr(self, 'h5py_file'):

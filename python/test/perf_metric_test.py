@@ -101,7 +101,7 @@ class AggrScorePerfMetricTest(unittest.TestCase):
         self.assertAlmostEqual(result['THR'], 3.0, places=6)
 
     def test_kflk_metrics_performance(self):
-        mat_filepath = config.ROOT + '/python/test/resource/data_Toyama.mat'
+        mat_filepath = config.VmafConfig.test_resource_path('data_Toyama.mat')
         mat_dict = scipy.io.loadmat(mat_filepath)
         results = KflkPerfMetric._metrics_performance(mat_dict['objScoDif'], mat_dict['signif'])
         self.assertAlmostEqual(np.mean(results['AUC_DS']), 0.69767003960902052, places=6)

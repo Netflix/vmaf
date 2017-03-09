@@ -3,7 +3,7 @@ from vmaf import config
 dataset_name = 'test_image'
 yuv_fmt = 'yuv444p'
 
-dataset_dir = config.ROOT + '/python/test/resource/test_image_yuv'
+dataset_dir = config.VmafConfig.test_resource_path('test_image_yuv')
 
 quality_width = 200
 quality_height = 100

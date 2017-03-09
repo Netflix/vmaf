@@ -12,7 +12,7 @@ class YuvReaderTest(unittest.TestCase):
 
     def test_yuv_reader(self):
         yuv_reader = YuvReader(
-            filepath=config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv",
+            filepath=config.VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
             width=576,
             height=324,
             yuv_type='yuv420p'
@@ -23,7 +23,7 @@ class YuvReaderTest(unittest.TestCase):
 
     def test_with(self):
         with YuvReader(
-            filepath=config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv",
+            filepath=config.VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
             width=576,
             height=324,
             yuv_type='yuv420p'
@@ -32,7 +32,7 @@ class YuvReaderTest(unittest.TestCase):
 
     def test_next_y_u_v(self):
         with YuvReader(
-            filepath=config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv",
+            filepath=config.VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
             width=576,
             height=324,
             yuv_type='yuv420p'
@@ -80,7 +80,7 @@ class YuvReaderTest(unittest.TestCase):
         y_2ndmoments = []
 
         with YuvReader(
-                filepath=config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv",
+                filepath=config.VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"),
                 width=576, height=324, yuv_type='yuv420p') as yuv_reader:
 
             for y, u, v in yuv_reader:
@@ -96,7 +96,7 @@ class YuvReaderTest10le(unittest.TestCase):
 
     def test_yuv_reader(self):
         yuv_reader = YuvReader(
-            filepath=config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv422p10le.yuv",
+            filepath=config.VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv422p10le.yuv"),
             width=576,
             height=324,
             yuv_type='yuv422p10le'
@@ -107,7 +107,7 @@ class YuvReaderTest10le(unittest.TestCase):
 
     def test_with(self):
         with YuvReader(
-            filepath=config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv422p10le.yuv",
+            filepath=config.VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv422p10le.yuv"),
             width=576,
             height=324,
             yuv_type='yuv422p10le'
@@ -155,7 +155,7 @@ class YuvReaderTest10le(unittest.TestCase):
         y_2ndmoments = []
 
         with YuvReader(
-                filepath=config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv422p10le.yuv",
+                filepath=config.VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv422p10le.yuv"),
                 width=576, height=324, yuv_type='yuv422p10le') as yuv_reader:
 
             for y, u, v in yuv_reader:

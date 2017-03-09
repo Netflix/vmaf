@@ -20,7 +20,7 @@ n_epochs = 30
 seed = 0 # None
 
 # read input dataset
-dataset_path = config.ROOT + '/resource/dataset/BSDS500_noisy_dataset.py'
+dataset_path = config.VmafConfig.resource_path('dataset', 'BSDS500_noisy_dataset.py')
 dataset = import_python_file(dataset_path)
 assets = read_dataset(dataset)
 
@@ -29,7 +29,7 @@ np.random.seed(seed)
 np.random.shuffle(assets)
 assets = assets[:(num_train + num_test)]
 
-raw_video_h5py_filepath = config.ROOT + '/workspace/workdir/rawvideo.hdf5'
+raw_video_h5py_filepath = config.VmafConfig.workdir_path('rawvideo.hdf5')
 raw_video_h5py_file = DisYUVRawVideoExtractor.open_h5py_file(raw_video_h5py_filepath)
 
 print '======================== Extract raw YUVs =============================='
@@ -44,7 +44,7 @@ _, raw_yuvs = run_executors_in_parallel(
     optional_dict=None,
     optional_dict2={'h5py_file': raw_video_h5py_file})
 
-patch_h5py_filepath = config.ROOT + '/workspace/workdir/patch.hdf5'
+patch_h5py_filepath = config.VmafConfig.workdir_path('patch.hdf5')
 patch_h5py_file = ToddNoiseClassifierTrainTestModel.open_h5py_file(patch_h5py_filepath)
 model = ToddNoiseClassifierTrainTestModel(
     param_dict={
@@ -53,7 +53,7 @@ model = ToddNoiseClassifierTrainTestModel(
     },
     logger=None,
     optional_dict2={ # for options that won't impact the result
-        # 'checkpoints_dir': config.ROOT + '/workspace/checkpoints_dir',
+        # 'checkpoints_dir': config.VmafConfig.workspace_path('checkpoints_dir'),
         'h5py_file': patch_h5py_file,
     })
 

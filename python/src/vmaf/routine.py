@@ -152,7 +152,7 @@ def read_dataset(dataset, **kwargs):
             asset = Asset(dataset=data_set_name,
                           content_id=dis_video['content_id'],
                           asset_id=dis_video['asset_id'],
-                          workdir_root=config.ROOT + "/workspace/workdir",
+                          workdir_root=config.VmafConfig.workdir_path(),
                           ref_path=ref_path,
                           dis_path=dis_video['path'],
                           asset_dict=asset_dict,

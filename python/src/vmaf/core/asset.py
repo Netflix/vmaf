@@ -40,7 +40,7 @@ class Asset(WorkdirEnabled):
     def __init__(self, dataset, content_id, asset_id,
                  ref_path, dis_path,
                  asset_dict,
-                 workdir_root=config.ROOT + "/workspace/workdir"):
+                 workdir_root=config.VmafConfig.workdir_path()):
         """
         :param dataset
         :param content_id: ID of content the asset correspond to within dataset
@@ -530,7 +530,7 @@ class NorefAsset(Asset):
     def __init__(self, dataset, content_id, asset_id,
                  dis_path,
                  asset_dict,
-                 workdir_root=config.ROOT + "/workspace/workdir"):
+                 workdir_root=config.VmafConfig.workdir_path()):
         """
         :param dataset
         :param content_id: ID of content the asset correspond to within dataset

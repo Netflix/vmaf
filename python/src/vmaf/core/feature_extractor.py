@@ -520,7 +520,7 @@ class StrredFeatureExtractor(MatlabFeatureExtractor):
 
     DERIVED_ATOM_FEATURES = ['strred', ]
 
-    MATLAB_WORKSPACE = config.ROOT + '/matlab/strred'
+    MATLAB_WORKSPACE = config.VmafConfig.root_path('matlab', 'strred')
 
     @classmethod
     def _assert_an_asset(cls, asset):

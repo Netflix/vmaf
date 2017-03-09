@@ -1,11 +1,4 @@
 import scipy
-
-from vmaf.routine import run_subjective_models
-from vmaf.tools.decorator import persist_to_file
-
-__copyright__ = "Copyright 2016-2017, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
-
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats
@@ -18,6 +11,11 @@ from vmaf.mos.dataset_reader import RawDatasetReader, SyntheticRawDatasetReader,
 from vmaf.mos.subjective_model import MosModel, DmosModel, \
     MaximumLikelihoodEstimationModelReduced, MaximumLikelihoodEstimationModel, \
     MaximumLikelihoodEstimationDmosModel, SubjrejMosModel, ZscoringSubjrejMosModel
+from vmaf.routine import run_subjective_models
+from vmaf.tools.decorator import persist_to_file
+
+__copyright__ = "Copyright 2016-2017, Netflix, Inc."
+__license__ = "Apache, Version 2.0"
 
 color_dict = {
     'Subject/Content-Aware': 'red',
@@ -105,7 +103,7 @@ def _validate_with_synthetic_dataset(subjective_model_classes, dataset_filepath,
 def validate_with_synthetic_dataset():
 
     # use the dataset_filepath only for its dimensions and reference video mapping
-    dataset_filepath = config.ROOT + '/resource/dataset/NFLX_dataset_public_raw_last4outliers.py'
+    dataset_filepath = config.VmafConfig.resource_path('dataset', 'NFLX_dataset_public_raw_last4outliers.py')
     np.random.seed(0)
     _validate_with_synthetic_dataset(
         subjective_model_classes=[
@@ -123,7 +121,7 @@ def validate_with_synthetic_dataset():
 
 def run_datasize_growth(dataset_filepaths):
 
-    @persist_to_file(config.ROOT + '/workspace/workdir/_run_subject_nums.json')
+    @persist_to_file(config.VmafConfig.workdir_path('_run_subject_nums.json'))
     def _run_subject_nums(dataset, subject_nums, model_class, seed,
                           perf_type='rmse'):
         def run_one_num_subject(num_subject, dataset, seed):
@@ -221,7 +219,7 @@ def run_datasize_growth(dataset_filepaths):
 
 def run_subject_corruption_growth(dataset_filepaths):
 
-    @persist_to_file(config.ROOT + '/workspace/workdir/_run_corrupt_nums.json')
+    @persist_to_file(config.VmafConfig.workdir_path('_run_corrupt_nums.json'))
     def _run_corrupt_nums(dataset, subject_nums, model_class, seed,
                           perf_type='rmse'):
         def run_one_num_subject(num_subject, dataset, seed):
@@ -322,7 +320,7 @@ def run_subject_corruption_growth(dataset_filepaths):
 
 def run_missing_growth(dataset_filepaths):
 
-    @persist_to_file(config.ROOT + '/workspace/workdir/_run_missing_probs.json')
+    @persist_to_file(config.VmafConfig.workdir_path('_run_missing_probs.json'))
     def _run_missing_probs(dataset, missing_probs, model_class, seed,
                            perf_type='rmse'):
         def run_one_missing_prob(missing_prob, dataset, seed):
@@ -428,7 +426,7 @@ def run_missing_growth(dataset_filepaths):
 
 def run_random_corruption_growth(dataset_filepaths):
 
-    @persist_to_file(config.ROOT + '/workspace/workdir/_run_corrupt_probs.json')
+    @persist_to_file(config.VmafConfig.workdir_path('_run_corrupt_probs.json'))
     def _run_corrupt_probs(dataset, corrupt_probs, model_class, seed,
                            perf_type='rmse'):
         def run_one_corrput_prob(corrupt_prob, dataset, seed):
@@ -534,7 +532,7 @@ def run_random_corruption_growth(dataset_filepaths):
 
 def run_subject_partial_corruption_growth(dataset_filepaths):
 
-    @persist_to_file(config.ROOT + '/workspace/workdir/_run_partial_corrupt_nums.json')
+    @persist_to_file(config.VmafConfig.workdir_path('_run_partial_corrupt_nums.json'))
     def _run_partial_corrupt_nums(dataset, subject_nums, model_class, seed,
                           perf_type='rmse'):
         def run_one_num_subject(num_subject, dataset, seed):
@@ -654,8 +652,8 @@ def plot_sample_results(dataset_filepaths, subjective_model_classes):
 def main():
 
     dataset_filepaths = [
-        config.ROOT + '/resource/dataset/NFLX_dataset_public_raw_last4outliers.py',
-        config.ROOT + '/resource/dataset/VQEGHD3_dataset_raw.py',
+        config.VmafConfig.resource_path('dataset', 'NFLX_dataset_public_raw_last4outliers.py'),
+        config.VmafConfig.resource_path('dataset', 'VQEGHD3_dataset_raw.py'),
     ]
 
     # ============ sample results =================
@@ -668,24 +666,24 @@ def main():
         # DmosModel,
     ]
 
-    plot_sample_results(dataset_filepaths, subjective_model_classes)
+    # plot_sample_results(dataset_filepaths, subjective_model_classes)
 
     # ============ plot trends =================
 
     # ===== datasize growth =====
-    run_datasize_growth(dataset_filepaths)
+    # run_datasize_growth(dataset_filepaths)
 
     # ===== corrpution growth =====
     run_subject_corruption_growth(dataset_filepaths)
-    run_random_corruption_growth(dataset_filepaths)
+    # run_random_corruption_growth(dataset_filepaths)
 
-    run_subject_partial_corruption_growth(dataset_filepaths)
+    # run_subject_partial_corruption_growth(dataset_filepaths)
 
     # ===== random missing growth =====
-    run_missing_growth(dataset_filepaths)
+    # run_missing_growth(dataset_filepaths)
 
     # ===== synthetic data =====
-    validate_with_synthetic_dataset()
+    # validate_with_synthetic_dataset()
 
     plt.show()
 

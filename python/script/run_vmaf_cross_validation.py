@@ -12,15 +12,15 @@ if __name__ == '__main__':
     # ==== Run simple cross validation: one training and one testing dataset ====
 
     run_vmaf_cv(
-        train_dataset_filepath=config.ROOT + '/resource/dataset/NFLX_dataset_public.py',
-        test_dataset_filepath=config.ROOT + '/resource/dataset/VQEGHD3_dataset.py',
-        param_filepath=config.ROOT + '/resource/param/vmaf_v3.py',
-        output_model_filepath=config.ROOT + '/workspace/model/test_model1.pkl'
+        train_dataset_filepath=config.VmafConfig.resource_path('dataset', 'NFLX_dataset_public.py'),
+        test_dataset_filepath=config.VmafConfig.resource_path('dataset', 'VQEGHD3_dataset.py'),
+        param_filepath=config.VmafConfig.resource_path('param', 'vmaf_v3.py'),
+        output_model_filepath=config.VmafConfig.workspace_path('model', 'test_model1.pkl'),
     )
 
     # ==== Run cross validation across genres (tough test) ====
 
-    nflx_dataset_path = config.ROOT + '/resource/dataset/NFLX_dataset_public.py'
+    nflx_dataset_path = config.VmafConfig.resource_path('dataset', 'NFLX_dataset_public.py')
     contentid_groups = [
         [0, 5], # cartoon: BigBuckBunny, FoxBird
         [1], # CG: BirdsInCage
@@ -28,7 +28,7 @@ if __name__ == '__main__':
         [3, 4], # ElFuente: ElFuente1, ElFuente2
         [8], # sports: Tennis
     ]
-    param_filepath = config.ROOT + '/resource/param/vmaf_v3.py'
+    param_filepath = config.VmafConfig.resource_path('param', 'vmaf_v3.py')
 
     aggregate_method = np.mean
     # aggregate_method = ListStats.harmonic_mean

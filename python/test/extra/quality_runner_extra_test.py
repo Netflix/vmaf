@@ -22,10 +22,10 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_psnr_runner_with_notyuv(self):
         print 'test on running PSNR runner...'
-        ref_path = config.ROOT + "/python/test/resource/mp4/Seeking_10_288_375.mp4"
-        dis_path = config.ROOT + "/python/test/resource/mp4/Seeking_10_288_375.mp4"
+        ref_path = config.VmafConfig.test_resource_path("mp4", "Seeking_10_288_375.mp4")
+        dis_path = config.VmafConfig.test_resource_path("mp4", "Seeking_10_288_375.mp4")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.ROOT + "/workspace/workdir",
+                      workdir_root=config.VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'yuv_type': 'notyuv',
@@ -44,10 +44,10 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner_with_notyuv(self):
         print 'test on running VMAF runner...'
-        ref_path = config.ROOT + "/python/test/resource/mp4/Seeking_30_480_1050.mp4"
-        dis_path = config.ROOT + "/python/test/resource/mp4/Seeking_10_288_375.mp4"
+        ref_path = config.VmafConfig.test_resource_path("mp4", "Seeking_30_480_1050.mp4")
+        dis_path = config.VmafConfig.test_resource_path("mp4", "Seeking_10_288_375.mp4")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.ROOT + "/workspace/workdir",
+                      workdir_root=config.VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'yuv_type': 'notyuv',
@@ -66,10 +66,10 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner_with_notyuv(self):
         print 'test on running VMAF runner...'
-        ref_path = config.ROOT + "/python/test/resource/mp4/Seeking_30_480_1050.mp4"
-        dis_path = config.ROOT + "/python/test/resource/mp4/Seeking_10_288_375.mp4"
+        ref_path = config.VmafConfig.test_resource_path("mp4", "Seeking_30_480_1050.mp4")
+        dis_path = config.VmafConfig.test_resource_path("mp4", "Seeking_10_288_375.mp4")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.ROOT + "/workspace/workdir",
+                      workdir_root=config.VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'yuv_type': 'notyuv',
@@ -100,16 +100,16 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_strrred_runner(self):
         print 'test on running STRRED runner...'
-        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.ROOT + "/workspace/workdir",
+                      workdir_root=config.VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=config.ROOT + "/workspace/workdir",
+                      workdir_root=config.VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})

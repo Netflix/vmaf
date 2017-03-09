@@ -24,16 +24,16 @@ class FeatureAssemblerTest(unittest.TestCase):
 
     def test_feature_assembler_whole_feature(self):
         print 'test on feature assembler with whole feature...'
-        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.ROOT + "/workspace/workdir",
+                      workdir_root=config.VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=config.ROOT + "/workspace/workdir",
+                      workdir_root=config.VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
@@ -67,16 +67,16 @@ class FeatureAssemblerTest(unittest.TestCase):
 
     def test_feature_assembler_selected_atom_feature(self):
         print 'test on feature assembler with selected atom features...'
-        ref_path = config.ROOT + "/python/test/resource/yuv/src01_hrc00_576x324.yuv"
-        dis_path = config.ROOT + "/python/test/resource/yuv/src01_hrc01_576x324.yuv"
+        ref_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.ROOT + "/workspace/workdir",
+                      workdir_root=config.VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=config.ROOT + "/workspace/workdir",
+                      workdir_root=config.VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})

@@ -9,7 +9,7 @@ __license__ = "Apache, Version 2.0"
 class TestReadDataset(unittest.TestCase):
 
     def test_read_dataset_crop_and_pad(self):
-        train_dataset_path = config.ROOT + '/python/test/resource/example_dataset_crop_pad.py'
+        train_dataset_path = config.VmafConfig.test_resource_path('example_dataset_crop_pad.py')
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
 

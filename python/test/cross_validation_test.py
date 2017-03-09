@@ -16,7 +16,7 @@ class CrossValidationTest(unittest.TestCase):
 
     def setUp(self):
 
-        train_dataset_path = config.ROOT + '/python/test/resource/test_image_dataset_diffdim.py'
+        train_dataset_path = config.VmafConfig.test_resource_path('test_image_dataset_diffdim.py')
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
 

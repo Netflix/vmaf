@@ -87,7 +87,7 @@ def main():
             asset = Asset(dataset="cmd",
                           content_id=0,
                           asset_id=line_idx,
-                          workdir_root=config.ROOT + "/workspace/workdir",
+                          workdir_root=config.VmafConfig.workdir_path(),
                           ref_path=ref_file,
                           dis_path=dis_file,
                           asset_dict={'width':width, 'height':height, 'yuv_type':fmt}

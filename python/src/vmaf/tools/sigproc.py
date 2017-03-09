@@ -218,7 +218,7 @@ def significanceHM(A, B, AUCs):
     #         pHM(j,i) = pHM(i,j);
     #     end
     # end
-    hm_filepath = config.ROOT + '/python/src/vmaf/tools/resource/Hanley_McNeil.mat'
+    hm_filepath = config.VmafConfig.tools_resource_path('Hanley_McNeil.mat')
     hm_dict = scipy.io.loadmat(hm_filepath)
     pHM = np.ones([n_met, n_met])
     Table_HM = hm_dict['Table_HM']

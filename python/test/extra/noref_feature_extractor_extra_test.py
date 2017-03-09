@@ -19,9 +19,9 @@ class NorefFeatureExtractorTest(unittest.TestCase):
     def test_noref_moment_fextractor_with_noref_asset_notyuv(self):
         print 'test on running Moment noref feature extractor on NorefAssets ' \
               '(non-YUV)...'
-        dis_path = config.ROOT + "/python/test/resource/mp4/Seeking_10_288_375.mp4"
+        dis_path = config.VmafConfig.test_resource_path("mp4", "Seeking_10_288_375.mp4")
         asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.ROOT + "/workspace/workdir",
+                      workdir_root=config.VmafConfig.workdir_path(),
                       dis_path=dis_path,
                       asset_dict={'yuv_type': 'notyuv',
                                   'quality_width': 720, 'quality_height': 480,

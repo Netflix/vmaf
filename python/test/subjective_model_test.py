@@ -18,9 +18,9 @@ __license__ = "Apache, Version 2.0"
 class SubjectiveModelTest(unittest.TestCase):
 
     def setUp(self):
-        self.dataset_filepath = config.ROOT + '/python/test/resource/NFLX_dataset_public_raw.py'
-        self.output_dataset_filepath = config.ROOT + '/workspace/workdir/NFLX_dataset_public_test.py'
-        self.output_dataset_pyc_filepath = config.ROOT + '/workspace/workdir/NFLX_dataset_public_test.pyc'
+        self.dataset_filepath = config.VmafConfig.test_resource_path('NFLX_dataset_public_raw.py')
+        self.output_dataset_filepath = config.VmafConfig.workdir_path('NFLX_dataset_public_test.py')
+        self.output_dataset_pyc_filepath = config.VmafConfig.workdir_path('NFLX_dataset_public_test.pyc')
 
     def tearDown(self):
         if os.path.exists(self.output_dataset_filepath):

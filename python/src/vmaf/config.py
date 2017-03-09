@@ -59,17 +59,33 @@ class VmafExternalConfig(object):
 class VmafConfig(object):
 
     @classmethod
-    def config_root_path(cls, *components):
+    def root_path(cls, *components):
         return os.path.join(ROOT, *components)
 
     @classmethod
-    def workspace_path(cls, *components):
-        return cls.config_root_path('workspace', *components)
-
-    @classmethod
     def file_result_store_path(cls, *components):
-        return cls.workspace_path('result_store_dir', *components)
+        return cls.root_path('workspace', 'result_store_dir', 'file_result_store_dir', *components)
 
     @classmethod
-    def result_store_path(cls, *components):
-        return cls.workspace_path('result_store_dir', *components)
+    def workspace_path(cls, *components):
+        return cls.root_path('workspace', *components)
+
+    @classmethod
+    def workdir_path(cls, *components):
+        return cls.root_path('workspace', 'workdir', *components)
+
+    @classmethod
+    def model_path(cls, *components):
+        return cls.root_path('model', *components)
+
+    @classmethod
+    def resource_path(cls, *components):
+        return cls.root_path('resource', *components)
+
+    @classmethod
+    def test_resource_path(cls, *components):
+        return cls.root_path('python', 'test', 'resource', *components)
+
+    @classmethod
+    def tools_resource_path(cls, *components):
+        return cls.root_path('python', 'src', 'vmaf', 'tools', 'resource', *components)
