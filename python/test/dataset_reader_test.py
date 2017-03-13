@@ -5,7 +5,7 @@ import unittest
 
 import numpy as np
 
-from vmaf import config
+from vmaf.config import VmafConfig
 from vmaf.tools.misc import import_python_file, indices
 from vmaf.mos.dataset_reader import RawDatasetReader, SyntheticRawDatasetReader, \
     MissingDataRawDatasetReader, SelectSubjectRawDatasetReader, \
@@ -14,7 +14,7 @@ from vmaf.mos.dataset_reader import RawDatasetReader, SyntheticRawDatasetReader,
 class RawDatasetReaderTest(unittest.TestCase):
 
     def setUp(self):
-        dataset_filepath = config.VmafConfig.test_resource_path('NFLX_dataset_public_raw.py')
+        dataset_filepath = VmafConfig.test_resource_path('NFLX_dataset_public_raw.py')
         self.dataset = import_python_file(dataset_filepath)
         self.dataset_reader = RawDatasetReader(self.dataset)
 
@@ -51,7 +51,7 @@ class RawDatasetReaderTest(unittest.TestCase):
 class SyntheticDatasetReaderTest(unittest.TestCase):
 
     def setUp(self):
-        dataset_filepath = config.VmafConfig.test_resource_path('NFLX_dataset_public_raw.py')
+        dataset_filepath = VmafConfig.test_resource_path('NFLX_dataset_public_raw.py')
         dataset = import_python_file(dataset_filepath)
 
         np.random.seed(0)
@@ -96,7 +96,7 @@ class SyntheticDatasetReaderTest(unittest.TestCase):
 class MissingDatasetReaderTest(unittest.TestCase):
 
     def setUp(self):
-        dataset_filepath = config.VmafConfig.test_resource_path('NFLX_dataset_public_raw.py')
+        dataset_filepath = VmafConfig.test_resource_path('NFLX_dataset_public_raw.py')
         dataset = import_python_file(dataset_filepath)
 
         np.random.seed(0)
@@ -122,7 +122,7 @@ class MissingDatasetReaderTest(unittest.TestCase):
 class SelectedSubjectDatasetReaderTest(unittest.TestCase):
 
     def setUp(self):
-        dataset_filepath = config.VmafConfig.test_resource_path('NFLX_dataset_public_raw.py')
+        dataset_filepath = VmafConfig.test_resource_path('NFLX_dataset_public_raw.py')
         dataset = import_python_file(dataset_filepath)
 
         np.random.seed(0)
@@ -152,7 +152,7 @@ class SelectedSubjectDatasetReaderTest(unittest.TestCase):
 class CorruptSubjectDatasetReaderTestWithCorruptionProb(unittest.TestCase):
 
     def setUp(self):
-        dataset_filepath = config.VmafConfig.test_resource_path('NFLX_dataset_public_raw.py')
+        dataset_filepath = VmafConfig.test_resource_path('NFLX_dataset_public_raw.py')
         self.dataset = import_python_file(dataset_filepath)
 
         np.random.seed(0)
@@ -201,7 +201,7 @@ class CorruptSubjectDatasetReaderTestWithCorruptionProb(unittest.TestCase):
 class CorruptSubjectDatasetReaderTest(unittest.TestCase):
 
     def setUp(self):
-        dataset_filepath = config.VmafConfig.test_resource_path('NFLX_dataset_public_raw.py')
+        dataset_filepath = VmafConfig.test_resource_path('NFLX_dataset_public_raw.py')
         dataset = import_python_file(dataset_filepath)
 
         np.random.seed(0)
@@ -232,7 +232,7 @@ class CorruptSubjectDatasetReaderTest(unittest.TestCase):
 class CorruptDataDatasetReaderTest(unittest.TestCase):
 
     def setUp(self):
-        dataset_filepath = config.VmafConfig.test_resource_path('NFLX_dataset_public_raw.py')
+        dataset_filepath = VmafConfig.test_resource_path('NFLX_dataset_public_raw.py')
         dataset = import_python_file(dataset_filepath)
 
         np.random.seed(0)

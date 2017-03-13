@@ -12,7 +12,7 @@ from vmaf.mos.dataset_reader import RawDatasetReader
 from vmaf.mos.subjective_model import DmosModel
 from vmaf.tools.misc import indices, get_stdout_logger, import_python_file, \
     close_logger, get_file_name_without_extension
-from vmaf import config
+from vmaf.config import VmafConfig
 from vmaf.core.asset import Asset
 from vmaf.core.train_test_model import TrainTestModel, RegressorMixin, \
     ClassifierMixin
@@ -152,7 +152,7 @@ def read_dataset(dataset, **kwargs):
             asset = Asset(dataset=data_set_name,
                           content_id=dis_video['content_id'],
                           asset_id=dis_video['asset_id'],
-                          workdir_root=config.VmafConfig.workdir_path(),
+                          workdir_root=VmafConfig.workdir_path(),
                           ref_path=ref_path,
                           dis_path=dis_video['path'],
                           asset_dict=asset_dict,

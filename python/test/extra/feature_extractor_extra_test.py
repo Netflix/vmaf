@@ -1,5 +1,5 @@
 import unittest
-from vmaf import config
+from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.asset import Asset
 from vmaf.core.feature_extractor import VmafFeatureExtractor, StrredFeatureExtractor
 from vmaf.tools.stats import ListStats
@@ -8,7 +8,7 @@ __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 
-@unittest.skipIf(not config.VmafExternalConfig.matlab_path(), "matlab not installed")
+@unittest.skipIf(not VmafExternalConfig.matlab_path(), "matlab not installed")
 class ParallelFeatureExtractorTestNew(unittest.TestCase):
 
     def tearDown(self):
@@ -17,17 +17,17 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
         pass
 
     def test_run_vmaf_fextractor_with_resampling(self):
-        ref_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=config.VmafConfig.workdir_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324,
                                   'quality_width':160, 'quality_height':90})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=2,
-                      workdir_root=config.VmafConfig.workdir_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324,
@@ -54,10 +54,10 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
         # crop_cmd: 288:162:144:81 - crop to 288x162 with upper-left pixel
         # starting at coordinate (144, 81)
 
-        ref_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=config.VmafConfig.workdir_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324,
@@ -66,7 +66,7 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
                                   })
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=2,
-                      workdir_root=config.VmafConfig.workdir_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324,
@@ -95,10 +95,10 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
         # pad_cmd: iw+100:ih+100:50:50 - pad to (iw+100)x(ih+100), where iw is
         # input width, ih is input height, and starting point is (-50, -50)
 
-        ref_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=config.VmafConfig.workdir_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324,
@@ -107,7 +107,7 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
                                   })
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=2,
-                      workdir_root=config.VmafConfig.workdir_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324,
@@ -136,10 +136,10 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
         # crop_cmd: 288:162:144:81 - crop to the center 288x162 image
         # pad_cmd: iw+288:ih+162:144:81 - pad back to the original size
 
-        ref_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=config.VmafConfig.workdir_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324,
@@ -149,7 +149,7 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
                                   })
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=2,
-                      workdir_root=config.VmafConfig.workdir_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324,
@@ -177,16 +177,16 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
 
     def test_run_strred_fextractor(self):
         print 'test on running STRRED feature extractor...'
-        ref_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.VmafConfig.workdir_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=config.VmafConfig.workdir_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
@@ -209,16 +209,16 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
 
     def test_run_strred_fextractor_blackframes(self):
         print 'test on running STRRED feature extractor on flat frames...'
-        ref_path = config.VmafConfig.test_resource_path("yuv", "flat_1920_1080_0.yuv")
-        dis_path = config.VmafConfig.test_resource_path("yuv", "flat_1920_1080_10.yuv")
+        ref_path = VmafConfig.test_resource_path("yuv", "flat_1920_1080_0.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "flat_1920_1080_10.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.VmafConfig.workdir_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=config.VmafConfig.workdir_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})

@@ -1,6 +1,6 @@
 import unittest
 
-from vmaf import config
+from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.asset import NorefAsset
 from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
 
@@ -8,7 +8,7 @@ __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 
-@unittest.skipIf(not config.VmafExternalConfig.ffmpeg_path(), "ffmpeg not installed")
+@unittest.skipIf(not VmafExternalConfig.ffmpeg_path(), "ffmpeg not installed")
 class NorefFeatureExtractorTest(unittest.TestCase):
 
     def tearDown(self):
@@ -19,9 +19,9 @@ class NorefFeatureExtractorTest(unittest.TestCase):
     def test_noref_moment_fextractor_with_noref_asset_notyuv(self):
         print 'test on running Moment noref feature extractor on NorefAssets ' \
               '(non-YUV)...'
-        dis_path = config.VmafConfig.test_resource_path("mp4", "Seeking_10_288_375.mp4")
+        dis_path = VmafConfig.test_resource_path("mp4", "Seeking_10_288_375.mp4")
         asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.VmafConfig.workdir_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       dis_path=dis_path,
                       asset_dict={'yuv_type': 'notyuv',
                                   'quality_width': 720, 'quality_height': 480,

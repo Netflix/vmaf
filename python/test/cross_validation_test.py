@@ -6,7 +6,7 @@ import unittest
 from vmaf.core.train_test_model import SklearnRandomForestTrainTestModel, LibsvmNusvrTrainTestModel, \
     SklearnExtraTreesTrainTestModel
 from vmaf.core.cross_validation import ModelCrossValidation
-from vmaf import config
+from vmaf.config import VmafConfig
 from vmaf.core.executor import run_executors_in_parallel
 from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
 from vmaf.routine import read_dataset
@@ -16,7 +16,7 @@ class CrossValidationTest(unittest.TestCase):
 
     def setUp(self):
 
-        train_dataset_path = config.VmafConfig.test_resource_path('test_image_dataset_diffdim.py')
+        train_dataset_path = VmafConfig.test_resource_path('test_image_dataset_diffdim.py')
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
 

@@ -1,9 +1,9 @@
-from vmaf import config
+from vmaf.config import VmafConfig
 
 dataset_name = 'test_image'
 yuv_fmt = 'yuv444p'
 
-dataset_dir = config.VmafConfig.test_resource_path('test_image_yuv')
+dataset_dir = VmafConfig.test_resource_path('test_image_yuv')
 
 ref_videos = [
  {'content_id': 0,

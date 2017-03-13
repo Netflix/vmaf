@@ -6,7 +6,7 @@ import os
 
 import numpy as np
 
-from vmaf import config
+from vmaf.config import VmafConfig
 from vmaf.core.asset import Asset
 from vmaf.core.quality_runner import PsnrQualityRunner
 from vmaf.tools.misc import get_cmd_option
@@ -64,7 +64,7 @@ def main():
         return 2
 
     asset = Asset(dataset="cmd", content_id=0, asset_id=0,
-                  workdir_root=config.VmafConfig.workdir_path(),
+                  workdir_root=VmafConfig.workdir_path(),
                   ref_path=ref_path,
                   dis_path=dis_path,
                   asset_dict={'width':width, 'height':height, 'yuv_type':fmt}

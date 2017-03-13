@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import scipy.io
 
-from vmaf import config
+from vmaf.config import VmafConfig
 from vmaf.core.perf_metric import RmsePerfMetric, SrccPerfMetric, PccPerfMetric, \
     KendallPerfMetric, KflkPerfMetric
 
@@ -101,7 +101,7 @@ class AggrScorePerfMetricTest(unittest.TestCase):
         self.assertAlmostEqual(result['THR'], 3.0, places=6)
 
     def test_kflk_metrics_performance(self):
-        mat_filepath = config.VmafConfig.test_resource_path('data_Toyama.mat')
+        mat_filepath = VmafConfig.test_resource_path('data_Toyama.mat')
         mat_dict = scipy.io.loadmat(mat_filepath)
         results = KflkPerfMetric._metrics_performance(mat_dict['objScoDif'], mat_dict['signif'])
         self.assertAlmostEqual(np.mean(results['AUC_DS']), 0.69767003960902052, places=6)

@@ -7,7 +7,8 @@ import os
 import re
 import unittest
 
-from vmaf import config, ExternalProgram
+from vmaf.config import VmafConfig
+from vmaf import ExternalProgram
 REMOVE_LOG = 1 # for debug, make this 0
 
 def read_log(log_filename, type):
@@ -26,9 +27,9 @@ def read_log(log_filename, type):
 
 class FeatureTest(unittest.TestCase):
 
-    LOG_FILENAME = config.VmafConfig.workdir_path("logFeatureTest")
-    REF_YUV = config.VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-    DIS_YUV = config.VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+    LOG_FILENAME = VmafConfig.workdir_path("logFeatureTest")
+    REF_YUV = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+    DIS_YUV = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
     YUV_FMT = "yuv420p"
     YUV_WIDTH = 576
     YUV_HEIGHT = 324
@@ -289,9 +290,9 @@ class FeatureTest(unittest.TestCase):
 
 class FeatureTestYuv422p10le(unittest.TestCase):
 
-    LOG_FILENAME = config.VmafConfig.workdir_path("logFeatureTestYuv422p10le")
-    REF_YUV = config.VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv422p10le.yuv")
-    DIS_YUV = config.VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv422p10le.yuv")
+    LOG_FILENAME = VmafConfig.workdir_path("logFeatureTestYuv422p10le")
+    REF_YUV = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv422p10le.yuv")
+    DIS_YUV = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv422p10le.yuv")
     YUV_FMT = "yuv422p10le"
     YUV_WIDTH = 576
     YUV_HEIGHT = 324
@@ -538,7 +539,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
 
 class CornerCaseTest(unittest.TestCase):
 
-    LOG_FILENAME = config.VmafConfig.workdir_path("logCornerCaseTest")
+    LOG_FILENAME = VmafConfig.workdir_path("logCornerCaseTest")
     CMD_TEMPLATE = """
         {vmaf} vif {fmt} {ref} {dis} {w} {h} > {log};
         {vmaf} adm {fmt} {ref} {dis} {w} {h} >> {log};
@@ -564,8 +565,8 @@ class CornerCaseTest(unittest.TestCase):
     def test_checkerboard_identical(self):
         print 'test on checkerboard pattern identical...'
         LOCAL_LOG_FILENAME = self.LOG_FILENAME + '_checkerboardIdentical'
-        ref_yuv = config.VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
-        dis_yuv = config.VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
+        ref_yuv = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
+        dis_yuv = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
         yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080
@@ -595,8 +596,8 @@ class CornerCaseTest(unittest.TestCase):
     def test_checkerboard_shifted_by_1(self):
         print 'test on checkerboard pattern shifted by 1...'
         LOCAL_LOG_FILENAME = self.LOG_FILENAME + '_checkerboard_shifted_by_1'
-        ref_yuv = config.VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
-        dis_yuv = config.VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_1_0.yuv")
+        ref_yuv = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
+        dis_yuv = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_1_0.yuv")
         yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080
@@ -626,8 +627,8 @@ class CornerCaseTest(unittest.TestCase):
     def test_checkerboard_opposite(self):
         print 'test on checkerboard pattern opposite...'
         LOCAL_LOG_FILENAME = self.LOG_FILENAME + '_checkerboard_opposite'
-        ref_yuv = config.VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
-        dis_yuv = config.VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_10_0.yuv")
+        ref_yuv = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
+        dis_yuv = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_10_0.yuv")
         yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080
@@ -657,8 +658,8 @@ class CornerCaseTest(unittest.TestCase):
     def test_flat_identical(self):
         print 'test on flat pattern identical...'
         LOCAL_LOG_FILENAME = self.LOG_FILENAME + '_flat_identical'
-        ref_yuv = config.VmafConfig.test_resource_path("yuv", "flat_1920_1080_0.yuv")
-        dis_yuv = config.VmafConfig.test_resource_path("yuv", "flat_1920_1080_0.yuv")
+        ref_yuv = VmafConfig.test_resource_path("yuv", "flat_1920_1080_0.yuv")
+        dis_yuv = VmafConfig.test_resource_path("yuv", "flat_1920_1080_0.yuv")
         yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080
@@ -688,8 +689,8 @@ class CornerCaseTest(unittest.TestCase):
     def test_flat_value10(self):
         print 'test on flat pattern of value 10...'
         LOCAL_LOG_FILENAME = self.LOG_FILENAME + '_flat_value10'
-        ref_yuv = config.VmafConfig.test_resource_path("yuv", "flat_1920_1080_0.yuv")
-        dis_yuv = config.VmafConfig.test_resource_path("yuv", "flat_1920_1080_10.yuv")
+        ref_yuv = VmafConfig.test_resource_path("yuv", "flat_1920_1080_0.yuv")
+        dis_yuv = VmafConfig.test_resource_path("yuv", "flat_1920_1080_10.yuv")
         yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080

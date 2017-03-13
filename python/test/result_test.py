@@ -8,7 +8,7 @@ from functools import partial
 import numpy as np
 
 from vmaf.core.asset import Asset
-from vmaf import config
+from vmaf.config import VmafConfig
 from vmaf.core.result import Result
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.core.quality_runner import VmafLegacyQualityRunner
@@ -18,10 +18,10 @@ class ResultTest(unittest.TestCase):
 
     def setUp(self):
 
-        ref_path = config.VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
-        dis_path = config.VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_1_0.yuv")
+        ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_1_0.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.VmafConfig.workdir_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':1920, 'height':1080})
@@ -122,10 +122,10 @@ class ResultFormattingTest(unittest.TestCase):
 
     def setUp(self):
 
-        # ref_path = config.VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
-        # dis_path = config.VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_1_0.yuv")
+        # ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
+        # dis_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_1_0.yuv")
         # asset = Asset(dataset="test", content_id=0, asset_id=0,
-        #               workdir_root=config.VmafConfig.workdir_path(),
+        #               workdir_root=VmafConfig.workdir_path(),
         #               ref_path=ref_path,
         #               dis_path=dis_path,
         #               asset_dict={'width':1920, 'height':1080})
@@ -136,9 +136,9 @@ class ResultFormattingTest(unittest.TestCase):
         # )
         # self.runner.run()
         #
-        # FileSystemResultStore.save_result(self.runner.results[0], config.VmafConfig.test_resource_path('/ssim_result_for_test.txt')
+        # FileSystemResultStore.save_result(self.runner.results[0], VmafConfig.test_resource_path('/ssim_result_for_test.txt')
 
-        self.result = FileSystemResultStore.load_result(config.VmafConfig.test_resource_path('ssim_result_for_test.txt'))
+        self.result = FileSystemResultStore.load_result(VmafConfig.test_resource_path('ssim_result_for_test.txt'))
 
     def tearDown(self):
         # if hasattr(self, 'runner'):
@@ -203,10 +203,10 @@ class ResultFormattingTest(unittest.TestCase):
 class ResultStoreTest(unittest.TestCase):
 
     def setUp(self):
-        ref_path = config.VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
-        dis_path = config.VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_1_0.yuv")
+        ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_1_0.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.VmafConfig.workdir_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':1920, 'height':1080})
@@ -239,7 +239,7 @@ class ResultStoreTestWithNone(unittest.TestCase):
 
     def test_load_result_with_none(self):
         print 'test on file system result store load result with None...'
-        result = FileSystemResultStore.load_result(config.VmafConfig.test_resource_path('result_with_none.txt'))
+        result = FileSystemResultStore.load_result(VmafConfig.test_resource_path('result_with_none.txt'))
         result.set_score_aggregate_method(ListStats.nonemean)
         self.assertAlmostEqual(result['STRRED_feature_srred_score'], 5829.2644469999996, places=4)
 

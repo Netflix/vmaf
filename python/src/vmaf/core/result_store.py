@@ -4,7 +4,7 @@ import ast
 
 import pandas as pd
 
-from vmaf import config
+from vmaf.config import VmafConfig
 from vmaf.core.result import Result
 from vmaf.tools.misc import make_parent_dirs_if_nonexist
 
@@ -35,7 +35,7 @@ class FileSystemResultStore(ResultStore):
     str(asset).
     """
     def __init__(self, logger=None,
-                 result_store_dir=config.VmafConfig.file_result_store_path()
+                 result_store_dir=VmafConfig.file_result_store_path()
                  ):
         self.logger = logger
         self.result_store_dir = result_store_dir

@@ -3,7 +3,7 @@ import unittest
 
 import numpy as np
 
-from vmaf import config
+from vmaf.config import VmafConfig
 from vmaf.core.asset import Asset
 from vmaf.core.executor import run_executors_in_parallel
 from vmaf.core.local_explainer import LocalExplainer
@@ -33,7 +33,7 @@ class LocalExplainerTest(unittest.TestCase):
 
         model_class = SklearnRandomForestTrainTestModel
 
-        train_dataset_path = config.VmafConfig.test_resource_path('test_image_dataset_diffdim.py')
+        train_dataset_path = VmafConfig.test_resource_path('test_image_dataset_diffdim.py')
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
         _, self.features = run_executors_in_parallel(
@@ -86,16 +86,16 @@ class LocalExplainerTest(unittest.TestCase):
 
     def test_explain_vmaf_results(self):
         print 'test on running VMAF runner with local explainer...'
-        ref_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = config.VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=config.VmafConfig.workdir_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=config.VmafConfig.workdir_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
@@ -153,11 +153,11 @@ class LocalExplainerTest(unittest.TestCase):
 class LocalExplainerMomentRandomForestTest(unittest.TestCase):
 
     def setUp(self):
-        train_dataset_path = config.VmafConfig.test_resource_path("test_image_dataset_diffdim.py")
+        train_dataset_path = VmafConfig.test_resource_path("test_image_dataset_diffdim.py")
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
 
-        self.h5py_filepath = config.VmafConfig.workdir_path('test.hdf5')
+        self.h5py_filepath = VmafConfig.workdir_path('test.hdf5')
         self.h5py_file = DisYUVRawVideoExtractor.open_h5py_file(self.h5py_filepath)
         optional_dict2 = {'h5py_file': self.h5py_file}
 

@@ -8,7 +8,8 @@ import re
 import numpy as np
 import ast
 
-from vmaf import config, ExternalProgram
+from vmaf import ExternalProgram
+from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.executor import Executor
 from vmaf.core.result import Result
 from vmaf.tools.reader import YuvReader
@@ -509,7 +510,7 @@ class MatlabFeatureExtractor(FeatureExtractor):
     def _assert_class(cls):
         # override Executor._assert_class
         super(MatlabFeatureExtractor, cls)._assert_class()
-        config.VmafExternalConfig.get_and_assert_matlab()
+        VmafExternalConfig.get_and_assert_matlab()
 
 class StrredFeatureExtractor(MatlabFeatureExtractor):
 
@@ -520,7 +521,7 @@ class StrredFeatureExtractor(MatlabFeatureExtractor):
 
     DERIVED_ATOM_FEATURES = ['strred', ]
 
-    MATLAB_WORKSPACE = config.VmafConfig.root_path('matlab', 'strred')
+    MATLAB_WORKSPACE = VmafConfig.root_path('matlab', 'strred')
 
     @classmethod
     def _assert_an_asset(cls, asset):
@@ -545,7 +546,7 @@ class StrredFeatureExtractor(MatlabFeatureExtractor):
         quality_width, quality_height = asset.quality_width_height
 
         strred_cmd = '''{matlab} -nodisplay -nosplash -nodesktop -r "run_strred('{ref}', '{dis}', {h}, {w}); exit;" >> {log_file_path}'''.format(
-            matlab=config.VmafExternalConfig.get_and_assert_matlab(),
+            matlab=VmafExternalConfig.get_and_assert_matlab(),
             ref=ref_workfile_path,
             dis=dis_workfile_path,
             w=quality_width,

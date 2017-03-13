@@ -6,8 +6,8 @@ import re
 
 import numpy as np
 
+from vmaf.config import VmafConfig
 from vmaf.core.asset import Asset
-from vmaf import config
 from vmaf.core.executor import run_executors_in_parallel
 from vmaf.core.quality_runner import VmafQualityRunner
 from vmaf.tools.misc import cmd_option_exists, get_cmd_option
@@ -87,7 +87,7 @@ def main():
             asset = Asset(dataset="cmd",
                           content_id=0,
                           asset_id=line_idx,
-                          workdir_root=config.VmafConfig.workdir_path(),
+                          workdir_root=VmafConfig.workdir_path(),
                           ref_path=ref_file,
                           dis_path=dis_file,
                           asset_dict={'width':width, 'height':height, 'yuv_type':fmt}

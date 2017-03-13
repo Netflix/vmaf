@@ -3,7 +3,7 @@ import scipy.misc
 import scipy.ndimage
 import scipy.stats
 import scipy.io
-from vmaf import config
+from vmaf.config import VmafConfig
 from vmaf.tools.misc import index_and_value_of_min
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
@@ -218,7 +218,7 @@ def significanceHM(A, B, AUCs):
     #         pHM(j,i) = pHM(i,j);
     #     end
     # end
-    hm_filepath = config.VmafConfig.tools_resource_path('Hanley_McNeil.mat')
+    hm_filepath = VmafConfig.tools_resource_path('Hanley_McNeil.mat')
     hm_dict = scipy.io.loadmat(hm_filepath)
     pHM = np.ones([n_met, n_met])
     Table_HM = hm_dict['Table_HM']

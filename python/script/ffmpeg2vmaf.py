@@ -5,7 +5,7 @@ import os
 
 import numpy as np
 
-from vmaf import config
+from vmaf.config import VmafConfig
 from vmaf.core.asset import Asset
 from vmaf.core.quality_runner import VmafQualityRunner
 from vmaf.core.quality_runner_extra import VmafQualityRunnerWithLocalExplainer
@@ -66,7 +66,7 @@ def main():
     phone_model = cmd_option_exists(sys.argv, 5, len(sys.argv), '--phone-model')
 
     if work_dir is None:
-        work_dir = config.VmafConfig.workdir_path()
+        work_dir = VmafConfig.workdir_path()
 
     asset = Asset(dataset="cmd",
                   content_id=abs(hash(get_file_name_without_extension(ref_file))) % (10 ** 16),

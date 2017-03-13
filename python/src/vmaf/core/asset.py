@@ -6,7 +6,7 @@ import os
 from vmaf.core.mixin import WorkdirEnabled
 from vmaf.tools.misc import get_file_name_without_extension, \
     get_file_name_with_extension, get_unique_str_from_recursive_dict
-from vmaf import config
+from vmaf.config import VmafConfig
 
 
 class Asset(WorkdirEnabled):
@@ -40,7 +40,7 @@ class Asset(WorkdirEnabled):
     def __init__(self, dataset, content_id, asset_id,
                  ref_path, dis_path,
                  asset_dict,
-                 workdir_root=config.VmafConfig.workdir_path()):
+                 workdir_root=VmafConfig.workdir_path()):
         """
         :param dataset
         :param content_id: ID of content the asset correspond to within dataset
@@ -530,7 +530,7 @@ class NorefAsset(Asset):
     def __init__(self, dataset, content_id, asset_id,
                  dis_path,
                  asset_dict,
-                 workdir_root=config.VmafConfig.workdir_path()):
+                 workdir_root=VmafConfig.workdir_path()):
         """
         :param dataset
         :param content_id: ID of content the asset correspond to within dataset

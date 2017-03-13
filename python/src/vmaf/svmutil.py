@@ -3,11 +3,11 @@
 from __future__ import absolute_import
 
 import sys
-from vmaf import config
+from vmaf.config import VmafConfig
 
 
 # This will work only when running with a checked out vmaf source, but not via pip install
-libsvm_path = config.VmafConfig.root_path('libsvm', 'python')
+libsvm_path = VmafConfig.root_path('libsvm', 'python')
 
 
 if libsvm_path not in sys.path:
