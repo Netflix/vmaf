@@ -1,4 +1,5 @@
 import numpy as np
+
 import matplotlib
 matplotlib.use('ps')
 
@@ -10,12 +11,10 @@ from vmaf.core.quality_runner import VmafQualityRunner
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.mos.dataset_reader import RawDatasetReader
 from vmaf.mos.subjective_model import DmosModel
-from vmaf.tools.misc import indices, get_stdout_logger, import_python_file, \
-    close_logger, get_file_name_without_extension
+from vmaf.tools.misc import indices, get_stdout_logger, import_python_file, close_logger, get_file_name_without_extension
 from vmaf.config import VmafConfig
 from vmaf.core.asset import Asset
-from vmaf.core.train_test_model import TrainTestModel, RegressorMixin, \
-    ClassifierMixin
+from vmaf.core.train_test_model import TrainTestModel, RegressorMixin, ClassifierMixin
 from vmaf.core.local_explainer import LocalExplainer
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
