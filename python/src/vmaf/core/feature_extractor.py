@@ -1,5 +1,6 @@
 import os
 from vmaf.tools.misc import make_absolute_path, run_process
+from vmaf.tools.stats import ListStats
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -578,10 +579,15 @@ class StrredFeatureExtractor(MatlabFeatureExtractor):
         trred_scores_key = cls.get_scores_key('trred')
         strred_scores_key = cls.get_scores_key('strred')
 
-        # compute strred scores
         srred_scores = result.result_dict[srred_scores_key]
         trred_scores = result.result_dict[trred_scores_key]
+
+        # compute strred scores
+        # === old way: consistent with VMAF framework, which is to multiply S and T scores per frame, then average
         strred_scores = map(_strred, zip(srred_scores, trred_scores))
+        # === new way: authentic way of calculating STRRED score: average first, then multiply ===
+        # strred_scores = [ListStats.nonemean(srred_scores) * ListStats.nonemean(trred_scores)]
+
         result.result_dict[strred_scores_key] = strred_scores
 
         # validate
