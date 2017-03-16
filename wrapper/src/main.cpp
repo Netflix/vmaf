@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 
     /* Check parameters */
 
-    if (argc < 6)
+    if (argc < 7)
     {
         print_usage(argc, argv);
         return -1;
