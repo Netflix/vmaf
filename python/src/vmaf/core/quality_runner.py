@@ -252,6 +252,7 @@ class VmafQualityRunner(QualityRunner):
     # ALGO_VERSION = 0
     # DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("nflxall_vmafv4.pkl")  # trained with resource/param/vmaf_v4.py on private/resource/dataset/NFLX_dataset.py (26 subjects)
 
+    # using model vmaf_v0.6.1.pkl. VmafFeatureExtractor VERSION 0.2.4b.
     VERSION = 'F' + VmafFeatureExtractor.VERSION + '-0.6.1'
     ALGO_VERSION = 2
 

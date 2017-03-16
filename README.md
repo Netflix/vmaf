@@ -364,10 +364,10 @@ Under [wrapper](wrapper), we provide a C++ implementation *vmafossexec* that has
 Under root, run *vmafossexec* as:
 
 ```
-wrapper/vmafossexec yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv python/test/resource/yuv/src01_hrc01_576x324.yuv model/nflxall_vmafv4.pkl --log vmaf_output.xml
+wrapper/vmafossexec yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv python/test/resource/yuv/src01_hrc01_576x324.yuv model/vmaf_v0.6.1.pkl --log vmaf_output.xml
 ```
 
-For VMAF v0.3.2, the model file is *model/nflxall_vmafv4.pkl*. The correspondence is documented [here](python/src/vmaf/core/quality_runner.py#L254).
+For VMAF v0.6.1, the model file is *model/vmaf_v0.6.1.pkl*. The correspondence is documented [here](python/src/vmaf/core/quality_runner.py#L255).
 
 #### Troubleshooting
 
