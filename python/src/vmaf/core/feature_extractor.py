@@ -586,7 +586,8 @@ class StrredFeatureExtractor(MatlabFeatureExtractor):
         # === Way One: consistent with VMAF framework, which is to multiply S and T scores per frame, then average
         strred_scores = map(_strred, zip(srred_scores, trred_scores))
         # === Way Two: authentic way of calculating STRRED score: average first, then multiply ===
-        # strred_scores = [ListStats.nonemean(srred_scores) * ListStats.nonemean(trred_scores)]
+        # assert len(srred_scores) == len(trred_scores)
+        # strred_scores = ListStats.nonemean(srred_scores) * ListStats.nonemean(trred_scores) * np.ones(len(srred_scores))
 
         result.result_dict[strred_scores_key] = strred_scores
 
