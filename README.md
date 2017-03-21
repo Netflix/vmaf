@@ -4,7 +4,7 @@ VMAF - Video Multi-Method Assessment Fusion
 
 VMAF is a perceptual video quality assessment algorithm developed by Netflix. VMAF Development Kit (VDK) is a software package that contains the VMAF algorithm implementation, as well as a set of tools that allows a user to train and test a custom VMAF model. Read [this](http://techblog.netflix.com/2016/06/toward-practical-perceptual-video.html) tech blog post for an overview.
 
-##What's New
+## What's New
 
 - (2/28/17) Packaging change: adding *vmaf.* to your imports, for example, use *from vmaf.core.asset import Asset* to replace *from core.asset import Asset*.
 - (2/20/17) Updated VMAF model to version v0.6.1. Changes include: 
@@ -16,7 +16,7 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 - (11/7/16) Custom subjective models (MOS, DMOS, MLE and more) are now supported. Read [this](resource/doc/dcc17v2.pdf) paper for some background, and see [this](#using-custom-subjective-models) section for usage. 
 - (9/30/16) Added a [FAQ](FAQ.md) page.
 
-##Prerequisite
+## Prerequisite
 
 The VDK package has its core feature extraction library written in C, and the rest scripting code written in Python. It also has a stand-alone C++ implementation that is Python-independent. To build the C/C++ code, it requires *gcc* and *g++* (>=4.8). To run scripts and tests, it requires Python2 (>= 2.7) installed.
 
@@ -50,7 +50,7 @@ To install *h5py*, run:
 sudo pip install --upgrade h5py
 ```
 
-####Troubleshooting
+#### Troubleshooting
 
 You can verify if these packages are properly installed and its version/location by:
 
@@ -71,7 +71,7 @@ python -c 'import sys; print sys.path'
 
 (Or simply delete the older one).
 
-##Installation
+## Installation
 
 After cloning VMAF repo to local, cd to the repo directory and run:
 
@@ -89,7 +89,7 @@ export PYTHONPATH=[path_to_repo_dir]/python/src:$PYTHONPATH
 
 You can also add it to environment permanently. On Ubuntu, append the line above to *~/.bashrc* and run `source ~/.bashrc`. On Mac OS X, append it to *~/.bash_profile* and run `source ~/.bash_profile`.
 
-##Testing
+## Testing
 
 The package has thus far been tested on Ubuntu 14.04 LTS and Mac OS X 10.10.5.
 
@@ -99,7 +99,7 @@ After installation, run:
 ./unittest
 ```
 
-##Basic Usage
+## Basic Usage
 
 There are two basic execution modes to run VMAF -- a single mode and a batch mode.
 
@@ -161,7 +161,7 @@ For example:
 ./run_vmaf_in_batch example_batch_input --parallelize
 ```
 
-###Predict Quality on a Cellular Phone Screen
+### Predict Quality on a Cellular Phone Screen
 
 VMAF v0.6.1 and later now support a custom quality model for cellular phone screen viewing. This model can be invoked by adding *--phone-model* option in the commands *run_vmaf*, *run_vmaf_in_batch* (also in *run_testing* and *vmafossexec* introduced the following sections):
 
@@ -176,7 +176,7 @@ Invoking the phone model will generate VMAF scores higher than in the regular mo
 
 It should be interpreted that due to the factors of screen size and viewing distance, the same distorted video would be perceived as having a higher quality when viewed on a phone screen than on a laptop/TV screen, and when the quality score reaches its maximum (100), further increasing the encoding bitrate would not result in any perceptual improvement in quality.
 
-##Advanced Usage
+## Advanced Usage
 
 VMAF follows a machine-learning based approach to first extract a number of quality-relevant features (or elementary metrics) from a distorted video and its reference full-quality video, followed by fusing them into a final quality score using a non-linear regressor (e.g. a SVM regressor), hence the name 'Video Multi-method Assessment Fusion'.
 
@@ -202,7 +202,7 @@ A user can customize the model based on:
   
 Once a model is trained, the VMAF package also provides tools to cross validate it on a different dataset and visualization.
 
-###Create a Dataset
+### Create a Dataset
 
 To begin with, create a dataset file following the format in [example_dataset.py](example_dataset.py). A dataset is a collection of distorted videos, each has a unique asset ID and a corresponding reference video, identified by a unique content ID. Each distorted video is also associated with subjective quality score, typically a MOS (mean opinion score), obtained through subjective study. An example code snippets that defines a dataset is as follows:
 
@@ -225,7 +225,7 @@ dis_videos = [
 
 See directory [resource/dataset](resource/dataset) for more examples. Also refer to the [Datasets](#datasets) section regarding publicly available datasets.
 
-###Validate a Dataset
+### Validate a Dataset
 
 Once a dataset is created, first validate the dataset using existing VMAF or other (PSNR, SSIM or MS-SSIM) metrics. Run:
 
@@ -251,7 +251,7 @@ Make sure *matplotlib* is installed to visualize the MOS-prediction scatter plot
   - SRCC - Spearman rank order correlation coefficient
   - RMSE - root mean squared error
   
-####Troubleshooting
+#### Troubleshooting
 
 When creating a dataset file, one may make errors (for example, having a typo in a file path) that could go unnoticed but make the execution of `run_testing` fail. For debugging purpose, it is recommended to disable *--parallelize*.
 
@@ -267,7 +267,7 @@ to clean up corrupted results in the store before retrying. For example:
 python python/script/run_cleaning_cache.py VMAF example_dataset.py
 ```
 
-###Train a New Model
+### Train a New Model
 
 Now that we are confident that the dataset is created correctly and we have some benchmark result on existing metrics, we proceed to train a new quality assessment model. Run:
 
@@ -319,7 +319,7 @@ The trained model is output to *output_model_file*. Once it is obtained, it can 
 
 Above are two example scatter plots obtained from running the *run_vmaf_training* and *run_testing* commands on a training and a testing dataset, respectively.
 
-###Using Custom Subjective Models
+### Using Custom Subjective Models
 
 The commands *./run_vmaf_training* and *./run_testing* also support custom subjective models (e.g. DMOS (default), MLE and more). Read [this](resource/doc/dcc17v2.pdf) paper for some background.
 
@@ -332,13 +332,13 @@ The subjective model option can be specified with option *--subj-model subjectiv
 
 Note that for the *--subj-model* option to have effect, the input dataset file must follow a format similar to *example_raw_dataset.py*. Specifically, for each dictionary element in dis_videos, instead of having a key named 'dmos' or 'groundtruth' (as in *example_dataset.py*), it must have a key named 'os' (stand for opinion score), and the value must be a list of numbers. This is the 'raw opinion score' collected from subjective experiments, which is used as the input to the custom subjective models.
 
-###Cross Validation
+### Cross Validation
 
 [python/script/run_vmaf_cross_validation.py](python/script/run_vmaf_cross_validation.py) provides tools for cross validation of hyper-parameters and models. *run_vmaf_cv* runs training on a training dataset using hyper-parameters specified in a parameter file, output a trained model file, and then test the trained model on another test dataset and report testing correlation scores. 
 
 *run_vmaf_kfold_cv* takes in a dataset file, a parameter file, and a data structure (list of lists) that specifies the folds based on video content's IDs, and run k-fold cross valiation on the video dataset. This can be useful for manually tuning the model parameters.
 
-###Creating New Features And Regressors
+### Creating New Features And Regressors
 
 You can also customize VMAF by plugging in third-party features or inventing new features, and specify them in a *feature_param_file*. Essentially, the 'aggregate' feature type (e.g. VMAF_feature) specified in the *feature_dict* corresponds to the *TYPE* field of a FeatureExtractor subclass (e.g. VmafFeatureExtractor). All you need to do is to create a new class extending the FeatureExtractor base class.
 
@@ -346,7 +346,7 @@ Similarly, you can plug in a third-party regressor or invent a new regressor and
 
 For instructions on how to extending the FeatureExtractor and TrainTestModel base classes, refer to [CONTRIBUTING.md](CONTRIBUTING.md).
 
-##Datasets
+## Datasets
 
 ### Netflix Public Dataset
 
@@ -356,7 +356,7 @@ We provide a dataset publicly available to the community for training, testing a
 
 We also provide an example dataset file containing video file names from VQEG (Video Quality Expert Group) HD3 videos. The dataset file is at [resource/dataset/VQEGHD3_dataset.py](resource/dataset/VQEGHD3_dataset.py), and the videos is available for downloading from [http://www.cdvl.org/](http://www.cdvl.org/). After login, choose menu 'find videos', and search use keyword 'vqeghd3'. The dataset file includes from src01 to src09 except for src04, which overlaps with the Netflix Public Dataset, and hrc04, hrc07, hrc16, hrc17, hrc18, hrc19, hrc20 and hrc21, which are the mostly relevant distortion types to adaptive streaming. After downloading the videos, convert them to YUV420P format. 
 
-##Python-independent Implementation
+## Python-independent Implementation
 
 The VDK package combines feature extraction implementation in C and the rest scripting code in Python. The Python layer allows fast prototyping, but sometimes deploying the Python dependency in production is a pain.
 Under [wrapper](wrapper), we provide a C++ implementation *vmafossexec* that has no dependency on Python.
@@ -373,7 +373,7 @@ For VMAF v0.6.1, the model file is *model/vmaf_v0.6.1.pkl*. The correspondence i
 
 Note that *vmafossexec* depends on a shared library *ptools/libptools.so* (or on Mac OS, *ptools/libptools.dylib*). If you move the executable, make sure to include the shared library in *LD_LIBRARY_PATH* (or on Mac OS, *DYLD_LIBRARY_PATH*).
 
-##Usage through Docker
+## Usage through Docker
 
 After cloning the VMAF repo, cd to the repo directory and run:
 
