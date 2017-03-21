@@ -28,6 +28,8 @@ class ListStats(object):
     8.0
     >>> ListStats.lp_norm(test_list, 3.0)
     10.507175744985801
+    >>> ListStats.perc1(test_list)
+    1.0900000000000001
     >>> ListStats.perc5(test_list)
     1.4500000000000002
     >>> ListStats.perc10(test_list)
@@ -86,6 +88,10 @@ class ListStats(object):
     @staticmethod
     def lp_norm(my_list, p):
         return np.power(np.mean(np.power(np.array(my_list), p)), 1.0 / p)
+
+    @staticmethod
+    def perc1(my_list):
+        return np.percentile(my_list, 1)
 
     @staticmethod
     def perc5(my_list):
