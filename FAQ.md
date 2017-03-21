@@ -4,7 +4,7 @@
 
 A: It is associated with the underlying assumption of VMAF on the subject viewing distance and display size.
 
-Fundamentally, any perceptual quality model should take the viewing distance and the display size (or the ratio between the two) as input. The same distorted video, if viewed closed-up, could contain more visual artifacts hence yield lower perceptual quality. Think about SSIM: at [SSIM](https://ece.uwaterloo.ca/~z70wang/research/ssim/), in section “Suggested Usage”, the authors make the recommendation of downsampling an image to 256 height (or width) before calculating SSIM. Effectively, this is to normalize all images to a fixed setting of viewing distance / display size ratio such that it could correlate better with subjective data.
+Fundamentally, any perceptual quality model should take the viewing distance and the display size (or the ratio between the two) as input. The same distorted video, if viewed closed-up, could contain more visual artifacts hence yield lower perceptual quality.
 
 In the case of VMAF, all the subjective data were collected in such a way that the distorted videos get rescaled to 1080 resolution and displayed with a viewing distance of three times the screen height (3H). Effectively, what the VMAF model trying to capture is the perceptual quality of a 1080 video displayed from 3H away. That’s the implicit assumption of our current VMAF model.
 
