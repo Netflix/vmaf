@@ -45,6 +45,13 @@ class VmafExternalConfig(object):
         return cls._path_from_external('MATLAB_PATH')
 
     @classmethod
+    def matlab_runtime_path(cls):
+        """
+        :return str: Path to matlab runtime, if installed and configured via `externals` module
+        """
+        return cls._path_from_external('MATLAB_RUNTIME_PATH')
+
+    @classmethod
     def get_and_assert_ffmpeg(cls):
         path = cls.ffmpeg_path()
         assert path is not None, cls._MISSING_EXTERNAL_MESSAGE.format(name='ffmpeg', key='FFMPEG_PATH')
@@ -54,6 +61,14 @@ class VmafExternalConfig(object):
     def get_and_assert_matlab(cls):
         path = cls.matlab_path()
         assert path is not None, cls._MISSING_EXTERNAL_MESSAGE.format(name='matlab', key='MATLAB_PATH')
+        return path
+
+    @classmethod
+    def get_and_assert_matlab_runtime(cls):
+        path = cls.matlab_runtime_path()
+        assert path is not None, \
+            """Must install matlab runtime (v9.1) and set {key} in {root}/externals.py, e.g. add a line like {key} = "[
+            """.format(root=PYTHON_ROOT, key='MATLAB_RUNTIME_PATH')
         return path
 
 class VmafConfig(object):
