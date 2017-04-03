@@ -67,7 +67,7 @@ class VmafExternalConfig(object):
     def get_and_assert_matlab_runtime(cls):
         path = cls.matlab_runtime_path()
         assert path is not None, \
-            """Must install matlab runtime (v9.1) and set {key} in {root}/externals.py, e.g. add a line like {key} = "[
+            """Must install matlab runtime (v9.1) and set {key} in {root}/externals.py, e.g. add a line like {key} = "[path to matlab runtime]/v91"
             """.format(root=PYTHON_ROOT, key='MATLAB_RUNTIME_PATH')
         return path
 
