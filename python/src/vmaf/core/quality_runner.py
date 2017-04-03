@@ -668,6 +668,9 @@ class MotionQualityRunner(VmafSingleFeatureQualityRunner):
     # TYPE = 'TI'
     FEATURE_NAME = 'motion'
 
+class Vif2QualityRunner(VmafSingleFeatureQualityRunner):
+    TYPE = 'VIF2'
+    FEATURE_NAME = 'vif2'
 
 class StrredQualityRunner(QualityRunner):
 
