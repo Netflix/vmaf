@@ -1,7 +1,7 @@
 from vmaf.config import VmafConfig
 from vmaf.core.asset import Asset
 from vmaf.core.quality_runner import PsnrQualityRunner, VmafQualityRunner, \
-    SsimQualityRunner, MsSsimQualityRunner
+    SsimQualityRunner, MsSsimQualityRunner, Vif2QualityRunner
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.core.vqm_quality_runner import VqmGeneralQualityRunner, \
     VqmVfdQualityRunner
@@ -32,6 +32,7 @@ if __name__ == '__main__':
         MsSsimQualityRunner,
         VqmGeneralQualityRunner,
         VqmVfdQualityRunner,
+        Vif2QualityRunner,
     ]
 
     for runner_class in runner_classs:
