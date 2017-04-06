@@ -668,11 +668,12 @@ class MotionQualityRunner(VmafSingleFeatureQualityRunner):
     # TYPE = 'TI'
     FEATURE_NAME = 'motion'
 
-
 class StrredQualityRunner(QualityRunner):
 
     TYPE = 'STRRED'
-    VERSION = '1.0'
+
+    # VERSION = '1.0'
+    VERSION = 'F' + VmafFeatureExtractor.VERSION + '-1.1'
 
     def _get_feature_assembler_instance(self, asset):
 

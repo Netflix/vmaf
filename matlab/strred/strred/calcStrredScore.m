@@ -14,8 +14,8 @@ while 1
     end
     
     % read successful, can then reshape
-    yr=reshape(yr,colms,rows)';
-    yd=reshape(yd,colms,rows)';
+    yr=reshape(yr,rows,colms)';
+    yd=reshape(yd,rows,colms)';
     
     if iframe == -1        
         yr_prev=yr;

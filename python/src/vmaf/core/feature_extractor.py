@@ -516,7 +516,9 @@ class MatlabFeatureExtractor(FeatureExtractor):
 class StrredFeatureExtractor(MatlabFeatureExtractor):
 
     TYPE = 'STRRED_feature'
-    VERSION = '1.0'
+
+    # VERSION = '1.0'
+    VERSION = '1.1' # fix matlab code where width and height are mistakenly swapped
 
     ATOM_FEATURES = ['srred', 'trred', ]
 

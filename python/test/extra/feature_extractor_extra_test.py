@@ -200,9 +200,9 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
 
         results = self.fextractor.results
 
-        self.assertAlmostEqual(results[0]['STRRED_feature_srred_score'], 4.8845008541666664, places=4)
-        self.assertAlmostEqual(results[0]['STRRED_feature_trred_score'], 8.9429378333333336, places=4)
-        self.assertAlmostEqual(results[0]['STRRED_feature_strred_score'], 44.002554138184131, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_srred_score'], 3.0115371666666668, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_trred_score'], 7.2454298124999994, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_strred_score'], 21.905674926201982, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_srred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_trred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_strred_score'], 0.0, places=4)
@@ -248,9 +248,9 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
         for result in results:
             result.set_score_aggregate_method(ListStats.nonemean)
 
-        self.assertAlmostEqual(results[0]['STRRED_feature_srred_score'], 5829.2644469999996, places=4)
-        self.assertAlmostEqual(results[0]['STRRED_feature_trred_score'], 13086.862734, places=4)
-        self.assertAlmostEqual(results[0]['STRRED_feature_strred_score'], 62207779.127545856, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_srred_score'], 1220.5679849999999, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_trred_score'], 94712.078984000007, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_strred_score'], 33639220.111463331, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_srred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_trred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_strred_score'], 0.0, places=4)
