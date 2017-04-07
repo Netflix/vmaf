@@ -24,8 +24,8 @@ while 1
         continue;
     end
     
-    [spatial_ref temporal_ref] = extract_info(yr_prev,yr);
-    [spatial_dis temporal_dis] = extract_info(yd_prev,yd);
+    [spatial_ref temporal_ref] = extract_info(yr, yr_prev);
+    [spatial_dis temporal_dis] = extract_info(yd, yd_prev);
 
     %figure;subplot(2,2,1);imagesc(yr_prev);colormap gray;colorbar;subplot(2,2,2);imagesc(yd_prev-yr_prev);colormap gray;colorbar;subplot(2,2,3);imagesc(yr);colormap gray;colorbar;subplot(2,2,4);imagesc(yd-yr);colormap gray;colorbar;title(sprintf('STRRED %f',strred));
 

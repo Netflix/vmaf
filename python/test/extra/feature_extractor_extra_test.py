@@ -200,9 +200,9 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
 
         results = self.fextractor.results
 
-        self.assertAlmostEqual(results[0]['STRRED_feature_srred_score'], 3.0115371666666668, places=4)
-        self.assertAlmostEqual(results[0]['STRRED_feature_trred_score'], 7.2454298124999994, places=4)
-        self.assertAlmostEqual(results[0]['STRRED_feature_strred_score'], 21.905674926201982, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_srred_score'], 3.0114681041666671, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_trred_score'], 7.3039486249999994, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_strred_score'], 21.995608318659482, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_srred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_trred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_strred_score'], 0.0, places=4)
@@ -249,8 +249,8 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
             result.set_score_aggregate_method(ListStats.nonemean)
 
         self.assertAlmostEqual(results[0]['STRRED_feature_srred_score'], 1220.5679849999999, places=4)
-        self.assertAlmostEqual(results[0]['STRRED_feature_trred_score'], 94712.078984000007, places=4)
-        self.assertAlmostEqual(results[0]['STRRED_feature_strred_score'], 33639220.111463331, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_trred_score'], 50983.3097155, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_strred_score'], 62228595.6081, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_srred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_trred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_strred_score'], 0.0, places=4)

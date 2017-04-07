@@ -518,7 +518,8 @@ class StrredFeatureExtractor(MatlabFeatureExtractor):
     TYPE = 'STRRED_feature'
 
     # VERSION = '1.0'
-    VERSION = '1.1' # fix matlab code where width and height are mistakenly swapped
+    # VERSION = '1.1' # fix matlab code where width and height are mistakenly swapped
+    VERSION = '1.2' # fix minor frame and prev frame swap issue
 
     ATOM_FEATURES = ['srred', 'trred', ]
 
@@ -586,10 +587,10 @@ class StrredFeatureExtractor(MatlabFeatureExtractor):
 
         # compute strred scores
         # === Way One: consistent with VMAF framework, which is to multiply S and T scores per frame, then average
-        strred_scores = map(_strred, zip(srred_scores, trred_scores))
+        # strred_scores = map(_strred, zip(srred_scores, trred_scores))
         # === Way Two: authentic way of calculating STRRED score: average first, then multiply ===
-        # assert len(srred_scores) == len(trred_scores)
-        # strred_scores = ListStats.nonemean(srred_scores) * ListStats.nonemean(trred_scores) * np.ones(len(srred_scores))
+        assert len(srred_scores) == len(trred_scores)
+        strred_scores = ListStats.nonemean(srred_scores) * ListStats.nonemean(trred_scores) * np.ones(len(srred_scores))
 
         result.result_dict[strred_scores_key] = strred_scores
 
