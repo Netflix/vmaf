@@ -508,6 +508,8 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['PSNR_score'], 30.755063979166664, places=4)
         self.assertAlmostEqual(results[1]['PSNR_score'], 60.0, places=4)
 
+        self.assertAlmostEqual(results[0]['PSNR_scores'][2], 30.993823, places=4)
+
     def test_run_vmafossexec_runner(self):
         print 'test on running VMAFOSSEXEC runner...'
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")

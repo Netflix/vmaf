@@ -149,11 +149,18 @@ class Executor(TypeVersionEnabled):
 
     @staticmethod
     def _need_ffmpeg(asset):
+        # 1) if quality width/height do not to agree with ref/dis width/height,
+        # must rely on ffmpeg for scaling
+        # 2) if crop/pad is need, need ffmpeg
+        # 3) if ref/dis videos' start/end frames specified, need ffmpeg for
+        # frame extraction
         return asset.quality_width_height != asset.ref_width_height \
             or asset.quality_width_height != asset.dis_width_height \
             or asset.crop_cmd is not None \
             or asset.pad_cmd is not None \
-            or asset.yuv_type == 'notyuv'
+            or asset.yuv_type == 'notyuv' \
+            or asset.ref_start_end_frame is not None \
+            or asset.dis_start_end_frame is not None
 
     @classmethod
     def _assert_an_asset(cls, asset):
@@ -162,8 +169,6 @@ class Executor(TypeVersionEnabled):
         # _open_dis_workfile if called
         assert asset.quality_width_height is not None
 
-        # if quality width/height do not to agree with ref/dis width/height,
-        # must rely on ffmpeg for scaling
         if cls._need_ffmpeg(asset):
             VmafExternalConfig.get_and_assert_ffmpeg()
 
@@ -360,7 +365,11 @@ class Executor(TypeVersionEnabled):
         crop_cmd = self._get_crop_cmd(asset)
         pad_cmd = self._get_pad_cmd(asset)
 
-        ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 -pix_fmt {yuv_type} -vf {crop_cmd}{pad_cmd}scale={width}x{height} -f rawvideo -sws_flags {resampling_type} -y {dst}'
+        vframes_cmd, select_cmd = self._get_vframes_cmd(asset, 'ref')
+
+        ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
+                     '-pix_fmt {yuv_type} {vframes_cmd} -vf {select_cmd}{crop_cmd}{pad_cmd}scale={width}x{height} -f rawvideo ' \
+                     '-sws_flags {resampling_type} -y {dst}'
         ffmpeg_cmd = ffmpeg_cmd.format(
             ffmpeg=VmafExternalConfig.get_and_assert_ffmpeg(),
             src=asset.ref_path,
@@ -371,7 +380,9 @@ class Executor(TypeVersionEnabled):
             crop_cmd=crop_cmd,
             pad_cmd=pad_cmd,
             yuv_type=workfile_yuv_type,
-            resampling_type=resampling_type
+            resampling_type=resampling_type,
+            vframes_cmd=vframes_cmd,
+            select_cmd=select_cmd,
         )
 
         if self.logger:
@@ -410,8 +421,10 @@ class Executor(TypeVersionEnabled):
         crop_cmd = self._get_crop_cmd(asset)
         pad_cmd = self._get_pad_cmd(asset)
 
+        vframes_cmd, select_cmd = self._get_vframes_cmd(asset, 'dis')
+
         ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
-                     '-pix_fmt {yuv_type} -vf {crop_cmd}{pad_cmd}scale={width}x{height} -f rawvideo ' \
+                     '-pix_fmt {yuv_type} {vframes_cmd} -vf {select_cmd}{crop_cmd}{pad_cmd}scale={width}x{height} -f rawvideo ' \
                      '-sws_flags {resampling_type} -y {dst}'.format(
             ffmpeg=VmafExternalConfig.get_and_assert_ffmpeg(),
             src=asset.dis_path, dst=asset.dis_workfile_path,
@@ -420,9 +433,13 @@ class Executor(TypeVersionEnabled):
             crop_cmd=crop_cmd,
             pad_cmd=pad_cmd,
             yuv_type=workfile_yuv_type,
-            resampling_type=resampling_type)
+            resampling_type=resampling_type,
+            vframes_cmd=vframes_cmd,
+            select_cmd=select_cmd,
+        )
         if self.logger:
             self.logger.info(ffmpeg_cmd)
+
         run_process(ffmpeg_cmd, shell=True)
 
     @staticmethod
@@ -455,6 +472,23 @@ class Executor(TypeVersionEnabled):
         pad_cmd = "pad={},".format(
             asset.pad_cmd) if asset.pad_cmd is not None else ""
         return pad_cmd
+
+    def _get_vframes_cmd(self, asset, ref_or_dis):
+        if ref_or_dis == 'ref':
+            start_end_frame = asset.ref_start_end_frame
+        elif ref_or_dis == 'dis':
+            start_end_frame = asset.dis_start_end_frame
+        else:
+            raise AssertionError('Unknown ref_or_dis: {}'.format(ref_or_dis))
+
+        if start_end_frame is None:
+            return "", ""
+        else:
+            start_frame, end_frame = start_end_frame
+            num_frames = end_frame - start_frame + 1
+            return "-vframes {}".format(num_frames), \
+                   "select='gte(n\,{start_frame})*gte({end_frame}\,n)',setpts=PTS-STARTPTS,".format(
+                       start_frame=start_frame, end_frame=end_frame)
 
     @staticmethod
     def _close_ref_workfile(asset):

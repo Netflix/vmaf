@@ -86,6 +86,36 @@ class QualityRunnerTest(unittest.TestCase):
         results = self.runner.results
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 79.052553444706504, places=4)
 
+    def test_run_psnr_runner_with_frames(self):
+        print 'test on running PSNR runner...'
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324,
+                                  'start_frame':2, 'end_frame':2})
+        asset2 = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324,
+                                  'ref_start_frame':2, 'ref_end_frame':2,
+                                  'dis_start_frame':6, 'dis_end_frame':6,
+                                  })
+        self.runner = PsnrQualityRunner(
+            [asset, asset2],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None
+        )
+        self.runner.run(parallelize=False)
+
+        results = self.runner.results
+        self.assertAlmostEqual(results[0]['PSNR_score'], 30.993823, places=4)
+        self.assertAlmostEqual(results[1]['PSNR_score'], 19.393160, places=4)
+
 
 @unittest.skipIf(not VmafExternalConfig.matlab_path(), "matlab not installed")
 class ParallelQualityRunnerTest(unittest.TestCase):
@@ -125,8 +155,8 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         results = self.runner.results
 
         self.assertAlmostEqual(results[0]['STRRED_feature_srred_score'], 3.0114681041666671, places=4)
-        self.assertAlmostEqual(results[0]['STRRED_feature_trred_score'], 7.3039486249999994, places=4)
-        self.assertAlmostEqual(results[0]['STRRED_score'], 21.995608318659482, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_trred_score'], 7.2454298124999994, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_score'], 21.905674926201982, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_srred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_trred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_score'], 0.0, places=4)
