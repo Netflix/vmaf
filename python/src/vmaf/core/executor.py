@@ -1,3 +1,4 @@
+from abc import ABCMeta, abstractmethod
 import multiprocessing
 import os
 from time import sleep
@@ -24,6 +25,16 @@ class Executor(TypeVersionEnabled):
     provides a number of shared housekeeping functions, including reusing
     Results, creating FIFO pipes, cleaning up log files/Results, etc.
     """
+
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def _generate_result(self, asset):
+        raise NotImplementedError
+
+    @abstractmethod
+    def _read_result(self, asset):
+        raise NotImplementedError
 
     def __init__(self,
                  assets,

@@ -1,3 +1,5 @@
+from abc import abstractmethod, ABCMeta
+
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
@@ -29,12 +31,22 @@ class TypeVersionEnabled(object):
     PSNR_V1.0, or VMAF_feature_V0.1).
     """
 
+    __metaclass__ = ABCMeta
+
+    @property
+    @abstractmethod
+    def TYPE(self):
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def VERSION(self):
+        raise NotImplementedError
+
     def __init__(self):
         self._assert_type_version()
 
     def _assert_type_version(self):
-        assert hasattr(self, 'TYPE')
-        assert hasattr(self, 'VERSION')
 
         assert re.match(r"^[a-zA-Z0-9_]+$", self.TYPE), \
             "TYPE can only contains alphabets, numbers and underscore (_)."

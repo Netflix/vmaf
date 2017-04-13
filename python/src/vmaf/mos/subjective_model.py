@@ -1,3 +1,4 @@
+from abc import ABCMeta, abstractmethod
 import sys
 
 import numpy as np
@@ -22,6 +23,13 @@ class SubjectiveModel(TypeVersionEnabled):
     A number of common functionalities are included: dscore_mode, zscore_mode,
      normalize_final, transform_final, subject_rejection
     """
+
+    __metaclass__ = ABCMeta
+
+    @classmethod
+    @abstractmethod
+    def _run_modeling(cls, dataset_reader, **kwargs):
+        raise NotImplementedError
 
     def __init__(self, dataset_reader):
         TypeVersionEnabled.__init__(self)

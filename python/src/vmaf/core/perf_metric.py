@@ -1,3 +1,4 @@
+from abc import abstractmethod, ABCMeta
 import numpy as np
 from numpy.linalg import lstsq
 import scipy.stats
@@ -11,6 +12,18 @@ __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 class PerfMetric(TypeVersionEnabled):
+
+    __metaclass__ = ABCMeta
+
+    @classmethod
+    @abstractmethod
+    def _preprocess(cls, groundtruths, predictions, **kwargs):
+        raise NotImplementedError
+
+    @classmethod
+    @abstractmethod
+    def _evaluate(cls, groundtruths, predictions, **kwargs):
+        raise NotImplementedError
 
     def __init__(self, groundtruths, predictions):
         """
@@ -375,8 +388,8 @@ class RmsePerfMetric(AggrScorePerfMetric):
     TYPE = "RMSE"
     VERSION = "1.0"
 
-    @staticmethod
-    def _evaluate(groundtruths, predictions, **kwargs):
+    @classmethod
+    def _evaluate(cls, groundtruths, predictions, **kwargs):
         rmse = np.sqrt(np.mean(np.power(np.array(groundtruths) - np.array(predictions), 2.0)))
         result = {'score': rmse}
         return result
@@ -386,8 +399,8 @@ class SrccPerfMetric(AggrScorePerfMetric):
     TYPE = "SRCC"
     VERSION = "1.0"
 
-    @staticmethod
-    def _evaluate(groundtruths, predictions, **kwargs):
+    @classmethod
+    def _evaluate(cls, groundtruths, predictions, **kwargs):
         # spearman
         srcc, _ = scipy.stats.spearmanr(groundtruths, predictions)
         result = {'score': srcc}
@@ -398,8 +411,8 @@ class PccPerfMetric(AggrScorePerfMetric):
     TYPE = "PCC"
     VERSION = "1.0"
 
-    @staticmethod
-    def _evaluate(groundtruths, predictions, **kwargs):
+    @classmethod
+    def _evaluate(cls, groundtruths, predictions, **kwargs):
         # pearson
         pcc, _ = scipy.stats.pearsonr(groundtruths, predictions)
         result = {'score': pcc}
@@ -410,8 +423,8 @@ class KendallPerfMetric(AggrScorePerfMetric):
     TYPE = "KENDALL"
     VERSION = "1.0"
 
-    @staticmethod
-    def _evaluate(groundtruths, predictions, **kwargs):
+    @classmethod
+    def _evaluate(cls, groundtruths, predictions, **kwargs):
         # kendall
         kendall, _ = scipy.stats.kendalltau(groundtruths, predictions)
         result = {'score': kendall}

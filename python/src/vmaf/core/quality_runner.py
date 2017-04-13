@@ -1,3 +1,4 @@
+from abc import ABCMeta, abstractmethod
 import re
 from xml.etree import ElementTree
 
@@ -55,6 +56,12 @@ class QualityRunner(Executor):
         FeatureAssembler.
     For an example, follow VmafQualityRunner.
     """
+
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def _get_quality_scores(self, asset):
+        raise NotImplementedError
 
     def _read_result(self, asset):
         result = {}
@@ -148,6 +155,12 @@ class VmafLegacyQualityRunner(QualityRunner):
                                      'VMAF_feature_adm_scores',
                                      'VMAF_feature_ansnr_scores',
                                      'VMAF_feature_motion_scores']
+
+    def _get_quality_scores(self, asset):
+        raise NotImplementedError
+
+    def _generate_result(self, asset):
+        raise NotImplementedError
 
     def _get_vmaf_feature_assembler_instance(self, asset):
         vmaf_fassembler = FeatureAssembler(
@@ -260,6 +273,12 @@ class VmafQualityRunner(QualityRunner):
     DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_v0.6.1.pkl")
 
     DEFAULT_FEATURE_DICT = {'VMAF_feature': ['vif', 'adm', 'motion', 'ansnr']} # for backward-compatible with older model only
+
+    def _get_quality_scores(self, asset):
+        raise NotImplementedError
+
+    def _generate_result(self, asset):
+        raise NotImplementedError
 
     def _get_vmaf_feature_assembler_instance(self, asset):
 
@@ -525,6 +544,12 @@ class SsimQualityRunner(QualityRunner):
     TYPE = 'SSIM'
     VERSION = '1.0'
 
+    def _get_quality_scores(self, asset):
+        raise NotImplementedError
+
+    def _generate_result(self, asset):
+        raise NotImplementedError
+
     def _get_feature_assembler_instance(self, asset):
 
         feature_dict = {SsimFeatureExtractor.TYPE: SsimFeatureExtractor.ATOM_FEATURES}
@@ -567,6 +592,12 @@ class MsSsimQualityRunner(QualityRunner):
     TYPE = 'MS_SSIM'
     VERSION = '1.0'
 
+    def _get_quality_scores(self, asset):
+        raise NotImplementedError
+
+    def _generate_result(self, asset):
+        raise NotImplementedError
+
     def _get_feature_assembler_instance(self, asset):
 
         feature_dict = {MsSsimFeatureExtractor.TYPE: MsSsimFeatureExtractor.ATOM_FEATURES}
@@ -606,7 +637,20 @@ class MsSsimQualityRunner(QualityRunner):
 
 class VmafSingleFeatureQualityRunner(QualityRunner):
 
+    __metaclass__ = ABCMeta
+
     VERSION = 'F{}-0'.format(VmafFeatureExtractor.VERSION)
+
+    @property
+    @abstractmethod
+    def FEATURE_NAME(self):
+        raise NotImplementedError
+
+    def _get_quality_scores(self, asset):
+        raise NotImplementedError
+
+    def _generate_result(self, asset):
+        raise NotImplementedError
 
     def _get_vmaf_feature_assembler_instance(self, asset):
 
@@ -674,6 +718,12 @@ class StrredQualityRunner(QualityRunner):
 
     # VERSION = '1.0'
     VERSION = 'F' + VmafFeatureExtractor.VERSION + '-1.1'
+
+    def _get_quality_scores(self, asset):
+        raise NotImplementedError
+
+    def _generate_result(self, asset):
+        raise NotImplementedError
 
     def _get_feature_assembler_instance(self, asset):
 

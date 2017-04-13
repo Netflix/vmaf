@@ -1,3 +1,4 @@
+from abc import ABCMeta, abstractmethod
 import os
 import pickle
 from numbers import Number
@@ -188,6 +189,18 @@ class ClassifierMixin(object):
             assert False, 'Unknow type: {} for get_objective_score().'.format(type)
 
 class TrainTestModel(TypeVersionEnabled):
+
+    __metaclass__ = ABCMeta
+
+    @classmethod
+    @abstractmethod
+    def _train(cls, param_dict, xys_2d):
+        raise NotImplementedError
+
+    @classmethod
+    @abstractmethod
+    def _predict(cls, model, xs_2d):
+        raise NotImplementedError
 
     def __init__(self, param_dict, logger=None, optional_dict2=None):
         '''
@@ -716,8 +729,8 @@ class SklearnRandomForestTrainTestModel(TrainTestModel, RegressorMixin):
     TYPE = 'RANDOMFOREST'
     VERSION = "0.1"
 
-    @staticmethod
-    def _train(model_param, xys_2d):
+    @classmethod
+    def _train(cls, model_param, xys_2d):
         """
         random forest regression
         http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html
@@ -743,8 +756,8 @@ class SklearnRandomForestTrainTestModel(TrainTestModel, RegressorMixin):
 
         return model
 
-    @staticmethod
-    def _predict(model, xs_2d):
+    @classmethod
+    def _predict(cls, model, xs_2d):
         # directly call sklearn's model's predict() function
         ys_label_pred = model.predict(xs_2d)
         return ys_label_pred
@@ -754,8 +767,8 @@ class SklearnExtraTreesTrainTestModel(TrainTestModel, RegressorMixin):
     TYPE = 'EXTRATREES'
     VERSION = "0.1"
 
-    @staticmethod
-    def _train(model_param, xys_2d):
+    @classmethod
+    def _train(cls, model_param, xys_2d):
         """
         extremely random trees
         http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesRegressor.html
@@ -781,8 +794,8 @@ class SklearnExtraTreesTrainTestModel(TrainTestModel, RegressorMixin):
 
         return model
 
-    @staticmethod
-    def _predict(model, xs_2d):
+    @classmethod
+    def _predict(cls, model, xs_2d):
         # directly call sklearn's model's predict() function
         ys_label_pred = model.predict(xs_2d)
         return ys_label_pred

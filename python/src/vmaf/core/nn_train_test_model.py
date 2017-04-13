@@ -469,8 +469,8 @@ class ToddNoiseClassifierTrainTestModel(NeuralNetTrainTestModel, ClassifierMixin
         score = f1_score(ys_true, ys_pred)
         return loss_cum, score
 
-    @staticmethod
-    def _predict(model, patches):
+    @classmethod
+    def _predict(cls, model, patches):
 
         sess = model['sess']
         y_p = model['y_p']

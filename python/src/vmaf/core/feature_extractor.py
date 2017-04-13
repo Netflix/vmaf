@@ -1,3 +1,4 @@
+from abc import ABCMeta, abstractmethod
 import os
 from vmaf.tools.misc import make_absolute_path, run_process
 from vmaf.tools.stats import ListStats
@@ -30,6 +31,13 @@ class FeatureExtractor(Executor):
         scores from the log file, and return the scores in a dictionary format.
     For an example, follow VmafFeatureExtractor.
     """
+
+    __metaclass__ = ABCMeta
+
+    @property
+    @abstractmethod
+    def ATOM_FEATURES(self):
+        raise NotImplementedError
 
     def _read_result(self, asset):
         result = {}
