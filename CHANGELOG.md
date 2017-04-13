@@ -1,5 +1,16 @@
 # Change Log
 
+## (4/13/2017) [1.2.4]
+
+**Refactoring:**
+- Deprecate run_executors_in_parallel.
+- Refactor NorefFeatureExtractor into NorefExecutorMixin so that it can be used for all executors.
+- Add abstract methods to some base classes.
+
+**New features:**
+- Add ST-RRED runner (StrredQualityRunner), based on "Video Quality Assessment by Reduced Reference Spatio-Temporal Entropic Differencing", by R. Soundararaajan, A. Bovik.
+- Add start/end frame support for Executor.
+
 ## (3/8/2017) [1.2.3]
 
 **New features:**
