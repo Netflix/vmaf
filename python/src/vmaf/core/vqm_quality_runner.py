@@ -164,9 +164,11 @@ class VqmQualityRunner(QualityRunner):
     def _get_vqm_matlab_workspace(self):
         # depends on Mac or Linux, switch to different dir
         if sys.platform == 'linux' or sys.platform == 'linux2':
+	    os.environ['MCR_CACHE_ROOT'] = "/tmp"
             return VmafConfig.root_path('matlab', 'vqm', 'VQM_Linux')
         elif sys.platform == 'darwin':
-            return VmafConfig.root_path('matlab', 'vqm', 'VQM_Mac')
+            os.environ['MCR_CACHE_ROOT'] = "/private/tmp"
+	    return VmafConfig.root_path('matlab', 'vqm', 'VQM_Mac')
         else:
             raise AssertionError("System is {}, which is not supported by VQM".format(sys.platform))
 
