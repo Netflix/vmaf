@@ -69,16 +69,18 @@ class FeatureAssembler(object):
             # results = fextractor.results
 
             fextractor_class = FeatureExtractor.find_subclass(fextractor_type)
-            _, results = run_executors_in_parallel(
-                fextractor_class,
-                assets=self.assets,
-                fifo_mode=self.fifo_mode,
-                delete_workdir=self.delete_workdir,
-                parallelize=self.parallelize,
-                result_store=self.result_store,
-                optional_dict=self.optional_dict,
-                optional_dict2=self.optional_dict2,
+
+            runner = fextractor_class(
+                 self.assets,
+                 logger=None,
+                 fifo_mode=self.fifo_mode,
+                 delete_workdir=self.delete_workdir,
+                 result_store=self.result_store,
+                 optional_dict=self.optional_dict,
+                 optional_dict2=self.optional_dict2,
             )
+            runner.run(parallelize=self.parallelize)
+            results = runner.results
 
             self.type2results_dict[fextractor_type] = results
 

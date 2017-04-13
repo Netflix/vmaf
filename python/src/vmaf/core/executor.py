@@ -4,6 +4,7 @@ import os
 from time import sleep
 import hashlib
 from vmaf.core.asset import Asset
+from vmaf.tools.decorator import deprecated
 
 from vmaf.tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_slash, \
     parallel_map, match_any_files, run_process, \
@@ -530,6 +531,7 @@ class Executor(TypeVersionEnabled):
         if self.result_store:
             self.result_store.delete(asset, self.executor_id)
 
+@deprecated
 def run_executors_in_parallel(executor_class,
                               assets,
                               fifo_mode=True,

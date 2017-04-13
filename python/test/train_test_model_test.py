@@ -24,16 +24,17 @@ class TrainTestModelTest(unittest.TestCase):
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
 
-        _, self.features = run_executors_in_parallel(
-            MomentNorefFeatureExtractor,
+        runner = MomentNorefFeatureExtractor(
             train_assets,
+            None,
             fifo_mode=True,
             delete_workdir=True,
-            parallelize=True,
             result_store=None,
             optional_dict=None,
             optional_dict2=None,
         )
+        runner.run(parallelize=True)
+        self.features = runner.results
 
         self.model_filename = VmafConfig.model_path("test_save_load.pkl")
 
@@ -248,16 +249,17 @@ class TrainTestModelWithDisYRawVideoExtractorTest(unittest.TestCase):
         self.h5py_file = DisYUVRawVideoExtractor.open_h5py_file(self.h5py_filepath)
         optional_dict2 = {'h5py_file': self.h5py_file}
 
-        _, self.features = run_executors_in_parallel(
-            DisYUVRawVideoExtractor,
+        runner = DisYUVRawVideoExtractor(
             train_assets,
+            None,
             fifo_mode=True,
             delete_workdir=True,
-            parallelize=False, # CAN ONLY USE SERIAL MODE FOR DisYRawVideoExtractor
             result_store=None,
             optional_dict=None,
             optional_dict2=optional_dict2,
         )
+        runner.run(parallelize=False) # CAN ONLY USE SERIAL MODE FOR DisYRawVideoExtractor
+        self.features = runner.results
 
         self.model_filename = VmafConfig.workspace_path("model", "test_save_load.pkl")
 

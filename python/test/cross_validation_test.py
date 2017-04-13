@@ -20,16 +20,17 @@ class CrossValidationTest(unittest.TestCase):
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
 
-        _, self.features = run_executors_in_parallel(
-            MomentNorefFeatureExtractor,
+        runner = MomentNorefFeatureExtractor(
             train_assets,
+            None,
             fifo_mode=True,
             delete_workdir=True,
-            parallelize=True,
             result_store=None,
             optional_dict=None,
             optional_dict2=None,
         )
+        runner.run(parallelize=True)
+        self.features = runner.results
 
     def test_run_cross_validation(self):
 
