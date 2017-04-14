@@ -1,4 +1,6 @@
 from abc import abstractmethod, ABCMeta
+import os
+from vmaf.tools.misc import get_dir_without_last_slash
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -20,8 +22,11 @@ class WorkdirEnabled(object):
 
     def _get_workdir(self, workdir_root):
         subdir = str(uuid.uuid4())
-        self.workdir = "{root}/{subdir}".format(root=workdir_root, subdir=subdir)
+        self.workdir = os.path.join(workdir_root, subdir)
 
+    @property
+    def workdir_root(self):
+        return get_dir_without_last_slash(self.workdir)
 
 class TypeVersionEnabled(object):
     """

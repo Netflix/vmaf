@@ -51,7 +51,7 @@ class Asset(WorkdirEnabled):
         :param workdir_root:
         :return:
         """
-        super(Asset, self).__init__(workdir_root)
+        WorkdirEnabled.__init__(self, workdir_root)
         self.dataset = dataset
         self.content_id = content_id
         self.asset_id = asset_id
@@ -540,10 +540,12 @@ class NorefAsset(Asset):
         :param workdir_root:
         :return:
         """
-        super(Asset, self).__init__(workdir_root)
-        self.dataset = dataset
-        self.content_id = content_id
-        self.asset_id = asset_id
-        self.ref_path = dis_path # just assign ref_path same as dis_path
-        self.dis_path = dis_path
-        self.asset_dict = asset_dict
+        super(NorefAsset, self).__init__(
+            dataset,
+            content_id,
+            asset_id,
+            dis_path, # repeat dis_path for both ref_path and dis_path
+            dis_path,
+            asset_dict,
+            workdir_root
+        )

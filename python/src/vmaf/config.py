@@ -82,6 +82,10 @@ class VmafConfig(object):
         return cls.root_path('workspace', 'result_store_dir', 'file_result_store', *components)
 
     @classmethod
+    def encode_store_path(cls, *components):
+        return cls.root_path('workspace', 'result_store_dir', 'encode_store', *components)
+
+    @classmethod
     def workspace_path(cls, *components):
         return cls.root_path('workspace', *components)
 

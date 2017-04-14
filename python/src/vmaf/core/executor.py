@@ -146,17 +146,6 @@ class Executor(TypeVersionEnabled):
         for asset in self.assets:
             self._assert_an_asset(asset)
 
-        # ===============================================
-        # after using locks in run_executors_in_parallel,
-        # no longer need constraint below
-        # ===============================================
-        # list_dataset_contentid_assetid = \
-        #     map(lambda asset: (asset.dataset, asset.content_id, asset.asset_id),
-        #         self.assets)
-        # assert len(list_dataset_contentid_assetid) == \
-        #        len(set(list_dataset_contentid_assetid)), \
-        #     "Triplet of dataset, content_id and asset_id must be unique for each asset."
-
         pass
 
     @staticmethod
@@ -305,7 +294,7 @@ class Executor(TypeVersionEnabled):
 
             # save result
             if self.result_store:
-                self.result_store.save(result)
+                result = self._save_result(result)
 
             # clean up workdir and log files in it
             if self.delete_workdir:
@@ -320,7 +309,7 @@ class Executor(TypeVersionEnabled):
                     os.rmdir(log_dir)
                 except OSError as e:
                     if e.errno == 39: # [Errno 39] Directory not empty
-                        # VQM could generate an error file with non-critical
+                        # e.g. VQM could generate an error file with non-critical
                         # information like: '3 File is longer than 15 seconds.
                         # Results will be calculated using first 15 seconds
                         # only.' In this case, want to keep this
@@ -329,6 +318,10 @@ class Executor(TypeVersionEnabled):
 
         result = self._post_process_result(result)
 
+        return result
+
+    def _save_result(self, result):
+        self.result_store.save(result)
         return result
 
     @classmethod
@@ -687,7 +680,7 @@ class NorefExecutorMixin(object):
 
             # save result
             if self.result_store:
-                self.result_store.save(result)
+                result = self._save_result(result)
 
             # clean up workdir and log files in it
             if self.delete_workdir:

@@ -408,8 +408,8 @@ class RawResult(object):
     def __init__(self, asset, executor_id, result_dict):
         # same interface as Result
         self.asset = asset
-        self.result_dict = result_dict
         self.executor_id = executor_id
+        self.result_dict = result_dict
 
     # make access dictionary-like, i.e. can do: result['pixels'], result['asset']
     def __getitem__(self, key):

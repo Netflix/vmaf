@@ -18,6 +18,12 @@ class AssetTest(unittest.TestCase):
         workdir = asset.workdir
         self.assertTrue(re.match(r"^my_workdir_root/[a-zA-Z0-9-]+$", workdir))
 
+    def test_workdir_root(self):
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={}, workdir_root="my_workdir_root")
+        self.assertEquals(asset.workdir_root, "my_workdir_root")
+
     def test_ref_width_height(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
