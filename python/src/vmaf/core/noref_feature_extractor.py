@@ -25,7 +25,7 @@ class MomentNorefFeatureExtractor(NorefExecutorMixin, FeatureExtractor):
         quality_w, quality_h = asset.quality_width_height
         with YuvReader(filepath=asset.dis_workfile_path, width=quality_w,
                        height=quality_h,
-                       yuv_type=self._get_workfile_yuv_type(asset.yuv_type)) \
+                       yuv_type=self._get_workfile_yuv_type(asset)) \
                 as dis_yuv_reader:
             scores_mtx_list = []
             i = 0

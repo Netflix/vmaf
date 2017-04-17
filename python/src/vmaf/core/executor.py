@@ -174,7 +174,8 @@ class Executor(TypeVersionEnabled):
         if cls._need_ffmpeg(asset):
             VmafExternalConfig.get_and_assert_ffmpeg()
 
-        # ref_yuv_type and dis_yuv_type must match, unless any of them is notyuv
+        # ref_yuv_type and dis_yuv_type must match, unless any of them is notyuv.
+        # also check the logic in _get_workfile_yuv_type
         assert (asset.ref_yuv_type == 'notyuv' or asset.dis_yuv_type == 'notyuv') \
                or (asset.ref_yuv_type == asset.dis_yuv_type)
 
@@ -370,7 +371,7 @@ class Executor(TypeVersionEnabled):
         else:
             src_fmt_cmd = self._get_notyuv_src_fmt_cmd(asset, 'ref')
 
-        workfile_yuv_type = self._get_workfile_yuv_type(yuv_type)
+        workfile_yuv_type = self._get_workfile_yuv_type(asset)
 
         crop_cmd = self._get_crop_cmd(asset)
         pad_cmd = self._get_pad_cmd(asset)
@@ -400,12 +401,24 @@ class Executor(TypeVersionEnabled):
 
         run_process(ffmpeg_cmd, shell=True)
 
-    def _get_workfile_yuv_type(self, yuv_type):
-        """ same as original yuv type, unless it is notyuv; in this case, check
-        the other's (if ref, check dis'; vice versa)
-        """
-        workfile_yuv_type = yuv_type if yuv_type != 'notyuv' else Asset.DEFAULT_YUV_TYPE
-        return workfile_yuv_type
+    @staticmethod
+    def _get_workfile_yuv_type(asset):
+        """ Same as original yuv type, unless it is notyuv; in this case, check
+        the other's (if ref, check dis'; vice versa); if both notyuv, use default"""
+
+        # also check the logic in _assert_an_asset. The assumption is:
+        # assert (asset.ref_yuv_type == 'notyuv' or asset.dis_yuv_type == 'notyuv') \
+        #        or (asset.ref_yuv_type == asset.dis_yuv_type)
+
+        if asset.ref_yuv_type == 'notyuv' and asset.dis_yuv_type == 'notyuv':
+            return Asset.DEFAULT_YUV_TYPE
+        elif asset.ref_yuv_type == 'notyuv' and asset.dis_yuv_type != 'notyuv':
+            return asset.dis_yuv_type
+        elif asset.ref_yuv_type != 'notyuv' and asset.dis_yuv_type == 'notyuv':
+            return asset.ref_yuv_type
+        else: # neither notyuv
+            assert asset.ref_yuv_type == asset.dis_yuv_type
+            return asset.ref_yuv_type
 
     def _open_dis_workfile(self, asset, fifo_mode):
         # For now, only works for YUV format -- all need is to copy from dis
@@ -429,7 +442,7 @@ class Executor(TypeVersionEnabled):
         else:
             src_fmt_cmd = self._get_notyuv_src_fmt_cmd(asset, 'dis')
 
-        workfile_yuv_type = self._get_workfile_yuv_type(yuv_type)
+        workfile_yuv_type = self._get_workfile_yuv_type(asset)
 
         crop_cmd = self._get_crop_cmd(asset)
         pad_cmd = self._get_pad_cmd(asset)

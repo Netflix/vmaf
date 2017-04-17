@@ -95,7 +95,7 @@ class PsnrQualityRunner(QualityRunner):
         psnr_cmd = "{psnr} {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
         .format(
             psnr=ExternalProgram.psnr,
-            yuv_type=self._get_workfile_yuv_type(asset.yuv_type),
+            yuv_type=self._get_workfile_yuv_type(asset),
             ref_path=asset.ref_workfile_path,
             dis_path=asset.dis_workfile_path,
             w=quality_width,
@@ -495,7 +495,7 @@ class VmafossExecQualityRunner(QualityRunner):
         vmafossexec_cmd = "{exe} {fmt} {w} {h} {ref_path} {dis_path} {model} --log {log_file_path} --log-fmt xml --psnr --ssim --ms-ssim" \
             .format(
             exe=ExternalProgram.vmafossexec,
-            fmt=self._get_workfile_yuv_type(asset.yuv_type),
+            fmt=self._get_workfile_yuv_type(asset),
             w=quality_width,
             h=quality_height,
             ref_path=asset.ref_workfile_path,

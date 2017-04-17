@@ -119,7 +119,7 @@ class DisYUVRawVideoExtractor(H5pyMixin, RawExtractor):
         dis_us = []
         dis_vs = []
         with YuvReader(filepath=asset.dis_workfile_path, width=quality_w, height=quality_h,
-                       yuv_type=self._get_workfile_yuv_type(asset.yuv_type)) as dis_yuv_reader:
+                       yuv_type=self._get_workfile_yuv_type(asset)) as dis_yuv_reader:
             for dis_yuv in dis_yuv_reader:
                 dis_y, dis_u, dis_v = dis_yuv
                 dis_ys.append(dis_y)
