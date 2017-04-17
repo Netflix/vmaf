@@ -159,7 +159,8 @@ class Executor(TypeVersionEnabled):
             or asset.quality_width_height != asset.dis_width_height \
             or asset.crop_cmd is not None \
             or asset.pad_cmd is not None \
-            or asset.yuv_type == 'notyuv' \
+            or asset.ref_yuv_type == 'notyuv' \
+            or asset.dis_yuv_type == 'notyuv' \
             or asset.ref_start_end_frame is not None \
             or asset.dis_start_end_frame is not None
 
@@ -172,6 +173,10 @@ class Executor(TypeVersionEnabled):
 
         if cls._need_ffmpeg(asset):
             VmafExternalConfig.get_and_assert_ffmpeg()
+
+        # ref_yuv_type and dis_yuv_type must match, unless any of them is notyuv
+        assert (asset.ref_yuv_type == 'notyuv' or asset.dis_yuv_type == 'notyuv') \
+               or (asset.ref_yuv_type == asset.dis_yuv_type)
 
         # if crop_cmd or pad_cmd is specified, make sure quality_width and
         # quality_height are EXPLICITLY specified in asset_dict
@@ -355,13 +360,13 @@ class Executor(TypeVersionEnabled):
             os.mkfifo(asset.ref_workfile_path)
 
         quality_width, quality_height = asset.quality_width_height
-        yuv_type = asset.yuv_type
+        yuv_type = asset.ref_yuv_type
         resampling_type = asset.resampling_type
 
         if yuv_type != 'notyuv':
             # in this case, for sure has ref_width_height
             width, height = asset.ref_width_height
-            src_fmt_cmd = self._get_yuv_src_fmt_cmd(asset, height, width)
+            src_fmt_cmd = self._get_yuv_src_fmt_cmd(asset, height, width, 'ref')
         else:
             src_fmt_cmd = self._get_notyuv_src_fmt_cmd(asset, 'ref')
 
@@ -396,6 +401,9 @@ class Executor(TypeVersionEnabled):
         run_process(ffmpeg_cmd, shell=True)
 
     def _get_workfile_yuv_type(self, yuv_type):
+        """ same as original yuv type, unless it is notyuv; in this case, check
+        the other's (if ref, check dis'; vice versa)
+        """
         workfile_yuv_type = yuv_type if yuv_type != 'notyuv' else Asset.DEFAULT_YUV_TYPE
         return workfile_yuv_type
 
@@ -411,13 +419,13 @@ class Executor(TypeVersionEnabled):
             os.mkfifo(asset.dis_workfile_path)
 
         quality_width, quality_height = asset.quality_width_height
-        yuv_type = asset.yuv_type
+        yuv_type = asset.dis_yuv_type
         resampling_type = asset.resampling_type
 
         if yuv_type != 'notyuv':
             # in this case, for sure has dis_width_height
             width, height = asset.dis_width_height
-            src_fmt_cmd = self._get_yuv_src_fmt_cmd(asset, height, width)
+            src_fmt_cmd = self._get_yuv_src_fmt_cmd(asset, height, width, 'dis')
         else:
             src_fmt_cmd = self._get_notyuv_src_fmt_cmd(asset, 'dis')
 
@@ -448,9 +456,15 @@ class Executor(TypeVersionEnabled):
         run_process(ffmpeg_cmd, shell=True)
 
     @staticmethod
-    def _get_yuv_src_fmt_cmd(asset, height, width):
+    def _get_yuv_src_fmt_cmd(asset, height, width, ref_or_dis):
+        if ref_or_dis == 'ref':
+            yuv_type = asset.ref_yuv_type
+        elif ref_or_dis == 'dis':
+            yuv_type = asset.dis_yuv_type
+        else:
+            raise AssertionError('Unknown ref_or_dis: {}'.format(ref_or_dis))
         yuv_src_fmt_cmd = '-f rawvideo -pix_fmt {yuv_fmt} -s {width}x{height}'. \
-            format(yuv_fmt=asset.yuv_type, width=width, height=height)
+            format(yuv_fmt=yuv_type, width=width, height=height)
         return yuv_src_fmt_cmd
 
     @staticmethod

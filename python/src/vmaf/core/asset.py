@@ -1,3 +1,5 @@
+from vmaf.tools.decorator import deprecated
+
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
@@ -65,8 +67,10 @@ class Asset(WorkdirEnabled):
         # if YUV is notyuv, then ref/dis width and height should not be given,
         # since it must be encoded video and the information should be already
         # in included in the header of the video files
-        if self.yuv_type == 'notyuv':
-            assert self.ref_width_height is None and self.dis_width_height is None, 'For yuv_type nonyuv, ref_width_height and dis_width_height must not be specified.'
+        if self.ref_yuv_type == 'notyuv':
+            assert self.ref_width_height is None, 'For ref_yuv_type nonyuv, ref_width_height must NOT be specified.'
+        if self.dis_yuv_type == 'notyuv':
+            assert self.dis_width_height is None, 'For dis_yuv_type nonyuv, dis_width_height must NOT be specified.'
 
     @staticmethod
     def from_repr(rp):
@@ -278,8 +282,8 @@ class Asset(WorkdirEnabled):
             w, h = self.ref_width_height
             s += "_{w}x{h}".format(w=w, h=h)
 
-        if self.yuv_type != self.DEFAULT_YUV_TYPE:
-            s += "_{}".format(self.yuv_type)
+        if self.ref_yuv_type != self.DEFAULT_YUV_TYPE:
+            s += "_{}".format(self.ref_yuv_type)
 
         if self.ref_start_end_frame:
             start, end = self.ref_start_end_frame
@@ -302,8 +306,8 @@ class Asset(WorkdirEnabled):
             w, h = self.dis_width_height
             s += "_{w}x{h}".format(w=w, h=h)
 
-        if self.yuv_type != self.DEFAULT_YUV_TYPE:
-            s += "_{}".format(self.yuv_type)
+        if self.dis_yuv_type != self.DEFAULT_YUV_TYPE:
+            s += "_{}".format(self.dis_yuv_type)
 
         if self.dis_start_end_frame:
             start, end = self.dis_start_end_frame
@@ -453,13 +457,14 @@ class Asset(WorkdirEnabled):
     # ==== yuv format ====
 
     @property
-    def yuv_type(self):
-        """
-        Assuming ref/dis files are both YUV and the same type, return the type
-        (yuv420p, yuv422p, yuv444p, yuv420p10le, yuv422p10le, yuv444p10le)
-        :return:
-        """
-        if 'yuv_type' in self.asset_dict:
+    def ref_yuv_type(self):
+        if 'ref_yuv_type' in self.asset_dict:
+            if self.asset_dict['ref_yuv_type'] in self.SUPPORTED_YUV_TYPES:
+                return self.asset_dict['ref_yuv_type']
+            else:
+                assert False, "Unsupported YUV type: {}".format(
+                    self.asset_dict['ref_yuv_type'])
+        elif 'yuv_type' in self.asset_dict:
             if self.asset_dict['yuv_type'] in self.SUPPORTED_YUV_TYPES:
                 return self.asset_dict['yuv_type']
             else:
@@ -467,6 +472,29 @@ class Asset(WorkdirEnabled):
                     self.asset_dict['yuv_type'])
         else:
             return self.DEFAULT_YUV_TYPE
+
+    @property
+    def dis_yuv_type(self):
+        if 'dis_yuv_type' in self.asset_dict:
+            if self.asset_dict['dis_yuv_type'] in self.SUPPORTED_YUV_TYPES:
+                return self.asset_dict['dis_yuv_type']
+            else:
+                assert False, "Unsupported YUV type: {}".format(
+                    self.asset_dict['dis_yuv_type'])
+        elif 'yuv_type' in self.asset_dict:
+            if self.asset_dict['yuv_type'] in self.SUPPORTED_YUV_TYPES:
+                return self.asset_dict['yuv_type']
+            else:
+                assert False, "Unsupported YUV type: {}".format(
+                    self.asset_dict['yuv_type'])
+        else:
+            return self.DEFAULT_YUV_TYPE
+
+    @property
+    @deprecated
+    def yuv_type(self):
+        """ For backward-compatibility """
+        return self.dis_yuv_type
 
     @property
     def resampling_type(self):
