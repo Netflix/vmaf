@@ -196,7 +196,7 @@ class LocalExplainer(object):
             if asset is not None:
                 w, h = asset.dis_width_height
                 with YuvReader(filepath=asset.dis_path, width=w, height=h,
-                               yuv_type=asset.yuv_type) as yuv_reader:
+                               yuv_type=asset.dis_yuv_type) as yuv_reader:
                     for yuv in yuv_reader:
                         img, _, _ = yuv
                         break

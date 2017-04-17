@@ -154,16 +154,18 @@ class ParallelDisYRawVideoExtractorTest(unittest.TestCase):
         h5py_file = DisYUVRawVideoExtractor.open_h5py_file(self.h5py_filepath)
         optional_dict2 = {'h5py_file': h5py_file}
 
-        self.fextractors, results = run_executors_in_parallel(
-            DisYUVRawVideoExtractor,
+        fextractor = DisYUVRawVideoExtractor(
             [asset, asset_original],
+            None,
             fifo_mode=True,
             delete_workdir=True,
-            parallelize=False, # Can't run parallel: can't pickle FileID objects
             result_store=None,
             optional_dict={'channels': 'yu'},
             optional_dict2=optional_dict2
         )
+        self.fextractors = [fextractor]
+        fextractor.run(parallelize=False) # Can't run parallel: can't pickle FileID objects
+        results = fextractor.results
 
         self.assertAlmostEqual(np.mean(results[0]['dis_y']), 61.332006579182384, places=4)
         self.assertAlmostEquals(np.mean(results[1]['dis_y']), 59.788567297525148, places=4)

@@ -538,7 +538,7 @@ class StrredFeatureExtractor(MatlabFeatureExtractor):
     @classmethod
     def _assert_an_asset(cls, asset):
         super(StrredFeatureExtractor, cls)._assert_an_asset(asset)
-        assert asset.yuv_type == 'yuv420p', \
+        assert asset.ref_yuv_type == 'yuv420p' and asset.dis_yuv_type == 'yuv420p', \
             'STRRED feature extractor only supports yuv420p for now.'
 
     def _generate_result(self, asset):

@@ -36,16 +36,18 @@ class LocalExplainerTest(unittest.TestCase):
         train_dataset_path = VmafConfig.test_resource_path('test_image_dataset_diffdim.py')
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
-        _, self.features = run_executors_in_parallel(
-            MomentNorefFeatureExtractor,
+
+        fextractor = MomentNorefFeatureExtractor(
             train_assets,
+            None,
             fifo_mode=True,
             delete_workdir=True,
-            parallelize=True,
             result_store=None,
             optional_dict=None,
             optional_dict2=None,
         )
+        fextractor.run(parallelize=True)
+        self.features = fextractor.results
 
         xys = model_class.get_xys_from_results(self.features[:7])
         model = model_class({'norm_type':'normalize', 'random_state':0}, None)
@@ -161,16 +163,17 @@ class LocalExplainerMomentRandomForestTest(unittest.TestCase):
         self.h5py_file = DisYUVRawVideoExtractor.open_h5py_file(self.h5py_filepath)
         optional_dict2 = {'h5py_file': self.h5py_file}
 
-        _, self.features = run_executors_in_parallel(
-            DisYUVRawVideoExtractor,
+        fextractor = DisYUVRawVideoExtractor(
             train_assets,
+            None,
             fifo_mode=True,
             delete_workdir=True,
-            parallelize=False, # CAN ONLY USE SERIAL MODE FOR DisYRawVideoExtractor
             result_store=None,
             optional_dict=None,
             optional_dict2=optional_dict2,
         )
+        fextractor.run(parallelize=False) # CAN ONLY USE SERIAL MODE FOR DisYRawVideoExtractor
+        self.features = fextractor.results
 
     def tearDown(self):
         if hasattr(self, 'h5py_file'):

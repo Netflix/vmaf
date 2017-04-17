@@ -101,14 +101,17 @@ class ParallelNorefFeatureExtractorTest(unittest.TestCase):
                       workdir_root=VmafConfig.workdir_path(),
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
-        self.fextractors, results = run_executors_in_parallel(
-            MomentNorefFeatureExtractor,
+
+        fextractor = MomentNorefFeatureExtractor(
             [asset, asset_original],
+            None,
             fifo_mode=True,
             delete_workdir=True,
-            parallelize=True,
             result_store=None,
         )
+        self.fextractors = [fextractor]
+        fextractor.run(parallelize=True)
+        results = fextractor.results
 
         self.assertAlmostEqual(results[0]['Moment_noref_feature_1st_score'], 61.332006624999984)
         self.assertAlmostEqual(results[0]['Moment_noref_feature_2nd_score'], 4798.659574041666)

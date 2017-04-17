@@ -68,11 +68,11 @@ class TestReadDataset(unittest.TestCase):
         self.assertEquals(train_assets[0].ref_width_height, (1920, 1080))
         self.assertEquals(train_assets[0].dis_width_height, (1920, 1080))
         self.assertEquals(train_assets[0].quality_width_height, (1920, 1080))
-        self.assertEquals(train_assets[0].yuv_type, 'yuv420p')
+        self.assertEquals(train_assets[0].dis_yuv_type, 'yuv420p')
         self.assertEquals(train_assets[2].ref_width_height, (1280, 720))
         self.assertEquals(train_assets[2].dis_width_height, (1280, 720))
         self.assertEquals(train_assets[2].quality_width_height, (1280, 720))
-        self.assertEquals(train_assets[2].yuv_type, 'yuv420p10le')
+        self.assertEquals(train_assets[2].dis_yuv_type, 'yuv420p10le')
 
 class TestTrainOnDataset(unittest.TestCase):
 
