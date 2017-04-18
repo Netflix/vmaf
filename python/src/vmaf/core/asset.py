@@ -157,7 +157,9 @@ class Asset(WorkdirEnabled):
         or ref and dis's width and height must be equal, which will be used
         as the default quality width and height.
         """
-        assert ('quality_width' in self.asset_dict and 'quality_height' in self.asset_dict) or self.ref_width_height == self.dis_width_height
+
+        assert ('quality_width' in self.asset_dict and 'quality_height' in self.asset_dict) \
+               or self.ref_width_height == self.dis_width_height
 
         if 'quality_width' in self.asset_dict and 'quality_height' in self.asset_dict:
             return self.asset_dict['quality_width'], self.asset_dict['quality_height']
