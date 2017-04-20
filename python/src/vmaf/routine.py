@@ -662,7 +662,9 @@ def run_subjective_models(dataset_filepath, subjective_model_classes, do_plot=No
 
         # ===== plot subject bias and inconsistency =====
         bar_width = 0.4
-        fig, (ax_bias, ax_inconsty) = plt.subplots(figsize=(5, 3.5), nrows=2, sharex=True)
+        # figsize = (5, 3.5)
+        figsize = (7, 10)
+        fig, (ax_bias, ax_inconsty) = plt.subplots(figsize=figsize, nrows=2, sharex=True)
         xs = None
         shift_count = 0
         colors = ['black', 'white', 'blue', 'red']
@@ -683,7 +685,7 @@ def run_subjective_models(dataset_filepath, subjective_model_classes, do_plot=No
                     observers = result['observers']
                     assert len(bias) == len(observers)
                     my_xticks = observers
-                    plt.xticks(np.array(xs) + 0.5, my_xticks, rotation=90)
+                    plt.xticks(np.array(xs) + 0.01, my_xticks, rotation=90)
 
             if 'observer_inconsistency' in result:
                 inconsty = result['observer_inconsistency']
@@ -725,7 +727,9 @@ def run_subjective_models(dataset_filepath, subjective_model_classes, do_plot=No
         if xs:
             my_xticks = map(lambda ref_video: ref_video['content_name'],
                             dataset_reader.dataset.ref_videos)
-            plt.xticks(np.array(xs) + 0.5, my_xticks, rotation=75)
+            # rotation = 75
+            rotation = 90
+            plt.xticks(np.array(xs) + 0.01, my_xticks, rotation=rotation)
         # ax_ambgty.legend(loc=1, ncol=2, frameon=False, prop={'size':12})
         plt.tight_layout()
 
