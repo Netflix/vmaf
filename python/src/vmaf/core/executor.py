@@ -352,6 +352,13 @@ class Executor(TypeVersionEnabled):
         cls._close_ref_workfile(asset)
         cls._close_dis_workfile(asset)
 
+    def _refresh_workfiles_before_additional_pass(self, asset):
+        # If fifo mode and workpath needs to be freshly generated, must
+        # reopen the fifo pipe before proceeding
+        if self.fifo_mode and (not asset.use_path_as_workpath):
+            self._close_workfiles(asset)
+            self._open_workfiles_in_fifo_mode(asset)
+
     def _save_result(self, result):
         self.result_store.save(result)
         return result
