@@ -188,7 +188,24 @@ class Executor(TypeVersionEnabled):
             assert 'quality_width' in asset.asset_dict and 'quality_height' in asset.asset_dict, \
                 'If pad_cmd is specified, must also EXPLICITLY specify quality_width and quality_height.'
 
-        pass
+    @staticmethod
+    def _get_workfile_yuv_type(asset):
+        """ Same as original yuv type, unless it is notyuv; in this case, check
+        the other's (if ref, check dis'; vice versa); if both notyuv, use default"""
+
+        # also check the logic in _assert_an_asset. The assumption is:
+        # assert (asset.ref_yuv_type == 'notyuv' or asset.dis_yuv_type == 'notyuv') \
+        #        or (asset.ref_yuv_type == asset.dis_yuv_type)
+
+        if asset.ref_yuv_type == 'notyuv' and asset.dis_yuv_type == 'notyuv':
+            return Asset.DEFAULT_YUV_TYPE
+        elif asset.ref_yuv_type == 'notyuv' and asset.dis_yuv_type != 'notyuv':
+            return asset.dis_yuv_type
+        elif asset.ref_yuv_type != 'notyuv' and asset.dis_yuv_type == 'notyuv':
+            return asset.ref_yuv_type
+        else: # neither notyuv
+            assert asset.ref_yuv_type == asset.dis_yuv_type
+            return asset.ref_yuv_type
 
     def _wait_for_workfiles(self, asset):
         # wait til workfile paths being generated
@@ -256,8 +273,7 @@ class Executor(TypeVersionEnabled):
                 # do nothing
                 pass
             else:
-                self._close_ref_workfile(asset)
-                self._close_dis_workfile(asset)
+                self._close_workfiles(asset)
 
             log_file_path = self._get_log_file_path(asset)
             make_parent_dirs_if_nonexist(log_file_path)
@@ -267,16 +283,9 @@ class Executor(TypeVersionEnabled):
                 pass
             else:
                 if self.fifo_mode:
-                    ref_p = multiprocessing.Process(target=self._open_ref_workfile,
-                                                    args=(asset, True))
-                    dis_p = multiprocessing.Process(target=self._open_dis_workfile,
-                                                    args=(asset, True))
-                    ref_p.start()
-                    dis_p.start()
-                    self._wait_for_workfiles(asset)
+                    self._open_workfiles_in_fifo_mode(asset)
                 else:
-                    self._open_ref_workfile(asset, fifo_mode=False)
-                    self._open_dis_workfile(asset, fifo_mode=False)
+                    self.open_workfiles(asset)
 
             self._prepare_log_file(asset)
 
@@ -288,8 +297,7 @@ class Executor(TypeVersionEnabled):
                     # do nothing
                     pass
                 else:
-                    self._close_ref_workfile(asset)
-                    self._close_dis_workfile(asset)
+                    self._close_workfiles(asset)
 
             if self.logger:
                 self.logger.info("Read {id} log file, get scores...".
@@ -325,6 +333,24 @@ class Executor(TypeVersionEnabled):
         result = self._post_process_result(result)
 
         return result
+
+    def open_workfiles(self, asset):
+        self._open_ref_workfile(asset, fifo_mode=False)
+        self._open_dis_workfile(asset, fifo_mode=False)
+
+    def _open_workfiles_in_fifo_mode(self, asset):
+        ref_p = multiprocessing.Process(target=self._open_ref_workfile,
+                                        args=(asset, True))
+        dis_p = multiprocessing.Process(target=self._open_dis_workfile,
+                                        args=(asset, True))
+        ref_p.start()
+        dis_p.start()
+        self._wait_for_workfiles(asset)
+
+    @classmethod
+    def _close_workfiles(cls, asset):
+        cls._close_ref_workfile(asset)
+        cls._close_dis_workfile(asset)
 
     def _save_result(self, result):
         self.result_store.save(result)
@@ -400,25 +426,6 @@ class Executor(TypeVersionEnabled):
             self.logger.info(ffmpeg_cmd)
 
         run_process(ffmpeg_cmd, shell=True)
-
-    @staticmethod
-    def _get_workfile_yuv_type(asset):
-        """ Same as original yuv type, unless it is notyuv; in this case, check
-        the other's (if ref, check dis'; vice versa); if both notyuv, use default"""
-
-        # also check the logic in _assert_an_asset. The assumption is:
-        # assert (asset.ref_yuv_type == 'notyuv' or asset.dis_yuv_type == 'notyuv') \
-        #        or (asset.ref_yuv_type == asset.dis_yuv_type)
-
-        if asset.ref_yuv_type == 'notyuv' and asset.dis_yuv_type == 'notyuv':
-            return Asset.DEFAULT_YUV_TYPE
-        elif asset.ref_yuv_type == 'notyuv' and asset.dis_yuv_type != 'notyuv':
-            return asset.dis_yuv_type
-        elif asset.ref_yuv_type != 'notyuv' and asset.dis_yuv_type == 'notyuv':
-            return asset.ref_yuv_type
-        else: # neither notyuv
-            assert asset.ref_yuv_type == asset.dis_yuv_type
-            return asset.ref_yuv_type
 
     def _open_dis_workfile(self, asset, fifo_mode):
         # For now, only works for YUV format -- all need is to copy from dis
@@ -616,11 +623,49 @@ def run_executors_in_parallel(executor_class,
 
 
 class NorefExecutorMixin(object):
+    """ Override Executor whenever reference video is mentioned. """
 
-    def _assert_paths(self, asset):
-        # Override Executor._assert_paths to skip asserting on ref_path
-        assert os.path.exists(asset.dis_path) or match_any_files(asset.dis_path), \
-            "Distorted path {} does not exist.".format(asset.dis_path)
+    @staticmethod
+    def _need_ffmpeg(asset):
+        # Override Executor._need_ffmpeg.
+        # 1) if quality width/height do not to agree with dis width/height,
+        # must rely on ffmpeg for scaling
+        # 2) if crop/pad is need, need ffmpeg
+        # 3) if dis videos' start/end frames specified, need ffmpeg for
+        # frame extraction
+        return asset.quality_width_height != asset.dis_width_height \
+            or asset.crop_cmd is not None \
+            or asset.pad_cmd is not None \
+            or asset.dis_yuv_type == 'notyuv' \
+            or asset.dis_start_end_frame is not None
+
+    @classmethod
+    def _assert_an_asset(cls, asset):
+
+        # needed by _generate_result, and by _open_dis_workfile if called
+        assert asset.quality_width_height is not None
+
+        if cls._need_ffmpeg(asset):
+            VmafExternalConfig.get_and_assert_ffmpeg()
+
+        # if crop_cmd or pad_cmd is specified, make sure quality_width and
+        # quality_height are EXPLICITLY specified in asset_dict
+        if asset.crop_cmd is not None:
+            assert 'quality_width' in asset.asset_dict and 'quality_height' in asset.asset_dict, \
+                'If crop_cmd is specified, must also EXPLICITLY specify quality_width and quality_height.'
+        if asset.pad_cmd is not None:
+            assert 'quality_width' in asset.asset_dict and 'quality_height' in asset.asset_dict, \
+                'If pad_cmd is specified, must also EXPLICITLY specify quality_width and quality_height.'
+
+    @staticmethod
+    def _get_workfile_yuv_type(asset):
+        """ Same as original yuv type, unless it is notyuv; in this case,
+        use default"""
+
+        if asset.dis_yuv_type == 'notyuv':
+            return Asset.DEFAULT_YUV_TYPE
+        else:
+            return asset.dis_yuv_type
 
     def _wait_for_workfiles(self, asset):
         # Override Executor._wait_for_workfiles to skip ref_workfile_path
@@ -633,102 +678,22 @@ class NorefExecutorMixin(object):
             raise RuntimeError("dis video workfile path {} is missing.".format(
                 asset.dis_workfile_path))
 
-    def _run_on_asset(self, asset):
-        # Override Executor._run_on_asset to skip working on ref video
+    def _assert_paths(self, asset):
+        # Override Executor._assert_paths to skip asserting on ref_path
+        assert os.path.exists(asset.dis_path) or match_any_files(asset.dis_path), \
+            "Distorted path {} does not exist.".format(asset.dis_path)
 
-        if self.result_store:
-            result = self.result_store.load(asset, self.executor_id)
-        else:
-            result = None
+    def open_workfiles(self, asset):
+        self._open_dis_workfile(asset, fifo_mode=False)
 
-        # if result can be retrieved from result_store, skip log file
-        # generation and reading result from log file, but directly return
-        # return the retrieved result
-        if result is not None:
-            if self.logger:
-                self.logger.info('{id} result exists. Skip {id} run.'.
-                                 format(id=self.executor_id))
-        else:
+    def _open_workfiles_in_fifo_mode(self, asset):
+        dis_p = multiprocessing.Process(target=self._open_dis_workfile,
+                                        args=(asset, True))
+        dis_p.start()
+        self._wait_for_workfiles(asset)
 
-            if self.logger:
-                self.logger.info('{id} result does\'t exist. Perform {id} '
-                                 'calculation.'.format(id=self.executor_id))
+    @classmethod
+    def _close_workfiles(cls, asset):
+        # Override Executor._close_workfiles to skip ref.
+        cls._close_dis_workfile(asset)
 
-            # at this stage, it is certain that asset.ref_path and
-            # asset.dis_path will be used. must early determine that
-            # they exists
-            self._assert_paths(asset)
-
-            # if no rescaling is involved, directly work on ref_path/dis_path,
-            # instead of opening workfiles
-            self._set_asset_use_path_as_workpath(asset)
-
-            # remove workfiles if exist (do early here to avoid race condition
-            # when ref path and dis path have some overlap)
-            if asset.use_path_as_workpath:
-                # do nothing
-                pass
-            else:
-                self._close_dis_workfile(asset)
-
-            log_file_path = self._get_log_file_path(asset)
-            make_parent_dirs_if_nonexist(log_file_path)
-
-            if asset.use_path_as_workpath:
-                # do nothing
-                pass
-            else:
-                if self.fifo_mode:
-                    dis_p = multiprocessing.Process(target=self._open_dis_workfile,
-                                                    args=(asset, True))
-                    dis_p.start()
-                    self._wait_for_workfiles(asset)
-                else:
-                    self._open_dis_workfile(asset, fifo_mode=False)
-
-            self._prepare_log_file(asset)
-
-            self._generate_result(asset)
-
-            # clean up workfiles
-            if self.delete_workdir:
-                if asset.use_path_as_workpath:
-                    # do nothing
-                    pass
-                else:
-                    self._close_dis_workfile(asset)
-
-            if self.logger:
-                self.logger.info("Read {id} log file, get scores...".
-                                 format(type=self.executor_id))
-
-            # collect result from each asset's log file
-            result = self._read_result(asset)
-
-            # save result
-            if self.result_store:
-                result = self._save_result(result)
-
-            # clean up workdir and log files in it
-            if self.delete_workdir:
-
-                # remove log file
-                self._remove_log(asset)
-
-                # remove dir
-                log_file_path = self._get_log_file_path(asset)
-                log_dir = get_dir_without_last_slash(log_file_path)
-                try:
-                    os.rmdir(log_dir)
-                except OSError as e:
-                    if e.errno == 39: # [Errno 39] Directory not empty
-                        # VQM could generate an error file with non-critical
-                        # information like: '3 File is longer than 15 seconds.
-                        # Results will be calculated using first 15 seconds
-                        # only.' In this case, want to keep this
-                        # informational file and pass
-                        pass
-
-        result = self._post_process_result(result)
-
-        return result
