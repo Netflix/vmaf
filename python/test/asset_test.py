@@ -5,7 +5,7 @@ import unittest
 import re
 
 from vmaf.config import VmafConfig
-from vmaf.core.asset import Asset
+from vmaf.core.asset import Asset, NorefAsset
 
 
 class AssetTest(unittest.TestCase):
@@ -487,6 +487,72 @@ class AssetTest(unittest.TestCase):
                       })
         self.assertEquals(asset.quality_width_height, (720, 480))
         self.assertEquals(str(asset), "test_0_0_refvideo_notyuv_vs_disvideo_notyuv_q_720x480")
+
+    def test_copy(self):
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'width':720, 'height':480,
+                                  'quality_width':720, 'quality_height':320,
+                                  'yuv_type':'yuv422p',
+                                  'crop_cmd':'570:320:3:2'})
+        new_asset = asset.copy()
+        self.assertEquals(asset, new_asset)
+        self.assertTrue(asset == new_asset)
+        self.assertNotEquals(id(asset), id(new_asset))
+
+        new_asset.asset_dict['yuv_type'] = 'yuv444p'
+        self.assertNotEquals(asset, new_asset)
+
+        new_asset2 = asset.copy(content_id=2)
+        self.assertFalse(asset == new_asset2)
+        self.assertEquals(new_asset2.content_id, 2)
+        self.assertEquals(new_asset2.asset_id, 0)
+
+    def test_copy_use_path_as_workpath(self):
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
+                                  'crop_cmd': '570:320:3:2',
+                                  'use_path_as_workpath': True
+                                  })
+        new_asset = asset.copy()
+        self.assertNotEquals(asset, new_asset) # use_path_as_workpath gets reset
+        self.assertTrue(asset.use_path_as_workpath)
+        self.assertFalse(new_asset.use_path_as_workpath)
+
+    def test_copy_noref(self):
+        asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
+                      dis_path="",
+                      asset_dict={'width':720, 'height':480,
+                                  'quality_width':720, 'quality_height':320,
+                                  'yuv_type':'yuv422p',
+                                  'crop_cmd':'570:320:3:2'})
+        new_asset = asset.copy()
+        self.assertEquals(asset, new_asset)
+        self.assertTrue(asset == new_asset)
+        self.assertNotEquals(id(asset), id(new_asset))
+
+        new_asset.asset_dict['yuv_type'] = 'yuv444p'
+        self.assertNotEquals(asset, new_asset)
+
+        new_asset2 = asset.copy(content_id=2)
+        self.assertFalse(asset == new_asset2)
+        self.assertEquals(new_asset2.content_id, 2)
+        self.assertEquals(new_asset2.asset_id, 0)
+
+    def test_NorefAsset_copy_as_Asset(self):
+        asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
+                      dis_path="abc",
+                      asset_dict={'width':720, 'height':480,
+                                  'quality_width':720, 'quality_height':320,
+                                  'yuv_type':'yuv422p',
+                                  'crop_cmd':'570:320:3:2'})
+        new_asset = asset.copy(ref_path='xyz')
+        self.assertEquals(new_asset.ref_path, 'abc')
+        new_asset2 = asset.copy_as_Asset(ref_path='xyz')
+        self.assertEquals(new_asset2.ref_path, 'xyz')
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,3 +1,4 @@
+import copy
 from vmaf.tools.decorator import deprecated
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
@@ -71,6 +72,48 @@ class Asset(WorkdirEnabled):
             assert self.ref_width_height is None, 'For ref_yuv_type nonyuv, ref_width_height must NOT be specified.'
         if self.dis_yuv_type == 'notyuv':
             assert self.dis_width_height is None, 'For dis_yuv_type nonyuv, dis_width_height must NOT be specified.'
+
+    def copy(self, **kwargs):
+        new_asset_dict = copy.deepcopy(self.asset_dict)
+
+        # reset the following argument:
+        if 'use_path_as_workpath' in new_asset_dict:
+            del new_asset_dict['use_path_as_workpath']
+
+        dataset = kwargs['dataset'] if 'dataset' in kwargs else self.dataset
+        content_id = kwargs['content_id'] if 'content_id' in kwargs else self.content_id
+        asset_id = kwargs['asset_id'] if 'asset_id' in kwargs else self.asset_id
+        ref_path = kwargs['ref_path'] if 'ref_path' in kwargs else self.ref_path
+        dis_path = kwargs['dis_path'] if 'dis_path' in kwargs else self.dis_path
+        workdir_root = kwargs['workdir_root'] if 'workdir_root' in kwargs else self.workdir_root
+
+        new_asset = self.__class__(dataset, content_id, asset_id,
+                                   ref_path, dis_path, new_asset_dict,
+                                   workdir_root)
+        return new_asset
+
+    def clear_off_yuv_type(self):
+        if 'yuv_type' in self.asset_dict:
+            del self.asset_dict['yuv_type']
+        if 'ref_yuv_type' in self.asset_dict:
+            del self.asset_dict['ref_yuv_type']
+        if 'dis_yuv_type' in self.asset_dict:
+            del self.asset_dict['dis_yuv_type']
+
+    def clear_off_width_height(self):
+        if 'width' in self.asset_dict:
+            del self.asset_dict['width']
+        if 'height' in self.asset_dict:
+            del self.asset_dict['height']
+        if 'ref_width' in self.asset_dict:
+            del self.asset_dict['ref_width']
+        if 'ref_height' in self.asset_dict:
+            del self.asset_dict['ref_height']
+        if 'dis_width' in self.asset_dict:
+            del self.asset_dict['dis_width']
+        if 'dis_height' in self.asset_dict:
+            del self.asset_dict['dis_height']
+
 
     @staticmethod
     def from_repr(rp):
@@ -579,3 +622,30 @@ class NorefAsset(Asset):
             asset_dict,
             workdir_root
         )
+
+    def copy(self, **kwargs):
+        # Override Asset.copy, since NorefAsset has a different constructor
+        # signature
+        new_asset_dict = copy.deepcopy(self.asset_dict)
+
+        # reset the following argument:
+        if 'use_path_as_workpath' in new_asset_dict:
+            del new_asset_dict['use_path_as_workpath']
+
+        dataset = kwargs['dataset'] if 'dataset' in kwargs else self.dataset
+        content_id = kwargs['content_id'] if 'content_id' in kwargs else self.content_id
+        asset_id = kwargs['asset_id'] if 'asset_id' in kwargs else self.asset_id
+        dis_path = kwargs['dis_path'] if 'dis_path' in kwargs else self.dis_path
+        workdir_root = kwargs['workdir_root'] if 'workdir_root' in kwargs else self.workdir_root
+
+        new_asset = self.__class__(dataset, content_id, asset_id,
+                                   dis_path, new_asset_dict,
+                                   workdir_root)
+        return new_asset
+
+    def copy_as_Asset(self, **kwargs):
+        """ similar to Noref.copy, except that the returned object is of
+        (super)class Asset. """
+        new_asset = self.copy()
+        new_asset.__class__ = Asset
+        return new_asset.copy(**kwargs)
