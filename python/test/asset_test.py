@@ -554,5 +554,68 @@ class AssetTest(unittest.TestCase):
         new_asset2 = asset.copy_as_Asset(ref_path='xyz')
         self.assertEquals(new_asset2.ref_path, 'xyz')
 
+    def test_clear_up_yuv_type(self):
+        asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
+                      dis_path="abc",
+                      asset_dict={'width':720, 'height':480,
+                                  'quality_width':720, 'quality_height':320,
+                                  'yuv_type':'yuv422p',
+                                  'crop_cmd':'570:320:3:2'})
+        self.assertEquals(asset.dis_yuv_type, 'yuv422p')
+        asset.clear_up_yuv_type()
+        self.assertEquals(asset.dis_yuv_type, 'yuv420p')
+
+    def test_clear_up_width_height(self):
+        asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
+                      dis_path="abc",
+                      asset_dict={'width':720, 'height':480,
+                                  'quality_width':720, 'quality_height':320,
+                                  'yuv_type':'yuv422p',
+                                  'crop_cmd':'570:320:3:2'})
+        self.assertEquals(asset.dis_width_height, (720, 480))
+        asset.clear_up_width_height()
+        self.assertEquals(asset.dis_width_height, None)
+
+    def test_clear_up_start_end_frame(self):
+        asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
+                      dis_path="abc",
+                      asset_dict={'width':720, 'height':480,
+                                  'quality_width':720, 'quality_height':320,
+                                  'yuv_type':'yuv422p',
+                                  'start_frame': 23, 'end_frame': 25})
+        self.assertEquals(asset.dis_start_end_frame, (23, 25))
+        asset.clear_up_start_end_frame()
+        self.assertEquals(asset.dis_start_end_frame, None)
+
+        asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
+                      dis_path="abc",
+                      asset_dict={'width':720, 'height':480,
+                                  'quality_width':720, 'quality_height':320,
+                                  'yuv_type':'yuv422p',
+                                  'fps': 5,
+                                  'duration_sec': 10})
+        self.assertEquals(asset.dis_start_end_frame, (0, 49))
+        asset.clear_up_start_end_frame()
+        self.assertEquals(asset.dis_start_end_frame, None)
+
+    def test_encoder_output_asset(self):
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="abc.yuv",
+                      dis_path="abc10to14",
+                      asset_dict={'dis_yuv_type': 'notyuv',
+                                  'fps': 23.976,
+                                  'ref_end_frame': 14,
+                                  'ref_height': 324,
+                                  'ref_start_frame': 10,
+                                  'ref_width': 576,
+                                  'ref_yuv_type': 'yuv420p'})
+        self.assertEquals(str(asset), "test_0_0_abc_576x324_10to14_vs_abc10to14_notyuv_q_576x324")
+        self.assertEquals(asset.ref_yuv_type, "yuv420p")
+        self.assertEquals(asset.dis_yuv_type, "notyuv")
+        self.assertEquals(asset.ref_width_height, (576, 324))
+        self.assertEquals(asset.dis_width_height, None)
+        self.assertEquals(asset.ref_start_end_frame, (10, 14))
+        self.assertEquals(asset.dis_start_end_frame, None)
+
 if __name__ == '__main__':
     unittest.main()

@@ -92,29 +92,6 @@ class Asset(WorkdirEnabled):
                                    workdir_root)
         return new_asset
 
-    def clear_off_yuv_type(self):
-        if 'yuv_type' in self.asset_dict:
-            del self.asset_dict['yuv_type']
-        if 'ref_yuv_type' in self.asset_dict:
-            del self.asset_dict['ref_yuv_type']
-        if 'dis_yuv_type' in self.asset_dict:
-            del self.asset_dict['dis_yuv_type']
-
-    def clear_off_width_height(self):
-        if 'width' in self.asset_dict:
-            del self.asset_dict['width']
-        if 'height' in self.asset_dict:
-            del self.asset_dict['height']
-        if 'ref_width' in self.asset_dict:
-            del self.asset_dict['ref_width']
-        if 'ref_height' in self.asset_dict:
-            del self.asset_dict['ref_height']
-        if 'dis_width' in self.asset_dict:
-            del self.asset_dict['dis_width']
-        if 'dis_height' in self.asset_dict:
-            del self.asset_dict['dis_height']
-
-
     @staticmethod
     def from_repr(rp):
         """
@@ -191,22 +168,39 @@ class Asset(WorkdirEnabled):
         else:
             return None
 
+    def clear_up_width_height(self):
+        if 'width' in self.asset_dict:
+            del self.asset_dict['width']
+        if 'height' in self.asset_dict:
+            del self.asset_dict['height']
+        if 'ref_width' in self.asset_dict:
+            del self.asset_dict['ref_width']
+        if 'ref_height' in self.asset_dict:
+            del self.asset_dict['ref_height']
+        if 'dis_width' in self.asset_dict:
+            del self.asset_dict['dis_width']
+        if 'dis_height' in self.asset_dict:
+            del self.asset_dict['dis_height']
+
     @property
     def quality_width_height(self):
         """
         Width and height to scale distorted video to before quality calculation.
         :return: width and height at which the quality is measured at. either
-        'quality_width' and 'quality_height' have to present in asset_dict,
+        'quality_width' and 'quality_height' have to present in asset_dict;
         or ref and dis's width and height must be equal, which will be used
-        as the default quality width and height.
+        as the default quality width and height; or either of ref/dis is type
+        'notyuv', in which case the other's width/height (could also be None)
         """
-
-        assert ('quality_width' in self.asset_dict and 'quality_height' in self.asset_dict) \
-               or self.ref_width_height == self.dis_width_height
 
         if 'quality_width' in self.asset_dict and 'quality_height' in self.asset_dict:
             return self.asset_dict['quality_width'], self.asset_dict['quality_height']
+        elif self.ref_yuv_type == 'notyuv':
+            return self.dis_width_height
+        elif self.dis_yuv_type == 'notyuv':
+            return self.ref_width_height
         else:
+            assert self.ref_width_height == self.dis_width_height
             return self.ref_width_height
 
     # ==== start and end frame ====
@@ -264,6 +258,22 @@ class Asset(WorkdirEnabled):
 
         else:
             return None
+
+    def clear_up_start_end_frame(self):
+        if 'start_frame' in self.asset_dict:
+            del self.asset_dict['start_frame']
+        if 'end_frame' in self.asset_dict:
+            del self.asset_dict['end_frame']
+        if 'ref_start_frame' in self.asset_dict:
+            del self.asset_dict['ref_start_frame']
+        if 'dis_start_frame' in self.asset_dict:
+            del self.asset_dict['dis_start_frame']
+        if 'start_sec' in self.asset_dict:
+            del self.asset_dict['start_sec']
+        if 'end_sec' in self.asset_dict:
+            del self.asset_dict['end_sec']
+        if 'duration_sec' in self.asset_dict:
+            del self.asset_dict['duration_sec']
 
     # ==== duration ====
 
@@ -540,6 +550,14 @@ class Asset(WorkdirEnabled):
     def yuv_type(self):
         """ For backward-compatibility """
         return self.dis_yuv_type
+
+    def clear_up_yuv_type(self):
+        if 'yuv_type' in self.asset_dict:
+            del self.asset_dict['yuv_type']
+        if 'ref_yuv_type' in self.asset_dict:
+            del self.asset_dict['ref_yuv_type']
+        if 'dis_yuv_type' in self.asset_dict:
+            del self.asset_dict['dis_yuv_type']
 
     @property
     def resampling_type(self):
