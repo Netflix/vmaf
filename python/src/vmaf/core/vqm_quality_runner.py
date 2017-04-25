@@ -89,9 +89,9 @@ class VqmQualityRunner(QualityRunner):
         if asset.fps:
             src_fmt_cmd += ' -r {}'.format(int(asset.fps))
 
-        # VQM can only take input file of yuyv422 wrapped in avi: Here tesing V210 10-bit 422.
+        # VQM can only take input file of yuyv422 wrapped in avi
         ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
-                     '-vcodec v210 -pix_fmt yuv422p10le -vf scale={width}x{height} -f avi ' \
+                     '-vcodec rawvideo -pix_fmt yuyv422 -vf scale={width}x{height} -f avi ' \
                      '-sws_flags bilinear -y {dst}'.format(
             ffmpeg=VmafExternalConfig.get_and_assert_ffmpeg(), src=asset.ref_path, dst=asset.ref_workfile_path,
             width=quality_width, height=quality_height,
@@ -124,9 +124,9 @@ class VqmQualityRunner(QualityRunner):
         if asset.fps:
             src_fmt_cmd += ' -r {}'.format(int(asset.fps))
 
-        # VQM can only take input file of yuyv422 wrapped in avi: Here tesing V210 10-bit 422.
+        # VQM can only take input file of yuyv422 wrapped in avi
         ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
-                     '-vcodec v210 -pix_fmt yuv422p10le -vf scale={width}x{height} -f avi ' \
+                     '-vcodec rawvideo -pix_fmt yuyv422 -vf scale={width}x{height} -f avi ' \
                      '-sws_flags bilinear -y {dst}'.format(
             ffmpeg=VmafExternalConfig.get_and_assert_ffmpeg(), src=asset.dis_path, dst=asset.dis_workfile_path,
             width=quality_width, height=quality_height,
