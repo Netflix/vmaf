@@ -275,7 +275,7 @@ class Asset(WorkdirEnabled):
         if 'duration_sec' in self.asset_dict:
             del self.asset_dict['duration_sec']
 
-    # ==== duration ====
+    # ==== duration and start time====
 
     @property
     def ref_duration_sec(self):
@@ -315,6 +315,24 @@ class Asset(WorkdirEnabled):
                 return (end - start + 1) / float(self.asset_dict['fps'])
             else:
                 return None
+
+    @property
+    def ref_start_sec(self):
+        if self.ref_start_end_frame is None or self.fps is None:
+            return None
+        else:
+            ref_start_frame, ref_end_frame = self.ref_start_end_frame
+            fps = self.fps
+            return float(ref_start_frame) / fps
+
+    @property
+    def dis_start_sec(self):
+        if self.dis_start_end_frame is None or self.fps is None:
+            return None
+        else:
+            dis_start_frame, dis_end_frame = self.dis_start_end_frame
+            fps = self.fps
+            return float(dis_start_frame) / fps
 
     @property
     def fps(self):

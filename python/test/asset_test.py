@@ -117,6 +117,8 @@ class AssetTest(unittest.TestCase):
                                   'dis_start_frame':3, 'dis_end_frame':3},)
         self.assertEquals(asset.ref_duration_sec, None)
         self.assertEquals(asset.dis_duration_sec, None)
+        self.assertEqual(asset.ref_start_sec, None)
+        self.assertEqual(asset.dis_start_sec, None)
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
@@ -125,6 +127,8 @@ class AssetTest(unittest.TestCase):
                                   'fps':24},)
         self.assertEquals(asset.ref_duration_sec, 1.0)
         self.assertEquals(asset.dis_duration_sec, 1.0)
+        self.assertAlmostEqual(asset.ref_start_sec, 0.0, places=4)
+        self.assertAlmostEqual(asset.dis_start_sec, 0.125, places=4)
 
     def test_bitrate(self):
         ref_path = VmafConfig.test_resource_path('yuv/', 'src01_hrc00_576x324.yuv')
