@@ -43,6 +43,10 @@ def persist(original_func):
 
     return new_func
 
+def dummy(func):
+    """ Dummy decorator. """
+    return func
+
 def persist_to_file(file_name):
     """
     Cache (or persist) returned value of function in a json file .
