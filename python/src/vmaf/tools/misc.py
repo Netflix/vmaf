@@ -2,6 +2,7 @@ from fnmatch import fnmatch
 import multiprocessing
 import subprocess
 from time import sleep
+import itertools
 
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -356,6 +357,32 @@ def run_process(cmd, **kwargs):
     ret = subprocess.call(cmd, **kwargs)
     assert ret == 0, 'Process returned {ret}, cmd: {cmd}'.format(ret=ret, cmd=cmd)
     return ret
+
+def unroll_dict_of_lists(dict_of_lists):
+    """ Unfold a dictionary of lists into a list of dictionaries.
+
+    >>> dict_of_lists = {'norm_type':['normalize'], 'n_estimators':[10, 50], 'random_state': [0]}
+    >>> unroll_dict_of_lists(dict_of_lists)
+    [{'n_estimators': 10, 'norm_type': 'normalize', 'random_state': 0}, {'n_estimators': 50, 'norm_type': 'normalize', 'random_state': 0}]
+
+    """
+    keys = sorted(dict_of_lists.keys()) # normalize order
+    list_of_key_value_pairs = []
+    for key in keys:
+        values = dict_of_lists[key]
+        key_value_pairs = []
+        for value in values:
+            key_value_pairs.append((key, value))
+        list_of_key_value_pairs.append(key_value_pairs)
+
+    list_of_key_value_pairs_rearranged = \
+        itertools.product(*list_of_key_value_pairs)
+
+    list_of_dicts = []
+    for key_value_pairs in list_of_key_value_pairs_rearranged:
+        list_of_dicts.append(dict(key_value_pairs))
+
+    return list_of_dicts
 
 if __name__ == '__main__':
     import doctest

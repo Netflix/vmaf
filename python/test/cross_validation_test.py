@@ -10,7 +10,8 @@ from vmaf.config import VmafConfig
 from vmaf.core.executor import run_executors_in_parallel
 from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
 from vmaf.routine import read_dataset
-from vmaf.tools.misc import import_python_file
+from vmaf.tools.misc import import_python_file, unroll_dict_of_lists
+
 
 class CrossValidationTest(unittest.TestCase):
 
@@ -116,7 +117,7 @@ class CrossValidationTest(unittest.TestCase):
         model_param_search_range = {'norm_type':['normalize', 'clip_0to1'],
                                     'n_estimators':[10, 50], 'random_state': [0]}
 
-        dicts = ModelCrossValidation._unroll_dict_of_lists(model_param_search_range)
+        dicts = unroll_dict_of_lists(model_param_search_range)
 
         expected_dicts = [
          {'norm_type':'normalize', 'n_estimators':10, 'random_state':0},

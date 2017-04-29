@@ -1,3 +1,5 @@
+from vmaf.tools.misc import unroll_dict_of_lists
+
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
@@ -174,7 +176,7 @@ class ModelCrossValidation(object):
 
         if search_strategy == 'grid':
             cls._assert_grid_search(model_param_search_range)
-            list_model_param = cls._unroll_dict_of_lists(
+            list_model_param = unroll_dict_of_lists(
                 model_param_search_range)
         elif search_strategy == 'random':
             cls._assert_random_search(model_param_search_range)
@@ -296,37 +298,6 @@ class ModelCrossValidation(object):
     def format_stats(stats):
         return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, MSE: {rmse:.3f})'.format(
             srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
-
-    @staticmethod
-    def _unroll_dict_of_lists(dict_of_lists):
-        """
-        Unfold a dictionary of lists into a list of dictionaries. For example,
-        dict_of_lists = {'norm_type':['normalize'],
-         'n_estimators':[10, 50],
-         'random_state': [0]}
-        the output list of dictionaries will be:
-        [{'norm_type':'normalize', 'n_estimators':10, 'random_state':0},
-         {'norm_type':'normalize', 'n_estimators':10, 'random_state':0}]
-        :param dict_of_lists:
-        :return:
-        """
-        keys = sorted(dict_of_lists.keys()) # normalize order
-        list_of_key_value_pairs = []
-        for key in keys:
-            values = dict_of_lists[key]
-            key_value_pairs = []
-            for value in values:
-                key_value_pairs.append((key, value))
-            list_of_key_value_pairs.append(key_value_pairs)
-
-        list_of_key_value_pairs_rearranged = \
-            itertools.product(*list_of_key_value_pairs)
-
-        list_of_dicts = []
-        for key_value_pairs in list_of_key_value_pairs_rearranged:
-            list_of_dicts.append(dict(key_value_pairs))
-
-        return list_of_dicts
 
     @staticmethod
     def _sample_model_param_list(model_param_search_range, random_search_times):
