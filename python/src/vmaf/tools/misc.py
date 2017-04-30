@@ -103,9 +103,25 @@ def delete_dir_if_exists(dir):
     if os.path.isdir(dir):
         os.rmdir(dir)
 
-def get_unique_str_from_recursive_dict(d):
+def get_normalized_string_from_dict(d):
+    """ Normalized string representation with sorted keys.
+
+    >>> get_normalized_string_from_dict({"max_buffer_sec": 5.0, "bitrate_kbps": 45, })
+    'bitrate_kbps_45_max_buffer_sec_5.0'
     """
-    String representation with sorted keys and values
+    return '_'.join(map(lambda k: '{k}_{v}'.format(k=k,v=d[k]), sorted(d.keys())))
+
+def get_normalized_value_tuple_from_dict(d):
+    """ Normalized tuple of values with sorted keys.
+
+    >>> get_normalized_value_tuple_from_dict({"max_buffer_sec": 5.0, "bitrate_kbps": 45, })
+    (45, 5.0)
+    """
+    return tuple(map(lambda k: d[k], sorted(d.keys())))
+
+def get_unique_str_from_recursive_dict(d):
+    """ String representation with sorted keys and values for recursive dict.
+
     >>> get_unique_str_from_recursive_dict({'a':1, 'b':2, 'c':{'x':'0', 'y':'1'}})
     '{"a": 1, "b": 2, "c": {"x": "0", "y": "1"}}'
     >>> get_unique_str_from_recursive_dict({'a':1, 'c':2, 'b':{'y':'1', 'x':'0', }})

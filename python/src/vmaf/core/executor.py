@@ -8,7 +8,7 @@ from vmaf.tools.decorator import deprecated
 
 from vmaf.tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_slash, \
     parallel_map, match_any_files, run_process, \
-    get_file_name_extension
+    get_file_name_extension, get_normalized_string_from_dict
 from vmaf.core.mixin import TypeVersionEnabled
 from vmaf.config import VmafExternalConfig
 
@@ -74,13 +74,7 @@ class Executor(TypeVersionEnabled):
         if self.optional_dict is not None and len(self.optional_dict) > 0:
             # include optional_dict info in executor_id for result store,
             # as parameters in optional_dict will impact result
-            executor_id_ += '_{}'.format(
-                '_'.join(
-                    map(lambda k: '{k}_{v}'.format(k=k,v=self.optional_dict[k]),
-                        sorted(self.optional_dict.keys()))
-                )
-            )
-
+            executor_id_ += '_{}'.format(get_normalized_string_from_dict(self.optional_dict))
         return executor_id_
 
     def run(self, **kwargs):
