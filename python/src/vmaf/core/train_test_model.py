@@ -48,10 +48,13 @@ class RegressorMixin(object):
                  'ys_label_pred': list(ys_label_pred)}
 
         if ys_label_raw is not None:
-            # KFLK
-            kflk = KflkPerfMetric(ys_label_raw, ys_label_pred) \
-                .evaluate()['score']
-            stats['KFLK'] = kflk
+            try:
+                # KFLK
+                kflk = KflkPerfMetric(ys_label_raw, ys_label_pred) \
+                    .evaluate()['score']
+                stats['KFLK'] = kflk
+            except TypeError: # KFLK would not work with dictionary-style dataset
+                stats['KFLK'] = float('nan')
 
         return stats
 
