@@ -62,6 +62,24 @@ class DatasetReader(object):
     def to_dataset(self):
         return self.dataset
 
+    @staticmethod
+    def write_out_dataset(dataset, output_dataset_filepath):
+        assert (hasattr(dataset, 'ref_videos'))
+        assert (hasattr(dataset, 'dis_videos'))
+        # write out
+        with open(output_dataset_filepath, 'wt') as output_file:
+            for key in dataset.__dict__.keys():
+                if key != 'ref_videos' and key != 'dis_videos':
+                    output_file.write('{} = '.format(key) + repr(
+                        dataset.__dict__[key]) + '\n')
+            output_file.write('\n')
+            output_file.write('ref_videos = ' + pprint.pformat(
+                dataset.ref_videos) + '\n')
+            output_file.write('\n')
+            output_file.write('dis_videos = ' + pprint.pformat(
+                dataset.dis_videos) + '\n')
+
+
 class RawDatasetReader(DatasetReader):
     """
     Reader for a subjective quality test dataset with raw scores (dis_video must
@@ -174,22 +192,8 @@ class RawDatasetReader(DatasetReader):
         return newone
 
     def to_aggregated_dataset_file(self, dataset_filepath, aggregate_scores, **kwargs):
-
         aggregate_dataset = self.to_aggregated_dataset(aggregate_scores, **kwargs)
-
-        assert(hasattr(aggregate_dataset, 'ref_videos'))
-        assert(hasattr(aggregate_dataset, 'dis_videos'))
-
-        # write out
-        with open(dataset_filepath, 'wt') as output_file:
-            for key in aggregate_dataset.__dict__.keys():
-                if key != 'ref_videos' and key != 'dis_videos':
-                    output_file.write('{} = '.format(key) + repr(aggregate_dataset.__dict__[key]) + '\n')
-
-            output_file.write('\n')
-            output_file.write('ref_videos = ' + pprint.pformat(aggregate_dataset.ref_videos) + '\n')
-            output_file.write('\n')
-            output_file.write('dis_videos = ' + pprint.pformat(aggregate_dataset.dis_videos) + '\n')
+        self.write_out_dataset(aggregate_dataset, dataset_filepath)
 
     def to_persubject_dataset(self, quality_scores, **kwargs):
 
@@ -245,22 +249,8 @@ class RawDatasetReader(DatasetReader):
         return newone
 
     def to_persubject_dataset_file(self, dataset_filepath, quality_scores, **kwargs):
-
         persubject_dataset = self.to_persubject_dataset(quality_scores, **kwargs)
-
-        assert(hasattr(persubject_dataset, 'ref_videos'))
-        assert(hasattr(persubject_dataset, 'dis_videos'))
-
-        # write out
-        with open(dataset_filepath, 'wt') as output_file:
-            for key in persubject_dataset.__dict__.keys():
-                if key != 'ref_videos' and key != 'dis_videos':
-                    output_file.write('{} = '.format(key) + repr(persubject_dataset.__dict__[key]) + '\n')
-
-            output_file.write('\n')
-            output_file.write('ref_videos = ' + pprint.pformat(persubject_dataset.ref_videos) + '\n')
-            output_file.write('\n')
-            output_file.write('dis_videos = ' + pprint.pformat(persubject_dataset.dis_videos) + '\n')
+        self.write_out_dataset(persubject_dataset, dataset_filepath)
 
 class MockedRawDatasetReader(RawDatasetReader):
 
