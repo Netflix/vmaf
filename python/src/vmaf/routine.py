@@ -742,3 +742,53 @@ def generate_dataset_from_raw(raw_dataset_filepath, output_dataset_filepath, **k
         subjective_model = subj_model_class.from_dataset_file(raw_dataset_filepath)
         subjective_model.run_modeling(**kwargs)
         subjective_model.to_aggregated_dataset_file(output_dataset_filepath, **kwargs)
+
+
+def run_vmaf_cv_from_raw(train_dataset_raw_filepath, test_dataset_raw_filepath,
+                    param_filepath, output_model_filepath, **kwargs):
+    if 'train_quality_wh' in kwargs:
+        train_quality_width, train_quality_height = kwargs['train_quality_wh']
+    else:
+        train_quality_width = None
+        train_quality_height = None
+
+    if 'test_quality_wh' in kwargs:
+        test_quality_width, test_quality_height = kwargs['test_quality_wh']
+    else:
+        test_quality_width = None
+        test_quality_height = None
+
+    if 'train_transform_final' in kwargs:
+        train_transform_final = kwargs['train_transform_final']
+    else:
+        train_transform_final = None
+
+    if 'test_transform_final' in kwargs:
+        test_transform_final = kwargs['test_transform_final']
+    else:
+        test_transform_final = None
+
+    train_output_dataset_filepath = VmafConfig.workspace_path('dataset', 'train_dataset.py')
+    generate_dataset_from_raw(raw_dataset_filepath=train_dataset_raw_filepath,
+                     output_dataset_filepath=train_output_dataset_filepath,
+                     quality_width=train_quality_width,
+                     quality_height=train_quality_height,
+                     transform_final=train_transform_final,
+                     **kwargs)
+
+    test_output_dataset_filepath = VmafConfig.workspace_path('dataset', 'test_dataset.py') \
+        if test_dataset_raw_filepath is not None else None
+    generate_dataset_from_raw(raw_dataset_filepath=test_dataset_raw_filepath,
+                     output_dataset_filepath=test_output_dataset_filepath,
+                     quality_width=test_quality_width,
+                     quality_height=test_quality_height,
+                     transform_final=test_transform_final,
+                     **kwargs)
+
+    run_vmaf_cv(
+        train_dataset_filepath=train_output_dataset_filepath,
+        test_dataset_filepath=test_output_dataset_filepath,
+        param_filepath=param_filepath,
+        output_model_filepath=output_model_filepath,
+        **kwargs
+    )
