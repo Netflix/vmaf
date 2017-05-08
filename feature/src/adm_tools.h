@@ -63,6 +63,10 @@ void adm_buffer_copy(const void *src, void *dst, int linewidth, int h, int src_s
 /* ================= */
 
 #define VIEW_DIST 3.0f
+//#define VIEW_DIST 4.0f
+//#define VIEW_DIST 5.0f
+//#define VIEW_DIST 6.0f
+
 #define REF_DISPLAY_HEIGHT 1080
 
 /*
