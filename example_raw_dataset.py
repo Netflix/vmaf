@@ -8,9 +8,9 @@ ref_score = 100.0
 from vmaf.config import VmafConfig
 
 ref_videos = [
-    {'content_id': 0, 'path': VmafConfig.test_resource_path('yuv', 'checkerboard_1920_1080_10_3_0_0.yuv')},
+    {'content_id': 0, 'content_name': 'checkerboard', 'path': VmafConfig.test_resource_path('yuv', 'checkerboard_1920_1080_10_3_0_0.yuv')},
 
-    {'content_id': 1, 'path': VmafConfig.test_resource_path('yuv', 'flat_1920_1080_0.yuv')},
+    {'content_id': 1, 'content_name': 'flat', 'path': VmafConfig.test_resource_path('yuv', 'flat_1920_1080_0.yuv')},
 ]
 
 dis_videos = [
