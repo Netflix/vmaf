@@ -316,8 +316,8 @@ class MaximumLikelihoodEstimationModelReduced(SubjectiveModel):
     is the term representing subject s's bias (b_s) and inconsistency (sigma_s).
     The model is then solved via likelihood maximization and belief propagation.
 
-    Note: reduced model of MaximumLikelihoodEstimationModel without considering
-    content.
+    Note: Similar to MaximumLikelihoodEstimationModelContentOblivious, except
+    that it does not deal with missing data etc. (Early implmentation)
     """
 
     # TYPE = 'Subject-Aware'
@@ -430,6 +430,7 @@ class MaximumLikelihoodEstimationModelReduced(SubjectiveModel):
 
         return result
 
+
 class MaximumLikelihoodEstimationModel(SubjectiveModel):
     """
     Generative model that considers individual subjective (or observer)'s bias
@@ -445,7 +446,10 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
 
     # TYPE = 'Subject/Content-Aware'
     TYPE = 'MLE' # maximum likelihood estimation
-    VERSION = '0.1'
+    # VERSION = '0.1'
+    VERSION = '0.2' # added confidence interval for parameters
+
+    mode = 'DEFAULT'
 
     @classmethod
     def _run_modeling(cls, dataset_reader, **kwargs):
@@ -453,7 +457,6 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
         # mode: DEFAULT - subject and content-aware
         #       NO_SUBJECT - subject-unaware
         #       NO_CONTENT - content-unaware
-        mode = kwargs['mode'] if 'mode' in kwargs else 'DEFAULT'
 
         if 'subject_rejection' in kwargs and kwargs['subject_rejection'] is True:
             assert False, 'SubjectAndContentAwareGenerativeModel must not ' \
@@ -492,18 +495,23 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
         b_s = np.zeros(S)
         x_es = z_es - np.tile(q_e, (S, 1)).T
 
-        if mode == 'NO_SUBJECT':
+        if cls.mode == 'NO_SUBJECT':
             sigma_s = np.zeros(S)
         else:
             sigma_s = pd.DataFrame(x_es).std(axis=0, ddof=0) # along e
 
         mu_c = np.zeros(C)
 
-        if mode == 'NO_CONTENT':
+        if cls.mode == 'NO_CONTENT':
             delta_c = np.zeros(C)
         else:
             delta_c = std_over_subject_and_content_id(
                 x_es, dataset_reader.content_id_of_dis_videos)
+
+        q_e_std = None
+        b_s_std = None
+        sigma_s_std = None
+        delta_c_std = None
 
         # === iterations ===
 
@@ -530,8 +538,12 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
             b_s_new = num / den
             b_s = b_s * (1.0 - REFRESH_RATE) + b_s_new * REFRESH_RATE
 
-            if mode == 'NO_SUBJECT':
+            # calculate std of q_e
+            b_s_std = 1.0 / np.sqrt(den)
+
+            if cls.mode == 'NO_SUBJECT':
                 b_s = np.zeros(S) # forcing zero, hence disabling
+                b_s_std = np.zeros(S)
 
             # (13) mu_c
             num_num = z_es - np.tile(q_e, (S, 1)).T - np.tile(b_s, (E, 1))
@@ -545,7 +557,7 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
             mu_c_new = num / den
             mu_c = mu_c * (1.0 - REFRESH_RATE) + mu_c_new * REFRESH_RATE
 
-            # if mode == 'NO_CONTENT':
+            # if cls.mode == 'NO_CONTENT':
             if True: # disabling mu_c permanently, since will never able to distinguish mu_c from q_e
                 mu_c = np.zeros(C) # forcing zero, hence disabling
 
@@ -565,11 +577,18 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
             sigma_s_new = sigma_s - num / den
             sigma_s = sigma_s * (1.0 - REFRESH_RATE) + sigma_s_new * REFRESH_RATE
 
+            # calculate std of sigma_s
+            lpp = pd.DataFrame(
+                s2_minus_d2 / s2_add_d2**2 + a_es**2 * poly_term / s2_add_d2**4
+            ).sum(axis=0) # sum over e
+            sigma_s_std = 1.0 / np.sqrt(-lpp)
+
             # force non-negative
             sigma_s = np.maximum(sigma_s, 0.0 * np.ones(sigma_s.shape))
 
-            if mode == 'NO_SUBJECT':
+            if cls.mode == 'NO_SUBJECT':
                 sigma_s = np.zeros(S) # forcing zero, hence disabling
+                sigma_s_std = np.zeros(S)
 
             # (15) delta_c
             mu_c_e = np.array(map(lambda i: mu_c[i], dataset_reader.content_id_of_dis_videos))
@@ -589,11 +608,21 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
             delta_c_new = delta_c - num / den
             delta_c = delta_c * (1.0 - REFRESH_RATE) + delta_c_new * REFRESH_RATE
 
+            # calculate std of delta_c
+            lpp = sum_over_content_id(
+                pd.DataFrame(
+                    -s2_minus_d2 / s2_add_d2**2 + a_es**2 * poly_term / s2_add_d2**4
+                ).sum(axis=1),
+                dataset_reader.content_id_of_dis_videos
+            ) # sum over e:c(e)=c
+            delta_c_std = 1.0 /np.sqrt(-lpp)
+
             # force non-negative
             delta_c = np.maximum(delta_c, 0.0 * np.ones(delta_c.shape))
 
-            if mode == 'NO_CONTENT':
+            if cls.mode == 'NO_CONTENT':
                 delta_c = np.zeros(C) # forcing zero, hence disabling
+                delta_c_std = np.zeros(C)
 
             # (11) q_e
             mu_c_e = np.array(map(lambda i: mu_c[i], dataset_reader.content_id_of_dis_videos))
@@ -606,6 +635,10 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
             den = pd.DataFrame(den_num / den_den).sum(axis=1) # sum over s
             q_e_new = num / den
             q_e = q_e * (1.0 - REFRESH_RATE) + q_e_new * REFRESH_RATE
+
+            # calculate std of q_e
+            q_e_std = 1.0 / np.sqrt(den)
+
 
             itr += 1
 
@@ -625,15 +658,38 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
 
         sys.stdout.write("\n")
 
+        assert q_e_std is not None
+        assert b_s_std is not None
+
         result = {
             'quality_scores': list(q_e),
-            'observer_bias': list(b_s),
-            'observer_inconsistency': list(sigma_s),
-            'content_bias': list(mu_c),
-            'content_ambiguity': list(delta_c),
+            'quality_scores_std': list(q_e_std),
         }
 
+        if cls.mode != 'NO_SUBJECT':
+            result['observer_bias'] = list(b_s)
+            result['observer_bias_std'] = list(b_s_std)
+
+            result['observer_inconsistency'] = list(sigma_s)
+            result['observer_inconsistency_std'] = list(sigma_s_std)
+
+        if cls.mode != 'NO_CONTENT':
+            result['content_ambiguity'] = list(delta_c)
+            result['content_ambiguity_std'] = list(delta_c_std)
+
         return result
+
+class MaximumLikelihoodEstimationModelContentOblivious(MaximumLikelihoodEstimationModel):
+    TYPE = 'MLE_CO' # maximum likelihood estimation (no content modeling)
+    VERSION = MaximumLikelihoodEstimationModel.VERSION + "_0.1"
+    mode = 'NO_CONTENT'
+
+
+class MaximumLikelihoodEstimationModelSubjectOblivious(MaximumLikelihoodEstimationModel):
+    TYPE = 'MLE_SO' # maximum likelihood estimation (no subject modeling)
+    VERSION = MaximumLikelihoodEstimationModel.VERSION + "_0.1"
+    mode = 'NO_SUBJECT'
+
 
 class SubjrejMosModel(MosModel):
 
