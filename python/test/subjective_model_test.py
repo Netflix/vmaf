@@ -39,6 +39,8 @@ class SubjectiveModelTest(unittest.TestCase):
         self.assertAlmostEquals(scores[0], 4.884615384615385, places=4)
         self.assertAlmostEquals(scores[10], 2.0769230769230771, places=4)
         self.assertAlmostEquals(np.mean(scores), 3.544790652385589, places=4)
+        scores_std = result['quality_scores_std']
+        self.assertAlmostEquals(np.mean(scores_std), 0.12986637295658307, places=4)
 
     def test_mos_subjective_model_output(self):
         dataset = import_python_file(self.dataset_filepath)
@@ -115,6 +117,8 @@ class SubjectiveModelTest(unittest.TestCase):
         self.assertAlmostEquals(scores[0], 5.0, places=4)
         self.assertAlmostEquals(scores[10], 2.1923076923076921, places=4)
         self.assertAlmostEquals(np.mean(scores), 3.7731256085686473, places=4)
+        scores_std = result['quality_scores_std']
+        self.assertAlmostEquals(np.mean(scores_std), 0.12986637295658307, places=4)
 
     def test_dmos_subjective_model_normalize_final(self):
         subjective_model = DmosModel.from_dataset_file(self.dataset_filepath)
@@ -204,6 +208,11 @@ class SubjectiveModelTest(unittest.TestCase):
 
         self.assertAlmostEquals(np.sum(result['quality_scores']), 280.20774261173619, places=4)
         self.assertAlmostEquals(np.var(result['quality_scores']), 1.4351342153719635, places=4)
+
+        self.assertAlmostEquals(np.sum(result['content_ambiguity_std']), 0.30465244947706538, places=4)
+        self.assertAlmostEquals(np.sum(result['observer_bias_std']), 1.7392847550878989, places=4)
+        self.assertAlmostEquals(np.sum(result['observer_inconsistency_std']), 22.108576292956428, places=4)
+        self.assertAlmostEquals(np.sum(result['quality_scores_std']), 8.8863877635750423, places=4)
 
     def test_observer_content_aware_subjective_model_missingdata(self):
 

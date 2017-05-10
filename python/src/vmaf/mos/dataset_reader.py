@@ -69,7 +69,7 @@ class DatasetReader(object):
         # write out
         with open(output_dataset_filepath, 'wt') as output_file:
             for key in dataset.__dict__.keys():
-                if key != 'ref_videos' and key != 'dis_videos':
+                if key != 'ref_videos' and key != 'dis_videos' and key != '__builtins__':
                     output_file.write('{} = '.format(key) + repr(
                         dataset.__dict__[key]) + '\n')
             output_file.write('\n')
