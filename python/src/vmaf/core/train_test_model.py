@@ -361,15 +361,12 @@ class TrainTestModel(TypeVersionEnabled):
         assert 'label' in xys
         assert 'content_id' in xys
 
-        # this makes sure the order of features are normalized, and each
-        # dimension of xys_2d is consistent with feature_names
-        feature_names = sorted(xys.keys())
-
-        feature_names.remove('label')
-        feature_names.remove('content_id')
-
+        feature_names = self.get_ordered_feature_names(xys)
         self.feature_names = feature_names
 
+        # note that feature_names is property (write). below cannot yet use
+        # self.feature_names since additional things (_assert_trained()) is
+        # not ready yet
         xys_2d = self._to_tabular_xys(feature_names, xys)
 
         # calculate normalization parameters,
@@ -380,6 +377,17 @@ class TrainTestModel(TypeVersionEnabled):
 
         model = self._train(self.param_dict, xys_2d)
         self.model = model
+
+    @staticmethod
+    def get_ordered_feature_names(xys_or_xs):
+        # this makes sure the order of features are normalized, and each
+        # dimension of xys_2d (or xs_2d) is consistent with feature_names
+        feature_names = sorted(xys_or_xs.keys())
+        if 'label' in feature_names:
+            feature_names.remove('label')
+        if 'content_id' in feature_names:
+            feature_names.remove('content_id')
+        return feature_names
 
     def _calculate_normalization_params(self, xys_2d):
 
