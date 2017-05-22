@@ -67,6 +67,11 @@ class Executor(TypeVersionEnabled):
         self._assert_args()
         self._assert_assets()
 
+        self._custom_init()
+
+    def _custom_init(self):
+        pass
+
     @property
     def executor_id(self):
         executor_id_ = TypeVersionEnabled.get_type_version_string(self)
