@@ -31,24 +31,28 @@ It also requires a number of Python packages:
 
 You will need to install gfortran, freetype, pkg-config, freetype and hdf5 (these can't be compiled from source here):
 - on OSX: `brew install gcc freetype pkg-config homebrew/science/hdf5` (`gcc` has the `gfortran` compiler needed for scipy)
-- on linux: `sudo apt-get install -y pkg-config gfortran libhdf5-dev libfreetype6-dev liblapack-dev`
+- on linux(Ubuntu): `sudo apt-get install -y pkg-config gfortran libhdf5-dev libfreetype6-dev liblapack-dev`
 
 Why is this needed?
 - gfortran compiler is needed in order to compile scipy
 - freetype and pkg-config are required by matplotlib
 - hdf5 is required by h5py (C header files needed)
 
-Follow [this link](http://www.scipy.org/install.html) to install the *numpy/scipy/matplotlib/pandas* suite. To install *scikit-learn*, first [install](http://python-packaging-user-guide.readthedocs.org/en/latest/installing/) package manager *pip*, then run:
+We recommend package manager *pip* for installing the above packages. To install *pip*:
+- on OSX: `sudo easy_install pip`
+- on Ubuntu: `sudo apt-get install python-pip`
 
+Upgrade *pip* by `python -m pip install --upgrade pip` before installing the required packages:
 ```
+pip install --user numpy scipy matplotlib pandas
 sudo pip install --upgrade scikit-learn
-```
-
-To install *h5py*, run:
-
-```
 sudo pip install --upgrade h5py
 ```
+Make sure your user install executable directory is on your PATH:
+- on OSX: add `export PATH="$PATH:/Users/your_user/Library/Python/2.7/bin"` to the end of your `~/.bash_profile` file
+- on Ubuntu: add `export PATH="$PATH:/home/your_user/.local/bin"` to the end of your `~/.bashrc` file
+
+Please refer to the [official document](http://www.scipy.org/install.html) if you encounter any problem.
 
 #### Troubleshooting
 
@@ -133,6 +137,12 @@ This will generate output like:
 ```
 
 where *VMAF_score* is the final score and the others are the scores for elementary metrics. *adm2*, *vif_scalex* scores range from 0 (worst) to 1 (best), and *motion2* score typically ranges from 0 (static) to 20 (high-motion).
+
+There is also a *ffmpeg2vmaf* script by which you can compare any file format supported by *ffmpeg* (you need *ffmpeg* installed, and add `FFMPEG_PATH = "path/to/ffmpeg"` to `path/to/vmaf/python/src/vmaf/externals.py`):
+
+```
+./ffmpeg2vmaf width height reference_path distorted_path [--out-fmt output_format]
+```
 
 To run VMAF in batch mode, create an input text file with each line of format (check examples in [example_batch_input](example_batch_input)):
 
