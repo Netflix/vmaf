@@ -154,6 +154,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
+        self.assertEqual(self.runner.VERSION, "F1.2-1.1")
         self.assertAlmostEqual(results[0]['STRRED_feature_srred_score'], 3.0114681041666671, places=4)
         self.assertAlmostEqual(results[0]['STRRED_feature_trred_score'], 7.3039486249999994, places=4)
         self.assertAlmostEqual(results[0]['STRRED_score'], 21.995608318659482, places=4)

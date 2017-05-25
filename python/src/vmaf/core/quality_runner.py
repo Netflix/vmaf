@@ -717,7 +717,7 @@ class StrredQualityRunner(QualityRunner):
     TYPE = 'STRRED'
 
     # VERSION = '1.0'
-    VERSION = 'F' + VmafFeatureExtractor.VERSION + '-1.1'
+    VERSION = 'F' + StrredFeatureExtractor.VERSION + '-1.1'
 
     def _get_quality_scores(self, asset):
         raise NotImplementedError
