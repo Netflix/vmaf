@@ -36,9 +36,9 @@ install: $(alib)
 	mkdir -p $(DESTDIR)$(PREFIX)/lib
 	mkdir -p $(DESTDIR)$(PREFIX)/include
 	cp $(alib) $(DESTDIR)$(PREFIX)/lib/$(alib)
-	cp wrapper/src/vmaf.h $(DESTDIR)$(PREFIX)/include/
+	cp wrapper/src/libvmaf.h $(DESTDIR)$(PREFIX)/include/
 
 .PHONY: uninstall
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/lib/$(alib)
-	rm -f $(DESTDIR)$(PREFIX)/include/vmaf.h
+	rm -f $(DESTDIR)$(PREFIX)/include/libvmaf.h

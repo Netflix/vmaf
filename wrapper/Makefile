@@ -28,6 +28,7 @@ OBJS = \
     $(OBJDIR)/svm.o \
     $(OBJDIR)/combo.o \
     $(OBJDIR)/vmaf.o \
+    $(OBJDIR)/libvmaf.o \
 	$(OBJDIR)/darray.o \
     $(OBJDIR)/main.o \
 	$(OBJDIR)/pugixml.o \
@@ -106,6 +107,9 @@ $(OBJDIR)/ms_ssim.o: $(FEATURESRCDIR)/ms_ssim.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/svm.o: $(SRCDIR)/svm.cpp
+	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
+ 
+$(OBJDIR)/libvmaf.o: $(SRCDIR)/libvmaf.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/main.o: $(SRCDIR)/main.cpp

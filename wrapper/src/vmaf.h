@@ -29,8 +29,6 @@
 #include <exception>
 #include <cstring>
 
-double compute_vmaf(char* fmt, int width, int height, char *ref_path, char *dis_path);
-
 double RunVmaf(const char* fmt, int width, int height,
                const char *ref_path, const char *dis_path, const char *model_path,
                const char *log_path, const char *log_fmt,
