@@ -109,8 +109,8 @@ $(OBJDIR)/ms_ssim.o: $(FEATURESRCDIR)/ms_ssim.c
 $(OBJDIR)/svm.o: $(SRCDIR)/svm.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
  
-$(OBJDIR)/libvmaf.o: $(SRCDIR)/libvmaf.cpp
-	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
+$(OBJDIR)/libvmaf.o: $(SRCDIR)/libvmaf.c
+	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/main.o: $(SRCDIR)/main.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common $<
