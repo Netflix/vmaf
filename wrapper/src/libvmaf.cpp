@@ -1,10 +1,10 @@
-#include "vmaf.h"
 #include "libvmaf.h"
 #include <cstdio>
 
 double compute_vmaf(char* fmt, int width, int height, char *ref_path, char *dis_path)
 {
-    char *model_path;
+	printf("hello");   
+/* char *model_path;
     char *log_path = NULL;
     char *log_fmt = NULL;
     bool disable_clip = false;
@@ -18,14 +18,17 @@ double compute_vmaf(char* fmt, int width, int height, char *ref_path, char *dis_
 
     try
     {
-        double score = RunVmaf(fmt, width, height, ref_path, dis_path, model_path, log_path, log_fmt, disable_clip, enable_transform, do_psnr, do_ssim, do_ms_ssim, pool_method);
+        //double score = RunVmaf(fmt, width, height, ref_path, dis_path, model_path, log_path, log_fmt, disable_clip, enable_transform, do_psnr, do_ssim, do_ms_ssim, pool_method);
 
-        return score;
+        return 0.0;
     }
     catch (const std::exception &e)
     {
         fprintf(stderr, "Error: %s\n", e.what());
         return -1;
     }
+*/
+
+return 0.0;
 
 }
