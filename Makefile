@@ -23,7 +23,7 @@ test:
 .PHONY: clean $(TARGETS)
 
 
-PREFIX = /usr
+PREFIX = /usr/local
 
 alib = libvmaf.a
 obj = $(wildcard wrapper/obj/*.o)
