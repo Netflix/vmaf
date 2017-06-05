@@ -174,4 +174,5 @@ private:
     static const int INIT_FRAMES = 1000;
 };
 
+
 #endif /* VMAF_H_ */

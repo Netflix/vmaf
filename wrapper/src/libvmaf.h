@@ -4,7 +4,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-double compute_vmaf(char* fmt, int width, int height, char *ref_path, char *dis_path);
+
+double compute_vmaf(char* fmt, int width, int height, char *ref_path, char *dis_path, char *model_path);
 
 #ifdef __cplusplus
 }

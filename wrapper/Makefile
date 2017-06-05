@@ -28,9 +28,10 @@ OBJS = \
     $(OBJDIR)/svm.o \
     $(OBJDIR)/combo.o \
     $(OBJDIR)/vmaf.o \
+	$(OBJDIR)/main.o \
+    $(OBJDIR)/vmaf_wrapper.o \
     $(OBJDIR)/libvmaf.o \
 	$(OBJDIR)/darray.o \
-    $(OBJDIR)/main.o \
 	$(OBJDIR)/pugixml.o \
 
 AVX_OBJS := \
@@ -109,16 +110,19 @@ $(OBJDIR)/ms_ssim.o: $(FEATURESRCDIR)/ms_ssim.c
 $(OBJDIR)/svm.o: $(SRCDIR)/svm.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
  
-$(OBJDIR)/libvmaf.o: $(SRCDIR)/libvmaf.cpp
-	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
-
 $(OBJDIR)/main.o: $(SRCDIR)/main.cpp
-	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common $<
+	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/vmaf.o: $(SRCDIR)/vmaf.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) \
 	-DOC_NEW_STYLE_INCLUDES -I $(PTOOLSDIR) \
 	-I $(PTOOLSDIR)/opencontainers_1_8_4/include  $<
+
+$(OBJDIR)/vmaf_wrapper.o: $(SRCDIR)/vmaf_wrapper.cpp
+	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common $<
+
+$(OBJDIR)/libvmaf.o: $(SRCDIR)/libvmaf.cpp
+	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) -I $(FEATURESRCDIR) $<

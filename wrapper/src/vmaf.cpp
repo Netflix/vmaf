@@ -639,11 +639,14 @@ double RunVmaf(const char* fmt, int width, int height,
     printf("Start calculating VMAF score...\n");
 
     Asset asset(width, height, ref_path, dis_path, fmt);
+	printf("Asset initialized...\n");
     VmafRunner runner{model_path};
+	printf("Model initialized...\n");
     Timer timer;
 
     timer.start();
     Result result = runner.run(asset, disable_clip, enable_transform, do_psnr, do_ssim, do_ms_ssim);
+	printf("Run finished...\n");
     timer.stop();
 
     if (pool_method != NULL && (strcmp(pool_method, "min")==0))
