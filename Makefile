@@ -26,7 +26,7 @@ test:
 PREFIX = /usr/local
 
 alib = libvmaf.a
-obj = $(wildcard wrapper/obj/*.o)
+obj = $(wildcard wrapper/obj/*.o) $(wildcard model/*.model)
 
 $(alib): $(obj)
 	ar rcs $@ $^
