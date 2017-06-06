@@ -6,7 +6,7 @@ extern "C" {
 
 	double compute_vmaf(char* fmt, int width, int height, char *ref_path, char *dis_path, char *model_path)
 	{
-		printf("under libvmaf\n");   
+		//printf("under libvmaf\n");   
 		char *log_path = NULL;
 		char *log_fmt = NULL;
 		int disable_clip = 0;
