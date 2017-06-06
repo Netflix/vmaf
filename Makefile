@@ -26,7 +26,7 @@ test:
 PREFIX = /usr/local
 
 alib = libvmaf.a
-obj = $(wildcard wrapper/obj/*.o) $(wildcard model/*.model) $(wildcard ptools/*.o)
+obj =  $(wildcard ptools/*.o) $(wildcard wrapper/obj/*.o)
 
 $(alib): $(obj)
 	ar rcs $@ $^
@@ -37,9 +37,11 @@ install: $(alib)
 	mkdir -p $(DESTDIR)$(PREFIX)/include
 	cp $(alib) $(DESTDIR)$(PREFIX)/lib/$(alib)
 	cp wrapper/src/libvmaf.h $(DESTDIR)$(PREFIX)/include/
+	cp -r model $(DESTDIR)$(PREFIX)/share/
 
 .PHONY: uninstall
 uninstall:
 	rm -f $(alib)
 	rm -f $(DESTDIR)$(PREFIX)/lib/$(alib)
 	rm -f $(DESTDIR)$(PREFIX)/include/libvmaf.h
+	rm -fr $(DESTDIR)$(PREFIX)/share/model
