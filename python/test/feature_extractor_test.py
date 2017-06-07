@@ -44,13 +44,13 @@ class FeatureExtractorTest(unittest.TestCase):
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
@@ -121,13 +121,13 @@ class FeatureExtractorTest(unittest.TestCase):
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
@@ -206,13 +206,13 @@ class FeatureExtractorTest(unittest.TestCase):
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
@@ -245,13 +245,13 @@ class FeatureExtractorTest(unittest.TestCase):
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
@@ -273,13 +273,13 @@ class FeatureExtractorTest(unittest.TestCase):
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
@@ -308,13 +308,13 @@ class FeatureExtractorTest(unittest.TestCase):
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
@@ -369,19 +369,19 @@ class FeatureExtractorTest(unittest.TestCase):
         dis_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_10_0.yuv")
         dis_path2 = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_1_0.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':1920, 'height':1080})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':1920, 'height':1080})
 
         asset2 = Asset(dataset="test", content_id=0, asset_id=2,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path2,
                       asset_dict={'width':1920, 'height':1080})
@@ -428,13 +428,13 @@ class FeatureExtractorTest(unittest.TestCase):
         ref_path = VmafConfig.test_resource_path("yuv", "flat_1920_1080_0.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "flat_1920_1080_10.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':1920, 'height':1080})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':1920, 'height':1080})
@@ -476,13 +476,13 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
@@ -551,13 +551,13 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
@@ -642,13 +642,13 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
@@ -682,13 +682,13 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
@@ -718,13 +718,13 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
                       asset_dict={'width':576, 'height':324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.root_path(),
+                      workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
