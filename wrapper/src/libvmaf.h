@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-double compute_vmaf(char* fmt, int width, int height, char *ref_path, char *dis_path, char *model_path);
+double compute_vmaf(char* fmt, int width, int height, const uint8_t *ref, const uint8_t *main, char *model_path);
 
 #ifdef __cplusplus
 }

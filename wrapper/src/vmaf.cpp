@@ -163,8 +163,8 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
 
     int w = asset.getWidth();
     int h = asset.getHeight();
-    const char* ref_path = asset.getRefPath();
-    const char* dis_path = asset.getDisPath();
+    const uint8_t* ref_data = asset.getRefPath();
+    const uint8_t* main_data = asset.getDisPath();
     const char* fmt = asset.getFmt();
     char errmsg[1024];
 
@@ -251,7 +251,7 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
     printf("Extract atom features...\n");
 #endif
 
-    int ret = combo(ref_path, dis_path, w, h, fmt,
+    int ret = combo(ref_data, main_data, w, h, fmt,
             &adm_num_array,
             &adm_den_array,
             &adm_num_scale0_array,
@@ -630,7 +630,7 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
 static const char VMAFOSS_XML_VERSION[] = "0.3.2"; // fix slopes and intercepts to match nflxall_vmafv4.pkl
 
 double RunVmaf(const char* fmt, int width, int height,
-               const char *ref_path, const char *dis_path, const char *model_path,
+               const uint8_t *ref_data, const uint8_t *main_data, const char *model_path,
                const char *log_path, const char *log_fmt,
                bool disable_clip, bool enable_transform,
                bool do_psnr, bool do_ssim, bool do_ms_ssim,
@@ -638,7 +638,7 @@ double RunVmaf(const char* fmt, int width, int height,
 {
     printf("Start calculating VMAF score...\n");
 
-    Asset asset(width, height, ref_path, dis_path, fmt);
+    Asset asset(width, height, ref, main, fmt);
     VmafRunner runner{model_path};
     Timer timer;
 

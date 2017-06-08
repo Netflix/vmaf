@@ -50,7 +50,7 @@ int compute_psnr(const float *ref, const float *dis, int w, int h, int ref_strid
 int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h, int ref_stride, int cmp_stride, double *score, double *l_score, double *c_score, double *s_score);
 int compute_ms_ssim(const number_t *ref, const number_t *cmp, int w, int h, int ref_stride, int cmp_stride, double *score, double* l_scores, double* c_scores, double* s_scores);
 
-int combo(const char *ref_path, const char *dis_path, int w, int h, const char *fmt,
+int combo(const uint8_t *ref_data, const uint8_t *main_data, int w, int h, const char *fmt,
         DArray *adm_num_array,
         DArray *adm_den_array,
         DArray *adm_num_scale0_array,
@@ -94,8 +94,6 @@ int combo(const char *ref_path, const char *dis_path, int w, int h, const char *
     number_t *blur_buf = 0;
     number_t *temp_buf = 0;
 
-    FILE *ref_rfile = 0;
-    FILE *dis_rfile = 0;
     size_t data_sz;
     int stride;
     int ret = 1;

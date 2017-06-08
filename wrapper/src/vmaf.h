@@ -30,7 +30,7 @@
 #include <cstring>
 
 double RunVmaf(const char* fmt, int width, int height,
-               const char *ref_path, const char *dis_path, const char *model_path,
+               const uint8_t *ref, const uint8_t *main, const char *model_path,
                const char *log_path, const char *log_fmt,
                bool disable_clip, bool enable_transform,
                bool do_psnr, bool do_ssim, bool do_ms_ssim,
@@ -39,18 +39,19 @@ double RunVmaf(const char* fmt, int width, int height,
 class Asset
 {
 public:
-    Asset(int w, int h, const char *ref_path, const char *dis_path, const char *fmt):
-        w(w), h(h), ref_path(ref_path), dis_path(dis_path), fmt(fmt) {}
+    Asset(int w, int h, const uint8_t *ref, const uint8_t *main, const char *fmt):
+        w(w), h(h), ref(ref), main(main), fmt(fmt) {}
     Asset(int w, int h, const char *ref_path, const char *dis_path):
-        w(w), h(h), ref_path(ref_path), dis_path(dis_path), fmt("yuv420p") {}
+        w(w), h(h), ref(ref), main(main), fmt("yuv420p") {}
     int getWidth() { return w; }
     int getHeight() { return h; }
-    const char* getRefPath() { return ref_path; }
-    const char* getDisPath() { return dis_path; }
+    const uint8_t* getRefPath() { return ref; }
+    const uint8_t* getDisPath() { return main; }
     const char* getFmt() { return fmt; }
 private:
     const int w, h;
-    const char *ref_path, *dis_path, *fmt;
+    const char *fmt;
+	const uint8_t *ref, *main;
 };
 
 class StatVector
