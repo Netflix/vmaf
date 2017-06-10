@@ -50,7 +50,7 @@ int compute_psnr(const float *ref, const float *dis, int w, int h, int ref_strid
 int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h, int ref_stride, int cmp_stride, double *score, double *l_score, double *c_score, double *s_score);
 int compute_ms_ssim(const number_t *ref, const number_t *cmp, int w, int h, int ref_stride, int cmp_stride, double *score, double* l_scores, double* c_scores, double* s_scores);
 
-int combo(const uint8_t *ref_data, const uint8_t *main_data, int w, int h, const char *fmt,
+int combo(int (*read_frame)(uint8_t *ref_data, int *ref_stride, uint8_t *main_data, int *main_stride), int w, int h, const char *fmt,
         DArray *adm_num_array,
         DArray *adm_den_array,
         DArray *adm_num_scale0_array,
@@ -95,8 +95,22 @@ int combo(const uint8_t *ref_data, const uint8_t *main_data, int w, int h, const
     number_t *temp_buf = 0;
 
     size_t data_sz;
-    int stride;
-    int ret = 1;
+	
+	uint8_t *ref_data, *main_data;
+    int ref_stride, main_stride;
+	int ret;
+	int p=0;
+/*
+	while(ret = read_frame(ref_data, &ref_stride, main_data, &main_stride)!=-1){
+		printf("Frame %d\n",p++);
+	}*/
+/*
+
+	printf("before reading1\n");
+
+	int *tr = (int *)ref_data;
+	printf("%d\n",tr[0]);
+
 
     if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(number_t))
     {
@@ -104,15 +118,15 @@ int combo(const uint8_t *ref_data, const uint8_t *main_data, int w, int h, const
         goto fail_or_end;
     }
 
-    stride = ALIGN_CEIL(w * sizeof(number_t));
+    //stride = ALIGN_CEIL(w * sizeof(number_t));
 
-    if ((size_t)h > SIZE_MAX / stride)
+    if ((size_t)h > SIZE_MAX / ref_stride)
     {
         sprintf(errmsg, "height %d too large.\n", h);
         goto fail_or_end;
     }
 
-    data_sz = (size_t)stride * h;
+    data_sz = (size_t)ref_stride * h;
 
     if (!(ref_buf = aligned_malloc(data_sz, MAX_ALIGN)))
     {
@@ -144,17 +158,6 @@ int combo(const uint8_t *ref_data, const uint8_t *main_data, int w, int h, const
         goto fail_or_end;
     }
 
-    if (!(ref_rfile = fopen(ref_path, "rb")))
-    {
-        sprintf(errmsg, "fopen ref_path %s failed.\n", ref_path);
-        goto fail_or_end;
-    }
-    if (!(dis_rfile = fopen(dis_path, "rb")))
-    {
-        sprintf(errmsg, "fopen dis_path %s failed.\n", dis_path);
-        goto fail_or_end;
-    }
-
     size_t offset;
     if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv420p10le"))
     {
@@ -180,55 +183,51 @@ int combo(const uint8_t *ref_data, const uint8_t *main_data, int w, int h, const
     }
 
     int frm_idx = 0;
-    while (1)
+printf("here\n");
+    // read dis y
+    if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+    {
+		printf("this format\n");
+        ret = read_image_b(main_data, dis_buf, 0, w, h, main_stride);
+    }
+    else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+    {
+		printf("this format1\n");
+        ret = read_image_w(main_data, dis_buf, 0, w, h, main_stride);
+    }
+    else
+    {
+        sprintf(errmsg, "unknown format %s.\n", fmt);
+        goto fail_or_end;
+    }
+printf("after reading\n");
+
+    // read ref y
+    if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+    {
+        ret = read_image_b(ref_data, ref_buf, 0, w, h, ref_stride);
+    }
+    else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+    {
+        ret = read_image_w(ref_data, ref_buf, 0, w, h, ref_stride);
+    }
+    else
+    {
+        sprintf(errmsg, "unknown format %s.\n", fmt);
+        goto fail_or_end;
+    }
+
+
+    /*while (1)
     {
 
-        // read ref y
-        if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+		
+        if (ret == -1)
         {
-            ret = read_image_b(ref_rfile, ref_buf, 0, w, h, stride);
-        }
-        else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-        {
-            ret = read_image_w(ref_rfile, ref_buf, 0, w, h, stride);
-        }
-        else
-        {
-            sprintf(errmsg, "unknown format %s.\n", fmt);
-            goto fail_or_end;
-        }
-        if (ret)
-        {
-            if (feof(ref_rfile))
-            {
-                ret = 0; // OK if end of file
-            }
             goto fail_or_end;
         }
 
-        // read dis y
-        if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
-        {
-            ret = read_image_b(dis_rfile, dis_buf, 0, w, h, stride);
-        }
-        else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-        {
-            ret = read_image_w(dis_rfile, dis_buf, 0, w, h, stride);
-        }
-        else
-        {
-            sprintf(errmsg, "unknown format %s.\n", fmt);
-            goto fail_or_end;
-        }
-        if (ret)
-        {
-            if (feof(dis_rfile))
-            {
-                ret = 0; // OK if end of file
-            }
-            goto fail_or_end;
-        }
-
+printf("before psnr\n");
 #ifdef PRINT_PROGRESS
         printf("frame: %d, ", frm_idx);
 #endif
@@ -239,17 +238,17 @@ int combo(const uint8_t *ref_data, const uint8_t *main_data, int w, int h, const
 
         if (psnr_array != NULL)
         {
-            /* =========== psnr ============== */
+            
             if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
             {
                 // max psnr 60.0 for 8-bit per Ioannis
-                ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, 255.0, 60.0);
+                ret = compute_psnr(ref_buf, dis_buf, w, h, ref_stride, main_stride, &score, 255.0, 60.0);
             }
             else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
             {
                 // 10 bit gets normalized to 8 bit, peak is 1023 / 4.0 = 255.75
                 // max psnr 72.0 for 10-bit per Ioannis
-                ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, 255.75, 72.0);
+                ret = compute_psnr(ref_buf, dis_buf, w, h, ref_stride, main_stride, &score, 255.75, 72.0);
             }
             else
             {
@@ -261,7 +260,7 @@ int combo(const uint8_t *ref_data, const uint8_t *main_data, int w, int h, const
                 sprintf(errmsg, "compute_psnr failed.\n");
                 goto fail_or_end;
             }
-
+printf("after psnr\n");
 #ifdef PRINT_PROGRESS
             printf("psnr: %.3f, ", score);
 #endif
@@ -271,8 +270,7 @@ int combo(const uint8_t *ref_data, const uint8_t *main_data, int w, int h, const
         if (ssim_array != NULL)
         {
 
-            /* =========== ssim ============== */
-            if ((ret = compute_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, &l_score, &c_score, &s_score)))
+            if ((ret = compute_ssim(ref_buf, dis_buf, w, h, ref_stride, main_stride, &score, &l_score, &c_score, &s_score)))
             {
                 sprintf(errmsg, "compute_ssim failed.\n");
                 goto fail_or_end;
@@ -287,8 +285,7 @@ int combo(const uint8_t *ref_data, const uint8_t *main_data, int w, int h, const
 
         if (ms_ssim_array != NULL)
         {
-            /* =========== ms-ssim ============== */
-            if ((ret = compute_ms_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, l_scores, c_scores, s_scores)))
+            if ((ret = compute_ms_ssim(ref_buf, dis_buf, w, h, ref_stride, main_stride, &score, l_scores, c_scores, s_scores)))
             {
                 sprintf(errmsg, "compute_ms_ssim failed.\n");
                 goto fail_or_end;
@@ -305,11 +302,10 @@ int combo(const uint8_t *ref_data, const uint8_t *main_data, int w, int h, const
         // for the rest, offset pixel by OPT_RANGE_PIXEL_OFFSET
         // ===============================================================
 
-        offset_image(ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
-        offset_image(dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+        offset_image(ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, ref_stride);
+        offset_image(dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, main_stride);
 
-        /* =========== adm ============== */
-        if ((ret = compute_adm(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores, ADM_BORDER_FACTOR)))
+        if ((ret = compute_adm(ref_buf, dis_buf, w, h, ref_stride, main_stride, &score, &score_num, &score_den, scores, ADM_BORDER_FACTOR)))
         {
             sprintf(errmsg, "compute_adm failed.\n");
             goto fail_or_end;
@@ -342,17 +338,16 @@ int combo(const uint8_t *ref_data, const uint8_t *main_data, int w, int h, const
 
 #ifdef COMPUTE_ANSNR
 
-        /* =========== ansnr ============== */
         if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
         {
             // max psnr 60.0 for 8-bit per Ioannis
-            ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score, &score_psnr, 255.0, 60.0);
+            ret = compute_ansnr(ref_buf, dis_buf, w, h, ref_stride, main_stride, &score, &score_psnr, 255.0, 60.0);
         }
         else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
         {
             // 10 bit gets normalized to 8 bit, peak is 1023 / 4.0 = 255.75
             // max psnr 72.0 for 10-bit per Ioannis
-            ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score, &score_psnr, 255.75, 72.0);
+            ret = compute_ansnr(ref_buf, dis_buf, w, h, ref_stride, main_stride, &score, &score_psnr, 255.75, 72.0);
         }
         else
         {
@@ -372,13 +367,11 @@ int combo(const uint8_t *ref_data, const uint8_t *main_data, int w, int h, const
 
 #endif
 
-        /* =========== motion ============== */
-
         // filter
         // apply filtering (to eliminate effects film grain)
         // stride input to convolution_f32_c is in terms of (sizeof(number_t) bytes)
         // since stride = ALIGN_CEIL(w * sizeof(number_t)), stride divides sizeof(number_t)
-        convolution_f32_c(FILTER_5, 5, ref_buf, blur_buf, temp_buf, w, h, stride / sizeof(number_t), stride / sizeof(number_t));
+        convolution_f32_c(FILTER_5, 5, ref_buf, blur_buf, temp_buf, w, h, ref_stride / sizeof(number_t), main_stride / sizeof(number_t));
 
         // compute
         if (frm_idx == 0)
@@ -387,7 +380,7 @@ int combo(const uint8_t *ref_data, const uint8_t *main_data, int w, int h, const
         }
         else
         {
-            if ((ret = compute_motion(prev_blur_buf, blur_buf, w, h, stride, stride, &score)))
+            if ((ret = compute_motion(prev_blur_buf, blur_buf, w, h, ref_stride, main_stride, &score)))
             {
                 sprintf(errmsg, "compute_motion failed.\n");
                 goto fail_or_end;
@@ -403,9 +396,7 @@ int combo(const uint8_t *ref_data, const uint8_t *main_data, int w, int h, const
 
         insert_array(motion_array, score);
 
-        /* =========== vif ============== */
-
-        if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores)))
+        if ((ret = compute_vif(ref_buf, dis_buf, w, h, ref_stride, main_stride, &score, &score_num, &score_den, scores)))
         {
             sprintf(errmsg, "compute_vif failed.\n");
             goto fail_or_end;
@@ -486,19 +477,42 @@ int combo(const uint8_t *ref_data, const uint8_t *main_data, int w, int h, const
 #endif
 
         frm_idx++;
-    }
+
+		ret = read_frame(ref_data, &ref_stride, main_data, &main_stride);
+
+        // read dis y
+        if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+        {
+            ret = read_image_b(main_data, dis_buf, 0, w, h, main_stride);
+        }
+        else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+        {
+            ret = read_image_w(main_data, dis_buf, 0, w, h, main_stride);
+        }
+        else
+        {
+            sprintf(errmsg, "unknown format %s.\n", fmt);
+            goto fail_or_end;
+        }
+        // read main y
+        if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+        {
+            ret = read_image_b(ref_data, ref_buf, 0, w, h, ref_stride);
+        }
+        else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+        {
+            ret = read_image_w(ref_data, ref_buf, 0, w, h, ref_stride);
+        }
+        else
+        {
+            sprintf(errmsg, "unknown format %s.\n", fmt);
+            goto fail_or_end;
+        }
+    }*/
 
     ret = 0;
 
 fail_or_end:
-    if (ref_rfile)
-    {
-        fclose(ref_rfile);
-    }
-    if (dis_rfile)
-    {
-        fclose(dis_rfile);
-    }
     aligned_free(ref_buf);
     aligned_free(dis_buf);
 

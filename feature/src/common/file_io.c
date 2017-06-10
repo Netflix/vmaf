@@ -19,11 +19,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <stdint.h>
 
 /**
  * Note: stride is in terms of bytes
  */
-int read_image(FILE *rfile, void *buf, int width, int height, int stride, int elem_size)
+int read_image(FILE *data, void *buf, int width, int height, int stride, int elem_size)
 {
 	char *byte_ptr = buf;
 	int i;
@@ -36,7 +37,7 @@ int read_image(FILE *rfile, void *buf, int width, int height, int stride, int el
 
 	for (i = 0; i < height; ++i)
 	{
-		if (fread(byte_ptr, elem_size, width, rfile) != (size_t)width)
+		if (fread(byte_ptr, elem_size, width, data) != (size_t)width)
 		{
 			goto fail_or_end;
 		}
@@ -83,12 +84,15 @@ fail_or_end:
 /**
  * Note: stride is in terms of bytes
  */
-int read_image_b2s(FILE * rfile, float *buf, float off, int width, int height, int stride)
+int read_image_b2s(uint8_t *data, float *buf, float off, int width, int height, int stride)
 {
+	printf("success\n");
+	uint8_t *ptr = data;
 	char *byte_ptr = (char *)buf;
 	unsigned char *tmp_buf = 0;
 	int i, j;
 	int ret = 1;
+	printf("success1\n");
 
 	if (width <= 0 || height <= 0)
 	{
@@ -102,19 +106,18 @@ int read_image_b2s(FILE * rfile, float *buf, float off, int width, int height, i
 
 	for (i = 0; i < height; ++i)
 	{
+	printf("success2\n");
 		float *row_ptr = (float *)byte_ptr;
-
-		if (fread(tmp_buf, 1, width, rfile) != (size_t)width)
-		{
-			goto fail_or_end;
-		}
 
 		for (j = 0; j < width; ++j)
 		{
-			row_ptr[j] = tmp_buf[j] + off;
+		printf("success3-3\n");
+		//printf("value = %u\n",ptr[j]);
+			//row_ptr[j] = (float)ptr[j] + off;
 		}
 
 		byte_ptr += stride;
+		ptr += stride;
 	}
 
 	ret = 0;
@@ -127,7 +130,7 @@ fail_or_end:
 /**
  * Note: stride is in terms of bytes
  */
-int read_image_b2d(FILE *rfile, double *buf, double off, int width, int height, int stride)
+int read_image_b2d(uint8_t *data, double *buf, double off, int width, int height, int stride)
 {
 	char *byte_ptr = (char *)buf;
 	unsigned char *tmp_buf = 0;
@@ -148,7 +151,7 @@ int read_image_b2d(FILE *rfile, double *buf, double off, int width, int height, 
 	{
 		double *row_ptr = (double *)byte_ptr;
 
-		if (fread(tmp_buf, 1, width, rfile) != (size_t)width)
+		if (fread(tmp_buf, 1, width, data) != (size_t)width)
 		{
 			goto fail_or_end;
 		}
@@ -171,7 +174,7 @@ fail_or_end:
 /**
  * Note: stride is in terms of bytes; image is 10-bit little-endian
  */
-int read_image_w2s(FILE * rfile, float *buf, float off, int width, int height, int stride)
+int read_image_w2s(uint8_t *data, float *buf, float off, int width, int height, int stride)
 {
 	// make sure unsigned short is 2 bytes
 	assert(sizeof(unsigned short) == 2);
@@ -195,7 +198,7 @@ int read_image_w2s(FILE * rfile, float *buf, float off, int width, int height, i
 	{
 		float *row_ptr = (float *)byte_ptr;
 
-		if (fread(tmp_buf, 2, width, rfile) != (size_t)width) // '2' for word
+		if (fread(tmp_buf, 2, width, data) != (size_t)width) // '2' for word
 		{
 			goto fail_or_end;
 		}
@@ -218,7 +221,7 @@ fail_or_end:
 /**
  * Note: stride is in terms of bytes, image is 10-bit little endian
  */
-int read_image_w2d(FILE *rfile, double *buf, double off, int width, int height, int stride)
+int read_image_w2d(uint8_t *data, double *buf, double off, int width, int height, int stride)
 {
 	// make sure unsigned short is 2 bytes
 	assert(sizeof(unsigned short) == 2);
@@ -242,7 +245,7 @@ int read_image_w2d(FILE *rfile, double *buf, double off, int width, int height, 
 	{
 		double *row_ptr = (double *)byte_ptr;
 
-		if (fread(tmp_buf, 2, width, rfile) != (size_t)width) // '2' for word
+		if (fread(tmp_buf, 2, width, data) != (size_t)width) // '2' for word
 		{
 			goto fail_or_end;
 		}

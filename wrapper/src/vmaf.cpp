@@ -25,6 +25,7 @@
 #include <sstream>
 #include <memory>
 #include <cmath>
+#include <cstdint>
 
 #include "vmaf.h"
 #include "darray.h"
@@ -135,8 +136,7 @@ void _read_and_assert_model(const char *model_path, Val& feature_names,
 
 }
 
-Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
-                       bool do_psnr, bool do_ssim, bool do_ms_ssim)
+Result VmafRunner::run(Asset asset, int (*read_frame)(uint8_t *ref_buf, int *ref_stride, uint8_t *main_buf, int *main_stride), bool disable_clip, bool enable_transform, bool do_psnr, bool do_ssim, bool do_ms_ssim)
 {
 
 #ifdef PRINT_PROGRESS
@@ -163,8 +163,6 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
 
     int w = asset.getWidth();
     int h = asset.getHeight();
-    const uint8_t* ref_data = asset.getRefPath();
-    const uint8_t* main_data = asset.getDisPath();
     const char* fmt = asset.getFmt();
     char errmsg[1024];
 
@@ -251,7 +249,7 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
     printf("Extract atom features...\n");
 #endif
 
-    int ret = combo(ref_data, main_data, w, h, fmt,
+    int ret = combo(read_frame, w, h, fmt,
             &adm_num_array,
             &adm_den_array,
             &adm_num_scale0_array,
@@ -629,21 +627,20 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
 //static const char VMAFOSS_XML_VERSION[] = "0.3.3"; // fix slopes and intercepts to match nflxtrain_vmafv3a.pkl
 static const char VMAFOSS_XML_VERSION[] = "0.3.2"; // fix slopes and intercepts to match nflxall_vmafv4.pkl
 
-double RunVmaf(const char* fmt, int width, int height,
-               const uint8_t *ref_data, const uint8_t *main_data, const char *model_path,
-               const char *log_path, const char *log_fmt,
-               bool disable_clip, bool enable_transform,
-               bool do_psnr, bool do_ssim, bool do_ms_ssim,
-               const char *pool_method)
+double RunVmaf(char* fmt, int width, int height, int (*read_frame)(uint8_t *ref_buf, int *ref_stride, uint8_t *main_buf, int *main_stride), const char *model_path,
+	           const char *log_path, const char *log_fmt,
+	           int disable_clip, int enable_transform,
+	           int do_psnr, int do_ssim, int do_ms_ssim,
+	           const char *pool_method)
 {
     printf("Start calculating VMAF score...\n");
 
-    Asset asset(width, height, ref, main, fmt);
+    Asset asset(width, height, fmt);
     VmafRunner runner{model_path};
     Timer timer;
 
     timer.start();
-    Result result = runner.run(asset, disable_clip, enable_transform, do_psnr, do_ssim, do_ms_ssim);
+    Result result = runner.run(asset, read_frame, disable_clip, enable_transform, do_psnr, do_ssim, do_ms_ssim);
     timer.stop();
 
     if (pool_method != NULL && (strcmp(pool_method, "min")==0))
