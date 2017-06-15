@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <inttypes.h>
 
 #include "common/alloc.h"
 #include "common/file_io.h"
@@ -84,33 +85,36 @@ int combo(int (*read_frame)(uint8_t *ref_data, int *ref_stride, uint8_t *main_da
     double l_score = 0, c_score = 0, s_score = 0;
     double l_scores[SCALES], c_scores[SCALES], s_scores[SCALES];
 
-#ifdef COMPUTE_ANSNR
+
     double score_psnr = 0;
-#endif
 
     number_t *ref_buf = 0;
-    number_t *dis_buf = 0;
+    number_t *main_buf = 0;
     number_t *prev_blur_buf = 0;
     number_t *blur_buf = 0;
     number_t *temp_buf = 0;
 
     size_t data_sz;
 	
-	uint8_t *ref_data, *main_data;
-    int ref_stride, main_stride;
-	int ret;
-	int p=0;
-/*
-	while(ret = read_frame(ref_data, &ref_stride, main_data, &main_stride)!=-1){
-		printf("Frame %d\n",p++);
-	}*/
-/*
+    int ref_stride=384, main_stride=384;
+	int ret,cru=0;
+	printf("before reading first frame\n");
+	
+/*while(1){
+		printf("read frame %d\n",cru++);
+		read_frame(&ref_data, &ref_stride, &main_data, &main_stride);
+		uint8_t tr = ref_data[0];
+		printf("%" PRIu8 "\n", tr);
+	}
+*/
+	data_sz = (sizeof(float))*ref_stride * h;
 
-	printf("before reading1\n");
+	ref_buf = aligned_malloc(data_sz, MAX_ALIGN);	
+	main_buf = aligned_malloc(data_sz, MAX_ALIGN);
 
-	int *tr = (int *)ref_data;
-	printf("%d\n",tr[0]);
-
+	read_frame(ref_buf, &ref_stride, main_buf, &main_stride);
+		
+	printf("after reading first frame\n");
 
     if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(number_t))
     {
@@ -123,19 +127,6 @@ int combo(int (*read_frame)(uint8_t *ref_data, int *ref_stride, uint8_t *main_da
     if ((size_t)h > SIZE_MAX / ref_stride)
     {
         sprintf(errmsg, "height %d too large.\n", h);
-        goto fail_or_end;
-    }
-
-    data_sz = (size_t)ref_stride * h;
-
-    if (!(ref_buf = aligned_malloc(data_sz, MAX_ALIGN)))
-    {
-        sprintf(errmsg, "aligned_malloc failed for ref_buf.\n");
-        goto fail_or_end;
-    }
-    if (!(dis_buf = aligned_malloc(data_sz, MAX_ALIGN)))
-    {
-        sprintf(errmsg, "aligned_malloc failed for dis_buf.\n");
         goto fail_or_end;
     }
 
@@ -183,17 +174,19 @@ int combo(int (*read_frame)(uint8_t *ref_data, int *ref_stride, uint8_t *main_da
     }
 
     int frm_idx = 0;
-printf("here\n");
+	printf("here\n");
+	printf("%s\n",fmt);
     // read dis y
+/*
     if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
     {
-		printf("this format\n");
-        ret = read_image_b(main_data, dis_buf, 0, w, h, main_stride);
+		printf("this format");
+        ret = read_image_b(main_data, main_buf, 0, w, h, main_stride);
     }
     else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
     {
-		printf("this format1\n");
-        ret = read_image_w(main_data, dis_buf, 0, w, h, main_stride);
+		printf("this format1");
+        ret = read_image_w(main_data, main_buf, 0, w, h, main_stride);
     }
     else
     {
@@ -202,10 +195,21 @@ printf("here\n");
     }
 printf("after reading\n");
 
-    // read ref y
+	
+	// read ref y
     if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
     {
         ret = read_image_b(ref_data, ref_buf, 0, w, h, ref_stride);
+		int i,j;		
+		float *ptr = ref_buf; 
+		printf("\n\n--------------------------------------------------------------------------------\n\n");
+		for(i=0;i<h;i++){
+			for(j=0;j<w;j++){
+				printf("%f ",ptr[j]);
+			}
+			ptr += ref_stride;
+			printf("\n");
+		}		
     }
     else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
     {
@@ -216,9 +220,12 @@ printf("after reading\n");
         sprintf(errmsg, "unknown format %s.\n", fmt);
         goto fail_or_end;
     }
+*/
+printf("First frame read successfully\n");
 
 
-    /*while (1)
+
+    while (1)
     {
 
 		
@@ -231,24 +238,23 @@ printf("before psnr\n");
 #ifdef PRINT_PROGRESS
         printf("frame: %d, ", frm_idx);
 #endif
-
         // ===============================================================
         // for the PSNR, SSIM and MS-SSIM, offset are 0 - do them first
         // ===============================================================
 
         if (psnr_array != NULL)
         {
-            
             if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
             {
                 // max psnr 60.0 for 8-bit per Ioannis
-                ret = compute_psnr(ref_buf, dis_buf, w, h, ref_stride, main_stride, &score, 255.0, 60.0);
+				printf("inside psnr format\n");
+                ret = compute_psnr(ref_buf, main_buf, w, h, ref_stride, main_stride, &score, 255.0, 60.0);
             }
             else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
             {
                 // 10 bit gets normalized to 8 bit, peak is 1023 / 4.0 = 255.75
                 // max psnr 72.0 for 10-bit per Ioannis
-                ret = compute_psnr(ref_buf, dis_buf, w, h, ref_stride, main_stride, &score, 255.75, 72.0);
+                ret = compute_psnr(ref_buf, main_buf, w, h, ref_stride, main_stride, &score, 255.75, 72.0);
             }
             else
             {
@@ -260,58 +266,64 @@ printf("before psnr\n");
                 sprintf(errmsg, "compute_psnr failed.\n");
                 goto fail_or_end;
             }
-printf("after psnr\n");
-#ifdef PRINT_PROGRESS
-            printf("psnr: %.3f, ", score);
-#endif
+
+            printf("psnr: %.3f, \n", score);
+
             insert_array(psnr_array, score);
         }
 
+printf("after psnr\n");
+
+printf("before ssim\n");
+
         if (ssim_array != NULL)
         {
-
-            if ((ret = compute_ssim(ref_buf, dis_buf, w, h, ref_stride, main_stride, &score, &l_score, &c_score, &s_score)))
+            if ((ret = compute_ssim(ref_buf, main_buf, w, h, ref_stride, main_stride, &score, &l_score, &c_score, &s_score)))
             {
                 sprintf(errmsg, "compute_ssim failed.\n");
                 goto fail_or_end;
             }
 
-#ifdef PRINT_PROGRESS
+
             printf("ssim: %.3f, ", score);
-#endif
+
 
             insert_array(ssim_array, score);
         }
+printf("after ssim\n");
 
+printf("before ms_ssim\n");
         if (ms_ssim_array != NULL)
         {
-            if ((ret = compute_ms_ssim(ref_buf, dis_buf, w, h, ref_stride, main_stride, &score, l_scores, c_scores, s_scores)))
+         
+            if ((ret = compute_ms_ssim(ref_buf, main_buf, w, h, ref_stride, main_stride, &score, l_scores, c_scores, s_scores)))
             {
                 sprintf(errmsg, "compute_ms_ssim failed.\n");
                 goto fail_or_end;
             }
 
-#ifdef PRINT_PROGRESS
+
             printf("ms_ssim: %.3f, ", score);
-#endif
 
             insert_array(ms_ssim_array, score);
         }
-
+printf("after ms_ssim\n");
         // ===============================================================
         // for the rest, offset pixel by OPT_RANGE_PIXEL_OFFSET
         // ===============================================================
-
+printf("before offset\n");
         offset_image(ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, ref_stride);
-        offset_image(dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, main_stride);
+        offset_image(main_buf, OPT_RANGE_PIXEL_OFFSET, w, h, main_stride);
+printf("after offset\n");
 
-        if ((ret = compute_adm(ref_buf, dis_buf, w, h, ref_stride, main_stride, &score, &score_num, &score_den, scores, ADM_BORDER_FACTOR)))
+printf("before compute_adm\n");
+        if ((ret = compute_adm(ref_buf, main_buf, w, h, ref_stride, main_stride, &score, &score_num, &score_den, scores, ADM_BORDER_FACTOR)))
         {
             sprintf(errmsg, "compute_adm failed.\n");
             goto fail_or_end;
         }
+printf("after compute_adm\n");
 
-#ifdef PRINT_PROGRESS
         printf("adm: %.3f, ", score);
         printf("adm_num: %.3f, ", score_num);
         printf("adm_den: %.3f, ", score_den);
@@ -323,7 +335,6 @@ printf("after psnr\n");
         printf("adm_den_scale2: %.3f, ", scores[5]);
         printf("adm_num_scale3: %.3f, ", scores[6]);
         printf("adm_den_scale3: %.3f, ", scores[7]);
-#endif
 
         insert_array(adm_num_array, score_num);
         insert_array(adm_den_array, score_den);
@@ -336,18 +347,18 @@ printf("after psnr\n");
         insert_array(adm_num_scale3_array, scores[6]);
         insert_array(adm_den_scale3_array, scores[7]);
 
-#ifdef COMPUTE_ANSNR
 
+printf("before compute_ansnr\n");
         if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
         {
             // max psnr 60.0 for 8-bit per Ioannis
-            ret = compute_ansnr(ref_buf, dis_buf, w, h, ref_stride, main_stride, &score, &score_psnr, 255.0, 60.0);
+            ret = compute_ansnr(ref_buf, main_buf, w, h, ref_stride, main_stride, &score, &score_psnr, 255.0, 60.0);
         }
         else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
         {
             // 10 bit gets normalized to 8 bit, peak is 1023 / 4.0 = 255.75
             // max psnr 72.0 for 10-bit per Ioannis
-            ret = compute_ansnr(ref_buf, dis_buf, w, h, ref_stride, main_stride, &score, &score_psnr, 255.75, 72.0);
+            ret = compute_ansnr(ref_buf, main_buf, w, h, ref_stride, main_stride, &score, &score_psnr, 255.75, 72.0);
         }
         else
         {
@@ -359,13 +370,11 @@ printf("after psnr\n");
             sprintf(errmsg, "compute_ansnr failed.\n");
             goto fail_or_end;
         }
+printf("after compute_ansnr\n");
 
-#ifdef PRINT_PROGRESS
         printf("ansnr: %.3f, ", score);
         printf("anpsnr: %.3f, ", score_psnr);
-#endif
 
-#endif
 
         // filter
         // apply filtering (to eliminate effects film grain)
@@ -390,19 +399,19 @@ printf("after psnr\n");
         // copy to prev_buf
         memcpy(prev_blur_buf, blur_buf, data_sz);
 
-#ifdef PRINT_PROGRESS
+
         printf("motion: %.3f, ", score);
-#endif
+
 
         insert_array(motion_array, score);
 
-        if ((ret = compute_vif(ref_buf, dis_buf, w, h, ref_stride, main_stride, &score, &score_num, &score_den, scores)))
+     
+        if ((ret = compute_vif(ref_buf, main_buf, w, h, ref_stride, main_stride, &score, &score_num, &score_den, scores)))
         {
             sprintf(errmsg, "compute_vif failed.\n");
             goto fail_or_end;
         }
 
-#ifdef PRINT_PROGRESS
         // printf("vif_num: %.3f, ", score_num);
         // printf("vif_den: %.3f, ", score_den);
         printf("vif_num_scale0: %.3f, ", scores[0]);
@@ -414,7 +423,6 @@ printf("after psnr\n");
         printf("vif_num_scale3: %.3f, ", scores[6]);
         printf("vif_den_scale3: %.3f, ", scores[7]);
         printf("vif: %.3f, ", score);
-#endif
 
         insert_array(vif_num_scale0_array, scores[0]);
         insert_array(vif_den_scale0_array, scores[1]);
@@ -426,68 +434,21 @@ printf("after psnr\n");
         insert_array(vif_den_scale3_array, scores[7]);
         insert_array(vif_array, score);
 
-        // ref skip u and v
-        if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
-        {
-            if (fread(temp_buf, 1, offset, ref_rfile) != (size_t)offset)
-            {
-                sprintf(errmsg, "ref fread u and v failed.\n");
-                goto fail_or_end;
-            }
-        }
-        else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-        {
-            if (fread(temp_buf, 2, offset, ref_rfile) != (size_t)offset)
-            {
-                sprintf(errmsg, "ref fread u and v failed.\n");
-                goto fail_or_end;
-            }
-        }
-        else
-        {
-            sprintf(errmsg, "unknown format %s.\n", fmt);
-            goto fail_or_end;
-        }
+		read_frame(ref_buf, &ref_stride, main_buf, &main_stride);
 
-        // dis skip u and v
-        if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
-        {
-            if (fread(temp_buf, 1, offset, dis_rfile) != (size_t)offset)
-            {
-                sprintf(errmsg, "dis fread u and v failed.\n");
-                goto fail_or_end;
-            }
-        }
-        else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-        {
-            if (fread(temp_buf, 2, offset, dis_rfile) != (size_t)offset)
-            {
-                sprintf(errmsg, "dis fread u and v failed.\n");
-                goto fail_or_end;
-            }
-        }
-        else
-        {
-            sprintf(errmsg, "unknown format %s.\n", fmt);
-            goto fail_or_end;
-        }
-
-#ifdef PRINT_PROGRESS
         printf("\n");
-#endif
 
         frm_idx++;
 
-		ret = read_frame(ref_data, &ref_stride, main_data, &main_stride);
-
+/*
         // read dis y
         if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
         {
-            ret = read_image_b(main_data, dis_buf, 0, w, h, main_stride);
+            ret = read_image_b(main_data, main_buf, 0, w, h, main_stride);
         }
         else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
         {
-            ret = read_image_w(main_data, dis_buf, 0, w, h, main_stride);
+            ret = read_image_w(main_data, main_buf, 0, w, h, main_stride);
         }
         else
         {
@@ -508,13 +469,14 @@ printf("after psnr\n");
             sprintf(errmsg, "unknown format %s.\n", fmt);
             goto fail_or_end;
         }
-    }*/
+*/
+    }
 
     ret = 0;
 
 fail_or_end:
     aligned_free(ref_buf);
-    aligned_free(dis_buf);
+    aligned_free(main_buf);
 
     aligned_free(prev_blur_buf);
     aligned_free(blur_buf);

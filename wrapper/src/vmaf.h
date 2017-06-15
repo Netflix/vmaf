@@ -28,6 +28,7 @@
 #include <sstream>
 #include <exception>
 #include <cstring>
+#include <cstdint>
 
 double RunVmaf(char* fmt, int width, int height, int (*read_frame)(uint8_t *ref_buf, int *ref_stride, uint8_t *main_buf, int *main_stride), const char *model_path,
 	           const char *log_path, const char *log_fmt,

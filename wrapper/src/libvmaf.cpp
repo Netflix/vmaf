@@ -12,9 +12,9 @@ double compute_vmaf(char* fmt, int width, int height, int (*read_frame)(uint8_t 
 		int disable_clip = 0;
 		int disable_avx = 0;
 		int enable_transform = 0;
-		int do_psnr = 0;
-		int do_ssim = 0;
-		int do_ms_ssim = 0;
+		int do_psnr = 1;
+		int do_ssim = 1;
+		int do_ms_ssim = 1;
 		char *pool_method = 0;
 		int *ref_buf;
 

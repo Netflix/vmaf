@@ -27,6 +27,7 @@
 #include <cmath>
 #include <cstdint>
 
+
 #include "vmaf.h"
 #include "darray.h"
 #include "combo.h"
@@ -248,7 +249,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(uint8_t *ref_buf, int *ref
 #ifdef PRINT_PROGRESS
     printf("Extract atom features...\n");
 #endif
-
+	printf("Got to combo\n");
     int ret = combo(read_frame, w, h, fmt,
             &adm_num_array,
             &adm_den_array,
@@ -634,15 +635,17 @@ double RunVmaf(char* fmt, int width, int height, int (*read_frame)(uint8_t *ref_
 	           const char *pool_method)
 {
     printf("Start calculating VMAF score...\n");
-
+	
     Asset asset(width, height, fmt);
+	
     VmafRunner runner{model_path};
     Timer timer;
-
+	printf("here1\n");
     timer.start();
     Result result = runner.run(asset, read_frame, disable_clip, enable_transform, do_psnr, do_ssim, do_ms_ssim);
     timer.stop();
-
+	printf("here2\n");
+	
     if (pool_method != NULL && (strcmp(pool_method, "min")==0))
     {
         result.setScoreAggregateMethod(MIN);

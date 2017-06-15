@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 /**
  * Note: stride is in terms of bytes
@@ -84,46 +85,39 @@ fail_or_end:
 /**
  * Note: stride is in terms of bytes
  */
-int read_image_b2s(uint8_t *data, float *buf, float off, int width, int height, int stride)
+int read_image_b2s(float *data, float *buf, float off, int width, int height, int stride)
 {
-	printf("success\n");
-	uint8_t *ptr = data;
+	//printf("success\n");
 	char *byte_ptr = (char *)buf;
-	unsigned char *tmp_buf = 0;
+
+	char *ptr = (char *)data;
+	
 	int i, j;
 	int ret = 1;
-	printf("success1\n");
 
 	if (width <= 0 || height <= 0)
 	{
 		goto fail_or_end;
 	}
 
-	if (!(tmp_buf = malloc(width)))
-	{
-		goto fail_or_end;
-	}
-
 	for (i = 0; i < height; ++i)
 	{
-	printf("success2\n");
+	    //printf("success2\n");
 		float *row_ptr = (float *)byte_ptr;
-
+		float *row_ptr1 = (float *)ptr;
 		for (j = 0; j < width; ++j)
 		{
-		printf("success3-3\n");
-		//printf("value = %u\n",ptr[j]);
-			//row_ptr[j] = (float)ptr[j] + off;
+		//printf("success3\n");
+			row_ptr[j] = row_ptr1[j] + off;
 		}
 
-		byte_ptr += stride;
 		ptr += stride;
+		byte_ptr += stride;
 	}
 
 	ret = 0;
 
 fail_or_end:
-	free(tmp_buf);
 	return ret;
 }
 

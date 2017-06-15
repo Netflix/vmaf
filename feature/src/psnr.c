@@ -52,7 +52,7 @@ int compute_psnr(const number_t *ref, const number_t *dis, int w, int h, int ref
 
     int ref_stride_ = ref_stride / sizeof(number_t);
     int dis_stride_ = dis_stride / sizeof(number_t);
-
+	
     for (int i = 0; i < h; ++i)
     {
         for (int j = 0; j < w; ++j)
@@ -63,6 +63,7 @@ int compute_psnr(const number_t *ref, const number_t *dis, int w, int h, int ref
             noise_ += diff * diff;
         }
     }
+	
     noise_ /= (w * h);
 
     double eps = 1e-10;
