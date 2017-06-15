@@ -392,9 +392,9 @@ class Executor(TypeVersionEnabled):
         if fifo_mode:
             os.mkfifo(asset.ref_workfile_path)
 
-        quality_width, quality_height = asset.quality_width_height
+        quality_height, quality_width = self._get_quality_width_height(asset)
         yuv_type = asset.ref_yuv_type
-        resampling_type = asset.resampling_type
+        resampling_type = self._get_resampling_type(asset)
 
         if yuv_type != 'notyuv':
             # in this case, for sure has ref_width_height
@@ -444,9 +444,9 @@ class Executor(TypeVersionEnabled):
         if fifo_mode:
             os.mkfifo(asset.dis_workfile_path)
 
-        quality_width, quality_height = asset.quality_width_height
+        quality_height, quality_width = self._get_quality_width_height(asset)
         yuv_type = asset.dis_yuv_type
-        resampling_type = asset.resampling_type
+        resampling_type = self._get_resampling_type(asset)
 
         if yuv_type != 'notyuv':
             # in this case, for sure has dis_width_height
@@ -480,6 +480,12 @@ class Executor(TypeVersionEnabled):
             self.logger.info(ffmpeg_cmd)
 
         run_process(ffmpeg_cmd, shell=True)
+
+    def _get_resampling_type(self, asset):
+        return asset.resampling_type
+
+    def _get_quality_width_height(self, asset):
+        return asset.quality_width_height
 
     @staticmethod
     def _get_yuv_src_fmt_cmd(asset, height, width, ref_or_dis):
