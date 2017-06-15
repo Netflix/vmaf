@@ -392,7 +392,7 @@ class Executor(TypeVersionEnabled):
         if fifo_mode:
             os.mkfifo(asset.ref_workfile_path)
 
-        quality_height, quality_width = self._get_quality_width_height(asset)
+        quality_width, quality_height = self._get_quality_width_height(asset)
         yuv_type = asset.ref_yuv_type
         resampling_type = self._get_resampling_type(asset)
 
@@ -444,7 +444,7 @@ class Executor(TypeVersionEnabled):
         if fifo_mode:
             os.mkfifo(asset.dis_workfile_path)
 
-        quality_height, quality_width = self._get_quality_width_height(asset)
+        quality_width, quality_height = self._get_quality_width_height(asset)
         yuv_type = asset.dis_yuv_type
         resampling_type = self._get_resampling_type(asset)
 
