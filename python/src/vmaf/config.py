@@ -10,7 +10,7 @@ class VmafExternalConfig(object):
 
     _MISSING_EXTERNAL_MESSAGE = """
     Must install {name} and set {key} in %s/externals.py, e.g. add a line like
-    {key} = "[path to ffmpeg]/{name}"
+    {key} = "[path to exec]/{name}"
     """ % PYTHON_ROOT
 
     @staticmethod
@@ -52,6 +52,13 @@ class VmafExternalConfig(object):
         return cls._path_from_external('MATLAB_RUNTIME_PATH')
 
     @classmethod
+    def mkvmerge_path(cls):
+        """
+        :return str: Path to mkvmerge, if installed and configured via `externals` module
+        """
+        return cls._path_from_external('MKVMERGE_PATH')
+
+    @classmethod
     def get_and_assert_ffmpeg(cls):
         path = cls.ffmpeg_path()
         assert path is not None, cls._MISSING_EXTERNAL_MESSAGE.format(name='ffmpeg', key='FFMPEG_PATH')
@@ -69,6 +76,12 @@ class VmafExternalConfig(object):
         assert path is not None, \
             """Must install matlab runtime (v9.1) and set {key} in {root}/externals.py, e.g. add a line like {key} = "[path to matlab runtime]/v91"
             """.format(root=PYTHON_ROOT, key='MATLAB_RUNTIME_PATH')
+        return path
+
+    @classmethod
+    def get_and_assert_mkvmerge(cls):
+        path = cls.mkvmerge_path()
+        assert path is not None, cls._MISSING_EXTERNAL_MESSAGE.format(name='mkvmerge', key='MKVMERGE_PATH')
         return path
 
 class VmafConfig(object):
