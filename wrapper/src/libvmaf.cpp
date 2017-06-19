@@ -2,9 +2,13 @@
 #include "vmaf_wrapper.h"
 #include <cstdio>
 #include <cstdint>
+#include "cpu.h"
 
 extern "C" {
-double compute_vmaf(char* fmt, int width, int height, int (*read_frame)(uint8_t *ref_data, int *ref_stride, uint8_t *main_data, int *main_stride), char *model_path)
+
+enum vmaf_cpu cpu; // global
+
+double compute_vmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_data, int *ref_stride, float *main_data, int *main_stride, double *score), char *model_path)
 	{
 		printf("under libvmaf\n");   
 		char *log_path = NULL;
@@ -17,6 +21,8 @@ double compute_vmaf(char* fmt, int width, int height, int (*read_frame)(uint8_t 
 		int do_ms_ssim = 1;
 		char *pool_method = 0;
 		int *ref_buf;
+
+		cpu = cpu_autodetect();
 
 		double score = RunVmaf1(fmt, width, height, read_frame, model_path, log_path, log_fmt, disable_clip, enable_transform, do_psnr, do_ssim, do_ms_ssim, pool_method);
 

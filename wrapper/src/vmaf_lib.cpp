@@ -25,10 +25,12 @@
 #include <sstream>
 #include <memory>
 #include <cmath>
+#include <cstdint>
 
-#include "vmaf.h"
+
+#include "vmaf_lib.h"
 #include "darray.h"
-#include "combo.h"
+#include "combo_lib.h"
 #include "svm.h"
 #include "pugixml/pugixml.hpp"
 #include "timer.h"
@@ -42,17 +44,18 @@
 
 #define MIN(A,B) ((A)<(B)?(A):(B))
 
+
 template <class T> static inline T min(T x,T y) { return (x<y)?x:y; }
 
 inline double _round_to_digit(double val, int digit);
-string _get_file_name(const std::string& s);
+string _get_file_name1(const std::string& s);
 
-void SvmDelete::operator()(void *svm)
+void SvmDelete1::operator()(void *svm)
 {
     svm_free_and_destroy_model((svm_model **)&svm);
 }
 
-void _read_and_assert_model(const char *model_path, Val& feature_names,
+void _read_and_assert_model1(const char *model_path, Val& feature_names,
      Val& norm_type, Val& slopes, Val& intercepts, Val& score_clip, Val& score_transform)
 {
     /*  TrainTestModel._assert_trained() in Python:
@@ -135,8 +138,7 @@ void _read_and_assert_model(const char *model_path, Val& feature_names,
 
 }
 
-Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
-                       bool do_psnr, bool do_ssim, bool do_ms_ssim)
+Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_buf, int *ref_stride, float *main_buf, int *main_stride, double *score), bool disable_clip, bool enable_transform, bool do_psnr, bool do_ssim, bool do_ms_ssim)
 {
 
 #ifdef PRINT_PROGRESS
@@ -144,13 +146,13 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
 #endif
 
     Val feature_names, norm_type, slopes, intercepts, score_clip, score_transform;
-    _read_and_assert_model(model_path, feature_names, norm_type, slopes, intercepts, score_clip, score_transform);
+    _read_and_assert_model1(model_path, feature_names, norm_type, slopes, intercepts, score_clip, score_transform);
 
 #ifdef PRINT_PROGRESS
     printf("Read input model (libsvm)...\n");
 #endif
 
-    std::unique_ptr<svm_model, SvmDelete> svm_model_ptr{svm_load_model(libsvm_model_path)};
+    std::unique_ptr<svm_model, SvmDelete1> svm_model_ptr{svm_load_model(libsvm_model_path)};
     if (!svm_model_ptr)
     {
         printf("Error loading SVM model.\n");
@@ -163,8 +165,6 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
 
     int w = asset.getWidth();
     int h = asset.getHeight();
-    const char* ref_path = asset.getRefPath();
-    const char* dis_path = asset.getDisPath();
     const char* fmt = asset.getFmt();
     char errmsg[1024];
 
@@ -250,8 +250,8 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
 #ifdef PRINT_PROGRESS
     printf("Extract atom features...\n");
 #endif
-
-    int ret = combo(ref_path, dis_path, w, h, fmt,
+	printf("Got to combo\n");
+    int ret = combo1(read_frame, w, h, fmt,
             &adm_num_array,
             &adm_den_array,
             &adm_num_scale0_array,
@@ -623,28 +623,30 @@ Result VmafRunner::run(Asset asset, bool disable_clip, bool enable_transform,
     return result;
 }
 
+
 // static const char VMAFOSS_XML_VERSION[] = "0.3.1";
 //static const char VMAFOSS_XML_VERSION[] = "0.3.2"; // add vif, ssim and ms-ssim scores
 //static const char VMAFOSS_XML_VERSION[] = "0.3.3"; // fix slopes and intercepts to match nflxtrain_vmafv3a.pkl
 static const char VMAFOSS_XML_VERSION[] = "0.3.2"; // fix slopes and intercepts to match nflxall_vmafv4.pkl
 
-double RunVmaf(const char* fmt, int width, int height,
-               const char *ref_path, const char *dis_path, const char *model_path,
-               const char *log_path, const char *log_fmt,
-               bool disable_clip, bool enable_transform,
-               bool do_psnr, bool do_ssim, bool do_ms_ssim,
-               const char *pool_method)
+double RunVmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_buf, int *ref_stride, float *main_buf, int *main_stride, double *score), const char *model_path,
+	           const char *log_path, const char *log_fmt,
+	           int disable_clip, int enable_transform,
+	           int do_psnr, int do_ssim, int do_ms_ssim,
+	           const char *pool_method)
 {
     printf("Start calculating VMAF score...\n");
+	
+    Asset asset(width, height, fmt);
 
-    Asset asset(width, height, ref_path, dis_path, fmt);
     VmafRunner runner{model_path};
     Timer timer;
-
+	printf("here1\n");
     timer.start();
-    Result result = runner.run(asset, disable_clip, enable_transform, do_psnr, do_ssim, do_ms_ssim);
+    Result result = runner.run(asset, read_frame, disable_clip, enable_transform, do_psnr, do_ssim, do_ms_ssim);
     timer.stop();
-
+	printf("here2\n");
+	
     if (pool_method != NULL && (strcmp(pool_method, "min")==0))
     {
         result.setScoreAggregateMethod(MIN);
@@ -680,7 +682,7 @@ double RunVmaf(const char* fmt, int width, int height,
         double value;
 
         OTab params;
-        params["model"] = _get_file_name(std::string(model_path));
+        params["model"] = _get_file_name1(std::string(model_path));
         params["scaledWidth"] = width;
         params["scaledHeight"] = height;
 
@@ -726,7 +728,7 @@ double RunVmaf(const char* fmt, int width, int height,
         xml_root.append_attribute("version") = VMAFOSS_XML_VERSION;
 
         auto params_node = xml_root.append_child("params");
-        params_node.append_attribute("model") = _get_file_name(std::string(model_path)).c_str();
+        params_node.append_attribute("model") = _get_file_name1(std::string(model_path)).c_str();
         params_node.append_attribute("scaledWidth") = width;
         params_node.append_attribute("scaledHeight") = height;
 
@@ -764,7 +766,7 @@ inline double _round_to_digit(double val, int digit)
     return _round(val * m) / m;
 }
 
-string _get_file_name(const std::string& s)
+string _get_file_name1(const std::string& s)
 {
    char sep = '/';
 #ifdef _WIN32

@@ -21,7 +21,7 @@
 #include <string>
 #include <algorithm>
 
-/*#include "cpu.h"
+#include "cpu.h"
 #include "vmaf.h"
 
 enum vmaf_cpu cpu; // global
@@ -47,11 +47,10 @@ void print_usage(int argc, char *argv[])
     fprintf(stderr, "fmt:\n\tyuv420p\n\tyuv422p\n\tyuv444p\n\tyuv420p10le\n\tyuv422p10le\n\tyuv444p10le\n\n");
     fprintf(stderr, "log_fmt:\n\txml (default)\n\tjson\n\n");
 }
-*/
 
-int main()
+int main(int argc, char *argv[])
 {
-/*    double score;
+    double score;
     char* fmt;
     int width;
     int height;
@@ -68,6 +67,7 @@ int main()
     bool do_ms_ssim = false;
     char *pool_method = NULL;
 
+    /* Check parameters */
 
     if (argc < 7)
     {
@@ -145,7 +145,7 @@ int main()
             cpu = VMAF_CPU_NONE;
         }
 
-       
+        /* Run VMAF */
         score = RunVmaf(fmt, width, height, ref_path, dis_path, model_path, log_path, log_fmt, disable_clip, enable_transform, do_psnr, do_ssim, do_ms_ssim, pool_method);
 
     }
@@ -155,6 +155,6 @@ int main()
         print_usage(argc, argv);
         return -1;
     }
-*/
+
     return 0;
 }

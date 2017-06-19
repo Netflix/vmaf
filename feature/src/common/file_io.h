@@ -21,8 +21,6 @@
 #ifndef FILE_IO_H_
 #define FILE_IO_H_
 
-#include <stdint.h>
-
 /* Whether to use [0,255] or [-128,127] input pixel range. */
 //#define OPT_RANGE_PIXEL_OFFSET 0
 #define OPT_RANGE_PIXEL_OFFSET (-128)
@@ -30,11 +28,11 @@
 int read_image(FILE *rfile, void *buf, int width, int height, int stride, int elem_size);
 int write_image(FILE *wfile, const void *buf, int width, int height, int stride, int elem_size);
 
-int read_image_b2s(uint8_t *data, float *buf, float off, int width, int height, int stride);
-int read_image_b2d(uint8_t *data, double *buf, double off, int width, int height, int stride);
+int read_image_b2s(FILE *rfile, float *buf, float off, int width, int height, int stride);
+int read_image_b2d(FILE *rfile, double *buf, double off, int width, int height, int stride);
 
-int read_image_w2s(uint8_t *data, float *buf, float off, int width, int height, int stride);
-int read_image_w2d(uint8_t *data, double *buf, double off, int width, int height, int stride);
+int read_image_w2s(FILE *rfile, float *buf, float off, int width, int height, int stride);
+int read_image_w2d(FILE *rfile, double *buf, double off, int width, int height, int stride);
 
 int offset_image_s(float *buf, float off, int width, int height, int stride);
 int offset_image_d(double *buf, double off, int width, int height, int stride);

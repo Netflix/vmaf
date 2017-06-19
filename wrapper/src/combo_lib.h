@@ -21,13 +21,15 @@
 #ifndef COMBO_H_
 #define COMBO_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "darray.h"
 
-int combo(const char *ref_path, const char *dis_path, int w, int h, const char *fmt,
+int combo1(int (*read_frame)(float *ref_data, int *ref_stride, float *main_data, int *main_stride, double *score), int w, int h, const char *fmt,
         DArray *adm_num_array,
         DArray *adm_den_array,
         DArray *adm_num_scale0_array,

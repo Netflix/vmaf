@@ -11,6 +11,7 @@ all:
 	done
 
 	cd libsvm; $(MAKE) lib; cd ..;
+	rm -f wrapper/obj/lib/main.o
 
 clean:
 	-for dir in $(TARGETS); do \
@@ -26,7 +27,7 @@ test:
 PREFIX = /usr/local
 
 alib = libvmaf.a
-obj =  $(wildcard ptools/*.o) $(wildcard wrapper/obj/*.o)
+obj =  $(wildcard ptools/*.o) $(wildcard wrapper/obj/lib/*.o)
 
 $(alib): $(obj)
 	ar rcs $@ $^
