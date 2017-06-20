@@ -307,6 +307,3 @@ fail_or_end:
 
     return ret;
 }
-
-
-
