@@ -2,7 +2,7 @@ TOP = $(shell pwd)
 
 SRCDIR = $(TOP)/src
 OBJDIR = $(TOP)/obj
-LIBSRCDIR = $(TOP)/src/lib
+LIBSRCDIR = $(TOP)/libsrc
 LIBOBJDIR = $(TOP)/libobj
 FEATURESRCDIR = $(TOP)/../feature/src
 PTOOLSDIR = $(TOP)/../ptools
@@ -196,7 +196,7 @@ lib: $(LIBOBJS)
 
 clean:
 	rm -f $(OBJDIR)/*.o
-	rm -f $(OBJDIR)/lib/*.o
+	rm -f $(LIBOBJDIR)/*.o
 	rm -f vmafossexec
 
 .PHONY: all clean
