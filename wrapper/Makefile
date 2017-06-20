@@ -3,7 +3,7 @@ TOP = $(shell pwd)
 SRCDIR = $(TOP)/src
 OBJDIR = $(TOP)/obj
 LIBSRCDIR = $(TOP)/src/lib
-LIBOBJDIR = $(TOP)/obj/lib
+LIBOBJDIR = $(TOP)/libobj
 FEATURESRCDIR = $(TOP)/../feature/src
 PTOOLSDIR = $(TOP)/../ptools
 
