@@ -11,7 +11,6 @@ all:
 	done
 
 	cd libsvm; $(MAKE) lib; cd ..;
-	rm -f wrapper/obj/lib/main.o
 
 clean:
 	-for dir in $(TARGETS); do \
@@ -37,7 +36,7 @@ install: $(alib)
 	mkdir -p $(DESTDIR)$(PREFIX)/lib
 	mkdir -p $(DESTDIR)$(PREFIX)/include
 	cp $(alib) $(DESTDIR)$(PREFIX)/lib/$(alib)
-	cp wrapper/src/libvmaf.h $(DESTDIR)$(PREFIX)/include/
+	cp wrapper/src/lib/libvmaf.h $(DESTDIR)$(PREFIX)/include/
 	cp -r model $(DESTDIR)$(PREFIX)/share/
 
 .PHONY: uninstall

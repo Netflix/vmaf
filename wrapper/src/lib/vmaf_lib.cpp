@@ -250,7 +250,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_buf, int *ref_s
 #ifdef PRINT_PROGRESS
     printf("Extract atom features...\n");
 #endif
-	printf("Got to combo\n");
+
     int ret = combo1(read_frame, w, h, fmt,
             &adm_num_array,
             &adm_den_array,
@@ -641,11 +641,9 @@ double RunVmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_bu
 
     VmafRunner runner{model_path};
     Timer timer;
-	printf("here1\n");
     timer.start();
     Result result = runner.run(asset, read_frame, disable_clip, enable_transform, do_psnr, do_ssim, do_ms_ssim);
     timer.stop();
-	printf("here2\n");
 	
     if (pool_method != NULL && (strcmp(pool_method, "min")==0))
     {

@@ -39,7 +39,6 @@ LIBOBJS = \
 	$(LIBOBJDIR)/file_io.o \
 	$(LIBOBJDIR)/cpu.o \
 	$(LIBOBJDIR)/convolution.o \
-	$(LIBOBJDIR)/convolution_avx.o \
 	$(LIBOBJDIR)/adm.o \
 	$(LIBOBJDIR)/adm_tools.o \
 	$(LIBOBJDIR)/ansnr.o \
@@ -56,7 +55,6 @@ LIBOBJS = \
 	$(LIBOBJDIR)/ms_ssim.o \
     $(LIBOBJDIR)/svm.o \
 	$(LIBOBJDIR)/darray.o \
-	$(LIBOBJDIR)/main.o \
 	$(LIBOBJDIR)/pugixml.o \
 	$(LIBOBJDIR)/combo_lib.o \
 	$(LIBOBJDIR)/vmaf_lib.o \
@@ -155,58 +153,13 @@ $(OBJDIR)/%.o: $(SRCDIR)/pugixml/%.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
 
 
-$(LIBOBJDIR)/alloc.o: $(FEATURESRCDIR)/common/alloc.c
+$(LIBOBJDIR)/%.o: $(FEATURESRCDIR)/common/%.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
-$(LIBOBJDIR)/file_io.o: $(FEATURESRCDIR)/common/file_io.c
+$(LIBOBJDIR)/%.o: $(FEATURESRCDIR)/%.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
-$(LIBOBJDIR)/convolution.o: $(FEATURESRCDIR)/common/convolution.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/cpu.o: $(FEATURESRCDIR)/common/cpu.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/adm.o: $(FEATURESRCDIR)/adm.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/adm_tools.o: $(FEATURESRCDIR)/adm_tools.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/ansnr.o: $(FEATURESRCDIR)/ansnr.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/ansnr_tools.o: $(FEATURESRCDIR)/ansnr_tools.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/vif.o: $(FEATURESRCDIR)/vif.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/vif_tools.o: $(FEATURESRCDIR)/vif_tools.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/motion.o: $(FEATURESRCDIR)/motion.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/psnr.o: $(FEATURESRCDIR)/psnr.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/math_utils.o: $(FEATURESRCDIR)/iqa/math_utils.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/convolve.o: $(FEATURESRCDIR)/iqa/convolve.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/decimate.o: $(FEATURESRCDIR)/iqa/decimate.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/ssim_tools.o: $(FEATURESRCDIR)/iqa/ssim_tools.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/ssim.o: $(FEATURESRCDIR)/ssim.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/ms_ssim.o: $(FEATURESRCDIR)/ms_ssim.c
+$(LIBOBJDIR)/%.o: $(FEATURESRCDIR)/iqa/%.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(LIBOBJDIR)/svm.o: $(SRCDIR)/svm.cpp
@@ -218,22 +171,19 @@ $(LIBOBJDIR)/%.o: $(SRCDIR)/%.c
 $(LIBOBJDIR)/%.o: $(SRCDIR)/pugixml/%.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
 
-$(LIBOBJDIR)/main.o: $(SRCDIR)/main1.cpp
-	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/combo_lib.o: $(SRCDIR)/combo_lib.c
+$(LIBOBJDIR)/combo_lib.o: $(LIBSRCDIR)/combo_lib.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common -I $(FEATURESRCDIR)/iqa -I $(SRCDIR) $<
 
-$(LIBOBJDIR)/vmaf_lib.o: $(SRCDIR)/vmaf_lib.cpp
+$(LIBOBJDIR)/vmaf_lib.o: $(LIBSRCDIR)/vmaf_lib.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) \
 	-DOC_NEW_STYLE_INCLUDES -I $(PTOOLSDIR) -I $(SRCDIR) -I $(FEATURESRCDIR)/common \
 	-I $(PTOOLSDIR)/opencontainers_1_8_4/include  $<
 
-$(LIBOBJDIR)/vmaf_wrapper.o: $(SRCDIR)/vmaf_wrapper.cpp
-	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(SRCDIR) -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common $<
+$(LIBOBJDIR)/vmaf_wrapper.o: $(LIBSRCDIR)/vmaf_wrapper.cpp
+	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(SRCDIR) $<
 
-$(LIBOBJDIR)/libvmaf.o: $(SRCDIR)/libvmaf.cpp
-	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(SRCDIR) -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common $<
+$(LIBOBJDIR)/libvmaf.o: $(LIBSRCDIR)/libvmaf.cpp
+	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(SRCDIR) -I $(FEATURESRCDIR)/common $<
 
 vmafossexec: $(OBJS)
 ifeq ($(shell uname),Darwin)
