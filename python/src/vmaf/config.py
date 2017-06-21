@@ -38,6 +38,13 @@ class VmafExternalConfig(object):
         return cls._path_from_external('FFMPEG_PATH')
 
     @classmethod
+    def vpxenc_path(cls):
+        """
+        :return str: Path to vpxenc, if installed and configured via `externals` module
+        """
+        return cls._path_from_external('VPXENC_PATH')
+
+    @classmethod
     def matlab_path(cls):
         """
         :return str: Path to matlab, if installed and configured via `externals` module
@@ -62,6 +69,12 @@ class VmafExternalConfig(object):
     def get_and_assert_ffmpeg(cls):
         path = cls.ffmpeg_path()
         assert path is not None, cls._MISSING_EXTERNAL_MESSAGE.format(name='ffmpeg', key='FFMPEG_PATH')
+        return path
+
+    @classmethod
+    def get_and_assert_vpxenc(cls):
+        path = cls.vpxenc_path()
+        assert path is not None, cls._MISSING_EXTERNAL_MESSAGE.format(name='vpxenc', key='VPXENC_PATH')
         return path
 
     @classmethod
