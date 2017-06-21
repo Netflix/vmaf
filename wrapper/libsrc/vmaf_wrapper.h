@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-double RunVmaf1(char* fmt, int width, int height, int (*read_frame)(float *ref_buf, int *ref_stride, float *main_buf, int *main_stride, double *score), const char *model_path,
+double RunVmaf1(char* fmt, int width, int height, int (*read_frame)(float *ref_buf, int *ref_stride, float *main_buf, int *main_stride, double *score, void *user_data), const char *model_path, void *user_data,
 	           const char *log_path, const char *log_fmt,
 	           int disable_clip, int enable_transform,
 	           int do_psnr, int do_ssim, int do_ms_ssim,

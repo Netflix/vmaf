@@ -22,7 +22,7 @@
 
 extern "C" {
 
-	double RunVmaf1(char* fmt, int width, int height, int (*read_frame)(float *ref_buf, int *ref_stride, float *main_buf, int *main_stride, double *score), const char *model_path,const char *log_path, const char *log_fmt,
+	double RunVmaf1(char* fmt, int width, int height, int (*read_frame)(float *ref_buf, int *ref_stride, float *main_buf, int *main_stride, double *score, void *user_data), const char *model_path, void *user_data, const char *log_path, const char *log_fmt,
 	           int disable_clip, int enable_transform,
 	           int do_psnr, int do_ssim, int do_ms_ssim,
 	           const char *pool_method){   
@@ -52,7 +52,7 @@ extern "C" {
 
 		try
 		{
-		    double score = RunVmaf(fmt, width, height, read_frame, model_path, log_path, log_fmt, d_c, e_t, d_p, d_s, d_m_s, pool_method);
+		    double score = RunVmaf(fmt, width, height, read_frame, model_path, user_data, log_path, log_fmt, d_c, e_t, d_p, d_s, d_m_s, pool_method);
 		    return score;
 		}
 		catch (const std::exception &e)

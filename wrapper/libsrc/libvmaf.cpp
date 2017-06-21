@@ -26,7 +26,7 @@ extern "C" {
 
 enum vmaf_cpu cpu; // global
 
-double compute_vmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_data, int *ref_stride, float *main_data, int *main_stride, double *score), char *model_path)
+double compute_vmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_data, int *ref_stride, float *main_data, int *main_stride, double *score, void *user_data), char *model_path, void *user_data)
 	{
 		char *log_path = NULL;
 		char *log_fmt = NULL;
@@ -41,7 +41,7 @@ double compute_vmaf(char* fmt, int width, int height, int (*read_frame)(float *r
 
 		cpu = cpu_autodetect();
 
-		double score = RunVmaf1(fmt, width, height, read_frame, model_path, log_path, log_fmt, disable_clip, enable_transform, do_psnr, do_ssim, do_ms_ssim, pool_method);
+		double score = RunVmaf1(fmt, width, height, read_frame, model_path, user_data, log_path, log_fmt, disable_clip, enable_transform, do_psnr, do_ssim, do_ms_ssim, pool_method);
 		
 		return score;
 

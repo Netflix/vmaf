@@ -51,7 +51,7 @@ int compute_psnr(const float *ref, const float *dis, int w, int h, int ref_strid
 int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h, int ref_stride, int cmp_stride, double *score, double *l_score, double *c_score, double *s_score);
 int compute_ms_ssim(const number_t *ref, const number_t *cmp, int w, int h, int ref_stride, int cmp_stride, double *score, double* l_scores, double* c_scores, double* s_scores);
 
-int combo1(int (*read_frame)(float *ref_data, int *ref_stride, float *main_data, int *main_stride, double *score), int w, int h, const char *fmt,
+int combo(int (*read_frame)(float *ref_data, int *ref_stride, float *main_data, int *main_stride, double *score, void *user_data), int w, int h, const char *fmt, void *user_data,
         DArray *adm_num_array,
         DArray *adm_den_array,
         DArray *adm_num_scale0_array,
@@ -99,7 +99,7 @@ int combo1(int (*read_frame)(float *ref_data, int *ref_stride, float *main_data,
     int ref_stride, main_stride;
 	int ret;
 	
-	ret = read_frame(ref_buf, &ref_stride, main_buf, &main_stride, &score);
+	ret = read_frame(ref_buf, &ref_stride, main_buf, &main_stride, &score, user_data);
 	if(ret){
         sprintf(errmsg, "frame initialization failed.\n");
         goto fail_or_end;	
@@ -110,7 +110,7 @@ int combo1(int (*read_frame)(float *ref_data, int *ref_stride, float *main_data,
 	ref_buf = aligned_malloc(data_sz, MAX_ALIGN);	
 	main_buf = aligned_malloc(data_sz, MAX_ALIGN);
 
-	ret = read_frame(ref_buf, &ref_stride, main_buf, &main_stride, &score);
+	ret = read_frame(ref_buf, &ref_stride, main_buf, &main_stride, &score, user_data);
 	if(ret){
         goto fail_or_end;	
 	}
@@ -383,7 +383,7 @@ int combo1(int (*read_frame)(float *ref_data, int *ref_stride, float *main_data,
         insert_array(vif_den_scale3_array, scores[7]);
         insert_array(vif_array, score);
 
-		ret = read_frame(ref_buf, &ref_stride, main_buf, &main_stride, &score);
+		ret = read_frame(ref_buf, &ref_stride, main_buf, &main_stride, &score, user_data);
 
     }
 

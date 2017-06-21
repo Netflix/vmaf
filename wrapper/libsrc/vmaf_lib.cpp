@@ -138,7 +138,7 @@ void _read_and_assert_model1(const char *model_path, Val& feature_names,
 
 }
 
-Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_buf, int *ref_stride, float *main_buf, int *main_stride, double *score), bool disable_clip, bool enable_transform, bool do_psnr, bool do_ssim, bool do_ms_ssim)
+Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_buf, int *ref_stride, float *main_buf, int *main_stride, double *score, void *user_data), void *user_data, bool disable_clip, bool enable_transform, bool do_psnr, bool do_ssim, bool do_ms_ssim)
 {
 
 #ifdef PRINT_PROGRESS
@@ -251,7 +251,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_buf, int *ref_s
     printf("Extract atom features...\n");
 #endif
 
-    int ret = combo1(read_frame, w, h, fmt,
+    int ret = combo(read_frame, w, h, fmt, user_data,
             &adm_num_array,
             &adm_den_array,
             &adm_num_scale0_array,
@@ -629,7 +629,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_buf, int *ref_s
 //static const char VMAFOSS_XML_VERSION[] = "0.3.3"; // fix slopes and intercepts to match nflxtrain_vmafv3a.pkl
 static const char VMAFOSS_XML_VERSION[] = "0.3.2"; // fix slopes and intercepts to match nflxall_vmafv4.pkl
 
-double RunVmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_buf, int *ref_stride, float *main_buf, int *main_stride, double *score), const char *model_path,
+double RunVmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_buf, int *ref_stride, float *main_buf, int *main_stride, double *score, void *user_data), const char *model_path, void *user_data,
 	           const char *log_path, const char *log_fmt,
 	           int disable_clip, int enable_transform,
 	           int do_psnr, int do_ssim, int do_ms_ssim,
@@ -642,7 +642,7 @@ double RunVmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_bu
     VmafRunner runner{model_path};
     Timer timer;
     timer.start();
-    Result result = runner.run(asset, read_frame, disable_clip, enable_transform, do_psnr, do_ssim, do_ms_ssim);
+    Result result = runner.run(asset, read_frame, user_data, disable_clip, enable_transform, do_psnr, do_ssim, do_ms_ssim);
     timer.stop();
 	
     if (pool_method != NULL && (strcmp(pool_method, "min")==0))
