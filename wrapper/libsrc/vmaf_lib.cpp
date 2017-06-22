@@ -138,7 +138,7 @@ void _read_and_assert_model1(const char *model_path, Val& feature_names,
 
 }
 
-Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_buf, int *ref_stride, float *main_buf, int *main_stride, double *score, void *user_data), void *user_data, bool disable_clip, bool enable_transform, bool do_psnr, bool do_ssim, bool do_ms_ssim)
+Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_buf, float *main_buf, int stride, double *score, void *user_data), void *user_data, bool disable_clip, bool enable_transform, bool do_psnr, bool do_ssim, bool do_ms_ssim)
 {
 
 #ifdef PRINT_PROGRESS
@@ -629,7 +629,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_buf, int *ref_s
 //static const char VMAFOSS_XML_VERSION[] = "0.3.3"; // fix slopes and intercepts to match nflxtrain_vmafv3a.pkl
 static const char VMAFOSS_XML_VERSION[] = "0.3.2"; // fix slopes and intercepts to match nflxall_vmafv4.pkl
 
-double RunVmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_buf, int *ref_stride, float *main_buf, int *main_stride, double *score, void *user_data), const char *model_path, void *user_data,
+double RunVmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_buf, float *main_buf, int stride, double *score, void *user_data), const char *model_path, void *user_data,
 	           const char *log_path, const char *log_fmt,
 	           bool disable_clip, bool enable_transform,
 	           bool do_psnr, bool do_ssim, bool do_ms_ssim,

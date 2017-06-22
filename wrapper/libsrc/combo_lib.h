@@ -29,7 +29,7 @@ extern "C" {
 
 #include "darray.h"
 
-int combo(int (*read_frame)(float *ref_data, int *ref_stride, float *main_data, int *main_stride, double *score, void *user_data), int w, int h, const char *fmt, void *user_data,
+int combo(int (*read_frame)(float *ref_data, float *main_data, int stride, double *score, void *user_data), int w, int h, const char *fmt, void *user_data,
         DArray *adm_num_array,
         DArray *adm_den_array,
         DArray *adm_num_scale0_array,

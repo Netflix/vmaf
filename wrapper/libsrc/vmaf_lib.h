@@ -30,7 +30,7 @@
 #include <cstring>
 #include <cstdint>
 
-double RunVmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_buf, int *ref_stride, float *main_buf, int *main_stride, double *score, void *user_data), const char *model_path, void *user_data,
+double RunVmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_buf, float *main_buf, int stride, double *score, void *user_data), const char *model_path, void *user_data,
 	           const char *log_path, const char *log_fmt,
 	           bool disable_clip, bool enable_transform,
 	           bool do_psnr, bool do_ssim, bool do_ms_ssim,
@@ -165,7 +165,7 @@ public:
         sprintf(libsvm_model_path, "%s.model", model_path);
     }
     ~VmafRunner() { delete[] libsvm_model_path; }
-    Result run(Asset asset, int (*read_frame)(float *ref_buf, int *ref_stride, float *main_buf, int *main_stride, double *score, void *user_data), void *user_data, bool disable_clip, bool enable_transform, bool do_psnr, bool do_ssim, bool do_ms_ssim);
+    Result run(Asset asset, int (*read_frame)(float *ref_buf, float *main_buf, int stride, double *score, void *user_data), void *user_data, bool disable_clip, bool enable_transform, bool do_psnr, bool do_ssim, bool do_ms_ssim);
 private:
     const char *model_path;
     char *libsvm_model_path;
