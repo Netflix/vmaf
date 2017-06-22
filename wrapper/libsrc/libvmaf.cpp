@@ -26,20 +26,17 @@ extern "C" {
 
 enum vmaf_cpu cpu; // global
 
-double compute_vmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_data, int *ref_stride, float *main_data, int *main_stride, double *score, void *user_data), char *model_path, void *user_data)
+double compute_vmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_data, int *ref_stride, float *main_data, int *main_stride, double *score, void *user_data), char *model_path, char *log_path, char *log_fmt, int disable_clip, int disable_avx, int enable_transform, int phone_model, int do_psnr, int do_ssim, int do_ms_ssim, char *pool_method, void *user_data)
 	{
-		char *log_path = NULL;
-		char *log_fmt = NULL;
-		int disable_clip = 0;
-		int disable_avx = 0;
-		int enable_transform = 0;
-		int do_psnr = 1;
-		int do_ssim = 1;
-		int do_ms_ssim = 1;
-		char *pool_method = 0;
-		int *ref_buf;
-
+		if(enable_transform || phone_model){
+			enable_transform = 1;
+		}
 		cpu = cpu_autodetect();
+
+        if (disable_avx)
+        {
+            cpu = VMAF_CPU_NONE;
+        }
 
 		double score = RunVmaf1(fmt, width, height, read_frame, model_path, user_data, log_path, log_fmt, disable_clip, enable_transform, do_psnr, do_ssim, do_ms_ssim, pool_method);
 		

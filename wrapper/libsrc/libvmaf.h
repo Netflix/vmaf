@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-double compute_vmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_data, int *ref_stride, float *main_data, int *main_stride, double *score, void *user_data), char *model_path, void *user_data);
+double compute_vmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_data, int *ref_stride, float *main_data, int *main_stride, double *score, void *user_data), char *model_path, char *log_path, char *log_fmt, int disable_clip, int disable_avx, int enable_transform, int phone_model, int do_psnr, int do_ssim, int do_ms_ssim, char *pool_method, void *user_data);
 
 
 #ifdef __cplusplus
