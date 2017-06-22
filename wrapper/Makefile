@@ -58,7 +58,6 @@ LIBOBJS = \
 	$(LIBOBJDIR)/pugixml.o \
 	$(LIBOBJDIR)/combo_lib.o \
 	$(LIBOBJDIR)/vmaf_lib.o \
-    $(LIBOBJDIR)/vmaf_wrapper.o \
     $(LIBOBJDIR)/libvmaf.o \
 
 AVX_OBJS := \
@@ -178,9 +177,6 @@ $(LIBOBJDIR)/vmaf_lib.o: $(LIBSRCDIR)/vmaf_lib.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) \
 	-DOC_NEW_STYLE_INCLUDES -I $(PTOOLSDIR) -I $(SRCDIR) -I $(FEATURESRCDIR)/common \
 	-I $(PTOOLSDIR)/opencontainers_1_8_4/include  $<
-
-$(LIBOBJDIR)/vmaf_wrapper.o: $(LIBSRCDIR)/vmaf_wrapper.cpp
-	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(SRCDIR) $<
 
 $(LIBOBJDIR)/libvmaf.o: $(LIBSRCDIR)/libvmaf.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(SRCDIR) -I $(FEATURESRCDIR)/common $<
