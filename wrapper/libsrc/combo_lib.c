@@ -23,7 +23,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <inttypes.h>
 
 #include "common/alloc.h"
 #include "common/file_io.h"
@@ -41,15 +40,15 @@ typedef float number_t;
 #define convolution_f32_c  convolution_f32_c_s
 #define offset_image       offset_image_s
 #define FILTER_5           FILTER_5_s
-int compute_adm(const float *ref, const float *dis, int w, int h, int stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores, double border_factor);
+int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores, double border_factor);
 #ifdef COMPUTE_ANSNR
-int compute_ansnr(const float *ref, const float *dis, int w, int h, int stride, int dis_stride, double *score, double *score_psnr, double peak, double psnr_max);
+int compute_ansnr(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_psnr, double peak, double psnr_max);
 #endif
-int compute_vif(const float *ref, const float *dis, int w, int h, int stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores);
-int compute_motion(const float *ref, const float *dis, int w, int h, int stride, int dis_stride, double *score);
-int compute_psnr(const float *ref, const float *dis, int w, int h, int stride, int dis_stride, double *score, double peak, double psnr_max);
-int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h, int stride, int cmp_stride, double *score, double *l_score, double *c_score, double *s_score);
-int compute_ms_ssim(const number_t *ref, const number_t *cmp, int w, int h, int stride, int cmp_stride, double *score, double* l_scores, double* c_scores, double* s_scores);
+int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores);
+int compute_motion(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);
+int compute_psnr(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double peak, double psnr_max);
+int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h, int ref_stride, int cmp_stride, double *score, double *l_score, double *c_score, double *s_score);
+int compute_ms_ssim(const number_t *ref, const number_t *cmp, int w, int h, int ref_stride, int cmp_stride, double *score, double* l_scores, double* c_scores, double* s_scores);
 
 int combo(int (*read_frame)(float *ref_data, float *main_data, int stride, double *score, void *user_data), int w, int h, const char *fmt, void *user_data,
         DArray *adm_num_array,
@@ -85,8 +84,9 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, int stride, doubl
     double l_score = 0, c_score = 0, s_score = 0;
     double l_scores[SCALES], c_scores[SCALES], s_scores[SCALES];
 
-
+#ifdef COMPUTE_ANSNR
     double score_psnr = 0;
+#endif
 
     number_t *ref_buf = 0;
     number_t *dis_buf = 0;
@@ -95,15 +95,15 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, int stride, doubl
     number_t *temp_buf = 0;
 
     size_t data_sz;
-	int stride;
-	int ret;
-	
+    int stride;
+    int ret = 1;
+
     if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(number_t))
     {
         sprintf(errmsg, "wrong width %d or height %d.\n", w, h);
         goto fail_or_end;
     }
-    
+
     stride = ALIGN_CEIL(w * sizeof(number_t));
 
     if ((size_t)h > SIZE_MAX / stride)
@@ -111,9 +111,9 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, int stride, doubl
         sprintf(errmsg, "height %d too large.\n", h);
         goto fail_or_end;
     }
-    
+
     data_sz = (size_t)stride * h;
-    
+
     if (!(ref_buf = aligned_malloc(data_sz, MAX_ALIGN)))
     {
         sprintf(errmsg, "aligned_malloc failed for ref_buf.\n");
@@ -124,7 +124,7 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, int stride, doubl
         sprintf(errmsg, "aligned_malloc failed for dis_buf.\n");
         goto fail_or_end;
     }
-    
+
     // prev_blur_buf, blur_buf for motion only
     if (!(prev_blur_buf = aligned_malloc(data_sz, MAX_ALIGN)))
     {
@@ -171,13 +171,14 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, int stride, doubl
     int frm_idx = 0;
     while (1)
     {
+        
         ret = read_frame(ref_buf, dis_buf, stride, &score, user_data);
-
+        
         if (ret)
         {
             break;
-        }
-
+        }    
+     
 #ifdef PRINT_PROGRESS
         printf("frame: %d, ", frm_idx);
 #endif
@@ -219,6 +220,7 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, int stride, doubl
 
         if (ssim_array != NULL)
         {
+
             /* =========== ssim ============== */
             if ((ret = compute_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, &l_score, &c_score, &s_score)))
             {
@@ -229,12 +231,13 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, int stride, doubl
 #ifdef PRINT_PROGRESS
             printf("ssim: %.3f, ", score);
 #endif
+
             insert_array(ssim_array, score);
         }
 
         if (ms_ssim_array != NULL)
         {
-            /* =========== ms-ssim ============== */         
+            /* =========== ms-ssim ============== */
             if ((ret = compute_ms_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, l_scores, c_scores, s_scores)))
             {
                 sprintf(errmsg, "compute_ms_ssim failed.\n");
@@ -275,7 +278,6 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, int stride, doubl
         printf("adm_num_scale3: %.3f, ", scores[6]);
         printf("adm_den_scale3: %.3f, ", scores[7]);
 #endif
-
         insert_array(adm_num_array, score_num);
         insert_array(adm_den_array, score_den);
         insert_array(adm_num_scale0_array, scores[0]);
@@ -287,9 +289,8 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, int stride, doubl
         insert_array(adm_num_scale3_array, scores[6]);
         insert_array(adm_den_scale3_array, scores[7]);
 
-
 #ifdef COMPUTE_ANSNR
-
+        /* =========== ansnr ============== */
         if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
         {
             // max psnr 60.0 for 8-bit per Ioannis
@@ -318,7 +319,6 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, int stride, doubl
 #endif
 
 #endif
-
         /* =========== motion ============== */
 
         // filter
@@ -347,11 +347,10 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, int stride, doubl
 #ifdef PRINT_PROGRESS
         printf("motion: %.3f, ", score);
 #endif
-
         insert_array(motion_array, score);
 
         /* =========== vif ============== */
-     
+
         if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores)))
         {
             sprintf(errmsg, "compute_vif failed.\n");
@@ -381,11 +380,18 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, int stride, doubl
         insert_array(vif_num_scale3_array, scores[6]);
         insert_array(vif_den_scale3_array, scores[7]);
         insert_array(vif_array, score);
+ 
+#ifdef PRINT_PROGRESS
+        printf("\n");
+#endif
+
+        frm_idx++;
     }
 
     ret = 0;
 
 fail_or_end:
+
     aligned_free(ref_buf);
     aligned_free(dis_buf);
 
