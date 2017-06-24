@@ -31,9 +31,9 @@ OBJS = \
     $(OBJDIR)/combo.o \
     $(OBJDIR)/vmaf.o \
 	$(OBJDIR)/darray.o \
-	$(OBJDIR)/main.o \
+    $(OBJDIR)/main.o \
 	$(OBJDIR)/pugixml.o \
-
+	
 LIBOBJS = \
 	$(LIBOBJDIR)/alloc.o \
 	$(LIBOBJDIR)/file_io.o \

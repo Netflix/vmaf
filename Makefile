@@ -3,7 +3,6 @@ TARGETS = \
 	feature \
 	libsvm \
 	wrapper
-  
 
 all:
 	-for dir in $(TARGETS); do \
@@ -19,7 +18,7 @@ clean:
 
 test:
 	@echo hello;
- 
+
 .PHONY: clean $(TARGETS)
 
 
