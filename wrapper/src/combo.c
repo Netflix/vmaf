@@ -92,7 +92,7 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
     number_t *dis_buf = 0;
     number_t *prev_blur_buf = 0;
     number_t *blur_buf = 0;
-    number_t *temp_buf = 0
+    number_t *temp_buf = 0;
     
 
     size_t data_sz;
