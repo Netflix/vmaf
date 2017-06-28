@@ -29,10 +29,9 @@ OBJS = \
     $(OBJDIR)/combo.o \
     $(OBJDIR)/vmaf.o \
 	$(OBJDIR)/darray.o \
-	$(OBJDIR)/libvmaf.o \
     $(OBJDIR)/main.o \
 	$(OBJDIR)/pugixml.o \
-	
+
 AVX_OBJS := \
 	$(OBJDIR)/convolution_avx.o \
 

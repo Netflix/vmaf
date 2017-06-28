@@ -84,13 +84,16 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
     double l_score = 0, c_score = 0, s_score = 0;
     double l_scores[SCALES], c_scores[SCALES], s_scores[SCALES];
 
+#ifdef COMPUTE_ANSNR
     double score_psnr = 0;
+#endif
 
     number_t *ref_buf = 0;
     number_t *dis_buf = 0;
     number_t *prev_blur_buf = 0;
     number_t *blur_buf = 0;
-    number_t *temp_buf = 0;
+    number_t *temp_buf = 0
+    
 
     size_t data_sz;
     int stride;
@@ -266,6 +269,8 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
         insert_array(adm_den_scale2_array, scores[5]);
         insert_array(adm_num_scale3_array, scores[6]);
         insert_array(adm_den_scale3_array, scores[7]);
+        
+#ifdef COMPUTE_ANSNR
 
         /* =========== ansnr ============== */
         if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
@@ -293,6 +298,8 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
 #ifdef PRINT_PROGRESS
         printf("ansnr: %.3f, ", score);
         printf("anpsnr: %.3f, ", score_psnr);
+#endif
+
 #endif
 
         /* =========== motion ============== */
@@ -370,6 +377,7 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
 fail_or_end:
     aligned_free(ref_buf);
     aligned_free(dis_buf);
+    
     aligned_free(prev_blur_buf);
     aligned_free(blur_buf);
     aligned_free(temp_buf);
