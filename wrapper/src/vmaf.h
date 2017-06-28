@@ -30,8 +30,8 @@
 #include <cstring>
 
 double RunVmaf(const char* fmt, int width, int height,
-               const char *ref_path, const char *dis_path, const char *model_path,
-               const char *log_path, const char *log_fmt,
+               int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, double *score, void *user_data),
+               void *user_data, const char *model_path, const char *log_path, const char *log_fmt,
                bool disable_clip, bool enable_transform,
                bool do_psnr, bool do_ssim, bool do_ms_ssim,
                const char *pool_method);
@@ -39,18 +39,16 @@ double RunVmaf(const char* fmt, int width, int height,
 class Asset
 {
 public:
-    Asset(int w, int h, const char *ref_path, const char *dis_path, const char *fmt):
-        w(w), h(h), ref_path(ref_path), dis_path(dis_path), fmt(fmt) {}
-    Asset(int w, int h, const char *ref_path, const char *dis_path):
-        w(w), h(h), ref_path(ref_path), dis_path(dis_path), fmt("yuv420p") {}
+    Asset(int w, int h, const char *fmt):
+        w(w), h(h), fmt(fmt) {}
+    Asset(int w, int h):
+        w(w), h(h), fmt("yuv420p") {}
     int getWidth() { return w; }
     int getHeight() { return h; }
-    const char* getRefPath() { return ref_path; }
-    const char* getDisPath() { return dis_path; }
     const char* getFmt() { return fmt; }
 private:
     const int w, h;
-    const char *ref_path, *dis_path, *fmt;
+    const char *fmt;
 };
 
 class StatVector
@@ -167,7 +165,7 @@ public:
         sprintf(libsvm_model_path, "%s.model", model_path);
     }
     ~VmafRunner() { delete[] libsvm_model_path; }
-    Result run(Asset asset, bool disable_clip, bool enable_transform, bool do_psnr, bool do_ssim, bool do_ms_ssim);
+    Result run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, double *score, void *user_data), void *user_data, bool disable_clip, bool enable_transform, bool do_psnr, bool do_ssim, bool do_ms_ssim);
 private:
     const char *model_path;
     char *libsvm_model_path;

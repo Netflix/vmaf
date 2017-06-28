@@ -17,16 +17,15 @@
  */
 
 #include "libvmaf.h"
-#include "vmaf_lib.h"
+#include "vmaf.h"
 #include <cstdio>
-#include <cstdint>
 #include "cpu.h"
 
 extern "C" {
 
 enum vmaf_cpu cpu; // global
 
-double compute_vmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_data, float *main_data, int stride, double *score, void *user_data), char *model_path, char *log_path, char *log_fmt, int disable_clip, int disable_avx, int enable_transform, int phone_model, int do_psnr, int do_ssim, int do_ms_ssim, char *pool_method, void *user_data)
+double compute_vmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, double *score, void *user_data),  void *user_data, char *model_path, char *log_path, char *log_fmt, int disable_clip, int disable_avx, int enable_transform, int phone_model, int do_psnr, int do_ssim, int do_ms_ssim, char *pool_method)
 	{
 		bool d_c = false;
 		bool d_a = false;
@@ -61,7 +60,7 @@ double compute_vmaf(char* fmt, int width, int height, int (*read_frame)(float *r
             cpu = VMAF_CPU_NONE;
         }
 
-		double score = RunVmaf(fmt, width, height, read_frame, model_path, user_data, log_path, log_fmt, d_c, e_t, d_p, d_s, d_m_s, pool_method);
+		double score = RunVmaf(fmt, width, height, read_frame, user_data, model_path, log_path, log_fmt, d_c, e_t, d_p, d_s, d_m_s, pool_method);
 		
 		return score;
 

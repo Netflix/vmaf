@@ -20,11 +20,128 @@
 #include <exception>
 #include <string>
 #include <algorithm>
+#include <cstring>
+#include "vmaf_interface.h"
 
-#include "cpu.h"
-#include "vmaf.h"
+extern "C" {
+#include "common/file_io.h"
+}
 
-enum vmaf_cpu cpu; // global
+#define read_image_b       read_image_b2s
+#define read_image_w       read_image_w2s
+
+struct data{
+    char* format;
+    int width;
+    int height;
+    size_t offset;
+    FILE *ref_rfile;
+    FILE *dis_rfile;
+};
+
+int read_frame(float *ref_data, float *dis_data, float *temp_data, int stride, double *score, void *s){
+    struct data *user_data = (struct data *)s;
+    char *fmt = user_data->format;
+    int w = user_data->width;
+    int h = user_data->height;
+    int ret;
+    
+    // read ref y
+    if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+    {
+        ret = read_image_b(user_data->ref_rfile, ref_data, 0, w, h, stride);
+    }
+    else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+    {
+        ret = read_image_w(user_data->ref_rfile, ref_data, 0, w, h, stride);
+    }
+    else
+    {
+        fprintf(stderr, "unknown format %s.\n", fmt);
+        return 1;
+    }
+    if (ret)
+    {
+        if (feof(user_data->ref_rfile))
+        {
+            ret = 2; // OK if end of file
+        }
+        return ret;
+    }
+ 
+    // read dis y
+    if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+    {
+        ret = read_image_b(user_data->dis_rfile, dis_data, 0, w, h, stride);
+    }
+    else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+    {
+        ret = read_image_w(user_data->dis_rfile, dis_data, 0, w, h, stride);
+    }
+    else
+    {
+        fprintf(stderr, "unknown format %s.\n", fmt);
+        return 1;
+    }
+    if (ret)
+    {
+        if (feof(user_data->dis_rfile))
+        {
+            ret = 2; // OK if end of file
+        }
+        return ret;
+    }
+    
+    // ref skip u and v
+    if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+    {
+        if (fread(temp_data, 1, user_data->offset, user_data->ref_rfile) != (size_t)user_data->offset)
+        {
+            fprintf(stderr, "ref fread u and v failed.\n");
+            goto fail_or_end;
+        }
+    }
+    else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+    {
+        if (fread(temp_data, 2, user_data->offset, user_data->ref_rfile) != (size_t)user_data->offset)
+        {
+            fprintf(stderr, "ref fread u and v failed.\n");
+            goto fail_or_end;
+        }
+    }
+    else
+    {
+        fprintf(stderr, "unknown format %s.\n", fmt);
+        goto fail_or_end;
+    }
+
+    // dis skip u and v
+    if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+    {
+        if (fread(temp_data, 1, user_data->offset, user_data->dis_rfile) != (size_t)user_data->offset)
+        {
+            fprintf(stderr, "dis fread u and v failed.\n");
+            goto fail_or_end;
+        }
+    }
+    else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+    {
+        if (fread(temp_data, 2, user_data->offset, user_data->dis_rfile) != (size_t)user_data->offset)
+        {
+            fprintf(stderr, "dis fread u and v failed.\n");
+            goto fail_or_end;
+        }
+    }
+    else
+    {
+        fprintf(stderr, "unknown format %s.\n", fmt);
+        goto fail_or_end;
+    }
+   
+   
+fail_or_end:   
+    return ret;
+}
 
 char* getCmdOption(char ** begin, char ** end, const std::string & option)
 {
@@ -62,6 +179,7 @@ int main(int argc, char *argv[])
     bool disable_clip = false;
     bool disable_avx = false;
     bool enable_transform = false;
+    bool phone_model = false;
     bool do_psnr = false;
     bool do_ssim = false;
     bool do_ms_ssim = false;
@@ -110,11 +228,15 @@ int main(int argc, char *argv[])
             disable_avx = true;
         }
 
-        if (cmdOptionExists(argv + 7, argv + argc, "--enable-transform") ||
-            cmdOptionExists(argv + 7, argv + argc, "--phone-model"))
+        if (cmdOptionExists(argv + 7, argv + argc, "--enable-transform"))
         {
             enable_transform = true;
         }
+        
+        if (cmdOptionExists(argv + 7, argv + argc, "--phone-model"))
+        {
+            phone_model = true;
+        }        
 
         if (cmdOptionExists(argv + 7, argv + argc, "--psnr"))
         {
@@ -137,16 +259,60 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Error: pool_method must be min, harmonic_mean or mean, but is %s\n", pool_method);
             return -1;
         }
-
-        cpu = cpu_autodetect();
-
-        if (disable_avx)
+        
+        struct data *s;
+        s = (struct data *)malloc(sizeof(struct data));
+        s->format = fmt;
+        s->width = width;
+        s->height = height;
+        
+        if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv420p10le"))
         {
-            cpu = VMAF_CPU_NONE;
+            if ((width * height) % 2 != 0)
+            {
+                fprintf(stderr, "(width * height) %% 2 != 0, width = %d, height = %d.\n", width, height);
+                goto fail_or_end;
+            }
+            s->offset = width * height / 2;
         }
-
+        else if (!strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv422p10le"))
+        {
+            s->offset = width * height;
+        }
+        else if (!strcmp(fmt, "yuv444p") || !strcmp(fmt, "yuv444p10le"))
+        {
+            s->offset = width * height * 2;
+        }
+        else
+        {
+            fprintf(stderr, "unknown format %s.\n", fmt);
+            goto fail_or_end;
+        }
+        
+        
+        if (!(s->ref_rfile = fopen(ref_path, "rb")))
+        {
+            fprintf(stderr, "fopen ref_path %s failed.\n", ref_path);
+            goto fail_or_end;
+        }
+        if (!(s->dis_rfile = fopen(dis_path, "rb")))
+        {
+            fprintf(stderr, "fopen ref_path %s failed.\n", dis_path);
+            goto fail_or_end;
+        }        
+            
         /* Run VMAF */
-        score = RunVmaf(fmt, width, height, ref_path, dis_path, model_path, log_path, log_fmt, disable_clip, enable_transform, do_psnr, do_ssim, do_ms_ssim, pool_method);
+        score = compute_vmaf(fmt, width, height, read_frame, s, model_path, log_path, log_fmt, disable_clip, disable_avx, enable_transform, phone_model, do_psnr, do_ssim, do_ms_ssim, pool_method);
+                
+fail_or_end:
+        if (s->ref_rfile)
+        {
+            fclose(s->ref_rfile);
+        }
+        if (s->dis_rfile)
+        {
+            fclose(s->dis_rfile);
+        }
 
     }
     catch (const std::exception &e)
@@ -155,6 +321,6 @@ int main(int argc, char *argv[])
         print_usage(argc, argv);
         return -1;
     }
-
+    
     return 0;
 }

@@ -2,8 +2,6 @@ TOP = $(shell pwd)
 
 SRCDIR = $(TOP)/src
 OBJDIR = $(TOP)/obj
-LIBSRCDIR = $(TOP)/libsrc
-LIBOBJDIR = $(TOP)/libobj
 FEATURESRCDIR = $(TOP)/../feature/src
 PTOOLSDIR = $(TOP)/../ptools
 
@@ -31,39 +29,14 @@ OBJS = \
     $(OBJDIR)/combo.o \
     $(OBJDIR)/vmaf.o \
 	$(OBJDIR)/darray.o \
+	$(OBJDIR)/libvmaf.o \
     $(OBJDIR)/main.o \
 	$(OBJDIR)/pugixml.o \
 	
-LIBOBJS = \
-	$(LIBOBJDIR)/alloc.o \
-	$(LIBOBJDIR)/file_io.o \
-	$(LIBOBJDIR)/cpu.o \
-	$(LIBOBJDIR)/convolution.o \
-	$(LIBOBJDIR)/adm.o \
-	$(LIBOBJDIR)/adm_tools.o \
-	$(LIBOBJDIR)/ansnr.o \
-	$(LIBOBJDIR)/ansnr_tools.o \
-	$(LIBOBJDIR)/vif.o \
-	$(LIBOBJDIR)/vif_tools.o \
-	$(LIBOBJDIR)/motion.o \
-	$(LIBOBJDIR)/psnr.o \
-	$(LIBOBJDIR)/math_utils.o \
-	$(LIBOBJDIR)/convolve.o \
-	$(LIBOBJDIR)/decimate.o \
-	$(LIBOBJDIR)/ssim_tools.o \
-	$(LIBOBJDIR)/ssim.o \
-	$(LIBOBJDIR)/ms_ssim.o \
-    $(LIBOBJDIR)/svm.o \
-	$(LIBOBJDIR)/darray.o \
-	$(LIBOBJDIR)/pugixml.o \
-	$(LIBOBJDIR)/combo_lib.o \
-	$(LIBOBJDIR)/vmaf_lib.o \
-    $(LIBOBJDIR)/libvmaf.o \
-
 AVX_OBJS := \
 	$(OBJDIR)/convolution_avx.o \
 
-all: vmafossexec lib
+all: vmafossexec
 
 CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic
 # CFLAGS_COMMON = -g -O0 -fPIC -Wall -Wextra -pedantic -D BUILD_O0 #-D PRINT_PROGRESS
@@ -90,7 +63,6 @@ $(OBJDIR)/cpu.o: $(FEATURESRCDIR)/common/cpu.c
 
 $(OBJDIR)/convolution_avx.o: $(FEATURESRCDIR)/common/convolution_avx.c
 	$(CC) -c -o $@ $(EXTRA_CFLAGS) $(CFLAGS) $(CPPFLAGS) $<
-	cp $(OBJDIR)/convolution_avx.o $(LIBOBJDIR)
 
 $(OBJDIR)/adm.o: $(FEATURESRCDIR)/adm.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
@@ -136,6 +108,9 @@ $(OBJDIR)/ms_ssim.o: $(FEATURESRCDIR)/ms_ssim.c
 
 $(OBJDIR)/svm.o: $(SRCDIR)/svm.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
+
+$(OBJDIR)/libvmaf.o: $(SRCDIR)/libvmaf.cpp
+	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(SRCDIR) -I $(FEATURESRCDIR)/common $<
  
 $(OBJDIR)/main.o: $(SRCDIR)/main.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common $<
@@ -151,36 +126,6 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 $(OBJDIR)/%.o: $(SRCDIR)/pugixml/%.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
 
-
-$(LIBOBJDIR)/%.o: $(FEATURESRCDIR)/common/%.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/%.o: $(FEATURESRCDIR)/%.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/%.o: $(FEATURESRCDIR)/iqa/%.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/svm.o: $(SRCDIR)/svm.cpp
-	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/%.o: $(SRCDIR)/%.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) -I $(FEATURESRCDIR) $<
-
-$(LIBOBJDIR)/%.o: $(SRCDIR)/pugixml/%.cpp
-	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
-
-$(LIBOBJDIR)/combo_lib.o: $(LIBSRCDIR)/combo_lib.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common -I $(FEATURESRCDIR)/iqa -I $(SRCDIR) $<
-
-$(LIBOBJDIR)/vmaf_lib.o: $(LIBSRCDIR)/vmaf_lib.cpp
-	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) \
-	-DOC_NEW_STYLE_INCLUDES -I $(PTOOLSDIR) -I $(SRCDIR) -I $(FEATURESRCDIR)/common \
-	-I $(PTOOLSDIR)/opencontainers_1_8_4/include  $<
-
-$(LIBOBJDIR)/libvmaf.o: $(LIBSRCDIR)/libvmaf.cpp
-	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(SRCDIR) -I $(FEATURESRCDIR)/common $<
-
 vmafossexec: $(OBJS)
 ifeq ($(shell uname),Darwin)
 	$(CXX) -o $@ $(LDFLAGS) $^ -L$(PTOOLSDIR) $(LIBS) -Wl
@@ -188,11 +133,34 @@ else
 	$(CXX) -o $@ $(LDFLAGS) $^ -L$(PTOOLSDIR) $(LIBS) -Wl,-rpath=$(PTOOLSDIR)
 endif
 
-lib: $(LIBOBJS)
+
+PREFIX = /usr/local
+
+lib = libvmaf.a
+obj =  $(wildcard ../ptools/*.o) $(wildcard obj/*.o)
+
+$(lib): $(obj)
+	ar rcs $@ $^
+
+.PHONY: install
+install: $(lib)
+	ar -dv $(lib) main.o
+	mkdir -p $(DESTDIR)$(PREFIX)/lib
+	mkdir -p $(DESTDIR)$(PREFIX)/include
+	cp $(lib) $(DESTDIR)$(PREFIX)/lib/$(lib)
+	cp wrapper/src/libvmaf.h $(DESTDIR)$(PREFIX)/include/
+	cp -r model $(DESTDIR)$(PREFIX)/share/
+
+.PHONY: uninstall
+uninstall:
+	rm -f $(lib)
+	rm -f $(DESTDIR)$(PREFIX)/lib/$(lib)
+	rm -f $(DESTDIR)$(PREFIX)/include/libvmaf.h
+	rm -fr $(DESTDIR)$(PREFIX)/share/model
 
 clean:
 	rm -f $(OBJDIR)/*.o
-	rm -f $(LIBOBJDIR)/*.o
+	rm -f $(lib)
 	rm -f vmafossexec
 
 .PHONY: all clean

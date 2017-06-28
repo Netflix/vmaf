@@ -19,13 +19,11 @@
 #ifndef LIBVMAF_H_
 #define LIBVMAF_H_
 
-#include <stdint.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-double compute_vmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_data, float *main_data, int stride, double *score, void *user_data), char *model_path, char *log_path, char *log_fmt, int disable_clip, int disable_avx, int enable_transform, int phone_model, int do_psnr, int do_ssim, int do_ms_ssim, char *pool_method, void *user_data);
+double compute_vmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, double *score, void *user_data), void *user_data, char *model_path, char *log_path, char *log_fmt, int disable_clip, int disable_avx, int enable_transform, int phone_model, int do_psnr, int do_ssim, int do_ms_ssim, char *pool_method);
 
 
 #ifdef __cplusplus

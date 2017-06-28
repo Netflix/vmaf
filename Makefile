@@ -18,29 +18,13 @@ clean:
 
 test:
 	@echo hello;
+     
+install:
+	cd wrapper; $(MAKE) install; cd ..;
+
+uninstall:
+	cd wrapper; $(MAKE) uninstall; cd ..;     
 
 .PHONY: clean $(TARGETS)
 
 
-PREFIX = /usr/local
-
-alib = libvmaf.a
-obj =  $(wildcard ptools/*.o) $(wildcard wrapper/libobj/*.o)
-
-$(alib): $(obj)
-	ar rcs $@ $^
-
-.PHONY: install
-install: $(alib)
-	mkdir -p $(DESTDIR)$(PREFIX)/lib
-	mkdir -p $(DESTDIR)$(PREFIX)/include
-	cp $(alib) $(DESTDIR)$(PREFIX)/lib/$(alib)
-	cp wrapper/libsrc/libvmaf.h $(DESTDIR)$(PREFIX)/include/
-	cp -r model $(DESTDIR)$(PREFIX)/share/
-
-.PHONY: uninstall
-uninstall:
-	rm -f $(alib)
-	rm -f $(DESTDIR)$(PREFIX)/lib/$(alib)
-	rm -f $(DESTDIR)$(PREFIX)/include/libvmaf.h
-	rm -fr $(DESTDIR)$(PREFIX)/share/model
