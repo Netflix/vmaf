@@ -148,8 +148,8 @@ install: $(lib)
 	mkdir -p $(DESTDIR)$(PREFIX)/lib
 	mkdir -p $(DESTDIR)$(PREFIX)/include
 	cp $(lib) $(DESTDIR)$(PREFIX)/lib/$(lib)
-	cp wrapper/src/vmaf_interface.h $(DESTDIR)$(PREFIX)/include/
-	cp -r model $(DESTDIR)$(PREFIX)/share/
+	cp src/libvmaf.h $(DESTDIR)$(PREFIX)/include/
+	cp -r ../model $(DESTDIR)$(PREFIX)/share/
 
 .PHONY: uninstall
 uninstall:
