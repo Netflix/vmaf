@@ -21,7 +21,7 @@
 #include <string>
 #include <algorithm>
 #include <cstring>
-#include "vmaf_interface.h"
+#include "libvmaf.h"
 
 extern "C" {
 #include "common/file_io.h"
