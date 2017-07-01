@@ -111,13 +111,17 @@ def get_normalized_string_from_dict(d):
     """
     return '_'.join(map(lambda k: '{k}_{v}'.format(k=k,v=d[k]), sorted(d.keys())))
 
-def get_normalized_value_tuple_from_dict(d):
-    """ Normalized tuple of values with sorted keys.
+def get_hashable_value_tuple_from_dict(d):
+    """ Hashable tuple of values with sorted keys.
 
-    >>> get_normalized_value_tuple_from_dict({"max_buffer_sec": 5.0, "bitrate_kbps": 45, })
+    >>> get_hashable_value_tuple_from_dict({"max_buffer_sec": 5.0, "bitrate_kbps": 45, })
     (45, 5.0)
+    >>> get_hashable_value_tuple_from_dict({"max_buffer_sec": 5.0, "bitrate_kbps": 45, "resolutions": [(740, 480), (1920, 1080), ]})
+    (45, 5.0, ((740, 480), (1920, 1080)))
     """
-    return tuple(map(lambda k: d[k], sorted(d.keys())))
+    return tuple(map(
+        lambda k: tuple(d[k]) if isinstance(d[k], list) else d[k],
+        sorted(d.keys())))
 
 def get_unique_str_from_recursive_dict(d):
     """ String representation with sorted keys and values for recursive dict.
