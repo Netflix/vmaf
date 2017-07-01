@@ -290,7 +290,7 @@ def parallel_map(func, list_args, processes=None):
         if len(waiting_procs) == 0 and len(active_procs) == 0:
             break
 
-        sleep(0.1) # check every 0.1 sec
+        sleep(0.01) # check every x sec
 
     # finally, collect results
     rets = map(lambda idx: return_dict[idx], range(len(list_args)))
