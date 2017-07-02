@@ -17,6 +17,7 @@
  */
 
 #include <cstdio>
+#include <stdlib.h>
 #include <exception>
 #include <string>
 #include <algorithm>

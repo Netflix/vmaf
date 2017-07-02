@@ -143,7 +143,7 @@ $(lib): $(obj)
 	ar rcs $@ $^
 
 .PHONY: install
-install: $(lib)
+install:
 	ar -dv $(lib) main.o
 	mkdir -p $(DESTDIR)$(PREFIX)/lib
 	mkdir -p $(DESTDIR)$(PREFIX)/include
@@ -160,7 +160,7 @@ uninstall:
 
 clean:
 	rm -f $(OBJDIR)/*.o
-	rm -f $(lib)
+	rm -f libvmaf.a
 	rm -f vmafossexec
 
 .PHONY: all clean
