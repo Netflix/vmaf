@@ -29,6 +29,7 @@ OBJS = \
     $(OBJDIR)/combo.o \
     $(OBJDIR)/vmaf.o \
 	$(OBJDIR)/darray.o \
+	$(OBJDIR)/libvmaf.o \
     $(OBJDIR)/main.o \
 	$(OBJDIR)/pugixml.o \
 
@@ -108,6 +109,9 @@ $(OBJDIR)/ms_ssim.o: $(FEATURESRCDIR)/ms_ssim.c
 $(OBJDIR)/svm.o: $(SRCDIR)/svm.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
 
+$(OBJDIR)/libvmaf.o: $(SRCDIR)/libvmaf.cpp
+	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(SRCDIR) -I $(FEATURESRCDIR)/common $<
+ 
 $(OBJDIR)/main.o: $(SRCDIR)/main.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common $<
 
@@ -129,8 +133,34 @@ else
 	$(CXX) -o $@ $(LDFLAGS) $^ -L$(PTOOLSDIR) $(LIBS) -Wl,-rpath=$(PTOOLSDIR)
 endif
 
+
+PREFIX = /usr/local
+
+lib = libvmaf.a
+obj =  $(wildcard ../ptools/*.o) $(wildcard obj/*.o)
+
+$(lib): $(obj)
+	ar rcs $@ $^
+
+.PHONY: install
+install:
+	ar -dv $(lib) main.o
+	mkdir -p $(DESTDIR)$(PREFIX)/lib
+	mkdir -p $(DESTDIR)$(PREFIX)/include
+	cp $(lib) $(DESTDIR)$(PREFIX)/lib/$(lib)
+	cp src/libvmaf.h $(DESTDIR)$(PREFIX)/include/
+	cp -r ../model $(DESTDIR)$(PREFIX)/share/
+
+.PHONY: uninstall
+uninstall:
+	rm -f $(lib)
+	rm -f $(DESTDIR)$(PREFIX)/lib/$(lib)
+	rm -f $(DESTDIR)$(PREFIX)/include/libvmaf.h
+	rm -fr $(DESTDIR)$(PREFIX)/share/model
+
 clean:
 	rm -f $(OBJDIR)/*.o
+	rm -f libvmaf.a
 	rm -f vmafossexec
 
 .PHONY: all clean

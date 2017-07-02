@@ -19,4 +19,15 @@ clean:
 test:
 	@echo hello;
 
+lib:
+	cd wrapper; $(MAKE) libvmaf.a; cd ..;
+
+install:
+	cd wrapper; $(MAKE) install; cd ..;
+
+uninstall:
+	cd wrapper; $(MAKE) uninstall; cd ..;
+
 .PHONY: clean $(TARGETS)
+
+

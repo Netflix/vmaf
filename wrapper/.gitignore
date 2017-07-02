@@ -1,5 +1,6 @@
 *.o
 vmafossexec
+libvmaf.a
 .cproject
 .project
 .DS_Store
