@@ -667,6 +667,7 @@ def run_subjective_models(dataset_filepath, subjective_model_classes, do_plot=No
                                             yerr=quality_error, fmt='.',
                                             color=colors[shift_count],
                                             label=subjective_model.TYPE)
+                        ax_quality.grid()
                     else:
                         ax_quality.plot(np.array(xs)+shift_count*bar_width+0.2, quality, '.',
                                     color=colors[shift_count],
@@ -678,6 +679,7 @@ def run_subjective_models(dataset_filepath, subjective_model_classes, do_plot=No
                 ax_quality.set_title(r'Recovered Quality Score ($x_e$)')
                 ax_quality.set_xlim([min(xs), max(xs)+1])
                 shift_count += 1
+        ax_quality.grid()
         ax_quality.legend(loc=1, ncol=2, frameon=True)
         plt.tight_layout()
 
@@ -718,6 +720,7 @@ def run_subjective_models(dataset_filepath, subjective_model_classes, do_plot=No
 
                 ax_inconsty.set_xlim([min(xs), max(xs)+1])
                 ax_bias.set_title(r'Subject Bias ($b_s$)')
+                ax_bias.grid()
 
                 if 'observers' in result:
                     observers = result['observers']
@@ -751,6 +754,7 @@ def run_subjective_models(dataset_filepath, subjective_model_classes, do_plot=No
                 ax_inconsty.set_xlim([min(xs), max(xs)+1])
                 ax_inconsty.set_title(r'Subject Inconsisency ($v_s$)')
                 ax_inconsty.legend(loc=2, ncol=2, frameon=True)
+                ax_inconsty.grid()
 
             if 'observer_bias' in result:
                 shift_count += 1
@@ -793,6 +797,7 @@ def run_subjective_models(dataset_filepath, subjective_model_classes, do_plot=No
 
                 shift_count += 1
                 ax_ambgty.set_title(r'Content Ambiguity ($a_c$)')
+                ax_ambgty.grid()
         if xs:
             my_xticks = map(lambda ref_video: ref_video['content_name'],
                             dataset_reader.dataset.ref_videos)

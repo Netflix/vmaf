@@ -340,6 +340,17 @@ The subjective model option can be specified with option *--subj-model subjectiv
 
 Note that for the *--subj-model* option to have effect, the input dataset file must follow a format similar to *example_raw_dataset.py*. Specifically, for each dictionary element in dis_videos, instead of having a key named 'dmos' or 'groundtruth' (as in *example_dataset.py*), it must have a key named 'os' (stand for opinion score), and the value must be a list of numbers. This is the 'raw opinion score' collected from subjective experiments, which is used as the input to the custom subjective models.
 
+#### Running Subjective Model as a Stand-alone Tool
+
+The commands above allow using the custom subjective models in training and testing a VMAF model. To use it as a stand-alone tool (for example, one would like to just analyze the raw subjective scores without running VMAF), use the *run_subj* command. For example:
+
+```
+./run_subj MLE resource/dataset/NFLX_dataset_public_raw_last4outliers.py
+./run_subj MLE resource/dataset/VQEGHD3_dataset_raw.py
+```
+
+More ways to use the subjective models can be found at */python/script/run_subjective_models.py*.
+
 ### Cross Validation
 
 [python/script/run_vmaf_cross_validation.py](python/script/run_vmaf_cross_validation.py) provides tools for cross validation of hyper-parameters and models. *run_vmaf_cv* runs training on a training dataset using hyper-parameters specified in a parameter file, output a trained model file, and then test the trained model on another test dataset and report testing correlation scores. 
