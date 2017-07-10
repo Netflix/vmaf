@@ -9,6 +9,7 @@ __license__ = "Apache, Version 2.0"
 
 import sys
 import os
+import re
 
 from vmaf.tools.scanf import sscanf, IncompleteCaptureError, FormatError
 
@@ -403,6 +404,18 @@ def unroll_dict_of_lists(dict_of_lists):
         list_of_dicts.append(dict(key_value_pairs))
 
     return list_of_dicts
+
+def slugify(value):
+    """
+    Normalizes string, converts to lowercase, removes non-alpha characters,
+    and converts spaces to hyphens.
+    """
+    import unicodedata
+    value = unicodedata.normalize('NFKD', unicode(value)).encode('ascii', 'ignore')
+    value = unicode(re.sub('[^\w\s-]', '', value).strip().lower())
+    value = unicode(re.sub('[-\s]+', '-', value))
+
+    return value
 
 if __name__ == '__main__':
     import doctest
