@@ -2,14 +2,21 @@
 #define FDTOOLS_H_
 
 extern "C" {
-#include <unistd.h>
-#include <netinet/in.h>
+#if defined(_MSC_VER)
+    #include <io.h>
+    #include <Winsock2.h>
+    #include <string.h>
+    typedef unsigned __int64    ssize_t;
+#else
+    #include <unistd.h>
+    #include <netinet/in.h>
+    #include <sys/socket.h>
+    #include <arpa/inet.h>
+    #include <sys/socket.h>
+#endif
 #include <signal.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 
-#include <sys/socket.h>
 };
 #include "ocval.h"
 #include "socketerror.h"
@@ -27,7 +34,7 @@ struct SockAddr_ {
 
   // Basic data of struct
   struct sockaddr addr;
-#if defined(OSF1_)
+#if defined(OSF1_) || defined(_MSC_VER)
   int             addrlen;
 #else
   socklen_t       addrlen;
@@ -423,7 +430,12 @@ class FDTools_ {
   virtual void closeUp_ (int& fd)
   {
     if (fd!=-1) {
-      shutdown(fd, SHUT_RDWR);
+#if defined(_MSC_VER)
+        int flag = SD_BOTH;
+#else
+        int flag = SHUT_RDWR;
+#endif
+      shutdown(fd, flag);
       ::close(fd);
     } 
     fd = -1;

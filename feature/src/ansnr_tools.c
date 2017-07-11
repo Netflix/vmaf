@@ -21,11 +21,22 @@
 #include "ansnr_options.h"
 #include "ansnr_tools.h"
 
+#if 1
+const float ansnr_filter1d_ref_s[3] = { 0.250138193, 0.499723613, 0.250138193 };
+const double ansnr_filter1d_ref_d[3] = { 0.25013820724449481, 0.49972358551101037, 0.25013820724449481 };
+
+const float ansnr_filter1d_dis_s[5] = { 0.054488685, 0.244201347, 0.402619958, 0.244201347, 0.054488685 };
+const double ansnr_filter1d_dis_d[5] = { 0.054488684549642945, 0.24420134200323335, 0.4026199468942474, 0.24420134200323335, 0.054488684549642945 };
+
+#else
+
 const float ansnr_filter1d_ref_s[3] = { 0x1.00243ap-2, 0x1.ffb78cp-2, 0x1.00243ap-2 };
 const double ansnr_filter1d_ref_d[3] = { 0x1.00243aee6175bp-2, 0x1.ffb78a233d14ap-2, 0x1.00243aee6175bp-2 };
 
 const float ansnr_filter1d_dis_s[5] = { 0x1.be5f0ep-5, 0x1.f41fd6p-3, 0x1.9c4868p-2, 0x1.f41fd6p-3, 0x1.be5f0ep-5 };
 const double ansnr_filter1d_dis_d[5] = { 0x1.be5f0dc491a0fp-5, 0x1.f41fd54c58786p-3, 0x1.9c486742831f6p-2, 0x1.f41fd54c58786p-3, 0x1.be5f0dc491a0fp-5 };
+
+#endif
 
 const int ansnr_filter1d_ref_width = 3;
 const int ansnr_filter1d_dis_width = 5;
