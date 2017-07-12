@@ -417,6 +417,22 @@ def slugify(value):
 
     return value
 
+def neg_if_even(x):
+    """
+    >>> neg_if_even(2)
+    -1
+    >>> neg_if_even(1)
+    1
+    >>> neg_if_even(0)
+    -1
+    >>> neg_if_even(-1)
+    1
+    >>> neg_if_even(-2)
+    -1
+
+    """
+    return 1 - (x % 2 == 0) * 2
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
