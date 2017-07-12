@@ -6,14 +6,13 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ## What's New
 
-- (2/28/17) Packaging change: adding *vmaf.* to your imports, for example, use *from vmaf.core.asset import Asset* to replace *from core.asset import Asset*.
 - (2/20/17) Updated VMAF model to version v0.6.1. Changes include: 
     - Added a custom quality model for cellular phone screen viewing. See [this](#predict-quality-on-a-cellular-phone-screen) section for details.
     - Trained using a new dataset, covering more difficult content.
     - Elementary metric fixes: ADM behavior at near-black frames, and motion behavior at scene boundaries.
     - Compressed quality score range by 20% to accommodate higher dynamic range.
     - Use MLE instead of DMOS for subjective model.
-- (11/7/16) Custom subjective models (MOS, DMOS, MLE and more) are now supported. Read [this](resource/doc/dcc17v2.pdf) paper for some background, and see [this](#using-custom-subjective-models) section for usage. 
+- (11/7/16) Custom subjective models (MOS, DMOS, MLE and more) are now supported. Read [this](resource/doc/dcc17v3.pdf) paper for some background, and see [this](#using-custom-subjective-models) section for usage. 
 - (9/30/16) Added a [FAQ](FAQ.md) page.
 
 ## Prerequisite
