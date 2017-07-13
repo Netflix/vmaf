@@ -851,7 +851,7 @@ inline I StringToInt (const char* data, int len)
     result+= (c-'0');
   }
   if (sign=='-') {
-    result = -result;
+    result = -(signed(result));
   }
   return result;
 }

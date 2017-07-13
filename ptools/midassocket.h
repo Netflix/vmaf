@@ -127,7 +127,15 @@ class MidasSocket_ : public FDTools_ {
   // we force a shutdown.  The default is TRUE.
   void closing_ (int fd)
   {
-    if (forceShutdownOnClose_) shutdown(fd, SHUT_RDWR);
+      if (forceShutdownOnClose_)
+      {
+#if defined(_MSC_VER)
+          int flag = SD_BOTH;
+#else
+          int flag = SHUT_RDWR;
+#endif
+          shutdown(fd, flag);
+      }
     ::close(fd);
   }
 

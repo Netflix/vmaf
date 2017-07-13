@@ -19,7 +19,11 @@
 #ifndef MACROS_H_
 #define MACROS_H_
 
+#if defined(_MSC_VER)
+#define FORCE_INLINE	__forceinline
+#else
 #define FORCE_INLINE __attribute__((always_inline))
+#endif
 #define RESTRICT __restrict
 
 #endif // MACROS_H_

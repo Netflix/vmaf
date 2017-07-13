@@ -61,8 +61,17 @@ static double rcp_d(double x)
 static const float dwt2_db2_coeffs_lo_s[4] = { 0.482962913144690, 0.836516303737469, 0.224143868041857, -0.129409522550921 };
 static const float dwt2_db2_coeffs_hi_s[4] = { -0.129409522550921, -0.224143868041857, 0.836516303737469, -0.482962913144690 };
 
+#if 1
+static const double dwt2_db2_coeffs_lo_d[4] = { 0.48296291314469025, 0.83651630373746899, 0.22414386804185735, -0.12940952255092145 };
+#else
 static const double dwt2_db2_coeffs_lo_d[4] = { 0x1.ee8dd4748ca11p-2, 0x1.ac4bdd6e3f184p-1, 0x1.cb0bf0b6b5b13p-3, -0x1.0907dc192d6ddp-3 };
+#endif
+
+#if 1
+static const double dwt2_db2_coeffs_hi_d[4] = { -0.12940952255092145, -0.22414386804185735, 0.83651630373746899, -0.48296291314469025 };
+#else
 static const double dwt2_db2_coeffs_hi_d[4] = { -0x1.0907dc192d6ddp-3, -0x1.cb0bf0b6b5b13p-3, 0x1.ac4bdd6e3f184p-1, -0x1.ee8dd4748ca11p-2 };
+#endif
 
 float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_factor)
 {

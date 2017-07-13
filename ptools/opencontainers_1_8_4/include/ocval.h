@@ -17,7 +17,7 @@ OC_BEGIN_NAMESPACE
 
 // ///// Forwards
 struct Val;
-struct Arr;
+class Arr;
 struct Tab;
 struct OTab;
 class Tup;

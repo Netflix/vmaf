@@ -734,7 +734,7 @@ class AVLTreeT {
 	// Put all free nodes on circular doubly-linked list
 	for (int_u4 ii=0; ii<OC_AVLCHUNKSIZE; ii++) {
 	  N* node = &chunk[ii];
-	  node->on_freelist_ref_count = -ii;
+	  node->on_freelist_ref_count = -(signed(ii));
 	  // link
 	  node->left_ = freelist_;
 	  node->right_ = freelist_->right_;

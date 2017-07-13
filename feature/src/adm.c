@@ -107,7 +107,7 @@ int compute_adm(const number_t *ref, const number_t *dis, int w, int h, int ref_
 
     if (SIZE_MAX / buf_sz_one < 35)
     {
-        printf("error: SIZE_MAX / buf_sz_one < 35, buf_sz_one = %lu.\n", buf_sz_one);
+        printf("error: SIZE_MAX / buf_sz_one < 35, buf_sz_one = %zu.\n", buf_sz_one);
         fflush(stdout);
         goto fail;
     }

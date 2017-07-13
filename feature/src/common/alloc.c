@@ -26,7 +26,11 @@ void *aligned_malloc(size_t size, size_t alignment)
 {
 	void *ptr;
 
-	if (posix_memalign(&ptr, alignment, size))
+#if defined(_MSC_VER)
+    if ((ptr = _aligned_malloc(size, alignment)) == NULL)
+#else
+    if (posix_memalign(&ptr, alignment, size))
+#endif
 		return 0;
 	else
 		return ptr;
@@ -34,5 +38,9 @@ void *aligned_malloc(size_t size, size_t alignment)
 
 void aligned_free(void *ptr)
 {
+#if defined(_MSC_VER)
+    _aligned_free(ptr);
+#else
 	free(ptr);
+#endif
 }
