@@ -1,0 +1,41 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vmafossexec", "wrapper\wrapper.vcxproj", "{C2D3FD1E-9068-494D-9655-88CE906B4C8B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3F07B371-1B81-477E-886C-0E079B0A6803} = {3F07B371-1B81-477E-886C-0E079B0A6803}
+		{03A4C79F-F1A8-48C9-A2AC-0A14EC0F093E} = {03A4C79F-F1A8-48C9-A2AC-0A14EC0F093E}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ptools", "ptools\ptools.vcxproj", "{3F07B371-1B81-477E-886C-0E079B0A6803}"
+	ProjectSection(ProjectDependencies) = postProject
+		{03A4C79F-F1A8-48C9-A2AC-0A14EC0F093E} = {03A4C79F-F1A8-48C9-A2AC-0A14EC0F093E}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pthreads", "pthreads\COPKG\pthreads.vcxproj", "{03A4C79F-F1A8-48C9-A2AC-0A14EC0F093E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C2D3FD1E-9068-494D-9655-88CE906B4C8B}.Debug|x64.ActiveCfg = Debug|x64
+		{C2D3FD1E-9068-494D-9655-88CE906B4C8B}.Debug|x64.Build.0 = Debug|x64
+		{C2D3FD1E-9068-494D-9655-88CE906B4C8B}.Release|x64.ActiveCfg = Release|x64
+		{C2D3FD1E-9068-494D-9655-88CE906B4C8B}.Release|x64.Build.0 = Release|x64
+		{3F07B371-1B81-477E-886C-0E079B0A6803}.Debug|x64.ActiveCfg = Debug|x64
+		{3F07B371-1B81-477E-886C-0E079B0A6803}.Debug|x64.Build.0 = Debug|x64
+		{3F07B371-1B81-477E-886C-0E079B0A6803}.Release|x64.ActiveCfg = Release|x64
+		{3F07B371-1B81-477E-886C-0E079B0A6803}.Release|x64.Build.0 = Release|x64
+		{03A4C79F-F1A8-48C9-A2AC-0A14EC0F093E}.Debug|x64.ActiveCfg = Debug|x64
+		{03A4C79F-F1A8-48C9-A2AC-0A14EC0F093E}.Debug|x64.Build.0 = Debug|x64
+		{03A4C79F-F1A8-48C9-A2AC-0A14EC0F093E}.Release|x64.ActiveCfg = Release|x64
+		{03A4C79F-F1A8-48C9-A2AC-0A14EC0F093E}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -76,13 +76,13 @@ int compute_motion(const number_t *ref, const number_t *dis, int w, int h, int r
 
     if (ref_stride % sizeof(number_t) != 0)
     {
-        printf("error: ref_stride %% sizeof(number_t) != 0, ref_stride = %d, sizeof(number_t) = %lu.\n", ref_stride, sizeof(number_t));
+        printf("error: ref_stride %% sizeof(number_t) != 0, ref_stride = %d, sizeof(number_t) = %zu.\n", ref_stride, sizeof(number_t));
         fflush(stdout);
         goto fail;
     }
     if (dis_stride % sizeof(number_t) != 0)
     {
-        printf("error: dis_stride %% sizeof(number_t) != 0, dis_stride = %d, sizeof(number_t) = %lu.\n", dis_stride, sizeof(number_t));
+        printf("error: dis_stride %% sizeof(number_t) != 0, dis_stride = %d, sizeof(number_t) = %zu.\n", dis_stride, sizeof(number_t));
         fflush(stdout);
         goto fail;
     }

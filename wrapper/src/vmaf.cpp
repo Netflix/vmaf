@@ -42,7 +42,9 @@
 
 #define MIN(A,B) ((A)<(B)?(A):(B))
 
+#if !defined(min)
 template <class T> static inline T min(T x,T y) { return (x<y)?x:y; }
+#endif
 
 inline double _round_to_digit(double val, int digit);
 string _get_file_name(const std::string& s);
@@ -383,7 +385,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
     /* IMPORTANT: always allocate one more spot and put a -1 at the last one's
      * index, so that libsvm will stop looping when seeing the -1 !!!
      * see https://github.com/cjlin1/libsvm */
-    svm_node nodes[feature_names.length() + 1];
+    svm_node* nodes = (svm_node*)alloca(sizeof(svm_node) * (feature_names.length() + 1));
     nodes[feature_names.length()].index = -1;
 
     for (size_t i=0; i<num_frms; i++)

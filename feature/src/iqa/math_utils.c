@@ -33,23 +33,23 @@
 
 #include "math_utils.h"
 
-IQA_INLINE int _round(float a)
+extern IQA_INLINE int _round(float a)
 {
     int sign_a = a > 0.0f ? 1 : -1;
     return a-(int)a >= 0.5 ? (int)a + sign_a : (int)a;
 }
 
-IQA_INLINE int _max(int x, int y)
+extern IQA_INLINE int _max(int x, int y)
 {
     return x >= y ? x : y;
 }
 
-IQA_INLINE int _min(int x, int y)
+extern IQA_INLINE int _min(int x, int y)
 {
     return x <= y ? x : y;
 }
 
-IQA_INLINE int _cmp_float(float a, float b, int digits)
+extern IQA_INLINE int _cmp_float(float a, float b, int digits)
 {
     /* Round */
     int sign_a = a > 0.0f ? 1 : -1;
@@ -64,7 +64,7 @@ IQA_INLINE int _cmp_float(float a, float b, int digits)
     return ai == bi ? 0 : 1;
 }
 
-IQA_INLINE int _matrix_cmp(const float *a, const float *b, int w, int h, int digits)
+extern IQA_INLINE int _matrix_cmp(const float *a, const float *b, int w, int h, int digits)
 {
     int offset;
     int result=0;

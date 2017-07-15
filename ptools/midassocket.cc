@@ -1,12 +1,15 @@
 
 #include "midassocket.h"
 #include "socketerror.h"
+#if defined(_MSC_VER)
+#else
 #include <netdb.h>   // for gethostbyname ... this causes conflicts
                      // on tru64 with X-Midas, so it has been moved to a .cc
-
-#include <math.h>
 #include <sys/time.h>
 #include <unistd.h>
+#endif
+
+#include <math.h>
 #include <fcntl.h>
 #include <errno.h>
 #include "m2convertrep.h"

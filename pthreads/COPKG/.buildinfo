@@ -1,0 +1,30 @@
+@import default_tools;
+
+default {
+    ("V110,V100", "win32,X64", "Release,Debug", "Dynamic,Static", "cdecl,stdcall") => {
+        .PushEnvironment{};
+        .LoadSystemEnvironment{};
+        .Message.Text = @"envTarg = vc_${0}_${1}   --  ${2}  ${3}  ${4}";
+        
+        .SetEnvironmentFromTarget.Target = "VC_${0}_${1}";
+        
+        .Message.Text = @"EnvValid = $(IsEnvironmentValid)";
+        
+        .Exec {
+            Condition="$(IsEnvironmentValid)";
+            Command = @"msbuild pthreads.vcxproj /p:PlatformToolset=${0};Platform=${1};Configuration=${2};ConfigurationType=${3}Library;CallingConvention=${4}";
+        };
+        
+        .PopEnvironment{};
+    };
+    
+};
+
+clean {
+    .RemoveDir.Directories = @".\intermediate";
+};
+
+nuke {
+    .RemoveDir.Directories = @".\output";
+};
+

@@ -511,7 +511,7 @@ class XMLDumper {
 	  value_ptr = &((*value_ptr)["__content__"]);
 	}
 
-	if ((value_ptr->tag=='t' || value_ptr->tag=='o') and value_ptr->length()==0 && l.length()==1) {
+	if ((value_ptr->tag=='t' || value_ptr->tag=='o') && value_ptr->length()==0 && l.length()==1) {
 	  // This RARE situation:  
 	  // { 'top': [ {} ] } -> <top type__="list"> <dict__/> </top>
 	  // Empty table inside a list: Ugh: hard to express in XML

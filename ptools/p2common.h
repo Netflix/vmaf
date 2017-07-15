@@ -6,7 +6,11 @@
 // implementation is fast.
 
 #include "cpickle.h"  // Python #defines 
+#if defined(_MSC_VER)
+#include <winsock2.h>
+#else
 #include <arpa/inet.h>
+#endif
 
 // Distinguish between M2k and OpenContainers usage
 #if defined(OC_USE_OC) || defined(OC_NEW_STYLE_INCLUDES)

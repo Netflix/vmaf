@@ -11,8 +11,15 @@ extern "C" {
 #include "ocport.h"
 #include <stdlib.h>
 #include <stdio.h>
+#if defined(_MSC_VER)
+#define HAVE_STRUCT_TIMESPEC 0
+#include <pthread.h>
+#include <winsock2.h>
+#include <windows.h>
+#else
 #include <pthread.h>
 #include <sys/time.h>
+#endif
 
 #ifdef __MACH__
 #include <mach/clock.h>
@@ -208,7 +215,12 @@ struct CondVar {
       struct timespec current_time;
 
 
-#ifdef __MACH__ // OS X does not have clock_gettime, use clock_get_time
+#if defined(_MSC_VER)
+        __int64 wintime; GetSystemTimeAsFileTime((FILETIME*)&wintime);
+        wintime      -=116444736000000000i64;  //1jan1601 to 1jan1970
+        current_time.tv_sec  =wintime / 10000000i64;           //seconds
+        current_time.tv_nsec =wintime % 10000000i64 *100;      //nano-seconds
+#elif defined(__MACH__) // OS X does not have clock_gettime, use clock_get_time
       clock_serv_t cclock;
       mach_timespec_t mts;
       host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);

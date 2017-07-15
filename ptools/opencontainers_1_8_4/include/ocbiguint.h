@@ -724,8 +724,8 @@ class BigUInt {
       throw runtime_error("Illegal base for print: only base 2-16");
     }
     BigUInt res(*this);
-    const size_t LEN = length() * 10;
-    char a[LEN]; // Enough space to stringize into based on size of int: don't waste space!
+    size_t LEN = length() * 10;
+    char* a = (char*)alloca(LEN); // Enough space to stringize into based on size of int: don't waste space!
     int ii=LEN-1;
     BigUInt divver, rem;
     BigUInt base(default_base);
