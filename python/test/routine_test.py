@@ -74,6 +74,16 @@ class TestReadDataset(unittest.TestCase):
         self.assertEquals(train_assets[2].quality_width_height, (1280, 720))
         self.assertEquals(train_assets[2].dis_yuv_type, 'yuv420p10le')
 
+    def test_read_image_dataset_notyuv(self):
+        dataset_path = VmafConfig.test_resource_path('test_image_dataset_notyuv.py')
+        dataset = import_python_file(dataset_path)
+        assets = read_dataset(dataset)
+
+        self.assertEquals(len(assets), 4)
+        self.assertTrue(assets[0].ref_width_height is None)
+        self.assertTrue(assets[0].dis_width_height is None)
+        self.assertEquals(assets[0].quality_width_height, (1920, 1080))
+
 class TestTrainOnDataset(unittest.TestCase):
 
     def setUp(self):
