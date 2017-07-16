@@ -147,6 +147,7 @@ install:
 	ar -dv $(lib) main.o
 	mkdir -p $(DESTDIR)$(PREFIX)/lib
 	mkdir -p $(DESTDIR)$(PREFIX)/include
+	mkdir -p $(DESTDIR)$(PREFIX)/share
 	cp $(lib) $(DESTDIR)$(PREFIX)/lib/$(lib)
 	cp src/libvmaf.h $(DESTDIR)$(PREFIX)/include/
 	cp -r ../model $(DESTDIR)$(PREFIX)/share/
