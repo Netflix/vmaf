@@ -90,6 +90,38 @@ export PYTHONPATH=[path_to_repo_dir]/python/src:$PYTHONPATH
 
 You can also add it to environment permanently. On Ubuntu, append the line above to *~/.bashrc* and run `source ~/.bashrc`. On Mac OS X, append it to *~/.bash_profile* and run `source ~/.bash_profile`.
 
+You can also install the library built using object files under wrapper/obj and ptools.
+To create the library (libvmaf.a) run:
+
+```
+make lib
+```
+
+To install the library run:
+
+```
+make install
+```
+
+This copies the library header libvmaf.h under usr/local/include, library (libvmaf.a) under user/local/lib and all the model files under usr/local/share. You can use the header libvmaf.h in your program.
+It contains an API which can be called from any C/C++ program.
+API:
+
+```
+double compute_vmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
+int stride, double *score, void *user_data), void *user_data, char *model_path, char *log_path, char *log_fmt, int disable_clip,
+int disable_avx, int enable_transform, int phone_model, int do_psnr, int do_ssim, int do_ms_ssim, char *pool_method);
+```
+
+Here, read_frame is a callback function which can be used to pass data from a program to vmaf.
+user_data is a program specific data that can be used by the callback function.
+
+To uninstall the library run:
+
+```
+make uninstall
+```
+
 ## Testing
 
 The package has thus far been tested on Ubuntu 14.04 LTS and Mac OS X 10.10.5.
