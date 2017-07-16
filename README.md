@@ -110,11 +110,12 @@ API:
 
 ```
 double compute_vmaf(char* fmt, int width, int height, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
-int stride, double *score, void *user_data), void *user_data, char *model_path, char *log_path, char *log_fmt, int disable_clip, int disable_avx, int enable_transform, int phone_model, int do_psnr, int do_ssim, int do_ms_ssim, char *pool_method);
+int stride, double *score, void *user_data), void *user_data, char *model_path, char *log_path, char *log_fmt, int disable_clip,
+int disable_avx, int enable_transform, int phone_model, int do_psnr, int do_ssim, int do_ms_ssim, char *pool_method);
 ```
 
 Here, read_frame is a callback function which can be used to pass data from a program to vmaf.
-user_data is a program specific data that canbe used by the callback.
+user_data is a program specific data that can be used by the callback function.
 
 To uninstall the library run:
 
