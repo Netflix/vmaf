@@ -21,8 +21,4 @@
 #ifndef PSNR_OPTIONS_H_
 #define PSNR_OPTIONS_H_
 
-/* Whether to use single precision for computation. */
-#define PSNR_OPT_SINGLE_PRECISION
-//#define PSNR_OPT_DOUBLE_PRECISION
-
 #endif /* PSNR_OPTIONS_H_ */

@@ -36,8 +36,4 @@
 /* Whether to use a 1-D formulation of the Gaussian filter. */
 #define VIF_OPT_FILTER_1D
 
-/* Whether to use single precision for computation. */
-#define VIF_OPT_SINGLE_PRECISION
-//#define VIF_OPT_DOUBLE_PRECISION
-
 #endif /* VIF_OPTIONS_H_ */

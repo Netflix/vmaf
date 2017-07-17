@@ -29,37 +29,26 @@
 #include "common/file_io.h"
 #include "psnr_options.h"
 
-#ifdef PSNR_OPT_SINGLE_PRECISION
-  typedef float number_t;
-
-  #define read_image_b  read_image_b2s
-  #define read_image_w  read_image_w2s
-
-#else
-  typedef double number_t;
-
-    #define read_image_b  read_image_b2d
-    #define read_image_w  read_image_w2d
-
-#endif
+#define read_image_b  read_image_b2s
+#define read_image_w  read_image_w2s
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
-int compute_psnr(const number_t *ref, const number_t *dis, int w, int h, int ref_stride, int dis_stride, double *score, double peak, double psnr_max)
+int compute_psnr(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double peak, double psnr_max)
 {
     double noise_ = 0;
 
-    int ref_stride_ = ref_stride / sizeof(number_t);
-    int dis_stride_ = dis_stride / sizeof(number_t);
+    int ref_stride_ = ref_stride / sizeof(float);
+    int dis_stride_ = dis_stride / sizeof(float);
 
     for (int i = 0; i < h; ++i)
     {
         for (int j = 0; j < w; ++j)
         {
-            number_t ref_ = ref[i * ref_stride_ + j];
-            number_t dis_ = dis[i * dis_stride_ + j];
-            number_t diff = ref_ - dis_;
+            float ref_ = ref[i * ref_stride_ + j];
+            float dis_ = dis[i * dis_stride_ + j];
+            float diff = ref_ - dis_;
             noise_ += diff * diff;
         }
     }
@@ -74,21 +63,21 @@ int compute_psnr(const number_t *ref, const number_t *dis, int w, int h, int ref
 int psnr(const char *ref_path, const char *dis_path, int w, int h, const char *fmt)
 {
     double score = 0;
-    number_t *ref_buf = 0;
-    number_t *dis_buf = 0;
-    number_t *temp_buf = 0;
+    float *ref_buf = 0;
+    float *dis_buf = 0;
+    float *temp_buf = 0;
     FILE *ref_rfile = 0;
     FILE *dis_rfile = 0;
     size_t data_sz;
     int stride;
     int ret = 1;
 
-    if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(number_t))
+    if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float))
     {
         goto fail_or_end;
     }
 
-    stride = ALIGN_CEIL(w * sizeof(number_t));
+    stride = ALIGN_CEIL(w * sizeof(float));
 
     if ((size_t)h > SIZE_MAX / stride)
     {

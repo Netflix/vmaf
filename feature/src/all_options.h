@@ -21,11 +21,4 @@
 #ifndef ALL_OPTIONS_H_
 #define ALL_OPTIONS_H_
 
-/* Whether to use single precision for computation. Need to make sure that
- * ALL_OPT_SINGLE_PRECISION is consistent with MOTION_OPT_SINGLE_PRECISION,
- * ANSNR_OPT_SINGLE_PRECISION, ADM_OPT_SINGLE_PRECISION and
- * VIF_OPT_SINGLE_PRECISION, if all() is called.*/
-#define ALL_OPT_SINGLE_PRECISION
-//#define ALL_OPT_DOUBLE_PRECISION
-
 #endif /* ALL_OPTIONS_H_ */

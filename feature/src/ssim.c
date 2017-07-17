@@ -31,9 +31,6 @@
 #include "iqa/decimate.h"
 #include "iqa/ssim_tools.h"
 
-// unlike psnr, ssim/ms-ssim only works with single precision
-typedef float number_t;
-
 #define read_image_b  read_image_b2s
 #define read_image_w  read_image_w2s
 
@@ -52,7 +49,7 @@ float _ssim_reduce(int w, int h, void *ctx)
     return (float)(*ssim_sum / (double)(w*h));
 }
 
-int compute_ssim(const number_t *ref, const number_t *cmp, int w, int h,
+int compute_ssim(const float *ref, const float *cmp, int w, int h,
         int ref_stride, int cmp_stride, double *score,
         double *l_score, double *c_score, double *s_score)
 {
@@ -188,9 +185,9 @@ int ssim(const char *ref_path, const char *dis_path, int w, int h, const char *f
 {
     double score = 0;
     double l_score = 0, c_score = 0, s_score = 0;
-    number_t *ref_buf = 0;
-    number_t *dis_buf = 0;
-    number_t *temp_buf = 0;
+    float *ref_buf = 0;
+    float *dis_buf = 0;
+    float *temp_buf = 0;
 
     FILE *ref_rfile = 0;
     FILE *dis_rfile = 0;
@@ -198,12 +195,12 @@ int ssim(const char *ref_path, const char *dis_path, int w, int h, const char *f
     int stride;
     int ret = 1;
 
-    if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(number_t))
+    if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float))
     {
         goto fail_or_end;
     }
 
-    stride = ALIGN_CEIL(w * sizeof(number_t));
+    stride = ALIGN_CEIL(w * sizeof(float));
 
     if ((size_t)h > SIZE_MAX / stride)
     {

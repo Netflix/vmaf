@@ -29,26 +29,15 @@
 #include "common/file_io.h"
 #include "moment_options.h"
 
-#ifdef MOMENT_OPT_SINGLE_PRECISION
-  typedef float number_t;
+#define read_image_b  read_image_b2s
+#define read_image_w  read_image_w2s
 
-  #define read_image_b  read_image_b2s
-  #define read_image_w  read_image_w2s
-
-#else
-  typedef double number_t;
-
-    #define read_image_b  read_image_b2d
-    #define read_image_w  read_image_w2d
-
-#endif
-
-int compute_1st_moment(const number_t *pic, int w, int h, int stride, double *score)
+int compute_1st_moment(const float *pic, int w, int h, int stride, double *score)
 {
     double cum = 0;
-    number_t pic_;
+    float pic_;
 
-    int stride_ = stride / sizeof(number_t);
+    int stride_ = stride / sizeof(float);
 
     for (int i = 0; i < h; ++i)
     {
@@ -65,12 +54,12 @@ int compute_1st_moment(const number_t *pic, int w, int h, int stride, double *sc
     return 0;
 }
 
-int compute_2nd_moment(const number_t *pic, int w, int h, int stride, double *score)
+int compute_2nd_moment(const float *pic, int w, int h, int stride, double *score)
 {
     double cum = 0;
-    number_t pic_;
+    float pic_;
 
-    int stride_ = stride / sizeof(number_t);
+    int stride_ = stride / sizeof(float);
 
     for (int i = 0; i < h; ++i)
     {
@@ -90,19 +79,19 @@ int compute_2nd_moment(const number_t *pic, int w, int h, int stride, double *sc
 int moment(const char *path, int w, int h, const char *fmt, int order)
 {
     double score = 0;
-    number_t *pic_buf = 0;
-    number_t *temp_buf = 0;
+    float *pic_buf = 0;
+    float *temp_buf = 0;
     FILE *rfile = 0;
     size_t data_sz;
     int stride;
     int ret = 1;
 
-    if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(number_t))
+    if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float))
     {
         goto fail_or_end;
     }
 
-    stride = ALIGN_CEIL(w * sizeof(number_t));
+    stride = ALIGN_CEIL(w * sizeof(float));
 
     if ((size_t)h > SIZE_MAX / stride)
     {

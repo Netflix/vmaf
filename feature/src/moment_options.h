@@ -21,8 +21,4 @@
 #ifndef MOMENT_OPTIONS_H_
 #define MOMENT_OPTIONS_H_
 
-/* Whether to use single precision for computation. */
-#define MOMENT_OPT_SINGLE_PRECISION
-//#define MOMENT_OPT_DOUBLE_PRECISION
-
 #endif /* MOMENT_OPTIONS_H_ */

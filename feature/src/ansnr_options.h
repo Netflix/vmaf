@@ -33,8 +33,4 @@
 /* Whether to normalize result by dividing against maximum ANSNR. */
 /* #define ANSNR_OPT_NORMALIZE */
 
-/* Whether to use single precision for computation. */
-#define ANSNR_OPT_SINGLE_PRECISION
-//#define ANSNR_OPT_DOUBLE_PRECISION
-
 #endif /* ANSNR_OPTIONS_H_ */
