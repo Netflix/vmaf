@@ -20,6 +20,7 @@ test:
 	@echo hello;
 
 lib:
+	cd ptools; $(MAKE); cd ..;
 	cd wrapper; $(MAKE) libvmaf.a; cd ..;
 
 install:
@@ -27,6 +28,9 @@ install:
 
 uninstall:
 	cd wrapper; $(MAKE) uninstall; cd ..;
+
+testlib:
+	cd wrapper; $(MAKE) testlib; cd ..;
 
 .PHONY: clean $(TARGETS)
 

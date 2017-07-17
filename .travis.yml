@@ -13,5 +13,9 @@ install:
   - pip install --upgrade h5py
 script:
   - make
+  - make lib
+  - sudo make install
+  - make testlib
   - export PYTHONPATH=$PWD/python/src:$PYTHONPATH
   - python -m unittest discover -s python/test -p '*_test.py'
+  - python -m unittest discover -s python/test/lib -p '*_libtest.py'
