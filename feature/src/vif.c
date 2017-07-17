@@ -28,80 +28,63 @@
 #include "vif_options.h"
 #include "vif_tools.h"
 
-#ifdef VIF_OPT_SINGLE_PRECISION
-  typedef float number_t;
+#define read_image_b       read_image_b2s
+#define read_image_w       read_image_w2s
+#define vif_filter1d_table vif_filter1d_table_s
+#define vif_filter1d       vif_filter1d_s
+#define vif_filter2d_table vif_filter2d_table_s
+#define vif_filter2d       vif_filter2d_s
+#define vif_dec2           vif_dec2_s
+#define vif_sum            vif_sum_s
+#define vif_xx_yy_xy       vif_xx_yy_xy_s
+#define vif_statistic      vif_statistic_s
 
-  #define read_image_b       read_image_b2s
-  #define read_image_w       read_image_w2s
-  #define vif_filter1d_table vif_filter1d_table_s
-  #define vif_filter1d       vif_filter1d_s
-  #define vif_filter2d_table vif_filter2d_table_s
-  #define vif_filter2d       vif_filter2d_s
-  #define vif_dec2           vif_dec2_s
-  #define vif_sum            vif_sum_s
-  #define vif_xx_yy_xy       vif_xx_yy_xy_s
-  #define vif_statistic      vif_statistic_s
-#else
-  typedef double number_t;
-
-  #define read_image_b       read_image_b2d
-  #define read_image_w       read_image_w2d
-  #define vif_filter1d_table vif_filter1d_table_d
-  #define vif_filter1d       vif_filter1d_d
-  #define vif_filter2d_table vif_filter2d_table_d
-  #define vif_filter2d       vif_filter2d_d
-  #define vif_dec2           vif_dec2_d
-  #define vif_sum            vif_sum_d
-  #define vif_xx_yy_xy       vif_xx_yy_xy_d
-  #define vif_statistic      vif_statistic_d
-#endif
-
-int compute_vif(const number_t *ref, const number_t *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores)
+int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores)
 {
-    number_t *data_buf = 0;
+    float *data_buf = 0;
     char *data_top;
 
-    number_t *ref_scale;
-    number_t *dis_scale;
-    number_t *ref_sq;
-    number_t *dis_sq;
-    number_t *ref_dis;
+    float *ref_scale;
+    float *dis_scale;
+    float *ref_sq;
+    float *dis_sq;
+    float *ref_dis;
 
-    number_t *mu1;
-    number_t *mu2;
-    number_t *mu1_sq;
-    number_t *mu2_sq;
-    number_t *mu1_mu2;
-    number_t *ref_sq_filt;
-    number_t *dis_sq_filt;
-    number_t *ref_dis_filt;
-    number_t *num_array;
-    number_t *den_array;
-    number_t *tmpbuf;
+    float *mu1;
+    float *mu2;
+    float *mu1_sq;
+    float *mu2_sq;
+    float *mu1_mu2;
+    float *ref_sq_filt;
+    float *dis_sq_filt;
+    float *ref_dis_filt;
+    float *num_array;
+    float *den_array;
+    float *tmpbuf;
 
     /* Offset pointers to adjust for convolution border handling. */
-    number_t *mu1_adj = 0;
-    number_t *mu2_adj = 0;
+    float *mu1_adj = 0;
+    float *mu2_adj = 0;
 
 #ifdef VIF_OPT_DEBUG_DUMP
-    number_t *mu1_sq_adj;
-    number_t *mu2_sq_adj;
-    number_t *mu1_mu2_adj;
-    number_t *ref_sq_filt_adj;
-    number_t *dis_sq_filt_adj;
-    number_t *ref_dis_filt_adj = 0;
+    float *mu1_sq_adj;
+    float *mu2_sq_adj;
+    float *mu1_mu2_adj;
+    float *ref_sq_filt_adj;
+    float *dis_sq_filt_adj;
+    float *ref_dis_filt_adj = 0;
 #endif
 
-    number_t *num_array_adj = 0;
-    number_t *den_array_adj = 0;
+    float *num_array_adj = 0;
+    float *den_array_adj = 0;
 
     /* Special handling of first scale. */
-    const number_t *curr_ref_scale = ref;
-    const number_t *curr_dis_scale = dis;
+    const float *curr_ref_scale = ref;
+    const float *curr_dis_scale = dis;
     int curr_ref_stride = ref_stride;
     int curr_dis_stride = dis_stride;
 
-    int buf_stride = ALIGN_CEIL(w * sizeof(number_t));
+    int buf_stride = ALIGN_CEIL(w * sizeof(float));
     size_t buf_sz_one = (size_t)buf_stride * h;
 
     double num = 0;
@@ -126,22 +109,22 @@ int compute_vif(const number_t *ref, const number_t *dis, int w, int h, int ref_
 
     data_top = (char *)data_buf;
 
-    ref_scale = (number_t *)data_top; data_top += buf_sz_one;
-    dis_scale = (number_t *)data_top; data_top += buf_sz_one;
-    ref_sq    = (number_t *)data_top; data_top += buf_sz_one;
-    dis_sq    = (number_t *)data_top; data_top += buf_sz_one;
-    ref_dis   = (number_t *)data_top; data_top += buf_sz_one;
-    mu1          = (number_t *)data_top; data_top += buf_sz_one;
-    mu2          = (number_t *)data_top; data_top += buf_sz_one;
-    mu1_sq       = (number_t *)data_top; data_top += buf_sz_one;
-    mu2_sq       = (number_t *)data_top; data_top += buf_sz_one;
-    mu1_mu2      = (number_t *)data_top; data_top += buf_sz_one;
-    ref_sq_filt  = (number_t *)data_top; data_top += buf_sz_one;
-    dis_sq_filt  = (number_t *)data_top; data_top += buf_sz_one;
-    ref_dis_filt = (number_t *)data_top; data_top += buf_sz_one;
-    num_array    = (number_t *)data_top; data_top += buf_sz_one;
-    den_array    = (number_t *)data_top; data_top += buf_sz_one;
-    tmpbuf    = (number_t *)data_top; data_top += buf_sz_one;
+    ref_scale = (float *)data_top; data_top += buf_sz_one;
+    dis_scale = (float *)data_top; data_top += buf_sz_one;
+    ref_sq    = (float *)data_top; data_top += buf_sz_one;
+    dis_sq    = (float *)data_top; data_top += buf_sz_one;
+    ref_dis   = (float *)data_top; data_top += buf_sz_one;
+    mu1          = (float *)data_top; data_top += buf_sz_one;
+    mu2          = (float *)data_top; data_top += buf_sz_one;
+    mu1_sq       = (float *)data_top; data_top += buf_sz_one;
+    mu2_sq       = (float *)data_top; data_top += buf_sz_one;
+    mu1_mu2      = (float *)data_top; data_top += buf_sz_one;
+    ref_sq_filt  = (float *)data_top; data_top += buf_sz_one;
+    dis_sq_filt  = (float *)data_top; data_top += buf_sz_one;
+    ref_dis_filt = (float *)data_top; data_top += buf_sz_one;
+    num_array    = (float *)data_top; data_top += buf_sz_one;
+    den_array    = (float *)data_top; data_top += buf_sz_one;
+    tmpbuf    = (float *)data_top; data_top += buf_sz_one;
 
     for (scale = 0; scale < 4; ++scale)
     {
@@ -150,10 +133,10 @@ int compute_vif(const number_t *ref, const number_t *dis, int w, int h, int ref_
 #endif
 
 #ifdef VIF_OPT_FILTER_1D
-        const number_t *filter = vif_filter1d_table[scale];
+        const float *filter = vif_filter1d_table[scale];
         int filter_width       = vif_filter1d_width[scale];
 #else
-        const number_t *filter = vif_filter2d_table[scale];
+        const float *filter = vif_filter2d_table[scale];
         int filter_width       = vif_filter2d_width[scale];
 #endif
 
@@ -167,7 +150,7 @@ int compute_vif(const number_t *ref, const number_t *dis, int w, int h, int ref_
         int buf_valid_w = w - filter_adj * 2;
         int buf_valid_h = h - filter_adj * 2;
 
-  #define ADJUST(x) ((number_t *)((char *)(x) + filter_adj * buf_stride + filter_adj * sizeof(number_t)))
+  #define ADJUST(x) ((float *)((char *)(x) + filter_adj * buf_stride + filter_adj * sizeof(float)))
 #endif
 
         if (scale > 0)
@@ -242,40 +225,40 @@ int compute_vif(const number_t *ref, const number_t *dis, int w, int h, int ref_
 
 #ifdef VIF_OPT_DEBUG_DUMP
         sprintf(pathbuf, "stage/ref[%d].bin", scale);
-        write_image(pathbuf, curr_ref_scale, w, h, curr_ref_stride, sizeof(number_t));
+        write_image(pathbuf, curr_ref_scale, w, h, curr_ref_stride, sizeof(float));
 
         sprintf(pathbuf, "stage/dis[%d].bin", scale);
-        write_image(pathbuf, curr_dis_scale, w, h, curr_dis_stride, sizeof(number_t));
+        write_image(pathbuf, curr_dis_scale, w, h, curr_dis_stride, sizeof(float));
 
         sprintf(pathbuf, "stage/mu1[%d].bin", scale);
-        write_image(pathbuf, mu1_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(number_t));
+        write_image(pathbuf, mu1_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(float));
 
         sprintf(pathbuf, "stage/mu2[%d].bin", scale);
-        write_image(pathbuf, mu2_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(number_t));
+        write_image(pathbuf, mu2_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(float));
 
         sprintf(pathbuf, "stage/mu1_sq[%d].bin", scale);
-        write_image(pathbuf, mu1_sq_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(number_t));
+        write_image(pathbuf, mu1_sq_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(float));
 
         sprintf(pathbuf, "stage/mu2_sq[%d].bin", scale);
-        write_image(pathbuf, mu2_sq_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(number_t));
+        write_image(pathbuf, mu2_sq_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(float));
 
         sprintf(pathbuf, "stage/mu1_mu2[%d].bin", scale);
-        write_image(pathbuf, mu1_mu2_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(number_t));
+        write_image(pathbuf, mu1_mu2_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(float));
 
         sprintf(pathbuf, "stage/ref_sq_filt[%d].bin", scale);
-        write_image(pathbuf, ref_sq_filt_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(number_t));
+        write_image(pathbuf, ref_sq_filt_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(float));
 
         sprintf(pathbuf, "stage/dis_sq_filt[%d].bin", scale);
-        write_image(pathbuf, dis_sq_filt_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(number_t));
+        write_image(pathbuf, dis_sq_filt_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(float));
 
         sprintf(pathbuf, "stage/ref_dis_filt[%d].bin", scale);
-        write_image(pathbuf, ref_dis_filt_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(number_t));
+        write_image(pathbuf, ref_dis_filt_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(float));
 
         sprintf(pathbuf, "stage/num_array[%d].bin", scale);
-        write_image(pathbuf, num_array_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(number_t));
+        write_image(pathbuf, num_array_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(float));
 
         sprintf(pathbuf, "stage/den_array[%d].bin", scale);
-        write_image(pathbuf, den_array_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(number_t));
+        write_image(pathbuf, den_array_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(float));
 #endif
 
         num = vif_sum(num_array_adj, buf_valid_w, buf_valid_h, buf_stride);
@@ -318,21 +301,21 @@ int vif(const char *ref_path, const char *dis_path, int w, int h, const char *fm
     double scores[4*2];
     double score_num = 0;
     double score_den = 0;
-    number_t *ref_buf = 0;
-    number_t *dis_buf = 0;
-    number_t *temp_buf = 0;
+    float *ref_buf = 0;
+    float *dis_buf = 0;
+    float *temp_buf = 0;
     FILE *ref_rfile = 0;
     FILE *dis_rfile = 0;
     size_t data_sz;
     int stride;
     int ret = 1;
 
-    if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(number_t))
+    if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float))
     {
         goto fail_or_end;
     }
 
-    stride = ALIGN_CEIL(w * sizeof(number_t));
+    stride = ALIGN_CEIL(w * sizeof(float));
 
     if ((size_t)h > SIZE_MAX / stride)
     {

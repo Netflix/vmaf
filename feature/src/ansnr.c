@@ -32,48 +32,32 @@
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
-#ifdef ANSNR_OPT_SINGLE_PRECISION
-  typedef float number_t;
+#define read_image_b       read_image_b2s
+#define read_image_w       read_image_w2s
+#define ansnr_filter1d_ref ansnr_filter1d_ref_s
+#define ansnr_filter1d_dis ansnr_filter1d_dis_s
+#define ansnr_filter2d_ref ansnr_filter2d_ref_s
+#define ansnr_filter2d_dis ansnr_filter2d_dis_s
+#define ansnr_filter1d     ansnr_filter1d_s
+#define ansnr_filter2d     ansnr_filter2d_s
+#define ansnr_mse          ansnr_mse_s
 
-  #define read_image_b       read_image_b2s
-  #define read_image_w       read_image_w2s
-  #define ansnr_filter1d_ref ansnr_filter1d_ref_s
-  #define ansnr_filter1d_dis ansnr_filter1d_dis_s
-  #define ansnr_filter2d_ref ansnr_filter2d_ref_s
-  #define ansnr_filter2d_dis ansnr_filter2d_dis_s
-  #define ansnr_filter1d     ansnr_filter1d_s
-  #define ansnr_filter2d     ansnr_filter2d_s
-  #define ansnr_mse          ansnr_mse_s
-#else
-  typedef double number_t;
-
-  #define read_image_b       read_image_b2d
-  #define read_image_w       read_image_w2d
-  #define ansnr_filter1d_ref ansnr_filter1d_ref_d
-  #define ansnr_filter1d_dis ansnr_filter1d_dis_d
-  #define ansnr_filter2d_ref ansnr_filter2d_ref_d
-  #define ansnr_filter2d_dis ansnr_filter2d_dis_d
-  #define ansnr_filter1d     ansnr_filter1d_d
-  #define ansnr_filter2d     ansnr_filter2d_d
-  #define ansnr_mse          ansnr_mse_d
-#endif
-
-int compute_ansnr(const number_t *ref, const number_t *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_psnr, double peak, double psnr_max)
+int compute_ansnr(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_psnr, double peak, double psnr_max)
 {
-    number_t *data_buf = 0;
+    float *data_buf = 0;
     char *data_top;
 
-    number_t *ref_filtr;
-    number_t *ref_filtd;
-    number_t *dis_filtd;
+    float *ref_filtr;
+    float *ref_filtd;
+    float *dis_filtd;
 
-    number_t sig, noise;
+    float sig, noise;
 
 #ifdef ANSNR_OPT_NORMALIZE
-    number_t noise_min;
+    float noise_min;
 #endif
 
-    int buf_stride = ALIGN_CEIL(w * sizeof(number_t));
+    int buf_stride = ALIGN_CEIL(w * sizeof(float));
     size_t buf_sz_one = (size_t)buf_stride * h;
 
     int ret = 1;
@@ -90,9 +74,9 @@ int compute_ansnr(const number_t *ref, const number_t *dis, int w, int h, int re
 
     data_top = (char *)data_buf;
 
-    ref_filtr = (number_t *)data_top; data_top += buf_sz_one;
-    ref_filtd = (number_t *)data_top; data_top += buf_sz_one;
-    dis_filtd = (number_t *)data_top; data_top += buf_sz_one;
+    ref_filtr = (float *)data_top; data_top += buf_sz_one;
+    ref_filtd = (float *)data_top; data_top += buf_sz_one;
+    dis_filtd = (float *)data_top; data_top += buf_sz_one;
 
 #ifdef ANSNR_OPT_FILTER_1D
     ansnr_filter1d(ansnr_filter1d_ref, ref, ref_filtr, w, h, ref_stride, buf_stride, ansnr_filter1d_ref_width);
@@ -105,9 +89,9 @@ int compute_ansnr(const number_t *ref, const number_t *dis, int w, int h, int re
 #endif
 
 #ifdef ANSNR_OPT_DEBUG_DUMP
-    write_image("stage/ref_filtr.bin", ref_filtr, w, h, buf_stride, sizeof(number_t));
-    write_image("stage/ref_filtd.bin", ref_filtd, w, h, buf_stride, sizeof(number_t));
-    write_image("stage/dis_filtd.bin", dis_filtd, w, h, buf_stride, sizeof(number_t));
+    write_image("stage/ref_filtr.bin", ref_filtr, w, h, buf_stride, sizeof(float));
+    write_image("stage/ref_filtd.bin", ref_filtd, w, h, buf_stride, sizeof(float));
+    write_image("stage/dis_filtd.bin", dis_filtd, w, h, buf_stride, sizeof(float));
 #endif
 
     ansnr_mse(ref_filtr, dis_filtd, &sig, &noise, w, h, buf_stride, buf_stride);
@@ -132,21 +116,21 @@ int ansnr(const char *ref_path, const char *dis_path, int w, int h, const char *
 {
     double score = 0;
     double score_psnr = 0;
-    number_t *ref_buf = 0;
-    number_t *dis_buf = 0;
-    number_t *temp_buf = 0;
+    float *ref_buf = 0;
+    float *dis_buf = 0;
+    float *temp_buf = 0;
     FILE *ref_rfile = 0;
     FILE *dis_rfile = 0;
     size_t data_sz;
     int stride;
     int ret = 1;
 
-    if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(number_t))
+    if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float))
     {
         goto fail_or_end;
     }
 
-    stride = ALIGN_CEIL(w * sizeof(number_t));
+    stride = ALIGN_CEIL(w * sizeof(float));
 
     if ((size_t)h > SIZE_MAX / stride)
     {

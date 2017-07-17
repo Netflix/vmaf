@@ -33,8 +33,4 @@
 /* Whether to perform division by reciprocal-multiplication. */
 #define ADM_OPT_RECIP_DIVISION
 
-/* Whether to use single precision for computation. */
-#define ADM_OPT_SINGLE_PRECISION
-//#define ADM_OPT_DOUBLE_PRECISION
-
 #endif /* ADM_OPTIONS_H_ */

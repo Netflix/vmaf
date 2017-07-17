@@ -32,33 +32,15 @@
 #include "vif_options.h"
 #include "adm_options.h"
 
-#ifdef ALL_OPT_SINGLE_PRECISION
-    typedef float number_t;
-
-    #define read_image_b       read_image_b2s
-    #define read_image_w       read_image_w2s
-    #define convolution_f32_c  convolution_f32_c_s
-    #define offset_image       offset_image_s
-    #define FILTER_5           FILTER_5_s
-    int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores, double border_factor);
-    int compute_ansnr(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_psnr, double peak, double psnr_max);
-    int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores);
-    int compute_motion(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);
-
-#else
-    typedef double number_t;
-
-    #define read_image_b       read_image_b2d
-    #define read_image_w       read_image_w2d
-    #define convolution_f32_c convolution_f32_c_d
-    #define offset_image       offset_image_d
-    #define FILTER_5           FILTER_5_d
-    int compute_adm(const double *ref, const double *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores, double border_factor);
-    int compute_ansnr(const double *ref, const double *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_psnr, double peak, double psnr_max);
-    int compute_vif(const double *ref, const double *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores);
-    int compute_motion(const double *ref, const double *dis, int w, int h, int ref_stride, int dis_stride, double *score);
-
-#endif
+#define read_image_b       read_image_b2s
+#define read_image_w       read_image_w2s
+#define convolution_f32_c  convolution_f32_c_s
+#define offset_image       offset_image_s
+#define FILTER_5           FILTER_5_s
+int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores, double border_factor);
+int compute_ansnr(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_psnr, double peak, double psnr_max);
+int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores);
+int compute_motion(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);
 
 int all(const char *ref_path, const char *dis_path, int w, int h, const char *fmt)
 {
@@ -67,12 +49,12 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
     double score_num = 0;
     double score_den = 0;
     double score_psnr = 0;
-    number_t *ref_buf = 0;
-    number_t *dis_buf = 0;
+    float *ref_buf = 0;
+    float *dis_buf = 0;
 
-    number_t *prev_blur_buf = 0;
-    number_t *blur_buf = 0;
-    number_t *temp_buf = 0;
+    float *prev_blur_buf = 0;
+    float *blur_buf = 0;
+    float *temp_buf = 0;
 
     FILE *ref_rfile = 0;
     FILE *dis_rfile = 0;
@@ -80,12 +62,12 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
     int stride;
     int ret = 1;
 
-    if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(number_t))
+    if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float))
     {
         goto fail_or_end;
     }
 
-    stride = ALIGN_CEIL(w * sizeof(number_t));
+    stride = ALIGN_CEIL(w * sizeof(float));
 
     if ((size_t)h > SIZE_MAX / stride)
     {
@@ -271,9 +253,9 @@ int all(const char *ref_path, const char *dis_path, int w, int h, const char *fm
 
         // filter
         // apply filtering (to eliminate effects film grain)
-        // stride input to convolution_f32_c is in terms of (sizeof(number_t) bytes)
-        // since stride = ALIGN_CEIL(w * sizeof(number_t)), stride divides sizeof(number_t)
-        convolution_f32_c(FILTER_5, 5, ref_buf, blur_buf, temp_buf, w, h, stride / sizeof(number_t), stride / sizeof(number_t));
+        // stride input to convolution_f32_c is in terms of (sizeof(float) bytes)
+        // since stride = ALIGN_CEIL(w * sizeof(float)), stride divides sizeof(float)
+        convolution_f32_c(FILTER_5, 5, ref_buf, blur_buf, temp_buf, w, h, stride / sizeof(float), stride / sizeof(float));
 
         // compute
         if (frm_idx == 0)
