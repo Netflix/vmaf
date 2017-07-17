@@ -1,4 +1,3 @@
 #!/usr/bin/env sh
 
-#echo "Run tests in python/extra/test..."
 PYTHONPATH=python/src python -m unittest discover -s python/test/extra -p '*_extratest.py'

@@ -36,6 +36,7 @@ OBJS = \
 AVX_OBJS := \
 	$(OBJDIR)/convolution_avx.o \
 
+.PHONY: all
 all: vmafossexec
 
 CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic
@@ -133,13 +134,10 @@ else
 	$(CXX) -o $@ $(LDFLAGS) $^ -L$(PTOOLSDIR) $(LIBS) -Wl,-rpath=$(PTOOLSDIR)
 endif
 
-
 PREFIX = /usr/local
 
 lib = libvmaf.a
-obj =  $(wildcard ../ptools/*.o) $(wildcard obj/*.o)
-
-$(lib): $(obj)
+$(lib): $(OBJS) $(wildcard ../ptools/*.o)
 	ar rcs $@ $^
 
 .PHONY: install
@@ -159,10 +157,14 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/include/libvmaf.h
 	rm -fr $(DESTDIR)$(PREFIX)/share/model
 
+testlib: $(SRCDIR)/main.cpp $(OBJDIR)/file_io.o
+	$(CXX) -o $@  $(CXXFLAGS) $^ -I $(FEATURESRCDIR) -I $(DESTDIR)$(PREFIX)/include -L$(DESTDIR)$(PREFIX)/lib -lvmaf -pthread
+
+.PHONY: clean
 clean:
 	rm -f $(OBJDIR)/*.o
 	rm -f libvmaf.a
 	rm -f vmafossexec
+	rm -f testlib
 
-.PHONY: all clean
 .DEFAULT: all

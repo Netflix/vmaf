@@ -467,6 +467,9 @@ class VmafossExecQualityRunner(QualityRunner):
 
         run_process(vmafossexec_cmd, shell=True)
 
+    def _get_exec(self):
+        return ExternalProgram.vmafossexec
+
     def _get_vmafossexec_cmd(self, asset, model_filepath, log_file_path):
 
         if self.optional_dict is not None and 'disable_clip_score' in self.optional_dict:
@@ -494,7 +497,7 @@ class VmafossExecQualityRunner(QualityRunner):
 
         vmafossexec_cmd = "{exe} {fmt} {w} {h} {ref_path} {dis_path} {model} --log {log_file_path} --log-fmt xml --psnr --ssim --ms-ssim" \
             .format(
-            exe=ExternalProgram.vmafossexec,
+            exe=self._get_exec(),
             fmt=self._get_workfile_yuv_type(asset),
             w=quality_width,
             h=quality_height,
