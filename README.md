@@ -416,7 +416,7 @@ int stride, double *score, void *user_data), void *user_data, char *model_path, 
 int disable_avx, int enable_transform, int phone_model, int do_psnr, int do_ssim, int do_ms_ssim, char *pool_method);
 ```
 
-Here, *read_frame* is a callback function which can be used to pass data from a program to VMAF. *user_data* is a program specific data that can be used by the callback function.
+Here, *read_frame* is a callback function which can be used to pass data from a program to VMAF. *user_data* is a program specific data that can be used by the callback function. For sample usage of *compute_vmaf*, refer to [wrapper/src/main.cpp](wrapper/src/main.cpp).
 
 To uninstall the library run:
 

@@ -40,7 +40,7 @@ struct data{
     FILE *dis_rfile;
 };
 
-int read_frame(float *ref_data, float *dis_data, float *temp_data, int stride, double *score, void *s){
+int read_frame(float *ref_data, float *dis_data, float *temp_data, int stride_byte, double *score, void *s){
     struct data *user_data = (struct data *)s;
     char *fmt = user_data->format;
     int w = user_data->width;
@@ -50,11 +50,11 @@ int read_frame(float *ref_data, float *dis_data, float *temp_data, int stride, d
     // read ref y
     if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
     {
-        ret = read_image_b(user_data->ref_rfile, ref_data, 0, w, h, stride);
+        ret = read_image_b(user_data->ref_rfile, ref_data, 0, w, h, stride_byte);
     }
     else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
     {
-        ret = read_image_w(user_data->ref_rfile, ref_data, 0, w, h, stride);
+        ret = read_image_w(user_data->ref_rfile, ref_data, 0, w, h, stride_byte);
     }
     else
     {
@@ -73,11 +73,11 @@ int read_frame(float *ref_data, float *dis_data, float *temp_data, int stride, d
     // read dis y
     if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
     {
-        ret = read_image_b(user_data->dis_rfile, dis_data, 0, w, h, stride);
+        ret = read_image_b(user_data->dis_rfile, dis_data, 0, w, h, stride_byte);
     }
     else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
     {
-        ret = read_image_w(user_data->dis_rfile, dis_data, 0, w, h, stride);
+        ret = read_image_w(user_data->dis_rfile, dis_data, 0, w, h, stride_byte);
     }
     else
     {
