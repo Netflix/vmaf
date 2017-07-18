@@ -7,6 +7,7 @@ PTOOLSDIR = $(TOP)/../ptools
 
 OBJS = \
 	$(OBJDIR)/alloc.o \
+	$(OBJDIR)/frame.o \
 	$(OBJDIR)/file_io.o \
 	$(OBJDIR)/cpu.o \
 	$(OBJDIR)/convolution.o \
@@ -54,6 +55,9 @@ $(OBJDIR)/alloc.o: $(FEATURESRCDIR)/common/alloc.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/file_io.o: $(FEATURESRCDIR)/common/file_io.c
+	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+
+$(OBJDIR)/frame.o: $(FEATURESRCDIR)/common/frame.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/convolution.o: $(FEATURESRCDIR)/common/convolution.c
@@ -157,7 +161,7 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/include/libvmaf.h
 	rm -fr $(DESTDIR)$(PREFIX)/share/model
 
-testlib: $(SRCDIR)/main.cpp $(OBJDIR)/file_io.o
+testlib: $(SRCDIR)/main.cpp
 	$(CXX) -o $@  $(CXXFLAGS) $^ -I $(FEATURESRCDIR) -I $(DESTDIR)$(PREFIX)/include -L$(DESTDIR)$(PREFIX)/lib -lvmaf -pthread
 
 .PHONY: clean
