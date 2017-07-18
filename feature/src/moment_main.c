@@ -83,7 +83,7 @@ int main(int argc, const char **argv)
 
     if (!(s->dis_rfile = fopen(video_path, "rb")))
     {
-        fprintf(stderr, "fopen ref_path %s failed.\n", video_path);
+        fprintf(stderr, "fopen video_path %s failed.\n", video_path);
         ret = 1;
         goto fail_or_end;
     }
