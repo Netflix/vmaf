@@ -60,14 +60,12 @@ int compute_psnr(const float *ref, const float *dis, int w, int h, int ref_strid
     return 0;
 }
 
-int psnr(const char *ref_path, const char *dis_path, int w, int h, const char *fmt)
+int psnr(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, double *score, void *user_data), void *user_data, int w, int h, const char *fmt)
 {
     double score = 0;
     float *ref_buf = 0;
     float *dis_buf = 0;
     float *temp_buf = 0;
-    FILE *ref_rfile = 0;
-    FILE *dis_rfile = 0;
     size_t data_sz;
     int stride;
     int ret = 1;
@@ -105,94 +103,17 @@ int psnr(const char *ref_path, const char *dis_path, int w, int h, const char *f
         goto fail_or_end;
     }
 
-    if (!(ref_rfile = fopen(ref_path, "rb")))
-    {
-        printf("error: fopen ref_path %s failed\n", ref_path);
-        fflush(stdout);
-        goto fail_or_end;
-    }
-    if (!(dis_rfile = fopen(dis_path, "rb")))
-    {
-        printf("error: fopen dis_path %s failed.\n", dis_path);
-        fflush(stdout);
-        goto fail_or_end;
-    }
-
-    size_t offset;
-    if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv420p10le"))
-    {
-        if ((w * h) % 2 != 0)
-        {
-            printf("error: (w * h) %% 2 != 0, w = %d, h = %d.\n", w, h);
-            fflush(stdout);
-            goto fail_or_end;
-        }
-        offset = w * h / 2;
-    }
-    else if (!strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv422p10le"))
-    {
-        offset = w * h;
-    }
-    else if (!strcmp(fmt, "yuv444p") || !strcmp(fmt, "yuv444p10le"))
-    {
-        offset = w * h * 2;
-    }
-    else
-    {
-        printf("error: unknown format %s.\n", fmt);
-        fflush(stdout);
-        goto fail_or_end;
-    }
-
     int frm_idx = 0;
     while (1)
     {
-        // read ref y
-        if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
-        {
-            ret = read_image_b(ref_rfile, ref_buf, 0, w, h, stride);
-        }
-        else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-        {
-            ret = read_image_w(ref_rfile, ref_buf, 0, w, h, stride);
-        }
-        else
-        {
-            printf("error: unknown format %s.\n", fmt);
-            fflush(stdout);
-            goto fail_or_end;
-        }
-        if (ret)
-        {
-            if (feof(ref_rfile))
-            {
-                ret = 0; // OK if end of file
-            }
-            goto fail_or_end;
-        }
+        ret = read_frame(ref_buf, dis_buf, temp_buf, stride, &score, user_data);
 
-        // read dis y
-        if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
-        {
-            ret = read_image_b(dis_rfile, dis_buf, 0, w, h, stride);
-        }
-        else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-        {
-            ret = read_image_w(dis_rfile, dis_buf, 0, w, h, stride);
-        }
-        else
-        {
-            printf("error: unknown format %s.\n", fmt);
-            fflush(stdout);
+        if(ret == 1){
             goto fail_or_end;
         }
-        if (ret)
+        if (ret == 2)
         {
-            if (feof(dis_rfile))
-            {
-                ret = 0; // OK if end of file
-            }
-            goto fail_or_end;
+            break;
         }
 
         // compute
@@ -224,72 +145,13 @@ int psnr(const char *ref_path, const char *dis_path, int w, int h, const char *f
         printf("psnr: %d %f\n", frm_idx, score);
         fflush(stdout);
 
-        // ref skip u and v
-        if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
-        {
-            if (fread(temp_buf, 1, offset, ref_rfile) != (size_t)offset)
-            {
-                printf("error: ref fread u and v failed.\n");
-                fflush(stdout);
-                goto fail_or_end;
-            }
-        }
-        else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-        {
-            if (fread(temp_buf, 2, offset, ref_rfile) != (size_t)offset)
-            {
-                printf("error: ref fread u and v failed.\n");
-                fflush(stdout);
-                goto fail_or_end;
-            }
-        }
-        else
-        {
-            printf("error: unknown format %s.\n", fmt);
-            fflush(stdout);
-            goto fail_or_end;
-        }
-
-        // dis skip u and v
-        if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
-        {
-            if (fread(temp_buf, 1, offset, dis_rfile) != (size_t)offset)
-            {
-                printf("error: dis fread u and v failed.\n");
-                fflush(stdout);
-                goto fail_or_end;
-            }
-        }
-        else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-        {
-            if (fread(temp_buf, 2, offset, dis_rfile) != (size_t)offset)
-            {
-                printf("error: dis fread u and v failed.\n");
-                fflush(stdout);
-                goto fail_or_end;
-            }
-        }
-        else
-        {
-            printf("error: unknown format %s.\n", fmt);
-            fflush(stdout);
-            goto fail_or_end;
-        }
-
         frm_idx++;
     }
 
     ret = 0;
 
 fail_or_end:
-    if (ref_rfile)
-    {
-        fclose(ref_rfile);
-    }
-    if (dis_rfile)
-    {
-        fclose(dis_rfile);
-    }
+
     aligned_free(ref_buf);
     aligned_free(dis_buf);
     aligned_free(temp_buf);
