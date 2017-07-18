@@ -125,50 +125,6 @@ fail_or_end:
 }
 
 /**
- * Note: stride is in terms of bytes
- */
-int read_image_b2d(FILE *rfile, double *buf, double off, int width, int height, int stride)
-{
-	char *byte_ptr = (char *)buf;
-	unsigned char *tmp_buf = 0;
-	int i, j;
-	int ret = 1;
-
-	if (width <= 0 || height <= 0)
-	{
-		goto fail_or_end;
-	}
-
-	if (!(tmp_buf = malloc(width)))
-	{
-		goto fail_or_end;
-	}
-
-	for (i = 0; i < height; ++i)
-	{
-		double *row_ptr = (double *)byte_ptr;
-
-		if (fread(tmp_buf, 1, width, rfile) != (size_t)width)
-		{
-			goto fail_or_end;
-		}
-
-		for (j = 0; j < width; ++j)
-		{
-			row_ptr[j] = tmp_buf[j] + off;
-		}
-
-		byte_ptr += stride;
-	}
-
-	ret = 0;
-
-fail_or_end:
-	free(tmp_buf);
-	return ret;
-}
-
-/**
  * Note: stride is in terms of bytes; image is 10-bit little-endian
  */
 int read_image_w2s(FILE * rfile, float *buf, float off, int width, int height, int stride)
@@ -216,54 +172,6 @@ fail_or_end:
 }
 
 /**
- * Note: stride is in terms of bytes, image is 10-bit little endian
- */
-int read_image_w2d(FILE *rfile, double *buf, double off, int width, int height, int stride)
-{
-	// make sure unsigned short is 2 bytes
-	assert(sizeof(unsigned short) == 2);
-
-	char *byte_ptr = (char *)buf;
-	unsigned short *tmp_buf = 0;
-	int i, j;
-	int ret = 1;
-
-	if (width <= 0 || height <= 0)
-	{
-		goto fail_or_end;
-	}
-
-	if (!(tmp_buf = malloc(width * 2))) // '*2' to accommodate words
-	{
-		goto fail_or_end;
-	}
-
-	for (i = 0; i < height; ++i)
-	{
-		double *row_ptr = (double *)byte_ptr;
-
-		if (fread(tmp_buf, 2, width, rfile) != (size_t)width) // '2' for word
-		{
-			goto fail_or_end;
-		}
-
-		for (j = 0; j < width; ++j)
-		{
-			row_ptr[j] = tmp_buf[j] / 4.0 + off; // '/4' to convert from 10 to 8-bit
-
-		}
-
-		byte_ptr += stride;
-	}
-
-	ret = 0;
-
-fail_or_end:
-	free(tmp_buf);
-	return ret;
-}
-
-/**
  * Note: stride is in terms of bytes
  */
 int offset_image_s(float *buf, float off, int width, int height, int stride)
@@ -287,32 +195,5 @@ int offset_image_s(float *buf, float off, int width, int height, int stride)
 	ret = 0;
 
 	return ret;
-}
-
-/**
- * Note: stride is in terms of bytes
- */
-int offset_image_d(double *buf, double off, int width, int height, int stride)
-{
-	char *byte_ptr = (char *)buf;
-	int ret = 1;
-	int i, j;
-
-	for (i = 0; i < height; ++i)
-	{
-		double *row_ptr = (double *)byte_ptr;
-
-		for (j = 0; j < width; ++j)
-		{
-			row_ptr[j] += off;
-		}
-
-		byte_ptr += stride;
-	}
-
-	ret = 0;
-
-	return ret;
-
 }
 
