@@ -314,6 +314,10 @@ fail_or_end:
         {
             fclose(s->dis_rfile);
         }
+        if (s)
+        {
+            free(s);
+        }
 
     }
     catch (const std::exception &e)

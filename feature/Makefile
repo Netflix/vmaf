@@ -7,6 +7,7 @@ TOOLDIR = $(TOP)/tool
 OBJS_VMAF = \
 	$(OBJDIR)/common/alloc.o \
 	$(OBJDIR)/common/file_io.o \
+	$(OBJDIR)/common/frame.o \
 	$(OBJDIR)/common/convolution.o \
 	$(OBJDIR)/common/convolution_avx.o \
 	$(OBJDIR)/adm.o \
@@ -26,18 +27,21 @@ AVX_OBJS := \
 OBJS_PSNR = \
 	$(OBJDIR)/common/alloc.o \
 	$(OBJDIR)/common/file_io.o \
+	$(OBJDIR)/common/frame.o \
 	$(OBJDIR)/psnr.o \
 	$(OBJDIR)/psnr_main.o \
 
 OBJS_MOMENT = \
 	$(OBJDIR)/common/alloc.o \
 	$(OBJDIR)/common/file_io.o \
+	$(OBJDIR)/common/frame.o \
 	$(OBJDIR)/moment.o \
 	$(OBJDIR)/moment_main.o \
 
 OBJS_SSIM = \
 	$(OBJDIR)/common/alloc.o \
 	$(OBJDIR)/common/file_io.o \
+	$(OBJDIR)/common/frame.o \
 	$(OBJDIR)/iqa/math_utils.o \
 	$(OBJDIR)/iqa/convolve.o \
 	$(OBJDIR)/iqa/decimate.o \
@@ -48,6 +52,7 @@ OBJS_SSIM = \
 OBJS_MS_SSIM = \
 	$(OBJDIR)/common/alloc.o \
 	$(OBJDIR)/common/file_io.o \
+	$(OBJDIR)/common/frame.o \
 	$(OBJDIR)/iqa/math_utils.o \
 	$(OBJDIR)/iqa/convolve.o \
 	$(OBJDIR)/iqa/decimate.o \
