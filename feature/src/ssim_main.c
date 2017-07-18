@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "common/frame.h"
 
 int ssim(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
 
@@ -59,10 +60,45 @@ int main(int argc, const char **argv)
         return 2;
     }
 
-    ret = ssim(ref_path, dis_path, w, h, fmt);
+    struct data *s;
+    s = (struct data *)malloc(sizeof(struct data));
+    s->format = fmt;
+    s->width = w;
+    s->height = h;
 
+    ret = get_frame_offset(fmt, w, h, &(s->offset));
     if (ret)
-        return ret;
+    {
+        goto fail_or_end;
+    }
 
-    return 0;
+    if (!(s->ref_rfile = fopen(ref_path, "rb")))
+    {
+        fprintf(stderr, "fopen ref_path %s failed.\n", ref_path);
+        ret = 1;
+        goto fail_or_end;
+    }
+    if (!(s->dis_rfile = fopen(dis_path, "rb")))
+    {
+        fprintf(stderr, "fopen ref_path %s failed.\n", dis_path);
+        ret = 1;
+        goto fail_or_end;
+    }
+
+    ret = ssim(read_frame, s, w, h, fmt);
+
+fail_or_end:
+    if (s->ref_rfile)
+    {
+        fclose(s->ref_rfile);
+    }
+    if (s->dis_rfile)
+    {
+        fclose(s->dis_rfile);
+    }
+    if (s)
+    {
+        free(s);
+    }
+    return ret;
 }
