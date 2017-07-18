@@ -66,7 +66,7 @@ int main(int argc, const char **argv)
     s->width = w;
     s->height = h;
 
-    ret = get_yuv_frame_offset(fmt, w, h, &(s->offset));
+    ret = get_frame_offset(fmt, w, h, &(s->offset));
     if (ret)
     {
         goto fail_or_end;
