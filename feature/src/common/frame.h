@@ -31,6 +31,6 @@ struct data
 
 int read_frame(float *ref_data, float *dis_data, float *temp_data, int stride_byte, double *score, void *s);
 
-int get_yuv_frame_offset(const char *fmt, int w, int h, size_t *offset);
+int get_frame_offset(const char *fmt, int w, int h, size_t *offset);
 
 #endif /* FRAME_H_ */

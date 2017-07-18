@@ -128,7 +128,7 @@ fail_or_end:
     return ret;
 }
 
-int get_yuv_frame_offset(const char *fmt, int w, int h, size_t *offset)
+int get_frame_offset(const char *fmt, int w, int h, size_t *offset)
 {
     if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv420p10le"))
     {
