@@ -20,13 +20,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "common/frame.h"
 #include "common/cpu.h"
 
-int adm(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
-int ansnr(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
-int vif(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
-int motion(const char *dis_path, int w, int h, const char *fmt);
-int all(const char *ref_path, const char *dis_path, int w, int h, const char *fmt);
+int adm(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, double *score, void *user_data), void *user_data, int w, int h, const char *fmt);
+int ansnr(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, double *score, void *user_data), void *user_data, int w, int h, const char *fmt);
+int vif(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, double *score, void *user_data), void *user_data, int w, int h, const char *fmt);
+int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int stride, double *score, void *user_data), void *user_data, int w, int h, const char *fmt);
+int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, double *score, void *user_data), void *user_data, int w, int h, const char *fmt);
 
 enum vmaf_cpu cpu; // global
 
@@ -78,21 +79,96 @@ int main(int argc, const char **argv)
 
     cpu = cpu_autodetect();
 
-    if (!strcmp(app, "adm"))
-        ret = adm(ref_path, dis_path, w, h, fmt);
-    else if (!strcmp(app, "ansnr"))
-        ret = ansnr(ref_path, dis_path, w, h, fmt);
-    else if (!strcmp(app, "vif"))
-        ret = vif(ref_path, dis_path, w, h, fmt);
-    else if (!strcmp(app, "motion"))
-        ret = motion(ref_path, w, h, fmt);
-    else if (!strcmp(app, "all"))
-        ret = all(ref_path, dis_path, w, h, fmt);
-    else
-        return 2;
+    if (!strcmp(app, "motion"))
+    {
+        struct noref_data *s;
+        s = (struct noref_data *)malloc(sizeof(struct noref_data));
+        s->format = fmt;
+        s->width = w;
+        s->height = h;
 
-    if (ret)
+        ret = get_frame_offset(fmt, w, h, &(s->offset));
+        if (ret)
+        {
+            goto fail_or_end_noref;
+        }
+
+        /* NOTE: below is legitimate: noref_data has a field called dis_rfile,
+         * but what's needed to be passed to motion is ref_path!
+         */
+        if (!(s->dis_rfile = fopen(ref_path, "rb")))
+        {
+            fprintf(stderr, "fopen ref_path %s failed.\n", ref_path);
+            ret = 1;
+            goto fail_or_end_noref;
+        }
+
+        ret = motion(read_noref_frame, s, w, h, fmt);
+
+fail_or_end_noref:
+        if (s->dis_rfile)
+        {
+            fclose(s->dis_rfile);
+        }
+        if (s)
+        {
+            free(s);
+        }
+        return ret;
+    }
+    else
+    {
+        struct data *s;
+        s = (struct data *)malloc(sizeof(struct data));
+        s->format = fmt;
+        s->width = w;
+        s->height = h;
+
+        ret = get_frame_offset(fmt, w, h, &(s->offset));
+        if (ret)
+        {
+            goto fail_or_end;
+        }
+
+        if (!(s->ref_rfile = fopen(ref_path, "rb")))
+        {
+            fprintf(stderr, "fopen ref_path %s failed.\n", ref_path);
+            ret = 1;
+            goto fail_or_end;
+        }
+        if (!(s->dis_rfile = fopen(dis_path, "rb")))
+        {
+            fprintf(stderr, "fopen ref_path %s failed.\n", dis_path);
+            ret = 1;
+            goto fail_or_end;
+        }
+
+        if (!strcmp(app, "adm"))
+            ret = adm(read_frame, s,  w, h, fmt);
+        else if (!strcmp(app, "ansnr"))
+            ret = ansnr(read_frame, s, w, h, fmt);
+        else if (!strcmp(app, "vif"))
+            ret = vif(read_frame, s, w, h, fmt);
+        else if (!strcmp(app, "all"))
+            ret = all(read_frame, s, w, h, fmt);
+        else
+            ret = 2;
+
+fail_or_end:
+        if (s->ref_rfile)
+        {
+            fclose(s->ref_rfile);
+        }
+        if (s->dis_rfile)
+        {
+            fclose(s->dis_rfile);
+        }
+        if (s)
+        {
+            free(s);
+        }
         return ret;
 
-    return 0;
+    }
+
 }
