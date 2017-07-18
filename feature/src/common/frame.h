@@ -29,7 +29,18 @@ struct data
     FILE *dis_rfile;
 };
 
+struct noref_data
+{
+    char* format; /* yuv420p, yuv422p, yuv444p, yuv420p10le, yuv422p10le, yuv444p10le */
+    int width;
+    int height;
+    size_t offset;
+    FILE *dis_rfile;
+};
+
 int read_frame(float *ref_data, float *dis_data, float *temp_data, int stride_byte, double *score, void *s);
+
+int read_noref_frame(float *dis_data, float *temp_data, int stride_byte, double *score, void *s);
 
 int get_frame_offset(const char *fmt, int w, int h, size_t *offset);
 

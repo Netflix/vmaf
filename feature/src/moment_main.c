@@ -18,8 +18,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "common/frame.h"
 
-int moment(const char *path, int w, int h, const char *fmt, int order);
+int moment(int (*read_noref_frame)(float *main_data, float *temp_data, int stride, double *score, void *user_data), void *user_data, int w, int h, const char *fmt, int order);
 
 static void usage(void)
 {
@@ -68,10 +69,35 @@ int main(int argc, const char **argv)
         return 2;
     }
 
-    ret = moment(video_path, w, h, fmt, order);
+    struct noref_data *s;
+    s = (struct noref_data *)malloc(sizeof(struct noref_data));
+    s->format = fmt;
+    s->width = w;
+    s->height = h;
 
+    ret = get_frame_offset(fmt, w, h, &(s->offset));
     if (ret)
-        return ret;
+    {
+        goto fail_or_end;
+    }
 
-    return 0;
+    if (!(s->dis_rfile = fopen(video_path, "rb")))
+    {
+        fprintf(stderr, "fopen ref_path %s failed.\n", video_path);
+        ret = 1;
+        goto fail_or_end;
+    }
+
+    ret = moment(read_noref_frame, s, w, h, fmt, order);
+
+fail_or_end:
+    if (s->dis_rfile)
+    {
+        fclose(s->dis_rfile);
+    }
+    if (s)
+    {
+        free(s);
+    }
+    return ret;
 }

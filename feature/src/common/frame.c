@@ -128,6 +128,65 @@ fail_or_end:
     return ret;
 }
 
+int read_noref_frame(float *dis_data, float *temp_data, int stride_byte, double *score, void *s)
+{
+    struct noref_data *user_data = (struct noref_data *)s;
+    char *fmt = user_data->format;
+    int w = user_data->width;
+    int h = user_data->height;
+    int ret;
+
+    // read dis y
+    if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+    {
+        ret = read_image_b(user_data->dis_rfile, dis_data, 0, w, h, stride_byte);
+    }
+    else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+    {
+        ret = read_image_w(user_data->dis_rfile, dis_data, 0, w, h, stride_byte);
+    }
+    else
+    {
+        fprintf(stderr, "unknown format %s.\n", fmt);
+        return 1;
+    }
+    if (ret)
+    {
+        if (feof(user_data->dis_rfile))
+        {
+            ret = 2; // OK if end of file
+        }
+        return ret;
+    }
+
+    // dis skip u and v
+    if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+    {
+        if (fread(temp_data, 1, user_data->offset, user_data->dis_rfile) != (size_t)user_data->offset)
+        {
+            fprintf(stderr, "dis fread u and v failed.\n");
+            goto fail_or_end;
+        }
+    }
+    else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+    {
+        if (fread(temp_data, 2, user_data->offset, user_data->dis_rfile) != (size_t)user_data->offset)
+        {
+            fprintf(stderr, "dis fread u and v failed.\n");
+            goto fail_or_end;
+        }
+    }
+    else
+    {
+        fprintf(stderr, "unknown format %s.\n", fmt);
+        goto fail_or_end;
+    }
+
+
+fail_or_end:
+    return ret;
+}
+
 int get_frame_offset(const char *fmt, int w, int h, size_t *offset)
 {
     if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv420p10le"))
