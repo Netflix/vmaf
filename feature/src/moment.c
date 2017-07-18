@@ -76,12 +76,11 @@ int compute_2nd_moment(const float *pic, int w, int h, int stride, double *score
     return 0;
 }
 
-int moment(const char *path, int w, int h, const char *fmt, int order)
+int moment(int (*read_noref_frame)(float *main_data, float *temp_data, int stride, double *score, void *user_data), void *user_data, int w, int h, const char *fmt, int order)
 {
     double score = 0;
     float *pic_buf = 0;
     float *temp_buf = 0;
-    FILE *rfile = 0;
     size_t data_sz;
     int stride;
     int ret = 1;
@@ -113,64 +112,17 @@ int moment(const char *path, int w, int h, const char *fmt, int order)
         goto fail_or_end;
     }
 
-    if (!(rfile = fopen(path, "rb")))
-    {
-        printf("error: fopen path %s failed\n", path);
-        fflush(stdout);
-        goto fail_or_end;
-    }
-
-    size_t offset;
-    if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv420p10le"))
-    {
-        if ((w * h) % 2 != 0)
-        {
-            printf("error: (w * h) %% 2 != 0, w = %d, h = %d.\n", w, h);
-            fflush(stdout);
-            goto fail_or_end;
-        }
-        offset = w * h / 2;
-    }
-    else if (!strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv422p10le"))
-    {
-        offset = w * h;
-    }
-    else if (!strcmp(fmt, "yuv444p") || !strcmp(fmt, "yuv444p10le"))
-    {
-        offset = w * h * 2;
-    }
-    else
-    {
-        printf("error: unknown format %s.\n", fmt);
-        fflush(stdout);
-        goto fail_or_end;
-    }
-
     int frm_idx = 0;
     while (1)
     {
-        // read pic y
-        if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
-        {
-            ret = read_image_b(rfile, pic_buf, 0, w, h, stride);
-        }
-        else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-        {
-            ret = read_image_w(rfile, pic_buf, 0, w, h, stride);
-        }
-        else
-        {
-            printf("error: unknown format %s.\n", fmt);
-            fflush(stdout);
+        ret = read_noref_frame(pic_buf, temp_buf, stride, &score, user_data);
+
+        if(ret == 1){
             goto fail_or_end;
         }
-        if (ret)
+        if (ret == 2)
         {
-            if (feof(rfile))
-            {
-                ret = 0; // OK if end of file
-            }
-            goto fail_or_end;
+            break;
         }
 
         // compute
@@ -203,42 +155,13 @@ int moment(const char *path, int w, int h, const char *fmt, int order)
             goto fail_or_end;
         }
 
-        // pic skip u and v
-        if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
-        {
-            if (fread(temp_buf, 1, offset, rfile) != (size_t)offset)
-            {
-                printf("error: pic fread u and v failed.\n");
-                fflush(stdout);
-                goto fail_or_end;
-            }
-        }
-        else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-        {
-            if (fread(temp_buf, 2, offset, rfile) != (size_t)offset)
-            {
-                printf("error: pic fread u and v failed.\n");
-                fflush(stdout);
-                goto fail_or_end;
-            }
-        }
-        else
-        {
-            printf("error: unknown format %s.\n", fmt);
-            fflush(stdout);
-            goto fail_or_end;
-        }
-
         frm_idx++;
     }
 
     ret = 0;
 
 fail_or_end:
-    if (rfile)
-    {
-        fclose(rfile);
-    }
+
     aligned_free(pic_buf);
     aligned_free(temp_buf);
 
