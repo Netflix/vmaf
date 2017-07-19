@@ -10,6 +10,8 @@ all:
 	done
 
 	cd libsvm; $(MAKE) lib; cd ..;
+	cd ptools; $(MAKE); cd ..;
+	cd wrapper; $(MAKE) libvmaf.a; cd ..;
 
 clean:
 	-for dir in $(TARGETS); do \
@@ -18,10 +20,6 @@ clean:
 
 test:
 	@echo hello;
-
-lib:
-	cd ptools; $(MAKE); cd ..;
-	cd wrapper; $(MAKE) libvmaf.a; cd ..;
 
 install:
 	cd wrapper; $(MAKE) install; cd ..;

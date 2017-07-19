@@ -396,13 +396,9 @@ Note that *vmafossexec* depends on a shared library *ptools/libptools.so* (or on
 
 ## Usage through libvmaf
 
-VMAF is now packaged into a library called *libvmaf*. You can install the library built using object files under wrapper/obj and ptools. To create the library (*libvmaf.a*) run:
+VMAF is now packaged into a library called *libvmaf*. You can install the library built using object files under wrapper/obj and ptools.
 
-```
-make lib
-```
-
-To install the library run:
+To install the library (*libvmaf.a*) run:
 
 ```
 make install
