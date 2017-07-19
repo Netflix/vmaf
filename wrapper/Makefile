@@ -116,7 +116,7 @@ $(OBJDIR)/svm.o: $(SRCDIR)/svm.cpp
 
 $(OBJDIR)/libvmaf.o: $(SRCDIR)/libvmaf.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(SRCDIR) -I $(FEATURESRCDIR)/common $<
- 
+
 $(OBJDIR)/main.o: $(SRCDIR)/main.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common $<
 
@@ -131,18 +131,18 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 $(OBJDIR)/%.o: $(SRCDIR)/pugixml/%.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
 
-vmafossexec: $(OBJS)
-ifeq ($(shell uname),Darwin)
-	$(CXX) -o $@ $(LDFLAGS) $^ -L$(PTOOLSDIR) $(LIBS) -Wl
-else
-	$(CXX) -o $@ $(LDFLAGS) $^ -L$(PTOOLSDIR) $(LIBS) -Wl,-rpath=$(PTOOLSDIR)
-endif
-
 PREFIX = /usr/local
 
 lib = libvmaf.a
 $(lib): $(OBJS) $(wildcard ../ptools/*.o)
 	ar rcs $@ $^
+
+vmafossexec: $(lib)
+ifeq ($(shell uname),Darwin)
+	$(CXX) -o $@ $(LDFLAGS) $^ -L$(PTOOLSDIR) $(LIBS) -Wl
+else
+	$(CXX) -o $@ $(LDFLAGS) $^ -L$(PTOOLSDIR) $(LIBS) -Wl,-rpath=$(PTOOLSDIR)
+endif
 
 .PHONY: install
 install:
@@ -150,9 +150,11 @@ install:
 	mkdir -p $(DESTDIR)$(PREFIX)/lib
 	mkdir -p $(DESTDIR)$(PREFIX)/include
 	mkdir -p $(DESTDIR)$(PREFIX)/share
+	mkdir -p $(DESTDIR)$(PREFIX)/lib/pkgconfig
 	cp $(lib) $(DESTDIR)$(PREFIX)/lib/$(lib)
 	cp src/libvmaf.h $(DESTDIR)$(PREFIX)/include/
 	cp -r ../model $(DESTDIR)$(PREFIX)/share/
+	cp libvmaf.pc $(DESTDIR)$(PREFIX)/lib/pkgconfig/
 
 .PHONY: uninstall
 uninstall:
@@ -160,6 +162,7 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/lib/$(lib)
 	rm -f $(DESTDIR)$(PREFIX)/include/libvmaf.h
 	rm -fr $(DESTDIR)$(PREFIX)/share/model
+	rm -f $(DESTDIR)$(PREFIX)/lib/pkgconfig/libvmaf.pc
 
 testlib: $(SRCDIR)/main.cpp
 	$(CXX) -o $@  $(CXXFLAGS) $^ -I $(FEATURESRCDIR) -I $(DESTDIR)$(PREFIX)/include -L$(DESTDIR)$(PREFIX)/lib -lvmaf -pthread
