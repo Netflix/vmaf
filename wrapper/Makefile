@@ -26,12 +26,12 @@ OBJS = \
 	$(OBJDIR)/ssim_tools.o \
 	$(OBJDIR)/ssim.o \
 	$(OBJDIR)/ms_ssim.o \
-    $(OBJDIR)/svm.o \
-    $(OBJDIR)/combo.o \
-    $(OBJDIR)/vmaf.o \
+	$(OBJDIR)/svm.o \
+	$(OBJDIR)/combo.o \
+	$(OBJDIR)/vmaf.o \
 	$(OBJDIR)/darray.o \
 	$(OBJDIR)/libvmaf.o \
-    $(OBJDIR)/main.o \
+	$(OBJDIR)/main.o \
 	$(OBJDIR)/pugixml.o \
 
 AVX_OBJS := \
@@ -46,7 +46,6 @@ CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic
 CFLAGS   := -std=c99 $(CFLAGS_COMMON) $(CFLAGS)
 CXXFLAGS := -std=c++11 $(CFLAGS_COMMON) $(CXXFLAGS)
 CPPFLAGS := $(CPPFLAGS)
-LIBS     := $(LIBS) -lm -lpthread -lptools
 LDFLAGS  := $(LDFLAGS)
 
 $(AVX_OBJS): EXTRA_CFLAGS := -mavx
@@ -138,7 +137,7 @@ $(lib): $(OBJS) $(wildcard ../ptools/*.o)
 	ar rcs $@ $^
 
 vmafossexec: $(lib)
-	$(CXX) -o $@ $(LDFLAGS) $^ -L$(PTOOLSDIR) $(LIBS)
+	$(CXX) -o $@ $(LDFLAGS) $^ -pthread
 
 .PHONY: install
 install:
