@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include "common/frame.h"
 
-int moment(int (*read_noref_frame)(float *main_data, float *temp_data, int stride, double *score, void *user_data), void *user_data, int w, int h, const char *fmt, int order);
+int moment(int (*read_noref_frame)(float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt, int order);
 
 static void usage(void)
 {

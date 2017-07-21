@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include "common/frame.h"
 
-int psnr(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, double *score, void *user_data), void *user_data, int w, int h, const char *fmt);
+int psnr(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt);
 
 static void usage(void)
 {

@@ -76,7 +76,7 @@ int compute_2nd_moment(const float *pic, int w, int h, int stride, double *score
     return 0;
 }
 
-int moment(int (*read_noref_frame)(float *main_data, float *temp_data, int stride, double *score, void *user_data), void *user_data, int w, int h, const char *fmt, int order)
+int moment(int (*read_noref_frame)(float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt, int order)
 {
     double score = 0;
     float *pic_buf = 0;
@@ -115,7 +115,7 @@ int moment(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
     int frm_idx = 0;
     while (1)
     {
-        ret = read_noref_frame(pic_buf, temp_buf, stride, &score, user_data);
+        ret = read_noref_frame(pic_buf, temp_buf, stride, user_data);
 
         if(ret == 1){
             goto fail_or_end;

@@ -48,7 +48,7 @@ int compute_psnr(const float *ref, const float *dis, int w, int h, int ref_strid
 int compute_ssim(const float *ref, const float *cmp, int w, int h, int ref_stride, int cmp_stride, double *score, double *l_score, double *c_score, double *s_score);
 int compute_ms_ssim(const float *ref, const float *cmp, int w, int h, int ref_stride, int cmp_stride, double *score, double* l_scores, double* c_scores, double* s_scores);
 
-int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, double *score, void *user_data), void *user_data, int w, int h, const char *fmt,
+int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt,
         DArray *adm_num_array,
         DArray *adm_den_array,
         DArray *adm_num_scale0_array,
@@ -146,7 +146,7 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
     int frm_idx = 0;
     while (1)
     {   
-        ret = read_frame(ref_buf, dis_buf, temp_buf, stride, &score, user_data);
+        ret = read_frame(ref_buf, dis_buf, temp_buf, stride, user_data);
         
         if(ret == 1){
             goto fail_or_end;

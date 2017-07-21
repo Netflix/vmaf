@@ -23,7 +23,7 @@
 #define read_image_b       read_image_b2s
 #define read_image_w       read_image_w2s
 
-int read_frame(float *ref_data, float *dis_data, float *temp_data, int stride_byte, double *score, void *s)
+int read_frame(float *ref_data, float *dis_data, float *temp_data, int stride_byte, void *s)
 {
     struct data *user_data = (struct data *)s;
     char *fmt = user_data->format;
@@ -128,7 +128,7 @@ fail_or_end:
     return ret;
 }
 
-int read_noref_frame(float *dis_data, float *temp_data, int stride_byte, double *score, void *s)
+int read_noref_frame(float *dis_data, float *temp_data, int stride_byte, void *s)
 {
     struct noref_data *user_data = (struct noref_data *)s;
     char *fmt = user_data->format;

@@ -181,7 +181,7 @@ fail_or_end:
 
 }
 
-int ssim(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, double *score, void *user_data), void *user_data, int w, int h, const char *fmt)
+int ssim(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt)
 {
     double score = 0;
     double l_score = 0, c_score = 0, s_score = 0;
@@ -228,7 +228,7 @@ int ssim(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, 
     int frm_idx = 0;
     while (1)
     {
-        ret = read_frame(ref_buf, dis_buf, temp_buf, stride, &score, user_data);
+        ret = read_frame(ref_buf, dis_buf, temp_buf, stride, user_data);
 
         if(ret == 1){
             goto fail_or_end;

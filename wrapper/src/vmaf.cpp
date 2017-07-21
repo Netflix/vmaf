@@ -137,7 +137,7 @@ void _read_and_assert_model(const char *model_path, Val& feature_names,
 
 }
 
-Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, double *score, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
+Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
                        bool do_psnr, bool do_ssim, bool do_ms_ssim)
 {
 
@@ -629,7 +629,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
 static const char VMAFOSS_XML_VERSION[] = "0.3.2"; // fix slopes and intercepts to match nflxall_vmafv4.pkl
 
 double RunVmaf(const char* fmt, int width, int height,
-               int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, double *score, void *user_data), 
+               int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
                void *user_data, const char *model_path, const char *log_path, const char *log_fmt,
                bool disable_clip, bool enable_transform,
                bool do_psnr, bool do_ssim, bool do_ms_ssim,
