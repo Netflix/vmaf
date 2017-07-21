@@ -137,7 +137,7 @@ $(lib): $(OBJS) $(wildcard ../ptools/*.o)
 	ar rcs $@ $^
 
 vmafossexec: $(lib)
-	$(CXX) -o $@ $(LDFLAGS) $^ -pthread
+	$(CXX) -s -o $@ $(LDFLAGS) $^ -pthread
 
 .PHONY: install
 install:
@@ -160,7 +160,7 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/lib/pkgconfig/libvmaf.pc
 
 testlib: $(SRCDIR)/main.cpp
-	$(CXX) -o $@  $(CXXFLAGS) $^ -I $(FEATURESRCDIR) -I $(DESTDIR)$(PREFIX)/include -L$(DESTDIR)$(PREFIX)/lib -lvmaf -pthread
+	$(CXX) -s -o $@  $(CXXFLAGS) $^ -I $(FEATURESRCDIR) -I $(DESTDIR)$(PREFIX)/include -L$(DESTDIR)$(PREFIX)/lib -lvmaf -pthread
 
 .PHONY: clean
 clean:
