@@ -10,7 +10,6 @@ all:
 	done
 
 	cd libsvm; $(MAKE) lib; cd ..;
-	cd ptools; $(MAKE); cd ..;
 	cd wrapper; $(MAKE) libvmaf.a; cd ..;
 
 clean:

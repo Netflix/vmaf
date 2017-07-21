@@ -138,11 +138,7 @@ $(lib): $(OBJS) $(wildcard ../ptools/*.o)
 	ar rcs $@ $^
 
 vmafossexec: $(lib)
-ifeq ($(shell uname),Darwin)
-	$(CXX) -o $@ $(LDFLAGS) $^ -L$(PTOOLSDIR) $(LIBS) -Wl
-else
-	$(CXX) -o $@ $(LDFLAGS) $^ -L$(PTOOLSDIR) $(LIBS) -Wl,-rpath=$(PTOOLSDIR)
-endif
+	$(CXX) -o $@ $(LDFLAGS) $^ -L$(PTOOLSDIR) $(LIBS)
 
 .PHONY: install
 install:
