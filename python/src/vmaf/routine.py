@@ -713,7 +713,7 @@ def run_subjective_models(dataset_filepath, subjective_model_classes, do_plot=No
                     else:
                         ax_bias.plot(np.array(xs)+shift_count*bar_width+0.2, bias, '.',
                                      color=colors[shift_count],
-                                     lable=subjective_model.TYPE)
+                                     label=subjective_model.TYPE)
                 else:
                     raise AssertionError("Unknown plot_type: {}".format(plot_type))
 

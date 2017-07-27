@@ -314,10 +314,11 @@ class MaximumLikelihoodEstimationModelReduced(SubjectiveModel):
     """
     Generative model that considers individual subject (or observer)'s bias and
     inconsistency. The observed score is modeled by:
-    Z_e,s = Q_e + X_s
-    where Q_e is the true quality of distorted video e, and X_s ~ N(b_s, sigma_s)
-    is the term representing subject s's bias (b_s) and inconsistency (sigma_s).
-    The model is then solved via likelihood maximization and belief propagation.
+    X_e,s = x_e + B_e,s
+    where x_e is the true quality of distorted video e, and B_e,s ~ N(b_s, v_s)
+    is the term representing subject s's bias (b_s) and inconsistency (v_s).
+    The model is then solved via maximum likelihood estimation using belief
+    propagation.
 
     Note: Similar to MaximumLikelihoodEstimationModelContentOblivious, except
     that it does not deal with missing data etc. (Early implmentation)
@@ -334,22 +335,22 @@ class MaximumLikelihoodEstimationModelReduced(SubjectiveModel):
             assert False, 'SubjectAwareGenerativeModel must not and need not ' \
                           'apply subject rejection.'
 
-        z_es = cls._get_opinion_score_2darray_with_preprocessing(dataset_reader, **kwargs)
-        E, S = z_es.shape
+        x_es = cls._get_opinion_score_2darray_with_preprocessing(dataset_reader, **kwargs)
+        E, S = x_es.shape
 
         use_log = kwargs['use_log'] if 'use_log' in kwargs else False
 
         # === initialization ===
 
-        mos = pd.DataFrame(z_es).mean(axis=1)
+        mos = pd.DataFrame(x_es).mean(axis=1)
 
-        q_e = mos # use MOS as initial value for q_e
+        x_e = mos # use MOS as initial value for x_e
         b_s = np.zeros(S)
 
-        x_es = z_es - np.tile(q_e, (S, 1)).T
-        sigma_s = np.array(pd.DataFrame(x_es).std(axis=0, ddof=0))
+        r_es = x_es - np.tile(x_e, (S, 1)).T # r_es: residual at e, s
+        v_s = np.array(pd.DataFrame(r_es).std(axis=0, ddof=0))
 
-        log_sigma_s = np.log(sigma_s)
+        log_v_s = np.log(v_s)
 
         # === iteration ===
 
@@ -362,56 +363,47 @@ class MaximumLikelihoodEstimationModelReduced(SubjectiveModel):
         itr = 0
         while True:
 
-            q_e_prev = q_e
+            x_e_prev = x_e
 
             # (8) b_s
-            num = pd.DataFrame(z_es - np.tile(q_e, (S, 1)).T).sum(axis=0) # sum over e
-
-            den = pd.DataFrame(z_es/z_es).sum(axis=0) # sum over e
-
+            num = pd.DataFrame(x_es - np.tile(x_e, (S, 1)).T).sum(axis=0) # sum over e
+            den = pd.DataFrame(x_es/x_es).sum(axis=0) # sum over e
             b_s_new = num / den
             b_s = b_s * (1.0 - REFRESH_RATE) + b_s_new * REFRESH_RATE
 
-            a_es = z_es - np.tile(q_e, (S, 1)).T - np.tile(b_s, (E, 1))
+            a_es = x_es - np.tile(x_e, (S, 1)).T - np.tile(b_s, (E, 1))
             if use_log:
-                # (9') log_sigma_s
-                num = pd.DataFrame(-np.ones([E, S]) + a_es**2 / np.tile(sigma_s**2, (E, 1))).sum(axis=0) # sum over e
-
-                den = pd.DataFrame(-2 * a_es**2 / np.tile(sigma_s**2, (E, 1))).sum(axis=0) # sum over e
-
-                log_sigma_s_new = log_sigma_s - num / den
-                log_sigma_s = log_sigma_s * (1.0 - REFRESH_RATE) + log_sigma_s_new * REFRESH_RATE
-                sigma_s = np.exp(log_sigma_s)
+                # (9') log_v_s
+                num = pd.DataFrame(-np.ones([E, S]) + a_es**2 / np.tile(v_s**2, (E, 1))).sum(axis=0) # sum over e
+                den = pd.DataFrame(-2 * a_es**2 / np.tile(v_s**2, (E, 1))).sum(axis=0) # sum over e
+                log_v_s_new = log_v_s - num / den
+                log_v_s = log_v_s * (1.0 - REFRESH_RATE) + log_v_s_new * REFRESH_RATE
+                v_s = np.exp(log_v_s)
             else:
-                # (9) sigma_s
-                num = pd.DataFrame(2 * np.ones([E, S]) * np.tile(sigma_s**3, (E, 1)) - 4 * np.tile(sigma_s, (E, 1)) * a_es**2).sum(axis=0) # sum over e
+                # (9) v_s
+                num = pd.DataFrame(2 * np.ones([E, S]) * np.tile(v_s**3, (E, 1)) - 4 * np.tile(v_s, (E, 1)) * a_es**2).sum(axis=0) # sum over e
+                den = pd.DataFrame(np.ones([E, S]) * np.tile(v_s**2, (E, 1)) - 3 * a_es**2).sum(axis=0) # sum over e
+                v_s_new = num / den
+                v_s = v_s * (1.0 - REFRESH_RATE) + v_s_new * REFRESH_RATE
+                # v_s = np.maximum(v_s, np.zeros(v_s.shape))
 
-                den = pd.DataFrame(np.ones([E, S]) * np.tile(sigma_s**2, (E, 1)) - 3 * a_es**2).sum(axis=0) # sum over e
-
-                sigma_s_new = num / den
-                sigma_s = sigma_s * (1.0 - REFRESH_RATE) + sigma_s_new * REFRESH_RATE
-
-                # sigma_s = np.maximum(sigma_s, np.zeros(sigma_s.shape))
-
-            # (7) q_e
-            num = pd.DataFrame((z_es - np.tile(b_s, (E, 1))) / np.tile(sigma_s**2, (E, 1))).sum(axis=1) # sum along s
-
-            den = pd.DataFrame(z_es/z_es / np.tile(sigma_s**2, (E, 1))).sum(axis=1) # sum along s
-
-            q_e_new = num / den
-            q_e = q_e * (1.0 - REFRESH_RATE) + q_e_new * REFRESH_RATE
+            # (7) x_e
+            num = pd.DataFrame((x_es - np.tile(b_s, (E, 1))) / np.tile(v_s**2, (E, 1))).sum(axis=1) # sum along s
+            den = pd.DataFrame(x_es/x_es / np.tile(v_s**2, (E, 1))).sum(axis=1) # sum along s
+            x_e_new = num / den
+            x_e = x_e * (1.0 - REFRESH_RATE) + x_e_new * REFRESH_RATE
 
             itr += 1
 
-            delta_q_e = linalg.norm(q_e_prev - q_e)
+            delta_x_e = linalg.norm(x_e_prev - x_e)
 
-            msg = 'Iteration {itr:4d}: change {delta_q_e}, mean q_e {q_e}, mean b_s {b_s}, mean sigma_s {sigma_s}'.\
-                format(itr=itr, delta_q_e=delta_q_e, q_e=np.mean(q_e), b_s=np.mean(b_s), sigma_s=np.mean(sigma_s))
+            msg = 'Iteration {itr:4d}: change {delta_x_e}, mean x_e {x_e}, mean b_s {b_s}, mean v_s {v_s}'.\
+                format(itr=itr, delta_x_e=delta_x_e, x_e=np.mean(x_e), b_s=np.mean(b_s), v_s=np.mean(v_s))
             sys.stdout.write(msg + '\r')
             sys.stdout.flush()
             # time.sleep(0.001)
 
-            if delta_q_e < DELTA_THR:
+            if delta_x_e < DELTA_THR:
                 break
 
             if itr >= MAX_ITR:
@@ -420,9 +412,9 @@ class MaximumLikelihoodEstimationModelReduced(SubjectiveModel):
         sys.stdout.write("\n")
 
         result = {
-            'quality_scores': list(q_e),
+            'quality_scores': list(x_e),
             'observer_bias': list(b_s),
-            'observer_inconsistency': list(sigma_s),
+            'observer_inconsistency': list(v_s),
         }
 
         try:
@@ -443,8 +435,8 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
     where x_e is the true quality of distorted video e, and B_e,s ~ N(b_s, v_s)
     is the term representing observer s's bias (b_s) and inconsistency (v_s).
     A_e,s ~ N(0, a_c), where c is a function of e, or c = c(e), represents
-    content c's ambiguity (a_c). The model is then solved
-    via maximum likelihood estimation using belief propagation.
+    content c's ambiguity (a_c). The model is then solved via maximum
+    likelihood estimation using belief propagation.
     """
 
     # TYPE = 'Subject/Content-Aware'
