@@ -495,8 +495,6 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
         else:
             v_s = pd.DataFrame(r_es).std(axis=0, ddof=0) # along e
 
-        mu_c = np.zeros(C)
-
         if cls.mode == 'NO_CONTENT':
             a_c = np.zeros(C)
         else:
@@ -522,9 +520,8 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
             q_e_prev = x_e
 
             # (12) b_s
-            mu_c_e = np.array(map(lambda i: mu_c[i], dataset_reader.content_id_of_dis_videos))
             a_c_e = np.array(map(lambda i: a_c[i], dataset_reader.content_id_of_dis_videos))
-            num_num = x_es - np.tile(x_e, (S, 1)).T - np.tile(mu_c_e, (S, 1)).T
+            num_num = x_es - np.tile(x_e, (S, 1)).T
             num_den = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
             num = pd.DataFrame(num_num / num_den).sum(axis=0) # sum over e
             den_num = x_es / x_es # 1 and nan
@@ -540,26 +537,9 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
                 b_s = np.zeros(S) # forcing zero, hence disabling
                 b_s_std = np.zeros(S)
 
-            # (13) mu_c
-            num_num = x_es - np.tile(x_e, (S, 1)).T - np.tile(b_s, (E, 1))
-            num_den = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
-            num = pd.DataFrame(num_num / num_den).sum(axis=1) # sum over s
-            num = sum_over_content_id(num, dataset_reader.content_id_of_dis_videos) # sum over e:c(e)=c
-            den_num = x_es / x_es # 1 and nan
-            den_den = num_den
-            den = pd.DataFrame(den_num / den_den).sum(axis=1) # sum over s
-            den = sum_over_content_id(den, dataset_reader.content_id_of_dis_videos) # sum over e:c(e)=c
-            mu_c_new = num / den
-            mu_c = mu_c * (1.0 - REFRESH_RATE) + mu_c_new * REFRESH_RATE
-
-            # if cls.mode == 'NO_CONTENT':
-            if True: # disabling mu_c permanently, since will never able to distinguish mu_c from x_e
-                mu_c = np.zeros(C) # forcing zero, hence disabling
-
             # (14) v_s
-            mu_c_e = np.array(map(lambda i: mu_c[i], dataset_reader.content_id_of_dis_videos))
             a_c_e = np.array(map(lambda i: a_c[i], dataset_reader.content_id_of_dis_videos))
-            a_es = x_es - np.tile(x_e, (S, 1)).T - np.tile(b_s, (E, 1)) - np.tile(mu_c_e, (S, 1)).T
+            a_es = x_es - np.tile(x_e, (S, 1)).T - np.tile(b_s, (E, 1))
             vs2_add_ace2 = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
             vs2_minus_ace2 = np.tile(v_s**2, (E, 1)) - np.tile(a_c_e**2, (S, 1)).T
             num = - np.tile(v_s, (E, 1)) / vs2_add_ace2 + np.tile(v_s, (E, 1)) * a_es**2 / vs2_add_ace2**2
@@ -586,9 +566,8 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
                 v_s_std = np.zeros(S)
 
             # (15) a_c
-            mu_c_e = np.array(map(lambda i: mu_c[i], dataset_reader.content_id_of_dis_videos))
             a_c_e = np.array(map(lambda i: a_c[i], dataset_reader.content_id_of_dis_videos))
-            a_es = x_es - np.tile(x_e, (S, 1)).T - np.tile(b_s, (E, 1)) - np.tile(mu_c_e, (S, 1)).T
+            a_es = x_es - np.tile(x_e, (S, 1)).T - np.tile(b_s, (E, 1))
             vs2_add_ace2 = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
             vs2_minus_ace2 = np.tile(v_s**2, (E, 1)) - np.tile(a_c_e**2, (S, 1)).T
             num = - np.tile(a_c_e, (S, 1)).T / vs2_add_ace2 + np.tile(a_c_e, (S, 1)).T * a_es**2 / vs2_add_ace2**2
@@ -620,9 +599,8 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
                 a_c_std = np.zeros(C)
 
             # (11) x_e
-            mu_c_e = np.array(map(lambda i: mu_c[i], dataset_reader.content_id_of_dis_videos))
             a_c_e = np.array(map(lambda i: a_c[i], dataset_reader.content_id_of_dis_videos))
-            num_num = x_es - np.tile(b_s, (E, 1)) - np.tile(mu_c_e, (S, 1)).T
+            num_num = x_es - np.tile(b_s, (E, 1))
             num_den = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
             num = pd.DataFrame(num_num / num_den).sum(axis=1) # sum over s
             den_num = x_es / x_es # 1 and nan
@@ -638,8 +616,8 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
 
             delta_x_e = linalg.norm(q_e_prev - x_e)
 
-            msg = 'Iteration {itr:4d}: change {delta_x_e}, mean x_e {x_e}, mean b_s {b_s}, mean mu_c {mu_c}, mean v_s {v_s}, mean a_c {a_c}'.\
-                format(itr=itr, delta_x_e=delta_x_e, x_e=np.mean(x_e), b_s=np.mean(b_s), mu_c=np.mean(mu_c), v_s=np.mean(v_s), a_c=np.mean(a_c))
+            msg = 'Iteration {itr:4d}: change {delta_x_e}, mean x_e {x_e}, mean b_s {b_s}, mean v_s {v_s}, mean a_c {a_c}'.\
+                format(itr=itr, delta_x_e=delta_x_e, x_e=np.mean(x_e), b_s=np.mean(b_s), v_s=np.mean(v_s), a_c=np.mean(a_c))
             sys.stdout.write(msg + '\r')
             sys.stdout.flush()
             # time.sleep(0.001)
