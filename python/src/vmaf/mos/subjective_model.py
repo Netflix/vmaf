@@ -517,7 +517,7 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
         itr = 0
         while True:
 
-            q_e_prev = x_e
+            x_e_prev = x_e
 
             # (12) b_s
             a_c_e = np.array(map(lambda i: a_c[i], dataset_reader.content_id_of_dis_videos))
@@ -614,7 +614,7 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
 
             itr += 1
 
-            delta_x_e = linalg.norm(q_e_prev - x_e)
+            delta_x_e = linalg.norm(x_e_prev - x_e)
 
             msg = 'Iteration {itr:4d}: change {delta_x_e}, mean x_e {x_e}, mean b_s {b_s}, mean v_s {v_s}, mean a_c {a_c}'.\
                 format(itr=itr, delta_x_e=delta_x_e, x_e=np.mean(x_e), b_s=np.mean(b_s), v_s=np.mean(v_s), a_c=np.mean(a_c))
