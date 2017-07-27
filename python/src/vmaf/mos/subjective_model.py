@@ -446,6 +446,8 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
 
     mode = 'DEFAULT'
 
+    DEFAULT_GRADIENT_METHOD = 'simplified'
+
     @classmethod
     def _run_modeling(cls, dataset_reader, **kwargs):
 
@@ -456,6 +458,9 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
         if 'subject_rejection' in kwargs and kwargs['subject_rejection'] is True:
             assert False, 'SubjectAndContentAwareGenerativeModel must not ' \
                           'and need not apply subject rejection.'
+
+        gradient_method = kwargs['gradient_method'] if 'gradient_method' in kwargs else cls.DEFAULT_GRADIENT_METHOD
+        assert gradient_method == 'simplified' or gradient_method == 'original' or 'gradient_method' == 'numerical'
 
         def sum_over_content_id(xs, cids):
             assert len(xs) == len(cids)
@@ -519,44 +524,78 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
 
             x_e_prev = x_e
 
-            # (12) b_s
-            a_c_e = np.array(map(lambda i: a_c[i], dataset_reader.content_id_of_dis_videos))
-            num_num = x_es - np.tile(x_e, (S, 1)).T
-            num_den = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
-            num = pd.DataFrame(num_num / num_den).sum(axis=0) # sum over e
-            den_num = x_es / x_es # 1 and nan
-            den_den = num_den
-            den = pd.DataFrame(den_num / den_den).sum(axis=0) # sum over e
-            b_s_new = num / den
-            b_s = b_s * (1.0 - REFRESH_RATE) + b_s_new * REFRESH_RATE
+            # ==== (12) b_s ====
 
-            # calculate std of x_e
-            b_s_std = 1.0 / np.sqrt(den)
+            if gradient_method == 'simplified':
+                a_c_e = np.array(map(lambda i: a_c[i], dataset_reader.content_id_of_dis_videos))
+                num_num = x_es - np.tile(x_e, (S, 1)).T
+                num_den = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
+                num = pd.DataFrame(num_num / num_den).sum(axis=0) # sum over e
+                den_num = x_es / x_es # 1 and nan
+                den_den = num_den
+                den = pd.DataFrame(den_num / den_den).sum(axis=0) # sum over e
+                b_s_new = num / den
+                b_s = b_s * (1.0 - REFRESH_RATE) + b_s_new * REFRESH_RATE
+                b_s_std = 1.0 / np.sqrt(den) # calculate std of x_e
+
+            elif gradient_method == 'original':
+                a_c_e = np.array(map(lambda i: a_c[i], dataset_reader.content_id_of_dis_videos))
+                vs2_add_ace2 = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
+                order1 = (x_es - np.tile(x_e, (S, 1)).T - np.tile(b_s, (E, 1))) / vs2_add_ace2
+                order1 = pd.DataFrame(order1).sum(axis=0) # sum over e
+                order2 = - (x_es / x_es) / vs2_add_ace2
+                order2 = pd.DataFrame(order2).sum(axis=0) # sum over e
+                b_s_new = b_s - order1 / order2
+                b_s = b_s * (1.0 - REFRESH_RATE) + b_s_new * REFRESH_RATE
+                b_s_std = 1.0 / np.sqrt(-order2) # calculate std of x_e
+
+            else:
+                assert False
 
             if cls.mode == 'NO_SUBJECT':
                 b_s = np.zeros(S) # forcing zero, hence disabling
                 b_s_std = np.zeros(S)
 
-            # (14) v_s
-            a_c_e = np.array(map(lambda i: a_c[i], dataset_reader.content_id_of_dis_videos))
-            a_es = x_es - np.tile(x_e, (S, 1)).T - np.tile(b_s, (E, 1))
-            vs2_add_ace2 = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
-            vs2_minus_ace2 = np.tile(v_s**2, (E, 1)) - np.tile(a_c_e**2, (S, 1)).T
-            num = - np.tile(v_s, (E, 1)) / vs2_add_ace2 + np.tile(v_s, (E, 1)) * a_es**2 / vs2_add_ace2**2
-            num = pd.DataFrame(num).sum(axis=0) # sum over e
-            poly_term = np.tile(a_c_e**4, (S, 1)).T \
-                  - 3 * np.tile(v_s**4, (E, 1)) \
-                  - 2 * np.tile(v_s**2, (E, 1)) * np.tile(a_c_e**2, (S, 1)).T
-            den = vs2_minus_ace2 / vs2_add_ace2**2 + a_es**2 * poly_term / vs2_add_ace2**4
-            den = pd.DataFrame(den).sum(axis=0) # sum over e
-            v_s_new = v_s - num / den
-            v_s = v_s * (1.0 - REFRESH_RATE) + v_s_new * REFRESH_RATE
+            # ==== (14) v_s ====
 
-            # calculate std of v_s
-            lpp = pd.DataFrame(
-                vs2_minus_ace2 / vs2_add_ace2**2 + a_es**2 * poly_term / vs2_add_ace2**4
-            ).sum(axis=0) # sum over e
-            v_s_std = 1.0 / np.sqrt(-lpp)
+            if gradient_method == 'simplified':
+                a_c_e = np.array(map(lambda i: a_c[i], dataset_reader.content_id_of_dis_videos))
+                a_es = x_es - np.tile(x_e, (S, 1)).T - np.tile(b_s, (E, 1))
+                vs2_add_ace2 = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
+                vs2_minus_ace2 = np.tile(v_s**2, (E, 1)) - np.tile(a_c_e**2, (S, 1)).T
+                num = - np.tile(v_s, (E, 1)) / vs2_add_ace2 + np.tile(v_s, (E, 1)) * a_es**2 / vs2_add_ace2**2
+                num = pd.DataFrame(num).sum(axis=0) # sum over e
+                poly_term = np.tile(a_c_e**4, (S, 1)).T \
+                      - 3 * np.tile(v_s**4, (E, 1)) \
+                      - 2 * np.tile(v_s**2, (E, 1)) * np.tile(a_c_e**2, (S, 1)).T
+                den = vs2_minus_ace2 / vs2_add_ace2**2 + a_es**2 * poly_term / vs2_add_ace2**4
+                den = pd.DataFrame(den).sum(axis=0) # sum over e
+                v_s_new = v_s - num / den
+                v_s = v_s * (1.0 - REFRESH_RATE) + v_s_new * REFRESH_RATE
+                # calculate std of v_s
+                lpp = pd.DataFrame(
+                    vs2_minus_ace2 / vs2_add_ace2**2 + a_es**2 * poly_term / vs2_add_ace2**4
+                ).sum(axis=0) # sum over e
+                v_s_std = 1.0 / np.sqrt(-lpp)
+
+            elif gradient_method == 'original':
+                a_c_e = np.array(map(lambda i: a_c[i], dataset_reader.content_id_of_dis_videos))
+                a_es = x_es - np.tile(x_e, (S, 1)).T - np.tile(b_s, (E, 1))
+                vs2_add_ace2 = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
+                vs2_minus_ace2 = np.tile(v_s**2, (E, 1)) - np.tile(a_c_e**2, (S, 1)).T
+                poly_term = np.tile(a_c_e**4, (S, 1)).T \
+                      - 3 * np.tile(v_s**4, (E, 1)) \
+                      - 2 * np.tile(v_s**2, (E, 1)) * np.tile(a_c_e**2, (S, 1)).T
+                order1 = - np.tile(v_s, (E, 1)) / vs2_add_ace2 + np.tile(v_s, (E, 1)) * a_es**2 / vs2_add_ace2**2
+                order1 = pd.DataFrame(order1).sum(axis=0) # sum over e
+                order2 = vs2_minus_ace2 / vs2_add_ace2**2 + a_es**2 * poly_term / vs2_add_ace2**4
+                order2 = pd.DataFrame(order2).sum(axis=0) # sum over e
+                v_s_new = v_s - order1 / order2
+                v_s = v_s * (1.0 - REFRESH_RATE) + v_s_new * REFRESH_RATE
+                v_s_std = 1.0 / np.sqrt(-order2) # calculate std of v_s
+
+            else:
+                assert False
 
             # force non-negative
             v_s = np.maximum(v_s, 0.0 * np.ones(v_s.shape))
@@ -565,31 +604,53 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
                 v_s = np.zeros(S) # forcing zero, hence disabling
                 v_s_std = np.zeros(S)
 
-            # (15) a_c
-            a_c_e = np.array(map(lambda i: a_c[i], dataset_reader.content_id_of_dis_videos))
-            a_es = x_es - np.tile(x_e, (S, 1)).T - np.tile(b_s, (E, 1))
-            vs2_add_ace2 = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
-            vs2_minus_ace2 = np.tile(v_s**2, (E, 1)) - np.tile(a_c_e**2, (S, 1)).T
-            num = - np.tile(a_c_e, (S, 1)).T / vs2_add_ace2 + np.tile(a_c_e, (S, 1)).T * a_es**2 / vs2_add_ace2**2
-            num = pd.DataFrame(num).sum(axis=1) # sum over s
-            num = sum_over_content_id(num, dataset_reader.content_id_of_dis_videos) # sum over e:c(e)=c
-            poly_term = np.tile(v_s**4, (E, 1)) \
-                  - 3 * np.tile(a_c_e**4, (S, 1)).T \
-                  - 2 * np.tile(v_s**2, (E, 1)) * np.tile(a_c_e**2, (S, 1)).T
-            den = - vs2_minus_ace2 / vs2_add_ace2**2 + a_es**2 * poly_term / vs2_add_ace2**4
-            den = pd.DataFrame(den).sum(axis=1) # sum over s
-            den = sum_over_content_id(den, dataset_reader.content_id_of_dis_videos) # sum over e:c(e)=c
-            a_c_new = a_c - num / den
-            a_c = a_c * (1.0 - REFRESH_RATE) + a_c_new * REFRESH_RATE
+            # ==== (15) a_c ====
 
-            # calculate std of a_c
-            lpp = sum_over_content_id(
-                pd.DataFrame(
-                    -vs2_minus_ace2 / vs2_add_ace2**2 + a_es**2 * poly_term / vs2_add_ace2**4
-                ).sum(axis=1),
-                dataset_reader.content_id_of_dis_videos
-            ) # sum over e:c(e)=c
-            a_c_std = 1.0 /np.sqrt(-lpp)
+            if gradient_method == 'simplified':
+                a_c_e = np.array(map(lambda i: a_c[i], dataset_reader.content_id_of_dis_videos))
+                a_es = x_es - np.tile(x_e, (S, 1)).T - np.tile(b_s, (E, 1))
+                vs2_add_ace2 = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
+                vs2_minus_ace2 = np.tile(v_s**2, (E, 1)) - np.tile(a_c_e**2, (S, 1)).T
+                num = - np.tile(a_c_e, (S, 1)).T / vs2_add_ace2 + np.tile(a_c_e, (S, 1)).T * a_es**2 / vs2_add_ace2**2
+                num = pd.DataFrame(num).sum(axis=1) # sum over s
+                num = sum_over_content_id(num, dataset_reader.content_id_of_dis_videos) # sum over e:c(e)=c
+                poly_term = np.tile(v_s**4, (E, 1)) \
+                      - 3 * np.tile(a_c_e**4, (S, 1)).T \
+                      - 2 * np.tile(v_s**2, (E, 1)) * np.tile(a_c_e**2, (S, 1)).T
+                den = - vs2_minus_ace2 / vs2_add_ace2**2 + a_es**2 * poly_term / vs2_add_ace2**4
+                den = pd.DataFrame(den).sum(axis=1) # sum over s
+                den = sum_over_content_id(den, dataset_reader.content_id_of_dis_videos) # sum over e:c(e)=c
+                a_c_new = a_c - num / den
+                a_c = a_c * (1.0 - REFRESH_RATE) + a_c_new * REFRESH_RATE
+                # calculate std of a_c
+                lpp = sum_over_content_id(
+                    pd.DataFrame(
+                        -vs2_minus_ace2 / vs2_add_ace2**2 + a_es**2 * poly_term / vs2_add_ace2**4
+                    ).sum(axis=1),
+                    dataset_reader.content_id_of_dis_videos
+                ) # sum over e:c(e)=c
+                a_c_std = 1.0 /np.sqrt(-lpp)
+
+            elif gradient_method == 'original':
+                a_c_e = np.array(map(lambda i: a_c[i], dataset_reader.content_id_of_dis_videos))
+                a_es = x_es - np.tile(x_e, (S, 1)).T - np.tile(b_s, (E, 1))
+                vs2_add_ace2 = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
+                vs2_minus_ace2 = np.tile(v_s**2, (E, 1)) - np.tile(a_c_e**2, (S, 1)).T
+                poly_term = np.tile(v_s**4, (E, 1)) \
+                      - 3 * np.tile(a_c_e**4, (S, 1)).T \
+                      - 2 * np.tile(v_s**2, (E, 1)) * np.tile(a_c_e**2, (S, 1)).T
+                order1 = - np.tile(a_c_e, (S, 1)).T / vs2_add_ace2 + np.tile(a_c_e, (S, 1)).T * a_es**2 / vs2_add_ace2**2
+                order1 = pd.DataFrame(order1).sum(axis=1) # sum over s
+                order1 = sum_over_content_id(order1, dataset_reader.content_id_of_dis_videos) # sum over e:c(e)=c
+                order2 = - vs2_minus_ace2 / vs2_add_ace2**2 + a_es**2 * poly_term / vs2_add_ace2**4
+                order2 = pd.DataFrame(order2).sum(axis=1) # sum over s
+                order2 = sum_over_content_id(order2, dataset_reader.content_id_of_dis_videos) # sum over e:c(e)=c
+                a_c_new = a_c - order1 / order2
+                a_c = a_c * (1.0 - REFRESH_RATE) + a_c_new * REFRESH_RATE
+                a_c_std = 1.0 / np.sqrt(-order2) # calculate std of a_c
+
+            else:
+                assert False
 
             # force non-negative
             a_c = np.maximum(a_c, 0.0 * np.ones(a_c.shape))
@@ -598,19 +659,34 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
                 a_c = np.zeros(C) # forcing zero, hence disabling
                 a_c_std = np.zeros(C)
 
-            # (11) x_e
-            a_c_e = np.array(map(lambda i: a_c[i], dataset_reader.content_id_of_dis_videos))
-            num_num = x_es - np.tile(b_s, (E, 1))
-            num_den = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
-            num = pd.DataFrame(num_num / num_den).sum(axis=1) # sum over s
-            den_num = x_es / x_es # 1 and nan
-            den_den = num_den
-            den = pd.DataFrame(den_num / den_den).sum(axis=1) # sum over s
-            x_e_new = num / den
-            x_e = x_e * (1.0 - REFRESH_RATE) + x_e_new * REFRESH_RATE
+            # (11) ==== x_e ====
 
-            # calculate std of x_e
-            x_e_std = 1.0 / np.sqrt(den)
+            if gradient_method == 'simplified':
+                a_c_e = np.array(map(lambda i: a_c[i], dataset_reader.content_id_of_dis_videos))
+                num_num = x_es - np.tile(b_s, (E, 1))
+                num_den = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
+                num = pd.DataFrame(num_num / num_den).sum(axis=1) # sum over s
+                den_num = x_es / x_es # 1 and nan
+                den_den = num_den
+                den = pd.DataFrame(den_num / den_den).sum(axis=1) # sum over s
+                x_e_new = num / den
+                x_e = x_e * (1.0 - REFRESH_RATE) + x_e_new * REFRESH_RATE
+                x_e_std = 1.0 / np.sqrt(den) # calculate std of x_e
+
+            elif gradient_method == 'original':
+                a_c_e = np.array(map(lambda i: a_c[i], dataset_reader.content_id_of_dis_videos))
+                a_es = x_es - np.tile(x_e, (S, 1)).T - np.tile(b_s, (E, 1))
+                vs2_add_ace2 = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
+                order1 = a_es / vs2_add_ace2
+                order1 = pd.DataFrame(order1).sum(axis=1) # sum over s
+                order2 = - (x_es / x_es) / vs2_add_ace2
+                order2 = pd.DataFrame(order2).sum(axis=1) # sum over s
+                x_e_new = x_e - order1 / order2
+                x_e = x_e * (1.0 - REFRESH_RATE) + x_e_new * REFRESH_RATE
+                x_e_std = 1.0 / np.sqrt(-order2) # calculate std of x_e
+
+            else:
+                assert False
 
             itr += 1
 
