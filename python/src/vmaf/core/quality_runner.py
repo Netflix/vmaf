@@ -335,7 +335,9 @@ class VmafQualityRunner(QualityRunner):
     def predict_with_model(cls, model, xs, **kwargs):
         ys_pred = model.predict(xs)
 
-        if 'enable_transform_score' in kwargs and kwargs['enable_transform_score'] is True:
+        do_transform_score = cls._do_transform_score(kwargs)
+
+        if do_transform_score:
             ys_pred = cls.transform_score(model, ys_pred)
         else:
             pass
@@ -346,6 +348,10 @@ class VmafQualityRunner(QualityRunner):
             ys_pred = cls.clip_score(model, ys_pred)
 
         return ys_pred
+
+    @staticmethod
+    def _do_transform_score(kwargs):
+        return 'enable_transform_score' in kwargs and kwargs['enable_transform_score'] is True
 
     @staticmethod
     def set_transform_score(model, score_transform):
@@ -416,6 +422,23 @@ class VmafQualityRunner(QualityRunner):
 
         vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
+
+class VmafPhoneQualityRunner(VmafQualityRunner):
+
+    TYPE = 'VMAF_Phone'
+
+    VERSION = '{}-phone'.format(VmafQualityRunner.VERSION)
+
+    def _assert_args(self):
+        super(VmafPhoneQualityRunner, self)._assert_args()
+
+        if self.optional_dict is not None:
+            assert 'enable_transform_score' not in self.optional_dict, \
+                'Cannot specify enable_transform_score option in {cls}.'.format(cls=self.__class__.__name__)
+
+    @staticmethod
+    def _do_transform_score(kwargs):
+        return True
 
 class VmafossExecQualityRunner(QualityRunner):
 
