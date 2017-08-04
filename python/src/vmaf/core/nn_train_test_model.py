@@ -540,7 +540,7 @@ class ToddNoiseClassifierTrainTestModel(NeuralNetTrainTestModel, ClassifierMixin
         logits_norm = tf.nn.softmax(logits)
 
         y_p = tf.argmax(logits_norm, 1)
-        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits, y_))
+        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=y_))
         train_step = tf.train.AdamOptimizer(learning_rate).minimize(loss)
 
         return input_image_batch, logits, y_, y_p, W_conv0, W_conv1, loss, train_step
