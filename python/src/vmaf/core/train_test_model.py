@@ -88,7 +88,7 @@ class RegressorMixin(object):
         return cls.get_stats(aggregate_ys_label, aggregate_ys_label_pred)
 
     @staticmethod
-    def plot_scatter(ax, stats, content_ids=None):
+    def plot_scatter(ax, stats, content_ids=None, point_labels=None):
         assert len(stats['ys_label']) == len(stats['ys_label_pred'])
 
         if content_ids is None:
@@ -106,6 +106,11 @@ class RegressorMixin(object):
                 curr_ys_label_pred = np.array(stats['ys_label_pred'])[curr_idxs]
                 ax.scatter(curr_ys_label, curr_ys_label_pred,
                            label=curr_content_id, color=colors[idx % len(colors)])
+
+        if point_labels:
+            assert len(point_labels) == len(stats['ys_label'])
+            for i, point_label in enumerate(point_labels):
+                ax.annotate(point_label, (stats['ys_label'][i], stats['ys_label_pred'][i]))
 
     @staticmethod
     def get_objective_score(result, type='SRCC'):

@@ -231,7 +231,18 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
 
     if ax is not None:
         content_ids = map(lambda asset: asset.content_id, test_assets)
-        model_type.plot_scatter(ax, stats, content_ids)
+
+        if 'point_label' in kwargs:
+            if kwargs['point_label'] == 'asset_id':
+                point_labels = map(lambda asset: asset.asset_id, test_assets)
+            elif kwargs['point_label'] == 'dis_path':
+                point_labels = map(lambda asset: get_file_name_without_extension(asset.dis_path), test_assets)
+            else:
+                raise AssertionError("Unknown point_label {}".format(kwargs['point_label']))
+        else:
+            point_labels = None
+
+        model_type.plot_scatter(ax, stats, content_ids, point_labels=point_labels)
         ax.set_xlabel('True Score')
         ax.set_ylabel("Predicted Score")
         ax.grid()
