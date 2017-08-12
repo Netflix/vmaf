@@ -214,6 +214,50 @@ class SubjectiveModelTest(unittest.TestCase):
         self.assertAlmostEquals(np.sum(result['observer_inconsistency_std']), 22.108576292956428, places=4)
         self.assertAlmostEquals(np.sum(result['quality_scores_std']), 8.8863877635750423, places=4)
 
+    def test_observer_content_aware_subjective_model_original(self):
+        subjective_model = MaximumLikelihoodEstimationModel.from_dataset_file(
+            self.dataset_filepath)
+        result = subjective_model.run_modeling(gradient_method='original')
+
+        self.assertAlmostEquals(np.sum(result['content_ambiguity']), 3.8972884776604402, places=4)
+        self.assertAlmostEquals(np.var(result['content_ambiguity']), 0.0041122094732031289, places=4)
+
+        self.assertAlmostEquals(np.sum(result['observer_bias']), -0.055712761348815837, places=4)
+        self.assertAlmostEquals(np.var(result['observer_bias']), 0.085842891905121704, places=4)
+
+        self.assertAlmostEquals(np.sum(result['observer_inconsistency']), 10.164665557559516, places=4)
+        self.assertAlmostEquals(np.var(result['observer_inconsistency']), 0.028749990587721687, places=4)
+
+        self.assertAlmostEquals(np.sum(result['quality_scores']), 280.20774261173619, places=4)
+        self.assertAlmostEquals(np.var(result['quality_scores']), 1.4351342153719635, places=4)
+
+        self.assertAlmostEquals(np.sum(result['content_ambiguity_std']), 0.30465244947706538, places=4)
+        self.assertAlmostEquals(np.sum(result['observer_bias_std']), 1.7392847550878989, places=4)
+        self.assertAlmostEquals(np.sum(result['observer_inconsistency_std']), 22.108576292956428, places=4)
+        self.assertAlmostEquals(np.sum(result['quality_scores_std']), 8.8863877635750423, places=4)
+
+    def test_observer_content_aware_subjective_model_numerical(self):
+        subjective_model = MaximumLikelihoodEstimationModel.from_dataset_file(
+            self.dataset_filepath)
+        result = subjective_model.run_modeling(gradient_method='numerical')
+
+        self.assertAlmostEquals(np.sum(result['content_ambiguity']), 3.8972884776604402, places=4)
+        self.assertAlmostEquals(np.var(result['content_ambiguity']), 0.0041122094732031289, places=4)
+
+        self.assertAlmostEquals(np.sum(result['observer_bias']), -0.055712761348815837, places=4)
+        self.assertAlmostEquals(np.var(result['observer_bias']), 0.085842891905121704, places=4)
+
+        self.assertAlmostEquals(np.sum(result['observer_inconsistency']), 10.164665557559516, places=3)
+        self.assertAlmostEquals(np.var(result['observer_inconsistency']), 0.028749990587721687, places=4)
+
+        self.assertAlmostEquals(np.sum(result['quality_scores']), 280.20774261173619, places=4)
+        self.assertAlmostEquals(np.var(result['quality_scores']), 1.4351342153719635, places=4)
+
+        self.assertAlmostEquals(np.sum(result['content_ambiguity_std']), 0.30465244947706538, places=4)
+        self.assertAlmostEquals(np.sum(result['observer_bias_std']), 1.7392847550878989, places=4)
+        self.assertAlmostEquals(np.sum(result['observer_inconsistency_std']), 12.393285044624955, places=4)
+        self.assertAlmostEquals(np.sum(result['quality_scores_std']), 8.8863877635750423, places=4)
+
     def test_observer_content_aware_subjective_model_missingdata(self):
 
         dataset = import_python_file(self.dataset_filepath)
@@ -476,6 +520,20 @@ class SubjectiveModelTest(unittest.TestCase):
 
         self.assertAlmostEquals(np.sum(result['observer_inconsistency']), 10.164665557559516, places=4)
         self.assertAlmostEquals(np.var(result['observer_inconsistency']), 0.028749990587721687, places=4)
+
+    def test_dmos_mle_co_model(self):
+        subjective_model = MaximumLikelihoodEstimationModelContentOblivious.from_dataset_file(
+            self.dataset_filepath)
+        result = subjective_model.run_modeling()
+
+        self.assertAlmostEquals(np.sum(result['quality_scores']), 280.31447815213642, places=4)
+        self.assertAlmostEquals(np.var(result['quality_scores']), 1.4355485462027884, places=4)
+
+        self.assertAlmostEquals(np.sum(result['observer_bias']), -0.090840910829074084, places=4)
+        self.assertAlmostEquals(np.var(result['observer_bias']), 0.089032585621095048, places=4)
+
+        self.assertAlmostEquals(np.sum(result['observer_inconsistency']), 15.681766163430936, places=4)
+        self.assertAlmostEquals(np.var(result['observer_inconsistency']), 0.01256558483297778, places=4)
 
     def test_least_squares_model(self):
         subjective_model = LeastSquaresModel.from_dataset_file(

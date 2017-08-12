@@ -11,7 +11,7 @@ from vmaf.tools.misc import import_python_file, get_file_name_with_extension
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
-SUBJECTIVE_MODELS = ['MLE', 'MOS', 'DMOS', 'DMOS_MLE', 'MLE_CO', 'SR_DMOS', 'SR_MOS', 'ZS_SR_DMOS', 'ZS_SR_MOS']
+SUBJECTIVE_MODELS = ['MLE', 'MOS', 'DMOS', 'DMOS_MLE', 'MLE_CO', 'DMOS_MLE_CO', 'SR_DMOS', 'SR_MOS', 'ZS_SR_DMOS', 'ZS_SR_MOS']
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) + " subjective_model dataset_filepath\n"
