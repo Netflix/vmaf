@@ -446,7 +446,7 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
 
     mode = 'DEFAULT'
 
-    DEFAULT_GRADIENT_METHOD = 'original'
+    DEFAULT_GRADIENT_METHOD = 'simplified'
 
     @staticmethod
     def loglikelihood_fcn(x_es, x_e, b_s, v_s, a_c, content_id_of_dis_videos, axis):
@@ -470,7 +470,7 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
                           'and need not apply subject rejection.'
 
         gradient_method = kwargs['gradient_method'] if 'gradient_method' in kwargs else cls.DEFAULT_GRADIENT_METHOD
-        assert gradient_method == 'simplified' or gradient_method == 'original'
+        assert gradient_method == 'simplified' or gradient_method == 'original' or gradient_method == 'numerical'
 
         def sum_over_content_id(xs, cids):
             assert len(xs) == len(cids)
@@ -526,6 +526,7 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
         MAX_ITR = 10000
         REFRESH_RATE = 0.1
         DELTA_THR = 1e-8
+        EPSILON = 1e-3
 
         print '=== Belief Propagation ==='
 
@@ -555,22 +556,17 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
                 order1 = pd.DataFrame(order1).sum(axis=0) # sum over e
                 order2 = - (x_es / x_es) / vs2_add_ace2
                 order2 = pd.DataFrame(order2).sum(axis=0) # sum over e
+                b_s_new = b_s - order1 / order2
+                b_s = b_s * (1.0 - REFRESH_RATE) + b_s_new * REFRESH_RATE
+                b_s_std = 1.0 / np.sqrt(-order2) # calculate std of x_e
 
-                # ========== numerical ==============
-                epsilon = 1e-3
+            elif gradient_method == 'numerical':
                 axis = 0 # sum over e
-                order1_numeric = (cls.loglikelihood_fcn(x_es, x_e, b_s + epsilon / 2.0, v_s, a_c, dataset_reader.content_id_of_dis_videos, axis=axis) -
-                         cls.loglikelihood_fcn(x_es, x_e, b_s - epsilon / 2.0, v_s, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)) / epsilon
-                order2_numeric = (cls.loglikelihood_fcn(x_es, x_e, b_s + epsilon, v_s, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)
+                order1 = (cls.loglikelihood_fcn(x_es, x_e, b_s + EPSILON / 2.0, v_s, a_c, dataset_reader.content_id_of_dis_videos, axis=axis) -
+                         cls.loglikelihood_fcn(x_es, x_e, b_s - EPSILON / 2.0, v_s, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)) / EPSILON
+                order2 = (cls.loglikelihood_fcn(x_es, x_e, b_s + EPSILON, v_s, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)
                                   - 2 * cls.loglikelihood_fcn(x_es, x_e, b_s, v_s, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)
-                                  + cls.loglikelihood_fcn(x_es, x_e, b_s - epsilon, v_s, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)) / epsilon**2
-                print 'order 1:'
-                print zip(order1, order1_numeric)
-                print 'order 2:'
-                print zip(order2, order2_numeric)
-                print 'breakpoint'
-                # ====== end of numerical ===========
-
+                                  + cls.loglikelihood_fcn(x_es, x_e, b_s - EPSILON, v_s, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)) / EPSILON**2
                 b_s_new = b_s - order1 / order2
                 b_s = b_s * (1.0 - REFRESH_RATE) + b_s_new * REFRESH_RATE
                 b_s_std = 1.0 / np.sqrt(-order2) # calculate std of x_e
@@ -616,22 +612,17 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
                 order1 = pd.DataFrame(order1).sum(axis=0) # sum over e
                 order2 = vs2_minus_ace2 / vs2_add_ace2**2 + a_es**2 * poly_term / vs2_add_ace2**4
                 order2 = pd.DataFrame(order2).sum(axis=0) # sum over e
+                v_s_new = v_s - order1 / order2
+                v_s = v_s * (1.0 - REFRESH_RATE) + v_s_new * REFRESH_RATE
+                v_s_std = 1.0 / np.sqrt(-order2) # calculate std of v_s
 
-                # ========== numerical ==============
-                epsilon = 1e-3
+            elif gradient_method == 'numerical':
                 axis = 0 # sum over e
-                order1_numeric = (cls.loglikelihood_fcn(x_es, x_e, b_s, v_s + epsilon / 2.0, a_c, dataset_reader.content_id_of_dis_videos, axis=axis) -
-                         cls.loglikelihood_fcn(x_es, x_e, b_s, v_s - epsilon / 2.0, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)) / epsilon
-                order2_numeric = (cls.loglikelihood_fcn(x_es, x_e, b_s, v_s + epsilon, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)
+                order1 = (cls.loglikelihood_fcn(x_es, x_e, b_s, v_s + EPSILON / 2.0, a_c, dataset_reader.content_id_of_dis_videos, axis=axis) -
+                         cls.loglikelihood_fcn(x_es, x_e, b_s, v_s - EPSILON / 2.0, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)) / EPSILON
+                order2 = (cls.loglikelihood_fcn(x_es, x_e, b_s, v_s + EPSILON, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)
                                   - 2 * cls.loglikelihood_fcn(x_es, x_e, b_s, v_s, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)
-                                  + cls.loglikelihood_fcn(x_es, x_e, b_s, v_s - epsilon, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)) / epsilon**2
-                print 'order 1:'
-                print zip(order1, order1_numeric)
-                print 'order 2:'
-                print zip(order2, order2_numeric)
-                print 'breakpoint'
-                # ====== end of numerical ===========
-
+                                  + cls.loglikelihood_fcn(x_es, x_e, b_s, v_s - EPSILON, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)) / EPSILON**2
                 v_s_new = v_s - order1 / order2
                 v_s = v_s * (1.0 - REFRESH_RATE) + v_s_new * REFRESH_RATE
                 v_s_std = 1.0 / np.sqrt(-order2) # calculate std of v_s
@@ -687,24 +678,19 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
                 order2 = - vs2_minus_ace2 / vs2_add_ace2**2 + a_es**2 * poly_term / vs2_add_ace2**4
                 order2 = pd.DataFrame(order2).sum(axis=1) # sum over s
                 order2 = sum_over_content_id(order2, dataset_reader.content_id_of_dis_videos) # sum over e:c(e)=c
+                a_c_new = a_c - order1 / order2
+                a_c = a_c * (1.0 - REFRESH_RATE) + a_c_new * REFRESH_RATE
+                a_c_std = 1.0 / np.sqrt(-order2) # calculate std of a_c
 
-                # ========== numerical ==============
-                epsilon = 1e-3
+            elif gradient_method == 'numerical':
                 axis = 1 # sum over s
-                order1_numeric = (cls.loglikelihood_fcn(x_es, x_e, b_s, v_s, a_c + epsilon / 2.0, dataset_reader.content_id_of_dis_videos, axis=axis) -
-                         cls.loglikelihood_fcn(x_es, x_e, b_s, v_s, a_c - epsilon / 2.0, dataset_reader.content_id_of_dis_videos, axis=axis)) / epsilon
-                order2_numeric = (cls.loglikelihood_fcn(x_es, x_e, b_s, v_s, a_c + epsilon, dataset_reader.content_id_of_dis_videos, axis=axis)
+                order1 = (cls.loglikelihood_fcn(x_es, x_e, b_s, v_s, a_c + EPSILON / 2.0, dataset_reader.content_id_of_dis_videos, axis=axis) -
+                         cls.loglikelihood_fcn(x_es, x_e, b_s, v_s, a_c - EPSILON / 2.0, dataset_reader.content_id_of_dis_videos, axis=axis)) / EPSILON
+                order2 = (cls.loglikelihood_fcn(x_es, x_e, b_s, v_s, a_c + EPSILON, dataset_reader.content_id_of_dis_videos, axis=axis)
                                   - 2 * cls.loglikelihood_fcn(x_es, x_e, b_s, v_s, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)
-                                  + cls.loglikelihood_fcn(x_es, x_e, b_s, v_s, a_c - epsilon, dataset_reader.content_id_of_dis_videos, axis=axis)) / epsilon**2
-                order1_numeric = sum_over_content_id(order1_numeric, dataset_reader.content_id_of_dis_videos) # sum over e:c(e)=c
-                order2_numeric = sum_over_content_id(order2_numeric, dataset_reader.content_id_of_dis_videos) # sum over e:c(e)=c
-                print 'order 1:'
-                print zip(order1, order1_numeric)
-                print 'order 2:'
-                print zip(order2, order2_numeric)
-                print 'breakpoint'
-                # ====== end of numerical ===========
-
+                                  + cls.loglikelihood_fcn(x_es, x_e, b_s, v_s, a_c - EPSILON, dataset_reader.content_id_of_dis_videos, axis=axis)) / EPSILON**2
+                order1 = sum_over_content_id(order1, dataset_reader.content_id_of_dis_videos) # sum over e:c(e)=c
+                order2 = sum_over_content_id(order2, dataset_reader.content_id_of_dis_videos) # sum over e:c(e)=c
                 a_c_new = a_c - order1 / order2
                 a_c = a_c * (1.0 - REFRESH_RATE) + a_c_new * REFRESH_RATE
                 a_c_std = 1.0 / np.sqrt(-order2) # calculate std of a_c
@@ -741,22 +727,17 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
                 order1 = pd.DataFrame(order1).sum(axis=1) # sum over s
                 order2 = - (x_es / x_es) / vs2_add_ace2
                 order2 = pd.DataFrame(order2).sum(axis=1) # sum over s
+                x_e_new = x_e - order1 / order2
+                x_e = x_e * (1.0 - REFRESH_RATE) + x_e_new * REFRESH_RATE
+                x_e_std = 1.0 / np.sqrt(-order2) # calculate std of x_e
 
-                # ========== numerical ==============
-                epsilon = 1e-3
+            elif gradient_method == 'numerical':
                 axis = 1 # sum over s
-                order1_numeric = (cls.loglikelihood_fcn(x_es, x_e + epsilon / 2.0, b_s, v_s, a_c, dataset_reader.content_id_of_dis_videos, axis=axis) -
-                         cls.loglikelihood_fcn(x_es, x_e - epsilon / 2.0, b_s, v_s, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)) / epsilon
-                order2_numeric = (cls.loglikelihood_fcn(x_es, x_e + epsilon, b_s, v_s, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)
+                order1 = (cls.loglikelihood_fcn(x_es, x_e + EPSILON / 2.0, b_s, v_s, a_c, dataset_reader.content_id_of_dis_videos, axis=axis) -
+                         cls.loglikelihood_fcn(x_es, x_e - EPSILON / 2.0, b_s, v_s, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)) / EPSILON
+                order2 = (cls.loglikelihood_fcn(x_es, x_e + EPSILON, b_s, v_s, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)
                                   - 2 * cls.loglikelihood_fcn(x_es, x_e, b_s, v_s, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)
-                                  + cls.loglikelihood_fcn(x_es, x_e - epsilon, b_s, v_s, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)) / epsilon**2
-                print 'order 1:'
-                print zip(order1, order1_numeric)
-                print 'order 2:'
-                print zip(order2, order2_numeric)
-                print 'breakpoint'
-                # ====== end of numerical ===========
-
+                                  + cls.loglikelihood_fcn(x_es, x_e - EPSILON, b_s, v_s, a_c, dataset_reader.content_id_of_dis_videos, axis=axis)) / EPSILON**2
                 x_e_new = x_e - order1 / order2
                 x_e = x_e * (1.0 - REFRESH_RATE) + x_e_new * REFRESH_RATE
                 x_e_std = 1.0 / np.sqrt(-order2) # calculate std of x_e
