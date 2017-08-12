@@ -6,6 +6,7 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ## What's New
 
+- (8/12/17) VMAF is now included as a filter in [FFmpeg](http://ffmpeg.org/) main branch, and can be configured using: *./configure --enable-libvmaf*.
 - (7/16/17) VMAF is now packaged into a library call *libvmaf* and can be called from a C/C++ program directly. See [this](#usage-through-libvmaf) section for details.
 - (2/20/17) Updated VMAF model to version v0.6.1. Changes include: 
     - Added a custom quality model for cellular phone screen viewing. See [this](#predict-quality-on-a-cellular-phone-screen) section for details.
@@ -14,7 +15,10 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
     - Compressed quality score range by 20% to accommodate higher dynamic range.
     - Use MLE instead of DMOS for subjective model.
 - (11/7/16) Custom subjective models (MOS, DMOS, MLE and more) are now supported. Read [this](resource/doc/dcc17v3.pdf) paper for some background, and see [this](#using-custom-subjective-models) section for usage. 
-- (9/30/16) Added a [FAQ](FAQ.md) page.
+
+## Frequently Asked Questions
+
+Refer to the [FAQ](FAQ.md) page.
 
 ## Prerequisite
 

@@ -1,5 +1,28 @@
 # Change Log
 
+## (8/12/2017) [1.3.1]
+
+**Refactoring:**
+- Refactor NorefExecutorMixin to eliminate repeated codes.
+- Refactor C code: get rid of unused double functions; uniformly use read_frame callback function to void repeated code;
+- Add strip option to Makefile.
+
+**New features:**
+- Update Asset class: add copy functions to Asset; add ref/dis_yuv_type; deprecate yuv_type; add ref/dis_start_sec;
+- Update subjective models: add confidence interval to subjective model parameters; refactor MLE model and make subclasses; add run_subj command line.
+- Recommend pip, add ffmpeg2vmaf info and reorganize prerequisite installation (#88).
+- Reduce sleep time in parallel_map.
+- Add library interface for VMAF (#90).
+- Add VisualStudio2015 support (#92).
+- Add example of image dataset notyuv.
+- Add pkgconfig file and changed Makefile.
+- Add VmafPhoneQualityRunner class.
+- Add DMOS_MLE_CO subjective model.
+
+**Fixed bugs:**
+- Update RegressionMixin to handle KFLK exception for dicitonary-style dataset.
+- Fix Makefile fedora libptools issue. (#98)
+
 ## (4/13/2017) [1.2.4]
 
 **Refactoring:**
