@@ -36,8 +36,12 @@ class SubjectiveModel(TypeVersionEnabled):
         self.dataset_reader = dataset_reader
 
     @classmethod
-    def from_dataset_file(cls, dataset_filepath):
+    def from_dataset_file(cls, dataset_filepath, content_ids=None):
         dataset = import_python_file(dataset_filepath)
+
+        if content_ids is not None:
+            dataset.dis_videos = filter(lambda dis_video: dis_video['content_id'] in content_ids, dataset.dis_videos)
+
         dataset_reader = RawDatasetReader(dataset)
         return cls(dataset_reader)
 

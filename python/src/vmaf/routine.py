@@ -823,7 +823,8 @@ def run_subjective_models(dataset_filepath, subjective_model_classes, do_plot=No
 def generate_dataset_from_raw(raw_dataset_filepath, output_dataset_filepath, **kwargs):
     if raw_dataset_filepath:
         subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs else DmosModel
-        subjective_model = subj_model_class.from_dataset_file(raw_dataset_filepath)
+        content_ids = kwargs['content_ids'] if 'content_ids' in kwargs else None
+        subjective_model = subj_model_class.from_dataset_file(raw_dataset_filepath, content_ids=content_ids)
         subjective_model.run_modeling(**kwargs)
         subjective_model.to_aggregated_dataset_file(output_dataset_filepath, **kwargs)
 
