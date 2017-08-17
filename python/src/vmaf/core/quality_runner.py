@@ -5,7 +5,7 @@ from xml.etree import ElementTree
 import numpy as np
 
 from vmaf.config import VmafConfig
-from vmaf import svmutil, ExternalProgram
+from vmaf import svmutil, ExternalProgram, ExternalProgramCaller
 from vmaf.core.executor import Executor
 from vmaf.core.result import Result
 from vmaf.core.feature_assembler import FeatureAssembler
@@ -87,26 +87,17 @@ class PsnrQualityRunner(QualityRunner):
         # routine to call the command-line executable and generate quality
         # scores in the log file.
 
+        quality_width, quality_height = asset.quality_width_height
         log_file_path = self._get_log_file_path(asset)
 
-        # run VMAF command line to extract features, 'APPEND' result (since
-        # super method already does something
-        quality_width, quality_height = asset.quality_width_height
-        psnr_cmd = "{psnr} {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
-        .format(
-            psnr=ExternalProgram.psnr,
-            yuv_type=self._get_workfile_yuv_type(asset),
-            ref_path=asset.ref_workfile_path,
-            dis_path=asset.dis_workfile_path,
-            w=quality_width,
-            h=quality_height,
-            log_file_path=log_file_path,
-        )
+        yuv_type = self._get_workfile_yuv_type(asset)
+        ref_path = asset.ref_workfile_path
+        dis_path = asset.dis_workfile_path
+        w = quality_width
+        h = quality_height
+        logger = self.logger
 
-        if self.logger:
-            self.logger.info(psnr_cmd)
-
-        run_process(psnr_cmd, shell=True)
+        ExternalProgramCaller.call_psnr(yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
 
     def _get_quality_scores(self, asset):
         # routine to read the quality scores from the log file, and return

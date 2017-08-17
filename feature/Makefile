@@ -24,8 +24,7 @@ $(OBJDIR)/vmaf_main.o: $(SRCDIR)/vmaf_main.c
 $(OBJDIR)/psnr_main.o: $(SRCDIR)/psnr_main.c
 	$(CC) $(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
-$(OBJDIR)/moment_main.o: $(SRCDIR)/moment_main.c
-	$(CC) $(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+$(OBJDIR)/moment_main.o: $(SRCDIR)/moment(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/ssim_main.o: $(SRCDIR)/ssim_main.c
 	$(CC) $(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
