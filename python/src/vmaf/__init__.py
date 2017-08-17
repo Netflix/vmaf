@@ -118,3 +118,30 @@ class ExternalProgramCaller(object):
             logger.info(vmaf_feature_cmd)
         run_process(vmaf_feature_cmd, shell=True)
 
+    @staticmethod
+    def call_vmafossexec(fmt, w, h, ref_path, dis_path, model, log_file_path, disable_clip_score,
+                         enable_transform_score, phone_model, disable_avx, exe=None, logger=None):
+
+        if exe is None:
+            exe = ExternalProgram.vmafossexec
+
+        vmafossexec_cmd = "{exe} {fmt} {w} {h} {ref_path} {dis_path} {model} --log {log_file_path} --log-fmt xml --psnr --ssim --ms-ssim" \
+            .format(
+            exe=exe,
+            fmt=fmt,
+            w=w,
+            h=h,
+            ref_path=ref_path,
+            dis_path=dis_path,
+            model=model,
+            log_file_path=log_file_path,
+        )
+        if disable_clip_score:
+            vmafossexec_cmd += ' --disable-clip'
+        if enable_transform_score or phone_model:
+            vmafossexec_cmd += ' --enable-transform'
+        if disable_avx:
+            vmafossexec_cmd += ' --disable-avx'
+        if logger:
+            logger.info(vmafossexec_cmd)
+        run_process(vmafossexec_cmd, shell=True)
