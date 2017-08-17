@@ -1,9 +1,14 @@
-TOP = $(shell pwd)
+LIBVMAF = libvmaf.a
 
+.PHONY: all
+all: $(LIBVMAF) vmafossexec
+
+TOP = $(shell pwd)
 SRCDIR = $(TOP)/src
 OBJDIR = $(TOP)/obj
 FEATURESRCDIR = $(TOP)/../feature/src
 PTOOLSDIR = $(TOP)/../ptools
+INSTALL_PREFIX = /usr/local
 
 OBJS = \
 	$(OBJDIR)/alloc.o \
@@ -26,19 +31,18 @@ OBJS = \
 	$(OBJDIR)/ssim_tools.o \
 	$(OBJDIR)/ssim.o \
 	$(OBJDIR)/ms_ssim.o \
+	$(OBJDIR)/moment.o \
+	$(OBJDIR)/psnr.o \
 	$(OBJDIR)/svm.o \
 	$(OBJDIR)/combo.o \
+	$(OBJDIR)/all.o \
 	$(OBJDIR)/vmaf.o \
 	$(OBJDIR)/darray.o \
 	$(OBJDIR)/libvmaf.o \
-	$(OBJDIR)/main.o \
-	$(OBJDIR)/pugixml.o \
+	$(OBJDIR)/pugixml.o
 
 AVX_OBJS := \
 	$(OBJDIR)/convolution_avx.o \
-
-.PHONY: all
-all: vmafossexec
 
 CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic
 # CFLAGS_COMMON = -g -O0 -fPIC -Wall -Wextra -pedantic -D BUILD_O0 #-D PRINT_PROGRESS
@@ -110,6 +114,15 @@ $(OBJDIR)/ssim.o: $(FEATURESRCDIR)/ssim.c
 $(OBJDIR)/ms_ssim.o: $(FEATURESRCDIR)/ms_ssim.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
+$(OBJDIR)/moment.o: $(FEATURESRCDIR)/moment.c
+	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+
+$(OBJDIR)/psnr.o: $(FEATURESRCDIR)/psnr.c
+	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+
+$(OBJDIR)/all.o: $(FEATURESRCDIR)/all.c
+	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+
 $(OBJDIR)/svm.o: $(SRCDIR)/svm.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
 
@@ -130,43 +143,36 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 $(OBJDIR)/%.o: $(SRCDIR)/pugixml/%.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
 
-PREFIX = /usr/local
-
-lib = libvmaf.a
-$(lib): $(OBJS) $(wildcard ../ptools/*.o)
+$(LIBVMAF): $(OBJS) $(wildcard ../ptools/*.o)
 	ar rcs $@ $^
 
-vmafossexec: $(lib)
+vmafossexec: $(OBJDIR)/main.o $(LIBVMAF)
 	$(CXX) -s -o $@ $(LDFLAGS) $^ -pthread
 
 .PHONY: install
 install:
-	ar -dv $(lib) main.o
-	mkdir -p $(DESTDIR)$(PREFIX)/lib
-	mkdir -p $(DESTDIR)$(PREFIX)/include
-	mkdir -p $(DESTDIR)$(PREFIX)/share
-	mkdir -p $(DESTDIR)$(PREFIX)/lib/pkgconfig
-	cp $(lib) $(DESTDIR)$(PREFIX)/lib/$(lib)
-	cp src/libvmaf.h $(DESTDIR)$(PREFIX)/include/
-	cp -r ../model $(DESTDIR)$(PREFIX)/share/
-	cp libvmaf.pc $(DESTDIR)$(PREFIX)/lib/pkgconfig/
+	mkdir -p $(DESTDIR)$(INSTALL_PREFIX)/lib
+	mkdir -p $(DESTDIR)$(INSTALL_PREFIX)/include
+	mkdir -p $(DESTDIR)$(INSTALL_PREFIX)/share
+	mkdir -p $(DESTDIR)$(INSTALL_PREFIX)/lib/pkgconfig
+	cp $(LIBVMAF) $(DESTDIR)$(INSTALL_PREFIX)/lib/$(LIBVMAF)
+	cp src/libvmaf.h $(DESTDIR)$(INSTALL_PREFIX)/include/
+	cp -r ../model $(DESTDIR)$(INSTALL_PREFIX)/share/
+	cp libvmaf.pc $(DESTDIR)$(INSTALL_PREFIX)/lib/pkgconfig/
 
 .PHONY: uninstall
 uninstall:
-	rm -f $(lib)
-	rm -f $(DESTDIR)$(PREFIX)/lib/$(lib)
-	rm -f $(DESTDIR)$(PREFIX)/include/libvmaf.h
-	rm -fr $(DESTDIR)$(PREFIX)/share/model
-	rm -f $(DESTDIR)$(PREFIX)/lib/pkgconfig/libvmaf.pc
+	rm -f $(DESTDIR)$(INSTALL_PREFIX)/lib/$(LIBVMAF)
+	rm -f $(DESTDIR)$(INSTALL_PREFIX)/include/libvmaf.h
+	rm -fr $(DESTDIR)$(INSTALL_PREFIX)/share/model
+	rm -f $(DESTDIR)$(INSTALL_PREFIX)/lib/pkgconfig/libvmaf.pc
 
 testlib: $(SRCDIR)/main.cpp
-	$(CXX) -s -o $@  $(CXXFLAGS) $^ -I $(FEATURESRCDIR) -I $(DESTDIR)$(PREFIX)/include -L$(DESTDIR)$(PREFIX)/lib -lvmaf -pthread
+	$(CXX) -s -o $@  $(CXXFLAGS) $^ -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common -I $(DESTDIR)$(INSTALL_PREFIX)/include -L$(DESTDIR)$(INSTALL_PREFIX)/lib -lvmaf -pthread
 
 .PHONY: clean
 clean:
 	rm -f $(OBJDIR)/*.o
-	rm -f libvmaf.a
+	rm -f $(LIBVMAF)
 	rm -f vmafossexec
 	rm -f testlib
-
-.DEFAULT: all
