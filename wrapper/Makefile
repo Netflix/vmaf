@@ -151,7 +151,6 @@ vmafossexec: $(OBJDIR)/main.o $(LIBVMAF)
 
 .PHONY: install
 install:
-	ar -dv $(LIBVMAF) main.o
 	mkdir -p $(DESTDIR)$(INSTALL_PREFIX)/lib
 	mkdir -p $(DESTDIR)$(INSTALL_PREFIX)/include
 	mkdir -p $(DESTDIR)$(INSTALL_PREFIX)/share
