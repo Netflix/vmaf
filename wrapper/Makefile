@@ -1,4 +1,7 @@
-all: vmafossexec
+LIBVMAF = libvmaf.a
+
+.PHONY: all
+all: $(LIBVMAF) vmafossexec
 
 TOP = $(shell pwd)
 SRCDIR = $(TOP)/src
@@ -6,7 +9,6 @@ OBJDIR = $(TOP)/obj
 FEATURESRCDIR = $(TOP)/../feature/src
 PTOOLSDIR = $(TOP)/../ptools
 INSTALL_PREFIX = /usr/local
-LIBVMAF = libvmaf.a
 
 OBJS = \
 	$(OBJDIR)/alloc.o \
@@ -37,7 +39,7 @@ OBJS = \
 	$(OBJDIR)/vmaf.o \
 	$(OBJDIR)/darray.o \
 	$(OBJDIR)/libvmaf.o \
-	$(OBJDIR)/pugixml.o \
+	$(OBJDIR)/pugixml.o
 
 AVX_OBJS := \
 	$(OBJDIR)/convolution_avx.o \
@@ -168,11 +170,11 @@ uninstall:
 	rm -f $(DESTDIR)$(INSTALL_PREFIX)/lib/pkgconfig/libvmaf.pc
 
 testlib: $(SRCDIR)/main.cpp
-	$(CXX) -s -o $@  $(CXXFLAGS) $^ -I $(FEATURESRCDIR) -I $(DESTDIR)$(INSTALL_PREFIX)/include -L$(DESTDIR)$(INSTALL_PREFIX)/lib -lvmaf -pthread
+	$(CXX) -s -o $@  $(CXXFLAGS) $^ -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common -I $(DESTDIR)$(INSTALL_PREFIX)/include -L$(DESTDIR)$(INSTALL_PREFIX)/lib -lvmaf -pthread
 
 .PHONY: clean
 clean:
 	rm -f $(OBJDIR)/*.o
-	rm -f libvmaf.a
+	rm -f $(LIBVMAF)
 	rm -f vmafossexec
 	rm -f testlib

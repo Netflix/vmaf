@@ -1,8 +1,8 @@
 TARGETS = \
 	ptools \
-	feature \
 	libsvm \
-	wrapper
+	wrapper \
+	feature
 
 all:
 	-for dir in $(TARGETS); do \
@@ -10,7 +10,6 @@ all:
 	done
 
 	cd libsvm; $(MAKE) lib; cd ..;
-	cd wrapper; $(MAKE) libvmaf.a; cd ..;
 
 clean:
 	-for dir in $(TARGETS); do \
@@ -29,6 +28,6 @@ uninstall:
 testlib:
 	cd wrapper; $(MAKE) testlib; cd ..;
 
-.PHONY: clean $(TARGETS)
+.PHONY: all clean $(TARGETS)
 
 
