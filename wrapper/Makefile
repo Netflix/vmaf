@@ -162,7 +162,6 @@ install:
 
 .PHONY: uninstall
 uninstall:
-	rm -f $(LIBVMAF)
 	rm -f $(DESTDIR)$(INSTALL_PREFIX)/lib/$(LIBVMAF)
 	rm -f $(DESTDIR)$(INSTALL_PREFIX)/include/libvmaf.h
 	rm -fr $(DESTDIR)$(INSTALL_PREFIX)/share/model
