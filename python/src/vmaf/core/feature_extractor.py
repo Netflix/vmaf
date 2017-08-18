@@ -10,7 +10,7 @@ import re
 import numpy as np
 import ast
 
-from vmaf import ExternalProgram
+from vmaf import ExternalProgram, ExternalProgramCaller
 from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.executor import Executor
 from vmaf.core.result import Result
@@ -142,27 +142,17 @@ class VmafFeatureExtractor(FeatureExtractor):
         # routine to call the command-line executable and generate feature
         # scores in the log file.
 
+        quality_width, quality_height = asset.quality_width_height
         log_file_path = self._get_log_file_path(asset)
 
-        # run VMAF command line to extract features, APPEND (>>) result (since
-        # _prepare_generate_log_file method has already created the file and
-        # written something in advance).
-        quality_width, quality_height = asset.quality_width_height
-        vmaf_feature_cmd = "{vmaf} all {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
-        .format(
-            vmaf=ExternalProgram.vmaf,
-            yuv_type=self._get_workfile_yuv_type(asset),
-            ref_path=asset.ref_workfile_path,
-            dis_path=asset.dis_workfile_path,
-            w=quality_width,
-            h=quality_height,
-            log_file_path=log_file_path,
-        )
+        yuv_type=self._get_workfile_yuv_type(asset)
+        ref_path=asset.ref_workfile_path
+        dis_path=asset.dis_workfile_path
+        w=quality_width
+        h=quality_height
+        logger = self.logger
 
-        if self.logger:
-            self.logger.info(vmaf_feature_cmd)
-
-        run_process(vmaf_feature_cmd, shell=True)
+        ExternalProgramCaller.call_vmaf_feature(yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
 
     @classmethod
     def _post_process_result(cls, result):
@@ -317,26 +307,18 @@ class PsnrFeatureExtractor(FeatureExtractor):
         # routine to call the command-line executable and generate quality
         # scores in the log file.
 
+        quality_width, quality_height = asset.quality_width_height
         log_file_path = self._get_log_file_path(asset)
 
-        # run VMAF command line to extract features, 'APPEND' result (since
-        # super method already does something
-        quality_width, quality_height = asset.quality_width_height
-        psnr_cmd = "{psnr} {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
-        .format(
-            psnr=ExternalProgram.psnr,
-            yuv_type=self._get_workfile_yuv_type(asset),
-            ref_path=asset.ref_workfile_path,
-            dis_path=asset.dis_workfile_path,
-            w=quality_width,
-            h=quality_height,
-            log_file_path=log_file_path,
-        )
+        yuv_type=self._get_workfile_yuv_type(asset)
+        ref_path=asset.ref_workfile_path
+        dis_path=asset.dis_workfile_path
+        w=quality_width
+        h=quality_height
+        logger = self.logger
 
-        if self.logger:
-            self.logger.info(psnr_cmd)
+        ExternalProgramCaller.call_psnr(yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
 
-        run_process(psnr_cmd, shell=True)
 
 class MomentFeatureExtractor(FeatureExtractor):
 
@@ -454,26 +436,18 @@ class SsimFeatureExtractor(FeatureExtractor):
         # routine to call the command-line executable and generate quality
         # scores in the log file.
 
+        quality_width, quality_height = asset.quality_width_height
         log_file_path = self._get_log_file_path(asset)
 
-        # run VMAF command line to extract features, 'APPEND' result (since
-        # super method already does something
-        quality_width, quality_height = asset.quality_width_height
-        ssim_cmd = "{ssim} {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
-        .format(
-            ssim=ExternalProgram.ssim,
-            yuv_type=self._get_workfile_yuv_type(asset),
-            ref_path=asset.ref_workfile_path,
-            dis_path=asset.dis_workfile_path,
-            w=quality_width,
-            h=quality_height,
-            log_file_path=log_file_path,
-        )
+        yuv_type=self._get_workfile_yuv_type(asset)
+        ref_path=asset.ref_workfile_path
+        dis_path=asset.dis_workfile_path
+        w=quality_width
+        h=quality_height
+        logger = self.logger
 
-        if self.logger:
-            self.logger.info(ssim_cmd)
+        ExternalProgramCaller.call_ssim(yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
 
-        run_process(ssim_cmd, shell=True)
 
 class MsSsimFeatureExtractor(FeatureExtractor):
 
@@ -489,32 +463,22 @@ class MsSsimFeatureExtractor(FeatureExtractor):
                      'ms_ssim_l_scale4', 'ms_ssim_c_scale4', 'ms_ssim_s_scale4',
                      ]
 
-    MS_SSIM = ExternalProgram.ms_ssim
-
     def _generate_result(self, asset):
         # routine to call the command-line executable and generate quality
         # scores in the log file.
 
+        quality_width, quality_height = asset.quality_width_height
         log_file_path = self._get_log_file_path(asset)
 
-        # run VMAF command line to extract features, 'APPEND' result (since
-        # super method already does something
-        quality_width, quality_height = asset.quality_width_height
-        ms_ssim_cmd = "{ms_ssim} {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
-        .format(
-            ms_ssim=self.MS_SSIM,
-            yuv_type=self._get_workfile_yuv_type(asset),
-            ref_path=asset.ref_workfile_path,
-            dis_path=asset.dis_workfile_path,
-            w=quality_width,
-            h=quality_height,
-            log_file_path=log_file_path,
-        )
+        yuv_type=self._get_workfile_yuv_type(asset)
+        ref_path=asset.ref_workfile_path
+        dis_path=asset.dis_workfile_path
+        w=quality_width
+        h=quality_height
+        logger = self.logger
 
-        if self.logger:
-            self.logger.info(ms_ssim_cmd)
+        ExternalProgramCaller.call_ms_ssim(yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
 
-        run_process(ms_ssim_cmd, shell=True)
 
 class MatlabFeatureExtractor(FeatureExtractor):
 

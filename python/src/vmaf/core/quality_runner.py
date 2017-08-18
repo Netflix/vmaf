@@ -5,7 +5,7 @@ from xml.etree import ElementTree
 import numpy as np
 
 from vmaf.config import VmafConfig
-from vmaf import svmutil, ExternalProgram
+from vmaf import svmutil, ExternalProgram, ExternalProgramCaller
 from vmaf.core.executor import Executor
 from vmaf.core.result import Result
 from vmaf.core.feature_assembler import FeatureAssembler
@@ -87,26 +87,17 @@ class PsnrQualityRunner(QualityRunner):
         # routine to call the command-line executable and generate quality
         # scores in the log file.
 
+        quality_width, quality_height = asset.quality_width_height
         log_file_path = self._get_log_file_path(asset)
 
-        # run VMAF command line to extract features, 'APPEND' result (since
-        # super method already does something
-        quality_width, quality_height = asset.quality_width_height
-        psnr_cmd = "{psnr} {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
-        .format(
-            psnr=ExternalProgram.psnr,
-            yuv_type=self._get_workfile_yuv_type(asset),
-            ref_path=asset.ref_workfile_path,
-            dis_path=asset.dis_workfile_path,
-            w=quality_width,
-            h=quality_height,
-            log_file_path=log_file_path,
-        )
+        yuv_type = self._get_workfile_yuv_type(asset)
+        ref_path = asset.ref_workfile_path
+        dis_path = asset.dis_workfile_path
+        w = quality_width
+        h = quality_height
+        logger = self.logger
 
-        if self.logger:
-            self.logger.info(psnr_cmd)
-
-        run_process(psnr_cmd, shell=True)
+        ExternalProgramCaller.call_psnr(yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
 
     def _get_quality_scores(self, asset):
         # routine to read the quality scores from the log file, and return
@@ -483,18 +474,6 @@ class VmafossExecQualityRunner(QualityRunner):
         else:
             model_filepath = self.DEFAULT_MODEL_FILEPATH
 
-        vmafossexec_cmd = self._get_vmafossexec_cmd(asset, model_filepath, log_file_path)
-
-        if self.logger:
-            self.logger.info(vmafossexec_cmd)
-
-        run_process(vmafossexec_cmd, shell=True)
-
-    def _get_exec(self):
-        return ExternalProgram.vmafossexec
-
-    def _get_vmafossexec_cmd(self, asset, model_filepath, log_file_path):
-
         if self.optional_dict is not None and 'disable_clip_score' in self.optional_dict:
             disable_clip_score = self.optional_dict['disable_clip_score']
         else:
@@ -515,31 +494,23 @@ class VmafossExecQualityRunner(QualityRunner):
         else:
             disable_avx = False
 
-        # Usage: vmafossexec fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--disable-clip] [--psnr] [--ssim] [--ms-ssim]
         quality_width, quality_height = asset.quality_width_height
 
-        vmafossexec_cmd = "{exe} {fmt} {w} {h} {ref_path} {dis_path} {model} --log {log_file_path} --log-fmt xml --psnr --ssim --ms-ssim" \
-            .format(
-            exe=self._get_exec(),
-            fmt=self._get_workfile_yuv_type(asset),
-            w=quality_width,
-            h=quality_height,
-            ref_path=asset.ref_workfile_path,
-            dis_path=asset.dis_workfile_path,
-            model=model_filepath,
-            log_file_path=log_file_path,
-        )
+        fmt=self._get_workfile_yuv_type(asset)
+        w=quality_width
+        h=quality_height
+        ref_path=asset.ref_workfile_path
+        dis_path=asset.dis_workfile_path
+        model=model_filepath
+        exe=self._get_exec()
+        logger = self.logger
 
-        if disable_clip_score:
-            vmafossexec_cmd += ' --disable-clip'
+        ExternalProgramCaller.call_vmafossexec(fmt, w, h, ref_path, dis_path, model, log_file_path,
+                                               disable_clip_score, enable_transform_score,
+                                               phone_model, disable_avx, exe, logger)
 
-        if enable_transform_score or phone_model:
-            vmafossexec_cmd += ' --enable-transform'
-
-        if disable_avx:
-            vmafossexec_cmd += ' --disable-avx'
-
-        return vmafossexec_cmd
+    def _get_exec(self):
+        return None # signaling default
 
     def _get_quality_scores(self, asset):
         # routine to read the quality scores from the log file, and return
