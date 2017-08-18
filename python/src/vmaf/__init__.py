@@ -8,34 +8,26 @@ VMAF_LIB_FOLDER = os.path.dirname(os.path.abspath(__file__))
 # Assuming vmaf source checkout, path to top checked out folder
 VMAF_PROJECT = os.path.abspath(os.path.join(VMAF_LIB_FOLDER, '../../..',))
 
-
-def project_path(relative_path, required=None):
-    """
-    :param str relative_path: Path relative to vmaf project source tree
-    :param str|None required: Optional, if provided raise an exception when file at 'relative_path' is missing
-    :return str: Full path to program
-    """
+def project_path(relative_path):
     path = os.path.join(VMAF_PROJECT, relative_path)
-    if required and not os.path.exists(path):
-        raise Exception("%s does not exist %s" % (path, required))
     return path
 
-
-def required_program(relative_path):
-    return project_path(relative_path, required="did you build?")
-
+def required(path):
+    if not os.path.exists(path):
+        raise AssertionError("%s does not exist, did you build?" % (path))
+    return path
 
 class ExternalProgram(object):
     """
     External C programs relied upon by the python vmaf code
     These external programs should be compiled before vmaf is ran, as per instructions in README
     """
-    psnr = required_program("feature/psnr")
-    moment = required_program("feature/moment")
-    ssim = required_program("feature/ssim")
-    ms_ssim = required_program("feature/ms_ssim")
-    vmaf = required_program("feature/vmaf")
-    vmafossexec = required_program("wrapper/vmafossexec")
+    psnr = project_path("feature/psnr")
+    moment = project_path("feature/moment")
+    ssim = project_path("feature/ssim")
+    ms_ssim = project_path("feature/ms_ssim")
+    vmaf = project_path("feature/vmaf")
+    vmafossexec = project_path("wrapper/vmafossexec")
 
 class ExternalProgramCaller(object):
     """
@@ -49,7 +41,7 @@ class ExternalProgramCaller(object):
         # and written something in advance).
         psnr_cmd = "{psnr} {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
             .format(
-            psnr=ExternalProgram.psnr,
+            psnr=required(ExternalProgram.psnr),
             yuv_type=yuv_type,
             ref_path=ref_path,
             dis_path=dis_path,
@@ -68,7 +60,7 @@ class ExternalProgramCaller(object):
         # and written something in advance).
         ssim_cmd = "{ssim} {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
             .format(
-            ssim=ExternalProgram.ssim,
+            ssim=required(ExternalProgram.ssim),
             yuv_type=yuv_type,
             ref_path=ref_path,
             dis_path=dis_path,
@@ -87,7 +79,7 @@ class ExternalProgramCaller(object):
         # and written something in advance).
         ms_ssim_cmd = "{ms_ssim} {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
             .format(
-            ms_ssim=ExternalProgram.ms_ssim,
+            ms_ssim=required(ExternalProgram.ms_ssim),
             yuv_type=yuv_type,
             ref_path=ref_path,
             dis_path=dis_path,
@@ -106,7 +98,7 @@ class ExternalProgramCaller(object):
         # and written something in advance).
         vmaf_feature_cmd = "{vmaf} all {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
             .format(
-            vmaf=ExternalProgram.vmaf,
+            vmaf=required(ExternalProgram.vmaf),
             yuv_type=yuv_type,
             ref_path=ref_path,
             dis_path=dis_path,
@@ -123,7 +115,7 @@ class ExternalProgramCaller(object):
                          enable_transform_score, phone_model, disable_avx, exe=None, logger=None):
 
         if exe is None:
-            exe = ExternalProgram.vmafossexec
+            exe = required(ExternalProgram.vmafossexec)
 
         vmafossexec_cmd = "{exe} {fmt} {w} {h} {ref_path} {dis_path} {model} --log {log_file_path} --log-fmt xml --psnr --ssim --ms-ssim" \
             .format(

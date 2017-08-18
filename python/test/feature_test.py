@@ -8,7 +8,8 @@ import re
 import unittest
 
 from vmaf.config import VmafConfig
-from vmaf import ExternalProgram
+from vmaf import ExternalProgram, required
+
 REMOVE_LOG = 1 # for debug, make this 0
 
 def read_log(log_filename, type):
@@ -52,7 +53,7 @@ class FeatureTest(unittest.TestCase):
         ADM_LOG = self.LOG_FILENAME + '_adm'
         print 'test adm...'
         cmd = "{vmaf} adm {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=ExternalProgram.vmaf, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ADM_LOG
         )
         run_process(cmd, shell=True)
@@ -84,7 +85,7 @@ class FeatureTest(unittest.TestCase):
         ANSNR_LOG = self.LOG_FILENAME + '_ansnr'
         print 'test ansnr...'
         cmd = "{vmaf} ansnr {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=ExternalProgram.vmaf, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ANSNR_LOG
         )
         run_process(cmd, shell=True)
@@ -97,7 +98,7 @@ class FeatureTest(unittest.TestCase):
         MOTION_LOG = self.LOG_FILENAME + '_motion'
         print 'test motion...'
         cmd = "{vmaf} motion {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=ExternalProgram.vmaf, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MOTION_LOG
         )
         run_process(cmd, shell=True)
@@ -108,7 +109,7 @@ class FeatureTest(unittest.TestCase):
         VIF_LOG = self.LOG_FILENAME + '_vif'
         print 'test vif...'
         cmd = "{vmaf} vif {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=ExternalProgram.vmaf, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=VIF_LOG
         )
         run_process(cmd, shell=True)
@@ -141,7 +142,7 @@ class FeatureTest(unittest.TestCase):
         ALL_LOG = self.LOG_FILENAME + "_all"
         print 'test all...'
         cmd = "{vmaf} all {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=ExternalProgram.vmaf, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ALL_LOG
         )
         run_process(cmd, shell=True)
@@ -198,7 +199,7 @@ class FeatureTest(unittest.TestCase):
         PSNR_LOG = self.LOG_FILENAME + '_psnr'
         print 'test psnr...'
         cmd = "{psnr} {fmt} {ref} {dis} {w} {h} > {log}".format(
-            psnr=ExternalProgram.psnr, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            psnr=required(ExternalProgram.psnr), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=PSNR_LOG
         )
         run_process(cmd, shell=True)
@@ -211,7 +212,7 @@ class FeatureTest(unittest.TestCase):
         MOMENT_LOG = self.LOG_FILENAME + '_moment'
         print 'test 2nd moment...'
         cmd = "{moment} 2 {fmt} {dis} {w} {h} > {log}".format(
-            moment=ExternalProgram.moment, fmt=self.YUV_FMT, dis=self.DIS_YUV,
+            moment=required(ExternalProgram.moment), fmt=self.YUV_FMT, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MOMENT_LOG
         )
         run_process(cmd, shell=True)
@@ -224,7 +225,7 @@ class FeatureTest(unittest.TestCase):
         SSIM_LOG = self.LOG_FILENAME + '_ssim'
         print 'test ssim...'
         cmd = "{ssim} {fmt} {ref} {dis} {w} {h} > {log}".format(
-            ssim=ExternalProgram.ssim, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            ssim=required(ExternalProgram.ssim), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=SSIM_LOG
         )
         run_process(cmd, shell=True)
@@ -249,7 +250,7 @@ class FeatureTest(unittest.TestCase):
         MS_SSIM_LOG = self.LOG_FILENAME + '_msssim'
         print 'test ms_ssim...'
         cmd = "{ms_ssim} {fmt} {ref} {dis} {w} {h} > {log}".format(
-            ms_ssim=ExternalProgram.ms_ssim, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            ms_ssim=required(ExternalProgram.ms_ssim), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MS_SSIM_LOG
         )
         run_process(cmd, shell=True)
@@ -315,7 +316,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         ADM_LOG = self.LOG_FILENAME + '_adm'
         print 'test adm on yuv422p10le...'
         cmd = "{vmaf} adm {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=ExternalProgram.vmaf, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ADM_LOG
         )
         run_process(cmd, shell=True)
@@ -345,7 +346,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         ANSNR_LOG = self. LOG_FILENAME + '_ansnr'
         print 'test ansnr on yuv422p10le...'
         cmd = "{vmaf} ansnr {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=ExternalProgram.vmaf, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ANSNR_LOG
         )
         run_process(cmd, shell=True)
@@ -358,7 +359,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         MOTION_LOG = self.LOG_FILENAME + '_motion'
         print 'test motion on yuv422p10le...'
         cmd = "{vmaf} motion {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=ExternalProgram.vmaf, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MOTION_LOG
         )
         run_process(cmd, shell=True)
@@ -369,7 +370,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         VIF_LOG = self.LOG_FILENAME + '_vif'
         print 'test vif on yuv422p10le...'
         cmd = "{vmaf} vif {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=ExternalProgram.vmaf, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=VIF_LOG
         )
         run_process(cmd, shell=True)
@@ -402,7 +403,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         ALL_LOG = self.LOG_FILENAME + "_all"
         print 'test all on yuv422p10le...'
         cmd = "{vmaf} all {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=ExternalProgram.vmaf, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ALL_LOG
         )
         run_process(cmd, shell=True)
@@ -459,7 +460,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         PSNR_LOG = self.LOG_FILENAME + '_psnr'
         print 'test psnr on yuv422p10le...'
         cmd = "{psnr} {fmt} {ref} {dis} {w} {h} > {log}".format(
-            psnr=ExternalProgram.psnr, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            psnr=required(ExternalProgram.psnr), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=PSNR_LOG
         )
         run_process(cmd, shell=True)
@@ -472,7 +473,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         SSIM_LOG = self.LOG_FILENAME + '_ssim'
         print 'test ssim on yuv422p10le...'
         cmd = "{ssim} {fmt} {ref} {dis} {w} {h} > {log}".format(
-            ssim=ExternalProgram.ssim, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            ssim=required(ExternalProgram.ssim), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=SSIM_LOG
         )
         run_process(cmd, shell=True)
@@ -497,7 +498,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         MS_SSIM_LOG = self.LOG_FILENAME + '_msssim'
         print 'test ms_ssim on yuv422p10le...'
         cmd = "{ms_ssim} {fmt} {ref} {dis} {w} {h} > {log}".format(
-            ms_ssim=ExternalProgram.ms_ssim, fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            ms_ssim=required(ExternalProgram.ms_ssim), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MS_SSIM_LOG
         )
         run_process(cmd, shell=True)
@@ -570,7 +571,7 @@ class CornerCaseTest(unittest.TestCase):
         yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080
-        cmd = self.CMD_TEMPLATE.format(vmaf=ExternalProgram.vmaf, fmt=yuv_fmt, ref=ref_yuv,
+        cmd = self.CMD_TEMPLATE.format(vmaf=required(ExternalProgram.vmaf), fmt=yuv_fmt, ref=ref_yuv,
                                        dis=dis_yuv, w=yuv_width, h=yuv_height,
                                        log=LOCAL_LOG_FILENAME)
         run_process(cmd, shell=True)
@@ -601,7 +602,7 @@ class CornerCaseTest(unittest.TestCase):
         yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080
-        cmd = self.CMD_TEMPLATE.format(vmaf=ExternalProgram.vmaf, fmt=yuv_fmt, ref=ref_yuv,
+        cmd = self.CMD_TEMPLATE.format(vmaf=required(ExternalProgram.vmaf), fmt=yuv_fmt, ref=ref_yuv,
                                        dis=dis_yuv, w=yuv_width, h=yuv_height,
                                        log=LOCAL_LOG_FILENAME)
         run_process(cmd, shell=True)
@@ -632,7 +633,7 @@ class CornerCaseTest(unittest.TestCase):
         yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080
-        cmd = self.CMD_TEMPLATE.format(vmaf=ExternalProgram.vmaf, fmt=yuv_fmt, ref=ref_yuv,
+        cmd = self.CMD_TEMPLATE.format(vmaf=required(ExternalProgram.vmaf), fmt=yuv_fmt, ref=ref_yuv,
                                        dis=dis_yuv, w=yuv_width, h=yuv_height,
                                        log=LOCAL_LOG_FILENAME)
         run_process(cmd, shell=True)
@@ -663,7 +664,7 @@ class CornerCaseTest(unittest.TestCase):
         yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080
-        cmd = self.CMD_TEMPLATE.format(vmaf=ExternalProgram.vmaf, fmt=yuv_fmt, ref=ref_yuv,
+        cmd = self.CMD_TEMPLATE.format(vmaf=required(ExternalProgram.vmaf), fmt=yuv_fmt, ref=ref_yuv,
                                        dis=dis_yuv, w=yuv_width, h=yuv_height,
                                        log=LOCAL_LOG_FILENAME)
         run_process(cmd, shell=True)
@@ -694,7 +695,7 @@ class CornerCaseTest(unittest.TestCase):
         yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080
-        cmd = self.CMD_TEMPLATE.format(vmaf=ExternalProgram.vmaf, fmt=yuv_fmt, ref=ref_yuv,
+        cmd = self.CMD_TEMPLATE.format(vmaf=required(ExternalProgram.vmaf), fmt=yuv_fmt, ref=ref_yuv,
                                        dis=dis_yuv, w=yuv_width, h=yuv_height,
                                        log=LOCAL_LOG_FILENAME)
         run_process(cmd, shell=True)
