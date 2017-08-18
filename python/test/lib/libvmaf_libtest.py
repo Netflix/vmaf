@@ -1,5 +1,5 @@
 import unittest
-from vmaf import required_program
+from vmaf import project_path, required
 from vmaf.config import VmafConfig
 from vmaf.core.asset import Asset
 from vmaf.core.quality_runner import VmafossExecQualityRunner
@@ -13,7 +13,7 @@ class TestLibRunner(VmafossExecQualityRunner):
     TYPE = "TESTLIB"
 
     def _get_exec(self):
-        return required_program("wrapper/testlib")
+        return required(project_path("wrapper/testlib"))
 
 class QualityRunnerTest(unittest.TestCase):
 

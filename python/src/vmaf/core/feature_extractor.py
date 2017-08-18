@@ -10,7 +10,7 @@ import re
 import numpy as np
 import ast
 
-from vmaf import ExternalProgram, ExternalProgramCaller
+from vmaf import ExternalProgramCaller
 from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.executor import Executor
 from vmaf.core.result import Result

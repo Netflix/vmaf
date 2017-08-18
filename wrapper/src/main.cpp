@@ -53,9 +53,79 @@ void print_usage(int argc, char *argv[])
     fprintf(stderr, "log_fmt:\n\txml (default)\n\tjson\n\n");
 }
 
-int main(int argc, char *argv[])
+int run_wrapper(char *fmt, int width, int height, char *ref_path, char *dis_path, char *model_path,
+        char *log_path, char *log_fmt, bool disable_clip, bool disable_avx, bool enable_transform, bool phone_model,
+        bool do_psnr, bool do_ssim, bool do_ms_ssim, char *pool_method)
 {
     double score;
+
+    int ret = 0;
+    struct data *s;
+    s = (struct data *)malloc(sizeof(struct data));
+    s->format = fmt;
+    s->width = width;
+    s->height = height;
+
+    if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv420p10le"))
+    {
+        if ((width * height) % 2 != 0)
+        {
+            fprintf(stderr, "(width * height) %% 2 != 0, width = %d, height = %d.\n", width, height);
+            ret = 1;
+            goto fail_or_end;
+        }
+        s->offset = width * height / 2;
+    }
+    else if (!strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv422p10le"))
+    {
+        s->offset = width * height;
+    }
+    else if (!strcmp(fmt, "yuv444p") || !strcmp(fmt, "yuv444p10le"))
+    {
+        s->offset = width * height * 2;
+    }
+    else
+    {
+        fprintf(stderr, "unknown format %s.\n", fmt);
+        ret = 1;
+        goto fail_or_end;
+    }
+
+
+    if (!(s->ref_rfile = fopen(ref_path, "rb")))
+    {
+        fprintf(stderr, "fopen ref_path %s failed.\n", ref_path);
+        ret = 1;
+        goto fail_or_end;
+    }
+    if (!(s->dis_rfile = fopen(dis_path, "rb")))
+    {
+        fprintf(stderr, "fopen ref_path %s failed.\n", dis_path);
+        ret = 1;
+        goto fail_or_end;
+    }
+
+    /* Run VMAF */
+    score = compute_vmaf(fmt, width, height, read_frame, s, model_path, log_path, log_fmt, disable_clip, disable_avx, enable_transform, phone_model, do_psnr, do_ssim, do_ms_ssim, pool_method);
+
+fail_or_end:
+    if (s->ref_rfile)
+    {
+        fclose(s->ref_rfile);
+    }
+    if (s->dis_rfile)
+    {
+        fclose(s->dis_rfile);
+    }
+    if (s)
+    {
+        free(s);
+    }
+    return ret;
+}
+
+int main(int argc, char *argv[])
+{
     char* fmt;
     int width;
     int height;
@@ -81,131 +151,76 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    fmt = argv[1];
+    width = std::stoi(argv[2]);
+    height = std::stoi(argv[3]);
+    ref_path = argv[4];
+    dis_path = argv[5];
+    model_path = argv[6];
+
+    if (width <= 0 || height <= 0)
+    {
+        fprintf(stderr, "Error: Invalid frame resolution %d x %d\n", width, height);
+        print_usage(argc, argv);
+        return -1;
+    }
+
+    log_path = getCmdOption(argv + 7, argv + argc, "--log");
+
+    log_fmt = getCmdOption(argv + 7, argv + argc, "--log-fmt");
+    if (log_fmt != NULL && !(strcmp(log_fmt, "xml")==0 || strcmp(log_fmt, "json")==0))
+    {
+        fprintf(stderr, "Error: log_fmt must be xml or json, but is %s\n", log_fmt);
+        return -1;
+    }
+
+    if (cmdOptionExists(argv + 7, argv + argc, "--disable-clip"))
+    {
+        disable_clip = true;
+    }
+
+    if (cmdOptionExists(argv + 7, argv + argc, "--disable-avx"))
+    {
+        disable_avx = true;
+    }
+
+    if (cmdOptionExists(argv + 7, argv + argc, "--enable-transform"))
+    {
+        enable_transform = true;
+    }
+
+    if (cmdOptionExists(argv + 7, argv + argc, "--phone-model"))
+    {
+        phone_model = true;
+    }
+
+    if (cmdOptionExists(argv + 7, argv + argc, "--psnr"))
+    {
+        do_psnr = true;
+    }
+
+    if (cmdOptionExists(argv + 7, argv + argc, "--ssim"))
+    {
+        do_ssim = true;
+    }
+
+    if (cmdOptionExists(argv + 7, argv + argc, "--ms-ssim"))
+    {
+        do_ms_ssim = true;
+    }
+
+    pool_method = getCmdOption(argv + 7, argv + argc, "--pool");
+    if (pool_method != NULL && !(strcmp(pool_method, "min")==0 || strcmp(pool_method, "harmonic_mean")==0 || strcmp(pool_method, "mean")==0))
+    {
+        fprintf(stderr, "Error: pool_method must be min, harmonic_mean or mean, but is %s\n", pool_method);
+        return -1;
+    }
+        
     try
     {
-        fmt = argv[1];
-        width = std::stoi(argv[2]);
-        height = std::stoi(argv[3]);
-        ref_path = argv[4];
-        dis_path = argv[5];
-        model_path = argv[6];
-
-        if (width <= 0 || height <= 0)
-        {
-            fprintf(stderr, "Error: Invalid frame resolution %d x %d\n", width, height);
-            print_usage(argc, argv);
-            return -1;
-        }
-
-        log_path = getCmdOption(argv + 7, argv + argc, "--log");
-
-        log_fmt = getCmdOption(argv + 7, argv + argc, "--log-fmt");
-        if (log_fmt != NULL && !(strcmp(log_fmt, "xml")==0 || strcmp(log_fmt, "json")==0))
-        {
-            fprintf(stderr, "Error: log_fmt must be xml or json, but is %s\n", log_fmt);
-            return -1;
-        }
-
-        if (cmdOptionExists(argv + 7, argv + argc, "--disable-clip"))
-        {
-            disable_clip = true;
-        }
-
-        if (cmdOptionExists(argv + 7, argv + argc, "--disable-avx"))
-        {
-            disable_avx = true;
-        }
-
-        if (cmdOptionExists(argv + 7, argv + argc, "--enable-transform"))
-        {
-            enable_transform = true;
-        }
-        
-        if (cmdOptionExists(argv + 7, argv + argc, "--phone-model"))
-        {
-            phone_model = true;
-        }        
-
-        if (cmdOptionExists(argv + 7, argv + argc, "--psnr"))
-        {
-            do_psnr = true;
-        }
-
-        if (cmdOptionExists(argv + 7, argv + argc, "--ssim"))
-        {
-            do_ssim = true;
-        }
-
-        if (cmdOptionExists(argv + 7, argv + argc, "--ms-ssim"))
-        {
-            do_ms_ssim = true;
-        }
-
-        pool_method = getCmdOption(argv + 7, argv + argc, "--pool");
-        if (pool_method != NULL && !(strcmp(pool_method, "min")==0 || strcmp(pool_method, "harmonic_mean")==0 || strcmp(pool_method, "mean")==0))
-        {
-            fprintf(stderr, "Error: pool_method must be min, harmonic_mean or mean, but is %s\n", pool_method);
-            return -1;
-        }
-        
-        struct data *s;
-        s = (struct data *)malloc(sizeof(struct data));
-        s->format = fmt;
-        s->width = width;
-        s->height = height;
-        
-        if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv420p10le"))
-        {
-            if ((width * height) % 2 != 0)
-            {
-                fprintf(stderr, "(width * height) %% 2 != 0, width = %d, height = %d.\n", width, height);
-                goto fail_or_end;
-            }
-            s->offset = width * height / 2;
-        }
-        else if (!strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv422p10le"))
-        {
-            s->offset = width * height;
-        }
-        else if (!strcmp(fmt, "yuv444p") || !strcmp(fmt, "yuv444p10le"))
-        {
-            s->offset = width * height * 2;
-        }
-        else
-        {
-            fprintf(stderr, "unknown format %s.\n", fmt);
-            goto fail_or_end;
-        }
-        
-        
-        if (!(s->ref_rfile = fopen(ref_path, "rb")))
-        {
-            fprintf(stderr, "fopen ref_path %s failed.\n", ref_path);
-            goto fail_or_end;
-        }
-        if (!(s->dis_rfile = fopen(dis_path, "rb")))
-        {
-            fprintf(stderr, "fopen ref_path %s failed.\n", dis_path);
-            goto fail_or_end;
-        }        
-            
-        /* Run VMAF */
-        score = compute_vmaf(fmt, width, height, read_frame, s, model_path, log_path, log_fmt, disable_clip, disable_avx, enable_transform, phone_model, do_psnr, do_ssim, do_ms_ssim, pool_method);
-                
-fail_or_end:
-        if (s->ref_rfile)
-        {
-            fclose(s->ref_rfile);
-        }
-        if (s->dis_rfile)
-        {
-            fclose(s->dis_rfile);
-        }
-        if (s)
-        {
-            free(s);
-        }
-
+        return run_wrapper(fmt, width, height, ref_path, dis_path, model_path,
+                log_path, log_fmt, disable_clip, disable_avx, enable_transform, phone_model,
+                do_psnr, do_ssim, do_ms_ssim, pool_method);
     }
     catch (const std::exception &e)
     {
@@ -214,5 +229,4 @@ fail_or_end:
         return -1;
     }
     
-    return 0;
 }

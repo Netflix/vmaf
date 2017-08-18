@@ -35,31 +35,9 @@ static void usage(void)
     );
 }
 
-int main(int argc, const char **argv)
+int run_ms_ssim(const char *fmt, const char *ref_path, const char *dis_path, int w, int h)
 {
-    const char *ref_path;
-    const char *dis_path;
-    const char *fmt;
-    int w;
-    int h;
-    int ret;
-
-    if (argc < 6) {
-        usage();
-        return 2;
-    }
-
-    fmt         = argv[1];
-    ref_path = argv[2];
-    dis_path = argv[3];
-    w        = atoi(argv[4]);
-    h        = atoi(argv[5]);
-
-    if (w <= 0 || h <= 0) {
-        usage();
-        return 2;
-    }
-
+    int ret = 0;
     struct data *s;
     s = (struct data *)malloc(sizeof(struct data));
     s->format = fmt;
@@ -87,18 +65,45 @@ int main(int argc, const char **argv)
 
     ret = ms_ssim(read_frame, s, w, h, fmt);
 
-    fail_or_end:
-        if (s->ref_rfile)
-        {
-            fclose(s->ref_rfile);
-        }
-        if (s->dis_rfile)
-        {
-            fclose(s->dis_rfile);
-        }
-        if (s)
-        {
-            free(s);
-        }
-        return ret;
+fail_or_end:
+    if (s->ref_rfile)
+    {
+        fclose(s->ref_rfile);
+    }
+    if (s->dis_rfile)
+    {
+        fclose(s->dis_rfile);
+    }
+    if (s)
+    {
+        free(s);
+    }
+    return ret;
+}
+
+int main(int argc, const char **argv)
+{
+    const char *ref_path;
+    const char *dis_path;
+    const char *fmt;
+    int w;
+    int h;
+
+    if (argc < 6) {
+        usage();
+        return 2;
+    }
+
+    fmt         = argv[1];
+    ref_path = argv[2];
+    dis_path = argv[3];
+    w        = atoi(argv[4]);
+    h        = atoi(argv[5]);
+
+    if (w <= 0 || h <= 0) {
+        usage();
+        return 2;
+    }
+
+    return run_ms_ssim(fmt, ref_path, dis_path, w, h);
 }

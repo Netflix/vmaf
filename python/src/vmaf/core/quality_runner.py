@@ -5,7 +5,7 @@ from xml.etree import ElementTree
 import numpy as np
 
 from vmaf.config import VmafConfig
-from vmaf import svmutil, ExternalProgram, ExternalProgramCaller
+from vmaf import svmutil, ExternalProgramCaller
 from vmaf.core.executor import Executor
 from vmaf.core.result import Result
 from vmaf.core.feature_assembler import FeatureAssembler

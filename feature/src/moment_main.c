@@ -38,37 +38,9 @@ static void usage(void)
     );
 }
 
-int main(int argc, const char **argv)
+int run_moment(int order, const char *fmt, const char *video_path, int w, int h)
 {
-    const char *video_path;
-    int order;
-    const char *fmt;
-    int w;
-    int h;
-    int ret;
-
-    if (argc < 6) {
-        usage();
-        return 2;
-    }
-
-    order     = atoi(argv[1]);
-    fmt         = argv[2];
-    video_path = argv[3];
-    w        = atoi(argv[4]);
-    h        = atoi(argv[5]);
-
-    if (w <= 0 || h <= 0) {
-        usage();
-        return 2;
-    }
-
-    if (!(order == 1 || order == 2))
-    {
-        usage();
-        return 2;
-    }
-
+    int ret = 0;
     struct noref_data *s;
     s = (struct noref_data *)malloc(sizeof(struct noref_data));
     s->format = fmt;
@@ -100,4 +72,37 @@ fail_or_end:
         free(s);
     }
     return ret;
+}
+
+int main(int argc, const char **argv)
+{
+    const char *video_path;
+    int order;
+    const char *fmt;
+    int w;
+    int h;
+
+    if (argc < 6) {
+        usage();
+        return 2;
+    }
+
+    order     = atoi(argv[1]);
+    fmt         = argv[2];
+    video_path = argv[3];
+    w        = atoi(argv[4]);
+    h        = atoi(argv[5]);
+
+    if (w <= 0 || h <= 0) {
+        usage();
+        return 2;
+    }
+
+    if (!(order == 1 || order == 2))
+    {
+        usage();
+        return 2;
+    }
+
+    return run_moment(order, fmt, video_path, w, h);
 }
