@@ -50,33 +50,9 @@ static void usage(void)
     );
 }
 
-int main(int argc, const char **argv)
+int run_vmaf(const char *app, const char *fmt, const char *ref_path, const char *dis_path, int w, int h)
 {
-    const char *app;
-    const char *ref_path;
-    const char *dis_path;
-    const char *fmt;
-    int w;
-    int h;
     int ret;
-
-    if (argc < 7) {
-        usage();
-        return 2;
-    }
-
-    app      = argv[1];
-    fmt         = argv[2];
-    ref_path = argv[3];
-    dis_path = argv[4];
-    w        = atoi(argv[5]);
-    h        = atoi(argv[6]);
-
-    if (w <= 0 || h <= 0) {
-        usage();
-        return 2;
-    }
-
     cpu = cpu_autodetect();
 
     if (!strcmp(app, "motion"))
@@ -170,5 +146,33 @@ fail_or_end:
         return ret;
 
     }
+}
 
+int main(int argc, const char **argv)
+{
+    const char *app;
+    const char *ref_path;
+    const char *dis_path;
+    const char *fmt;
+    int w;
+    int h;
+
+    if (argc < 7) {
+        usage();
+        return 2;
+    }
+
+    app      = argv[1];
+    fmt         = argv[2];
+    ref_path = argv[3];
+    dis_path = argv[4];
+    w        = atoi(argv[5]);
+    h        = atoi(argv[6]);
+
+    if (w <= 0 || h <= 0) {
+        usage();
+        return 2;
+    }
+
+    return run_vmaf(app, fmt, ref_path, dis_path, w, h);
 }
