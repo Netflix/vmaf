@@ -52,7 +52,7 @@ static void usage(void)
 
 int run_vmaf(const char *app, const char *fmt, const char *ref_path, const char *dis_path, int w, int h)
 {
-    int ret;
+    int ret = 0;
     cpu = cpu_autodetect();
 
     if (!strcmp(app, "motion"))

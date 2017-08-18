@@ -40,7 +40,7 @@ static void usage(void)
 
 int run_moment(int order, const char *fmt, const char *video_path, int w, int h)
 {
-    int ret;
+    int ret = 0;
     struct noref_data *s;
     s = (struct noref_data *)malloc(sizeof(struct noref_data));
     s->format = fmt;

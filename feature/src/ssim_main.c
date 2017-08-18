@@ -37,7 +37,7 @@ static void usage(void)
 
 int run_ssim(const char *fmt, const char *ref_path, const char *dis_path, int w, int h)
 {
-    int ret;
+    int ret = 0;
     struct data *s;
     s = (struct data *)malloc(sizeof(struct data));
     s->format = fmt;
