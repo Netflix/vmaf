@@ -104,6 +104,7 @@
     <ClInclude Include="..\feature\src\common\cpudetect.h" />
     <ClInclude Include="..\feature\src\common\file_io.h" />
     <ClInclude Include="..\feature\src\common\macros.h" />
+    <ClInclude Include="..\feature\src\common\frame.h" />
     <ClInclude Include="..\feature\src\iqa\convolve.h" />
     <ClInclude Include="..\feature\src\iqa\decimate.h" />
     <ClInclude Include="..\feature\src\iqa\iqa.h" />
@@ -135,6 +136,7 @@
     <ClCompile Include="..\feature\src\common\convolution_avx.c" />
     <ClCompile Include="..\feature\src\common\cpu.c" />
     <ClCompile Include="..\feature\src\common\file_io.c" />
+    <ClCompile Include="..\feature\src\common\frame.c" />
     <ClCompile Include="..\feature\src\iqa\convolve.c" />
     <ClCompile Include="..\feature\src\iqa\decimate.c" />
     <ClCompile Include="..\feature\src\iqa\math_utils.c" />
