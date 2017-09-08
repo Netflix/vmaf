@@ -21,8 +21,12 @@ class TestReadDataset(unittest.TestCase):
         self.assertEquals(len(train_assets), 9)
         self.assertTrue('groundtruth' in train_assets[0].asset_dict.keys())
         self.assertTrue('os' not in train_assets[0].asset_dict.keys())
-        self.assertTrue('width' in train_assets[0].asset_dict.keys())
-        self.assertTrue('height' in train_assets[0].asset_dict.keys())
+        self.assertFalse('width' in train_assets[0].asset_dict.keys())
+        self.assertTrue('ref_width' in train_assets[0].asset_dict.keys())
+        self.assertTrue('dis_width' in train_assets[0].asset_dict.keys())
+        self.assertFalse('height' in train_assets[0].asset_dict.keys())
+        self.assertTrue('ref_height' in train_assets[0].asset_dict.keys())
+        self.assertTrue('dis_height' in train_assets[0].asset_dict.keys())
         self.assertTrue('quality_width' not in train_assets[0].asset_dict.keys())
         self.assertTrue('quality_height' not in train_assets[0].asset_dict.keys())
 
@@ -83,6 +87,52 @@ class TestReadDataset(unittest.TestCase):
         self.assertTrue(assets[0].ref_width_height is None)
         self.assertTrue(assets[0].dis_width_height is None)
         self.assertEquals(assets[0].quality_width_height, (1920, 1080))
+
+    def test_read_dataset_basic(self):
+        dataset_path = VmafConfig.test_resource_path('test_dataset.py')
+        dataset = import_python_file(dataset_path)
+        assets = read_dataset(dataset)
+
+        self.assertEquals(len(assets), 4)
+        self.assertTrue('groundtruth' in assets[0].asset_dict.keys())
+        self.assertTrue('os' not in assets[0].asset_dict.keys())
+        self.assertEqual(assets[0].quality_width_height, (1920, 1080))
+        self.assertEqual(assets[0].resampling_type, 'bilinear')
+        self.assertEqual(assets[0].ref_yuv_type, 'yuv420p')
+        self.assertEqual(assets[0].dis_yuv_type, 'yuv420p')
+        self.assertEqual(assets[1].quality_width_height, (1920, 1080))
+        self.assertEqual(assets[1].resampling_type, 'bilinear')
+
+    def test_read_dataset_mixed(self):
+        dataset_path = VmafConfig.test_resource_path('test_dataset_mixed.py')
+        dataset = import_python_file(dataset_path)
+        assets = read_dataset(dataset)
+
+        self.assertEquals(len(assets), 4)
+
+        self.assertEqual(assets[0].resampling_type, 'bilinear')
+        self.assertEqual(assets[0].ref_yuv_type, 'yuv420p')
+        self.assertEqual(assets[0].dis_yuv_type, 'yuv420p')
+        self.assertEqual(assets[0].ref_width_height, (1920, 1080))
+        self.assertEqual(assets[0].dis_width_height, (1920, 1080))
+
+        self.assertEqual(assets[1].resampling_type, 'bilinear')
+        self.assertEqual(assets[1].ref_yuv_type, 'yuv420p')
+        self.assertEqual(assets[1].dis_yuv_type, 'notyuv')
+        self.assertEqual(assets[1].ref_width_height, (1920, 1080))
+        self.assertEqual(assets[1].dis_width_height, None)
+
+        self.assertEqual(assets[2].resampling_type, 'bilinear')
+        self.assertEqual(assets[2].ref_yuv_type, 'yuv420p')
+        self.assertEqual(assets[2].dis_yuv_type, 'yuv420p')
+        self.assertEqual(assets[2].ref_width_height, (720, 480))
+        self.assertEqual(assets[2].dis_width_height, (720, 480))
+
+        self.assertEqual(assets[3].resampling_type, 'bilinear')
+        self.assertEqual(assets[3].ref_yuv_type, 'yuv420p')
+        self.assertEqual(assets[3].dis_yuv_type, 'notyuv')
+        self.assertEqual(assets[3].ref_width_height, (720, 480))
+        self.assertEqual(assets[3].dis_width_height, None)
 
 class TestTrainOnDataset(unittest.TestCase):
 

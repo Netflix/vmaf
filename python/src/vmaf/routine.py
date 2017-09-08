@@ -74,7 +74,9 @@ def read_dataset(dataset, **kwargs):
         ref_video = ref_dict[dis_video['content_id']]
 
         ref_path = ref_video['path']
-        yuv_fmt_ = yuv_fmt if yuv_fmt is not None else ref_dict[dis_video['content_id']]['yuv_fmt']
+
+        ref_yuv_fmt_ = yuv_fmt if yuv_fmt is not None else ref_dict[dis_video['content_id']]['yuv_fmt']
+        dis_yuv_fmt_ = dis_video['yuv_fmt'] if 'yuv_fmt' in dis_video else ref_yuv_fmt_
 
         if width is not None:
             width_ = width
@@ -125,11 +127,17 @@ def read_dataset(dataset, **kwargs):
         else:
             pad_cmd_ = None
 
-        asset_dict = {'yuv_type': yuv_fmt_}
+        asset_dict = {'ref_yuv_type': ref_yuv_fmt_, 'dis_yuv_type': dis_yuv_fmt_}
         if width_ is not None:
-            asset_dict['width'] = width_
+            if asset_dict['ref_yuv_type'] != 'notyuv':
+                asset_dict['ref_width'] = width_
+            if asset_dict['dis_yuv_type'] != 'notyuv':
+                asset_dict['dis_width'] = width_
         if height_ is not None:
-            asset_dict['height'] = height_
+            if asset_dict['ref_yuv_type'] != 'notyuv':
+                asset_dict['ref_height'] = height_
+            if asset_dict['dis_yuv_type'] != 'notyuv':
+                asset_dict['dis_height'] = height_
         if groundtruth is not None:
             asset_dict['groundtruth'] = groundtruth
         if raw_groundtruth is not None:
