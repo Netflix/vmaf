@@ -28,6 +28,9 @@
     <ClCompile Include="..\feature\src\common\file_io.c">
       <Filter>feature\common</Filter>
     </ClCompile>
+    <ClCompile Include="..\feature\src\common\frame.c">
+      <Filter>feature\common</Filter>
+    </ClCompile>
     <ClCompile Include="..\feature\src\vif_tools.c">
       <Filter>feature</Filter>
     </ClCompile>
@@ -111,6 +114,9 @@
       <Filter>feature\common</Filter>
     </ClInclude>
     <ClInclude Include="..\feature\src\common\macros.h">
+      <Filter>feature\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\feature\src\common\frame.h">
       <Filter>feature\common</Filter>
     </ClInclude>
     <ClInclude Include="..\feature\src\motion_options.h">
