@@ -62,7 +62,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner.run()
 
         results = self.runner.results
-        self.assertAlmostEqual(results[0]['VMAF_score'], 79.052553444706504, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 77.635307276411766, places=4)
 
     def test_run_vmafossexec_runner_with_notyuv(self):
         print 'test on running VMAF runner...'
@@ -84,7 +84,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner.run()
 
         results = self.runner.results
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 79.052553444706504, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 77.635309333333339, places=4)
 
     def test_run_psnr_runner_with_frames(self):
         print 'test on running PSNR runner...'

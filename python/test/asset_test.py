@@ -376,7 +376,7 @@ class AssetTest(unittest.TestCase):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
                       asset_dict={'fps':24, 'start_sec':2, 'end_sec': 3})
-        self.assertEquals(asset.resampling_type, 'bilinear')
+        self.assertEquals(asset.resampling_type, 'bicubic')
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",

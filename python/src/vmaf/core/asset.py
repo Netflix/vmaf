@@ -36,7 +36,7 @@ class Asset(WorkdirEnabled):
     DEFAULT_YUV_TYPE = 'yuv420p'
 
     SUPPORTED_RESAMPLING_TYPES = ['bilinear', 'bicubic', 'lanczos']
-    DEFAULT_RESAMPLING_TYPE = 'bilinear'
+    DEFAULT_RESAMPLING_TYPE = 'bicubic'
 
     # ==== constructor ====
 

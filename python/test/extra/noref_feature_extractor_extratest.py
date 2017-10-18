@@ -36,9 +36,9 @@ class NorefFeatureExtractorTest(unittest.TestCase):
 
         results = self.fextractor.results
 
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_1st_score'], 63.763580381944436, places=4)
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_2nd_score'], 5158.9407083526221, places=4)
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_var_score'], 1084.1635630076041, places=4)
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_1st_score'], 63.776442013888882, places=4)
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_2nd_score'], 5194.9118422453694, places=4)
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_var_score'], 1118.4952858425261, places=4)
 
     def test_noref_moment_fextractor_frames(self):
         print 'test on running Moment noref feature extractor on Assets with frames...'

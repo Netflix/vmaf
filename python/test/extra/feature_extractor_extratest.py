@@ -40,15 +40,15 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
 
         results = self.fextractor.results
 
-        self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.782546520833, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'],1.3216766875, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_score'], 0.98229347916666665, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 28.0085990417, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.74165043750000004, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'],1.4066421666666666, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_score'], 0.9808006041666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 27.319241250000001, places=4)
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 1.3216766875, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 1.4066421666666666, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_score'], 1.0, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 31.811350125, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 30.682829895833333, places=4)
 
     def test_run_vmaf_fextractor_with_cropping(self):
         # crop_cmd: 288:162:144:81 - crop to 288x162 with upper-left pixel
