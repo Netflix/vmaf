@@ -8,7 +8,6 @@ import numpy as np
 from vmaf.config import VmafConfig
 from vmaf.core.asset import Asset
 from vmaf.core.quality_runner import VmafQualityRunner
-from vmaf.core.quality_runner_extra import VmafQualityRunnerWithLocalExplainer
 from vmaf.tools.misc import get_file_name_without_extension, get_cmd_option, \
     cmd_option_exists
 from vmaf.tools.stats import ListStats
@@ -83,6 +82,7 @@ def main():
     if not show_local_explanation:
         runner_class = VmafQualityRunner
     else:
+        from vmaf.core.quality_runner_extra import VmafQualityRunnerWithLocalExplainer
         runner_class = VmafQualityRunnerWithLocalExplainer
 
     if model_path is None:
