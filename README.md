@@ -442,11 +442,11 @@ docker run --rm vmaf [CLI]
 For example, if you are under root, to run *run_vmaf* on a sample reference/distorted video pair under *resource/yuv*:
 
 ```
-docker run --rm -v $(PWD):/files vmaf run_vmaf yuv420p 576 324 /files/python/test/resource/yuv/src01_hrc00_576x324.yuv /files/python/test/resource/yuv/src01_hrc01_576x324.yuv --out-fmt json
+docker run --rm -v $(pwd):/files vmaf run_vmaf yuv420p 576 324 /files/python/test/resource/yuv/src01_hrc00_576x324.yuv /files/python/test/resource/yuv/src01_hrc01_576x324.yuv --out-fmt json
 ```
 
 Under root, to run *vmafossexec* with a specified model file:
 
 ```
-docker run --rm -v $(PWD):/files vmaf vmafossexec yuv420p 576 324 /files/python/test/resource/yuv/src01_hrc00_576x324.yuv /files/python/test/resource/yuv/src01_hrc01_576x324.yuv /files/model/nflxall_vmafv4.pkl
+docker run --rm -v $(pwd):/files vmaf vmafossexec yuv420p 576 324 /files/python/test/resource/yuv/src01_hrc00_576x324.yuv /files/python/test/resource/yuv/src01_hrc01_576x324.yuv /files/model/nflxall_vmafv4.pkl
 ```
