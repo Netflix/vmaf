@@ -16,12 +16,14 @@ from vmaf.tools.stats import ListStats
 __copyright__ = "Copyright 2016-2017, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
+FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
 OUT_FMTS = ['text (default)', 'xml', 'json']
 POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'perc20']
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) \
-          + " quality_width quality_height ref_path dis_path [--model model_path] [--out-fmt out_fmt] [--work-dir work_dir] [--phone-model]\n"
+          + " quality_width quality_height ref_path dis_path [--model model_path] [--out-fmt out_fmt] [--work-dir work_dir] [--phone-model] [--ref-fmt ref_fmt --ref-width ref_width --ref-height ref_height] [--dis-fmt dis_fmt --dis-width dis_width --dis-height dis_height]\n"
+    print "ref_fmt/dis_fmt:\n\t" + "\n\t".join(FMTS) + "\n"
     print "out_fmt:\n\t" + "\n\t".join(OUT_FMTS) + "\n"
 
 def main():
@@ -53,6 +55,21 @@ def main():
         print_usage()
         return 2
 
+    ref_fmt = get_cmd_option(sys.argv, 5, len(sys.argv), '--ref-fmt')
+    if not (ref_fmt is None
+            or ref_fmt in FMTS):
+        print '--ref-fmt can only have option among {}'.format(', '.join(FMTS))
+
+    ref_width = get_cmd_option(sys.argv, 5, len(sys.argv), '--ref-width')
+    ref_height = get_cmd_option(sys.argv, 5, len(sys.argv), '--ref-height')
+    dis_width = get_cmd_option(sys.argv, 5, len(sys.argv), '--dis-width')
+    dis_height = get_cmd_option(sys.argv, 5, len(sys.argv), '--dis-height')
+
+    dis_fmt = get_cmd_option(sys.argv, 5, len(sys.argv), '--dis-fmt')
+    if not (dis_fmt is None
+            or dis_fmt in FMTS):
+        print '--dis-fmt can only have option among {}'.format(', '.join(FMTS))
+
     work_dir = get_cmd_option(sys.argv, 5, len(sys.argv), '--work-dir')
 
     pool_method = get_cmd_option(sys.argv, 5, len(sys.argv), '--pool')
@@ -68,13 +85,37 @@ def main():
     if work_dir is None:
         work_dir = VmafConfig.workdir_path()
 
+    asset_dict = {'quality_width':q_width, 'quality_height':q_height}
+
+    if ref_fmt is None:
+        asset_dict['ref_yuv_type'] = 'notyuv'
+    else:
+        if ref_width is None or ref_height is None:
+            print 'if --ref-fmt is specified, both --ref-width and --ref-height must be specified'
+            return 2
+        else:
+            asset_dict['ref_yuv_type'] = ref_fmt
+            asset_dict['ref_width'] = ref_width
+            asset_dict['ref_height'] = ref_height
+
+    if dis_fmt is None:
+        asset_dict['dis_yuv_type'] = 'notyuv'
+    else:
+        if dis_width is None or dis_height is None:
+            print 'if --dis-fmt is specified, both --dis-width and --dis-height must be specified'
+            return 2
+        else:
+            asset_dict['dis_yuv_type'] = dis_fmt
+            asset_dict['dis_width'] = dis_width
+            asset_dict['dis_height'] = dis_height
+
     asset = Asset(dataset="cmd",
                   content_id=abs(hash(get_file_name_without_extension(ref_file))) % (10 ** 16),
                   asset_id=abs(hash(get_file_name_without_extension(ref_file))) % (10 ** 16),
                   workdir_root=work_dir,
                   ref_path=ref_file,
                   dis_path=dis_file,
-                  asset_dict={'quality_width':q_width, 'quality_height':q_height, 'yuv_type': 'notyuv'}
+                  asset_dict=asset_dict,
                   )
     assets = [asset]
 
