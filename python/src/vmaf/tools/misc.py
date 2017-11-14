@@ -433,6 +433,15 @@ def neg_if_even(x):
     """
     return 1 - (x % 2 == 0) * 2
 
+def get_unique_sorted_list(l):
+    """
+    >>> get_unique_sorted_list([3, 4, 4, 1])
+    [1, 3, 4]
+    >>> get_unique_sorted_list([])
+    []
+    """
+    return sorted(list(set(l)))
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()

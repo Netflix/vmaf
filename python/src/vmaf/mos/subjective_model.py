@@ -154,7 +154,8 @@ class SubjectiveModel(TypeVersionEnabled):
 
         return s_es
 
-    def _postprocess_model_result(self, result, **kwargs):
+    @staticmethod
+    def _postprocess_model_result(result, **kwargs):
 
         # normalize_final: True - do normalization on final quality score
         #                  False - don't do
@@ -422,7 +423,7 @@ class MaximumLikelihoodEstimationModelReduced(SubjectiveModel):
         }
 
         try:
-            observers = dataset_reader._get_list_observers # may not exist
+            observers = dataset_reader._get_list_observers() # may not exist
             result['observers'] = observers
         except AssertionError:
             pass
