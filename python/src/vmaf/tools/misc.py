@@ -35,6 +35,10 @@ def get_file_name_without_extension(path):
     'src01_hrc01'
     >>> get_file_name_without_extension('abc/xyz/src01_hrc01.yuv')
     'src01_hrc01'
+    >>> get_file_name_without_extension('abc/xyz/src01_hrc01.sdr.yuv')
+    'src01_hrc01.sdr'
+    >>> get_file_name_without_extension('abc/xyz/src01_hrc01.sdr.dvi.yuv')
+    'src01_hrc01.sdr.dvi'
 
     """
     return os.path.splitext(path.split("/")[-1])[0]

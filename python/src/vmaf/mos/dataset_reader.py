@@ -162,10 +162,11 @@ class RawDatasetReader(DatasetReader):
     def to_aggregated_dataset(self, aggregate_scores, **kwargs):
 
         newone = empty_object()
-        newone.dataset_name = self.dataset.dataset_name
-        newone.yuv_fmt = self.dataset.yuv_fmt
-        newone.width = self.dataset.width
-        newone.height = self.dataset.height
+
+        # systematically copy fields, e.g. dataset_name, yuv_fmt, width, height, ...
+        for key in self.dataset.__dict__.keys():
+            if not key.startswith('__'): # filter out those e.g. __builtin__ ...
+                setattr(newone, key, getattr(self.dataset, key))
 
         if 'quality_width' in kwargs and kwargs['quality_width'] is not None:
             newone.quality_width = kwargs['quality_width']
@@ -207,10 +208,11 @@ class RawDatasetReader(DatasetReader):
         import math
 
         newone = empty_object()
-        newone.dataset_name = self.dataset.dataset_name
-        newone.yuv_fmt = self.dataset.yuv_fmt
-        newone.width = self.dataset.width
-        newone.height = self.dataset.height
+
+        # systematically copy fields, e.g. dataset_name, yuv_fmt, width, height, ...
+        for key in self.dataset.__dict__.keys():
+            if not key.startswith('__'): # filter out those e.g. __builtin__ ...
+                setattr(newone, key, getattr(self.dataset, key))
 
         if 'quality_width' in kwargs and kwargs['quality_width'] is not None:
             newone.quality_width = kwargs['quality_width']

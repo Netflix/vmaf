@@ -31,9 +31,13 @@ class SubjectiveModel(TypeVersionEnabled):
     def _run_modeling(cls, dataset_reader, **kwargs):
         raise NotImplementedError
 
+    def _assert_args(self):
+        assert isinstance(self.dataset_reader, RawDatasetReader)
+
     def __init__(self, dataset_reader):
         TypeVersionEnabled.__init__(self)
         self.dataset_reader = dataset_reader
+        self._assert_args()
 
     @classmethod
     def from_dataset_file(cls, dataset_filepath, content_ids=None):

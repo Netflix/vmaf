@@ -193,7 +193,8 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
     except AssertionError:
         # no groundtruth, try do subjective modeling
         subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs and kwargs['subj_model_class'] is not None else DmosModel
-        subjective_model = subj_model_class(RawDatasetReader(test_dataset))
+        dataset_reader_class = kwargs['dataset_reader_class'] if 'dataset_reader_class' in kwargs else RawDatasetReader
+        subjective_model = subj_model_class(dataset_reader_class(test_dataset))
         subjective_model.run_modeling(**kwargs)
         test_dataset_aggregate = subjective_model.to_aggregated_dataset(**kwargs)
         test_raw_assets = test_assets
@@ -286,7 +287,8 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
     except AssertionError:
         # no groundtruth, try do subjective modeling
         subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs and kwargs['subj_model_class'] is not None else DmosModel
-        subjective_model = subj_model_class(RawDatasetReader(train_dataset))
+        dataset_reader_class = kwargs['dataset_reader_class'] if 'dataset_reader_class' in kwargs else RawDatasetReader
+        subjective_model = subj_model_class(dataset_reader_class(train_dataset))
         subjective_model.run_modeling(**kwargs)
         train_dataset_aggregate = subjective_model.to_aggregated_dataset(**kwargs)
         train_raw_assets = train_assets
@@ -376,7 +378,8 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         except AssertionError:
             # no groundtruth, try do subjective modeling
             subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs and kwargs['subj_model_class'] is not None else DmosModel
-            subjective_model = subj_model_class(RawDatasetReader(test_dataset))
+            dataset_reader_class = kwargs['dataset_reader_class'] if 'dataset_reader_class' in kwargs else RawDatasetReader
+            subjective_model = subj_model_class(dataset_reader_class(test_dataset))
             subjective_model.run_modeling(**kwargs)
             test_dataset_aggregate = subjective_model.to_aggregated_dataset(**kwargs)
             test_raw_assets = test_assets
