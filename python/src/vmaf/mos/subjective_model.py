@@ -475,8 +475,7 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
         #       NO_CONTENT - content-unaware
 
         if 'subject_rejection' in kwargs and kwargs['subject_rejection'] is True:
-            assert False, 'SubjectAndContentAwareGenerativeModel must not ' \
-                          'and need not apply subject rejection.'
+            assert False, '{} must not and need not apply subject rejection.'.format(cls.__name__)
 
         gradient_method = kwargs['gradient_method'] if 'gradient_method' in kwargs else cls.DEFAULT_GRADIENT_METHOD
         assert gradient_method == 'simplified' or gradient_method == 'original' or gradient_method == 'numerical'
