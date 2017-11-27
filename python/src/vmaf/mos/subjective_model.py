@@ -508,21 +508,14 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
         # === initialization ===
 
         mos = np.array(MosModel(dataset_reader).run_modeling()['quality_scores'])
+        r_es = x_es - np.tile(mos, (S, 1)).T # r_es: residual at e, s
+        sigma_r_s = pd.DataFrame(r_es).std(axis=0, ddof=0) # along e
+        sigma_r_c = std_over_subject_and_content_id(r_es, dataset_reader.content_id_of_dis_videos)
 
         x_e = mos # use MOS as initial value for x_e
         b_s = np.zeros(S)
-        r_es = x_es - np.tile(x_e, (S, 1)).T # r_es: residual at e, s
-
-        if cls.mode == 'NO_SUBJECT':
-            v_s = np.zeros(S)
-        else:
-            v_s = pd.DataFrame(r_es).std(axis=0, ddof=0) # along e
-
-        if cls.mode == 'NO_CONTENT':
-            a_c = np.zeros(C)
-        else:
-            a_c = std_over_subject_and_content_id(
-                r_es, dataset_reader.content_id_of_dis_videos)
+        v_s = np.zeros(S) if cls.mode == 'NO_SUBJECT' else sigma_r_s
+        a_c = np.zeros(C) if cls.mode == 'NO_CONTENT' else sigma_r_c
 
         x_e_std = None
         b_s_std = None
