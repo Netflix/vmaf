@@ -501,6 +501,11 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
                 stds.append(pd.Series(l).std(ddof=0))
             return np.array(stds)
 
+        def one_or_nan(x):
+            y = np.ones(x.shape)
+            y[np.isnan(x)] = float('nan')
+            return y
+
         x_es = cls._get_opinion_score_2darray_with_preprocessing(dataset_reader, **kwargs)
         E, S = x_es.shape
         C = dataset_reader.num_ref_videos
@@ -543,7 +548,7 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
                 num_num = x_es - np.tile(x_e, (S, 1)).T
                 num_den = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
                 num = pd.DataFrame(num_num / num_den).sum(axis=0) # sum over e
-                den_num = x_es / x_es # 1 and nan
+                den_num = one_or_nan(x_es) # 1 and nan
                 den_den = num_den
                 den = pd.DataFrame(den_num / den_den).sum(axis=0) # sum over e
                 b_s_new = num / den
@@ -555,7 +560,7 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
                 vs2_add_ace2 = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
                 order1 = (x_es - np.tile(x_e, (S, 1)).T - np.tile(b_s, (E, 1))) / vs2_add_ace2
                 order1 = pd.DataFrame(order1).sum(axis=0) # sum over e
-                order2 = - (x_es / x_es) / vs2_add_ace2
+                order2 = - one_or_nan(x_es) / vs2_add_ace2
                 order2 = pd.DataFrame(order2).sum(axis=0) # sum over e
                 b_s_new = b_s - order1 / order2
                 b_s = b_s * (1.0 - REFRESH_RATE) + b_s_new * REFRESH_RATE
@@ -713,7 +718,7 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
                 num_num = x_es - np.tile(b_s, (E, 1))
                 num_den = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
                 num = pd.DataFrame(num_num / num_den).sum(axis=1) # sum over s
-                den_num = x_es / x_es # 1 and nan
+                den_num = one_or_nan(x_es) # 1 and nan
                 den_den = num_den
                 den = pd.DataFrame(den_num / den_den).sum(axis=1) # sum over s
                 x_e_new = num / den
@@ -726,7 +731,7 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
                 vs2_add_ace2 = np.tile(v_s**2, (E, 1)) + np.tile(a_c_e**2, (S, 1)).T
                 order1 = a_es / vs2_add_ace2
                 order1 = pd.DataFrame(order1).sum(axis=1) # sum over s
-                order2 = - (x_es / x_es) / vs2_add_ace2
+                order2 = - one_or_nan(x_es) / vs2_add_ace2
                 order2 = pd.DataFrame(order2).sum(axis=1) # sum over s
                 x_e_new = x_e - order1 / order2
                 x_e = x_e * (1.0 - REFRESH_RATE) + x_e_new * REFRESH_RATE
