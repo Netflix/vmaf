@@ -50,7 +50,7 @@ def main():
             'content_scores',
         ],
         plot_type='errorbar',
-        gradient_method='numerical',
+        gradient_method='simplified',
     )
 
     plt.show()
