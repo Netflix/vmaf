@@ -1,5 +1,27 @@
 # Change Log
 
+## (12/3/2017) [1.3.2]
+
+**Refactoring:**
+- Lift check for exec existence during program load.
+- Refactor psnr, ssim, ms_ssim and vmaf_feature to call ExternalProgramCaller.
+- Refactor feature/Makefile to make executables depend on libvmaf.a.
+- Refactor wrapper/Makefile to include additional objs in libvmaf.a but exclude main.o.
+- Remove ar -d command after removing main.o from libvmaf.a.
+
+**New features:**
+- Generalize read_dataset.
+- Update default Asset resampling method to bicubic (#116).
+- Extend ffmpeg2vmaf script to allow ref/dis input to be YUV (#118).
+- Improve README.md (#121).
+
+**Fixed bugs:**
+- Temporary fix Visual Studio builds (#112).
+- Avoid unnecessary dependency on matplotlib in run_vmaf (#114).
+- Remove unneeded dependencies in Dockerfile, fixes #115 (#117).
+- MinGW support (#123).
+- Change compute_vmaf() interface to return an error code instead of throw an error #124 (#126).
+
 ## (8/12/2017) [1.3.1]
 
 **Refactoring:**
