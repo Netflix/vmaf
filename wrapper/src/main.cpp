@@ -106,7 +106,7 @@ int run_wrapper(char *fmt, int width, int height, char *ref_path, char *dis_path
     }
 
     /* Run VMAF */
-    score = compute_vmaf(fmt, width, height, read_frame, s, model_path, log_path, log_fmt, disable_clip, disable_avx, enable_transform, phone_model, do_psnr, do_ssim, do_ms_ssim, pool_method);
+    ret = compute_vmaf(&score, fmt, width, height, read_frame, s, model_path, log_path, log_fmt, disable_clip, disable_avx, enable_transform, phone_model, do_psnr, do_ssim, do_ms_ssim, pool_method);
 
 fail_or_end:
     if (s->ref_rfile)
