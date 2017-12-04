@@ -128,6 +128,7 @@ You can also add it to the environment permanently, by appending to `~/.bashrc`:
 
 ```
 echo export PYTHONPATH="$(pwd)/python/src:$PYTHONPATH" >> ~/.bashrc
+source ~/.bashrc
 ```
 
 Under macOS, use `~/.bash_profile` instead.
