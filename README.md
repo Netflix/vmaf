@@ -92,18 +92,18 @@ pip install matplotlib notebook pandas sympy nose scikit-learn h5py
 You can verify if these packages are properly installed and its version/location by:
 
 ```
-python -c 'import numpy as pkg; print pkg.__version__; print pkg.__file__'
-python -c 'import scipy as pkg; print pkg.__version__; print pkg.__file__'
-python -c 'import matplotlib as pkg; print pkg.__version__; print pkg.__file__'
-python -c 'import pandas as pkg; print pkg.__version__; print pkg.__file__'
-python -c 'import sklearn as pkg; print pkg.__version__; print pkg.__file__'
-python -c 'import h5py as pkg; print pkg.__version__; print pkg.__file__'
+python -c 'import numpy as pkg; print(pkg.__version__); print(pkg.__file__)'
+python -c 'import scipy as pkg; print(pkg.__version__); print(pkg.__file__)'
+python -c 'import matplotlib as pkg; print(pkg.__version__); print(pkg.__file__)'
+python -c 'import pandas as pkg; print(pkg.__version__); print(pkg.__file__)'
+python -c 'import sklearn as pkg; print(pkg.__version__); print(pkg.__file__)'
+python -c 'import h5py as pkg; print(pkg.__version__); print(pkg.__file__)'
 ```
 
 If you see that the printed version number is older than the ones aforementioned, it could suggest that a previously installed package with the same name but older version at a different location may have overshadowed the new one. Make sure that the new one's path appears early in the path list, which can be printed by:
 
 ```
-python -c 'import sys; print sys.path'
+python -c 'import sys; print(sys.path)'
 ```
 
 (Or simply delete the older one).
