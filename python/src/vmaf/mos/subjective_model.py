@@ -790,6 +790,12 @@ class MaximumLikelihoodEstimationModel(SubjectiveModel):
             result['content_ambiguity'] = list(a_c)
             result['content_ambiguity_std'] = list(a_c_std)
 
+        try:
+            observers = dataset_reader._get_list_observers() # may not exist
+            result['observers'] = observers
+        except AssertionError:
+            pass
+
         return result
 
 

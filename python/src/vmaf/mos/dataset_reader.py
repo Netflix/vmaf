@@ -69,7 +69,8 @@ class DatasetReader(object):
         # write out
         with open(output_dataset_filepath, 'wt') as output_file:
             for key in dataset.__dict__.keys():
-                if key != 'ref_videos' and key != 'dis_videos' and not key.startswith('__'):
+                if key != 'ref_videos' and key != 'dis_videos' \
+                        and key != 'subjects' and not key.startswith('__'):
                     output_file.write('{} = '.format(key) + repr(
                         dataset.__dict__[key]) + '\n')
             output_file.write('\n')
@@ -78,7 +79,10 @@ class DatasetReader(object):
             output_file.write('\n')
             output_file.write('dis_videos = ' + pprint.pformat(
                 dataset.dis_videos) + '\n')
-
+            if 'subjects' in dataset.__dict__.keys():
+                output_file.write('\n')
+                output_file.write('subjects = ' + pprint.pformat(
+                    dataset.subjects) + '\n')
 
 class RawDatasetReader(DatasetReader):
     """
