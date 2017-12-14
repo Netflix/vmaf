@@ -5,7 +5,7 @@ import os
 
 import numpy as np
 
-from vmaf.config import VmafConfig
+from vmaf.config import VmafConfig, DisplayConfig
 from vmaf.core.asset import Asset
 from vmaf.core.quality_runner import VmafQualityRunner
 from vmaf.core.quality_runner_extra import VmafQualityRunnerWithLocalExplainer
@@ -174,7 +174,7 @@ def main():
     if show_local_explanation:
         import matplotlib.pyplot as plt
         runner.show_local_explanations([result])
-        plt.show()
+        DisplayConfig.show()
 
     return 0
 

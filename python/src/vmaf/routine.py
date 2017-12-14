@@ -12,7 +12,7 @@ from vmaf.core.result_store import FileSystemResultStore
 from vmaf.mos.dataset_reader import RawDatasetReader
 from vmaf.mos.subjective_model import DmosModel
 from vmaf.tools.misc import indices, get_stdout_logger, import_python_file, close_logger, get_file_name_without_extension
-from vmaf.config import VmafConfig
+from vmaf.config import VmafConfig, DisplayConfig
 from vmaf.core.asset import Asset
 from vmaf.core.train_test_model import TrainTestModel, RegressorMixin, ClassifierMixin
 from vmaf.core.local_explainer import LocalExplainer
@@ -610,7 +610,7 @@ def explain_model_on_dataset(model, test_assets_selected_indexs,
 
     explainer.print_explanations(test_exps, assets=test_assets, ys=test_ys, ys_pred=test_ys_pred)
     explainer.plot_explanations(test_exps, assets=test_assets, ys=test_ys, ys_pred=test_ys_pred)
-    plt.show()
+    DisplayConfig.show()
 
 
 def run_subjective_models(dataset_filepath, subjective_model_classes, do_plot=None, **kwargs):

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats
 
-from vmaf.config import VmafConfig
+from vmaf.config import VmafConfig, DisplayConfig
 from vmaf.tools.misc import import_python_file
 from vmaf.mos.dataset_reader import RawDatasetReader, SyntheticRawDatasetReader, \
     MissingDataRawDatasetReader, SelectSubjectRawDatasetReader, \
@@ -685,7 +685,7 @@ def main():
     # ===== synthetic data =====
     # validate_with_synthetic_dataset()
 
-    plt.show()
+    DisplayConfig.show()
 
 if __name__ == '__main__':
     main()

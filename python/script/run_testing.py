@@ -4,6 +4,7 @@ import os
 import sys
 
 import numpy as np
+from vmaf.config import DisplayConfig
 
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.tools.misc import import_python_file, get_cmd_option, cmd_option_exists
@@ -132,7 +133,7 @@ def main():
         # ax.set_ylim([-10, 110])
 
         plt.tight_layout()
-        plt.show()
+        DisplayConfig.show()
     except ImportError:
         print_matplotlib_warning()
         assets, results = run_test_on_dataset(test_dataset, runner_class, None,

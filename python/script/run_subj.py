@@ -3,6 +3,7 @@ import os
 import sys
 
 import matplotlib.pyplot as plt
+from vmaf.config import DisplayConfig
 
 from vmaf.mos.subjective_model import SubjectiveModel
 from vmaf.routine import run_subjective_models
@@ -53,7 +54,7 @@ def main():
         gradient_method='simplified',
     )
 
-    plt.show()
+    DisplayConfig.show()
 
     return 0
 

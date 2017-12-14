@@ -4,7 +4,7 @@ __license__ = "Apache, Version 2.0"
 import matplotlib.pyplot as plt
 import numpy as np
 
-from vmaf.config import VmafConfig
+from vmaf.config import VmafConfig, DisplayConfig
 from vmaf.routine import run_vmaf_cv, run_vmaf_kfold_cv
 
 if __name__ == '__main__':
@@ -41,6 +41,6 @@ if __name__ == '__main__':
         aggregate_method=aggregate_method,
     )
 
-    plt.show()
+    DisplayConfig.show()
 
     print 'Done.'

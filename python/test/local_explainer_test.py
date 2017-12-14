@@ -149,7 +149,7 @@ class LocalExplainerTest(unittest.TestCase):
 
         # self.runner.show_local_explanations(results, indexs=[2, 3])
         # import matplotlib.pyplot as plt
-        # plt.show()
+        # DisplayConfig.show()
 
 
 class LocalExplainerMomentRandomForestTest(unittest.TestCase):

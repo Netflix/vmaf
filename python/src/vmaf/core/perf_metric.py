@@ -326,7 +326,7 @@ class KflkPerfMetric(RawScorePerfMetric):
         # plt.imshow(signif_mtx, interpolation='nearest')
         # plt.set_cmap('gray')
         # plt.colorbar()
-        # plt.show()
+        # DisplayConfig.show()
 
         results = cls._metrics_performance(objscodif_mtx.reshape(1, N*N), signif_mtx.reshape(1, N*N))
 
