@@ -1,1 +1,1 @@
-include Makefile.VMAF
+-include Makefile.VMAF
