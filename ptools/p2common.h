@@ -6,7 +6,7 @@
 // implementation is fast.
 
 #include "cpickle.h"  // Python #defines 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__MINGW32__)
 #include <winsock2.h>
 #else
 #include <arpa/inet.h>
