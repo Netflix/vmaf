@@ -2,11 +2,10 @@
 #define FDTOOLS_H_
 
 extern "C" {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__MINGW32__)
     #include <io.h>
     #include <Winsock2.h>
     #include <string.h>
-    typedef unsigned __int64    ssize_t;
 #else
     #include <unistd.h>
     #include <netinet/in.h>
@@ -16,6 +15,10 @@ extern "C" {
 #endif
 #include <signal.h>
 #include <sys/types.h>
+
+#if defined(_MSC_VER)
+    typedef unsigned __int64    ssize_t;
+#endif
 
 };
 #include "ocval.h"
@@ -34,7 +37,7 @@ struct SockAddr_ {
 
   // Basic data of struct
   struct sockaddr addr;
-#if defined(OSF1_) || defined(_MSC_VER)
+#if defined(OSF1_) || defined(_MSC_VER) || defined(__MINGW32__)
   int             addrlen;
 #else
   socklen_t       addrlen;
@@ -430,7 +433,7 @@ class FDTools_ {
   virtual void closeUp_ (int& fd)
   {
     if (fd!=-1) {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__MINGW32__)
         int flag = SD_BOTH;
 #else
         int flag = SHUT_RDWR;

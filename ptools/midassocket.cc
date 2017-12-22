@@ -1,7 +1,7 @@
 
 #include "midassocket.h"
 #include "socketerror.h"
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__MINGW32__)
 #else
 #include <netdb.h>   // for gethostbyname ... this causes conflicts
                      // on tru64 with X-Midas, so it has been moved to a .cc

@@ -129,7 +129,7 @@ class MidasSocket_ : public FDTools_ {
   {
       if (forceShutdownOnClose_)
       {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__MINGW32__)
           int flag = SD_BOTH;
 #else
           int flag = SHUT_RDWR;
