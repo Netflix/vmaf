@@ -68,12 +68,17 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height, int (*rea
         catch (VmafException& e)
         {
             printf("Caught VmafException: %s\n", e.what());
-            return 1;
+            return -2;
         }
         catch (std::runtime_error& e)
         {
             printf("Caught runtime_error: %s\n", e.what());
-            return 1;
+            return -3;
+        }
+        catch (std::logic_error& e)
+        {
+            printf("Caught logic_error: %s\n", e.what());
+            return -4;
         }
     }
 
