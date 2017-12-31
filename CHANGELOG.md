@@ -1,5 +1,10 @@
 # Change Log
 
+## (12/3/2017) [1.3.3]
+
+**Fixed bugs:**
+- Update VMAF version to 0.6.2 after compute_vmaf() interface change (#124).
+
 ## (12/3/2017) [1.3.2]
 
 **Refactoring:**
