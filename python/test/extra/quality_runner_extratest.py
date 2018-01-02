@@ -118,7 +118,7 @@ class QualityRunnerTest(unittest.TestCase):
 
 
 @unittest.skipIf(not VmafExternalConfig.matlab_path(), "matlab not installed")
-class ParallelQualityRunnerTest(unittest.TestCase):
+class ParallelMatlabQualityRunnerTest(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, 'runner'):
@@ -161,6 +161,17 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['STRRED_feature_srred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_trred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_score'], 0.0, places=4)
+
+
+class ParallelQualityRunnerTest(unittest.TestCase):
+
+    def tearDown(self):
+        if hasattr(self, 'runner'):
+            self.runner.remove_results()
+            pass
+
+    def setUp(self):
+        self.result_store = FileSystemResultStore()
 
 
 if __name__ == '__main__':

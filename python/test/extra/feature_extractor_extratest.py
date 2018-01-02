@@ -9,6 +9,94 @@ __license__ = "Apache, Version 2.0"
 
 
 @unittest.skipIf(not VmafExternalConfig.matlab_path(), "matlab not installed")
+class ParallelMatlabFeatureExtractorTestNew(unittest.TestCase):
+
+    def tearDown(self):
+        if hasattr(self, 'fextractor'):
+            self.fextractor.remove_results()
+        pass
+
+    def test_run_strred_fextractor(self):
+        print 'test on running STRRED feature extractor...'
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.fextractor = StrredFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['STRRED_feature_srred_score'], 3.0114681041666671, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_trred_score'], 7.3039486249999994, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_strred_score'], 21.995608318659482, places=4)
+        self.assertAlmostEqual(results[1]['STRRED_feature_srred_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[1]['STRRED_feature_trred_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[1]['STRRED_feature_strred_score'], 0.0, places=4)
+
+    def test_run_strred_fextractor_blackframes(self):
+        print 'test on running STRRED feature extractor on flat frames...'
+        ref_path = VmafConfig.test_resource_path("yuv", "flat_1920_1080_0.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "flat_1920_1080_10.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        from vmaf.core.result_store import FileSystemResultStore
+        result_store = FileSystemResultStore(logger=None)
+
+        self.fextractor = StrredFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=result_store
+        )
+
+        print '    running for the first time with fresh calculation...'
+        self.fextractor.run(parallelize=True)
+
+        result0, result1 = self.fextractor.results
+        import os
+        self.assertTrue(os.path.exists(result_store._get_result_file_path(result0)))
+        self.assertTrue(os.path.exists(result_store._get_result_file_path(result1)))
+
+        print '    running for the second time with stored results...'
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+
+        # ignore NaN
+        for result in results:
+            result.set_score_aggregate_method(ListStats.nonemean)
+
+        self.assertAlmostEqual(results[0]['STRRED_feature_srred_score'], 1220.5679849999999, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_trred_score'], 50983.3097155, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_strred_score'], 62228595.6081, places=4)
+        self.assertAlmostEqual(results[1]['STRRED_feature_srred_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[1]['STRRED_feature_trred_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[1]['STRRED_feature_strred_score'], 0.0, places=4)
+
+
 class ParallelFeatureExtractorTestNew(unittest.TestCase):
 
     def tearDown(self):
@@ -174,86 +262,6 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 0.7203213958333331, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 40.280504208333333, places=4)
-
-    def test_run_strred_fextractor(self):
-        print 'test on running STRRED feature extractor...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
-
-        self.fextractor = StrredFeatureExtractor(
-            [asset, asset_original],
-            None, fifo_mode=True,
-            result_store=None
-        )
-        self.fextractor.run(parallelize=True)
-
-        results = self.fextractor.results
-
-        self.assertAlmostEqual(results[0]['STRRED_feature_srred_score'], 3.0114681041666671, places=4)
-        self.assertAlmostEqual(results[0]['STRRED_feature_trred_score'], 7.3039486249999994, places=4)
-        self.assertAlmostEqual(results[0]['STRRED_feature_strred_score'], 21.995608318659482, places=4)
-        self.assertAlmostEqual(results[1]['STRRED_feature_srred_score'], 0.0, places=4)
-        self.assertAlmostEqual(results[1]['STRRED_feature_trred_score'], 0.0, places=4)
-        self.assertAlmostEqual(results[1]['STRRED_feature_strred_score'], 0.0, places=4)
-
-    def test_run_strred_fextractor_blackframes(self):
-        print 'test on running STRRED feature extractor on flat frames...'
-        ref_path = VmafConfig.test_resource_path("yuv", "flat_1920_1080_0.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "flat_1920_1080_10.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
-
-        from vmaf.core.result_store import FileSystemResultStore
-        result_store = FileSystemResultStore(logger=None)
-
-        self.fextractor = StrredFeatureExtractor(
-            [asset, asset_original],
-            None, fifo_mode=True,
-            result_store=result_store
-        )
-
-        print '    running for the first time with fresh calculation...'
-        self.fextractor.run(parallelize=True)
-
-        result0, result1 = self.fextractor.results
-        import os
-        self.assertTrue(os.path.exists(result_store._get_result_file_path(result0)))
-        self.assertTrue(os.path.exists(result_store._get_result_file_path(result1)))
-
-        print '    running for the second time with stored results...'
-        self.fextractor.run(parallelize=True)
-        results = self.fextractor.results
-
-        # ignore NaN
-        for result in results:
-            result.set_score_aggregate_method(ListStats.nonemean)
-
-        self.assertAlmostEqual(results[0]['STRRED_feature_srred_score'], 1220.5679849999999, places=4)
-        self.assertAlmostEqual(results[0]['STRRED_feature_trred_score'], 50983.3097155, places=4)
-        self.assertAlmostEqual(results[0]['STRRED_feature_strred_score'], 62228595.6081, places=4)
-        self.assertAlmostEqual(results[1]['STRRED_feature_srred_score'], 0.0, places=4)
-        self.assertAlmostEqual(results[1]['STRRED_feature_trred_score'], 0.0, places=4)
-        self.assertAlmostEqual(results[1]['STRRED_feature_strred_score'], 0.0, places=4)
 
 
 if __name__ == '__main__':
