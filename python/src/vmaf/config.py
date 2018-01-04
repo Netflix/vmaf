@@ -135,6 +135,7 @@ class DisplayConfig(object):
             format = kwargs['format'] if 'format' in kwargs else 'png'
             filedir = kwargs['write_to_dir'] if kwargs['write_to_dir'] is not None else VmafConfig.workspace_path('output')
             for fignum in plt.get_fignums():
-                plt.savefig(os.path.join(filedir, str(fignum)), format=format)
+                fig = plt.figure(fignum)
+                fig.savefig(os.path.join(filedir, str(fignum)), format=format)
         else:
             plt.show()
