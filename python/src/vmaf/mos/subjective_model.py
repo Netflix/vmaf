@@ -40,12 +40,19 @@ class SubjectiveModel(TypeVersionEnabled):
         self._assert_args()
 
     @classmethod
-    def from_dataset_file(cls, dataset_filepath, content_ids=None):
+    def _import_dataset_and_filter(cls, dataset_filepath, content_ids, asset_ids):
         dataset = import_python_file(dataset_filepath)
-
         if content_ids is not None:
-            dataset.dis_videos = filter(lambda dis_video: dis_video['content_id'] in content_ids, dataset.dis_videos)
+            dataset.dis_videos = filter(lambda dis_video: dis_video['content_id'] in content_ids,
+                                        dataset.dis_videos)
+        if asset_ids is not None:
+            dataset.dis_videos = filter(lambda dis_video: dis_video['asset_id'] in asset_ids,
+                                        dataset.dis_videos)
+        return dataset
 
+    @classmethod
+    def from_dataset_file(cls, dataset_filepath, content_ids=None, asset_ids=None):
+        dataset = cls._import_dataset_and_filter(dataset_filepath, content_ids, asset_ids)
         dataset_reader = RawDatasetReader(dataset)
         return cls(dataset_reader)
 

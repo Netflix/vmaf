@@ -37,6 +37,14 @@ class DatasetReader(object):
         return len(self.dataset.ref_videos)
 
     @property
+    def content_ids(self):
+        return list(set(map(lambda ref_video: ref_video['content_id'], self.dataset.ref_videos)))
+
+    @property
+    def asset_ids(self):
+        return list(set(map(lambda dis_video: dis_video['asset_id'], self.dataset.dis_videos)))
+
+    @property
     def content_id_of_dis_videos(self):
         return map(lambda dis_video: dis_video['content_id'], self.dataset.dis_videos)
 
@@ -199,6 +207,13 @@ class RawDatasetReader(DatasetReader):
                 del dis_video2['os']
             dis_video2['groundtruth'] = score
             dis_videos.append(dis_video2)
+
+        if 'aggregate_content_ids' in kwargs and kwargs['aggregate_content_ids'] is not None:
+            dis_videos = filter(lambda dis_video: dis_video['content_id'] in kwargs['aggregate_content_ids'], dis_videos)
+
+        if 'aggregate_asset_ids' in kwargs and kwargs['aggregate_asset_ids'] is not None:
+            dis_videos = filter(lambda dis_video: dis_video['asset_id'] in kwargs['aggregate_asset_ids'], dis_videos)
+
         newone.dis_videos = dis_videos
 
         return newone

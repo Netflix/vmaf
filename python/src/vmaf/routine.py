@@ -835,31 +835,34 @@ def generate_dataset_from_raw(raw_dataset_filepath, output_dataset_filepath, **k
     if raw_dataset_filepath:
         subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs else DmosModel
         content_ids = kwargs['content_ids'] if 'content_ids' in kwargs else None
-        subjective_model = subj_model_class.from_dataset_file(raw_dataset_filepath, content_ids=content_ids)
+        asset_ids = kwargs['asset_ids'] if 'asset_ids' in kwargs else None
+        subjective_model = subj_model_class.from_dataset_file(raw_dataset_filepath,
+                                                              content_ids=content_ids,
+                                                              asset_ids=asset_ids)
         subjective_model.run_modeling(**kwargs)
         subjective_model.to_aggregated_dataset_file(output_dataset_filepath, **kwargs)
 
 
 def run_vmaf_cv_from_raw(train_dataset_raw_filepath, test_dataset_raw_filepath,
                     param_filepath, output_model_filepath, **kwargs):
-    if 'train_quality_wh' in kwargs:
+    if 'train_quality_wh' in kwargs and kwargs['train_quality_wh'] is not None:
         train_quality_width, train_quality_height = kwargs['train_quality_wh']
     else:
         train_quality_width = None
         train_quality_height = None
 
-    if 'test_quality_wh' in kwargs:
+    if 'test_quality_wh' in kwargs and kwargs['test_quality_wh'] is not None:
         test_quality_width, test_quality_height = kwargs['test_quality_wh']
     else:
         test_quality_width = None
         test_quality_height = None
 
-    if 'train_transform_final' in kwargs:
+    if 'train_transform_final' in kwargs and kwargs['train_transform_final'] is not None:
         train_transform_final = kwargs['train_transform_final']
     else:
         train_transform_final = None
 
-    if 'test_transform_final' in kwargs:
+    if 'test_transform_final' in kwargs and kwargs['test_transform_final'] is not None:
         test_transform_final = kwargs['test_transform_final']
     else:
         test_transform_final = None
