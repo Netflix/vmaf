@@ -214,6 +214,11 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
             optional_dict = {}
         optional_dict['enable_transform_score'] = kwargs['enable_transform_score']
 
+    if 'disable_clip_score' in kwargs and kwargs['disable_clip_score'] is not None:
+        if not optional_dict:
+            optional_dict = {}
+        optional_dict['disable_clip_score'] = kwargs['disable_clip_score']
+
     # run
     runner = runner_class(
         test_assets,
