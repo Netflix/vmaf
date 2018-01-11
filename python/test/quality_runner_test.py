@@ -10,7 +10,8 @@ from vmaf.config import VmafConfig
 from vmaf.core.asset import Asset
 from vmaf.core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner, \
     PsnrQualityRunner, VmafossExecQualityRunner, MsSsimQualityRunner, \
-    SsimQualityRunner, Adm2QualityRunner, VmafPhoneQualityRunner
+    SsimQualityRunner, Adm2QualityRunner, VmafPhoneQualityRunner, VifQualityRunner, \
+    Vif2QualityRunner
 from vmaf.core.result_store import FileSystemResultStore
 
 
@@ -961,6 +962,64 @@ class QualityRunnerTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['ADM2_score'], 0.93458780728708746, places=4)
         self.assertAlmostEqual(results[1]['ADM2_score'], 1.0, places=4)
+
+    def test_run_vif_runner(self):
+        print 'test on running VIF runner...'
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.runner = VifQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VIF_score'], 0.44609339583333335, places=4)
+        self.assertAlmostEqual(results[1]['VIF_score'], 1.0, places=4)
+
+    def test_run_vif2_runner(self):
+        print 'test on running VIF2 runner...'
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.runner = Vif2QualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VIF2_score'], 0.7272233644583975, places=4)
+        self.assertAlmostEqual(results[1]['VIF2_score'], 1.0, places=4)
 
     def test_run_vmaf_runner_with_transform_score(self):
         print 'test on running VMAF runner with score transforming...'

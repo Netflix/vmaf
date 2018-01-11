@@ -683,6 +683,14 @@ class VmafSingleFeatureQualityRunner(QualityRunner):
         vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
 
+class VifQualityRunner(VmafSingleFeatureQualityRunner):
+    TYPE = 'VIF'
+    FEATURE_NAME = 'vif'
+
+class Vif2QualityRunner(VmafSingleFeatureQualityRunner):
+    TYPE = 'VIF2'
+    FEATURE_NAME = 'vif2'
+
 class Adm2QualityRunner(VmafSingleFeatureQualityRunner):
     TYPE = 'ADM2'
     # TYPE = 'DLM'
