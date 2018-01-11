@@ -12,7 +12,7 @@ from vmaf.tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_s
 from vmaf.core.mixin import TypeVersionEnabled
 from vmaf.config import VmafExternalConfig
 
-__copyright__ = "Copyright 2016-2017, Netflix, Inc."
+__copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 class Executor(TypeVersionEnabled):

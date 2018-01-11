@@ -2,7 +2,7 @@ import collections
 from functools import partial
 import os
 
-__copyright__ = "Copyright 2016-2017, Netflix, Inc."
+__copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import warnings

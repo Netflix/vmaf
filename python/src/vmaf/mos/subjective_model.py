@@ -10,7 +10,7 @@ from vmaf.core.mixin import TypeVersionEnabled
 from vmaf.tools.misc import import_python_file, indices
 from vmaf.mos.dataset_reader import RawDatasetReader
 
-__copyright__ = "Copyright 2016-2017, Netflix, Inc."
+__copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 class SubjectiveModel(TypeVersionEnabled):

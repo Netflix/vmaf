@@ -13,7 +13,7 @@ from vmaf.routine import read_dataset
 from vmaf.tools.misc import import_python_file
 from vmaf.core.raw_extractor import DisYUVRawVideoExtractor
 
-__copyright__ = "Copyright 2016-2017, Netflix, Inc."
+__copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 class TrainTestModelTest(unittest.TestCase):

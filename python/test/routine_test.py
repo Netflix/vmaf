@@ -7,7 +7,7 @@ from vmaf.tools.misc import import_python_file
 from vmaf.core.quality_runner import VmafQualityRunner
 from vmaf.mos.subjective_model import MosModel
 
-__copyright__ = "Copyright 2016-2017, Netflix, Inc."
+__copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 

@@ -9,7 +9,7 @@ from vmaf.mos.subjective_model import SubjectiveModel
 from vmaf.routine import run_subjective_models
 from vmaf.tools.misc import import_python_file, get_file_name_with_extension
 
-__copyright__ = "Copyright 2016-2017, Netflix, Inc."
+__copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 SUBJECTIVE_MODELS = ['MLE', 'MOS', 'DMOS', 'DMOS_MLE', 'MLE_CO', 'DMOS_MLE_CO', 'SR_DMOS', 'SR_MOS', 'ZS_SR_DMOS', 'ZS_SR_MOS']

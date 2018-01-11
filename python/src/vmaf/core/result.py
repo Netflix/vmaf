@@ -7,7 +7,7 @@ import numpy as np
 from vmaf.tools.misc import get_file_name_with_extension
 from vmaf.core.asset import Asset
 
-__copyright__ = "Copyright 2016-2017, Netflix, Inc."
+__copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 

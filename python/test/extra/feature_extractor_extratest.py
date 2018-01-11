@@ -4,7 +4,7 @@ from vmaf.core.asset import Asset
 from vmaf.core.feature_extractor import VmafFeatureExtractor, StrredFeatureExtractor
 from vmaf.tools.stats import ListStats
 
-__copyright__ = "Copyright 2016-2017, Netflix, Inc."
+__copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 
