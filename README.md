@@ -45,7 +45,7 @@ Install the dependencies:
 sudo apt-get update -qq && \
 sudo apt-get install -y \
   pkg-config gfortran libhdf5-dev libfreetype6-dev liblapack-dev \
-  python python-setuptools python-dev python-pip
+  python python-setuptools python-dev python-pip python-tk
 ```
 
 Upgrade `pip` to the newest version:
