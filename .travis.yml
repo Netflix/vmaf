@@ -6,15 +6,18 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq g++-4.8
   - export CXX="g++-4.8" CC="gcc-4.8"
+  - sudo apt-get install git
 install:
   - pip install --upgrade pip
   - pip install --upgrade numpy scipy matplotlib pandas
   - pip install --upgrade scikit-learn
   - pip install --upgrade h5py
 script:
+  - git submodule update --init --recursive
   - make
   - sudo make install
   - make testlib
-  - export PYTHONPATH=$PWD/python/src:$PYTHONPATH
+  - export PYTHONPATH=$PWD/python/src:$PWD/sureal/python/src:$PYTHONPATH
   - python -m unittest discover -s python/test -p '*_test.py'
+  - python -m unittest discover -s sureal/python/test -p '*_test.py'
   - python -m unittest discover -s python/test/lib -p '*_libtest.py'

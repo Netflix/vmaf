@@ -5,7 +5,7 @@ from vmaf.config import VmafConfig
 from vmaf.routine import train_test_vmaf_on_dataset, read_dataset, run_test_on_dataset, generate_dataset_from_raw
 from vmaf.tools.misc import import_python_file
 from vmaf.core.quality_runner import VmafQualityRunner
-from vmaf.mos.subjective_model import MosModel
+from sureal.subjective_model import MosModel
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"

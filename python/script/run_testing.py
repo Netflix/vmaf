@@ -11,7 +11,7 @@ from vmaf.tools.misc import import_python_file, get_cmd_option, cmd_option_exist
 from vmaf.core.quality_runner import QualityRunner, VmafQualityRunner
 from vmaf.routine import run_test_on_dataset, print_matplotlib_warning
 from vmaf.tools.stats import ListStats
-from vmaf.mos.subjective_model import SubjectiveModel
+from sureal.subjective_model import SubjectiveModel
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"

@@ -6,15 +6,9 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ## What's New
 
+- (1/20/17) Moved custom subjective models into a new repo named [sureal](https://github.com/Netflix/sureal).
 - (8/12/17) VMAF is now included as a filter in [FFmpeg](http://ffmpeg.org/) main branch, and can be configured using: `./configure --enable-libvmaf`.
 - (7/16/17) VMAF is now packaged into a library call `libvmaf` and can be called from a C/C++ program directly. See [this](#usage-through-libvmaf) section for details.
-- (2/20/17) Updated VMAF model to version v0.6.1. Changes include:
-    - Added a custom quality model for cellular phone screen viewing. See [this](#predict-quality-on-a-cellular-phone-screen) section for details.
-    - Trained using a new dataset, covering more difficult content.
-    - Elementary metric fixes: ADM behavior at near-black frames, and motion behavior at scene boundaries.
-    - Compressed quality score range by 20% to accommodate higher dynamic range.
-    - Use MLE instead of DMOS for subjective model.
-- (11/7/16) Custom subjective models (MOS, DMOS, MLE and more) are now supported. Read [this](resource/doc/dcc17v3.pdf) paper for some background, and see [this](#using-custom-subjective-models) section for usage.
 
 ## Frequently Asked Questions
 
@@ -110,6 +104,12 @@ python -c 'import sys; print(sys.path)'
 
 ## Installation
 
+First, pull submodule `sureal` by running:
+
+```
+git submodule update --init --recursive
+```
+
 After cloning VMAF repository, `cd` to the repo directory and run:
 
 ```
@@ -118,16 +118,16 @@ make
 
 to build the binaries.
 
-Add the `python/src` subdirectory to the environment variable `PYTHONPATH`:
+Add the `python/src` and `sureal/python/src` subdirectories to the environment variable `PYTHONPATH`:
 
 ```
-export PYTHONPATH="$(pwd)/python/src:$PYTHONPATH"
+export PYTHONPATH="$(pwd)/python/src:$(pwd)/sureal/python/src:$PYTHONPATH"
 ```
 
 You can also add it to the environment permanently, by appending to `~/.bashrc`:
 
 ```
-echo export PYTHONPATH="$(pwd)/python/src:$PYTHONPATH" >> ~/.bashrc
+echo export PYTHONPATH="$(pwd)/python/src:$(pwd)/sureal/python/src:$PYTHONPATH" >> ~/.bashrc
 source ~/.bashrc
 ```
 
@@ -405,7 +405,7 @@ Above are two example scatter plots obtained from running the `run_vmaf_training
 
 ### Using Custom Subjective Models
 
-The commands `./run_vmaf_training` and `./run_testing` also support custom subjective models (e.g. DMOS (default), MLE and more). Read [this](resource/doc/dcc17v2.pdf) paper for some background.
+The commands `./run_vmaf_training` and `./run_testing` also support custom subjective models (e.g. DMOS (default), MLE and more), through the submodule repository [sureal](https://github.com/Netflix/sureal). Read [this](resource/doc/dcc17v2.pdf) paper for some background.
 
 The subjective model option can be specified with option `--subj-model subjective_model`, for example:
 
@@ -420,17 +420,6 @@ The subjective model option can be specified with option `--subj-model subjectiv
 ```
 
 Note that for the `--subj-model` option to have effect, the input dataset file must follow a format similar to `example_raw_dataset.py`. Specifically, for each dictionary element in `dis_videos`, instead of having a key named 'dmos' or 'groundtruth' as in `example_dataset.py`, it must have a key named 'os' (stand for opinion score), and the value must be a list of numbers. This is the 'raw opinion score' collected from subjective experiments, which is used as the input to the custom subjective models.
-
-#### Running Subjective Model as a Standalone Tool
-
-The commands above allow using the custom subjective models in training and testing a VMAF model. To use it as a stand-alone tool (for example, one would like to just analyze the raw subjective scores without running VMAF), use the `run_subj` command. For example:
-
-```
-./run_subj MLE resource/dataset/NFLX_dataset_public_raw_last4outliers.py
-./run_subj MLE resource/dataset/VQEGHD3_dataset_raw.py
-```
-
-More ways to use the subjective models can be found in `/python/script/run_subjective_models.py`.
 
 ### Cross Validation
 

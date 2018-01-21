@@ -122,9 +122,9 @@ class VmafConfig(object):
     def tools_resource_path(cls, *components):
         return cls.root_path('python', 'src', 'vmaf', 'tools', 'resource', *components)
 
-    @staticmethod
-    def encode_path(*components):
-        return VmafConfig.root_path('workspace', 'encode', *components)
+    @classmethod
+    def encode_path(cls, *components):
+        return cls.root_path('workspace', 'encode', *components)
 
 class DisplayConfig(object):
 
