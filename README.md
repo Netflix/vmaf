@@ -6,7 +6,7 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ## What's New
 
-- (1/20/17) Moved custom subjective models into a submodule named [sureal](https://github.com/Netflix/sureal). If you pull the latest changes, you will have to pull the submoddule by `git submodule update --init --recursive` and add `sureal/python/src` to `PYTHONPATH`.
+- (1/20/18) Moved custom subjective models into a submodule named [sureal](https://github.com/Netflix/sureal). If you pull the latest changes, you will have to pull the submoddule by `git submodule update --init --recursive` and add `sureal/python/src` to `PYTHONPATH`.
 - (8/12/17) VMAF is now included as a filter in [FFmpeg](http://ffmpeg.org/) main branch, and can be configured using: `./configure --enable-libvmaf`.
 - (7/16/17) VMAF is now packaged into a library call `libvmaf` and can be called from a C/C++ program directly. See [this](#usage-through-libvmaf) section for details.
 
