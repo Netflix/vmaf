@@ -1,0 +1,4 @@
+[submodule "sureal"]
+	path = sureal
+	url = https://github.com/Netflix/sureal.git
+	branch = master

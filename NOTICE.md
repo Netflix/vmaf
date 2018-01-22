@@ -8,3 +8,6 @@
   - Joe Lin (joe.yuchieh.lin@gmail.com)
   - Eddy Wu (chihao.eddy.wu@gmail.com)
   - Leandro Moreira (leandro.ribeiro.moreira@gmail.com)
+  - Zoran Simic (zsimic)
+  - Ashish Pratap Singh (ashk43712@gmail.com)
+  - Simon Kirsten (skirsten)
