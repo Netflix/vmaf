@@ -340,22 +340,16 @@ class TrainTestModel(TypeVersionEnabled):
             info_loaded = pickle.load(file)
 
         model_type = info_loaded['model_dict']['model_type']
+        model_class = TrainTestModel.find_subclass(model_type)
+        train_test_model = model_class(
+            param_dict={}, logger=logger, optional_dict2=optional_dict2)
+        train_test_model.param_dict = info_loaded['param_dict']
+        train_test_model.model_dict = info_loaded['model_dict']
 
-        if model_type == LibsvmNusvrTrainTestModel.TYPE:
-            train_test_model = LibsvmNusvrTrainTestModel(
-                param_dict={}, logger=logger, optional_dict2=optional_dict2)
-            train_test_model.param_dict = info_loaded['param_dict']
-            train_test_model.model_dict = info_loaded['model_dict']
-
+        if issubclass(model_class, LibsvmNusvrTrainTestModel):
             # == special handling of libsvmnusvr: load .model differently ==
             model = svmutil.svm_load_model(filename + '.model')
             train_test_model.model_dict['model'] = model
-        else:
-            model_class = TrainTestModel.find_subclass(model_type)
-            train_test_model = model_class(
-                param_dict={}, logger=logger, optional_dict2=optional_dict2)
-            train_test_model.param_dict = info_loaded['param_dict']
-            train_test_model.model_dict = info_loaded['model_dict']
 
         return train_test_model
 
