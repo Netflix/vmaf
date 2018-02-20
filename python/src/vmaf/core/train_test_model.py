@@ -487,15 +487,10 @@ class TrainTestModel(TypeVersionEnabled):
         xs_2d = self.normalize_xs(xs_2d)
         return xs_2d
 
-    def _postproc_predict(self, ys_label_pred):
-        # denormalize ys
-        ys_label_pred = self.denormalize_ys(ys_label_pred)
-        return ys_label_pred
-
     def predict(self, xs):
         xs_2d = self._preproc_predict(xs)
         ys_label_pred = self._predict(self.model, xs_2d)
-        ys_label_pred = self._postproc_predict(ys_label_pred)
+        ys_label_pred = self.denormalize_ys(ys_label_pred)
         return {'ys_label_pred': ys_label_pred}
 
     @classmethod
