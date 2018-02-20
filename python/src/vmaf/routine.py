@@ -609,7 +609,7 @@ def explain_model_on_dataset(model, test_assets_selected_indexs,
     test_feature_results = test_fassembler.results
     test_xs = model.get_xs_from_results(test_feature_results)
     test_ys = model.get_ys_from_results(test_feature_results)
-    test_ys_pred = model.predict(test_xs)
+    test_ys_pred = model.predict(test_xs)['ys_label_pred']
     explainer = LocalExplainer(neighbor_samples=1000)
     test_exps = explainer.explain(model, test_xs)
 

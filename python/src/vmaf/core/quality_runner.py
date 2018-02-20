@@ -324,7 +324,7 @@ class VmafQualityRunner(QualityRunner):
 
     @classmethod
     def predict_with_model(cls, model, xs, **kwargs):
-        ys_pred = model.predict(xs)
+        ys_pred = model.predict(xs)['ys_label_pred']
 
         do_transform_score = cls._do_transform_score(kwargs)
 

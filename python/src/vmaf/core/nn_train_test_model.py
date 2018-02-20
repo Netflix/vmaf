@@ -156,7 +156,7 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
             y_label_pred = self._predict(self.model, patches_cache)
             ys_label_pred.append(y_label_pred)
 
-        return ys_label_pred
+        return {'ys_label_pred': ys_label_pred}
 
     def _create_patch_and_label_dataset(self, total_frames, overwrite=True):
 

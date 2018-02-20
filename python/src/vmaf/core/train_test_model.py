@@ -496,7 +496,7 @@ class TrainTestModel(TypeVersionEnabled):
         xs_2d = self._preproc_predict(xs)
         ys_label_pred = self._predict(self.model, xs_2d)
         ys_label_pred = self._postproc_predict(ys_label_pred)
-        return ys_label_pred
+        return {'ys_label_pred': ys_label_pred}
 
     @classmethod
     def _to_tabular_xys(cls, xkeys, xys):
@@ -521,7 +521,7 @@ class TrainTestModel(TypeVersionEnabled):
         return xs_2d
 
     def evaluate(self, xs, ys):
-        ys_label_pred = self.predict(xs)
+        ys_label_pred = self.predict(xs)['ys_label_pred']
         ys_label = ys['label']
         return self.get_stats(ys_label, ys_label_pred)
 
