@@ -353,27 +353,24 @@ class TrainTestModel(TypeVersionEnabled):
 
         return train_test_model
 
-    def train(self, xys):
-
+    def _preproc_train(self, xys):
         self.model_type = self.TYPE
-
         assert 'label' in xys
         assert 'content_id' in xys
-
         feature_names = self.get_ordered_feature_names(xys)
         self.feature_names = feature_names
-
         # note that feature_names is property (write). below cannot yet use
         # self.feature_names since additional things (_assert_trained()) is
         # not ready yet
         xys_2d = self._to_tabular_xys(feature_names, xys)
-
         # calculate normalization parameters,
         self._calculate_normalization_params(xys_2d)
-
         # normalize
         xys_2d = self._normalize_xys(xys_2d)
+        return xys_2d
 
+    def train(self, xys):
+        xys_2d = self._preproc_train(xys)
         model = self._train(self.param_dict, xys_2d)
         self.model = model
 
@@ -480,25 +477,25 @@ class TrainTestModel(TypeVersionEnabled):
                 .format(self.norm_type)
         return xs_2d
 
-    def predict(self, xs):
+    def _preproc_predict(self, xs):
         self._assert_trained()
-
         feature_names = self.feature_names
-
         for name in feature_names:
             assert name in xs
-
         xs_2d = self._to_tabular_xs(feature_names, xs)
-
         # normalize xs
         xs_2d = self.normalize_xs(xs_2d)
+        return xs_2d
 
-        # predict
-        ys_label_pred = self._predict(self.model, xs_2d)
-
+    def _postproc_predict(self, ys_label_pred):
         # denormalize ys
         ys_label_pred = self.denormalize_ys(ys_label_pred)
+        return ys_label_pred
 
+    def predict(self, xs):
+        xs_2d = self._preproc_predict(xs)
+        ys_label_pred = self._predict(self.model, xs_2d)
+        ys_label_pred = self._postproc_predict(ys_label_pred)
         return ys_label_pred
 
     @classmethod
