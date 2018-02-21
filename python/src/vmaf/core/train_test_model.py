@@ -329,8 +329,14 @@ class TrainTestModel(TypeVersionEnabled):
 
     def to_file(self, filename):
         self._assert_trained()
-        info_to_save = {'param_dict': self.param_dict,
-                        'model_dict': self.model_dict}
+        param_dict = self.param_dict
+        model_dict = self.model_dict
+        self._to_file(filename, param_dict, model_dict)
+
+    @staticmethod
+    def _to_file(filename, param_dict, model_dict):
+        info_to_save = {'param_dict': param_dict,
+                        'model_dict': model_dict}
         with open(filename, 'wb') as file:
             pickle.dump(info_to_save, file)
 
@@ -669,22 +675,19 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
         ys_label_pred = np.array(score)
         return ys_label_pred
 
-    def to_file(self, filename):
+    @staticmethod
+    def _to_file(filename, param_dict, model_dict):
         """
-        override TrainTestModel.to_file
+        override TrainTestModel._to_file
         """
-
-        self._assert_trained()
-
         # special handling of libsvmnusvr: save .model differently
-        model_dict_copy = self.model_dict.copy()
-        model_dict_copy['model'] = None
-        info_to_save = {'param_dict': self.param_dict,
-                        'model_dict': model_dict_copy}
-        svmutil.svm_save_model(filename + '.model', self.model_dict['model'])
-
+        info_to_save = {'param_dict': param_dict,
+                        'model_dict': model_dict.copy()}
+        svm_model = info_to_save['model_dict']['model']
+        info_to_save['model_dict']['model'] = None
         with open(filename, 'wb') as file:
             pickle.dump(info_to_save, file)
+        svmutil.svm_save_model(filename + '.model', svm_model)
 
     @staticmethod
     def delete(filename):
