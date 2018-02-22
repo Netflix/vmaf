@@ -36,7 +36,7 @@ class TrainTestModelTest(unittest.TestCase):
         runner.run(parallelize=True)
         self.features = runner.results
 
-        self.model_filename = VmafConfig.model_path("test_save_load.pkl")
+        self.model_filename = VmafConfig.workspace_path("model", "test_save_load.pkl")
 
     def tearDown(self):
         if hasattr(self, 'model'):

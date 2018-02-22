@@ -342,21 +342,22 @@ class TrainTestModel(TypeVersionEnabled):
 
     @classmethod
     def from_file(cls, filename, logger=None, optional_dict2=None):
+        assert os.path.exists(filename)
         with open(filename, 'rb') as file:
             info_loaded = pickle.load(file)
-
         model_type = info_loaded['model_dict']['model_type']
         model_class = TrainTestModel.find_subclass(model_type)
-        train_test_model = model_class(
+        train_test_model = model_class._from_info_loaded(info_loaded, filename,
+                                                         logger, optional_dict2)
+
+        return train_test_model
+
+    @classmethod
+    def _from_info_loaded(cls, info_loaded, filename, logger, optional_dict2):
+        train_test_model = cls(
             param_dict={}, logger=logger, optional_dict2=optional_dict2)
         train_test_model.param_dict = info_loaded['param_dict']
         train_test_model.model_dict = info_loaded['model_dict']
-
-        if issubclass(model_class, LibsvmNusvrTrainTestModel):
-            # == special handling of libsvmnusvr: load .model differently ==
-            model = svmutil.svm_load_model(filename + '.model')
-            train_test_model.model_dict['model'] = model
-
         return train_test_model
 
     def _preproc_train(self, xys):
@@ -526,8 +527,12 @@ class TrainTestModel(TypeVersionEnabled):
         ys_label = ys['label']
         return self.get_stats(ys_label, ys_label_pred)
 
+    @classmethod
+    def delete(cls, filename):
+        cls._delete(filename)
+
     @staticmethod
-    def delete(filename):
+    def _delete(filename):
         if os.path.exists(filename):
             os.remove(filename)
 
@@ -677,9 +682,7 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
 
     @staticmethod
     def _to_file(filename, param_dict, model_dict):
-        """
-        override TrainTestModel._to_file
-        """
+        # override TrainTestModel._to_file
         # special handling of libsvmnusvr: save .model differently
         info_to_save = {'param_dict': param_dict,
                         'model_dict': model_dict.copy()}
@@ -689,11 +692,24 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
             pickle.dump(info_to_save, file)
         svmutil.svm_save_model(filename + '.model', svm_model)
 
-    @staticmethod
-    def delete(filename):
-        """
-        override TrainTestModel.delete
-        """
+    @classmethod
+    def _from_info_loaded(cls, info_loaded, filename, logger, optional_dict2):
+        # override TrainTestModel._from_info_loaded
+        train_test_model = cls(
+            param_dict={}, logger=logger, optional_dict2=optional_dict2)
+        train_test_model.param_dict = info_loaded['param_dict']
+        train_test_model.model_dict = info_loaded['model_dict']
+
+        if issubclass(cls, LibsvmNusvrTrainTestModel):
+            # == special handling of libsvmnusvr: load .model differently ==
+            model = svmutil.svm_load_model(filename + '.model')
+            train_test_model.model_dict['model'] = model
+
+        return train_test_model
+
+    @classmethod
+    def _delete(cls, filename):
+        # override TrainTestModel._delete
         if os.path.exists(filename):
             os.remove(filename)
         if os.path.exists(filename + '.model'):
