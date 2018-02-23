@@ -338,7 +338,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
     if 'score_transform' in model_param_dict:
         VmafQualityRunner.set_transform_score(model, model_param_dict['score_transform'])
 
-    train_ys_pred = VmafQualityRunner.predict_with_model(model, train_xs, **kwargs)
+    train_ys_pred = VmafQualityRunner.predict_with_model(model, train_xs, **kwargs)['ys_pred']
 
     raw_groundtruths = None if train_raw_assets is None else \
         map(lambda asset: asset.raw_groundtruth, train_raw_assets)
@@ -411,7 +411,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         test_xs = model_class.get_xs_from_results(test_features)
         test_ys = model_class.get_ys_from_results(test_features)
 
-        test_ys_pred = VmafQualityRunner.predict_with_model(model, test_xs, **kwargs)
+        test_ys_pred = VmafQualityRunner.predict_with_model(model, test_xs, **kwargs)['ys_pred']
 
         raw_groundtruths = None if test_raw_assets is None else \
             map(lambda asset: asset.raw_groundtruth, test_raw_assets)

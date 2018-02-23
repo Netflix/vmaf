@@ -316,7 +316,7 @@ class VmafQualityRunner(QualityRunner):
 
         ys_pred = self.predict_with_model(model, xs,
                                           disable_clip_score=disable_clip_score,
-                                          enable_transform_score=enable_transform_score)
+                                          enable_transform_score=enable_transform_score)['ys_pred']
         result_dict = {}
         result_dict.update(feature_result.result_dict) # add feature result
         result_dict[self.get_scores_key()] = ys_pred # add quality score
@@ -338,7 +338,7 @@ class VmafQualityRunner(QualityRunner):
         else:
             ys_pred = cls.clip_score(model, ys_pred)
 
-        return ys_pred
+        return {'ys_pred': ys_pred}
 
     @staticmethod
     def _do_transform_score(kwargs):
