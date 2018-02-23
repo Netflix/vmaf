@@ -404,8 +404,12 @@ class VmafQualityRunner(QualityRunner):
             model_filepath = self.optional_dict['model_filepath']
         else:
             model_filepath = self.DEFAULT_MODEL_FILEPATH
-        model = TrainTestModel.from_file(model_filepath, self.logger)
+        train_test_model_class = self._get_train_test_model_class()
+        model = train_test_model_class.from_file(model_filepath, self.logger)
         return model
+
+    def _get_train_test_model_class(self):
+        return TrainTestModel
 
     def _remove_result(self, asset):
         # Override Executor._remove_result(self, asset) by redirecting it to the
