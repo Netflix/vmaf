@@ -314,30 +314,30 @@ class VmafQualityRunner(QualityRunner):
         else:
             enable_transform_score = False
 
-        ys_pred = self.predict_with_model(model, xs,
+        pred_result = self.predict_with_model(model, xs,
                                           disable_clip_score=disable_clip_score,
-                                          enable_transform_score=enable_transform_score)['ys_pred']
-        result_dict = {}
-        result_dict.update(feature_result.result_dict) # add feature result
-        result_dict[self.get_scores_key()] = ys_pred # add quality score
+                                          enable_transform_score=enable_transform_score)
+        result_dict = self._populate_result_dict(feature_result, pred_result)
         return Result(asset, self.executor_id, result_dict)
+
+    def _populate_result_dict(self, feature_result, pred_result):
+        result_dict = {}
+        result_dict.update(feature_result.result_dict)  # add feature result
+        result_dict[self.get_scores_key()] = pred_result['ys_pred']  # add quality score
+        return result_dict
 
     @classmethod
     def predict_with_model(cls, model, xs, **kwargs):
         ys_pred = model.predict(xs)['ys_label_pred']
-
         do_transform_score = cls._do_transform_score(kwargs)
-
         if do_transform_score:
             ys_pred = cls.transform_score(model, ys_pred)
         else:
             pass
-
         if 'disable_clip_score' in kwargs and kwargs['disable_clip_score'] is True:
             pass
         else:
             ys_pred = cls.clip_score(model, ys_pred)
-
         return {'ys_pred': ys_pred}
 
     @staticmethod
