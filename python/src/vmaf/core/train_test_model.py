@@ -347,8 +347,13 @@ class TrainTestModel(TypeVersionEnabled):
             info_loaded = pickle.load(file)
         model_type = info_loaded['model_dict']['model_type']
         model_class = TrainTestModel.find_subclass(model_type)
-        train_test_model = model_class._from_info_loaded(info_loaded, filename,
-                                                         logger, optional_dict2)
+        if model_class == cls:
+            train_test_model = model_class._from_info_loaded(info_loaded, filename,
+                                                             logger, optional_dict2)
+        else:
+            # the newly found model_class can be a different class (e.g. a subclass of cls). In this
+            # case, call from_file() of that model_class.
+            train_test_model = model_class.from_file(filename, logger, optional_dict2)
 
         return train_test_model
 
