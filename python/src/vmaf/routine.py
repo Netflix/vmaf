@@ -259,7 +259,7 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
         else:
             point_labels = None
 
-        model_type.plot_scatter(ax, stats, content_ids, point_labels=point_labels)
+        model_type.plot_scatter(ax, stats, content_ids=content_ids, point_labels=point_labels)
         ax.set_xlabel('True Score')
         ax.set_ylabel("Predicted Score")
         ax.grid()

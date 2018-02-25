@@ -90,7 +90,11 @@ class RegressorMixin(object):
         return cls.get_stats(aggregate_ys_label, aggregate_ys_label_pred)
 
     @classmethod
-    def plot_scatter(cls, ax, stats, content_ids=None, point_labels=None):
+    def plot_scatter(cls, ax, stats, **kwargs):
+
+        content_ids = kwargs['content_ids'] if 'content_ids' in kwargs else None
+        point_labels = kwargs['point_labels'] if 'point_labels' in kwargs else None
+
         assert len(stats['ys_label']) == len(stats['ys_label_pred'])
 
         if content_ids is None:
