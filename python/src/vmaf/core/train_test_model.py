@@ -18,7 +18,7 @@ __license__ = "Apache, Version 2.0"
 class RegressorMixin(object):
 
     @classmethod
-    def get_stats(cls, ys_label, ys_label_pred, ys_label_raw=None):
+    def get_stats(cls, ys_label, ys_label_pred, **kwargs):
 
         # cannot have None
         assert all(x is not None for x in ys_label)
@@ -46,6 +46,8 @@ class RegressorMixin(object):
                  'KENDALL': kendall,
                  'ys_label': list(ys_label),
                  'ys_label_pred': list(ys_label_pred)}
+
+        ys_label_raw = kwargs['ys_label_raw'] if 'ys_label_raw' in kwargs else None
 
         if ys_label_raw is not None:
             try:
@@ -87,8 +89,8 @@ class RegressorMixin(object):
             aggregate_ys_label_pred += stats['ys_label_pred']
         return cls.get_stats(aggregate_ys_label, aggregate_ys_label_pred)
 
-    @staticmethod
-    def plot_scatter(ax, stats, content_ids=None, point_labels=None):
+    @classmethod
+    def plot_scatter(cls, ax, stats, content_ids=None, point_labels=None):
         assert len(stats['ys_label']) == len(stats['ys_label_pred'])
 
         if content_ids is None:
@@ -134,7 +136,7 @@ class RegressorMixin(object):
 class ClassifierMixin(object):
 
     @classmethod
-    def get_stats(cls, ys_label, ys_label_pred):
+    def get_stats(cls, ys_label, ys_label_pred, **kwargs):
 
         # cannot have None
         assert all(x is not None for x in ys_label)
@@ -342,7 +344,7 @@ class TrainTestModel(TypeVersionEnabled):
 
     @classmethod
     def from_file(cls, filename, logger=None, optional_dict2=None):
-        assert os.path.exists(filename)
+        assert os.path.exists(filename), 'File name {} does not exist.'.format(filename)
         with open(filename, 'rb') as file:
             info_loaded = pickle.load(file)
         model_type = info_loaded['model_dict']['model_type']

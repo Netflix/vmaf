@@ -178,13 +178,6 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
     TODO: move this function under test/
     """
 
-    if type == 'regressor':
-        model_type = RegressorMixin
-    elif type == 'classifier':
-        model_type = ClassifierMixin
-    else:
-        assert False
-
     test_assets = read_dataset(test_dataset, **kwargs)
     test_raw_assets = None
     try:
@@ -233,6 +226,16 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
 
     for result in results:
         result.set_score_aggregate_method(aggregate_method)
+
+    try:
+        model_type = runner._load_model(test_assets[0]).__class__
+    except:
+        if type == 'regressor':
+            model_type = RegressorMixin
+        elif type == 'classifier':
+            model_type = ClassifierMixin
+        else:
+            assert False
 
     # plot
     groundtruths = map(lambda asset: asset.groundtruth, test_assets)
