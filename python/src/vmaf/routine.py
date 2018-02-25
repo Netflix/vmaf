@@ -228,7 +228,7 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
         result.set_score_aggregate_method(aggregate_method)
 
     try:
-        model_type = runner._load_model(test_assets[0]).__class__
+        model_type = runner.get_train_test_model_class()
     except:
         if type == 'regressor':
             model_type = RegressorMixin
@@ -242,7 +242,15 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
     predictions = map(lambda result: result[runner_class.get_score_key()], results)
     raw_grountruths = None if test_raw_assets is None else \
         map(lambda asset: asset.raw_groundtruth, test_raw_assets)
-    stats = model_type.get_stats(groundtruths, predictions, ys_label_raw=raw_grountruths)
+    try:
+        predictions_bagging = map(lambda result: result[runner_class.get_bagging_score_key()], results)
+        predictions_stddev = map(lambda result: result[runner_class.get_stddev_score_key()], results)
+        stats = model_type.get_stats(groundtruths, predictions,
+                                     ys_label_raw=raw_grountruths,
+                                     ys_label_pred_bagging=predictions_bagging,
+                                     ys_label_pred_stddev=predictions_stddev)
+    except:
+        stats = model_type.get_stats(groundtruths, predictions, ys_label_raw=raw_grountruths)
 
     print 'Stats on testing data: {}'.format(model_type.format_stats(stats))
 

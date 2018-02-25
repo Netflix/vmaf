@@ -9,7 +9,7 @@ from vmaf import svmutil, ExternalProgramCaller
 from vmaf.core.executor import Executor
 from vmaf.core.result import Result
 from vmaf.core.feature_assembler import FeatureAssembler
-from vmaf.core.train_test_model import TrainTestModel
+from vmaf.core.train_test_model import TrainTestModel, LibsvmNusvrTrainTestModel
 from vmaf.core.feature_extractor import SsimFeatureExtractor, MsSsimFeatureExtractor, \
     VmafFeatureExtractor, StrredFeatureExtractor
 from vmaf.tools.misc import run_process
@@ -404,12 +404,12 @@ class VmafQualityRunner(QualityRunner):
             model_filepath = self.optional_dict['model_filepath']
         else:
             model_filepath = self.DEFAULT_MODEL_FILEPATH
-        train_test_model_class = self._get_train_test_model_class()
+        train_test_model_class = self.get_train_test_model_class()
         model = train_test_model_class.from_file(model_filepath, self.logger)
         return model
 
-    def _get_train_test_model_class(self):
-        return TrainTestModel
+    def get_train_test_model_class(self):
+        return LibsvmNusvrTrainTestModel
 
     def _remove_result(self, asset):
         # Override Executor._remove_result(self, asset) by redirecting it to the
