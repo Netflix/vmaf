@@ -540,7 +540,11 @@ class TrainTestModel(TypeVersionEnabled):
     def evaluate(self, xs, ys):
         ys_label_pred = self.predict(xs)['ys_label_pred']
         ys_label = ys['label']
-        return self.get_stats(ys_label, ys_label_pred)
+        try:
+            stats = self.get_stats(ys_label, ys_label_pred)
+        except:
+            stats = super(TrainTestModel, self).get_stats(ys_label, ys_label_pred)
+        return stats
 
     @classmethod
     def delete(cls, filename):
