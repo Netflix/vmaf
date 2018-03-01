@@ -18,7 +18,7 @@ __license__ = "Apache, Version 2.0"
 class RegressorMixin(object):
 
     @classmethod
-    def get_stats(cls, ys_label, ys_label_pred, ys_label_raw=None):
+    def get_stats(cls, ys_label, ys_label_pred, **kwargs):
 
         # cannot have None
         assert all(x is not None for x in ys_label)
@@ -46,6 +46,8 @@ class RegressorMixin(object):
                  'KENDALL': kendall,
                  'ys_label': list(ys_label),
                  'ys_label_pred': list(ys_label_pred)}
+
+        ys_label_raw = kwargs['ys_label_raw'] if 'ys_label_raw' in kwargs else None
 
         if ys_label_raw is not None:
             try:
@@ -87,10 +89,23 @@ class RegressorMixin(object):
             aggregate_ys_label_pred += stats['ys_label_pred']
         return cls.get_stats(aggregate_ys_label, aggregate_ys_label_pred)
 
-    @staticmethod
-    def plot_scatter(ax, stats, content_ids=None, point_labels=None):
+    @classmethod
+    def plot_scatter(cls, ax, stats, **kwargs):
+
+        content_ids = kwargs['content_ids'] if 'content_ids' in kwargs else None
+        point_labels = kwargs['point_labels'] if 'point_labels' in kwargs else None
+
         assert len(stats['ys_label']) == len(stats['ys_label_pred'])
 
+        cls._plot_scatter(ax, stats, content_ids)
+
+        if point_labels:
+            assert len(point_labels) == len(stats['ys_label'])
+            for i, point_label in enumerate(point_labels):
+                ax.annotate(point_label, (stats['ys_label'][i], stats['ys_label_pred'][i]))
+
+    @classmethod
+    def _plot_scatter(cls, ax, stats, content_ids):
         if content_ids is None:
             ax.scatter(stats['ys_label'], stats['ys_label_pred'])
         else:
@@ -106,11 +121,6 @@ class RegressorMixin(object):
                 curr_ys_label_pred = np.array(stats['ys_label_pred'])[curr_idxs]
                 ax.scatter(curr_ys_label, curr_ys_label_pred,
                            label=curr_content_id, color=colors[idx % len(colors)])
-
-        if point_labels:
-            assert len(point_labels) == len(stats['ys_label'])
-            for i, point_label in enumerate(point_labels):
-                ax.annotate(point_label, (stats['ys_label'][i], stats['ys_label_pred'][i]))
 
     @staticmethod
     def get_objective_score(result, type='SRCC'):
@@ -134,7 +144,7 @@ class RegressorMixin(object):
 class ClassifierMixin(object):
 
     @classmethod
-    def get_stats(cls, ys_label, ys_label_pred):
+    def get_stats(cls, ys_label, ys_label_pred, **kwargs):
 
         # cannot have None
         assert all(x is not None for x in ys_label)
@@ -329,28 +339,40 @@ class TrainTestModel(TypeVersionEnabled):
 
     def to_file(self, filename):
         self._assert_trained()
-        info_to_save = {'param_dict': self.param_dict,
-                        'model_dict': self.model_dict}
+        param_dict = self.param_dict
+        model_dict = self.model_dict
+        self._to_file(filename, param_dict, model_dict)
+
+    @staticmethod
+    def _to_file(filename, param_dict, model_dict):
+        info_to_save = {'param_dict': param_dict,
+                        'model_dict': model_dict}
         with open(filename, 'wb') as file:
             pickle.dump(info_to_save, file)
 
     @classmethod
     def from_file(cls, filename, logger=None, optional_dict2=None):
+        assert os.path.exists(filename), 'File name {} does not exist.'.format(filename)
         with open(filename, 'rb') as file:
             info_loaded = pickle.load(file)
-
         model_type = info_loaded['model_dict']['model_type']
         model_class = TrainTestModel.find_subclass(model_type)
-        train_test_model = model_class(
+        if model_class == cls:
+            train_test_model = model_class._from_info_loaded(info_loaded, filename,
+                                                             logger, optional_dict2)
+        else:
+            # the newly found model_class can be a different class (e.g. a subclass of cls). In this
+            # case, call from_file() of that model_class.
+            train_test_model = model_class.from_file(filename, logger, optional_dict2)
+
+        return train_test_model
+
+    @classmethod
+    def _from_info_loaded(cls, info_loaded, filename, logger, optional_dict2):
+        train_test_model = cls(
             param_dict={}, logger=logger, optional_dict2=optional_dict2)
         train_test_model.param_dict = info_loaded['param_dict']
         train_test_model.model_dict = info_loaded['model_dict']
-
-        if issubclass(model_class, LibsvmNusvrTrainTestModel):
-            # == special handling of libsvmnusvr: load .model differently ==
-            model = svmutil.svm_load_model(filename + '.model')
-            train_test_model.model_dict['model'] = model
-
         return train_test_model
 
     def _preproc_train(self, xys):
@@ -518,10 +540,18 @@ class TrainTestModel(TypeVersionEnabled):
     def evaluate(self, xs, ys):
         ys_label_pred = self.predict(xs)['ys_label_pred']
         ys_label = ys['label']
-        return self.get_stats(ys_label, ys_label_pred)
+        try:
+            stats = self.get_stats(ys_label, ys_label_pred)
+        except:
+            stats = super(TrainTestModel, self).get_stats(ys_label, ys_label_pred)
+        return stats
+
+    @classmethod
+    def delete(cls, filename):
+        cls._delete(filename)
 
     @staticmethod
-    def delete(filename):
+    def _delete(filename):
         if os.path.exists(filename):
             os.remove(filename)
 
@@ -669,28 +699,36 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
         ys_label_pred = np.array(score)
         return ys_label_pred
 
-    def to_file(self, filename):
-        """
-        override TrainTestModel.to_file
-        """
-
-        self._assert_trained()
-
+    @staticmethod
+    def _to_file(filename, param_dict, model_dict):
+        # override TrainTestModel._to_file
         # special handling of libsvmnusvr: save .model differently
-        model_dict_copy = self.model_dict.copy()
-        model_dict_copy['model'] = None
-        info_to_save = {'param_dict': self.param_dict,
-                        'model_dict': model_dict_copy}
-        svmutil.svm_save_model(filename + '.model', self.model_dict['model'])
-
+        info_to_save = {'param_dict': param_dict,
+                        'model_dict': model_dict.copy()}
+        svm_model = info_to_save['model_dict']['model']
+        info_to_save['model_dict']['model'] = None
         with open(filename, 'wb') as file:
             pickle.dump(info_to_save, file)
+        svmutil.svm_save_model(filename + '.model', svm_model)
 
-    @staticmethod
-    def delete(filename):
-        """
-        override TrainTestModel.delete
-        """
+    @classmethod
+    def _from_info_loaded(cls, info_loaded, filename, logger, optional_dict2):
+        # override TrainTestModel._from_info_loaded
+        train_test_model = cls(
+            param_dict={}, logger=logger, optional_dict2=optional_dict2)
+        train_test_model.param_dict = info_loaded['param_dict']
+        train_test_model.model_dict = info_loaded['model_dict']
+
+        if issubclass(cls, LibsvmNusvrTrainTestModel):
+            # == special handling of libsvmnusvr: load .model differently ==
+            model = svmutil.svm_load_model(filename + '.model')
+            train_test_model.model_dict['model'] = model
+
+        return train_test_model
+
+    @classmethod
+    def _delete(cls, filename):
+        # override TrainTestModel._delete
         if os.path.exists(filename):
             os.remove(filename)
         if os.path.exists(filename + '.model'):

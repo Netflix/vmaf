@@ -178,13 +178,6 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
     TODO: move this function under test/
     """
 
-    if type == 'regressor':
-        model_type = RegressorMixin
-    elif type == 'classifier':
-        model_type = ClassifierMixin
-    else:
-        assert False
-
     test_assets = read_dataset(test_dataset, **kwargs)
     test_raw_assets = None
     try:
@@ -234,12 +227,30 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
     for result in results:
         result.set_score_aggregate_method(aggregate_method)
 
+    try:
+        model_type = runner.get_train_test_model_class()
+    except:
+        if type == 'regressor':
+            model_type = RegressorMixin
+        elif type == 'classifier':
+            model_type = ClassifierMixin
+        else:
+            assert False
+
     # plot
     groundtruths = map(lambda asset: asset.groundtruth, test_assets)
     predictions = map(lambda result: result[runner_class.get_score_key()], results)
     raw_grountruths = None if test_raw_assets is None else \
         map(lambda asset: asset.raw_groundtruth, test_raw_assets)
-    stats = model_type.get_stats(groundtruths, predictions, ys_label_raw=raw_grountruths)
+    try:
+        predictions_bagging = map(lambda result: result[runner_class.get_bagging_score_key()], results)
+        predictions_stddev = map(lambda result: result[runner_class.get_stddev_score_key()], results)
+        stats = model_type.get_stats(groundtruths, predictions,
+                                     ys_label_raw=raw_grountruths,
+                                     ys_label_pred_bagging=predictions_bagging,
+                                     ys_label_pred_stddev=predictions_stddev)
+    except:
+        stats = model_type.get_stats(groundtruths, predictions, ys_label_raw=raw_grountruths)
 
     print 'Stats on testing data: {}'.format(model_type.format_stats(stats))
 
@@ -256,7 +267,7 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
         else:
             point_labels = None
 
-        model_type.plot_scatter(ax, stats, content_ids, point_labels=point_labels)
+        model_type.plot_scatter(ax, stats, content_ids=content_ids, point_labels=point_labels)
         ax.set_xlabel('True Score')
         ax.set_ylabel("Predicted Score")
         ax.grid()
@@ -338,7 +349,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
     if 'score_transform' in model_param_dict:
         VmafQualityRunner.set_transform_score(model, model_param_dict['score_transform'])
 
-    train_ys_pred = VmafQualityRunner.predict_with_model(model, train_xs, **kwargs)
+    train_ys_pred = VmafQualityRunner.predict_with_model(model, train_xs, **kwargs)['ys_pred']
 
     raw_groundtruths = None if train_raw_assets is None else \
         map(lambda asset: asset.raw_groundtruth, train_raw_assets)
@@ -411,7 +422,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         test_xs = model_class.get_xs_from_results(test_features)
         test_ys = model_class.get_ys_from_results(test_features)
 
-        test_ys_pred = VmafQualityRunner.predict_with_model(model, test_xs, **kwargs)
+        test_ys_pred = VmafQualityRunner.predict_with_model(model, test_xs, **kwargs)['ys_pred']
 
         raw_groundtruths = None if test_raw_assets is None else \
             map(lambda asset: asset.raw_groundtruth, test_raw_assets)
