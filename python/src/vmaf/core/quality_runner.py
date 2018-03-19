@@ -841,3 +841,16 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
     @classmethod
     def get_stddev_score_key(cls):
         return cls.TYPE + '_stddev_score'
+
+class BaggingVmafQualityRunner(BootstrapVmafQualityRunner):
+
+    TYPE = "BOOTSTRAP_VMAF"
+    VERSION = VmafQualityRunner.VERSION + '-' + BootstrapLibsvmNusvrTrainTestModel.VERSION
+
+    def _populate_result_dict(self, feature_result, pred_result):
+        result_dict = super(BaggingVmafQualityRunner, self)._populate_result_dict(feature_result, pred_result)
+
+        # override score with bagging score
+        result_dict[self.get_scores_key()] = pred_result['ys_pred_bagging']
+
+        return result_dict
