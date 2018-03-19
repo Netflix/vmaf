@@ -540,10 +540,7 @@ class TrainTestModel(TypeVersionEnabled):
     def evaluate(self, xs, ys):
         ys_label_pred = self.predict(xs)['ys_label_pred']
         ys_label = ys['label']
-        try:
-            stats = self.get_stats(ys_label, ys_label_pred)
-        except:
-            stats = super(TrainTestModel, self).get_stats(ys_label, ys_label_pred)
+        stats = self.get_stats(ys_label, ys_label_pred)
         return stats
 
     @classmethod
@@ -920,33 +917,41 @@ class BootstrapRegressorMixin(RegressorMixin):
     @classmethod
     def get_stats(cls, ys_label, ys_label_pred, **kwargs):
         # override RegressionMixin.get_stats
-        assert 'ys_label_pred_bagging' in kwargs
-        assert 'ys_label_pred_stddev' in kwargs
-        stats = super(BootstrapRegressorMixin, cls).get_stats(ys_label, ys_label_pred, **kwargs)
-        stats['ys_label_pred_bagging'] = kwargs['ys_label_pred_bagging']
-        stats['ys_label_pred_stddev'] = kwargs['ys_label_pred_stddev']
-        return stats
+        try:
+            assert 'ys_label_pred_bagging' in kwargs
+            assert 'ys_label_pred_stddev' in kwargs
+            stats = super(BootstrapRegressorMixin, cls).get_stats(ys_label, ys_label_pred, **kwargs)
+            stats['ys_label_pred_bagging'] = kwargs['ys_label_pred_bagging']
+            stats['ys_label_pred_stddev'] = kwargs['ys_label_pred_stddev']
+            return stats
+        except AssertionError:
+            return super(BootstrapRegressorMixin, cls).get_stats(ys_label, ys_label_pred, **kwargs)
 
     @classmethod
     def _plot_scatter(cls, ax, stats, content_ids):
         # override RegressionMixin._plot_scatter
-        if content_ids is None:
-            ax.errorbar(stats['ys_label'], stats['ys_label_pred'], yerr=3.0 * stats['ys_label_pred_stddev'],
-                        marker='o', linestyle='')
-        else:
-            assert len(stats['ys_label']) == len(content_ids)
+        try:
+            assert 'ys_label_pred_bagging' in stats
+            assert 'ys_label_pred_stddev' in stats
+            if content_ids is None:
+                ax.errorbar(stats['ys_label'], stats['ys_label_pred'], yerr=3.0 * stats['ys_label_pred_stddev'],
+                            marker='o', linestyle='')
+            else:
+                assert len(stats['ys_label']) == len(content_ids)
 
-            unique_content_ids = list(set(content_ids))
-            import matplotlib.pyplot as plt
-            cmap = plt.get_cmap()
-            colors = [cmap(i) for i in np.linspace(0, 1, len(unique_content_ids))]
-            for idx, curr_content_id in enumerate(unique_content_ids):
-                curr_idxs = indices(content_ids, lambda cid: cid == curr_content_id)
-                curr_ys_label = np.array(stats['ys_label'])[curr_idxs]
-                curr_ys_label_pred = np.array(stats['ys_label_pred'])[curr_idxs]
-                curr_ys_label_pred_stddev = np.array(stats['ys_label_pred_stddev'])[curr_idxs]
-                ax.errorbar(curr_ys_label, curr_ys_label_pred, yerr=3.0 * curr_ys_label_pred_stddev,
-                            marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)])
+                unique_content_ids = list(set(content_ids))
+                import matplotlib.pyplot as plt
+                cmap = plt.get_cmap()
+                colors = [cmap(i) for i in np.linspace(0, 1, len(unique_content_ids))]
+                for idx, curr_content_id in enumerate(unique_content_ids):
+                    curr_idxs = indices(content_ids, lambda cid: cid == curr_content_id)
+                    curr_ys_label = np.array(stats['ys_label'])[curr_idxs]
+                    curr_ys_label_pred = np.array(stats['ys_label_pred'])[curr_idxs]
+                    curr_ys_label_pred_stddev = np.array(stats['ys_label_pred_stddev'])[curr_idxs]
+                    ax.errorbar(curr_ys_label, curr_ys_label_pred, yerr=3.0 * curr_ys_label_pred_stddev,
+                                marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)])
+        except AssertionError:
+            super(BootstrapRegressorMixin, cls)._plot_scatter(ax, stats, content_ids)
 
 
 class BootstrapMixin(object):
@@ -1020,10 +1025,7 @@ class BootstrapMixin(object):
     def evaluate_bagging(self, xs, ys):
         ys_label_pred_bagging = self.predict(xs)['ys_label_pred_bagging']
         ys_label = ys['label']
-        try:
-            stats = self.get_stats(ys_label, ys_label_pred_bagging)
-        except:
-            stats = super(BootstrapMixin, self).get_stats(ys_label, ys_label_pred_bagging)
+        stats = self.get_stats(ys_label, ys_label_pred_bagging)
         return stats
 
     def to_file(self, filename):

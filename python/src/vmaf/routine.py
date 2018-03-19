@@ -354,8 +354,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
     raw_groundtruths = None if train_raw_assets is None else \
         map(lambda asset: asset.raw_groundtruth, train_raw_assets)
 
-    train_stats = model.get_stats(train_ys['label'], train_ys_pred,
-                                  ys_label_raw=raw_groundtruths)
+    train_stats = model.get_stats(train_ys['label'], train_ys_pred, ys_label_raw=raw_groundtruths)
 
     log = 'Stats on training data: {}'.format(model.format_stats(train_stats))
     if logger:
@@ -369,7 +368,8 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
 
     if train_ax is not None:
         train_content_ids = map(lambda asset: asset.content_id, train_assets)
-        model_class.plot_scatter(train_ax, train_stats, train_content_ids)
+        model_class.plot_scatter(train_ax, train_stats, content_ids=train_content_ids)
+
         train_ax.set_xlabel('True Score')
         train_ax.set_ylabel("Predicted Score")
         train_ax.grid()
@@ -427,8 +427,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         raw_groundtruths = None if test_raw_assets is None else \
             map(lambda asset: asset.raw_groundtruth, test_raw_assets)
 
-        test_stats = model_class.get_stats(test_ys['label'], test_ys_pred,
-                                           ys_label_raw=raw_groundtruths)
+        test_stats = model.get_stats(test_ys['label'], test_ys_pred, ys_label_raw=raw_groundtruths)
 
         log = 'Stats on testing data: {}'.format(model_class.format_stats(test_stats))
         if logger:
@@ -438,7 +437,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
 
         if test_ax is not None:
             test_content_ids = map(lambda asset: asset.content_id, test_assets)
-            model_class.plot_scatter(test_ax, test_stats, test_content_ids)
+            model_class.plot_scatter(test_ax, test_stats, content_ids=test_content_ids)
             test_ax.set_xlabel('True Score')
             test_ax.set_ylabel("Predicted Score")
             test_ax.grid()
