@@ -934,7 +934,8 @@ class BootstrapRegressorMixin(RegressorMixin):
             assert 'ys_label_pred_bagging' in stats
             assert 'ys_label_pred_stddev' in stats
             if content_ids is None:
-                ax.errorbar(stats['ys_label'], stats['ys_label_pred'], yerr=3.0 * stats['ys_label_pred_stddev'],
+                ax.errorbar(stats['ys_label'], stats['ys_label_pred'],
+                            yerr=1.96 * stats['ys_label_pred_stddev'], # 95% C.I.
                             marker='o', linestyle='')
             else:
                 assert len(stats['ys_label']) == len(content_ids)
@@ -948,7 +949,8 @@ class BootstrapRegressorMixin(RegressorMixin):
                     curr_ys_label = np.array(stats['ys_label'])[curr_idxs]
                     curr_ys_label_pred = np.array(stats['ys_label_pred'])[curr_idxs]
                     curr_ys_label_pred_stddev = np.array(stats['ys_label_pred_stddev'])[curr_idxs]
-                    ax.errorbar(curr_ys_label, curr_ys_label_pred, yerr=3.0 * curr_ys_label_pred_stddev,
+                    ax.errorbar(curr_ys_label, curr_ys_label_pred,
+                                yerr=1.96 * curr_ys_label_pred_stddev, # 95% C.I.
                                 marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)])
         except AssertionError:
             super(BootstrapRegressorMixin, cls)._plot_scatter(ax, stats, content_ids)
