@@ -933,6 +933,7 @@ class BootstrapRegressorMixin(RegressorMixin):
         try:
             assert 'ys_label_pred_bagging' in stats
             assert 'ys_label_pred_stddev' in stats
+            avg_std = np.mean(stats['ys_label_pred_stddev'])
             if content_ids is None:
                 ax.errorbar(stats['ys_label'], stats['ys_label_pred'],
                             yerr=1.96 * stats['ys_label_pred_stddev'], # 95% C.I.
@@ -952,6 +953,13 @@ class BootstrapRegressorMixin(RegressorMixin):
                     ax.errorbar(curr_ys_label, curr_ys_label_pred,
                                 yerr=1.96 * curr_ys_label_pred_stddev, # 95% C.I.
                                 marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)])
+
+            ax.text(0.33, 0.1, 'Avg. Std.: {:.2f}'.format(avg_std),
+                    horizontalalignment='right',
+                    verticalalignment='top',
+                    transform=ax.transAxes,
+                    fontsize=12)
+
         except AssertionError:
             super(BootstrapRegressorMixin, cls)._plot_scatter(ax, stats, content_ids)
 
