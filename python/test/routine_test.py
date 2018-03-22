@@ -218,9 +218,9 @@ class TestTrainOnDataset(unittest.TestCase):
         test_dataset = import_python_file(
             VmafConfig.test_resource_path('raw_dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
-                        None, None,
-                        parallelize=True,
-                        aggregate_method=None)
+                                                   None, None,
+                                                   parallelize=True,
+                                                   aggregate_method=None)
 
         self.assertAlmostEqual(results[0]['VMAF_score'], 99.142659046424384, places=4)
         self.assertAlmostEqual(results[1]['VMAF_score'], 35.066157497128764, places=4)
@@ -230,6 +230,10 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(test_assets[1].groundtruth, 50, places=4)
         self.assertAlmostEqual(test_assets[2].groundtruth, 100, places=4)
         self.assertAlmostEqual(test_assets[3].groundtruth, 90, places=4)
+        self.assertAlmostEqual(test_assets[0].groundtruth_std, 0.0, places=4)
+        self.assertAlmostEqual(test_assets[1].groundtruth_std, 3.5355339059327373, places=4)
+        self.assertAlmostEqual(test_assets[2].groundtruth_std, 0.0, places=4)
+        self.assertAlmostEqual(test_assets[3].groundtruth_std, 3.5355339059327373, places=4)
 
     def test_test_on_dataset_mle(self):
         test_dataset = import_python_file(
@@ -248,6 +252,10 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(test_assets[1].groundtruth, 50, places=4)
         self.assertAlmostEqual(test_assets[2].groundtruth, 90, places=4)
         self.assertAlmostEqual(test_assets[3].groundtruth, 80, places=4)
+        self.assertAlmostEqual(test_assets[0].groundtruth_std, 0.0, places=4)
+        self.assertAlmostEqual(test_assets[1].groundtruth_std, 3.5355339059327373, places=4)
+        self.assertAlmostEqual(test_assets[2].groundtruth_std, 0.0, places=4)
+        self.assertAlmostEqual(test_assets[3].groundtruth_std, 3.5355339059327373, places=4)
 
 class TestGenerateDatasetFromRaw(unittest.TestCase):
 

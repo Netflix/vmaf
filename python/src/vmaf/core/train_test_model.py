@@ -58,6 +58,9 @@ class RegressorMixin(object):
             except TypeError: # KFLK would not work with dictionary-style dataset
                 stats['KFLK'] = float('nan')
 
+        if 'ys_label_stddev' in kwargs and 'ys_label_stddev' and kwargs['ys_label_stddev'] is not None:
+            stats['ys_label_stddev'] = kwargs['ys_label_stddev']
+
         return stats
 
     @staticmethod
@@ -950,9 +953,16 @@ class BootstrapRegressorMixin(RegressorMixin):
                     curr_ys_label = np.array(stats['ys_label'])[curr_idxs]
                     curr_ys_label_pred = np.array(stats['ys_label_pred'])[curr_idxs]
                     curr_ys_label_pred_stddev = np.array(stats['ys_label_pred_stddev'])[curr_idxs]
-                    ax.errorbar(curr_ys_label, curr_ys_label_pred,
-                                yerr=1.96 * curr_ys_label_pred_stddev, # 95% C.I.
-                                marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)])
+                    try:
+                        curr_ys_label_stddev = np.array(stats['ys_label_stddev'])[curr_idxs]
+                        ax.errorbar(curr_ys_label, curr_ys_label_pred,
+                                    yerr=1.96 * curr_ys_label_pred_stddev, # 95% C.I.
+                                    xerr=1.96 * curr_ys_label_stddev,
+                                    marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)])
+                    except:
+                        ax.errorbar(curr_ys_label, curr_ys_label_pred,
+                                    yerr=1.96 * curr_ys_label_pred_stddev, # 95% C.I.
+                                    marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)])
 
             ax.text(0.33, 0.1, 'Avg. Std.: {:.2f}'.format(avg_std),
                     horizontalalignment='right',
