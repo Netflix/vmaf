@@ -621,5 +621,17 @@ class AssetTest(unittest.TestCase):
         self.assertEquals(asset.ref_start_end_frame, (10, 14))
         self.assertEquals(asset.dis_start_end_frame, None)
 
+    def test_groundtruth(self):
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
+                      asset_dict={'width':720, 'height':480,
+                                  'start_frame':2, 'end_frame':2,
+                                  'quality_width':1920, 'quality_height':1080,
+                                  'groundtruth': 91.0, 'groundtruth_std': 4.5, 'raw_groundtruth': [90.0, 92.0]},
+                      workdir_root="workdir")
+        self.assertEquals(asset.groundtruth, 91.0)
+        self.assertEquals(asset.groundtruth_std, 4.5)
+        self.assertEquals(asset.raw_groundtruth, [90.0, 92.0])
+
 if __name__ == '__main__':
     unittest.main()

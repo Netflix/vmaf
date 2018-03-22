@@ -58,6 +58,9 @@ class RegressorMixin(object):
             except TypeError: # KFLK would not work with dictionary-style dataset
                 stats['KFLK'] = float('nan')
 
+        if 'ys_label_stddev' in kwargs and 'ys_label_stddev' and kwargs['ys_label_stddev'] is not None:
+            stats['ys_label_stddev'] = kwargs['ys_label_stddev']
+
         return stats
 
     @staticmethod
@@ -540,10 +543,7 @@ class TrainTestModel(TypeVersionEnabled):
     def evaluate(self, xs, ys):
         ys_label_pred = self.predict(xs)['ys_label_pred']
         ys_label = ys['label']
-        try:
-            stats = self.get_stats(ys_label, ys_label_pred)
-        except:
-            stats = super(TrainTestModel, self).get_stats(ys_label, ys_label_pred)
+        stats = self.get_stats(ys_label, ys_label_pred)
         return stats
 
     @classmethod
@@ -913,3 +913,258 @@ class MomentRandomForestTrainTestModel(RawVideoTrainTestModelMixin,
         xs_2d = np.hstack(xs_list)
 
         return xs_2d
+
+
+class BootstrapRegressorMixin(RegressorMixin):
+
+    @classmethod
+    def get_stats(cls, ys_label, ys_label_pred, **kwargs):
+        # override RegressionMixin.get_stats
+        try:
+            assert 'ys_label_pred_bagging' in kwargs
+            assert 'ys_label_pred_stddev' in kwargs
+            stats = super(BootstrapRegressorMixin, cls).get_stats(ys_label, ys_label_pred, **kwargs)
+            stats['ys_label_pred_bagging'] = kwargs['ys_label_pred_bagging']
+            stats['ys_label_pred_stddev'] = kwargs['ys_label_pred_stddev']
+            return stats
+        except AssertionError:
+            return super(BootstrapRegressorMixin, cls).get_stats(ys_label, ys_label_pred, **kwargs)
+
+    @classmethod
+    def _plot_scatter(cls, ax, stats, content_ids):
+        # override RegressionMixin._plot_scatter
+        try:
+            assert 'ys_label_pred_bagging' in stats
+            assert 'ys_label_pred_stddev' in stats
+            avg_std = np.mean(stats['ys_label_pred_stddev'])
+            if content_ids is None:
+                ax.errorbar(stats['ys_label'], stats['ys_label_pred'],
+                            yerr=1.96 * stats['ys_label_pred_stddev'], # 95% C.I.
+                            marker='o', linestyle='')
+            else:
+                assert len(stats['ys_label']) == len(content_ids)
+
+                unique_content_ids = list(set(content_ids))
+                import matplotlib.pyplot as plt
+                cmap = plt.get_cmap()
+                colors = [cmap(i) for i in np.linspace(0, 1, len(unique_content_ids))]
+                for idx, curr_content_id in enumerate(unique_content_ids):
+                    curr_idxs = indices(content_ids, lambda cid: cid == curr_content_id)
+                    curr_ys_label = np.array(stats['ys_label'])[curr_idxs]
+                    curr_ys_label_pred = np.array(stats['ys_label_pred'])[curr_idxs]
+                    curr_ys_label_pred_stddev = np.array(stats['ys_label_pred_stddev'])[curr_idxs]
+                    try:
+                        curr_ys_label_stddev = np.array(stats['ys_label_stddev'])[curr_idxs]
+                        ax.errorbar(curr_ys_label, curr_ys_label_pred,
+                                    yerr=1.96 * curr_ys_label_pred_stddev, # 95% C.I.
+                                    xerr=1.96 * curr_ys_label_stddev,
+                                    marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)])
+                    except:
+                        ax.errorbar(curr_ys_label, curr_ys_label_pred,
+                                    yerr=1.96 * curr_ys_label_pred_stddev, # 95% C.I.
+                                    marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)])
+
+            ax.text(0.33, 0.1, 'Avg. Std.: {:.2f}'.format(avg_std),
+                    horizontalalignment='right',
+                    verticalalignment='top',
+                    transform=ax.transAxes,
+                    fontsize=12)
+
+        except AssertionError:
+            super(BootstrapRegressorMixin, cls)._plot_scatter(ax, stats, content_ids)
+
+
+class BootstrapMixin(object):
+
+    MIXIN_VERSION = 'B0.0.1'
+
+    DEFAULT_NUM_MODELS = 100
+
+    def train(self, xys):
+        # override TrainTestModel.train()
+        xys_2d = self._preproc_train(xys)
+        num_models = self._get_num_models()
+        sample_size = xys_2d.shape[0]
+        models = []
+
+        # first model: use full training data
+        model_0 = self._train(self.param_dict, xys_2d)
+        models.append(model_0)
+
+        # rest models: resample training data with replacement
+        for i_model in range(1, num_models):
+            np.random.seed(i_model) # seed is i_model
+            # random sample with replacement:
+            indices = np.random.choice(range(sample_size), size=sample_size, replace=True)
+            xys_2d_ = xys_2d[indices, :]
+            model_ = self._train(self.param_dict, xys_2d_)
+            models.append(model_)
+        self.model = models
+
+    def _get_num_models(self):
+        num_models = self.param_dict[
+            'num_models'] if 'num_models' in self.param_dict else self.DEFAULT_NUM_MODELS
+        return num_models
+
+    @classmethod
+    def _get_num_models_from_param_dict(cls, param_dict):
+        num_models = param_dict[
+            'num_models'] if 'num_models' in param_dict else cls.DEFAULT_NUM_MODELS
+        return num_models
+
+    def predict(self, xs):
+        # override TrainTestModel.predict()
+        xs_2d = self._preproc_predict(xs)
+
+        models = self.model
+        num_models = self._get_num_models()
+        assert num_models == len(models)
+
+        # first model: conventional prediction
+        model_0 = models[0]
+        ys_label_pred = self._predict(model_0, xs_2d)
+        ys_label_pred = self.denormalize_ys(ys_label_pred)
+
+        # rest models: bagging (bootstrap aggregation)
+        ys_list = []
+        for model_ in models[1:]:
+            ys = self._predict(model_, xs_2d)
+            ys_list.append(ys)
+        ys_2d = np.vstack(ys_list)
+        ys_2d = self.denormalize_ys(ys_2d)
+        ys_label_pred_bagging = np.mean(ys_2d, axis=0)
+        ys_label_pred_stddev = np.std(ys_2d, axis=0)
+        return {'ys_label_pred': ys_label_pred,
+                'ys_label_pred_bagging': ys_label_pred_bagging,
+                'ys_label_pred_stddev': ys_label_pred_stddev}
+
+    def evaluate_stddev(self, xs):
+        ys_label_pred_stddev = self.predict(xs)['ys_label_pred_stddev']
+        return {'mean_stddev': np.mean(ys_label_pred_stddev)}
+
+    def evaluate_bagging(self, xs, ys):
+        ys_label_pred_bagging = self.predict(xs)['ys_label_pred_bagging']
+        ys_label = ys['label']
+        stats = self.get_stats(ys_label, ys_label_pred_bagging)
+        return stats
+
+    def to_file(self, filename):
+        # override TrainTestModel.to_file()
+        self._assert_trained()
+        param_dict = self.param_dict
+        model_dict = self.model_dict
+
+        models = self.model
+        num_models = self._get_num_models()
+        assert num_models == len(models)
+        for i_model, model in enumerate(models):
+            filename_ = self._get_model_i_filename(filename, i_model)
+            model_dict_ = model_dict.copy()
+            model_dict_['model'] = model
+            self._to_file(filename_, param_dict, model_dict_)
+
+    @staticmethod
+    def _get_model_i_filename(filename, i_model):
+        # first model doesn't have suffix - so it have the same file name as a regular model
+        if i_model == 0:
+            filename_ = "{}".format(filename)
+        else:
+            filename_ = "{}.{:04d}".format(filename, i_model)
+        return filename_
+
+    @classmethod
+    def from_file(cls, filename, logger=None, optional_dict2=None):
+        # override TrainTestModel.from_file()
+        filename_0 = cls._get_model_i_filename(filename, 0)
+        assert os.path.exists(filename_0), 'File name {} does not exist.'.format(filename_0)
+        with open(filename_0, 'rb') as file:
+            info_loaded_0 = pickle.load(file)
+        model_type = info_loaded_0['model_dict']['model_type']
+        model_class = TrainTestModel.find_subclass(model_type)
+        train_test_model_0 = model_class._from_info_loaded(
+            info_loaded_0, filename_0, logger, optional_dict2)
+        num_models = cls._get_num_models_from_param_dict(info_loaded_0['param_dict'])
+
+        models = []
+        for i_model in range(num_models):
+            filename_ = cls._get_model_i_filename(filename, i_model)
+            assert os.path.exists(filename_), 'File name {} does not exist.'.format(filename_)
+            with open(filename_, 'rb') as file:
+                info_loaded_ = pickle.load(file)
+            train_test_model_ = model_class._from_info_loaded(info_loaded_, filename_, None, None)
+            model_ = train_test_model_.model
+            models.append(model_)
+
+        train_test_model_0.model = models
+
+        return train_test_model_0
+
+    @classmethod
+    def delete(cls, filename):
+        # override TrainTestModel.delete()
+        filename_0 = cls._get_model_i_filename(filename, 0)
+        assert os.path.exists(filename_0)
+        with open(filename_0, 'rb') as file:
+            info_loaded_0 = pickle.load(file)
+        num_models = cls._get_num_models_from_param_dict(info_loaded_0['param_dict'])
+        for i_model in range(num_models):
+            filename_ = cls._get_model_i_filename(filename, i_model)
+            cls._delete(filename_)
+
+
+class BootstrapLibsvmNusvrTrainTestModel(BootstrapRegressorMixin, BootstrapMixin, LibsvmNusvrTrainTestModel):
+
+    TYPE = 'BOOTSTRAP_LIBSVMNUSVR'
+    VERSION = LibsvmNusvrTrainTestModel.VERSION + '-' + BootstrapMixin.MIXIN_VERSION
+
+
+class BootstrapSklearnRandomForestTrainTestModel(BootstrapRegressorMixin, BootstrapMixin, SklearnRandomForestTrainTestModel):
+
+    TYPE = 'BOOTSTRAP_RANDOMFOREST'
+    VERSION = SklearnRandomForestTrainTestModel.VERSION + '-' + BootstrapMixin.MIXIN_VERSION
+
+
+class ResidueBootstrapMixin(BootstrapMixin):
+
+    MIXIN_VERSION = 'RB0.0.1'
+
+    def train(self, xys):
+        # override TrainTestModel.train()
+        xys_2d = self._preproc_train(xys)
+        num_models = self._get_num_models()
+        sample_size = xys_2d.shape[0]
+        models = []
+
+        # first model: use full training data
+        model_0 = self._train(self.param_dict, xys_2d)
+        models.append(model_0)
+
+        # predict and find residue
+        ys = xys_2d[:, 0].T
+        xs_2d = xys_2d[:, 1:]
+        ys_pred = self._predict(model_0, xs_2d)
+        residue_ys = ys - ys_pred
+
+        # rest models: resample residue data with replacement
+        for i_model in range(1, num_models):
+            np.random.seed(i_model) # seed is i_model
+            # random sample with replacement:
+            indices = np.random.choice(range(sample_size), size=sample_size, replace=True)
+            residue_ys_resampled = residue_ys[indices]
+            ys_resampled = residue_ys_resampled + ys_pred
+            xys_2d_ = np.array(np.hstack((np.matrix(ys_resampled).T, xs_2d)))
+            model_ = self._train(self.param_dict, xys_2d_)
+            models.append(model_)
+        self.model = models
+
+
+class ResidueBootstrapLibsvmNusvrTrainTestModel(BootstrapRegressorMixin, ResidueBootstrapMixin, LibsvmNusvrTrainTestModel):
+
+    TYPE = 'RESIDUEBOOTSTRAP_LIBSVMNUSVR'
+    VERSION = LibsvmNusvrTrainTestModel.VERSION + '-' + ResidueBootstrapMixin.MIXIN_VERSION
+
+
+class ResidueBootstrapRandomForestTrainTestModel(BootstrapRegressorMixin, ResidueBootstrapMixin, SklearnRandomForestTrainTestModel):
+
+    TYPE = 'RESIDUEBOOTSTRAP_RANDOMFOREST'
+    VERSION = SklearnRandomForestTrainTestModel.VERSION + '-' + ResidueBootstrapMixin.MIXIN_VERSION

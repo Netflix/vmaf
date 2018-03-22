@@ -9,7 +9,8 @@ from vmaf import svmutil, ExternalProgramCaller
 from vmaf.core.executor import Executor
 from vmaf.core.result import Result
 from vmaf.core.feature_assembler import FeatureAssembler
-from vmaf.core.train_test_model import TrainTestModel, LibsvmNusvrTrainTestModel
+from vmaf.core.train_test_model import TrainTestModel, LibsvmNusvrTrainTestModel, \
+    BootstrapLibsvmNusvrTrainTestModel
 from vmaf.core.feature_extractor import SsimFeatureExtractor, MsSsimFeatureExtractor, \
     VmafFeatureExtractor, StrredFeatureExtractor
 from vmaf.tools.misc import run_process
@@ -770,3 +771,86 @@ class StrredQualityRunner(QualityRunner):
 
         vmaf_fassembler = self._get_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
+
+
+class BootstrapVmafQualityRunner(VmafQualityRunner):
+
+    TYPE = "BOOTSTRAP_VMAF"
+    VERSION = VmafQualityRunner.VERSION + '-' + BootstrapLibsvmNusvrTrainTestModel.VERSION
+    ALGO_VERSION = None
+
+    DEFAULT_MODEL_FILEPATH = None
+
+    def _populate_result_dict(self, feature_result, pred_result):
+        result_dict = {}
+        result_dict.update(feature_result.result_dict)  # add feature result
+        result_dict[self.get_scores_key()] = pred_result['ys_pred']  # add quality score
+        result_dict[self.get_bagging_scores_key()] = pred_result['ys_pred_bagging']  # add bagging quality score
+        result_dict[self.get_stddev_scores_key()] = pred_result['ys_pred_stddev']  # add stddev of bootstrapped quality score
+        return result_dict
+
+    @classmethod
+    def predict_with_model(cls, model, xs, **kwargs):
+        DELTA = 1e-2
+        result = model.predict(xs)
+        ys_pred = result['ys_label_pred']
+        ys_pred_bagging = result['ys_label_pred_bagging']
+        ys_pred_stddev = result['ys_label_pred_stddev']
+        ys_pred_plus = ys_pred_bagging + DELTA
+        ys_pred_minus = ys_pred_bagging - DELTA
+
+        do_transform_score = cls._do_transform_score(kwargs)
+        if do_transform_score:
+            ys_pred = cls.transform_score(model, ys_pred)
+            ys_pred_bagging = cls.transform_score(model, ys_pred_bagging)
+            ys_pred_plus = cls.transform_score(model, ys_pred_plus)
+            ys_pred_minus = cls.transform_score(model, ys_pred_minus)
+        else:
+            pass
+
+        if 'disable_clip_score' in kwargs and kwargs['disable_clip_score'] is True:
+            pass
+        else:
+            ys_pred = cls.clip_score(model, ys_pred)
+            ys_pred_bagging = cls.clip_score(model, ys_pred_bagging)
+            ys_pred_plus = cls.clip_score(model, ys_pred_plus)
+            ys_pred_minus = cls.clip_score(model, ys_pred_minus)
+
+        # stddev score transform is applied after transform, clip, or both, or neither
+        slope = ((ys_pred_plus - ys_pred_minus) / (2.0 * DELTA))
+        ys_pred_stddev = ys_pred_stddev * slope
+
+        return {'ys_pred': ys_pred, 'ys_pred_bagging': ys_pred_bagging, 'ys_pred_stddev': ys_pred_stddev}
+
+    def get_train_test_model_class(self):
+        # overide VmafQualityRunner.get_train_test_model_class
+        return BootstrapLibsvmNusvrTrainTestModel
+
+    @classmethod
+    def get_bagging_scores_key(cls):
+        return cls.TYPE + '_bagging_scores'
+
+    @classmethod
+    def get_bagging_score_key(cls):
+        return cls.TYPE + '_bagging_score'
+
+    @classmethod
+    def get_stddev_scores_key(cls):
+        return cls.TYPE + '_stddev_scores'
+
+    @classmethod
+    def get_stddev_score_key(cls):
+        return cls.TYPE + '_stddev_score'
+
+class BaggingVmafQualityRunner(BootstrapVmafQualityRunner):
+
+    TYPE = "BOOTSTRAP_VMAF"
+    VERSION = VmafQualityRunner.VERSION + '-' + BootstrapLibsvmNusvrTrainTestModel.VERSION
+
+    def _populate_result_dict(self, feature_result, pred_result):
+        result_dict = super(BaggingVmafQualityRunner, self)._populate_result_dict(feature_result, pred_result)
+
+        # override score with bagging score
+        result_dict[self.get_scores_key()] = pred_result['ys_pred_bagging']
+
+        return result_dict

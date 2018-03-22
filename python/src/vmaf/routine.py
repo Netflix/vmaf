@@ -71,6 +71,11 @@ def read_dataset(dataset, **kwargs):
         else:
             raw_groundtruth = None
 
+        if 'groundtruth_std' in dis_video:
+            groundtruth_std = dis_video['groundtruth_std']
+        else:
+            groundtruth_std = None
+
         ref_video = ref_dict[dis_video['content_id']]
 
         ref_path = ref_video['path']
@@ -142,6 +147,8 @@ def read_dataset(dataset, **kwargs):
             asset_dict['groundtruth'] = groundtruth
         if raw_groundtruth is not None:
             asset_dict['raw_groundtruth'] = raw_groundtruth
+        if groundtruth_std is not None:
+            asset_dict['groundtruth_std'] = groundtruth_std
         if quality_width_ is not None:
             asset_dict['quality_width'] = quality_width_
         if quality_height_ is not None:
@@ -242,15 +249,20 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
     predictions = map(lambda result: result[runner_class.get_score_key()], results)
     raw_grountruths = None if test_raw_assets is None else \
         map(lambda asset: asset.raw_groundtruth, test_raw_assets)
+    groundtruths_std = None if test_assets is None else \
+        map(lambda asset: asset.groundtruth_std, test_assets)
     try:
         predictions_bagging = map(lambda result: result[runner_class.get_bagging_score_key()], results)
         predictions_stddev = map(lambda result: result[runner_class.get_stddev_score_key()], results)
         stats = model_type.get_stats(groundtruths, predictions,
                                      ys_label_raw=raw_grountruths,
                                      ys_label_pred_bagging=predictions_bagging,
-                                     ys_label_pred_stddev=predictions_stddev)
+                                     ys_label_pred_stddev=predictions_stddev,
+                                     ys_label_stddev=groundtruths_std)
     except:
-        stats = model_type.get_stats(groundtruths, predictions, ys_label_raw=raw_grountruths)
+        stats = model_type.get_stats(groundtruths, predictions,
+                                     ys_label_raw=raw_grountruths,
+                                     ys_label_stddev=groundtruths_std)
 
     print 'Stats on testing data: {}'.format(model_type.format_stats(stats))
 
@@ -354,8 +366,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
     raw_groundtruths = None if train_raw_assets is None else \
         map(lambda asset: asset.raw_groundtruth, train_raw_assets)
 
-    train_stats = model.get_stats(train_ys['label'], train_ys_pred,
-                                  ys_label_raw=raw_groundtruths)
+    train_stats = model.get_stats(train_ys['label'], train_ys_pred, ys_label_raw=raw_groundtruths)
 
     log = 'Stats on training data: {}'.format(model.format_stats(train_stats))
     if logger:
@@ -369,7 +380,8 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
 
     if train_ax is not None:
         train_content_ids = map(lambda asset: asset.content_id, train_assets)
-        model_class.plot_scatter(train_ax, train_stats, train_content_ids)
+        model_class.plot_scatter(train_ax, train_stats, content_ids=train_content_ids)
+
         train_ax.set_xlabel('True Score')
         train_ax.set_ylabel("Predicted Score")
         train_ax.grid()
@@ -427,8 +439,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         raw_groundtruths = None if test_raw_assets is None else \
             map(lambda asset: asset.raw_groundtruth, test_raw_assets)
 
-        test_stats = model_class.get_stats(test_ys['label'], test_ys_pred,
-                                           ys_label_raw=raw_groundtruths)
+        test_stats = model.get_stats(test_ys['label'], test_ys_pred, ys_label_raw=raw_groundtruths)
 
         log = 'Stats on testing data: {}'.format(model_class.format_stats(test_stats))
         if logger:
@@ -438,7 +449,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
 
         if test_ax is not None:
             test_content_ids = map(lambda asset: asset.content_id, test_assets)
-            model_class.plot_scatter(test_ax, test_stats, test_content_ids)
+            model_class.plot_scatter(test_ax, test_stats, content_ids=test_content_ids)
             test_ax.set_xlabel('True Score')
             test_ax.set_ylabel("Predicted Score")
             test_ax.grid()

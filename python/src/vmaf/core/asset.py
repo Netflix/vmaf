@@ -128,6 +128,13 @@ class Asset(WorkdirEnabled):
             return None
 
     @property
+    def groundtruth_std(self):
+        if 'groundtruth_std' in self.asset_dict:
+            return self.asset_dict['groundtruth_std']
+        else:
+            return None
+
+    @property
     def raw_groundtruth(self):
         """
         Raw ground truth scores, e.g. opinion score (OS)
