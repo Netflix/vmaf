@@ -787,6 +787,8 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
         result_dict[self.get_scores_key()] = pred_result['ys_pred']  # add quality score
         result_dict[self.get_bagging_scores_key()] = pred_result['ys_pred_bagging']  # add bagging quality score
         result_dict[self.get_stddev_scores_key()] = pred_result['ys_pred_stddev']  # add stddev of bootstrapped quality score
+        result_dict[self.get_ci95_low_scores_key()] = pred_result['ys_pred_ci95_low']  # add ci95 of bootstrapped quality score
+        result_dict[self.get_ci95_high_scores_key()] = pred_result['ys_pred_ci95_high']  # add ci95 of bootstrapped quality score
         return result_dict
 
     @classmethod
@@ -796,6 +798,8 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
         ys_pred = result['ys_label_pred']
         ys_pred_bagging = result['ys_label_pred_bagging']
         ys_pred_stddev = result['ys_label_pred_stddev']
+        ys_pred_ci95_low = result['ys_label_pred_ci95_low']
+        ys_pred_ci95_high = result['ys_label_pred_ci95_high']
         ys_pred_plus = ys_pred_bagging + DELTA
         ys_pred_minus = ys_pred_bagging - DELTA
 
@@ -805,6 +809,8 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
             ys_pred_bagging = cls.transform_score(model, ys_pred_bagging)
             ys_pred_plus = cls.transform_score(model, ys_pred_plus)
             ys_pred_minus = cls.transform_score(model, ys_pred_minus)
+            ys_pred_ci95_low = cls.transform_score(model, ys_pred_ci95_low)
+            ys_pred_ci95_high = cls.transform_score(model, ys_pred_ci95_high)
         else:
             pass
 
@@ -815,12 +821,19 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
             ys_pred_bagging = cls.clip_score(model, ys_pred_bagging)
             ys_pred_plus = cls.clip_score(model, ys_pred_plus)
             ys_pred_minus = cls.clip_score(model, ys_pred_minus)
+            ys_pred_ci95_low = cls.clip_score(model, ys_pred_ci95_low)
+            ys_pred_ci95_high = cls.clip_score(model, ys_pred_ci95_high)
 
         # stddev score transform is applied after transform, clip, or both, or neither
         slope = ((ys_pred_plus - ys_pred_minus) / (2.0 * DELTA))
         ys_pred_stddev = ys_pred_stddev * slope
 
-        return {'ys_pred': ys_pred, 'ys_pred_bagging': ys_pred_bagging, 'ys_pred_stddev': ys_pred_stddev}
+        return {'ys_pred': ys_pred,
+                'ys_pred_bagging': ys_pred_bagging,
+                'ys_pred_stddev': ys_pred_stddev,
+                'ys_pred_ci95_low': ys_pred_ci95_low,
+                'ys_pred_ci95_high': ys_pred_ci95_high,
+                }
 
     def get_train_test_model_class(self):
         # overide VmafQualityRunner.get_train_test_model_class
@@ -841,6 +854,22 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
     @classmethod
     def get_stddev_score_key(cls):
         return cls.TYPE + '_stddev_score'
+
+    @classmethod
+    def get_ci95_low_scores_key(cls):
+        return cls.TYPE + '_ci95_low_scores'
+
+    @classmethod
+    def get_ci95_low_score_key(cls):
+        return cls.TYPE + '_ci95_low_score'
+
+    @classmethod
+    def get_ci95_high_scores_key(cls):
+        return cls.TYPE + '_ci95_high_scores'
+
+    @classmethod
+    def get_ci95_high_score_key(cls):
+        return cls.TYPE + '_ci95_high_score'
 
 class BaggingVmafQualityRunner(BootstrapVmafQualityRunner):
 

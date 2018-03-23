@@ -254,10 +254,14 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
     try:
         predictions_bagging = map(lambda result: result[runner_class.get_bagging_score_key()], results)
         predictions_stddev = map(lambda result: result[runner_class.get_stddev_score_key()], results)
+        predictions_ci95_low = map(lambda result: result[runner_class.get_ci95_low_score_key()], results)
+        predictions_ci95_high = map(lambda result: result[runner_class.get_ci95_high_score_key()], results)
         stats = model_type.get_stats(groundtruths, predictions,
                                      ys_label_raw=raw_grountruths,
                                      ys_label_pred_bagging=predictions_bagging,
                                      ys_label_pred_stddev=predictions_stddev,
+                                     ys_label_pred_ci95_low=predictions_ci95_low,
+                                     ys_label_pred_ci95_high=predictions_ci95_high,
                                      ys_label_stddev=groundtruths_std)
     except:
         stats = model_type.get_stats(groundtruths, predictions,
@@ -279,7 +283,7 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
         else:
             point_labels = None
 
-        model_type.plot_scatter(ax, stats, content_ids=content_ids, point_labels=point_labels)
+        model_type.plot_scatter(ax, stats, content_ids=content_ids, point_labels=point_labels, **kwargs)
         ax.set_xlabel('True Score')
         ax.set_ylabel("Predicted Score")
         ax.grid()

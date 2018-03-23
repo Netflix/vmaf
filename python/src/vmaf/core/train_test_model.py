@@ -95,20 +95,11 @@ class RegressorMixin(object):
     @classmethod
     def plot_scatter(cls, ax, stats, **kwargs):
 
+        assert len(stats['ys_label']) == len(stats['ys_label_pred'])
+
         content_ids = kwargs['content_ids'] if 'content_ids' in kwargs else None
         point_labels = kwargs['point_labels'] if 'point_labels' in kwargs else None
 
-        assert len(stats['ys_label']) == len(stats['ys_label_pred'])
-
-        cls._plot_scatter(ax, stats, content_ids)
-
-        if point_labels:
-            assert len(point_labels) == len(stats['ys_label'])
-            for i, point_label in enumerate(point_labels):
-                ax.annotate(point_label, (stats['ys_label'][i], stats['ys_label_pred'][i]))
-
-    @classmethod
-    def _plot_scatter(cls, ax, stats, content_ids):
         if content_ids is None:
             ax.scatter(stats['ys_label'], stats['ys_label_pred'])
         else:
@@ -124,6 +115,11 @@ class RegressorMixin(object):
                 curr_ys_label_pred = np.array(stats['ys_label_pred'])[curr_idxs]
                 ax.scatter(curr_ys_label, curr_ys_label_pred,
                            label=curr_content_id, color=colors[idx % len(colors)])
+
+        if point_labels:
+            assert len(point_labels) == len(stats['ys_label'])
+            for i, point_label in enumerate(point_labels):
+                ax.annotate(point_label, (stats['ys_label'][i], stats['ys_label_pred'][i]))
 
     @staticmethod
     def get_objective_score(result, type='SRCC'):
@@ -923,23 +919,44 @@ class BootstrapRegressorMixin(RegressorMixin):
         try:
             assert 'ys_label_pred_bagging' in kwargs
             assert 'ys_label_pred_stddev' in kwargs
+            assert 'ys_label_pred_ci95_low' in kwargs
+            assert 'ys_label_pred_ci95_high' in kwargs
             stats = super(BootstrapRegressorMixin, cls).get_stats(ys_label, ys_label_pred, **kwargs)
             stats['ys_label_pred_bagging'] = kwargs['ys_label_pred_bagging']
             stats['ys_label_pred_stddev'] = kwargs['ys_label_pred_stddev']
+            stats['ys_label_pred_ci95_low'] = kwargs['ys_label_pred_ci95_low']
+            stats['ys_label_pred_ci95_high'] = kwargs['ys_label_pred_ci95_high']
             return stats
         except AssertionError:
             return super(BootstrapRegressorMixin, cls).get_stats(ys_label, ys_label_pred, **kwargs)
 
     @classmethod
-    def _plot_scatter(cls, ax, stats, content_ids):
-        # override RegressionMixin._plot_scatter
+    def plot_scatter(cls, ax, stats, **kwargs):
+        # override RegressionMixin.plot_scatter
+
+        assert len(stats['ys_label']) == len(stats['ys_label_pred'])
+
+        content_ids = kwargs['content_ids'] if 'content_ids' in kwargs else None
+        point_labels = kwargs['point_labels'] if 'point_labels' in kwargs else None
+
         try:
+
+            ci_assume_gaussian = kwargs['ci_assume_gaussian'] if 'ci_assume_gaussian' in kwargs else True
+
             assert 'ys_label_pred_bagging' in stats
             assert 'ys_label_pred_stddev' in stats
+            assert 'ys_label_pred_ci95_low' in stats
+            assert 'ys_label_pred_ci95_high' in stats
             avg_std = np.mean(stats['ys_label_pred_stddev'])
+            avg_ci95_low = np.mean(stats['ys_label_pred_ci95_low'])
+            avg_ci95_high = np.mean(stats['ys_label_pred_ci95_high'])
             if content_ids is None:
+                if ci_assume_gaussian:
+                    yerr = 1.96 * stats['ys_label_pred_stddev'] # 95% C.I. (assume Gaussian)
+                else:
+                    yerr = [stats['ys_label_pred_bagging'] - avg_ci95_low, avg_ci95_high - stats['ys_label_pred_bagging']] # 95% C.I.
                 ax.errorbar(stats['ys_label'], stats['ys_label_pred'],
-                            yerr=1.96 * stats['ys_label_pred_stddev'], # 95% C.I.
+                            yerr=yerr,
                             marker='o', linestyle='')
             else:
                 assert len(stats['ys_label']) == len(content_ids)
@@ -952,16 +969,23 @@ class BootstrapRegressorMixin(RegressorMixin):
                     curr_idxs = indices(content_ids, lambda cid: cid == curr_content_id)
                     curr_ys_label = np.array(stats['ys_label'])[curr_idxs]
                     curr_ys_label_pred = np.array(stats['ys_label_pred'])[curr_idxs]
+                    curr_ys_label_pred_bagging = np.array(stats['ys_label_pred_bagging'])[curr_idxs]
                     curr_ys_label_pred_stddev = np.array(stats['ys_label_pred_stddev'])[curr_idxs]
+                    curr_ys_label_pred_ci95_low = np.array(stats['ys_label_pred_ci95_low'])[curr_idxs]
+                    curr_ys_label_pred_ci95_high = np.array(stats['ys_label_pred_ci95_high'])[curr_idxs]
+                    if ci_assume_gaussian:
+                        yerr = 1.96 * curr_ys_label_pred_stddev # 95% C.I. (assume Gaussian)
+                    else:
+                        yerr = [curr_ys_label_pred_bagging - curr_ys_label_pred_ci95_low, curr_ys_label_pred_ci95_high - curr_ys_label_pred_bagging] # 95% C.I.
                     try:
                         curr_ys_label_stddev = np.array(stats['ys_label_stddev'])[curr_idxs]
                         ax.errorbar(curr_ys_label, curr_ys_label_pred,
-                                    yerr=1.96 * curr_ys_label_pred_stddev, # 95% C.I.
+                                    yerr=yerr,
                                     xerr=1.96 * curr_ys_label_stddev,
                                     marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)])
                     except:
                         ax.errorbar(curr_ys_label, curr_ys_label_pred,
-                                    yerr=1.96 * curr_ys_label_pred_stddev, # 95% C.I.
+                                    yerr=yerr,
                                     marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)])
 
             ax.text(0.33, 0.1, 'Avg. Std.: {:.2f}'.format(avg_std),
@@ -970,8 +994,13 @@ class BootstrapRegressorMixin(RegressorMixin):
                     transform=ax.transAxes,
                     fontsize=12)
 
+            if point_labels:
+                assert len(point_labels) == len(stats['ys_label'])
+                for i, point_label in enumerate(point_labels):
+                    ax.annotate(point_label, (stats['ys_label'][i], stats['ys_label_pred'][i]))
+
         except AssertionError:
-            super(BootstrapRegressorMixin, cls)._plot_scatter(ax, stats, content_ids)
+            super(BootstrapRegressorMixin, cls).plot_scatter(ax, stats, **kwargs)
 
 
 class BootstrapMixin(object):
@@ -1034,13 +1063,20 @@ class BootstrapMixin(object):
         ys_2d = self.denormalize_ys(ys_2d)
         ys_label_pred_bagging = np.mean(ys_2d, axis=0)
         ys_label_pred_stddev = np.std(ys_2d, axis=0)
+        ys_label_pred_ci95_low = np.percentile(ys_2d, 2.5, axis=0)
+        ys_label_pred_ci95_high = np.percentile(ys_2d, 97.5, axis=0)
         return {'ys_label_pred': ys_label_pred,
                 'ys_label_pred_bagging': ys_label_pred_bagging,
-                'ys_label_pred_stddev': ys_label_pred_stddev}
+                'ys_label_pred_stddev': ys_label_pred_stddev,
+                'ys_label_pred_ci95_low': ys_label_pred_ci95_low,
+                'ys_label_pred_ci95_high': ys_label_pred_ci95_high,
+                }
 
     def evaluate_stddev(self, xs):
-        ys_label_pred_stddev = self.predict(xs)['ys_label_pred_stddev']
-        return {'mean_stddev': np.mean(ys_label_pred_stddev)}
+        prediction = self.predict(xs)
+        return {'mean_stddev': np.mean(prediction['ys_label_pred_stddev']),
+                'mean_ci95_low': np.mean(prediction['ys_label_pred_ci95_low']),
+                'mean_ci95_high': np.mean(prediction['ys_label_pred_ci95_high'])}
 
     def evaluate_bagging(self, xs, ys):
         ys_label_pred_bagging = self.predict(xs)['ys_label_pred_bagging']
