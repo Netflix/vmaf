@@ -137,8 +137,14 @@ class RegressorMixin(object):
                 curr_idxs = indices(content_ids, lambda cid: cid == curr_content_id)
                 curr_ys_label = np.array(stats['ys_label'])[curr_idxs]
                 curr_ys_label_pred = np.array(stats['ys_label_pred'])[curr_idxs]
-                ax.scatter(curr_ys_label, curr_ys_label_pred,
-                           label=curr_content_id, color=colors[idx % len(colors)])
+                try:
+                    curr_ys_label_stddev = np.array(stats['ys_label_stddev'])[curr_idxs]
+                    ax.errorbar(curr_ys_label, curr_ys_label_pred,
+                                xerr=1.96 * curr_ys_label_stddev,
+                                marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)])
+                except:
+                    ax.errorbar(curr_ys_label, curr_ys_label_pred,
+                                marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)])
 
         if point_labels:
             assert len(point_labels) == len(stats['ys_label'])
@@ -1012,7 +1018,7 @@ class BootstrapRegressorMixin(RegressorMixin):
                                     yerr=yerr,
                                     marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)])
 
-            ax.text(0.33, 0.1, 'Avg. Std.: {:.2f}'.format(avg_std),
+            ax.text(0.45, 0.1, 'Avg. Pred. Std.: {:.2f}'.format(avg_std),
                     horizontalalignment='right',
                     verticalalignment='top',
                     transform=ax.transAxes,

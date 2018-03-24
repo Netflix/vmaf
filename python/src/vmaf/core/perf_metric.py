@@ -445,7 +445,7 @@ class ResolvingPowerPerfMetric(RawScorePerfMetric):
         try:
             res_pow_95 = scipy.interpolate.interp1d(cdf_z_vqm, delta_vqm, kind='linear')([0.95])[0]
         except ValueError:
-            res_pow_95 = None
+            res_pow_95 = float('nan')
 
         # === original binning logic: ===
         # # % One control parameter for delta_vqm resolution plot; number of vqm bins,
