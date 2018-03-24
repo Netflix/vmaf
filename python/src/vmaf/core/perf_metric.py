@@ -62,7 +62,7 @@ class RawScorePerfMetric(PerfMetric):
         for groundtruth in self.groundtruths:
             assert hasattr(groundtruth, '__len__') and len(groundtruth) > 1
 
-class KflkPerfMetric(RawScorePerfMetric):
+class AucPerfMetric(RawScorePerfMetric):
     """
     # % The method is described in the paper:
     # % L. Krasula, K. Fliegel, P. Le Callet, M.Klima, "On the accuracy of
@@ -98,7 +98,7 @@ class KflkPerfMetric(RawScorePerfMetric):
     # % objective quality metrics from pair comparison data", QoMEX 2016.
     """
 
-    TYPE = "KFLK"
+    TYPE = "AUC"
     VERSION = "0.1"
 
     @classmethod

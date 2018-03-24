@@ -47,7 +47,7 @@
 - Add DMOS_MLE_CO subjective model.
 
 **Fixed bugs:**
-- Update RegressionMixin to handle KFLK exception for dicitonary-style dataset.
+- Update RegressionMixin to handle AUC exception for dicitonary-style dataset.
 - Fix Makefile fedora libptools issue. (#98)
 
 ## (4/13/2017) [1.2.4]
@@ -144,7 +144,7 @@
 ## (11/11/2016) [1.1.11]
 
 **New features:**
-- Add implementation of KFLK - quality metric evaluation method based on AUC. Refer to: L. Krasula, K. Fliegel, P. Le Callet, M.Klima, "On the accuracy of objective image and video quality models: New methodology for performance evaluation", QoMEX 2016.
+- Add implementation of AUC (Area Under the Curve) - quality metric evaluation method based on AUC. Refer to: L. Krasula, K. Fliegel, P. Le Callet, M.Klima, "On the accuracy of objective image and video quality models: New methodology for performance evaluation", QoMEX 2016.
 
 ## (11/07/2016) [1.1.10]
 

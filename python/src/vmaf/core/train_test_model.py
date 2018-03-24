@@ -10,7 +10,7 @@ from vmaf import svmutil
 from vmaf.tools.misc import indices
 from vmaf.core.mixin import TypeVersionEnabled
 from vmaf.core.perf_metric import RmsePerfMetric, SrccPerfMetric, PccPerfMetric, \
-    KendallPerfMetric, KflkPerfMetric
+    KendallPerfMetric, AucPerfMetric
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -51,12 +51,12 @@ class RegressorMixin(object):
 
         if ys_label_raw is not None:
             try:
-                # KFLK
-                kflk = KflkPerfMetric(ys_label_raw, ys_label_pred) \
+                # AUC
+                auc = AucPerfMetric(ys_label_raw, ys_label_pred) \
                     .evaluate()['score']
-                stats['KFLK'] = kflk
-            except TypeError: # KFLK would not work with dictionary-style dataset
-                stats['KFLK'] = float('nan')
+                stats['AUC'] = auc
+            except TypeError: # AUC would not work with dictionary-style dataset
+                stats['AUC'] = float('nan')
 
         if 'ys_label_stddev' in kwargs and 'ys_label_stddev' and kwargs['ys_label_stddev'] is not None:
             stats['ys_label_stddev'] = kwargs['ys_label_stddev']
@@ -68,9 +68,9 @@ class RegressorMixin(object):
         if stats is None:
             return '(Invalid Stats)'
         else:
-            if 'KFLK' in stats:
-                return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, KFLK: {kflk:.3f})'. \
-                    format(srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'], kflk=stats['KFLK'])
+            if 'AUC' in stats:
+                return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f},\nAUC: {auc:.3f})'. \
+                    format(srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'], auc=stats['AUC'])
             else:
                 return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f})'. \
                     format(srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
