@@ -268,7 +268,7 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
                                      ys_label_raw=raw_grountruths,
                                      ys_label_stddev=groundtruths_std)
 
-    print 'Stats on testing data: {}'.format(model_type.format_stats(stats))
+    print 'Stats on testing data: {}'.format(model_type.format_stats_for_print(stats))
 
     if ax is not None:
         content_ids = map(lambda asset: asset.content_id, test_assets)
@@ -290,7 +290,7 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
         ax.set_title("{runner}\n{stats}".format(
             dataset=test_assets[0].dataset,
             runner=runner_class.TYPE,
-            stats=model_type.format_stats(stats),
+            stats=model_type.format_stats_for_plot(stats),
         ))
 
     return test_assets, results
@@ -372,7 +372,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
 
     train_stats = model.get_stats(train_ys['label'], train_ys_pred, ys_label_raw=raw_groundtruths)
 
-    log = 'Stats on training data: {}'.format(model.format_stats(train_stats))
+    log = 'Stats on training data: {}'.format(model.format_stats_for_print(train_stats))
     if logger:
         logger.info(log)
     else:
@@ -392,7 +392,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         train_ax.set_title("Dataset: {dataset}, Model: {model}\n{stats}".format(
             dataset=train_dataset.dataset_name,
             model=model.model_id,
-            stats=model_class.format_stats(train_stats)
+            stats=model_class.format_stats_for_plot(train_stats)
         ))
 
     # === test model on test dataset ===
@@ -445,7 +445,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
 
         test_stats = model.get_stats(test_ys['label'], test_ys_pred, ys_label_raw=raw_groundtruths)
 
-        log = 'Stats on testing data: {}'.format(model_class.format_stats(test_stats))
+        log = 'Stats on testing data: {}'.format(model_class.format_stats_for_print(test_stats))
         if logger:
             logger.info(log)
         else:
@@ -460,7 +460,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
             test_ax.set_title("Dataset: {dataset}, Model: {model}\n{stats}".format(
                 dataset=test_dataset.dataset_name,
                 model=model.model_id,
-                stats=model_class.format_stats(test_stats)
+                stats=model_class.format_stats_for_plot(test_stats)
             ))
 
     return train_fassembler, train_assets, train_stats, test_fassembler, test_assets, test_stats, model
@@ -513,7 +513,7 @@ def cv_on_dataset(dataset, feature_param, model_param, ax, result_store,
     print 'Feature parameters: {}'.format(feature_param.feature_dict)
     print 'Model type: {}'.format(model_param.model_type)
     print 'Model parameters: {}'.format(model_param.model_param_dict)
-    print 'Stats: {}'.format(model_class.format_stats(cv_output['aggr_stats']))
+    print 'Stats: {}'.format(model_class.format_stats_for_print(cv_output['aggr_stats']))
 
     if ax is not None:
         model_class.plot_scatter(ax, cv_output['aggr_stats'], cv_output['contentids'])
@@ -523,7 +523,7 @@ def cv_on_dataset(dataset, feature_param, model_param, ax, result_store,
         ax.set_title("Dataset: {dataset}, Model: {model},\n{stats}".format(
             dataset=dataset.dataset_name,
             model=model_param.model_type,
-            stats=model_class.format_stats(cv_output['aggr_stats'])
+            stats=model_class.format_stats_for_plot(cv_output['aggr_stats'])
         ))
 
     return assets, cv_output

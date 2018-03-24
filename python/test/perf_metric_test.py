@@ -5,7 +5,7 @@ import scipy.io
 
 from vmaf.config import VmafConfig
 from vmaf.core.perf_metric import RmsePerfMetric, SrccPerfMetric, PccPerfMetric, \
-    KendallPerfMetric, AucPerfMetric
+    KendallPerfMetric, AucPerfMetric, ResolvingPowerPerfMetric
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -108,3 +108,20 @@ class AggrScorePerfMetricTest(unittest.TestCase):
         self.assertAlmostEqual(np.mean(results['AUC_BW']), 0.94454700301894534, places=6)
         self.assertAlmostEqual(np.mean(results['CC_0']), 0.88105386206276415, places=6)
         self.assertAlmostEqual(np.mean(results['THR']), 6.2392849606450556, places=6)
+
+    def test_respow_perf_metric(self):
+        np.random.seed(0)
+        groundtruths = np.random.normal(0, 1.0, [4, 10]) + np.tile(np.array([1, 2, 3, 4]), [10, 1]).T
+        predictions = [1, 2, 3, 4]
+        metric = ResolvingPowerPerfMetric(groundtruths, predictions)
+        result = metric.evaluate()
+        self.assertAlmostEqual(result['resolving_power_95perc'], 1.0, places=6)
+        self.assertAlmostEqual(result['score'], 1.0, places=6)
+
+    def test_respow_perf_metric2(self):
+        np.random.seed(0)
+        groundtruths = np.random.normal(0, 5.0, [100, 30]) + np.tile(np.array(np.arange(100)), [30, 1]).T
+        predictions = np.arange(100)
+        metric = ResolvingPowerPerfMetric(groundtruths, predictions)
+        result = metric.evaluate()
+        self.assertAlmostEqual(result['score'], 2.6887185220590433, places=6)

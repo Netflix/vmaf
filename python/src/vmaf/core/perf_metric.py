@@ -2,6 +2,8 @@ from abc import abstractmethod, ABCMeta
 import numpy as np
 from numpy.linalg import lstsq
 import scipy.stats
+import scipy.special
+import scipy.interpolate
 
 from vmaf.core.mixin import TypeVersionEnabled
 from vmaf.tools.misc import empty_object, indices
@@ -103,6 +105,7 @@ class AucPerfMetric(RawScorePerfMetric):
 
     @classmethod
     def _preprocess(cls, groundtruths, predictions, **kwargs):
+        # override - do not preprocess
         return groundtruths, predictions
 
     @staticmethod
@@ -338,6 +341,211 @@ class AucPerfMetric(RawScorePerfMetric):
 
         result['score'] = result['AUC_DS']
 
+        return result
+
+class ResolvingPowerPerfMetric(RawScorePerfMetric):
+    """
+    The method is described in the paper:
+    M. H. Pinson, S. Wolf, "Techniques for Evaluating Objective Video Quality Models Using
+    Overlapping Subjective Data Sets", NTIA Technical Report TR-09-457.
+    """
+
+    TYPE = "ResPow"
+    VERSION = "0.1"
+
+    @classmethod
+    def _preprocess(cls, groundtruths, predictions, **kwargs):
+        # override - do not preprocess
+        return groundtruths, predictions
+
+    @classmethod
+    def _evaluate(cls, groundtruths, predictions, **kwargs):
+
+        # function [resolving_power] = vqm_accuracy (vqm, num_viewers, mos, std, deg_of_freedom) % MATLAB function [resolving_power] = ...
+        # % vqm_accuracy (vqm, num_viewers, mos, std, deg_of_freedom)
+        # %
+        # % Compute resolving power for one model.
+        # %
+        # %    vqm is the video quality metric score for this src_id x hrc_id
+        # %    num_viewers is the number of viewers that rated this src_id x hrc_id
+        # %    mos is the mean opinion score of this src_id x hrc_id
+        # %    std is the standard-deviation of this src_id x hrc_id
+        # %
+        #
+        # % All of the above arrays must be the same length.  The VQM must already be
+        # % fitted to the MOS.
+        # %
+        # %   deg_of_freedom is the number of degrees of freedom for the fit between
+        # %           VQM and MOS prior to calling this routine.
+        # %
+        # % returned data contains:
+        # %   resolving_power(1) = 95% Resolving Power
+        # %   resolving_power(2) = 90% Resolving Power
+        # %   resolving_power(3) = 75% Resolving Power
+        # %   resolving_power(4) = 68% Resolving Power
+
+        deg_of_freedom = kwargs['ddof'] if 'ddof' in kwargs else 0
+
+        vqm = np.array(predictions)
+        num_viewers = np.array(map(lambda groundtruth: len(groundtruth), groundtruths))
+        mos = np.mean(groundtruths, axis=1)
+        std = np.std(groundtruths, axis=1, ddof=deg_of_freedom)
+
+        # variance = std.^2;
+        variance = std**2
+
+        # num_comb = length(vqm);
+        num_comb = len(vqm)
+
+        # % Perform the vqm RMSE calculation using vqm.
+        # vqm_rmse = (sum((vqm-mos).^2)/(num_comb - deg_of_freedom))^0.5;
+        vqm_rmse = (sum((vqm-mos)**2)/(num_comb - deg_of_freedom))**0.5
+
+        # % Perform the vqm resolution measurement using both vqm and mos.
+        # vqm_pairs = repmat(vqm,1,num_comb)-repmat(vqm',num_comb,1);
+        # mos_pairs = repmat(mos,1,num_comb)-repmat(mos',num_comb,1);
+        # stand_err_diff = sqrt(repmat(variance./num_viewers,1,num_comb) + repmat((variance./num_viewers)',num_comb,1));
+        # z_pairs = mos_pairs./stand_err_diff;
+        vqm_pairs = np.tile(vqm, (num_comb, 1))
+        vqm_pairs = vqm_pairs - vqm_pairs.T
+        mos_pairs = np.tile(mos, (num_comb, 1))
+        mos_pairs = mos_pairs - mos_pairs.T
+        stand_err_diff = np.tile(variance / num_viewers, (num_comb, 1))
+        stand_err_diff = np.sqrt(stand_err_diff + stand_err_diff.T)
+        z_pairs = mos_pairs / stand_err_diff
+
+        # % Include everything above the diagonal.
+        # delta_vqm = [];
+        # z = [];
+        # for col = 2:num_comb
+        #     delta_vqm = [delta_vqm; vqm_pairs(1:col-1,col)];
+        #     z = [z; z_pairs(1:col-1,col)];
+        # end
+        delta_vqm = []
+        z = []
+        for col in range(2, num_comb + 1):
+            delta_vqm = np.hstack([delta_vqm, vqm_pairs[0:col-1, col-1]])
+            z = np.hstack([z, z_pairs[0:col-1, col-1]])
+
+        # % Switch on z and delta_vqm for negative delta_vqm
+        # z_vqm = z;
+        # negs_vqm = find(delta_vqm < 0);
+        # delta_vqm(negs_vqm) = -delta_vqm(negs_vqm);
+        # z_vqm(negs_vqm) = -z_vqm(negs_vqm);
+        z_vqm = z
+        negs_vqm = indices(delta_vqm, lambda x: x < 0)
+        delta_vqm[negs_vqm] = - delta_vqm[negs_vqm]
+        z_vqm[negs_vqm] = - z_vqm[negs_vqm]
+
+        # % Compute the average confidence that vqm(2) is worse than vqm(1) in mean_cdf_z_vqm.
+        # cdf_z_vqm = .5+erf(z_vqm/sqrt(2))/2;
+        cdf_z_vqm = .5 + scipy.special.erf(z_vqm/np.sqrt(2))/2
+
+        # === my alternative implementation instead of using the original binning logic: ===
+        try:
+            res_pow_95 = scipy.interpolate.interp1d(cdf_z_vqm, delta_vqm, kind='linear')([0.95])[0]
+        except ValueError:
+            res_pow_95 = None
+
+        # === original binning logic: ===
+        # # % One control parameter for delta_vqm resolution plot; number of vqm bins,
+        # # % equally spaced from min(delta_vqm) to max(delta_vqm).
+        #
+        # # % Sliding neighborhood filter with 50% overlap means that there will actually
+        # # % be vqm_bins*2-1 points on the delta_vqm resolution plot.
+        # # vqm_bins = 10; % How many bins to divide full vqm range for local averaging
+        # # vqm_low = min(delta_vqm); % lower limit on delta_vqm
+        # # vqm_high = max(delta_vqm); % upper limit on delta_vqm
+        # # vqm_step = (vqm_high-vqm_low)/vqm_bins; % size of delta_vqm bins
+        # vqm_bins = 10
+        # vqm_low = min(delta_vqm)
+        # vqm_high = max(delta_vqm)
+        # vqm_step = (vqm_high-vqm_low)/vqm_bins
+        #
+        # # % lower, upper, and center bin locations
+        # # low_limits = [vqm_low:vqm_step/2:vqm_high-vqm_step];
+        # # high_limits = [vqm_low+vqm_step:vqm_step/2:vqm_high];
+        # # centers = [vqm_low+vqm_step/2:vqm_step/2:vqm_high-vqm_step/2];
+        # low_limits = np.arange(vqm_low, vqm_high-vqm_step, step=vqm_step/2)
+        # high_limits = np.arange(vqm_low+vqm_step, vqm_high, step=vqm_step/2)
+        # centers = np.arange(vqm_low+vqm_step/2, vqm_high-vqm_step/2, step=vqm_step/2)
+        #
+        # len_centers = len(centers)
+        # assert len_centers == len(low_limits) == len(high_limits)
+        #
+        # # mean_cdf_z_vqm = zeros(1,2*vqm_bins-1);
+        # # for i=1:2*vqm_bins-1
+        # #     in_bin = find(low_limits(i) <= delta_vqm & delta_vqm < high_limits(i));
+        # #     mean_cdf_z_vqm(i) = mean(cdf_z_vqm(in_bin));
+        # # end
+        # mean_cdf_z_vqm = np.zeros(len_centers)
+        # for i in range(1, len_centers+1):
+        #     in_bin = indices(delta_vqm, lambda x:low_limits[i-1] <= x and x < high_limits[i-1])
+        #     mean_cdf_z_vqm[i-1] = np.mean(cdf_z_vqm[in_bin])
+        #
+        # # % % Optional code to plot resolving power curve.
+        # # % % The x-axis is vqm(2)-vqm(1).  The Y-axis is always the average
+        # # % % confidence that vqm(2) is worse than vqm(1).
+        # # % figure(1)
+        # # % plot(centers,mean_cdf_z_vqm)
+        # # % grid
+        # # % set(gca,'LineWidth',1)
+        # #
+        # # % set(gca,'FontName','Ariel')
+        # # % set(gca,'fontsize',11)
+        # # % xlabel('VQM (2) - VQM (1)')
+        # # % ylabel('Average Confidence VQM (2) is worse than VQM (1)')
+        # # % title('VQM Resolving Power')
+        #
+        # # % Compute each resolving power by interpolating the mean_cdf_z_vqm graph
+        #
+        # # % 95% resolving power
+        # # i = length(centers) - 1;
+        # # while mean_cdf_z_vqm(i) > 0.95 && i > 1,
+        # #     i = i -1;
+        # # end
+        # # j = min(length(centers), i+1);
+        # # resolving_power(1) = interp1(mean_cdf_z_vqm(i:j),centers(i:j), 0.95);
+        #
+        # # % 90% resolving power
+        # # i = length(centers) - 1;
+        # # while mean_cdf_z_vqm(i) > 0.90 && i > 1,
+        # # i = i -1;
+        # # end
+        # # j = min(length(centers), i+1);
+        # # resolving_power(2) = interp1(mean_cdf_z_vqm(i:j),centers(i:j), 0.90);
+        #
+        # # % 75% resolving power
+        # # i = length(centers) - 1;
+        # # while mean_cdf_z_vqm(i) > 0.75 && i > 1,
+        # # i = i -1;
+        # # end
+        # # j = min(length(centers), i+1);
+        # # resolving_power(3) = interp1(mean_cdf_z_vqm(i:j),centers(i:j), 0.75);
+        #
+        # # % 68% resolving power
+        # # i = length(centers) - 1;
+        # # while mean_cdf_z_vqm(i) > 0.68 && i > 1,
+        # # i = i -1;
+        # # end
+        # # j = min(length(centers), i+1);
+        # # resolving_power(4) = interp1(mean_cdf_z_vqm(i:j),centers(i:j), 0.68);
+        #
+        # resolving_powers = []
+        # for perc in [0.95, 0.90, 0.75, 0.68]:
+        #     i = len(centers) - 1
+        #     while mean_cdf_z_vqm[i-1] > perc and i > 1:
+        #         i -= 1
+        #     j = min(len(centers), i+1)
+        #     resolving_power = scipy.interpolate.interp1d(mean_cdf_z_vqm[i-1:j], centers[i-1:j])(perc)
+        #     resolving_powers.append(resolving_power)
+        #
+        # # % return infinity if can't compute
+        # # resolving_power(isnan(resolving_power)) = inf;
+
+        result = dict()
+        result['resolving_power_95perc'] = res_pow_95
+        result['score'] = res_pow_95
         return result
 
 class AggrScorePerfMetric(PerfMetric):

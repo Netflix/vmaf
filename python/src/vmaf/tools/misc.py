@@ -160,6 +160,8 @@ def indices(a, func):
     [1, 2]
     >>> indices([1, 2, 3, 4], lambda x: x in [2, 4])
     [1, 3]
+    >>> indices([1,2,3,1,2,3,1,2,3], lambda x: x > 2)
+    [2, 5, 8]
     """
     return [i for (i, val) in enumerate(a) if func(val)]
 

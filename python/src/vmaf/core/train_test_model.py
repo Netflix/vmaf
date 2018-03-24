@@ -7,10 +7,11 @@ from sklearn.metrics import f1_score
 import numpy as np
 
 from vmaf import svmutil
+from vmaf.tools.decorator import deprecated
 from vmaf.tools.misc import indices
 from vmaf.core.mixin import TypeVersionEnabled
 from vmaf.core.perf_metric import RmsePerfMetric, SrccPerfMetric, PccPerfMetric, \
-    KendallPerfMetric, AucPerfMetric
+    KendallPerfMetric, AucPerfMetric, ResolvingPowerPerfMetric
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -58,24 +59,47 @@ class RegressorMixin(object):
             except TypeError: # AUC would not work with dictionary-style dataset
                 stats['AUC'] = float('nan')
 
+            try:
+                # ResPow
+                respow = ResolvingPowerPerfMetric(ys_label_raw, ys_label_pred) \
+                    .evaluate()['score']
+                stats['ResPow'] = respow
+            except TypeError: # ResPow would not work with dictionary-style dataset
+                stats['ResPow'] = float('nan')
+
         if 'ys_label_stddev' in kwargs and 'ys_label_stddev' and kwargs['ys_label_stddev'] is not None:
             stats['ys_label_stddev'] = kwargs['ys_label_stddev']
 
         return stats
 
     @staticmethod
-    def format_stats(stats):
+    def format_stats_for_plot(stats):
         if stats is None:
             return '(Invalid Stats)'
         else:
-            if 'AUC' in stats:
-                return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f},\nAUC: {auc:.3f})'. \
-                    format(srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'], auc=stats['AUC'])
+            if 'AUC' in stats and 'ResPow' in stats:
+                return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f},\n AUC: {auc:.3f}, ResPow: {respow:.3f})'. \
+                    format(srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'],
+                           auc=stats['AUC'], respow=stats['ResPow'])
             else:
                 return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f})'. \
                     format(srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
 
     @staticmethod
+    def format_stats_for_print(stats):
+        if stats is None:
+            return '(Invalid Stats)'
+        else:
+            if 'AUC' in stats and 'ResPow' in stats:
+                return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f}, AUC: {auc:.3f}, ResPow: {respow:.3f})'. \
+                    format(srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'],
+                           auc=stats['AUC'], respow=stats['ResPow'])
+            else:
+                return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f})'. \
+                    format(srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
+
+    @staticmethod
+    @deprecated
     def format_stats2(stats):
         if stats is None:
             return 'Invalid Stats'
