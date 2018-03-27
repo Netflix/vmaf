@@ -115,13 +115,13 @@ class AggrScorePerfMetricTest(unittest.TestCase):
         predictions = [1, 2, 3, 4]
         metric = ResolvingPowerPerfMetric(groundtruths, predictions)
         result = metric.evaluate()
-        self.assertAlmostEqual(result['resolving_power_95perc'], 1.0, places=6)
-        self.assertAlmostEqual(result['score'], 1.0, places=6)
+        self.assertAlmostEqual(result['resolving_power_95perc'], 1.2176359647113211, places=6)
+        self.assertAlmostEqual(result['score'], 1.2176359647113211, places=6)
 
     def test_respow_perf_metric2(self):
         np.random.seed(0)
-        groundtruths = np.random.normal(0, 5.0, [100, 30]) + np.tile(np.array(np.arange(100)), [30, 1]).T
+        groundtruths = np.random.normal(0, 10.0, [100, 30]) + np.tile(np.array(np.arange(100)), [30, 1]).T
         predictions = np.arange(100)
         metric = ResolvingPowerPerfMetric(groundtruths, predictions)
         result = metric.evaluate()
-        self.assertAlmostEqual(result['score'], 2.6887185220590433, places=6)
+        self.assertAlmostEqual(result['score'], 9.0014569671225111, places=6)

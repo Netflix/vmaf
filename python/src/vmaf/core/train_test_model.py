@@ -53,19 +53,28 @@ class RegressorMixin(object):
         if ys_label_raw is not None:
             try:
                 # AUC
-                auc = AucPerfMetric(ys_label_raw, ys_label_pred) \
-                    .evaluate()['score']
-                stats['AUC'] = auc
+                result = AucPerfMetric(ys_label_raw, ys_label_pred).evaluate()
+                stats['AUC_DS'] = result['AUC_DS']
+                stats['AUC_BW'] = result['AUC_BW']
             except TypeError: # AUC would not work with dictionary-style dataset
-                stats['AUC'] = float('nan')
+                stats['AUC_DS'] = float('nan')
+                stats['AUC2_BW'] = float('nan')
 
             try:
                 # ResPow
                 respow = ResolvingPowerPerfMetric(ys_label_raw, ys_label_pred) \
-                    .evaluate()['score']
+                    .evaluate(enable_mapping=False)['score']
                 stats['ResPow'] = respow
             except TypeError: # ResPow would not work with dictionary-style dataset
                 stats['ResPow'] = float('nan')
+
+            try:
+                # ResPow
+                respow_norm = ResolvingPowerPerfMetric(ys_label_raw, ys_label_pred) \
+                    .evaluate(enable_mapping=True)['score']
+                stats['ResPowNormalized'] = respow_norm
+            except TypeError: # ResPow would not work with dictionary-style dataset
+                stats['ResPowNormalized'] = float('score')
 
         if 'ys_label_stddev' in kwargs and 'ys_label_stddev' and kwargs['ys_label_stddev'] is not None:
             stats['ys_label_stddev'] = kwargs['ys_label_stddev']
@@ -77,10 +86,12 @@ class RegressorMixin(object):
         if stats is None:
             return '(Invalid Stats)'
         else:
-            if 'AUC' in stats and 'ResPow' in stats:
-                return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f},\n AUC: {auc:.3f}, ResPow: {respow:.3f})'. \
+            if 'AUC_DS' in stats and 'AUC_BW' in stats and 'ResPow' in stats and 'ResPowNormalized' in stats:
+                return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f},\n AUC: {auc_ds:.3f}/{auc_bw:.3f}, ' \
+                       'ResPow: {respow:.3f}/{respownorm:.3f})'. \
                     format(srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'],
-                           auc=stats['AUC'], respow=stats['ResPow'])
+                           auc_ds=stats['AUC_DS'], auc_bw=stats['AUC_BW'],
+                           respow=stats['ResPow'], respownorm=stats['ResPowNormalized'])
             else:
                 return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f})'. \
                     format(srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
@@ -90,10 +101,12 @@ class RegressorMixin(object):
         if stats is None:
             return '(Invalid Stats)'
         else:
-            if 'AUC' in stats and 'ResPow' in stats:
-                return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f}, AUC: {auc:.3f}, ResPow: {respow:.3f})'. \
+            if 'AUC_DS' in stats and 'AUC_BW' in stats and 'ResPow' in stats and 'ResPowNormalized' in stats:
+                return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f}, AUC: {auc_ds:.3f}/{auc_bw:.3f}, ' \
+                       'ResPow: {respow:.3f}/{respownorm:.3f})'. \
                     format(srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'],
-                           auc=stats['AUC'], respow=stats['ResPow'])
+                           auc_ds=stats['AUC_DS'], auc_bw=stats['AUC_BW'],
+                           respow=stats['ResPow'], respownorm=stats['ResPowNormalized'])
             else:
                 return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f})'. \
                     format(srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])

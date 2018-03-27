@@ -353,10 +353,41 @@ class ResolvingPowerPerfMetric(RawScorePerfMetric):
     TYPE = "ResPow"
     VERSION = "0.1"
 
+    @staticmethod
+    def sigmoid_adjust_raw(xs, ys):
+        ys_max = np.max(ys) + 0.1
+        ys_min = np.min(ys) - 0.1
+
+        ys_ = np.mean(np.array(ys), axis=1)
+
+        # normalize to [0, 1]
+        ys_ = (ys_ - ys_min) / (ys_max - ys_min)
+
+        zs = -np.log(1.0 / ys_.T - 1.0)
+        Y_mtx = np.matrix((np.ones(len(ys_)), zs)).T
+        x_vec = np.matrix(xs).T
+        a_b = lstsq(Y_mtx, x_vec)[0]
+        a = a_b.item(0)
+        b = a_b.item(1)
+
+        xs = 1.0 / (1.0 + np.exp(- (np.array(xs) - a) / b))
+
+        # denormalize
+        xs = xs * (ys_max - ys_min) + ys_min
+
+        return xs
+
     @classmethod
     def _preprocess(cls, groundtruths, predictions, **kwargs):
         # override - do not preprocess
-        return groundtruths, predictions
+        enable_mapping = kwargs['enable_mapping'] if 'enable_mapping' in kwargs else False
+
+        if enable_mapping:
+            predictions_ = cls.sigmoid_adjust_raw(predictions, groundtruths)
+        else:
+            predictions_ = predictions
+
+        return groundtruths, predictions_
 
     @classmethod
     def _evaluate(cls, groundtruths, predictions, **kwargs):
@@ -441,48 +472,49 @@ class ResolvingPowerPerfMetric(RawScorePerfMetric):
         # cdf_z_vqm = .5+erf(z_vqm/sqrt(2))/2;
         cdf_z_vqm = .5 + scipy.special.erf(z_vqm/np.sqrt(2))/2
 
-        # === my alternative implementation instead of using the original binning logic: ===
-        try:
-            res_pow_95 = scipy.interpolate.interp1d(cdf_z_vqm, delta_vqm, kind='linear')([0.95])[0]
-        except ValueError:
-            res_pow_95 = float('nan')
-
         # === original binning logic: ===
-        # # % One control parameter for delta_vqm resolution plot; number of vqm bins,
-        # # % equally spaced from min(delta_vqm) to max(delta_vqm).
-        #
-        # # % Sliding neighborhood filter with 50% overlap means that there will actually
-        # # % be vqm_bins*2-1 points on the delta_vqm resolution plot.
-        # # vqm_bins = 10; % How many bins to divide full vqm range for local averaging
-        # # vqm_low = min(delta_vqm); % lower limit on delta_vqm
-        # # vqm_high = max(delta_vqm); % upper limit on delta_vqm
-        # # vqm_step = (vqm_high-vqm_low)/vqm_bins; % size of delta_vqm bins
-        # vqm_bins = 10
-        # vqm_low = min(delta_vqm)
-        # vqm_high = max(delta_vqm)
-        # vqm_step = (vqm_high-vqm_low)/vqm_bins
-        #
-        # # % lower, upper, and center bin locations
-        # # low_limits = [vqm_low:vqm_step/2:vqm_high-vqm_step];
-        # # high_limits = [vqm_low+vqm_step:vqm_step/2:vqm_high];
-        # # centers = [vqm_low+vqm_step/2:vqm_step/2:vqm_high-vqm_step/2];
-        # low_limits = np.arange(vqm_low, vqm_high-vqm_step, step=vqm_step/2)
-        # high_limits = np.arange(vqm_low+vqm_step, vqm_high, step=vqm_step/2)
-        # centers = np.arange(vqm_low+vqm_step/2, vqm_high-vqm_step/2, step=vqm_step/2)
-        #
-        # len_centers = len(centers)
-        # assert len_centers == len(low_limits) == len(high_limits)
-        #
-        # # mean_cdf_z_vqm = zeros(1,2*vqm_bins-1);
-        # # for i=1:2*vqm_bins-1
-        # #     in_bin = find(low_limits(i) <= delta_vqm & delta_vqm < high_limits(i));
-        # #     mean_cdf_z_vqm(i) = mean(cdf_z_vqm(in_bin));
-        # # end
-        # mean_cdf_z_vqm = np.zeros(len_centers)
-        # for i in range(1, len_centers+1):
-        #     in_bin = indices(delta_vqm, lambda x:low_limits[i-1] <= x and x < high_limits[i-1])
-        #     mean_cdf_z_vqm[i-1] = np.mean(cdf_z_vqm[in_bin])
-        #
+        # % One control parameter for delta_vqm resolution plot; number of vqm bins,
+        # % equally spaced from min(delta_vqm) to max(delta_vqm).
+
+        # % Sliding neighborhood filter with 50% overlap means that there will actually
+        # % be vqm_bins*2-1 points on the delta_vqm resolution plot.
+        # vqm_bins = 10; % How many bins to divide full vqm range for local averaging
+        # vqm_low = min(delta_vqm); % lower limit on delta_vqm
+        # vqm_high = max(delta_vqm); % upper limit on delta_vqm
+        # vqm_step = (vqm_high-vqm_low)/vqm_bins; % size of delta_vqm bins
+        vqm_bins = 10
+        vqm_low = min(delta_vqm)
+        vqm_high = max(delta_vqm)
+        vqm_step = (vqm_high - vqm_low) / vqm_bins
+
+        # % lower, upper, and center bin locations
+        # low_limits = [vqm_low:vqm_step/2:vqm_high-vqm_step];
+        # high_limits = [vqm_low+vqm_step:vqm_step/2:vqm_high];
+        # centers = [vqm_low+vqm_step/2:vqm_step/2:vqm_high-vqm_step/2];
+        low_limits = np.arange(vqm_low, vqm_high - vqm_step, step=vqm_step / 2)
+        centers = low_limits.copy() + vqm_step / 2
+        high_limits = low_limits.copy() + vqm_step
+        # patch to cover entire range
+        if high_limits[-1] < vqm_high:
+            low_limits = np.hstack([low_limits, vqm_high - vqm_step])
+            high_limits = np.hstack([high_limits, vqm_high])
+            centers = np.hstack([centers, vqm_high - vqm_step / 2])
+
+        len_centers = len(centers)
+        assert len_centers == len(low_limits) == len(high_limits)
+
+        # mean_cdf_z_vqm = zeros(1,2*vqm_bins-1);
+        # for i=1:2*vqm_bins-1
+        #     in_bin = find(low_limits(i) <= delta_vqm & delta_vqm < high_limits(i));
+        #     mean_cdf_z_vqm(i) = mean(cdf_z_vqm(in_bin));
+        # end
+        mean_cdf_z_vqm = np.zeros(len_centers)
+        for i in range(0, len_centers):
+            in_bin = indices(delta_vqm, lambda x:low_limits[i] <= x and x < high_limits[i])
+            mean_cdf_z_vqm[i] = np.mean(cdf_z_vqm[in_bin])
+        centers__mean_cdf_z_vqm = filter(lambda (x,y): not np.isnan(y), zip(centers, mean_cdf_z_vqm))
+        centers, mean_cdf_z_vqm = zip(*centers__mean_cdf_z_vqm)
+
         # # % % Optional code to plot resolving power curve.
         # # % % The x-axis is vqm(2)-vqm(1).  The Y-axis is always the average
         # # % % confidence that vqm(2) is worse than vqm(1).
@@ -539,9 +571,11 @@ class ResolvingPowerPerfMetric(RawScorePerfMetric):
         #     j = min(len(centers), i+1)
         #     resolving_power = scipy.interpolate.interp1d(mean_cdf_z_vqm[i-1:j], centers[i-1:j])(perc)
         #     resolving_powers.append(resolving_power)
-        #
-        # # % return infinity if can't compute
-        # # resolving_power(isnan(resolving_power)) = inf;
+
+        res_pow_95 = scipy.interpolate.interp1d(mean_cdf_z_vqm, centers, kind='linear')([0.95])[0]
+
+        # % return infinity if can't compute
+        # resolving_power(isnan(resolving_power)) = inf;
 
         result = dict()
         result['resolving_power_95perc'] = res_pow_95
