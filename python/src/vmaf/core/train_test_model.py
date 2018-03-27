@@ -58,7 +58,7 @@ class RegressorMixin(object):
                 stats['AUC_BW'] = result['AUC_BW']
             except TypeError: # AUC would not work with dictionary-style dataset
                 stats['AUC_DS'] = float('nan')
-                stats['AUC2_BW'] = float('nan')
+                stats['AUC_BW'] = float('nan')
 
             try:
                 # ResPow
@@ -74,7 +74,7 @@ class RegressorMixin(object):
                     .evaluate(enable_mapping=True)['score']
                 stats['ResPowNormalized'] = respow_norm
             except TypeError: # ResPow would not work with dictionary-style dataset
-                stats['ResPowNormalized'] = float('score')
+                stats['ResPowNormalized'] = float('nan')
 
         if 'ys_label_stddev' in kwargs and 'ys_label_stddev' and kwargs['ys_label_stddev'] is not None:
             stats['ys_label_stddev'] = kwargs['ys_label_stddev']

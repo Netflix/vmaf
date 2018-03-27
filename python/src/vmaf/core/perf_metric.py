@@ -290,6 +290,9 @@ class AucPerfMetric(RawScorePerfMetric):
     @classmethod
     def _evaluate(cls, groundtruths, predictions, **kwargs):
 
+        if isinstance(groundtruths, (list, tuple)) and isinstance(groundtruths[0], dict):
+            raise TypeError("{} cannot handle dictionary-style daataset yet.".format(cls.__name__))
+
         def _signif(a, b):
             mos_a = np.mean(a)
             mos_b = np.mean(b)
@@ -414,6 +417,9 @@ class ResolvingPowerPerfMetric(RawScorePerfMetric):
         # %   resolving_power(2) = 90% Resolving Power
         # %   resolving_power(3) = 75% Resolving Power
         # %   resolving_power(4) = 68% Resolving Power
+
+        if isinstance(groundtruths, (list, tuple)) and isinstance(groundtruths[0], dict):
+            raise TypeError("{} cannot handle dictionary-style daataset yet.".format(cls.__name__))
 
         deg_of_freedom = kwargs['ddof'] if 'ddof' in kwargs else 0
 
