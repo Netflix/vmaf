@@ -578,7 +578,10 @@ class ResolvingPowerPerfMetric(RawScorePerfMetric):
         #     resolving_power = scipy.interpolate.interp1d(mean_cdf_z_vqm[i-1:j], centers[i-1:j])(perc)
         #     resolving_powers.append(resolving_power)
 
-        res_pow_95 = scipy.interpolate.interp1d(mean_cdf_z_vqm, centers, kind='linear')([0.95])[0]
+        try:
+            res_pow_95 = scipy.interpolate.interp1d(mean_cdf_z_vqm, centers, kind='linear')([0.95])[0]
+        except ValueError:
+            res_pow_95 = float('NaN')
 
         # % return infinity if can't compute
         # resolving_power(isnan(resolving_power)) = inf;
