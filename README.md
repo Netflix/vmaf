@@ -25,6 +25,7 @@ It also requires a number of Python packages:
   - [`matplotlib`](http://matplotlib.org/1.3.1/index.html) (>=2.0.0)
   - [`pandas`](http://pandas.pydata.org/) (>=0.19.2)
   - [`scikit-learn`](http://scikit-learn.org/stable/) (>=0.18.1)
+  - [`scikit-image`](http://scikit-image.org/) (>=0.13.1)
   - [`h5py`](http://www.h5py.org/) (>=2.6.0)
 
 You will need to install `gfortran` for compiling `scipy`, `freetype` and `pkg-config` required by `matplotlib`, and `hdf5` required by `h5py` (C header files needed). These can't be compiled from source here.
@@ -51,7 +52,7 @@ sudo -H pip install --upgrade pip
 Then install the required Python packages:
 
 ```
-pip install --user numpy scipy matplotlib notebook pandas sympy nose scikit-learn h5py
+pip install --user numpy scipy matplotlib notebook pandas sympy nose scikit-learn scikit-image h5py
 ```
 
 Make sure your user install executable directory is on your PATH. Add this to the end of `~/.bashrc` and restart your shell:
@@ -78,7 +79,7 @@ Now install the required Python packages:
 
 ```
 brew install numpy scipy
-pip install matplotlib notebook pandas sympy nose scikit-learn h5py
+pip install matplotlib notebook pandas sympy nose scikit-learn scikit-image h5py
 ```
 
 ### Troubleshooting
@@ -91,6 +92,7 @@ python -c 'import scipy as pkg; print(pkg.__version__); print(pkg.__file__)'
 python -c 'import matplotlib as pkg; print(pkg.__version__); print(pkg.__file__)'
 python -c 'import pandas as pkg; print(pkg.__version__); print(pkg.__file__)'
 python -c 'import sklearn as pkg; print(pkg.__version__); print(pkg.__file__)'
+python -c 'import skimage as pkg; print(pkg.__version__); print(pkg.__file__)'
 python -c 'import h5py as pkg; print(pkg.__version__); print(pkg.__file__)'
 ```
 

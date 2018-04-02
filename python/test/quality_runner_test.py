@@ -7,11 +7,11 @@ import os
 import unittest
 
 from vmaf.config import VmafConfig
-from vmaf.core.asset import Asset
+from vmaf.core.asset import Asset, NorefAsset
 from vmaf.core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner, \
     PsnrQualityRunner, VmafossExecQualityRunner, MsSsimQualityRunner, \
     SsimQualityRunner, Adm2QualityRunner, VmafPhoneQualityRunner, VifQualityRunner, \
-    Vif2QualityRunner, BootstrapVmafQualityRunner, BaggingVmafQualityRunner
+    Vif2QualityRunner, BootstrapVmafQualityRunner, BaggingVmafQualityRunner, NiqeQualityRunner
 from vmaf.core.result_store import FileSystemResultStore
 
 
@@ -1663,6 +1663,33 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['BOOTSTRAP_VMAF_stddev_score'], 0.6812993325967104, places=4)
         self.assertAlmostEqual(results[1]['BOOTSTRAP_VMAF_stddev_score'], 0.03947607207290399, places=4)
 
+    def test_run_niqe_runner(self):
+        print 'test on running NIQE runner on images...'
+        ref1_path = VmafConfig.test_resource_path("test_image_yuv", "100007.yuv")
+        ref2_path = VmafConfig.test_resource_path("test_image_yuv", "100039.yuv")
+        asset1 = NorefAsset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      dis_path=ref1_path,
+                      asset_dict={'width':481, 'height':321, 'yuv_type':'yuv444p'})
+
+        asset2 = NorefAsset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=VmafConfig.workdir_path(),
+                      dis_path=ref2_path,
+                      asset_dict={'width':481, 'height':321, 'yuv_type':'yuv444p'})
+
+        self.runner = NiqeQualityRunner(
+            [asset1, asset2],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None
+        )
+        self.runner.run()
+
+        results = self.runner.results
+        self.assertAlmostEqual(results[0]['NIQE_score'], 4.8656072348129422, places=4)
+        self.assertAlmostEqual(results[1]['NIQE_score'], 2.9309929860778756, places=2)
+
+
 class ParallelQualityRunnerTest(unittest.TestCase):
 
     def setUp(self):
@@ -2048,6 +2075,35 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.946416666666664, places=4)
         self.assertAlmostEqual(results[2]['VMAFOSSEXEC_score'], 76.699266666666674, places=3)
         self.assertAlmostEqual(results[3]['VMAFOSSEXEC_score'], 76.699266666666674, places=3)
+
+    def test_run_parallel_niqe_runner(self):
+        print 'test on running NIQE runner in parallel...'
+        ref1_path = VmafConfig.test_resource_path("test_image_yuv", "100007.yuv")
+        ref2_path = VmafConfig.test_resource_path("test_image_yuv", "100039.yuv")
+        asset1 = NorefAsset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      dis_path=ref1_path,
+                      asset_dict={'width':481, 'height':321, 'yuv_type':'yuv444p'})
+
+        asset2 = NorefAsset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=VmafConfig.workdir_path(),
+                      dis_path=ref2_path,
+                      asset_dict={'width':481, 'height':321, 'yuv_type':'yuv444p'})
+
+        self.runner = NiqeQualityRunner(
+            [asset1, asset2],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={},
+            optional_dict2={},
+        )
+        self.runner.run(parallelize=True)
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['NIQE_score'], 4.8656072348129422, places=4)
+        self.assertAlmostEqual(results[1]['NIQE_score'], 2.9309929860778756, places=2)
+
 
 class QualityRunnerVersionTest(unittest.TestCase):
 
