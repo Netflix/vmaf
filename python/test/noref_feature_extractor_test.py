@@ -7,7 +7,9 @@ import unittest
 
 from vmaf.config import VmafConfig
 from vmaf.core.asset import NorefAsset, Asset
-from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
+from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor, \
+    NiqeNorefFeatureExtractor, BrisqueNorefFeatureExtractor
+
 
 class NorefFeatureExtractorTest(unittest.TestCase):
 
@@ -79,6 +81,145 @@ class NorefFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['Moment_noref_feature_1st_score'], 59.788567297525134)
         self.assertAlmostEqual(results[1]['Moment_noref_feature_2nd_score'], 4696.668388042271)
         self.assertAlmostEqual(results[1]['Moment_noref_feature_var_score'], 1121.519917231207)
+
+    def test_run_noref_brisque_fextractor(self):
+        print 'test on running BRISQUE noref feature extractor...'
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        asset = NorefAsset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=VmafConfig.workdir_path(),
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324,})
+
+        asset_original = NorefAsset(dataset="test", content_id=0, asset_id=2,
+                      workdir_root=VmafConfig.workdir_path(),
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324,})
+
+        self.fextractor = BrisqueNorefFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_alpha23_score'], 0.78020833333333384, places=4)
+        self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_alpha13_score'], 0.6322500000000002, places=4)
+        self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_N34_score'],    -0.0071207420215536723, places=4)
+
+        self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_alpha23_score'], 0.87156250000000046, places=4)
+        self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_alpha13_score'], 0.82906250000000103, places=4)
+        self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_N34_score'],     -0.0092448158862212092, places=4)
+
+    def test_run_noref_niqe_fextractor(self):
+        print 'test on running NIQE noref feature extractor...'
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        asset = NorefAsset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=VmafConfig.workdir_path(),
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324,})
+
+        asset_original = NorefAsset(dataset="test", content_id=0, asset_id=2,
+                      workdir_root=VmafConfig.workdir_path(),
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324,})
+
+        self.fextractor = NiqeNorefFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None
+        )
+
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['NIQE_noref_feature_alpha23_score'], 0.8168807870370377, places=4)
+        self.assertAlmostEqual(results[0]['NIQE_noref_feature_alpha13_score'], 0.6949641203703707, places=4)
+        self.assertAlmostEqual(results[0]['NIQE_noref_feature_alpha_m1_score'], 2.0924143518518536, places=4)
+        self.assertAlmostEqual(results[0]['NIQE_noref_feature_blbr1_score'], 0.72958634325785898, places=4)
+
+        self.assertAlmostEqual(results[1]['NIQE_noref_feature_alpha23_score'], 0.89566087962963026, places=4)
+        self.assertAlmostEqual(results[1]['NIQE_noref_feature_alpha13_score'], 0.85539583333333391, places=4)
+        self.assertAlmostEqual(results[1]['NIQE_noref_feature_alpha_m1_score'], 2.7192025462962985, places=4)
+        self.assertAlmostEqual(results[1]['NIQE_noref_feature_blbr1_score'], 0.98723051960738684, places=4)
+
+    def test_run_noref_niqe_fextractor_train(self):
+        print 'test on running NIQE noref feature extractor in train mode...'
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        asset = NorefAsset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=VmafConfig.workdir_path(),
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324,})
+
+        asset_original = NorefAsset(dataset="test", content_id=0, asset_id=2,
+                      workdir_root=VmafConfig.workdir_path(),
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324,})
+
+        self.fextractor = NiqeNorefFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'mode': 'train'},
+            optional_dict2=None,
+        )
+
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['NIQE_noref_feature_alpha23_score'], 0.97259000000000073, places=4)
+        self.assertAlmostEqual(results[0]['NIQE_noref_feature_alpha13_score'], 0.80907000000000051, places=4)
+        self.assertAlmostEqual(results[0]['NIQE_noref_feature_alpha_m1_score'], 2.6135250000000019, places=4)
+        self.assertAlmostEqual(results[0]['NIQE_noref_feature_blbr1_score'], 0.9150526409258144, places=4)
+
+        self.assertAlmostEqual(results[1]['NIQE_noref_feature_alpha23_score'], 0.97447727272727347, places=4)
+        self.assertAlmostEqual(results[1]['NIQE_noref_feature_alpha13_score'], 0.89120909090909162, places=4)
+        self.assertAlmostEqual(results[1]['NIQE_noref_feature_alpha_m1_score'], 3.0300909090909118, places=4)
+        self.assertAlmostEqual(results[1]['NIQE_noref_feature_blbr1_score'], 1.0508255408831713, places=4)
+
+    def test_run_noref_niqe_fextractor_with_patch_size(self):
+        print 'test on running NIQE noref feature extractor with custom patch size...'
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        asset = NorefAsset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=VmafConfig.workdir_path(),
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = NorefAsset(dataset="test", content_id=0, asset_id=2,
+                      workdir_root=VmafConfig.workdir_path(),
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.fextractor = NiqeNorefFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'patch_size': 48},
+            optional_dict2=None,
+        )
+
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['NIQE_noref_feature_alpha23_score'], 0.8430156250000006, places=4)
+        self.assertAlmostEqual(results[0]['NIQE_noref_feature_alpha13_score'], 0.71714583333333359, places=4)
+        self.assertAlmostEqual(results[0]['NIQE_noref_feature_alpha_m1_score'], 2.2195590277777795, places=4)
+        self.assertAlmostEqual(results[0]['NIQE_noref_feature_blbr1_score'], 0.74061215376929412, places=4)
+
+        self.assertAlmostEqual(results[1]['NIQE_noref_feature_alpha23_score'], 0.9144918981481488, places=4)
+        self.assertAlmostEqual(results[1]['NIQE_noref_feature_alpha13_score'], 0.87132291666666728, places=4)
+        self.assertAlmostEqual(results[1]['NIQE_noref_feature_alpha_m1_score'], 2.8193532986111136, places=4)
+        self.assertAlmostEqual(results[1]['NIQE_noref_feature_blbr1_score'], 0.99354006450609134, places=4)
+
 
 class ParallelNorefFeatureExtractorTest(unittest.TestCase):
 
@@ -191,6 +332,73 @@ class ParallelNorefFeatureExtractorTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[1]['Moment_noref_feature_1st_score'], 59.788567297525134)
         self.assertAlmostEqual(results[1]['Moment_noref_feature_2nd_score'], 4696.668388042271)
         self.assertAlmostEqual(results[1]['Moment_noref_feature_var_score'], 1121.519917231207)
+
+    def test_run_parallel_brisque_noref_fextractor(self):
+        print 'test on running BRISQUE noref feature extractor on NorefAssets in parallel...'
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = NorefAsset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=VmafConfig.workdir_path(),
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+        self.fextractors, results = run_executors_in_parallel(
+            BrisqueNorefFeatureExtractor,
+            [asset, asset_original],
+            fifo_mode=True,
+            delete_workdir=True,
+            parallelize=True,
+            result_store=None,
+        )
+
+        self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_alpha23_score'], 0.78020833333333384, places=4)
+        self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_alpha13_score'], 0.6322500000000002, places=4)
+        self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_N34_score'],     -0.0071207420215536723, places=4)
+
+        self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_alpha23_score'], 0.87156250000000046, places=4)
+        self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_alpha13_score'], 0.82906250000000103, places=4)
+        self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_N34_score'],     -0.0092448158862212092, places=4)
+
+    def test_run_parallel_noref_brisque_fextractor_with_resampling(self):
+        print 'test on running BRISQUE noref feature extractor with resampling in parallel...'
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        asset = NorefAsset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=VmafConfig.workdir_path(),
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324,
+                                  'quality_width':160, 'quality_height':90,
+                                  'resampling_type': 'bilinear',
+                                  })
+
+        asset_original = NorefAsset(dataset="test", content_id=0, asset_id=2,
+                      workdir_root=VmafConfig.workdir_path(),
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324,
+                                  'quality_width':160, 'quality_height':90,
+                                  'resampling_type': 'bilinear',
+                                  })
+
+        self.fextractors, results = run_executors_in_parallel(
+            BrisqueNorefFeatureExtractor,
+            [asset, asset_original],
+            fifo_mode=True,
+            delete_workdir=True,
+            parallelize=True,
+            result_store=None,
+        )
+
+        self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_alpha23_score'], 0.86560416666666729, places=4)
+        self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_alpha13_score'], 0.8333541666666672, places=4)
+        self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_N34_score'],     0.018890620734542892, places=4)
+
+        self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_alpha23_score'], 0.87308333333333399, places=3)
+        self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_alpha13_score'], 0.8690208333333338, places=4)
+        self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_N34_score'],     0.019980529805492527, places=4)
 
 if __name__ == '__main__':
     unittest.main()

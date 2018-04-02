@@ -15,6 +15,7 @@ dependencies {
     python 'pypi:h5py:2.6.0'
     python 'pypi:matplotlib:2.0.0'      // 1.5.1
     python 'pypi:scikit-learn:0.18.1'   // 0.18
+    python 'pypi:scikit-image:0.13.1'   // 0.13
     test 'pypi:mock:2.0.0'
 }
 
