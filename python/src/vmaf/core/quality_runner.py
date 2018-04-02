@@ -7,6 +7,7 @@ import numpy as np
 from vmaf.config import VmafConfig
 from vmaf import svmutil, ExternalProgramCaller
 from vmaf.core.executor import Executor
+from vmaf.core.niqe_train_test_model import NiqeTrainTestModel
 from vmaf.core.result import Result
 from vmaf.core.feature_assembler import FeatureAssembler
 from vmaf.core.train_test_model import TrainTestModel, LibsvmNusvrTrainTestModel, \
@@ -883,3 +884,91 @@ class BaggingVmafQualityRunner(BootstrapVmafQualityRunner):
         result_dict[self.get_scores_key()] = pred_result['ys_pred_bagging']
 
         return result_dict
+
+
+class NiqeQualityRunner(QualityRunner):
+
+    TYPE = 'NIQE'
+
+    VERSION = '0.1'
+    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path('niqe_v0.1.pkl')
+
+    DEFAULT_FEATURE_DICT = {'NIQE_noref_feature': 'all'}
+
+    def _get_quality_scores(self, asset):
+        raise NotImplementedError
+
+    def _generate_result(self, asset):
+        raise NotImplementedError
+
+    def _get_niqe_feature_assembler_instance(self, asset):
+
+        # load TrainTestModel only to retrieve its 'feature_dict' extra info
+        model = self._load_model(asset)
+
+        # need this so that FeatureAssembler can find NiqeNorefFeatureExtractor:
+        from vmaf.core.noref_feature_extractor import NiqeNorefFeatureExtractor
+
+        feature_dict = model.get_appended_info('feature_dict')
+        if feature_dict is None:
+            feature_dict = self.DEFAULT_FEATURE_DICT
+
+        feature_optional_dict = model.get_appended_info('feature_optional_dict')
+
+        vmaf_fassembler = FeatureAssembler(
+            feature_dict=feature_dict,
+            feature_option_dict=None,
+            assets=[asset],
+            logger=self.logger,
+            fifo_mode=self.fifo_mode,
+            delete_workdir=self.delete_workdir,
+            result_store=self.result_store,
+            optional_dict=feature_optional_dict,
+            optional_dict2=None,
+            parallelize=False,
+        )
+
+        return vmaf_fassembler
+
+    def _load_model(self, asset):
+        if self.optional_dict is not None \
+                and 'model_filepath' in self.optional_dict \
+                and self.optional_dict['model_filepath'] is not None:
+            model_filepath = self.optional_dict['model_filepath']
+        else:
+            model_filepath = self.DEFAULT_MODEL_FILEPATH
+        model = TrainTestModel.from_file(model_filepath, self.logger)
+        return model
+
+    def _run_on_asset(self, asset):
+        # Override Executor._run_on_asset(self, asset), which runs a
+        # FeatureAssembler, collect a feature vector, run
+        # TrainTestModel.predict() on it, and return a Result object
+        # (in this case, both Executor._run_on_asset(self, asset) and
+        # QualityRunner._read_result(self, asset) get bypassed.
+
+        niqe_fassembler = self._get_niqe_feature_assembler_instance(asset)
+        niqe_fassembler.run()
+        feature_result = niqe_fassembler.results[0]
+
+        # xs = NiqeTrainTestModel.get_perframe_xs_from_result(feature_result)
+        xs = NiqeTrainTestModel.get_xs_from_results([feature_result])
+
+        model = self._load_model(asset)
+
+        ys_pred = model.predict(xs)['ys_label_pred']
+
+        result_dict = {}
+        # add all feature result
+        result_dict.update(feature_result.result_dict)
+        # add quality score
+        result_dict[self.get_scores_key()] = ys_pred
+
+        return Result(asset, self.executor_id, result_dict)
+
+    def _remove_result(self, asset):
+        # Override Executor._remove_result(self, asset) by redirecting it to the
+        # FeatureAssembler.
+
+        vmaf_fassembler = self._get_niqe_feature_assembler_instance(asset)
+        vmaf_fassembler.remove_results()
