@@ -40,6 +40,6 @@ A: VMAF was designed with HTTP adaptive streaming in mind. Correspondingly, in t
 
 A: Yes, you can. You can transcode an encoded video to raw YUV stream (e.g. by FFmpeg) and pipe it to VMAF. An example can be found [here](https://github.com/Netflix/vmaf/blob/master/ffmpeg2vmaf).
 
-**Q: When I compare a video with itself as reference, I expexct to get a perfect score of VMAF 100, but what I see is a score like 98.7. Is there a bug?
+**Q: When I compare a video with itself as reference, I expexct to get a perfect score of VMAF 100, but what I see is a score like 98.7. Is there a bug?**
 
 A: VMAF doesn't guarantee that you get a perfect score in this case, but you should get a score close enough. Similar things would happen to other machine learning-based predictors (another example is VQM-VFD).
