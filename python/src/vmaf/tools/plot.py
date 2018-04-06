@@ -20,10 +20,9 @@ def get_pdf(data, num_bins=20):
     return pdf, bin_centres
 
 
-def plot_distribution(plot_type, df, key, slice_name, slices, colors=None):
+def plot_distribution(plot_type, df, key, slice_name, slices, colors=None, ax=None):
     if colors is None:
         colors = [None for _ in slices]
-    handles = []
     for slice, color in zip(slices, colors):
         if isinstance(slice, (list, tuple)):
             data = df.loc[df[slice_name].isin(slice)][key].tolist()
@@ -37,10 +36,9 @@ def plot_distribution(plot_type, df, key, slice_name, slices, colors=None):
             plt.ylabel('PDF')
         else:
             assert False, "Unknown plot type: {}".format(plot_type)
-        if color:
-            handle = plt.plot(xs, ys, label="{}".format(str(slice)), color=color)
+        if ax:
+            ax.plot(xs, ys, label="{}".format(str(slice)), color=color)
+            ax.grid(which='major')
         else:
-            handle = plt.plot(xs, ys, label="{}".format(str(slice)))
-        plt.grid(which='major')
-        handles.append(handle)
-    return handles
+            plt.plot(xs, ys, label="{}".format(str(slice)), color=color)
+            plt.grid(which='major')
