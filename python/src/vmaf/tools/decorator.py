@@ -102,6 +102,9 @@ def persist_to_file(file_name):
             h = hashlib.sha1(str(original_func.__name__) + str(args)).hexdigest()
             if h not in cache:
                 cache[h] = original_func(*args)
+                file_dir = os.path.dirname(file_name)
+                if not os.path.exists(file_dir):
+                    os.makedirs(file_dir)
                 json.dump(cache, open(file_name, 'wt'))
             return cache[h]
 
