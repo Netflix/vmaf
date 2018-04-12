@@ -1,6 +1,6 @@
 from matplotlib import pyplot as plt
 import numpy as np
-from scipy.stats import norm
+from scipy.stats import norm, gamma
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -44,9 +44,7 @@ def plot_distribution(plot_type, df, key, slice_name, slices, colors=None, ax=No
             plt.plot(xs, ys, label="{}".format(str(slice)), color=color)
             plt.grid(which='major')
 
-def plot_distribution_fit(plot_type, df, key, slice_name, slices, colors=None, ax=None, distribution_type='gaussian', collate_data=True):
-
-    assert distribution_type == 'gaussian', 'Currently only support Gaussian distribution fit.'
+def plot_distribution_fit(plot_type, df, key, slice_name, slices, colors=None, ax=None, distribution_type='gamma', collate_data=True):
 
     if colors is None:
         colors = [None for _ in slices]
@@ -57,45 +55,46 @@ def plot_distribution_fit(plot_type, df, key, slice_name, slices, colors=None, a
                 data += df.loc[df[slice_name].isin(slice)][key].tolist()
             else:
                 data += df.loc[df[slice_name] == slice][key].tolist()
-        mu, std = norm.fit(data)
-        xmin = min(data)
-        xmax = max(data)
-        xs = np.linspace(xmin, xmax)
-        if plot_type == 'cdf':
-            ys = norm.cdf(xs, mu, std)
-            plt.ylabel('CDF')
-        elif plot_type == 'pdf':
-            ys = norm.pdf(xs, mu, std)
-            plt.ylabel('PDF')
-        else:
-            assert False, "Unknown plot type: {}".format(plot_type)
-        if ax:
-            ax.plot(xs, ys, label="Gaussian Fit ($\mu={mu:.2f}$, $\sigma={sigma:.2f}$)".format(mu=mu, sigma=std), color=colors[0])
-            ax.grid(which='major')
-        else:
-            plt.plot(xs, ys, label="Gaussian Fit ($\mu={mu:.2f}$, $\sigma={sigma:.2f}$)".format(mu=mu, sigma=std), color=colors[0])
-            plt.grid(which='major')
+        _plot_distribution_fit(ax, data, distribution_type, plot_type, "", colors[0])
+
     else:
         for slice, color in zip(slices, colors):
             if isinstance(slice, (list, tuple)):
                 data = df.loc[df[slice_name].isin(slice)][key].tolist()
             else:
                 data = df.loc[df[slice_name] == slice][key].tolist()
-            mu, std = norm.fit(data)
-            xmin = min(data)
-            xmax = max(data)
-            xs = np.linspace(xmin, xmax)
-            if plot_type == 'cdf':
-                ys = norm.cdf(xs, mu, std)
-                plt.ylabel('CDF')
-            elif plot_type == 'pdf':
-                ys = norm.pdf(xs, mu, std)
-                plt.ylabel('PDF')
-            else:
-                assert False, "Unknown plot type: {}".format(plot_type)
-            if ax:
-                ax.plot(xs, ys, label="{} (Gaussian Fit)".format(str(slice)), color=color)
-                ax.grid(which='major')
-            else:
-                plt.plot(xs, ys, label="{} (Gaussian Fit)".format(str(slice)), color=color)
-                plt.grid(which='major')
+            _plot_distribution_fit(ax, data, distribution_type, plot_type, slice, color)
+
+
+def _plot_distribution_fit(ax, data, distribution_type, plot_type, tag, color):
+
+    if distribution_type == 'norm':
+        distribution_fcn = norm
+    elif distribution_type == 'gamma':
+        distribution_fcn = gamma
+    else:
+        assert False, 'Currently only support norm and gamma distribution fit.'
+
+    xmin = min(data)
+    xmax = max(data)
+    xs = np.linspace(xmin, xmax)
+
+    params = distribution_fcn.fit(data)
+    if plot_type == 'cdf':
+        ys = distribution_fcn.cdf(xs, *params)
+        plt.ylabel('CDF')
+    elif plot_type == 'pdf':
+        ys = distribution_fcn.pdf(xs, *params)
+        plt.ylabel('PDF')
+    else:
+        assert False, "Unknown plot type: {}".format(plot_type)
+    label = "{tag} {dis_name} fit {param}".format(
+        tag=tag, dis_name=distribution_fcn.name,
+        param=', '.join(map(lambda p: "{:.4f}".format(p), params)))
+
+    if ax:
+        ax.plot(xs, ys, label=label, color=color)
+        ax.grid(which='major')
+    else:
+        plt.plot(xs, ys, label=label, color=color)
+        plt.grid(which='major')
