@@ -1,6 +1,6 @@
 from matplotlib import pyplot as plt
 import numpy as np
-from scipy.stats import norm, gamma
+from scipy.stats import norm
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -44,7 +44,7 @@ def plot_distribution(plot_type, df, key, slice_name, slices, colors=None, ax=No
             plt.plot(xs, ys, label="{}".format(str(slice)), color=color)
             plt.grid(which='major')
 
-def plot_distribution_fit(plot_type, df, key, slice_name, slices, colors=None, ax=None, distribution_type='gamma', collate_data=True):
+def plot_distribution_fit(plot_type, df, key, slice_name, slices, colors=None, ax=None, distribution_fcn=norm, collate_data=True, **kwargs):
 
     if colors is None:
         colors = [None for _ in slices]
@@ -55,7 +55,7 @@ def plot_distribution_fit(plot_type, df, key, slice_name, slices, colors=None, a
                 data += df.loc[df[slice_name].isin(slice)][key].tolist()
             else:
                 data += df.loc[df[slice_name] == slice][key].tolist()
-        _plot_distribution_fit(ax, data, distribution_type, plot_type, "", colors[0])
+        _plot_distribution_fit(ax, data, distribution_fcn, plot_type, "", colors[0], **kwargs)
 
     else:
         for slice, color in zip(slices, colors):
@@ -63,23 +63,18 @@ def plot_distribution_fit(plot_type, df, key, slice_name, slices, colors=None, a
                 data = df.loc[df[slice_name].isin(slice)][key].tolist()
             else:
                 data = df.loc[df[slice_name] == slice][key].tolist()
-            _plot_distribution_fit(ax, data, distribution_type, plot_type, slice, color)
+            _plot_distribution_fit(ax, data, distribution_fcn, plot_type, slice, color, **kwargs)
 
 
-def _plot_distribution_fit(ax, data, distribution_type, plot_type, tag, color):
-
-    if distribution_type == 'norm':
-        distribution_fcn = norm
-    elif distribution_type == 'gamma':
-        distribution_fcn = gamma
-    else:
-        assert False, 'Currently only support norm and gamma distribution fit.'
+def _plot_distribution_fit(ax, data, distribution_fcn, plot_type, tag, color, **kwargs):
 
     xmin = min(data)
     xmax = max(data)
     xs = np.linspace(xmin, xmax)
 
-    params = distribution_fcn.fit(data)
+    fit_params = kwargs['fit_params'] if 'fit_params' in kwargs else dict()
+
+    params = distribution_fcn.fit(data, **fit_params)
     if plot_type == 'cdf':
         ys = distribution_fcn.cdf(xs, *params)
         plt.ylabel('CDF')
