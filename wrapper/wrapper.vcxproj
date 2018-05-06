@@ -105,6 +105,7 @@
     <ClInclude Include="..\feature\src\common\file_io.h" />
     <ClInclude Include="..\feature\src\common\macros.h" />
     <ClInclude Include="..\feature\src\common\frame.h" />
+    <ClInclude Include="..\feature\src\psnr_tools.h" />
     <ClInclude Include="..\feature\src\iqa\convolve.h" />
     <ClInclude Include="..\feature\src\iqa\decimate.h" />
     <ClInclude Include="..\feature\src\iqa\iqa.h" />
@@ -144,6 +145,7 @@
     <ClCompile Include="..\feature\src\motion.c" />
     <ClCompile Include="..\feature\src\ms_ssim.c" />
     <ClCompile Include="..\feature\src\psnr.c" />
+    <ClCompile Include="..\feature\src\psnr_tools.c" />
     <ClCompile Include="..\feature\src\ssim.c" />
     <ClCompile Include="..\feature\src\vif.c" />
     <ClCompile Include="..\feature\src\vif_tools.c" />
