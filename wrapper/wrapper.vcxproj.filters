@@ -55,6 +55,9 @@
     <ClCompile Include="..\feature\src\psnr.c">
       <Filter>feature</Filter>
     </ClCompile>
+    <ClCompile Include="..\feature\src\psnr_tools.c">
+      <Filter>feature</Filter>
+    </ClCompile>
     <ClCompile Include="..\feature\src\iqa\ssim_tools.c">
       <Filter>feature\iqa</Filter>
     </ClCompile>
@@ -126,6 +129,9 @@
       <Filter>feature</Filter>
     </ClInclude>
     <ClInclude Include="..\feature\src\psnr_options.h">
+      <Filter>feature</Filter>
+    </ClInclude>
+    <ClInclude Include="..\feature\src\psnr_tools.h">
       <Filter>feature</Filter>
     </ClInclude>
     <ClInclude Include="..\feature\src\vif_options.h">

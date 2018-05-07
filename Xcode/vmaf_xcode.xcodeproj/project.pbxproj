@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B10D906920A0BEA20014D895 /* psnr_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = B10D906820A0BEA10014D895 /* psnr_tools.c */; };
 		C7FEEB811DAA2826001FC78F /* adm_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB781DAA2826001FC78F /* adm_tools.c */; };
 		C7FEEB821DAA2826001FC78F /* adm.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB7A1DAA2826001FC78F /* adm.c */; };
 		C7FEEB831DAA2826001FC78F /* all.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB7C1DAA2826001FC78F /* all.c */; };
@@ -245,6 +246,8 @@
 		C7FEEB8E1DAA2844001FC78F /* psnr_main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = psnr_main.c; path = ../feature/src/psnr_main.c; sourceTree = "<group>"; };
 		C7FEEB8F1DAA2844001FC78F /* psnr_options.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = psnr_options.h; path = ../feature/src/psnr_options.h; sourceTree = "<group>"; };
 		C7FEEB901DAA2844001FC78F /* psnr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = psnr.c; path = ../feature/src/psnr.c; sourceTree = "<group>"; };
+		B10D906720A0BEA10014D895 /* psnr_tools.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = psnr_tools.h; path = ../feature/src/psnr_tools.h; sourceTree = "<group>"; };
+		B10D906820A0BEA10014D895 /* psnr_tools.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = psnr_tools.c; path = ../feature/src/psnr_tools.c; sourceTree = "<group>"; };
 		C7FEEB911DAA2844001FC78F /* ssim_main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ssim_main.c; path = ../feature/src/ssim_main.c; sourceTree = "<group>"; };
 		C7FEEB921DAA2844001FC78F /* ssim.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ssim.c; path = ../feature/src/ssim.c; sourceTree = "<group>"; };
 		C7FEEB931DAA2844001FC78F /* vif_options.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vif_options.h; path = ../feature/src/vif_options.h; sourceTree = "<group>"; };
@@ -349,6 +352,8 @@
 				C7FEEBA41DAA2849001FC78F /* iqa */,
 				C7FEEB871DAA2844001FC78F /* moment_options.h */,
 				C7FEEB881DAA2844001FC78F /* moment.c */,
+				B10D906820A0BEA10014D895 /* psnr_tools.c */,
+				B10D906720A0BEA10014D895 /* psnr_tools.h */,
 				C7FEEB891DAA2844001FC78F /* motion_options.h */,
 				C7FEEB8A1DAA2844001FC78F /* motion_tools.h */,
 				C7FEEB8B1DAA2844001FC78F /* motion.c */,
@@ -603,6 +608,7 @@
 				C7FEEB9E1DAA2844001FC78F /* psnr.c in Sources */,
 				C7FEEBA21DAA2844001FC78F /* vif.c in Sources */,
 				C7FEEB991DAA2844001FC78F /* moment.c in Sources */,
+				B10D906920A0BEA20014D895 /* psnr_tools.c in Sources */,
 				C7FEEB9C1DAA2844001FC78F /* ms_ssim.c in Sources */,
 				C7FEEBB81DAA28D1001FC78F /* math_utils.c in Sources */,
 				C7FEEBB71DAA28D1001FC78F /* decimate.c in Sources */,

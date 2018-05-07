@@ -17,6 +17,7 @@ OBJS = \
 	$(OBJDIR)/cpu.o \
 	$(OBJDIR)/convolution.o \
 	$(OBJDIR)/convolution_avx.o \
+	$(OBJDIR)/psnr_tools.o \
 	$(OBJDIR)/adm.o \
 	$(OBJDIR)/adm_tools.o \
 	$(OBJDIR)/ansnr.o \
@@ -70,6 +71,9 @@ $(OBJDIR)/cpu.o: $(FEATURESRCDIR)/common/cpu.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/convolution_avx.o: $(FEATURESRCDIR)/common/convolution_avx.c
+	$(CC) -c -o $@ $(EXTRA_CFLAGS) $(CFLAGS) $(CPPFLAGS) $<
+
+$(OBJDIR)/psnr_tools.o: $(FEATURESRCDIR)/psnr_tools.c
 	$(CC) -c -o $@ $(EXTRA_CFLAGS) $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/adm.o: $(FEATURESRCDIR)/adm.c

@@ -27,6 +27,7 @@
 #include "common/alloc.h"
 #include "common/file_io.h"
 #include "motion_tools.h"
+#include "psnr_tools.h"
 #include "common/convolution.h"
 #include "common/convolution_internal.h"
 #include "iqa/ssim_tools.h"
@@ -91,10 +92,12 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
     float *prev_blur_buf = 0;
     float *blur_buf = 0;
     float *temp_buf = 0;
-    
+
 
     size_t data_sz;
     int stride;
+    double peak;
+    double psnr_max;
     int ret = 1;
 
     if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float))
@@ -108,6 +111,13 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
     if ((size_t)h > SIZE_MAX / stride)
     {
         sprintf(errmsg, "height %d too large.\n", h);
+        goto fail_or_end;
+    }
+
+    ret = psnr_constants(fmt, &peak, &psnr_max);
+    if (ret)
+    {
+        sprintf(errmsg, "unknown format %s.\n", fmt);
         goto fail_or_end;
     }
 
@@ -145,16 +155,17 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
 
     int frm_idx = 0;
     while (1)
-    {   
+    {
         ret = read_frame(ref_buf, dis_buf, temp_buf, stride, user_data);
-        
-        if(ret == 1){
+
+        if (ret == 1)
+        {
             goto fail_or_end;
         }
         if (ret == 2)
         {
             break;
-        }    
+        }
 
 
 #ifdef PRINT_PROGRESS
@@ -168,22 +179,8 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
         if (psnr_array != NULL)
         {
             /* =========== psnr ============== */
-            if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
-            {
-                // max psnr 60.0 for 8-bit per Ioannis
-                ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, 255.0, 60.0);
-            }
-            else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-            {
-                // 10 bit gets normalized to 8 bit, peak is 1023 / 4.0 = 255.75
-                // max psnr 72.0 for 10-bit per Ioannis
-                ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, 255.75, 72.0);
-            }
-            else
-            {
-                sprintf(errmsg, "unknown format %s.\n", fmt);
-                goto fail_or_end;
-            }
+            ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, peak, psnr_max);
+
             if (ret)
             {
                 sprintf(errmsg, "compute_psnr failed.\n");
@@ -235,7 +232,7 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
 
         offset_image(ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
         offset_image(dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
-        
+
         /* =========== adm ============== */
         if ((ret = compute_adm(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores, ADM_BORDER_FACTOR)))
         {
@@ -267,7 +264,7 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
         insert_array(adm_den_scale2_array, scores[5]);
         insert_array(adm_num_scale3_array, scores[6]);
         insert_array(adm_den_scale3_array, scores[7]);
-        
+
 #ifdef COMPUTE_ANSNR
 
         /* =========== ansnr ============== */
@@ -292,7 +289,7 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
             sprintf(errmsg, "compute_ansnr failed.\n");
             goto fail_or_end;
         }
-        
+
 #ifdef PRINT_PROGRESS
         printf("ansnr: %.3f, ", score);
         printf("anpsnr: %.3f, ", score_psnr);
@@ -375,7 +372,7 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
 fail_or_end:
     aligned_free(ref_buf);
     aligned_free(dis_buf);
-    
+
     aligned_free(prev_blur_buf);
     aligned_free(blur_buf);
     aligned_free(temp_buf);
