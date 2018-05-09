@@ -27,6 +27,7 @@
 #include "common/file_io.h"
 #include "common/convolution.h"
 #include "common/convolution_internal.h"
+#include "psnr_tools.h"
 #include "motion_tools.h"
 #include "all_options.h"
 #include "vif_options.h"
@@ -58,6 +59,8 @@ int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, i
 
     size_t data_sz;
     int stride;
+    double peak;
+    double psnr_max;
     int ret = 1;
 
     if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float))
@@ -69,6 +72,14 @@ int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, i
 
     if ((size_t)h > SIZE_MAX / stride)
     {
+        goto fail_or_end;
+    }
+
+    ret = psnr_constants(fmt, &peak, &psnr_max);
+    if (ret)
+    {
+        printf("error: unknown format %s.\n", fmt);
+        fflush(stdout);
         goto fail_or_end;
     }
 
@@ -114,7 +125,8 @@ int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, i
     {
         ret = read_frame(ref_buf, dis_buf, temp_buf, stride, user_data);
 
-        if(ret == 1){
+        if (ret == 1)
+        {
             goto fail_or_end;
         }
         if (ret == 2)
@@ -136,34 +148,17 @@ int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, i
             goto fail_or_end;
         }
         printf("adm: %d %f\n", frm_idx, score);
-        fflush(stdout);
         printf("adm_num: %d %f\n", frm_idx, score_num);
-        fflush(stdout);
         printf("adm_den: %d %f\n", frm_idx, score_den);
-        fflush(stdout);
         for(int scale=0;scale<4;scale++){
             printf("adm_num_scale%d: %d %f\n", scale, frm_idx, scores[2*scale]);
             printf("adm_den_scale%d: %d %f\n", scale, frm_idx, scores[2*scale+1]);
         }
+        fflush(stdout);
 
         /* =========== ansnr ============== */
-        if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
-        {
-            // max psnr 60.0 for 8-bit per Ioannis
-            ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score, &score_psnr, 255.0, 60.0);
-        }
-        else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-        {
-            // 10 bit gets normalized to 8 bit, peak is 1023 / 4.0 = 255.75
-            // max psnr 72.0 for 10-bit per Ioannis
-            ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score, &score_psnr, 255.75, 72.0);
-        }
-        else
-        {
-            printf("error: unknown format %s.\n", fmt);
-            fflush(stdout);
-            goto fail_or_end;
-        }
+        ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score, &score_psnr, peak, psnr_max);
+
         if (ret)
         {
             printf("error: compute_ansnr failed.\n");
@@ -172,7 +167,6 @@ int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, i
         }
 
         printf("ansnr: %d %f\n", frm_idx, score);
-        fflush(stdout);
         printf("anpsnr: %d %f\n", frm_idx, score_psnr);
         fflush(stdout);
 
@@ -216,15 +210,13 @@ int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, i
             goto fail_or_end;
         }
         printf("vif: %d %f\n", frm_idx, score);
-        fflush(stdout);
         printf("vif_num: %d %f\n", frm_idx, score_num);
-        fflush(stdout);
         printf("vif_den: %d %f\n", frm_idx, score_den);
-        fflush(stdout);
         for(int scale=0;scale<4;scale++){
             printf("vif_num_scale%d: %d %f\n", scale, frm_idx, scores[2*scale]);
             printf("vif_den_scale%d: %d %f\n", scale, frm_idx, scores[2*scale+1]);
         }
+        fflush(stdout);
 
         frm_idx++;
     }
