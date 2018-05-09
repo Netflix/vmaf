@@ -1,5 +1,23 @@
 # Change Log
 
+## (5/8/2018) [1.3.4]
+
+**Refactoring:**
+- Refactor mos out of vmaf repo; rename to sureal as submodule.
+- Refactor TrainTestModel to make predict() to output dictionary.
+- Refactor TrainTestModel.
+- Rename KFLK metric to AUC (Area Under the Curve) for better interpretability.
+
+**New features:**
+- Add bootstrapping to VMAF. Add two new classes BootstrapVmafQualityRunner and BaggingVmafQualityRunner
+- Add Resolving Power Performance Metric.
+- Add BRISQUE and NIQE feature extractors. Added two new classes BrisqueNorefFeatureExtractor and NiqeNorefFeatureExtractor. Add NiqeQualityRunner.
+
+**Fixed bugs:**
+- Add .gitattributes (#127). Force .pkl and .model files to retain LF line-ending. Required for use on Windows where model files would otherwise be checked out as CRLF which VMAF's parser doesn't handle.
+- Allow MinGW compilation of ptools (#133). ptools doesn't build on MinGW as *nix socket headers are included. This patch selects Windows headers for MinGW builds.
+- Update compute vmaf interface (#138). Update VMAF version in libvmaf.pc and etc. Catch logic error (resulted from wrong model file format) in compute_vmaf(). Use custom error code.
+
 ## (12/3/2017) [1.3.3]
 
 **Fixed bugs:**
