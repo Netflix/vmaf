@@ -9,6 +9,8 @@ OBJDIR = $(TOP)/obj
 FEATURESRCDIR = $(TOP)/../feature/src
 PTOOLSDIR = $(TOP)/../ptools
 INSTALL_PREFIX = /usr/local
+INC_DIRS = $(TOP)/../wrapper/src $(TOP)/../feature/src
+INC_PARAMS=$(foreach d, $(INC_DIRS), -I$d)
 
 OBJS = \
 	$(OBJDIR)/alloc.o \
@@ -35,17 +37,20 @@ OBJS = \
 	$(OBJDIR)/moment.o \
 	$(OBJDIR)/psnr.o \
 	$(OBJDIR)/svm.o \
-	$(OBJDIR)/combo.o \
+	$(OBJDIR)/combo_threaded.o \
 	$(OBJDIR)/all.o \
 	$(OBJDIR)/vmaf.o \
 	$(OBJDIR)/darray.o \
 	$(OBJDIR)/libvmaf.o \
-	$(OBJDIR)/pugixml.o
+	$(OBJDIR)/pugixml.o \
+	$(OBJDIR)/blur_array.o \
+	$(OBJDIR)/cpu_info.o
 
 AVX_OBJS := \
 	$(OBJDIR)/convolution_avx.o \
 
-CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic
+#CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic
+CFLAGS_COMMON = -g -fPIC -w -Wextra -pedantic $(INC_PARAMS) -DPRINT_PROGRESS -DMULTI_THREADING
 # CFLAGS_COMMON = -g -O0 -fPIC -Wall -Wextra -pedantic -D BUILD_O0 #-D PRINT_PROGRESS
 
 CFLAGS   := -std=c99 $(CFLAGS_COMMON) $(CFLAGS)
@@ -68,7 +73,7 @@ $(OBJDIR)/convolution.o: $(FEATURESRCDIR)/common/convolution.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/cpu.o: $(FEATURESRCDIR)/common/cpu.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+	$(CC) -c -o $@ $(CFLAGS) -O1 $(CPPFLAGS) $<
 
 $(OBJDIR)/convolution_avx.o: $(FEATURESRCDIR)/common/convolution_avx.c
 	$(CC) -c -o $@ $(EXTRA_CFLAGS) $(CFLAGS) $(CPPFLAGS) $<
@@ -125,6 +130,12 @@ $(OBJDIR)/psnr.o: $(FEATURESRCDIR)/psnr.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/all.o: $(FEATURESRCDIR)/all.c
+	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+
+$(OBJDIR)/blur_array.o: $(SRCDIR)/blur_array.c
+	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+
+$(OBJDIR)/cpu_info.o: $(SRCDIR)/cpu_info.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/svm.o: $(SRCDIR)/svm.cpp
