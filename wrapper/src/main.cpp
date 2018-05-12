@@ -91,13 +91,14 @@ int run_wrapper(char *fmt, int width, int height, char *ref_path, char *dis_path
         goto fail_or_end;
     }
 
-
     if (!(s->ref_rfile = fopen(ref_path, "rb")))
     {
         fprintf(stderr, "fopen ref_path %s failed.\n", ref_path);
         ret = 1;
         goto fail_or_end;
     }
+
+
     if (!(s->dis_rfile = fopen(dis_path, "rb")))
     {
         fprintf(stderr, "fopen ref_path %s failed.\n", dis_path);
@@ -129,8 +130,8 @@ int main(int argc, char *argv[])
     char* fmt;
     int width;
     int height;
-    char *ref_path;
-    char *dis_path;
+    char* ref_path;
+    char* dis_path;
     char *model_path;
     char *log_path = NULL;
     char *log_fmt = NULL;

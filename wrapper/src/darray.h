@@ -25,16 +25,23 @@
 extern "C" {
 #endif
 
+#ifdef MULTI_THREADING
+#include "pthread.h"
+#endif
 
 typedef struct
 {
     double *array;
     size_t used;
     size_t size;
+#ifdef MULTI_THREADING
+    pthread_mutex_t mutex;
+#endif
 } DArray;
 
 void init_array(DArray *a, size_t init_size);
 void insert_array(DArray *a, double e);
+void insert_array_at(DArray *a, double e, int pos);
 void free_array(DArray *a);
 double get_at(DArray *a, int pos);
 
