@@ -280,7 +280,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
 
         pthread_mutex_unlock(&thread_data->mutex_readframe);
 
-#if 0
+#ifdef PRINT_PROGRESS
         printf("frame: %d, ", frm_idx);
 #endif
 
@@ -299,7 +299,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
                 goto fail_or_end;
             }
 
-#if 0
+#ifdef PRINT_PROGRESS
             printf("psnr: %.3f, ", score);
 #endif
             insert_array_at(thread_data->psnr_array, score, frm_idx);
@@ -315,7 +315,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
                 goto fail_or_end;
             }
 
-#if 0
+#ifdef PRINT_PROGRESS
             printf("ssim: %.3f, ", score);
 #endif
 
@@ -331,7 +331,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
                 goto fail_or_end;
             }
 
-#if 0
+#ifdef PRINT_PROGRESS
             printf("ms_ssim: %.3f, ", score);
 #endif
 
@@ -352,7 +352,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
             goto fail_or_end;
         }
 
-#if 0
+#ifdef PRINT_PROGRESS
         printf("adm: %.3f, ", score);
         printf("adm_num: %.3f, ", score_num);
         printf("adm_den: %.3f, ", score_den);
@@ -402,7 +402,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
             goto fail_or_end;
         }
         
-#if 0
+#ifdef PRINT_PROGRESS
         printf("ansnr: %.3f, ", score);
         printf("anpsnr: %.3f, ", score_psnr);
 #endif
@@ -444,7 +444,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
         memcpy(prev_blur_buf, blur_buf, data_sz);
 #endif
 
-#if 0
+#ifdef PRINT_PROGRESS
         printf("motion: %.3f, ", score);
 #endif
 
@@ -458,7 +458,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
             goto fail_or_end;
         }
 
-#if 0
+#ifdef PRINT_PROGRESS
         // printf("vif_num: %.3f, ", score_num);
         // printf("vif_den: %.3f, ", score_den);
         printf("vif_num_scale0: %.3f, ", scores[0]);
@@ -483,7 +483,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
         insert_array_at(thread_data->vif_array, score, frm_idx);
 
 #ifdef PRINT_PROGRESS
-        printf("frame: %d\n", frm_idx);
+        printf("\n");
 #endif
     }
 
