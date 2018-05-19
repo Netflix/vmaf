@@ -9,8 +9,6 @@ OBJDIR = $(TOP)/obj
 FEATURESRCDIR = $(TOP)/../feature/src
 PTOOLSDIR = $(TOP)/../ptools
 INSTALL_PREFIX = /usr/local
-INC_DIRS = $(TOP)/../wrapper/src $(TOP)/../feature/src
-INC_PARAMS=$(foreach d, $(INC_DIRS), -I$d)
 
 OBJS = \
 	$(OBJDIR)/alloc.o \
@@ -51,7 +49,7 @@ AVX_OBJS := \
 
 # CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic
 # CFLAGS_COMMON = -g -O0 -fPIC -Wall -Wextra -pedantic -D BUILD_O0 #-D PRINT_PROGRESS
-CFLAGS_COMMON = -g -fPIC -w -Wextra -pedantic $(INC_PARAMS) -DMULTI_THREADING
+CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic -DMULTI_THREADING
 
 CFLAGS   := -std=c99 $(CFLAGS_COMMON) $(CFLAGS)
 CXXFLAGS := -std=c++11 $(CFLAGS_COMMON) $(CXXFLAGS)
@@ -73,7 +71,7 @@ $(OBJDIR)/convolution.o: $(FEATURESRCDIR)/common/convolution.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/cpu.o: $(FEATURESRCDIR)/common/cpu.c
-	$(CC) -c -o $@ $(CFLAGS) -O1 $(CPPFLAGS) $<
+	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/convolution_avx.o: $(FEATURESRCDIR)/common/convolution_avx.c
 	$(CC) -c -o $@ $(EXTRA_CFLAGS) $(CFLAGS) $(CPPFLAGS) $<
@@ -133,7 +131,7 @@ $(OBJDIR)/all.o: $(FEATURESRCDIR)/all.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/blur_array.o: $(SRCDIR)/blur_array.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common $<
 
 $(OBJDIR)/cpu_info.o: $(SRCDIR)/cpu_info.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
@@ -142,7 +140,7 @@ $(OBJDIR)/svm.o: $(SRCDIR)/svm.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/libvmaf.o: $(SRCDIR)/libvmaf.cpp
-	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(SRCDIR) -I $(FEATURESRCDIR)/common $<
+	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(SRCDIR) -I $(FEATURESRCDIR)/common -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common $<
 
 $(OBJDIR)/main.o: $(SRCDIR)/main.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common $<
@@ -150,7 +148,7 @@ $(OBJDIR)/main.o: $(SRCDIR)/main.cpp
 $(OBJDIR)/vmaf.o: $(SRCDIR)/vmaf.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) \
 	-DOC_NEW_STYLE_INCLUDES -I $(PTOOLSDIR) \
-	-I $(PTOOLSDIR)/opencontainers_1_8_4/include  $<
+	-I $(PTOOLSDIR)/opencontainers_1_8_4/include -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common $<
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) -I $(FEATURESRCDIR) $<
