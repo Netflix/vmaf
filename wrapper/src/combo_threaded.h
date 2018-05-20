@@ -27,7 +27,7 @@ extern "C" {
 
 #include "pthread.h"
 #include "darray.h"
-#include "blur_array.h"
+#include "common/blur_array.h"
 
 typedef struct
 {
