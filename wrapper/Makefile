@@ -130,8 +130,8 @@ $(OBJDIR)/psnr.o: $(FEATURESRCDIR)/psnr.c
 $(OBJDIR)/all.o: $(FEATURESRCDIR)/all.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
-$(OBJDIR)/blur_array.o: $(SRCDIR)/blur_array.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common $<
+$(OBJDIR)/blur_array.o: $(FEATURESRCDIR)/common/blur_array.c
+	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/cpu_info.o: $(SRCDIR)/cpu_info.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
@@ -140,7 +140,7 @@ $(OBJDIR)/svm.o: $(SRCDIR)/svm.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/libvmaf.o: $(SRCDIR)/libvmaf.cpp
-	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(SRCDIR) -I $(FEATURESRCDIR)/common -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common $<
+	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(SRCDIR) -I $(FEATURESRCDIR)/common $<
 
 $(OBJDIR)/main.o: $(SRCDIR)/main.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common $<
@@ -148,7 +148,7 @@ $(OBJDIR)/main.o: $(SRCDIR)/main.cpp
 $(OBJDIR)/vmaf.o: $(SRCDIR)/vmaf.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) \
 	-DOC_NEW_STYLE_INCLUDES -I $(PTOOLSDIR) \
-	-I $(PTOOLSDIR)/opencontainers_1_8_4/include -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common $<
+	-I $(PTOOLSDIR)/opencontainers_1_8_4/include -I $(FEATURESRCDIR) $<
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) -I $(FEATURESRCDIR) $<

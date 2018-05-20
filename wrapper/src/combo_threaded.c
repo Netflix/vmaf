@@ -34,7 +34,7 @@
 #include "adm_options.h"
 
 #ifdef MULTI_THREADING
-#include "blur_array.h"
+#include "common/blur_array.h"
 #include "combo_threaded.h"
 #include "cpu_info.h"
 #endif
