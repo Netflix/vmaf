@@ -28,11 +28,7 @@
 
 #include "vmaf.h"
 #include "darray.h"
-#ifdef MULTI_THREADING
-#include "combo_threaded.h"
-#else
 #include "combo.h"
-#endif
 #include "svm.h"
 #include "pugixml/pugixml.hpp"
 #include "timer.h"
