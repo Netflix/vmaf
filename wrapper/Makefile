@@ -35,7 +35,7 @@ OBJS = \
 	$(OBJDIR)/moment.o \
 	$(OBJDIR)/psnr.o \
 	$(OBJDIR)/svm.o \
-	$(OBJDIR)/combo_threaded.o \
+	$(OBJDIR)/combo.o \
 	$(OBJDIR)/all.o \
 	$(OBJDIR)/vmaf.o \
 	$(OBJDIR)/darray.o \
@@ -48,8 +48,8 @@ AVX_OBJS := \
 	$(OBJDIR)/convolution_avx.o \
 
 # CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic
+CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic -D MULTI_THREADING
 # CFLAGS_COMMON = -g -O0 -fPIC -Wall -Wextra -pedantic -D BUILD_O0 #-D PRINT_PROGRESS
-CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic -DMULTI_THREADING
 
 CFLAGS   := -std=c99 $(CFLAGS_COMMON) $(CFLAGS)
 CXXFLAGS := -std=c++11 $(CFLAGS_COMMON) $(CXXFLAGS)
