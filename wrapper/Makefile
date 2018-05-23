@@ -47,8 +47,8 @@ OBJS = \
 AVX_OBJS := \
 	$(OBJDIR)/convolution_avx.o \
 
-CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic
-# CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic -D MULTI_THREADING
+# CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic
+CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic -D MULTI_THREADING
 # CFLAGS_COMMON = -g -O0 -fPIC -Wall -Wextra -pedantic -D BUILD_O0 #-D PRINT_PROGRESS
 
 CFLAGS   := -std=c99 $(CFLAGS_COMMON) $(CFLAGS)

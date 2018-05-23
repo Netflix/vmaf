@@ -100,12 +100,14 @@ void* combo_threadfunc(void* vmaf_thread_data)
         goto fail_or_end;
     }
 
+#ifndef MULTI_THREADING
     // prev_blur_buf, blur_buf for motion only
     if (!(prev_blur_buf = aligned_malloc(data_sz, MAX_ALIGN)))
     {
         sprintf(errmsg, "aligned_malloc failed for prev_blur_buf.\n");
         goto fail_or_end;
     }
+#endif
 
     if (!(blur_buf = aligned_malloc(data_sz, MAX_ALIGN)))
     {
