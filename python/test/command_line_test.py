@@ -1,5 +1,6 @@
 import os
 import unittest
+import subprocess
 
 from vmaf.config import VmafConfig
 from vmaf.tools.misc import run_process
@@ -107,6 +108,96 @@ class CommandLineTest(unittest.TestCase):
             exe=exe, dataset=self.dataset_filename)
         ret = run_process(cmd, shell=True)
         self.assertEquals(ret, 0)
+
+class VmafossexecCommandLineTest(unittest.TestCase):
+
+    RC_SUCCESS = 0
+    RC_VMAF_EXCEPTION = 256 - 2
+    RC_RUNTIME_ERROR = 256 - 3
+    RC_LOGIC_ERROR = 256 - 4
+    RC_SEGMENTATION_FAULT = 139
+    RC_ARGUMENT_ISSUE = 1
+    RC_MORE_ARGUMENT_ISSUE = 256 - 1
+
+    def test_run_vmafossexec(self):
+        exe = VmafConfig.root_path('wrapper', 'vmafossexec')
+        cmd = "{exe} yuv420p 576 324 {ref} {dis} {model}".format(
+            exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("vmaf_v0.6.0.pkl"))
+        ret = subprocess.call(cmd, shell=True)
+        self.assertEquals(ret, self.RC_SUCCESS)
+
+    def test_run_vmafossexec_nonexist_model_file(self):
+        exe = VmafConfig.root_path('wrapper', 'vmafossexec')
+        cmd = "{exe} yuv420p 576 324 {ref} {dis} {model}".format(
+            exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("vmaf_v0.6.0.pkl_XXX"))
+        ret = subprocess.call(cmd, shell=True)
+        self.assertEquals(ret, self.RC_VMAF_EXCEPTION)
+
+    def test_run_vmafossexec_wrong_model_fmt(self):
+        exe = VmafConfig.root_path('wrapper', 'vmafossexec')
+        cmd = "{exe} yuv420p 576 324 {ref} {dis} {model}".format(
+            exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("vmaf_v0.6.0.pkl.model"))
+        ret = subprocess.call(cmd, shell=True)
+        self.assertEquals(ret, self.RC_LOGIC_ERROR)
+
+    def test_run_vmafossexec_nonexist_ref_file(self):
+        exe = VmafConfig.root_path('wrapper', 'vmafossexec')
+        cmd = "{exe} yuv420p 576 324 {ref} {dis} {model}".format(
+            exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324_XXX.yuv"),
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("vmaf_v0.6.0.pkl"))
+        ret = subprocess.call(cmd, shell=True)
+        self.assertEquals(ret, self.RC_ARGUMENT_ISSUE)
+
+    def test_run_vmafossexec_nonexist_dis_file(self):
+        exe = VmafConfig.root_path('wrapper', 'vmafossexec')
+        cmd = "{exe} yuv420p 576 324 {ref} {dis} {model}".format(
+            exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324_XXX.yuv"), model=VmafConfig.model_path("vmaf_v0.6.0.pkl"))
+        ret = subprocess.call(cmd, shell=True)
+        self.assertEquals(ret, self.RC_ARGUMENT_ISSUE)
+
+    def test_run_vmafossexec_unknown_yuv_fmt(self):
+        exe = VmafConfig.root_path('wrapper', 'vmafossexec')
+        cmd = "{exe} yuv420p_XXX 576 324 {ref} {dis} {model}".format(
+            exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("vmaf_v0.6.0.pkl"))
+        ret = subprocess.call(cmd, shell=True)
+        self.assertEquals(ret, self.RC_ARGUMENT_ISSUE)
+
+    def test_run_vmafossexec_odd_resolution(self):
+        exe = VmafConfig.root_path('wrapper', 'vmafossexec')
+        cmd = "{exe} yuv420p 575 323 {ref} {dis} {model}".format(
+            exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("vmaf_v0.6.0.pkl"))
+        ret = subprocess.call(cmd, shell=True)
+        self.assertEquals(ret, self.RC_ARGUMENT_ISSUE)
+
+    def test_run_vmafossexec_wrong_width(self):
+        exe = VmafConfig.root_path('wrapper', 'vmafossexec')
+        cmd = "{exe} yuv420p 0 324 {ref} {dis} {model}".format(
+            exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("vmaf_v0.6.0.pkl"))
+        ret = subprocess.call(cmd, shell=True)
+        self.assertEquals(ret, self.RC_MORE_ARGUMENT_ISSUE)
+
+    def test_run_vmafossexec_unknown_log_fmt(self):
+        exe = VmafConfig.root_path('wrapper', 'vmafossexec')
+        cmd = "{exe} yuv420p 576 324 {ref} {dis} {model} --log-fmt xml_XXX".format(
+            exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("vmaf_v0.6.0.pkl"))
+        ret = subprocess.call(cmd, shell=True)
+        self.assertEquals(ret, self.RC_MORE_ARGUMENT_ISSUE)
+
+    def test_run_vmafossexec_unknown_pooling(self):
+        exe = VmafConfig.root_path('wrapper', 'vmafossexec')
+        cmd = "{exe} yuv420p 576 324 {ref} {dis} {model} --pool mean_XXX".format(
+            exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("vmaf_v0.6.0.pkl"))
+        ret = subprocess.call(cmd, shell=True)
+        self.assertEquals(ret, self.RC_MORE_ARGUMENT_ISSUE)
 
 if __name__ == '__main__':
     unittest.main()
