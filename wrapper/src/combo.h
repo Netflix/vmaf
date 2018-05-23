@@ -26,13 +26,12 @@ extern "C" {
 #endif
 
 #include "darray.h"
+#include "common/blur_array.h"
 
 #ifdef MULTI_THREADING
 #include "pthread.h"
-#include "common/blur_array.h"
 #endif
 
-#ifdef MULTI_THREADING
 typedef struct
 {
     int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data);
@@ -70,14 +69,16 @@ typedef struct
     double peak;
     double psnr_max;
     size_t data_sz;
+#ifdef MULTI_THREADING
     int thread_count;
     int stop_threads;
     pthread_mutex_t mutex_readframe;
     BLUR_BUF_ARRAY blur_array;
+#endif
+    int ret;
 
 } VMAF_THREAD_STRUCT;
 void* combo_threadfunc(void* vmaf_thread_data);
-#endif
 
 int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt,
         DArray *adm_num_array,
