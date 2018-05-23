@@ -65,6 +65,8 @@ int run_wrapper(char *fmt, int width, int height, char *ref_path, char *dis_path
     s->format = fmt;
     s->width = width;
     s->height = height;
+    s->ref_rfile = NULL;
+    s->dis_rfile = NULL;
 
     if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv420p10le"))
     {
