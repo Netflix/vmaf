@@ -11,3 +11,4 @@
   - Zoran Simic (zsimic)
   - Ashish Pratap Singh (ashk43712@gmail.com)
   - Simon Kirsten (skirsten)
+  - DonTequila (DonTequila)
