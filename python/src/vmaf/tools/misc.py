@@ -1,7 +1,7 @@
 from fnmatch import fnmatch
 import multiprocessing
 import subprocess
-from time import sleep
+from time import sleep, time
 import itertools
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
@@ -447,6 +447,14 @@ def get_unique_sorted_list(l):
     []
     """
     return sorted(list(set(l)))
+
+class Timer(object):
+
+    def __enter__(self):
+        self.tstart = time()
+
+    def __exit__(self, type, value, traceback):
+        print 'Elapsed: %s' % (time() - self.tstart)
 
 if __name__ == '__main__':
     import doctest
