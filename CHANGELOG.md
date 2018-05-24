@@ -1,5 +1,10 @@
 # Change Log
 
+## (5/23/2018) [1.3.5]
+
+**New features:**
+- Add multi-threading to vmafossexec.
+
 ## (5/8/2018) [1.3.4]
 
 **Refactoring:**
