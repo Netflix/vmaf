@@ -6,6 +6,7 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ## What's New
 
+- (5/23/18) Added multi-threading to `vmafossexec`.
 - (1/20/18) Moved custom subjective models into a submodule named [sureal](https://github.com/Netflix/sureal). If you pull the latest changes, you will have to pull the submoddule by `git submodule update --init --recursive` and add `sureal/python/src` to `PYTHONPATH`.
 - (8/12/17) VMAF is now included as a filter in [FFmpeg](http://ffmpeg.org/) main branch, and can be configured using: `./configure --enable-libvmaf`.
 - (7/16/17) VMAF is now packaged into a library call `libvmaf` and can be called from a C/C++ program directly. See [this](#usage-through-libvmaf) section for details.
@@ -463,10 +464,6 @@ wrapper/vmafossexec yuv420p 576 324
 ```
 
 For VMAF v0.6.1, the model file is `model/vmaf_v0.6.1.pkl`. The correspondence is documented [here](python/src/vmaf/core/quality_runner.py#L255).
-
-#### Troubleshooting
-
-Note that `vmafossexec` depends on a shared library `ptools/libptools.so` (or on macOS, `ptools/libptools.dylib`). If you move the executable, make sure to include the shared library in `LD_LIBRARY_PATH` (or on macOS, `DYLD_LIBRARY_PATH`).
 
 ## Usage through `libvmaf`
 
