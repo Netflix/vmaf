@@ -28,7 +28,7 @@ To provide some flexibility, in CLIs *run_vmaf*, *run_psnr*, *run_vmaf_in_batch*
 
 **Q: Will VMAF work on 4K videos?**
 
-A: The current VMAF model (v0.3.2) was trained on videos encoded at *up to* 1080p resolution. It is still useful for measuring 4K videos, if you are interested in a relative score. In other words, for two 4K videos A and B with A perceptually better than B, the VMAF scores will tell you so too. However, if you are interested in an absolute score, say if a 4K video is perceptually acceptable, you may not get an accurate answer.
+A: The current VMAF model (v0.6.1) was trained on videos encoded at *up to* 1080p resolution. It is still useful for measuring 4K videos, if you are interested in a relative score. In other words, for two 4K videos A and B with A perceptually better than B, the VMAF scores will tell you so too. However, if you are interested in an absolute score, say if a 4K video is perceptually acceptable, you may not get an accurate answer.
 
 The future plan is to publish a model specifically trained on 4K videos.
 
