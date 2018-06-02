@@ -85,6 +85,8 @@ void* combo_threadfunc(void* vmaf_thread_data)
     float *dis_buf = 0;
     float *prev_blur_buf = 0;
     float *blur_buf = 0;
+    float *next_ref_buf = 0;
+    float *next_dis_buf = 0;
     float *next_blur_buf = 0;
     float *temp_buf = 0;
 
@@ -102,10 +104,19 @@ void* combo_threadfunc(void* vmaf_thread_data)
     }
 
 #ifndef MULTI_THREADING
-    // prev_blur_buf, blur_buf, next_blur_buf for motion only
     if (!(prev_blur_buf = aligned_malloc(data_sz, MAX_ALIGN)))
     {
         sprintf(errmsg, "aligned_malloc failed for prev_blur_buf.\n");
+        goto fail_or_end;
+    }
+    if (!(next_ref_buf = aligned_malloc(data_sz, MAX_ALIGN)))
+    {
+        sprintf(errmsg, "aligned_malloc failed for next_ref_buf.\n");
+        goto fail_or_end;
+    }
+    if (!(next_dis_buf = aligned_malloc(data_sz, MAX_ALIGN)))
+    {
+        sprintf(errmsg, "aligned_malloc failed for next_dis_buf.\n");
         goto fail_or_end;
     }
     if (!(next_blur_buf = aligned_malloc(data_sz, MAX_ALIGN)))
@@ -318,14 +329,11 @@ void* combo_threadfunc(void* vmaf_thread_data)
         {
 #ifdef MULTI_THREADING
             prev_blur_buf = get_blur_buf(&thread_data->blur_array, frm_idx-1);
-            next_blur_buf = get_blur_buf(&thread_data->blur_array2, frm_idx-1);
+            next_ref_buf = get_blur_buf(&thread_data->blur_array2, frm_idx-1);
+            next_dis_buf = get_blur_buf(&thread_data->blur_array3, frm_idx-1);
+            next_blur_buf = get_blur_buf(&thread_data->blur_array4, frm_idx-1);
 #endif
             if ((ret = compute_motion(prev_blur_buf, blur_buf, w, h, stride, stride, &score)))
-            {
-                sprintf(errmsg, "compute_motion failed.\n");
-                goto fail_or_end;
-            }
-            if ((ret = compute_motion(next_blur_buf, blur_buf, w, h, stride, stride, &score)))
             {
                 sprintf(errmsg, "compute_motion failed.\n");
                 goto fail_or_end;
@@ -333,15 +341,21 @@ void* combo_threadfunc(void* vmaf_thread_data)
 #ifdef MULTI_THREADING
             release_blur_buf(&thread_data->blur_array, frm_idx-1);
             release_blur_buf(&thread_data->blur_array2, frm_idx-1);
+            release_blur_buf(&thread_data->blur_array3, frm_idx-1);
+            release_blur_buf(&thread_data->blur_array4, frm_idx-1);
 #endif
         }
 
 #ifdef MULTI_THREADING
         put_blur_buf(&thread_data->blur_array, frm_idx, blur_buf);
         put_blur_buf(&thread_data->blur_array2, frm_idx, blur_buf);
+        put_blur_buf(&thread_data->blur_array3, frm_idx, blur_buf);
+        put_blur_buf(&thread_data->blur_array4, frm_idx, blur_buf);
 #else
         // copy to prev_buf
         memcpy(prev_blur_buf, blur_buf, data_sz);
+        memcpy(next_ref_buf, blur_buf, data_sz);
+        memcpy(next_dis_buf, blur_buf, data_sz);
         memcpy(next_blur_buf, blur_buf, data_sz);
 #endif
 
@@ -397,6 +411,8 @@ fail_or_end:
 
 #ifndef MULTI_THREADING
     aligned_free(prev_blur_buf);
+    aligned_free(next_ref_buf);
+    aligned_free(next_dis_buf);
     aligned_free(next_blur_buf);
 #endif
     aligned_free(blur_buf);
@@ -503,8 +519,10 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
     combo_thread_data.thread_count = getNumCores();
 
     // for motion analysis we compare to previous buffer and next buffer
-    init_blur_array(&combo_thread_data.blur_array, combo_thread_data.thread_count + 1, combo_thread_data.data_sz, MAX_ALIGN);
-    init_blur_array(&combo_thread_data.blur_array2, combo_thread_data.thread_count + 1, combo_thread_data.data_sz, MAX_ALIGN);
+    init_blur_array(&combo_thread_data.blur_array, combo_thread_data.thread_count + 1, combo_thread_data.data_sz, MAX_ALIGN); // prev_blur_buf
+    init_blur_array(&combo_thread_data.blur_array2, combo_thread_data.thread_count + 1, combo_thread_data.data_sz, MAX_ALIGN); // next_ref_buf
+    init_blur_array(&combo_thread_data.blur_array3, combo_thread_data.thread_count + 1, combo_thread_data.data_sz, MAX_ALIGN); // next_dis_buf
+    init_blur_array(&combo_thread_data.blur_array4, combo_thread_data.thread_count + 1, combo_thread_data.data_sz, MAX_ALIGN); // next_blur_buf
 
     // initialize the mutex that protects the read_frame function
     pthread_mutex_init(&combo_thread_data.mutex_readframe, NULL);
@@ -537,8 +555,10 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
         }
     }
 
-    free_blur_buf(&combo_thread_data.blur_array);
-    free_blur_buf(&combo_thread_data.blur_array2);
+    free_blur_buf(&combo_thread_data.blur_array); // prev_blur_buf
+    free_blur_buf(&combo_thread_data.blur_array2); // next_ref_buf
+    free_blur_buf(&combo_thread_data.blur_array3); // next_dis_buf
+    free_blur_buf(&combo_thread_data.blur_array4); // next_blur_buf
     return 0;
 }
 

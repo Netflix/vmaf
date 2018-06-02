@@ -75,6 +75,8 @@ typedef struct
     pthread_mutex_t mutex_readframe;
     BLUR_BUF_ARRAY blur_array;
     BLUR_BUF_ARRAY blur_array2;
+    BLUR_BUF_ARRAY blur_array3;
+    BLUR_BUF_ARRAY blur_array4;
 #endif
     int ret;
 
