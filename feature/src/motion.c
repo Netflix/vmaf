@@ -38,6 +38,8 @@
 #define FILTER_5           FILTER_5_s
 #define offset_image       offset_image_s
 
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+
 /**
  * Note: img1_stride and img2_stride are in terms of (sizeof(float) bytes)
  */
@@ -89,6 +91,7 @@ fail:
 int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt)
 {
     double score = 0;
+    double score2 = 0;
     float *ref_buf = 0;
     float *prev_blur_buf = 0;
     float *blur_buf = 0;
@@ -98,6 +101,7 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
     size_t data_sz;
     int stride;
     int ret = 1;
+    bool next_frame_read;
 
     if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float))
     {
@@ -153,30 +157,50 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
     int frm_idx = 0;
     while (1)
     {
-        ret = read_noref_frame(ref_buf, temp_buf, stride, user_data);
-        if(ret == 1){
+        if (frm_idx == 0)
+        {
+            ret = read_noref_frame(ref_buf, temp_buf, stride, user_data);
+            if(ret == 1)
+            {
+                goto fail_or_end;
+            }
+            if (ret == 2)
+            {
+                break;
+            }
+            offset_image(ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+            convolution_f32_c(FILTER_5, 5, ref_buf, blur_buf, temp_buf, w, h, stride / sizeof(float), stride / sizeof(float));
+        }
+
+        ret = read_noref_frame(next_ref_buf, temp_buf, stride, user_data);
+        if (ret == 1)
+        {
             goto fail_or_end;
         }
-        if (ret == 2)
-        {
-            break;
-        }
+        next_frame_read = (ret == 2) ? false : true;
 
         // ===============================================================
         // offset pixel by OPT_RANGE_PIXEL_OFFSET
         // ===============================================================
-        offset_image(ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+        if (next_frame_read)
+        {
+            offset_image(next_ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+        }
 
         // filter
         // apply filtering (to eliminate effects film grain)
         // stride input to convolution_f32_c is in terms of (sizeof(float) bytes)
         // since stride = ALIGN_CEIL(w * sizeof(float)), stride divides sizeof(float)
-        convolution_f32_c(FILTER_5, 5, ref_buf, blur_buf, temp_buf, w, h, stride / sizeof(float), stride / sizeof(float));
+        if (next_frame_read)
+        {
+            convolution_f32_c(FILTER_5, 5, next_ref_buf, next_blur_buf, temp_buf, w, h, stride / sizeof(float), stride / sizeof(float));
+        }
 
         // compute
         if (frm_idx == 0)
         {
             score = 0.0;
+            score2 = 0.0;
         }
         else
         {
@@ -186,18 +210,38 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
                 fflush(stdout);
                 goto fail_or_end;
             }
+
+            if (next_frame_read)
+            {
+                if ((ret = compute_motion(blur_buf, next_blur_buf, w, h, stride, stride, &score2)))
+                {
+                    printf("error: compute_motion (prev) failed.\n");
+                    fflush(stdout);
+                    goto fail_or_end;
+                }
+                score2 = MIN(score, score2);
+            }
+            else
+            {
+                score2 = score;
+            }
         }
 
-        // copy to prev_buf
         memcpy(prev_blur_buf, blur_buf, data_sz);
-        memcpy(next_ref_buf, blur_buf, data_sz);
-        memcpy(next_blur_buf, blur_buf, data_sz);
+        memcpy(ref_buf, next_ref_buf, data_sz);
+        memcpy(blur_buf, next_blur_buf, data_sz);
 
         // print
         printf("motion: %d %f\n", frm_idx, score);
+        printf("motion2: %d %f\n", frm_idx, score2);
         fflush(stdout);
 
         frm_idx++;
+
+        if (!next_frame_read)
+        {
+            break;
+        }
     }
 
     ret = 0;

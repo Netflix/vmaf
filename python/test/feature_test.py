@@ -105,6 +105,17 @@ class FeatureTest(unittest.TestCase):
         score, scores = read_log(MOTION_LOG, "motion")
         self.assertAlmostEquals(score, 4.04982535417, places=4)
 
+    def test_motion2(self):
+        MOTION_LOG = self.LOG_FILENAME + '_motion2'
+        print 'test motion2...'
+        cmd = "{vmaf} motion {fmt} {ref} {dis} {w} {h} > {log}".format(
+            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MOTION_LOG
+        )
+        run_process(cmd, shell=True)
+        score, scores = read_log(MOTION_LOG, "motion2")
+        self.assertAlmostEquals(score, 3.8953518541666665, places=4)
+
     def test_vif(self):
         VIF_LOG = self.LOG_FILENAME + '_vif'
         print 'test vif...'
@@ -366,6 +377,17 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         score, scores = read_log(MOTION_LOG, "motion")
         self.assertAlmostEquals(score, 4.04982535417, places=4)
 
+    def test_motion2(self):
+        MOTION_LOG = self.LOG_FILENAME + '_motion2'
+        print 'test motion2 on yuv422p10le...'
+        cmd = "{vmaf} motion {fmt} {ref} {dis} {w} {h} > {log}".format(
+            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MOTION_LOG
+        )
+        run_process(cmd, shell=True)
+        score, scores = read_log(MOTION_LOG, "motion2")
+        self.assertAlmostEquals(score, 3.8953518541666665, places=4)
+
     def test_vif(self):
         VIF_LOG = self.LOG_FILENAME + '_vif'
         print 'test vif on yuv422p10le...'
@@ -578,6 +600,7 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm")[0], 1.0, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "ansnr")[0], 21.1138813333, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "motion")[0], 12.554836666666667, places=4)
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "motion2")[0], 12.554836666666667, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "vif")[0], 1.0, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_num")[0], 2773.891225, places=3)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_den")[0], 2773.891225, places=3)
@@ -609,6 +632,7 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm")[0], 0.7853383333333334, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "ansnr")[0], 7.92623066667, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "motion")[0], 12.5548366667, places=4)
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "motion2")[0], 12.5548366667, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "vif")[0], 0.156834666667, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_num")[0], 2178.5352886666665, places=3)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_den")[0], 2773.891225, places=3)
@@ -640,6 +664,7 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm")[0], 0.053996333333333334, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "ansnr")[0], -5.758091333333334, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "motion")[0], 12.554836666666667, places=4)
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "motion2")[0], 12.554836666666667, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "vif")[0], 0.0, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_num")[0], 149.780313, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_den")[0], 2773.891225, places=3)
@@ -671,6 +696,7 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm")[0], 1.0, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "ansnr")[0], 60.0, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "motion")[0], 0.0, places=4)
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "motion2")[0], 0.0, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "vif")[0], 1.0, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_num")[0], 149.780392, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_den")[0], 149.780392, places=4)
@@ -702,6 +728,7 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm")[0], 1.0, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "ansnr")[0], 21.899511, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "motion")[0], 0.0, places=4)
+        self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "motion2")[0], 0.0, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "vif")[0], 1.0, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_num")[0], 149.780313, places=4)
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_den")[0], 149.780392, places=4)
