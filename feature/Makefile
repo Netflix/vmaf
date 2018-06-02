@@ -8,7 +8,7 @@ TOOLDIR = $(TOP)/tool
 LIBVMAF = $(TOP)/../wrapper/libvmaf.a
 
 CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic
-# CFLAGS_COMMON = -g -O0 -fPIC -Wall -Wextra -pedantic -D BUILD_O0
+# CFLAGS_COMMON = -g -O0 -fPIC -Wall -Wextra -pedantic
 
 CFLAGS   := -std=c99 $(CFLAGS_COMMON) $(CFLAGS)
 CXXFLAGS := -std=c++11 $(CFLAGS_COMMON) $(CXXFLAGS)

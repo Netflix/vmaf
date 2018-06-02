@@ -16,13 +16,14 @@
  *
  */
 
-#ifndef ALIGNMENT_H_
-#define ALIGNMENT_H_
+#include "alignment.h"
 
-/* Required for AVX. */
-#define VMAF_ALIGNMENT 32
+int vmaf_floorn(int n, int m)
+{
+	return n - n % m;
+}
 
-int vmaf_floorn(int n, int m);
-int vmaf_ceiln(int n, int m);
-
-#endif // ALIGNMENT_H_
+int vmaf_ceiln(int n, int m)
+{
+	return n % m ? n + (m - n % m) : n;
+}

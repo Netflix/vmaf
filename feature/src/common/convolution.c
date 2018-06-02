@@ -22,6 +22,8 @@
 #include "cpu.h"
 
 extern enum vmaf_cpu cpu;
+extern int vmaf_floorn(int, int);
+extern int vmaf_ceiln(int, int);
 
 void convolution_x_c_s(const float *filter, int filter_width, const float *src, float *dst, int width, int height, int src_stride, int dst_stride, int step)
 {

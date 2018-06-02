@@ -32,7 +32,7 @@ typedef struct X86Capabilities {
  * @param eax argument to instruction
  * @param ecx argument to instruction
  */
-inline void do_cpuid(int regs[4], int eax, int ecx)
+void do_cpuid(int regs[4], int eax, int ecx)
 {
 #if defined(_MSC_VER)
 	__cpuidex(regs, eax, ecx);
@@ -51,7 +51,7 @@ inline void do_cpuid(int regs[4], int eax, int ecx)
  *
  * @return capabilities
  */
-inline X86Capabilities query_x86_capabilities()
+X86Capabilities query_x86_capabilities()
 {
 	X86Capabilities caps = { 0 };
 	int regs[4] = { 0 };

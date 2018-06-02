@@ -133,6 +133,7 @@
     <ClCompile Include="..\feature\src\ansnr.c" />
     <ClCompile Include="..\feature\src\ansnr_tools.c" />
     <ClCompile Include="..\feature\src\common\alloc.c" />
+    <ClCompile Include="..\feature\src\common\alignment.c" />
     <ClCompile Include="..\feature\src\common\convolution.c" />
     <ClCompile Include="..\feature\src\common\convolution_avx.c" />
     <ClCompile Include="..\feature\src\common\cpu.c" />
