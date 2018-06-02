@@ -92,6 +92,7 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
     float *ref_buf = 0;
     float *prev_blur_buf = 0;
     float *blur_buf = 0;
+    float *next_blur_buf = 0;
     float *temp_buf = 0;
     size_t data_sz;
     int stride;
@@ -126,6 +127,12 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
     if (!(blur_buf = aligned_malloc(data_sz, MAX_ALIGN)))
     {
         printf("error: aligned_malloc failed for blur_buf.\n");
+        fflush(stdout);
+        goto fail_or_end;
+    }
+    if (!(next_blur_buf = aligned_malloc(data_sz, MAX_ALIGN)))
+    {
+        printf("error: aligned_malloc failed for next_blur_buf.\n");
         fflush(stdout);
         goto fail_or_end;
     }
@@ -169,7 +176,13 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
         {
             if ((ret = compute_motion(prev_blur_buf, blur_buf, w, h, stride, stride, &score)))
             {
-                printf("error: compute_motion failed.\n");
+                printf("error: compute_motion (prev) failed.\n");
+                fflush(stdout);
+                goto fail_or_end;
+            }
+            if ((ret = compute_motion(next_blur_buf, blur_buf, w, h, stride, stride, &score)))
+            {
+                printf("error: compute_motion (next) failed.\n");
                 fflush(stdout);
                 goto fail_or_end;
             }
@@ -177,6 +190,7 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
 
         // copy to prev_buf
         memcpy(prev_blur_buf, blur_buf, data_sz);
+        memcpy(next_blur_buf, blur_buf, data_sz);
 
         // print
         printf("motion: %d %f\n", frm_idx, score);
@@ -192,6 +206,7 @@ fail_or_end:
     aligned_free(ref_buf);
     aligned_free(prev_blur_buf);
     aligned_free(blur_buf);
+    aligned_free(next_blur_buf);
     aligned_free(temp_buf);
 
     return ret;

@@ -74,6 +74,7 @@ typedef struct
     int stop_threads;
     pthread_mutex_t mutex_readframe;
     BLUR_BUF_ARRAY blur_array;
+    BLUR_BUF_ARRAY blur_array2;
 #endif
     int ret;
 
