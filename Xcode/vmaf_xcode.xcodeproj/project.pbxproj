@@ -26,6 +26,7 @@
 		C7FEEBB81DAA28D1001FC78F /* math_utils.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB21DAA28D1001FC78F /* math_utils.c */; };
 		C7FEEBB91DAA28D1001FC78F /* ssim_tools.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBB41DAA28D1001FC78F /* ssim_tools.c */; };
 		C7FEEBC31DAA28E2001FC78F /* alloc.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBB1DAA28E2001FC78F /* alloc.c */; };
+		C7FEEBC31DAA28E2001FC78F /* alignment.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBB1DAA28E2001FC78F /* alignment.c */; };
 		C7FEEBC41DAA28E2001FC78F /* convolution.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBE1DAA28E2001FC78F /* convolution.c */; };
 		C7FEEBC51DAA28E2001FC78F /* file_io.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBC01DAA28E2001FC78F /* file_io.c */; };
 		C7FEEBC61DAA292C001FC78F /* alignment.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBA1DAA28E2001FC78F /* alignment.h */; };
@@ -73,6 +74,7 @@
 		C7FEEBF31DAA29C8001FC78F /* motion.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB8B1DAA2844001FC78F /* motion.c */; };
 		C7FEEBF41DAA29C8001FC78F /* convolve.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAB1DAA28D1001FC78F /* convolve.c */; };
 		C7FEEBF51DAA29C8001FC78F /* alloc.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBB1DAA28E2001FC78F /* alloc.c */; };
+		C7FEEBF51DAA29C8001FC78F /* alignment.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBB1DAA28E2001FC78F /* alignment.c */; };
 		C7FEEBFC1DAA29EC001FC78F /* moment_main.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB861DAA2844001FC78F /* moment_main.c */; };
 		C7FEEC001DAA2A4A001FC78F /* convolve.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAC1DAA28D1001FC78F /* convolve.h */; };
 		C7FEEC011DAA2A4A001FC78F /* decimate.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAE1DAA28D1001FC78F /* decimate.h */; };
@@ -106,6 +108,7 @@
 		C7FEEC1D1DAA2A4A001FC78F /* motion.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB8B1DAA2844001FC78F /* motion.c */; };
 		C7FEEC1E1DAA2A4A001FC78F /* convolve.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAB1DAA28D1001FC78F /* convolve.c */; };
 		C7FEEC1F1DAA2A4A001FC78F /* alloc.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBB1DAA28E2001FC78F /* alloc.c */; };
+		C7FEEC1F1DAA2A4A001FC78F /* alignment.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBB1DAA28E2001FC78F /* alignment.c */; };
 		C7FEEC291DAA2A4B001FC78F /* convolve.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAC1DAA28D1001FC78F /* convolve.h */; };
 		C7FEEC2A1DAA2A4B001FC78F /* decimate.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAE1DAA28D1001FC78F /* decimate.h */; };
 		C7FEEC2B1DAA2A4B001FC78F /* iqa_options.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAF1DAA28D1001FC78F /* iqa_options.h */; };
@@ -138,6 +141,7 @@
 		C7FEEC461DAA2A4B001FC78F /* motion.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB8B1DAA2844001FC78F /* motion.c */; };
 		C7FEEC471DAA2A4B001FC78F /* convolve.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAB1DAA28D1001FC78F /* convolve.c */; };
 		C7FEEC481DAA2A4B001FC78F /* alloc.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBB1DAA28E2001FC78F /* alloc.c */; };
+		C7FEEC481DAA2A4B001FC78F /* alignment.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBB1DAA28E2001FC78F /* alignment.c */; };
 		C7FEEC521DAA2A50001FC78F /* convolve.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAC1DAA28D1001FC78F /* convolve.h */; };
 		C7FEEC531DAA2A50001FC78F /* decimate.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAE1DAA28D1001FC78F /* decimate.h */; };
 		C7FEEC541DAA2A50001FC78F /* iqa_options.h in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAF1DAA28D1001FC78F /* iqa_options.h */; };
@@ -170,6 +174,7 @@
 		C7FEEC6F1DAA2A50001FC78F /* motion.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB8B1DAA2844001FC78F /* motion.c */; };
 		C7FEEC701DAA2A50001FC78F /* convolve.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBAB1DAA28D1001FC78F /* convolve.c */; };
 		C7FEEC711DAA2A50001FC78F /* alloc.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBB1DAA28E2001FC78F /* alloc.c */; };
+		C7FEEC711DAA2A50001FC78F /* alignment.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEBBB1DAA28E2001FC78F /* alignment.c */; };
 		C7FEEC781DAA2A68001FC78F /* ms_ssim_main.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB8C1DAA2844001FC78F /* ms_ssim_main.c */; };
 		C7FEEC791DAA2A7C001FC78F /* psnr_main.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB8E1DAA2844001FC78F /* psnr_main.c */; };
 		C7FEEC7A1DAA2A8E001FC78F /* ssim_main.c in Sources */ = {isa = PBXBuildFile; fileRef = C7FEEB911DAA2844001FC78F /* ssim_main.c */; };
@@ -267,6 +272,7 @@
 		C7FEEBB41DAA28D1001FC78F /* ssim_tools.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ssim_tools.c; path = ../feature/src/iqa/ssim_tools.c; sourceTree = "<group>"; };
 		C7FEEBB51DAA28D1001FC78F /* ssim_tools.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ssim_tools.h; path = ../feature/src/iqa/ssim_tools.h; sourceTree = "<group>"; };
 		C7FEEBBA1DAA28E2001FC78F /* alignment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = alignment.h; path = ../feature/src/common/alignment.h; sourceTree = "<group>"; };
+		C7FEEBBA1DAA28E2001FC78F /* alignment.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = alignment.c; path = ../feature/src/common/alignment.c; sourceTree = "<group>"; };
 		C7FEEBBB1DAA28E2001FC78F /* alloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = alloc.c; path = ../feature/src/common/alloc.c; sourceTree = "<group>"; };
 		C7FEEBBC1DAA28E2001FC78F /* alloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = alloc.h; path = ../feature/src/common/alloc.h; sourceTree = "<group>"; };
 		C7FEEBBD1DAA28E2001FC78F /* convolution_internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = convolution_internal.h; path = ../feature/src/common/convolution_internal.h; sourceTree = "<group>"; };
@@ -401,6 +407,7 @@
 			isa = PBXGroup;
 			children = (
 				C7FEEBBA1DAA28E2001FC78F /* alignment.h */,
+				C7FEEBBA1DAA28E2001FC78F /* alignment.c */,
 				C7FEEBBB1DAA28E2001FC78F /* alloc.c */,
 				C7FEEBBC1DAA28E2001FC78F /* alloc.h */,
 				C7FEEBBD1DAA28E2001FC78F /* convolution_internal.h */,
@@ -615,6 +622,7 @@
 				C7FEEB811DAA2826001FC78F /* adm_tools.c in Sources */,
 				C7FEEB9A1DAA2844001FC78F /* motion.c in Sources */,
 				C7FEEBB61DAA28D1001FC78F /* convolve.c in Sources */,
+				C7FEEBC31DAA28E2001FC78F /* alignment.c in Sources */,
 				C7FEEBC31DAA28E2001FC78F /* alloc.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -655,6 +663,7 @@
 				C7FEEBF21DAA29C8001FC78F /* adm_tools.c in Sources */,
 				C7FEEBF31DAA29C8001FC78F /* motion.c in Sources */,
 				C7FEEBF41DAA29C8001FC78F /* convolve.c in Sources */,
+				C7FEEBF51DAA29C8001FC78F /* alignment.c in Sources */,
 				C7FEEBF51DAA29C8001FC78F /* alloc.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -695,6 +704,7 @@
 				C7FEEC1C1DAA2A4A001FC78F /* adm_tools.c in Sources */,
 				C7FEEC1D1DAA2A4A001FC78F /* motion.c in Sources */,
 				C7FEEC1E1DAA2A4A001FC78F /* convolve.c in Sources */,
+				C7FEEC1F1DAA2A4A001FC78F /* alignment.c in Sources */,
 				C7FEEC1F1DAA2A4A001FC78F /* alloc.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -735,6 +745,7 @@
 				C7FEEC451DAA2A4B001FC78F /* adm_tools.c in Sources */,
 				C7FEEC461DAA2A4B001FC78F /* motion.c in Sources */,
 				C7FEEC471DAA2A4B001FC78F /* convolve.c in Sources */,
+				C7FEEC481DAA2A4B001FC78F /* alignment.c in Sources */,
 				C7FEEC481DAA2A4B001FC78F /* alloc.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -775,6 +786,7 @@
 				C7FEEC6E1DAA2A50001FC78F /* adm_tools.c in Sources */,
 				C7FEEC6F1DAA2A50001FC78F /* motion.c in Sources */,
 				C7FEEC701DAA2A50001FC78F /* convolve.c in Sources */,
+				C7FEEC711DAA2A50001FC78F /* alignment.c in Sources */,
 				C7FEEC711DAA2A50001FC78F /* alloc.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

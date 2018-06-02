@@ -12,6 +12,7 @@ INSTALL_PREFIX = /usr/local
 
 OBJS = \
 	$(OBJDIR)/alloc.o \
+	$(OBJDIR)/alignment.o \
 	$(OBJDIR)/frame.o \
 	$(OBJDIR)/file_io.o \
 	$(OBJDIR)/cpu.o \
@@ -47,9 +48,9 @@ OBJS = \
 AVX_OBJS := \
 	$(OBJDIR)/convolution_avx.o \
 
-# CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic
 CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic -D MULTI_THREADING
-# CFLAGS_COMMON = -g -O0 -fPIC -Wall -Wextra -pedantic -D BUILD_O0 #-D PRINT_PROGRESS
+# CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic
+# CFLAGS_COMMON = -g -O0 -fPIC -Wall -Wextra -pedantic -D PRINT_PROGRESS
 
 CFLAGS   := -std=c99 $(CFLAGS_COMMON) $(CFLAGS)
 CXXFLAGS := -std=c++11 $(CFLAGS_COMMON) $(CXXFLAGS)
@@ -59,6 +60,9 @@ LDFLAGS  := $(LDFLAGS)
 $(AVX_OBJS): EXTRA_CFLAGS := -mavx
 
 $(OBJDIR)/alloc.o: $(FEATURESRCDIR)/common/alloc.c
+	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+
+$(OBJDIR)/alignment.o: $(FEATURESRCDIR)/common/alignment.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/file_io.o: $(FEATURESRCDIR)/common/file_io.c

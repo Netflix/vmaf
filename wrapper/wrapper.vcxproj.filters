@@ -19,6 +19,9 @@
     <ClCompile Include="..\feature\src\common\alloc.c">
       <Filter>feature\common</Filter>
     </ClCompile>
+    <ClCompile Include="..\feature\src\common\alignment.c">
+      <Filter>feature\common</Filter>
+    </ClCompile>
     <ClCompile Include="..\feature\src\common\convolution.c">
       <Filter>feature\common</Filter>
     </ClCompile>
