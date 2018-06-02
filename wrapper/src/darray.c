@@ -55,7 +55,7 @@ void insert_array_at(DArray *a, double e, int pos)
         a->used = pos+1;
     }
 
-    if (a->used > a->size)
+    while (a->used > a->size)
     {
         a->size *= 2;
         a->array = (double *)realloc(a->array, a->size * sizeof(double));

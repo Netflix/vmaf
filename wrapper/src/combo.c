@@ -122,11 +122,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
         goto fail_or_end;
     }
 
-#ifdef MULTI_THREADING
     int frm_idx = -1;
-#else
-    int frm_idx = 0;
-#endif
     while (1)
     {
 
@@ -166,6 +162,8 @@ void* combo_threadfunc(void* vmaf_thread_data)
         thread_data->frm_idx++;
 
         pthread_mutex_unlock(&thread_data->mutex_readframe);
+#else
+        frm_idx++;
 #endif
 
 #ifdef PRINT_PROGRESS
@@ -190,11 +188,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
 #ifdef PRINT_PROGRESS
             printf("psnr: %.3f, ", score);
 #endif
-#ifdef MULTI_THREADING
             insert_array_at(thread_data->psnr_array, score, frm_idx);
-#else
-            insert_array(thread_data->psnr_array, score);
-#endif
         }
 
         if (thread_data->ssim_array != NULL)
@@ -211,11 +205,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
             printf("ssim: %.3f, ", score);
 #endif
 
-#ifdef MULTI_THREADING
             insert_array_at(thread_data->ssim_array, score, frm_idx);
-#else
-            insert_array(thread_data->ssim_array, score);
-#endif
         }
 
         if (thread_data->ms_ssim_array != NULL)
@@ -231,11 +221,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
             printf("ms_ssim: %.3f, ", score);
 #endif
 
-#ifdef MULTI_THREADING
             insert_array_at(thread_data->ms_ssim_array, score, frm_idx);
-#else
-            insert_array(thread_data->ms_ssim_array, score);
-#endif
         }
 
         // ===============================================================
@@ -266,7 +252,6 @@ void* combo_threadfunc(void* vmaf_thread_data)
         printf("adm_den_scale3: %.3f, ", scores[7]);
 #endif
 
-#ifdef MULTI_THREADING
         insert_array_at(thread_data->adm_num_array, score_num, frm_idx);
         insert_array_at(thread_data->adm_den_array, score_den, frm_idx);
         insert_array_at(thread_data->adm_num_scale0_array, scores[0], frm_idx);
@@ -277,18 +262,6 @@ void* combo_threadfunc(void* vmaf_thread_data)
         insert_array_at(thread_data->adm_den_scale2_array, scores[5], frm_idx);
         insert_array_at(thread_data->adm_num_scale3_array, scores[6], frm_idx);
         insert_array_at(thread_data->adm_den_scale3_array, scores[7], frm_idx);
-#else
-        insert_array(thread_data->adm_num_array, score_num);
-        insert_array(thread_data->adm_den_array, score_den);
-        insert_array(thread_data->adm_num_scale0_array, scores[0]);
-        insert_array(thread_data->adm_den_scale0_array, scores[1]);
-        insert_array(thread_data->adm_num_scale1_array, scores[2]);
-        insert_array(thread_data->adm_den_scale1_array, scores[3]);
-        insert_array(thread_data->adm_num_scale2_array, scores[4]);
-        insert_array(thread_data->adm_den_scale2_array, scores[5]);
-        insert_array(thread_data->adm_num_scale3_array, scores[6]);
-        insert_array(thread_data->adm_den_scale3_array, scores[7]);
-#endif
 
 #ifdef COMPUTE_ANSNR
 
@@ -361,11 +334,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
         printf("motion: %.3f, ", score);
 #endif
 
-#ifdef MULTI_THREADING
         insert_array_at(thread_data->motion_array, score, frm_idx);
-#else
-        insert_array(thread_data->motion_array, score);
-#endif
 
         /* =========== vif ============== */
 
@@ -389,7 +358,6 @@ void* combo_threadfunc(void* vmaf_thread_data)
         printf("vif: %.3f, ", score);
 #endif
 
-#ifdef MULTI_THREADING
         insert_array_at(thread_data->vif_num_scale0_array, scores[0], frm_idx);
         insert_array_at(thread_data->vif_den_scale0_array, scores[1], frm_idx);
         insert_array_at(thread_data->vif_num_scale1_array, scores[2], frm_idx);
@@ -399,24 +367,9 @@ void* combo_threadfunc(void* vmaf_thread_data)
         insert_array_at(thread_data->vif_num_scale3_array, scores[6], frm_idx);
         insert_array_at(thread_data->vif_den_scale3_array, scores[7], frm_idx);
         insert_array_at(thread_data->vif_array, score, frm_idx);
-#else
-        insert_array(thread_data->vif_num_scale0_array, scores[0]);
-        insert_array(thread_data->vif_den_scale0_array, scores[1]);
-        insert_array(thread_data->vif_num_scale1_array, scores[2]);
-        insert_array(thread_data->vif_den_scale1_array, scores[3]);
-        insert_array(thread_data->vif_num_scale2_array, scores[4]);
-        insert_array(thread_data->vif_den_scale2_array, scores[5]);
-        insert_array(thread_data->vif_num_scale3_array, scores[6]);
-        insert_array(thread_data->vif_den_scale3_array, scores[7]);
-        insert_array(thread_data->vif_array, score);
-#endif
 
 #ifdef PRINT_PROGRESS
         printf("\n");
-#endif
-
-#ifndef MULTI_THREADING
-        frm_idx++;
 #endif
 
     }
