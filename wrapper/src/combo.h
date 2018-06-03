@@ -74,10 +74,10 @@ typedef struct
     int thread_count;
     int stop_threads;
     pthread_mutex_t mutex_readframe;
-    BLUR_BUF_ARRAY blur_array;
-    BLUR_BUF_ARRAY blur_array2;
-    BLUR_BUF_ARRAY blur_array3;
-    BLUR_BUF_ARRAY blur_array4;
+    BLUR_BUF_ARRAY blur_array; // prev_blur_buf
+    BLUR_BUF_ARRAY blur_array2; // next_ref_buf
+    BLUR_BUF_ARRAY blur_array3; // next_dis_buf
+    BLUR_BUF_ARRAY blur_array4; // next_blur_buf
 #endif
     int ret;
 
