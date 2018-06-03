@@ -168,7 +168,18 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
             {
                 break;
             }
+
+            // ===============================================================
+            // offset pixel by OPT_RANGE_PIXEL_OFFSET
+            // ===============================================================
             offset_image(ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+
+            // ===============================================================
+            // filter
+            // apply filtering (to eliminate effects film grain)
+            // stride input to convolution_f32_c is in terms of (sizeof(float) bytes)
+            // since stride = ALIGN_CEIL(w * sizeof(float)), stride divides sizeof(float)
+            // ===============================================================
             convolution_f32_c(FILTER_5, 5, ref_buf, blur_buf, temp_buf, w, h, stride / sizeof(float), stride / sizeof(float));
         }
 
@@ -187,14 +198,18 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
             offset_image(next_ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
         }
 
+        // ===============================================================
         // filter
         // apply filtering (to eliminate effects film grain)
         // stride input to convolution_f32_c is in terms of (sizeof(float) bytes)
         // since stride = ALIGN_CEIL(w * sizeof(float)), stride divides sizeof(float)
+        // ===============================================================
         if (next_frame_read)
         {
             convolution_f32_c(FILTER_5, 5, next_ref_buf, next_blur_buf, temp_buf, w, h, stride / sizeof(float), stride / sizeof(float));
         }
+
+        /* =========== motion ============== */
 
         // compute
         if (frm_idx == 0)
@@ -215,7 +230,7 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
             {
                 if ((ret = compute_motion(blur_buf, next_blur_buf, w, h, stride, stride, &score2)))
                 {
-                    printf("error: compute_motion (prev) failed.\n");
+                    printf("error: compute_motion (next) failed.\n");
                     fflush(stdout);
                     goto fail_or_end;
                 }
@@ -227,14 +242,14 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
             }
         }
 
-        memcpy(prev_blur_buf, blur_buf, data_sz);
-        memcpy(ref_buf, next_ref_buf, data_sz);
-        memcpy(blur_buf, next_blur_buf, data_sz);
-
         // print
         printf("motion: %d %f\n", frm_idx, score);
         printf("motion2: %d %f\n", frm_idx, score2);
         fflush(stdout);
+
+        memcpy(prev_blur_buf, blur_buf, data_sz);
+        memcpy(ref_buf, next_ref_buf, data_sz);
+        memcpy(blur_buf, next_blur_buf, data_sz);
 
         frm_idx++;
 
