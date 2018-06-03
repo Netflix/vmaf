@@ -366,6 +366,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
         adm_scale2.append((get_at(&adm_num_scale2_array, i) + ADM_SCALE_CONSTANT) / (get_at(&adm_den_scale2_array, i) + ADM_SCALE_CONSTANT));
         adm_scale3.append((get_at(&adm_num_scale3_array, i) + ADM_SCALE_CONSTANT) / (get_at(&adm_den_scale3_array, i) + ADM_SCALE_CONSTANT));
         motion.append(get_at(&motion_array, i));
+        motion2.append(get_at(&motion2_array, i));
         vif_scale0.append(get_at(&vif_num_scale0_array, i) / get_at(&vif_den_scale0_array, i));
         vif_scale1.append(get_at(&vif_num_scale1_array, i) / get_at(&vif_den_scale1_array, i));
         vif_scale2.append(get_at(&vif_num_scale2_array, i) / get_at(&vif_den_scale2_array, i));
@@ -376,12 +377,6 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
         if (ssim_array_ptr != NULL) { ssim.append(get_at(&ssim_array, i)); }
         if (ms_ssim_array_ptr != NULL) { ms_ssim.append(get_at(&ms_ssim_array, i)); }
     }
-
-    for (size_t i=0; i<num_frms-1; i++)
-    {
-        motion2.append(MIN(get_at(&motion_array, i), get_at(&motion_array, i+1)));
-    }
-    motion2.append(get_at(&motion_array, num_frms-1));
 
 #ifdef PRINT_PROGRESS
     printf("Normalize features, SVM regression, denormalize score, clip...\n");
