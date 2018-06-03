@@ -154,10 +154,10 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
         goto fail_or_end;
     }
 
-    int frm_idx = 0;
+    int frm_idx = -1;
     while (1)
     {
-        if (frm_idx == 0)
+        if (frm_idx == -1)
         {
             ret = read_noref_frame(ref_buf, temp_buf, stride, user_data);
             if(ret == 1)
@@ -182,6 +182,8 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
             // ===============================================================
             convolution_f32_c(FILTER_5, 5, ref_buf, blur_buf, temp_buf, w, h, stride / sizeof(float), stride / sizeof(float));
         }
+
+        frm_idx++;
 
         ret = read_noref_frame(next_ref_buf, temp_buf, stride, user_data);
         if (ret == 1)
@@ -250,8 +252,6 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
         memcpy(prev_blur_buf, blur_buf, data_sz);
         memcpy(ref_buf, next_ref_buf, data_sz);
         memcpy(blur_buf, next_blur_buf, data_sz);
-
-        frm_idx++;
 
         if (!next_frame_read)
         {

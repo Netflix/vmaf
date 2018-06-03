@@ -179,6 +179,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
            adm_num_scale3_array,
            adm_den_scale3_array,
            motion_array,
+           motion2_array,
            vif_num_scale0_array,
            vif_den_scale0_array,
            vif_num_scale1_array,
@@ -206,6 +207,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
     init_array(&adm_num_scale3_array, INIT_FRAMES);
     init_array(&adm_den_scale3_array, INIT_FRAMES);
     init_array(&motion_array, INIT_FRAMES);
+    init_array(&motion2_array, INIT_FRAMES);
     init_array(&vif_num_scale0_array, INIT_FRAMES);
     init_array(&vif_den_scale0_array, INIT_FRAMES);
     init_array(&vif_num_scale1_array, INIT_FRAMES);
@@ -263,6 +265,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
             &adm_num_scale3_array,
             &adm_den_scale3_array,
             &motion_array,
+            &motion2_array,
             &vif_num_scale0_array,
             &vif_den_scale0_array,
             &vif_num_scale1_array,
@@ -285,6 +288,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
     bool num_frms_is_consistent =
                (adm_num_array.used == num_frms)
             && (adm_den_array.used == num_frms)
+            && (motion2_array.used == num_frms)
             && (adm_num_scale0_array.used == num_frms)
             && (adm_den_scale0_array.used == num_frms)
             && (adm_num_scale1_array.used == num_frms)
@@ -308,7 +312,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
     if (!num_frms_is_consistent)
     {
         sprintf(errmsg, "Output feature vectors are of inconsistent dimensions: "
-                "motion (%zu), adm_num (%zu), adm_den (%zu), vif_num_scale0 (%zu), "
+                "motion (%zu), motion2 (%zu), adm_num (%zu), adm_den (%zu), vif_num_scale0 (%zu), "
                 "vif_den_scale0 (%zu), vif_num_scale1 (%zu), vif_den_scale1 (%zu), "
                 "vif_num_scale2 (%zu), vif_den_scale2 (%zu), vif_num_scale3 (%zu), "
                 "vif_den_scale3 (%zu), vif (%zu), "
@@ -317,6 +321,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
                 "adm_den_scale1 (%zu), adm_num_scale2 (%zu), adm_den_scale2 (%zu), "
                 "adm_num_scale3 (%zu), adm_den_scale3 (%zu)",
                 motion_array.used,
+                motion2_array.used,
                 adm_num_array.used,
                 adm_den_array.used,
                 vif_num_scale0_array.used,
@@ -607,6 +612,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
     free_array(&adm_num_scale3_array);
     free_array(&adm_den_scale3_array);
     free_array(&motion_array);
+    free_array(&motion2_array);
     free_array(&vif_num_scale0_array);
     free_array(&vif_den_scale0_array);
     free_array(&vif_num_scale1_array);
@@ -626,7 +632,8 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
 // static const char VMAFOSS_XML_VERSION[] = "0.3.1";
 //static const char VMAFOSS_XML_VERSION[] = "0.3.2"; // add vif, ssim and ms-ssim scores
 //static const char VMAFOSS_XML_VERSION[] = "0.3.3"; // fix slopes and intercepts to match nflxtrain_vmafv3a.pkl
-static const char VMAFOSS_XML_VERSION[] = "0.3.2"; // fix slopes and intercepts to match nflxall_vmafv4.pkl
+//static const char VMAFOSS_XML_VERSION[] = "0.3.2"; // fix slopes and intercepts to match nflxall_vmafv4.pkl
+static const char VMAFOSS_XML_VERSION[] = "0.6.1"; // move motion2 to combo.c
 
 double RunVmaf(const char* fmt, int width, int height,
                int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),

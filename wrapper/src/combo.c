@@ -54,6 +54,8 @@ int compute_psnr(const float *ref, const float *dis, int w, int h, int ref_strid
 int compute_ssim(const float *ref, const float *cmp, int w, int h, int ref_stride, int cmp_stride, double *score, double *l_score, double *c_score, double *s_score);
 int compute_ms_ssim(const float *ref, const float *cmp, int w, int h, int ref_stride, int cmp_stride, double *score, double* l_scores, double* c_scores, double* s_scores);
 
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+
 void* combo_threadfunc(void* vmaf_thread_data)
 {
     // this is our shared thread data
@@ -71,6 +73,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
     const char* fmt = thread_data->fmt;
 
     double score = 0;
+    double score2 = 0;
     double scores[4*2];
     double score_num = 0;
     double score_den = 0;
@@ -91,6 +94,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
     float *temp_buf = 0;
 
     int ret = 1;
+    bool next_frame_read;
 
     if (!(ref_buf = aligned_malloc(data_sz, MAX_ALIGN)))
     {
@@ -364,6 +368,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
 #endif
 
         insert_array_at(thread_data->motion_array, score, frm_idx);
+        insert_array_at(thread_data->motion2_array, score, frm_idx);
 
         /* =========== vif ============== */
 
@@ -444,6 +449,7 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
         DArray *adm_num_scale3_array,
         DArray *adm_den_scale3_array,
         DArray *motion_array,
+        DArray *motion2_array,
         DArray *vif_num_scale0_array,
         DArray *vif_den_scale0_array,
         DArray *vif_num_scale1_array,
@@ -477,6 +483,7 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
     combo_thread_data.adm_num_scale3_array = adm_num_scale3_array;
     combo_thread_data.adm_den_scale3_array = adm_den_scale3_array;
     combo_thread_data.motion_array = motion_array;
+    combo_thread_data.motion2_array = motion2_array;
     combo_thread_data.vif_num_scale0_array = vif_num_scale0_array;
     combo_thread_data.vif_den_scale0_array = vif_den_scale0_array;
     combo_thread_data.vif_num_scale1_array = vif_num_scale1_array;
@@ -576,6 +583,7 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
         DArray *adm_num_scale3_array,
         DArray *adm_den_scale3_array,
         DArray *motion_array,
+        DArray *motion2_array,
         DArray *vif_num_scale0_array,
         DArray *vif_den_scale0_array,
         DArray *vif_num_scale1_array,
@@ -608,6 +616,7 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
     combo_thread_data.adm_num_scale3_array = adm_num_scale3_array;
     combo_thread_data.adm_den_scale3_array = adm_den_scale3_array;
     combo_thread_data.motion_array = motion_array;
+    combo_thread_data.motion2_array = motion2_array;
     combo_thread_data.vif_num_scale0_array = vif_num_scale0_array;
     combo_thread_data.vif_den_scale0_array = vif_den_scale0_array;
     combo_thread_data.vif_num_scale1_array = vif_num_scale1_array;

@@ -50,6 +50,7 @@ typedef struct
     DArray *adm_num_scale3_array;
     DArray *adm_den_scale3_array;
     DArray *motion_array;
+    DArray *motion2_array;
     DArray *vif_num_scale0_array;
     DArray *vif_den_scale0_array;
     DArray *vif_num_scale1_array;
@@ -95,6 +96,7 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
         DArray *adm_num_scale3_array,
         DArray *adm_den_scale3_array,
         DArray *motion_array,
+        DArray *motion2_array,
         DArray *vif_num_scale0_array,
         DArray *vif_den_scale0_array,
         DArray *vif_num_scale1_array,
