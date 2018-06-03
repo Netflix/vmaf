@@ -276,7 +276,6 @@ int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, i
         fflush(stdout);
 
         /* =========== vif ============== */
-        // compute vif last, because its input ref/dis might be offset by -128
 
         if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores)))
         {
@@ -314,10 +313,11 @@ fail_or_end:
     aligned_free(dis_buf);
 
     aligned_free(prev_blur_buf);
-    aligned_free(blur_buf);
     aligned_free(next_ref_buf);
     aligned_free(next_dis_buf);
     aligned_free(next_blur_buf);
+
+    aligned_free(blur_buf);
     aligned_free(temp_buf);
 
     return ret;

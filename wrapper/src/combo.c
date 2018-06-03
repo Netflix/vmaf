@@ -146,52 +146,76 @@ void* combo_threadfunc(void* vmaf_thread_data)
     int frm_idx = -1;
     while (1)
     {
-
-#ifdef MULTI_THREADING
-        pthread_mutex_lock(&thread_data->mutex_readframe);
-
-        if (thread_data->stop_threads)
-        {
-            // this is the signal that another thread has reached the end of the input file, so we all quit
-            pthread_mutex_unlock(&thread_data->mutex_readframe);
-            break;
-        }
-#endif
-
         // the next frame
         frm_idx = thread_data->frm_idx;
         thread_data->frm_idx++;
 
-        ret = read_frame(ref_buf, dis_buf, temp_buf, stride, user_data);
+        if (frm_idx == 0)
+        {
+            ret = read_frame(ref_buf, dis_buf, temp_buf, stride, user_data);
+            if (ret == 1)
+            {
+                goto fail_or_end;
+            }
+            if (ret == 2)
+            {
+                break;
+            }
 
+            // ===============================================================
+            // offset pixel by OPT_RANGE_PIXEL_OFFSET
+            // ===============================================================
+            offset_image(ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+            offset_image(dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+
+            // ===============================================================
+            // filter
+            // apply filtering (to eliminate effects film grain)
+            // stride input to convolution_f32_c is in terms of (sizeof(float) bytes)
+            // since stride = ALIGN_CEIL(w * sizeof(float)), stride divides sizeof(float)
+            // ===============================================================
+            convolution_f32_c(FILTER_5, 5, ref_buf, blur_buf, temp_buf, w, h, stride / sizeof(float), stride / sizeof(float));
+
+        }
+
+        ret = read_frame(next_ref_buf, next_dis_buf, temp_buf, stride, user_data);
         if (ret == 1)
         {
-#ifdef MULTI_THREADING
-            thread_data->stop_threads = 1;
-            pthread_mutex_unlock(&thread_data->mutex_readframe);
-#endif
             goto fail_or_end;
         }
-        if (ret == 2)
+        next_frame_read = (ret == 2) ? false : true;
+
+        // ===============================================================
+        // offset pixel by OPT_RANGE_PIXEL_OFFSET
+        // ===============================================================
+        if (next_frame_read)
         {
-#ifdef MULTI_THREADING
-            thread_data->stop_threads = 1;
-            pthread_mutex_unlock(&thread_data->mutex_readframe);
-#endif
-            break;
+            offset_image(next_ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+            offset_image(next_dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
         }
 
-#ifdef MULTI_THREADING
-        pthread_mutex_unlock(&thread_data->mutex_readframe);
-#endif
+        // ===============================================================
+        // filter
+        // apply filtering (to eliminate effects film grain)
+        // stride input to convolution_f32_c is in terms of (sizeof(float) bytes)
+        // since stride = ALIGN_CEIL(w * sizeof(float)), stride divides sizeof(float)
+        // ===============================================================
+        if (next_frame_read)
+        {
+            convolution_f32_c(FILTER_5, 5, next_ref_buf, next_blur_buf, temp_buf, w, h, stride / sizeof(float), stride / sizeof(float));
+        }
 
 #ifdef PRINT_PROGRESS
         printf("frame: %d, ", frm_idx);
 #endif
 
         // ===============================================================
-        // for the PSNR, SSIM and MS-SSIM, offset are 0 - do them first
+        // for the PSNR, SSIM and MS-SSIM, offset are 0. Since in prev read
+        // step they have been offset by OPT_RANGE_PIXEL_OFFSET, now
+        // offset them back.
         // ===============================================================
+        offset_image(ref_buf, -OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+        offset_image(dis_buf, -OPT_RANGE_PIXEL_OFFSET, w, h, stride);
 
         if (thread_data->psnr_array != NULL)
         {
@@ -246,7 +270,6 @@ void* combo_threadfunc(void* vmaf_thread_data)
         // ===============================================================
         // for the rest, offset pixel by OPT_RANGE_PIXEL_OFFSET
         // ===============================================================
-
         offset_image(ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
         offset_image(dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
 
@@ -316,57 +339,42 @@ void* combo_threadfunc(void* vmaf_thread_data)
 
         /* =========== motion ============== */
 
-        // filter
-        // apply filtering (to eliminate effects film grain)
-        // stride input to convolution_f32_c is in terms of (sizeof(float) bytes)
-        // since stride = ALIGN_CEIL(w * sizeof(float)), stride divides sizeof(float)
-        convolution_f32_c(FILTER_5, 5, ref_buf, blur_buf, temp_buf, w, h, stride / sizeof(float), stride / sizeof(float));
-
         // compute
         if (frm_idx == 0)
         {
             score = 0.0;
+            score2 = 0.0;
         }
         else
         {
-#ifdef MULTI_THREADING
-            prev_blur_buf = get_blur_buf(&thread_data->blur_array, frm_idx-1);
-            next_ref_buf = get_blur_buf(&thread_data->blur_array2, frm_idx-1);
-            next_dis_buf = get_blur_buf(&thread_data->blur_array3, frm_idx-1);
-            next_blur_buf = get_blur_buf(&thread_data->blur_array4, frm_idx-1);
-#endif
             if ((ret = compute_motion(prev_blur_buf, blur_buf, w, h, stride, stride, &score)))
             {
-                sprintf(errmsg, "compute_motion failed.\n");
+                sprintf(errmsg, "compute_motion (prev) failed.\n");
                 goto fail_or_end;
             }
-#ifdef MULTI_THREADING
-            release_blur_buf(&thread_data->blur_array, frm_idx-1);
-            release_blur_buf(&thread_data->blur_array2, frm_idx-1);
-            release_blur_buf(&thread_data->blur_array3, frm_idx-1);
-            release_blur_buf(&thread_data->blur_array4, frm_idx-1);
-#endif
-        }
 
-#ifdef MULTI_THREADING
-        put_blur_buf(&thread_data->blur_array, frm_idx, blur_buf);
-        put_blur_buf(&thread_data->blur_array2, frm_idx, blur_buf);
-        put_blur_buf(&thread_data->blur_array3, frm_idx, blur_buf);
-        put_blur_buf(&thread_data->blur_array4, frm_idx, blur_buf);
-#else
-        // copy to prev_buf
-        memcpy(prev_blur_buf, blur_buf, data_sz);
-        memcpy(next_ref_buf, blur_buf, data_sz);
-        memcpy(next_dis_buf, blur_buf, data_sz);
-        memcpy(next_blur_buf, blur_buf, data_sz);
-#endif
+            if (next_frame_read)
+            {
+                if ((ret = compute_motion(blur_buf, next_blur_buf, w, h, stride, stride, &score2)))
+                {
+                    sprintf(errmsg, "compute_motion (next) failed.\n");
+                    goto fail_or_end;
+                }
+                score2 = MIN(score, score2);
+            }
+            else
+            {
+                score2 = score;
+            }
+        }
 
 #ifdef PRINT_PROGRESS
         printf("motion: %.3f, ", score);
+        printf("motion2: %.3f, ", score2);
 #endif
 
         insert_array_at(thread_data->motion_array, score, frm_idx);
-        insert_array_at(thread_data->motion2_array, score, frm_idx);
+        insert_array_at(thread_data->motion2_array, score2, frm_idx);
 
         /* =========== vif ============== */
 
@@ -404,32 +412,35 @@ void* combo_threadfunc(void* vmaf_thread_data)
         printf("\n");
 #endif
 
+        // copy to prev_buf
+        memcpy(prev_blur_buf, blur_buf, data_sz);
+        memcpy(ref_buf, next_ref_buf, data_sz);
+        memcpy(dis_buf, next_dis_buf, data_sz);
+        memcpy(blur_buf, next_blur_buf, data_sz);
+
+        if (!next_frame_read)
+        {
+            break;
+        }
+
     }
 
     ret = 0;
 
 fail_or_end:
+
     aligned_free(ref_buf);
     aligned_free(dis_buf);
 
-#ifndef MULTI_THREADING
     aligned_free(prev_blur_buf);
     aligned_free(next_ref_buf);
     aligned_free(next_dis_buf);
     aligned_free(next_blur_buf);
-#endif
+
     aligned_free(blur_buf);
     aligned_free(temp_buf);
 
-#ifdef MULTI_THREADING
-    // when one thread ends we signal all other threads to also stop
-    thread_data->stop_threads = 1;
     thread_data->ret = ret;
-    pthread_exit(&ret);
-
-#else
-    thread_data->ret = ret;
-#endif
 
 }
 
