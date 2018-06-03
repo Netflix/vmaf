@@ -73,7 +73,7 @@ class ResultTest(unittest.TestCase):
         self.assertEquals(
             df.iloc[0]['asset'],
             '{"asset_dict": {"height": 1080, "use_path_as_workpath": 1, "width": 1920}, "asset_id": 0, "content_id": 0, "dataset": "test", "dis_path": "checkerboard_1920_1080_10_3_1_0.yuv", "ref_path": "checkerboard_1920_1080_10_3_0_0.yuv", "workdir": ""}') # noqa
-        self.assertEquals(df.iloc[0]['executor_id'], 'VMAF_legacy_VF0.2.4b-1.1')
+        self.assertEquals(df.iloc[0]['executor_id'], 'VMAF_legacy_VF0.2.4c-1.1')
 
         Result._assert_asset_dataframe(df)
 

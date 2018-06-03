@@ -30,7 +30,7 @@ class QualityRunnerTest(unittest.TestCase):
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
                       asset_dict={'width': 720, 'height': 480})
         runner = VmafLegacyQualityRunner([asset], None)
-        self.assertEquals(runner.executor_id, 'VMAF_legacy_VF0.2.4b-1.1')
+        self.assertEquals(runner.executor_id, 'VMAF_legacy_VF0.2.4c-1.1')
 
     def test_run_vamf_legacy_runner(self):
         print 'test on running VMAF (legacy) runner...'
@@ -2108,11 +2108,11 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 class QualityRunnerVersionTest(unittest.TestCase):
 
     def test_vmaf_quality_runner_version(self):
-        self.assertEquals(VmafQualityRunner.VERSION, 'F0.2.4b-0.6.1')
+        self.assertEquals(VmafQualityRunner.VERSION, 'F0.2.4c-0.6.1')
         self.assertEquals(VmafQualityRunner.ALGO_VERSION, 2)
 
     def test_vmafossexec_quality_runner_version(self):
-        self.assertEquals(VmafossExecQualityRunner.VERSION, 'F0.2.4b-0.6.1')
+        self.assertEquals(VmafossExecQualityRunner.VERSION, 'F0.2.4c-0.6.1')
         self.assertEquals(VmafossExecQualityRunner.ALGO_VERSION, 2)
 
 if __name__ == '__main__':
