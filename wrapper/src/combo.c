@@ -158,6 +158,10 @@ void* combo_threadfunc(void* vmaf_thread_data)
         }
 #endif
 
+        // the next frame
+        frm_idx = thread_data->frm_idx;
+        thread_data->frm_idx++;
+
         ret = read_frame(ref_buf, dis_buf, temp_buf, stride, user_data);
 
         if (ret == 1)
@@ -178,13 +182,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
         }
 
 #ifdef MULTI_THREADING
-        // the next frame
-        frm_idx = thread_data->frm_idx;
-        thread_data->frm_idx++;
-
         pthread_mutex_unlock(&thread_data->mutex_readframe);
-#else
-        frm_idx++;
 #endif
 
 #ifdef PRINT_PROGRESS

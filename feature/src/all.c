@@ -69,6 +69,7 @@ int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, i
     double psnr_max;
     int ret = 1;
     bool next_frame_read;
+    int global_frm_idx = 0; // map to thread_data->frm_idx in combo.c
 
     if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float))
     {
@@ -147,7 +148,11 @@ int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, i
     int frm_idx = -1;
     while (1)
     {
-        if (frm_idx == -1)
+        // the next frame
+        frm_idx = global_frm_idx;
+        global_frm_idx++;
+
+        if (frm_idx == 0)
         {
             ret = read_frame(ref_buf, dis_buf, temp_buf, stride, user_data);
             if (ret == 1)
@@ -174,8 +179,6 @@ int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, i
             convolution_f32_c(FILTER_5, 5, ref_buf, blur_buf, temp_buf, w, h, stride / sizeof(float), stride / sizeof(float));
 
         }
-
-        frm_idx++;
 
         ret = read_frame(next_ref_buf, next_dis_buf, temp_buf, stride, user_data);
         if (ret == 1)

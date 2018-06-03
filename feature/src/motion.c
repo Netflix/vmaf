@@ -102,6 +102,7 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
     int stride;
     int ret = 1;
     bool next_frame_read;
+    int global_frm_idx = 0; // map to thread_data->frm_idx in combo.c
 
     if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float))
     {
@@ -157,7 +158,11 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
     int frm_idx = -1;
     while (1)
     {
-        if (frm_idx == -1)
+        // the next frame
+        frm_idx = global_frm_idx;
+        global_frm_idx++;
+
+        if (frm_idx == 0)
         {
             ret = read_noref_frame(ref_buf, temp_buf, stride, user_data);
             if(ret == 1)
@@ -182,8 +187,6 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
             // ===============================================================
             convolution_f32_c(FILTER_5, 5, ref_buf, blur_buf, temp_buf, w, h, stride / sizeof(float), stride / sizeof(float));
         }
-
-        frm_idx++;
 
         ret = read_noref_frame(next_ref_buf, temp_buf, stride, user_data);
         if (ret == 1)
