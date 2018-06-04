@@ -108,7 +108,9 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
         DArray *psnr_array,
         DArray *ssim_array,
         DArray *ms_ssim_array,
-        char *errmsg
+        char *errmsg,
+        int n_thread,
+        int n_subsample
 );
 
 #ifdef __cplusplus

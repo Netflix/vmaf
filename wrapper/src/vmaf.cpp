@@ -279,7 +279,9 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
             psnr_array_ptr,
             ssim_array_ptr,
             ms_ssim_array_ptr,
-            errmsg);
+            errmsg,
+            n_thread,
+            n_subsample);
     if (ret)
     {
         throw VmafException(errmsg);

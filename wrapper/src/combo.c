@@ -566,7 +566,9 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
         DArray *psnr_array,
         DArray *ssim_array,
         DArray *ms_ssim_array,
-        char *errmsg
+        char *errmsg,
+        int n_thread,
+        int n_subsample
         )
 {
     // init shared thread data
@@ -627,7 +629,14 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
 
     combo_thread_data.data_sz = (size_t)combo_thread_data.stride * h;
 
-    combo_thread_data.thread_count = getNumCores();
+    if (n_thread == 0)
+    {
+        combo_thread_data.thread_count = getNumCores();
+    }
+    else
+    {
+        combo_thread_data.thread_count = MIN(getNumCores(), n_thread);
+    }
 
     // for motion analysis we compare to previous buffer and next buffer
     init_blur_array(&combo_thread_data.ref_buf_array, combo_thread_data.thread_count, combo_thread_data.data_sz, MAX_ALIGN);
@@ -698,7 +707,9 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
         DArray *psnr_array,
         DArray *ssim_array,
         DArray *ms_ssim_array,
-        char *errmsg
+        char *errmsg,
+        int n_thread,
+        int n_subsample
         )
 {
     VMAF_THREAD_STRUCT combo_thread_data;
