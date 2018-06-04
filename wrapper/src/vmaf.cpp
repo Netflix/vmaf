@@ -40,7 +40,7 @@
 #define VAL_IS_NONE(V) ((V).tag=='Z') /* check ocval.cc */
 #define VAL_IS_DICT(V) ((V).tag=='t') /* check ocval.cc */
 
-#define MIN(A,B) ((A)<(B)?(A):(B))
+//#define MIN(A,B) ((A)<(B)?(A):(B))
 
 #if !defined(min)
 template <class T> static inline T min(T x,T y) { return (x<y)?x:y; }
@@ -137,8 +137,9 @@ void _read_and_assert_model(const char *model_path, Val& feature_names,
 
 }
 
-Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
-                       bool do_psnr, bool do_ssim, bool do_ms_ssim)
+Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
+                       int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
+                       bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample)
 {
 
 #ifdef PRINT_PROGRESS
@@ -635,16 +636,34 @@ double RunVmaf(const char* fmt, int width, int height,
                void *user_data, const char *model_path, const char *log_path, const char *log_fmt,
                bool disable_clip, bool enable_transform,
                bool do_psnr, bool do_ssim, bool do_ms_ssim,
-               const char *pool_method)
+               const char *pool_method, int n_thread, int n_subsample)
 {
     printf("Start calculating VMAF score...\n");
+
+    if (width <= 0)
+    {
+        throw VmafException("Invalid width value (must be > 0)");
+    }
+    if (height <= 0)
+    {
+        throw VmafException("Invalid height value (must be > 0)");
+    }
+    if (n_thread < 0)
+    {
+        throw VmafException("Invalid n_thread value (must be >= 0)");
+    }
+    if (n_subsample <= 0)
+    {
+        throw VmafException("Invalid n_subsample value (must be > 0)");
+    }
 
     Asset asset(width, height, fmt);
     VmafRunner runner{model_path};
     Timer timer;
 
     timer.start();
-    Result result = runner.run(asset, read_frame, user_data, disable_clip, enable_transform, do_psnr, do_ssim, do_ms_ssim);
+    Result result = runner.run(asset, read_frame, user_data, disable_clip, enable_transform,
+                               do_psnr, do_ssim, do_ms_ssim, n_thread, n_subsample);
     timer.stop();
 
     if (pool_method != NULL && (strcmp(pool_method, "min")==0))

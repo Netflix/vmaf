@@ -34,7 +34,7 @@ double RunVmaf(const char* fmt, int width, int height,
                void *user_data, const char *model_path, const char *log_path, const char *log_fmt,
                bool disable_clip, bool enable_transform,
                bool do_psnr, bool do_ssim, bool do_ms_ssim,
-               const char *pool_method);
+               const char *pool_method, int n_thread, int n_subsample);
 
 class Asset
 {
@@ -165,7 +165,9 @@ public:
         sprintf(libsvm_model_path, "%s.model", model_path);
     }
     ~VmafRunner() { delete[] libsvm_model_path; }
-    Result run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform, bool do_psnr, bool do_ssim, bool do_ms_ssim);
+    Result run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
+               int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
+               bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample);
 private:
     const char *model_path;
     char *libsvm_model_path;
