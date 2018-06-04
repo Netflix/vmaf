@@ -160,7 +160,6 @@ void* combo_threadfunc(void* vmaf_thread_data)
         {
             // this is the signal that another thread has reached the end of the input file, so we all quit
             pthread_mutex_unlock(&thread_data->mutex_readframe);
-            printf("(1) frame: %d\n", frm_idx);
             break;
         }
 #endif
@@ -188,7 +187,6 @@ void* combo_threadfunc(void* vmaf_thread_data)
             thread_data->stop_threads = 1;
             pthread_mutex_unlock(&thread_data->mutex_readframe);
 #endif
-                printf("(2) frame: %d\n", frm_idx);
                 break;
             }
 
@@ -239,7 +237,18 @@ void* combo_threadfunc(void* vmaf_thread_data)
 #endif
             goto fail_or_end;
         }
-        next_frame_read = (ret == 2) ? false : true;
+        if (ret == 2)
+        {
+#ifdef MULTI_THREADING
+            thread_data->stop_threads = 1;
+            pthread_mutex_unlock(&thread_data->mutex_readframe);
+#endif
+            next_frame_read = false;
+        }
+        else
+        {
+            next_frame_read = true;
+        }
 
 #ifdef MULTI_THREADING
         pthread_mutex_unlock(&thread_data->mutex_readframe);
@@ -501,7 +510,6 @@ void* combo_threadfunc(void* vmaf_thread_data)
             thread_data->stop_threads = 1;
             pthread_mutex_unlock(&thread_data->mutex_readframe);
 #endif
-            printf("(3) frame: %d\n", frm_idx);
             break;
         }
 
@@ -510,8 +518,6 @@ void* combo_threadfunc(void* vmaf_thread_data)
     ret = 0;
 
 fail_or_end:
-
-//    printf("frame: %d\n", frm_idx);
 
     aligned_free(ref_buf);
     aligned_free(dis_buf);

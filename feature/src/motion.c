@@ -193,7 +193,14 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
         {
             goto fail_or_end;
         }
-        next_frame_read = (ret == 2) ? false : true;
+        if (ret == 2)
+        {
+            next_frame_read = false;
+        }
+        else
+        {
+            next_frame_read = true;
+        }
 
         // ===============================================================
         // offset pixel by OPT_RANGE_PIXEL_OFFSET
