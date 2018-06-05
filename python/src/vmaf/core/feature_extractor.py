@@ -112,12 +112,10 @@ class VmafFeatureExtractor(FeatureExtractor):
     # VERSION = '0.2.2b'  # expose adm_den/num_scalex
     # VERSION = '0.2.3'  # AVX for VMAF convolution; update adm features by folding noise floor into per coef
     # VERSION = '0.2.4'  # Fix a bug in adm feature passing scale into dwt_quant_step
-    VERSION = '0.2.4b'  # Modify by adding ADM noise floor outside cube root; add derived feature motion2
-    # VERSION = '0.2.4b4h'  # Modify 0.2.4b by changing ADM viewing distance to 4H
-    # VERSION = '0.2.4b5h'  # Modify 0.2.4b by changing ADM viewing distance to 5H
-    # VERSION = '0.2.4b6h'  # Modify 0.2.4b by changing ADM viewing distance to 6H
+    # VERSION = '0.2.4b'  # Modify by adding ADM noise floor outside cube root; add derived feature motion2
+    VERSION = '0.2.4c'  # Modify by moving motion2 to c code
 
-    ATOM_FEATURES = ['vif', 'adm', 'ansnr', 'motion',
+    ATOM_FEATURES = ['vif', 'adm', 'ansnr', 'motion', 'motion2',
                      'vif_num', 'vif_den', 'adm_num', 'adm_den', 'anpsnr',
                      'vif_num_scale0', 'vif_den_scale0',
                      'vif_num_scale1', 'vif_den_scale1',
@@ -132,7 +130,6 @@ class VmafFeatureExtractor(FeatureExtractor):
     DERIVED_ATOM_FEATURES = ['vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
                              'vif2', 'adm2', 'adm3',
                              'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
-                             'motion2',
                              ]
 
     ADM2_CONSTANT = 0
@@ -217,20 +214,6 @@ class VmafFeatureExtractor(FeatureExtractor):
             ) / 4.0
         )
 
-        # vif_weighted_sum_scores_key = cls.get_scores_key('vif_weighted_sum')
-        # result.result_dict[vif_weighted_sum_scores_key] = list(
-        #     (
-        #         1.0/64*(np.array(result.result_dict[vif_num_scale0_scores_key])
-        #          / np.array(result.result_dict[vif_den_scale0_scores_key])) +
-        #         1.0/16*(np.array(result.result_dict[vif_num_scale1_scores_key])
-        #          / np.array(result.result_dict[vif_den_scale1_scores_key])) +
-        #         1.0/4*(np.array(result.result_dict[vif_num_scale2_scores_key])
-        #          / np.array(result.result_dict[vif_den_scale2_scores_key])) +
-        #         1.0/1*(np.array(result.result_dict[vif_num_scale3_scores_key])
-        #          / np.array(result.result_dict[vif_den_scale3_scores_key]))
-        #     )
-        # )
-
         # adm_scalei = adm_num_scalei / adm_den_scalei, i = 0, 1, 2, 3
         adm_num_scale0_scores_key = cls.get_scores_key('adm_num_scale0')
         adm_den_scale0_scores_key = cls.get_scores_key('adm_den_scale0')
@@ -278,16 +261,6 @@ class VmafFeatureExtractor(FeatureExtractor):
                 ((np.array(result.result_dict[adm_num_scale3_scores_key]) + cls.ADM_SCALE_CONSTANT)
                  / (np.array(result.result_dict[adm_den_scale3_scores_key]) + cls.ADM_SCALE_CONSTANT))
             ) / 4.0
-        )
-
-        # motion2: motion2[i] = min(motion[i], motion[i+1])
-        motion2_scores_key = cls.get_scores_key('motion2')
-        motion_scores_key = cls.get_scores_key('motion')
-        motion_scores = result.result_dict[motion_scores_key]
-        motion_scores_2 = motion_scores[1:] + [motion_scores[-1]]
-        motion2_scores = np.minimum(motion_scores, motion_scores_2)
-        result.result_dict[motion2_scores_key] = list( # !! list(.) so that ast.literal_eval could handle in FileSystemResultStore
-            motion2_scores
         )
 
         # validate

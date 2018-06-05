@@ -18,6 +18,7 @@
 
 #include <cstdio>
 #include <stdlib.h>
+#include <stdexcept>
 #include <exception>
 #include <string>
 #include <algorithm>
@@ -48,14 +49,16 @@ bool cmdOptionExists(char** begin, char** end, const std::string& option)
 
 void print_usage(int argc, char *argv[])
 {
-    fprintf(stderr, "Usage: %s fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--disable-clip] [--disable-avx] [--psnr] [--ssim] [--ms-ssim] [--phone-model]\n", argv[0]);
+    fprintf(stderr, "Usage: %s fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--thread n_thread] [--subsample n_subsample] [--disable-clip] [--disable-avx] [--psnr] [--ssim] [--ms-ssim] [--phone-model]\n", argv[0]);
     fprintf(stderr, "fmt:\n\tyuv420p\n\tyuv422p\n\tyuv444p\n\tyuv420p10le\n\tyuv422p10le\n\tyuv444p10le\n\n");
     fprintf(stderr, "log_fmt:\n\txml (default)\n\tjson\n\n");
+    fprintf(stderr, "n_thread:\n\tmaximum threads to use (default 0 - use all threads)\n\n");
+    fprintf(stderr, "n_subsample:\n\tn indicates computing on one of every n frames (default 1)\n\n");
 }
 
 int run_wrapper(char *fmt, int width, int height, char *ref_path, char *dis_path, char *model_path,
         char *log_path, char *log_fmt, bool disable_clip, bool disable_avx, bool enable_transform, bool phone_model,
-        bool do_psnr, bool do_ssim, bool do_ms_ssim, char *pool_method)
+        bool do_psnr, bool do_ssim, bool do_ms_ssim, char *pool_method, int n_thread, int n_subsample)
 {
     double score;
 
@@ -109,7 +112,9 @@ int run_wrapper(char *fmt, int width, int height, char *ref_path, char *dis_path
     }
 
     /* Run VMAF */
-    ret = compute_vmaf(&score, fmt, width, height, read_frame, s, model_path, log_path, log_fmt, disable_clip, disable_avx, enable_transform, phone_model, do_psnr, do_ssim, do_ms_ssim, pool_method);
+    ret = compute_vmaf(&score, fmt, width, height, read_frame, s, model_path, log_path, log_fmt,
+                       disable_clip, disable_avx, enable_transform, phone_model, do_psnr, do_ssim,
+                       do_ms_ssim, pool_method, n_thread, n_subsample);
 
 fail_or_end:
     if (s->ref_rfile)
@@ -145,6 +150,9 @@ int main(int argc, char *argv[])
     bool do_ssim = false;
     bool do_ms_ssim = false;
     char *pool_method = NULL;
+    int n_thread = 0;
+    int n_subsample = 1;
+    char *temp;
 
     /* Check parameters */
 
@@ -155,18 +163,29 @@ int main(int argc, char *argv[])
     }
 
     fmt = argv[1];
-    width = std::stoi(argv[2]);
-    height = std::stoi(argv[3]);
-    ref_path = argv[4];
-    dis_path = argv[5];
-    model_path = argv[6];
 
-    if (width <= 0 || height <= 0)
+    try
     {
-        fprintf(stderr, "Error: Invalid frame resolution %d x %d\n", width, height);
+        width = std::stoi(argv[2]);
+        height = std::stoi(argv[3]);
+    }
+    catch (std::logic_error& e)
+    {
+        fprintf(stderr, "Error: Invalid width/height format: %s\n", e.what());
         print_usage(argc, argv);
         return -1;
     }
+
+    if (width <= 0 || height <= 0)
+    {
+        fprintf(stderr, "Error: Invalid width/height value: %d, %d\n", width, height);
+        print_usage(argc, argv);
+        return -1;
+    }
+
+    ref_path = argv[4];
+    dis_path = argv[5];
+    model_path = argv[6];
 
     log_path = getCmdOption(argv + 7, argv + argc, "--log");
 
@@ -174,6 +193,48 @@ int main(int argc, char *argv[])
     if (log_fmt != NULL && !(strcmp(log_fmt, "xml")==0 || strcmp(log_fmt, "json")==0))
     {
         fprintf(stderr, "Error: log_fmt must be xml or json, but is %s\n", log_fmt);
+        return -1;
+    }
+
+    temp = getCmdOption(argv + 7, argv + argc, "--thread");
+    if (temp)
+    {
+        try
+        {
+            n_thread = std::stoi(temp);
+        }
+        catch (std::logic_error& e)
+        {
+            fprintf(stderr, "Error: Invalid n_thread format: %s\n", e.what());
+            print_usage(argc, argv);
+            return -1;
+        }
+    }
+    if (n_thread < 0)
+    {
+        fprintf(stderr, "Error: Invalid n_thread value: %d\n", n_thread);
+        print_usage(argc, argv);
+        return -1;
+    }
+
+    temp = getCmdOption(argv + 7, argv + argc, "--subsample");
+    if (temp)
+    {
+        try
+        {
+            n_subsample = std::stoi(temp);
+        }
+        catch (std::logic_error& e)
+        {
+            fprintf(stderr, "Error: Invalid n_subsample format: %s\n", e.what());
+            print_usage(argc, argv);
+            return -1;
+        }
+    }
+    if (n_subsample <= 0)
+    {
+        fprintf(stderr, "Error: Invalid n_subsample value: %d\n", n_subsample);
+        print_usage(argc, argv);
         return -1;
     }
 
@@ -223,7 +284,7 @@ int main(int argc, char *argv[])
     {
         return run_wrapper(fmt, width, height, ref_path, dis_path, model_path,
                 log_path, log_fmt, disable_clip, disable_avx, enable_transform, phone_model,
-                do_psnr, do_ssim, do_ms_ssim, pool_method);
+                do_psnr, do_ssim, do_ms_ssim, pool_method, n_thread, n_subsample);
     }
     catch (const std::exception &e)
     {

@@ -1,5 +1,12 @@
 # Change Log
 
+## (6/4/2018) [1.3.6]
+
+**New features:**
+- Update libvmaf version to 1.3.6 (to make consistent with VDK version from now on) after compute_vmaf() interface change (added thread and subsample options).
+- Add the option to set the number of threads to use in vmafossexec.
+- Add the option to subsample frames to save computation in vmafossexec.
+
 ## (5/23/2018) [1.3.5]
 
 **New features:**

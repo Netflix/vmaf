@@ -30,7 +30,7 @@ class QualityRunnerTest(unittest.TestCase):
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
                       asset_dict={'width': 720, 'height': 480})
         runner = VmafLegacyQualityRunner([asset], None)
-        self.assertEquals(runner.executor_id, 'VMAF_legacy_VF0.2.4b-1.1')
+        self.assertEquals(runner.executor_id, 'VMAF_legacy_VF0.2.4c-1.1')
 
     def test_run_vamf_legacy_runner(self):
         print 'test on running VMAF (legacy) runner...'
@@ -600,6 +600,66 @@ class QualityRunnerTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.699271272486044, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'],99.946416604585025, places=4)
+
+    def test_run_vmafossexec_runner_with_thread(self):
+        print 'test on running VMAFOSSEXEC runner with thread...'
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.runner = VmafossExecQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={'thread': 3}
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.699271272486044, places=3)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'],99.946416604585025, places=4)
+
+    def test_run_vmafossexec_runner_with_subsample(self):
+        print 'test on running VMAFOSSEXEC runner with subsample...'
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.runner = VmafossExecQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={'subsample': 5}
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.954390000000018, places=3)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.742800000000003, places=4)
 
     def test_run_vmafossexec_runner_with_phone_score(self):
         print 'test on running VMAFOSSEXEC runner with phone score...'
@@ -2108,12 +2168,66 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 class QualityRunnerVersionTest(unittest.TestCase):
 
     def test_vmaf_quality_runner_version(self):
-        self.assertEquals(VmafQualityRunner.VERSION, 'F0.2.4b-0.6.1')
+        self.assertEquals(VmafQualityRunner.VERSION, 'F0.2.4c-0.6.1')
         self.assertEquals(VmafQualityRunner.ALGO_VERSION, 2)
 
     def test_vmafossexec_quality_runner_version(self):
-        self.assertEquals(VmafossExecQualityRunner.VERSION, 'F0.2.4b-0.6.1')
+        self.assertEquals(VmafossExecQualityRunner.VERSION, 'F0.2.4c-0.6.1')
         self.assertEquals(VmafossExecQualityRunner.ALGO_VERSION, 2)
+
+class VmafossexecQualityRunnerSubsamplingTest(unittest.TestCase):
+
+    def tearDown(self):
+        if hasattr(self, 'runner0'):
+            self.runner0.remove_results()
+        if hasattr(self, 'runner'):
+            self.runner.remove_results()
+
+    def setUp(self):
+        self.result_store = FileSystemResultStore()
+
+    def test_run_vmafossexec_runner_with_subsample2(self):
+        print 'test on running VMAFOSSEXEC runner with subsample2...'
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        subsample = 5
+
+        self.runner0 = VmafossExecQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={}
+        )
+        self.runner0.run()
+        results0 = self.runner0.results
+
+        self.runner = VmafossExecQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={'subsample': subsample}
+        )
+        self.runner.run()
+        results = self.runner.results
+
+        for i in range(48):
+            if i % subsample == 0:
+                self.assertAlmostEqual(results0[0]['VMAFOSSEXEC_scores'][i], results[0]['VMAFOSSEXEC_scores'][i / subsample], places=7)
+                self.assertAlmostEqual(results0[1]['VMAFOSSEXEC_scores'][i], results[1]['VMAFOSSEXEC_scores'][i / subsample], places=7)
 
 if __name__ == '__main__':
     unittest.main()

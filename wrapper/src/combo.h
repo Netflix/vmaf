@@ -50,6 +50,7 @@ typedef struct
     DArray *adm_num_scale3_array;
     DArray *adm_den_scale3_array;
     DArray *motion_array;
+    DArray *motion2_array;
     DArray *vif_num_scale0_array;
     DArray *vif_den_scale0_array;
     DArray *vif_num_scale1_array;
@@ -63,6 +64,7 @@ typedef struct
     DArray *ssim_array;
     DArray *ms_ssim_array;
     char *errmsg;
+    int n_subsample;
 
     int frm_idx;
     int stride;
@@ -73,7 +75,9 @@ typedef struct
     int thread_count;
     int stop_threads;
     pthread_mutex_t mutex_readframe;
-    BLUR_BUF_ARRAY blur_array;
+    BLUR_BUF_ARRAY blur_buf_array;
+    BLUR_BUF_ARRAY ref_buf_array;
+    BLUR_BUF_ARRAY dis_buf_array;
 #endif
     int ret;
 
@@ -92,6 +96,7 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
         DArray *adm_num_scale3_array,
         DArray *adm_den_scale3_array,
         DArray *motion_array,
+        DArray *motion2_array,
         DArray *vif_num_scale0_array,
         DArray *vif_den_scale0_array,
         DArray *vif_num_scale1_array,
@@ -104,7 +109,9 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
         DArray *psnr_array,
         DArray *ssim_array,
         DArray *ms_ssim_array,
-        char *errmsg
+        char *errmsg,
+        int n_thread,
+        int n_subsample
 );
 
 #ifdef __cplusplus
