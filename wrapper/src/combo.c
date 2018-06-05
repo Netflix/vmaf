@@ -71,6 +71,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
     char* errmsg = thread_data->errmsg;
     void* user_data = thread_data->user_data;
     const char* fmt = thread_data->fmt;
+    int n_subsample = thread_data->n_subsample;
 
     double score = 0;
     double score2 = 0;
@@ -291,7 +292,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
         offset_image(ref_buf, -OPT_RANGE_PIXEL_OFFSET, w, h, stride);
         offset_image(dis_buf, -OPT_RANGE_PIXEL_OFFSET, w, h, stride);
 
-        if (thread_data->psnr_array != NULL)
+        if (frm_idx % n_subsample == 0 && thread_data->psnr_array != NULL)
         {
             /* =========== psnr ============== */
             ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, peak, psnr_max);
@@ -308,7 +309,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
             insert_array_at(thread_data->psnr_array, score, frm_idx);
         }
 
-        if (thread_data->ssim_array != NULL)
+        if (frm_idx % n_subsample == 0 && thread_data->ssim_array != NULL)
         {
 
             /* =========== ssim ============== */
@@ -325,7 +326,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
             insert_array_at(thread_data->ssim_array, score, frm_idx);
         }
 
-        if (thread_data->ms_ssim_array != NULL)
+        if (frm_idx % n_subsample == 0 && thread_data->ms_ssim_array != NULL)
         {
             /* =========== ms-ssim ============== */
             if ((ret = compute_ms_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, l_scores, c_scores, s_scores)))
@@ -348,149 +349,177 @@ void* combo_threadfunc(void* vmaf_thread_data)
         offset_image(dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
 
         /* =========== adm ============== */
-        if ((ret = compute_adm(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores, ADM_BORDER_FACTOR)))
+        if (frm_idx % n_subsample == 0)
         {
-            sprintf(errmsg, "compute_adm failed.\n");
-            goto fail_or_end;
-        }
+            if ((ret = compute_adm(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores, ADM_BORDER_FACTOR)))
+            {
+                sprintf(errmsg, "compute_adm failed.\n");
+                goto fail_or_end;
+            }
 
 #ifdef PRINT_PROGRESS
-        printf("adm: %.3f, ", score);
-        printf("adm_num: %.3f, ", score_num);
-        printf("adm_den: %.3f, ", score_den);
-        printf("adm_num_scale0: %.3f, ", scores[0]);
-        printf("adm_den_scale0: %.3f, ", scores[1]);
-        printf("adm_num_scale1: %.3f, ", scores[2]);
-        printf("adm_den_scale1: %.3f, ", scores[3]);
-        printf("adm_num_scale2: %.3f, ", scores[4]);
-        printf("adm_den_scale2: %.3f, ", scores[5]);
-        printf("adm_num_scale3: %.3f, ", scores[6]);
-        printf("adm_den_scale3: %.3f, ", scores[7]);
+            printf("adm: %.3f, ", score);
+            printf("adm_num: %.3f, ", score_num);
+            printf("adm_den: %.3f, ", score_den);
+            printf("adm_num_scale0: %.3f, ", scores[0]);
+            printf("adm_den_scale0: %.3f, ", scores[1]);
+            printf("adm_num_scale1: %.3f, ", scores[2]);
+            printf("adm_den_scale1: %.3f, ", scores[3]);
+            printf("adm_num_scale2: %.3f, ", scores[4]);
+            printf("adm_den_scale2: %.3f, ", scores[5]);
+            printf("adm_num_scale3: %.3f, ", scores[6]);
+            printf("adm_den_scale3: %.3f, ", scores[7]);
 #endif
 
-        insert_array_at(thread_data->adm_num_array, score_num, frm_idx);
-        insert_array_at(thread_data->adm_den_array, score_den, frm_idx);
-        insert_array_at(thread_data->adm_num_scale0_array, scores[0], frm_idx);
-        insert_array_at(thread_data->adm_den_scale0_array, scores[1], frm_idx);
-        insert_array_at(thread_data->adm_num_scale1_array, scores[2], frm_idx);
-        insert_array_at(thread_data->adm_den_scale1_array, scores[3], frm_idx);
-        insert_array_at(thread_data->adm_num_scale2_array, scores[4], frm_idx);
-        insert_array_at(thread_data->adm_den_scale2_array, scores[5], frm_idx);
-        insert_array_at(thread_data->adm_num_scale3_array, scores[6], frm_idx);
-        insert_array_at(thread_data->adm_den_scale3_array, scores[7], frm_idx);
-
+            insert_array_at(thread_data->adm_num_array, score_num, frm_idx);
+            insert_array_at(thread_data->adm_den_array, score_den, frm_idx);
+            insert_array_at(thread_data->adm_num_scale0_array, scores[0], frm_idx);
+            insert_array_at(thread_data->adm_den_scale0_array, scores[1], frm_idx);
+            insert_array_at(thread_data->adm_num_scale1_array, scores[2], frm_idx);
+            insert_array_at(thread_data->adm_den_scale1_array, scores[3], frm_idx);
+            insert_array_at(thread_data->adm_num_scale2_array, scores[4], frm_idx);
+            insert_array_at(thread_data->adm_den_scale2_array, scores[5], frm_idx);
+            insert_array_at(thread_data->adm_num_scale3_array, scores[6], frm_idx);
+            insert_array_at(thread_data->adm_den_scale3_array, scores[7], frm_idx);
+        }
 #ifdef COMPUTE_ANSNR
 
-        /* =========== ansnr ============== */
-        if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+        if (frm_idx % n_subsample == 0)
         {
-            // max psnr 60.0 for 8-bit per Ioannis
-            ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score, &score_psnr, 255.0, 60.0);
-        }
-        else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-        {
-            // 10 bit gets normalized to 8 bit, peak is 1023 / 4.0 = 255.75
-            // max psnr 72.0 for 10-bit per Ioannis
-            ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score, &score_psnr, 255.75, 72.0);
-        }
-        else
-        {
-            sprintf(errmsg, "unknown format %s.\n", fmt);
-            goto fail_or_end;
-        }
-        if (ret)
-        {
-            sprintf(errmsg, "compute_ansnr failed.\n");
-            goto fail_or_end;
-        }
+
+            /* =========== ansnr ============== */
+            if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+            {
+                // max psnr 60.0 for 8-bit per Ioannis
+                ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score, &score_psnr, 255.0, 60.0);
+            }
+            else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+            {
+                // 10 bit gets normalized to 8 bit, peak is 1023 / 4.0 = 255.75
+                // max psnr 72.0 for 10-bit per Ioannis
+                ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score, &score_psnr, 255.75, 72.0);
+            }
+            else
+            {
+                sprintf(errmsg, "unknown format %s.\n", fmt);
+                goto fail_or_end;
+            }
+            if (ret)
+            {
+                sprintf(errmsg, "compute_ansnr failed.\n");
+                goto fail_or_end;
+            }
 
 #ifdef PRINT_PROGRESS
-        printf("ansnr: %.3f, ", score);
-        printf("anpsnr: %.3f, ", score_psnr);
+            printf("ansnr: %.3f, ", score);
+            printf("anpsnr: %.3f, ", score_psnr);
 #endif
+        }
 
 #endif
 
         /* =========== motion ============== */
 
-        // compute
-        if (frm_idx == 0)
+        if (frm_idx % n_subsample == 0)
         {
-            score = 0.0;
-            score2 = 0.0;
+
+            // compute
+            if (frm_idx == 0)
+            {
+                score = 0.0;
+                score2 = 0.0;
+            }
+            else
+            {
+#ifdef MULTI_THREADING
+                prev_blur_buf_ = get_blur_buf(&thread_data->blur_buf_array, frm_idx - 1);
+                memcpy(prev_blur_buf, prev_blur_buf_, data_sz);
+#endif
+                if ((ret = compute_motion(prev_blur_buf, blur_buf, w, h, stride, stride, &score)))
+                {
+                    sprintf(errmsg, "compute_motion (prev) failed.\n");
+                    goto fail_or_end;
+                }
+#ifdef MULTI_THREADING
+                release_blur_buf(&thread_data->blur_buf_array, frm_idx - 1);
+#endif
+
+                if (next_frame_read)
+                {
+                    if ((ret = compute_motion(blur_buf, next_blur_buf, w, h, stride, stride, &score2)))
+                    {
+                        sprintf(errmsg, "compute_motion (next) failed.\n");
+                        goto fail_or_end;
+                    }
+                    score2 = MIN(score, score2);
+                }
+                else
+                {
+                    score2 = score;
+#ifdef MULTI_THREADING
+                    release_blur_buf(&thread_data->blur_buf_array, frm_idx); // no more next frames, release this one too
+#endif
+                }
+            }
+
+#ifdef PRINT_PROGRESS
+            printf("motion: %.3f, ", score);
+            printf("motion2: %.3f, ", score2);
+#endif
+
+            insert_array_at(thread_data->motion_array, score, frm_idx);
+            insert_array_at(thread_data->motion2_array, score2, frm_idx);
+
         }
         else
         {
 #ifdef MULTI_THREADING
-            prev_blur_buf_ = get_blur_buf(&thread_data->blur_buf_array, frm_idx - 1);
-            memcpy(prev_blur_buf, prev_blur_buf_, data_sz);
-#endif
-            if ((ret = compute_motion(prev_blur_buf, blur_buf, w, h, stride, stride, &score)))
-            {
-                sprintf(errmsg, "compute_motion (prev) failed.\n");
-                goto fail_or_end;
-            }
-#ifdef MULTI_THREADING
-            release_blur_buf(&thread_data->blur_buf_array, frm_idx - 1);
-#endif
-
-            if (next_frame_read)
-            {
-                if ((ret = compute_motion(blur_buf, next_blur_buf, w, h, stride, stride, &score2)))
-                {
-                    sprintf(errmsg, "compute_motion (next) failed.\n");
-                    goto fail_or_end;
-                }
-                score2 = MIN(score, score2);
-            }
+            if (frm_idx == 0) {}
             else
             {
-                score2 = score;
-#ifdef MULTI_THREADING
-                release_blur_buf(&thread_data->blur_buf_array, frm_idx); // no more next frames, release this one too
-#endif
+                release_blur_buf(&thread_data->blur_buf_array, frm_idx - 1);
+                if (next_frame_read) {}
+                else
+                {
+                    release_blur_buf(&thread_data->blur_buf_array, frm_idx); // no more next frames, release this one too
+                }
             }
-        }
-
-#ifdef PRINT_PROGRESS
-        printf("motion: %.3f, ", score);
-        printf("motion2: %.3f, ", score2);
 #endif
-
-        insert_array_at(thread_data->motion_array, score, frm_idx);
-        insert_array_at(thread_data->motion2_array, score2, frm_idx);
-
+        }
         /* =========== vif ============== */
 
-        if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores)))
+        if (frm_idx % n_subsample == 0)
         {
-            sprintf(errmsg, "compute_vif failed.\n");
-            goto fail_or_end;
-        }
+            if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores)))
+            {
+                sprintf(errmsg, "compute_vif failed.\n");
+                goto fail_or_end;
+            }
 
 #ifdef PRINT_PROGRESS
-        // printf("vif_num: %.3f, ", score_num);
-        // printf("vif_den: %.3f, ", score_den);
-        printf("vif_num_scale0: %.3f, ", scores[0]);
-        printf("vif_den_scale0: %.3f, ", scores[1]);
-        printf("vif_num_scale1: %.3f, ", scores[2]);
-        printf("vif_den_scale1: %.3f, ", scores[3]);
-        printf("vif_num_scale2: %.3f, ", scores[4]);
-        printf("vif_den_scale2: %.3f, ", scores[5]);
-        printf("vif_num_scale3: %.3f, ", scores[6]);
-        printf("vif_den_scale3: %.3f, ", scores[7]);
-        printf("vif: %.3f, ", score);
+            // printf("vif_num: %.3f, ", score_num);
+            // printf("vif_den: %.3f, ", score_den);
+            printf("vif_num_scale0: %.3f, ", scores[0]);
+            printf("vif_den_scale0: %.3f, ", scores[1]);
+            printf("vif_num_scale1: %.3f, ", scores[2]);
+            printf("vif_den_scale1: %.3f, ", scores[3]);
+            printf("vif_num_scale2: %.3f, ", scores[4]);
+            printf("vif_den_scale2: %.3f, ", scores[5]);
+            printf("vif_num_scale3: %.3f, ", scores[6]);
+            printf("vif_den_scale3: %.3f, ", scores[7]);
+            printf("vif: %.3f, ", score);
 #endif
 
-        insert_array_at(thread_data->vif_num_scale0_array, scores[0], frm_idx);
-        insert_array_at(thread_data->vif_den_scale0_array, scores[1], frm_idx);
-        insert_array_at(thread_data->vif_num_scale1_array, scores[2], frm_idx);
-        insert_array_at(thread_data->vif_den_scale1_array, scores[3], frm_idx);
-        insert_array_at(thread_data->vif_num_scale2_array, scores[4], frm_idx);
-        insert_array_at(thread_data->vif_den_scale2_array, scores[5], frm_idx);
-        insert_array_at(thread_data->vif_num_scale3_array, scores[6], frm_idx);
-        insert_array_at(thread_data->vif_den_scale3_array, scores[7], frm_idx);
-        insert_array_at(thread_data->vif_array, score, frm_idx);
+            insert_array_at(thread_data->vif_num_scale0_array, scores[0], frm_idx);
+            insert_array_at(thread_data->vif_den_scale0_array, scores[1], frm_idx);
+            insert_array_at(thread_data->vif_num_scale1_array, scores[2], frm_idx);
+            insert_array_at(thread_data->vif_den_scale1_array, scores[3], frm_idx);
+            insert_array_at(thread_data->vif_num_scale2_array, scores[4], frm_idx);
+            insert_array_at(thread_data->vif_den_scale2_array, scores[5], frm_idx);
+            insert_array_at(thread_data->vif_num_scale3_array, scores[6], frm_idx);
+            insert_array_at(thread_data->vif_den_scale3_array, scores[7], frm_idx);
+            insert_array_at(thread_data->vif_array, score, frm_idx);
+        }
 
 #ifdef PRINT_PROGRESS
         printf("\n");
@@ -605,6 +634,7 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
     combo_thread_data.errmsg = errmsg;
     combo_thread_data.frm_idx = 0;
     combo_thread_data.stop_threads = 0;
+    combo_thread_data.n_subsample = n_subsample;
 
     // sanity check for width/height
     if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float))
@@ -745,6 +775,7 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
     combo_thread_data.errmsg = errmsg;
     combo_thread_data.frm_idx = 0;
     // combo_thread_data.stop_threads = 0;
+    combo_thread_data.n_subsample = n_subsample;
 
     // sanity check for width/height
     if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float))

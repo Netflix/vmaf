@@ -112,12 +112,13 @@ class ExternalProgramCaller(object):
 
     @staticmethod
     def call_vmafossexec(fmt, w, h, ref_path, dis_path, model, log_file_path, disable_clip_score,
-                         enable_transform_score, phone_model, disable_avx, exe=None, logger=None):
+                         enable_transform_score, phone_model, disable_avx, n_thread, n_subsample,
+                         exe=None, logger=None):
 
         if exe is None:
             exe = required(ExternalProgram.vmafossexec)
 
-        vmafossexec_cmd = "{exe} {fmt} {w} {h} {ref_path} {dis_path} {model} --log {log_file_path} --log-fmt xml --psnr --ssim --ms-ssim" \
+        vmafossexec_cmd = "{exe} {fmt} {w} {h} {ref_path} {dis_path} {model} --log {log_file_path} --log-fmt xml --psnr --ssim --ms-ssim --thread {n_thread} --subsample {n_subsample}" \
             .format(
             exe=exe,
             fmt=fmt,
@@ -127,7 +128,8 @@ class ExternalProgramCaller(object):
             dis_path=dis_path,
             model=model,
             log_file_path=log_file_path,
-        )
+            n_thread=n_thread,
+            n_subsample=n_subsample)
         if disable_clip_score:
             vmafossexec_cmd += ' --disable-clip'
         if enable_transform_score or phone_model:

@@ -64,6 +64,7 @@ typedef struct
     DArray *ssim_array;
     DArray *ms_ssim_array;
     char *errmsg;
+    int n_subsample;
 
     int frm_idx;
     int stride;

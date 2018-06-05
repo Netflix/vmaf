@@ -500,6 +500,16 @@ class VmafossExecQualityRunner(QualityRunner):
         else:
             disable_avx = False
 
+        if self.optional_dict is not None and 'thread' in self.optional_dict:
+            n_thread = self.optional_dict['thread']
+        else:
+            n_thread = 0
+
+        if self.optional_dict is not None and 'subsample' in self.optional_dict:
+            n_subsample = self.optional_dict['subsample']
+        else:
+            n_subsample = 1
+
         quality_width, quality_height = asset.quality_width_height
 
         fmt=self._get_workfile_yuv_type(asset)
@@ -513,7 +523,8 @@ class VmafossExecQualityRunner(QualityRunner):
 
         ExternalProgramCaller.call_vmafossexec(fmt, w, h, ref_path, dis_path, model, log_file_path,
                                                disable_clip_score, enable_transform_score,
-                                               phone_model, disable_avx, exe, logger)
+                                               phone_model, disable_avx, n_thread, n_subsample,
+                                               exe, logger)
 
     def _get_exec(self):
         return None # signaling default
