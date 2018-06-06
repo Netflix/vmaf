@@ -34,6 +34,7 @@
 #include "timer.h"
 #include "chooseser.h"
 #include "jsonprint.h"
+#include "debug.h"
 
 #define VAL_EQUAL_STR(V,S) (Stringize((V)).compare((S))==0)
 #define VAL_IS_LIST(V) ((V).tag=='n') /* check ocval.cc */
@@ -142,16 +143,12 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
                        bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample)
 {
 
-#ifdef PRINT_PROGRESS
-    printf("Read input model (pkl)...\n");
-#endif
+    dbg_printf("Read input model (pkl)...\n");
 
     Val feature_names, norm_type, slopes, intercepts, score_clip, score_transform;
     _read_and_assert_model(model_path, feature_names, norm_type, slopes, intercepts, score_clip, score_transform);
 
-#ifdef PRINT_PROGRESS
-    printf("Read input model (libsvm)...\n");
-#endif
+    dbg_printf("Read input model (libsvm)...\n");
 
     std::unique_ptr<svm_model, SvmDelete> svm_model_ptr{svm_load_model(libsvm_model_path)};
     if (!svm_model_ptr)
@@ -160,9 +157,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
         throw VmafException("Error loading SVM model");
     }
 
-#ifdef PRINT_PROGRESS
-    printf("Initialize storage arrays...\n");
-#endif
+    dbg_printf("Initialize storage arrays...\n");
 
     int w = asset.getWidth();
     int h = asset.getHeight();
@@ -250,9 +245,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
         ms_ssim_array_ptr = NULL;
     }
 
-#ifdef PRINT_PROGRESS
-    printf("Extract atom features...\n");
-#endif
+    dbg_printf("Extract atom features...\n");
 
     int ret = combo(read_frame, user_data, w, h, fmt,
             &adm_num_array,
@@ -352,9 +345,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
         throw VmafException(errmsg);
     }
 
-#ifdef PRINT_PROGRESS
-    printf("Generate final features (including derived atom features)...\n");
-#endif
+    dbg_printf("Generate final features (including derived atom features)...\n");
 
     double ADM2_CONSTANT = 0.0;
     double ADM_SCALE_CONSTANT = 0.0;
@@ -384,9 +375,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
         }
     }
 
-#ifdef PRINT_PROGRESS
-    printf("Normalize features, SVM regression, denormalize score, clip...\n");
-#endif
+    dbg_printf("Normalize features, SVM regression, denormalize score, clip...\n");
 
     /* IMPORTANT: always allocate one more spot and put a -1 at the last one's
      * index, so that libsvm will stop looping when seeing the -1 !!!
@@ -541,28 +530,26 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
             //        node[0].value, node[1].value, node[2].value,
             //        node[3].value, node[4].value, node[5].value, prediction);
 
-#ifdef PRINT_PROGRESS
-            printf("frame: %zu, ", i);
-            printf("vmaf: %f, ", prediction);
-            printf("adm2: %f, ", adm2.at(i / n_subsample));
-            printf("adm_scale0: %f, ", adm_scale0.at(i / n_subsample));
-            printf("adm_scale1: %f, ", adm_scale1.at(i / n_subsample));
-            printf("adm_scale2: %f, ", adm_scale2.at(i / n_subsample));
-            printf("adm_scale3: %f, ", adm_scale3.at(i / n_subsample));
-            printf("motion: %f, ", motion.at(i / n_subsample));
-            printf("vif_scale0: %f, ", vif_scale0.at(i / n_subsample));
-            printf("vif_scale1: %f, ", vif_scale1.at(i / n_subsample));
-            printf("vif_scale2: %f, ", vif_scale2.at(i / n_subsample));
-            printf("vif_scale3: %f, ", vif_scale3.at(i / n_subsample));
-            printf("vif: %f, ", vif.at(i / n_subsample));
-            printf("motion2: %f, ", motion2.at(i / n_subsample));
+            dbg_printf("frame: %zu, ", i);
+            dbg_printf("vmaf: %f, ", prediction);
+            dbg_printf("adm2: %f, ", adm2.at(i / n_subsample));
+            dbg_printf("adm_scale0: %f, ", adm_scale0.at(i / n_subsample));
+            dbg_printf("adm_scale1: %f, ", adm_scale1.at(i / n_subsample));
+            dbg_printf("adm_scale2: %f, ", adm_scale2.at(i / n_subsample));
+            dbg_printf("adm_scale3: %f, ", adm_scale3.at(i / n_subsample));
+            dbg_printf("motion: %f, ", motion.at(i / n_subsample));
+            dbg_printf("vif_scale0: %f, ", vif_scale0.at(i / n_subsample));
+            dbg_printf("vif_scale1: %f, ", vif_scale1.at(i / n_subsample));
+            dbg_printf("vif_scale2: %f, ", vif_scale2.at(i / n_subsample));
+            dbg_printf("vif_scale3: %f, ", vif_scale3.at(i / n_subsample));
+            dbg_printf("vif: %f, ", vif.at(i / n_subsample));
+            dbg_printf("motion2: %f, ", motion2.at(i / n_subsample));
 
-            if (psnr_array_ptr != NULL) { printf("psnr: %f, ", psnr.at(i / n_subsample)); }
-            if (ssim_array_ptr != NULL) { printf("ssim: %f, ", ssim.at(i / n_subsample)); }
-            if (ms_ssim_array_ptr != NULL) { printf("ms_ssim: %f, ", ms_ssim.at(i / n_subsample)); }
+            if (psnr_array_ptr != NULL) { dbg_printf("psnr: %f, ", psnr.at(i / n_subsample)); }
+            if (ssim_array_ptr != NULL) { dbg_printf("ssim: %f, ", ssim.at(i / n_subsample)); }
+            if (ms_ssim_array_ptr != NULL) { dbg_printf("ms_ssim: %f, ", ms_ssim.at(i / n_subsample)); }
 
-            printf("\n");
-#endif
+            dbg_printf("\n");
 
             vmaf.append(prediction);
         }
