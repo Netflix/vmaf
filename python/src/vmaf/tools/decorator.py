@@ -111,3 +111,27 @@ def persist_to_file(file_name):
         return new_func
 
     return decorator
+
+
+def persist_to_dir(dir_name):
+    """
+    Cache (or persist) returned value of function in a directory of files.
+    """
+
+    def decorator(original_func):
+
+        def new_func(*args):
+            h = hashlib.sha1(str(original_func.__name__) + str(args)).hexdigest()
+            file_name = os.path.join(dir_name, h)
+            if not os.path.exists(file_name):
+                if not os.path.exists(dir_name):
+                    os.makedirs(dir_name)
+                res = original_func(*args)
+                json.dump(res, open(file_name, 'wt'))
+            else:
+                res = json.load(open(file_name, 'rt'))
+            return res
+
+        return new_func
+
+    return decorator

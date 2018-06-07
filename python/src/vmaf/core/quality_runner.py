@@ -510,6 +510,21 @@ class VmafossExecQualityRunner(QualityRunner):
         else:
             n_subsample = 1
 
+        if self.optional_dict is not None and 'psnr' in self.optional_dict:
+            psnr = self.optional_dict['psnr']
+        else:
+            psnr = True
+
+        if self.optional_dict is not None and 'ssim' in self.optional_dict:
+            ssim = self.optional_dict['ssim']
+        else:
+            ssim = True
+
+        if self.optional_dict is not None and 'ms_ssim' in self.optional_dict:
+            ms_ssim = self.optional_dict['ms_ssim']
+        else:
+            ms_ssim = True
+
         quality_width, quality_height = asset.quality_width_height
 
         fmt=self._get_workfile_yuv_type(asset)
@@ -524,7 +539,7 @@ class VmafossExecQualityRunner(QualityRunner):
         ExternalProgramCaller.call_vmafossexec(fmt, w, h, ref_path, dis_path, model, log_file_path,
                                                disable_clip_score, enable_transform_score,
                                                phone_model, disable_avx, n_thread, n_subsample,
-                                               exe, logger)
+                                               psnr, ssim, ms_ssim, exe, logger)
 
     def _get_exec(self):
         return None # signaling default
