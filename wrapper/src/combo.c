@@ -95,7 +95,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
     float *next_blur_buf = 0;
     float *temp_buf = 0;
 
-    int ret = 1;
+    int ret = 0;
     bool next_frame_read;
 
 #ifdef MULTI_THREADING
@@ -520,12 +520,10 @@ void* combo_threadfunc(void* vmaf_thread_data)
 #ifdef MULTI_THREADING
             thread_data->stop_threads = 1;
 #endif
-            break;
+            goto fail_or_end;
         }
 
     }
-
-    ret = 0;
 
 fail_or_end:
 
