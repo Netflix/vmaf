@@ -6,7 +6,7 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ## What's New
 
-- (6/5/18) Speed optimization to `vmafossexec`: 1) support multi-threading (e.g. use `--thread 0` to use all cores), 2) support frame sampling (e.g. use `--subsample 5` to calculate VMAF on one of every 5 frames). See [this](#python-independent-implementation) section for details.
+- (6/5/18) Speed optimization to `vmafossexec`: 1) support multi-threading (e.g. use `--thread 0` to use all cores), 2) support frame sampling (e.g. use `--subsample 5` to calculate VMAF on one of every 5 frames). See [this](#vmafossexec---python-independent-implementation) section for details.
 - (1/20/18) Moved custom subjective models into a submodule named [sureal](https://github.com/Netflix/sureal). If you pull the latest changes, you will have to pull the submoddule by `git submodule update --init --recursive` and add `sureal/python/src` to `PYTHONPATH`.
 - (8/12/17) VMAF is now included as a filter in [FFmpeg](http://ffmpeg.org/) main branch, and can be configured using: `./configure --enable-libvmaf`.
 - (7/16/17) VMAF is now packaged into a library call `libvmaf` and can be called from a C/C++ program directly. See [this](#usage-through-libvmaf) section for details.
@@ -467,7 +467,7 @@ wrapper/vmafossexec yuv420p 576 324
 
 For VMAF v0.6.1, the model file is `model/vmaf_v0.6.1.pkl`. The correspondence is documented [here](python/src/vmaf/core/quality_runner.py#L255).
 
-The options `--psnr`, `--ssim` and `--ms-ssim` allow reporting PSNR, SSIM and MS-SSIM results, respectively. The option `--thread` specifies the number of threads to use. Apply `--thread 0` to use all threads available. The option `--subsample` specifies the subsampling of frames to speed up calculation. For example, `--subsample 5` calculates VMAF on one of every 5 frames. The following plot shows the trend of how the subsample number impacts the processing speed (based on the [Netflix Public Dataset](#netflix-public-dataset) of 1080p videos, with PSNR, SSIM and MS-SSIM calculation enabled):
+The options `--psnr`, `--ssim` and `--ms-ssim` also allow reporting PSNR, SSIM and MS-SSIM results, respectively. The option `--thread` specifies the number of threads to use. Apply `--thread 0` to use all threads available. The option `--subsample` specifies the subsampling of frames to speed up calculation. For example, `--subsample 5` calculates VMAF on one of every 5 frames. The following plot shows the trend of how the subsample number impacts the processing speed (based on the [Netflix Public Dataset](#netflix-public-dataset) of 1080p videos, with PSNR, SSIM and MS-SSIM calculation enabled):
 
 ![subsample](/resource/images/subsample.png)
 
