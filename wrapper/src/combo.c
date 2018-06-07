@@ -33,6 +33,7 @@
 #include "darray.h"
 #include "adm_options.h"
 #include "combo.h"
+#include "debug.h"
 
 #ifdef MULTI_THREADING
 #include "common/blur_array.h"
@@ -161,7 +162,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
         {
             // this is the signal that another thread has reached the end of the input file, so we all quit
             pthread_mutex_unlock(&thread_data->mutex_readframe);
-            break;
+            goto fail_or_end;
         }
 #endif
 
@@ -177,18 +178,18 @@ void* combo_threadfunc(void* vmaf_thread_data)
             if (ret == 1)
             {
 #ifdef MULTI_THREADING
-            thread_data->stop_threads = 1;
-            pthread_mutex_unlock(&thread_data->mutex_readframe);
+                thread_data->stop_threads = 1;
+                pthread_mutex_unlock(&thread_data->mutex_readframe);
 #endif
                 goto fail_or_end;
             }
             if (ret == 2)
             {
 #ifdef MULTI_THREADING
-            thread_data->stop_threads = 1;
-            pthread_mutex_unlock(&thread_data->mutex_readframe);
+                thread_data->stop_threads = 1;
+                pthread_mutex_unlock(&thread_data->mutex_readframe);
 #endif
-                break;
+                goto fail_or_end;
             }
 
             // ===============================================================
@@ -242,7 +243,6 @@ void* combo_threadfunc(void* vmaf_thread_data)
         {
 #ifdef MULTI_THREADING
             thread_data->stop_threads = 1;
-            pthread_mutex_unlock(&thread_data->mutex_readframe);
 #endif
             next_frame_read = false;
         }
@@ -279,10 +279,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
 #endif
         }
 
-
-#ifdef PRINT_PROGRESS
-        printf("frame: %d, ", frm_idx);
-#endif
+        dbg_printf("frame: %d, ", frm_idx);
 
         // ===============================================================
         // for the PSNR, SSIM and MS-SSIM, offset are 0. Since in prev read
@@ -303,9 +300,8 @@ void* combo_threadfunc(void* vmaf_thread_data)
                 goto fail_or_end;
             }
 
-#ifdef PRINT_PROGRESS
-            printf("psnr: %.3f, ", score);
-#endif
+            dbg_printf("psnr: %.3f, ", score);
+
             insert_array_at(thread_data->psnr_array, score, frm_idx);
         }
 
@@ -319,9 +315,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
                 goto fail_or_end;
             }
 
-#ifdef PRINT_PROGRESS
-            printf("ssim: %.3f, ", score);
-#endif
+            dbg_printf("ssim: %.3f, ", score);
 
             insert_array_at(thread_data->ssim_array, score, frm_idx);
         }
@@ -335,9 +329,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
                 goto fail_or_end;
             }
 
-#ifdef PRINT_PROGRESS
-            printf("ms_ssim: %.3f, ", score);
-#endif
+            dbg_printf("ms_ssim: %.3f, ", score);
 
             insert_array_at(thread_data->ms_ssim_array, score, frm_idx);
         }
@@ -357,19 +349,17 @@ void* combo_threadfunc(void* vmaf_thread_data)
                 goto fail_or_end;
             }
 
-#ifdef PRINT_PROGRESS
-            printf("adm: %.3f, ", score);
-            printf("adm_num: %.3f, ", score_num);
-            printf("adm_den: %.3f, ", score_den);
-            printf("adm_num_scale0: %.3f, ", scores[0]);
-            printf("adm_den_scale0: %.3f, ", scores[1]);
-            printf("adm_num_scale1: %.3f, ", scores[2]);
-            printf("adm_den_scale1: %.3f, ", scores[3]);
-            printf("adm_num_scale2: %.3f, ", scores[4]);
-            printf("adm_den_scale2: %.3f, ", scores[5]);
-            printf("adm_num_scale3: %.3f, ", scores[6]);
-            printf("adm_den_scale3: %.3f, ", scores[7]);
-#endif
+            dbg_printf("adm: %.3f, ", score);
+            dbg_printf("adm_num: %.3f, ", score_num);
+            dbg_printf("adm_den: %.3f, ", score_den);
+            dbg_printf("adm_num_scale0: %.3f, ", scores[0]);
+            dbg_printf("adm_den_scale0: %.3f, ", scores[1]);
+            dbg_printf("adm_num_scale1: %.3f, ", scores[2]);
+            dbg_printf("adm_den_scale1: %.3f, ", scores[3]);
+            dbg_printf("adm_num_scale2: %.3f, ", scores[4]);
+            dbg_printf("adm_den_scale2: %.3f, ", scores[5]);
+            dbg_printf("adm_num_scale3: %.3f, ", scores[6]);
+            dbg_printf("adm_den_scale3: %.3f, ", scores[7]);
 
             insert_array_at(thread_data->adm_num_array, score_num, frm_idx);
             insert_array_at(thread_data->adm_den_array, score_den, frm_idx);
@@ -410,10 +400,8 @@ void* combo_threadfunc(void* vmaf_thread_data)
                 goto fail_or_end;
             }
 
-#ifdef PRINT_PROGRESS
-            printf("ansnr: %.3f, ", score);
-            printf("anpsnr: %.3f, ", score_psnr);
-#endif
+            dbg_printf("ansnr: %.3f, ", score);
+            dbg_printf("anpsnr: %.3f, ", score_psnr);
         }
 
 #endif
@@ -462,10 +450,8 @@ void* combo_threadfunc(void* vmaf_thread_data)
                 }
             }
 
-#ifdef PRINT_PROGRESS
-            printf("motion: %.3f, ", score);
-            printf("motion2: %.3f, ", score2);
-#endif
+            dbg_printf("motion: %.3f, ", score);
+            dbg_printf("motion2: %.3f, ", score2);
 
             insert_array_at(thread_data->motion_array, score, frm_idx);
             insert_array_at(thread_data->motion2_array, score2, frm_idx);
@@ -496,19 +482,17 @@ void* combo_threadfunc(void* vmaf_thread_data)
                 goto fail_or_end;
             }
 
-#ifdef PRINT_PROGRESS
-            // printf("vif_num: %.3f, ", score_num);
-            // printf("vif_den: %.3f, ", score_den);
-            printf("vif_num_scale0: %.3f, ", scores[0]);
-            printf("vif_den_scale0: %.3f, ", scores[1]);
-            printf("vif_num_scale1: %.3f, ", scores[2]);
-            printf("vif_den_scale1: %.3f, ", scores[3]);
-            printf("vif_num_scale2: %.3f, ", scores[4]);
-            printf("vif_den_scale2: %.3f, ", scores[5]);
-            printf("vif_num_scale3: %.3f, ", scores[6]);
-            printf("vif_den_scale3: %.3f, ", scores[7]);
-            printf("vif: %.3f, ", score);
-#endif
+            // dbg_printf("vif_num: %.3f, ", score_num);
+            // dbg_printf("vif_den: %.3f, ", score_den);
+            dbg_printf("vif_num_scale0: %.3f, ", scores[0]);
+            dbg_printf("vif_den_scale0: %.3f, ", scores[1]);
+            dbg_printf("vif_num_scale1: %.3f, ", scores[2]);
+            dbg_printf("vif_den_scale1: %.3f, ", scores[3]);
+            dbg_printf("vif_num_scale2: %.3f, ", scores[4]);
+            dbg_printf("vif_den_scale2: %.3f, ", scores[5]);
+            dbg_printf("vif_num_scale3: %.3f, ", scores[6]);
+            dbg_printf("vif_den_scale3: %.3f, ", scores[7]);
+            dbg_printf("vif: %.3f, ", score);
 
             insert_array_at(thread_data->vif_num_scale0_array, scores[0], frm_idx);
             insert_array_at(thread_data->vif_den_scale0_array, scores[1], frm_idx);
@@ -521,9 +505,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
             insert_array_at(thread_data->vif_array, score, frm_idx);
         }
 
-#ifdef PRINT_PROGRESS
-        printf("\n");
-#endif
+        dbg_printf("\n");
 
 #ifndef MULTI_THREADING
         // copy to prev_buf
@@ -537,7 +519,6 @@ void* combo_threadfunc(void* vmaf_thread_data)
         {
 #ifdef MULTI_THREADING
             thread_data->stop_threads = 1;
-            pthread_mutex_unlock(&thread_data->mutex_readframe);
 #endif
             break;
         }
@@ -684,7 +665,7 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
     // start threads
     int t;
     pthread_t thread[combo_thread_data.thread_count];
-    for (t=0; t<combo_thread_data.thread_count; t++)
+    for (t=0; t < combo_thread_data.thread_count; t++)
     {
         pthread_create(&thread[t], &attr, combo_threadfunc, &combo_thread_data);
     }
@@ -692,7 +673,7 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
     pthread_attr_destroy(&attr);
 
     // wait for all threads to finish
-    for (t=0; t<combo_thread_data.thread_count; t++)
+    for (t=0; t < combo_thread_data.thread_count; t++)
     {
         void* thread_ret;
         int rc = pthread_join(thread[t], &thread_ret);
