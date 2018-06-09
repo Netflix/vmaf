@@ -11,8 +11,10 @@ from vmaf.core.asset import Asset, NorefAsset
 from vmaf.core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner, \
     PsnrQualityRunner, VmafossExecQualityRunner, MsSsimQualityRunner, \
     SsimQualityRunner, Adm2QualityRunner, VmafPhoneQualityRunner, VifQualityRunner, \
-    Vif2QualityRunner, BootstrapVmafQualityRunner, BaggingVmafQualityRunner, NiqeQualityRunner
+    Vif2QualityRunner, BootstrapVmafQualityRunner, BaggingVmafQualityRunner, NiqeQualityRunner, \
+    EnsembleVmafQualityRunner
 from vmaf.core.result_store import FileSystemResultStore
+from testutil import set_default_576_324_videos_for_testing, set_default_flat_1920_1080_videos_for_testing
 
 
 class QualityRunnerTest(unittest.TestCase):
@@ -32,21 +34,9 @@ class QualityRunnerTest(unittest.TestCase):
         runner = VmafLegacyQualityRunner([asset], None)
         self.assertEquals(runner.executor_id, 'VMAF_legacy_VF0.2.4c-1.1')
 
-    def test_run_vamf_legacy_runner(self):
+    def test_run_vmaf_legacy_runner(self):
         print 'test on running VMAF (legacy) runner...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafLegacyQualityRunner(
             [asset, asset_original],
@@ -71,7 +61,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_legacy_score'], 65.393758021816708, places=4)
         self.assertAlmostEqual(results[1]['VMAF_legacy_score'], 96.444658329804156, places=4)
 
-    def test_run_vamf_legacy_runner_10le(self):
+    def test_run_vmaf_legacy_runner_10le(self):
         print 'test on running VMAF (legacy) runner on 10 bit le...'
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv422p10le.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv422p10le.yuv")
@@ -112,21 +102,9 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_legacy_score'], 65.393758021816708, places=4)
         self.assertAlmostEqual(results[1]['VMAF_legacy_score'], 96.444658329804156, places=4)
 
-    def test_run_vamf_legacy_runner_with_result_store(self):
+    def test_run_vmaf_legacy_runner_with_result_store(self):
         print 'test on running VMAF (legacy) runner with result store...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         result_store = FileSystemResultStore(logger=None)
 
@@ -165,19 +143,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner_v1_model(self):
         print 'test on running VMAF runner (v1 model)...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
@@ -208,19 +174,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner(self):
         print 'test on running VMAF runner...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
@@ -260,19 +214,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner_with_phone_score(self):
         print 'test on running VMAF runner with phone score...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
@@ -292,19 +234,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_phone_runner(self):
         print 'test on running VMAF phone runner...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         with self.assertRaises(AssertionError):
             VmafPhoneQualityRunner(
@@ -391,19 +321,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner_flat(self):
         print 'test on running VMAF runner on flat pattern...'
-        ref_path = VmafConfig.test_resource_path("yuv", "flat_1920_1080_0.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "flat_1920_1080_10.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':1920, 'height':1080})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':1920, 'height':1080})
+        ref_path, dis_path, asset, asset_original = set_default_flat_1920_1080_videos_for_testing()
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
@@ -434,19 +352,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner_with_rf_model(self):
         print 'test on running VMAF runner with custom input model...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
@@ -475,21 +381,9 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_score'], 79.224759615384599, places=4)
         self.assertAlmostEqual(results[1]['VMAF_score'], 100.0, places=4)
 
-    def test_run_vamf_runner_with_norm_type_none(self):
+    def test_run_vmaf_runner_with_norm_type_none(self):
         print 'test on running VMAF quality runner with custom model...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
@@ -522,21 +416,52 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_score'], 74.253349625150562, places=4)
         self.assertAlmostEqual(results[1]['VMAF_score'], 77.996338095161946, places=4)
 
+    def test_run_ensemblevmaf_runner_same_models(self):
+        print 'test on running EnsembleVMAF runner...'
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = EnsembleVmafQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.363420489439, places=4)
+
+        self.assertAlmostEqual(results[0]['EnsembleVMAF_model_0_score'], 76.699271272486044, places=4)
+        self.assertAlmostEqual(results[0]['EnsembleVMAF_model_1_score'], 76.699271272486044, places=4)
+        self.assertAlmostEqual(results[0]['EnsembleVMAF_score'], 76.699271272486044, places=4)
+
+    def test_run_ensemblevmaf_runner_different_models(self):
+        print 'test on running EnsembleVMAF runner with different models...'
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = EnsembleVmafQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={
+                'model_filepath': [VmafConfig.model_path("vmaf_v0.6.1.pkl"), VmafConfig.model_path("vmaf_v0.6.0.pkl")],
+            },
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.363420489439, places=4)
+
+        self.assertAlmostEqual(results[0]['EnsembleVMAF_model_0_score'], 76.699271272486044, places=4)
+        self.assertAlmostEqual(results[0]['EnsembleVMAF_model_1_score'], 81.78388541156974, places=4)
+        self.assertAlmostEqual(results[0]['EnsembleVMAF_score'], 79.24157800929017, places=4)
+
     def test_run_psnr_runner(self):
         print 'test on running PSNR runner...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = PsnrQualityRunner(
             [asset, asset_original],
@@ -554,19 +479,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner(self):
         print 'test on running VMAFOSSEXEC runner...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
             [asset, asset_original],
@@ -603,19 +516,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner_with_thread(self):
         print 'test on running VMAFOSSEXEC runner with thread...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
             [asset, asset_original],
@@ -633,19 +534,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner_with_subsample(self):
         print 'test on running VMAFOSSEXEC runner with subsample...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
             [asset, asset_original],
@@ -663,19 +552,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner_with_phone_score(self):
         print 'test on running VMAFOSSEXEC runner with phone score...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
             [asset, asset_original],
@@ -695,19 +572,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner_norm_type_none(self):
         print 'test on running VMAFOSSEXEC runner with norm type none...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
             [asset, asset_original],
@@ -798,19 +663,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_ssim_runner(self):
         print 'test on running SSIM runner...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = SsimQualityRunner(
             [asset, asset_original],
@@ -833,19 +686,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_ms_ssim_runner(self):
         print 'test on running MS-SSIM runner...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = MsSsimQualityRunner(
             [asset, asset_original],
@@ -892,19 +733,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner_pool_harmonic_mean(self):
         print 'test on running VMAF runner (pool harmonic mean)...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
@@ -944,19 +773,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_runner_pool_perc10(self):
         print 'test on running VMAF runner (pool 10-perctile)...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
@@ -996,19 +813,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_adm2_runner(self):
         print 'test on running ADM2 runner...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = Adm2QualityRunner(
             [asset, asset_original],
@@ -1025,19 +830,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vif_runner(self):
         print 'test on running VIF runner...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VifQualityRunner(
             [asset, asset_original],
@@ -1054,19 +847,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vif2_runner(self):
         print 'test on running VIF2 runner...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = Vif2QualityRunner(
             [asset, asset_original],
@@ -1397,19 +1178,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner_disable_avx_precise(self):
         print 'test on running VMAFOSSEXEC runner disabling AVX (precise)...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
             [asset, asset_original],
@@ -1447,19 +1216,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner_enable_avx_precise(self):
         print 'test on running VMAFOSSEXEC runner enabling AVX (precise)...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
             [asset, asset_original],
@@ -1496,19 +1253,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner_with_motion2(self):
         print 'test on running VMAFOSSEXEC runner with motion2 feature...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
             [asset, asset_original],
@@ -1534,19 +1279,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_bootstrap_vmaf_runner(self):
         print 'test on running bootstrap VMAF runner...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = BootstrapVmafQualityRunner(
             [asset, asset_original],
@@ -1593,19 +1326,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_bootstrap_vmaf_runner_with_transform_score(self):
         print 'test on running bootstrap VMAF runner with transform score...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = BootstrapVmafQualityRunner(
             [asset, asset_original],
@@ -1630,19 +1351,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_bootstrap_vmaf_runner_10models(self):
         print 'test on running bootstrap VMAF runner with 10 models...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = BootstrapVmafQualityRunner(
             [asset, asset_original],
@@ -1666,19 +1375,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_bagging_vmaf_runner(self):
         print 'test on running bagging VMAF runner...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = BaggingVmafQualityRunner(
             [asset, asset_original],
@@ -1763,19 +1460,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_parallel_vmaf_legacy_runner(self):
         print 'test on running VMAF (legacy) quality runner in parallel...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafLegacyQualityRunner(
             [asset, asset_original, asset_original],
@@ -1802,19 +1487,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_parallel_vmaf_runner(self):
         print 'test on running VMAF quality runner in parallel...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafQualityRunner(
             [asset, asset_original, asset, asset_original],
@@ -1846,19 +1519,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_parallel_psnr_runner(self):
         print 'test on running PSNR quality runner in parallel...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = PsnrQualityRunner(
             [asset, asset_original],
@@ -1874,19 +1535,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_parallel_vamf_runner_with_rf_model(self):
         print 'test on running VMAF quality runner in parallel with RF model...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafQualityRunner(
             [asset, asset_original, asset, asset, asset],
@@ -1919,19 +1568,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_parallel_ssim_runner(self):
         print 'test on running SSIM quality runner in parallel...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = SsimQualityRunner(
             [asset, asset_original, asset, asset],
@@ -1957,19 +1594,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_parallel_msssim_runner(self):
         print 'test on running MS-SSIM quality runner in parallel...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = MsSsimQualityRunner(
             [asset, asset_original, asset],
@@ -2018,19 +1643,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_parallel_msssim_runner_with_result_store(self):
         print 'test on running MS-SSIM quality runner in parallel...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = MsSsimQualityRunner(
             [asset, asset_original, asset, asset],
@@ -2048,19 +1661,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_parallel_runner_with_repeated_assets(self):
         print 'test on running PSNR quality runner in parallel with repeated assets...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = PsnrQualityRunner(
             [asset, asset_original, asset, asset],
@@ -2078,19 +1679,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_parallel_runner_with_parallel_disabled(self):
         print 'test on running PSNR quality runner in parallel with parallelization disabled...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = PsnrQualityRunner(
             [asset, asset_original, asset, asset],
@@ -2108,19 +1697,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     def test_run_parallel_vmafossexec_runner_with_repeated_assets(self):
         print 'test on running VMAFOSSEXEC quality runner in parallel with repeated assets...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
             [asset, asset_original, asset, asset],
@@ -2188,19 +1765,7 @@ class VmafossexecQualityRunnerSubsamplingTest(unittest.TestCase):
 
     def test_run_vmafossexec_runner_with_subsample2(self):
         print 'test on running VMAFOSSEXEC runner with subsample2...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         subsample = 5
 
