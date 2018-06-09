@@ -10,6 +10,7 @@ from vmaf.core.feature_extractor import VmafFeatureExtractor, MomentFeatureExtra
     PsnrFeatureExtractor, SsimFeatureExtractor, MsSsimFeatureExtractor
 from vmaf.core.asset import Asset
 from vmaf.core.result_store import FileSystemResultStore
+from testutil import set_default_576_324_videos_for_testing, set_default_flat_1920_1080_videos_for_testing
 
 
 class FeatureExtractorTest(unittest.TestCase):
@@ -41,19 +42,7 @@ class FeatureExtractorTest(unittest.TestCase):
 
     def test_run_vmaf_fextractor(self):
         print 'test on running VMAF feature extractor...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fextractor = VmafFeatureExtractor(
             [asset, asset_original],
@@ -118,19 +107,7 @@ class FeatureExtractorTest(unittest.TestCase):
 
     def test_run_vmaf_fextractor_with_result_store(self):
         print 'test on running VMAF feature extractor with result store...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         result_store = FileSystemResultStore(logger=None)
 
@@ -203,19 +180,7 @@ class FeatureExtractorTest(unittest.TestCase):
 
     def test_run_moment_fextractor(self):
         print 'test on running Moment feature extractor...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fextractor = MomentFeatureExtractor(
             [asset, asset_original],
@@ -242,19 +207,7 @@ class FeatureExtractorTest(unittest.TestCase):
 
     def test_run_psnr_fextractor(self):
         print 'test on running PSNR feature extractor...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fextractor = PsnrFeatureExtractor(
             [asset, asset_original],
@@ -270,19 +223,7 @@ class FeatureExtractorTest(unittest.TestCase):
 
     def test_run_ssim_fextractor(self):
         print 'test on running SSIM feature extractor...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fextractor = SsimFeatureExtractor(
             [asset, asset_original],
@@ -305,19 +246,7 @@ class FeatureExtractorTest(unittest.TestCase):
 
     def test_run_ms_ssim_fextractor(self):
         print 'test on running MS-SSIM feature extractor...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fextractor = MsSsimFeatureExtractor(
             [asset, asset_original],
@@ -424,20 +353,7 @@ class FeatureExtractorTest(unittest.TestCase):
 
     def test_run_vmaf_fextractor_flat(self):
         print 'test on running VMAF feature extractor on flat pattern...'
-
-        ref_path = VmafConfig.test_resource_path("yuv", "flat_1920_1080_0.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "flat_1920_1080_10.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':1920, 'height':1080})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':1920, 'height':1080})
+        ref_path, dis_path, asset, asset_original = set_default_flat_1920_1080_videos_for_testing()
 
         self.fextractor = VmafFeatureExtractor(
             [asset, asset_original],
@@ -473,19 +389,7 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
     def test_run_parallel_vmaf_fextractor(self):
         print 'test on running VMAF feature extractor in parallel...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fextractor = VmafFeatureExtractor(
             [asset, asset_original, asset],
@@ -548,19 +452,7 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
     def test_run_parallel_vamf_fextractor_with_result_store(self):
         print 'test on running VMAF feature extractor with result store ' \
               'in parallel...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         result_store = FileSystemResultStore(logger=None)
 
@@ -639,19 +531,7 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
     def test_run_parallel_moment_fextractor(self):
         print 'test on running Moment feature extractor in parallel...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fextractor = MomentFeatureExtractor(
             [asset, asset_original, asset],
@@ -679,19 +559,7 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
     def test_run_parallel_ssim_fextractor(self):
         print 'test on running SSIM feature extractor in parallel...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fextractor = SsimFeatureExtractor(
             [asset, asset_original, asset],
@@ -715,19 +583,7 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
     def test_run_parallel_ms_ssim_fextractor(self):
         print 'test on running MS-SSIM feature extractor in parallel...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fextractor = MsSsimFeatureExtractor(
             [asset, asset_original, asset],
