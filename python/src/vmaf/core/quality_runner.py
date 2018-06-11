@@ -777,10 +777,10 @@ class StrredQualityRunner(QualityRunner):
 class BootstrapVmafQualityRunner(VmafQualityRunner):
 
     TYPE = "BOOTSTRAP_VMAF"
-    VERSION = VmafQualityRunner.VERSION + '-' + BootstrapLibsvmNusvrTrainTestModel.VERSION
+    VERSION = 'F' + VmafFeatureExtractor.VERSION + '-0.6.1' + '-' + 'M' + BootstrapLibsvmNusvrTrainTestModel.VERSION + '0.6.2'
     ALGO_VERSION = None
 
-    DEFAULT_MODEL_FILEPATH = None
+    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_rb_v0.6.2", "vmaf_rb_v0.6.2.pkl")
 
     def _populate_result_dict(self, feature_result, pred_result):
         result_dict = {}
@@ -872,9 +872,10 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
     def get_ci95_high_score_key(cls):
         return cls.TYPE + '_ci95_high_score'
 
+
 class BaggingVmafQualityRunner(BootstrapVmafQualityRunner):
 
-    TYPE = "BOOTSTRAP_VMAF"
+    TYPE = "BAGGING_VMAF"
     VERSION = VmafQualityRunner.VERSION + '-' + BootstrapLibsvmNusvrTrainTestModel.VERSION
 
     def _populate_result_dict(self, feature_result, pred_result):

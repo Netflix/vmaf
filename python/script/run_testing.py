@@ -8,7 +8,7 @@ from vmaf.config import DisplayConfig
 
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.tools.misc import import_python_file, get_cmd_option, cmd_option_exists
-from vmaf.core.quality_runner import QualityRunner, VmafQualityRunner
+from vmaf.core.quality_runner import QualityRunner, VmafQualityRunner, BootstrapVmafQualityRunner
 from vmaf.routine import run_test_on_dataset, print_matplotlib_warning
 from vmaf.tools.stats import ListStats
 from sureal.subjective_model import SubjectiveModel
@@ -63,12 +63,14 @@ def main():
         print "Error: " + str(e)
         return 1
 
-    if vmaf_model_path is not None and quality_type != VmafQualityRunner.TYPE:
+    if vmaf_model_path is not None and quality_type != VmafQualityRunner.TYPE \
+            and quality_type != BootstrapVmafQualityRunner.TYPE:
         print "Input error: only quality_type of VMAF accepts --vmaf-model."
         print_usage()
         return 2
 
-    if vmaf_phone_model and quality_type != VmafQualityRunner.TYPE:
+    if vmaf_phone_model and quality_type != VmafQualityRunner.TYPE \
+            and quality_type != BootstrapVmafQualityRunner:
         print "Input error: only quality_type of VMAF accepts --vmaf-phone-model."
         print_usage()
         return 2
