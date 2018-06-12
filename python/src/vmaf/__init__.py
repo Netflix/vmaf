@@ -112,12 +112,13 @@ class ExternalProgramCaller(object):
 
     @staticmethod
     def call_vmafossexec(fmt, w, h, ref_path, dis_path, model, log_file_path, disable_clip_score,
-                         enable_transform_score, phone_model, disable_avx, exe=None, logger=None):
+                         enable_transform_score, phone_model, disable_avx, n_thread, n_subsample,
+                         psnr, ssim, ms_ssim, exe=None, logger=None):
 
         if exe is None:
             exe = required(ExternalProgram.vmafossexec)
 
-        vmafossexec_cmd = "{exe} {fmt} {w} {h} {ref_path} {dis_path} {model} --log {log_file_path} --log-fmt xml --psnr --ssim --ms-ssim" \
+        vmafossexec_cmd = "{exe} {fmt} {w} {h} {ref_path} {dis_path} {model} --log {log_file_path} --log-fmt xml --thread {n_thread} --subsample {n_subsample}" \
             .format(
             exe=exe,
             fmt=fmt,
@@ -127,13 +128,20 @@ class ExternalProgramCaller(object):
             dis_path=dis_path,
             model=model,
             log_file_path=log_file_path,
-        )
+            n_thread=n_thread,
+            n_subsample=n_subsample)
         if disable_clip_score:
             vmafossexec_cmd += ' --disable-clip'
         if enable_transform_score or phone_model:
             vmafossexec_cmd += ' --enable-transform'
         if disable_avx:
             vmafossexec_cmd += ' --disable-avx'
+        if psnr:
+            vmafossexec_cmd += ' --psnr'
+        if ssim:
+            vmafossexec_cmd += ' --ssim'
+        if ms_ssim:
+            vmafossexec_cmd += ' --ms-ssim'
         if logger:
             logger.info(vmafossexec_cmd)
         run_process(vmafossexec_cmd, shell=True)

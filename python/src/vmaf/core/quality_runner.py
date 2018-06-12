@@ -424,6 +424,137 @@ class VmafQualityRunner(QualityRunner):
         vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
 
+class EnsembleVmafQualityRunner(VmafQualityRunner):
+
+    TYPE = 'EnsembleVMAF'
+
+    VERSION = '{}-Ensemble'.format(VmafQualityRunner.VERSION)
+
+    DEFAULT_MODEL_FILEPATH = [VmafConfig.model_path("vmaf_v0.6.1.pkl"), VmafConfig.model_path("vmaf_v0.6.1.pkl")]
+
+    # this now needs to become a list
+    DEFAULT_FEATURE_DICT = [{'VMAF_feature': ['vif', 'adm', 'motion', 'ansnr']}, {'VMAF_feature': ['vif', 'adm', 'motion', 'ansnr']}]
+
+    def _populate_result_dict(self, feature_result, pred_result, result_dict):
+        result_dict.update(feature_result.result_dict)  # add feature result
+        result_dict[self.get_scores_key()] = pred_result['ys_pred']  # add quality score
+        return result_dict
+
+    def _get_ensemblevmaf_feature_assembler_instance(self, asset):
+
+        # load TrainTestModel only to retrieve its 'feature_dict' extra info
+        all_models = self._load_model(asset)
+        ensemblevmaf_fassemblers = []
+
+        for model_ind, model_now in enumerate(all_models):
+
+            feature_dict = model_now.get_appended_info('feature_dict')
+            if feature_dict is None:
+                feature_dict = self.DEFAULT_FEATURE_DICT[model_ind]
+
+            ensemblevmaf_fassembler = FeatureAssembler(
+                feature_dict=feature_dict,
+                feature_option_dict=None,
+                assets=[asset],
+                logger=self.logger,
+                fifo_mode=self.fifo_mode,
+                delete_workdir=self.delete_workdir,
+                result_store=self.result_store,
+                optional_dict=None,
+                optional_dict2=None,
+                parallelize=False,  # parallelization already in a higher level
+            )
+
+            ensemblevmaf_fassemblers.append(ensemblevmaf_fassembler)
+
+        return ensemblevmaf_fassemblers
+
+    def _get_Nframes(self, pred_result):
+
+        return len(pred_result['ys_pred'])
+
+    def _run_on_asset(self, asset):
+        # Override Executor._run_on_asset(self, asset), which runs a
+        # FeatureAssembler, collect a feature vector, run
+        # TrainTestModel.predict() on it, and return a Result object
+        # (in this case, both Executor._run_on_asset(self, asset) and
+        # QualityRunner._read_result(self, asset) get bypassed.
+        ensemblevmaf_fassemblers = self._get_ensemblevmaf_feature_assembler_instance(asset)
+
+        # each model is associated with a Feature Assembler
+        Nmodels = len(ensemblevmaf_fassemblers)
+        pred_result_all_models = []
+        result_dict = {}
+
+        for model_ind in range(Nmodels):
+
+            evmaf_fassembler = ensemblevmaf_fassemblers[model_ind]
+            evmaf_fassembler.run()
+            feature_result = evmaf_fassembler.results[0]
+            model = self._load_model(asset)[model_ind]
+            xs = model.get_per_unit_xs_from_a_result(feature_result)
+
+            if self.optional_dict is not None and 'disable_clip_score' in self.optional_dict:
+                disable_clip_score = self.optional_dict['disable_clip_score']
+            else:
+                disable_clip_score = False
+
+            if self.optional_dict is not None and 'enable_transform_score' in self.optional_dict:
+                enable_transform_score = self.optional_dict['enable_transform_score']
+            else:
+                enable_transform_score = False
+
+            pred_result = self.predict_with_model(model, xs,
+                                              disable_clip_score=disable_clip_score,
+                                              enable_transform_score=enable_transform_score)
+            result_dict = self._populate_result_dict(feature_result, pred_result, result_dict)
+            pred_result_all_models.append(pred_result)
+
+        assert Nmodels > 0
+
+        Nframes = self._get_Nframes(pred_result)
+
+        all_model_scores = np.zeros((Nmodels, Nframes))
+        all_model_score_names = self.ensemblevmaf_get_scores_key(Nmodels)
+        for model_ind in range(Nmodels):
+            result_dict[all_model_score_names[model_ind]] = pred_result_all_models[model_ind]['ys_pred']  # add quality score
+            all_model_scores[model_ind, :] = pred_result_all_models[model_ind]['ys_pred']
+
+        # perform prediction averaging (simple average for now)
+        pred_result_all_models_ensemble = np.mean(all_model_scores, axis=0)
+
+        # write results
+        result_dict[self.get_scores_key()] = pred_result_all_models_ensemble
+
+        return Result(asset, self.executor_id, result_dict)
+
+    def ensemblevmaf_get_scores_key(self, Nmodels):
+        scores_name_list = []
+        for model_ind in range(Nmodels):
+            scores_name_list.append(self.TYPE + '_model_' + str(model_ind) + '_scores')
+        return scores_name_list
+
+    def _load_model(self, asset):
+        if self.optional_dict is not None \
+                and 'model_filepath' in self.optional_dict \
+                and self.optional_dict['model_filepath'] is not None:
+            model_filepath = self.optional_dict['model_filepath']
+        else:
+            model_filepath = self.DEFAULT_MODEL_FILEPATH
+
+        model = []
+        for model_filepath_part in model_filepath:
+            model.append(TrainTestModel.from_file(model_filepath_part, self.logger))
+        return model
+
+    def _remove_result(self, asset):
+        # Override Executor._remove_result(self, asset) by redirecting it to the
+        # FeatureAssembler.
+
+        ensemblevmaf_fassemblers = self._get_ensemblevmaf_feature_assembler_instance(asset)
+        for ensemblevmaf_fassembler in ensemblevmaf_fassemblers:
+            ensemblevmaf_fassembler.remove_results()
+
 class VmafPhoneQualityRunner(VmafQualityRunner):
 
     TYPE = 'VMAF_Phone'
@@ -504,6 +635,31 @@ class VmafossExecQualityRunner(QualityRunner):
         else:
             disable_avx = False
 
+        if self.optional_dict is not None and 'thread' in self.optional_dict:
+            n_thread = self.optional_dict['thread']
+        else:
+            n_thread = 0
+
+        if self.optional_dict is not None and 'subsample' in self.optional_dict:
+            n_subsample = self.optional_dict['subsample']
+        else:
+            n_subsample = 1
+
+        if self.optional_dict is not None and 'psnr' in self.optional_dict:
+            psnr = self.optional_dict['psnr']
+        else:
+            psnr = True
+
+        if self.optional_dict is not None and 'ssim' in self.optional_dict:
+            ssim = self.optional_dict['ssim']
+        else:
+            ssim = True
+
+        if self.optional_dict is not None and 'ms_ssim' in self.optional_dict:
+            ms_ssim = self.optional_dict['ms_ssim']
+        else:
+            ms_ssim = True
+
         quality_width, quality_height = asset.quality_width_height
 
         fmt=self._get_workfile_yuv_type(asset)
@@ -517,7 +673,8 @@ class VmafossExecQualityRunner(QualityRunner):
 
         ExternalProgramCaller.call_vmafossexec(fmt, w, h, ref_path, dis_path, model, log_file_path,
                                                disable_clip_score, enable_transform_score,
-                                               phone_model, disable_avx, exe, logger)
+                                               phone_model, disable_avx, n_thread, n_subsample,
+                                               psnr, ssim, ms_ssim, exe, logger)
 
     def _get_exec(self):
         return None # signaling default

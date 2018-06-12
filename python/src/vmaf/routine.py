@@ -181,9 +181,6 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
                     aggregate_method=np.mean,
                     type='regressor',
                     **kwargs):
-    """
-    TODO: move this function under test/
-    """
 
     test_assets = read_dataset(test_dataset, **kwargs)
     test_raw_assets = None
@@ -218,6 +215,11 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
         if not optional_dict:
             optional_dict = {}
         optional_dict['disable_clip_score'] = kwargs['disable_clip_score']
+
+    if 'subsample' in kwargs and kwargs['subsample'] is not None:
+        if not optional_dict:
+            optional_dict = {}
+        optional_dict['subsample'] = kwargs['subsample']
 
     # run
     runner = runner_class(

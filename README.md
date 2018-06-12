@@ -6,7 +6,7 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ## What's New
 
-- (5/23/18) Added multi-threading to `vmafossexec`.
+- (6/5/18) Speed optimization to `vmafossexec`: 1) support multi-threading (e.g. use `--thread 0` to use all cores), 2) support frame sampling (e.g. use `--subsample 5` to calculate VMAF on one of every 5 frames). See [this](#vmafossexec---python-independent-implementation) section for details.
 - (1/20/18) Moved custom subjective models into a submodule named [sureal](https://github.com/Netflix/sureal). If you pull the latest changes, you will have to pull the submoddule by `git submodule update --init --recursive` and add `sureal/python/src` to `PYTHONPATH`.
 - (8/12/17) VMAF is now included as a filter in [FFmpeg](http://ffmpeg.org/) main branch, and can be configured using: `./configure --enable-libvmaf`.
 - (7/16/17) VMAF is now packaged into a library call `libvmaf` and can be called from a C/C++ program directly. See [this](#usage-through-libvmaf) section for details.
@@ -183,13 +183,13 @@ This will generate JSON output like:
 
 ```
 "aggregate": {
-    "VMAF_feature_adm2_score": 0.92542107502749982, 
-    "VMAF_feature_motion2_score": 4.0498253541666669, 
-    "VMAF_feature_vif_scale0_score": 0.36342048943884936, 
-    "VMAF_feature_vif_scale1_score": 0.76664754213485187, 
-    "VMAF_feature_vif_scale2_score": 0.86285466690193247, 
-    "VMAF_feature_vif_scale3_score": 0.91597177803640772, 
-    "VMAF_score": 65.44885887590759, 
+    "VMAF_feature_adm2_score": 0.93458780776205741, 
+    "VMAF_feature_motion2_score": 3.8953518541666665, 
+    "VMAF_feature_vif_scale0_score": 0.36342081156994926, 
+    "VMAF_feature_vif_scale1_score": 0.76664738784617292, 
+    "VMAF_feature_vif_scale2_score": 0.86285338927816291, 
+    "VMAF_feature_vif_scale3_score": 0.91597186913930484, 
+    "VMAF_score": 76.699271371151269, 
     "method": "mean"
 }
 ```
@@ -448,7 +448,7 @@ We provide a dataset publicly available to the community for training, testing a
 
 We also provide an example dataset file containing video file names from VQEG (Video Quality Expert Group) HD3 videos. The dataset file is at [`resource/dataset/VQEGHD3_dataset.py`](resource/dataset/VQEGHD3_dataset.py), and the videos is available for downloading from [http://www.cdvl.org/](http://www.cdvl.org/). After login, choose menu 'find videos', and search use keyword 'vqeghd3'. The dataset file includes from `src01` to `src09` except for `src04`, which overlaps with the Netflix Public Dataset, and `hrc04`, `hrc07`, `hrc16`, `hrc17`, `hrc18`, `hrc19`, `hrc20` and `hrc21`, which are the most relevant distortion types to adaptive streaming. After downloading the videos, convert them to YUV420P format.
 
-## Python-independent Implementation
+## `vmafossexec` - Python-independent Implementation
 
 The VDK package combines feature extraction implementation in C and the rest scripting code in Python. The Python layer allows fast prototyping, but sometimes deploying the Python dependency in production is a pain.
 Under [`wrapper`](wrapper), we provide a C++ implementation `vmafossexec` that has no dependency on Python.
@@ -460,10 +460,16 @@ wrapper/vmafossexec yuv420p 576 324
   python/test/resource/yuv/src01_hrc00_576x324.yuv \
   python/test/resource/yuv/src01_hrc01_576x324.yuv \
   model/vmaf_v0.6.1.pkl \
-  --log vmaf_output.xml
+  --log vmaf_output.xml \
+  --psnr --ssim --ms-ssim \
+  --thread 0 --subsample 5
 ```
 
 For VMAF v0.6.1, the model file is `model/vmaf_v0.6.1.pkl`. The correspondence is documented [here](python/src/vmaf/core/quality_runner.py#L255).
+
+The options `--psnr`, `--ssim` and `--ms-ssim` also allow reporting PSNR, SSIM and MS-SSIM results, respectively. The option `--thread` specifies the number of threads to use. Apply `--thread 0` to use all threads available. The option `--subsample` specifies the subsampling of frames to speed up calculation. For example, `--subsample 5` calculates VMAF on one of every 5 frames. The following plot shows the trend of how the subsample number impacts the processing speed (based on the [Netflix Public Dataset](#netflix-public-dataset) of 1080p videos, with PSNR, SSIM and MS-SSIM calculation enabled):
+
+![subsample](/resource/images/subsample.png)
 
 ## Usage through `libvmaf`
 
@@ -478,9 +484,11 @@ make install
 This copies the library header `libvmaf.h` under `usr/local/include`, library `libvmaf.a `under `user/local/lib` and all the model files under `usr/local/share`. You can use the header `libvmaf.h` in your program. It contains an API which can be called from any C/C++ program:
 
 ```
-int compute_vmaf(double* vmaf_score, char* fmt, int width, int height, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
-int stride, void *user_data), void *user_data, char *model_path, char *log_path, char *log_fmt, int disable_clip,
-int disable_avx, int enable_transform, int phone_model, int do_psnr, int do_ssim, int do_ms_ssim, char *pool_method);
+int compute_vmaf(double* vmaf_score, char* fmt, int width, int height, 
+int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), 
+void *user_data, char *model_path, char *log_path, char *log_fmt, int disable_clip, 
+int disable_avx, int enable_transform, int phone_model, int do_psnr, int do_ssim, 
+int do_ms_ssim, char *pool_method, int thread, int subsample);
 ```
 
 Here, `read_frame` is a callback function which can be used to pass data from a program to VMAF. `user_data` is a program specific data that can be used by the callback function. For sample usage of `compute_vmaf`, refer to [`wrapper/src/main.cpp`](wrapper/src/main.cpp).
