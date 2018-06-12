@@ -777,7 +777,7 @@ class StrredQualityRunner(QualityRunner):
 class BootstrapVmafQualityRunner(VmafQualityRunner):
 
     TYPE = "BOOTSTRAP_VMAF"
-    VERSION = 'F' + VmafFeatureExtractor.VERSION + '-0.6.1' + '-' + 'M' + BootstrapLibsvmNusvrTrainTestModel.VERSION + '0.6.2'
+    VERSION = VmafQualityRunner.VERSION + '-' + 'M' + BootstrapLibsvmNusvrTrainTestModel.VERSION
     ALGO_VERSION = None
 
     DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_rb_v0.6.2", "vmaf_rb_v0.6.2.pkl")
