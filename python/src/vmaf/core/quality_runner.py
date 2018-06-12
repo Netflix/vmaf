@@ -407,7 +407,11 @@ class VmafQualityRunner(QualityRunner):
         else:
             model_filepath = self.DEFAULT_MODEL_FILEPATH
         train_test_model_class = self.get_train_test_model_class()
-        model = train_test_model_class.from_file(model_filepath, self.logger)
+        try:
+            model = train_test_model_class.from_file(model_filepath, self.logger)
+        except AssertionError as e:
+            raise AssertionError("File {filepath} may not be a valid model file for class {cls}: {e}".
+                                 format(filepath=model_filepath, cls=train_test_model_class.__name__, e=e))
         return model
 
     def get_train_test_model_class(self):

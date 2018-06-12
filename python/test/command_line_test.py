@@ -88,6 +88,14 @@ class CommandLineTest(unittest.TestCase):
         ret = run_process(cmd, shell=True)
         self.assertEquals(ret, 0)
 
+    def test_run_vmaf_both_local_explain_and_ci(self):
+        exe = VmafConfig.root_path('run_vmaf')
+        line = 'yuv420p 576 324 {root}/python/test/resource/yuv/src01_hrc00_576x324.yuv ' \
+               '{root}/python/test/resource/yuv/src01_hrc01_576x324.yuv'.format(root=VmafConfig.root_path())
+        cmd = "{exe} {line} --local-explain --ci >/dev/null 2>&1".format(line=line, exe=exe)
+        ret = subprocess.call(cmd, shell=True)
+        self.assertEquals(ret, 2)
+
     def test_run_psnr(self):
         exe = VmafConfig.root_path('run_psnr')
         line = 'yuv420p 576 324 {root}/python/test/resource/yuv/src01_hrc00_576x324.yuv ' \
