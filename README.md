@@ -488,7 +488,7 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
 int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), 
 void *user_data, char *model_path, char *log_path, char *log_fmt, int disable_clip, 
 int disable_avx, int enable_transform, int phone_model, int do_psnr, int do_ssim, 
-int do_ms_ssim, char *pool_method, int thread, int subsample);
+int do_ms_ssim, char *pool_method, int thread, int subsample, bool conf_interval);
 ```
 
 Here, `read_frame` is a callback function which can be used to pass data from a program to VMAF. `user_data` is a program specific data that can be used by the callback function. For sample usage of `compute_vmaf`, refer to [`wrapper/src/main.cpp`](wrapper/src/main.cpp).

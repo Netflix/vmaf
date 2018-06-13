@@ -140,7 +140,7 @@ void _read_and_assert_model(const char *model_path, Val& feature_names,
 
 Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
                        int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
-                       bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample)
+                       bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample, bool conf_interval)
 {
 
     dbg_printf("Read input model (pkl)...\n");
@@ -632,7 +632,7 @@ double RunVmaf(const char* fmt, int width, int height,
                void *user_data, const char *model_path, const char *log_path, const char *log_fmt,
                bool disable_clip, bool enable_transform,
                bool do_psnr, bool do_ssim, bool do_ms_ssim,
-               const char *pool_method, int n_thread, int n_subsample)
+               const char *pool_method, int n_thread, int n_subsample, bool conf_interval)
 {
     printf("Start calculating VMAF score...\n");
 
@@ -659,7 +659,7 @@ double RunVmaf(const char* fmt, int width, int height,
 
     timer.start();
     Result result = runner.run(asset, read_frame, user_data, disable_clip, enable_transform,
-                               do_psnr, do_ssim, do_ms_ssim, n_thread, n_subsample);
+                               do_psnr, do_ssim, do_ms_ssim, n_thread, n_subsample, conf_interval);
     timer.stop();
 
     if (pool_method != NULL && (strcmp(pool_method, "min")==0))

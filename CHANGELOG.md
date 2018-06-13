@@ -1,5 +1,11 @@
 # Change Log
 
+## (6/12/2018) [1.3.7]
+
+**New features:**
+- Add the --ci option to calculate confidence intervals to predicted VMAF scores (run_vmaf, run_vmaf_in_batch, ffmpeg2vmaf, vmafossexec).
+- Update libvmaf version to 1.3.7 after compute_vmaf() interface change (added conf_interval option).
+
 ## (6/4/2018) [1.3.6]
 
 **New features:**
