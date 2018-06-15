@@ -29,6 +29,9 @@
 #include <exception>
 #include <cstring>
 
+#include "svm.h"
+#include "chooseser.h"
+
 double RunVmaf(const char* fmt, int width, int height,
                int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
                void *user_data, const char *model_path, const char *log_path, const char *log_fmt,
@@ -157,21 +160,17 @@ struct SvmDelete {
 class VmafRunner
 {
 public:
-    VmafRunner(const char *model_path): model_path(model_path)
-    {
-        /* follow the convention that if model_path is a/b.c, the
-         * libsvm_model_path is always a/b.c.model */
-        libsvm_model_path = new char[strlen(model_path) + 10];
-        sprintf(libsvm_model_path, "%s.model", model_path);
-    }
-    ~VmafRunner() { delete[] libsvm_model_path; }
+    VmafRunner(const char *model_path): model_path(model_path) {}
     Result run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
                int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
                bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample, bool conf_interval);
 private:
     const char *model_path;
-    char *libsvm_model_path;
     static const int INIT_FRAMES = 1000;
+    void _read_and_assert_model(const char *model_path, Val& feature_names, Val& norm_type, Val& slopes,
+            Val& intercepts, Val& score_clip, Val& score_transform);
+    std::unique_ptr<svm_model, SvmDelete> _read_and_assert_svm_model(const char* libsvm_model_path);
+
 };
 
 #endif /* VMAF_H_ */

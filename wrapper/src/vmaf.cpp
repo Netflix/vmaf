@@ -29,10 +29,8 @@
 #include "vmaf.h"
 #include "darray.h"
 #include "combo.h"
-#include "svm.h"
 #include "pugixml/pugixml.hpp"
 #include "timer.h"
-#include "chooseser.h"
 #include "jsonprint.h"
 #include "debug.h"
 
@@ -55,7 +53,7 @@ void SvmDelete::operator()(void *svm)
     svm_free_and_destroy_model((svm_model **)&svm);
 }
 
-void _read_and_assert_model(const char *model_path, Val& feature_names,
+void VmafRunner::_read_and_assert_model(const char *model_path, Val& feature_names,
      Val& norm_type, Val& slopes, Val& intercepts, Val& score_clip, Val& score_transform)
 {
     /*  TrainTestModel._assert_trained() in Python:
@@ -138,6 +136,17 @@ void _read_and_assert_model(const char *model_path, Val& feature_names,
 
 }
 
+std::unique_ptr<svm_model, SvmDelete> VmafRunner::_read_and_assert_svm_model(const char* libsvm_model_path)
+{
+    std::unique_ptr < svm_model, SvmDelete
+            > svm_model_ptr { svm_load_model(libsvm_model_path) };
+    if (!svm_model_ptr) {
+        printf("Error loading SVM model.\n");
+        throw VmafException("Error loading SVM model");
+    }
+    return svm_model_ptr;
+}
+
 Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
                        int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
                        bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample, bool conf_interval)
@@ -150,48 +159,25 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
 
     dbg_printf("Read input model (libsvm)...\n");
 
-    std::unique_ptr<svm_model, SvmDelete> svm_model_ptr{svm_load_model(libsvm_model_path)};
-    if (!svm_model_ptr)
-    {
-        printf("Error loading SVM model.\n");
-        throw VmafException("Error loading SVM model");
-    }
+    /* follow the convention that if model_path is a/b.c, the libsvm_model_path is always a/b.c.model */
+    const char *libsvm_model_path = (std::string(model_path) + std::string(".model")).c_str();
+    std::unique_ptr<svm_model, SvmDelete> svm_model_ptr = _read_and_assert_svm_model(libsvm_model_path);
 
     dbg_printf("Initialize storage arrays...\n");
-
     int w = asset.getWidth();
     int h = asset.getHeight();
     const char* fmt = asset.getFmt();
     char errmsg[1024];
-
-    DArray adm_num_array,
-           adm_den_array,
-           adm_num_scale0_array,
-           adm_den_scale0_array,
-           adm_num_scale1_array,
-           adm_den_scale1_array,
-           adm_num_scale2_array,
-           adm_den_scale2_array,
-           adm_num_scale3_array,
-           adm_den_scale3_array,
-           motion_array,
-           motion2_array,
-           vif_num_scale0_array,
-           vif_den_scale0_array,
-           vif_num_scale1_array,
-           vif_den_scale1_array,
-           vif_num_scale2_array,
-           vif_den_scale2_array,
-           vif_num_scale3_array,
-           vif_den_scale3_array,
-           vif_array,
-           psnr_array,
-           ssim_array,
-           ms_ssim_array;
-
+    DArray adm_num_array, adm_den_array, adm_num_scale0_array,
+            adm_den_scale0_array, adm_num_scale1_array, adm_den_scale1_array,
+            adm_num_scale2_array, adm_den_scale2_array, adm_num_scale3_array,
+            adm_den_scale3_array, motion_array, motion2_array,
+            vif_num_scale0_array, vif_den_scale0_array, vif_num_scale1_array,
+            vif_den_scale1_array, vif_num_scale2_array, vif_den_scale2_array,
+            vif_num_scale3_array, vif_den_scale3_array, vif_array, psnr_array,
+            ssim_array, ms_ssim_array;
     /* use the following ptrs as flags to turn on/off optional metrics */
     DArray *psnr_array_ptr, *ssim_array_ptr, *ms_ssim_array_ptr;
-
     init_array(&adm_num_array, INIT_FRAMES);
     init_array(&adm_den_array, INIT_FRAMES);
     init_array(&adm_num_scale0_array, INIT_FRAMES);
@@ -216,73 +202,37 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
     init_array(&psnr_array, INIT_FRAMES);
     init_array(&ssim_array, INIT_FRAMES);
     init_array(&ms_ssim_array, INIT_FRAMES);
-
     /* optional output arrays */
-    if (do_psnr)
-    {
+    if (do_psnr) {
         psnr_array_ptr = &psnr_array;
-    }
-    else
-    {
+    } else {
         psnr_array_ptr = NULL;
     }
-
-    if (do_ssim)
-    {
+    if (do_ssim) {
         ssim_array_ptr = &ssim_array;
-    }
-    else
-    {
+    } else {
         ssim_array_ptr = NULL;
     }
-
-    if (do_ms_ssim)
-    {
+    if (do_ms_ssim) {
         ms_ssim_array_ptr = &ms_ssim_array;
-    }
-    else
-    {
+    } else {
         ms_ssim_array_ptr = NULL;
     }
-
     dbg_printf("Extract atom features...\n");
-
-    int ret = combo(read_frame, user_data, w, h, fmt,
-            &adm_num_array,
-            &adm_den_array,
-            &adm_num_scale0_array,
-            &adm_den_scale0_array,
-            &adm_num_scale1_array,
-            &adm_den_scale1_array,
-            &adm_num_scale2_array,
-            &adm_den_scale2_array,
-            &adm_num_scale3_array,
-            &adm_den_scale3_array,
-            &motion_array,
-            &motion2_array,
-            &vif_num_scale0_array,
-            &vif_den_scale0_array,
-            &vif_num_scale1_array,
-            &vif_den_scale1_array,
-            &vif_num_scale2_array,
-            &vif_den_scale2_array,
-            &vif_num_scale3_array,
-            &vif_den_scale3_array,
-            &vif_array,
-            psnr_array_ptr,
-            ssim_array_ptr,
-            ms_ssim_array_ptr,
-            errmsg,
-            n_thread,
-            n_subsample);
-    if (ret)
-    {
+    int ret = combo(read_frame, user_data, w, h, fmt, &adm_num_array,
+            &adm_den_array, &adm_num_scale0_array, &adm_den_scale0_array,
+            &adm_num_scale1_array, &adm_den_scale1_array, &adm_num_scale2_array,
+            &adm_den_scale2_array, &adm_num_scale3_array, &adm_den_scale3_array,
+            &motion_array, &motion2_array, &vif_num_scale0_array,
+            &vif_den_scale0_array, &vif_num_scale1_array, &vif_den_scale1_array,
+            &vif_num_scale2_array, &vif_den_scale2_array, &vif_num_scale3_array,
+            &vif_den_scale3_array, &vif_array, psnr_array_ptr, ssim_array_ptr,
+            ms_ssim_array_ptr, errmsg, n_thread, n_subsample);
+    if (ret) {
         throw VmafException(errmsg);
     }
-
     size_t num_frms = motion_array.used;
-    bool num_frms_is_consistent =
-               (adm_num_array.used == num_frms)
+    bool num_frms_is_consistent = (adm_num_array.used == num_frms)
             && (adm_den_array.used == num_frms)
             && (motion2_array.used == num_frms)
             && (adm_num_scale0_array.used == num_frms)
@@ -302,20 +252,21 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
             && (vif_num_scale3_array.used == num_frms)
             && (vif_den_scale3_array.used == num_frms)
             && (vif_array.used == num_frms);
-    if (psnr_array_ptr != NULL) { num_frms_is_consistent = num_frms_is_consistent && (psnr_array.used == num_frms); }
-    if (ssim_array_ptr != NULL) { num_frms_is_consistent = num_frms_is_consistent && (ssim_array.used == num_frms); }
-    if (ms_ssim_array_ptr != NULL) { num_frms_is_consistent = num_frms_is_consistent && (ms_ssim_array.used == num_frms); }
-    if (!num_frms_is_consistent)
-    {
-        sprintf(errmsg, "Output feature vectors are of inconsistent dimensions: "
-                "motion (%zu), motion2 (%zu), adm_num (%zu), adm_den (%zu), vif_num_scale0 (%zu), "
-                "vif_den_scale0 (%zu), vif_num_scale1 (%zu), vif_den_scale1 (%zu), "
-                "vif_num_scale2 (%zu), vif_den_scale2 (%zu), vif_num_scale3 (%zu), "
-                "vif_den_scale3 (%zu), vif (%zu), "
-                "psnr (%zu), ssim (%zu), ms_ssim (%zu), "
-                "adm_num_scale0 (%zu), adm_den_scale0 (%zu), adm_num_scale1 (%zu), "
-                "adm_den_scale1 (%zu), adm_num_scale2 (%zu), adm_den_scale2 (%zu), "
-                "adm_num_scale3 (%zu), adm_den_scale3 (%zu)",
+    if (psnr_array_ptr != NULL) {
+        num_frms_is_consistent = num_frms_is_consistent
+                && (psnr_array.used == num_frms);
+    }
+    if (ssim_array_ptr != NULL) {
+        num_frms_is_consistent = num_frms_is_consistent
+                && (ssim_array.used == num_frms);
+    }
+    if (ms_ssim_array_ptr != NULL) {
+        num_frms_is_consistent = num_frms_is_consistent
+                && (ms_ssim_array.used == num_frms);
+    }
+    if (!num_frms_is_consistent) {
+        sprintf(errmsg,
+                "Output feature vectors are of inconsistent dimensions: motion (%zu), motion2 (%zu), adm_num (%zu), adm_den (%zu), vif_num_scale0 (%zu), vif_den_scale0 (%zu), vif_num_scale1 (%zu), vif_den_scale1 (%zu), vif_num_scale2 (%zu), vif_den_scale2 (%zu), vif_num_scale3 (%zu), vif_den_scale3 (%zu), vif (%zu), psnr (%zu), ssim (%zu), ms_ssim (%zu), adm_num_scale0 (%zu), adm_den_scale0 (%zu), adm_num_scale1 (%zu), adm_den_scale1 (%zu), adm_num_scale2 (%zu), adm_den_scale2 (%zu), adm_num_scale3 (%zu), adm_den_scale3 (%zu)",
                 motion_array.used,
                 motion2_array.used,
                 adm_num_array.used,
