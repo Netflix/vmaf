@@ -24,6 +24,7 @@
 #include <iostream>
 #include <sstream>
 #include <cmath>
+#include <iomanip>
 
 #include "vmaf.h"
 #include "combo.h"
@@ -134,7 +135,7 @@ void LibsvmNusvrTrainTestModel::_read_and_assert_model(const char *model_path, V
 
 }
 
-void LibsvmNusvrTrainTestModel::_loadModel()
+void LibsvmNusvrTrainTestModel::loadModel()
 {
     dbg_printf("Read input model (pkl)...\n");
 
@@ -145,6 +146,27 @@ void LibsvmNusvrTrainTestModel::_loadModel()
     /* follow the convention that if model_path is a/b.c, the libsvm_model_path is always a/b.c.model */
     const char *libsvm_model_path = (std::string(model_path) + std::string(".model")).c_str();
     svm_model_ptr = _read_and_assert_svm_model(libsvm_model_path);
+}
+
+const char *BootstrapLibsvmNusvrTrainTestModel::_get_model_i_filename(const char* model_path, int i_model)
+{
+    if (i_model == 0) {
+        return model_path;
+    }
+    else {
+        std::stringstream ss;
+        ss << '.' << std::setw(4) << std::setfill('0') << i_model;
+        std::string s = ss.str();
+        return (std::string(model_path) + s).c_str();
+    }
+}
+
+void BootstrapLibsvmNusvrTrainTestModel::loadModel()
+{
+    LibsvmNusvrTrainTestModel::loadModel();
+    printf("%s\n", _get_model_i_filename(model_path, 0));
+    printf("%s\n", _get_model_i_filename(model_path, 1));
+    printf("%s\n", _get_model_i_filename(model_path, 2));
 }
 
 std::unique_ptr<svm_model, SvmDelete> LibsvmNusvrTrainTestModel::_read_and_assert_svm_model(const char* libsvm_model_path)
@@ -168,8 +190,7 @@ void VmafRunner::_normalize_predict_denormalize(
         StatVector& adm_scale2, StatVector& adm_scale3, StatVector& motion,
         StatVector& vif_scale0, StatVector& vif_scale1, StatVector& vif_scale2,
         StatVector& vif_scale3, StatVector& vif, StatVector& motion2,
-        bool enable_transform, bool disable_clip, DArray*& psnr_array_ptr,
-        DArray*& ssim_array_ptr, DArray*& ms_ssim_array_ptr, StatVector& vmaf) {
+        bool enable_transform, bool disable_clip, StatVector& vmaf) {
 
     /* IMPORTANT: always allocate one more spot and put a -1 at the last one's
      * index, so that libsvm will stop looping when seeing the -1 !!!
@@ -370,16 +391,6 @@ void VmafRunner::_normalize_predict_denormalize(
             dbg_printf("vif: %f, ", vif.at(i / n_subsample));
             dbg_printf("motion2: %f, ", motion2.at(i / n_subsample));
 
-            if (psnr_array_ptr != NULL) {
-                dbg_printf("psnr: %f, ", psnr.at(i / n_subsample));
-            }
-            if (ssim_array_ptr != NULL) {
-                dbg_printf("ssim: %f, ", ssim.at(i / n_subsample));
-            }
-            if (ms_ssim_array_ptr != NULL) {
-                dbg_printf("ms_ssim: %f, ", ms_ssim.at(i / n_subsample));
-            }
-
             dbg_printf("\n");
 
             vmaf.append(prediction);
@@ -392,7 +403,9 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
                        bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample, bool conf_interval)
 {
 
-    LibsvmNusvrTrainTestModel model = LibsvmNusvrTrainTestModel(model_path);
+    BootstrapLibsvmNusvrTrainTestModel model = BootstrapLibsvmNusvrTrainTestModel(model_path);
+
+    model.loadModel();
 
     dbg_printf("Initialize storage arrays...\n");
     int w = asset.getWidth();
@@ -565,8 +578,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
     _normalize_predict_denormalize(model, num_frms, n_subsample, adm2,
             adm_scale0, adm_scale1, adm_scale2, adm_scale3, motion, vif_scale0,
             vif_scale1, vif_scale2, vif_scale3, vif, motion2, enable_transform,
-            disable_clip, psnr_array_ptr, ssim_array_ptr, ms_ssim_array_ptr,
-            vmaf);
+            disable_clip, vmaf);
 
     Result result{};
     result.set_scores("vmaf", vmaf);
