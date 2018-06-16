@@ -28,9 +28,11 @@
 #include <sstream>
 #include <exception>
 #include <cstring>
+#include <memory>
 
 #include "svm.h"
 #include "chooseser.h"
+#include "darray.h"
 
 double RunVmaf(const char* fmt, int width, int height,
                int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
@@ -157,6 +159,21 @@ struct SvmDelete {
     void operator()(void *svm);
 };
 
+class LibsvmNusvrTrainTestModel
+{
+public:
+    LibsvmNusvrTrainTestModel(const char *model_path): model_path(model_path) { _loadModel(); }
+    Val feature_names, norm_type, slopes, intercepts, score_clip, score_transform;
+    std::unique_ptr<svm_model, SvmDelete> svm_model_ptr;
+    double predict(svm_node* nodes);
+private:
+    const char *model_path;
+    void _loadModel();
+    void _read_and_assert_model(const char *model_path, Val& feature_names, Val& norm_type, Val& slopes,
+            Val& intercepts, Val& score_clip, Val& score_transform);
+    std::unique_ptr<svm_model, SvmDelete> _read_and_assert_svm_model(const char* libsvm_model_path);
+};
+
 class VmafRunner
 {
 public:
@@ -167,20 +184,15 @@ public:
 private:
     const char *model_path;
     static const int INIT_FRAMES = 1000;
-};
-
-class LibsvmNusvrTrainTestModel
-{
-public:
-    LibsvmNusvrTrainTestModel(const char *model_path): model_path(model_path) { _loadModel(); }
-    Val feature_names, norm_type, slopes, intercepts, score_clip, score_transform;
-    std::unique_ptr<svm_model, SvmDelete> svm_model_ptr;
-private:
-    const char *model_path;
-    void _loadModel();
-    void _read_and_assert_model(const char *model_path, Val& feature_names, Val& norm_type, Val& slopes,
-            Val& intercepts, Val& score_clip, Val& score_transform);
-    std::unique_ptr<svm_model, SvmDelete> _read_and_assert_svm_model(const char* libsvm_model_path);
+    void _normalize_predict_denormalize(LibsvmNusvrTrainTestModel& model,
+            size_t num_frms, int n_subsample, StatVector& adm2,
+            StatVector& adm_scale0, StatVector& adm_scale1,
+            StatVector& adm_scale2, StatVector& adm_scale3, StatVector& motion,
+            StatVector& vif_scale0, StatVector& vif_scale1,
+            StatVector& vif_scale2, StatVector& vif_scale3, StatVector& vif,
+            StatVector& motion2, bool enable_transform, bool disable_clip,
+            DArray*& psnr_array_ptr, DArray*& ssim_array_ptr,
+            DArray*& ms_ssim_array_ptr, StatVector& vmaf);
 };
 
 #endif /* VMAF_H_ */
