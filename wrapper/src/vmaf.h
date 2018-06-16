@@ -166,7 +166,7 @@ public:
     Val feature_names, norm_type, slopes, intercepts, score_clip, score_transform;
     std::unique_ptr<svm_model, SvmDelete> svm_model_ptr;
     double predict(svm_node* nodes);
-    void loadModel();
+    virtual void loadModel();
 protected:
     const char *model_path;
 private:
@@ -178,7 +178,7 @@ private:
 class BootstrapLibsvmNusvrTrainTestModel: public LibsvmNusvrTrainTestModel {
 public:
     BootstrapLibsvmNusvrTrainTestModel(const char *model_path): LibsvmNusvrTrainTestModel(model_path) {}
-    void loadModel();
+    virtual void loadModel();
 private:
     const char *_get_model_i_filename(const char* model_path, int i_model);
 };
@@ -201,7 +201,7 @@ private:
             StatVector& vif_scale2, StatVector& vif_scale3, StatVector& vif,
             StatVector& motion2, bool enable_transform, bool disable_clip,
             StatVector& vmaf);
-    BootstrapLibsvmNusvrTrainTestModel &loadModel(const char *model_path, bool conf_interval);
+    LibsvmNusvrTrainTestModel& _loadModel(const char *model_path, bool conf_interval);
 };
 
 #endif /* VMAF_H_ */

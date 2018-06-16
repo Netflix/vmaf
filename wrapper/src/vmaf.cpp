@@ -164,6 +164,7 @@ const char *BootstrapLibsvmNusvrTrainTestModel::_get_model_i_filename(const char
 void BootstrapLibsvmNusvrTrainTestModel::loadModel()
 {
     LibsvmNusvrTrainTestModel::loadModel();
+
     printf("%s\n", _get_model_i_filename(model_path, 0));
     printf("%s\n", _get_model_i_filename(model_path, 1));
     printf("%s\n", _get_model_i_filename(model_path, 2));
@@ -398,14 +399,25 @@ void VmafRunner::_normalize_predict_denormalize(
     }
 }
 
+LibsvmNusvrTrainTestModel& VmafRunner::_loadModel(const char *model_path, bool conf_interval)
+{
+    LibsvmNusvrTrainTestModel* model;
+    if (conf_interval) {
+        model = new BootstrapLibsvmNusvrTrainTestModel(model_path);
+    }
+    else {
+        model = new LibsvmNusvrTrainTestModel(model_path);
+    }
+    model->loadModel();
+    return *model;
+}
+
 Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
                        int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
                        bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample, bool conf_interval)
 {
 
-    BootstrapLibsvmNusvrTrainTestModel model = BootstrapLibsvmNusvrTrainTestModel(model_path);
-
-    model.loadModel();
+    LibsvmNusvrTrainTestModel& model = _loadModel(model_path, conf_interval);
 
     dbg_printf("Initialize storage arrays...\n");
     int w = asset.getWidth();
@@ -642,6 +654,8 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
     free_array(&psnr_array);
     free_array(&ssim_array);
     free_array(&ms_ssim_array);
+
+    delete &model;
 
     return result;
 }
