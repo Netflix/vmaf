@@ -67,14 +67,10 @@ export PATH="$PATH:$HOME/.local/bin"
 First, install [Homebrew](https://brew.sh), then install the dependencies:
 
 ```
-brew install gcc freetype pkg-config homebrew/science/hdf5 python
+brew install gcc freetype pkg-config homebrew/science/hdf5 python@2
 ```
 
-This will install an up-to-date version of Python and `pip`, but you must add the following to the end of `~/.bash_profile` and restart your shell:
-
-```
-export PATH="/usr/local/opt/python/libexec/bin:$PATH"
-```
+This will install an up-to-date version of Python 2.7 and `pip` (see [Homebrew's Python guide](https://docs.brew.sh/Homebrew-and-Python) for more info).
 
 Now install the required Python packages:
 
