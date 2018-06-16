@@ -167,10 +167,20 @@ public:
 private:
     const char *model_path;
     static const int INIT_FRAMES = 1000;
+};
+
+class LibsvmNusvrTrainTestModel
+{
+public:
+    LibsvmNusvrTrainTestModel(const char *model_path): model_path(model_path) { _loadModel(); }
+    Val feature_names, norm_type, slopes, intercepts, score_clip, score_transform;
+    std::unique_ptr<svm_model, SvmDelete> svm_model_ptr;
+private:
+    const char *model_path;
+    void _loadModel();
     void _read_and_assert_model(const char *model_path, Val& feature_names, Val& norm_type, Val& slopes,
             Val& intercepts, Val& score_clip, Val& score_transform);
     std::unique_ptr<svm_model, SvmDelete> _read_and_assert_svm_model(const char* libsvm_model_path);
-
 };
 
 #endif /* VMAF_H_ */
