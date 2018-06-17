@@ -167,6 +167,7 @@ public:
     std::unique_ptr<svm_model, SvmDelete> svm_model_ptr;
     double predict(svm_node* nodes);
     virtual void loadModel();
+    virtual ~LibsvmNusvrTrainTestModel() {}
 protected:
     const char *model_path;
     void _read_and_assert_model(const char *model_path, Val& feature_names, Val& norm_type, Val& slopes,
@@ -182,6 +183,7 @@ public:
     BootstrapLibsvmNusvrTrainTestModel(const char *model_path): LibsvmNusvrTrainTestModel(model_path) {}
     virtual void loadModel();
     int numModels;
+    virtual ~BootstrapLibsvmNusvrTrainTestModel() {}
 private:
     const char *_get_model_i_filename(const char* model_path, int i_model);
     void _read_and_assert_model(const char *model_path, Val& feature_names, Val& norm_type, Val& slopes,
