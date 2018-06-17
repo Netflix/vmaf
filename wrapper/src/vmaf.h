@@ -29,6 +29,7 @@
 #include <exception>
 #include <cstring>
 #include <memory>
+#include <list>
 
 #include "svm.h"
 #include "chooseser.h"
@@ -164,12 +165,12 @@ class LibsvmNusvrTrainTestModel
 public:
     LibsvmNusvrTrainTestModel(const char *model_path): model_path(model_path) {}
     Val feature_names, norm_type, slopes, intercepts, score_clip, score_transform;
-    std::unique_ptr<svm_model, SvmDelete> svm_model_ptr;
     double predict(svm_node* nodes);
     virtual void loadModel();
     virtual ~LibsvmNusvrTrainTestModel() {}
 protected:
     const char *model_path;
+    std::unique_ptr<svm_model, SvmDelete> svm_model_ptr;
     void _read_and_assert_model(const char *model_path, Val& feature_names, Val& norm_type, Val& slopes,
             Val& intercepts, Val& score_clip, Val& score_transform);
     std::unique_ptr<svm_model, SvmDelete> _read_and_assert_svm_model(const char* libsvm_model_path);
@@ -185,6 +186,7 @@ public:
     int numModels;
     virtual ~BootstrapLibsvmNusvrTrainTestModel() {}
 private:
+    std::list<std::unique_ptr<svm_model, SvmDelete>> bootstrap_svm_model_ptrs;
     const char *_get_model_i_filename(const char* model_path, int i_model);
     void _read_and_assert_model(const char *model_path, Val& feature_names, Val& norm_type, Val& slopes,
             Val& intercepts, Val& score_clip, Val& score_transform, int& numModels);

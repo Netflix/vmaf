@@ -198,22 +198,30 @@ void BootstrapLibsvmNusvrTrainTestModel::_read_and_assert_model(const char *mode
 
 void BootstrapLibsvmNusvrTrainTestModel::loadModel()
 {
-    const char *model_path0 = _get_model_i_filename(model_path, 0);
+    const char *model_path;
+    const char *libsvm_model_path;
 
+    model_path = _get_model_i_filename(this->model_path, 0);
     dbg_printf("Read input model (pkl) at %s ...\n", model_path);
-    _read_and_assert_model(model_path0, feature_names, norm_type, slopes, intercepts, score_clip, score_transform, numModels);
-
+    _read_and_assert_model(model_path, feature_names, norm_type, slopes, intercepts, score_clip, score_transform, numModels);
     dbg_printf("number of bootstrap models: %d\n", numModels);
 
-    /* follow the convention that if model_path is a/b.c, the libsvm_model_path is always a/b.c.model */
-    const char *libsvm_model_path0 = (std::string(model_path0) + std::string(".model")).c_str();
-    dbg_printf("Read input model (libsvm) at %s ...\n", libsvm_model_path0);
-    svm_model_ptr = _read_and_assert_svm_model(libsvm_model_path0);
+    for (int iModel=0; iModel<numModels; iModel++)
+    {
+        model_path = _get_model_i_filename(this->model_path, iModel);
+        /* follow the convention that if model_path is a/b.c, the libsvm_model_path is always a/b.c.model */
+        libsvm_model_path = (std::string(model_path) + std::string(".model")).c_str();
+        dbg_printf("Read input model (libsvm) at %s ...\n", libsvm_model_path);
+        if (iModel == 0)
+        {
+            svm_model_ptr = _read_and_assert_svm_model(libsvm_model_path);
+        }
+        else
+        {
+            bootstrap_svm_model_ptrs.push_back(_read_and_assert_svm_model(libsvm_model_path));
+        }
+    }
 
-//    LibsvmNusvrTrainTestModel::loadModel();
-//    printf("%s\n", _get_model_i_filename(model_path, 0));
-//    printf("%s\n", _get_model_i_filename(model_path, 1));
-//    printf("%s\n", _get_model_i_filename(model_path, 2));
 }
 
 std::unique_ptr<svm_model, SvmDelete> LibsvmNusvrTrainTestModel::_read_and_assert_svm_model(const char* libsvm_model_path)
