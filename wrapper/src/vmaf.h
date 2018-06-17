@@ -209,7 +209,7 @@ private:
             StatVector& vif_scale2, StatVector& vif_scale3, StatVector& vif,
             StatVector& motion2, bool enable_transform, bool disable_clip,
             StatVector& vmaf);
-    LibsvmNusvrTrainTestModel& _loadModel(const char *model_path, bool conf_interval);
+    static LibsvmNusvrTrainTestModel& _loadModel(const char *model_path, bool conf_interval);
 };
 
 #endif /* VMAF_H_ */
