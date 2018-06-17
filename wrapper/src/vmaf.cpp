@@ -52,6 +52,14 @@ void SvmDelete::operator()(void *svm)
     svm_free_and_destroy_model((svm_model **)&svm);
 }
 
+void LibsvmNusvrTrainTestModel::_assert_model_type(Val model_type) {
+    if (!VAL_EQUAL_STR(model_type, "'LIBSVMNUSVR'")) {
+        printf("Expect model type LIBSVMNUSVR, "
+                "but got %s\n", Stringize(model_type).c_str());
+        throw VmafException("Incompatible model_type");
+    }
+}
+
 void LibsvmNusvrTrainTestModel::_read_and_assert_model(const char *model_path, Val& feature_names,
      Val& norm_type, Val& slopes, Val& intercepts, Val& score_clip, Val& score_transform)
 {
@@ -90,12 +98,7 @@ void LibsvmNusvrTrainTestModel::_read_and_assert_model(const char *model_path, V
         throw VmafException(errmsg);
     }
 
-    if (!VAL_EQUAL_STR(model_type, "'LIBSVMNUSVR'"))
-    {
-        printf("Current vmafossexec only accepts model type LIBSVMNUSVR, "
-                "but got %s\n", Stringize(model_type).c_str());
-        throw VmafException("Incompatible model_type");
-    }
+    _assert_model_type(model_type);
 
     if (!VAL_IS_LIST(feature_names))
     {
@@ -137,14 +140,12 @@ void LibsvmNusvrTrainTestModel::_read_and_assert_model(const char *model_path, V
 
 void LibsvmNusvrTrainTestModel::loadModel()
 {
-    dbg_printf("Read input model (pkl)...\n");
-
+    dbg_printf("Read input model (pkl) at %s ...\n", model_path);
     _read_and_assert_model(model_path, feature_names, norm_type, slopes, intercepts, score_clip, score_transform);
-
-    dbg_printf("Read input model (libsvm)...\n");
 
     /* follow the convention that if model_path is a/b.c, the libsvm_model_path is always a/b.c.model */
     const char *libsvm_model_path = (std::string(model_path) + std::string(".model")).c_str();
+    dbg_printf("Read input model (libsvm) at %s ...\n", libsvm_model_path);
     svm_model_ptr = _read_and_assert_svm_model(libsvm_model_path);
 }
 
@@ -161,13 +162,58 @@ const char *BootstrapLibsvmNusvrTrainTestModel::_get_model_i_filename(const char
     }
 }
 
+void BootstrapLibsvmNusvrTrainTestModel::_assert_model_type(Val model_type) {
+    if (!VAL_EQUAL_STR(model_type, "'RESIDUEBOOTSTRAP_LIBSVMNUSVR'")) {
+        printf("Expect model type RESIDUEBOOTSTRAP_LIBSVMNUSVR, "
+                "but got %s\n", Stringize(model_type).c_str());
+        throw VmafException("Incompatible model_type");
+    }
+}
+
+void BootstrapLibsvmNusvrTrainTestModel::_read_and_assert_model(const char *model_path, Val& feature_names, Val& norm_type, Val& slopes,
+        Val& intercepts, Val& score_clip, Val& score_transform, int& numModels)
+{
+    LibsvmNusvrTrainTestModel::_read_and_assert_model(model_path, feature_names, norm_type, slopes, intercepts, score_clip, score_transform);
+
+    Val model, model_type, numModelsVal;
+    char errmsg[1024];
+    try
+    {
+        LoadValFromFile(model_path, model, SERIALIZE_P0);
+        numModelsVal = model["param_dict"]["num_models"];
+    }
+    catch (std::runtime_error& e)
+    {
+        printf("num_models at %s cannot be read successfully.\n", model_path);
+        sprintf(errmsg, "Error loading model (.pkl): %s", e.what());
+        throw VmafException(errmsg);
+    }
+    if (VAL_IS_NONE(numModelsVal))
+    {
+        printf("num_models cannot be none.\n");
+        throw VmafException("num_models cannot be none.");
+    }
+    numModels = numModelsVal;
+}
+
 void BootstrapLibsvmNusvrTrainTestModel::loadModel()
 {
-    LibsvmNusvrTrainTestModel::loadModel();
+    const char *model_path0 = _get_model_i_filename(model_path, 0);
 
-    printf("%s\n", _get_model_i_filename(model_path, 0));
-    printf("%s\n", _get_model_i_filename(model_path, 1));
-    printf("%s\n", _get_model_i_filename(model_path, 2));
+    dbg_printf("Read input model (pkl) at %s ...\n", model_path);
+    _read_and_assert_model(model_path0, feature_names, norm_type, slopes, intercepts, score_clip, score_transform, numModels);
+
+    dbg_printf("number of bootstrap models: %d\n", numModels);
+
+    /* follow the convention that if model_path is a/b.c, the libsvm_model_path is always a/b.c.model */
+    const char *libsvm_model_path0 = (std::string(model_path0) + std::string(".model")).c_str();
+    dbg_printf("Read input model (libsvm) at %s ...\n", libsvm_model_path0);
+    svm_model_ptr = _read_and_assert_svm_model(libsvm_model_path0);
+
+//    LibsvmNusvrTrainTestModel::loadModel();
+//    printf("%s\n", _get_model_i_filename(model_path, 0));
+//    printf("%s\n", _get_model_i_filename(model_path, 1));
+//    printf("%s\n", _get_model_i_filename(model_path, 2));
 }
 
 std::unique_ptr<svm_model, SvmDelete> LibsvmNusvrTrainTestModel::_read_and_assert_svm_model(const char* libsvm_model_path)

@@ -169,18 +169,24 @@ public:
     virtual void loadModel();
 protected:
     const char *model_path;
-private:
     void _read_and_assert_model(const char *model_path, Val& feature_names, Val& norm_type, Val& slopes,
             Val& intercepts, Val& score_clip, Val& score_transform);
     std::unique_ptr<svm_model, SvmDelete> _read_and_assert_svm_model(const char* libsvm_model_path);
+
+private:
+    virtual void _assert_model_type(Val model_type);
 };
 
 class BootstrapLibsvmNusvrTrainTestModel: public LibsvmNusvrTrainTestModel {
 public:
     BootstrapLibsvmNusvrTrainTestModel(const char *model_path): LibsvmNusvrTrainTestModel(model_path) {}
     virtual void loadModel();
+    int numModels;
 private:
     const char *_get_model_i_filename(const char* model_path, int i_model);
+    void _read_and_assert_model(const char *model_path, Val& feature_names, Val& norm_type, Val& slopes,
+            Val& intercepts, Val& score_clip, Val& score_transform, int& numModels);
+    virtual void _assert_model_type(Val model_type);
 };
 
 class VmafRunner
