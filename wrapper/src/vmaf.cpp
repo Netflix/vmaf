@@ -613,27 +613,24 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
     StatVector adm2, motion, vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, vmaf, motion2;
     StatVector adm_scale0, adm_scale1, adm_scale2, adm_scale3;
     StatVector psnr, ssim, ms_ssim;
-    for (size_t i=0; i<num_frms; i++)
+    for (size_t i=0; i<num_frms; i+=n_subsample)
     {
-        if (i % n_subsample == 0)
-        {
-            adm2.append((get_at(&adm_num_array, i) + ADM2_CONSTANT) / (get_at(&adm_den_array, i) + ADM2_CONSTANT));
-            adm_scale0.append((get_at(&adm_num_scale0_array, i) + ADM_SCALE_CONSTANT) / (get_at(&adm_den_scale0_array, i) + ADM_SCALE_CONSTANT));
-            adm_scale1.append((get_at(&adm_num_scale1_array, i) + ADM_SCALE_CONSTANT) / (get_at(&adm_den_scale1_array, i) + ADM_SCALE_CONSTANT));
-            adm_scale2.append((get_at(&adm_num_scale2_array, i) + ADM_SCALE_CONSTANT) / (get_at(&adm_den_scale2_array, i) + ADM_SCALE_CONSTANT));
-            adm_scale3.append((get_at(&adm_num_scale3_array, i) + ADM_SCALE_CONSTANT) / (get_at(&adm_den_scale3_array, i) + ADM_SCALE_CONSTANT));
-            motion.append(get_at(&motion_array, i));
-            motion2.append(get_at(&motion2_array, i));
-            vif_scale0.append(get_at(&vif_num_scale0_array, i) / get_at(&vif_den_scale0_array, i));
-            vif_scale1.append(get_at(&vif_num_scale1_array, i) / get_at(&vif_den_scale1_array, i));
-            vif_scale2.append(get_at(&vif_num_scale2_array, i) / get_at(&vif_den_scale2_array, i));
-            vif_scale3.append(get_at(&vif_num_scale3_array, i) / get_at(&vif_den_scale3_array, i));
-            vif.append(get_at(&vif_array, i));
+        adm2.append((get_at(&adm_num_array, i) + ADM2_CONSTANT) / (get_at(&adm_den_array, i) + ADM2_CONSTANT));
+        adm_scale0.append((get_at(&adm_num_scale0_array, i) + ADM_SCALE_CONSTANT) / (get_at(&adm_den_scale0_array, i) + ADM_SCALE_CONSTANT));
+        adm_scale1.append((get_at(&adm_num_scale1_array, i) + ADM_SCALE_CONSTANT) / (get_at(&adm_den_scale1_array, i) + ADM_SCALE_CONSTANT));
+        adm_scale2.append((get_at(&adm_num_scale2_array, i) + ADM_SCALE_CONSTANT) / (get_at(&adm_den_scale2_array, i) + ADM_SCALE_CONSTANT));
+        adm_scale3.append((get_at(&adm_num_scale3_array, i) + ADM_SCALE_CONSTANT) / (get_at(&adm_den_scale3_array, i) + ADM_SCALE_CONSTANT));
+        motion.append(get_at(&motion_array, i));
+        motion2.append(get_at(&motion2_array, i));
+        vif_scale0.append(get_at(&vif_num_scale0_array, i) / get_at(&vif_den_scale0_array, i));
+        vif_scale1.append(get_at(&vif_num_scale1_array, i) / get_at(&vif_den_scale1_array, i));
+        vif_scale2.append(get_at(&vif_num_scale2_array, i) / get_at(&vif_den_scale2_array, i));
+        vif_scale3.append(get_at(&vif_num_scale3_array, i) / get_at(&vif_den_scale3_array, i));
+        vif.append(get_at(&vif_array, i));
 
-            if (psnr_array_ptr != NULL) { psnr.append(get_at(&psnr_array, i)); }
-            if (ssim_array_ptr != NULL) { ssim.append(get_at(&ssim_array, i)); }
-            if (ms_ssim_array_ptr != NULL) { ms_ssim.append(get_at(&ms_ssim_array, i)); }
-        }
+        if (psnr_array_ptr != NULL) { psnr.append(get_at(&psnr_array, i)); }
+        if (ssim_array_ptr != NULL) { ssim.append(get_at(&ssim_array, i)); }
+        if (ms_ssim_array_ptr != NULL) { ms_ssim.append(get_at(&ms_ssim_array, i)); }
     }
 
     dbg_printf("Normalize features, SVM regression, denormalize score, clip...\n");
