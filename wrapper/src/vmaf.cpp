@@ -144,7 +144,8 @@ void LibsvmNusvrTrainTestModel::loadModel()
     _read_and_assert_model(model_path, feature_names, norm_type, slopes, intercepts, score_clip, score_transform);
 
     /* follow the convention that if model_path is a/b.c, the libsvm_model_path is always a/b.c.model */
-    const char *libsvm_model_path = (std::string(model_path) + std::string(".model")).c_str();
+    std::string libsvm_model_path_ = std::string(model_path) + std::string(".model");
+    const char *libsvm_model_path = libsvm_model_path_.c_str();
     dbg_printf("Read input model (libsvm) at %s ...\n", libsvm_model_path);
     svm_model_ptr = _read_and_assert_svm_model(libsvm_model_path);
 }
@@ -158,7 +159,8 @@ const char *BootstrapLibsvmNusvrTrainTestModel::_get_model_i_filename(const char
         std::stringstream ss;
         ss << '.' << std::setw(4) << std::setfill('0') << i_model;
         std::string s = ss.str();
-        return (std::string(model_path) + s).c_str();
+        std::string model_path_i = std::string(model_path) + s;
+        return model_path_i.c_str();
     }
 }
 
@@ -210,7 +212,8 @@ void BootstrapLibsvmNusvrTrainTestModel::loadModel()
     {
         model_path = _get_model_i_filename(this->model_path, iModel);
         /* follow the convention that if model_path is a/b.c, the libsvm_model_path is always a/b.c.model */
-        libsvm_model_path = (std::string(model_path) + std::string(".model")).c_str();
+        std::string libsvm_model_path_ = std::string(model_path) + std::string(".model");
+        libsvm_model_path = libsvm_model_path_.c_str();
         dbg_printf("Read input model (libsvm) at %s ...\n", libsvm_model_path);
         if (iModel == 0)
         {
