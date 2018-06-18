@@ -361,6 +361,17 @@ void VmafRunner::_populate_and_normalize_nodes_at_frm(size_t i_frm,
     }
 }
 
+void VmafRunner::_denormalize_prediction(LibsvmNusvrTrainTestModel& model,
+        double& prediction) {
+    if (VAL_EQUAL_STR(model.norm_type, "'linear_rescale'")) {
+        /* denormalize */
+        prediction = (prediction - double(model.intercepts[0]))
+                / double(model.slopes[0]);
+    } else {
+        ;
+    }
+}
+
 void VmafRunner::_normalize_predict_denormalize(
         LibsvmNusvrTrainTestModel& model, size_t num_frms,
         StatVector& adm2, StatVector& adm_scale0, StatVector& adm_scale1,
@@ -385,53 +396,54 @@ void VmafRunner::_normalize_predict_denormalize(
         /* feed to svm_predict */
         double prediction = model.predict(nodes);
 
-        if (VAL_EQUAL_STR(model.norm_type, "'linear_rescale'")) {
-            /* denormalize */
-            prediction = (prediction - double(model.intercepts[0]))
-                    / double(model.slopes[0]);
-        } else {
-            ;
-        }
+        /* denormalize score */
+        _denormalize_prediction(model, prediction);
 
         /* score transform */
-        if (enable_transform && !VAL_IS_NONE(model.score_transform)) {
-            double value = 0.0;
+        if (enable_transform)
+        {
+            if (!VAL_IS_NONE(model.score_transform)) {
+                double value = 0.0;
 
-            /* quadratic transform */
-            if (!VAL_IS_NONE(model.score_transform["p0"])) {
-                value += double(model.score_transform["p0"]);
-            }
-            if (!VAL_IS_NONE(model.score_transform["p1"])) {
-                value += double(model.score_transform["p1"]) * prediction;
-            }
-            if (!VAL_IS_NONE(model.score_transform["p2"])) {
-                value += double(model.score_transform["p2"]) * prediction
-                        * prediction;
-            }
-
-            /* rectification */
-            if (!VAL_IS_NONE(model.score_transform["out_lte_in"])
-                    && VAL_EQUAL_STR(model.score_transform["out_lte_in"], "'true'")) {
-                if (value > prediction) {
-                    value = prediction;
+                /* quadratic transform */
+                if (!VAL_IS_NONE(model.score_transform["p0"])) {
+                    value += double(model.score_transform["p0"]);
                 }
-            }
-            if (!VAL_IS_NONE(model.score_transform["out_gte_in"])
-                    && VAL_EQUAL_STR(model.score_transform["out_gte_in"], "'true'")) {
-                if (value < prediction) {
-                    value = prediction;
+                if (!VAL_IS_NONE(model.score_transform["p1"])) {
+                    value += double(model.score_transform["p1"]) * prediction;
                 }
-            }
+                if (!VAL_IS_NONE(model.score_transform["p2"])) {
+                    value += double(model.score_transform["p2"]) * prediction
+                            * prediction;
+                }
 
-            prediction = value;
+                /* rectification */
+                if (!VAL_IS_NONE(model.score_transform["out_lte_in"])
+                        && VAL_EQUAL_STR(model.score_transform["out_lte_in"], "'true'")) {
+                    if (value > prediction) {
+                        value = prediction;
+                    }
+                }
+                if (!VAL_IS_NONE(model.score_transform["out_gte_in"])
+                        && VAL_EQUAL_STR(model.score_transform["out_gte_in"], "'true'")) {
+                    if (value < prediction) {
+                        value = prediction;
+                    }
+                }
+
+                prediction = value;
+            }
         }
 
         /* score clip */
-        if (!disable_clip && !VAL_IS_NONE(model.score_clip)) {
-            if (prediction < double(model.score_clip[0])) {
-                prediction = double(model.score_clip[0]);
-            } else if (prediction > double(model.score_clip[1])) {
-                prediction = double(model.score_clip[1]);
+        if (!disable_clip)
+        {
+            if (!VAL_IS_NONE(model.score_clip)) {
+                if (prediction < double(model.score_clip[0])) {
+                    prediction = double(model.score_clip[0]);
+                } else if (prediction > double(model.score_clip[1])) {
+                    prediction = double(model.score_clip[1]);
+                }
             }
         }
 
