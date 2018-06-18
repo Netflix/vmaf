@@ -174,6 +174,7 @@ protected:
     void _read_and_assert_model(const char *model_path, Val& feature_names, Val& norm_type, Val& slopes,
             Val& intercepts, Val& score_clip, Val& score_transform);
     std::unique_ptr<svm_model, SvmDelete> _read_and_assert_svm_model(const char* libsvm_model_path);
+    void _denormalize_prediction(double& prediction);
 
 private:
     virtual void _assert_model_type(Val model_type);
@@ -205,8 +206,6 @@ private:
     static const int INIT_FRAMES = 1000;
     void _clip_score(LibsvmNusvrTrainTestModel& model, double& prediction);
     void _transform_score(LibsvmNusvrTrainTestModel& model, double& prediction);
-    void _denormalize_prediction(LibsvmNusvrTrainTestModel& model,
-            double& prediction);
     void _populate_and_normalize_nodes_at_frm(size_t i_frm,
             LibsvmNusvrTrainTestModel& model,
             svm_node*& nodes, StatVector& adm2,

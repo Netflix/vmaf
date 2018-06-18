@@ -239,7 +239,23 @@ std::unique_ptr<svm_model, SvmDelete> LibsvmNusvrTrainTestModel::_read_and_asser
 }
 
 double LibsvmNusvrTrainTestModel::predict(svm_node* nodes) {
-    return svm_predict(svm_model_ptr.get(), nodes);
+    double prediction = svm_predict(svm_model_ptr.get(), nodes);
+
+    /* denormalize score */
+    _denormalize_prediction(prediction);
+
+    return prediction;
+
+}
+
+void LibsvmNusvrTrainTestModel::_denormalize_prediction(double& prediction) {
+    if (VAL_EQUAL_STR(norm_type, "'linear_rescale'")) {
+        /* denormalize */
+        prediction = (prediction - double(intercepts[0]))
+                / double(slopes[0]);
+    } else {
+        ;
+    }
 }
 
 void VmafRunner::_populate_and_normalize_nodes_at_frm(size_t i_frm,
@@ -361,17 +377,6 @@ void VmafRunner::_populate_and_normalize_nodes_at_frm(size_t i_frm,
     }
 }
 
-void VmafRunner::_denormalize_prediction(LibsvmNusvrTrainTestModel& model,
-        double& prediction) {
-    if (VAL_EQUAL_STR(model.norm_type, "'linear_rescale'")) {
-        /* denormalize */
-        prediction = (prediction - double(model.intercepts[0]))
-                / double(model.slopes[0]);
-    } else {
-        ;
-    }
-}
-
 void VmafRunner::_transform_score(LibsvmNusvrTrainTestModel& model,
         double& prediction) {
     if (!VAL_IS_NONE(model.score_transform)) {
@@ -441,9 +446,6 @@ void VmafRunner::_normalize_predict_denormalize_transform_clip(
 
         /* feed to svm_predict */
         double prediction = model.predict(nodes);
-
-        /* denormalize score */
-        _denormalize_prediction(model, prediction);
 
         /* score transform */
         if (enable_transform)
