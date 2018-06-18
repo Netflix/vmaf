@@ -279,14 +279,17 @@ void LibsvmNusvrTrainTestModel::populate_and_normalize_nodes_at_frm(size_t i_frm
     }
 }
 
-double LibsvmNusvrTrainTestModel::predict(svm_node* nodes) {
+std::map<VmafPredictionReturnType, double>& LibsvmNusvrTrainTestModel::predict(svm_node* nodes) {
+
     double prediction = svm_predict(svm_model_ptr.get(), nodes);
 
     /* denormalize score */
     _denormalize_prediction(prediction);
 
-    return prediction;
+    std::map<VmafPredictionReturnType, double>* predictionMapPtr = new std::map<VmafPredictionReturnType, double>();
+    (*predictionMapPtr)[SCORE] = prediction;
 
+    return *predictionMapPtr;
 }
 
 void LibsvmNusvrTrainTestModel::_denormalize_prediction(double& prediction) {
@@ -314,7 +317,7 @@ const char *BootstrapLibsvmNusvrTrainTestModel::_get_model_i_filename(const char
 }
 
 void BootstrapLibsvmNusvrTrainTestModel::_assert_model_type(Val model_type) {
-    if (!VAL_EQUAL_STR(model_type, "'RESIDUEBOOTSTRAP_LIBSVMNUSVR'") ||
+    if (!VAL_EQUAL_STR(model_type, "'RESIDUEBOOTSTRAP_LIBSVMNUSVR'") &&
             !VAL_EQUAL_STR(model_type, "'BOOTSTRAP_LIBSVMNUSVR'")) {
         printf("Expect model type BOOTSTRAP_LIBSVMNUSVR or "
                 "RESIDUEBOOTSTRAP_LIBSVMNUSVR, but got %s\n", Stringize(model_type).c_str());
@@ -445,7 +448,8 @@ void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
                 vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, motion2);
 
         /* feed to svm_predict */
-        double prediction = model.predict(nodes);
+        std::map<VmafPredictionReturnType, double>& predictionMap = model.predict(nodes);
+        double prediction = predictionMap[SCORE];
 
         /* score transform */
         if (enable_transform)
@@ -477,6 +481,8 @@ void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
         dbg_printf("\n");
 
         vmaf.append(prediction);
+
+        delete &predictionMap;
     }
 }
 

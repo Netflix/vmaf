@@ -160,12 +160,21 @@ struct SvmDelete {
     void operator()(void *svm);
 };
 
+enum VmafPredictionReturnType
+{
+    SCORE,
+    BAGGING_SCORE,
+    STDDEV,
+    CI95_LOW,
+    CI95_HIGH
+};
+
 class LibsvmNusvrTrainTestModel
 {
 public:
     LibsvmNusvrTrainTestModel(const char *model_path): model_path(model_path) {}
     Val feature_names, norm_type, slopes, intercepts, score_clip, score_transform;
-    double predict(svm_node* nodes);
+    std::map<VmafPredictionReturnType, double>& predict(svm_node* nodes);
     virtual void loadModel();
     void populate_and_normalize_nodes_at_frm(size_t i_frm,
             svm_node*& nodes, StatVector& adm2,
