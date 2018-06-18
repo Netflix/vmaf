@@ -377,7 +377,7 @@ void BootstrapLibsvmNusvrTrainTestModel::loadModel()
 
 }
 
-void VmafRunner::_transform_score(LibsvmNusvrTrainTestModel& model,
+void VmafQualityRunner::_transform_score(LibsvmNusvrTrainTestModel& model,
         double& prediction) {
     if (!VAL_IS_NONE(model.score_transform)) {
         double value = 0.0;
@@ -412,7 +412,7 @@ void VmafRunner::_transform_score(LibsvmNusvrTrainTestModel& model,
     }
 }
 
-void VmafRunner::_clip_score(LibsvmNusvrTrainTestModel& model,
+void VmafQualityRunner::_clip_score(LibsvmNusvrTrainTestModel& model,
         double& prediction) {
     if (!VAL_IS_NONE(model.score_clip)) {
         if (prediction < double(model.score_clip[0])) {
@@ -423,7 +423,7 @@ void VmafRunner::_clip_score(LibsvmNusvrTrainTestModel& model,
     }
 }
 
-void VmafRunner::_normalize_predict_denormalize_transform_clip(
+void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
         LibsvmNusvrTrainTestModel& model, size_t num_frms,
         StatVector& adm2, StatVector& adm_scale0, StatVector& adm_scale1,
         StatVector& adm_scale2, StatVector& adm_scale3, StatVector& motion,
@@ -480,7 +480,7 @@ void VmafRunner::_normalize_predict_denormalize_transform_clip(
     }
 }
 
-LibsvmNusvrTrainTestModel& VmafRunner::_loadModel(const char *model_path)
+LibsvmNusvrTrainTestModel& VmafQualityRunner::_loadModel(const char *model_path)
 {
     LibsvmNusvrTrainTestModel* model;
     model = new LibsvmNusvrTrainTestModel(model_path);
@@ -488,7 +488,15 @@ LibsvmNusvrTrainTestModel& VmafRunner::_loadModel(const char *model_path)
     return *model;
 }
 
-Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
+LibsvmNusvrTrainTestModel& BootstrapVmafQualityRunner::_loadModel(const char *model_path)
+{
+    LibsvmNusvrTrainTestModel* model;
+    model = new BootstrapLibsvmNusvrTrainTestModel(model_path);
+    model->loadModel();
+    return *model;
+}
+
+Result VmafQualityRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
                        int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
                        bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample)
 {
@@ -767,9 +775,18 @@ double RunVmaf(const char* fmt, int width, int height,
     }
 
     Asset asset(width, height, fmt);
-    VmafRunner runner{model_path};
-    Timer timer;
+    VmafQualityRunner* runner_ptr;
+    if (conf_interval)
+    {
+        runner_ptr = new BootstrapVmafQualityRunner(model_path);
+    }
+    else
+    {
+        runner_ptr = new VmafQualityRunner(model_path);
+    }
+    VmafQualityRunner& runner = *runner_ptr;
 
+    Timer timer;
     timer.start();
     Result result = runner.run(asset, read_frame, user_data, disable_clip, enable_transform,
                                do_psnr, do_ssim, do_ms_ssim, n_thread, n_subsample);
@@ -880,6 +897,9 @@ double RunVmaf(const char* fmt, int width, int height,
 
         xml.save_file(log_path);
     }
+
+    /* clean up */
+    delete runner_ptr;
 
     return aggregate_vmaf;
 }

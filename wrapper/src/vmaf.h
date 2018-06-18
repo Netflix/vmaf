@@ -201,15 +201,16 @@ private:
     virtual void _assert_model_type(Val model_type);
 };
 
-class VmafRunner
+class VmafQualityRunner
 {
 public:
-    VmafRunner(const char *model_path): model_path(model_path) {}
+    VmafQualityRunner(const char *model_path): model_path(model_path) {}
     Result run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
                int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
                bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample);
 private:
     const char *model_path;
+    virtual LibsvmNusvrTrainTestModel& _loadModel(const char *model_path);
     static const int INIT_FRAMES = 1000;
     void _clip_score(LibsvmNusvrTrainTestModel& model, double& prediction);
     void _transform_score(LibsvmNusvrTrainTestModel& model, double& prediction);
@@ -221,7 +222,14 @@ private:
             StatVector& vif_scale2, StatVector& vif_scale3, StatVector& vif,
             StatVector& motion2, bool enable_transform, bool disable_clip,
             StatVector& vmaf);
-    static LibsvmNusvrTrainTestModel& _loadModel(const char *model_path);
+};
+
+class BootstrapVmafQualityRunner: public VmafQualityRunner
+{
+public:
+    BootstrapVmafQualityRunner(const char *model_path): VmafQualityRunner(model_path) {}
+private:
+    virtual LibsvmNusvrTrainTestModel& _loadModel(const char *model_path);
 };
 
 #endif /* VMAF_H_ */
