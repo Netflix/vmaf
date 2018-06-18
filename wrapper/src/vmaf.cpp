@@ -152,8 +152,7 @@ void LibsvmNusvrTrainTestModel::loadModel()
 
 std::unique_ptr<svm_model, SvmDelete> LibsvmNusvrTrainTestModel::_read_and_assert_svm_model(const char* libsvm_model_path)
 {
-    std::unique_ptr < svm_model, SvmDelete
-            > svm_model_ptr { svm_load_model(libsvm_model_path) };
+    std::unique_ptr<svm_model, SvmDelete> svm_model_ptr { svm_load_model(libsvm_model_path) };
     if (!svm_model_ptr) {
         printf("Error loading SVM model.\n");
         throw VmafException("Error loading SVM model");
@@ -315,9 +314,10 @@ const char *BootstrapLibsvmNusvrTrainTestModel::_get_model_i_filename(const char
 }
 
 void BootstrapLibsvmNusvrTrainTestModel::_assert_model_type(Val model_type) {
-    if (!VAL_EQUAL_STR(model_type, "'RESIDUEBOOTSTRAP_LIBSVMNUSVR'")) {
-        printf("Expect model type RESIDUEBOOTSTRAP_LIBSVMNUSVR, "
-                "but got %s\n", Stringize(model_type).c_str());
+    if (!VAL_EQUAL_STR(model_type, "'RESIDUEBOOTSTRAP_LIBSVMNUSVR'") ||
+            !VAL_EQUAL_STR(model_type, "'BOOTSTRAP_LIBSVMNUSVR'")) {
+        printf("Expect model type BOOTSTRAP_LIBSVMNUSVR or "
+                "RESIDUEBOOTSTRAP_LIBSVMNUSVR, but got %s\n", Stringize(model_type).c_str());
         throw VmafException("Incompatible model_type");
     }
 }
@@ -482,16 +482,14 @@ void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
 
 LibsvmNusvrTrainTestModel& VmafQualityRunner::_loadModel(const char *model_path)
 {
-    LibsvmNusvrTrainTestModel* model;
-    model = new LibsvmNusvrTrainTestModel(model_path);
+    LibsvmNusvrTrainTestModel* model = new LibsvmNusvrTrainTestModel(model_path);
     model->loadModel();
     return *model;
 }
 
 LibsvmNusvrTrainTestModel& BootstrapVmafQualityRunner::_loadModel(const char *model_path)
 {
-    LibsvmNusvrTrainTestModel* model;
-    model = new BootstrapLibsvmNusvrTrainTestModel(model_path);
+    LibsvmNusvrTrainTestModel* model = new BootstrapLibsvmNusvrTrainTestModel(model_path);
     model->loadModel();
     return *model;
 }
