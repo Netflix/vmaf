@@ -207,7 +207,7 @@ public:
     VmafRunner(const char *model_path): model_path(model_path) {}
     Result run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
                int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
-               bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample, bool conf_interval);
+               bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample);
 private:
     const char *model_path;
     static const int INIT_FRAMES = 1000;
@@ -221,7 +221,7 @@ private:
             StatVector& vif_scale2, StatVector& vif_scale3, StatVector& vif,
             StatVector& motion2, bool enable_transform, bool disable_clip,
             StatVector& vmaf);
-    static LibsvmNusvrTrainTestModel& _loadModel(const char *model_path, bool conf_interval);
+    static LibsvmNusvrTrainTestModel& _loadModel(const char *model_path);
 };
 
 #endif /* VMAF_H_ */

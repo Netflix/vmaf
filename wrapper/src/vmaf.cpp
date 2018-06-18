@@ -480,25 +480,20 @@ void VmafRunner::_normalize_predict_denormalize_transform_clip(
     }
 }
 
-LibsvmNusvrTrainTestModel& VmafRunner::_loadModel(const char *model_path, bool conf_interval)
+LibsvmNusvrTrainTestModel& VmafRunner::_loadModel(const char *model_path)
 {
     LibsvmNusvrTrainTestModel* model;
-    if (conf_interval) {
-        model = new BootstrapLibsvmNusvrTrainTestModel(model_path);
-    }
-    else {
-        model = new LibsvmNusvrTrainTestModel(model_path);
-    }
+    model = new LibsvmNusvrTrainTestModel(model_path);
     model->loadModel();
     return *model;
 }
 
 Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
                        int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
-                       bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample, bool conf_interval)
+                       bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample)
 {
 
-    LibsvmNusvrTrainTestModel& model = _loadModel(model_path, conf_interval);
+    LibsvmNusvrTrainTestModel& model = _loadModel(model_path);
 
     dbg_printf("Initialize storage arrays...\n");
     int w = asset.getWidth();
@@ -777,7 +772,7 @@ double RunVmaf(const char* fmt, int width, int height,
 
     timer.start();
     Result result = runner.run(asset, read_frame, user_data, disable_clip, enable_transform,
-                               do_psnr, do_ssim, do_ms_ssim, n_thread, n_subsample, conf_interval);
+                               do_psnr, do_ssim, do_ms_ssim, n_thread, n_subsample);
     timer.stop();
 
     if (pool_method != NULL && (strcmp(pool_method, "min")==0))
