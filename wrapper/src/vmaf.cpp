@@ -418,7 +418,7 @@ void VmafRunner::_clip_score(LibsvmNusvrTrainTestModel& model,
     }
 }
 
-void VmafRunner::_normalize_predict_denormalize(
+void VmafRunner::_normalize_predict_denormalize_transform_clip(
         LibsvmNusvrTrainTestModel& model, size_t num_frms,
         StatVector& adm2, StatVector& adm_scale0, StatVector& adm_scale1,
         StatVector& adm_scale2, StatVector& adm_scale3, StatVector& motion,
@@ -456,10 +456,6 @@ void VmafRunner::_normalize_predict_denormalize(
          {
             _clip_score(model, prediction);
         }
-
-        // printf("svm predict: %f, %f, %f, %f, %f, %f => %f\n",
-        //        node[0].value, node[1].value, node[2].value,
-        //        node[3].value, node[4].value, node[5].value, prediction);
 
         dbg_printf("frame: %zu, ", i);
         dbg_printf("vmaf: %f, ", prediction);
@@ -669,7 +665,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
     {
         num_frms_subsampled++;
     }
-    _normalize_predict_denormalize(model, num_frms_subsampled, adm2,
+    _normalize_predict_denormalize_transform_clip(model, num_frms_subsampled, adm2,
             adm_scale0, adm_scale1, adm_scale2, adm_scale3, motion, vif_scale0,
             vif_scale1, vif_scale2, vif_scale3, vif, motion2, enable_transform,
             disable_clip, vmaf);
