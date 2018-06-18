@@ -167,6 +167,13 @@ public:
     Val feature_names, norm_type, slopes, intercepts, score_clip, score_transform;
     double predict(svm_node* nodes);
     virtual void loadModel();
+    void populate_and_normalize_nodes_at_frm(size_t i_frm,
+            svm_node*& nodes, StatVector& adm2,
+            StatVector& adm_scale0, StatVector& adm_scale1,
+            StatVector& adm_scale2, StatVector& adm_scale3, StatVector& motion,
+            StatVector& vif_scale0, StatVector& vif_scale1,
+            StatVector& vif_scale2, StatVector& vif_scale3, StatVector& vif,
+            StatVector& motion2);
     virtual ~LibsvmNusvrTrainTestModel() {}
 protected:
     const char *model_path;
@@ -206,14 +213,6 @@ private:
     static const int INIT_FRAMES = 1000;
     void _clip_score(LibsvmNusvrTrainTestModel& model, double& prediction);
     void _transform_score(LibsvmNusvrTrainTestModel& model, double& prediction);
-    void _populate_and_normalize_nodes_at_frm(size_t i_frm,
-            LibsvmNusvrTrainTestModel& model,
-            svm_node*& nodes, StatVector& adm2,
-            StatVector& adm_scale0, StatVector& adm_scale1,
-            StatVector& adm_scale2, StatVector& adm_scale3, StatVector& motion,
-            StatVector& vif_scale0, StatVector& vif_scale1,
-            StatVector& vif_scale2, StatVector& vif_scale3, StatVector& vif,
-            StatVector& motion2);
     void _normalize_predict_denormalize_transform_clip(LibsvmNusvrTrainTestModel& model,
             size_t num_frms, StatVector& adm2,
             StatVector& adm_scale0, StatVector& adm_scale1,

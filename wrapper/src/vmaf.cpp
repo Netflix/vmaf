@@ -150,6 +150,37 @@ void LibsvmNusvrTrainTestModel::loadModel()
     svm_model_ptr = _read_and_assert_svm_model(libsvm_model_path);
 }
 
+std::unique_ptr<svm_model, SvmDelete> LibsvmNusvrTrainTestModel::_read_and_assert_svm_model(const char* libsvm_model_path)
+{
+    std::unique_ptr < svm_model, SvmDelete
+            > svm_model_ptr { svm_load_model(libsvm_model_path) };
+    if (!svm_model_ptr) {
+        printf("Error loading SVM model.\n");
+        throw VmafException("Error loading SVM model");
+    }
+    return svm_model_ptr;
+}
+
+double LibsvmNusvrTrainTestModel::predict(svm_node* nodes) {
+    double prediction = svm_predict(svm_model_ptr.get(), nodes);
+
+    /* denormalize score */
+    _denormalize_prediction(prediction);
+
+    return prediction;
+
+}
+
+void LibsvmNusvrTrainTestModel::_denormalize_prediction(double& prediction) {
+    if (VAL_EQUAL_STR(norm_type, "'linear_rescale'")) {
+        /* denormalize */
+        prediction = (prediction - double(intercepts[0]))
+                / double(slopes[0]);
+    } else {
+        ;
+    }
+}
+
 const char *BootstrapLibsvmNusvrTrainTestModel::_get_model_i_filename(const char* model_path, int i_model)
 {
     if (i_model == 0) {
@@ -227,150 +258,119 @@ void BootstrapLibsvmNusvrTrainTestModel::loadModel()
 
 }
 
-std::unique_ptr<svm_model, SvmDelete> LibsvmNusvrTrainTestModel::_read_and_assert_svm_model(const char* libsvm_model_path)
-{
-    std::unique_ptr < svm_model, SvmDelete
-            > svm_model_ptr { svm_load_model(libsvm_model_path) };
-    if (!svm_model_ptr) {
-        printf("Error loading SVM model.\n");
-        throw VmafException("Error loading SVM model");
-    }
-    return svm_model_ptr;
-}
-
-double LibsvmNusvrTrainTestModel::predict(svm_node* nodes) {
-    double prediction = svm_predict(svm_model_ptr.get(), nodes);
-
-    /* denormalize score */
-    _denormalize_prediction(prediction);
-
-    return prediction;
-
-}
-
-void LibsvmNusvrTrainTestModel::_denormalize_prediction(double& prediction) {
-    if (VAL_EQUAL_STR(norm_type, "'linear_rescale'")) {
-        /* denormalize */
-        prediction = (prediction - double(intercepts[0]))
-                / double(slopes[0]);
-    } else {
-        ;
-    }
-}
-
-void VmafRunner::_populate_and_normalize_nodes_at_frm(size_t i_frm,
-        LibsvmNusvrTrainTestModel& model, svm_node*& nodes, StatVector& adm2,
+void LibsvmNusvrTrainTestModel::populate_and_normalize_nodes_at_frm(size_t i_frm,
+        svm_node*& nodes, StatVector& adm2,
         StatVector& adm_scale0, StatVector& adm_scale1,
         StatVector& adm_scale2, StatVector& adm_scale3, StatVector& motion,
         StatVector& vif_scale0, StatVector& vif_scale1, StatVector& vif_scale2,
         StatVector& vif_scale3, StatVector& vif, StatVector& motion2) {
-    if (VAL_EQUAL_STR(model.norm_type, "'linear_rescale'")) {
-        for (size_t j = 0; j < model.feature_names.length(); j++) {
+    if (VAL_EQUAL_STR(norm_type, "'linear_rescale'")) {
+        for (size_t j = 0; j < feature_names.length(); j++) {
             nodes[j].index = j + 1;
-            if (strcmp(Stringize(model.feature_names[j]).c_str(),
+            if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_adm2_score'") == 0)
-                nodes[j].value = double(model.slopes[j + 1]) * adm2.at(i_frm)
-                        + double(model.intercepts[j + 1]);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                nodes[j].value = double(slopes[j + 1]) * adm2.at(i_frm)
+                        + double(intercepts[j + 1]);
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_adm_scale0_score'") == 0)
-                nodes[j].value = double(model.slopes[j + 1])
+                nodes[j].value = double(slopes[j + 1])
                         * adm_scale0.at(i_frm)
-                        + double(model.intercepts[j + 1]);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                        + double(intercepts[j + 1]);
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_adm_scale1_score'") == 0)
-                nodes[j].value = double(model.slopes[j + 1])
+                nodes[j].value = double(slopes[j + 1])
                         * adm_scale1.at(i_frm)
-                        + double(model.intercepts[j + 1]);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                        + double(intercepts[j + 1]);
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_adm_scale2_score'") == 0)
-                nodes[j].value = double(model.slopes[j + 1])
+                nodes[j].value = double(slopes[j + 1])
                         * adm_scale2.at(i_frm)
-                        + double(model.intercepts[j + 1]);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                        + double(intercepts[j + 1]);
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_adm_scale3_score'") == 0)
-                nodes[j].value = double(model.slopes[j + 1])
+                nodes[j].value = double(slopes[j + 1])
                         * adm_scale3.at(i_frm)
-                        + double(model.intercepts[j + 1]);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                        + double(intercepts[j + 1]);
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_motion_score'") == 0)
-                nodes[j].value = double(model.slopes[j + 1]) * motion.at(i_frm)
-                        + double(model.intercepts[j + 1]);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                nodes[j].value = double(slopes[j + 1]) * motion.at(i_frm)
+                        + double(intercepts[j + 1]);
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_vif_scale0_score'") == 0)
-                nodes[j].value = double(model.slopes[j + 1])
+                nodes[j].value = double(slopes[j + 1])
                         * vif_scale0.at(i_frm)
-                        + double(model.intercepts[j + 1]);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                        + double(intercepts[j + 1]);
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_vif_scale1_score'") == 0)
-                nodes[j].value = double(model.slopes[j + 1])
+                nodes[j].value = double(slopes[j + 1])
                         * vif_scale1.at(i_frm)
-                        + double(model.intercepts[j + 1]);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                        + double(intercepts[j + 1]);
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_vif_scale2_score'") == 0)
-                nodes[j].value = double(model.slopes[j + 1])
+                nodes[j].value = double(slopes[j + 1])
                         * vif_scale2.at(i_frm)
-                        + double(model.intercepts[j + 1]);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                        + double(intercepts[j + 1]);
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_vif_scale3_score'") == 0)
-                nodes[j].value = double(model.slopes[j + 1])
+                nodes[j].value = double(slopes[j + 1])
                         * vif_scale3.at(i_frm)
-                        + double(model.intercepts[j + 1]);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                        + double(intercepts[j + 1]);
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_vif_score'") == 0)
-                nodes[j].value = double(model.slopes[j + 1]) * vif.at(i_frm)
-                        + double(model.intercepts[j + 1]);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                nodes[j].value = double(slopes[j + 1]) * vif.at(i_frm)
+                        + double(intercepts[j + 1]);
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_motion2_score'") == 0)
-                nodes[j].value = double(model.slopes[j + 1]) * motion2.at(i_frm)
-                        + double(model.intercepts[j + 1]);
+                nodes[j].value = double(slopes[j + 1]) * motion2.at(i_frm)
+                        + double(intercepts[j + 1]);
             else {
                 printf("Unknown feature name: %s.\n",
-                        Stringize(model.feature_names[j]).c_str());
+                        Stringize(feature_names[j]).c_str());
                 throw VmafException("Unknown feature name");
             }
         }
     } else {
-        for (size_t j = 0; j < model.feature_names.length(); j++) {
+        for (size_t j = 0; j < feature_names.length(); j++) {
             nodes[j].index = j + 1;
-            if (strcmp(Stringize(model.feature_names[j]).c_str(),
+            if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_adm2_score'") == 0)
                 nodes[j].value = adm2.at(i_frm);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_adm_scale0_score'") == 0)
                 nodes[j].value = adm_scale0.at(i_frm);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_adm_scale1_score'") == 0)
                 nodes[j].value = adm_scale1.at(i_frm);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_adm_scale2_score'") == 0)
                 nodes[j].value = adm_scale2.at(i_frm);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_adm_scale3_score'") == 0)
                 nodes[j].value = adm_scale3.at(i_frm);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_motion_score'") == 0)
                 nodes[j].value = motion.at(i_frm);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_vif_scale0_score'") == 0)
                 nodes[j].value = vif_scale0.at(i_frm);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_vif_scale1_score'") == 0)
                 nodes[j].value = vif_scale1.at(i_frm);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_vif_scale2_score'") == 0)
                 nodes[j].value = vif_scale2.at(i_frm);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_vif_scale3_score'") == 0)
                 nodes[j].value = vif_scale3.at(i_frm);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_vif_score'") == 0)
                 nodes[j].value = vif.at(i_frm);
-            else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+            else if (strcmp(Stringize(feature_names[j]).c_str(),
                     "'VMAF_feature_motion2_score'") == 0)
                 nodes[j].value = motion2.at(i_frm);
             else {
                 printf("Unknown feature name: %s.\n",
-                        Stringize(model.feature_names[j]).c_str());
+                        Stringize(feature_names[j]).c_str());
                 throw VmafException("Unknown feature name");
             }
         }
@@ -440,7 +440,7 @@ void VmafRunner::_normalize_predict_denormalize_transform_clip(
 
     size_t i_subsampled;
     for (size_t i_frm=0; i_frm<num_frms; i_frm++) {
-        _populate_and_normalize_nodes_at_frm(i_frm, model, nodes, adm2,
+        model.populate_and_normalize_nodes_at_frm(i_frm, nodes, adm2,
                 adm_scale0, adm_scale1, adm_scale2, adm_scale3, motion,
                 vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, motion2);
 
