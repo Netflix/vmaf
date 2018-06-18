@@ -109,18 +109,18 @@ enum ScoreAggregateMethod
 class Result
 {
 public:
-    Result(): score_aggregate_method(MEAN) {}
+    Result(): score_aggregate_method(ScoreAggregateMethod::MEAN) {}
     void set_scores(const std::string &key, const StatVector &scores) { d[key] = scores; }
     StatVector get_scores(const std::string &key) { return d[key]; }
     bool has_scores(const std::string &key) { return d.find(key) != d.end(); }
     double get_score(const std::string &key)
     {
         StatVector list = get_scores(key);
-        if (score_aggregate_method == MIN)
+        if (score_aggregate_method == ScoreAggregateMethod::MIN)
         {
             return list.min();
         }
-        else if (score_aggregate_method == HARMONIC_MEAN)
+        else if (score_aggregate_method == ScoreAggregateMethod::HARMONIC_MEAN)
         {
             return list.harmonic_mean();
         }
@@ -174,7 +174,7 @@ class LibsvmNusvrTrainTestModel
 public:
     LibsvmNusvrTrainTestModel(const char *model_path): model_path(model_path) {}
     Val feature_names, norm_type, slopes, intercepts, score_clip, score_transform;
-    std::map<VmafPredictionReturnType, double>& predict(svm_node* nodes);
+    virtual std::map<VmafPredictionReturnType, double>& predict(svm_node* nodes);
     virtual void loadModel();
     void populate_and_normalize_nodes_at_frm(size_t i_frm,
             svm_node*& nodes, StatVector& adm2,

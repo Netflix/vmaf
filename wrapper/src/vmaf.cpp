@@ -287,7 +287,7 @@ std::map<VmafPredictionReturnType, double>& LibsvmNusvrTrainTestModel::predict(s
     _denormalize_prediction(prediction);
 
     std::map<VmafPredictionReturnType, double>* predictionMapPtr = new std::map<VmafPredictionReturnType, double>();
-    (*predictionMapPtr)[SCORE] = prediction;
+    (*predictionMapPtr)[VmafPredictionReturnType::SCORE] = prediction;
 
     return *predictionMapPtr;
 }
@@ -450,7 +450,7 @@ void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
 
         /* feed to svm_predict */
         std::map<VmafPredictionReturnType, double>& predictionMap = model.predict(nodes);
-        double prediction = predictionMap[SCORE];
+        double prediction = predictionMap[VmafPredictionReturnType::SCORE];
 
         /* score transform */
         if (enable_transform)
@@ -799,15 +799,15 @@ double RunVmaf(const char* fmt, int width, int height,
 
     if (pool_method != NULL && (strcmp(pool_method, "min")==0))
     {
-        result.setScoreAggregateMethod(MIN);
+        result.setScoreAggregateMethod(ScoreAggregateMethod::MIN);
     }
     else if (pool_method != NULL && (strcmp(pool_method, "harmonic_mean")==0))
     {
-        result.setScoreAggregateMethod(HARMONIC_MEAN);
+        result.setScoreAggregateMethod(ScoreAggregateMethod::HARMONIC_MEAN);
     }
     else // mean or default
     {
-        result.setScoreAggregateMethod(MEAN);
+        result.setScoreAggregateMethod(ScoreAggregateMethod::MEAN);
     }
 
     size_t num_frames_subsampled = result.get_scores("vmaf").size();
