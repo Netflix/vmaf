@@ -203,8 +203,16 @@ public:
 private:
     const char *model_path;
     static const int INIT_FRAMES = 1000;
+    void _populate_and_normalize_nodes_at_frm(size_t i_frm,
+            LibsvmNusvrTrainTestModel& model,
+            svm_node*& nodes, StatVector& adm2,
+            StatVector& adm_scale0, StatVector& adm_scale1,
+            StatVector& adm_scale2, StatVector& adm_scale3, StatVector& motion,
+            StatVector& vif_scale0, StatVector& vif_scale1,
+            StatVector& vif_scale2, StatVector& vif_scale3, StatVector& vif,
+            StatVector& motion2);
     void _normalize_predict_denormalize(LibsvmNusvrTrainTestModel& model,
-            size_t num_frms_subsample, StatVector& adm2,
+            size_t num_frms, StatVector& adm2,
             StatVector& adm_scale0, StatVector& adm_scale1,
             StatVector& adm_scale2, StatVector& adm_scale3, StatVector& motion,
             StatVector& vif_scale0, StatVector& vif_scale1,
