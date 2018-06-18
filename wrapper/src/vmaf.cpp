@@ -161,103 +161,6 @@ std::unique_ptr<svm_model, SvmDelete> LibsvmNusvrTrainTestModel::_read_and_asser
     return svm_model_ptr;
 }
 
-double LibsvmNusvrTrainTestModel::predict(svm_node* nodes) {
-    double prediction = svm_predict(svm_model_ptr.get(), nodes);
-
-    /* denormalize score */
-    _denormalize_prediction(prediction);
-
-    return prediction;
-
-}
-
-void LibsvmNusvrTrainTestModel::_denormalize_prediction(double& prediction) {
-    if (VAL_EQUAL_STR(norm_type, "'linear_rescale'")) {
-        /* denormalize */
-        prediction = (prediction - double(intercepts[0]))
-                / double(slopes[0]);
-    } else {
-        ;
-    }
-}
-
-const char *BootstrapLibsvmNusvrTrainTestModel::_get_model_i_filename(const char* model_path, int i_model)
-{
-    if (i_model == 0) {
-        return model_path;
-    }
-    else {
-        std::stringstream ss;
-        ss << '.' << std::setw(4) << std::setfill('0') << i_model;
-        std::string s = ss.str();
-        std::string model_path_i = std::string(model_path) + s;
-        return model_path_i.c_str();
-    }
-}
-
-void BootstrapLibsvmNusvrTrainTestModel::_assert_model_type(Val model_type) {
-    if (!VAL_EQUAL_STR(model_type, "'RESIDUEBOOTSTRAP_LIBSVMNUSVR'")) {
-        printf("Expect model type RESIDUEBOOTSTRAP_LIBSVMNUSVR, "
-                "but got %s\n", Stringize(model_type).c_str());
-        throw VmafException("Incompatible model_type");
-    }
-}
-
-void BootstrapLibsvmNusvrTrainTestModel::_read_and_assert_model(const char *model_path, Val& feature_names, Val& norm_type, Val& slopes,
-        Val& intercepts, Val& score_clip, Val& score_transform, int& numModels)
-{
-    LibsvmNusvrTrainTestModel::_read_and_assert_model(model_path, feature_names, norm_type, slopes, intercepts, score_clip, score_transform);
-
-    Val model, model_type, numModelsVal;
-    char errmsg[1024];
-    try
-    {
-        LoadValFromFile(model_path, model, SERIALIZE_P0);
-        numModelsVal = model["param_dict"]["num_models"];
-    }
-    catch (std::runtime_error& e)
-    {
-        printf("num_models at %s cannot be read successfully.\n", model_path);
-        sprintf(errmsg, "Error loading model (.pkl): %s", e.what());
-        throw VmafException(errmsg);
-    }
-    if (VAL_IS_NONE(numModelsVal))
-    {
-        printf("num_models cannot be none.\n");
-        throw VmafException("num_models cannot be none.");
-    }
-    numModels = numModelsVal;
-}
-
-void BootstrapLibsvmNusvrTrainTestModel::loadModel()
-{
-    const char *model_path;
-    const char *libsvm_model_path;
-
-    model_path = _get_model_i_filename(this->model_path, 0);
-    dbg_printf("Read input model (pkl) at %s ...\n", model_path);
-    _read_and_assert_model(model_path, feature_names, norm_type, slopes, intercepts, score_clip, score_transform, numModels);
-    dbg_printf("number of bootstrap models: %d\n", numModels);
-
-    for (int iModel=0; iModel<numModels; iModel++)
-    {
-        model_path = _get_model_i_filename(this->model_path, iModel);
-        /* follow the convention that if model_path is a/b.c, the libsvm_model_path is always a/b.c.model */
-        std::string libsvm_model_path_ = std::string(model_path) + std::string(".model");
-        libsvm_model_path = libsvm_model_path_.c_str();
-        dbg_printf("Read input model (libsvm) at %s ...\n", libsvm_model_path);
-        if (iModel == 0)
-        {
-            svm_model_ptr = _read_and_assert_svm_model(libsvm_model_path);
-        }
-        else
-        {
-            bootstrap_svm_model_ptrs.push_back(_read_and_assert_svm_model(libsvm_model_path));
-        }
-    }
-
-}
-
 void LibsvmNusvrTrainTestModel::populate_and_normalize_nodes_at_frm(size_t i_frm,
         svm_node*& nodes, StatVector& adm2,
         StatVector& adm_scale0, StatVector& adm_scale1,
@@ -375,6 +278,103 @@ void LibsvmNusvrTrainTestModel::populate_and_normalize_nodes_at_frm(size_t i_frm
             }
         }
     }
+}
+
+double LibsvmNusvrTrainTestModel::predict(svm_node* nodes) {
+    double prediction = svm_predict(svm_model_ptr.get(), nodes);
+
+    /* denormalize score */
+    _denormalize_prediction(prediction);
+
+    return prediction;
+
+}
+
+void LibsvmNusvrTrainTestModel::_denormalize_prediction(double& prediction) {
+    if (VAL_EQUAL_STR(norm_type, "'linear_rescale'")) {
+        /* denormalize */
+        prediction = (prediction - double(intercepts[0]))
+                / double(slopes[0]);
+    } else {
+        ;
+    }
+}
+
+const char *BootstrapLibsvmNusvrTrainTestModel::_get_model_i_filename(const char* model_path, int i_model)
+{
+    if (i_model == 0) {
+        return model_path;
+    }
+    else {
+        std::stringstream ss;
+        ss << '.' << std::setw(4) << std::setfill('0') << i_model;
+        std::string s = ss.str();
+        std::string model_path_i = std::string(model_path) + s;
+        return model_path_i.c_str();
+    }
+}
+
+void BootstrapLibsvmNusvrTrainTestModel::_assert_model_type(Val model_type) {
+    if (!VAL_EQUAL_STR(model_type, "'RESIDUEBOOTSTRAP_LIBSVMNUSVR'")) {
+        printf("Expect model type RESIDUEBOOTSTRAP_LIBSVMNUSVR, "
+                "but got %s\n", Stringize(model_type).c_str());
+        throw VmafException("Incompatible model_type");
+    }
+}
+
+void BootstrapLibsvmNusvrTrainTestModel::_read_and_assert_model(const char *model_path, Val& feature_names, Val& norm_type, Val& slopes,
+        Val& intercepts, Val& score_clip, Val& score_transform, int& numModels)
+{
+    LibsvmNusvrTrainTestModel::_read_and_assert_model(model_path, feature_names, norm_type, slopes, intercepts, score_clip, score_transform);
+
+    Val model, model_type, numModelsVal;
+    char errmsg[1024];
+    try
+    {
+        LoadValFromFile(model_path, model, SERIALIZE_P0);
+        numModelsVal = model["param_dict"]["num_models"];
+    }
+    catch (std::runtime_error& e)
+    {
+        printf("num_models at %s cannot be read successfully.\n", model_path);
+        sprintf(errmsg, "Error loading model (.pkl): %s", e.what());
+        throw VmafException(errmsg);
+    }
+    if (VAL_IS_NONE(numModelsVal))
+    {
+        printf("num_models cannot be none.\n");
+        throw VmafException("num_models cannot be none.");
+    }
+    numModels = numModelsVal;
+}
+
+void BootstrapLibsvmNusvrTrainTestModel::loadModel()
+{
+    const char *model_path;
+    const char *libsvm_model_path;
+
+    model_path = _get_model_i_filename(this->model_path, 0);
+    dbg_printf("Read input model (pkl) at %s ...\n", model_path);
+    _read_and_assert_model(model_path, feature_names, norm_type, slopes, intercepts, score_clip, score_transform, numModels);
+    dbg_printf("number of bootstrap models: %d\n", numModels);
+
+    for (int iModel=0; iModel<numModels; iModel++)
+    {
+        model_path = _get_model_i_filename(this->model_path, iModel);
+        /* follow the convention that if model_path is a/b.c, the libsvm_model_path is always a/b.c.model */
+        std::string libsvm_model_path_ = std::string(model_path) + std::string(".model");
+        libsvm_model_path = libsvm_model_path_.c_str();
+        dbg_printf("Read input model (libsvm) at %s ...\n", libsvm_model_path);
+        if (iModel == 0)
+        {
+            svm_model_ptr = _read_and_assert_svm_model(libsvm_model_path);
+        }
+        else
+        {
+            bootstrap_svm_model_ptrs.push_back(_read_and_assert_svm_model(libsvm_model_path));
+        }
+    }
+
 }
 
 void VmafRunner::_transform_score(LibsvmNusvrTrainTestModel& model,
@@ -663,8 +663,7 @@ Result VmafRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *ma
     dbg_printf("Normalize features, SVM regression, denormalize score, clip...\n");
 
     size_t num_frms_subsampled = 0;
-    for (size_t i=0; i<num_frms; i+=n_subsample)
-    {
+    for (size_t i=0; i<num_frms; i+=n_subsample) {
         num_frms_subsampled++;
     }
     _normalize_predict_denormalize_transform_clip(model, num_frms_subsampled, adm2,
