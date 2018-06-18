@@ -355,11 +355,12 @@ void BootstrapLibsvmNusvrTrainTestModel::loadModel()
 {
     const char *model_path;
     const char *libsvm_model_path;
+    int numModels;
 
     model_path = _get_model_i_filename(this->model_path, 0);
     dbg_printf("Read input model (pkl) at %s ...\n", model_path);
     _read_and_assert_model(model_path, feature_names, norm_type, slopes, intercepts, score_clip, score_transform, numModels);
-    dbg_printf("number of bootstrap models: %d\n", numModels);
+    dbg_printf("Number of models: %d\n", numModels);
 
     for (int iModel=0; iModel<numModels; iModel++)
     {

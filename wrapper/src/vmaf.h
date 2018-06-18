@@ -200,7 +200,6 @@ class BootstrapLibsvmNusvrTrainTestModel: public LibsvmNusvrTrainTestModel {
 public:
     BootstrapLibsvmNusvrTrainTestModel(const char *model_path): LibsvmNusvrTrainTestModel(model_path) {}
     virtual void loadModel();
-    int numModels;
     virtual ~BootstrapLibsvmNusvrTrainTestModel() {}
 private:
     std::list<std::unique_ptr<svm_model, SvmDelete>> bootstrap_svm_model_ptrs;
