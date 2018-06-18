@@ -372,6 +372,52 @@ void VmafRunner::_denormalize_prediction(LibsvmNusvrTrainTestModel& model,
     }
 }
 
+void VmafRunner::_transform_score(LibsvmNusvrTrainTestModel& model,
+        double& prediction) {
+    if (!VAL_IS_NONE(model.score_transform)) {
+        double value = 0.0;
+
+        /* quadratic transform */
+        if (!VAL_IS_NONE(model.score_transform["p0"])) {
+            value += double(model.score_transform["p0"]);
+        }
+        if (!VAL_IS_NONE(model.score_transform["p1"])) {
+            value += double(model.score_transform["p1"]) * prediction;
+        }
+        if (!VAL_IS_NONE(model.score_transform["p2"])) {
+            value += double(model.score_transform["p2"]) * prediction
+                    * prediction;
+        }
+
+        /* rectification */
+        if (!VAL_IS_NONE(model.score_transform["out_lte_in"])
+                && VAL_EQUAL_STR(model.score_transform["out_lte_in"], "'true'")) {
+            if (value > prediction) {
+                value = prediction;
+            }
+        }
+        if (!VAL_IS_NONE(model.score_transform["out_gte_in"])
+                && VAL_EQUAL_STR(model.score_transform["out_gte_in"], "'true'")) {
+            if (value < prediction) {
+                value = prediction;
+            }
+        }
+
+        prediction = value;
+    }
+}
+
+void VmafRunner::_clip_score(LibsvmNusvrTrainTestModel& model,
+        double& prediction) {
+    if (!VAL_IS_NONE(model.score_clip)) {
+        if (prediction < double(model.score_clip[0])) {
+            prediction = double(model.score_clip[0]);
+        } else if (prediction > double(model.score_clip[1])) {
+            prediction = double(model.score_clip[1]);
+        }
+    }
+}
+
 void VmafRunner::_normalize_predict_denormalize(
         LibsvmNusvrTrainTestModel& model, size_t num_frms,
         StatVector& adm2, StatVector& adm_scale0, StatVector& adm_scale1,
@@ -401,50 +447,14 @@ void VmafRunner::_normalize_predict_denormalize(
 
         /* score transform */
         if (enable_transform)
-        {
-            if (!VAL_IS_NONE(model.score_transform)) {
-                double value = 0.0;
-
-                /* quadratic transform */
-                if (!VAL_IS_NONE(model.score_transform["p0"])) {
-                    value += double(model.score_transform["p0"]);
-                }
-                if (!VAL_IS_NONE(model.score_transform["p1"])) {
-                    value += double(model.score_transform["p1"]) * prediction;
-                }
-                if (!VAL_IS_NONE(model.score_transform["p2"])) {
-                    value += double(model.score_transform["p2"]) * prediction
-                            * prediction;
-                }
-
-                /* rectification */
-                if (!VAL_IS_NONE(model.score_transform["out_lte_in"])
-                        && VAL_EQUAL_STR(model.score_transform["out_lte_in"], "'true'")) {
-                    if (value > prediction) {
-                        value = prediction;
-                    }
-                }
-                if (!VAL_IS_NONE(model.score_transform["out_gte_in"])
-                        && VAL_EQUAL_STR(model.score_transform["out_gte_in"], "'true'")) {
-                    if (value < prediction) {
-                        value = prediction;
-                    }
-                }
-
-                prediction = value;
-            }
+         {
+            _transform_score(model, prediction);
         }
 
         /* score clip */
         if (!disable_clip)
-        {
-            if (!VAL_IS_NONE(model.score_clip)) {
-                if (prediction < double(model.score_clip[0])) {
-                    prediction = double(model.score_clip[0]);
-                } else if (prediction > double(model.score_clip[1])) {
-                    prediction = double(model.score_clip[1]);
-                }
-            }
+         {
+            _clip_score(model, prediction);
         }
 
         // printf("svm predict: %f, %f, %f, %f, %f, %f => %f\n",
