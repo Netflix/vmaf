@@ -217,15 +217,18 @@ public:
     Result run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
                int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
                bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample);
+protected:
+    static void _transform_value(LibsvmNusvrTrainTestModel& model, double& prediction);
+    static void _clip_value(LibsvmNusvrTrainTestModel& model, double& prediction);
+    virtual void _set_prediction_result(
+            std::vector<std::map<VmafPredictionReturnType, double> > predictionMaps,
+            Result& result);
 private:
     const char *model_path;
     virtual LibsvmNusvrTrainTestModel& _loadModel(const char *model_path);
     static const int INIT_FRAMES = 1000;
-    void _set_prediction_result(
-            std::vector<std::map<VmafPredictionReturnType, double> > predictionMaps,
-            Result& result);
-    void _transform_score(LibsvmNusvrTrainTestModel& model, std::map<VmafPredictionReturnType, double>& predictionMap);
-    void _clip_score(LibsvmNusvrTrainTestModel& model, std::map<VmafPredictionReturnType, double>& predictionMap);
+    virtual void _transform_score(LibsvmNusvrTrainTestModel& model, std::map<VmafPredictionReturnType, double>& predictionMap);
+    virtual void _clip_score(LibsvmNusvrTrainTestModel& model, std::map<VmafPredictionReturnType, double>& predictionMap);
     void _normalize_predict_denormalize_transform_clip(LibsvmNusvrTrainTestModel& model,
             size_t num_frms, StatVector& adm2,
             StatVector& adm_scale0, StatVector& adm_scale1,
@@ -242,6 +245,11 @@ public:
     BootstrapVmafQualityRunner(const char *model_path): VmafQualityRunner(model_path) {}
 private:
     virtual LibsvmNusvrTrainTestModel& _loadModel(const char *model_path);
+    virtual void _transform_score(LibsvmNusvrTrainTestModel& model, std::map<VmafPredictionReturnType, double>& predictionMap);
+    virtual void _clip_score(LibsvmNusvrTrainTestModel& model, std::map<VmafPredictionReturnType, double>& predictionMap);
+    virtual void _set_prediction_result(
+            std::vector<std::map<VmafPredictionReturnType, double> > predictionMaps,
+            Result& result);
 };
 
 #endif /* VMAF_H_ */

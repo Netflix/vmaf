@@ -402,11 +402,8 @@ std::map<VmafPredictionReturnType, double>& BootstrapLibsvmNusvrTrainTestModel::
     return predictionMap;
 }
 
-void VmafQualityRunner::_transform_score(LibsvmNusvrTrainTestModel& model,
-        std::map<VmafPredictionReturnType, double>& predictionMap) {
-
-    double& prediction = predictionMap[VmafPredictionReturnType::SCORE];
-
+void VmafQualityRunner::_transform_value(LibsvmNusvrTrainTestModel& model,
+        double& prediction) {
     if (!VAL_IS_NONE(model.score_transform)) {
         double value = 0.0;
 
@@ -440,11 +437,8 @@ void VmafQualityRunner::_transform_score(LibsvmNusvrTrainTestModel& model,
     }
 }
 
-void VmafQualityRunner::_clip_score(LibsvmNusvrTrainTestModel& model,
-        std::map<VmafPredictionReturnType, double>& predictionMap) {
-
-    double& prediction = predictionMap[VmafPredictionReturnType::SCORE];
-
+void VmafQualityRunner::_clip_value(LibsvmNusvrTrainTestModel& model,
+        double& prediction) {
     if (!VAL_IS_NONE(model.score_clip)) {
         if (prediction < double(model.score_clip[0])) {
             prediction = double(model.score_clip[0]);
@@ -452,6 +446,20 @@ void VmafQualityRunner::_clip_score(LibsvmNusvrTrainTestModel& model,
             prediction = double(model.score_clip[1]);
         }
     }
+}
+
+void VmafQualityRunner::_transform_score(LibsvmNusvrTrainTestModel& model,
+        std::map<VmafPredictionReturnType, double>& predictionMap) {
+
+    double& prediction = predictionMap[VmafPredictionReturnType::SCORE];
+    _transform_value(model, prediction);
+}
+
+void VmafQualityRunner::_clip_score(LibsvmNusvrTrainTestModel& model,
+        std::map<VmafPredictionReturnType, double>& predictionMap) {
+
+    double& prediction = predictionMap[VmafPredictionReturnType::SCORE];
+    _clip_value(model, prediction);
 }
 
 void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
@@ -516,13 +524,6 @@ void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
 LibsvmNusvrTrainTestModel& VmafQualityRunner::_loadModel(const char *model_path)
 {
     LibsvmNusvrTrainTestModel* model = new LibsvmNusvrTrainTestModel(model_path);
-    model->loadModel();
-    return *model;
-}
-
-LibsvmNusvrTrainTestModel& BootstrapVmafQualityRunner::_loadModel(const char *model_path)
-{
-    LibsvmNusvrTrainTestModel* model = new BootstrapLibsvmNusvrTrainTestModel(model_path);
     model->loadModel();
     return *model;
 }
@@ -807,6 +808,46 @@ Result VmafQualityRunner::run(Asset asset, int (*read_frame)(float *ref_data, fl
     delete &model;
 
     return result;
+}
+
+LibsvmNusvrTrainTestModel& BootstrapVmafQualityRunner::_loadModel(const char *model_path)
+{
+    LibsvmNusvrTrainTestModel* model = new BootstrapLibsvmNusvrTrainTestModel(model_path);
+    model->loadModel();
+    return *model;
+}
+
+void BootstrapVmafQualityRunner::_transform_score(LibsvmNusvrTrainTestModel& model,
+        std::map<VmafPredictionReturnType, double>& predictionMap) {
+
+    double& score = predictionMap[VmafPredictionReturnType::SCORE];
+    _transform_value(model, score);
+
+    double& bagging_score = predictionMap[VmafPredictionReturnType::BAGGING_SCORE];
+    _transform_value(model, bagging_score);
+}
+
+void BootstrapVmafQualityRunner::_clip_score(LibsvmNusvrTrainTestModel& model,
+        std::map<VmafPredictionReturnType, double>& predictionMap) {
+
+    double& score = predictionMap[VmafPredictionReturnType::SCORE];
+    _clip_value(model, score);
+
+    double& bagging_score = predictionMap[VmafPredictionReturnType::BAGGING_SCORE];
+    _clip_value(model, bagging_score);
+}
+
+void BootstrapVmafQualityRunner::_set_prediction_result(
+        std::vector<std::map<VmafPredictionReturnType, double> > predictionMaps,
+        Result& result) {
+
+    VmafQualityRunner::_set_prediction_result(predictionMaps, result);
+
+    StatVector bagging_score;
+    for (size_t i = 0; i < predictionMaps.size(); i++) {
+        bagging_score.append(predictionMaps.at(i)[VmafPredictionReturnType::BAGGING_SCORE]);
+    }
+    result.set_scores("bagging_vmaf", bagging_score);
 }
 
 // static const char VMAFOSS_XML_VERSION[] = "0.3.1";
