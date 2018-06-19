@@ -230,7 +230,7 @@ private:
             StatVector& vif_scale0, StatVector& vif_scale1,
             StatVector& vif_scale2, StatVector& vif_scale3, StatVector& vif,
             StatVector& motion2, bool enable_transform, bool disable_clip,
-            StatVector& vmaf);
+            std::vector<std::map<VmafPredictionReturnType, double>>& predictionMaps);
 };
 
 class BootstrapVmafQualityRunner: public VmafQualityRunner

@@ -362,14 +362,14 @@ void BootstrapLibsvmNusvrTrainTestModel::loadModel()
     _read_and_assert_model(model_path, feature_names, norm_type, slopes, intercepts, score_clip, score_transform, numModels);
     dbg_printf("Number of models: %d\n", numModels);
 
-    for (int iModel=0; iModel<numModels; iModel++)
+    for (size_t i=0; i<numModels; i++)
     {
-        model_path = _get_model_i_filename(this->model_path, iModel);
+        model_path = _get_model_i_filename(this->model_path, i);
         /* follow the convention that if model_path is a/b.c, the libsvm_model_path is always a/b.c.model */
         std::string libsvm_model_path_ = std::string(model_path) + std::string(".model");
         libsvm_model_path = libsvm_model_path_.c_str();
         dbg_printf("Read input model (libsvm) at %s ...\n", libsvm_model_path);
-        if (iModel == 0)
+        if (i == 0)
         {
             svm_model_ptr = _read_and_assert_svm_model(libsvm_model_path);
         }
@@ -387,7 +387,7 @@ std::map<VmafPredictionReturnType, double>& BootstrapLibsvmNusvrTrainTestModel::
 
     StatVector predictions;
     double prediction;
-    for (int i=0; i<bootstrap_svm_model_ptrs.size(); i++)
+    for (size_t i=0; i<bootstrap_svm_model_ptrs.size(); i++)
     {
         prediction = svm_predict(bootstrap_svm_model_ptrs.at(i).get(), nodes);
 
@@ -454,7 +454,8 @@ void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
         StatVector& adm_scale2, StatVector& adm_scale3, StatVector& motion,
         StatVector& vif_scale0, StatVector& vif_scale1, StatVector& vif_scale2,
         StatVector& vif_scale3, StatVector& vif, StatVector& motion2,
-        bool enable_transform, bool disable_clip, StatVector& vmaf) {
+        bool enable_transform, bool disable_clip,
+        std::vector<std::map<VmafPredictionReturnType, double>>& predictionMaps) {
 
     /* IMPORTANT: always allocate one more spot and put a -1 at the last one's
      * index, so that libsvm will stop looping when seeing the -1 !!!
@@ -471,7 +472,8 @@ void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
 
         /* feed to svm_predict */
         std::map<VmafPredictionReturnType, double>& predictionMap = model.predict(nodes);
-        double prediction = predictionMap[VmafPredictionReturnType::SCORE];
+
+        double& prediction = predictionMap[VmafPredictionReturnType::SCORE];
 
         /* score transform */
         if (enable_transform)
@@ -502,7 +504,7 @@ void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
 
         dbg_printf("\n");
 
-        vmaf.append(prediction);
+        predictionMaps.push_back(predictionMap);
 
         delete &predictionMap;
     }
@@ -666,9 +668,11 @@ Result VmafQualityRunner::run(Asset asset, int (*read_frame)(float *ref_data, fl
 
     double ADM2_CONSTANT = 0.0;
     double ADM_SCALE_CONSTANT = 0.0;
-    StatVector adm2, motion, vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, vmaf, motion2;
+    StatVector adm2, motion, vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, motion2;
     StatVector adm_scale0, adm_scale1, adm_scale2, adm_scale3;
     StatVector psnr, ssim, ms_ssim;
+    StatVector vmaf;
+    std::vector<std::map<VmafPredictionReturnType, double>> predictionMaps;
     for (size_t i=0; i<num_frms; i+=n_subsample)
     {
         adm2.append((get_at(&adm_num_array, i) + ADM2_CONSTANT) / (get_at(&adm_den_array, i) + ADM2_CONSTANT));
@@ -695,10 +699,16 @@ Result VmafQualityRunner::run(Asset asset, int (*read_frame)(float *ref_data, fl
     for (size_t i=0; i<num_frms; i+=n_subsample) {
         num_frms_subsampled++;
     }
+
     _normalize_predict_denormalize_transform_clip(model, num_frms_subsampled, adm2,
             adm_scale0, adm_scale1, adm_scale2, adm_scale3, motion, vif_scale0,
             vif_scale1, vif_scale2, vif_scale3, vif, motion2, enable_transform,
-            disable_clip, vmaf);
+            disable_clip, predictionMaps);
+
+    for (size_t i=0; i<predictionMaps.size(); i++)
+    {
+        vmaf.append(predictionMaps.at(i)[VmafPredictionReturnType::SCORE]);
+    }
 
     Result result{};
     result.set_scores("vmaf", vmaf);
