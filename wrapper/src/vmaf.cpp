@@ -492,7 +492,6 @@ void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
         }
 
         dbg_printf("frame: %zu, ", i);
-        dbg_printf("vmaf: %f, ", prediction);
         dbg_printf("adm2: %f, ", adm2.at(i_frm));
         dbg_printf("adm_scale0: %f, ", adm_scale0.at(i_frm));
         dbg_printf("adm_scale1: %f, ", adm_scale1.at(i_frm));
@@ -638,7 +637,12 @@ Result VmafQualityRunner::run(Asset asset, int (*read_frame)(float *ref_data, fl
     }
     if (!num_frms_is_consistent) {
         sprintf(errmsg,
-                "Output feature vectors are of inconsistent dimensions: motion (%zu), motion2 (%zu), adm_num (%zu), adm_den (%zu), vif_num_scale0 (%zu), vif_den_scale0 (%zu), vif_num_scale1 (%zu), vif_den_scale1 (%zu), vif_num_scale2 (%zu), vif_den_scale2 (%zu), vif_num_scale3 (%zu), vif_den_scale3 (%zu), vif (%zu), psnr (%zu), ssim (%zu), ms_ssim (%zu), adm_num_scale0 (%zu), adm_den_scale0 (%zu), adm_num_scale1 (%zu), adm_den_scale1 (%zu), adm_num_scale2 (%zu), adm_den_scale2 (%zu), adm_num_scale3 (%zu), adm_den_scale3 (%zu)",
+                "Output feature vectors are of inconsistent dimensions: motion (%zu), motion2 (%zu), adm_num (%zu), "
+                "adm_den (%zu), vif_num_scale0 (%zu), vif_den_scale0 (%zu), vif_num_scale1 (%zu), "
+                "vif_den_scale1 (%zu), vif_num_scale2 (%zu), vif_den_scale2 (%zu), vif_num_scale3 (%zu), "
+                "vif_den_scale3 (%zu), vif (%zu), psnr (%zu), ssim (%zu), ms_ssim (%zu), adm_num_scale0 (%zu), "
+                "adm_den_scale0 (%zu), adm_num_scale1 (%zu), adm_den_scale1 (%zu), adm_num_scale2 (%zu), "
+                "adm_den_scale2 (%zu), adm_num_scale3 (%zu), adm_den_scale3 (%zu)",
                 motion_array.used,
                 motion2_array.used,
                 adm_num_array.used,
@@ -675,7 +679,6 @@ Result VmafQualityRunner::run(Asset asset, int (*read_frame)(float *ref_data, fl
     StatVector adm2, motion, vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, motion2;
     StatVector adm_scale0, adm_scale1, adm_scale2, adm_scale3;
     StatVector psnr, ssim, ms_ssim;
-    StatVector vmaf;
     std::vector<std::map<VmafPredictionReturnType, double>> predictionMaps;
     for (size_t i=0; i<num_frms; i+=n_subsample)
     {
@@ -709,13 +712,7 @@ Result VmafQualityRunner::run(Asset asset, int (*read_frame)(float *ref_data, fl
             vif_scale1, vif_scale2, vif_scale3, vif, motion2, enable_transform,
             disable_clip, predictionMaps);
 
-    for (size_t i=0; i<predictionMaps.size(); i++)
-    {
-        vmaf.append(predictionMaps.at(i)[VmafPredictionReturnType::SCORE]);
-    }
-
     Result result{};
-    result.set_scores("vmaf", vmaf);
     for (size_t j=0; j<model.feature_names.length(); j++)
     {
         if (strcmp(Stringize(model.feature_names[j]).c_str(), "'VMAF_feature_adm2_score'") == 0)
@@ -751,6 +748,13 @@ Result VmafQualityRunner::run(Asset asset, int (*read_frame)(float *ref_data, fl
     if (psnr_array_ptr != NULL) { result.set_scores("psnr", psnr); }
     if (ssim_array_ptr != NULL) { result.set_scores("ssim", ssim); }
     if (ms_ssim_array_ptr != NULL) { result.set_scores("ms_ssim", ms_ssim); }
+
+    StatVector score;
+    for (size_t i=0; i<predictionMaps.size(); i++)
+    {
+        score.append(predictionMaps.at(i)[VmafPredictionReturnType::SCORE]);
+    }
+    result.set_scores("vmaf", score);
 
     free_array(&adm_num_array);
     free_array(&adm_den_array);
