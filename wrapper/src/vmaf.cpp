@@ -138,7 +138,7 @@ void LibsvmNusvrTrainTestModel::_read_and_assert_model(const char *model_path, V
 
 }
 
-void LibsvmNusvrTrainTestModel::loadModel()
+void LibsvmNusvrTrainTestModel::load_model()
 {
     dbg_printf("Read input model (pkl) at %s ...\n", model_path);
     _read_and_assert_model(model_path, feature_names, norm_type, slopes, intercepts, score_clip, score_transform);
@@ -351,7 +351,7 @@ void BootstrapLibsvmNusvrTrainTestModel::_read_and_assert_model(const char *mode
     numModels = numModelsVal;
 }
 
-void BootstrapLibsvmNusvrTrainTestModel::loadModel()
+void BootstrapLibsvmNusvrTrainTestModel::load_model()
 {
     const char *model_path;
     const char *libsvm_model_path;
@@ -526,10 +526,10 @@ void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
     }
 }
 
-LibsvmNusvrTrainTestModel& VmafQualityRunner::_loadModel(const char *model_path)
+LibsvmNusvrTrainTestModel& VmafQualityRunner::_load_model(const char *model_path)
 {
     LibsvmNusvrTrainTestModel* model = new LibsvmNusvrTrainTestModel(model_path);
-    model->loadModel();
+    model->load_model();
     return *model;
 }
 
@@ -548,7 +548,7 @@ Result VmafQualityRunner::run(Asset asset, int (*read_frame)(float *ref_data, fl
                        bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample)
 {
 
-    LibsvmNusvrTrainTestModel& model = _loadModel(model_path);
+    LibsvmNusvrTrainTestModel& model = _load_model(model_path);
 
     dbg_printf("Initialize storage arrays...\n");
     int w = asset.getWidth();
@@ -815,10 +815,10 @@ Result VmafQualityRunner::run(Asset asset, int (*read_frame)(float *ref_data, fl
     return result;
 }
 
-LibsvmNusvrTrainTestModel& BootstrapVmafQualityRunner::_loadModel(const char *model_path)
+LibsvmNusvrTrainTestModel& BootstrapVmafQualityRunner::_load_model(const char *model_path)
 {
     LibsvmNusvrTrainTestModel* model = new BootstrapLibsvmNusvrTrainTestModel(model_path);
-    model->loadModel();
+    model->load_model();
     return *model;
 }
 
