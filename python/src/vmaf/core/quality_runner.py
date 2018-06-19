@@ -595,7 +595,8 @@ class VmafossExecQualityRunner(QualityRunner):
 
     FEATURES = ['adm2', 'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
                 'motion', 'vif_scale0', 'vif_scale1', 'vif_scale2',
-                'vif_scale3', 'vif', 'psnr', 'ssim', 'ms_ssim', 'motion2']
+                'vif_scale3', 'vif', 'psnr', 'ssim', 'ms_ssim', 'motion2',
+                'bagging_vmaf']
 
     @classmethod
     def get_feature_scores_key(cls, atom_feature):
@@ -660,6 +661,11 @@ class VmafossExecQualityRunner(QualityRunner):
         else:
             ms_ssim = True
 
+        if self.optional_dict is not None and 'ci' in self.optional_dict:
+            ci = self.optional_dict['ci']
+        else:
+            ci = False
+
         quality_width, quality_height = asset.quality_width_height
 
         fmt=self._get_workfile_yuv_type(asset)
@@ -674,7 +680,7 @@ class VmafossExecQualityRunner(QualityRunner):
         ExternalProgramCaller.call_vmafossexec(fmt, w, h, ref_path, dis_path, model, log_file_path,
                                                disable_clip_score, enable_transform_score,
                                                phone_model, disable_avx, n_thread, n_subsample,
-                                               psnr, ssim, ms_ssim, exe, logger)
+                                               psnr, ssim, ms_ssim, ci, exe, logger)
 
     def _get_exec(self):
         return None # signaling default
