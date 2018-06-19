@@ -381,6 +381,27 @@ void BootstrapLibsvmNusvrTrainTestModel::loadModel()
 
 }
 
+std::map<VmafPredictionReturnType, double>& BootstrapLibsvmNusvrTrainTestModel::predict(svm_node* nodes) {
+
+    std::map<VmafPredictionReturnType, double>& predictionMap = LibsvmNusvrTrainTestModel::predict(nodes);
+
+    StatVector predictions;
+    double prediction;
+    for (int i=0; i<bootstrap_svm_model_ptrs.size(); i++)
+    {
+        prediction = svm_predict(bootstrap_svm_model_ptrs.at(i).get(), nodes);
+
+        /* denormalize score */
+        _denormalize_prediction(prediction);
+
+        predictions.append(prediction);
+    }
+
+    predictionMap[VmafPredictionReturnType::BAGGING_SCORE] = predictions.mean();
+
+    return predictionMap;
+}
+
 void VmafQualityRunner::_transform_score(LibsvmNusvrTrainTestModel& model,
         double& prediction) {
     if (!VAL_IS_NONE(model.score_transform)) {
