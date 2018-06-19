@@ -221,8 +221,8 @@ private:
     const char *model_path;
     virtual LibsvmNusvrTrainTestModel& _loadModel(const char *model_path);
     static const int INIT_FRAMES = 1000;
-    void _clip_score(LibsvmNusvrTrainTestModel& model, double& prediction);
-    void _transform_score(LibsvmNusvrTrainTestModel& model, double& prediction);
+    void _transform_score(LibsvmNusvrTrainTestModel& model, std::map<VmafPredictionReturnType, double>& predictionMap);
+    void _clip_score(LibsvmNusvrTrainTestModel& model, std::map<VmafPredictionReturnType, double>& predictionMap);
     void _normalize_predict_denormalize_transform_clip(LibsvmNusvrTrainTestModel& model,
             size_t num_frms, StatVector& adm2,
             StatVector& adm_scale0, StatVector& adm_scale1,

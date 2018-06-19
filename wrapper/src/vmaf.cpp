@@ -403,7 +403,10 @@ std::map<VmafPredictionReturnType, double>& BootstrapLibsvmNusvrTrainTestModel::
 }
 
 void VmafQualityRunner::_transform_score(LibsvmNusvrTrainTestModel& model,
-        double& prediction) {
+        std::map<VmafPredictionReturnType, double>& predictionMap) {
+
+    double& prediction = predictionMap[VmafPredictionReturnType::SCORE];
+
     if (!VAL_IS_NONE(model.score_transform)) {
         double value = 0.0;
 
@@ -438,7 +441,10 @@ void VmafQualityRunner::_transform_score(LibsvmNusvrTrainTestModel& model,
 }
 
 void VmafQualityRunner::_clip_score(LibsvmNusvrTrainTestModel& model,
-        double& prediction) {
+        std::map<VmafPredictionReturnType, double>& predictionMap) {
+
+    double& prediction = predictionMap[VmafPredictionReturnType::SCORE];
+
     if (!VAL_IS_NONE(model.score_clip)) {
         if (prediction < double(model.score_clip[0])) {
             prediction = double(model.score_clip[0]);
@@ -473,18 +479,16 @@ void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
         /* feed to svm_predict */
         std::map<VmafPredictionReturnType, double>& predictionMap = model.predict(nodes);
 
-        double& prediction = predictionMap[VmafPredictionReturnType::SCORE];
-
         /* score transform */
         if (enable_transform)
          {
-            _transform_score(model, prediction);
+            _transform_score(model, predictionMap);
         }
 
         /* score clip */
         if (!disable_clip)
          {
-            _clip_score(model, prediction);
+            _clip_score(model, predictionMap);
         }
 
         dbg_printf("frame: %zu, ", i);
