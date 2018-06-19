@@ -230,6 +230,7 @@ public:
     Result run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
                int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
                bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample);
+    virtual ~VmafQualityRunner() {}
 protected:
     static void _transform_value(LibsvmNusvrTrainTestModel& model, double& prediction);
     static void _clip_value(LibsvmNusvrTrainTestModel& model, double& prediction);
@@ -258,6 +259,7 @@ class BootstrapVmafQualityRunner: public VmafQualityRunner
 {
 public:
     BootstrapVmafQualityRunner(const char *model_path): VmafQualityRunner(model_path) {}
+    virtual ~BootstrapVmafQualityRunner() {}
 private:
     static constexpr double DELTA = 0.01;
     virtual LibsvmNusvrTrainTestModel& _load_model(const char *model_path);
