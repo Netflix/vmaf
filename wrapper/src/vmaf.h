@@ -27,6 +27,7 @@
 #include <iostream>
 #include <sstream>
 #include <exception>
+#include <stdexcept>
 #include <cstring>
 #include <memory>
 #include <vector>
@@ -64,6 +65,7 @@ public:
     StatVector(std::vector<double> l): l(l) {}
     double mean()
     {
+        _assert_size();
         double sum = 0.0;
         for (double e : l)
         {
@@ -73,6 +75,7 @@ public:
     }
     double min()
     {
+        _assert_size();
         double min_ = l[0];
         for (double e : l)
         {
@@ -85,6 +88,7 @@ public:
     }
     double harmonic_mean()
     {
+        _assert_size();
         double sum = 0.0;
         for (double e: l)
         {
@@ -94,12 +98,35 @@ public:
     }
     double second_moment()
     {
+        _assert_size();
         double sum = 0.0;
         for (double e : l)
         {
             sum += pow(e, 2);
         }
         return sum / l.size();
+    }
+    double percentile(double perc)
+    {
+        _assert_size();
+        if (perc < 0.0) {
+            perc = 0.0;
+        }
+        else if (perc > 100.0) {
+            perc = 100.0;
+        }
+        std::vector<double> l(this->l);
+        std::sort(l.begin(), l.end());
+        double pos = perc * (this->l.size() - 1) / 100.0;
+        int pos_left = (int)floor(pos);
+        int pos_right = (int)ceil(pos);
+        if (pos_left == pos_right) {
+            return l[pos_left];
+        }
+        else {
+            return l[pos_left] * (pos_right - pos) + l[pos_right] * (pos - pos_left);
+        }
+
     }
     double var() { return second_moment() - pow(mean(), 2); }
     double std() { return sqrt(var()); }
@@ -108,6 +135,11 @@ public:
     size_t size() { return l.size(); }
 private:
     std::vector<double> l;
+    void _assert_size() {
+        if (l.size() == 0) {
+            throw std::runtime_error("StatVector size is 0.");
+        }
+    }
 };
 
 enum ScoreAggregateMethod

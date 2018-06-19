@@ -394,6 +394,8 @@ std::map<VmafPredictionReturnType, double>& BootstrapLibsvmNusvrTrainTestModel::
     }
     predictionMap[VmafPredictionReturnType::BAGGING_SCORE] = predictions.mean();
     predictionMap[VmafPredictionReturnType::STDDEV] = predictions.std();
+    predictionMap[VmafPredictionReturnType::CI95_LOW] = predictions.percentile(2.5);
+    predictionMap[VmafPredictionReturnType::CI95_HIGH] = predictions.percentile(97.5);
 
     return predictionMap;
 }
@@ -838,12 +840,15 @@ void BootstrapVmafQualityRunner::_transform_score(LibsvmNusvrTrainTestModel& mod
 
     double& score = predictionMap[VmafPredictionReturnType::SCORE];
     double& baggingScore = predictionMap[VmafPredictionReturnType::BAGGING_SCORE];
+    double& ci95LowScore = predictionMap[VmafPredictionReturnType::CI95_LOW];
+    double& ci95HighScore = predictionMap[VmafPredictionReturnType::CI95_HIGH];
     double& scorePlusDelta = predictionMap[VmafPredictionReturnType::PLUS_DELTA];
     double& scoreMinusDelta = predictionMap[VmafPredictionReturnType::MINUS_DELTA];
 
     _transform_value(model, score);
     _transform_value(model, baggingScore);
-
+    _transform_value(model, ci95LowScore);
+    _transform_value(model, ci95HighScore);
     _transform_value(model, scorePlusDelta);
     _transform_value(model, scoreMinusDelta);
 }
@@ -853,12 +858,15 @@ void BootstrapVmafQualityRunner::_clip_score(LibsvmNusvrTrainTestModel& model,
 
     double& score = predictionMap[VmafPredictionReturnType::SCORE];
     double& baggingScore = predictionMap[VmafPredictionReturnType::BAGGING_SCORE];
+    double& ci95LowScore = predictionMap[VmafPredictionReturnType::CI95_LOW];
+    double& ci95HighScore = predictionMap[VmafPredictionReturnType::CI95_HIGH];
     double& scorePlusDelta = predictionMap[VmafPredictionReturnType::PLUS_DELTA];
     double& scoreMinusDelta = predictionMap[VmafPredictionReturnType::MINUS_DELTA];
 
     _clip_value(model, score);
     _clip_value(model, baggingScore);
-
+    _clip_value(model, ci95LowScore);
+    _clip_value(model, ci95HighScore);
     _clip_value(model, scorePlusDelta);
     _clip_value(model, scoreMinusDelta);
 }
@@ -880,20 +888,20 @@ void BootstrapVmafQualityRunner::_set_prediction_result(
 
     VmafQualityRunner::_set_prediction_result(predictionMaps, result);
 
-    StatVector baggingScore, stdDev;
+    StatVector baggingScore, stdDev, ci95LowScore, ci95HighScore;
     for (size_t i = 0; i < predictionMaps.size(); i++) {
         baggingScore.append(predictionMaps.at(i)[VmafPredictionReturnType::BAGGING_SCORE]);
         stdDev.append(predictionMaps.at(i)[VmafPredictionReturnType::STDDEV]);
+        ci95LowScore.append(predictionMaps.at(i)[VmafPredictionReturnType::CI95_LOW]);
+        ci95HighScore.append(predictionMaps.at(i)[VmafPredictionReturnType::CI95_HIGH]);
     }
     result.set_scores("bagging", baggingScore);
     result.set_scores("stddev", stdDev);
+    result.set_scores("ci95_low", ci95LowScore);
+    result.set_scores("ci95_high", ci95HighScore);
 }
 
-// static const char VMAFOSS_XML_VERSION[] = "0.3.1";
-//static const char VMAFOSS_XML_VERSION[] = "0.3.2"; // add vif, ssim and ms-ssim scores
-//static const char VMAFOSS_XML_VERSION[] = "0.3.3"; // fix slopes and intercepts to match nflxtrain_vmafv3a.pkl
-//static const char VMAFOSS_XML_VERSION[] = "0.3.2"; // fix slopes and intercepts to match nflxall_vmafv4.pkl
-static const char VMAFOSS_XML_VERSION[] = "0.6.1"; // move motion2 to combo.c
+static const char VMAFOSS_DOC_VERSION[] = "1.3.7";
 
 double RunVmaf(const char* fmt, int width, int height,
                int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
@@ -1002,7 +1010,7 @@ double RunVmaf(const char* fmt, int width, int height,
         }
 
         Val top = OTab();
-        top["version"] = VMAFOSS_XML_VERSION;
+        top["version"] = VMAFOSS_DOC_VERSION;
         top["params"] = params;
         top["metrics"] = metrics;
         top["frames"] = frames;
@@ -1018,7 +1026,7 @@ double RunVmaf(const char* fmt, int width, int height,
         std::vector<std::string> result_keys = result.get_keys();
         pugi::xml_document xml;
         pugi::xml_node xml_root = xml.append_child("VMAF");
-        xml_root.append_attribute("version") = VMAFOSS_XML_VERSION;
+        xml_root.append_attribute("version") = VMAFOSS_DOC_VERSION;
 
         auto params_node = xml_root.append_child("params");
         params_node.append_attribute("model") = _get_file_name(std::string(model_path)).c_str();

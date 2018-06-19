@@ -521,6 +521,10 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_bagging_score'], 99.686116179979152, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_stddev_score'], 1.2301198477788975, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_stddev_score'], 1.5917514683608882, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ci95_low_score'], 70.801585803086553, places=3)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ci95_low_score'], 94.784491176494996, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ci95_high_score'], 74.853442421187708, places=3)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ci95_high_score'], 99.992560767034618, places=4)
 
     def test_run_vmafossexec_runner_with_ci_and_custom_model(self):
         print 'test on running VMAFOSSEXEC runner with conf interval and custom model...'

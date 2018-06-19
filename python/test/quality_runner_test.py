@@ -922,6 +922,10 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['BOOTSTRAP_VMAF_bagging_score'], 99.686116179979152, places=4)
         self.assertAlmostEqual(results[0]['BOOTSTRAP_VMAF_stddev_score'], 1.2301198477788975, places=4)
         self.assertAlmostEqual(results[1]['BOOTSTRAP_VMAF_stddev_score'], 1.5917514683608882, places=4)
+        self.assertAlmostEqual(results[0]['BOOTSTRAP_VMAF_ci95_low_score'], 70.801585803086553, places=4)
+        self.assertAlmostEqual(results[1]['BOOTSTRAP_VMAF_ci95_low_score'], 94.784491176494996, places=4)
+        self.assertAlmostEqual(results[0]['BOOTSTRAP_VMAF_ci95_high_score'], 74.853442421187708, places=4)
+        self.assertAlmostEqual(results[1]['BOOTSTRAP_VMAF_ci95_high_score'], 99.992560767034618, places=4)
 
     def test_run_bootstrap_vmaf_runner_default_model_with_transform_score(self):
         print 'test on running bootstrap VMAF runner with default model...'
