@@ -527,6 +527,16 @@ LibsvmNusvrTrainTestModel& BootstrapVmafQualityRunner::_loadModel(const char *mo
     return *model;
 }
 
+void VmafQualityRunner::_set_prediction_result(
+        std::vector<std::map<VmafPredictionReturnType, double> > predictionMaps,
+        Result& result) {
+    StatVector score;
+    for (size_t i = 0; i < predictionMaps.size(); i++) {
+        score.append(predictionMaps.at(i)[VmafPredictionReturnType::SCORE]);
+    }
+    result.set_scores("vmaf", score);
+}
+
 Result VmafQualityRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
                        int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
                        bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample)
@@ -637,124 +647,137 @@ Result VmafQualityRunner::run(Asset asset, int (*read_frame)(float *ref_data, fl
     }
     if (!num_frms_is_consistent) {
         sprintf(errmsg,
-                "Output feature vectors are of inconsistent dimensions: motion (%zu), motion2 (%zu), adm_num (%zu), "
-                "adm_den (%zu), vif_num_scale0 (%zu), vif_den_scale0 (%zu), vif_num_scale1 (%zu), "
-                "vif_den_scale1 (%zu), vif_num_scale2 (%zu), vif_den_scale2 (%zu), vif_num_scale3 (%zu), "
-                "vif_den_scale3 (%zu), vif (%zu), psnr (%zu), ssim (%zu), ms_ssim (%zu), adm_num_scale0 (%zu), "
-                "adm_den_scale0 (%zu), adm_num_scale1 (%zu), adm_den_scale1 (%zu), adm_num_scale2 (%zu), "
-                "adm_den_scale2 (%zu), adm_num_scale3 (%zu), adm_den_scale3 (%zu)",
-                motion_array.used,
-                motion2_array.used,
-                adm_num_array.used,
-                adm_den_array.used,
-                vif_num_scale0_array.used,
-                vif_den_scale0_array.used,
-                vif_num_scale1_array.used,
-                vif_den_scale1_array.used,
-                vif_num_scale2_array.used,
-                vif_den_scale2_array.used,
-                vif_num_scale3_array.used,
-                vif_num_scale3_array.used,
-                vif_array.used,
-                psnr_array.used,
-                ssim_array.used,
-                ms_ssim_array.used,
-                adm_num_scale0_array.used,
-                adm_den_scale0_array.used,
-                adm_num_scale1_array.used,
-                adm_den_scale1_array.used,
-                adm_num_scale2_array.used,
-                adm_den_scale2_array.used,
-                adm_num_scale3_array.used,
-                adm_num_scale3_array.used
-                );
-
+                "Output feature vectors are of inconsistent dimensions: motion (%zu), motion2 (%zu), adm_num (%zu), adm_den (%zu), vif_num_scale0 (%zu), vif_den_scale0 (%zu), vif_num_scale1 (%zu), vif_den_scale1 (%zu), vif_num_scale2 (%zu), vif_den_scale2 (%zu), vif_num_scale3 (%zu), vif_den_scale3 (%zu), vif (%zu), psnr (%zu), ssim (%zu), ms_ssim (%zu), adm_num_scale0 (%zu), adm_den_scale0 (%zu), adm_num_scale1 (%zu), adm_den_scale1 (%zu), adm_num_scale2 (%zu), adm_den_scale2 (%zu), adm_num_scale3 (%zu), adm_den_scale3 (%zu)",
+                motion_array.used, motion2_array.used, adm_num_array.used,
+                adm_den_array.used, vif_num_scale0_array.used,
+                vif_den_scale0_array.used, vif_num_scale1_array.used,
+                vif_den_scale1_array.used, vif_num_scale2_array.used,
+                vif_den_scale2_array.used, vif_num_scale3_array.used,
+                vif_num_scale3_array.used, vif_array.used, psnr_array.used,
+                ssim_array.used, ms_ssim_array.used, adm_num_scale0_array.used,
+                adm_den_scale0_array.used, adm_num_scale1_array.used,
+                adm_den_scale1_array.used, adm_num_scale2_array.used,
+                adm_den_scale2_array.used, adm_num_scale3_array.used,
+                adm_num_scale3_array.used);
         throw VmafException(errmsg);
     }
-
-    dbg_printf("Generate final features (including derived atom features)...\n");
-
+    dbg_printf(
+            "Generate final features (including derived atom features)...\n");
     double ADM2_CONSTANT = 0.0;
     double ADM_SCALE_CONSTANT = 0.0;
-    StatVector adm2, motion, vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, motion2;
+    StatVector adm2, motion, vif_scale0, vif_scale1, vif_scale2, vif_scale3,
+            vif, motion2;
     StatVector adm_scale0, adm_scale1, adm_scale2, adm_scale3;
     StatVector psnr, ssim, ms_ssim;
-    std::vector<std::map<VmafPredictionReturnType, double>> predictionMaps;
-    for (size_t i=0; i<num_frms; i+=n_subsample)
-    {
-        adm2.append((get_at(&adm_num_array, i) + ADM2_CONSTANT) / (get_at(&adm_den_array, i) + ADM2_CONSTANT));
-        adm_scale0.append((get_at(&adm_num_scale0_array, i) + ADM_SCALE_CONSTANT) / (get_at(&adm_den_scale0_array, i) + ADM_SCALE_CONSTANT));
-        adm_scale1.append((get_at(&adm_num_scale1_array, i) + ADM_SCALE_CONSTANT) / (get_at(&adm_den_scale1_array, i) + ADM_SCALE_CONSTANT));
-        adm_scale2.append((get_at(&adm_num_scale2_array, i) + ADM_SCALE_CONSTANT) / (get_at(&adm_den_scale2_array, i) + ADM_SCALE_CONSTANT));
-        adm_scale3.append((get_at(&adm_num_scale3_array, i) + ADM_SCALE_CONSTANT) / (get_at(&adm_den_scale3_array, i) + ADM_SCALE_CONSTANT));
+    std::vector < std::map<VmafPredictionReturnType, double> > predictionMaps;
+    for (size_t i = 0; i < num_frms; i += n_subsample) {
+        adm2.append(
+                (get_at(&adm_num_array, i) + ADM2_CONSTANT)
+                        / (get_at(&adm_den_array, i) + ADM2_CONSTANT));
+        adm_scale0.append(
+                (get_at(&adm_num_scale0_array, i) + ADM_SCALE_CONSTANT)
+                        / (get_at(&adm_den_scale0_array, i) + ADM_SCALE_CONSTANT));
+        adm_scale1.append(
+                (get_at(&adm_num_scale1_array, i) + ADM_SCALE_CONSTANT)
+                        / (get_at(&adm_den_scale1_array, i) + ADM_SCALE_CONSTANT));
+        adm_scale2.append(
+                (get_at(&adm_num_scale2_array, i) + ADM_SCALE_CONSTANT)
+                        / (get_at(&adm_den_scale2_array, i) + ADM_SCALE_CONSTANT));
+        adm_scale3.append(
+                (get_at(&adm_num_scale3_array, i) + ADM_SCALE_CONSTANT)
+                        / (get_at(&adm_den_scale3_array, i) + ADM_SCALE_CONSTANT));
         motion.append(get_at(&motion_array, i));
         motion2.append(get_at(&motion2_array, i));
-        vif_scale0.append(get_at(&vif_num_scale0_array, i) / get_at(&vif_den_scale0_array, i));
-        vif_scale1.append(get_at(&vif_num_scale1_array, i) / get_at(&vif_den_scale1_array, i));
-        vif_scale2.append(get_at(&vif_num_scale2_array, i) / get_at(&vif_den_scale2_array, i));
-        vif_scale3.append(get_at(&vif_num_scale3_array, i) / get_at(&vif_den_scale3_array, i));
+        vif_scale0.append(
+                get_at(&vif_num_scale0_array, i)
+                        / get_at(&vif_den_scale0_array, i));
+        vif_scale1.append(
+                get_at(&vif_num_scale1_array, i)
+                        / get_at(&vif_den_scale1_array, i));
+        vif_scale2.append(
+                get_at(&vif_num_scale2_array, i)
+                        / get_at(&vif_den_scale2_array, i));
+        vif_scale3.append(
+                get_at(&vif_num_scale3_array, i)
+                        / get_at(&vif_den_scale3_array, i));
         vif.append(get_at(&vif_array, i));
 
-        if (psnr_array_ptr != NULL) { psnr.append(get_at(&psnr_array, i)); }
-        if (ssim_array_ptr != NULL) { ssim.append(get_at(&ssim_array, i)); }
-        if (ms_ssim_array_ptr != NULL) { ms_ssim.append(get_at(&ms_ssim_array, i)); }
+        if (psnr_array_ptr != NULL) {
+            psnr.append(get_at(&psnr_array, i));
+        }
+        if (ssim_array_ptr != NULL) {
+            ssim.append(get_at(&ssim_array, i));
+        }
+        if (ms_ssim_array_ptr != NULL) {
+            ms_ssim.append(get_at(&ms_ssim_array, i));
+        }
     }
-
-    dbg_printf("Normalize features, SVM regression, denormalize score, clip...\n");
-
+    dbg_printf(
+            "Normalize features, SVM regression, denormalize score, clip...\n");
     size_t num_frms_subsampled = 0;
-    for (size_t i=0; i<num_frms; i+=n_subsample) {
+    for (size_t i = 0; i < num_frms; i += n_subsample) {
         num_frms_subsampled++;
     }
-
-    _normalize_predict_denormalize_transform_clip(model, num_frms_subsampled, adm2,
-            adm_scale0, adm_scale1, adm_scale2, adm_scale3, motion, vif_scale0,
-            vif_scale1, vif_scale2, vif_scale3, vif, motion2, enable_transform,
-            disable_clip, predictionMaps);
-
-    Result result{};
-    for (size_t j=0; j<model.feature_names.length(); j++)
-    {
-        if (strcmp(Stringize(model.feature_names[j]).c_str(), "'VMAF_feature_adm2_score'") == 0)
+    _normalize_predict_denormalize_transform_clip(model, num_frms_subsampled,
+            adm2, adm_scale0, adm_scale1, adm_scale2, adm_scale3, motion,
+            vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, motion2,
+            enable_transform, disable_clip, predictionMaps);
+    Result result { };
+    for (size_t j = 0; j < model.feature_names.length(); j++) {
+        if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_adm2_score'") == 0)
             result.set_scores("adm2", adm2);
-        else if (strcmp(Stringize(model.feature_names[j]).c_str(), "'VMAF_feature_adm_scale0_score'") == 0)
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_adm_scale0_score'") == 0)
             result.set_scores("adm_scale0", adm_scale0);
-        else if (strcmp(Stringize(model.feature_names[j]).c_str(), "'VMAF_feature_adm_scale1_score'") == 0)
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_adm_scale1_score'") == 0)
             result.set_scores("adm_scale1", adm_scale1);
-        else if (strcmp(Stringize(model.feature_names[j]).c_str(), "'VMAF_feature_adm_scale2_score'") == 0)
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_adm_scale2_score'") == 0)
             result.set_scores("adm_scale2", adm_scale2);
-        else if (strcmp(Stringize(model.feature_names[j]).c_str(), "'VMAF_feature_adm_scale3_score'") == 0)
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_adm_scale3_score'") == 0)
             result.set_scores("adm_scale3", adm_scale3);
-        else if (strcmp(Stringize(model.feature_names[j]).c_str(), "'VMAF_feature_motion_score'") == 0)
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_motion_score'") == 0)
             result.set_scores("motion", motion);
-        else if (strcmp(Stringize(model.feature_names[j]).c_str(), "'VMAF_feature_vif_scale0_score'") == 0)
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_vif_scale0_score'") == 0)
             result.set_scores("vif_scale0", vif_scale0);
-        else if (strcmp(Stringize(model.feature_names[j]).c_str(), "'VMAF_feature_vif_scale1_score'") == 0)
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_vif_scale1_score'") == 0)
             result.set_scores("vif_scale1", vif_scale1);
-        else if (strcmp(Stringize(model.feature_names[j]).c_str(), "'VMAF_feature_vif_scale2_score'") == 0)
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_vif_scale2_score'") == 0)
             result.set_scores("vif_scale2", vif_scale2);
-        else if (strcmp(Stringize(model.feature_names[j]).c_str(), "'VMAF_feature_vif_scale3_score'") == 0)
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_vif_scale3_score'") == 0)
             result.set_scores("vif_scale3", vif_scale3);
-        else if (strcmp(Stringize(model.feature_names[j]).c_str(), "'VMAF_feature_vif_score'") == 0)
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_vif_score'") == 0)
             result.set_scores("vif", vif);
-        else if (strcmp(Stringize(model.feature_names[j]).c_str(), "'VMAF_feature_motion2_score'") == 0)
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_motion2_score'") == 0)
             result.set_scores("motion2", motion2);
-        else
-        {
-            printf("Unknown feature name: %s.\n", Stringize(model.feature_names[j]).c_str());
+        else {
+            printf("Unknown feature name: %s.\n",
+                    Stringize(model.feature_names[j]).c_str());
             throw VmafException("Unknown feature name");
         }
     }
-    if (psnr_array_ptr != NULL) { result.set_scores("psnr", psnr); }
-    if (ssim_array_ptr != NULL) { result.set_scores("ssim", ssim); }
-    if (ms_ssim_array_ptr != NULL) { result.set_scores("ms_ssim", ms_ssim); }
 
-    StatVector score;
-    for (size_t i=0; i<predictionMaps.size(); i++)
-    {
-        score.append(predictionMaps.at(i)[VmafPredictionReturnType::SCORE]);
+    if (psnr_array_ptr != NULL) {
+        result.set_scores("psnr", psnr);
     }
-    result.set_scores("vmaf", score);
+    if (ssim_array_ptr != NULL) {
+        result.set_scores("ssim", ssim);
+    }
+    if (ms_ssim_array_ptr != NULL) {
+        result.set_scores("ms_ssim", ms_ssim);
+    }
+
+    _set_prediction_result(predictionMaps, result);
 
     free_array(&adm_num_array);
     free_array(&adm_den_array);
