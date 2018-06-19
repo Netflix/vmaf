@@ -517,8 +517,61 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 75.443043750000001, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.958047916666672, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_bagging_vmaf_score'], 75.13012623785923, places=3)
-        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_bagging_vmaf_score'], 99.96504855577571, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_bagging_score'], 73.099946626689174, places=3)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_bagging_score'], 99.686116179979152, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_stddev_score'], 1.2301198477788975, places=3)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_stddev_score'], 1.5917514683608882, places=4)
+
+    def test_run_vmafossexec_runner_with_ci_and_custom_model(self):
+        print 'test on running VMAFOSSEXEC runner with conf interval and custom model...'
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = VmafossExecQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={
+                'model_filepath': VmafConfig.test_resource_path('model', 'vmafplus_v0.5.2boot_test.pkl'),
+                'ci': True
+            },
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 75.443043750000001, places=3)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.958047916666672, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_bagging_score'], 75.13012623785923, places=3)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_bagging_score'], 99.96504855577571, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_stddev_score'], 0.6812993325967104, places=3)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_stddev_score'], 0.03947607207290399, places=4)
+
+    def test_run_vmafossexec_runner_with_ci_and_phone_model(self):
+        print 'test on running VMAFOSSEXEC runner with conf interval and phone model...'
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = VmafossExecQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={
+                'model_filepath': VmafConfig.model_path("vmaf_rb_v0.6.2", "vmaf_rb_v0.6.2.pkl"),
+                'phone_model':True,
+                'ci': True,
+            },
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 91.723012127641823, places=4)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 100.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_bagging_score'], 90.129761531349985, places=3)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_bagging_score'], 100.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_stddev_score'], 0.85880437658259945, places=3)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_stddev_score'], 0.0, places=4)
 
 class VmafossexecQualityRunnerSubsamplingTest(unittest.TestCase):
 

@@ -92,6 +92,17 @@ public:
         }
         return 1.0 / (sum / l.size()) - 1.0;
     }
+    double second_moment()
+    {
+        double sum = 0.0;
+        for (double e : l)
+        {
+            sum += pow(e, 2);
+        }
+        return sum / l.size();
+    }
+    double var() { return second_moment() - pow(mean(), 2); }
+    double std() { return sqrt(var()); }
     void append(double e) { l.push_back(e); }
     double at(size_t idx) { return l.at(idx); }
     size_t size() { return l.size(); }
@@ -166,7 +177,9 @@ enum VmafPredictionReturnType
     BAGGING_SCORE,
     STDDEV,
     CI95_LOW,
-    CI95_HIGH
+    CI95_HIGH,
+    PLUS_DELTA,
+    MINUS_DELTA
 };
 
 class LibsvmNusvrTrainTestModel
@@ -227,8 +240,10 @@ private:
     const char *model_path;
     virtual LibsvmNusvrTrainTestModel& _loadModel(const char *model_path);
     static const int INIT_FRAMES = 1000;
+    virtual void _postproc_predict(std::map<VmafPredictionReturnType, double>& predictionMap);
     virtual void _transform_score(LibsvmNusvrTrainTestModel& model, std::map<VmafPredictionReturnType, double>& predictionMap);
     virtual void _clip_score(LibsvmNusvrTrainTestModel& model, std::map<VmafPredictionReturnType, double>& predictionMap);
+    virtual void _postproc_transform_clip(std::map<VmafPredictionReturnType, double>& predictionMap);
     void _normalize_predict_denormalize_transform_clip(LibsvmNusvrTrainTestModel& model,
             size_t num_frms, StatVector& adm2,
             StatVector& adm_scale0, StatVector& adm_scale1,
@@ -244,9 +259,12 @@ class BootstrapVmafQualityRunner: public VmafQualityRunner
 public:
     BootstrapVmafQualityRunner(const char *model_path): VmafQualityRunner(model_path) {}
 private:
+    static constexpr double DELTA = 0.01;
     virtual LibsvmNusvrTrainTestModel& _loadModel(const char *model_path);
+    virtual void _postproc_predict(std::map<VmafPredictionReturnType, double>& predictionMap);
     virtual void _transform_score(LibsvmNusvrTrainTestModel& model, std::map<VmafPredictionReturnType, double>& predictionMap);
     virtual void _clip_score(LibsvmNusvrTrainTestModel& model, std::map<VmafPredictionReturnType, double>& predictionMap);
+    virtual void _postproc_transform_clip(std::map<VmafPredictionReturnType, double>& predictionMap);
     virtual void _set_prediction_result(
             std::vector<std::map<VmafPredictionReturnType, double> > predictionMaps,
             Result& result);

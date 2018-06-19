@@ -387,17 +387,13 @@ std::map<VmafPredictionReturnType, double>& BootstrapLibsvmNusvrTrainTestModel::
 
     StatVector predictions;
     double prediction;
-    for (size_t i=0; i<bootstrap_svm_model_ptrs.size(); i++)
-    {
+    for (size_t i=0; i<bootstrap_svm_model_ptrs.size(); i++) {
         prediction = svm_predict(bootstrap_svm_model_ptrs.at(i).get(), nodes);
-
-        /* denormalize score */
         _denormalize_prediction(prediction);
-
         predictions.append(prediction);
     }
-
     predictionMap[VmafPredictionReturnType::BAGGING_SCORE] = predictions.mean();
+    predictionMap[VmafPredictionReturnType::STDDEV] = predictions.std();
 
     return predictionMap;
 }
@@ -448,6 +444,11 @@ void VmafQualityRunner::_clip_value(LibsvmNusvrTrainTestModel& model,
     }
 }
 
+void VmafQualityRunner::_postproc_predict(
+        std::map<VmafPredictionReturnType, double>& predictionMap) {
+    ;
+}
+
 void VmafQualityRunner::_transform_score(LibsvmNusvrTrainTestModel& model,
         std::map<VmafPredictionReturnType, double>& predictionMap) {
 
@@ -460,6 +461,11 @@ void VmafQualityRunner::_clip_score(LibsvmNusvrTrainTestModel& model,
 
     double& prediction = predictionMap[VmafPredictionReturnType::SCORE];
     _clip_value(model, prediction);
+}
+
+void VmafQualityRunner::_postproc_transform_clip(
+        std::map<VmafPredictionReturnType, double>& predictionMap) {
+    ;
 }
 
 void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
@@ -484,20 +490,19 @@ void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
                 adm_scale0, adm_scale1, adm_scale2, adm_scale3, motion,
                 vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, motion2);
 
-        /* feed to svm_predict */
         std::map<VmafPredictionReturnType, double>& predictionMap = model.predict(nodes);
 
-        /* score transform */
-        if (enable_transform)
-         {
+        _postproc_predict(predictionMap);
+
+        if (enable_transform) {
             _transform_score(model, predictionMap);
         }
 
-        /* score clip */
-        if (!disable_clip)
-         {
+        if (!disable_clip) {
             _clip_score(model, predictionMap);
         }
+
+        _postproc_transform_clip(predictionMap);
 
         dbg_printf("frame: %zu, ", i);
         dbg_printf("adm2: %f, ", adm2.at(i_frm));
@@ -817,24 +822,56 @@ LibsvmNusvrTrainTestModel& BootstrapVmafQualityRunner::_loadModel(const char *mo
     return *model;
 }
 
+void BootstrapVmafQualityRunner::_postproc_predict(
+        std::map<VmafPredictionReturnType, double>& predictionMap) {
+
+    double baggingScore = predictionMap[VmafPredictionReturnType::BAGGING_SCORE];
+    double scorePlusDelta = baggingScore + BootstrapVmafQualityRunner::DELTA;
+    double scoreMinusDelta = baggingScore - BootstrapVmafQualityRunner::DELTA;
+
+    predictionMap[VmafPredictionReturnType::PLUS_DELTA] = scorePlusDelta;
+    predictionMap[VmafPredictionReturnType::MINUS_DELTA] = scoreMinusDelta;
+}
+
 void BootstrapVmafQualityRunner::_transform_score(LibsvmNusvrTrainTestModel& model,
         std::map<VmafPredictionReturnType, double>& predictionMap) {
 
     double& score = predictionMap[VmafPredictionReturnType::SCORE];
-    _transform_value(model, score);
+    double& baggingScore = predictionMap[VmafPredictionReturnType::BAGGING_SCORE];
+    double& scorePlusDelta = predictionMap[VmafPredictionReturnType::PLUS_DELTA];
+    double& scoreMinusDelta = predictionMap[VmafPredictionReturnType::MINUS_DELTA];
 
-    double& bagging_score = predictionMap[VmafPredictionReturnType::BAGGING_SCORE];
-    _transform_value(model, bagging_score);
+    _transform_value(model, score);
+    _transform_value(model, baggingScore);
+
+    _transform_value(model, scorePlusDelta);
+    _transform_value(model, scoreMinusDelta);
 }
 
 void BootstrapVmafQualityRunner::_clip_score(LibsvmNusvrTrainTestModel& model,
         std::map<VmafPredictionReturnType, double>& predictionMap) {
 
     double& score = predictionMap[VmafPredictionReturnType::SCORE];
-    _clip_value(model, score);
+    double& baggingScore = predictionMap[VmafPredictionReturnType::BAGGING_SCORE];
+    double& scorePlusDelta = predictionMap[VmafPredictionReturnType::PLUS_DELTA];
+    double& scoreMinusDelta = predictionMap[VmafPredictionReturnType::MINUS_DELTA];
 
-    double& bagging_score = predictionMap[VmafPredictionReturnType::BAGGING_SCORE];
-    _clip_value(model, bagging_score);
+    _clip_value(model, score);
+    _clip_value(model, baggingScore);
+
+    _clip_value(model, scorePlusDelta);
+    _clip_value(model, scoreMinusDelta);
+}
+
+void BootstrapVmafQualityRunner::_postproc_transform_clip(
+        std::map<VmafPredictionReturnType, double>& predictionMap) {
+
+    double scorePlusDelta = predictionMap[VmafPredictionReturnType::PLUS_DELTA];
+    double scoreMinusDelta = predictionMap[VmafPredictionReturnType::MINUS_DELTA];
+    double& scoreStdDev = predictionMap[VmafPredictionReturnType::STDDEV];
+
+    double slope = (scorePlusDelta - scoreMinusDelta) / (2.0 * BootstrapVmafQualityRunner::DELTA);
+    scoreStdDev *= slope;
 }
 
 void BootstrapVmafQualityRunner::_set_prediction_result(
@@ -843,11 +880,13 @@ void BootstrapVmafQualityRunner::_set_prediction_result(
 
     VmafQualityRunner::_set_prediction_result(predictionMaps, result);
 
-    StatVector bagging_score;
+    StatVector baggingScore, stdDev;
     for (size_t i = 0; i < predictionMaps.size(); i++) {
-        bagging_score.append(predictionMaps.at(i)[VmafPredictionReturnType::BAGGING_SCORE]);
+        baggingScore.append(predictionMaps.at(i)[VmafPredictionReturnType::BAGGING_SCORE]);
+        stdDev.append(predictionMaps.at(i)[VmafPredictionReturnType::STDDEV]);
     }
-    result.set_scores("bagging_vmaf", bagging_score);
+    result.set_scores("bagging", baggingScore);
+    result.set_scores("stddev", stdDev);
 }
 
 // static const char VMAFOSS_XML_VERSION[] = "0.3.1";
