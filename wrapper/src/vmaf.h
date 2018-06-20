@@ -220,7 +220,7 @@ public:
     LibsvmNusvrTrainTestModel(const char *model_path): model_path(model_path) {}
     Val feature_names, norm_type, slopes, intercepts, score_clip, score_transform;
     virtual void load_model();
-    virtual std::map<VmafPredictionReturnType, double>& predict(svm_node* nodes);
+    virtual std::map<VmafPredictionReturnType, double> predict(svm_node* nodes);
     void populate_and_normalize_nodes_at_frm(size_t i_frm,
             svm_node*& nodes, StatVector& adm2,
             StatVector& adm_scale0, StatVector& adm_scale1,
@@ -245,7 +245,7 @@ class BootstrapLibsvmNusvrTrainTestModel: public LibsvmNusvrTrainTestModel {
 public:
     BootstrapLibsvmNusvrTrainTestModel(const char *model_path): LibsvmNusvrTrainTestModel(model_path) {}
     virtual void load_model();
-    virtual std::map<VmafPredictionReturnType, double>& predict(svm_node* nodes);
+    virtual std::map<VmafPredictionReturnType, double> predict(svm_node* nodes);
     virtual ~BootstrapLibsvmNusvrTrainTestModel() {}
 private:
     std::vector<std::unique_ptr<svm_model, SvmDelete>> bootstrap_svm_model_ptrs;

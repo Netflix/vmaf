@@ -279,17 +279,17 @@ void LibsvmNusvrTrainTestModel::populate_and_normalize_nodes_at_frm(size_t i_frm
     }
 }
 
-std::map<VmafPredictionReturnType, double>& LibsvmNusvrTrainTestModel::predict(svm_node* nodes) {
+std::map<VmafPredictionReturnType, double> LibsvmNusvrTrainTestModel::predict(svm_node* nodes) {
 
     double prediction = svm_predict(svm_model_ptr.get(), nodes);
 
     /* denormalize score */
     _denormalize_prediction(prediction);
 
-    std::map<VmafPredictionReturnType, double>* predictionMapPtr = new std::map<VmafPredictionReturnType, double>();
-    (*predictionMapPtr)[VmafPredictionReturnType::SCORE] = prediction;
+    std::map<VmafPredictionReturnType, double> predictionMap;
+    predictionMap[VmafPredictionReturnType::SCORE] = prediction;
 
-    return *predictionMapPtr;
+    return predictionMap;
 }
 
 void LibsvmNusvrTrainTestModel::_denormalize_prediction(double& prediction) {
@@ -381,9 +381,9 @@ void BootstrapLibsvmNusvrTrainTestModel::load_model()
 
 }
 
-std::map<VmafPredictionReturnType, double>& BootstrapLibsvmNusvrTrainTestModel::predict(svm_node* nodes) {
+std::map<VmafPredictionReturnType, double> BootstrapLibsvmNusvrTrainTestModel::predict(svm_node* nodes) {
 
-    std::map<VmafPredictionReturnType, double>& predictionMap = LibsvmNusvrTrainTestModel::predict(nodes);
+    std::map<VmafPredictionReturnType, double> predictionMap = LibsvmNusvrTrainTestModel::predict(nodes);
 
     StatVector predictions;
     double prediction;
@@ -492,7 +492,7 @@ void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
                 adm_scale0, adm_scale1, adm_scale2, adm_scale3, motion,
                 vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, motion2);
 
-        std::map<VmafPredictionReturnType, double>& predictionMap = model.predict(nodes);
+        std::map<VmafPredictionReturnType, double> predictionMap = model.predict(nodes);
 
         _postproc_predict(predictionMap);
 
@@ -524,7 +524,6 @@ void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
 
         predictionMaps.push_back(predictionMap);
 
-        delete &predictionMap;
     }
 }
 
