@@ -929,20 +929,19 @@ double RunVmaf(const char* fmt, int width, int height,
     }
 
     Asset asset(width, height, fmt);
-    VmafQualityRunner* runner_ptr;
+    std::unique_ptr<VmafQualityRunner> runner_ptr;
     if (conf_interval)
     {
-        runner_ptr = new BootstrapVmafQualityRunner(model_path);
+        runner_ptr = std::unique_ptr<BootstrapVmafQualityRunner>(new BootstrapVmafQualityRunner(model_path));
     }
     else
     {
-        runner_ptr = new VmafQualityRunner(model_path);
+        runner_ptr = std::unique_ptr<VmafQualityRunner>(new VmafQualityRunner(model_path));
     }
-    VmafQualityRunner& runner = *runner_ptr;
 
     Timer timer;
     timer.start();
-    Result result = runner.run(asset, read_frame, user_data, disable_clip, enable_transform,
+    Result result = runner_ptr->run(asset, read_frame, user_data, disable_clip, enable_transform,
                                do_psnr, do_ssim, do_ms_ssim, n_thread, n_subsample);
     timer.stop();
 
@@ -1051,9 +1050,6 @@ double RunVmaf(const char* fmt, int width, int height,
 
         xml.save_file(log_path);
     }
-
-    /* clean up */
-    delete runner_ptr;
 
     return aggregate_vmaf;
 }
