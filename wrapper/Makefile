@@ -49,6 +49,7 @@ AVX_OBJS := \
 	$(OBJDIR)/convolution_avx.o \
 
 CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic -D MULTI_THREADING
+# CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic -D MULTI_THREADING -D PRINT_PROGRESS
 # CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic
 # CFLAGS_COMMON = -g -O0 -fPIC -Wall -Wextra -pedantic -D PRINT_PROGRESS
 
@@ -144,7 +145,8 @@ $(OBJDIR)/svm.o: $(SRCDIR)/svm.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/libvmaf.o: $(SRCDIR)/libvmaf.cpp
-	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(SRCDIR) -I $(FEATURESRCDIR)/common $<
+	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(SRCDIR) -I $(FEATURESRCDIR)/common -DOC_NEW_STYLE_INCLUDES -I $(PTOOLSDIR) \
+	-I $(PTOOLSDIR)/opencontainers_1_8_4/include $<
 
 $(OBJDIR)/main.o: $(SRCDIR)/main.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common $<

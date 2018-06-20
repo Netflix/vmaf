@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from vmaf.tools.misc import get_file_name_without_extension
 from vmaf.tools.reader import YuvReader
 
-
 # Copyright (c) 2016, Marco Tulio Correia Ribeiro
 # All rights reserved.
 #
@@ -117,8 +116,12 @@ class LocalExplainer(object):
             ).ravel()
             sample_weight = self.kernel_fn(distances)
 
+            model = train_test_model.model
+            if isinstance(model, list):
+                model = model[0] # HACKY, TODO: fix it
+
             # predict
-            ys_label_pred_neighbor = train_test_model._predict(train_test_model.model, xs_2d_neighbor)
+            ys_label_pred_neighbor = train_test_model._predict(model, xs_2d_neighbor)
 
             # take xs_2d_neighbor and ys_label_pred_neighbor, train a linear
             # model
