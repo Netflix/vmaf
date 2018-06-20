@@ -302,17 +302,17 @@ void LibsvmNusvrTrainTestModel::_denormalize_prediction(double& prediction) {
     }
 }
 
-const char *BootstrapLibsvmNusvrTrainTestModel::_get_model_i_filename(const char* model_path, int i_model)
+std::string BootstrapLibsvmNusvrTrainTestModel::_get_model_i_filename(const char* model_path, int i_model)
 {
     if (i_model == 0) {
-        return model_path;
+        return std::string(model_path);
     }
     else {
         std::stringstream ss;
         ss << '.' << std::setw(4) << std::setfill('0') << i_model;
         std::string s = ss.str();
         std::string model_path_i = std::string(model_path) + s;
-        return model_path_i.c_str();
+        return model_path_i;
     }
 }
 
@@ -353,29 +353,29 @@ void BootstrapLibsvmNusvrTrainTestModel::_read_and_assert_model(const char *mode
 
 void BootstrapLibsvmNusvrTrainTestModel::load_model()
 {
-    const char *model_path;
-    const char *libsvm_model_path;
+
     int numModels;
 
-    model_path = _get_model_i_filename(this->model_path, 0);
-    dbg_printf("Read input model (pkl) at %s ...\n", model_path);
-    _read_and_assert_model(model_path, feature_names, norm_type, slopes, intercepts, score_clip, score_transform, numModels);
+    std::string model_path_0 = _get_model_i_filename(this->model_path, 0);
+
+    dbg_printf("Read input model (pkl) at %s ...\n", model_path_0.c_str());
+    _read_and_assert_model(model_path_0.c_str(), feature_names, norm_type, slopes, intercepts, score_clip, score_transform, numModels);
     dbg_printf("Number of models: %d\n", numModels);
 
     for (size_t i=0; i<numModels; i++)
     {
-        model_path = _get_model_i_filename(this->model_path, i);
+        std::string model_path_i = _get_model_i_filename(this->model_path, i);
         /* follow the convention that if model_path is a/b.c, the libsvm_model_path is always a/b.c.model */
-        std::string libsvm_model_path_ = std::string(model_path) + std::string(".model");
-        libsvm_model_path = libsvm_model_path_.c_str();
-        dbg_printf("Read input model (libsvm) at %s ...\n", libsvm_model_path);
+        std::string libsvm_model_path_i = model_path_i + std::string(".model");
+        dbg_printf("Read input model (libsvm) at %s ...\n", libsvm_model_path_i.c_str());
+
         if (i == 0)
         {
-            svm_model_ptr = _read_and_assert_svm_model(libsvm_model_path);
+            svm_model_ptr = _read_and_assert_svm_model(libsvm_model_path_i.c_str());
         }
         else
         {
-            bootstrap_svm_model_ptrs.push_back(_read_and_assert_svm_model(libsvm_model_path));
+            bootstrap_svm_model_ptrs.push_back(_read_and_assert_svm_model(libsvm_model_path_i.c_str()));
         }
     }
 

@@ -249,7 +249,7 @@ public:
     virtual ~BootstrapLibsvmNusvrTrainTestModel() {}
 private:
     std::vector<std::unique_ptr<svm_model, SvmDelete>> bootstrap_svm_model_ptrs;
-    const char *_get_model_i_filename(const char* model_path, int i_model);
+    std::string _get_model_i_filename(const char* model_path, int i_model);
     void _read_and_assert_model(const char *model_path, Val& feature_names, Val& norm_type, Val& slopes,
             Val& intercepts, Val& score_clip, Val& score_transform, int& numModels);
     virtual void _assert_model_type(Val model_type);
