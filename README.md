@@ -6,6 +6,8 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ## What's New
 
+- (6/19/18) VMAF prediction now comes with a 95% confidence interval (CI), which quantifies the uncertainty in a trained VMAF model. The CI is established through bootstrapping on the prediction residue using the training data points. To enable CI, use the option `--ci` in the command line tools with a bootstrapping model such as `model/vmaf_rb_v0.6.2/vmaf_rb_v0.6.2.pkl`.
+- (6/19/18) Added 4K VMAF model under `model/vmaf_4k_v0.6.1.pkl`, which predicts the subjective quality of video displayed on a 4KTV and viewed from the distance of 1.5X the display height.
 - (6/5/18) Speed optimization to `vmafossexec`: 1) support multi-threading (e.g. use `--thread 0` to use all cores), 2) support frame sampling (e.g. use `--subsample 5` to calculate VMAF on one of every 5 frames). See [this](#vmafossexec---python-independent-implementation) section for details.
 - (1/20/18) Moved custom subjective models into a submodule named [sureal](https://github.com/Netflix/sureal). If you pull the latest changes, you will have to pull the submoddule by `git submodule update --init --recursive` and add `sureal/python/src` to `PYTHONPATH`.
 - (8/12/17) VMAF is now included as a filter in [FFmpeg](http://ffmpeg.org/) main branch, and can be configured using: `./configure --enable-libvmaf`.
@@ -484,7 +486,7 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
 int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), 
 void *user_data, char *model_path, char *log_path, char *log_fmt, int disable_clip, 
 int disable_avx, int enable_transform, int phone_model, int do_psnr, int do_ssim, 
-int do_ms_ssim, char *pool_method, int thread, int subsample);
+int do_ms_ssim, char *pool_method, int thread, int subsample, bool conf_interval);
 ```
 
 Here, `read_frame` is a callback function which can be used to pass data from a program to VMAF. `user_data` is a program specific data that can be used by the callback function. For sample usage of `compute_vmaf`, refer to [`wrapper/src/main.cpp`](wrapper/src/main.cpp).

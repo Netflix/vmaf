@@ -21,7 +21,7 @@ POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'pe
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) \
-          + " fmt width height ref_path dis_path [--model model_path] [--out-fmt out_fmt] [--phone-model]\n"
+          + " fmt width height ref_path dis_path [--model model_path] [--out-fmt out_fmt] [--phone-model] [--ci]\n"
     print "fmt:\n\t" + "\n\t".join(FMTS) + "\n"
     print "out_fmt:\n\t" + "\n\t".join(OUT_FMTS) + "\n"
 
@@ -69,6 +69,12 @@ def main():
 
     phone_model = cmd_option_exists(sys.argv, 6, len(sys.argv), '--phone-model')
 
+    conf_interval = cmd_option_exists(sys.argv, 6, len(sys.argv), '--ci')
+
+    if show_local_explanation and conf_interval:
+        print 'cannot set both --local-explain and --ci flags'
+        return 2
+
     asset = Asset(dataset="cmd",
                   content_id=abs(hash(get_file_name_without_extension(ref_file))) % (10 ** 16),
                   asset_id=abs(hash(get_file_name_without_extension(ref_file))) % (10 ** 16),
@@ -79,11 +85,14 @@ def main():
                   )
     assets = [asset]
 
-    if not show_local_explanation:
-        runner_class = VmafQualityRunner
-    else:
+    if show_local_explanation:
         from vmaf.core.quality_runner_extra import VmafQualityRunnerWithLocalExplainer
         runner_class = VmafQualityRunnerWithLocalExplainer
+    elif conf_interval:
+        from vmaf.core.quality_runner import BootstrapVmafQualityRunner
+        runner_class = BootstrapVmafQualityRunner
+    else:
+        runner_class = VmafQualityRunner
 
     if model_path is None:
         optional_dict = None

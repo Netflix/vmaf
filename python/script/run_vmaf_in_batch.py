@@ -22,7 +22,7 @@ POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'pe
 
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) + \
-          " input_file [--model model_path] [--out-fmt out_fmt] [--parallelize] [--phone-model]\n"
+          " input_file [--model model_path] [--out-fmt out_fmt] [--parallelize] [--phone-model] [--ci]\n"
     print "out_fmt:\n\t" + "\n\t".join(OUT_FMTS) + "\n"
     print "input_file contains lines of:"
     print "\tfmt width height ref_path dis_path\\n"
@@ -54,6 +54,8 @@ def main():
     parallelize = cmd_option_exists(sys.argv, 2, len(sys.argv), '--parallelize')
 
     phone_model = cmd_option_exists(sys.argv, 2, len(sys.argv), '--phone-model')
+
+    conf_interval = cmd_option_exists(sys.argv, 2, len(sys.argv), '--ci')
 
     assets = []
     line_idx = 0
@@ -95,7 +97,11 @@ def main():
             assets.append(asset)
             line_idx += 1
 
-    runner_class = VmafQualityRunner
+    if conf_interval:
+        from vmaf.core.quality_runner import BootstrapVmafQualityRunner
+        runner_class = BootstrapVmafQualityRunner
+    else:
+        runner_class = VmafQualityRunner
 
     if model_path is None:
         optional_dict = None

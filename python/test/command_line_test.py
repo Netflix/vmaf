@@ -80,6 +80,20 @@ class CommandLineTest(unittest.TestCase):
         ret = run_process(cmd, shell=True)
         self.assertEquals(ret, 0)
 
+    def test_run_vmaf_in_batch_ci(self):
+        line = 'yuv420p 576 324 {root}/python/test/resource/yuv/src01_hrc00_576x324.yuv ' \
+               '{root}/python/test/resource/yuv/src01_hrc01_576x324.yuv'.format(root=VmafConfig.root_path())
+        cmd = 'echo "{line}" > {batch_filename}'.format(
+            line=line, batch_filename=self.batch_filename)
+        ret = run_process(cmd, shell=True)
+        self.assertEquals(ret, 0)
+
+        exe = VmafConfig.root_path('run_vmaf_in_batch')
+        cmd = "{exe} {input} --parallelize --ci >/dev/null 2>&1".format(
+            exe=exe, input=self.batch_filename)
+        ret = run_process(cmd, shell=True)
+        self.assertEquals(ret, 0)
+
     def test_run_vmaf(self):
         exe = VmafConfig.root_path('run_vmaf')
         line = 'yuv420p 576 324 {root}/python/test/resource/yuv/src01_hrc00_576x324.yuv ' \
@@ -87,6 +101,22 @@ class CommandLineTest(unittest.TestCase):
         cmd = "{exe} {line} >/dev/null 2>&1".format(line=line, exe=exe)
         ret = run_process(cmd, shell=True)
         self.assertEquals(ret, 0)
+
+    def test_run_vmaf_ci(self):
+        exe = VmafConfig.root_path('run_vmaf')
+        line = 'yuv420p 576 324 {root}/python/test/resource/yuv/src01_hrc00_576x324.yuv ' \
+               '{root}/python/test/resource/yuv/src01_hrc01_576x324.yuv'.format(root=VmafConfig.root_path())
+        cmd = "{exe} {line} --ci >/dev/null 2>&1".format(line=line, exe=exe)
+        ret = run_process(cmd, shell=True)
+        self.assertEquals(ret, 0)
+
+    def test_run_vmaf_both_local_explain_and_ci(self):
+        exe = VmafConfig.root_path('run_vmaf')
+        line = 'yuv420p 576 324 {root}/python/test/resource/yuv/src01_hrc00_576x324.yuv ' \
+               '{root}/python/test/resource/yuv/src01_hrc01_576x324.yuv'.format(root=VmafConfig.root_path())
+        cmd = "{exe} {line} --local-explain --ci >/dev/null 2>&1".format(line=line, exe=exe)
+        ret = subprocess.call(cmd, shell=True)
+        self.assertEquals(ret, 2)
 
     def test_run_psnr(self):
         exe = VmafConfig.root_path('run_psnr')

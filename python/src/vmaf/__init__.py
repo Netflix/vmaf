@@ -113,7 +113,7 @@ class ExternalProgramCaller(object):
     @staticmethod
     def call_vmafossexec(fmt, w, h, ref_path, dis_path, model, log_file_path, disable_clip_score,
                          enable_transform_score, phone_model, disable_avx, n_thread, n_subsample,
-                         psnr, ssim, ms_ssim, exe=None, logger=None):
+                         psnr, ssim, ms_ssim, ci, exe=None, logger=None):
 
         if exe is None:
             exe = required(ExternalProgram.vmafossexec)
@@ -142,6 +142,8 @@ class ExternalProgramCaller(object):
             vmafossexec_cmd += ' --ssim'
         if ms_ssim:
             vmafossexec_cmd += ' --ms-ssim'
+        if ci:
+            vmafossexec_cmd += ' --ci'
         if logger:
             logger.info(vmafossexec_cmd)
         run_process(vmafossexec_cmd, shell=True)

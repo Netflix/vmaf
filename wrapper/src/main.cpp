@@ -49,7 +49,7 @@ bool cmdOptionExists(char** begin, char** end, const std::string& option)
 
 void print_usage(int argc, char *argv[])
 {
-    fprintf(stderr, "Usage: %s fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--thread n_thread] [--subsample n_subsample] [--disable-clip] [--disable-avx] [--psnr] [--ssim] [--ms-ssim] [--phone-model]\n", argv[0]);
+    fprintf(stderr, "Usage: %s fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--thread n_thread] [--subsample n_subsample] [--disable-clip] [--disable-avx] [--psnr] [--ssim] [--ms-ssim] [--phone-model] [--ci]\n", argv[0]);
     fprintf(stderr, "fmt:\n\tyuv420p\n\tyuv422p\n\tyuv444p\n\tyuv420p10le\n\tyuv422p10le\n\tyuv444p10le\n\n");
     fprintf(stderr, "log_fmt:\n\txml (default)\n\tjson\n\n");
     fprintf(stderr, "n_thread:\n\tmaximum threads to use (default 0 - use all threads)\n\n");
@@ -58,7 +58,7 @@ void print_usage(int argc, char *argv[])
 
 int run_wrapper(char *fmt, int width, int height, char *ref_path, char *dis_path, char *model_path,
         char *log_path, char *log_fmt, bool disable_clip, bool disable_avx, bool enable_transform, bool phone_model,
-        bool do_psnr, bool do_ssim, bool do_ms_ssim, char *pool_method, int n_thread, int n_subsample)
+        bool do_psnr, bool do_ssim, bool do_ms_ssim, char *pool_method, int n_thread, int n_subsample, bool conf_interval)
 {
     double score;
 
@@ -114,7 +114,7 @@ int run_wrapper(char *fmt, int width, int height, char *ref_path, char *dis_path
     /* Run VMAF */
     ret = compute_vmaf(&score, fmt, width, height, read_frame, s, model_path, log_path, log_fmt,
                        disable_clip, disable_avx, enable_transform, phone_model, do_psnr, do_ssim,
-                       do_ms_ssim, pool_method, n_thread, n_subsample);
+                       do_ms_ssim, pool_method, n_thread, n_subsample, conf_interval);
 
 fail_or_end:
     if (s->ref_rfile)
@@ -152,6 +152,7 @@ int main(int argc, char *argv[])
     char *pool_method = NULL;
     int n_thread = 0;
     int n_subsample = 1;
+    bool conf_interval = false;
     char *temp;
 
     /* Check parameters */
@@ -279,12 +280,17 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Error: pool_method must be min, harmonic_mean or mean, but is %s\n", pool_method);
         return -1;
     }
-        
+
+    if (cmdOptionExists(argv + 7, argv + argc, "--ci"))
+    {
+        conf_interval = true;
+    }
+
     try
     {
         return run_wrapper(fmt, width, height, ref_path, dis_path, model_path,
                 log_path, log_fmt, disable_clip, disable_avx, enable_transform, phone_model,
-                do_psnr, do_ssim, do_ms_ssim, pool_method, n_thread, n_subsample);
+                do_psnr, do_ssim, do_ms_ssim, pool_method, n_thread, n_subsample, conf_interval);
     }
     catch (const std::exception &e)
     {

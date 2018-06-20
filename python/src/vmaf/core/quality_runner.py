@@ -407,7 +407,11 @@ class VmafQualityRunner(QualityRunner):
         else:
             model_filepath = self.DEFAULT_MODEL_FILEPATH
         train_test_model_class = self.get_train_test_model_class()
-        model = train_test_model_class.from_file(model_filepath, self.logger)
+        try:
+            model = train_test_model_class.from_file(model_filepath, self.logger)
+        except AssertionError as e:
+            raise AssertionError("File {filepath} may not be a valid model file for class {cls}: {e}".
+                                 format(filepath=model_filepath, cls=train_test_model_class.__name__, e=e))
         return model
 
     def get_train_test_model_class(self):
@@ -591,7 +595,8 @@ class VmafossExecQualityRunner(QualityRunner):
 
     FEATURES = ['adm2', 'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
                 'motion', 'vif_scale0', 'vif_scale1', 'vif_scale2',
-                'vif_scale3', 'vif', 'psnr', 'ssim', 'ms_ssim', 'motion2']
+                'vif_scale3', 'vif', 'psnr', 'ssim', 'ms_ssim', 'motion2',
+                'bagging', 'stddev', 'ci95_low', 'ci95_high']
 
     @classmethod
     def get_feature_scores_key(cls, atom_feature):
@@ -656,6 +661,11 @@ class VmafossExecQualityRunner(QualityRunner):
         else:
             ms_ssim = True
 
+        if self.optional_dict is not None and 'ci' in self.optional_dict:
+            ci = self.optional_dict['ci']
+        else:
+            ci = False
+
         quality_width, quality_height = asset.quality_width_height
 
         fmt=self._get_workfile_yuv_type(asset)
@@ -670,7 +680,7 @@ class VmafossExecQualityRunner(QualityRunner):
         ExternalProgramCaller.call_vmafossexec(fmt, w, h, ref_path, dis_path, model, log_file_path,
                                                disable_clip_score, enable_transform_score,
                                                phone_model, disable_avx, n_thread, n_subsample,
-                                               psnr, ssim, ms_ssim, exe, logger)
+                                               psnr, ssim, ms_ssim, ci, exe, logger)
 
     def _get_exec(self):
         return None # signaling default
@@ -934,10 +944,10 @@ class StrredQualityRunner(QualityRunner):
 class BootstrapVmafQualityRunner(VmafQualityRunner):
 
     TYPE = "BOOTSTRAP_VMAF"
-    VERSION = VmafQualityRunner.VERSION + '-' + BootstrapLibsvmNusvrTrainTestModel.VERSION
+    VERSION = VmafQualityRunner.VERSION + '-' + 'M' + BootstrapLibsvmNusvrTrainTestModel.VERSION
     ALGO_VERSION = None
 
-    DEFAULT_MODEL_FILEPATH = None
+    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_rb_v0.6.2", "vmaf_rb_v0.6.2.pkl")
 
     def _populate_result_dict(self, feature_result, pred_result):
         result_dict = {}
@@ -1029,9 +1039,10 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
     def get_ci95_high_score_key(cls):
         return cls.TYPE + '_ci95_high_score'
 
+
 class BaggingVmafQualityRunner(BootstrapVmafQualityRunner):
 
-    TYPE = "BOOTSTRAP_VMAF"
+    TYPE = "BAGGING_VMAF"
     VERSION = VmafQualityRunner.VERSION + '-' + BootstrapLibsvmNusvrTrainTestModel.VERSION
 
     def _populate_result_dict(self, feature_result, pred_result):
