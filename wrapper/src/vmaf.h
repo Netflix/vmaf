@@ -272,7 +272,7 @@ protected:
 private:
     const char *model_path;
     static const int INIT_FRAMES = 1000;
-    virtual LibsvmNusvrTrainTestModel& _load_model(const char *model_path);
+    virtual std::unique_ptr<LibsvmNusvrTrainTestModel> _load_model(const char *model_path);
     virtual void _postproc_predict(std::map<VmafPredictionReturnType, double>& predictionMap);
     virtual void _transform_score(LibsvmNusvrTrainTestModel& model, std::map<VmafPredictionReturnType, double>& predictionMap);
     virtual void _clip_score(LibsvmNusvrTrainTestModel& model, std::map<VmafPredictionReturnType, double>& predictionMap);
@@ -294,7 +294,7 @@ public:
     virtual ~BootstrapVmafQualityRunner() {}
 private:
     static constexpr double DELTA = 0.01;
-    virtual LibsvmNusvrTrainTestModel& _load_model(const char *model_path);
+    virtual std::unique_ptr<LibsvmNusvrTrainTestModel> _load_model(const char *model_path);
     virtual void _postproc_predict(std::map<VmafPredictionReturnType, double>& predictionMap);
     virtual void _transform_score(LibsvmNusvrTrainTestModel& model, std::map<VmafPredictionReturnType, double>& predictionMap);
     virtual void _clip_score(LibsvmNusvrTrainTestModel& model, std::map<VmafPredictionReturnType, double>& predictionMap);

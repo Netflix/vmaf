@@ -527,11 +527,11 @@ void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
     }
 }
 
-LibsvmNusvrTrainTestModel& VmafQualityRunner::_load_model(const char *model_path)
+std::unique_ptr<LibsvmNusvrTrainTestModel> VmafQualityRunner::_load_model(const char *model_path)
 {
-    LibsvmNusvrTrainTestModel* model = new LibsvmNusvrTrainTestModel(model_path);
-    model->load_model();
-    return *model;
+    std::unique_ptr<LibsvmNusvrTrainTestModel> model_ptr = std::unique_ptr<LibsvmNusvrTrainTestModel>(new LibsvmNusvrTrainTestModel(model_path));
+    model_ptr->load_model();
+    return model_ptr;
 }
 
 void VmafQualityRunner::_set_prediction_result(
@@ -549,7 +549,8 @@ Result VmafQualityRunner::run(Asset asset, int (*read_frame)(float *ref_data, fl
                        bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample)
 {
 
-    LibsvmNusvrTrainTestModel& model = _load_model(model_path);
+    std::unique_ptr<LibsvmNusvrTrainTestModel> model_ptr = _load_model(model_path);
+    LibsvmNusvrTrainTestModel& model = *model_ptr;
 
     dbg_printf("Initialize storage arrays...\n");
     int w = asset.getWidth();
@@ -811,16 +812,14 @@ Result VmafQualityRunner::run(Asset asset, int (*read_frame)(float *ref_data, fl
     free_array(&ssim_array);
     free_array(&ms_ssim_array);
 
-    delete &model;
-
     return result;
 }
 
-LibsvmNusvrTrainTestModel& BootstrapVmafQualityRunner::_load_model(const char *model_path)
+std::unique_ptr<LibsvmNusvrTrainTestModel> BootstrapVmafQualityRunner::_load_model(const char *model_path)
 {
-    LibsvmNusvrTrainTestModel* model = new BootstrapLibsvmNusvrTrainTestModel(model_path);
-    model->load_model();
-    return *model;
+    std::unique_ptr<LibsvmNusvrTrainTestModel> model_ptr = std::unique_ptr<BootstrapLibsvmNusvrTrainTestModel>(new BootstrapLibsvmNusvrTrainTestModel(model_path));
+    model_ptr->load_model();
+    return model_ptr;
 }
 
 void BootstrapVmafQualityRunner::_postproc_predict(
