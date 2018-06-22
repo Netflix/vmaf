@@ -27,7 +27,7 @@ enum vmaf_cpu cpu; // global
 
 int compute_vmaf(double* vmaf_score, char* fmt, int width, int height, int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride_byte, void *user_data),
 				 void *user_data, char *model_path, char *log_path, char *log_fmt, int disable_clip, int disable_avx, int enable_transform, int phone_model, int do_psnr,
-				 int do_ssim, int do_ms_ssim, char *pool_method, int n_thread, int n_subsample, bool conf_interval)
+				 int do_ssim, int do_ms_ssim, char *pool_method, int n_thread, int n_subsample, int enable_conf_interval)
 	{
 		bool d_c = false;
 		bool d_a = false;
@@ -63,7 +63,7 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height, int (*rea
         }
 
         try {
-            double score = RunVmaf(fmt, width, height, read_frame, user_data, model_path, log_path, log_fmt, d_c, e_t, d_p, d_s, d_m_s, pool_method, n_thread, n_subsample, conf_interval);
+            double score = RunVmaf(fmt, width, height, read_frame, user_data, model_path, log_path, log_fmt, d_c, e_t, d_p, d_s, d_m_s, pool_method, n_thread, n_subsample, enable_conf_interval);
             *vmaf_score = score;
             return 0;
         }
