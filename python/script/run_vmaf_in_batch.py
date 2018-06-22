@@ -55,7 +55,7 @@ def main():
 
     phone_model = cmd_option_exists(sys.argv, 2, len(sys.argv), '--phone-model')
 
-    conf_interval = cmd_option_exists(sys.argv, 2, len(sys.argv), '--ci')
+    enable_conf_interval = cmd_option_exists(sys.argv, 2, len(sys.argv), '--ci')
 
     assets = []
     line_idx = 0
@@ -97,7 +97,7 @@ def main():
             assets.append(asset)
             line_idx += 1
 
-    if conf_interval:
+    if enable_conf_interval:
         from vmaf.core.quality_runner import BootstrapVmafQualityRunner
         runner_class = BootstrapVmafQualityRunner
     else:

@@ -41,7 +41,7 @@ double RunVmaf(const char* fmt, int width, int height,
                void *user_data, const char *model_path, const char *log_path, const char *log_fmt,
                bool disable_clip, bool enable_transform,
                bool do_psnr, bool do_ssim, bool do_ms_ssim,
-               const char *pool_method, int n_thread, int n_subsample, bool conf_interval);
+               const char *pool_method, int n_thread, int n_subsample, bool enable_conf_interval);
 
 class Asset
 {

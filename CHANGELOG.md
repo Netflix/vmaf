@@ -1,10 +1,15 @@
 # Change Log
 
+## (6/21/2018) [1.3.8]
+
+**Fixed bugs:**
+- Fix compute_vmaf boolean type issue (#178).
+
 ## (6/12/2018) [1.3.7]
 
 **New features:**
 - Add the --ci option to calculate confidence intervals to predicted VMAF scores (run_vmaf, run_vmaf_in_batch, ffmpeg2vmaf, vmafossexec).
-- Update libvmaf version to 1.3.7 after compute_vmaf() interface change (added conf_interval option).
+- Update libvmaf version to 1.3.7 after compute_vmaf() interface change (added enable_conf_interval option).
 - Add new models: 1) model/vmaf_4k_v0.6.1.pkl for 4KTV viewing at distance 1.5H, 2) model/vmaf_rb_v0.6.2/vmaf_rb_v0.6.2.pkl for VMAF prediction with a confidence interval, 3) model/vmaf_4k_rb_v0.6.2/vmaf_4k_rb_v0.6.2.pkl for 4KTV viewing at distance 1.5H, with a confidence interval.
 
 ## (6/4/2018) [1.3.6]
