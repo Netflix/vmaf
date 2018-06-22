@@ -906,7 +906,7 @@ double RunVmaf(const char* fmt, int width, int height,
                void *user_data, const char *model_path, const char *log_path, const char *log_fmt,
                bool disable_clip, bool enable_transform,
                bool do_psnr, bool do_ssim, bool do_ms_ssim,
-               const char *pool_method, int n_thread, int n_subsample, bool conf_interval)
+               const char *pool_method, int n_thread, int n_subsample, bool enable_conf_interval)
 {
     printf("Start calculating VMAF score...\n");
 
@@ -929,7 +929,7 @@ double RunVmaf(const char* fmt, int width, int height,
 
     Asset asset(width, height, fmt);
     std::unique_ptr<VmafQualityRunner> runner_ptr;
-    if (conf_interval)
+    if (enable_conf_interval)
     {
         runner_ptr = std::unique_ptr<BootstrapVmafQualityRunner>(new BootstrapVmafQualityRunner(model_path));
     }

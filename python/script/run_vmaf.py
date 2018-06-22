@@ -69,9 +69,9 @@ def main():
 
     phone_model = cmd_option_exists(sys.argv, 6, len(sys.argv), '--phone-model')
 
-    conf_interval = cmd_option_exists(sys.argv, 6, len(sys.argv), '--ci')
+    enable_conf_interval = cmd_option_exists(sys.argv, 6, len(sys.argv), '--ci')
 
-    if show_local_explanation and conf_interval:
+    if show_local_explanation and enable_conf_interval:
         print 'cannot set both --local-explain and --ci flags'
         return 2
 
@@ -88,7 +88,7 @@ def main():
     if show_local_explanation:
         from vmaf.core.quality_runner_extra import VmafQualityRunnerWithLocalExplainer
         runner_class = VmafQualityRunnerWithLocalExplainer
-    elif conf_interval:
+    elif enable_conf_interval:
         from vmaf.core.quality_runner import BootstrapVmafQualityRunner
         runner_class = BootstrapVmafQualityRunner
     else:
