@@ -6,8 +6,8 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ## What's New
 
-- (6/19/18) VMAF prediction now comes with a 95% confidence interval (CI), which quantifies the uncertainty in a trained VMAF model. The CI is established through bootstrapping on the prediction residue using the training data points. To enable CI, use the option `--ci` in the command line tools with a bootstrapping model such as `model/vmaf_rb_v0.6.2/vmaf_rb_v0.6.2.pkl`.
-- (6/19/18) Added 4K VMAF model under `model/vmaf_4k_v0.6.1.pkl`, which predicts the subjective quality of video displayed on a 4KTV and viewed from the distance of 1.5X the display height.
+- (6/19/18) Each VMAF prediction score now comes with a 95% confidence interval (CI), which quantifies the level of confidence that the prediction lies within the interval. The CI is a consequence of the fact that the VMAF model is trained on a sample of subjective scores, while the population is unknown. The CI is established through bootstrapping on the prediction residue using the training data points. To enable CI, use the option `--ci` in the command line tools with a bootstrapping model such as `model/vmaf_rb_v0.6.2/vmaf_rb_v0.6.2.pkl`.
+- (6/19/18) Added 4K VMAF model under `model/vmaf_4k_v0.6.1.pkl`, which predicts the subjective quality of video displayed on a 4KTV and viewed from the distance of 1.5X the display height. Read [this](#predict-quality-on-a-4KTV-screen-at-1.5H) section for details.
 - (6/5/18) Speed optimization to `vmafossexec`: 1) support multi-threading (e.g. use `--thread 0` to use all cores), 2) support frame sampling (e.g. use `--subsample 5` to calculate VMAF on one of every 5 frames). See [this](#vmafossexec---python-independent-implementation) section for details.
 - (1/20/18) Moved custom subjective models into a submodule named [sureal](https://github.com/Netflix/sureal). If you pull the latest changes, you will have to pull the submoddule by `git submodule update --init --recursive` and add `sureal/python/src` to `PYTHONPATH`.
 - (8/12/17) VMAF is now included as a filter in [FFmpeg](http://ffmpeg.org/) main branch, and can be configured using: `./configure --enable-libvmaf`.
@@ -247,11 +247,23 @@ VMAF v0.6.1 and later support a custom quality model for cellular phone screen v
 ./run_vmaf_in_batch example_batch_input --parallelize --phone-model
 ```
 
+This model is trained using subjective data collected in a lab experiment, based on the [absolute categorical rating (ACR)](https://en.wikipedia.org/wiki/Absolute_Category_Rating) methodology, with the exception that after viewing a video sequence, a subject votes on a continuous scale (from "bad" to "excellent"), instead of the more conventional five-level discrete scale. The test content are video clips selected from the Netflix catalog, each 10 seconds long. For each clip, a combination of 6 resolutions and 3 encoding parameters are used to generate the processed video sequences, resulting 18 impairment conditions for testing. Instead of fixating the viewing distance, each subject is instructed to view the video at a distance he/she feels comfortable with. In the trained model, the score ranges from 0 to 100, which is linear with the subjective voting scale, where roughly "bad" is mapped to score 20, and "excellent" is mapped to score 100.
+
 Invoking the phone model will generate VMAF scores higher than in the regular model, which is more suitable for laptop, TV, etc. viewing conditions. An example VMAF–bitrate relationship for the two models is shown below:
 
 ![regular vs phone model](/resource/images/phone_model.png)
 
 From the figure it can be interpreted that due to the factors of screen size and viewing distance, the same distorted video would be perceived as having a higher quality when viewed on a phone screen than on a laptop/TV screen, and when the quality score reaches its maximum (100), further increasing the encoding bitrate would not result in any perceptual improvement in quality.
+
+### Predict Quality on a 4KTV screen at 1.5H
+
+As of June 2018, we have added a new 4K VMAF model at `model/vmaf_4k_v0.6.1.pkl`, which predicts the subjective quality of video displayed on a 4KTV and viewed from the distance of 1.5 times the height of the display device (1.5H). This model is trained with subjective data collected in a lab experiment, using the ACR methodology. The viewing distance of 1.5H is the critical distance for a human subject to appreciate the quality of 4K content (see [recommendation](https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.2022-0-201208-I!!PDF-E.pdf)).
+
+To invoke this model, specify the model path using the `--model` option. For example:
+
+```
+./run_vmaf yuv420p 3840 2160 ref_path dis_path --model model/vmaf_4k_v0.6.1.pkl
+```
 
 ## Advanced Usage
 
