@@ -462,16 +462,17 @@ The commands `./run_vmaf_training` and `./run_testing` also support custom subje
 The subjective model option can be specified with option `--subj-model subjective_model`, for example:
 
 ```
-./run_vmaf_training example_raw_dataset.py \
+./run_vmaf_training resource/example/example_raw_dataset.py \
   resource/feature_param/vmaf_feature_v2.py \
   resource/model_param/libsvmnusvr_v2.py \
   workspace/model/test_model.pkl \
   --subj-model MLE --cache-result --parallelize
 
-./run_testing VMAF example_raw_dataset.py --subj-model MLE --cache-result --parallelize
+./run_testing VMAF resource/example/example_raw_dataset.py --subj-model MLE \
+  --cache-result --parallelize
 ```
 
-Note that for the `--subj-model` option to have effect, the input dataset file must follow a format similar to `example_raw_dataset.py`. Specifically, for each dictionary element in `dis_videos`, instead of having a key named 'dmos' or 'groundtruth' as in `resource/example/example_dataset.py`, it must have a key named 'os' (stand for opinion score), and the value must be a list of numbers. This is the 'raw opinion score' collected from subjective experiments, which is used as the input to the custom subjective models.
+Note that for the `--subj-model` option to have effect, the input dataset file must follow a format similar to [example_raw_dataset.py](resource/example/example_raw_dataset.py). Specifically, for each dictionary element in `dis_videos`, instead of having a key named 'dmos' or 'groundtruth' as in [example_dataset.py](resource/example/example_dataset.py), it must have a key named 'os' (stand for opinion score), and the value must be a list of numbers. This is the 'raw opinion score' collected from subjective experiments, which is used as the input to the custom subjective models.
 
 ### Cross Validation
 
