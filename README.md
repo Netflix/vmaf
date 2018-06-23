@@ -334,7 +334,7 @@ Once a model is trained, the VMAF package also provides tools to cross validate 
 
 ### Create a Dataset
 
-To begin with, create a dataset file following the format in [`example_dataset.py`](example_dataset.py). A dataset is a collection of distorted videos. Each has a unique asset ID and a corresponding reference video, identified by a unique content ID. Each distorted video is also associated with subjective quality score, typically a MOS (mean opinion score), obtained through subjective study. An example code snippet that defines a dataset is as follows:
+To begin with, create a dataset file following the format in [`example_dataset.py`](resource/example/example_dataset.py). A dataset is a collection of distorted videos. Each has a unique asset ID and a corresponding reference video, identified by a unique content ID. Each distorted video is also associated with subjective quality score, typically a MOS (mean opinion score), obtained through subjective study. An example code snippet that defines a dataset is as follows:
 
 ```
 dataset_name = 'example'
@@ -372,7 +372,8 @@ Enabling `--parallelize` allows execution on multiple reference-distorted video 
 For example:
 
 ```
-./run_testing VMAF example_dataset.py --cache-result --parallelize
+./run_testing VMAF resource/example/example_dataset.py --cache-result \
+  --parallelize
 ```
 
 Make sure `matplotlib` is installed to visualize the MOS-prediction scatter plot and inspect the statistics:
@@ -394,7 +395,8 @@ python python/script/run_cleaning_cache.py quality_type test_dataset_file
 to clean up corrupted results in the store before retrying. For example:
 
 ```
-python python/script/run_cleaning_cache.py VMAF example_dataset.py
+python python/script/run_cleaning_cache.py VMAF \
+  resource/example/example_dataset.py
 ```
 
 ### Train a New Model
@@ -408,7 +410,7 @@ Now that we are confident that the dataset is created correctly and we have some
 For example:
 
 ```
-./run_vmaf_training example_dataset.py \
+./run_vmaf_training resource/example/example_dataset.py \
   resource/feature_param/vmaf_feature_v2.py \
   resource/model_param/libsvmnusvr_v2.py \
   workspace/model/test_model.pkl \
@@ -469,7 +471,7 @@ The subjective model option can be specified with option `--subj-model subjectiv
 ./run_testing VMAF example_raw_dataset.py --subj-model MLE --cache-result --parallelize
 ```
 
-Note that for the `--subj-model` option to have effect, the input dataset file must follow a format similar to `example_raw_dataset.py`. Specifically, for each dictionary element in `dis_videos`, instead of having a key named 'dmos' or 'groundtruth' as in `example_dataset.py`, it must have a key named 'os' (stand for opinion score), and the value must be a list of numbers. This is the 'raw opinion score' collected from subjective experiments, which is used as the input to the custom subjective models.
+Note that for the `--subj-model` option to have effect, the input dataset file must follow a format similar to `example_raw_dataset.py`. Specifically, for each dictionary element in `dis_videos`, instead of having a key named 'dmos' or 'groundtruth' as in `resource/example/example_dataset.py`, it must have a key named 'os' (stand for opinion score), and the value must be a list of numbers. This is the 'raw opinion score' collected from subjective experiments, which is used as the input to the custom subjective models.
 
 ### Cross Validation
 
