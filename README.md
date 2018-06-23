@@ -207,7 +207,7 @@ There is also an `ffmpeg2vmaf` script which can compare any file format supporte
 
 ### Running in Batch Mode
 
-To run VMAF in batch mode, create an input text file, where each corresponds to the following format (check examples in [example_batch_input](example_batch_input)):
+To run VMAF in batch mode, create an input text file, where each corresponds to the following format (check examples in [example_batch_input](resource/example/example_batch_input)):
 
 ```
 format width height reference_path distorted_path
@@ -231,7 +231,7 @@ where enabling `--parallelize` allows execution on multiple reference-distorted 
 For example:
 
 ```
-./run_vmaf_in_batch example_batch_input --parallelize
+./run_vmaf_in_batch resource/example/example_batch_input --parallelize
 ```
 
 ### Predict Quality on a Cellular Phone Screen
@@ -244,7 +244,8 @@ VMAF v0.6.1 and later support a custom quality model for cellular phone screen v
   python/test/resource/yuv/src01_hrc01_576x324.yuv \
   --phone-model
 
-./run_vmaf_in_batch example_batch_input --parallelize --phone-model
+./run_vmaf_in_batch resource/example/example_batch_input --parallelize \
+  --phone-model
 ```
 
 This model is trained using subjective data collected in a lab experiment, based on the [absolute categorical rating (ACR)](https://en.wikipedia.org/wiki/Absolute_Category_Rating) methodology, with the exception that after viewing a video sequence, a subject votes on a continuous scale (from "bad" to "excellent"), instead of the more conventional five-level discrete scale. The test content are video clips selected from the Netflix catalog, each 10 seconds long. For each clip, a combination of 6 resolutions and 3 encoding parameters are used to generate the processed video sequences, resulting 18 impairment conditions for testing. Instead of fixating the viewing distance, each subject is instructed to view the video at a distance he/she feels comfortable with. In the trained model, the score ranges from 0 to 100, which is linear with the subjective voting scale, where roughly "bad" is mapped to score 20, and "excellent" is mapped to score 100.
@@ -319,7 +320,8 @@ For example:
   python/test/resource/yuv/src01_hrc01_576x324.yuv \
   --model model/nflxtrain_vmafv3.pkl
 
-./run_vmaf_in_batch example_batch_input --model model/nflxtrain_vmafv3.pkl --parallelize
+./run_vmaf_in_batch resource/example/example_batch_input \
+  --model model/nflxtrain_vmafv3.pkl --parallelize
 ```
 
 A user can customize the model based on:
