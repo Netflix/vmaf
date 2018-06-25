@@ -9,8 +9,6 @@ from vmaf.core.cross_validation import ModelCrossValidation
 from vmaf.core.feature_assembler import FeatureAssembler
 from vmaf.core.quality_runner import VmafQualityRunner
 from vmaf.core.result_store import FileSystemResultStore
-from sureal.dataset_reader import RawDatasetReader
-from sureal.subjective_model import DmosModel
 from vmaf.tools.misc import indices, get_stdout_logger, import_python_file, close_logger, get_file_name_without_extension
 from vmaf.config import VmafConfig, DisplayConfig
 from vmaf.core.asset import Asset
@@ -189,6 +187,8 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
             assert test_asset.groundtruth is not None
     except AssertionError:
         # no groundtruth, try do subjective modeling
+        from sureal.dataset_reader import RawDatasetReader
+        from sureal.subjective_model import DmosModel
         subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs and kwargs['subj_model_class'] is not None else DmosModel
         dataset_reader_class = kwargs['dataset_reader_class'] if 'dataset_reader_class' in kwargs else RawDatasetReader
         subjective_model = subj_model_class(dataset_reader_class(test_dataset))
@@ -320,6 +320,8 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
             assert train_asset.groundtruth is not None
     except AssertionError:
         # no groundtruth, try do subjective modeling
+        from sureal.dataset_reader import RawDatasetReader
+        from sureal.subjective_model import DmosModel
         subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs and kwargs['subj_model_class'] is not None else DmosModel
         dataset_reader_class = kwargs['dataset_reader_class'] if 'dataset_reader_class' in kwargs else RawDatasetReader
         subjective_model = subj_model_class(dataset_reader_class(train_dataset))
@@ -411,6 +413,8 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
                 assert test_asset.groundtruth is not None
         except AssertionError:
             # no groundtruth, try do subjective modeling
+            from sureal.dataset_reader import RawDatasetReader
+            from sureal.subjective_model import DmosModel
             subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs and kwargs['subj_model_class'] is not None else DmosModel
             dataset_reader_class = kwargs['dataset_reader_class'] if 'dataset_reader_class' in kwargs else RawDatasetReader
             subjective_model = subj_model_class(dataset_reader_class(test_dataset))
@@ -648,6 +652,7 @@ def explain_model_on_dataset(model, test_assets_selected_indexs,
 
 def generate_dataset_from_raw(raw_dataset_filepath, output_dataset_filepath, **kwargs):
     if raw_dataset_filepath:
+        from sureal.subjective_model import DmosModel
         subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs else DmosModel
         content_ids = kwargs['content_ids'] if 'content_ids' in kwargs else None
         asset_ids = kwargs['asset_ids'] if 'asset_ids' in kwargs else None

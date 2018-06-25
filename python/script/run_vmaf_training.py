@@ -10,7 +10,6 @@ from vmaf.tools.misc import import_python_file, cmd_option_exists, get_cmd_optio
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.routine import print_matplotlib_warning, train_test_vmaf_on_dataset
 from vmaf.tools.stats import ListStats
-from sureal.subjective_model import SubjectiveModel
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -61,6 +60,7 @@ def main():
 
     try:
         if subj_model is not None:
+            from sureal.subjective_model import SubjectiveModel
             subj_model_class = SubjectiveModel.find_subclass(subj_model)
         else:
             subj_model_class = None
