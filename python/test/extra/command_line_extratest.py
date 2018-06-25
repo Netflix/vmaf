@@ -5,7 +5,7 @@ import unittest
 from vmaf import run_process
 from vmaf.config import VmafConfig
 
-__copyright__ = "Copyright 2016-2017, Netflix, Inc."
+__copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 class CommandLineTest(unittest.TestCase):
