@@ -5,7 +5,7 @@ The VMAF Python library offers full functionalities from running basic VMAF comm
 
 ## Prerequisites
 
-The VDK package has its core feature extraction library written in C, and the rest scripting code written in Python. It also has a stand-alone C++ implementation that is Python-independent. To build the C/C++ code, it requires `gcc` and `g++` (>=4.8). To run scripts and tests, it requires Python2 (>= 2.7) installed.
+The VMAF Python library has its core feature extraction library written in C, and the rest scripting code written in Python. To build the C code, it requires `gcc` and `g++` (>=4.8). To run scripts and tests, it requires Python2 (>= 2.7) installed.
 
 It also requires a number of Python packages:
 
