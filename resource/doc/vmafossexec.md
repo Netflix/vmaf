@@ -16,9 +16,9 @@ wrapper/vmafossexec yuv420p 576 324
   --thread 0 --subsample 5
 ```
 
-For VMAF v0.6.1, the model file is `model/vmaf_v0.6.1.pkl`. The correspondence is documented [here](python/src/vmaf/core/quality_runner.py#L255).
+For VMAF v0.6.1, the model file is `model/vmaf_v0.6.1.pkl`.
 
-The options `--psnr`, `--ssim` and `--ms-ssim` also allow reporting PSNR, SSIM and MS-SSIM results, respectively. The option `--thread` specifies the number of threads to use. Apply `--thread 0` to use all threads available. The option `--subsample` specifies the subsampling of frames to speed up calculation. For example, `--subsample 5` calculates VMAF on one of every 5 frames. The following plot shows the trend of how the subsample number impacts the processing speed (based on the [Netflix Public Dataset](#netflix-public-dataset) of 1080p videos, with PSNR, SSIM and MS-SSIM calculation enabled):
+The options `--psnr`, `--ssim` and `--ms-ssim` also allow reporting PSNR, SSIM and MS-SSIM results, respectively. The option `--thread` specifies the number of threads to use. Apply `--thread 0` to use all threads available. The option `--subsample` specifies the subsampling of frames to speed up calculation. For example, `--subsample 5` calculates VMAF on one of every 5 frames. The following plot shows the trend of how the subsample number impacts the processing speed (based on the [Netflix Public Dataset](resource/doc/datasets.md#netflix-public-dataset) of 1080p videos, with PSNR, SSIM and MS-SSIM calculation enabled):
 
 ![subsample](/resource/images/subsample.png)
 
