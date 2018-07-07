@@ -269,6 +269,160 @@ class VmafFeatureExtractor(FeatureExtractor):
 
         return result
 
+class ColorVmafFeatureExtractor(FeatureExtractor):
+
+    TYPE = "ColorVMAF_feature"
+
+    VERSION = '0.2.4c'  # Modify by moving motion2 to c code
+
+    ATOM_FEATURES = [feat + "_y" for feat in VmafFeatureExtractor.ATOM_FEATURES] + \
+                    [feat + "_u" for feat in VmafFeatureExtractor.ATOM_FEATURES] + \
+                    [feat + "_v" for feat in VmafFeatureExtractor.ATOM_FEATURES]
+
+    DERIVED_ATOM_FEATURES = [feat + "_y" for feat in VmafFeatureExtractor.DERIVED_ATOM_FEATURES] + \
+                    [feat + "_u" for feat in VmafFeatureExtractor.DERIVED_ATOM_FEATURES] + \
+                    [feat + "_v" for feat in VmafFeatureExtractor.DERIVED_ATOM_FEATURES]
+
+    ADM2_CONSTANT = 0
+    ADM_SCALE_CONSTANT = 0
+
+    def _generate_result(self, asset):
+        # routine to call the command-line executable and generate feature
+        # scores in the log file.
+
+        quality_width, quality_height = asset.quality_width_height
+        log_file_path = self._get_log_file_path(asset)
+
+        yuv_type=self._get_workfile_yuv_type(asset)
+        ref_path=asset.ref_workfile_path
+        dis_path=asset.dis_workfile_path
+        w=quality_width
+        h=quality_height
+        logger = self.logger
+
+        ExternalProgramCaller.call_vmaf_feature(yuv_type, ref_path, dis_path, w, h, log_file_path, logger, 1)
+
+    @classmethod
+    def _post_process_result(cls, result):
+        # override Executor._post_process_result
+
+        result = super(ColorVmafFeatureExtractor, cls)._post_process_result(result)
+        channels = ['_y', '_u', '_v']
+
+        for channel in channels:
+
+            # adm2 =
+            # (adm_num + ADM2_CONSTANT) / (adm_den + ADM2_CONSTANT)
+            adm2_scores_key = cls.get_scores_key('adm2' + channel)
+            adm_num_scores_key = cls.get_scores_key('adm_num' + channel)
+            adm_den_scores_key = cls.get_scores_key('adm_den' + channel)
+            result.result_dict[adm2_scores_key] = list(
+                (np.array(result.result_dict[adm_num_scores_key]) + cls.ADM2_CONSTANT) /
+                (np.array(result.result_dict[adm_den_scores_key]) + cls.ADM2_CONSTANT)
+            )
+
+            # vif_scalei = vif_num_scalei / vif_den_scalei, i = 0, 1, 2, 3
+            vif_num_scale0_scores_key = cls.get_scores_key('vif_num_scale0' + channel)
+            vif_den_scale0_scores_key = cls.get_scores_key('vif_den_scale0' + channel)
+            vif_num_scale1_scores_key = cls.get_scores_key('vif_num_scale1' + channel)
+            vif_den_scale1_scores_key = cls.get_scores_key('vif_den_scale1' + channel)
+            vif_num_scale2_scores_key = cls.get_scores_key('vif_num_scale2' + channel)
+            vif_den_scale2_scores_key = cls.get_scores_key('vif_den_scale2' + channel)
+            vif_num_scale3_scores_key = cls.get_scores_key('vif_num_scale3' + channel)
+            vif_den_scale3_scores_key = cls.get_scores_key('vif_den_scale3' + channel)
+            vif_scale0_scores_key = cls.get_scores_key('vif_scale0' + channel)
+            vif_scale1_scores_key = cls.get_scores_key('vif_scale1' + channel)
+            vif_scale2_scores_key = cls.get_scores_key('vif_scale2' + channel)
+            vif_scale3_scores_key = cls.get_scores_key('vif_scale3' + channel)
+            result.result_dict[vif_scale0_scores_key] = list(
+                (np.array(result.result_dict[vif_num_scale0_scores_key])
+                 / np.array(result.result_dict[vif_den_scale0_scores_key]))
+            )
+            result.result_dict[vif_scale1_scores_key] = list(
+                (np.array(result.result_dict[vif_num_scale1_scores_key])
+                 / np.array(result.result_dict[vif_den_scale1_scores_key]))
+            )
+            result.result_dict[vif_scale2_scores_key] = list(
+                (np.array(result.result_dict[vif_num_scale2_scores_key])
+                 / np.array(result.result_dict[vif_den_scale2_scores_key]))
+            )
+            result.result_dict[vif_scale3_scores_key] = list(
+                (np.array(result.result_dict[vif_num_scale3_scores_key])
+                 / np.array(result.result_dict[vif_den_scale3_scores_key]))
+            )
+
+            # vif2 =
+            # ((vif_num_scale0 / vif_den_scale0) + (vif_num_scale1 / vif_den_scale1) +
+            # (vif_num_scale2 / vif_den_scale2) + (vif_num_scale3 / vif_den_scale3)) / 4.0
+            vif_scores_key = cls.get_scores_key('vif2' + channel)
+            result.result_dict[vif_scores_key] = list(
+                (
+                    (np.array(result.result_dict[vif_num_scale0_scores_key])
+                     / np.array(result.result_dict[vif_den_scale0_scores_key])) +
+                    (np.array(result.result_dict[vif_num_scale1_scores_key])
+                     / np.array(result.result_dict[vif_den_scale1_scores_key])) +
+                    (np.array(result.result_dict[vif_num_scale2_scores_key])
+                     / np.array(result.result_dict[vif_den_scale2_scores_key])) +
+                    (np.array(result.result_dict[vif_num_scale3_scores_key])
+                     / np.array(result.result_dict[vif_den_scale3_scores_key]))
+                ) / 4.0
+            )
+
+            # adm_scalei = adm_num_scalei / adm_den_scalei, i = 0, 1, 2, 3
+            adm_num_scale0_scores_key = cls.get_scores_key('adm_num_scale0' + channel)
+            adm_den_scale0_scores_key = cls.get_scores_key('adm_den_scale0' + channel)
+            adm_num_scale1_scores_key = cls.get_scores_key('adm_num_scale1' + channel)
+            adm_den_scale1_scores_key = cls.get_scores_key('adm_den_scale1' + channel)
+            adm_num_scale2_scores_key = cls.get_scores_key('adm_num_scale2' + channel)
+            adm_den_scale2_scores_key = cls.get_scores_key('adm_den_scale2' + channel)
+            adm_num_scale3_scores_key = cls.get_scores_key('adm_num_scale3' + channel)
+            adm_den_scale3_scores_key = cls.get_scores_key('adm_den_scale3' + channel)
+            adm_scale0_scores_key = cls.get_scores_key('adm_scale0' + channel)
+            adm_scale1_scores_key = cls.get_scores_key('adm_scale1' + channel)
+            adm_scale2_scores_key = cls.get_scores_key('adm_scale2' + channel)
+            adm_scale3_scores_key = cls.get_scores_key('adm_scale3' + channel)
+            result.result_dict[adm_scale0_scores_key] = list(
+                (np.array(result.result_dict[adm_num_scale0_scores_key]) + cls.ADM_SCALE_CONSTANT)
+                / (np.array(result.result_dict[adm_den_scale0_scores_key]) + cls.ADM_SCALE_CONSTANT)
+            )
+            result.result_dict[adm_scale1_scores_key] = list(
+                (np.array(result.result_dict[adm_num_scale1_scores_key]) + cls.ADM_SCALE_CONSTANT)
+                / (np.array(result.result_dict[adm_den_scale1_scores_key]) + cls.ADM_SCALE_CONSTANT)
+            )
+            result.result_dict[adm_scale2_scores_key] = list(
+                (np.array(result.result_dict[adm_num_scale2_scores_key]) + cls.ADM_SCALE_CONSTANT)
+                / (np.array(result.result_dict[adm_den_scale2_scores_key]) + cls.ADM_SCALE_CONSTANT)
+            )
+            result.result_dict[adm_scale3_scores_key] = list(
+                (np.array(result.result_dict[adm_num_scale3_scores_key]) + cls.ADM_SCALE_CONSTANT)
+                / (np.array(result.result_dict[adm_den_scale3_scores_key]) + cls.ADM_SCALE_CONSTANT)
+            )
+
+            # adm3 = \
+            # (((adm_num_scale0 + ADM_SCALE_CONSTANT) / (adm_den_scale0 + ADM_SCALE_CONSTANT))
+            #  + ((adm_num_scale1 + ADM_SCALE_CONSTANT) / (adm_den_scale1 + ADM_SCALE_CONSTANT))
+            #  + ((adm_num_scale2 + ADM_SCALE_CONSTANT) / (adm_den_scale2 + ADM_SCALE_CONSTANT))
+            #  + ((adm_num_scale3 + ADM_SCALE_CONSTANT) / (adm_den_scale3 + ADM_SCALE_CONSTANT))) / 4.0
+            adm3_scores_key = cls.get_scores_key('adm3' + channel)
+            result.result_dict[adm3_scores_key] = list(
+                (
+                    ((np.array(result.result_dict[adm_num_scale0_scores_key]) + cls.ADM_SCALE_CONSTANT)
+                     / (np.array(result.result_dict[adm_den_scale0_scores_key]) + cls.ADM_SCALE_CONSTANT)) +
+                    ((np.array(result.result_dict[adm_num_scale1_scores_key]) + cls.ADM_SCALE_CONSTANT)
+                     / (np.array(result.result_dict[adm_den_scale1_scores_key]) + cls.ADM_SCALE_CONSTANT)) +
+                    ((np.array(result.result_dict[adm_num_scale2_scores_key]) + cls.ADM_SCALE_CONSTANT)
+                     / (np.array(result.result_dict[adm_den_scale2_scores_key]) + cls.ADM_SCALE_CONSTANT)) +
+                    ((np.array(result.result_dict[adm_num_scale3_scores_key]) + cls.ADM_SCALE_CONSTANT)
+                     / (np.array(result.result_dict[adm_den_scale3_scores_key]) + cls.ADM_SCALE_CONSTANT))
+                ) / 4.0
+            )
+
+        # validate
+        for feature in cls.DERIVED_ATOM_FEATURES:
+            assert cls.get_scores_key(feature) in result.result_dict
+
+        return result
+
 class PsnrFeatureExtractor(FeatureExtractor):
 
     TYPE = "PSNR_feature"

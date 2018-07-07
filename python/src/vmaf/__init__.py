@@ -92,11 +92,11 @@ class ExternalProgramCaller(object):
         run_process(ms_ssim_cmd, shell=True)
 
     @staticmethod
-    def call_vmaf_feature(yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None):
+    def call_vmaf_feature(yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None, use_color=0):
 
         # APPEND (>>) result (since _prepare_generate_log_file method has already created the file
         # and written something in advance).
-        vmaf_feature_cmd = "{vmaf} all {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
+        vmaf_feature_cmd = "{vmaf} all {yuv_type} {ref_path} {dis_path} {w} {h} {use_color} >> {log_file_path}" \
             .format(
             vmaf=required(ExternalProgram.vmaf),
             yuv_type=yuv_type,
@@ -105,6 +105,7 @@ class ExternalProgramCaller(object):
             w=w,
             h=h,
             log_file_path=log_file_path,
+            use_color=use_color,
         )
         if logger:
             logger.info(vmaf_feature_cmd)

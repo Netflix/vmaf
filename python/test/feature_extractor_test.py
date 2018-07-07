@@ -7,7 +7,7 @@ import re
 
 from vmaf.config import VmafConfig
 from vmaf.core.feature_extractor import VmafFeatureExtractor, MomentFeatureExtractor, \
-    PsnrFeatureExtractor, SsimFeatureExtractor, MsSsimFeatureExtractor
+    PsnrFeatureExtractor, SsimFeatureExtractor, MsSsimFeatureExtractor, ColorVmafFeatureExtractor
 from vmaf.core.asset import Asset
 from vmaf.core.result_store import FileSystemResultStore
 from testutil import set_default_576_324_videos_for_testing, set_default_flat_1920_1080_videos_for_testing
@@ -39,6 +39,54 @@ class FeatureExtractorTest(unittest.TestCase):
         log_file_path = fextractor._get_log_file_path(asset)
         h = hashlib.sha1("test_0_1_refvideo_720x480_vs_disvideo_720x480_q_720x480").hexdigest()
         self.assertTrue(re.match(r"^my_workdir_root/[a-zA-Z0-9-]+/VMAF_feature_V0.2.4c_{}$".format(h), log_file_path))
+
+    def test_run_colorvmaf_fextractor(self):
+        print 'test on running Color VMAF feature extractor...'
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width':576, 'height':324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width':576, 'height':324})
+
+        self.fextractor = ColorVmafFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+
+        results_color = self.fextractor.results
+
+        self.fextractor = VmafFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        # bind Y channel results to the VMAF results
+        self.assertAlmostEqual(results_color[0]['ColorVMAF_feature_vif_y_score'], results[0]['VMAF_feature_vif_score'], places=4)
+        self.assertAlmostEqual(results_color[0]['ColorVMAF_feature_motion_y_score'], results[0]['VMAF_feature_motion_score'], places=4)
+        self.assertAlmostEqual(results_color[0]['ColorVMAF_feature_motion2_y_score'], results[0]['VMAF_feature_motion2_score'], places=4)
+        self.assertAlmostEqual(results_color[0]['ColorVMAF_feature_adm_y_score'], results[0]['VMAF_feature_adm_score'], places=4)
+        self.assertAlmostEqual(results_color[0]['ColorVMAF_feature_adm2_y_score'], results[0]['VMAF_feature_adm2_score'], places=4)
+        self.assertAlmostEqual(results_color[0]['ColorVMAF_feature_ansnr_y_score'], results[0]['VMAF_feature_ansnr_score'], places=4)
+
+        self.assertAlmostEqual(results_color[0]['ColorVMAF_feature_vif_num_y_score'], results[0]['VMAF_feature_vif_num_score'], places=0)
+        self.assertAlmostEqual(results_color[0]['ColorVMAF_feature_vif_den_y_score'], results[0]['VMAF_feature_vif_den_score'], places=0)
+        self.assertAlmostEqual(results_color[0]['ColorVMAF_feature_adm_num_y_score'], results[0]['VMAF_feature_adm_num_score'], places=4)
+        self.assertAlmostEqual(results_color[0]['ColorVMAF_feature_adm_den_y_score'], results[0]['VMAF_feature_adm_den_score'], places=4)
+        self.assertAlmostEqual(results_color[0]['ColorVMAF_feature_anpsnr_y_score'], results[0]['VMAF_feature_anpsnr_score'], places=4)
 
     def test_run_vmaf_fextractor(self):
         print 'test on running VMAF feature extractor...'
@@ -117,14 +165,14 @@ class FeatureExtractorTest(unittest.TestCase):
             result_store=result_store
         )
 
-        print '    running for the first time with fresh calculation...'
+        print 'running for the first time with fresh calculation...'
         self.fextractor.run()
         result0, result1 = self.fextractor.results
 
         self.assertTrue(os.path.exists(result_store._get_result_file_path(result0)))
         self.assertTrue(os.path.exists(result_store._get_result_file_path(result1)))
 
-        print '    running for the second time with stored results...'
+        print 'running for the second time with stored results...'
         self.fextractor.run()
         results = self.fextractor.results
 

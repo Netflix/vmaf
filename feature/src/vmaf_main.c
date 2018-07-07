@@ -28,6 +28,8 @@ int ansnr(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
 int vif(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt);
 int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt);
 int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt);
+int all_color(int (*read_yuv_frame)(float *ref_data_y, float *ref_data_u, float *ref_data_v, float *dis_data_y, float *dis_data_u, float *dis_data_v, 
+    int stride_byte_y, void *s, int w_u, int w_v, int h_u, int h_v, int stride_byte_u, int stride_byte_v), void *user_data, int w, int h, const char *fmt);
 
 enum vmaf_cpu cpu; // global
 
@@ -50,7 +52,7 @@ static void usage(void)
     );
 }
 
-int run_vmaf(const char *app, const char *fmt, const char *ref_path, const char *dis_path, int w, int h)
+int run_vmaf(const char *app, const char *fmt, const char *ref_path, const char *dis_path, int w, int h, int use_color)
 {
     int ret = 0;
     cpu = cpu_autodetect();
@@ -123,10 +125,19 @@ fail_or_end_noref:
             ret = adm(read_frame, s,  w, h, fmt);
         else if (!strcmp(app, "ansnr"))
             ret = ansnr(read_frame, s, w, h, fmt);
-        else if (!strcmp(app, "vif"))
+        else if (!strcmp(app, "vif")) 
             ret = vif(read_frame, s, w, h, fmt);
         else if (!strcmp(app, "all"))
-            ret = all(read_frame, s, w, h, fmt);
+        {
+            if (use_color)
+            {
+                ret = all_color(read_yuv_frame, s,  w, h, fmt);
+            }
+            else
+            {
+                ret = all(read_frame, s,  w, h, fmt);
+            }
+        }
         else
             ret = 2;
 
@@ -156,6 +167,7 @@ int main(int argc, const char **argv)
     const char *fmt;
     int w;
     int h;
+    int use_color;
 
     if (argc < 7) {
         usage();
@@ -163,16 +175,24 @@ int main(int argc, const char **argv)
     }
 
     app      = argv[1];
-    fmt         = argv[2];
+    fmt      = argv[2];
     ref_path = argv[3];
     dis_path = argv[4];
     w        = atoi(argv[5]);
     h        = atoi(argv[6]);
+
+    if (argc > 7) {
+        use_color = atoi(argv[7]);
+    }
+    else 
+    {
+        use_color = 0;
+    }
 
     if (w <= 0 || h <= 0) {
         usage();
         return 2;
     }
 
-    return run_vmaf(app, fmt, ref_path, dis_path, w, h);
+    return run_vmaf(app, fmt, ref_path, dis_path, w, h, use_color);
 }
