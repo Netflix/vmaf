@@ -28,9 +28,9 @@ To provide some flexibility, in CLIs *run_vmaf*, *run_psnr*, *run_vmaf_in_batch*
 
 #### Q: Will VMAF work on 4K videos?
 
-A: The current VMAF model (v0.6.1) was trained on videos encoded at *up to* 1080p resolution. It is still useful for measuring 4K videos, if you are interested in a relative score. In other words, for two 4K videos A and B with A perceptually better than B, the VMAF scores will tell you so too. However, if you are interested in an absolute score, say if a 4K video is perceptually acceptable, you may not get an accurate answer.
+A: The current VMAF model at `model/vmaf_v0.6.1.pkl` was trained on videos encoded at *up to* 1080p resolution. It is still useful for measuring 4K videos, if you are interested in a relative score. In other words, for two 4K videos A and B with A perceptually better than B, the VMAF scores will tell you so too. However, if you are interested in an absolute score, say if a 4K video is perceptually acceptable, you may not get an accurate answer.
 
-The future plan is to publish a model specifically trained on 4K videos.
+As of VDK v1.3.7, we have added a new 4K model at `model/vmaf_4k_v0.6.1.pkl`, which is trained to predict 4KTV viewing at distance of 1.5X the display height. Refer to [this](resource/doc/VMAF_Python_library.md#predict-quality-on-a-4ktv-screen-at-15h) section for details..
 
 #### Q: Will VMAF work on applications other than HTTP adaptive streaming?
 
@@ -40,10 +40,14 @@ A: VMAF was designed with HTTP adaptive streaming in mind. Correspondingly, in t
 
 A: Yes, you can. You can transcode an encoded video to raw YUV stream (e.g. by FFmpeg) and pipe it to VMAF. An example can be found [here](https://github.com/Netflix/vmaf/blob/master/ffmpeg2vmaf).
 
-#### Q: When I compare a video with itself as reference, I expexct to get a perfect score of VMAF 100, but what I see is a score like 98.7. Is there a bug?
+#### Q: When I compare a video with itself as reference, I expect to get a perfect score of VMAF 100, but what I see is a score like 98.7. Is there a bug?
 
 A: VMAF doesn't guarantee that you get a perfect score in this case, but you should get a score close enough. Similar things would happen to other machine learning-based predictors (another example is VQM-VFD).
 
 #### Q: How is the VMAF package versioned?
 
 A: Since the package has been growing and there were confusion on what this VMAF number should be in the VERSION file, it is decided to stick to the convention that this VMAF version should only be related to the version of the default model for the `VmafQualityRunner`. Whenever there is a numerical change to the VMAF result in running the default model, this number is going to be updated. For anything else, we are going to use the VDK version number. For `libvmaf`, whenever there is an interface change or numerical change to the VMAF result, the version number at `https://github.com/Netflix/vmaf/blob/master/wrapper/libvmaf.pc` is going to be updated to the latest VDK number.
+
+#### Q: If I train a model using the *run_vmaf_training* process with some dataset, and then I run the *run_testing* process with that trained model and the same dataset, why wouldn't I get the same results (SRCC, PCC, and RMSE)? [Issue #191](https://github.com/Netflix/vmaf/issues/191)
+
+A: This is due to the slightly different workflows used by *run_vmaf_training* and *run_testing*. In *run_vmaf_training*, the feature scores (elementary metric scores) from each frame are first extracted,  each feature is then temporally pooled (by arithmetic mean) to form a feature score per clip. The per-clip feature scores are then fit with the subjective scores to obtain the trained model. The reported SRCC, PCC and RMSE are the fitting result. In *run_testing*, the per-frame feature scores are first extracted, then the prediction model is applied on a per-frame basis, resulting "per-frame VMAF score". The final score for the clip is arithmetic mean of the per-frame scores. As you can see, there is a re-ordering of the 'temporal pooling' and 'prediction' operators. If the features from a clip are constant, the re-ordering will not have an impact. In practice, we find the numeric difference to be small.
