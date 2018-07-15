@@ -185,11 +185,13 @@ where `VMAF_score` is the final score and the others are the scores for VMAF's e
 
 ### Using `ffmpeg2vmaf`
 
-There is also an `ffmpeg2vmaf` script which can compare any file format supported by `ffmpeg` (note that you need a recent version of `ffmpeg` installed):
+There is also an `ffmpeg2vmaf` script which can compare any file format supported by `ffmpeg`. `ffmpeg2vmaf` essentially pipes FFmpeg-decoded videos to VMAF. Note that you need a recent version of `ffmpeg` installed (for the first time, run the command line, follow the prompted instruction to specify the path of `ffmpeg`).
 
 ```
-./ffmpeg2vmaf width height reference_path distorted_path [--out-fmt output_format]
+./ffmpeg2vmaf quality_width quality_height reference_path distorted_path [--model model_path] [--out-fmt out_fmt]
 ```
+
+Here `quality_width` and `quality_height` are the width and height the reference and distorted videos are scaled to before VMAF calculation. This is different from `run_vmaf`'s  `width` and `height`, which specify the raw YUV's width and height instead. The input to `ffmpeg2vmaf` must already have such information specified in the header so that they are FFmpeg-decodable.
 
 ### Running in Batch Mode
 

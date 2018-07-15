@@ -22,12 +22,16 @@ THe VDK package offers multiple ways for a user to interact with VMAF algorithm 
 
 There are a number of ways one can use the pakcage: 
 
-  - [VMAF Python library](resource/doc/VMAF_Python_library.md) offers full functionalities from running basic VMAF command line, running VMAF on a batch of video files, training and testing a VMAF model on video datasets, and visualization tools, etc.
-  - [`vmafossexec` - a C++ "wrapper" executable](resource/doc/vmafossexec.md) offers running the prediction part of the algorithm in full, such that one can easily deploy VMAF in a production environment without needing to configure the Python dependancies. Additionally, `vmafossexec` offers a number of exclusive features, such as 1) speed optimization using multi-threading and skipping frames, 2) optionally computing PSNR, SSIM and MS-SSIM in the output.
-  - [`libvmaf` - a static library](resource/doc/libvmaf.md) offers an interface to allow incorporating VMAF into your C/C++ code. Using this library, VMAF is now included as a filter in [FFmpeg](http://ffmpeg.org/) main branch, and can be configured using: `./configure --enable-libvmaf`.
-  - [VMAF Dockerfile](Dockerfile) generates a VMAF docker image. Refer to [this](resource/doc/docker.md) document for detailed usages.
+  - [VMAF Python library](resource/doc/VMAF_Python_library.md) offers full functionalities including running basic VMAF command line, running VMAF on a batch of video files, training and testing a VMAF model on video datasets, and visualization tools, etc. It also provides a command line tool `ffmpeg2vmaf` that can pipe FFmpeg-decoded raw videos to VMAF. Unlike other command lines, `ffmpeg2vmaf` can take compressed video bitstreams as input.
+  - [`vmafossexec` - a C++ "wrapper" executable](resource/doc/vmafossexec.md) offers running the prediction part of the algorithm in full, such that one can easily deploy VMAF in a production environment without needing to configure the Python dependancies. Additionally, `vmafossexec` offers a number of exclusive features, such as 1) speed optimization using multi-threading and skipping frames, 2) optionally computing PSNR, SSIM and MS-SSIM metrics in the output.
+  - [`libvmaf` - a static library](resource/doc/libvmaf.md) offers an interface to incorporate VMAF into your C/C++ code. Using this library, VMAF is now included as a filter in [FFmpeg](http://ffmpeg.org/) main branch, and can be configured using: `./configure --enable-libvmaf`.
+  - [VMAF Dockerfile](Dockerfile) generates a VMAF docker image from the [VMAF Python library](resource/doc/VMAF_Python_library.md). Refer to [this](resource/doc/docker.md) document for detailed usages.
   
 ## Datasets
 
-We also provide [two sample datasets](resource/doc/datasets.md) including the video files and the properly formatted dataset files in Python.
+We also provide [two sample datasets](resource/doc/datasets.md) including the video files and the properly formatted dataset files in Python. They can be used as sample datasets to train and test custom VMAF models.
+
+## Models
+
+Besides the default VMAF model `model/vmaf_v0.6.1.pkl`, VDK also includes a number of additional models, covering phone and 4KTV viewing conditions, as well as models that provide additional prediction confidence intervals. See the [Models](resource/doc/models.md) page.
 
