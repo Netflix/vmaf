@@ -1,7 +1,7 @@
 VMAF Python Library
 ===================
 
-The VMAF Python library offers full functionalities from running basic VMAF command line, running VMAF on a batch of video files, training and testing a VMAF model on video datasets, and visualization tools, etc. It is the playground to experiment with the VMAF algorithm.
+The VMAF Python library offers full functionalities from running basic VMAF command line, running VMAF on a batch of video files, training and testing a VMAF model on video datasets, and visualization tools, etc. It is the playground to experiment with VMAF.
 
 It also provides a command line tool [`ffmpeg2vmaf`](#using-ffmmpeg2vmaf) that can pipe FFmpeg-decoded raw videos to VMAF. Unlike other command lines, `ffmpeg2vmaf` can take compressed video bitstreams as input.
 
@@ -221,7 +221,8 @@ For example:
 There is also an `ffmpeg2vmaf` command line tool which can compare any file format decodable by `ffmpeg`. `ffmpeg2vmaf` essentially pipes FFmpeg-decoded videos to VMAF. Note that you need a recent version of `ffmpeg` installed (for the first time, run the command line, follow the prompted instruction to specify the path of `ffmpeg`).
 
 ```
-./ffmpeg2vmaf quality_width quality_height reference_path distorted_path [--model model_path] [--out-fmt out_fmt]
+./ffmpeg2vmaf quality_width quality_height reference_path \
+  distorted_path [--model model_path] [--out-fmt out_fmt]
 ```
 
 Here `quality_width` and `quality_height` are the width and height the reference and distorted videos are scaled to before VMAF calculation. This is different from `run_vmaf`'s  `width` and `height`, which specify the raw YUV's width and height instead. The input to `ffmpeg2vmaf` must already have such information specified in the header so that they are FFmpeg-decodable.
@@ -230,7 +231,7 @@ Here `quality_width` and `quality_height` are the width and height the reference
 
 VMAF follows a machine-learning based approach to first extract a number of quality-relevant features (or elementary metrics) from a distorted video and its reference full-quality video, followed by fusing them into a final quality score using a non-linear regressor (e.g. an SVM regressor), hence the name “Video Multi-method Assessment Fusion”.
 
-In addition to the basic commands, the VMAF package also provides a framework to allow any user to train his/her own perceptual quality assessment model. For example, directory [`resource/model`](resource/model) contains a number of pre-trained models, which can be loaded by the aforementioned commands:
+In addition to the basic commands, the VMAF package also provides a framework to allow any user to train his/her own perceptual quality assessment model. For example, directory [`resource/model`](../../resource/model) contains a number of pre-trained models, which can be loaded by the aforementioned commands:
 
 ```
 ./run_vmaf format width height reference_path distorted_path [--model model_path]
@@ -259,7 +260,7 @@ Once a model is trained, the VMAF package also provides tools to cross validate 
 
 ### Create a Dataset
 
-To begin with, create a dataset file following the format in [`example_dataset.py`](resource/example/example_dataset.py). A dataset is a collection of distorted videos. Each has a unique asset ID and a corresponding reference video, identified by a unique content ID. Each distorted video is also associated with subjective quality score, typically a MOS (mean opinion score), obtained through subjective study. An example code snippet that defines a dataset is as follows:
+To begin with, create a dataset file following the format in [`example_dataset.py`](../../resource/example/example_dataset.py). A dataset is a collection of distorted videos. Each has a unique asset ID and a corresponding reference video, identified by a unique content ID. Each distorted video is also associated with subjective quality score, typically a MOS (mean opinion score), obtained through subjective study. An example code snippet that defines a dataset is as follows:
 
 ```
 dataset_name = 'example'
@@ -271,14 +272,14 @@ ref_videos = [
     {'content_id':1, 'path':'flat.yuv'},
 ]
 dis_videos = [
-    {'content_id':0, 'asset_id': 0, 'dmos':100, 'path':'checkerboard.yuv'}, # ref
+    {'content_id':0, 'asset_id': 0, 'dmos':100, 'path':'checkerboard.yuv'},
     {'content_id':0, 'asset_id': 1, 'dmos':50,  'path':'checkerboard_dis.yuv'},
-    {'content_id':1, 'asset_id': 2, 'dmos':100,  'path':'flat.yuv'}, # ref
+    {'content_id':1, 'asset_id': 2, 'dmos':100,  'path':'flat.yuv'},
     {'content_id':1, 'asset_id': 3, 'dmos':80,  'path':'flat_dis.yuv'},
 ]
 ```
 
-See the directory [`resource/dataset`](resource/dataset) for more examples. Also refer to the [Datasets](#datasets) section regarding publicly available datasets.
+See the directory [`resource/dataset`](../../resource/dataset) for more examples. Also refer to the [Datasets](datasets.md) section regarding publicly available datasets.
 
 ### Validate a Dataset
 
