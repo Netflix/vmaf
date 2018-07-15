@@ -27,4 +27,9 @@ The options `--psnr`, `--ssim` and `--ms-ssim` also allow reporting PSNR, SSIM a
 
 ![subsample](/resource/images/subsample.png)
 
+Optionally, one can test `vmafossexec` by running the [`vmafossexec_test.py`](python/test/vmafossexec_test.py) script (this requires Python and the `numpy`, `scipy` and `pandas` packages):
 
+```
+pip install --user numpy scipy pandas
+PYTHONPATH=python/src python python/test/vmafossexec_test.py
+```
