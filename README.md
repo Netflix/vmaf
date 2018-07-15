@@ -10,7 +10,6 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 - (6/19/18) Added 4K VMAF model under `model/vmaf_4k_v0.6.1.pkl`, which predicts the subjective quality of video displayed on a 4KTV and viewed from the distance of 1.5X the display height. Read [this](resource/doc/VMAF_Python_library.md#predict-quality-on-a-4ktv-screen-at-15h) section for details.
 - (6/5/18) Speed optimization to `vmafossexec`: 1) support multi-threading (e.g. use `--thread 0` to use all cores), 2) support frame sampling (e.g. use `--subsample 5` to calculate VMAF on one of every 5 frames). See [this](resource/doc/vmafossexec.md#vmafossexec---python-independent-implementation) section for details.
 - (1/20/18) Moved custom subjective models into a submodule named [sureal](https://github.com/Netflix/sureal). If you pull the latest changes, you will have to pull the submoddule by `git submodule update --init --recursive` and add `sureal/python/src` to `PYTHONPATH`.
-- (8/12/17) VMAF is now packaged into a library call `libvmaf` and can be called from a C/C++ program directly. See [this](resource/doc/libvmaf.md) document for details. Using this library, VMAF is now included as a filter in [FFmpeg](http://ffmpeg.org/) main branch, and can be configured using: `./configure --enable-libvmaf`.
 
 ## Frequently Asked Questions
 
@@ -18,7 +17,7 @@ Refer to the [FAQ](FAQ.md) page.
 
 ## Usages
 
-THe VDK package offers multiple ways for a user to interact with VMAF algorithm implementations. The core feature extraction library is written in C. The rest scripting code including the classes for machine learning regression, training and testing VMAF models and etc., is written in Python. Besides, there is C++ "wrapper" code partially replicating the logic in the regression classes, such that the VMAF prediction (excluding training) is fully implemented in C/C++.
+THe VDK package offers multiple ways for a user to interact with the VMAF algorithm implementations. The core feature extraction library is written in C. The rest scripting code including the classes for machine learning regression, training and testing VMAF models and etc., is written in Python. Besides, there is C++ "wrapper" code partially replicating the logic in the regression classes, such that the VMAF prediction (excluding training) is fully implemented in C/C++.
 
 There are a number of ways one can use the pakcage: 
 
