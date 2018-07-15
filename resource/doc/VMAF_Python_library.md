@@ -3,7 +3,7 @@ VMAF Python Library
 
 The VMAF Python library offers full functionalities from running basic VMAF command line, running VMAF on a batch of video files, training and testing a VMAF model on video datasets, and visualization tools, etc. It is the playground to experiment with VMAF.
 
-It also provides a command line tool [`ffmpeg2vmaf`](#using-ffmmpeg2vmaf) that can pipe FFmpeg-decoded raw videos to VMAF. Unlike other command lines, `ffmpeg2vmaf` can take compressed video bitstreams as input.
+It also provides a command line tool [`ffmpeg2vmaf`](#using-ffmpeg2vmaf) that can pipe FFmpeg-decoded raw videos to VMAF. Unlike other command lines, `ffmpeg2vmaf` can take compressed video bitstreams as input.
 
 ## Prerequisites
 
@@ -198,8 +198,10 @@ format width height reference_path distorted_path
 For example:
 
 ```
-yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv python/test/resource/yuv/src01_hrc01_576x324.yuv
-yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv python/test/resource/yuv/src01_hrc00_576x324.yuv
+yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv \
+  python/test/resource/yuv/src01_hrc01_576x324.yuv
+yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv \
+  python/test/resource/yuv/src01_hrc00_576x324.yuv
 ```
 
 After that, run:
@@ -221,8 +223,8 @@ For example:
 There is also an `ffmpeg2vmaf` command line tool which can compare any file format decodable by `ffmpeg`. `ffmpeg2vmaf` essentially pipes FFmpeg-decoded videos to VMAF. Note that you need a recent version of `ffmpeg` installed (for the first time, run the command line, follow the prompted instruction to specify the path of `ffmpeg`).
 
 ```
-./ffmpeg2vmaf quality_width quality_height reference_path \
-  distorted_path [--model model_path] [--out-fmt out_fmt]
+./ffmpeg2vmaf quality_width quality_height reference_path distorted_path \
+  [--model model_path] [--out-fmt out_fmt]
 ```
 
 Here `quality_width` and `quality_height` are the width and height the reference and distorted videos are scaled to before VMAF calculation. This is different from `run_vmaf`'s  `width` and `height`, which specify the raw YUV's width and height instead. The input to `ffmpeg2vmaf` must already have such information specified in the header so that they are FFmpeg-decodable.
@@ -231,7 +233,7 @@ Here `quality_width` and `quality_height` are the width and height the reference
 
 VMAF follows a machine-learning based approach to first extract a number of quality-relevant features (or elementary metrics) from a distorted video and its reference full-quality video, followed by fusing them into a final quality score using a non-linear regressor (e.g. an SVM regressor), hence the name “Video Multi-method Assessment Fusion”.
 
-In addition to the basic commands, the VMAF package also provides a framework to allow any user to train his/her own perceptual quality assessment model. For example, directory [`resource/model`](../../resource/model) contains a number of pre-trained models, which can be loaded by the aforementioned commands:
+In addition to the basic commands, the VMAF package also provides a framework to allow any user to train his/her own perceptual quality assessment model. For example, directory [`model`](../../model) contains a number of pre-trained models, which can be loaded by the aforementioned commands:
 
 ```
 ./run_vmaf format width height reference_path distorted_path [--model model_path]
@@ -279,17 +281,18 @@ dis_videos = [
 ]
 ```
 
-See the directory [`resource/dataset`](../../resource/dataset) for more examples. Also refer to the [Datasets](datasets.md) section regarding publicly available datasets.
+See the directory [`resource/dataset`](../../resource/dataset) for more examples. Also refer to the [Datasets](datasets.md) document regarding publicly available datasets.
 
 ### Validate a Dataset
 
 Once a dataset is created, first validate the dataset using existing VMAF or other (PSNR, SSIM or MS-SSIM) metrics. Run:
 
 ```
-./run_testing quality_type test_dataset_file [--vmaf-model optional_VMAF_model_path] [--cache-result] [--parallelize]
+./run_testing quality_type test_dataset_file \
+[--vmaf-model optional_VMAF_model_path] [--cache-result] [--parallelize]
 ```
 
-where `quality_type` can be `VMAF`, `PSNR`, `SSIM` or `MS_SSIM`.
+where `quality_type` can be `VMAF`, `PSNR`, `SSIM`, `MS_SSIM`, etc.
 
 Enabling `--cache-result` allows storing/retrieving extracted features (or elementary quality metrics) in a data store (since feature extraction is the most expensive operations here).
 
@@ -298,8 +301,8 @@ Enabling `--parallelize` allows execution on multiple reference-distorted video 
 For example:
 
 ```
-./run_testing VMAF resource/example/example_dataset.py --cache-result \
-  --parallelize
+./run_testing VMAF resource/example/example_dataset.py \
+  --cache-result --parallelize
 ```
 
 Make sure `matplotlib` is installed to visualize the MOS-prediction scatter plot and inspect the statistics:
@@ -330,7 +333,8 @@ python python/script/run_cleaning_cache.py VMAF \
 Now that we are confident that the dataset is created correctly and we have some benchmark result on existing metrics, we proceed to train a new quality assessment model. Run:
 
 ```
-./run_vmaf_training train_dataset_filepath feature_param_file model_param_file output_model_file [--cache-result] [--parallelize]
+./run_vmaf_training train_dataset_filepath feature_param_file model_param_file \
+  output_model_file [--cache-result] [--parallelize]
 ```
 
 For example:
@@ -383,7 +387,7 @@ Above are two example scatter plots obtained from running the `run_vmaf_training
 
 ### Using Custom Subjective Models
 
-The commands `./run_vmaf_training` and `./run_testing` also support custom subjective models (e.g. DMOS (default), MLE and more), through the submodule repository [sureal](https://github.com/Netflix/sureal). Read [this](resource/doc/dcc17v2.pdf) paper for some background.
+The commands `./run_vmaf_training` and `./run_testing` also support custom subjective models (e.g. DMOS (default), MLE and more), through the submodule repository [sureal](https://github.com/Netflix/sureal).
 
 The subjective model option can be specified with option `--subj-model subjective_model`, for example:
 
@@ -394,11 +398,11 @@ The subjective model option can be specified with option `--subj-model subjectiv
   workspace/model/test_model.pkl \
   --subj-model MLE --cache-result --parallelize
 
-./run_testing VMAF resource/example/example_raw_dataset.py --subj-model MLE \
-  --cache-result --parallelize
+./run_testing VMAF resource/example/example_raw_dataset.py \
+  --subj-model MLE --cache-result --parallelize
 ```
 
-Note that for the `--subj-model` option to have effect, the input dataset file must follow a format similar to [example_raw_dataset.py](resource/example/example_raw_dataset.py). Specifically, for each dictionary element in `dis_videos`, instead of having a key named 'dmos' or 'groundtruth' as in [example_dataset.py](resource/example/example_dataset.py), it must have a key named 'os' (stand for opinion score), and the value must be a list of numbers. This is the 'raw opinion score' collected from subjective experiments, which is used as the input to the custom subjective models.
+Note that for the `--subj-model` option to have effect, the input dataset file must follow a format similar to [example_raw_dataset.py](../../resource/example/example_raw_dataset.py). Specifically, for each dictionary element in `dis_videos`, instead of having a key named 'dmos' or 'groundtruth' as in [example_dataset.py](../../resource/example/example_dataset.py), it must have a key named `os` (stands for opinion score), and the value must be a list of numbers. This is the "raw opinion score" collected from subjective experiments, which is used as the input to the custom subjective models.
 
 ### Cross Validation
 
