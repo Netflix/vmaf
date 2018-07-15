@@ -1,7 +1,7 @@
 `vmafossexec` -- a C++ "Wrapper" Executable
 ===================
 
-The VDK package combines feature extraction implementation in C and the rest scripting code in Python. The Python layer allows fast prototyping, but sometimes deploying the Python dependency in production is a pain. Under [`wrapper`](wrapper), we provide a C++ implementation `vmafossexec` that has no dependency on Python.
+The VDK package combines feature extraction implementation in C and the rest scripting code in Python. The Python layer allows fast prototyping, but sometimes deploying the Python dependency in production is a pain. Under [`wrapper`](../../wrapper), we provide a C++ implementation `vmafossexec` that has no dependency on Python.
 
 To build `vmafossexec`, make the `ptools` library first, followed by the executable itself:
 
