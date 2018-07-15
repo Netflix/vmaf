@@ -27,6 +27,14 @@ int do_ms_ssim, char *pool_method, int thread, int subsample, int enable_conf_in
 
 Here, `read_frame` is a callback function which can be used to pass data from a program to VMAF. `user_data` is a program specific data that can be used by the callback function. For sample usage of `compute_vmaf`, refer to [`wrapper/src/main.cpp`](../../wrapper/src/main.cpp).
 
+To test the library, run:
+
+```
+make testlib
+```
+
+This command will build an executable `testlib` using this library together with [`wrapper/src/main.cpp`](../../wrapper/src/main.cpp).
+
 To uninstall the library run:
 
 ```

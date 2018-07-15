@@ -33,3 +33,5 @@ Optionally, one can test `vmafossexec` by running the [`vmafossexec_test.py`](..
 pip install --user numpy scipy pandas sklearn
 PYTHONPATH=python/src python python/test/vmafossexec_test.py
 ```
+
+Expect all tests pass.
