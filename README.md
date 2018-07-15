@@ -6,9 +6,9 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ## News
 
-- (6/19/18) Each VMAF prediction score now comes with a 95% confidence interval (CI), which quantifies the level of confidence that the prediction lies within the interval. Refer to [this](resource/doc/VMAF_Python_library.md#invoking-prediction-confidence-interval) section for details.
-- (6/19/18) Added 4K VMAF model under `model/vmaf_4k_v0.6.1.pkl`, which predicts the subjective quality of video displayed on a 4KTV and viewed from the distance of 1.5X the display height. Read [this](resource/doc/VMAF_Python_library.md#predict-quality-on-a-4ktv-screen-at-15h) section for details.
-- (6/5/18) Speed optimization to `vmafossexec`: 1) support multi-threading (e.g. use `--thread 0` to use all cores), 2) support frame sampling (e.g. use `--subsample 5` to calculate VMAF on one of every 5 frames). See [this](resource/doc/vmafossexec.md#vmafossexec---python-independent-implementation) section for details.
+- (6/19/18) Each VMAF prediction score now comes with a 95% [confidence interval (CI)](resource/doc/conf_interval.md), which quantifies the level of confidence that the prediction lies within the interval.
+- (6/19/18) Added a [4K VMAF model](resource/doc/models.md/#predict-quality-on-a-4ktv-screen-at-15h) under `model/vmaf_4k_v0.6.1.pkl`, which predicts the subjective quality of video displayed on a 4KTV and viewed from the distance of 1.5X the display height.
+- (6/5/18) Speed optimization to [`vmafossexec`](resource/doc/vmafossexec.md): 1) support multi-threading (e.g. use `--thread 0` to use all cores), 2) support frame sampling (e.g. use `--subsample 5` to calculate VMAF on one of every 5 frames).
 - (1/20/18) Moved custom subjective models into a submodule named [sureal](https://github.com/Netflix/sureal). If you pull the latest changes, you will have to pull the submoddule by `git submodule update --init --recursive` and add `sureal/python/src` to `PYTHONPATH`.
 
 ## Frequently Asked Questions
@@ -34,3 +34,10 @@ We also provide [two sample datasets](resource/doc/datasets.md) including the vi
 
 Besides the default VMAF model `model/vmaf_v0.6.1.pkl`, VDK also includes a number of additional models, covering phone and 4KTV viewing conditions, as well as models that provide additional prediction confidence intervals. Refer to the [models](resource/doc/models.md) page for more details.
 
+## Confidence Interval
+
+Since VDK v1.3.7 (June 2018), we have introduced a way to quantify the level of confidence entailed in a VMAF prediction. Each VMAF prediction score now can come with a 95% confidence interval (CI), which quantifies the level of confidence that the prediction lies within the interval. Refer to the [VMAF confidence interval](resource/doc/conf_interval.md) page for more details.
+
+## References
+
+Refer to the [References](resource/doc/references.md) page.
