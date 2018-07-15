@@ -4,7 +4,7 @@ VMAF - Video Multi-Method Assessment Fusion
 
 VMAF is a perceptual video quality assessment algorithm developed by Netflix. VMAF Development Kit (VDK) is a software package that contains the VMAF algorithm implementation, as well as a set of tools that allows a user to train and test a custom VMAF model. For an overview, read [this](http://techblog.netflix.com/2016/06/toward-practical-perceptual-video.html) tech blog post, or [this](resource/doc/VMAF_ICIP17.pdf) slide deck.
 
-## What's New
+## News
 
 - (6/19/18) Each VMAF prediction score now comes with a 95% confidence interval (CI), which quantifies the level of confidence that the prediction lies within the interval. Refer to [this](resource/doc/VMAF_Python_library.md#invoking-prediction-confidence-interval) section for details.
 - (6/19/18) Added 4K VMAF model under `model/vmaf_4k_v0.6.1.pkl`, which predicts the subjective quality of video displayed on a 4KTV and viewed from the distance of 1.5X the display height. Read [this](resource/doc/VMAF_Python_library.md#predict-quality-on-a-4ktv-screen-at-15h) section for details.
@@ -33,5 +33,5 @@ We also provide [two sample datasets](resource/doc/datasets.md) including the vi
 
 ## Models
 
-Besides the default VMAF model `model/vmaf_v0.6.1.pkl`, VDK also includes a number of additional models, covering phone and 4KTV viewing conditions, as well as models that provide additional prediction confidence intervals. See the [Models](resource/doc/models.md) page.
+Besides the default VMAF model `model/vmaf_v0.6.1.pkl`, VDK also includes a number of additional models, covering phone and 4KTV viewing conditions, as well as models that provide additional prediction confidence intervals. Refer to the [models](resource/doc/models.md) page for more details.
 

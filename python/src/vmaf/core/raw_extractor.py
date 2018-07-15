@@ -1,7 +1,7 @@
 import os
 from time import sleep
 
-from vmaf.core.mixin import H5pyMixin
+from vmaf.core.h5py_mixin import H5pyMixin
 from vmaf.tools.reader import YuvReader
 from vmaf.core.executor import Executor
 from vmaf.core.result import RawResult
