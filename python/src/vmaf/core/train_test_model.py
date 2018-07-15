@@ -6,7 +6,6 @@ from numbers import Number
 from sklearn.metrics import f1_score
 import numpy as np
 
-from vmaf import svmutil
 from vmaf.tools.decorator import deprecated
 from vmaf.tools.misc import indices
 from vmaf.core.mixin import TypeVersionEnabled
@@ -700,6 +699,11 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
         nu = model_param['nu'] if 'nu' in model_param else 0.5
         cache_size = model_param['cache_size'] if 'cache_size' in model_param else 200
 
+        try:
+            svmutil
+        except NameError:
+            from vmaf import svmutil
+
         if kernel == 'rbf':
             ktype_int = svmutil.RBF
         elif kernel == 'linear':
@@ -731,6 +735,11 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
     @classmethod
     def _predict(cls, model, xs_2d):
         # override TrainTestModel._predict
+        try:
+            svmutil
+        except NameError:
+            from vmaf import svmutil
+
         f = list(xs_2d)
         for i, item in enumerate(f):
             f[i] = list(item)
@@ -740,6 +749,11 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
 
     @staticmethod
     def _to_file(filename, param_dict, model_dict):
+        try:
+            svmutil
+        except NameError:
+            from vmaf import svmutil
+
         # override TrainTestModel._to_file
         # special handling of libsvmnusvr: save .model differently
         info_to_save = {'param_dict': param_dict,
@@ -752,6 +766,11 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
 
     @classmethod
     def _from_info_loaded(cls, info_loaded, filename, logger, optional_dict2):
+        try:
+            svmutil
+        except NameError:
+            from vmaf import svmutil
+
         # override TrainTestModel._from_info_loaded
         train_test_model = cls(
             param_dict={}, logger=logger, optional_dict2=optional_dict2)
@@ -783,6 +802,10 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
         :param logger:
         :return:
         """
+        try:
+            svmutil
+        except NameError:
+            from vmaf import svmutil
 
         # assert additional_model_dict
         assert 'feature_names' in additional_model_dict
