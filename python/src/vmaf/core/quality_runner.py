@@ -5,7 +5,7 @@ from xml.etree import ElementTree
 import numpy as np
 
 from vmaf.config import VmafConfig
-from vmaf import svmutil, ExternalProgramCaller
+from vmaf import ExternalProgramCaller
 from vmaf.core.executor import Executor
 from vmaf.core.niqe_train_test_model import NiqeTrainTestModel
 from vmaf.core.result import Result
@@ -14,7 +14,6 @@ from vmaf.core.train_test_model import TrainTestModel, LibsvmNusvrTrainTestModel
     BootstrapLibsvmNusvrTrainTestModel
 from vmaf.core.feature_extractor import SsimFeatureExtractor, MsSsimFeatureExtractor, \
     VmafFeatureExtractor, StrredFeatureExtractor
-from vmaf.tools.misc import run_process
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -182,6 +181,11 @@ class VmafLegacyQualityRunner(QualityRunner):
         feature_result = vmaf_fassembler.results[0]
 
         # =====================================================================
+
+        try:
+            svmutil
+        except NameError:
+            from vmaf import svmutil
 
         # SVR predict
         model = svmutil.svm_load_model(self.SVM_MODEL_FILE)
