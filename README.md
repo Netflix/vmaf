@@ -9,7 +9,7 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 - (6/19/18) Each VMAF prediction score now comes with a 95% [confidence interval (CI)](resource/doc/conf_interval.md), which quantifies the level of confidence that the prediction lies within the interval.
 - (6/19/18) Added a [4K VMAF model](resource/doc/models.md/#predict-quality-on-a-4ktv-screen-at-15h) under `model/vmaf_4k_v0.6.1.pkl`, which predicts the subjective quality of video displayed on a 4KTV and viewed from the distance of 1.5X the display height.
 - (6/5/18) Speed optimization to [`vmafossexec`](resource/doc/vmafossexec.md): 1) support multi-threading (e.g. use `--thread 0` to use all cores), 2) support frame sampling (e.g. use `--subsample 5` to calculate VMAF on one of every 5 frames).
-- (1/20/18) Moved custom subjective models into a submodule named [sureal](https://github.com/Netflix/sureal). If you pull the latest changes, you will have to pull the submoddule by `git submodule update --init --recursive` and add `sureal/python/src` to `PYTHONPATH`.
+- (1/20/18) Moved custom subjective models into a submodule named [SUREAL](https://github.com/Netflix/sureal). If you pull the latest changes, you will have to pull the submoddule by `git submodule update --init --recursive` and add `sureal/python/src` to `PYTHONPATH`.
 
 ## Frequently Asked Questions
 
