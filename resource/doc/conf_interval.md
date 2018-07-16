@@ -5,7 +5,7 @@ Since VDK 1.3.7 (June 2018), we have introduced a way to quantify the level of c
 
 The CI is a consequence of the fact that the VMAF model is trained on a sample of subjective scores, while the population is unknown. The CI is established through [bootstrapping on the prediction residue](http://www.jstor.org/stable/2241979) using the full training data. Essentially, it trains multiple models, using "resampling with replacement", on the residue of prediction. Each of the models will introduce a slightly different prediction. The variability of these predictions quantifies the level of confidence -- the more close these predictions, the more confident the prediction using the full data.
 
-### Usage
+### Run in Command Line
 
 To enable CI, use the option `--ci` in the command line tools with a bootstrapping model such as `model/vmaf_rb_v0.6.2/vmaf_rb_v0.6.2.pkl`.
 
@@ -53,3 +53,15 @@ Running the command line above will generate scatter plot:
 
 Here each data point (color representing different content) is associated with a 95% CI. It is interesting to note that points on the higher-score end tend to have a tighter CI than points on the lower-score end. This can be explained by the fact that in the dataset to train the VMAF model, there are more dense data points on the higher end than the lower.
 
+### Training Bootstrap Models
+
+To train a bootstrap model, one can use [`run_vmaf_training`](VMAF_Python_library.md/#train-a-new-model) command line. In the parameter file, the `model_type` must be `RESIDUEBOOTSTRAP_LIBSVMNUSVR`. In `model_param_dict`, one can optionally specify the number of models to be used via `num_models`. See [`vmaf_v6_residue_bootstrap.py`](../../resource/param/vmaf_v6_residue_bootstrap.py) for an example parameter file.
+
+Running the command line below will generate a bootstrap model `test_rb_model.pkl`.
+
+```
+./run_vmaf_training resource/dataset/NFLX_dataset_public.py \
+  resource/param/vmaf_v6_residue_bootstrap.py \
+  resource/param/vmaf_v6_residue_bootstrap.py \
+  ~/Desktop/test/test_rb_model.pkl --cache-result --parallelize
+```
