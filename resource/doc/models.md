@@ -32,7 +32,7 @@ From the figure it can be interpreted that due to the factors of screen size and
 
 ### Predict Quality on a 4KTV Screen at 1.5H
 
-As of VDK v1.3.7 (June 2018), we have added a new 4K VMAF model at `model/vmaf_4k_v0.6.1.pkl`, which predicts the subjective quality of video displayed on a 4KTV and viewed from the distance of 1.5 times the height of the display device (1.5H). Again, this model is trained with subjective data collected in a lab experiment, using the ACR methodology. The viewing distance of 1.5H is the critical distance for a human subject to appreciate the quality of 4K content (see [recommendation](https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.2022-0-201208-I!!PDF-E.pdf)).
+As of VDK v1.3.7 (June 2018), we have added a new 4K VMAF model at `model/vmaf_4k_v0.6.1.pkl`, which predicts the subjective quality of video displayed on a 4KTV and viewed from the distance of 1.5 times the height of the display device (1.5H). Again, this model is trained with subjective data collected in a lab experiment, using the ACR methodology (notice that it uses the original 5-level discrete scale instead of the continuous scale). The viewing distance of 1.5H is the critical distance for a human subject to appreciate the quality of 4K content (see [recommendation](https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.2022-0-201208-I!!PDF-E.pdf)). More details can be found in [this](VQEG_SAM_2018_025_VMAF_4K.pdf) slide deck.
 
 To invoke this model, specify the model path using the `--model` option. For example:
 

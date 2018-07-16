@@ -17,7 +17,7 @@ Note that not all ideas in the academic papers below are implemented in the curr
   - J. Y. Lin, T. J. Liu, E. C.-H. Wu and C. C. J. Kuo, [A fusion-based video quality assessment (FVQA) index](https://ieeexplore.ieee.org/document/7041705/), Signal and Information Processing Association Annual Summit and Conference (APSIPA), 2014 Asia-Pacific, Siem Reap, 2014.
   - J. Y. Lin, R. Song, C.-H. Wu, T. Liu, H. Wang, C.-C. Jay Kuo, [MCL-V: A streaming video quality assessment database](https://www.sciencedirect.com/science/article/pii/S1047320315000425), Journal of Visual Communication and Image Representation, Volume 30, 2015, Pages 1-9, ISSN 1047-3203,
   - J. Y. Lin, C.-H. Wu, I. Katsavounidis, Z. Li, A. Aaron and C.-C. J. Kuo, [EVQA: An ensemble-learning-based video quality assessment index](https://ieeexplore.ieee.org/document/7169760/), 2015 IEEE International Conference on Multimedia & Expo Workshops (ICMEW), Turin, 2015.
-  - H. Sheikh, A. Bovik, [Image information and visual quality](https://ieeexplore.ieee.org/document/1576816). IEEE Transactions on Image Processing. 15 (2): 430–444, 2006.
+  - H. Sheikh and A. Bovik, [Image information and visual quality](https://ieeexplore.ieee.org/document/1576816). IEEE Transactions on Image Processing. 15 (2): 430–444, 2006.
   - S. Li, F. Zhang, L. Ma, K. N. Ngan, [Image quality assessment by separately evaluating detail losses and additive impairments](https://ieeexplore.ieee.org/document/5765502/). IEEE Transactions on Multimedia. 13 (5): 935–949, 2011.
   - Z. Li and C. Bampis, [Recover subjective quality scores from noisy measurements](https://arxiv.org/abs/1611.01715), in Proc. Data Compression Conference, April 2017.
   - C. G. Bampis, Z. Li, I. Katsavounidis and A. C. Bovik, [Recurrent and dynamic models for predicting streaming video quality of experience](https://ieeexplore.ieee.org/document/8315481/), in IEEE Transactions on Image Processing, vol. 27, no. 7, pp. 3316-3331, July 2018.
@@ -27,7 +27,7 @@ Note that not all ideas in the academic papers below are implemented in the curr
 
 The papers below independent evaluate the performance of VMAF.
 
-  - R. Rassool, [VMAF reproducibility: Validating a perceptual practical video quality metric](https://ieeexplore.ieee.org/document/7986143/), 2017 IEEE International Symposium on Broadband Multimedia Systems and Broadcasting (BMSB), Cagliari, 2017, pp. 1-2.
+  - R. Rassool, [VMAF reproducibility: validating a perceptual practical video quality metric](https://ieeexplore.ieee.org/document/7986143/), 2017 IEEE International Symposium on Broadband Multimedia Systems and Broadcasting (BMSB), Cagliari, 2017, pp. 1-2.
   - C. Lee, S. Woo, S. Baek, J. Han, J. Chae and J. Rim, [Comparison of objective quality models for adaptive bit-streaming services](https://ieeexplore.ieee.org/document/8316385/), 2017 8th International Conference on Information, Intelligence, Systems & Applications (IISA), Larnaca, 2017.
   - N. Barman, S. Schmidt, S. Zadtootaghaj, M. Martini, S. Möller, [An evaluation of video quality assessment metrics for passive gaming video streaming](https://www.researchgate.net/publication/325285444_An_Evaluation_of_Video_Quality_Assessment_Metrics_for_Passive_Gaming_Video_Streaming), 23rd Packet Video Workshop 2018 (PV 2018).
 
