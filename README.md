@@ -32,11 +32,11 @@ We also provide [two sample datasets](resource/doc/datasets.md) including the vi
 
 ## Models
 
-Besides the default VMAF model `model/vmaf_v0.6.1.pkl`, VDK also includes a number of additional models, covering phone and 4KTV viewing conditions, as well as models that provide additional prediction confidence intervals. Refer to the [models](resource/doc/models.md) page for more details.
+Besides the default VMAF model which predicts HDTV in a living-room viewing condition, VDK also includes a number of additional models. Refer to the [models](resource/doc/models.md) page for more details.
 
 ## Confidence Interval
 
-Since VDK v1.3.7 (June 2018), we have introduced a way to quantify the level of confidence entailed in a VMAF prediction. Each VMAF prediction score now can come with a 95% confidence interval (CI), which quantifies the level of confidence that the prediction lies within the interval. Refer to the [VMAF confidence interval](resource/doc/conf_interval.md) page for more details.
+Since VDK v1.3.7 (June 2018), we have introduced a way to quantify the level of confidence a VMAF prediction entails. Each VMAF prediction score now can come with a 95% confidence interval (CI), which quantifies the level of confidence that the prediction lies within the interval. Refer to the [VMAF confidence interval](resource/doc/conf_interval.md) page for more details.
 
 ## References
 
