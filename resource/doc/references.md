@@ -13,7 +13,7 @@ VMAF is an on-going project. It has gone through substantial updates since its i
 
 Note that not all ideas in the academic papers below are implemented in the current version of VMAF open-source package (or not yet).
 
-  - A. Aaron, Z. Li, M. Manohara, J.Y. Lin, E.C.-H. Wu, and C.-C.J. Kuo, [Challenges in cloud based ingest and encoding for high quality streaming media](https://ieeexplore.ieee.org/document/7351097/),  in Proc. IEEE International Conference on Image Processing, pp. 1732–1736, September 2015. 
+  - A. Aaron, Z. Li, M. Manohara, J.Y. Lin, E.C.-H. Wu, and C.-C.J. Kuo, [Challenges in cloud based ingest and encoding for high quality streaming media](https://ieeexplore.ieee.org/document/7351097/),  in Proc. IEEE International Conference on Image Processing, pp. 1732–1736, 2015. 
   - J. Y. Lin, T. J. Liu, E. C.-H. Wu and C. C. J. Kuo, [A fusion-based video quality assessment (FVQA) index](https://ieeexplore.ieee.org/document/7041705/), Signal and Information Processing Association Annual Summit and Conference (APSIPA), 2014 Asia-Pacific, Siem Reap, 2014.
   - J. Y. Lin, R. Song, C.-H. Wu, T. Liu, H. Wang, C.-C. Jay Kuo, [MCL-V: A streaming video quality assessment database](https://www.sciencedirect.com/science/article/pii/S1047320315000425), Journal of Visual Communication and Image Representation, Volume 30, 2015, Pages 1-9, ISSN 1047-3203,
   - J. Y. Lin, C.-H. Wu, I. Katsavounidis, Z. Li, A. Aaron and C.-C. J. Kuo, [EVQA: An ensemble-learning-based video quality assessment index](https://ieeexplore.ieee.org/document/7169760/), 2015 IEEE International Conference on Multimedia & Expo Workshops (ICMEW), Turin, 2015.
