@@ -1,7 +1,7 @@
 Models
 ===================
 
-VDK offers a number of trained VMAF models to be used in different scenarios. Besides the default VMAF model which predicts HDTV in a living-room viewing condition, VDK also includes a number of additional models, covering mobile phone and 4KTV viewing conditions.
+VDK offers a number of trained VMAF models to be used in different scenarios. Besides the default VMAF model which predicts the quality of a video displayed on a HDTV in a living-room viewing condition, VDK also includes a number of additional models, covering mobile phone and 4KTV viewing conditions.
 
 ### Predict Quality on a 1080p HDTV screen at 3H
 
