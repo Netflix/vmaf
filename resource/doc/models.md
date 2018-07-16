@@ -1,6 +1,10 @@
 Models
 ===================
 
+### Predict Quality on a 1080p screen at 3H
+
+In the case of the default VMAF model (`model/vmaf_v0.6.1.pkl`), which is trained to predict the quality of videos displayed on a 1080p HDTV in a living-room-like environment, all the subjective data were collected in such a way that the distorted videos get rescaled to 1080 resolution and displayed with a viewing distance of three times the screen height (3H). Effectively, what the VMAF model trying to capture is the perceptual quality of a 1080 video displayed from 3H away. That’s the implicit assumption of our default VMAF model.
+
 ### Predict Quality on a Cellular Phone Screen
 
 VMAF v0.6.1 and later support a custom quality model for cellular phone screen viewing. This model can be invoked by adding `--phone-model` option in the commands `run_vmaf`, `run_vmaf_in_batch` (but also in `run_testing` and `vmafossexec` which are introduced the following sections):
