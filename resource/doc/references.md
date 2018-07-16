@@ -5,18 +5,18 @@ VMAF is an on-going project. It has gone through substantial updates since its i
 
 ### Tech Blogs 
 
-  - [Toward A Practical Perceptual Video Quality Metric](https://medium.com/netflix-techblog/toward-a-practical-perceptual-video-quality-metric-653f208b9652), June 6, 2016 -- tech blog with VMAF's open sourcing on Github.
-  - [Dynamic Optimizer — A Perceptual Video Encoding Optimization Framework](https://medium.com/netflix-techblog/dynamic-optimizer-a-perceptual-video-encoding-optimization-framework-e19f1e3a277f), March 6, 2018 -- tech blog describing how VMAF is used in an codec-oblivious encoding optimization framework.
-  - [Optimized Shot-Based Encodes: Now Streaming!](https://medium.com/netflix-techblog/optimized-shot-based-encodes-now-streaming-4b9464204830), March 9, 2018 -- tech blog describing systems design for the Dynamic Optimizer.
+  - [Toward a practical perceptual video quality metric](https://medium.com/netflix-techblog/toward-a-practical-perceptual-video-quality-metric-653f208b9652), June 6, 2016 -- tech blog with VMAF's open sourcing on Github.
+  - [Dynamic Optimizer — a perceptual video encoding optimization framework](https://medium.com/netflix-techblog/dynamic-optimizer-a-perceptual-video-encoding-optimization-framework-e19f1e3a277f), March 6, 2018 -- tech blog describing how VMAF is used in an codec-oblivious encoding optimization framework.
+  - [Optimized shot-based encodes: now streaming!](https://medium.com/netflix-techblog/optimized-shot-based-encodes-now-streaming-4b9464204830), March 9, 2018 -- tech blog describing systems design for the Dynamic Optimizer.
 
 ### Academic Papers
 
 Note that not all ideas in the academic papers below are implemented in the current version of VMAF open-source package (or not yet).
 
   - A. Aaron, Z. Li, M. Manohara, J.Y. Lin, E.C.-H. Wu, and C.-C.J. Kuo, [Challenges in cloud based ingest and encoding for high quality streaming media](https://ieeexplore.ieee.org/document/7351097/),  in Proc. IEEE International Conference on Image Processing, pp. 1732–1736, September 2015. 
-  - J. Y. Lin, T. J. Liu, E. C.-H. Wu and C. C. J. Kuo, [A fusion-based video quality assessment (FVQA) index](https://ieeexplore.ieee.org/document/7041705/), Signal and Information Processing Association Annual Summit and Conference (APSIPA), 2014 Asia-Pacific, Siem Reap, 2014, pp. 1-5.
+  - J. Y. Lin, T. J. Liu, E. C.-H. Wu and C. C. J. Kuo, [A fusion-based video quality assessment (FVQA) index](https://ieeexplore.ieee.org/document/7041705/), Signal and Information Processing Association Annual Summit and Conference (APSIPA), 2014 Asia-Pacific, Siem Reap, 2014.
   - J. Y. Lin, R. Song, C.-H. Wu, T. Liu, H. Wang, C.-C. Jay Kuo, [MCL-V: A streaming video quality assessment database](https://www.sciencedirect.com/science/article/pii/S1047320315000425), Journal of Visual Communication and Image Representation, Volume 30, 2015, Pages 1-9, ISSN 1047-3203,
-  - J. Y. Lin, C.-H. Wu, I. Katsavounidis, Z. Li, A. Aaron and C.-C. J. Kuo, [EVQA: An ensemble-learning-based video quality assessment index](https://ieeexplore.ieee.org/document/7169760/), 2015 IEEE International Conference on Multimedia & Expo Workshops (ICMEW), Turin, 2015, pp. 1-6.
+  - J. Y. Lin, C.-H. Wu, I. Katsavounidis, Z. Li, A. Aaron and C.-C. J. Kuo, [EVQA: An ensemble-learning-based video quality assessment index](https://ieeexplore.ieee.org/document/7169760/), 2015 IEEE International Conference on Multimedia & Expo Workshops (ICMEW), Turin, 2015.
   - H. Sheikh, A. Bovik, [Image information and visual quality](https://ieeexplore.ieee.org/document/1576816). IEEE Transactions on Image Processing. 15 (2): 430–444.
   - S. Li, F. Zhang, L. Ma, K.N. Ngan, [Image quality assessment by separately evaluating detail losses and additive impairments](https://ieeexplore.ieee.org/document/5765502/). IEEE Transactions on Multimedia. 13 (5): 935–949.
   - Z. Li and C. Bampis, [Recover subjective quality scores from noisy measurements](https://arxiv.org/abs/1611.01715), in Proc. Data Compression Conference, April 2017.
@@ -27,13 +27,13 @@ Note that not all ideas in the academic papers below are implemented in the curr
 
 The papers below independent evaluate the performance of VMAF.
 
-  - R. Rassool, [VMAF reproducibility: Validating a perceptual practical video quality metric](https://ieeexplore.ieee.org/document/7986143/), 2017 IEEE International Symposium on Broadband Multimedia Systems and Broadcasting (BMSB), Cagliari, 2017, pp. 1-2. doi: 10.1109/BMSB.2017.7986143.
-  - C. Lee, S. Woo, S. Baek, J. Han, J. Chae and J. Rim, [Comparison of objective quality models for adaptive bit-streaming services](https://ieeexplore.ieee.org/document/8316385/), 2017 8th International Conference on Information, Intelligence, Systems & Applications (IISA), Larnaca, 2017, pp. 1-4.
+  - R. Rassool, [VMAF reproducibility: Validating a perceptual practical video quality metric](https://ieeexplore.ieee.org/document/7986143/), 2017 IEEE International Symposium on Broadband Multimedia Systems and Broadcasting (BMSB), Cagliari, 2017, pp. 1-2.
+  - C. Lee, S. Woo, S. Baek, J. Han, J. Chae and J. Rim, [Comparison of objective quality models for adaptive bit-streaming services](https://ieeexplore.ieee.org/document/8316385/), 2017 8th International Conference on Information, Intelligence, Systems & Applications (IISA), Larnaca, 2017.
   - N. Barman, S. Schmidt, S. Zadtootaghaj, M. Martini, S. Möller, [An evaluation of video quality assessment metrics for passive gaming video streaming](https://www.researchgate.net/publication/325285444_An_Evaluation_of_Video_Quality_Assessment_Metrics_for_Passive_Gaming_Video_Streaming), 23rd Packet Video Workshop 2018 (PV 2018).
 
 ### Presentations
   - [Measuring perceptual video quality at scale](https://www.twitch.tv/videos/94954102) by A. Aaron, at Demuxed 2016.
   - [More efficient encoding for mobile video](https://code.fb.com/video-engineering/video-scale-2017-recap/) by A. Aaron, at Video@Scale 2017.
-  - [Measure perceptual video quality with VMAF](https://github.com/Netflix/vmaf/blob/master/resource/doc/VMAF_ICIP17.pdf) by Z. Li, at Netflix Industry Wrokshop: Video Encoding at Scale, 2017 IEEE International Conference on Image Processing (ICIP), Beijing, 2017.
-  - [A VMAF Model for 4K](ftp://vqeg.its.bldrdoc.gov/Documents/VQEG_Madrid_Mar18/Meeting_Files/VQEG_SAM_2018_025_VMAF_4K.pdf) by Z. Li, T. Vigier and P. Le Callet, at Video Quality Experts Group (VQEG) Meeting in Madrid, March 2018.
-  - [Quantify VMAF Model Variability Using Bootstrapping](ftp://vqeg.its.bldrdoc.gov/Documents/VQEG_Madrid_Mar18/Meeting_Files/VQEG_SAM_2018_023_VMAF_Variability.pdf) by Z. Li and I. Katsavounidis, at Video Quality Experts Group (VQEG) Meeting in Madrid, March 2018.
+  - [Measure perceptual video quality with VMAF](VMAF_ICIP17.pdf) by Z. Li, at Netflix Industry Wrokshop: Video Encoding at Scale, 2017 IEEE International Conference on Image Processing (ICIP), Beijing, 2017.
+  - [A VMAF model for 4K](VQEG_SAM_2018_025_VMAF_4K.pdf) by Z. Li, T. Vigier and P. Le Callet, at Video Quality Experts Group (VQEG) Meeting in Madrid, March 2018.
+  - [Quantify VMAF model variability using bootstrapping](VQEG_SAM_2018_023_VMAF_Variability.pdf) by Z. Li and I. Katsavounidis, at Video Quality Experts Group (VQEG) Meeting in Madrid, March 2018.
