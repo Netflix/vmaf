@@ -1,7 +1,9 @@
 VMAF Python Library
 ===================
 
-The VMAF Python library offers full functionalities from running basic VMAF command line, running VMAF on a batch of video files, training and testing a VMAF model on video datasets, and visualization tools, etc. It is the playground to experiment with the VMAF algorithm.
+The VMAF Python library offers full functionalities from running basic VMAF command line, running VMAF on a batch of video files, training and testing a VMAF model on video datasets, and visualization tools, etc. It is the playground to experiment with VMAF.
+
+It also provides a command line tool [`ffmpeg2vmaf`](#using-ffmpeg2vmaf) that can pipe FFmpeg-decoded raw videos to VMAF. Unlike other command lines, `ffmpeg2vmaf` can take compressed video bitstreams as input.
 
 ## Prerequisites
 
@@ -41,7 +43,7 @@ sudo -H pip install --upgrade pip
 Then install the required Python packages:
 
 ```
-pip install --user numpy scipy matplotlib notebook pandas sympy nose scikit-learn scikit-image h5py
+pip install --user numpy scipy matplotlib pandas scikit-learn scikit-image h5py
 ```
 
 Make sure your user install executable directory is on your PATH. Add this to the end of `~/.bashrc` and restart your shell:
@@ -130,11 +132,13 @@ After installation, run:
 ./unittest
 ```
 
+and expect all tests pass.
+
 ## Basic Usage
 
-There are two basic execution modes to run VMAF – a single mode and a batch mode.
+One can run VMAF either in single mode by `run_vmaf` or in batch mode by `run_vmaf_in_batch`. Besides, `ffmpeg2vmaf` is a command line tool that offers the capability of taking compressed video bitstreams as input.
 
-### Running in Single Mode
+### `run_vmaf` -- Running VMAF in Single Mode
 
 To run VMAF on a single reference/distorted video pair, run:
 
@@ -183,17 +187,9 @@ where `VMAF_score` is the final score and the others are the scores for VMAF's e
 - `adm2`, `vif_scalex` scores range from 0 (worst) to 1 (best)
 - `motion2` score typically ranges from 0 (static) to 20 (high-motion)
 
-### Using `ffmpeg2vmaf`
+### `run_vmaf_in_batch` -- Running VMAF in Batch Mode
 
-There is also an `ffmpeg2vmaf` script which can compare any file format supported by `ffmpeg` (note that you need a recent version of `ffmpeg` installed):
-
-```
-./ffmpeg2vmaf width height reference_path distorted_path [--out-fmt output_format]
-```
-
-### Running in Batch Mode
-
-To run VMAF in batch mode, create an input text file, where each corresponds to the following format (check examples in [example_batch_input](resource/example/example_batch_input)):
+To run VMAF in batch mode, create an input text file, where each corresponds to the following format (check examples in [example_batch_input](../../resource/example/example_batch_input)):
 
 ```
 format width height reference_path distorted_path
@@ -202,8 +198,10 @@ format width height reference_path distorted_path
 For example:
 
 ```
-yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv python/test/resource/yuv/src01_hrc01_576x324.yuv
-yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv python/test/resource/yuv/src01_hrc00_576x324.yuv
+yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv \
+  python/test/resource/yuv/src01_hrc01_576x324.yuv
+yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv \
+  python/test/resource/yuv/src01_hrc00_576x324.yuv
 ```
 
 After that, run:
@@ -220,78 +218,22 @@ For example:
 ./run_vmaf_in_batch resource/example/example_batch_input --parallelize
 ```
 
-### Predict Quality on a Cellular Phone Screen
+### Using `ffmpeg2vmaf`
 
-VMAF v0.6.1 and later support a custom quality model for cellular phone screen viewing. This model can be invoked by adding `--phone-model` option in the commands `run_vmaf`, `run_vmaf_in_batch` (but also in `run_testing` and `vmafossexec` which are introduced the following sections):
-
-```
-./run_vmaf yuv420p 576 324 \
-  python/test/resource/yuv/src01_hrc00_576x324.yuv \
-  python/test/resource/yuv/src01_hrc01_576x324.yuv \
-  --phone-model
-
-./run_vmaf_in_batch resource/example/example_batch_input --parallelize \
-  --phone-model
-```
-
-This model is trained using subjective data collected in a lab experiment, based on the [absolute categorical rating (ACR)](https://en.wikipedia.org/wiki/Absolute_Category_Rating) methodology, with the exception that after viewing a video sequence, a subject votes on a continuous scale (from "bad" to "excellent"), instead of the more conventional five-level discrete scale. The test content are video clips selected from the Netflix catalog, each 10 seconds long. For each clip, a combination of 6 resolutions and 3 encoding parameters are used to generate the processed video sequences, resulting 18 impairment conditions for testing. Instead of fixating the viewing distance, each subject is instructed to view the video at a distance he/she feels comfortable with. In the trained model, the score ranges from 0 to 100, which is linear with the subjective voting scale, where roughly "bad" is mapped to score 20, and "excellent" is mapped to score 100.
-
-Invoking the phone model will generate VMAF scores higher than in the regular model, which is more suitable for laptop, TV, etc. viewing conditions. An example VMAF–bitrate relationship for the two models is shown below:
-
-![regular vs phone model](/resource/images/phone_model.png)
-
-From the figure it can be interpreted that due to the factors of screen size and viewing distance, the same distorted video would be perceived as having a higher quality when viewed on a phone screen than on a laptop/TV screen, and when the quality score reaches its maximum (100), further increasing the encoding bitrate would not result in any perceptual improvement in quality.
-
-### Predict Quality on a 4KTV Screen at 1.5H
-
-As June 2018, we have added a new 4K VMAF model at `model/vmaf_4k_v0.6.1.pkl`, which predicts the subjective quality of video displayed on a 4KTV and viewed from the distance of 1.5 times the height of the display device (1.5H). This model is trained with subjective data collected in a lab experiment, using the ACR methodology. The viewing distance of 1.5H is the critical distance for a human subject to appreciate the quality of 4K content (see [recommendation](https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.2022-0-201208-I!!PDF-E.pdf)).
-
-To invoke this model, specify the model path using the `--model` option. For example:
+There is also an `ffmpeg2vmaf` command line tool which can compare any file format decodable by `ffmpeg`. `ffmpeg2vmaf` essentially pipes FFmpeg-decoded videos to VMAF. Note that you need a recent version of `ffmpeg` installed (for the first time, run the command line, follow the prompted instruction to specify the path of `ffmpeg`).
 
 ```
-./run_vmaf yuv420p 3840 2160 ref_path dis_path --model model/vmaf_4k_v0.6.1.pkl
+./ffmpeg2vmaf quality_width quality_height reference_path distorted_path \
+  [--model model_path] [--out-fmt out_fmt]
 ```
 
-### Invoking Prediction Confidence Interval
-
-As June 2018, we have introduced a way to quantify the level of confidence in VMAF predictions. Each VMAF prediction score can now come with a 95% confidence interval (CI), which quantifies the level of confidence that the prediction lies within the interval. The CI is a consequence of the fact that the VMAF model is trained on a sample of subjective scores, while the population is unknown. The CI is established through bootstrapping on the prediction residue using the full training data. Essentially, it trains multiple models, using "resampling with replacement", on the residue of prediction. Each of the models will introduce a slightly different prediction. The variability of these predictions quantifies the level of confidence -- the more close these predictions, the more confident the prediction using the full data.
-
-To enable CI, use the option `--ci` in the command line tools with a bootstrapping model such as `model/vmaf_rb_v0.6.2/vmaf_rb_v0.6.2.pkl`.
-
-For example, running
-
-```
-./run_vmaf yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv \
-python/test/resource/yuv/src01_hrc01_576x324.yuv \
---model model/vmaf_rb_v0.6.2/vmaf_rb_v0.6.2.pkl --out-fmt json --ci
-```
-
-yields:
-
-```
-...
-    "aggregate": {
-        "BOOTSTRAP_VMAF_bagging_score": 73.09994670135325, 
-        "BOOTSTRAP_VMAF_score": 75.44304862545658, 
-        "BOOTSTRAP_VMAF_stddev_score": 1.2301198524660464, 
-        "VMAF_feature_adm2_score": 0.9345878077620574, 
-        "VMAF_feature_motion2_score": 3.8953518541666665, 
-        "VMAF_feature_vif_scale0_score": 0.36342081156994926, 
-        "VMAF_feature_vif_scale1_score": 0.7666473878461729, 
-        "VMAF_feature_vif_scale2_score": 0.8628533892781629, 
-        "VMAF_feature_vif_scale3_score": 0.9159718691393048, 
-        "method": "mean"
-    }
-}
-```
-
-Here, `BOOTSTRAP_VMAF_score` is the final prediction result, similar to `VMAF_score` without the `--ci` option. `BOOTSTRAP_VMAF_stddev_score` is the standard deviation of bootstrapping predictions. If assuming a normal distribution, the 95% CI is `BOOTSTRAP_VMAF_score +/- 1.96 * BOOTSTRAP_VMAF_stddev_score`.
+Here `quality_width` and `quality_height` are the width and height the reference and distorted videos are scaled to before VMAF calculation. This is different from `run_vmaf`'s  `width` and `height`, which specify the raw YUV's width and height instead. The input to `ffmpeg2vmaf` must already have such information specified in the header so that they are FFmpeg-decodable.
 
 ## Advanced Usage
 
 VMAF follows a machine-learning based approach to first extract a number of quality-relevant features (or elementary metrics) from a distorted video and its reference full-quality video, followed by fusing them into a final quality score using a non-linear regressor (e.g. an SVM regressor), hence the name “Video Multi-method Assessment Fusion”.
 
-In addition to the basic commands, the VMAF package also provides a framework to allow any user to train his/her own perceptual quality assessment model. For example, directory [`resource/model`](resource/model) contains a number of pre-trained models, which can be loaded by the aforementioned commands:
+In addition to the basic commands, the VMAF package also provides a framework to allow any user to train his/her own perceptual quality assessment model. For example, directory [`model`](../../model) contains a number of pre-trained models, which can be loaded by the aforementioned commands:
 
 ```
 ./run_vmaf format width height reference_path distorted_path [--model model_path]
@@ -320,7 +262,7 @@ Once a model is trained, the VMAF package also provides tools to cross validate 
 
 ### Create a Dataset
 
-To begin with, create a dataset file following the format in [`example_dataset.py`](resource/example/example_dataset.py). A dataset is a collection of distorted videos. Each has a unique asset ID and a corresponding reference video, identified by a unique content ID. Each distorted video is also associated with subjective quality score, typically a MOS (mean opinion score), obtained through subjective study. An example code snippet that defines a dataset is as follows:
+To begin with, create a dataset file following the format in [`example_dataset.py`](../../resource/example/example_dataset.py). A dataset is a collection of distorted videos. Each has a unique asset ID and a corresponding reference video, identified by a unique content ID. Each distorted video is also associated with subjective quality score, typically a MOS (mean opinion score), obtained through subjective study. An example code snippet that defines a dataset is as follows:
 
 ```
 dataset_name = 'example'
@@ -332,24 +274,25 @@ ref_videos = [
     {'content_id':1, 'path':'flat.yuv'},
 ]
 dis_videos = [
-    {'content_id':0, 'asset_id': 0, 'dmos':100, 'path':'checkerboard.yuv'}, # ref
+    {'content_id':0, 'asset_id': 0, 'dmos':100, 'path':'checkerboard.yuv'},
     {'content_id':0, 'asset_id': 1, 'dmos':50,  'path':'checkerboard_dis.yuv'},
-    {'content_id':1, 'asset_id': 2, 'dmos':100,  'path':'flat.yuv'}, # ref
+    {'content_id':1, 'asset_id': 2, 'dmos':100,  'path':'flat.yuv'},
     {'content_id':1, 'asset_id': 3, 'dmos':80,  'path':'flat_dis.yuv'},
 ]
 ```
 
-See the directory [`resource/dataset`](resource/dataset) for more examples. Also refer to the [Datasets](#datasets) section regarding publicly available datasets.
+See the directory [`resource/dataset`](../../resource/dataset) for more examples. Also refer to the [Datasets](datasets.md) document regarding publicly available datasets.
 
 ### Validate a Dataset
 
 Once a dataset is created, first validate the dataset using existing VMAF or other (PSNR, SSIM or MS-SSIM) metrics. Run:
 
 ```
-./run_testing quality_type test_dataset_file [--vmaf-model optional_VMAF_model_path] [--cache-result] [--parallelize]
+./run_testing quality_type test_dataset_file \
+[--vmaf-model optional_VMAF_model_path] [--cache-result] [--parallelize]
 ```
 
-where `quality_type` can be `VMAF`, `PSNR`, `SSIM` or `MS_SSIM`.
+where `quality_type` can be `VMAF`, `PSNR`, `SSIM`, `MS_SSIM`, etc.
 
 Enabling `--cache-result` allows storing/retrieving extracted features (or elementary quality metrics) in a data store (since feature extraction is the most expensive operations here).
 
@@ -358,8 +301,8 @@ Enabling `--parallelize` allows execution on multiple reference-distorted video 
 For example:
 
 ```
-./run_testing VMAF resource/example/example_dataset.py --cache-result \
-  --parallelize
+./run_testing VMAF resource/example/example_dataset.py \
+  --cache-result --parallelize
 ```
 
 Make sure `matplotlib` is installed to visualize the MOS-prediction scatter plot and inspect the statistics:
@@ -390,7 +333,8 @@ python python/script/run_cleaning_cache.py VMAF \
 Now that we are confident that the dataset is created correctly and we have some benchmark result on existing metrics, we proceed to train a new quality assessment model. Run:
 
 ```
-./run_vmaf_training train_dataset_filepath feature_param_file model_param_file output_model_file [--cache-result] [--parallelize]
+./run_vmaf_training train_dataset_filepath feature_param_file model_param_file \
+  output_model_file [--cache-result] [--parallelize]
 ```
 
 For example:
@@ -443,7 +387,7 @@ Above are two example scatter plots obtained from running the `run_vmaf_training
 
 ### Using Custom Subjective Models
 
-The commands `./run_vmaf_training` and `./run_testing` also support custom subjective models (e.g. DMOS (default), MLE and more), through the submodule repository [sureal](https://github.com/Netflix/sureal). Read [this](resource/doc/dcc17v2.pdf) paper for some background.
+The commands `./run_vmaf_training` and `./run_testing` also support custom subjective models (e.g. DMOS (default), MLE and more), through the submodule repository [sureal](https://github.com/Netflix/sureal).
 
 The subjective model option can be specified with option `--subj-model subjective_model`, for example:
 
@@ -454,22 +398,20 @@ The subjective model option can be specified with option `--subj-model subjectiv
   workspace/model/test_model.pkl \
   --subj-model MLE --cache-result --parallelize
 
-./run_testing VMAF resource/example/example_raw_dataset.py --subj-model MLE \
-  --cache-result --parallelize
+./run_testing VMAF resource/example/example_raw_dataset.py \
+  --subj-model MLE --cache-result --parallelize
 ```
 
-Note that for the `--subj-model` option to have effect, the input dataset file must follow a format similar to [example_raw_dataset.py](resource/example/example_raw_dataset.py). Specifically, for each dictionary element in `dis_videos`, instead of having a key named 'dmos' or 'groundtruth' as in [example_dataset.py](resource/example/example_dataset.py), it must have a key named 'os' (stand for opinion score), and the value must be a list of numbers. This is the 'raw opinion score' collected from subjective experiments, which is used as the input to the custom subjective models.
+Note that for the `--subj-model` option to have effect, the input dataset file must follow a format similar to [example_raw_dataset.py](../../resource/example/example_raw_dataset.py). Specifically, for each dictionary element in `dis_videos`, instead of having a key named 'dmos' or 'groundtruth' as in [example_dataset.py](../../resource/example/example_dataset.py), it must have a key named `os` (stands for opinion score), and the value must be a list of numbers. This is the "raw opinion score" collected from subjective experiments, which is used as the input to the custom subjective models.
 
 ### Cross Validation
 
-[`python/script/run_vmaf_cross_validation.py`](python/script/run_vmaf_cross_validation.py) provides tools for cross-validation of hyper-parameters and models. `run_vmaf_cv` runs training on a training dataset using hyper-parameters specified in a parameter file, output a trained model file, and then test the trained model on another test dataset and report testing correlation scores.
-
-`run_vmaf_kfold_cv` takes in a dataset file, a parameter file, and a data structure (list of lists) that specifies the folds based on video content's IDs, and run k-fold cross valiation on the video dataset. This can be useful for manually tuning the model parameters.
+[`run_vmaf_cross_validation.py`](../../python/script/run_vmaf_cross_validation.py) provides tools for cross-validation of hyper-parameters and models. `run_vmaf_cv` runs training on a training dataset using hyper-parameters specified in a parameter file, output a trained model file, and then test the trained model on another test dataset and report testing correlation scores. `run_vmaf_kfold_cv` takes in a dataset file, a parameter file, and a data structure (list of lists) that specifies the folds based on video content's IDs, and run k-fold cross valiation on the video dataset. This can be useful for manually tuning the model parameters.
 
 ### Creating New Features And Regressors
 
-You can also customize VMAF by plugging in third-party features or inventing new features, and specify them in a `feature_param_file`. Essentially, the 'aggregate' feature type (e.g. `VMAF_feature`) specified in the `feature_dict` corresponds to the `TYPE` field of a `FeatureExtractor` subclass (e.g. `VmafFeatureExtractor`). All you need to do is to create a new class extending the `FeatureExtractor` base class.
+You can also customize VMAF by plugging in third-party features or inventing new features, and specify them in a `feature_param_file`. Essentially, the "aggregate" feature type (e.g. `VMAF_feature`) specified in the `feature_dict` corresponds to the `TYPE` field of a `FeatureExtractor` subclass (e.g. `VmafFeatureExtractor`). All you need to do is to create a new class extending the `FeatureExtractor` base class.
 
 Similarly, you can plug in a third-party regressor or invent a new regressor and specify them in a `model_param_file`. The `model_type` (e.g. `LIBSVMNUSVR`) corresponds to the `TYPE` field of a `TrainTestModel` sublass (e.g. `LibsvmnusvrTrainTestModel`). All needed is to create a new class extending the `TrainTestModel` base class.
 
-For instructions on how to extending the `FeatureExtractor` and `TrainTestModel` base classes, refer to [`CONTRIBUTING.md`](CONTRIBUTING.md).
+For instructions on how to extending the `FeatureExtractor` and `TrainTestModel` base classes, refer to [`CONTRIBUTING.md`](../../CONTRIBUTING.md).

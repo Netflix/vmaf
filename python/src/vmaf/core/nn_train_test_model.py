@@ -7,7 +7,7 @@ import scipy.stats
 from sklearn.metrics import f1_score
 import tensorflow as tf
 
-from vmaf.core.mixin import H5pyMixin
+from vmaf.core.h5py_mixin import H5pyMixin
 from vmaf.core.train_test_model import RawVideoTrainTestModelMixin, TrainTestModel, \
     ClassifierMixin
 from vmaf.tools.sigproc import as_one_hot, create_hp_yuv_4channel, dstack_y_u_v
