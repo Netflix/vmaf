@@ -49,7 +49,7 @@ CI can also be enabled in [`run_testing`](VMAF_Python_library.md/#validate-a-dat
 
 Running the command line above will generate scatter plot:
 
-![confidence interval plot](/resource/images/CI.png =250x)
+![confidence interval plot](/resource/images/CI.png)
 
 Here each data point (color representing different content) is associated with a 95% CI. It is interesting to note that points on the higher-score end tend to have a tighter CI than points on the lower-score end. This can be explained by the fact that in the dataset to train the VMAF model, there are more dense data points on the higher end than the lower.
 
