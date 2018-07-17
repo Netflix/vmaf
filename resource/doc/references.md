@@ -25,7 +25,7 @@ Note that not all ideas in the academic papers below are implemented in the curr
   - C. G. Bampis, Z. Li, and A. C. Bovik, [SpatioTemporal feature integration and model fusion for full reference video quality assessment](https://arxiv.org/abs/1804.04813), in arXiv e-print, 2018.
   - J. Li, L. Krasula, P. Le Callet, Z. Li, Y. Baveye, [Quantifying the influence of devices on quality of experience for video streaming](https://www2.securecms.com/PCS2018/Papers/ViewPapers.asp?PaperNum=1144), in Proc. Picture Coding Symposium (PCS), San Francisco, 2018.
 
-The papers below independent evaluate the performance of VMAF.
+The papers below independently evaluate the performance of VMAF.
 
   - R. Rassool, [VMAF reproducibility: validating a perceptual practical video quality metric](https://ieeexplore.ieee.org/document/7986143/), 2017 IEEE International Symposium on Broadband Multimedia Systems and Broadcasting (BMSB), Cagliari, 2017, pp. 1-2.
   - C. Lee, S. Woo, S. Baek, J. Han, J. Chae and J. Rim, [Comparison of objective quality models for adaptive bit-streaming services](https://ieeexplore.ieee.org/document/8316385/), 2017 8th International Conference on Information, Intelligence, Systems & Applications (IISA), Larnaca, 2017.
