@@ -1,9 +1,14 @@
+from vmaf.tools.ResultAssembler import XML_Assembler, JSON_Assembler
+from testutil import set_default_576_324_videos_for_testing
+from vmaf.tools.misc import make_parent_dirs_if_nonexist
+
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import json
 import unittest
 from functools import partial
+import os
 
 import numpy as np
 
@@ -11,7 +16,7 @@ from vmaf.core.asset import Asset
 from vmaf.config import VmafConfig
 from vmaf.core.result import Result
 from vmaf.core.result_store import FileSystemResultStore
-from vmaf.core.quality_runner import VmafLegacyQualityRunner
+from vmaf.core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner
 from vmaf.tools.stats import ListStats
 
 class ResultTest(unittest.TestCase):
@@ -243,6 +248,116 @@ class ResultStoreTestWithNone(unittest.TestCase):
         result = FileSystemResultStore.load_result(VmafConfig.test_resource_path('result_with_none.txt'))
         result.set_score_aggregate_method(ListStats.nonemean)
         self.assertAlmostEqual(result['STRRED_feature_srred_score'], 5829.2644469999996, places=4)
+
+class ResultAggregatingTest(unittest.TestCase):
+
+    def test_invalid_format_aggregator(self):
+
+        print 'test on running result aggregation with invalid format...'
+        with self.assertRaises(AssertionError):
+            XML_Assembler(['dummy.png']).assemble()
+            XML_Assembler(['dummy.png, dummpy.xml']).assemble()
+            JSON_Assembler(['dummy.png']).assemble()
+            JSON_Assembler(['dummy.xml, dummpy.png']).assemble()
+
+    def test_xml_aggregator(self):
+
+        print 'test on running XML aggregation...'
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        asset_list = [asset, asset_original]
+
+        self.runner = VmafQualityRunner(
+            asset_list,
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={
+                'model_filepath': VmafConfig.model_path("vmaf_v0.6.1.pkl"),
+            },
+            optional_dict2=None,
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        xml_file_list = []
+        dump_dir = os.getcwd() + '/temp_outputs/'
+        make_parent_dirs_if_nonexist(dump_dir)
+
+        xml_file = dump_dir + 'temp_xml_1.xml'
+        with open(xml_file, 'wb') as myfile:
+            myfile.write(results[0].to_xml())
+        xml_file_list.append(xml_file)
+
+        xml_file = dump_dir + 'temp_xml_2.xml'
+        with open(xml_file, 'wb') as myfile:
+            myfile.write(results[1].to_xml())
+        xml_file_list.append(xml_file)
+
+        import xml.etree.ElementTree as ET
+        tree_1 = ET.ElementTree(ET.fromstring(results[0].to_xml()))
+        tree_2 = ET.ElementTree(ET.fromstring(XML_Assembler([xml_file_list[0]]).assemble()))
+
+        tree_3 = ET.ElementTree(ET.fromstring(XML_Assembler(xml_file_list).assemble()))
+        tree_4 = ET.ElementTree(ET.fromstring(XML_Assembler([xml_file_list[1], xml_file_list[0]]).assemble()))
+
+        aggregate_1 = float(tree_1.getroot().find('aggregate').get('VMAF_score'))
+        aggregate_2 = float(tree_2.getroot().find('aggregate').get('VMAF_score'))
+
+        aggregate_3 = float(tree_3.getroot().find('aggregate').get('VMAF_score'))
+        aggregate_4 = float(tree_4.getroot().find('aggregate').get('VMAF_score'))
+
+        assert aggregate_1 == aggregate_2 and aggregate_3 == aggregate_4
+
+    def test_json_aggregator(self):
+
+        print 'test on running JSON aggregation...'
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        asset_list = [asset, asset_original]
+
+        self.runner = VmafQualityRunner(
+            asset_list,
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={
+                'model_filepath': VmafConfig.model_path("vmaf_v0.6.1.pkl"),
+            },
+            optional_dict2=None,
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        json_file_list = []
+        dump_dir = os.getcwd() + '/temp_outputs/'
+        make_parent_dirs_if_nonexist(dump_dir)
+
+        json_file = dump_dir + 'temp_json_1.json'
+        with open(json_file, 'wb') as myfile:
+            myfile.write(results[0].to_json())
+        json_file_list.append(json_file)
+
+        json_file = dump_dir + 'temp_json_2.json'
+        with open(json_file, 'wb') as myfile:
+            myfile.write(results[1].to_json())
+        json_file_list.append(json_file)
+
+        json_1 = json.loads(results[0].to_json())
+        json_2 = json.loads(JSON_Assembler([json_file_list[0]]).assemble())
+
+        json_3 = json.loads(JSON_Assembler(json_file_list).assemble())
+        json_4 = json.loads(JSON_Assembler([json_file_list[1], json_file_list[0]]).assemble())
+
+        aggregate_1 = json_1['aggregate']['VMAF_score']
+        aggregate_2 = json_2['aggregate']['VMAF_score']
+
+        aggregate_3 = json_3['aggregate']['VMAF_score']
+        aggregate_4 = json_4['aggregate']['VMAF_score']
+
+        assert aggregate_1 == aggregate_2 and aggregate_3 == aggregate_4
 
 if __name__ == '__main__':
     unittest.main()
