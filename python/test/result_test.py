@@ -1,3 +1,5 @@
+from testutil import set_default_576_324_videos_for_testing
+
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
@@ -11,7 +13,7 @@ from vmaf.core.asset import Asset
 from vmaf.config import VmafConfig
 from vmaf.core.result import Result
 from vmaf.core.result_store import FileSystemResultStore
-from vmaf.core.quality_runner import VmafLegacyQualityRunner
+from vmaf.core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner
 from vmaf.tools.stats import ListStats
 
 class ResultTest(unittest.TestCase):
@@ -243,6 +245,54 @@ class ResultStoreTestWithNone(unittest.TestCase):
         result = FileSystemResultStore.load_result(VmafConfig.test_resource_path('result_with_none.txt'))
         result.set_score_aggregate_method(ListStats.nonemean)
         self.assertAlmostEqual(result['STRRED_feature_srred_score'], 5829.2644469999996, places=4)
+
+class ResultAggregatingTest(unittest.TestCase):
+
+    def test_from_xml_from_json_and_aggregation(self):
+
+        print 'test on running from_xml and from_json and aggregation...'
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        asset_list = [asset, asset_original]
+
+        self.runner = VmafQualityRunner(
+            asset_list,
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={
+                'model_filepath': VmafConfig.model_path("vmaf_v0.6.1.pkl"),
+            },
+            optional_dict2=None,
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        xml_string_expected = results[0].to_xml()
+        xml_string_recon = Result.from_xml(xml_string_expected).to_xml()
+
+        json_string_expected = results[0].to_json()
+        json_string_recon = Result.from_json(json_string_expected).to_json()
+
+        assert xml_string_expected == xml_string_recon, "XML files do not match"
+        assert json_string_expected == json_string_recon, "JSON files do not match"
+
+        combined_result = Result.combine_result([results[0], results[1]])
+
+        # check that all keys are there
+        combined_result_keys = [key for key in combined_result.result_dict]
+        keys_0 = [key for key in results[0].result_dict]
+        keys_1 = [key for key in results[1].result_dict]
+        assert set(keys_0) == set(keys_1) == set(combined_result_keys)
+
+        # check that the dictionaries have been copied as expected
+        for key in combined_result_keys:
+            assert len(combined_result.result_dict[key]) == len(results[0].result_dict[key]) + len(results[1].result_dict[key])
+            assert combined_result.result_dict[key][0] == results[0].result_dict[key][0]
+            assert combined_result.result_dict[key][len(results[0].result_dict[key]) - 1] == results[0].result_dict[key][len(results[0].result_dict[key]) - 1]
+            assert combined_result.result_dict[key][len(results[0].result_dict[key])] == results[1].result_dict[key][0]
+            assert combined_result.result_dict[key][len(combined_result.result_dict[key]) - 1] == results[1].result_dict[key][len(results[1].result_dict[key]) - 1]
 
 if __name__ == '__main__':
     unittest.main()
