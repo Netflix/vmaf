@@ -65,6 +65,10 @@ class Asset(WorkdirEnabled):
         self._assert()
 
     def _assert(self):
+        # validate yuv types
+        assert self.ref_yuv_type in self.SUPPORTED_YUV_TYPES
+        assert self.dis_yuv_type in self.SUPPORTED_YUV_TYPES
+        assert self.workfile_yuv_type in self.SUPPORTED_YUV_TYPES
         # if YUV is notyuv, then ref/dis width and height should not be given,
         # since it must be encoded video and the information should be already
         # in included in the header of the video files
@@ -567,6 +571,23 @@ class Asset(WorkdirEnabled):
             else:
                 assert False, "Unsupported YUV type: {}".format(
                     self.asset_dict['yuv_type'])
+        else:
+            return self.DEFAULT_YUV_TYPE
+
+    @property
+    def workfile_yuv_type(self):
+        """
+        for notyuv assets, we want to allow the decoded yuv format to be set by the user
+        this is highly relevant to image decoding, where we would like to select yuv444p
+        this property tries to read workfile_yuv_type from asset_dict, if it is there it is set
+        else it default to default_yuv_type
+        """
+        supported_yuv_types = list(set(Asset.SUPPORTED_YUV_TYPES) - {'notyuv'})
+        if 'workfile_yuv_type' in self.asset_dict:
+            workfile_yuv_type = self.asset_dict['workfile_yuv_type']
+            assert workfile_yuv_type in supported_yuv_types, "Workfile YUV format {} is not valid, pick: {}".format(
+                workfile_yuv_type, str(supported_yuv_types))
+            return workfile_yuv_type
         else:
             return self.DEFAULT_YUV_TYPE
 

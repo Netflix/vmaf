@@ -64,6 +64,29 @@ class QualityRunnerTest(unittest.TestCase):
         results = self.runner.results
         self.assertAlmostEqual(results[0]['VMAF_score'], 77.635307276411766, places=4)
 
+    def test_run_vmaf_runner_with_notyuv_jpg(self):
+        print 'test on running VMAF runner on jpg...'
+        ref_path = VmafConfig.test_resource_path("test_images", "bikes.jpg")
+        dis_path = VmafConfig.test_resource_path("test_images", "bikes_dis.jpg")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'yuv_type': 'notyuv',
+                                  'quality_width': 512, 'quality_height': 384,
+                                  'workfile_yuv_type': 'yuv444p',
+                                  })
+        self.runner = VmafQualityRunner(
+            [asset],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None
+        )
+        self.runner.run()
+
+        results = self.runner.results
+        self.assertAlmostEqual(results[0]['VMAF_score'], 63.27798081002585, places=4)
+
     def test_run_vmafossexec_runner_with_notyuv(self):
         print 'test on running VMAF runner...'
         ref_path = VmafConfig.test_resource_path("mp4", "Seeking_30_480_1050.mp4")
