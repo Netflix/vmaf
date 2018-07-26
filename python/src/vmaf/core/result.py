@@ -37,6 +37,11 @@ class BasicResult(object):
         except KeyError as e:
             return self._try_get_aggregate_score(key, e)
 
+    @staticmethod
+    def get_scores_key_from_score_key(score_key):
+        # e.g. 'VMAF_scores'
+        return score_key + 's'
+
     def _try_get_aggregate_score(self, key, error):
         """
         Get aggregate score from list of scores. Must follow the convention
@@ -46,7 +51,7 @@ class BasicResult(object):
         'VMAF_scores'.
         """
         if re.search(r"_score$", key):
-            scores_key = key + 's' # e.g. 'VMAF_scores'
+            scores_key = self.get_scores_key_from_score_key(key)
             if scores_key in self.result_dict:
                 scores = self.result_dict[scores_key]
                 return self.score_aggregate_method(scores)
@@ -222,6 +227,85 @@ class Result(BasicResult):
             aggregate.set(score_key, str(score))
 
         return prettify(top)
+
+    @classmethod
+    def from_xml(cls, xml_string):
+
+        from xml.etree import ElementTree
+
+        top = ElementTree.fromstring(xml_string)
+        asset = top.find('asset').get('identifier')
+        executor_id = top.get('executorId')
+
+        result_dict = {}
+
+        frames = top.find('frames')
+
+        for frame_ind, frame in enumerate(frames):
+            for score_key, score_value in frame.attrib.items():
+                if 'score' in score_key:
+                    # same convention of 'score' and 'scores' as in _try_get_aggregate_score
+                    if 'feature' in score_key:
+                        result_dict.setdefault(Result.get_scores_key_from_score_key(score_key), []).append(np.float64(score_value))
+                    else:
+                        pred_result_key = Result.get_scores_key_from_score_key(score_key)
+                        result_dict.setdefault(pred_result_key, []).append(np.float64(score_value))
+
+        result_dict[pred_result_key] = np.array(result_dict[pred_result_key])
+
+        return Result(asset, executor_id, result_dict)
+
+    @classmethod
+    def from_json(cls, json_string):
+
+        json_data = json.loads(json_string)
+        executor_id = json_data['executorId']
+        asset = json_data['asset']['identifier']
+
+        result_dict = {}
+
+        frames = json_data['frames']
+
+        for frame_ind, frame in enumerate(frames):
+            for score_key, score_value in frame.items():
+                if 'score' in score_key:
+                    # same convention of 'score' and 'scores' as in _try_get_aggregate_score
+                    if 'feature' in score_key:
+                        result_dict.setdefault(Result.get_scores_key_from_score_key(score_key), []).append(np.float64(score_value))
+                    else:
+                        pred_result_key = Result.get_scores_key_from_score_key(score_key)
+                        result_dict.setdefault(pred_result_key, []).append(np.float64(score_value))
+
+        result_dict[pred_result_key] = np.array(result_dict[pred_result_key])
+
+        return Result(asset, executor_id, result_dict)
+
+    @classmethod
+    def combine_result(cls, results):
+
+        assert len(results) > 0, "Results list is empty."
+        executor_ids = [result.executor_id for result in results]
+        assert len(set(executor_ids)) == 1, "Executor ids do not match."
+        executor_id = executor_ids[0]
+        combined_result_dict = OrderedDict()
+
+        sorted_scores_keys = sorted([key for key in results[0].result_dict.keys()], reverse=True)
+
+        # initialize dictionary
+        for scores_key in sorted_scores_keys:
+            combined_result_dict[scores_key] = []
+
+        for result in results:
+            result_dict  = result.result_dict
+            # assert if the keys in result_dict match
+            assert sorted([key for key in result_dict.keys()], reverse=True) == sorted_scores_keys, "Score keys do not match."
+            for scores_key in sorted_scores_keys:
+                combined_result_dict[scores_key] += list(result_dict[scores_key])
+
+        pred_result_key = [key for key in sorted_scores_keys if 'feature' not in key][0]
+        combined_result_dict[pred_result_key] = np.array(combined_result_dict[pred_result_key])
+
+        return Result('combined_asset', executor_id, combined_result_dict)
 
     def to_dict(self):
         """Example:
