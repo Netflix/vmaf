@@ -86,7 +86,19 @@ class TestReadDataset(unittest.TestCase):
         self.assertEquals(len(assets), 4)
         self.assertTrue(assets[0].ref_width_height is None)
         self.assertTrue(assets[0].dis_width_height is None)
+        self.assertEqual(assets[0].workfile_yuv_type, assets[0].DEFAULT_YUV_TYPE)
         self.assertEquals(assets[0].quality_width_height, (1920, 1080))
+
+    def test_read_image_dataset_notyuv_workfile_yuv_type(self):
+        dataset_path = VmafConfig.test_resource_path('test_image_dataset_notyuv_workfile_yuv_type.py')
+        dataset = import_python_file(dataset_path)
+        assets = read_dataset(dataset)
+
+        self.assertEquals(len(assets), 4)
+        self.assertTrue(assets[0].ref_width_height is None)
+        self.assertTrue(assets[0].dis_width_height is None)
+        self.assertEquals(assets[0].quality_width_height, (1920, 1080))
+        self.assertEquals(assets[0].workfile_yuv_type, 'yuv444p')
 
     def test_read_dataset_basic(self):
         dataset_path = VmafConfig.test_resource_path('test_dataset.py')
