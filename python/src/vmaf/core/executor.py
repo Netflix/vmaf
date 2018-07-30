@@ -190,20 +190,20 @@ class Executor(TypeVersionEnabled):
     @staticmethod
     def _get_workfile_yuv_type(asset):
         """ Same as original yuv type, unless it is notyuv; in this case, check
-        the other's (if ref, check dis'; vice versa); if both notyuv, use default"""
+        the other's (if ref, check dis'; vice versa); if both notyuv, use format as set at a higher level"""
 
         # also check the logic in _assert_an_asset. The assumption is:
         # assert (asset.ref_yuv_type == 'notyuv' or asset.dis_yuv_type == 'notyuv') \
         #        or (asset.ref_yuv_type == asset.dis_yuv_type)
 
         if asset.ref_yuv_type == 'notyuv' and asset.dis_yuv_type == 'notyuv':
-            return Asset.DEFAULT_YUV_TYPE
+            return asset.workfile_yuv_type
         elif asset.ref_yuv_type == 'notyuv' and asset.dis_yuv_type != 'notyuv':
             return asset.dis_yuv_type
         elif asset.ref_yuv_type != 'notyuv' and asset.dis_yuv_type == 'notyuv':
             return asset.ref_yuv_type
         else: # neither notyuv
-            assert asset.ref_yuv_type == asset.dis_yuv_type
+            assert asset.ref_yuv_type == asset.dis_yuv_type, "YUV types for ref and dis do not match."
             return asset.ref_yuv_type
 
     def _wait_for_workfiles(self, asset):
@@ -300,7 +300,7 @@ class Executor(TypeVersionEnabled):
 
             if self.logger:
                 self.logger.info("Read {id} log file, get scores...".
-                                 format(type=self.executor_id))
+                                 format(id=self.executor_id))
 
             # collect result from each asset's log file
             result = self._read_result(asset)
@@ -672,10 +672,10 @@ class NorefExecutorMixin(object):
     @staticmethod
     def _get_workfile_yuv_type(asset):
         """ Same as original yuv type, unless it is notyuv; in this case,
-        use default"""
+        use format as set at a higher level"""
 
         if asset.dis_yuv_type == 'notyuv':
-            return Asset.DEFAULT_YUV_TYPE
+            return asset.workfile_yuv_type
         else:
             return asset.dis_yuv_type
 

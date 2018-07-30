@@ -475,6 +475,22 @@ class AssetTest(unittest.TestCase):
                               'dis_width': 720, 'dis_height': 480,
                           })
 
+        with self.assertRaises(AssertionError):
+            asset = Asset(dataset="test", content_id=0, asset_id=0,
+                          ref_path="", dis_path="",
+                          asset_dict={
+                              'yuv_type': 'notyuv',
+                              'workfile_yuv_type': 'yuv4444p'
+                          })
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={
+                          'yuv_type': 'notyuv',
+                          'workfile_yuv_type': 'yuv422p'
+                      })
+        self.assertEquals(asset.workfile_yuv_type, 'yuv422p')
+
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="refvideo", dis_path="disvideo",
                       asset_dict={
@@ -491,6 +507,23 @@ class AssetTest(unittest.TestCase):
                       })
         self.assertEquals(asset.quality_width_height, (720, 480))
         self.assertEquals(str(asset), "test_0_0_refvideo_notyuv_vs_disvideo_notyuv_q_720x480")
+
+    def test_notyuv_noref(self):
+        with self.assertRaises(AssertionError):
+            asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
+                          dis_path="",
+                          asset_dict={
+                              'yuv_type': 'notyuv',
+                              'workfile_yuv_type': 'yuv4444p'
+                              })
+
+        asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
+                      dis_path="",
+                      asset_dict={
+                          'yuv_type': 'notyuv',
+                          'workfile_yuv_type': 'yuv422p'
+                      })
+        self.assertEquals(asset.workfile_yuv_type, 'yuv422p')
 
     def test_copy(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,

@@ -44,6 +44,7 @@ def read_dataset(dataset, **kwargs):
     resampling_type = dataset.resampling_type if hasattr(dataset, 'resampling_type') else None
     crop_cmd = dataset.crop_cmd if hasattr(dataset, 'crop_cmd') else None
     pad_cmd = dataset.pad_cmd if hasattr(dataset, 'pad_cmd') else None
+    workfile_yuv_type = dataset.workfile_yuv_type if hasattr(dataset, 'workfile_yuv_type') else None
 
     ref_dict = {} # dictionary of content_id -> path for ref videos
     for ref_video in ref_videos:
@@ -157,6 +158,8 @@ def read_dataset(dataset, **kwargs):
             asset_dict['crop_cmd'] = crop_cmd_
         if pad_cmd_ is not None:
             asset_dict['pad_cmd'] = pad_cmd_
+        if workfile_yuv_type is not None:
+            asset_dict['workfile_yuv_type'] = workfile_yuv_type
 
         if groundtruth is None and skip_asset_with_none_groundtruth:
             pass
