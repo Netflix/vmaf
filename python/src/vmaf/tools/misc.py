@@ -13,6 +13,7 @@ import re
 
 from vmaf.tools.scanf import sscanf, IncompleteCaptureError, FormatError
 
+
 def get_stdout_logger():
     import logging
     logger = logging.getLogger()
@@ -21,10 +22,12 @@ def get_stdout_logger():
     logger.addHandler(handler)
     return logger
 
+
 def close_logger(logger):
     for handler in logger.handlers:
         handler.close()
         logger.removeHandler(handler)
+
 
 def get_file_name_without_extension(path):
     """
@@ -43,6 +46,7 @@ def get_file_name_without_extension(path):
     """
     return os.path.splitext(path.split("/")[-1])[0]
 
+
 def get_file_name_with_extension(path):
     """
 
@@ -56,6 +60,7 @@ def get_file_name_with_extension(path):
     """
     return path.split("/")[-1]
 
+
 def get_file_name_extension(path):
     '''
     >>> get_file_name_extension("file:///mnt/zli/test.txt")
@@ -66,6 +71,7 @@ def get_file_name_extension(path):
     'abc'
     '''
     return path.split('.')[-1]
+
 
 def get_normalized_path(dir_):
     """
@@ -83,6 +89,7 @@ def get_normalized_path(dir_):
     else:
         return dir_
 
+
 def get_dir_without_last_slash(path):
     """
 
@@ -98,15 +105,18 @@ def get_dir_without_last_slash(path):
     """
     return "/".join(path.split("/")[:-1])
 
+
 def make_parent_dirs_if_nonexist(path):
     dst_dir = get_dir_without_last_slash(path)
     # create dir if not exist yet
     if not os.path.exists(dst_dir):
         os.makedirs(dst_dir)
 
+
 def delete_dir_if_exists(dir):
     if os.path.isdir(dir):
         os.rmdir(dir)
+
 
 def get_normalized_string_from_dict(d):
     """ Normalized string representation with sorted keys.
@@ -115,6 +125,7 @@ def get_normalized_string_from_dict(d):
     'bitrate_kbps_45_max_buffer_sec_5.0'
     """
     return '_'.join(map(lambda k: '{k}_{v}'.format(k=k,v=d[k]), sorted(d.keys())))
+
 
 def get_hashable_value_tuple_from_dict(d):
     """ Hashable tuple of values with sorted keys.
@@ -127,6 +138,7 @@ def get_hashable_value_tuple_from_dict(d):
     return tuple(map(
         lambda k: tuple(d[k]) if isinstance(d[k], list) else d[k],
         sorted(d.keys())))
+
 
 def get_unique_str_from_recursive_dict(d):
     """ String representation with sorted keys and values for recursive dict.
@@ -149,6 +161,7 @@ def get_unique_str_from_recursive_dict(d):
             return d
     return json.dumps(to_ordered_dict_recursively(d))
 
+
 def indices(a, func):
     """
     Get indices of elements in an array which satisfies func
@@ -165,6 +178,7 @@ def indices(a, func):
     """
     return [i for (i, val) in enumerate(a) if func(val)]
 
+
 def import_python_file(filepath):
     """
     Import a python file as a module.
@@ -176,6 +190,7 @@ def import_python_file(filepath):
     ret = imp.load_source(filename, filepath)
 
     return ret
+
 
 def make_absolute_path(path, current_dir):
     '''
@@ -191,8 +206,10 @@ def make_absolute_path(path, current_dir):
     else:
         return current_dir + path
 
+
 def empty_object():
     return type('', (), {})()
+
 
 def get_cmd_option(argv, begin, end, option):
     '''
@@ -218,6 +235,7 @@ def get_cmd_option(argv, begin, end, option):
         return argv[itr + 1]
     return None
 
+
 def cmd_option_exists(argv, begin, end, option):
     '''
 
@@ -240,6 +258,7 @@ def cmd_option_exists(argv, begin, end, option):
             break
     return found
 
+
 def index_and_value_of_min(l):
     '''
 
@@ -248,6 +267,7 @@ def index_and_value_of_min(l):
 
     '''
     return min(enumerate(l), key=lambda x: x[1])
+
 
 def parallel_map(func, list_args, processes=None):
     """
@@ -308,6 +328,7 @@ def parallel_map(func, list_args, processes=None):
 
     return rets
 
+
 def check_program_exist(program):
     '''
 
@@ -332,6 +353,7 @@ def check_program_exist(program):
         else:
             # Something else went wrong while trying to run `wget`
             raise
+
 
 def check_scanf_match(string, template):
     '''
@@ -372,6 +394,7 @@ def check_scanf_match(string, template):
 
     return False
 
+
 def match_any_files(template):
     dir_ = os.path.dirname(template)
     for filename in os.listdir(dir_):
@@ -380,10 +403,12 @@ def match_any_files(template):
             return True
     return False
 
+
 def run_process(cmd, **kwargs):
     ret = subprocess.call(cmd, **kwargs)
     assert ret == 0, 'Process returned {ret}, cmd: {cmd}'.format(ret=ret, cmd=cmd)
     return ret
+
 
 def unroll_dict_of_lists(dict_of_lists):
     """ Unfold a dictionary of lists into a list of dictionaries.
@@ -411,6 +436,7 @@ def unroll_dict_of_lists(dict_of_lists):
 
     return list_of_dicts
 
+
 def slugify(value):
     """
     Normalizes string, converts to lowercase, removes non-alpha characters,
@@ -422,6 +448,7 @@ def slugify(value):
     value = unicode(re.sub('[-\s]+', '-', value))
 
     return value
+
 
 def neg_if_even(x):
     """
@@ -439,6 +466,7 @@ def neg_if_even(x):
     """
     return 1 - (x % 2 == 0) * 2
 
+
 def get_unique_sorted_list(l):
     """
     >>> get_unique_sorted_list([3, 4, 4, 1])
@@ -448,6 +476,7 @@ def get_unique_sorted_list(l):
     """
     return sorted(list(set(l)))
 
+
 class Timer(object):
 
     def __enter__(self):
@@ -455,6 +484,24 @@ class Timer(object):
 
     def __exit__(self, type, value, traceback):
         print 'Elapsed: %s' % (time() - self.tstart)
+
+
+def dedup_value_in_dict(d):
+    """
+    >>> dedup_value_in_dict({'a': 1, 'b': 1, 'c': 2})
+    {'a': 1, 'c': 2}
+    """
+    reversed_d = dict()
+    keys = sorted(d.keys())
+    for key in keys:
+        value = d[key]
+        if value not in reversed_d:
+            reversed_d[value] = key
+    d_ = dict()
+    for value, key in reversed_d.iteritems():
+        d_[key] = value
+    return d_
+
 
 if __name__ == '__main__':
     import doctest
