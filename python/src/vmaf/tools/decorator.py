@@ -10,6 +10,7 @@ import json
 import hashlib
 import sys
 
+
 def deprecated(func):
     """
     Mark a function as deprecated.
@@ -28,6 +29,7 @@ def deprecated(func):
     new_func.__dict__.update(func.__dict__)
     return new_func
 
+
 def persist(original_func):
     """
     Cache returned value of function in a function. Useful when calling functions
@@ -45,9 +47,11 @@ def persist(original_func):
 
     return new_func
 
+
 def dummy(func):
     """ Dummy decorator. """
     return func
+
 
 class memoized(object):
     """ Decorator. Caches a function's return value each time it is called.
@@ -82,6 +86,7 @@ class memoized(object):
     def __get__(self, obj, objtype):
         """ Support instance methods. """
         return partial(self.__call__, obj)
+
 
 def persist_to_file(file_name):
     """
