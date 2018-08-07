@@ -174,7 +174,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
         {
             // read frame from file
 
-            ret = read_frame(ref_buf, dis_buf, temp_buf, stride, user_data);
+            ret = thread_data->read_frame(ref_buf, dis_buf, temp_buf, stride, user_data);
             if (ret == 1)
             {
 #ifdef MULTI_THREADING
@@ -230,7 +230,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
         }
 #endif
 
-        ret = read_frame(next_ref_buf, next_dis_buf, temp_buf, stride, user_data);
+        ret = thread_data->read_frame(next_ref_buf, next_dis_buf, temp_buf, stride, user_data);
         if (ret == 1)
         {
 #ifdef MULTI_THREADING
