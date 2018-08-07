@@ -1,5 +1,8 @@
 # Change Log
 
+## (8/7/2018) [1.3.9]
+- libvmaf: fix case where user defined read_frame() callback was being ignored.
+
 ## (6/21/2018) [1.3.8]
 
 **Fixed bugs:**
