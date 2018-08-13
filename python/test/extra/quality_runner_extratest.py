@@ -1,8 +1,10 @@
 import unittest
+
+from vmaf.core.matlab_quality_runner import SpEEDMatlabQualityRunner, StrredQualityRunner
+from vmaf.tools.testutil import set_default_576_324_videos_for_testing
 from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.asset import Asset
-from vmaf.core.quality_runner import StrredQualityRunner, PsnrQualityRunner, \
-    VmafQualityRunner, VmafossExecQualityRunner
+from vmaf.core.quality_runner import PsnrQualityRunner, VmafQualityRunner, VmafossExecQualityRunner
 from vmaf.core.result_store import FileSystemResultStore
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
@@ -153,19 +155,7 @@ class ParallelMatlabQualityRunnerTest(unittest.TestCase):
 
     def test_run_strrred_runner(self):
         print 'test on running STRRED runner...'
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = StrredQualityRunner(
             [asset, asset_original],
@@ -184,6 +174,26 @@ class ParallelMatlabQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['STRRED_feature_srred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_trred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_score'], 0.0, places=4)
+
+    def test_run_speed_matlab_runner(self):
+        print 'test on running SPEED Matlab runner...'
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = SpEEDMatlabQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None
+        )
+        self.runner.run(parallelize=True)
+
+        results = self.runner.results
+        self.assertAlmostEqual(results[0]['SpEED_Matlab_feature_sspeed_4_score'], 5.155523354166667, places=4)
+        self.assertAlmostEqual(results[0]['SpEED_Matlab_feature_tspeed_4_score'], 15.091642416666668, places=4)
+        self.assertAlmostEqual(results[0]['SpEED_Matlab_score'], 78.4927784076698, places=4)
+        self.assertAlmostEqual(results[1]['SpEED_Matlab_feature_sspeed_4_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[1]['SpEED_Matlab_feature_tspeed_4_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[1]['SpEED_Matlab_score'], 0.0, places=4)
 
 
 class ParallelQualityRunnerTest(unittest.TestCase):
