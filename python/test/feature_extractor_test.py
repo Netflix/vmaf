@@ -10,7 +10,7 @@ from vmaf.core.feature_extractor import VmafFeatureExtractor, MomentFeatureExtra
     PsnrFeatureExtractor, SsimFeatureExtractor, MsSsimFeatureExtractor
 from vmaf.core.asset import Asset
 from vmaf.core.result_store import FileSystemResultStore
-from testutil import set_default_576_324_videos_for_testing, set_default_flat_1920_1080_videos_for_testing
+from vmaf.tools.testutil import set_default_576_324_videos_for_testing, set_default_flat_1920_1080_videos_for_testing
 
 
 class FeatureExtractorTest(unittest.TestCase):
@@ -449,7 +449,7 @@ class ParallelFeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[2]['VMAF_feature_vif_num_score'], 712650.023478, places=0)
 
-    def test_run_parallel_vamf_fextractor_with_result_store(self):
+    def test_run_parallel_vmaf_fextractor_with_result_store(self):
         print 'test on running VMAF feature extractor with result store ' \
               'in parallel...'
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
