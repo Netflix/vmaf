@@ -1,7 +1,8 @@
 import unittest
 from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.asset import Asset
-from vmaf.core.feature_extractor import VmafFeatureExtractor, StrredFeatureExtractor
+from vmaf.core.feature_extractor import VmafFeatureExtractor
+from vmaf.core.matlab_feature_extractor import StrredFeatureExtractor, SpEEDMatlabFeatureExtractor
 from vmaf.tools.stats import ListStats
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
@@ -95,6 +96,40 @@ class ParallelMatlabFeatureExtractorTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[1]['STRRED_feature_srred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_trred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_strred_score'], 0.0, places=4)
+
+    def test_run_SpEED_matlab_fextractor(self):
+
+        print 'test on running SpEED (Matlab) feature extractor...'
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 576, 'height': 324})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                               workdir_root=VmafConfig.workdir_path(),
+                               ref_path=ref_path,
+                               dis_path=ref_path,
+                               asset_dict={'width': 576, 'height': 324})
+
+        self.fextractor = SpEEDMatlabFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+        # S-SpEED assertions on first frame
+        self.assertAlmostEqual(results[0].result_dict[self.fextractor.TYPE + '_sspeed_2_scores'][0], 13.510418, places=4)
+        self.assertAlmostEqual(results[0].result_dict[self.fextractor.TYPE + '_sspeed_3_scores'][0], 7.211881, places=4)
+        self.assertAlmostEqual(results[0].result_dict[self.fextractor.TYPE + '_sspeed_4_scores'][0], 4.921501, places=4)
+        # T-SpEED assertions on third frame
+        self.assertAlmostEqual(results[0].result_dict[self.fextractor.TYPE + '_tspeed_2_scores'][2], 32.994605, places=4)
+        self.assertAlmostEqual(results[0].result_dict[self.fextractor.TYPE + '_tspeed_3_scores'][2], 22.404285, places=4)
+        self.assertAlmostEqual(results[0].result_dict[self.fextractor.TYPE + '_tspeed_4_scores'][2], 15.233468, places=4)
 
 
 class ParallelFeatureExtractorTestNew(unittest.TestCase):
