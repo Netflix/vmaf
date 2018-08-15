@@ -7,7 +7,7 @@ import re
 
 from vmaf.config import VmafConfig
 from vmaf.core.feature_extractor import VmafFeatureExtractor, MomentFeatureExtractor, \
-    PsnrFeatureExtractor, SsimFeatureExtractor, MsSsimFeatureExtractor
+    PsnrFeatureExtractor, SsimFeatureExtractor, MsSsimFeatureExtractor, VifFrameDifferenceFeatureExtractor
 from vmaf.core.asset import Asset
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.tools.testutil import set_default_576_324_videos_for_testing, set_default_flat_1920_1080_videos_for_testing
@@ -104,6 +104,29 @@ class FeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm3_score'], 1.0, places=4)
+
+    def test_run_vif_frame_difference_fextractor(self):
+        print 'test on running VIF frame difference feature extractor...'
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.fextractor = VifFrameDifferenceFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['VifDiff_feature_vifdiff_score'], 0.26745858333333333, places=4)
+
+        self.assertAlmostEqual(results[0]['VifDiff_feature_vifdiff_num_score'], 305412.7661844375, places=0)
+        self.assertAlmostEqual(results[0]['VifDiff_feature_vifdiff_den_score'], 1113927.6002349583, places=0)
+
+        self.assertAlmostEqual(results[1]['VifDiff_feature_vifdiff_score'], 0.9791655833333334, places=4)
+
+        self.assertAlmostEqual(results[1]['VifDiff_feature_vifdiff_num_score'], 1113926.2941030415, places=0)
+        self.assertAlmostEqual(results[1]['VifDiff_feature_vifdiff_den_score'], 1113927.6002349583, places=0)
 
     def test_run_vmaf_fextractor_with_result_store(self):
         print 'test on running VMAF feature extractor with result store...'

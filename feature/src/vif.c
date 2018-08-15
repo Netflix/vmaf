@@ -299,7 +299,7 @@ fail_or_end:
 int vif(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt)
 {
     double score = 0;
-    double scores[4*2];
+    double scores[4 * 2];
     double score_num = 0;
     double score_den = 0;
     float *ref_buf = 0;
@@ -376,9 +376,9 @@ int vif(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, i
         fflush(stdout);
         printf("vif_den: %d %f\n", frm_idx, score_den);
         fflush(stdout);
-        for(int scale=0;scale<4;scale++){
-            printf("vif_num_scale%d: %d %f\n", scale, frm_idx, scores[2*scale]);
-            printf("vif_den_scale%d: %d %f\n", scale, frm_idx, scores[2*scale+1]);
+        for(int scale = 0; scale < 4; scale++){
+            printf("vif_num_scale%d: %d %f\n", scale, frm_idx, scores[2 * scale]);
+            printf("vif_den_scale%d: %d %f\n", scale, frm_idx, scores[2 * scale + 1]);
         }
 
         frm_idx++;
@@ -390,6 +390,165 @@ fail_or_end:
 
     aligned_free(ref_buf);
     aligned_free(dis_buf);
+    aligned_free(temp_buf);
+
+    return ret;
+}
+
+int vifdiff(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt)
+{
+    double score = 0;
+    double scores[4 * 2];
+    double score_num = 0;
+    double score_den = 0;
+    float *ref_buf = 0;
+    float *ref_diff_buf = 0;
+    float *prev_ref_buf = 0;
+    float *dis_buf = 0;
+    float *dis_diff_buf = 0;
+    float *prev_dis_buf = 0;
+    float *temp_buf = 0;
+    size_t data_sz;
+    int stride;
+    int ret = 1;
+
+    if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float))
+    {
+        goto fail_or_end;
+    }
+
+    stride = ALIGN_CEIL(w * sizeof(float));
+
+    if ((size_t)h > SIZE_MAX / stride)
+    {
+        goto fail_or_end;
+    }
+
+    data_sz = (size_t)stride * h;
+
+    if (!(ref_buf = aligned_malloc(data_sz, MAX_ALIGN)))
+    {
+        printf("error: aligned_malloc failed for ref_buf.\n");
+        fflush(stdout);
+        goto fail_or_end;
+    }
+    if (!(ref_diff_buf = aligned_malloc(data_sz, MAX_ALIGN)))
+    {
+        printf("error: aligned_malloc failed for ref_diff_buf.\n");
+        fflush(stdout);
+        goto fail_or_end;
+    }
+    if (!(prev_ref_buf = aligned_malloc(data_sz, MAX_ALIGN)))
+    {
+        printf("error: aligned_malloc failed for prev_ref_buf.\n");
+        fflush(stdout);
+        goto fail_or_end;
+    }
+    if (!(dis_buf = aligned_malloc(data_sz, MAX_ALIGN)))
+    {
+        printf("error: aligned_malloc failed for dis_buf.\n");
+        fflush(stdout);
+        goto fail_or_end;
+    }
+    if (!(dis_diff_buf = aligned_malloc(data_sz, MAX_ALIGN)))
+    {
+        printf("error: aligned_malloc failed for dis_diff_buf.\n");
+        fflush(stdout);
+        goto fail_or_end;
+    }
+    if (!(prev_dis_buf = aligned_malloc(data_sz, MAX_ALIGN)))
+    {
+        printf("error: aligned_malloc failed for prev_dis_buf.\n");
+        fflush(stdout);
+        goto fail_or_end;
+    }
+    if (!(temp_buf = aligned_malloc(data_sz * 2, MAX_ALIGN)))
+    {
+        printf("error: aligned_malloc failed for temp_buf.\n");
+        fflush(stdout);
+        goto fail_or_end;
+    }
+
+    int frm_idx = 0;
+    while (1)
+    {
+        ret = read_frame(ref_buf, dis_buf, temp_buf, stride, user_data);
+
+        if(ret == 1){
+            goto fail_or_end;
+        }
+        if (ret == 2)
+        {
+            break;
+        }
+
+        // ===============================================================
+        // offset pixel by OPT_RANGE_PIXEL_OFFSET
+        // ===============================================================
+        offset_image(ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+        offset_image(dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+
+        if (frm_idx > 0)
+        {
+            apply_frame_differencing(ref_buf, prev_ref_buf, ref_diff_buf, w, h, stride / sizeof(float));
+		    apply_frame_differencing(dis_buf, prev_dis_buf, dis_diff_buf, w, h, stride / sizeof(float));
+		}
+
+        // copy the current frame to the previous frame buffer to have it available for next time you apply frame differencing
+        memcpy(prev_ref_buf, ref_buf, data_sz);
+        memcpy(prev_dis_buf, dis_buf, data_sz);
+
+        // Pay attention to extracting T-VIF for first frame. Since we are doing subtracting the previous frame from the current frame,
+        // we cannot apply T-VIF differencing for the first video frame. Therefore we initialize with a default value (e.g. 0 for num and something
+        // very small for den, e.g. 1e-5). Why not difference the other way (next frame minus current frame)? Because the current choice will give us
+        // unreliable scores for an earlier video frame, rather than the latest one. This might be better for video quality calculations, since recency effects
+        // places more weight on later frames.
+        if (frm_idx == 0)
+		{
+		    score = 0.0;
+		    score_num = 0.0;
+		    score_den = 0.0;
+		    for(int scale = 0; scale < 4; scale++){
+		    	scores[2 * scale] = 0.0;
+		    	scores[2 * scale + 1] = 0.0 + 1e-5;
+		    }
+		}
+		else
+		{
+            // compute
+            if ((ret = compute_vif(ref_diff_buf, dis_diff_buf, w, h, stride, stride, &score, &score_num, &score_den, scores)))
+            {
+                printf("error: compute_vifdiff failed.\n");
+                fflush(stdout);
+                goto fail_or_end;
+            }
+        }
+
+        // print
+        printf("vifdiff: %d %f\n", frm_idx, score);
+        fflush(stdout);
+        printf("vifdiff_num: %d %f\n", frm_idx, score_num);
+        fflush(stdout);
+        printf("vifdiff_den: %d %f\n", frm_idx, score_den);
+        fflush(stdout);
+        for(int scale=0;scale<4;scale++){
+            printf("vifdiff_num_scale%d: %d %f\n", scale, frm_idx, scores[2*scale]);
+            printf("vifdiff_den_scale%d: %d %f\n", scale, frm_idx, scores[2*scale+1]);
+        }
+
+        frm_idx++;
+    }
+
+    ret = 0;
+
+fail_or_end:
+
+    aligned_free(ref_buf);
+    aligned_free(ref_diff_buf);
+    aligned_free(prev_ref_buf);
+    aligned_free(dis_buf);
+    aligned_free(dis_diff_buf);
+    aligned_free(prev_dis_buf);
     aligned_free(temp_buf);
 
     return ret;

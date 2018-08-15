@@ -269,6 +269,84 @@ class VmafFeatureExtractor(FeatureExtractor):
 
         return result
 
+class VifFrameDifferenceFeatureExtractor(FeatureExtractor):
+
+    TYPE = "VifDiff_feature"
+
+    VERSION = '0.1'
+
+    ATOM_FEATURES = ['vifdiff',
+                     'vifdiff_num', 'vifdiff_den',
+                     'vifdiff_num_scale0', 'vifdiff_den_scale0',
+                     'vifdiff_num_scale1', 'vifdiff_den_scale1',
+                     'vifdiff_num_scale2', 'vifdiff_den_scale2',
+                     'vifdiff_num_scale3', 'vifdiff_den_scale3',
+                     ]
+
+    DERIVED_ATOM_FEATURES = ['vifdiff_scale0', 'vifdiff_scale1', 'vifdiff_scale2', 'vifdiff_scale3',
+                             ]
+
+    ADM2_CONSTANT = 0
+    ADM_SCALE_CONSTANT = 0
+
+    def _generate_result(self, asset):
+        # routine to call the command-line executable and generate feature
+        # scores in the log file.
+
+        quality_width, quality_height = asset.quality_width_height
+        log_file_path = self._get_log_file_path(asset)
+
+        yuv_type=self._get_workfile_yuv_type(asset)
+        ref_path=asset.ref_workfile_path
+        dis_path=asset.dis_workfile_path
+        w=quality_width
+        h=quality_height
+        logger = self.logger
+
+        ExternalProgramCaller.call_vifdiff_feature(yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
+
+    @classmethod
+    def _post_process_result(cls, result):
+        # override Executor._post_process_result
+
+        result = super(VifFrameDifferenceFeatureExtractor, cls)._post_process_result(result)
+
+        # vifdiff_scalei = vifdiff_num_scalei / vifdiff_den_scalei, i = 0, 1, 2, 3
+        vifdiff_num_scale0_scores_key = cls.get_scores_key('vifdiff_num_scale0')
+        vifdiff_den_scale0_scores_key = cls.get_scores_key('vifdiff_den_scale0')
+        vifdiff_num_scale1_scores_key = cls.get_scores_key('vifdiff_num_scale1')
+        vifdiff_den_scale1_scores_key = cls.get_scores_key('vifdiff_den_scale1')
+        vifdiff_num_scale2_scores_key = cls.get_scores_key('vifdiff_num_scale2')
+        vifdiff_den_scale2_scores_key = cls.get_scores_key('vifdiff_den_scale2')
+        vifdiff_num_scale3_scores_key = cls.get_scores_key('vifdiff_num_scale3')
+        vifdiff_den_scale3_scores_key = cls.get_scores_key('vifdiff_den_scale3')
+        vifdiff_scale0_scores_key = cls.get_scores_key('vifdiff_scale0')
+        vifdiff_scale1_scores_key = cls.get_scores_key('vifdiff_scale1')
+        vifdiff_scale2_scores_key = cls.get_scores_key('vifdiff_scale2')
+        vifdiff_scale3_scores_key = cls.get_scores_key('vifdiff_scale3')
+        result.result_dict[vifdiff_scale0_scores_key] = list(
+            (np.array(result.result_dict[vifdiff_num_scale0_scores_key])
+             / np.array(result.result_dict[vifdiff_den_scale0_scores_key]))
+        )
+        result.result_dict[vifdiff_scale1_scores_key] = list(
+            (np.array(result.result_dict[vifdiff_num_scale1_scores_key])
+             / np.array(result.result_dict[vifdiff_den_scale1_scores_key]))
+        )
+        result.result_dict[vifdiff_scale2_scores_key] = list(
+            (np.array(result.result_dict[vifdiff_num_scale2_scores_key])
+             / np.array(result.result_dict[vifdiff_den_scale2_scores_key]))
+        )
+        result.result_dict[vifdiff_scale3_scores_key] = list(
+            (np.array(result.result_dict[vifdiff_num_scale3_scores_key])
+             / np.array(result.result_dict[vifdiff_den_scale3_scores_key]))
+        )
+
+        # validate
+        for feature in cls.DERIVED_ATOM_FEATURES:
+            assert cls.get_scores_key(feature) in result.result_dict
+
+        return result
+
 class PsnrFeatureExtractor(FeatureExtractor):
 
     TYPE = "PSNR_feature"

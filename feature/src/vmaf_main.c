@@ -127,6 +127,8 @@ fail_or_end_noref:
             ret = vif(read_frame, s, w, h, fmt);
         else if (!strcmp(app, "all"))
             ret = all(read_frame, s, w, h, fmt);
+        else if (!strcmp(app, "vifdiff"))
+            ret = vifdiff(read_frame, s, w, h, fmt);
         else
             ret = 2;
 
