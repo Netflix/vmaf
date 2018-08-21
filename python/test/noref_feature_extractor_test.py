@@ -7,7 +7,8 @@ import unittest
 
 from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor, \
     NiqeNorefFeatureExtractor, BrisqueNorefFeatureExtractor
-from vmaf.tools.testutil import set_default_576_324_videos_for_testing
+
+from testutil import set_default_576_324_videos_for_testing
 
 
 class NorefFeatureExtractorTest(unittest.TestCase):

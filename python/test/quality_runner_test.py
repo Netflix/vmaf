@@ -12,9 +12,9 @@ from vmaf.core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner,
     Vif2QualityRunner, BootstrapVmafQualityRunner, BaggingVmafQualityRunner, NiqeQualityRunner, \
     EnsembleVmafQualityRunner
 from vmaf.core.result_store import FileSystemResultStore
-from vmaf.tools.testutil import set_default_576_324_videos_for_testing, set_default_flat_1920_1080_videos_for_testing
 from vmaf.tools.stats import ListStats
 
+from testutil import set_default_576_324_videos_for_testing, set_default_flat_1920_1080_videos_for_testing
 
 class QualityRunnerTest(unittest.TestCase):
 
