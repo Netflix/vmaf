@@ -18,6 +18,7 @@ from vmaf.core.feature_extractor import SsimFeatureExtractor, MsSsimFeatureExtra
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
+
 class QualityRunner(Executor):
     """
     QualityRunner takes in a list of assets, and run quality assessment on
@@ -428,6 +429,7 @@ class VmafQualityRunner(QualityRunner):
         vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
 
+
 class EnsembleVmafQualityRunner(VmafQualityRunner):
 
     TYPE = 'EnsembleVMAF'
@@ -559,6 +561,7 @@ class EnsembleVmafQualityRunner(VmafQualityRunner):
         for ensemblevmaf_fassembler in ensemblevmaf_fassemblers:
             ensemblevmaf_fassembler.remove_results()
 
+
 class VmafPhoneQualityRunner(VmafQualityRunner):
 
     TYPE = 'VMAF_Phone'
@@ -575,6 +578,7 @@ class VmafPhoneQualityRunner(VmafQualityRunner):
     @staticmethod
     def _do_transform_score(kwargs):
         return True
+
 
 class VmafossExecQualityRunner(QualityRunner):
 
@@ -713,6 +717,7 @@ class VmafossExecQualityRunner(QualityRunner):
                 quality_result[self.get_feature_scores_key(feature)] = feature_scores[i_feature]
         return quality_result
 
+
 class SsimQualityRunner(QualityRunner):
 
     TYPE = 'SSIM'
@@ -761,6 +766,7 @@ class SsimQualityRunner(QualityRunner):
         vmaf_fassembler = self._get_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
 
+
 class MsSsimQualityRunner(QualityRunner):
 
     TYPE = 'MS_SSIM'
@@ -808,6 +814,7 @@ class MsSsimQualityRunner(QualityRunner):
 
         vmaf_fassembler = self._get_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
+
 
 class VmafSingleFeatureQualityRunner(QualityRunner):
 
@@ -860,39 +867,48 @@ class VmafSingleFeatureQualityRunner(QualityRunner):
         vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
 
+
 class VifQualityRunner(VmafSingleFeatureQualityRunner):
     TYPE = 'VIF'
     FEATURE_NAME = 'vif'
 
+
 class Vif2QualityRunner(VmafSingleFeatureQualityRunner):
     TYPE = 'VIF2'
     FEATURE_NAME = 'vif2'
+
 
 class Adm2QualityRunner(VmafSingleFeatureQualityRunner):
     TYPE = 'ADM2'
     # TYPE = 'DLM'
     FEATURE_NAME = 'adm2'
 
+
 class VifScale0QualityRunner(VmafSingleFeatureQualityRunner):
     TYPE = 'VIF_SCALE0'
     FEATURE_NAME = 'vif_scale0'
+
 
 class VifScale1QualityRunner(VmafSingleFeatureQualityRunner):
     TYPE = 'VIF_SCALE1'
     FEATURE_NAME = 'vif_scale1'
 
+
 class VifScale2QualityRunner(VmafSingleFeatureQualityRunner):
     TYPE = 'VIF_SCALE2'
     FEATURE_NAME = 'vif_scale2'
+
 
 class VifScale3QualityRunner(VmafSingleFeatureQualityRunner):
     TYPE = 'VIF_SCALE3'
     FEATURE_NAME = 'vif_scale3'
 
+
 class MotionQualityRunner(VmafSingleFeatureQualityRunner):
     TYPE = 'MOTION'
     # TYPE = 'TI'
     FEATURE_NAME = 'motion'
+
 
 class BootstrapVmafQualityRunner(VmafQualityRunner):
 
