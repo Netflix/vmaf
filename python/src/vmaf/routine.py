@@ -18,6 +18,7 @@ from vmaf.core.local_explainer import LocalExplainer
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
+
 def read_dataset(dataset, **kwargs):
 
     groundtruth_key = kwargs['groundtruth_key'] if 'groundtruth_key' in kwargs else None
@@ -176,6 +177,7 @@ def read_dataset(dataset, **kwargs):
 
     return assets
 
+
 def run_test_on_dataset(test_dataset, runner_class, ax,
                     result_store, model_filepath,
                     parallelize=True, fifo_mode=True,
@@ -299,6 +301,7 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
         ))
 
     return test_assets, results
+
 
 def print_matplotlib_warning():
     print "Warning: cannot import matplotlib, no picture displayed. " \
