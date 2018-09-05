@@ -1,12 +1,11 @@
 import unittest
 
 from vmaf.core.matlab_quality_runner import SpEEDMatlabQualityRunner, StrredQualityRunner
+from vmaf.tools.testutil import set_default_576_324_videos_for_testing
 from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.asset import Asset
 from vmaf.core.quality_runner import PsnrQualityRunner, VmafQualityRunner, VmafossExecQualityRunner
 from vmaf.core.result_store import FileSystemResultStore
-
-from testutil import set_default_576_324_videos_for_testing
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -144,6 +143,60 @@ class QualityRunnerTest(unittest.TestCase):
 
 
 @unittest.skipIf(not VmafExternalConfig.matlab_path(), "matlab not installed")
+class MatlabQualityRunnerTest(unittest.TestCase):
+
+    def tearDown(self):
+        if hasattr(self, 'runner'):
+            self.runner.remove_results()
+            pass
+
+    def setUp(self):
+        self.result_store = FileSystemResultStore()
+
+    def test_run_strrred_runner(self):
+        print 'test on running STRRED runner, no parallelization...'
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = StrredQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None
+        )
+        self.runner.run(parallelize=False)
+
+        results = self.runner.results
+
+        self.assertEqual(self.runner.VERSION, "F1.3-1.1")
+        self.assertAlmostEqual(results[0]['STRRED_feature_srred_score'], 3.0166328541666663, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_trred_score'], 7.338665770833333, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_score'], 22.336452104611016, places=4)
+        self.assertAlmostEqual(results[1]['STRRED_feature_srred_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[1]['STRRED_feature_trred_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[1]['STRRED_score'], 0.0, places=4)
+
+    def test_run_speed_matlab_runner(self):
+        print 'test on running SPEED Matlab runner, no parallelization...'
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = SpEEDMatlabQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None
+        )
+        self.runner.run(parallelize=True)
+
+        results = self.runner.results
+        self.assertAlmostEqual(results[0]['SpEED_Matlab_feature_sspeed_4_score'], 5.155523354166667, places=4)
+        self.assertAlmostEqual(results[0]['SpEED_Matlab_feature_tspeed_4_score'], 15.091642416666668, places=4)
+        self.assertAlmostEqual(results[0]['SpEED_Matlab_score'], 78.4927784076698, places=4)
+        self.assertAlmostEqual(results[1]['SpEED_Matlab_feature_sspeed_4_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[1]['SpEED_Matlab_feature_tspeed_4_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[1]['SpEED_Matlab_score'], 0.0, places=4)
+
+
+@unittest.skipIf(not VmafExternalConfig.matlab_path(), "matlab not installed")
 class ParallelMatlabQualityRunnerTest(unittest.TestCase):
 
     def tearDown(self):
@@ -155,7 +208,7 @@ class ParallelMatlabQualityRunnerTest(unittest.TestCase):
         self.result_store = FileSystemResultStore()
 
     def test_run_strrred_runner(self):
-        print 'test on running STRRED runner...'
+        print 'test on running STRRED runner, with parallelization...'
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = StrredQualityRunner(
@@ -168,16 +221,16 @@ class ParallelMatlabQualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertEqual(self.runner.VERSION, "F1.2-1.1")
-        self.assertAlmostEqual(results[0]['STRRED_feature_srred_score'], 3.0114681041666671, places=4)
-        self.assertAlmostEqual(results[0]['STRRED_feature_trred_score'], 7.3039486249999994, places=4)
-        self.assertAlmostEqual(results[0]['STRRED_score'], 21.995608318659482, places=4)
+        self.assertEqual(self.runner.VERSION, "F1.3-1.1")
+        self.assertAlmostEqual(results[0]['STRRED_feature_srred_score'], 3.0166328541666663, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_feature_trred_score'], 7.338665770833333, places=4)
+        self.assertAlmostEqual(results[0]['STRRED_score'], 22.336452104611016, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_srred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_feature_trred_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['STRRED_score'], 0.0, places=4)
 
     def test_run_speed_matlab_runner(self):
-        print 'test on running SPEED Matlab runner...'
+        print 'test on running SPEED Matlab runner, with parallelization...'
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = SpEEDMatlabQualityRunner(
