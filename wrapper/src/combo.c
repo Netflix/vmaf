@@ -34,6 +34,7 @@
 #include "adm_options.h"
 #include "combo.h"
 #include "debug.h"
+#include "psnr_tools.h"
 
 #ifdef MULTI_THREADING
 #include "common/blur_array.h"
