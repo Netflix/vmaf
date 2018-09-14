@@ -1,7 +1,7 @@
 import unittest
 
 from vmaf.core.matlab_quality_runner import SpEEDMatlabQualityRunner, StrredQualityRunner
-from vmaf.tools.testutil import set_default_576_324_videos_for_testing
+from testutil import set_default_576_324_videos_for_testing
 from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.asset import Asset
 from vmaf.core.quality_runner import PsnrQualityRunner, VmafQualityRunner, VmafossExecQualityRunner
