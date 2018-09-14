@@ -1,6 +1,13 @@
 # Change Log
 
+## (9/13/2018) [1.3.10]
+
+**New features:**
+- Remove sureal as a submodule to vmaf. sureal is now available through pip install.
+
 ## (8/7/2018) [1.3.9]
+
+**Fixed bugs:**
 - libvmaf: fix case where user defined read_frame() callback was being ignored.
 
 ## (6/21/2018) [1.3.8]
