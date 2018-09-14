@@ -4,4 +4,4 @@
 # A better way to run the unit tests is via a venv (which can be easily done with pygradle)
 
 #echo "Run tests in python/test..."
-PYTHONPATH=python/src:sureal/python/src python -m unittest discover -s python/test -p '*_test.py'
+PYTHONPATH=python/src python -m unittest discover -s python/test -p '*_test.py'
