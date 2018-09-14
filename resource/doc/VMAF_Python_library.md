@@ -214,7 +214,7 @@ For example:
 
 ### Using `ffmpeg2vmaf`
 
-There is also an `ffmpeg2vmaf` command line tool which can compare any file format decodable by `ffmpeg`. `ffmpeg2vmaf` essentially pipes FFmpeg-decoded videos to VMAF. Note that you need a recent version of `ffmpeg` installed (for the first time, run the command line, follow the prompted instruction to specify the path of `ffmpeg`). See [this](https://ffmpeg.org/ffmpeg-filters.html#libvmaf) section for details.
+There is also an `ffmpeg2vmaf` command line tool which can compare any file format decodable by `ffmpeg`. `ffmpeg2vmaf` essentially pipes FFmpeg-decoded videos to VMAF. Note that you need a recent version of `ffmpeg` installed (for the first time, run the command line, follow the prompted instruction to specify the path of `ffmpeg`). 
 
 ```
 ./ffmpeg2vmaf quality_width quality_height reference_path distorted_path \
@@ -223,7 +223,7 @@ There is also an `ffmpeg2vmaf` command line tool which can compare any file form
 
 Here `quality_width` and `quality_height` are the width and height the reference and distorted videos are scaled to before VMAF calculation. This is different from `run_vmaf`'s  `width` and `height`, which specify the raw YUV's width and height instead. The input to `ffmpeg2vmaf` must already have such information specified in the header so that they are FFmpeg-decodable.
 
-Note that with `libvmaf` as a filter in FFmpeg becoming available, `ffmpeg2vmaf` is no longer the preferred way to pass in compressed video streams to VMAF.
+Note that with `libvmaf` as a filter in FFmpeg becoming available (see [this](https://ffmpeg.org/ffmpeg-filters.html#libvmaf) section for details), `ffmpeg2vmaf` is no longer the preferred way to pass in compressed video streams to VMAF. 
 
 ## Advanced Usage
 
