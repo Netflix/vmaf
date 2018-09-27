@@ -73,7 +73,7 @@ public:
         }
         return sum / l.size();
     }
-    double min()
+    double minimum()
     {
         _assert_size();
         double min_ = l[0];
@@ -146,7 +146,7 @@ enum ScoreAggregateMethod
 {
     MEAN,
     HARMONIC_MEAN,
-    MIN
+    MINIMUM
 };
 
 class Result
@@ -159,9 +159,9 @@ public:
     double get_score(const std::string &key)
     {
         StatVector list = get_scores(key);
-        if (score_aggregate_method == ScoreAggregateMethod::MIN)
+        if (score_aggregate_method == ScoreAggregateMethod::MINIMUM)
         {
-            return list.min();
+            return list.minimum();
         }
         else if (score_aggregate_method == ScoreAggregateMethod::HARMONIC_MEAN)
         {
