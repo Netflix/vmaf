@@ -946,7 +946,7 @@ double RunVmaf(const char* fmt, int width, int height,
 
     if (pool_method != NULL && (strcmp(pool_method, "min")==0))
     {
-        result.setScoreAggregateMethod(ScoreAggregateMethod::MIN);
+        result.setScoreAggregateMethod(ScoreAggregateMethod::MINIMUM);
     }
     else if (pool_method != NULL && (strcmp(pool_method, "harmonic_mean")==0))
     {
