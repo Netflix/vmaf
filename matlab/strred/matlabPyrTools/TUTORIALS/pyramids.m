@@ -502,7 +502,7 @@ res = reconWpyr(pyr,pind);
 imStats(sig,res);
 
 %% Now for 2D, we use separable filters.  There are 4 ways to apply the two 
-%% filters to the input image (followed by the relavent subsampling operation):
+%% filters to the input image (followed by the relevant subsampling operation):
 %%   (1) lowpass in both x and y
 %%   (2) lowpass in x and highpass in y 
 %%   (3) lowpass in y and highpass in x

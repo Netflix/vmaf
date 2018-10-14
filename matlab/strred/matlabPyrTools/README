@@ -34,9 +34,9 @@ platforms.  Source code is included in the MEX directory, as well as
 Make files.  I've included pre-compiled versions for a number of
 platforms (Solaris,Linux,Mac,Windows).  To make sure these are in your
 matlab path, you can do *one* of the following:
-  1) Create a symbolic link (or macintosh "alias") for the relavent files 
+  1) Create a symbolic link (or macintosh "alias") for the relevant files 
      in the main matlabPyrTools directory,   or
-  2) Copy the relavent files into the main matlabPyrTools directory, or 
+  2) Copy the relevant files into the main matlabPyrTools directory, or 
   3) Put the MEX subdirectory in your matlab path.
 
 Some example script files showing usage of the code are in the

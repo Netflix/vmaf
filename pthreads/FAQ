@@ -64,7 +64,7 @@ of the library that use exceptions as part of the thread
 cancelation and cleanup implementation, and one that uses
 setjmp/longjmp instead).
 
-There is some contension amongst POSIX threads experts as
+There is some contention amongst POSIX threads experts as
 to how POSIX threads cancelation and exit should work
 with languages that include exceptions and handlers, e.g.
 C++ and even C (Microsoft's Structured Exceptions).
