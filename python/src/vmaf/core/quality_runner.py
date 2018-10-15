@@ -29,7 +29,7 @@ class QualityRunner(Executor):
 
     There are two ways to create a derived class of QualityRunner:
 
-    a) Call a command-line exectuable directly, very similar to what
+    a) Call a command-line executable directly, very similar to what
     FeatureExtractor does. You must:
         1) Override TYPE and VERSION
         2) Override _generate_result(self, asset), which call a

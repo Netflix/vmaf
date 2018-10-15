@@ -197,7 +197,7 @@ of the library that use exceptions as part of the thread
 cancelation and exit implementation. The default version uses
 setjmp/longjmp.
 
-There is some contension amongst POSIX threads experts as
+There is some contention amongst POSIX threads experts as
 to how POSIX threads cancelation and exit should work
 with languages that use exceptions, e.g. C++ and even C
 (Microsoft's Structured Exceptions).
