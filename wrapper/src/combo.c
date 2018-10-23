@@ -663,7 +663,10 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
 
     // start threads
     int t;
-    pthread_t thread[combo_thread_data.thread_count];
+	int numThread = combo_thread_data.thread_count;
+	pthread_t* thread = (pthread_t*)calloc(numThread, sizeof(pthread_t));
+	memset(thread, 0, numThread * sizeof(pthread_t));
+
     for (t=0; t < combo_thread_data.thread_count; t++)
     {
         pthread_create(&thread[t], &attr, combo_threadfunc, &combo_thread_data);
@@ -687,6 +690,8 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
     free_blur_buf(&combo_thread_data.ref_buf_array);
     free_blur_buf(&combo_thread_data.dis_buf_array);
     free_blur_buf(&combo_thread_data.blur_buf_array);
+
+	free(thread);
     return 0;
 }
 
