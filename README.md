@@ -6,6 +6,7 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ## News
 
+- (10/25/18) We have published our [second techblog](https://medium.com/netflix-techblog/vmaf-the-journey-continues-44b51ee9ed12) on VMAF with recommendations on best practices.
 - (9/13/18) [SUREAL](https://github.com/Netflix/sureal) is no longer a submodule to VMAF. 
 - (6/19/18) Each VMAF prediction score now comes with a 95% [confidence interval (CI)](resource/doc/conf_interval.md), which quantifies the level of confidence that the prediction lies within the interval.
 - (6/19/18) Added a [4K VMAF model](resource/doc/models.md/#predict-quality-on-a-4ktv-screen-at-15h) under `model/vmaf_4k_v0.6.1.pkl`, which predicts the subjective quality of video displayed on a 4KTV and viewed from the distance of 1.5X the display height.
