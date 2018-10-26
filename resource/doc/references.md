@@ -8,7 +8,7 @@ VMAF is an on-going project. It has gone through substantial updates since its i
   - [Toward a practical perceptual video quality metric](https://medium.com/netflix-techblog/toward-a-practical-perceptual-video-quality-metric-653f208b9652), June 6, 2016 -- tech blog with VMAF's open sourcing on Github.
   - [Dynamic Optimizer — a perceptual video encoding optimization framework](https://medium.com/netflix-techblog/dynamic-optimizer-a-perceptual-video-encoding-optimization-framework-e19f1e3a277f), March 6, 2018 -- tech blog describing how VMAF is used in an codec-agnostic encoding optimization framework.
   - [Optimized shot-based encodes: now streaming!](https://medium.com/netflix-techblog/optimized-shot-based-encodes-now-streaming-4b9464204830), March 9, 2018 -- tech blog describing systems design for the Dynamic Optimizer.
-  - [VMAF: The Journey Continues](https://medium.com/netflix-techblog/vmaf-the-journey-continues-44b51ee9ed12), October 25, 2018 -- second techblog on VMAF focus on new features and best practices.
+  - [VMAF: the journey continues](https://medium.com/netflix-techblog/vmaf-the-journey-continues-44b51ee9ed12), October 25, 2018 -- second techblog on VMAF focus on new features and best practices.
 
 ### Academic Papers
 
