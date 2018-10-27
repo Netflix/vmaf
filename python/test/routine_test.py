@@ -226,6 +226,18 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(test_assets[2].groundtruth, 100, places=4)
         self.assertAlmostEqual(test_assets[3].groundtruth, 80, places=4)
 
+    def test_test_on_dataset_split_test_indices_for_perf_ci(self):
+        test_dataset = import_python_file(
+            VmafConfig.test_resource_path('dataset_sample.py'))
+        test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
+                        None, None,
+                        parallelize=True,
+                        aggregate_method=None,
+                        split_test_indices_for_perf_ci=True,
+                        n_splits_test_indices=10)
+
+        self.assertAlmostEqual(results[0]['VMAF_score'], 99.142659046424384, places=4)
+
     def test_test_on_dataset_raw(self):
         test_dataset = import_python_file(
             VmafConfig.test_resource_path('raw_dataset_sample.py'))

@@ -149,6 +149,59 @@ class TrainTestModelTest(unittest.TestCase):
         result = model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.23294283650716496, places=4)
 
+    def test_train_across_test_splits_ci_libsvmnusvr(self):
+
+        print "test libsvmnusvr, across_test_splits_ci..."
+
+        xs = LibsvmNusvrTrainTestModel.get_xs_from_results(self.features)
+        ys = LibsvmNusvrTrainTestModel.get_ys_from_results(self.features)
+        xys = LibsvmNusvrTrainTestModel.get_xys_from_results(self.features)
+
+        self.model = LibsvmNusvrTrainTestModel({'norm_type': 'normalize'}, None)
+        self.model.train(xys)
+
+        ys_label_pred = self.model.predict(xs)['ys_label_pred']
+        ys_label = ys['label']
+
+        n_splits_test_indices = 3
+
+        stats = self.model.get_stats(ys_label, ys_label_pred,
+                                     split_test_indices_for_perf_ci=True,
+                                     n_splits_test_indices=n_splits_test_indices)
+
+        # check that the performance metric distributions have been passed out
+        assert 'SRCC_across_test_splits_distribution' in stats, 'SRCC across_test_splits distribution non-existing.'
+        assert 'PCC_across_test_splits_distribution' in stats, 'PCC across_test_splits distribution non-existing.'
+        assert 'RMSE_across_test_splits_distribution' in stats, 'RMSE across_test_splits distribution non-existing.'
+
+        # check that the length of the perf metrc lists is equal to n_splits_test_indices
+        assert len(stats['SRCC_across_test_splits_distribution']) == n_splits_test_indices, \
+            'SRCC list is not equal to the number of splits specified.'
+        assert len(stats['PCC_across_test_splits_distribution']) == n_splits_test_indices, \
+            'PCC list is not equal to the number of splits specified.'
+        assert len(stats['RMSE_across_test_splits_distribution']) == n_splits_test_indices, \
+            'RMSE list is not equal to the number of splits specified.'
+
+        self.assertAlmostEqual(stats['SRCC_across_test_splits_distribution'][0], 0.391304347826087, places=4)
+        self.assertAlmostEqual(stats['SRCC_across_test_splits_distribution'][1], 0.8983050847457626, places=4)
+        self.assertAlmostEqual(stats['SRCC_across_test_splits_distribution'][2], 0.9478260869565218, places=4)
+
+        self.assertAlmostEqual(stats['PCC_across_test_splits_distribution'][0], 0.554154433495891, places=4)
+        self.assertAlmostEqual(stats['PCC_across_test_splits_distribution'][1], 0.817203617522247, places=4)
+        self.assertAlmostEqual(stats['PCC_across_test_splits_distribution'][2], 0.5338890441054945, places=4)
+
+        self.assertAlmostEqual(stats['RMSE_across_test_splits_distribution'][0], 0.6943573719335835, places=4)
+        self.assertAlmostEqual(stats['RMSE_across_test_splits_distribution'][1], 0.5658403884750773, places=4)
+        self.assertAlmostEqual(stats['RMSE_across_test_splits_distribution'][2], 0.5997800884581888, places=4)
+
+        stats_no_test_split = self.model.get_stats(ys_label, ys_label_pred,
+                                                  split_test_indices_for_perf_ci=False)
+
+        # check that the performance metric distributions are not in these stats dict
+        assert 'SRCC_across_test_splits_distribution' not in stats_no_test_split, 'SRCC across_test_splits distribution should not exist.'
+        assert 'PCC_across_test_splits_distribution' not in stats_no_test_split, 'PCC across_test_splits distribution should not exist.'
+        assert 'RMSE_across_test_splits_distribution' not in stats_no_test_split, 'RMSE across_test_splits distribution should not exist.'
+
     def test_train_predict_randomforest(self):
 
         print "test random forest train and predict..."
