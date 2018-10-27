@@ -1,5 +1,6 @@
 import os
 import unittest
+import numpy as np
 
 from vmaf.config import VmafConfig
 from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
@@ -128,6 +129,42 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         self.assertAlmostEqual(loaded_model.evaluate_stddev(xs)['mean_stddev'], 0.39781075130382537)
         self.assertAlmostEqual(self.model.evaluate_stddev(xs)['mean_ci95_low'], 3.3976996507329407)
         self.assertAlmostEqual(self.model.evaluate_stddev(xs)['mean_ci95_high'], 4.7546572275110091)
+
+    def test_train_across_model_stats_bootstraplibsvmnusvr(self):
+
+        print "test bootstrap libsvmnusvr gather across model stats..."
+
+        xs = BootstrapLibsvmNusvrTrainTestModel.get_xs_from_results(self.features)
+        ys = BootstrapLibsvmNusvrTrainTestModel.get_ys_from_results(self.features)
+        xys = BootstrapLibsvmNusvrTrainTestModel.get_xys_from_results(self.features)
+
+        self.model = BootstrapLibsvmNusvrTrainTestModel({'norm_type': 'normalize'}, None)
+        self.model.train(xys)
+        self.model.to_file(self.model_filename)
+
+        model_predictions = self.model.predict(xs)
+        ys_label_pred = model_predictions['ys_label_pred']
+        ys_label_pred_all_models = model_predictions['ys_label_pred_all_models']
+        ys_label = ys['label']
+        stats = self.model.get_stats(ys_label, ys_label_pred,
+                                     ys_label_pred_all_models=ys_label_pred_all_models)
+
+        # check that across model stats are generated
+        assert 'SRCC_across_model_distribution' in stats \
+               and 'PCC_across_model_distribution' in stats \
+               and 'RMSE_across_model_distribution' in stats
+
+        # check dimensions
+        assert len(stats['SRCC_across_model_distribution']) == np.shape(ys_label_pred_all_models)[0] \
+            and len(stats['PCC_across_model_distribution']) == np.shape(ys_label_pred_all_models)[0] \
+            and len(stats['RMSE_across_model_distribution']) == np.shape(ys_label_pred_all_models)[0]
+
+        # check case without across_model_stats
+        stats_not_across_model = self.model.get_stats(ys_label, ys_label_pred)
+
+        assert 'SRCC_across_model_distribution' not in stats_not_across_model \
+               and 'PCC_across_model_distribution' not in stats_not_across_model \
+               and 'RMSE_across_model_distribution' not in stats_not_across_model
 
     def test_train_predict_bootstrap_randomforest(self):
 

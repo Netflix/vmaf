@@ -14,7 +14,7 @@ __license__ = "Apache, Version 2.0"
 class BasicResult(object):
     """
     Has some basic functions, but don't need asset or executor_id. To be used by
-    FeatureAssemler, which is not an Executor.
+    FeatureAssembler, which is not an Executor.
     """
     def __init__(self, asset, result_dict):
         self.asset = asset
@@ -49,17 +49,37 @@ class BasicResult(object):
         a corresponding list of scores that uses key '*_scores'. For example,
         if the key is 'VMAF_score', there must exist a corresponding key
         'VMAF_scores'.
+        The list of scores (when present) should also follow the convention
+        that IF multiple models are present (e.g. in bootstrapping),
+        the first dimension will be the model and the
+        second dimension the video frames.
         """
         if re.search(r"_score$", key):
             scores_key = self.get_scores_key_from_score_key(key)
             if scores_key in self.result_dict:
                 scores = self.result_dict[scores_key]
-                return self.score_aggregate_method(scores)
+                # if scores are in a list, wrap in an array to be consistent
+                if type(scores) is list:
+                    scores = np.asarray(scores)
+                # dimension assertion: scores should be either 1-D (one prediction per frame) or 2-D (single/multiple predictions per frame)
+                assert scores.ndim <= 2, 'Per frame score aggregation is not well-defined; scores cannot be saved in a N-D array with N > 2.'
+                # check if there are more than one predictions per frame
+                if scores.ndim == 2:
+                    if scores.shape[0] > 1 and scores.shape[1] > 1:
+                        # a scores "piece" is the single prediction (out of multiple) for each frame
+                        return [self.score_aggregate_method(scores_piece) for scores_piece in scores]
+                    else:
+                        # just one prediction per frame, but (for some reason) was saved as a 2-D array
+                        return self.score_aggregate_method(scores)
+                else:
+                    # just one prediction per frame
+                    return self.score_aggregate_method(scores)
         raise KeyError(error)
 
     def get_ordered_list_scores_key(self):
         # e.g. ['VMAF_scores', 'VMAF_vif_scores']
-        list_scores_key = filter(lambda key: re.search(r"_scores$", key),
+        # filter out scores that are > 1D (e.g. when having multiple models in bootstrapping)
+        list_scores_key = filter(lambda key: re.search(r"_scores$", key) and np.asarray(self.result_dict[key]).ndim == 1,
                                  self.result_dict.keys())
         list_scores_key = sorted(list_scores_key)
         return list_scores_key

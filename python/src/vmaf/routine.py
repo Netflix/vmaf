@@ -263,12 +263,14 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
         predictions_stddev = map(lambda result: result[runner_class.get_stddev_score_key()], results)
         predictions_ci95_low = map(lambda result: result[runner_class.get_ci95_low_score_key()], results)
         predictions_ci95_high = map(lambda result: result[runner_class.get_ci95_high_score_key()], results)
+        predictions_all_models = map(lambda result: result[runner_class.get_all_models_score_key()], results)
         stats = model_type.get_stats(groundtruths, predictions,
                                      ys_label_raw=raw_grountruths,
                                      ys_label_pred_bagging=predictions_bagging,
                                      ys_label_pred_stddev=predictions_stddev,
                                      ys_label_pred_ci95_low=predictions_ci95_low,
                                      ys_label_pred_ci95_high=predictions_ci95_high,
+                                     ys_label_pred_all_models=predictions_all_models,
                                      ys_label_stddev=groundtruths_std)
     except:
         stats = model_type.get_stats(groundtruths, predictions,
@@ -276,6 +278,13 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
                                      ys_label_stddev=groundtruths_std)
 
     print 'Stats on testing data: {}'.format(model_type.format_stats_for_print(stats))
+
+    # printing stats if multiple models are present
+    if 'SRCC_across_model_distribution' in stats \
+            and 'PCC_across_model_distribution' in stats \
+            and 'RMSE_across_model_distribution' in stats:
+        print 'Stats on testing data (across multiple models, using all test indices): {}'.format(
+            model_type.format_across_model_stats_for_print(model_type.extract_across_model_stats(stats)))
 
     if ax is not None:
         content_ids = map(lambda asset: asset.content_id, test_assets)

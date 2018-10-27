@@ -47,6 +47,33 @@ class RegressorMixin(object):
                  'ys_label': list(ys_label),
                  'ys_label_pred': list(ys_label_pred)}
 
+        # create perf metric distributions, if multiple predictions are passed in as kwargs
+        # spearman distribution for now
+        if 'ys_label_pred_all_models' in kwargs:
+
+            ys_label_pred_all_models = kwargs['ys_label_pred_all_models']
+            # need to revert the list of lists, so that the outer list has the predictions for each model separately
+            # ys_label_pred_all_models = np.array(ys_label_pred_all_models).T.tolist()
+
+            srcc_all_models = []
+            pcc_all_models = []
+            rmse_all_models = []
+
+            for ys_label_pred_some_model in ys_label_pred_all_models:
+                srcc_some_model = SrccPerfMetric(ys_label, ys_label_pred_some_model) \
+                    .evaluate(enable_mapping=True)['score']
+                pcc_some_model = PccPerfMetric(ys_label, ys_label_pred_some_model) \
+                    .evaluate(enable_mapping=True)['score']
+                rmse_some_model = RmsePerfMetric(ys_label, ys_label_pred_some_model) \
+                    .evaluate(enable_mapping=True)['score']
+                srcc_all_models.append(srcc_some_model)
+                pcc_all_models.append(pcc_some_model)
+                rmse_all_models.append(rmse_some_model)
+
+            stats['SRCC_across_model_distribution'] = srcc_all_models
+            stats['PCC_across_model_distribution'] = pcc_all_models
+            stats['RMSE_across_model_distribution'] = rmse_all_models
+
         ys_label_raw = kwargs['ys_label_raw'] if 'ys_label_raw' in kwargs else None
 
         if ys_label_raw is not None:
@@ -109,6 +136,29 @@ class RegressorMixin(object):
             else:
                 return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f})'. \
                     format(srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
+
+    @staticmethod
+    def format_across_model_stats_for_print(stats):
+        if stats is None:
+            return '(Invalid Stats)'
+        else:
+            return '(SRCC: {srcc:.3f}+/-{srcc_ci:.3f}, PCC: {pcc:.3f}+/-{pcc_ci:.3f}, RMSE: {rmse:.3f})+/-{rmse_ci:.3f}'. \
+                format(srcc=stats['SRCC'], srcc_ci=stats['SRCC_across_model_ci'],
+                       pcc=stats['PCC'], pcc_ci=stats['PCC_across_model_ci'],
+                       rmse=stats['RMSE'], rmse_ci=stats['RMSE_across_model_ci'], )
+
+    @staticmethod
+    def extract_across_model_stats(stats):
+        if 'SRCC_across_model_distribution' in stats \
+                and 'PCC_across_model_distribution' in stats\
+                and 'RMSE_across_model_distribution' in stats:
+            srcc_across_model_ci = 1.96 * np.std(stats['SRCC_across_model_distribution'])
+            pcc_across_model_ci = 1.96 * np.std(stats['PCC_across_model_distribution'])
+            rmse_across_model_ci = 1.96 * np.std(stats['RMSE_across_model_distribution'])
+            stats['SRCC_across_model_ci'] = srcc_across_model_ci
+            stats['PCC_across_model_ci'] = pcc_across_model_ci
+            stats['RMSE_across_model_ci'] = rmse_across_model_ci
+        return stats
 
     @staticmethod
     @deprecated
@@ -1180,7 +1230,8 @@ class BootstrapMixin(object):
             ys_label_pred_stddev = np.std(ys_2d, axis=0)
             ys_label_pred_ci95_low = np.percentile(ys_2d, 2.5, axis=0)
             ys_label_pred_ci95_high = np.percentile(ys_2d, 97.5, axis=0)
-            return {'ys_label_pred': ys_label_pred,
+            return {'ys_label_pred_all_models': ys_2d,
+                    'ys_label_pred': ys_label_pred,
                     'ys_label_pred_bagging': ys_label_pred_bagging,
                     'ys_label_pred_stddev': ys_label_pred_stddev,
                     'ys_label_pred_ci95_low': ys_label_pred_ci95_low,
