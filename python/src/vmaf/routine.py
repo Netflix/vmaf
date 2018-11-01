@@ -365,7 +365,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
 
     model = model_class(model_param_dict, logger)
 
-    model.train(train_xys)
+    model.train(train_xys, **kwargs)
 
     # append additional information to model before saving, so that
     # VmafQualityRunner can read and process

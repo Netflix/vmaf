@@ -247,6 +247,7 @@ class ClassifierMixin(object):
         else:
             assert False, 'Unknow type: {} for get_objective_score().'.format(type)
 
+
 class TrainTestModel(TypeVersionEnabled):
 
     __metaclass__ = ABCMeta
@@ -432,7 +433,7 @@ class TrainTestModel(TypeVersionEnabled):
         xys_2d = self._normalize_xys(xys_2d)
         return xys_2d
 
-    def train(self, xys):
+    def train(self, xys, **kwargs):
         xys_2d = self._preproc_train(xys)
         model = self._train(self.param_dict, xys_2d)
         self.model = model
@@ -1075,7 +1076,7 @@ class BootstrapMixin(object):
 
     DEFAULT_NUM_MODELS = 100
 
-    def train(self, xys):
+    def train(self, xys, **kwargs):
         # override TrainTestModel.train()
         xys_2d = self._preproc_train(xys)
         num_models = self._get_num_models()
@@ -1230,7 +1231,7 @@ class ResidueBootstrapMixin(BootstrapMixin):
 
     MIXIN_VERSION = 'RB0.0.1'
 
-    def train(self, xys):
+    def train(self, xys, **kwargs):
         # override TrainTestModel.train()
         xys_2d = self._preproc_train(xys)
         num_models = self._get_num_models()
