@@ -1122,22 +1122,27 @@ class BootstrapMixin(object):
         ys_label_pred = self.denormalize_ys(ys_label_pred)
 
         # rest models: bagging (bootstrap aggregation)
-        ys_list = []
-        for model_ in models[1:]:
-            ys = self._predict(model_, xs_2d)
-            ys_list.append(ys)
-        ys_2d = np.vstack(ys_list)
-        ys_2d = self.denormalize_ys(ys_2d)
-        ys_label_pred_bagging = np.mean(ys_2d, axis=0)
-        ys_label_pred_stddev = np.std(ys_2d, axis=0)
-        ys_label_pred_ci95_low = np.percentile(ys_2d, 2.5, axis=0)
-        ys_label_pred_ci95_high = np.percentile(ys_2d, 97.5, axis=0)
-        return {'ys_label_pred': ys_label_pred,
-                'ys_label_pred_bagging': ys_label_pred_bagging,
-                'ys_label_pred_stddev': ys_label_pred_stddev,
-                'ys_label_pred_ci95_low': ys_label_pred_ci95_low,
-                'ys_label_pred_ci95_high': ys_label_pred_ci95_high,
-                }
+        # first check if there are any bootstrapped models
+        if num_models > 1:
+            ys_list = []
+            for model_ in models[1:]:
+                ys = self._predict(model_, xs_2d)
+                ys_list.append(ys)
+            ys_2d = np.vstack(ys_list)
+            ys_2d = self.denormalize_ys(ys_2d)
+            ys_label_pred_bagging = np.mean(ys_2d, axis=0)
+            ys_label_pred_stddev = np.std(ys_2d, axis=0)
+            ys_label_pred_ci95_low = np.percentile(ys_2d, 2.5, axis=0)
+            ys_label_pred_ci95_high = np.percentile(ys_2d, 97.5, axis=0)
+            return {'ys_label_pred': ys_label_pred,
+                    'ys_label_pred_bagging': ys_label_pred_bagging,
+                    'ys_label_pred_stddev': ys_label_pred_stddev,
+                    'ys_label_pred_ci95_low': ys_label_pred_ci95_low,
+                    'ys_label_pred_ci95_high': ys_label_pred_ci95_high,
+                    }
+        else:
+            return {'ys_label_pred': ys_label_pred,
+                    }
 
     def evaluate_stddev(self, xs):
         prediction = self.predict(xs)
