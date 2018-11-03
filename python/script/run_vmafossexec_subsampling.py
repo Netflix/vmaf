@@ -38,6 +38,7 @@ def run_vmafossexec_with_subsample(dataset_filepath, subsample):
 
     return elapsed_time, srcc, pcc, rmse
 
+
 def main():
 
     subsamples = [1, 2, 4, 8, 16, 32, 64, 128]
@@ -59,6 +60,7 @@ def main():
     plt.tight_layout()
 
     DisplayConfig.show()
+
 
 if __name__ == '__main__':
     main()

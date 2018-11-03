@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+import matplotlib
+matplotlib.use('Agg')
+
 import os
 import sys
 
@@ -18,10 +21,13 @@ POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'pe
 
 SUBJECTIVE_MODELS = ['DMOS (default)', 'DMOS_MLE', 'MLE', 'MOS', 'SR_DMOS', 'SR_MOS', 'ZS_SR_DMOS', 'ZS_SR_MOS']
 
+
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) + \
-        " train_dataset_filepath feature_param_filepath model_param_filepath output_model_filepath [--subj-model subjective_model] [--cache-result] [--parallelize]\n"
+        " train_dataset_filepath feature_param_filepath model_param_filepath output_model_filepath " \
+        "[--subj-model subjective_model] [--cache-result] [--parallelize] [--save-plot plot_dir]\n"
     print "subjective_model:\n\t" + "\n\t".join(SUBJECTIVE_MODELS) + "\n"
+
 
 def main():
 
@@ -67,6 +73,8 @@ def main():
     except Exception as e:
         print "Error: " + str(e)
         return 1
+
+    save_plot_dir = get_cmd_option(sys.argv, 3, len(sys.argv), '--save-plot')
 
     if cache_result:
         result_store = FileSystemResultStore()
@@ -116,7 +124,12 @@ def main():
         # ax.set_ylim([-10, 110])
 
         plt.tight_layout()
-        DisplayConfig.show()
+
+        if save_plot_dir is None:
+            DisplayConfig.show()
+        else:
+            DisplayConfig.show(write_to_dir=save_plot_dir)
+
     except ImportError:
         print_matplotlib_warning()
         train_test_vmaf_on_dataset(train_dataset=train_dataset, test_dataset=None,
@@ -142,6 +155,7 @@ def main():
                                    )
 
     return 0
+
 
 if __name__ == '__main__':
     ret = main()
