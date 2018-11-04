@@ -13,6 +13,7 @@ from vmaf.tools.sigproc import fastDeLong, calpvalue, significanceHM, \
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
+
 class PerfMetric(TypeVersionEnabled):
 
     __metaclass__ = ABCMeta
@@ -52,6 +53,7 @@ class PerfMetric(TypeVersionEnabled):
         assert 'score' in result
         return result
 
+
 class RawScorePerfMetric(PerfMetric):
     """
     Groundtruth is a list of raw scores (list of list of real numbers)
@@ -63,6 +65,7 @@ class RawScorePerfMetric(PerfMetric):
         # require the raw scores to be more than 1
         for groundtruth in self.groundtruths:
             assert hasattr(groundtruth, '__len__') and len(groundtruth) > 1
+
 
 class AucPerfMetric(RawScorePerfMetric):
     """
@@ -346,6 +349,7 @@ class AucPerfMetric(RawScorePerfMetric):
 
         return result
 
+
 class ResolvingPowerPerfMetric(RawScorePerfMetric):
     """
     The method is described in the paper:
@@ -591,6 +595,7 @@ class ResolvingPowerPerfMetric(RawScorePerfMetric):
         result['score'] = res_pow_95
         return result
 
+
 class AggrScorePerfMetric(PerfMetric):
     """
     Groundtruth is a list of aggregate scores (list of real numbers)
@@ -634,6 +639,7 @@ class AggrScorePerfMetric(PerfMetric):
 
         return groundtruths_, predictions_
 
+
 class RmsePerfMetric(AggrScorePerfMetric):
 
     TYPE = "RMSE"
@@ -644,6 +650,7 @@ class RmsePerfMetric(AggrScorePerfMetric):
         rmse = np.sqrt(np.mean(np.power(np.array(groundtruths) - np.array(predictions), 2.0)))
         result = {'score': rmse}
         return result
+
 
 class SrccPerfMetric(AggrScorePerfMetric):
 
@@ -657,6 +664,7 @@ class SrccPerfMetric(AggrScorePerfMetric):
         result = {'score': srcc}
         return result
 
+
 class PccPerfMetric(AggrScorePerfMetric):
 
     TYPE = "PCC"
@@ -668,6 +676,7 @@ class PccPerfMetric(AggrScorePerfMetric):
         pcc, _ = scipy.stats.pearsonr(groundtruths, predictions)
         result = {'score': pcc}
         return result
+
 
 class KendallPerfMetric(AggrScorePerfMetric):
 
