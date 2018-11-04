@@ -15,7 +15,7 @@ The static library built is at `wrapper/libvmaf.a`. To install the library, run:
 sudo make install
 ```
 
-This copies the library header `libvmaf.h` under `usr/local/include`, library `libvmaf.a `under `user/local/lib` and all the model files under `usr/local/share`. You can use the header `libvmaf.h` in your program. It contains an API which can be called from any C/C++ program:
+This copies the library header `libvmaf.h` under `usr/local/include`, library `libvmaf.a `under `usr/local/lib` and all the model files under `usr/local/share`. You can use the header `libvmaf.h` in your program. It contains an API which can be called from any C/C++ program:
 
 ```
 int compute_vmaf(double* vmaf_score, char* fmt, int width, int height, 
