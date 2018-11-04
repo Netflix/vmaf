@@ -14,6 +14,7 @@ from vmaf.core.train_test_model import TrainTestModel, LibsvmNusvrTrainTestModel
     BootstrapLibsvmNusvrTrainTestModel
 from vmaf.core.feature_extractor import SsimFeatureExtractor, MsSsimFeatureExtractor, \
     VmafFeatureExtractor
+from vmaf.core.noref_feature_extractor import BrisqueNorefFeatureExtractor
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"

@@ -850,6 +850,8 @@ class SklearnRandomForestTrainTestModel(TrainTestModel, RegressorMixin):
             del model_param_['score_clip']
         if 'custom_clip_0to1_map' in model_param_:
             del model_param_['custom_clip_0to1_map']
+        if 'num_models' in model_param_:
+            del model_param_['num_models']
 
         from sklearn import ensemble
         model = ensemble.RandomForestRegressor(
@@ -864,6 +866,7 @@ class SklearnRandomForestTrainTestModel(TrainTestModel, RegressorMixin):
         # directly call sklearn's model's predict() function
         ys_label_pred = model.predict(xs_2d)
         return ys_label_pred
+
 
 class SklearnExtraTreesTrainTestModel(TrainTestModel, RegressorMixin):
 
@@ -888,6 +891,8 @@ class SklearnExtraTreesTrainTestModel(TrainTestModel, RegressorMixin):
             del model_param_['score_clip']
         if 'custom_clip_0to1_map' in model_param_:
             del model_param_['custom_clip_0to1_map']
+        if 'num_models' in model_param_:
+            del model_param_['num_models']
 
         from sklearn import ensemble
         model = ensemble.ExtraTreesRegressor(
