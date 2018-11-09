@@ -868,6 +868,47 @@ class SklearnRandomForestTrainTestModel(TrainTestModel, RegressorMixin):
         return ys_label_pred
 
 
+class SklearnLinearRegressionTrainTestModel(TrainTestModel, RegressorMixin):
+
+    TYPE = 'LINEARREG'
+    VERSION = "0.1"
+
+    @classmethod
+    def _train(cls, model_param, xys_2d):
+        """
+        linear regression
+        https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html
+        :param model_param:
+        :param xys_2d:
+        :return:
+        """
+        model_param_ = model_param.copy()
+
+        # remove keys unassociated with sklearn
+        if 'norm_type' in model_param_:
+            del model_param_['norm_type']
+        if 'score_clip' in model_param_:
+            del model_param_['score_clip']
+        if 'custom_clip_0to1_map' in model_param_:
+            del model_param_['custom_clip_0to1_map']
+        if 'num_models' in model_param_:
+            del model_param_['num_models']
+
+        from sklearn import linear_model
+        model = linear_model.LinearRegression(
+            **model_param_
+        )
+        model.fit(xys_2d[:, 1:], np.ravel(xys_2d[:, 0]))
+
+        return model
+
+    @classmethod
+    def _predict(cls, model, xs_2d):
+        # directly call sklearn's model's predict() function
+        ys_label_pred = model.predict(xs_2d)
+        return ys_label_pred
+
+
 class SklearnExtraTreesTrainTestModel(TrainTestModel, RegressorMixin):
 
     TYPE = 'EXTRATREES'
