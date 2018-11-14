@@ -962,13 +962,33 @@ double RunVmaf(const char* fmt, int width, int height,
     double exec_fps = (double)num_frames_subsampled * n_subsample / (double)timer.elapsed();
     printf("Exec FPS: %f\n", exec_fps);
 
+    double aggregate_psnr = 0.0, aggregate_ssim = 0.0, aggregate_ms_ssim = 0.0;
+    if (result.has_scores("psnr"))
+        aggregate_psnr = result.get_score("psnr");
+    if (result.has_scores("ssim"))
+        aggregate_ssim = result.get_score("ssim");
+    if (result.has_scores("ms_ssim"))
+        aggregate_ms_ssim = result.get_score("ms_ssim");
+
     if (pool_method)
     {
         printf("VMAF score (%s) = %f\n", pool_method, aggregate_vmaf);
+        if (aggregate_psnr)
+            printf("PSNR score (%s) = %f\n", pool_method, aggregate_psnr);
+        if (aggregate_ssim)
+            printf("SSIM score (%s) = %f\n", pool_method, aggregate_ssim);
+        if (aggregate_ms_ssim)
+            printf("MS-SSIM score (%s) = %f\n", pool_method, aggregate_ms_ssim);
     }
     else // default
     {
         printf("VMAF score = %f\n", aggregate_vmaf);
+        if (aggregate_psnr)
+            printf("PSNR score = %f\n", aggregate_psnr);
+        if (aggregate_ssim)
+            printf("SSIM score = %f\n", aggregate_ssim);
+        if (aggregate_ms_ssim)
+            printf("MS-SSIM score = %f\n", aggregate_ms_ssim);
     }
 
     if (log_path != NULL && log_fmt !=NULL && (strcmp(log_fmt, "json")==0))
@@ -1034,6 +1054,12 @@ double RunVmaf(const char* fmt, int width, int height,
         auto info_node = xml_root.append_child("fyi");
         info_node.append_attribute("numOfFrames") = (int)num_frames_subsampled;
         info_node.append_attribute("aggregateVMAF") = aggregate_vmaf;
+        if (aggregate_psnr)
+            info_node.append_attribute("aggregatePSNR") = aggregate_psnr;
+        if (aggregate_ssim)
+            info_node.append_attribute("aggregateSSIM") = aggregate_ssim;
+        if (aggregate_ms_ssim)
+            info_node.append_attribute("aggregateMS_SSIM") = aggregate_ms_ssim;
         info_node.append_attribute("execFps") = exec_fps;
 
         auto frames_node = xml_root.append_child("frames");
