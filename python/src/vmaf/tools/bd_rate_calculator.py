@@ -7,6 +7,10 @@ __license__ = "Apache, Version 2.0"
 
 
 class BDrateCalculator(object):
+    """
+    BD rate calculator. Implementation validated against JCTVC-E137:
+    http://phenix.it-sudparis.eu/jct/doc_end_user/documents/5_Geneva/wg11/JCTVC-E137-v1.zip
+    """
 
     REJECTED_BD_RATE_NO_OVERLAP = -10000
     REJECTED_BD_RATE_NON_MONOTONIC = -20000
