@@ -450,10 +450,10 @@ class EnsembleVmafQualityRunner(VmafQualityRunner):
     def _get_ensemblevmaf_feature_assembler_instance(self, asset):
 
         # load TrainTestModel only to retrieve its 'feature_dict' extra info
-        all_models = self._load_model(asset)
+        ensem_models = self._load_model(asset)
         ensemblevmaf_fassemblers = []
 
-        for model_ind, model_now in enumerate(all_models):
+        for model_ind, model_now in enumerate(ensem_models):
 
             feature_dict = model_now.get_appended_info('feature_dict')
             if feature_dict is None:
@@ -490,7 +490,7 @@ class EnsembleVmafQualityRunner(VmafQualityRunner):
 
         # each model is associated with a Feature Assembler
         Nmodels = len(ensemblevmaf_fassemblers)
-        pred_result_all_models = []
+        pred_result_ensem_models = []
         result_dict = {}
 
         for model_ind in range(Nmodels):
@@ -515,7 +515,7 @@ class EnsembleVmafQualityRunner(VmafQualityRunner):
                                               disable_clip_score=disable_clip_score,
                                               enable_transform_score=enable_transform_score)
             result_dict = self._populate_result_dict(feature_result, pred_result, result_dict)
-            pred_result_all_models.append(pred_result)
+            pred_result_ensem_models.append(pred_result)
 
         assert Nmodels > 0
 
@@ -524,14 +524,14 @@ class EnsembleVmafQualityRunner(VmafQualityRunner):
         all_model_scores = np.zeros((Nmodels, Nframes))
         all_model_score_names = self.ensemblevmaf_get_scores_key(Nmodels)
         for model_ind in range(Nmodels):
-            result_dict[all_model_score_names[model_ind]] = pred_result_all_models[model_ind]['ys_pred']  # add quality score
-            all_model_scores[model_ind, :] = pred_result_all_models[model_ind]['ys_pred']
+            result_dict[all_model_score_names[model_ind]] = pred_result_ensem_models[model_ind]['ys_pred']  # add quality score
+            all_model_scores[model_ind, :] = pred_result_ensem_models[model_ind]['ys_pred']
 
         # perform prediction averaging (simple average for now)
-        pred_result_all_models_ensemble = np.mean(all_model_scores, axis=0)
+        pred_result_ensem_models_aggregate = np.mean(all_model_scores, axis=0)
 
         # write results
-        result_dict[self.get_scores_key()] = pred_result_all_models_ensemble
+        result_dict[self.get_scores_key()] = pred_result_ensem_models_aggregate
 
         return Result(asset, self.executor_id, result_dict)
 
@@ -923,6 +923,7 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
         result_dict = {}
         result_dict.update(feature_result.result_dict)  # add feature result
         result_dict[self.get_scores_key()] = pred_result['ys_pred']  # add quality score
+        result_dict[self.get_all_models_scores_key()] = pred_result['ys_pred_all_models']  # add quality score from all models
         result_dict[self.get_bagging_scores_key()] = pred_result['ys_pred_bagging']  # add bagging quality score
         result_dict[self.get_stddev_scores_key()] = pred_result['ys_pred_stddev']  # add stddev of bootstrapped quality score
         result_dict[self.get_ci95_low_scores_key()] = pred_result['ys_pred_ci95_low']  # add ci95 of bootstrapped quality score
@@ -933,6 +934,7 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
     def predict_with_model(cls, model, xs, **kwargs):
         DELTA = 1e-2
         result = model.predict(xs)
+        ys_pred_all_models = result['ys_label_pred_all_models']
         ys_pred = result['ys_label_pred']
         ys_pred_bagging = result['ys_label_pred_bagging']
         ys_pred_stddev = result['ys_label_pred_stddev']
@@ -943,6 +945,7 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
 
         do_transform_score = cls._do_transform_score(kwargs)
         if do_transform_score:
+            ys_pred_all_models = np.array([cls.transform_score(model, ys_pred_some_model) for ys_pred_some_model in ys_pred_all_models])
             ys_pred = cls.transform_score(model, ys_pred)
             ys_pred_bagging = cls.transform_score(model, ys_pred_bagging)
             ys_pred_plus = cls.transform_score(model, ys_pred_plus)
@@ -955,6 +958,7 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
         if 'disable_clip_score' in kwargs and kwargs['disable_clip_score'] is True:
             pass
         else:
+            ys_pred_all_models = np.array([cls.clip_score(model, ys_pred_some_model) for ys_pred_some_model in ys_pred_all_models])
             ys_pred = cls.clip_score(model, ys_pred)
             ys_pred_bagging = cls.clip_score(model, ys_pred_bagging)
             ys_pred_plus = cls.clip_score(model, ys_pred_plus)
@@ -966,7 +970,8 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
         slope = ((ys_pred_plus - ys_pred_minus) / (2.0 * DELTA))
         ys_pred_stddev = ys_pred_stddev * slope
 
-        return {'ys_pred': ys_pred,
+        return {'ys_pred_all_models': ys_pred_all_models,
+                'ys_pred': ys_pred,
                 'ys_pred_bagging': ys_pred_bagging,
                 'ys_pred_stddev': ys_pred_stddev,
                 'ys_pred_ci95_low': ys_pred_ci95_low,
@@ -976,6 +981,14 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
     def get_train_test_model_class(self):
         # overide VmafQualityRunner.get_train_test_model_class
         return BootstrapLibsvmNusvrTrainTestModel
+
+    @classmethod
+    def get_all_models_scores_key(cls):
+        return cls.TYPE + '_all_models_scores'
+
+    @classmethod
+    def get_all_models_score_key(cls):
+        return cls.TYPE + '_all_models_score'
 
     @classmethod
     def get_bagging_scores_key(cls):

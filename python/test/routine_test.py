@@ -4,7 +4,7 @@ import unittest
 from vmaf.config import VmafConfig
 from vmaf.routine import train_test_vmaf_on_dataset, read_dataset, run_test_on_dataset, generate_dataset_from_raw
 from vmaf.tools.misc import import_python_file
-from vmaf.core.quality_runner import VmafQualityRunner
+from vmaf.core.quality_runner import VmafQualityRunner, BootstrapVmafQualityRunner
 from sureal.subjective_model import MosModel
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
@@ -225,6 +225,22 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(test_assets[1].groundtruth, 50, places=4)
         self.assertAlmostEqual(test_assets[2].groundtruth, 100, places=4)
         self.assertAlmostEqual(test_assets[3].groundtruth, 80, places=4)
+
+    def test_test_on_dataset_bootstrap_quality_runner(self):
+        test_dataset = import_python_file(
+            VmafConfig.test_resource_path('dataset_sample.py'))
+        test_assets, results = run_test_on_dataset(test_dataset, BootstrapVmafQualityRunner, None,
+                        None, None,
+                        parallelize=True,
+                        aggregate_method=None)
+
+        sample_bootstrap_result = [98.16651475310283, 98.91183061083787, 99.36422724288224, 96.50048423265571, 99.21273677366027,
+                   98.62336376880593, 98.62051499518681, 98.8642476917713, 97.18679108400873, 97.90880967431475,
+                   99.02401501170068, 98.81633865219612, 99.41999313834772, 98.14027966557246, 98.1642532047448,
+                   97.38297850600293, 99.67477792382446, 99.00814352558844, 100.0]
+
+        self.assertAlmostEqual(results[0]['BOOTSTRAP_VMAF_all_models_score'], sample_bootstrap_result, places=4)
+        self.assertAlmostEqual(results[0]['BOOTSTRAP_VMAF_score'], 99.32876664539778, places=4)
 
     def test_test_on_dataset_raw(self):
         test_dataset = import_python_file(
