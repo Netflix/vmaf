@@ -76,6 +76,16 @@ def read_dataset(dataset, **kwargs):
         else:
             groundtruth_std = None
 
+        if 'fps' in dis_video:
+            fps = dis_video['fps']
+        else:
+            fps = None
+
+        if 'rebuf_indices' in dis_video:
+            rebuf_indices = dis_video['rebuf_indices']
+        else:
+            rebuf_indices = None
+
         ref_video = ref_dict[dis_video['content_id']]
 
         ref_path = ref_video['path']
@@ -161,6 +171,10 @@ def read_dataset(dataset, **kwargs):
             asset_dict['pad_cmd'] = pad_cmd_
         if workfile_yuv_type is not None:
             asset_dict['workfile_yuv_type'] = workfile_yuv_type
+        if fps is not None:
+            asset_dict['fps'] = fps
+        if rebuf_indices is not None:
+            asset_dict['rebuf_indices'] = rebuf_indices
 
         if groundtruth is None and skip_asset_with_none_groundtruth:
             pass
