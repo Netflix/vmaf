@@ -63,6 +63,28 @@ class TestReadDataset(unittest.TestCase):
         self.assertEqual(train_assets[0].asset_dict['quality_height'], 100)
         self.assertEqual(train_assets[0].asset_dict['resampling_type'], 'bicubic')
 
+    def test_read_dataset_fps_rebuf_indices(self):
+        train_dataset_path = VmafConfig.test_resource_path('test_dataset_fps_rebufinds.py')
+        train_dataset = import_python_file(train_dataset_path)
+        train_assets = read_dataset(train_dataset)
+
+        self.assertTrue('fps' in train_assets[0].asset_dict.keys())
+        self.assertTrue('rebuf_indices' in train_assets[0].asset_dict.keys())
+
+    def test_read_dataset_bad_fps_rebuf_indices(self):
+        train_dataset_path = VmafConfig.test_resource_path('test_dataset_bad_fps_rebufinds.py')
+        train_dataset = import_python_file(train_dataset_path)
+
+        with self.assertRaises(AssertionError):
+            train_assets = read_dataset(train_dataset)
+
+    def test_read_dataset_fps_bad_rebuf_indices(self):
+        train_dataset_path = VmafConfig.test_resource_path('test_dataset_fps_bad_rebufinds.py')
+        train_dataset = import_python_file(train_dataset_path)
+
+        with self.assertRaises(AssertionError):
+            train_assets = read_dataset(train_dataset)
+
     def test_read_dataset_diffyuv(self):
         train_dataset_path = VmafConfig.test_resource_path('test_dataset_diffyuv.py')
         train_dataset = import_python_file(train_dataset_path)
