@@ -6,6 +6,7 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ## News
 
+- (11/19/18) Added a BD-rate calculator [implementation](python/src/vmaf/tools/bd_rate_calculator.py) ([examples](python/test/bd_rate_calculator_test.py)).
 - (10/25/18) We have published our [second techblog on VMAF](https://medium.com/netflix-techblog/vmaf-the-journey-continues-44b51ee9ed12), with recommendations on best practices.
 - (9/13/18) [SUREAL](https://github.com/Netflix/sureal) is no longer a submodule to VMAF.
 - (6/19/18) Each VMAF prediction score now comes with a 95% [confidence interval (CI)](resource/doc/conf_interval.md), which quantifies the level of confidence that the prediction lies within the interval.
