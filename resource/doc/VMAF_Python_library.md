@@ -411,3 +411,11 @@ You can also customize VMAF by plugging in third-party features or inventing new
 Similarly, you can plug in a third-party regressor or invent a new regressor and specify them in a `model_param_file`. The `model_type` (e.g. `LIBSVMNUSVR`) corresponds to the `TYPE` field of a `TrainTestModel` sublass (e.g. `LibsvmnusvrTrainTestModel`). All needed is to create a new class extending the `TrainTestModel` base class.
 
 For instructions on how to extending the `FeatureExtractor` and `TrainTestModel` base classes, refer to [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
+
+## Analysis Tools
+
+Overtime, a number of helper tools have been incorporated into the VDK, to facilitate training and validating VMAF models. An overview of the tools available can be found in [this slide deck](VQEG_SAM_2018_111_AnalysisToolsInVMAF.pdf).
+
+### BD-Rate Calculator
+
+A Bjøntegaard-Delta (BD) rate [implementation](python/src/vmaf/tools/bd_rate_calculator.py) is added. Example usage can be found [here](python/test/bd_rate_calculator_test.py). The implementation is validated against [MPEG JCTVC-E137](http://phenix.it-sudparis.eu/jct/doc_end_user/documents/5_Geneva/wg11/JCTVC-E137-v1.zip).
