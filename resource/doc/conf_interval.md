@@ -22,21 +22,23 @@ yields:
 ```
 ...
     "aggregate": {
-        "BOOTSTRAP_VMAF_bagging_score": 73.09994670135325, 
-        "BOOTSTRAP_VMAF_score": 75.44304862545658, 
-        "BOOTSTRAP_VMAF_stddev_score": 1.2301198524660464, 
-        "VMAF_feature_adm2_score": 0.9345878077620574, 
-        "VMAF_feature_motion2_score": 3.8953518541666665, 
-        "VMAF_feature_vif_scale0_score": 0.36342081156994926, 
-        "VMAF_feature_vif_scale1_score": 0.7666473878461729, 
-        "VMAF_feature_vif_scale2_score": 0.8628533892781629, 
-        "VMAF_feature_vif_scale3_score": 0.9159718691393048, 
+        "BOOTSTRAP_VMAF_bagging_score": 73.09994612674564,
+        "BOOTSTRAP_VMAF_ci95_high_score": 74.85344190068236,
+        "BOOTSTRAP_VMAF_ci95_low_score": 70.80158536383833,
+        "BOOTSTRAP_VMAF_score": 75.44304785910772,
+        "BOOTSTRAP_VMAF_stddev_score": 1.2301198163451679,
+        "VMAF_feature_adm2_score": 0.9345878041226809,
+        "VMAF_feature_motion2_score": 3.8953518541666665,
+        "VMAF_feature_vif_scale0_score": 0.36342081156994926,
+        "VMAF_feature_vif_scale1_score": 0.7666473878461729,
+        "VMAF_feature_vif_scale2_score": 0.8628533892781629,
+        "VMAF_feature_vif_scale3_score": 0.9159718691393048,
         "method": "mean"
     }
 }
 ```
 
-Here, `BOOTSTRAP_VMAF_score` is the final prediction result, similar to `VMAF_score` without the `--ci` option. `BOOTSTRAP_VMAF_stddev_score` is the standard deviation of bootstrapping predictions. If assuming a normal distribution, the 95% CI is `BOOTSTRAP_VMAF_score +/- 1.96 * BOOTSTRAP_VMAF_stddev_score`.
+Here, `BOOTSTRAP_VMAF_score` is the final prediction result and is identical to `VMAF_score` when the `--ci` option is not used. `BOOTSTRAP_VMAF_stddev_score` is the standard deviation of bootstrapping predictions. `BOOTSTRAP_VMAF_ci95_high_score` and `BOOTSTRAP_VMAF_ci95_low_score` are the 97.5 and 2.5 percentiles respectively. If assuming a normal distribution, the 95% CI is `BOOTSTRAP_VMAF_score +/- 1.96 * BOOTSTRAP_VMAF_stddev_score`. By contrast, when we do not assume a normal distribution, the 95% CI is defined as `[BOOTSTRAP_VMAF_score - BOOTSTRAP_VMAF_ci95_low_score, BOOTSTRAP_VMAF_score + BOOTSTRAP_VMAF_ci95_high_score]`.
 
 ### Dataset Validation
 
