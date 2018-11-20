@@ -419,3 +419,17 @@ Overtime, a number of helper tools have been incorporated into the VDK, to facil
 ### BD-Rate Calculator
 
 A Bjøntegaard-Delta (BD) rate [implementation](../../python/src/vmaf/tools/bd_rate_calculator.py) is added. Example usage can be found [here](../../python/test/bd_rate_calculator_test.py). The implementation is validated against [MPEG JCTVC-E137](http://phenix.it-sudparis.eu/jct/doc_end_user/documents/5_Geneva/wg11/JCTVC-E137-v1.zip).
+
+### LIME (Local-Explainer Model-Agnostic Explanation) Implementation
+
+An implementation of [LIME](https://arxiv.org/pdf/1602.04938.pdf) is also added as part of the repository. The main idea is to perform a local linear approximation to any regressor or classifier and then use the coefficients of the linearized model as indicators of feature importance. LIME can be used as part of the VMAF regression framework, for example:
+
+```
+./run_vmaf yuv420p 1920 1080 NFLX_dataset_public/ref/OldTownCross_25fps.yuv NFLX_dataset_public/dis/OldTownCross_90_1080_4300.yuv --local-explain
+```
+
+Naturally, LIME can also be applied to any other regression scheme as long as there exists a pre-trained model. For example, applying to BRISQUE:
+
+```
+./run_vmaf yuv420p 1920 1080 NFLX_dataset_public/ref/OldTownCross_25fps.yuv NFLX_dataset_public/dis/OldTownCross_90_1080_4300.yuv --local-explain --model model/vmaf_brisque_all_v0.0rc.pkl
+```
