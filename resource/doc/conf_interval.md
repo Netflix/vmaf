@@ -38,11 +38,11 @@ yields:
 }
 ```
 
-Here, `BOOTSTRAP_VMAF_score` is the final prediction result and is identical to `VMAF_score` when the `--ci` option is not used. `BOOTSTRAP_VMAF_stddev_score` is the standard deviation of bootstrapping predictions. `BOOTSTRAP_VMAF_ci95_high_score` and `BOOTSTRAP_VMAF_ci95_low_score` are the 97.5 and 2.5 percentiles respectively. If assuming a normal distribution, the 95% CI is `BOOTSTRAP_VMAF_score +/- 1.96 * BOOTSTRAP_VMAF_stddev_score`. For a more detailed explanation, please refer to the following section.
+Here, `BOOTSTRAP_VMAF_score` is the final prediction result and is identical to `VMAF_score` when the `--ci` option is not used. `BOOTSTRAP_VMAF_stddev_score` is the standard deviation of bootstrapping predictions. If assuming a normal distribution, the 95% CI is `BOOTSTRAP_VMAF_score +/- 1.96 * BOOTSTRAP_VMAF_stddev_score`. For a more detailed explanation, please refer to the following section.
 
 ### Further Analysis of Bootstrapped Predictions
 
-We assumed, for the sake of simplicity, that the distribution of VMAF predictions is a normal distribution. However, this assumption is not necessarily true. If we do not assume a normal distribution, the 95% CI is defined as `[BOOTSTRAP_VMAF_ci95_low_score, BOOTSTRAP_VMAF_ci95_high_score]`. Furthermore, `BOOTSTRAP_VMAF_bagging_score` is the average of the individual bootstrap models. While `BOOTSTRAP_VMAF_bagging_score` is different from `BOOTSTRAP_VMAF_score`, it is expected that they are relatively similar to each other.
+We assumed, for the sake of simplicity, that the distribution of VMAF predictions is a normal distribution. However, this assumption is not necessarily true. If we do not assume a normal distribution, the 95% CI is defined as `[BOOTSTRAP_VMAF_ci95_low_score, BOOTSTRAP_VMAF_ci95_high_score]`, where `BOOTSTRAP_VMAF_ci95_low_score` and `BOOTSTRAP_VMAF_ci95_high_score` are the 2.5 and 97.5 percentiles respectively. Furthermore, `BOOTSTRAP_VMAF_bagging_score` is the mean of the individual bootstrap models. While `BOOTSTRAP_VMAF_bagging_score` is different from `BOOTSTRAP_VMAF_score`, it is expected that they are relatively similar to each other if the distribution is not very skewed.
 
 ### Dataset Validation
 
