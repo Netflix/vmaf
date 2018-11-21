@@ -39,4 +39,4 @@ The papers below independently evaluate the performance of VMAF.
   - [A VMAF model for 4K](VQEG_SAM_2018_025_VMAF_4K.pdf) by Z. Li, T. Vigier and P. Le Callet, at Video Quality Experts Group (VQEG) Meeting in Madrid, March 2018.
   - [Quantify VMAF model variability using bootstrapping](VQEG_SAM_2018_023_VMAF_Variability.pdf) by Z. Li and I. Katsavounidis, at Video Quality Experts Group (VQEG) Meeting in Madrid, March 2018.
   - [VMAF: the journey continues](http://www.streamingmedia.com/Articles/Editorial/Featured-Articles/Video-Engineering-Summit-Netflix-to-Discuss-VMAFs-Future-128457.aspx) by Z. Li, at Streaming Media West, Huntington Beach, CA, November 2018.
-  - [Analysis Tools in the VMAF Open-Source Repo](VQEG_SAM_2018_111_AnalysisToolsInVMAF.pdf) by Z. Li and C. Bampis, at Video Quality Experts Group (VQEG) Meeting in Mountain View, CA, November 2018.
+  - [Analysis tools in the VMAF open-source package](VQEG_SAM_2018_111_AnalysisToolsInVMAF.pdf) by Z. Li and C. Bampis, at Video Quality Experts Group (VQEG) Meeting in Mountain View, CA, November 2018.
