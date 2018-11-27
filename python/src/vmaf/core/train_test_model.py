@@ -304,7 +304,7 @@ class TrainTestModel(TypeVersionEnabled):
 
     @classmethod
     @abstractmethod
-    def _train(cls, param_dict, xys_2d):
+    def _train(cls, param_dict, xys_2d, **kwargs):
         raise NotImplementedError
 
     @classmethod
@@ -485,7 +485,7 @@ class TrainTestModel(TypeVersionEnabled):
 
     def train(self, xys, **kwargs):
         xys_2d = self._preproc_train(xys)
-        model = self._train(self.param_dict, xys_2d)
+        model = self._train(self.param_dict, xys_2d, **kwargs)
         self.model = model
 
     @staticmethod
@@ -738,7 +738,7 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
     VERSION = "0.1"
 
     @classmethod
-    def _train(cls, model_param, xys_2d):
+    def _train(cls, model_param, xys_2d, **kwargs):
         """
         :param model_param:
         :param xys_2d:
@@ -883,7 +883,7 @@ class SklearnRandomForestTrainTestModel(TrainTestModel, RegressorMixin):
     VERSION = "0.1"
 
     @classmethod
-    def _train(cls, model_param, xys_2d):
+    def _train(cls, model_param, xys_2d, **kwargs):
         """
         random forest regression
         http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html
@@ -924,7 +924,7 @@ class SklearnLinearRegressionTrainTestModel(TrainTestModel, RegressorMixin):
     VERSION = "0.1"
 
     @classmethod
-    def _train(cls, model_param, xys_2d):
+    def _train(cls, model_param, xys_2d, **kwargs):
         """
         linear regression
         https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html
@@ -965,7 +965,7 @@ class SklearnExtraTreesTrainTestModel(TrainTestModel, RegressorMixin):
     VERSION = "0.1"
 
     @classmethod
-    def _train(cls, model_param, xys_2d):
+    def _train(cls, model_param, xys_2d, **kwargs):
         """
         extremely random trees
         http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesRegressor.html
@@ -1180,7 +1180,7 @@ class BootstrapMixin(object):
         models = []
 
         # first model: use full training data
-        model_0 = self._train(self.param_dict, xys_2d)
+        model_0 = self._train(self.param_dict, xys_2d, **kwargs)
         models.append(model_0)
 
         # rest models: resample training data with replacement
@@ -1189,7 +1189,7 @@ class BootstrapMixin(object):
             # random sample with replacement:
             indices = np.random.choice(range(sample_size), size=sample_size, replace=True)
             xys_2d_ = xys_2d[indices, :]
-            model_ = self._train(self.param_dict, xys_2d_)
+            model_ = self._train(self.param_dict, xys_2d_, **kwargs)
             models.append(model_)
         self.model = models
 
@@ -1341,7 +1341,7 @@ class ResidueBootstrapMixin(BootstrapMixin):
         models = []
 
         # first model: use full training data
-        model_0 = self._train(self.param_dict, xys_2d)
+        model_0 = self._train(self.param_dict, xys_2d, **kwargs)
         models.append(model_0)
 
         # predict and find residue
@@ -1358,7 +1358,7 @@ class ResidueBootstrapMixin(BootstrapMixin):
             residue_ys_resampled = residue_ys[indices]
             ys_resampled = residue_ys_resampled + ys_pred
             xys_2d_ = np.array(np.hstack((np.matrix(ys_resampled).T, xs_2d)))
-            model_ = self._train(self.param_dict, xys_2d_)
+            model_ = self._train(self.param_dict, xys_2d_, **kwargs)
             models.append(model_)
         self.model = models
 
