@@ -42,7 +42,7 @@ class PerfMetric(TypeVersionEnabled):
         self._assert_args()
 
     def _assert_args(self):
-        assert len(self.groundtruths) == len(self.predictions)
+        assert len(self.groundtruths) == len(self.predictions), 'The lengths of groundtruth labels and predictions do not match.'
 
     def evaluate(self, **kwargs):
         """
@@ -50,7 +50,7 @@ class PerfMetric(TypeVersionEnabled):
         """
         groundtruths, predictions = self._preprocess(self.groundtruths, self.predictions, **kwargs)
         result = self._evaluate(groundtruths, predictions, **kwargs)
-        assert 'score' in result
+        assert 'score' in result, 'Score does not exist in result.'
         return result
 
 
