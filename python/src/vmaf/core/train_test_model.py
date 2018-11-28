@@ -52,8 +52,6 @@ class RegressorMixin(object):
         if 'ys_label_pred_all_models' in kwargs:
 
             ys_label_pred_all_models = kwargs['ys_label_pred_all_models']
-            # need to revert the list of lists, so that the outer list has the predictions for each model separately
-            # ys_label_pred_all_models = np.array(ys_label_pred_all_models).T.tolist()
 
             srcc_all_models = []
             pcc_all_models = []

@@ -52,7 +52,8 @@ class BasicResult(object):
         The list of scores (when present) should also follow the convention
         that IF multiple models are present (e.g. in bootstrapping),
         the first dimension will be the model and the
-        second dimension the video frames.
+        second dimension the video frames. This means that a 2D result array
+        should be created ONLY when multiple models are present.
         """
         if re.search(r"_score$", key):
             scores_key = self.get_scores_key_from_score_key(key)
@@ -63,14 +64,16 @@ class BasicResult(object):
                     scores = np.asarray(scores)
                 # dimension assertion: scores should be either 1-D (one prediction per frame) or 2-D (single/multiple predictions per frame)
                 assert scores.ndim <= 2, 'Per frame score aggregation is not well-defined; scores cannot be saved in a N-D array with N > 2.'
-                # check if there are more than one predictions per frame
+
+                # check if there are more than one models (first dimension)
                 if scores.ndim == 2:
-                    if scores.shape[0] > 1 and scores.shape[1] > 1:
-                        # a scores "piece" is the single prediction (out of multiple) for each frame
-                        return [self.score_aggregate_method(scores_piece) for scores_piece in scores]
-                    else:
-                        # just one prediction per frame, but (for some reason) was saved as a 2-D array
-                        return self.score_aggregate_method(scores)
+                    # check that there are > 1 models present
+                    assert scores.shape[0] > 1, '# models is <=1, but a 2D result array (models x frames) was used.'
+                    # check that there are >= 1 frames predicted
+                    assert scores.shape[1] >= 1, '# predicted frames is < 1.'
+                    # apply score aggregation on each individual model
+                    # a scores "piece" corresponds to a single model's predictions over all frames
+                    return [self.score_aggregate_method(scores_piece) for scores_piece in scores]
                 else:
                     # just one prediction per frame
                     return self.score_aggregate_method(scores)

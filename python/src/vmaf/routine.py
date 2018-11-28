@@ -278,6 +278,10 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
         predictions_ci95_low = map(lambda result: result[runner_class.get_ci95_low_score_key()], results)
         predictions_ci95_high = map(lambda result: result[runner_class.get_ci95_high_score_key()], results)
         predictions_all_models = map(lambda result: result[runner_class.get_all_models_score_key()], results)
+
+        # need to revert the list of lists, so that the outer list has the predictions for each model separately
+        predictions_all_models = np.array(predictions_all_models).T.tolist()
+
         stats = model_type.get_stats(groundtruths, predictions,
                                      ys_label_raw=raw_grountruths,
                                      ys_label_pred_bagging=predictions_bagging,
