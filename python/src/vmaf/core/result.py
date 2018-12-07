@@ -87,9 +87,22 @@ class BasicResult(object):
         list_scores_key = sorted(list_scores_key)
         return list_scores_key
 
+    def get_ordered_list_multimodel_scores_key(self):
+        # e.g. ['BOOTSTRAP_VMAF_all_models_scores']
+        # select only scores that are > 1D (e.g. when having multiple models in bootstrapping)
+        list_scores_key = filter(lambda key: re.search(r"_scores$", key) and np.asarray(self.result_dict[key]).ndim > 1,
+                                 self.result_dict.keys())
+        list_scores_key = sorted(list_scores_key)
+        return list_scores_key
+
     def get_ordered_list_score_key(self):
         # e.g. ['VMAF_score', 'VMAF_vif_score']
         list_scores_key = self.get_ordered_list_scores_key()
+        return map(lambda scores_key: scores_key[:-1], list_scores_key)
+
+    def get_ordered_list_multimodel_score_key(self):
+        # e.g. ['BOOTSTRAP_VMAF_all_models_score']
+        list_scores_key = self.get_ordered_list_multimodel_scores_key()
         return map(lambda scores_key: scores_key[:-1], list_scores_key)
 
     def _get_scores_str(self, unit_name='Frame'):
@@ -224,6 +237,20 @@ class Result(BasicResult):
         list_score_key = self.get_ordered_list_score_key()
         list_scores = map(lambda key: self.result_dict[key], list_scores_key)
         list_aggregate_score = map(lambda key: self[key], list_score_key)
+
+        list_multimodel_scores_key = self.get_ordered_list_multimodel_scores_key()
+        list_multimodel_score_key = self.get_ordered_list_multimodel_score_key()
+        # here we need to transpose, since printing is per frame and not per model
+        # we also need to turn the 2D array to a list of lists, for unpacking to work as expected
+        list_multimodel_scores = map(lambda key: self.result_dict[key].T.tolist(), list_multimodel_scores_key)
+        list_aggregate_multimodel_score = map(lambda key: self[key], list_multimodel_score_key)
+
+        # append multimodel scores and keys (if any)
+        list_scores_key += list_multimodel_scores_key
+        list_score_key += list_multimodel_score_key
+        list_scores += list_multimodel_scores
+        list_aggregate_score += list_aggregate_multimodel_score
+
         list_scores_reordered = zip(*list_scores)
 
         def prettify(elem):
@@ -372,6 +399,20 @@ class Result(BasicResult):
         list_score_key = self.get_ordered_list_score_key()
         list_scores = map(lambda key: self.result_dict[key], list_scores_key)
         list_aggregate_score = map(lambda key: self[key], list_score_key)
+
+        list_multimodel_scores_key = self.get_ordered_list_multimodel_scores_key()
+        list_multimodel_score_key = self.get_ordered_list_multimodel_score_key()
+        # here we need to transpose, since printing is per frame and not per model
+        # we also need to turn the 2D array to a list of lists, for unpacking to work as expected
+        list_multimodel_scores = map(lambda key: self.result_dict[key].T.tolist(), list_multimodel_scores_key)
+        list_aggregate_multimodel_score = map(lambda key: self[key], list_multimodel_score_key)
+
+        # append multimodel scores and keys (if any)
+        list_scores_key += list_multimodel_scores_key
+        list_score_key += list_multimodel_score_key
+        list_scores += list_multimodel_scores
+        list_aggregate_score += list_aggregate_multimodel_score
+
         list_scores_reordered = zip(*list_scores)
 
         top = OrderedDict()
