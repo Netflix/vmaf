@@ -1168,7 +1168,9 @@ class BootstrapMixin(object):
 
     MIXIN_VERSION = 'B0.0.1'
 
-    DEFAULT_NUM_MODELS = 100
+    # since bootstrap version 0.6.3, we want num_models to be + 1 the number of bootstrap model.
+    # Therefore, we use 100 bootstrap models or (DEFAULT_NUM_MODELS - 1) bootstrap models.
+    DEFAULT_NUM_MODELS = 101
 
     def train(self, xys, **kwargs):
         # override TrainTestModel.train()

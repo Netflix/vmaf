@@ -489,7 +489,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath': VmafConfig.model_path("vmaf_rb_v0.6.2", "vmaf_rb_v0.6.2.pkl"),
+                'model_filepath': VmafConfig.model_path("vmaf_rb_v0.6.3", "vmaf_rb_v0.6.3.pkl"),
                 'ci': True
             },
         )
@@ -519,14 +519,15 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 75.443043750000001, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.958047916666672, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_bagging_score'], 73.099946626689174, places=3)
-        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_bagging_score'], 99.686116179979152, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_stddev_score'], 1.2301198477788975, places=3)
-        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_stddev_score'], 1.5917514683608882, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ci95_low_score'], 70.801585803086553, places=3)
-        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ci95_low_score'], 94.784491176494996, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ci95_high_score'], 74.853442421187708, places=3)
-        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ci95_high_score'], 99.992560767034618, places=4)
+
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_bagging_score'], 73.10273541666668, places=3)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_bagging_score'], 99.79000416666668, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_stddev_score'], 1.1991330833333333, places=3)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_stddev_score'], 1.3028828125, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ci95_low_score'], 70.82471875, places=3)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ci95_low_score'], 94.79667083333334, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ci95_high_score'], 74.85038125, places=3)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ci95_high_score'], 99.99736666666666, places=4)
 
     def test_run_vmafossexec_runner_with_ci_and_custom_model(self):
         print 'test on running VMAFOSSEXEC runner with conf interval and custom model...'
