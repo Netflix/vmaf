@@ -917,7 +917,7 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
     VERSION = VmafQualityRunner.VERSION + '-' + 'M' + BootstrapLibsvmNusvrTrainTestModel.VERSION
     ALGO_VERSION = None
 
-    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_rb_v0.6.2", "vmaf_rb_v0.6.2.pkl")
+    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_rb_v0.6.3", "vmaf_rb_v0.6.3.pkl")
 
     def _populate_result_dict(self, feature_result, pred_result):
         result_dict = {}

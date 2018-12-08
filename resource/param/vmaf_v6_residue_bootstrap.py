@@ -29,5 +29,5 @@ model_param_dict = {
 
     # ==== bootstrap parameters ==== #
 
-    'num_models': 20,
+    'num_models': 21, # this leads to 20 bootstrapped models being trained
 }
