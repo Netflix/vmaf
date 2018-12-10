@@ -701,7 +701,20 @@ class VmafossExecQualityRunner(QualityRunner):
         tree = ElementTree.parse(log_file_path)
         root = tree.getroot()
         scores = []
+
+        num_bootstrap_models = np.int(root.findall('params')[0].attrib['num_bootstrap_models'])
+        bootstrap_model_prefix = root.findall('params')[0].attrib['bootstrap_model_prefix']
+
+        bootstrap_model_list = []
+        for bootstrap_ind in range(num_bootstrap_models):
+            # NOTE: bootstrap model indices start from 1
+            bootstrap_model_list.append('{}{:04d}'.format(bootstrap_model_prefix, bootstrap_ind + 1))
+
+        # augment the feature set with any bootstrap models
+        self.FEATURES += bootstrap_model_list
+
         feature_scores = [[] for _ in self.FEATURES]
+
         for frame in root.findall('frames/frame'):
             scores.append(float(frame.attrib['vmaf']))
             for i_feature, feature in enumerate(self.FEATURES):

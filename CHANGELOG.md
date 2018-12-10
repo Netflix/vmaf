@@ -1,5 +1,11 @@
 # Change Log
 
+## (12/17/2018) [1.3.11]
+
+**New features:**
+- Revise number of bootstrap models definition: model/vmaf_rb_v0.6.3/vmaf_rb_v0.6.3.pkl has 21 models (20 bootstrap models and one using the full data). From these 21 models, the 20 of them are same as v0.6.2, only added an additional bootstrap model.
+- Output the per bootstrap model predictions from wrapper/vmafossexec.
+
 ## (9/13/2018) [1.3.10]
 
 **New features:**
