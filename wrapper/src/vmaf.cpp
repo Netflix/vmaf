@@ -279,17 +279,17 @@ void LibsvmNusvrTrainTestModel::populate_and_normalize_nodes_at_frm(size_t i_frm
     }
 }
 
-std::map<VmafPredictionReturnType, double> LibsvmNusvrTrainTestModel::predict(svm_node* nodes) {
+VmafPredictionStruct LibsvmNusvrTrainTestModel::predict(svm_node* nodes) {
 
     double prediction = svm_predict(svm_model_ptr.get(), nodes);
+    VmafPredictionStruct predictionStruct;
 
     /* denormalize score */
     _denormalize_prediction(prediction);
 
-    std::map<VmafPredictionReturnType, double> predictionMap;
-    predictionMap[VmafPredictionReturnType::SCORE] = prediction;
+    predictionStruct.vmafPrediction[VmafPredictionReturnType::SCORE] = prediction;
 
-    return predictionMap;
+    return predictionStruct;
 }
 
 void LibsvmNusvrTrainTestModel::_denormalize_prediction(double& prediction) {
@@ -381,23 +381,27 @@ void BootstrapLibsvmNusvrTrainTestModel::load_model()
 
 }
 
-std::map<VmafPredictionReturnType, double> BootstrapLibsvmNusvrTrainTestModel::predict(svm_node* nodes) {
+VmafPredictionStruct BootstrapLibsvmNusvrTrainTestModel::predict(svm_node* nodes) {
 
-    std::map<VmafPredictionReturnType, double> predictionMap = LibsvmNusvrTrainTestModel::predict(nodes);
+    VmafPredictionStruct predictionStruct = LibsvmNusvrTrainTestModel::predict(nodes);
 
-    StatVector predictions;
-    double prediction;
+    StatVector bootstrapPredictions;
+    double bootstrapPrediction;
+
     for (size_t i=0; i<bootstrap_svm_model_ptrs.size(); i++) {
-        prediction = svm_predict(bootstrap_svm_model_ptrs.at(i).get(), nodes);
-        _denormalize_prediction(prediction);
-        predictions.append(prediction);
+        bootstrapPrediction = svm_predict(bootstrap_svm_model_ptrs.at(i).get(), nodes);
+        _denormalize_prediction(bootstrapPrediction);
+        bootstrapPredictions.append(bootstrapPrediction);
     }
-    predictionMap[VmafPredictionReturnType::BAGGING_SCORE] = predictions.mean();
-    predictionMap[VmafPredictionReturnType::STDDEV] = predictions.std();
-    predictionMap[VmafPredictionReturnType::CI95_LOW] = predictions.percentile(2.5);
-    predictionMap[VmafPredictionReturnType::CI95_HIGH] = predictions.percentile(97.5);
 
-    return predictionMap;
+    predictionStruct.vmafPrediction[VmafPredictionReturnType::BAGGING_SCORE] = bootstrapPredictions.mean();
+    predictionStruct.vmafPrediction[VmafPredictionReturnType::STDDEV] = bootstrapPredictions.std();
+    predictionStruct.vmafPrediction[VmafPredictionReturnType::CI95_LOW] = bootstrapPredictions.percentile(2.5);
+    predictionStruct.vmafPrediction[VmafPredictionReturnType::CI95_HIGH] = bootstrapPredictions.percentile(97.5);
+
+    predictionStruct.vmafMultiModelPrediction = bootstrapPredictions.getVector();
+
+    return predictionStruct;
 }
 
 void VmafQualityRunner::_transform_value(LibsvmNusvrTrainTestModel& model,
@@ -447,26 +451,26 @@ void VmafQualityRunner::_clip_value(LibsvmNusvrTrainTestModel& model,
 }
 
 void VmafQualityRunner::_postproc_predict(
-        std::map<VmafPredictionReturnType, double>& predictionMap) {
+        VmafPredictionStruct& predictionStruct) {
     ;
 }
 
 void VmafQualityRunner::_transform_score(LibsvmNusvrTrainTestModel& model,
-        std::map<VmafPredictionReturnType, double>& predictionMap) {
+        VmafPredictionStruct& predictionStruct) {
 
-    double& prediction = predictionMap[VmafPredictionReturnType::SCORE];
+    double& prediction = predictionStruct.vmafPrediction[VmafPredictionReturnType::SCORE];
     _transform_value(model, prediction);
 }
 
 void VmafQualityRunner::_clip_score(LibsvmNusvrTrainTestModel& model,
-        std::map<VmafPredictionReturnType, double>& predictionMap) {
+        VmafPredictionStruct& predictionStruct) {
 
-    double& prediction = predictionMap[VmafPredictionReturnType::SCORE];
+    double& prediction = predictionStruct.vmafPrediction[VmafPredictionReturnType::SCORE];
     _clip_value(model, prediction);
 }
 
 void VmafQualityRunner::_postproc_transform_clip(
-        std::map<VmafPredictionReturnType, double>& predictionMap) {
+        VmafPredictionStruct& predictionStruct) {
     ;
 }
 
@@ -477,7 +481,7 @@ void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
         StatVector& vif_scale0, StatVector& vif_scale1, StatVector& vif_scale2,
         StatVector& vif_scale3, StatVector& vif, StatVector& motion2,
         bool enable_transform, bool disable_clip,
-        std::vector<std::map<VmafPredictionReturnType, double>>& predictionMaps) {
+        std::vector<VmafPredictionStruct>& predictionStructs) {
 
     /* IMPORTANT: always allocate one more spot and put a -1 at the last one's
      * index, so that libsvm will stop looping when seeing the -1 !!!
@@ -492,19 +496,19 @@ void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
                 adm_scale0, adm_scale1, adm_scale2, adm_scale3, motion,
                 vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, motion2);
 
-        std::map<VmafPredictionReturnType, double> predictionMap = model.predict(nodes);
+        VmafPredictionStruct predictionStruct = model.predict(nodes);
 
-        _postproc_predict(predictionMap);
+        _postproc_predict(predictionStruct);
 
         if (enable_transform) {
-            _transform_score(model, predictionMap);
+            _transform_score(model, predictionStruct);
         }
 
         if (!disable_clip) {
-            _clip_score(model, predictionMap);
+            _clip_score(model, predictionStruct);
         }
 
-        _postproc_transform_clip(predictionMap);
+        _postproc_transform_clip(predictionStruct);
 
         dbg_printf("frame: %zu, ", i);
         dbg_printf("adm2: %f, ", adm2.at(i_frm));
@@ -522,7 +526,7 @@ void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
 
         dbg_printf("\n");
 
-        predictionMaps.push_back(predictionMap);
+        predictionStructs.push_back(predictionStruct);
 
     }
 }
@@ -535,11 +539,11 @@ std::unique_ptr<LibsvmNusvrTrainTestModel> VmafQualityRunner::_load_model(const 
 }
 
 void VmafQualityRunner::_set_prediction_result(
-        std::vector<std::map<VmafPredictionReturnType, double> > predictionMaps,
+        std::vector<VmafPredictionStruct> predictionStructs,
         Result& result) {
     StatVector score;
-    for (size_t i = 0; i < predictionMaps.size(); i++) {
-        score.append(predictionMaps.at(i)[VmafPredictionReturnType::SCORE]);
+    for (size_t i = 0; i < predictionStructs.size(); i++) {
+        score.append(predictionStructs.at(i).vmafPrediction[VmafPredictionReturnType::SCORE]);
     }
     result.set_scores("vmaf", score);
 }
@@ -677,7 +681,7 @@ Result VmafQualityRunner::run(Asset asset, int (*read_frame)(float *ref_data, fl
             vif, motion2;
     StatVector adm_scale0, adm_scale1, adm_scale2, adm_scale3;
     StatVector psnr, ssim, ms_ssim;
-    std::vector < std::map<VmafPredictionReturnType, double> > predictionMaps;
+    std::vector<VmafPredictionStruct> predictionStructs;
     for (size_t i = 0; i < num_frms; i += n_subsample) {
         adm2.append(
                 (get_at(&adm_num_array, i) + ADM2_CONSTANT)
@@ -729,7 +733,7 @@ Result VmafQualityRunner::run(Asset asset, int (*read_frame)(float *ref_data, fl
     _normalize_predict_denormalize_transform_clip(model, num_frms_subsampled,
             adm2, adm_scale0, adm_scale1, adm_scale2, adm_scale3, motion,
             vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, motion2,
-            enable_transform, disable_clip, predictionMaps);
+            enable_transform, disable_clip, predictionStructs);
     Result result { };
     for (size_t j = 0; j < model.feature_names.length(); j++) {
         if (strcmp(Stringize(model.feature_names[j]).c_str(),
@@ -785,7 +789,7 @@ Result VmafQualityRunner::run(Asset asset, int (*read_frame)(float *ref_data, fl
         result.set_scores("ms_ssim", ms_ssim);
     }
 
-    _set_prediction_result(predictionMaps, result);
+    _set_prediction_result(predictionStructs, result);
 
     free_array(&adm_num_array);
     free_array(&adm_den_array);
@@ -823,25 +827,25 @@ std::unique_ptr<LibsvmNusvrTrainTestModel> BootstrapVmafQualityRunner::_load_mod
 }
 
 void BootstrapVmafQualityRunner::_postproc_predict(
-        std::map<VmafPredictionReturnType, double>& predictionMap) {
+        VmafPredictionStruct& predictionStruct) {
 
-    double baggingScore = predictionMap[VmafPredictionReturnType::BAGGING_SCORE];
+    double baggingScore = predictionStruct.vmafPrediction[VmafPredictionReturnType::BAGGING_SCORE];
     double scorePlusDelta = baggingScore + BootstrapVmafQualityRunner::DELTA;
     double scoreMinusDelta = baggingScore - BootstrapVmafQualityRunner::DELTA;
 
-    predictionMap[VmafPredictionReturnType::PLUS_DELTA] = scorePlusDelta;
-    predictionMap[VmafPredictionReturnType::MINUS_DELTA] = scoreMinusDelta;
+    predictionStruct.vmafPrediction[VmafPredictionReturnType::PLUS_DELTA] = scorePlusDelta;
+    predictionStruct.vmafPrediction[VmafPredictionReturnType::MINUS_DELTA] = scoreMinusDelta;
 }
 
 void BootstrapVmafQualityRunner::_transform_score(LibsvmNusvrTrainTestModel& model,
-        std::map<VmafPredictionReturnType, double>& predictionMap) {
+        VmafPredictionStruct& predictionStruct) {
 
-    double& score = predictionMap[VmafPredictionReturnType::SCORE];
-    double& baggingScore = predictionMap[VmafPredictionReturnType::BAGGING_SCORE];
-    double& ci95LowScore = predictionMap[VmafPredictionReturnType::CI95_LOW];
-    double& ci95HighScore = predictionMap[VmafPredictionReturnType::CI95_HIGH];
-    double& scorePlusDelta = predictionMap[VmafPredictionReturnType::PLUS_DELTA];
-    double& scoreMinusDelta = predictionMap[VmafPredictionReturnType::MINUS_DELTA];
+    double& score = predictionStruct.vmafPrediction[VmafPredictionReturnType::SCORE];
+    double& baggingScore = predictionStruct.vmafPrediction[VmafPredictionReturnType::BAGGING_SCORE];
+    double& ci95LowScore = predictionStruct.vmafPrediction[VmafPredictionReturnType::CI95_LOW];
+    double& ci95HighScore = predictionStruct.vmafPrediction[VmafPredictionReturnType::CI95_HIGH];
+    double& scorePlusDelta = predictionStruct.vmafPrediction[VmafPredictionReturnType::PLUS_DELTA];
+    double& scoreMinusDelta = predictionStruct.vmafPrediction[VmafPredictionReturnType::MINUS_DELTA];
 
     _transform_value(model, score);
     _transform_value(model, baggingScore);
@@ -849,17 +853,25 @@ void BootstrapVmafQualityRunner::_transform_score(LibsvmNusvrTrainTestModel& mod
     _transform_value(model, ci95HighScore);
     _transform_value(model, scorePlusDelta);
     _transform_value(model, scoreMinusDelta);
+
+    // transform bootstrap model scores
+    int num_models = predictionStruct.vmafMultiModelPrediction.size();
+
+    for (int model_i = 0; model_i < num_models; model_i++)
+    {
+        _transform_value(model, predictionStruct.vmafMultiModelPrediction.at(model_i));
+    }
 }
 
 void BootstrapVmafQualityRunner::_clip_score(LibsvmNusvrTrainTestModel& model,
-        std::map<VmafPredictionReturnType, double>& predictionMap) {
+        VmafPredictionStruct& predictionStruct) {
 
-    double& score = predictionMap[VmafPredictionReturnType::SCORE];
-    double& baggingScore = predictionMap[VmafPredictionReturnType::BAGGING_SCORE];
-    double& ci95LowScore = predictionMap[VmafPredictionReturnType::CI95_LOW];
-    double& ci95HighScore = predictionMap[VmafPredictionReturnType::CI95_HIGH];
-    double& scorePlusDelta = predictionMap[VmafPredictionReturnType::PLUS_DELTA];
-    double& scoreMinusDelta = predictionMap[VmafPredictionReturnType::MINUS_DELTA];
+    double& score = predictionStruct.vmafPrediction[VmafPredictionReturnType::SCORE];
+    double& baggingScore = predictionStruct.vmafPrediction[VmafPredictionReturnType::BAGGING_SCORE];
+    double& ci95LowScore = predictionStruct.vmafPrediction[VmafPredictionReturnType::CI95_LOW];
+    double& ci95HighScore = predictionStruct.vmafPrediction[VmafPredictionReturnType::CI95_HIGH];
+    double& scorePlusDelta = predictionStruct.vmafPrediction[VmafPredictionReturnType::PLUS_DELTA];
+    double& scoreMinusDelta = predictionStruct.vmafPrediction[VmafPredictionReturnType::MINUS_DELTA];
 
     _clip_value(model, score);
     _clip_value(model, baggingScore);
@@ -867,39 +879,65 @@ void BootstrapVmafQualityRunner::_clip_score(LibsvmNusvrTrainTestModel& model,
     _clip_value(model, ci95HighScore);
     _clip_value(model, scorePlusDelta);
     _clip_value(model, scoreMinusDelta);
+
+    // clip bootstrap model scores
+    int num_models = predictionStruct.vmafMultiModelPrediction.size();
+
+    for (int model_i; model_i < num_models; model_i++)
+    {
+        _clip_value(model, predictionStruct.vmafMultiModelPrediction.at(model_i));
+    }
 }
 
 void BootstrapVmafQualityRunner::_postproc_transform_clip(
-        std::map<VmafPredictionReturnType, double>& predictionMap) {
+        VmafPredictionStruct& predictionStruct) {
 
-    double scorePlusDelta = predictionMap[VmafPredictionReturnType::PLUS_DELTA];
-    double scoreMinusDelta = predictionMap[VmafPredictionReturnType::MINUS_DELTA];
-    double& scoreStdDev = predictionMap[VmafPredictionReturnType::STDDEV];
+    double scorePlusDelta = predictionStruct.vmafPrediction[VmafPredictionReturnType::PLUS_DELTA];
+    double scoreMinusDelta = predictionStruct.vmafPrediction[VmafPredictionReturnType::MINUS_DELTA];
+    double& scoreStdDev = predictionStruct.vmafPrediction[VmafPredictionReturnType::STDDEV];
 
     double slope = (scorePlusDelta - scoreMinusDelta) / (2.0 * BootstrapVmafQualityRunner::DELTA);
     scoreStdDev *= slope;
 }
 
 void BootstrapVmafQualityRunner::_set_prediction_result(
-        std::vector<std::map<VmafPredictionReturnType, double> > predictionMaps,
+        std::vector<VmafPredictionStruct> predictionStructs,
         Result& result) {
 
-    VmafQualityRunner::_set_prediction_result(predictionMaps, result);
+    VmafQualityRunner::_set_prediction_result(predictionStructs, result);
 
     StatVector baggingScore, stdDev, ci95LowScore, ci95HighScore;
-    for (size_t i = 0; i < predictionMaps.size(); i++) {
-        baggingScore.append(predictionMaps.at(i)[VmafPredictionReturnType::BAGGING_SCORE]);
-        stdDev.append(predictionMaps.at(i)[VmafPredictionReturnType::STDDEV]);
-        ci95LowScore.append(predictionMaps.at(i)[VmafPredictionReturnType::CI95_LOW]);
-        ci95HighScore.append(predictionMaps.at(i)[VmafPredictionReturnType::CI95_HIGH]);
+    for (size_t i = 0; i < predictionStructs.size(); i++) {
+        baggingScore.append(predictionStructs.at(i).vmafPrediction[VmafPredictionReturnType::BAGGING_SCORE]);
+        stdDev.append(predictionStructs.at(i).vmafPrediction[VmafPredictionReturnType::STDDEV]);
+        ci95LowScore.append(predictionStructs.at(i).vmafPrediction[VmafPredictionReturnType::CI95_LOW]);
+        ci95HighScore.append(predictionStructs.at(i).vmafPrediction[VmafPredictionReturnType::CI95_HIGH]);
     }
     result.set_scores("bagging", baggingScore);
     result.set_scores("stddev", stdDev);
     result.set_scores("ci95_low", ci95LowScore);
     result.set_scores("ci95_high", ci95HighScore);
+
+    // num_models is same across frames, so just use first frame length
+    int num_models = predictionStructs.at(0).vmafMultiModelPrediction.size();
+    std::vector<double> perModelScore;
+    // character array to put the name of the vmaf bootstrap model, e.g. vmaf_0001 is the first one
+    char char_buffer[50];
+
+    for (int j = 0; j < num_models; j++) {
+        for (size_t i = 0; i < predictionStructs.size(); i++) {
+            perModelScore.push_back(predictionStructs.at(i).vmafMultiModelPrediction.at(j));
+        }
+        sprintf(char_buffer, "%04d", j + 1);
+        result.set_scores("vmaf_" + std::string(char_buffer), perModelScore);
+        perModelScore.clear();
+    }
+
 }
 
-static const char VMAFOSS_DOC_VERSION[] = "1.3.7";
+static const char VMAFOSS_DOC_VERSION[] = "1.3.11";
+
+static const char BOOSTRAP_VMAF_MODEL_PREFIX[] = "vmaf_";
 
 double RunVmaf(const char* fmt, int width, int height,
                int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
@@ -962,6 +1000,19 @@ double RunVmaf(const char* fmt, int width, int height,
     double exec_fps = (double)num_frames_subsampled * n_subsample / (double)timer.elapsed();
     printf("Exec FPS: %f\n", exec_fps);
 
+    std::vector<std::string> result_keys = result.get_keys();
+
+    int num_boot_models = 0;
+
+    // determine number of bootstrap models (if any)
+    for (size_t j=0; j<result_keys.size(); j++)
+    {
+        if (result_keys[j].find(BOOSTRAP_VMAF_MODEL_PREFIX)!= std::string::npos)
+        {
+            num_boot_models += 1;
+        }
+    }
+
     double aggregate_psnr = 0.0, aggregate_ssim = 0.0, aggregate_ms_ssim = 0.0;
     if (result.has_scores("psnr"))
         aggregate_psnr = result.get_score("psnr");
@@ -995,7 +1046,6 @@ double RunVmaf(const char* fmt, int width, int height,
     {
         /* output to json */
 
-        std::vector<std::string> result_keys = result.get_keys();
         double value;
 
         OTab params;
@@ -1003,6 +1053,8 @@ double RunVmaf(const char* fmt, int width, int height,
         params["scaledWidth"] = width;
         params["scaledHeight"] = height;
         params["subsample"] = n_subsample;
+        params["num_bootstrap_models"] = num_boot_models;
+        params["bootstrap_model_prefix"] = BOOSTRAP_VMAF_MODEL_PREFIX;
 
         Arr metrics;
         for (size_t j=0; j<result_keys.size(); j++)
@@ -1040,7 +1092,6 @@ double RunVmaf(const char* fmt, int width, int height,
     {
         /* output to xml */
 
-        std::vector<std::string> result_keys = result.get_keys();
         pugi::xml_document xml;
         pugi::xml_node xml_root = xml.append_child("VMAF");
         xml_root.append_attribute("version") = VMAFOSS_DOC_VERSION;
@@ -1050,6 +1101,8 @@ double RunVmaf(const char* fmt, int width, int height,
         params_node.append_attribute("scaledWidth") = width;
         params_node.append_attribute("scaledHeight") = height;
         params_node.append_attribute("subsample") = n_subsample;
+        params_node.append_attribute("num_bootstrap_models") = num_boot_models;
+        params_node.append_attribute("bootstrap_model_prefix") = BOOSTRAP_VMAF_MODEL_PREFIX;
 
         auto info_node = xml_root.append_child("fyi");
         info_node.append_attribute("numOfFrames") = (int)num_frames_subsampled;
