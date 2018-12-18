@@ -142,7 +142,7 @@ class VmafLegacyQualityRunner(QualityRunner):
                             'VMAF_feature_ansnr_scores': (10.0, 50.0),
                             'VMAF_feature_motion_scores': (0.0, 20.0)}
 
-    SVM_MODEL_FILE = VmafConfig.model_path("model_V8a.model")
+    SVM_MODEL_FILE = VmafConfig.model_path("other_models", "model_V8a.model")
 
     # model_v8a.model is trained with customized feature order:
     SVM_MODEL_ORDERED_SCORES_KEYS = ['VMAF_feature_vif_scores',
@@ -702,16 +702,15 @@ class VmafossExecQualityRunner(QualityRunner):
         root = tree.getroot()
         scores = []
 
-        num_bootstrap_models = np.int(root.findall('params')[0].attrib['num_bootstrap_models'])
-        bootstrap_model_prefix = root.findall('params')[0].attrib['bootstrap_model_prefix']
-
-        bootstrap_model_list = []
-        for bootstrap_ind in range(num_bootstrap_models):
-            # NOTE: bootstrap model indices start from 1
-            bootstrap_model_list.append('{}{:04d}'.format(bootstrap_model_prefix, bootstrap_ind + 1))
-
-        # augment the feature set with any bootstrap models
-        self.FEATURES += bootstrap_model_list
+        # check if vmafossexec returned additional info about the bootstrapped models
+        # bootstrap_model_list_str is a comma-separated string of model names
+        if 'bootstrap_model_list_str' in root.findall('params')[0].attrib:
+            bootstrap_model_list = []
+            vmaf_params = root.findall('params')[0].attrib
+            bootstrap_model_list_str = vmaf_params['bootstrap_model_list_str']
+            bootstrap_model_list = bootstrap_model_list_str.split(',')
+            # augment the feature set with bootstrap models
+            self.FEATURES += bootstrap_model_list
 
         feature_scores = [[] for _ in self.FEATURES]
 
@@ -1055,7 +1054,7 @@ class NiqeQualityRunner(QualityRunner):
     TYPE = 'NIQE'
 
     VERSION = '0.1'
-    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path('niqe_v0.1.pkl')
+    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path('other_models', 'niqe_v0.1.pkl')
 
     DEFAULT_FEATURE_DICT = {'NIQE_noref_feature': 'all'}
 

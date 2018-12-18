@@ -124,7 +124,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath':VmafConfig.model_path("nflxtrain_norm_type_none.pkl"),
+                'model_filepath':VmafConfig.model_path("other_models", "nflxtrain_norm_type_none.pkl"),
             },
         )
         self.runner.run()

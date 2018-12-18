@@ -855,9 +855,9 @@ void BootstrapVmafQualityRunner::_transform_score(LibsvmNusvrTrainTestModel& mod
     _transform_value(model, scoreMinusDelta);
 
     // transform bootstrap model scores
-    int num_models = predictionStruct.vmafMultiModelPrediction.size();
+    size_t num_models = predictionStruct.vmafMultiModelPrediction.size();
 
-    for (int model_i = 0; model_i < num_models; model_i++)
+    for (size_t model_i = 0; model_i < num_models; model_i++)
     {
         _transform_value(model, predictionStruct.vmafMultiModelPrediction.at(model_i));
     }
@@ -881,9 +881,9 @@ void BootstrapVmafQualityRunner::_clip_score(LibsvmNusvrTrainTestModel& model,
     _clip_value(model, scoreMinusDelta);
 
     // clip bootstrap model scores
-    int num_models = predictionStruct.vmafMultiModelPrediction.size();
+    size_t num_models = predictionStruct.vmafMultiModelPrediction.size();
 
-    for (int model_i; model_i < num_models; model_i++)
+    for (size_t model_i = 0; model_i < num_models; model_i++)
     {
         _clip_value(model, predictionStruct.vmafMultiModelPrediction.at(model_i));
     }
@@ -919,25 +919,23 @@ void BootstrapVmafQualityRunner::_set_prediction_result(
     result.set_scores("ci95_high", ci95HighScore);
 
     // num_models is same across frames, so just use first frame length
-    int num_models = predictionStructs.at(0).vmafMultiModelPrediction.size();
+    size_t num_models = predictionStructs.at(0).vmafMultiModelPrediction.size();
     std::vector<double> perModelScore;
     // character array to put the name of the vmaf bootstrap model, e.g. vmaf_0001 is the first one
     char char_buffer[50];
 
-    for (int j = 0; j < num_models; j++) {
+    for (size_t j = 0; j < num_models; j++) {
         for (size_t i = 0; i < predictionStructs.size(); i++) {
             perModelScore.push_back(predictionStructs.at(i).vmafMultiModelPrediction.at(j));
         }
         sprintf(char_buffer, "%04d", j + 1);
-        result.set_scores("vmaf_" + std::string(char_buffer), perModelScore);
+        result.set_scores(BOOSTRAP_VMAF_MODEL_PREFIX + std::string(char_buffer), perModelScore);
         perModelScore.clear();
     }
 
 }
 
 static const char VMAFOSS_DOC_VERSION[] = "1.3.11";
-
-static const char BOOSTRAP_VMAF_MODEL_PREFIX[] = "vmaf_";
 
 double RunVmaf(const char* fmt, int width, int height,
                int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
@@ -1002,14 +1000,27 @@ double RunVmaf(const char* fmt, int width, int height,
 
     std::vector<std::string> result_keys = result.get_keys();
 
-    int num_boot_models = 0;
+    int num_bootstrap_models = 0;
+    std::string bootstrap_model_list_str = "";
 
-    // determine number of bootstrap models (if any)
+    // determine number of bootstrap models (if any) and construct a comma-separated string of bootstrap vmaf model names
     for (size_t j=0; j<result_keys.size(); j++)
     {
         if (result_keys[j].find(BOOSTRAP_VMAF_MODEL_PREFIX)!= std::string::npos)
         {
-            num_boot_models += 1;
+            if (num_bootstrap_models == 0)
+            {
+                bootstrap_model_list_str += result_keys[j] + ",";
+            }
+            else if (num_bootstrap_models == 1)
+            {
+                bootstrap_model_list_str += result_keys[j];
+            }
+            else
+            {
+                bootstrap_model_list_str += "," + result_keys[j];
+            }
+            num_bootstrap_models += 1;
         }
     }
 
@@ -1053,8 +1064,8 @@ double RunVmaf(const char* fmt, int width, int height,
         params["scaledWidth"] = width;
         params["scaledHeight"] = height;
         params["subsample"] = n_subsample;
-        params["num_bootstrap_models"] = num_boot_models;
-        params["bootstrap_model_prefix"] = BOOSTRAP_VMAF_MODEL_PREFIX;
+        params["num_bootstrap_models"] = num_bootstrap_models;
+        params["bootstrap_model_list_str"] = bootstrap_model_list_str;
 
         Arr metrics;
         for (size_t j=0; j<result_keys.size(); j++)
@@ -1101,8 +1112,8 @@ double RunVmaf(const char* fmt, int width, int height,
         params_node.append_attribute("scaledWidth") = width;
         params_node.append_attribute("scaledHeight") = height;
         params_node.append_attribute("subsample") = n_subsample;
-        params_node.append_attribute("num_bootstrap_models") = num_boot_models;
-        params_node.append_attribute("bootstrap_model_prefix") = BOOSTRAP_VMAF_MODEL_PREFIX;
+        params_node.append_attribute("num_bootstrap_models") = num_bootstrap_models;
+        params_node.append_attribute("bootstrap_model_list_str") = bootstrap_model_list_str.c_str();
 
         auto info_node = xml_root.append_child("fyi");
         info_node.append_attribute("numOfFrames") = (int)num_frames_subsampled;
