@@ -150,7 +150,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath':VmafConfig.model_path("nflx_v1.pkl"),
+                'model_filepath':VmafConfig.model_path("other_models", "nflx_v1.pkl"),
             },
             optional_dict2=None,
         )
@@ -359,7 +359,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=self.result_store,
             optional_dict={
-                'model_filepath':VmafConfig.model_path("nflx_vmaff_rf_v2.pkl"),
+                'model_filepath':VmafConfig.model_path("other_models", "nflx_vmaff_rf_v2.pkl"),
             },
             optional_dict2=None,
         )
@@ -390,7 +390,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=self.result_store,
             optional_dict={
-                'model_filepath':VmafConfig.model_path("nflxtrain_norm_type_none.pkl"),
+                'model_filepath':VmafConfig.model_path("other_models", "nflxtrain_norm_type_none.pkl"),
             },
             optional_dict2=None,
         )
@@ -445,7 +445,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath': [VmafConfig.model_path("vmaf_v0.6.1.pkl"), VmafConfig.model_path("vmaf_v0.6.0.pkl")],
+                'model_filepath': [VmafConfig.model_path("vmaf_v0.6.1.pkl"), VmafConfig.model_path("other_models", "vmaf_v0.6.0.pkl")],
             },
         )
         self.runner.run()
@@ -1297,7 +1297,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath':VmafConfig.model_path("nflx_vmaff_rf_v2.pkl"),
+                'model_filepath':VmafConfig.model_path("other_models", "nflx_vmaff_rf_v2.pkl"),
             },
             optional_dict2=None,
         )
