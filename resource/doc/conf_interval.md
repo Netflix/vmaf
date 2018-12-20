@@ -3,7 +3,11 @@ VMAF Confidence Interval
 
 Since VDK 1.3.7 (June 2018), we have introduced a way to quantify the level of confidence that a VMAF prediction entails. With this method, each VMAF prediction score can be accompanied by a 95% confidence interval (CI), which quantifies the level of confidence that the prediction lies within the interval. 
 
-The CI is a consequence of the fact that the VMAF model is trained on a sample of subjective scores, while the population is unknown. The CI is established through [bootstrapping on the prediction residue](http://www.jstor.org/stable/2241979) using the full training data. Essentially, it trains multiple models, using "resampling with replacement", on the residue of prediction. Each of the models will introduce a slightly different prediction. The variability of these predictions quantifies the level of confidence -- the more close these predictions, the more confident the prediction using the full data. More details can be found in [this](VQEG_SAM_2018_023_VMAF_Variability.pdf) slide deck.
+The CI is a consequence of the fact that the VMAF model is trained on a sample of subjective scores, while the population is unknown. The CI is established through [bootstrapping](http://www.jstor.org/stable/2241979) using the full training data. Essentially, the bootstrapping approach trains multiple models. Each of the models will introduce a slightly different prediction. The variability of these predictions quantifies the level of confidence -- the more close these predictions, the more confident the prediction using the full data. More details can be found in [this](VQEG_SAM_2018_023_VMAF_Variability.pdf) slide deck.
+
+### Implementation Details of Bootstrapping
+
+There are two ways to perform bootstrapping on VMAF. The first one is called plain/vanilla bootstrapping (b) and the latter one is called residue bootstrapping (rb). In the first case, the training data is resampled with replacement to create multiple models and, in the second case, the bootstrapping is performed on the prediction residue. For example, vmaf_b_v0.6.3.pkl and vmaf_rb_v0.6.3.pkl are the VMAF models using plain and residue bootstrapping respectively. We recommend using plain bootstrapping, e.g., vmaf_b_v0.6.3.pkl. While plain bootstrapping tends to produce larger measurement uncertainty compared to its residue counterpart, it is unbiased with respect to the full VMAF model (which uses the full training data).
 
 ### Run in Command Line
 
