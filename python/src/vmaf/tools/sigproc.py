@@ -137,7 +137,11 @@ def _cov_kendall(x):
             # scipy 1.2.0 kendalltau() has an issue with the p-value of two long vectors that are perfectly monotonic
             # see here: https://github.com/scipy/scipy/issues/9611
             # until this is fixed, we bypass the exact calculation method by using the variance approximation (asymptotic method)
-            kendall, _ = scipy.stats.kendalltau(x[i,:], x[j,:], method='asymptotic')
+            # need a try-except clause: ealier scipy versions do not support a method keywarg
+            try:
+                kendall, _ = scipy.stats.kendalltau(x[i,:], x[j,:], method='asymptotic')
+            except TypeError:
+                kendall, _ = scipy.stats.kendalltau(x[i, :], x[j, :])
             cov_[i, j] = kendall
             cov_[j, i] = kendall
     return cov_
