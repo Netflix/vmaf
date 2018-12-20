@@ -256,12 +256,17 @@ class TestTrainOnDataset(unittest.TestCase):
                         parallelize=True,
                         aggregate_method=None)
 
-        sample_bootstrap_result = [98.16651475310283, 98.91183061083787, 99.36422724288224, 96.50048423265571, 99.21273677366027,
-                   98.62336376880593, 98.62051499518681, 98.8642476917713, 97.18679108400873, 97.90880967431475,
-                   99.02401501170068, 98.81633865219612, 99.41999313834772, 98.14027966557246, 98.1642532047448,
-                   97.38297850600293, 99.67477792382446, 99.00814352558844, 100.0, 99.85637183960806]
+        expecteds = [98.16651475310283, 98.91183061083787, 99.36422724288224, 96.50048423265571, 99.21273677366027,
+                     98.62336376880593, 98.62051499518681, 98.8642476917713, 97.18679108400873, 97.90880967431475,
+                     99.02401501170068, 98.81633865219612, 99.41999313834772, 98.14027966557246, 98.1642532047448,
+                     97.38297850600293, 99.67477792382446, 99.00814352558844, 100.0, 99.85637183960806]
 
-        self.assertAlmostEqual(results[0]['BOOTSTRAP_VMAF_all_models_score'], sample_bootstrap_result, places=4)
+        actuals = results[0]['BOOTSTRAP_VMAF_all_models_score']
+
+        assert len(actuals) == len(expecteds), "Expected and actual bootstrap prediction lists do not match in length."
+
+        for actual, expected in zip(actuals, expecteds):
+            self.assertAlmostEqual(actual, expected, places=4)
         self.assertAlmostEqual(results[0]['BOOTSTRAP_VMAF_score'], 99.32876664539778, places=4)
 
     def test_test_on_dataset_raw(self):
