@@ -2,7 +2,8 @@ import os
 import unittest
 
 from vmaf.config import VmafConfig
-from vmaf.routine import train_test_vmaf_on_dataset, read_dataset, run_test_on_dataset, generate_dataset_from_raw
+# from vmaf.routine import train_test_vmaf_on_dataset, read_dataset, run_test_on_dataset, generate_dataset_from_raw
+from vmaf.routine import read_dataset, generate_dataset_from_raw
 from vmaf.tools.misc import import_python_file
 from vmaf.core.quality_runner import VmafQualityRunner, BootstrapVmafQualityRunner
 from sureal.subjective_model import MosModel
@@ -178,6 +179,7 @@ class TestTrainOnDataset(unittest.TestCase):
             os.remove(self.output_model_filepath)
 
     def test_train_test_on_dataset_with_dis1st_thr(self):
+        from vmaf.routine import train_test_vmaf_on_dataset
         train_dataset = import_python_file(
             VmafConfig.test_resource_path('dataset_sample.py'))
         model_param = import_python_file(
@@ -205,6 +207,7 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(test_stats['ys_label_pred'][0], 90.753010402770798, places=3)
 
     def test_train_test_on_raw_dataset_with_dis1st_thr(self):
+        from vmaf.routine import train_test_vmaf_on_dataset
         train_dataset = import_python_file(
             VmafConfig.test_resource_path('raw_dataset_sample.py'))
         model_param = import_python_file(
@@ -232,6 +235,7 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(test_stats['ys_label_pred'][0], 93.565459224020742, places=3)
 
     def test_test_on_dataset(self):
+        from vmaf.routine import run_test_on_dataset
         test_dataset = import_python_file(
             VmafConfig.test_resource_path('dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
@@ -249,6 +253,7 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(test_assets[3].groundtruth, 80, places=4)
 
     def test_test_on_dataset_bootstrap_quality_runner(self):
+        from vmaf.routine import run_test_on_dataset
         test_dataset = import_python_file(
             VmafConfig.test_resource_path('dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, BootstrapVmafQualityRunner, None,
@@ -270,6 +275,7 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(results[0]['BOOTSTRAP_VMAF_score'], 99.32876664539778, places=4)
 
     def test_test_on_dataset_raw(self):
+        from vmaf.routine import run_test_on_dataset
         test_dataset = import_python_file(
             VmafConfig.test_resource_path('raw_dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
@@ -291,6 +297,7 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(test_assets[3].groundtruth_std, 3.5355339059327373, places=4)
 
     def test_test_on_dataset_mle(self):
+        from vmaf.routine import run_test_on_dataset
         test_dataset = import_python_file(
             VmafConfig.test_resource_path('raw_dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
