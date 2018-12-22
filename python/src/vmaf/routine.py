@@ -281,6 +281,7 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
 
         # need to revert the list of lists, so that the outer list has the predictions for each model separately
         predictions_all_models = np.array(predictions_all_models).T.tolist()
+        num_models = np.shape(predictions_all_models)[0]
 
         stats = model_type.get_stats(groundtruths, predictions,
                                      ys_label_raw=raw_grountruths,
@@ -296,6 +297,7 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
         stats = model_type.get_stats(groundtruths, predictions,
                                      ys_label_raw=raw_grountruths,
                                      ys_label_stddev=groundtruths_std)
+        num_models = 1
 
     print 'Stats on testing data: {}'.format(model_type.format_stats_for_print(stats))
 
@@ -323,10 +325,11 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
         ax.set_xlabel('True Score')
         ax.set_ylabel("Predicted Score")
         ax.grid()
-        ax.set_title("{runner}\n{stats}".format(
+        ax.set_title("{runner}{num_models}\n{stats}".format(
             dataset=test_assets[0].dataset,
             runner=runner_class.TYPE,
             stats=model_type.format_stats_for_plot(stats),
+            num_models=", {} models".format(num_models) if num_models > 1 else "",
         ))
 
     return test_assets, results
