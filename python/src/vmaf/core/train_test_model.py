@@ -47,6 +47,31 @@ class RegressorMixin(object):
                  'ys_label': list(ys_label),
                  'ys_label_pred': list(ys_label_pred)}
 
+        # create perf metric distributions, if multiple predictions are passed in as kwargs
+        # spearman distribution for now
+        if 'ys_label_pred_all_models' in kwargs:
+
+            ys_label_pred_all_models = kwargs['ys_label_pred_all_models']
+
+            srcc_all_models = []
+            pcc_all_models = []
+            rmse_all_models = []
+
+            for ys_label_pred_some_model in ys_label_pred_all_models:
+                srcc_some_model = SrccPerfMetric(ys_label, ys_label_pred_some_model) \
+                    .evaluate(enable_mapping=True)['score']
+                pcc_some_model = PccPerfMetric(ys_label, ys_label_pred_some_model) \
+                    .evaluate(enable_mapping=True)['score']
+                rmse_some_model = RmsePerfMetric(ys_label, ys_label_pred_some_model) \
+                    .evaluate(enable_mapping=True)['score']
+                srcc_all_models.append(srcc_some_model)
+                pcc_all_models.append(pcc_some_model)
+                rmse_all_models.append(rmse_some_model)
+
+            stats['SRCC_across_model_distribution'] = srcc_all_models
+            stats['PCC_across_model_distribution'] = pcc_all_models
+            stats['RMSE_across_model_distribution'] = rmse_all_models
+
         ys_label_raw = kwargs['ys_label_raw'] if 'ys_label_raw' in kwargs else None
 
         if ys_label_raw is not None:
@@ -109,6 +134,29 @@ class RegressorMixin(object):
             else:
                 return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f})'. \
                     format(srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
+
+    @staticmethod
+    def format_across_model_stats_for_print(stats):
+        if stats is None:
+            return '(Invalid Stats)'
+        else:
+            return '(SRCC: {srcc:.3f}+/-{srcc_ci:.3f}, PCC: {pcc:.3f}+/-{pcc_ci:.3f}, RMSE: {rmse:.3f})+/-{rmse_ci:.3f}'. \
+                format(srcc=stats['SRCC'], srcc_ci=stats['SRCC_across_model_ci'],
+                       pcc=stats['PCC'], pcc_ci=stats['PCC_across_model_ci'],
+                       rmse=stats['RMSE'], rmse_ci=stats['RMSE_across_model_ci'], )
+
+    @staticmethod
+    def extract_across_model_stats(stats):
+        if 'SRCC_across_model_distribution' in stats \
+                and 'PCC_across_model_distribution' in stats\
+                and 'RMSE_across_model_distribution' in stats:
+            srcc_across_model_ci = 1.96 * np.std(stats['SRCC_across_model_distribution'])
+            pcc_across_model_ci = 1.96 * np.std(stats['PCC_across_model_distribution'])
+            rmse_across_model_ci = 1.96 * np.std(stats['RMSE_across_model_distribution'])
+            stats['SRCC_across_model_ci'] = srcc_across_model_ci
+            stats['PCC_across_model_ci'] = pcc_across_model_ci
+            stats['RMSE_across_model_ci'] = rmse_across_model_ci
+        return stats
 
     @staticmethod
     @deprecated
@@ -247,13 +295,14 @@ class ClassifierMixin(object):
         else:
             assert False, 'Unknow type: {} for get_objective_score().'.format(type)
 
+
 class TrainTestModel(TypeVersionEnabled):
 
     __metaclass__ = ABCMeta
 
     @classmethod
     @abstractmethod
-    def _train(cls, param_dict, xys_2d):
+    def _train(cls, param_dict, xys_2d, **kwargs):
         raise NotImplementedError
 
     @classmethod
@@ -432,9 +481,9 @@ class TrainTestModel(TypeVersionEnabled):
         xys_2d = self._normalize_xys(xys_2d)
         return xys_2d
 
-    def train(self, xys):
+    def train(self, xys, **kwargs):
         xys_2d = self._preproc_train(xys)
-        model = self._train(self.param_dict, xys_2d)
+        model = self._train(self.param_dict, xys_2d, **kwargs)
         self.model = model
 
     @staticmethod
@@ -687,7 +736,7 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
     VERSION = "0.1"
 
     @classmethod
-    def _train(cls, model_param, xys_2d):
+    def _train(cls, model_param, xys_2d, **kwargs):
         """
         :param model_param:
         :param xys_2d:
@@ -832,7 +881,7 @@ class SklearnRandomForestTrainTestModel(TrainTestModel, RegressorMixin):
     VERSION = "0.1"
 
     @classmethod
-    def _train(cls, model_param, xys_2d):
+    def _train(cls, model_param, xys_2d, **kwargs):
         """
         random forest regression
         http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html
@@ -849,6 +898,8 @@ class SklearnRandomForestTrainTestModel(TrainTestModel, RegressorMixin):
             del model_param_['score_clip']
         if 'custom_clip_0to1_map' in model_param_:
             del model_param_['custom_clip_0to1_map']
+        if 'num_models' in model_param_:
+            del model_param_['num_models']
 
         from sklearn import ensemble
         model = ensemble.RandomForestRegressor(
@@ -864,13 +915,55 @@ class SklearnRandomForestTrainTestModel(TrainTestModel, RegressorMixin):
         ys_label_pred = model.predict(xs_2d)
         return ys_label_pred
 
+
+class SklearnLinearRegressionTrainTestModel(TrainTestModel, RegressorMixin):
+
+    TYPE = 'LINEARREG'
+    VERSION = "0.1"
+
+    @classmethod
+    def _train(cls, model_param, xys_2d, **kwargs):
+        """
+        linear regression
+        https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html
+        :param model_param:
+        :param xys_2d:
+        :return:
+        """
+        model_param_ = model_param.copy()
+
+        # remove keys unassociated with sklearn
+        if 'norm_type' in model_param_:
+            del model_param_['norm_type']
+        if 'score_clip' in model_param_:
+            del model_param_['score_clip']
+        if 'custom_clip_0to1_map' in model_param_:
+            del model_param_['custom_clip_0to1_map']
+        if 'num_models' in model_param_:
+            del model_param_['num_models']
+
+        from sklearn import linear_model
+        model = linear_model.LinearRegression(
+            **model_param_
+        )
+        model.fit(xys_2d[:, 1:], np.ravel(xys_2d[:, 0]))
+
+        return model
+
+    @classmethod
+    def _predict(cls, model, xs_2d):
+        # directly call sklearn's model's predict() function
+        ys_label_pred = model.predict(xs_2d)
+        return ys_label_pred
+
+
 class SklearnExtraTreesTrainTestModel(TrainTestModel, RegressorMixin):
 
     TYPE = 'EXTRATREES'
     VERSION = "0.1"
 
     @classmethod
-    def _train(cls, model_param, xys_2d):
+    def _train(cls, model_param, xys_2d, **kwargs):
         """
         extremely random trees
         http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesRegressor.html
@@ -887,6 +980,8 @@ class SklearnExtraTreesTrainTestModel(TrainTestModel, RegressorMixin):
             del model_param_['score_clip']
         if 'custom_clip_0to1_map' in model_param_:
             del model_param_['custom_clip_0to1_map']
+        if 'num_models' in model_param_:
+            del model_param_['num_models']
 
         from sklearn import ensemble
         model = ensemble.ExtraTreesRegressor(
@@ -1073,9 +1168,11 @@ class BootstrapMixin(object):
 
     MIXIN_VERSION = 'B0.0.1'
 
-    DEFAULT_NUM_MODELS = 100
+    # since bootstrap version 0.6.3, we want num_models to be + 1 the number of bootstrap model.
+    # Therefore, we use 100 bootstrap models or (DEFAULT_NUM_MODELS - 1) bootstrap models.
+    DEFAULT_NUM_MODELS = 101
 
-    def train(self, xys):
+    def train(self, xys, **kwargs):
         # override TrainTestModel.train()
         xys_2d = self._preproc_train(xys)
         num_models = self._get_num_models()
@@ -1083,7 +1180,7 @@ class BootstrapMixin(object):
         models = []
 
         # first model: use full training data
-        model_0 = self._train(self.param_dict, xys_2d)
+        model_0 = self._train(self.param_dict, xys_2d, **kwargs)
         models.append(model_0)
 
         # rest models: resample training data with replacement
@@ -1092,7 +1189,7 @@ class BootstrapMixin(object):
             # random sample with replacement:
             indices = np.random.choice(range(sample_size), size=sample_size, replace=True)
             xys_2d_ = xys_2d[indices, :]
-            model_ = self._train(self.param_dict, xys_2d_)
+            model_ = self._train(self.param_dict, xys_2d_, **kwargs)
             models.append(model_)
         self.model = models
 
@@ -1121,22 +1218,28 @@ class BootstrapMixin(object):
         ys_label_pred = self.denormalize_ys(ys_label_pred)
 
         # rest models: bagging (bootstrap aggregation)
-        ys_list = []
-        for model_ in models[1:]:
-            ys = self._predict(model_, xs_2d)
-            ys_list.append(ys)
-        ys_2d = np.vstack(ys_list)
-        ys_2d = self.denormalize_ys(ys_2d)
-        ys_label_pred_bagging = np.mean(ys_2d, axis=0)
-        ys_label_pred_stddev = np.std(ys_2d, axis=0)
-        ys_label_pred_ci95_low = np.percentile(ys_2d, 2.5, axis=0)
-        ys_label_pred_ci95_high = np.percentile(ys_2d, 97.5, axis=0)
-        return {'ys_label_pred': ys_label_pred,
-                'ys_label_pred_bagging': ys_label_pred_bagging,
-                'ys_label_pred_stddev': ys_label_pred_stddev,
-                'ys_label_pred_ci95_low': ys_label_pred_ci95_low,
-                'ys_label_pred_ci95_high': ys_label_pred_ci95_high,
-                }
+        # first check if there are any bootstrapped models
+        if num_models > 1:
+            ys_list = []
+            for model_ in models[1:]:
+                ys = self._predict(model_, xs_2d)
+                ys_list.append(ys)
+            ys_2d = np.vstack(ys_list)
+            ys_2d = self.denormalize_ys(ys_2d)
+            ys_label_pred_bagging = np.mean(ys_2d, axis=0)
+            ys_label_pred_stddev = np.std(ys_2d, axis=0)
+            ys_label_pred_ci95_low = np.percentile(ys_2d, 2.5, axis=0)
+            ys_label_pred_ci95_high = np.percentile(ys_2d, 97.5, axis=0)
+            return {'ys_label_pred_all_models': ys_2d,
+                    'ys_label_pred': ys_label_pred,
+                    'ys_label_pred_bagging': ys_label_pred_bagging,
+                    'ys_label_pred_stddev': ys_label_pred_stddev,
+                    'ys_label_pred_ci95_low': ys_label_pred_ci95_low,
+                    'ys_label_pred_ci95_high': ys_label_pred_ci95_high,
+                    }
+        else:
+            return {'ys_label_pred': ys_label_pred,
+                    }
 
     def evaluate_stddev(self, xs):
         prediction = self.predict(xs)
@@ -1161,6 +1264,9 @@ class BootstrapMixin(object):
         assert num_models == len(models)
         for i_model, model in enumerate(models):
             filename_ = self._get_model_i_filename(filename, i_model)
+            filedir = os.path.dirname(filename_)
+            if not os.path.exists(filedir):
+                os.makedirs(filedir)
             model_dict_ = model_dict.copy()
             model_dict_['model'] = model
             self._to_file(filename_, param_dict, model_dict_)
@@ -1230,7 +1336,7 @@ class ResidueBootstrapMixin(BootstrapMixin):
 
     MIXIN_VERSION = 'RB0.0.1'
 
-    def train(self, xys):
+    def train(self, xys, **kwargs):
         # override TrainTestModel.train()
         xys_2d = self._preproc_train(xys)
         num_models = self._get_num_models()
@@ -1238,7 +1344,7 @@ class ResidueBootstrapMixin(BootstrapMixin):
         models = []
 
         # first model: use full training data
-        model_0 = self._train(self.param_dict, xys_2d)
+        model_0 = self._train(self.param_dict, xys_2d, **kwargs)
         models.append(model_0)
 
         # predict and find residue
@@ -1255,7 +1361,7 @@ class ResidueBootstrapMixin(BootstrapMixin):
             residue_ys_resampled = residue_ys[indices]
             ys_resampled = residue_ys_resampled + ys_pred
             xys_2d_ = np.array(np.hstack((np.matrix(ys_resampled).T, xs_2d)))
-            model_ = self._train(self.param_dict, xys_2d_)
+            model_ = self._train(self.param_dict, xys_2d_, **kwargs)
             models.append(model_)
         self.model = models
 

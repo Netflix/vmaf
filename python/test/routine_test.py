@@ -2,9 +2,10 @@ import os
 import unittest
 
 from vmaf.config import VmafConfig
-from vmaf.routine import train_test_vmaf_on_dataset, read_dataset, run_test_on_dataset, generate_dataset_from_raw
+# from vmaf.routine import train_test_vmaf_on_dataset, read_dataset, run_test_on_dataset, generate_dataset_from_raw
+from vmaf.routine import read_dataset, generate_dataset_from_raw
 from vmaf.tools.misc import import_python_file
-from vmaf.core.quality_runner import VmafQualityRunner
+from vmaf.core.quality_runner import VmafQualityRunner, BootstrapVmafQualityRunner
 from sureal.subjective_model import MosModel
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
@@ -62,6 +63,28 @@ class TestReadDataset(unittest.TestCase):
         self.assertEqual(train_assets[0].asset_dict['quality_width'], 200)
         self.assertEqual(train_assets[0].asset_dict['quality_height'], 100)
         self.assertEqual(train_assets[0].asset_dict['resampling_type'], 'bicubic')
+
+    def test_read_dataset_fps_rebuf_indices(self):
+        train_dataset_path = VmafConfig.test_resource_path('test_dataset_fps_rebufinds.py')
+        train_dataset = import_python_file(train_dataset_path)
+        train_assets = read_dataset(train_dataset)
+
+        self.assertTrue('fps' in train_assets[0].asset_dict.keys())
+        self.assertTrue('rebuf_indices' in train_assets[0].asset_dict.keys())
+
+    def test_read_dataset_bad_fps_rebuf_indices(self):
+        train_dataset_path = VmafConfig.test_resource_path('test_dataset_bad_fps_rebufinds.py')
+        train_dataset = import_python_file(train_dataset_path)
+
+        with self.assertRaises(AssertionError):
+            train_assets = read_dataset(train_dataset)
+
+    def test_read_dataset_fps_bad_rebuf_indices(self):
+        train_dataset_path = VmafConfig.test_resource_path('test_dataset_fps_bad_rebufinds.py')
+        train_dataset = import_python_file(train_dataset_path)
+
+        with self.assertRaises(AssertionError):
+            train_assets = read_dataset(train_dataset)
 
     def test_read_dataset_diffyuv(self):
         train_dataset_path = VmafConfig.test_resource_path('test_dataset_diffyuv.py')
@@ -156,6 +179,7 @@ class TestTrainOnDataset(unittest.TestCase):
             os.remove(self.output_model_filepath)
 
     def test_train_test_on_dataset_with_dis1st_thr(self):
+        from vmaf.routine import train_test_vmaf_on_dataset
         train_dataset = import_python_file(
             VmafConfig.test_resource_path('dataset_sample.py'))
         model_param = import_python_file(
@@ -183,6 +207,7 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(test_stats['ys_label_pred'][0], 90.753010402770798, places=3)
 
     def test_train_test_on_raw_dataset_with_dis1st_thr(self):
+        from vmaf.routine import train_test_vmaf_on_dataset
         train_dataset = import_python_file(
             VmafConfig.test_resource_path('raw_dataset_sample.py'))
         model_param = import_python_file(
@@ -210,6 +235,7 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(test_stats['ys_label_pred'][0], 93.565459224020742, places=3)
 
     def test_test_on_dataset(self):
+        from vmaf.routine import run_test_on_dataset
         test_dataset = import_python_file(
             VmafConfig.test_resource_path('dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
@@ -226,7 +252,30 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(test_assets[2].groundtruth, 100, places=4)
         self.assertAlmostEqual(test_assets[3].groundtruth, 80, places=4)
 
+    def test_test_on_dataset_bootstrap_quality_runner(self):
+        from vmaf.routine import run_test_on_dataset
+        test_dataset = import_python_file(
+            VmafConfig.test_resource_path('dataset_sample.py'))
+        test_assets, results = run_test_on_dataset(test_dataset, BootstrapVmafQualityRunner, None,
+                        None, None,
+                        parallelize=True,
+                        aggregate_method=None)
+
+        expecteds = [98.7927560599655, 100.0, 100.0, 98.82959541116277, 99.80711961053976, 98.91713244333198, 100.0,
+                     99.33233498293374, 98.99337537979711, 99.62668672314118, 99.00879643796763, 100.0, 97.29492843378944,
+                     100.0, 99.02095425720624, 94.50521964145268, 95.63007904351339, 98.57370486684022, 100.0,
+                     99.3674807701887]
+
+        actuals = results[0]['BOOTSTRAP_VMAF_all_models_score']
+
+        assert len(actuals) == len(expecteds), "Expected and actual bootstrap prediction lists do not match in length."
+
+        for actual, expected in zip(actuals, expecteds):
+            self.assertAlmostEqual(actual, expected, places=4)
+        self.assertAlmostEqual(results[0]['BOOTSTRAP_VMAF_score'], 99.32876664539778, places=4)
+
     def test_test_on_dataset_raw(self):
+        from vmaf.routine import run_test_on_dataset
         test_dataset = import_python_file(
             VmafConfig.test_resource_path('raw_dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
@@ -248,6 +297,7 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(test_assets[3].groundtruth_std, 3.5355339059327373, places=4)
 
     def test_test_on_dataset_mle(self):
+        from vmaf.routine import run_test_on_dataset
         test_dataset = import_python_file(
             VmafConfig.test_resource_path('raw_dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,

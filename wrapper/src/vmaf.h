@@ -36,6 +36,8 @@
 #include "chooseser.h"
 #include "darray.h"
 
+static const char BOOSTRAP_VMAF_MODEL_PREFIX[] = "vmaf_";
+
 double RunVmaf(const char* fmt, int width, int height,
                int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
                void *user_data, const char *model_path, const char *log_path, const char *log_fmt,
@@ -63,6 +65,10 @@ class StatVector
 public:
     StatVector() {}
     StatVector(std::vector<double> l): l(l) {}
+    std::vector<double> getVector()
+    {
+        return l;
+    }
     double mean()
     {
         _assert_size();
@@ -214,13 +220,19 @@ enum VmafPredictionReturnType
     MINUS_DELTA
 };
 
+struct VmafPredictionStruct
+{
+    std::map<VmafPredictionReturnType, double> vmafPrediction;
+    std::vector<double> vmafMultiModelPrediction;
+};
+
 class LibsvmNusvrTrainTestModel
 {
 public:
     LibsvmNusvrTrainTestModel(const char *model_path): model_path(model_path) {}
     Val feature_names, norm_type, slopes, intercepts, score_clip, score_transform;
     virtual void load_model();
-    virtual std::map<VmafPredictionReturnType, double> predict(svm_node* nodes);
+    virtual VmafPredictionStruct predict(svm_node* nodes);
     void populate_and_normalize_nodes_at_frm(size_t i_frm,
             svm_node*& nodes, StatVector& adm2,
             StatVector& adm_scale0, StatVector& adm_scale1,
@@ -245,7 +257,7 @@ class BootstrapLibsvmNusvrTrainTestModel: public LibsvmNusvrTrainTestModel {
 public:
     BootstrapLibsvmNusvrTrainTestModel(const char *model_path): LibsvmNusvrTrainTestModel(model_path) {}
     virtual void load_model();
-    virtual std::map<VmafPredictionReturnType, double> predict(svm_node* nodes);
+    virtual VmafPredictionStruct predict(svm_node* nodes);
     virtual ~BootstrapLibsvmNusvrTrainTestModel() {}
 private:
     std::vector<std::unique_ptr<svm_model, SvmDelete>> bootstrap_svm_model_ptrs;
@@ -267,16 +279,16 @@ protected:
     static void _transform_value(LibsvmNusvrTrainTestModel& model, double& prediction);
     static void _clip_value(LibsvmNusvrTrainTestModel& model, double& prediction);
     virtual void _set_prediction_result(
-            std::vector<std::map<VmafPredictionReturnType, double> > predictionMaps,
+            std::vector<VmafPredictionStruct> predictionStructs,
             Result& result);
 private:
     const char *model_path;
     static const int INIT_FRAMES = 1000;
     virtual std::unique_ptr<LibsvmNusvrTrainTestModel> _load_model(const char *model_path);
-    virtual void _postproc_predict(std::map<VmafPredictionReturnType, double>& predictionMap);
-    virtual void _transform_score(LibsvmNusvrTrainTestModel& model, std::map<VmafPredictionReturnType, double>& predictionMap);
-    virtual void _clip_score(LibsvmNusvrTrainTestModel& model, std::map<VmafPredictionReturnType, double>& predictionMap);
-    virtual void _postproc_transform_clip(std::map<VmafPredictionReturnType, double>& predictionMap);
+    virtual void _postproc_predict(VmafPredictionStruct& predictionStruct);
+    virtual void _transform_score(LibsvmNusvrTrainTestModel& model, VmafPredictionStruct& predictionStruct);
+    virtual void _clip_score(LibsvmNusvrTrainTestModel& model, VmafPredictionStruct& predictionStruct);
+    virtual void _postproc_transform_clip(VmafPredictionStruct& predictionStruct);
     void _normalize_predict_denormalize_transform_clip(LibsvmNusvrTrainTestModel& model,
             size_t num_frms, StatVector& adm2,
             StatVector& adm_scale0, StatVector& adm_scale1,
@@ -284,7 +296,7 @@ private:
             StatVector& vif_scale0, StatVector& vif_scale1,
             StatVector& vif_scale2, StatVector& vif_scale3, StatVector& vif,
             StatVector& motion2, bool enable_transform, bool disable_clip,
-            std::vector<std::map<VmafPredictionReturnType, double>>& predictionMaps);
+            std::vector<VmafPredictionStruct>& predictionStructs);
 };
 
 class BootstrapVmafQualityRunner: public VmafQualityRunner
@@ -295,12 +307,12 @@ public:
 private:
     static constexpr double DELTA = 0.01;
     virtual std::unique_ptr<LibsvmNusvrTrainTestModel> _load_model(const char *model_path);
-    virtual void _postproc_predict(std::map<VmafPredictionReturnType, double>& predictionMap);
-    virtual void _transform_score(LibsvmNusvrTrainTestModel& model, std::map<VmafPredictionReturnType, double>& predictionMap);
-    virtual void _clip_score(LibsvmNusvrTrainTestModel& model, std::map<VmafPredictionReturnType, double>& predictionMap);
-    virtual void _postproc_transform_clip(std::map<VmafPredictionReturnType, double>& predictionMap);
+    virtual void _postproc_predict(VmafPredictionStruct& predictionStruct);
+    virtual void _transform_score(LibsvmNusvrTrainTestModel& model, VmafPredictionStruct& predictionStruct);
+    virtual void _clip_score(LibsvmNusvrTrainTestModel& model, VmafPredictionStruct& predictionStruct);
+    virtual void _postproc_transform_clip(VmafPredictionStruct& predictionStruct);
     virtual void _set_prediction_result(
-            std::vector<std::map<VmafPredictionReturnType, double> > predictionMaps,
+            std::vector<VmafPredictionStruct> predictionStructs,
             Result& result);
 };
 

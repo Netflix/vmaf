@@ -76,6 +76,17 @@ class Asset(WorkdirEnabled):
             assert self.ref_width_height is None, 'For ref_yuv_type nonyuv, ref_width_height must NOT be specified.'
         if self.dis_yuv_type == 'notyuv':
             assert self.dis_width_height is None, 'For dis_yuv_type nonyuv, dis_width_height must NOT be specified.'
+        # validate asset_dict
+        self._assert_asset_dict()
+
+    def _assert_asset_dict(self):
+        # perform necessary assertions on asset properties of asset dict
+        if 'fps' in self.asset_dict:
+            assert self.asset_dict['fps'] > 0.0, 'Frame rate has to be positive.'
+        if 'rebuf_indices' in self.asset_dict:
+            assert isinstance(self.asset_dict['rebuf_indices'], list), 'Rebuffering indices need to be in a list.'
+            # check for negative rebuffering indices
+            assert len(filter(lambda x: x < 0, self.asset_dict['rebuf_indices'])) == 0, 'All rebuffering indices have to be >= 0.'
 
     def copy(self, **kwargs):
         new_asset_dict = copy.deepcopy(self.asset_dict)
@@ -347,7 +358,21 @@ class Asset(WorkdirEnabled):
 
     @property
     def fps(self):
-        return self.asset_dict['fps'] if 'fps' in self.asset_dict else None
+        if 'fps' in self.asset_dict:
+            assert self.asset_dict['fps'] > 0.0, 'Frame rate has to be positive.'
+            return self.asset_dict['fps']
+        else:
+            return None
+
+    @property
+    def rebuf_indices(self):
+        if 'rebuf_indices' in self.asset_dict:
+            assert isinstance(self.asset_dict['rebuf_indices'], list), 'Rebuffering indices need to be in a list.'
+            # check for negative rebuffering indices
+            assert len(filter(lambda x: x < 0, self.asset_dict['rebuf_indices'])) == 0, 'All rebuffering indices have to be >= 0.'
+            return self.asset_dict['rebuf_indices']
+        else:
+            return None
 
     # ==== str ====
 

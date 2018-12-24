@@ -53,3 +53,17 @@ A: Since the package has been growing and there were confusion on what this VMAF
 #### Q: If I train a model using the `run_vmaf_training` process with some dataset, and then I run the `run_testing` process with that trained model and the same dataset, why wouldn't I get the same results (SRCC, PCC, and RMSE)? [Issue #191](https://github.com/Netflix/vmaf/issues/191)
 
 A: This is due to the slightly different workflows used by `run_vmaf_training` and `run_testing`. In `run_vmaf_training`, the feature scores (elementary metric scores) from each frame are first extracted,  each feature is then temporally pooled (by arithmetic mean) to form a feature score per clip. The per-clip feature scores are then fit with the subjective scores to obtain the trained model. The reported SRCC, PCC and RMSE are the fitting result. In `run_testing`, the per-frame feature scores are first extracted, then the prediction model is applied on a per-frame basis, resulting "per-frame VMAF score". The final score for the clip is arithmetic mean of the per-frame scores. As you can see, there is a re-ordering of the 'temporal pooling' and 'prediction' operators. If the features from a clip are constant, the re-ordering will not have an impact. In practice, we find the numeric difference to be small.
+
+### Q: How do I use VMAF with downscaled videos?
+
+If you have a distorted video that was scaled down (e.g. for adaptive streaming) and want to calculate VMAF, you can use ffmpeg with `libvmaf` to perform the re-scaling for you.
+
+For example, to upscale the distorted video to 1080p:
+
+```
+ffmpeg -i main.mpg -i ref.mpg -filter_complex "[0:v]scale=1920:1080[main];[main][1:v]libvmaf" -f null -
+```
+
+This scales the first input video (`0:v`) and forwards it to VMAF (`libvmaf`) with the label `main`, where it is compared against the second input video, `1:v`.
+
+See the [FFmpeg Filtering Guide](https://trac.ffmpeg.org/wiki/FilteringGuide) for more examples of complex filters, and the [Scaling Guide](https://trac.ffmpeg.org/wiki/Scaling) for information about scaling and using different scaling algorithms.

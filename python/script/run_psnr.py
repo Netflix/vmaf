@@ -19,11 +19,13 @@ FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p1
 OUT_FMTS = ['text (default)', 'xml', 'json']
 POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'perc20']
 
+
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) \
           + " fmt width height ref_path dis_path [--out-fmt out_fmt]\n"
     print "fmt:\n\t" + "\n\t".join(FMTS) + "\n"
     print "out_fmt:\n\t" + "\n\t".join(OUT_FMTS) + "\n"
+
 
 def main():
     if len(sys.argv) < 6:
@@ -110,6 +112,7 @@ def main():
         print str(result)
 
     return 0
+
 
 if __name__ == "__main__":
     ret = main()

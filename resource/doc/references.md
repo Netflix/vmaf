@@ -8,6 +8,7 @@ VMAF is an on-going project. It has gone through substantial updates since its i
   - [Toward a practical perceptual video quality metric](https://medium.com/netflix-techblog/toward-a-practical-perceptual-video-quality-metric-653f208b9652), June 6, 2016 -- tech blog with VMAF's open sourcing on Github.
   - [Dynamic Optimizer — a perceptual video encoding optimization framework](https://medium.com/netflix-techblog/dynamic-optimizer-a-perceptual-video-encoding-optimization-framework-e19f1e3a277f), March 6, 2018 -- tech blog describing how VMAF is used in an codec-agnostic encoding optimization framework.
   - [Optimized shot-based encodes: now streaming!](https://medium.com/netflix-techblog/optimized-shot-based-encodes-now-streaming-4b9464204830), March 9, 2018 -- tech blog describing systems design for the Dynamic Optimizer.
+  - [VMAF: the journey continues](https://medium.com/netflix-techblog/vmaf-the-journey-continues-44b51ee9ed12), October 25, 2018 -- second techblog on VMAF focus on new features and best practices.
 
 ### Academic Papers
 
@@ -37,3 +38,5 @@ The papers below independently evaluate the performance of VMAF.
   - [Measure perceptual video quality with VMAF](VMAF_ICIP17.pdf) by Z. Li, at Netflix Industry Wrokshop: Video Encoding at Scale, 2017 IEEE International Conference on Image Processing (ICIP), Beijing, 2017.
   - [A VMAF model for 4K](VQEG_SAM_2018_025_VMAF_4K.pdf) by Z. Li, T. Vigier and P. Le Callet, at Video Quality Experts Group (VQEG) Meeting in Madrid, March 2018.
   - [Quantify VMAF model variability using bootstrapping](VQEG_SAM_2018_023_VMAF_Variability.pdf) by Z. Li and I. Katsavounidis, at Video Quality Experts Group (VQEG) Meeting in Madrid, March 2018.
+  - [VMAF: the journey continues](http://www.streamingmedia.com/Articles/Editorial/Featured-Articles/Video-Engineering-Summit-Netflix-to-Discuss-VMAFs-Future-128457.aspx) by Z. Li, at Streaming Media West, Huntington Beach, CA, November 2018.
+  - [Analysis tools in the VMAF open-source package](VQEG_SAM_2018_111_AnalysisToolsInVMAF.pdf) by Z. Li and C. Bampis, at Video Quality Experts Group (VQEG) Meeting in Mountain View, CA, November 2018.

@@ -34,7 +34,6 @@ OBJS = \
 	$(OBJDIR)/ssim.o \
 	$(OBJDIR)/ms_ssim.o \
 	$(OBJDIR)/moment.o \
-	$(OBJDIR)/psnr.o \
 	$(OBJDIR)/svm.o \
 	$(OBJDIR)/combo.o \
 	$(OBJDIR)/all.o \
@@ -127,9 +126,6 @@ $(OBJDIR)/ms_ssim.o: $(FEATURESRCDIR)/ms_ssim.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/moment.o: $(FEATURESRCDIR)/moment.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
-
-$(OBJDIR)/psnr.o: $(FEATURESRCDIR)/psnr.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/all.o: $(FEATURESRCDIR)/all.c

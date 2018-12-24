@@ -3,7 +3,11 @@ VMAF Confidence Interval
 
 Since VDK 1.3.7 (June 2018), we have introduced a way to quantify the level of confidence that a VMAF prediction entails. With this method, each VMAF prediction score can be accompanied by a 95% confidence interval (CI), which quantifies the level of confidence that the prediction lies within the interval. 
 
-The CI is a consequence of the fact that the VMAF model is trained on a sample of subjective scores, while the population is unknown. The CI is established through [bootstrapping on the prediction residue](http://www.jstor.org/stable/2241979) using the full training data. Essentially, it trains multiple models, using "resampling with replacement", on the residue of prediction. Each of the models will introduce a slightly different prediction. The variability of these predictions quantifies the level of confidence -- the more close these predictions, the more confident the prediction using the full data. More details can be found in [this](VQEG_SAM_2018_023_VMAF_Variability.pdf) slide deck.
+The CI is a consequence of the fact that the VMAF model is trained on a sample of subjective scores, while the population is unknown. The CI is established through [bootstrapping](http://www.jstor.org/stable/2241979) using the full training data. Essentially, the bootstrapping approach trains multiple models. Each of the models will introduce a slightly different prediction. The variability of these predictions quantifies the level of confidence -- the more close these predictions, the more confident the prediction using the full data. More details can be found in [this](VQEG_SAM_2018_023_VMAF_Variability.pdf) slide deck.
+
+### Implementation Details of Bootstrapping
+
+There are two ways to perform bootstrapping on VMAF. The first one is called plain/vanilla bootstrapping (b) and the latter one is called residue bootstrapping (rb). In the first case, the training data is resampled with replacement to create multiple models and, in the second case, the bootstrapping is performed on the prediction residue. For example, vmaf_b_v0.6.3.pkl and vmaf_rb_v0.6.3.pkl are the VMAF models using plain and residue bootstrapping respectively. We recommend using plain bootstrapping, e.g., vmaf_b_v0.6.3.pkl. While plain bootstrapping tends to produce larger measurement uncertainty compared to its residue counterpart, it is unbiased with respect to the full VMAF model (which uses the full training data).
 
 ### Run in Command Line
 
@@ -22,21 +26,27 @@ yields:
 ```
 ...
     "aggregate": {
-        "BOOTSTRAP_VMAF_bagging_score": 73.09994670135325, 
-        "BOOTSTRAP_VMAF_score": 75.44304862545658, 
-        "BOOTSTRAP_VMAF_stddev_score": 1.2301198524660464, 
-        "VMAF_feature_adm2_score": 0.9345878077620574, 
-        "VMAF_feature_motion2_score": 3.8953518541666665, 
-        "VMAF_feature_vif_scale0_score": 0.36342081156994926, 
-        "VMAF_feature_vif_scale1_score": 0.7666473878461729, 
-        "VMAF_feature_vif_scale2_score": 0.8628533892781629, 
-        "VMAF_feature_vif_scale3_score": 0.9159718691393048, 
+        "BOOTSTRAP_VMAF_bagging_score": 73.09994612674564,
+        "BOOTSTRAP_VMAF_ci95_high_score": 74.85344190068236,
+        "BOOTSTRAP_VMAF_ci95_low_score": 70.80158536383833,
+        "BOOTSTRAP_VMAF_score": 75.44304785910772,
+        "BOOTSTRAP_VMAF_stddev_score": 1.2301198163451679,
+        "VMAF_feature_adm2_score": 0.9345878041226809,
+        "VMAF_feature_motion2_score": 3.8953518541666665,
+        "VMAF_feature_vif_scale0_score": 0.36342081156994926,
+        "VMAF_feature_vif_scale1_score": 0.7666473878461729,
+        "VMAF_feature_vif_scale2_score": 0.8628533892781629,
+        "VMAF_feature_vif_scale3_score": 0.9159718691393048,
         "method": "mean"
     }
 }
 ```
 
-Here, `BOOTSTRAP_VMAF_score` is the final prediction result, similar to `VMAF_score` without the `--ci` option. `BOOTSTRAP_VMAF_stddev_score` is the standard deviation of bootstrapping predictions. If assuming a normal distribution, the 95% CI is `BOOTSTRAP_VMAF_score +/- 1.96 * BOOTSTRAP_VMAF_stddev_score`.
+Here, `BOOTSTRAP_VMAF_score` is the final prediction result and is identical to `VMAF_score` when the `--ci` option is not used. `BOOTSTRAP_VMAF_stddev_score` is the standard deviation of bootstrapping predictions. If assuming a normal distribution, the 95% CI is `BOOTSTRAP_VMAF_score +/- 1.96 * BOOTSTRAP_VMAF_stddev_score`. For a more detailed explanation, please refer to the following section.
+
+### Further Analysis of Bootstrapped Predictions
+
+We assumed, for the sake of simplicity, that the distribution of VMAF predictions is a normal distribution. However, this assumption is not necessarily true. If we do not assume a normal distribution, the 95% CI is defined as `[BOOTSTRAP_VMAF_ci95_low_score, BOOTSTRAP_VMAF_ci95_high_score]`, where `BOOTSTRAP_VMAF_ci95_low_score` and `BOOTSTRAP_VMAF_ci95_high_score` are the 2.5 and 97.5 percentiles respectively. Furthermore, `BOOTSTRAP_VMAF_bagging_score` is the mean of the individual bootstrap models. While `BOOTSTRAP_VMAF_bagging_score` is different from `BOOTSTRAP_VMAF_score`, it is expected that they are relatively similar to each other if the distribution is not very skewed.
 
 ### Dataset Validation
 

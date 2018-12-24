@@ -6,7 +6,7 @@ import numpy as np
 from vmaf.config import VmafConfig
 from vmaf.core.train_test_model import TrainTestModel, \
     LibsvmNusvrTrainTestModel, SklearnRandomForestTrainTestModel, \
-    MomentRandomForestTrainTestModel, SklearnExtraTreesTrainTestModel
+    MomentRandomForestTrainTestModel, SklearnExtraTreesTrainTestModel, SklearnLinearRegressionTrainTestModel
 from vmaf.core.executor import run_executors_in_parallel
 from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
 from vmaf.routine import read_dataset
@@ -192,6 +192,22 @@ class TrainTestModelTest(unittest.TestCase):
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.051804171170643752, places=4)
+
+    def test_train_predict_linearregression(self):
+
+        print "test linear regression train and predict..."
+
+        # linear regression doesn't need proper data normalization
+
+        xs = SklearnLinearRegressionTrainTestModel.get_xs_from_results(self.features, [0, 1, 2, 3, 4, 5])
+        ys = SklearnLinearRegressionTrainTestModel.get_ys_from_results(self.features, [0, 1, 2, 3, 4, 5])
+        xys = SklearnLinearRegressionTrainTestModel.get_xys_from_results(self.features, [0, 1, 2, 3, 4, 5])
+
+        model = SklearnLinearRegressionTrainTestModel({'norm_type':'normalize'}, None)
+        model.train(xys)
+        result = model.evaluate(xs, ys)
+
+        self.assertAlmostEquals(result['RMSE'], 0.49489849608079006, places=4)
 
     def test_train_predict_extratrees(self):
 
