@@ -76,6 +76,10 @@
       <Filter>feature</Filter>
     </ClCompile>
     <ClCompile Include="src\libvmaf.cpp" />
+    <ClCompile Include="..\feature\src\common\blur_array.c">
+      <Filter>feature</Filter>
+    </ClCompile>
+    <ClCompile Include="src\cpu_info.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\svm.h" />
@@ -168,6 +172,10 @@
     <ClInclude Include="src\combo.h" />
     <ClInclude Include="src\timer.h" />
     <ClInclude Include="src\libvmaf.h" />
+    <ClInclude Include="..\feature\src\common\blur_array.h">
+      <Filter>feature</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cpu_info.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="feature">
