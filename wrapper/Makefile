@@ -9,6 +9,8 @@ OBJDIR = $(TOP)/obj
 FEATURESRCDIR = $(TOP)/../feature/src
 PTOOLSDIR = $(TOP)/../ptools
 INSTALL_PREFIX = /usr/local
+INCLUDES += -I$(TOP)/../feature/src
+INCLUDES += -I$(TOP)/../feature/src/common
 
 OBJS = \
 	$(OBJDIR)/alloc.o \
@@ -73,13 +75,13 @@ $(OBJDIR)/frame.o: $(FEATURESRCDIR)/common/frame.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/convolution.o: $(FEATURESRCDIR)/common/convolution.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $(INCLUDES) $<
 
 $(OBJDIR)/cpu.o: $(FEATURESRCDIR)/common/cpu.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/convolution_avx.o: $(FEATURESRCDIR)/common/convolution_avx.c
-	$(CC) -c -o $@ $(EXTRA_CFLAGS) $(CFLAGS) $(CPPFLAGS) $<
+	$(CC) -c -o $@ $(EXTRA_CFLAGS) $(CFLAGS) $(CPPFLAGS) $(INCLUDES) $<
 
 $(OBJDIR)/psnr_tools.o: $(FEATURESRCDIR)/psnr_tools.c
 	$(CC) -c -o $@ $(EXTRA_CFLAGS) $(CFLAGS) $(CPPFLAGS) $<
@@ -97,10 +99,10 @@ $(OBJDIR)/ansnr_tools.o: $(FEATURESRCDIR)/ansnr_tools.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 $(OBJDIR)/vif.o: $(FEATURESRCDIR)/vif.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $(INCLUDES) $<
 
 $(OBJDIR)/vif_tools.o: $(FEATURESRCDIR)/vif_tools.c
-	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $(INCLUDES) $<
 
 $(OBJDIR)/motion.o: $(FEATURESRCDIR)/motion.c
 	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<

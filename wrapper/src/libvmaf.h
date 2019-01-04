@@ -19,6 +19,15 @@
 #ifndef LIBVMAF_H_
 #define LIBVMAF_H_
 
+#ifndef WINCE
+#define TIME_TEST_ENABLE 		1 // 1: memory leak test enable 0: disable
+#define MEM_LEAK_TEST_ENABLE 	0 // prints execution time in xml log when enabled.
+#else
+//For Windows memory leak test and execution time test cases are not handled.
+#define TIME_TEST_ENABLE 0
+#define MEM_LEAK_TEST_ENABLE 0
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

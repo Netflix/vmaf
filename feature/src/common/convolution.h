@@ -37,4 +37,9 @@ void convolution_f32_c_s(const float *filter, int filter_width, const float *src
 
 void convolution_f32_avx_s(const float *filter, int filter_width, const float *src, float *dst, float *tmp, int width, int height, int src_stride, int dst_stride);
 
+#if VIF_OPT_ENABLE
+void convolution_f32_avx_sq_s(const float *filter, int filter_width, const float *src, float *dst, float *tmp, int width, int height, int src_stride, int dst_stride);
+
+void convolution_f32_avx_xy_s(const float *filter, int filter_width, const float *src1, const float *src2, float *dst, float *tmp, int width, int height, int src1_stride, int src2_stride, int dst_stride);
+#endif
 #endif // CONVOLUTION_H_

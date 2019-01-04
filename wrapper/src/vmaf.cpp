@@ -25,6 +25,7 @@
 #include <sstream>
 #include <cmath>
 #include <iomanip>
+#include "libvmaf.h"
 
 #include "vmaf.h"
 #include "combo.h"
@@ -960,6 +961,9 @@ double RunVmaf(const char* fmt, int width, int height,
     size_t num_frames_subsampled = result.get_scores("vmaf").size();
     double aggregate_vmaf = result.get_score("vmaf");
     double exec_fps = (double)num_frames_subsampled * n_subsample / (double)timer.elapsed();
+#if TIME_TEST_ENABLE
+	double time_taken = (double)timer.elapsed();
+#endif
     printf("Exec FPS: %f\n", exec_fps);
 
     if (pool_method)
@@ -1035,6 +1039,9 @@ double RunVmaf(const char* fmt, int width, int height,
         info_node.append_attribute("numOfFrames") = (int)num_frames_subsampled;
         info_node.append_attribute("aggregateVMAF") = aggregate_vmaf;
         info_node.append_attribute("execFps") = exec_fps;
+#if TIME_TEST_ENABLE
+		info_node.append_attribute("timeTaken") = time_taken;
+#endif
 
         auto frames_node = xml_root.append_child("frames");
         for (size_t i_subsampled=0; i_subsampled<num_frames_subsampled; i_subsampled++)

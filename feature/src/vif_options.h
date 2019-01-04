@@ -36,4 +36,10 @@
 /* Whether to use a 1-D formulation of the Gaussian filter. */
 #define VIF_OPT_FILTER_1D
 
+/* VIF optimizations are enabled only for ID filter */ 
+#ifdef VIF_OPT_FILTER_1D
+#define VIF_OPT_ENABLE 1
+#else
+#define VIF_OPT_ENABLE 0
+#endif
 #endif /* VIF_OPTIONS_H_ */
