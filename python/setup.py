@@ -45,5 +45,6 @@ setup(
         "scikit-learn>=0.18.1",
         "scikit-image>=0.13.1",
         "h5py>=2.6.0",
+        "sureal>=0.1.0",
     ]
 )

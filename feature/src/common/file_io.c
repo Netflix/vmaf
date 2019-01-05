@@ -23,6 +23,18 @@
 /**
  * Note: stride is in terms of bytes
  */
+float apply_frame_differencing(const float *current_frame, const float *previous_frame, float *frame_difference, int width, int height, int stride)
+{
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
+            frame_difference[i * stride + j] = current_frame[i * stride + j] - previous_frame[i * stride + j];
+        }
+    }
+}
+
+/**
+ * Note: stride is in terms of bytes
+ */
 int read_image(FILE *rfile, void *buf, int width, int height, int stride, int elem_size)
 {
 	char *byte_ptr = buf;

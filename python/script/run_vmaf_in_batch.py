@@ -20,6 +20,7 @@ FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p1
 OUT_FMTS = ['text (default)', 'xml', 'json']
 POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'perc20']
 
+
 def print_usage():
     print "usage: " + os.path.basename(sys.argv[0]) + \
           " input_file [--model model_path] [--out-fmt out_fmt] [--parallelize] [--phone-model] [--ci]\n"
@@ -27,6 +28,7 @@ def print_usage():
     print "input_file contains lines of:"
     print "\tfmt width height ref_path dis_path\\n"
     print "fmt:\n\t" + "\n\t".join(FMTS) + "\n"
+
 
 def main():
     if len(sys.argv) < 2:
@@ -154,6 +156,7 @@ def main():
             print str(result)
 
     return 0
+
 
 if __name__ == "__main__":
     ret = main()

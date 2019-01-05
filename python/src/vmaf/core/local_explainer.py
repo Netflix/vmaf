@@ -34,6 +34,7 @@ from vmaf.tools.reader import YuvReader
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
 class LocalExplainer(object):
     """Explains a TrainTestModel on a local data point.
     Adapted from:
@@ -125,7 +126,8 @@ class LocalExplainer(object):
 
             # take xs_2d_neighbor and ys_label_pred_neighbor, train a linear
             # model
-            self.model_regressor.fit(xs_2d_neighbor, ys_label_pred_neighbor,
+            self.model_regressor.fit(xs_2d_neighbor,
+                                     ys_label_pred_neighbor,
                                      sample_weight=sample_weight)
             feature_weight = self.model_regressor.coef_.copy()
             feature_weights[i_sample, :] = feature_weight

@@ -18,6 +18,7 @@ from vmaf.core.local_explainer import LocalExplainer
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
+
 def read_dataset(dataset, **kwargs):
 
     groundtruth_key = kwargs['groundtruth_key'] if 'groundtruth_key' in kwargs else None
@@ -74,6 +75,16 @@ def read_dataset(dataset, **kwargs):
             groundtruth_std = dis_video['groundtruth_std']
         else:
             groundtruth_std = None
+
+        if 'fps' in dis_video:
+            fps = dis_video['fps']
+        else:
+            fps = None
+
+        if 'rebuf_indices' in dis_video:
+            rebuf_indices = dis_video['rebuf_indices']
+        else:
+            rebuf_indices = None
 
         ref_video = ref_dict[dis_video['content_id']]
 
@@ -160,6 +171,10 @@ def read_dataset(dataset, **kwargs):
             asset_dict['pad_cmd'] = pad_cmd_
         if workfile_yuv_type is not None:
             asset_dict['workfile_yuv_type'] = workfile_yuv_type
+        if fps is not None:
+            asset_dict['fps'] = fps
+        if rebuf_indices is not None:
+            asset_dict['rebuf_indices'] = rebuf_indices
 
         if groundtruth is None and skip_asset_with_none_groundtruth:
             pass
@@ -175,6 +190,7 @@ def read_dataset(dataset, **kwargs):
             assets.append(asset)
 
     return assets
+
 
 def run_test_on_dataset(test_dataset, runner_class, ax,
                     result_store, model_filepath,
@@ -261,19 +277,36 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
         predictions_stddev = map(lambda result: result[runner_class.get_stddev_score_key()], results)
         predictions_ci95_low = map(lambda result: result[runner_class.get_ci95_low_score_key()], results)
         predictions_ci95_high = map(lambda result: result[runner_class.get_ci95_high_score_key()], results)
+        predictions_all_models = map(lambda result: result[runner_class.get_all_models_score_key()], results)
+
+        # need to revert the list of lists, so that the outer list has the predictions for each model separately
+        predictions_all_models = np.array(predictions_all_models).T.tolist()
+        num_models = np.shape(predictions_all_models)[0]
+
         stats = model_type.get_stats(groundtruths, predictions,
                                      ys_label_raw=raw_grountruths,
                                      ys_label_pred_bagging=predictions_bagging,
                                      ys_label_pred_stddev=predictions_stddev,
                                      ys_label_pred_ci95_low=predictions_ci95_low,
                                      ys_label_pred_ci95_high=predictions_ci95_high,
+                                     ys_label_pred_all_models=predictions_all_models,
                                      ys_label_stddev=groundtruths_std)
-    except:
+    except Exception as e:
+        print('Stats calculation failed, using default stats calculation. Error cause: ')
+        print(e)
         stats = model_type.get_stats(groundtruths, predictions,
                                      ys_label_raw=raw_grountruths,
                                      ys_label_stddev=groundtruths_std)
+        num_models = 1
 
     print 'Stats on testing data: {}'.format(model_type.format_stats_for_print(stats))
+
+    # printing stats if multiple models are present
+    if 'SRCC_across_model_distribution' in stats \
+            and 'PCC_across_model_distribution' in stats \
+            and 'RMSE_across_model_distribution' in stats:
+        print 'Stats on testing data (across multiple models, using all test indices): {}'.format(
+            model_type.format_across_model_stats_for_print(model_type.extract_across_model_stats(stats)))
 
     if ax is not None:
         content_ids = map(lambda asset: asset.content_id, test_assets)
@@ -292,13 +325,15 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
         ax.set_xlabel('True Score')
         ax.set_ylabel("Predicted Score")
         ax.grid()
-        ax.set_title("{runner}\n{stats}".format(
+        ax.set_title("{runner}{num_models}\n{stats}".format(
             dataset=test_assets[0].dataset,
             runner=runner_class.TYPE,
             stats=model_type.format_stats_for_plot(stats),
+            num_models=", {} models".format(num_models) if num_models > 1 else "",
         ))
 
     return test_assets, results
+
 
 def print_matplotlib_warning():
     print "Warning: cannot import matplotlib, no picture displayed. " \
@@ -362,7 +397,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
 
     model = model_class(model_param_dict, logger)
 
-    model.train(train_xys)
+    model.train(train_xys, **kwargs)
 
     # append additional information to model before saving, so that
     # VmafQualityRunner can read and process

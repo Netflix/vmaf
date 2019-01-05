@@ -1,6 +1,31 @@
 # Change Log
 
+## (12/17/2018) [1.3.11]
+
+**New features:**
+- Revise number of bootstrap models definition: model/vmaf_rb_v0.6.3/vmaf_rb_v0.6.3.pkl has 21 models (20 bootstrap models and one using the full data). From these 21 models, the 20 of them are same as v0.6.2, only added an additional bootstrap model.
+- Output the per bootstrap model predictions from wrapper/vmafossexec.
+- Print bootstrap individual scores in xml and json.
+- Add BD-rate calculator and update documentation.
+- Report aggregate PSNR, SSIM, and MS-SSIM scores.
+- Add sklearn linear regression class to TrainTestModel.
+- Enable BRISQUE feature in VMAF training with bootstrapping.
+- Add --save-plot option to command line tools.
+- Add ST-RREDOpt (time optimized), ST-MAD feature extractors, quality runners and unittestts. Refactor ST-RRED feature extractor. (#216)
+
+**Fixed bugs:**
+- Bug fixed. When start vmaf in multi-thread at the same time. (#239)
+- Fix name of min function in vmaf.h and vmaf.cpp. (#227)
+- Fix implicit declaration of functions (#225)
+
+## (9/13/2018) [1.3.10]
+
+**New features:**
+- Remove sureal as a submodule to vmaf. sureal is now available through pip install.
+
 ## (8/7/2018) [1.3.9]
+
+**Fixed bugs:**
 - libvmaf: fix case where user defined read_frame() callback was being ignored.
 
 ## (6/21/2018) [1.3.8]

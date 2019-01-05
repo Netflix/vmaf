@@ -3,8 +3,6 @@ VMAF Python Library
 
 The VMAF Python library offers full functionalities from running basic VMAF command line, running VMAF on a batch of video files, training and testing a VMAF model on video datasets, and visualization tools, etc. It is the playground to experiment with VMAF.
 
-It also provides a command line tool [`ffmpeg2vmaf`](#using-ffmpeg2vmaf) that can pipe FFmpeg-decoded raw videos to VMAF. Unlike other command lines, `ffmpeg2vmaf` can take compressed video bitstreams as input.
-
 ## Prerequisites
 
 The VMAF Python library has its core feature extraction library written in C, and the rest scripting code written in Python. To build the C code, it requires `gcc` and `g++` (>=4.8). To run scripts and tests, it requires Python2 (>= 2.7) installed.
@@ -18,6 +16,7 @@ It also requires a number of Python packages:
   - [`scikit-learn`](http://scikit-learn.org/stable/) (>=0.18.1)
   - [`scikit-image`](http://scikit-image.org/) (>=0.13.1)
   - [`h5py`](http://www.h5py.org/) (>=2.6.0)
+  - [`sureal`](https://github.com/Netflix/sureal) (>=0.1.1)
 
 You will need to install `gfortran` for compiling `scipy`, `freetype` and `pkg-config` required by `matplotlib`, and `hdf5` required by `h5py` (C header files needed). These can't be compiled from source here.
 
@@ -43,7 +42,7 @@ sudo -H pip install --upgrade pip
 Then install the required Python packages:
 
 ```
-pip install --user numpy scipy matplotlib pandas scikit-learn scikit-image h5py
+pip install --user numpy scipy matplotlib pandas scikit-learn scikit-image h5py sureal
 ```
 
 Make sure your user install executable directory is on your PATH. Add this to the end of `~/.bashrc` and restart your shell:
@@ -66,7 +65,7 @@ Now install the required Python packages:
 
 ```
 brew install numpy scipy
-pip install matplotlib notebook pandas sympy nose scikit-learn scikit-image h5py
+pip install matplotlib notebook pandas sympy nose scikit-learn scikit-image h5py sureal
 ```
 
 ### Troubleshooting
@@ -81,6 +80,7 @@ python -c 'import pandas as pkg; print(pkg.__version__); print(pkg.__file__)'
 python -c 'import sklearn as pkg; print(pkg.__version__); print(pkg.__file__)'
 python -c 'import skimage as pkg; print(pkg.__version__); print(pkg.__file__)'
 python -c 'import h5py as pkg; print(pkg.__version__); print(pkg.__file__)'
+python -c 'import sureal as pkg; print(pkg.__version__); print(pkg.__file__)'
 ```
 
 If you see that the printed version number is older than the ones aforementioned, it could suggest that a previously installed package with the same name but older version at a different location may have overshadowed the new one. Make sure that the new one's path appears early in the path list, which can be printed by:
@@ -93,12 +93,6 @@ python -c 'import sys; print(sys.path)'
 
 ## Installation
 
-First, pull submodule `sureal` by running:
-
-```
-git submodule update --init --recursive
-```
-
 After cloning VMAF repository, `cd` to the repo directory and run:
 
 ```
@@ -107,16 +101,16 @@ make
 
 to build the binaries.
 
-Add the `python/src` and `sureal/python/src` subdirectories to the environment variable `PYTHONPATH`:
+Add the `python/src` subdirectories to the environment variable `PYTHONPATH`:
 
 ```
-export PYTHONPATH="$(pwd)/python/src:$(pwd)/sureal/python/src:$PYTHONPATH"
+export PYTHONPATH="$(pwd)/python/src:$PYTHONPATH"
 ```
 
 You can also add it to the environment permanently, by appending to `~/.bashrc`:
 
 ```
-echo export PYTHONPATH="$(pwd)/python/src:$(pwd)/sureal/python/src:$PYTHONPATH" >> ~/.bashrc
+echo export PYTHONPATH="$(pwd)/python/src:$PYTHONPATH" >> ~/.bashrc
 source ~/.bashrc
 ```
 
@@ -220,7 +214,7 @@ For example:
 
 ### Using `ffmpeg2vmaf`
 
-There is also an `ffmpeg2vmaf` command line tool which can compare any file format decodable by `ffmpeg`. `ffmpeg2vmaf` essentially pipes FFmpeg-decoded videos to VMAF. Note that you need a recent version of `ffmpeg` installed (for the first time, run the command line, follow the prompted instruction to specify the path of `ffmpeg`).
+There is also an `ffmpeg2vmaf` command line tool which can compare any file format decodable by `ffmpeg`. `ffmpeg2vmaf` essentially pipes FFmpeg-decoded videos to VMAF. Note that you need a recent version of `ffmpeg` installed (for the first time, run the command line, follow the prompted instruction to specify the path of `ffmpeg`). 
 
 ```
 ./ffmpeg2vmaf quality_width quality_height reference_path distorted_path \
@@ -228,6 +222,8 @@ There is also an `ffmpeg2vmaf` command line tool which can compare any file form
 ```
 
 Here `quality_width` and `quality_height` are the width and height the reference and distorted videos are scaled to before VMAF calculation. This is different from `run_vmaf`'s  `width` and `height`, which specify the raw YUV's width and height instead. The input to `ffmpeg2vmaf` must already have such information specified in the header so that they are FFmpeg-decodable.
+
+Note that with `libvmaf` as a filter in FFmpeg becoming available (see [this](https://ffmpeg.org/ffmpeg-filters.html#libvmaf) section for details), `ffmpeg2vmaf` is no longer the preferred way to pass in compressed video streams to VMAF. 
 
 ## Advanced Usage
 
@@ -387,7 +383,7 @@ Above are two example scatter plots obtained from running the `run_vmaf_training
 
 ### Using Custom Subjective Models
 
-The commands `./run_vmaf_training` and `./run_testing` also support custom subjective models (e.g. DMOS (default), MLE and more), through the submodule repository [sureal](https://github.com/Netflix/sureal).
+The commands `./run_vmaf_training` and `./run_testing` also support custom subjective models (e.g. DMOS (default), MLE and more), through the package [sureal](https://github.com/Netflix/sureal).
 
 The subjective model option can be specified with option `--subj-model subjective_model`, for example:
 
@@ -415,3 +411,28 @@ You can also customize VMAF by plugging in third-party features or inventing new
 Similarly, you can plug in a third-party regressor or invent a new regressor and specify them in a `model_param_file`. The `model_type` (e.g. `LIBSVMNUSVR`) corresponds to the `TYPE` field of a `TrainTestModel` sublass (e.g. `LibsvmnusvrTrainTestModel`). All needed is to create a new class extending the `TrainTestModel` base class.
 
 For instructions on how to extending the `FeatureExtractor` and `TrainTestModel` base classes, refer to [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
+
+## Analysis Tools
+
+Overtime, a number of helper tools have been incorporated into the VDK, to facilitate training and validating VMAF models. An overview of the tools available can be found in [this slide deck](VQEG_SAM_2018_111_AnalysisToolsInVMAF.pdf).
+
+### BD-Rate Calculator
+
+A Bjøntegaard-Delta (BD) rate [implementation](../../python/src/vmaf/tools/bd_rate_calculator.py) is added. Example usage can be found [here](../../python/test/bd_rate_calculator_test.py). The implementation is validated against [MPEG JCTVC-E137](http://phenix.it-sudparis.eu/jct/doc_end_user/documents/5_Geneva/wg11/JCTVC-E137-v1.zip).
+
+### LIME (Local-Explainer Model-Agnostic Explanation) Implementation
+
+An implementation of [LIME](https://arxiv.org/pdf/1602.04938.pdf) is also added as part of the repository. The main idea is to perform a local linear approximation to any regressor or classifier and then use the coefficients of the linearized model as indicators of feature importance. LIME can be used as part of the VMAF regression framework, for example:
+
+```
+./run_vmaf yuv420p 1920 1080 NFLX_dataset_public/ref/OldTownCross_25fps.yuv \
+    NFLX_dataset_public/dis/OldTownCross_90_1080_4300.yuv --local-explain
+```
+
+Naturally, LIME can also be applied to any other regression scheme as long as there exists a pre-trained model. For example, applying to BRISQUE:
+
+```
+./run_vmaf yuv420p 1920 1080 NFLX_dataset_public/ref/OldTownCross_25fps.yuv \
+    NFLX_dataset_public/dis/OldTownCross_90_1080_4300.yuv --local-explain \
+    --model model/vmaf_brisque_all_v0.0rc.pkl
+```

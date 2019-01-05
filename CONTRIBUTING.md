@@ -146,7 +146,7 @@ For this type of subclassing, refer to the example of LibsvmnusvrTrainTestModel.
 
 There are two ways to create a derived class of QualityRunner:
 
-The first way is to call a command-line exectuable directly, very similar to what FeatureExtractor does. A derived class must:
+The first way is to call a command-line executable directly, very similar to what FeatureExtractor does. A derived class must:
     
   - Override *TYPE* and *VERSION* fields.
   - Override *_generate_result(self, asset)*, which call a command-line executable and generate quality scores in a log file.

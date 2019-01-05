@@ -5,6 +5,7 @@
  *      Author: thomas
  */
 
+#include <string.h>
 #include "blur_array.h"
 
 /*

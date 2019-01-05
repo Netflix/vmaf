@@ -327,10 +327,7 @@ static const char *kernel_type_table[]=
     "linear","polynomial","rbf","sigmoid","precomputed",NULL
 };
 
-static char *line = NULL;
-static int max_line_len;
-
-static char* readline(FILE *input)
+static char* readline(FILE *input, char* line, int max_line_len)
 {
     int len;
 
@@ -501,11 +498,11 @@ svm_model *svm_load_model(const char *model_file_name)
     int elements = 0;
     long pos = ftell(fp);
 
-    max_line_len = 1024;
-    line = Malloc(char,max_line_len);
+    int max_line_len = 1024;
+    char* line = Malloc(char,max_line_len);
     char *p,*endptr,*idx,*val;
 
-    while(readline(fp)!=NULL)
+    while(readline(fp, line, max_line_len)!=NULL)
     {
         p = strtok(line,":");
         while(1)
@@ -533,7 +530,7 @@ svm_model *svm_load_model(const char *model_file_name)
     int j=0;
     for(i=0;i<l;i++)
     {
-        readline(fp);
+        readline(fp, line, max_line_len);
         model->SV[i] = &x_space[j];
 
         p = strtok(line, " \t");
