@@ -25,6 +25,7 @@
 #include <sstream>
 #include <cmath>
 #include <iomanip>
+#include "libvmaf.h"
 
 #include "vmaf.h"
 #include "combo.h"
@@ -996,6 +997,9 @@ double RunVmaf(const char* fmt, int width, int height,
     size_t num_frames_subsampled = result.get_scores("vmaf").size();
     double aggregate_vmaf = result.get_score("vmaf");
     double exec_fps = (double)num_frames_subsampled * n_subsample / (double)timer.elapsed();
+#if TIME_TEST_ENABLE
+	double time_taken = (double)timer.elapsed();
+#endif
     printf("Exec FPS: %f\n", exec_fps);
 
     std::vector<std::string> result_keys = result.get_keys();
@@ -1125,6 +1129,9 @@ double RunVmaf(const char* fmt, int width, int height,
         if (aggregate_ms_ssim)
             info_node.append_attribute("aggregateMS_SSIM") = aggregate_ms_ssim;
         info_node.append_attribute("execFps") = exec_fps;
+#if TIME_TEST_ENABLE
+		info_node.append_attribute("timeTaken") = time_taken;
+#endif
 
         auto frames_node = xml_root.append_child("frames");
         for (size_t i_subsampled=0; i_subsampled<num_frames_subsampled; i_subsampled++)

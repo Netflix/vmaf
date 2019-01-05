@@ -99,6 +99,10 @@ void* combo_threadfunc(void* vmaf_thread_data)
     int ret = 0;
     bool next_frame_read;
 
+#if BUF_OPT_ENABLE		
+	bool offset_flag;
+#endif
+
 #ifdef MULTI_THREADING
     float *prev_blur_buf_ = 0;
     float *ref_buf_ = 0;
@@ -106,6 +110,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
     float *blur_buf_ = 0;
 #endif
 
+#if !BUF_OPT_ENABLE		
     if (!(ref_buf = aligned_malloc(data_sz, MAX_ALIGN)))
     {
         sprintf(errmsg, "aligned_malloc failed for ref_buf.\n");
@@ -143,6 +148,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
         sprintf(errmsg, "aligned_malloc failed for next_blur_buf.\n");
         goto fail_or_end;
     }
+#endif
 
     // use temp_buf for convolution_f32_c, and fread u and v
     if (!(temp_buf = aligned_malloc(data_sz * 2, MAX_ALIGN)))
@@ -173,6 +179,23 @@ void* combo_threadfunc(void* vmaf_thread_data)
 
         if (frm_idx == 0)
         {
+#if BUF_OPT_ENABLE				
+            // Allocating the free buffers from buffer array
+			blur_buf 	= get_free_blur_buf_slot(&thread_data->blur_buf_array, frm_idx);
+			ref_buf 	= get_free_blur_buf_slot(&thread_data->ref_buf_array, frm_idx);
+			dis_buf 	= get_free_blur_buf_slot(&thread_data->dis_buf_array, frm_idx);
+		
+			if((NULL == blur_buf) || (NULL == ref_buf) || (NULL == dis_buf))
+			{
+#ifdef MULTI_THREADING
+                thread_data->stop_threads = 1;			
+				sprintf(errmsg, "No free slot found for buffer allocation.\n");
+				pthread_mutex_unlock(&thread_data->mutex_readframe);
+#endif				
+				goto fail_or_end;
+			}
+#endif			
+			
             // read frame from file
 
             ret = thread_data->read_frame(ref_buf, dis_buf, temp_buf, stride, user_data);
@@ -208,13 +231,31 @@ void* combo_threadfunc(void* vmaf_thread_data)
             convolution_f32_c(FILTER_5, 5, ref_buf, blur_buf, temp_buf, w, h, stride / sizeof(float), stride / sizeof(float));
 
 #ifdef MULTI_THREADING
+#if !BUF_OPT_ENABLE
             put_blur_buf(&thread_data->blur_buf_array, frm_idx, blur_buf);
+#endif
 #endif
 
         }
 #ifdef MULTI_THREADING
         else
         {
+#if BUF_OPT_ENABLE
+			// retrieve from buffer array			
+            ref_buf 	= get_blur_buf(&thread_data->ref_buf_array, frm_idx);
+            dis_buf 	= get_blur_buf(&thread_data->dis_buf_array, frm_idx);
+            blur_buf 	= get_blur_buf(&thread_data->blur_buf_array, frm_idx);
+			
+			if((NULL == ref_buf) || (NULL == dis_buf) || (NULL == blur_buf))
+			{
+#ifdef MULTI_THREADING
+				thread_data->stop_threads = 1;			
+				sprintf(errmsg, "Data not available.\n");
+				pthread_mutex_unlock(&thread_data->mutex_readframe);
+#endif				
+				goto fail_or_end;
+			}
+#else			
             // retrieve from buffer array
 
             ref_buf_ = get_blur_buf(&thread_data->ref_buf_array, frm_idx);
@@ -228,6 +269,22 @@ void* combo_threadfunc(void* vmaf_thread_data)
             blur_buf_ = get_blur_buf(&thread_data->blur_buf_array, frm_idx);
             memcpy(blur_buf, blur_buf_, data_sz);
             // don't releave blur_buf_array of frm_idx yet, since it will be used by the next frame again
+#endif			
+        }
+#endif
+
+#if BUF_OPT_ENABLE
+		// Allocate free buffer from the buffer array for next frame index
+		next_ref_buf 	= get_free_blur_buf_slot(&thread_data->ref_buf_array, frm_idx + 1);
+		next_dis_buf 	= get_free_blur_buf_slot(&thread_data->dis_buf_array, frm_idx + 1);		
+		if((NULL == next_ref_buf) || (NULL == next_dis_buf))
+		{
+#ifdef MULTI_THREADING
+			thread_data->stop_threads = 1;			
+			sprintf(errmsg, "No free slot found for next buffer.\n");
+			pthread_mutex_unlock(&thread_data->mutex_readframe);
+#endif			
+			goto fail_or_end;
         }
 #endif
 
@@ -252,12 +309,25 @@ void* combo_threadfunc(void* vmaf_thread_data)
             next_frame_read = true;
         }
 
+#if !BUF_OPT_ENABLE		
 #ifdef MULTI_THREADING
         pthread_mutex_unlock(&thread_data->mutex_readframe);
+#endif
 #endif
 
         if (next_frame_read)
         {
+#if BUF_OPT_ENABLE			
+			next_blur_buf 	= get_free_blur_buf_slot(&thread_data->blur_buf_array, frm_idx + 1);
+			if(NULL == next_blur_buf)
+			{
+#ifdef MULTI_THREADING
+				thread_data->stop_threads = 1;
+				sprintf(errmsg, "No free slot found for blur buffer.\n");
+#endif				
+				goto fail_or_end;
+			}
+#endif			
             // ===============================================================
             // offset pixel by OPT_RANGE_PIXEL_OFFSET
             // ===============================================================
@@ -272,14 +342,24 @@ void* combo_threadfunc(void* vmaf_thread_data)
             // ===============================================================
             convolution_f32_c(FILTER_5, 5, next_ref_buf, next_blur_buf, temp_buf, w, h, stride / sizeof(float), stride / sizeof(float));
 
+#if !BUF_OPT_ENABLE					
 #ifdef MULTI_THREADING
             // save next_ref_buf, next_ref_buf and next_ref_buf to buffer array
             put_blur_buf(&thread_data->ref_buf_array, frm_idx + 1, next_ref_buf);
             put_blur_buf(&thread_data->dis_buf_array, frm_idx + 1, next_dis_buf);
             put_blur_buf(&thread_data->blur_buf_array, frm_idx + 1, next_blur_buf);
 #endif
+#endif
         }
 
+#if BUF_OPT_ENABLE
+		// release ref and dis buffer references after blur buf computation
+		release_blur_buf_reference(&thread_data->ref_buf_array, frm_idx + 1);
+		release_blur_buf_reference(&thread_data->dis_buf_array, frm_idx + 1);	
+#ifdef MULTI_THREADING
+        pthread_mutex_unlock(&thread_data->mutex_readframe);
+#endif
+#endif
         dbg_printf("frame: %d, ", frm_idx);
 
         // ===============================================================
@@ -287,9 +367,18 @@ void* combo_threadfunc(void* vmaf_thread_data)
         // step they have been offset by OPT_RANGE_PIXEL_OFFSET, now
         // offset them back.
         // ===============================================================
+#if BUF_OPT_ENABLE
+		// offset back the buffers only if required
+		if (frm_idx % n_subsample == 0 && ( (thread_data->psnr_array != NULL) || (thread_data->ssim_array != NULL) || (thread_data->ms_ssim_array != NULL) ))
+		{
         offset_image(ref_buf, -OPT_RANGE_PIXEL_OFFSET, w, h, stride);
         offset_image(dis_buf, -OPT_RANGE_PIXEL_OFFSET, w, h, stride);
-
+			offset_flag = true;
+		}
+#else		
+        offset_image(ref_buf, -OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+        offset_image(dis_buf, -OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+#endif
         if (frm_idx % n_subsample == 0 && thread_data->psnr_array != NULL)
         {
             /* =========== psnr ============== */
@@ -338,8 +427,17 @@ void* combo_threadfunc(void* vmaf_thread_data)
         // ===============================================================
         // for the rest, offset pixel by OPT_RANGE_PIXEL_OFFSET
         // ===============================================================
+#if BUF_OPT_ENABLE
+		if(offset_flag)
+		{
         offset_image(ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
         offset_image(dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+			offset_flag = false;
+		}
+#else		
+        offset_image(ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+        offset_image(dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+#endif
 
         /* =========== adm ============== */
         if (frm_idx % n_subsample == 0)
@@ -421,8 +519,19 @@ void* combo_threadfunc(void* vmaf_thread_data)
             else
             {
 #ifdef MULTI_THREADING
+#if BUF_OPT_ENABLE
+				// avoid multiple memory copies
+				prev_blur_buf = get_blur_buf(&thread_data->blur_buf_array, frm_idx - 1);
+				if(NULL == prev_blur_buf)
+				{
+					thread_data->stop_threads = 1;
+					sprintf(errmsg, "Data not available for prev_blur_buf.\n");	
+					goto fail_or_end;
+				}	
+#else				
                 prev_blur_buf_ = get_blur_buf(&thread_data->blur_buf_array, frm_idx - 1);
                 memcpy(prev_blur_buf, prev_blur_buf_, data_sz);
+#endif
 #endif
                 if ((ret = compute_motion(prev_blur_buf, blur_buf, w, h, stride, stride, &score)))
                 {
@@ -430,7 +539,11 @@ void* combo_threadfunc(void* vmaf_thread_data)
                     goto fail_or_end;
                 }
 #ifdef MULTI_THREADING
+#if BUF_OPT_ENABLE
+				release_blur_buf_reference(&thread_data->blur_buf_array, frm_idx - 1);
+#else				
                 release_blur_buf(&thread_data->blur_buf_array, frm_idx - 1);
+#endif
 #endif
 
                 if (next_frame_read)
@@ -446,7 +559,9 @@ void* combo_threadfunc(void* vmaf_thread_data)
                 {
                     score2 = score;
 #ifdef MULTI_THREADING
+#if !BUF_OPT_ENABLE
                     release_blur_buf(&thread_data->blur_buf_array, frm_idx); // no more next frames, release this one too
+#endif
 #endif
                 }
             }
@@ -458,6 +573,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
             insert_array_at(thread_data->motion2_array, score2, frm_idx);
 
         }
+#if !BUF_OPT_ENABLE		
         else
         {
 #ifdef MULTI_THREADING
@@ -473,6 +589,12 @@ void* combo_threadfunc(void* vmaf_thread_data)
             }
 #endif
         }
+#else
+		/* Indicate that motion score computation for this frame is complete */
+		insert_array_at(thread_data->motion_score_compute_flag_array, 1.0, frm_idx);
+		release_blur_buf_reference(&thread_data->blur_buf_array, frm_idx + 1);
+#endif
+		
         /* =========== vif ============== */
 
         if (frm_idx % n_subsample == 0)
@@ -508,12 +630,60 @@ void* combo_threadfunc(void* vmaf_thread_data)
 
         dbg_printf("\n");
 
+#if BUF_OPT_ENABLE
+		//Release references to reference and distorted buffers
+		release_blur_buf_reference(&thread_data->ref_buf_array, frm_idx);
+		release_blur_buf_reference(&thread_data->dis_buf_array, frm_idx);
+		release_blur_buf_reference(&thread_data->blur_buf_array, frm_idx);
+		/*Loop through the slots and release slots if there are no more 
+		  reference till the current index. Not releasing next frame as
+		  it may be required for the next loop						   */
+		for(int i = 0; i <= frm_idx; i++)
+		{
+			int ref_reference_count = get_blur_buf_reference_count(&thread_data->ref_buf_array, i);
+			int dis_reference_count = get_blur_buf_reference_count(&thread_data->dis_buf_array, i);
+			
+			if((ref_reference_count == 0) && (dis_reference_count == 0))
+			{		
+				release_blur_buf_slot(&thread_data->ref_buf_array, i);
+				release_blur_buf_slot(&thread_data->dis_buf_array, i);
+			}
+		}
+			
+		/* Loop through the blur buffer array and release slots only till current index - 1 */	
+		/* Only for those whose reference counter is zero */
+		for(int i = 0; i <= (frm_idx - 1); i++)
+		{
+			int reference_count = get_blur_buf_reference_count(&thread_data->blur_buf_array, i);
+			if(reference_count == 0)
+			{
+				/* Release buffer only if motion score is computed for current, previous and next frame */			
+				if(
+					(get_at(thread_data->motion_score_compute_flag_array, i)) &&
+					(get_at(thread_data->motion_score_compute_flag_array, i + 1)) &&
+					((i == 0) || (get_at(thread_data->motion_score_compute_flag_array, i - 1)))
+					)
+				{
+					release_blur_buf_slot(&thread_data->blur_buf_array, i);
+				}
+			}
+		}
+		
+		/* If this is the last frame then release any subsequent slots */
+		if (!next_frame_read)
+		{
+			release_blur_buf_slot(&thread_data->ref_buf_array, frm_idx + 1);
+			release_blur_buf_slot(&thread_data->dis_buf_array, frm_idx + 1);
+			release_blur_buf_slot(&thread_data->blur_buf_array, frm_idx);		
+		}
+#else	
 #ifndef MULTI_THREADING
         // copy to prev_buf
         memcpy(prev_blur_buf, blur_buf, data_sz);
         memcpy(ref_buf, next_ref_buf, data_sz);
         memcpy(dis_buf, next_dis_buf, data_sz);
         memcpy(blur_buf, next_blur_buf, data_sz);
+#endif
 #endif
 
         if (!next_frame_read)
@@ -528,6 +698,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
 
 fail_or_end:
 
+#if !BUF_OPT_ENABLE
     aligned_free(ref_buf);
     aligned_free(dis_buf);
     aligned_free(prev_blur_buf);
@@ -535,6 +706,7 @@ fail_or_end:
     aligned_free(next_dis_buf);
     aligned_free(next_blur_buf);
     aligned_free(blur_buf);
+#endif	
     aligned_free(temp_buf);
 
 #ifdef MULTI_THREADING
@@ -616,6 +788,12 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
     combo_thread_data.stop_threads = 0;
     combo_thread_data.n_subsample = n_subsample;
 
+#if BUF_OPT_ENABLE	
+	DArray	motion_score_compute_flag_array;
+	init_array(&motion_score_compute_flag_array, 1000);
+	combo_thread_data.motion_score_compute_flag_array = &motion_score_compute_flag_array;
+#endif
+	
     // sanity check for width/height
     if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float))
     {
@@ -649,10 +827,22 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
     }
 
     // for motion analysis we compare to previous buffer and next buffer
+#if BUF_OPT_ENABLE
+	/*	
+	 *	In the multi-thread mode, allocate a fixed size buffer pool for the reference, distorted and blur buffers.
+	 *	At any point, the no. of required ref and dis buffers is 1 more than the total no. of allotted threads, 
+		to accomodate reading the next frame index.
+	 *	At any point, one thread operates on the current, previous and next blur buffers, and hence, the no. of
+		required blur buffers will be three times the total no. of allotted threads.
+	 */
+	init_blur_array(&combo_thread_data.ref_buf_array, combo_thread_data.thread_count + 1, combo_thread_data.data_sz, MAX_ALIGN);
+    init_blur_array(&combo_thread_data.dis_buf_array, combo_thread_data.thread_count + 1, combo_thread_data.data_sz, MAX_ALIGN);
+    init_blur_array(&combo_thread_data.blur_buf_array, 3 * (combo_thread_data.thread_count), combo_thread_data.data_sz, MAX_ALIGN);
+#else	
     init_blur_array(&combo_thread_data.ref_buf_array, combo_thread_data.thread_count, combo_thread_data.data_sz, MAX_ALIGN);
     init_blur_array(&combo_thread_data.dis_buf_array, combo_thread_data.thread_count, combo_thread_data.data_sz, MAX_ALIGN);
     init_blur_array(&combo_thread_data.blur_buf_array, combo_thread_data.thread_count + 2, combo_thread_data.data_sz, MAX_ALIGN);
-
+#endif
     // initialize the mutex that protects the read_frame function
     pthread_mutex_init(&combo_thread_data.mutex_readframe, NULL);
 
@@ -691,7 +881,12 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
     free_blur_buf(&combo_thread_data.dis_buf_array);
     free_blur_buf(&combo_thread_data.blur_buf_array);
 
-	free(thread);
+#if BUF_OPT_ENABLE	
+    free_array(&motion_score_compute_flag_array);
+#endif
+
+    free(thread);
+
     return 0;
 }
 
