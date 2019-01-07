@@ -40,6 +40,10 @@ Besides the default VMAF model which predicts the quality of videos displayed on
 
 Since VDK v1.3.7 (June 2018), we have introduced a way to quantify the level of confidence that a VMAF prediction entails. Each VMAF prediction score now can come with a 95% confidence interval (CI), which quantifies the level of confidence that the prediction lies within the interval. Refer to the [VMAF confidence interval](resource/doc/conf_interval.md) page for more details.
 
+## Matlab Functionality
+
+Besides the Python/C/C++ part of the repository, we also introduced a number of algorithms that are implemented in Matlab. For example, users can calculate ST-RRED, ST-MAD, SpEED-QA, and BRISQUE. For more details, see the [Matlab Usage](resource/doc/matlab_usage.md) page for more details.
+
 ## References
 
 Refer to the [references](resource/doc/references.md) page.
