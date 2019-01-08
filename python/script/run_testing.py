@@ -12,6 +12,7 @@ from vmaf.config import DisplayConfig
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.tools.misc import import_python_file, get_cmd_option, cmd_option_exists
 from vmaf.core.quality_runner import QualityRunner, VmafQualityRunner, BootstrapVmafQualityRunner
+from vmaf.core.matlab_quality_runner import STMADQualityRunner, SpEEDMatlabQualityRunner, StrredQualityRunner, StrredOptQualityRunner
 from vmaf.routine import run_test_on_dataset, print_matplotlib_warning
 from vmaf.tools.stats import ListStats
 
