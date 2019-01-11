@@ -85,6 +85,7 @@
   <ItemGroup>
     <ClCompile Include="..\feature\src\adm.c" />
     <ClCompile Include="..\feature\src\adm_tools.c" />
+    <ClCompile Include="..\feature\src\all.c" />
     <ClCompile Include="..\feature\src\ansnr.c" />
     <ClCompile Include="..\feature\src\ansnr_tools.c" />
     <ClCompile Include="..\feature\src\common\alignment.c" />
@@ -99,6 +100,7 @@
     <ClCompile Include="..\feature\src\iqa\decimate.c" />
     <ClCompile Include="..\feature\src\iqa\math_utils.c" />
     <ClCompile Include="..\feature\src\iqa\ssim_tools.c" />
+    <ClCompile Include="..\feature\src\moment.c" />
     <ClCompile Include="..\feature\src\motion.c" />
     <ClCompile Include="..\feature\src\ms_ssim.c" />
     <ClCompile Include="..\feature\src\psnr.c" />

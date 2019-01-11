@@ -30,6 +30,9 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\feature\src\all.c">
+      <Filter>feature</Filter>
+    </ClCompile>
     <ClCompile Include="..\feature\src\adm.c">
       <Filter>feature</Filter>
     </ClCompile>
@@ -43,6 +46,9 @@
       <Filter>feature</Filter>
     </ClCompile>
     <ClCompile Include="..\feature\src\common\blur_array.c">
+      <Filter>feature</Filter>
+    </ClCompile>
+    <ClCompile Include="..\feature\src\moment.c">
       <Filter>feature</Filter>
     </ClCompile>
     <ClCompile Include="..\feature\src\motion.c">
