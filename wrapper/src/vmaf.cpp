@@ -964,15 +964,7 @@ double RunVmaf(const char* fmt, int width, int height,
     }
 
     Asset asset(width, height, fmt);
-    std::unique_ptr<VmafQualityRunner> runner_ptr;
-    if (enable_conf_interval)
-    {
-        runner_ptr = std::unique_ptr<BootstrapVmafQualityRunner>(new BootstrapVmafQualityRunner(model_path));
-    }
-    else
-    {
-        runner_ptr = std::unique_ptr<VmafQualityRunner>(new VmafQualityRunner(model_path));
-    }
+    std::unique_ptr<IVmafQualityRunner> runner_ptr = VmafQualityRunnerFactory::createVmafQualityRunner(model_path, enable_conf_interval);
 
     Timer timer;
     timer.start();

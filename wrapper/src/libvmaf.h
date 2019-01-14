@@ -31,4 +31,83 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height, int (*rea
 }
 #endif
 
+#ifdef __cplusplus
+#include <vector>
+#include <cstring>
+#include <map>
+#include <memory>
+
+class Asset
+{
+public:
+    Asset(int w, int h, const char *fmt);
+    Asset(int w, int h);
+    int getWidth();
+    int getHeight();
+    const char* getFmt();
+private:
+    const int w, h;
+    const char *fmt;
+};
+
+enum ScoreAggregateMethod
+{
+    MEAN,
+    HARMONIC_MEAN,
+    MINIMUM
+};
+
+class StatVector
+{
+public:
+    StatVector();
+    StatVector(std::vector<double> l);
+    std::vector<double> getVector();
+    double mean();
+    double minimum();
+    double harmonic_mean();
+    double second_moment();
+    double percentile(double perc);
+    double var();
+    double std();
+    void append(double e);
+    double at(size_t idx);
+    size_t size();
+private:
+    std::vector<double> l;
+    void _assert_size();
+};
+
+
+class Result
+{
+public:
+    Result();
+    void set_scores(const std::string &key, const StatVector &scores);
+    StatVector get_scores(const std::string &key);
+    bool has_scores(const std::string &key);
+    double get_score(const std::string &key);
+    std::vector<std::string> get_keys();
+    void setScoreAggregateMethod(ScoreAggregateMethod scoreAggregateMethod);
+private:
+    std::map<std::string, StatVector> d;
+    ScoreAggregateMethod score_aggregate_method;
+};
+
+class IVmafQualityRunner {
+public:
+    virtual Result run(Asset asset, int(*read_frame)(float *ref_data, float *main_data, float *temp_data,
+        int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
+        bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample) = 0;
+    virtual ~IVmafQualityRunner() {}
+};
+
+class VmafQualityRunnerFactory {
+public:
+    static std::unique_ptr<IVmafQualityRunner> 
+        createVmafQualityRunner(const char *model_path, bool enable_conf_interval);
+};
+
+#endif
+
 #endif /* _LIBVMAF_H */
