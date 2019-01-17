@@ -919,7 +919,10 @@ void BootstrapVmafQualityRunner::_set_prediction_result(
     result.set_scores("ci95_high", ci95HighScore);
 
     // num_models is same across frames, so just use first frame length
-    size_t num_models = predictionStructs.at(0).vmafMultiModelPrediction.size();
+    size_t num_models = 0; 
+    if (predictionStructs.size() > 0) {
+        num_models = predictionStructs.at(0).vmafMultiModelPrediction.size();
+    }
     std::vector<double> perModelScore;
     // character array to put the name of the vmaf bootstrap model, e.g. vmaf_0001 is the first one
     char char_buffer[50];
