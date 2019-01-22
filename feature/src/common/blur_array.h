@@ -23,7 +23,7 @@ typedef struct
 {
     int frame_idx;
     float *blur_buf;
-	int reference_count;
+    int reference_count;
 
 
 } BLUR_BUF_STRUCT;

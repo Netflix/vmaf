@@ -41,7 +41,7 @@ typedef adm_dwt_band_t_s adm_dwt_band_t;
 
 #if ADM_OPT_ENABLE
     #define adm_csf_den_scale adm_csf_den_scale_s
-	#define dwt2_src_indices_filt dwt2_src_indices_filt_s
+    #define dwt2_src_indices_filt dwt2_src_indices_filt_s
 #endif
 
 static char *init_dwt_band(adm_dwt_band_t *band, char *data_top, size_t buf_sz_one)
@@ -274,7 +274,7 @@ fail:
 	aligned_free(buf_x_orig);
 	return ret;
 }
-#else
+#else // ADM_OPT_ENABLE
 int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores, double border_factor)
 {
 #ifdef ADM_OPT_SINGLE_PRECISION
