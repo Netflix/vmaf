@@ -900,8 +900,14 @@ void BootstrapVmafQualityRunner::_postproc_transform_clip(
     scoreStdDev *= slope;
 }
 
-static const char BOOTSTRAP_MODEL_NAME_TRAILING_ZEROS[] = "%04d";
-static const int BOOTSTRAP_MODEL_NAME_BUF_SIZE = 100;
+static const int BOOTSTRAP_MODEL_NAME_PRECISION = 4;
+
+std::string to_zero_lead(const int value, const unsigned precision)
+{
+     std::ostringstream oss;
+     oss << std::setw(precision) << std::setfill('0') << value;
+     return oss.str();
+}
 
 void BootstrapVmafQualityRunner::_set_prediction_result(
         std::vector<VmafPredictionStruct> predictionStructs,
@@ -924,15 +930,13 @@ void BootstrapVmafQualityRunner::_set_prediction_result(
     // num_models is same across frames, so just use first frame length
     size_t num_models = predictionStructs.at(0).vmafMultiModelPrediction.size();
     std::vector<double> perModelScore;
-    // character array to put the name of the vmaf bootstrap model, e.g. vmaf_0001 is the first one
-    char char_buffer[BOOTSTRAP_MODEL_NAME_BUF_SIZE];
+    // name of the vmaf bootstrap model, e.g. vmaf_0001 is the first one
 
     for (size_t j = 0; j < num_models; j++) {
         for (size_t i = 0; i < predictionStructs.size(); i++) {
             perModelScore.push_back(predictionStructs.at(i).vmafMultiModelPrediction.at(j));
         }
-        sprintf(char_buffer, BOOTSTRAP_MODEL_NAME_TRAILING_ZEROS, j + 1);
-        result.set_scores(BOOSTRAP_VMAF_MODEL_PREFIX + std::string(char_buffer), perModelScore);
+        result.set_scores(BOOSTRAP_VMAF_MODEL_PREFIX + to_zero_lead(j + 1, BOOTSTRAP_MODEL_NAME_PRECISION), perModelScore);
         perModelScore.clear();
     }
 
@@ -1035,9 +1039,6 @@ double RunVmaf(const char* fmt, int width, int height,
     int num_bootstrap_models = 0;
     std::string bootstrap_model_list_str = "";
 
-    // character array to put the name of the vmaf bootstrap model, e.g. 0001 is the first one
-    char char_buffer[BOOTSTRAP_MODEL_NAME_BUF_SIZE];
-
     // determine number of bootstrap models (if any) and construct a comma-separated string of bootstrap vmaf model names
     for (size_t j=0; j<result_keys.size(); j++)
     {
@@ -1055,12 +1056,11 @@ double RunVmaf(const char* fmt, int width, int height,
             {
                 bootstrap_model_list_str += "," + result_keys[j];
             }
-            sprintf(char_buffer, BOOTSTRAP_MODEL_NAME_TRAILING_ZEROS, num_bootstrap_models + 1);
             if (pool_method) {
-                printf("VMAF score (%s), model %s = %f\n", pool_method, char_buffer, result.get_score(result_keys[j]));
+                printf("VMAF score (%s), model %s = %f\n", pool_method, to_zero_lead(num_bootstrap_models + 1, BOOTSTRAP_MODEL_NAME_PRECISION).c_str(), result.get_score(result_keys[j]));
             }
             else {
-                printf("VMAF score, model %s = %f\n", char_buffer, result.get_score(result_keys[j]));
+                printf("VMAF score, model %s = %f\n", to_zero_lead(num_bootstrap_models + 1, BOOTSTRAP_MODEL_NAME_PRECISION).c_str(), result.get_score(result_keys[j]));
             }
             num_bootstrap_models += 1;
         }

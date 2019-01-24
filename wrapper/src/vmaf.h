@@ -36,7 +36,7 @@
 #include "chooseser.h"
 #include "darray.h"
 
-static const char BOOSTRAP_VMAF_MODEL_PREFIX[] = "vmaf_";
+static const std::string BOOSTRAP_VMAF_MODEL_PREFIX = "vmaf_";
 
 double RunVmaf(const char* fmt, int width, int height,
                int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
