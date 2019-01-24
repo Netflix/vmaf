@@ -900,6 +900,15 @@ void BootstrapVmafQualityRunner::_postproc_transform_clip(
     scoreStdDev *= slope;
 }
 
+static const int BOOTSTRAP_MODEL_NAME_PRECISION = 4;
+
+std::string to_zero_lead(const int value, const unsigned precision)
+{
+     std::ostringstream oss;
+     oss << std::setw(precision) << std::setfill('0') << value;
+     return oss.str();
+}
+
 void BootstrapVmafQualityRunner::_set_prediction_result(
         std::vector<VmafPredictionStruct> predictionStructs,
         Result& result) {
@@ -921,15 +930,13 @@ void BootstrapVmafQualityRunner::_set_prediction_result(
     // num_models is same across frames, so just use first frame length
     size_t num_models = predictionStructs.at(0).vmafMultiModelPrediction.size();
     std::vector<double> perModelScore;
-    // character array to put the name of the vmaf bootstrap model, e.g. vmaf_0001 is the first one
-    char char_buffer[50];
+    // name of the vmaf bootstrap model, e.g. vmaf_0001 is the first one
 
     for (size_t j = 0; j < num_models; j++) {
         for (size_t i = 0; i < predictionStructs.size(); i++) {
             perModelScore.push_back(predictionStructs.at(i).vmafMultiModelPrediction.at(j));
         }
-        sprintf(char_buffer, "%04d", j + 1);
-        result.set_scores(BOOSTRAP_VMAF_MODEL_PREFIX + std::string(char_buffer), perModelScore);
+        result.set_scores(BOOSTRAP_VMAF_MODEL_PREFIX + to_zero_lead(j + 1, BOOTSTRAP_MODEL_NAME_PRECISION), perModelScore);
         perModelScore.clear();
     }
 
@@ -1000,30 +1007,6 @@ double RunVmaf(const char* fmt, int width, int height,
 
     std::vector<std::string> result_keys = result.get_keys();
 
-    int num_bootstrap_models = 0;
-    std::string bootstrap_model_list_str = "";
-
-    // determine number of bootstrap models (if any) and construct a comma-separated string of bootstrap vmaf model names
-    for (size_t j=0; j<result_keys.size(); j++)
-    {
-        if (result_keys[j].find(BOOSTRAP_VMAF_MODEL_PREFIX)!= std::string::npos)
-        {
-            if (num_bootstrap_models == 0)
-            {
-                bootstrap_model_list_str += result_keys[j] + ",";
-            }
-            else if (num_bootstrap_models == 1)
-            {
-                bootstrap_model_list_str += result_keys[j];
-            }
-            else
-            {
-                bootstrap_model_list_str += "," + result_keys[j];
-            }
-            num_bootstrap_models += 1;
-        }
-    }
-
     double aggregate_psnr = 0.0, aggregate_ssim = 0.0, aggregate_ms_ssim = 0.0;
     if (result.has_scores("psnr"))
         aggregate_psnr = result.get_score("psnr");
@@ -1051,6 +1034,36 @@ double RunVmaf(const char* fmt, int width, int height,
             printf("SSIM score = %f\n", aggregate_ssim);
         if (aggregate_ms_ssim)
             printf("MS-SSIM score = %f\n", aggregate_ms_ssim);
+    }
+
+    int num_bootstrap_models = 0;
+    std::string bootstrap_model_list_str = "";
+
+    // determine number of bootstrap models (if any) and construct a comma-separated string of bootstrap vmaf model names
+    for (size_t j=0; j<result_keys.size(); j++)
+    {
+        if (result_keys[j].find(BOOSTRAP_VMAF_MODEL_PREFIX)!= std::string::npos)
+        {
+            if (num_bootstrap_models == 0)
+            {
+                bootstrap_model_list_str += result_keys[j] + ",";
+            }
+            else if (num_bootstrap_models == 1)
+            {
+                bootstrap_model_list_str += result_keys[j];
+            }
+            else
+            {
+                bootstrap_model_list_str += "," + result_keys[j];
+            }
+            if (pool_method) {
+                printf("VMAF score (%s), model %s = %f\n", pool_method, to_zero_lead(num_bootstrap_models + 1, BOOTSTRAP_MODEL_NAME_PRECISION).c_str(), result.get_score(result_keys[j]));
+            }
+            else {
+                printf("VMAF score, model %s = %f\n", to_zero_lead(num_bootstrap_models + 1, BOOTSTRAP_MODEL_NAME_PRECISION).c_str(), result.get_score(result_keys[j]));
+            }
+            num_bootstrap_models += 1;
+        }
     }
 
     if (log_path != NULL && log_fmt !=NULL && (strcmp(log_fmt, "json")==0))
