@@ -46,10 +46,12 @@ const char* Asset::getFmt()
     return fmt; 
 }
 
-StatVector::StatVector() {
+StatVector::StatVector() 
+{
 }
 
-StatVector::StatVector(std::vector<double> l) : l(l) {
+StatVector::StatVector(std::vector<double> l) : l(l) 
+{
 }
 
 std::vector<double> StatVector::getVector()
@@ -127,38 +129,56 @@ double StatVector::percentile(double perc)
 
 }
 
-double StatVector::var() { 
+double StatVector::var()
+{ 
     return second_moment() - pow(mean(), 2); 
 }
-double StatVector::std() { 
+
+double StatVector::std()
+{ 
     return sqrt(var()); 
 }
-void StatVector::append(double e) { 
+
+void StatVector::append(double e)
+{ 
     l.push_back(e); 
 }
-double StatVector::at(size_t idx) { 
+double StatVector::at(size_t idx)
+{ 
     return l.at(idx); 
 }
-size_t StatVector::size() { 
+
+size_t StatVector::size()
+{ 
     return l.size(); 
 }
-void StatVector::_assert_size() {
+
+void StatVector::_assert_size()
+{
     if (l.size() == 0) {
         throw std::runtime_error("StatVector size is 0.");
     }
 }
 
-Result::Result() : score_aggregate_method(ScoreAggregateMethod::MEAN) {
+Result::Result() : score_aggregate_method(ScoreAggregateMethod::MEAN)
+{
 }
-void Result::set_scores(const std::string &key, const StatVector &scores) {
+
+void Result::set_scores(const std::string &key, const StatVector &scores)
+{
     d[key] = scores; 
 }
-StatVector Result::get_scores(const std::string &key) { 
+
+StatVector Result::get_scores(const std::string &key)
+{ 
     return d[key]; 
 }
-bool Result::has_scores(const std::string &key) {
+
+bool Result::has_scores(const std::string &key)
+{
     return d.find(key) != d.end(); 
 }
+
 double Result::get_score(const std::string &key)
 {
     StatVector list = get_scores(key);
@@ -175,6 +195,7 @@ double Result::get_score(const std::string &key)
         return list.mean();
     }
 }
+
 std::vector<std::string> Result::get_keys()
 {
     std::vector<std::string> v;
@@ -184,6 +205,7 @@ std::vector<std::string> Result::get_keys()
     }
     return v;
 }
+
 void Result::setScoreAggregateMethod(ScoreAggregateMethod scoreAggregateMethod)
 {
     score_aggregate_method = scoreAggregateMethod;
@@ -205,39 +227,39 @@ VmafQualityRunnerFactory::createVmafQualityRunner(const char *model_path, bool e
 
 extern "C" {
 
-enum vmaf_cpu cpu; // global
+    enum vmaf_cpu cpu; // global
 
-int compute_vmaf(double* vmaf_score, char* fmt, int width, int height, int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride_byte, void *user_data),
-				 void *user_data, char *model_path, char *log_path, char *log_fmt, int disable_clip, int disable_avx, int enable_transform, int phone_model, int do_psnr,
-				 int do_ssim, int do_ms_ssim, char *pool_method, int n_thread, int n_subsample, int enable_conf_interval)
-	{
-		bool d_c = false;
-		bool d_a = false;
-		bool e_t = false;
-		bool d_p = false;
-		bool d_s = false;
-		bool d_m_s = false;	
+    int compute_vmaf(double* vmaf_score, char* fmt, int width, int height, int(*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride_byte, void *user_data),
+        void *user_data, char *model_path, char *log_path, char *log_fmt, int disable_clip, int disable_avx, int enable_transform, int phone_model, int do_psnr,
+        int do_ssim, int do_ms_ssim, char *pool_method, int n_thread, int n_subsample, int enable_conf_interval)
+    {
+        bool d_c = false;
+        bool d_a = false;
+        bool e_t = false;
+        bool d_p = false;
+        bool d_s = false;
+        bool d_m_s = false;
 
-		if(enable_transform || phone_model){
-			e_t = true;
-		}
-		if(disable_clip){
-			d_c = true;
-		}
-		if(disable_avx){
-			d_a = true;
-		}
-		if(do_psnr){
-			d_p = true;
-		}
-		if(do_ssim){
-			d_s = true;
-		}
-		if(do_ms_ssim){
-			d_m_s = true;
-		}
-		
-		cpu = cpu_autodetect();
+        if (enable_transform || phone_model) {
+            e_t = true;
+        }
+        if (disable_clip) {
+            d_c = true;
+        }
+        if (disable_avx) {
+            d_a = true;
+        }
+        if (do_psnr) {
+            d_p = true;
+        }
+        if (do_ssim) {
+            d_s = true;
+        }
+        if (do_ms_ssim) {
+            d_m_s = true;
+        }
+
+        cpu = cpu_autodetect();
 
         if (disable_avx)
         {
@@ -265,5 +287,4 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height, int (*rea
             return -4;
         }
     }
-
 }
