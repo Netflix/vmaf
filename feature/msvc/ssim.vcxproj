@@ -12,20 +12,20 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <UseNativeEnvironment>true</UseNativeEnvironment>
-    <ProjectGuid>{03A4C79F-F1A8-48C9-A2AC-0A14EC0F093E}</ProjectGuid>
+    <ProjectGuid>{418D8FFD-D23A-4C56-8A94-D4B9D39083D1}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>pthreads</RootNamespace>
+    <RootNamespace>ssim</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -47,62 +47,35 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>PTW32_BUILD_INLINED;PTW32_STATIC_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>PTW32_BUILD_INLINED;PTW32_STATIC_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\attr.c" />
-    <ClCompile Include="..\autostatic.c" />
-    <ClCompile Include="..\barrier.c" />
-    <ClCompile Include="..\cancel.c" />
-    <ClCompile Include="..\cleanup.c" />
-    <ClCompile Include="..\condvar.c" />
-    <ClCompile Include="..\create.c" />
-    <ClCompile Include="..\dll.c" />
-    <ClCompile Include="..\errno.c" />
-    <ClCompile Include="..\exit.c" />
-    <ClCompile Include="..\fork.c" />
-    <ClCompile Include="..\global.c" />
-    <ClCompile Include="..\misc.c" />
-    <ClCompile Include="..\mutex.c" />
-    <ClCompile Include="..\nonportable.c" />
-    <ClCompile Include="..\private.c" />
-    <ClCompile Include="..\rwlock.c" />
-    <ClCompile Include="..\sched.c" />
-    <ClCompile Include="..\semaphore.c" />
-    <ClCompile Include="..\signal.c" />
-    <ClCompile Include="..\spin.c" />
-    <ClCompile Include="..\sync.c" />
-    <ClCompile Include="..\tsd.c" />
+    <ClCompile Include="..\src\ssim_main.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\implement.h" />
-    <ClInclude Include="..\need_errno.h" />
-    <ClInclude Include="..\pthread.h" />
-    <ClInclude Include="..\semaphore.h" />
+    <ProjectReference Include="..\..\wrapper\libvmaf.vcxproj">
+      <Project>{5f5103f4-e473-4476-8e7b-fd3465e872b1}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

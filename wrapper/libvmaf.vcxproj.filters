@@ -27,9 +27,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="..\feature\src\all.c">
       <Filter>feature</Filter>
     </ClCompile>
@@ -43,9 +40,6 @@
       <Filter>feature</Filter>
     </ClCompile>
     <ClCompile Include="..\feature\src\ansnr_tools.c">
-      <Filter>feature</Filter>
-    </ClCompile>
-    <ClCompile Include="..\feature\src\common\blur_array.c">
       <Filter>feature</Filter>
     </ClCompile>
     <ClCompile Include="..\feature\src\moment.c">
@@ -126,6 +120,9 @@
     <ClCompile Include="src\vmaf.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\feature\src\common\blur_array.c">
+      <Filter>feature\common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\feature\src\adm_options.h">
@@ -138,9 +135,6 @@
       <Filter>feature</Filter>
     </ClInclude>
     <ClInclude Include="..\feature\src\ansnr_tools.h">
-      <Filter>feature</Filter>
-    </ClInclude>
-    <ClInclude Include="..\feature\src\common\blur_array.h">
       <Filter>feature</Filter>
     </ClInclude>
     <ClInclude Include="..\feature\src\psnr_tools.h">
@@ -234,6 +228,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\vmaf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\feature\src\common\blur_array.h">
+      <Filter>feature\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\feature\src\all_options.h">
+      <Filter>feature</Filter>
+    </ClInclude>
+    <ClInclude Include="..\feature\src\moment_options.h">
+      <Filter>feature</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

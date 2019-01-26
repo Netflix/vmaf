@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
+    <UseNativeEnvironment>true</UseNativeEnvironment>
     <ProjectGuid>{5F5103F4-E473-4476-8E7B-FD3465E872B1}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>libvmaf</RootNamespace>
@@ -42,17 +43,15 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
+      <AdditionalIncludeDirectories>..\feature\src;..\feature\src\common;..\pthreads;..\ptools;..\ptools\opencontainers_1_8_4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>MULTI_THREADING;_CRT_NONSTDC_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;PTW32_STATIC_LIB;OC_NEW_STYLE_INCLUDES;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\feature\src\common;..\ptools;..\ptools\opencontainers_1_8_4\include;..\pthreads;..\feature\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <SDLCheck>true</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>MULTI_THREADING;PTW32_STATIC_LIB;OC_NEW_STYLE_INCLUDES;_DEBUG;_CRT_NONSTDC_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -61,17 +60,12 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
+      <AdditionalIncludeDirectories>..\feature\src;..\feature\src\common;..\pthreads;..\ptools;..\ptools\opencontainers_1_8_4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>MULTI_THREADING;_CRT_NONSTDC_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;PTW32_STATIC_LIB;OC_NEW_STYLE_INCLUDES;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\feature\src\common;..\ptools;..\ptools\opencontainers_1_8_4\include;..\pthreads;..\feature\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <SDLCheck>true</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>MULTI_THREADING;PTW32_STATIC_LIB;OC_NEW_STYLE_INCLUDES;NDEBUG;_CRT_NONSTDC_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -79,9 +73,6 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\feature\src\adm.c" />
     <ClCompile Include="..\feature\src\adm_tools.c" />
@@ -92,7 +83,10 @@
     <ClCompile Include="..\feature\src\common\alloc.c" />
     <ClCompile Include="..\feature\src\common\blur_array.c" />
     <ClCompile Include="..\feature\src\common\convolution.c" />
-    <ClCompile Include="..\feature\src\common\convolution_avx.c" />
+    <ClCompile Include="..\feature\src\common\convolution_avx.c">
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+    </ClCompile>
     <ClCompile Include="..\feature\src\common\cpu.c" />
     <ClCompile Include="..\feature\src\common\file_io.c" />
     <ClCompile Include="..\feature\src\common\frame.c" />
@@ -119,6 +113,7 @@
   <ItemGroup>
     <ClInclude Include="..\feature\src\adm_options.h" />
     <ClInclude Include="..\feature\src\adm_tools.h" />
+    <ClInclude Include="..\feature\src\all_options.h" />
     <ClInclude Include="..\feature\src\ansnr_options.h" />
     <ClInclude Include="..\feature\src\ansnr_tools.h" />
     <ClInclude Include="..\feature\src\common\alignment.h" />
@@ -138,6 +133,7 @@
     <ClInclude Include="..\feature\src\iqa\iqa_os.h" />
     <ClInclude Include="..\feature\src\iqa\math_utils.h" />
     <ClInclude Include="..\feature\src\iqa\ssim_tools.h" />
+    <ClInclude Include="..\feature\src\moment_options.h" />
     <ClInclude Include="..\feature\src\motion_options.h" />
     <ClInclude Include="..\feature\src\motion_tools.h" />
     <ClInclude Include="..\feature\src\psnr_options.h" />
@@ -147,6 +143,7 @@
     <ClInclude Include="src\combo.h" />
     <ClInclude Include="src\cpu_info.h" />
     <ClInclude Include="src\darray.h" />
+    <ClInclude Include="src\debug.h" />
     <ClInclude Include="src\libvmaf.h" />
     <ClInclude Include="src\pugixml\pugiconfig.hpp" />
     <ClInclude Include="src\pugixml\pugixml.hpp" />
