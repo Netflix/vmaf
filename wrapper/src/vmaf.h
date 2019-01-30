@@ -35,6 +35,7 @@
 #include "svm.h"
 #include "chooseser.h"
 #include "darray.h"
+#include "libvmaf.h"
 
 static const std::string BOOSTRAP_VMAF_MODEL_PREFIX = "vmaf_";
 
@@ -44,157 +45,6 @@ double RunVmaf(const char* fmt, int width, int height,
                bool disable_clip, bool enable_transform,
                bool do_psnr, bool do_ssim, bool do_ms_ssim,
                const char *pool_method, int n_thread, int n_subsample, bool enable_conf_interval);
-
-class Asset
-{
-public:
-    Asset(int w, int h, const char *fmt):
-        w(w), h(h), fmt(fmt) {}
-    Asset(int w, int h):
-        w(w), h(h), fmt("yuv420p") {}
-    int getWidth() { return w; }
-    int getHeight() { return h; }
-    const char* getFmt() { return fmt; }
-private:
-    const int w, h;
-    const char *fmt;
-};
-
-class StatVector
-{
-public:
-    StatVector() {}
-    StatVector(std::vector<double> l): l(l) {}
-    std::vector<double> getVector()
-    {
-        return l;
-    }
-    double mean()
-    {
-        _assert_size();
-        double sum = 0.0;
-        for (double e : l)
-        {
-            sum += e;
-        }
-        return sum / l.size();
-    }
-    double minimum()
-    {
-        _assert_size();
-        double min_ = l[0];
-        for (double e : l)
-        {
-            if (e < min_)
-            {
-                min_ = e;
-            }
-        }
-        return min_;
-    }
-    double harmonic_mean()
-    {
-        _assert_size();
-        double sum = 0.0;
-        for (double e: l)
-        {
-            sum += 1.0 / (e + 1.0);
-        }
-        return 1.0 / (sum / l.size()) - 1.0;
-    }
-    double second_moment()
-    {
-        _assert_size();
-        double sum = 0.0;
-        for (double e : l)
-        {
-            sum += pow(e, 2);
-        }
-        return sum / l.size();
-    }
-    double percentile(double perc)
-    {
-        _assert_size();
-        if (perc < 0.0) {
-            perc = 0.0;
-        }
-        else if (perc > 100.0) {
-            perc = 100.0;
-        }
-        std::vector<double> l(this->l);
-        std::sort(l.begin(), l.end());
-        double pos = perc * (this->l.size() - 1) / 100.0;
-        int pos_left = (int)floor(pos);
-        int pos_right = (int)ceil(pos);
-        if (pos_left == pos_right) {
-            return l[pos_left];
-        }
-        else {
-            return l[pos_left] * (pos_right - pos) + l[pos_right] * (pos - pos_left);
-        }
-
-    }
-    double var() { return second_moment() - pow(mean(), 2); }
-    double std() { return sqrt(var()); }
-    void append(double e) { l.push_back(e); }
-    double at(size_t idx) { return l.at(idx); }
-    size_t size() { return l.size(); }
-private:
-    std::vector<double> l;
-    void _assert_size() {
-        if (l.size() == 0) {
-            throw std::runtime_error("StatVector size is 0.");
-        }
-    }
-};
-
-enum ScoreAggregateMethod
-{
-    MEAN,
-    HARMONIC_MEAN,
-    MINIMUM
-};
-
-class Result
-{
-public:
-    Result(): score_aggregate_method(ScoreAggregateMethod::MEAN) {}
-    void set_scores(const std::string &key, const StatVector &scores) { d[key] = scores; }
-    StatVector get_scores(const std::string &key) { return d[key]; }
-    bool has_scores(const std::string &key) { return d.find(key) != d.end(); }
-    double get_score(const std::string &key)
-    {
-        StatVector list = get_scores(key);
-        if (score_aggregate_method == ScoreAggregateMethod::MINIMUM)
-        {
-            return list.minimum();
-        }
-        else if (score_aggregate_method == ScoreAggregateMethod::HARMONIC_MEAN)
-        {
-            return list.harmonic_mean();
-        }
-        else // MEAN
-        {
-            return list.mean();
-        }
-    }
-    std::vector<std::string> get_keys()
-    {
-        std::vector<std::string> v;
-        for (std::map<std::string, StatVector>::iterator it = d.begin(); it != d.end(); ++it)
-        {
-            v.push_back(it->first);
-        }
-        return v;
-    }
-    void setScoreAggregateMethod(ScoreAggregateMethod scoreAggregateMethod)
-    {
-        score_aggregate_method = scoreAggregateMethod;
-    }
-private:
-    std::map<std::string, StatVector> d;
-    ScoreAggregateMethod score_aggregate_method;
-};
 
 class VmafException: public std::exception
 {
@@ -267,11 +117,11 @@ private:
     virtual void _assert_model_type(Val model_type);
 };
 
-class VmafQualityRunner
+class VmafQualityRunner : public IVmafQualityRunner
 {
 public:
     VmafQualityRunner(const char *model_path): model_path(model_path) {}
-    Result run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
+    virtual Result run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
                int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
                bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample);
     virtual ~VmafQualityRunner() {}

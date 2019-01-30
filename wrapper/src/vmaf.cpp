@@ -929,7 +929,10 @@ void BootstrapVmafQualityRunner::_set_prediction_result(
     result.set_scores("ci95_high", ci95HighScore);
 
     // num_models is same across frames, so just use first frame length
-    size_t num_models = predictionStructs.at(0).vmafMultiModelPrediction.size();
+    size_t num_models = 0; 
+    if (predictionStructs.size() > 0) {
+        num_models = predictionStructs.at(0).vmafMultiModelPrediction.size();
+    }
     std::vector<double> perModelScore;
     // name of the vmaf bootstrap model, e.g. vmaf_0001 is the first one
 
@@ -972,15 +975,7 @@ double RunVmaf(const char* fmt, int width, int height,
     }
 
     Asset asset(width, height, fmt);
-    std::unique_ptr<VmafQualityRunner> runner_ptr;
-    if (enable_conf_interval)
-    {
-        runner_ptr = std::unique_ptr<BootstrapVmafQualityRunner>(new BootstrapVmafQualityRunner(model_path));
-    }
-    else
-    {
-        runner_ptr = std::unique_ptr<VmafQualityRunner>(new VmafQualityRunner(model_path));
-    }
+    std::unique_ptr<IVmafQualityRunner> runner_ptr = VmafQualityRunnerFactory::createVmafQualityRunner(model_path, enable_conf_interval);
 
     Timer timer;
     timer.start();
