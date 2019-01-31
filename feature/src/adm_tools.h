@@ -146,22 +146,6 @@ void dwt2_src_indices_filt_s(int **src_ind_y, int **src_ind_x, int w, int h);
 
 void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int **ind_x, int w, int h, int src_stride, int dst_stride);
 
-#else
-
-float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_factor);
-
-void adm_decouple_s(const adm_dwt_band_t_s *ref, const adm_dwt_band_t_s *dis, const adm_dwt_band_t_s *r, const adm_dwt_band_t_s *a, int w, int h, int ref_stride, int dis_stride, int r_stride, int a_stride);
-
-void adm_csf_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, int orig_h, int scale, int w, int h, int src_stride, int dst_stride);
-
-void adm_cm_thresh_s(const adm_dwt_band_t_s *src, float *dst, int w, int h, int src_stride, int dst_stride);
-
-void adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const float *thresh, int w, int h, int src_stride, int dst_stride, int thresh_stride);
-
-void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int w, int h, int src_stride, int dst_stride);
-
-void adm_buffer_copy(const void *src, void *dst, int linewidth, int h, int src_stride, int dst_stride);
-
 /* ================= */
 /* Noise floor model */
 /* ================= */
