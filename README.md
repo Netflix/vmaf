@@ -2,16 +2,15 @@ VMAF - Video Multi-Method Assessment Fusion
 ===================
 [![Build Status](https://travis-ci.org/Netflix/vmaf.svg?branch=master)](https://travis-ci.org/Netflix/vmaf)
 
-VMAF is a perceptual video quality assessment algorithm developed by Netflix. VMAF Development Kit (VDK) is a software package that contains the VMAF algorithm implementation, as well as a set of tools that allows a user to train and test a custom VMAF model. For an overview, read [this](http://techblog.netflix.com/2016/06/toward-practical-perceptual-video.html) tech blog post, or [this](resource/doc/VMAF_ICIP17.pdf) slide deck.
+VMAF is a perceptual video quality assessment algorithm developed by Netflix. VMAF Development Kit (VDK) is a software package that contains the VMAF algorithm implementation, as well as a set of tools that allows a user to train and test a custom VMAF model. Read [this](https://medium.com/netflix-techblog/toward-a-practical-perceptual-video-quality-metric-653f208b9652) techblog post for an overview, or [this](https://medium.com/netflix-techblog/vmaf-the-journey-continues-44b51ee9ed12) post for the latest updates and tips for best practices.
 
 ## News
 
+- (1/31/19) Optimized C code for speed. Running in multithreading mode, `vmafossexec` achieves ~40% run time reduction compared to the previous version.
 - (11/19/18) Added a BD-rate calculator implementation. See more details [here](resource/doc/VMAF_Python_library.md#bd-rate-calculator).
 - (10/25/18) We have published our [second techblog on VMAF](https://medium.com/netflix-techblog/vmaf-the-journey-continues-44b51ee9ed12), with recommendations on best practices.
 - (9/13/18) [SUREAL](https://github.com/Netflix/sureal) is no longer a submodule to VMAF.
 - (6/19/18) Each VMAF prediction score now comes with a 95% [confidence interval (CI)](resource/doc/conf_interval.md), which quantifies the level of confidence that the prediction lies within the interval.
-- (6/19/18) Added a [4K VMAF model](resource/doc/models.md/#predict-quality-on-a-4ktv-screen-at-15h) under `model/vmaf_4k_v0.6.1.pkl`, which predicts the subjective quality of video displayed on a 4KTV and viewed from the distance of 1.5X the display height.
-- (6/5/18) Speed optimization to [`vmafossexec`](resource/doc/vmafossexec.md): 1) support multi-threading (e.g. use `--thread 0` to use all cores), 2) support frame sampling (e.g. use `--subsample 5` to calculate VMAF on one of every 5 frames).
 
 ## Frequently Asked Questions
 
