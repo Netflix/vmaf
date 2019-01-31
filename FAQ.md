@@ -56,12 +56,12 @@ A: This is due to the slightly different workflows used by `run_vmaf_training` a
 
 ### Q: How do I use VMAF with downscaled videos?
 
-If you have a distorted video that was scaled down (e.g. for adaptive streaming) and want to calculate VMAF, you can use ffmpeg with `libvmaf` to perform the re-scaling for you.
+If you have a distorted video that was scaled down (e.g. for adaptive streaming) and want to calculate VMAF, you can use FFmpeg with `libvmaf` to perform the re-scaling for you.
 
 For example, to upscale the distorted video to 1080p:
 
 ```
-ffmpeg -i main.mpg -i ref.mpg -filter_complex "[0:v]scale=1920:1080[main];[main][1:v]libvmaf" -f null -
+ffmpeg -i main.mpg -i ref.mpg -filter_complex "[0:v]scale=1920x1080:flags=bicubic[main];[main][1:v]libvmaf" -f null -
 ```
 
 This scales the first input video (`0:v`) and forwards it to VMAF (`libvmaf`) with the label `main`, where it is compared against the second input video, `1:v`.
