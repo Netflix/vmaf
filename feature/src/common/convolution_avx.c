@@ -29,7 +29,6 @@ FORCE_INLINE inline void convolution_f32_avx_s_1d_v_scanline_5(const float * RES
 FORCE_INLINE inline void convolution_f32_avx_s_1d_v_scanline_9(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end);
 FORCE_INLINE inline void convolution_f32_avx_s_1d_v_scanline_17(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end);
 
-#if VIF_OPT_ENABLE
 FORCE_INLINE inline void convolution_f32_avx_s_1d_h_sq_scanline_5(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end);
 FORCE_INLINE inline void convolution_f32_avx_s_1d_h_sq_scanline_9(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end);
 FORCE_INLINE inline void convolution_f32_avx_s_1d_h_sq_scanline_17(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end);
@@ -43,7 +42,7 @@ FORCE_INLINE inline void convolution_f32_avx_s_1d_h_xy_scanline_17(const float *
 FORCE_INLINE inline void convolution_f32_avx_s_1d_v_xy_scanline_5(const float * RESTRICT filter, int filter_width, const float * RESTRICT src1, const float * RESTRICT src2, float * RESTRICT dst, int src1_stride, int src2_stride, int j_end);
 FORCE_INLINE inline void convolution_f32_avx_s_1d_v_xy_scanline_9(const float * RESTRICT filter, int filter_width, const float * RESTRICT src1, const float * RESTRICT src2, float * RESTRICT dst, int src1_stride, int src2_stride, int j_end);
 FORCE_INLINE inline void convolution_f32_avx_s_1d_v_xy_scanline_17(const float * RESTRICT filter, int filter_width, const float * RESTRICT src1, const float * RESTRICT src2, float * RESTRICT dst, int src1_stride, int src2_stride, int j_end);
-#endif
+
 FORCE_INLINE inline static void convolution_f32_avx_s_3x3_2d_scanline(const float * RESTRICT filter, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end)
 {
 	__m256 f00, f01, f02, f10, f11, f12, f20, f21, f22;
@@ -873,7 +872,6 @@ void convolution_f32_avx_s(const float *filter, int filter_width, const float *s
 	}
 }
 
-#if VIF_OPT_ENABLE
 // Filter a single scanline.
 FORCE_INLINE inline static void convolution_f32_avx_s_1d_h_sq_scanline(int N, const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end)
 {
@@ -2647,4 +2645,3 @@ void convolution_f32_avx_xy_s(const float *filter, int filter_width, const float
 		break;
 	}
 }
-#endif

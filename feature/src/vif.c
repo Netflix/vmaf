@@ -42,10 +42,9 @@
 #define vif_statistic      vif_statistic_s
 #define offset_image       offset_image_s
 
-#if VIF_OPT_ENABLE
 #define vif_filter1d_sq    vif_filter1d_sq_s
 #define vif_filter1d_xy    vif_filter1d_xy_s
-#endif
+
 int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores)
 {
     float *data_buf = 0;
@@ -64,17 +63,8 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
     float *ref_dis_filt;
     float *tmpbuf;
 
-
-#if VIF_OPT_ENABLE
     float *num_array;
     float *den_array;
-#else
-	float *mu1_sq;
-	float *mu2_sq;
-	float *mu1_mu2;
-    float *num_array;
-    float *den_array;
-#endif
 
     /* Offset pointers to adjust for convolution border handling. */
     float *mu1_adj = 0;
@@ -106,8 +96,8 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
 
     int scale;
     int ret = 1;
-#if VIF_OPT_ENABLE
-	// Code optimized to save on multiple buffer copies 
+
+	// Code optimized to save on multiple buffer copies
 	// hence the reduction in the number of buffers required from 15 to 10 
 #define VIF_BUF_CNT 10	
 	if (SIZE_MAX / buf_sz_one < VIF_BUF_CNT)
@@ -136,41 +126,6 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
 	num_array    = (float *)data_top; data_top += buf_sz_one;
     den_array    = (float *)data_top; data_top += buf_sz_one;
 	tmpbuf = (float *)data_top; data_top += buf_sz_one;
-#else
-
-    if (SIZE_MAX / buf_sz_one < 15)
-    {
-        printf("error: SIZE_MAX / buf_sz_one < 15, buf_sz_one = %zu.\n", buf_sz_one);
-        fflush(stdout);
-        goto fail_or_end;
-    }
-
-    if (!(data_buf = aligned_malloc(buf_sz_one * 16, MAX_ALIGN)))
-    {
-        printf("error: aligned_malloc failed for data_buf.\n");
-        fflush(stdout);
-        goto fail_or_end;
-    }
-
-    data_top = (char *)data_buf;
-
-    ref_scale = (float *)data_top; data_top += buf_sz_one;
-    dis_scale = (float *)data_top; data_top += buf_sz_one;
-    ref_sq    = (float *)data_top; data_top += buf_sz_one;
-    dis_sq    = (float *)data_top; data_top += buf_sz_one;
-    ref_dis   = (float *)data_top; data_top += buf_sz_one;
-    mu1          = (float *)data_top; data_top += buf_sz_one;
-    mu2          = (float *)data_top; data_top += buf_sz_one;
-    mu1_sq       = (float *)data_top; data_top += buf_sz_one;
-    mu2_sq       = (float *)data_top; data_top += buf_sz_one;
-    mu1_mu2      = (float *)data_top; data_top += buf_sz_one;
-    ref_sq_filt  = (float *)data_top; data_top += buf_sz_one;
-    dis_sq_filt  = (float *)data_top; data_top += buf_sz_one;
-    ref_dis_filt = (float *)data_top; data_top += buf_sz_one;
-    num_array    = (float *)data_top; data_top += buf_sz_one;
-    den_array    = (float *)data_top; data_top += buf_sz_one;
-    tmpbuf    = (float *)data_top; data_top += buf_sz_one;
-#endif
 
     for (scale = 0; scale < 4; ++scale)
     {
@@ -237,36 +192,19 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
         vif_filter2d(filter, curr_ref_scale, mu1, w, h, curr_ref_stride, buf_stride, filter_width);
         vif_filter2d(filter, curr_dis_scale, mu2, w, h, curr_dis_stride, buf_stride, filter_width);
 #endif
-#if !VIF_OPT_ENABLE
-        vif_xx_yy_xy(mu1, mu2, mu1_sq, mu2_sq, mu1_mu2, w, h, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride);
-
-        vif_xx_yy_xy(curr_ref_scale, curr_dis_scale, ref_sq, dis_sq, ref_dis, w, h, curr_ref_stride, curr_dis_stride, buf_stride, buf_stride, buf_stride);
-#endif
 #ifdef VIF_OPT_FILTER_1D
-#if VIF_OPT_ENABLE
-
 		// Code optimized by adding intrinsic code for the functions, 
 		// vif_filter1d_sq and vif_filter1d_sq
 		vif_filter1d_sq(filter, curr_ref_scale, ref_sq_filt, tmpbuf, w, h, curr_ref_stride, buf_stride, filter_width);
 		vif_filter1d_sq(filter, curr_dis_scale, dis_sq_filt, tmpbuf, w, h, curr_dis_stride, buf_stride, filter_width);
 		vif_filter1d_xy(filter, curr_ref_scale, curr_dis_scale, ref_dis_filt, tmpbuf, w, h, curr_ref_stride, curr_dis_stride, buf_stride, filter_width);
 #else
-        vif_filter1d(filter, ref_sq, ref_sq_filt, tmpbuf, w, h, buf_stride, buf_stride, filter_width);
-        vif_filter1d(filter, dis_sq, dis_sq_filt, tmpbuf, w, h, buf_stride, buf_stride, filter_width);
-        vif_filter1d(filter, ref_dis, ref_dis_filt, tmpbuf, w, h, buf_stride, buf_stride, filter_width);
-#endif
-#else
         vif_filter2d(filter, ref_sq, ref_sq_filt, w, h, buf_stride, buf_stride, filter_width);
         vif_filter2d(filter, dis_sq, dis_sq_filt, w, h, buf_stride, buf_stride, filter_width);
         vif_filter2d(filter, ref_dis, ref_dis_filt, w, h, buf_stride, buf_stride, filter_width);
 #endif
-#if VIF_OPT_ENABLE
 		vif_statistic(mu1, mu2, NULL, ref_sq_filt, dis_sq_filt, ref_dis_filt, num_array, den_array,
 			w, h, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride);
-#else
-        vif_statistic(mu1_sq, mu2_sq, mu1_mu2, ref_sq_filt, dis_sq_filt, ref_dis_filt, num_array, den_array,
-                      w, h, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride);
-#endif
         mu1_adj = ADJUST(mu1);
         mu2_adj = ADJUST(mu2);
 
@@ -276,10 +214,6 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
         ref_dis_filt_adj = ADJUST(ref_dis_filt);
 #endif
 
-#if !VIF_OPT_ENABLE
-        num_array_adj = ADJUST(num_array);
-        den_array_adj = ADJUST(den_array);
-#endif
 #undef ADJUST
 
 #ifdef VIF_OPT_DEBUG_DUMP
@@ -311,13 +245,8 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
         write_image(pathbuf, den_array_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(float));
 #endif
 
-#if VIF_OPT_ENABLE
 		num = *num_array;
 		den = *den_array;
-#else
-        num = vif_sum(num_array_adj, buf_valid_w, buf_valid_h, buf_stride);
-        den = vif_sum(den_array_adj, buf_valid_w, buf_valid_h, buf_stride);
-#endif
 
         scores[2*scale] = num;
         scores[2*scale+1] = den;
