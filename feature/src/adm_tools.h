@@ -25,10 +25,7 @@
 #ifndef ADM_TOOLS_H_
 #define ADM_TOOLS_H_
 
-#define ADM_OPT_ENABLE 1
-
-#if ADM_OPT_ENABLE
-// i = 0, j = 0: indices y: 1,0,1, x: 1,0,1 
+// i = 0, j = 0: indices y: 1,0,1, x: 1,0,1
 #define ADM_CM_THRESH_S_0_0(angles,src_px_stride,accum,w,h,i,j) \
 { \
 	*accum = 0; \
@@ -125,7 +122,6 @@
 	} \
 	*accum = sum; \
 }
-#endif
 
 typedef struct adm_dwt_band_t_s {
     float *band_a; /* Low-pass V + low-pass H. */
@@ -133,8 +129,6 @@ typedef struct adm_dwt_band_t_s {
     float *band_h; /* High-pass V + low-pass H. */
     float *band_d; /* High-pass V + high-pass H. */
 } adm_dwt_band_t_s;
-
-#if ADM_OPT_ENABLE
 
 float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_factor);
 
@@ -151,24 +145,6 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const a
 void dwt2_src_indices_filt_s(int **src_ind_y, int **src_ind_x, int w, int h);
 
 void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int **ind_x, int w, int h, int src_stride, int dst_stride);
-
-#else
-
-float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_factor);
-
-void adm_decouple_s(const adm_dwt_band_t_s *ref, const adm_dwt_band_t_s *dis, const adm_dwt_band_t_s *r, const adm_dwt_band_t_s *a, int w, int h, int ref_stride, int dis_stride, int r_stride, int a_stride);
-
-void adm_csf_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, int orig_h, int scale, int w, int h, int src_stride, int dst_stride);
-
-void adm_cm_thresh_s(const adm_dwt_band_t_s *src, float *dst, int w, int h, int src_stride, int dst_stride);
-
-void adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const float *thresh, int w, int h, int src_stride, int dst_stride, int thresh_stride);
-
-void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int w, int h, int src_stride, int dst_stride);
-
-void adm_buffer_copy(const void *src, void *dst, int linewidth, int h, int src_stride, int dst_stride);
-
-#endif
 
 /* ================= */
 /* Noise floor model */

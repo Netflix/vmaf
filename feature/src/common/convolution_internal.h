@@ -51,7 +51,6 @@ FORCE_INLINE inline float convolution_edge_s(bool horizontal, const float *filte
 	return accum;
 }
 
-#if VIF_OPT_ENABLE 
 FORCE_INLINE inline float convolution_edge_sq_s(bool horizontal, const float *filter, int filter_width, const float *src, int width, int height, int stride, int i, int j)
 {
 	int radius = filter_width / 2;
@@ -110,5 +109,5 @@ FORCE_INLINE inline float convolution_edge_xy_s(bool horizontal, const float *fi
 	}
 	return accum;
 }
-#endif
+
 #endif // CONVOLUTION_INTERNAL_H_
