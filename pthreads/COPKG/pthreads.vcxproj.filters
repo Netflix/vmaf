@@ -7,7 +7,7 @@
     </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
     <Filter Include="Resource Files">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
@@ -16,6 +16,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\attr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\autostatic.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\barrier.c">
@@ -36,6 +39,9 @@
     <ClCompile Include="..\dll.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\errno.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\exit.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -51,6 +57,9 @@
     <ClCompile Include="..\mutex.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\nonportable.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\private.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -63,6 +72,9 @@
     <ClCompile Include="..\semaphore.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\signal.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\spin.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -72,24 +84,18 @@
     <ClCompile Include="..\tsd.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\nonportable.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\errno.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\signal.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\autostatic.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\implement.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\need_errno.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\pthread.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\implement.h">
+    <ClInclude Include="..\semaphore.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

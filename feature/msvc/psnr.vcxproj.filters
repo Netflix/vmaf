@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\ms_ssim_main.c">
+    <ClCompile Include="..\src\psnr_main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

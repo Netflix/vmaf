@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\ssim_main.c">
+    <ClCompile Include="..\src\vmaf_main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
