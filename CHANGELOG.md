@@ -1,11 +1,11 @@
 # Change Log
 
-## (1/31/2019) [1.3.12]
+## (1/31/2019) [1.3.13]
 
 **New features:**
 - Optimized C code for speed. Running in multithreading mode, `vmafossexec` achieves ~40% run time reduction compared to the previous version.
 - Printed out individual vmaf bootstrap scores in text file from `vmafossexec`.
-- refactored windows solution (#283) (#284) (#285) (#291) (#298)
+- refactored windows solution (#283) (#284) (#285) (#291) (#298).
 
 ## (12/17/2018) [1.3.11]
 
