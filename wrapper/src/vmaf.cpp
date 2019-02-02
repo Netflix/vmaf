@@ -946,7 +946,7 @@ void BootstrapVmafQualityRunner::_set_prediction_result(
 
 }
 
-static const char VMAFOSS_DOC_VERSION[] = "1.3.11";
+static const char VMAFOSS_DOC_VERSION[] = "1.3.13";
 
 double RunVmaf(const char* fmt, int width, int height,
                int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
