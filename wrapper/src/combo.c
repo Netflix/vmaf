@@ -99,7 +99,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
     int ret = 0;
     bool next_frame_read;
 
-    bool offset_flag;
+    bool offset_flag = false;
 
 #ifdef MULTI_THREADING
     float *prev_blur_buf_ = 0;
