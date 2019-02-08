@@ -59,4 +59,4 @@ ffmpeg -i main.mpg -i ref.mpg -filter_complex \
 
 Here `main.mpg` is a downscaled and encoded video and `ref.mpg` is its reference source at 1080p. The command scales the first input video (`0:v`) and forwards it to VMAF (`libvmaf`) with the label `main`, where it is compared against the second input reference video, `1:v`. Bicubic upsampling is used (also see the [techblog](https://medium.com/netflix-techblog/vmaf-the-journey-continues-44b51ee9ed12) for the recommendation on upsampling methods).
 
-See the [FFmpeg Filtering Guide](https://trac.ffmpeg.org/wiki/FilteringGuide) for more examples of complex filters, and the [Scaling Guide](https://trac.ffmpeg.org/wiki/Scaling) for information about scaling and using different scaling algorithms.
+See the [libvmaf](https://ffmpeg.org/ffmpeg-filters.html#libvmaf) section for FFmpeg's guide to libvmaf, the [FFmpeg Filtering Guide](https://trac.ffmpeg.org/wiki/FilteringGuide) for more examples of complex filters, and the [Scaling Guide](https://trac.ffmpeg.org/wiki/Scaling) for information about scaling and using different scaling algorithms.
