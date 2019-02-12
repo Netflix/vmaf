@@ -46,7 +46,7 @@ template <class T> static inline T min(T x,T y) { return (x<y)?x:y; }
 #endif
 
 inline double _round_to_digit(double val, int digit);
-string _get_file_name(const std::string& s);
+std::string _get_file_name(const std::string& s);
 
 void SvmDelete::operator()(void *svm)
 {
@@ -1206,16 +1206,11 @@ inline double _round_to_digit(double val, int digit)
     return _round(val * m) / m;
 }
 
-string _get_file_name(const std::string& s)
+std::string _get_file_name(const std::string& s)
 {
-   char sep = '/';
-#ifdef _WIN32
-   sep = '\\';
-#endif
-   size_t i = s.rfind(sep, s.length());
-   if (i != string::npos) {
-      return(s.substr(i+1, s.length() - i));
-   }
-   return("");
+    size_t i = s.find_last_of("/\\", s.length());
+    if (i != std::string::npos) {
+        return(s.substr(i + 1, s.length() - i));
+    }
+    return("");
 }
-
