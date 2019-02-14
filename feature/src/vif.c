@@ -107,7 +107,7 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
     int scale;
     int ret = 1;
 #if VIF_OPT_ENABLE
-	// Code optimized to save on multiple buffer copies
+	// Code optimized to save on multiple buffer copies 
 	// hence the reduction in the number of buffers required from 15 to 10 
 #define VIF_BUF_CNT 10	
 	if (SIZE_MAX / buf_sz_one < VIF_BUF_CNT)

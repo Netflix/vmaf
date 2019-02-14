@@ -403,7 +403,7 @@ void vif_filter1d_s(const float *f, const float *src, float *dst, float *tmpbuf,
     aligned_free(tmp);
 }
 #if	VIF_OPT_ENABLE
-// Code optimized by adding intrinsic code for the functions,
+// Code optimized by adding intrinsic code for the functions, 
 // vif_filter1d_sq and vif_filter1d_sq
 
 void vif_filter1d_sq_s(const float *f, const float *src, float *dst, float *tmpbuf, int w, int h, int src_stride, int dst_stride, int fwidth)

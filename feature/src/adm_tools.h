@@ -28,7 +28,7 @@
 #define ADM_OPT_ENABLE 1
 
 #if ADM_OPT_ENABLE
-// i = 0, j = 0: indices y: 1,0,1, x: 1,0,1
+// i = 0, j = 0: indices y: 1,0,1, x: 1,0,1 
 #define ADM_CM_THRESH_S_0_0(angles,src_px_stride,accum,w,h,i,j) \
 { \
 	*accum = 0; \
