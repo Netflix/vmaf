@@ -88,6 +88,8 @@ int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride
 
 	adm_dwt_band_t csf_r;
 	adm_dwt_band_t csf_a;
+	adm_dwt_band_t csf_f; //Store filtered coeffs
+
 	const float *curr_ref_scale = ref;
 	const float *curr_dis_scale = dis;
 	int curr_ref_stride = ref_stride;
@@ -109,7 +111,7 @@ int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride
 	
 	// Code optimized to save on multiple buffer copies 
 	// hence the reduction in the number of buffers required from 35 to 17 
-#define NUM_BUFS_ADM 17 
+#define NUM_BUFS_ADM 20 
 	if (SIZE_MAX / buf_sz_one < NUM_BUFS_ADM)
 	{
 		printf("error: SIZE_MAX / buf_sz_one < NUM_BUFS_ADM, buf_sz_one = %zu.\n", buf_sz_one);
@@ -131,6 +133,7 @@ int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride
 	data_top = init_dwt_band_hvd(&decouple_r, data_top, buf_sz_one);
 	data_top = init_dwt_band_hvd(&decouple_a, data_top, buf_sz_one);
 	data_top = init_dwt_band_hvd(&csf_a, data_top, buf_sz_one);
+	data_top = init_dwt_band_hvd(&csf_f, data_top, buf_sz_one);
 
 	if (!(buf_y_orig = aligned_malloc(ind_size_y * 4, MAX_ALIGN)))
 	{
@@ -174,9 +177,9 @@ int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride
 
 		den_scale = adm_csf_den_scale(&ref_dwt2, orig_h, scale, w, h, buf_stride, border_factor);
 
-		adm_csf(&decouple_a, &csf_a, orig_h, scale, w, h, buf_stride, buf_stride, border_factor);
+		adm_csf(&decouple_a, &csf_a, &csf_f, orig_h, scale, w, h, buf_stride, buf_stride, border_factor);
 	
-		num_scale = adm_cm(&decouple_r, NULL, &csf_a, w, h, buf_stride, buf_stride, buf_stride, border_factor, scale);
+		num_scale = adm_cm(&decouple_r, &csf_f, &csf_a, w, h, buf_stride, buf_stride, buf_stride, border_factor, scale);
 
 #ifdef ADM_OPT_DEBUG_DUMP
 		sprintf(pathbuf, "stage/ref[%d]_a.yuv", scale);
