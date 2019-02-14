@@ -10,33 +10,8 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="m2convertrep.cc" />
-    <ClCompile Include="m2pythontools.cc" />
-    <ClCompile Include="m2ser.cc" />
-    <ClCompile Include="m2streamdataenc.cc" />
-    <ClCompile Include="midassocket.cc" />
-    <ClCompile Include="timeconv.cc" />
-    <ClCompile Include="valprotocol2.cc" />
-    <ClCompile Include="valpython.cc" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="chooseser.h" />
-    <ClInclude Include="jsonprint.h" />
-    <ClInclude Include="m2convertrep.h" />
-    <ClInclude Include="m2pmstack.h" />
-    <ClInclude Include="m2pythontools.h" />
-    <ClInclude Include="m2ser.h" />
-    <ClInclude Include="m2streamdataenc.h" />
-    <ClInclude Include="midassocket.h" />
-    <ClInclude Include="midasyeller.h" />
-    <ClInclude Include="serialization.h" />
-    <ClInclude Include="timeconv.h" />
-    <ClInclude Include="valpickleloader.h" />
-    <ClInclude Include="valprotocol2.h" />
-    <ClInclude Include="valpython.h" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
+    <UseNativeEnvironment>true</UseNativeEnvironment>
     <ProjectGuid>{3F07B371-1B81-477E-886C-0E079B0A6803}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>ptools</RootNamespace>
@@ -59,7 +34,8 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Label="Shared" />
+  <ImportGroup Label="Shared">
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -67,25 +43,15 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <Linkage-pthreads>static</Linkage-pthreads>
-    <OutDir>$(SolutionDir)\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(Platform)\$(Configuration)\</IntDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <Linkage-pthreads>static</Linkage-pthreads>
-    <OutDir>$(SolutionDir)\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(Platform)\$(Configuration)\</IntDir>
-  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>PTW32_STATIC_LIB;OC_NEW_STYLE_INCLUDES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>opencontainers_1_8_4\include;..\pthreads;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>PTW32_STATIC_LIB;OC_NEW_STYLE_INCLUDES;_DEBUG;_CRT_NONSTDC_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -94,16 +60,12 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>PTW32_STATIC_LIB;OC_NEW_STYLE_INCLUDES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>opencontainers_1_8_4\include;..\pthreads;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <WarningLevel>Level3</WarningLevel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>PTW32_STATIC_LIB;OC_NEW_STYLE_INCLUDES;NDEBUG;_CRT_NONSTDC_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -111,5 +73,27 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="m2convertrep.cc" />
+    <ClCompile Include="m2pythontools.cc" />
+    <ClCompile Include="m2ser.cc" />
+    <ClCompile Include="m2streamdataenc.cc" />
+    <ClCompile Include="midassocket.cc" />
+    <ClCompile Include="timeconv.cc" />
+    <ClCompile Include="valprotocol2.cc" />
+    <ClCompile Include="valpython.cc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="m2convertrep.h" />
+    <ClInclude Include="m2pythontools.h" />
+    <ClInclude Include="m2ser.h" />
+    <ClInclude Include="m2streamdataenc.h" />
+    <ClInclude Include="midassocket.h" />
+    <ClInclude Include="timeconv.h" />
+    <ClInclude Include="valprotocol2.h" />
+    <ClInclude Include="valpython.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
 </Project>

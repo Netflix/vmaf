@@ -1,9 +1,13 @@
+import os
+
+from vmaf.config import VmafExternalConfig, VmafConfig
+from vmaf.tools.misc import run_process
 from vmaf.core.feature_assembler import FeatureAssembler
 from vmaf.core.matlab_feature_extractor import StrredFeatureExtractor, StrredOptFeatureExtractor, SpEEDMatlabFeatureExtractor, STMADFeatureExtractor
 from vmaf.core.quality_runner import QualityRunner
 from vmaf.core.result import Result
 
-__copyright__ = "Copyright 2016-2018, Netflix, Inc."
+__copyright__ = "Copyright 2016-2019, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 
@@ -162,6 +166,7 @@ class SpEEDMatlabQualityRunner(QualityRunner):
 
 
 class STMADQualityRunner(QualityRunner):
+
     TYPE = 'STMAD'
 
     VERSION = 'F' + STMADFeatureExtractor.VERSION + '-1.1'

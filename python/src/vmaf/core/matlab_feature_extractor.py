@@ -6,7 +6,7 @@ from vmaf.core.feature_extractor import FeatureExtractor
 from vmaf.tools.misc import make_absolute_path, run_process
 from vmaf.tools.stats import ListStats
 
-__copyright__ = "Copyright 2016-2018, Netflix, Inc."
+__copyright__ = "Copyright 2016-2019, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 
@@ -154,8 +154,6 @@ class StrredOptFeatureExtractor(MatlabFeatureExtractor):
                 log_file_path=log_file_path,
             )
 
-            # print(strred_cmd)
-
             if self.logger:
                 self.logger.info(strredopt_cmd)
 
@@ -296,6 +294,28 @@ class STMADFeatureExtractor(MatlabFeatureExtractor):
 
     MATLAB_WORKSPACE = VmafConfig.root_path('matlab', 'STMAD_2011_MatlabCode')
 
+    # compile necessary functions; need to use mex from within matlab
+    def _custom_init(self):
+
+        def run_stmad_cmd(stmad_cmd):
+
+            current_dir = os.getcwd() + '/'
+            os.chdir(self.MATLAB_WORKSPACE)
+            run_process(stmad_cmd, shell=True)
+            os.chdir(current_dir)
+
+        stmad_mex_cmd_1 = '''{matlab} -nodisplay -nosplash -nodesktop -r "mex ical_std.c; exit;"'''.format(
+            matlab=VmafExternalConfig.get_and_assert_matlab(),
+        )
+
+        run_stmad_cmd(stmad_mex_cmd_1)
+
+        stmad_mex_cmd_2 = '''{matlab} -nodisplay -nosplash -nodesktop -r "mex ical_stat.c; exit;"'''.format(
+            matlab=VmafExternalConfig.get_and_assert_matlab(),
+        )
+
+        run_stmad_cmd(stmad_mex_cmd_2)
+
     @classmethod
     def _assert_an_asset(cls, asset):
         super(STMADFeatureExtractor, cls)._assert_an_asset(asset)
@@ -326,6 +346,7 @@ class STMADFeatureExtractor(MatlabFeatureExtractor):
             h=quality_height,
             log_file_path=log_file_path,
         )
+
         if self.logger:
             self.logger.info(stmad_cmd)
 

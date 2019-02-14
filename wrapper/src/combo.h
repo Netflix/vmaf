@@ -1,6 +1,6 @@
 /**
  *
- *  Copyright 2016-2018 Netflix, Inc.
+ *  Copyright 2016-2019 Netflix, Inc.
  *
  *     Licensed under the Apache License, Version 2.0 (the "License");
  *     you may not use this file except in compliance with the License.
@@ -78,6 +78,7 @@ typedef struct
     BLUR_BUF_ARRAY blur_buf_array;
     BLUR_BUF_ARRAY ref_buf_array;
     BLUR_BUF_ARRAY dis_buf_array;
+	DArray *motion_score_compute_flag_array;
 #endif
     int ret;
 

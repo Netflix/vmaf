@@ -1,6 +1,6 @@
 /**
  *
- *  Copyright 2016-2018 Netflix, Inc.
+ *  Copyright 2016-2019 Netflix, Inc.
  *
  *     Licensed under the Apache License, Version 2.0 (the "License");
  *     you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@
 #include <sstream>
 #include <cmath>
 #include <iomanip>
+#include "libvmaf.h"
 
 #include "vmaf.h"
 #include "combo.h"
@@ -45,7 +46,7 @@ template <class T> static inline T min(T x,T y) { return (x<y)?x:y; }
 #endif
 
 inline double _round_to_digit(double val, int digit);
-string _get_file_name(const std::string& s);
+std::string _get_file_name(const std::string& s);
 
 void SvmDelete::operator()(void *svm)
 {
@@ -900,6 +901,15 @@ void BootstrapVmafQualityRunner::_postproc_transform_clip(
     scoreStdDev *= slope;
 }
 
+static const int BOOTSTRAP_MODEL_NAME_PRECISION = 4;
+
+std::string to_zero_lead(const int value, const unsigned precision)
+{
+     std::ostringstream oss;
+     oss << std::setw(precision) << std::setfill('0') << value;
+     return oss.str();
+}
+
 void BootstrapVmafQualityRunner::_set_prediction_result(
         std::vector<VmafPredictionStruct> predictionStructs,
         Result& result) {
@@ -919,23 +929,24 @@ void BootstrapVmafQualityRunner::_set_prediction_result(
     result.set_scores("ci95_high", ci95HighScore);
 
     // num_models is same across frames, so just use first frame length
-    size_t num_models = predictionStructs.at(0).vmafMultiModelPrediction.size();
+    size_t num_models = 0; 
+    if (predictionStructs.size() > 0) {
+        num_models = predictionStructs.at(0).vmafMultiModelPrediction.size();
+    }
     std::vector<double> perModelScore;
-    // character array to put the name of the vmaf bootstrap model, e.g. vmaf_0001 is the first one
-    char char_buffer[50];
+    // name of the vmaf bootstrap model, e.g. vmaf_0001 is the first one
 
     for (size_t j = 0; j < num_models; j++) {
         for (size_t i = 0; i < predictionStructs.size(); i++) {
             perModelScore.push_back(predictionStructs.at(i).vmafMultiModelPrediction.at(j));
         }
-        sprintf(char_buffer, "%04d", j + 1);
-        result.set_scores(BOOSTRAP_VMAF_MODEL_PREFIX + std::string(char_buffer), perModelScore);
+        result.set_scores(BOOSTRAP_VMAF_MODEL_PREFIX + to_zero_lead(j + 1, BOOTSTRAP_MODEL_NAME_PRECISION), perModelScore);
         perModelScore.clear();
     }
 
 }
 
-static const char VMAFOSS_DOC_VERSION[] = "1.3.11";
+static const char VMAFOSS_DOC_VERSION[] = "1.3.13";
 
 double RunVmaf(const char* fmt, int width, int height,
                int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
@@ -964,15 +975,7 @@ double RunVmaf(const char* fmt, int width, int height,
     }
 
     Asset asset(width, height, fmt);
-    std::unique_ptr<VmafQualityRunner> runner_ptr;
-    if (enable_conf_interval)
-    {
-        runner_ptr = std::unique_ptr<BootstrapVmafQualityRunner>(new BootstrapVmafQualityRunner(model_path));
-    }
-    else
-    {
-        runner_ptr = std::unique_ptr<VmafQualityRunner>(new VmafQualityRunner(model_path));
-    }
+    std::unique_ptr<IVmafQualityRunner> runner_ptr = VmafQualityRunnerFactory::createVmafQualityRunner(model_path, enable_conf_interval);
 
     Timer timer;
     timer.start();
@@ -996,9 +999,67 @@ double RunVmaf(const char* fmt, int width, int height,
     size_t num_frames_subsampled = result.get_scores("vmaf").size();
     double aggregate_vmaf = result.get_score("vmaf");
     double exec_fps = (double)num_frames_subsampled * n_subsample / (double)timer.elapsed();
+#if TIME_TEST_ENABLE
+	double time_taken = (double)timer.elapsed();
+#endif
     printf("Exec FPS: %f\n", exec_fps);
 
     std::vector<std::string> result_keys = result.get_keys();
+
+    double aggregate_bagging = 0.0, aggregate_stddev = 0.0, aggregate_ci95_low = 0.0, aggregate_ci95_high = 0.0;
+    if (result.has_scores("bagging"))
+        aggregate_bagging = result.get_score("bagging");
+    if (result.has_scores("stddev"))
+        aggregate_stddev = result.get_score("stddev");
+    if (result.has_scores("ci95_low"))
+        aggregate_ci95_low = result.get_score("ci95_low");
+    if (result.has_scores("ci95_high"))
+        aggregate_ci95_high = result.get_score("ci95_high");
+
+    double aggregate_psnr = 0.0, aggregate_ssim = 0.0, aggregate_ms_ssim = 0.0;
+    if (result.has_scores("psnr"))
+        aggregate_psnr = result.get_score("psnr");
+    if (result.has_scores("ssim"))
+        aggregate_ssim = result.get_score("ssim");
+    if (result.has_scores("ms_ssim"))
+        aggregate_ms_ssim = result.get_score("ms_ssim");
+
+    if (pool_method)
+    {
+        printf("VMAF score (%s) = %f\n", pool_method, aggregate_vmaf);
+        if (aggregate_bagging)
+            printf("Bagging score (%s) = %f\n", pool_method, aggregate_bagging);
+        if (aggregate_stddev)
+            printf("StdDev score (%s) = %f\n", pool_method, aggregate_stddev);
+        if (aggregate_ci95_low)
+            printf("CI95_low score (%s) = %f\n", pool_method, aggregate_ci95_low);
+        if (aggregate_ci95_high)
+            printf("CI95_high score (%s) = %f\n", pool_method, aggregate_ci95_high);
+        if (aggregate_psnr)
+            printf("PSNR score (%s) = %f\n", pool_method, aggregate_psnr);
+        if (aggregate_ssim)
+            printf("SSIM score (%s) = %f\n", pool_method, aggregate_ssim);
+        if (aggregate_ms_ssim)
+            printf("MS-SSIM score (%s) = %f\n", pool_method, aggregate_ms_ssim);
+    }
+    else // default
+    {
+        printf("VMAF score = %f\n", aggregate_vmaf);
+        if (aggregate_bagging)
+            printf("Bagging score = %f\n", aggregate_bagging);
+        if (aggregate_stddev)
+            printf("StdDev score = %f\n", aggregate_stddev);
+        if (aggregate_ci95_low)
+            printf("CI95_low score = %f\n", aggregate_ci95_low);
+        if (aggregate_ci95_high)
+            printf("CI95_high score = %f\n", aggregate_ci95_high);
+        if (aggregate_psnr)
+            printf("PSNR score = %f\n", aggregate_psnr);
+        if (aggregate_ssim)
+            printf("SSIM score = %f\n", aggregate_ssim);
+        if (aggregate_ms_ssim)
+            printf("MS-SSIM score = %f\n", aggregate_ms_ssim);
+    }
 
     int num_bootstrap_models = 0;
     std::string bootstrap_model_list_str = "";
@@ -1020,37 +1081,14 @@ double RunVmaf(const char* fmt, int width, int height,
             {
                 bootstrap_model_list_str += "," + result_keys[j];
             }
+            if (pool_method) {
+                printf("VMAF score (%s), model %s = %f\n", pool_method, to_zero_lead(num_bootstrap_models + 1, BOOTSTRAP_MODEL_NAME_PRECISION).c_str(), result.get_score(result_keys[j]));
+            }
+            else {
+                printf("VMAF score, model %s = %f\n", to_zero_lead(num_bootstrap_models + 1, BOOTSTRAP_MODEL_NAME_PRECISION).c_str(), result.get_score(result_keys[j]));
+            }
             num_bootstrap_models += 1;
         }
-    }
-
-    double aggregate_psnr = 0.0, aggregate_ssim = 0.0, aggregate_ms_ssim = 0.0;
-    if (result.has_scores("psnr"))
-        aggregate_psnr = result.get_score("psnr");
-    if (result.has_scores("ssim"))
-        aggregate_ssim = result.get_score("ssim");
-    if (result.has_scores("ms_ssim"))
-        aggregate_ms_ssim = result.get_score("ms_ssim");
-
-    if (pool_method)
-    {
-        printf("VMAF score (%s) = %f\n", pool_method, aggregate_vmaf);
-        if (aggregate_psnr)
-            printf("PSNR score (%s) = %f\n", pool_method, aggregate_psnr);
-        if (aggregate_ssim)
-            printf("SSIM score (%s) = %f\n", pool_method, aggregate_ssim);
-        if (aggregate_ms_ssim)
-            printf("MS-SSIM score (%s) = %f\n", pool_method, aggregate_ms_ssim);
-    }
-    else // default
-    {
-        printf("VMAF score = %f\n", aggregate_vmaf);
-        if (aggregate_psnr)
-            printf("PSNR score = %f\n", aggregate_psnr);
-        if (aggregate_ssim)
-            printf("SSIM score = %f\n", aggregate_ssim);
-        if (aggregate_ms_ssim)
-            printf("MS-SSIM score = %f\n", aggregate_ms_ssim);
     }
 
     if (log_path != NULL && log_fmt !=NULL && (strcmp(log_fmt, "json")==0))
@@ -1118,13 +1156,26 @@ double RunVmaf(const char* fmt, int width, int height,
         auto info_node = xml_root.append_child("fyi");
         info_node.append_attribute("numOfFrames") = (int)num_frames_subsampled;
         info_node.append_attribute("aggregateVMAF") = aggregate_vmaf;
+        if (aggregate_bagging)
+            info_node.append_attribute("aggregateBagging") = aggregate_bagging;
+        if (aggregate_stddev)
+            info_node.append_attribute("aggregateStdDev") = aggregate_stddev;
+        if (aggregate_ci95_low)
+            info_node.append_attribute("aggregateCI95_low") = aggregate_ci95_low;
+        if (aggregate_ci95_high)
+            info_node.append_attribute("aggregateCI95_high") = aggregate_ci95_high;
         if (aggregate_psnr)
             info_node.append_attribute("aggregatePSNR") = aggregate_psnr;
         if (aggregate_ssim)
             info_node.append_attribute("aggregateSSIM") = aggregate_ssim;
         if (aggregate_ms_ssim)
             info_node.append_attribute("aggregateMS_SSIM") = aggregate_ms_ssim;
+        if (pool_method)
+            info_node.append_attribute("poolMethod") = pool_method;
         info_node.append_attribute("execFps") = exec_fps;
+#if TIME_TEST_ENABLE
+		info_node.append_attribute("timeTaken") = time_taken;
+#endif
 
         auto frames_node = xml_root.append_child("frames");
         for (size_t i_subsampled=0; i_subsampled<num_frames_subsampled; i_subsampled++)
@@ -1155,16 +1206,11 @@ inline double _round_to_digit(double val, int digit)
     return _round(val * m) / m;
 }
 
-string _get_file_name(const std::string& s)
+std::string _get_file_name(const std::string& s)
 {
-   char sep = '/';
-#ifdef _WIN32
-   sep = '\\';
-#endif
-   size_t i = s.rfind(sep, s.length());
-   if (i != string::npos) {
-      return(s.substr(i+1, s.length() - i));
-   }
-   return("");
+    size_t i = s.find_last_of("/\\", s.length());
+    if (i != std::string::npos) {
+        return(s.substr(i + 1, s.length() - i));
+    }
+    return("");
 }
-

@@ -12,10 +12,11 @@ from vmaf.config import DisplayConfig
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.tools.misc import import_python_file, get_cmd_option, cmd_option_exists
 from vmaf.core.quality_runner import QualityRunner, VmafQualityRunner, BootstrapVmafQualityRunner
+from vmaf.core.matlab_quality_runner import STMADQualityRunner, SpEEDMatlabQualityRunner, StrredQualityRunner, StrredOptQualityRunner
 from vmaf.routine import run_test_on_dataset, print_matplotlib_warning
 from vmaf.tools.stats import ListStats
 
-__copyright__ = "Copyright 2016-2018, Netflix, Inc."
+__copyright__ = "Copyright 2016-2019, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'perc20']

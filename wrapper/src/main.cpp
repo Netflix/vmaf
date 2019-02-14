@@ -1,6 +1,6 @@
 /**
  *
- *  Copyright 2016-2018 Netflix, Inc.
+ *  Copyright 2016-2019 Netflix, Inc.
  *
  *     Licensed under the Apache License, Version 2.0 (the "License");
  *     you may not use this file except in compliance with the License.
@@ -55,6 +55,54 @@ void print_usage(int argc, char *argv[])
     fprintf(stderr, "n_thread:\n\tmaximum threads to use (default 0 - use all threads)\n\n");
     fprintf(stderr, "n_subsample:\n\tn indicates computing on one of every n frames (default 1)\n\n");
 }
+
+#if MEM_LEAK_TEST_ENABLE
+/*
+ * Measures the current (and peak) resident and virtual memories
+ * usage of your linux C process, in kB
+ */
+void getMemory(int itr_ctr, int state)
+{
+	int currRealMem;
+	int peakRealMem;
+	int currVirtMem;
+	int peakVirtMem;
+	char state_str[10]="";
+    // stores each word in status file
+    char buffer[1024] = "";
+	
+	if(state ==1)
+		strcpy(state_str,"start");
+	else
+		strcpy(state_str,"end");
+		
+    // linux file contains this-process info
+    FILE* file = fopen("/proc/self/status", "r");
+
+    // read the entire file
+    while (fscanf(file, " %1023s", buffer) == 1)
+	{
+        if (strcmp(buffer, "VmRSS:") == 0)
+		{
+            fscanf(file, " %d", &currRealMem);
+        }
+        if (strcmp(buffer, "VmHWM:") == 0)
+		{
+            fscanf(file, " %d", &peakRealMem);
+        }
+        if (strcmp(buffer, "VmSize:") == 0)
+		{
+            fscanf(file, " %d", &currVirtMem);
+        }
+        if (strcmp(buffer, "VmPeak:") == 0)
+		{
+            fscanf(file, " %d", &peakVirtMem);
+        }
+    }
+    fclose(file);
+    printf("Iteration %d at %s of process: currRealMem: %6d, peakRealMem: %6d, currVirtMem: %6d, peakVirtMem: %6d\n",itr_ctr, state_str, currRealMem, peakRealMem, currVirtMem, peakVirtMem);
+}
+#endif
 
 int run_wrapper(char *fmt, int width, int height, char *ref_path, char *dis_path, char *model_path,
         char *log_path, char *log_fmt, bool disable_clip, bool disable_avx, bool enable_transform, bool phone_model,
@@ -154,7 +202,10 @@ int main(int argc, char *argv[])
     int n_subsample = 1;
     bool enable_conf_interval = false;
     char *temp;
-
+#if MEM_LEAK_TEST_ENABLE	
+	int itr_ctr;
+	int ret = 0;
+#endif
     /* Check parameters */
 
     if (argc < 7)
@@ -288,9 +339,20 @@ int main(int argc, char *argv[])
 
     try
     {
+#if MEM_LEAK_TEST_ENABLE
+		for(itr_ctr=0;itr_ctr<1000;itr_ctr++)
+		{
+			getMemory(itr_ctr,1);
+			ret = run_wrapper(fmt, width, height, ref_path, dis_path, model_path,
+                log_path, log_fmt, disable_clip, disable_avx, enable_transform, phone_model,
+                do_psnr, do_ssim, do_ms_ssim, pool_method, n_thread, n_subsample, enable_conf_interval);
+			getMemory(itr_ctr,2);
+		}
+#else
         return run_wrapper(fmt, width, height, ref_path, dis_path, model_path,
                 log_path, log_fmt, disable_clip, disable_avx, enable_transform, phone_model,
                 do_psnr, do_ssim, do_ms_ssim, pool_method, n_thread, n_subsample, enable_conf_interval);
+#endif
     }
     catch (const std::exception &e)
     {
