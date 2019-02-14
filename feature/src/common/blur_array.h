@@ -12,6 +12,12 @@
 #include "pthread.h"
 #include "alloc.h"
 
+#ifdef MULTI_THREADING
+#define BUF_OPT_ENABLE 1
+#else
+#define BUF_OPT_ENABLE 0
+#endif
+
 #define MAX_NUM_THREADS 128
 typedef struct
 {
@@ -33,6 +39,8 @@ typedef struct
 
 int init_blur_array(BLUR_BUF_ARRAY* arr, int array_length, size_t size, size_t alignement);
 
+#if BUF_OPT_ENABLE
+
 float* get_free_blur_buf_slot(BLUR_BUF_ARRAY* arr, int frame_idx);
 
 int get_blur_buf_reference_count(BLUR_BUF_ARRAY* arr, int frame_idx);
@@ -40,6 +48,12 @@ int get_blur_buf_reference_count(BLUR_BUF_ARRAY* arr, int frame_idx);
 int release_blur_buf_slot(BLUR_BUF_ARRAY* arr, int search_frame_idx);
 
 int release_blur_buf_reference(BLUR_BUF_ARRAY* arr, int search_frame_idx);
+
+#else
+
+int release_blur_buf(BLUR_BUF_ARRAY* arr, int search_frame_idx);
+
+#endif
 
 float* get_blur_buf(BLUR_BUF_ARRAY* arr, int search_frame_idx);
 
