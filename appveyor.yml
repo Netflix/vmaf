@@ -1,0 +1,5 @@
+image: Visual Studio 2017
+configuration: Release
+
+build:
+  project: vmaf.sln
