@@ -546,7 +546,7 @@ void VmafQualityRunner::_set_prediction_result(
     for (size_t i = 0; i < predictionStructs.size(); i++) {
         score.append(predictionStructs.at(i).vmafPrediction[VmafPredictionReturnType::SCORE]);
     }
-    result.set_scores("vmaf", score);
+    result.set_scores("score", score);
 }
 
 Result VmafQualityRunner::run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
@@ -996,8 +996,8 @@ double RunVmaf(const char* fmt, int width, int height,
         result.setScoreAggregateMethod(ScoreAggregateMethod::MEAN);
     }
 
-    size_t num_frames_subsampled = result.get_scores("vmaf").size();
-    double aggregate_vmaf = result.get_score("vmaf");
+    size_t num_frames_subsampled = result.get_scores("score").size();
+    double aggregate_vmaf = result.get_score("score");
     double exec_fps = (double)num_frames_subsampled * n_subsample / (double)timer.elapsed();
 #if TIME_TEST_ENABLE
 	double time_taken = (double)timer.elapsed();
@@ -1142,18 +1142,16 @@ double RunVmaf(const char* fmt, int width, int height,
         /* output to xml */
 
         pugi::xml_document xml;
-        pugi::xml_node xml_root = xml.append_child("VMAF");
+        pugi::xml_node xml_root = xml.append_child("VMAFCalculator");
         xml_root.append_attribute("version") = VMAFOSS_DOC_VERSION;
 
-        auto params_node = xml_root.append_child("params");
-        params_node.append_attribute("model") = _get_file_name(std::string(model_path)).c_str();
-        params_node.append_attribute("scaledWidth") = width;
-        params_node.append_attribute("scaledHeight") = height;
-        params_node.append_attribute("subsample") = n_subsample;
-        params_node.append_attribute("num_bootstrap_models") = num_bootstrap_models;
-        params_node.append_attribute("bootstrap_model_list_str") = bootstrap_model_list_str.c_str();
-
-        auto info_node = xml_root.append_child("fyi");
+        auto info_node = xml_root.append_child("Info");
+        info_node.append_attribute("model") = _get_file_name(std::string(model_path)).c_str();
+        info_node.append_attribute("scaledWidth") = width;
+        info_node.append_attribute("scaledHeight") = height;
+        info_node.append_attribute("subsample") = n_subsample;
+        info_node.append_attribute("num_bootstrap_models") = num_bootstrap_models;
+        info_node.append_attribute("bootstrap_model_list_str") = bootstrap_model_list_str.c_str();
         info_node.append_attribute("numOfFrames") = (int)num_frames_subsampled;
         info_node.append_attribute("aggregateVMAF") = aggregate_vmaf;
         if (aggregate_bagging)
@@ -1172,7 +1170,7 @@ double RunVmaf(const char* fmt, int width, int height,
             info_node.append_attribute("aggregateMS_SSIM") = aggregate_ms_ssim;
         if (pool_method)
             info_node.append_attribute("poolMethod") = pool_method;
-        info_node.append_attribute("execFps") = exec_fps;
+        info_node.append_attribute("fps") = exec_fps;
 #if TIME_TEST_ENABLE
 		info_node.append_attribute("timeTaken") = time_taken;
 #endif

@@ -704,9 +704,9 @@ class VmafossExecQualityRunner(QualityRunner):
 
         # check if vmafossexec returned additional info about the bootstrapped models
         # bootstrap_model_list_str is a comma-separated string of model names
-        if 'bootstrap_model_list_str' in root.findall('params')[0].attrib:
+        if 'bootstrap_model_list_str' in root.findall('Info')[0].attrib:
             bootstrap_model_list = []
-            vmaf_params = root.findall('params')[0].attrib
+            vmaf_params = root.findall('Info')[0].attrib
             bootstrap_model_list_str = vmaf_params['bootstrap_model_list_str']
             bootstrap_model_list = bootstrap_model_list_str.split(',')
             # augment the feature set with bootstrap models
@@ -715,7 +715,7 @@ class VmafossExecQualityRunner(QualityRunner):
         feature_scores = [[] for _ in self.FEATURES]
 
         for frame in root.findall('frames/frame'):
-            scores.append(float(frame.attrib['vmaf']))
+            scores.append(float(frame.attrib['score']))
             for i_feature, feature in enumerate(self.FEATURES):
                 try:
                     feature_scores[i_feature].append(float(frame.attrib[feature]))
