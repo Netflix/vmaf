@@ -6,4 +6,16 @@ build:
 
 artifacts:
     - path: x64\Release\*.*
-      name: $(APPVEYOR_PROJECT_NAME)
+
+ deploy:
+  - provider: GitHub
+    artifact: 
+     - x64\Release\examples.bat
+     - x64\Release\libvmaf.lib
+     - x64\Release\vmafossexec.exe
+     - x64\Release\vmaf.exe
+    auth_token:
+      secure: 'hY5Mk6KOwgQ97TzEBsM7Woqr1ZIm5QTvHg8EvxMV1x8j3wk/3mNBMqWFFbEIBK0i'
+    prerelease: true
+    on:
+      appveyor_repo_tag: true
