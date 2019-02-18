@@ -12,7 +12,7 @@ artifacts:
 
 deploy:
   - provider: GitHub
-    artifact: "vmaf-win-x64.zip","examples.bat","libvmaf.lib","vmafossexec.exe","vmaf.exe"
+    artifact: vmaf-win-x64.zip,examples.bat,libvmaf.lib,vmafossexec.exe,vmaf.exe
     auth_token:
       secure: 'hY5Mk6KOwgQ97TzEBsM7Woqr1ZIm5QTvHg8EvxMV1x8j3wk/3mNBMqWFFbEIBK0i'
     prerelease: true
