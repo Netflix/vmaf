@@ -7,7 +7,7 @@ build:
 artifacts:
     - path: x64\Release\*.*
 
- deploy:
+deploy:
   - provider: GitHub
     artifact: 
      - x64\Release\examples.bat
