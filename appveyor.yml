@@ -3,3 +3,7 @@ configuration: Release
 
 build:
   project: vmaf.sln
+
+artifacts:
+    - path: x64\Release\*.*
+      name: $(APPVEYOR_PROJECT_NAME)
