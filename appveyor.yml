@@ -9,7 +9,7 @@ artifacts:
 
 deploy:
   - provider: GitHub
-    artifact: 
+    artifacts: 
      - x64\Release\examples.bat
      - x64\Release\libvmaf.lib
      - x64\Release\vmafossexec.exe
