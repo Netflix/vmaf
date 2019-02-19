@@ -1,4 +1,4 @@
-# Prepare  [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/Netflix/vmaf?branch=master&svg=true)](https://ci.appveyor.com/project/Netflix/vmaf)
+# Prepare  [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/68i57b8ssasttngg?svg=true)](https://ci.appveyor.com/project/li-zhi/vmaf)
   - Visual Studio 2015 on Windows
   
 # Steps
