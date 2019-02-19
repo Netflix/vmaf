@@ -46,4 +46,4 @@ Besides the Python/C/C++ part of the repository, we also introduced a number of 
 
 ## References
 
-Refer to the [references](resource/doc/references.md) page. 
+Refer to the [references](resource/doc/references.md) page.
