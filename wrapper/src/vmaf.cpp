@@ -46,7 +46,7 @@ template <class T> static inline T min(T x,T y) { return (x<y)?x:y; }
 #endif
 
 inline double _round_to_digit(double val, int digit);
-string _get_file_name(const std::string& s);
+std::string _get_file_name(const std::string& s);
 
 void SvmDelete::operator()(void *svm)
 {
@@ -1006,6 +1006,16 @@ double RunVmaf(const char* fmt, int width, int height,
 
     std::vector<std::string> result_keys = result.get_keys();
 
+    double aggregate_bagging = 0.0, aggregate_stddev = 0.0, aggregate_ci95_low = 0.0, aggregate_ci95_high = 0.0;
+    if (result.has_scores("bagging"))
+        aggregate_bagging = result.get_score("bagging");
+    if (result.has_scores("stddev"))
+        aggregate_stddev = result.get_score("stddev");
+    if (result.has_scores("ci95_low"))
+        aggregate_ci95_low = result.get_score("ci95_low");
+    if (result.has_scores("ci95_high"))
+        aggregate_ci95_high = result.get_score("ci95_high");
+
     double aggregate_psnr = 0.0, aggregate_ssim = 0.0, aggregate_ms_ssim = 0.0;
     if (result.has_scores("psnr"))
         aggregate_psnr = result.get_score("psnr");
@@ -1017,6 +1027,14 @@ double RunVmaf(const char* fmt, int width, int height,
     if (pool_method)
     {
         printf("VMAF score (%s) = %f\n", pool_method, aggregate_vmaf);
+        if (aggregate_bagging)
+            printf("Bagging score (%s) = %f\n", pool_method, aggregate_bagging);
+        if (aggregate_stddev)
+            printf("StdDev score (%s) = %f\n", pool_method, aggregate_stddev);
+        if (aggregate_ci95_low)
+            printf("CI95_low score (%s) = %f\n", pool_method, aggregate_ci95_low);
+        if (aggregate_ci95_high)
+            printf("CI95_high score (%s) = %f\n", pool_method, aggregate_ci95_high);
         if (aggregate_psnr)
             printf("PSNR score (%s) = %f\n", pool_method, aggregate_psnr);
         if (aggregate_ssim)
@@ -1027,6 +1045,14 @@ double RunVmaf(const char* fmt, int width, int height,
     else // default
     {
         printf("VMAF score = %f\n", aggregate_vmaf);
+        if (aggregate_bagging)
+            printf("Bagging score = %f\n", aggregate_bagging);
+        if (aggregate_stddev)
+            printf("StdDev score = %f\n", aggregate_stddev);
+        if (aggregate_ci95_low)
+            printf("CI95_low score = %f\n", aggregate_ci95_low);
+        if (aggregate_ci95_high)
+            printf("CI95_high score = %f\n", aggregate_ci95_high);
         if (aggregate_psnr)
             printf("PSNR score = %f\n", aggregate_psnr);
         if (aggregate_ssim)
@@ -1130,12 +1156,22 @@ double RunVmaf(const char* fmt, int width, int height,
         auto info_node = xml_root.append_child("fyi");
         info_node.append_attribute("numOfFrames") = (int)num_frames_subsampled;
         info_node.append_attribute("aggregateVMAF") = aggregate_vmaf;
+        if (aggregate_bagging)
+            info_node.append_attribute("aggregateBagging") = aggregate_bagging;
+        if (aggregate_stddev)
+            info_node.append_attribute("aggregateStdDev") = aggregate_stddev;
+        if (aggregate_ci95_low)
+            info_node.append_attribute("aggregateCI95_low") = aggregate_ci95_low;
+        if (aggregate_ci95_high)
+            info_node.append_attribute("aggregateCI95_high") = aggregate_ci95_high;
         if (aggregate_psnr)
             info_node.append_attribute("aggregatePSNR") = aggregate_psnr;
         if (aggregate_ssim)
             info_node.append_attribute("aggregateSSIM") = aggregate_ssim;
         if (aggregate_ms_ssim)
             info_node.append_attribute("aggregateMS_SSIM") = aggregate_ms_ssim;
+        if (pool_method)
+            info_node.append_attribute("poolMethod") = pool_method;
         info_node.append_attribute("execFps") = exec_fps;
 #if TIME_TEST_ENABLE
 		info_node.append_attribute("timeTaken") = time_taken;
@@ -1170,16 +1206,11 @@ inline double _round_to_digit(double val, int digit)
     return _round(val * m) / m;
 }
 
-string _get_file_name(const std::string& s)
+std::string _get_file_name(const std::string& s)
 {
-   char sep = '/';
-#ifdef _WIN32
-   sep = '\\';
-#endif
-   size_t i = s.rfind(sep, s.length());
-   if (i != string::npos) {
-      return(s.substr(i+1, s.length() - i));
-   }
-   return("");
+    size_t i = s.find_last_of("/\\", s.length());
+    if (i != std::string::npos) {
+        return(s.substr(i + 1, s.length() - i));
+    }
+    return("");
 }
-
