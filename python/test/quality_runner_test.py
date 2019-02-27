@@ -1156,6 +1156,58 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_score'], 75.44304862545658, places=4)
         self.assertAlmostEqual(results[1]['VMAF_score'], 99.95804893252175, places=4)
 
+    def test_run_vmaf_runner_input160x90(self):
+        print 'test on running VMAF runner with 160x90 input...'
+        ref_path = VmafConfig.test_resource_path("yuv", "ref_test_0_1_src01_hrc00_576x324_576x324_vs_src01_hrc01_576x324_576x324_q_160x90.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "dis_test_0_1_src01_hrc00_576x324_576x324_vs_src01_hrc01_576x324_576x324_q_160x90.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 160, 'height': 90})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                               workdir_root=VmafConfig.workdir_path(),
+                               ref_path=ref_path,
+                               dis_path=ref_path,
+                               asset_dict={'width': 160, 'height': 90})
+
+        self.runner = VmafQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.6890852611788579, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale1_score'], 0.9568544348982971, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale2_score'], 0.97696930627404, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale3_score'], 0.9830559447224111, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_motion2_score'], 1.3596959375, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'], 0.9808005954458935, places=4)
+
+        self.assertAlmostEqual(results[1]['VMAF_feature_vif_scale0_score'], 1.00000001415, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_vif_scale1_score'],0.99999972612, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_vif_scale2_score'], 0.999999465724, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_vif_scale3_score'], 0.999999399683, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_motion2_score'], 1.3596959375, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
+
+        with self.assertRaises(KeyError):
+            self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0, places=4)
+
+        with self.assertRaises(KeyError):
+            self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 1.0, places=4)
+
+        with self.assertRaises(KeyError):
+            self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 1.0, places=4)
+
+        self.assertAlmostEqual(results[0]['VMAF_score'], 92.5447133327328, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 99.3088521349021, places=4)
+
 
 class ParallelQualityRunnerTest(unittest.TestCase):
 
