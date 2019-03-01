@@ -21,9 +21,7 @@ int init_blur_array(BLUR_BUF_ARRAY* arr, int array_length, size_t size, size_t a
     {
         arr->blur_buf_array[i].frame_idx = -1;
         arr->blur_buf_array[i].blur_buf = aligned_malloc(size, alignement);
-#if BUF_OPT_ENABLE
 		arr->blur_buf_array[i].reference_count	= 0;
-#endif
         if (arr->blur_buf_array[i].blur_buf == 0)
             return 0;
 
@@ -41,7 +39,6 @@ int init_blur_array(BLUR_BUF_ARRAY* arr, int array_length, size_t size, size_t a
  */
 float* get_blur_buf(BLUR_BUF_ARRAY* arr, int search_frame_idx)
 {
-#if BUF_OPT_ENABLE
     int array_length = arr->actual_length;
     BLUR_BUF_STRUCT* s = arr->blur_buf_array;
 	float *ret = NULL;
@@ -66,31 +63,6 @@ float* get_blur_buf(BLUR_BUF_ARRAY* arr, int search_frame_idx)
     pthread_mutex_unlock(&arr->block);
 
     return ret;
-#else
-    // find item for the search_frame_idx
-    while (1)
-    {
-        pthread_mutex_lock(&arr->block);
-
-        int array_length = arr->actual_length;
-        BLUR_BUF_STRUCT* s = arr->blur_buf_array;
-
-        for (int i = 0; i < array_length; i++)
-        {
-            if (s->frame_idx == search_frame_idx)
-            {
-                pthread_mutex_unlock(&arr->block);
-                return s->blur_buf;
-            }
-
-            // next array item
-            s++;
-        }
-
-        pthread_mutex_unlock(&arr->block);
-    }
-#endif
-    return 0;
 }
 
 /*
@@ -127,11 +99,7 @@ int put_blur_buf(BLUR_BUF_ARRAY* arr, int frame_idx, float* blur_buf)
 /*
  * resets the slot in the array to -1 to indicate that the buffer can be used again
  */
-#if BUF_OPT_ENABLE
 int release_blur_buf_slot(BLUR_BUF_ARRAY* arr, int search_frame_idx)
-#else
-int release_blur_buf(BLUR_BUF_ARRAY* arr, int search_frame_idx)
-#endif
 {
     int ret = 0;
     int array_length = arr->actual_length;
@@ -143,7 +111,6 @@ int release_blur_buf(BLUR_BUF_ARRAY* arr, int search_frame_idx)
     {
         if (s->frame_idx == search_frame_idx)
         {
-#if BUF_OPT_ENABLE
 			if(s->reference_count <= 0)
 			{
 				s->frame_idx = -1;
@@ -153,10 +120,6 @@ int release_blur_buf(BLUR_BUF_ARRAY* arr, int search_frame_idx)
 			{
 				ret = -1;
 			}
-#else
-            s->frame_idx = -1;
-            ret = 1;
-#endif			
             break;
         }
 
@@ -189,7 +152,6 @@ void free_blur_buf(BLUR_BUF_ARRAY* arr)
     pthread_mutex_destroy(&arr->block);
 }
 
-#if BUF_OPT_ENABLE
 /*
  * finds a free slot in the array, assigns the new frame index and returns the free buffer pointer
  * This increases the reference count for this slot
@@ -278,6 +240,3 @@ int release_blur_buf_reference(BLUR_BUF_ARRAY* arr, int search_frame_idx)
 
     return ret;
 }
-
-
-#endif

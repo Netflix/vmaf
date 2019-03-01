@@ -78,9 +78,7 @@ typedef struct
     BLUR_BUF_ARRAY blur_buf_array;
     BLUR_BUF_ARRAY ref_buf_array;
     BLUR_BUF_ARRAY dis_buf_array;
-#if BUF_OPT_ENABLE
 	DArray *motion_score_compute_flag_array;
-#endif
 #endif
     int ret;
 
