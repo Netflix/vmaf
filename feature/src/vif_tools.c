@@ -213,7 +213,6 @@ void vif_xx_yy_xy_s(const float *x, const float *y, float *xx, float *yy, float 
     }
 }
 
-#if VIF_OPT_ENABLE
 void vif_statistic_s(const float *mu1, const float *mu2, const float *mu1_mu2, const float *xx_filt, const float *yy_filt, const float *xy_filt, float *num, float *den,
 	int w, int h, int mu1_stride, int mu2_stride, int mu1_mu2_stride, int xx_filt_stride, int yy_filt_stride, int xy_filt_stride, int num_stride, int den_stride)
 {
@@ -282,64 +281,6 @@ void vif_statistic_s(const float *mu1, const float *mu2, const float *mu1_mu2, c
 	num[0] = accum_num;
 	den[0] = accum_den;
 }
-#else
-void vif_statistic_s(const float *mu1_sq, const float *mu2_sq, const float *mu1_mu2, const float *xx_filt, const float *yy_filt, const float *xy_filt, float *num, float *den,
-                     int w, int h, int mu1_sq_stride, int mu2_sq_stride, int mu1_mu2_stride, int xx_filt_stride, int yy_filt_stride, int xy_filt_stride, int num_stride, int den_stride)
-{
-    static const float sigma_nsq = 2;
-    static const float sigma_max_inv = 4.0/(255.0*255.0);
-
-    int mu1_sq_px_stride  = mu1_sq_stride / sizeof(float);
-    int mu2_sq_px_stride  = mu2_sq_stride / sizeof(float);
-    int mu1_mu2_px_stride = mu1_mu2_stride / sizeof(float);
-    int xx_filt_px_stride = xx_filt_stride / sizeof(float);
-    int yy_filt_px_stride = yy_filt_stride / sizeof(float);
-    int xy_filt_px_stride = xy_filt_stride / sizeof(float);
-    int num_px_stride = num_stride / sizeof(float);
-    int den_px_stride = den_stride / sizeof(float);
-
-    float mu1_sq_val, mu2_sq_val, mu1_mu2_val, xx_filt_val, yy_filt_val, xy_filt_val;
-    float sigma1_sq, sigma2_sq, sigma12, g, sv_sq;
-    float num_val, den_val;
-    int i, j;
-
-    for (i = 0; i < h; ++i) {
-        for (j = 0; j < w; ++j) {
-            mu1_sq_val  = mu1_sq[i * mu1_sq_px_stride + j]; // same name as the Matlab code vifp_mscale.m
-            mu2_sq_val  = mu2_sq[i * mu2_sq_px_stride + j];
-            mu1_mu2_val = mu1_mu2[i * mu1_mu2_px_stride + j];
-            xx_filt_val = xx_filt[i * xx_filt_px_stride + j];
-            yy_filt_val = yy_filt[i * yy_filt_px_stride + j];
-            xy_filt_val = xy_filt[i * xy_filt_px_stride + j];
-
-            sigma1_sq = xx_filt_val - mu1_sq_val;
-            sigma2_sq = yy_filt_val - mu2_sq_val;
-            sigma12   = xy_filt_val - mu1_mu2_val;
-
-            if (sigma1_sq < sigma_nsq) {
-                num_val = 1.0 - sigma2_sq*sigma_max_inv;
-                den_val = 1.0;
-            }
-            else {
-                    sv_sq = (sigma2_sq + sigma_nsq) * sigma1_sq;
-                                if( sigma12 < 0 )
-                                {
-                                    num_val = 0.0;
-                                }
-                                else
-                                {
-                        g = sv_sq - sigma12 * sigma12;
-                    num_val = log2f(sv_sq / g);
-                                }
-                den_val = log2f(1.0f + sigma1_sq / sigma_nsq);
-            }
-
-            num[i * num_px_stride + j] = num_val;
-            den[i * den_px_stride + j] = den_val;
-        }
-    }
-}
-#endif
 
 void vif_filter1d_s(const float *f, const float *src, float *dst, float *tmpbuf, int w, int h, int src_stride, int dst_stride, int fwidth)
 {
@@ -402,8 +343,8 @@ void vif_filter1d_s(const float *f, const float *src, float *dst, float *tmpbuf,
 
     aligned_free(tmp);
 }
-#if	VIF_OPT_ENABLE
-// Code optimized by adding intrinsic code for the functions, 
+
+// Code optimized by adding intrinsic code for the functions,
 // vif_filter1d_sq and vif_filter1d_sq
 
 void vif_filter1d_sq_s(const float *f, const float *src, float *dst, float *tmpbuf, int w, int h, int src_stride, int dst_stride, int fwidth)
@@ -531,7 +472,6 @@ void vif_filter1d_xy_s(const float *f, const float *src1, const float *src2, flo
 
 	aligned_free(tmp);
 }
-#endif
 
 void vif_filter2d_s(const float *f, const float *src, float *dst, int w, int h, int src_stride, int dst_stride, int fwidth)
 {
