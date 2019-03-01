@@ -1,5 +1,15 @@
 # Change Log
 
+## (3/1/2019) [1.3.14]
+
+**Fixed bugs:**
+- Fix VMAF value mismatch on 160x90 videos after optimization (#315).
+- Fix w10 error with using uninitialized offset_flag variable (#302).
+
+**New features:**
+- Add automated Windows builds with AddVeyor (#313).
+- Report aggregate CI scores and fix empty model name in log (#304).
+
 ## (1/31/2019) [1.3.13]
 
 **New features:**
