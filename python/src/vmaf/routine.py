@@ -46,6 +46,7 @@ def read_dataset(dataset, **kwargs):
     crop_cmd = dataset.crop_cmd if hasattr(dataset, 'crop_cmd') else None
     pad_cmd = dataset.pad_cmd if hasattr(dataset, 'pad_cmd') else None
     workfile_yuv_type = dataset.workfile_yuv_type if hasattr(dataset, 'workfile_yuv_type') else None
+    duration_sec = dataset.duration_sec if hasattr(dataset, 'duration_sec') else None
 
     ref_dict = {} # dictionary of content_id -> path for ref videos
     for ref_video in ref_videos:
@@ -142,6 +143,13 @@ def read_dataset(dataset, **kwargs):
         else:
             pad_cmd_ = None
 
+        if duration_sec is not None:
+            duration_sec_ = duration_sec
+        elif 'duration_sec' in dis_video:
+            duration_sec_ = dis_video['duration_sec']
+        else:
+            duration_sec_ = None
+
         asset_dict = {'ref_yuv_type': ref_yuv_fmt_, 'dis_yuv_type': dis_yuv_fmt_}
         if width_ is not None:
             if asset_dict['ref_yuv_type'] != 'notyuv':
@@ -169,6 +177,8 @@ def read_dataset(dataset, **kwargs):
             asset_dict['crop_cmd'] = crop_cmd_
         if pad_cmd_ is not None:
             asset_dict['pad_cmd'] = pad_cmd_
+        if duration_sec_ is not None:
+            asset_dict['duration_sec'] = duration_sec_
         if workfile_yuv_type is not None:
             asset_dict['workfile_yuv_type'] = workfile_yuv_type
         if fps is not None:
