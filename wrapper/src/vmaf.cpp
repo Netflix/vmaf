@@ -511,7 +511,7 @@ void VmafQualityRunner::_normalize_predict_denormalize_transform_clip(
 
         _postproc_transform_clip(predictionStruct);
 
-        dbg_printf("frame: %zu, ", i);
+        dbg_printf("frame: %zu, ", i_frm);
         dbg_printf("adm2: %f, ", adm2.at(i_frm));
         dbg_printf("adm_scale0: %f, ", adm_scale0.at(i_frm));
         dbg_printf("adm_scale1: %f, ", adm_scale1.at(i_frm));
