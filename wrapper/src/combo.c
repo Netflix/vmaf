@@ -689,9 +689,9 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
      *	At any point, one thread operates on the current, previous and next blur buffers, and hence, the no. of
         required blur buffers will be three times the total no. of allotted threads.
      */
-    init_blur_array(&combo_thread_data.ref_buf_array, combo_thread_data.thread_count + 1, combo_thread_data.data_sz, MAX_ALIGN);
-    init_blur_array(&combo_thread_data.dis_buf_array, combo_thread_data.thread_count + 1, combo_thread_data.data_sz, MAX_ALIGN);
-    init_blur_array(&combo_thread_data.blur_buf_array, 3 * (combo_thread_data.thread_count), combo_thread_data.data_sz, MAX_ALIGN);
+    init_blur_array(&combo_thread_data.ref_buf_array, MIN(combo_thread_data.thread_count + 1, MAX_NUM_THREADS), combo_thread_data.data_sz, MAX_ALIGN);
+    init_blur_array(&combo_thread_data.dis_buf_array, MIN(combo_thread_data.thread_count + 1, MAX_NUM_THREADS), combo_thread_data.data_sz, MAX_ALIGN);
+    init_blur_array(&combo_thread_data.blur_buf_array, MIN(3 * (combo_thread_data.thread_count), MAX_NUM_THREADS), combo_thread_data.data_sz, MAX_ALIGN);
 
     // initialize the mutex that protects the read_frame function
     pthread_mutex_init(&combo_thread_data.mutex_readframe, NULL);
