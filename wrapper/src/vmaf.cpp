@@ -1133,6 +1133,15 @@ double RunVmaf(const char* fmt, int width, int height,
         top["metrics"] = metrics;
         top["frames"] = frames;
 
+        top["VMAF score"] = aggregate_vmaf;
+        top["ExecFps"] = exec_fps;
+        if (aggregate_psnr)
+            top["PSNR score"] = aggregate_psnr;
+        if (aggregate_ssim)
+            top["SSIM score"] = aggregate_ssim;
+        if (aggregate_ms_ssim)
+            top["MS-SSIM score"] = aggregate_ms_ssim;
+
         std::ofstream log_file(log_path);
         JSONPrint(top, log_file, 0, true, 2);
         log_file.close();
