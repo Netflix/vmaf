@@ -1134,6 +1134,7 @@ double RunVmaf(const char* fmt, int width, int height,
         top["frames"] = frames;
 
         top["VMAF score"] = aggregate_vmaf;
+        top["ExecFps"] = exec_fps;
         if (aggregate_psnr)
             top["PSNR score"] = aggregate_psnr;
         if (aggregate_ssim)
