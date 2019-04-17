@@ -25,7 +25,7 @@
 //#define OPT_RANGE_PIXEL_OFFSET 0
 #define OPT_RANGE_PIXEL_OFFSET (-128)
 
-float apply_frame_differencing(const float *current_frame, const float *previous_frame, float *frame_difference, int width, int height, int stride);
+void apply_frame_differencing(const float *current_frame, const float *previous_frame, float *frame_difference, int width, int height, int stride);
 int read_image(FILE *rfile, void *buf, int width, int height, int stride, int elem_size);
 int write_image(FILE *wfile, const void *buf, int width, int height, int stride, int elem_size);
 
