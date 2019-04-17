@@ -22,9 +22,8 @@
 #include <stdint.h>
 #include <string.h>
 #include "common/alloc.h"
+#include "common/convolution.h"
 #include "vif_options.h"
-#include "convolution.h"
-#include "convolution_internal.h"
 #include "vif_tools.h"
 #include "common/cpu.h"
 
