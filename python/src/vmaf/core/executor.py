@@ -508,7 +508,7 @@ class Executor(TypeVersionEnabled):
         else:
             assert False, 'ref_or_dis cannot be {}'.format(ref_or_dis)
 
-        if 'icpf' == get_file_name_extension(path) or 'j2c' == get_file_name_extension(path):
+        if 'icpf' == get_file_name_extension(path) or 'j2c' == get_file_name_extension(path) or 'j2k' == get_file_name_extension(path):
             # 2147483647 is INT_MAX if int is 4 bytes
             return "-start_number_range 2147483647"
         else:
