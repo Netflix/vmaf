@@ -32,7 +32,7 @@ assets = assets[:(num_train + num_test)]
 raw_video_h5py_filepath = VmafConfig.workdir_path('rawvideo.hdf5')
 raw_video_h5py_file = DisYUVRawVideoExtractor.open_h5py_file(raw_video_h5py_filepath)
 
-print '======================== Extract raw YUVs =============================='
+print('======================== Extract raw YUVs ==============================')
 
 _, raw_yuvs = run_executors_in_parallel(
     DisYUVRawVideoExtractor,
@@ -57,17 +57,17 @@ model = ToddNoiseClassifierTrainTestModel(
         'h5py_file': patch_h5py_file,
     })
 
-print '============================ Train model ==============================='
+print('============================ Train model ===============================')
 xys = ToddNoiseClassifierTrainTestModel.get_xys_from_results(raw_yuvs[:num_train])
 model.train(xys)
 
-print '=========================== Evaluate model ============================='
+print('=========================== Evaluate model =============================')
 xs = ToddNoiseClassifierTrainTestModel.get_xs_from_results(raw_yuvs[num_train:])
 ys = ToddNoiseClassifierTrainTestModel.get_ys_from_results(raw_yuvs[num_train:])
 result = model.evaluate(xs, ys)
 
-print ""
-print "f1 test %g, errorrate test %g" % (result['f1'], result['errorrate'])
+print("")
+print("f1 test %g, errorrate test %g" % (result['f1'], result['errorrate']))
 
 # tear down
 DisYUVRawVideoExtractor.close_h5py_file(raw_video_h5py_file)
@@ -75,4 +75,4 @@ ToddNoiseClassifierTrainTestModel.close_h5py_file(patch_h5py_file)
 os.remove(raw_video_h5py_filepath)
 os.remove(patch_h5py_filepath)
 
-print 'Done.'
+print('Done.')

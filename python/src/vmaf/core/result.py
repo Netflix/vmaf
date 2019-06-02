@@ -111,12 +111,12 @@ class BasicResult(object):
         list_scores = map(lambda key: self.result_dict[key], list_scores_key)
         str_perframe = "\n".join(
             map(
-                lambda (frame_num, scores): "{unit} {num}: ".format(
-                    unit=unit_name, num=frame_num) + (
+                lambda tframe_scores: "{unit} {num}: ".format(
+                    unit=unit_name, num=tframe_scores[0]) + (
                 ", ".join(
                     map(
-                        lambda (score_key, score): "{score_key}:{score:.6f}".format(score_key=score_key, score=score),
-                        zip(list_score_key, scores))
+                        lambda tscore: "{score_key}:{score:.6f}".format(score_key=tscore[0], score=tscore[1]),
+                        zip(list_score_key, tframe_scores[1]))
                 )),
                 enumerate(zip(*list_scores))
             )
@@ -128,7 +128,7 @@ class BasicResult(object):
         list_score_key = self.get_ordered_list_score_key()
         str_aggregate = "Aggregate ({}): ".format(self.score_aggregate_method.__name__) + (", ".join(
             map(
-                lambda (score_key, score): "{score_key}:{score:.6f}".format(score_key=score_key, score=score),
+                lambda tscore: "{score_key}:{score:.6f}".format(score_key=tscore[0], score=tscore[1]),
                 zip(
                     list_score_key, map(
                         lambda score_key: self[score_key],

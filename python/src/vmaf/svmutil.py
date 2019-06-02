@@ -20,5 +20,5 @@ try:
     from svmutil import *           # noqa
 
 except ImportError as e:
-    print "Can't import svmutil from %s: %s" % (libsvm_path, e)
+    print("Can't import svmutil from %s: %s" % (libsvm_path, e))
     sys.exit(1)

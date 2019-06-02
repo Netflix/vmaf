@@ -190,7 +190,7 @@ class RegressorMixin(object):
             assert len(stats['ys_label']) == len(content_ids)
 
             unique_content_ids = list(set(content_ids))
-            import matplotlib.pyplot as plt
+            from vmaf import plt
             cmap = plt.get_cmap()
             colors = [cmap(i) for i in np.linspace(0, 1, len(unique_content_ids))]
             for idx, curr_content_id in enumerate(unique_content_ids):
@@ -1123,7 +1123,7 @@ class BootstrapRegressorMixin(RegressorMixin):
                 assert len(stats['ys_label']) == len(content_ids)
 
                 unique_content_ids = list(set(content_ids))
-                import matplotlib.pyplot as plt
+                from vmaf import plt
                 cmap = plt.get_cmap()
                 colors = [cmap(i) for i in np.linspace(0, 1, len(unique_content_ids))]
                 for idx, curr_content_id in enumerate(unique_content_ids):

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 __copyright__ = "Copyright 2016-2019, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
@@ -7,7 +9,7 @@ from vmaf.core.feature_assembler import FeatureAssembler
 from vmaf.core.feature_extractor import VmafFeatureExtractor, FeatureExtractor, \
     MomentFeatureExtractor
 
-from testutil import set_default_576_324_videos_for_testing
+from .testutil import set_default_576_324_videos_for_testing
 
 
 class FeatureAssemblerTest(unittest.TestCase):
@@ -23,7 +25,7 @@ class FeatureAssemblerTest(unittest.TestCase):
         self.assertTrue(MomentFeatureExtractor in fextractor_subclasses)
 
     def test_feature_assembler_whole_feature(self):
-        print 'test on feature assembler with whole feature...'
+        print('test on feature assembler with whole feature...')
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fassembler = FeatureAssembler(
@@ -54,7 +56,7 @@ class FeatureAssemblerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 31.271439270833337, places=4)
 
     def test_feature_assembler_selected_atom_feature(self):
-        print 'test on feature assembler with selected atom features...'
+        print('test on feature assembler with selected atom features...')
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fassembler = FeatureAssembler(

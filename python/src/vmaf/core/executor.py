@@ -377,7 +377,7 @@ class Executor(TypeVersionEnabled):
     def _get_log_file_path(self, asset):
         return "{workdir}/{executor_id}_{str}".format(
             workdir=asset.workdir, executor_id=self.executor_id,
-            str=hashlib.sha1(str(asset)).hexdigest())
+            str=hashlib.sha1(str(asset).encode("utf-8")).hexdigest())
 
     # ===== workfile =====
 

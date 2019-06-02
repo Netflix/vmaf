@@ -22,12 +22,12 @@ POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'pe
 
 
 def print_usage():
-    print "usage: " + os.path.basename(sys.argv[0]) + \
-          " input_file [--model model_path] [--out-fmt out_fmt] [--parallelize] [--phone-model] [--ci]\n"
-    print "out_fmt:\n\t" + "\n\t".join(OUT_FMTS) + "\n"
-    print "input_file contains lines of:"
-    print "\tfmt width height ref_path dis_path\\n"
-    print "fmt:\n\t" + "\n\t".join(FMTS) + "\n"
+    print("usage: " + os.path.basename(sys.argv[0]) + \
+          " input_file [--model model_path] [--out-fmt out_fmt] [--parallelize] [--phone-model] [--ci]\n")
+    print("out_fmt:\n\t" + "\n\t".join(OUT_FMTS) + "\n")
+    print("input_file contains lines of:")
+    print("\tfmt width height ref_path dis_path\\n")
+    print("fmt:\n\t" + "\n\t".join(FMTS) + "\n")
 
 
 def main():
@@ -50,7 +50,7 @@ def main():
     pool_method = get_cmd_option(sys.argv, 2, len(sys.argv), '--pool')
     if not (pool_method is None
             or pool_method in POOL_METHODS):
-        print '--pool can only have option among {}'.format(', '.join(POOL_METHODS))
+        print('--pool can only have option among {}'.format(', '.join(POOL_METHODS)))
         return 2
 
     parallelize = cmd_option_exists(sys.argv, 2, len(sys.argv), '--parallelize')
@@ -67,7 +67,7 @@ def main():
             # match comment
             mo = re.match(r"^#", line)
             if mo:
-                print "Skip commented line: {}".format(line)
+                print("Skip commented line: {}".format(line))
                 continue
 
             # match whitespace
@@ -78,7 +78,7 @@ def main():
             # example: yuv420p 576 324 ref.yuv dis.yuv
             mo = re.match(r"([\S]+) ([0-9]+) ([0-9]+) ([\S]+) ([\S]+)", line)
             if not mo or mo.group(1) not in FMTS:
-                print "Unknown format: {}".format(line)
+                print("Unknown format: {}".format(line))
                 print_usage()
                 return 1
 
@@ -146,14 +146,14 @@ def main():
             pass
 
         if out_fmt == 'xml':
-            print result.to_xml()
+            print(result.to_xml())
         elif out_fmt == 'json':
-            print result.to_json()
-        else: # None or 'json'
-            print '============================'
-            print 'Asset {asset_id}:'.format(asset_id=result.asset.asset_id)
-            print '============================'
-            print str(result)
+            print(result.to_json())
+        else:  # None or 'json'
+            print('============================')
+            print('Asset {asset_id}:'.format(asset_id=result.asset.asset_id))
+            print('============================')
+            print(result)
 
     return 0
 

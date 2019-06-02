@@ -1,6 +1,7 @@
-from matplotlib import pyplot as plt
 import numpy as np
 from scipy.stats import norm
+
+from vmaf import plt
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"

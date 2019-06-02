@@ -1,8 +1,8 @@
 from time import time
 
 import numpy as np
-import matplotlib.pyplot as plt
 
+from vmaf import plt
 from vmaf.config import VmafConfig, DisplayConfig
 from vmaf.core.quality_runner import VmafossExecQualityRunner
 from vmaf.core.result_store import FileSystemResultStore

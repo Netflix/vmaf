@@ -1,4 +1,4 @@
-from testutil import set_default_576_324_videos_for_testing
+from .testutil import set_default_576_324_videos_for_testing
 
 __copyright__ = "Copyright 2016-2019, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -43,7 +43,7 @@ class ResultTest(unittest.TestCase):
 
     def test_todataframe_fromdataframe(self):
 
-        print 'test on result to/from dataframe...'
+        print('test on result to/from dataframe...')
         df = self.result.to_dataframe()
         df_vmaf = df.loc[df['scores_key'] == 'VMAF_legacy_scores']
         df_adm = df.loc[df['scores_key'] == 'VMAF_feature_adm_scores']
@@ -86,7 +86,7 @@ class ResultTest(unittest.TestCase):
         self.assertFalse(self.result != recon_result)
 
     def test_to_score_str(self):
-        print 'test on result aggregate scores...'
+        print('test on result aggregate scores...')
         self.assertAlmostEquals(self.result.get_result('VMAF_legacy_score'), 40.421899030550769, places=4)
         self.assertAlmostEquals(self.result['VMAF_legacy_score'], 40.421899030550769, places=4)
         self.assertAlmostEquals(self.result.get_result('VMAF_feature_adm_score'), 0.78533833333333336, places=4)
@@ -229,7 +229,7 @@ class ResultStoreTest(unittest.TestCase):
         pass
 
     def test_file_system_result_store_save_load(self):
-        print 'test on file system result store save and load...'
+        print('test on file system result store save and load...')
         self.result_store = FileSystemResultStore(logger=None)
         asset = self.result.asset
         executor_id = self.result.executor_id
@@ -244,7 +244,7 @@ class ResultStoreTest(unittest.TestCase):
 class ResultStoreTestWithNone(unittest.TestCase):
 
     def test_load_result_with_none(self):
-        print 'test on file system result store load result with None...'
+        print('test on file system result store load result with None...')
         result = FileSystemResultStore.load_result(VmafConfig.test_resource_path('result_with_none.txt'))
         result.set_score_aggregate_method(ListStats.nonemean)
         self.assertAlmostEqual(result['STRRED_feature_srred_score'], 5829.2644469999996, places=4)
@@ -254,7 +254,7 @@ class ResultAggregatingTest(unittest.TestCase):
 
     def test_from_xml_from_json_and_aggregation(self):
 
-        print 'test on running from_xml and from_json and aggregation...'
+        print('test on running from_xml and from_json and aggregation...')
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         asset_list = [asset, asset_original]
@@ -330,7 +330,7 @@ class ScoreAggregationTest(unittest.TestCase):
             self.runner.remove_results()
 
     def test_to_score_str(self):
-        print 'test on result aggregate scores...'
+        print('test on result aggregate scores...')
         self.result.set_score_aggregate_method(np.mean)
         # the following should give same value
         self.assertAlmostEquals(self.result['VMAF_score'], 35.0661575902223, places=4)

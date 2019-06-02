@@ -374,23 +374,23 @@ class ToddNoiseClassifierTrainTestModel(NeuralNetTrainTestModel, ClassifierMixin
         f1score_per_epoch = []
         loss_per_epoch = []
         for j in range(self.n_epochs):
-            print ""
+            print("")
 
-            print "******************** EPOCH %d / %d ********************" % (j, self.n_epochs)
+            print("******************** EPOCH %d / %d ********************" % (j, self.n_epochs))
 
             # train
             train_loss, train_score = self._evaluate_on_patches(
                 patches, labels, input_image_batch, loss,
                 sess, train_indices, y_, y_p, "train")
 
-            print ""
+            print("")
 
             # validate
             validate_loss, validate_score = self._evaluate_on_patches(
                 patches, labels, input_image_batch, loss,
                 sess, validate_indices, y_, y_p, "validate")
 
-            print ""
+            print("")
 
             print("f1 train %g, f1 validate %g, loss train %g, loss validate %g"
                   % (train_score, validate_score, train_loss, validate_loss))
@@ -401,7 +401,7 @@ class ToddNoiseClassifierTrainTestModel(NeuralNetTrainTestModel, ClassifierMixin
                 if saver is None:
                     saver = tf.train.Saver(max_to_keep=0)
                 outputfile = "%s/model_epoch_%d.ckpt" % (self.checkpoints_dir, j,)
-                print "Checkpointing -> %s" % (outputfile,)
+                print("Checkpointing -> %s" % (outputfile,))
                 saver.save(sess, outputfile)
 
             halfbatch = self.batch_size / 2
@@ -413,7 +413,7 @@ class ToddNoiseClassifierTrainTestModel(NeuralNetTrainTestModel, ClassifierMixin
             n_iterations = np.min((len(train_posindices)/halfbatch,
                                    len(train_negindices)/halfbatch))
 
-            for i in xrange(n_iterations):
+            for i in range(n_iterations):
                 # must sort, since h5py needs ordered indices
                 poslst = np.sort(train_posindices[i*(halfbatch):(i+1)*(halfbatch)]).tolist()
                 neglst = np.sort(train_negindices[i*(halfbatch):(i+1)*(halfbatch)]).tolist()
@@ -435,7 +435,7 @@ class ToddNoiseClassifierTrainTestModel(NeuralNetTrainTestModel, ClassifierMixin
             np.random.shuffle(train_posindices)
             np.random.shuffle(train_negindices)
 
-            print ""
+            print("")
 
         model = {
             'sess': sess,

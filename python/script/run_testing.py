@@ -26,12 +26,12 @@ SUBJECTIVE_MODELS = ['DMOS (default)', 'DMOS_MLE', 'MLE', 'MOS', 'SR_DMOS', 'SR_
 
 def print_usage():
     quality_runner_types = ['VMAF', 'PSNR', 'SSIM', 'MS_SSIM']
-    print "usage: " + os.path.basename(sys.argv[0]) + \
+    print("usage: " + os.path.basename(sys.argv[0]) + \
           " quality_type test_dataset_filepath [--vmaf-model VMAF_model_path] " \
           "[--vmaf-phone-model] [--subj-model subjective_model] [--cache-result] " \
-          "[--parallelize] [--print-result] [--save-plot plot_dir]\n"
-    print "quality_type:\n\t" + "\n\t".join(quality_runner_types) +"\n"
-    print "subjective_model:\n\t" + "\n\t".join(SUBJECTIVE_MODELS) + "\n"
+          "[--parallelize] [--print-result] [--save-plot plot_dir]\n")
+    print("quality_type:\n\t" + "\n\t".join(quality_runner_types) +"\n")
+    print("subjective_model:\n\t" + "\n\t".join(SUBJECTIVE_MODELS) + "\n")
 
 
 def main():
@@ -56,7 +56,7 @@ def main():
     pool_method = get_cmd_option(sys.argv, 3, len(sys.argv), '--pool')
     if not (pool_method is None
             or pool_method in POOL_METHODS):
-        print '--pool can only have option among {}'.format(', '.join(POOL_METHODS))
+        print('--pool can only have option among {}'.format(', '.join(POOL_METHODS)))
         return 2
 
     subj_model = get_cmd_option(sys.argv, 3, len(sys.argv), '--subj-model')
@@ -68,7 +68,7 @@ def main():
         else:
             subj_model_class = None
     except Exception as e:
-        print "Error: " + str(e)
+        print("Error: " + str(e))
         return 1
 
     save_plot_dir = get_cmd_option(sys.argv, 3, len(sys.argv), '--save-plot')
@@ -76,25 +76,25 @@ def main():
     try:
         runner_class = QualityRunner.find_subclass(quality_type)
     except Exception as e:
-        print "Error: " + str(e)
+        print("Error: " + str(e))
         return 1
 
     if vmaf_model_path is not None and runner_class != VmafQualityRunner and \
                     runner_class != BootstrapVmafQualityRunner:
-        print "Input error: only quality_type of VMAF accepts --vmaf-model."
+        print("Input error: only quality_type of VMAF accepts --vmaf-model.")
         print_usage()
         return 2
 
     if vmaf_phone_model and runner_class != VmafQualityRunner and \
                     runner_class != BootstrapVmafQualityRunner:
-        print "Input error: only quality_type of VMAF accepts --vmaf-phone-model."
+        print("Input error: only quality_type of VMAF accepts --vmaf-phone-model.")
         print_usage()
         return 2
 
     try:
         test_dataset = import_python_file(test_dataset_filepath)
     except Exception as e:
-        print "Error: " + str(e)
+        print("Error: " + str(e))
         return 1
 
     if cache_result:
@@ -127,7 +127,7 @@ def main():
         if suppress_plot:
             raise AssertionError
 
-        import matplotlib.pyplot as plt
+        from vmaf import plt
         fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
 
         assets, results = run_test_on_dataset(test_dataset, runner_class, ax,
@@ -171,8 +171,8 @@ def main():
 
     if print_result:
         for result in results:
-            print result
-            print ''
+            print(result)
+            print('')
 
     return 0
 

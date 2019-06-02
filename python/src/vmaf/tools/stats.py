@@ -107,12 +107,12 @@ class ListStats(object):
 
     @staticmethod
     def print_stats(my_list):
-        print "Min: {min}, Max: {max}, Median: {median}, Mean: {mean}," \
+        print("Min: {min}, Max: {max}, Median: {median}, Mean: {mean}," \
               " Variance: {var}, Total_variation: {total_var}".format(
             min=np.min(my_list), max=np.max(my_list),
             median=np.median(my_list), mean=np.mean(my_list),
             var=np.var(my_list),
-            total_var=ListStats.total_variation(my_list))
+            total_var=ListStats.total_variation(my_list)))
 
     @staticmethod
     def print_moving_average_stats(my_list, n, type='exponential', decay=-1):

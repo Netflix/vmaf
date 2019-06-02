@@ -8,10 +8,17 @@ __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import sys
+import errno
 import os
 import re
 
 from vmaf.tools.scanf import sscanf, IncompleteCaptureError, FormatError
+
+try:
+    unicode  # noqa, remove this once python2 support is dropped
+
+except NameError:
+    unicode = str
 
 
 def get_stdout_logger():
@@ -154,7 +161,7 @@ def get_unique_str_from_recursive_dict(d):
     def to_ordered_dict_recursively(d):
         if isinstance(d, dict):
             return OrderedDict(map(
-                lambda (k,v): (to_ordered_dict_recursively(k), to_ordered_dict_recursively(v)),
+                lambda t: (to_ordered_dict_recursively(t[0]), to_ordered_dict_recursively(t[1])),
                 sorted(d.items())
             ))
         else:
@@ -348,7 +355,7 @@ def check_program_exist(program):
         run_process(program.split(), stdout=open(os.devnull, 'wb'))
         return True
     except OSError as e:
-        if e.errno == os.errno.ENOENT:
+        if e.errno == errno.ENOENT:
             return False
         else:
             # Something else went wrong while trying to run `wget`
@@ -414,7 +421,7 @@ def unroll_dict_of_lists(dict_of_lists):
     """ Unfold a dictionary of lists into a list of dictionaries.
 
     >>> dict_of_lists = {'norm_type':['normalize'], 'n_estimators':[10, 50], 'random_state': [0]}
-    >>> unroll_dict_of_lists(dict_of_lists)
+    >>> sorted(unroll_dict_of_lists(dict_of_lists))
     [{'n_estimators': 10, 'norm_type': 'normalize', 'random_state': 0}, {'n_estimators': 50, 'norm_type': 'normalize', 'random_state': 0}]
 
     """
@@ -483,7 +490,7 @@ class Timer(object):
         self.tstart = time()
 
     def __exit__(self, type, value, traceback):
-        print 'Elapsed: %s' % (time() - self.tstart)
+        print('Elapsed: %s' % (time() - self.tstart))
 
 
 def dedup_value_in_dict(d):
@@ -498,7 +505,7 @@ def dedup_value_in_dict(d):
         if value not in reversed_d:
             reversed_d[value] = key
     d_ = dict()
-    for value, key in reversed_d.iteritems():
+    for value, key in reversed_d.items():
         d_[key] = value
     return d_
 

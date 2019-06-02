@@ -24,14 +24,14 @@ POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'pe
 
 
 def print_usage():
-    print "usage: " + os.path.basename(sys.argv[0]) \
+    print("usage: " + os.path.basename(sys.argv[0]) \
           + " quality_width quality_height ref_path dis_path [--model model_path] " \
             "[--out-fmt out_fmt] [--work-dir work_dir] [--phone-model] [--ci] " \
             "[--ref-fmt ref_fmt --ref-width ref_width --ref-height ref_height] " \
             "[--dis-fmt dis_fmt --dis-width dis_width --dis-height dis_height] " \
-            "[--save-plot plot_dir]\n"
-    print "ref_fmt/dis_fmt:\n\t" + "\n\t".join(FMTS) + "\n"
-    print "out_fmt:\n\t" + "\n\t".join(OUT_FMTS) + "\n"
+            "[--save-plot plot_dir]\n")
+    print("ref_fmt/dis_fmt:\n\t" + "\n\t".join(FMTS) + "\n")
+    print("out_fmt:\n\t" + "\n\t".join(OUT_FMTS) + "\n")
 
 
 def main():
@@ -49,7 +49,7 @@ def main():
         return 2
 
     if q_width < 0 or q_height < 0:
-        print "quality_width and quality_height must be non-negative, but are {w} and {h}".format(w=q_width, h=q_height)
+        print("quality_width and quality_height must be non-negative, but are {w} and {h}".format(w=q_width, h=q_height))
         print_usage()
         return 2
 
@@ -66,7 +66,7 @@ def main():
     ref_fmt = get_cmd_option(sys.argv, 5, len(sys.argv), '--ref-fmt')
     if not (ref_fmt is None
             or ref_fmt in FMTS):
-        print '--ref-fmt can only have option among {}'.format(', '.join(FMTS))
+        print('--ref-fmt can only have option among {}'.format(', '.join(FMTS)))
 
     ref_width = get_cmd_option(sys.argv, 5, len(sys.argv), '--ref-width')
     ref_height = get_cmd_option(sys.argv, 5, len(sys.argv), '--ref-height')
@@ -76,14 +76,14 @@ def main():
     dis_fmt = get_cmd_option(sys.argv, 5, len(sys.argv), '--dis-fmt')
     if not (dis_fmt is None
             or dis_fmt in FMTS):
-        print '--dis-fmt can only have option among {}'.format(', '.join(FMTS))
+        print('--dis-fmt can only have option among {}'.format(', '.join(FMTS)))
 
     work_dir = get_cmd_option(sys.argv, 5, len(sys.argv), '--work-dir')
 
     pool_method = get_cmd_option(sys.argv, 5, len(sys.argv), '--pool')
     if not (pool_method is None
             or pool_method in POOL_METHODS):
-        print '--pool can only have option among {}'.format(', '.join(POOL_METHODS))
+        print('--pool can only have option among {}'.format(', '.join(POOL_METHODS)))
         return 2
 
     show_local_explanation = cmd_option_exists(sys.argv, 5, len(sys.argv), '--local-explain')
@@ -103,7 +103,7 @@ def main():
         asset_dict['ref_yuv_type'] = 'notyuv'
     else:
         if ref_width is None or ref_height is None:
-            print 'if --ref-fmt is specified, both --ref-width and --ref-height must be specified'
+            print('if --ref-fmt is specified, both --ref-width and --ref-height must be specified')
             return 2
         else:
             asset_dict['ref_yuv_type'] = ref_fmt
@@ -114,7 +114,7 @@ def main():
         asset_dict['dis_yuv_type'] = 'notyuv'
     else:
         if dis_width is None or dis_height is None:
-            print 'if --dis-fmt is specified, both --dis-width and --dis-height must be specified'
+            print('if --dis-fmt is specified, both --dis-width and --dis-height must be specified')
             return 2
         else:
             asset_dict['dis_yuv_type'] = dis_fmt
@@ -122,7 +122,7 @@ def main():
             asset_dict['dis_height'] = dis_height
 
     if show_local_explanation and enable_conf_interval:
-        print 'cannot set both --local-explain and --ci flags'
+        print('cannot set both --local-explain and --ci flags')
         return 2
 
     asset = Asset(dataset="cmd",
@@ -184,15 +184,14 @@ def main():
 
     # output
     if out_fmt == 'xml':
-        print result.to_xml()
+        print(result.to_xml())
     elif out_fmt == 'json':
-        print result.to_json()
+        print(result.to_json())
     else: # None or 'text'
-        print str(result)
+        print(str(result))
 
     # local explanation
     if show_local_explanation:
-        import matplotlib.pyplot as plt
         runner.show_local_explanations([result])
 
         if save_plot_dir is None:

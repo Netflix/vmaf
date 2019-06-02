@@ -1,10 +1,6 @@
 import numpy as np
 
-# import matplotlib
-# matplotlib.use('ps')
-
-from matplotlib import pyplot as plt
-
+from vmaf import plt
 from vmaf.core.cross_validation import ModelCrossValidation
 from vmaf.core.feature_assembler import FeatureAssembler
 from vmaf.core.quality_runner import VmafQualityRunner
@@ -309,14 +305,14 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
                                      ys_label_stddev=groundtruths_std)
         num_models = 1
 
-    print 'Stats on testing data: {}'.format(model_type.format_stats_for_print(stats))
+    print('Stats on testing data: {}'.format(model_type.format_stats_for_print(stats)))
 
     # printing stats if multiple models are present
     if 'SRCC_across_model_distribution' in stats \
             and 'PCC_across_model_distribution' in stats \
             and 'RMSE_across_model_distribution' in stats:
-        print 'Stats on testing data (across multiple models, using all test indices): {}'.format(
-            model_type.format_across_model_stats_for_print(model_type.extract_across_model_stats(stats)))
+        print('Stats on testing data (across multiple models, using all test indices): {}'.format(
+            model_type.format_across_model_stats_for_print(model_type.extract_across_model_stats(stats))))
 
     if ax is not None:
         content_ids = map(lambda asset: asset.content_id, test_assets)
@@ -346,11 +342,11 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
 
 
 def print_matplotlib_warning():
-    print "Warning: cannot import matplotlib, no picture displayed. " \
+    print("Warning: cannot import matplotlib, no picture displayed. " \
           "If you are on Mac OS and have installed matplotlib, you " \
           "possibly need to run: \nsudo pip uninstall python-dateutil \n" \
           "sudo pip install python-dateutil==2.2 \n" \
-          "Refer to: http://stackoverflow.com/questions/27630114/matplotlib-issue-on-os-x-importerror-cannot-import-name-thread"
+          "Refer to: http://stackoverflow.com/questions/27630114/matplotlib-issue-on-os-x-importerror-cannot-import-name-thread")
 
 
 def train_test_vmaf_on_dataset(train_dataset, test_dataset,
@@ -428,7 +424,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
     if logger:
         logger.info(log)
     else:
-        print log
+        print(log)
 
     # save model
     if output_model_filepath is not None:
@@ -503,7 +499,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         if logger:
             logger.info(log)
         else:
-            print log
+            print(log)
 
         if test_ax is not None:
             test_content_ids = map(lambda asset: asset.content_id, test_assets)
@@ -564,10 +560,10 @@ def cv_on_dataset(dataset, feature_param, model_param, ax, result_store,
         logger=logger,
     )
 
-    print 'Feature parameters: {}'.format(feature_param.feature_dict)
-    print 'Model type: {}'.format(model_param.model_type)
-    print 'Model parameters: {}'.format(model_param.model_param_dict)
-    print 'Stats: {}'.format(model_class.format_stats_for_print(cv_output['aggr_stats']))
+    print('Feature parameters: {}'.format(feature_param.feature_dict))
+    print('Model type: {}'.format(model_param.model_type))
+    print('Model parameters: {}'.format(model_param.model_param_dict))
+    print('Stats: {}'.format(model_class.format_stats_for_print(cv_output['aggr_stats'])))
 
     if ax is not None:
         model_class.plot_scatter(ax, cv_output['aggr_stats'], cv_output['contentids'])
@@ -660,17 +656,17 @@ def explain_model_on_dataset(model, test_assets_selected_indexs,
                              test_dataset_filepath):
 
     def print_assets(test_assets):
-        print '\n'.join(map(
-            lambda (i, asset): "Asset {i}: {name}".format(
-                i=i, name=get_file_name_without_extension(asset.dis_path)),
+        print('\n'.join(map(
+            lambda tasset: "Asset {i}: {name}".format(
+                i=tasset[0], name=get_file_name_without_extension(tasset[1].dis_path)),
             enumerate(test_assets)
-        ))
+        )))
 
     test_dataset = import_python_file(test_dataset_filepath)
     test_assets = read_dataset(test_dataset)
     print_assets(test_assets)
-    print "Assets selected for local explanation: {}".format(
-        test_assets_selected_indexs)
+    print("Assets selected for local explanation: {}".format(
+        test_assets_selected_indexs))
     result_store = FileSystemResultStore()
     test_assets = [test_assets[i] for i in test_assets_selected_indexs]
     test_fassembler = FeatureAssembler(

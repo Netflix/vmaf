@@ -522,7 +522,7 @@ class ResolvingPowerPerfMetric(RawScorePerfMetric):
         for i in range(0, len_centers):
             in_bin = indices(delta_vqm, lambda x:low_limits[i] <= x and x < high_limits[i])
             mean_cdf_z_vqm[i] = np.mean(cdf_z_vqm[in_bin])
-        centers__mean_cdf_z_vqm = filter(lambda (x,y): not np.isnan(y), zip(centers, mean_cdf_z_vqm))
+        centers__mean_cdf_z_vqm = filter(lambda p: not np.isnan(p[1]), zip(centers, mean_cdf_z_vqm))
         centers, mean_cdf_z_vqm = zip(*centers__mean_cdf_z_vqm)
 
         # # % % Optional code to plot resolving power curve.

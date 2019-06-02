@@ -64,7 +64,7 @@ class TrainTestModelTest(unittest.TestCase):
 
     def test_train_save_load_predict(self):
 
-        print "test train, save, load and predict..."
+        print("test train, save, load and predict...")
 
         xs = SklearnRandomForestTrainTestModel.get_xs_from_results(self.features)
         ys = SklearnRandomForestTrainTestModel.get_ys_from_results(self.features)
@@ -83,7 +83,7 @@ class TrainTestModelTest(unittest.TestCase):
 
     def test_train_save_load_predict_libsvmnusvr(self):
 
-        print "test libsvmnusvr train, save, load and predict..."
+        print("test libsvmnusvr train, save, load and predict...")
 
         xs = LibsvmNusvrTrainTestModel.get_xs_from_results(self.features)
         ys = LibsvmNusvrTrainTestModel.get_ys_from_results(self.features)
@@ -107,7 +107,7 @@ class TrainTestModelTest(unittest.TestCase):
 
     def test_train_predict_libsvmnusvr(self):
 
-        print "test libsvmnusvr train and predict..."
+        print("test libsvmnusvr train and predict...")
 
         # libsvmnusvr is bit exact to nusvr
 
@@ -151,7 +151,7 @@ class TrainTestModelTest(unittest.TestCase):
 
     def test_train_predict_randomforest(self):
 
-        print "test random forest train and predict..."
+        print("test random forest train and predict...")
 
         # random forest don't need proper data normalization
 
@@ -195,7 +195,7 @@ class TrainTestModelTest(unittest.TestCase):
 
     def test_train_predict_linearregression(self):
 
-        print "test linear regression train and predict..."
+        print("test linear regression train and predict...")
 
         # linear regression doesn't need proper data normalization
 
@@ -211,7 +211,7 @@ class TrainTestModelTest(unittest.TestCase):
 
     def test_train_predict_extratrees(self):
 
-        print "test extra trees train and predict..."
+        print("test extra trees train and predict...")
 
         # extra trees don't need proper data normalization
 

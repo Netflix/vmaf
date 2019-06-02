@@ -56,10 +56,8 @@ class YuvReader(object):
         return self
 
     def next(self):
-        try:
-            return self.next_y_u_v()
-        except EOFError:
-            raise StopIteration
+        """next() is for python2 only, in python3 all you need to define is __next__(self)"""
+        return self.__next__()
 
     @property
     def num_bytes(self):
@@ -113,7 +111,7 @@ class YuvReader(object):
     def _is_10bitle(self):
         return self.yuv_type in self.SUPPORTED_YUV_10BIT_LE_TYPES
 
-    def next_y_u_v(self):
+    def __next__(self):
 
         y_width = self.width
         y_height = self.height
@@ -130,13 +128,13 @@ class YuvReader(object):
 
         y = np.fromfile(self.file, pix_type, count=y_width*y_height)
         if y.size == 0:
-            raise EOFError
+            raise StopIteration
         u = np.fromfile(self.file, pix_type, count=uv_width*uv_height)
         if u.size == 0:
-            raise EOFError
+            raise StopIteration
         v = np.fromfile(self.file, pix_type, count=uv_width*uv_height)
         if v.size == 0:
-            raise EOFError
+            raise StopIteration
 
         y = y.reshape(y_height, y_width)
         u = u.reshape(uv_height, uv_width)

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from functools import partial
 
 import sys
 import os
@@ -21,10 +20,9 @@ POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'pe
 
 
 def print_usage():
-    print "usage: " + os.path.basename(sys.argv[0]) \
-          + " fmt width height ref_path dis_path [--out-fmt out_fmt]\n"
-    print "fmt:\n\t" + "\n\t".join(FMTS) + "\n"
-    print "out_fmt:\n\t" + "\n\t".join(OUT_FMTS) + "\n"
+    print("usage: %s fmt width height ref_path dis_path [--out-fmt out_fmt]\n" % os.path.basename(sys.argv[0]))
+    print("fmt:\n\t" + "\n\t".join(FMTS) + "\n")
+    print("out_fmt:\n\t" + "\n\t".join(OUT_FMTS) + "\n")
 
 
 def main():
@@ -43,7 +41,7 @@ def main():
         return 2
 
     if width < 0 or height < 0:
-        print "width and height must be non-negative, but are {w} and {h}".format(w=width, h=height)
+        print("width and height must be non-negative, but are {w} and {h}".format(w=width, h=height))
         print_usage()
         return 2
 
@@ -62,7 +60,7 @@ def main():
     pool_method = get_cmd_option(sys.argv, 6, len(sys.argv), '--pool')
     if not (pool_method is None
             or pool_method in POOL_METHODS):
-        print '--pool can only have option among {}'.format(', '.join(POOL_METHODS))
+        print('--pool can only have option among {}'.format(', '.join(POOL_METHODS)))
         return 2
 
     asset = Asset(dataset="cmd", content_id=0, asset_id=0,
@@ -105,11 +103,11 @@ def main():
 
     # output
     if out_fmt == 'xml':
-        print result.to_xml()
+        print(result.to_xml())
     elif out_fmt == 'json':
-        print result.to_json()
-    else: # None or 'text'
-        print str(result)
+        print(result.to_json())
+    else:  # None or 'text'
+        print(str(result))
 
     return 0
 

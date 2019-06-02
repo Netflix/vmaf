@@ -96,7 +96,7 @@ class FeatureAssembler(object):
                     result_dicts[result_index][scores_key] = result[scores_key]
 
         self.results = map(
-            lambda (asset, result_dict): BasicResult(asset, result_dict),
+            lambda tasset: BasicResult(tasset[0], tasset[1]),
             zip(self.assets, result_dicts)
         )
 
