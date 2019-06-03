@@ -1,22 +1,20 @@
 language: python
 python:
   - "2.7"
+  - "3.7"
+
 before_install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update -qq
   - sudo apt-get install -qq g++-4.8
   - export CXX="g++-4.8" CC="gcc-4.8"
   - sudo apt-get install git
+
 install:
-  - pip install --upgrade pip
-  - pip install --upgrade numpy scipy matplotlib pandas
-  - pip install --upgrade scikit-learn scikit-image
-  - pip install --upgrade h5py
-  - pip install --upgrade sureal
+  - pip install tox-travis
+
 script:
   - make
   - sudo make install
   - make testlib
-  - export PYTHONPATH=$PWD/python/src:$PYTHONPATH
-  - python -m unittest discover -s python/test -p '*_test.py'
-  - python -m unittest discover -s python/test/lib -p '*_libtest.py'
+  - tox -c python/
