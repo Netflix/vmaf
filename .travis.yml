@@ -17,4 +17,4 @@ script:
   - make
   - sudo make install
   - make testlib
-  - tox -c python/
+  - TEST_MARKER="main or lib" tox -c python/
