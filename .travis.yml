@@ -1,7 +1,7 @@
 language: python
 python:
   - "2.7"
-  - "3.7"
+  - "3.6"
 
 before_install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
@@ -17,4 +17,4 @@ script:
   - make
   - sudo make install
   - make testlib
-  - TEST_MARKER="main or lib" tox -c python/
+  - tox -c python/ -- -v -p no:warnings -m 'main or lib'
