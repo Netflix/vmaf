@@ -632,8 +632,8 @@ class VmafossexecQualityRunnerSubsamplingTest(unittest.TestCase):
 
         for i in range(48):
             if i % subsample == 0:
-                self.assertAlmostEqual(results0[0]['VMAFOSSEXEC_scores'][i], results[0]['VMAFOSSEXEC_scores'][i / subsample], places=7)
-                self.assertAlmostEqual(results0[1]['VMAFOSSEXEC_scores'][i], results[1]['VMAFOSSEXEC_scores'][i / subsample], places=7)
+                self.assertAlmostEqual(results0[0]['VMAFOSSEXEC_scores'][i], results[0]['VMAFOSSEXEC_scores'][i // subsample], places=7)
+                self.assertAlmostEqual(results0[1]['VMAFOSSEXEC_scores'][i], results[1]['VMAFOSSEXEC_scores'][i // subsample], places=7)
 
 
 class QualityRunnerVersionTest(unittest.TestCase):

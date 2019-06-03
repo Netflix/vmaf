@@ -1,6 +1,6 @@
 import numpy as np
 
-from vmaf import plt
+from vmaf import plt, to_list
 from vmaf.core.cross_validation import ModelCrossValidation
 from vmaf.core.feature_assembler import FeatureAssembler
 from vmaf.core.quality_runner import VmafQualityRunner
@@ -272,18 +272,18 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
             assert False
 
     # plot
-    groundtruths = map(lambda asset: asset.groundtruth, test_assets)
-    predictions = map(lambda result: result[runner_class.get_score_key()], results)
+    groundtruths = to_list(map(lambda asset: asset.groundtruth, test_assets))
+    predictions = to_list(map(lambda result: result[runner_class.get_score_key()], results))
     raw_grountruths = None if test_raw_assets is None else \
-        map(lambda asset: asset.raw_groundtruth, test_raw_assets)
+        to_list(map(lambda asset: asset.raw_groundtruth, test_raw_assets))
     groundtruths_std = None if test_assets is None else \
-        map(lambda asset: asset.groundtruth_std, test_assets)
+        to_list(map(lambda asset: asset.groundtruth_std, test_assets))
     try:
-        predictions_bagging = map(lambda result: result[runner_class.get_bagging_score_key()], results)
-        predictions_stddev = map(lambda result: result[runner_class.get_stddev_score_key()], results)
-        predictions_ci95_low = map(lambda result: result[runner_class.get_ci95_low_score_key()], results)
-        predictions_ci95_high = map(lambda result: result[runner_class.get_ci95_high_score_key()], results)
-        predictions_all_models = map(lambda result: result[runner_class.get_all_models_score_key()], results)
+        predictions_bagging = to_list(map(lambda result: result[runner_class.get_bagging_score_key()], results))
+        predictions_stddev = to_list(map(lambda result: result[runner_class.get_stddev_score_key()], results))
+        predictions_ci95_low = to_list(map(lambda result: result[runner_class.get_ci95_low_score_key()], results))
+        predictions_ci95_high = to_list(map(lambda result: result[runner_class.get_ci95_high_score_key()], results))
+        predictions_all_models = to_list(map(lambda result: result[runner_class.get_all_models_score_key()], results))
 
         # need to revert the list of lists, so that the outer list has the predictions for each model separately
         predictions_all_models = np.array(predictions_all_models).T.tolist()
@@ -315,13 +315,13 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
             model_type.format_across_model_stats_for_print(model_type.extract_across_model_stats(stats))))
 
     if ax is not None:
-        content_ids = map(lambda asset: asset.content_id, test_assets)
+        content_ids = to_list(map(lambda asset: asset.content_id, test_assets))
 
         if 'point_label' in kwargs:
             if kwargs['point_label'] == 'asset_id':
-                point_labels = map(lambda asset: asset.asset_id, test_assets)
+                point_labels = to_list(map(lambda asset: asset.asset_id, test_assets))
             elif kwargs['point_label'] == 'dis_path':
-                point_labels = map(lambda asset: get_file_name_without_extension(asset.dis_path), test_assets)
+                point_labels = to_list(map(lambda asset: get_file_name_without_extension(asset.dis_path), test_assets))
             else:
                 raise AssertionError("Unknown point_label {}".format(kwargs['point_label']))
         else:
@@ -416,7 +416,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
     train_ys_pred = VmafQualityRunner.predict_with_model(model, train_xs, **kwargs)['ys_pred']
 
     raw_groundtruths = None if train_raw_assets is None else \
-        map(lambda asset: asset.raw_groundtruth, train_raw_assets)
+        to_list(map(lambda asset: asset.raw_groundtruth, train_raw_assets))
 
     train_stats = model.get_stats(train_ys['label'], train_ys_pred, ys_label_raw=raw_groundtruths)
 
@@ -431,7 +431,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         model.to_file(output_model_filepath)
 
     if train_ax is not None:
-        train_content_ids = map(lambda asset: asset.content_id, train_assets)
+        train_content_ids = to_list(map(lambda asset: asset.content_id, train_assets))
         model_class.plot_scatter(train_ax, train_stats, content_ids=train_content_ids)
 
         train_ax.set_xlabel('True Score')
@@ -491,7 +491,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         test_ys_pred = VmafQualityRunner.predict_with_model(model, test_xs, **kwargs)['ys_pred']
 
         raw_groundtruths = None if test_raw_assets is None else \
-            map(lambda asset: asset.raw_groundtruth, test_raw_assets)
+            to_list(map(lambda asset: asset.raw_groundtruth, test_raw_assets))
 
         test_stats = model.get_stats(test_ys['label'], test_ys_pred, ys_label_raw=raw_groundtruths)
 
@@ -502,7 +502,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
             print(log)
 
         if test_ax is not None:
-            test_content_ids = map(lambda asset: asset.content_id, test_assets)
+            test_content_ids = to_list(map(lambda asset: asset.content_id, test_assets))
             model_class.plot_scatter(test_ax, test_stats, content_ids=test_content_ids)
             test_ax.set_xlabel('True Score')
             test_ax.set_ylabel("Predicted Score")
@@ -518,7 +518,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
 
 def construct_kfold_list(assets, contentid_groups):
     # construct cross validation kfold input list
-    content_ids = map(lambda asset: asset.content_id, assets)
+    content_ids = to_list(map(lambda asset: asset.content_id, assets))
     kfold = []
     for curr_content_group in contentid_groups:
         curr_indices = indices(content_ids, lambda x: x in curr_content_group)

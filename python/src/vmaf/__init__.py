@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 try:
     from matplotlib import pyplot as plt
@@ -14,13 +15,24 @@ except BaseException:
     #   See 'Working with Matplotlib on OSX' in the Matplotlib FAQ for more information.
     plt = None
 
-from vmaf.tools.misc import run_process
 
 # Path to folder containing this file
 VMAF_LIB_FOLDER = os.path.dirname(os.path.abspath(__file__))
 
 # Assuming vmaf source checkout, path to top checked out folder
 VMAF_PROJECT = os.path.abspath(os.path.join(VMAF_LIB_FOLDER, '../../..',))
+
+def to_list(value):
+    """list: python3's map returns an iterable, not subscriptable"""
+    if value is None or isinstance(value, list):
+        return value
+    return list(value)
+
+def run_process(cmd, **kwargs):
+    ret = subprocess.call(cmd, **kwargs)
+    assert ret == 0, 'Process returned {ret}, cmd: {cmd}'.format(ret=ret, cmd=cmd)
+    return ret
+
 
 def project_path(relative_path):
     path = os.path.join(VMAF_PROJECT, relative_path)

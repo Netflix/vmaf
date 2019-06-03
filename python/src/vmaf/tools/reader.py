@@ -112,7 +112,6 @@ class YuvReader(object):
         return self.yuv_type in self.SUPPORTED_YUV_10BIT_LE_TYPES
 
     def __next__(self):
-
         y_width = self.width
         y_height = self.height
         uv_w_multiplier, uv_h_multiplier = self._get_uv_width_height_multiplier()

@@ -3,6 +3,9 @@ __license__ = "Apache, Version 2.0"
 
 import numpy as np
 
+from vmaf import to_list
+
+
 class ListStats(object):
     """
     >>> test_list = [1, 2, 3, 4, 5, 11, 12, 13, 14, 15]
@@ -121,7 +124,7 @@ class ListStats(object):
 
     @staticmethod
     def nonemean(my_list):
-        return np.mean(filter(lambda x: x is not None, my_list))
+        return np.mean(to_list(filter(lambda x: x is not None, my_list)))
 
 if __name__ == '__main__':
     import doctest

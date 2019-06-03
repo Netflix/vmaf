@@ -6,6 +6,7 @@ from numbers import Number
 from sklearn.metrics import f1_score
 import numpy as np
 
+from vmaf import to_list
 from vmaf.tools.decorator import deprecated
 from vmaf.tools.misc import indices
 from vmaf.core.mixin import TypeVersionEnabled
@@ -390,7 +391,7 @@ class TrainTestModel(TypeVersionEnabled):
     @mus.setter
     def mus(self, value):
         # forcing float, to be used by PicklingTools and read in C++
-        self.model_dict['mus'] = map(lambda x: float(x), list(value))
+        self.model_dict['mus'] = to_list(map(lambda x: float(x), list(value)))
 
     @property
     def sds(self):
@@ -399,7 +400,7 @@ class TrainTestModel(TypeVersionEnabled):
     @sds.setter
     def sds(self, value):
         # forcing float, to be used by PicklingTools and read in C++
-        self.model_dict['sds'] = map(lambda x: float(x), list(value))
+        self.model_dict['sds'] = to_list(map(lambda x: float(x), list(value)))
 
     @property
     def slopes(self):
@@ -408,7 +409,7 @@ class TrainTestModel(TypeVersionEnabled):
     @slopes.setter
     def slopes(self, value):
         # forcing float, to be used by PicklingTools and read in C++
-        self.model_dict['slopes'] = map(lambda x: float(x), list(value))
+        self.model_dict['slopes'] = to_list(map(lambda x: float(x), list(value)))
 
     @property
     def intercepts(self):
@@ -417,7 +418,7 @@ class TrainTestModel(TypeVersionEnabled):
     @intercepts.setter
     def intercepts(self, value):
         # forcing float, to be used by PicklingTools and read in C++
-        self.model_dict['intercepts'] = map(lambda x: float(x), list(value))
+        self.model_dict['intercepts'] = to_list(map(lambda x: float(x), list(value)))
 
     @property
     def model(self):
@@ -659,16 +660,17 @@ class TrainTestModel(TypeVersionEnabled):
             # or get_ordered_list_scores_key. Instead, just get the sorted keys
             feature_names = results[0].get_ordered_results()
 
+        feature_names = to_list(feature_names)
         cls._assert_dimension(feature_names, results)
 
         # collect results into xs
         xs = {}
         for name in feature_names:
             if indexs is not None:
-                _results = map(lambda i:results[i], indexs)
+                _results = to_list(map(lambda i:results[i], indexs))
             else:
                 _results = results
-            xs[name] = map(lambda result: result[name], _results)
+            xs[name] = to_list(map(lambda result: result[name], _results))
         return xs
 
     @classmethod
@@ -703,13 +705,13 @@ class TrainTestModel(TypeVersionEnabled):
         """
         ys = {}
         if indexs is not None:
-            _results = map(lambda i:results[i], indexs)
+            _results = to_list(map(lambda i:results[i], indexs))
         else:
             _results = results
         ys['label'] = \
-            np.array(map(lambda result: result.asset.groundtruth, _results))
+            np.array(to_list(map(lambda result: result.asset.groundtruth, _results)))
         ys['content_id'] = \
-            np.array(map(lambda result: result.asset.content_id, _results))
+            np.array(to_list(map(lambda result: result.asset.content_id, _results)))
         return ys
 
     @classmethod

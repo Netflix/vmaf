@@ -1,6 +1,5 @@
 from fnmatch import fnmatch
 import multiprocessing
-import subprocess
 from time import sleep, time
 import itertools
 
@@ -12,6 +11,7 @@ import errno
 import os
 import re
 
+from vmaf import run_process, to_list
 from vmaf.tools.scanf import sscanf, IncompleteCaptureError, FormatError
 
 try:
@@ -332,8 +332,7 @@ def parallel_map(func, list_args, processes=None):
 
     # finally, collect results
     rets = map(lambda idx: return_dict[idx], range(len(list_args)))
-
-    return rets
+    return to_list(rets)
 
 
 def check_program_exist(program):
@@ -409,12 +408,6 @@ def match_any_files(template):
         if check_scanf_match(filepath, template):
             return True
     return False
-
-
-def run_process(cmd, **kwargs):
-    ret = subprocess.call(cmd, **kwargs)
-    assert ret == 0, 'Process returned {ret}, cmd: {cmd}'.format(ret=ret, cmd=cmd)
-    return ret
 
 
 def unroll_dict_of_lists(dict_of_lists):

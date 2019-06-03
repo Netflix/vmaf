@@ -5,7 +5,14 @@ __license__ = "Apache, Version 2.0"
 
 import random
 from math import floor
-import itertools
+
+
+try:
+    long
+except NameError:
+    # TODO: remove this once python2 support is dropped, in python3 all int are as long as you want
+    long = int
+
 
 class ModelCrossValidation(object):
 

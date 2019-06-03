@@ -20,7 +20,7 @@ class VmafExternalConfig(object):
         :return str: Configured path, if any
         """
         try:
-            import externals
+            from . import externals
             path = getattr(externals, name, None)
             if path and os.path.exists(path):
                 return path

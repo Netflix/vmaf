@@ -3,7 +3,8 @@ import multiprocessing
 import os
 from time import sleep
 import hashlib
-from vmaf.core.asset import Asset
+
+from vmaf import to_list
 from vmaf.tools.decorator import deprecated
 
 from vmaf.tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_slash, \
@@ -122,7 +123,7 @@ class Executor(TypeVersionEnabled):
 
             self.results = parallel_map(_run, list_args)
         else:
-            self.results = map(self._run_on_asset, self.assets)
+            self.results = to_list(map(self._run_on_asset, self.assets))
 
     def remove_results(self):
         """
