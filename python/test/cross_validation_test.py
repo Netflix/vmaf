@@ -4,8 +4,6 @@ __license__ = "Apache, Version 2.0"
 import sys
 import unittest
 
-import pytest
-
 from vmaf.core.train_test_model import SklearnRandomForestTrainTestModel, LibsvmNusvrTrainTestModel, \
     SklearnExtraTreesTrainTestModel
 from vmaf.core.cross_validation import ModelCrossValidation
@@ -131,7 +129,7 @@ class CrossValidationTest(unittest.TestCase):
 
         self.assertEquals(dicts, expected_dicts)
 
-    @pytest.mark.skipif(sys.version_info > (3,), reason="check randomness order in py3")
+    @unittest.skipIf(sys.version_info > (3,), reason="check randomness order in py3")
     def test_sample_model_param_list(self):
         import random
         random.seed(0)

@@ -5,8 +5,6 @@ import os
 import unittest
 import sys
 
-import pytest
-
 from vmaf.config import VmafConfig
 from vmaf.core.asset import Asset, NorefAsset
 from vmaf.core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner, \
@@ -351,7 +349,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_score'], 97.427927701008869, places=4)
         self.assertAlmostEqual(results[1]['VMAF_score'], 97.428042675471147, places=4)
 
-    @pytest.mark.skipif(sys.version_info > (3,), reason="nflx_vmaff_rf_v2.pkl fails to pickle.load() with python3")
+    @unittest.skipIf(sys.version_info > (3,), reason="nflx_vmaff_rf_v2.pkl fails to pickle.load() with python3")
     def test_run_vmaf_runner_with_rf_model(self):
         print('test on running VMAF runner with custom input model...')
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -1069,7 +1067,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['BAGGING_VMAF_stddev_score'], 0.6812993325967104, places=4)
         self.assertAlmostEqual(results[1]['BAGGING_VMAF_stddev_score'], 0.03947607207290399, places=4)
 
-    @pytest.mark.skipif(sys.version_info > (3,), reason="niqe_v0.1.pkl fails to pickle.load() with python3")
+    @unittest.skipIf(sys.version_info > (3,), reason="niqe_v0.1.pkl fails to pickle.load() with python3")
     def test_run_niqe_runner(self):
         print('test on running NIQE runner on images...')
         ref1_path = VmafConfig.test_resource_path("test_image_yuv", "100007.yuv")
@@ -1299,7 +1297,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['PSNR_score'], 30.755063979166664, places=4)
         self.assertAlmostEqual(results[1]['PSNR_score'], 60.0, places=4)
 
-    @pytest.mark.skipif(sys.version_info > (3,), reason="nflx_vmaff_rf_v2.pkl fails to pickle.load() with python3")
+    @unittest.skipIf(sys.version_info > (3,), reason="nflx_vmaff_rf_v2.pkl fails to pickle.load() with python3")
     def test_run_parallel_vamf_runner_with_rf_model(self):
         print('test on running VMAF quality runner in parallel with RF model...')
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -1462,7 +1460,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[2]['PSNR_score'], 30.755063979166664, places=4)
         self.assertAlmostEqual(results[3]['PSNR_score'], 30.755063979166664, places=4)
 
-    @pytest.mark.skipif(sys.version_info > (3,), reason="niqe_v0.1.pkl fails to pickle.load() with python3")
+    @unittest.skipIf(sys.version_info > (3,), reason="niqe_v0.1.pkl fails to pickle.load() with python3")
     def test_run_parallel_niqe_runner(self):
         print('test on running NIQE runner in parallel...')
         ref1_path = VmafConfig.test_resource_path("test_image_yuv", "100007.yuv")
