@@ -35,6 +35,7 @@ class YuvReader(object):
 
         self._asserts()
 
+        # TODO python3: this doesn't work well with python3, need to refactor this class
         self.file = open(self.filepath, 'rb')
 
     def close(self):

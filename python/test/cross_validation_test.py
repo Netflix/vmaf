@@ -129,7 +129,7 @@ class CrossValidationTest(unittest.TestCase):
 
         self.assertEquals(dicts, expected_dicts)
 
-    @unittest.skipIf(sys.version_info > (3,), reason="check randomness order in py3")
+    @unittest.skipIf(sys.version_info > (3,), reason="TODO python3: check randomness order in py3")
     def test_sample_model_param_list(self):
         import random
         random.seed(0)

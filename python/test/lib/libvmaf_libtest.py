@@ -1,15 +1,15 @@
-import unittest
-from vmaf import project_path, required
-from vmaf.config import VmafConfig
-from vmaf.core.asset import Asset
-from vmaf.core.quality_runner import VmafossExecQualityRunner
-from vmaf.core.result_store import FileSystemResultStore
-
-__copyright__ = "Copyright 2016-2018, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
-
 # TODO: is this test still applicable? Did a build, but don't see wrapper/testlib
 
+# import unittest
+# from vmaf import project_path, required
+# from vmaf.config import VmafConfig
+# from vmaf.core.asset import Asset
+# from vmaf.core.quality_runner import VmafossExecQualityRunner
+# from vmaf.core.result_store import FileSystemResultStore
+#
+# __copyright__ = "Copyright 2016-2018, Netflix, Inc."
+# __license__ = "Apache, Version 2.0"
+#
 # class TestLibRunner(VmafossExecQualityRunner):
 #
 #     TYPE = "TESTLIB"

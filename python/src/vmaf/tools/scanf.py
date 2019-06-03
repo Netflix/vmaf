@@ -169,15 +169,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 
+import string
 import sys
 import unittest
-from string import whitespace as WHITESPACE
-from string import digits as DIGITS
 
 try:
     import StringIO
 
-    StringIO = StringIO.StringIO  # remove this once python2 support is dropped
+    StringIO = StringIO.StringIO  # TODO: remove this once python2 support is dropped
 
 except ImportError:
     from io import StringIO
@@ -185,6 +184,13 @@ except ImportError:
 
 __all__ = ['scanf', 'sscanf', 'fscanf']
 __version__ = '1.0'
+
+# We keep a few sets as module variables just to incur the cost of constructing them just once.
+_DIGIT_SET = set(string.digits)
+_HEX_SET = set("0123456789ABCDEFabcdef")
+_OCT_SET = set("01234567")
+_PLUS_MINUS_SET = set("+-")
+_WHITESPACE_SET = set(string.whitespace)
 
 
 class CharacterBuffer(object):
@@ -212,7 +218,7 @@ class CharacterBuffer(object):
         chars = []
         countChars = 0
         while True:
-            if (maxChars != 0 and countChars >= maxChars):
+            if maxChars != 0 and countChars >= maxChars:
                 break
             ch = self.getch()
             if ch != '' and predicate(ch):
@@ -413,7 +419,7 @@ characters."""
     return parser(buffer)
 
 
-def isWhitespaceChar(ch, _set=WHITESPACE):
+def isWhitespaceChar(ch, _set=_WHITESPACE_SET):
     """Returns true if the charcter looks like whitespace.
     We follow the definition of C's isspace() function.
     """
@@ -432,13 +438,6 @@ def handleWhitespace(buffer):
             break
     return ''.join(chars)
 
-
-# We keep a few sets as module variables just to incur the cost of
-# constructing them just once.
-_PLUS_MINUS_SET = set("+-")
-_DIGIT_SET = set(DIGITS)
-_OCT_SET = set("01234567")
-_HEX_SET = set("0123456789ABCDEFabcdef")
 
 def handleDecimalInt(buffer, optional=False, allowLeadingWhitespace=True):
     """Tries to scan for an integer.  If 'optional' is set to False,

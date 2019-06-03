@@ -23,7 +23,12 @@ VMAF_LIB_FOLDER = os.path.dirname(os.path.abspath(__file__))
 VMAF_PROJECT = os.path.abspath(os.path.join(VMAF_LIB_FOLDER, '../../..',))
 
 def to_list(value):
-    """list: python3's map returns an iterable, not subscriptable"""
+    """
+    TODO python3: map() and filter() return a generator in python3, however vmaf assumes list
+
+    Returns:
+        (list): `value` converted to a list when applicable
+    """
     if value is None or isinstance(value, list):
         return value
     return list(value)
