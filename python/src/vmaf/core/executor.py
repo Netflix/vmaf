@@ -405,8 +405,8 @@ class Executor(TypeVersionEnabled):
 
         workfile_yuv_type = self._get_workfile_yuv_type(asset)
 
-        crop_cmd = self._get_crop_cmd(asset)
-        pad_cmd = self._get_pad_cmd(asset)
+        crop_cmd = self._get_ref_crop_cmd(asset)
+        pad_cmd = self._get_ref_pad_cmd(asset)
 
         vframes_cmd, select_cmd = self._get_vframes_cmd(asset, 'ref')
 
@@ -457,8 +457,8 @@ class Executor(TypeVersionEnabled):
 
         workfile_yuv_type = self._get_workfile_yuv_type(asset)
 
-        crop_cmd = self._get_crop_cmd(asset)
-        pad_cmd = self._get_pad_cmd(asset)
+        crop_cmd = self._get_dis_crop_cmd(asset)
+        pad_cmd = self._get_dis_pad_cmd(asset)
 
         vframes_cmd, select_cmd = self._get_vframes_cmd(asset, 'dis')
 
@@ -514,14 +514,24 @@ class Executor(TypeVersionEnabled):
         else:
             return ""
 
-    def _get_crop_cmd(self, asset):
+    def _get_ref_crop_cmd(self, asset):
         crop_cmd = "crop={},".format(
-            asset.crop_cmd) if asset.crop_cmd is not None else ""
+            asset.ref_crop_cmd) if asset.ref_crop_cmd is not None else ""
         return crop_cmd
 
-    def _get_pad_cmd(self, asset):
+    def _get_ref_pad_cmd(self, asset):
         pad_cmd = "pad={},".format(
-            asset.pad_cmd) if asset.pad_cmd is not None else ""
+            asset.ref_pad_cmd) if asset.ref_pad_cmd is not None else ""
+        return pad_cmd
+
+    def _get_dis_crop_cmd(self, asset):
+        crop_cmd = "crop={},".format(
+            asset.dis_crop_cmd) if asset.dis_crop_cmd is not None else ""
+        return crop_cmd
+
+    def _get_dis_pad_cmd(self, asset):
+        pad_cmd = "pad={},".format(
+            asset.dis_pad_cmd) if asset.dis_pad_cmd is not None else ""
         return pad_cmd
 
     def _get_vframes_cmd(self, asset, ref_or_dis):
