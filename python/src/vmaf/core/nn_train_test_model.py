@@ -5,7 +5,12 @@ import sys
 import numpy as np
 import scipy.stats
 from sklearn.metrics import f1_score
-import tensorflow as tf
+
+try:
+    import tensorflow as tf
+
+except ImportError:
+    tf = None
 
 from vmaf.core.h5py_mixin import H5pyMixin
 from vmaf.core.train_test_model import RawVideoTrainTestModelMixin, TrainTestModel, \

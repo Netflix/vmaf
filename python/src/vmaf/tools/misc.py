@@ -414,8 +414,9 @@ def unroll_dict_of_lists(dict_of_lists):
     """ Unfold a dictionary of lists into a list of dictionaries.
 
     >>> dict_of_lists = {'norm_type':['normalize'], 'n_estimators':[10, 50], 'random_state': [0]}
-    >>> sorted(unroll_dict_of_lists(dict_of_lists))
-    [{'n_estimators': 10, 'norm_type': 'normalize', 'random_state': 0}, {'n_estimators': 50, 'norm_type': 'normalize', 'random_state': 0}]
+    >>> expected = [{'n_estimators': 10, 'norm_type': 'normalize', 'random_state': 0}, {'n_estimators': 50, 'norm_type': 'normalize', 'random_state': 0}]
+    >>> unroll_dict_of_lists(dict_of_lists) == expected
+    True
 
     """
     keys = sorted(dict_of_lists.keys()) # normalize order
@@ -488,8 +489,8 @@ class Timer(object):
 
 def dedup_value_in_dict(d):
     """
-    >>> dedup_value_in_dict({'a': 1, 'b': 1, 'c': 2})
-    {'a': 1, 'c': 2}
+    >>> dedup_value_in_dict({'a': 1, 'b': 1, 'c': 2}) == {'a': 1, 'c': 2}
+    True
     """
     reversed_d = dict()
     keys = sorted(d.keys())
