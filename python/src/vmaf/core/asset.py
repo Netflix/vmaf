@@ -398,6 +398,16 @@ class Asset(WorkdirEnabled):
             start, end = self.ref_start_end_frame
             s += "_{start}to{end}".format(start=start, end=end)
 
+        if self.ref_crop_cmd is not None:
+            if s != "":
+                s += "_"
+            s += "crop{}".format(self.ref_crop_cmd)
+
+        if self.ref_pad_cmd is not None:
+            if s != "":
+                s += "_"
+            s += "pad{}".format(self.ref_pad_cmd)
+
         return s
 
     @property
@@ -421,6 +431,16 @@ class Asset(WorkdirEnabled):
         if self.dis_start_end_frame:
             start, end = self.dis_start_end_frame
             s += "_{start}to{end}".format(start=start, end=end)
+
+        if self.dis_crop_cmd is not None:
+            if s != "":
+                s += "_"
+            s += "crop{}".format(self.dis_crop_cmd)
+
+        if self.dis_pad_cmd is not None:
+            if s != "":
+                s += "_"
+            s += "pad{}".format(self.dis_pad_cmd)
 
         return s
 
@@ -446,16 +466,6 @@ class Asset(WorkdirEnabled):
             if s != "":
                 s += "_"
             s += "{}".format(self.resampling_type)
-
-        if self.crop_cmd is not None:
-            if s != "":
-                s += "_"
-            s += "crop{}".format(self.crop_cmd)
-
-        if self.pad_cmd is not None:
-            if s != "":
-                s += "_"
-            s += "pad{}".format(self.pad_cmd)
 
         return s
 
@@ -680,6 +690,43 @@ class Asset(WorkdirEnabled):
             return self.asset_dict['pad_cmd']
         else:
             return None
+
+    @property
+    def ref_crop_cmd(self):
+        if 'ref_crop_cmd' in self.asset_dict:
+            return self.asset_dict['ref_crop_cmd']
+        elif 'crop_cmd' in self.asset_dict:
+            return self.asset_dict['crop_cmd']
+        else:
+            return None
+
+    @property
+    def dis_crop_cmd(self):
+        if 'dis_crop_cmd' in self.asset_dict:
+            return self.asset_dict['dis_crop_cmd']
+        elif 'crop_cmd' in self.asset_dict:
+            return self.asset_dict['crop_cmd']
+        else:
+            return None
+
+    @property
+    def ref_pad_cmd(self):
+        if 'ref_pad_cmd' in self.asset_dict:
+            return self.asset_dict['ref_pad_cmd']
+        elif 'pad_cmd' in self.asset_dict:
+            return self.asset_dict['pad_cmd']
+        else:
+            return None
+
+    @property
+    def dis_pad_cmd(self):
+        if 'dis_pad_cmd' in self.asset_dict:
+            return self.asset_dict['dis_pad_cmd']
+        elif 'pad_cmd' in self.asset_dict:
+            return self.asset_dict['pad_cmd']
+        else:
+            return None
+
 
 class NorefAsset(Asset):
     """
