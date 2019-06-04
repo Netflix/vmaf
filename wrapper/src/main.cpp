@@ -154,7 +154,7 @@ int run_wrapper(char *fmt, int width, int height, char *ref_path, char *dis_path
 
     if (!(s->dis_rfile = fopen(dis_path, "rb")))
     {
-        fprintf(stderr, "fopen ref_path %s failed.\n", dis_path);
+        fprintf(stderr, "fopen dis_path %s failed.\n", dis_path);
         ret = 1;
         goto fail_or_end;
     }
