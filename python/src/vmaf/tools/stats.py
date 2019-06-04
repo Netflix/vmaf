@@ -23,10 +23,6 @@ class ListStats(object):
     1.4500000000000002
     >>> ListStats.perc20(test_list)
     2.8000000000000003
-    >>> ListStats.print_stats(test_list)
-    Min: 1, Max: 15, Median: 8.0, Mean: 8.0, Variance: 27.0, Total_variation: 1.55555555556
-    >>> ListStats.print_moving_average_stats(test_list, 3)
-    Min: 2.67984333217, Max: 13.6798433322, Median: 4.64565264023, Mean: 6.61976499826, Variance: 18.625918874, Total_variation: 1.22222222222
     >>> ListStats.nonemean([None, None, 1, 2])
     1.5
     >>> ListStats.nonemean([3, 4, 1, 2])
@@ -36,6 +32,12 @@ class ListStats(object):
     """
 
     """
+    The following tests don't render numbers with same precision in py2 vs py3:
+    >> ListStats.print_stats(test_list)
+    Min: 1, Max: 15, Median: 8.0, Mean: 8.0, Variance: 27.0, Total_variation: 1.55555555556
+    >> ListStats.print_moving_average_stats(test_list, 3)
+    Min: 2.67984333217, Max: 13.6798433322, Median: 4.64565264023, Mean: 6.61976499826, Variance: 18.625918874, Total_variation: 1.22222222222
+    
     The following tests need review
     >> ListStats.moving_average(test_list, 2)
     array([  2.26894142,   2.26894142,   2.26894142,   3.26894142,
