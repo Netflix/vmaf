@@ -51,7 +51,7 @@ void print_usage(int argc, char *argv[])
 {
     fprintf(stderr, "Usage: %s fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--thread n_thread] [--subsample n_subsample] [--disable-clip] [--disable-avx] [--psnr] [--ssim] [--ms-ssim] [--phone-model] [--ci]\n", argv[0]);
     fprintf(stderr, "fmt:\n\tyuv420p\n\tyuv422p\n\tyuv444p\n\tyuv420p10le\n\tyuv422p10le\n\tyuv444p10le\n\n");
-    fprintf(stderr, "log_fmt:\n\txml (default)\n\tjson\n\n");
+    fprintf(stderr, "log_fmt:\n\txml (default)\n\tjson\n\tcsv\n\n");
     fprintf(stderr, "n_thread:\n\tmaximum threads to use (default 0 - use all threads)\n\n");
     fprintf(stderr, "n_subsample:\n\tn indicates computing on one of every n frames (default 1)\n\n");
 }
@@ -242,9 +242,9 @@ int main(int argc, char *argv[])
     log_path = getCmdOption(argv + 7, argv + argc, "--log");
 
     log_fmt = getCmdOption(argv + 7, argv + argc, "--log-fmt");
-    if (log_fmt != NULL && !(strcmp(log_fmt, "xml")==0 || strcmp(log_fmt, "json")==0))
+    if (log_fmt != NULL && !(strcmp(log_fmt, "xml")==0 || strcmp(log_fmt, "json")==0 || strcmp(log_fmt, "csv") == 0))
     {
-        fprintf(stderr, "Error: log_fmt must be xml or json, but is %s\n", log_fmt);
+        fprintf(stderr, "Error: log_fmt must be xml, json or csv, but is %s\n", log_fmt);
         return -1;
     }
 
