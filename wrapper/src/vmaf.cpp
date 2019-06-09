@@ -1146,6 +1146,28 @@ double RunVmaf(const char* fmt, int width, int height,
         JSONPrint(top, log_file, 0, true, 2);
         log_file.close();
     }
+	else if (log_path != NULL && log_fmt != NULL && (strcmp(log_fmt, "csv") == 0))
+	{
+		/* output to csv */
+		FILE *csv = fopen(log_path, "wt");
+		fprintf(csv, "Frame,Width,Height,");
+		for (size_t j = 0; j < result_keys.size(); j++)
+		{
+			fprintf(csv, "%s,", result_keys[j].c_str());
+		}
+		fprintf(csv, "\n");
+		for (size_t i_subsampled = 0; i_subsampled<num_frames_subsampled; i_subsampled++)
+		{
+			int frameNum = i_subsampled * n_subsample;
+			fprintf(csv, "%d,%d,%d,", frameNum, width, height);
+			for (size_t j = 0; j<result_keys.size(); j++)
+			{
+				fprintf(csv, "%4.4f,", (float)result.get_scores(result_keys[j].c_str()).at(i_subsampled));
+			}
+			fprintf(csv, "\n");
+		}
+		fclose(csv);
+	}
     else if (log_path != NULL)
     {
         /* output to xml */
