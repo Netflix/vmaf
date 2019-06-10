@@ -1,6 +1,6 @@
 # Notes on python2 / python3 support
 
-A `tox.ini` was added to help provide support for python3 in vmaf.
+A `tox.ini` was added to help provide support for python3. Before running tests using tox, be sure to first run `make` under the root directory.
 
 First draft allows to do this:
 
