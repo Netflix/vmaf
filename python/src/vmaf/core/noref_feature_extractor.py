@@ -12,6 +12,7 @@ __license__ = "Apache, Version 2.0"
 
 import numpy as np
 
+from vmaf import to_list
 from vmaf.core.feature_extractor import FeatureExtractor
 from vmaf.tools.reader import YuvReader
 
@@ -78,10 +79,8 @@ class MomentNorefFeatureExtractor(NorefExecutorMixin, FeatureExtractor):
         var_scores_key = cls.get_scores_key('var')
         first_scores_key = cls.get_scores_key('1st')
         second_scores_key = cls.get_scores_key('2nd')
-        get_var = lambda (m1, m2): m2 - m1 * m1
-        result.result_dict[var_scores_key] = \
-            map(get_var, zip(result.result_dict[first_scores_key],
-                             result.result_dict[second_scores_key]))
+        value = map(lambda m: m[1] - m[0] * m[0], zip(result.result_dict[first_scores_key], result.result_dict[second_scores_key]))
+        result.result_dict[var_scores_key] = to_list(value)
 
         # validate
         for feature in cls.DERIVED_ATOM_FEATURES:
@@ -384,8 +383,8 @@ class NiqeNorefFeatureExtractor(BrisqueNorefFeatureExtractor):
 
         for j in range(0, h-block_h+1, shift_h):
             for i in range(0, w-block_w+1, shift_w):
-                m_patch1 = m_image1[j  :(j+block_h),   i  :(i+block_w)  ]
-                m_patch2 = m_image2[j/2:(j+block_h)/2, i/2:(i+block_w)/2]
+                m_patch1 = m_image1[j:j + block_h, i:i + block_w]
+                m_patch2 = m_image2[j // 2:(j + block_h) // 2, i // 2:(i + block_w) // 2]
 
                 alpha_m1, N1, bl1, br1, lsq1, rsq1 = cls.extract_aggd_features(m_patch1)
                 alpha_m2, N2, bl2, br2, lsq2, rsq2 = cls.extract_aggd_features(m_patch2)

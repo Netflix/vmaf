@@ -10,7 +10,7 @@ import re
 import numpy as np
 import ast
 
-from vmaf import ExternalProgramCaller
+from vmaf import ExternalProgramCaller, to_list
 from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.executor import Executor
 from vmaf.core.result import Result
@@ -461,13 +461,13 @@ class MomentFeatureExtractor(FeatureExtractor):
         disvar_scores_key = cls.get_scores_key('disvar')
         dis1st_scores_key = cls.get_scores_key('dis1st')
         dis2nd_scores_key = cls.get_scores_key('dis2nd')
-        get_var = lambda (m1, m2): m2 - m1 * m1
+        get_var = lambda m: m[1] - m[0] * m[0]
         result.result_dict[refvar_scores_key] = \
-            map(get_var, zip(result.result_dict[ref1st_scores_key],
-                             result.result_dict[ref2nd_scores_key]))
+            to_list(map(get_var, zip(result.result_dict[ref1st_scores_key],
+                             result.result_dict[ref2nd_scores_key])))
         result.result_dict[disvar_scores_key] = \
-            map(get_var, zip(result.result_dict[dis1st_scores_key],
-                             result.result_dict[dis2nd_scores_key]))
+            to_list(map(get_var, zip(result.result_dict[dis1st_scores_key],
+                             result.result_dict[dis2nd_scores_key])))
 
         # validate
         for feature in cls.DERIVED_ATOM_FEATURES:

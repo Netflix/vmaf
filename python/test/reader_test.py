@@ -28,7 +28,7 @@ class YuvReaderTest(unittest.TestCase):
             height=324,
             yuv_type='yuv420p'
         ) as yuv_reader:
-            self.assertEquals(yuv_reader.file.__class__, file)
+            assert hasattr(yuv_reader.file, "read")
 
     def test_next_y_u_v(self):
         with YuvReader(
@@ -38,7 +38,7 @@ class YuvReaderTest(unittest.TestCase):
             yuv_type='yuv420p'
         ) as yuv_reader:
 
-            y, u, v = yuv_reader.next_y_u_v()
+            y, u, v = yuv_reader.__next__()
 
             self.assertEquals(y[0][0], 87)
             self.assertEquals(y[0][1], 131)
@@ -56,7 +56,7 @@ class YuvReaderTest(unittest.TestCase):
             self.assertAlmostEquals(u.mean(), 114.6326517489712, places=4)
             self.assertAlmostEquals(v.mean(), 122.05084019204389, places=4)
 
-            y, u, v = yuv_reader.next_y_u_v()
+            y, u, v = yuv_reader.__next__()
 
             self.assertEquals(y[0][0], 142)
             self.assertEquals(y[0][1], 128)
@@ -113,7 +113,7 @@ class YuvReaderTest10le(unittest.TestCase):
             yuv_type='yuv422p10le'
         ) as yuv_reader:
 
-            y, u, v = yuv_reader.next_y_u_v()
+            y, u, v = yuv_reader.__next__()
 
             self.assertEquals(y[0][0], 87)
             self.assertEquals(y[0][1], 131)
@@ -131,7 +131,7 @@ class YuvReaderTest10le(unittest.TestCase):
             self.assertAlmostEquals(u.mean(), 114.63283661265432, places=4)
             self.assertAlmostEquals(v.mean(), 122.05113490226337, places=4)
 
-            y, u, v = yuv_reader.next_y_u_v()
+            y, u, v = yuv_reader.__next__()
 
             self.assertEquals(y[0][0], 142)
             self.assertEquals(y[0][1], 128)

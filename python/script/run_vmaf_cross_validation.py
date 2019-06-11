@@ -1,7 +1,6 @@
 __copyright__ = "Copyright 2016-2019, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 from vmaf.config import VmafConfig, DisplayConfig
@@ -43,4 +42,4 @@ if __name__ == '__main__':
 
     DisplayConfig.show()
 
-    print 'Done.'
+    print('Done.')

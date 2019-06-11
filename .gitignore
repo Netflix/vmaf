@@ -1,18 +1,14 @@
-# Caches
+# Caches, build artifacts
 .DS_Store
 .cache/
+*.egg*
 .gradle/
 .idea/
+*.py[cod]
+.pypirc
+.tox/
+.*version
+.venv*/
 __pycache__/
-
-# Build artifacts
-activate
 build/
-
-# Code coverage reports
-.coverage*
-coverage.xml
-htmlcov/
-
-*.egg-info
-*.pyc
+dist/

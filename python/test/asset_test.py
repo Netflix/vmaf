@@ -64,7 +64,7 @@ class AssetTest(unittest.TestCase):
                       asset_dict={"ref_width":1920, "ref_height":1080,
                                   "dis_width":720, "dis_height":480},)
         with self.assertRaises(AssertionError):
-            print asset.quality_width_height
+            print(asset.quality_width_height)
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",

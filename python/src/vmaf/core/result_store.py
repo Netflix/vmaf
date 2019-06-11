@@ -45,10 +45,7 @@ class FileSystemResultStore(ResultStore):
         try:
             make_parent_dirs_if_nonexist(result_file_path)
         except OSError as e:
-            print 'make_parent_dirs_if_nonexist {path} fails: {e}'.format(
-                path=result_file_path,
-                e=str(e))
-            pass
+            print('make_parent_dirs_if_nonexist {path} fails: {e}'.format(path=result_file_path, e=str(e)))
 
         self.save_result(result, result_file_path)
 
@@ -86,7 +83,7 @@ class FileSystemResultStore(ResultStore):
             shutil.rmtree(self.result_store_dir)
 
     def _get_result_file_path(self, result):
-        str_to_hash = str(result.asset)
+        str_to_hash = str(result.asset).encode("utf-8")
 
         return "{dir}/{executor_id}/{dataset}/{content_id}/{str}".format(
             dir=self.result_store_dir, executor_id=result.executor_id,
@@ -95,7 +92,7 @@ class FileSystemResultStore(ResultStore):
             str=hashlib.sha1(str_to_hash).hexdigest())
 
     def _get_result_file_path2(self, asset, executor_id):
-        str_to_hash = str(asset)
+        str_to_hash = str(asset).encode("utf-8")
         return "{dir}/{executor_id}/{dataset}/{content_id}/{str}".format(
             dir=self.result_store_dir, executor_id=executor_id,
             dataset=asset.dataset,

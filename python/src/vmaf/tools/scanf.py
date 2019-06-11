@@ -169,15 +169,28 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 
+import string
 import sys
 import unittest
-from string import whitespace as WHITESPACE
-from string import digits as DIGITS
-from sets import Set
+
+try:
+    import StringIO
+
+    StringIO = StringIO.StringIO  # TODO: remove this once python2 support is dropped
+
+except ImportError:
+    from io import StringIO
 
 
 __all__ = ['scanf', 'sscanf', 'fscanf']
 __version__ = '1.0'
+
+# We keep a few sets as module variables just to incur the cost of constructing them just once.
+_DIGIT_SET = set(string.digits)
+_HEX_SET = set("0123456789ABCDEFabcdef")
+_OCT_SET = set("01234567")
+_PLUS_MINUS_SET = set("+-")
+_WHITESPACE_SET = set(string.whitespace)
 
 
 class CharacterBuffer(object):
@@ -205,7 +218,7 @@ class CharacterBuffer(object):
         chars = []
         countChars = 0
         while True:
-            if (maxChars != 0 and countChars >= maxChars):
+            if maxChars != 0 and countChars >= maxChars:
                 break
             ch = self.getch()
             if ch != '' and predicate(ch):
@@ -227,7 +240,7 @@ class CharacterBufferFromIterable(CharacterBuffer):
     def getch(self):
         if self.lastChar == '':
             try:
-                return self.iterator.next()
+                return next(self.iterator)
             except StopIteration:
                 return ''
         else:
@@ -406,7 +419,7 @@ characters."""
     return parser(buffer)
 
 
-def isWhitespaceChar(ch, _set=Set(WHITESPACE)):
+def isWhitespaceChar(ch, _set=_WHITESPACE_SET):
     """Returns true if the charcter looks like whitespace.
     We follow the definition of C's isspace() function.
     """
@@ -425,13 +438,6 @@ def handleWhitespace(buffer):
             break
     return ''.join(chars)
 
-
-# We keep a few sets as module variables just to incur the cost of
-# constructing them just once.
-_PLUS_MINUS_SET = Set("+-")
-_DIGIT_SET = Set(DIGITS)
-_OCT_SET = Set("01234567")
-_HEX_SET = Set("0123456789ABCDEFabcdef")
 
 def handleDecimalInt(buffer, optional=False, allowLeadingWhitespace=True):
     """Tries to scan for an integer.  If 'optional' is set to False,
@@ -565,7 +571,7 @@ class CompiledPattern:
                 if value is not None:
                     results.append(value)
             return tuple(results)
-        except FormatError, e:
+        except FormatError as e:
             raise IncompleteCaptureError(e, tuple(results))
 
     def __repr__(self):
@@ -676,10 +682,10 @@ class ScanfTests(unittest.TestCase):
 
     def testCharacterSetScanning(self):
         b = makeCharBuffer("+++-+++++1234")
-        self.assertEquals("+++", b.scanCharacterSet(Set("+")))
-        self.assertEquals("", b.scanCharacterSet(Set("+")))
-        self.assertEquals("-", b.scanCharacterSet(Set("-")))
-        self.assertEquals("+", b.scanCharacterSet(Set("+"), 1))
+        self.assertEquals("+++", b.scanCharacterSet(set("+")))
+        self.assertEquals("", b.scanCharacterSet(set("+")))
+        self.assertEquals("-", b.scanCharacterSet(set("-")))
+        self.assertEquals("+", b.scanCharacterSet(set("+"), 1))
 
     def testPredicateScanning(self):
         b = makeCharBuffer("+++-+++++1234")
@@ -781,12 +787,11 @@ class ScanfTests(unittest.TestCase):
         self.assertEquals(("  ",), sscanf("              xyz", "%2c"))
 
     def testFscanf(self):
-        import StringIO
-        b = StringIO.StringIO("hello world")
+        b = StringIO("hello world")
         self.assertEquals(("hello", " ", "world"), fscanf(b, "%s%c%s"))
         # Check that calling fscanf() twice doesn't
         # drop the last character
-        b2 = StringIO.StringIO("hello world")
+        b2 = StringIO("hello world")
         self.assertEquals(("hello",), fscanf(b2, "%s"))
         self.assertEquals((" ",), fscanf(b2, "%c"))
         self.assertEquals(("world",), fscanf(b2, "%s"))

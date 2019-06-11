@@ -12,9 +12,9 @@ __license__ = "Apache, Version 2.0"
 
 def print_usage():
     quality_runner_types = ['VMAF', 'PSNR', 'SSIM', 'MS_SSIM']
-    print "usage: " + os.path.basename(sys.argv[0]) + \
-          " quality_type dataset_filepath\n"
-    print "quality_type:\n\t" + "\n\t".join(quality_runner_types) +"\n"
+    print("usage: " + os.path.basename(sys.argv[0]) + \
+          " quality_type dataset_filepath\n")
+    print("quality_type:\n\t" + "\n\t".join(quality_runner_types) +"\n")
 
 
 def main():
@@ -32,7 +32,7 @@ def main():
     try:
         dataset = import_python_file(dataset_filepath)
     except Exception as e:
-        print "Error: " + str(e)
+        print("Error: " + str(e))
         return 1
 
     try:

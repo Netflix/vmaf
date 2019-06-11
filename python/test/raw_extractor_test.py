@@ -16,7 +16,7 @@ from vmaf.core.raw_extractor import AssetExtractor, DisYUVRawVideoExtractor
 class RawExtractorTest(unittest.TestCase):
 
     def test_run_asset_extractor(self):
-        print 'test on running asset extractor...'
+        print('test on running asset extractor...')
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=1,
@@ -60,7 +60,7 @@ class DisYUVRawVideoExtractorTest(unittest.TestCase):
             os.remove(self.h5py_filepath)
 
     def test_run_dis_yuv_raw_video_extractor(self):
-        print 'test on running dis YUV raw video extractor...'
+        print('test on running dis YUV raw video extractor...')
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=1,
@@ -98,7 +98,7 @@ class DisYUVRawVideoExtractorTest(unittest.TestCase):
         DisYUVRawVideoExtractor.close_h5py_file(h5py_file)
 
     def test_run_dis_yuv_raw_video_extractor_parallel(self):
-        print 'test on running dis YUV raw video extractor...'
+        print('test on running dis YUV raw video extractor...')
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=1,
@@ -136,7 +136,7 @@ class ParallelDisYRawVideoExtractorTest(unittest.TestCase):
             os.remove(self.h5py_filepath)
 
     def test_run_parallel_dis_y_fextractor(self):
-        print 'test on running dis YUV raw video extractor in parallel (disabled)...'
+        print('test on running dis YUV raw video extractor in parallel (disabled)...')
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=1,

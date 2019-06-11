@@ -9,6 +9,13 @@ from vmaf.core.result import RawResult
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
+try:
+    basestring
+except NameError:
+    # TODO: remove this once python2 support is dropped
+    basestring = str
+
+
 class RawExtractor(Executor):
 
     def _assert_args(self):

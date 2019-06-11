@@ -42,7 +42,7 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
 
     def test_train_predict_bootstrap_libsvmnusvr(self):
 
-        print "test bootstrap libsvmnusvr train and predict..."
+        print("test bootstrap libsvmnusvr train and predict...")
 
         xs = BootstrapLibsvmNusvrTrainTestModel.get_xs_from_results(self.features)
         ys = BootstrapLibsvmNusvrTrainTestModel.get_ys_from_results(self.features)
@@ -99,7 +99,7 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
 
     def test_train_save_load_predict_bootstrap_libsvmnusvr(self):
 
-        print "test bootstrap libsvmnusvr train, save, load and predict..."
+        print("test bootstrap libsvmnusvr train, save, load and predict...")
 
         xs = BootstrapLibsvmNusvrTrainTestModel.get_xs_from_results(self.features)
         ys = BootstrapLibsvmNusvrTrainTestModel.get_ys_from_results(self.features)
@@ -132,7 +132,7 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
 
     def test_train_across_model_stats_bootstraplibsvmnusvr(self):
 
-        print "test bootstrap libsvmnusvr gather across model stats..."
+        print("test bootstrap libsvmnusvr gather across model stats...")
 
         xs = BootstrapLibsvmNusvrTrainTestModel.get_xs_from_results(self.features)
         ys = BootstrapLibsvmNusvrTrainTestModel.get_ys_from_results(self.features)
@@ -168,7 +168,7 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
 
     def test_train_predict_bootstrap_randomforest(self):
 
-        print "test bootstrap randomforest train and predict..."
+        print("test bootstrap randomforest train and predict...")
 
         xs = BootstrapSklearnRandomForestTrainTestModel.get_xs_from_results(self.features)
         ys = BootstrapSklearnRandomForestTrainTestModel.get_ys_from_results(self.features)
@@ -226,7 +226,7 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
 
     def test_train_save_load_predict_bootstrap_randomforest(self):
 
-        print "test bootstrap randomforest train, save, load and predict..."
+        print("test bootstrap randomforest train, save, load and predict...")
 
         xs = BootstrapSklearnRandomForestTrainTestModel.get_xs_from_results(self.features)
         ys = BootstrapSklearnRandomForestTrainTestModel.get_ys_from_results(self.features)
@@ -253,7 +253,7 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
 
     def test_train_save_load_predict_residue_bootstrap_libsvmnusvr(self):
 
-        print "test residue bootstrap libsvmnusvr train, save, load and predict..."
+        print("test residue bootstrap libsvmnusvr train, save, load and predict...")
 
         xs = ResidueBootstrapLibsvmNusvrTrainTestModel.get_xs_from_results(self.features)
         ys = ResidueBootstrapLibsvmNusvrTrainTestModel.get_ys_from_results(self.features)
@@ -280,7 +280,7 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
 
     def test_train_save_load_predict_residue_bootstrap_randomforest(self):
 
-        print "test residue bootstrap randomforest train, save, load and predict..."
+        print("test residue bootstrap randomforest train, save, load and predict...")
 
         xs = ResidueBootstrapRandomForestTrainTestModel.get_xs_from_results(self.features)
         ys = ResidueBootstrapRandomForestTrainTestModel.get_ys_from_results(self.features)

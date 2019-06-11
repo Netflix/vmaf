@@ -1,12 +1,43 @@
 import os
+import subprocess
 
-from vmaf.tools.misc import run_process
+try:
+    from matplotlib import pyplot as plt
+
+except BaseException:
+    # TODO: importing matplotlib fails on OSX with system python, check what can be done there...
+    # Error reported is:
+    #   RuntimeError: Python is not installed as a framework.
+    #   The Mac OS X backend will not be able to function correctly if Python is not installed as a framework.
+    #   See the Python documentation for more information on installing Python as a framework on Mac OS X.
+    #   Please either reinstall Python as a framework, or try one of the other backends.
+    #   If you are using (Ana)Conda please install python.app and replace the use of 'python' with 'pythonw'.
+    #   See 'Working with Matplotlib on OSX' in the Matplotlib FAQ for more information.
+    plt = None
+
 
 # Path to folder containing this file
 VMAF_LIB_FOLDER = os.path.dirname(os.path.abspath(__file__))
 
 # Assuming vmaf source checkout, path to top checked out folder
 VMAF_PROJECT = os.path.abspath(os.path.join(VMAF_LIB_FOLDER, '../../..',))
+
+def to_list(value):
+    """
+    TODO python3: map() and filter() return a generator in python3, however vmaf assumes list
+
+    Returns:
+        (list): `value` converted to a list when applicable
+    """
+    if value is None or isinstance(value, list):
+        return value
+    return list(value)
+
+def run_process(cmd, **kwargs):
+    ret = subprocess.call(cmd, **kwargs)
+    assert ret == 0, 'Process returned {ret}, cmd: {cmd}'.format(ret=ret, cmd=cmd)
+    return ret
+
 
 def project_path(relative_path):
     path = os.path.join(VMAF_PROJECT, relative_path)

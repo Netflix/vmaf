@@ -8,12 +8,14 @@ from vmaf.core.result_store import FileSystemResultStore
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
-class TestLibRunner(VmafossExecQualityRunner):
+
+class LibRunner(VmafossExecQualityRunner):
 
     TYPE = "TESTLIB"
 
     def _get_exec(self):
         return required(project_path("wrapper/testlib"))
+
 
 class QualityRunnerTest(unittest.TestCase):
 
@@ -26,7 +28,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.result_store = FileSystemResultStore()
 
     def test_run_testlib_runner(self):
-        print 'test on running TESTLIB runner...'
+        print('test on running TESTLIB runner...')
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -41,7 +43,7 @@ class QualityRunnerTest(unittest.TestCase):
                       dis_path=ref_path,
                       asset_dict={'width':576, 'height':324})
 
-        self.runner = TestLibRunner(
+        self.runner = LibRunner(
             [asset, asset_original],
             None, fifo_mode=True,
             delete_workdir=True,

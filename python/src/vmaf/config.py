@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import os
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
@@ -5,6 +7,7 @@ __license__ = "Apache, Version 2.0"
 
 PYTHON_ROOT = os.path.dirname(os.path.realpath(__file__))
 ROOT = os.path.abspath(os.path.join(PYTHON_ROOT, '../../..',))
+
 
 class VmafExternalConfig(object):
 
@@ -20,7 +23,7 @@ class VmafExternalConfig(object):
         :return str: Configured path, if any
         """
         try:
-            import externals
+            from . import externals
             path = getattr(externals, name, None)
             if path and os.path.exists(path):
                 return path
@@ -132,7 +135,7 @@ class DisplayConfig(object):
 
     @staticmethod
     def show(**kwargs):
-        import matplotlib.pyplot as plt
+        from vmaf import plt
         if 'write_to_dir' in kwargs:
             format = kwargs['format'] if 'format' in kwargs else 'png'
             filedir = kwargs['write_to_dir'] if kwargs['write_to_dir'] is not None else VmafConfig.workspace_path('output')

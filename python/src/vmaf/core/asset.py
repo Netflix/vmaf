@@ -6,6 +6,7 @@ __license__ = "Apache, Version 2.0"
 
 import os
 
+from vmaf import to_list
 from vmaf.core.mixin import WorkdirEnabled
 from vmaf.tools.misc import get_file_name_without_extension, \
     get_file_name_with_extension, get_unique_str_from_recursive_dict
@@ -86,7 +87,7 @@ class Asset(WorkdirEnabled):
         if 'rebuf_indices' in self.asset_dict:
             assert isinstance(self.asset_dict['rebuf_indices'], list), 'Rebuffering indices need to be in a list.'
             # check for negative rebuffering indices
-            assert len(filter(lambda x: x < 0, self.asset_dict['rebuf_indices'])) == 0, 'All rebuffering indices have to be >= 0.'
+            assert len(to_list(filter(lambda x: x < 0, self.asset_dict['rebuf_indices']))) == 0, 'All rebuffering indices have to be >= 0.'
 
     def copy(self, **kwargs):
         new_asset_dict = copy.deepcopy(self.asset_dict)
@@ -369,7 +370,7 @@ class Asset(WorkdirEnabled):
         if 'rebuf_indices' in self.asset_dict:
             assert isinstance(self.asset_dict['rebuf_indices'], list), 'Rebuffering indices need to be in a list.'
             # check for negative rebuffering indices
-            assert len(filter(lambda x: x < 0, self.asset_dict['rebuf_indices'])) == 0, 'All rebuffering indices have to be >= 0.'
+            assert len(to_list(filter(lambda x: x < 0, self.asset_dict['rebuf_indices']))) == 0, 'All rebuffering indices have to be >= 0.'
             return self.asset_dict['rebuf_indices']
         else:
             return None

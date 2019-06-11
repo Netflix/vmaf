@@ -1,6 +1,5 @@
 from fnmatch import fnmatch
 import multiprocessing
-import subprocess
 from time import sleep, time
 import itertools
 
@@ -8,10 +7,18 @@ __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 import sys
+import errno
 import os
 import re
 
+from vmaf import run_process, to_list
 from vmaf.tools.scanf import sscanf, IncompleteCaptureError, FormatError
+
+try:
+    unicode  # noqa, remove this once python2 support is dropped
+
+except NameError:
+    unicode = str
 
 
 def get_stdout_logger():
@@ -154,7 +161,7 @@ def get_unique_str_from_recursive_dict(d):
     def to_ordered_dict_recursively(d):
         if isinstance(d, dict):
             return OrderedDict(map(
-                lambda (k,v): (to_ordered_dict_recursively(k), to_ordered_dict_recursively(v)),
+                lambda t: (to_ordered_dict_recursively(t[0]), to_ordered_dict_recursively(t[1])),
                 sorted(d.items())
             ))
         else:
@@ -325,8 +332,7 @@ def parallel_map(func, list_args, processes=None):
 
     # finally, collect results
     rets = map(lambda idx: return_dict[idx], range(len(list_args)))
-
-    return rets
+    return to_list(rets)
 
 
 def check_program_exist(program):
@@ -348,7 +354,7 @@ def check_program_exist(program):
         run_process(program.split(), stdout=open(os.devnull, 'wb'))
         return True
     except OSError as e:
-        if e.errno == os.errno.ENOENT:
+        if e.errno == errno.ENOENT:
             return False
         else:
             # Something else went wrong while trying to run `wget`
@@ -404,18 +410,13 @@ def match_any_files(template):
     return False
 
 
-def run_process(cmd, **kwargs):
-    ret = subprocess.call(cmd, **kwargs)
-    assert ret == 0, 'Process returned {ret}, cmd: {cmd}'.format(ret=ret, cmd=cmd)
-    return ret
-
-
 def unroll_dict_of_lists(dict_of_lists):
     """ Unfold a dictionary of lists into a list of dictionaries.
 
     >>> dict_of_lists = {'norm_type':['normalize'], 'n_estimators':[10, 50], 'random_state': [0]}
-    >>> unroll_dict_of_lists(dict_of_lists)
-    [{'n_estimators': 10, 'norm_type': 'normalize', 'random_state': 0}, {'n_estimators': 50, 'norm_type': 'normalize', 'random_state': 0}]
+    >>> expected = [{'n_estimators': 10, 'norm_type': 'normalize', 'random_state': 0}, {'n_estimators': 50, 'norm_type': 'normalize', 'random_state': 0}]
+    >>> unroll_dict_of_lists(dict_of_lists) == expected
+    True
 
     """
     keys = sorted(dict_of_lists.keys()) # normalize order
@@ -483,13 +484,13 @@ class Timer(object):
         self.tstart = time()
 
     def __exit__(self, type, value, traceback):
-        print 'Elapsed: %s' % (time() - self.tstart)
+        print('Elapsed: %s' % (time() - self.tstart))
 
 
 def dedup_value_in_dict(d):
     """
-    >>> dedup_value_in_dict({'a': 1, 'b': 1, 'c': 2})
-    {'a': 1, 'c': 2}
+    >>> dedup_value_in_dict({'a': 1, 'b': 1, 'c': 2}) == {'a': 1, 'c': 2}
+    True
     """
     reversed_d = dict()
     keys = sorted(d.keys())
@@ -498,7 +499,7 @@ def dedup_value_in_dict(d):
         if value not in reversed_d:
             reversed_d[value] = key
     d_ = dict()
-    for value, key in reversed_d.iteritems():
+    for value, key in reversed_d.items():
         d_[key] = value
     return d_
 

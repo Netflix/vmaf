@@ -1,10 +1,14 @@
+from __future__ import absolute_import
+
 import unittest
+
 from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.asset import Asset
 from vmaf.core.feature_extractor import VmafFeatureExtractor
 from vmaf.core.matlab_feature_extractor import StrredFeatureExtractor, StrredOptFeatureExtractor, SpEEDMatlabFeatureExtractor, STMADFeatureExtractor
 from vmaf.tools.stats import ListStats
-from testutil import set_default_576_324_videos_for_testing
+
+from ..testutil import set_default_576_324_videos_for_testing
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -19,7 +23,7 @@ class MatlabFeatureExtractorTest(unittest.TestCase):
         pass
 
     def test_run_strred_fextractor(self):
-        print 'test on running STRRED feature extractor, no parallelization...'
+        print('test on running STRRED feature extractor, no parallelization...')
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fextractor = StrredFeatureExtractor(
@@ -40,7 +44,7 @@ class MatlabFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['STRRED_feature_strred_score'], 0.0, places=4)
 
     def test_run_strredOpt_fextractor(self):
-        print 'test on running STRREDopt feature extractor, no parallelization...'
+        print('test on running STRREDopt feature extractor, no parallelization...')
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fextractor = StrredOptFeatureExtractor(
@@ -62,7 +66,7 @@ class MatlabFeatureExtractorTest(unittest.TestCase):
 
     def test_run_SpEED_matlab_fextractor(self):
 
-        print 'test on running SpEED (Matlab) feature extractor, no paralellization...'
+        print('test on running SpEED (Matlab) feature extractor, no paralellization...')
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fextractor = SpEEDMatlabFeatureExtractor(
@@ -85,7 +89,7 @@ class MatlabFeatureExtractorTest(unittest.TestCase):
     @unittest.skip("Need signal processing toolbox in Matlab.")
     def test_run_stmad_fextractor(self):
 
-        print 'test on running STMAD (Matlab) feature extractor, no parallelization...'
+        print('test on running STMAD (Matlab) feature extractor, no parallelization...')
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fextractor = STMADFeatureExtractor(
@@ -115,7 +119,7 @@ class ParallelMatlabFeatureExtractorTestNew(unittest.TestCase):
         pass
 
     def test_run_strred_fextractor(self):
-        print 'test on running STRRED feature extractor, with parallelization...'
+        print('test on running STRRED feature extractor, with parallelization...')
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fextractor = StrredFeatureExtractor(
@@ -136,7 +140,7 @@ class ParallelMatlabFeatureExtractorTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[1]['STRRED_feature_strred_score'], 0.0, places=4)
 
     def test_run_strred_fextractor_blackframes(self):
-        print 'test on running STRRED feature extractor on flat frames...'
+        print('test on running STRRED feature extractor on flat frames...')
         ref_path = VmafConfig.test_resource_path("yuv", "flat_1920_1080_0.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "flat_1920_1080_10.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -160,7 +164,7 @@ class ParallelMatlabFeatureExtractorTestNew(unittest.TestCase):
             result_store=result_store
         )
 
-        print '    running for the first time with fresh calculation...'
+        print('    running for the first time with fresh calculation...')
         self.fextractor.run(parallelize=True)
 
         result0, result1 = self.fextractor.results
@@ -168,7 +172,7 @@ class ParallelMatlabFeatureExtractorTestNew(unittest.TestCase):
         self.assertTrue(os.path.exists(result_store._get_result_file_path(result0)))
         self.assertTrue(os.path.exists(result_store._get_result_file_path(result1)))
 
-        print '    running for the second time with stored results...'
+        print('    running for the second time with stored results...')
         self.fextractor.run(parallelize=True)
         results = self.fextractor.results
 

@@ -43,7 +43,7 @@ class FeatureTest(unittest.TestCase):
         if os.path.exists(self.LOG_FILENAME):
             os.remove(self.LOG_FILENAME)
 
-        if(REMOVE_LOG):
+        if REMOVE_LOG:
             (logPath, logFilePrefix) = os.path.split(self.LOG_FILENAME)
             filenames = [filename for filename in os.listdir(logPath) if filename.startswith(logFilePrefix)]
             for filename in filenames:
@@ -51,7 +51,7 @@ class FeatureTest(unittest.TestCase):
 
     def test_adm(self):
         ADM_LOG = self.LOG_FILENAME + '_adm'
-        print 'test adm...'
+        print('test adm...')
         cmd = "{vmaf} adm {fmt} {ref} {dis} {w} {h} > {log}".format(
             vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ADM_LOG
@@ -83,7 +83,7 @@ class FeatureTest(unittest.TestCase):
 
     def test_ansnr(self):
         ANSNR_LOG = self.LOG_FILENAME + '_ansnr'
-        print 'test ansnr...'
+        print('test ansnr...')
         cmd = "{vmaf} ansnr {fmt} {ref} {dis} {w} {h} > {log}".format(
             vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ANSNR_LOG
@@ -96,7 +96,7 @@ class FeatureTest(unittest.TestCase):
 
     def test_motion(self):
         MOTION_LOG = self.LOG_FILENAME + '_motion'
-        print 'test motion...'
+        print('test motion...')
         cmd = "{vmaf} motion {fmt} {ref} {dis} {w} {h} > {log}".format(
             vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MOTION_LOG
@@ -107,7 +107,7 @@ class FeatureTest(unittest.TestCase):
 
     def test_motion2(self):
         MOTION_LOG = self.LOG_FILENAME + '_motion2'
-        print 'test motion2...'
+        print('test motion2...')
         cmd = "{vmaf} motion {fmt} {ref} {dis} {w} {h} > {log}".format(
             vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MOTION_LOG
@@ -118,7 +118,7 @@ class FeatureTest(unittest.TestCase):
 
     def test_vif(self):
         VIF_LOG = self.LOG_FILENAME + '_vif'
-        print 'test vif...'
+        print('test vif...')
         cmd = "{vmaf} vif {fmt} {ref} {dis} {w} {h} > {log}".format(
             vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=VIF_LOG
@@ -151,7 +151,7 @@ class FeatureTest(unittest.TestCase):
 
     def test_all(self):
         ALL_LOG = self.LOG_FILENAME + "_all"
-        print 'test all...'
+        print('test all...')
         cmd = "{vmaf} all {fmt} {ref} {dis} {w} {h} > {log}".format(
             vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ALL_LOG
@@ -210,7 +210,7 @@ class FeatureTest(unittest.TestCase):
 
     def test_psnr(self):
         PSNR_LOG = self.LOG_FILENAME + '_psnr'
-        print 'test psnr...'
+        print('test psnr...')
         cmd = "{psnr} {fmt} {ref} {dis} {w} {h} > {log}".format(
             psnr=required(ExternalProgram.psnr), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=PSNR_LOG
@@ -223,7 +223,7 @@ class FeatureTest(unittest.TestCase):
 
     def test_2nd_moment(self):
         MOMENT_LOG = self.LOG_FILENAME + '_moment'
-        print 'test 2nd moment...'
+        print('test 2nd moment...')
         cmd = "{moment} 2 {fmt} {dis} {w} {h} > {log}".format(
             moment=required(ExternalProgram.moment), fmt=self.YUV_FMT, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MOMENT_LOG
@@ -236,7 +236,7 @@ class FeatureTest(unittest.TestCase):
 
     def test_ssim(self):
         SSIM_LOG = self.LOG_FILENAME + '_ssim'
-        print 'test ssim...'
+        print('test ssim...')
         cmd = "{ssim} {fmt} {ref} {dis} {w} {h} > {log}".format(
             ssim=required(ExternalProgram.ssim), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=SSIM_LOG
@@ -261,7 +261,7 @@ class FeatureTest(unittest.TestCase):
 
     def test_ms_ssim(self):
         MS_SSIM_LOG = self.LOG_FILENAME + '_msssim'
-        print 'test ms_ssim...'
+        print('test ms_ssim...')
         cmd = "{ms_ssim} {fmt} {ref} {dis} {w} {h} > {log}".format(
             ms_ssim=required(ExternalProgram.ms_ssim), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MS_SSIM_LOG
@@ -327,7 +327,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
 
     def test_adm(self):
         ADM_LOG = self.LOG_FILENAME + '_adm'
-        print 'test adm on yuv422p10le...'
+        print('test adm on yuv422p10le...')
         cmd = "{vmaf} adm {fmt} {ref} {dis} {w} {h} > {log}".format(
             vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ADM_LOG
@@ -357,7 +357,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
 
     def test_ansnr(self):
         ANSNR_LOG = self. LOG_FILENAME + '_ansnr'
-        print 'test ansnr on yuv422p10le...'
+        print('test ansnr on yuv422p10le...')
         cmd = "{vmaf} ansnr {fmt} {ref} {dis} {w} {h} > {log}".format(
             vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ANSNR_LOG
@@ -370,7 +370,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
 
     def test_motion(self):
         MOTION_LOG = self.LOG_FILENAME + '_motion'
-        print 'test motion on yuv422p10le...'
+        print('test motion on yuv422p10le...')
         cmd = "{vmaf} motion {fmt} {ref} {dis} {w} {h} > {log}".format(
             vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MOTION_LOG
@@ -381,7 +381,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
 
     def test_motion2(self):
         MOTION_LOG = self.LOG_FILENAME + '_motion2'
-        print 'test motion2 on yuv422p10le...'
+        print('test motion2 on yuv422p10le...')
         cmd = "{vmaf} motion {fmt} {ref} {dis} {w} {h} > {log}".format(
             vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MOTION_LOG
@@ -392,7 +392,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
 
     def test_vif(self):
         VIF_LOG = self.LOG_FILENAME + '_vif'
-        print 'test vif on yuv422p10le...'
+        print('test vif on yuv422p10le...')
         cmd = "{vmaf} vif {fmt} {ref} {dis} {w} {h} > {log}".format(
             vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=VIF_LOG
@@ -425,7 +425,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
 
     def test_all(self):
         ALL_LOG = self.LOG_FILENAME + "_all"
-        print 'test all on yuv422p10le...'
+        print('test all on yuv422p10le...')
         cmd = "{vmaf} all {fmt} {ref} {dis} {w} {h} > {log}".format(
             vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ALL_LOG
@@ -484,7 +484,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
 
     def test_psnr(self):
         PSNR_LOG = self.LOG_FILENAME + '_psnr'
-        print 'test psnr on yuv422p10le...'
+        print('test psnr on yuv422p10le...')
         cmd = "{psnr} {fmt} {ref} {dis} {w} {h} > {log}".format(
             psnr=required(ExternalProgram.psnr), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=PSNR_LOG
@@ -497,7 +497,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
 
     def test_ssim(self):
         SSIM_LOG = self.LOG_FILENAME + '_ssim'
-        print 'test ssim on yuv422p10le...'
+        print('test ssim on yuv422p10le...')
         cmd = "{ssim} {fmt} {ref} {dis} {w} {h} > {log}".format(
             ssim=required(ExternalProgram.ssim), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=SSIM_LOG
@@ -522,7 +522,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
 
     def test_ms_ssim(self):
         MS_SSIM_LOG = self.LOG_FILENAME + '_msssim'
-        print 'test ms_ssim on yuv422p10le...'
+        print('test ms_ssim on yuv422p10le...')
         cmd = "{ms_ssim} {fmt} {ref} {dis} {w} {h} > {log}".format(
             ms_ssim=required(ExternalProgram.ms_ssim), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MS_SSIM_LOG
@@ -590,7 +590,7 @@ class CornerCaseTest(unittest.TestCase):
                 os.remove(os.path.join(logPath, filename))
 
     def test_checkerboard_identical(self):
-        print 'test on checkerboard pattern identical...'
+        print('test on checkerboard pattern identical...')
         LOCAL_LOG_FILENAME = self.LOG_FILENAME + '_checkerboardIdentical'
         ref_yuv = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
         dis_yuv = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
@@ -622,7 +622,7 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_den_scale3")[0], 924.193766, places=3)
 
     def test_checkerboard_shifted_by_1(self):
-        print 'test on checkerboard pattern shifted by 1...'
+        print('test on checkerboard pattern shifted by 1...')
         LOCAL_LOG_FILENAME = self.LOG_FILENAME + '_checkerboard_shifted_by_1'
         ref_yuv = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
         dis_yuv = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_1_0.yuv")
@@ -654,7 +654,7 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_den_scale3")[0], 924.193766, places=3)
 
     def test_checkerboard_opposite(self):
-        print 'test on checkerboard pattern opposite...'
+        print('test on checkerboard pattern opposite...')
         LOCAL_LOG_FILENAME = self.LOG_FILENAME + '_checkerboard_opposite'
         ref_yuv = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
         dis_yuv = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_10_0.yuv")
@@ -686,7 +686,7 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_den_scale3")[0], 924.193766, places=3)
 
     def test_flat_identical(self):
-        print 'test on flat pattern identical...'
+        print('test on flat pattern identical...')
         LOCAL_LOG_FILENAME = self.LOG_FILENAME + '_flat_identical'
         ref_yuv = VmafConfig.test_resource_path("yuv", "flat_1920_1080_0.yuv")
         dis_yuv = VmafConfig.test_resource_path("yuv", "flat_1920_1080_0.yuv")
@@ -718,7 +718,7 @@ class CornerCaseTest(unittest.TestCase):
         self.assertAlmostEquals(read_log(LOCAL_LOG_FILENAME, "adm_den_scale3")[0], 16.667747, places=3)
 
     def test_flat_value10(self):
-        print 'test on flat pattern of value 10...'
+        print('test on flat pattern of value 10...')
         LOCAL_LOG_FILENAME = self.LOG_FILENAME + '_flat_value10'
         ref_yuv = VmafConfig.test_resource_path("yuv", "flat_1920_1080_0.yuv")
         dis_yuv = VmafConfig.test_resource_path("yuv", "flat_1920_1080_10.yuv")
@@ -753,4 +753,4 @@ if __name__ == '__main__':
 
     unittest.main()
 
-    print 'Done.'
+    print('Done.')

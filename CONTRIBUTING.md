@@ -57,7 +57,7 @@ Files in the repository follow the structure below:
 
 The core class architecture can be depicted in the diagram below:
 
-![UML](/resource/images/uml.png)
+![UML](resource/images/uml.png)
 
 #### Asset
 
