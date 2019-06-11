@@ -15,9 +15,9 @@ class TestReadDataset(unittest.TestCase):
         train_assets = read_dataset(train_dataset)
 
         self.assertEquals(len(train_assets), 3)
-        self.assertEquals(str(train_assets[0]), "example_0_1_src01_hrc00_576x324_576x324_vs_src01_hrc01_576x324_576x324_q_576x324_crop288:162:144:81")
-        self.assertEquals(str(train_assets[1]), "example_0_2_src01_hrc00_576x324_576x324_vs_src01_hrc01_576x324_576x324_q_576x324_padiw+100:ih+100:50:50")
-        self.assertEquals(str(train_assets[2]), "example_0_3_src01_hrc00_576x324_576x324_vs_src01_hrc01_576x324_576x324_q_576x324_crop288:162:144:81_padiw+288:ih+162:144:81")
+        self.assertEquals(str(train_assets[0]), "example_0_1_src01_hrc00_576x324_576x324_crop288:162:144:81_vs_src01_hrc01_576x324_576x324_crop288:162:144:81_q_576x324")
+        self.assertEquals(str(train_assets[1]), "example_0_2_src01_hrc00_576x324_576x324_padiw+100:ih+100:50:50_vs_src01_hrc01_576x324_576x324_padiw+100:ih+100:50:50_q_576x324")
+        self.assertEquals(str(train_assets[2]), "example_0_3_src01_hrc00_576x324_576x324_crop288:162:144:81_padiw+288:ih+162:144:81_vs_src01_hrc01_576x324_576x324_crop288:162:144:81_padiw+288:ih+162:144:81_q_576x324")
 
     def test_read_dataset_duration_sec(self):
         train_dataset_path = VmafConfig.test_resource_path('example_dataset_crop_pad_duration_sec.py')
