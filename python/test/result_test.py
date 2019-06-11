@@ -1,7 +1,4 @@
-from .testutil import set_default_576_324_videos_for_testing
-
-__copyright__ = "Copyright 2016-2019, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
+from __future__ import absolute_import
 
 import json
 import unittest
@@ -15,6 +12,11 @@ from vmaf.core.result import Result
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner
 from vmaf.tools.stats import ListStats
+
+from .testutil import set_default_576_324_videos_for_testing
+
+__copyright__ = "Copyright 2016-2019, Netflix, Inc."
+__license__ = "Apache, Version 2.0"
 
 
 class ResultTest(unittest.TestCase):

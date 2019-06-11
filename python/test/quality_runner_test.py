@@ -1,9 +1,8 @@
-__copyright__ = "Copyright 2016-2019, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
+from __future__ import absolute_import
 
 import os
-import unittest
 import sys
+import unittest
 
 from vmaf.config import VmafConfig
 from vmaf.core.asset import Asset, NorefAsset
@@ -16,6 +15,10 @@ from vmaf.core.result_store import FileSystemResultStore
 from vmaf.tools.stats import ListStats
 
 from .testutil import set_default_576_324_videos_for_testing, set_default_flat_1920_1080_videos_for_testing
+
+__copyright__ = "Copyright 2016-2019, Netflix, Inc."
+__license__ = "Apache, Version 2.0"
+
 
 class QualityRunnerTest(unittest.TestCase):
 

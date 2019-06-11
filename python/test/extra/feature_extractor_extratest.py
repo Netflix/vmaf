@@ -1,9 +1,13 @@
+from __future__ import absolute_import
+
 import unittest
+
 from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.asset import Asset
 from vmaf.core.feature_extractor import VmafFeatureExtractor
 from vmaf.core.matlab_feature_extractor import StrredFeatureExtractor, StrredOptFeatureExtractor, SpEEDMatlabFeatureExtractor, STMADFeatureExtractor
 from vmaf.tools.stats import ListStats
+
 from ..testutil import set_default_576_324_videos_for_testing
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."

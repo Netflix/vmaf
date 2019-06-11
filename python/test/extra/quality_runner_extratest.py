@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import unittest
 
 from vmaf.core.matlab_quality_runner import SpEEDMatlabQualityRunner, StrredQualityRunner
