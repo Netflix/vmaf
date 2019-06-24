@@ -45,6 +45,7 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height, int (*rea
 #include <cstring>
 #include <map>
 #include <memory>
+#include <string>
 
 class Asset
 {
