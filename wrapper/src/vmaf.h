@@ -46,14 +46,6 @@ double RunVmaf(const char* fmt, int width, int height,
                bool do_psnr, bool do_ssim, bool do_ms_ssim,
                const char *pool_method, int n_thread, int n_subsample, bool enable_conf_interval);
 
-class VmafException: public std::exception
-{
-public:
-    explicit VmafException(const char *msg): msg(msg) {}
-    virtual const char* what() const throw () { return msg.c_str(); }
-private:
-    std::string msg;
-};
 
 struct SvmDelete {
     void operator()(void *svm);
