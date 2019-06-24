@@ -27,6 +27,7 @@ struct data
     size_t offset;
     FILE *ref_rfile;
     FILE *dis_rfile;
+    int num_frames;
 };
 
 struct noref_data
