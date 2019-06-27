@@ -24,6 +24,8 @@
 #define read_image_b       read_image_b2s
 #define read_image_w       read_image_w2s
 
+static int completed_frames = 0;
+
 int read_frame(float *ref_data, float *dis_data, float *temp_data, int stride_byte, void *s)
 {
     struct data *user_data = (struct data *)s;
@@ -123,6 +125,8 @@ int read_frame(float *ref_data, float *dis_data, float *temp_data, int stride_by
         fprintf(stderr, "unknown format %s.\n", fmt);
         goto fail_or_end;
     }
+
+    fprintf(stderr, "Frame: %d/%d\r", completed_frames++, user_data->num_frames);
 
 
 fail_or_end:
