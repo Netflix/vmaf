@@ -17,7 +17,6 @@
  */
 
 #include "alignment.h"
-#include "vif_options.h"
 #include "convolution.h"
 #include "convolution_internal.h"
 #include "cpu.h"

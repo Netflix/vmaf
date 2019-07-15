@@ -23,7 +23,7 @@
 /**
  * Note: stride is in terms of bytes
  */
-float apply_frame_differencing(const float *current_frame, const float *previous_frame, float *frame_difference, int width, int height, int stride)
+void apply_frame_differencing(const float *current_frame, const float *previous_frame, float *frame_difference, int width, int height, int stride)
 {
     for (int i = 0; i < height; ++i) {
         for (int j = 0; j < width; ++j) {

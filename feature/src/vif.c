@@ -24,10 +24,9 @@
 #include <string.h>
 
 #include "common/alloc.h"
+#include "common/convolution.h"
 #include "common/file_io.h"
 #include "vif_options.h"
-#include "convolution.h"
-#include "convolution_internal.h"
 #include "vif_tools.h"
 
 #define read_image_b       read_image_b2s
