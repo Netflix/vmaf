@@ -12,3 +12,4 @@
 __pycache__/
 build/
 dist/
+vmaf_output.xml
