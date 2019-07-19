@@ -215,11 +215,11 @@ struct CondVar {
       struct timespec current_time;
 
 
-#if defined(_MSC_VER)
+#if defined(_WIN32)
         __int64 wintime; GetSystemTimeAsFileTime((FILETIME*)&wintime);
-        wintime      -=116444736000000000i64;  //1jan1601 to 1jan1970
-        current_time.tv_sec  =wintime / 10000000i64;           //seconds
-        current_time.tv_nsec =wintime % 10000000i64 *100;      //nano-seconds
+        wintime      -=116444736000000000ll;  //1jan1601 to 1jan1970
+        current_time.tv_sec  =wintime / 10000000ll;           //seconds
+        current_time.tv_nsec =wintime % 10000000ll *100;      //nano-seconds
 #elif defined(__MACH__) // OS X does not have clock_gettime, use clock_get_time
       clock_serv_t cclock;
       mach_timespec_t mts;
