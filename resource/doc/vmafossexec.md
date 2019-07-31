@@ -25,13 +25,24 @@ For VMAF v0.6.1, the model file is `model/vmaf_v0.6.1.pkl`.
 
 The options `--psnr`, `--ssim` and `--ms-ssim` also allow reporting PSNR, SSIM and MS-SSIM results, respectively. The option `--thread` specifies the number of threads to use. Apply `--thread 0` to use all threads available. The option `--subsample` specifies the subsampling of frames to speed up calculation. For example, `--subsample 5` calculates VMAF on one of every 5 frames. The following plot shows the trend of how the subsample number impacts the processing speed (based on the [Netflix Public Dataset](datasets.md#netflix-public-dataset) of 1080p videos, with PSNR, SSIM and MS-SSIM calculation enabled):
 
-![subsample](/resource/images/subsample.png)
+![subsample](../images/subsample.png)
 
-Optionally, one can test `vmafossexec` by running the [`vmafossexec_test.py`](../../python/test/vmafossexec_test.py) script (this requires Python 2 and the `numpy`, `scipy`, `pandas` and `sklearn` packages):
+Optionally, one can test `vmafossexec` by running the [`vmafossexec_test.py`](../../python/test/vmafossexec_test.py) script
+(this requires Python 3), run the following command
+(which creates a virtual environment, and installs vmaf with all its dependencies into it):
 
 ```
-pip install --user numpy scipy pandas sklearn
-PYTHONPATH=python/src python python/test/vmafossexec_test.py
+rm -rf .venv/
+python3 -mvenv .venv
+.venv/bin/pip install pytest -e python/
+.venv/bin/pytest python/test/vmafossexec_test.py
 ```
 
 Expect all tests pass.
+
+You can alternatively use python2 (not recommended), by changing the 2nd line above to this,
+but you will need to install `virtualenv` module yourself:
+
+```
+python2 -mvirtualenv .venv
+```
