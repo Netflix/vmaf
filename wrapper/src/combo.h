@@ -75,11 +75,11 @@ typedef struct
     int thread_count;
     int stop_threads;
     pthread_mutex_t mutex_readframe;
-#endif
     BLUR_BUF_ARRAY blur_buf_array;
     BLUR_BUF_ARRAY ref_buf_array;
     BLUR_BUF_ARRAY dis_buf_array;
-    DArray *motion_score_compute_flag_array;
+	DArray *motion_score_compute_flag_array;
+#endif
     int ret;
 
 } VMAF_THREAD_STRUCT;

@@ -22,8 +22,9 @@
 #include <stdint.h>
 #include <string.h>
 #include "common/alloc.h"
-#include "common/convolution.h"
 #include "vif_options.h"
+#include "convolution.h"
+#include "convolution_internal.h"
 #include "vif_tools.h"
 #include "common/cpu.h"
 
@@ -220,9 +221,12 @@ void vif_statistic_s(const float *mu1, const float *mu2, const float *mu1_mu2, c
 
 	int mu1_px_stride = mu1_stride / sizeof(float);
 	int mu2_px_stride = mu2_stride / sizeof(float);
+	int mu1_mu2_px_stride = mu1_mu2_stride / sizeof(float);
 	int xx_filt_px_stride = xx_filt_stride / sizeof(float);
 	int yy_filt_px_stride = yy_filt_stride / sizeof(float);
 	int xy_filt_px_stride = xy_filt_stride / sizeof(float);
+	int num_px_stride = num_stride / sizeof(float);
+	int den_px_stride = den_stride / sizeof(float);
 
 	float mu1_sq_val, mu2_sq_val, mu1_mu2_val, xx_filt_val, yy_filt_val, xy_filt_val;
 	float sigma1_sq, sigma2_sq, sigma12, g, sv_sq;

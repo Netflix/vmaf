@@ -83,6 +83,7 @@ int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride
 	adm_dwt_band_t decouple_r;
 	adm_dwt_band_t decouple_a;
 
+	adm_dwt_band_t csf_r;
 	adm_dwt_band_t csf_a;
 	adm_dwt_band_t csf_f; //Store filtered coeffs
 
