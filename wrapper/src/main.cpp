@@ -23,6 +23,8 @@
 #include <string>
 #include <algorithm>
 #include <cstring>
+#include <cstdint>
+#include <sys/stat.h>
 #include "libvmaf.h"
 
 extern "C" {
@@ -118,8 +120,6 @@ int run_wrapper(char *fmt, int width, int height, char *ref_path, char *dis_path
     s->height = height;
     s->ref_rfile = NULL;
     s->dis_rfile = NULL;
-    long file_size = 0;
-    int frame_size = 0;
 
     if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv420p10le"))
     {
@@ -163,29 +163,26 @@ int run_wrapper(char *fmt, int width, int height, char *ref_path, char *dis_path
 
     if (strcmp(ref_path, "-"))
     {
-        if (fseek(s->ref_rfile, 0, SEEK_END))
+#ifdef _WIN32
+        struct _stat64 ref_stat;
+        if (!_stat64(ref_path, &ref_stat))
+#else
+        struct stat64 ref_stat;
+        if (!stat64(ref_path, &ref_stat))
+#endif
         {
-            fprintf(stderr, "fseek failed.\n");
-            ret = 1;
-            goto fail_or_end;
-        }
+            size_t frame_size = width * height + s->offset;
+            if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+            {
+                frame_size *= 2;
+            }
 
-        if ((file_size = ftell(s->ref_rfile)) == -1)
+            s->num_frames = ref_stat.st_size / frame_size;
+        }
+        else
         {
-            fprintf(stderr, "ftell failed.\n");
-            ret = 1;
-            goto fail_or_end;
+            s->num_frames = -1;
         }
-
-        rewind(s->ref_rfile);
-
-        frame_size = width * height + s->offset;
-        if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
-        {
-            frame_size *= 2;
-        }
-
-        s->num_frames = file_size / frame_size;
     }
     else
     {
