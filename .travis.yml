@@ -6,8 +6,8 @@ python:
 before_install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update -qq
-  - sudo apt-get install -qq g++-4.8
-  - export CXX="g++-4.8" CC="gcc-4.8"
+  - sudo apt-get install -qq g++-9
+  - export CXX="g++-9" CC="gcc-9"
   - sudo apt-get install git
 
 install:
