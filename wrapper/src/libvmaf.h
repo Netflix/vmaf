@@ -32,9 +32,32 @@
 extern "C" {
 #endif
 
-int compute_vmaf(double* vmaf_score, char* fmt, int width, int height, int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride_byte, void *user_data),
-				 void *user_data, char *model_path, char *log_path, char *log_fmt, int disable_clip, int disable_avx, int enable_transform, int phone_model, int do_psnr,
-				 int do_ssim, int do_ms_ssim, char *pool_method, int n_thread, int n_subsample, int enable_conf_interval);
+typedef struct {
+
+    int width;
+    int height;
+    char *format;
+    char *model_path;
+    char *additional_model_paths;
+    char *log_path;
+    char *log_fmt;
+
+    int n_thread;
+    int n_subsample;
+    char *pool_method;
+    int disable_clip;
+    int disable_avx;
+    int enable_transform;
+    int phone_model;
+    int do_psnr;
+    int do_ssim;
+    int do_ms_ssim;
+    int enable_conf_interval;
+
+} VmafContext;
+
+int compute_vmaf(double* vmaf_score, int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride_byte, void *user_data),
+				 void *user_data, VmafContext *vmafContext);
 
 #ifdef __cplusplus
 }
@@ -107,8 +130,7 @@ private:
 class IVmafQualityRunner {
 public:
     virtual Result run(Asset asset, int(*read_frame)(float *ref_data, float *main_data, float *temp_data,
-        int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
-        bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample) = 0;
+        int stride, void *user_data), void *user_data, VmafContext *vmafContext) = 0;
     virtual ~IVmafQualityRunner() {}
 };
 

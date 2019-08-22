@@ -30,6 +30,9 @@ class Executor(TypeVersionEnabled):
 
     __metaclass__ = ABCMeta
 
+    # if optional dict is too long, executor_id needs to be trimmed
+    MAX_CHARS_EX_ID_OPT_DICT = 10
+
     @abstractmethod
     def _generate_result(self, asset):
         raise NotImplementedError
@@ -80,7 +83,7 @@ class Executor(TypeVersionEnabled):
         if self.optional_dict is not None and len(self.optional_dict) > 0:
             # include optional_dict info in executor_id for result store,
             # as parameters in optional_dict will impact result
-            executor_id_ += '_{}'.format(get_normalized_string_from_dict(self.optional_dict))
+            executor_id_ += '_{}'.format(get_normalized_string_from_dict(self.optional_dict))[0:self.MAX_CHARS_EX_ID_OPT_DICT]
         return executor_id_
 
     def run(self, **kwargs):

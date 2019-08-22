@@ -39,12 +39,8 @@
 
 static const std::string BOOSTRAP_VMAF_MODEL_PREFIX = "vmaf_";
 
-double RunVmaf(const char* fmt, int width, int height,
-               int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
-               void *user_data, const char *model_path, const char *log_path, const char *log_fmt,
-               bool disable_clip, bool enable_transform,
-               bool do_psnr, bool do_ssim, bool do_ms_ssim,
-               const char *pool_method, int n_thread, int n_subsample, bool enable_conf_interval);
+double RunVmaf(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
+               void *user_data, VmafContext *vmafContext);
 
 class VmafException: public std::exception
 {
@@ -74,6 +70,13 @@ struct VmafPredictionStruct
 {
     std::map<VmafPredictionReturnType, double> vmafPrediction;
     std::vector<double> vmafMultiModelPrediction;
+};
+
+struct AdditionalModelStruct
+{
+    std::vector<string> model_paths;
+    std::vector<string> model_names;
+    int num_models;
 };
 
 class LibsvmNusvrTrainTestModel
@@ -122,8 +125,7 @@ class VmafQualityRunner : public IVmafQualityRunner
 public:
     VmafQualityRunner(const char *model_path): model_path(model_path) {}
     virtual Result run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
-               int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
-               bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample);
+               int stride, void *user_data), void *user_data, VmafContext *vmafContext);
     virtual ~VmafQualityRunner() {}
 protected:
     static void _transform_value(LibsvmNusvrTrainTestModel& model, double& prediction);
