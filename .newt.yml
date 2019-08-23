@@ -1,0 +1,59 @@
+app-type: debian-package
+
+build-image: dockerregistry.test.netflix.net:7002/engtools/newt-c-builder/xenial:latest
+
+build-setup:
+  - >
+    sudo apt-get update && sudo apt-get install -y
+    libogg-dev
+    python-setuptools
+    python-tk
+    python-dev
+  - sudo easy_install pip
+  - sudo pip install --upgrade pip
+  - sudo pip install --upgrade h5py
+  - sudo pip install --upgrade numpy scipy matplotlib pandas nose
+  - sudo pip install --upgrade scikit-learn scikit-image
+  - sudo pip install --upgrade openpyxl
+  - sudo pip install --upgrade sureal
+
+build-step:
+
+  # ==== get VMAF source code from github ====
+  - git clone https://github.com/Netflix/vmaf.git
+
+  # ==== make and install vmafossexec and models ====
+  - cd vmaf; make clean
+  - cd vmaf; make
+  - cd vmaf; sudo make install
+  - cd vmaf; make testlib
+
+  # ==== tests ====
+  # - cd vmaf/python; export PYTHONPATH=$(pwd)/src:$PYTHONPATH; python -m unittest discover -t . -s test/lib -p '*_libtest.py'
+  # - cd vmaf/python; export PYTHONPATH=$(pwd)/src:$PYTHONPATH; python -m unittest discover -t . -s test -p '*_test.py'
+  # - cd vmaf/python; export PYTHONPATH=$(pwd)/src:$PYTHONPATH; python -m unittest discover -t . -s test/extra -p '*_extratest.py'
+
+  # ==== create necessary folders ====
+  - mkdir -p $(pwd)/newt_pkg/apps/transcoder/bin
+  - mkdir -p $(pwd)/newt_pkg/apps/transcoder/lib/pkgconfig
+  - mkdir -p $(pwd)/newt_pkg/usr/local/lib/
+  - mkdir -p $(pwd)/newt_pkg/usr/local/include/
+  - mkdir -p $(pwd)/newt_pkg/usr/local/share/model
+
+  # ==== copy necessary folders/files ====
+
+  # ==== copy binary ====
+  - cp $(pwd)/vmaf/wrapper/vmafossexec $(pwd)/newt_pkg/apps/transcoder/bin
+  - cp $(pwd)/vmaf/wrapper/testlib $(pwd)/newt_pkg/apps/transcoder/bin
+
+  # ==== copy libvmaf files ====
+  - cp $(pwd)/vmaf/wrapper/libvmaf.pc $(pwd)/newt_pkg/apps/transcoder/lib/pkgconfig
+  - cp $(pwd)/vmaf/wrapper/libvmaf.a $(pwd)/newt_pkg/apps/transcoder/lib
+  - cp $(pwd)/vmaf/wrapper/src/libvmaf.h $(pwd)/newt_pkg/apps/transcoder/include
+
+  # ==== copy model file to: /usr/local/share/model ====
+
+  # ==== copy VMAF model ====
+  - cp -r $(pwd)/vmaf/model/vmaf_v0.6.1.pkl $(pwd)/newt_pkg/usr/local/share/model
+
+package-root: "newt_pkg"
