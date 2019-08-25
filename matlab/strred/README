@@ -1,0 +1,23 @@
+** modifications **
+
+(12/19/2016 zli@netflix.com) Three modifications are made to fit into the VDK framework:
+1) Instead of specifying number of seconds to read, read file until the end.
+2) Instead of calculating a frame score every two frames, change it to one score
+every frame.
+3) Original algorithm averages frame SRRED and TRRED scores first, and the final
+STRRED score is the product of the two. In this modified version, only the per-
+frame SRRED and TRRED scores are calculated and passed out. The computation of
+the STRRED score is performed outside, by first computing the per-frame STRRED
+score via:
+per-frame STRRED = (per-frame SRRED) * (per-frame TRRED)
+and then aggregating (e.g. via taking the mean).
+
+** run **
+
+Command run_strred takes in arguments:
+ref_yuv_file_path dis_yuv_file_path width height
+
+After installing Matlab and setting path, run STRRED in command line:
+matlab -nodisplay -nosplash -nodesktop -r "run_strred('../../python/test/resource/yuv/src01_hrc00_576x324.yuv', '../../python/test/resource/yuv/src01_hrc01_576x324.yuv', 576, 324); exit;"
+
+

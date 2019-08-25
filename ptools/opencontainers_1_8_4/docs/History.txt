@@ -1,0 +1,305 @@
+
+This document describes some of the history of the classes in the
+OpenContainers.  It also documents some of the decisions [which you
+may or may not agree with] made in the implementations.  This document
+assumes you know basic data structures.
+
+This document is really for the curious you want to know about what's
+under the hood and why it's under the hood.  You don't need to read
+this to use the OpenContainers (and you might want to save reading it
+until after you've used them for a while).
+
+OCString:
+
+OCString came from Midas 2k.  It has been beaten on pretty heavily in
+that framework.  It had been rewritten several times over the life of
+M2k, basically because of performance and footprint reasons.  It
+doesn't implement the entire STL::string interface, but a good subset
+of it (enough that no one complained too heavily about using it).
+
+Rewrite 1 came because a "naive" string implementation hits the heap
+VERY hard, and was very expensive.  For our multi-threaded system, the
+heap became the bottleneck as string after string was constructed from
+the heap.  The first rewrite created a local "lookaside" cache for the
+string: if the string is less than (say) 32 bytes, it stays completely
+within the local cache, otherwise it goes to the heap.  At least for
+our framwork, a large majority of strings were less than 32 bytes, and
+this single optimization did more for Midas 2k's scalability than just
+about any feature.
+
+Rewrite 2 happened because we needed to save space.  When the string
+is a "long" string (over 32 bytes), the local cache goes unused and is
+wasting space.  So, we use a union.  For short strings, the local
+lookaside cache stores the length (in a single byte int) and contains
+the string itself.  For long strings, the cache holds the length of
+the string (in a larger int) as well as the pointer to the string on
+the heap.  This rewrite made a good dent on making Midas 2k's space
+requirements smaller.
+
+There still needs to be a rewrite 3: Currently, there is no notion of
+"capacity" of strings and growing strings.  A problem found with
+OCString is that if you keep appending A SINGLE CHARACTER, you have to
+recopy the string every time.  [Why would you only append a single
+character?  Because you are writing a parser that keeps every token
+for error-reporting.]  So, there will be a rewrite where the notion of
+"capacity" of the string is kept, as well as doubling of capacity when
+the string needs to grow.
+
+So, the code for OCString isn't the prettiest in the world, but it has
+been tested in real applications that have run for months and months.
+It also is pretty efficient and adheres to the STL interface.
+
+
+
+Permutations:
+
+Permutations came from having to write tests for sorting and other
+things.  Many times during a test, you want to try "all possible
+permutations" of the data to make sure your code will handle every
+possible input well.  That's why it was written.
+
+Writing permutations, you might claim, is a "simple" task: It's a
+recursive function you can write and get it working quickly.  Writing
+an EFFICIENT permutation generator, well, that's a different story.
+
+The permutation generator in OpenContainers uses NO recursion.  It is
+completely iterative.  It is also very fast.  The time to generate a
+single element of a permutation is (amortized cost) constant
+[Basically two swaps].  Knuth has, in his web site, a permutation
+generator from his "forthcoming" 4th Book of the "Art of Computer
+Programming".  The permutation generator is comparable to the ones
+listed there.  The one in OpenContainers has the extra property that
+you can seed to immediately get the any particular permutation with
+the "seed" method.
+
+One final note on permutations: this class does generate permutations
+quickly, but remember that the number of permutations of n grows very
+quickly (n factorial).  n! might take a day to generate all
+permutations, so (n+1)! will take n+1 days.  Bound your permutations
+unless you want to be sitting a LONG time.
+
+
+Sorting:
+
+This code comes from a particular project where I needed to sort a
+LARGE amount of data to get the median, and it had to be as fast as I
+could make it.  The permutation generator (above) came from this same
+project: I needed to test the sorting for all possibilities!
+
+For large, random amounts of data, quicksort tends to beat the pants
+off of other sorts.  For small sorts, insertion tends to be much
+better (because if the data is already sorted, it will sort better
+with insertion sort).  And for very small sorts, a hardcoded sort is
+the best way to go.
+
+The "best" "general purpose" sort combines all three of these
+features: use quicksort to quickly break down the problem, use
+insertion sort for small pieces, and hardcoded sorting for the
+smallest pieces.
+
+The final piece is to take the middle piece of data to get the median.
+[BTW, it turns out you can find the median of an array of data in
+linear time, but it's very tricky]
+
+
+Array:
+
+This code comes directly from Midas 2k: It has the same amount of
+testing as the String class: extensive.  Most of it is pretty
+strait-forward, although this is one potential gotcha: having to
+append data in the array to initialize it.  This makes it so we don't
+require a default constructor to initialize the whole array.
+
+Requiring an "append" to construct each element of the array may be
+one of those issues disagree with, (perhaps it would be better if the
+array did default construction), but I am codifying existing practice.
+This is simply how the very well-tested Midas 2k array works.
+
+
+HashTableT:
+
+HashTableT<key,value,len> actually has hard-coded into the class an
+array of size len: this is for performance!  There is one less
+allocation to perform at construction, many of the loops in the code
+have constant bounds (so that unrolling, constant folding and other
+optimizations can be made), and during destruction there is less work.
+
+HashTableT made a choice: prefer hard-coded bounds in the class (for
+performance) which disallows "rehashing": Rehashing is where, when a
+hash table gets too full, you create a larger array and move
+everything over.  The problem, of course, with rehashing is that it is
+a linear operation touching all items in the table.  Certainally a
+full hash table is expensive to search, but the classes from Midas2k
+were typically for soft real-time: one operation should prefer to be
+bounded.  If we allow rehashing, we allow operations to be unbounded.
+If we want a more general data structure for Hashing, we should use
+the AVLHash [see below].
+
+There was one rewrite of HashTable for performance.  The HashTable
+uses buckets (every insert creates a node for a link list called a
+"bucket"), and these buckets were obtained off the heap directly.
+This suffers from the same problem as the OCString: too much heap
+traffic.  To alleviate the problem, buckets are allocated in groups of
+4 (encapsulated in a #define: at the time, there was poor, poor
+support for templates).  This way, every 4 inserts go to the heap at
+the cost of potential wasted space [if you don't use all 4 nodes, they
+are allocated but not used].  Classic trade-off of space vs. time, but
+in this case, it was more for scalability [the heap is a precious
+resource that seems to be hit too hard].
+
+
+HashTable:
+
+The most common HashTableT has strings as the key.  HashTable is
+simply a convienence class and is equivalent to HashTableT<string,
+value, 8>.
+
+
+AVLTree: 
+
+AVLTreeT has pretty much the exact same interface as HashTableT: in
+fact, it should be plug-in compatible.  AVLTree is like HashTable:
+AVLTree<value> is equivalent to AVLTreeT<string, value, 8>.
+
+AVLTree is what you expect, a balanced binary search tree (an AVL
+tree).  It requires its keys to be able to call operator<.
+
+There are some (in my mind) interesting things about the AVLTree.
+First, it doesn't require recursion (for those of you with small
+stacks, this is a good thing).  [The only routine that requires
+recursion is "isConsistent", a self-checking routine which simply
+verifies that the data structure is intact: you should never have any
+need to call it except for during testing.  A user probably never
+needs to call it.]  It's a bit surprising, given that most Computer
+Science texts always show AVLTree routines recursively, but for
+performance reasons, you typically want to stay away from recursion.
+[In fact, it accounts for a lot of the speed of this implementation].
+
+[Implementation detail: To avoid recursion, we have to have a "parent"
+pointer in each node, which adds "management overhead".  If you use a
+recursive solution, you can avoid this extra overhead per node, but
+then you still have to build a parent list EVERY time you traverse.
+It's a lot faster to simply keep this list and only update/traverse it
+when you have to.  Stack management vs. simple linked lists is no
+contest: the simple linked "parent" list is faster.]
+
+Second, the AVLTree is "threaded": this makes it easy to traverse the
+tree in order and it can be done without recursion [Most traversals
+for trees are recursive].  Note that in a typical binary search tree,
+half of the nodes are are the frontier and contain n+1 null pointers.
+[Draw yourself a picture if you don't believe this ...]  So, half of
+the pointers of the tree do nothing.  We can turn those pointers into
+something useful: in our case, we make left NULL pointers point to the
+inorder predecessor and the right NULL pointers point to the inorder
+successor.  We distinguish between "threaded" pointers and "normal"
+pointers by using the low-order bit of the pointer.  (Since structs
+have to be aligned on 4 byte boundaries, we have 2 bits which are
+always zero in a pointer).  If the low-order bit is 1, then this is a
+threaded pointer, otherwise a normal pointer.  This means that we have
+to be careful and mask off bits as we traverse through trees, but it's
+not too expensive.
+
+A good reference for "threaded" trees is: Harry Lewis, Fundamentals of
+Data Structures and Algorithms.
+
+Todo: the lookup phase of the AVLTree is actually slower than it
+should be: the test for nullness takes 2 instructions instead of 1.
+We need to rewrite the AVLTree slightly so we can take only one
+instruction. [This is very minor, but does slow it down ever so
+slightly]
+
+
+AVLHash:
+
+AVLHashT is plug-in compatible with AVLTreeT and HashTableT.
+AVLHashT<value> is equivalent to AVLTreeT<string, value, 8>.
+
+The problem with HashTableT above is that searches can degenerate into
+linear linked-list searches if the bucket lists get too big.  To
+combat this, the AVLHash is a HashTable that uses the full hash value
+computed as keys in an AVLTree.  Thus, the nodes of the AVLTree are
+ordered by the hash value. Thus, a search is logarithmic, but rather
+than do a full key compare, you do integer compares to get to the
+point you want in the tree.  Each node still has a bucket list, but
+collisions should be much, much less frequent (if you have a good hash
+function) because you aren't constrained by the size of the array.
+
+This is basically an extendible hash table.  It's a good general data
+structure if you don't know the size of your data.  It's competitive
+with HashTable.
+
+
+Val/Tab/Str:
+
+The Val/Tab/Str heterogenous container is a relatively new addition
+to OpenContainers.  It does not have all the testing of the other
+classes, but it is still useful enough to include.
+
+The Val type is basically a Union for all int types (not complex),
+strings, and Tables (Tabs).  
+
+Tabs are recursive (meaning they can contain other other Tabs)
+containers for the Val type.  
+
+Str is simply the OCString, but since it is faster than STL
+strings in many contexts, we make Tabs parameterized on Tabs.
+
+These are all lightweight containers so we can have the functionality
+of Python dictionaries without having to embed a Python interpreter
+inside our process.  The nice thing about them is that they are pretty
+easy to use:
+
+  Val v = 1.0;   // Put a real into the container
+  int_u2 vv = v; // .. and get it out as an int 
+                 //    as if you had done vv = int_u2(real(1.0))
+
+  Tab t;
+  t["1"] = 100;      // some int: Constructs Val(int) then assigns
+  t["2"] = 1.0;      // some real: Constructs Val(real) then assigns
+  t["3"] = "string"; // some string: Constructs Val(const char*) then assigns
+
+  Tab sub;
+  sub["A"] = int_4(0);
+  
+  t["subtable"] = sub; // Copy in a subtable!
+
+If you look at the class, you'll see we have constructors and out
+converters for most types so assigning in and out of Vals should just
+WORK.  Midas 2k had problems with too confusing of overload rules and
+frequently you had to qualify what values you wanted out when it was
+usually pretty clear from context.  The Val/Tab/Str learned lessons
+from Midas 2k about what to do and not do.  You SHOULD explicitly give
+all construction/out conversions so there's never any question which
+signature to use.
+
+If you look at the code, I break 2 Herb Sutter rules on purpose.  One:
+I explicitly called destructors and constructors without wrapping them
+in a "construct/destruct" functions.  I think it's silly to hide real
+C++ code when that's what they do.  Two: I use a char buf[SOMEIZE] to
+construct Tabs INPLACE.  I do put them in a union with real_8 so that
+there aren't any alignment issues.  I do this for speed: The usual
+usage for the Vals is on the Stack and this way we avoid the heap (by
+not going to it unless we have to).  This was proven, again and again
+in Midas 2k, to be a major performance/scalability issue.  Stay away
+from the heap: construct inplace.
+
+Serialize and Deserialize could be faster, but this was a first pass.
+It also doesn't handle different endians.  These are issues to be
+addressed in the future.
+
+One other thing: I always thought C++ iterator syntax was a nightmare.
+But, of course, you have to descend into the namespace/class
+to get the iterator and completely qualify it even though 
+the type of the container has all that information already.
+  Vector<string> c;
+  Vector::iterator<string> it(c);  // Redundant!
+What I want is:
+  SOMECONTAINER<T> c;
+  IT ii(c);         
+So, with the Val/Tab/Str containers, I actually have almost that.
+Since I have to keep the container usage from previous written
+code, I get:
+  Tab t = ...;
+  for (It ii(t); ii(); ) 
+     cerr << ii.value() << " " << ii.key() << endl;
+

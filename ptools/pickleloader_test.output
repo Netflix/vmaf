@@ -1,0 +1,267 @@
+***Make sure we can load integers for Protocol 0
+ ... okay: 'x'0
+ ... okay: 'x'1
+ ... okay: 'x'-1
+ ... okay: 'x'255
+ ... okay: 'x'-255
+ ... okay: 'x'32768
+ ... okay: 'x'-32768
+**Make sure we can do LONG integers for Protocol 0
+ ... okay: 'q'10L
+ ... okay: 'q'1L
+ ... okay: 'q'0L
+ ... okay: 'q'-1L
+ ... okay: 'q'-10L
+ ... okay: 'q'340282366920938463463374607431768211456L
+ ... okay: 'q'-340282366920938463463374607431768211456L
+**Make sure we can do string for P0
+ ... okay: 'a''abc'
+ ... okay: 'a'''
+ ... okay: 'a''\x00'
+ ... okay: 'a''\x00\x01\n'
+ ... okay: 'a''\x00\x01\n"'
+ ... okay: 'a'"'"
+ ... okay: 'a''"'
+ ... okay: 'a''"Don\'t!"'
+ ... okay: 'a''\xfe\xcd\xab\x98vT2\x10'
+**Make sure we can do reals for P0
+ ... okay: 'd'1.1
+ ... okay: 'd'1.23456789123456
+ ... okay: 'd'1.234567891234567
+ ... okay: 'd'1.234567891234568
+ ... okay: 'd'-1.2
+ ... okay: 'd'0.0
+ ... okay: 'd'1238458972635762432.0
+ ... okay: 'd'inf
+ ... okay: 'd'-inf
+ ... okay: 'd'nan
+ ... okay: 'd'-nan
+ ... we actually expect nan != nan, so this error okay
+**Make sure we can do complexes for P0
+ ... okay: 'D'(1+2j)
+ ... okay: 'D'(-827345872.7863479+2394750234j)
+ ... okay: 'D'(0-1j)
+ ... okay: 'D'(0+0j)
+**Make sure we can do tuples for P0
+ ... okay: 'u'()
+ ... okay: 'u'(1)
+ ... okay: 'u'(1, 2)
+ ... okay: 'u'(1, 2.2, 'three')
+ ... okay: 'u'((), (1, 2, (), 3), (), 4)
+ ... okay: 'u'(1, (1))
+ ... okay: 'u'(1, (1), (1))
+**Make sure we can do dict for P0
+ ... okay: 't'{}
+ ... okay: 't'{'a': 1, 'b': 2.2, 'c': 'ree'}
+ ... okay: 't'{'a': 1}
+ ... okay: 't'{'a': 1, 'b': {'n': 6}}
+**Make sure we can do None for P0
+ ... okay: 'Z'None
+**Make sure we can do list for P0
+ ... okay: 'nZ'[]
+ ... okay: 'nZ'[[], [[], []], [[]], []]
+ ... okay: 'nZ'[1, 2, 3]
+ ... okay: 'nZ'[{'a': 1}, {'b': []}, [1, 2], (1+2j), 17.2348979283]
+**Make sure we can do longs for P2
+ ... okay: 'q'1L
+ ... okay: 'q'-1L
+ ... okay: 'q'127L
+ ... okay: 'q'129L
+ ... okay: 'q'1234567890123456789L
+ ... okay: 'q'32317006071311007300714876688669951960444102669715484032130345427524655138867890893197201411522913463688717960921898019494119559150490921095088152386448283120630877367300996091750197750389652106796057638384067568276792218642619756161838094338476170470581645852036305042887575891541065808607552399123930385521914333389668342420684974786564569494856176035326322058077805659331026192708460314150258592864177116725943603718461857357598351152301645904403697613233287231227125684710820209725157101726931323469678542580656697935045997268352998638215525166389437335543602135433229604645318478604952148193555853611059596230656L
+**Make sure we can put gets and puts with P0
+ ... okay: 'nZ'[[], []]
+nZ1
+nZ1
+1
+**Make sure the Protocol note works for P2
+ ... okay: 'S'1
+***Make sure we can load all the integers for Protocol 2
+ ... okay: 'S'1
+ ... okay: 'S'127
+ ... okay: 'S'128
+ ... okay: 'S'255
+ ... okay: 'I'256
+ ... okay: 'I'32767
+ ... okay: 'I'32768
+ ... okay: 'I'65535
+ ... okay: 'l'65536
+ ... okay: 'l'-65536
+ ... okay: 'l'2147483647
+ ... okay: 'l'-2147483648
+***Misc
+ ... okay: 'Z'None
+ ... okay: 't'{}
+ ... okay: 'nZ'[]
+ ... okay: 'b'True
+ ... okay: 'b'False
+***Strings for Protocol 2
+ ... okay: 'a''abc'
+ ... okay: 'a'''
+ ... okay: 'a''***************************************************************************************************************************************************************************************************************************************************************'
+ ... okay: 'a''****************************************************************************************************************************************************************************************************************************************************************'
+***tuples for Protocol 2
+ ... okay: 'u'()
+ ... okay: 'u'(1)
+ ... okay: 'u'(1, 2)
+ ... okay: 'u'(1, 2, 3)
+ ... okay: 'u'(1, 2, 3, 4)
+*** nastier tuples
+ ... okay: 'u'(1, 2, 3, (4, 5))
+ ... okay: 'u'(1, 2, 3, (4, 5), (6), (7, 8, 9, 10))
+*** dictionaries
+ ... okay: 't'{'a': 1}
+ ... okay: 't'{'a': 1, 'b': 2}
+ ... okay: 't'{'a': 1, 'b': 2, 'c': 3}
+*** nested dictionaries
+ ... okay: 't'{'a': {}, 'b': {'N': 8}, 'c': {'O': None, 'P': (1, 2, 3)}}
+ ... okay: 't'{1: {}, 2: {}, 5: {}}
+*** real numbers
+ ... okay: 'd'1.0
+ ... okay: 'd'-1.0
+ ... okay: 'd'100.25
+*** complex numbers
+ ... okay: 'D'(1+2j)
+ ... okay: 'D'(-1.5-0.5j)
+*** lists
+ ... okay: 'nZ'[]
+ ... okay: 'nZ'[1]
+ ... okay: 'nZ'[1, 2]
+ ... okay: 'nZ'[1, 2, 3]
+*** nested lists for P2
+ ... okay: 'nZ'[1, 2, [3, 4, [5], (6, 7, 8), [[]]], [], [1]]
+*** orderered dicts for P0
+ ... okay: 'o'OrderedDict([])
+ ... okay: 'o'OrderedDict([('a', 1)])
+ ... okay: 'o'OrderedDict([('a', 1), ('b', 2)])
+*** orderered dicts for P2
+ ... okay: 'o'OrderedDict([])
+ ... okay: 'o'OrderedDict([('a', 1)])
+ ... okay: 'o'OrderedDict([('a', 1), ('b', 2)])
+*** proxies and replicated data (puts/gets)
+ ... okay: 'u'([], [])
+([], [])
+111
+ ... okay: 'u'((1+2j), (3+4j))
+ ... okay: 'u'([1, (2), 'three'], [1, (2), 'three'], {'a': 1, 'b': 2}, {'a': 1, 'b': 2}, (1, (2, 2), 'three'), (1, (2, 2), 'three'), (1, (2, 2), 'three'))
+*** Numeric arrays: P0 and P2
+ ... okay: 'ns'array([1,2,3], '1')
+ ... okay: 'ns'array([1,2,3], '1')
+ ... okay: 'nS'array([1,2,3], 'b')
+ ... okay: 'nS'array([1,2,3], 'b')
+ ... okay: 'ni'array([1,2,3], 's')
+ ... okay: 'ni'array([1,2,3], 's')
+ ... okay: 'nI'array([1,2,3], 'w')
+ ... okay: 'nI'array([1,2,3], 'w')
+ ... okay: 'nl'array([1,2,3], 'i')
+ ... okay: 'nl'array([1,2,3], 'i')
+ ... okay: 'nL'array([1,2,3], 'u')
+ ... okay: 'nL'array([1,2,3], 'u')
+ ... okay: 'nx'array([1,2,3], 'l')
+ ... okay: 'nx'array([1,2,3], 'l')
+ ... okay: 'nf'array([1.0,2.0,3.0], 'f')
+ ... okay: 'nd'array([1.0,2.0,3.0], 'd')
+ ... okay: 'nF'array([(1+0j),(2+0j),(3+0j)], 'F')
+ ... okay: 'nD'array([(1+0j),(2+0j),(3+0j)], 'D')
+ ... okay: 'u'(array([1,2,3], '1'), array([1,2,3], 'b'), array([1,2,3], '1'))
+*** Functions with no registered reducer
+ ... okay: 'u'('__main__\nJacob\n', ({'x': 100}))
+** Functions with no registered BUILD function
+ ... okay: 'u'(('__main__\nScott\n', ()), {'data': 100})
+** Functions with registered BUILD functions
+SCOTT:type_object:('__main__\nScott\n', ())
+SCOTT:input:{'data': 100}
+name:__main__
+Scott
+ args:()
+ ... okay: 'S'100
+**P0 doesn't intercept this just yet, but at least it parses ...
+ ... okay: 'u'(('copy_reg\n_reconstructor\n', ('__main__\nScott\n', '__builtin__\nobject\n', None)), {'data': 100})
+** Complex tables with P0
+ ... okay: 't'{'nest': {'cc': 17}, 'hello': [3.3, 4.4, 5.5], 'proxy2': {'shared': 1}, 'proxy1': {'shared': 1}, 'a': array([(0+0j)], 'F'), 'b': array([(0+0j),(0+0j),(0+0j)], 'F')}
+** Complex tables with P2
+ ... okay: 't'{'nest': {'cc': 17}, 'hello': [3.3, 4.4, 5.5], 'proxy2': {'shared': 1}, 'proxy1': {'shared': 1}, 'a': array([(0+0j)], 'F'), 'b': array([(0+0j),(0+0j),(0+0j)], 'F')}
+** array module
+..This is how Python 2.7 does it: P0
+ ... okay: 'nx'array([100,200,300], 'l')
+..This is how Python 2.6 does it: P0
+ ... okay: 'nx'array([100,200,300], 'l')
+..This is how Python 2.7 does it: P2
+ ... okay: 'ns'array([65,55], '1')
+ ... okay: 'nx'array([100,200,300], 'l')
+..This is how Python 2.6 does it: P2
+ ... okay: 'ns'array([65,55], '1')
+ ... okay: 'nx'array([100,200,300], 'l')
+**Numeric module P2 FROM A 32_BIT MACHINE
+...The load below represents loading a Numeric array from a 
+   32-bit machine: it had the Numeric typecode 'l', which means 'long'
+   in Numeric land, but sizeof(long)==4 on the original 32-bit machine
+   and 'more frequently', the sizeof(long)==8).
+   We can detect this on the load and correct the problem.
+   When we dump, however, we currently (at least from C++)
+   ALWAYS dump a Numeric 'l' as a int_8 array.
+ ... okay: 'nl'array([1,2,3], 'i')
+**NumPy, empty array test pickle 2
+ ... okay: 'nd'array([], 'd')
+**NumPy, empty array test pickle 0
+ ... okay: 'nd'array([], 'd')
+**NumPy floats test pickle 2
+ ... okay: 'nf'array([100.0,200.0,300.0,400.0], 'f')
+**NumPy floats test pickle 0
+ ... okay: 'nf'array([100.0,200.0,300.0,400.0], 'f')
+**NumPy complex_16 test pickle 2
+ ... okay: 'nD'array([(1+0j),(2+0j),(3+0j),(4+0j)], 'D')
+**NumPy complex_16 test pickle 0
+ ... okay: 'nD'array([(1+0j),(2+0j),(3+0j),(4+0j)], 'D')
+**NumPy complex_8 test pickle 2
+ ... okay: 'nF'array([(1+0j),(2+0j),(3+0j),(4+0j)], 'F')
+**NumPy complex_8 test pickle 0
+ ... okay: 'nF'array([(1+0j),(2+0j),(3+0j),(4+0j)], 'F')
+**NumPy int_u1 test pickle 2
+ ... okay: 'nS'array([1,2,3,4], 'b')
+**NumPy int_u1 test pickle 0
+ ... okay: 'nS'array([1,2,3,4], 'b')
+**NumPy int_1 test pickle 2
+ ... okay: 'ns'array([1,2,3,4], '1')
+**NumPy int_1 test pickle 0
+ ... okay: 'ns'array([1,2,3,4], '1')
+**NumPy int_u2 test pickle 2
+ ... okay: 'nI'array([1,2,3,4], 'w')
+**NumPy int_u2 test pickle 2
+ ... okay: 'nI'array([1,2,3,4], 'w')
+**NumPy int_2 test pickle 2
+ ... okay: 'ni'array([1,2,3,4], 's')
+**NumPy int_2 test pickle 0
+ ... okay: 'ni'array([1,2,3,4], 's')
+**NumPy, int_u4 pickle 2
+ ... okay: 'nL'array([15,16,17], 'u')
+**NumPy, int_u4 pickle 0
+ ... okay: 'nL'array([15,16,17], 'u')
+**NumPy, int_4 pickle 2
+ ... okay: 'nl'array([15,16,17], 'i')
+**NumPy, int_4 pickle 0
+ ... okay: 'nl'array([15,16,17], 'i')
+**NumPy, int_u8 pickle 2
+ ... okay: 'nX'array([1,18446744073709551615,0], 'l')
+**NumPy, int_u8 pickle 0
+ ... okay: 'nX'array([1,18446744073709551615,0], 'l')
+**NumPy, int_8 pickle 2
+ ... okay: 'nx'array([1,-1,0], 'l')
+**NumPy, int_8 pickle 0
+ ... okay: 'nx'array([1,-1,0], 'l')
+**NumPy, bool pickle 2
+ ... okay: 'nb'array([True,True,False], 'b')
+**NumPy, bool pickle 0
+ ... okay: 'nb'array([True,True,False], 'b')
+**NumPy, sharing pickle 0
+ ... okay: 't'{'a': array([1], 'i'), 'b': array([1], 'i')}
+1
+**NumPy, sharing pickle 2
+ ... okay: 't'{'a': array([1], 'i'), 'b': array([1], 'i')}
+1
+**NumPy, multiple sharing pickle 0
+ ... okay: 't'{'a': array([1], 'i'), 'b': array([1], 'i')}
+0
+**NumPy, multiple sharing pickle 2
+ ... okay: 't'{'a': array([1], 'i'), 'b': array([1], 'i')}
+0

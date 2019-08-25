@@ -1,0 +1,73 @@
+
+nuget {
+	// the nuspec file metadata. Gets created/updated on build
+	nuspec {
+		id = pthreads;
+		version : 2.9.1.4;
+		title: Pthreads Library;
+		authors: {Pthreads contributors, Tim Rogers};
+		owners: {CoApp Project, Garrett Serack, Tom Hanrahan};
+		licenseUrl: "https://raw.github.com/coapp-packages/pthreads/master/COPYING.LIB";
+		projectUrl: "http://github.com/coapp-packages/pthreads";
+		iconUrl: http://www.sourceware.org/pthreads-win32/images/Pthreads-win32-small.gif;
+		requireLicenseAcceptance:false;
+		summary: Pthreads - POSIX threads API for Windows;
+		description: @"A library for writing multithreaded applications with POSIX threads.
+		Pthreads homepage: http://www.sourceware.org/pthreads-win32/";
+		releaseNotes: "Release of pthreads-win32 2.9.1";
+		copyright: Copyright 2013;
+		tags: { pthread, libpthread, native, CoApp };
+
+	};
+
+	// the files that go into the content folders
+	// (inserted into the nuspec file)
+	files {
+		include: { 
+            ..\need_errno.h,
+            ..\pthread.h,
+            ..\sched.h,
+            ..\semaphore.h,
+        };
+
+        source:  { 
+            ..\*.c,
+            ..\*.h,
+        };
+
+		docs: { 
+            ..\manual\*
+        };
+        
+        ("v100,v110", "Win32,x64", "release,debug", "dynamic,static", "cdecl,stdcall") => {
+            [${0},${1},${2},${3},${4}] {
+				lib:     { .\output\${0}\${1}\${2}\${3}Library\${4}\lib\*.lib };
+            };
+		};
+		
+        ("v100,v110", "Win32,x64", "release,debug", "dynamic", "cdecl,stdcall") => {
+            [${0},${1},${2},${3},${4}] {
+				bin:     { .\output\${0}\${1}\${2}\${3}Library\${4}\lib\*.dll };
+				symbols: { .\output\${0}\${1}\${2}\${3}Library\${4}\lib\*.pdb };
+            };
+		};
+
+
+	};
+
+	// the VC++ .props file that gets generated and inserted into the ${d_content} folder
+	props { 
+		// we're going to generate a number of properties anyway. 
+        // so even if the packager doesn't specify the props object 
+        // we're going to make this file.
+	};
+
+	// the VC++ .targets file that gets generated and inserted into the ${d_content} folder
+	targets {
+		// every configuration needs to reference the include directories.
+		Defines += HAS_PTHREAD;
+		[static]
+			Defines += PTW32_STATIC_LIB;
+	};
+}
+

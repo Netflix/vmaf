@@ -1,0 +1,15 @@
+# Caches, build artifacts
+.DS_Store
+.cache/
+*.egg*
+.gradle/
+.idea/
+*.py[cod]
+.pypirc
+.tox/
+.*version
+.venv*/
+__pycache__/
+build/
+dist/
+vmaf_output.xml

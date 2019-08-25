@@ -1,0 +1,221 @@
+
+This document is a quick overview of the OpenContainers.  The first
+section give some quick examples of code to show general usage.  The
+second section talks about or discusses each major class in a little
+more detail.
+
+We also strongly suggest you look the "examples" directory to see real
+code in a real program.
+
+Overview:
+
+    // Generate all n! permutations
+     Permutations p(n); 
+     while (p.next()) {
+       const int* perm = p.currentPermutation();
+       for (int ii=0; ii<n; ii++)
+         cout << perm[ii];
+     }
+
+     // Arrays:  Directly from M2k
+     Array<string> a;
+     for (int ii=0; ii<n; ii++) 
+       a.append("Some string"+Stringize(ii));
+     for (int ii=0; ii<n; ii++)
+       cout << a[ii] << " ";
+
+     // Sorting
+     OCInsertionSort(a, 0, n);      // Inplace sort for small or ordered data
+     OCQuickSort(a, 0, n);          // Inplace sort for large, random data
+     string m = OCMedian(a, 0, n);  // Sorts a, returns median
+
+     // HashTableT:  useful if good HashFunction, and expected size
+     HashTableT<string, int, 8> h;  // Expect 8 to 2*16 items
+     for (int ii=0; ii<n; ii++) 
+       h.insertKeyAndValue("Some key"+Stringize(ii), ii);
+     HashTableIterator<string, int, 8> it(h);
+     while (it()) 
+       cout << it.key() << " " << it.value() << endl;
+
+     // AVLTree: useful if data is ordered by < and unknown
+     // amount expected but always want bounded lookups
+     AVLTree<string, int, 8> h;  
+     for (int ii=0; ii<n; ii++) 
+       h.insertKeyAndValue("Some key"+Stringize(ii), ii);
+     AVLTreeIterator<string, int, 8> it(h);
+     while (it()) 
+       cout << it.key() << " " << it.value() << endl;
+
+     // AVLHash: useful if good HashFunction, unknown amount 
+     AVLTree<string, int, 8> h;  // 
+     for (int ii=0; ii<n; ii++) 
+       h.insertKeyAndValue("Some key"+Stringize(ii), ii);
+     AVLTreeIterator<string, int, 8> it(h);
+     while (it()) 
+       cout << it.key() << " " << it.value() << endl;
+
+     // Val/Tab/Str: Recursive, heterogenous Tables
+     Tab t; t["1"] = 1.0; t["2"] = 100; t["3"] = "hello";
+     for (It ii(t); ii(); )
+        cout << ii.key() << " " << ii.value() << endl;
+
+
+ARRAY:
+
+// An array starts out as empty: YOU CANNOT INDEX INTO YET!
+Array<string> a;
+
+// Only once you "append" (allocate a new space at the end)
+// some items can you access those items.  Why? Because
+// the constructor has to be called on each element you put in.
+for (int ii=0; ii<n; ii++)
+  a.append(ii);
+
+// Array ready to roll for individual accesses
+for (int ii=0; ii<n; ii++)
+  cout << a[ii] << " ";
+
+// Reverse it by swapping ends 
+for (int ii=0; ii<n/2; ii++) {
+    int temp = a[ii];
+    a[ii] = a[n-ii+1];
+    a[n-ii+1] = temp;
+}
+  
+// Each array access is constant time.
+
+
+PERMUTATIONS:
+
+// Want to go through all permutations of 123, there's 3! or 6 of them.
+Permutations p(3); // 3 elements of the permutation: 1, 2, and 3
+while (p.next()) {
+
+  // Output the current permutation: each call is constant (amortized) time
+  const int* a = p.currentPermutation();
+  for (int ii=0; ii<3; ii++) 
+    cout << a[ii];
+
+  cout << " ";
+}
+
+// Generates all 3! permutations of 123: 123, 132, 231, 213, 321, 312
+
+
+STRING:
+
+// Same interface as the STL string, but a subset
+
+OCString s;                // Starts out empty
+s += "Hello";              // Append
+const char* c = s.c_str(); // Interface for C style code
+
+
+HASHTABLET:
+
+// Assumptions: HashFunction for Key type is available
+// operator== works for Key Type.
+
+// Tradeoffs:  Exceptionally fast for handling inserts/deletes/lookups
+// as long as you have a good hash function, and you don't exceed the
+// number of compile-time buckets by too much.  Space overhead low.
+// Can degenerate into a linear lookup if you aren't careful.
+
+AVLTREET:
+
+// This is implementation of an AVL Tree:  a balanced tree for
+// supporting insertions/deletions/lookups.  It's pretty standard,
+// but has two great features:  not implemented with any recursion
+// (unlike standard Text Book implementations) and supports iteration
+// through the tree WITHOUT recursion in order!  The only operation
+// that uses recursion is in fact the "isConsistent" method
+// for allowing testing.  You should NEVER have to call "isConsistent"
+// in your own programs.
+
+
+// Tradeoffs: Reasonable quick handling of inserts/deletes/lookups.
+// Iterator will traverse the set inorder.  Requires the key to support
+// operator< and operator==.   Both key and value need to support
+// operator= and copy construction.
+
+AVLHASHT:
+
+// The AVLHashT preserves the interface of HashTableT and AVLTreeT,
+// and is fact plug-in compatible.  
+
+// Assumptions: HashFunction for Key type is available
+// operator== works for Key Type.
+
+// Think of AVLHashT as an extendible hash function.  HashTableT
+// is hard-wired to a certain number of buckets (a compile-time
+// constant), but the access to the bucket is very, very quick
+// (constant time array access). So, time for insertions/deletions/lookups
+// depends very much on how much data is in the table, and in fact
+// becomes linear when the amount exceeds the number of buckets by
+// a reasonably large amount.
+
+// The AVLHashT, however, has a dynamic number of buckets.
+// The bucket lookup is a little slower (logarithmic time).
+// but the lookup is still very, very fast because the compares
+// are integer compares to get the right bucket.  And since the
+// number of buckets grows as the table grows, it will rarely,
+// if ever (depending on how good your hash function is), have to
+// linear search any of the buckets.
+
+// Tradeoffs:  more space overhead per key-value pair, but good
+// at handling small and large amounts of data.
+
+
+
+HASHTABLET vs. AVLTREET vs. AVLHASHT
+
+All three implementations have completely compatible interfaces, so
+you should be able to just plug-in one implementation for another.
+Why use one over the other?
+
+HashTableT: If you know specifically how much data you are going to
+use, and have a good HashFunction, use this.  Quick, and little space
+overhead.
+
+AVLTreeT: If you want ordered data at your fingertips, it's easy and
+quick to use the iterator for that without having to sort and such.
+Also, if you don't have a good HashFunction, AVLTree is a good choice:
+It's pretty quick but has a little more space overhead.
+
+AVLHashT: If you have a good HashFunction, but could expect small to
+large amounts of data, use this.  Very quick, but a little more space
+overhead.
+
+ Typically, AVLHashT is the best generic class to use: it's very fast
+on both small and large amounts of data.  For string based keys, it
+keeps up with HashtableT operations, but scales much, much better for
+large amounts of data.
+ 
+
+VAL/TAB/STR:
+
+
+  Val v = 1.0;   // Put a real into the container
+  int_u2 vv = v; // .. and get it out as an int 
+                 //    as if you had done vv = int_u2(real(1.0))
+
+  Tab t;
+  t["1"] = 100;      // some int: Constructs Val(int) then assigns
+  t["2"] = 1.0;      // some real: Constructs Val(real) then assigns
+  t["3"] = "string"; // some string: Constructs Val(const char*) then assigns
+
+  Tab sub;
+  sub["A"] = int_4(0);
+  
+  t["subtable"] = sub; // Copy in a subtable!
+
+  for (It ii(t); ii(); ) // Iterate through all key/value pairs
+    cerr << ii.key() << " " << ii.value() << endl;
+
+
+CONCLUSION:
+
+Go look at real code, over in the "examples" directory.  C'mon.  Now.
+Really.  There's nothing else in this document.
+
+ 

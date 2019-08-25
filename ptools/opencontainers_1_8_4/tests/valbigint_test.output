@@ -1,0 +1,702 @@
+1789234790273409057 1.78923e+18
+1789234790273409057 1789234790273409057
+'234958927634589234759263459234523475927345' 2.34959e+41
+'234958927634589234759263459234523475927345' 234958927634589234759263459234523475927345
+234958927634589234759263459234523475927345L 234958927634589234759263459234523475927345L
+234958927634589234759263459234523475927345L 234958927634589234759263459234523475927345L
+234958927634589234759263459234523475927345L 596721612627960113
+'123456789' 1.23457e+08
+'123456789' 123456789
+'123456789' 123456789
+256L
+256L
+-2112L
+-2112L
+100
+100
+100
+100
+-100
+-100
+-100
+-100
+-100
+-100
+0 0 0 0
+v1=None
+..[0 1 0]v2=None
+..[1 0 0]v2='abc'
+..[1 0 0]v2=(1+2j)
+..[1 0 0]v2=(-1-100j)
+..[1 0 0]v2={'a': 1, 'b': 2}
+..[1 0 0]v2=[]
+..[1 0 0]v2={}
+..[1 0 0]v2=OrderedDict([('a', 1), ('b', 2)])
+..[1 0 0]v2=(1, 2, 3)
+..[1 0 0]v2=-2000000000000
+..[1 0 0]v2=-256
+..[1 0 0]v2=-1.1
+..[1 0 0]v2=-1
+..[1 0 0]v2=-1.0
+..[1 0 0]v2=-0.66
+..[1 0 0]v2=0
+..[1 0 0]v2=0.66
+..[1 0 0]v2=1
+..[1 0 0]v2=1.0
+..[1 0 0]v2=1.1
+..[1 0 0]v2=256
+..[1 0 0]v2=200000000000
+
+v1='abc'
+..[0 0 1]v2=None
+..[0 1 0]v2='abc'
+..[0 0 1]v2=(1+2j)
+..[0 0 1]v2=(-1-100j)
+..[1 0 0]v2={'a': 1, 'b': 2}
+..[0 0 1]v2=[]
+..[1 0 0]v2={}
+..[0 0 1]v2=OrderedDict([('a', 1), ('b', 2)])
+..[0 0 1]v2=(1, 2, 3)
+..[0 0 1]v2=-2000000000000
+..[0 0 1]v2=-256
+..[0 0 1]v2=-1.1
+..[0 0 1]v2=-1
+..[0 0 1]v2=-1.0
+..[0 0 1]v2=-0.66
+..[0 0 1]v2=0
+..[0 0 1]v2=0.66
+..[0 0 1]v2=1
+..[0 0 1]v2=1.0
+..[0 0 1]v2=1.1
+..[0 0 1]v2=256
+..[0 0 1]v2=200000000000
+
+v1=(1+2j)
+..[0 0 1]v2=None
+..[1 0 0]v2='abc'
+Can't compare types for some reason:Complex types are not ordered
+v2=(1+2j)
+Can't compare types for some reason:Complex types are not ordered
+v2=(-1-100j)
+..[1 0 0]v2={'a': 1, 'b': 2}
+..[1 0 0]v2=[]
+..[1 0 0]v2={}
+..[1 0 0]v2=OrderedDict([('a', 1), ('b', 2)])
+..[1 0 0]v2=(1, 2, 3)
+Can't compare types for some reason:Complex types are not ordered
+v2=-2000000000000
+Can't compare types for some reason:Complex types are not ordered
+v2=-256
+Can't compare types for some reason:Complex types are not ordered
+v2=-1.1
+Can't compare types for some reason:Complex types are not ordered
+v2=-1
+Can't compare types for some reason:Complex types are not ordered
+v2=-1.0
+Can't compare types for some reason:Complex types are not ordered
+v2=-0.66
+Can't compare types for some reason:Complex types are not ordered
+v2=0
+Can't compare types for some reason:Complex types are not ordered
+v2=0.66
+Can't compare types for some reason:Complex types are not ordered
+v2=1
+Can't compare types for some reason:Complex types are not ordered
+v2=1.0
+Can't compare types for some reason:Complex types are not ordered
+v2=1.1
+Can't compare types for some reason:Complex types are not ordered
+v2=256
+Can't compare types for some reason:Complex types are not ordered
+v2=200000000000
+
+v1=(-1-100j)
+..[0 0 1]v2=None
+..[1 0 0]v2='abc'
+Can't compare types for some reason:Complex types are not ordered
+v2=(1+2j)
+Can't compare types for some reason:Complex types are not ordered
+v2=(-1-100j)
+..[1 0 0]v2={'a': 1, 'b': 2}
+..[1 0 0]v2=[]
+..[1 0 0]v2={}
+..[1 0 0]v2=OrderedDict([('a', 1), ('b', 2)])
+..[1 0 0]v2=(1, 2, 3)
+Can't compare types for some reason:Complex types are not ordered
+v2=-2000000000000
+Can't compare types for some reason:Complex types are not ordered
+v2=-256
+Can't compare types for some reason:Complex types are not ordered
+v2=-1.1
+Can't compare types for some reason:Complex types are not ordered
+v2=-1
+Can't compare types for some reason:Complex types are not ordered
+v2=-1.0
+Can't compare types for some reason:Complex types are not ordered
+v2=-0.66
+Can't compare types for some reason:Complex types are not ordered
+v2=0
+Can't compare types for some reason:Complex types are not ordered
+v2=0.66
+Can't compare types for some reason:Complex types are not ordered
+v2=1
+Can't compare types for some reason:Complex types are not ordered
+v2=1.0
+Can't compare types for some reason:Complex types are not ordered
+v2=1.1
+Can't compare types for some reason:Complex types are not ordered
+v2=256
+Can't compare types for some reason:Complex types are not ordered
+v2=200000000000
+
+v1={'a': 1, 'b': 2}
+..[0 0 1]v2=None
+..[0 0 1]v2='abc'
+..[0 0 1]v2=(1+2j)
+..[0 0 1]v2=(-1-100j)
+..[0 1 0]v2={'a': 1, 'b': 2}
+..[0 0 1]v2=[]
+..[0 0 1]v2={}
+..[0 1 0]v2=OrderedDict([('a', 1), ('b', 2)])
+..[0 0 1]v2=(1, 2, 3)
+..[0 0 1]v2=-2000000000000
+..[0 0 1]v2=-256
+..[0 0 1]v2=-1.1
+..[0 0 1]v2=-1
+..[0 0 1]v2=-1.0
+..[0 0 1]v2=-0.66
+..[0 0 1]v2=0
+..[0 0 1]v2=0.66
+..[0 0 1]v2=1
+..[0 0 1]v2=1.0
+..[0 0 1]v2=1.1
+..[0 0 1]v2=256
+..[0 0 1]v2=200000000000
+
+v1=[]
+..[0 0 1]v2=None
+..[1 0 0]v2='abc'
+..[0 0 1]v2=(1+2j)
+..[0 0 1]v2=(-1-100j)
+..[1 0 0]v2={'a': 1, 'b': 2}
+..[0 1 0]v2=[]
+..[1 0 0]v2={}
+..[0 0 1]v2=OrderedDict([('a', 1), ('b', 2)])
+..[0 0 1]v2=(1, 2, 3)
+..[0 0 1]v2=-2000000000000
+..[0 0 1]v2=-256
+..[0 0 1]v2=-1.1
+..[0 0 1]v2=-1
+..[0 0 1]v2=-1.0
+..[0 0 1]v2=-0.66
+..[0 0 1]v2=0
+..[0 0 1]v2=0.66
+..[0 0 1]v2=1
+..[0 0 1]v2=1.0
+..[0 0 1]v2=1.1
+..[0 0 1]v2=256
+..[0 0 1]v2=200000000000
+
+v1={}
+..[0 0 1]v2=None
+..[0 0 1]v2='abc'
+..[0 0 1]v2=(1+2j)
+..[0 0 1]v2=(-1-100j)
+..[1 0 0]v2={'a': 1, 'b': 2}
+..[0 0 1]v2=[]
+..[0 1 0]v2={}
+..[0 0 1]v2=OrderedDict([('a', 1), ('b', 2)])
+..[0 0 1]v2=(1, 2, 3)
+..[0 0 1]v2=-2000000000000
+..[0 0 1]v2=-256
+..[0 0 1]v2=-1.1
+..[0 0 1]v2=-1
+..[0 0 1]v2=-1.0
+..[0 0 1]v2=-0.66
+..[0 0 1]v2=0
+..[0 0 1]v2=0.66
+..[0 0 1]v2=1
+..[0 0 1]v2=1.0
+..[0 0 1]v2=1.1
+..[0 0 1]v2=256
+..[0 0 1]v2=200000000000
+
+v1=OrderedDict([('a', 1), ('b', 2)])
+..[0 0 1]v2=None
+..[1 0 0]v2='abc'
+..[0 0 1]v2=(1+2j)
+..[0 0 1]v2=(-1-100j)
+..[1 1 0]v2={'a': 1, 'b': 2}
+..[1 0 0]v2=[]
+..[1 0 0]v2={}
+..[0 1 0]v2=OrderedDict([('a', 1), ('b', 2)])
+..[0 0 1]v2=(1, 2, 3)
+..[0 0 1]v2=-2000000000000
+..[0 0 1]v2=-256
+..[0 0 1]v2=-1.1
+..[0 0 1]v2=-1
+..[0 0 1]v2=-1.0
+..[0 0 1]v2=-0.66
+..[0 0 1]v2=0
+..[0 0 1]v2=0.66
+..[0 0 1]v2=1
+..[0 0 1]v2=1.0
+..[0 0 1]v2=1.1
+..[0 0 1]v2=256
+..[0 0 1]v2=200000000000
+
+v1=(1, 2, 3)
+..[0 0 1]v2=None
+..[1 0 0]v2='abc'
+..[0 0 1]v2=(1+2j)
+..[0 0 1]v2=(-1-100j)
+..[1 0 0]v2={'a': 1, 'b': 2}
+..[1 0 0]v2=[]
+..[1 0 0]v2={}
+..[1 0 0]v2=OrderedDict([('a', 1), ('b', 2)])
+..[0 1 0]v2=(1, 2, 3)
+..[0 0 1]v2=-2000000000000
+..[0 0 1]v2=-256
+..[0 0 1]v2=-1.1
+..[0 0 1]v2=-1
+..[0 0 1]v2=-1.0
+..[0 0 1]v2=-0.66
+..[0 0 1]v2=0
+..[0 0 1]v2=0.66
+..[0 0 1]v2=1
+..[0 0 1]v2=1.0
+..[0 0 1]v2=1.1
+..[0 0 1]v2=256
+..[0 0 1]v2=200000000000
+
+v1=-2000000000000
+..[0 0 1]v2=None
+..[1 0 0]v2='abc'
+Can't compare types for some reason:Complex types are not ordered
+v2=(1+2j)
+Can't compare types for some reason:Complex types are not ordered
+v2=(-1-100j)
+..[1 0 0]v2={'a': 1, 'b': 2}
+..[1 0 0]v2=[]
+..[1 0 0]v2={}
+..[1 0 0]v2=OrderedDict([('a', 1), ('b', 2)])
+..[1 0 0]v2=(1, 2, 3)
+..[0 1 0]v2=-2000000000000
+..[1 0 0]v2=-256
+..[1 0 0]v2=-1.1
+..[1 0 0]v2=-1
+..[1 0 0]v2=-1.0
+..[1 0 0]v2=-0.66
+..[1 0 0]v2=0
+..[1 0 0]v2=0.66
+..[1 0 0]v2=1
+..[1 0 0]v2=1.0
+..[1 0 0]v2=1.1
+..[1 0 0]v2=256
+..[1 0 0]v2=200000000000
+
+v1=-256
+..[0 0 1]v2=None
+..[1 0 0]v2='abc'
+Can't compare types for some reason:Complex types are not ordered
+v2=(1+2j)
+Can't compare types for some reason:Complex types are not ordered
+v2=(-1-100j)
+..[1 0 0]v2={'a': 1, 'b': 2}
+..[1 0 0]v2=[]
+..[1 0 0]v2={}
+..[1 0 0]v2=OrderedDict([('a', 1), ('b', 2)])
+..[1 0 0]v2=(1, 2, 3)
+..[0 0 1]v2=-2000000000000
+..[0 1 0]v2=-256
+..[1 0 0]v2=-1.1
+..[1 0 0]v2=-1
+..[1 0 0]v2=-1.0
+..[1 0 0]v2=-0.66
+..[1 0 0]v2=0
+..[1 0 0]v2=0.66
+..[1 0 0]v2=1
+..[1 0 0]v2=1.0
+..[1 0 0]v2=1.1
+..[1 0 0]v2=256
+..[1 0 0]v2=200000000000
+
+v1=-1.1
+..[0 0 1]v2=None
+..[1 0 0]v2='abc'
+Can't compare types for some reason:Complex types are not ordered
+v2=(1+2j)
+Can't compare types for some reason:Complex types are not ordered
+v2=(-1-100j)
+..[1 0 0]v2={'a': 1, 'b': 2}
+..[1 0 0]v2=[]
+..[1 0 0]v2={}
+..[1 0 0]v2=OrderedDict([('a', 1), ('b', 2)])
+..[1 0 0]v2=(1, 2, 3)
+..[0 0 1]v2=-2000000000000
+..[0 0 1]v2=-256
+..[0 1 0]v2=-1.1
+..[1 0 0]v2=-1
+..[1 0 0]v2=-1.0
+..[1 0 0]v2=-0.66
+..[1 0 0]v2=0
+..[1 0 0]v2=0.66
+..[1 0 0]v2=1
+..[1 0 0]v2=1.0
+..[1 0 0]v2=1.1
+..[1 0 0]v2=256
+..[1 0 0]v2=200000000000
+
+v1=-1
+..[0 0 1]v2=None
+..[1 0 0]v2='abc'
+Can't compare types for some reason:Complex types are not ordered
+v2=(1+2j)
+Can't compare types for some reason:Complex types are not ordered
+v2=(-1-100j)
+..[1 0 0]v2={'a': 1, 'b': 2}
+..[1 0 0]v2=[]
+..[1 0 0]v2={}
+..[1 0 0]v2=OrderedDict([('a', 1), ('b', 2)])
+..[1 0 0]v2=(1, 2, 3)
+..[0 0 1]v2=-2000000000000
+..[0 0 1]v2=-256
+..[0 0 1]v2=-1.1
+..[0 1 0]v2=-1
+..[0 1 0]v2=-1.0
+..[1 0 0]v2=-0.66
+..[1 0 0]v2=0
+..[1 0 0]v2=0.66
+..[1 0 0]v2=1
+..[1 0 0]v2=1.0
+..[1 0 0]v2=1.1
+..[1 0 0]v2=256
+..[1 0 0]v2=200000000000
+
+v1=-1.0
+..[0 0 1]v2=None
+..[1 0 0]v2='abc'
+Can't compare types for some reason:Complex types are not ordered
+v2=(1+2j)
+Can't compare types for some reason:Complex types are not ordered
+v2=(-1-100j)
+..[1 0 0]v2={'a': 1, 'b': 2}
+..[1 0 0]v2=[]
+..[1 0 0]v2={}
+..[1 0 0]v2=OrderedDict([('a', 1), ('b', 2)])
+..[1 0 0]v2=(1, 2, 3)
+..[0 0 1]v2=-2000000000000
+..[0 0 1]v2=-256
+..[0 0 1]v2=-1.1
+..[0 1 0]v2=-1
+..[0 1 0]v2=-1.0
+..[1 0 0]v2=-0.66
+..[1 0 0]v2=0
+..[1 0 0]v2=0.66
+..[1 0 0]v2=1
+..[1 0 0]v2=1.0
+..[1 0 0]v2=1.1
+..[1 0 0]v2=256
+..[1 0 0]v2=200000000000
+
+v1=-0.66
+..[0 0 1]v2=None
+..[1 0 0]v2='abc'
+Can't compare types for some reason:Complex types are not ordered
+v2=(1+2j)
+Can't compare types for some reason:Complex types are not ordered
+v2=(-1-100j)
+..[1 0 0]v2={'a': 1, 'b': 2}
+..[1 0 0]v2=[]
+..[1 0 0]v2={}
+..[1 0 0]v2=OrderedDict([('a', 1), ('b', 2)])
+..[1 0 0]v2=(1, 2, 3)
+..[0 0 1]v2=-2000000000000
+..[0 0 1]v2=-256
+..[0 0 1]v2=-1.1
+..[0 0 1]v2=-1
+..[0 0 1]v2=-1.0
+..[0 1 0]v2=-0.66
+..[1 0 0]v2=0
+..[1 0 0]v2=0.66
+..[1 0 0]v2=1
+..[1 0 0]v2=1.0
+..[1 0 0]v2=1.1
+..[1 0 0]v2=256
+..[1 0 0]v2=200000000000
+
+v1=0
+..[0 0 1]v2=None
+..[1 0 0]v2='abc'
+Can't compare types for some reason:Complex types are not ordered
+v2=(1+2j)
+Can't compare types for some reason:Complex types are not ordered
+v2=(-1-100j)
+..[1 0 0]v2={'a': 1, 'b': 2}
+..[1 0 0]v2=[]
+..[1 0 0]v2={}
+..[1 0 0]v2=OrderedDict([('a', 1), ('b', 2)])
+..[1 0 0]v2=(1, 2, 3)
+..[0 0 1]v2=-2000000000000
+..[0 0 1]v2=-256
+..[0 0 1]v2=-1.1
+..[0 0 1]v2=-1
+..[0 0 1]v2=-1.0
+..[0 0 1]v2=-0.66
+..[0 1 0]v2=0
+..[1 0 0]v2=0.66
+..[1 0 0]v2=1
+..[1 0 0]v2=1.0
+..[1 0 0]v2=1.1
+..[1 0 0]v2=256
+..[1 0 0]v2=200000000000
+
+v1=0.66
+..[0 0 1]v2=None
+..[1 0 0]v2='abc'
+Can't compare types for some reason:Complex types are not ordered
+v2=(1+2j)
+Can't compare types for some reason:Complex types are not ordered
+v2=(-1-100j)
+..[1 0 0]v2={'a': 1, 'b': 2}
+..[1 0 0]v2=[]
+..[1 0 0]v2={}
+..[1 0 0]v2=OrderedDict([('a', 1), ('b', 2)])
+..[1 0 0]v2=(1, 2, 3)
+..[0 0 1]v2=-2000000000000
+..[0 0 1]v2=-256
+..[0 0 1]v2=-1.1
+..[0 0 1]v2=-1
+..[0 0 1]v2=-1.0
+..[0 0 1]v2=-0.66
+..[0 0 1]v2=0
+..[0 1 0]v2=0.66
+..[1 0 0]v2=1
+..[1 0 0]v2=1.0
+..[1 0 0]v2=1.1
+..[1 0 0]v2=256
+..[1 0 0]v2=200000000000
+
+v1=1
+..[0 0 1]v2=None
+..[1 0 0]v2='abc'
+Can't compare types for some reason:Complex types are not ordered
+v2=(1+2j)
+Can't compare types for some reason:Complex types are not ordered
+v2=(-1-100j)
+..[1 0 0]v2={'a': 1, 'b': 2}
+..[1 0 0]v2=[]
+..[1 0 0]v2={}
+..[1 0 0]v2=OrderedDict([('a', 1), ('b', 2)])
+..[1 0 0]v2=(1, 2, 3)
+..[0 0 1]v2=-2000000000000
+..[0 0 1]v2=-256
+..[0 0 1]v2=-1.1
+..[0 0 1]v2=-1
+..[0 0 1]v2=-1.0
+..[0 0 1]v2=-0.66
+..[0 0 1]v2=0
+..[0 0 1]v2=0.66
+..[0 1 0]v2=1
+..[0 1 0]v2=1.0
+..[1 0 0]v2=1.1
+..[1 0 0]v2=256
+..[1 0 0]v2=200000000000
+
+v1=1.0
+..[0 0 1]v2=None
+..[1 0 0]v2='abc'
+Can't compare types for some reason:Complex types are not ordered
+v2=(1+2j)
+Can't compare types for some reason:Complex types are not ordered
+v2=(-1-100j)
+..[1 0 0]v2={'a': 1, 'b': 2}
+..[1 0 0]v2=[]
+..[1 0 0]v2={}
+..[1 0 0]v2=OrderedDict([('a', 1), ('b', 2)])
+..[1 0 0]v2=(1, 2, 3)
+..[0 0 1]v2=-2000000000000
+..[0 0 1]v2=-256
+..[0 0 1]v2=-1.1
+..[0 0 1]v2=-1
+..[0 0 1]v2=-1.0
+..[0 0 1]v2=-0.66
+..[0 0 1]v2=0
+..[0 0 1]v2=0.66
+..[0 1 0]v2=1
+..[0 1 0]v2=1.0
+..[1 0 0]v2=1.1
+..[1 0 0]v2=256
+..[1 0 0]v2=200000000000
+
+v1=1.1
+..[0 0 1]v2=None
+..[1 0 0]v2='abc'
+Can't compare types for some reason:Complex types are not ordered
+v2=(1+2j)
+Can't compare types for some reason:Complex types are not ordered
+v2=(-1-100j)
+..[1 0 0]v2={'a': 1, 'b': 2}
+..[1 0 0]v2=[]
+..[1 0 0]v2={}
+..[1 0 0]v2=OrderedDict([('a', 1), ('b', 2)])
+..[1 0 0]v2=(1, 2, 3)
+..[0 0 1]v2=-2000000000000
+..[0 0 1]v2=-256
+..[0 0 1]v2=-1.1
+..[0 0 1]v2=-1
+..[0 0 1]v2=-1.0
+..[0 0 1]v2=-0.66
+..[0 0 1]v2=0
+..[0 0 1]v2=0.66
+..[0 0 1]v2=1
+..[0 0 1]v2=1.0
+..[0 1 0]v2=1.1
+..[1 0 0]v2=256
+..[1 0 0]v2=200000000000
+
+v1=256
+..[0 0 1]v2=None
+..[1 0 0]v2='abc'
+Can't compare types for some reason:Complex types are not ordered
+v2=(1+2j)
+Can't compare types for some reason:Complex types are not ordered
+v2=(-1-100j)
+..[1 0 0]v2={'a': 1, 'b': 2}
+..[1 0 0]v2=[]
+..[1 0 0]v2={}
+..[1 0 0]v2=OrderedDict([('a', 1), ('b', 2)])
+..[1 0 0]v2=(1, 2, 3)
+..[0 0 1]v2=-2000000000000
+..[0 0 1]v2=-256
+..[0 0 1]v2=-1.1
+..[0 0 1]v2=-1
+..[0 0 1]v2=-1.0
+..[0 0 1]v2=-0.66
+..[0 0 1]v2=0
+..[0 0 1]v2=0.66
+..[0 0 1]v2=1
+..[0 0 1]v2=1.0
+..[0 0 1]v2=1.1
+..[0 1 0]v2=256
+..[1 0 0]v2=200000000000
+
+v1=200000000000
+..[0 0 1]v2=None
+..[1 0 0]v2='abc'
+Can't compare types for some reason:Complex types are not ordered
+v2=(1+2j)
+Can't compare types for some reason:Complex types are not ordered
+v2=(-1-100j)
+..[1 0 0]v2={'a': 1, 'b': 2}
+..[1 0 0]v2=[]
+..[1 0 0]v2={}
+..[1 0 0]v2=OrderedDict([('a', 1), ('b', 2)])
+..[1 0 0]v2=(1, 2, 3)
+..[0 0 1]v2=-2000000000000
+..[0 0 1]v2=-256
+..[0 0 1]v2=-1.1
+..[0 0 1]v2=-1
+..[0 0 1]v2=-1.0
+..[0 0 1]v2=-0.66
+..[0 0 1]v2=0
+..[0 0 1]v2=0.66
+..[0 0 1]v2=1
+..[0 0 1]v2=1.0
+..[0 0 1]v2=1.1
+..[0 0 1]v2=256
+..[0 1 0]v2=200000000000
+
+10**0 is ... 
+1
+10**1 is ... 
+10
+10**2 is ... 
+100
+10**3 is ... 
+1000
+10**4 is ... 
+10000
+10**5 is ... 
+100000
+10**6 is ... 
+1000000
+10**7 is ... 
+10000000
+10**8 is ... 
+100000000
+10**9 is ... 
+1000000000
+10**10 is ... 
+10000000000
+10**11 is ... 
+100000000000
+10**12 is ... 
+1000000000000
+10**13 is ... 
+10000000000000
+10**14 is ... 
+100000000000000
+0**0 is1
+[100]
+[50]
+[1]
+[0]
+[0.5]
+[0.3333]
+[0.6667]
+[183.6251234521005850]
+183.6251234521006
+i183
+r184
+i183.6
+r183.6
+i183.63
+r183.63
+i183.625
+r183.625
+i183.6251
+r183.6251
+i183.62512
+r183.62512
+i183.625123
+r183.625123
+i183.6251235
+r183.6251235
+i183.62512345
+r183.62512345
+i183.625123452
+r183.625123452
+i183.6251234521
+r183.6251234521
+i183.62512345210
+r183.6251234521
+i183.625123452101
+r183.625123452101
+i183.6251234521006
+r183.6251234521006
+i183.62512345210058
+r183.6251234521006
+i183.625123452100585
+r183.6251234521006
+i183.6251234521005850
+r183.6251234521006
+i183.62512345210058497
+r183.6251234521006
+i183.625123452100584973
+r183.6251234521006
+i183.6251234521005849730
+r183.6251234521006
+i183.62512345210058497303
+r183.6251234521006
+i183.625123452100584973030
+r183.6251234521006
+i183.6251234521005849730305
+r183.6251234521006
+i183.62512345210058497303046
+r183.6251234521006
+i183.625123452100584973030464
+r183.6251234521006
+[0.6666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666667]
+[3.1428571]
+[5]

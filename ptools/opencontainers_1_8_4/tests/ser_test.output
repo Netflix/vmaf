@@ -1,0 +1,3346 @@
+Test everything
+Timing serializing big tables with method:0
+Comparing old serializing with new to make sure make results:
+Timing serializing big tables with method:1
+Comparing old serializing with new to make sure make results:
+Comparing old serializing with new to make sure make results:
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+Trying PROXY 
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+...okay
+Before: (conversion=1)
+( )
+ bytes to serialize:6
+After: (conversion=1)
+[ ]
+ .. converted DeSerialized[ ]
+ .. converted Serialized[ ]
+Before: (conversion=1)
+(
+    1
+)
+ bytes to serialize:11
+After: (conversion=1)
+[
+    1
+]
+ .. converted DeSerialized[
+    1
+]
+ .. converted Serialized[
+    1
+]
+Before: (conversion=1)
+(
+    1,
+    2
+)
+ bytes to serialize:16
+After: (conversion=1)
+[
+    1,
+    2
+]
+ .. converted DeSerialized[
+    1,
+    2
+]
+ .. converted Serialized[
+    1,
+    2
+]
+Before: (conversion=1)
+(
+    1,
+    2,
+    3
+)
+ bytes to serialize:21
+After: (conversion=1)
+[
+    1,
+    2,
+    3
+]
+ .. converted DeSerialized[
+    1,
+    2,
+    3
+]
+ .. converted Serialized[
+    1,
+    2,
+    3
+]
+Before: (conversion=1)
+(
+    1,
+    2,
+    3,
+    (
+        1,
+        2
+    )
+)
+ bytes to serialize:37
+After: (conversion=1)
+[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+ .. converted DeSerialized[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+ .. converted Serialized[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+Before: (conversion=1)
+(
+    1,
+    2,
+    3,
+    (
+        1,
+        2
+    )
+)
+ bytes to serialize:37
+After: (conversion=1)
+[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+ .. converted DeSerialized[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+ .. converted Serialized[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+Before: (conversion=1)
+o{ }
+ bytes to serialize:5
+After: (conversion=1)
+{ }
+ .. converted DeSerialized{ }
+ .. converted Serialized{ }
+Before: (conversion=1)
+o{
+    'a':1
+}
+ bytes to serialize:16
+After: (conversion=1)
+{
+    'a':1
+}
+ .. converted DeSerialized{
+    'a':1
+}
+ .. converted Serialized{
+    'a':1
+}
+Before: (conversion=1)
+o{
+    'a':1,
+    'b':2
+}
+ bytes to serialize:27
+After: (conversion=1)
+{
+    'a':1,
+    'b':2
+}
+ .. converted DeSerialized{
+    'a':1,
+    'b':2
+}
+ .. converted Serialized{
+    'a':1,
+    'b':2
+}
+Before: (conversion=1)
+o{
+    'a':1,
+    'b':(
+        1,
+        2,
+        3
+    ),
+    'c':{
+        3:(
+            None,
+            None
+        ),
+        'nn':3
+    }
+}
+ bytes to serialize:79
+After: (conversion=1)
+{
+    'a':1,
+    'b':[
+        1,
+        2,
+        3
+    ],
+    'c':{
+        3:[
+            None,
+            None
+        ],
+        'nn':3
+    }
+}
+ .. converted DeSerialized{
+    'a':1,
+    'b':[
+        1,
+        2,
+        3
+    ],
+    'c':{
+        3:[
+            None,
+            None
+        ],
+        'nn':3
+    }
+}
+ .. converted Serialized{
+    'a':1,
+    'b':[
+        1,
+        2,
+        3
+    ],
+    'c':{
+        3:[
+            None,
+            None
+        ],
+        'nn':3
+    }
+}
+Before: (conversion=1)
+o{
+    'a':2893475892734095720934759287345972345L
+}
+ bytes to serialize:53
+After: (conversion=1)
+{
+    'a':'2893475892734095720934759287345972345'
+}
+ .. converted DeSerialized{
+    'a':'2893475892734095720934759287345972345'
+}
+ .. converted Serialized{
+    'a':'2893475892734095720934759287345972345'
+}
+Before: (conversion=1)
+o{
+    'a':2893475892734095720934759287345972345L,
+    'g':(
+        435782635692873465896239569284635L,
+        1
+    ),
+    'k':[
+        235024305897239085234L,
+        2,
+        (
+            1
+        )
+    ]
+}
+ bytes to serialize:162
+After: (conversion=1)
+{
+    'a':'2893475892734095720934759287345972345',
+    'g':[
+        '435782635692873465896239569284635',
+        1
+    ],
+    'k':[
+        '235024305897239085234',
+        2,
+        [
+            1
+        ]
+    ]
+}
+ .. converted DeSerialized{
+    'a':'2893475892734095720934759287345972345',
+    'g':[
+        '435782635692873465896239569284635',
+        1
+    ],
+    'k':[
+        '235024305897239085234',
+        2,
+        [
+            1
+        ]
+    ]
+}
+ .. converted Serialized{
+    'a':'2893475892734095720934759287345972345',
+    'g':[
+        '435782635692873465896239569284635',
+        1
+    ],
+    'k':[
+        '235024305897239085234',
+        2,
+        [
+            1
+        ]
+    ]
+}
+Before: (conversion=1)
+(
+    (
+        (
+            1,
+            2,
+            3
+        ),
+        (
+            1,
+            2,
+            3
+        ),
+        o{
+            'a':1
+        },
+        o{
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':o{
+                'a':1,
+                'v':2
+            },
+            'gg':(
+                1,
+                2,
+                3
+            )
+        },
+        {
+            'dddddddddd':o{
+                'a':1,
+                'v':2
+            },
+            'gg':(
+                1,
+                2,
+                3
+            )
+        }
+    ),
+    (
+        (
+            1,
+            2,
+            3
+        ),
+        (
+            1,
+            2,
+            3
+        ),
+        o{
+            'a':1
+        },
+        o{
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':o{
+                'a':1,
+                'v':2
+            },
+            'gg':(
+                1,
+                2,
+                3
+            )
+        },
+        {
+            'dddddddddd':o{
+                'a':1,
+                'v':2
+            },
+            'gg':(
+                1,
+                2,
+                3
+            )
+        }
+    ),
+    o{
+        'a':1,
+        'b':2,
+        'c':o{
+            'a':1
+        }
+    }
+)
+ bytes to serialize:419
+After: (conversion=1)
+[
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    {
+        'a':1,
+        'b':2,
+        'c':{
+            'a':1
+        }
+    }
+]
+ .. converted DeSerialized[
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    {
+        'a':1,
+        'b':2,
+        'c':{
+            'a':1
+        }
+    }
+]
+ .. converted Serialized[
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    {
+        'a':1,
+        'b':2,
+        'c':{
+            'a':1
+        }
+    }
+]
+Before: (conversion=1)
+( )
+ bytes to serialize:6
+After: (conversion=0)
+[ ]
+ .. converted DeSerialized[ ]
+ .. converted Serialized[ ]
+Before: (conversion=1)
+(
+    1
+)
+ bytes to serialize:11
+After: (conversion=0)
+[
+    1
+]
+ .. converted DeSerialized[
+    1
+]
+ .. converted Serialized[
+    1
+]
+Before: (conversion=1)
+(
+    1,
+    2
+)
+ bytes to serialize:16
+After: (conversion=0)
+[
+    1,
+    2
+]
+ .. converted DeSerialized[
+    1,
+    2
+]
+ .. converted Serialized[
+    1,
+    2
+]
+Before: (conversion=1)
+(
+    1,
+    2,
+    3
+)
+ bytes to serialize:21
+After: (conversion=0)
+[
+    1,
+    2,
+    3
+]
+ .. converted DeSerialized[
+    1,
+    2,
+    3
+]
+ .. converted Serialized[
+    1,
+    2,
+    3
+]
+Before: (conversion=1)
+(
+    1,
+    2,
+    3,
+    (
+        1,
+        2
+    )
+)
+ bytes to serialize:37
+After: (conversion=0)
+[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+ .. converted DeSerialized[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+ .. converted Serialized[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+Before: (conversion=1)
+(
+    1,
+    2,
+    3,
+    (
+        1,
+        2
+    )
+)
+ bytes to serialize:37
+After: (conversion=0)
+[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+ .. converted DeSerialized[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+ .. converted Serialized[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+Before: (conversion=1)
+o{ }
+ bytes to serialize:5
+After: (conversion=0)
+{ }
+ .. converted DeSerialized{ }
+ .. converted Serialized{ }
+Before: (conversion=1)
+o{
+    'a':1
+}
+ bytes to serialize:16
+After: (conversion=0)
+{
+    'a':1
+}
+ .. converted DeSerialized{
+    'a':1
+}
+ .. converted Serialized{
+    'a':1
+}
+Before: (conversion=1)
+o{
+    'a':1,
+    'b':2
+}
+ bytes to serialize:27
+After: (conversion=0)
+{
+    'a':1,
+    'b':2
+}
+ .. converted DeSerialized{
+    'a':1,
+    'b':2
+}
+ .. converted Serialized{
+    'a':1,
+    'b':2
+}
+Before: (conversion=1)
+o{
+    'a':1,
+    'b':(
+        1,
+        2,
+        3
+    ),
+    'c':{
+        3:(
+            None,
+            None
+        ),
+        'nn':3
+    }
+}
+ bytes to serialize:79
+After: (conversion=0)
+{
+    'a':1,
+    'b':[
+        1,
+        2,
+        3
+    ],
+    'c':{
+        3:[
+            None,
+            None
+        ],
+        'nn':3
+    }
+}
+ .. converted DeSerialized{
+    'a':1,
+    'b':[
+        1,
+        2,
+        3
+    ],
+    'c':{
+        3:[
+            None,
+            None
+        ],
+        'nn':3
+    }
+}
+ .. converted Serialized{
+    'a':1,
+    'b':[
+        1,
+        2,
+        3
+    ],
+    'c':{
+        3:[
+            None,
+            None
+        ],
+        'nn':3
+    }
+}
+Before: (conversion=1)
+o{
+    'a':2893475892734095720934759287345972345L
+}
+ bytes to serialize:53
+After: (conversion=0)
+{
+    'a':'2893475892734095720934759287345972345'
+}
+ .. converted DeSerialized{
+    'a':'2893475892734095720934759287345972345'
+}
+ .. converted Serialized{
+    'a':'2893475892734095720934759287345972345'
+}
+Before: (conversion=1)
+o{
+    'a':2893475892734095720934759287345972345L,
+    'g':(
+        435782635692873465896239569284635L,
+        1
+    ),
+    'k':[
+        235024305897239085234L,
+        2,
+        (
+            1
+        )
+    ]
+}
+ bytes to serialize:162
+After: (conversion=0)
+{
+    'a':'2893475892734095720934759287345972345',
+    'g':[
+        '435782635692873465896239569284635',
+        1
+    ],
+    'k':[
+        '235024305897239085234',
+        2,
+        [
+            1
+        ]
+    ]
+}
+ .. converted DeSerialized{
+    'a':'2893475892734095720934759287345972345',
+    'g':[
+        '435782635692873465896239569284635',
+        1
+    ],
+    'k':[
+        '235024305897239085234',
+        2,
+        [
+            1
+        ]
+    ]
+}
+ .. converted Serialized{
+    'a':'2893475892734095720934759287345972345',
+    'g':[
+        '435782635692873465896239569284635',
+        1
+    ],
+    'k':[
+        '235024305897239085234',
+        2,
+        [
+            1
+        ]
+    ]
+}
+Before: (conversion=1)
+(
+    (
+        (
+            1,
+            2,
+            3
+        ),
+        (
+            1,
+            2,
+            3
+        ),
+        o{
+            'a':1
+        },
+        o{
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':o{
+                'a':1,
+                'v':2
+            },
+            'gg':(
+                1,
+                2,
+                3
+            )
+        },
+        {
+            'dddddddddd':o{
+                'a':1,
+                'v':2
+            },
+            'gg':(
+                1,
+                2,
+                3
+            )
+        }
+    ),
+    (
+        (
+            1,
+            2,
+            3
+        ),
+        (
+            1,
+            2,
+            3
+        ),
+        o{
+            'a':1
+        },
+        o{
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':o{
+                'a':1,
+                'v':2
+            },
+            'gg':(
+                1,
+                2,
+                3
+            )
+        },
+        {
+            'dddddddddd':o{
+                'a':1,
+                'v':2
+            },
+            'gg':(
+                1,
+                2,
+                3
+            )
+        }
+    ),
+    o{
+        'a':1,
+        'b':2,
+        'c':o{
+            'a':1
+        }
+    }
+)
+ bytes to serialize:419
+After: (conversion=0)
+[
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    {
+        'a':1,
+        'b':2,
+        'c':{
+            'a':1
+        }
+    }
+]
+ .. converted DeSerialized[
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    {
+        'a':1,
+        'b':2,
+        'c':{
+            'a':1
+        }
+    }
+]
+ .. converted Serialized[
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    {
+        'a':1,
+        'b':2,
+        'c':{
+            'a':1
+        }
+    }
+]
+Before: (conversion=0)
+( )
+ bytes to serialize:6
+After: (conversion=1)
+[ ]
+ .. converted DeSerialized[ ]
+ .. converted Serialized[ ]
+Before: (conversion=0)
+(
+    1
+)
+ bytes to serialize:11
+After: (conversion=1)
+[
+    1
+]
+ .. converted DeSerialized[
+    1
+]
+ .. converted Serialized[
+    1
+]
+Before: (conversion=0)
+(
+    1,
+    2
+)
+ bytes to serialize:16
+After: (conversion=1)
+[
+    1,
+    2
+]
+ .. converted DeSerialized[
+    1,
+    2
+]
+ .. converted Serialized[
+    1,
+    2
+]
+Before: (conversion=0)
+(
+    1,
+    2,
+    3
+)
+ bytes to serialize:21
+After: (conversion=1)
+[
+    1,
+    2,
+    3
+]
+ .. converted DeSerialized[
+    1,
+    2,
+    3
+]
+ .. converted Serialized[
+    1,
+    2,
+    3
+]
+Before: (conversion=0)
+(
+    1,
+    2,
+    3,
+    (
+        1,
+        2
+    )
+)
+ bytes to serialize:37
+After: (conversion=1)
+[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+ .. converted DeSerialized[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+ .. converted Serialized[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+Before: (conversion=0)
+(
+    1,
+    2,
+    3,
+    (
+        1,
+        2
+    )
+)
+ bytes to serialize:37
+After: (conversion=1)
+[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+ .. converted DeSerialized[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+ .. converted Serialized[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+Before: (conversion=0)
+o{ }
+ bytes to serialize:5
+After: (conversion=1)
+{ }
+ .. converted DeSerialized{ }
+ .. converted Serialized{ }
+Before: (conversion=0)
+o{
+    'a':1
+}
+ bytes to serialize:16
+After: (conversion=1)
+{
+    'a':1
+}
+ .. converted DeSerialized{
+    'a':1
+}
+ .. converted Serialized{
+    'a':1
+}
+Before: (conversion=0)
+o{
+    'a':1,
+    'b':2
+}
+ bytes to serialize:27
+After: (conversion=1)
+{
+    'a':1,
+    'b':2
+}
+ .. converted DeSerialized{
+    'a':1,
+    'b':2
+}
+ .. converted Serialized{
+    'a':1,
+    'b':2
+}
+Before: (conversion=0)
+o{
+    'a':1,
+    'b':(
+        1,
+        2,
+        3
+    ),
+    'c':{
+        3:(
+            None,
+            None
+        ),
+        'nn':3
+    }
+}
+ bytes to serialize:79
+After: (conversion=1)
+{
+    'a':1,
+    'b':[
+        1,
+        2,
+        3
+    ],
+    'c':{
+        3:[
+            None,
+            None
+        ],
+        'nn':3
+    }
+}
+ .. converted DeSerialized{
+    'a':1,
+    'b':[
+        1,
+        2,
+        3
+    ],
+    'c':{
+        3:[
+            None,
+            None
+        ],
+        'nn':3
+    }
+}
+ .. converted Serialized{
+    'a':1,
+    'b':[
+        1,
+        2,
+        3
+    ],
+    'c':{
+        3:[
+            None,
+            None
+        ],
+        'nn':3
+    }
+}
+Before: (conversion=0)
+o{
+    'a':2893475892734095720934759287345972345L
+}
+ bytes to serialize:32
+After: (conversion=1)
+{
+    'a':'2893475892734095720934759287345972345'
+}
+ .. converted DeSerialized{
+    'a':'2893475892734095720934759287345972345'
+}
+ .. converted Serialized{
+    'a':'2893475892734095720934759287345972345'
+}
+Before: (conversion=0)
+o{
+    'a':2893475892734095720934759287345972345L,
+    'g':(
+        435782635692873465896239569284635L,
+        1
+    ),
+    'k':[
+        235024305897239085234L,
+        2,
+        (
+            1
+        )
+    ]
+}
+ bytes to serialize:110
+After: (conversion=1)
+{
+    'a':'2893475892734095720934759287345972345',
+    'g':[
+        '435782635692873465896239569284635',
+        1
+    ],
+    'k':[
+        '235024305897239085234',
+        2,
+        [
+            1
+        ]
+    ]
+}
+ .. converted DeSerialized{
+    'a':'2893475892734095720934759287345972345',
+    'g':[
+        '435782635692873465896239569284635',
+        1
+    ],
+    'k':[
+        '235024305897239085234',
+        2,
+        [
+            1
+        ]
+    ]
+}
+ .. converted Serialized{
+    'a':'2893475892734095720934759287345972345',
+    'g':[
+        '435782635692873465896239569284635',
+        1
+    ],
+    'k':[
+        '235024305897239085234',
+        2,
+        [
+            1
+        ]
+    ]
+}
+Before: (conversion=0)
+(
+    (
+        (
+            1,
+            2,
+            3
+        ),
+        (
+            1,
+            2,
+            3
+        ),
+        o{
+            'a':1
+        },
+        o{
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':o{
+                'a':1,
+                'v':2
+            },
+            'gg':(
+                1,
+                2,
+                3
+            )
+        },
+        {
+            'dddddddddd':o{
+                'a':1,
+                'v':2
+            },
+            'gg':(
+                1,
+                2,
+                3
+            )
+        }
+    ),
+    (
+        (
+            1,
+            2,
+            3
+        ),
+        (
+            1,
+            2,
+            3
+        ),
+        o{
+            'a':1
+        },
+        o{
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':o{
+                'a':1,
+                'v':2
+            },
+            'gg':(
+                1,
+                2,
+                3
+            )
+        },
+        {
+            'dddddddddd':o{
+                'a':1,
+                'v':2
+            },
+            'gg':(
+                1,
+                2,
+                3
+            )
+        }
+    ),
+    o{
+        'a':1,
+        'b':2,
+        'c':o{
+            'a':1
+        }
+    }
+)
+ bytes to serialize:419
+After: (conversion=1)
+[
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    {
+        'a':1,
+        'b':2,
+        'c':{
+            'a':1
+        }
+    }
+]
+ .. converted DeSerialized[
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    {
+        'a':1,
+        'b':2,
+        'c':{
+            'a':1
+        }
+    }
+]
+ .. converted Serialized[
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    {
+        'a':1,
+        'b':2,
+        'c':{
+            'a':1
+        }
+    }
+]
+Before: (conversion=0)
+( )
+ bytes to serialize:6
+After: (conversion=0)
+( )
+ .. converted DeSerialized[ ]
+ .. converted Serialized[ ]
+Before: (conversion=0)
+(
+    1
+)
+ bytes to serialize:11
+After: (conversion=0)
+(
+    1
+)
+ .. converted DeSerialized[
+    1
+]
+ .. converted Serialized[
+    1
+]
+Before: (conversion=0)
+(
+    1,
+    2
+)
+ bytes to serialize:16
+After: (conversion=0)
+(
+    1,
+    2
+)
+ .. converted DeSerialized[
+    1,
+    2
+]
+ .. converted Serialized[
+    1,
+    2
+]
+Before: (conversion=0)
+(
+    1,
+    2,
+    3
+)
+ bytes to serialize:21
+After: (conversion=0)
+(
+    1,
+    2,
+    3
+)
+ .. converted DeSerialized[
+    1,
+    2,
+    3
+]
+ .. converted Serialized[
+    1,
+    2,
+    3
+]
+Before: (conversion=0)
+(
+    1,
+    2,
+    3,
+    (
+        1,
+        2
+    )
+)
+ bytes to serialize:37
+After: (conversion=0)
+(
+    1,
+    2,
+    3,
+    (
+        1,
+        2
+    )
+)
+ .. converted DeSerialized[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+ .. converted Serialized[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+Before: (conversion=0)
+(
+    1,
+    2,
+    3,
+    (
+        1,
+        2
+    )
+)
+ bytes to serialize:37
+After: (conversion=0)
+(
+    1,
+    2,
+    3,
+    (
+        1,
+        2
+    )
+)
+ .. converted DeSerialized[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+ .. converted Serialized[
+    1,
+    2,
+    3,
+    [
+        1,
+        2
+    ]
+]
+Before: (conversion=0)
+o{ }
+ bytes to serialize:5
+After: (conversion=0)
+o{ }
+ .. converted DeSerialized{ }
+ .. converted Serialized{ }
+Before: (conversion=0)
+o{
+    'a':1
+}
+ bytes to serialize:16
+After: (conversion=0)
+o{
+    'a':1
+}
+ .. converted DeSerialized{
+    'a':1
+}
+ .. converted Serialized{
+    'a':1
+}
+Before: (conversion=0)
+o{
+    'a':1,
+    'b':2
+}
+ bytes to serialize:27
+After: (conversion=0)
+o{
+    'a':1,
+    'b':2
+}
+ .. converted DeSerialized{
+    'a':1,
+    'b':2
+}
+ .. converted Serialized{
+    'a':1,
+    'b':2
+}
+Before: (conversion=0)
+o{
+    'a':1,
+    'b':(
+        1,
+        2,
+        3
+    ),
+    'c':{
+        3:(
+            None,
+            None
+        ),
+        'nn':3
+    }
+}
+ bytes to serialize:79
+After: (conversion=0)
+o{
+    'a':1,
+    'b':(
+        1,
+        2,
+        3
+    ),
+    'c':{
+        3:(
+            None,
+            None
+        ),
+        'nn':3
+    }
+}
+ .. converted DeSerialized{
+    'a':1,
+    'b':[
+        1,
+        2,
+        3
+    ],
+    'c':{
+        3:[
+            None,
+            None
+        ],
+        'nn':3
+    }
+}
+ .. converted Serialized{
+    'a':1,
+    'b':[
+        1,
+        2,
+        3
+    ],
+    'c':{
+        3:[
+            None,
+            None
+        ],
+        'nn':3
+    }
+}
+Before: (conversion=0)
+o{
+    'a':2893475892734095720934759287345972345L
+}
+ bytes to serialize:32
+After: (conversion=0)
+o{
+    'a':2893475892734095720934759287345972345L
+}
+ .. converted DeSerialized{
+    'a':'2893475892734095720934759287345972345'
+}
+ .. converted Serialized{
+    'a':'2893475892734095720934759287345972345'
+}
+Before: (conversion=0)
+o{
+    'a':2893475892734095720934759287345972345L,
+    'g':(
+        435782635692873465896239569284635L,
+        1
+    ),
+    'k':[
+        235024305897239085234L,
+        2,
+        (
+            1
+        )
+    ]
+}
+ bytes to serialize:110
+After: (conversion=0)
+o{
+    'a':2893475892734095720934759287345972345L,
+    'g':(
+        435782635692873465896239569284635L,
+        1
+    ),
+    'k':[
+        235024305897239085234L,
+        2,
+        (
+            1
+        )
+    ]
+}
+ .. converted DeSerialized{
+    'a':'2893475892734095720934759287345972345',
+    'g':[
+        '435782635692873465896239569284635',
+        1
+    ],
+    'k':[
+        '235024305897239085234',
+        2,
+        [
+            1
+        ]
+    ]
+}
+ .. converted Serialized{
+    'a':'2893475892734095720934759287345972345',
+    'g':[
+        '435782635692873465896239569284635',
+        1
+    ],
+    'k':[
+        '235024305897239085234',
+        2,
+        [
+            1
+        ]
+    ]
+}
+Before: (conversion=0)
+(
+    (
+        (
+            1,
+            2,
+            3
+        ),
+        (
+            1,
+            2,
+            3
+        ),
+        o{
+            'a':1
+        },
+        o{
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':o{
+                'a':1,
+                'v':2
+            },
+            'gg':(
+                1,
+                2,
+                3
+            )
+        },
+        {
+            'dddddddddd':o{
+                'a':1,
+                'v':2
+            },
+            'gg':(
+                1,
+                2,
+                3
+            )
+        }
+    ),
+    (
+        (
+            1,
+            2,
+            3
+        ),
+        (
+            1,
+            2,
+            3
+        ),
+        o{
+            'a':1
+        },
+        o{
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':o{
+                'a':1,
+                'v':2
+            },
+            'gg':(
+                1,
+                2,
+                3
+            )
+        },
+        {
+            'dddddddddd':o{
+                'a':1,
+                'v':2
+            },
+            'gg':(
+                1,
+                2,
+                3
+            )
+        }
+    ),
+    o{
+        'a':1,
+        'b':2,
+        'c':o{
+            'a':1
+        }
+    }
+)
+ bytes to serialize:419
+After: (conversion=0)
+(
+    (
+        (
+            1,
+            2,
+            3
+        ),
+        (
+            1,
+            2,
+            3
+        ),
+        o{
+            'a':1
+        },
+        o{
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':o{
+                'a':1,
+                'v':2
+            },
+            'gg':(
+                1,
+                2,
+                3
+            )
+        },
+        {
+            'dddddddddd':o{
+                'a':1,
+                'v':2
+            },
+            'gg':(
+                1,
+                2,
+                3
+            )
+        }
+    ),
+    (
+        (
+            1,
+            2,
+            3
+        ),
+        (
+            1,
+            2,
+            3
+        ),
+        o{
+            'a':1
+        },
+        o{
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':o{
+                'a':1,
+                'v':2
+            },
+            'gg':(
+                1,
+                2,
+                3
+            )
+        },
+        {
+            'dddddddddd':o{
+                'a':1,
+                'v':2
+            },
+            'gg':(
+                1,
+                2,
+                3
+            )
+        }
+    ),
+    o{
+        'a':1,
+        'b':2,
+        'c':o{
+            'a':1
+        }
+    }
+)
+ .. converted DeSerialized[
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    {
+        'a':1,
+        'b':2,
+        'c':{
+            'a':1
+        }
+    }
+]
+ .. converted Serialized[
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    [
+        [
+            1,
+            2,
+            3
+        ],
+        [
+            1,
+            2,
+            3
+        ],
+        {
+            'a':1
+        },
+        {
+            'a':1
+        },
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        [
+            1,
+            2.2,
+            'three'
+        ],
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        array([666,666,666,666,666,666,666,666,666,666], 'u'),
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':100.1
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            'dddddddddd':{
+                'a':1,
+                'v':2
+            },
+            'gg':[
+                1,
+                2,
+                3
+            ]
+        }
+    ],
+    {
+        'a':1,
+        'b':2,
+        'c':{
+            'a':1
+        }
+    }
+]
+big=1073741824 a.length()=1073741824 a.capacity()=1073741824
+................................................................Finished initializing
+Testing Array Type:f
+Bytes: 4294967317
+Same.

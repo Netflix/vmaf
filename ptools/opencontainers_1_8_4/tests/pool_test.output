@@ -1,0 +1,136 @@
+Simple 0 allocation then 0 deallocation at order:1:GOOD
+Simple 0 allocation then 0 deallocation at order:-1:GOOD
+Simple 1 allocation then 1 deallocation at order:1:GOOD
+Simple 1 allocation then 1 deallocation at order:-1:GOOD
+Simple 2 allocation then 2 deallocation at order:1:GOOD
+Simple 2 allocation then 2 deallocation at order:-1:GOOD
+Simple 3 allocation then 3 deallocation at order:1:GOOD
+Simple 3 allocation then 3 deallocation at order:-1:GOOD
+Simple 4 allocation then 4 deallocation at order:1:GOOD
+Simple 4 allocation then 4 deallocation at order:-1:GOOD
+Simple 5 allocation then 5 deallocation at order:1:GOOD
+Simple 5 allocation then 5 deallocation at order:-1:GOOD
+Simple 6 allocation then 6 deallocation at order:1:GOOD
+Simple 6 allocation then 6 deallocation at order:-1:GOOD
+Simple 7 allocation then 7 deallocation at order:1:GOOD
+Simple 7 allocation then 7 deallocation at order:-1:GOOD
+Simple 8 allocation then 8 deallocation at order:1:GOOD
+Simple 8 allocation then 8 deallocation at order:-1:GOOD
+Simple 9 allocation then 9 deallocation at order:1:GOOD
+Simple 9 allocation then 9 deallocation at order:-1:GOOD
+Simple 10 allocation then 10 deallocation at order:1:GOOD
+Simple 10 allocation then 10 deallocation at order:-1:GOOD
+Simple 11 allocation then 11 deallocation at order:1:GOOD
+Simple 11 allocation then 11 deallocation at order:-1:GOOD
+Simple 12 allocation then 12 deallocation at order:1:GOOD
+Simple 12 allocation then 12 deallocation at order:-1:GOOD
+Simple 13 allocation then 13 deallocation at order:1:GOOD
+Simple 13 allocation then 13 deallocation at order:-1:GOOD
+Simple 14 allocation then 14 deallocation at order:1:GOOD
+Simple 14 allocation then 14 deallocation at order:-1:GOOD
+Simple 15 allocation then 15 deallocation at order:1:GOOD
+Simple 15 allocation then 15 deallocation at order:-1:GOOD
+Simple 16 allocation then 16 deallocation at order:1:GOOD
+Simple 16 allocation then 16 deallocation at order:-1:GOOD
+Simple 17 allocation then 17 deallocation at order:1:GOOD
+Simple 17 allocation then 17 deallocation at order:-1:GOOD
+Simple 18 allocation then 18 deallocation at order:1:GOOD
+Simple 18 allocation then 18 deallocation at order:-1:GOOD
+Simple 19 allocation then 19 deallocation at order:1:GOOD
+Simple 19 allocation then 19 deallocation at order:-1:GOOD
+Simple 20 allocation then 20 deallocation at order:1:GOOD
+Simple 20 allocation then 20 deallocation at order:-1:GOOD
+Simple 21 allocation then 21 deallocation at order:1:GOOD
+Simple 21 allocation then 21 deallocation at order:-1:GOOD
+Simple 22 allocation then 22 deallocation at order:1:GOOD
+Simple 22 allocation then 22 deallocation at order:-1:GOOD
+Simple 23 allocation then 23 deallocation at order:1:GOOD
+Simple 23 allocation then 23 deallocation at order:-1:GOOD
+Simple 24 allocation then 24 deallocation at order:1:GOOD
+Simple 24 allocation then 24 deallocation at order:-1:GOOD
+Simple 25 allocation then 25 deallocation at order:1:GOOD
+Simple 25 allocation then 25 deallocation at order:-1:GOOD
+Simple 26 allocation then 26 deallocation at order:1:GOOD
+Simple 26 allocation then 26 deallocation at order:-1:GOOD
+Simple 27 allocation then 27 deallocation at order:1:GOOD
+Simple 27 allocation then 27 deallocation at order:-1:GOOD
+Simple 28 allocation then 28 deallocation at order:1:GOOD
+Simple 28 allocation then 28 deallocation at order:-1:GOOD
+Simple 29 allocation then 29 deallocation at order:1:GOOD
+Simple 29 allocation then 29 deallocation at order:-1:GOOD
+Simple 30 allocation then 30 deallocation at order:1:GOOD
+Simple 30 allocation then 30 deallocation at order:-1:GOOD
+Simple 31 allocation then 31 deallocation at order:1:GOOD
+Simple 31 allocation then 31 deallocation at order:-1:GOOD
+Simple 32 allocation then 32 deallocation at order:1:GOOD
+Simple 32 allocation then 32 deallocation at order:-1:GOOD
+Simple 33 allocation then 33 deallocation at order:1:GOOD
+Simple 33 allocation then 33 deallocation at order:-1:GOOD
+Simple 34 allocation then 34 deallocation at order:1:GOOD
+Simple 34 allocation then 34 deallocation at order:-1:GOOD
+Simple 35 allocation then 35 deallocation at order:1:GOOD
+Simple 35 allocation then 35 deallocation at order:-1:GOOD
+Simple 36 allocation then 36 deallocation at order:1:GOOD
+Simple 36 allocation then 36 deallocation at order:-1:GOOD
+Simple 37 allocation then 37 deallocation at order:1:GOOD
+Simple 37 allocation then 37 deallocation at order:-1:GOOD
+Simple 38 allocation then 38 deallocation at order:1:GOOD
+Simple 38 allocation then 38 deallocation at order:-1:GOOD
+Simple 39 allocation then 39 deallocation at order:1:GOOD
+Simple 39 allocation then 39 deallocation at order:-1:GOOD
+Simple 40 allocation then 40 deallocation at order:1:GOOD
+Simple 40 allocation then 40 deallocation at order:-1:GOOD
+Simple 41 allocation then 41 deallocation at order:1:GOOD
+Simple 41 allocation then 41 deallocation at order:-1:GOOD
+Simple 42 allocation then 42 deallocation at order:1:GOOD
+Simple 42 allocation then 42 deallocation at order:-1:GOOD
+Simple 43 allocation then 43 deallocation at order:1:GOOD
+Simple 43 allocation then 43 deallocation at order:-1:GOOD
+Simple 44 allocation then 44 deallocation at order:1:GOOD
+Simple 44 allocation then 44 deallocation at order:-1:GOOD
+Simple 45 allocation then 45 deallocation at order:1:GOOD
+Simple 45 allocation then 45 deallocation at order:-1:GOOD
+Simple 46 allocation then 46 deallocation at order:1:GOOD
+Simple 46 allocation then 46 deallocation at order:-1:GOOD
+Simple 47 allocation then 47 deallocation at order:1:GOOD
+Simple 47 allocation then 47 deallocation at order:-1:GOOD
+Simple 48 allocation then 48 deallocation at order:1:GOOD
+Simple 48 allocation then 48 deallocation at order:-1:GOOD
+Simple 49 allocation then 49 deallocation at order:1:GOOD
+Simple 49 allocation then 49 deallocation at order:-1:GOOD
+Permuting Deallocations Only:1
+Permuting Deallocations Only:2
+Permuting Deallocations Only:3
+Permuting Deallocations Only:4
+Permuting Deallocations Only:5
+Permuting Deallocations Only:6
+Permuting Deallocations Only:7
+Permuting Deallocations Only:8
+Permuting Deallocations Only:9
+Permuting Allocations and Deallocations:2
+Permuting Allocations and Deallocations:4
+Permuting Allocations and Deallocations:6
+Permuting Allocations and Deallocations:8
+Permuting Allocations and Deallocations:10
+Testing single big allocations
+Can detect if memory too small
+Testing all sorts of random
+Permuting Deallocations Only with random lengths:1
+Permuting Deallocations Only with random lengths:2
+Permuting Deallocations Only with random lengths:3
+Permuting Deallocations Only with random lengths:4
+Permuting Deallocations Only with random lengths:5
+Permuting Deallocations Only with random lengths:6
+Permuting Deallocations Only with random lengths:7
+Permuting Deallocations Only with random lengths:8
+Permuting Deallocations Only with random lengths:9
+Permuting Allocations and Deallocations with random allocation sizes:2
+Permuting Allocations and Deallocations with random allocation sizes:4
+Permuting Allocations and Deallocations with random allocation sizes:6
+Permuting Allocations and Deallocations with random allocation sizes:8
+Permuting Allocations and Deallocations with random allocation sizes:10
+Permuting Allocations and Deallocations with random allocation sizes WITH SMALL ALLOCATOR:2
+Permuting Allocations and Deallocations with random allocation sizes WITH SMALL ALLOCATOR:4
+Permuting Allocations and Deallocations with random allocation sizes WITH SMALL ALLOCATOR:6
+Permuting Allocations and Deallocations with random allocation sizes WITH SMALL ALLOCATOR:8
+Permuting Allocations and Deallocations with random allocation sizes WITH SMALL ALLOCATOR:10

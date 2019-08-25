@@ -1,0 +1,390 @@
+DECUNIX: 5.1b (4 CPU, Alpha Processors)
+
+// #define IMPL_HASH
+( ~/opencontainers/timing )
+ruby % cxx -O -I/home/rts/opencontainers/include -DOC_BYTES_IN_POINTER=8 -DIMPL_HASH -DHAVE_STL containers_timing.cc -o containers_timing
+( ~/opencontainers/timing )
+ruby % containers_timing 
+Time for 1 i/d (done 1000 times) = 0.00195301
+Time for 2 i/d (done 1000 times) = 0.00390601
+Time for 4 i/d (done 1000 times) = 0.00781298
+Time for 8 i/d (done 1000 times) = 0.015625
+Time for 16 i/d (done 1000 times) = 0.032227
+Time for 32 i/d (done 1000 times) = 0.0703139
+Time for 64 i/d (done 1000 times) = 0.156252
+Time for 128 i/d (done 1000 times) = 0.392584
+Time for 256 i/d (done 1000 times) = 1.15724
+Time for 512 i/d (done 1000 times) = 3.9776
+Time for 1024 i/d (done 1000 times) = 14.884
+Time for 2048 i/d (done 1000 times) = 61.6104
+Time for 4096 i/d (done 1000 times) = 264.944
+Time for 1 lookups (done 1000 times) = 0.000975966
+Time for 2 lookups (done 1000 times) = 0.00097692
+Time for 4 lookups (done 1000 times) = 0.00195301
+Time for 8 lookups (done 1000 times) = 0.00488305
+Time for 16 lookups (done 1000 times) = 0.00878894
+Time for 32 lookups (done 1000 times) = 0.021485
+Time for 64 lookups (done 1000 times) = 0.048829
+Time for 128 lookups (done 1000 times) = 0.133791
+Time for 256 lookups (done 1000 times) = 0.430671
+Time for 512 lookups (done 1000 times) = 1.6094
+Time for 1024 lookups (done 1000 times) = 6.66026
+Time for 2048 lookups (done 1000 times) = 28.4555
+Time for 4096 lookups (done 1000 times) = 123.618
+Time for 8192 lookups (done 1000 times) = ... too long ...
+
+
+// #define IMPL_AVLTREE
+( ~/opencontainers/timing )
+ruby % cxx -O -I/home/rts/opencontainers/include -DOC_BYTES_IN_POINTER=8 -DIMPL_AVLTREE -DHAVE_STL containers_timing.cc -o containers_timing
+( ~/opencontainers/timing )
+ruby % containers_timing                                                        Time for 1 i/d (done 1000 times) = 0.00195396
+Time for 2 i/d (done 1000 times) = 0.00390601
+Time for 4 i/d (done 1000 times) = 0.0078131
+Time for 8 i/d (done 1000 times) = 0.0185549
+Time for 16 i/d (done 1000 times) = 0.039063
+Time for 32 i/d (done 1000 times) = 0.093752
+Time for 64 i/d (done 1000 times) = 0.208988
+Time for 128 i/d (done 1000 times) = 0.482429
+Time for 256 i/d (done 1000 times) = 1.13576
+Time for 512 i/d (done 1000 times) = 2.62114
+Time for 1024 i/d (done 1000 times) = 5.78037
+Time for 2048 i/d (done 1000 times) = 12.6389
+Time for 4096 i/d (done 1000 times) = 28.1118
+Time for 1 lookups (done 1000 times) = 0
+Time for 2 lookups (done 1000 times) = 0.00097692
+Time for 4 lookups (done 1000 times) = 0.000976086
+Time for 8 lookups (done 1000 times) = 0.00293005
+Time for 16 lookups (done 1000 times) = 0.00781298
+Time for 32 lookups (done 1000 times) = 0.021485
+Time for 64 lookups (done 1000 times) = 0.054688
+Time for 128 lookups (done 1000 times) = 0.133791
+Time for 256 lookups (done 1000 times) = 0.341803
+Time for 512 lookups (done 1000 times) = 0.84474
+Time for 1024 lookups (done 1000 times) = 1.98343
+Time for 2048 lookups (done 1000 times) = 4.7032
+Time for 4096 lookups (done 1000 times) = 10.9787
+Time for 8192 lookups (done 1000 times) = 24.4174
+
+
+// #define IMPL_AVLHASH
+( ~/opencontainers/timing )
+ruby % cxx -O -I/home/rts/opencontainers/include -DOC_BYTES_IN_POINTER=8 -DIMPL_AVLHASH -DHAVE_STL containers_timing.cc -o containers_timing
+( ~/opencontainers/timing )
+ruby % containers_timing                                                      
+Time for 1 i/d (done 1000 times) = 0.00292993
+Time for 2 i/d (done 1000 times) = 0.00488305
+Time for 4 i/d (done 1000 times) = 0.010743
+Time for 8 i/d (done 1000 times) = 0.020509
+Time for 16 i/d (done 1000 times) = 0.0449229
+Time for 32 i/d (done 1000 times) = 0.094728
+Time for 64 i/d (done 1000 times) = 0.198245
+Time for 128 i/d (done 1000 times) = 0.420905
+Time for 256 i/d (done 1000 times) = 0.933609
+Time for 512 i/d (done 1000 times) = 1.98831
+Time for 1024 i/d (done 1000 times) = 4.11237
+Time for 2048 i/d (done 1000 times) = 8.64857
+Time for 4096 i/d (done 1000 times) = 18.2571
+Time for 1 lookups (done 1000 times) = 0.000975966
+Time for 2 lookups (done 1000 times) = 0.000977039
+Time for 4 lookups (done 1000 times) = 0.00292897
+Time for 8 lookups (done 1000 times) = 0.00488305
+Time for 16 lookups (done 1000 times) = 0.00878906
+Time for 32 lookups (done 1000 times) = 0.0185549
+Time for 64 lookups (done 1000 times) = 0.041016
+Time for 128 lookups (done 1000 times) = 0.0878921
+Time for 256 lookups (done 1000 times) = 0.193363
+Time for 512 lookups (done 1000 times) = 0.428717
+Time for 1024 lookups (done 1000 times) = 0.974625
+Time for 2048 lookups (done 1000 times) = 2.14359
+Time for 4096 lookups (done 1000 times) = 4.85164
+Time for 8192 lookups (done 1000 times) = 11.9201
+
+// #define IMPL_MAP
+( ~/opencontainers/timing )
+ruby % cxx -O -I/home/rts/opencontainers/include -DOC_BYTES_IN_POINTER=8 -DIMPL_MAP -DHAVE_STL containers_timing.cc -o containers_timing
+( ~/opencontainers/timing )
+ruby % containers_timing                                                        Time for 1 i/d (done 1000 times) = 0.00293005
+Time for 2 i/d (done 1000 times) = 0.00585997
+Time for 4 i/d (done 1000 times) = 0.012695
+Time for 8 i/d (done 1000 times) = 0.025391
+Time for 16 i/d (done 1000 times) = 0.057618
+Time for 32 i/d (done 1000 times) = 0.124025
+Time for 64 i/d (done 1000 times) = 0.277348
+Time for 128 i/d (done 1000 times) = 0.635752
+Time for 256 i/d (done 1000 times) = 1.39162
+Time for 512 i/d (done 1000 times) = 3.24908
+Time for 1024 i/d (done 1000 times) = 8.45228
+Time for 2048 i/d (done 1000 times) = 19.889
+Time for 4096 i/d (done 1000 times) = 53.787
+Time for 1 lookups (done 1000 times) = 0.000976086
+Time for 2 lookups (done 1000 times) = 0.00292993
+Time for 4 lookups (done 1000 times) = 0.00488305
+Time for 8 lookups (done 1000 times) = 0.00976598
+Time for 16 lookups (done 1000 times) = 0.0205081
+Time for 32 lookups (done 1000 times) = 0.043946
+Time for 64 lookups (done 1000 times) = 0.094728
+Time for 128 lookups (done 1000 times) = 0.2168
+Time for 256 lookups (done 1000 times) = 0.471687
+Time for 512 lookups (done 1000 times) = 1.09865
+Time for 1024 lookups (done 1000 times) = 2.43168
+Time for 2048 lookups (done 1000 times) = 5.4747
+Time for 4096 lookups (done 1000 times) = 12.048
+Time for 8192 lookups (done 1000 times) = 27.0766
+
+
+
+
+
+
+
+
+LINUX: (2 CPU, Xeon Processors)
+
+// #define IMPL_HASH
+
+( ~/opencontainers/timing )
+brhrda % g++ -O5 -I/home/rts/opencontainers/include -DOC_BYTES_IN_POINTER=4 -Wno-deprecated -DIMPL_HASH -DHAVE_STL containers_timing.cc -o containers_timing
+( ~/opencontainers/timing )
+brhrda % containers_timing                                                      Time for 1 i/d (done 1000 times) = 0.001096
+Time for 2 i/d (done 1000 times) = 0.002172
+Time for 4 i/d (done 1000 times) = 0.004789
+Time for 8 i/d (done 1000 times) = 0.009807
+Time for 16 i/d (done 1000 times) = 0.021952
+Time for 32 i/d (done 1000 times) = 0.053246
+Time for 64 i/d (done 1000 times) = 0.132387
+Time for 128 i/d (done 1000 times) = 0.390299
+Time for 256 i/d (done 1000 times) = 1.25346
+Time for 512 i/d (done 1000 times) = 4.49477
+Time for 1024 i/d (done 1000 times) = 17.0104
+Time for 2048 i/d (done 1000 times) = 67.6006
+Time for 4096 i/d (done 1000 times) = 288.78
+Time for 1 lookups (done 1000 times) = 0.000553
+Time for 2 lookups (done 1000 times) = 0.001108
+Time for 4 lookups (done 1000 times) = 0.002244
+Time for 8 lookups (done 1000 times) = 0.004908
+Time for 16 lookups (done 1000 times) = 0.010873
+Time for 32 lookups (done 1000 times) = 0.025705
+Time for 64 lookups (done 1000 times) = 0.065921
+Time for 128 lookups (done 1000 times) = 0.192957
+Time for 256 lookups (done 1000 times) = 0.618045
+Time for 512 lookups (done 1000 times) = 2.20385
+Time for 1024 lookups (done 1000 times) = 8.30897
+Time for 2048 lookups (done 1000 times) = 32.6398
+Time for 4096 lookups (done 1000 times) = 142.095
+Time for 8192 lookups (done 1000 times) = .. too long ...
+
+
+// #define IMPL_AVLTREE
+( ~/opencontainers/timing )
+brhrda % g++ -O5 -I/home/rts/opencontainers/include -DOC_BYTES_IN_POINTER=4 -Wno-deprecated -DIMPL_AVLTREE -DHAVE_STL containers_timing.cc -o containers_timing
+( ~/opencontainers/timing )
+brhrda % containers_timing 
+Time for 1 i/d (done 1000 times) = 0.001741
+Time for 2 i/d (done 1000 times) = 0.002999
+Time for 4 i/d (done 1000 times) = 0.007673
+Time for 8 i/d (done 1000 times) = 0.015605
+Time for 16 i/d (done 1000 times) = 0.038151
+Time for 32 i/d (done 1000 times) = 0.09596
+Time for 64 i/d (done 1000 times) = 0.234885
+Time for 128 i/d (done 1000 times) = 0.559641
+Time for 256 i/d (done 1000 times) = 1.39397
+Time for 512 i/d (done 1000 times) = 3.37605
+Time for 1024 i/d (done 1000 times) = 7.66447
+Time for 2048 i/d (done 1000 times) = 18.5123
+Time for 4096 i/d (done 1000 times) = 44.4153
+Time for 1 lookups (done 1000 times) = 0.000368
+Time for 2 lookups (done 1000 times) = 0.001393
+Time for 4 lookups (done 1000 times) = 0.002381
+Time for 8 lookups (done 1000 times) = 0.005973
+Time for 16 lookups (done 1000 times) = 0.015589
+Time for 32 lookups (done 1000 times) = 0.039318
+Time for 64 lookups (done 1000 times) = 0.104048
+Time for 128 lookups (done 1000 times) = 0.268009
+Time for 256 lookups (done 1000 times) = 0.699261
+Time for 512 lookups (done 1000 times) = 1.75813
+Time for 1024 lookups (done 1000 times) = 4.20432
+Time for 2048 lookups (done 1000 times) = 10.0298
+Time for 4096 lookups (done 1000 times) = 24.2964
+Time for 8192 lookups (done 1000 times) = 55.6848
+
+
+// #define IMPL_AVLHASH
+
+( ~/opencontainers/timing )
+brhrda % g++ -O5 -I/home/rts/opencontainers/include -DOC_BYTES_IN_POINTER=4 -Wno-deprecated -DIMPL_AVLHASH -DHAVE_STL containers_timing.cc -o containers_timing
+( ~/opencontainers/timing )
+brhrda % containers_timing                                                      Time for 1 i/d (done 1000 times) = 0.002166
+Time for 2 i/d (done 1000 times) = 0.004099
+Time for 4 i/d (done 1000 times) = 0.007514
+Time for 8 i/d (done 1000 times) = 0.015604
+Time for 16 i/d (done 1000 times) = 0.034296
+Time for 32 i/d (done 1000 times) = 0.072795
+Time for 64 i/d (done 1000 times) = 0.152763
+Time for 128 i/d (done 1000 times) = 0.320516
+Time for 256 i/d (done 1000 times) = 0.665605
+Time for 512 i/d (done 1000 times) = 1.36693
+Time for 1024 i/d (done 1000 times) = 2.84223
+Time for 2048 i/d (done 1000 times) = 6.67098
+Time for 4096 i/d (done 1000 times) = 16.396
+Time for 1 lookups (done 1000 times) = 0.000585
+Time for 2 lookups (done 1000 times) = 0.001187
+Time for 4 lookups (done 1000 times) = 0.002445
+Time for 8 lookups (done 1000 times) = 0.005147
+Time for 16 lookups (done 1000 times) = 0.011055
+Time for 32 lookups (done 1000 times) = 0.023241
+Time for 64 lookups (done 1000 times) = 0.048274
+Time for 128 lookups (done 1000 times) = 0.103135
+Time for 256 lookups (done 1000 times) = 0.218033
+Time for 512 lookups (done 1000 times) = 0.478227
+Time for 1024 lookups (done 1000 times) = 1.08579
+Time for 2048 lookups (done 1000 times) = 2.42827
+Time for 4096 lookups (done 1000 times) = 6.26226
+Time for 8192 lookups (done 1000 times) = 16.8542
+
+
+// #define IMPL_MAP
+
+( ~/opencontainers/timing )
+brhrda % g++ -O5 -I/home/rts/opencontainers/include -DOC_BYTES_IN_POINTER=4 -Wno-deprecated -DIMPL_MAP -DHAVE_STL containers_timing.cc -o containers_timing
+( ~/opencontainers/timing )
+brhrda % containers_timing                                                    
+Time for 1 i/d (done 1000 times) = 0.001637
+Time for 2 i/d (done 1000 times) = 0.003703
+Time for 4 i/d (done 1000 times) = 0.009418
+Time for 8 i/d (done 1000 times) = 0.019445
+Time for 16 i/d (done 1000 times) = 0.046576
+Time for 32 i/d (done 1000 times) = 0.106344
+Time for 64 i/d (done 1000 times) = 0.256402
+Time for 128 i/d (done 1000 times) = 0.606906
+Time for 256 i/d (done 1000 times) = 1.46973
+Time for 512 i/d (done 1000 times) = 3.46971
+Time for 1024 i/d (done 1000 times) = 7.94686
+Time for 2048 i/d (done 1000 times) = 19.4256
+Time for 4096 i/d (done 1000 times) = 45.4613
+Time for 1 lookups (done 1000 times) = 0.000716
+Time for 2 lookups (done 1000 times) = 0.001462
+Time for 4 lookups (done 1000 times) = 0.00393
+Time for 8 lookups (done 1000 times) = 0.007603
+Time for 16 lookups (done 1000 times) = 0.017655
+Time for 32 lookups (done 1000 times) = 0.04063
+Time for 64 lookups (done 1000 times) = 0.093759
+Time for 128 lookups (done 1000 times) = 0.224348
+Time for 256 lookups (done 1000 times) = 0.55943
+Time for 512 lookups (done 1000 times) = 1.30872
+Time for 1024 lookups (done 1000 times) = 2.97237
+Time for 2048 lookups (done 1000 times) = 7.04554
+Time for 4096 lookups (done 1000 times) = 16.9128
+Time for 8192 lookups (done 1000 times) = 38.4987
+
+
+
+SOLARIS: (2 CPU, SPARC)
+
+// #define IMPL_HASH
+( ~/opencontainers/timing )
+apu % CC -O -I/home/rts/opencontainers/include -DOC_NEEDS_BOOL -DOC_BYTES_IN_POINTER=4 -DIMPL_HASH containers_timing.cc -o containers_timing
+( ~/opencontainers/timing )
+apu % containers_timing                                                         Time for 1 i/d (done 1000 times) = 0.00695801
+Time for 2 i/d (done 1000 times) = 0.014622
+Time for 4 i/d (done 1000 times) = 0.033156
+Time for 8 i/d (done 1000 times) = 0.068947
+Time for 16 i/d (done 1000 times) = 0.141577
+Time for 32 i/d (done 1000 times) = 0.330809
+Time for 64 i/d (done 1000 times) = 0.800221
+Time for 128 i/d (done 1000 times) = 2.00563
+Time for 256 i/d (done 1000 times) = 5.53283
+Time for 512 i/d (done 1000 times) = 19.3111
+Time for 1024 i/d (done 1000 times) = 72.5107
+Time for 2048 i/d (done 1000 times) = 215.654
+Time for 4096 i/d (done 1000 times) = 967.921
+Time for 1 lookups (done 1000 times) = 0.00206792
+Time for 2 lookups (done 1000 times) = 0.00408304
+Time for 4 lookups (done 1000 times) = 0.00789404
+Time for 8 lookups (done 1000 times) = 0.0186089
+Time for 16 lookups (done 1000 times) = 0.037171
+Time for 32 lookups (done 1000 times) = 0.0916711
+Time for 64 lookups (done 1000 times) = 0.237159
+Time for 128 lookups (done 1000 times) = 0.6562
+Time for 256 lookups (done 1000 times) = 2.02219
+Time for 512 lookups (done 1000 times) = 8.18534
+Time for 1024 lookups (done 1000 times) = 33.5541
+Time for 2048 lookups (done 1000 times) = 100.985
+Time for 4096 lookups (done 1000 times) = ..too long..
+Time for 8192 lookups (done 1000 times) = ..too long..
+
+
+
+
+// #define IMPL_AVLTREE
+( ~/opencontainers/timing )
+apu % CC -O -I/home/rts/opencontainers/include -DOC_NEEDS_BOOL -DOC_BYTES_IN_POINTER=4 -DIMPL_AVLTREE containers_timing.cc -o containers_timing
+( ~/opencontainers/timing )
+apu % containers_timing
+Time for 1 i/d (done 1000 times) = 0.00676298
+Time for 2 i/d (done 1000 times) = 0.0140021
+Time for 4 i/d (done 1000 times) = 0.037611
+Time for 8 i/d (done 1000 times) = 0.0795751
+Time for 16 i/d (done 1000 times) = 0.174608
+Time for 32 i/d (done 1000 times) = 0.412811
+Time for 64 i/d (done 1000 times) = 0.940173
+Time for 128 i/d (done 1000 times) = 2.24871
+Time for 256 i/d (done 1000 times) = 5.04065
+Time for 512 i/d (done 1000 times) = 11.3896
+Time for 1024 i/d (done 1000 times) = 25.0987
+Time for 2048 i/d (done 1000 times) = 53.4054
+Time for 4096 i/d (done 1000 times) = 118.239
+Time for 1 lookups (done 1000 times) = 0.000854969
+Time for 2 lookups (done 1000 times) = 0.00267398
+Time for 4 lookups (done 1000 times) = 0.00727296
+Time for 8 lookups (done 1000 times) = 0.017884
+Time for 16 lookups (done 1000 times) = 0.039569
+Time for 32 lookups (done 1000 times) = 0.10249
+Time for 64 lookups (done 1000 times) = 0.266872
+Time for 128 lookups (done 1000 times) = 0.638568
+Time for 256 lookups (done 1000 times) = 1.52525
+Time for 512 lookups (done 1000 times) = 3.73968
+Time for 1024 lookups (done 1000 times) = 8.99694
+Time for 2048 lookups (done 1000 times) = 20.1489
+Time for 4096 lookups (done 1000 times) = 46.5369
+Time for 8192 lookups (done 1000 times) = 103.288
+
+
+// #define IMPL_AVLHASH
+
+( ~/opencontainers/timing )
+apu % CC -O -I/home/rts/opencontainers/include -DOC_NEEDS_BOOL -DOC_BYTES_IN_POINTER=4 -DIMPL_AVLHASH containers_timing.cc -o containers_timing
+( ~/opencontainers/timing )
+apu % containers_timing                                                         Time for 1 i/d (done 1000 times) = 0.008726
+Time for 2 i/d (done 1000 times) = 0.017701
+Time for 4 i/d (done 1000 times) = 0.0405381
+Time for 8 i/d (done 1000 times) = 0.076648
+Time for 16 i/d (done 1000 times) = 0.171402
+Time for 32 i/d (done 1000 times) = 0.37067
+Time for 64 i/d (done 1000 times) = 0.746175
+Time for 128 i/d (done 1000 times) = 1.69807
+Time for 256 i/d (done 1000 times) = 3.50466
+Time for 512 i/d (done 1000 times) = 6.93778
+Time for 1024 i/d (done 1000 times) = 14.3573
+Time for 2048 i/d (done 1000 times) = 28.6567
+Time for 4096 i/d (done 1000 times) = 59.0515
+Time for 1 lookups (done 1000 times) = 0.00184596
+Time for 2 lookups (done 1000 times) = 0.00382698
+Time for 4 lookups (done 1000 times) = 0.00785291
+Time for 8 lookups (done 1000 times) = 0.015578
+Time for 16 lookups (done 1000 times) = 0.032081
+Time for 32 lookups (done 1000 times) = 0.0645919
+Time for 64 lookups (done 1000 times) = 0.140258
+Time for 128 lookups (done 1000 times) = 0.295464
+Time for 256 lookups (done 1000 times) = 0.627018
+Time for 512 lookups (done 1000 times) = 1.36307
+Time for 1024 lookups (done 1000 times) = 3.07198
+Time for 2048 lookups (done 1000 times) = 6.17327
+Time for 4096 lookups (done 1000 times) = 13.6336
+Time for 8192 lookups (done 1000 times) = 32.914
+
+
+
+// #define IMPL_MAP
+
+ No implementation on Solaris

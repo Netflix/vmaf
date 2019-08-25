@@ -1,0 +1,10 @@
+/obj/.keep
+*.o
+vmaf
+psnr
+moment
+ssim
+ms_ssim
+.cproject
+.project
+.pydevproject

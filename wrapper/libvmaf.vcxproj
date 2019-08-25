@@ -1,0 +1,157 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <UseNativeEnvironment>true</UseNativeEnvironment>
+    <ProjectGuid>{5F5103F4-E473-4476-8E7B-FD3465E872B1}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>libvmaf</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\feature\src;..\feature\src\common;..\pthreads;..\ptools;..\ptools\opencontainers_1_8_4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>MULTI_THREADING;PTW32_STATIC_LIB;OC_NEW_STYLE_INCLUDES;_DEBUG;_CRT_NONSTDC_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\feature\src;..\feature\src\common;..\pthreads;..\ptools;..\ptools\opencontainers_1_8_4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <WarningLevel>Level3</WarningLevel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>MULTI_THREADING;PTW32_STATIC_LIB;OC_NEW_STYLE_INCLUDES;NDEBUG;_CRT_NONSTDC_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\feature\src\adm.c" />
+    <ClCompile Include="..\feature\src\adm_tools.c" />
+    <ClCompile Include="..\feature\src\all.c" />
+    <ClCompile Include="..\feature\src\ansnr.c" />
+    <ClCompile Include="..\feature\src\ansnr_tools.c" />
+    <ClCompile Include="..\feature\src\common\alignment.c" />
+    <ClCompile Include="..\feature\src\common\alloc.c" />
+    <ClCompile Include="..\feature\src\common\blur_array.c" />
+    <ClCompile Include="..\feature\src\common\convolution.c" />
+    <ClCompile Include="..\feature\src\common\convolution_avx.c">
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <ClCompile Include="..\feature\src\common\cpu.c" />
+    <ClCompile Include="..\feature\src\common\file_io.c" />
+    <ClCompile Include="..\feature\src\common\frame.c" />
+    <ClCompile Include="..\feature\src\iqa\convolve.c" />
+    <ClCompile Include="..\feature\src\iqa\decimate.c" />
+    <ClCompile Include="..\feature\src\iqa\math_utils.c" />
+    <ClCompile Include="..\feature\src\iqa\ssim_tools.c" />
+    <ClCompile Include="..\feature\src\moment.c" />
+    <ClCompile Include="..\feature\src\motion.c" />
+    <ClCompile Include="..\feature\src\ms_ssim.c" />
+    <ClCompile Include="..\feature\src\psnr.c" />
+    <ClCompile Include="..\feature\src\psnr_tools.c" />
+    <ClCompile Include="..\feature\src\ssim.c" />
+    <ClCompile Include="..\feature\src\vif.c" />
+    <ClCompile Include="..\feature\src\vif_tools.c" />
+    <ClCompile Include="src\combo.c" />
+    <ClCompile Include="src\cpu_info.c" />
+    <ClCompile Include="src\darray.c" />
+    <ClCompile Include="src\libvmaf.cpp" />
+    <ClCompile Include="src\pugixml\pugixml.cpp" />
+    <ClCompile Include="src\svm.cpp" />
+    <ClCompile Include="src\vmaf.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\feature\src\adm_options.h" />
+    <ClInclude Include="..\feature\src\adm_tools.h" />
+    <ClInclude Include="..\feature\src\all_options.h" />
+    <ClInclude Include="..\feature\src\ansnr_options.h" />
+    <ClInclude Include="..\feature\src\ansnr_tools.h" />
+    <ClInclude Include="..\feature\src\common\alignment.h" />
+    <ClInclude Include="..\feature\src\common\alloc.h" />
+    <ClInclude Include="..\feature\src\common\blur_array.h" />
+    <ClInclude Include="..\feature\src\common\convolution.h" />
+    <ClInclude Include="..\feature\src\common\convolution_internal.h" />
+    <ClInclude Include="..\feature\src\common\cpu.h" />
+    <ClInclude Include="..\feature\src\common\cpudetect.h" />
+    <ClInclude Include="..\feature\src\common\file_io.h" />
+    <ClInclude Include="..\feature\src\common\frame.h" />
+    <ClInclude Include="..\feature\src\common\macros.h" />
+    <ClInclude Include="..\feature\src\iqa\convolve.h" />
+    <ClInclude Include="..\feature\src\iqa\decimate.h" />
+    <ClInclude Include="..\feature\src\iqa\iqa.h" />
+    <ClInclude Include="..\feature\src\iqa\iqa_options.h" />
+    <ClInclude Include="..\feature\src\iqa\iqa_os.h" />
+    <ClInclude Include="..\feature\src\iqa\math_utils.h" />
+    <ClInclude Include="..\feature\src\iqa\ssim_tools.h" />
+    <ClInclude Include="..\feature\src\moment_options.h" />
+    <ClInclude Include="..\feature\src\motion_options.h" />
+    <ClInclude Include="..\feature\src\motion_tools.h" />
+    <ClInclude Include="..\feature\src\psnr_options.h" />
+    <ClInclude Include="..\feature\src\psnr_tools.h" />
+    <ClInclude Include="..\feature\src\vif_options.h" />
+    <ClInclude Include="..\feature\src\vif_tools.h" />
+    <ClInclude Include="src\combo.h" />
+    <ClInclude Include="src\cpu_info.h" />
+    <ClInclude Include="src\darray.h" />
+    <ClInclude Include="src\debug.h" />
+    <ClInclude Include="src\libvmaf.h" />
+    <ClInclude Include="src\pugixml\pugiconfig.hpp" />
+    <ClInclude Include="src\pugixml\pugixml.hpp" />
+    <ClInclude Include="src\svm.h" />
+    <ClInclude Include="src\timer.h" />
+    <ClInclude Include="src\vmaf.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,769 @@
+NUMBER TEST1
+Looking at::
+Expected numeric digit or '.' for number
+Looking at:0:
+Got:l:0
+Looking at: 0:
+Got:l:0
+Looking at: +0:
+Got:l:0
+Looking at: + 0:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   +
+---^
+Expected numeric digit or '.' for number
+Looking at: -0:
+Got:l:0
+Looking at: - 0:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   -
+---^
+Expected numeric digit or '.' for number
+Looking at:B:1:
+Got:s:1
+Looking at:I:1:
+Got:i:1
+Looking at:L:1:
+Got:l:1
+Looking at:X:1:
+Got:x:1
+Looking at:F:1:
+Got:f:1.0
+Looking at:D:1:
+Got:d:1.0
+Looking at:CF:1:
+Got:F:(1+0j)
+Looking at:CD:1:
+Got:D:(1+0j)
+Looking at:UB:1:
+Got:S:1
+Looking at:UI:1:
+Got:I:1
+Looking at:UL:1:
+Got:L:1
+Looking at:UX:1:
+Got:X:1
+Looking at:CB:1:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  CB
+---^
+Unknown Numeric Tag:'CB'
+Looking at:1.:
+Got:d:1.0
+Looking at:1.0:
+Got:d:1.0
+Looking at:1e6:
+Got:d:1000000.0
+Looking at:1e-6:
+Got:d:1e-06
+Looking at:1000000:
+Got:l:1000000
+Looking at:1000000000000:
+Got:x:1000000000000
+Looking at:1000000000000.0:
+Got:d:1000000000000.0
+Looking at:D:1000000000000:
+Got:d:1000000000000.0
+Looking at:123456789123456789123456789:
+Got:d:1.234567891234568e+26
+Looking at:-1000000:
+Got:l:-1000000
+Looking at:-1000000000000:
+Got:x:-1000000000000
+Looking at:-1000000000000.0:
+Got:d:-1000000000000.0
+Looking at:D:-1000000000000:
+Got:d:-1000000000000.0
+Looking at:-123456789123456789123456789:
+Got:d:-1.234567891234568e+26
+Looking at:DU:5:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  DU
+---^
+Unknown Numeric Tag:'DU'
+Looking at:DUr:5:
+Got:d:5.0
+Looking at:T::
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  T:
+---^
+Malformed time tag:''
+Looking at:T:1950:
+Got:a:'1950'
+Looking at:BIT:1:
+Got:b:True
+Looking at:BIT:0:
+Got:b:False
+Looking at:BIT:208234768:
+Got:b:True
+STRING TEST1
+Looking at::
+A string needs to start with "
+Looking at: ":
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   "
+---^
+Unexpected EOF inside of string
+Looking at: "":
+Got::
+Looking at:"1:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  "1
+---^
+Unexpected EOF inside of string
+Looking at:"1":
+Got:1:
+Looking at:"12:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  "12
+----^
+Unexpected EOF inside of string
+Looking at:"12":
+Got:12:
+Looking at:"
+":
+Got:
+:
+Looking at:"\n":
+Got:
+:
+Looking at:"\"":
+Got:":
+VECTOR TEST1
+Looking at::
+Expected:'<', but saw 'EOF' on input
+Looking at:<1,2,3>:
+Got:l:array([1,2,3], 'i'):
+Looking at:D:<1,2,3>:
+Got:d:array([1.0,2.0,3.0], 'd'):
+Looking at:<>:
+Got:d:array([], 'd'):
+Looking at:<:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  <
+--^
+Expected numeric digit or '.' for number
+Looking at:<1:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  <1
+---^
+Expected numeric digit or '.' for number
+Looking at:<1,:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  <1,
+----^
+Expected numeric digit or '.' for number
+Looking at:B:<1>:
+Got:s:array([1], '1'):
+Looking at:I:<1>:
+Got:i:array([1], 's'):
+Looking at:L:<1>:
+Got:l:array([1], 'i'):
+Looking at:X:<1>:
+Got:x:array([1], 'l'):
+Looking at:F:<1>:
+Got:f:array([1.0], 'f'):
+Looking at:D:<1>:
+Got:d:array([1.0], 'd'):
+Looking at:UB:<1>:
+Got:S:array([1], 'b'):
+Looking at:UI:<1>:
+Got:I:array([1], 'w'):
+Looking at:UL:<1>:
+Got:L:array([1], 'u'):
+Looking at:UX:<1>:
+Got:X:array([1], 'l'):
+Looking at:CF:<1>:
+Got:F:array([(1+0j)], 'F'):
+Looking at:CD:<1>:
+Got:D:array([(1+0j)], 'D'):
+Looking at:I:<100, 127, 128, 255, 256>:
+Got:i:array([100,127,128,255,256], 's'):
+Looking at:I:<100, 127, 128, 255, 256,>:
+Got:i:array([100,127,128,255,256], 's'):
+Looking at:<100,127,100000000,200>:
+Got:l:array([100,127,100000000,200], 'i'):
+TAB TEST1
+Looking at::
+Expected:'{', but saw 'EOF' on input
+Looking at:{}:
+Got:{}:
+Looking at: { } :
+Got:{}:
+Looking at:{:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  {
+--^
+Expected a key and saw EOF
+Looking at:}:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  }
+--^
+Expected:'{', but saw '}' on input
+Looking at:{ "a" = 1 }:
+Got:{'a': 1}:
+Looking at:{ "a"= { } }:
+Got:{'a': {}}:
+Looking at:{ a = 1 }:
+Got:{'a': 1}:
+Looking at:{ a = 1,}:
+Got:{'a': 1}:
+Looking at:{ a = 1, }:
+Got:{'a': 1}:
+Looking at:{ "a"= { } :
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  { "a"= { }
+-----------^
+Expecting a '}' or ',' for table
+Looking at:{a1 = 1} :
+Got:{'a1': 1}:
+Looking at:{a_1=100}:
+Got:{'a_1': 100}:
+Looking at:{111=100}:
+Got:{'111': 100}:
+Looking at:{ a:1}:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  { a
+----^
+Unknown Numeric Tag:'a'
+Looking at:{PZ=CF:(0.12015177, -0.95675814), a=1}:
+Got:{'PZ': (0.1201518-0.9567581j), 'a': 1}:
+Looking at:{ DATA=MV(<12.3, 17>, I:<1,1,1>) }:
+Got:{'DATA': [array([12.3,17.0], 'd'), array([1,1,1], 's')]}:
+Looking at: {1,2,3}:
+Got:{0: 1, 1: 2, 2: 3}:
+Looking at: {1,2}:
+Got:{0: 1, 1: 2}:
+Looking at: {1}:
+Got:{0: 1}:
+Looking at: {}:
+Got:{}:
+Looking at: {1.0,2,"three"}:
+Got:{0: 1.0, 1: 2, 2: 'three'}:
+HDR test1
+{
+    'ATTRIBUTE_PACKET':{ },
+    'EVENTS':{
+        'ASSOCIATIONS':[
+            'ALL_EVENTS, ALL_TRACKS'
+        ],
+        'KEYWORDS':{ },
+        'TRACKS':[
+            {
+                'EPOCH':'1976:04:22::10:09:08.76543210000',
+                'FIELDS':[
+                    {
+                        'FORMAT':'DUR',
+                        'NAME':'TOA',
+                        'TIME_INTERPRETATION':'First Sample',
+                        'UNITS':'sec'
+                    },
+                    {
+                        'FORMAT':'L',
+                        'NAME':'Length',
+                        'TIME_INTERPRETATION':'None',
+                        'UNITS':''
+                    }
+                ],
+                'FIELD_INTERPRETATION':{ },
+                'KEYWORDS':{ },
+                'LENGTH':2,
+                'NAME':'Track 0'
+            }
+        ]
+    },
+    'GRANULARITY':10,
+    'KEYWORDS':{
+        'CONTENTS':'Integer data from a Ramp',
+        'FILENAME':'r_int',
+        'SPECIAL_R_INT':1
+    },
+    'MACHINE_REP':'IEEE',
+    'NAME':'r_int',
+    'TIME':{
+        'DELTA':1.7,
+        'KEYWORDS':{ },
+        'LENGTH':10,
+        'NAME':'Time',
+        'START':19.3,
+        'UNITS':'s'
+    },
+    'TRACKS':[
+        {
+            'AXES':[
+                'TIME'
+            ],
+            'FORMAT':'I',
+            'KEYWORDS':{
+                'TRACK_FILENAME':'r_int_track_0'
+            },
+            'NAME':'Track 0',
+            'UNITS':''
+        }
+    ]
+}
+COMMENT TEST1
+Looking at:1// comment starts here
+:
+Got:1:
+Looking at: // comment here
+1:
+Got:1:
+Looking at://
+1:
+Got:1:
+Looking at:1//
+0:
+Got:1:
+Looking at:1/1:
+Got:1:
+Looking at:111/
+0:
+Got:111:
+Looking at:"abcd//hello":
+Got:'abcd//hello':
+Looking at:{ // This is a table
+ a = 1 }:
+Got:{'a': 1}:
+Looking at:{ a = // what?
+ 100 }:
+Got:{'a': 100}:
+Looking at:{ a = / what? 100 }:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  { a = / 
+---------^
+Expected numeric digit or '.' for number
+Looking at:{ a = / what?
+ 100 }:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  { a = / 
+---------^
+Expected numeric digit or '.' for number
+Looking at: {1,2,3}:
+Got:[1, 2, 3]:
+Looking at: {1,2}:
+Got:[1, 2]:
+Looking at: {1}:
+Got:[1]:
+Looking at: {}:
+Got:{}:
+Looking at:{ I:1} :
+Got:[1]:
+Looking at:{ B:1} :
+Got:[1]:
+Looking at:{I:1,B:2,DUR:3}:
+Got:[1, 2, 3.0]:
+Looking at: {1.0,2,"three"}:
+Got:[1.0, 2, 'three']:
+MV TEST1
+Looking at:MV(<1>, <2>):
+Got:[array([1], 'i'), array([2], 'i')]:
+Looking at:MV(D:<1>, D:<2>):
+Got:[array([1.0], 'd'), array([2.0], 'd')]:
+Looking at:MV():
+Got:[]:
+Looking at:MV(I:<1,2>, D:<1,2,3,4>):
+Got:[array([1,2], 's'), array([1.0,2.0,3.0,4.0], 'd')]:
+Looking at:MV():
+Got:[]:
+Looking at:MV(<>):
+Got:[array([], 'd')]:
+Looking at:MV(:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  MV(
+----^
+Expected:'<', but saw 'EOF' on input
+Looking at:MV[:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  MV[
+----^
+Expected:'(', but saw '[' on input
+Looking at: MV(   ):
+Got:[]:
+Looking at: MV (   ):
+Got:[]:
+NUMBER TEST0
+Looking at::
+Expected numeric digit or '.' for number
+Looking at:0:
+Got:l:0
+Looking at: 0:
+Got:l:0
+Looking at: +0:
+Got:l:0
+Looking at: + 0:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   +
+---^
+Expected numeric digit or '.' for number
+Looking at: -0:
+Got:l:0
+Looking at: - 0:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   -
+---^
+Expected numeric digit or '.' for number
+Looking at:B:1:
+Got:s:1
+Looking at:I:1:
+Got:i:1
+Looking at:L:1:
+Got:l:1
+Looking at:X:1:
+Got:x:1
+Looking at:F:1:
+Got:f:1.0
+Looking at:D:1:
+Got:d:1.0
+Looking at:CF:1:
+Got:F:(1+0j)
+Looking at:CD:1:
+Got:D:(1+0j)
+Looking at:UB:1:
+Got:S:1
+Looking at:UI:1:
+Got:I:1
+Looking at:UL:1:
+Got:L:1
+Looking at:UX:1:
+Got:X:1
+Looking at:CB:1:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  CB
+---^
+Unknown Numeric Tag:'CB'
+Looking at:1.:
+Got:d:1.0
+Looking at:1.0:
+Got:d:1.0
+Looking at:1e6:
+Got:d:1000000.0
+Looking at:1e-6:
+Got:d:1e-06
+Looking at:1000000:
+Got:l:1000000
+Looking at:1000000000000:
+Got:x:1000000000000
+Looking at:1000000000000.0:
+Got:d:1000000000000.0
+Looking at:D:1000000000000:
+Got:d:1000000000000.0
+Looking at:123456789123456789123456789:
+Got:d:1.234567891234568e+26
+Looking at:-1000000:
+Got:l:-1000000
+Looking at:-1000000000000:
+Got:x:-1000000000000
+Looking at:-1000000000000.0:
+Got:d:-1000000000000.0
+Looking at:D:-1000000000000:
+Got:d:-1000000000000.0
+Looking at:-123456789123456789123456789:
+Got:d:-1.234567891234568e+26
+Looking at:DU:5:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  DU
+---^
+Unknown Numeric Tag:'DU'
+Looking at:DUr:5:
+Got:d:5.0
+Looking at:T::
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  T:
+---^
+Malformed time tag:''
+Looking at:T:1950:
+Got:a:'1950'
+Looking at:BIT:1:
+Got:b:True
+Looking at:BIT:0:
+Got:b:False
+Looking at:BIT:208234768:
+Got:b:True
+STRING TEST0
+Looking at::
+A string needs to start with "
+Looking at: ":
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+   "
+---^
+Unexpected EOF inside of string
+Looking at: "":
+Got::
+Looking at:"1:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  "1
+---^
+Unexpected EOF inside of string
+Looking at:"1":
+Got:1:
+Looking at:"12:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  "12
+----^
+Unexpected EOF inside of string
+Looking at:"12":
+Got:12:
+Looking at:"
+":
+Got:
+:
+Looking at:"\n":
+Got:
+:
+Looking at:"\"":
+Got:":
+VECTOR TEST0
+Looking at::
+Expected:'<', but saw 'EOF' on input
+Looking at:<1,2,3>:
+Got:l:array([1,2,3], 'i'):
+Looking at:D:<1,2,3>:
+Got:d:array([1.0,2.0,3.0], 'd'):
+Looking at:<>:
+Got:d:array([], 'd'):
+Looking at:<:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  <
+--^
+Expected numeric digit or '.' for number
+Looking at:<1:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  <1
+---^
+Expected numeric digit or '.' for number
+Looking at:<1,:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  <1,
+----^
+Expected numeric digit or '.' for number
+Looking at:B:<1>:
+Got:s:array([1], '1'):
+Looking at:I:<1>:
+Got:i:array([1], 's'):
+Looking at:L:<1>:
+Got:l:array([1], 'i'):
+Looking at:X:<1>:
+Got:x:array([1], 'l'):
+Looking at:F:<1>:
+Got:f:array([1.0], 'f'):
+Looking at:D:<1>:
+Got:d:array([1.0], 'd'):
+Looking at:UB:<1>:
+Got:S:array([1], 'b'):
+Looking at:UI:<1>:
+Got:I:array([1], 'w'):
+Looking at:UL:<1>:
+Got:L:array([1], 'u'):
+Looking at:UX:<1>:
+Got:X:array([1], 'l'):
+Looking at:CF:<1>:
+Got:F:array([(1+0j)], 'F'):
+Looking at:CD:<1>:
+Got:D:array([(1+0j)], 'D'):
+Looking at:I:<100, 127, 128, 255, 256>:
+Got:i:array([100,127,128,255,256], 's'):
+Looking at:I:<100, 127, 128, 255, 256,>:
+Got:i:array([100,127,128,255,256], 's'):
+Looking at:<100,127,100000000,200>:
+Got:l:array([100,127,100000000,200], 'i'):
+TAB TEST0
+Looking at::
+Expected:'{', but saw 'EOF' on input
+Looking at:{}:
+Got:{}:
+Looking at: { } :
+Got:{}:
+Looking at:{:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  {
+--^
+Expected a key and saw EOF
+Looking at:}:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  }
+--^
+Expected:'{', but saw '}' on input
+Looking at:{ "a" = 1 }:
+Got:{'a': 1}:
+Looking at:{ "a"= { } }:
+Got:{'a': {}}:
+Looking at:{ a = 1 }:
+Got:{'a': 1}:
+Looking at:{ a = 1,}:
+Got:{'a': 1}:
+Looking at:{ a = 1, }:
+Got:{'a': 1}:
+Looking at:{ "a"= { } :
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  { "a"= { }
+-----------^
+Expecting a '}' or ',' for table
+Looking at:{a1 = 1} :
+Got:{'a1': 1}:
+Looking at:{a_1=100}:
+Got:{'a_1': 100}:
+Looking at:{111=100}:
+Got:{'111': 100}:
+Looking at:{ a:1}:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  { a
+----^
+Unknown Numeric Tag:'a'
+Looking at:{PZ=CF:(0.12015177, -0.95675814), a=1}:
+Got:{'PZ': (0.1201518-0.9567581j), 'a': 1}:
+Looking at:{ DATA=MV(<12.3, 17>, I:<1,1,1>) }:
+Got:{'DATA': [array([12.3,17.0], 'd'), array([1,1,1], 's')]}:
+Looking at: {1,2,3}:
+Got:{0: 1, 1: 2, 2: 3}:
+Looking at: {1,2}:
+Got:{0: 1, 1: 2}:
+Looking at: {1}:
+Got:{0: 1}:
+Looking at: {}:
+Got:{}:
+Looking at: {1.0,2,"three"}:
+Got:{0: 1.0, 1: 2, 2: 'three'}:
+HDR test0
+{
+    'ATTRIBUTE_PACKET':{ },
+    'EVENTS':{
+        'ASSOCIATIONS':[
+            'ALL_EVENTS, ALL_TRACKS'
+        ],
+        'KEYWORDS':{ },
+        'TRACKS':[
+            {
+                'EPOCH':'1976:04:22::10:09:08.76543210000',
+                'FIELDS':[
+                    {
+                        'FORMAT':'DUR',
+                        'NAME':'TOA',
+                        'TIME_INTERPRETATION':'First Sample',
+                        'UNITS':'sec'
+                    },
+                    {
+                        'FORMAT':'L',
+                        'NAME':'Length',
+                        'TIME_INTERPRETATION':'None',
+                        'UNITS':''
+                    }
+                ],
+                'FIELD_INTERPRETATION':{ },
+                'KEYWORDS':{ },
+                'LENGTH':2,
+                'NAME':'Track 0'
+            }
+        ]
+    },
+    'GRANULARITY':10,
+    'KEYWORDS':{
+        'CONTENTS':'Integer data from a Ramp',
+        'FILENAME':'r_int',
+        'SPECIAL_R_INT':1
+    },
+    'MACHINE_REP':'IEEE',
+    'NAME':'r_int',
+    'TIME':{
+        'DELTA':1.7,
+        'KEYWORDS':{ },
+        'LENGTH':10,
+        'NAME':'Time',
+        'START':19.3,
+        'UNITS':'s'
+    },
+    'TRACKS':[
+        {
+            'AXES':[
+                'TIME'
+            ],
+            'FORMAT':'I',
+            'KEYWORDS':{
+                'TRACK_FILENAME':'r_int_track_0'
+            },
+            'NAME':'Track 0',
+            'UNITS':''
+        }
+    ]
+}
+COMMENT TEST0
+Looking at:1// comment starts here
+:
+Got:1:
+Looking at: // comment here
+1:
+Got:1:
+Looking at://
+1:
+Got:1:
+Looking at:1//
+0:
+Got:1:
+Looking at:1/1:
+Got:1:
+Looking at:111/
+0:
+Got:111:
+Looking at:"abcd//hello":
+Got:'abcd//hello':
+Looking at:{ // This is a table
+ a = 1 }:
+Got:{'a': 1}:
+Looking at:{ a = // what?
+ 100 }:
+Got:{'a': 100}:
+Looking at:{ a = / what? 100 }:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  { a = / 
+---------^
+Expected numeric digit or '.' for number
+Looking at:{ a = / what?
+ 100 }:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  { a = / 
+---------^
+Expected numeric digit or '.' for number
+Looking at: {1,2,3}:
+Got:[1, 2, 3]:
+Looking at: {1,2}:
+Got:[1, 2]:
+Looking at: {1}:
+Got:[1]:
+Looking at: {}:
+Got:{}:
+Looking at:{ I:1} :
+Got:[1]:
+Looking at:{ B:1} :
+Got:[1]:
+Looking at:{I:1,B:2,DUR:3}:
+Got:[1, 2, 3.0]:
+Looking at: {1.0,2,"three"}:
+Got:[1.0, 2, 'three']:
+MV TEST0
+Looking at:MV(<1>, <2>):
+Got:[array([1], 'i'), array([2], 'i')]:
+Looking at:MV(D:<1>, D:<2>):
+Got:[array([1.0], 'd'), array([2.0], 'd')]:
+Looking at:MV():
+Got:[]:
+Looking at:MV(I:<1,2>, D:<1,2,3,4>):
+Got:[array([1,2], 's'), array([1.0,2.0,3.0,4.0], 'd')]:
+Looking at:MV():
+Got:[]:
+Looking at:MV(<>):
+Got:[array([], 'd')]:
+Looking at:MV(:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  MV(
+----^
+Expected:'<', but saw 'EOF' on input
+Looking at:MV[:
+****Syntax Error on line:1 Last 1 line of input (lines 1-1) shown below****
+  MV[
+----^
+Expected:'(', but saw '[' on input
+Looking at: MV(   ):
+Got:[]:
+Looking at: MV (   ):
+Got:[]:
+!!!!!!!!!!!!!!!!If you see this, we are OKAY!!!!!!!!!!!!!!

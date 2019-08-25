@@ -1,0 +1,116 @@
+
+Quick tour of the files here:
+-----------------------------
+ocport.h:  
+First file you should look at.  It encapsulates all the system level
+issues for porting across different platforms.
+
+ocstring.h:
+A subset implementation of the STL string, in case you are on a
+platform with no STL at all.  The OCString class can be typedefed to
+"string" (and frequently is in the "tests").
+
+ocstringtools.h:
+Added Image and DeImage functions to allow converting between Imaged strings 
+and raw strings underneath.
+
+occomplex.h:
+An implementation of a complex class
+
+ocpermutations.h:
+Some classes for generating permutations.  All permutations of (for
+example) 123 are 123, 132, 213, 231, 312, 321
+
+ocsort.h:
+Some classes for sorting arrays/containers of data.  It implements
+both an Insertion Sort and a Quick Sort as well as a median find.
+
+ocarray.h:
+An array for objects and pointers.  (Array and ArrayPtr)   
+
+ochashtablet.h:
+ochashtable.h:
+General HashTable classes for fixed size Tables.
+
+ocavlhasht.h:
+ocavlhash.h:			   
+General extendible hashing HashTable classes.
+
+ochashfunction.h:
+String hashfunction needed by HashTables and AVLHashes.
+
+ocavltreet.h:
+ocavltree.h:
+Balanced binary search trees for holding key-value pairs.
+
+occontainer_test.h:
+Most of the containers contain the same interface (AVLHash, AVLTree,
+HashTable), so the test for testing them is a template here.
+
+ocexception.h:
+Exceptions thrown by Arrays and Strings: if you don't
+have STL exceptions, these mimic that structure
+
+ocval.h:
+Recursive, heterogeneous container (like Python dictionaries).
+Newer classes.
+
+ocproxy.h.,cc:
+Proxy class to emulate links for Recursive, heterogenous containers
+
+ocstreamingpool.h,.cc:
+Memory allocation class
+
+ocspinfo.h:
+Implementation detail for StreamingPool
+
+ocvalreader.h:
+Allows Vals to read string literals easily
+
+ocserialize.h:
+Moves the serialization from val class to its own file
+
+ocser.h,.cc
+UPDATE!! Deprecate ocserialize.h, and use ocser.h,.cc: Needed to handle Proxies
+
+occircularbuffer.h:
+Implements both infinite and finite circular buffers
+
+ocworkercoordinatort.h,.cc:
+If doing barrier synchronization for a pool of workers, implements coordinator
+
+ocsynchronizedworker.h,.cc:
+If doing barrier synchronization for a pool of workers, implements worker
+
+octhreadedpipelinet.h,.cc:
+Helper classes for doing pipeline synchronization
+
+occq.h:
+Implements a Queue with synchronization and blocking
+
+occonvert.h:
+Convert between Tab and Arr easily
+
+ocmaketab.h:
+Force a Val into some kind of Tab
+
+ocbsearch.h:
+Binary search
+
+occombinations.h:
+Compute all combinations
+
+ocbiguint.h:
+Arbitrary sized unsigned integers
+
+ocbigint.h:
+Arbitrary sized signed integers
+
+ocmove.h:
+Code for faster moves and Array resizes
+
+ocsplit.h:
+Code for python-like split, strip, ToLower, Toupper
+
+FOR SOME GOOD THREADED EXAMPLES, LOOK IN THE C++/Examples
+AREA OF THE PICKLINGTOOLS 1.00 (and up) DISTRIBUTION

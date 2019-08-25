@@ -1,0 +1,241 @@
+*** Testing:0
+*** Testing:-223
+*** Testing:2
+*** Testing:-222
+*** Testing:-2
+*** Testing:4
+*** Testing:5
+*** Testing:6
+*** Testing:7
+*** Testing:1
+OrderedDict([])
+{}
+*** Testing: dump_ser0 load_ser:0
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser-223 load_ser:-223
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser2 load_ser:2
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser-222 load_ser:-222
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser-2 load_ser:-2
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser4 load_ser:4
+convert_on_dump:0 convert_on_load:0
+... M2k has no equivalent OTab, Tup, or BigInt structure ... continuing.
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser5 load_ser:5
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser6 load_ser:6
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser7 load_ser:7
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+OrderedDict([('a', 1)])
+{'a': 1}
+*** Testing: dump_ser0 load_ser:0
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser-223 load_ser:-223
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser2 load_ser:2
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser-222 load_ser:-222
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser-2 load_ser:-2
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser4 load_ser:4
+convert_on_dump:0 convert_on_load:0
+... M2k has no equivalent OTab, Tup, or BigInt structure ... continuing.
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser5 load_ser:5
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser6 load_ser:6
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser7 load_ser:7
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser0 load_ser:0
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser-223 load_ser:0
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser2 load_ser:2
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser-222 load_ser:2
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser4 load_ser:4
+convert_on_dump:0 convert_on_load:0
+... M2k has no equivalent OTab, Tup, or BigInt structure ... continuing.
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser5 load_ser:5
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser6 load_ser:6
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser7 load_ser:7
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+123456789123456789123456789
+'123456789123456789123456789'
+*** Testing: dump_ser0 load_ser:0
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser-223 load_ser:0
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser2 load_ser:2
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser-222 load_ser:2
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser4 load_ser:4
+convert_on_dump:0 convert_on_load:0
+... M2k has no equivalent OTab, Tup, or BigInt structure ... continuing.
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser5 load_ser:5
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser6 load_ser:6
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser7 load_ser:7
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser0 load_ser:0
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser-223 load_ser:0
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser2 load_ser:2
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser-222 load_ser:2
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser4 load_ser:4
+convert_on_dump:0 convert_on_load:0
+... M2k has no equivalent OTab, Tup, or BigInt structure ... continuing.
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser5 load_ser:5
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser6 load_ser:6
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing: dump_ser7 load_ser:7
+convert_on_dump:0 convert_on_load:0
+convert_on_dump:1 convert_on_load:0
+convert_on_dump:0 convert_on_load:1
+convert_on_dump:1 convert_on_load:1
+*** Testing File:0
+*** Testing File:-223
+*** Testing File:2
+*** Testing File:-222
+*** Testing File:-2
+*** Testing File:4
+*** Testing File:5
+*** Testing File:6
+*** Testing File:7
+*** Testing File:1

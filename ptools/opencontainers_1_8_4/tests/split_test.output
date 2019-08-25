@@ -1,0 +1,164 @@
+Whitespace delimits
+Split('')
+
+Split('a')
+a 
+Split(' a')
+a 
+Split('a  ')
+a 
+Split('  a ')
+a 
+Split(' ab')
+ab 
+Split(' a b')
+a b 
+Split('abde   dff   ')
+abde dff 
+Split('  abde  	 dff		 ')
+abde dff 
+Split('a b c  s d   asd f asd f asd f sd    
+')
+a b c s d asd f asd f asd f sd 
+Split('a b c  s d   asd f asd f asd f sd
+')
+a b c s d asd f asd f asd f sd 
+User delimits
+Split('', " ")
+ 
+Split('a', " ")
+a 
+Split(' a', " ")
+ a 
+Split('a  ', " ")
+a   
+Split('  a ', " ")
+  a  
+Split(' ab', " ")
+ ab 
+Split(' a b', " ")
+ a b 
+Split('abde   dff   ', " ")
+abde   dff    
+Split('  abde  	 dff		 ', " ")
+  abde  	 dff		  
+Split('a b c  s d   asd f asd f asd f sd    
+', " ")
+a b c  s d   asd f asd f asd f sd    
+ 
+Split('a b c  s d   asd f asd f asd f sd
+', " ")
+a b c  s d   asd f asd f asd f sd
+ 
+User delimits with a
+Split('', "a")
+ 
+Split('a', "a")
+  
+Split(' a', "a")
+   
+Split('a  ', "a")
+    
+Split('  a ', "a")
+     
+Split(' ab', "a")
+  b 
+Split(' a b', "a")
+   b 
+Split('abde   dff   ', "a")
+ bde   dff    
+Split('  abde  	 dff		 ', "a")
+   bde  	 dff		  
+Split('a b c  s d   asd f asd f asd f sd    
+', "a")
+  b c  s d    sd f  sd f  sd f sd    
+ 
+Split('a b c  s d   asd f asd f asd f sd
+', "a")
+  b c  s d    sd f  sd f  sd f sd
+ 
+User delimits with abbbcc
+Split('', "abbbcc")
+ 
+Split('a', "abbbcc")
+a 
+Split(' a', "abbbcc")
+ a 
+Split('a  ', "abbbcc")
+a   
+Split('  a ', "abbbcc")
+  a  
+Split(' ab', "abbbcc")
+ ab 
+Split(' a b', "abbbcc")
+ a b 
+Split('abde   dff   ', "abbbcc")
+abde   dff    
+Split('  abde  	 dff		 ', "abbbcc")
+  abde  	 dff		  
+Split('a b c  s d   asd f asd f asd f sd    
+', "abbbcc")
+a b c  s d   asd f asd f asd f sd    
+ 
+Split('a b c  s d   asd f asd f asd f sd
+', "abbbcc")
+a b c  s d   asd f asd f asd f sd
+ 
+Split('123abbbcc456', "abbbcc")
+123 456 
+Split('123abbbbcc456', "abbbcc")
+123abbbbcc456 
+Split('123abbbccc456', "abbbcc")
+123 c456 
+Split('123aabbbccc456', "abbbcc")
+123a c456 
+Split('123aabbbcc', "abbbcc")
+123a  
+Split('123aabbbc', "abbbcc")
+123aabbbc 
+Splitting at end
+60 
+60 
+60 
+60 
+protocol='http'
+host='www.yahoo.com'
+path='/file/path'
+port=''
+protocol='http'
+host='www.yahoo.com'
+path='fred.html'
+port='80'
+ERROR: Malformed URLarray: attempting to access element:1 in array of length:1
+protocol='http'
+host='www.yahoo.com:80'
+path='fred.html'
+port='80'
+protocol='http'
+host='www.yahoo.com:'
+path='/path/to/fred.html'
+port='80'
+Strip: hh='abcdef'    stripped:'abcdef'
+Strip: hh=' abcdef'    stripped:'abcdef'
+Strip: hh=' 	abcdef'    stripped:'abcdef'
+Strip: hh=' 	
+  abcdef'    stripped:'abcdef'
+Strip: hh='abcdef '    stripped:'abcdef'
+Strip: hh='abcdef   '    stripped:'abcdef'
+Strip: hh='      abcdef   '    stripped:'abcdef'
+Strip: hh='        	  
+  abc   de f  
+  '    stripped:'abc   de f'
+Strip: hh='   '    stripped:''
+Strip: hh='  '    stripped:''
+Strip: hh=' '    stripped:''
+Strip: hh=''    stripped:''
+Strip: hh='a'    stripped:'a'
+Strip: hh='aa'    stripped:'aa'
+Strip ab: hh='aaabbccaa'    stripped:'cc'
+Strip ab: hh='aaa'    stripped:''
+Strip ab: hh='bb'    stripped:''
+Strip ab: hh='b'    stripped:''
+Strip ab: hh='bc'    stripped:'c'
+Strip ab: hh='cb'    stripped:'c'
+Strip ab: hh='c'    stripped:'c'

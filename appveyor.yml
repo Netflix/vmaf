@@ -1,0 +1,20 @@
+image: Visual Studio 2017
+configuration: Release
+
+build:
+  project: vmaf.sln
+
+after_build: 7z a vmaf-win-x64.zip x64\Release\*.*
+
+artifacts:
+    - path: vmaf-win-x64.zip
+    - path: x64\Release\*.*
+
+#deploy:
+#  - provider: GitHub
+#    artifact: vmaf-win-x64.zip,examples.bat,libvmaf.lib,vmafossexec.exe,vmaf.exe
+#    auth_token:
+#      secure: 'hY5Mk6KOwgQ97TzEBsM7Woqr1ZIm5QTvHg8EvxMV1x8j3wk/3mNBMqWFFbEIBK0i'
+#    prerelease: true
+#    on:
+#      appveyor_repo_tag: true

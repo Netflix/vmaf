@@ -1,0 +1,1058 @@
+
+
+Section 1: Introduction
+ 
+ Philosophy.
+ 
+What are OpenContainers?  They are a small collection of C++ container
+classes that are easy to to use.  OpenContainers (OC) are freely
+distributable and freely modifiable.
+
+The OpenContainers (OC) philosophy:
+ 
+(0) Open! [we have the source]
+(1) One implementation [same implementation across platforms]
+(2) Inline code only [no linkage issues]
+(3) Simple, but fast [It is mostly readable, but may trade for efficiency]
+
+ All the classes in the OC come from a C++ framework: The classes have
+been been debugged, optimized, purified and tested in real world
+applications that run 24/7.  They have a 7 year legacy of testing
+(except for the Val container).  Generally, the OC classes are faster
+than their STL counterparts, but they do not have the same interface:
+this is because they (mostly) predate the STL.  Version 2.0 should
+have all STL interfaces.
+
+OpenContainers (OC) can be summed up in a single page:  See Figure 1.1.
+
+---------Figure 1.1: OpenContainers Summary------------------
+#include "opencontainers.h" // Bring in all the OpenContainers classes
+int main ()
+{
+  // Strings: OC gives us strings (subset of STL) even if C++ compiler doesn't
+  string empty; 
+  string s = "open" + empty;
+
+  // Arrays:  Homogeneous, resizing, by-value containers
+  Array<char> a(2);   // completely empty:capacity of 2, resizes if necessary 
+  for (int ii=0; ii<s.length(); ii++) 
+    a.append(s[ii]);  // Append value to end of array
+  for (int ii=0; ii<a.length(); ii++)
+    cout << a[ii] << " ";  // Output: o p e n
+  cout << endl;
+
+  // Sorting: Sorts OC Arrays or C-Style arrays
+  char cc[] = "open";
+  OCInsertionSort(a, 0, a.length()); // Inplace sort for small, ordered data
+  OCQuickSort(cc, 0, 4);             // Inplace sort for larger, unordered 
+  char m; OCMedian(cc,0,4,m);        // Sort, returns median
+
+  // Permutations: Generate all n! possibilities (for testing)
+  Permutations p(3);
+  while (p.next()) {
+    const int* perm = p.currentPermutation();  // Read-Only access to perm
+    for (int ii=0; ii<3; ii++) cout << perm[ii];
+    cout << endl;
+  } // Output: 123 213 321 132 312 231
+
+  // Tables:  Insert/lookup/delete key/value pairs 
+
+  // * HashTableT:  Useful when HashFunction available, static table sizes
+  HashTableT<string, real_8, 8> hash_table; // Expect 8 to 2*8 elements
+  hash_table["Jenny"] = 867.5309;
+  HashTableTIterator<string, real_8, 8> ii(hash_table); // Iterator
+  while (ii.next()) { cout << ii.key() << " " << ii.value() << endl; }
+
+  // * AVLTreeT:  Useful when want sorted iteration, dynamic table sizes
+  AVLTreeT<string, real_8, 8> avl_tree;
+  avl_tree["Jenny"] = 867.5309;
+  AVLTreeTIterator<string, real_8, 8> jj(avl_tree);    // Iterator
+  while (jj.next()) { cout << jj.key() << " " << jj.value() << endl; }
+
+  // * AVLHashT:  Useful when want speed, dynamic table sizes
+  AVLHashT<string, real_8, 8> avl_hash;
+  avl_hash["Jenny"] = 867.5309;
+  AVLHashTIterator<string, real_8, 8> kk(avl_hash);   // Iterator
+  while (kk.next()) { cout << kk.key() << " " << kk.value() << endl; }
+
+  // Val/Tab/Str:  Heterogeneous, Recursive Containers
+  Tab t;    t["1"] = 10; t["2"] = 3.1415; t["3"]="hello";
+  Tab nest; nest["1"] = int_u4(1); // Tables contain most numeric types 
+  t["nested_table"] = nest;        // Tables contain tables
+  t["nested_table"]["1"] = "hi";   // Cascading insert
+  cout << t << endl; 
+  // Output:  {'3': 'hello', 'nested_table': {'1': 'hi'}, '1': 10, '2': 3.1415}
+}
+---------------------------------------------------------------------
+
+ A lot of the optimization work in the OC is based on the assumptions
+of the Midas 2k (a C++ Digital Signal Processing framework).  These
+assumptions guided the development of the OC, and although these
+assumptions are generally applicable, mileage may vary.  See the
+Sidebar "OpenContainers Assumptions".
+
+--------------Sidebar: OpenContainers Assumptions---------------------
+
+ (0) Portability: The OC has to work on a variety of platforms
+(Solaris, IRIX, Linux, Tru64, Windows): some that have STL, some that
+didn't.  More than that, the OC has to work the same on all platforms
+(performance, correctness and thread assumptions, see below) so that
+applications port quickly and easily.  The STL is more portable and
+prevelant today, but there are still platforms that don't support the
+it. Also, different implementation of STL may not have the same
+assumptions across platforms (see 1-5 below).
+ 
+ (1) Thread-Safety: The OC containers are NOT thread-safe: this is on
+purpose.  There was a time when our C++ framework had thread-safety in
+most classes (Tables and strings especially) and it simply didn't
+scale well: Every operation would lock a mutex when (most of the time)
+it didn't need to.  There was also the collateral damage of forcing
+synchronization across platforms (syncing caches). With a back of the
+envelope calculation of 10 cycles for synchronization and typical op
+of 20 cycles, this cost us 1.5x in performance.  Tables, strings,
+etc. are all low-level data structures and synchronization (for
+performance reasons) should probably be done at a higher level [10]
+("transactions" or at the component level).
+
+ (2) Re-entrancy (or "thread neutrality").  The OC containers ARE
+re-entrant (inasmuch as anything that uses the heap is re-entrant):
+two threads in different instances of the same class will not
+interfere with performance or correctness of another thread.
+
+ (3) Recursion: We avoid recursion for two main reasons.  The first is
+to avoid overrunning the stack: this is even more critical in our
+applications because we allocate 100s of threads in the same address
+space and we have to be judicious to not waste address space on each
+stack.  The second reason is performance: An iterative solution tends
+to be faster than a recursive solution (because managing stack frames
+can be expensive if we aren't careful).  The only class that uses
+recursion directly is the Val Serialize and Deserialize.  NO other
+classes use "stack" recursion.
+
+ (4) Dynamic Memory Allocation: We don't avoid using the heap, but we
+avoid calling "malloc/new" excessively if we can.  We tend to run on
+shared memory, multiple CPU machines.  On those, the heap is a shared
+resource used by ALL CPUS in the same address space.  The pressure on
+the heap will kill us: If 4 CPUs try to call malloc all at once, they
+can get locked out or suffer performance penalties waiting to get
+in. In the earliest versions of malloc on most systems, there was a
+single lock that allowed only one thread in the heap at a time.  Thus
+all mallocs would serialize behind each other, crippling a 4 CPU
+machine.  Implementations of malloc got better of course, but they
+mitigate the problem rather than solve it.  This one factor was
+CRITICAL in the scalability of our framework and spawned several
+techniques below.
+
+  (a) Use Stack space: Allocating stack space is trivial: a single add
+      for the stack frame with NO THREAD LOCKING at all.  Compare this
+      to "malloc" which must be use some form of synchronization for
+      allocation.  This technique is very cheap and scales
+      trivially. [This doesn't contradict (3) above: We only put
+      small items in the current stack frame as opposed to potentially
+      rampant stack usage of a recursive routine].
+  
+ (b) Use Lookaside Caches.  Add another 32 bytes or so to an object and
+     put information there instead of going to the heap.  We use this
+     technique extensively (in OCString, Val, and HashTableT). Note
+     that this explicitly breaks rules from [9] for two extremely
+     important reasons: Performance (by keeping "locality of
+     reference" and avoiding extra levels of indirection via
+     pointers/handles) and scalability (by avoiding the heap).  See
+     the "ocval.h" code for more discussion of this technique.
+
+ (c) Use unions.  With unions we can re-use memory that we already
+     have and avoid the heap. (Val and OCString use this technique)
+
+ (d) Group Allocations. If we DO have to go to the heap, allocate a
+     bunch of items at once so that we don't have to go back to the
+     heap anytime soon.  Most OC classes allocate internal items in
+     groups of 8 or so.  Note that two different instances of any
+     class DO NOT share these groups: that would require
+     thread-safety.  Every instance has its own local list of chunks.
+     This technique is for both scalability (stay out of the heap) and
+     performance (see Listing 5.1). All Tables use this technique.
+
+ (5) Inlined Code Only: All OC code is inline. This is partially to
+avoid a complex "bootstrap process" (we have to build tools that we
+need to build tools), but inline code avoids linkage issues (which can
+be problematic building with someone else's library).  Code bloat can
+be an issue (it wasn't too much in our framework), but we can refactor
+code if necessary because we have the source. Inline code tends to be
+the best single optimization compilers can do [12].
+-------------------------------------------------------------------------
+
+Section 2: Basic classes: Strings and Arrays
+
+ Strings.
+
+  The string class we choose will make a major difference in the
+performance and scalability of our system.  This maxim comes from hard
+experience with real systems. By rewriting the string class several
+times after testing and benchmarking, we were able to make our C++ DSP
+framework scalable and faster.  The discoveries we made in Midas 2k
+were independent of [1] but discovered many of the same things.
+
+  The implementation of the OCString uses a lookaside cache to store
+small strings (because most Midas 2k strings were "human readable"
+strings of names/ids, etc. under 32 characters) and a union: Rather
+than "waste space" for large strings, we can store things in the
+lookaside cache when we don't use it.  In psuedo-C++:
+
+  class string {
+    union {
+      char cache_[32];   // Length for small strings is in cache_[31]: 
+      struct {           //  If cache_[31]==-127, then this is a LONG
+        int length_;     //     STRING ... 
+        char* buffer_;
+       } long_strings;   // LONG STRING: use length_ and buffer_ 
+    }
+   };// string
+
+The last byte of the class, cache_[31] is pivotal: if it stores the
+special value -127, then this string represents a LONG STRING where
+the length_/buffer_ fields are valid and point to a string in the
+heap.  Otherwise, cache_[31] is the length of the short string and the
+short string is entirely in the lookaside cache
+(cache_[0..length-1]). Thanks to Scott Gilbert for this work/idea.
+
+The OCString implements a subset of the STL string.  What subset?  The
+subset that seemed useful enough for many real applications at Rincon.
+That's a bit of a cop-out, but the interface seemed to be enough to
+get real work done without too much complaining from the users (of
+which there were 100s).  Take a look at the "ocstring.h" for more
+details-It's an interesting study of "what's important" in the STL
+string interface.
+
+To see how well the OCString performs, take a look at the how well
+Val/Tab/Str trio (section 6) performs under different implementations
+of String and Table.
+
+ Arrays.
+
+  The Array is the "vector" class of the OpenContainers collection,
+but with a different interface. Array is a simple template class
+wrapping array access/allocation and holding elements by value.
+[There is also ArrayPtr, which has almost the same interface, but
+holds elements by pointer.]  See the code in "ocarray.h" for a full
+listing of the interface and examples: the documentation in the class
+should be ample, as the array class is straight-forward.  Note the
+arrays automatically resize themselves.
+
+  The only real "gotcha" that may trip us up is that the array is
+initially constructed EMPTY and we must "append" to insert items in
+the array.  See Listing 2.1.  This was done to avoid the extra
+"default copy construction" that happens with code like "new TYPE[10]"
+(The TYPE's default constructor gets called 10 times, 1 for each
+element, and sometimes we want to avoid default construction for
+performance).
+
+--------------Listing 2.1:  Array class usage------------------------
+#include "ocarray.h"
+Array<string> a(5);  // Capacity to contain 5, currently none
+
+cout << a.length() << endl;  // Should be 0
+  
+for (int ii=0; ii<5; ii++) 
+  a.append(string("hello"));  // Puts things into array
+
+a.append(string("more strings"));// Triggers a resize (entries > 5) and recopy 
+----------------------------------------------------------------------------
+  
+  For interfacing with old style C code, or for just raw speed, we
+can get the contiguous memory out using the "data" method to get a T*.
+
+Section 3: Sorting
+
+ Discussion.
+
+ Sorting is a topic we can spend years on.  Just see [3][5][6][7].
+OC contains some inplace sorting routines, a partitioning routine, and
+a median finding routine.
+
+For very small amounts of data, nothing is faster than a hardcoded
+sort: enumerate all possibilies of comparisons (i.e., the same as
+unwinding a loop by hand). OC has routines for hardcoded 2,3 and 4
+element sorts. It simply does the all possible compares/swaps directly
+to avoid loop overhead. [3]
+
+For small amounts of data, insertion sort is great. In fact, if the
+data is already sorted, insertion sort is O(n) (linear).  Worst case,
+however, insertion sort degenerates to O(n^2). [3][5][6]
+
+Quicksort is fantastic for large amounts of data because it's good
+and fast at dividing up the data because of the speed of partitioning.
+Best and average case is O(n*log(n)), worst can be O(n^2). [3][5][6]
+
+We take advantage of all the best features of each sort and combine
+them into OCQuickSort: use hard-coded sorts for 2-4 element arrays,
+use insertion sort for 5-41 element arrays [these numbers were
+determined with empirical testing, mileage may vary], use
+quicksort for everything else. See Listing 3.1 for a simple example.
+OC also gives us a median finding routine: it uses OCQuickSort to
+sort the data, then yanks the middle element out.
+  
+---------------Listing 3.1: Sorting---------------------
+#include "ocsort.h"
+{ 
+  int a[] = { 5,4,3,2,1 }; // Array to sort
+
+  OCQuickSort(a, 0, 5);  // Sorts a[0..4]: cut of length 5
+  OCQuickSort(a, 2, 3);  // Sorts a[2..4]: cut of length 3
+
+  int med;   // Put median value in med
+  OCMedian(a, start_index, length_of_cut, med); 
+  // Side effect that a is sorted after OCMedian
+}
+----------------------------------------------------------
+
+As per Listing 3.2, we are comparable with the STL. On Tru64 Unix, we
+are slightly faster and on Linux we are slightly slower (both compiled
+with -O4).
+
+---------------Listing 3.2: Sorting Test--------------------------
+// OpenContainers and STL sort test (uncomment out the appropriate line)
+#include "ocsort.h"
+#include <algorithm>
+#define SIZE 1000000
+int main ()
+{
+   int* a = new int[SIZE]; int* b = new int[SIZE];
+   for (int ii=0; ii<SIZE; ii++)          
+     a[ii] = ((ii % 32767 + 13567) + ii*17) % SIZE;
+
+   for (int jj=0; jj<1e2; jj++) {
+     memcpy(b,a,SIZE*sizeof(a[0]));
+     OCQuickSort(b, 0, SIZE);        // OC
+//   sort(b, b+SIZE);                // STL
+   }
+}
+
+/*   Timings are in seconds.
+
+  Tru64 Unix - compiled with -O4.
+  ---------------------------
+  SIZE:      OC    STL 
+  100000     2.39   2.599
+  1000000   29.64  31.37
+  10000000 416.59 447.36
+
+  Linux - compiled with g++ -O4. 
+  -----------------------------
+  SIZE:      OC    STL 
+  100000     2.39   2.36
+  1000000   32.39  30.22
+  10000000 412.290 369.38
+ */
+-------------------------------------------------------------------
+
+Section 4: Permutations
+
+ Usage.
+
+If we need to "try all possibilities" to test an algorithm thoroughly,
+the Permutations class in the OC may be useful.  The Permutations
+class was originally written to test the OC sorting algorithms
+(discussed in Section 3), but proved to be generally useful.  In fact,
+in the promised 4th volume of Knuth [4], there is an entire section on
+permutations.  The work below is comparable to [4] and the
+implementation is completely original.
+
+With an array of n distinct elements, there are n! (n factorial)
+possible different arrays.  For example, given the elements 123, there
+are 3!=3*2*1=6 possible ways to permute them: 123 213 321 132 312 231.
+We can generate those easily with the Permutations class: See Listing
+4.1.
+
+------------Listing 4.1: Permutations example-----------
+  #include "ocpermutations.h"
+  int main()
+  {  
+   Permutations p(3);
+   while (p.next()) { // Advance to the next Permutation
+     const int* cp = p.currentPermutation(); // Get the current
+   
+     // Output:  cp[0..n-1] holds the elements of the perm. 
+     for (int ii=0;ii<3;i++) cout << cp[ii];
+     cout << " ";
+    }
+  }
+
+  Output would be:
+  123 213 321 132 312 231
+---------------------------------------------------------
+
+We have to be careful generating permutations because n! grows very
+quickly: A computer that could compute over 1e10 permutations/second
+would still take 7.4 _days_ to compute for 18!, 4.7 months for 19!,
+and 7.7 years for 20!.  When computing sets that large, we may want
+to be able split up the computation on multiple processors/machines to
+get an answer quicker.  To help us with this, there is the 'seed(n)'
+function which allows us to go directly to permutation number n and
+start computing from there.  For example, let's say we had 2 CPUs on
+our machine and wanted to break up the processing into the first n!/2
+and the last n!/2 elements:
+
+-------------Listing 4.2: Parallel Permutations----------
+  void compute(Permutations& p)
+  { 
+    while (p.next()) {
+      const int* cp = currentPermutation();
+      ... do something with the current permutation ...
+    }
+  }
+  int_u8 number_of_permutations = fact(11); // 11!=11*10*9*8*7*6*5*4*3*2*1
+  Permutations p1(11), p2(11);
+  p1.seed(0); p2.seed(number_of_permutations/2);
+  ... call compute(p1) on CPU 1 ...  
+  ... call compute(p2) on CPU 2 ...
+---------------------------------------------------------
+
+In the listing 4.2 example, CPU 1 computes the first 1 to 11!/2
+permutations and CPU 2 computes the remaining.  We can use this
+technique to search the state space quicker.  Be careful though: 20!
+(2432902008176640000) fits in an int_u8, but 21! does NOT fit in an
+int_u8.  (Since 21! would take 162 years to compute (based on previous
+assumptions), this isn't an overriding priority right now to fix
+this).
+
+  Comparison.
+
+ OC permutations work differently than the STL permutations.  They
+both generate all permutations but the STL gives us the permutations
+in "sorted" order whereas the OpenContainers has relaxed this
+constraint for speed. We still get all the permutations, but in a
+different order.
+
+The comparison programs we used are given in Listings 4.3 and 4.4:
+Note that OC Permutations are about 15% faster (see Figure 4.1). When
+we are computing algorithms that search a state space of n!, that
+extra savings can make a significant difference in hours, days or
+weeks.
+
+------Listing 4.3: OpenContainers permutations benchmark------
+#include "ocpermutations.h"
+int minify(const int* cp, int len)
+{
+  int m = 0;
+  for (int ii=0; ii<len; ii++) {
+    if (cp[ii]<m) m = cp[ii];
+  }
+  return m;
+}
+
+int main()
+{
+  int sum = 0;
+  Permutations p(13);
+  while (p.next()) {
+    const int*cp = p.currentPermutation();
+    int m = minify(cp, 13);
+    sum += m;
+  }
+  cout << sum << endl; 
+}
+---------------------------------------------------------
+
+--------Listing 4.4: STL permutations benchmark----------
+#include <algorithm>
+#include <iostream>
+using namespace std;
+
+int minify(const int* cp, int len)
+{
+  int m = 0;
+  for (int ii=0; ii<len; ii++) {
+    if (cp[ii]<m) m = cp[ii];
+  }
+  return m;
+}
+
+int main()
+{
+  int v[]= {1,2,3,4,5,6,7,8,9,10,11,12,13};
+  int sum = 0;
+  while (next_permutation(v, v+13)) {
+    int m = minify(v, 13);
+    sum += m;
+  }
+  cout << sum << endl; 
+}
+---------------------------------------------------------
+
+----------Figure 4.1: OC vs. STL-----------------
+
+All programs compiled with -O4.
+
+Tru64 Unix 5.0a: 500 MHz ES45 with cxx 6-023(time in seconds)
+    9! perms:  OC:     .050  STL:     .050
+   10! perms:  OC:     .497  STL:     .556
+   11! perms:  OC:    5.631  STL:    6.208
+   12! perms:  OC:   76.758  STL:   83.006
+   13! perms:  OC: 1040.000  STL: 1118.335
+   14! perms:  OC:11871.597  STL:13504.302
+
+RedHat Linux 9.0:  833 MHZ Pentium machine with g++ 3.2(time in seconds)
+    9! perms:  OC:     .050  STL:     .050
+   10! perms:  OC:     .520  STL:     .560
+   11! perms:  OC:    5.840  STL:    6.28
+   12! perms:  OC:   66.23   STL:   84.090
+   13! perms:  OC:  890.61   STL: 1040.22
+   14! perms:  OC:12919.950  STL:15056.340
+
+
+Solaris:  (STL not supported)
+--------------------------------------------------
+
+ Complexity.
+
+Part of the speed of the OC Permutations is because it can
+generate each permutation in amortized constant time: usually just 2
+swaps.  "Amortized constant time" is a complicated way of saying that
+most operations are very quick and every so often an operation will
+take longer.  The work is divided, though, so that over n operations,
+there will never be more than k*n work (for some constant k).
+
+ In our case, most of the time, the work we do is 2 swaps: One swap
+to correct back to the "start" permutation, and one swap to go to the
+"next" permutation.  Consider this sequence in the middle of 
+computing 4!:
+
+1234 -> swap 1 and 2
+2134 -> correct back to 1234 (1 swap), then swap 1 and 3
+3214 -> correct back to 1234 (1 swap), then swap 1 and 4
+4231 -> correct back to 1234 (1 swap).. then set next "start": 1324 (1 swap)
+1324 
+3124 -> correct back to 1324 (1 swap), then swap 1 and 2
+ ..
+
+Consider a sequence of any n operations (like above) for permuations
+of size n: the first operation is a "start" permutation with the 1 up
+front).  The first n-1 operations only require 2 swaps each.  As we
+generate the permutations, the "1" slides down the diagonal
+
+1
+ 1 
+  1
+   1
+1      // New start!
+ 1 
+  1
+   1
+1      // New start!
+ 1 
+
+Every "nth" time we have to do up to n swaps to set the next "start"
+(actually usually much less, but let's just consider the worst case).
+So, when we generate n permutations, we do: 2*(n-1) swaps + n swaps
+or about 3n swaps.  Over n operations, we do about 3n work. This is
+amortized constant time: About 3 swaps per operation.
+
+Section 5: Associate Containers/Tables
+
+ Introduction and interface.
+
+ A Table (AVLHashT, AVLTreeT or HashTableT) is a table of associated
+Key-Value pairs.  We insert a key-value pair into the table and can
+retrieve (or delete or change) the value in the table via the key at a
+later time.  Both the keys and the values are contained in the table
+by value (so the Table makes a copy of the key and the value).  If we
+insert a key into the table that's already there, the new value
+replaces the old value (thus, there cannot be multiple instances of a
+key in the table.  Of course, the same value can be associated with
+multiple keys).
+
+ The interface for the Tables in the OpenContainers collection is
+given in any of the files "ochashtablet.h", "ocavltreet.h" and
+"ocavlhasht.h".  (Most of the usage documentation is in the .h files)
+Note that all Tables in the OC have the _same interface_ so they are
+_interchangeable_.
+
+  Not every kind of Table (or in STL-speak: map) is created equal.
+That's why there are three different types in the OpenContainers.
+
+ HashTableT<K,V,number of buckets>: A HashTable where we expect a
+   bounded number number of elements.  If we insert more items than
+   the number of buckets, performance degrades, but it does still
+   work.  We use the HashtableT when we know typically how much data
+   to expect.  Requires the routine "int_u4 HashFunction(const K&
+   key)" which turns keys into ints.
+
+ AVLHashT<K,V,allocation chunk size>: An extendible hash table: It
+   grows in size easily and still retains the performance of a hash
+   table at the cost of a little more memory (as it maintains a more
+   complicated data structure). Also requires the HashFunction.
+
+ AVLTreeT<K,V,allocation chunk size>: An AVLTree where keys are
+   comparable with "operator==" and "operator<".  The performance
+   isn't quite as good as the previous two Tables typically, but it
+   does give us iteration through the keys of the table in sorted
+   order.
+
+ ---------------Listing 5.1: Allocation Chunk Size Effects-------------
+ #include "ocavltreet.h"
+ // Change this see the effects of allocation chunk size on performance
+ #define CHANGEME 1 
+ int main ()
+ {
+   AVLTreeT<int_u8, int_u8, CHANGEME> t;
+   for (int_u8 ii=0; ii<1e7; ii++) {
+      t[ii] = ii;
+   }
+ }
+
+ /*
+  Tru64 Unix Numbers: Values of CHANGEME: 1      2      4      8     16
+                   Times in seconds  22.132 19.134 19.156 18.193 17.814
+
+  We use the number '8' for our allocation chunk sizes a lot: It gives
+ good performance, but doesn't waste exorbitant amounts of memory.
+ Note that it gives about a a 22% speedup (and that doesn't even count
+ the scalability factors by alleviating pressure on the heap).  */
+ ----------------------------------------------------------------------
+
+ Some good references for Hash Tables and AVL Trees are [5][6][7].
+
+ Iterators.
+
+All the Tables have iterators so we can look through all the keys and
+values in the table.  The interface is the same for all three (except
+replace AVLTreeT with either HashTableT or AVLHashT): See Listing 5.2.
+Although the interface is the same, there is one major difference
+between the three iterators: AVLTreeT will iterate through the
+elements in sorted order of the keys, HashTableT and AVLHashT will
+iterate through the elements in what looks like "random" order (but
+it's really based on the ordering of the hash functions of the keys).
+None of the iterators need recursion.
+
+--------------Listing 5.2: Iterator Example---------------------------
+  #include "ocavltreet.h"
+
+  AVLTreeT<string, int, 8> some_tree = ... ;
+  AVLTreeIterator<string, int, 8> it(some_tree); // Iterate over this tree
+  while (it()) {                    // Continue while still elements to see!
+    const string& key = it.key();   // Get key by const &
+          string& val = it.value(); // Get value by & so can change
+    cout << key << " " << value << endl;
+  }
+  // Note that the iterator it is INVALID immediately after construction:
+  // The next() or operator () method has to be called to start out.
+
+-----------------------------------------------------------------------
+
+ HashTableT.
+
+ HashTableTs are a standard data structure: they are implemented using
+"open hashing" (aka "separate chaining") where we use linked-lists to
+store all key/values when there are collisions. See [3][5][6][7].
+
+ The number of buckets we used is "fixed" (the third template
+argument) for speed: All loops have static bounds, and the front of
+each list is stored in a lookaside cache inside the HashTableT (for
+locality).  This means, however, that HashTableT does not support
+rehashing because we can't increase the number of buckets dynamically:
+it's part of the class!  See AVLHashT for more discussion of
+rehashing.
+ 
+ There is, by default, a HashFunction for strings based on Pearson's
+String Hash Function [11].
+
+ 
+ AVLTree.
+
+  All lookup/insert/delete operations are O(log(n)) time with O(1)
+extra space.
+
+ The STL tends to use Red-Black trees, but there are competing
+arguments over which is better.  AVL trees aren't as deep as Red-Black
+trees: the height of a worst case AVL tree with n nodes is 1.44*log(n)
+[7], whereas with a Red-Black tree, its 2*log(n) [6]).  This means AVL
+traversal lookups/inserts/deletes do less work than equivalent
+Red-Black traversals.  On the other hand, Red-Black trees don't do as
+much work when rotating back to the root [5][6][7] for deletes.
+Red-Black trees only need 1 extra bit per node whereas AVL trees need
+2, but both of those can be folded into the node easily (see
+"Threaded Trees" sidebar).  That said, I believe AVL trees are easier
+than Red-Black trees. [The real solution to compare two
+implementations using the same bag of tricks, but even then it really
+depends on the implementation].
+
+The AVLTrees uses "threaded pointers" (See the Sidebar "What are
+Threaded Trees?" and [7] for more details), thus there is no recursion
+required for the iterators.
+
+
+----Sidebar:  What Are Threaded Trees?-----------------------------------
+
+ In most Binary Search Tree (BST) implementations[3][[5][6][7], we
+have pointers to our left and right children.  At the frontier of the
+trees, these pointers are all NULL.  With a few drawings, we can
+convince ourselves that for a BST with n nodes, there are n+1 NULL
+links.  That's a lot of wasted space.  All we really need is a single
+bit of information to indicate that child is empty.
+
+  // Typical BST implementation
+  class Tree {               
+    Tree* left;
+    Tree* right;
+    Val   value;       
+  };
+                            2   
+                           / \     n nodes, n+1 NULL (N) pointers       
+                          1   4
+                         N N / N
+                            3  
+                           N N 
+
+ If we could get that extra bit, we could store interesting
+information there: the "inorder predecessor" or the "inorder
+successor".  What are those?
+
+First, recall that an inorder traversal iterates through the tree in
+sorted order, but needs recursion to do it.
+
+  void recursiveInorderPrint (Tree* t)
+  {
+    if (t==NULL) return;
+    recurseInorderPrint(t->left);
+    print t->value;
+    recursiveinorderPrint(t->right);
+  }
+
+  (Will print "1234" for the tree above)
+
+The stack size for this recursive algorithm is bounded by the height
+of the tree, but this may be too big for our application.  Even
+worse, recursion tends to be slower than iteration.
+
+ Note that when we get to a leaf in the recursive solution, we have to
+return up the stack to see where to go next.  If we could store "where
+to go next" (formally known as the "inorder successor") in the node,
+we could bypass recursion altogether.  Remember that the smallest
+thing is (recursively) in our left subtree.  For the moment, let's use
+a bool to indicate whether a child node is "empty".  If a left child
+node is empty, then it points to its inorder predecessor (instead of
+storing NULL).  If a right child node is empty, then it points to it's
+inorder successor (instead of storing NULL). Consider:
+
+  class Tree {                       
+    bool left_empty;              
+    bool right_empty;
+    Tree* left;
+    Tree* right;
+    Val value;
+  }; 
+
+
+            2           A points to node 2 (2 comes after 1)
+           / \          B points to node 2 (2 comes before 3)
+          1   4         C points to node 4 (4 comes after 3)
+         N A / N        N is still NULL
+            3   
+           B C 
+
+To print out this tree inorder, we keep trying to go left: recall that
+in a BST, the smallest member of the current subtree is always the
+leftmost element of the subtree.
+
+  void iterativeInorderPrint (Tree* t)
+  {
+    bool at_succesor = false;
+    while (t!=NULL) {      
+      // Go left as far as possible to find smallest value haven't printed
+      if (!at_succesor) while (!t.left_empty) t=t->left; 
+
+      print t->value;       // At smallest value so print
+
+      // If no right subtree, go directly to successor, otherwise
+      // look for successor in right subtree
+      at_succesor = t->right_empty;
+      t=t->right;
+    }
+  }
+
+ This works great and allows us sorted iteration.  Keeping the inorder
+successors and predecessors is a bit of a challenge, but it doesn't
+change the O(log(n)) nature of lookups/inserts/deletes in a tree.  See
+[7] for many more details on how to keep this information updated.
+
+ One last thing, we still have "two bools" clogging up the class and
+wasting memory: All we really want is another 2 bits of information.
+With a little bit of bit-twiddling, we can get this. On most modern
+architectures, an allocation from the heap has to be aligned on 2,4 or
+even 8 byte boundaries.  That means the last bit in the pointer are
+ALWAYS 0 since the memory addresses have to be a multiple of 2 (4 or
+8).
+
+  memory address from malloc = 0xffd2; // Always even due to alignment
+
+We can mask off that bit and store extra information there: of
+course, this means we have to turn pointers into the integers to do
+the mask, but internally to the CPU, that should be no more than one
+or two instructions.  (Incidentally, this is why we have to define
+OC_BYTES_IN_POINTER in ocport.h).
+
+ Combining these ideas together, we can set the low-order bit of the
+address in left (resp. right) to say that left (right) is an empty
+subtree.  We have to be careful when traversing pointers (we have to
+mask off that extra bit), but this is only an extra instruction
+on most CPUS.
+
+  memory address from malloc =0xffd2; // Non-empty subtree
+  memory address from malloc =0xffd3; // "empty subtree", so 0xffd2 is 
+    // actually address of what comes next (the successor or predecessor)
+
+ So, by using threaded trees, we can take advantage of the wasted
+space of NULL pointers and completely eliminate recursion from our
+tree traversals.  See the AVLTreeT class for a real implementation of
+this idea.
+---------------------------------------------------------------------
+
+
+ AVLHashT.
+
+  AVLHashT's are based on a need for a more dynamic hash table.  A
+typical hash table can grow by "rehashing" [5] every so often, but
+that means completely rebuilding the table and touching/copying every
+element. A rehash, although infrequent, is very expensive. So
+instead, consider what a typical hash call looks like:
+
+  int_u4 bucket_list_number = HashFunction(key) % number_of_bucket_lists;
+
+We have to modulo (%) the hash to get it to fit in the range of [0 to
+number_of_bucket_lists).  Notice the modulo function throws away good
+information: All the top bits!  A "good" hash function will return a
+number between 0 and 2^32-1 (like Pearson's [11]) Rather than use
+modulo (%) operations to remove information, we will use the FULL
+value (returned by the HashFunction) and make these FULL value the
+"keys" of an AVLTree.
+
+Thus, an AVLHashT<Original Key, Original Value> is equivalent to
+AVLTreeT<FULL hash value, (Original key, Original Value)> (remember
+that the AVLHashT still has to handle collisions though).
+
+With a really good hash function, our lookup times will never be worse
+than log(n) where n is the number of items in the AVLHashT.
+Basically, AVLHashT is an HashTable which can grow dynamically.
+
+ Performance.
+
+ The OC Tables all have performance comparable to or better than the
+STL map, but with more flexibility.  See Figure 5.2.  Each type of
+table is comparable to the map, but allows is to choose what's
+important (static speed, dynamic growth or inorder traversals).  [We
+haven't tried STL hashes due to their "not fully in the standard" yet:
+See the "timings" area for more information].
+
+----------------Figure 5.2:  Comparison of Tables--------------------
+ Times in the table are in seconds.  The first part of the table times
+ 100 insert/delete pairs.  The second part of the table times 100 lookups.
+---------------------------------------------------------------------------
+        Tru64:HashTableT    Tru64:AVLTreeT    Tru64:AVLHashT    Tru64:map
+ # ops: Solaris:HashTableT  Solaris:AVLTreeT  Solaris:AVLHashT  Solaris:map
+        Linux:HashTableT    Linux:AVLTreeT    Linux:AVLHashT    Linux:map
+---------------------------------------------------------------------------
+ *InsertDeletePairs
+                1.157240        1.135760        0.933609        1.391620
+     256        5.532830        5.040650        3.504660             n/a
+________________1.253460________1.393970________0.665605________1.469730
+                3.977600        2.621140        1.988310        3.249080
+     512       19.311100       11.389600        6.937780             n/a
+________________4.494770________3.376050________1.366930________3.469710
+               14.884000        5.780370        4.112370        8.452280
+    1024       72.510700       25.098700       14.357300             n/a
+_______________17.010400________7.664470________2.842230________7.946860
+               61.610400       12.638900        8.648570       19.889000
+    2048      215.654000       53.405400       28.656700             n/a
+_______________67.600600_______18.512300________6.670980_______19.425600
+              264.944000       28.111800       18.257100       53.787000
+    4096      967.921000      118.239000       59.051500             n/a
+______________288.780000_______44.415300_______16.396000_______45.461300
+ *Lookups
+                0.430671        0.341803        0.193363        0.471687
+     256        2.022190        1.525250        0.627018             n/a
+________________0.618045________0.699261________0.218033________0.559430
+                1.609400        0.844740        0.428717        1.098650
+     512        8.185340        3.739680        1.363070             n/a
+________________2.203850________1.758130________0.478227________1.308720
+                6.660260        1.983430        0.974625        2.431680
+    1024       33.554100        8.996940        3.071980             n/a
+________________8.308970________4.204320________1.085790________2.972370
+               28.455500        4.703200        2.143590        5.474700
+    2048      100.985000       20.148900        6.173270             n/a
+_______________32.639800_______10.029800________2.428270________7.045540
+              123.618000       10.978700        4.851640       12.048000
+    4096             n/a       46.536900       13.633600             n/a
+______________142.095000_______24.296400________6.262260_______16.912800
+                     n/a       24.417400       11.920100       27.076600
+    8192             n/a      103.288000       32.914000             n/a
+_____________________n/a_______55.684800_______16.854200_______38.498700
+--------------------------------------------------------------------------
+
+
+Section 6:  Nested Heterogeneous Containers
+
+ Introduction.
+
+  Heterogeneous containers comes from a need to have recursive,
+hierarchical containers with disparate data.  In other words, we want
+something like Python dictionaries (or Midas 2k Opaltables or Perl
+hashes) in C++. [Homogeneous containers (like Arrays) contain data
+where every item is the same type.  Heterogeneous containers contain
+data where every item is potentially a different type].
+
+In Python [8], we can build a table that can contain strings, ints, reals
+and even other tables:
+ a = { 'key1':100, 'key2':'stringvalue', 'key3': { 's':1.0, 't':2.0 } }
+
+This is a very powerful data structure, allowing nesting much like
+hierarchical file systems (with directories and sub-directories and
+sub-directories).  Unfortunately, C++ is a strongly typed language and
+makes this difficult.  Or does it?
+
+ With the Val/Str/Tab abstraction, we can get recursive, heterogeneous
+containers in C++.  Val is a heterogeneous container FOR A SINGLE
+OBJECT: A int_1, int_u1, int_2, int_u2, int_4, int_u4, int_8, int_u8,
+real_4, real_8, Str (string) or Tab (table).  
+
+  Val v1 = 1;         // create a val that contains a int_4(1)
+  Val v2 = 1.0;       // create a val that contains a real_8(1.0);
+  Val v3 = "hello"    // create a val that contains a string hello
+  Val v4 = int_u2(1); // explicitly create an int_u2(1)
+  Val v5 = Tab();     // create an empty table
+  Val v6 = Str();     // Empty string
+
+The syntax above makes it very convenient to put things inside of
+Vals, but it's just as easy to get them out.
+
+  int_4 i1  = v1;      // Get the int_4 directly
+  real_8 i2 = v2;      // Get the real_8 out directly
+  Str    i3 = v3;      // Get the string out
+
+For numeric types, if we request a slightly different type, it will
+out convert it for us (as C++ normally does when we convert between
+different types of numbers):
+
+  real_4 i4 = v1;      // Convert the int_4 in v1 to a real_4
+  int_u8 i5 = v2;      // Convert the real_8 in v2 to an int_u8
+
+Every Val type can be cast out to a string.  This makes an easy way to
+convert numbers and tables into printable entities.
+ 
+  Str s1 = v1; Str s2 = v2; Str s3 = v3; Str s4 = v4; Str s5 = v5;
+
+Only a Table in a Val can be converted to a Tab: if we try to convert
+out something that's not a Tab, it will throw a "logic_error": Note
+that we convert out as a "Tab&" so we get our hands on the underlying
+data without having to do an expensive copy.
+
+  Tab& t = v5;    // Okay ... direct reference to the Tab in v5
+  Tab tc = v5;    // Actually makes a copy
+  Tab& terr = v1; // ERROR!  Throws a logic_error
+
+We can nest Tabs, lookups and inserts easily:
+
+  Tab t1; 
+  Tab t2; t2["hello"] = "there";
+  t1["subtable"] = t2;  // Insert Table into table
+
+  cout << t1["subtable"]["hello"] << endl; // cascading lookup
+  t1["subtable"]["hello"] = 101;           // cascading insert
+
+Str is just a typedef for an OCString.  A Tab is just an AVLHashT<Str,
+Val, 8>.  Thus, the Tab has the same interface as any Table in the
+OpenContainers.  (If we decide we really want the "iterate in sorted
+order" feature on the Tab, we can simply change Tab to be an AVLTreeT
+in "ocval.h" and voila!)
+
+If we want, we can pass Vals between processes on the same machine
+(we don't support different endians or floating point standards yet,
+so it has to stay on the same machine), we can serialize and
+deserialize to and from memory. See Listing 6.1.
+
+-----------------Listing 6.1:  Serialization/Deserialization----------
+  Val big = .... ; // some big nasty table
+  Val something;
+  size_t bytes = BytesToSerialize(big);
+  char* mem = new char[bytes];
+
+  Serialize(big, mem);         // Put big in memory
+  Deserialize(something, mem); // Take out of memory and put in something
+
+  delete [] bytes;
+----------------------------------------------------------------------
+
+The performance of the Tab/Str/Val really does depend on the
+implementation of Tabs and Strs.  Consider Figure 6.1 which Serializes
+and Deserializes 5000 times a 1000 element table.  The actual listing
+is in the "examples" area of the OC as "tab_ex.cc". Note that we
+prefer AVLHashT and OCString because of this test (which may not be
+representative of other's needs).
+
+----------------Figure 6.1: Swap Str and Tab implementations---------
+
+5000 Serialize/Deserialize some large 1000 element table pairs
+Tru64 Unix:
+Tab as AVLHashT, Str as OCString:   10.22 seconds
+Tab as AVLTreeT, Str as OCString:   14.31 seconds
+Tab as AVLHashT, Str as STL string: 18.73 seconds
+Tab as AVLTreeT, Str as STL string: 23.12 seconds
+----------------------------------------------------------------------
+
+
+ Implementation and Errata.
+
+ There are other solutions to Heterogeneous Containers[13][14], but
+they require either virtual function/class extensions or require
+containing pointers/handles.  For performance reasons, we don't want
+either of these.  We want to hold entities by value inside the class
+so we don't have to follow a virtual indirection or go the heap. So,
+we simply keep a tag of the type and construct (in-place copy
+constructor) directly into the lookaside buffer of the class.
+
+ What really makes the Val/Tab/Str trio work is that the Val has
+inconverters and outconverters for ALL TYPES WE USE.  Thus, the class
+is a bit lengthy (with all the different conversions), but this allows
+the user to just plop in and out values without having to worry about
+which type to convert to.  All numeric types (except complex .. this
+will be in the future?) are supported!  This also gets around the
+problem of "which conversion to use?" that overloaded functions can
+have because all types are specified. If we run into any problems
+with conversion, however, just explicitly specify a hard type.
+
+  some_function(some_val); // Works on most platforms, but
+                           // may get sticky on Solaris
+
+  int_u4 a = some_val;     // Explicitly get out a type:
+  some_function(a);        // Should always work.
+ 
+
+Section 7:  Conclusion
+
+ Distribution.
+
+ OC is packaged as opencontainers_1_3_3.tgz.  Unzip/unpack this tar
+and read the top file "README" to get going: It'll tell us everything
+we need to start using the OpenContainers classes.  Most of the
+documentation for the classes in the .h files themselves, but there is
+other documentation in the package.
+
+ One final note: Open Containers is open, take them and use them to
+your heart's content.  You can go to http://www.amalgama.us for the
+most up-to-date version and you can e-mail me at
+bugs@opencontainers.amalgama.us if you find any problems.
+
+
+[1] More Exceptional C++ by Herb Sutter: Appendix A: Optimizations That Aren't (In A Multithreaded World)
+[2] A Retargetable C Compiler : Design and Implementation by David R. Hanson, Christopher W. Fraser
+[3] Art of Computer Programming, Volume 3: Sorting and Searching (2nd Edition) by Donald E. Knuth 
+[4] Preliminary 4th volume for Knuth's Art of Computer Programming: http://www-cs-faculty.stanford.edu/~knuth/news.html
+[5] Introduction to Algorithms, Second Edition by Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, Clifford Stein
+[6] Data Structure and Algorithm Analysis in C by Weiss
+[7] Fundamentals of Data Structures and Algorithms by Harry R. Lewis
+[8] Learning Python by Lutz and Ascher 
+[9] Exceptional C++ by Herb Sutter: Section 30: The "Fast Pimpl Idiom"
+[10] The Sourcebook of Parallel Computing by Ken Kennedy, et. al.  
+[11] C++ Report by D. Moore. Rehashing Pearson's string hash. Letters section, pages 6-15, February 1995
+[12] Computer Architecture: A Quantitative Approach by Hennessy and Patterson
+[13] Heterogeneous, Nested STL Containers in C++ by Volker Simonis - Roland Weiss, http://www-ca.informatik.uni-tuebingen.de/people/simonis/papers/nseq/nseq/nseq.html
+[14] C++ FAQ: http://www.cs.indiana.edu/~zlu/cpp_faq.html

@@ -1,0 +1,20 @@
+
+This directory contains some documentation for the OpenContainers,
+but remember the source is the final documentation.
+
+
+  Philosophy.txt:   First item you should read. EVERYONE SHOULD READ
+THIS. It contains the general overview and philosophy of
+OpenContainers.
+
+  Overview.txt:    A quick overview of everything in OpenContainers and why
+you should use one class over another.  EVERYONE SHOULD READ THIS.
+
+  Primer.txt:      A little more verbose than the Overview. Read if you want
+a little bit more than the Overview provides.  Still a bit incomplete.
+
+  History.txt:     Describes history and some implementation details and their
+decisions.  Not for everyone: written for the computer scientist.
+
+  Article:         Sibdirectory containing the article 
+

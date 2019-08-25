@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+
+# Note: Running unit tests via this will only work in docker, with all dependencies `pip install`-ed globally
+# A better way to run the unit tests is via a venv (which can be easily done with pygradle)
+
+#echo "Run tests in python/test..."
+PYTHONPATH=python/src python -m unittest discover -s python/test -p '*_test.py'

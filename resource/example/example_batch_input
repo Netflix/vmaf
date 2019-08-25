@@ -1,0 +1,7 @@
+# yuv_fmt width height ref_path src_path
+yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv python/test/resource/yuv/src01_hrc01_576x324.yuv
+yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv python/test/resource/yuv/src01_hrc00_576x324.yuv
+
+# repeat
+yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv python/test/resource/yuv/src01_hrc01_576x324.yuv
+yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv python/test/resource/yuv/src01_hrc00_576x324.yuv

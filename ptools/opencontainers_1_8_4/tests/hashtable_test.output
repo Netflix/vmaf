@@ -1,0 +1,79 @@
+Table has 0 elements
+Good.  Found Key1 to be 1
+Table has 1 elements
+Good.  Key1 removed from the table
+Good.  Found Superman to be 4
+Table has 1 elements
+Good.  Found Superman to be 5
+Table has 1 elements
+Good.  Superman removed from the table
+Table has 0 elements
+Table has 0 elements
+Good.  Superman in the table
+Good.  Supernam NOT in the table
+Good.  empty string NOT in the table
+Good.  Found Flash's key to be Flash
+Good.  Didn't find hsalF.
+Good.  Found Sinestro to be 12
+Good.  Didn't find Weaponer's of Qward
+Good.  Found Sinestro to be 12
+Good.  Didn't find Weaponer's of Qward
+Good.  Table is not empty. 
+Good.  Superman removed.
+Good.  Batman removed.
+Good.  Wonder Woman removed.
+Good.  Aquaman removed.
+Good.  Green Lantern removed.
+Good.  Flash removed.
+Good.  Apache Chief removed.
+Good.  Black Lightning removed.
+Good.  Lex Luthor removed.
+Good.  Joker removed.
+Good.  Catwoman removed.
+Good.  Black manta removed.
+Good.  Sinestro removed.
+Good.  Reverse-Flash removed.
+Good.  Giganta removed.
+Good.  Table is empty. 
+Good.  It copies correctly.
+Good. After assignment, It copies correctly
+Good.  Iterated through all elements
+Good.  Didn't iterate through anything when going through emoty list 
+Should only see this element: Hello=0
+Good.  Iterated through all elements
+GOOD: op== works for straight copy!
+GOOD: op== works for rev copy!
+Good.  Iterated through all elements
+Good.  Didn't iterate through anything when going through emoty list 
+Should only see this element: Hello=0
+As expected: Key BADKEY not in table
+t1 entries=3
+test1 test2
+test10 test20
+test100 test200
+t2 entries=2
+howdy ho
+hello there
+t1 entries=2
+howdy ho
+hello there
+t2 entries=3
+test1 test2
+test10 test20
+test100 test200
+t1 entries=4
+1 2
+3 3
+howdy ho
+hello there
+t2 entries=2
+test10 test20
+test100 test200
+t1 entries=2
+test10 test20
+test100 test200
+t2 entries=4
+1 2
+3 3
+howdy ho
+hello there

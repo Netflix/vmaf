@@ -1,0 +1,6 @@
+*.o
+libptools.so
+libptools.dylib
+.DS_Store
+.cproject
+.project

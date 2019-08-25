@@ -1,0 +1,65 @@
+Proxy looks like: {'a': 1, 'b': 2}
+Proxy copy looks like: {'a': 1, 'b': 2}
+borrowed reference of p looks like: {'a': 1, 'b': 2}
+Expected Error: No conversion from:Proxy to Arr&.
+Adopting Val (i.e., Proxy) looks like: {'should': 'allow carefully'} {'should': 'allow carefully'}
+After operator= and op[] test:{0: 100, 'eh?': True}
+{'yup': 17, 'hello': 100, 'a': 1, 'b': 2, 'again': 666}
+Proxy: make sure you can insert into table:{'stuff': 1, 'proxy': {'yup': 17, 'hello': 100, 'a': 1, 'b': 2, 'again': 666}}
+Transaction Lock with plain ref count:{'set something': None}
+Expected Failure--Can only lock on a Proxy: No conversion from:{} to Proxy.
+BEFORE MANIPULATION:{'HEADER': {}, 'DATA': array([1,2,3], 'i')}
+AFTER MANIPULATION:{'HEADER': {'AXIS': 'Time', 'NAME': 'Blah'}, 'DATA': array([0,1,2,3,4,5,6,7,8,9], 'i')}
+Thread number 0
+Thread number 1
+Okay:  Threads test passed
+Test creating Arrays with proxies
+[1, 2, 3]
+Proxies with Arrs: can we update:[17, 2, 3]
+{'data': array([0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0], 'd')}
+array([0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0], 'd')
+Expecting Exception because wrong type:No conversion from:array([0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0], 'd') to Arr.
+[1, 2, 3, 'hello']
+17
+Expected:array: attempting to access element:100 in array of length:4
+Expected:No conversion from:[17, 2, 3, 'hello'] to table.
+[17, 2, 3, 'hello']
+Expected subscript error:Key 'not gonna happen' not in table
+{'hello': 17.6, 'a': 1}
+Expected subscript error:Only Array<Val> can subscript, Array<T> cannot
+Tab in shared memory:{0: 100.1, 1: {10: 10}}
+[8, 9]
+[8, 9, 100]
+[array([], 'd'), [666, 777], {888: 555.5}]
+NO PROXIES FOR PLAIN DATA! Expected:Cannot handle proxies except for Arr, Tab, OTab and Array<T>
+NO PROXIES FOR STRINGS!: Strings are immutable (like in Python)Cannot handle proxies except for Arr, Tab, OTab and Array<T>
+NO PROXIES FOR OCSTRINGS either!: Strings are immutable (like in Python)Cannot handle proxies except for Arr, Tab, OTab and Array<T>
+Not using the same allocator
+Not using the same allocator
+Not using the same allocator
+Not using the same allocator
+Not using the same allocator
+Can't take length of None
+Can't take length of 1
+Can't take length of 1.0
+Length is 5 of 'hello'
+Length is 0 of ''
+Length is 1 of 'a'
+Length is 0 of { }
+Length is 1 of {'a':1}
+Length is 2 of { 'a':2, 'b':3 }
+Length is 0 of []
+Length is 1 of [None]
+Length is 2 of [None, None]
+Length is 0 of array([])
+Length is 2 of array([1 2])
+Length is 1 of array([1.0])
+Length is 0 of {}
+Length is 1 of {'a':1}
+Length is 2 of {'a':'b', 'g':2}
+Length is 0 of []
+Length is 1 of [None]
+Length is 2 of [None, None]
+Length is 0 of array([])
+Length is 2 of array([1 2])
+Length is 1 of array([1])

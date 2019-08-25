@@ -1,0 +1,6 @@
+# Set the default behavior, in case people don't have core.autocrlf set.
+* text=auto
+
+# The model file parser requires LF line endings
+*.pkl text eol=lf
+*.model text eol=lf
