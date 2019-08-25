@@ -21,19 +21,19 @@ build-setup:
 build-step:
   
   # ==== make and install vmafossexec and models ====
-  - cd vmaf; make clean
-  - cd vmaf; make
-  - cd vmaf; sudo make install
-  - cd vmaf; make testlib
+  - make clean
+  - make
+  - sudo make install
+  - make testlib
 
   # ==== External ffmpeg path ====
-  - touch $(pwd)/vmaf/python/src/vmaf/externals.py
-  - echo "FFMPEG_PATH = '/usr/bin/ffmpeg'" > $(pwd)/vmaf/python/src/vmaf/externals.py
+  - touch $(pwd)/python/src/vmaf/externals.py
+  - echo "FFMPEG_PATH = '/usr/bin/ffmpeg'" > $(pwd)/python/src/vmaf/externals.py
 
   # ==== tests ====
-  - cd vmaf/python; export PYTHONPATH=$(pwd)/src:$PYTHONPATH; python -m unittest discover -t . -s test/lib -p '*_libtest.py'
-  - cd vmaf/python; export PYTHONPATH=$(pwd)/src:$PYTHONPATH; python -m unittest discover -t . -s test -p '*_test.py'
-  - cd vmaf/python; export PYTHONPATH=$(pwd)/src:$PYTHONPATH; python -m unittest discover -t . -s test/extra -p '*_extratest.py'
+  - cd python; export PYTHONPATH=$(pwd)/src:$PYTHONPATH; python -m unittest discover -t . -s test/lib -p '*_libtest.py'
+  - cd python; export PYTHONPATH=$(pwd)/src:$PYTHONPATH; python -m unittest discover -t . -s test -p '*_test.py'
+  - cd python; export PYTHONPATH=$(pwd)/src:$PYTHONPATH; python -m unittest discover -t . -s test/extra -p '*_extratest.py'
 
   # ==== create necessary folders ====
   - mkdir -p $(pwd)/newt_pkg/apps/transcoder/bin
@@ -45,11 +45,11 @@ build-step:
   # ==== copy necessary folders/files ====
 
   # ==== copy libvmaf files ====
-  - cp $(pwd)/vmaf/wrapper/libvmaf.pc $(pwd)/newt_pkg/apps/transcoder/lib/pkgconfig
-  - cp $(pwd)/vmaf/wrapper/libvmaf.a $(pwd)/newt_pkg/usr/local/lib
-  - cp $(pwd)/vmaf/wrapper/src/libvmaf.h $(pwd)/newt_pkg/usr/local/include
+  - cp $(pwd)/wrapper/libvmaf.pc $(pwd)/newt_pkg/apps/transcoder/lib/pkgconfig
+  - cp $(pwd)/wrapper/libvmaf.a $(pwd)/newt_pkg/usr/local/lib
+  - cp $(pwd)/wrapper/src/libvmaf.h $(pwd)/newt_pkg/usr/local/include
 
   # ==== copy model files to: /usr/local/share/model ====
-  - cp -r $(pwd)/vmaf/model/* $(pwd)/newt_pkg/usr/local/share/model
+  - cp -r $(pwd)/model/* $(pwd)/newt_pkg/usr/local/share/model
 
 package-root: "newt_pkg"
