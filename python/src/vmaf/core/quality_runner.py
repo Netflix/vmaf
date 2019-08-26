@@ -675,44 +675,21 @@ class VmafossExecQualityRunner(QualityRunner):
         else:
             ci = False
 
-        additional_models_dict = self.optional_dict['additional_models'] \
-            if self.optional_dict is not None and 'additional_models' in self.optional_dict else None
-
-        additional_models = None
-        # augment the feature set, if there are any additional models passed in
-        if additional_models_dict:
-            self.FEATURES += additional_models_dict.keys()
-            # augment also with transformed scores
-            self.FEATURES += map(lambda k: "{k}_transformed".format(k=k), additional_models_dict.keys())
-            # get json string for additional models
-            additional_models = self.get_json_additional_model_string(additional_models_dict)
-
         quality_width, quality_height = asset.quality_width_height
 
-        fmt = self._get_workfile_yuv_type(asset)
-        w = quality_width
-        h = quality_height
-        ref_path = asset.ref_workfile_path
-        dis_path = asset.dis_workfile_path
-        model = model_filepath
-        exe = self._get_exec()
+        fmt=self._get_workfile_yuv_type(asset)
+        w=quality_width
+        h=quality_height
+        ref_path=asset.ref_workfile_path
+        dis_path=asset.dis_workfile_path
+        model=model_filepath
+        exe=self._get_exec()
         logger = self.logger
 
         ExternalProgramCaller.call_vmafossexec(fmt, w, h, ref_path, dis_path, model, log_file_path,
                                                disable_clip_score, enable_transform_score,
                                                phone_model, disable_avx, n_thread, n_subsample,
-                                               psnr, ssim, ms_ssim, ci, exe, logger, additional_models)
-
-    @staticmethod
-    def get_json_additional_model_string(d):
-        """ Returns json string representation with sorted keys for additional models.
-        get_json_additional_model_string({"model A": "/someA/pthA/forA/A.pkl", "model B": "/someB/pthB/forB/B.pkl"})
-        """
-        if d:
-            return "{{{0}}}".format('\\,'.join(map(lambda k: '\\"{k}\\"\\:\\"{v}\\"'
-                                               .format(k=k, v=d[k]), sorted(d.keys()))))
-        else:
-            return ""
+                                               psnr, ssim, ms_ssim, ci, exe, logger)
 
     def _get_exec(self):
         return None # signaling default
@@ -728,9 +705,10 @@ class VmafossExecQualityRunner(QualityRunner):
         # check if vmafossexec returned additional info about the bootstrapped models
         # bootstrap_model_list_str is a comma-separated string of model names
         if 'bootstrap_model_list_str' in root.findall('params')[0].attrib:
+            bootstrap_model_list = []
             vmaf_params = root.findall('params')[0].attrib
             bootstrap_model_list_str = vmaf_params['bootstrap_model_list_str']
-            bootstrap_model_list = bootstrap_model_list_str.split(',') if len(bootstrap_model_list_str) > 0 else []
+            bootstrap_model_list = bootstrap_model_list_str.split(',')
             # augment the feature set with bootstrap models
             self.FEATURES += bootstrap_model_list
 
