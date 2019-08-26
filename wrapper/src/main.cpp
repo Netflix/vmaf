@@ -106,7 +106,7 @@ void getMemory(int itr_ctr, int state)
 }
 #endif
 
-int run_wrapper(char *fmt, int width, int height, char *ref_path, char *dis_path, char *model_path, char *additional_model_paths,
+int run_wrapper(char *fmt, int width, int height, char *ref_path, char *dis_path, char *model_path,
         char *log_path, char *log_fmt, bool disable_clip, bool disable_avx, bool enable_transform, bool phone_model,
         bool do_psnr, bool do_ssim, bool do_ms_ssim, char *pool_method, int n_thread, int n_subsample, bool enable_conf_interval)
 {
@@ -189,35 +189,10 @@ int run_wrapper(char *fmt, int width, int height, char *ref_path, char *dis_path
         s->num_frames = -1;
     }
 
-    // initialize context
-    VmafContext *vmafContext;
-    vmafContext = (VmafContext *)malloc(sizeof(VmafContext));
-
-    // fill context with data
-    vmafContext->format = fmt;
-    vmafContext->width = width;
-    vmafContext->height = height;
-
-    vmafContext->model_path = model_path;
-    vmafContext->additional_model_paths = additional_model_paths;
-    vmafContext->log_path = log_path;
-    vmafContext->log_fmt = log_fmt;
-    vmafContext->disable_clip = disable_clip;
-    vmafContext->disable_avx = disable_avx;
-    vmafContext->enable_transform = enable_transform || phone_model;
-    vmafContext->do_psnr = do_psnr;
-    vmafContext->do_ssim = do_ssim;
-    vmafContext->do_ms_ssim = do_ms_ssim;
-    vmafContext->pool_method = pool_method;
-    vmafContext->n_thread = n_thread;
-    vmafContext->n_subsample = n_subsample;
-    vmafContext->enable_conf_interval = enable_conf_interval;
-
     /* Run VMAF */
-    ret = compute_vmaf(&score, read_frame, s, vmafContext);
-
-    // free VMAF context
-    free(vmafContext);
+    ret = compute_vmaf(&score, fmt, width, height, read_frame, s, model_path, log_path, log_fmt,
+                       disable_clip, disable_avx, enable_transform, phone_model, do_psnr, do_ssim,
+                       do_ms_ssim, pool_method, n_thread, n_subsample, enable_conf_interval);
 
 fail_or_end:
     if (s->ref_rfile)
@@ -243,7 +218,6 @@ int main(int argc, char *argv[])
     char* ref_path;
     char* dis_path;
     char *model_path;
-    char *additional_model_paths;
     char *log_path = NULL;
     char *log_fmt = NULL;
     bool disable_clip = false;
@@ -388,8 +362,6 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    additional_model_paths = getCmdOption(argv + 7, argv + argc, "--additional-models");
-
     if (cmdOptionExists(argv + 7, argv + argc, "--ci"))
     {
         enable_conf_interval = true;
@@ -401,13 +373,13 @@ int main(int argc, char *argv[])
 		for(itr_ctr=0;itr_ctr<1000;itr_ctr++)
 		{
 			getMemory(itr_ctr,1);
-			ret = run_wrapper(fmt, width, height, ref_path, dis_path, model_path, additional_model_paths,
+			ret = run_wrapper(fmt, width, height, ref_path, dis_path, model_path,
                 log_path, log_fmt, disable_clip, disable_avx, enable_transform, phone_model,
                 do_psnr, do_ssim, do_ms_ssim, pool_method, n_thread, n_subsample, enable_conf_interval);
 			getMemory(itr_ctr,2);
 		}
 #else
-        return run_wrapper(fmt, width, height, ref_path, dis_path, model_path, additional_model_paths,
+        return run_wrapper(fmt, width, height, ref_path, dis_path, model_path,
                 log_path, log_fmt, disable_clip, disable_avx, enable_transform, phone_model,
                 do_psnr, do_ssim, do_ms_ssim, pool_method, n_thread, n_subsample, enable_conf_interval);
 #endif
