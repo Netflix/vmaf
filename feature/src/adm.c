@@ -274,7 +274,7 @@ fail:
 	return ret;
 }
 
-int adm(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt)
+int adm(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h)
 {
     double score = 0;
     double score_num = 0;

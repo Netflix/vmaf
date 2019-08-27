@@ -37,14 +37,12 @@
 #include "darray.h"
 #include "libvmaf.h"
 
-static const std::string BOOSTRAP_VMAF_MODEL_PREFIX = "vmaf_";
+static const char VMAFOSS_DOC_VERSION[] = "1.4.0";
+static const std::string BOOSTRAP_VMAF_MODEL_KEY = "_bootstrap_";
 
-double RunVmaf(const char* fmt, int width, int height,
-               int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
-               void *user_data, const char *model_path, const char *log_path, const char *log_fmt,
-               bool disable_clip, bool enable_transform,
-               bool do_psnr, bool do_ssim, bool do_ms_ssim,
-               const char *pool_method, int n_thread, int n_subsample, bool enable_conf_interval);
+double RunVmaf(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
+               int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
+               void *user_data, VmafSettings *vmafSettings);
 
 class VmafException: public std::exception
 {
@@ -70,10 +68,68 @@ enum VmafPredictionReturnType
     MINUS_DELTA
 };
 
+enum ScoreAggregateMethod
+{
+    MEAN,
+    HARMONIC_MEAN,
+    MINIMUM
+};
+
+class StatVector
+{
+public:
+    StatVector();
+    StatVector(std::vector<double> l);
+    std::vector<double> getVector();
+    double mean();
+    double minimum();
+    double harmonic_mean();
+    double second_moment();
+    double percentile(double perc);
+    double var();
+    double std();
+    void append(double e);
+    double at(size_t idx);
+    size_t size();
+private:
+    std::vector<double> l;
+    void _assert_size();
+};
+
+class Result
+{
+public:
+    Result();
+    void set_scores(const std::string &key, const StatVector &scores);
+    StatVector get_scores(const std::string &key);
+    bool has_scores(const std::string &key);
+    double get_score(const std::string &key);
+    std::vector<std::string> get_keys();
+    void setScoreAggregateMethod(ScoreAggregateMethod scoreAggregateMethod);
+    unsigned int get_num_frms();
+    void set_num_frms(unsigned int num_frms);
+private:
+    std::map<std::string, StatVector> d;
+    ScoreAggregateMethod score_aggregate_method;
+    unsigned int num_frms;
+};
+
 struct VmafPredictionStruct
 {
     std::map<VmafPredictionReturnType, double> vmafPrediction;
     std::vector<double> vmafMultiModelPrediction;
+};
+
+class IVmafQualityRunner {
+public:
+    virtual void predict(Result &result, VmafModel *vmaf_model_ptr) = 0;
+    virtual ~IVmafQualityRunner() {}
+};
+
+class VmafQualityRunnerFactory {
+public:
+    static std::unique_ptr<IVmafQualityRunner>
+        createVmafQualityRunner(VmafModel *vmaf_model_ptr);
 };
 
 class LibsvmNusvrTrainTestModel
@@ -121,16 +177,18 @@ class VmafQualityRunner : public IVmafQualityRunner
 {
 public:
     VmafQualityRunner(const char *model_path): model_path(model_path) {}
-    virtual Result run(Asset asset, int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
-               int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
-               bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample);
+    static void feature_extract(Result &result,
+                int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
+                int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
+                void *user_data, VmafSettings *vmafSettings);
+    virtual void predict(Result &result, VmafModel *vmaf_model_ptr);
     virtual ~VmafQualityRunner() {}
 protected:
     static void _transform_value(LibsvmNusvrTrainTestModel& model, double& prediction);
     static void _clip_value(LibsvmNusvrTrainTestModel& model, double& prediction);
     virtual void _set_prediction_result(
             std::vector<VmafPredictionStruct> predictionStructs,
-            Result& result);
+            Result& result, std::string model_name);
 private:
     const char *model_path;
     static const int INIT_FRAMES = 1000;
@@ -140,12 +198,7 @@ private:
     virtual void _clip_score(LibsvmNusvrTrainTestModel& model, VmafPredictionStruct& predictionStruct);
     virtual void _postproc_transform_clip(VmafPredictionStruct& predictionStruct);
     void _normalize_predict_denormalize_transform_clip(LibsvmNusvrTrainTestModel& model,
-            size_t num_frms, StatVector& adm2,
-            StatVector& adm_scale0, StatVector& adm_scale1,
-            StatVector& adm_scale2, StatVector& adm_scale3, StatVector& motion,
-            StatVector& vif_scale0, StatVector& vif_scale1,
-            StatVector& vif_scale2, StatVector& vif_scale3, StatVector& vif,
-            StatVector& motion2, bool enable_transform, bool disable_clip,
+            size_t num_frms, Result& result, int vmaf_model_setting,
             std::vector<VmafPredictionStruct>& predictionStructs);
 };
 
@@ -163,7 +216,7 @@ private:
     virtual void _postproc_transform_clip(VmafPredictionStruct& predictionStruct);
     virtual void _set_prediction_result(
             std::vector<VmafPredictionStruct> predictionStructs,
-            Result& result);
+            Result& result, std::string model_name);
 };
 
 #endif /* VMAF_H_ */

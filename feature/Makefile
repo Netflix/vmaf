@@ -6,6 +6,7 @@ SRCDIR  = $(TOP)/src
 OBJDIR  = $(TOP)/obj
 TOOLDIR = $(TOP)/tool
 LIBVMAF = $(TOP)/../wrapper/libvmaf.a
+LIBVMAF_HEADER = $(TOP)/../wrapper/src
 
 CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic
 # CFLAGS_COMMON = -g -O0 -fPIC -Wall -Wextra -pedantic
@@ -19,19 +20,19 @@ LDFLAGS  := $(LDFLAGS)
 $(AVX_OBJS): EXTRA_CFLAGS := -mavx
 
 $(OBJDIR)/vmaf_main.o: $(SRCDIR)/vmaf_main.c
-	$(CC) $(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+	$(CC) $(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) -I $(LIBVMAF_HEADER) $<
 
 $(OBJDIR)/psnr_main.o: $(SRCDIR)/psnr_main.c
-	$(CC) $(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+	$(CC) $(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) -I $(LIBVMAF_HEADER) $<
 
 $(OBJDIR)/moment_main.o: $(SRCDIR)/moment_main.c
-	$(CC) $(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+	$(CC) $(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) -I $(LIBVMAF_HEADER) $<
 
 $(OBJDIR)/ssim_main.o: $(SRCDIR)/ssim_main.c
-	$(CC) $(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+	$(CC) $(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) -I $(LIBVMAF_HEADER) $<
 
 $(OBJDIR)/ms_ssim_main.o: $(SRCDIR)/ms_ssim_main.c
-	$(CC) $(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+	$(CC) $(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) -I $(LIBVMAF_HEADER) $<
 
 vmaf: $(OBJDIR)/vmaf_main.o $(LIBVMAF)
 	$(CXX) -s -o $@ $(LDFLAGS) $^ $(LIBS) -pthread

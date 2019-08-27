@@ -61,7 +61,7 @@ int compute_psnr(const float *ref, const float *dis, int w, int h, int ref_strid
     return 0;
 }
 
-int psnr(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt)
+int psnr(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, enum VmafPixelFormat fmt)
 {
     double score = 0;
     float *ref_buf = 0;

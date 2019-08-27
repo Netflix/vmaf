@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include "common/frame.h"
 
-int moment(int (*read_noref_frame)(float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt, int order);
+int moment(int (*read_noref_frame)(float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, int order);
 
 static void usage(void)
 {
@@ -42,12 +42,13 @@ int run_moment(int order, const char *fmt, const char *video_path, int w, int h)
 {
     int ret = 0;
     struct noref_data *s;
+    enum VmafPixelFormat fmt_enum = get_pix_fmt_from_input_char_ptr(fmt);
     s = (struct noref_data *)malloc(sizeof(struct noref_data));
-    s->format = fmt;
+    s->format = fmt_enum;
     s->width = w;
     s->height = h;
 
-    ret = get_frame_offset(fmt, w, h, &(s->offset));
+    ret = get_frame_offset(fmt_enum, w, h, &(s->offset));
     if (ret)
     {
         goto fail_or_end;
@@ -60,7 +61,7 @@ int run_moment(int order, const char *fmt, const char *video_path, int w, int h)
         goto fail_or_end;
     }
 
-    ret = moment(read_noref_frame, s, w, h, fmt, order);
+    ret = moment(read_noref_frame, s, w, h, order);
 
 fail_or_end:
     if (s->dis_rfile)

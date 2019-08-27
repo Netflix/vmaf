@@ -27,6 +27,7 @@ extern "C" {
 
 #include "darray.h"
 #include "common/blur_array.h"
+#include "libvmaf.h"
 
 #ifdef MULTI_THREADING
 #include "pthread.h"
@@ -35,10 +36,11 @@ extern "C" {
 typedef struct
 {
     int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data);
+    int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data);
     void *user_data;
     int w;
     int h;
-    const char *fmt;
+    enum VmafPixelFormat fmt;
     DArray *adm_num_array;
     DArray *adm_den_array;
     DArray *adm_num_scale0_array;
@@ -61,16 +63,19 @@ typedef struct
     DArray *vif_den_scale3_array;
     DArray *vif_array;
     DArray *psnr_array;
+    DArray *psnr_u_array;
+    DArray *psnr_v_array;
     DArray *ssim_array;
     DArray *ms_ssim_array;
     char *errmsg;
     int n_subsample;
+    bool use_color;
 
     int frm_idx;
-    int stride;
+    int stride, stride_u, stride_v;
     double peak;
     double psnr_max;
-    size_t data_sz;
+    size_t data_sz, data_sz_u, data_sz_v;
 #ifdef MULTI_THREADING
     int thread_count;
     int stop_threads;
@@ -79,13 +84,19 @@ typedef struct
     BLUR_BUF_ARRAY blur_buf_array;
     BLUR_BUF_ARRAY ref_buf_array;
     BLUR_BUF_ARRAY dis_buf_array;
+    BLUR_BUF_ARRAY ref_buf_u_array;
+    BLUR_BUF_ARRAY dis_buf_u_array;
+    BLUR_BUF_ARRAY ref_buf_v_array;
+    BLUR_BUF_ARRAY dis_buf_v_array;
     DArray *motion_score_compute_flag_array;
     int ret;
 
 } VMAF_THREAD_STRUCT;
 void* combo_threadfunc(void* vmaf_thread_data);
 
-int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt,
+int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
+        int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
+        void *user_data, int w, int h, enum VmafPixelFormat fmt,
         DArray *adm_num_array,
         DArray *adm_den_array,
         DArray *adm_num_scale0_array,
@@ -108,11 +119,13 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
         DArray *vif_den_scale3_array,
         DArray *vif_array,
         DArray *psnr_array,
+        DArray *psnr_u_array,
+        DArray *psnr_v_array,
         DArray *ssim_array,
         DArray *ms_ssim_array,
         char *errmsg,
-        int n_thread,
-        int n_subsample
+        VmafFeatureCalculationSetting vmaf_feature_calculation_setting,
+        bool use_color
 );
 
 #ifdef __cplusplus

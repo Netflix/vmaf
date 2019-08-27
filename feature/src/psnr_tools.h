@@ -19,6 +19,8 @@
 #ifndef PSNR_TOOLS_H_
 #define PSNR_TOOLS_H_
 
-int psnr_constants(const char *fmt, double *peak, double *psnr_max);
+#include "libvmaf.h"
+
+int psnr_constants(enum VmafPixelFormat fmt, double *peak, double *psnr_max);
 
 #endif /* PSNR_TOOLS_H_ */

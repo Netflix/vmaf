@@ -20,31 +20,8 @@
 #include "vmaf.h"
 #include <cstdio>
 #include "cpu.h"
-
-Asset::Asset(int w, int h, const char *fmt)
-    :w(w), h(h), fmt(fmt) 
-{
-}
-
-Asset::Asset(int w, int h) 
-    :w(w), h(h), fmt("yuv420p") 
-{
-}
-
-int Asset::getWidth()
-{ 
-    return w; 
-}
-
-int Asset::getHeight()
-{ 
-    return h; 
-}
-
-const char* Asset::getFmt()
-{ 
-    return fmt; 
-}
+#include "jsonprint.h"
+#include "jsonreader.h"
 
 StatVector::StatVector() 
 {
@@ -143,6 +120,7 @@ void StatVector::append(double e)
 { 
     l.push_back(e); 
 }
+
 double StatVector::at(size_t idx)
 { 
     return l.at(idx); 
@@ -206,21 +184,31 @@ std::vector<std::string> Result::get_keys()
     return v;
 }
 
+unsigned int Result::get_num_frms()
+{
+    return num_frms;
+}
+
+void Result::set_num_frms(unsigned int num_frms)
+{
+    this->num_frms = num_frms;
+}
+
 void Result::setScoreAggregateMethod(ScoreAggregateMethod scoreAggregateMethod)
 {
     score_aggregate_method = scoreAggregateMethod;
 }
 
 std::unique_ptr<IVmafQualityRunner> 
-VmafQualityRunnerFactory::createVmafQualityRunner(const char *model_path, bool enable_conf_interval) {
+VmafQualityRunnerFactory::createVmafQualityRunner(VmafModel *vmaf_model_ptr) {
     std::unique_ptr<IVmafQualityRunner> runner_ptr;
-    if (enable_conf_interval)
+    if (vmaf_model_ptr->vmaf_model_setting & VMAF_MODEL_SETTING_ENABLE_CONF_INTERVAL)
     {
-        runner_ptr = std::unique_ptr<BootstrapVmafQualityRunner>(new BootstrapVmafQualityRunner(model_path));
+        runner_ptr = std::unique_ptr<BootstrapVmafQualityRunner>(new BootstrapVmafQualityRunner(vmaf_model_ptr->path));
     }
     else
     {
-        runner_ptr = std::unique_ptr<VmafQualityRunner>(new VmafQualityRunner(model_path));
+        runner_ptr = std::unique_ptr<VmafQualityRunner>(new VmafQualityRunner(vmaf_model_ptr->path));
     }
     return runner_ptr;
 }
@@ -229,45 +217,21 @@ extern "C" {
 
     enum vmaf_cpu cpu; // global
 
-    int compute_vmaf(double* vmaf_score, char* fmt, int width, int height, int(*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride_byte, void *user_data),
-        void *user_data, char *model_path, char *log_path, char *log_fmt, int disable_clip, int disable_avx, int enable_transform, int phone_model, int do_psnr,
-        int do_ssim, int do_ms_ssim, char *pool_method, int n_thread, int n_subsample, int enable_conf_interval)
+    int compute_vmaf(double* vmaf_score,
+        int(*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride_byte, void *user_data),
+        int(*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
+        void *user_data, VmafSettings *vmafSettings)
     {
-        bool d_c = false;
-        bool d_a = false;
-        bool e_t = false;
-        bool d_p = false;
-        bool d_s = false;
-        bool d_m_s = false;
-
-        if (enable_transform || phone_model) {
-            e_t = true;
-        }
-        if (disable_clip) {
-            d_c = true;
-        }
-        if (disable_avx) {
-            d_a = true;
-        }
-        if (do_psnr) {
-            d_p = true;
-        }
-        if (do_ssim) {
-            d_s = true;
-        }
-        if (do_ms_ssim) {
-            d_m_s = true;
-        }
 
         cpu = cpu_autodetect();
 
-        if (disable_avx)
+        if (vmafSettings->vmaf_feature_calculation_setting.disable_avx)
         {
             cpu = VMAF_CPU_NONE;
         }
 
         try {
-            double score = RunVmaf(fmt, width, height, read_frame, user_data, model_path, log_path, log_fmt, d_c, e_t, d_p, d_s, d_m_s, pool_method, n_thread, n_subsample, enable_conf_interval);
+            double score = RunVmaf(read_frame, read_vmaf_picture, user_data, vmafSettings);
             *vmaf_score = score;
             return 0;
         }
@@ -287,4 +251,124 @@ extern "C" {
             return -4;
         }
     }
+
+    void replace_string_in_place(std::string& subject, const std::string& search,
+                      const std::string& replace) {
+size_t pos = 0;
+while ((pos = subject.find(search, pos)) != std::string::npos) {
+     subject.replace(pos, search.length(), replace);
+     pos += replace.length();
+}
+}
+
+    unsigned int get_additional_models(char *additional_model_paths, VmafModel *vmaf_model)
+    {
+        // read additional models, if any
+        if (additional_model_paths != NULL) {
+
+            std::string unknown_option_exception;
+            std::string model_key, model_values;
+            bool use_option;
+
+            istringstream is(additional_model_paths);
+            Val additional_model_path_val;
+            Val inner_additional_model_path_val;
+
+            ReadValFromJSONStream(is, additional_model_path_val);
+
+            unsigned int additional_model_ind = 0;
+
+            Tab tt = MakeTab(Tab(GetString(additional_model_path_val)));
+            It kv_pair(tt);
+
+            while (kv_pair()) {
+
+                if (additional_model_ind + 1 > MAX_NUM_VMAF_MODELS)
+                {
+                    fprintf(stderr, "Error: at least %d models were passed in, but a maximum of %d are allowed.\n",
+                        additional_model_ind + 1, MAX_NUM_VMAF_MODELS);
+                    return -1;
+                }
+
+                // each model corresponds to a key-value pair
+                // the value corresponds to a dictionary as well that we parse
+
+                std::string name = GetString(kv_pair.key());
+
+                vmaf_model[additional_model_ind + 1].name = (char*)malloc(name.length() + 1);
+
+                if (!vmaf_model[additional_model_ind + 1].name)
+                {
+                    fprintf(stderr, "Malloc for additional model %d failed.\n", additional_model_ind);
+                    return -1;
+                }
+
+                strcpy(vmaf_model[additional_model_ind + 1].name, name.c_str());
+
+                vmaf_model[additional_model_ind + 1].vmaf_model_setting = VMAF_MODEL_SETTING_NONE;
+
+                std::string path = "";
+
+                model_values = GetString(kv_pair.value());
+
+                // replace single quotes with double quotes and extra spaces added by parser
+                replace_string_in_place(model_values, "'", "\"");
+                replace_string_in_place(model_values, " ", "");
+
+                istringstream inner_is(model_values.c_str());
+                ReadValFromJSONStream(inner_is, inner_additional_model_path_val);
+
+                Tab inner_tt = MakeTab(Tab(GetString(inner_additional_model_path_val)));
+                It inner_kv_pair(inner_tt);
+
+                while (inner_kv_pair()) {
+
+                    use_option = !strcmp(GetString(inner_kv_pair.value()).c_str(), "1");
+                    if (strcmp(GetString(inner_kv_pair.key()).c_str(), "model_path") == 0) {
+                        path = GetString(inner_kv_pair.value());
+                    }
+                    else if ((strcmp(GetString(inner_kv_pair.key()).c_str(), "enable_transform") == 0) && use_option) {
+                        vmaf_model[additional_model_ind + 1].vmaf_model_setting |= VMAF_MODEL_SETTING_ENABLE_TRANSFORM;
+                    }
+                    else if ((strcmp(GetString(inner_kv_pair.key()).c_str(), "enable_conf_interval") == 0) && use_option) {
+                        vmaf_model[additional_model_ind + 1].vmaf_model_setting |= VMAF_MODEL_SETTING_ENABLE_CONF_INTERVAL;
+                    }
+                    else if ((strcmp(GetString(inner_kv_pair.key()).c_str(), "disable_clip") == 0) && use_option) {
+                        vmaf_model[additional_model_ind + 1].vmaf_model_setting |= VMAF_MODEL_SETTING_DISABLE_CLIP;
+                    }
+                    else {
+                        if ((strcmp(GetString(inner_kv_pair.key()).c_str(), "enable_transform") == 1) &&
+                            (strcmp(GetString(inner_kv_pair.key()).c_str(), "enable_conf_interval") == 1) &&
+                            (strcmp(GetString(inner_kv_pair.key()).c_str(), "disable_clip") == 1)) {
+                            unknown_option_exception = "Additional model option " + GetString(inner_kv_pair.key()) + " is unknown.";
+                            fprintf(stderr, "Error: %s.\n", unknown_option_exception.c_str());
+                            return -1;
+                        }
+                    }
+
+                }
+
+                vmaf_model[additional_model_ind + 1].path = (char*)malloc(path.length() + 1);
+
+                if (!vmaf_model[additional_model_ind + 1].path)
+                {
+                    fprintf(stderr, "Malloc for additional model path %d failed.\n", additional_model_ind);
+                    return -1;
+                }
+
+                strcpy(vmaf_model[additional_model_ind + 1].path, path.c_str());
+                additional_model_ind += 1;
+
+            }
+
+            return additional_model_ind;
+
+        }
+        else
+        {
+            return 0;
+        }
+
+    }
+
 }

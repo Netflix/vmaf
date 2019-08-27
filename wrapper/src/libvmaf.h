@@ -19,6 +19,8 @@
 #ifndef LIBVMAF_H_
 #define LIBVMAF_H_
 
+#define MAX_NUM_VMAF_MODELS 5 // there can be MAX_NUM_VMAF_MODELS - 1 additional models at most
+
 #ifndef WINCE
 #define TIME_TEST_ENABLE 		1 // 1: memory leak test enable 0: disable
 #define MEM_LEAK_TEST_ENABLE 	0 // prints execution time in xml log when enabled.
@@ -32,92 +34,94 @@
 extern "C" {
 #endif
 
-int compute_vmaf(double* vmaf_score, char* fmt, int width, int height, int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride_byte, void *user_data),
-				 void *user_data, char *model_path, char *log_path, char *log_fmt, int disable_clip, int disable_avx, int enable_transform, int phone_model, int do_psnr,
-				 int do_ssim, int do_ms_ssim, char *pool_method, int n_thread, int n_subsample, int enable_conf_interval);
+#include <stdbool.h>
+
+enum VmafLogFmt {
+    VMAF_LOG_FMT_XML                                   = 0,
+    VMAF_LOG_FMT_JSON                                  = 1,
+    VMAF_LOG_FMT_CSV                                   = 2,
+};
+
+enum VmafPoolingMethod {
+    VMAF_POOL_MIN                                      = 0,
+    VMAF_POOL_MEAN                                     = 1,
+    VMAF_POOL_HARMONIC_MEAN                            = 2,
+};
+
+typedef struct VmafFeatureCalculationSetting
+{
+    unsigned int n_threads;
+    unsigned int n_subsample;
+    bool disable_avx;
+} VmafFeatureCalculationSetting;
+
+enum VmafFeatureModeSetting {
+    VMAF_FEATURE_MODE_SETTING_DO_NONE                  = (1 << 0),
+    VMAF_FEATURE_MODE_SETTING_DO_PSNR                  = (1 << 1),
+    VMAF_FEATURE_MODE_SETTING_DO_SSIM                  = (1 << 2),
+    VMAF_FEATURE_MODE_SETTING_DO_MS_SSIM               = (1 << 3),
+    VMAF_FEATURE_MODE_SETTING_DO_COLOR                 = (1 << 4),
+};
+
+enum VmafPixelFormat {
+    VMAF_PIX_FMT_YUV420P                               = 0,
+    VMAF_PIX_FMT_YUV422P                               = 1,
+    VMAF_PIX_FMT_YUV444P                               = 2,
+    VMAF_PIX_FMT_YUV420P10LE                           = 3,
+    VMAF_PIX_FMT_YUV422P10LE                           = 4,
+    VMAF_PIX_FMT_YUV444P10LE                           = 5,
+    VMAF_PIX_FMT_UNKNOWN                               = 6,
+};
+
+typedef struct VmafPicture
+{
+    float *data[3];
+    unsigned int w[3], h[3];
+    unsigned int stride_byte[3];
+    enum VmafPixelFormat pix_fmt;
+} VmafPicture;
+
+enum VmafModelSetting {
+    VMAF_MODEL_SETTING_NONE                            = (1 << 0),
+    VMAF_MODEL_SETTING_ENABLE_TRANSFORM                = (1 << 1),
+    VMAF_MODEL_SETTING_DISABLE_CLIP                    = (1 << 2),
+    VMAF_MODEL_SETTING_ENABLE_CONF_INTERVAL            = (1 << 3),
+};
+
+typedef struct {
+    char *name;
+    char *path;
+    int vmaf_model_setting;
+} VmafModel;
+
+typedef struct {
+
+    unsigned int width;
+    unsigned int height;
+    unsigned int num_models;
+    unsigned int default_model_ind; // useful to tell between the default model and additional models (if any)
+
+    char *log_path;
+    int vmaf_feature_mode_setting;
+
+    VmafModel vmaf_model[MAX_NUM_VMAF_MODELS];
+    VmafFeatureCalculationSetting vmaf_feature_calculation_setting;
+
+    enum VmafPixelFormat pix_fmt;
+    enum VmafLogFmt log_fmt;
+    enum VmafPoolingMethod pool_method;
+
+} VmafSettings;
+
+int compute_vmaf(double* vmaf_score,
+                 int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride_byte, void *user_data),
+                 int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
+				 void *user_data, VmafSettings *vmafSettings);
+
+unsigned int get_additional_models(char *additional_model_paths, VmafModel *vmaf_model);
 
 #ifdef __cplusplus
 }
-#endif
-
-#ifdef __cplusplus
-#include <vector>
-#include <cstring>
-#include <map>
-#include <memory>
-#include <string>
-
-class Asset
-{
-public:
-    Asset(int w, int h, const char *fmt);
-    Asset(int w, int h);
-    int getWidth();
-    int getHeight();
-    const char* getFmt();
-private:
-    const int w, h;
-    const char *fmt;
-};
-
-enum ScoreAggregateMethod
-{
-    MEAN,
-    HARMONIC_MEAN,
-    MINIMUM
-};
-
-class StatVector
-{
-public:
-    StatVector();
-    StatVector(std::vector<double> l);
-    std::vector<double> getVector();
-    double mean();
-    double minimum();
-    double harmonic_mean();
-    double second_moment();
-    double percentile(double perc);
-    double var();
-    double std();
-    void append(double e);
-    double at(size_t idx);
-    size_t size();
-private:
-    std::vector<double> l;
-    void _assert_size();
-};
-
-
-class Result
-{
-public:
-    Result();
-    void set_scores(const std::string &key, const StatVector &scores);
-    StatVector get_scores(const std::string &key);
-    bool has_scores(const std::string &key);
-    double get_score(const std::string &key);
-    std::vector<std::string> get_keys();
-    void setScoreAggregateMethod(ScoreAggregateMethod scoreAggregateMethod);
-private:
-    std::map<std::string, StatVector> d;
-    ScoreAggregateMethod score_aggregate_method;
-};
-
-class IVmafQualityRunner {
-public:
-    virtual Result run(Asset asset, int(*read_frame)(float *ref_data, float *main_data, float *temp_data,
-        int stride, void *user_data), void *user_data, bool disable_clip, bool enable_transform,
-        bool do_psnr, bool do_ssim, bool do_ms_ssim, int n_thread, int n_subsample) = 0;
-    virtual ~IVmafQualityRunner() {}
-};
-
-class VmafQualityRunnerFactory {
-public:
-    static std::unique_ptr<IVmafQualityRunner> 
-        createVmafQualityRunner(const char *model_path, bool enable_conf_interval);
-};
-
 #endif
 
 #endif /* _LIBVMAF_H */

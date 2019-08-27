@@ -605,7 +605,7 @@ class VmafossExecQualityRunner(QualityRunner):
     FEATURES = ['adm2', 'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
                 'motion', 'vif_scale0', 'vif_scale1', 'vif_scale2',
                 'vif_scale3', 'vif', 'psnr', 'ssim', 'ms_ssim', 'motion2',
-                'bagging', 'stddev', 'ci95_low', 'ci95_high']
+                'vmaf_bagging', 'vmaf_stddev', 'vmaf_ci95_low', 'vmaf_ci95_high']
 
     @classmethod
     def get_feature_scores_key(cls, atom_feature):
@@ -675,21 +675,65 @@ class VmafossExecQualityRunner(QualityRunner):
         else:
             ci = False
 
+        if self.optional_dict is not None and 'use_color' in self.optional_dict:
+            use_color = self.optional_dict['use_color']
+        else:
+            use_color = False
+
+        # augment the feature set with color features, if color is enabled
+        if use_color:
+            self.FEATURES += ["psnr_u", "psnr_v"]
+
+        additional_models_dict = self.optional_dict['additional_models'] \
+            if self.optional_dict is not None and 'additional_models' in self.optional_dict else None
+
+        additional_models = None
+        # augment the feature set, if there are any additional models passed in
+        if additional_models_dict:
+            self.FEATURES += additional_models_dict.keys()
+            # if ci is on for a model, augment feature set with this model's bagging, stddev, ci95_low and ci95_high scores
+            for key in additional_models_dict.keys():
+                if "enable_conf_interval" in additional_models_dict[key] and \
+                        additional_models_dict[key]["enable_conf_interval"] == "1":
+                    self.FEATURES.append("{k}_bagging".format(k=key))
+                    self.FEATURES.append("{k}_stddev".format(k=key))
+                    self.FEATURES.append("{k}_ci95_low".format(k=key))
+                    self.FEATURES.append("{k}_ci95_high".format(k=key))
+            # get json string for additional models
+            additional_models = self.get_json_additional_model_string(additional_models_dict)
+
         quality_width, quality_height = asset.quality_width_height
 
-        fmt=self._get_workfile_yuv_type(asset)
-        w=quality_width
-        h=quality_height
-        ref_path=asset.ref_workfile_path
-        dis_path=asset.dis_workfile_path
-        model=model_filepath
-        exe=self._get_exec()
+        fmt = self._get_workfile_yuv_type(asset)
+        w = quality_width
+        h = quality_height
+        ref_path = asset.ref_workfile_path
+        dis_path = asset.dis_workfile_path
+        model = model_filepath
+        exe = self._get_exec()
         logger = self.logger
 
         ExternalProgramCaller.call_vmafossexec(fmt, w, h, ref_path, dis_path, model, log_file_path,
                                                disable_clip_score, enable_transform_score,
                                                phone_model, disable_avx, n_thread, n_subsample,
-                                               psnr, ssim, ms_ssim, ci, exe, logger)
+                                               psnr, ssim, ms_ssim, ci, exe, logger, additional_models,
+                                               use_color)
+
+    @staticmethod
+    def get_json_additional_model_string(d):
+        """
+        Returns json string representation with sorted keys for additional models.
+        """
+        if d:
+            s_list = []
+            for key in sorted(d.keys()):
+                inner_d = d[key]
+                single_model = "{{{0}}}".format('\\,'.join(map(lambda k: '\\"{k}\\"\\:\\"{v}\\"'
+                                                           .format(k=k, v=inner_d[k]), sorted(inner_d.keys()))))
+                s_list.append('\\"{k}\\"\\:{v}'.format(k=key, v=single_model))
+            return "{{{0}}}".format('\\,'.join(s_list))
+        else:
+            return ""
 
     def _get_exec(self):
         return None # signaling default
@@ -705,10 +749,9 @@ class VmafossExecQualityRunner(QualityRunner):
         # check if vmafossexec returned additional info about the bootstrapped models
         # bootstrap_model_list_str is a comma-separated string of model names
         if 'bootstrap_model_list_str' in root.findall('params')[0].attrib:
-            bootstrap_model_list = []
             vmaf_params = root.findall('params')[0].attrib
             bootstrap_model_list_str = vmaf_params['bootstrap_model_list_str']
-            bootstrap_model_list = bootstrap_model_list_str.split(',')
+            bootstrap_model_list = bootstrap_model_list_str.split(',') if len(bootstrap_model_list_str) > 0 else []
             # augment the feature set with bootstrap models
             self.FEATURES += bootstrap_model_list
 

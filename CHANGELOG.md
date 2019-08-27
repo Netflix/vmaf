@@ -1,5 +1,11 @@
 # Change Log
 
+## (9/9/2019) [1.4.0]
+
+**New features:**
+- Support for multiple models.
+- Libvmaf interface changes.
+
 ## (9/8/2019) [1.3.15]
 
 **Fixed bugs:**
