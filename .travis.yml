@@ -1,7 +1,8 @@
 language: python
+dist: bionic
 python:
   - "2.7"
-  - "3.6"
+  - "3.7"
 
 before_install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
