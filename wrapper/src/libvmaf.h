@@ -63,6 +63,8 @@ enum VmafFeatureModeSetting {
     VMAF_FEATURE_MODE_SETTING_DO_COLOR                 = (1 << 4),
 };
 
+/** Definition of pixel formats in the VMAF library.
+  **/
 enum VmafPixelFormat {
     VMAF_PIX_FMT_YUV420P                               = 0,
     VMAF_PIX_FMT_YUV422P                               = 1,
@@ -88,6 +90,9 @@ enum VmafModelSetting {
     VMAF_MODEL_SETTING_ENABLE_CONF_INTERVAL            = (1 << 3),
 };
 
+/** Thin VMAF model wrapper.
+  * Assumes the existence of the model in a filesystem path.
+  * Includes a model setting for disabling clip, score transformation etc.*/
 typedef struct {
     char *name;
     char *path;
@@ -113,10 +118,32 @@ typedef struct {
 
 } VmafSettings;
 
+/** Computes VMAF using a read_vmaf_picture callback,
+  * a user-defined struct and a settings struct.
+  * A single VMAF value is returned and all calculated
+  * features and additional predictions are written into a log file. */
 int compute_vmaf(double* vmaf_score,
                  int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
 				 void *user_data, VmafSettings *vmafSettings);
 
+/** Populates additional models to be used for prediction.
+  * A maximum of
+  * The function returns the number of additional models as an integer (0 for a NULL ptr).
+  * The first model is the model corresponding to model_path.
+  * The additional models are passed in using the additional_model_paths string.
+  * This string contains model-specific parameters for each additional model (path, disable_clip, etc.)
+  * This string should be formatted as an escaped json-like string with the following format:
+  * {\"<name>\":{\"model_path\"\:\"<path>\"}}, e.g.:
+  * {\"another_model\":{\"model_path\"\:\"some/path/to/some/model/another_model.pkl\"}}
+  * The fields <name> and <path> are required and optional parameters can be used by adding an escaped comma, e.g.:
+  * {\"<name>\":{\"model_path\"\:\"<path>\"\,\"disable_clip\"\:\"1\"}} --> disable clipping of predictions
+  * {\"<name>\":{\"model_path\"\:\"<path>\"\,\"enable_transform\"\:\"1\"}} --> use transformation for the predictions (e.g. phone model transformation)
+  * {\"<name>\":{\"model_path\"\:\"<path>\"\,\"enable_conf_interval\"\:\"1\"}} --> calculate confidence interval (CI) for the predictions (the model should support CIs)
+  * {\"<name>\":{\"model_path\"\:\"<path>\"\,\"disable_clip\"\:\"0\"\,\"enable_transform\"\:\"1\"}} --> enable clipping and transform scores
+  * Real example: {\"vmaf_061_CI_no_phone\"\:{\"model_path\"\:\"model/vmaf_b_v0.6.3/vmaf_b_v0.6.3.pkl\"\,\"enable_conf_interval\"\:\"1\"\,\"enable_transform\"\:\"0\"}}
+  * The order of the optional parameters does not matter
+  * If optional parameters are not populated, a default value of false is used.
+  * */
 unsigned int get_additional_models(char *additional_model_paths, VmafModel *vmaf_model);
 
 #ifdef __cplusplus
