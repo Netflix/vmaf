@@ -1,16 +1,19 @@
 VMAF - Video Multi-Method Assessment Fusion
 ===================
+
 [![Build Status](https://travis-ci.org/Netflix/vmaf.svg?branch=master)](https://travis-ci.org/Netflix/vmaf) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/68i57b8ssasttngg?svg=true)](https://ci.appveyor.com/project/li-zhi/vmaf)
 
 VMAF is a perceptual video quality assessment algorithm developed by Netflix. VMAF Development Kit (VDK) is a software package that contains the VMAF algorithm implementation, as well as a set of tools that allows a user to train and test a custom VMAF model. Read [this](https://medium.com/netflix-techblog/toward-a-practical-perceptual-video-quality-metric-653f208b9652) techblog post for an overview, or [this](https://medium.com/netflix-techblog/vmaf-the-journey-continues-44b51ee9ed12) post for the latest updates and tips for best practices.
 
+![vmaf logo](resource/images/vmaf_logo.jpg)
+
 ## News
 
+- (9/8/19) Added a [link to report VMAF bad cases](https://docs.google.com/forms/d/e/1FAIpQLSdJntNoBuucMSiYoK3SDWoY1QN0yiFAi5LyEXuOyXEWJbQBtQ/viewform?usp=sf_link). Over time, we have received feedbacks on when VMAF's prediction does not reflect the expected perceptual quality of videos, either they are corner cases where VMAF fails to cover, or new application scenarios which VMAF was not initially intended for. In response to that, we have created the Google form to allow users to upload their video samples and describe the scenarios. The bad cases are valuable for improving future versions of VMAF. Users can opt in or out for sharing their sample videos publicly.
 - (1/31/19) Optimized C code for speed. Running in multithreading mode, `vmafossexec` achieves ~40% run time reduction compared to the previous version.
 - (11/19/18) Added a BD-rate calculator implementation. See more details [here](resource/doc/VMAF_Python_library.md#bd-rate-calculator).
 - (10/25/18) We have published our [second techblog on VMAF](https://medium.com/netflix-techblog/vmaf-the-journey-continues-44b51ee9ed12), with recommendations on best practices.
 - (9/13/18) [SUREAL](https://github.com/Netflix/sureal) is no longer a submodule to VMAF.
-- (6/19/18) Each VMAF prediction score now comes with a 95% [confidence interval (CI)](resource/doc/conf_interval.md), which quantifies the level of confidence that the prediction lies within the interval.
 
 ## Frequently Asked Questions
 

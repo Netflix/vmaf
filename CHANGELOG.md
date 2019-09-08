@@ -1,5 +1,22 @@
 # Change Log
 
+## (9/8/2019) [1.3.15]
+
+**Fixed bugs:**
+- Fix a case when CPU cores > 128(MAX_NUM_THREADS) / 3 (#319).
+- Avoid dis-filtering ref when not needed, fix return type (#325).
+- Update name of file for failed dis_path fopen (#334).
+- A few compilation fixes (warnings and errors) (#326).
+- Bump up g++ version to 9 for travis (#352).
+- Use stat struct instead of ftell to retrieve the file size (#350).
+
+**New features:**
+- Write aggregate scores, exec FPS to json output.
+- Add support for python3 (#332).
+- Print progress in vmafossexec (#337).
+- Add VMAF logo.
+- Add link to report VMAF bad cases.
+
 ## (3/1/2019) [1.3.14]
 
 **Fixed bugs:**
