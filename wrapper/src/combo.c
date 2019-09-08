@@ -777,8 +777,7 @@ fail_or_end:
 
 #ifdef MULTI_THREADING
 
-int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
-        int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
+int combo(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
         void *user_data, int w, int h, enum VmafPixelFormat fmt,
         DArray *adm_num_array,
         DArray *adm_den_array,
@@ -814,7 +813,6 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
 
     // init shared thread data
     VMAF_THREAD_STRUCT combo_thread_data;
-    combo_thread_data.read_frame = read_frame;
     combo_thread_data.read_vmaf_picture = read_vmaf_picture;
     combo_thread_data.user_data = user_data;
     combo_thread_data.w = w;
@@ -977,8 +975,7 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
 
 #else // #ifdef MULTI_THREADING
 
-int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
-        int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
+int combo(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
         void *user_data, int w, int h, enum VmafPixelFormat fmt,
         DArray *adm_num_array,
         DArray *adm_den_array,
@@ -1012,7 +1009,6 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
         )
 {
     VMAF_THREAD_STRUCT combo_thread_data;
-    combo_thread_data.read_frame = read_frame;
     combo_thread_data.read_vmaf_picture = read_vmaf_picture;
     combo_thread_data.user_data = user_data;
     combo_thread_data.w = w;

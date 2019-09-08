@@ -40,8 +40,7 @@
 static const char VMAFOSS_DOC_VERSION[] = "1.4.0";
 static const std::string BOOSTRAP_VMAF_MODEL_KEY = "_bootstrap_";
 
-double RunVmaf(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
-               int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
+double RunVmaf(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
                void *user_data, VmafSettings *vmafSettings);
 
 class VmafException: public std::exception
@@ -178,7 +177,6 @@ class VmafQualityRunner : public IVmafQualityRunner
 public:
     VmafQualityRunner(const char *model_path): model_path(model_path) {}
     static void feature_extract(Result &result,
-                int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
                 int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
                 void *user_data, VmafSettings *vmafSettings);
     virtual void predict(Result &result, VmafModel *vmaf_model_ptr);

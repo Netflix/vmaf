@@ -601,7 +601,6 @@ void VmafQualityRunner::_set_prediction_result(
 }
 
 void VmafQualityRunner::feature_extract(Result &result,
-                        int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
                         int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
                         void *user_data, VmafSettings *vmafSettings)
 {
@@ -679,7 +678,7 @@ void VmafQualityRunner::feature_extract(Result &result,
     }
 
     dbg_printf("Extract atom features...\n");
-    int ret = combo(read_frame, read_vmaf_picture, user_data, w, h, fmt, &adm_num_array,
+    int ret = combo(read_vmaf_picture, user_data, w, h, fmt, &adm_num_array,
             &adm_den_array, &adm_num_scale0_array, &adm_den_scale0_array,
             &adm_num_scale1_array, &adm_den_scale1_array, &adm_num_scale2_array,
             &adm_den_scale2_array, &adm_num_scale3_array, &adm_den_scale3_array,
@@ -1035,8 +1034,7 @@ void BootstrapVmafQualityRunner::_set_prediction_result(
 
 }
 
-double RunVmaf(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data),
-               int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
+double RunVmaf(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
                void *user_data, VmafSettings *vmafSettings)
 {
     printf("Start calculating VMAF score...\n");
@@ -1063,7 +1061,7 @@ double RunVmaf(int (*read_frame)(float *ref_data, float *main_data, float *temp_
     Result result;
 
     // feature extraction
-    VmafQualityRunner::feature_extract(result, read_frame, read_vmaf_picture, user_data, vmafSettings);
+    VmafQualityRunner::feature_extract(result, read_vmaf_picture, user_data, vmafSettings);
 
     unsigned int num_models = vmafSettings->num_models;
     for (int i = 0; i < num_models; i ++)
