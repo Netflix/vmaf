@@ -667,9 +667,7 @@ void VmafQualityRunner::feature_extract(Result &result,
         ms_ssim_array_ptr = NULL;
     }
 
-    bool use_chroma = vmafSettings->vmaf_feature_mode_setting & VMAF_FEATURE_MODE_SETTING_DO_CHROMA;
-
-    if (use_chroma) {
+    if (vmafSettings->vmaf_feature_mode_setting & VMAF_FEATURE_MODE_SETTING_DO_CHROMA_PSNR) {
         psnr_u_array_ptr = &psnr_u_array;
         psnr_v_array_ptr = &psnr_v_array;
     } else {
@@ -687,8 +685,9 @@ void VmafQualityRunner::feature_extract(Result &result,
             &vif_num_scale2_array, &vif_den_scale2_array, &vif_num_scale3_array,
             &vif_den_scale3_array, &vif_array,
             psnr_array_ptr, psnr_u_array_ptr, psnr_v_array_ptr, ssim_array_ptr,
-            ms_ssim_array_ptr, errmsg, vmafSettings->vmaf_feature_calculation_setting,
-            use_chroma);
+            ms_ssim_array_ptr, errmsg,
+            vmafSettings->vmaf_feature_calculation_setting,
+            vmafSettings->vmaf_feature_mode_setting);
     if (ret) {
         throw VmafException(errmsg);
     }

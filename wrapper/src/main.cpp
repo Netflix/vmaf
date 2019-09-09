@@ -110,7 +110,8 @@ void getMemory(int itr_ctr, int state)
 #endif
 
 int run_wrapper(enum VmafPixelFormat pix_fmt, int width, int height, char *ref_path, char *dis_path,
-        char *log_path, enum VmafLogFmt log_fmt, bool disable_avx, int vmaf_feature_mode_setting,
+        char *log_path, enum VmafLogFmt log_fmt, bool disable_avx,
+        int vmaf_feature_mode_setting,
         enum VmafPoolingMethod pool_method,
         int n_thread, int n_subsample, char *model_path, char *additional_model_paths,
         int vmaf_model_setting)
@@ -120,7 +121,6 @@ int run_wrapper(enum VmafPixelFormat pix_fmt, int width, int height, char *ref_p
     struct data *s;
     s = (struct data *)malloc(sizeof(struct data));
     s->format = pix_fmt;
-    s->use_chroma = vmaf_feature_mode_setting & VMAF_FEATURE_MODE_SETTING_DO_CHROMA;
     s->width = width;
     s->height = height;
     s->ref_rfile = NULL;
@@ -467,9 +467,9 @@ int main(int argc, char *argv[])
         vmaf_feature_mode_setting |= VMAF_FEATURE_MODE_SETTING_DO_MS_SSIM;
     }
 
-    if (cmdOptionExists(argv + 7, argv + argc, "--chroma"))
+    if (cmdOptionExists(argv + 7, argv + argc, "--psnr-chroma"))
     {
-        vmaf_feature_mode_setting |= VMAF_FEATURE_MODE_SETTING_DO_CHROMA;
+        vmaf_feature_mode_setting |= VMAF_FEATURE_MODE_SETTING_DO_CHROMA_PSNR;
     }
 
     char *pool_method_option = getCmdOption(argv + 7, argv + argc, "--pool");
@@ -495,13 +495,15 @@ int main(int argc, char *argv[])
 		{
 			getMemory(itr_ctr, 1);
 			ret = run_wrapper(pix_fmt, width, height, ref_path, dis_path,
-                log_path, log_fmt, disable_avx, vmaf_feature_mode_setting, pool_method, n_thread,
+                log_path, log_fmt, disable_avx,
+                vmaf_feature_mode_setting, pool_method, n_thread,
                 n_subsample, model_path, additional_model_paths, vmaf_model_setting);
 			getMemory(itr_ctr, 2);
 		}
 #else
         return run_wrapper(pix_fmt, width, height, ref_path, dis_path,
-                log_path, log_fmt, disable_avx, vmaf_feature_mode_setting, pool_method, n_thread,
+                log_path, log_fmt, disable_avx,
+                vmaf_feature_mode_setting, pool_method, n_thread,
                 n_subsample, model_path, additional_model_paths, vmaf_model_setting);
 #endif
     }

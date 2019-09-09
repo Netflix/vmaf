@@ -32,7 +32,6 @@ struct data
     FILE *ref_rfile;
     FILE *dis_rfile;
     int num_frames;
-    int use_chroma;
 };
 
 struct noref_data

@@ -74,8 +74,9 @@ void* combo_threadfunc(void* vmaf_thread_data)
     char* errmsg = thread_data->errmsg;
     void* user_data = thread_data->user_data;
     enum VmafPixelFormat fmt = thread_data->fmt;
-    unsigned int n_subsample = thread_data->n_subsample;
-    bool use_chroma = thread_data->use_chroma;
+
+    VmafFeatureCalculationSetting vmaf_feature_calculation_setting = thread_data->vmaf_feature_calculation_setting;
+    int vmaf_feature_mode_setting = thread_data->vmaf_feature_mode_setting;
 
     double score = 0;
     double score2 = 0;
@@ -174,34 +175,28 @@ void* combo_threadfunc(void* vmaf_thread_data)
                 goto fail_or_end;
             }
 
-            if (use_chroma)
-            {
-                ref_buf_u = get_free_blur_buf_slot(&thread_data->ref_buf_u_array, frm_idx);
-                dis_buf_u = get_free_blur_buf_slot(&thread_data->dis_buf_u_array, frm_idx);
-                ref_buf_v = get_free_blur_buf_slot(&thread_data->ref_buf_v_array, frm_idx);
-                dis_buf_v = get_free_blur_buf_slot(&thread_data->dis_buf_v_array, frm_idx);
+            ref_buf_u = get_free_blur_buf_slot(&thread_data->ref_buf_u_array, frm_idx);
+            dis_buf_u = get_free_blur_buf_slot(&thread_data->dis_buf_u_array, frm_idx);
+            ref_buf_v = get_free_blur_buf_slot(&thread_data->ref_buf_v_array, frm_idx);
+            dis_buf_v = get_free_blur_buf_slot(&thread_data->dis_buf_v_array, frm_idx);
 
-                if((NULL == ref_buf_u) || (NULL == ref_buf_v) || (NULL == dis_buf_u) || (NULL == dis_buf_v))
-                {
+            if((NULL == ref_buf_u) || (NULL == ref_buf_v) || (NULL == dis_buf_u) || (NULL == dis_buf_v))
+            {
 #ifdef MULTI_THREADING
-                    thread_data->stop_threads = 1;
-                    sprintf(errmsg, "No free slot found for buffer allocation.\n");
-                    pthread_mutex_unlock(&thread_data->mutex_readframe);
+                thread_data->stop_threads = 1;
+                sprintf(errmsg, "No free slot found for buffer allocation.\n");
+                pthread_mutex_unlock(&thread_data->mutex_readframe);
 #endif
-                    goto fail_or_end;
-                }
+                goto fail_or_end;
             }
 
             ref_vmaf_pict_ptr->data[0] = ref_buf;
             dis_vmaf_pict_ptr->data[0] = dis_buf;
 
-            if (use_chroma)
-            {
-                ref_vmaf_pict_ptr->data[1] = ref_buf_u;
-                dis_vmaf_pict_ptr->data[1] = dis_buf_u;
-                ref_vmaf_pict_ptr->data[2] = ref_buf_v;
-                dis_vmaf_pict_ptr->data[2] = dis_buf_v;
-            }
+            ref_vmaf_pict_ptr->data[1] = ref_buf_u;
+            dis_vmaf_pict_ptr->data[1] = dis_buf_u;
+            ref_vmaf_pict_ptr->data[2] = ref_buf_v;
+            dis_vmaf_pict_ptr->data[2] = dis_buf_v;
 
             // read frame from file
             ret = thread_data->read_vmaf_picture(ref_vmaf_pict_ptr, dis_vmaf_pict_ptr, temp_buf, user_data);
@@ -220,20 +215,13 @@ void* combo_threadfunc(void* vmaf_thread_data)
             // offset pixel by OPT_RANGE_PIXEL_OFFSET (no offset for color for now)
             // ===============================================================
 
-//            fprintf(stderr, "stride: %d, stride_byte for y: %u.\n", stride, ref_vmaf_pict_ptr->stride_byte[0]);
-
-//            offset_vmaf_picture(ref_vmaf_pict_ptr, OPT_RANGE_PIXEL_OFFSET);
-//            offset_vmaf_picture(dis_vmaf_pict_ptr, OPT_RANGE_PIXEL_OFFSET);
-
             ref_buf = ref_vmaf_pict_ptr->data[0];
             dis_buf = dis_vmaf_pict_ptr->data[0];
 
-            if (use_chroma) {
-                ref_buf_u = ref_vmaf_pict_ptr->data[1];
-                dis_buf_u = dis_vmaf_pict_ptr->data[1];
-                ref_buf_v = ref_vmaf_pict_ptr->data[2];
-                dis_buf_v = dis_vmaf_pict_ptr->data[2];
-            }
+            ref_buf_u = ref_vmaf_pict_ptr->data[1];
+            dis_buf_u = dis_vmaf_pict_ptr->data[1];
+            ref_buf_v = ref_vmaf_pict_ptr->data[2];
+            dis_buf_v = dis_vmaf_pict_ptr->data[2];
 
             // ===============================================================
             // offset pixel by OPT_RANGE_PIXEL_OFFSET (no offset for color for now)
@@ -268,24 +256,20 @@ void* combo_threadfunc(void* vmaf_thread_data)
                 goto fail_or_end;
             }
 
-            if (use_chroma) {
-                ref_buf_u = get_blur_buf(&thread_data->ref_buf_u_array, frm_idx);
-                dis_buf_u = get_blur_buf(&thread_data->dis_buf_u_array, frm_idx);
-                ref_buf_v = get_blur_buf(&thread_data->ref_buf_v_array, frm_idx);
-                dis_buf_v = get_blur_buf(&thread_data->dis_buf_v_array, frm_idx);
+            ref_buf_u = get_blur_buf(&thread_data->ref_buf_u_array, frm_idx);
+            dis_buf_u = get_blur_buf(&thread_data->dis_buf_u_array, frm_idx);
+            ref_buf_v = get_blur_buf(&thread_data->ref_buf_v_array, frm_idx);
+            dis_buf_v = get_blur_buf(&thread_data->dis_buf_v_array, frm_idx);
 
-                if((NULL == ref_buf_u) || (NULL == ref_buf_v) || (NULL == dis_buf_u) || (NULL == dis_buf_v))
-                {
+            if((NULL == ref_buf_u) || (NULL == ref_buf_v) || (NULL == dis_buf_u) || (NULL == dis_buf_v))
+            {
 #ifdef MULTI_THREADING
-                    thread_data->stop_threads = 1;
-                    sprintf(errmsg, "Data not available.\n");
-                    pthread_mutex_unlock(&thread_data->mutex_readframe);
+                thread_data->stop_threads = 1;
+                sprintf(errmsg, "Data not available.\n");
+                pthread_mutex_unlock(&thread_data->mutex_readframe);
 #endif
-                    goto fail_or_end;
-                }
-
+                goto fail_or_end;
             }
-
         }
 #endif
 
@@ -302,31 +286,27 @@ void* combo_threadfunc(void* vmaf_thread_data)
             goto fail_or_end;
         }
 
-        if (use_chroma) {
-            next_ref_buf_u = get_free_blur_buf_slot(&thread_data->ref_buf_u_array, frm_idx + 1);
-            next_dis_buf_u = get_free_blur_buf_slot(&thread_data->dis_buf_u_array, frm_idx + 1);
-            next_ref_buf_v = get_free_blur_buf_slot(&thread_data->ref_buf_v_array, frm_idx + 1);
-            next_dis_buf_v = get_free_blur_buf_slot(&thread_data->dis_buf_v_array, frm_idx + 1);
-            if((NULL == next_ref_buf_u) || (NULL == next_dis_buf_u) || (NULL == next_ref_buf_v) || (NULL == next_dis_buf_v))
-            {
-    #ifdef MULTI_THREADING
-                thread_data->stop_threads = 1;
-                sprintf(errmsg, "No free slot found for next buffer.\n");
-                pthread_mutex_unlock(&thread_data->mutex_readframe);
-    #endif
-                goto fail_or_end;
-            }
+        next_ref_buf_u = get_free_blur_buf_slot(&thread_data->ref_buf_u_array, frm_idx + 1);
+        next_dis_buf_u = get_free_blur_buf_slot(&thread_data->dis_buf_u_array, frm_idx + 1);
+        next_ref_buf_v = get_free_blur_buf_slot(&thread_data->ref_buf_v_array, frm_idx + 1);
+        next_dis_buf_v = get_free_blur_buf_slot(&thread_data->dis_buf_v_array, frm_idx + 1);
+        if((NULL == next_ref_buf_u) || (NULL == next_dis_buf_u) || (NULL == next_ref_buf_v) || (NULL == next_dis_buf_v))
+        {
+#ifdef MULTI_THREADING
+            thread_data->stop_threads = 1;
+            sprintf(errmsg, "No free slot found for next buffer.\n");
+            pthread_mutex_unlock(&thread_data->mutex_readframe);
+#endif
+            goto fail_or_end;
         }
 
         ref_vmaf_pict_ptr->data[0] = next_ref_buf;
         dis_vmaf_pict_ptr->data[0] = next_dis_buf;
 
-        if (use_chroma) {
-            ref_vmaf_pict_ptr->data[1] = next_ref_buf_u;
-            dis_vmaf_pict_ptr->data[1] = next_dis_buf_u;
-            ref_vmaf_pict_ptr->data[2] = next_ref_buf_v;
-            dis_vmaf_pict_ptr->data[2] = next_dis_buf_v;
-        }
+        ref_vmaf_pict_ptr->data[1] = next_ref_buf_u;
+        dis_vmaf_pict_ptr->data[1] = next_dis_buf_u;
+        ref_vmaf_pict_ptr->data[2] = next_ref_buf_v;
+        dis_vmaf_pict_ptr->data[2] = next_dis_buf_v;
 
         ret = thread_data->read_vmaf_picture(ref_vmaf_pict_ptr, dis_vmaf_pict_ptr, temp_buf, user_data);
 //        ret = thread_data->read_frame(next_ref_buf, next_dis_buf, temp_buf, stride, user_data);
@@ -354,12 +334,10 @@ void* combo_threadfunc(void* vmaf_thread_data)
         next_ref_buf = ref_vmaf_pict_ptr->data[0];
         next_dis_buf = dis_vmaf_pict_ptr->data[0];
 
-        if (use_chroma) {
-            next_ref_buf_u = ref_vmaf_pict_ptr->data[1];
-            next_dis_buf_u = dis_vmaf_pict_ptr->data[1];
-            next_ref_buf_v = ref_vmaf_pict_ptr->data[2];
-            next_dis_buf_v = dis_vmaf_pict_ptr->data[2];
-        }
+        next_ref_buf_u = ref_vmaf_pict_ptr->data[1];
+        next_dis_buf_u = dis_vmaf_pict_ptr->data[1];
+        next_ref_buf_v = ref_vmaf_pict_ptr->data[2];
+        next_dis_buf_v = dis_vmaf_pict_ptr->data[2];
 
         if (next_frame_read)
         {
@@ -393,12 +371,11 @@ void* combo_threadfunc(void* vmaf_thread_data)
         release_blur_buf_reference(&thread_data->ref_buf_array, frm_idx + 1);
         release_blur_buf_reference(&thread_data->dis_buf_array, frm_idx + 1);
 
-        if (use_chroma) {
-            release_blur_buf_reference(&thread_data->ref_buf_u_array, frm_idx + 1);
-            release_blur_buf_reference(&thread_data->dis_buf_u_array, frm_idx + 1);
-            release_blur_buf_reference(&thread_data->ref_buf_v_array, frm_idx + 1);
-            release_blur_buf_reference(&thread_data->dis_buf_v_array, frm_idx + 1);
-        }
+        // release ref and dis buffer references for chroma after blur buf computation
+        release_blur_buf_reference(&thread_data->ref_buf_u_array, frm_idx + 1);
+        release_blur_buf_reference(&thread_data->dis_buf_u_array, frm_idx + 1);
+        release_blur_buf_reference(&thread_data->ref_buf_v_array, frm_idx + 1);
+        release_blur_buf_reference(&thread_data->dis_buf_v_array, frm_idx + 1);
 
 #ifdef MULTI_THREADING
         pthread_mutex_unlock(&thread_data->mutex_readframe);
@@ -413,14 +390,14 @@ void* combo_threadfunc(void* vmaf_thread_data)
         // ===============================================================
 
         // offset back the buffers only if required
-        if (frm_idx % n_subsample == 0 && ( (thread_data->psnr_array != NULL) || (thread_data->ssim_array != NULL) || (thread_data->ms_ssim_array != NULL) ))
+        if (frm_idx % vmaf_feature_calculation_setting.n_subsample == 0 && ( (thread_data->psnr_array != NULL) || (thread_data->ssim_array != NULL) || (thread_data->ms_ssim_array != NULL) ))
         {
             offset_image(ref_buf, -OPT_RANGE_PIXEL_OFFSET, w, h, stride);
             offset_image(dis_buf, -OPT_RANGE_PIXEL_OFFSET, w, h, stride);
             offset_flag = true;
 		}
 
-        if (frm_idx % n_subsample == 0 && thread_data->psnr_array != NULL)
+        if (frm_idx % vmaf_feature_calculation_setting.n_subsample == 0 && thread_data->psnr_array != NULL)
         {
             /* =========== psnr ============== */
             ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, peak, psnr_max);
@@ -435,7 +412,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
 
             insert_array_at(thread_data->psnr_array, score, frm_idx);
 
-            if (use_chroma) {
+            if (vmaf_feature_mode_setting & VMAF_FEATURE_MODE_SETTING_DO_CHROMA_PSNR) {
 
                 ret = compute_psnr(ref_buf_u, dis_buf_u,
                     ref_vmaf_pict_ptr->w[1], ref_vmaf_pict_ptr->h[1],
@@ -456,7 +433,6 @@ void* combo_threadfunc(void* vmaf_thread_data)
                     ref_vmaf_pict_ptr->w[2], ref_vmaf_pict_ptr->h[2],
                     ref_vmaf_pict_ptr->stride_byte[2], dis_vmaf_pict_ptr->stride_byte[2],
                     &score, peak, psnr_max);
-
                 if (ret)
                 {
                     sprintf(errmsg, "compute_psnr for v failed.\n");
@@ -471,7 +447,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
 
         }
 
-        if (frm_idx % n_subsample == 0 && thread_data->ssim_array != NULL)
+        if (frm_idx % vmaf_feature_calculation_setting.n_subsample == 0 && thread_data->ssim_array != NULL)
         {
 
             /* =========== ssim ============== */
@@ -486,7 +462,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
             insert_array_at(thread_data->ssim_array, score, frm_idx);
         }
 
-        if (frm_idx % n_subsample == 0 && thread_data->ms_ssim_array != NULL)
+        if (frm_idx % vmaf_feature_calculation_setting.n_subsample == 0 && thread_data->ms_ssim_array != NULL)
         {
             /* =========== ms-ssim ============== */
             if ((ret = compute_ms_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, l_scores, c_scores, s_scores)))
@@ -512,7 +488,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
 		}
 
         /* =========== adm ============== */
-        if (frm_idx % n_subsample == 0)
+        if (frm_idx % vmaf_feature_calculation_setting.n_subsample == 0)
         {
             if ((ret = compute_adm(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores, ADM_BORDER_FACTOR)))
             {
@@ -545,7 +521,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
         }
 #ifdef COMPUTE_ANSNR
 
-        if (frm_idx % n_subsample == 0)
+        if (frm_idx % vmaf_feature_calculation_setting.n_subsample == 0)
         {
 
             /* =========== ansnr ============== */
@@ -579,7 +555,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
 
         /* =========== motion ============== */
 
-        if (frm_idx % n_subsample == 0)
+        if (frm_idx % vmaf_feature_calculation_setting.n_subsample == 0)
         {
 
             // compute
@@ -637,7 +613,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
 
         /* =========== vif ============== */
 
-        if (frm_idx % n_subsample == 0)
+        if (frm_idx % vmaf_feature_calculation_setting.n_subsample == 0)
         {
             if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores)))
             {
@@ -670,16 +646,17 @@ void* combo_threadfunc(void* vmaf_thread_data)
 
         dbg_printf("\n");
 
-        //Release references to reference and distorted buffers
+        // Release references to reference and distorted buffers
         release_blur_buf_reference(&thread_data->ref_buf_array, frm_idx);
         release_blur_buf_reference(&thread_data->dis_buf_array, frm_idx);
         release_blur_buf_reference(&thread_data->blur_buf_array, frm_idx);
-        if (use_chroma) {
-            release_blur_buf_reference(&thread_data->ref_buf_u_array, frm_idx);
-            release_blur_buf_reference(&thread_data->dis_buf_u_array, frm_idx);
-            release_blur_buf_reference(&thread_data->ref_buf_v_array, frm_idx);
-            release_blur_buf_reference(&thread_data->dis_buf_v_array, frm_idx);
-        }
+
+        // Release references to reference and distorted buffers for chroma
+        release_blur_buf_reference(&thread_data->ref_buf_u_array, frm_idx);
+        release_blur_buf_reference(&thread_data->dis_buf_u_array, frm_idx);
+        release_blur_buf_reference(&thread_data->ref_buf_v_array, frm_idx);
+        release_blur_buf_reference(&thread_data->dis_buf_v_array, frm_idx);
+
         /*Loop through the slots and release slots if there are no more
           reference till the current index. Not releasing next frame as
           it may be required for the next loop						   */
@@ -694,27 +671,23 @@ void* combo_threadfunc(void* vmaf_thread_data)
                 release_blur_buf_slot(&thread_data->dis_buf_array, i);
             }
 
-            if (use_chroma)
+            int ref_u_reference_count = get_blur_buf_reference_count(&thread_data->ref_buf_u_array, i);
+            int dis_u_reference_count = get_blur_buf_reference_count(&thread_data->dis_buf_u_array, i);
+
+            if((ref_u_reference_count == 0) && (dis_u_reference_count == 0))
             {
-                int ref_u_reference_count = get_blur_buf_reference_count(&thread_data->ref_buf_u_array, i);
-                int dis_u_reference_count = get_blur_buf_reference_count(&thread_data->dis_buf_u_array, i);
-
-                if((ref_u_reference_count == 0) && (dis_u_reference_count == 0))
-                {
-                    release_blur_buf_slot(&thread_data->ref_buf_u_array, i);
-                    release_blur_buf_slot(&thread_data->dis_buf_u_array, i);
-                }
-
-                int ref_v_reference_count = get_blur_buf_reference_count(&thread_data->ref_buf_v_array, i);
-                int dis_v_reference_count = get_blur_buf_reference_count(&thread_data->dis_buf_v_array, i);
-
-                if((ref_v_reference_count == 0) && (dis_v_reference_count == 0))
-                {
-                    release_blur_buf_slot(&thread_data->ref_buf_v_array, i);
-                    release_blur_buf_slot(&thread_data->dis_buf_v_array, i);
-                }
+                release_blur_buf_slot(&thread_data->ref_buf_u_array, i);
+                release_blur_buf_slot(&thread_data->dis_buf_u_array, i);
             }
 
+            int ref_v_reference_count = get_blur_buf_reference_count(&thread_data->ref_buf_v_array, i);
+            int dis_v_reference_count = get_blur_buf_reference_count(&thread_data->dis_buf_v_array, i);
+
+            if((ref_v_reference_count == 0) && (dis_v_reference_count == 0))
+            {
+                release_blur_buf_slot(&thread_data->ref_buf_v_array, i);
+                release_blur_buf_slot(&thread_data->dis_buf_v_array, i);
+            }
         }
 
         /* Loop through the blur buffer array and release slots only till current index - 1 */
@@ -741,12 +714,12 @@ void* combo_threadfunc(void* vmaf_thread_data)
         {
             release_blur_buf_slot(&thread_data->ref_buf_array, frm_idx + 1);
             release_blur_buf_slot(&thread_data->dis_buf_array, frm_idx + 1);
-            if (use_chroma){
-                release_blur_buf_slot(&thread_data->ref_buf_u_array, frm_idx + 1);
-                release_blur_buf_slot(&thread_data->dis_buf_u_array, frm_idx + 1);
-                release_blur_buf_slot(&thread_data->ref_buf_v_array, frm_idx + 1);
-                release_blur_buf_slot(&thread_data->dis_buf_v_array, frm_idx + 1);
-            }
+
+            release_blur_buf_slot(&thread_data->ref_buf_u_array, frm_idx + 1);
+            release_blur_buf_slot(&thread_data->dis_buf_u_array, frm_idx + 1);
+            release_blur_buf_slot(&thread_data->ref_buf_v_array, frm_idx + 1);
+            release_blur_buf_slot(&thread_data->dis_buf_v_array, frm_idx + 1);
+
             release_blur_buf_slot(&thread_data->blur_buf_array, frm_idx);
         }
 
@@ -807,10 +780,9 @@ int combo(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_
         DArray *ms_ssim_array,
         char *errmsg,
         VmafFeatureCalculationSetting vmaf_feature_calculation_setting,
-        bool use_chroma
+        int vmaf_feature_mode_setting
         )
 {
-
     // init shared thread data
     VMAF_THREAD_STRUCT combo_thread_data;
     combo_thread_data.read_vmaf_picture = read_vmaf_picture;
@@ -847,8 +819,8 @@ int combo(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_
     combo_thread_data.errmsg = errmsg;
     combo_thread_data.frm_idx = 0;
     combo_thread_data.stop_threads = 0;
-    combo_thread_data.n_subsample = vmaf_feature_calculation_setting.n_subsample;
-    combo_thread_data.use_chroma = use_chroma;
+    combo_thread_data.vmaf_feature_calculation_setting = vmaf_feature_calculation_setting;
+    combo_thread_data.vmaf_feature_mode_setting = vmaf_feature_mode_setting;
 
     DArray	motion_score_compute_flag_array;
     init_array(&motion_score_compute_flag_array, 1000);
@@ -877,22 +849,19 @@ int combo(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_
 
     combo_thread_data.data_sz = (size_t)combo_thread_data.stride * h;
 
-    if (use_chroma) {
+    size_t w_u = 0, w_v = 0, h_u = 0, h_v = 0;
 
-        size_t w_u = 0, w_v = 0, h_u = 0, h_v = 0;
+    int chroma_resolution_ret = get_chroma_resolution(fmt, w, h, &w_u, &h_u, &w_v, &h_v);
 
-        int chroma_resolution_ret = get_chroma_resolution(fmt, w, h, &w_u, &h_u, &w_v, &h_v);
-
-        if (chroma_resolution_ret)
-        {
-            sprintf(errmsg, "Calculating resolutions for chroma channels failed A.\n");
-            return -1;
-        }
-        combo_thread_data.stride_u = get_stride_byte_from_width(w_u);
-        combo_thread_data.stride_v = get_stride_byte_from_width(w_v);
-        combo_thread_data.data_sz_u = (size_t)combo_thread_data.stride_u * h_u;
-        combo_thread_data.data_sz_v = (size_t)combo_thread_data.stride_v * h_v;
+    if (chroma_resolution_ret)
+    {
+        sprintf(errmsg, "Calculating resolutions for chroma channels failed.\n");
+        return -1;
     }
+    combo_thread_data.stride_u = get_stride_byte_from_width(w_u);
+    combo_thread_data.stride_v = get_stride_byte_from_width(w_v);
+    combo_thread_data.data_sz_u = (size_t)combo_thread_data.stride_u * h_u;
+    combo_thread_data.data_sz_v = (size_t)combo_thread_data.stride_v * h_v;
 
     if (vmaf_feature_calculation_setting.n_threads == 0)
     {
@@ -915,12 +884,10 @@ int combo(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_
     init_blur_array(&combo_thread_data.dis_buf_array, MIN(combo_thread_data.thread_count + 1, MAX_NUM_THREADS), combo_thread_data.data_sz, MAX_ALIGN);
     init_blur_array(&combo_thread_data.blur_buf_array, MIN(3 * (combo_thread_data.thread_count), MAX_NUM_THREADS), combo_thread_data.data_sz, MAX_ALIGN);
 
-    if (use_chroma) {
-        init_blur_array(&combo_thread_data.ref_buf_u_array, MIN(combo_thread_data.thread_count + 1, MAX_NUM_THREADS), combo_thread_data.data_sz_u, MAX_ALIGN);
-        init_blur_array(&combo_thread_data.dis_buf_u_array, MIN(combo_thread_data.thread_count + 1, MAX_NUM_THREADS), combo_thread_data.data_sz_u, MAX_ALIGN);
-        init_blur_array(&combo_thread_data.ref_buf_v_array, MIN(combo_thread_data.thread_count + 1, MAX_NUM_THREADS), combo_thread_data.data_sz_v, MAX_ALIGN);
-        init_blur_array(&combo_thread_data.dis_buf_v_array, MIN(combo_thread_data.thread_count + 1, MAX_NUM_THREADS), combo_thread_data.data_sz_v, MAX_ALIGN);
-    }
+    init_blur_array(&combo_thread_data.ref_buf_u_array, MIN(combo_thread_data.thread_count + 1, MAX_NUM_THREADS), combo_thread_data.data_sz_u, MAX_ALIGN);
+    init_blur_array(&combo_thread_data.dis_buf_u_array, MIN(combo_thread_data.thread_count + 1, MAX_NUM_THREADS), combo_thread_data.data_sz_u, MAX_ALIGN);
+    init_blur_array(&combo_thread_data.ref_buf_v_array, MIN(combo_thread_data.thread_count + 1, MAX_NUM_THREADS), combo_thread_data.data_sz_v, MAX_ALIGN);
+    init_blur_array(&combo_thread_data.dis_buf_v_array, MIN(combo_thread_data.thread_count + 1, MAX_NUM_THREADS), combo_thread_data.data_sz_v, MAX_ALIGN);
 
     // initialize the mutex that protects the read_frame function
     pthread_mutex_init(&combo_thread_data.mutex_readframe, NULL);
@@ -959,12 +926,11 @@ int combo(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_
     free_blur_buf(&combo_thread_data.ref_buf_array);
     free_blur_buf(&combo_thread_data.dis_buf_array);
     free_blur_buf(&combo_thread_data.blur_buf_array);
-    if (use_chroma) {
-        free_blur_buf(&combo_thread_data.ref_buf_u_array);
-        free_blur_buf(&combo_thread_data.dis_buf_u_array);
-        free_blur_buf(&combo_thread_data.ref_buf_v_array);
-        free_blur_buf(&combo_thread_data.dis_buf_v_array);
-    }
+
+    free_blur_buf(&combo_thread_data.ref_buf_u_array);
+    free_blur_buf(&combo_thread_data.dis_buf_u_array);
+    free_blur_buf(&combo_thread_data.ref_buf_v_array);
+    free_blur_buf(&combo_thread_data.dis_buf_v_array);
 
     free_array(&motion_score_compute_flag_array);
 
@@ -1005,7 +971,7 @@ int combo(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_
         DArray *ms_ssim_array,
         char *errmsg,
         VmafFeatureCalculationSetting vmaf_feature_calculation_setting,
-        bool use_chroma
+        int vmaf_feature_mode_setting
         )
 {
     VMAF_THREAD_STRUCT combo_thread_data;
@@ -1043,8 +1009,8 @@ int combo(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_
     combo_thread_data.errmsg = errmsg;
     combo_thread_data.frm_idx = 0;
     // combo_thread_data.stop_threads = 0;
-    combo_thread_data.n_subsample = vmaf_feature_calculation_setting.n_subsample;
-    combo_thread_data.use_chroma = use_chroma;
+    combo_thread_data.vmaf_feature_calculation_setting = vmaf_feature_calculation_setting;
+    combo_thread_data.vmaf_feature_mode_setting = vmaf_feature_mode_setting;
 
     // sanity check for width/height
     if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float))

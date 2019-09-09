@@ -67,8 +67,8 @@ typedef struct
     DArray *ssim_array;
     DArray *ms_ssim_array;
     char *errmsg;
-    int n_subsample;
-    bool use_chroma;
+    VmafFeatureCalculationSetting vmaf_feature_calculation_setting;
+    int vmaf_feature_mode_setting;
 
     int frm_idx;
     int stride, stride_u, stride_v;
@@ -123,7 +123,7 @@ int combo(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_
         DArray *ms_ssim_array,
         char *errmsg,
         VmafFeatureCalculationSetting vmaf_feature_calculation_setting,
-        bool use_chroma
+        int vmaf_feature_mode_setting
 );
 
 #ifdef __cplusplus

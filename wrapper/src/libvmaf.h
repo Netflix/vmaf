@@ -56,6 +56,9 @@ enum VmafPoolingMethod {
     VMAF_POOL_HARMONIC_MEAN                            = 2,
 };
 
+/** Enum with settings for feature extraction.
+  * For example, setting read_color to true will instruct read_vmaf_picture to read U and V planes.
+  **/
 typedef struct VmafFeatureCalculationSetting
 {
     unsigned int n_threads;
@@ -63,16 +66,16 @@ typedef struct VmafFeatureCalculationSetting
     bool disable_avx;
 } VmafFeatureCalculationSetting;
 
-/** Enum with settings for feature calculation.
+/** Enum with settings for feature mode calculation.
   * If the setting is used, the corresponding feature calculation/operation will occur.
-  * For example, the DO_COLOR setting will instruct read_vmaf_picture to read U and V planes.
+  * For example, the DO_PSNR setting will instruct extract PSNR.
   **/
 enum VmafFeatureModeSetting {
     VMAF_FEATURE_MODE_SETTING_DO_NONE                  = (1 << 0),
     VMAF_FEATURE_MODE_SETTING_DO_PSNR                  = (1 << 1),
     VMAF_FEATURE_MODE_SETTING_DO_SSIM                  = (1 << 2),
     VMAF_FEATURE_MODE_SETTING_DO_MS_SSIM               = (1 << 3),
-    VMAF_FEATURE_MODE_SETTING_DO_CHROMA                = (1 << 4),
+    VMAF_FEATURE_MODE_SETTING_DO_CHROMA_PSNR           = (1 << 4),
 };
 
 /** Definition of pixel formats in the VMAF library.

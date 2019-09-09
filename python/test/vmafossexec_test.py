@@ -411,7 +411,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.742800000000003, places=4)
 
     def test_run_vmafossexec_runner_psnr_chroma(self):
-        print('test on running VMAFOSSEXEC runner with chroma ...')
+        print('test on running VMAFOSSEXEC runner with PSNR chroma ...')
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
@@ -419,7 +419,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
             None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
-            optional_dict={'use_chroma': True}
+            optional_dict={'psnr_chroma': True}
         )
         self.runner.run()
 
@@ -435,7 +435,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_psnr_v_score'], 60.0, places=3)
 
     def test_run_vmafossexec_runner_psnr_chroma_single_thread(self):
-        print('test on running VMAFOSSEXEC runner with chroma using one thread ...')
+        print('test on running VMAFOSSEXEC runner with PSNR chroma using one thread ...')
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
@@ -443,7 +443,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
             None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
-            optional_dict={'use_chroma': True, 'thread': 1}
+            optional_dict={'psnr_chroma': True, 'thread': 1}
         )
         self.runner.run()
 
@@ -459,7 +459,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_psnr_v_score'], 60.0, places=3)
 
     def test_run_vmafossexec_runner_psnr_chroma_two_threads(self):
-        print('test on running VMAFOSSEXEC runner with chroma using two threads ...')
+        print('test on running VMAFOSSEXEC runner with PSNR chroma using two threads ...')
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
@@ -467,7 +467,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
             None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
-            optional_dict={'use_chroma': True, 'thread': 2}
+            optional_dict={'psnr_chroma': True, 'thread': 2}
         )
         self.runner.run()
 
