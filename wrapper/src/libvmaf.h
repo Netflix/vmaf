@@ -69,6 +69,7 @@ typedef struct VmafFeatureCalculationSetting
 /** Enum with settings for feature mode calculation.
   * If the setting is used, the corresponding feature calculation/operation will occur.
   * For example, the DO_PSNR setting will instruct extract PSNR.
+  * The DO_CHROMA_PSNR setting will extract chroma PSNR scores.
   **/
 enum VmafFeatureModeSetting {
     VMAF_FEATURE_MODE_SETTING_DO_NONE                  = (1 << 0),
