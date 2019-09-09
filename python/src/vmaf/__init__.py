@@ -164,7 +164,7 @@ class ExternalProgramCaller(object):
     def call_vmafossexec(fmt, w, h, ref_path, dis_path, model, log_file_path, disable_clip_score,
                          enable_transform_score, phone_model, disable_avx, n_thread, n_subsample,
                          psnr, ssim, ms_ssim, ci, exe=None, logger=None, additional_models=None,
-                         use_color=False):
+                         use_chroma=False):
 
         if exe is None:
             exe = required(ExternalProgram.vmafossexec)
@@ -197,8 +197,8 @@ class ExternalProgramCaller(object):
             vmafossexec_cmd += ' --ms-ssim'
         if ci:
             vmafossexec_cmd += ' --ci'
-        if use_color:
-            vmafossexec_cmd += ' --color'
+        if use_chroma:
+            vmafossexec_cmd += ' --chroma'
         if additional_models is not None:
             vmafossexec_cmd += ' --additional-models ' + additional_models
         if logger:

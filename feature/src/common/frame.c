@@ -82,7 +82,7 @@ const char* get_fmt_str_from_fmt_enum(enum VmafPixelFormat fmt_enum)
 int read_vmaf_picture(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *s)
 {
     struct data *user_data = (struct data *)s;
-    bool use_color = user_data->use_color;
+    bool use_chroma = user_data->use_chroma;
     enum VmafPixelFormat format = user_data->format;
     unsigned int w = user_data->width;
     unsigned int h = user_data->height;
@@ -96,20 +96,20 @@ int read_vmaf_picture(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, fl
     dis_vmaf_pict->w[0] = w;
     dis_vmaf_pict->h[0] = h;
 
-    int color_resolution_ret = get_color_resolution(ref_vmaf_pict->pix_fmt, ref_vmaf_pict->w[0],
+    int chroma_resolution_ret = get_chroma_resolution(ref_vmaf_pict->pix_fmt, ref_vmaf_pict->w[0],
         ref_vmaf_pict->h[0], &(ref_vmaf_pict->w[1]), &(ref_vmaf_pict->h[1]),
         &(ref_vmaf_pict->w[2]), &(ref_vmaf_pict->h[2]));
 
-    if (color_resolution_ret) {
-        fprintf(stderr, "Calculating resolutions for color channels for ref failed.\n");
+    if (chroma_resolution_ret) {
+        fprintf(stderr, "Calculating resolutions for chroma channels for ref failed.\n");
         return 1;
     }
-    color_resolution_ret = get_color_resolution(dis_vmaf_pict->pix_fmt, dis_vmaf_pict->w[0],
+    chroma_resolution_ret = get_chroma_resolution(dis_vmaf_pict->pix_fmt, dis_vmaf_pict->w[0],
         dis_vmaf_pict->h[0], &(dis_vmaf_pict->w[1]), &(dis_vmaf_pict->h[1]),
         &(dis_vmaf_pict->w[2]), &(dis_vmaf_pict->h[2]));
 
-    if (color_resolution_ret) {
-        fprintf(stderr, "Calculating resolutions for color channels for dis failed.\n");
+    if (chroma_resolution_ret) {
+        fprintf(stderr, "Calculating resolutions for chroma channels for dis failed.\n");
         return 1;
     }
 
@@ -172,7 +172,7 @@ int read_vmaf_picture(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, fl
         return ret;
     }
 
-    if (!use_color)
+    if (!use_chroma)
     {
         // ref skip u and v
         if (ref_fmt == VMAF_PIX_FMT_YUV420P || ref_fmt == VMAF_PIX_FMT_YUV422P || ref_fmt == VMAF_PIX_FMT_YUV444P)
@@ -510,7 +510,7 @@ int get_frame_offset(enum VmafPixelFormat fmt, int w, int h, size_t *offset)
     return 0;
 }
 
-int get_color_resolution(enum VmafPixelFormat fmt, unsigned int w, unsigned int h, unsigned int *w_u, unsigned int *h_u, unsigned int *w_v, unsigned int *h_v) {
+int get_chroma_resolution(enum VmafPixelFormat fmt, unsigned int w, unsigned int h, unsigned int *w_u, unsigned int *h_u, unsigned int *w_v, unsigned int *h_v) {
 
     // check that both width and height are positive
     if ((w <= 0) || (h <= 0))

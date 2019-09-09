@@ -72,7 +72,7 @@ enum VmafFeatureModeSetting {
     VMAF_FEATURE_MODE_SETTING_DO_PSNR                  = (1 << 1),
     VMAF_FEATURE_MODE_SETTING_DO_SSIM                  = (1 << 2),
     VMAF_FEATURE_MODE_SETTING_DO_MS_SSIM               = (1 << 3),
-    VMAF_FEATURE_MODE_SETTING_DO_COLOR                 = (1 << 4),
+    VMAF_FEATURE_MODE_SETTING_DO_CHROMA                = (1 << 4),
 };
 
 /** Definition of pixel formats in the VMAF library.

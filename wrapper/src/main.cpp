@@ -120,7 +120,7 @@ int run_wrapper(enum VmafPixelFormat pix_fmt, int width, int height, char *ref_p
     struct data *s;
     s = (struct data *)malloc(sizeof(struct data));
     s->format = pix_fmt;
-    s->use_color = vmaf_feature_mode_setting & VMAF_FEATURE_MODE_SETTING_DO_COLOR;
+    s->use_chroma = vmaf_feature_mode_setting & VMAF_FEATURE_MODE_SETTING_DO_CHROMA;
     s->width = width;
     s->height = height;
     s->ref_rfile = NULL;
@@ -467,9 +467,9 @@ int main(int argc, char *argv[])
         vmaf_feature_mode_setting |= VMAF_FEATURE_MODE_SETTING_DO_MS_SSIM;
     }
 
-    if (cmdOptionExists(argv + 7, argv + argc, "--color"))
+    if (cmdOptionExists(argv + 7, argv + argc, "--chroma"))
     {
-        vmaf_feature_mode_setting |= VMAF_FEATURE_MODE_SETTING_DO_COLOR;
+        vmaf_feature_mode_setting |= VMAF_FEATURE_MODE_SETTING_DO_CHROMA;
     }
 
     char *pool_method_option = getCmdOption(argv + 7, argv + argc, "--pool");

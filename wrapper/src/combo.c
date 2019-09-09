@@ -75,7 +75,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
     void* user_data = thread_data->user_data;
     enum VmafPixelFormat fmt = thread_data->fmt;
     unsigned int n_subsample = thread_data->n_subsample;
-    bool use_color = thread_data->use_color;
+    bool use_chroma = thread_data->use_chroma;
 
     double score = 0;
     double score2 = 0;
@@ -174,7 +174,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
                 goto fail_or_end;
             }
 
-            if (use_color)
+            if (use_chroma)
             {
                 ref_buf_u = get_free_blur_buf_slot(&thread_data->ref_buf_u_array, frm_idx);
                 dis_buf_u = get_free_blur_buf_slot(&thread_data->dis_buf_u_array, frm_idx);
@@ -195,7 +195,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
             ref_vmaf_pict_ptr->data[0] = ref_buf;
             dis_vmaf_pict_ptr->data[0] = dis_buf;
 
-            if (use_color)
+            if (use_chroma)
             {
                 ref_vmaf_pict_ptr->data[1] = ref_buf_u;
                 dis_vmaf_pict_ptr->data[1] = dis_buf_u;
@@ -228,7 +228,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
             ref_buf = ref_vmaf_pict_ptr->data[0];
             dis_buf = dis_vmaf_pict_ptr->data[0];
 
-            if (use_color) {
+            if (use_chroma) {
                 ref_buf_u = ref_vmaf_pict_ptr->data[1];
                 dis_buf_u = dis_vmaf_pict_ptr->data[1];
                 ref_buf_v = ref_vmaf_pict_ptr->data[2];
@@ -268,7 +268,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
                 goto fail_or_end;
             }
 
-            if (use_color) {
+            if (use_chroma) {
                 ref_buf_u = get_blur_buf(&thread_data->ref_buf_u_array, frm_idx);
                 dis_buf_u = get_blur_buf(&thread_data->dis_buf_u_array, frm_idx);
                 ref_buf_v = get_blur_buf(&thread_data->ref_buf_v_array, frm_idx);
@@ -302,7 +302,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
             goto fail_or_end;
         }
 
-        if (use_color) {
+        if (use_chroma) {
             next_ref_buf_u = get_free_blur_buf_slot(&thread_data->ref_buf_u_array, frm_idx + 1);
             next_dis_buf_u = get_free_blur_buf_slot(&thread_data->dis_buf_u_array, frm_idx + 1);
             next_ref_buf_v = get_free_blur_buf_slot(&thread_data->ref_buf_v_array, frm_idx + 1);
@@ -321,7 +321,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
         ref_vmaf_pict_ptr->data[0] = next_ref_buf;
         dis_vmaf_pict_ptr->data[0] = next_dis_buf;
 
-        if (use_color) {
+        if (use_chroma) {
             ref_vmaf_pict_ptr->data[1] = next_ref_buf_u;
             dis_vmaf_pict_ptr->data[1] = next_dis_buf_u;
             ref_vmaf_pict_ptr->data[2] = next_ref_buf_v;
@@ -354,7 +354,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
         next_ref_buf = ref_vmaf_pict_ptr->data[0];
         next_dis_buf = dis_vmaf_pict_ptr->data[0];
 
-        if (use_color) {
+        if (use_chroma) {
             next_ref_buf_u = ref_vmaf_pict_ptr->data[1];
             next_dis_buf_u = dis_vmaf_pict_ptr->data[1];
             next_ref_buf_v = ref_vmaf_pict_ptr->data[2];
@@ -393,7 +393,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
         release_blur_buf_reference(&thread_data->ref_buf_array, frm_idx + 1);
         release_blur_buf_reference(&thread_data->dis_buf_array, frm_idx + 1);
 
-        if (use_color) {
+        if (use_chroma) {
             release_blur_buf_reference(&thread_data->ref_buf_u_array, frm_idx + 1);
             release_blur_buf_reference(&thread_data->dis_buf_u_array, frm_idx + 1);
             release_blur_buf_reference(&thread_data->ref_buf_v_array, frm_idx + 1);
@@ -435,7 +435,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
 
             insert_array_at(thread_data->psnr_array, score, frm_idx);
 
-            if (use_color) {
+            if (use_chroma) {
 
                 ret = compute_psnr(ref_buf_u, dis_buf_u,
                     ref_vmaf_pict_ptr->w[1], ref_vmaf_pict_ptr->h[1],
@@ -674,7 +674,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
         release_blur_buf_reference(&thread_data->ref_buf_array, frm_idx);
         release_blur_buf_reference(&thread_data->dis_buf_array, frm_idx);
         release_blur_buf_reference(&thread_data->blur_buf_array, frm_idx);
-        if (use_color) {
+        if (use_chroma) {
             release_blur_buf_reference(&thread_data->ref_buf_u_array, frm_idx);
             release_blur_buf_reference(&thread_data->dis_buf_u_array, frm_idx);
             release_blur_buf_reference(&thread_data->ref_buf_v_array, frm_idx);
@@ -694,7 +694,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
                 release_blur_buf_slot(&thread_data->dis_buf_array, i);
             }
 
-            if (use_color)
+            if (use_chroma)
             {
                 int ref_u_reference_count = get_blur_buf_reference_count(&thread_data->ref_buf_u_array, i);
                 int dis_u_reference_count = get_blur_buf_reference_count(&thread_data->dis_buf_u_array, i);
@@ -741,7 +741,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
         {
             release_blur_buf_slot(&thread_data->ref_buf_array, frm_idx + 1);
             release_blur_buf_slot(&thread_data->dis_buf_array, frm_idx + 1);
-            if (use_color){
+            if (use_chroma){
                 release_blur_buf_slot(&thread_data->ref_buf_u_array, frm_idx + 1);
                 release_blur_buf_slot(&thread_data->dis_buf_u_array, frm_idx + 1);
                 release_blur_buf_slot(&thread_data->ref_buf_v_array, frm_idx + 1);
@@ -807,7 +807,7 @@ int combo(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_
         DArray *ms_ssim_array,
         char *errmsg,
         VmafFeatureCalculationSetting vmaf_feature_calculation_setting,
-        bool use_color
+        bool use_chroma
         )
 {
 
@@ -848,7 +848,7 @@ int combo(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_
     combo_thread_data.frm_idx = 0;
     combo_thread_data.stop_threads = 0;
     combo_thread_data.n_subsample = vmaf_feature_calculation_setting.n_subsample;
-    combo_thread_data.use_color = use_color;
+    combo_thread_data.use_chroma = use_chroma;
 
     DArray	motion_score_compute_flag_array;
     init_array(&motion_score_compute_flag_array, 1000);
@@ -877,15 +877,15 @@ int combo(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_
 
     combo_thread_data.data_sz = (size_t)combo_thread_data.stride * h;
 
-    if (use_color) {
+    if (use_chroma) {
 
         size_t w_u = 0, w_v = 0, h_u = 0, h_v = 0;
 
-        int color_resolution_ret = get_color_resolution(fmt, w, h, &w_u, &h_u, &w_v, &h_v);
+        int chroma_resolution_ret = get_chroma_resolution(fmt, w, h, &w_u, &h_u, &w_v, &h_v);
 
-        if (color_resolution_ret)
+        if (chroma_resolution_ret)
         {
-            sprintf(errmsg, "Calculating resolutions for color channels failed A.\n");
+            sprintf(errmsg, "Calculating resolutions for chroma channels failed A.\n");
             return -1;
         }
         combo_thread_data.stride_u = get_stride_byte_from_width(w_u);
@@ -915,7 +915,7 @@ int combo(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_
     init_blur_array(&combo_thread_data.dis_buf_array, MIN(combo_thread_data.thread_count + 1, MAX_NUM_THREADS), combo_thread_data.data_sz, MAX_ALIGN);
     init_blur_array(&combo_thread_data.blur_buf_array, MIN(3 * (combo_thread_data.thread_count), MAX_NUM_THREADS), combo_thread_data.data_sz, MAX_ALIGN);
 
-    if (use_color) {
+    if (use_chroma) {
         init_blur_array(&combo_thread_data.ref_buf_u_array, MIN(combo_thread_data.thread_count + 1, MAX_NUM_THREADS), combo_thread_data.data_sz_u, MAX_ALIGN);
         init_blur_array(&combo_thread_data.dis_buf_u_array, MIN(combo_thread_data.thread_count + 1, MAX_NUM_THREADS), combo_thread_data.data_sz_u, MAX_ALIGN);
         init_blur_array(&combo_thread_data.ref_buf_v_array, MIN(combo_thread_data.thread_count + 1, MAX_NUM_THREADS), combo_thread_data.data_sz_v, MAX_ALIGN);
@@ -959,7 +959,7 @@ int combo(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_
     free_blur_buf(&combo_thread_data.ref_buf_array);
     free_blur_buf(&combo_thread_data.dis_buf_array);
     free_blur_buf(&combo_thread_data.blur_buf_array);
-    if (use_color) {
+    if (use_chroma) {
         free_blur_buf(&combo_thread_data.ref_buf_u_array);
         free_blur_buf(&combo_thread_data.dis_buf_u_array);
         free_blur_buf(&combo_thread_data.ref_buf_v_array);
@@ -1005,7 +1005,7 @@ int combo(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_
         DArray *ms_ssim_array,
         char *errmsg,
         VmafFeatureCalculationSetting vmaf_feature_calculation_setting,
-        bool use_color
+        bool use_chroma
         )
 {
     VMAF_THREAD_STRUCT combo_thread_data;
@@ -1044,7 +1044,7 @@ int combo(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_
     combo_thread_data.frm_idx = 0;
     // combo_thread_data.stop_threads = 0;
     combo_thread_data.n_subsample = vmaf_feature_calculation_setting.n_subsample;
-    combo_thread_data.use_color = use_color;
+    combo_thread_data.use_chroma = use_chroma;
 
     // sanity check for width/height
     if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float))
