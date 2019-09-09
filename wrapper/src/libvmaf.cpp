@@ -217,11 +217,10 @@ extern "C" {
 
     enum vmaf_cpu cpu; // global
 
-    int compute_vmaf(double* vmaf_score,
+    int compute_vmaf(VmafOutput *vmaf_output_ptr,
         int(*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
         void *user_data, VmafSettings *vmafSettings)
     {
-
         cpu = cpu_autodetect();
 
         if (vmafSettings->vmaf_feature_calculation_setting.disable_avx)
@@ -230,8 +229,8 @@ extern "C" {
         }
 
         try {
-            double score = RunVmaf(read_vmaf_picture, user_data, vmafSettings);
-            *vmaf_score = score;
+            Result result = RunVmaf(read_vmaf_picture, user_data, vmafSettings);
+            vmaf_output_ptr->vmaf_score = result.get_score("vmaf");
             return 0;
         }
         catch (VmafException& e)

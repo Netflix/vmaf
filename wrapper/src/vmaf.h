@@ -40,22 +40,6 @@
 static const char VMAFOSS_DOC_VERSION[] = "1.4.0";
 static const std::string BOOSTRAP_VMAF_MODEL_KEY = "_bootstrap_";
 
-double RunVmaf(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
-               void *user_data, VmafSettings *vmafSettings);
-
-class VmafException: public std::exception
-{
-public:
-    explicit VmafException(const char *msg): msg(msg) {}
-    virtual const char* what() const throw () { return msg.c_str(); }
-private:
-    std::string msg;
-};
-
-struct SvmDelete {
-    void operator()(void *svm);
-};
-
 enum VmafPredictionReturnType
 {
     SCORE,
@@ -111,6 +95,22 @@ private:
     std::map<std::string, StatVector> d;
     ScoreAggregateMethod score_aggregate_method;
     unsigned int num_frms;
+};
+
+Result RunVmaf(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
+               void *user_data, VmafSettings *vmafSettings);
+
+class VmafException: public std::exception
+{
+public:
+    explicit VmafException(const char *msg): msg(msg) {}
+    virtual const char* what() const throw () { return msg.c_str(); }
+private:
+    std::string msg;
+};
+
+struct SvmDelete {
+    void operator()(void *svm);
 };
 
 struct VmafPredictionStruct

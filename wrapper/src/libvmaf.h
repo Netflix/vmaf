@@ -19,7 +19,7 @@
 #ifndef LIBVMAF_H_
 #define LIBVMAF_H_
 
-#define MAX_NUM_VMAF_MODELS 5 // there can be MAX_NUM_VMAF_MODELS - 1 additional models at most
+#define MAX_NUM_VMAF_MODELS 21 // there can be MAX_NUM_VMAF_MODELS - 1 additional models at most
 
 #ifndef WINCE
 #define TIME_TEST_ENABLE 		1 // 1: memory leak test enable 0: disable
@@ -35,6 +35,14 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
+
+/** Thin wrapper for VMAF outputs (besides the logged features and predictions).
+  * Can be extended to include other fields.
+  **/
+typedef struct VmafOutput
+{
+    double vmaf_score;
+} VmafOutput;
 
 enum VmafLogFmt {
     VMAF_LOG_FMT_XML                                   = 0,
@@ -55,6 +63,10 @@ typedef struct VmafFeatureCalculationSetting
     bool disable_avx;
 } VmafFeatureCalculationSetting;
 
+/** Enum with settings for feature calculation.
+  * If the setting is used, the corresponding feature calculation/operation will occur.
+  * For example, the DO_COLOR setting will instruct read_vmaf_picture to read U and V planes.
+  **/
 enum VmafFeatureModeSetting {
     VMAF_FEATURE_MODE_SETTING_DO_NONE                  = (1 << 0),
     VMAF_FEATURE_MODE_SETTING_DO_PSNR                  = (1 << 1),
@@ -83,6 +95,14 @@ typedef struct VmafPicture
     enum VmafPixelFormat pix_fmt;
 } VmafPicture;
 
+/** Model specific settings.
+  * The "default" model is the one in by model_path and with
+  * additional options, e.g. disable_clip, enable_transform
+  * and enable confidence interval.
+  * To follow the convention this model should be named "vmaf".
+  * Additional models can be named as needed and customized
+  * independently using the desired model setting.
+  */
 enum VmafModelSetting {
     VMAF_MODEL_SETTING_NONE                            = (1 << 0),
     VMAF_MODEL_SETTING_ENABLE_TRANSFORM                = (1 << 1),
@@ -92,7 +112,7 @@ enum VmafModelSetting {
 
 /** Thin VMAF model wrapper.
   * Assumes the existence of the model in a filesystem path.
-  * Includes a model setting for disabling clip, score transformation etc.*/
+  * Includes a model setting for disabling clip, score transformation etc. */
 typedef struct {
     char *name;
     char *path;
@@ -122,7 +142,7 @@ typedef struct {
   * a user-defined struct and a settings struct.
   * A single VMAF value is returned and all calculated
   * features and additional predictions are written into a log file. */
-int compute_vmaf(double* vmaf_score,
+int compute_vmaf(VmafOutput *vmaf_output_ptr,
                  int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
 				 void *user_data, VmafSettings *vmafSettings);
 

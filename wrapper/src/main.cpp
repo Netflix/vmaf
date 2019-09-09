@@ -115,8 +115,6 @@ int run_wrapper(enum VmafPixelFormat pix_fmt, int width, int height, char *ref_p
         int n_thread, int n_subsample, char *model_path, char *additional_model_paths,
         int vmaf_model_setting)
 {
-    double score;
-
     int ret = 0;
     int num_additional_models = 0;
     struct data *s;
@@ -240,8 +238,9 @@ int run_wrapper(enum VmafPixelFormat pix_fmt, int width, int height, char *ref_p
     // account for default VMAF model
     vmafSettings->num_models = num_additional_models + 1;
 
+    VmafOutput vmaf_output;
     /* Run VMAF */
-    ret = compute_vmaf(&score, read_vmaf_picture, s, vmafSettings);
+    ret = compute_vmaf(&vmaf_output, read_vmaf_picture, s, vmafSettings);
 
     // free memory relevant to additional models
     for (int i = 0; i < vmafSettings->num_models; i ++)

@@ -1034,7 +1034,7 @@ void BootstrapVmafQualityRunner::_set_prediction_result(
 
 }
 
-double RunVmaf(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
+Result RunVmaf(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture *dis_vmaf_pict, float *temp_data, void *user_data),
                void *user_data, VmafSettings *vmafSettings)
 {
     printf("Start calculating VMAF score...\n");
@@ -1301,5 +1301,5 @@ double RunVmaf(int (*read_vmaf_picture)(VmafPicture *ref_vmaf_pict, VmafPicture 
         xml.save_file(vmafSettings->log_path);
     }
 
-    return aggregate_vmaf;
+    return result;
 }
