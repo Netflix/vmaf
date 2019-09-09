@@ -251,13 +251,14 @@ extern "C" {
     }
 
     void replace_string_in_place(std::string& subject, const std::string& search,
-                      const std::string& replace) {
-size_t pos = 0;
-while ((pos = subject.find(search, pos)) != std::string::npos) {
-     subject.replace(pos, search.length(), replace);
-     pos += replace.length();
-}
-}
+                      const std::string& replace)
+    {
+        size_t pos = 0;
+        while ((pos = subject.find(search, pos)) != std::string::npos) {
+             subject.replace(pos, search.length(), replace);
+             pos += replace.length();
+        }
+    }
 
     unsigned int get_additional_models(char *additional_model_paths, VmafModel *vmaf_model)
     {
