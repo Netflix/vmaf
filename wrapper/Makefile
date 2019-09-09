@@ -11,6 +11,8 @@ PTOOLSDIR = $(TOP)/../ptools
 INSTALL_PREFIX = /usr/local
 INCLUDES += -I$(TOP)/../feature/src
 INCLUDES += -I$(TOP)/../feature/src/common
+
+# TODO: improve on the circular dependency introduced with feature/src/common, wrapper and libvmaf.h
 LIBVMAF_HEADER = $(TOP)/src
 
 OBJS = \

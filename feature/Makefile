@@ -6,6 +6,8 @@ SRCDIR  = $(TOP)/src
 OBJDIR  = $(TOP)/obj
 TOOLDIR = $(TOP)/tool
 LIBVMAF = $(TOP)/../wrapper/libvmaf.a
+
+# TODO: improve on the circular dependency introduced with feature/src/common, wrapper and libvmaf.h
 LIBVMAF_HEADER = $(TOP)/../wrapper/src
 
 CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic
