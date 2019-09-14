@@ -931,7 +931,7 @@ void BootstrapVmafQualityRunner::_set_prediction_result(
     result.set_scores("ci95_high", ci95HighScore);
 
     // num_models is same across frames, so just use first frame length
-    size_t num_models = 0; 
+    size_t num_models = 0;
     if (predictionStructs.size() > 0) {
         num_models = predictionStructs.at(0).vmafMultiModelPrediction.size();
     }
@@ -957,7 +957,6 @@ double RunVmaf(const char* fmt, int width, int height,
                bool do_psnr, bool do_ssim, bool do_ms_ssim,
                const char *pool_method, int n_thread, int n_subsample, bool enable_conf_interval)
 {
-    printf("Start calculating VMAF score...\n");
 
     if (width <= 0)
     {
@@ -1004,7 +1003,6 @@ double RunVmaf(const char* fmt, int width, int height,
 #if TIME_TEST_ENABLE
 	double time_taken = (double)timer.elapsed();
 #endif
-    printf("Exec FPS: %f\n", exec_fps);
 
     std::vector<std::string> result_keys = result.get_keys();
 
@@ -1026,42 +1024,6 @@ double RunVmaf(const char* fmt, int width, int height,
     if (result.has_scores("ms_ssim"))
         aggregate_ms_ssim = result.get_score("ms_ssim");
 
-    if (pool_method)
-    {
-        printf("VMAF score (%s) = %f\n", pool_method, aggregate_vmaf);
-        if (aggregate_bagging)
-            printf("Bagging score (%s) = %f\n", pool_method, aggregate_bagging);
-        if (aggregate_stddev)
-            printf("StdDev score (%s) = %f\n", pool_method, aggregate_stddev);
-        if (aggregate_ci95_low)
-            printf("CI95_low score (%s) = %f\n", pool_method, aggregate_ci95_low);
-        if (aggregate_ci95_high)
-            printf("CI95_high score (%s) = %f\n", pool_method, aggregate_ci95_high);
-        if (aggregate_psnr)
-            printf("PSNR score (%s) = %f\n", pool_method, aggregate_psnr);
-        if (aggregate_ssim)
-            printf("SSIM score (%s) = %f\n", pool_method, aggregate_ssim);
-        if (aggregate_ms_ssim)
-            printf("MS-SSIM score (%s) = %f\n", pool_method, aggregate_ms_ssim);
-    }
-    else // default
-    {
-        printf("VMAF score = %f\n", aggregate_vmaf);
-        if (aggregate_bagging)
-            printf("Bagging score = %f\n", aggregate_bagging);
-        if (aggregate_stddev)
-            printf("StdDev score = %f\n", aggregate_stddev);
-        if (aggregate_ci95_low)
-            printf("CI95_low score = %f\n", aggregate_ci95_low);
-        if (aggregate_ci95_high)
-            printf("CI95_high score = %f\n", aggregate_ci95_high);
-        if (aggregate_psnr)
-            printf("PSNR score = %f\n", aggregate_psnr);
-        if (aggregate_ssim)
-            printf("SSIM score = %f\n", aggregate_ssim);
-        if (aggregate_ms_ssim)
-            printf("MS-SSIM score = %f\n", aggregate_ms_ssim);
-    }
 
     int num_bootstrap_models = 0;
     std::string bootstrap_model_list_str = "";
