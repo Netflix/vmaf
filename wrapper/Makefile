@@ -166,8 +166,11 @@ $(LIBVMAF): $(OBJS) $(wildcard ../ptools/*.o)
 vmafossexec: $(OBJDIR)/main.o $(LIBVMAF)
 	$(CXX) -s -o $@ $(LDFLAGS) $^ -pthread
 
+$(OBJDIR)/libvmaf.pc: libvmaf.pc.in
+	sed 's!@@PREFIX@@!$(INSTALL_PREFIX)!g' $< >$@
+
 .PHONY: install
-install:
+install: $(OBJDIR)/libvmaf.pc
 	mkdir -p $(DESTDIR)$(INSTALL_PREFIX)/lib
 	mkdir -p $(DESTDIR)$(INSTALL_PREFIX)/include
 	mkdir -p $(DESTDIR)$(INSTALL_PREFIX)/share
@@ -175,7 +178,7 @@ install:
 	cp $(LIBVMAF) $(DESTDIR)$(INSTALL_PREFIX)/lib/$(LIBVMAF)
 	cp src/libvmaf.h $(DESTDIR)$(INSTALL_PREFIX)/include/
 	cp -r ../model $(DESTDIR)$(INSTALL_PREFIX)/share/
-	cp libvmaf.pc $(DESTDIR)$(INSTALL_PREFIX)/lib/pkgconfig/
+	cp $(OBJDIR)/libvmaf.pc $(DESTDIR)$(INSTALL_PREFIX)/lib/pkgconfig/
 
 .PHONY: uninstall
 uninstall:
