@@ -118,6 +118,15 @@ public:
         createVmafQualityRunner(const char *model_path, bool enable_conf_interval);
 };
 
+class VmafException: public std::exception
+{
+public:
+    explicit VmafException(const char *msg): msg(msg) {}
+    virtual const char* what() const throw () { return msg.c_str(); }
+private:
+    std::string msg;
+};
+
 #endif
 
 #endif /* _LIBVMAF_H */
