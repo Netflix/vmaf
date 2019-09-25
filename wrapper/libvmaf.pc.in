@@ -1,7 +1,7 @@
-prefix=/usr/local
+prefix=@@PREFIX@@
 exec_prefix=${prefix}
-libdir=/usr/local/lib
-includedir=/usr/local/include
+libdir=${prefix}/lib
+includedir=${prefix}/include
 
 Name: libvmaf
 Description: Netflix's VMAF library
