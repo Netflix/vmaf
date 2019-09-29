@@ -32,6 +32,7 @@ extern "C" {
 #include "pthread.h"
 #endif
 
+#ifdef MULTI_THREADING
 typedef struct
 {
     int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data);
@@ -71,11 +72,9 @@ typedef struct
     double peak;
     double psnr_max;
     size_t data_sz;
-#ifdef MULTI_THREADING
     int thread_count;
     int stop_threads;
     pthread_mutex_t mutex_readframe;
-#endif
     BLUR_BUF_ARRAY blur_buf_array;
     BLUR_BUF_ARRAY ref_buf_array;
     BLUR_BUF_ARRAY dis_buf_array;
@@ -83,6 +82,55 @@ typedef struct
     int ret;
 
 } VMAF_THREAD_STRUCT;
+#else
+typedef struct
+{
+    int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data);
+    void *user_data;
+    int w;
+    int h;
+    const char *fmt;
+    DArray *adm_num_array;
+    DArray *adm_den_array;
+    DArray *adm_num_scale0_array;
+    DArray *adm_den_scale0_array;
+    DArray *adm_num_scale1_array;
+    DArray *adm_den_scale1_array;
+    DArray *adm_num_scale2_array;
+    DArray *adm_den_scale2_array;
+    DArray *adm_num_scale3_array;
+    DArray *adm_den_scale3_array;
+    DArray *motion_array;
+    DArray *motion2_array;
+    DArray *vif_num_scale0_array;
+    DArray *vif_den_scale0_array;
+    DArray *vif_num_scale1_array;
+    DArray *vif_den_scale1_array;
+    DArray *vif_num_scale2_array;
+    DArray *vif_den_scale2_array;
+    DArray *vif_num_scale3_array;
+    DArray *vif_den_scale3_array;
+    DArray *vif_array;
+    DArray *psnr_array;
+    DArray *ssim_array;
+    DArray *ms_ssim_array;
+    char *errmsg;
+    int n_subsample;
+
+    int frm_idx;
+    int stride;
+    double peak;
+    double psnr_max;
+    size_t data_sz;
+    BLUR_BUF_ARRAY blur_buf_array;
+    BLUR_BUF_ARRAY ref_buf_array;
+    BLUR_BUF_ARRAY dis_buf_array;
+    DArray *motion_score_compute_flag_array;
+    int ret;
+
+} VMAF_THREAD_STRUCT;
+#endif
+
 void* combo_threadfunc(void* vmaf_thread_data);
 
 int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt,
