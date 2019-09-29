@@ -340,7 +340,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
         // for the rest, offset pixel by OPT_RANGE_PIXEL_OFFSET
         // ===============================================================
 
-        if(offset_flag)
+        if (offset_flag)
         {
             offset_image(ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
             offset_image(dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
