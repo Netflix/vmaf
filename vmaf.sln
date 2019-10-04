@@ -7,7 +7,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vmafossexec", "wrapper\vmaf
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ptools", "ptools\ptools.vcxproj", "{3F07B371-1B81-477E-886C-0E079B0A6803}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pthreads", "pthreads\COPKG\pthreads.vcxproj", "{03A4C79F-F1A8-48C9-A2AC-0A14EC0F093E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pthreads", "src\pthreads\COPKG\pthreads.vcxproj", "{03A4C79F-F1A8-48C9-A2AC-0A14EC0F093E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvmaf", "wrapper\libvmaf.vcxproj", "{5F5103F4-E473-4476-8E7B-FD3465E872B1}"
 EndProject
