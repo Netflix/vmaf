@@ -2,7 +2,7 @@ project('vmaf', 'c', 'cpp')
 
 # Build libptools
 
-ptools_path = './ptools/'
+ptools_path = './src/ptools/'
 opencontainers_path = ptools_path + 'opencontainers_1_8_4'
 opencontainers_include = include_directories(opencontainers_path + '/include')
 

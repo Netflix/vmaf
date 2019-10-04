@@ -26,7 +26,7 @@ By contributing your code, you agree to license your contribution under the term
 
 ## Repository Structure
 
-Files in the repository follow the structure below:
+Files in the repository follow the structure below (10/4/2019 TO BE UPDATED):
 
 ```
 ├── feature: C/C++ source code for extraction of features

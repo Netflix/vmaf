@@ -1,5 +1,5 @@
 TARGETS = \
-	ptools \
+	src/ptools \
 	libsvm \
 	wrapper \
 	feature

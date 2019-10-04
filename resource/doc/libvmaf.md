@@ -1,7 +1,7 @@
 `libvmaf.a` -- A Static Library of VMAF
 ===================
 
-VMAF is now packaged into a static library called `libvmaf.a`, built using object files under `wrapper/obj` and `ptools`.
+VMAF is now packaged into a static library called `libvmaf.a`, built using object files under `wrapper/obj` and `ptools` (10/4/2019 TO BE UPDATED).
 
 To build `libvmaf.a`, make the `ptools` library first, followed by `wrapper`:
 

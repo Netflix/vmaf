@@ -7,7 +7,7 @@ TOP = $(shell pwd)
 SRCDIR = $(TOP)/src
 OBJDIR = $(TOP)/obj
 FEATURESRCDIR = $(TOP)/../feature/src
-PTOOLSDIR = $(TOP)/../ptools
+PTOOLSDIR = $(TOP)/../src/ptools
 INSTALL_PREFIX = /usr/local
 INCLUDES += -I$(TOP)/../feature/src
 INCLUDES += -I$(TOP)/../feature/src/common
@@ -159,7 +159,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 $(OBJDIR)/%.o: $(SRCDIR)/pugixml/%.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
 
-$(LIBVMAF): $(OBJS) $(wildcard ../ptools/*.o)
+$(LIBVMAF): $(OBJS) $(wildcard $(PTOOLSDIR)/*.o)
 	ar rcs $@ $^
 
 vmafossexec: $(OBJDIR)/main.o $(LIBVMAF)
