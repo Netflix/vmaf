@@ -26,16 +26,12 @@ void init_array(DArray *a, size_t init_size)
 	memset(a->array, 0.0, init_size * sizeof(double));
     a->used = 0;
     a->size = init_size;
-#ifdef MULTI_THREADING
     pthread_mutex_init(&a->mutex, NULL);
-#endif
 }
 
 void insert_array(DArray *a, double e)
 {
-#ifdef MULTI_THREADING
     pthread_mutex_lock(&a->mutex);
-#endif
     if (a->used == a->size)
     {
         a->size *= 2;
@@ -46,16 +42,12 @@ void insert_array(DArray *a, double e)
         a->array = (double *)realloc(a->array, a->size * sizeof(double));
     }
     a->array[a->used++] = e;
-#ifdef MULTI_THREADING
     pthread_mutex_unlock(&a->mutex);
-#endif
 }
 
 void insert_array_at(DArray *a, double e, int pos)
 {
-#ifdef MULTI_THREADING
     pthread_mutex_lock(&a->mutex);
-#endif
     if ((pos+1) > a->used)
     {
         a->used = pos+1;
@@ -71,9 +63,7 @@ void insert_array_at(DArray *a, double e, int pos)
 		memset(temp, 0.0, (a->size / 2) * sizeof(double));
     }
     a->array[pos] = e;
-#ifdef MULTI_THREADING
     pthread_mutex_unlock(&a->mutex);
-#endif
 }
 
 double get_at(DArray *a, int pos)
@@ -86,7 +76,5 @@ void free_array(DArray *a)
     free(a->array);
     a->array = NULL;
     a->used = a->size = 0;
-#ifdef MULTI_THREADING
     pthread_mutex_destroy(&a->mutex);
-#endif
 }

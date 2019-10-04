@@ -36,10 +36,8 @@
 #include "debug.h"
 #include "psnr_tools.h"
 
-#ifdef MULTI_THREADING
 #include "common/blur_array.h"
 #include "cpu_info.h"
-#endif
 
 #define read_image_b       read_image_b2s
 #define read_image_w       read_image_w2s
@@ -101,13 +99,6 @@ void* combo_threadfunc(void* vmaf_thread_data)
 
     bool offset_flag = false;
 
-#ifdef MULTI_THREADING
-    float *prev_blur_buf_ = 0;
-    float *ref_buf_ = 0;
-    float *dis_buf_ = 0;
-    float *blur_buf_ = 0;
-#endif
-
     // use temp_buf for convolution_f32_c, and fread u and v
     if (!(temp_buf = aligned_malloc(data_sz * 2, MAX_ALIGN)))
     {
@@ -120,7 +111,6 @@ void* combo_threadfunc(void* vmaf_thread_data)
     while (1)
     {
 
-#ifdef MULTI_THREADING
         pthread_mutex_lock(&thread_data->mutex_readframe);
 
         if (thread_data->stop_threads)
@@ -129,7 +119,6 @@ void* combo_threadfunc(void* vmaf_thread_data)
             pthread_mutex_unlock(&thread_data->mutex_readframe);
             goto fail_or_end;
         }
-#endif
 
         // the next frame
         frm_idx = thread_data->frm_idx;
@@ -144,11 +133,9 @@ void* combo_threadfunc(void* vmaf_thread_data)
 		
             if((NULL == blur_buf) || (NULL == ref_buf) || (NULL == dis_buf))
             {
-#ifdef MULTI_THREADING
-                thread_data->stop_threads = 1;			
+                thread_data->stop_threads = 1;
                 sprintf(errmsg, "No free slot found for buffer allocation.\n");
                 pthread_mutex_unlock(&thread_data->mutex_readframe);
-#endif
                 goto fail_or_end;
             }
 
@@ -157,18 +144,14 @@ void* combo_threadfunc(void* vmaf_thread_data)
             ret = thread_data->read_frame(ref_buf, dis_buf, temp_buf, stride, user_data);
             if (ret == 1)
             {
-#ifdef MULTI_THREADING
                 thread_data->stop_threads = 1;
                 pthread_mutex_unlock(&thread_data->mutex_readframe);
-#endif
                 goto fail_or_end;
             }
             if (ret == 2)
             {
-#ifdef MULTI_THREADING
                 thread_data->stop_threads = 1;
                 pthread_mutex_unlock(&thread_data->mutex_readframe);
-#endif
                 goto fail_or_end;
             }
 
@@ -187,7 +170,6 @@ void* combo_threadfunc(void* vmaf_thread_data)
             convolution_f32_c(FILTER_5, 5, ref_buf, blur_buf, temp_buf, w, h, stride / sizeof(float), stride / sizeof(float));
 
         }
-#ifdef MULTI_THREADING
         else
         {
             // retrieve from buffer array
@@ -197,43 +179,34 @@ void* combo_threadfunc(void* vmaf_thread_data)
 
             if((NULL == ref_buf) || (NULL == dis_buf) || (NULL == blur_buf))
             {
-#ifdef MULTI_THREADING
                 thread_data->stop_threads = 1;
                 sprintf(errmsg, "Data not available.\n");
                 pthread_mutex_unlock(&thread_data->mutex_readframe);
-#endif
                 goto fail_or_end;
             }
         }
-#endif
 
         // Allocate free buffer from the buffer array for next frame index
         next_ref_buf 	= get_free_blur_buf_slot(&thread_data->ref_buf_array, frm_idx + 1);
         next_dis_buf 	= get_free_blur_buf_slot(&thread_data->dis_buf_array, frm_idx + 1);
         if((NULL == next_ref_buf) || (NULL == next_dis_buf))
         {
-#ifdef MULTI_THREADING
             thread_data->stop_threads = 1;
             sprintf(errmsg, "No free slot found for next buffer.\n");
             pthread_mutex_unlock(&thread_data->mutex_readframe);
-#endif
             goto fail_or_end;
         }
 
         ret = thread_data->read_frame(next_ref_buf, next_dis_buf, temp_buf, stride, user_data);
         if (ret == 1)
         {
-#ifdef MULTI_THREADING
             thread_data->stop_threads = 1;
             pthread_mutex_unlock(&thread_data->mutex_readframe);
-#endif
             goto fail_or_end;
         }
         if (ret == 2)
         {
-#ifdef MULTI_THREADING
             thread_data->stop_threads = 1;
-#endif
             next_frame_read = false;
         }
         else
@@ -246,10 +219,8 @@ void* combo_threadfunc(void* vmaf_thread_data)
             next_blur_buf     = get_free_blur_buf_slot(&thread_data->blur_buf_array, frm_idx + 1);
             if(NULL == next_blur_buf)
             {
-#ifdef MULTI_THREADING
                 thread_data->stop_threads = 1;
                 sprintf(errmsg, "No free slot found for blur buffer.\n");
-#endif
                 goto fail_or_end;
             }
             // ===============================================================
@@ -271,9 +242,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
         // release ref and dis buffer references after blur buf computation
         release_blur_buf_reference(&thread_data->ref_buf_array, frm_idx + 1);
         release_blur_buf_reference(&thread_data->dis_buf_array, frm_idx + 1);
-#ifdef MULTI_THREADING
         pthread_mutex_unlock(&thread_data->mutex_readframe);
-#endif
 
         dbg_printf("frame: %d, ", frm_idx);
 
@@ -426,7 +395,6 @@ void* combo_threadfunc(void* vmaf_thread_data)
             }
             else
             {
-#ifdef MULTI_THREADING
                 // avoid multiple memory copies
                 prev_blur_buf = get_blur_buf(&thread_data->blur_buf_array, frm_idx - 1);
                 if(NULL == prev_blur_buf)
@@ -435,15 +403,12 @@ void* combo_threadfunc(void* vmaf_thread_data)
                     sprintf(errmsg, "Data not available for prev_blur_buf.\n");
                     goto fail_or_end;
                 }
-#endif
                 if ((ret = compute_motion(prev_blur_buf, blur_buf, w, h, stride, stride, &score)))
                 {
                     sprintf(errmsg, "compute_motion (prev) failed.\n");
                     goto fail_or_end;
                 }
-#ifdef MULTI_THREADING
                 release_blur_buf_reference(&thread_data->blur_buf_array, frm_idx - 1);
-#endif
 
                 if (next_frame_read)
                 {
@@ -554,9 +519,7 @@ void* combo_threadfunc(void* vmaf_thread_data)
 
         if (!next_frame_read)
         {
-#ifdef MULTI_THREADING
             thread_data->stop_threads = 1;
-#endif
             goto fail_or_end;
         }
 
@@ -566,18 +529,12 @@ fail_or_end:
 
     aligned_free(temp_buf);
 
-#ifdef MULTI_THREADING
     // when one thread ends we signal all other threads to also stop
     thread_data->stop_threads = 1;
     thread_data->ret = ret;
     pthread_exit(&ret);
-#else
-    thread_data->ret = ret;
-#endif
 
 }
-
-#ifdef MULTI_THREADING
 
 int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt,
         DArray *adm_num_array,
@@ -737,101 +694,3 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
 
     return 0;
 }
-
-#else // #ifdef MULTI_THREADING
-
-int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt,
-        DArray *adm_num_array,
-        DArray *adm_den_array,
-        DArray *adm_num_scale0_array,
-        DArray *adm_den_scale0_array,
-        DArray *adm_num_scale1_array,
-        DArray *adm_den_scale1_array,
-        DArray *adm_num_scale2_array,
-        DArray *adm_den_scale2_array,
-        DArray *adm_num_scale3_array,
-        DArray *adm_den_scale3_array,
-        DArray *motion_array,
-        DArray *motion2_array,
-        DArray *vif_num_scale0_array,
-        DArray *vif_den_scale0_array,
-        DArray *vif_num_scale1_array,
-        DArray *vif_den_scale1_array,
-        DArray *vif_num_scale2_array,
-        DArray *vif_den_scale2_array,
-        DArray *vif_num_scale3_array,
-        DArray *vif_den_scale3_array,
-        DArray *vif_array,
-        DArray *psnr_array,
-        DArray *ssim_array,
-        DArray *ms_ssim_array,
-        char *errmsg,
-        int n_thread,
-        int n_subsample
-        )
-{
-    VMAF_THREAD_STRUCT combo_thread_data;
-    combo_thread_data.read_frame = read_frame;
-    combo_thread_data.user_data = user_data;
-    combo_thread_data.w = w;
-    combo_thread_data.h = h;
-    combo_thread_data.fmt = fmt;
-    combo_thread_data.adm_num_array = adm_num_array;
-    combo_thread_data.adm_den_array = adm_den_array;
-    combo_thread_data.adm_num_scale0_array = adm_num_scale0_array;
-    combo_thread_data.adm_den_scale0_array = adm_den_scale0_array;
-    combo_thread_data.adm_num_scale1_array = adm_num_scale1_array;
-    combo_thread_data.adm_den_scale1_array = adm_den_scale1_array;
-    combo_thread_data.adm_num_scale2_array = adm_num_scale2_array;
-    combo_thread_data.adm_den_scale2_array = adm_den_scale2_array;
-    combo_thread_data.adm_num_scale3_array = adm_num_scale3_array;
-    combo_thread_data.adm_den_scale3_array = adm_den_scale3_array;
-    combo_thread_data.motion_array = motion_array;
-    combo_thread_data.motion2_array = motion2_array;
-    combo_thread_data.vif_num_scale0_array = vif_num_scale0_array;
-    combo_thread_data.vif_den_scale0_array = vif_den_scale0_array;
-    combo_thread_data.vif_num_scale1_array = vif_num_scale1_array;
-    combo_thread_data.vif_den_scale1_array = vif_den_scale1_array;
-    combo_thread_data.vif_num_scale2_array = vif_num_scale2_array;
-    combo_thread_data.vif_den_scale2_array = vif_den_scale2_array;
-    combo_thread_data.vif_num_scale3_array = vif_num_scale3_array;
-    combo_thread_data.vif_den_scale3_array = vif_den_scale3_array;
-    combo_thread_data.vif_array = vif_array;
-    combo_thread_data.psnr_array = psnr_array;
-    combo_thread_data.ssim_array = ssim_array;
-    combo_thread_data.ms_ssim_array = ms_ssim_array;
-    combo_thread_data.errmsg = errmsg;
-    combo_thread_data.frm_idx = 0;
-    // combo_thread_data.stop_threads = 0;
-    combo_thread_data.n_subsample = n_subsample;
-
-    // sanity check for width/height
-    if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float))
-    {
-        sprintf(errmsg, "wrong width %d or height %d.\n", w, h);
-        return -1;
-    }
-
-    // calculate stride and data size
-    combo_thread_data.stride = ALIGN_CEIL(w * sizeof(float));
-    if ((size_t)h > SIZE_MAX / combo_thread_data.stride)
-    {
-        sprintf(errmsg, "height %d too large.\n", h);
-        return -1;
-    }
-
-    if (psnr_constants(fmt, &combo_thread_data.peak, &combo_thread_data.psnr_max))
-    {
-        sprintf(errmsg, "unknown format %s.\n", fmt);
-        return -1;
-    }
-
-    combo_thread_data.data_sz = (size_t)combo_thread_data.stride * h;
-
-    combo_threadfunc(&combo_thread_data);
-
-    return combo_thread_data.ret;
-
-}
-
-#endif // #ifdef MULTI_THREADING
