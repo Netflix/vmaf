@@ -29,6 +29,12 @@ By contributing your code, you agree to license your contribution under the term
 Files in the repository follow the structure below (10/4/2019 TO BE UPDATED):
 
 ```
+├── matlab: matlab scripts
+├── src
+│   ├── libsvm: libsvm C/C++ source code
+│   ├── libvmaf: stand-alone C++ implementation of VMAF and a number of other metrics such as PSNR and SSIM
+│   ├── pthreads: m
+│   └── ptools
 ├── feature: C/C++ source code for extraction of features
 ├── libsvm: libsvm C/C++ source code
 ├── ptools: PicklingTools library that allows Python/C++ data sharing

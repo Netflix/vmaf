@@ -166,6 +166,7 @@ $(LIBVMAF): $(OBJS) $(wildcard $(PTOOLSDIR)/*.o)
 
 vmafossexec: $(OBJDIR)/main.o $(LIBVMAF)
 	$(CXX) -s -o $@ $(LDFLAGS) $^ -pthread
+#	$(CXX) -o $@ $(LDFLAGS) $^ -pthread
 
 libvmaf.pc: libvmaf.pc.in
 	sed 's!@@PREFIX@@!$(INSTALL_PREFIX)!g' $< >$@
@@ -189,16 +190,16 @@ vmaf: $(OBJDIR)/vmaf_main.o $(LIBVMAF)
 	$(CXX) -s -o $@ $(LDFLAGS) $^ $(LIBS) -pthread
 
 psnr: $(OBJDIR)/psnr_main.o $(LIBVMAF)
-	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
+	$(CC) -s -o $@ $(LDFLAGS) $^ $(LIBS)
 
 moment: $(OBJDIR)/moment_main.o $(LIBVMAF)
-	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
+	$(CC) -s -o $@ $(LDFLAGS) $^ $(LIBS)
 
 ssim: $(OBJDIR)/ssim_main.o $(LIBVMAF)
-	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
+	$(CC) -s -o $@ $(LDFLAGS) $^ $(LIBS)
 
 ms_ssim: $(OBJDIR)/ms_ssim_main.o $(LIBVMAF)
-	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
+	$(CC) -s -o $@ $(LDFLAGS) $^ $(LIBS)
 
 .PHONY: install
 install: libvmaf.pc
