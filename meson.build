@@ -40,10 +40,10 @@ ptools_shared_lib = shared_library(
 
 # Build libvmaf
 
-feature_src_dir = './src/feature/src/'
+feature_src_dir = './src/libvmaf/src/'
 src_dir = './src/libvmaf/src/'
 
-vmaf_base_include = include_directories('./src/feature/src', './src/feature/src/common')
+vmaf_base_include = include_directories('./src/libvmaf/src', './src/libvmaf/src/common')
 
 convolution_and_psnr_avx_sources = [
     feature_src_dir + 'common/convolution_avx.c',

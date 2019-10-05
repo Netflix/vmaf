@@ -47,7 +47,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\feature\src;..\feature\src\common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\libvmaf\src;..\libvmaf\src\common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>MULTI_THREADING;_DEBUG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -58,12 +58,12 @@
     </Link>
     <PostBuildEvent>
       <Message>copy examples.bat to output folder</Message>
-      <Command>copy /y "$(SolutionDir)\src\feature\examples.bat" "$(OutDir)"</Command>
+      <Command>copy /y "$(SolutionDir)\src\libvmaf\examples.bat" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\feature\src;..\feature\src\common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\libvmaf\src;..\libvmaf\src\common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>MULTI_THREADING;NDEBUG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -76,7 +76,7 @@
     </Link>
     <PostBuildEvent>
       <Message>copy examples.bat to output folder</Message>
-      <Command>copy /y "$(SolutionDir)\src\feature\examples.bat" "$(OutDir)"</Command>
+      <Command>copy /y "$(SolutionDir)\src\libvmaf\examples.bat" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

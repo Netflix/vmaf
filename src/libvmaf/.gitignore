@@ -5,3 +5,10 @@ testlib
 .cproject
 .project
 .DS_Store
+/obj/.keep
+vmaf
+psnr
+moment
+ssim
+ms_ssim
+.pydevproject
