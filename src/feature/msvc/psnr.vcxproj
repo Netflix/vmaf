@@ -73,7 +73,7 @@
     <ClCompile Include="..\src\psnr_main.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\wrapper\libvmaf.vcxproj">
+    <ProjectReference Include="..\..\wrapper\libvmaf.vcxproj">
       <Project>{5f5103f4-e473-4476-8e7b-fd3465e872b1}</Project>
     </ProjectReference>
   </ItemGroup>
