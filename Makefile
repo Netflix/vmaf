@@ -1,20 +1,16 @@
-TARGETS = \
-	src/ptools \
-	libsvm \
-	wrapper \
-	feature
-
 all:
-	-for dir in $(TARGETS); do \
-		cd $${dir}; $(MAKE); cd ..; \
-	done
+	cd src/ptools; $(MAKE); cd ../..;
+	cd src/libsvm; $(MAKE); cd ../..;
+	cd src/libsvm; $(MAKE) lib; cd ../..;
+	cd wrapper; $(MAKE); cd ..;
+	cd feature; $(MAKE); cd ..;
 
-	cd libsvm; $(MAKE) lib; cd ..;
 
 clean:
-	-for dir in $(TARGETS); do \
-		cd $${dir}; $(MAKE) clean; cd ..; \
-	done
+	cd src/ptools; $(MAKE) clean; cd ../..;
+	cd src/libsvm; $(MAKE) clean; cd ../..;
+	cd wrapper; $(MAKE) clean; cd ..;
+	cd feature; $(MAKE) clean; cd ..;
 
 test:
 	@echo hello;
