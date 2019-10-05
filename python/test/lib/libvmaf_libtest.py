@@ -16,7 +16,7 @@ class LibRunner(VmafossExecQualityRunner):
     TYPE = "TESTLIB"
 
     def _get_exec(self):
-        return required(project_path(os.path.join("src", "wrapper", "testlib")))
+        return required(project_path(os.path.join("src", "libvmaf", "testlib")))
 
 
 class QualityRunnerTest(unittest.TestCase):

@@ -3,13 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vmafossexec", "src\wrapper\vmafossexec.vcxproj", "{C2D3FD1E-9068-494D-9655-88CE906B4C8B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vmafossexec", "src\libvmaf\vmafossexec.vcxproj", "{C2D3FD1E-9068-494D-9655-88CE906B4C8B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ptools", "src\ptools\ptools.vcxproj", "{3F07B371-1B81-477E-886C-0E079B0A6803}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pthreads", "src\pthreads\COPKG\pthreads.vcxproj", "{03A4C79F-F1A8-48C9-A2AC-0A14EC0F093E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvmaf", "src\wrapper\libvmaf.vcxproj", "{5F5103F4-E473-4476-8E7B-FD3465E872B1}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvmaf", "src\libvmaf\libvmaf.vcxproj", "{5F5103F4-E473-4476-8E7B-FD3465E872B1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{3202BE63-8C0E-4405-9B6D-DFD6F99B3CB4}"
 EndProject

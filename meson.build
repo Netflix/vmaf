@@ -41,7 +41,7 @@ ptools_shared_lib = shared_library(
 # Build libvmaf
 
 feature_src_dir = './src/feature/src/'
-src_dir = './src/wrapper/src/'
+src_dir = './src/libvmaf/src/'
 
 vmaf_base_include = include_directories('./src/feature/src', './src/feature/src/common')
 

@@ -63,7 +63,7 @@ class ExternalProgram(object):
     ssim = project_path(os.path.join("src", "feature", "ssim"))
     ms_ssim = project_path(os.path.join("src", "feature", "ms_ssim"))
     vmaf = project_path(os.path.join("src", "feature", "vmaf"))
-    vmafossexec = project_path(os.path.join("src", "wrapper", "vmafossexec"))
+    vmafossexec = project_path(os.path.join("src", "libvmaf", "vmafossexec"))
 
 
 class ExternalProgramCaller(object):
