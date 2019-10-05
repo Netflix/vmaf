@@ -12,3 +12,4 @@ moment
 ssim
 ms_ssim
 .pydevproject
+libvmaf.pc

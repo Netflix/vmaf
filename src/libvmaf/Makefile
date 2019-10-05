@@ -1,7 +1,7 @@
 LIBVMAF = libvmaf.a
 
 .PHONY: all
-all: $(LIBVMAF) vmafossexec vmaf psnr moment ssim ms_ssim
+all: $(LIBVMAF) libvmaf.pc vmafossexec vmaf psnr moment ssim ms_ssim
 
 TOP = $(shell pwd)
 SRCDIR = $(TOP)/src
@@ -167,7 +167,7 @@ $(LIBVMAF): $(OBJS) $(wildcard $(PTOOLSDIR)/*.o)
 vmafossexec: $(OBJDIR)/main.o $(LIBVMAF)
 	$(CXX) -s -o $@ $(LDFLAGS) $^ -pthread
 
-$(OBJDIR)/libvmaf.pc: libvmaf.pc.in
+libvmaf.pc: libvmaf.pc.in
 	sed 's!@@PREFIX@@!$(INSTALL_PREFIX)!g' $< >$@
 
 $(OBJDIR)/vmaf_main.o: $(SRCDIR)/vmaf_main.c
@@ -201,7 +201,7 @@ ms_ssim: $(OBJDIR)/ms_ssim_main.o $(LIBVMAF)
 	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
 
 .PHONY: install
-install: $(OBJDIR)/libvmaf.pc
+install: libvmaf.pc
 	mkdir -p $(DESTDIR)$(INSTALL_PREFIX)/lib
 	mkdir -p $(DESTDIR)$(INSTALL_PREFIX)/include
 	mkdir -p $(DESTDIR)$(INSTALL_PREFIX)/share
@@ -209,7 +209,7 @@ install: $(OBJDIR)/libvmaf.pc
 	cp $(LIBVMAF) $(DESTDIR)$(INSTALL_PREFIX)/lib/$(LIBVMAF)
 	cp src/libvmaf.h $(DESTDIR)$(INSTALL_PREFIX)/include/
 	cp -r ../model $(DESTDIR)$(INSTALL_PREFIX)/share/
-	cp $(OBJDIR)/libvmaf.pc $(DESTDIR)$(INSTALL_PREFIX)/lib/pkgconfig/
+	cp libvmaf.pc $(DESTDIR)$(INSTALL_PREFIX)/lib/pkgconfig/
 
 .PHONY: uninstall
 uninstall:
