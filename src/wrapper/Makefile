@@ -6,11 +6,11 @@ all: $(LIBVMAF) vmafossexec
 TOP = $(shell pwd)
 SRCDIR = $(TOP)/src
 OBJDIR = $(TOP)/obj
-FEATURESRCDIR = $(TOP)/../../feature/src
+FEATURESRCDIR = $(TOP)/../feature/src
 PTOOLSDIR = $(TOP)/../ptools
 INSTALL_PREFIX = /usr/local
-INCLUDES += -I$(TOP)/../../feature/src
-INCLUDES += -I$(TOP)/../../feature/src/common
+INCLUDES += -I$(TOP)/../feature/src
+INCLUDES += -I$(TOP)/../feature/src/common
 
 OBJS = \
 	$(OBJDIR)/alloc.o \

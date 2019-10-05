@@ -13,13 +13,13 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="feature">
+    <Filter Include="src\feature">
       <UniqueIdentifier>{dee9a2f0-7c52-449e-9d11-a683f66eb2c9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="feature\common">
+    <Filter Include="src\feature\common">
       <UniqueIdentifier>{589b3bda-313a-403c-953e-708015877f7b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="feature\iqa">
+    <Filter Include="src\feature\iqa">
       <UniqueIdentifier>{5613a206-8935-4871-ade5-e078de0d0fa6}</UniqueIdentifier>
     </Filter>
     <Filter Include="pugixml">

@@ -58,7 +58,7 @@
     </Link>
     <PostBuildEvent>
       <Message>copy examples.bat to output folder</Message>
-      <Command>copy /y "$(SolutionDir)feature\examples.bat" "$(OutDir)"</Command>
+      <Command>copy /y "$(SolutionDir)\src\feature\examples.bat" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -76,7 +76,7 @@
     </Link>
     <PostBuildEvent>
       <Message>copy examples.bat to output folder</Message>
-      <Command>copy /y "$(SolutionDir)feature\examples.bat" "$(OutDir)"</Command>
+      <Command>copy /y "$(SolutionDir)\src\feature\examples.bat" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

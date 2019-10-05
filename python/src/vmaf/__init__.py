@@ -58,11 +58,11 @@ class ExternalProgram(object):
     External C programs relied upon by the python vmaf code
     These external programs should be compiled before vmaf is ran, as per instructions in README
     """
-    psnr = project_path(os.path.join("feature", "psnr"))
-    moment = project_path(os.path.join("feature", "moment"))
-    ssim = project_path(os.path.join("feature", "ssim"))
-    ms_ssim = project_path(os.path.join("feature", "ms_ssim"))
-    vmaf = project_path(os.path.join("feature", "vmaf"))
+    psnr = project_path(os.path.join("src", "feature", "psnr"))
+    moment = project_path(os.path.join("src", "feature", "moment"))
+    ssim = project_path(os.path.join("src", "feature", "ssim"))
+    ms_ssim = project_path(os.path.join("src", "feature", "ms_ssim"))
+    vmaf = project_path(os.path.join("src", "feature", "vmaf"))
     vmafossexec = project_path(os.path.join("src", "wrapper", "vmafossexec"))
 
 

@@ -5,7 +5,7 @@ TOP = $(shell pwd)
 SRCDIR  = $(TOP)/src
 OBJDIR  = $(TOP)/obj
 TOOLDIR = $(TOP)/tool
-LIBVMAF = $(TOP)/../src/wrapper/libvmaf.a
+LIBVMAF = $(TOP)/../wrapper/libvmaf.a
 
 CFLAGS_COMMON = -g -O3 -fPIC -w -Wextra -pedantic
 # CFLAGS_COMMON = -g -O0 -fPIC -Wall -Wextra -pedantic
