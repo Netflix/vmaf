@@ -655,7 +655,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 65.559652083333333, places=4)
 
         with self.assertRaises(KeyError):
-            print results[0]['VMAFOSSEXEC_adm2_score']
+            print(results[0]['VMAFOSSEXEC_adm2_score'])
 
 
 class VmafossexecQualityRunnerSubsamplingTest(unittest.TestCase):
