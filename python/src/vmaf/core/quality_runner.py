@@ -706,17 +706,17 @@ class VmafossExecQualityRunner(QualityRunner):
         # check if vmafossexec returned additional info about the bootstrapped models
         # bootstrap_model_list_str is a comma-separated string of model names
         vmaf_params = root.findall('params')[0].attrib
-        features = copy.copy(self.FEATURES)
+        augmented_features = copy.copy(self.FEATURES)
         if 'bootstrap_model_list_str' in vmaf_params:
             bootstrap_model_list_str = vmaf_params['bootstrap_model_list_str']
             bootstrap_model_list = bootstrap_model_list_str.split(',') if len(bootstrap_model_list_str) > 0 else []
-            features += bootstrap_model_list
+            augmented_features += bootstrap_model_list
 
-        feature_scores = [[] for _ in features]
+        feature_scores = [[] for _ in augmented_features]
 
         for frame in root.findall('frames/frame'):
             scores.append(float(frame.attrib['vmaf']))
-            for i_feature, feature in enumerate(self.FEATURES):
+            for i_feature, feature in enumerate(augmented_features):
                 try:
                     feature_scores[i_feature].append(float(frame.attrib[feature]))
                 except KeyError:
@@ -725,7 +725,7 @@ class VmafossExecQualityRunner(QualityRunner):
         quality_result = {
             self.get_scores_key(): scores,
         }
-        for i_feature, feature in enumerate(self.FEATURES):
+        for i_feature, feature in enumerate(augmented_features):
             if len(feature_scores[i_feature]) != 0:
                 quality_result[self.get_feature_scores_key(feature)] = feature_scores[i_feature]
         return quality_result
