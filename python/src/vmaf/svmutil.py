@@ -1,4 +1,4 @@
-# TODO: dependency on libsvm/svmutil needs to be properly done, this is a temporary workaround wrapper
+# TODO: dependency on src/libsvm/svmutil needs to be properly done, this is a temporary workaround wrapper
 
 from __future__ import absolute_import
 
@@ -7,11 +7,11 @@ from vmaf.config import VmafConfig
 
 
 # This will work only when running with a checked out vmaf source, but not via pip install
-libsvm_path = VmafConfig.root_path('libsvm', 'python')
+libsvm_path = VmafConfig.root_path('src', 'libsvm', 'python')
 
 
 if libsvm_path not in sys.path:
-    # Inject {project}/libsvm/python to PYTHONPATH dynamically
+    # Inject {project}/src/libsvm/python to PYTHONPATH dynamically
     sys.path.append(libsvm_path)
 
 

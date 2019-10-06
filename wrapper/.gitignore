@@ -1,7 +1,0 @@
-*.o
-vmafossexec
-libvmaf.a
-testlib
-.cproject
-.project
-.DS_Store

@@ -1,4 +1,4 @@
-rem refer feature/examples
+rem refer src/libvmaf/examples
 
 vmaf
 echo ""

@@ -19,8 +19,10 @@ except BaseException:
 # Path to folder containing this file
 VMAF_LIB_FOLDER = os.path.dirname(os.path.abspath(__file__))
 
+
 # Assuming vmaf source checkout, path to top checked out folder
 VMAF_PROJECT = os.path.abspath(os.path.join(VMAF_LIB_FOLDER, '../../..',))
+
 
 def to_list(value):
     """
@@ -33,6 +35,7 @@ def to_list(value):
         return value
     return list(value)
 
+
 def run_process(cmd, **kwargs):
     ret = subprocess.call(cmd, **kwargs)
     assert ret == 0, 'Process returned {ret}, cmd: {cmd}'.format(ret=ret, cmd=cmd)
@@ -43,22 +46,25 @@ def project_path(relative_path):
     path = os.path.join(VMAF_PROJECT, relative_path)
     return path
 
+
 def required(path):
     if not os.path.exists(path):
         raise AssertionError("%s does not exist, did you build?" % (path))
     return path
+
 
 class ExternalProgram(object):
     """
     External C programs relied upon by the python vmaf code
     These external programs should be compiled before vmaf is ran, as per instructions in README
     """
-    psnr = project_path("feature/psnr")
-    moment = project_path("feature/moment")
-    ssim = project_path("feature/ssim")
-    ms_ssim = project_path("feature/ms_ssim")
-    vmaf = project_path("feature/vmaf")
-    vmafossexec = project_path("wrapper/vmafossexec")
+    psnr = project_path(os.path.join("src", "libvmaf", "psnr"))
+    moment = project_path(os.path.join("src", "libvmaf", "moment"))
+    ssim = project_path(os.path.join("src", "libvmaf", "ssim"))
+    ms_ssim = project_path(os.path.join("src", "libvmaf", "ms_ssim"))
+    vmaf = project_path(os.path.join("src", "libvmaf", "vmaf"))
+    vmafossexec = project_path(os.path.join("src", "libvmaf", "vmafossexec"))
+
 
 class ExternalProgramCaller(object):
     """

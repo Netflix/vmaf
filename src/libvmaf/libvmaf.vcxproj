@@ -47,7 +47,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\feature\src;..\feature\src\common;..\pthreads;..\ptools;..\ptools\opencontainers_1_8_4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..'src', 'libvmaf', \src;..\libvmaf\src\common;..\pthreads;..\ptools;..\ptools\opencontainers_1_8_4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -60,7 +60,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\feature\src;..\feature\src\common;..\pthreads;..\ptools;..\ptools\opencontainers_1_8_4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\libvmaf\src;..\libvmaf\src\common;..\pthreads;..\ptools;..\ptools\opencontainers_1_8_4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PreprocessorDefinitions>MULTI_THREADING;PTW32_STATIC_LIB;OC_NEW_STYLE_INCLUDES;NDEBUG;_CRT_NONSTDC_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -74,34 +74,34 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\feature\src\adm.c" />
-    <ClCompile Include="..\feature\src\adm_tools.c" />
-    <ClCompile Include="..\feature\src\all.c" />
-    <ClCompile Include="..\feature\src\ansnr.c" />
-    <ClCompile Include="..\feature\src\ansnr_tools.c" />
-    <ClCompile Include="..\feature\src\common\alignment.c" />
-    <ClCompile Include="..\feature\src\common\alloc.c" />
-    <ClCompile Include="..\feature\src\common\blur_array.c" />
-    <ClCompile Include="..\feature\src\common\convolution.c" />
-    <ClCompile Include="..\feature\src\common\convolution_avx.c">
+    <ClCompile Include="..\libvmaf\src\adm.c" />
+    <ClCompile Include="..\libvmaf\src\adm_tools.c" />
+    <ClCompile Include="..\libvmaf\src\all.c" />
+    <ClCompile Include="..\libvmaf\src\ansnr.c" />
+    <ClCompile Include="..\libvmaf\src\ansnr_tools.c" />
+    <ClCompile Include="..\libvmaf\src\common\alignment.c" />
+    <ClCompile Include="..\libvmaf\src\common\alloc.c" />
+    <ClCompile Include="..\libvmaf\src\common\blur_array.c" />
+    <ClCompile Include="..\libvmaf\src\common\convolution.c" />
+    <ClCompile Include="..\libvmaf\src\common\convolution_avx.c">
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AdvancedVectorExtensions</EnableEnhancedInstructionSet>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AdvancedVectorExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="..\feature\src\common\cpu.c" />
-    <ClCompile Include="..\feature\src\common\file_io.c" />
-    <ClCompile Include="..\feature\src\common\frame.c" />
-    <ClCompile Include="..\feature\src\iqa\convolve.c" />
-    <ClCompile Include="..\feature\src\iqa\decimate.c" />
-    <ClCompile Include="..\feature\src\iqa\math_utils.c" />
-    <ClCompile Include="..\feature\src\iqa\ssim_tools.c" />
-    <ClCompile Include="..\feature\src\moment.c" />
-    <ClCompile Include="..\feature\src\motion.c" />
-    <ClCompile Include="..\feature\src\ms_ssim.c" />
-    <ClCompile Include="..\feature\src\psnr.c" />
-    <ClCompile Include="..\feature\src\psnr_tools.c" />
-    <ClCompile Include="..\feature\src\ssim.c" />
-    <ClCompile Include="..\feature\src\vif.c" />
-    <ClCompile Include="..\feature\src\vif_tools.c" />
+    <ClCompile Include="..\libvmaf\src\common\cpu.c" />
+    <ClCompile Include="..\libvmaf\src\common\file_io.c" />
+    <ClCompile Include="..\libvmaf\src\common\frame.c" />
+    <ClCompile Include="..\libvmaf\src\iqa\convolve.c" />
+    <ClCompile Include="..\libvmaf\src\iqa\decimate.c" />
+    <ClCompile Include="..\libvmaf\src\iqa\math_utils.c" />
+    <ClCompile Include="..\libvmaf\src\iqa\ssim_tools.c" />
+    <ClCompile Include="..\libvmaf\src\moment.c" />
+    <ClCompile Include="..\libvmaf\src\motion.c" />
+    <ClCompile Include="..\libvmaf\src\ms_ssim.c" />
+    <ClCompile Include="..\libvmaf\src\psnr.c" />
+    <ClCompile Include="..\libvmaf\src\psnr_tools.c" />
+    <ClCompile Include="..\libvmaf\src\ssim.c" />
+    <ClCompile Include="..\libvmaf\src\vif.c" />
+    <ClCompile Include="..\libvmaf\src\vif_tools.c" />
     <ClCompile Include="src\combo.c" />
     <ClCompile Include="src\cpu_info.c" />
     <ClCompile Include="src\darray.c" />
@@ -111,35 +111,35 @@
     <ClCompile Include="src\vmaf.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\feature\src\adm_options.h" />
-    <ClInclude Include="..\feature\src\adm_tools.h" />
-    <ClInclude Include="..\feature\src\all_options.h" />
-    <ClInclude Include="..\feature\src\ansnr_options.h" />
-    <ClInclude Include="..\feature\src\ansnr_tools.h" />
-    <ClInclude Include="..\feature\src\common\alignment.h" />
-    <ClInclude Include="..\feature\src\common\alloc.h" />
-    <ClInclude Include="..\feature\src\common\blur_array.h" />
-    <ClInclude Include="..\feature\src\common\convolution.h" />
-    <ClInclude Include="..\feature\src\common\convolution_internal.h" />
-    <ClInclude Include="..\feature\src\common\cpu.h" />
-    <ClInclude Include="..\feature\src\common\cpudetect.h" />
-    <ClInclude Include="..\feature\src\common\file_io.h" />
-    <ClInclude Include="..\feature\src\common\frame.h" />
-    <ClInclude Include="..\feature\src\common\macros.h" />
-    <ClInclude Include="..\feature\src\iqa\convolve.h" />
-    <ClInclude Include="..\feature\src\iqa\decimate.h" />
-    <ClInclude Include="..\feature\src\iqa\iqa.h" />
-    <ClInclude Include="..\feature\src\iqa\iqa_options.h" />
-    <ClInclude Include="..\feature\src\iqa\iqa_os.h" />
-    <ClInclude Include="..\feature\src\iqa\math_utils.h" />
-    <ClInclude Include="..\feature\src\iqa\ssim_tools.h" />
-    <ClInclude Include="..\feature\src\moment_options.h" />
-    <ClInclude Include="..\feature\src\motion_options.h" />
-    <ClInclude Include="..\feature\src\motion_tools.h" />
-    <ClInclude Include="..\feature\src\psnr_options.h" />
-    <ClInclude Include="..\feature\src\psnr_tools.h" />
-    <ClInclude Include="..\feature\src\vif_options.h" />
-    <ClInclude Include="..\feature\src\vif_tools.h" />
+    <ClInclude Include="..\libvmaf\src\adm_options.h" />
+    <ClInclude Include="..\libvmaf\src\adm_tools.h" />
+    <ClInclude Include="..\libvmaf\src\all_options.h" />
+    <ClInclude Include="..\libvmaf\src\ansnr_options.h" />
+    <ClInclude Include="..\libvmaf\src\ansnr_tools.h" />
+    <ClInclude Include="..\libvmaf\src\common\alignment.h" />
+    <ClInclude Include="..\libvmaf\src\common\alloc.h" />
+    <ClInclude Include="..\libvmaf\src\common\blur_array.h" />
+    <ClInclude Include="..\libvmaf\src\common\convolution.h" />
+    <ClInclude Include="..\libvmaf\src\common\convolution_internal.h" />
+    <ClInclude Include="..\libvmaf\src\common\cpu.h" />
+    <ClInclude Include="..\libvmaf\src\common\cpudetect.h" />
+    <ClInclude Include="..\libvmaf\src\common\file_io.h" />
+    <ClInclude Include="..\libvmaf\src\common\frame.h" />
+    <ClInclude Include="..\libvmaf\src\common\macros.h" />
+    <ClInclude Include="..\libvmaf\src\iqa\convolve.h" />
+    <ClInclude Include="..\libvmaf\src\iqa\decimate.h" />
+    <ClInclude Include="..\libvmaf\src\iqa\iqa.h" />
+    <ClInclude Include="..\libvmaf\src\iqa\iqa_options.h" />
+    <ClInclude Include="..\libvmaf\src\iqa\iqa_os.h" />
+    <ClInclude Include="..\libvmaf\src\iqa\math_utils.h" />
+    <ClInclude Include="..\libvmaf\src\iqa\ssim_tools.h" />
+    <ClInclude Include="..\libvmaf\src\moment_options.h" />
+    <ClInclude Include="..\libvmaf\src\motion_options.h" />
+    <ClInclude Include="..\libvmaf\src\motion_tools.h" />
+    <ClInclude Include="..\libvmaf\src\psnr_options.h" />
+    <ClInclude Include="..\libvmaf\src\psnr_tools.h" />
+    <ClInclude Include="..\libvmaf\src\vif_options.h" />
+    <ClInclude Include="..\libvmaf\src\vif_tools.h" />
     <ClInclude Include="src\combo.h" />
     <ClInclude Include="src\cpu_info.h" />
     <ClInclude Include="src\darray.h" />

@@ -1,4 +1,6 @@
 import unittest
+import os
+
 from vmaf import project_path, required
 from vmaf.config import VmafConfig
 from vmaf.core.asset import Asset
@@ -14,7 +16,7 @@ class LibRunner(VmafossExecQualityRunner):
     TYPE = "TESTLIB"
 
     def _get_exec(self):
-        return required(project_path("wrapper/testlib"))
+        return required(project_path(os.path.join("src", "libvmaf", "testlib")))
 
 
 class QualityRunnerTest(unittest.TestCase):

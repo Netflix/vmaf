@@ -2,7 +2,7 @@ project('vmaf', 'c', 'cpp')
 
 # Build libptools
 
-ptools_path = './ptools/'
+ptools_path = './src/ptools/'
 opencontainers_path = ptools_path + 'opencontainers_1_8_4'
 opencontainers_include = include_directories(opencontainers_path + '/include')
 
@@ -40,10 +40,10 @@ ptools_shared_lib = shared_library(
 
 # Build libvmaf
 
-feature_src_dir = './feature/src/'
-src_dir = './wrapper/src/'
+feature_src_dir = './src/libvmaf/src/'
+src_dir = './src/libvmaf/src/'
 
-vmaf_base_include = include_directories('./feature/src', './feature/src/common')
+vmaf_base_include = include_directories('./src/libvmaf/src', './src/libvmaf/src/common')
 
 convolution_and_psnr_avx_sources = [
     feature_src_dir + 'common/convolution_avx.c',

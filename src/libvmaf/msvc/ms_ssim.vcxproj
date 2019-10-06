@@ -12,9 +12,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <UseNativeEnvironment>true</UseNativeEnvironment>
-    <ProjectGuid>{054010E9-3004-4C24-B0F3-DCCE36D6B436}</ProjectGuid>
+    <ProjectGuid>{CF8FA427-306B-4803-9F23-31C229A630B6}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>vmaf</RootNamespace>
+    <RootNamespace>ms_ssim</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -70,10 +70,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\vmaf_main.c" />
+    <ClCompile Include="..\src\ms_ssim_main.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\wrapper\libvmaf.vcxproj">
+    <ProjectReference Include="..\..\libvmaf\libvmaf.vcxproj">
       <Project>{5f5103f4-e473-4476-8e7b-fd3465e872b1}</Project>
     </ProjectReference>
   </ItemGroup>

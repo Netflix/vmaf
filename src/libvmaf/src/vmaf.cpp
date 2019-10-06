@@ -735,51 +735,51 @@ Result VmafQualityRunner::run(Asset asset, int (*read_frame)(float *ref_data, fl
             adm2, adm_scale0, adm_scale1, adm_scale2, adm_scale3, motion,
             vif_scale0, vif_scale1, vif_scale2, vif_scale3, vif, motion2,
             enable_transform, disable_clip, predictionStructs);
-
     Result result { };
-    result.set_scores("adm2", adm2);
-    result.set_scores("adm_scale0", adm_scale0);
-    result.set_scores("adm_scale1", adm_scale1);
-    result.set_scores("adm_scale2", adm_scale2);
-    result.set_scores("adm_scale3", adm_scale3);
-    result.set_scores("motion", motion);
-    result.set_scores("vif_scale0", vif_scale0);
-    result.set_scores("vif_scale1", vif_scale1);
-    result.set_scores("vif_scale2", vif_scale2);
-    result.set_scores("vif_scale3", vif_scale3);
-    result.set_scores("vif", vif);
-    result.set_scores("motion2", motion2);
-
     for (size_t j = 0; j < model.feature_names.length(); j++) {
 
-        if ((strcmp(Stringize(model.feature_names[j]).c_str(),
-                "'VMAF_feature_adm2_score'") != 0)
-                && (strcmp(Stringize(model.feature_names[j]).c_str(),
-                "'VMAF_feature_adm_scale0_score'") != 0)
-                && (strcmp(Stringize(model.feature_names[j]).c_str(),
-                "'VMAF_feature_adm_scale1_score'") != 0)
-                && (strcmp(Stringize(model.feature_names[j]).c_str(),
-                "'VMAF_feature_adm_scale2_score'") != 0)
-                && (strcmp(Stringize(model.feature_names[j]).c_str(),
-                "'VMAF_feature_adm_scale3_score'") != 0)
-                && (strcmp(Stringize(model.feature_names[j]).c_str(),
-                "'VMAF_feature_motion_score'") != 0)
-                && (strcmp(Stringize(model.feature_names[j]).c_str(),
-                "'VMAF_feature_motion2_score'") != 0)
-                && (strcmp(Stringize(model.feature_names[j]).c_str(),
-                "'VMAF_feature_vif_scale0_score'") != 0)
-                && (strcmp(Stringize(model.feature_names[j]).c_str(),
-                "'VMAF_feature_vif_scale1_score'") != 0)
-                && (strcmp(Stringize(model.feature_names[j]).c_str(),
-                "'VMAF_feature_vif_scale2_score'") != 0)
-                && (strcmp(Stringize(model.feature_names[j]).c_str(),
-                "'VMAF_feature_vif_scale3_score'") != 0)
-                && (strcmp(Stringize(model.feature_names[j]).c_str(),
-                "'VMAF_feature_vif_score'") != 0)) {
-                printf("Unknown feature name: %s.\n", Stringize(model.feature_names[j]).c_str());
-                throw VmafException("Unknown feature name");
-        }
+        if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_adm2_score'") == 0)
+            result.set_scores("adm2", adm2);
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_adm_scale0_score'") == 0)
+            result.set_scores("adm_scale0", adm_scale0);
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_adm_scale1_score'") == 0)
+            result.set_scores("adm_scale1", adm_scale1);
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_adm_scale2_score'") == 0)
+            result.set_scores("adm_scale2", adm_scale2);
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_adm_scale3_score'") == 0)
+            result.set_scores("adm_scale3", adm_scale3);
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_motion_score'") == 0)
+            result.set_scores("motion", motion);
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_vif_scale0_score'") == 0)
+            result.set_scores("vif_scale0", vif_scale0);
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_vif_scale1_score'") == 0)
+            result.set_scores("vif_scale1", vif_scale1);
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_vif_scale2_score'") == 0)
+            result.set_scores("vif_scale2", vif_scale2);
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_vif_scale3_score'") == 0)
+            result.set_scores("vif_scale3", vif_scale3);
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_vif_score'") == 0)
+            result.set_scores("vif", vif);
+        else if (strcmp(Stringize(model.feature_names[j]).c_str(),
+                "'VMAF_feature_motion2_score'") == 0)
+            result.set_scores("motion2", motion2);
+        else {
+            printf("Unknown feature name: %s.\n",
+                    Stringize(model.feature_names[j]).c_str());
+            throw VmafException("Unknown feature name");
 
+        }
     }
 
     if (psnr_array_ptr != NULL) {

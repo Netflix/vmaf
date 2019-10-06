@@ -12,9 +12,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <UseNativeEnvironment>true</UseNativeEnvironment>
-    <ProjectGuid>{418D8FFD-D23A-4C56-8A94-D4B9D39083D1}</ProjectGuid>
+    <ProjectGuid>{D67BDBF2-D42F-465D-BABD-A381BFFAA373}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>ssim</RootNamespace>
+    <RootNamespace>moment</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -70,10 +70,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\ssim_main.c" />
+    <ClCompile Include="..\src\moment_main.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\wrapper\libvmaf.vcxproj">
+    <ProjectReference Include="..\..\libvmaf\libvmaf.vcxproj">
       <Project>{5f5103f4-e473-4476-8e7b-fd3465e872b1}</Project>
     </ProjectReference>
   </ItemGroup>

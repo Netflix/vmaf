@@ -1,0 +1,246 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="src\libvmaf">
+      <UniqueIdentifier>{dee9a2f0-7c52-449e-9d11-a683f66eb2c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\libvmaf\common">
+      <UniqueIdentifier>{589b3bda-313a-403c-953e-708015877f7b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\libvmaf\iqa">
+      <UniqueIdentifier>{5613a206-8935-4871-ade5-e078de0d0fa6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pugixml">
+      <UniqueIdentifier>{25a2d365-ffa6-4464-9712-344c46384a31}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\libvmaf\src\all.c">
+      <Filter>libvmaf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\adm.c">
+      <Filter>libvmaf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\adm_tools.c">
+      <Filter>libvmaf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\ansnr.c">
+      <Filter>libvmaf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\ansnr_tools.c">
+      <Filter>libvmaf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\moment.c">
+      <Filter>libvmaf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\motion.c">
+      <Filter>libvmaf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\ms_ssim.c">
+      <Filter>libvmaf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\psnr.c">
+      <Filter>libvmaf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\psnr_tools.c">
+      <Filter>libvmaf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\ssim.c">
+      <Filter>libvmaf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\vif.c">
+      <Filter>libvmaf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\vif_tools.c">
+      <Filter>libvmaf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\common\alloc.c">
+      <Filter>libvmaf\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\common\alignment.c">
+      <Filter>libvmaf\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\common\convolution.c">
+      <Filter>libvmaf\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\common\convolution_avx.c">
+      <Filter>libvmaf\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\common\cpu.c">
+      <Filter>libvmaf\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\common\file_io.c">
+      <Filter>libvmaf\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\common\frame.c">
+      <Filter>libvmaf\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\iqa\convolve.c">
+      <Filter>libvmaf\iqa</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\iqa\decimate.c">
+      <Filter>libvmaf\iqa</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\iqa\math_utils.c">
+      <Filter>libvmaf\iqa</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\iqa\ssim_tools.c">
+      <Filter>libvmaf\iqa</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pugixml\pugixml.cpp">
+      <Filter>pugixml</Filter>
+    </ClCompile>
+    <ClCompile Include="src\combo.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\cpu_info.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\darray.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\libvmaf.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\svm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vmaf.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libvmaf\src\common\blur_array.c">
+      <Filter>libvmaf\common</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\libvmaf\src\adm_options.h">
+      <Filter>libvmaf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\adm_tools.h">
+      <Filter>libvmaf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\ansnr_options.h">
+      <Filter>libvmaf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\ansnr_tools.h">
+      <Filter>libvmaf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\psnr_tools.h">
+      <Filter>libvmaf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\motion_options.h">
+      <Filter>libvmaf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\motion_tools.h">
+      <Filter>libvmaf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\psnr_options.h">
+      <Filter>libvmaf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\vif_options.h">
+      <Filter>libvmaf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\vif_tools.h">
+      <Filter>libvmaf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\common\alignment.h">
+      <Filter>libvmaf\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\common\alloc.h">
+      <Filter>libvmaf\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\common\convolution.h">
+      <Filter>libvmaf\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\common\convolution_internal.h">
+      <Filter>libvmaf\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\common\cpu.h">
+      <Filter>libvmaf\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\common\cpudetect.h">
+      <Filter>libvmaf\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\common\file_io.h">
+      <Filter>libvmaf\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\common\macros.h">
+      <Filter>libvmaf\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\common\frame.h">
+      <Filter>libvmaf\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\iqa\convolve.h">
+      <Filter>libvmaf\iqa</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\iqa\decimate.h">
+      <Filter>libvmaf\iqa</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\iqa\iqa.h">
+      <Filter>libvmaf\iqa</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\iqa\iqa_options.h">
+      <Filter>libvmaf\iqa</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\iqa\iqa_os.h">
+      <Filter>libvmaf\iqa</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\iqa\math_utils.h">
+      <Filter>libvmaf\iqa</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\iqa\ssim_tools.h">
+      <Filter>libvmaf\iqa</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pugixml\pugiconfig.hpp">
+      <Filter>pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pugixml\pugixml.hpp">
+      <Filter>pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="src\combo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cpu_info.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\darray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\libvmaf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\svm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vmaf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\common\blur_array.h">
+      <Filter>libvmaf\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\all_options.h">
+      <Filter>libvmaf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libvmaf\src\moment_options.h">
+      <Filter>libvmaf</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

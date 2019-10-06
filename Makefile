@@ -1,32 +1,25 @@
-TARGETS = \
-	ptools \
-	libsvm \
-	wrapper \
-	feature
-
 all:
-	-for dir in $(TARGETS); do \
-		cd $${dir}; $(MAKE); cd ..; \
-	done
-
-	cd libsvm; $(MAKE) lib; cd ..;
+	cd src/ptools; $(MAKE); cd ../..;
+	cd src/libsvm; $(MAKE); cd ../..;
+	cd src/libsvm; $(MAKE) lib; cd ../..;
+	cd src/libvmaf; $(MAKE); cd ../..;
 
 clean:
-	-for dir in $(TARGETS); do \
-		cd $${dir}; $(MAKE) clean; cd ..; \
-	done
+	cd src/ptools; $(MAKE) clean; cd ../..;
+	cd src/libsvm; $(MAKE) clean; cd ../..;
+	cd src/libvmaf; $(MAKE) clean; cd ../..;
 
 test:
 	@echo hello;
 
 install:
-	cd wrapper; $(MAKE) install; cd ..;
+	cd src/libvmaf; $(MAKE) install; cd ../..;
 
 uninstall:
-	cd wrapper; $(MAKE) uninstall; cd ..;
+	cd src/libvmaf; $(MAKE) uninstall; cd ../..;
 
 testlib:
-	cd wrapper; $(MAKE) testlib; cd ..;
+	cd src/libvmaf; $(MAKE) testlib; cd ../..;
 
 .PHONY: all clean $(TARGETS)
 

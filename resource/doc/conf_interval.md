@@ -11,7 +11,7 @@ There are two ways to perform bootstrapping on VMAF. The first one is called pla
 
 ### Run in Command Line
 
-To enable CI, use the option `--ci` in the command line tools with a bootstrapping model such as `model/vmaf_rb_v0.6.2/vmaf_rb_v0.6.2.pkl`. The `--ci` option is available for both `./run_vmaf` and `./wrapper/vmafossexec`. In [libvmaf](libvmaf.md), CI can be enabled by setting the argument `enable_conf_interval` to 1.
+To enable CI, use the option `--ci` in the command line tools with a bootstrapping model such as `model/vmaf_rb_v0.6.2/vmaf_rb_v0.6.2.pkl`. The `--ci` option is available for both `./run_vmaf` and `./src/libvmaf/vmafossexec`. In [libvmaf](libvmaf.md), CI can be enabled by setting the argument `enable_conf_interval` to 1.
 
 For example, running
 

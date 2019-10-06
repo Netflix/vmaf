@@ -1,16 +1,17 @@
 LIBVMAF = libvmaf.a
 
 .PHONY: all
-all: $(LIBVMAF) vmafossexec
+all: $(LIBVMAF) libvmaf.pc vmafossexec vmaf psnr moment ssim ms_ssim
 
 TOP = $(shell pwd)
 SRCDIR = $(TOP)/src
 OBJDIR = $(TOP)/obj
-FEATURESRCDIR = $(TOP)/../feature/src
+TOOLDIR = $(TOP)/tool
+FEATURESRCDIR = $(TOP)/src
 PTOOLSDIR = $(TOP)/../ptools
 INSTALL_PREFIX = /usr/local
-INCLUDES += -I$(TOP)/../feature/src
-INCLUDES += -I$(TOP)/../feature/src/common
+INCLUDES += -I$(TOP)/src
+INCLUDES += -I$(TOP)/src/common
 
 OBJS = \
 	$(OBJDIR)/alloc.o \
@@ -57,6 +58,7 @@ CFLAGS   := -std=c99 $(CFLAGS_COMMON) $(CFLAGS)
 CXXFLAGS := -std=c++11 $(CFLAGS_COMMON) $(CXXFLAGS)
 CPPFLAGS := $(CPPFLAGS)
 LDFLAGS  := $(LDFLAGS)
+LIBS     := $(LIBS) -lm
 
 $(AVX_OBJS): EXTRA_CFLAGS := -mavx
 
@@ -159,17 +161,48 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 $(OBJDIR)/%.o: $(SRCDIR)/pugixml/%.cpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $(CPPFLAGS) $<
 
-$(LIBVMAF): $(OBJS) $(wildcard ../ptools/*.o)
+$(LIBVMAF): $(OBJS) $(wildcard $(PTOOLSDIR)/*.o)
 	ar rcs $@ $^
 
 vmafossexec: $(OBJDIR)/main.o $(LIBVMAF)
 	$(CXX) -s -o $@ $(LDFLAGS) $^ -pthread
+#	$(CXX) -o $@ $(LDFLAGS) $^ -pthread
 
-$(OBJDIR)/libvmaf.pc: libvmaf.pc.in
+libvmaf.pc: libvmaf.pc.in
 	sed 's!@@PREFIX@@!$(INSTALL_PREFIX)!g' $< >$@
 
+$(OBJDIR)/vmaf_main.o: $(SRCDIR)/vmaf_main.c
+	$(CC) $(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+
+$(OBJDIR)/psnr_main.o: $(SRCDIR)/psnr_main.c
+	$(CC) $(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+
+$(OBJDIR)/moment_main.o: $(SRCDIR)/moment_main.c
+	$(CC) $(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+
+$(OBJDIR)/ssim_main.o: $(SRCDIR)/ssim_main.c
+	$(CC) $(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+
+$(OBJDIR)/ms_ssim_main.o: $(SRCDIR)/ms_ssim_main.c
+	$(CC) $(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
+
+vmaf: $(OBJDIR)/vmaf_main.o $(LIBVMAF)
+	$(CXX) -s -o $@ $(LDFLAGS) $^ $(LIBS) -pthread
+
+psnr: $(OBJDIR)/psnr_main.o $(LIBVMAF)
+	$(CC) -s -o $@ $(LDFLAGS) $^ $(LIBS)
+
+moment: $(OBJDIR)/moment_main.o $(LIBVMAF)
+	$(CC) -s -o $@ $(LDFLAGS) $^ $(LIBS)
+
+ssim: $(OBJDIR)/ssim_main.o $(LIBVMAF)
+	$(CC) -s -o $@ $(LDFLAGS) $^ $(LIBS)
+
+ms_ssim: $(OBJDIR)/ms_ssim_main.o $(LIBVMAF)
+	$(CC) -s -o $@ $(LDFLAGS) $^ $(LIBS)
+
 .PHONY: install
-install: $(OBJDIR)/libvmaf.pc
+install: libvmaf.pc
 	mkdir -p $(DESTDIR)$(INSTALL_PREFIX)/lib
 	mkdir -p $(DESTDIR)$(INSTALL_PREFIX)/include
 	mkdir -p $(DESTDIR)$(INSTALL_PREFIX)/share
@@ -177,7 +210,7 @@ install: $(OBJDIR)/libvmaf.pc
 	cp $(LIBVMAF) $(DESTDIR)$(INSTALL_PREFIX)/lib/$(LIBVMAF)
 	cp src/libvmaf.h $(DESTDIR)$(INSTALL_PREFIX)/include/
 	cp -r ../model $(DESTDIR)$(INSTALL_PREFIX)/share/
-	cp $(OBJDIR)/libvmaf.pc $(DESTDIR)$(INSTALL_PREFIX)/lib/pkgconfig/
+	cp libvmaf.pc $(DESTDIR)$(INSTALL_PREFIX)/lib/pkgconfig/
 
 .PHONY: uninstall
 uninstall:
@@ -195,3 +228,4 @@ clean:
 	rm -f $(LIBVMAF)
 	rm -f vmafossexec
 	rm -f testlib
+	rm -f vmaf psnr moment ssim ms_ssim

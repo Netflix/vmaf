@@ -1,15 +1,15 @@
 `libvmaf.a` -- A Static Library of VMAF
 ===================
 
-VMAF is now packaged into a static library called `libvmaf.a`, built using object files under `wrapper/obj` and `ptools`.
+VMAF is now packaged into a static library called `libvmaf.a`.
 
-To build `libvmaf.a`, make the `ptools` library first, followed by `wrapper`:
+To build `libvmaf.a`, make the `ptools` library first, followed by `libvmaf`:
 
 ```
-cd ptools; make; cd ../wrapper; make; cd ..;
+cd src/ptools; make; cd ../../src/libvmaf; make; cd ../..;
 ```
 
-The static library built is at `wrapper/libvmaf.a`. To install the library, run:
+The static library built is at `src/libvmaf/libvmaf.a`. To install the library, run:
 
 ```
 sudo make install
@@ -25,7 +25,7 @@ int disable_avx, int enable_transform, int phone_model, int do_psnr, int do_ssim
 int do_ms_ssim, char *pool_method, int thread, int subsample, int enable_conf_interval);
 ```
 
-Here, `read_frame` is a callback function which can be used to pass data from a program to VMAF. `user_data` is a program specific data that can be used by the callback function. For sample usage of `compute_vmaf`, refer to [`wrapper/src/main.cpp`](../../wrapper/src/main.cpp).
+Here, `read_frame` is a callback function which can be used to pass data from a program to VMAF. `user_data` is a program specific data that can be used by the callback function. For sample usage of `compute_vmaf`, refer to [`src/libvmaf/src/main.cpp`](../../libvmaf/src/main.cpp).
 
 To test the library, run:
 
@@ -33,7 +33,7 @@ To test the library, run:
 make testlib
 ```
 
-This command will build an executable `testlib` using this library together with [`wrapper/src/main.cpp`](../../wrapper/src/main.cpp).
+This command will build an executable `testlib` using this library together with [`src/libvmaf/src/main.cpp`](../../libvmaf/src/main.cpp).
 
 To uninstall the library run:
 

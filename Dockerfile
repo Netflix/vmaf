@@ -11,6 +11,6 @@ RUN pip install numpy scipy matplotlib notebook pandas sympy nose scikit-learn s
 RUN git clone --depth 1 https://github.com/Netflix/vmaf.git vmaf
 WORKDIR vmaf/
 ENV PYTHONPATH=/vmaf/python/src:/vmaf:$PYTHONPATH
-ENV PATH=/vmaf:/vmaf/wrapper:$PATH
+ENV PATH=/vmaf:/vmaf/src/libvmaf:$PATH
 RUN make
 WORKDIR /root/

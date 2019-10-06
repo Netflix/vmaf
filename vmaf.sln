@@ -3,25 +3,25 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vmafossexec", "wrapper\vmafossexec.vcxproj", "{C2D3FD1E-9068-494D-9655-88CE906B4C8B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vmafossexec", "src\libvmaf\vmafossexec.vcxproj", "{C2D3FD1E-9068-494D-9655-88CE906B4C8B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ptools", "ptools\ptools.vcxproj", "{3F07B371-1B81-477E-886C-0E079B0A6803}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ptools", "src\ptools\ptools.vcxproj", "{3F07B371-1B81-477E-886C-0E079B0A6803}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pthreads", "pthreads\COPKG\pthreads.vcxproj", "{03A4C79F-F1A8-48C9-A2AC-0A14EC0F093E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pthreads", "src\pthreads\COPKG\pthreads.vcxproj", "{03A4C79F-F1A8-48C9-A2AC-0A14EC0F093E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvmaf", "wrapper\libvmaf.vcxproj", "{5F5103F4-E473-4476-8E7B-FD3465E872B1}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvmaf", "src\libvmaf\libvmaf.vcxproj", "{5F5103F4-E473-4476-8E7B-FD3465E872B1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{3202BE63-8C0E-4405-9B6D-DFD6F99B3CB4}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "moment", "feature\msvc\moment.vcxproj", "{D67BDBF2-D42F-465D-BABD-A381BFFAA373}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "moment", "src\libvmaf\msvc\moment.vcxproj", "{D67BDBF2-D42F-465D-BABD-A381BFFAA373}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ms_ssim", "feature\msvc\ms_ssim.vcxproj", "{CF8FA427-306B-4803-9F23-31C229A630B6}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ms_ssim", "src\libvmaf\msvc\ms_ssim.vcxproj", "{CF8FA427-306B-4803-9F23-31C229A630B6}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "psnr", "feature\msvc\psnr.vcxproj", "{2DC3E418-09C6-49F4-A8DA-04C614D6016D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "psnr", "src\libvmaf\msvc\psnr.vcxproj", "{2DC3E418-09C6-49F4-A8DA-04C614D6016D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ssim", "feature\msvc\ssim.vcxproj", "{418D8FFD-D23A-4C56-8A94-D4B9D39083D1}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ssim", "src\libvmaf\msvc\ssim.vcxproj", "{418D8FFD-D23A-4C56-8A94-D4B9D39083D1}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vmaf", "feature\msvc\vmaf.vcxproj", "{054010E9-3004-4C24-B0F3-DCCE36D6B436}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vmaf", "src\libvmaf\msvc\vmaf.vcxproj", "{054010E9-3004-4C24-B0F3-DCCE36D6B436}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
