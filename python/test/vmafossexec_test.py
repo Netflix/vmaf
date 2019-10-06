@@ -595,7 +595,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_0020_score'], 90.16633958333334, places=3)
 
     def test_run_vmafossexec_runner_vmafplus1080model(self):
-        print 'test on running VMAF+ runner at 480 height...'
+        print('test on running VMAF+ runner at 480 height...')
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=1,
