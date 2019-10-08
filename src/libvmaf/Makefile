@@ -209,7 +209,7 @@ install: libvmaf.pc
 	mkdir -p $(DESTDIR)$(INSTALL_PREFIX)/lib/pkgconfig
 	cp $(LIBVMAF) $(DESTDIR)$(INSTALL_PREFIX)/lib/$(LIBVMAF)
 	cp src/libvmaf.h $(DESTDIR)$(INSTALL_PREFIX)/include/
-	cp -r ../model $(DESTDIR)$(INSTALL_PREFIX)/share/
+	cp -r ../../model $(DESTDIR)$(INSTALL_PREFIX)/share/
 	cp libvmaf.pc $(DESTDIR)$(INSTALL_PREFIX)/lib/pkgconfig/
 
 .PHONY: uninstall
