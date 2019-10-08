@@ -54,6 +54,7 @@ vmaf_cflags_common = [
     '-w',
     '-Wextra',
     '-pedantic',
+    '-D_FILE_OFFSET_BITS=64',
     '-D MULTI_THREADING',
     '-DOC_NEW_STYLE_INCLUDES'
 ]
