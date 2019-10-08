@@ -167,8 +167,8 @@ int run_wrapper(char *fmt, int width, int height, char *ref_path, char *dis_path
         struct _stat64 ref_stat;
         if (!_stat64(ref_path, &ref_stat))
 #else
-        struct stat64 ref_stat;
-        if (!stat64(ref_path, &ref_stat))
+        struct stat ref_stat;
+        if (!stat(ref_path, &ref_stat))
 #endif
         {
             size_t frame_size = width * height + s->offset;
