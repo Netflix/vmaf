@@ -165,6 +165,11 @@ install(TARGETS vmaf
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libvmaf.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 install(DIRECTORY model DESTINATION ${CMAKE_INSTALL_DATADIR})
 
+add_executable(testlib EXCLUDE_FROM_ALL src/libvmaf/src/main.cpp)
+target_include_directories(testlib PUBLIC src/libvmaf/src src/libvmaf/src/common)
+target_link_libraries(testlib PUBLIC Threads::Threads vmaf)
+set_target_properties(testlib PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/src/libvmaf)
+
 # Although it's possible to add an "uninstall" target by reading the install_manifest.txt file that gets generated after `make install`
 # It's generally not recommended by cmake.
 #uninstall:
