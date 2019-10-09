@@ -13,4 +13,5 @@ vmafossexec = executable(
     c_args : vmaf_c_args,
     cpp_args : vmaf_cpp_args,
     link_with : libvmaf,
+    install : true,
 )
