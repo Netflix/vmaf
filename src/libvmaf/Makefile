@@ -169,7 +169,7 @@ vmafossexec: $(OBJDIR)/main.o $(LIBVMAF)
 #	$(CXX) -o $@ $(LDFLAGS) $^ -pthread
 
 libvmaf.pc: libvmaf.pc.in
-	sed 's!@@PREFIX@@!$(INSTALL_PREFIX)!g' $< >$@
+	sed 's!@PREFIX@!$(INSTALL_PREFIX)!g' $< >$@
 
 $(OBJDIR)/vmaf_main.o: $(SRCDIR)/vmaf_main.c
 	$(CC) $(EXTRA_CFLAGS) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
