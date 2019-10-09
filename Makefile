@@ -21,6 +21,9 @@ uninstall:
 testlib:
 	cd src/libvmaf; $(MAKE) testlib; cd ../..;
 
+testlibdyn:
+	cd src/libvmaf; $(MAKE) testlibdyn; cd ../..;
+
 .PHONY: all clean $(TARGETS)
 
 

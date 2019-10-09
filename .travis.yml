@@ -18,4 +18,5 @@ script:
   - make
   - sudo make install
   - make testlib
-  - tox -c python/ -- -v -p no:warnings -m 'main or lib' --doctest-modules
+  - make testlibdyn
+  - export LD_LIBRARY_PATH=$(pwd)/src/libvmaf:$LD_LIBRARY_PATH && tox -c python/ -- -v -p no:warnings -m 'main or lib' --doctest-modules
