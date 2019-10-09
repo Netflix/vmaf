@@ -118,5 +118,6 @@ libvmaf = static_library(
     objects : [
         convolution_and_psnr_avx_static_lib.extract_all_objects(),
         ptools_shared_lib.extract_all_objects()
-    ]
+    ],
+    install: true,
 )
