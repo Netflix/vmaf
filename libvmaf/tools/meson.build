@@ -1,9 +1,5 @@
 libvmaf_dep = declare_dependency(
     link_with : libvmaf,
-    #include_directories : include_directories(
-    #    src_dir,
-    #    feature_src_dir + 'common'
-    #)
 )
 
 vmafossexec = executable(

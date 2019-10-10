@@ -1,17 +1,17 @@
-project('libvmaf', 'c', 'cpp',
-         version : '1.4.0')
+project('libvmaf', ['c', 'cpp'],
+    version : '1.3.16',
+    meson_version: '>= 0.47.0')
+
+vmaf_soname_version       = '0.0.0'
+vmaf_api_version_array    = vmaf_soname_version.split('.')
+vmaf_api_version_major    = vmaf_api_version_array[0]
+vmaf_api_version_minor    = vmaf_api_version_array[1]
+vmaf_api_version_revision = vmaf_api_version_array[2]
 
 libvmaf_src_root = meson.current_source_dir()
 libvmaf_inc = include_directories('include')
 
-subdir('doc')
 subdir('src')
+subdir('include')
 subdir('tools')
-
-pkg_mod = import('pkgconfig')
-pkg_mod.generate(libraries: libvmaf,
-    version: meson.project_version(),
-    name: 'libvmaf',
-    filebase: 'vmaf',
-    description: 'VMAF, Perceptual video quality assessment based on multi-method fusion'
-)
+subdir('doc')

@@ -108,7 +108,7 @@ vmaf_include = include_directories(
     opencontainers_path + '/include'
 )
 
-libvmaf = static_library(
+libvmaf = both_libraries(
     'vmaf',
     vmaf_sources,
     include_directories : vmaf_include,
@@ -120,4 +120,12 @@ libvmaf = static_library(
         ptools_shared_lib.extract_all_objects()
     ],
     install: true,
+)
+
+pkg_mod = import('pkgconfig')
+pkg_mod.generate(libraries: libvmaf,
+    version: meson.project_version(),
+    name: 'libvmaf',
+    filebase: 'vmaf',
+    description: 'VMAF, Perceptual video quality assessment based on multi-method fusion'
 )
