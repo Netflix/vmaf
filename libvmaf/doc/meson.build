@@ -3,7 +3,7 @@ doxygen = find_program('doxygen', required: false)
 if doxygen.found()
     conf_data = configuration_data()
     doxygen_input = [join_paths(meson.source_root(), 'include/libvmaf'),
-                     join_paths(meson.source_root(), 'src/features')]
+                    ]
 
     conf_data.set('DOXYGEN_INPUT', ' '.join(doxygen_input))
     conf_data.set('DOXYGEN_STRIP', join_paths(meson.source_root(), 'include'))
