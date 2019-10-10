@@ -10,7 +10,7 @@ before_install:
   - sudo apt-get install -qq g++-9
   - export CXX="g++-9" CC="gcc-9"
   - sudo apt-get install git
-  - sudo apt-get install ninja-build
+  - sudo apt-get install ninja-build python3-pip python3-setuptools
 
 install:
   - pip install tox-travis
