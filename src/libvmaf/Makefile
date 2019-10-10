@@ -1,8 +1,10 @@
 LIBVMAF = libvmaf.a
+LIBVMAF_DYN = libvmafdyn.so
 
 .PHONY: all
-all: $(LIBVMAF) libvmaf.pc vmafossexec vmaf psnr moment ssim ms_ssim
+all: $(LIBVMAF) $(LIBVMAF_DYN) libvmaf.pc vmafossexec vmaf psnr moment ssim ms_ssim
 
+OS = $(shell uname)
 TOP = $(shell pwd)
 SRCDIR = $(TOP)/src
 OBJDIR = $(TOP)/obj
@@ -164,6 +166,14 @@ $(OBJDIR)/%.o: $(SRCDIR)/pugixml/%.cpp
 $(LIBVMAF): $(OBJS) $(wildcard $(PTOOLSDIR)/*.o)
 	ar rcs $@ $^
 
+$(LIBVMAF_DYN): $(OBJS) $(wildcard $(PTOOLSDIR)/*.o)
+	if [ "$(OS)" = "Darwin" ]; then \
+		SHARED_LIB_FLAG="-shared -Wl,-install_name,$@"; \
+	else \
+		SHARED_LIB_FLAG="-shared -Wl,-soname,$@"; \
+	fi; \
+	$(CXX) $${SHARED_LIB_FLAG} -o $@ $^
+
 vmafossexec: $(OBJDIR)/main.o $(LIBVMAF)
 	$(CXX) -s -o $@ $(LDFLAGS) $^ -pthread
 #	$(CXX) -o $@ $(LDFLAGS) $^ -pthread
@@ -208,6 +218,7 @@ install: libvmaf.pc
 	mkdir -p $(DESTDIR)$(INSTALL_PREFIX)/share
 	mkdir -p $(DESTDIR)$(INSTALL_PREFIX)/lib/pkgconfig
 	cp $(LIBVMAF) $(DESTDIR)$(INSTALL_PREFIX)/lib/$(LIBVMAF)
+	cp $(LIBVMAF_DYN) $(DESTDIR)$(INSTALL_PREFIX)/lib/$(LIBVMAF_DYN)
 	cp src/libvmaf.h $(DESTDIR)$(INSTALL_PREFIX)/include/
 	cp -r ../../model $(DESTDIR)$(INSTALL_PREFIX)/share/
 	cp libvmaf.pc $(DESTDIR)$(INSTALL_PREFIX)/lib/pkgconfig/
@@ -215,6 +226,7 @@ install: libvmaf.pc
 .PHONY: uninstall
 uninstall:
 	rm -f $(DESTDIR)$(INSTALL_PREFIX)/lib/$(LIBVMAF)
+	rm -f $(DESTDIR)$(INSTALL_PREFIX)/lib/$(LIBVMAF_DYN)
 	rm -f $(DESTDIR)$(INSTALL_PREFIX)/include/libvmaf.h
 	rm -fr $(DESTDIR)$(INSTALL_PREFIX)/share/model
 	rm -f $(DESTDIR)$(INSTALL_PREFIX)/lib/pkgconfig/libvmaf.pc
@@ -222,10 +234,15 @@ uninstall:
 testlib: $(SRCDIR)/main.cpp
 	$(CXX) -s -o $@  $(CXXFLAGS) $^ -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common -I $(DESTDIR)$(INSTALL_PREFIX)/include -L$(DESTDIR)$(INSTALL_PREFIX)/lib -lvmaf -pthread
 
+testlibdyn: $(SRCDIR)/main.cpp
+	$(CXX) -s -o $@  $(CXXFLAGS) $^ -I $(FEATURESRCDIR) -I $(FEATURESRCDIR)/common -I $(DESTDIR)$(INSTALL_PREFIX)/include -L$(DESTDIR)$(INSTALL_PREFIX)/lib -lvmafdyn -pthread
+
 .PHONY: clean
 clean:
 	rm -f $(OBJDIR)/*.o
 	rm -f $(LIBVMAF)
+	rm -f $(LIBVMAF_DYN)
 	rm -f vmafossexec
 	rm -f testlib
+	rm -f testlibdyn
 	rm -f vmaf psnr moment ssim ms_ssim

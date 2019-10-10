@@ -1,4 +1,5 @@
 *.o
+*.so
 vmafossexec
 libvmaf.a
 testlib
