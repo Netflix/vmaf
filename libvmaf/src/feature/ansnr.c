@@ -25,16 +25,14 @@
 #include <string.h>
 
 #include "common/alloc.h"
-#include "common/file_io.h"
 #include "psnr_tools.h"
+#include "all_options.h"
 #include "ansnr_options.h"
 #include "ansnr_tools.h"
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
-#define read_image_b       read_image_b2s
-#define read_image_w       read_image_w2s
 #define ansnr_filter1d_ref ansnr_filter1d_ref_s
 #define ansnr_filter1d_dis ansnr_filter1d_dis_s
 #define ansnr_filter2d_ref ansnr_filter2d_ref_s

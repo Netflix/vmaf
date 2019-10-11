@@ -23,21 +23,19 @@
 #include <string.h>
 
 #include "common/alloc.h"
-#include "common/file_io.h"
+#include "all_options.h"
 #include "adm_options.h"
 #include "adm_tools.h"
 
 typedef adm_dwt_band_t_s adm_dwt_band_t;
 
-#define read_image_b  read_image_b2s
-#define read_image_w  read_image_w2s
 #define adm_dwt2      adm_dwt2_s
 #define adm_decouple  adm_decouple_s
 #define adm_csf       adm_csf_s
 #define adm_cm_thresh adm_cm_thresh_s
 #define adm_cm        adm_cm_s
 #define adm_sum_cube  adm_sum_cube_s
-#define offset_image       offset_image_s
+#define offset_image  offset_image_s
 
 #define adm_csf_den_scale adm_csf_den_scale_s
 #define dwt2_src_indices_filt dwt2_src_indices_filt_s

@@ -26,11 +26,7 @@
 #include <math.h>
 
 #include "common/alloc.h"
-#include "common/file_io.h"
 #include "moment_options.h"
-
-#define read_image_b  read_image_b2s
-#define read_image_w  read_image_w2s
 
 int compute_1st_moment(const float *pic, int w, int h, int stride, double *score)
 {

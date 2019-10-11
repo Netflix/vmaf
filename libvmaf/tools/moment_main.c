@@ -18,13 +18,17 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "common/frame.h"
 
-int ms_ssim(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt);
+#include "frame.h"
+
+int moment(int (*read_noref_frame)(float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt, int order);
 
 static void usage(void)
 {
-    puts("usage: ms_ssim fmt ref dis w h\n"
+    puts("usage: moment order fmt video w h\n"
+         "order:\n"
+         "\t1\n"
+         "\t2\n"
          "fmts:\n"
          "\tyuv420p\n"
          "\tyuv422p\n"
@@ -35,11 +39,11 @@ static void usage(void)
     );
 }
 
-int run_ms_ssim(const char *fmt, const char *ref_path, const char *dis_path, int w, int h)
+int run_moment(int order, const char *fmt, const char *video_path, int w, int h)
 {
     int ret = 0;
-    struct data *s;
-    s = (struct data *)malloc(sizeof(struct data));
+    struct noref_data *s;
+    s = (struct noref_data *)malloc(sizeof(struct noref_data));
     s->format = fmt;
     s->width = w;
     s->height = h;
@@ -50,26 +54,16 @@ int run_ms_ssim(const char *fmt, const char *ref_path, const char *dis_path, int
         goto fail_or_end;
     }
 
-    if (!(s->ref_rfile = fopen(ref_path, "rb")))
+    if (!(s->dis_rfile = fopen(video_path, "rb")))
     {
-        fprintf(stderr, "fopen ref_path %s failed.\n", ref_path);
-        ret = 1;
-        goto fail_or_end;
-    }
-    if (!(s->dis_rfile = fopen(dis_path, "rb")))
-    {
-        fprintf(stderr, "fopen ref_path %s failed.\n", dis_path);
+        fprintf(stderr, "fopen video_path %s failed.\n", video_path);
         ret = 1;
         goto fail_or_end;
     }
 
-    ret = ms_ssim(read_frame, s, w, h, fmt);
+    ret = moment(read_noref_frame, s, w, h, fmt, order);
 
 fail_or_end:
-    if (s->ref_rfile)
-    {
-        fclose(s->ref_rfile);
-    }
     if (s->dis_rfile)
     {
         fclose(s->dis_rfile);
@@ -83,8 +77,8 @@ fail_or_end:
 
 int main(int argc, const char **argv)
 {
-    const char *ref_path;
-    const char *dis_path;
+    const char *video_path;
+    int order;
     const char *fmt;
     int w;
     int h;
@@ -94,9 +88,9 @@ int main(int argc, const char **argv)
         return 2;
     }
 
-    fmt         = argv[1];
-    ref_path = argv[2];
-    dis_path = argv[3];
+    order     = atoi(argv[1]);
+    fmt         = argv[2];
+    video_path = argv[3];
     w        = atoi(argv[4]);
     h        = atoi(argv[5]);
 
@@ -105,5 +99,11 @@ int main(int argc, const char **argv)
         return 2;
     }
 
-    return run_ms_ssim(fmt, ref_path, dis_path, w, h);
+    if (!(order == 1 || order == 2))
+    {
+        usage();
+        return 2;
+    }
+
+    return run_moment(order, fmt, video_path, w, h);
 }

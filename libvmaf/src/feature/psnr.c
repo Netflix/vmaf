@@ -26,12 +26,8 @@
 #include <math.h>
 
 #include "common/alloc.h"
-#include "common/file_io.h"
 #include "psnr_tools.h"
 #include "psnr_options.h"
-
-#define read_image_b  read_image_b2s
-#define read_image_w  read_image_w2s
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))

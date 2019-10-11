@@ -4,8 +4,8 @@ libvmaf_dep = declare_dependency(
 
 vmafossexec = executable(
     'vmafossexec',
-    src_dir + 'main.cpp',
-    include_directories : vmaf_include,
+    [src_dir + 'main.cpp', src_dir + 'read_frame.c'],
+    include_directories : libvmaf_inc,
     c_args : vmaf_c_args,
     cpp_args : vmaf_cpp_args,
     link_with : libvmaf,

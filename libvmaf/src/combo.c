@@ -25,7 +25,6 @@
 #include <math.h>
 
 #include "common/alloc.h"
-#include "common/file_io.h"
 #include "motion_tools.h"
 #include "common/convolution.h"
 #include "common/convolution_internal.h"
@@ -35,12 +34,11 @@
 #include "combo.h"
 #include "debug.h"
 #include "psnr_tools.h"
+#include "all_options.h"
 
 #include "common/blur_array.h"
 #include "cpu_info.h"
 
-#define read_image_b       read_image_b2s
-#define read_image_w       read_image_w2s
 #define convolution_f32_c  convolution_f32_c_s
 #define offset_image       offset_image_s
 #define FILTER_5           FILTER_5_s

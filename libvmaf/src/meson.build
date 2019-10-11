@@ -69,10 +69,9 @@ vmaf_cpp_args = ['-std=c++11'] + vmaf_cflags_common
 vmaf_sources = [
     feature_src_dir + 'common/alloc.c',
     feature_src_dir + 'common/alignment.c',
-    feature_src_dir + 'common/file_io.c',
-    feature_src_dir + 'common/frame.c',
     feature_src_dir + 'common/convolution.c',
     feature_src_dir + 'common/cpu.c',
+    feature_src_dir + 'all_options.c',
     feature_src_dir + 'adm.c',
     feature_src_dir + 'adm_tools.c',
     feature_src_dir + 'ansnr.c',

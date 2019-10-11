@@ -26,13 +26,9 @@
 #include <math.h>
 
 #include "common/alloc.h"
-#include "common/file_io.h"
 #include "iqa/math_utils.h"
 #include "iqa/decimate.h"
 #include "iqa/ssim_tools.h"
-
-#define read_image_b  read_image_b2s
-#define read_image_w  read_image_w2s
 
 /* _ssim_map */
 int _ssim_map(const struct _ssim_int *si, void *ctx)

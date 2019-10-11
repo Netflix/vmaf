@@ -25,12 +25,10 @@
 
 #include "common/alloc.h"
 #include "common/convolution.h"
-#include "common/file_io.h"
+#include "all_options.h"
 #include "vif_options.h"
 #include "vif_tools.h"
 
-#define read_image_b       read_image_b2s
-#define read_image_w       read_image_w2s
 #define vif_filter1d_table vif_filter1d_table_s
 #define vif_filter1d       vif_filter1d_s
 #define vif_filter2d_table vif_filter2d_table_s
@@ -43,6 +41,18 @@
 
 #define vif_filter1d_sq    vif_filter1d_sq_s
 #define vif_filter1d_xy    vif_filter1d_xy_s
+
+/**
+ * Note: stride is in terms of bytes
+ */
+void apply_frame_differencing(const float *current_frame, const float *previous_frame, float *frame_difference, int width, int height, int stride)
+{
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
+            frame_difference[i * stride + j] = current_frame[i * stride + j] - previous_frame[i * stride + j];
+        }
+    }
+}
 
 int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores)
 {

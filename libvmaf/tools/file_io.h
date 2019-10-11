@@ -21,18 +21,6 @@
 #ifndef FILE_IO_H_
 #define FILE_IO_H_
 
-/* Whether to use [0,255] or [-128,127] input pixel range. */
-//#define OPT_RANGE_PIXEL_OFFSET 0
-#define OPT_RANGE_PIXEL_OFFSET (-128)
-
-void apply_frame_differencing(const float *current_frame, const float *previous_frame, float *frame_difference, int width, int height, int stride);
-int read_image(FILE *rfile, void *buf, int width, int height, int stride, int elem_size);
 int write_image(FILE *wfile, const void *buf, int width, int height, int stride, int elem_size);
-
-int read_image_b2s(FILE *rfile, float *buf, float off, int width, int height, int stride);
-
-int read_image_w2s(FILE *rfile, float *buf, float off, int width, int height, int stride);
-
-int offset_image_s(float *buf, float off, int width, int height, int stride);
 
 #endif /* FILE_IO_H_ */

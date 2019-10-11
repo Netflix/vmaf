@@ -16,15 +16,36 @@
  *
  */
 
-#pragma once
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
 
-#ifndef ALL_OPTIONS_H_
-#define ALL_OPTIONS_H_
+/**
+ * Note: stride is in terms of bytes
+ */
+int write_image(FILE *wfile, const void *buf, int width, int height, int stride, int elem_size)
+{
+	const char *byte_ptr = buf;
+	int i;
+	int ret = 1;
 
-/* Whether to use [0,255] or [-128,127] input pixel range. */
-//#define OPT_RANGE_PIXEL_OFFSET 0
-#define OPT_RANGE_PIXEL_OFFSET (-128)
+	if (width <= 0 || height <= 0 || elem_size <= 0)
+	{
+		goto fail_or_end;
+	}
 
-int offset_image_s(float *buf, float off, int width, int height, int stride);
+	for (i = 0; i < height; ++i)
+	{
+		if (fwrite(byte_ptr, elem_size, width, wfile) != (size_t)width)
+		{
+			goto fail_or_end;
+		}
 
-#endif /* ALL_OPTIONS_H_ */
+		byte_ptr += stride;
+	}
+
+	ret = 0;
+
+fail_or_end:
+	return ret;
+}

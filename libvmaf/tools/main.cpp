@@ -25,16 +25,14 @@
 #include <cstring>
 #include <cstdint>
 #include <sys/stat.h>
-#include "libvmaf.h"
 
 extern "C" {
-#include "common/frame.h"
+#include "libvmaf/libvmaf.h"
+#include "libvmaf/frame.h"
+#include "read_frame.h"
 }
 
-#define read_image_b       read_image_b2s
-#define read_image_w       read_image_w2s
-
-char* getCmdOption(char ** begin, char ** end, const std::string & option)
+static char* getCmdOption(char ** begin, char ** end, const std::string & option)
 {
     char ** itr = std::find(begin, end, option);
     if (itr != end && ++itr != end)
@@ -44,12 +42,12 @@ char* getCmdOption(char ** begin, char ** end, const std::string & option)
     return 0;
 }
 
-bool cmdOptionExists(char** begin, char** end, const std::string& option)
+static bool cmdOptionExists(char** begin, char** end, const std::string& option)
 {
     return std::find(begin, end, option) != end;
 }
 
-void print_usage(int argc, char *argv[])
+static void print_usage(int argc, char *argv[])
 {
     fprintf(stderr, "Usage: %s fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--thread n_thread] [--subsample n_subsample] [--disable-clip] [--disable-avx] [--psnr] [--ssim] [--ms-ssim] [--phone-model] [--ci]\n", argv[0]);
     fprintf(stderr, "fmt:\n\tyuv420p\n\tyuv422p\n\tyuv444p\n\tyuv420p10le\n\tyuv422p10le\n\tyuv444p10le\n\n");
@@ -63,7 +61,7 @@ void print_usage(int argc, char *argv[])
  * Measures the current (and peak) resident and virtual memories
  * usage of your linux C process, in kB
  */
-void getMemory(int itr_ctr, int state)
+static void getMemory(int itr_ctr, int state)
 {
 	int currRealMem;
 	int peakRealMem;
@@ -106,7 +104,7 @@ void getMemory(int itr_ctr, int state)
 }
 #endif
 
-int run_wrapper(char *fmt, int width, int height, char *ref_path, char *dis_path, char *model_path,
+static int run_wrapper(char *fmt, int width, int height, char *ref_path, char *dis_path, char *model_path,
         char *log_path, char *log_fmt, bool disable_clip, bool disable_avx, bool enable_transform, bool phone_model,
         bool do_psnr, bool do_ssim, bool do_ms_ssim, char *pool_method, int n_thread, int n_subsample, bool enable_conf_interval)
 {
@@ -209,6 +207,7 @@ fail_or_end:
     }
     return ret;
 }
+
 
 int main(int argc, char *argv[])
 {
