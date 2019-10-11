@@ -21,4 +21,5 @@ script:
     cd libvmaf &&
     meson build --buildtype release &&
     ninja -vC build test
+  - cd -
   - tox -c python/ -- -v -p no:warnings -m 'main or lib' --doctest-modules
