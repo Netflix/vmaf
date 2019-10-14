@@ -28,7 +28,6 @@
 
 extern "C" {
 #include "libvmaf/libvmaf.h"
-#include "libvmaf/frame.h"
 #include "read_frame.h"
 }
 

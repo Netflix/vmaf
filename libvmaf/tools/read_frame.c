@@ -19,8 +19,9 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "file_io.h"
-#include "libvmaf/frame.h"
+#include "read_frame.h"
 
 /**
  * Note: stride is in terms of bytes

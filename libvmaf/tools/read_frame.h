@@ -16,4 +16,34 @@
  *
  */
 
+#ifndef READ_FRAME_H_
+#define READ_FRAME_H_
+
+struct data
+{
+    char* format; /* yuv420p, yuv422p, yuv444p, yuv420p10le, yuv422p10le, yuv444p10le */
+    int width;
+    int height;
+    size_t offset;
+    FILE *ref_rfile;
+    FILE *dis_rfile;
+    int num_frames;
+};
+
+struct noref_data
+{
+    char* format; /* yuv420p, yuv422p, yuv444p, yuv420p10le, yuv422p10le, yuv444p10le */
+    int width;
+    int height;
+    size_t offset;
+    FILE *dis_rfile;
+};
+
 int read_frame(float *ref_data, float *dis_data, float *temp_data, int stride_byte, void *s);
+
+int read_noref_frame(float *dis_data, float *temp_data, int stride_byte, void *s);
+
+int get_frame_offset(const char *fmt, int w, int h, size_t *offset);
+
+#endif /* READ_FRAME_H_ */
+
