@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include "read_frame.h"
-#include "common/cpu.h"
 
 int adm(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt);
 int ansnr(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt);
@@ -29,8 +28,6 @@ int vif(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, i
 int vifdiff(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt);
 int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt);
 int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt);
-
-enum vmaf_cpu cpu; // global
 
 static void usage(void)
 {
@@ -55,7 +52,6 @@ static void usage(void)
 int run_vmaf(const char *app, const char *fmt, const char *ref_path, const char *dis_path, int w, int h)
 {
     int ret = 0;
-    cpu = cpu_autodetect();
 
     if (!strcmp(app, "motion"))
     {
