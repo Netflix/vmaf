@@ -7,7 +7,7 @@ from vmaf.config import VmafConfig
 
 
 # This will work only when running with a checked out vmaf source, but not via pip install
-libsvm_path = VmafConfig.root_path('src', 'libsvm', 'python')
+libsvm_path = VmafConfig.root_path('third_party', 'libsvm', 'python')
 
 
 if libsvm_path not in sys.path:

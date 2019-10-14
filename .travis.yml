@@ -18,8 +18,12 @@ install:
 
 script:
   - >
+    cd third_party/libsvm &&
+    make lib &&
+    cd -
+  - >
     cd libvmaf &&
     meson build --buildtype release &&
-    ninja -vC build test
-  - cd -
+    ninja -vC build test &&
+    cd -
   - tox -c python/ -- -v -p no:warnings -m 'main or lib' --doctest-modules
