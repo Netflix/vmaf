@@ -9,7 +9,7 @@
 #define VMAF_FEATURE_SRC_BLUR_ARRAY_H_
 
 #include <stdlib.h>
-#include "pthread.h"
+#include "thread.h"
 #include "alloc.h"
 
 #define MAX_NUM_THREADS 128

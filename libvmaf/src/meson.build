@@ -25,14 +25,12 @@ ptools_sources = [
 ]
 
 ccp = meson.get_compiler('cpp')
-pthread_lib = ccp.find_library('pthread')
 
 ptools_shared_lib = shared_library(
     'ptools',
     ptools_sources,
     include_directories : opencontainers_include,
     cpp_args : ptools_cpp_args,
-    dependencies : pthread_lib
 )
 
 # Build libvmaf
@@ -107,13 +105,22 @@ vmaf_include = include_directories(
     opencontainers_path + '/include'
 )
 
+if host_machine.system() == 'windows'
+    # On Windows, we use a compatibility layer to emulate pthread
+    thread_dependency = []
+    thread_compat_dep = declare_dependency(sources : files('win32/thread.c'))
+else
+    thread_dependency = dependency('threads')
+    thread_compat_dep = []
+endif
+
 libvmaf = both_libraries(
     'vmaf',
     vmaf_sources,
     include_directories : vmaf_include,
     c_args : vmaf_c_args,
     cpp_args : vmaf_cpp_args,
-    dependencies : pthread_lib,
+    dependencies : thread_dependency,
     objects : [
         convolution_and_psnr_avx_static_lib.extract_all_objects(),
         ptools_shared_lib.extract_all_objects()
