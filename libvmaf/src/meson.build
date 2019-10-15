@@ -1,3 +1,12 @@
+if host_machine.system() == 'windows'
+    # On Windows, we use a compatibility layer to emulate pthread
+    thread_dependency = []
+    thread_compat_dep = declare_dependency(sources : files('win32/thread.c'))
+else
+    thread_dependency = dependency('threads')
+    thread_compat_dep = []
+endif
+
 # Build libptools
 ptools_path = './third_party/ptools/'
 opencontainers_path = ptools_path + 'opencontainers_1_8_4'
@@ -26,10 +35,11 @@ ptools_sources = [
 
 ccp = meson.get_compiler('cpp')
 
-ptools_shared_lib = shared_library(
+libptools = shared_library(
     'ptools',
     ptools_sources,
     include_directories : opencontainers_include,
+    dependencies : thread_dependency,
     cpp_args : ptools_cpp_args,
 )
 
@@ -103,15 +113,6 @@ vmaf_include = include_directories(
     opencontainers_path + '/include'
 )
 
-if host_machine.system() == 'windows'
-    # On Windows, we use a compatibility layer to emulate pthread
-    thread_dependency = []
-    thread_compat_dep = declare_dependency(sources : files('win32/thread.c'))
-else
-    thread_dependency = dependency('threads')
-    thread_compat_dep = []
-endif
-
 libvmaf = both_libraries(
     'vmaf',
     vmaf_sources,
@@ -121,7 +122,7 @@ libvmaf = both_libraries(
     dependencies : thread_dependency,
     objects : [
         convolution_and_psnr_avx_static_lib.extract_all_objects(),
-        ptools_shared_lib.extract_all_objects()
+        libptools.extract_all_objects()
     ],
     install: true,
 )
