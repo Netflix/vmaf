@@ -34,8 +34,8 @@ build_script:
   - cmd: cd libvmaf
   - cmd: echo Building on %arch% with %compiler%
   - cmd: meson --backend=ninja builddir
-  - cmd: ninja -C builddir
+  - cmd: ninja -vC builddir
 
 test_script:
   - cmd: cd libvmaf
-  - cmd: ninja -C builddir test
+  - cmd: ninja -vC builddir test
