@@ -132,5 +132,5 @@ pkg_mod.generate(libraries: libvmaf,
     version: meson.project_version(),
     name: 'libvmaf',
     filebase: 'vmaf',
-    description: 'VMAF, Perceptual video quality assessment based on multi-method fusion'
+    description: 'VMAF, Video Multimethod Assessment Fusion'
 )
