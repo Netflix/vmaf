@@ -39,7 +39,10 @@ libptools = shared_library(
     'ptools',
     ptools_sources,
     include_directories : opencontainers_include,
-    dependencies : thread_dependency,
+    dependencies : [
+        thread_dependency,
+        thread_compat_dep,
+    ],
     cpp_args : ptools_cpp_args,
 )
 
@@ -119,7 +122,10 @@ libvmaf = both_libraries(
     include_directories : vmaf_include,
     c_args : vmaf_c_args,
     cpp_args : vmaf_cpp_args,
-    dependencies : thread_dependency,
+    dependencies : [
+        thread_dependency,
+        thread_compat_dep,
+    ],
     objects : [
         convolution_and_psnr_avx_static_lib.extract_all_objects(),
         libptools.extract_all_objects()
