@@ -49,9 +49,7 @@ vmaf_cflags_common = [
     '-w',
     '-Wextra',
     '-pedantic',
-    '-D_FILE_OFFSET_BITS=64',
-    '-D MULTI_THREADING',
-    '-DOC_NEW_STYLE_INCLUDES'
+    '-DOC_NEW_STYLE_INCLUDES',
 ]
 
 convolution_and_psnr_avx_static_lib = static_library(
