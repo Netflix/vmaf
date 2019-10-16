@@ -25,7 +25,7 @@
 
 #include "common/alloc.h"
 #include "common/convolution.h"
-#include "all_options.h"
+#include "offset.h"
 #include "vif_options.h"
 #include "vif_tools.h"
 

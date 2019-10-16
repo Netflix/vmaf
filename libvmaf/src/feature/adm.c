@@ -23,9 +23,9 @@
 #include <string.h>
 
 #include "common/alloc.h"
-#include "all_options.h"
 #include "adm_options.h"
 #include "adm_tools.h"
+#include "offset.h"
 
 typedef adm_dwt_band_t_s adm_dwt_band_t;
 

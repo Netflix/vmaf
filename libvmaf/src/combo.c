@@ -34,7 +34,7 @@
 #include "combo.h"
 #include "debug.h"
 #include "psnr_tools.h"
-#include "all_options.h"
+#include "offset.h"
 
 #include "common/blur_array.h"
 #include "cpu_info.h"

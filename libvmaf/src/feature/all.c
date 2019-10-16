@@ -28,7 +28,7 @@
 #include "common/convolution_internal.h"
 #include "psnr_tools.h"
 #include "motion_tools.h"
-#include "all_options.h"
+#include "offset.h"
 #include "vif_options.h"
 #include "adm_options.h"
 

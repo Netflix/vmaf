@@ -26,9 +26,9 @@
 
 #include "common/alloc.h"
 #include "psnr_tools.h"
-#include "all_options.h"
 #include "ansnr_options.h"
 #include "ansnr_tools.h"
+#include "offset.h"
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))

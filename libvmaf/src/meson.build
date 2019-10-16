@@ -80,7 +80,7 @@ vmaf_sources = [
     feature_src_dir + 'common/alignment.c',
     feature_src_dir + 'common/convolution.c',
     feature_src_dir + 'common/cpu.c',
-    feature_src_dir + 'all_options.c',
+    feature_src_dir + 'offset.c',
     feature_src_dir + 'adm.c',
     feature_src_dir + 'adm_tools.c',
     feature_src_dir + 'ansnr.c',

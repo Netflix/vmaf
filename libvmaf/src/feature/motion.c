@@ -25,7 +25,7 @@
 #include <stdbool.h>
 #include <math.h>
 
-#include "all_options.h"
+#include "offset.h"
 #include "motion_options.h"
 #include "common/alloc.h"
 #include "common/convolution.h"

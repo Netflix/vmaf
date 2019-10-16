@@ -16,10 +16,8 @@
  *
  */
 
-#pragma once
-
-#ifndef ALL_OPTIONS_H_
-#define ALL_OPTIONS_H_
+#ifndef OFFSET_H_
+#define OFFSET_H_
 
 /* Whether to use [0,255] or [-128,127] input pixel range. */
 //#define OPT_RANGE_PIXEL_OFFSET 0
@@ -27,4 +25,4 @@
 
 int offset_image_s(float *buf, float off, int width, int height, int stride);
 
-#endif /* ALL_OPTIONS_H_ */
+#endif /* OFFSET_H_ */
