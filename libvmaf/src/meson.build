@@ -14,12 +14,9 @@ opencontainers_include = include_directories(opencontainers_path + '/include')
 
 if cc.get_id() != 'msvc'
     ptools_cpp_args = [
-        '-Wall',
-        '-Wextra',
         '-fno-strict-aliasing',
         '-DLINUX_',
         '-DOC_NEW_STYLE_INCLUDES',
-        '-Wno-deprecated',
         '-D_REENTRANT'
     ]
 else
@@ -67,8 +64,6 @@ convolution_and_psnr_avx_sources = [
 
 if cc.get_id() != 'msvc'
     vmaf_cflags_common = [
-        '-w',
-        '-Wextra',
         '-pedantic',
         '-DOC_NEW_STYLE_INCLUDES',
     ]
@@ -85,9 +80,6 @@ convolution_and_psnr_avx_static_lib = static_library(
     include_directories : vmaf_base_include,
     c_args : ['-mavx'] + vmaf_cflags_common,
 )
-
-vmaf_c_args = ['-std=c99'] + vmaf_cflags_common
-vmaf_cpp_args = ['-std=c++11'] + vmaf_cflags_common
 
 vmaf_sources = [
     feature_src_dir + 'common/alloc.c',
@@ -134,8 +126,8 @@ libvmaf = both_libraries(
     'vmaf',
     vmaf_sources,
     include_directories : vmaf_include,
-    c_args : vmaf_c_args,
-    cpp_args : vmaf_cpp_args,
+    c_args : vmaf_cflags_common,
+    cpp_args : vmaf_cflags_common,
     dependencies : [
         thread_dependency,
         thread_compat_dep,

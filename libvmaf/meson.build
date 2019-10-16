@@ -1,5 +1,10 @@
 project('libvmaf', ['c', 'cpp'],
     version : '1.3.16',
+    default_options : ['c_std=c99',
+                       'cpp_std=c++11',
+                       'warning_level=2',
+                       'buildtype=release',
+                      ],
     meson_version: '>= 0.47.0')
 
 vmaf_soname_version       = '0.0.0'
