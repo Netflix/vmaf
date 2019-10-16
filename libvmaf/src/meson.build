@@ -14,7 +14,7 @@ opencontainers_include = include_directories(opencontainers_path + '/include')
 
 ptools_cpp_args = [
     '-Wall',
-    '-Wextra',
+    #'-Wextra',
     '-fno-strict-aliasing',
     '-DLINUX_',
     '-DOC_NEW_STYLE_INCLUDES',
@@ -60,7 +60,7 @@ convolution_and_psnr_avx_sources = [
 
 vmaf_cflags_common = [
     '-w',
-    '-Wextra',
+    #'-Wextra',
     '-pedantic',
     '-DOC_NEW_STYLE_INCLUDES',
 ]
