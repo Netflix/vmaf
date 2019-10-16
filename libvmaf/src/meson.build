@@ -12,15 +12,22 @@ ptools_path = './third_party/ptools/'
 opencontainers_path = ptools_path + 'opencontainers_1_8_4'
 opencontainers_include = include_directories(opencontainers_path + '/include')
 
-ptools_cpp_args = [
-    '-Wall',
-    '-Wextra',
-    '-fno-strict-aliasing',
-    '-DLINUX_',
-    '-DOC_NEW_STYLE_INCLUDES',
-    '-Wno-deprecated',
-    '-D_REENTRANT'
- ]
+if cc.get_id() != 'msvc'
+    ptools_cpp_args = [
+        '-Wall',
+        '-Wextra',
+        '-fno-strict-aliasing',
+        '-DLINUX_',
+        '-DOC_NEW_STYLE_INCLUDES',
+        '-Wno-deprecated',
+        '-D_REENTRANT'
+    ]
+else
+    ptools_cpp_args = [
+      '-wd4028', # parameter different from declaration
+      '-wd4996'  # use of POSIX functions
+    ]
+endif
 
 ptools_sources = [
     ptools_path + 'm2pythontools.cc',
@@ -58,12 +65,19 @@ convolution_and_psnr_avx_sources = [
     feature_src_dir + 'psnr_tools.c'
 ]
 
-vmaf_cflags_common = [
-    '-w',
-    '-Wextra',
-    '-pedantic',
-    '-DOC_NEW_STYLE_INCLUDES',
-]
+if cc.get_id() != 'msvc'
+    vmaf_cflags_common = [
+        '-w',
+        '-Wextra',
+        '-pedantic',
+        '-DOC_NEW_STYLE_INCLUDES',
+    ]
+else
+    vmaf_cflags_common = [
+      '-wd4028', # parameter different from declaration
+      '-wd4996'  # use of POSIX functions
+    ]
+endif
 
 convolution_and_psnr_avx_static_lib = static_library(
     'convolution_and_psnr_avx',
