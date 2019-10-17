@@ -22,7 +22,9 @@ if cc.get_id() != 'msvc'
 else
     ptools_cpp_args = [
       '-wd4028', # parameter different from declaration
-      '-wd4996'  # use of POSIX functions
+      '-wd4996', # use of POSIX functions
+      '-DOC_NEW_STYLE_INCLUDES',
+      '-D_REENTRANT',
     ]
 endif
 
@@ -70,7 +72,8 @@ if cc.get_id() != 'msvc'
 else
     vmaf_cflags_common = [
       '-wd4028', # parameter different from declaration
-      '-wd4996'  # use of POSIX functions
+      '-wd4996', # use of POSIX functions
+      '-DOC_NEW_STYLE_INCLUDES',
     ]
 endif
 
