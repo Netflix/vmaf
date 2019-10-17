@@ -76,7 +76,7 @@ static inline int pthread_attr_setstacksize(pthread_attr_t *const attr,
     return 0;
 }
 
-static inline int pthread_attr_setdetachstate(pthread_attr_init *const attr,
+static inline int pthread_attr_setdetachstate(pthread_attr_t *attr,
                                               int *detachstate)
 {
     return 0;
