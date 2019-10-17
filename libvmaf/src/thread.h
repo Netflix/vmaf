@@ -32,7 +32,9 @@
 
 #include <windows.h>
 
-#define PTHREAD_ONCE_INIT INIT_ONCE_STATIC_INIT
+#define PTHREAD_CREATE_JOINABLE 0
+#define PTHREAD_CREATE_DETACHED 1
+#define PTHREAD_SCOPE_SYSTEM 0
 
 typedef struct {
     HANDLE h;
@@ -71,6 +73,18 @@ static inline int pthread_attr_setstacksize(pthread_attr_t *const attr,
                                             const unsigned stack_size)
 {
     attr->stack_size = stack_size;
+    return 0;
+}
+
+static inline int pthread_attr_setdetachstate(pthread_attr_init *const attr,
+                                              int *detachstate)
+{
+    return 0;
+}
+
+static inline int pthread_attr_setscope(const pthread_attr_t *restrict attr,
+                                        int *restrict contentionscope)
+{
     return 0;
 }
 
