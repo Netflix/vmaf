@@ -82,8 +82,8 @@ static inline int pthread_attr_setdetachstate(pthread_attr_init *const attr,
     return 0;
 }
 
-static inline int pthread_attr_setscope(const pthread_attr_t *restrict attr,
-                                        int *restrict contentionscope)
+static inline int pthread_attr_setscope(pthread_attr_t *const attr,
+                                        int *contentionscope)
 {
     return 0;
 }
