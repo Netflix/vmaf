@@ -8,7 +8,7 @@
 // below) to be the main loop.  We add another wrapper 
 
 #include "ocport.h"
-#include <pthread.h>
+#include "thread.h"
 
 OC_BEGIN_NAMESPACE
 

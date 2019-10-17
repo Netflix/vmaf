@@ -13,11 +13,11 @@ extern "C" {
 #include <stdio.h>
 #if defined(_MSC_VER)
 #define HAVE_STRUCT_TIMESPEC 0
-#include <pthread.h>
+#include "thread.h"
 #include <winsock2.h>
 #include <windows.h>
 #else
-#include <pthread.h>
+#include "thread.h"
 #include <sys/time.h>
 #endif
 

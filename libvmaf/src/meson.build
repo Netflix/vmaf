@@ -11,6 +11,7 @@ endif
 ptools_path = './third_party/ptools/'
 opencontainers_path = ptools_path + 'opencontainers_1_8_4'
 opencontainers_include = include_directories(opencontainers_path + '/include')
+thread_include = include_directories('./')
 
 if cc.get_id() != 'msvc'
     ptools_cpp_args = [
@@ -44,7 +45,10 @@ ccp = meson.get_compiler('cpp')
 libptools = shared_library(
     'ptools',
     ptools_sources,
-    include_directories : opencontainers_include,
+    include_directories : [
+        opencontainers_include,
+        thread_include,
+    ],
     dependencies : [
         thread_dependency,
         thread_compat_dep,
