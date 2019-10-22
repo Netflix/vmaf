@@ -136,7 +136,7 @@ static inline int pthread_cond_signal(pthread_cond_t *const cond) {
     return 0;
 }
 
-static inline int pthread_cond_timedwait(thread_cond_t *cond,
+static inline int pthread_cond_timedwait(pthread_cond_t *cond,
                                          pthread_mutex_t *mutex,
                                          struct timespec *abstime)
 {
