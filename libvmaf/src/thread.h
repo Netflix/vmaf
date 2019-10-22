@@ -131,6 +131,16 @@ static inline int pthread_cond_signal(pthread_cond_t *const cond) {
     return 0;
 }
 
+int pthread_cond_timedwait(thread_cond_t *cond, pthread_mutex_t *mutex,
+                           const struct timespec *abstime)
+{
+    if (!cond || !mutex)
+        return 1;
+    if (!SleepConditionVariableCS(cond, mutex, timespec_to_ms(abstime)))
+        return 1;
+    return 0;
+}
+
 static inline int pthread_cond_broadcast(pthread_cond_t *const cond) {
     WakeAllConditionVariable(cond);
     return 0;
