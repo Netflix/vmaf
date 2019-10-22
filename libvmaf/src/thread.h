@@ -46,6 +46,11 @@ typedef struct {
     unsigned stack_size;
 } pthread_attr_t;
 
+struct timespec {
+    long tv_sec;
+    long tv_nsec;
+};
+
 typedef SRWLOCK pthread_mutex_t;
 typedef CONDITION_VARIABLE pthread_cond_t;
 typedef INIT_ONCE pthread_once_t;
