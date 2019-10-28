@@ -51,6 +51,19 @@ struct timespec {
     long tv_nsec;
 };
 
+static inline DWORD timespec_to_ms(const struct timespec *abstime)
+{
+    DWORD t;
+
+    if (!abstime)
+        return INFINITE;
+
+    t = ((abstime->tv_sec - time(NULL)) * 1000) + (abstime->tv_nsec / 1000000);
+    if (t < 0)
+        t = 1;
+    return t;
+}
+
 typedef SRWLOCK pthread_mutex_t;
 typedef CONDITION_VARIABLE pthread_cond_t;
 typedef INIT_ONCE pthread_once_t;
