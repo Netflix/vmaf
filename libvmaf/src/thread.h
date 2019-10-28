@@ -31,6 +31,7 @@
 #if defined(_WIN32)
 
 #include <windows.h>
+#include <time.h>
 
 #define PTHREAD_CREATE_JOINABLE 0
 #define PTHREAD_CREATE_DETACHED 1
