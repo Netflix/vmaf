@@ -1,29 +1,15 @@
 all:
-	cd src/ptools; $(MAKE); cd ../..;
-	cd src/libsvm; $(MAKE); cd ../..;
-	cd src/libsvm; $(MAKE) lib; cd ../..;
-	cd src/libvmaf; $(MAKE); cd ../..;
+	cd third_party/libsvm && make lib
+
+	mkdir -p libvmaf/build && cd libvmaf/build && \
+	meson .. --buildtype release && \
+	ninja -vC .
 
 clean:
-	cd src/ptools; $(MAKE) clean; cd ../..;
-	cd src/libsvm; $(MAKE) clean; cd ../..;
-	cd src/libvmaf; $(MAKE) clean; cd ../..;
-
-test:
-	@echo hello;
+	cd third_party/libsvm && make clean && cd -
+	rm -rf libvmaf/build
 
 install:
-	cd src/libvmaf; $(MAKE) install; cd ../..;
-
-uninstall:
-	cd src/libvmaf; $(MAKE) uninstall; cd ../..;
-
-testlib:
-	cd src/libvmaf; $(MAKE) testlib; cd ../..;
-
-testlibdyn:
-	cd src/libvmaf; $(MAKE) testlibdyn; cd ../..;
-
-.PHONY: all clean $(TARGETS)
-
-
+	mkdir -p libvmaf/build && cd libvmaf/build && \
+	meson .. --buildtype release && \
+	ninja -vC . install

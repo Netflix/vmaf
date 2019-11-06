@@ -10,13 +10,22 @@ before_install:
   - sudo apt-get install -qq g++-9
   - export CXX="g++-9" CC="gcc-9"
   - sudo apt-get install git
+  - sudo apt-get install ninja-build python3-pip python3-setuptools
 
 install:
   - pip install tox-travis
+  - pip3 install meson
 
 script:
-  - make
-  - sudo make install
-  - make testlib
-  - make testlibdyn
-  - export LD_LIBRARY_PATH=$(pwd)/src/libvmaf:$LD_LIBRARY_PATH && tox -c python/ -- -v -p no:warnings -m 'main or lib' --doctest-modules
+  - >
+    cd third_party/libsvm &&
+    make lib &&
+    cd -
+  - >
+    cd libvmaf &&
+    mkdir build && cd build &&
+    meson .. --buildtype release &&
+    ninja -vC . test &&
+    DESTDIR=$(pwd)/install ninja -vC . install &&
+    cd ../..
+  - tox -c python/ -- -v -p no:warnings -m 'main or lib' --doctest-modules

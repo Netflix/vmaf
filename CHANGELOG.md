@@ -1,5 +1,10 @@
 # Change Log
 
+## [Upcoming]
+    
+**New features:**
+- libvmaf has been relocated, and now has its own self-enclosed source tree (`./libvmaf/`) and build system (`meson`).
+
 ## (9/8/2019) [1.3.15]
 
 **Fixed bugs:**

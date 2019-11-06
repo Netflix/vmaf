@@ -1,7 +1,0 @@
-*.obj
-pthread*.dll
-pthread*.exp 
-pthread*.ilk
-pthread*.lib
-pthread*.pdb
-*.res
