@@ -56,7 +56,7 @@ export PATH="$PATH:$HOME/.local/bin"
 First, install [Homebrew](https://brew.sh), then install the dependencies:
 
 ```
-brew install gcc freetype pkg-config homebrew/core/hdf5 python@2
+brew install gcc freetype pkg-config homebrew/core/hdf5 python@2 ninja
 ```
 
 This will install an up-to-date version of Python 2.7 and `pip` (see [Homebrew's Python guide](https://docs.brew.sh/Homebrew-and-Python) for more info).
@@ -66,6 +66,7 @@ Now install the required Python packages:
 ```
 brew install numpy scipy
 pip install matplotlib notebook pandas sympy nose scikit-learn scikit-image h5py sureal
+pip3 install meson
 ```
 
 ### Troubleshooting
