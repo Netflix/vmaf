@@ -4,6 +4,7 @@ from scipy.misc import imresize
 from scipy.ndimage import correlate1d
 from scipy.special._ufuncs import gamma
 from skimage.util import view_as_windows
+from PIL import Image
 
 from vmaf.core.executor import NorefExecutorMixin
 
@@ -163,8 +164,8 @@ class BrisqueNorefFeatureExtractor(NorefExecutorMixin, FeatureExtractor):
 
     @classmethod
     def mscn_extract(cls, img):
-        img2 = imresize(img, 0.5)
-        img3 = imresize(img, 0.25)
+        img2 = np.array(Image.fromarray(img).resize((int(np.shape(img)[1] / 2.0), int(np.shape(img)[0] / 2.0)), Image.BILINEAR))
+        img3 = np.array(Image.fromarray(img).resize((int(np.shape(img)[1] / 4.0), int(np.shape(img)[0] / 4.0)), Image.BILINEAR))
         m_image, _, _ = cls.calc_image(img)
         m_image2, _, _ = cls.calc_image(img2)
         m_image3, _, _ = cls.calc_image(img3)
@@ -369,7 +370,7 @@ class NiqeNorefFeatureExtractor(BrisqueNorefFeatureExtractor):
     def mscn_extract_niqe(cls, img, patch_size, mode):
         h, w = img.shape
 
-        img2 = imresize(img, 0.5, interp='bicubic', mode='F')
+        img2 = np.array(Image.fromarray(img).resize((int(w / 2.0), int(h / 2.0)), Image.BICUBIC))
 
         m_image1, img_var, _ = cls.calc_image(img, extend_mode='nearest')
         m_image1 = m_image1.astype(np.float32)

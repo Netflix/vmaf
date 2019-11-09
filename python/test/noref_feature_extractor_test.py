@@ -75,11 +75,11 @@ class NorefFeatureExtractorTest(unittest.TestCase):
 
         results = self.fextractor.results
 
-        self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_alpha23_score'], 0.78020833333333384, places=4)
+        self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_alpha23_score'], 0.7640625000000005, places=4)
         self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_alpha13_score'], 0.6322500000000002, places=4)
-        self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_N34_score'],    -0.0071207420215536723, places=4)
+        self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_N34_score'],    -0.007239876204980851, places=4)
 
-        self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_alpha23_score'], 0.87156250000000046, places=4)
+        self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_alpha23_score'], 0.8644583333333339, places=4)
         self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_alpha13_score'], 0.82906250000000103, places=4)
         self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_N34_score'],     -0.0092448158862212092, places=4)
 
@@ -253,13 +253,14 @@ class ParallelNorefFeatureExtractorTestNew(unittest.TestCase):
             result_store=None,
         )
 
-        self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_alpha23_score'], 0.78020833333333384, places=4)
+        self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_alpha23_score'], 0.7640625000000005, places=4)
         self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_alpha13_score'], 0.6322500000000002, places=4)
-        self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_N34_score'],     -0.0071207420215536723, places=4)
+        self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_N34_score'],     -0.007239876204980851, places=4)
 
-        self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_alpha23_score'], 0.87156250000000046, places=4)
+        self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_alpha23_score'], 0.8644583333333339, places=4)
         self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_alpha13_score'], 0.82906250000000103, places=4)
         self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_N34_score'],     -0.0092448158862212092, places=4)
+
 
 if __name__ == '__main__':
     unittest.main()
