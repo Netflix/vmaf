@@ -1,6 +1,5 @@
 from itertools import compress
 
-from scipy.misc import imresize
 from scipy.ndimage import correlate1d
 from scipy.special._ufuncs import gamma
 from skimage.util import view_as_windows

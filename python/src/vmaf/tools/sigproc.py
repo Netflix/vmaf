@@ -3,6 +3,8 @@ import scipy.misc
 import scipy.ndimage
 import scipy.stats
 import scipy.io
+from PIL import Image
+
 from vmaf.config import VmafConfig
 from vmaf.tools.misc import index_and_value_of_min
 
@@ -67,9 +69,9 @@ def create_hp_yuv_4channel(yuvimg):
 def dstack_y_u_v(y, u, v):
     # make y, u, v consistent in size
     if u.shape != y.shape:
-        u = scipy.misc.imresize(u, size=y.shape, interp='bicubic')
+        u = np.array(Image.fromarray(u).convert("L").resize(y.shape, Image.BICUBIC))
     if v.shape != y.shape:
-        v = scipy.misc.imresize(v, size=y.shape, interp='bicubic')
+        v = np.array(Image.fromarray(v).convert("L").resize(y.shape, Image.BICUBIC))
     return np.dstack((y, u, v))
 
 
