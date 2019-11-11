@@ -129,6 +129,7 @@ class CrossValidationTest(unittest.TestCase):
 
         self.assertEquals(dicts, expected_dicts)
 
+    @unittest.skipIf(sys.version_info < (3,), reason="For py3 only: py2 uses a different random seed.")
     def test_sample_model_param_list(self):
         import random
         random.seed(0)
