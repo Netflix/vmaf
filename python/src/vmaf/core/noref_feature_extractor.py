@@ -12,7 +12,6 @@ __license__ = "Apache, Version 2.0"
 
 import numpy as np
 
-from vmaf import to_list
 from vmaf.core.feature_extractor import FeatureExtractor
 from vmaf.tools.reader import YuvReader
 
@@ -79,8 +78,8 @@ class MomentNorefFeatureExtractor(NorefExecutorMixin, FeatureExtractor):
         var_scores_key = cls.get_scores_key('var')
         first_scores_key = cls.get_scores_key('1st')
         second_scores_key = cls.get_scores_key('2nd')
-        value = map(lambda m: m[1] - m[0] * m[0], zip(result.result_dict[first_scores_key], result.result_dict[second_scores_key]))
-        result.result_dict[var_scores_key] = to_list(value)
+        value = list(map(lambda m: m[1] - m[0] * m[0], zip(result.result_dict[first_scores_key], result.result_dict[second_scores_key])))
+        result.result_dict[var_scores_key] = value
 
         # validate
         for feature in cls.DERIVED_ATOM_FEATURES:

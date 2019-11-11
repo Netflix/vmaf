@@ -24,18 +24,6 @@ VMAF_LIB_FOLDER = os.path.dirname(os.path.abspath(__file__))
 VMAF_PROJECT = os.path.abspath(os.path.join(VMAF_LIB_FOLDER, '../../..',))
 
 
-def to_list(value):
-    """
-    TODO python3: map() and filter() return a generator in python3, however vmaf assumes list
-
-    Returns:
-        (list): `value` converted to a list when applicable
-    """
-    if value is None or isinstance(value, list):
-        return value
-    return list(value)
-
-
 def run_process(cmd, **kwargs):
     ret = subprocess.call(cmd, **kwargs)
     assert ret == 0, 'Process returned {ret}, cmd: {cmd}'.format(ret=ret, cmd=cmd)

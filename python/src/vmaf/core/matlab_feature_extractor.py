@@ -97,7 +97,7 @@ class StrredFeatureExtractor(MatlabFeatureExtractor):
         assert len(srred_scores) == len(trred_scores)
 
         # === Way One: consistent with VMAF framework, which is to multiply S and T scores per frame, then average
-        strred_scores = map(_strred, zip(srred_scores, trred_scores))
+        strred_scores = list(map(_strred, zip(srred_scores, trred_scores)))
         # === Way Two: authentic way of calculating STRRED score: average first, then multiply ===
         strred_all_same_scores = ListStats.nonemean(srred_scores) * ListStats.nonemean(trred_scores) * np.ones(len(srred_scores))
 
@@ -190,7 +190,7 @@ class StrredOptFeatureExtractor(MatlabFeatureExtractor):
             assert len(srred_scores) == len(trred_scores)
 
             # === Way One: consistent with VMAF framework, which is to multiply S and T scores per frame, then average
-            strred_scores = map(_strred, zip(srred_scores, trred_scores))
+            strred_scores = list(map(_strred, zip(srred_scores, trred_scores)))
             # === Way Two: authentic way of calculating STRRED score: average first, then multiply ===
             strred_all_same_scores = ListStats.nonemean(srred_scores) * ListStats.nonemean(trred_scores) * np.ones(
                 len(srred_scores))
@@ -273,7 +273,7 @@ class SpEEDMatlabFeatureExtractor(MatlabFeatureExtractor):
             tspeed_scale_now_scores = result.result_dict[tspeed_scale_now_scores_key]
             assert len(sspeed_scale_now_scores) == len(tspeed_scale_now_scores)
             # consistent with VMAF framework, which is to multiply S and T scores per frame, then average
-            speed_scale_now_scores = map(_speed, zip(sspeed_scale_now_scores, tspeed_scale_now_scores))
+            speed_scale_now_scores = list(map(_speed, zip(sspeed_scale_now_scores, tspeed_scale_now_scores)))
             result.result_dict[speed_scale_now_scores_key] = speed_scale_now_scores
 
         # validate

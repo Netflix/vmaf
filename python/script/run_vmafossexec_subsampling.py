@@ -29,8 +29,8 @@ def run_vmafossexec_with_subsample(dataset_filepath, subsample):
                                           fifo_mode=True, subsample=subsample)
     elapsed_time = time() - start_time
 
-    groundtruths = map(lambda asset: asset.groundtruth, assets)
-    predictions = map(lambda result: result[runner_class.get_score_key()], results)
+    groundtruths = list(map(lambda asset: asset.groundtruth, assets))
+    predictions = list(map(lambda result: result[runner_class.get_score_key()], results))
     stats = RegressorMixin.get_stats(groundtruths, predictions)
     srcc = stats['SRCC']
     pcc = stats['PCC']

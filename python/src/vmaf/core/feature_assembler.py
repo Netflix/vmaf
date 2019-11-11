@@ -1,11 +1,11 @@
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
-from vmaf import to_list
 from vmaf.core.feature_extractor import FeatureExtractor
 from vmaf.core.result import BasicResult
 from vmaf.core.executor import run_executors_in_parallel
 from vmaf.core.matlab_feature_extractor import StrredFeatureExtractor, SpEEDMatlabFeatureExtractor
+
 
 class FeatureAssembler(object):
     """
@@ -88,7 +88,7 @@ class FeatureAssembler(object):
 
         # assemble an output dict with demanded atom features
         # atom_features_dict = self.fextractor_atom_features_dict
-        result_dicts = to_list(map(lambda x: dict(), self.assets))
+        result_dicts = list(map(lambda x: dict(), self.assets))
         for fextractor_type in self.feature_dict:
             assert fextractor_type in self.type2results_dict
             for atom_feature in self._get_atom_features(fextractor_type):
@@ -96,7 +96,7 @@ class FeatureAssembler(object):
                 for result_index, result in enumerate(self.type2results_dict[fextractor_type]):
                     result_dicts[result_index][scores_key] = result[scores_key]
 
-        self.results = to_list(map(
+        self.results = list(map(
             lambda tasset: BasicResult(tasset[0], tasset[1]),
             zip(self.assets, result_dicts)
         ))

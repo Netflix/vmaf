@@ -58,7 +58,7 @@ while True:
 	last_line = line
 	line = f.readline()
 	if not line: break
-c,g,rate = map(float,last_line.split())
+c,g,rate = list(map(float,last_line.split()))
 
 print('Best c={0}, g={1} CV rate={2}'.format(c,g,rate))
 

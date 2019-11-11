@@ -10,11 +10,12 @@ import re
 import numpy as np
 import ast
 
-from vmaf import ExternalProgramCaller, to_list
+from vmaf import ExternalProgramCaller
 from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.executor import Executor
 from vmaf.core.result import Result
 from vmaf.tools.reader import YuvReader
+
 
 class FeatureExtractor(Executor):
     """
@@ -269,6 +270,7 @@ class VmafFeatureExtractor(FeatureExtractor):
 
         return result
 
+
 class VifFrameDifferenceFeatureExtractor(FeatureExtractor):
 
     TYPE = "VifDiff_feature"
@@ -346,6 +348,7 @@ class VifFrameDifferenceFeatureExtractor(FeatureExtractor):
             assert cls.get_scores_key(feature) in result.result_dict
 
         return result
+
 
 class PsnrFeatureExtractor(FeatureExtractor):
 
@@ -463,10 +466,10 @@ class MomentFeatureExtractor(FeatureExtractor):
         dis2nd_scores_key = cls.get_scores_key('dis2nd')
         get_var = lambda m: m[1] - m[0] * m[0]
         result.result_dict[refvar_scores_key] = \
-            to_list(map(get_var, zip(result.result_dict[ref1st_scores_key],
+            list(map(get_var, zip(result.result_dict[ref1st_scores_key],
                              result.result_dict[ref2nd_scores_key])))
         result.result_dict[disvar_scores_key] = \
-            to_list(map(get_var, zip(result.result_dict[dis1st_scores_key],
+            list(map(get_var, zip(result.result_dict[dis1st_scores_key],
                              result.result_dict[dis2nd_scores_key])))
 
         # validate
@@ -474,6 +477,7 @@ class MomentFeatureExtractor(FeatureExtractor):
             assert cls.get_scores_key(feature) in result.result_dict
 
         return result
+
 
 class SsimFeatureExtractor(FeatureExtractor):
 
