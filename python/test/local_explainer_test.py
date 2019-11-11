@@ -50,7 +50,9 @@ class LocalExplainerTest(unittest.TestCase):
         self.features = fextractor.results
 
         xys = model_class.get_xys_from_results(self.features[:7])
-        model = model_class({'norm_type':'normalize', 'random_state':0}, None)
+        model = model_class({'norm_type':'normalize',
+                             'n_estimators': 10,
+                             'random_state':0}, None)
         model.train(xys)
 
         np.random.seed(0)
@@ -189,7 +191,9 @@ class LocalExplainerMomentRandomForestTest(unittest.TestCase):
         del xys['dis_u']
         del xys['dis_v']
 
-        model = model_class({'norm_type':'normalize', 'random_state':0})
+        model = model_class({'norm_type':'normalize',
+                             'n_estimators': 10,
+                             'random_state':0})
         model.train(xys)
 
         np.random.seed(0)

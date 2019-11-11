@@ -175,7 +175,9 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         xys = BootstrapSklearnRandomForestTrainTestModel.get_xys_from_results(self.features)
 
         model = BootstrapSklearnRandomForestTrainTestModel(
-            {'norm_type':'normalize', 'random_state':0}, None)
+            {'norm_type':'normalize',
+             'n_estimators': 10,
+             'random_state':0}, None)
         model.train(xys)
         self.assertAlmostEquals(model.evaluate(xs, ys)['RMSE'], 0.17634739353518517, places=4)
         self.assertAlmostEquals(model.evaluate_bagging(xs, ys)['RMSE'], 0.1734023350765026, places=4)
@@ -184,7 +186,9 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_ci95_high'], 4.6789999999999985)
 
         model = BootstrapSklearnRandomForestTrainTestModel(
-            {'norm_type':'clip_0to1', 'random_state':0}, None)
+            {'norm_type':'clip_0to1',
+             'n_estimators': 10,
+             'random_state':0}, None)
         model.train(xys)
         self.assertAlmostEquals(model.evaluate(xs, ys)['RMSE'], 0.15634392282439, places=4)
         self.assertAlmostEquals(model.evaluate_bagging(xs, ys)['RMSE'], 0.16538552470948875, places=4)
@@ -194,6 +198,7 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
 
         model = BootstrapSklearnRandomForestTrainTestModel(
             {'norm_type': 'custom_clip_0to1',
+             'n_estimators': 10,
              'custom_clip_0to1_map': {
                 'Moment_noref_feature_1st_score': [0.0, 100.0],
               },
@@ -207,7 +212,9 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_ci95_high'], 4.667805555555555)
 
         model = BootstrapSklearnRandomForestTrainTestModel(
-            {'norm_type':'clip_minus1to1', 'random_state':0}, None)
+            {'norm_type':'clip_minus1to1',
+             'n_estimators': 10,
+             'random_state':0}, None)
         model.train(xys)
         self.assertAlmostEquals(model.evaluate(xs, ys)['RMSE'], 0.15634392282438947, places=4)
         self.assertAlmostEquals(model.evaluate_bagging(xs, ys)['RMSE'], 0.16634325875304712, places=4)
@@ -216,7 +223,9 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_ci95_high'], 4.686916666666666)
 
         model = BootstrapSklearnRandomForestTrainTestModel(
-            {'norm_type':'none', 'random_state':0}, None)
+            {'norm_type':'none',
+             'n_estimators': 10,
+             'random_state':0}, None)
         model.train(xys)
         self.assertAlmostEquals(model.evaluate(xs, ys)['RMSE'], 0.15634392282438941, places=4)
         self.assertAlmostEquals(model.evaluate_bagging(xs, ys)['RMSE'], 0.16935240638616547, places=4)
@@ -232,7 +241,9 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         ys = BootstrapSklearnRandomForestTrainTestModel.get_ys_from_results(self.features)
         xys = BootstrapSklearnRandomForestTrainTestModel.get_xys_from_results(self.features)
 
-        self.model = BootstrapSklearnRandomForestTrainTestModel({'norm_type': 'normalize', 'random_state': 0}, None)
+        self.model = BootstrapSklearnRandomForestTrainTestModel({'norm_type': 'normalize',
+                                                                 'n_estimators': 10,
+                                                                 'random_state': 0}, None)
         self.model.train(xys)
 
         self.model.to_file(self.model_filename)
@@ -286,7 +297,9 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         ys = ResidueBootstrapRandomForestTrainTestModel.get_ys_from_results(self.features)
         xys = ResidueBootstrapRandomForestTrainTestModel.get_xys_from_results(self.features)
 
-        self.model = ResidueBootstrapRandomForestTrainTestModel({'norm_type': 'normalize', 'random_state': 0}, None)
+        self.model = ResidueBootstrapRandomForestTrainTestModel({'norm_type': 'normalize',
+                                                                 'n_estimators': 10,
+                                                                 'random_state': 0}, None)
         self.model.train(xys)
 
         self.model.to_file(self.model_filename)

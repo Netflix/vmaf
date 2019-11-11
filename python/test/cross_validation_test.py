@@ -39,7 +39,9 @@ class CrossValidationTest(unittest.TestCase):
         print("test cross validation...")
 
         train_test_model_class = SklearnRandomForestTrainTestModel
-        model_param = {'norm_type':'normalize', 'random_state': 0}
+        model_param = {'norm_type':'normalize',
+                       'n_estimators': 10,
+                       'random_state': 0}
 
         indices_train = range(9)
         indices_test = range(9)
@@ -58,7 +60,9 @@ class CrossValidationTest(unittest.TestCase):
         print("test k-fold cross validation on random forest...")
 
         train_test_model_class = SklearnRandomForestTrainTestModel
-        model_param = {'norm_type':'normalize', 'random_state': 0}
+        model_param = {'norm_type':'normalize',
+                       'n_estimators': 10,
+                       'random_state': 0}
 
         output = ModelCrossValidation.run_kfold_cross_validation(
             train_test_model_class, model_param, self.features, 3)
@@ -103,7 +107,9 @@ class CrossValidationTest(unittest.TestCase):
         print("test k-fold cross validation with list input...")
 
         train_test_model_class = SklearnRandomForestTrainTestModel
-        model_param = {'norm_type':'normalize', 'random_state': 0}
+        model_param = {'norm_type':'normalize',
+                       'n_estimators': 10,
+                       'random_state': 0}
 
         output = ModelCrossValidation.run_kfold_cross_validation(
             train_test_model_class, model_param, self.features,

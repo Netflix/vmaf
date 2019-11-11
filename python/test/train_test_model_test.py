@@ -70,7 +70,9 @@ class TrainTestModelTest(unittest.TestCase):
         ys = SklearnRandomForestTrainTestModel.get_ys_from_results(self.features)
         xys = SklearnRandomForestTrainTestModel.get_xys_from_results(self.features)
 
-        self.model = SklearnRandomForestTrainTestModel({'norm_type':'normalize', 'random_state':0}, None)
+        self.model = SklearnRandomForestTrainTestModel({'norm_type':'normalize',
+                                                        'n_estimators': 10,
+                                                        'random_state':0}, None)
         self.model.train(xys)
 
         self.model.to_file(self.model_filename)
@@ -160,19 +162,22 @@ class TrainTestModelTest(unittest.TestCase):
         xys = SklearnRandomForestTrainTestModel.get_xys_from_results(self.features, [0, 1, 2])
 
         model = SklearnRandomForestTrainTestModel({'norm_type':'normalize',
-                                            'random_state': 0}, None)
+                                                   'n_estimators': 10,
+                                                   'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.051804171170643766, places=4)
 
         model = SklearnRandomForestTrainTestModel({'norm_type':'clip_0to1',
-                                'random_state': 0}, None)
+                                                   'n_estimators': 10,
+                                                   'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.051804171170643752, places=4)
 
         model = SklearnRandomForestTrainTestModel(
             {'norm_type': 'custom_clip_0to1',
+             'n_estimators': 10,
              'custom_clip_0to1_map': {
                 'Moment_noref_feature_1st_score': [0.0, 100.0],
               },
@@ -183,12 +188,15 @@ class TrainTestModelTest(unittest.TestCase):
         self.assertAlmostEquals(result['RMSE'], 0.051804171170643752, places=4)
 
         model = SklearnRandomForestTrainTestModel({'norm_type':'clip_minus1to1',
-                                'random_state': 0}, None)
+                                                   'n_estimators': 10,
+                                                   'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.051804171170643752, places=4)
 
-        model = SklearnRandomForestTrainTestModel({'norm_type':'none', 'random_state': 0}, None)
+        model = SklearnRandomForestTrainTestModel({'norm_type':'none',
+                                                   'n_estimators': 10,
+                                                   'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertAlmostEquals(result['RMSE'], 0.051804171170643752, places=4)
@@ -357,7 +365,9 @@ class TrainTestModelWithDisYRawVideoExtractorTest(unittest.TestCase):
         del xys['dis_u']
         del xys['dis_v']
 
-        model = MomentRandomForestTrainTestModel({'norm_type':'normalize', 'random_state':0})
+        model = MomentRandomForestTrainTestModel({'norm_type':'normalize',
+                                                  'n_estimators': 10,
+                                                  'random_state':0})
         model.train(xys)
 
         result = model.evaluate(xs, ys)
@@ -375,7 +385,9 @@ class TrainTestModelWithDisYRawVideoExtractorTest(unittest.TestCase):
         del xys['dis_u']
         del xys['dis_v']
 
-        model = MomentRandomForestTrainTestModel({'norm_type':'normalize', 'random_state':0})
+        model = MomentRandomForestTrainTestModel({'norm_type':'normalize',
+                                                  'n_estimators': 10,
+                                                  'random_state':0})
         model.train(xys)
 
         model.to_file(self.model_filename)
@@ -391,7 +403,9 @@ class TrainTestModelWithDisYRawVideoExtractorTest(unittest.TestCase):
         ys = MomentRandomForestTrainTestModel.get_ys_from_results(self.features)
         xys = MomentRandomForestTrainTestModel.get_xys_from_results(self.features)
 
-        model = MomentRandomForestTrainTestModel({'norm_type':'normalize', 'random_state':0})
+        model = MomentRandomForestTrainTestModel({'norm_type':'normalize',
+                                                  'n_estimators': 10,
+                                                  'random_state':0})
         model.train(xys)
 
         result = model.evaluate(xs, ys)
