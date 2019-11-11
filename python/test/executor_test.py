@@ -11,25 +11,25 @@ class ExecutorTest(unittest.TestCase):
 
         asset = Asset(dataset="test", content_id=0, asset_id=0, ref_path="", dis_path="",
                       asset_dict={}, workdir_root="my_workdir_root")
-        self.assertEquals(Executor._get_workfile_yuv_type(asset), 'yuv420p')
+        self.assertEqual(Executor._get_workfile_yuv_type(asset), 'yuv420p')
 
         asset = Asset(dataset="test", content_id=0, asset_id=0, ref_path="", dis_path="",
                       asset_dict={'ref_yuv_type': 'notyuv', 'dis_yuv_type': 'notyuv'}, workdir_root="my_workdir_root")
-        self.assertEquals(Executor._get_workfile_yuv_type(asset), 'yuv420p')
+        self.assertEqual(Executor._get_workfile_yuv_type(asset), 'yuv420p')
 
         asset = Asset(dataset="test", content_id=0, asset_id=0, ref_path="", dis_path="",
                       asset_dict={'ref_yuv_type': 'yuv444p', 'dis_yuv_type': 'notyuv'}, workdir_root="my_workdir_root")
-        self.assertEquals(Executor._get_workfile_yuv_type(asset), 'yuv444p')
+        self.assertEqual(Executor._get_workfile_yuv_type(asset), 'yuv444p')
 
         with self.assertRaises(AssertionError):
             asset = Asset(dataset="test", content_id=0, asset_id=0, ref_path="", dis_path="",
                           asset_dict={'ref_yuv_type': 'yuv444p', 'dis_yuv_type': 'yuv420p'}, workdir_root="my_workdir_root")
-            self.assertEquals(Executor._get_workfile_yuv_type(asset), 'yuv444p')
+            self.assertEqual(Executor._get_workfile_yuv_type(asset), 'yuv444p')
 
         asset = Asset(dataset="test", content_id=0, asset_id=0, ref_path="", dis_path="",
                       asset_dict={'ref_yuv_type': 'notyuv', 'dis_yuv_type': 'yuv422p'}, workdir_root="my_workdir_root")
-        self.assertEquals(Executor._get_workfile_yuv_type(asset), 'yuv422p')
+        self.assertEqual(Executor._get_workfile_yuv_type(asset), 'yuv422p')
 
         asset = Asset(dataset="test", content_id=0, asset_id=0, ref_path="", dis_path="",
                       asset_dict={'ref_yuv_type': 'yuv444p', 'dis_yuv_type': 'yuv444p'}, workdir_root="my_workdir_root")
-        self.assertEquals(Executor._get_workfile_yuv_type(asset), 'yuv444p')
+        self.assertEqual(Executor._get_workfile_yuv_type(asset), 'yuv444p')

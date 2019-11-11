@@ -51,7 +51,7 @@ class CrossValidationTest(unittest.TestCase):
         self.assertAlmostEquals(output['stats']['PCC'], 0.97754442316039469, places=4)
         self.assertAlmostEquals(output['stats']['KENDALL'], 0.83333333333333337, places=4)
         self.assertAlmostEquals(output['stats']['RMSE'], 0.17634739353518517, places=4)
-        self.assertEquals(output['model'].TYPE, "RANDOMFOREST")
+        self.assertEqual(output['model'].TYPE, "RANDOMFOREST")
 
     def test_run_kfold_cross_validation_randomforest(self):
 
@@ -127,7 +127,7 @@ class CrossValidationTest(unittest.TestCase):
          {'norm_type':'clip_0to1', 'n_estimators':50, 'random_state':0},
         ]
 
-        self.assertEquals(dicts, expected_dicts)
+        self.assertEqual(dicts, expected_dicts)
 
     @unittest.skipIf(sys.version_info < (3,), reason="For py3 only: py2 uses a different random seed.")
     def test_sample_model_param_list(self):
@@ -157,7 +157,7 @@ class CrossValidationTest(unittest.TestCase):
             {'n_estimators': 13.0, 'norm_type': 'normalize', 'random_state': 0},
             {'n_estimators': 28.0, 'norm_type': 'normalize', 'random_state': 0},
         ]
-        self.assertEquals(dicts, expected_dicts)
+        self.assertEqual(dicts, expected_dicts)
 
     def test_find_most_frequent_dict(self):
         dicts = [
@@ -172,8 +172,8 @@ class CrossValidationTest(unittest.TestCase):
         expected_dict = {'norm_type':'clip_0to1', 'n_estimators':50, 'random_state':0}
         expected_count = 2
 
-        self.assertEquals(dict, expected_dict)
-        self.assertEquals(count, expected_count)
+        self.assertEqual(dict, expected_dict)
+        self.assertEqual(count, expected_count)
 
     def test_run_nested_kfold_cross_validation_randomforest(self):
 
@@ -201,8 +201,8 @@ class CrossValidationTest(unittest.TestCase):
             'random_state': 0
         }
         expected_top_ratio = 0.6666666666666666
-        self.assertEquals(output['top_model_param'], expected_top_model_param)
-        self.assertEquals(output['top_ratio'], expected_top_ratio)
+        self.assertEqual(output['top_model_param'], expected_top_model_param)
+        self.assertEqual(output['top_ratio'], expected_top_ratio)
 
     def test_run_nested_kfold_cross_validation_libsvmnusvr(self):
 
@@ -234,8 +234,8 @@ class CrossValidationTest(unittest.TestCase):
         }
         expected_top_ratio = 1.0
 
-        self.assertEquals(output['top_model_param'], expected_top_model_param)
-        self.assertEquals(output['top_ratio'], expected_top_ratio)
+        self.assertEqual(output['top_model_param'], expected_top_model_param)
+        self.assertEqual(output['top_ratio'], expected_top_ratio)
 
     def test_run_nested_kfold_cross_validation_with_list_input(self):
 
@@ -264,8 +264,8 @@ class CrossValidationTest(unittest.TestCase):
                                     'random_state':0
                                     }
         expected_top_ratio = 0.6666666666666666
-        self.assertEquals(output['top_model_param'], expected_top_model_param)
-        self.assertEquals(output['top_ratio'], expected_top_ratio)
+        self.assertEqual(output['top_model_param'], expected_top_model_param)
+        self.assertEqual(output['top_ratio'], expected_top_ratio)
 
 
 if __name__ == '__main__':

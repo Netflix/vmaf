@@ -45,15 +45,15 @@ class TrainTestModelTest(unittest.TestCase):
     def test_get_xs_ys(self):
         xs = TrainTestModel.get_xs_from_results(self.features, [0, 1, 2])
 
-        self.assertEquals(len(xs['Moment_noref_feature_1st_score']), 3)
+        self.assertEqual(len(xs['Moment_noref_feature_1st_score']), 3)
         self.assertAlmostEquals(np.mean(xs['Moment_noref_feature_1st_score']), 128.26146851380497, places=4)
-        self.assertEquals(len(xs['Moment_noref_feature_var_score']), 3)
+        self.assertEqual(len(xs['Moment_noref_feature_var_score']), 3)
         self.assertAlmostEquals(np.mean(xs['Moment_noref_feature_var_score']), 1569.2395085695462, places=4)
 
         xs = TrainTestModel.get_xs_from_results(self.features)
-        self.assertEquals(len(xs['Moment_noref_feature_1st_score']), 9)
+        self.assertEqual(len(xs['Moment_noref_feature_1st_score']), 9)
         self.assertAlmostEquals(np.mean(xs['Moment_noref_feature_1st_score']), 111.59099599173773, places=4)
-        self.assertEquals(len(xs['Moment_noref_feature_var_score']), 9)
+        self.assertEqual(len(xs['Moment_noref_feature_var_score']), 9)
         self.assertAlmostEquals(np.mean(xs['Moment_noref_feature_var_score']), 1806.8620377229011, places=4)
 
         ys = TrainTestModel.get_ys_from_results(self.features, [0, 1, 2])

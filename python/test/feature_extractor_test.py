@@ -28,7 +28,7 @@ class FeatureExtractorTest(unittest.TestCase):
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
                       asset_dict={'width': 720, 'height': 480})
         fextractor = VmafFeatureExtractor([asset], None)
-        self.assertEquals(fextractor.executor_id, "VMAF_feature_V0.2.4c")
+        self.assertEqual(fextractor.executor_id, "VMAF_feature_V0.2.4c")
 
     def test_get_log_file_path(self):
         import hashlib

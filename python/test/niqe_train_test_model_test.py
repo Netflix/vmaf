@@ -53,11 +53,11 @@ class NiqeTrainTestModelTest(unittest.TestCase):
 
         xs = NiqeTrainTestModel.get_xs_from_results(self.features)
 
-        self.assertEquals(len(xs['NIQE_noref_feature_N11_scores'][0]), 5)
-        self.assertEquals(len(xs['NIQE_noref_feature_N11_scores'][1]), 3)
-        self.assertEquals(len(xs['NIQE_noref_feature_N11_scores'][2]), 7)
-        self.assertEquals(len(xs['NIQE_noref_feature_N11_scores'][3]), 11)
-        self.assertEquals(len(xs['NIQE_noref_feature_N11_scores'][4]), 3)
+        self.assertEqual(len(xs['NIQE_noref_feature_N11_scores'][0]), 5)
+        self.assertEqual(len(xs['NIQE_noref_feature_N11_scores'][1]), 3)
+        self.assertEqual(len(xs['NIQE_noref_feature_N11_scores'][2]), 7)
+        self.assertEqual(len(xs['NIQE_noref_feature_N11_scores'][3]), 11)
+        self.assertEqual(len(xs['NIQE_noref_feature_N11_scores'][4]), 3)
         self.assertAlmostEquals(xs['NIQE_noref_feature_N11_scores'][0][3],
                                 -0.016672410493636325)
 
