@@ -612,13 +612,13 @@ class TrainTestModel(TypeVersionEnabled):
         xs_2d = None
         for name in xkeys:
             if xs_2d is None:
-                xs_2d = np.matrix(xys[name]).T
+                xs_2d = np.matrix(xys[name]).T  # TODO python3: fix np.matrix
             else:
-                xs_2d = np.hstack((xs_2d, np.matrix(xys[name]).T))
+                xs_2d = np.hstack((xs_2d, np.matrix(xys[name]).T))  # TODO python3: fix np.matrix
 
         # combine them
         ys_vec = xys['label']
-        xys_2d = np.array(np.hstack((np.matrix(ys_vec).T, xs_2d)))
+        xys_2d = np.array(np.hstack((np.matrix(ys_vec).T, xs_2d)))  # TODO python3: fix np.matrix
         return xys_2d
 
     @classmethod
@@ -1043,7 +1043,7 @@ class MomentRandomForestTrainTestModel(RawVideoTrainTestModelMixin,
 
         # combine with ys
         ys_vec = xys['label']
-        xys_2d = np.array(np.hstack((np.matrix(ys_vec).T, xs_2d)))
+        xys_2d = np.array(np.hstack((np.matrix(ys_vec).T, xs_2d)))  # TODO python3: fix np.matrix
 
         return xys_2d
 
@@ -1363,7 +1363,7 @@ class ResidueBootstrapMixin(BootstrapMixin):
             indices = np.random.choice(range(sample_size), size=sample_size, replace=True)
             residue_ys_resampled = residue_ys[indices]
             ys_resampled = residue_ys_resampled + ys_pred
-            xys_2d_ = np.array(np.hstack((np.matrix(ys_resampled).T, xs_2d)))
+            xys_2d_ = np.array(np.hstack((np.matrix(ys_resampled).T, xs_2d)))  # TODO python3: fix np.matrix
             model_ = self._train(self.param_dict, xys_2d_, **kwargs)
             models.append(model_)
         self.model = models

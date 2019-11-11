@@ -371,8 +371,8 @@ class ResolvingPowerPerfMetric(RawScorePerfMetric):
         ys_ = (ys_ - ys_min) / (ys_max - ys_min)
 
         zs = -np.log(1.0 / ys_.T - 1.0)
-        Y_mtx = np.matrix((np.ones(len(ys_)), zs)).T
-        x_vec = np.matrix(xs).T
+        Y_mtx = np.matrix((np.ones(len(ys_)), zs)).T  # TODO python3: fix np.matrix
+        x_vec = np.matrix(xs).T  # TODO python3: fix np.matrix
         a_b = lstsq(Y_mtx, x_vec, rcond=-1)[0]
         a = a_b.item(0)
         b = a_b.item(1)
@@ -610,8 +610,8 @@ class AggrScorePerfMetric(PerfMetric):
         ys = list((np.array(ys) - ys_min) / (ys_max - ys_min))
 
         zs = -np.log(1.0 / np.array(ys).T - 1.0)
-        Y_mtx = np.matrix((np.ones(len(ys)), zs)).T
-        x_vec = np.matrix(xs).T
+        Y_mtx = np.matrix((np.ones(len(ys)), zs)).T  # TODO python3: fix np.matrix
+        x_vec = np.matrix(xs).T  # TODO python3: fix np.matrix
         a_b = lstsq(Y_mtx, x_vec, rcond=-1)[0]
         a = a_b.item(0)
         b = a_b.item(1)
