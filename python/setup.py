@@ -44,7 +44,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "numpy>=1.12.0",
-        "scipy>=0.17.1,<1.3.0",  # TODO python3: scipy 1.3.0 removed some previously deprecated functions, still used by vmaf
+        "scipy>=0.17.1",
         "matplotlib>=2.0.0",
         "pandas>=0.19.2",
         "scikit-learn>=0.18.1",
