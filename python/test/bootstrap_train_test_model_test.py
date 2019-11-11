@@ -318,5 +318,6 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         self.assertAlmostEqual(loaded_model.evaluate_stddev(xs)['mean_ci95_low'], 3.621466666666666)
         self.assertAlmostEqual(loaded_model.evaluate_stddev(xs)['mean_ci95_high'], 4.4107916666666656)
 
+
 if __name__ == '__main__':
     unittest.main()
