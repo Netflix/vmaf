@@ -5,6 +5,7 @@ import os
 
 import numpy as np
 
+
 class YuvReader(object):
 
     SUPPORTED_YUV_8BIT_TYPES = ['yuv420p',

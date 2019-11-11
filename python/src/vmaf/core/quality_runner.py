@@ -1054,7 +1054,9 @@ class NiqeQualityRunner(QualityRunner):
 
     TYPE = 'NIQE'
 
-    VERSION = '0.1'
+    # VERSION = '0.1'
+    VERSION = '0.2'  # update model to py3
+
     DEFAULT_MODEL_FILEPATH = VmafConfig.model_path('other_models', 'niqe_v0.1.pkl')
 
     DEFAULT_FEATURE_DICT = {'NIQE_noref_feature': 'all'}

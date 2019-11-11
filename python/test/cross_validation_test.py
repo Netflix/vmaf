@@ -129,22 +129,21 @@ class CrossValidationTest(unittest.TestCase):
 
         self.assertEquals(dicts, expected_dicts)
 
-    @unittest.skipIf(sys.version_info > (3,), reason="TODO python3: check randomness order in py3")
     def test_sample_model_param_list(self):
         import random
         random.seed(0)
 
         model_param_search_range = {'norm_type':['normalize', 'clip_0to1'],
                                     'n_estimators':[10, 50], 'random_state': [0]}
-        dicts = ModelCrossValidation._sample_model_param_list(
-            model_param_search_range, 4)
+        dicts = ModelCrossValidation._sample_model_param_list(model_param_search_range, 4)
         expected_dicts = [
-         {'norm_type':'clip_0to1', 'n_estimators':50, 'random_state':0},
-         {'norm_type':'clip_0to1', 'n_estimators':10, 'random_state':0},
-         {'norm_type':'normalize', 'n_estimators':50, 'random_state':0},
-         {'norm_type':'clip_0to1', 'n_estimators':50, 'random_state':0},
+            {'n_estimators': 50, 'norm_type': 'clip_0to1', 'random_state': 0},
+            {'n_estimators': 50, 'norm_type': 'clip_0to1', 'random_state': 0},
+            {'n_estimators': 50, 'norm_type': 'clip_0to1', 'random_state': 0},
+            {'n_estimators': 10, 'norm_type': 'normalize', 'random_state': 0},
         ]
-        self.assertEquals(dicts, expected_dicts)
+        for dict, expected_dict in zip(dicts, expected_dicts):
+            self.assertDictEqual(dict, expected_dict)
 
         model_param_search_range = {'norm_type':['normalize', 'clip_0to1'],
                                     'n_estimators':{'low':10, 'high':50, 'decimal':0},
@@ -152,10 +151,10 @@ class CrossValidationTest(unittest.TestCase):
         dicts = ModelCrossValidation._sample_model_param_list(
             model_param_search_range, 4)
         expected_dicts = [
-         {'norm_type':'clip_0to1', 'n_estimators':21, 'random_state':0},
-         {'norm_type':'clip_0to1', 'n_estimators':20, 'random_state':0},
-         {'norm_type':'clip_0to1', 'n_estimators':42, 'random_state':0},
-         {'norm_type':'clip_0to1', 'n_estimators':39, 'random_state':0},
+            {'n_estimators': 15.0, 'norm_type': 'normalize', 'random_state': 0},
+            {'n_estimators': 49.0, 'norm_type': 'normalize', 'random_state': 0},
+            {'n_estimators': 13.0, 'norm_type': 'normalize', 'random_state': 0},
+            {'n_estimators': 28.0, 'norm_type': 'normalize', 'random_state': 0},
         ]
         self.assertEquals(dicts, expected_dicts)
 
@@ -266,6 +265,7 @@ class CrossValidationTest(unittest.TestCase):
         expected_top_ratio = 0.6666666666666666
         self.assertEquals(output['top_model_param'], expected_top_model_param)
         self.assertEquals(output['top_ratio'], expected_top_ratio)
+
 
 if __name__ == '__main__':
     unittest.main()
