@@ -588,10 +588,10 @@ class AssetTest(unittest.TestCase):
         new_asset = asset.copy()
         self.assertEqual(asset, new_asset)
         self.assertTrue(asset == new_asset)
-        self.assertNotEquals(id(asset), id(new_asset))
+        self.assertNotEqual(id(asset), id(new_asset))
 
         new_asset.asset_dict['yuv_type'] = 'yuv444p'
-        self.assertNotEquals(asset, new_asset)
+        self.assertNotEqual(asset, new_asset)
 
         new_asset2 = asset.copy(content_id=2)
         self.assertFalse(asset == new_asset2)

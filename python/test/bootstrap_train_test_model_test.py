@@ -254,8 +254,6 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
 
     def test_train_save_load_predict_residue_bootstrap_libsvmnusvr(self):
 
-        print("test residue bootstrap libsvmnusvr train, save, load and predict...")
-
         xs = ResidueBootstrapLibsvmNusvrTrainTestModel.get_xs_from_results(self.features)
         ys = ResidueBootstrapLibsvmNusvrTrainTestModel.get_ys_from_results(self.features)
         xys = ResidueBootstrapLibsvmNusvrTrainTestModel.get_xys_from_results(self.features)
