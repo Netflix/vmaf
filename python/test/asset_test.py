@@ -608,7 +608,7 @@ class AssetTest(unittest.TestCase):
                                   'use_path_as_workpath': True
                                   })
         new_asset = asset.copy()
-        self.assertNotEquals(asset, new_asset)  # use_path_as_workpath gets reset
+        self.assertNotEqual(asset, new_asset)  # use_path_as_workpath gets reset
         self.assertTrue(asset.use_path_as_workpath)
         self.assertFalse(new_asset.use_path_as_workpath)
 
@@ -622,10 +622,10 @@ class AssetTest(unittest.TestCase):
         new_asset = asset.copy()
         self.assertEqual(asset, new_asset)
         self.assertTrue(asset == new_asset)
-        self.assertNotEquals(id(asset), id(new_asset))
+        self.assertNotEqual(id(asset), id(new_asset))
 
         new_asset.asset_dict['yuv_type'] = 'yuv444p'
-        self.assertNotEquals(asset, new_asset)
+        self.assertNotEqual(asset, new_asset)
 
         new_asset2 = asset.copy(content_id=2)
         self.assertFalse(asset == new_asset2)
