@@ -138,10 +138,10 @@ class AssetTest(unittest.TestCase):
                       ref_path=ref_path, dis_path=dis_path,
                       asset_dict={'ref_start_frame': 0, 'ref_end_frame': 47,
                                   'dis_start_frame': 0, 'dis_end_frame': 47,
-                                  'fps':23.976},)
-        self.assertAlmostEquals(asset.ref_bitrate_kbps_for_entire_file,
+                                  'fps': 23.976},)
+        self.assertAlmostEqual(asset.ref_bitrate_kbps_for_entire_file,
                           53693.964287999996, places=4)
-        self.assertAlmostEquals(asset.dis_bitrate_kbps_for_entire_file,
+        self.assertAlmostEqual(asset.dis_bitrate_kbps_for_entire_file,
                           53693.964287999996, places=4)
 
     def test_to_normalized_dict(self):

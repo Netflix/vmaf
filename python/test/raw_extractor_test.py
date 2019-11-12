@@ -89,9 +89,9 @@ class DisYUVRawVideoExtractorTest(unittest.TestCase):
         results = self.fextractor.results
 
         self.assertAlmostEqual(np.mean(results[0]['dis_y']), 61.332006579182384, places=4)
-        self.assertAlmostEquals(np.mean(results[1]['dis_y']), 59.788567297525148, places=4)
+        self.assertAlmostEqual(np.mean(results[1]['dis_y']), 59.788567297525148, places=4)
         self.assertAlmostEqual(np.mean(results[0]['dis_u']), 115.23227407335962, places=4)
-        self.assertAlmostEquals(np.mean(results[1]['dis_u']), 114.49701717535437, places=4)
+        self.assertAlmostEqual(np.mean(results[1]['dis_u']), 114.49701717535437, places=4)
 
         with self.assertRaises(KeyError):
             np.mean(results[0]['dis_v'])
@@ -170,9 +170,9 @@ class ParallelDisYRawVideoExtractorTest(unittest.TestCase):
         results = fextractor.results
 
         self.assertAlmostEqual(np.mean(results[0]['dis_y']), 61.332006579182384, places=4)
-        self.assertAlmostEquals(np.mean(results[1]['dis_y']), 59.788567297525148, places=4)
+        self.assertAlmostEqual(np.mean(results[1]['dis_y']), 59.788567297525148, places=4)
         self.assertAlmostEqual(np.mean(results[0]['dis_u']), 115.23227407335962, places=4)
-        self.assertAlmostEquals(np.mean(results[1]['dis_u']), 114.49701717535437, places=4)
+        self.assertAlmostEqual(np.mean(results[1]['dis_u']), 114.49701717535437, places=4)
 
         with self.assertRaises(KeyError):
             np.mean(results[0]['dis_v'])

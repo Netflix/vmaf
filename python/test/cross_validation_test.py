@@ -47,10 +47,10 @@ class CrossValidationTest(unittest.TestCase):
         output = ModelCrossValidation.run_cross_validation(
             train_test_model_class, model_param, self.features,
             indices_train, indices_test)
-        self.assertAlmostEquals(output['stats']['SRCC'], 0.93333333333333324, places=4)
-        self.assertAlmostEquals(output['stats']['PCC'], 0.97754442316039469, places=4)
-        self.assertAlmostEquals(output['stats']['KENDALL'], 0.83333333333333337, places=4)
-        self.assertAlmostEquals(output['stats']['RMSE'], 0.17634739353518517, places=4)
+        self.assertAlmostEqual(output['stats']['SRCC'], 0.93333333333333324, places=4)
+        self.assertAlmostEqual(output['stats']['PCC'], 0.97754442316039469, places=4)
+        self.assertAlmostEqual(output['stats']['KENDALL'], 0.83333333333333337, places=4)
+        self.assertAlmostEqual(output['stats']['RMSE'], 0.17634739353518517, places=4)
         self.assertEqual(output['model'].TYPE, "RANDOMFOREST")
 
     def test_run_kfold_cross_validation_randomforest(self):
@@ -63,10 +63,10 @@ class CrossValidationTest(unittest.TestCase):
         output = ModelCrossValidation.run_kfold_cross_validation(
             train_test_model_class, model_param, self.features, 3)
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.28452131897694583, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.1689046198483892, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.084515425472851652, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.344683833136588, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['SRCC'], 0.28452131897694583, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['PCC'], 0.1689046198483892, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['KENDALL'], 0.084515425472851652, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['RMSE'], 1.344683833136588, places=4)
 
     def test_run_kfold_cross_validation_extratrees(self):
 
@@ -76,10 +76,10 @@ class CrossValidationTest(unittest.TestCase):
         output = ModelCrossValidation.run_kfold_cross_validation(
             train_test_model_class, model_param, self.features, 3)
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.17320508075688773, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.33023719320146966, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.14907119849998599, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.3279056191361394, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['SRCC'], 0.17320508075688773, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['PCC'], 0.33023719320146966, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['KENDALL'], 0.14907119849998599, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['RMSE'], 1.3279056191361394, places=4)
 
     def test_run_kfold_cross_validation_libsvmnusvr(self):
 
@@ -89,10 +89,10 @@ class CrossValidationTest(unittest.TestCase):
         output = ModelCrossValidation.run_kfold_cross_validation(
             train_test_model_class, model_param, self.features, 3)
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.31666666666666665, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.33103132578536021, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.27777777777777779, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.2855099934718619, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['SRCC'], 0.31666666666666665, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['PCC'], 0.33103132578536021, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['KENDALL'], 0.27777777777777779, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['RMSE'], 1.2855099934718619, places=4)
 
     def test_run_kfold_cross_validation_with_list_input(self):
 
@@ -105,10 +105,10 @@ class CrossValidationTest(unittest.TestCase):
             train_test_model_class, model_param, self.features,
             [[0, 3, 8], [2, 1, 5], [4, 6, 7]])
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.18333333333333335, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.35513638509959689, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.1111111111111111, places=3)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.2740400878438387, places=3)
+        self.assertAlmostEqual(output['aggr_stats']['SRCC'], 0.18333333333333335, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['PCC'], 0.35513638509959689, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['KENDALL'], 0.1111111111111111, places=3)
+        self.assertAlmostEqual(output['aggr_stats']['RMSE'], 1.2740400878438387, places=3)
 
     def test_unroll_dict_of_lists(self):
         model_param_search_range = {'norm_type': ['normalize', 'clip_0to1'],
@@ -183,10 +183,10 @@ class CrossValidationTest(unittest.TestCase):
         output = ModelCrossValidation.run_nested_kfold_cross_validation(
             train_test_model_class, model_param_search_range, self.features, 3)
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.40167715620274708, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.11009919053282299, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.14085904245475275, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.3681348274719265, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['SRCC'], 0.40167715620274708, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['PCC'], 0.11009919053282299, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['KENDALL'], 0.14085904245475275, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['RMSE'], 1.3681348274719265, places=4)
 
         expected_top_model_param = {
             'norm_type': 'normalize',
@@ -212,10 +212,10 @@ class CrossValidationTest(unittest.TestCase):
         output = ModelCrossValidation.run_nested_kfold_cross_validation(
             train_test_model_class, model_param_search_range, self.features, 3)
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.30962614123961751, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], -0.1535643705229309, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.14085904245475275, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.5853397658781734, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['SRCC'], 0.30962614123961751, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['PCC'], -0.1535643705229309, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['KENDALL'], 0.14085904245475275, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['RMSE'], 1.5853397658781734, places=4)
 
         expected_top_model_param = {
             'norm_type': 'clip_0to1',
@@ -243,10 +243,10 @@ class CrossValidationTest(unittest.TestCase):
             train_test_model_class, model_param_search_range, self.features,
             [[0, 3, 2], [8, 6, 5], [4, 1, 7]])
 
-        self.assertAlmostEquals(output['aggr_stats']['SRCC'], 0.26666666666666666, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['PCC'], 0.15272340058922063, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['KENDALL'], 0.22222222222222221, places=4)
-        self.assertAlmostEquals(output['aggr_stats']['RMSE'], 1.452887116343635, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['SRCC'], 0.26666666666666666, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['PCC'], 0.15272340058922063, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['KENDALL'], 0.22222222222222221, places=4)
+        self.assertAlmostEqual(output['aggr_stats']['RMSE'], 1.452887116343635, places=4)
 
         expected_top_model_param = {'norm_type': 'none',
                                     'n_estimators': 10,

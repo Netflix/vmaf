@@ -53,9 +53,9 @@ class YuvReaderTest(unittest.TestCase):
             self.assertEqual(v[0][1], 126)
             self.assertEqual(v[1][0], 122)
 
-            self.assertAlmostEquals(y.mean(), 61.928749785665296, places=4)
-            self.assertAlmostEquals(u.mean(), 114.6326517489712, places=4)
-            self.assertAlmostEquals(v.mean(), 122.05084019204389, places=4)
+            self.assertAlmostEqual(y.mean(), 61.928749785665296, places=4)
+            self.assertAlmostEqual(u.mean(), 114.6326517489712, places=4)
+            self.assertAlmostEqual(v.mean(), 122.05084019204389, places=4)
 
             y, u, v = yuv_reader.__next__()
 
@@ -71,9 +71,9 @@ class YuvReaderTest(unittest.TestCase):
             self.assertEqual(v[0][1], 126)
             self.assertEqual(v[1][0], 124)
 
-            self.assertAlmostEquals(y.mean(), 61.265260631001375, places=4)
-            self.assertAlmostEquals(u.mean(), 114.72515860768175, places=4)
-            self.assertAlmostEquals(v.mean(), 122.12022033607681, places=4)
+            self.assertAlmostEqual(y.mean(), 61.265260631001375, places=4)
+            self.assertAlmostEqual(u.mean(), 114.72515860768175, places=4)
+            self.assertAlmostEqual(v.mean(), 122.12022033607681, places=4)
 
     def test_iteration(self):
 
@@ -90,8 +90,9 @@ class YuvReaderTest(unittest.TestCase):
 
         self.assertEqual(len(y_1stmoments), 48)
         self.assertEqual(len(y_2ndmoments), 48)
-        self.assertAlmostEquals(np.mean(y_1stmoments), 61.332006624999984, places=4)
-        self.assertAlmostEquals(np.mean(y_2ndmoments), 4798.659574041666, places=4)
+        self.assertAlmostEqual(np.mean(y_1stmoments), 61.332006624999984, places=4)
+        self.assertAlmostEqual(np.mean(y_2ndmoments), 4798.659574041666, places=4)
+
 
 class YuvReaderTest10le(unittest.TestCase):
 
@@ -128,9 +129,9 @@ class YuvReaderTest10le(unittest.TestCase):
             self.assertEqual(v[0][1], 126.25)
             self.assertEqual(v[1][0], 121.25)
 
-            self.assertAlmostEquals(y.mean(), 61.928749785665296, places=4)
-            self.assertAlmostEquals(u.mean(), 114.63283661265432, places=4)
-            self.assertAlmostEquals(v.mean(), 122.05113490226337, places=4)
+            self.assertAlmostEqual(y.mean(), 61.928749785665296, places=4)
+            self.assertAlmostEqual(u.mean(), 114.63283661265432, places=4)
+            self.assertAlmostEqual(v.mean(), 122.05113490226337, places=4)
 
             y, u, v = yuv_reader.__next__()
 
@@ -146,9 +147,9 @@ class YuvReaderTest10le(unittest.TestCase):
             self.assertEqual(v[0][1], 126.5)
             self.assertEqual(v[1][0], 127.25)
 
-            self.assertAlmostEquals(y.mean(), 61.265260631001375, places=4)
-            self.assertAlmostEquals(u.mean(), 114.72527917095336, places=4)
-            self.assertAlmostEquals(v.mean(), 122.12047217935527, places=4)
+            self.assertAlmostEqual(y.mean(), 61.265260631001375, places=4)
+            self.assertAlmostEqual(u.mean(), 114.72527917095336, places=4)
+            self.assertAlmostEqual(v.mean(), 122.12047217935527, places=4)
 
     def test_iteration(self):
 
@@ -165,8 +166,8 @@ class YuvReaderTest10le(unittest.TestCase):
 
         self.assertEqual(len(y_1stmoments), 48)
         self.assertEqual(len(y_2ndmoments), 48)
-        self.assertAlmostEquals(np.mean(y_1stmoments), 61.332006624999984, places=4)
-        self.assertAlmostEquals(np.mean(y_2ndmoments), 4798.659574041666, places=4)
+        self.assertAlmostEqual(np.mean(y_1stmoments), 61.332006624999984, places=4)
+        self.assertAlmostEqual(np.mean(y_2ndmoments), 4798.659574041666, places=4)
 
 
 if __name__ == '__main__':
