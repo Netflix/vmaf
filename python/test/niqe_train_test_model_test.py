@@ -53,20 +53,20 @@ class NiqeTrainTestModelTest(unittest.TestCase):
 
         xs = NiqeTrainTestModel.get_xs_from_results(self.features)
 
-        self.assertEquals(len(xs['NIQE_noref_feature_N11_scores'][0]), 5)
-        self.assertEquals(len(xs['NIQE_noref_feature_N11_scores'][1]), 3)
-        self.assertEquals(len(xs['NIQE_noref_feature_N11_scores'][2]), 7)
-        self.assertEquals(len(xs['NIQE_noref_feature_N11_scores'][3]), 11)
-        self.assertEquals(len(xs['NIQE_noref_feature_N11_scores'][4]), 3)
-        self.assertAlmostEquals(xs['NIQE_noref_feature_N11_scores'][0][3],
+        self.assertEqual(len(xs['NIQE_noref_feature_N11_scores'][0]), 5)
+        self.assertEqual(len(xs['NIQE_noref_feature_N11_scores'][1]), 3)
+        self.assertEqual(len(xs['NIQE_noref_feature_N11_scores'][2]), 7)
+        self.assertEqual(len(xs['NIQE_noref_feature_N11_scores'][3]), 11)
+        self.assertEqual(len(xs['NIQE_noref_feature_N11_scores'][4]), 3)
+        self.assertAlmostEqual(xs['NIQE_noref_feature_N11_scores'][0][3],
                                 -0.016672410493636325)
 
     def test_train(self):
         xys = NiqeTrainTestModel.get_xys_from_results(self.features)
         model = NiqeTrainTestModel(self.param.model_param_dict, None)
         model.train(xys)
-        self.assertAlmostEquals(np.mean(model.model_dict['model']['mu']), 0.58721456594247923, places=4)
-        self.assertAlmostEquals(np.mean(model.model_dict['model']['cov']), 0.0062869078795764156, places=4)
+        self.assertAlmostEqual(np.mean(model.model_dict['model']['mu']), 0.58721456594247923, places=4)
+        self.assertAlmostEqual(np.mean(model.model_dict['model']['cov']), 0.0062869078795764156, places=4)
 
     def test_predict(self):
         xs = NiqeTrainTestModel.get_xs_from_results(self.features)
@@ -74,9 +74,9 @@ class NiqeTrainTestModelTest(unittest.TestCase):
         model = NiqeTrainTestModel(self.param.model_param_dict, None)
         model.train(xys)
         ys_pred = model.predict(xs)['ys_label_pred']
-        self.assertAlmostEquals(np.mean(ys_pred), 3.7645955838278695, places=4)
-        self.assertAlmostEquals(ys_pred[0], 3.5840187532885257, places=3)
-        self.assertAlmostEquals(ys_pred[1], 5.1472584219091102, places=4)
+        self.assertAlmostEqual(np.mean(ys_pred), 3.7645955838278695, places=4)
+        self.assertAlmostEqual(ys_pred[0], 3.5840187532885257, places=3)
+        self.assertAlmostEqual(ys_pred[1], 5.1472584219091102, places=4)
 
     def test_save_load_model(self):
         xs = NiqeTrainTestModel.get_xs_from_results(self.features)
@@ -86,8 +86,8 @@ class NiqeTrainTestModelTest(unittest.TestCase):
         model.to_file(self.model_filename)
         model_new = TrainTestModel.from_file(self.model_filename, None)
         ys_pred = model_new.predict(xs)['ys_label_pred']
-        self.assertAlmostEquals(np.mean(ys_pred), 3.7645955838278695, places=4)
+        self.assertAlmostEqual(np.mean(ys_pred), 3.7645955838278695, places=4)
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)

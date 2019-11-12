@@ -462,8 +462,8 @@ class ToddNoiseClassifierTrainTestModel(NeuralNetTrainTestModel, ClassifierMixin
             sys.stdout.flush()
             curr_indices = indices[M * self.batch_size:
                            (M + 1) * self.batch_size].tolist()
-            patches = map(lambda idx: patches_in[idx], curr_indices)
-            labels_ = map(lambda idx: labels_in[idx], curr_indices)
+            patches = list(map(lambda idx: patches_in[idx], curr_indices))
+            labels_ = list(map(lambda idx: labels_in[idx], curr_indices))
             labels = as_one_hot(labels_)
             y_pred, loss = sess.run([y_p, loss_in],
                 feed_dict={input_image_batch: patches, y_: labels})

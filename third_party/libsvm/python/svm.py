@@ -114,7 +114,7 @@ class svm_parameter(Structure):
 	def __str__(self):
 		s = ''
 		attrs = svm_parameter._names + list(self.__dict__.keys())
-		values = map(lambda attr: getattr(self, attr), attrs) 
+		values = list(map(lambda attr: getattr(self, attr), attrs) )
 		for attr, val in zip(attrs, values):
 			s += (' %s: %s\n' % (attr, val))
 		s = s.strip()

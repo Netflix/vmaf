@@ -19,7 +19,7 @@ class TestReadDataset(unittest.TestCase):
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
 
-        self.assertEquals(len(train_assets), 9)
+        self.assertEqual(len(train_assets), 9)
         self.assertTrue('groundtruth' in train_assets[0].asset_dict.keys())
         self.assertTrue('os' not in train_assets[0].asset_dict.keys())
         self.assertFalse('width' in train_assets[0].asset_dict.keys())
@@ -91,44 +91,44 @@ class TestReadDataset(unittest.TestCase):
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
 
-        self.assertEquals(len(train_assets), 4)
-        self.assertEquals(train_assets[0].ref_width_height, (1920, 1080))
-        self.assertEquals(train_assets[0].dis_width_height, (1920, 1080))
-        self.assertEquals(train_assets[0].quality_width_height, (1920, 1080))
-        self.assertEquals(train_assets[0].dis_yuv_type, 'yuv420p')
-        self.assertEquals(train_assets[2].ref_width_height, (1280, 720))
-        self.assertEquals(train_assets[2].dis_width_height, (1280, 720))
-        self.assertEquals(train_assets[2].quality_width_height, (1280, 720))
-        self.assertEquals(train_assets[2].dis_yuv_type, 'yuv420p10le')
+        self.assertEqual(len(train_assets), 4)
+        self.assertEqual(train_assets[0].ref_width_height, (1920, 1080))
+        self.assertEqual(train_assets[0].dis_width_height, (1920, 1080))
+        self.assertEqual(train_assets[0].quality_width_height, (1920, 1080))
+        self.assertEqual(train_assets[0].dis_yuv_type, 'yuv420p')
+        self.assertEqual(train_assets[2].ref_width_height, (1280, 720))
+        self.assertEqual(train_assets[2].dis_width_height, (1280, 720))
+        self.assertEqual(train_assets[2].quality_width_height, (1280, 720))
+        self.assertEqual(train_assets[2].dis_yuv_type, 'yuv420p10le')
 
     def test_read_image_dataset_notyuv(self):
         dataset_path = VmafConfig.test_resource_path('test_image_dataset_notyuv.py')
         dataset = import_python_file(dataset_path)
         assets = read_dataset(dataset)
 
-        self.assertEquals(len(assets), 4)
+        self.assertEqual(len(assets), 4)
         self.assertTrue(assets[0].ref_width_height is None)
         self.assertTrue(assets[0].dis_width_height is None)
         self.assertEqual(assets[0].workfile_yuv_type, assets[0].DEFAULT_YUV_TYPE)
-        self.assertEquals(assets[0].quality_width_height, (1920, 1080))
+        self.assertEqual(assets[0].quality_width_height, (1920, 1080))
 
     def test_read_image_dataset_notyuv_workfile_yuv_type(self):
         dataset_path = VmafConfig.test_resource_path('test_image_dataset_notyuv_workfile_yuv_type.py')
         dataset = import_python_file(dataset_path)
         assets = read_dataset(dataset)
 
-        self.assertEquals(len(assets), 4)
+        self.assertEqual(len(assets), 4)
         self.assertTrue(assets[0].ref_width_height is None)
         self.assertTrue(assets[0].dis_width_height is None)
-        self.assertEquals(assets[0].quality_width_height, (1920, 1080))
-        self.assertEquals(assets[0].workfile_yuv_type, 'yuv444p')
+        self.assertEqual(assets[0].quality_width_height, (1920, 1080))
+        self.assertEqual(assets[0].workfile_yuv_type, 'yuv444p')
 
     def test_read_dataset_basic(self):
         dataset_path = VmafConfig.test_resource_path('test_dataset.py')
         dataset = import_python_file(dataset_path)
         assets = read_dataset(dataset)
 
-        self.assertEquals(len(assets), 4)
+        self.assertEqual(len(assets), 4)
         self.assertTrue('groundtruth' in assets[0].asset_dict.keys())
         self.assertTrue('os' not in assets[0].asset_dict.keys())
         self.assertEqual(assets[0].quality_width_height, (1920, 1080))
@@ -143,7 +143,7 @@ class TestReadDataset(unittest.TestCase):
         dataset = import_python_file(dataset_path)
         assets = read_dataset(dataset)
 
-        self.assertEquals(len(assets), 4)
+        self.assertEqual(len(assets), 4)
 
         self.assertEqual(assets[0].resampling_type, 'bicubic')
         self.assertEqual(assets[0].ref_yuv_type, 'yuv420p')
@@ -168,6 +168,7 @@ class TestReadDataset(unittest.TestCase):
         self.assertEqual(assets[3].dis_yuv_type, 'notyuv')
         self.assertEqual(assets[3].ref_width_height, (720, 480))
         self.assertEqual(assets[3].dis_width_height, None)
+
 
 class TestTrainOnDataset(unittest.TestCase):
 
@@ -319,6 +320,7 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(test_assets[2].groundtruth_std, 0.0, places=4)
         self.assertAlmostEqual(test_assets[3].groundtruth_std, 3.5355339059327373, places=4)
 
+
 class TestGenerateDatasetFromRaw(unittest.TestCase):
 
     def setUp(self):
@@ -332,7 +334,7 @@ class TestGenerateDatasetFromRaw(unittest.TestCase):
         if os.path.exists(self.derived_dataset_path_pyc):
             os.remove(self.derived_dataset_path_pyc)
 
-    def test_generate_dataset_from_raw_default(self): # DMOS
+    def test_generate_dataset_from_raw_default(self):  # DMOS
         generate_dataset_from_raw(raw_dataset_filepath=self.raw_dataset_filepath,
                          output_dataset_filepath=self.derived_dataset_path)
         dataset = import_python_file(self.derived_dataset_path)
@@ -345,5 +347,6 @@ class TestGenerateDatasetFromRaw(unittest.TestCase):
         dataset = import_python_file(self.derived_dataset_path)
         self.assertAlmostEqual(dataset.dis_videos[0]['groundtruth'], 1.3076923076923077, places=4)
 
+
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)

@@ -49,13 +49,13 @@ class GridOption:
 				if options[i] == 'null':
 					self.grid_with_c = False
 				else:
-					self.c_begin, self.c_end, self.c_step = map(float,options[i].split(','))
+					self.c_begin, self.c_end, self.c_step = list(map(float,options[i].split(',')))
 			elif options[i] == '-log2g':
 				i = i + 1
 				if options[i] == 'null':
 					self.grid_with_g = False
 				else:
-					self.g_begin, self.g_end, self.g_step = map(float,options[i].split(','))
+					self.g_begin, self.g_end, self.g_step = list(map(float,options[i].split(',')))
 			elif options[i] == '-v':
 				i = i + 1
 				self.fold = options[i]

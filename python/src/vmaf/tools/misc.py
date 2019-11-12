@@ -11,7 +11,7 @@ import errno
 import os
 import re
 
-from vmaf import run_process, to_list
+from vmaf import run_process
 from vmaf.tools.scanf import sscanf, IncompleteCaptureError, FormatError
 
 try:
@@ -331,8 +331,8 @@ def parallel_map(func, list_args, processes=None):
         sleep(0.01) # check every x sec
 
     # finally, collect results
-    rets = map(lambda idx: return_dict[idx], range(len(list_args)))
-    return to_list(rets)
+    rets = list(map(lambda idx: return_dict[idx], range(len(list_args))))
+    return rets
 
 
 def check_program_exist(program):

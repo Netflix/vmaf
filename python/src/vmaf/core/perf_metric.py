@@ -5,7 +5,6 @@ import scipy.stats
 import scipy.special
 import scipy.interpolate
 
-from vmaf import to_list
 from vmaf.core.mixin import TypeVersionEnabled
 from vmaf.tools.misc import empty_object, indices
 from vmaf.tools.sigproc import fastDeLong, calpvalue, significanceHM, \
@@ -372,9 +371,9 @@ class ResolvingPowerPerfMetric(RawScorePerfMetric):
         ys_ = (ys_ - ys_min) / (ys_max - ys_min)
 
         zs = -np.log(1.0 / ys_.T - 1.0)
-        Y_mtx = np.matrix((np.ones(len(ys_)), zs)).T
-        x_vec = np.matrix(xs).T
-        a_b = lstsq(Y_mtx, x_vec)[0]
+        Y_mtx = np.array((np.ones(len(ys_)), zs)).T
+        x_vec = np.array([xs]).T
+        a_b = lstsq(Y_mtx, x_vec, rcond=-1)[0]
         a = a_b.item(0)
         b = a_b.item(1)
 
@@ -429,7 +428,7 @@ class ResolvingPowerPerfMetric(RawScorePerfMetric):
         deg_of_freedom = kwargs['ddof'] if 'ddof' in kwargs else 0
 
         vqm = np.array(predictions)
-        num_viewers = np.array(to_list(map(lambda groundtruth: len(groundtruth), groundtruths)))
+        num_viewers = np.array(list(map(lambda groundtruth: len(groundtruth), groundtruths)))
         mos = np.mean(groundtruths, axis=1)
         std = np.std(groundtruths, axis=1, ddof=deg_of_freedom)
 
@@ -611,9 +610,9 @@ class AggrScorePerfMetric(PerfMetric):
         ys = list((np.array(ys) - ys_min) / (ys_max - ys_min))
 
         zs = -np.log(1.0 / np.array(ys).T - 1.0)
-        Y_mtx = np.matrix((np.ones(len(ys)), zs)).T
-        x_vec = np.matrix(xs).T
-        a_b = lstsq(Y_mtx, x_vec)[0]
+        Y_mtx = np.array((np.ones(len(ys)), zs)).T
+        x_vec = np.array([xs]).T
+        a_b = lstsq(Y_mtx, x_vec, rcond=-1)[0]
         a = a_b.item(0)
         b = a_b.item(1)
 
@@ -629,7 +628,7 @@ class AggrScorePerfMetric(PerfMetric):
         aggre_method = kwargs['aggr_method'] if 'aggr_method' in kwargs else np.mean
         enable_mapping = kwargs['enable_mapping'] if 'enable_mapping' in kwargs else False
 
-        groundtruths_ = to_list(map(
+        groundtruths_ = list(map(
             lambda x: aggre_method(x) if hasattr(x, '__len__') else x,
             groundtruths))
 

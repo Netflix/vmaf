@@ -4,7 +4,6 @@ import os
 from time import sleep
 import hashlib
 
-from vmaf import to_list
 from vmaf.tools.decorator import deprecated
 
 from vmaf.tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_slash, \
@@ -15,6 +14,7 @@ from vmaf.config import VmafExternalConfig
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
+
 
 class Executor(TypeVersionEnabled):
     """
@@ -123,7 +123,7 @@ class Executor(TypeVersionEnabled):
 
             self.results = parallel_map(_run, list_args)
         else:
-            self.results = to_list(map(self._run_on_asset, self.assets))
+            self.results = list(map(self._run_on_asset, self.assets))
 
     def remove_results(self):
         """
@@ -637,7 +637,7 @@ def run_executors_in_parallel(executor_class,
     if parallelize:
         executors = parallel_map(run_executor, list_args, processes=None)
     else:
-        executors = map(run_executor, list_args)
+        executors = list(map(run_executor, list_args))
 
     # aggregate results
     results = [executor.results[0] for executor in executors]

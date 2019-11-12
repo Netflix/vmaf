@@ -25,13 +25,9 @@ grep -r 'reason="TODO python3' .
 
 Here's the current list:
 
-- `scipy` v1.3.0 removed some deprecated functions tha vmaf still uses -> need to adapt those before we can upgrade to latest scipy
 - tests that rely on `random` do not yield the same results in python2 and python3
 - vmaf uses `pickle` to serialize some objects, however "pickle is fickle", and a few objects fail to deserialize in python3
 - `YuvReader` needs to be reviewed, it doesn't work in python3
-- `map()` and `filter()` yield a generator (instead of list) in python3 -> this implies an extra call `to_list()` throughout the code
-  (search for `to_list` to find all the spots where this is done).
-  All usages of `map()`/`filter()` should be reviewed to leverage the speed generators offer
 
 
 # Test coverage

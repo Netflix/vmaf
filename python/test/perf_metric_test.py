@@ -11,6 +11,7 @@ from vmaf.core.perf_metric import RmsePerfMetric, SrccPerfMetric, PccPerfMetric,
 __copyright__ = "Copyright 2016-2019, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
+
 class AggrScorePerfMetricTest(unittest.TestCase):
 
     def setUp(self):
@@ -89,16 +90,16 @@ class AggrScorePerfMetricTest(unittest.TestCase):
         result = metric.evaluate(enable_mapping=True)
         self.assertAlmostEqual(result['score'], 1.0, places=6)
 
-    @unittest.skipIf(sys.version_info > (3,), reason="TODO python3: check randomness order in py3")
+    @unittest.skipIf(sys.version_info < (3,), reason="For py3 only: py2 uses a different random seed.")
     def test_auc_perf_metric(self):
-        np.random.seed(0)
+        np.random.seed(1)
         groundtruths = np.random.normal(0, 1.0, [4, 10]) + np.tile(np.array([1, 2, 3, 4]), [10, 1]).T
         predictions = [1, 2, 3, 4]
         metric = AucPerfMetric(groundtruths, predictions)
         result = metric.evaluate()
-        self.assertAlmostEqual(result['score'], 0.95, places=6)
-        self.assertAlmostEqual(result['AUC_BW'], 0.9166666666666666, places=6)
-        self.assertAlmostEqual(result['AUC_DS'], 0.95, places=6)
+        self.assertAlmostEqual(result['score'], 0.9375, places=6)
+        self.assertAlmostEqual(result['AUC_BW'], 0.9999999999999999, places=6)
+        self.assertAlmostEqual(result['AUC_DS'], 0.9375, places=6)
         self.assertAlmostEqual(result['CC_0'], 1.0, places=6)
         self.assertAlmostEqual(result['THR'], 3.0, places=6)
 
@@ -127,3 +128,7 @@ class AggrScorePerfMetricTest(unittest.TestCase):
         metric = ResolvingPowerPerfMetric(groundtruths, predictions)
         result = metric.evaluate()
         self.assertAlmostEqual(result['score'], 9.0014569671225111, places=6)
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)

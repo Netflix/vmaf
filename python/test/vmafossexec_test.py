@@ -24,7 +24,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.result_store = FileSystemResultStore()
 
     def test_run_vmafossexec_runner(self):
-        print('test on running VMAFOSSEXEC runner...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
@@ -61,7 +61,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'],99.946416604585025, places=4)
 
     def test_run_vmafossexec_runner_with_thread(self):
-        print('test on running VMAFOSSEXEC runner with thread...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
@@ -79,7 +79,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'],99.946416604585025, places=4)
 
     def test_run_vmafossexec_runner_with_subsample(self):
-        print('test on running VMAFOSSEXEC runner with subsample...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
@@ -97,7 +97,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.742800000000003, places=4)
 
     def test_run_vmafossexec_runner_with_phone_score(self):
-        print('test on running VMAFOSSEXEC runner with phone score...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
@@ -117,7 +117,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 100.0, places=4)
 
     def test_run_vmafossexec_runner_norm_type_none(self):
-        print('test on running VMAFOSSEXEC runner with norm type none...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
@@ -157,22 +157,22 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 77.996338095161946, places=4)
 
     def test_run_vmafossexec_runner_yuv422p10le(self):
-        print('test on running VMAFOSSEXEC runner on 10 bit le...')
+
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv422p10le.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv422p10le.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324,
-                                  'yuv_type':'yuv422p10le'})
+                      asset_dict={'width': 576, 'height': 324,
+                                  'yuv_type': 'yuv422p10le'})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324,
-                                  'yuv_type':'yuv422p10le'})
+                      asset_dict={'width': 576, 'height': 324,
+                                  'yuv_type': 'yuv422p10le'})
 
         self.runner = VmafossExecQualityRunner(
             [asset, asset_original],
@@ -208,7 +208,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.946416604585025, places=4)
 
     def test_run_vmafossexec_runner_with_transform_score(self):
-        print('test on running VMAFOSSEXEC runner with score transforming...')
+
         ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_10_0.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -244,7 +244,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 32.757433333333331, places=4)
 
     def test_run_vmafossexec_runner_with_transform_score_2(self):
-        print('test on running VMAFOSSEXEC runner with score transforming...')
+
         ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_10_0.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -281,7 +281,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], -7.2425766666666673, places=4)
 
     def test_run_vmafossexec_runner_with_transform_score_disabled(self):
-        print('test on running VMAFOSSEXEC runner with score transforming disabled...')
+
         ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_10_0.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -317,7 +317,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 0.0, places=4)
 
     def test_run_vmafossexec_runner_with_transform_for_phone(self):
-        print('test on running VMAFOSSEXEC runner with transform for phone...')
+
         ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_10_0.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -349,7 +349,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 14.982840000000001, places=4)
 
     def test_run_vmafossexec_runner_with_phone_model(self):
-        print('test on running VMAFOSSEXEC runner with transform for phone...')
+
         ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_10_0.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -363,7 +363,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
             None, fifo_mode=False,
             delete_workdir=True,
             optional_dict={
-                'phone_model':True,
+                'phone_model': True,
             },
             result_store=self.result_store,
         )
@@ -381,7 +381,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 14.982840000000001, places=4)
 
     def test_run_vmafossexec_runner_disable_avx_precise(self):
-        print('test on running VMAFOSSEXEC runner disabling AVX (precise)...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
@@ -419,7 +419,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.946416666666664, places=5)
 
     def test_run_vmafossexec_runner_enable_avx_precise(self):
-        print('test on running VMAFOSSEXEC runner enabling AVX (precise)...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
@@ -456,7 +456,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.946416666666664, places=5)
 
     def test_run_vmafossexec_runner_with_motion2(self):
-        print('test on running VMAFOSSEXEC runner with motion2 feature...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
@@ -482,7 +482,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 97.089554166666673, places=4)
 
     def test_run_vmafossexec_runner_with_ci(self):
-        print('test on running VMAFOSSEXEC runner with conf interval...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
@@ -538,7 +538,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_0020_score'], 73.15570625, places=3)
 
     def test_run_vmafossexec_runner_with_ci_and_custom_model(self):
-        print('test on running VMAFOSSEXEC runner with conf interval and custom model...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
@@ -563,7 +563,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_stddev_score'], 0.03947607207290399, places=4)
 
     def test_run_vmafossexec_runner_with_ci_and_phone_model(self):
-        print('test on running VMAFOSSEXEC runner with conf interval and phone model...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
@@ -595,7 +595,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_0020_score'], 90.16633958333334, places=3)
 
     def test_run_vmafossexec_runner_vmafplus1080model(self):
-        print('test on running VMAF+ runner at 480 height...')
+
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=1,
@@ -670,7 +670,7 @@ class VmafossexecQualityRunnerSubsamplingTest(unittest.TestCase):
         self.result_store = FileSystemResultStore()
 
     def test_run_vmafossexec_runner_with_subsample2(self):
-        print('test on running VMAFOSSEXEC runner with subsample2...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         subsample = 5
@@ -704,8 +704,8 @@ class VmafossexecQualityRunnerSubsamplingTest(unittest.TestCase):
 class QualityRunnerVersionTest(unittest.TestCase):
 
     def test_vmafossexec_quality_runner_version(self):
-        self.assertEquals(VmafossExecQualityRunner.VERSION, 'F0.2.4c-0.6.1')
-        self.assertEquals(VmafossExecQualityRunner.ALGO_VERSION, 2)
+        self.assertEqual(VmafossExecQualityRunner.VERSION, 'F0.2.4c-0.6.1')
+        self.assertEqual(VmafossExecQualityRunner.ALGO_VERSION, 2)
 
 
 class ParallelQualityRunnerTest(unittest.TestCase):
@@ -720,7 +720,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             pass
 
     def test_run_parallel_vmafossexec_runner_with_repeated_assets(self):
-        print('test on running VMAFOSSEXEC quality runner in parallel with repeated assets...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafossExecQualityRunner(
@@ -739,4 +739,4 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)
