@@ -37,7 +37,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertEqual(runner.executor_id, 'VMAF_legacy_VF0.2.4c-1.1')
 
     def test_run_vmaf_legacy_runner(self):
-        print('test on running VMAF (legacy) runner...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafLegacyQualityRunner(
@@ -64,22 +64,22 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_legacy_score'], 96.444658329804156, places=4)
 
     def test_run_vmaf_legacy_runner_10le(self):
-        print('test on running VMAF (legacy) runner on 10 bit le...')
+
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv422p10le.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv422p10le.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324,
-                                  'yuv_type':'yuv422p10le'})
+                      asset_dict={'width': 576, 'height': 324,
+                                  'yuv_type': 'yuv422p10le'})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324,
-                                  'yuv_type':'yuv422p10le'})
+                      asset_dict={'width': 576, 'height': 324,
+                                  'yuv_type': 'yuv422p10le'})
 
         self.runner = VmafLegacyQualityRunner(
             [asset, asset_original],
@@ -105,7 +105,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_legacy_score'], 96.444658329804156, places=4)
 
     def test_run_vmaf_legacy_runner_with_result_store(self):
-        print('test on running VMAF (legacy) runner with result store...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         result_store = FileSystemResultStore(logger=None)
@@ -117,7 +117,6 @@ class QualityRunnerTest(unittest.TestCase):
             result_store=result_store
         )
 
-        print('    running for the first time with fresh calculation...')
         self.runner.run()
         result0, result1 = self.runner.results
 
@@ -126,7 +125,6 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertFalse(os.path.exists(result_store._get_result_file_path(result0)))
         self.assertFalse(os.path.exists(result_store._get_result_file_path(result1)))
 
-        print('    running for the second time with stored results...')
         self.runner.run()
         results = self.runner.results
 
@@ -144,7 +142,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_legacy_score'], 96.444658329804156, places=4)
 
     def test_run_vmaf_runner_v1_model(self):
-        print('test on running VMAF runner (v1 model)...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafQualityRunner(
@@ -153,7 +151,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath':VmafConfig.model_path("other_models", "nflx_v1.pkl"),
+                'model_filepath': VmafConfig.model_path("other_models", "nflx_v1.pkl"),
             },
             optional_dict2=None,
         )
@@ -175,7 +173,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_score'], 100.0, places=4)
 
     def test_run_vmaf_runner(self):
-        print('test on running VMAF runner...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafQualityRunner(
@@ -215,7 +213,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_score'], 99.946416604585025, places=4)
 
     def test_run_vmaf_runner_with_phone_score(self):
-        print('test on running VMAF runner with phone score...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafQualityRunner(
@@ -235,7 +233,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_score'], 100.0, places=4)
 
     def test_run_vmaf_phone_runner(self):
-        print('test on running VMAF phone runner...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         with self.assertRaises(AssertionError):
@@ -264,7 +262,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_Phone_score'], 100.0, places=4)
 
     def test_run_vmaf_runner_checkerboard(self):
-        print('test on running VMAF runner on checkerboard pattern...')
+
         ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_10_0.yuv")
         dis_path2 = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_1_0.yuv")
@@ -272,19 +270,19 @@ class QualityRunnerTest(unittest.TestCase):
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
-                      asset_dict={'width':1920, 'height':1080})
+                      asset_dict={'width': 1920, 'height': 1080})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
-                      asset_dict={'width':1920, 'height':1080})
+                      asset_dict={'width': 1920, 'height': 1080})
 
         asset2 = Asset(dataset="test", content_id=0, asset_id=2,
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path2,
-                      asset_dict={'width':1920, 'height':1080})
+                      asset_dict={'width': 1920, 'height': 1080})
 
         self.runner = VmafQualityRunner(
             [asset, asset_original, asset2],
@@ -322,7 +320,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[2]['VMAF_score'], 35.066157497128764, places=4)
 
     def test_run_vmaf_runner_flat(self):
-        print('test on running VMAF runner on flat pattern...')
+
         ref_path, dis_path, asset, asset_original = set_default_flat_1920_1080_videos_for_testing()
 
         self.runner = VmafQualityRunner(
@@ -354,7 +352,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     @unittest.skipIf(sys.version_info < (3,), reason="For py3 only: model not supported by py2.")
     def test_run_vmaf_runner_with_rf_model(self):
-        print('test on running VMAF runner with custom input model...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafQualityRunner(
@@ -363,7 +361,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=self.result_store,
             optional_dict={
-                'model_filepath':VmafConfig.model_path("other_models", "nflx_vmaff_rf_v2.pkl"),
+                'model_filepath': VmafConfig.model_path("other_models", "nflx_vmaff_rf_v2.pkl"),
             },
             optional_dict2=None,
         )
@@ -385,7 +383,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_score'], 100.0, places=4)
 
     def test_run_vmaf_runner_with_norm_type_none(self):
-        print('test on running VMAF quality runner with custom model...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafQualityRunner(
@@ -394,7 +392,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=self.result_store,
             optional_dict={
-                'model_filepath':VmafConfig.model_path("other_models", "nflxtrain_norm_type_none.pkl"),
+                'model_filepath': VmafConfig.model_path("other_models", "nflxtrain_norm_type_none.pkl"),
             },
             optional_dict2=None,
         )
@@ -420,7 +418,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_score'], 77.996338095161946, places=4)
 
     def test_run_ensemblevmaf_runner_same_models(self):
-        print('test on running EnsembleVMAF runner...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = EnsembleVmafQualityRunner(
@@ -440,7 +438,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['EnsembleVMAF_score'], 76.699271272486044, places=4)
 
     def test_run_ensemblevmaf_runner_different_models(self):
-        print('test on running EnsembleVMAF runner with different models...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = EnsembleVmafQualityRunner(
@@ -463,7 +461,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['EnsembleVMAF_score'], 79.24157800929017, places=4)
 
     def test_run_psnr_runner(self):
-        print('test on running PSNR runner...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = PsnrQualityRunner(
@@ -481,7 +479,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['PSNR_scores'][2], 30.993823, places=4)
 
     def test_run_ssim_runner(self):
-        print('test on running SSIM runner...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = SsimQualityRunner(
@@ -504,7 +502,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['SSIM_feature_ssim_s_score'], 1.0, places=4)
 
     def test_run_ms_ssim_runner(self):
-        print('test on running MS-SSIM runner...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = MsSsimQualityRunner(
@@ -551,7 +549,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['MS_SSIM_feature_ms_ssim_s_scale4_score'], 1., places=4)
 
     def test_run_vmaf_runner_pool_harmonic_mean(self):
-        print('test on running VMAF runner (pool harmonic mean)...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafQualityRunner(
@@ -591,7 +589,7 @@ class QualityRunnerTest(unittest.TestCase):
             self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 1.0, places=4)
 
     def test_run_vmaf_runner_pool_perc10(self):
-        print('test on running VMAF runner (pool 10-perctile)...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafQualityRunner(
@@ -631,7 +629,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_score'], 100.0, places=4)
 
     def test_run_adm2_runner(self):
-        print('test on running ADM2 runner...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = Adm2QualityRunner(
@@ -648,7 +646,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['ADM2_score'], 1.0, places=4)
 
     def test_run_vif_runner(self):
-        print('test on running VIF runner...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VifQualityRunner(
@@ -665,7 +663,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VIF_score'], 1.0, places=4)
 
     def test_run_vif2_runner(self):
-        print('test on running VIF2 runner...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = Vif2QualityRunner(
@@ -682,14 +680,14 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VIF2_score'], 1.0, places=4)
 
     def test_run_vmaf_runner_with_transform_score(self):
-        print('test on running VMAF runner with score transforming...')
+
         ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_10_0.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
-                      asset_dict={'width':1920, 'height':1080})
+                      asset_dict={'width': 1920, 'height': 1080})
 
         self.runner = VmafQualityRunner(
             [asset],
@@ -718,14 +716,14 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_score'], 32.757433750978919, places=4)
 
     def test_run_vmaf_runner_with_transform_score_2(self):
-        print('test on running VMAF runner with score transforming (2)...')
+
         ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_10_0.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
-                      asset_dict={'width':1920, 'height':1080})
+                      asset_dict={'width': 1920, 'height': 1080})
 
         self.runner = VmafQualityRunner(
             [asset],
@@ -755,14 +753,14 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_score'], -7.2425662490210838, places=4)
 
     def test_run_vmaf_runner_with_transform_score_disabled(self):
-        print('test on running VMAF runner with score transforming disabled...')
+
         ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_10_0.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
-                      asset_dict={'width':1920, 'height':1080})
+                      asset_dict={'width': 1920, 'height': 1080})
 
         self.runner = VmafQualityRunner(
             [asset],
@@ -791,14 +789,14 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_score'], 0.0, places=4)
 
     def test_run_vmaf_runner_with_transform_for_phone(self):
-        print('test on running VMAF runner with transform for phone...')
+
         ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_10_0.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
-                      asset_dict={'width':1920, 'height':1080})
+                      asset_dict={'width': 1920, 'height': 1080})
 
         self.runner = VmafQualityRunner(
             [asset],
@@ -823,7 +821,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_score'], 14.982837886251568, places=4)
 
     def test_run_bootstrap_vmaf_runner(self):
-        print('test on running bootstrap VMAF runner...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = BootstrapVmafQualityRunner(
@@ -832,7 +830,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath':VmafConfig.test_resource_path('model', 'vmafplus_v0.5.2boot_test.pkl'),
+                'model_filepath': VmafConfig.test_resource_path('model', 'vmafplus_v0.5.2boot_test.pkl'),
             },
         )
         self.runner.run()
@@ -870,7 +868,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['BOOTSTRAP_VMAF_stddev_score'], 0.03947607207290399, places=4)
 
     def test_run_bootstrap_vmaf_runner_with_transform_score(self):
-        print('test on running bootstrap VMAF runner with transform score...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = BootstrapVmafQualityRunner(
@@ -879,7 +877,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath':VmafConfig.test_resource_path('model', 'vmafplus_v0.5.2boot_test.pkl'),
+                'model_filepath': VmafConfig.test_resource_path('model', 'vmafplus_v0.5.2boot_test.pkl'),
                 'enable_transform_score': True,
             },
         )
@@ -895,7 +893,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['BOOTSTRAP_VMAF_stddev_score'], 0.0, places=10)
 
     def test_run_bootstrap_vmaf_runner_specific_model(self):
-        print('test on running bootstrap VMAF runner with model version 0.6.2...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = BootstrapVmafQualityRunner(
@@ -923,7 +921,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['BOOTSTRAP_VMAF_ci95_high_score'], 99.992560767034618, places=4)
 
     def test_run_bootstrap_vmaf_runner_residue_bootstrap_model(self):
-        print('test on running bootstrap VMAF runner with 0.6.3 residue bootstrap model...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = BootstrapVmafQualityRunner(
@@ -951,7 +949,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['BOOTSTRAP_VMAF_ci95_high_score'], 99.99736657892976, places=4)
 
     def test_run_bootstrap_vmaf_runner_default_model(self):
-        print('test on running bootstrap VMAF runner with default model...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = BootstrapVmafQualityRunner(
@@ -976,7 +974,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['BOOTSTRAP_VMAF_ci95_high_score'], 100.0, places=4)
 
     def test_run_bootstrap_vmaf_runner_default_model_with_transform_score(self):
-        print('test on running bootstrap VMAF runner with default model and transform...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = BootstrapVmafQualityRunner(
@@ -1000,7 +998,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['BOOTSTRAP_VMAF_stddev_score'], 0.0, places=4)
 
     def test_run_bootstrap_vmaf_runner_10models(self):
-        print('test on running bootstrap VMAF runner with 10 models...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = BootstrapVmafQualityRunner(
@@ -1009,7 +1007,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath':VmafConfig.test_resource_path('model', 'vmafplus_v0.5.2boot_test2.pkl'),
+                'model_filepath': VmafConfig.test_resource_path('model', 'vmafplus_v0.5.2boot_test2.pkl'),
             },
         )
         self.runner.run()
@@ -1024,7 +1022,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['BOOTSTRAP_VMAF_stddev_score'], 0.03321535846597722, places=4)
 
     def test_run_bagging_vmaf_runner(self):
-        print('test on running bagging VMAF runner...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = BaggingVmafQualityRunner(
@@ -1033,7 +1031,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath':VmafConfig.test_resource_path('model', 'vmafplus_v0.5.2boot_test.pkl'),
+                'model_filepath': VmafConfig.test_resource_path('model', 'vmafplus_v0.5.2boot_test.pkl'),
             },
         )
         self.runner.run()
@@ -1072,18 +1070,18 @@ class QualityRunnerTest(unittest.TestCase):
 
     @unittest.skipIf(sys.version_info < (3,), reason="For py3 only: model not supported by py2.")
     def test_run_niqe_runner(self):
-        print('test on running NIQE runner on images...')
+
         ref1_path = VmafConfig.test_resource_path("test_image_yuv", "100007.yuv")
         ref2_path = VmafConfig.test_resource_path("test_image_yuv", "100039.yuv")
         asset1 = NorefAsset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=VmafConfig.workdir_path(),
                       dis_path=ref1_path,
-                      asset_dict={'width':481, 'height':321, 'yuv_type':'yuv444p'})
+                      asset_dict={'width': 481, 'height': 321, 'yuv_type': 'yuv444p'})
 
         asset2 = NorefAsset(dataset="test", content_id=0, asset_id=1,
                       workdir_root=VmafConfig.workdir_path(),
                       dis_path=ref2_path,
-                      asset_dict={'width':481, 'height':321, 'yuv_type':'yuv444p'})
+                      asset_dict={'width': 481, 'height': 321, 'yuv_type': 'yuv444p'})
 
         self.runner = NiqeQualityRunner(
             [asset1, asset2],
@@ -1098,7 +1096,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['NIQE_score'], 2.9309929860778756, places=2)
 
     def test_run_vmaf_runner_with_4k_1d5H_model(self):
-        print('test on running VMAF runner with 4k 1.5H model...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafQualityRunner(
@@ -1118,7 +1116,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_score'], 100.0, places=4)
 
     def test_run_bootstrap_vmaf_runner_with_4k_1d5H_model(self):
-        print('test on running bootstrap VMAF runner with 4k 1.5H model...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = BootstrapVmafQualityRunner(
@@ -1142,7 +1140,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['BOOTSTRAP_VMAF_stddev_score'], 0.03627354379389184, places=4)
 
     def test_run_vmaf_runner_with_bootstrap_model(self):
-        print('test on running VMAF runner with bootstrap model...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafQualityRunner(
@@ -1151,7 +1149,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath':VmafConfig.test_resource_path('model', 'vmafplus_v0.5.2boot_test.pkl'),
+                'model_filepath': VmafConfig.test_resource_path('model', 'vmafplus_v0.5.2boot_test.pkl'),
             },
         )
         self.runner.run()
@@ -1162,7 +1160,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_score'], 99.95804893252175, places=4)
 
     def test_run_vmaf_runner_input160x90(self):
-        print('test on running VMAF runner with 160x90 input...')
+
         ref_path = VmafConfig.test_resource_path("yuv", "ref_test_0_1_src01_hrc00_576x324_576x324_vs_src01_hrc01_576x324_576x324_q_160x90.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "dis_test_0_1_src01_hrc00_576x324_576x324_vs_src01_hrc01_576x324_576x324_q_160x90.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -1226,7 +1224,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             pass
 
     def test_run_parallel_vmaf_legacy_runner(self):
-        print('test on running VMAF (legacy) quality runner in parallel...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafLegacyQualityRunner(
@@ -1253,7 +1251,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[2]['VMAF_legacy_score'], 96.444658329804156, places=4)
 
     def test_run_parallel_vmaf_runner(self):
-        print('test on running VMAF quality runner in parallel...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafQualityRunner(
@@ -1285,7 +1283,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[3]['VMAF_score'], 99.946416604585025, places=4)
 
     def test_run_parallel_psnr_runner(self):
-        print('test on running PSNR quality runner in parallel...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = PsnrQualityRunner(
@@ -1302,7 +1300,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     @unittest.skipIf(sys.version_info < (3,), reason="For py3 only: model not supported by py2.")
     def test_run_parallel_vamf_runner_with_rf_model(self):
-        print('test on running VMAF quality runner in parallel with RF model...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafQualityRunner(
@@ -1311,7 +1309,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath':VmafConfig.model_path("other_models", "nflx_vmaff_rf_v2.pkl"),
+                'model_filepath': VmafConfig.model_path("other_models", "nflx_vmaff_rf_v2.pkl"),
             },
             optional_dict2=None,
         )
@@ -1335,7 +1333,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[4]['VMAF_score'], 79.224759615384599, places=4)
 
     def test_run_parallel_ssim_runner(self):
-        print('test on running SSIM quality runner in parallel...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = SsimQualityRunner(
@@ -1361,7 +1359,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[3]['SSIM_score'], 0.86322654166666657, places=4)
 
     def test_run_parallel_msssim_runner(self):
-        print('test on running MS-SSIM quality runner in parallel...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = MsSsimQualityRunner(
@@ -1410,7 +1408,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[2]['MS_SSIM_score'], 0.9632498125, places=4)
 
     def test_run_parallel_msssim_runner_with_result_store(self):
-        print('test on running MS-SSIM quality runner in parallel...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = MsSsimQualityRunner(
@@ -1428,7 +1426,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[3]['MS_SSIM_score'], 0.9632498125, places=4)
 
     def test_run_parallel_runner_with_repeated_assets(self):
-        print('test on running PSNR quality runner in parallel with repeated assets...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = PsnrQualityRunner(
@@ -1446,7 +1444,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[3]['PSNR_score'], 30.755063979166664, places=4)
 
     def test_run_parallel_runner_with_parallel_disabled(self):
-        print('test on running PSNR quality runner in parallel with parallelization disabled...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = PsnrQualityRunner(
@@ -1465,18 +1463,18 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
     @unittest.skipIf(sys.version_info < (3,), reason="For py3 only: model not supported by py2.")
     def test_run_parallel_niqe_runner(self):
-        print('test on running NIQE runner in parallel...')
+
         ref1_path = VmafConfig.test_resource_path("test_image_yuv", "100007.yuv")
         ref2_path = VmafConfig.test_resource_path("test_image_yuv", "100039.yuv")
         asset1 = NorefAsset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=VmafConfig.workdir_path(),
                       dis_path=ref1_path,
-                      asset_dict={'width':481, 'height':321, 'yuv_type':'yuv444p'})
+                      asset_dict={'width': 481, 'height': 321, 'yuv_type': 'yuv444p'})
 
         asset2 = NorefAsset(dataset="test", content_id=0, asset_id=1,
                       workdir_root=VmafConfig.workdir_path(),
                       dis_path=ref2_path,
-                      asset_dict={'width':481, 'height':321, 'yuv_type':'yuv444p'})
+                      asset_dict={'width': 481, 'height': 321, 'yuv_type': 'yuv444p'})
 
         self.runner = NiqeQualityRunner(
             [asset1, asset2],
@@ -1501,4 +1499,4 @@ class QualityRunnerVersionTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)

@@ -29,7 +29,7 @@ class ResultTest(unittest.TestCase):
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
-                      asset_dict={'width':1920, 'height':1080})
+                      asset_dict={'width': 1920, 'height': 1080})
 
         self.runner = VmafLegacyQualityRunner(
             [asset], None, fifo_mode=True,
@@ -121,7 +121,7 @@ class ResultTest(unittest.TestCase):
         with self.assertRaises(KeyError):
             self.result.get_result('VVMAF_legacy_score')
         with self.assertRaises(KeyError):
-            self.result.get_result('VMAF_motion_scor')
+            self.result.get_result('VMAF_motion_score')
 
 
 class ResultFormattingTest(unittest.TestCase):
@@ -246,7 +246,7 @@ class ResultStoreTest(unittest.TestCase):
 class ResultStoreTestWithNone(unittest.TestCase):
 
     def test_load_result_with_none(self):
-        print('test on file system result store load result with None...')
+
         result = FileSystemResultStore.load_result(VmafConfig.test_resource_path('result_with_none.txt'))
         result.set_score_aggregate_method(ListStats.nonemean)
         self.assertAlmostEqual(result['STRRED_feature_srred_score'], 5829.2644469999996, places=4)
@@ -256,7 +256,6 @@ class ResultAggregatingTest(unittest.TestCase):
 
     def test_from_xml_from_json_and_aggregation(self):
 
-        print('test on running from_xml and from_json and aggregation...')
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         asset_list = [asset, asset_original]
@@ -332,7 +331,7 @@ class ScoreAggregationTest(unittest.TestCase):
             self.runner.remove_results()
 
     def test_to_score_str(self):
-        print('test on result aggregate scores...')
+
         self.result.set_score_aggregate_method(np.mean)
         # the following should give same value
         self.assertAlmostEquals(self.result['VMAF_score'], 35.0661575902223, places=4)
@@ -348,4 +347,4 @@ class ScoreAggregationTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)

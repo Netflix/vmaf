@@ -8,6 +8,7 @@ import numpy as np
 from vmaf.config import VmafConfig
 from vmaf.tools.reader import YuvReader
 
+
 class YuvReaderTest(unittest.TestCase):
 
     def test_yuv_reader(self):
@@ -167,5 +168,6 @@ class YuvReaderTest10le(unittest.TestCase):
         self.assertAlmostEquals(np.mean(y_1stmoments), 61.332006624999984, places=4)
         self.assertAlmostEquals(np.mean(y_2ndmoments), 4798.659574041666, places=4)
 
+
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)

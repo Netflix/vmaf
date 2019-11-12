@@ -27,94 +27,94 @@ class AssetTest(unittest.TestCase):
     def test_ref_width_height(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'ref_width':1920, 'ref_height':1080,})
+                      asset_dict={'ref_width': 1920, 'ref_height': 1080,})
         self.assertEqual(asset.ref_width_height, (1920, 1080))
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'ref_width':1920, 'ref_height':1080,
-                                  'width':720, 'height':480})
+                      asset_dict={'ref_width': 1920, 'ref_height': 1080,
+                                  'width': 720, 'height': 480})
         self.assertEqual(asset.ref_width_height, (1920, 1080))
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'width':720, 'height':480})
+                      asset_dict={'width': 720, 'height': 480})
         self.assertEqual(asset.ref_width_height, (720, 480))
 
     def test_dis_width_height(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'dis_width':1920, 'dis_height':1080,})
+                      asset_dict={'dis_width': 1920, 'dis_height': 1080, })
         self.assertEqual(asset.dis_width_height, (1920, 1080))
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'dis_width':1920, 'dis_height':1080,
-                                  'width':720, 'height':480})
+                      asset_dict={'dis_width': 1920, 'dis_height': 1080,
+                                  'width': 720, 'height': 480})
         self.assertEqual(asset.dis_width_height, (1920, 1080))
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'width':720, 'height':480})
+                      asset_dict={'width': 720, 'height': 480})
         self.assertEqual(asset.dis_width_height, (720, 480))
 
     def test_quality_width_height(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={"ref_width":1920, "ref_height":1080,
-                                  "dis_width":720, "dis_height":480},)
+                      asset_dict={"ref_width": 1920, "ref_height": 1080,
+                                  "dis_width": 720, "dis_height": 480},)
         with self.assertRaises(AssertionError):
             print(asset.quality_width_height)
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={"ref_width":1920, "ref_height":1080,
-                                  "dis_width":720, "dis_height":480,
-                                  "quality_width":1280, "quality_height":720},)
+                      asset_dict={"ref_width": 1920, "ref_height": 1080,
+                                  "dis_width": 720, "dis_height": 480,
+                                  "quality_width": 1280, "quality_height": 720},)
         self.assertEqual(asset.quality_width_height, (1280, 720))
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={"ref_width":720, "ref_height":480,
-                                  "dis_width":720, "dis_height":480,},)
+                      asset_dict={"ref_width": 720, "ref_height": 480,
+                                  "dis_width": 720, "dis_height": 480, },)
         self.assertEqual(asset.quality_width_height, (720, 480))
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={"width":720, "height":480,},)
+                      asset_dict={"width": 720, "height": 480, },)
         self.assertEqual(asset.quality_width_height, (720, 480))
 
     def test_start_end_frame(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'ref_start_frame':2, 'ref_end_frame':2,
-                                  'dis_start_frame':3, 'dis_end_frame':3},)
+                      asset_dict={'ref_start_frame': 2, 'ref_end_frame': 2,
+                                  'dis_start_frame': 3, 'dis_end_frame': 3},)
         self.assertEqual(asset.ref_start_end_frame, (2, 2))
         self.assertEqual(asset.dis_start_end_frame, (3, 3))
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'start_frame':2, 'end_frame':2})
+                      asset_dict={'start_frame': 2, 'end_frame': 2})
         self.assertEqual(asset.ref_start_end_frame, (2, 2))
         self.assertEqual(asset.dis_start_end_frame, (2, 2))
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'fps':24, 'duration_sec':2})
+                      asset_dict={'fps':24, 'duration_sec': 2})
         self.assertEqual(asset.ref_start_end_frame, (0, 47))
         self.assertEqual(asset.dis_start_end_frame, (0, 47))
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'fps':24, 'start_sec':2, 'end_sec': 3})
+                      asset_dict={'fps': 24, 'start_sec': 2, 'end_sec': 3})
         self.assertEqual(asset.ref_start_end_frame, (48, 71))
         self.assertEqual(asset.dis_start_end_frame, (48, 71))
 
     def test_duration_sec(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'ref_start_frame':2, 'ref_end_frame':2,
-                                  'dis_start_frame':3, 'dis_end_frame':3},)
+                      asset_dict={'ref_start_frame': 2, 'ref_end_frame': 2,
+                                  'dis_start_frame': 3, 'dis_end_frame': 3},)
         self.assertEqual(asset.ref_duration_sec, None)
         self.assertEqual(asset.dis_duration_sec, None)
         self.assertEqual(asset.ref_start_sec, None)
@@ -122,8 +122,8 @@ class AssetTest(unittest.TestCase):
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'ref_start_frame':0, 'ref_end_frame':23,
-                                  'dis_start_frame':3, 'dis_end_frame':26,
+                      asset_dict={'ref_start_frame':  0, 'ref_end_frame': 23,
+                                  'dis_start_frame': 3, 'dis_end_frame': 26,
                                   'fps':24},)
         self.assertEqual(asset.ref_duration_sec, 1.0)
         self.assertEqual(asset.dis_duration_sec, 1.0)
@@ -136,8 +136,8 @@ class AssetTest(unittest.TestCase):
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path=ref_path, dis_path=dis_path,
-                      asset_dict={'ref_start_frame':0, 'ref_end_frame':47,
-                                  'dis_start_frame':0, 'dis_end_frame':47,
+                      asset_dict={'ref_start_frame': 0, 'ref_end_frame': 47,
+                                  'dis_start_frame': 0, 'dis_end_frame': 47,
                                   'fps':23.976},)
         self.assertAlmostEquals(asset.ref_bitrate_kbps_for_entire_file,
                           53693.964287999996, places=4)
@@ -147,8 +147,8 @@ class AssetTest(unittest.TestCase):
     def test_to_normalized_dict(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
-                      asset_dict={'width':720, 'height':480,
-                                  'start_frame':2, 'end_frame':2})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'start_frame': 2, 'end_frame': 2})
         self.assertEqual(
             asset.to_normalized_dict(),
             {
@@ -166,8 +166,8 @@ class AssetTest(unittest.TestCase):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="dir/refvideo.yuv420p10le.yuv",
                       dis_path="dir/disvideo.yuv420p10le.yuv",
-                      asset_dict={'width':720, 'height':480,
-                                  'start_frame':2, 'end_frame':2})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'start_frame': 2, 'end_frame': 2})
         self.assertEqual(
             asset.to_normalized_dict(),
             {
@@ -184,8 +184,8 @@ class AssetTest(unittest.TestCase):
     def test_str_repr(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
-                      asset_dict={'width':720, 'height':480,
-                                  'start_frame':2, 'end_frame':2})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'start_frame': 2, 'end_frame': 2})
         self.assertEqual(
             str(asset),
             "test_0_0_refvideo_720x480_2to2_vs_disvideo_720x480_2to2_q_720x480"
@@ -201,7 +201,7 @@ class AssetTest(unittest.TestCase):
 
         asset = Asset(dataset="test", content_id=0, asset_id=1,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
-                      asset_dict={'width':720, 'height':480,})
+                      asset_dict={'width': 720, 'height': 480, })
         self.assertEqual(
             str(asset),
             "test_0_1_refvideo_720x480_vs_disvideo_720x480_q_720x480"
@@ -213,8 +213,8 @@ class AssetTest(unittest.TestCase):
 
         asset = Asset(dataset="test", content_id=0, asset_id=2,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':1920, 'quality_height':1080})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 1920, 'quality_height': 1080})
         self.assertEqual(
             str(asset),
             "test_0_2_refvideo_720x480_vs_disvideo_720x480_q_1920x1080"
@@ -226,9 +226,9 @@ class AssetTest(unittest.TestCase):
 
         asset = Asset(dataset="test", content_id=0, asset_id=2,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':1920, 'quality_height':1080,
-                                  'yuv_type':'yuv422p'})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 1920, 'quality_height': 1080,
+                                  'yuv_type': 'yuv422p'})
         self.assertEqual(
             str(asset),
             "test_0_2_refvideo_720x480_yuv422p_vs_disvideo_720x480_yuv422p_q_1920x1080"
@@ -240,9 +240,9 @@ class AssetTest(unittest.TestCase):
 
         asset = Asset(dataset="test", content_id=0, asset_id=2,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':1920, 'quality_height':1080,
-                                  'resampling_type':'lanczos'})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 1920, 'quality_height': 1080,
+                                  'resampling_type': 'lanczos'})
         self.assertEqual(
             str(asset),
             "test_0_2_refvideo_720x480_vs_disvideo_720x480_q_1920x1080_lanczos"
@@ -256,8 +256,8 @@ class AssetTest(unittest.TestCase):
 
         asset = Asset(dataset="test", content_id=0, asset_id=1,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':720, 'quality_height':480})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 480})
         self.assertEqual(
             str(asset),
             "test_0_1_refvideo_720x480_vs_disvideo_720x480_q_720x480"
@@ -265,8 +265,8 @@ class AssetTest(unittest.TestCase):
 
         asset = Asset(dataset="test", content_id=0, asset_id=1,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
-                      asset_dict={'width':720, 'height':480,
-                                  'resampling_type':'lanczos'})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'resampling_type': 'lanczos'})
         self.assertEqual(
             str(asset),
             "test_0_1_refvideo_720x480_vs_disvideo_720x480_q_720x480"
@@ -274,9 +274,9 @@ class AssetTest(unittest.TestCase):
 
         asset = Asset(dataset="test", content_id=0, asset_id=1,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':720, 'quality_height':480,
-                                  'resampling_type':'lanczos'})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 480,
+                                  'resampling_type': 'lanczos'})
         self.assertEqual(
             str(asset),
             "test_0_1_refvideo_720x480_vs_disvideo_720x480_q_720x480"
@@ -284,10 +284,10 @@ class AssetTest(unittest.TestCase):
 
         asset = Asset(dataset="test", content_id=0, asset_id=1,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
-                      asset_dict={'ref_width':720, 'ref_height':480,
-                                  'dis_width':1920, 'dis_height':1080,
-                                  'quality_width':720, 'quality_height':480,
-                                  'resampling_type':'lanczos'})
+                      asset_dict={'ref_width': 720, 'ref_height': 480,
+                                  'dis_width': 1920, 'dis_height': 1080,
+                                  'quality_width': 720, 'quality_height': 480,
+                                  'resampling_type': 'lanczos'})
         self.assertEqual(
             str(asset),
             "test_0_1_refvideo_720x480_vs_disvideo_1920x1080_q_720x480_lanczos"
@@ -295,10 +295,10 @@ class AssetTest(unittest.TestCase):
 
         asset = Asset(dataset="test", content_id=0, asset_id=1,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
-                      asset_dict={'ref_width':1920, 'ref_height':1080,
-                                  'dis_width':720, 'dis_height':480,
-                                  'quality_width':720, 'quality_height':480,
-                                  'resampling_type':'lanczos'})
+                      asset_dict={'ref_width': 1920, 'ref_height': 1080,
+                                  'dis_width': 720, 'dis_height': 480,
+                                  'quality_width': 720, 'quality_height': 480,
+                                  'resampling_type': 'lanczos'})
         self.assertEqual(
             str(asset),
             "test_0_1_refvideo_1920x1080_vs_disvideo_720x480_q_720x480_lanczos"
@@ -307,20 +307,20 @@ class AssetTest(unittest.TestCase):
     def test_hash_equal(self):
         asset1 = Asset(dataset="test", content_id=0, asset_id=2,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':1920, 'quality_height':1080})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 1920, 'quality_height': 1080})
         asset2 = Asset(dataset="test", content_id=0, asset_id=2,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':1920, 'quality_height':1080})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width':1920, 'quality_height': 1080})
         asset3 = Asset(dataset="test", content_id=0, asset_id=2,
                       ref_path="my/dir/refvideo.yuv", dis_path="my/dir/disvideo.yuv",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':1920, 'quality_height':1080})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 1920, 'quality_height': 1080})
         asset4 = Asset(dataset="test", content_id=0, asset_id=2,
                       ref_path="my/dir/refvideo.yuv", dis_path="my/dir/disvideo.avi",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':1920, 'quality_height':1080})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 1920, 'quality_height': 1080})
 
         self.assertTrue(asset1 == asset2)
         self.assertTrue(asset2 == asset3)
@@ -331,9 +331,9 @@ class AssetTest(unittest.TestCase):
     def test_workfile_path(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
-                      asset_dict={'width':720, 'height':480,
-                                  'start_frame':2, 'end_frame':2,
-                                  'quality_width':1920, 'quality_height':1080},
+                      asset_dict={'width': 720, 'height': 480,
+                                  'start_frame': 2, 'end_frame': 2,
+                                  'quality_width': 1920, 'quality_height': 1080},
                       workdir_root="workdir")
         expected_ref_workfile_path_re = \
             r"^workdir/[a-zA-Z0-9-]+/" \
@@ -347,21 +347,21 @@ class AssetTest(unittest.TestCase):
     def test_yuv_type(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'fps':24, 'start_sec':2, 'end_sec': 3})
+                      asset_dict={'fps': 24, 'start_sec': 2, 'end_sec': 3})
         self.assertEqual(asset.ref_yuv_type, 'yuv420p')
         self.assertEqual(asset.dis_yuv_type, 'yuv420p')
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="", asset_dict={
-            'fps':24, 'start_sec':2, 'end_sec': 3, 'yuv_type':'yuv444p'})
+            'fps': 24, 'start_sec': 2, 'end_sec': 3, 'yuv_type':'yuv444p'})
         self.assertEqual(asset.ref_yuv_type, 'yuv444p')
         self.assertEqual(asset.dis_yuv_type, 'yuv444p')
 
         with self.assertRaises(AssertionError):
             asset = Asset(dataset="test", content_id=0, asset_id=0,
                           ref_path="", dis_path="",
-                          asset_dict={'fps':24, 'start_sec':2,
-                                      'end_sec': 3, 'yuv_type':'yuv444a'})
+                          asset_dict={'fps': 24, 'start_sec': 2,
+                                      'end_sec': 3, 'yuv_type': 'yuv444a'})
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="", asset_dict={
@@ -375,27 +375,27 @@ class AssetTest(unittest.TestCase):
     def test_resampling_type(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'fps':24, 'start_sec':2, 'end_sec': 3})
+                      asset_dict={'fps': 24, 'start_sec': 2, 'end_sec': 3})
         self.assertEqual(asset.resampling_type, 'bicubic')
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'fps':24, 'start_sec':2, 'end_sec': 3,
-                                  'resampling_type':'lanczos'})
+                      asset_dict={'fps': 24, 'start_sec': 2, 'end_sec': 3,
+                                  'resampling_type': 'lanczos'})
         self.assertEqual(asset.resampling_type, 'lanczos')
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'fps':24, 'start_sec':2, 'end_sec': 3,
-                                  'resampling_type':'bicubic'})
+                      asset_dict={'fps': 24, 'start_sec': 2, 'end_sec': 3,
+                                  'resampling_type': 'bicubic'})
         self.assertEqual(asset.resampling_type, 'bicubic')
 
     def test_use_path_as_workpath(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
-                      asset_dict={'width':720, 'height':480,
-                                  'start_frame':2, 'end_frame':2,
-                                  'quality_width':1920, 'quality_height':1080},
+                      asset_dict={'width': 720, 'height': 480,
+                                  'start_frame': 2, 'end_frame': 2,
+                                  'quality_width': 1920, 'quality_height': 1080},
                       workdir_root="workdir")
         expected_ref_workfile_path_re = \
             r"^workdir/[a-zA-Z0-9-]+/" \
@@ -416,10 +416,10 @@ class AssetTest(unittest.TestCase):
     def test_crop_cmd(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':720, 'quality_height':320,
-                                  'yuv_type':'yuv422p',
-                                  'crop_cmd':'570:320:3:2'})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
+                                  'crop_cmd': '570:320:3:2'})
         self.assertEqual(asset.crop_cmd, '570:320:3:2')
         self.assertEqual(asset.ref_crop_cmd, '570:320:3:2')
         self.assertEqual(asset.dis_crop_cmd, '570:320:3:2')
@@ -427,9 +427,9 @@ class AssetTest(unittest.TestCase):
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':720, 'quality_height':320,
-                                  'yuv_type':'yuv422p',})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p', })
         self.assertTrue(asset.crop_cmd is None)
         self.assertTrue(asset.ref_crop_cmd is None)
         self.assertTrue(asset.dis_crop_cmd is None)
@@ -438,10 +438,10 @@ class AssetTest(unittest.TestCase):
     def test_ref_dis_crop_cmd(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':720, 'quality_height':320,
-                                  'yuv_type':'yuv422p',
-                                  'ref_crop_cmd':'570:320:3:2', 'dis_crop_cmd':'571:320:3:2'})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
+                                  'ref_crop_cmd': '570:320:3:2', 'dis_crop_cmd': '571:320:3:2'})
         self.assertTrue(asset.crop_cmd is None)
         self.assertEqual(asset.ref_crop_cmd, '570:320:3:2')
         self.assertEqual(asset.dis_crop_cmd, '571:320:3:2')
@@ -449,9 +449,9 @@ class AssetTest(unittest.TestCase):
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':720, 'quality_height':320,
-                                  'yuv_type':'yuv422p', 'ref_crop_cmd':'570:320:3:2', 'crop_cmd':'572:320:3:2', })
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p', 'ref_crop_cmd': '570:320:3:2', 'crop_cmd': '572:320:3:2', })
         self.assertEqual(asset.crop_cmd, '572:320:3:2')
         self.assertEqual(asset.ref_crop_cmd, '570:320:3:2')
         self.assertEqual(asset.dis_crop_cmd, '572:320:3:2')
@@ -460,10 +460,10 @@ class AssetTest(unittest.TestCase):
     def test_pad_cmd(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':720, 'quality_height':320,
-                                  'yuv_type':'yuv422p',
-                                  'pad_cmd':'iw+6:ih+4:3:2'})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
+                                  'pad_cmd': 'iw+6:ih+4:3:2'})
         self.assertEqual(asset.pad_cmd, 'iw+6:ih+4:3:2')
         self.assertEqual(asset.ref_pad_cmd, 'iw+6:ih+4:3:2')
         self.assertEqual(asset.dis_pad_cmd, 'iw+6:ih+4:3:2')
@@ -471,9 +471,9 @@ class AssetTest(unittest.TestCase):
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':720, 'quality_height':320,
-                                  'yuv_type':'yuv422p',})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p', })
         self.assertTrue(asset.pad_cmd is None)
         self.assertTrue(asset.ref_pad_cmd is None)
         self.assertTrue(asset.pad_cmd is None)
@@ -482,10 +482,10 @@ class AssetTest(unittest.TestCase):
     def test_ref_dis_pad_cmd(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':720, 'quality_height':320,
-                                  'yuv_type':'yuv422p',
-                                  'ref_pad_cmd':'iw+6:ih+4:3:2'})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
+                                  'ref_pad_cmd': 'iw+6:ih+4:3:2'})
         self.assertIsNone(asset.pad_cmd)
         self.assertEqual(asset.ref_pad_cmd, 'iw+6:ih+4:3:2')
         self.assertIsNone(asset.dis_pad_cmd)
@@ -493,10 +493,10 @@ class AssetTest(unittest.TestCase):
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':720, 'quality_height':320,
-                                  'yuv_type':'yuv422p',
-                                  'ref_pad_cmd':'iw+6:ih+4:3:2', 'dis_pad_cmd':'iw+6:ih+4:3:3'})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
+                                  'ref_pad_cmd': 'iw+6:ih+4:3:2', 'dis_pad_cmd': 'iw+6:ih+4:3:3'})
         self.assertIsNone(asset.pad_cmd)
         self.assertEqual(asset.ref_pad_cmd, 'iw+6:ih+4:3:2')
         self.assertEqual(asset.dis_pad_cmd, 'iw+6:ih+4:3:3')
@@ -581,10 +581,10 @@ class AssetTest(unittest.TestCase):
     def test_copy(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':720, 'quality_height':320,
-                                  'yuv_type':'yuv422p',
-                                  'crop_cmd':'570:320:3:2'})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
+                                  'crop_cmd': '570:320:3:2'})
         new_asset = asset.copy()
         self.assertEqual(asset, new_asset)
         self.assertTrue(asset == new_asset)
@@ -608,17 +608,17 @@ class AssetTest(unittest.TestCase):
                                   'use_path_as_workpath': True
                                   })
         new_asset = asset.copy()
-        self.assertNotEquals(asset, new_asset) # use_path_as_workpath gets reset
+        self.assertNotEquals(asset, new_asset)  # use_path_as_workpath gets reset
         self.assertTrue(asset.use_path_as_workpath)
         self.assertFalse(new_asset.use_path_as_workpath)
 
     def test_copy_noref(self):
         asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
                       dis_path="",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':720, 'quality_height':320,
-                                  'yuv_type':'yuv422p',
-                                  'crop_cmd':'570:320:3:2'})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
+                                  'crop_cmd': '570:320:3:2'})
         new_asset = asset.copy()
         self.assertEqual(asset, new_asset)
         self.assertTrue(asset == new_asset)
@@ -635,10 +635,10 @@ class AssetTest(unittest.TestCase):
     def test_NorefAsset_copy_as_Asset(self):
         asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
                       dis_path="abc",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':720, 'quality_height':320,
-                                  'yuv_type':'yuv422p',
-                                  'crop_cmd':'570:320:3:2'})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
+                                  'crop_cmd': '570:320:3:2'})
         new_asset = asset.copy(ref_path='xyz')
         self.assertEqual(new_asset.ref_path, 'abc')
         new_asset2 = asset.copy_as_Asset(ref_path='xyz')
@@ -647,10 +647,10 @@ class AssetTest(unittest.TestCase):
     def test_clear_up_yuv_type(self):
         asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
                       dis_path="abc",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':720, 'quality_height':320,
-                                  'yuv_type':'yuv422p',
-                                  'crop_cmd':'570:320:3:2'})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
+                                  'crop_cmd': '570:320:3:2'})
         self.assertEqual(asset.dis_yuv_type, 'yuv422p')
         asset.clear_up_yuv_type()
         self.assertEqual(asset.dis_yuv_type, 'yuv420p')
@@ -658,10 +658,10 @@ class AssetTest(unittest.TestCase):
     def test_clear_up_width_height(self):
         asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
                       dis_path="abc",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':720, 'quality_height':320,
-                                  'yuv_type':'yuv422p',
-                                  'crop_cmd':'570:320:3:2'})
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
+                                  'crop_cmd': '570:320:3:2'})
         self.assertEqual(asset.dis_width_height, (720, 480))
         asset.clear_up_width_height()
         self.assertEqual(asset.dis_width_height, None)
@@ -669,9 +669,9 @@ class AssetTest(unittest.TestCase):
     def test_clear_up_start_end_frame(self):
         asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
                       dis_path="abc",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':720, 'quality_height':320,
-                                  'yuv_type':'yuv422p',
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
                                   'start_frame': 23, 'end_frame': 25})
         self.assertEqual(asset.dis_start_end_frame, (23, 25))
         asset.clear_up_start_end_frame()
@@ -679,9 +679,9 @@ class AssetTest(unittest.TestCase):
 
         asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
                       dis_path="abc",
-                      asset_dict={'width':720, 'height':480,
-                                  'quality_width':720, 'quality_height':320,
-                                  'yuv_type':'yuv422p',
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
                                   'fps': 5,
                                   'duration_sec': 10})
         self.assertEqual(asset.dis_start_end_frame, (0, 49))
@@ -710,9 +710,9 @@ class AssetTest(unittest.TestCase):
     def test_groundtruth(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
-                      asset_dict={'width':720, 'height':480,
-                                  'start_frame':2, 'end_frame':2,
-                                  'quality_width':1920, 'quality_height':1080,
+                      asset_dict={'width': 720, 'height': 480,
+                                  'start_frame': 2, 'end_frame': 2,
+                                  'quality_width': 1920, 'quality_height': 1080,
                                   'groundtruth': 91.0, 'groundtruth_std': 4.5, 'raw_groundtruth': [90.0, 92.0]},
                       workdir_root="workdir")
         self.assertEqual(asset.groundtruth, 91.0)
@@ -721,4 +721,4 @@ class AssetTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)

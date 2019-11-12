@@ -50,9 +50,9 @@ class LocalExplainerTest(unittest.TestCase):
         self.features = fextractor.results
 
         xys = model_class.get_xys_from_results(self.features[:7])
-        model = model_class({'norm_type':'normalize',
+        model = model_class({'norm_type': 'normalize',
                              'n_estimators': 10,
-                             'random_state':0}, None)
+                             'random_state': 0}, None)
         model.train(xys)
 
         np.random.seed(0)
@@ -96,13 +96,13 @@ class LocalExplainerTest(unittest.TestCase):
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
+                      asset_dict={'width': 576, 'height': 324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+                      asset_dict={'width': 576, 'height': 324})
 
         self.runner = VmafQualityRunnerWithLocalExplainer(
             [asset, asset_original],
@@ -174,7 +174,7 @@ class LocalExplainerMomentRandomForestTest(unittest.TestCase):
             optional_dict=None,
             optional_dict2=optional_dict2,
         )
-        fextractor.run(parallelize=False) # CAN ONLY USE SERIAL MODE FOR DisYRawVideoExtractor
+        fextractor.run(parallelize=False)  # CAN ONLY USE SERIAL MODE FOR DisYRawVideoExtractor
         self.features = fextractor.results
 
     def tearDown(self):
@@ -191,9 +191,9 @@ class LocalExplainerMomentRandomForestTest(unittest.TestCase):
         del xys['dis_u']
         del xys['dis_v']
 
-        model = model_class({'norm_type':'normalize',
+        model = model_class({'norm_type': 'normalize',
                              'n_estimators': 10,
-                             'random_state':0})
+                             'random_state': 0})
         model.train(xys)
 
         np.random.seed(0)
@@ -248,13 +248,13 @@ class QualityRunnerTest(unittest.TestCase):
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
+                      asset_dict={'width': 576, 'height': 324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+                      asset_dict={'width': 576, 'height': 324})
 
         self.runner = VmafQualityRunnerWithLocalExplainer(
             [asset, asset_original],
@@ -262,7 +262,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath':VmafConfig.test_resource_path('model', 'vmafplus_v0.5.2boot_test.pkl'),
+                'model_filepath': VmafConfig.test_resource_path('model', 'vmafplus_v0.5.2boot_test.pkl'),
             },
         )
         self.runner.run()
@@ -274,4 +274,4 @@ class QualityRunnerTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)

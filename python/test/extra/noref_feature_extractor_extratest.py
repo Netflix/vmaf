@@ -18,7 +18,7 @@ class NorefFeatureExtractorTest(unittest.TestCase):
             pass
 
     def test_noref_moment_fextractor_with_noref_asset_notyuv(self):
-        print('test on running Moment noref feature extractor on NorefAssets (non-YUV)...')
+
         dis_path = VmafConfig.test_resource_path("mp4", "Seeking_10_288_375.mp4")
         asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=VmafConfig.workdir_path(),
@@ -41,13 +41,13 @@ class NorefFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['Moment_noref_feature_var_score'], 1118.4952858425261, places=4)
 
     def test_noref_moment_fextractor_frames(self):
-        print('test on running Moment noref feature extractor on Assets with frames...')
+
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=VmafConfig.workdir_path(),
                       dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324,
-                                  'start_frame':2, 'end_frame':2,
+                      asset_dict={'width': 576, 'height': 324,
+                                  'start_frame': 2, 'end_frame': 2,
                                   })
 
         self.fextractor = MomentNorefFeatureExtractor(
@@ -62,3 +62,7 @@ class NorefFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['Moment_noref_feature_1st_score'], 62.315495327503427, places=4)
         self.assertAlmostEqual(results[0]['Moment_noref_feature_2nd_score'], 4888.7623296039092, places=4)
         self.assertAlmostEqual(results[0]['Moment_noref_feature_var_score'], 1005.5413716918079, places=4)
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)

@@ -42,14 +42,12 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
 
     def test_train_predict_bootstrap_libsvmnusvr(self):
 
-        print("test bootstrap libsvmnusvr train and predict...")
-
         xs = BootstrapLibsvmNusvrTrainTestModel.get_xs_from_results(self.features)
         ys = BootstrapLibsvmNusvrTrainTestModel.get_ys_from_results(self.features)
         xys = BootstrapLibsvmNusvrTrainTestModel.get_xys_from_results(self.features)
 
         model = BootstrapLibsvmNusvrTrainTestModel(
-            {'norm_type':'normalize'}, None)
+            {'norm_type': 'normalize'}, None)
         model.train(xys)
         self.assertAlmostEquals(model.evaluate(xs, ys)['RMSE'], 0.6226308662005923, places=4)
         self.assertAlmostEquals(model.evaluate_bagging(xs, ys)['RMSE'], 0.6696474832672723, places=4)
@@ -58,7 +56,7 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_ci95_high'], 4.753825468723706)
 
         model = BootstrapLibsvmNusvrTrainTestModel(
-            {'norm_type':'clip_0to1'}, None)
+            {'norm_type': 'clip_0to1'}, None)
         model.train(xys)
         self.assertAlmostEquals(model.evaluate(xs, ys)['RMSE'], 0.8424314108711469, places=4)
         self.assertAlmostEquals(model.evaluate_bagging(xs, ys)['RMSE'], 0.8035115098260148, places=4)
@@ -80,7 +78,7 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_ci95_high'], 4.758095707489271)
 
         model = BootstrapLibsvmNusvrTrainTestModel(
-            {'norm_type':'clip_minus1to1'}, None)
+            {'norm_type': 'clip_minus1to1'}, None)
         model.train(xys)
         self.assertAlmostEquals(model.evaluate(xs, ys)['RMSE'], 0.831435275234099, places=4)
         self.assertAlmostEquals(model.evaluate_bagging(xs, ys)['RMSE'], 0.7833205217865182, places=4)
@@ -89,7 +87,7 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_ci95_high'], 4.750492595014303)
 
         model = BootstrapLibsvmNusvrTrainTestModel(
-            {'norm_type':'none'}, None)
+            {'norm_type': 'none'}, None)
         model.train(xys)
         self.assertAlmostEquals(model.evaluate(xs, ys)['RMSE'], 0.23294283650716543, places=4)
         self.assertAlmostEquals(model.evaluate_bagging(xs, ys)['RMSE'], 0.17423420271622292, places=4)
@@ -98,8 +96,6 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_ci95_high'], 4.617611259682587)
 
     def test_train_save_load_predict_bootstrap_libsvmnusvr(self):
-
-        print("test bootstrap libsvmnusvr train, save, load and predict...")
 
         xs = BootstrapLibsvmNusvrTrainTestModel.get_xs_from_results(self.features)
         ys = BootstrapLibsvmNusvrTrainTestModel.get_ys_from_results(self.features)
@@ -131,8 +127,6 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         self.assertAlmostEqual(loaded_model.evaluate_stddev(xs)['mean_ci95_high'], 4.753825575324514)
 
     def test_train_across_model_stats_bootstraplibsvmnusvr(self):
-
-        print("test bootstrap libsvmnusvr gather across model stats...")
 
         xs = BootstrapLibsvmNusvrTrainTestModel.get_xs_from_results(self.features)
         ys = BootstrapLibsvmNusvrTrainTestModel.get_ys_from_results(self.features)
@@ -168,16 +162,14 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
 
     def test_train_predict_bootstrap_randomforest(self):
 
-        print("test bootstrap randomforest train and predict...")
-
         xs = BootstrapSklearnRandomForestTrainTestModel.get_xs_from_results(self.features)
         ys = BootstrapSklearnRandomForestTrainTestModel.get_ys_from_results(self.features)
         xys = BootstrapSklearnRandomForestTrainTestModel.get_xys_from_results(self.features)
 
         model = BootstrapSklearnRandomForestTrainTestModel(
-            {'norm_type':'normalize',
+            {'norm_type': 'normalize',
              'n_estimators': 10,
-             'random_state':0}, None)
+             'random_state': 0}, None)
         model.train(xys)
         self.assertAlmostEquals(model.evaluate(xs, ys)['RMSE'], 0.17634739353518517, places=4)
         self.assertAlmostEquals(model.evaluate_bagging(xs, ys)['RMSE'], 0.1734023350765026, places=4)
@@ -186,9 +178,9 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_ci95_high'], 4.6789999999999985)
 
         model = BootstrapSklearnRandomForestTrainTestModel(
-            {'norm_type':'clip_0to1',
+            {'norm_type': 'clip_0to1',
              'n_estimators': 10,
-             'random_state':0}, None)
+             'random_state': 0}, None)
         model.train(xys)
         self.assertAlmostEquals(model.evaluate(xs, ys)['RMSE'], 0.15634392282439, places=4)
         self.assertAlmostEquals(model.evaluate_bagging(xs, ys)['RMSE'], 0.16538552470948875, places=4)
@@ -212,9 +204,9 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_ci95_high'], 4.667805555555555)
 
         model = BootstrapSklearnRandomForestTrainTestModel(
-            {'norm_type':'clip_minus1to1',
+            {'norm_type': 'clip_minus1to1',
              'n_estimators': 10,
-             'random_state':0}, None)
+             'random_state': 0}, None)
         model.train(xys)
         self.assertAlmostEquals(model.evaluate(xs, ys)['RMSE'], 0.15634392282438947, places=4)
         self.assertAlmostEquals(model.evaluate_bagging(xs, ys)['RMSE'], 0.16634325875304712, places=4)
@@ -223,9 +215,9 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_ci95_high'], 4.686916666666666)
 
         model = BootstrapSklearnRandomForestTrainTestModel(
-            {'norm_type':'none',
+            {'norm_type': 'none',
              'n_estimators': 10,
-             'random_state':0}, None)
+             'random_state': 0}, None)
         model.train(xys)
         self.assertAlmostEquals(model.evaluate(xs, ys)['RMSE'], 0.15634392282438941, places=4)
         self.assertAlmostEquals(model.evaluate_bagging(xs, ys)['RMSE'], 0.16935240638616547, places=4)
@@ -234,8 +226,6 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_ci95_high'], 4.679027777777778)
 
     def test_train_save_load_predict_bootstrap_randomforest(self):
-
-        print("test bootstrap randomforest train, save, load and predict...")
 
         xs = BootstrapSklearnRandomForestTrainTestModel.get_xs_from_results(self.features)
         ys = BootstrapSklearnRandomForestTrainTestModel.get_ys_from_results(self.features)
@@ -291,8 +281,6 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
 
     def test_train_save_load_predict_residue_bootstrap_randomforest(self):
 
-        print("test residue bootstrap randomforest train, save, load and predict...")
-
         xs = ResidueBootstrapRandomForestTrainTestModel.get_xs_from_results(self.features)
         ys = ResidueBootstrapRandomForestTrainTestModel.get_ys_from_results(self.features)
         xys = ResidueBootstrapRandomForestTrainTestModel.get_xys_from_results(self.features)
@@ -320,4 +308,4 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)

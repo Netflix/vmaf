@@ -23,7 +23,7 @@ class MatlabFeatureExtractorTest(unittest.TestCase):
         pass
 
     def test_run_strred_fextractor(self):
-        print('test on running STRRED feature extractor, no parallelization...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fextractor = StrredFeatureExtractor(
@@ -44,7 +44,7 @@ class MatlabFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['STRRED_feature_strred_score'], 0.0, places=4)
 
     def test_run_strredOpt_fextractor(self):
-        print('test on running STRREDopt feature extractor, no parallelization...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fextractor = StrredOptFeatureExtractor(
@@ -66,7 +66,6 @@ class MatlabFeatureExtractorTest(unittest.TestCase):
 
     def test_run_SpEED_matlab_fextractor(self):
 
-        print('test on running SpEED (Matlab) feature extractor, no paralellization...')
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fextractor = SpEEDMatlabFeatureExtractor(
@@ -119,7 +118,7 @@ class ParallelMatlabFeatureExtractorTestNew(unittest.TestCase):
         pass
 
     def test_run_strred_fextractor(self):
-        print('test on running STRRED feature extractor, with parallelization...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fextractor = StrredFeatureExtractor(
@@ -140,20 +139,20 @@ class ParallelMatlabFeatureExtractorTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[1]['STRRED_feature_strred_score'], 0.0, places=4)
 
     def test_run_strred_fextractor_blackframes(self):
-        print('test on running STRRED feature extractor on flat frames...')
+
         ref_path = VmafConfig.test_resource_path("yuv", "flat_1920_1080_0.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "flat_1920_1080_10.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324})
+                      asset_dict={'width': 576, 'height': 324})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=1,
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324})
+                      asset_dict={'width': 576, 'height': 324})
 
         from vmaf.core.result_store import FileSystemResultStore
         result_store = FileSystemResultStore(logger=None)
@@ -164,7 +163,6 @@ class ParallelMatlabFeatureExtractorTestNew(unittest.TestCase):
             result_store=result_store
         )
 
-        print('    running for the first time with fresh calculation...')
         self.fextractor.run(parallelize=True)
 
         result0, result1 = self.fextractor.results
@@ -172,7 +170,6 @@ class ParallelMatlabFeatureExtractorTestNew(unittest.TestCase):
         self.assertTrue(os.path.exists(result_store._get_result_file_path(result0)))
         self.assertTrue(os.path.exists(result_store._get_result_file_path(result1)))
 
-        print('    running for the second time with stored results...')
         self.fextractor.run(parallelize=True)
         results = self.fextractor.results
 
@@ -202,15 +199,15 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324,
-                                  'quality_width':160, 'quality_height':90})
+                      asset_dict={'width': 576, 'height': 324,
+                                  'quality_width': 160, 'quality_height': 90})
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=2,
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324,
-                                  'quality_width':160, 'quality_height':90})
+                      asset_dict={'width': 576, 'height': 324,
+                                  'quality_width': 160, 'quality_height': 90})
 
         self.fextractor = VmafFeatureExtractor(
             [asset, asset_original], None, fifo_mode=False)
@@ -239,18 +236,18 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324,
-                                  'crop_cmd':'288:162:144:81',
-                                  'quality_width':288, 'quality_height':162,
+                      asset_dict={'width': 576, 'height': 324,
+                                  'crop_cmd': '288:162:144:81',
+                                  'quality_width': 288, 'quality_height': 162,
                                   })
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=2,
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324,
-                                  'crop_cmd':'288:162:144:81',
-                                  'quality_width':288, 'quality_height':162,
+                      asset_dict={'width': 576, 'height': 324,
+                                  'crop_cmd': '288:162:144:81',
+                                  'quality_width': 288, 'quality_height': 162,
                                   })
 
         self.fextractor = VmafFeatureExtractor(
@@ -280,18 +277,18 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324,
+                      asset_dict={'width': 576, 'height': 324,
                                   'pad_cmd': 'iw+100:ih+100:50:50',
-                                  'quality_width':676, 'quality_height':424,
+                                  'quality_width': 676, 'quality_height': 424,
                                   })
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=2,
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324,
+                      asset_dict={'width': 576, 'height': 324,
                                   'pad_cmd': 'iw+100:ih+100:50:50',
-                                  'quality_width':676, 'quality_height':424,
+                                  'quality_width': 676, 'quality_height': 424,
                                   })
 
         self.fextractor = VmafFeatureExtractor(
@@ -321,20 +318,20 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324,
-                                  'crop_cmd':'288:162:144:81',
+                      asset_dict={'width': 576, 'height': 324,
+                                  'crop_cmd': '288:162:144:81',
                                   'pad_cmd': 'iw+288:ih+162:144:81',
-                                  'quality_width':576, 'quality_height':324,
+                                  'quality_width': 576, 'quality_height': 324,
                                   })
 
         asset_original = Asset(dataset="test", content_id=0, asset_id=2,
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=ref_path,
-                      asset_dict={'width':576, 'height':324,
-                                  'crop_cmd':'288:162:144:81',
+                      asset_dict={'width': 576, 'height': 324,
+                                  'crop_cmd': '288:162:144:81',
                                   'pad_cmd': 'iw+288:ih+162:144:81',
-                                  'quality_width':576, 'quality_height':324,
+                                  'quality_width': 576, 'quality_height': 324,
                                   })
 
         self.fextractor = VmafFeatureExtractor(
@@ -356,4 +353,4 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)

@@ -26,7 +26,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.result_store = FileSystemResultStore()
 
     def test_run_psnr_runner_with_notyuv(self):
-        print('test on running PSNR runner...')
+
         ref_path = VmafConfig.test_resource_path("mp4", "Seeking_10_288_375.mp4")
         dis_path = VmafConfig.test_resource_path("mp4", "Seeking_10_288_375.mp4")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -48,7 +48,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['PSNR_score'], 60.0, places=4)
 
     def test_run_vmaf_runner_with_notyuv(self):
-        print('test on running VMAF runner...')
+
         ref_path = VmafConfig.test_resource_path("mp4", "Seeking_30_480_1050.mp4")
         dis_path = VmafConfig.test_resource_path("mp4", "Seeking_10_288_375.mp4")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -70,7 +70,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_score'], 77.635307276411766, places=4)
 
     def test_run_vmaf_runner_with_notyuv_jpg(self):
-        print('test on running VMAF runner on jpg...')
+
         ref_path = VmafConfig.test_resource_path("test_images", "bikes.jpg")
         dis_path = VmafConfig.test_resource_path("test_images", "bikes_dis.jpg")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -93,7 +93,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_score'], 63.27798081002585, places=4)
 
     def test_run_vmafossexec_runner_with_notyuv(self):
-        print('test on running VMAF runner...')
+
         ref_path = VmafConfig.test_resource_path("mp4", "Seeking_30_480_1050.mp4")
         dis_path = VmafConfig.test_resource_path("mp4", "Seeking_10_288_375.mp4")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -115,22 +115,22 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 77.635309333333339, places=4)
 
     def test_run_psnr_runner_with_frames(self):
-        print('test on running PSNR runner...')
+
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324,
-                                  'start_frame':2, 'end_frame':2})
+                      asset_dict={'width': 576, 'height': 324,
+                                  'start_frame': 2, 'end_frame': 2})
         asset2 = Asset(dataset="test", content_id=0, asset_id=0,
                       workdir_root=VmafConfig.workdir_path(),
                       ref_path=ref_path,
                       dis_path=dis_path,
-                      asset_dict={'width':576, 'height':324,
-                                  'ref_start_frame':2, 'ref_end_frame':2,
-                                  'dis_start_frame':6, 'dis_end_frame':6,
+                      asset_dict={'width': 576, 'height': 324,
+                                  'ref_start_frame': 2, 'ref_end_frame': 2,
+                                  'dis_start_frame': 6, 'dis_end_frame': 6,
                                   })
         self.runner = PsnrQualityRunner(
             [asset, asset2],
@@ -157,7 +157,7 @@ class MatlabQualityRunnerTest(unittest.TestCase):
         self.result_store = FileSystemResultStore()
 
     def test_run_strrred_runner(self):
-        print('test on running STRRED runner, no parallelization...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = StrredQualityRunner(
@@ -179,7 +179,7 @@ class MatlabQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['STRRED_score'], 0.0, places=4)
 
     def test_run_speed_matlab_runner(self):
-        print('test on running SPEED Matlab runner, no parallelization...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = SpEEDMatlabQualityRunner(
@@ -211,7 +211,7 @@ class ParallelMatlabQualityRunnerTest(unittest.TestCase):
         self.result_store = FileSystemResultStore()
 
     def test_run_strrred_runner(self):
-        print('test on running STRRED runner, with parallelization...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = StrredQualityRunner(
@@ -233,7 +233,7 @@ class ParallelMatlabQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['STRRED_score'], 0.0, places=4)
 
     def test_run_speed_matlab_runner(self):
-        print('test on running SPEED Matlab runner, with parallelization...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = SpEEDMatlabQualityRunner(
@@ -265,4 +265,4 @@ class ParallelQualityRunnerTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)

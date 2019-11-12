@@ -5,6 +5,7 @@ from vmaf.core.executor import Executor
 __copyright__ = "Copyright 2016-2019, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
+
 class ExecutorTest(unittest.TestCase):
 
     def test_get_workfile_yuv_type(self):

@@ -169,6 +169,7 @@ class TestReadDataset(unittest.TestCase):
         self.assertEqual(assets[3].ref_width_height, (720, 480))
         self.assertEqual(assets[3].dis_width_height, None)
 
+
 class TestTrainOnDataset(unittest.TestCase):
 
     def setUp(self):
@@ -319,6 +320,7 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(test_assets[2].groundtruth_std, 0.0, places=4)
         self.assertAlmostEqual(test_assets[3].groundtruth_std, 3.5355339059327373, places=4)
 
+
 class TestGenerateDatasetFromRaw(unittest.TestCase):
 
     def setUp(self):
@@ -332,7 +334,7 @@ class TestGenerateDatasetFromRaw(unittest.TestCase):
         if os.path.exists(self.derived_dataset_path_pyc):
             os.remove(self.derived_dataset_path_pyc)
 
-    def test_generate_dataset_from_raw_default(self): # DMOS
+    def test_generate_dataset_from_raw_default(self):  # DMOS
         generate_dataset_from_raw(raw_dataset_filepath=self.raw_dataset_filepath,
                          output_dataset_filepath=self.derived_dataset_path)
         dataset = import_python_file(self.derived_dataset_path)
@@ -345,5 +347,6 @@ class TestGenerateDatasetFromRaw(unittest.TestCase):
         dataset = import_python_file(self.derived_dataset_path)
         self.assertAlmostEqual(dataset.dis_videos[0]['groundtruth'], 1.3076923076923077, places=4)
 
+
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)

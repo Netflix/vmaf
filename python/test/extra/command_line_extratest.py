@@ -8,6 +8,7 @@ from vmaf.config import VmafConfig
 __copyright__ = "Copyright 2016-2019, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
+
 class CommandLineTest(unittest.TestCase):
 
     def setUp(self):
@@ -48,3 +49,7 @@ class CommandLineTest(unittest.TestCase):
         cmd = "{exe} {line} --ci --local-explain >/dev/null 2>&1".format(line=line, exe=exe)
         ret = subprocess.call(cmd, shell=True)
         self.assertEqual(ret, 2)
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)

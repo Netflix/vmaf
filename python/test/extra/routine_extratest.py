@@ -28,3 +28,7 @@ class TestReadDataset(unittest.TestCase):
         self.assertEqual(train_assets[0].asset_dict['duration_sec'], 5.0)
         self.assertEqual(train_assets[1].asset_dict['duration_sec'], 5.0)
         self.assertEqual(train_assets[2].asset_dict['duration_sec'], 5.0)
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)

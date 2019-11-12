@@ -25,11 +25,11 @@ class FeatureAssemblerTest(unittest.TestCase):
         self.assertTrue(MomentFeatureExtractor in fextractor_subclasses)
 
     def test_feature_assembler_whole_feature(self):
-        print('test on feature assembler with whole feature...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fassembler = FeatureAssembler(
-            feature_dict={'VMAF_feature':'all'},
+            feature_dict={'VMAF_feature': 'all'},
             feature_option_dict=None,
             assets=[asset, asset_original],
             logger=None,
@@ -56,11 +56,11 @@ class FeatureAssemblerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 31.271439270833337, places=4)
 
     def test_feature_assembler_selected_atom_feature(self):
-        print('test on feature assembler with selected atom features...')
+
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fassembler = FeatureAssembler(
-            feature_dict={'VMAF_feature':['vif', 'motion']},
+            feature_dict={'VMAF_feature': ['vif', 'motion']},
             feature_option_dict=None,
             assets=[asset, asset_original],
             logger=None,
@@ -93,4 +93,4 @@ class FeatureAssemblerTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)
