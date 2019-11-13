@@ -30,8 +30,7 @@ ptools_sources = [
     ptools_path + 'timeconv.cc'
 ]
 
-ccp = meson.get_compiler('cpp')
-pthread_lib = ccp.find_library('pthread')
+thread_lib = dependency('threads')
 
 libptools = shared_library(
     'ptools',
@@ -40,7 +39,7 @@ libptools = shared_library(
         opencontainers_include,
     ],
     cpp_args : ptools_cpp_args,
-    dependencies : pthread_lib,
+    dependencies : thread_lib,
 )
 
 # Build libvmaf
@@ -122,7 +121,7 @@ libvmaf = both_libraries(
     include_directories : vmaf_include,
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,
-    dependencies : pthread_lib,
+    dependencies : thread_lib,
     objects : [
         convolution_and_psnr_avx_static_lib.extract_all_objects(),
         libptools.extract_all_objects()
