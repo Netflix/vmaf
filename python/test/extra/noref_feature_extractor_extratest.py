@@ -29,7 +29,7 @@ class NorefFeatureExtractorTest(unittest.TestCase):
 
         self.fextractor = MomentNorefFeatureExtractor(
             [asset],
-            None, fifo_mode=False,  # TODO python3: fifo mode fails in py3, needs fix
+            None, fifo_mode=True,
             result_store=None
         )
         self.fextractor.run()
@@ -52,7 +52,7 @@ class NorefFeatureExtractorTest(unittest.TestCase):
 
         self.fextractor = MomentNorefFeatureExtractor(
             [asset],
-            None, fifo_mode=False,  # TODO python3: fifo mode fails in py3, needs fix
+            None, fifo_mode=True,
             result_store=None
         )
         self.fextractor.run()
