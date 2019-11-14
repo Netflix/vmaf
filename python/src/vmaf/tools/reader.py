@@ -122,18 +122,20 @@ class YuvReader(object):
 
         if self._is_10bitle():
             pix_type = np.uint16
+            word = 2
         elif self._is_8bit():
             pix_type = np.uint8
+            word = 1
         else:
             assert False
 
-        y = np.fromfile(self.file, pix_type, count=y_width*y_height)
+        y = np.frombuffer(self.file.read(y_width * y_height * word), pix_type)
         if y.size == 0:
             raise StopIteration
-        u = np.fromfile(self.file, pix_type, count=uv_width*uv_height)
+        u = np.frombuffer(self.file.read(uv_width * uv_height * word), pix_type)
         if u.size == 0:
             raise StopIteration
-        v = np.fromfile(self.file, pix_type, count=uv_width*uv_height)
+        v = np.frombuffer(self.file.read(uv_width * uv_height * word), pix_type)
         if v.size == 0:
             raise StopIteration
 

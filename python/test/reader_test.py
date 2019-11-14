@@ -12,15 +12,15 @@ from vmaf.tools.reader import YuvReader
 class YuvReaderTest(unittest.TestCase):
 
     def test_yuv_reader(self):
-        yuv_reader = YuvReader(
+        with YuvReader(
             filepath=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
             width=576,
             height=324,
             yuv_type='yuv420p'
-        )
-        self.assertEqual(yuv_reader.num_bytes, 13436928)
-        self.assertEqual(yuv_reader.num_frms, 48)
-        self.assertEqual(yuv_reader._get_uv_width_height_multiplier(), (0.5, 0.5))
+        ) as yuv_reader:
+            self.assertEqual(yuv_reader.num_bytes, 13436928)
+            self.assertEqual(yuv_reader.num_frms, 48)
+            self.assertEqual(yuv_reader._get_uv_width_height_multiplier(), (0.5, 0.5))
 
     def test_with(self):
         with YuvReader(
@@ -97,17 +97,19 @@ class YuvReaderTest(unittest.TestCase):
 class YuvReaderTest10le(unittest.TestCase):
 
     def test_yuv_reader(self):
-        yuv_reader = YuvReader(
+
+        with YuvReader(
             filepath=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv422p10le.yuv"),
             width=576,
             height=324,
             yuv_type='yuv422p10le'
-        )
-        self.assertEqual(yuv_reader.num_bytes, 35831808)
-        self.assertEqual(yuv_reader.num_frms, 48)
-        self.assertEqual(yuv_reader._get_uv_width_height_multiplier(), (0.5, 1.0))
+        ) as yuv_reader:
+            self.assertEqual(yuv_reader.num_bytes, 35831808)
+            self.assertEqual(yuv_reader.num_frms, 48)
+            self.assertEqual(yuv_reader._get_uv_width_height_multiplier(), (0.5, 1.0))
 
     def test_with(self):
+
         with YuvReader(
             filepath=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv422p10le.yuv"),
             width=576,
