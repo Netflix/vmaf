@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "mem.h"
 #include "picture.h"
 
 #define DATA_ALIGN 32
@@ -32,7 +33,7 @@ int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
     const size_t uv_sz = pic->stride[1] * pic->h[1];
     const size_t pic_size = y_sz + 2 * uv_sz;
 
-    uint8_t *data = malloc(pic_size);
+    uint8_t *data = aligned_malloc(pic_size, DATA_ALIGN);
     if (!data) goto fail;
     memset(data, 0, sizeof(*data));
     pic->data[0] = data;
@@ -65,7 +66,7 @@ int vmaf_picture_unref(VmafPicture *pic) {
 
     atomic_int *ref_cnt = pic->ref_cnt;
     if (--(*ref_cnt) == 0) {
-        free(pic->data[0]);
+        aligned_free(pic->data[0]);
         free(pic->ref_cnt);
     }
     memset(pic, 0, sizeof(*pic));

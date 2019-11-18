@@ -27,7 +27,7 @@
 
 #include "offset.h"
 #include "motion_options.h"
-#include "common/alloc.h"
+#include "mem.h"
 #include "common/convolution.h"
 #include "common/convolution_internal.h"
 #include "motion_tools.h"

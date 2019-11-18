@@ -25,7 +25,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "common/alloc.h"
+#include "mem.h"
 #include "iqa/math_utils.h"
 #include "iqa/decimate.h"
 #include "iqa/ssim_tools.h"

@@ -24,7 +24,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "common/alloc.h"
+#include "mem.h"
 #include "motion_tools.h"
 #include "common/convolution.h"
 #include "common/convolution_internal.h"

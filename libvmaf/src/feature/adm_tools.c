@@ -19,7 +19,7 @@
 #include <math.h>
 #include <stddef.h>
 #include <string.h>
-#include "common/alloc.h"
+#include "mem.h"
 #include "adm_options.h"
 #include "adm_tools.h"
 

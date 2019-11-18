@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "common/alloc.h"
+#include "mem.h"
 #include "common/convolution.h"
 #include "offset.h"
 #include "vif_options.h"
