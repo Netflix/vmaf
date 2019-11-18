@@ -10,7 +10,7 @@
 
 #include <stdlib.h>
 #include <pthread.h>
-#include "alloc.h"
+#include "mem.h"
 
 #define MAX_NUM_THREADS 128
 typedef struct

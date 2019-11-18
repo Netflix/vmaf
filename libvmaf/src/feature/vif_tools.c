@@ -21,7 +21,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include "common/alloc.h"
+#include "mem.h"
 #include "common/convolution.h"
 #include "vif_options.h"
 #include "vif_tools.h"

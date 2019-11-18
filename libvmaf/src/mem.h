@@ -16,10 +16,8 @@
  *
  */
 
-#pragma once
-
-#ifndef ALLOC_H_
-#define ALLOC_H_
+#ifndef __VMAF_MEM_H__
+#define __VMAF_MEM_H__
 
 #define MAX_ALIGN 32
 
@@ -30,4 +28,4 @@ void *aligned_malloc(size_t size, size_t alignment);
 
 void aligned_free(void *ptr);
 
-#endif /* ALLOC_H_ */
+#endif /* __VMAF_MEM_H__ */

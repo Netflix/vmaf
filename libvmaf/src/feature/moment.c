@@ -25,7 +25,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "common/alloc.h"
+#include "mem.h"
 #include "moment_options.h"
 
 int compute_1st_moment(const float *pic, int w, int h, int stride, double *score)

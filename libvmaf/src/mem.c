@@ -20,7 +20,7 @@
 
 #include <stddef.h>
 #include <stdlib.h>
-#include "alloc.h"
+#include "mem.h"
 
 void *aligned_malloc(size_t size, size_t alignment)
 {

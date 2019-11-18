@@ -75,7 +75,6 @@ convolution_and_psnr_avx_static_lib = static_library(
 )
 
 vmaf_sources = [
-    feature_src_dir + 'common/alloc.c',
     feature_src_dir + 'common/alignment.c',
     feature_src_dir + 'common/convolution.c',
     feature_src_dir + 'common/cpu.c',
@@ -98,6 +97,7 @@ vmaf_sources = [
     feature_src_dir + 'iqa/decimate.c',
     feature_src_dir + 'iqa/ssim_tools.c',
     third_party_dir + 'pugixml/pugixml.cpp',
+    src_dir + 'mem.c',
     src_dir + 'combo.c',
     src_dir + 'cpu_info.c',
     src_dir + 'svm.cpp',

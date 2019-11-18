@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "common/alloc.h"
+#include "mem.h"
 #include "psnr_tools.h"
 #include "ansnr_options.h"
 #include "ansnr_tools.h"
