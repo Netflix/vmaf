@@ -88,7 +88,6 @@ class MatlabFeatureExtractorTest(unittest.TestCase):
     @unittest.skip("Need signal processing toolbox in Matlab.")
     def test_run_stmad_fextractor(self):
 
-        print('test on running STMAD (Matlab) feature extractor, no parallelization...')
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.fextractor = STMADFeatureExtractor(

@@ -45,7 +45,6 @@ class ResultTest(unittest.TestCase):
 
     def test_todataframe_fromdataframe(self):
 
-        print('test on result to/from dataframe...')
         df = self.result.to_dataframe()
         df_vmaf = df.loc[df['scores_key'] == 'VMAF_legacy_scores']
         df_adm = df.loc[df['scores_key'] == 'VMAF_feature_adm_scores']
@@ -88,7 +87,6 @@ class ResultTest(unittest.TestCase):
         self.assertFalse(self.result != recon_result)
 
     def test_to_score_str(self):
-        print('test on result aggregate scores...')
         self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 40.421899030550769, places=4)
         self.assertAlmostEqual(self.result['VMAF_legacy_score'], 40.421899030550769, places=4)
         self.assertAlmostEqual(self.result.get_result('VMAF_feature_adm_score'), 0.78533833333333336, places=4)
@@ -231,7 +229,6 @@ class ResultStoreTest(unittest.TestCase):
         pass
 
     def test_file_system_result_store_save_load(self):
-        print('test on file system result store save and load...')
         self.result_store = FileSystemResultStore(logger=None)
         asset = self.result.asset
         executor_id = self.result.executor_id
