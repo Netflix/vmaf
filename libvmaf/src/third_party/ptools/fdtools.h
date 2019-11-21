@@ -4,7 +4,7 @@
 extern "C" {
 #if defined(_MSC_VER) || defined(__MINGW32__)
     #include <io.h>
-    #include <Winsock2.h>
+    #include <winsock2.h>
     #include <string.h>
 #else
     #include <unistd.h>
