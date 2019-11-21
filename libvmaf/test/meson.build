@@ -5,4 +5,10 @@ test_picture = executable('test_picture',
     include_directories : [libvmaf_inc, test_inc, '../src/'],
 )
 
+test_feature_collector = executable('test_feature_collector',
+    ['test.c', 'test_feature_collector.c',],
+    include_directories : [libvmaf_inc, test_inc, '../src/feature/'],
+)
+
 test('test_picture', test_picture)
+test('test_feature_collector', test_feature_collector)
