@@ -192,10 +192,13 @@ def import_python_file(filepath):
     :param filepath:
     :return:
     """
-    import imp
     filename = get_file_name_without_extension(filepath)
-    ret = imp.load_source(filename, filepath)
-
+    try:
+        from importlib.machinery import SourceFileLoader
+        ret = SourceFileLoader(filename, filepath).load_module()
+    except ImportError:
+        import imp
+        ret = imp.load_source(filename, filepath)
     return ret
 
 
