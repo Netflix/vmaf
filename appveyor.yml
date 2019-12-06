@@ -1,41 +1,55 @@
-os: Visual Studio 2017
+os: Visual Studio 2019
 
 environment:
+  APPVEYOR_SAVE_CACHE_ON_ERROR: true
   matrix:
+    #- arch: x86
+    #  compiler: msvc2015
+    #- arch: x64
+    #  compiler: msvc2015
+    #- arch: x86
+    #  compiler: msvc2017
+    #- arch: x64
+    #  compiler: msvc2017
+    #- arch: x86
+    #  compiler: msvc2019
+    #- arch: x64
+    #  compiler: msvc2019
     - arch: x86
-      compiler: msvc2015
+      MSYSTEM: MINGW32
+      CC: ccache i686-w64-mingw32-gcc
+      CXX: ccache i686-w64-mingw32-g++
+      CFLAGS: -msse
     - arch: x64
-      compiler: msvc2015
-    - arch: x86
-      compiler: msvc2017
-    - arch: x64
-      compiler: msvc2017
+      MSYSTEM: MINGW64
+      CC: ccache x86_64-w64-mingw32-gcc
+      CXX: ccache x86_64-w64-mingw32-g++
 
 platform:
   - x64
 
 install:
-  # Download ninja
-  - cmd: mkdir C:\ninja-build
-  - ps: (new-object net.webclient).DownloadFile('https://github.com/mesonbuild/cidata/raw/master/ninja.exe', 'C:\ninja-build\ninja.exe')
-  # Set paths to dependencies (based on architecture)
-  - cmd: if %arch%==x86 (set PYTHON_ROOT=C:\python37) else (set PYTHON_ROOT=C:\python37-x64)
-  # Print out dependency paths
-  - cmd: echo Using Python at %PYTHON_ROOT%
-  # Add neccessary paths to PATH variable
-  - cmd: set PATH=%cd%;C:\ninja-build;%PYTHON_ROOT%;%PYTHON_ROOT%\Scripts;%PATH%
-  # Install meson
-  - cmd: pip install meson
+  - set "PATH=C:\msys64\mingw64\bin;C:\msys64\mingw32\bin;C:\msys64\usr\bin;%PATH%"
+  - set MSYS2_PATH_TYPE=inherit
+  # Download ninja and meson
+  - pacman -Syyuu --ask=20 --noconfirm --noprogressbar --needed
+  - pacman -Sy --ask=20 --noconfirm --noprogressbar --needed mingw-w64-x86_64-ninja mingw-w64-x86_64-meson
+  #- set CFLAGS=/D_TIMESPEC_DEFINED /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   # Set up the build environment
-  - cmd: if %compiler%==msvc2015 ( call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %arch% )
-  - cmd: if %compiler%==msvc2017 ( call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" %arch% )
+  - |
+    if "%compiler%"=="msvc2015" ( call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %arch% )
+    if "%compiler%"=="msvc2017" ( call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" %arch% )
+    if "%compiler%"=="msvc2019" ( call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" %arch% )
 
 build_script:
-  - cmd: cd libvmaf
-  - cmd: echo Building on %arch% with %compiler%
-  - cmd: meson --backend=ninja builddir
-  - cmd: ninja -vC builddir
+  - echo Building on %arch% with %compiler%
+  - cd libvmaf
+  - meson --backend=ninja build
+  - ninja -vC build
 
 test_script:
-  - cmd: cd libvmaf
-  - cmd: ninja -vC builddir test
+  - ninja -vC build test
+
+cache:
+  - 'C:\msys64\home\appveyor\.ccache'
+  - 'C:\msys64\var\cache\pacman\pkg'
