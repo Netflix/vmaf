@@ -71,7 +71,7 @@ class CrossValidationTest(unittest.TestCase):
     def test_run_kfold_cross_validation_extratrees(self):
 
         train_test_model_class = SklearnExtraTreesTrainTestModel
-        model_param = {'norm_type': 'normalize', 'random_state': 0}
+        model_param = {'norm_type': 'normalize', 'random_state': 0, 'n_estimators': 10}
 
         output = ModelCrossValidation.run_kfold_cross_validation(
             train_test_model_class, model_param, self.features, 3)
