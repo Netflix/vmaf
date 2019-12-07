@@ -11,14 +11,14 @@ There are two ways to perform bootstrapping on VMAF. The first one is called pla
 
 ### Run in Command Line
 
-To enable CI, use the option `--ci` in the command line tools with a bootstrapping model such as `model/vmaf_rb_v0.6.2/vmaf_rb_v0.6.2.pkl`. The `--ci` option is available for both `./run_vmaf` and `./src/libvmaf/vmafossexec`. In [libvmaf](libvmaf.md), CI can be enabled by setting the argument `enable_conf_interval` to 1.
+To enable CI, use the option `--ci` in the command line tools with a bootstrapping model such as `model/vmaf_b_v0.6.3/vmaf_b_v0.6.3.pkl`. The `--ci` option is available for both `./run_vmaf` and `./src/libvmaf/vmafossexec`. In [libvmaf](libvmaf.md), CI can be enabled by setting the argument `enable_conf_interval` to 1.
 
 For example, running
 
 ```
 ./run_vmaf yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv \
 python/test/resource/yuv/src01_hrc01_576x324.yuv \
---model model/vmaf_rb_v0.6.2/vmaf_rb_v0.6.2.pkl --out-fmt json --ci
+--model model/vmaf_b_v0.6.3/vmaf_b_v0.6.3.pkl --out-fmt json --ci
 ```
 
 yields:
@@ -26,17 +26,18 @@ yields:
 ```
 ...
     "aggregate": {
-        "BOOTSTRAP_VMAF_bagging_score": 73.09994612674564,
-        "BOOTSTRAP_VMAF_ci95_high_score": 74.85344190068236,
-        "BOOTSTRAP_VMAF_ci95_low_score": 70.80158536383833,
+        "BOOTSTRAP_VMAF_bagging_score": 74.96366248843681,
+        "BOOTSTRAP_VMAF_ci95_high_score": 77.38652840665362,
+        "BOOTSTRAP_VMAF_ci95_low_score": 72.98503037587044,
         "BOOTSTRAP_VMAF_score": 75.44304785910772,
-        "BOOTSTRAP_VMAF_stddev_score": 1.2301198163451679,
+        "BOOTSTRAP_VMAF_stddev_score": 1.31289244504376,
         "VMAF_feature_adm2_score": 0.9345878041226809,
         "VMAF_feature_motion2_score": 3.8953518541666665,
         "VMAF_feature_vif_scale0_score": 0.36342081156994926,
         "VMAF_feature_vif_scale1_score": 0.7666473878461729,
         "VMAF_feature_vif_scale2_score": 0.8628533892781629,
         "VMAF_feature_vif_scale3_score": 0.9159718691393048,
+        ...
         "method": "mean"
     }
 }
@@ -54,7 +55,7 @@ CI can also be enabled in [`run_testing`](VMAF_Python_library.md/#validate-a-dat
 
 ```
 ./run_testing BOOTSTRAP_VMAF resource/dataset/NFLX_dataset_public.py \
-  --vmaf-model model/vmaf_rb_v0.6.2/vmaf_rb_v0.6.2.pkl --cache-result --parallelize
+  --vmaf-model model/vmaf_b_v0.6.3/vmaf_b_v0.6.3.pkl --cache-result --parallelize
 ```
 
 Running the command line above will generate scatter plot:
@@ -65,13 +66,13 @@ Here each data point (color representing different content) is associated with a
 
 ### Training Bootstrap Models
 
-To train a bootstrap model, one can use [`run_vmaf_training`](VMAF_Python_library.md/#train-a-new-model) command line. In the parameter file, the `model_type` must be `RESIDUEBOOTSTRAP_LIBSVMNUSVR`. In `model_param_dict`, one can optionally specify the number of models to be used via `num_models`. See [`vmaf_v6_residue_bootstrap.py`](../../resource/param/vmaf_v6_residue_bootstrap.py) for an example parameter file.
+To train a bootstrap model, one can use [`run_vmaf_training`](VMAF_Python_library.md/#train-a-new-model) command line. In the parameter file, the `model_type` must be `BOOTSTRAP_LIBSVMNUSVR`. In `model_param_dict`, one can optionally specify the number of models to be used via `num_models`. See [`vmaf_v6_bootstrap.py`](../../resource/param/vmaf_v6_bootstrap.py) for an example parameter file.
 
-Running the command line below will generate a bootstrap model `test_rb_model.pkl`.
+Running the command line below will generate a bootstrap model `test_b_model.pkl`.
 
 ```
 ./run_vmaf_training resource/dataset/NFLX_dataset_public.py \
-  resource/param/vmaf_v6_residue_bootstrap.py \
-  resource/param/vmaf_v6_residue_bootstrap.py \
-  ~/Desktop/test/test_rb_model.pkl --cache-result --parallelize
+  resource/param/vmaf_v6_bootstrap.py \
+  resource/param/vmaf_v6_bootstrap.py \
+  ~/Desktop/test/test_b_model.pkl --cache-result --parallelize
 ```
