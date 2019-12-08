@@ -719,6 +719,55 @@ class AssetTest(unittest.TestCase):
         self.assertEqual(asset.groundtruth_std, 4.5)
         self.assertEqual(asset.raw_groundtruth, [90.0, 92.0])
 
+    def test_gblur_cmd(self):
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
+                                  'gblur_cmd': 'sigma=1:steps=2'})
+        self.assertEqual(asset.gblur_cmd, 'sigma=1:steps=2')
+        self.assertEqual(asset.ref_gblur_cmd, 'sigma=1:steps=2')
+        self.assertEqual(asset.dis_gblur_cmd, 'sigma=1:steps=2')
+        self.assertEqual(str(asset), "test_0_0__720x480_yuv422p_gblursigma=1:steps=2_vs__720x480_yuv422p_gblursigma=1:steps=2_q_720x320")
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p', })
+        self.assertTrue(asset.gblur_cmd is None)
+        self.assertTrue(asset.ref_gblur_cmd is None)
+        self.assertTrue(asset.dis_gblur_cmd is None)
+        self.assertEqual(str(asset), "test_0_0__720x480_yuv422p_vs__720x480_yuv422p_q_720x320")
+
+    def test_ref_dis_gblur_cmd(self):
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
+                                  'ref_gblur_cmd': 'sigma=1:steps=2',
+                                  'dis_gblur_cmd': 'sigma=0.3:steps=3',
+                                  })
+        self.assertEqual(asset.gblur_cmd, None)
+        self.assertEqual(asset.ref_gblur_cmd, 'sigma=1:steps=2')
+        self.assertEqual(asset.dis_gblur_cmd, 'sigma=0.3:steps=3')
+        self.assertEqual(str(asset), "test_0_0__720x480_yuv422p_gblursigma=1:steps=2_vs__720x480_yuv422p_gblursigma=0.3:steps=3_q_720x320")
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
+                                  'ref_gblur_cmd': 'sigma=1:steps=2',
+                                  'gblur_cmd': 'sigma=0.3:steps=3',
+                                  })
+        self.assertEqual(asset.gblur_cmd, 'sigma=0.3:steps=3')
+        self.assertEqual(asset.ref_gblur_cmd, 'sigma=1:steps=2')
+        self.assertEqual(asset.dis_gblur_cmd, 'sigma=0.3:steps=3')
+        self.assertEqual(str(asset), "test_0_0__720x480_yuv422p_gblursigma=1:steps=2_vs__720x480_yuv422p_gblursigma=0.3:steps=3_q_720x320")
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

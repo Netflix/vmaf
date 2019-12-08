@@ -350,6 +350,47 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 40.280504208333333, places=4)
 
+    def test_run_vmaf_fextractor_with_gaussian_blurring(self):
+
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 576, 'height': 324,
+                                  'crop_cmd': '288:162:144:81',
+                                  'dis_gblur_cmd': 'sigma=0.01:steps=1',
+                                  'quality_width': 288, 'quality_height': 162,
+                                  })
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=2,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width': 576, 'height': 324,
+                                  'crop_cmd': '288:162:144:81',
+                                  'dis_gblur_cmd': 'sigma=0.01:steps=2',
+                                  'quality_width': 288, 'quality_height': 162,
+                                  })
+
+        self.fextractor = VmafFeatureExtractor(
+            [asset, asset_original], None, fifo_mode=True)
+
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.45136466666666664, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 2.8779373333333331, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'],0.9362876630569382, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 24.109544854166668, places=4)
+
+        self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 0.9789283541666666, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 2.8779373333333331, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 0.9958889086049826, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 31.128021979166665, places=4)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

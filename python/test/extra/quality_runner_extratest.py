@@ -144,6 +144,52 @@ class QualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['PSNR_score'], 30.993823, places=4)
         self.assertAlmostEqual(results[1]['PSNR_score'], 19.393160, places=4)
 
+    def test_run_psnr_runner_with_notyuv_gblur(self):
+
+        ref_path = VmafConfig.test_resource_path("mp4", "Seeking_10_288_375.mp4")
+        dis_path = VmafConfig.test_resource_path("mp4", "Seeking_10_288_375.mp4")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'yuv_type': 'notyuv',
+                                  'quality_width': 720, 'quality_height': 480,
+                                  'dis_gblur_cmd': 'sigma=0.01:steps=1',
+                                  })
+        self.runner = PsnrQualityRunner(
+            [asset],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None
+        )
+        self.runner.run()
+
+        results = self.runner.results
+        self.assertAlmostEqual(results[0]['PSNR_score'], 51.12090432666667, places=4)
+
+    def test_run_vmaf_runner_with_notyuv_gblur(self):
+
+        ref_path = VmafConfig.test_resource_path("mp4", "Seeking_30_480_1050.mp4")
+        dis_path = VmafConfig.test_resource_path("mp4", "Seeking_10_288_375.mp4")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'yuv_type': 'notyuv',
+                                  'quality_width': 360, 'quality_height': 240,
+                                  'dis_gblur_cmd': 'sigma=0.01:steps=1',
+                                  })
+        self.runner = VmafQualityRunner(
+            [asset],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None
+        )
+        self.runner.run()
+
+        results = self.runner.results
+        self.assertAlmostEqual(results[0]['VMAF_score'], 77.28044458354246, places=4)
+
 
 @unittest.skipIf(not VmafExternalConfig.matlab_path(), "matlab not installed")
 class MatlabQualityRunnerTest(unittest.TestCase):
