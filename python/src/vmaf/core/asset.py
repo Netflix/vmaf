@@ -408,6 +408,11 @@ class Asset(WorkdirEnabled):
                 s += "_"
             s += "pad{}".format(self.ref_pad_cmd)
 
+        if self.ref_gblur_cmd is not None:
+            if s != "":
+                s += "_"
+            s += "gblur{}".format(self.ref_gblur_cmd)
+
         return s
 
     @property
@@ -441,6 +446,11 @@ class Asset(WorkdirEnabled):
             if s != "":
                 s += "_"
             s += "pad{}".format(self.dis_pad_cmd)
+
+        if self.dis_gblur_cmd is not None:
+            if s != "":
+                s += "_"
+            s += "gblur{}".format(self.dis_gblur_cmd)
 
         return s
 
@@ -724,6 +734,31 @@ class Asset(WorkdirEnabled):
             return self.asset_dict['dis_pad_cmd']
         elif 'pad_cmd' in self.asset_dict:
             return self.asset_dict['pad_cmd']
+        else:
+            return None
+
+    @property
+    def gblur_cmd(self):
+        if 'gblur_cmd' in self.asset_dict:
+            return self.asset_dict['gblur_cmd']
+        else:
+            return None
+
+    @property
+    def ref_gblur_cmd(self):
+        if 'ref_gblur_cmd' in self.asset_dict:
+            return self.asset_dict['ref_gblur_cmd']
+        elif 'gblur_cmd' in self.asset_dict:
+            return self.asset_dict['gblur_cmd']
+        else:
+            return None
+
+    @property
+    def dis_gblur_cmd(self):
+        if 'dis_gblur_cmd' in self.asset_dict:
+            return self.asset_dict['dis_gblur_cmd']
+        elif 'gblur_cmd' in self.asset_dict:
+            return self.asset_dict['gblur_cmd']
         else:
             return None
 

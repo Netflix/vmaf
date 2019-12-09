@@ -152,17 +152,16 @@ class Executor(TypeVersionEnabled):
     def _need_ffmpeg(asset):
         # 1) if quality width/height do not to agree with ref/dis width/height,
         # must rely on ffmpeg for scaling
-        # 2) if crop/pad is need, need ffmpeg
+        # 2) if crop/pad/etc. is needed, need ffmpeg
         # 3) if ref/dis videos' start/end frames specified, need ffmpeg for
         # frame extraction
         return asset.quality_width_height != asset.ref_width_height \
-            or asset.quality_width_height != asset.dis_width_height \
-            or asset.crop_cmd is not None \
-            or asset.pad_cmd is not None \
-            or asset.ref_yuv_type == 'notyuv' \
-            or asset.dis_yuv_type == 'notyuv' \
-            or asset.ref_start_end_frame is not None \
-            or asset.dis_start_end_frame is not None
+               or asset.quality_width_height != asset.dis_width_height \
+               or asset.ref_crop_cmd is not None or asset.dis_crop_cmd is not None \
+               or asset.ref_pad_cmd is not None or asset.dis_pad_cmd is not None \
+               or asset.ref_gblur_cmd is not None or asset.dis_gblur_cmd is not None \
+               or asset.ref_yuv_type == 'notyuv' or asset.dis_yuv_type == 'notyuv' \
+               or asset.ref_start_end_frame is not None or asset.dis_start_end_frame is not None
 
     @classmethod
     def _assert_an_asset(cls, asset):
@@ -179,14 +178,14 @@ class Executor(TypeVersionEnabled):
         assert (asset.ref_yuv_type == 'notyuv' or asset.dis_yuv_type == 'notyuv') \
                or (asset.ref_yuv_type == asset.dis_yuv_type)
 
-        # if crop_cmd or pad_cmd is specified, make sure quality_width and
+        # if crop_cmd or pad_cmd or etc. is specified, make sure quality_width and
         # quality_height are EXPLICITLY specified in asset_dict
-        if asset.crop_cmd is not None:
+        if asset.ref_crop_cmd is not None or asset.dis_crop_cmd is not None:
             assert 'quality_width' in asset.asset_dict and 'quality_height' in asset.asset_dict, \
-                'If crop_cmd is specified, must also EXPLICITLY specify quality_width and quality_height.'
-        if asset.pad_cmd is not None:
+                'If crop_cmd or etc. is specified, must also EXPLICITLY specify quality_width and quality_height.'
+        if asset.ref_pad_cmd is not None or asset.dis_pad_cmd is not None:
             assert 'quality_width' in asset.asset_dict and 'quality_height' in asset.asset_dict, \
-                'If pad_cmd is specified, must also EXPLICITLY specify quality_width and quality_height.'
+                'If pad_cmd or etc. is specified, must also EXPLICITLY specify quality_width and quality_height.'
 
     @staticmethod
     def _get_workfile_yuv_type(asset):
@@ -365,7 +364,7 @@ class Executor(TypeVersionEnabled):
 
     @classmethod
     def _set_asset_use_path_as_workpath(cls, asset):
-        # if no rescaling or croping or padding is involved, directly work on
+        # if no rescaling or croping or padding or etc. is involved, directly work on
         # ref_path/dis_path, instead of opening workfiles
         if not cls._need_ffmpeg(asset):
             asset.use_path_as_workpath = True
@@ -408,25 +407,26 @@ class Executor(TypeVersionEnabled):
 
         crop_cmd = self._get_ref_crop_cmd(asset)
         pad_cmd = self._get_ref_pad_cmd(asset)
+        gblur_cmd = self._get_ref_gblur_cmd(asset)
 
         vframes_cmd, select_cmd = self._get_vframes_cmd(asset, 'ref')
 
+        scale_cmd = 'scale={width}x{height}'.format(width=quality_width, height=quality_height)
+
+        vf_cmd = ','.join(filter(lambda s: s!='', [select_cmd, crop_cmd, pad_cmd, scale_cmd, gblur_cmd]))
+
         ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
-                     '-pix_fmt {yuv_type} {vframes_cmd} -vf {select_cmd}{crop_cmd}{pad_cmd}scale={width}x{height} -f rawvideo ' \
+                     '-pix_fmt {yuv_type} {vframes_cmd} -vf {vf_cmd} -f rawvideo ' \
                      '-sws_flags {resampling_type} -y {dst}'
         ffmpeg_cmd = ffmpeg_cmd.format(
             ffmpeg=VmafExternalConfig.get_and_assert_ffmpeg(),
             src=asset.ref_path,
             dst=asset.ref_workfile_path,
-            width=quality_width,
-            height=quality_height,
             src_fmt_cmd=src_fmt_cmd,
-            crop_cmd=crop_cmd,
-            pad_cmd=pad_cmd,
+            vf_cmd=vf_cmd,
             yuv_type=workfile_yuv_type,
             resampling_type=resampling_type,
             vframes_cmd=vframes_cmd,
-            select_cmd=select_cmd,
         )
 
         if self.logger:
@@ -460,23 +460,26 @@ class Executor(TypeVersionEnabled):
 
         crop_cmd = self._get_dis_crop_cmd(asset)
         pad_cmd = self._get_dis_pad_cmd(asset)
+        gblur_cmd = self._get_dis_gblur_cmd(asset)
 
         vframes_cmd, select_cmd = self._get_vframes_cmd(asset, 'dis')
 
+        scale_cmd = 'scale={width}x{height}'.format(width=quality_width, height=quality_height)
+
+        vf_cmd = ','.join(filter(lambda s: s!='', [select_cmd, crop_cmd, pad_cmd, scale_cmd, gblur_cmd]))
+
         ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
-                     '-pix_fmt {yuv_type} {vframes_cmd} -vf {select_cmd}{crop_cmd}{pad_cmd}scale={width}x{height} -f rawvideo ' \
+                     '-pix_fmt {yuv_type} {vframes_cmd} -vf {vf_cmd} -f rawvideo ' \
                      '-sws_flags {resampling_type} -y {dst}'.format(
             ffmpeg=VmafExternalConfig.get_and_assert_ffmpeg(),
             src=asset.dis_path, dst=asset.dis_workfile_path,
-            width=quality_width, height=quality_height,
             src_fmt_cmd=src_fmt_cmd,
-            crop_cmd=crop_cmd,
-            pad_cmd=pad_cmd,
+            vf_cmd=vf_cmd,
             yuv_type=workfile_yuv_type,
             resampling_type=resampling_type,
             vframes_cmd=vframes_cmd,
-            select_cmd=select_cmd,
         )
+
         if self.logger:
             self.logger.info(ffmpeg_cmd)
 
@@ -516,24 +519,34 @@ class Executor(TypeVersionEnabled):
             return ""
 
     def _get_ref_crop_cmd(self, asset):
-        crop_cmd = "crop={},".format(
+        crop_cmd = "crop={}".format(
             asset.ref_crop_cmd) if asset.ref_crop_cmd is not None else ""
         return crop_cmd
 
     def _get_ref_pad_cmd(self, asset):
-        pad_cmd = "pad={},".format(
+        pad_cmd = "pad={}".format(
             asset.ref_pad_cmd) if asset.ref_pad_cmd is not None else ""
         return pad_cmd
 
     def _get_dis_crop_cmd(self, asset):
-        crop_cmd = "crop={},".format(
+        crop_cmd = "crop={}".format(
             asset.dis_crop_cmd) if asset.dis_crop_cmd is not None else ""
         return crop_cmd
 
     def _get_dis_pad_cmd(self, asset):
-        pad_cmd = "pad={},".format(
+        pad_cmd = "pad={}".format(
             asset.dis_pad_cmd) if asset.dis_pad_cmd is not None else ""
         return pad_cmd
+
+    def _get_ref_gblur_cmd(self, asset):
+        gblur_cmd = "gblur={}".format(
+            asset.ref_gblur_cmd) if asset.ref_gblur_cmd is not None else ""
+        return gblur_cmd
+
+    def _get_dis_gblur_cmd(self, asset):
+        gblur_cmd = "gblur={}".format(
+            asset.dis_gblur_cmd) if asset.dis_gblur_cmd is not None else ""
+        return gblur_cmd
 
     def _get_vframes_cmd(self, asset, ref_or_dis):
         if ref_or_dis == 'ref':
@@ -549,7 +562,7 @@ class Executor(TypeVersionEnabled):
             start_frame, end_frame = start_end_frame
             num_frames = end_frame - start_frame + 1
             return "-vframes {}".format(num_frames), \
-                   "select='gte(n\,{start_frame})*gte({end_frame}\,n)',setpts=PTS-STARTPTS,".format(
+                   "select='gte(n\,{start_frame})*gte({end_frame}\,n)',setpts=PTS-STARTPTS".format(
                        start_frame=start_frame, end_frame=end_frame)
 
     @staticmethod
@@ -653,14 +666,15 @@ class NorefExecutorMixin(object):
         # Override Executor._need_ffmpeg.
         # 1) if quality width/height do not to agree with dis width/height,
         # must rely on ffmpeg for scaling
-        # 2) if crop/pad is need, need ffmpeg
+        # 2) if crop/pad/etc. is need, need ffmpeg
         # 3) if dis videos' start/end frames specified, need ffmpeg for
         # frame extraction
         return asset.quality_width_height != asset.dis_width_height \
-            or asset.crop_cmd is not None \
-            or asset.pad_cmd is not None \
-            or asset.dis_yuv_type == 'notyuv' \
-            or asset.dis_start_end_frame is not None
+               or asset.dis_crop_cmd is not None \
+               or asset.dis_pad_cmd is not None \
+               or asset.dis_gblur_cmd is not None \
+               or asset.dis_yuv_type == 'notyuv' \
+               or asset.dis_start_end_frame is not None
 
     @classmethod
     def _assert_an_asset(cls, asset):
@@ -671,14 +685,14 @@ class NorefExecutorMixin(object):
         if cls._need_ffmpeg(asset):
             VmafExternalConfig.get_and_assert_ffmpeg()
 
-        # if crop_cmd or pad_cmd is specified, make sure quality_width and
+        # if crop_cmd or pad_cmd or etc. is specified, make sure quality_width and
         # quality_height are EXPLICITLY specified in asset_dict
-        if asset.crop_cmd is not None:
+        if asset.dis_crop_cmd is not None:
             assert 'quality_width' in asset.asset_dict and 'quality_height' in asset.asset_dict, \
-                'If crop_cmd is specified, must also EXPLICITLY specify quality_width and quality_height.'
-        if asset.pad_cmd is not None:
+                'If crop_cmd etc. is specified, must also EXPLICITLY specify quality_width and quality_height.'
+        if asset.dis_pad_cmd is not None:
             assert 'quality_width' in asset.asset_dict and 'quality_height' in asset.asset_dict, \
-                'If pad_cmd is specified, must also EXPLICITLY specify quality_width and quality_height.'
+                'If pad_cmd etc. is specified, must also EXPLICITLY specify quality_width and quality_height.'
 
     @staticmethod
     def _get_workfile_yuv_type(asset):
