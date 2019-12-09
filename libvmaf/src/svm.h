@@ -77,7 +77,7 @@ double svm_predict_values(const struct svm_model *model, const struct svm_node *
 double svm_predict(const struct svm_model *model, const struct svm_node *x);
 
 void svm_free_model_content(struct svm_model *model_ptr);
-void svm_free_and_destroy_model(svm_model** model_ptr_ptr);
+void svm_free_and_destroy_model(struct svm_model** model_ptr_ptr);
 
 #ifdef __cplusplus
 }
