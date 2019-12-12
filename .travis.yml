@@ -77,13 +77,6 @@ matrix:
         - pip3 install tox-travis
         - make -C third_party/libsvm -j lib
         - tox -c python/ -- -v -p no:warnings -m 'main or lib' --doctest-modules
-    - name: Python2 Tox
-      language: python
-      python: "2.7"
-      env: CC=gcc-7 CXX=g++-7
-      cache: *python-cache
-      before_script: *base-gcc-script
-      script: *python-tox
     - name: libvmaf FFmpeg
       before_script: *base-gcc-script
       script:
