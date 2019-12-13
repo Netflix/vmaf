@@ -523,15 +523,15 @@ class Executor(TypeVersionEnabled):
             asset.ref_crop_cmd) if asset.ref_crop_cmd is not None else ""
         return crop_cmd
 
-    def _get_ref_pad_cmd(self, asset):
-        pad_cmd = "pad={}".format(
-            asset.ref_pad_cmd) if asset.ref_pad_cmd is not None else ""
-        return pad_cmd
-
     def _get_dis_crop_cmd(self, asset):
         crop_cmd = "crop={}".format(
             asset.dis_crop_cmd) if asset.dis_crop_cmd is not None else ""
         return crop_cmd
+
+    def _get_ref_pad_cmd(self, asset):
+        pad_cmd = "pad={}".format(
+            asset.ref_pad_cmd) if asset.ref_pad_cmd is not None else ""
+        return pad_cmd
 
     def _get_dis_pad_cmd(self, asset):
         pad_cmd = "pad={}".format(

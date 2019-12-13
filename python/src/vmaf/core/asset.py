@@ -695,13 +695,6 @@ class Asset(WorkdirEnabled):
             return None
 
     @property
-    def pad_cmd(self):
-        if 'pad_cmd' in self.asset_dict:
-            return self.asset_dict['pad_cmd']
-        else:
-            return None
-
-    @property
     def ref_crop_cmd(self):
         if 'ref_crop_cmd' in self.asset_dict:
             return self.asset_dict['ref_crop_cmd']
@@ -716,6 +709,13 @@ class Asset(WorkdirEnabled):
             return self.asset_dict['dis_crop_cmd']
         elif 'crop_cmd' in self.asset_dict:
             return self.asset_dict['crop_cmd']
+        else:
+            return None
+
+    @property
+    def pad_cmd(self):
+        if 'pad_cmd' in self.asset_dict:
+            return self.asset_dict['pad_cmd']
         else:
             return None
 
