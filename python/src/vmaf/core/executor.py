@@ -159,7 +159,7 @@ class Executor(TypeVersionEnabled):
                or asset.quality_width_height != asset.dis_width_height \
                or asset.ref_crop_cmd is not None or asset.dis_crop_cmd is not None \
                or asset.ref_pad_cmd is not None or asset.dis_pad_cmd is not None \
-               or asset.ref_gblur_cmd is not None or asset.dis_gblur_cmd is not None \
+               or asset.get_filter_cmd('gblur', 'ref') is not None or asset.get_filter_cmd('gblur', 'dis') is not None \
                or asset.ref_yuv_type == 'notyuv' or asset.dis_yuv_type == 'notyuv' \
                or asset.ref_start_end_frame is not None or asset.dis_start_end_frame is not None
 
@@ -540,12 +540,12 @@ class Executor(TypeVersionEnabled):
 
     def _get_ref_gblur_cmd(self, asset):
         gblur_cmd = "gblur={}".format(
-            asset.ref_gblur_cmd) if asset.ref_gblur_cmd is not None else ""
+            asset.get_filter_cmd('gblur', 'ref')) if asset.get_filter_cmd('gblur', 'ref') is not None else ""
         return gblur_cmd
 
     def _get_dis_gblur_cmd(self, asset):
         gblur_cmd = "gblur={}".format(
-            asset.dis_gblur_cmd) if asset.dis_gblur_cmd is not None else ""
+            asset.get_filter_cmd('gblur', 'dis')) if asset.get_filter_cmd('gblur', 'dis') is not None else ""
         return gblur_cmd
 
     def _get_vframes_cmd(self, asset, ref_or_dis):
@@ -672,7 +672,7 @@ class NorefExecutorMixin(object):
         return asset.quality_width_height != asset.dis_width_height \
                or asset.dis_crop_cmd is not None \
                or asset.dis_pad_cmd is not None \
-               or asset.dis_gblur_cmd is not None \
+               or asset.get_filter_cmd('gblur', 'dis') is not None \
                or asset.dis_yuv_type == 'notyuv' \
                or asset.dis_start_end_frame is not None
 
