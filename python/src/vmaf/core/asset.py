@@ -38,7 +38,7 @@ class Asset(WorkdirEnabled):
     SUPPORTED_RESAMPLING_TYPES = ['bilinear', 'bicubic', 'lanczos']
     DEFAULT_RESAMPLING_TYPE = 'bicubic'
 
-    SUPPORTED_FILTER_TYPES = ['crop', 'pad', 'gblur']
+    ORDERED_FILTER_LIST = ['crop', 'pad', 'gblur']
 
     # ==== constructor ====
 
@@ -400,20 +400,11 @@ class Asset(WorkdirEnabled):
             start, end = self.ref_start_end_frame
             s += "_{start}to{end}".format(start=start, end=end)
 
-        if self.ref_crop_cmd is not None:
-            if s != "":
-                s += "_"
-            s += "crop{}".format(self.ref_crop_cmd)
-
-        if self.ref_pad_cmd is not None:
-            if s != "":
-                s += "_"
-            s += "pad{}".format(self.ref_pad_cmd)
-
-        if self.get_filter_cmd('gblur', 'ref') is not None:
-            if s != "":
-                s += "_"
-            s += "gblur{}".format(self.get_filter_cmd('gblur', 'ref'))
+        for key in self.ORDERED_FILTER_LIST:
+            if self.get_filter_cmd(key, 'ref') is not None:
+                if s != "":
+                    s += "_"
+                s += "{}{}".format(key, self.get_filter_cmd(key, 'ref'))
 
         return s
 
@@ -439,20 +430,11 @@ class Asset(WorkdirEnabled):
             start, end = self.dis_start_end_frame
             s += "_{start}to{end}".format(start=start, end=end)
 
-        if self.dis_crop_cmd is not None:
-            if s != "":
-                s += "_"
-            s += "crop{}".format(self.dis_crop_cmd)
-
-        if self.dis_pad_cmd is not None:
-            if s != "":
-                s += "_"
-            s += "pad{}".format(self.dis_pad_cmd)
-
-        if self.get_filter_cmd('gblur', 'dis') is not None:
-            if s != "":
-                s += "_"
-            s += "gblur{}".format(self.get_filter_cmd('gblur', 'dis'))
+        for key in self.ORDERED_FILTER_LIST:
+            if self.get_filter_cmd(key, 'dis') is not None:
+                if s != "":
+                    s += "_"
+                s += "{}{}".format(key, self.get_filter_cmd(key, 'dis'))
 
         return s
 
@@ -714,7 +696,7 @@ class Asset(WorkdirEnabled):
         return self.get_filter_cmd('pad', 'dis')
 
     def get_filter_cmd(self, key, target=None):
-        assert key in self.SUPPORTED_FILTER_TYPES, 'key {key} is not in SUPPORTED_FILTER_TYPES'.format(key=key)
+        assert key in self.ORDERED_FILTER_LIST, 'key {key} is not in SUPPORTED_FILTER_TYPES'.format(key=key)
         assert target == 'ref' or target == 'dis' or target is None, \
             'target is {}, which is not supported'.format(target)
         if target is None:
