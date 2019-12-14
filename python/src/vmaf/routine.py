@@ -43,6 +43,9 @@ def read_dataset(dataset, **kwargs):
     pad_cmd = dataset.pad_cmd if hasattr(dataset, 'pad_cmd') else None
     workfile_yuv_type = dataset.workfile_yuv_type if hasattr(dataset, 'workfile_yuv_type') else None
     duration_sec = dataset.duration_sec if hasattr(dataset, 'duration_sec') else None
+    fps = dataset.fps if hasattr(dataset, 'fps') else None
+    start_frame = dataset.start_frame if hasattr(dataset, 'start_frame') else None
+    end_frame = dataset.end_frame if hasattr(dataset, 'end_frame') else None
 
     ref_dict = {} # dictionary of content_id -> path for ref videos
     for ref_video in ref_videos:
@@ -72,11 +75,6 @@ def read_dataset(dataset, **kwargs):
             groundtruth_std = dis_video['groundtruth_std']
         else:
             groundtruth_std = None
-
-        if 'fps' in dis_video:
-            fps = dis_video['fps']
-        else:
-            fps = None
 
         if 'rebuf_indices' in dis_video:
             rebuf_indices = dis_video['rebuf_indices']
@@ -146,6 +144,27 @@ def read_dataset(dataset, **kwargs):
         else:
             duration_sec_ = None
 
+        if fps is not None:
+            fps_ = fps
+        elif 'fps' in dis_video:
+            fps_ = dis_video['fps']
+        else:
+            fps_ = None
+
+        if start_frame is not None:
+            start_frame_ = start_frame
+        elif 'start_frame' in dis_video:
+            start_frame_ = dis_video['start_frame']
+        else:
+            start_frame_ = None
+
+        if end_frame is not None:
+            end_frame_ = end_frame
+        elif 'end_frame' in dis_video:
+            end_frame_ = dis_video['end_frame']
+        else:
+            end_frame_ = None
+
         asset_dict = {'ref_yuv_type': ref_yuv_fmt_, 'dis_yuv_type': dis_yuv_fmt_}
         if width_ is not None:
             if asset_dict['ref_yuv_type'] != 'notyuv':
@@ -177,10 +196,14 @@ def read_dataset(dataset, **kwargs):
             asset_dict['duration_sec'] = duration_sec_
         if workfile_yuv_type is not None:
             asset_dict['workfile_yuv_type'] = workfile_yuv_type
-        if fps is not None:
-            asset_dict['fps'] = fps
         if rebuf_indices is not None:
             asset_dict['rebuf_indices'] = rebuf_indices
+        if fps_ is not None:
+            asset_dict['fps'] = fps_
+        if start_frame_ is not None:
+            asset_dict['start_frame'] = start_frame_
+        if end_frame_ is not None:
+            asset_dict['end_frame'] = end_frame_
 
         if groundtruth is None and skip_asset_with_none_groundtruth:
             pass
