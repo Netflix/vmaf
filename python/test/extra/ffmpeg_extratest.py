@@ -149,3 +149,25 @@ class QualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
         self.assertAlmostEqual(results[0]['VMAF_score'], 77.28044458354246, places=4)
+
+    def test_run_vmaf_runner_with_yuv_lutyuv(self):
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 576, 'height': 324,
+                                  'quality_width': 360, 'quality_height': 240,
+                                  'lutyuv_cmd': 'y=2*val',
+                                  })
+        self.runner = VmafQualityRunner(
+            [asset],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            result_store=None
+        )
+        self.runner.run()
+
+        results = self.runner.results
+        self.assertAlmostEqual(results[0]['VMAF_score'], 78.06249411099073, places=4)

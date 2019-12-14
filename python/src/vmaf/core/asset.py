@@ -38,6 +38,8 @@ class Asset(WorkdirEnabled):
     SUPPORTED_RESAMPLING_TYPES = ['bilinear', 'bicubic', 'lanczos']
     DEFAULT_RESAMPLING_TYPE = 'bicubic'
 
+    ORDERED_FILTER_LIST = ['crop', 'pad', 'gblur', 'lutyuv']
+
     # ==== constructor ====
 
     def __init__(self, dataset, content_id, asset_id,
@@ -398,20 +400,11 @@ class Asset(WorkdirEnabled):
             start, end = self.ref_start_end_frame
             s += "_{start}to{end}".format(start=start, end=end)
 
-        if self.ref_crop_cmd is not None:
-            if s != "":
-                s += "_"
-            s += "crop{}".format(self.ref_crop_cmd)
-
-        if self.ref_pad_cmd is not None:
-            if s != "":
-                s += "_"
-            s += "pad{}".format(self.ref_pad_cmd)
-
-        if self.ref_gblur_cmd is not None:
-            if s != "":
-                s += "_"
-            s += "gblur{}".format(self.ref_gblur_cmd)
+        for key in self.ORDERED_FILTER_LIST:
+            if self.get_filter_cmd(key, 'ref') is not None:
+                if s != "":
+                    s += "_"
+                s += "{}{}".format(key, self.get_filter_cmd(key, 'ref'))
 
         return s
 
@@ -437,20 +430,11 @@ class Asset(WorkdirEnabled):
             start, end = self.dis_start_end_frame
             s += "_{start}to{end}".format(start=start, end=end)
 
-        if self.dis_crop_cmd is not None:
-            if s != "":
-                s += "_"
-            s += "crop{}".format(self.dis_crop_cmd)
-
-        if self.dis_pad_cmd is not None:
-            if s != "":
-                s += "_"
-            s += "pad{}".format(self.dis_pad_cmd)
-
-        if self.dis_gblur_cmd is not None:
-            if s != "":
-                s += "_"
-            s += "gblur{}".format(self.dis_gblur_cmd)
+        for key in self.ORDERED_FILTER_LIST:
+            if self.get_filter_cmd(key, 'dis') is not None:
+                if s != "":
+                    s += "_"
+                s += "{}{}".format(key, self.get_filter_cmd(key, 'dis'))
 
         return s
 
@@ -689,78 +673,49 @@ class Asset(WorkdirEnabled):
 
     @property
     def crop_cmd(self):
-        if 'crop_cmd' in self.asset_dict:
-            return self.asset_dict['crop_cmd']
-        else:
-            return None
-
-    @property
-    def pad_cmd(self):
-        if 'pad_cmd' in self.asset_dict:
-            return self.asset_dict['pad_cmd']
-        else:
-            return None
+        return self.get_filter_cmd('crop', None)
 
     @property
     def ref_crop_cmd(self):
-        if 'ref_crop_cmd' in self.asset_dict:
-            return self.asset_dict['ref_crop_cmd']
-        elif 'crop_cmd' in self.asset_dict:
-            return self.asset_dict['crop_cmd']
-        else:
-            return None
+        return self.get_filter_cmd('crop', 'ref')
 
     @property
     def dis_crop_cmd(self):
-        if 'dis_crop_cmd' in self.asset_dict:
-            return self.asset_dict['dis_crop_cmd']
-        elif 'crop_cmd' in self.asset_dict:
-            return self.asset_dict['crop_cmd']
-        else:
-            return None
+        return self.get_filter_cmd('crop', 'dis')
+
+    @property
+    def pad_cmd(self):
+        return self.get_filter_cmd('pad', None)
 
     @property
     def ref_pad_cmd(self):
-        if 'ref_pad_cmd' in self.asset_dict:
-            return self.asset_dict['ref_pad_cmd']
-        elif 'pad_cmd' in self.asset_dict:
-            return self.asset_dict['pad_cmd']
-        else:
-            return None
+        return self.get_filter_cmd('pad', 'ref')
 
     @property
     def dis_pad_cmd(self):
-        if 'dis_pad_cmd' in self.asset_dict:
-            return self.asset_dict['dis_pad_cmd']
-        elif 'pad_cmd' in self.asset_dict:
-            return self.asset_dict['pad_cmd']
-        else:
-            return None
+        return self.get_filter_cmd('pad', 'dis')
 
-    @property
-    def gblur_cmd(self):
-        if 'gblur_cmd' in self.asset_dict:
-            return self.asset_dict['gblur_cmd']
+    def get_filter_cmd(self, key, target=None):
+        assert key in self.ORDERED_FILTER_LIST, 'key {key} is not in SUPPORTED_FILTER_TYPES'.format(key=key)
+        assert target == 'ref' or target == 'dis' or target is None, \
+            'target is {}, which is not supported'.format(target)
+        if target is None:
+            cmd = key + '_cmd'
+            if cmd in self.asset_dict:
+                return self.asset_dict[cmd]
+            else:
+                return None
+        if target == 'ref' or target == 'dis':
+            cmd = target + '_' + key + '_cmd'
+            cmd2 = key + '_cmd'
+            if cmd in self.asset_dict:
+                return self.asset_dict[cmd]
+            elif cmd2 in self.asset_dict:
+                return self.asset_dict[cmd2]
+            else:
+                return None
         else:
-            return None
-
-    @property
-    def ref_gblur_cmd(self):
-        if 'ref_gblur_cmd' in self.asset_dict:
-            return self.asset_dict['ref_gblur_cmd']
-        elif 'gblur_cmd' in self.asset_dict:
-            return self.asset_dict['gblur_cmd']
-        else:
-            return None
-
-    @property
-    def dis_gblur_cmd(self):
-        if 'dis_gblur_cmd' in self.asset_dict:
-            return self.asset_dict['dis_gblur_cmd']
-        elif 'gblur_cmd' in self.asset_dict:
-            return self.asset_dict['gblur_cmd']
-        else:
-            return None
+            assert False
 
 
 class NorefAsset(Asset):
