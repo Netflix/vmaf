@@ -4,6 +4,7 @@ import os
 from time import sleep
 import hashlib
 
+from vmaf.core.asset import Asset
 from vmaf.tools.decorator import deprecated
 
 from vmaf.tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_slash, \
@@ -155,13 +156,14 @@ class Executor(TypeVersionEnabled):
         # 2) if crop/pad/etc. is needed, need ffmpeg
         # 3) if ref/dis videos' start/end frames specified, need ffmpeg for
         # frame extraction
-        return asset.quality_width_height != asset.ref_width_height \
+        ret = asset.quality_width_height != asset.ref_width_height \
                or asset.quality_width_height != asset.dis_width_height \
-               or asset.ref_crop_cmd is not None or asset.dis_crop_cmd is not None \
-               or asset.ref_pad_cmd is not None or asset.dis_pad_cmd is not None \
-               or asset.get_filter_cmd('gblur', 'ref') is not None or asset.get_filter_cmd('gblur', 'dis') is not None \
                or asset.ref_yuv_type == 'notyuv' or asset.dis_yuv_type == 'notyuv' \
                or asset.ref_start_end_frame is not None or asset.dis_start_end_frame is not None
+        for key in Asset.ORDERED_FILTER_LIST:
+            ret = ret or asset.get_filter_cmd(key, 'ref') is not None or asset.get_filter_cmd(key, 'dis') is not None
+
+        return ret
 
     @classmethod
     def _assert_an_asset(cls, asset):
@@ -405,13 +407,11 @@ class Executor(TypeVersionEnabled):
 
         workfile_yuv_type = self._get_workfile_yuv_type(asset)
 
+        vframes_cmd, select_cmd = self._get_vframes_cmd(asset, 'ref')
         crop_cmd = self._get_ref_crop_cmd(asset)
         pad_cmd = self._get_ref_pad_cmd(asset)
-        gblur_cmd = self._get_ref_gblur_cmd(asset)
-
-        vframes_cmd, select_cmd = self._get_vframes_cmd(asset, 'ref')
-
         scale_cmd = 'scale={width}x{height}'.format(width=quality_width, height=quality_height)
+        gblur_cmd = self._get_ref_gblur_cmd(asset)
 
         vf_cmd = ','.join(filter(lambda s: s!='', [select_cmd, crop_cmd, pad_cmd, scale_cmd, gblur_cmd]))
 
@@ -458,13 +458,11 @@ class Executor(TypeVersionEnabled):
 
         workfile_yuv_type = self._get_workfile_yuv_type(asset)
 
+        vframes_cmd, select_cmd = self._get_vframes_cmd(asset, 'dis')
         crop_cmd = self._get_dis_crop_cmd(asset)
         pad_cmd = self._get_dis_pad_cmd(asset)
-        gblur_cmd = self._get_dis_gblur_cmd(asset)
-
-        vframes_cmd, select_cmd = self._get_vframes_cmd(asset, 'dis')
-
         scale_cmd = 'scale={width}x{height}'.format(width=quality_width, height=quality_height)
+        gblur_cmd = self._get_dis_gblur_cmd(asset)
 
         vf_cmd = ','.join(filter(lambda s: s!='', [select_cmd, crop_cmd, pad_cmd, scale_cmd, gblur_cmd]))
 
@@ -518,35 +516,34 @@ class Executor(TypeVersionEnabled):
         else:
             return ""
 
-    def _get_ref_crop_cmd(self, asset):
-        crop_cmd = "crop={}".format(
-            asset.ref_crop_cmd) if asset.ref_crop_cmd is not None else ""
-        return crop_cmd
+    @staticmethod
+    def _get_filter_cmd(asset, key, target):
+        return "{}={}".format(key, asset.get_filter_cmd(key, target)) \
+            if asset.get_filter_cmd(key, target) is not None else ""
 
-    def _get_dis_crop_cmd(self, asset):
-        crop_cmd = "crop={}".format(
-            asset.dis_crop_cmd) if asset.dis_crop_cmd is not None else ""
-        return crop_cmd
+    @classmethod
+    def _get_ref_crop_cmd(cls, asset):
+        return cls._get_filter_cmd(asset, 'crop', 'ref')
 
-    def _get_ref_pad_cmd(self, asset):
-        pad_cmd = "pad={}".format(
-            asset.ref_pad_cmd) if asset.ref_pad_cmd is not None else ""
-        return pad_cmd
+    @classmethod
+    def _get_dis_crop_cmd(cls, asset):
+        return cls._get_filter_cmd(asset, 'crop', 'dis')
 
-    def _get_dis_pad_cmd(self, asset):
-        pad_cmd = "pad={}".format(
-            asset.dis_pad_cmd) if asset.dis_pad_cmd is not None else ""
-        return pad_cmd
+    @classmethod
+    def _get_ref_pad_cmd(cls, asset):
+        return cls._get_filter_cmd(asset, 'pad', 'ref')
 
-    def _get_ref_gblur_cmd(self, asset):
-        gblur_cmd = "gblur={}".format(
-            asset.get_filter_cmd('gblur', 'ref')) if asset.get_filter_cmd('gblur', 'ref') is not None else ""
-        return gblur_cmd
+    @classmethod
+    def _get_dis_pad_cmd(cls, asset):
+        return cls._get_filter_cmd(asset, 'pad', 'dis')
 
-    def _get_dis_gblur_cmd(self, asset):
-        gblur_cmd = "gblur={}".format(
-            asset.get_filter_cmd('gblur', 'dis')) if asset.get_filter_cmd('gblur', 'dis') is not None else ""
-        return gblur_cmd
+    @classmethod
+    def _get_ref_gblur_cmd(cls, asset):
+        return cls._get_filter_cmd(asset, 'gblur', 'ref')
+
+    @classmethod
+    def _get_dis_gblur_cmd(cls, asset):
+        return cls._get_filter_cmd(asset, 'gblur', 'dis')
 
     def _get_vframes_cmd(self, asset, ref_or_dis):
         if ref_or_dis == 'ref':
