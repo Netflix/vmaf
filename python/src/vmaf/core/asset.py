@@ -38,7 +38,7 @@ class Asset(WorkdirEnabled):
     SUPPORTED_RESAMPLING_TYPES = ['bilinear', 'bicubic', 'lanczos']
     DEFAULT_RESAMPLING_TYPE = 'bicubic'
 
-    ORDERED_FILTER_LIST = ['crop', 'pad', 'gblur']
+    ORDERED_FILTER_LIST = ['crop', 'pad', 'gblur', 'lutyuv']
 
     # ==== constructor ====
 
