@@ -408,12 +408,16 @@ class Executor(TypeVersionEnabled):
         workfile_yuv_type = self._get_workfile_yuv_type(asset)
 
         vframes_cmd, select_cmd = self._get_vframes_cmd(asset, 'ref')
-        crop_cmd = self._get_ref_crop_cmd(asset)
-        pad_cmd = self._get_ref_pad_cmd(asset)
+        crop_cmd = self._get_filter_cmd(asset, 'crop', 'ref')
+        pad_cmd = self._get_filter_cmd(asset, 'pad', 'ref')
         scale_cmd = 'scale={width}x{height}'.format(width=quality_width, height=quality_height)
-        gblur_cmd = self._get_ref_gblur_cmd(asset)
 
-        vf_cmd = ','.join(filter(lambda s: s!='', [select_cmd, crop_cmd, pad_cmd, scale_cmd, gblur_cmd]))
+        filter_cmds = []
+        for key in Asset.ORDERED_FILTER_LIST:
+            if key is not 'crop' and key is not 'pad':
+                filter_cmds.append(self._get_filter_cmd(asset, key, 'ref'))
+
+        vf_cmd = ','.join(filter(lambda s: s!='', [select_cmd, crop_cmd, pad_cmd, scale_cmd] + filter_cmds))
 
         ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
                      '-pix_fmt {yuv_type} {vframes_cmd} -vf {vf_cmd} -f rawvideo ' \
@@ -459,12 +463,16 @@ class Executor(TypeVersionEnabled):
         workfile_yuv_type = self._get_workfile_yuv_type(asset)
 
         vframes_cmd, select_cmd = self._get_vframes_cmd(asset, 'dis')
-        crop_cmd = self._get_dis_crop_cmd(asset)
-        pad_cmd = self._get_dis_pad_cmd(asset)
+        crop_cmd = self._get_filter_cmd(asset, 'crop', 'dis')
+        pad_cmd = self._get_filter_cmd(asset, 'pad', 'dis')
         scale_cmd = 'scale={width}x{height}'.format(width=quality_width, height=quality_height)
-        gblur_cmd = self._get_dis_gblur_cmd(asset)
 
-        vf_cmd = ','.join(filter(lambda s: s!='', [select_cmd, crop_cmd, pad_cmd, scale_cmd, gblur_cmd]))
+        filter_cmds = []
+        for key in Asset.ORDERED_FILTER_LIST:
+            if key is not 'crop' and key is not 'pad':
+                filter_cmds.append(self._get_filter_cmd(asset, key, 'dis'))
+
+        vf_cmd = ','.join(filter(lambda s: s!='', [select_cmd, crop_cmd, pad_cmd, scale_cmd] + filter_cmds))
 
         ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
                      '-pix_fmt {yuv_type} {vframes_cmd} -vf {vf_cmd} -f rawvideo ' \
@@ -502,13 +510,13 @@ class Executor(TypeVersionEnabled):
         return yuv_src_fmt_cmd
 
     @staticmethod
-    def _get_notyuv_src_fmt_cmd(asset, ref_or_dis):
-        if ref_or_dis == 'ref':
+    def _get_notyuv_src_fmt_cmd(asset, target):
+        if target == 'ref':
             path = asset.ref_path
-        elif ref_or_dis == 'dis':
+        elif target == 'dis':
             path = asset.dis_path
         else:
-            assert False, 'ref_or_dis cannot be {}'.format(ref_or_dis)
+            assert False, 'target cannot be {}'.format(target)
 
         if 'icpf' == get_file_name_extension(path) or 'j2c' == get_file_name_extension(path) or 'j2k' == get_file_name_extension(path):
             # 2147483647 is INT_MAX if int is 4 bytes
@@ -520,30 +528,6 @@ class Executor(TypeVersionEnabled):
     def _get_filter_cmd(asset, key, target):
         return "{}={}".format(key, asset.get_filter_cmd(key, target)) \
             if asset.get_filter_cmd(key, target) is not None else ""
-
-    @classmethod
-    def _get_ref_crop_cmd(cls, asset):
-        return cls._get_filter_cmd(asset, 'crop', 'ref')
-
-    @classmethod
-    def _get_dis_crop_cmd(cls, asset):
-        return cls._get_filter_cmd(asset, 'crop', 'dis')
-
-    @classmethod
-    def _get_ref_pad_cmd(cls, asset):
-        return cls._get_filter_cmd(asset, 'pad', 'ref')
-
-    @classmethod
-    def _get_dis_pad_cmd(cls, asset):
-        return cls._get_filter_cmd(asset, 'pad', 'dis')
-
-    @classmethod
-    def _get_ref_gblur_cmd(cls, asset):
-        return cls._get_filter_cmd(asset, 'gblur', 'ref')
-
-    @classmethod
-    def _get_dis_gblur_cmd(cls, asset):
-        return cls._get_filter_cmd(asset, 'gblur', 'dis')
 
     def _get_vframes_cmd(self, asset, ref_or_dis):
         if ref_or_dis == 'ref':
@@ -666,12 +650,13 @@ class NorefExecutorMixin(object):
         # 2) if crop/pad/etc. is need, need ffmpeg
         # 3) if dis videos' start/end frames specified, need ffmpeg for
         # frame extraction
-        return asset.quality_width_height != asset.dis_width_height \
-               or asset.dis_crop_cmd is not None \
-               or asset.dis_pad_cmd is not None \
-               or asset.get_filter_cmd('gblur', 'dis') is not None \
+        ret = asset.quality_width_height != asset.dis_width_height \
                or asset.dis_yuv_type == 'notyuv' \
                or asset.dis_start_end_frame is not None
+        for key in Asset.ORDERED_FILTER_LIST:
+            ret = ret or asset.get_filter_cmd(key, 'dis') is not None
+
+        return ret
 
     @classmethod
     def _assert_an_asset(cls, asset):
