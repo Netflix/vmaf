@@ -169,44 +169,6 @@ class TestReadDataset(unittest.TestCase):
         self.assertEqual(assets[3].ref_width_height, (720, 480))
         self.assertEqual(assets[3].dis_width_height, None)
 
-    def test_read_dataset_start_end_frame_crop(self):
-        dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset.py')
-        dataset = import_python_file(dataset_path)
-        assets = read_dataset(dataset)
-
-        self.assertEqual(len(assets), 3)
-
-        self.assertEqual(assets[0].resampling_type, 'bicubic')
-        self.assertEqual(assets[0].ref_yuv_type, 'notyuv')
-        self.assertEqual(assets[0].dis_yuv_type, 'notyuv')
-        self.assertEqual(assets[0].ref_width_height, None)
-        self.assertEqual(assets[0].dis_width_height, None)
-        self.assertEqual(assets[0].ref_start_end_frame, (200, 210))
-        self.assertEqual(assets[0].dis_start_end_frame, (200, 210))
-        self.assertEqual(assets[0].ref_crop_cmd, '1280:1920:0:0')
-        self.assertEqual(assets[0].dis_crop_cmd, '1280:1920:0:0')
-        self.assertEqual(assets[1].ref_start_end_frame, (200, 210))
-        self.assertEqual(assets[1].dis_start_end_frame, (200, 210))
-
-    def test_read_dataset_fps_duration_sec(self):
-        dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset2.py')
-        dataset = import_python_file(dataset_path)
-        assets = read_dataset(dataset)
-
-        self.assertEqual(len(assets), 3)
-
-        self.assertEqual(assets[0].resampling_type, 'bicubic')
-        self.assertEqual(assets[0].ref_yuv_type, 'notyuv')
-        self.assertEqual(assets[0].dis_yuv_type, 'notyuv')
-        self.assertEqual(assets[0].ref_width_height, None)
-        self.assertEqual(assets[0].dis_width_height, None)
-        self.assertEqual(assets[0].ref_start_end_frame, (0, 9))
-        self.assertEqual(assets[0].dis_start_end_frame, (0, 9))
-        self.assertEqual(assets[0].ref_crop_cmd, '1280:1920:0:0')
-        self.assertEqual(assets[0].dis_crop_cmd, '1280:1920:0:0')
-        self.assertEqual(assets[1].ref_start_end_frame, (100, 110))
-        self.assertEqual(assets[1].dis_start_end_frame, (100, 110))
-
 
 class TestTrainOnDataset(unittest.TestCase):
 
