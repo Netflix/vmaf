@@ -25,7 +25,7 @@ int disable_avx, int enable_transform, int phone_model, int do_psnr, int do_ssim
 int do_ms_ssim, char *pool_method, int thread, int subsample, int enable_conf_interval);
 ```
 
-Here, `read_frame` is a callback function which can be used to pass data from a program to VMAF. `user_data` is a program specific data that can be used by the callback function. For sample usage of `compute_vmaf`, refer to [`src/libvmaf/src/main.cpp`](../../libvmaf/src/main.cpp).
+Here, `read_frame` is a callback function which can be used to pass data from a program to VMAF. `user_data` is a program specific data that can be used by the callback function. For sample usage of `compute_vmaf`, refer to [`libvmaf/tools/main.cpp`](../../libvmaf/tools/main.cpp).
 
 To test the library, run:
 
@@ -33,7 +33,7 @@ To test the library, run:
 make testlib
 ```
 
-This command will build an executable `testlib` using this library together with [`src/libvmaf/src/main.cpp`](../../libvmaf/src/main.cpp).
+This command will build an executable `testlib` using this library together with [`libvmaf/tools/main.cpp`](../../libvmaf/tools/main.cpp).
 
 To uninstall the library run:
 
