@@ -21,7 +21,7 @@ typedef struct {
     double slope, intercept;
 } VmafModelFeature;
 
-typedef struct {
+typedef struct VmafModel {
     char *path;
     enum VmafModelType type;
     VmafModelFeature *feature;
