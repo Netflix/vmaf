@@ -21,6 +21,7 @@ def read_dataset(dataset, **kwargs):
     skip_asset_with_none_groundtruth = kwargs['skip_asset_with_none_groundtruth'] \
         if 'skip_asset_with_none_groundtruth' in kwargs else False
     content_ids = kwargs['content_ids'] if 'content_ids' in kwargs else None
+    asset_ids = kwargs['asset_ids'] if 'asset_ids' in kwargs else None
 
     # asserts, can add more to the list...
     assert hasattr(dataset, 'dataset_name')
@@ -56,6 +57,9 @@ def read_dataset(dataset, **kwargs):
     for dis_video in dis_videos:
 
         if content_ids is not None and dis_video['content_id'] not in content_ids:
+            continue
+
+        if asset_ids is not None and dis_video['asset_id'] not in asset_ids:
             continue
 
         if groundtruth_key is not None:
