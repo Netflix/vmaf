@@ -32,7 +32,14 @@ test_predict = executable('test_predict',
     dependencies : thread_lib,
 )
 
+test_feature_extractor = executable('test_feature_extractor',
+    ['test.c', 'test_feature_extractor.c',
+     '../src/feature/feature_extractor.c'],
+    include_directories : [libvmaf_inc, test_inc, '../src/'],
+)
+
 test('test_picture', test_picture)
 test('test_feature_collector', test_feature_collector)
 test('test_model', test_model)
 test('test_predict', test_predict)
+test('test_feature_extractor', test_feature_extractor)
