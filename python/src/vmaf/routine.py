@@ -20,6 +20,7 @@ def read_dataset(dataset, **kwargs):
     groundtruth_key = kwargs['groundtruth_key'] if 'groundtruth_key' in kwargs else None
     skip_asset_with_none_groundtruth = kwargs['skip_asset_with_none_groundtruth'] \
         if 'skip_asset_with_none_groundtruth' in kwargs else False
+    content_ids = kwargs['content_ids'] if 'content_ids' in kwargs else None
 
     # asserts, can add more to the list...
     assert hasattr(dataset, 'dataset_name')
@@ -53,6 +54,9 @@ def read_dataset(dataset, **kwargs):
 
     assets = []
     for dis_video in dis_videos:
+
+        if content_ids is not None and dis_video['content_id'] not in content_ids:
+            continue
 
         if groundtruth_key is not None:
             groundtruth = dis_video[groundtruth_key]
@@ -90,15 +94,25 @@ def read_dataset(dataset, **kwargs):
 
         if width is not None:
             width_ = width
-        elif 'width' in ref_video:
-            width_ = ref_video['width'] # NOTE: width in ref_video not dis_video
+        elif 'width' in ref_video and 'width' not in dis_video:
+            width_ = ref_video['width']
+        elif 'width' in dis_video and 'width' not in ref_video:
+            width_ = dis_video['width']
+        elif 'width' in ref_video and 'width' in dis_video:
+            assert ref_video['width'] == dis_video['width']
+            width_ = ref_video['width']
         else:
             width_ = None
 
         if height is not None:
             height_ = height
-        elif 'height' in ref_video:
-            height_ = ref_video['height']  # NOTE: height in ref_video not dis_video
+        elif 'height' in ref_video and 'height' not in dis_video:
+            height_ = ref_video['height']
+        elif 'height' in dis_video and 'height' not in ref_video:
+            height_ = dis_video['height']
+        elif 'height' in ref_video and 'height' in dis_video:
+            assert ref_video['height'] == dis_video['height']
+            height_ = ref_video['height']
         else:
             height_ = None
 
