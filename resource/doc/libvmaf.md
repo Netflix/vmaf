@@ -95,3 +95,17 @@ If we want to store the results in an XML file with a given name (e.g. under `/f
 ffmpeg -i main.mpg -i ref.mpg -filter_complex \
 "[0:v]scale=1920x1080:flags=bicubic,setpts=PTS-STARTPTS[main];[1:v]setpts=PTS-STARTPTS[ref];[main][ref]libvmaf='log_path=/foo/bar/baz/results.xml:model_path=/foo/bar/baz.pkl'" -an -f null -
 ```
+
+If we want to enable the calculation of an additional metric, like SSIM:
+
+```
+ffmpeg -i main.mpg -i ref.mpg -filter_complex \
+"[0:v]scale=1920x1080:flags=bicubic,setpts=PTS-STARTPTS[main];[1:v]setpts=PTS-STARTPTS[ref];[main][ref]libvmaf='ssim=1:model_path=/foo/bar/baz.pkl'" -an -f null -
+```
+
+If we want use a single thread:
+
+```
+ffmpeg -i main.mpg -i ref.mpg -filter_complex \
+"[0:v]scale=1920x1080:flags=bicubic,setpts=PTS-STARTPTS[main];[1:v]setpts=PTS-STARTPTS[ref];[main][ref]libvmaf='n_threads=1:ssim=1:model_path=/foo/bar/baz.pkl'" -an -f null -
+```
