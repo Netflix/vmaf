@@ -174,6 +174,8 @@ class TestReadDataset(unittest.TestCase):
         dataset = import_python_file(dataset_path)
         assets = read_dataset(dataset)
 
+        assets[0].asset_dict['ref_crop_cmd'] = '1280:1920:0:0'
+
         self.assertEqual(len(assets), 3)
 
         self.assertEqual(assets[0].resampling_type, 'bicubic')
@@ -192,6 +194,8 @@ class TestReadDataset(unittest.TestCase):
         dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset2.py')
         dataset = import_python_file(dataset_path)
         assets = read_dataset(dataset)
+
+        assets[0].asset_dict['ref_crop_cmd'] = '1280:1920:0:0'
 
         self.assertEqual(len(assets), 3)
 
