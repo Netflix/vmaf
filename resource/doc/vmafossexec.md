@@ -1,18 +1,14 @@
 `vmafossexec` -- a C++ Executable
 ===================
 
-The VDK package combines feature extraction implementation in C and the rest scripting code in Python. The Python layer allows fast prototyping, but sometimes deploying the Python dependency in production is a pain. Under [`src/libvmaf`](../../src/libvmaf), we provide a C++ executable `vmafossexec` that has no dependency on Python.
+The VDK package combines feature extraction implementation in C and the rest scripting code in Python. The Python layer allows fast prototyping, but sometimes deploying the Python dependency in production is a pain. Under [`libvmaf`](../../libvmaf), we provide a C++ executable `vmafossexec` that has no dependency on Python.
 
-To build `vmafossexec`, make the `ptools` library first, followed by the executable itself:
+To build `vmafossexec`, follow the instrunctions to build [libvmaf](../../libvmaf/README.md#compile).
 
-```
-cd src/ptools; make; cd ../../src/libvmaf; make; cd ../..;
-```
-
-Under root, run `vmafossexec` as:
+You will find `vmafossexec` in `libvmaf/build/tools/vmafossexec`, run `vmafossexec` as:
 
 ```
-src/libvmaf/vmafossexec yuv420p 576 324 \
+libvmaf/build/tools/vmafossexec yuv420p 576 324 \
   python/test/resource/yuv/src01_hrc00_576x324.yuv \
   python/test/resource/yuv/src01_hrc01_576x324.yuv \
   model/vmaf_v0.6.1.pkl \
