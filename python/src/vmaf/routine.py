@@ -142,18 +142,30 @@ def read_dataset(dataset, **kwargs):
             resampling_type_ = None
 
         if crop_cmd is not None:
-            crop_cmd_ = crop_cmd
-        elif 'crop_cmd' in dis_video:
-            crop_cmd_ = dis_video['crop_cmd']
+            ref_crop_cmd_ = crop_cmd
+            dis_crop_cmd_ = crop_cmd
         else:
-            crop_cmd_ = None
+            if 'crop_cmd' in ref_video:
+                ref_crop_cmd_ = ref_video['crop_cmd']
+            else:
+                ref_crop_cmd_ = None
+            if 'crop_cmd' in dis_video:
+                dis_crop_cmd_ = dis_video['crop_cmd']
+            else:
+                dis_crop_cmd_ = None
 
         if pad_cmd is not None:
-            pad_cmd_ = pad_cmd
-        elif 'pad_cmd' in dis_video:
-            pad_cmd_ = dis_video['pad_cmd']
+            ref_pad_cmd_ = pad_cmd
+            dis_pad_cmd_ = pad_cmd
         else:
-            pad_cmd_ = None
+            if 'pad_cmd' in ref_video:
+                ref_pad_cmd_ = ref_video['pad_cmd']
+            else:
+                ref_pad_cmd_ = None
+            if 'pad_cmd' in dis_video:
+                dis_pad_cmd_ = dis_video['pad_cmd']
+            else:
+                dis_pad_cmd_ = None
 
         if duration_sec is not None:
             duration_sec_ = duration_sec
@@ -206,10 +218,17 @@ def read_dataset(dataset, **kwargs):
             asset_dict['quality_height'] = quality_height_
         if resampling_type_ is not None:
             asset_dict['resampling_type'] = resampling_type_
-        if crop_cmd_ is not None:
-            asset_dict['crop_cmd'] = crop_cmd_
-        if pad_cmd_ is not None:
-            asset_dict['pad_cmd'] = pad_cmd_
+
+        if ref_crop_cmd_ is not None:
+            asset_dict['ref_crop_cmd'] = ref_crop_cmd_
+        if dis_crop_cmd_ is not None:
+            asset_dict['dis_crop_cmd'] = dis_crop_cmd_
+
+        if ref_pad_cmd_ is not None:
+            asset_dict['ref_pad_cmd'] = ref_pad_cmd_
+        if dis_pad_cmd_ is not None:
+            asset_dict['dis_pad_cmd'] = dis_pad_cmd_
+
         if duration_sec_ is not None:
             asset_dict['duration_sec'] = duration_sec_
         if workfile_yuv_type is not None:

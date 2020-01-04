@@ -14,6 +14,11 @@ class TestReadDataset(unittest.TestCase):
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
 
+        train_assets[0].asset_dict['ref_crop_cmd'] = '288:162:144:81'
+        train_assets[1].asset_dict['ref_pad_cmd'] = 'iw+100:ih+100:50:50'
+        train_assets[2].asset_dict['ref_crop_cmd'] = '288:162:144:81'
+        train_assets[2].asset_dict['ref_pad_cmd'] = 'iw+288:ih+162:144:81'
+
         self.assertEqual(len(train_assets), 3)
         self.assertEqual(str(train_assets[0]), "example_0_1_src01_hrc00_576x324_576x324_crop288:162:144:81_vs_src01_hrc01_576x324_576x324_crop288:162:144:81_q_576x324")
         self.assertEqual(str(train_assets[1]), "example_0_2_src01_hrc00_576x324_576x324_padiw+100:ih+100:50:50_vs_src01_hrc01_576x324_576x324_padiw+100:ih+100:50:50_q_576x324")
