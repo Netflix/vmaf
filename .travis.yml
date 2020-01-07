@@ -79,7 +79,7 @@ matrix:
         - tox -c python/ -- -v -p no:warnings -m 'main or lib' --doctest-modules
     - name: libvmaf FFmpeg
       before_script: *base-gcc-script
-      script:
+      script: &python-tox
         - git clone https://github.com/FFmpeg/FFmpeg --branch master --depth=1 ffmpeg && cd ffmpeg
         - "sudo chown -R travis: $HOME/.ccache"
         - CFLAGS="-static" ./configure --enable-libvmaf --enable-version3 || less ffbuild/config.log
