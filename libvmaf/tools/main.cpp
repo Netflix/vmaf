@@ -48,11 +48,12 @@ static bool cmdOptionExists(char** begin, char** end, const std::string& option)
 
 static void print_usage(int argc, char *argv[])
 {
-    fprintf(stderr, "Usage: %s fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--thread n_thread] [--subsample n_subsample] [--disable-clip] [--disable-avx] [--psnr] [--ssim] [--ms-ssim] [--phone-model] [--ci]\n", argv[0]);
+    fprintf(stderr, "Usage: %s fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--thread n_thread] [--subsample n_subsample] [--disable-clip] [--disable-avx] [--psnr] [--ssim] [--ms-ssim] [--phone-model] [--pool pool_method] [--ci]\n", argv[0]);
     fprintf(stderr, "fmt:\n\tyuv420p\n\tyuv422p\n\tyuv444p\n\tyuv420p10le\n\tyuv422p10le\n\tyuv444p10le\n\n");
     fprintf(stderr, "log_fmt:\n\txml (default)\n\tjson\n\tcsv\n\n");
     fprintf(stderr, "n_thread:\n\tmaximum threads to use (default 0 - use all threads)\n\n");
     fprintf(stderr, "n_subsample:\n\tn indicates computing on one of every n frames (default 1)\n\n");
+    fprintf(stderr, "pool_method:\n\tmean (default)\n\tharmonic_mean\n\tmin\n\n");
 }
 
 #if MEM_LEAK_TEST_ENABLE
