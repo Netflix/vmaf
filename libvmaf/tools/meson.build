@@ -8,7 +8,7 @@ vmafossexec = executable(
     include_directories : libvmaf_inc,
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,
-    link_with : libvmaf,
+    link_with : libvmaf.get_static_lib(),
     install : true,
 )
 
