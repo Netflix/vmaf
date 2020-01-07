@@ -1067,6 +1067,7 @@ double RunVmaf(const char* fmt, int width, int height,
         params["subsample"] = n_subsample;
         params["num_bootstrap_models"] = num_bootstrap_models;
         params["bootstrap_model_list_str"] = bootstrap_model_list_str;
+        params["pool"] = pool_method ? pool_method : "mean";
 
         Arr metrics;
         for (size_t j=0; j<result_keys.size(); j++)
