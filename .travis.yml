@@ -78,6 +78,10 @@ matrix:
         - make -C third_party/libsvm -j lib
         - tox -c python/ -- -v -p no:warnings -m 'main or lib' --doctest-modules
     - name: libvmaf FFmpeg
+      cache: &python-cache
+        pip: true
+        directories:
+          - $HOME/.ccache
       before_script: *base-gcc-script
       script: &python-tox
         - git clone https://github.com/FFmpeg/FFmpeg --branch master --depth=1 ffmpeg && cd ffmpeg
