@@ -64,16 +64,14 @@ See the [FFmpeg's guide to libvmaf](https://ffmpeg.org/ffmpeg-filters.html#libvm
 
 ### Use `libvmaf.a` with FFmpeg - More examples
 
-The above command line works well for most cases, but additional steps might be necessary.
+Additional examples can be found as follows:
 
-For example, when the frame rates between reference and encoded video do not match, e.g., when the source is 60 fps and the encode is 30 fps:
+If we want to specify the VMAF model file to be used:
 
 ```
-ffmpeg -r 1 -i main.mpg -r 2 -i ref.mpg -filter_complex \
-"[0:v]scale=1920x1080:flags=bicubic,setpts=PTS-STARTPTS[main];[1:v]select='not(mod(n,2))',setpts=PTS-STARTPTS[ref];[main][ref]libvmaf" -an -f null -
+ffmpeg -i main.mpg -i ref.mpg -filter_complex \
+"[0:v]scale=1920x1080:flags=bicubic,setpts=PTS-STARTPTS[main];[1:v]setpts=PTS-STARTPTS[ref];[main][ref]libvmaf='model_path=/usr/local/share/model/vmaf.pkl'" -an -f null -
 ```
-
-Here we explicitly state that the reference video has double the frame rate and also use the select filter to select half of the reference frames to calculate VMAF.
 
 If we want a specific model to be used (e.g. the `baz.pkl` model file under the `/foo/bar/` directory):
 
@@ -103,7 +101,7 @@ ffmpeg -i main.mpg -i ref.mpg -filter_complex \
 "[0:v]scale=1920x1080:flags=bicubic,setpts=PTS-STARTPTS[main];[1:v]setpts=PTS-STARTPTS[ref];[main][ref]libvmaf='ssim=1:model_path=/foo/bar/baz.pkl'" -an -f null -
 ```
 
-If we want use a single thread:
+If we want to use a single thread (e.g. when comparing a single-threaded to a multi-threaded execution):
 
 ```
 ffmpeg -i main.mpg -i ref.mpg -filter_complex \
