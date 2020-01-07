@@ -96,3 +96,5 @@ matrix:
             echo "vmaf score matches"
             return 0
           fi
+        - pip3 install tox-travis
+        - tox -c python/ -- -v -p no:warnings -m 'extra' --doctest-modules
