@@ -129,6 +129,41 @@ libvmaf = both_libraries(
     install: true,
 )
 
+libvmaf_rc_sources = [
+    src_dir + 'libvmaf.rc.c',
+    src_dir + 'predict.c',
+    src_dir + 'model.c',
+    src_dir + 'unpickle.cpp',
+    src_dir + 'svm.cpp',
+    src_dir + 'picture.c',
+    src_dir + 'mem.c',
+    src_dir + 'picture.c',
+    feature_src_dir + 'feature_collector.c',
+    feature_src_dir + 'feature_extractor.c',
+]
+
+libvmaf_rc_include = include_directories(
+    opencontainers_path + '/include',
+    src_dir,
+    feature_src_dir,
+    feature_src_dir + 'common',
+    ptools_path,
+    opencontainers_path + '/include',
+)
+
+libvmaf_rc = both_libraries(
+    'vmaf_rc',
+    libvmaf_rc_sources,
+    include_directories : [vmaf_include, libvmaf_inc],
+    c_args : vmaf_cflags_common,
+    cpp_args : vmaf_cflags_common,
+    dependencies : thread_lib,
+    objects : [
+        libptools.extract_all_objects()
+    ],
+    install: false,
+)
+
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libraries: libvmaf,
     version: meson.project_version(),
