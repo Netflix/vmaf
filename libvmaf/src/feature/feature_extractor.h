@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "feature_collector.h"
+
 #include "libvmaf/picture.h"
 
 enum VmafFeatureExtractorFlags {
@@ -14,7 +16,8 @@ typedef struct VmafFeatureExtractor {
     const char *name;
     int (*init)(struct VmafFeatureExtractor *fex);
     int (*extract)(struct VmafFeatureExtractor *fex,
-                   VmafPicture *ref_pic, VmafPicture *dist_pic);
+                   VmafPicture *ref_pic, VmafPicture *dist_pic,
+                   unsigned index, VmafFeatureCollector *feature_collector);
     int (*close)(struct VmafFeatureExtractor *fex);
     void *priv;
     size_t priv_size;
