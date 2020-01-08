@@ -12,6 +12,16 @@ vmafossexec = executable(
     install : true,
 )
 
+vmaf_rc = executable(
+    'vmaf_rc',
+    ['vmaf.c', 'cli_parse.c', 'y4m_input.c', 'vidinput.c'],
+    include_directories : [libvmaf_inc, vmaf_include],
+    c_args : vmaf_cflags_common,
+    cpp_args : vmaf_cflags_common,
+    link_with : libvmaf_rc,
+    install : false,
+)
+
 psnr = executable(
     'psnr',
     [src_dir + 'psnr_main.c', src_dir + 'read_frame.c'],
