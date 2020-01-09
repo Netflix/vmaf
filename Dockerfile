@@ -24,7 +24,7 @@ RUN pip3 install --upgrade pip
 RUN pip install numpy scipy matplotlib notebook pandas sympy nose scikit-learn scikit-image h5py sureal meson
 
 # retrieve source code
-RUN git clone --depth 1 https://github.com/Netflix/vmaf.git /vmaf
+COPY . /vmaf
 
 # setup environment
 ENV PYTHONPATH=/vmaf/python/src:/vmaf:$PYTHONPATH
