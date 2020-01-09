@@ -5,7 +5,7 @@ The VMAF Python library offers full functionalities from running basic VMAF comm
 
 ## Prerequisites
 
-The VMAF Python library has its core feature extraction library written in C, and the rest scripting code written in Python. To build the C code, it requires `gcc` and `g++` (>=4.8). To run scripts and tests, it requires Python2 (>= 2.7) installed.
+The VMAF Python library has its core feature extraction library written in C, and the rest scripting code written in Python. To build the C code, it requires `gcc` and `g++` (>=4.8). To run scripts and tests, it requires Python 3.
 
 It also requires a number of Python packages:
 
@@ -30,19 +30,23 @@ Install the dependencies:
 sudo apt-get update -qq && \
 sudo apt-get install -y \
   pkg-config gfortran libhdf5-dev libfreetype6-dev liblapack-dev \
-  python python-setuptools python-dev python-pip python-tk
+  python3 \
+  python3-dev \
+  python3-pip \
+  python3-setuptools \
+  python3-tk
 ```
 
 Upgrade `pip` to the newest version:
 
 ```
-sudo -H pip install --upgrade pip
+sudo -H pip3 install --upgrade pip
 ```
 
 Then install the required Python packages:
 
 ```
-pip install --user numpy scipy matplotlib pandas scikit-learn scikit-image h5py sureal
+pip3 install --user numpy scipy matplotlib pandas scikit-learn scikit-image h5py sureal
 ```
 
 Make sure your user install executable directory is on your PATH. Add this to the end of `~/.bashrc` and restart your shell:
@@ -74,20 +78,20 @@ pip3 install meson
 You can verify if these packages are properly installed and its version/location by:
 
 ```
-python -c 'import numpy as pkg; print(pkg.__version__); print(pkg.__file__)'
-python -c 'import scipy as pkg; print(pkg.__version__); print(pkg.__file__)'
-python -c 'import matplotlib as pkg; print(pkg.__version__); print(pkg.__file__)'
-python -c 'import pandas as pkg; print(pkg.__version__); print(pkg.__file__)'
-python -c 'import sklearn as pkg; print(pkg.__version__); print(pkg.__file__)'
-python -c 'import skimage as pkg; print(pkg.__version__); print(pkg.__file__)'
-python -c 'import h5py as pkg; print(pkg.__version__); print(pkg.__file__)'
-python -c 'import sureal as pkg; print(pkg.__version__); print(pkg.__file__)'
+python3 -c 'import numpy as pkg; print(pkg.__version__); print(pkg.__file__)'
+python3 -c 'import scipy as pkg; print(pkg.__version__); print(pkg.__file__)'
+python3 -c 'import matplotlib as pkg; print(pkg.__version__); print(pkg.__file__)'
+python3 -c 'import pandas as pkg; print(pkg.__version__); print(pkg.__file__)'
+python3 -c 'import sklearn as pkg; print(pkg.__version__); print(pkg.__file__)'
+python3 -c 'import skimage as pkg; print(pkg.__version__); print(pkg.__file__)'
+python3 -c 'import h5py as pkg; print(pkg.__version__); print(pkg.__file__)'
+python3 -c 'import sureal as pkg; print(pkg.__version__); print(pkg.__file__)'
 ```
 
 If you see that the printed version number is older than the ones aforementioned, it could suggest that a previously installed package with the same name but older version at a different location may have overshadowed the new one. Make sure that the new one's path appears early in the path list, which can be printed by:
 
 ```
-python -c 'import sys; print(sys.path)'
+python3 -c 'import sys; print(sys.path)'
 ```
 
 (Or simply delete the older one).
@@ -315,13 +319,13 @@ When creating a dataset file, one may make errors (for example, having a typo in
 If the problem persists, one may need to run the script:
 
 ```
-python python/script/run_cleaning_cache.py quality_type test_dataset_file
+python3 python/script/run_cleaning_cache.py quality_type test_dataset_file
 ```
 
 to clean up corrupted results in the store before retrying. For example:
 
 ```
-python python/script/run_cleaning_cache.py VMAF \
+python3 python/script/run_cleaning_cache.py VMAF \
   resource/example/example_dataset.py
 ```
 

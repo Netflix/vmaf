@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os, sys
 sys.path = [os.path.dirname(os.path.abspath(__file__))] + sys.path 
