@@ -117,6 +117,7 @@ def midrank(x):
 
     return T2
 
+
 def calpvalue(aucs, sigma):
     # function pvalue = calpvalue(aucs, sigma)
     # l = [1, -1];
@@ -126,6 +127,7 @@ def calpvalue(aucs, sigma):
     z = np.abs(np.diff(aucs)) / np.sqrt(np.dot(np.dot(l, sigma), l.T))
     pvalue = 2 * (1 - scipy.stats.norm.cdf(z, loc=0, scale=1))
     return pvalue
+
 
 def _cov_kendall(x):
     """
@@ -147,6 +149,7 @@ def _cov_kendall(x):
             cov_[i, j] = kendall
             cov_[j, i] = kendall
     return cov_
+
 
 def AUC_CI(n_D, n_I, Area):
     # function [CI,SE] = AUC_CI(n_D,n_I,Area)
@@ -189,6 +192,7 @@ def AUC_CI(n_D, n_I, Area):
     CI = 1.96 * SE
 
     return CI, SE
+
 
 def significanceHM(A, B, AUCs):
     # function [pHM,CI] = significanceHM(A,B,AUCs)
@@ -254,6 +258,7 @@ def significanceHM(A, B, AUCs):
             pHM[j-1, i-1] = pHM[i-1, j-1]
 
     return pHM, CI
+
 
 def fastDeLong(samples):
     # %FASTDELONGCOV
@@ -326,6 +331,7 @@ def fastDeLong(samples):
     delongcov = sx / m + sy / n
 
     return aucs, delongcov, v01, v10
+
 
 def significanceBinomial(p1, p2, N):
     # function pValue = significanceBinomial(p1,p2,N)

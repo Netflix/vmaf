@@ -1,3 +1,4 @@
+import os
 import numpy as np
 
 from vmaf import plt
@@ -22,6 +23,7 @@ def read_dataset(dataset, **kwargs):
         if 'skip_asset_with_none_groundtruth' in kwargs else False
     content_ids = kwargs['content_ids'] if 'content_ids' in kwargs else None
     asset_ids = kwargs['asset_ids'] if 'asset_ids' in kwargs else None
+    workdir_root = kwargs['workdir_root'] if 'workdir_root' in kwargs else VmafConfig.workdir_path()
 
     # asserts, can add more to the list...
     assert hasattr(dataset, 'dataset_name')
@@ -248,7 +250,7 @@ def read_dataset(dataset, **kwargs):
             asset = Asset(dataset=data_set_name,
                           content_id=dis_video['content_id'],
                           asset_id=dis_video['asset_id'],
-                          workdir_root=VmafConfig.workdir_path(),
+                          workdir_root=workdir_root,
                           ref_path=ref_path,
                           dis_path=dis_video['path'],
                           asset_dict=asset_dict,
@@ -651,8 +653,10 @@ def run_vmaf_cv(train_dataset_filepath,
                 output_model_filepath=None,
                 **kwargs):
 
+    result_store_dir = kwargs['result_store_dir'] if 'result_store_dir' in kwargs else VmafConfig.file_result_store_path()
+
     logger = get_stdout_logger()
-    result_store = FileSystemResultStore()
+    result_store = FileSystemResultStore(result_store_dir)
 
     train_dataset = import_python_file(train_dataset_filepath)
     test_dataset = import_python_file(test_dataset_filepath) if test_dataset_filepath is not None else None
@@ -692,10 +696,11 @@ def run_vmaf_kfold_cv(dataset_filepath,
                       contentid_groups,
                       param_filepath,
                       aggregate_method,
+                      result_store_dir=VmafConfig.file_result_store_path(),
                       ):
 
     logger = get_stdout_logger()
-    result_store = FileSystemResultStore()
+    result_store = FileSystemResultStore(result_store_dir)
     dataset = import_python_file(dataset_filepath)
     param = import_python_file(param_filepath)
 
@@ -713,7 +718,8 @@ def run_vmaf_kfold_cv(dataset_filepath,
 
 
 def explain_model_on_dataset(model, test_assets_selected_indexs,
-                             test_dataset_filepath):
+                             test_dataset_filepath,
+                             result_store_dir=VmafConfig.file_result_store_path()):
 
     def print_assets(test_assets):
         print('\n'.join(map(
@@ -727,7 +733,7 @@ def explain_model_on_dataset(model, test_assets_selected_indexs,
     print_assets(test_assets)
     print("Assets selected for local explanation: {}".format(
         test_assets_selected_indexs))
-    result_store = FileSystemResultStore()
+    result_store = FileSystemResultStore(result_store_dir)
     test_assets = [test_assets[i] for i in test_assets_selected_indexs]
     test_fassembler = FeatureAssembler(
         feature_dict=model.model_dict['feature_dict'],
@@ -791,7 +797,9 @@ def run_vmaf_cv_from_raw(train_dataset_raw_filepath, test_dataset_raw_filepath,
     else:
         test_transform_final = None
 
-    train_output_dataset_filepath = VmafConfig.workspace_path('dataset', 'train_dataset.py')
+    workspace_path = kwargs['workspace_path'] if 'workspace_path' in kwargs else VmafConfig.workspace_path()
+
+    train_output_dataset_filepath = os.path.join(workspace_path, 'dataset', 'train_dataset.py')
     generate_dataset_from_raw(raw_dataset_filepath=train_dataset_raw_filepath,
                      output_dataset_filepath=train_output_dataset_filepath,
                      quality_width=train_quality_width,
@@ -799,7 +807,7 @@ def run_vmaf_cv_from_raw(train_dataset_raw_filepath, test_dataset_raw_filepath,
                      transform_final=train_transform_final,
                      **kwargs)
 
-    test_output_dataset_filepath = VmafConfig.workspace_path('dataset', 'test_dataset.py') \
+    test_output_dataset_filepath = os.path.join(workspace_path, 'dataset', 'test_dataset.py') \
         if test_dataset_raw_filepath is not None else None
     generate_dataset_from_raw(raw_dataset_filepath=test_dataset_raw_filepath,
                      output_dataset_filepath=test_output_dataset_filepath,
