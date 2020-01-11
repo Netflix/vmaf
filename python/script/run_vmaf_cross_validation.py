@@ -21,11 +21,11 @@ if __name__ == '__main__':
 
     nflx_dataset_path = VmafConfig.resource_path('dataset', 'NFLX_dataset_public.py')
     contentid_groups = [
-        [0, 5], # cartoon: BigBuckBunny, FoxBird
-        [1], # CG: BirdsInCage
-        [2, 6, 7], # complex: CrowdRun, OldTownCross, Seeking
-        [3, 4], # ElFuente: ElFuente1, ElFuente2
-        [8], # sports: Tennis
+        [0, 5],  # cartoon: BigBuckBunny, FoxBird
+        [1],  # CG: BirdsInCage
+        [2, 6, 7],  # complex: CrowdRun, OldTownCross, Seeking
+        [3, 4],  # ElFuente: ElFuente1, ElFuente2
+        [8],  # sports: Tennis
     ]
     param_filepath = VmafConfig.resource_path('param', 'vmaf_v3.py')
 
