@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "feature/feature_extractor.h"
 #include "feature/feature_collector.h"
@@ -9,58 +10,58 @@
 #include "picture.h"
 
 typedef struct {
-    VmafFeatureExtractor **fex;
+    VmafFeatureExtractorContext **fex_ctx;
     unsigned cnt, capacity;
-} VmafFeatureExtractorVector;
+} RegisteredFeatureExtractors;
 
 typedef struct VmafContext {
     VmafConfiguration cfg;
     VmafFeatureCollector *feature_collector;
-    VmafFeatureExtractorVector registered_feature_extractor;
+    RegisteredFeatureExtractors registered_feature_extractors;
 } VmafContext;
 
-static int feature_extractor_vector_init(VmafFeatureExtractorVector *fev)
+static int feature_extractor_vector_init(RegisteredFeatureExtractors *rfe)
 {
-    fev->cnt = 0;
-    fev->capacity = 8;
-    size_t sz = sizeof(*(fev->fex)) * fev->capacity;
-    fev->fex = malloc(sz);
-    if (!fev->fex) return -ENOMEM;
-    memset(fev->fex, 0, sz);
+    rfe->cnt = 0;
+    rfe->capacity = 8;
+    size_t sz = sizeof(*(rfe->fex_ctx)) * rfe->capacity;
+    rfe->fex_ctx = malloc(sz);
+    if (!rfe->fex_ctx) return -ENOMEM;
+    memset(rfe->fex_ctx, 0, sz);
     return 0;
 }
 
-static int feature_extractor_vector_append(VmafFeatureExtractorVector *fev,
-                                           VmafFeatureExtractor *fex)
+static int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
+                                           VmafFeatureExtractorContext *fex_ctx)
 {
-    if (!fev) return -EINVAL;
-    if (!fex) return -EINVAL;
+    if (!rfe) return -EINVAL;
+    if (!fex_ctx) return -EINVAL;
 
-    for (unsigned i = 0; i < fev->cnt; i++) {
-        if (fev->fex[i] == fex)
+    for (unsigned i = 0; i < rfe->cnt; i++) {
+        if (rfe->fex_ctx[i] == fex_ctx)
             return 0;
     }
 
-    if (fev->cnt >= fev->capacity) {
-        size_t capacity = fev->capacity * 2;
-        VmafFeatureExtractor **fex =
-            realloc(fev->fex, sizeof(*(fev->fex)) * capacity);
-        if (!fex) return -ENOMEM;
-        fev->fex = fex;
-        fev->capacity = capacity;
-        for (int i = fev->cnt; i < fev->capacity; i++)
-            fev->fex[i] = NULL;
+    if (rfe->cnt >= rfe->capacity) {
+        size_t capacity = rfe->capacity * 2;
+        VmafFeatureExtractorContext **fex_ctx =
+            realloc(rfe->fex_ctx, sizeof(*(rfe->fex_ctx)) * capacity);
+        if (!fex_ctx) return -ENOMEM;
+        rfe->fex_ctx = fex_ctx;
+        rfe->capacity = capacity;
+        for (unsigned i = rfe->cnt; i < rfe->capacity; i++)
+            rfe->fex_ctx[i] = NULL;
     }
 
-    fev->fex[fev->cnt++] = fex;
+    rfe->fex_ctx[rfe->cnt++] = fex_ctx;
     return 0;
 }
 
-static void feature_extractor_vector_destroy(VmafFeatureExtractorVector *fev)
+static void feature_extractor_vector_destroy(RegisteredFeatureExtractors *rfe)
 {
-    if (!fev) return;
-    if (!fev->fex) return;
-    free(fev->fex);
+    if (!rfe) return;
+    if (!rfe->fex_ctx) return;
+    free(rfe->fex_ctx);
     return;
 }
 
@@ -82,7 +83,7 @@ int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
 
     err = vmaf_feature_collector_init(&(v->feature_collector));
     if (err) goto free_v;
-    err = feature_extractor_vector_init(&(v->registered_feature_extractor));
+    err = feature_extractor_vector_init(&(v->registered_feature_extractors));
     if (err) goto free_feature_collector;
 
     if (v->cfg.n_threads > 1) {
@@ -105,7 +106,7 @@ int vmaf_close(VmafContext *vmaf)
 {
     if (!vmaf) return -EINVAL;
 
-    feature_extractor_vector_destroy(&(vmaf->registered_feature_extractor));
+    feature_extractor_vector_destroy(&(vmaf->registered_feature_extractors));
     vmaf_feature_collector_destroy(vmaf->feature_collector);
     free(vmaf);
 
@@ -127,12 +128,18 @@ int vmaf_use_feature(VmafContext *vmaf, const char *feature_name)
     if (!vmaf) return -EINVAL;
     if (!feature_name) return -EINVAL;
 
-    VmafFeatureExtractor *fex = NULL;
-    fex = get_feature_extractor_by_name(feature_name);
+    int err = 0;
+
+    VmafFeatureExtractor *fex =
+        vmaf_get_feature_extractor_by_name(feature_name);
     if (!fex) return -EINVAL;
 
-    VmafFeatureExtractorVector *fev = &(vmaf->registered_feature_extractor);
-    return feature_extractor_vector_append(fev, fex);
+    VmafFeatureExtractorContext *fex_ctx;
+    err = vmaf_feature_extractor_context_create(&fex_ctx, fex);
+    if (err) return err;
+
+    RegisteredFeatureExtractors *rfe = &(vmaf->registered_feature_extractors);
+    return feature_extractor_vector_append(rfe, fex_ctx);
 }
 
 int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model)
@@ -153,9 +160,11 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     int err = 0;
 
     //TODO: VmafThreadPool
-    for (unsigned i = 0; i < vmaf->registered_feature_extractor.cnt; i++) {
-        VmafFeatureExtractor *fex = vmaf->registered_feature_extractor.fex[i];
-        err = fex->extract(fex, ref, dist, index, vmaf->feature_collector);
+    for (unsigned i = 0; i < vmaf->registered_feature_extractors.cnt; i++) {
+        VmafFeatureExtractorContext *fex_ctx =
+            vmaf->registered_feature_extractors.fex_ctx[i];
+        err = vmaf_feature_extractor_context_extract(fex_ctx, ref, dist, index,
+                                                     vmaf->feature_collector);
         if (err) return err;
     }
 

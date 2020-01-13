@@ -8,9 +8,9 @@
 static char *test_get_feature_extractor_by_name_and_feature_name()
 {
     VmafFeatureExtractor *fex = NULL;
-    fex = get_feature_extractor_by_name("");
+    fex = vmaf_get_feature_extractor_by_name("");
     mu_assert("problem during vmaf_picture_unref", !fex);
-    fex = get_feature_extractor_by_feature_name("");
+    fex = vmaf_get_feature_extractor_by_feature_name("");
     mu_assert("problem during vmaf_picture_unref", !fex);
 
     return NULL;

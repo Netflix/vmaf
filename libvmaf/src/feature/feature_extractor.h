@@ -25,7 +25,23 @@ typedef struct VmafFeatureExtractor {
     const char *feature[];
 } VmafFeatureExtractor;
 
-VmafFeatureExtractor *get_feature_extractor_by_name(char *name);
-VmafFeatureExtractor *get_feature_extractor_by_feature_name(char *feature_name);
+VmafFeatureExtractor *vmaf_get_feature_extractor_by_name(char *name);
+VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(char *name);
+
+typedef struct VmafFeatureExtractorContext VmafFeatureExtractorContext;
+
+int vmaf_feature_extractor_context_create(VmafFeatureExtractorContext **fex_ctx,
+                                          VmafFeatureExtractor *fex);
+
+int vmaf_feature_extractor_context_init(VmafFeatureExtractorContext *fex_ctx);
+
+int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
+                                           VmafPicture *ref, VmafPicture *dist,
+                                           unsigned pic_index,
+                                           VmafFeatureCollector *vfc);
+
+int vmaf_feature_extractor_context_close(VmafFeatureExtractorContext *fex_ctx);
+
+int vmaf_feature_extractor_context_delete(VmafFeatureExtractorContext *fex_ctx);
 
 #endif /* __VMAF_FEATURE_EXTRACTOR_H__ */
