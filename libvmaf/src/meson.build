@@ -143,6 +143,12 @@ libvmaf_rc_sources = [
     feature_src_dir + 'feature_collector.c',
     feature_src_dir + 'feature_extractor.c',
     feature_src_dir + 'integer_ssim.c',
+    feature_src_dir + 'float_ssim.c',
+    feature_src_dir + 'ssim.c',
+    feature_src_dir + 'iqa/math_utils.c',
+    feature_src_dir + 'iqa/convolve.c',
+    feature_src_dir + 'iqa/decimate.c',
+    feature_src_dir + 'iqa/ssim_tools.c',
 ]
 
 libvmaf_rc_include = include_directories(
