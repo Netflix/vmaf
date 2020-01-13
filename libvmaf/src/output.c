@@ -45,7 +45,7 @@ int vmaf_write_output_xml(VmafFeatureCollector *fc, FILE *outfile)
                 fc->feature_vector[j]->score[i].value
             );
         }
-        fprintf(outfile, "    />\n");
+        fprintf(outfile, "/>\n");
     }
 
     fprintf(outfile, "  </frames>\n");
