@@ -34,8 +34,11 @@ test_predict = executable('test_predict',
 
 test_feature_extractor = executable('test_feature_extractor',
     ['test.c', 'test_feature_extractor.c',
-     '../src/feature/feature_extractor.c'],
+     '../src/feature/feature_extractor.c',
+     '../src/feature/feature_collector.c',
+     '../src/feature/integer_ssim.c'],
     include_directories : [libvmaf_inc, test_inc, '../src/'],
+    dependencies : math_lib,
 )
 
 test('test_picture', test_picture)

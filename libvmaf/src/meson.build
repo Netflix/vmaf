@@ -31,6 +31,7 @@ ptools_sources = [
 ]
 
 thread_lib = dependency('threads')
+math_lib = cc.find_library('m', required : false)
 
 libptools = shared_library(
     'ptools',
@@ -141,6 +142,7 @@ libvmaf_rc_sources = [
     src_dir + 'output.c',
     feature_src_dir + 'feature_collector.c',
     feature_src_dir + 'feature_extractor.c',
+    feature_src_dir + 'integer_ssim.c',
 ]
 
 libvmaf_rc_include = include_directories(
@@ -158,7 +160,10 @@ libvmaf_rc = both_libraries(
     include_directories : [vmaf_include, libvmaf_inc],
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,
-    dependencies : thread_lib,
+    dependencies : [
+      thread_lib,
+      math_lib,
+    ],
     objects : [
         libptools.extract_all_objects()
     ],
