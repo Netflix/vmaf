@@ -4,7 +4,10 @@
 
 #include "feature_extractor.h"
 
+extern VmafFeatureExtractor vmaf_fex_ssim;
+
 static VmafFeatureExtractor *feature_extractor_list[] = {
+    &vmaf_fex_ssim,
     NULL
 };
 
