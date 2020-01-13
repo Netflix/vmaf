@@ -18,6 +18,8 @@ __license__ = "Apache, Version 2.0"
 
 class RegressorMixin(object):
 
+    DEFAULT_N_SPLITS_TEST_INDICES = 5
+
     @classmethod
     def get_stats(cls, ys_label, ys_label_pred, **kwargs):
 
@@ -73,6 +75,9 @@ class RegressorMixin(object):
             stats['PCC_across_model_distribution'] = pcc_all_models
             stats['RMSE_across_model_distribution'] = rmse_all_models
 
+        split_test_indices_for_perf_ci = kwargs['split_test_indices_for_perf_ci'] \
+            if 'split_test_indices_for_perf_ci' in kwargs else False
+
         ys_label_raw = kwargs['ys_label_raw'] if 'ys_label_raw' in kwargs else None
 
         if ys_label_raw is not None:
@@ -81,7 +86,7 @@ class RegressorMixin(object):
                 result = AucPerfMetric(ys_label_raw, ys_label_pred).evaluate()
                 stats['AUC_DS'] = result['AUC_DS']
                 stats['AUC_BW'] = result['AUC_BW']
-            except TypeError: # AUC would not work with dictionary-style dataset
+            except TypeError:  # AUC would not work with dictionary-style dataset
                 stats['AUC_DS'] = float('nan')
                 stats['AUC_BW'] = float('nan')
 
@@ -103,6 +108,45 @@ class RegressorMixin(object):
 
         if 'ys_label_stddev' in kwargs and 'ys_label_stddev' and kwargs['ys_label_stddev'] is not None:
             stats['ys_label_stddev'] = kwargs['ys_label_stddev']
+
+        if split_test_indices_for_perf_ci:
+
+            # ensure labels and predictions are arrays
+            if type(ys_label) is not np.array:
+                ys_label = np.asarray(ys_label)
+            if type(ys_label_pred) is not np.array:
+                ys_label_pred = np.asarray(ys_label_pred)
+
+            # replicate logic of BootstrapVmafQualityRunner
+            sample_size = len(ys_label)
+            n_splits_test_indices = kwargs['n_splits_test_indices'] if 'n_splits_test_indices' in kwargs \
+                else cls.DEFAULT_N_SPLITS_TEST_INDICES
+
+            srcc_distribution = []
+            pcc_distribution = []
+            rmse_distribution = []
+
+            for i_test_split in range(n_splits_test_indices):
+
+                np.random.seed(i_test_split)  # seed is i_test_split
+                # random sample with replacement:
+                indices = np.random.choice(range(sample_size), size=sample_size, replace=True)
+
+                ys_label_resampled = ys_label[indices]
+                ys_label_pred_resampled = ys_label_pred[indices]
+
+                srcc_distribution.append(SrccPerfMetric(ys_label_resampled, ys_label_pred_resampled)
+                    .evaluate(enable_mapping=True)['score'])
+
+                pcc_distribution.append(PccPerfMetric(ys_label_resampled, ys_label_pred_resampled)
+                    .evaluate(enable_mapping=True)['score'])
+
+                rmse_distribution.append(RmsePerfMetric(ys_label_resampled, ys_label_pred_resampled)
+                    .evaluate(enable_mapping=True)['score'])
+
+            stats['SRCC_across_test_splits_distribution'] = srcc_distribution
+            stats['PCC_across_test_splits_distribution'] = pcc_distribution
+            stats['RMSE_across_test_splits_distribution'] = rmse_distribution
 
         return stats
 
@@ -135,6 +179,31 @@ class RegressorMixin(object):
             else:
                 return '(SRCC: {srcc:.3f}, PCC: {pcc:.3f}, RMSE: {rmse:.3f})'. \
                     format(srcc=stats['SRCC'], pcc=stats['PCC'], rmse=stats['RMSE'])
+
+    @staticmethod
+    def format_stats_across_test_splits_for_print(stats):
+        if stats is None:
+            return '(Invalid Stats)'
+        else:
+            return '(SRCC: {srcc:.3f}+/-{srcc_ci:.3f}, PCC: {pcc:.3f}+/-{pcc_ci:.3f}, RMSE: {rmse:.3f}+/-{rmse_ci:.3f})'. \
+                format(srcc=stats['SRCC'], srcc_ci=stats['SRCC_across_test_splits_ci'],
+                       pcc=stats['PCC'], pcc_ci=stats['PCC_across_test_splits_ci'],
+                       rmse=stats['RMSE'], rmse_ci=stats['RMSE_across_test_splits_ci'])
+
+    @staticmethod
+    def extract_across_test_splits_stats(stats):
+
+        if 'SRCC_across_test_splits_distribution' in stats \
+                and 'PCC_across_test_splits_distribution' in stats \
+                and 'RMSE_across_test_splits_distribution' in stats:
+            srcc_ci = 1.96 * np.std(stats['SRCC_across_test_splits_distribution'])
+            pcc_ci = 1.96 * np.std(stats['PCC_across_test_splits_distribution'])
+            rmse_ci = 1.96 * np.std(stats['RMSE_across_test_splits_distribution'])
+            stats['SRCC_across_test_splits_ci'] = srcc_ci
+            stats['PCC_across_test_splits_ci'] = pcc_ci
+            stats['RMSE_across_test_splits_ci'] = rmse_ci
+
+        return stats
 
     @staticmethod
     def format_across_model_stats_for_print(stats):

@@ -333,6 +333,9 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
         else:
             assert False
 
+    split_test_indices_for_perf_ci = kwargs['split_test_indices_for_perf_ci'] \
+        if 'split_test_indices_for_perf_ci' in kwargs else False
+
     # plot
     groundtruths = list(map(lambda asset: asset.groundtruth, test_assets))
     predictions = list(map(lambda result: result[runner_class.get_score_key()], results))
@@ -358,13 +361,15 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
                                      ys_label_pred_ci95_low=predictions_ci95_low,
                                      ys_label_pred_ci95_high=predictions_ci95_high,
                                      ys_label_pred_all_models=predictions_all_models,
-                                     ys_label_stddev=groundtruths_std)
+                                     ys_label_stddev=groundtruths_std,
+                                     split_test_indices_for_perf_ci=split_test_indices_for_perf_ci)
     except Exception as e:
         print('Stats calculation failed, using default stats calculation. Error cause: ')
         print(e)
         stats = model_type.get_stats(groundtruths, predictions,
                                      ys_label_raw=raw_grountruths,
-                                     ys_label_stddev=groundtruths_std)
+                                     ys_label_stddev=groundtruths_std,
+                                     split_test_indices_for_perf_ci=split_test_indices_for_perf_ci)
         num_models = 1
 
     print('Stats on testing data: {}'.format(model_type.format_stats_for_print(stats)))
@@ -375,6 +380,10 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
             and 'RMSE_across_model_distribution' in stats:
         print('Stats on testing data (across multiple models, using all test indices): {}'.format(
             model_type.format_across_model_stats_for_print(model_type.extract_across_model_stats(stats))))
+
+    if split_test_indices_for_perf_ci:
+        print('Stats on testing data (single model, multiple test sets): {}'
+              .format(model_type.format_stats_across_test_splits_for_print(model_type.extract_across_test_splits_stats(stats))))
 
     if ax is not None:
         content_ids = list(map(lambda asset: asset.content_id, test_assets))
