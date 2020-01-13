@@ -1,4 +1,6 @@
+#include <errno.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "feature_extractor.h"
 
@@ -6,7 +8,7 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     NULL
 };
 
-VmafFeatureExtractor *get_feature_extractor_by_name(char *name)
+VmafFeatureExtractor *vmaf_get_feature_extractor_by_name(char *name)
 {
     if (!name) return NULL;
 
@@ -18,9 +20,9 @@ VmafFeatureExtractor *get_feature_extractor_by_name(char *name)
     return NULL;
 }
 
-VmafFeatureExtractor *get_feature_extractor_by_feature_name(char *feature_name)
+VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(char *name)
 {
-    if (!feature_name) return NULL;
+    if (!name) return NULL;
 
     VmafFeatureExtractor *fex = NULL;
     for (unsigned i = 0; (fex = feature_extractor_list[i]); i++) {
@@ -33,4 +35,92 @@ VmafFeatureExtractor *get_feature_extractor_by_feature_name(char *feature_name)
         */
     }
     return NULL;
+}
+
+typedef struct VmafFeatureExtractorContext {
+    bool is_initialized;
+    VmafFeatureExtractor *fex;
+} VmafFeatureExtractorContext;
+
+int vmaf_feature_extractor_context_create(VmafFeatureExtractorContext **fex_ctx,
+                                          VmafFeatureExtractor *fex)
+{
+    VmafFeatureExtractorContext *f = *fex_ctx = malloc(sizeof(*f));
+    if (!f) return -ENOMEM;
+    memset(f, 0, sizeof(*f));
+
+    VmafFeatureExtractor *x = malloc(sizeof(*x));
+    if (!x) goto free_f;
+    memcpy(x, fex, sizeof(*x));
+
+    f->fex = x;
+    if (f->fex->priv_size) {
+        void *priv = malloc(f->fex->priv_size);
+        if (!priv) goto free_x;
+        f->fex->priv = priv;
+    }
+    return 0;
+
+free_x:
+    free(x);
+free_f:
+    free(f);
+    return -ENOMEM;
+}
+
+int vmaf_feature_extractor_context_init(VmafFeatureExtractorContext *fex_ctx)
+{
+    if (!fex_ctx) return -EINVAL;
+    if (fex_ctx->is_initialized) return -EINVAL;
+
+    int err = 0;
+    if (!fex_ctx->is_initialized) {
+        int err = fex_ctx->fex->init(fex_ctx->fex);
+        if (err) return err;
+    }
+
+    fex_ctx->is_initialized = true;
+    return err;
+}
+
+int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
+                                           VmafPicture *ref, VmafPicture *dist,
+                                           unsigned pic_index,
+                                           VmafFeatureCollector *vfc)
+{
+    if (!fex_ctx) return -EINVAL;
+    if (!ref) return -EINVAL;
+    if (!dist) return -EINVAL;
+    if (!vfc) return -EINVAL;
+    if (!fex_ctx->fex->init) return -EINVAL;
+    if (!fex_ctx->fex->extract) return -EINVAL;
+
+    if (!fex_ctx->is_initialized) {
+        int err = vmaf_feature_extractor_context_init(fex_ctx);
+        if (err) return err;
+    }
+
+    return fex_ctx->fex->extract(fex_ctx->fex, ref, dist, pic_index, vfc);
+}
+
+int vmaf_feature_extractor_context_close(VmafFeatureExtractorContext *fex_ctx)
+{
+    if (!fex_ctx) return -EINVAL;
+    if (!fex_ctx->is_initialized) return -EINVAL;
+
+    int err = 0;
+    if (fex_ctx->fex->close) {
+        err = fex_ctx->fex->close(fex_ctx->fex);
+    }
+    return err;
+}
+
+int vmaf_feature_extractor_context_destroy(VmafFeatureExtractorContext *fex_ctx)
+{
+    if (!fex_ctx) return -EINVAL;
+
+    if (fex_ctx->fex->priv_size)
+        free(fex_ctx->fex->priv);
+    free(fex_ctx);
+    return 0;
 }
