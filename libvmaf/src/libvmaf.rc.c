@@ -7,6 +7,7 @@
 #include "feature/feature_collector.h"
 #include "libvmaf/libvmaf.rc.h"
 #include "model.h"
+#include "output.h"
 #include "picture.h"
 
 typedef struct {
@@ -201,7 +202,19 @@ const char *vmaf_version(void)
     return "RELEASE_CANDIDATE";
 }
 
-void vmaf_write_log(VmafContext *vmaf, FILE *logfile)
+int vmaf_write_output(VmafContext *vmaf, FILE *outfile,
+                      enum VmafOutputFormat fmt)
 {
-    return;
+    int err = 0;
+
+    switch (fmt) {
+    case VMAF_OUTPUT_FORMAT_NONE:
+    case VMAF_OUTPUT_FORMAT_XML:
+        err = vmaf_write_output_xml(vmaf->feature_collector, outfile);
+        break;
+    default:
+        break;
+    }
+
+    return err;
 }

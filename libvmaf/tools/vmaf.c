@@ -213,14 +213,14 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (c.log_path) {
-        FILE *logfile = fopen(c.log_path, "w");
-        if (!logfile) {
-            fprintf(stderr, "could not open file: %s\n", c.y4m_path_dist);
+    if (c.output_path) {
+        FILE *outfile = fopen(c.output_path, "w");
+        if (!outfile) {
+            fprintf(stderr, "could not open file: %s\n", c.output_path);
             return -1;
         }
-        vmaf_write_log(vmaf, logfile);
-        fclose(logfile);
+        vmaf_write_output(vmaf, outfile, c.output_fmt);
+        fclose(outfile);
     }
 
     for (unsigned i = 0; i < c.model_cnt; i++)
