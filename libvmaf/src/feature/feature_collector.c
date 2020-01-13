@@ -6,21 +6,6 @@
 
 #include "feature_collector.h"
 
-typedef struct {
-    char *name;
-    struct {
-        bool written;
-        double value;
-    } *score;
-    unsigned capacity;
-} FeatureVector;
-
-typedef struct VmafFeatureCollector {
-    FeatureVector **feature_vector;
-    unsigned cnt, capacity;
-    pthread_mutex_t lock;
-} VmafFeatureCollector;
-
 static int feature_vector_init(FeatureVector **const feature_vector,
                                const char *name)
 {

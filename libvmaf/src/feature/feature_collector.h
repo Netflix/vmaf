@@ -1,7 +1,23 @@
 #ifndef __VMAF_FEATURE_COLLECTOR_H__
 #define __VMAF_FEATURE_COLLECTOR_H__
 
-typedef struct VmafFeatureCollector VmafFeatureCollector;
+#include <pthread.h>
+#include <stdbool.h>
+
+typedef struct {
+    char *name;
+    struct {
+        bool written;
+        double value;
+    } *score;
+    unsigned capacity;
+} FeatureVector;
+
+typedef struct VmafFeatureCollector {
+    FeatureVector **feature_vector;
+    unsigned cnt, capacity;
+    pthread_mutex_t lock;
+} VmafFeatureCollector;
 
 int vmaf_feature_collector_init(VmafFeatureCollector **const feature_collector);
 

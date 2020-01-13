@@ -138,6 +138,7 @@ libvmaf_rc_sources = [
     src_dir + 'picture.c',
     src_dir + 'mem.c',
     src_dir + 'picture.c',
+    src_dir + 'output.c',
     feature_src_dir + 'feature_collector.c',
     feature_src_dir + 'feature_extractor.c',
 ]

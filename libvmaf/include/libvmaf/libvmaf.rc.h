@@ -10,6 +10,11 @@ enum VmafLogLevel {
     VMAF_LOG_LEVEL_NONE,
 };
 
+enum VmafOutputFormat {
+    VMAF_OUTPUT_FORMAT_NONE,
+    VMAF_OUTPUT_FORMAT_XML,
+};
+
 typedef struct {
     enum VmafLogLevel log_level;
     unsigned n_threads;
@@ -29,7 +34,6 @@ typedef struct {
 typedef struct VmafContext VmafContext;
 
 void vmaf_default_configuration(VmafConfiguration *cfg);
-void vmaf_write_log(VmafContext *vmaf, FILE *log);
 
 /**
  * Get libvmaf version.
@@ -164,5 +168,8 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel model,
  * @param vmaf The VMAF instance to close.
  */
 int vmaf_close(VmafContext *vmaf);
+
+int vmaf_write_output(VmafContext *vmaf, FILE *logfile,
+                      enum VmafOutputFormat fmt);
 
 #endif /* __VMAF_H__ */

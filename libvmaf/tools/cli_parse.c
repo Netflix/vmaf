@@ -9,13 +9,14 @@
 
 #include <libvmaf/libvmaf.rc.h>
 
-static const char short_opts[] = "r:d:m:l:t:f:i:v:";
+static const char short_opts[] = "r:d:m:o:x:t:f:i:n:v:";
 
 static const struct option long_opts[] = {
     { "reference",        1, NULL, 'r' },
     { "distorted",        1, NULL, 'd' },
     { "model",            1, NULL, 'm' },
-    { "log",              1, NULL, 'l' },
+    { "output",           1, NULL, 'o' },
+    { "xml",              0, NULL, 'x' },
     { "threads",          1, NULL, 't' },
     { "feature",          1, NULL, 'f' },
     { "import",           1, NULL, 'i' },
@@ -37,7 +38,8 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --reference/-r $path:      path to reference .y4m\n"
             " --distorted/-d $path:      path to distorted .y4m\n"
             " --model/-m $path:          path to model file\n"
-            " --log/-l $path:            path to output log file\n"
+            " --output/-o $path:         path to output file\n"
+            " --xml/-x:                  write output file as XML (default)\n"
             " --threads/-t $unsigned:    number of threads to use\n"
             " --feature/-f $string:      additional feature\n"
             " --import/-i $path:         path to precomputed feature log\n"
@@ -90,8 +92,11 @@ void cli_parse(const int argc, char *const *const argv,
         case 'd':
             settings->y4m_path_dist = optarg;
             break;
-        case 'l':
-            settings->log_path = optarg;
+        case 'o':
+            settings->output_path = optarg;
+            break;
+        case 'x':
+            settings->output_fmt = VMAF_OUTPUT_FORMAT_XML;
             break;
         case 'm':
             if (settings->model_cnt == CLI_SETTINGS_STATIC_ARRAY_LEN) {
