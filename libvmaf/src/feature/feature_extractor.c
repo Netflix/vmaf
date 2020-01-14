@@ -7,11 +7,13 @@
 extern VmafFeatureExtractor vmaf_fex_ssim;
 extern VmafFeatureExtractor vmaf_fex_float_ssim;
 extern VmafFeatureExtractor vmaf_fex_psnr;
+extern VmafFeatureExtractor vmaf_fex_float_psnr;
 
 static VmafFeatureExtractor *feature_extractor_list[] = {
     &vmaf_fex_ssim,
     &vmaf_fex_float_ssim,
     &vmaf_fex_psnr,
+    &vmaf_fex_float_psnr,
     NULL
 };
 
