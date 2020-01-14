@@ -1,12 +1,13 @@
 from __future__ import absolute_import
 
 import unittest
+from functools import partial
 
 from vmaf.core.executor import run_executors_in_parallel
 from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor, \
-    NiqeNorefFeatureExtractor, BrisqueNorefFeatureExtractor
+    NiqeNorefFeatureExtractor, BrisqueNorefFeatureExtractor, SiTiNorefFeatureExtractor
 
-from .testutil import set_default_576_324_videos_for_testing
+from .testutil import set_default_576_324_videos_for_testing, set_default_576_324_noref_videos_for_testing
 
 __copyright__ = "Copyright 2016-2019, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
@@ -42,7 +43,7 @@ class NorefFeatureExtractorTest(unittest.TestCase):
 
     def test_noref_moment_fextractor_with_noref_asset(self):
 
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        ref_path, dis_path, asset, asset_original = set_default_576_324_noref_videos_for_testing()
 
         self.fextractor = MomentNorefFeatureExtractor(
             [asset, asset_original],
@@ -158,6 +159,35 @@ class NorefFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['NIQE_noref_feature_alpha13_score'], 0.87132291666666728, places=4)
         self.assertAlmostEqual(results[1]['NIQE_noref_feature_alpha_m1_score'], 2.8193532986111136, places=4)
         self.assertAlmostEqual(results[1]['NIQE_noref_feature_blbr1_score'], 0.99354006450609134, places=4)
+
+    def test_noref_siti_fextractor_with_noref_asset(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_noref_videos_for_testing()
+
+        self.fextractor = SiTiNorefFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['SITI_noref_feature_si_score'], 79.27042052471928)
+        self.assertAlmostEqual(results[0]['SITI_noref_feature_ti_score'], 13.580963712032636)
+
+        self.assertAlmostEqual(results[1]['SITI_noref_feature_si_score'], 83.46568284569439)
+        self.assertAlmostEqual(results[1]['SITI_noref_feature_ti_score'], 15.570422677885475)
+
+        import numpy as np
+        perc75 = partial(np.percentile, q=75)
+        [result.set_score_aggregate_method(perc75) for result in results]
+
+        self.assertAlmostEqual(results[0]['SITI_noref_feature_si_score'], 80.01507800178135)
+        self.assertAlmostEqual(results[0]['SITI_noref_feature_ti_score'], 14.71399321502522)
+
+        self.assertAlmostEqual(results[1]['SITI_noref_feature_si_score'], 84.00886573293045)
+        self.assertAlmostEqual(results[1]['SITI_noref_feature_ti_score'], 16.862281850395433)
 
 
 class ParallelNorefFeatureExtractorTest(unittest.TestCase):

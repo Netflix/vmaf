@@ -4,13 +4,14 @@ from scipy.ndimage import correlate1d
 from scipy.special._ufuncs import gamma
 from skimage.util import view_as_windows
 from PIL import Image
+import numpy as np
+import copy
+from scipy import ndimage
 
 from vmaf.core.executor import NorefExecutorMixin
 
 __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
-
-import numpy as np
 
 from vmaf.core.feature_extractor import FeatureExtractor
 from vmaf.tools.reader import YuvReader
@@ -19,15 +20,14 @@ from vmaf.tools.reader import YuvReader
 class MomentNorefFeatureExtractor(NorefExecutorMixin, FeatureExtractor):
 
     TYPE = "Moment_noref_feature"
-    VERSION = "1.0" # python only
+    VERSION = "1.0"  # python only
 
     ATOM_FEATURES = ['1st', '2nd', ] # order matters
 
     DERIVED_ATOM_FEATURES = ['var', ]
 
     def _generate_result(self, asset):
-        # routine to call the command-line executable and generate feature
-        # scores in the log file.
+        # routine to generate feature scores in the log file.
 
         quality_w, quality_h = asset.quality_width_height
         with YuvReader(filepath=asset.dis_workfile_path, width=quality_w,
@@ -431,3 +431,67 @@ class NiqeNorefFeatureExtractor(BrisqueNorefFeatureExtractor):
             assert False
 
         return list_features
+
+
+class SiTiNorefFeatureExtractor(NorefExecutorMixin, FeatureExtractor):
+
+    TYPE = "SITI_noref_feature"
+    VERSION = "1.0"
+
+    ATOM_FEATURES = ['si', 'ti']  # order matters
+
+    @staticmethod
+    def sobel_filt(img):
+
+        dx = ndimage.sobel(img, 1)  # horizontal derivative
+        dy = ndimage.sobel(img, 0)  # vertical derivative
+        mag = np.hypot(dx, dy)  # magnitude
+
+        return mag
+
+    def _generate_result(self, asset):
+        # routine to generate feature scores in the log file.
+
+        quality_w, quality_h = asset.quality_width_height
+        with YuvReader(filepath=asset.dis_workfile_path, width=quality_w,
+                       height=quality_h,
+                       yuv_type=self._get_workfile_yuv_type(asset)) \
+                as dis_yuv_reader:
+            scores_mtx_list = []
+            i = 0
+            for dis_yuv in dis_yuv_reader:
+                dis_y = dis_yuv[0].astype('int32')
+                mag = self.sobel_filt(dis_y)
+                si = np.std(mag)
+                if i == 0:
+                    ti = 0
+                else:
+                    ti = np.std(dis_y - dis_y_prev)
+                dis_y_prev = copy.deepcopy(dis_y)
+                scores_mtx_list.append(np.hstack(([si], [ti])))
+                i += 1
+            scores_mtx = np.vstack(scores_mtx_list)
+
+            # write scores_mtx to log file
+        log_file_path = self._get_log_file_path(asset)
+        with open(log_file_path, "wb") as log_file:
+            np.save(log_file, scores_mtx)
+
+    def _get_feature_scores(self, asset):
+        # routine to read the feature scores from the log file, and return
+        # the scores in a dictionary format.
+
+        log_file_path = self._get_log_file_path(asset)
+        with open(log_file_path, "rb") as log_file:
+            scores_mtx = np.load(log_file)
+
+        num_frm, num_features = scores_mtx.shape
+        assert num_features == len(self.ATOM_FEATURES)
+
+        feature_result = {}
+
+        for idx, atom_feature in enumerate(self.ATOM_FEATURES):
+            scores_key = self.get_scores_key(atom_feature)
+            feature_result[scores_key] = list(scores_mtx[:, idx])
+
+        return feature_result
