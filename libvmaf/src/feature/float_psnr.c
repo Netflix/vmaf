@@ -1,7 +1,9 @@
+#include <math.h>
+#include <string.h>
+
 #include "feature_collector.h"
 #include "feature_extractor.h"
-
-#include "ssim.h"
+#include "psnr.h"
 #include "picture_copy.h"
 
 static int init(VmafFeatureExtractor *fex)
@@ -22,12 +24,13 @@ static int extract(VmafFeatureExtractor *fex,
     picture_copy(ref, ref_pic);
     picture_copy(dist, dist_pic);
 
-    double score, l_score, c_score, s_score;
-    err = compute_ssim(ref, dist, ref_pic->w[0], ref_pic->h[0], stride, stride,
-                       &score, &l_score, &c_score, &s_score);
+    double score;
+    err = compute_psnr(ref, dist, ref_pic->w[0], ref_pic->h[0], stride, stride,
+                       &score, 255., 60.);
+
     if (err) return err;
 
-    err = vmaf_feature_collector_append(feature_collector, "float_ssim", score,
+    err = vmaf_feature_collector_append(feature_collector, "float_psnr", score,
                                         index);
     if (err) return err;
 
@@ -41,8 +44,8 @@ static int close(VmafFeatureExtractor *fex)
     return 0;
 }
 
-VmafFeatureExtractor vmaf_fex_float_ssim = {
-    .name = "float_ssim",
+VmafFeatureExtractor vmaf_fex_float_psnr = {
+    .name = "float_psnr",
     .init = init,
     .extract = extract,
     .close = close,
