@@ -61,7 +61,10 @@ static int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
 static void feature_extractor_vector_destroy(RegisteredFeatureExtractors *rfe)
 {
     if (!rfe) return;
-    if (!rfe->fex_ctx) return;
+    for (unsigned i = 0; i < rfe->cnt; i++) {
+        vmaf_feature_extractor_context_close(rfe->fex_ctx[i]);
+        vmaf_feature_extractor_context_destroy(rfe->fex_ctx[i]);
+    }
     free(rfe->fex_ctx);
     return;
 }

@@ -128,6 +128,7 @@ int vmaf_feature_extractor_context_destroy(VmafFeatureExtractorContext *fex_ctx)
 
     if (fex_ctx->fex->priv_size)
         free(fex_ctx->fex->priv);
+    free(fex_ctx->fex);
     free(fex_ctx);
     return 0;
 }
