@@ -7,18 +7,14 @@
 #include "libvmaf/picture.h"
 
 enum VmafLogLevel {
-    VMAF_LOG_LEVEL_NONE,
+    VMAF_LOG_LEVEL_NONE = 0,
+    VMAF_LOG_LEVEL_INFO = 1 << 0,
 };
 
 enum VmafOutputFormat {
-    VMAF_OUTPUT_FORMAT_NONE,
+    VMAF_OUTPUT_FORMAT_NONE = 0,
     VMAF_OUTPUT_FORMAT_XML,
 };
-
-typedef struct {
-    enum VmafLogLevel log_level;
-    unsigned n_threads;
-} VmafConfiguration;
 
 enum VmafPoolingMethod {
     VMAF_POOL_METHOD_UNKNOWN = 0,
@@ -27,18 +23,18 @@ enum VmafPoolingMethod {
     VMAF_POOL_METHOD_HARMONIC_MEAN,
 };
 
-typedef struct {
+typedef struct VmafConfiguration {
+    enum VmafLogLevel log_level;
+    unsigned n_threads;
+} VmafConfiguration;
+
+typedef struct VmafScore {
     double score;
 } VmafScore;
 
 typedef struct VmafContext VmafContext;
 
 void vmaf_default_configuration(VmafConfiguration *cfg);
-
-/**
- * Get libvmaf version.
- */
-const char *vmaf_version(void);
 
 /**
  * Allocate and open a VMAF instance.
@@ -56,7 +52,7 @@ const char *vmaf_version(void);
 int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg);
 
 /**
- * Register all feature extractors required by a model.
+ * Register feature extractors required by a specific `VmafModel`.
  * This may be called multiple times using different models.
  * In this case, the registered feature extractors will form a set, and any
  * features required by multiple models will only be extracted once.
@@ -73,7 +69,7 @@ int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model);
 /**
  * Register specific feature extractor.
  * Useful when a specific/additional feature is required, usually one which
- * is not provided by a model using `vmaf_use_features_from_model()`.
+ * is not already provided by a model via `vmaf_use_features_from_model()`.
  * This may be called multiple times.
  *
  * @param vmaf         The VMAF context allocated with `vmaf_init()`.
@@ -88,9 +84,8 @@ int vmaf_use_feature(VmafContext *vmaf, const char *feature_name);
 /**
  * Import an external feature score.
  * Useful when pre-computed feature scores are available.
- * In this case, computation is saved since features have already been
- * extracted previously. Also useful in the case where there is no libvmaf
- * feature extractor implementation for a required feature.
+ * Also useful in the case where there is no libvmaf feature extractor
+ * implementation for a required feature.
  *
  * @param vmaf         The VMAF context allocated with `vmaf_init()`.
  *
@@ -108,8 +103,10 @@ int vmaf_import_feature_score(VmafContext *vmaf, char *feature_name,
 
 /**
  * Read a pair of pictures and queue them for eventual feature extraction.
- * This should always be called after feature extractors are registered via
+ * This should be called after feature extractors are registered via
  * `vmaf_use_features_from_model()` and/or `vmaf_use_feature()`.
+ * `VmafContext` will take ownership of both `VmafPicture`s (`ref` and `dist`)
+ * and `vmaf_picture_unref()`.
  *
  * @param vmaf  The VMAF context allocated with `vmaf_init()`.
  *
@@ -117,7 +114,8 @@ int vmaf_import_feature_score(VmafContext *vmaf, char *feature_name,
  *
  * @param dist  Distorted picture.
  *
- * @param index  Picture index.
+ * @param index Picture index.
+ *
  *
  * @return 0 on success, or < 0 (a negative errno code) on error.
  */
@@ -156,6 +154,7 @@ int vmaf_score_at_index(VmafContext *vmaf, VmafModel model, VmafScore *score,
  *
  * @param index_high   High picture index of pooling interval.
  *
+ *
  * @return 0 on success, or < 0 (a negative errno code) on error.
  */
 int vmaf_score_pooled(VmafContext *vmaf, VmafModel model,
@@ -166,10 +165,30 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel model,
  * Close a VMAF instance and free all associated memory.
  *
  * @param vmaf The VMAF instance to close.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
  */
 int vmaf_close(VmafContext *vmaf);
 
+/**
+ * Write VMAF stats to an output file.
+ *
+ * @param vmaf    The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param logfile Output file, previously `fopen()`'d by calling application.
+ *
+ * @param fmt     Output file format. See `enum VmafOutputFormat` for options.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
 int vmaf_write_output(VmafContext *vmaf, FILE *logfile,
                       enum VmafOutputFormat fmt);
+
+/**
+ * Get libvmaf version.
+ */
+const char *vmaf_version(void);
 
 #endif /* __VMAF_H__ */
