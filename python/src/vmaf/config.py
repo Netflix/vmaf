@@ -6,7 +6,7 @@ __copyright__ = "Copyright 2016-2018, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 PYTHON_ROOT = os.path.dirname(os.path.realpath(__file__))
-ROOT = os.path.abspath(os.path.join(PYTHON_ROOT, '../../..',))
+ROOT = os.path.abspath(os.path.join(PYTHON_ROOT, '..', '..', '..',))
 
 
 class VmafExternalConfig(object):
