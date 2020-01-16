@@ -174,7 +174,7 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     return 0;
 }
 
-int vmaf_score_at_index(VmafContext *vmaf, VmafModel model, VmafScore *score,
+int vmaf_score_at_index(VmafContext *vmaf, VmafModel model, double *score,
                         unsigned index)
 {
     if (!vmaf) return -EINVAL;
@@ -184,7 +184,7 @@ int vmaf_score_at_index(VmafContext *vmaf, VmafModel model, VmafScore *score,
 }
 
 int vmaf_score_pooled(VmafContext *vmaf, VmafModel model,
-                      enum VmafPoolingMethod pool_method, VmafScore *score,
+                      enum VmafPoolingMethod pool_method, double *score,
                       unsigned index_low, unsigned index_high)
 {
     if (!vmaf) return -EINVAL;

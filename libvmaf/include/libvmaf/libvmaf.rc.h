@@ -28,10 +28,6 @@ typedef struct VmafConfiguration {
     unsigned n_threads;
 } VmafConfiguration;
 
-typedef struct VmafScore {
-    double score;
-} VmafScore;
-
 typedef struct VmafContext VmafContext;
 
 /**
@@ -134,7 +130,7 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
  *
  * @return 0 on success, or < 0 (a negative errno code) on error.
  */
-int vmaf_score_at_index(VmafContext *vmaf, VmafModel model, VmafScore *score,
+int vmaf_score_at_index(VmafContext *vmaf, VmafModel model, double *score,
                         unsigned index);
 
 /**
@@ -156,7 +152,7 @@ int vmaf_score_at_index(VmafContext *vmaf, VmafModel model, VmafScore *score,
  * @return 0 on success, or < 0 (a negative errno code) on error.
  */
 int vmaf_score_pooled(VmafContext *vmaf, VmafModel model,
-                      enum VmafPoolingMethod pool_method, VmafScore *score,
+                      enum VmafPoolingMethod pool_method, double *score,
                       unsigned index_low, unsigned index_high);
 
 /**
