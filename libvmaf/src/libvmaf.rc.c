@@ -69,12 +69,6 @@ static void feature_extractor_vector_destroy(RegisteredFeatureExtractors *rfe)
     return;
 }
 
-void vmaf_default_configuration(VmafConfiguration *cfg)
-{
-    if (!cfg) return;
-    memset(cfg, 0, sizeof(*cfg));
-}
-
 int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
 {
     if (!vmaf) return -EINVAL;

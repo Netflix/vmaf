@@ -149,9 +149,10 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    VmafConfiguration cfg;
-    vmaf_default_configuration(&cfg);
-    cfg.n_threads = c.thread_cnt;
+    VmafConfiguration cfg = {
+        .log_level = VMAF_LOG_LEVEL_INFO,
+        .n_threads = c.thread_cnt,
+    };
 
     VmafContext *vmaf;
     err = vmaf_init(&vmaf, cfg);

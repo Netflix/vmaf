@@ -34,8 +34,6 @@ typedef struct VmafScore {
 
 typedef struct VmafContext VmafContext;
 
-void vmaf_default_configuration(VmafConfiguration *cfg);
-
 /**
  * Allocate and open a VMAF instance.
  *
