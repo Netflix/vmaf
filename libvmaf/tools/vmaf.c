@@ -213,6 +213,7 @@ int main(int argc, char *argv[])
             break;
         }
     }
+    fprintf(stderr, "\n");
 
     if (c.output_path) {
         FILE *outfile = fopen(c.output_path, "w");
