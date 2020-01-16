@@ -77,14 +77,17 @@ free_f:
     return -ENOMEM;
 }
 
-int vmaf_feature_extractor_context_init(VmafFeatureExtractorContext *fex_ctx)
+int vmaf_feature_extractor_context_init(VmafFeatureExtractorContext *fex_ctx,
+                                        enum VmafPixelFormat pix_fmt,
+                                        unsigned bpc, unsigned w, unsigned h)
 {
     if (!fex_ctx) return -EINVAL;
     if (fex_ctx->is_initialized) return -EINVAL;
+    if (!pix_fmt) return -EINVAL;
 
     int err = 0;
     if (!fex_ctx->is_initialized) {
-        int err = fex_ctx->fex->init(fex_ctx->fex);
+        int err = fex_ctx->fex->init(fex_ctx->fex, pix_fmt, bpc, w, h);
         if (err) return err;
     }
 
@@ -105,7 +108,9 @@ int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
     if (!fex_ctx->fex->extract) return -EINVAL;
 
     if (!fex_ctx->is_initialized) {
-        int err = vmaf_feature_extractor_context_init(fex_ctx);
+        int err =
+            vmaf_feature_extractor_context_init(fex_ctx, ref->pix_fmt, ref->bpc,
+                                                ref->w[0], ref->h[0]);
         if (err) return err;
     }
 

@@ -14,7 +14,8 @@ enum VmafFeatureExtractorFlags {
 
 typedef struct VmafFeatureExtractor {
     const char *name;
-    int (*init)(struct VmafFeatureExtractor *fex);
+    int (*init)(struct VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
+                unsigned bpc, unsigned w, unsigned h);
     int (*extract)(struct VmafFeatureExtractor *fex,
                    VmafPicture *ref_pic, VmafPicture *dist_pic,
                    unsigned index, VmafFeatureCollector *feature_collector);
@@ -33,7 +34,9 @@ typedef struct VmafFeatureExtractorContext VmafFeatureExtractorContext;
 int vmaf_feature_extractor_context_create(VmafFeatureExtractorContext **fex_ctx,
                                           VmafFeatureExtractor *fex);
 
-int vmaf_feature_extractor_context_init(VmafFeatureExtractorContext *fex_ctx);
+int vmaf_feature_extractor_context_init(VmafFeatureExtractorContext *fex_ctx,
+                                        enum VmafPixelFormat pix_fmt,
+                                        unsigned bpc, unsigned w, unsigned h);
 
 int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
                                            VmafPicture *ref, VmafPicture *dist,

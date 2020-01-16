@@ -4,7 +4,8 @@
 #include "feature_collector.h"
 #include "feature_extractor.h"
 
-static int init(VmafFeatureExtractor *fex)
+static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
+                unsigned bpc, unsigned w, unsigned h)
 {
     return 0;
 }
