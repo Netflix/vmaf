@@ -196,7 +196,8 @@ static double calc_ssim(const unsigned char *_src,int _systride,
   return ssim/ssimw;
 }
 
-static int init(VmafFeatureExtractor *fex)
+static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
+                unsigned bpc, unsigned w, unsigned h)
 {
     return 0;
 }
