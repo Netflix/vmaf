@@ -3,12 +3,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <libvmaf/libvmaf.rc.h>
+
 #include "feature/feature_extractor.h"
 #include "feature/feature_collector.h"
-#include "libvmaf/libvmaf.rc.h"
 #include "model.h"
 #include "output.h"
 #include "picture.h"
+#include "predict.h"
+
 
 typedef struct {
     VmafFeatureExtractorContext **fex_ctx;
@@ -180,7 +183,8 @@ int vmaf_score_at_index(VmafContext *vmaf, VmafModel model, double *score,
     if (!vmaf) return -EINVAL;
     if (!score) return -EINVAL;
 
-    return 0;
+    return vmaf_predict_score_at_index(vmaf, vmaf->feature_collector, index,
+                                       score);
 }
 
 int vmaf_score_pooled(VmafContext *vmaf, VmafModel model,
