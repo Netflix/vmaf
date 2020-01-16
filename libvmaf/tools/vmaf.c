@@ -4,6 +4,7 @@
 
 #include "cli_parse.h"
 #include "vidinput.h"
+#include "spinner.h"
 
 #include "libvmaf/picture.h"
 #include "libvmaf/libvmaf.rc.h"
@@ -206,7 +207,9 @@ int main(int argc, char *argv[])
             break;
         }
 
-        fprintf(stderr, "\r%d", picture_index);
+        fprintf(stderr, "\r%s %d",
+                spinner[picture_index % spinner_length], picture_index);
+
         err = vmaf_read_pictures(vmaf, &pic_ref, &pic_dist, picture_index);
         if (err) {
             fprintf(stderr, "problem reading pictures\n");
