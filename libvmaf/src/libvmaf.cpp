@@ -91,7 +91,7 @@ double StatVector::harmonic_mean()
     {
         sum += 1.0 / (e + 1.0);
     }
-    return 1.0 / (sum / l.size()) - 1.0;
+    return l.size() / sum - 1.0;
 }
 
 double StatVector::second_moment()
