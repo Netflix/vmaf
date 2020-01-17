@@ -3,6 +3,8 @@ from __future__ import absolute_import
 import unittest
 from functools import partial
 
+import numpy as np
+
 from vmaf.core.executor import run_executors_in_parallel
 from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor, \
     NiqeNorefFeatureExtractor, BrisqueNorefFeatureExtractor, SiTiNorefFeatureExtractor
@@ -179,7 +181,6 @@ class NorefFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['SITI_noref_feature_si_score'], 83.46568284569439)
         self.assertAlmostEqual(results[1]['SITI_noref_feature_ti_score'], 15.570422677885475)
 
-        import numpy as np
         perc75 = partial(np.percentile, q=75)
         [result.set_score_aggregate_method(perc75) for result in results]
 
@@ -188,6 +189,15 @@ class NorefFeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[1]['SITI_noref_feature_si_score'], 84.00886573293045)
         self.assertAlmostEqual(results[1]['SITI_noref_feature_ti_score'], 16.862281850395433)
+
+        perc100 = partial(np.percentile, q=100)
+        [result.set_score_aggregate_method(perc100) for result in results]
+
+        self.assertAlmostEqual(results[0]['SITI_noref_feature_si_score'], 82.84005099011819)
+        self.assertAlmostEqual(results[0]['SITI_noref_feature_ti_score'], 17.60733889303054)
+
+        self.assertAlmostEqual(results[1]['SITI_noref_feature_si_score'], 85.28055474796807)
+        self.assertAlmostEqual(results[1]['SITI_noref_feature_ti_score'], 19.500837587311423)
 
 
 class ParallelNorefFeatureExtractorTest(unittest.TestCase):
