@@ -40,7 +40,7 @@ int vmaf_write_output_xml(VmafFeatureCollector *fc, FILE *outfile)
                 continue;
             if (!fc->feature_vector[j]->score[i].written)
                 continue;
-            fprintf(outfile, "%s=\"%.6f\" ",
+            fprintf(outfile, "%s=\"%.5f\" ",
                 fc->feature_vector[j]->name,
                 fc->feature_vector[j]->score[i].value
             );

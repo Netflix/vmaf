@@ -136,6 +136,9 @@ libvmaf_rc_sources = [
     src_dir + 'model.c',
     src_dir + 'unpickle.cpp',
     src_dir + 'svm.cpp',
+    feature_src_dir + 'common/cpu.c',
+    feature_src_dir + 'offset.c',
+    feature_src_dir + 'common/alignment.c',
     src_dir + 'picture.c',
     src_dir + 'mem.c',
     src_dir + 'picture.c',
@@ -162,6 +165,9 @@ libvmaf_rc_sources = [
     feature_src_dir + 'integer_psnr.c',
     feature_src_dir + 'float_psnr.c',
     feature_src_dir + 'psnr.c',
+    feature_src_dir + 'float_motion.c',
+    feature_src_dir + 'motion.c',
+    feature_src_dir + 'common/convolution.c',
 ]
 
 libvmaf_rc_include = include_directories(
