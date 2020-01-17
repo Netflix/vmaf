@@ -1045,10 +1045,14 @@ double RunVmaf(const char* fmt, int width, int height,
                 bootstrap_model_list_str += "," + result_keys[j];
             }
             if (pool_method) {
-                printf("VMAF score (%s), model %s = %f\n", pool_method, to_zero_lead(num_bootstrap_models + 1, BOOTSTRAP_MODEL_NAME_PRECISION).c_str(), result.get_score(result_keys[j]));
+                dbg_printf("VMAF score (%s), model %s = %f\n",
+                           pool_method, to_zero_lead(num_bootstrap_models + 1,
+                           BOOTSTRAP_MODEL_NAME_PRECISION).c_str(), result.get_score(result_keys[j]));
             }
             else {
-                printf("VMAF score, model %s = %f\n", to_zero_lead(num_bootstrap_models + 1, BOOTSTRAP_MODEL_NAME_PRECISION).c_str(), result.get_score(result_keys[j]));
+                dbg_printf("VMAF score, model %s = %f\n",
+                           to_zero_lead(num_bootstrap_models + 1,
+                           BOOTSTRAP_MODEL_NAME_PRECISION).c_str(), result.get_score(result_keys[j]));
             }
             num_bootstrap_models += 1;
         }
