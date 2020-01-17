@@ -1099,6 +1099,14 @@ double RunVmaf(const char* fmt, int width, int height,
 
         top["VMAF score"] = aggregate_vmaf;
         top["ExecFps"] = exec_fps;
+        if (aggregate_bagging)
+            top["Bagging"] = aggregate_bagging;
+        if (aggregate_stddev)
+            top["StdDev"] = aggregate_stddev;
+        if (aggregate_ci95_low)
+            top["CI95 Low"] = aggregate_ci95_low;
+        if (aggregate_ci95_high)
+            top["CI95 High"] = aggregate_ci95_high;
         if (aggregate_psnr)
             top["PSNR score"] = aggregate_psnr;
         if (aggregate_ssim)
