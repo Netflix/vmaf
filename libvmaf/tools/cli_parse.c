@@ -46,7 +46,9 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --height/-h $unsigned:     height\n"
             " --pixel_format/-p: $string pixel format (420/422/444)\n"
             " --bitdepth/-b $unsigned:   bitdepth (8/10/12)\n"
-            " --model/-m $path:          path to model file\n"
+            " --model/-m $model-params:  path to model file (required) + optional parameters, e.g.\n"
+            "                               path=foo.pkl:disable_clip\n"
+            "                               path=foo.pkl:name=foo:enable_transform\n"
             " --output/-o $path:         path to output file\n"
             " --xml/-x:                  write output file as XML (default)\n"
             " --threads/-t $unsigned:    number of threads to use\n"
@@ -116,6 +118,43 @@ static enum VmafPixelFormat parse_pix_fmt(const char *const optarg,
     return pix_fmt;
 }
 
+static VmafModelConfig parse_model_config(const char *const optarg,
+                                          const char *const app)
+{
+    /* some initializations */
+    VmafModelConfig cfg = {
+        .flags = VMAF_MODEL_FLAGS_DEFAULT,
+    };
+    char *token;
+    char delim[] = "=:";
+    bool path_set = false;
+    char *optarg_copy = (char *)optarg;
+    token = strtok(optarg_copy, delim);
+    /* loop over tokens and populate model configuration */
+    while (token != 0) {
+        if(!strcmp(token, "path")) {
+            path_set = true;
+            cfg.path = strtok(0, delim);
+        } else if (!strcmp(token, "name")) {
+            cfg.name = strtok(0, delim);
+        } else if (!strcmp(token, "disable_clip")) {
+            cfg.flags |= VMAF_MODEL_FLAG_DISABLE_CLIP;
+        } else if (!strcmp(token, "enable_transform")) {
+            cfg.flags |= VMAF_MODEL_FLAG_ENABLE_TRANSFORM;
+        } else if (!strcmp(token, "enable_ci")) {
+            cfg.flags |= VMAF_MODEL_FLAG_ENABLE_CONFIDENCE_INTERVAL;
+        } else {
+            usage(app, "Unknown parameter %s for model.\n", token);
+        }
+        token = strtok(0, delim);
+    }
+    /* path always needs to be set for each model specified */
+    if (!path_set) {
+        usage(app, "For every model, path needs to be set.\n");
+    }
+    return cfg;
+}
+
 void cli_parse(const int argc, char *const *const argv,
                CLISettings *const settings)
 {
@@ -157,7 +196,8 @@ void cli_parse(const int argc, char *const *const argv,
                 usage(argv[0], "A maximum of %d models is supported\n",
                       CLI_SETTINGS_STATIC_ARRAY_LEN);
             }
-            settings->model_path[settings->model_cnt++] = optarg;
+            settings->model_config[settings->model_cnt++] =
+                parse_model_config(optarg, argv[0]);
             break;
         case 'f':
             if (settings->feature_cnt == CLI_SETTINGS_STATIC_ARRAY_LEN) {
