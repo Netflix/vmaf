@@ -183,7 +183,7 @@ int vmaf_score_at_index(VmafContext *vmaf, VmafModel model, double *score,
     if (!vmaf) return -EINVAL;
     if (!score) return -EINVAL;
 
-    return vmaf_predict_score_at_index(vmaf, vmaf->feature_collector, index,
+    return vmaf_predict_score_at_index(&model, vmaf->feature_collector, index,
                                        score);
 }
 
