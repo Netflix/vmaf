@@ -5,13 +5,13 @@
 
 #include <libvmaf/libvmaf.rc.h>
 
+#include "feature/common/cpu.h"
 #include "feature/feature_extractor.h"
 #include "feature/feature_collector.h"
 #include "model.h"
 #include "output.h"
 #include "picture.h"
 #include "predict.h"
-
 
 typedef struct {
     VmafFeatureExtractorContext **fex_ctx;
@@ -72,10 +72,17 @@ static void feature_extractor_vector_destroy(RegisteredFeatureExtractors *rfe)
     return;
 }
 
+enum vmaf_cpu cpu;
+// ^ FIXME, this is a global in the old libvmaf
+// A few wrapped floating point feature extractors rely on it being a global
+// After we clean those up, We'll add this to the VmafContext
+
 int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
 {
     if (!vmaf) return -EINVAL;
     int err = 0;
+
+    cpu = cpu_autodetect(); //FIXME, see above
 
     VmafContext *const v = *vmaf = malloc(sizeof(*v));
     if (!v) goto fail;

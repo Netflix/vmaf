@@ -140,13 +140,18 @@ libvmaf_rc_sources = [
     src_dir + 'mem.c',
     src_dir + 'picture.c',
     src_dir + 'output.c',
+    feature_src_dir + 'offset.c',
+    feature_src_dir + 'common/alignment.c',
+    feature_src_dir + 'common/cpu.c',
     feature_src_dir + 'feature_collector.c',
     feature_src_dir + 'feature_extractor.c',
     feature_src_dir + 'picture_copy.c',
-    feature_src_dir + 'offset.c',
     feature_src_dir + 'adm.c',
     feature_src_dir + 'adm_tools.c',
     feature_src_dir + 'float_adm.c',
+    feature_src_dir + 'float_vif.c',
+    feature_src_dir + 'vif.c',
+    feature_src_dir + 'vif_tools.c',
     feature_src_dir + 'integer_ssim.c',
     feature_src_dir + 'float_ssim.c',
     feature_src_dir + 'ssim.c',
@@ -157,7 +162,6 @@ libvmaf_rc_sources = [
     feature_src_dir + 'integer_psnr.c',
     feature_src_dir + 'float_psnr.c',
     feature_src_dir + 'psnr.c',
-    feature_src_dir + 'psnr_tools.c',
 ]
 
 libvmaf_rc_include = include_directories(
@@ -180,6 +184,7 @@ libvmaf_rc = both_libraries(
       math_lib,
     ],
     objects : [
+        convolution_and_psnr_avx_static_lib.extract_all_objects(),
         libptools.extract_all_objects()
     ],
     install: false,
