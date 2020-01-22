@@ -51,7 +51,7 @@ VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(char *name)
 }
 
 typedef struct VmafFeatureExtractorContext {
-    bool is_initialized;
+    bool is_initialized, is_closed;
     VmafFeatureExtractor *fex;
 } VmafFeatureExtractorContext;
 
@@ -125,11 +125,13 @@ int vmaf_feature_extractor_context_close(VmafFeatureExtractorContext *fex_ctx)
 {
     if (!fex_ctx) return -EINVAL;
     if (!fex_ctx->is_initialized) return -EINVAL;
+    if (fex_ctx->is_closed) return 0;
 
     int err = 0;
     if (fex_ctx->fex->close) {
         err = fex_ctx->fex->close(fex_ctx->fex);
     }
+    fex_ctx->is_closed = true;
     return err;
 }
 

@@ -133,6 +133,8 @@ void cli_parse(const int argc, char *const *const argv,
         }
     }
 
+    if (!settings->output_fmt)
+        settings->output_fmt = VMAF_OUTPUT_FORMAT_XML;
     if (!settings->y4m_path_ref)
         usage(argv[0], "Reference .y4m (-r/--reference) is required");
     if (!settings->y4m_path_ref)
