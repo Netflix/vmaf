@@ -213,16 +213,14 @@ const char *vmaf_version(void)
 int vmaf_write_output(VmafContext *vmaf, FILE *outfile,
                       enum VmafOutputFormat fmt)
 {
-    int err = 0;
+    RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
+    for (unsigned i = 0; i < rfe.cnt; i++)
+        vmaf_feature_extractor_context_close(rfe.fex_ctx[i]);
 
     switch (fmt) {
-    case VMAF_OUTPUT_FORMAT_NONE:
     case VMAF_OUTPUT_FORMAT_XML:
-        err = vmaf_write_output_xml(vmaf->feature_collector, outfile);
-        break;
+        return vmaf_write_output_xml(vmaf->feature_collector, outfile);
     default:
-        break;
+        return 0;
     }
-
-    return err;
 }
