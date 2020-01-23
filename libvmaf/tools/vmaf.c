@@ -187,7 +187,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    for (unsigned picture_index = 0 ;; picture_index++) {
+    unsigned picture_index;
+    for (picture_index = 0 ;; picture_index++) {
         VmafPicture pic_ref, pic_dist;
         int ret1 = fetch_picture(&vid_ref, &pic_ref);
         int ret2 = fetch_picture(&vid_dist, &pic_dist);
@@ -214,6 +215,18 @@ int main(int argc, char *argv[])
         }
     }
     fprintf(stderr, "\n");
+
+    for (unsigned i = 0; i < c.model_cnt; i++) {
+        double vmaf_score;
+        err = vmaf_score_pooled(vmaf, model[i], VMAF_POOL_METHOD_MEAN,
+                                &vmaf_score, 0, picture_index);
+        if (err) {
+            fprintf(stderr, "problem generating pooled VMAF score\n");
+            return -1;
+        }
+
+        fprintf(stderr, "%s: %f\n", c.model_path[i], vmaf_score);
+    }
 
     if (c.output_path) {
         FILE *outfile = fopen(c.output_path, "w");
