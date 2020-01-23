@@ -168,6 +168,7 @@ libvmaf_rc_sources = [
     feature_src_dir + 'float_motion.c',
     feature_src_dir + 'motion.c',
     feature_src_dir + 'common/convolution.c',
+    feature_src_dir + 'alias.c',
 ]
 
 libvmaf_rc_include = include_directories(

@@ -1,7 +1,9 @@
 #include <errno.h>
 #include <stdio.h>
 
+#include "feature/alias.h"
 #include "feature/feature_collector.h"
+
 #include <libvmaf/libvmaf.rc.h>
 
 static unsigned max_capacity(VmafFeatureCollector *fc)
@@ -41,7 +43,7 @@ int vmaf_write_output_xml(VmafFeatureCollector *fc, FILE *outfile)
             if (!fc->feature_vector[j]->score[i].written)
                 continue;
             fprintf(outfile, "%s=\"%.5f\" ",
-                fc->feature_vector[j]->name,
+                vmaf_feature_name_alias(fc->feature_vector[j]->name),
                 fc->feature_vector[j]->score[i].value
             );
         }
