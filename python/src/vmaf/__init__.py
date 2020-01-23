@@ -15,6 +15,7 @@ except BaseException:
     #   See 'Working with Matplotlib on OSX' in the Matplotlib FAQ for more information.
     plt = None
 
+from . import config
 
 # Path to folder containing this file
 VMAF_LIB_FOLDER = os.path.dirname(os.path.abspath(__file__))
@@ -47,12 +48,19 @@ class ExternalProgram(object):
     These external programs should be compiled before vmaf is ran, as per instructions in README
     """
 
-    psnr = project_path(os.path.join("libvmaf", "build", "tools", "psnr"))
-    moment = project_path(os.path.join("libvmaf", "build", "tools", "moment"))
-    ssim = project_path(os.path.join("libvmaf", "build", "tools", "ssim"))
-    ms_ssim = project_path(os.path.join("libvmaf", "build", "tools", "ms_ssim"))
-    vmaf = project_path(os.path.join("libvmaf", "build", "tools", "vmaf"))
-    vmafossexec = project_path(os.path.join("libvmaf", "build", "tools", "vmafossexec"))
+    external_psnr = config.VmafExternalConfig.psnr_path()
+    external_moment = config.VmafExternalConfig.moment_path()
+    external_ssim = config.VmafExternalConfig.ssim_path()
+    external_ms_ssim = config.VmafExternalConfig.ms_ssim_path()
+    external_vmaf = config.VmafExternalConfig.vmaf_path()
+    external_vmafossexec = config.VmafExternalConfig.vmafossexec_path()
+
+    psnr = project_path(os.path.join("libvmaf", "build", "tools", "psnr")) if external_psnr is None else external_psnr
+    moment = project_path(os.path.join("libvmaf", "build", "tools", "moment")) if external_moment is None else external_moment
+    ssim = project_path(os.path.join("libvmaf", "build", "tools", "ssim")) if external_ssim is None else external_ssim
+    ms_ssim = project_path(os.path.join("libvmaf", "build", "tools", "ms_ssim")) if external_ms_ssim is None else external_ms_ssim
+    vmaf = project_path(os.path.join("libvmaf", "build", "tools", "vmaf")) if external_vmaf is None else external_vmaf
+    vmafossexec = project_path(os.path.join("libvmaf", "build", "tools", "vmafossexec")) if external_vmafossexec is None else external_vmafossexec
 
 
 class ExternalProgramCaller(object):
