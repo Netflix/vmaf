@@ -46,7 +46,7 @@ static int unpickle(VmafModel *model, const char *pickle_path)
 
     if (!(VAL_IS_NONE(score_transform) || VAL_IS_DICT(score_transform)))
         return -EINVAL;
-    if (VAL_IS_NONE(score_transform)) {
+    if (!VAL_IS_NONE(score_transform)) {
         model->score_transform.enabled = false;
     } else {
         model->score_transform.enabled = true;
@@ -91,9 +91,12 @@ static int unpickle(VmafModel *model, const char *pickle_path)
     for (unsigned i = 0; i < model->n_features; i++) {
        model->feature[i].name = strdup(Stringize(feature_names[i]).c_str());
        if (!model->feature[i].name) goto free_name;
-       model->feature[i].slope = slopes[i];
-       model->feature[i].intercept = intercepts[i];
+       model->feature[i].slope = double(slopes[i + 1]);
+       model->feature[i].intercept = double(intercepts[i + 1]);
     }
+
+    model->slope = double(slopes[0]);
+    model->intercept = double(intercepts[0]);
 
     return 0;
 
