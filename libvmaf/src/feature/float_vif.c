@@ -50,28 +50,22 @@ static int extract(VmafFeatureExtractor *fex,
                       &score, &score_num, &score_den, scores);
     if (err) return err;
 
-    err = vmaf_feature_collector_append(feature_collector, "float_vif",
-                                        score, index);
+    err = vmaf_feature_collector_append(feature_collector,
+                                        "'VMAF_feature_vif_scale0_score'",
+                                        scores[0] / scores[1], index);
     if (err) return err;
-    err = vmaf_feature_collector_append(feature_collector, "float_vif_num",
-                                        score_num, index);
+    err = vmaf_feature_collector_append(feature_collector,
+                                        "'VMAF_feature_vif_scale1_score'",
+                                        scores[2] / scores[3], index);
     if (err) return err;
-    err = vmaf_feature_collector_append(feature_collector, "float_vif_den",
-                                        score_den, index);
+    err = vmaf_feature_collector_append(feature_collector,
+                                        "'VMAF_feature_vif_scale2_score'",
+                                        scores[4] / scores[5], index);
     if (err) return err;
-
-    const char *feature_names[8] = {
-        "float_vif_num_scale_0", "float_vif_den_scale_0",
-        "float_vif_num_scale_1", "float_vif_den_scale_1",
-        "float_vif_num_scale_2", "float_vif_den_scale_2",
-        "float_vif_num_scale_3", "float_vif_den_scale_3",
-    };
-
-    for (unsigned i = 0; i < 8; i++) {
-        err = vmaf_feature_collector_append(feature_collector, feature_names[i],
-                                            scores[i], index);
-        if (err) return err;
-    }
+    err = vmaf_feature_collector_append(feature_collector,
+                                        "'VMAF_feature_vif_scale3_score'",
+                                        scores[6] / scores[7], index);
+    if (err) return err;
 
     return 0;
 }

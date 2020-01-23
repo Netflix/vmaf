@@ -56,7 +56,8 @@ static int extract(VmafFeatureExtractor *fex,
                         s->float_stride / sizeof(float));
 
     if (index == 0)
-        return vmaf_feature_collector_append(feature_collector, "float_motion2",
+        return vmaf_feature_collector_append(feature_collector,
+                                             "'VMAF_feature_motion2_score'",
                                              0., index);
 
     double score;
@@ -72,7 +73,8 @@ static int extract(VmafFeatureExtractor *fex,
                          s->float_stride, s->float_stride, &score2);
     if (err) return err;
     score2 = score2 < score ? score2 : score;
-    err = vmaf_feature_collector_append(feature_collector, "float_motion2",
+    err = vmaf_feature_collector_append(feature_collector,
+                                        "'VMAF_feature_motion2_score'",
                                         score2, index - 1);
 
     s->score = score;
@@ -91,7 +93,8 @@ static int close(VmafFeatureExtractor *fex)
     if (s->blur[2]) free(s->blur[2]);
     if (s->tmp) free(s->tmp);
 
-    return vmaf_feature_collector_append(s->feature_collector, "float_motion2",
+    return vmaf_feature_collector_append(s->feature_collector,
+                                         "'VMAF_feature_motion2_score'",
                                          s->score, s->index);
 }
 
