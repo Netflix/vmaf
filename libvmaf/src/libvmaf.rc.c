@@ -184,17 +184,17 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     return 0;
 }
 
-int vmaf_score_at_index(VmafContext *vmaf, VmafModel model, double *score,
+int vmaf_score_at_index(VmafContext *vmaf, VmafModel *model, double *score,
                         unsigned index)
 {
     if (!vmaf) return -EINVAL;
     if (!score) return -EINVAL;
 
-    return vmaf_predict_score_at_index(&model, vmaf->feature_collector, index,
+    return vmaf_predict_score_at_index(model, vmaf->feature_collector, index,
                                        score);
 }
 
-int vmaf_score_pooled(VmafContext *vmaf, VmafModel model,
+int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
                       enum VmafPoolingMethod pool_method, double *score,
                       unsigned index_low, unsigned index_high)
 {
@@ -202,6 +202,18 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel model,
     if (!score) return -EINVAL;
     if (index_low >= index_high) return -EINVAL;
 
+    RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
+    for (unsigned i = 0; i < rfe.cnt; i++)
+        vmaf_feature_extractor_context_close(rfe.fex_ctx[i]);
+
+    double sum;
+    for (unsigned i = index_low; i < index_high; i++) {
+        double vmaf_score;
+        int err = vmaf_score_at_index(vmaf, model, &vmaf_score, i);
+        if (err) return err;
+        sum += vmaf_score;
+    }
+    *score = sum / (index_high - index_low);
     return 0;
 }
 
