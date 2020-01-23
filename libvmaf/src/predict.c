@@ -27,8 +27,7 @@ static int denormalize(VmafModel *model, double *prediction)
     case(VMAF_MODEL_NORMALIZATION_TYPE_NONE):
         break;
     case(VMAF_MODEL_NORMALIZATION_TYPE_LINEAR_RESCALE):
-        *prediction -=
-            (model->feature[0].intercept / model->feature[0].slope);
+        *prediction = (*prediction - model->intercept) / model->slope;
         break;
     default:
         return -EINVAL;
