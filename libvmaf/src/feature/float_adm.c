@@ -50,28 +50,9 @@ static int extract(VmafFeatureExtractor *fex,
                       &score_den, scores, ADM_BORDER_FACTOR);
     if (err) return err;
 
-    err = vmaf_feature_collector_append(feature_collector, "float_adm",
+    err = vmaf_feature_collector_append(feature_collector,
+                                        "'VMAF_feature_adm2_score'",
                                         score, index);
-    if (err) return err;
-    err = vmaf_feature_collector_append(feature_collector, "float_adm_num",
-                                         score_num, index);
-    if (err) return err;
-    err = vmaf_feature_collector_append(feature_collector, "float_adm_den",
-                                         score_den, index);
-    if (err) return err;
-
-    const char *feature_names[8] = {
-        "float_adm_num_scale_0", "float_adm_den_scale_0",
-        "float_adm_num_scale_1", "float_adm_den_scale_1",
-        "float_adm_num_scale_2", "float_adm_den_scale_2",
-        "float_adm_num_scale_3", "float_adm_den_scale_3",
-    };
-
-    for (unsigned i = 0; i < 8; i++) {
-        err = vmaf_feature_collector_append(feature_collector, feature_names[i],
-                                            scores[i], index);
-        if (err) return err;
-    }
 
     return 0;
 }
