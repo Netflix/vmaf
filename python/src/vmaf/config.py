@@ -64,6 +64,48 @@ class VmafExternalConfig(object):
         return cls._path_from_external('CVX_PATH')
 
     @classmethod
+    def psnr_path(cls):
+        """
+        :return str: Path to external psnr executable, if installed and configured via `externals` module
+        """
+        return cls._path_from_external('PSNR_PATH')
+
+    @classmethod
+    def moment_path(cls):
+        """
+        :return str: Path to external moment executable, if installed and configured via `externals` module
+        """
+        return cls._path_from_external('MOMENT_PATH')
+
+    @classmethod
+    def ssim_path(cls):
+        """
+        :return str: Path to external ssim executable, if installed and configured via `externals` module
+        """
+        return cls._path_from_external('SSIM_PATH')
+
+    @classmethod
+    def ms_ssim_path(cls):
+        """
+        :return str: Path to external ms_ssim executable, if installed and configured via `externals` module
+        """
+        return cls._path_from_external('MS_SSIM_PATH')
+
+    @classmethod
+    def vmaf_path(cls):
+        """
+        :return str: Path to external vmaf executable, if installed and configured via `externals` module
+        """
+        return cls._path_from_external('VMAF_PATH')
+
+    @classmethod
+    def vmafossexec_path(cls):
+        """
+        :return str: Path to external vmafossexec executable, if installed and configured via `externals` module
+        """
+        return cls._path_from_external('VMAFOSSEXEC_PATH')
+
+    @classmethod
     def get_and_assert_ffmpeg(cls):
         path = cls.ffmpeg_path()
         assert path is not None, cls._MISSING_EXTERNAL_MESSAGE.format(name='ffmpeg', key='FFMPEG_PATH')
@@ -88,6 +130,7 @@ class VmafExternalConfig(object):
         path = cls.cvx_path()
         assert path is not None, cls._MISSING_EXTERNAL_MESSAGE.format(name='cvx', key='CVX_PATH')
         return path
+
 
 class VmafConfig(object):
 
