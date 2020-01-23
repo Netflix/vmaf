@@ -10,6 +10,19 @@ __copyright__ = "Copyright 2016-2019, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 
+class RunProcessTest(unittest.TestCase):
+
+    def test_run_process(self):
+        ret = run_process('echo hello', shell=True)
+        self.assertEqual(ret, 0)
+
+    def test_run_process_false_cmd(self):
+        with self.assertRaises(AssertionError) as e:
+            run_process('echoo hello', shell=True)
+        self.assertEqual("Process returned 127, cmd: echoo hello, msg: b'/bin/sh: echoo: command not found\\n'",
+                         e.exception.args[0])
+
+
 class CommandLineTest(unittest.TestCase):
 
     def setUp(self):

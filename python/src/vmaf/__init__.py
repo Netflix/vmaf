@@ -26,9 +26,11 @@ VMAF_PROJECT = os.path.abspath(os.path.join(VMAF_LIB_FOLDER, '../../..',))
 
 
 def run_process(cmd, **kwargs):
-    ret = subprocess.call(cmd, **kwargs)
-    assert ret == 0, 'Process returned {ret}, cmd: {cmd}'.format(ret=ret, cmd=cmd)
-    return ret
+    try:
+        subprocess.check_output(cmd, stderr=subprocess.STDOUT, **kwargs)
+    except subprocess.CalledProcessError as e:
+        raise AssertionError(f'Process returned {e.returncode}, cmd: {cmd}, msg: {str(e.output)}')
+    return 0
 
 
 def project_path(relative_path):
