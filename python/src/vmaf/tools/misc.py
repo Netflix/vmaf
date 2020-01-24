@@ -1,3 +1,4 @@
+import subprocess
 from fnmatch import fnmatch
 import multiprocessing
 from time import sleep, time
@@ -354,7 +355,7 @@ def check_program_exist(program):
 
     '''
     try:
-        run_process(program.split(), stdout=open(os.devnull, 'wb'))
+        subprocess.call(program.split(), stdout=open(os.devnull, 'wb'))
         return True
     except OSError as e:
         if e.errno == errno.ENOENT:

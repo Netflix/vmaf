@@ -19,8 +19,8 @@ class RunProcessTest(unittest.TestCase):
     def test_run_process_false_cmd(self):
         with self.assertRaises(AssertionError) as e:
             run_process('echoo hello', shell=True)
-        self.assertEqual("Process returned 127, cmd: echoo hello, msg: b'/bin/sh: echoo: command not found\\n'",
-                         e.exception.args[0])
+        self.assertTrue('Process returned 127, cmd: echoo hello' in e.exception.args[0])
+        self.assertTrue('not found' in e.exception.args[0])
 
 
 class CommandLineTest(unittest.TestCase):
