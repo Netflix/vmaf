@@ -78,10 +78,17 @@ static int close(VmafFeatureExtractor *fex)
     return 0;
 }
 
+static const char *provided_features[] = {
+    "'VMAF_feature_vif_scale0_score'", "'VMAF_feature_vif_scale1_score'",
+    "'VMAF_feature_vif_scale2_score'", "'VMAF_feature_vif_scale3_score'",
+    NULL
+};
+
 VmafFeatureExtractor vmaf_fex_float_vif = {
     .name = "float_vif",
     .init = init,
     .extract = extract,
     .close = close,
     .priv_size = sizeof(VifState),
+    .provided_features = provided_features,
 };

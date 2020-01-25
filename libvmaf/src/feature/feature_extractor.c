@@ -41,21 +41,15 @@ VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(char *name)
 
     VmafFeatureExtractor *fex = NULL;
     for (unsigned i = 0; (fex = feature_extractor_list[i]); i++) {
-        /*
+        if (!fex->provided_features) continue;
         const char *fname = NULL;
-        for (unsigned j = 0; (fname = fex->feature[j]); j++) {
-            if (!strcmp(feature_name, fname))
+        for (unsigned j = 0; (fname = fex->provided_features[j]); j++) {
+            if (!strcmp(name, fname))
                 return fex;
         }
-        */
     }
     return NULL;
 }
-
-typedef struct VmafFeatureExtractorContext {
-    bool is_initialized, is_closed;
-    VmafFeatureExtractor *fex;
-} VmafFeatureExtractorContext;
 
 int vmaf_feature_extractor_context_create(VmafFeatureExtractorContext **fex_ctx,
                                           VmafFeatureExtractor *fex)

@@ -61,10 +61,16 @@ static int close(VmafFeatureExtractor *fex)
     return 0;
 }
 
+static const char *provided_features[] = {
+    "float_psnr",
+    NULL
+};
+
 VmafFeatureExtractor vmaf_fex_float_psnr = {
     .name = "float_psnr",
     .init = init,
     .extract = extract,
     .close = close,
     .priv_size = sizeof(PsnrState),
+    .provided_features = provided_features,
 };
