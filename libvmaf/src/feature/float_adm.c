@@ -65,10 +65,16 @@ static int close(VmafFeatureExtractor *fex)
     return 0;
 }
 
+static const char *provided_features[] = {
+    "'VMAF_feature_adm2_score'",
+    NULL
+};
+
 VmafFeatureExtractor vmaf_fex_float_adm = {
     .name = "float_adm",
     .init = init,
     .extract = extract,
     .close = close,
     .priv_size = sizeof(AdmState),
+    .provided_features = provided_features,
 };

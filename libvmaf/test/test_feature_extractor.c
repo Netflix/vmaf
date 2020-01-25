@@ -15,11 +15,17 @@ static char *test_get_feature_extractor_by_name_and_feature_name()
 {
     cpu = cpu_autodetect(); //FIXME, see above
 
-    VmafFeatureExtractor *fex = NULL;
+    VmafFeatureExtractor *fex;
     fex = vmaf_get_feature_extractor_by_name("");
-    mu_assert("problem during vmaf_picture_unref", !fex);
-    fex = vmaf_get_feature_extractor_by_feature_name("");
-    mu_assert("problem during vmaf_picture_unref", !fex);
+    mu_assert("problem during vmaf_get_feature_extractor_by_name", !fex);
+    fex = vmaf_get_feature_extractor_by_name("float_vif");
+    mu_assert("problem vmaf_get_feature_extractor_by_name",
+              !strcmp(fex->name, "float_vif"));
+
+    fex =
+        vmaf_get_feature_extractor_by_feature_name("'VMAF_feature_adm2_score'");
+    mu_assert("problem during vmaf_get_feature_extractor_by_feature_name",
+              fex && !strcmp(fex->name, "float_adm"));
 
     return NULL;
 }

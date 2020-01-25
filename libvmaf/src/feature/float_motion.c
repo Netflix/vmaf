@@ -98,10 +98,16 @@ static int close(VmafFeatureExtractor *fex)
                                          s->score, s->index);
 }
 
+static const char *provided_features[] = {
+    "'VMAF_feature_motion2_score'",
+    NULL
+};
+
 VmafFeatureExtractor vmaf_fex_float_motion = {
     .name = "float_motion",
     .init = init,
     .extract = extract,
     .close = close,
     .priv_size = sizeof(MotionState),
+    .provided_features = provided_features,
 };

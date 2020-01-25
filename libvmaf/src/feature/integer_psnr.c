@@ -53,9 +53,15 @@ static int close(VmafFeatureExtractor *fex)
     return 0;
 }
 
+static const char *provided_features[] = {
+    "psnr_y", "psnr_cb", "psnr_cr",
+    NULL
+};
+
 VmafFeatureExtractor vmaf_fex_psnr = {
     .name = "psnr",
     .init = init,
     .extract = extract,
     .close = close,
+    .provided_features = provided_features,
 };

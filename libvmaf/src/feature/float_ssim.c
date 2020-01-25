@@ -58,10 +58,16 @@ static int close(VmafFeatureExtractor *fex)
     return 0;
 }
 
+static const char *provided_features[] = {
+    "float_ssim",
+    NULL
+};
+
 VmafFeatureExtractor vmaf_fex_float_ssim = {
     .name = "float_ssim",
     .init = init,
     .extract = extract,
     .close = close,
     .priv_size = sizeof(SsimState),
+    .provided_features = provided_features,
 };
