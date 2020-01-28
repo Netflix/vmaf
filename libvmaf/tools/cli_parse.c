@@ -9,11 +9,15 @@
 
 #include <libvmaf/libvmaf.rc.h>
 
-static const char short_opts[] = "r:d:m:o:x:t:f:i:n:v:";
+static const char short_opts[] = "r:d:w:h:p:b:m:o:x:t:f:i:n:v:";
 
 static const struct option long_opts[] = {
     { "reference",        1, NULL, 'r' },
     { "distorted",        1, NULL, 'd' },
+    { "width",            1, NULL, 'w' },
+    { "height",           1, NULL, 'h' },
+    { "pixel_format",     1, NULL, 'p' },
+    { "bitdepth",         1, NULL, 'b' },
     { "model",            1, NULL, 'm' },
     { "output",           1, NULL, 'o' },
     { "xml",              0, NULL, 'x' },
@@ -35,8 +39,12 @@ static void usage(const char *const app, const char *const reason, ...) {
     }
     fprintf(stderr, "Usage: %s [options]\n\n", app);
     fprintf(stderr, "Supported options:\n"
-            " --reference/-r $path:      path to reference .y4m\n"
-            " --distorted/-d $path:      path to distorted .y4m\n"
+            " --reference/-r $path:      path to reference .y4m or .yuv\n"
+            " --distorted/-d $path:      path to distorted .y4m or .yuv\n"
+            " --width/-w $unsigned:      width\n"
+            " --height/-h $unsigned:     height\n"
+            " --pixel_format/-p: $string pixel format (420/422/444)\n"
+            " --bitdepth/-b $unsigned:   bitdepth (8/10/12)\n"
             " --model/-m $path:          path to model file\n"
             " --output/-o $path:         path to output file\n"
             " --xml/-x:                  write output file as XML (default)\n"
@@ -78,6 +86,34 @@ static unsigned parse_unsigned(const char *const optarg, const int option,
     return res;
 }
 
+static unsigned parse_bitdepth(const char *const optarg, const int option,
+                               const char *const app)
+{
+    unsigned bitdepth = parse_unsigned(optarg, option, app);
+    if (!((bitdepth == 8) || (bitdepth == 10) || (bitdepth == 12)))
+        error(app, optarg, option, "a valid bitdepth (8/10/12)");
+    return bitdepth;
+}
+
+static enum VmafPixelFormat parse_pix_fmt(const char *const optarg,
+                                          const int option,
+                                          const char *const app)
+{
+    enum VmafPixelFormat pix_fmt = VMAF_PIX_FMT_UNKNOWN;
+
+    if (!strcmp(optarg, "420"))
+        pix_fmt = VMAF_PIX_FMT_YUV420P;
+    if (!strcmp(optarg, "422"))
+        pix_fmt = VMAF_PIX_FMT_YUV422P;
+    if (!strcmp(optarg, "444"))
+        pix_fmt = VMAF_PIX_FMT_YUV444P;
+
+    if (!pix_fmt) error(app, optarg, option, "a valid pixel format "
+                                             "(420/422/444)");
+
+    return pix_fmt;
+}
+
 void cli_parse(const int argc, char *const *const argv,
                CLISettings *const settings)
 {
@@ -87,10 +123,26 @@ void cli_parse(const int argc, char *const *const argv,
     while ((o = getopt_long(argc, argv, short_opts, long_opts, NULL)) >= 0) {
         switch (o) {
         case 'r':
-            settings->y4m_path_ref = optarg;
+            settings->path_ref = optarg;
             break;
         case 'd':
-            settings->y4m_path_dist = optarg;
+            settings->path_dist = optarg;
+            break;
+        case 'w':
+            settings->width = parse_unsigned(optarg, 'w', argv[0]);
+            settings->use_yuv = true;
+            break;
+        case 'h':
+            settings->height = parse_unsigned(optarg, 'h', argv[0]);
+            settings->use_yuv = true;
+            break;
+        case 'p':
+            settings->pix_fmt = parse_pix_fmt(optarg, 'p', argv[0]);
+            settings->use_yuv = true;
+            break;
+        case 'b':
+            settings->bitdepth = parse_bitdepth(optarg, 'b', argv[0]);
+            settings->use_yuv = true;
             break;
         case 'o':
             settings->output_path = optarg;
@@ -135,10 +187,19 @@ void cli_parse(const int argc, char *const *const argv,
 
     if (!settings->output_fmt)
         settings->output_fmt = VMAF_OUTPUT_FORMAT_XML;
-    if (!settings->y4m_path_ref)
-        usage(argv[0], "Reference .y4m (-r/--reference) is required");
-    if (!settings->y4m_path_ref)
-        usage(argv[0], "Distorted .y4m (-d/--distorted) is required");
+    if (!settings->path_ref)
+        usage(argv[0], "Reference .y4m or .yuv (-r/--reference) is required");
+    if (!settings->path_ref)
+        usage(argv[0], "Distorted .y4m or .yuv (-d/--distorted) is required");
+    if (settings->use_yuv && !(settings->width && settings->height &&
+        settings->pix_fmt && settings->bitdepth))
+    {
+        usage(argv[0], "The following options are required for .yuv input:\n"
+                       "  --width/-w\n"
+                       "  --height/-h\n"
+                       "  --pixel_format/-p\n"
+                       "  --bitdepth/-b\n");
+    }
     if ((settings->model_cnt == 0) && !settings->no_prediction)
         usage(argv[0], "At least one model file (-m/--model) is required");
 }
