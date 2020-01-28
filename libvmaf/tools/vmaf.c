@@ -116,29 +116,39 @@ int main(int argc, char *argv[])
     CLISettings c;
     cli_parse(argc, argv, &c);
 
-    FILE *file_ref = fopen(c.y4m_path_ref, "r");
+    FILE *file_ref = fopen(c.path_ref, "r");
     if (!file_ref) {
-        fprintf(stderr, "could not open file: %s\n", c.y4m_path_ref);
+        fprintf(stderr, "could not open file: %s\n", c.path_ref);
         return -1;
     }
 
-    FILE *file_dist = fopen(c.y4m_path_dist, "r");
+    FILE *file_dist = fopen(c.path_dist, "r");
     if (!file_dist) {
-        fprintf(stderr, "could not open file: %s\n", c.y4m_path_dist);
+        fprintf(stderr, "could not open file: %s\n", c.path_dist);
         return -1;
     }
 
     video_input vid_ref;
-    err = video_input_open(&vid_ref, file_ref);
+    if (c.use_yuv) {
+        err = raw_input_open(&vid_ref, file_ref,
+                             c.width, c.height, c.pix_fmt, c.bitdepth);
+    } else {
+        err = video_input_open(&vid_ref, file_ref);
+    }
     if (err) {
-        fprintf(stderr, "problem with y4m: %s\n", c.y4m_path_ref);
+        fprintf(stderr, "problem with reference file: %s\n", c.path_ref);
         return -1;
     }
 
     video_input vid_dist;
-    err = video_input_open(&vid_dist, file_dist);
+    if (c.use_yuv) {
+        err = raw_input_open(&vid_dist, file_dist,
+                             c.width, c.height, c.pix_fmt, c.bitdepth);
+    } else {
+        err = video_input_open(&vid_dist, file_dist);
+    }
     if (err) {
-        fprintf(stderr, "problem with y4m: %s\n", c.y4m_path_dist);
+        fprintf(stderr, "problem with distorted file: %s\n", c.path_dist);
         return -1;
     }
 
@@ -196,14 +206,16 @@ int main(int argc, char *argv[])
         if (ret1 && ret2) {
             break;
         } else if (ret1 < 0 || ret2 < 0) {
+            fprintf(stderr, "problem while reading pictures\n",
+                    c.path_ref, c.path_dist);
             break;
         } else if (ret1) {
             fprintf(stderr, "\"%s\" ended before \"%s\".\n",
-                    c.y4m_path_ref, c.y4m_path_dist);
+                    c.path_ref, c.path_dist);
             break;
         } else if (ret2) {
             fprintf(stderr, "\"%s\" ended before \"%s\".\n",
-                    c.y4m_path_dist, c.y4m_path_ref);
+                    c.path_dist, c.path_ref);
             break;
         }
 

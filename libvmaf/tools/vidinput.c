@@ -27,6 +27,24 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.*/
 #include <string.h>
 
 extern video_input_vtbl Y4M_INPUT_VTBL;
+extern raw_input_vtbl YUV_INPUT_VTBL;
+
+int raw_input_open(video_input *_vid,FILE *_fin,
+                   unsigned width, unsigned height,
+                   int pix_fmt, unsigned bitdepth)
+{
+  void *ctx;
+  if((ctx = YUV_INPUT_VTBL.open(_fin, width, height,
+                                pix_fmt, bitdepth)) != NULL)
+  {
+    _vid->vtbl=&YUV_INPUT_VTBL;
+    _vid->ctx=ctx;
+    _vid->fin=_fin;
+    return 0;
+  }
+  else fprintf(stderr,"Unknown file type.\n");
+  return -1;
+}
 
 int video_input_open(video_input *_vid,FILE *_fin){
   void *ctx;
