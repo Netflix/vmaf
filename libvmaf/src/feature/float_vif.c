@@ -40,8 +40,8 @@ static int extract(VmafFeatureExtractor *fex,
     VifState *s = fex->priv;
     int err = 0;
 
-    picture_copy(s->ref, ref_pic);
-    picture_copy(s->dist, dist_pic);
+    picture_copy(s->ref, ref_pic, -128);
+    picture_copy(s->dist, dist_pic, -128);
 
     double score, score_num, score_den;
     double scores[8];

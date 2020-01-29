@@ -39,8 +39,8 @@ static int extract(VmafFeatureExtractor *fex,
     PsnrState *s = fex->priv;
     int err = 0;
 
-    picture_copy(s->ref, ref_pic);
-    picture_copy(s->dist, dist_pic);
+    picture_copy(s->ref, ref_pic, 0);
+    picture_copy(s->dist, dist_pic, 0);
 
     double score;
     err = compute_psnr(s->ref, s->dist, ref_pic->w[0], ref_pic->h[0], s->float_stride,
