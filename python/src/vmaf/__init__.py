@@ -56,6 +56,7 @@ class ExternalProgram(object):
     external_ms_ssim = config.VmafExternalConfig.ms_ssim_path()
     external_vmaf = config.VmafExternalConfig.vmaf_path()
     external_vmafossexec = config.VmafExternalConfig.vmafossexec_path()
+    external_vmafrc = config.VmafExternalConfig.vmafrc_path()
 
     psnr = project_path(os.path.join("libvmaf", "build", "tools", "psnr")) if external_psnr is None else external_psnr
     moment = project_path(os.path.join("libvmaf", "build", "tools", "moment")) if external_moment is None else external_moment
@@ -63,6 +64,7 @@ class ExternalProgram(object):
     ms_ssim = project_path(os.path.join("libvmaf", "build", "tools", "ms_ssim")) if external_ms_ssim is None else external_ms_ssim
     vmaf = project_path(os.path.join("libvmaf", "build", "tools", "vmaf")) if external_vmaf is None else external_vmaf
     vmafossexec = project_path(os.path.join("libvmaf", "build", "tools", "vmafossexec")) if external_vmafossexec is None else external_vmafossexec
+    vmafrc = project_path(os.path.join("libvmaf", "build", "tools", "vmaf_rc")) if external_vmafrc is None else external_vmafrc
 
 
 class ExternalProgramCaller(object):
@@ -202,3 +204,35 @@ class ExternalProgramCaller(object):
         if logger:
             logger.info(vmafossexec_cmd)
         run_process(vmafossexec_cmd, shell=True)
+
+    @staticmethod
+    def call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth,
+                    psnr, ssim, ms_ssim, model, output, exe, logger):
+
+        if exe is None:
+            exe = required(ExternalProgram.vmafrc)
+
+        vmafrc_cmd = "{exe} --reference {reference} --distorted {distorted} --width {width} --height {height} --pixel_format {pixel_format} --bitdepth {bitdepth} --model {model} --output {output}" \
+            .format(
+            exe=exe,
+            reference=reference,
+            distorted=distorted,
+            width=width,
+            height=height,
+            pixel_format=pixel_format,
+            bitdepth=bitdepth,
+            model=model,
+            output=output)
+
+        if psnr:
+            vmafrc_cmd += ' --feature float_psnr'
+        if ssim:
+            vmafrc_cmd += ' --feature float_ssim'
+        if ms_ssim:
+            pass
+            # vmafrc_cmd += ' --feature float_ms_ssim'  # TODO: add float_ms_ssim
+
+        if logger:
+            logger.info(vmafrc_cmd)
+
+        run_process(vmafrc_cmd, shell=True)

@@ -106,6 +106,13 @@ class VmafExternalConfig(object):
         return cls._path_from_external('VMAFOSSEXEC_PATH')
 
     @classmethod
+    def vmafrc_path(cls):
+        """
+        :return str: Path to external vmafossexec executable, if installed and configured via `externals` module
+        """
+        return cls._path_from_external('VMAFRC_PATH')
+
+    @classmethod
     def get_and_assert_ffmpeg(cls):
         path = cls.ffmpeg_path()
         assert path is not None, cls._MISSING_EXTERNAL_MESSAGE.format(name='ffmpeg', key='FFMPEG_PATH')
