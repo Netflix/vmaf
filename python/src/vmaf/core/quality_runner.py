@@ -660,16 +660,19 @@ class VmafossExecQualityRunner(QualityRunner):
             psnr = self.optional_dict['psnr']
         else:
             psnr = True
+        assert isinstance(psnr, bool)
 
         if self.optional_dict is not None and 'ssim' in self.optional_dict:
             ssim = self.optional_dict['ssim']
         else:
             ssim = True
+        assert isinstance(ssim, bool)
 
         if self.optional_dict is not None and 'ms_ssim' in self.optional_dict:
             ms_ssim = self.optional_dict['ms_ssim']
         else:
             ms_ssim = True
+        assert isinstance(ms_ssim, bool)
 
         if self.optional_dict is not None and 'ci' in self.optional_dict:
             ci = self.optional_dict['ci']
@@ -720,7 +723,7 @@ class VmafossExecQualityRunner(QualityRunner):
                 try:
                     feature_scores[i_feature].append(float(frame.attrib[feature]))
                 except KeyError:
-                    pass # some features may be missing
+                    pass  # some features may be missing
         assert len(scores) != 0
         quality_result = {
             self.get_scores_key(): scores,
@@ -1138,3 +1141,124 @@ class NiqeQualityRunner(QualityRunner):
 
         vmaf_fassembler = self._get_niqe_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
+
+
+class VmafrcQualityRunner(QualityRunner):
+
+    TYPE = 'VMAFRC'
+
+    VERSION = 'F' + VmafFeatureExtractor.VERSION + '-0.6.1'
+    ALGO_VERSION = 2
+
+    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_v0.6.1.pkl")
+
+    FEATURES = ['adm2', 'motion2', 'vif_scale0', 'vif_scale1', 'vif_scale2',
+                'vif_scale3', 'float_psnr', 'float_ssim',
+                # 'float_ms_ssim',
+                ]
+
+    @classmethod
+    def get_feature_scores_key(cls, atom_feature):
+        return "{type}_{atom_feature}_scores".format(
+            type=cls.TYPE, atom_feature=atom_feature)
+
+    def _generate_result(self, asset):
+        # routine to call the command-line executable and generate quality
+        # scores in the log file.
+
+        log_file_path = self._get_log_file_path(asset)
+
+        if self.optional_dict is not None \
+                and 'model_filepath' in self.optional_dict \
+                and self.optional_dict['model_filepath'] is not None:
+            model_filepath = self.optional_dict['model_filepath']
+        else:
+            model_filepath = self.DEFAULT_MODEL_FILEPATH
+
+        if self.optional_dict is not None and 'psnr' in self.optional_dict:
+            psnr = self.optional_dict['psnr']
+        else:
+            psnr = True
+        assert isinstance(psnr, bool)
+
+        if self.optional_dict is not None and 'ssim' in self.optional_dict:
+            ssim = self.optional_dict['ssim']
+        else:
+            ssim = True
+        assert isinstance(ssim, bool)
+
+        if self.optional_dict is not None and 'ms_ssim' in self.optional_dict:
+            ms_ssim = self.optional_dict['ms_ssim']
+        else:
+            ms_ssim = True
+        assert isinstance(ms_ssim, bool)
+
+        quality_width, quality_height = asset.quality_width_height
+
+        fmt = self._get_workfile_yuv_type(asset)
+
+        ref_path = asset.ref_workfile_path
+        dis_path = asset.dis_workfile_path
+
+        reference = ref_path
+        distorted = dis_path
+        width = quality_width
+        height = quality_height
+        pixel_format, bitdepth = self._convert_format(fmt)
+        model = model_filepath
+        output = log_file_path
+        exe = self._get_exec()
+        logger = self.logger
+
+        ExternalProgramCaller.call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth,
+                                          psnr, ssim, ms_ssim, model, output, exe, logger)
+
+    def _get_exec(self):
+        return None # signaling default
+
+    @staticmethod
+    def _convert_format(old_fmt):
+        assert old_fmt in ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
+        if old_fmt in ['yuv420p', 'yuv420p10le']:
+            pixel_format = '420'
+        elif old_fmt in ['yuv422p', 'yuv422p10le']:
+            pixel_format = '422'
+        elif old_fmt in ['yuv444p', 'yuv444p10le']:
+            pixel_format = '444'
+        else:
+            assert False
+        if old_fmt in ['yuv420p', 'yuv422p', 'yuv444p']:
+            bitdepth = 8
+        elif old_fmt in ['yuv420p10le', 'yuv422p10le', 'yuv444p10le']:
+            bitdepth = 10
+        else:
+            assert False
+        return pixel_format, bitdepth
+
+    def _get_quality_scores(self, asset):
+        # routine to read the quality scores from the log file, and return
+        # the scores in a dictionary format.
+
+        log_file_path = self._get_log_file_path(asset)
+        tree = ElementTree.parse(log_file_path)
+        root = tree.getroot()
+        scores = []
+
+        feature_scores = [[] for _ in self.FEATURES]
+
+        for frame in root.findall('frames/frame'):
+            scores.append(float(frame.attrib['vmaf']))
+            for i_feature, feature in enumerate(self.FEATURES):
+                try:
+                    feature_scores[i_feature].append(float(frame.attrib[feature]))
+                except KeyError:
+                    pass  # some features may be missing
+        assert len(scores) != 0
+        quality_result = {
+            self.get_scores_key(): scores,
+        }
+        for i_feature, feature in enumerate(self.FEATURES):
+            if len(feature_scores[i_feature]) != 0:
+                quality_result[self.get_feature_scores_key(feature)] = feature_scores[i_feature]
+        return quality_result
+
