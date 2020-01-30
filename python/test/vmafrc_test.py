@@ -71,25 +71,25 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'],0.3634208125, places=6)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.7666474166666667, places=6)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'],0.3634208125, places=8)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.7666474166666667, places=8)
         self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.8628533333333334, places=5)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.9159719583333334, places=6)
-        self.assertAlmostEqual(results[0]['VMAFRC_motion2_score'], 3.895352291666667, places=6)
-        self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 0.9345877291666667, places=6)
-        self.assertAlmostEqual(results[0]['VMAFRC_float_psnr_score'], 30.7550666667, places=6)
-        self.assertAlmostEqual(results[0]['VMAFRC_float_ssim_score'], 0.86322654166666657, places=6)
-        # self.assertAlmostEqual(results[0]['VMAFRC_float_ms_ssim_score'], 0.9632406874999999, places=4)  # TODO: add float_ms_ssim
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.9159719583333334, places=8)
+        self.assertAlmostEqual(results[0]['VMAFRC_motion2_score'], 3.895352291666667, places=8)
+        self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 0.9345877291666667, places=8)
+        self.assertAlmostEqual(results[0]['VMAFRC_float_psnr_score'], 30.7550666667, places=8)
+        self.assertAlmostEqual(results[0]['VMAFRC_float_ssim_score'], 0.86322654166666657, places=8)
+        # self.assertAlmostEqual(results[0]['VMAFRC_float_ms_ssim_score'], 0.9632406874999999, places=8)  # TODO: add float_ms_ssim
 
-        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale0_score'], 1.0, places=6)
-        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale1_score'],0.9999998541666666, places=6)
-        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale2_score'],0.9999996041666667, places=6)
-        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale3_score'], 0.9999991458333334, places=6)
-        self.assertAlmostEqual(results[1]['VMAFRC_motion2_score'], 3.895352291666667, places=6)
-        self.assertAlmostEqual(results[1]['VMAFRC_adm2_score'], 1.0, places=6)
-        self.assertAlmostEqual(results[1]['VMAFRC_float_psnr_score'], 60.0, places=6)
-        self.assertAlmostEqual(results[1]['VMAFRC_float_ssim_score'], 1.0, places=6)
-        # self.assertAlmostEqual(results[1]['VMAFRC_float_ms_ssim_score'], 1.0, places=6)  # TODO: add float_ms_ssim
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale0_score'], 1.0, places=8)
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale1_score'],0.9999998541666666, places=8)
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale2_score'],0.9999996041666667, places=8)
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale3_score'], 0.9999991458333334, places=8)
+        self.assertAlmostEqual(results[1]['VMAFRC_motion2_score'], 3.895352291666667, places=8)
+        self.assertAlmostEqual(results[1]['VMAFRC_adm2_score'], 1.0, places=8)
+        self.assertAlmostEqual(results[1]['VMAFRC_float_psnr_score'], 60.0, places=8)
+        self.assertAlmostEqual(results[1]['VMAFRC_float_ssim_score'], 1.0, places=8)
+        # self.assertAlmostEqual(results[1]['VMAFRC_float_ms_ssim_score'], 1.0, places=8)  # TODO: add float_ms_ssim
 
-        self.assertAlmostEqual(results[0]['VMAFRC_score'], 76.69926875, places=6)
-        self.assertAlmostEqual(results[1]['VMAFRC_score'], 99.94641666666666, places=6)
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 76.69926875, places=8)
+        self.assertAlmostEqual(results[1]['VMAFRC_score'], 99.94641666666666, places=8)
