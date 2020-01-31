@@ -22,6 +22,7 @@ typedef struct {
     char *import_path[CLI_SETTINGS_STATIC_ARRAY_LEN];
     unsigned import_cnt;
     enum VmafLogLevel log_level;
+    unsigned subsample;
     unsigned thread_cnt;
     bool no_prediction;
 } CLISettings;

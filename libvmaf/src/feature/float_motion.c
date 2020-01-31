@@ -114,4 +114,5 @@ VmafFeatureExtractor vmaf_fex_float_motion = {
     .close = close,
     .priv_size = sizeof(MotionState),
     .provided_features = provided_features,
+    .flags = VMAF_FEATURE_EXTRACTOR_TEMPORAL,
 };
