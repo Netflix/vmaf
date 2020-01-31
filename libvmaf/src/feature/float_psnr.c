@@ -5,6 +5,7 @@
 #include "feature_collector.h"
 #include "feature_extractor.h"
 
+#include "mem.h"
 #include "psnr.h"
 #include "picture_copy.h"
 
@@ -19,9 +20,9 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 {
     PsnrState *s = fex->priv;
     s->float_stride = sizeof(float) * w;
-    s->ref = malloc(s->float_stride * h);
+    s->ref = aligned_malloc(s->float_stride * h, 32);
     if (!s->ref) goto fail;
-    s->dist = malloc(s->float_stride * h);
+    s->dist = aligned_malloc(s->float_stride * h, 32);
     if (!s->dist) goto free_ref;
 
     return 0;
@@ -56,8 +57,8 @@ static int extract(VmafFeatureExtractor *fex,
 static int close(VmafFeatureExtractor *fex)
 {
     PsnrState *s = fex->priv;
-    if (s->ref) free(s->ref);
-    if (s->dist) free(s->dist);
+    if (s->ref) aligned_free(s->ref);
+    if (s->dist) aligned_free(s->dist);
     return 0;
 }
 

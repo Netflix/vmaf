@@ -5,6 +5,7 @@
 #include "common/convolution.h"
 #include "feature_collector.h"
 #include "feature_extractor.h"
+#include "mem.h"
 #include "motion.h"
 #include "motion_tools.h"
 
@@ -26,11 +27,14 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     MotionState *s = fex->priv;
 
     s->float_stride = sizeof(float) * w;
-    s->ref = malloc(s->float_stride * h);
-    s->tmp = malloc(s->float_stride * h);
-    s->blur[0] = malloc(s->float_stride * h);
-    s->blur[1] = malloc(s->float_stride * h);
-    s->blur[2] = malloc(s->float_stride * h);
+    s->ref = aligned_malloc(s->float_stride * h, 32);
+    s->tmp = aligned_malloc(s->float_stride * h, 32);
+    s->blur[0] = aligned_malloc(s->float_stride * h, 32);
+    s->blur[1] = aligned_malloc(s->float_stride * h, 32);
+    s->blur[2] = aligned_malloc(s->float_stride * h, 32);
+    if (!s->ref || !s->tmp || !s->blur[0] || !s->blur[1] || !s->blur[2])
+        return -ENOMEM;
+
     s->score = 0;
 
     return 0;
@@ -87,11 +91,11 @@ static int close(VmafFeatureExtractor *fex)
 {
     MotionState *s = fex->priv;
 
-    if (s->ref) free(s->ref);
-    if (s->blur[0]) free(s->blur[0]);
-    if (s->blur[1]) free(s->blur[1]);
-    if (s->blur[2]) free(s->blur[2]);
-    if (s->tmp) free(s->tmp);
+    if (s->ref) aligned_free(s->ref);
+    if (s->blur[0]) aligned_free(s->blur[0]);
+    if (s->blur[1]) aligned_free(s->blur[1]);
+    if (s->blur[2]) aligned_free(s->blur[2]);
+    if (s->tmp) aligned_free(s->tmp);
 
     return vmaf_feature_collector_append(s->feature_collector,
                                          "'VMAF_feature_motion2_score'",
