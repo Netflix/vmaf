@@ -26,6 +26,7 @@ enum VmafPoolingMethod {
 typedef struct VmafConfiguration {
     enum VmafLogLevel log_level;
     unsigned n_threads;
+    unsigned n_subsample;
 } VmafConfiguration;
 
 typedef struct VmafContext VmafContext;
