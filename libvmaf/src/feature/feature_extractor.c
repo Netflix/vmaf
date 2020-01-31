@@ -66,6 +66,7 @@ int vmaf_feature_extractor_context_create(VmafFeatureExtractorContext **fex_ctx,
     if (f->fex->priv_size) {
         void *priv = malloc(f->fex->priv_size);
         if (!priv) goto free_x;
+        memset(priv, 0, f->fex->priv_size);
         f->fex->priv = priv;
     }
     return 0;
