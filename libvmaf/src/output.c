@@ -18,7 +18,8 @@ static unsigned max_capacity(VmafFeatureCollector *fc)
     return capacity;
 }
 
-int vmaf_write_output_xml(VmafFeatureCollector *fc, FILE *outfile)
+int vmaf_write_output_xml(VmafFeatureCollector *fc, FILE *outfile,
+                          unsigned subsample)
 {
     if (!fc) return -EINVAL;
     if (!outfile) return -EINVAL;
@@ -27,6 +28,9 @@ int vmaf_write_output_xml(VmafFeatureCollector *fc, FILE *outfile)
     fprintf(outfile, "  <frames>\n");
 
     for (unsigned i = 0 ; i < max_capacity(fc); i++) {
+        if ((subsample > 1) && (i % subsample))
+            continue;
+
         unsigned cnt = 0;
         for (unsigned j = 0; j < fc->cnt; j++) {
             if (i > fc->feature_vector[j]->capacity)

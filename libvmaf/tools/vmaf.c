@@ -162,6 +162,7 @@ int main(int argc, char *argv[])
     VmafConfiguration cfg = {
         .log_level = VMAF_LOG_LEVEL_INFO,
         .n_threads = c.thread_cnt,
+        .n_subsample = c.subsample,
     };
 
     VmafContext *vmaf;
