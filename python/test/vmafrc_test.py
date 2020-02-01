@@ -128,3 +128,53 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFRC_psnr_cb_score'], 60.0, places=8)
         self.assertAlmostEqual(results[1]['VMAFRC_psnr_cr_score'], 60.0, places=8)
         self.assertAlmostEqual(results[1]['VMAFRC_ssim_score'], 1.0, places=8)
+
+
+class VmafrcQualityRunnerSubsamplingTest(unittest.TestCase):
+
+    def tearDown(self):
+        if hasattr(self, 'runner0'):
+            self.runner0.remove_results()
+        if hasattr(self, 'runner'):
+            self.runner.remove_results()
+
+    def setUp(self):
+        self.result_store = FileSystemResultStore()
+
+    def test_run_vmafrc_runner_with_subsample2(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        subsample = 5
+
+        self.runner0 = VmafrcQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={}
+        )
+        self.runner0.run()
+        results0 = self.runner0.results
+
+        self.runner = VmafrcQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={'subsample': subsample}
+        )
+        self.runner.run()
+        results = self.runner.results
+
+        for i in range(48):
+            if i % subsample == 0:
+                self.assertAlmostEqual(results0[0]['VMAFRC_scores'][i], results[0]['VMAFRC_scores'][i // subsample], places=7)
+                self.assertAlmostEqual(results0[1]['VMAFRC_scores'][i], results[1]['VMAFRC_scores'][i // subsample], places=7)
+
+
+class QualityRunnerVersionTest(unittest.TestCase):
+
+    def test_vmafrc_quality_runner_version(self):
+        self.assertEqual(VmafrcQualityRunner.VERSION, 'F0.2.4c-0.6.1')
+        self.assertEqual(VmafrcQualityRunner.ALGO_VERSION, 2)

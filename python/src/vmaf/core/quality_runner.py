@@ -1217,6 +1217,12 @@ class VmafrcQualityRunner(QualityRunner):
             no_prediction = False
         assert isinstance(no_prediction, bool)
 
+        if self.optional_dict is not None and 'subsample' in self.optional_dict:
+            subsample = self.optional_dict['subsample']
+        else:
+            subsample = 1
+        assert isinstance(subsample, int) and subsample >= 1
+
         quality_width, quality_height = asset.quality_width_height
 
         fmt = self._get_workfile_yuv_type(asset)
@@ -1236,7 +1242,7 @@ class VmafrcQualityRunner(QualityRunner):
 
         ExternalProgramCaller.call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth,
                                           psnr, fixed_psnr, ssim, fixed_ssim, ms_ssim, fixed_ms_ssim,
-                                          no_prediction, model, output, exe, logger)
+                                          no_prediction, model, subsample, output, exe, logger)
 
     def _get_exec(self):
         return None # signaling default
