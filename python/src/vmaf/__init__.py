@@ -207,12 +207,14 @@ class ExternalProgramCaller(object):
 
     @staticmethod
     def call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth,
-                    psnr, ssim, ms_ssim, model, output, exe, logger):
+                    psnr, fixed_psnr, ssim, fixed_ssim, ms_ssim, fixed_ms_ssim,
+                    no_prediction, model, output, exe, logger):
 
         if exe is None:
             exe = required(ExternalProgram.vmafrc)
 
-        vmafrc_cmd = "{exe} --reference {reference} --distorted {distorted} --width {width} --height {height} --pixel_format {pixel_format} --bitdepth {bitdepth} --model {model} --output {output}" \
+        vmafrc_cmd = "{exe} --reference {reference} --distorted {distorted} --width {width} --height {height} " \
+                     "--pixel_format {pixel_format} --bitdepth {bitdepth} --output {output}" \
             .format(
             exe=exe,
             reference=reference,
@@ -221,7 +223,6 @@ class ExternalProgramCaller(object):
             height=height,
             pixel_format=pixel_format,
             bitdepth=bitdepth,
-            model=model,
             output=output)
 
         if psnr:
@@ -230,6 +231,19 @@ class ExternalProgramCaller(object):
             vmafrc_cmd += ' --feature float_ssim'
         if ms_ssim:
             vmafrc_cmd += ' --feature float_ms_ssim'
+
+        if fixed_psnr:
+            vmafrc_cmd += ' --feature psnr'
+        if fixed_ssim:
+            vmafrc_cmd += ' --feature ssim'
+        if fixed_ms_ssim:
+            vmafrc_cmd += ' --feature ms_ssim'
+
+        if no_prediction:
+            vmafrc_cmd += ' --no_prediction'
+        else:
+            assert model is not None
+            vmafrc_cmd += ' --model {}'.format(model)
 
         if logger:
             logger.info(vmafrc_cmd)
