@@ -1153,8 +1153,7 @@ class VmafrcQualityRunner(QualityRunner):
     DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_v0.6.1.pkl")
 
     FEATURES = ['adm2', 'motion2', 'vif_scale0', 'vif_scale1', 'vif_scale2',
-                'vif_scale3', 'float_psnr', 'float_ssim',
-                # 'float_ms_ssim',
+                'vif_scale3', 'float_psnr', 'float_ssim', 'float_ms_ssim',
                 ]
 
     @classmethod
