@@ -26,11 +26,11 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         self.runner = VmafossExecQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=False,
+            None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
         )
-        self.runner.run(parallelize=False)
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -57,17 +57,22 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.69926875, places=8)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.94641666666666, places=8)
 
-    def test_run_vmafrc_runner(self):
+    def test_run_vmafrc_runner_matched_to_vmafossexec(self):
 
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         self.runner = VmafrcQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=False,
+            None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
+            optional_dict={
+                'psnr': True,
+                'ssim': True,
+                'ms_ssim': True,
+            }
         )
-        self.runner.run(parallelize=False)
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -93,3 +98,33 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAFRC_score'], 76.69926875, places=8)
         self.assertAlmostEqual(results[1]['VMAFRC_score'], 99.94641666666666, places=8)
+
+    def test_run_vmafrc_runner_fixed_psnr_ssim(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = VmafrcQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={
+                'fixed_psnr': True,
+                'fixed_ssim': True,
+                'fixed_ms_ssim': False,  # TODO: enable fixed_ms_ssim
+                'no_prediction': True,
+            }
+        )
+        self.runner.run(parallelize=True)
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAFRC_psnr_y_score'], 30.755063979166668, places=8)
+        self.assertAlmostEqual(results[0]['VMAFRC_psnr_cb_score'], 38.4494410625, places=8)
+        self.assertAlmostEqual(results[0]['VMAFRC_psnr_cr_score'], 40.99191027083334, places=8)
+        self.assertAlmostEqual(results[0]['VMAFRC_ssim_score'], 0.8613860416666667, places=8)
+
+        self.assertAlmostEqual(results[1]['VMAFRC_psnr_y_score'], 60.0, places=8)
+        self.assertAlmostEqual(results[1]['VMAFRC_psnr_cb_score'], 60.0, places=8)
+        self.assertAlmostEqual(results[1]['VMAFRC_psnr_cr_score'], 60.0, places=8)
+        self.assertAlmostEqual(results[1]['VMAFRC_ssim_score'], 1.0, places=8)

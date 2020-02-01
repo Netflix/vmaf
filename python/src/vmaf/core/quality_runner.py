@@ -1154,6 +1154,7 @@ class VmafrcQualityRunner(QualityRunner):
 
     FEATURES = ['adm2', 'motion2', 'vif_scale0', 'vif_scale1', 'vif_scale2',
                 'vif_scale3', 'float_psnr', 'float_ssim', 'float_ms_ssim',
+                'psnr_y', 'psnr_cb', 'psnr_cr', 'ssim', 'ms_ssim',
                 ]
 
     @classmethod
@@ -1177,20 +1178,44 @@ class VmafrcQualityRunner(QualityRunner):
         if self.optional_dict is not None and 'psnr' in self.optional_dict:
             psnr = self.optional_dict['psnr']
         else:
-            psnr = True
+            psnr = False
         assert isinstance(psnr, bool)
 
         if self.optional_dict is not None and 'ssim' in self.optional_dict:
             ssim = self.optional_dict['ssim']
         else:
-            ssim = True
+            ssim = False
         assert isinstance(ssim, bool)
 
         if self.optional_dict is not None and 'ms_ssim' in self.optional_dict:
             ms_ssim = self.optional_dict['ms_ssim']
         else:
-            ms_ssim = True
+            ms_ssim = False
         assert isinstance(ms_ssim, bool)
+
+        if self.optional_dict is not None and 'fixed_psnr' in self.optional_dict:
+            fixed_psnr = self.optional_dict['fixed_psnr']
+        else:
+            fixed_psnr = False
+        assert isinstance(fixed_psnr, bool)
+
+        if self.optional_dict is not None and 'fixed_ssim' in self.optional_dict:
+            fixed_ssim = self.optional_dict['fixed_ssim']
+        else:
+            fixed_ssim = False
+        assert isinstance(fixed_ssim, bool)
+
+        if self.optional_dict is not None and 'fixed_ms_ssim' in self.optional_dict:
+            fixed_ms_ssim = self.optional_dict['fixed_ms_ssim']
+        else:
+            fixed_ms_ssim = False
+        assert isinstance(fixed_ms_ssim, bool)
+
+        if self.optional_dict is not None and 'no_prediction' in self.optional_dict:
+            no_prediction = self.optional_dict['no_prediction']
+        else:
+            no_prediction = False
+        assert isinstance(no_prediction, bool)
 
         quality_width, quality_height = asset.quality_width_height
 
@@ -1210,7 +1235,8 @@ class VmafrcQualityRunner(QualityRunner):
         logger = self.logger
 
         ExternalProgramCaller.call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth,
-                                          psnr, ssim, ms_ssim, model, output, exe, logger)
+                                          psnr, fixed_psnr, ssim, fixed_ssim, ms_ssim, fixed_ms_ssim,
+                                          no_prediction, model, output, exe, logger)
 
     def _get_exec(self):
         return None # signaling default
@@ -1246,7 +1272,10 @@ class VmafrcQualityRunner(QualityRunner):
         feature_scores = [[] for _ in self.FEATURES]
 
         for frame in root.findall('frames/frame'):
-            scores.append(round(float(frame.attrib['vmaf']), 4))
+            try:
+                scores.append(round(float(frame.attrib['vmaf']), 4))
+            except KeyError:
+                pass  # if no_prediction is enabled
             for i_feature, feature in enumerate(self.FEATURES):
                 try:
                     if feature in ['motion2']:
@@ -1257,7 +1286,7 @@ class VmafrcQualityRunner(QualityRunner):
                         feature_scores[i_feature].append(float(frame.attrib[feature]))
                 except KeyError:
                     pass  # some features may be missing
-        assert len(scores) != 0
+        assert len(scores) != 0 or any([len(feature_score) != 0 for feature_score in feature_scores])
         quality_result = {
             self.get_scores_key(): scores,
         }
