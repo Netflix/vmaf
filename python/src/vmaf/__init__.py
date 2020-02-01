@@ -229,8 +229,7 @@ class ExternalProgramCaller(object):
         if ssim:
             vmafrc_cmd += ' --feature float_ssim'
         if ms_ssim:
-            pass
-            # vmafrc_cmd += ' --feature float_ms_ssim'  # TODO: add float_ms_ssim
+            vmafrc_cmd += ' --feature float_ms_ssim'
 
         if logger:
             logger.info(vmafrc_cmd)
