@@ -208,7 +208,7 @@ class ExternalProgramCaller(object):
     @staticmethod
     def call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth,
                     psnr, fixed_psnr, ssim, fixed_ssim, ms_ssim, fixed_ms_ssim,
-                    no_prediction, model, output, exe, logger):
+                    no_prediction, model, subsample, output, exe, logger):
 
         if exe is None:
             exe = required(ExternalProgram.vmafrc)
@@ -244,6 +244,10 @@ class ExternalProgramCaller(object):
         else:
             assert model is not None
             vmafrc_cmd += ' --model {}'.format(model)
+
+        assert isinstance(subsample, int) and subsample >= 1
+        if subsample != 1:
+            vmafrc_cmd += ' --subsample {}'.format(subsample)
 
         if logger:
             logger.info(vmafrc_cmd)
