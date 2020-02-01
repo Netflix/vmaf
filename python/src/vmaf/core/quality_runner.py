@@ -1247,10 +1247,15 @@ class VmafrcQualityRunner(QualityRunner):
         feature_scores = [[] for _ in self.FEATURES]
 
         for frame in root.findall('frames/frame'):
-            scores.append(float(frame.attrib['vmaf']))
+            scores.append(round(float(frame.attrib['vmaf']), 4))
             for i_feature, feature in enumerate(self.FEATURES):
                 try:
-                    feature_scores[i_feature].append(float(frame.attrib[feature]))
+                    if feature in ['motion2']:
+                        feature_scores[i_feature].append(round(float(frame.attrib[feature]), 5))
+                    elif feature in ['float_psnr']:
+                        feature_scores[i_feature].append(round(float(frame.attrib[feature]), 4))
+                    else:
+                        feature_scores[i_feature].append(float(frame.attrib[feature]))
                 except KeyError:
                     pass  # some features may be missing
         assert len(scores) != 0

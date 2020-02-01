@@ -26,11 +26,11 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         self.runner = VmafossExecQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -63,7 +63,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         self.runner = VmafrcQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
         )
