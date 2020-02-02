@@ -7,6 +7,7 @@
 
 #include "adm.h"
 #include "adm_options.h"
+#include "mem.h"
 #include "picture_copy.h"
 
 typedef struct AdmState {
@@ -20,9 +21,9 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 {
     AdmState *s = fex->priv;
     s->float_stride = sizeof(float) * w;
-    s->ref = malloc(s->float_stride * h);
+    s->ref = aligned_malloc(s->float_stride * h, 32);
     if (!s->ref) goto fail;
-    s->dist = malloc(s->float_stride * h);
+    s->dist = aligned_malloc(s->float_stride * h, 32);
     if (!s->dist) goto free_ref;
 
     return 0;
@@ -40,8 +41,8 @@ static int extract(VmafFeatureExtractor *fex,
     AdmState *s = fex->priv;
     int err = 0;
 
-    picture_copy(s->ref, ref_pic);
-    picture_copy(s->dist, dist_pic);
+    picture_copy(s->ref, ref_pic, -128);
+    picture_copy(s->dist, dist_pic, -128);
 
     double score, score_num, score_den;
     double scores[8];
@@ -60,10 +61,15 @@ static int extract(VmafFeatureExtractor *fex,
 static int close(VmafFeatureExtractor *fex)
 {
     AdmState *s = fex->priv;
-    if (s->ref) free(s->ref);
-    if (s->dist) free(s->dist);
+    if (s->ref) aligned_free(s->ref);
+    if (s->dist) aligned_free(s->dist);
     return 0;
 }
+
+static const char *provided_features[] = {
+    "'VMAF_feature_adm2_score'",
+    NULL
+};
 
 VmafFeatureExtractor vmaf_fex_float_adm = {
     .name = "float_adm",
@@ -71,4 +77,5 @@ VmafFeatureExtractor vmaf_fex_float_adm = {
     .extract = extract,
     .close = close,
     .priv_size = sizeof(AdmState),
+    .provided_features = provided_features,
 };

@@ -23,13 +23,16 @@ typedef struct VmafFeatureExtractor {
     void *priv;
     size_t priv_size;
     uint64_t flags;
-    const char *feature[];
+    const char **provided_features;
 } VmafFeatureExtractor;
 
 VmafFeatureExtractor *vmaf_get_feature_extractor_by_name(char *name);
 VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(char *name);
 
-typedef struct VmafFeatureExtractorContext VmafFeatureExtractorContext;
+typedef struct VmafFeatureExtractorContext {
+    bool is_initialized, is_closed;
+    VmafFeatureExtractor *fex;
+} VmafFeatureExtractorContext;
 
 int vmaf_feature_extractor_context_create(VmafFeatureExtractorContext **fex_ctx,
                                           VmafFeatureExtractor *fex);

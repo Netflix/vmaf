@@ -11,6 +11,7 @@ extern VmafFeatureExtractor vmaf_fex_float_psnr;
 extern VmafFeatureExtractor vmaf_fex_float_adm;
 extern VmafFeatureExtractor vmaf_fex_float_vif;
 extern VmafFeatureExtractor vmaf_fex_float_motion;
+extern VmafFeatureExtractor vmaf_fex_float_ms_ssim;
 
 static VmafFeatureExtractor *feature_extractor_list[] = {
     &vmaf_fex_ssim,
@@ -20,6 +21,7 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     &vmaf_fex_float_adm,
     &vmaf_fex_float_vif,
     &vmaf_fex_float_motion,
+    &vmaf_fex_float_ms_ssim,
     NULL
 };
 
@@ -41,21 +43,15 @@ VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(char *name)
 
     VmafFeatureExtractor *fex = NULL;
     for (unsigned i = 0; (fex = feature_extractor_list[i]); i++) {
-        /*
+        if (!fex->provided_features) continue;
         const char *fname = NULL;
-        for (unsigned j = 0; (fname = fex->feature[j]); j++) {
-            if (!strcmp(feature_name, fname))
+        for (unsigned j = 0; (fname = fex->provided_features[j]); j++) {
+            if (!strcmp(name, fname))
                 return fex;
         }
-        */
     }
     return NULL;
 }
-
-typedef struct VmafFeatureExtractorContext {
-    bool is_initialized, is_closed;
-    VmafFeatureExtractor *fex;
-} VmafFeatureExtractorContext;
 
 int vmaf_feature_extractor_context_create(VmafFeatureExtractorContext **fex_ctx,
                                           VmafFeatureExtractor *fex)
@@ -72,6 +68,7 @@ int vmaf_feature_extractor_context_create(VmafFeatureExtractorContext **fex_ctx,
     if (f->fex->priv_size) {
         void *priv = malloc(f->fex->priv_size);
         if (!priv) goto free_x;
+        memset(priv, 0, f->fex->priv_size);
         f->fex->priv = priv;
     }
     return 0;

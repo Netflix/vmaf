@@ -71,6 +71,22 @@ struct video_input{
   FILE                   *fin;
 };
 
+typedef void* (*raw_input_open_func)(FILE *_fin,
+                                     unsigned width, unsigned height,
+                                     int pix_fmt,
+                                     unsigned bitdepth);
+
+int raw_input_open(video_input *_vid,FILE *_fin,
+                   unsigned width, unsigned height,
+                   int pix_fmt, unsigned bitdepth);
+
+typedef struct raw_input_vtbl {
+  raw_input_open_func           open;
+  video_input_get_info_func     get_info;
+  video_input_fetch_frame_func  fetch_frame;
+  video_input_close_func        close;
+} raw_input_vtbl;
+
 int video_input_open(video_input *_vid,FILE *_fin);
 void video_input_close(video_input *_vid);
 

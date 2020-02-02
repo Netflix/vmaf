@@ -75,7 +75,16 @@ convolution_and_psnr_avx_static_lib = static_library(
     c_args : ['-mavx'] + vmaf_cflags_common,
 )
 
-vmaf_sources = [
+vmaf_include = include_directories(
+    opencontainers_path + '/include',
+    src_dir,
+    feature_src_dir,
+    feature_src_dir + 'common',
+    ptools_path,
+    opencontainers_path + '/include'
+)
+
+libvmaf_feature_sources = [
     feature_src_dir + 'common/alignment.c',
     feature_src_dir + 'common/convolution.c',
     feature_src_dir + 'common/cpu.c',
@@ -97,6 +106,15 @@ vmaf_sources = [
     feature_src_dir + 'iqa/convolve.c',
     feature_src_dir + 'iqa/decimate.c',
     feature_src_dir + 'iqa/ssim_tools.c',
+]
+
+libvmaf_feature_static_lib = static_library(
+    'libvmaf_feature',
+    libvmaf_feature_sources,
+    include_directories : [vmaf_include, vmaf_base_include],
+)
+
+vmaf_sources = [
     third_party_dir + 'pugixml/pugixml.cpp',
     src_dir + 'mem.c',
     src_dir + 'combo.c',
@@ -107,15 +125,6 @@ vmaf_sources = [
     src_dir + 'vmaf.cpp',
 ]
 
-vmaf_include = include_directories(
-    opencontainers_path + '/include',
-    src_dir,
-    feature_src_dir,
-    feature_src_dir + 'common',
-    ptools_path,
-    opencontainers_path + '/include'
-)
-
 libvmaf = both_libraries(
     'vmaf',
     vmaf_sources,
@@ -125,9 +134,41 @@ libvmaf = both_libraries(
     dependencies : thread_lib,
     objects : [
         convolution_and_psnr_avx_static_lib.extract_all_objects(),
-        libptools.extract_all_objects()
+        libptools.extract_all_objects(),
+        libvmaf_feature_static_lib.extract_all_objects(),
     ],
     install: true,
+)
+
+libvmaf_rc_include = include_directories(
+    opencontainers_path + '/include',
+    '../include',
+    src_dir,
+    feature_src_dir,
+    feature_src_dir + 'common',
+    ptools_path,
+    opencontainers_path + '/include',
+)
+
+libvmaf_rc_feature_sources = [
+  feature_src_dir + 'picture_copy.c',
+  feature_src_dir + 'integer_psnr.c',
+  feature_src_dir + 'feature_extractor.c',
+  feature_src_dir + 'alias.c',
+  feature_src_dir + 'float_adm.c',
+  feature_src_dir + 'feature_collector.c',
+  feature_src_dir + 'float_psnr.c',
+  feature_src_dir + 'float_motion.c',
+  feature_src_dir + 'float_ssim.c',
+  feature_src_dir + 'float_ms_ssim.c',
+  feature_src_dir + 'float_vif.c',
+  feature_src_dir + 'integer_ssim.c',
+]
+
+libvmaf_rc_feature_static_lib = static_library(
+    'libvmaf_rc_feature',
+    libvmaf_rc_feature_sources,
+    include_directories : [libvmaf_rc_include],
 )
 
 libvmaf_rc_sources = [
@@ -136,49 +177,11 @@ libvmaf_rc_sources = [
     src_dir + 'model.c',
     src_dir + 'unpickle.cpp',
     src_dir + 'svm.cpp',
-    feature_src_dir + 'common/cpu.c',
-    feature_src_dir + 'offset.c',
-    feature_src_dir + 'common/alignment.c',
     src_dir + 'picture.c',
     src_dir + 'mem.c',
     src_dir + 'picture.c',
     src_dir + 'output.c',
-    feature_src_dir + 'offset.c',
-    feature_src_dir + 'common/alignment.c',
-    feature_src_dir + 'common/cpu.c',
-    feature_src_dir + 'feature_collector.c',
-    feature_src_dir + 'feature_extractor.c',
-    feature_src_dir + 'picture_copy.c',
-    feature_src_dir + 'adm.c',
-    feature_src_dir + 'adm_tools.c',
-    feature_src_dir + 'float_adm.c',
-    feature_src_dir + 'float_vif.c',
-    feature_src_dir + 'vif.c',
-    feature_src_dir + 'vif_tools.c',
-    feature_src_dir + 'integer_ssim.c',
-    feature_src_dir + 'float_ssim.c',
-    feature_src_dir + 'ssim.c',
-    feature_src_dir + 'iqa/math_utils.c',
-    feature_src_dir + 'iqa/convolve.c',
-    feature_src_dir + 'iqa/decimate.c',
-    feature_src_dir + 'iqa/ssim_tools.c',
-    feature_src_dir + 'integer_psnr.c',
-    feature_src_dir + 'float_psnr.c',
-    feature_src_dir + 'psnr.c',
-    feature_src_dir + 'float_motion.c',
-    feature_src_dir + 'motion.c',
-    feature_src_dir + 'common/convolution.c',
-    feature_src_dir + 'alias.c',
 ]
-
-libvmaf_rc_include = include_directories(
-    opencontainers_path + '/include',
-    src_dir,
-    feature_src_dir,
-    feature_src_dir + 'common',
-    ptools_path,
-    opencontainers_path + '/include',
-)
 
 libvmaf_rc = both_libraries(
     'vmaf_rc',
@@ -192,7 +195,9 @@ libvmaf_rc = both_libraries(
     ],
     objects : [
         convolution_and_psnr_avx_static_lib.extract_all_objects(),
-        libptools.extract_all_objects()
+        libptools.extract_all_objects(),
+        libvmaf_feature_static_lib.extract_all_objects(),
+        libvmaf_rc_feature_static_lib.extract_all_objects(),
     ],
     install: false,
 )

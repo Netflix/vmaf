@@ -4,6 +4,7 @@
 
 #include "feature_collector.h"
 #include "feature_extractor.h"
+#include "mem.h"
 
 #include "vif.h"
 #include "vif_options.h"
@@ -20,9 +21,9 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 {
     VifState *s = fex->priv;
     s->float_stride = sizeof(float) * w;
-    s->ref = malloc(s->float_stride * h);
+    s->ref = aligned_malloc(s->float_stride * h, 32);
     if (!s->ref) goto fail;
-    s->dist = malloc(s->float_stride * h);
+    s->dist = aligned_malloc(s->float_stride * h, 32);
     if (!s->dist) goto free_ref;
 
     return 0;
@@ -40,8 +41,8 @@ static int extract(VmafFeatureExtractor *fex,
     VifState *s = fex->priv;
     int err = 0;
 
-    picture_copy(s->ref, ref_pic);
-    picture_copy(s->dist, dist_pic);
+    picture_copy(s->ref, ref_pic, -128);
+    picture_copy(s->dist, dist_pic, -128);
 
     double score, score_num, score_den;
     double scores[8];
@@ -73,10 +74,16 @@ static int extract(VmafFeatureExtractor *fex,
 static int close(VmafFeatureExtractor *fex)
 {
     VifState *s = fex->priv;
-    if (s->ref) free(s->ref);
-    if (s->dist) free(s->dist);
+    if (s->ref) aligned_free(s->ref);
+    if (s->dist) aligned_free(s->dist);
     return 0;
 }
+
+static const char *provided_features[] = {
+    "'VMAF_feature_vif_scale0_score'", "'VMAF_feature_vif_scale1_score'",
+    "'VMAF_feature_vif_scale2_score'", "'VMAF_feature_vif_scale3_score'",
+    NULL
+};
 
 VmafFeatureExtractor vmaf_fex_float_vif = {
     .name = "float_vif",
@@ -84,4 +91,5 @@ VmafFeatureExtractor vmaf_fex_float_vif = {
     .extract = extract,
     .close = close,
     .priv_size = sizeof(VifState),
+    .provided_features = provided_features,
 };

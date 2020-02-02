@@ -42,8 +42,8 @@ static int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
     if (!fex_ctx) return -EINVAL;
 
     for (unsigned i = 0; i < rfe->cnt; i++) {
-        if (rfe->fex_ctx[i] == fex_ctx)
-            return 0;
+        if (!strcmp(rfe->fex_ctx[i]->fex->name, fex_ctx->fex->name))
+            return vmaf_feature_extractor_context_destroy(fex_ctx);
     }
 
     if (rfe->cnt >= rfe->capacity) {
@@ -147,13 +147,36 @@ int vmaf_use_feature(VmafContext *vmaf, const char *feature_name)
     if (err) return err;
 
     RegisteredFeatureExtractors *rfe = &(vmaf->registered_feature_extractors);
-    return feature_extractor_vector_append(rfe, fex_ctx);
+    err = feature_extractor_vector_append(rfe, fex_ctx);
+    if (err)
+        err |= vmaf_feature_extractor_context_destroy(fex_ctx);
+
+    return err;
 }
 
 int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model)
 {
     if (!vmaf) return -EINVAL;
     if (!model) return -EINVAL;
+
+    int err = 0;
+
+    RegisteredFeatureExtractors *rfe = &(vmaf->registered_feature_extractors);
+
+    for (unsigned i = 0; i < model->n_features; i++) {
+        VmafFeatureExtractor *fex =
+            vmaf_get_feature_extractor_by_feature_name(model->feature[i].name);
+        if (!fex) return -EINVAL;
+        VmafFeatureExtractorContext *fex_ctx;
+        err = vmaf_feature_extractor_context_create(&fex_ctx, fex);
+        if (err) return err;
+        err = feature_extractor_vector_append(rfe, fex_ctx);
+        if (err) {
+            err |= vmaf_feature_extractor_context_destroy(fex_ctx);
+            return err;
+        }
+
+    }
 
     return 0;
 }
@@ -171,6 +194,13 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     for (unsigned i = 0; i < vmaf->registered_feature_extractors.cnt; i++) {
         VmafFeatureExtractorContext *fex_ctx =
             vmaf->registered_feature_extractors.fex_ctx[i];
+
+        if ((vmaf->cfg.n_subsample > 1) && (index % vmaf->cfg.n_subsample) &&
+            !(fex_ctx->fex->flags & VMAF_FEATURE_EXTRACTOR_TEMPORAL))
+        {
+            continue;
+        }
+
         err = vmaf_feature_extractor_context_extract(fex_ctx, ref, dist, index,
                                                      vmaf->feature_collector);
         if (err) return err;
@@ -206,8 +236,10 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
     for (unsigned i = 0; i < rfe.cnt; i++)
         vmaf_feature_extractor_context_close(rfe.fex_ctx[i]);
 
-    double sum;
+    double sum = 0.;
     for (unsigned i = index_low; i < index_high; i++) {
+        if ((vmaf->cfg.n_subsample > 1) && (i % vmaf->cfg.n_subsample))
+            continue;
         double vmaf_score;
         int err = vmaf_score_at_index(vmaf, model, &vmaf_score, i);
         if (err) return err;
@@ -231,7 +263,8 @@ int vmaf_write_output(VmafContext *vmaf, FILE *outfile,
 
     switch (fmt) {
     case VMAF_OUTPUT_FORMAT_XML:
-        return vmaf_write_output_xml(vmaf->feature_collector, outfile);
+        return vmaf_write_output_xml(vmaf->feature_collector, outfile,
+                                     vmaf->cfg.n_subsample);
     default:
         return 0;
     }

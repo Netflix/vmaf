@@ -5,6 +5,7 @@
 #include "feature_collector.h"
 #include "feature_extractor.h"
 
+#include "mem.h"
 #include "psnr.h"
 #include "picture_copy.h"
 
@@ -19,9 +20,9 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 {
     PsnrState *s = fex->priv;
     s->float_stride = sizeof(float) * w;
-    s->ref = malloc(s->float_stride * h);
+    s->ref = aligned_malloc(s->float_stride * h, 32);
     if (!s->ref) goto fail;
-    s->dist = malloc(s->float_stride * h);
+    s->dist = aligned_malloc(s->float_stride * h, 32);
     if (!s->dist) goto free_ref;
 
     return 0;
@@ -39,8 +40,8 @@ static int extract(VmafFeatureExtractor *fex,
     PsnrState *s = fex->priv;
     int err = 0;
 
-    picture_copy(s->ref, ref_pic);
-    picture_copy(s->dist, dist_pic);
+    picture_copy(s->ref, ref_pic, 0);
+    picture_copy(s->dist, dist_pic, 0);
 
     double score;
     err = compute_psnr(s->ref, s->dist, ref_pic->w[0], ref_pic->h[0], s->float_stride,
@@ -56,10 +57,15 @@ static int extract(VmafFeatureExtractor *fex,
 static int close(VmafFeatureExtractor *fex)
 {
     PsnrState *s = fex->priv;
-    if (s->ref) free(s->ref);
-    if (s->dist) free(s->dist);
+    if (s->ref) aligned_free(s->ref);
+    if (s->dist) aligned_free(s->dist);
     return 0;
 }
+
+static const char *provided_features[] = {
+    "float_psnr",
+    NULL
+};
 
 VmafFeatureExtractor vmaf_fex_float_psnr = {
     .name = "float_psnr",
@@ -67,4 +73,5 @@ VmafFeatureExtractor vmaf_fex_float_psnr = {
     .extract = extract,
     .close = close,
     .priv_size = sizeof(PsnrState),
+    .provided_features = provided_features,
 };

@@ -8,7 +8,11 @@
 #define CLI_SETTINGS_STATIC_ARRAY_LEN 256
 
 typedef struct {
-    char *y4m_path_ref, *y4m_path_dist;
+    char *path_ref, *path_dist;
+    unsigned width, height;
+    enum VmafPixelFormat pix_fmt;
+    unsigned bitdepth;
+    bool use_yuv;
     char *output_path;
     enum VmafOutputFormat output_fmt;
     char *model_path[CLI_SETTINGS_STATIC_ARRAY_LEN];
@@ -18,6 +22,7 @@ typedef struct {
     char *import_path[CLI_SETTINGS_STATIC_ARRAY_LEN];
     unsigned import_cnt;
     enum VmafLogLevel log_level;
+    unsigned subsample;
     unsigned thread_cnt;
     bool no_prediction;
 } CLISettings;
