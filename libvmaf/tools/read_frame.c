@@ -19,6 +19,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "file_io.h"
 #include "read_frame.h"
@@ -58,7 +59,8 @@ fail_or_end:
  */
 static int read_image_b(FILE * rfile, float *buf, float off, int width, int height, int stride)
 {
-	char *byte_ptr = (char *)buf;
+	// printf("buf: %p -> %f\n", buf, *buf);
+    char *byte_ptr = (char *)buf;
 	unsigned char *tmp_buf = 0;
 	int i, j;
 	int ret = 1;
@@ -89,7 +91,7 @@ static int read_image_b(FILE * rfile, float *buf, float off, int width, int heig
 
 		byte_ptr += stride;
 	}
-
+    //printf("Advanced %zu bytes\n", height * width);
 	ret = 0;
 
 fail_or_end:
@@ -253,21 +255,28 @@ fail_or_end:
     return ret;
 }
 
-int read_noref_frame(float *dis_data, float *temp_data, int stride_byte, void *s)
+int read_noref_frame(float *dis_data, float *temp_data, int stride_byte, void *s, int offset)
 {
     struct noref_data *user_data = (struct noref_data *)s;
     char *fmt = user_data->format;
     int w = user_data->width;
     int h = user_data->height;
     int ret;
-
+    
+    if (offset > 0){
+        fseek(user_data->dis_rfile, offset, SEEK_SET);
+    } else if (offset == -1){
+        fseek(user_data->dis_rfile, 0, SEEK_SET);
+    }
     // read dis y
     if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
     {
+        //printf("no ref read_image_b entered\n");
         ret = read_image_b(user_data->dis_rfile, dis_data, 0, w, h, stride_byte);
     }
     else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
     {
+        //printf("no ref read_image_w entered\n");
         ret = read_image_w(user_data->dis_rfile, dis_data, 0, w, h, stride_byte);
     }
     else
@@ -277,6 +286,7 @@ int read_noref_frame(float *dis_data, float *temp_data, int stride_byte, void *s
     }
     if (ret)
     {
+        // printf("ret exit pre fread call\n");
         if (feof(user_data->dis_rfile))
         {
             ret = 2; // OK if end of file
@@ -284,6 +294,11 @@ int read_noref_frame(float *dis_data, float *temp_data, int stride_byte, void *s
         return ret;
     }
 
+    // if (offset > 0){
+    //     fseek(user_data->dis_rfile, offset, SEEK_SET);
+    // } else if (offset == -1){
+    //     fseek(user_data->dis_rfile, 0, SEEK_SET);
+    // }
     // dis skip u and v
     if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
     {
@@ -292,6 +307,8 @@ int read_noref_frame(float *dis_data, float *temp_data, int stride_byte, void *s
             fprintf(stderr, "dis fread u and v failed.\n");
             goto fail_or_end;
         }
+        //printf("read %zu bytes\n", (size_t)user_data->offset);
+        
     }
     else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
     {
