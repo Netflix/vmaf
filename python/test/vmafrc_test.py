@@ -48,8 +48,8 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFRC_motion2_score'], 3.895352291666667, places=8)
         self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 0.9345877291666667, places=8)
         self.assertAlmostEqual(results[0]['VMAFRC_float_psnr_score'], 30.7550666667, places=8)
-        self.assertAlmostEqual(results[0]['VMAFRC_float_ssim_score'], 0.86322654166666657, places=8)
-        self.assertAlmostEqual(results[0]['VMAFRC_float_ms_ssim_score'], 0.9632406874999999, places=8)
+        self.assertAlmostEqual(results[0]['VMAFRC_float_ssim_score'], 0.86322654166666657, places=8)  # FIXME: this is a regression from previous comment
+        self.assertAlmostEqual(results[0]['VMAFRC_float_ms_ssim_score'], 0.9632406874999999, places=8)  # FIXME: this is a regression from previous comment
 
         self.assertAlmostEqual(results[1]['VMAFRC_vif_scale0_score'], 1.0, places=8)
         self.assertAlmostEqual(results[1]['VMAFRC_vif_scale1_score'],0.9999998541666666, places=8)
