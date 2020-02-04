@@ -38,9 +38,14 @@
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 // My extra #defines
+// frames per second
 #define FPS 4
+// minimum (seconds) of frame gap
 #define MIN_GAP 2
+// maximum (seconds) of frame gap
 #define MAX_GAP 4
+// discovered multiplier for correct frame indexing
+#define FRAME_INDEX_OFFSET 1.5
 
 /**
  * Note: img1_stride and img2_stride are in terms of (sizeof(float) bytes)
@@ -53,8 +58,11 @@ float vmaf_image_sad_c(const float *img1, const float *img2, int width, int heig
         for (int j = 0; j < width; ++j) {
             float img1px = img1[i * img1_stride + j];
             float img2px = img2[i * img2_stride + j];  
+            // if running through the first time, print out all the motion scores
+            // so that I can use them in the alpha masking.
             if (pass == 0){
-                if(j == width - 1 && i == height - 1){             
+                if(j == width - 1 && i == height - 1){     
+                    // no comma after the final score for parsing in cinemagraph.py
                     printf("%f", fabs(img1px - img2px));   
                 } else {
                     printf("%f,", fabs(img1px - img2px));  
@@ -65,7 +73,10 @@ float vmaf_image_sad_c(const float *img1, const float *img2, int width, int heig
         accum += accum_line;
     }
     float res = (float) (accum / (width * height));
-    if (pass == 0) { printf("\n"); }
+    if (pass == 0) { 
+        // marking the end of a frame with a newline for cinemagraph.py 
+        printf("\n"); 
+    }
     return res;
 }
 
@@ -120,56 +131,66 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
     int ret = 1;
     bool next_frame_read;
     int global_frm_idx = 0; // map to thread_data->frm_idx in combo.c
-
-    // extra variables
+    // Pass is the mode to run the motion computation in. If it is zero, 
+    // it prints all the individual cell scores (used for masking). 
+    // If it is 1, we print the motion between the frames (used for N^2 comparions).
     int pass = 0;
 
-    if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float)) { goto fail_or_end; }
-
+    if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float)) { 
+        goto fail_or_end; 
+    }
     stride = ALIGN_CEIL(w * sizeof(float));
-
-    if ((size_t)h > SIZE_MAX / stride) { goto fail_or_end; }
+    if ((size_t)h > SIZE_MAX / stride) { 
+        goto fail_or_end; 
+    }
 
     data_sz = (size_t)stride * h;
+
     if (!(ref_buf = aligned_malloc(data_sz, MAX_ALIGN))) {
         printf("error: aligned_malloc failed for ref_buf.\n");
-        fflush(stdout); goto fail_or_end;
+        fflush(stdout); 
+        goto fail_or_end;
     }
     if (!(prev_blur_buf = aligned_malloc(data_sz, MAX_ALIGN))) {
         printf("error: aligned_malloc failed for prev_blur_buf.\n");
-        fflush(stdout); goto fail_or_end;
+        fflush(stdout); 
+        goto fail_or_end;
     }
     if (!(blur_buf = aligned_malloc(data_sz, MAX_ALIGN))) {
         printf("error: aligned_malloc failed for blur_buf.\n");
-        fflush(stdout); goto fail_or_end;
+        fflush(stdout); 
+        goto fail_or_end;
     }
     if (!(next_ref_buf = aligned_malloc(data_sz, MAX_ALIGN))) {
         printf("error: aligned_malloc failed for next_ref_buf.\n");
-        fflush(stdout); goto fail_or_end;
+        fflush(stdout); 
+        goto fail_or_end;
     }
     if (!(next_blur_buf = aligned_malloc(data_sz, MAX_ALIGN))) {
         printf("error: aligned_malloc failed for next_blur_buf.\n");
-        fflush(stdout); goto fail_or_end;
+        fflush(stdout); 
+        goto fail_or_end;
     }
     if (!(temp_buf = aligned_malloc(data_sz, MAX_ALIGN))){
         printf("error: aligned_malloc failed for temp_buf.\n");
-        fflush(stdout); goto fail_or_end;
+        fflush(stdout); 
+        goto fail_or_end;
     }
 
-    float *b_frame_buf = 0;
-    if (!(b_frame_buf = aligned_malloc(data_sz, MAX_ALIGN))) {
-        printf("error: aligned_malloc failed for b_buf.\n");
-        fflush(stdout); goto fail_or_end;
-    }
     int frm_idx = -1;
     while (1) {
         // the next frame
         frm_idx = global_frm_idx;
         global_frm_idx++;
         if (frm_idx == 0) {
-            ret = read_noref_frame(ref_buf, temp_buf, stride, user_data, 0);
-            if (ret == 1) { goto fail_or_end; }
-            if (ret == 2) { break; }
+            // using -1 for read_noref_frame call to indicate that no seeking is required
+            ret = read_noref_frame(ref_buf, temp_buf, stride, user_data, -1);
+            if (ret == 1) { 
+                goto fail_or_end; 
+            }
+            if (ret == 2) { 
+                break; 
+            }
             // ===============================================================
             // offset pixel by OPT_RANGE_PIXEL_OFFSET
             // ===============================================================
@@ -178,20 +199,29 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
         } 
 
         // reading a buffer ahead, important for knowing if the last iteration or not
-        ret = read_noref_frame(next_ref_buf, temp_buf, stride, user_data, 0);
-        if (ret == 1) { goto fail_or_end; }
-        if (ret == 2) { next_frame_read = false; } 
-        else { next_frame_read = true; }
+        ret = read_noref_frame(next_ref_buf, temp_buf, stride, user_data, -1);
+        if (ret == 1) { 
+            goto fail_or_end;
+        }
+        if (ret == 2) { 
+            next_frame_read = false; 
+        } else { 
+            next_frame_read = true; 
+        }
         // ===============================================================
         // offset pixel by OPT_RANGE_PIXEL_OFFSET
         // ===============================================================
-        if (next_frame_read) { offset_image(next_ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride); }
+        if (next_frame_read) { 
+            offset_image(next_ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride); 
+        }
         // ===============================================================
         // apply filtering (to eliminate effects film grain)
         // stride input to convolution_f32_c is in terms of (sizeof(float) bytes)
         // since stride = ALIGN_CEIL(w * sizeof(float)), stride divides sizeof(float)
         // ===============================================================
-        if (next_frame_read) { convolution_f32_c(FILTER_5, 5, next_ref_buf, next_blur_buf, temp_buf, w, h, stride / sizeof(float), stride / sizeof(float)); }
+        if (next_frame_read) { 
+            convolution_f32_c(FILTER_5, 5, next_ref_buf, next_blur_buf, temp_buf, w, h, stride / sizeof(float), stride / sizeof(float)); 
+        }
         
         /* =========== motion ============== */
         // compute
@@ -200,7 +230,8 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
         } else {     
             if ((ret = compute_motion(prev_blur_buf, blur_buf, w, h, stride, stride, &score, pass))){
                 printf("error: compute_motion (prev) failed.\n");
-                fflush(stdout); goto fail_or_end;
+                fflush(stdout); 
+                goto fail_or_end;
             }      
         }
         fflush(stdout);
@@ -208,23 +239,31 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
         memcpy(ref_buf, next_ref_buf, data_sz);
         memcpy(blur_buf, next_blur_buf, data_sz);
 
-        if (!next_frame_read) { break; }
+        if (!next_frame_read) { 
+            break; 
+        }
     }
 
-    // a    b   c
-    // ----------
-    // 0    1   1
-    // 0    1   2
-    //     ...
-    // 0    2   2
-    // 0    2   3
-    //     ...
-    // 0    52  52
+    // The second pass (pass 1) is an N^2 comparison of relative motion between all frames
+    // in the input video file. The outer loop frame is referred to as 'b_frame_buf' and 
+    // the inner loop frame is 'c_frame_buf', you can think of 'b' as the reference frame
+    // for all the iteration of 'c' frames to be compared to. Blur buf's serve the same purpose
+    // but have blurring & convolutioin applied to eliminate noise to give more accurate motion scores
+    // b   c
+    // ------
+    // 0   1   
+    // 0   2
+    //  ...
+    // 2   2
+    // 2   3
+    //  ...
+    // 52  52
     pass = 1;
-    float *c_frame = 0;
+    float *c_frame_buf = 0;
     float *c_blur_buf = 0;
     float *b_blur_buf = 0;
-    if (!(c_frame = aligned_malloc(data_sz, MAX_ALIGN))) {
+    float *b_frame_buf = 0;
+    if (!(c_frame_buf = aligned_malloc(data_sz, MAX_ALIGN))) {
         printf("error: aligned_malloc failed for c frame.\n");
         fflush(stdout); goto fail_or_end;
     }
@@ -232,47 +271,58 @@ int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int strid
         printf("error: aligned_malloc failed for c blur.\n");
         fflush(stdout); goto fail_or_end;
     }
+    if (!(b_frame_buf = aligned_malloc(data_sz, MAX_ALIGN))) {
+        printf("error: aligned_malloc failed for b_buf.\n");
+        fflush(stdout); 
+        goto fail_or_end;
+    }
     if (!(b_blur_buf = aligned_malloc(data_sz, MAX_ALIGN))){
         printf("error: aligned_malloc failed for b blur.\n");
         fflush(stdout); goto fail_or_end;
     }
     
-    /* initialisation finished */
+    // Initialisation of scores and indices. The min_lower and min_upper are
+    // initialised to give the entire video length as opposed to flag values 
+    // that would pass errors back to the python process, so that if an error 
+    // occurs, as has happened with very short videos, we use the whole video.
     float min = -1.0;
     int min_lower_idx = 0;
     int min_upper_idx = global_frm_idx-1;
-    read_noref_frame(b_frame_buf, temp_buf, stride, user_data, -1);
-    for (int b_idx = 0; b_idx < global_frm_idx; b_idx++){
-        
-        //if b idx is 0, nothing is really different, you should compare the zero'th frame to the C index frames
-        // c_buf = copy(b_buf);       
-        memcpy(c_frame, b_frame_buf, data_sz);
-        // blur b_frame in preparation for comparison
+    // loop until all frames have been iterated over for comparison
+    for (int b_idx = 0; b_idx < global_frm_idx; b_idx++){   
+        // read in the b frame to be the frame of reference  
+        read_noref_frame(b_frame_buf, temp_buf, stride, user_data, b_idx * w * h * FRAME_INDEX_OFFSET);
+        // offset and blur b_frame in preparation for comparison
         offset_image(b_frame_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
         convolution_f32_c(FILTER_5, 5, b_frame_buf, b_blur_buf, temp_buf, w, h, stride / sizeof(float), stride / sizeof(float));      
+        // loop from the frame index immediately after the current 'b' frame index until
+        // the end of the frames
         for (int c_idx = b_idx + 1; c_idx < global_frm_idx; c_idx++){        
-            // printf("C = %d\n", c_idx);
-            // read_into_c
-            read_noref_frame(c_frame, temp_buf, stride, user_data, c_idx * w * h * 1.5);
-            offset_image(c_frame, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
-            convolution_f32_c(FILTER_5, 5, c_frame, c_blur_buf, temp_buf, w, h, stride / sizeof(float), stride / sizeof(float));
-            // compare_motion_b_and_c           
-            compute_motion(b_blur_buf, c_blur_buf, w, h, stride, stride, &score, 1);          
+            // read the frame given by the 'c' index offset as the new comparison frame
+            read_noref_frame(c_frame_buf, temp_buf, stride, user_data, c_idx * w * h * FRAME_INDEX_OFFSET);
+            // offset and blur the 'c' frame in preparation for motion calculation
+            offset_image(c_frame_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+            convolution_f32_c(FILTER_5, 5, c_frame_buf, c_blur_buf, temp_buf, w, h, stride / sizeof(float), stride / sizeof(float));
+            // compute the motion from b -> c with into score         
+            compute_motion(b_blur_buf, c_blur_buf, w, h, stride, stride, &score, pass);   
+            // min -1.0 is the condition that shows no genuine minimum has been found yet.
+            // Otherwise the motion must be less than the current minimum and the index gap
+            // must meet the #define'd acceptable cinemagraph length as measured in frames
             if((min == -1.0 || score < min) && MIN_GAP * FPS < (c_idx - b_idx) && (c_idx - b_idx) < MAX_GAP * FPS){
-                //printf("%f,%d,%d\n", min, min_lower_idx, min_upper_idx);
                 min = score;
                 min_lower_idx = b_idx;
                 min_upper_idx = c_idx;
-            }
-            
+            }           
         } 
-        // read_next_frame_into_b
-        read_noref_frame(b_frame_buf, temp_buf, stride, user_data, (b_idx + 1) * w * h * 1.5);
     }
-    printf("%f,%d,%d\n", min, min_lower_idx, min_upper_idx);
-    
+    // give result to cinemagraphs.py in expected format
+    printf("%f,%d,%d\n", min, min_lower_idx, min_upper_idx);  
+    // cleanup
+    aligned_free(b_blur_buf);
+    aligned_free(b_frame_buf);
+    aligned_free(c_frame_buf);
+    aligned_free(c_blur_buf);
 fail_or_end:
-
     aligned_free(ref_buf);
     aligned_free(prev_blur_buf);
     aligned_free(blur_buf);

@@ -41,7 +41,7 @@ struct noref_data
 
 int read_frame(float *ref_data, float *dis_data, float *temp_data, int stride_byte, void *s);
 
-int read_noref_frame(float *dis_data, float *temp_data, int stride_byte, void *s);
+int read_noref_frame(float *dis_data, float *temp_data, int stride_byte, void *s, int offset);
 
 int get_frame_offset(const char *fmt, int w, int h, size_t *offset);
 
