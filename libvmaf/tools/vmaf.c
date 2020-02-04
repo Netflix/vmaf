@@ -102,8 +102,22 @@ static int fetch_picture(video_input *vid, VmafPicture *pic)
             }
         }
     } else {
-        fprintf(stderr, "FIXME: support 10-bit input\n");
-        return -1;
+        for (unsigned i = 0; i < 3; i++) {
+            int xdec = i&&!(info.pixel_fmt&1);
+            int ydec = i&&!(info.pixel_fmt&2);
+            int xstride = info.depth > 8 ? 2 : 1;
+            uint16_t *ycbcr_data = (uint16_t*) ycbcr[i].data +
+                (info.pic_y >> ydec) * (ycbcr[i].stride / 2) +
+                (info.pic_x * xstride >> xdec);
+            // ^ gross, but this is how the daala y4m API works. FIXME.
+            uint16_t *pic_data = pic->data[i];
+
+            for (unsigned j = 0; j < pic->h[i]; j++) {
+                memcpy(pic_data, ycbcr_data, sizeof(*pic_data) * pic->w[i]);
+                pic_data += pic->stride[i] / 2;
+                ycbcr_data += ycbcr[i].stride / 2;
+            }
+        }
     }
 
     return 0;
