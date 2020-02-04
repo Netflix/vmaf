@@ -207,6 +207,57 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.69926875, places=8)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.94641666666666, places=8)
 
+    def test_run_vmafossexec_runner_yuv422p10le_sparks(self):
+
+        ref_path = VmafConfig.test_resource_path("yuv", "sparks_ref_480x270.yuv42010le.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "sparks_dis_480x270.yuv42010le.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 480, 'height': 270,
+                                  'yuv_type': 'yuv420p10le'})
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width': 480, 'height': 270,
+                                  'yuv_type': 'yuv420p10le'})
+
+        self.runner = VmafossExecQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+        )
+        self.runner.run(parallelize=True)
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale0_score'],0.9240746, places=8)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale1_score'], 0.9968371999999999, places=8)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale2_score'], 0.9987575999999999, places=8)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale3_score'], 0.9993221999999999, places=8)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_motion2_score'], 0.7523685999999999, places=8)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm2_score'], 0.9981770000000001, places=8)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_psnr_score'], 48.81622, places=8)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ssim_score'], 0.99566, places=8)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ms_ssim_score'], 0.9993778000000001, places=8)
+
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_vif_scale0_score'], 1.0, places=8)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_vif_scale1_score'], 0.9999990000000001, places=8)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_vif_scale2_score'], 0.9999990000000001, places=8)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_vif_scale3_score'], 0.9999990000000001, places=8)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_motion2_score'], 0.7523685999999999, places=8)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_adm2_score'], 1.0, places=8)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_psnr_score'], 72.0, places=8)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ssim_score'], 1.0, places=8)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ms_ssim_score'], 1.0, places=8)
+
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 97.90585999999999, places=8)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 98.47138, places=8)
+
     def test_run_vmafossexec_runner_with_transform_score(self):
 
         ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
