@@ -53,7 +53,7 @@ static int extract(VmafFeatureExtractor *fex,
     unsigned blur_idx_2 = (index + 2) % 3;
     s->feature_collector = feature_collector; //FIXME
 
-    picture_copy(s->ref, ref_pic, -128);
+    picture_copy(s->ref, ref_pic, -128, ref_pic->bpc);
     convolution_f32_c_s(FILTER_5_s, 5, s->ref, s->blur[blur_idx_0], s->tmp,
                         ref_pic->w[0], ref_pic->h[0],
                         s->float_stride / sizeof(float),

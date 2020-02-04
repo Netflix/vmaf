@@ -41,8 +41,8 @@ static int extract(VmafFeatureExtractor *fex,
     AdmState *s = fex->priv;
     int err = 0;
 
-    picture_copy(s->ref, ref_pic, -128);
-    picture_copy(s->dist, dist_pic, -128);
+    picture_copy(s->ref, ref_pic, -128, ref_pic->bpc);
+    picture_copy(s->dist, dist_pic, -128, dist_pic->bpc);
 
     double score, score_num, score_den;
     double scores[8];

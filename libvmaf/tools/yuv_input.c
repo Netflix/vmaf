@@ -42,22 +42,23 @@ static yuv_input *yuv_input_open(FILE *_fin,
     yuv->height = height;
     yuv->pix_fmt = pix_fmt;
     yuv->bitdepth = bitdepth;
+    bool hbd = yuv->bitdepth > 8;
 
     switch (yuv->pix_fmt) {
     case VMAF_PIX_FMT_YUV420P:
         yuv->src_c_dec_h=yuv->dst_c_dec_h=yuv->src_c_dec_v=yuv->dst_c_dec_v=2;
-        yuv->dst_buf_sz=yuv->width*yuv->height
-         +2*((yuv->width+1)/2)*((yuv->height+1)/2);
+        yuv->dst_buf_sz = (yuv->width*yuv->height
+         +2*((yuv->width+1)/2)*((yuv->height+1)/2)) << hbd;
         break;
     case VMAF_PIX_FMT_YUV422P:
         yuv->src_c_dec_h=yuv->dst_c_dec_h=2;
         yuv->src_c_dec_v=yuv->dst_c_dec_v=1;
-        yuv->dst_buf_sz = yuv->width*yuv->height +
-            2*(((yuv->width+1)/2) * yuv->height);
+        yuv->dst_buf_sz = (yuv->width*yuv->height +
+            2*(((yuv->width+1)/2) * yuv->height)) << hbd;
         break;
     case VMAF_PIX_FMT_YUV444P:
         yuv->src_c_dec_h=yuv->dst_c_dec_h=yuv->src_c_dec_v=yuv->dst_c_dec_v=1;
-        yuv->dst_buf_sz=yuv->width*yuv->height*3;
+        yuv->dst_buf_sz = (yuv->width*yuv->height*3) << hbd;
         break;
     default:
         goto fail; 

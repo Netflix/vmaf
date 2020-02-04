@@ -453,9 +453,11 @@ class SiTiNorefFeatureExtractor(NorefExecutorMixin, FeatureExtractor):
         # routine to generate feature scores in the log file.
 
         quality_w, quality_h = asset.quality_width_height
+        yuv_type = self._get_workfile_yuv_type(asset)
+        assert yuv_type in YuvReader.SUPPORTED_YUV_8BIT_TYPES, '{} only work with 8 bit for now.'.format(self.__class__.__name__)
         with YuvReader(filepath=asset.dis_workfile_path, width=quality_w,
                        height=quality_h,
-                       yuv_type=self._get_workfile_yuv_type(asset)) \
+                       yuv_type=yuv_type) \
                 as dis_yuv_reader:
             scores_mtx_list = []
             i = 0
