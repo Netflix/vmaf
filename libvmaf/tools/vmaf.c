@@ -252,7 +252,7 @@ int main(int argc, char *argv[])
             return -1;
         }
 
-        fprintf(stderr, "%s: %f\n", c.model_config[i].name, vmaf_score);
+        fprintf(stderr, "%s: %f\n", c.model_config[i].path, vmaf_score);
     }
 
     if (c.output_path) {
