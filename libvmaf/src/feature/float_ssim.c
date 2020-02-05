@@ -38,8 +38,8 @@ static int extract(VmafFeatureExtractor *fex,
     SsimState *s = fex->priv;
     int err = 0;
 
-    picture_copy(s->ref, ref_pic, -128, ref_pic->bpc);
-    picture_copy(s->dist, dist_pic, -128, dist_pic->bpc);
+    picture_copy(s->ref, ref_pic, 0, ref_pic->bpc);
+    picture_copy(s->dist, dist_pic, 0, dist_pic->bpc);
 
     double score, l_score, c_score, s_score;
     err = compute_ssim(s->ref, s->dist, ref_pic->w[0], ref_pic->h[0], s->float_stride,
