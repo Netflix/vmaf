@@ -13,11 +13,13 @@
 #include "output.h"
 #include "picture.h"
 #include "predict.h"
+#include "thread_pool.h"
 
 typedef struct VmafContext {
     VmafConfiguration cfg;
     VmafFeatureCollector *feature_collector;
     RegisteredFeatureExtractors registered_feature_extractors;
+    VmafThreadPool *thread_pool;
 } VmafContext;
 
 enum vmaf_cpu cpu;
@@ -43,13 +45,14 @@ int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
     if (err) goto free_feature_collector;
 
     if (v->cfg.n_threads > 1) {
-        fprintf(stderr, "set `--threads 1` for now.\n"
-                        "multithreaded feature extraction is on the way.\n");
-        return -EINVAL;
+        err = vmaf_thread_pool_create(&v->thread_pool, v->cfg.n_threads);
+        if (err) goto free_feature_extractor_vector;
     }
 
     return 0;
 
+free_feature_extractor_vector:
+    feature_extractor_vector_destroy(&(v->registered_feature_extractors));
 free_feature_collector:
     vmaf_feature_collector_destroy(v->feature_collector);
 free_v:
@@ -64,6 +67,7 @@ int vmaf_close(VmafContext *vmaf)
 
     feature_extractor_vector_destroy(&(vmaf->registered_feature_extractors));
     vmaf_feature_collector_destroy(vmaf->feature_collector);
+    vmaf_thread_pool_destroy(vmaf->thread_pool);
     free(vmaf);
 
     return 0;
