@@ -23,13 +23,6 @@ static int unpickle(VmafModel *model, const char *pickle_path,
     Val score_clip = pickle_model["model_dict"]["score_clip"];
     Val score_transform = pickle_model["model_dict"]["score_transform"];
 
-    /* if flags are not set, error out */
-    if (flags == VMAF_MODEL_FLAG_UNKNOWN) {
-        fprintf(stderr, "Model flags need to be set in the model config. "
-                "For default behavior, use VMAF_MODEL_FLAGS_DEFAULT.\n");
-        return -EINVAL;
-    }
-
     if (!((VAL_IS_NONE(score_clip)) || VAL_IS_LIST(score_clip)))
         return -EINVAL;
     model->score_clip.enabled = !(VAL_IS_NONE(score_clip)) &&
