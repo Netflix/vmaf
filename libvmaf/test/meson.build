@@ -10,6 +10,12 @@ test_feature_collector = executable('test_feature_collector',
     include_directories : [libvmaf_inc, test_inc, '../src/feature/'],
 )
 
+test_thread_pool = executable('test_thread_pool',
+    ['test.c', 'test_thread_pool.c', '../src/thread_pool.c'],
+    include_directories : [libvmaf_inc, test_inc, '../src/'],
+    dependencies : thread_lib,
+)
+
 test_model = executable('test_model',
     ['test.c', 'test_model.c', '../src/svm.cpp', '../src/unpickle.cpp'],
     include_directories : [libvmaf_inc, test_inc, opencontainers_include,
@@ -45,6 +51,7 @@ test_feature_extractor = executable('test_feature_extractor',
 
 test('test_picture', test_picture)
 test('test_feature_collector', test_feature_collector)
+test('test_thread_pool', test_thread_pool)
 test('test_model', test_model)
 test('test_predict', test_predict)
 test('test_feature_extractor', test_feature_extractor)
