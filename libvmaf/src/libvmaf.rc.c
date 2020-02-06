@@ -231,12 +231,13 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
     if (!vmaf) return -EINVAL;
     if (!score) return -EINVAL;
     if (index_low >= index_high) return -EINVAL;
+    if (!pool_method) return -EINVAL;
 
     RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
     for (unsigned i = 0; i < rfe.cnt; i++)
         vmaf_feature_extractor_context_close(rfe.fex_ctx[i]);
 
-    double sum = 0.;
+    double min, sum, i_sum = 0.;
     for (unsigned i = index_low; i < index_high; i++) {
         if ((vmaf->cfg.n_subsample > 1) && (i % vmaf->cfg.n_subsample))
             continue;
@@ -244,8 +245,25 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
         int err = vmaf_score_at_index(vmaf, model, &vmaf_score, i);
         if (err) return err;
         sum += vmaf_score;
+        i_sum += 1. / (vmaf_score + 1.);
+        if ((i == index_low) || (min < vmaf_score))
+            min = vmaf_score;
     }
-    *score = sum / (index_high - index_low);
+
+    switch (pool_method) {
+    case VMAF_POOL_METHOD_MEAN:
+        *score = sum / (index_high - index_low);
+        break;
+    case VMAF_POOL_METHOD_MIN:
+        *score = min;
+        break;
+    case VMAF_POOL_METHOD_HARMONIC_MEAN:
+        *score = (index_high - index_low) / i_sum - 1.0;
+        break;
+    default:
+        return -EINVAL;
+    }
+
     return 0;
 }
 
