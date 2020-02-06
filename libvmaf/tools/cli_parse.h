@@ -3,7 +3,8 @@
 
 #include <stdbool.h>
 
-#include "libvmaf/libvmaf.rc.h"
+#include <libvmaf/libvmaf.rc.h>
+#include <libvmaf/model.h>
 
 #define CLI_SETTINGS_STATIC_ARRAY_LEN 256
 
@@ -15,7 +16,7 @@ typedef struct {
     bool use_yuv;
     char *output_path;
     enum VmafOutputFormat output_fmt;
-    char *model_path[CLI_SETTINGS_STATIC_ARRAY_LEN];
+    VmafModelConfig model_config[CLI_SETTINGS_STATIC_ARRAY_LEN];
     unsigned model_cnt;
     char *feature[CLI_SETTINGS_STATIC_ARRAY_LEN];
     unsigned feature_cnt;

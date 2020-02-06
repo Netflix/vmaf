@@ -5,8 +5,8 @@
 #include "cli_parse.h"
 #include "vidinput.h"
 
-#include "libvmaf/picture.h"
-#include "libvmaf/libvmaf.rc.h"
+#include <libvmaf/picture.h>
+#include <libvmaf/libvmaf.rc.h>
 
 static enum VmafPixelFormat pix_fmt_map(int pf)
 {
@@ -102,8 +102,22 @@ static int fetch_picture(video_input *vid, VmafPicture *pic)
             }
         }
     } else {
-        fprintf(stderr, "FIXME: support 10-bit input\n");
-        return -1;
+        for (unsigned i = 0; i < 3; i++) {
+            int xdec = i&&!(info.pixel_fmt&1);
+            int ydec = i&&!(info.pixel_fmt&2);
+            int xstride = info.depth > 8 ? 2 : 1;
+            uint16_t *ycbcr_data = (uint16_t*) ycbcr[i].data +
+                (info.pic_y >> ydec) * (ycbcr[i].stride / 2) +
+                (info.pic_x * xstride >> xdec);
+            // ^ gross, but this is how the daala y4m API works. FIXME.
+            uint16_t *pic_data = pic->data[i];
+
+            for (unsigned j = 0; j < pic->h[i]; j++) {
+                memcpy(pic_data, ycbcr_data, sizeof(*pic_data) * pic->w[i]);
+                pic_data += pic->stride[i] / 2;
+                ycbcr_data += ycbcr[i].stride / 2;
+            }
+        }
     }
 
     return 0;
@@ -174,17 +188,17 @@ int main(int argc, char *argv[])
 
     VmafModel *model[c.model_cnt];
     for (unsigned i = 0; i < c.model_cnt; i++) {
-        err = vmaf_model_load_from_path(&model[i], c.model_path[i]);
+        err = vmaf_model_load_from_path(&model[i], &c.model_config[i]);
         if (err) {
             fprintf(stderr, "problem loading model file: %s\n",
-                    c.model_path[i]);
+                    c.model_config[i].path);
             return -1;
         }
         err = vmaf_use_features_from_model(vmaf, model[i]);
         if (err) {
             fprintf(stderr,
                     "problem loading feature extractors from model file: %s\n",
-                    c.model_path[i]);
+                    c.model_config[i].path);
             return -1;
         }
     }
@@ -238,7 +252,7 @@ int main(int argc, char *argv[])
             return -1;
         }
 
-        fprintf(stderr, "%s: %f\n", c.model_path[i], vmaf_score);
+        fprintf(stderr, "%s: %f\n", c.model_config[i].path, vmaf_score);
     }
 
     if (c.output_path) {
@@ -251,8 +265,10 @@ int main(int argc, char *argv[])
         fclose(outfile);
     }
 
-    for (unsigned i = 0; i < c.model_cnt; i++)
+    for (unsigned i = 0; i < c.model_cnt; i++) {
         vmaf_model_destroy(model[i]);
+    }
+
     video_input_close(&vid_ref);
     video_input_close(&vid_dist);
     vmaf_close(vmaf);
