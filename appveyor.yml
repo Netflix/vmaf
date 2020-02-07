@@ -50,12 +50,13 @@ build_script:
 test_script:
   - ninja -vC build test
 
-after_build: 7z a vmaf-win-%arch%.zip build\*.*
+after_build: 7z a vmaf-win-%arch%.zip build\**\*.*
 
 artifacts:
-  - path: libvmaf\build\*.zip
+  - path: libvmaf\**\*.zip
   - path: libvmaf\build\src\libvmaf*.*
   - path: libvmaf\build\tools\*vmaf*.exe
+  - path: libvmaf\build\meson-logs\*.txt
 
 cache:
   - 'C:\msys64\home\appveyor\.ccache'
