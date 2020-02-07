@@ -50,6 +50,9 @@ build_script:
 test_script:
   - ninja -vC build test
 
+artifacts:
+    - path: libvmaf\**\*vmaf*.*
+
 cache:
   - 'C:\msys64\home\appveyor\.ccache'
   - 'C:\msys64\var\cache\pacman\pkg'
