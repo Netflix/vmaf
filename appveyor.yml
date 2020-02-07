@@ -51,7 +51,8 @@ test_script:
   - ninja -vC build test
 
 artifacts:
-    - path: libvmaf\**\*vmaf*.*
+    - path: libvmaf\build\src\libvmaf*.*
+    - path: libvmaf\build\tools\*vmaf*.exe
 
 cache:
   - 'C:\msys64\home\appveyor\.ccache'
