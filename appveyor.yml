@@ -50,7 +50,7 @@ build_script:
 test_script:
   - ninja -vC build test
 
-after_build: 7z a vmaf-win-%arch%.zip libvmaf\build\*.*
+after_build: 7z a vmaf-win-%arch%.zip build\*.*
 
 artifacts:
   - path: libvmaf\build\*.zip
