@@ -8,69 +8,19 @@
 #include "feature/common/cpu.h"
 #include "feature/feature_extractor.h"
 #include "feature/feature_collector.h"
+#include "fex_ctx_vector.h"
 #include "model.h"
 #include "output.h"
 #include "picture.h"
 #include "predict.h"
-
-typedef struct {
-    VmafFeatureExtractorContext **fex_ctx;
-    unsigned cnt, capacity;
-} RegisteredFeatureExtractors;
+#include "thread_pool.h"
 
 typedef struct VmafContext {
     VmafConfiguration cfg;
     VmafFeatureCollector *feature_collector;
     RegisteredFeatureExtractors registered_feature_extractors;
+    VmafThreadPool *thread_pool;
 } VmafContext;
-
-static int feature_extractor_vector_init(RegisteredFeatureExtractors *rfe)
-{
-    rfe->cnt = 0;
-    rfe->capacity = 8;
-    size_t sz = sizeof(*(rfe->fex_ctx)) * rfe->capacity;
-    rfe->fex_ctx = malloc(sz);
-    if (!rfe->fex_ctx) return -ENOMEM;
-    memset(rfe->fex_ctx, 0, sz);
-    return 0;
-}
-
-static int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
-                                           VmafFeatureExtractorContext *fex_ctx)
-{
-    if (!rfe) return -EINVAL;
-    if (!fex_ctx) return -EINVAL;
-
-    for (unsigned i = 0; i < rfe->cnt; i++) {
-        if (!strcmp(rfe->fex_ctx[i]->fex->name, fex_ctx->fex->name))
-            return vmaf_feature_extractor_context_destroy(fex_ctx);
-    }
-
-    if (rfe->cnt >= rfe->capacity) {
-        size_t capacity = rfe->capacity * 2;
-        VmafFeatureExtractorContext **fex_ctx =
-            realloc(rfe->fex_ctx, sizeof(*(rfe->fex_ctx)) * capacity);
-        if (!fex_ctx) return -ENOMEM;
-        rfe->fex_ctx = fex_ctx;
-        rfe->capacity = capacity;
-        for (unsigned i = rfe->cnt; i < rfe->capacity; i++)
-            rfe->fex_ctx[i] = NULL;
-    }
-
-    rfe->fex_ctx[rfe->cnt++] = fex_ctx;
-    return 0;
-}
-
-static void feature_extractor_vector_destroy(RegisteredFeatureExtractors *rfe)
-{
-    if (!rfe) return;
-    for (unsigned i = 0; i < rfe->cnt; i++) {
-        vmaf_feature_extractor_context_close(rfe->fex_ctx[i]);
-        vmaf_feature_extractor_context_destroy(rfe->fex_ctx[i]);
-    }
-    free(rfe->fex_ctx);
-    return;
-}
 
 enum vmaf_cpu cpu;
 // ^ FIXME, this is a global in the old libvmaf
@@ -95,13 +45,14 @@ int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
     if (err) goto free_feature_collector;
 
     if (v->cfg.n_threads > 1) {
-        fprintf(stderr, "set `--threads 1` for now.\n"
-                        "multithreaded feature extraction is on the way.\n");
-        return -EINVAL;
+        err = vmaf_thread_pool_create(&v->thread_pool, v->cfg.n_threads);
+        if (err) goto free_feature_extractor_vector;
     }
 
     return 0;
 
+free_feature_extractor_vector:
+    feature_extractor_vector_destroy(&(v->registered_feature_extractors));
 free_feature_collector:
     vmaf_feature_collector_destroy(v->feature_collector);
 free_v:
@@ -116,6 +67,7 @@ int vmaf_close(VmafContext *vmaf)
 
     feature_extractor_vector_destroy(&(vmaf->registered_feature_extractors));
     vmaf_feature_collector_destroy(vmaf->feature_collector);
+    vmaf_thread_pool_destroy(vmaf->thread_pool);
     free(vmaf);
 
     return 0;
@@ -231,12 +183,13 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
     if (!vmaf) return -EINVAL;
     if (!score) return -EINVAL;
     if (index_low >= index_high) return -EINVAL;
+    if (!pool_method) return -EINVAL;
 
     RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
     for (unsigned i = 0; i < rfe.cnt; i++)
         vmaf_feature_extractor_context_close(rfe.fex_ctx[i]);
 
-    double sum = 0.;
+    double min, sum, i_sum = 0.;
     for (unsigned i = index_low; i < index_high; i++) {
         if ((vmaf->cfg.n_subsample > 1) && (i % vmaf->cfg.n_subsample))
             continue;
@@ -244,8 +197,25 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
         int err = vmaf_score_at_index(vmaf, model, &vmaf_score, i);
         if (err) return err;
         sum += vmaf_score;
+        i_sum += 1. / (vmaf_score + 1.);
+        if ((i == index_low) || (min < vmaf_score))
+            min = vmaf_score;
     }
-    *score = sum / (index_high - index_low);
+
+    switch (pool_method) {
+    case VMAF_POOL_METHOD_MEAN:
+        *score = sum / (index_high - index_low);
+        break;
+    case VMAF_POOL_METHOD_MIN:
+        *score = min;
+        break;
+    case VMAF_POOL_METHOD_HARMONIC_MEAN:
+        *score = (index_high - index_low) / i_sum - 1.0;
+        break;
+    default:
+        return -EINVAL;
+    }
+
     return 0;
 }
 

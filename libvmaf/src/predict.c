@@ -111,7 +111,7 @@ int vmaf_predict_score_at_index(VmafModel *model,
     err = clip(model, &prediction);
     if (err) goto free_node;
 
-    err = vmaf_feature_collector_append(feature_collector, "vmaf",
+    err = vmaf_feature_collector_append(feature_collector, model->name,
                                         prediction, index);
     if (err) goto free_node;
 

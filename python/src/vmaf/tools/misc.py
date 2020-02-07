@@ -488,7 +488,7 @@ class Timer(object):
         self.tstart = time()
 
     def __exit__(self, type, value, traceback):
-        print('Elapsed: %s' % (time() - self.tstart))
+        print('Elapsed: %s sec' % (time() - self.tstart))
 
 
 def dedup_value_in_dict(d):

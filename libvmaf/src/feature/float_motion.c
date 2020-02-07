@@ -70,7 +70,11 @@ static int extract(VmafFeatureExtractor *fex,
                          s->float_stride, s->float_stride, &score);
     if (err) return err;
 
-    if (index == 1) return 0;
+    if (index == 1) {
+        s->score = score;
+        return 0;
+    }
+    
     double score2;
     err = compute_motion(s->blur[blur_idx_2], s->blur[blur_idx_1],
                          ref_pic->w[0], ref_pic->h[0],
