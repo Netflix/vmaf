@@ -243,7 +243,7 @@ class ExternalProgramCaller(object):
             vmafrc_cmd += ' --no_prediction'
         else:
             assert model is not None
-            vmafrc_cmd += ' --model {}'.format(model)
+            vmafrc_cmd += ' --model path={}:name=vmaf'.format(model)
 
         assert isinstance(subsample, int) and subsample >= 1
         if subsample != 1:
