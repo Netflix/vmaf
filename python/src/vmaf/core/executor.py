@@ -82,6 +82,9 @@ class Executor(TypeVersionEnabled):
             # include optional_dict info in executor_id for result store,
             # as parameters in optional_dict will impact result
             executor_id_ += '_{}'.format(get_normalized_string_from_dict(self.optional_dict))
+            replace_chars = ["'", " "]
+            for c in replace_chars:
+                executor_id_ = executor_id_.replace(c, "_")
         return executor_id_
 
     def run(self, **kwargs):

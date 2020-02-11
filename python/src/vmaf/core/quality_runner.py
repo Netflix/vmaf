@@ -124,7 +124,7 @@ class PsnrQualityRunner(QualityRunner):
 
         scores_key = self.get_scores_key()
         quality_result = {
-            scores_key:psnr_scores
+            scores_key: psnr_scores
         }
         return quality_result
 
@@ -168,7 +168,7 @@ class VmafLegacyQualityRunner(QualityRunner):
             result_store=self.result_store,
             optional_dict=None,
             optional_dict2=None,
-            parallelize=False, # parallelization already in a higher level
+            parallelize=False,  # parallelization already in a higher level
         )
         return vmaf_fassembler
 
@@ -1169,11 +1169,12 @@ class VmafrcQualityRunner(QualityRunner):
         log_file_path = self._get_log_file_path(asset)
 
         if self.optional_dict is not None \
-                and 'model_filepath' in self.optional_dict \
-                and self.optional_dict['model_filepath'] is not None:
-            model_filepath = self.optional_dict['model_filepath']
+                and 'models' in self.optional_dict \
+                and self.optional_dict['models'] is not None:
+            assert isinstance(self.optional_dict['models'], list)
+            models = self.optional_dict['models']
         else:
-            model_filepath = self.DEFAULT_MODEL_FILEPATH
+            models = ['path={}:name=vmaf'.format(self.DEFAULT_MODEL_FILEPATH)]
 
         if self.optional_dict is not None and 'psnr' in self.optional_dict:
             psnr = self.optional_dict['psnr']
@@ -1223,6 +1224,12 @@ class VmafrcQualityRunner(QualityRunner):
             subsample = 1
         assert isinstance(subsample, int) and subsample >= 1
 
+        if self.optional_dict is not None and 'n_threads' in self.optional_dict:
+            n_threads = self.optional_dict['n_threads']
+        else:
+            n_threads = 1
+        assert isinstance(n_threads, int) and n_threads >= 1
+
         quality_width, quality_height = asset.quality_width_height
 
         fmt = self._get_workfile_yuv_type(asset)
@@ -1235,14 +1242,14 @@ class VmafrcQualityRunner(QualityRunner):
         width = quality_width
         height = quality_height
         pixel_format, bitdepth = self._convert_format(fmt)
-        model = model_filepath
         output = log_file_path
         exe = self._get_exec()
         logger = self.logger
 
         ExternalProgramCaller.call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth,
                                           psnr, fixed_psnr, ssim, fixed_ssim, ms_ssim, fixed_ms_ssim,
-                                          no_prediction, model, subsample, output, exe, logger)
+                                          no_prediction, models, subsample, output, exe, logger,
+                                          n_threads)
 
     def _get_exec(self):
         return None # signaling default
@@ -1273,15 +1280,36 @@ class VmafrcQualityRunner(QualityRunner):
         log_file_path = self._get_log_file_path(asset)
         tree = ElementTree.parse(log_file_path)
         root = tree.getroot()
-        scores = []
+        scores_dict = {}
 
         feature_scores = [[] for _ in self.FEATURES]
 
+        if self.optional_dict is not None and 'no_prediction' in self.optional_dict:
+            no_prediction = self.optional_dict['no_prediction']
+        else:
+            no_prediction = False
+        assert isinstance(no_prediction, bool)
+
+        # if no_prediction, scores keys are empty
+        # if >=1 models are passed in through optional_dict, assign keys from model's name
+        # else default to a single key as "vmaf"
+        if no_prediction:
+            scores_keys = []
+        elif self.optional_dict is not None and 'models' in self.optional_dict:
+            assert isinstance(self.optional_dict['models'], list)
+            scores_keys = []
+            for model in self.optional_dict['models']:
+                scores_keys.append(model.split("name=")[1].split(":")[0])
+        else:
+            scores_keys = ['vmaf']
+
+        for scores_key in scores_keys:
+            scores_dict[scores_key] = []
+
         for frame in root.findall('frames/frame'):
-            try:
-                scores.append(round(float(frame.attrib['vmaf']), 4))
-            except KeyError:
-                pass  # if no_prediction is enabled
+            if not no_prediction:
+                for scores_key in scores_keys:
+                    scores_dict[scores_key].append(round(float(frame.attrib[scores_key]), 4))
             for i_feature, feature in enumerate(self.FEATURES):
                 try:
                     if feature in ['motion2']:
@@ -1292,12 +1320,16 @@ class VmafrcQualityRunner(QualityRunner):
                         feature_scores[i_feature].append(float(frame.attrib[feature]))
                 except KeyError:
                     pass  # some features may be missing
-        assert len(scores) != 0 or any([len(feature_score) != 0 for feature_score in feature_scores])
-        quality_result = {
-            self.get_scores_key(): scores,
-        }
+        for scores_key in scores_keys:
+            assert len(scores_dict[scores_key]) != 0 \
+                   or any([len(feature_score) != 0 for feature_score in feature_scores])
+        quality_result = {}
+        for scores_key in scores_keys:
+            if scores_key != 'vmaf':
+                quality_result[self.get_feature_scores_key(scores_key)] = scores_dict[scores_key]
+            else:
+                quality_result[self.get_scores_key()] = scores_dict[scores_key]
         for i_feature, feature in enumerate(self.FEATURES):
             if len(feature_scores[i_feature]) != 0:
                 quality_result[self.get_feature_scores_key(feature)] = feature_scores[i_feature]
         return quality_result
-
