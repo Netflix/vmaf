@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <string.h>
 
 #include "feature/feature_extractor.h"
 #include "feature/common/cpu.h"
@@ -30,8 +31,40 @@ static char *test_get_feature_extractor_by_name_and_feature_name()
     return NULL;
 }
 
+static char *test_get_feature_extractor_context_pool()
+{
+    int err = 0;
+
+    const unsigned n_threads = 8;
+    VmafFeatureExtractorContextPool *pool;
+    err = vmaf_fex_ctx_pool_create(&pool, n_threads);
+    mu_assert("problem during vmaf_fex_ctx_pool_create", !err);
+
+    VmafFeatureExtractor *fex = vmaf_get_feature_extractor_by_name("ssim");
+    mu_assert("problem during vmaf_get_feature_extractor_by_name", fex);
+
+    VmafFeatureExtractorContext *fex_ctx[n_threads];
+    for (unsigned i = 0; i < n_threads; i++) {
+        err = vmaf_fex_ctx_pool_aquire(pool, fex, &fex_ctx[i]);
+        mu_assert("problem during vmaf_fex_ctx_pool_aquire", !err);
+        mu_assert("fex_ctx[i] should be ssim feature extractor",
+                  !strcmp(fex_ctx[i]->fex->name, "ssim"));
+    }
+
+    for (unsigned i = 0; i < n_threads; i++) {
+        err = vmaf_fex_ctx_pool_release(pool, fex_ctx[i]);
+        mu_assert("problem during vmaf_fex_ctx_pool_release", !err);
+    }
+
+    err = vmaf_fex_ctx_pool_destroy(pool);
+    mu_assert("problem during vmaf_fex_ctx_pool_destroy", !err);
+
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_get_feature_extractor_by_name_and_feature_name);
+    mu_run_test(test_get_feature_extractor_context_pool);
     return NULL;
 }

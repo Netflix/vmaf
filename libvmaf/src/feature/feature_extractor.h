@@ -50,4 +50,30 @@ int vmaf_feature_extractor_context_close(VmafFeatureExtractorContext *fex_ctx);
 
 int vmaf_feature_extractor_context_delete(VmafFeatureExtractorContext *fex_ctx);
 
+typedef struct VmafFeatureExtractorContextPool {
+    struct fex_list_entry {
+        VmafFeatureExtractor *fex;
+        struct {
+            VmafFeatureExtractorContext *fex_ctx;
+            bool in_use;
+        } *ctx_list;
+        atomic_int capacity, in_use;
+        pthread_cond_t full;
+    } *fex_list;
+    unsigned length;
+    pthread_mutex_t lock;
+} VmafFeatureExtractorContextPool;
+
+int vmaf_fex_ctx_pool_create(VmafFeatureExtractorContextPool **pool,
+                             unsigned n_threads);
+
+int vmaf_fex_ctx_pool_aquire(VmafFeatureExtractorContextPool *pool,
+                             VmafFeatureExtractor *fex,
+                             VmafFeatureExtractorContext **fex_ctx);
+
+int vmaf_fex_ctx_pool_release(VmafFeatureExtractorContextPool *pool,
+                             VmafFeatureExtractorContext *fex_ctx);
+
+int vmaf_fex_ctx_pool_destroy(VmafFeatureExtractorContextPool *pool);
+
 #endif /* __VMAF_FEATURE_EXTRACTOR_H__ */
