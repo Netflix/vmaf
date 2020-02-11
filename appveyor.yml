@@ -48,7 +48,7 @@ build_script:
   - set "CXXFLAGS=-static %CXXFLAGS%"
   - cd libvmaf
   - meson setup --backend=ninja --default-library=static --buildtype=release --prefix="%CD%/install" build
-  - ninja -vC build instal
+  - ninja -vC build install
 
 test_script:
   - ninja -vC build test
