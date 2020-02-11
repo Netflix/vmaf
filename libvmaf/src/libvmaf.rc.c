@@ -19,6 +19,7 @@ typedef struct VmafContext {
     VmafConfiguration cfg;
     VmafFeatureCollector *feature_collector;
     RegisteredFeatureExtractors registered_feature_extractors;
+    VmafFeatureExtractorContextPool *fex_ctx_pool;
     VmafThreadPool *thread_pool;
 } VmafContext;
 
@@ -44,13 +45,17 @@ int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
     err = feature_extractor_vector_init(&(v->registered_feature_extractors));
     if (err) goto free_feature_collector;
 
-    if (v->cfg.n_threads > 1) {
+    if (v->cfg.n_threads > 0) {
         err = vmaf_thread_pool_create(&v->thread_pool, v->cfg.n_threads);
         if (err) goto free_feature_extractor_vector;
+        err = vmaf_fex_ctx_pool_create(&v->fex_ctx_pool, v->cfg.n_threads);
+        if (err) goto free_thread_pool;
     }
 
     return 0;
 
+free_thread_pool:
+    vmaf_thread_pool_destroy(v->thread_pool);
 free_feature_extractor_vector:
     feature_extractor_vector_destroy(&(v->registered_feature_extractors));
 free_feature_collector:
@@ -65,9 +70,11 @@ int vmaf_close(VmafContext *vmaf)
 {
     if (!vmaf) return -EINVAL;
 
+    vmaf_thread_pool_wait(vmaf->thread_pool);
     feature_extractor_vector_destroy(&(vmaf->registered_feature_extractors));
     vmaf_feature_collector_destroy(vmaf->feature_collector);
     vmaf_thread_pool_destroy(vmaf->thread_pool);
+    vmaf_fex_ctx_pool_destroy(vmaf->fex_ctx_pool);
     free(vmaf);
 
     return 0;
@@ -119,6 +126,7 @@ int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model)
         VmafFeatureExtractor *fex =
             vmaf_get_feature_extractor_by_feature_name(model->feature[i].name);
         if (!fex) return -EINVAL;
+
         VmafFeatureExtractorContext *fex_ctx;
         err = vmaf_feature_extractor_context_create(&fex_ctx, fex);
         if (err) return err;
@@ -127,10 +135,74 @@ int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model)
             err |= vmaf_feature_extractor_context_destroy(fex_ctx);
             return err;
         }
+    }
+    return 0;
+}
 
+struct ThreadData {
+    VmafFeatureExtractorContext *fex_ctx;
+    VmafPicture ref, dist;
+    unsigned index;
+    VmafFeatureCollector *feature_collector;
+    VmafFeatureExtractorContextPool *fex_ctx_pool;
+    int err;
+};
+
+static void threaded_extract_func(void *e)
+{
+    struct ThreadData *f = e;
+
+    f->err = vmaf_feature_extractor_context_extract(f->fex_ctx, &f->ref,
+                                                    &f->dist, f->index,
+                                                    f->feature_collector);
+    f->err = vmaf_fex_ctx_pool_release(f->fex_ctx_pool, f->fex_ctx);
+    vmaf_picture_unref(&f->ref);
+    vmaf_picture_unref(&f->dist);
+}
+
+static int threaded_read_pictures(VmafContext *vmaf, VmafPicture *ref,
+                                  VmafPicture *dist, unsigned index)
+{
+    if (!vmaf) return -EINVAL;
+    if (!ref) return -EINVAL;
+    if (!dist) return -EINVAL;
+
+    int err = 0;
+
+    for (unsigned i = 0; i < vmaf->registered_feature_extractors.cnt; i++) {
+        VmafPicture pic_a, pic_b;
+        vmaf_picture_ref(&pic_a, ref);
+        vmaf_picture_ref(&pic_b, dist);
+
+        VmafFeatureExtractor *fex =
+            vmaf->registered_feature_extractors.fex_ctx[i]->fex;
+
+        if ((vmaf->cfg.n_subsample > 1) && (index % vmaf->cfg.n_subsample) &&
+            !(fex->flags & VMAF_FEATURE_EXTRACTOR_TEMPORAL))
+        {
+            continue;
+        }
+
+        VmafFeatureExtractorContext *fex_ctx;
+        err = vmaf_fex_ctx_pool_aquire(vmaf->fex_ctx_pool, fex, &fex_ctx);
+        if (err) return err;
+
+        struct ThreadData data = {
+            .fex_ctx = fex_ctx,
+            .ref = pic_a,
+            .dist = pic_b,
+            .index = index,
+            .feature_collector = vmaf->feature_collector,
+            .fex_ctx_pool = vmaf->fex_ctx_pool,
+            .err = 0,
+        };
+
+        err = vmaf_thread_pool_enqueue(vmaf->thread_pool, threaded_extract_func,
+                                       &data, sizeof(data));
+        if (err) return err;
     }
 
-    return 0;
+    return vmaf_picture_unref(ref) | vmaf_picture_unref(dist);
 }
 
 int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
@@ -142,7 +214,9 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
 
     int err = 0;
 
-    //TODO: VmafThreadPool
+    if (vmaf->thread_pool)
+        return threaded_read_pictures(vmaf, ref, dist, index);
+
     for (unsigned i = 0; i < vmaf->registered_feature_extractors.cnt; i++) {
         VmafFeatureExtractorContext *fex_ctx =
             vmaf->registered_feature_extractors.fex_ctx[i];
@@ -185,11 +259,13 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
     if (index_low >= index_high) return -EINVAL;
     if (!pool_method) return -EINVAL;
 
+    vmaf_thread_pool_wait(vmaf->thread_pool);
     RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
     for (unsigned i = 0; i < rfe.cnt; i++) {
         vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
                                              vmaf->feature_collector);
     }
+    vmaf_fex_ctx_pool_flush(vmaf->fex_ctx_pool, vmaf->feature_collector);
 
     double min, sum, i_sum = 0.;
     for (unsigned i = index_low; i < index_high; i++) {
@@ -229,11 +305,13 @@ const char *vmaf_version(void)
 int vmaf_write_output(VmafContext *vmaf, FILE *outfile,
                       enum VmafOutputFormat fmt)
 {
+    vmaf_thread_pool_wait(vmaf->thread_pool);
     RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
     for (unsigned i = 0; i < rfe.cnt; i++) {
         vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
                                              vmaf->feature_collector);
     }
+    vmaf_fex_ctx_pool_flush(vmaf->fex_ctx_pool, vmaf->feature_collector);
 
     switch (fmt) {
     case VMAF_OUTPUT_FORMAT_XML:
