@@ -138,19 +138,9 @@ int vmaf_thread_pool_wait(VmafThreadPool *pool)
     if (!pool) return -EINVAL;
 
     pthread_mutex_lock(&(pool->queue.lock));
-
-    for (;;) {
-        if ((!pool->stop && pool->n_working != 0) ||
-            (pool->stop && pool->n_threads != 0))
-        {
-            pthread_cond_wait(&(pool->working), &(pool->queue.lock));
-        } else {
-            break;
-        }
-    }
-
+    while((!pool->stop && pool->n_working) || (pool->stop && pool->n_threads))
+        pthread_cond_wait(&(pool->working), &(pool->queue.lock));
     pthread_mutex_unlock(&(pool->queue.lock));
-
     return 0;
 }
 int vmaf_thread_pool_destroy(VmafThreadPool *pool)
@@ -168,9 +158,7 @@ int vmaf_thread_pool_destroy(VmafThreadPool *pool)
     pool->stop = true;
     pthread_cond_broadcast(&(pool->queue.empty));
     pthread_mutex_unlock(&(pool->queue.lock));
-
     vmaf_thread_pool_wait(pool);
-
     pthread_mutex_destroy(&(pool->queue.lock));
     pthread_cond_destroy(&(pool->queue.empty));
     pthread_cond_destroy(&(pool->working));
