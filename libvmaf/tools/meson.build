@@ -18,7 +18,7 @@ vmaf_rc = executable(
     include_directories : [libvmaf_inc, vmaf_include],
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,
-    link_with : libvmaf_rc,
+    link_with : libvmaf_rc.get_static_lib(),
     install : false,
 )
 
@@ -28,7 +28,7 @@ psnr = executable(
     include_directories : libvmaf_inc,
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,
-    link_with : libvmaf,
+    link_with : libvmaf.get_static_lib(),
     install : false,
 )
 
@@ -38,7 +38,7 @@ moment = executable(
     include_directories : libvmaf_inc,
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,
-    link_with : libvmaf,
+    link_with : libvmaf.get_static_lib(),
     install : false,
 )
 
@@ -48,7 +48,7 @@ ssim = executable(
     include_directories : libvmaf_inc,
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,
-    link_with : libvmaf,
+    link_with : libvmaf.get_static_lib(),
     install : false,
 )
 
@@ -58,7 +58,7 @@ ms_ssim = executable(
     include_directories : libvmaf_inc,
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,
-    link_with : libvmaf,
+    link_with : libvmaf.get_static_lib(),
     install : false,
 )
 
@@ -68,6 +68,6 @@ vmaf = executable(
     include_directories : libvmaf_inc,
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,
-    link_with : libvmaf,
+    link_with : libvmaf.get_static_lib(),
     install : false,
 )
