@@ -2,6 +2,7 @@ os: Visual Studio 2019
 
 environment:
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
+  LDFLAGS: -static-libgcc -static-libstdc++
   matrix:
     #- arch: x86
     #  compiler: msvc2015
@@ -43,12 +44,23 @@ install:
 
 build_script:
   - echo Building on %arch% with %compiler%
+  - set "CFLAGS=-static %CFLAGS%"
+  - set "CXXFLAGS=-static %CXXFLAGS%"
   - cd libvmaf
-  - meson --backend=ninja build
-  - ninja -vC build
+  - meson setup --backend=ninja --default-library=static --buildtype=release --prefix="%CD%/install" build
+  - ninja -vC build install
 
 test_script:
   - ninja -vC build test
+
+after_build:
+  - 7z a vmaf-win-%arch%.zip install\**\*.*
+
+artifacts:
+  - path: libvmaf\**\*.zip
+  - path: libvmaf\build\src\libvmaf*.*
+  - path: libvmaf\build\tools\*vmaf*.exe
+  - path: libvmaf\build\meson-logs\*.txt
 
 cache:
   - 'C:\msys64\home\appveyor\.ccache'
