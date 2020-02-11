@@ -79,6 +79,9 @@ int vmaf_fex_ctx_pool_aquire(VmafFeatureExtractorContextPool *pool,
 int vmaf_fex_ctx_pool_release(VmafFeatureExtractorContextPool *pool,
                              VmafFeatureExtractorContext *fex_ctx);
 
+int vmaf_fex_ctx_pool_flush(VmafFeatureExtractorContextPool *pool,
+                            VmafFeatureCollector *feature_collector);
+
 int vmaf_fex_ctx_pool_destroy(VmafFeatureExtractorContextPool *pool);
 
 #endif /* __VMAF_FEATURE_EXTRACTOR_H__ */

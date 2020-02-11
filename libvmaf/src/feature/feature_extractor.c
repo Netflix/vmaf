@@ -286,6 +286,29 @@ unlock:
     return err;
 }
 
+int vmaf_fex_ctx_pool_flush(VmafFeatureExtractorContextPool *pool,
+                            VmafFeatureCollector *feature_collector)
+{
+    if (!pool) return -EINVAL;
+    if (!pool->fex_list) return -EINVAL;
+    pthread_mutex_lock(&(pool->lock));
+
+    for (unsigned i = 0; i < pool->length; i++) {
+        VmafFeatureExtractor *fex = pool->fex_list[i].fex;
+        if (!(fex->flags & VMAF_FEATURE_EXTRACTOR_TEMPORAL))
+            continue;
+        for (unsigned j = 0; j < pool->fex_list[i].capacity; j++) {
+            VmafFeatureExtractorContext *fex_ctx =
+                pool->fex_list[i].ctx_list[j].fex_ctx;
+            if (!fex_ctx) continue;
+            vmaf_feature_extractor_context_flush(fex_ctx, feature_collector);
+        }
+    }
+
+    pthread_mutex_unlock(&(pool->lock));
+    return 0;
+}
+
 int vmaf_fex_ctx_pool_destroy(VmafFeatureExtractorContextPool *pool)
 {
     if (!pool) return -EINVAL;
