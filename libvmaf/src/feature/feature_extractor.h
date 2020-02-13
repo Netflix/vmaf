@@ -19,6 +19,8 @@ typedef struct VmafFeatureExtractor {
     int (*extract)(struct VmafFeatureExtractor *fex,
                    VmafPicture *ref_pic, VmafPicture *dist_pic,
                    unsigned index, VmafFeatureCollector *feature_collector);
+    int (*flush)(struct VmafFeatureExtractor *fex,
+                 VmafFeatureCollector *feature_collector);
     int (*close)(struct VmafFeatureExtractor *fex);
     void *priv;
     size_t priv_size;
@@ -45,6 +47,9 @@ int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
                                            VmafPicture *ref, VmafPicture *dist,
                                            unsigned pic_index,
                                            VmafFeatureCollector *vfc);
+
+int vmaf_feature_extractor_context_flush(VmafFeatureExtractorContext *fex_ctx,
+                                         VmafFeatureCollector *vfc);
 
 int vmaf_feature_extractor_context_close(VmafFeatureExtractorContext *fex_ctx);
 

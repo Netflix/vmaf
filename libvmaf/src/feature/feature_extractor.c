@@ -121,6 +121,19 @@ int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
     return fex_ctx->fex->extract(fex_ctx->fex, ref, dist, pic_index, vfc);
 }
 
+int vmaf_feature_extractor_context_flush(VmafFeatureExtractorContext *fex_ctx,
+                                         VmafFeatureCollector *vfc)
+{
+    if (!fex_ctx) return -EINVAL;
+    if (!fex_ctx->is_initialized) return -EINVAL;
+    if (fex_ctx->is_closed) return 0;
+
+    int err = 0;
+    if (fex_ctx->fex->flush)
+        while (!(err = fex_ctx->fex->flush(fex_ctx->fex, vfc)));
+    return err < 0 ? err : 0;
+}
+
 int vmaf_feature_extractor_context_close(VmafFeatureExtractorContext *fex_ctx)
 {
     if (!fex_ctx) return -EINVAL;
@@ -128,9 +141,8 @@ int vmaf_feature_extractor_context_close(VmafFeatureExtractorContext *fex_ctx)
     if (fex_ctx->is_closed) return 0;
 
     int err = 0;
-    if (fex_ctx->fex->close) {
+    if (fex_ctx->fex->close)
         err = fex_ctx->fex->close(fex_ctx->fex);
-    }
     fex_ctx->is_closed = true;
     return err;
 }
