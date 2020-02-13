@@ -16,7 +16,6 @@ typedef struct MotionState {
     float *ref;
     float *tmp;
     float *blur[3];
-    VmafFeatureCollector *feature_collector;
     unsigned index;
     double score;
 } MotionState;
@@ -33,11 +32,29 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     s->blur[1] = aligned_malloc(s->float_stride * h, 32);
     s->blur[2] = aligned_malloc(s->float_stride * h, 32);
     if (!s->ref || !s->tmp || !s->blur[0] || !s->blur[1] || !s->blur[2])
-        return -ENOMEM;
+        goto fail;
 
     s->score = 0;
-
     return 0;
+
+fail:
+    if (s->ref) aligned_free(s->ref);
+    if (s->blur[0]) aligned_free(s->blur[0]);
+    if (s->blur[1]) aligned_free(s->blur[1]);
+    if (s->blur[2]) aligned_free(s->blur[2]);
+    if (s->tmp) aligned_free(s->tmp);
+    return -ENOMEM;
+
+}
+
+static int flush(VmafFeatureExtractor *fex,
+                 VmafFeatureCollector *feature_collector)
+{
+    MotionState *s = fex->priv;
+    int ret = vmaf_feature_collector_append(feature_collector,
+                                            "'VMAF_feature_motion2_score'",
+                                            s->score, s->index);
+    return (ret < 0) ? ret : !ret;
 }
 
 static int extract(VmafFeatureExtractor *fex,
@@ -51,7 +68,6 @@ static int extract(VmafFeatureExtractor *fex,
     unsigned blur_idx_0 = (index + 0) % 3;
     unsigned blur_idx_1 = (index + 1) % 3;
     unsigned blur_idx_2 = (index + 2) % 3;
-    s->feature_collector = feature_collector; //FIXME
 
     picture_copy(s->ref, ref_pic, -128, ref_pic->bpc);
     convolution_f32_c_s(FILTER_5_s, 5, s->ref, s->blur[blur_idx_0], s->tmp,
@@ -69,11 +85,10 @@ static int extract(VmafFeatureExtractor *fex,
                          ref_pic->w[0], ref_pic->h[0],
                          s->float_stride, s->float_stride, &score);
     if (err) return err;
+    s->score = score;
 
-    if (index == 1) {
-        s->score = score;
+    if (index == 1)
         return 0;
-    }
     
     double score2;
     err = compute_motion(s->blur[blur_idx_2], s->blur[blur_idx_1],
@@ -84,10 +99,8 @@ static int extract(VmafFeatureExtractor *fex,
     err = vmaf_feature_collector_append(feature_collector,
                                         "'VMAF_feature_motion2_score'",
                                         score2, index - 1);
-
-    s->score = score;
-
     if (err) return err;
+
     return 0;
 }
 
@@ -100,10 +113,7 @@ static int close(VmafFeatureExtractor *fex)
     if (s->blur[1]) aligned_free(s->blur[1]);
     if (s->blur[2]) aligned_free(s->blur[2]);
     if (s->tmp) aligned_free(s->tmp);
-
-    return vmaf_feature_collector_append(s->feature_collector,
-                                         "'VMAF_feature_motion2_score'",
-                                         s->score, s->index);
+    return 0;
 }
 
 static const char *provided_features[] = {
@@ -115,6 +125,7 @@ VmafFeatureExtractor vmaf_fex_float_motion = {
     .name = "float_motion",
     .init = init,
     .extract = extract,
+    .flush = flush,
     .close = close,
     .priv_size = sizeof(MotionState),
     .provided_features = provided_features,

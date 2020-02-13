@@ -186,8 +186,10 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
     if (!pool_method) return -EINVAL;
 
     RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
-    for (unsigned i = 0; i < rfe.cnt; i++)
-        vmaf_feature_extractor_context_close(rfe.fex_ctx[i]);
+    for (unsigned i = 0; i < rfe.cnt; i++) {
+        vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
+                                             vmaf->feature_collector);
+    }
 
     double min, sum, i_sum = 0.;
     for (unsigned i = index_low; i < index_high; i++) {
@@ -228,8 +230,10 @@ int vmaf_write_output(VmafContext *vmaf, FILE *outfile,
                       enum VmafOutputFormat fmt)
 {
     RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
-    for (unsigned i = 0; i < rfe.cnt; i++)
-        vmaf_feature_extractor_context_close(rfe.fex_ctx[i]);
+    for (unsigned i = 0; i < rfe.cnt; i++) {
+        vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
+                                             vmaf->feature_collector);
+    }
 
     switch (fmt) {
     case VMAF_OUTPUT_FORMAT_XML:
