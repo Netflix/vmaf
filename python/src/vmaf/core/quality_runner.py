@@ -1309,13 +1309,13 @@ class VmafrcQualityRunner(QualityRunner):
         for frame in root.findall('frames/frame'):
             if not no_prediction:
                 for scores_key in scores_keys:
-                    scores_dict[scores_key].append(round(float(frame.attrib[scores_key]), 4))
+                    scores_dict[scores_key].append(float(frame.attrib[scores_key]))
             for i_feature, feature in enumerate(self.FEATURES):
                 try:
                     if feature in ['motion2']:
-                        feature_scores[i_feature].append(round(float(frame.attrib[feature]), 5))
+                        feature_scores[i_feature].append(float(frame.attrib[feature]))
                     elif feature in ['float_psnr']:
-                        feature_scores[i_feature].append(round(float(frame.attrib[feature]), 4))
+                        feature_scores[i_feature].append(float(frame.attrib[feature]))
                     else:
                         feature_scores[i_feature].append(float(frame.attrib[feature]))
                 except KeyError:
