@@ -207,7 +207,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.69926875, places=4)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.94641666666666, places=4)
 
-    def test_run_vmafossexec_runner_yuv422p10le_sparks(self):
+    def test_run_vmafossexec_runner_yuv420p10le_sparks(self):
 
         ref_path = VmafConfig.test_resource_path("yuv", "sparks_ref_480x270.yuv42010le.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "sparks_dis_480x270.yuv42010le.yuv")
