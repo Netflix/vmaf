@@ -54,6 +54,24 @@ static int extract(VmafFeatureExtractor *fex,
     err = vmaf_feature_collector_append(feature_collector,
                                         "'VMAF_feature_adm2_score'",
                                         score, index);
+    if (err) return err;
+
+    err = vmaf_feature_collector_append(feature_collector,
+                                        "adm2_scale0",
+                                        scores[0] / scores[1], index);
+    if (err) return err;
+    err = vmaf_feature_collector_append(feature_collector,
+                                        "adm2_scale1",
+                                        scores[2] / scores[3], index);
+    if (err) return err;
+    err = vmaf_feature_collector_append(feature_collector,
+                                        "adm2_scale2",
+                                        scores[4] / scores[5], index);
+    if (err) return err;
+    err = vmaf_feature_collector_append(feature_collector,
+                                        "adm2_scale3",
+                                        scores[6] / scores[7], index);
+    if (err) return err;
 
     return 0;
 }
@@ -68,6 +86,8 @@ static int close(VmafFeatureExtractor *fex)
 
 static const char *provided_features[] = {
     "'VMAF_feature_adm2_score'",
+    "adm2_scale0", "adm2_scale1",
+    "adm2_scale2", "adm2_scale3",
     NULL
 };
 
