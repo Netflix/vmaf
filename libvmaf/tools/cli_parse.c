@@ -9,7 +9,7 @@
 
 #include <libvmaf/libvmaf.rc.h>
 
-static const char short_opts[] = "r:d:w:h:p:b:m:o:x:t:f:i:s:n:v:";
+static const char short_opts[] = "r:d:w:h:p:b:m:o:x:t:f:i:s:c:n:v:";
 
 static const struct option long_opts[] = {
     { "reference",        1, NULL, 'r' },
@@ -25,6 +25,7 @@ static const struct option long_opts[] = {
     { "feature",          1, NULL, 'f' },
     { "import",           1, NULL, 'i' },
     { "subsample",        1, NULL, 's' },
+    { "cpumask",          1, NULL, 'c' },
     { "no_prediction",    0, NULL, 'n' },
     { "version",          0, NULL, 'v' },
     { NULL,               0, NULL, 0 },
@@ -54,6 +55,7 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --threads/-t $unsigned:    number of threads to use\n"
             " --feature/-f $string:      additional feature\n"
             " --import/-i $path:         path to precomputed feature log\n"
+            " --cpumask/-c: $mask        restrict permitted CPU instruction sets\n"
             " --subsample/-s: $unsigned  compute scores only every N frames\n"
             " --no_prediction/-n:        no prediction, extract features only\n"
             " --version/-v:              print version and exit\n"
@@ -218,6 +220,9 @@ void cli_parse(const int argc, char *const *const argv,
             break;
         case 's':
             settings->subsample = parse_unsigned(optarg, 's', argv[0]);
+            break;
+        case 'c':
+            settings->cpumask = parse_unsigned(optarg, 'c', argv[0]);
             break;
         case 'n':
             settings->no_prediction = true;

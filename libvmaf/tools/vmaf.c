@@ -177,6 +177,7 @@ int main(int argc, char *argv[])
         .log_level = VMAF_LOG_LEVEL_INFO,
         .n_threads = c.thread_cnt,
         .n_subsample = c.subsample,
+        .cpumask = c.cpumask,
     };
 
     VmafContext *vmaf;

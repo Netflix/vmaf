@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -33,7 +34,7 @@ int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
     if (!vmaf) return -EINVAL;
     int err = 0;
 
-    cpu = cpu_autodetect(); //FIXME, see above
+    cpu = cpu_autodetect() & (~cfg.cpumask); //FIXME, see above
 
     VmafContext *const v = *vmaf = malloc(sizeof(*v));
     if (!v) goto fail;

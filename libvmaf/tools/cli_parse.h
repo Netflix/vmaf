@@ -2,6 +2,7 @@
 #define __VMAF_CLI_PARSE_H__
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include <libvmaf/libvmaf.rc.h>
 #include <libvmaf/model.h>
@@ -26,6 +27,7 @@ typedef struct {
     unsigned subsample;
     unsigned thread_cnt;
     bool no_prediction;
+    uint32_t cpumask;
 } CLISettings;
 
 void cli_parse(const int argc, char *const *const argv,
