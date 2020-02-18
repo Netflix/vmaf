@@ -1,6 +1,7 @@
 #ifndef __VMAF_H__
 #define __VMAF_H__
 
+#include <stdint.h>
 #include <stdio.h>
 
 #include "libvmaf/model.h"
@@ -27,6 +28,7 @@ typedef struct VmafConfiguration {
     enum VmafLogLevel log_level;
     unsigned n_threads;
     unsigned n_subsample;
+    uint32_t cpumask;
 } VmafConfiguration;
 
 typedef struct VmafContext VmafContext;
