@@ -108,10 +108,9 @@ int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
     if (!ref) return -EINVAL;
     if (!dist) return -EINVAL;
     if (!vfc) return -EINVAL;
-    if (!fex_ctx->fex->init) return -EINVAL;
     if (!fex_ctx->fex->extract) return -EINVAL;
 
-    if (!fex_ctx->is_initialized) {
+    if (fex_ctx->fex->init && !fex_ctx->is_initialized) {
         int err =
             vmaf_feature_extractor_context_init(fex_ctx, ref->pix_fmt, ref->bpc,
                                                 ref->w[0], ref->h[0]);
