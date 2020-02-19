@@ -1176,6 +1176,24 @@ class VmafrcQualityRunner(QualityRunner):
         else:
             models = ['path={}:name=vmaf'.format(self.DEFAULT_MODEL_FILEPATH)]
 
+        if self.optional_dict is not None and 'float_psnr' in self.optional_dict:
+            float_psnr = self.optional_dict['float_psnr']
+        else:
+            float_psnr = False
+        assert isinstance(float_psnr, bool)
+
+        if self.optional_dict is not None and 'float_ssim' in self.optional_dict:
+            float_ssim = self.optional_dict['float_ssim']
+        else:
+            float_ssim = False
+        assert isinstance(float_ssim, bool)
+
+        if self.optional_dict is not None and 'float_ms_ssim' in self.optional_dict:
+            float_ms_ssim = self.optional_dict['float_ms_ssim']
+        else:
+            float_ms_ssim = False
+        assert isinstance(float_ms_ssim, bool)
+
         if self.optional_dict is not None and 'psnr' in self.optional_dict:
             psnr = self.optional_dict['psnr']
         else:
@@ -1193,24 +1211,6 @@ class VmafrcQualityRunner(QualityRunner):
         else:
             ms_ssim = False
         assert isinstance(ms_ssim, bool)
-
-        if self.optional_dict is not None and 'fixed_psnr' in self.optional_dict:
-            fixed_psnr = self.optional_dict['fixed_psnr']
-        else:
-            fixed_psnr = False
-        assert isinstance(fixed_psnr, bool)
-
-        if self.optional_dict is not None and 'fixed_ssim' in self.optional_dict:
-            fixed_ssim = self.optional_dict['fixed_ssim']
-        else:
-            fixed_ssim = False
-        assert isinstance(fixed_ssim, bool)
-
-        if self.optional_dict is not None and 'fixed_ms_ssim' in self.optional_dict:
-            fixed_ms_ssim = self.optional_dict['fixed_ms_ssim']
-        else:
-            fixed_ms_ssim = False
-        assert isinstance(fixed_ms_ssim, bool)
 
         if self.optional_dict is not None and 'no_prediction' in self.optional_dict:
             no_prediction = self.optional_dict['no_prediction']
@@ -1247,7 +1247,7 @@ class VmafrcQualityRunner(QualityRunner):
         logger = self.logger
 
         ExternalProgramCaller.call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth,
-                                          psnr, fixed_psnr, ssim, fixed_ssim, ms_ssim, fixed_ms_ssim,
+                                          float_psnr, psnr, float_ssim, ssim, float_ms_ssim, ms_ssim,
                                           no_prediction, models, subsample, output, exe, logger,
                                           n_threads)
 

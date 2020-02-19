@@ -33,9 +33,9 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'psnr': True,
-                'ssim': True,
-                'ms_ssim': True,
+                'float_psnr': True,
+                'float_ssim': True,
+                'float_ms_ssim': True,
             }
         )
         self.runner.run(parallelize=True)
@@ -75,9 +75,9 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'fixed_psnr': True,
-                'fixed_ssim': True,
-                'fixed_ms_ssim': False,  # TODO: enable fixed_ms_ssim
+                'psnr': True,
+                'ssim': True,
+                'ms_ssim': False,  # TODO: enable fixed_ms_ssim
                 'no_prediction': True,
             }
         )
@@ -105,12 +105,12 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
+                'float_psnr': True,
+                'float_ssim': True,
+                'float_ms_ssim': True,
                 'psnr': True,
                 'ssim': True,
-                'ms_ssim': True,
-                'fixed_psnr': True,
-                'fixed_ssim': True,
-                'fixed_ms_ssim': False,  # TODO: enable fixed_ms_ssim
+                'ms_ssim': False,  # TODO: enable fixed_ms_ssim
                 'n_threads': 4,
             }
         )
@@ -241,9 +241,9 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'psnr': True,
-                'ssim': True,
-                'ms_ssim': True,
+                'float_psnr': True,
+                'float_ssim': True,
+                'float_ms_ssim': True,
             }
         )
         self.runner.run()
@@ -297,9 +297,9 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'psnr': True,
-                'ssim': True,
-                'ms_ssim': True,
+                'float_psnr': True,
+                'float_ssim': True,
+                'float_ms_ssim': True,
             }
         )
         self.runner.run(parallelize=True)
@@ -339,9 +339,9 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'psnr': True,
-                'ssim': True,
-                'ms_ssim': True,
+                'float_psnr': True,
+                'float_ssim': True,
+                'float_ms_ssim': True,
             }
         )
         self.runner.run(parallelize=True)
@@ -405,9 +405,9 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'psnr': True,
-                'ssim': True,
-                'ms_ssim': True,
+                'float_psnr': True,
+                'float_ssim': True,
+                'float_ms_ssim': True,
             }
         )
         self.runner.run(parallelize=False)
@@ -457,9 +457,9 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'psnr': True,
-                'ssim': True,
-                'ms_ssim': True,
+                'float_psnr': True,
+                'float_ssim': True,
+                'float_ms_ssim': True,
             }
         )
         self.runner.run(parallelize=True)

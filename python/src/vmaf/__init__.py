@@ -207,7 +207,7 @@ class ExternalProgramCaller(object):
 
     @staticmethod
     def call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth,
-                    psnr, fixed_psnr, ssim, fixed_ssim, ms_ssim, fixed_ms_ssim,
+                    float_psnr, psnr, float_ssim, ssim, float_ms_ssim, ms_ssim,
                     no_prediction, models, subsample, output, exe, logger,
                     n_threads):
 
@@ -226,18 +226,18 @@ class ExternalProgramCaller(object):
             bitdepth=bitdepth,
             output=output)
 
-        if psnr:
+        if float_psnr:
             vmafrc_cmd += ' --feature float_psnr'
-        if ssim:
+        if float_ssim:
             vmafrc_cmd += ' --feature float_ssim'
-        if ms_ssim:
+        if float_ms_ssim:
             vmafrc_cmd += ' --feature float_ms_ssim'
 
-        if fixed_psnr:
+        if psnr:
             vmafrc_cmd += ' --feature psnr'
-        if fixed_ssim:
+        if ssim:
             vmafrc_cmd += ' --feature ssim'
-        if fixed_ms_ssim:
+        if ms_ssim:
             vmafrc_cmd += ' --feature ms_ssim'
 
         if no_prediction:
