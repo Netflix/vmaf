@@ -1230,6 +1230,12 @@ class VmafrcQualityRunner(QualityRunner):
             n_threads = 1
         assert isinstance(n_threads, int) and n_threads >= 1
 
+        if self.optional_dict is not None and 'disable_avx' in self.optional_dict:
+            disable_avx = self.optional_dict['disable_avx']
+        else:
+            disable_avx = False
+        assert isinstance(disable_avx, bool)
+
         quality_width, quality_height = asset.quality_width_height
 
         fmt = self._get_workfile_yuv_type(asset)
@@ -1246,10 +1252,9 @@ class VmafrcQualityRunner(QualityRunner):
         exe = self._get_exec()
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth,
-                                          float_psnr, psnr, float_ssim, ssim, float_ms_ssim, ms_ssim,
-                                          no_prediction, models, subsample, output, exe, logger,
-                                          n_threads)
+        ExternalProgramCaller.call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth, float_psnr, psnr,
+                                          float_ssim, ssim, float_ms_ssim, ms_ssim, no_prediction, models, subsample,
+                                          n_threads, disable_avx, output, exe, logger)
 
     def _get_exec(self):
         return None # signaling default

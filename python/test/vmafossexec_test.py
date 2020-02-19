@@ -76,7 +76,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         results = self.runner.results
 
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.699271272486044, places=3)
-        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'],99.946416604585025, places=4)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.946416604585025, places=4)
 
     def test_run_vmafossexec_runner_with_subsample(self):
 

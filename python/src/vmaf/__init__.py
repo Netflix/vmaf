@@ -206,10 +206,9 @@ class ExternalProgramCaller(object):
         run_process(vmafossexec_cmd, shell=True)
 
     @staticmethod
-    def call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth,
-                    float_psnr, psnr, float_ssim, ssim, float_ms_ssim, ms_ssim,
-                    no_prediction, models, subsample, output, exe, logger,
-                    n_threads):
+    def call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth, float_psnr, psnr, float_ssim, ssim,
+                    float_ms_ssim, ms_ssim, no_prediction, models, subsample, n_threads, disable_avx, output, exe,
+                    logger):
 
         if exe is None:
             exe = required(ExternalProgram.vmafrc)
@@ -255,6 +254,9 @@ class ExternalProgramCaller(object):
         assert isinstance(n_threads, int) and n_threads >= 1
         if n_threads != 1:
             vmafrc_cmd += ' --threads {}'.format(n_threads)
+
+        if disable_avx:
+            vmafrc_cmd += ' --cpumask -1'
 
         if logger:
             logger.info(vmafrc_cmd)

@@ -199,6 +199,40 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFRC_custom_vmaf_0_score'], 99.94641666666666, places=4)
         self.assertAlmostEqual(results[1]['VMAFRC_custom_vmaf_1_score'], 100.0, places=4)
 
+    def test_run_vmafrc_runner_disable_avx(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = VmafrcQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={
+                'disable_avx': True
+            }
+        )
+        self.runner.run(parallelize=True)
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'],0.3634208125, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.7666474166666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.8628533333333334, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.9159719583333334, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_motion2_score'], 3.895352291666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 0.9345877291666667, places=4)
+
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale0_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale1_score'],0.9999998541666666, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale2_score'],0.9999996041666667, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale3_score'], 0.9999991458333334, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_motion2_score'], 3.895352291666667, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_adm2_score'], 1.0, places=4)
+
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 76.69926875, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_score'], 99.94641666666666, places=4)
+
     def test_run_parallel_vmafrc_runner_with_repeated_assets(self):
 
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
