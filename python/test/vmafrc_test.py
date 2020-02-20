@@ -376,6 +376,9 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
                 'float_psnr': True,
                 'float_ssim': True,
                 'float_ms_ssim': True,
+                'psnr': True,
+                'ssim': True,
+                'ms_ssim': False,
             }
         )
         self.runner.run(parallelize=True)
@@ -401,6 +404,10 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results_rc[0]['VMAFRC_float_psnr_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
         self.assertAlmostEqual(results_rc[0]['VMAFRC_float_ssim_score'], results[0]['VMAFOSSEXEC_ssim_score'], places=5)
         self.assertAlmostEqual(results_rc[0]['VMAFRC_float_ms_ssim_score'], results[0]['VMAFOSSEXEC_ms_ssim_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFRC_psnr_y_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
+        # self.assertAlmostEqual(results_rc[0]['VMAFRC_psnr_cb_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
+        # self.assertAlmostEqual(results_rc[0]['VMAFRC_psnr_cr_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
+        self.assertAlmostEqual(results_rc[0]['VMAFRC_ssim_score'], results[0]['VMAFOSSEXEC_ssim_score'], places=5)
 
         self.assertAlmostEqual(results_rc[1]['VMAFRC_vif_scale0_score'], results[1]['VMAFOSSEXEC_vif_scale0_score'], places=5)
         self.assertAlmostEqual(results_rc[1]['VMAFRC_vif_scale1_score'], results[1]['VMAFOSSEXEC_vif_scale1_score'], places=5)
@@ -411,6 +418,10 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results_rc[1]['VMAFRC_float_psnr_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
         self.assertAlmostEqual(results_rc[1]['VMAFRC_float_ssim_score'], results[1]['VMAFOSSEXEC_ssim_score'], places=5)
         self.assertAlmostEqual(results_rc[1]['VMAFRC_float_ms_ssim_score'], results[1]['VMAFOSSEXEC_ms_ssim_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFRC_psnr_y_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
+        # self.assertAlmostEqual(results_rc[1]['VMAFRC_psnr_cb_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
+        # self.assertAlmostEqual(results_rc[1]['VMAFRC_psnr_cr_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
+        self.assertAlmostEqual(results_rc[1]['VMAFRC_ssim_score'], results[1]['VMAFOSSEXEC_ssim_score'], places=5)
 
         self.assertAlmostEqual(results_rc[0]['VMAFRC_score'], results[0]['VMAFOSSEXEC_score'], places=4)
         self.assertAlmostEqual(results_rc[1]['VMAFRC_score'], results[1]['VMAFOSSEXEC_score'], places=4)
@@ -442,6 +453,9 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
                 'float_psnr': True,
                 'float_ssim': True,
                 'float_ms_ssim': True,
+                'psnr': True,
+                'ssim': True,
+                'ms_ssim': False,
             }
         )
         self.runner.run(parallelize=False)
@@ -467,6 +481,10 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results_rc[0]['VMAFRC_float_psnr_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
         self.assertAlmostEqual(results_rc[0]['VMAFRC_float_ssim_score'], results[0]['VMAFOSSEXEC_ssim_score'], places=5)
         self.assertAlmostEqual(results_rc[0]['VMAFRC_float_ms_ssim_score'], results[0]['VMAFOSSEXEC_ms_ssim_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFRC_psnr_y_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
+        # self.assertAlmostEqual(results_rc[0]['VMAFRC_psnr_cb_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
+        # self.assertAlmostEqual(results_rc[0]['VMAFRC_psnr_cr_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
+        # self.assertAlmostEqual(results_rc[0]['VMAFRC_ssim_score'], results[0]['VMAFOSSEXEC_ssim_score'], places=5)
 
         self.assertAlmostEqual(results_rc[1]['VMAFRC_vif_scale0_score'], results[1]['VMAFOSSEXEC_vif_scale0_score'], places=5)
         self.assertAlmostEqual(results_rc[1]['VMAFRC_vif_scale1_score'], results[1]['VMAFOSSEXEC_vif_scale1_score'], places=5)
@@ -477,6 +495,10 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results_rc[1]['VMAFRC_float_psnr_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
         self.assertAlmostEqual(results_rc[1]['VMAFRC_float_ssim_score'], results[1]['VMAFOSSEXEC_ssim_score'], places=5)
         self.assertAlmostEqual(results_rc[1]['VMAFRC_float_ms_ssim_score'], results[1]['VMAFOSSEXEC_ms_ssim_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFRC_psnr_y_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
+        # self.assertAlmostEqual(results_rc[1]['VMAFRC_psnr_cb_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
+        # self.assertAlmostEqual(results_rc[1]['VMAFRC_psnr_cr_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
+        # self.assertAlmostEqual(results_rc[1]['VMAFRC_ssim_score'], results[1]['VMAFOSSEXEC_ssim_score'], places=5)
 
         self.assertAlmostEqual(results_rc[0]['VMAFRC_score'], results[0]['VMAFOSSEXEC_score'], places=4)
         self.assertAlmostEqual(results_rc[1]['VMAFRC_score'], results[1]['VMAFOSSEXEC_score'], places=4)
@@ -494,9 +516,12 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
                 'float_psnr': True,
                 'float_ssim': True,
                 'float_ms_ssim': True,
+                'psnr': True,
+                'ssim': True,
+                'ms_ssim': False,
             }
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results_rc = self.runner.results
 
@@ -519,6 +544,10 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results_rc[0]['VMAFRC_float_psnr_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
         self.assertAlmostEqual(results_rc[0]['VMAFRC_float_ssim_score'], results[0]['VMAFOSSEXEC_ssim_score'], places=5)
         self.assertAlmostEqual(results_rc[0]['VMAFRC_float_ms_ssim_score'], results[0]['VMAFOSSEXEC_ms_ssim_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFRC_psnr_y_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
+        # self.assertAlmostEqual(results_rc[0]['VMAFRC_psnr_cb_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
+        # self.assertAlmostEqual(results_rc[0]['VMAFRC_psnr_cr_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
+        # self.assertAlmostEqual(results_rc[0]['VMAFRC_ssim_score'], results[0]['VMAFOSSEXEC_ssim_score'], places=5)
 
         self.assertAlmostEqual(results_rc[1]['VMAFRC_vif_scale0_score'], results[1]['VMAFOSSEXEC_vif_scale0_score'], places=5)
         self.assertAlmostEqual(results_rc[1]['VMAFRC_vif_scale1_score'], results[1]['VMAFOSSEXEC_vif_scale1_score'], places=5)
@@ -529,6 +558,10 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results_rc[1]['VMAFRC_float_psnr_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
         self.assertAlmostEqual(results_rc[1]['VMAFRC_float_ssim_score'], results[1]['VMAFOSSEXEC_ssim_score'], places=5)
         self.assertAlmostEqual(results_rc[1]['VMAFRC_float_ms_ssim_score'], results[1]['VMAFOSSEXEC_ms_ssim_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFRC_psnr_y_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
+        # self.assertAlmostEqual(results_rc[1]['VMAFRC_psnr_cb_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
+        # self.assertAlmostEqual(results_rc[1]['VMAFRC_psnr_cr_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
+        # self.assertAlmostEqual(results_rc[1]['VMAFRC_ssim_score'], results[1]['VMAFOSSEXEC_ssim_score'], places=5)
 
         self.assertAlmostEqual(results_rc[0]['VMAFRC_score'], results[0]['VMAFOSSEXEC_score'], places=4)
         self.assertAlmostEqual(results_rc[1]['VMAFRC_score'], results[1]['VMAFOSSEXEC_score'], places=4)
