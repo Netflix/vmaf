@@ -21,6 +21,7 @@ addons:
       - ninja
       - ccache
       - yasm
+    update: true
 
 before_install: "sudo chown -R travis: $HOME/.ccache"
 
