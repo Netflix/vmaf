@@ -26,6 +26,7 @@ class WorkdirEnabled(object):
     def workdir_root(self):
         return get_dir_without_last_slash(self.workdir)
 
+
 class TypeVersionEnabled(object):
     """
     Mandate a type name and a version string. Derived class (e.g. an Executor)

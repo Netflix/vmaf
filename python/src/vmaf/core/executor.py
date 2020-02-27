@@ -387,8 +387,6 @@ class Executor(TypeVersionEnabled):
     # ===== workfile =====
 
     def _open_ref_workfile(self, asset, fifo_mode):
-        # For now, only works for YUV format -- all need is to copy from ref
-        # file to ref workfile
 
         # only need to open ref workfile if the path is different from ref path
         assert asset.use_path_as_workpath is False and asset.ref_path != asset.ref_workfile_path
@@ -442,8 +440,6 @@ class Executor(TypeVersionEnabled):
         run_process(ffmpeg_cmd, shell=True)
 
     def _open_dis_workfile(self, asset, fifo_mode):
-        # For now, only works for YUV format -- all need is to copy from dis
-        # file to dis workfile
 
         # only need to open dis workfile if the path is different from dis path
         assert asset.use_path_as_workpath is False and asset.dis_path != asset.dis_workfile_path
