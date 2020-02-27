@@ -11,7 +11,7 @@ from vmaf.routine import run_test_on_dataset
 from vmaf.tools.decorator import persist_to_dir
 from vmaf.tools.misc import import_python_file
 
-__copyright__ = "Copyright 2016-2019, Netflix, Inc."
+__copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 

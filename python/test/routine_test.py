@@ -8,7 +8,7 @@ from vmaf.tools.misc import import_python_file
 from vmaf.core.quality_runner import VmafQualityRunner, BootstrapVmafQualityRunner
 from sureal.subjective_model import MosModel
 
-__copyright__ = "Copyright 2016-2019, Netflix, Inc."
+__copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 

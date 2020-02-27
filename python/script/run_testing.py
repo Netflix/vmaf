@@ -16,7 +16,7 @@ from vmaf.core.matlab_quality_runner import STMADQualityRunner, SpEEDMatlabQuali
 from vmaf.routine import run_test_on_dataset, print_matplotlib_warning
 from vmaf.tools.stats import ListStats
 
-__copyright__ = "Copyright 2016-2019, Netflix, Inc."
+__copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'perc20']

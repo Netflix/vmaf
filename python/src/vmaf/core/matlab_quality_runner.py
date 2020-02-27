@@ -7,7 +7,7 @@ from vmaf.core.matlab_feature_extractor import StrredFeatureExtractor, StrredOpt
 from vmaf.core.quality_runner import QualityRunner
 from vmaf.core.result import Result
 
-__copyright__ = "Copyright 2016-2019, Netflix, Inc."
+__copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "Apache, Version 2.0"
 
 
