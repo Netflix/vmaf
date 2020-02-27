@@ -3,7 +3,7 @@ from functools import partial
 import os
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
+__license__ = "BSD+Patent"
 
 import warnings
 import json

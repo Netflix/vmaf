@@ -3,7 +3,7 @@ import unittest
 from vmaf.tools.bd_rate_calculator import BDrateCalculator
 
 __copyright__ = "Copyright 2016, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
+__license__ = "BSD+Patent"
 
 
 class BDrateCalculatorTest(unittest.TestCase):

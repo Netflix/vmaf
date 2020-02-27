@@ -16,7 +16,7 @@ from vmaf.routine import read_dataset
 from vmaf.tools.misc import import_python_file
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
+__license__ = "BSD+Patent"
 
 
 class LocalExplainerTest(unittest.TestCase):
