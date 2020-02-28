@@ -11,7 +11,7 @@ from scipy import ndimage
 from vmaf.core.executor import NorefExecutorMixin
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
+__license__ = "BSD+Patent"
 
 from vmaf.core.feature_extractor import FeatureExtractor
 from vmaf.tools.reader import YuvReader

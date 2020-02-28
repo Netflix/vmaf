@@ -1,6 +1,10 @@
 import os
 import subprocess
 
+__copyright__ = "Copyright 2016-2020, Netflix, Inc."
+__license__ = "BSD+Patent"
+
+
 try:
     from matplotlib import pyplot as plt
 

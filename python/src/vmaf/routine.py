@@ -13,7 +13,7 @@ from vmaf.core.train_test_model import TrainTestModel, RegressorMixin, Classifie
 from vmaf.core.local_explainer import LocalExplainer
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
+__license__ = "BSD+Patent"
 
 
 def read_dataset(dataset, **kwargs):

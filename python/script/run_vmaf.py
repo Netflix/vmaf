@@ -16,7 +16,7 @@ from vmaf.tools.misc import get_file_name_without_extension, get_cmd_option, \
 from vmaf.tools.stats import ListStats
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
+__license__ = "BSD+Patent"
 
 FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
 OUT_FMTS = ['text (default)', 'xml', 'json']

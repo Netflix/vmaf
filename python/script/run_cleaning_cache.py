@@ -7,7 +7,7 @@ from vmaf.routine import run_remove_results_for_dataset
 from vmaf.tools.misc import import_python_file
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
-__license__ = "Apache, Version 2.0"
+__license__ = "BSD+Patent"
 
 
 def print_usage():
