@@ -1,9 +1,15 @@
 # Change Log
 
-## [Upcoming]
+## (2/27/2020) [1.5.1]
     
 **New features:**
-- libvmaf has been relocated, and now has its own self-enclosed source tree (`./libvmaf/`) and build system (`meson`).
+- `libvmaf` has been relocated, and now has its own self-enclosed source tree (`./libvmaf/`) and build system (`meson`).
+- Update license to BSD+Patent.
+- Migrate the build system from makefile to meson.
+- Introduce a new API with the associated library `libvmaf_rc` and executable `vmaf_rc` under `./libvmaf/build`. 
+- Add SI and TI feature extractor python classes.
+- Add fixed-point SSIM implementation.
+- Migrate to python3.
 
 ## (9/8/2019) [1.3.15]
 
