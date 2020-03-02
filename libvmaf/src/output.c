@@ -123,3 +123,41 @@ int vmaf_write_output_json(VmafFeatureCollector *fc, FILE *outfile,
     fprintf(outfile, "}\n");
     return 0;
 }
+
+int vmaf_write_output_csv(VmafFeatureCollector *fc, FILE *outfile,
+                           unsigned subsample)
+{
+
+    fprintf(outfile, "Frame,");
+    for (unsigned i = 0; i < fc->cnt; i++) {
+        fprintf(outfile, "%s,",
+                vmaf_feature_name_alias(fc->feature_vector[i]->name));
+    }
+    fprintf(outfile, "\n");
+
+    for (unsigned i = 0 ; i < max_capacity(fc); i++) {
+        if ((subsample > 1) && (i % subsample))
+            continue;
+
+        unsigned cnt = 0;
+        for (unsigned j = 0; j < fc->cnt; j++) {
+            if (i > fc->feature_vector[j]->capacity)
+                continue;
+            if (fc->feature_vector[j]->score[i].written)
+                cnt++;
+        }
+        if (!cnt) continue;
+
+        fprintf(outfile, "%d,", i);
+        for (unsigned j = 0; j < fc->cnt; j++) {
+            if (i > fc->feature_vector[j]->capacity)
+                continue;
+            if (!fc->feature_vector[j]->score[i].written)
+                continue;
+            fprintf(outfile, "%.6f,", fc->feature_vector[j]->score[i].value);
+        }
+        fprintf(outfile, "\n");
+    }
+
+    return 0;
+}
