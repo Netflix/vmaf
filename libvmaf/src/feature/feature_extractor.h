@@ -31,19 +31,52 @@ enum VmafFeatureExtractorFlags {
 };
 
 typedef struct VmafFeatureExtractor {
-    const char *name;
+    const char *name; ///< Name of feature extractor.
+    /**
+     * Initialization callback. Optional, preallocate fex->priv buffers here.
+     *
+     * @param     fex self.
+     * @param pix_fmt VmafPixelFormat of all subsequent pictures.
+     * @param     bpc Bitdepth of all subsequent pictures.
+     * @param       w Width of all subsequent pictures.
+     * @param       h Height of all subsequent pictures.
+     */
     int (*init)(struct VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h);
+    /**
+     * Feature extraction callback. Called for every pair of pictures. Unless
+     * the VMAF_FEATURE_EXTRACTOR_TEMPORAL flag is set, there is no guarantee
+     * that this callback is called in any specific order.
+     *
+     *
+     * @param               fex self.
+     * @param           ref_pic Reference VmafPicture.
+     * @param          dist_pic Distorted VmafPicture.
+     * @param             index Picture index.
+     * @param feature_collector VmafFeatureCollector used to write out scores.
+     */
     int (*extract)(struct VmafFeatureExtractor *fex,
                    VmafPicture *ref_pic, VmafPicture *dist_pic,
                    unsigned index, VmafFeatureCollector *feature_collector);
+    /**
+     * Buffer flush callback. Optional.
+     * Called only when the VMAF_FEATURE_EXTRACTOR_TEMPORAL flag is set.
+     *
+     * @param               fex self.
+     * @param feature_collector VmafFeatureCollector used to write out scores.
+     */
     int (*flush)(struct VmafFeatureExtractor *fex,
                  VmafFeatureCollector *feature_collector);
+    /**
+     * Close callback. Optional, clean up fex->priv buffers here.
+     *
+     * @param               fex self.
+     */
     int (*close)(struct VmafFeatureExtractor *fex);
-    void *priv;
-    size_t priv_size;
-    uint64_t flags;
-    const char **provided_features;
+    void *priv; ///< Custom data.
+    size_t priv_size; ///< sizeof private data.
+    uint64_t flags; ///< Feauture extraction flags, binary or'd.
+    const char **provided_features; ///< Provided feature list, NULL terminated.
 } VmafFeatureExtractor;
 
 VmafFeatureExtractor *vmaf_get_feature_extractor_by_name(char *name);
