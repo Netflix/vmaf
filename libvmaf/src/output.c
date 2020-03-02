@@ -77,3 +77,49 @@ int vmaf_write_output_xml(VmafFeatureCollector *fc, FILE *outfile,
 
     return 0;
 }
+
+int vmaf_write_output_json(VmafFeatureCollector *fc, FILE *outfile,
+                           unsigned subsample)
+{
+    fprintf(outfile, "{\n");
+    fprintf(outfile, "  \"version\": \"%s\",\n", vmaf_version());
+    fprintf(outfile, "  \"frames\": [");
+
+    for (unsigned i = 0 ; i < max_capacity(fc); i++) {
+        if ((subsample > 1) && (i % subsample))
+            continue;
+
+        unsigned cnt = 0;
+        for (unsigned j = 0; j < fc->cnt; j++) {
+            if (i > fc->feature_vector[j]->capacity)
+                continue;
+            if (fc->feature_vector[j]->score[i].written)
+                cnt++;
+        }
+        if (!cnt) continue;
+        fprintf(outfile, "%s", i > 0 ? ",\n" : "\n");
+
+        fprintf(outfile, "    {\n");
+        fprintf(outfile, "      \"frameNum\": %d,\n", i);
+        fprintf(outfile, "      \"metrics\": {\n");
+
+        unsigned cnt2 = 0;
+        for (unsigned j = 0; j < fc->cnt; j++) {
+            if (i > fc->feature_vector[j]->capacity)
+                continue;
+            if (!fc->feature_vector[j]->score[i].written)
+                continue;
+            cnt2++;
+            fprintf(outfile, "        \"%s\": %.6f%s\n",
+                vmaf_feature_name_alias(fc->feature_vector[j]->name),
+                fc->feature_vector[j]->score[i].value,
+                cnt2 < cnt ? "," : ""
+            );
+        }
+        fprintf(outfile, "      }\n");
+        fprintf(outfile, "    }");
+    }
+    fprintf(outfile, "\n  ]\n");
+    fprintf(outfile, "}\n");
+    return 0;
+}
