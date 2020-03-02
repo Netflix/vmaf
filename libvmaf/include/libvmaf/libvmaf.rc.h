@@ -34,6 +34,7 @@ enum VmafOutputFormat {
     VMAF_OUTPUT_FORMAT_NONE = 0,
     VMAF_OUTPUT_FORMAT_XML,
     VMAF_OUTPUT_FORMAT_JSON,
+    VMAF_OUTPUT_FORMAT_CSV,
 };
 
 enum VmafPoolingMethod {
