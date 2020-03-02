@@ -71,10 +71,6 @@ typedef struct VmafFeatureExtractor {
      * Close callback. Optional, clean up fex->priv buffers here.
      *
      * @param               fex self.
-     * @param           ref_pic VmafPicture used as reference.
-     * @param          dist_pic VmafPicture used as distorted.
-     * @param             index picture index.
-     * @param feature_collector VmafFeatureCollector.
      */
     int (*close)(struct VmafFeatureExtractor *fex);
     void *priv; ///< Custom data.
