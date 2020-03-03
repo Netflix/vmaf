@@ -336,6 +336,9 @@ int vmaf_write_output(VmafContext *vmaf, FILE *outfile,
     case VMAF_OUTPUT_FORMAT_XML:
         return vmaf_write_output_xml(vmaf->feature_collector, outfile,
                                      vmaf->cfg.n_subsample);
+    case VMAF_OUTPUT_FORMAT_JSON:
+        return vmaf_write_output_json(vmaf->feature_collector, outfile,
+                                      vmaf->cfg.n_subsample);
     default:
         return 0;
     }
