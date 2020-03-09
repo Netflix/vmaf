@@ -21,6 +21,7 @@
 
 #include <pthread.h>
 #include <stdbool.h>
+#include <time.h>
 
 typedef struct {
     char *name;
@@ -34,6 +35,7 @@ typedef struct {
 typedef struct VmafFeatureCollector {
     FeatureVector **feature_vector;
     unsigned cnt, capacity;
+    struct { clock_t begin, end; } timer;
     pthread_mutex_t lock;
 } VmafFeatureCollector;
 
