@@ -37,14 +37,18 @@ static unsigned max_capacity(VmafFeatureCollector *fc)
 }
 
 int vmaf_write_output_xml(VmafFeatureCollector *fc, FILE *outfile,
-                          unsigned subsample)
+                          unsigned subsample, unsigned width, unsigned height,
+                          double fps)
 {
     if (!fc) return -EINVAL;
     if (!outfile) return -EINVAL;
 
     fprintf(outfile, "<VMAF version=\"%s\">\n", vmaf_version());
-    fprintf(outfile, "  <frames>\n");
+    fprintf(outfile, "  <params qualityWidth=\"%d\" qualityHeight=\"%d\" />\n",
+            width, height);
+    fprintf(outfile, "  <fyi fps=\"%.2f\" />\n", fps);
 
+    fprintf(outfile, "  <frames>\n");
     for (unsigned i = 0 ; i < max_capacity(fc); i++) {
         if ((subsample > 1) && (i % subsample))
             continue;
@@ -71,8 +75,8 @@ int vmaf_write_output_xml(VmafFeatureCollector *fc, FILE *outfile,
         }
         fprintf(outfile, "/>\n");
     }
-
     fprintf(outfile, "  </frames>\n");
+
     fprintf(outfile, "</VMAF>\n");
 
     return 0;
