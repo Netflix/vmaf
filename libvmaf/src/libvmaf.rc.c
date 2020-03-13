@@ -16,6 +16,8 @@
  *
  */
 
+#include "vcs_version.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -318,7 +320,7 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
 
 const char *vmaf_version(void)
 {
-    return "RELEASE_CANDIDATE";
+    return VMAF_VERSION;
 }
 
 int vmaf_write_output(VmafContext *vmaf, FILE *outfile,
