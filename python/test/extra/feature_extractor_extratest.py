@@ -350,6 +350,50 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 40.280504208333333, places=4)
 
+    def test_run_vmaf_fextractor_with_cropping_and_padding_to_original_wh_proc(self):
+        # crop_cmd: 288:162:144:81 - crop to the center 288x162 image
+        # pad_cmd: iw+288:ih+162:144:81 - pad back to the original size
+
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 576, 'height': 324,
+                                  'crop_cmd': '288:162:144:81',
+                                  'pad_cmd': 'iw+288:ih+162:144:81',
+                                  'quality_width': 576, 'quality_height': 324,
+                                  'ref_proc_callback': 'identity',
+                                  'dis_proc_callback': 'identity',
+                                  })
+
+        asset_original = Asset(dataset="test", content_id=0, asset_id=2,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=ref_path,
+                      asset_dict={'width': 576, 'height': 324,
+                                  'crop_cmd': '288:162:144:81',
+                                  'pad_cmd': 'iw+288:ih+162:144:81',
+                                  'quality_width': 576, 'quality_height': 324,
+                                  })
+
+        self.fextractor = VmafFeatureExtractor(
+            [asset, asset_original], None, fifo_mode=True)
+
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.64106379166666672, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 0.7203213958333331, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'],0.94700196017089999, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 32.78451041666667, places=4)
+
+        self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 0.7203213958333331, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 40.280504208333333, places=4)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
