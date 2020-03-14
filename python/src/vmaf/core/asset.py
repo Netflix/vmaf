@@ -10,6 +10,7 @@ from vmaf.core.mixin import WorkdirEnabled
 from vmaf.tools.misc import get_file_name_without_extension, \
     get_file_name_with_extension, get_unique_str_from_recursive_dict
 from vmaf.config import VmafConfig
+from vmaf.core.proc_func import proc_func_dict
 
 
 class Asset(WorkdirEnabled):
@@ -93,9 +94,12 @@ class Asset(WorkdirEnabled):
     def copy(self, **kwargs):
         new_asset_dict = copy.deepcopy(self.asset_dict)
 
-        # reset the following argument:
+        # reset the following arguments:
         if 'use_path_as_workpath' in new_asset_dict:
             del new_asset_dict['use_path_as_workpath']
+
+        if 'use_workpath_as_procpath' in new_asset_dict:
+            del new_asset_dict['use_workpath_as_procpath']
 
         dataset = kwargs['dataset'] if 'dataset' in kwargs else self.dataset
         content_id = kwargs['content_id'] if 'content_id' in kwargs else self.content_id
@@ -406,6 +410,9 @@ class Asset(WorkdirEnabled):
                     s += "_"
                 s += "{}{}".format(key, self.get_filter_cmd(key, 'ref'))
 
+        if self.ref_proc_callback_str:
+            s += f'_{self.ref_proc_callback_str}'
+
         return s
 
     @property
@@ -435,6 +442,9 @@ class Asset(WorkdirEnabled):
                 if s != "":
                     s += "_"
                 s += "{}{}".format(key, self.get_filter_cmd(key, 'dis'))
+
+        if self.dis_proc_callback_str:
+            s += f'_{self.dis_proc_callback_str}'
 
         return s
 
@@ -532,16 +542,29 @@ class Asset(WorkdirEnabled):
         if self.use_path_as_workpath:
             return self.ref_path
         else:
-            return "{workdir}/ref_{str}".format(workdir=self.workdir,str=str(self))
+            return os.path.join(self.workdir, f"ref_{str(self)}")
 
     @property
     def dis_workfile_path(self):
         if self.use_path_as_workpath:
             return self.dis_path
         else:
-            return "{workdir}/dis_{str}".format(
-                workdir=self.workdir,
-                str=str(self))
+            return os.path.join(self.workdir, f"dis_{str(self)}")
+
+    # ==== procfile ====
+    @property
+    def ref_procfile_path(self):
+        if self.use_workpath_as_procpath:
+            return self.ref_workfile_path
+        else:
+            return os.path.join(self.workdir, f"refp_{str(self)}")
+
+    @property
+    def dis_procfile_path(self):
+        if self.use_workpath_as_procpath:
+            return self.dis_workfile_path
+        else:
+            return os.path.join(self.workdir, f"disp_{str(self)}")
 
     # ==== bitrate ====
 
@@ -672,6 +695,32 @@ class Asset(WorkdirEnabled):
             self.asset_dict['use_path_as_workpath'] = 0
 
     @property
+    def use_workpath_as_procpath(self):
+        """
+        If True, use ref_workfile_path as ref_procfile_path, and dis_workfile_path
+        as dis_procfile_path.
+        """
+        if 'use_workpath_as_procpath' in self.asset_dict:
+            if self.asset_dict['use_workpath_as_procpath'] == 1:
+                return True
+            elif self.asset_dict['use_workpath_as_procpath'] == 0:
+                return False
+            else:
+                assert False
+        else:
+            return False
+
+    @use_workpath_as_procpath.setter
+    def use_workpath_as_procpath(self, bool_value):
+        # cannot just assign True/False for ResultStore reason:
+        # df = pd.DataFrame.from_dict(ast.literal_eval(result_file.read()))
+        # cannot read true/false
+        if bool_value is True:
+            self.asset_dict['use_workpath_as_procpath'] = 1
+        else:
+            self.asset_dict['use_workpath_as_procpath'] = 0
+
+    @property
     def crop_cmd(self):
         return self.get_filter_cmd('crop', None)
 
@@ -717,6 +766,54 @@ class Asset(WorkdirEnabled):
         else:
             assert False
 
+    @property
+    def ref_proc_callback_str(self):
+        if 'ref_proc_callback' in self.asset_dict:
+            if self.asset_dict['ref_proc_callback'] in proc_func_dict:
+                return self.asset_dict['ref_proc_callback']
+            else:
+                assert False, "Unsupported ref_proc_callback: {}".format(
+                    self.asset_dict['ref_proc_callback'])
+        elif 'proc_callback' in self.asset_dict:
+            if self.asset_dict['proc_callback'] in proc_func_dict:
+                return self.asset_dict['proc_callback']
+            else:
+                assert False, "Unsupported proc_callback: {}".format(
+                    self.asset_dict['proc_callback'])
+        else:
+            return None
+
+    @property
+    def ref_proc_callback(self):
+        if self.ref_proc_callback_str is None:
+            return None
+        else:
+            return proc_func_dict[self.ref_proc_callback_str]
+
+    @property
+    def dis_proc_callback_str(self):
+        if 'dis_proc_callback' in self.asset_dict:
+            if self.asset_dict['dis_proc_callback'] in proc_func_dict:
+                return self.asset_dict['dis_proc_callback']
+            else:
+                assert False, "Unsupported dis_proc_callback: {}".format(
+                    self.asset_dict['dis_proc_callback'])
+        elif 'proc_callback' in self.asset_dict:
+            if self.asset_dict['proc_callback'] in proc_func_dict:
+                return self.asset_dict['proc_callback']
+            else:
+                assert False, "Unsupported proc_callback: {}".format(
+                    self.asset_dict['proc_callback'])
+        else:
+            return None
+
+    @property
+    def dis_proc_callback(self):
+        if self.dis_proc_callback_str is None:
+            return None
+        else:
+            return proc_func_dict[self.dis_proc_callback_str]
+
 
 class NorefAsset(Asset):
     """
@@ -754,9 +851,12 @@ class NorefAsset(Asset):
         # signature
         new_asset_dict = copy.deepcopy(self.asset_dict)
 
-        # reset the following argument:
+        # reset the following arguments:
         if 'use_path_as_workpath' in new_asset_dict:
             del new_asset_dict['use_path_as_workpath']
+
+        if 'use_workpath_as_procpath' in new_asset_dict:
+            del new_asset_dict['use_workpath_as_procpath']
 
         dataset = kwargs['dataset'] if 'dataset' in kwargs else self.dataset
         content_id = kwargs['content_id'] if 'content_id' in kwargs else self.content_id

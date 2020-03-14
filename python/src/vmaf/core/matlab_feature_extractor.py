@@ -44,22 +44,22 @@ class StrredFeatureExtractor(MatlabFeatureExtractor):
         # routine to call the command-line executable and generate quality
         # scores in the log file.
 
-        ref_workfile_path = asset.ref_workfile_path
-        dis_workfile_path = asset.dis_workfile_path
+        ref_procfile_path = asset.ref_procfile_path
+        dis_procfile_path = asset.dis_procfile_path
         log_file_path = self._get_log_file_path(asset)
 
         current_dir = os.getcwd() + '/'
 
-        ref_workfile_path = make_absolute_path(ref_workfile_path, current_dir)
-        dis_workfile_path = make_absolute_path(dis_workfile_path, current_dir)
+        ref_procfile_path = make_absolute_path(ref_procfile_path, current_dir)
+        dis_procfile_path = make_absolute_path(dis_procfile_path, current_dir)
         log_file_path = make_absolute_path(log_file_path, current_dir)
 
         quality_width, quality_height = asset.quality_width_height
 
         strred_cmd = '''{matlab} -nodisplay -nosplash -nodesktop -r "run_strred('{ref}', '{dis}', {h}, {w}); exit;" >> {log_file_path}'''.format(
             matlab=VmafExternalConfig.get_and_assert_matlab(),
-            ref=ref_workfile_path,
-            dis=dis_workfile_path,
+            ref=ref_procfile_path,
+            dis=dis_procfile_path,
             w=quality_width,
             h=quality_height,
             log_file_path=log_file_path,
@@ -133,22 +133,22 @@ class StrredOptFeatureExtractor(MatlabFeatureExtractor):
             # routine to call the command-line executable and generate quality
             # scores in the log file.
 
-            ref_workfile_path = asset.ref_workfile_path
-            dis_workfile_path = asset.dis_workfile_path
+            ref_procfile_path = asset.ref_procfile_path
+            dis_procfile_path = asset.dis_procfile_path
             log_file_path = self._get_log_file_path(asset)
 
             current_dir = os.getcwd() + '/'
 
-            ref_workfile_path = make_absolute_path(ref_workfile_path, current_dir)
-            dis_workfile_path = make_absolute_path(dis_workfile_path, current_dir)
+            ref_procfile_path = make_absolute_path(ref_procfile_path, current_dir)
+            dis_procfile_path = make_absolute_path(dis_procfile_path, current_dir)
             log_file_path = make_absolute_path(log_file_path, current_dir)
 
             quality_width, quality_height = asset.quality_width_height
 
             strredopt_cmd = '''{matlab} -nodisplay -nosplash -nodesktop -r "run_strred_opt('{ref}', '{dis}', {w}, {h}); exit;" >> {log_file_path}'''.format(
                 matlab=VmafExternalConfig.get_and_assert_matlab(),
-                ref=ref_workfile_path,
-                dis=dis_workfile_path,
+                ref=ref_procfile_path,
+                dis=dis_procfile_path,
                 w=quality_width,
                 h=quality_height,
                 log_file_path=log_file_path,
@@ -225,18 +225,18 @@ class SpEEDMatlabFeatureExtractor(MatlabFeatureExtractor):
 
         # routine to call the command-line executable and generate quality
         # scores in the log file.
-        ref_workfile_path = asset.ref_workfile_path
-        dis_workfile_path = asset.dis_workfile_path
+        ref_procfile_path = asset.ref_procfile_path
+        dis_procfile_path = asset.dis_procfile_path
         log_file_path = self._get_log_file_path(asset)
         current_dir = os.getcwd() + '/'
-        ref_workfile_path = make_absolute_path(ref_workfile_path, current_dir)
-        dis_workfile_path = make_absolute_path(dis_workfile_path, current_dir)
+        ref_procfile_path = make_absolute_path(ref_procfile_path, current_dir)
+        dis_procfile_path = make_absolute_path(dis_procfile_path, current_dir)
         log_file_path = make_absolute_path(log_file_path, current_dir)
         quality_width, quality_height = asset.quality_width_height
         speed_cmd = '''{matlab} -nodisplay -nosplash -nodesktop -r "run_speed('{ref}', '{dis}', {w}, {h}, {bands}, '{yuv_type}'); exit;" >> {log_file_path}'''.format(
             matlab=VmafExternalConfig.get_and_assert_matlab(),
-            ref=ref_workfile_path,
-            dis=dis_workfile_path,
+            ref=ref_procfile_path,
+            dis=dis_procfile_path,
             w=quality_width,
             h=quality_height,
             bands=self.scale_list,
@@ -326,22 +326,22 @@ class STMADFeatureExtractor(MatlabFeatureExtractor):
         # routine to call the command-line executable and generate quality
         # scores in the log file.
 
-        ref_workfile_path = asset.ref_workfile_path
-        dis_workfile_path = asset.dis_workfile_path
+        ref_procfile_path = asset.ref_procfile_path
+        dis_procfile_path = asset.dis_procfile_path
         log_file_path = self._get_log_file_path(asset)
 
         current_dir = os.getcwd() + '/'
 
-        ref_workfile_path = make_absolute_path(ref_workfile_path, current_dir)
-        dis_workfile_path = make_absolute_path(dis_workfile_path, current_dir)
+        ref_procfile_path = make_absolute_path(ref_procfile_path, current_dir)
+        dis_procfile_path = make_absolute_path(dis_procfile_path, current_dir)
         log_file_path = make_absolute_path(log_file_path, current_dir)
 
         quality_width, quality_height = asset.quality_width_height
 
         stmad_cmd = '''{matlab} -nodisplay -nosplash -nodesktop -r "run_stmad('{ref}', '{dis}', {w}, {h}); exit;" >> {log_file_path}'''.format(
             matlab=VmafExternalConfig.get_and_assert_matlab(),
-            ref=ref_workfile_path,
-            dis=dis_workfile_path,
+            ref=ref_procfile_path,
+            dis=dis_procfile_path,
             w=quality_width,
             h=quality_height,
             log_file_path=log_file_path,

@@ -39,7 +39,7 @@ class YuvReaderTest(unittest.TestCase):
             yuv_type='yuv420p'
         ) as yuv_reader:
 
-            y, u, v = yuv_reader.__next__()
+            y, u, v = yuv_reader.next()
 
             self.assertEqual(y[0][0], 87)
             self.assertEqual(y[0][1], 131)
@@ -57,7 +57,7 @@ class YuvReaderTest(unittest.TestCase):
             self.assertAlmostEqual(u.mean(), 114.6326517489712, places=4)
             self.assertAlmostEqual(v.mean(), 122.05084019204389, places=4)
 
-            y, u, v = yuv_reader.__next__()
+            y, u, v = yuv_reader.next()
 
             self.assertEqual(y[0][0], 142)
             self.assertEqual(y[0][1], 128)
@@ -117,7 +117,7 @@ class YuvReaderTest10le(unittest.TestCase):
             yuv_type='yuv422p10le'
         ) as yuv_reader:
 
-            y, u, v = yuv_reader.__next__()
+            y, u, v = yuv_reader.next()
 
             self.assertEqual(y[0][0], 87)
             self.assertEqual(y[0][1], 131)
@@ -135,7 +135,7 @@ class YuvReaderTest10le(unittest.TestCase):
             self.assertAlmostEqual(u.mean(), 114.63283661265432, places=4)
             self.assertAlmostEqual(v.mean(), 122.05113490226337, places=4)
 
-            y, u, v = yuv_reader.__next__()
+            y, u, v = yuv_reader.next()
 
             self.assertEqual(y[0][0], 142)
             self.assertEqual(y[0][1], 128)

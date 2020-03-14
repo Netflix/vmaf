@@ -401,6 +401,29 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_scale2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm_scale3_score'], 1.0, places=4)
 
+    def test_run_psnr_fextractor_proc(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        callback_dict = {
+            'ref_proc_callback': 'plusone',
+            'dis_proc_callback': 'identity',
+        }
+        asset.asset_dict.update(callback_dict)
+        asset_original.asset_dict.update(callback_dict)
+
+        self.fextractor = PsnrFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None,
+        )
+        self.fextractor.run(parallelize=False)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['PSNR_feature_psnr_score'], 30.912854687499998, places=8)
+        self.assertAlmostEqual(results[1]['PSNR_feature_psnr_score'], 48.130804000000005, places=8)
+
 
 class ParallelFeatureExtractorTest(unittest.TestCase):
 

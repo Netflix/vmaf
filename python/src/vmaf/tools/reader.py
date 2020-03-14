@@ -1,9 +1,9 @@
-__copyright__ = "Copyright 2016-2020, Netflix, Inc."
-__license__ = "BSD+Patent"
-
 import os
 
 import numpy as np
+
+__copyright__ = "Copyright 2016-2020, Netflix, Inc."
+__license__ = "BSD+Patent"
 
 
 class YuvReader(object):
@@ -36,7 +36,6 @@ class YuvReader(object):
 
         self._asserts()
 
-        # TODO python3: this doesn't work well with python3, need to refactor this class
         self.file = open(self.filepath, 'rb')
 
     def close(self):
@@ -57,9 +56,9 @@ class YuvReader(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         """next() is for python2 only, in python3 all you need to define is __next__(self)"""
-        return self.__next__()
+        return self.next()
 
     @property
     def num_bytes(self):
@@ -113,7 +112,7 @@ class YuvReader(object):
     def _is_10bitle(self):
         return self.yuv_type in self.SUPPORTED_YUV_10BIT_LE_TYPES
 
-    def __next__(self):
+    def next(self):
         y_width = self.width
         y_height = self.height
         uv_w_multiplier, uv_h_multiplier = self._get_uv_width_height_multiplier()

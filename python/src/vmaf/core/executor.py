@@ -12,6 +12,9 @@ from vmaf.tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_s
     get_file_name_extension, get_normalized_string_from_dict
 from vmaf.core.mixin import TypeVersionEnabled
 from vmaf.config import VmafExternalConfig
+from vmaf.core import proc_func
+from vmaf.tools.reader import YuvReader
+from vmaf.tools.writer import YuvWriter
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
@@ -27,6 +30,19 @@ class Executor(TypeVersionEnabled):
     Executor is the base class for FeatureExtractor and QualityRunner, and it
     provides a number of shared housekeeping functions, including reusing
     Results, creating FIFO pipes, cleaning up log files/Results, etc.
+
+    (3/11/2020) added an (optional) step to allow python-based processing on
+    both the ref and dis files. The new processing pipeline looks like this:
+
+     notyuv  --------   ref_workfile   -----------------   ref_procfile
+    -------> |FFmpeg| ---------------> |python-callback| -----------------
+             --------                  -----------------                 |    -----------------
+                                                                         ---> |               |
+                                                                              |     VMAF      | --->
+                                                                         ---> |               |
+     notyuv  --------   dis_workfile   -----------------   dis_procfile  |    -----------------
+    -------> |FFmpeg| ---------------> |python-callback| ----------------
+             --------                  -----------------
     """
 
     __metaclass__ = ABCMeta
@@ -214,12 +230,20 @@ class Executor(TypeVersionEnabled):
     def _wait_for_workfiles(self, asset):
         # wait til workfile paths being generated
         for i in range(10):
-            if os.path.exists(asset.ref_workfile_path) and \
-                    os.path.exists(asset.dis_workfile_path):
+            if os.path.exists(asset.ref_workfile_path) and os.path.exists(asset.dis_workfile_path):
                 break
             sleep(0.1)
         else:
             raise RuntimeError("ref or dis video workfile path {ref} or {dis} is missing.".format(ref=asset.ref_workfile_path, dis=asset.dis_workfile_path))
+
+    def _wait_for_procfiles(self, asset):
+        # wait til procfile paths being generated
+        for i in range(10):
+            if os.path.exists(asset.ref_procfile_path) and os.path.exists(asset.dis_procfile_path):
+                break
+            sleep(0.1)
+        else:
+            raise RuntimeError("ref or dis video procfile path {ref} or {dis} is missing.".format(ref=asset.ref_procfile_path, dis=asset.dis_procfile_path))
 
     def _prepare_log_file(self, asset):
 
@@ -267,9 +291,13 @@ class Executor(TypeVersionEnabled):
             # they exists
             self._assert_paths(asset)
 
-            # if no rescaling is involved, directly work on ref_path/dis_path,
+            # if no FFmpeg is involved, directly work on ref_path/dis_path,
             # instead of opening workfiles
             self._set_asset_use_path_as_workpath(asset)
+
+            # if no ref/dis_proc_callback is involved, directly work on ref/dis_workfile_path,
+            # instead of opening procfiles
+            self._set_asset_use_workpath_as_procpath(asset)
 
             # remove workfiles if exist (do early here to avoid race condition
             # when ref path and dis path have some overlap)
@@ -278,6 +306,14 @@ class Executor(TypeVersionEnabled):
                 pass
             else:
                 self._close_workfiles(asset)
+
+            # remove procfiles if exist (do early here to avoid race condition
+            # when ref path and dis path have some overlap)
+            if asset.use_workpath_as_procpath:
+                # do nothing
+                pass
+            else:
+                self._close_procfiles(asset)
 
             log_file_path = self._get_log_file_path(asset)
             make_parent_dirs_if_nonexist(log_file_path)
@@ -289,7 +325,16 @@ class Executor(TypeVersionEnabled):
                 if self.fifo_mode:
                     self._open_workfiles_in_fifo_mode(asset)
                 else:
-                    self.open_workfiles(asset)
+                    self._open_workfiles(asset)
+
+            if asset.use_workpath_as_procpath:
+                # do nothing
+                pass
+            else:
+                if self.fifo_mode:
+                    self._open_procfiles_in_fifo_mode(asset)
+                else:
+                    self._open_procfiles(asset)
 
             self._prepare_log_file(asset)
 
@@ -338,7 +383,7 @@ class Executor(TypeVersionEnabled):
 
         return result
 
-    def open_workfiles(self, asset):
+    def _open_workfiles(self, asset):
         self._open_ref_workfile(asset, fifo_mode=False)
         self._open_dis_workfile(asset, fifo_mode=False)
 
@@ -351,10 +396,28 @@ class Executor(TypeVersionEnabled):
         dis_p.start()
         self._wait_for_workfiles(asset)
 
+    def _open_procfiles(self, asset):
+        self._open_ref_procfile(asset, fifo_mode=False)
+        self._open_dis_procfile(asset, fifo_mode=False)
+
+    def _open_procfiles_in_fifo_mode(self, asset):
+        ref_p = multiprocessing.Process(target=self._open_ref_procfile,
+                                        args=(asset, True))
+        dis_p = multiprocessing.Process(target=self._open_dis_procfile,
+                                        args=(asset, True))
+        ref_p.start()
+        dis_p.start()
+        self._wait_for_procfiles(asset)
+
     @classmethod
     def _close_workfiles(cls, asset):
         cls._close_ref_workfile(asset)
         cls._close_dis_workfile(asset)
+
+    @classmethod
+    def _close_procfiles(cls, asset):
+        cls._close_ref_procfile(asset)
+        cls._close_dis_procfile(asset)
 
     def _refresh_workfiles_before_additional_pass(self, asset):
         # If fifo mode and workpath needs to be freshly generated, must
@@ -373,6 +436,11 @@ class Executor(TypeVersionEnabled):
         # ref_path/dis_path, instead of opening workfiles
         if not cls._need_ffmpeg(asset):
             asset.use_path_as_workpath = True
+
+    @classmethod
+    def _set_asset_use_workpath_as_procpath(cls, asset):
+        if asset.ref_proc_callback is None and asset.dis_proc_callback is None:
+            asset.use_workpath_as_procpath = True
 
     @classmethod
     def _post_process_result(cls, result):
@@ -490,6 +558,52 @@ class Executor(TypeVersionEnabled):
 
         run_process(ffmpeg_cmd, shell=True)
 
+    # ===== procfile =====
+
+    def _open_ref_procfile(self, asset, fifo_mode):
+
+        # only need to open ref procfile if the path is different from ref path
+        assert asset.use_workpath_as_procpath is False and asset.ref_workfile_path != asset.ref_procfile_path
+
+        ref_proc_callback = asset.ref_proc_callback if asset.ref_proc_callback is not None else lambda x: x
+
+        if fifo_mode:
+            os.mkfifo(asset.ref_procfile_path)
+
+        quality_width, quality_height = self._get_quality_width_height(asset)
+        yuv_type = asset.workfile_yuv_type
+        with YuvReader(filepath=asset.ref_workfile_path, width=quality_width, height=quality_height,
+                       yuv_type=yuv_type) as ref_yuv_reader:
+            with YuvWriter(filepath=asset.ref_procfile_path, width=quality_width, height=quality_height,
+                           yuv_type=yuv_type) as ref_yuv_writer:
+                for y, u, v in ref_yuv_reader:
+                    y, u, v = ref_proc_callback(y), \
+                              ref_proc_callback(u), \
+                              ref_proc_callback(v)
+                    ref_yuv_writer.next(y, u, v)
+
+    def _open_dis_procfile(self, asset, fifo_mode):
+
+        # only need to open dis procfile if the path is different from dis path
+        assert asset.use_workpath_as_procpath is False and asset.dis_workfile_path != asset.dis_procfile_path
+
+        dis_proc_callback = asset.dis_proc_callback if asset.dis_proc_callback is not None else lambda x: x
+
+        if fifo_mode:
+            os.mkfifo(asset.dis_procfile_path)
+
+        quality_width, quality_height = self._get_quality_width_height(asset)
+        yuv_type = asset.workfile_yuv_type
+        with YuvReader(filepath=asset.dis_workfile_path, width=quality_width, height=quality_height,
+                       yuv_type=yuv_type) as dis_yuv_reader:
+            with YuvWriter(filepath=asset.dis_procfile_path, width=quality_width, height=quality_height,
+                           yuv_type=yuv_type) as dis_yuv_writer:
+                for y, u, v in dis_yuv_reader:
+                    y, u, v = dis_proc_callback(y), \
+                              dis_proc_callback(u), \
+                              dis_proc_callback(v)
+                    dis_yuv_writer.next(y, u, v)
+
     def _get_resampling_type(self, asset):
         return asset.resampling_type
 
@@ -541,9 +655,7 @@ class Executor(TypeVersionEnabled):
         else:
             start_frame, end_frame = start_end_frame
             num_frames = end_frame - start_frame + 1
-            return "-vframes {}".format(num_frames), \
-                   "select='gte(n\,{start_frame})*gte({end_frame}\,n)',setpts=PTS-STARTPTS".format(
-                       start_frame=start_frame, end_frame=end_frame)
+            return f"-vframes {num_frames}", f"select='gte(n\\,{start_frame})*gte({end_frame}\\,n)',setpts=PTS-STARTPTS"
 
     @staticmethod
     def _close_ref_workfile(asset):
@@ -564,6 +676,24 @@ class Executor(TypeVersionEnabled):
         # caution: never remove dis file!!!!!!!!!!!!!!
         if os.path.exists(asset.dis_workfile_path):
             os.remove(asset.dis_workfile_path)
+
+    @staticmethod
+    def _close_ref_procfile(asset):
+
+        # only need to close ref procfile if the path is different from ref workpath
+        assert asset.use_workpath_as_procpath is False and asset.ref_workfile_path != asset.ref_procfile_path
+
+        if os.path.exists(asset.ref_procfile_path):
+            os.remove(asset.ref_procfile_path)
+
+    @staticmethod
+    def _close_dis_procfile(asset):
+
+        # only need to close dis procfile if the path is different from dis path
+        assert asset.use_workpath_as_procpath is False and asset.dis_workfile_path != asset.dis_procfile_path
+
+        if os.path.exists(asset.dis_procfile_path):
+            os.remove(asset.dis_procfile_path)
 
     def _remove_log(self, asset):
         log_file_path = self._get_log_file_path(asset)
@@ -696,22 +826,51 @@ class NorefExecutorMixin(object):
             raise RuntimeError("dis video workfile path {} is missing.".format(
                 asset.dis_workfile_path))
 
+    def _wait_for_procfiles(self, asset):
+        # Override Executor._wait_for_procfiles to skip ref_procfile_path
+        # wait til procfile paths being generated
+        for i in range(10):
+            if os.path.exists(asset.dis_procfile_path):
+                break
+            sleep(0.1)
+        else:
+            raise RuntimeError("dis video procfile path {} is missing.".format(
+                asset.dis_procfile_path))
+
     def _assert_paths(self, asset):
         # Override Executor._assert_paths to skip asserting on ref_path
         assert os.path.exists(asset.dis_path) or match_any_files(asset.dis_path), \
             "Distorted path {} does not exist.".format(asset.dis_path)
 
-    def open_workfiles(self, asset):
+    def _open_workfiles(self, asset):
+        # Override Executor._open_workfiles to skip ref.
         self._open_dis_workfile(asset, fifo_mode=False)
 
     def _open_workfiles_in_fifo_mode(self, asset):
+        # Override Executor._open_workfiles_in_fifo_mode to skip ref
         dis_p = multiprocessing.Process(target=self._open_dis_workfile,
                                         args=(asset, True))
         dis_p.start()
         self._wait_for_workfiles(asset)
 
+    def _open_procfiles(self, asset):
+        # Override Executor._open_procfiles to skip ref.
+        self._open_dis_procfile(asset, fifo_mode=False)
+
+    def _open_procfiles_in_fifo_mode(self, asset):
+        # Override Executor._open_procfiles_in_fifo_mode to skip ref
+        dis_p = multiprocessing.Process(target=self._open_dis_procfile,
+                                        args=(asset, True))
+        dis_p.start()
+        self._wait_for_procfiles(asset)
+
     @classmethod
     def _close_workfiles(cls, asset):
         # Override Executor._close_workfiles to skip ref.
         cls._close_dis_workfile(asset)
+
+    @classmethod
+    def _close_procfiles(cls, asset):
+        # Override Executor._close_procfiles to skip ref.
+        cls._close_dis_procfile(asset)
 

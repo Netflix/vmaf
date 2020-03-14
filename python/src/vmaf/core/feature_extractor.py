@@ -144,8 +144,8 @@ class VmafFeatureExtractor(FeatureExtractor):
         log_file_path = self._get_log_file_path(asset)
 
         yuv_type=self._get_workfile_yuv_type(asset)
-        ref_path=asset.ref_workfile_path
-        dis_path=asset.dis_workfile_path
+        ref_path=asset.ref_procfile_path
+        dis_path=asset.dis_procfile_path
         w=quality_width
         h=quality_height
         logger = self.logger
@@ -299,8 +299,8 @@ class VifFrameDifferenceFeatureExtractor(FeatureExtractor):
         log_file_path = self._get_log_file_path(asset)
 
         yuv_type=self._get_workfile_yuv_type(asset)
-        ref_path=asset.ref_workfile_path
-        dis_path=asset.dis_workfile_path
+        ref_path=asset.ref_procfile_path
+        dis_path=asset.dis_procfile_path
         w=quality_width
         h=quality_height
         logger = self.logger
@@ -365,8 +365,8 @@ class PsnrFeatureExtractor(FeatureExtractor):
         log_file_path = self._get_log_file_path(asset)
 
         yuv_type=self._get_workfile_yuv_type(asset)
-        ref_path=asset.ref_workfile_path
-        dis_path=asset.dis_workfile_path
+        ref_path=asset.ref_procfile_path
+        dis_path=asset.dis_procfile_path
         w=quality_width
         h=quality_height
         logger = self.logger
@@ -392,7 +392,7 @@ class MomentFeatureExtractor(FeatureExtractor):
         quality_w, quality_h = asset.quality_width_height
 
         ref_scores_mtx = None
-        with YuvReader(filepath=asset.ref_workfile_path, width=quality_w, height=quality_h,
+        with YuvReader(filepath=asset.ref_procfile_path, width=quality_w, height=quality_h,
                        yuv_type=self._get_workfile_yuv_type(asset)) as ref_yuv_reader:
             scores_mtx_list = []
             i = 0
@@ -405,7 +405,7 @@ class MomentFeatureExtractor(FeatureExtractor):
             ref_scores_mtx = np.vstack(scores_mtx_list)
 
         dis_scores_mtx = None
-        with YuvReader(filepath=asset.dis_workfile_path, width=quality_w, height=quality_h,
+        with YuvReader(filepath=asset.dis_procfile_path, width=quality_w, height=quality_h,
                        yuv_type=self._get_workfile_yuv_type(asset)) as dis_yuv_reader:
             scores_mtx_list = []
             i = 0
@@ -495,8 +495,8 @@ class SsimFeatureExtractor(FeatureExtractor):
         log_file_path = self._get_log_file_path(asset)
 
         yuv_type=self._get_workfile_yuv_type(asset)
-        ref_path=asset.ref_workfile_path
-        dis_path=asset.dis_workfile_path
+        ref_path=asset.ref_procfile_path
+        dis_path=asset.dis_procfile_path
         w=quality_width
         h=quality_height
         logger = self.logger
@@ -526,8 +526,8 @@ class MsSsimFeatureExtractor(FeatureExtractor):
         log_file_path = self._get_log_file_path(asset)
 
         yuv_type=self._get_workfile_yuv_type(asset)
-        ref_path=asset.ref_workfile_path
-        dis_path=asset.dis_workfile_path
+        ref_path=asset.ref_procfile_path
+        dis_path=asset.dis_procfile_path
         w=quality_width
         h=quality_height
         logger = self.logger

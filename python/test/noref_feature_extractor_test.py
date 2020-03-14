@@ -199,6 +199,33 @@ class NorefFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['SITI_noref_feature_si_score'], 85.28055474796807)
         self.assertAlmostEqual(results[1]['SITI_noref_feature_ti_score'], 19.500837587311423)
 
+    def test_noref_moment_fextractor_proc(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        callback_dict = {
+            'dis_proc_callback': 'identity',
+        }
+        asset.asset_dict.update(callback_dict)
+        asset_original.asset_dict.update(callback_dict)
+
+        self.fextractor = MomentNorefFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_1st_score'], 61.332006624999984)
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_2nd_score'], 4798.659574041666)
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_var_score'], 1036.8371843488285)
+
+        self.assertAlmostEqual(results[1]['Moment_noref_feature_1st_score'], 59.788567297525134)
+        self.assertAlmostEqual(results[1]['Moment_noref_feature_2nd_score'], 4696.668388042271)
+        self.assertAlmostEqual(results[1]['Moment_noref_feature_var_score'], 1121.519917231207)
+
 
 class ParallelNorefFeatureExtractorTest(unittest.TestCase):
 
@@ -301,6 +328,33 @@ class ParallelNorefFeatureExtractorTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_alpha23_score'], 0.8644583333333339, places=4)
         self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_alpha13_score'], 0.82906250000000103, places=4)
         self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_N34_score'],     -0.0092448158862212092, places=4)
+
+    def test_noref_moment_fextractor_proc(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        callback_dict = {
+            'dis_proc_callback': 'identity',
+        }
+        asset.asset_dict.update(callback_dict)
+        asset_original.asset_dict.update(callback_dict)
+
+        self.fextractor = MomentNorefFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_1st_score'], 61.332006624999984)
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_2nd_score'], 4798.659574041666)
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_var_score'], 1036.8371843488285)
+
+        self.assertAlmostEqual(results[1]['Moment_noref_feature_1st_score'], 59.788567297525134)
+        self.assertAlmostEqual(results[1]['Moment_noref_feature_2nd_score'], 4696.668388042271)
+        self.assertAlmostEqual(results[1]['Moment_noref_feature_var_score'], 1121.519917231207)
 
 
 if __name__ == '__main__':
