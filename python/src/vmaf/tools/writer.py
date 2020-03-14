@@ -90,6 +90,6 @@ class YuvWriter(object):
         else:
             assert False
 
-        y.astype(pix_type).tofile(self.file)
-        u.astype(pix_type).tofile(self.file)
-        v.astype(pix_type).tofile(self.file)
+        self.file.write(y.astype(pix_type).tobytes())
+        self.file.write(u.astype(pix_type).tobytes())
+        self.file.write(v.astype(pix_type).tobytes())
