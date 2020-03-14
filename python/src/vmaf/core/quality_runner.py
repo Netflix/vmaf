@@ -95,8 +95,8 @@ class PsnrQualityRunner(QualityRunner):
         log_file_path = self._get_log_file_path(asset)
 
         yuv_type = self._get_workfile_yuv_type(asset)
-        ref_path = asset.ref_workfile_path
-        dis_path = asset.dis_workfile_path
+        ref_path = asset.ref_procfile_path
+        dis_path = asset.dis_procfile_path
         w = quality_width
         h = quality_height
         logger = self.logger
@@ -684,8 +684,8 @@ class VmafossExecQualityRunner(QualityRunner):
         fmt=self._get_workfile_yuv_type(asset)
         w=quality_width
         h=quality_height
-        ref_path=asset.ref_workfile_path
-        dis_path=asset.dis_workfile_path
+        ref_path=asset.ref_procfile_path
+        dis_path=asset.dis_procfile_path
         model=model_filepath
         exe=self._get_exec()
         logger = self.logger
@@ -1240,8 +1240,8 @@ class VmafrcQualityRunner(QualityRunner):
 
         fmt = self._get_workfile_yuv_type(asset)
 
-        ref_path = asset.ref_workfile_path
-        dis_path = asset.dis_workfile_path
+        ref_path = asset.ref_procfile_path
+        dis_path = asset.dis_procfile_path
 
         reference = ref_path
         distorted = dis_path
