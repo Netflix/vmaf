@@ -202,6 +202,7 @@ class LocalExplainer(object):
                                yuv_type=asset.dis_yuv_type) as yuv_reader:
                     for yuv in yuv_reader:
                         img, _, _ = yuv
+                        img = img.astype(np.double)
                         break
                 assert img is not None
 

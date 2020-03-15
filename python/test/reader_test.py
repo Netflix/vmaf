@@ -40,6 +40,7 @@ class YuvReaderTest(unittest.TestCase):
         ) as yuv_reader:
 
             y, u, v = yuv_reader.next()
+            y, u, v = y.astype(np.double), u.astype(np.double), v.astype(np.double)
 
             self.assertEqual(y[0][0], 87)
             self.assertEqual(y[0][1], 131)
@@ -58,6 +59,7 @@ class YuvReaderTest(unittest.TestCase):
             self.assertAlmostEqual(v.mean(), 122.05084019204389, places=4)
 
             y, u, v = yuv_reader.next()
+            y, u, v = y.astype(np.double), u.astype(np.double), v.astype(np.double)
 
             self.assertEqual(y[0][0], 142)
             self.assertEqual(y[0][1], 128)
@@ -85,6 +87,7 @@ class YuvReaderTest(unittest.TestCase):
                 width=576, height=324, yuv_type='yuv420p') as yuv_reader:
 
             for y, u, v in yuv_reader:
+                y, u, v = y.astype(np.double), u.astype(np.double), v.astype(np.double)
                 y_1stmoments.append(y.mean())
                 y_2ndmoments.append(y.var() + y.mean() * y.mean())
 
@@ -118,6 +121,7 @@ class YuvReaderTest10le(unittest.TestCase):
         ) as yuv_reader:
 
             y, u, v = yuv_reader.next()
+            y, u, v = y.astype(np.double) / 4.0, u.astype(np.double) / 4.0, v.astype(np.double) / 4.0
 
             self.assertEqual(y[0][0], 87)
             self.assertEqual(y[0][1], 131)
@@ -136,6 +140,7 @@ class YuvReaderTest10le(unittest.TestCase):
             self.assertAlmostEqual(v.mean(), 122.05113490226337, places=4)
 
             y, u, v = yuv_reader.next()
+            y, u, v = y.astype(np.double) / 4.0, u.astype(np.double) / 4.0, v.astype(np.double) / 4.0
 
             self.assertEqual(y[0][0], 142)
             self.assertEqual(y[0][1], 128)
@@ -163,6 +168,7 @@ class YuvReaderTest10le(unittest.TestCase):
                 width=576, height=324, yuv_type='yuv422p10le') as yuv_reader:
 
             for y, u, v in yuv_reader:
+                y, u, v = y.astype(np.double) / 4.0, u.astype(np.double) / 4.0, v.astype(np.double) / 4.0
                 y_1stmoments.append(y.mean())
                 y_2ndmoments.append(y.var() + y.mean() * y.mean())
 

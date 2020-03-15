@@ -1,6 +1,8 @@
 import os
 from time import sleep
 
+import numpy as np
+
 from vmaf.core.h5py_mixin import H5pyMixin
 from vmaf.tools.reader import YuvReader
 from vmaf.core.executor import Executor
@@ -129,6 +131,8 @@ class DisYUVRawVideoExtractor(H5pyMixin, RawExtractor):
                        yuv_type=self._get_workfile_yuv_type(asset)) as dis_yuv_reader:
             for dis_yuv in dis_yuv_reader:
                 dis_y, dis_u, dis_v = dis_yuv
+                dis_y, dis_u, dis_v = dis_y.astype(np.double), dis_u.astype(np.double), dis_v.astype(np.double)
+
                 dis_ys.append(dis_y)
                 dis_us.append(dis_u)
                 dis_vs.append(dis_v)

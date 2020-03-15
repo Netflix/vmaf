@@ -398,6 +398,7 @@ class MomentFeatureExtractor(FeatureExtractor):
             i = 0
             for ref_yuv in ref_yuv_reader:
                 ref_y = ref_yuv[0]
+                ref_y = ref_y.astype(np.double)
                 firstm = ref_y.mean()
                 secondm = ref_y.var() + firstm**2
                 scores_mtx_list.append(np.hstack(([firstm], [secondm])))
@@ -411,6 +412,7 @@ class MomentFeatureExtractor(FeatureExtractor):
             i = 0
             for dis_yuv in dis_yuv_reader:
                 dis_y = dis_yuv[0]
+                dis_y = dis_y.astype(np.double)
                 firstm = dis_y.mean()
                 secondm = dis_y.var() + firstm**2
                 scores_mtx_list.append(np.hstack(([firstm], [secondm])))

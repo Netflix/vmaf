@@ -4,6 +4,8 @@ import os
 from time import sleep
 import hashlib
 
+import numpy as np
+
 from vmaf.core.asset import Asset
 from vmaf.tools.decorator import deprecated
 
@@ -12,7 +14,6 @@ from vmaf.tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_s
     get_file_name_extension, get_normalized_string_from_dict
 from vmaf.core.mixin import TypeVersionEnabled
 from vmaf.config import VmafExternalConfig
-from vmaf.core import proc_func
 from vmaf.tools.reader import YuvReader
 from vmaf.tools.writer import YuvWriter
 
@@ -583,6 +584,7 @@ class Executor(TypeVersionEnabled):
             with YuvWriter(filepath=asset.ref_procfile_path, width=quality_width, height=quality_height,
                            yuv_type=yuv_type) as ref_yuv_writer:
                 for y, u, v in ref_yuv_reader:
+                    y, u, v = y.astype(np.double), u.astype(np.double), v.astype(np.double)
                     y, u, v = ref_proc_callback(y), u, v
                     ref_yuv_writer.next(y, u, v)
 
@@ -603,6 +605,7 @@ class Executor(TypeVersionEnabled):
             with YuvWriter(filepath=asset.dis_procfile_path, width=quality_width, height=quality_height,
                            yuv_type=yuv_type) as dis_yuv_writer:
                 for y, u, v in dis_yuv_reader:
+                    y, u, v = y.astype(np.double), u.astype(np.double), v.astype(np.double)
                     y, u, v = dis_proc_callback(y), u, v
                     dis_yuv_writer.next(y, u, v)
 

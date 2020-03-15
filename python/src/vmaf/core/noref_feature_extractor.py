@@ -38,6 +38,7 @@ class MomentNorefFeatureExtractor(NorefExecutorMixin, FeatureExtractor):
             i = 0
             for dis_yuv in dis_yuv_reader:
                 dis_y = dis_yuv[0]
+                dis_y = dis_y.astype(np.double)
                 firstm = dis_y.mean()
                 secondm = dis_y.var() + firstm**2
                 scores_mtx_list.append(np.hstack(([firstm], [secondm])))
@@ -132,6 +133,7 @@ class BrisqueNorefFeatureExtractor(NorefExecutorMixin, FeatureExtractor):
             scores_mtx_list = []
             for dis_yuv in dis_yuv_reader:
                 dis_y = dis_yuv[0]
+                dis_y = dis_y.astype(np.double)
                 fgroup1_dis, fgroup2_dis = self.mscn_extract(dis_y)
                 scores_mtx_list.append(np.hstack((fgroup1_dis, fgroup2_dis)))
             scores_mtx = np.vstack(scores_mtx_list)
@@ -355,6 +357,7 @@ class NiqeNorefFeatureExtractor(BrisqueNorefFeatureExtractor):
             scores_mtx_list = []
             for dis_yuv in dis_yuv_reader:
                 dis_y = dis_yuv[0]
+                dis_y = dis_y.astype(np.double)
                 list_features = self.mscn_extract_niqe(dis_y, self.patch_size, self.mode)
                 scores_mtx_list += list_features
             scores_mtx = np.vstack(scores_mtx_list)

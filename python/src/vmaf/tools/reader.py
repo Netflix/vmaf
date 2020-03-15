@@ -112,7 +112,10 @@ class YuvReader(object):
     def _is_10bitle(self):
         return self.yuv_type in self.SUPPORTED_YUV_10BIT_LE_TYPES
 
-    def next(self):
+    def next(self, format='uint'):
+
+        assert format == 'uint' or format == 'float'
+
         y_width = self.width
         y_height = self.height
         uv_w_multiplier, uv_h_multiplier = self._get_uv_width_height_multiplier()
@@ -142,11 +145,16 @@ class YuvReader(object):
         u = u.reshape(uv_height, uv_width)
         v = v.reshape(uv_height, uv_width)
 
-        if self._is_10bitle():
-            return y.astype(np.double) / 4.0, u.astype(np.double) / 4.0, v.astype(np.double) / 4.0
+        if format == 'uint':
+            return y, u, v
 
-        elif self._is_8bit():
-            return y.astype(np.double), u.astype(np.double), v.astype(np.double)
+        elif format == 'float':
+            if self._is_8bit():
+                return y.astype(np.double) / (2.0**8 - 1.0), u.astype(np.double) / (2.0**8 - 1.0), v.astype(np.double) / (2.0**8 - 1.0)
+            elif self._is_10bitle():
+                return y.astype(np.double) / (2.0**10 - 1.0), u.astype(np.double) / (2.0**10 - 1.0), v.astype(np.double) / (2.0**10 - 1.0)
+            else:
+                assert False
 
         else:
             assert False
