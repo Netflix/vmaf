@@ -3,5 +3,5 @@ __license__ = "BSD+Patent"
 
 proc_func_dict = {
     'identity': lambda x: x,
-    'plusone': lambda x: x + 1,
+    'multiply': lambda x: x * 1.1,
 }

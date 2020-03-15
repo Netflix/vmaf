@@ -583,10 +583,13 @@ class Executor(TypeVersionEnabled):
                        yuv_type=yuv_type) as ref_yuv_reader:
             with YuvWriter(filepath=asset.ref_procfile_path, width=quality_width, height=quality_height,
                            yuv_type=yuv_type) as ref_yuv_writer:
-                for y, u, v in ref_yuv_reader:
-                    y, u, v = y.astype(np.double), u.astype(np.double), v.astype(np.double)
-                    y, u, v = ref_proc_callback(y), u, v
-                    ref_yuv_writer.next(y, u, v)
+                while True:
+                    try:
+                        y, u, v = ref_yuv_reader.next(format='float')
+                        y, u, v = ref_proc_callback(y), u, v
+                        ref_yuv_writer.next(y, u, v, format='float2uint')
+                    except StopIteration:
+                        break
 
     def _open_dis_procfile(self, asset, fifo_mode):
 
@@ -604,10 +607,13 @@ class Executor(TypeVersionEnabled):
                        yuv_type=yuv_type) as dis_yuv_reader:
             with YuvWriter(filepath=asset.dis_procfile_path, width=quality_width, height=quality_height,
                            yuv_type=yuv_type) as dis_yuv_writer:
-                for y, u, v in dis_yuv_reader:
-                    y, u, v = y.astype(np.double), u.astype(np.double), v.astype(np.double)
-                    y, u, v = dis_proc_callback(y), u, v
-                    dis_yuv_writer.next(y, u, v)
+                while True:
+                    try:
+                        y, u, v = dis_yuv_reader.next(format='float')
+                        y, u, v = dis_proc_callback(y), u, v
+                        dis_yuv_writer.next(y, u, v, format='float2uint')
+                    except StopIteration:
+                        break
 
     def _get_resampling_type(self, asset):
         return asset.resampling_type

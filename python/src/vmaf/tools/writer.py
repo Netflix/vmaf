@@ -70,8 +70,10 @@ class YuvWriter(object):
 
     def next(self, y, u, v, format='uint'):
 
-        assert format == 'uint', 'For now only support uint mode (this means the data must be prepared ' \
-                                 'manually in the corresponding bit depth). float mode comes later.'
+        assert format in ['uint', 'float2uint'], \
+            "For now support two modes: \n" \
+            "uint - directly map y, u, v values to the corresponding uint types; \n" \
+            "float2uint - assume y, u, v are in [0, 1], do proper scaling and map to the corresponding uint types"
 
         y_width = self.width
         y_height = self.height
@@ -87,6 +89,22 @@ class YuvWriter(object):
             pix_type = np.uint8
         elif self._is_10bitle():
             pix_type = np.uint16
+        else:
+            assert False
+
+        if format == 'uint':
+            pass
+        elif format == 'float2uint':
+            if self._is_8bit():
+                y, u, v = y.astype(np.double) * (2.0**8 - 1.0), \
+                          u.astype(np.double) * (2.0**8 - 1.0), \
+                          v.astype(np.double) * (2.0**8 - 1.0)
+            elif self._is_10bitle():
+                y, u, v = y.astype(np.double) * (2.0**10 - 1.0), \
+                          u.astype(np.double) * (2.0**10 - 1.0), \
+                          v.astype(np.double) * (2.0**10 - 1.0)
+            else:
+                assert False
         else:
             assert False
 

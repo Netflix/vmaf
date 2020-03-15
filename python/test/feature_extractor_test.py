@@ -406,23 +406,23 @@ class FeatureExtractorTest(unittest.TestCase):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
         callback_dict = {
-            'ref_proc_callback': 'plusone',
-            'dis_proc_callback': 'identity',
+            'ref_proc_callback': 'identity',
+            'dis_proc_callback': 'multiply',
         }
         asset.asset_dict.update(callback_dict)
         asset_original.asset_dict.update(callback_dict)
 
         self.fextractor = PsnrFeatureExtractor(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             result_store=None,
         )
         self.fextractor.run(parallelize=False)
 
         results = self.fextractor.results
 
-        self.assertAlmostEqual(results[0]['PSNR_feature_psnr_score'], 30.912854687499998, places=8)
-        self.assertAlmostEqual(results[1]['PSNR_feature_psnr_score'], 48.130804000000005, places=8)
+        self.assertAlmostEqual(results[0]['PSNR_feature_psnr_score'], 27.645446604166665, places=8)
+        self.assertAlmostEqual(results[1]['PSNR_feature_psnr_score'], 31.87683660416667, places=8)
 
 
 class ParallelFeatureExtractorTest(unittest.TestCase):
