@@ -348,6 +348,12 @@ class Executor(TypeVersionEnabled):
                 else:
                     self._close_workfiles(asset)
 
+                if asset.use_workpath_as_procpath:
+                    # do nothing
+                    pass
+                else:
+                    self._close_procfiles(asset)
+
             if self.logger:
                 self.logger.info("Read {id} log file, get scores...".
                                  format(id=self.executor_id))
