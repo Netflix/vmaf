@@ -583,9 +583,7 @@ class Executor(TypeVersionEnabled):
             with YuvWriter(filepath=asset.ref_procfile_path, width=quality_width, height=quality_height,
                            yuv_type=yuv_type) as ref_yuv_writer:
                 for y, u, v in ref_yuv_reader:
-                    y, u, v = ref_proc_callback(y), \
-                              ref_proc_callback(u), \
-                              ref_proc_callback(v)
+                    y, u, v = ref_proc_callback(y), u, v
                     ref_yuv_writer.next(y, u, v)
 
     def _open_dis_procfile(self, asset, fifo_mode):
@@ -605,9 +603,7 @@ class Executor(TypeVersionEnabled):
             with YuvWriter(filepath=asset.dis_procfile_path, width=quality_width, height=quality_height,
                            yuv_type=yuv_type) as dis_yuv_writer:
                 for y, u, v in dis_yuv_reader:
-                    y, u, v = dis_proc_callback(y), \
-                              dis_proc_callback(u), \
-                              dis_proc_callback(v)
+                    y, u, v = dis_proc_callback(y), u, v
                     dis_yuv_writer.next(y, u, v)
 
     def _get_resampling_type(self, asset):
