@@ -3,6 +3,7 @@ test_inc = include_directories('.')
 test_picture = executable('test_picture',
     ['test.c', 'test_picture.c', '../src/picture.c', '../src/mem.c'],
     include_directories : [libvmaf_inc, test_inc, '../src/'],
+    dependencies:[stdatomic_dependency],
 )
 
 test_feature_collector = executable('test_feature_collector',
@@ -41,7 +42,7 @@ test_predict = executable('test_predict',
 test_feature_extractor = executable('test_feature_extractor',
     ['test.c', 'test_feature_extractor.c', '../src/mem.c', '../src/picture.c'],
     include_directories : [libvmaf_inc, test_inc, '../src/'],
-    dependencies : math_lib,
+    dependencies : [math_lib, stdatomic_dependency],
     objects : [
       convolution_and_psnr_avx_static_lib.extract_all_objects(),
       libvmaf_feature_static_lib.extract_all_objects(),

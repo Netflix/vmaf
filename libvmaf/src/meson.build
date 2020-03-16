@@ -112,6 +112,7 @@ libvmaf_feature_static_lib = static_library(
     'libvmaf_feature',
     libvmaf_feature_sources,
     include_directories : [vmaf_include, vmaf_base_include],
+    dependencies: [stdatomic_dependency],
 )
 
 vmaf_sources = [
@@ -131,7 +132,7 @@ libvmaf = both_libraries(
     include_directories : vmaf_include,
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,
-    dependencies : thread_lib,
+    dependencies : [thread_lib, stdatomic_dependency],
     objects : [
         convolution_and_psnr_avx_static_lib.extract_all_objects(),
         libptools.extract_all_objects(),
@@ -169,6 +170,7 @@ libvmaf_rc_feature_static_lib = static_library(
     'libvmaf_rc_feature',
     libvmaf_rc_feature_sources,
     include_directories : [libvmaf_rc_include],
+    dependencies: [stdatomic_dependency],
 )
 
 libvmaf_rc_sources = [
@@ -194,6 +196,7 @@ libvmaf_rc = both_libraries(
     dependencies : [
       thread_lib,
       math_lib,
+      stdatomic_dependency,
     ],
     objects : [
         convolution_and_psnr_avx_static_lib.extract_all_objects(),
