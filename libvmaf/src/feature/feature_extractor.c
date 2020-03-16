@@ -195,9 +195,8 @@ int vmaf_fex_ctx_pool_create(VmafFeatureExtractorContextPool **pool,
     for (unsigned i = 0; i < p->length; i++) {
         VmafFeatureExtractor *fex = feature_extractor_list[i];
         p->fex_list[i].fex = fex;
-        p->fex_list[i].capacity =
-            fex->flags & VMAF_FEATURE_EXTRACTOR_TEMPORAL ? 1 : n_threads;
-        p->fex_list[i].in_use = 0;
+        atomic_init(&p->fex_list[i].capacity, (fex->flags & VMAF_FEATURE_EXTRACTOR_TEMPORAL ? 1 : n_threads));
+        atomic_init(&p->fex_list[i].in_use, 0);
         pthread_cond_init(&(p->fex_list[i].full), NULL);
         size_t ctx_array_sz =
             sizeof(p->fex_list[i].ctx_list[0]) * p->fex_list[i].capacity;
@@ -244,10 +243,10 @@ int vmaf_fex_ctx_pool_aquire(VmafFeatureExtractorContextPool *pool,
         goto unlock;
     }
 
-    while (entry->capacity == entry->in_use)
+    while (atomic_load(&entry->capacity) == atomic_load(&entry->in_use))
         pthread_cond_wait(&(entry->full), &(pool->lock));
 
-    for (unsigned i = 0; i < entry->capacity; i++) {
+    for (unsigned i = 0; i < atomic_load(&entry->capacity); i++) {
         VmafFeatureExtractorContext *f = entry->ctx_list[i].fex_ctx;
         if (!f) {
             err = vmaf_feature_extractor_context_create(&f, entry->fex);
@@ -259,7 +258,7 @@ int vmaf_fex_ctx_pool_aquire(VmafFeatureExtractorContextPool *pool,
             break;
         }
     }
-    entry->in_use++;
+    atomic_fetch_add(&entry->in_use, 1);
 
 unlock:
     pthread_mutex_unlock(&(pool->lock));
@@ -288,10 +287,10 @@ int vmaf_fex_ctx_pool_release(VmafFeatureExtractorContextPool *pool,
         goto unlock;
     }
 
-    for (unsigned i = 0; i < entry->capacity; i++) {
+    for (unsigned i = 0; i < atomic_load(&entry->capacity); i++) {
         if (fex_ctx == entry->ctx_list[i].fex_ctx) {
             entry->ctx_list[i].in_use = false;
-            entry->in_use--;
+            atomic_fetch_sub(&entry->in_use, 1);
             pthread_cond_signal(&(entry->full));
             goto unlock;
         }
@@ -314,7 +313,7 @@ int vmaf_fex_ctx_pool_flush(VmafFeatureExtractorContextPool *pool,
         VmafFeatureExtractor *fex = pool->fex_list[i].fex;
         if (!(fex->flags & VMAF_FEATURE_EXTRACTOR_TEMPORAL))
             continue;
-        for (unsigned j = 0; j < pool->fex_list[i].capacity; j++) {
+        for (unsigned j = 0; j < atomic_load(&pool->fex_list[i].capacity); j++) {
             VmafFeatureExtractorContext *fex_ctx =
                 pool->fex_list[i].ctx_list[j].fex_ctx;
             if (!fex_ctx) continue;
@@ -334,7 +333,7 @@ int vmaf_fex_ctx_pool_destroy(VmafFeatureExtractorContextPool *pool)
 
     for (unsigned i = 0; i < pool->length; i++) {
         if (!pool->fex_list[i].ctx_list) continue;
-        for (unsigned j = 0; j < pool->fex_list[i].capacity; j++) {
+        for (unsigned j = 0; j < atomic_load(&pool->fex_list[i].capacity); j++) {
             VmafFeatureExtractorContext *fex_ctx =
                 pool->fex_list[i].ctx_list[j].fex_ctx;
             if (!fex_ctx) continue;

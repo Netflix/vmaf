@@ -60,7 +60,8 @@ int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
 
     pic->ref_cnt = malloc(sizeof(*pic->ref_cnt));
     if (!pic->ref_cnt) goto free_data;
-    *(pic->ref_cnt) = 1;
+
+    atomic_init(pic->ref_cnt, 1);
     return 0;
 
 free_data:
@@ -73,8 +74,7 @@ int vmaf_picture_ref(VmafPicture *dst, VmafPicture *src) {
     if (!dst || !src) return -EINVAL;
 
     memcpy(dst, src, sizeof(*src));
-    atomic_int *ref_cnt = src->ref_cnt;
-    (*ref_cnt)++;
+    atomic_fetch_add(src->ref_cnt, 1);
     return 0;
 }
 
@@ -82,8 +82,8 @@ int vmaf_picture_unref(VmafPicture *pic) {
     if (!pic) return -EINVAL;
     if (!pic->ref_cnt) return -EINVAL;
 
-    atomic_int *ref_cnt = pic->ref_cnt;
-    if (--(*ref_cnt) == 0) {
+    atomic_fetch_sub(pic->ref_cnt, 1);
+    if (atomic_load(pic->ref_cnt) == 0) {
         aligned_free(pic->data[0]);
         free(pic->ref_cnt);
     }
