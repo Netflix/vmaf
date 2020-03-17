@@ -118,6 +118,14 @@ class Executor(TypeVersionEnabled):
             parallelize = kwargs['parallelize']
         else:
             parallelize = False
+        assert isinstance(parallelize, bool)
+
+        if 'processes' in kwargs:
+            assert parallelize is True, 'Cannot specify processes if parallelize is False.'
+            processes = kwargs['processes']
+        else:
+            processes = None
+        assert processes is None or (isinstance(processes, int) and processes >= 1)
 
         if parallelize:
             # create locks for unique assets (uniqueness is identified by str(asset))
@@ -142,7 +150,7 @@ class Executor(TypeVersionEnabled):
                 lock.release()
                 return result
 
-            self.results = parallel_map(_run, list_args)
+            self.results = parallel_map(_run, list_args, processes=processes)
         else:
             self.results = list(map(self._run_on_asset, self.assets))
 

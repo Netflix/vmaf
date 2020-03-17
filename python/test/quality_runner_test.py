@@ -1298,6 +1298,22 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['PSNR_score'], 30.755063979166664, places=4)
         self.assertAlmostEqual(results[1]['PSNR_score'], 60.0, places=4)
 
+    def test_run_parallel_psnr_runner_processes(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = PsnrQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None
+        )
+        self.runner.run(parallelize=True, processes=1)
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['PSNR_score'], 30.755063979166664, places=4)
+        self.assertAlmostEqual(results[1]['PSNR_score'], 60.0, places=4)
+
     @unittest.skipIf(sys.version_info < (3,), reason="For py3 only: model not supported by py2.")
     def test_run_parallel_vamf_runner_with_rf_model(self):
 
