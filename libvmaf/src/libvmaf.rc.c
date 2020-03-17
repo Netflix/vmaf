@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include <libvmaf/libvmaf.rc.h>
 
@@ -42,6 +43,12 @@ typedef struct VmafContext {
     RegisteredFeatureExtractors registered_feature_extractors;
     VmafFeatureExtractorContextPool *fex_ctx_pool;
     VmafThreadPool *thread_pool;
+    struct {
+        unsigned w, h;
+        enum VmafPixelFormat pix_fmt;
+        unsigned bpc;
+    } pic_params;
+    unsigned pic_cnt;
 } VmafContext;
 
 enum vmaf_cpu cpu;
@@ -226,6 +233,31 @@ static int threaded_read_pictures(VmafContext *vmaf, VmafPicture *ref,
     return vmaf_picture_unref(ref) | vmaf_picture_unref(dist);
 }
 
+static int validate_pic_params(VmafContext *vmaf, VmafPicture *ref,
+                               VmafPicture *dist)
+{
+    if (!vmaf->pic_params.w) {
+        vmaf->pic_params.w = ref->w[0];
+        vmaf->pic_params.h = ref->h[0];
+        vmaf->pic_params.pix_fmt = ref->pix_fmt;
+        vmaf->pic_params.bpc = ref->bpc;
+    }
+
+    if ((ref->w[0] != dist->w[0]) || (ref->w[0] != vmaf->pic_params.w))
+        return -EINVAL;
+    if ((ref->h[0] != dist->h[0]) || (ref->h[0] != vmaf->pic_params.h))
+        return -EINVAL;
+    if ((ref->pix_fmt != dist->pix_fmt) ||
+        (ref->pix_fmt != vmaf->pic_params.pix_fmt))
+    {
+        return -EINVAL;
+    }
+    if ((ref->bpc != dist->bpc) && (ref->bpc != vmaf->pic_params.bpc))
+        return -EINVAL;
+
+    return 0;
+}
+
 int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
                        unsigned index)
 {
@@ -234,6 +266,10 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     if (!dist) return -EINVAL;
 
     int err = 0;
+
+    vmaf->pic_cnt++;
+    err = validate_pic_params(vmaf, ref, dist);
+    if (err) return err;
 
     if (vmaf->thread_pool)
         return threaded_read_pictures(vmaf, ref, dist, index);
@@ -333,11 +369,16 @@ int vmaf_write_output(VmafContext *vmaf, FILE *outfile,
                                              vmaf->feature_collector);
     }
     vmaf_fex_ctx_pool_flush(vmaf->fex_ctx_pool, vmaf->feature_collector);
+    const double fps = vmaf->pic_cnt /
+                ((double) (vmaf->feature_collector->timer.end -
+                vmaf->feature_collector->timer.begin) / CLOCKS_PER_SEC);
 
     switch (fmt) {
     case VMAF_OUTPUT_FORMAT_XML:
         return vmaf_write_output_xml(vmaf->feature_collector, outfile,
-                                     vmaf->cfg.n_subsample);
+                                     vmaf->cfg.n_subsample,
+                                     vmaf->pic_params.w, vmaf->pic_params.h,
+                                     fps);
     case VMAF_OUTPUT_FORMAT_JSON:
         return vmaf_write_output_json(vmaf->feature_collector, outfile,
                                       vmaf->cfg.n_subsample);

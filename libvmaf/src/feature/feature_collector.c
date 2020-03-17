@@ -129,6 +129,9 @@ int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
     pthread_mutex_lock(&(feature_collector->lock));
     int err = 0;
 
+    if (!feature_collector->timer.begin)
+        feature_collector->timer.begin = clock();
+
     FeatureVector *feature_vector =
         find_feature_vector(feature_collector, feature_name);
 
@@ -157,6 +160,7 @@ int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
     err = feature_vector_append(feature_vector, picture_index, score);
 
 unlock:
+    feature_collector->timer.end = clock();
     pthread_mutex_unlock(&(feature_collector->lock));
     return err;
 }
