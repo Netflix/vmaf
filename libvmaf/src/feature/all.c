@@ -46,6 +46,7 @@ int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, i
 {
     double score = 0;
     double score2 = 0;
+    double score_next = 0;
     double scores[4*2];
     double score_num = 0;
     double score_den = 0;
@@ -53,7 +54,6 @@ int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, i
     float *ref_buf = 0;
     float *dis_buf = 0;
 
-    float *prev_blur_buf = 0;
     float *blur_buf = 0;
     float *next_ref_buf = 0;
     float *next_dis_buf = 0;
@@ -103,12 +103,6 @@ int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, i
         goto fail_or_end;
     }
 
-    if (!(prev_blur_buf = aligned_malloc(data_sz, MAX_ALIGN)))
-    {
-        printf("error: aligned_malloc failed for prev_blur_buf.\n");
-        fflush(stdout);
-        goto fail_or_end;
-    }
     if (!(blur_buf = aligned_malloc(data_sz, MAX_ALIGN)))
     {
         printf("error: aligned_malloc failed for blur_buf.\n");
@@ -246,36 +240,31 @@ int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, i
         // compute
         if (frm_idx == 0)
         {
-            score = 0.0;
-            score2 = 0.0;
             if (next_frame_read)
             {
-                if ((ret = compute_motion(blur_buf, next_blur_buf, w, h, stride, stride, &score2)))
+                score = 0.0;
+                if ((ret = compute_motion(blur_buf, next_blur_buf, w, h, stride, stride, &score_next)))
                 {
                     printf("error: compute_motion (next) failed.\n");
                     fflush(stdout);
                     goto fail_or_end;
                 }
+                score2 = score_next;
             }
+
         }
         else
         {
-            if ((ret = compute_motion(prev_blur_buf, blur_buf, w, h, stride, stride, &score)))
-            {
-                printf("error: compute_motion (prev) failed.\n");
-                fflush(stdout);
-                goto fail_or_end;
-            }
-
+            score = score_next;
             if (next_frame_read)
             {
-                if ((ret = compute_motion(blur_buf, next_blur_buf, w, h, stride, stride, &score2)))
+                if ((ret = compute_motion(blur_buf, next_blur_buf, w, h, stride, stride, &score_next)))
                 {
                     printf("error: compute_motion (next) failed.\n");
                     fflush(stdout);
                     goto fail_or_end;
                 }
-                score2 = MIN(score, score2);
+                score2 = MIN(score, score_next);
             }
             else
             {
@@ -305,8 +294,7 @@ int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, i
         }
         fflush(stdout);
 
-        // copy to prev_buf
-        memcpy(prev_blur_buf, blur_buf, data_sz);
+        // copy to ref_buf
         memcpy(ref_buf, next_ref_buf, data_sz);
         memcpy(dis_buf, next_dis_buf, data_sz);
         memcpy(blur_buf, next_blur_buf, data_sz);
@@ -325,7 +313,6 @@ fail_or_end:
     aligned_free(ref_buf);
     aligned_free(dis_buf);
 
-    aligned_free(prev_blur_buf);
     aligned_free(next_ref_buf);
     aligned_free(next_dis_buf);
     aligned_free(next_blur_buf);
