@@ -331,11 +331,11 @@ class ScoreAggregationTest(unittest.TestCase):
 
         self.result.set_score_aggregate_method(np.mean)
         # the following should give same value
-        self.assertAlmostEqual(self.result['VMAF_score'], 35.0661575902223, places=4)
+        self.assertAlmostEqual(self.result['VMAF_score'], 39.88104680859025, places=4)
         # for a 2-D array, first dimension is # models and second is # frames
-        self.assertAlmostEqual(self.result['VMAF_two_models_array_score'][0], 35.0661575902223, places=4)
-        self.assertAlmostEqual(self.result['VMAF_two_models_array_score'][1], 35.0661575902223, places=4)
-        self.assertAlmostEqual(self.result['VMAF_array_score'][0], 22.97749190550349, places=4)
+        self.assertAlmostEqual(self.result['VMAF_two_models_array_score'][0], 39.88104680859025 , places=4)
+        self.assertAlmostEqual(self.result['VMAF_two_models_array_score'][1], 39.88104680859025 , places=4)
+        self.assertAlmostEqual(self.result['VMAF_array_score'][0], 37.42215956060733, places=4)
         self.assertAlmostEqual(self.result['VMAF_array_score'][1], 44.79653061901706, places=4)
         self.assertAlmostEqual(self.result['VMAF_array_score'][2], 37.424450246146364, places=4)
         # check that a 3-D array will throw assertion, score aggregation accepts only up to 2-D
