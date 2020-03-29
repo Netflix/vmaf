@@ -286,8 +286,8 @@ class TestTrainOnDataset(unittest.TestCase):
                         parallelize=True,
                         aggregate_method=None)
 
-        self.assertAlmostEqual(results[0]['VMAF_score'], 99.142659046424384, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_score'], 35.066157497128764, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 100.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 39.88104680859025, places=4)
         self.assertAlmostEqual(results[2]['VMAF_score'], 97.428042675471147, places=4)
         self.assertAlmostEqual(results[3]['VMAF_score'], 97.427927701008869, places=4)
         self.assertAlmostEqual(test_assets[0].groundtruth, 100, places=4)
@@ -304,10 +304,10 @@ class TestTrainOnDataset(unittest.TestCase):
                         parallelize=True,
                         aggregate_method=None)
 
-        expecteds = [98.7927560599655, 100.0, 100.0, 98.82959541116277, 99.80711961053976, 98.91713244333198, 100.0,
-                     99.33233498293374, 98.99337537979711, 99.62668672314118, 99.00879643796763, 100.0, 97.29492843378944,
-                     100.0, 99.02095425720624, 94.50521964145268, 95.63007904351339, 98.57370486684022, 100.0,
-                     99.3674807701887]
+        expecteds = [100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0,
+                     100.0, 100.0, 100.0, 100.0, 100.0, 100.0,
+                     100.0, 100.0, 100.0, 100.0, 100.0, 100.0,
+                     100.0]
 
         actuals = results[0]['BOOTSTRAP_VMAF_all_models_score']
 
@@ -315,7 +315,7 @@ class TestTrainOnDataset(unittest.TestCase):
 
         for actual, expected in zip(actuals, expecteds):
             self.assertAlmostEqual(actual, expected, places=4)
-        self.assertAlmostEqual(results[0]['BOOTSTRAP_VMAF_score'], 99.32876664539778, places=4)
+        self.assertAlmostEqual(results[0]['BOOTSTRAP_VMAF_score'], 100.0, places=4)
 
     def test_test_on_dataset_split_test_indices_for_perf_ci(self):
         from vmaf.routine import run_test_on_dataset
@@ -326,7 +326,7 @@ class TestTrainOnDataset(unittest.TestCase):
                                                    split_test_indices_for_perf_ci=True,
                                                    n_splits_test_indices=10)
 
-        self.assertAlmostEqual(results[0]['VMAF_score'], 99.142659046424384, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 100.0, places=4)
 
     def test_test_on_dataset_raw(self):
         from vmaf.routine import run_test_on_dataset
@@ -337,8 +337,8 @@ class TestTrainOnDataset(unittest.TestCase):
                                                    parallelize=True,
                                                    aggregate_method=None)
 
-        self.assertAlmostEqual(results[0]['VMAF_score'], 99.142659046424384, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_score'], 35.066157497128764, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 100.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 39.88104680859025, places=4)
         self.assertAlmostEqual(results[2]['VMAF_score'], 97.428042675471147, places=4)
         self.assertAlmostEqual(results[3]['VMAF_score'], 97.427927701008869, places=4)
         self.assertAlmostEqual(test_assets[0].groundtruth, 100, places=4)
@@ -360,8 +360,8 @@ class TestTrainOnDataset(unittest.TestCase):
                         aggregate_method=None,
                         subj_model_class=MosModel)
 
-        self.assertAlmostEqual(results[0]['VMAF_score'], 99.142659046424384, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_score'], 35.066157497128764, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 100.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 39.88104680859025, places=4)
         self.assertAlmostEqual(results[2]['VMAF_score'], 97.428042675471147, places=4)
         self.assertAlmostEqual(results[3]['VMAF_score'], 97.427927701008869, places=4)
         self.assertAlmostEqual(test_assets[0].groundtruth, 100, places=4)

@@ -116,8 +116,8 @@ class LocalExplainerTest(unittest.TestCase):
         self.runner.run()
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAF_score'], 76.699271272486044, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_score'], 99.946416604585025, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 76.81292177612421, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 100.0, places=4)
 
         expected_feature_names = ['VMAF_feature_adm2_score',
                                   'VMAF_feature_motion2_score',
@@ -267,8 +267,8 @@ class QualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAF_score'], 75.44304862545658, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_score'], 99.95804893252175, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 75.54398270627779, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 100.0, places=4)
 
 
 if __name__ == '__main__':
