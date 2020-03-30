@@ -48,7 +48,7 @@ static bool cmdOptionExists(char** begin, char** end, const std::string& option)
 
 static void print_usage(int argc, char *argv[])
 {
-    fprintf(stderr, "Usage: %s fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--thread n_thread] [--subsample n_subsample] [--disable-clip] [--disable-avx] [--psnr] [--ssim] [--ms-ssim] [--phone-model] [--pool pool_method] [--ci]\n", argv[0]);
+    fprintf(stderr, "Usage: %s fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--thread n_thread] [--subsample n_subsample] [--disable-clip] [--disable-avx] [--disable-float] [--psnr] [--ssim] [--ms-ssim] [--phone-model] [--pool pool_method] [--ci]\n", argv[0]);
     fprintf(stderr, "fmt:\n\tyuv420p\n\tyuv422p\n\tyuv444p\n\tyuv420p10le\n\tyuv422p10le\n\tyuv444p10le\n\n");
     fprintf(stderr, "log_fmt:\n\txml (default)\n\tjson\n\tcsv\n\n");
     fprintf(stderr, "n_thread:\n\tmaximum threads to use (default 0 - use all threads)\n\n");
@@ -105,7 +105,7 @@ static void getMemory(int itr_ctr, int state)
 #endif
 
 static int run_wrapper(char *fmt, int width, int height, char *ref_path, char *dis_path, char *model_path,
-        char *log_path, char *log_fmt, bool disable_clip, bool disable_avx, bool enable_transform, bool phone_model,
+        char *log_path, char *log_fmt, bool disable_clip, bool disable_avx, bool disable_float, bool enable_transform, bool phone_model,
         bool do_psnr, bool do_ssim, bool do_ms_ssim, char *pool_method, int n_thread, int n_subsample, bool enable_conf_interval)
 {
     double score;
@@ -189,7 +189,7 @@ static int run_wrapper(char *fmt, int width, int height, char *ref_path, char *d
 
     /* Run VMAF */
     ret = compute_vmaf(&score, fmt, width, height, read_frame, s, model_path, log_path, log_fmt,
-                       disable_clip, disable_avx, enable_transform, phone_model, do_psnr, do_ssim,
+                       disable_clip, disable_avx, disable_float, enable_transform, phone_model, do_psnr, do_ssim,
                        do_ms_ssim, pool_method, n_thread, n_subsample, enable_conf_interval);
 
 fail_or_end:
@@ -230,6 +230,7 @@ int main(int argc, char *argv[])
     int n_thread = 0;
     int n_subsample = 1;
     bool enable_conf_interval = false;
+    bool disable_float = false;
     char *temp;
 #if MEM_LEAK_TEST_ENABLE	
 	int itr_ctr;
@@ -329,6 +330,11 @@ int main(int argc, char *argv[])
         disable_avx = true;
     }
 
+    if (cmdOptionExists(argv + 7, argv + argc, "--disable-float"))
+    {
+        disable_float = true;
+    }
+
     if (cmdOptionExists(argv + 7, argv + argc, "--enable-transform"))
     {
         enable_transform = true;
@@ -373,13 +379,13 @@ int main(int argc, char *argv[])
 		{
 			getMemory(itr_ctr,1);
 			ret = run_wrapper(fmt, width, height, ref_path, dis_path, model_path,
-                log_path, log_fmt, disable_clip, disable_avx, enable_transform, phone_model,
+                log_path, log_fmt, disable_clip, disable_avx, disable_float, enable_transform, phone_model,
                 do_psnr, do_ssim, do_ms_ssim, pool_method, n_thread, n_subsample, enable_conf_interval);
 			getMemory(itr_ctr,2);
 		}
 #else
         return run_wrapper(fmt, width, height, ref_path, dis_path, model_path,
-                log_path, log_fmt, disable_clip, disable_avx, enable_transform, phone_model,
+                log_path, log_fmt, disable_clip, disable_avx, disable_float, enable_transform, phone_model,
                 do_psnr, do_ssim, do_ms_ssim, pool_method, n_thread, n_subsample, enable_conf_interval);
 #endif
     }

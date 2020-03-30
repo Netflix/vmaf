@@ -28,6 +28,7 @@
 #include "offset.h"
 #include "vif_options.h"
 #include "vif_tools.h"
+#include "common/macros.h"
 
 #define vif_filter1d_table vif_filter1d_table_s
 #define vif_filter1d       vif_filter1d_s

@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include "mem.h"
+#include <stdint.h>
 
 #define MAX_NUM_THREADS 128
 typedef struct
@@ -24,6 +25,14 @@ typedef struct
 
 typedef struct
 {
+    int frame_idx;
+    int16_t *blur_buf;
+    int reference_count;
+
+} INTEGER_BLUR_BUF_STRUCT;
+
+typedef struct
+{
     BLUR_BUF_STRUCT blur_buf_array[MAX_NUM_THREADS];
     int actual_length;
     size_t buffer_size;
@@ -31,7 +40,18 @@ typedef struct
 
 } BLUR_BUF_ARRAY;
 
+typedef struct
+{
+    INTEGER_BLUR_BUF_STRUCT blur_buf_array[MAX_NUM_THREADS];
+    int actual_length;
+    size_t buffer_size;
+    pthread_mutex_t block;
+
+} INTEGER_BLUR_BUF_ARRAY;
+
 int init_blur_array(BLUR_BUF_ARRAY* arr, int array_length, size_t size, size_t alignement);
+
+int integer_init_blur_array(INTEGER_BLUR_BUF_ARRAY* arr, int array_length, size_t size, size_t alignement);
 
 float* get_free_blur_buf_slot(BLUR_BUF_ARRAY* arr, int frame_idx);
 
@@ -43,8 +63,16 @@ int release_blur_buf_reference(BLUR_BUF_ARRAY* arr, int search_frame_idx);
 
 float* get_blur_buf(BLUR_BUF_ARRAY* arr, int search_frame_idx);
 
+int16_t* integer_get_blur_buf(INTEGER_BLUR_BUF_ARRAY* arr, int search_frame_idx);
+
 int put_blur_buf(BLUR_BUF_ARRAY* arr, int frame_idx, float* blur_buf);
 
+int integer_put_blur_buf(INTEGER_BLUR_BUF_ARRAY* arr, int frame_idx, int16_t* blur_buf);
+
+int integer_release_blur_buf(INTEGER_BLUR_BUF_ARRAY* arr, int search_frame_idx);
+
 void free_blur_buf(BLUR_BUF_ARRAY* arr);
+
+void integer_free_blur_buf(INTEGER_BLUR_BUF_ARRAY* arr);
 
 #endif /* VMAF_FEATURE_SRC_BLUR_ARRAY_H_ */

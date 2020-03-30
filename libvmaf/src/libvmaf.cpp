@@ -227,9 +227,10 @@ VmafQualityRunnerFactory::createVmafQualityRunner(const char *model_path, bool e
 extern "C" {
 
     enum vmaf_cpu cpu = cpu_autodetect(); // global
+    enum vmaf_run_type run_type = VMAF_FLOAT; //default float
 
     int compute_vmaf(double* vmaf_score, char* fmt, int width, int height, int(*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride_byte, void *user_data),
-        void *user_data, char *model_path, char *log_path, char *log_fmt, int disable_clip, int disable_avx, int enable_transform, int phone_model, int do_psnr,
+        void *user_data, char *model_path, char *log_path, char *log_fmt, int disable_clip, int disable_avx, int disable_float, int enable_transform, int phone_model, int do_psnr,
         int do_ssim, int do_ms_ssim, char *pool_method, int n_thread, int n_subsample, int enable_conf_interval)
     {
         bool d_c = false;
@@ -238,6 +239,7 @@ extern "C" {
         bool d_p = false;
         bool d_s = false;
         bool d_m_s = false;
+        bool d_f = false;
 
         if (enable_transform || phone_model) {
             e_t = true;
@@ -257,10 +259,18 @@ extern "C" {
         if (do_ms_ssim) {
             d_m_s = true;
         }
+        if (disable_float) {
+            d_f = true;
+        }
 
         if (disable_avx)
         {
             cpu = VMAF_CPU_NONE;
+        }
+
+        if (disable_float)
+        {
+            run_type = VMAF_INTEGER;
         }
 
         try {

@@ -45,8 +45,9 @@ static float rcp_s(float x)
 
 #endif /* ADM_OPT_RECIP_DIVISION */
 
-static const float dwt2_db2_coeffs_lo_s[4] = { 0.482962913144690, 0.836516303737469, 0.224143868041857, -0.129409522550921 };
-static const float dwt2_db2_coeffs_hi_s[4] = { -0.129409522550921, -0.224143868041857, 0.836516303737469, -0.482962913144690 };
+//coefficent calculated from original coefficient and converted make there addition 1
+static const float dwt2_db2_coeffs_lo_s[4] = { 0.482971191406250, 0.836517333984375, 0.224151611328125, -0.129394531250000 };
+static const float dwt2_db2_coeffs_hi_s[4] = { -0.129394531250000, -0.224151611328125, 0.836517333984375, -0.482971191406250 };
 
 #ifndef FLOAT_ONE_BY_30
 #define FLOAT_ONE_BY_30	0.0333333351
@@ -812,7 +813,7 @@ void dwt2_src_indices_filt_s(int **src_ind_y, int **src_ind_x, int w, int h)
 	}
 }
 
-void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int **ind_x, int w, int h, int src_stride, int dst_stride)
+void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int **ind_x, int w, int h, int src_stride, int dst_stride, int scale)
 {
 	const float *filter_lo = dwt2_db2_coeffs_lo_s;
 	const float *filter_hi = dwt2_db2_coeffs_hi_s;
@@ -825,11 +826,12 @@ void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int 
 	float *tmphi = aligned_malloc(ALIGN_CEIL(sizeof(float) * w), MAX_ALIGN);
 	float fcoeff_lo, fcoeff_hi, imgcoeff;
 	float s0, s1, s2, s3;
-	float accum;
 
 	int i, j, fi, fj, ii, jj;
 	int j0, j1, j2, j3;
-
+    if (scale == 0)
+    {
+        float accum;
 	for (i = 0; i < (h + 1) / 2; ++i) {
 		/* Vertical pass. */
 		for (j = 0; j < w; ++j) {
@@ -900,7 +902,83 @@ void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int 
 
 		}
 	}
+    }
+    else
+    {
+        double accum;
+        for (i = 0; i < (h + 1) / 2; ++i) {
+            /* Vertical pass. */
+            for (j = 0; j < w; ++j) {
+                s0 = src[ind_y[0][i] * src_px_stride + j];
+                s1 = src[ind_y[1][i] * src_px_stride + j];
+                s2 = src[ind_y[2][i] * src_px_stride + j];
+                s3 = src[ind_y[3][i] * src_px_stride + j];
 
+
+                accum = 0;
+                accum += (double)filter_lo[0] * s0;
+                accum += (double)filter_lo[1] * s1;
+                accum += (double)filter_lo[2] * s2;
+                accum += (double)filter_lo[3] * s3;
+                tmplo[j] = (float)accum;
+
+
+                accum = 0;
+                accum += (double)filter_hi[0] * s0;
+                accum += (double)filter_hi[1] * s1;
+                accum += (double)filter_hi[2] * s2;
+                accum += (double)filter_hi[3] * s3;
+                tmphi[j] = (float)accum;
+
+            }
+
+            /* Horizontal pass (lo and hi). */
+            for (j = 0; j < (w + 1) / 2; ++j) {
+
+                j0 = ind_x[0][j];
+                j1 = ind_x[1][j];
+                j2 = ind_x[2][j];
+                j3 = ind_x[3][j];
+                s0 = tmplo[j0];
+                s1 = tmplo[j1];
+                s2 = tmplo[j2];
+                s3 = tmplo[j3];
+
+                accum = 0;
+                accum += (double)filter_lo[0] * s0;
+                accum += (double)filter_lo[1] * s1;
+                accum += (double)filter_lo[2] * s2;
+                accum += (double)filter_lo[3] * s3;
+                dst->band_a[i * dst_px_stride + j] = (float)accum;
+
+                accum = 0;
+                accum += (double)filter_hi[0] * s0;
+                accum += (double)filter_hi[1] * s1;
+                accum += (double)filter_hi[2] * s2;
+                accum += (double)filter_hi[3] * s3;
+                dst->band_v[i * dst_px_stride + j] = (float)accum;
+
+                s0 = tmphi[j0];
+                s1 = tmphi[j1];
+                s2 = tmphi[j2];
+                s3 = tmphi[j3];
+
+                accum = 0;
+                accum += (double)filter_lo[0] * s0;
+                accum += (double)filter_lo[1] * s1;
+                accum += (double)filter_lo[2] * s2;
+                accum += (double)filter_lo[3] * s3;
+                dst->band_h[i * dst_px_stride + j] = (float)accum;
+
+                accum = 0;
+                accum += (double)filter_hi[0] * s0;
+                accum += (double)filter_hi[1] * s1;
+                accum += (double)filter_hi[2] * s2;
+                accum += (double)filter_hi[3] * s3;
+                dst->band_d[i * dst_px_stride + j] = (float)accum;
+            }
+        }
+    }
 	aligned_free(tmplo);
 	aligned_free(tmphi);
 }

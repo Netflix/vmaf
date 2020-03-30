@@ -27,3 +27,13 @@ int vmaf_ceiln(int n, int m)
 {
 	return n % m ? n + (m - n % m) : n;
 }
+
+int vmaf_floorn_2pow(int n, int m)
+{
+    return n - (n & (m - 1));
+}
+
+int vmaf_ceiln_2pow(int n, int m)
+{
+    return (n & (m - 1)) ? n + (m - (n & (m - 1))) : n;
+}

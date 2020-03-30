@@ -75,13 +75,16 @@ typedef struct
     BLUR_BUF_ARRAY blur_buf_array;
     BLUR_BUF_ARRAY ref_buf_array;
     BLUR_BUF_ARRAY dis_buf_array;
+    INTEGER_BLUR_BUF_ARRAY integer_blur_buf_array;
+    INTEGER_BLUR_BUF_ARRAY integer_ref_buf_array;
+    INTEGER_BLUR_BUF_ARRAY integer_dis_buf_array;
     DArray *motion_score_compute_flag_array;
     int ret;
 
 } VMAF_THREAD_STRUCT;
 
 void* combo_threadfunc(void* vmaf_thread_data);
-
+void* integer_combo_threadfunc(void* vmaf_thread_data);
 int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt,
         DArray *adm_num_array,
         DArray *adm_den_array,

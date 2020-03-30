@@ -130,13 +130,13 @@ int main(int argc, char *argv[])
     CLISettings c;
     cli_parse(argc, argv, &c);
 
-    FILE *file_ref = fopen(c.path_ref, "r");
+    FILE *file_ref = fopen(c.path_ref, "rb");
     if (!file_ref) {
         fprintf(stderr, "could not open file: %s\n", c.path_ref);
         return -1;
     }
 
-    FILE *file_dist = fopen(c.path_dist, "r");
+    FILE *file_dist = fopen(c.path_dist, "rb");
     if (!file_dist) {
         fprintf(stderr, "could not open file: %s\n", c.path_dist);
         return -1;
@@ -179,6 +179,9 @@ int main(int argc, char *argv[])
         .n_subsample = c.subsample,
         .cpumask = c.cpumask,
     };
+
+    //one time log table generation for integer vif
+    log_generate();
 
     VmafContext *vmaf;
     err = vmaf_init(&vmaf, cfg);

@@ -36,4 +36,13 @@
 /* Whether to use a 1-D formulation of the Gaussian filter. */
 #define VIF_OPT_FILTER_1D
 
+extern const float vif_filter1d_table_s[4][17];
+
+extern const uint16_t integer_vif_filter1d_table_s[4][17];
+
+extern const int vif_filter1d_width[4];
+
+extern const float vif_filter2d_table_s[4][17 * 17];
+
+extern const int vif_filter2d_width[4];
 #endif /* VIF_OPTIONS_H_ */

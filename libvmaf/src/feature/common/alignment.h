@@ -24,5 +24,8 @@
 
 int vmaf_floorn(int n, int m);
 int vmaf_ceiln(int n, int m);
+//same as above functions but only used when m is in pow of 2
+int vmaf_floorn_2pow(int n, int m);
+int vmaf_ceiln_2pow(int n, int m);
 
 #endif // ALIGNMENT_H_

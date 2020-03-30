@@ -21,13 +21,8 @@
 #ifndef VIF_TOOLS_H_
 #define VIF_TOOLS_H_
 
-extern const float vif_filter1d_table_s[4][17]; // 4 is scale. since this is separable filter, filtering is 1d repeat horizontally and vertically
-
-extern const int vif_filter1d_width[4];
-
-extern const float vif_filter2d_table_s[4][17*17];
-
-extern const int vif_filter2d_width[4];
+//log value table for integer implementation
+uint16_t log_values[65537];
 
 /* s single precision, d double precision */
 

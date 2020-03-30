@@ -38,20 +38,30 @@
 
 #include "common/blur_array.h"
 #include "cpu_info.h"
+#include "common/cpu.h"
 
+extern enum vmaf_run_type run_type;
+
+#define read_image_b       read_image_b2s
+#define read_image_w       read_image_w2s
 #define convolution_f32_c  convolution_f32_c_s
+#define integer_convolution_f32_c  integer_convolution_f32_c_s
 #define offset_image       offset_image_s
 #define FILTER_5           FILTER_5_s
+#define INTEGER_FILTER_5     INTEGER_FILTER_5_s
+
 int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores, double border_factor);
 #ifdef COMPUTE_ANSNR
 int compute_ansnr(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_psnr, double peak, double psnr_max);
 #endif
 int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores);
+int integer_compute_vif(const int16_t *ref, const int16_t *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores, int inp_size_bits);
 int compute_motion(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);
+int integer_compute_motion(const int16_t *ref, const int16_t *dis, int w, int h, int ref_stride, int dis_stride, double *score);
 int compute_psnr(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double peak, double psnr_max);
 int compute_ssim(const float *ref, const float *cmp, int w, int h, int ref_stride, int cmp_stride, double *score, double *l_score, double *c_score, double *s_score);
 int compute_ms_ssim(const float *ref, const float *cmp, int w, int h, int ref_stride, int cmp_stride, double *score, double* l_scores, double* c_scores, double* s_scores);
-
+void log_generate();
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 void* combo_threadfunc(void* vmaf_thread_data)
@@ -96,6 +106,11 @@ void* combo_threadfunc(void* vmaf_thread_data)
     bool next_frame_read;
 
     bool offset_flag = false;
+
+    float *prev_blur_buf_ = 0;
+    float *ref_buf_ = 0;
+    float *dis_buf_ = 0;
+    float *blur_buf_ = 0;
 
     // use temp_buf for convolution_f32_c, and fread u and v
     if (!(temp_buf = aligned_malloc(data_sz * 2, MAX_ALIGN)))
@@ -531,7 +546,7 @@ fail_or_end:
     thread_data->stop_threads = 1;
     thread_data->ret = ret;
     pthread_exit(&ret);
-
+    thread_data->ret = ret;
 }
 
 int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt,
@@ -648,6 +663,9 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
     init_blur_array(&combo_thread_data.dis_buf_array, MIN(combo_thread_data.thread_count + 1, MAX_NUM_THREADS), combo_thread_data.data_sz, MAX_ALIGN);
     init_blur_array(&combo_thread_data.blur_buf_array, MIN(3 * (combo_thread_data.thread_count), MAX_NUM_THREADS), combo_thread_data.data_sz, MAX_ALIGN);
 
+    integer_init_blur_array(&combo_thread_data.integer_ref_buf_array, combo_thread_data.thread_count, combo_thread_data.data_sz, MAX_ALIGN);
+    integer_init_blur_array(&combo_thread_data.integer_dis_buf_array, combo_thread_data.thread_count, combo_thread_data.data_sz, MAX_ALIGN);
+    integer_init_blur_array(&combo_thread_data.integer_blur_buf_array, combo_thread_data.thread_count + 2, combo_thread_data.data_sz, MAX_ALIGN);
     // initialize the mutex that protects the read_frame function
     pthread_mutex_init(&combo_thread_data.mutex_readframe, NULL);
 
@@ -662,9 +680,19 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
     pthread_t* thread = (pthread_t*)calloc(numThread, sizeof(pthread_t));
     memset(thread, 0, numThread * sizeof(pthread_t));
 
+    if (run_type == VMAF_FLOAT)
+    {
     for (t=0; t < combo_thread_data.thread_count; t++)
     {
         pthread_create(&thread[t], &attr, combo_threadfunc, &combo_thread_data);
+    }
+    }
+    else
+    {
+        for (t = 0; t < combo_thread_data.thread_count; t++)
+        {
+            pthread_create(&thread[t], &attr, integer_combo_threadfunc, &combo_thread_data);
+        }
     }
 
     pthread_attr_destroy(&attr);
@@ -687,8 +715,666 @@ int combo(int (*read_frame)(float *ref_data, float *main_data, float *temp_data,
     free_blur_buf(&combo_thread_data.blur_buf_array);
 
     free_array(&motion_score_compute_flag_array);
-
+    integer_free_blur_buf(&combo_thread_data.integer_ref_buf_array);
+    integer_free_blur_buf(&combo_thread_data.integer_dis_buf_array);
+    integer_free_blur_buf(&combo_thread_data.integer_blur_buf_array);
     free(thread);
 
     return 0;
+}
+
+
+void* integer_combo_threadfunc(void* vmaf_thread_data)
+{
+    // this is our shared thread data
+    VMAF_THREAD_STRUCT* thread_data = (VMAF_THREAD_STRUCT*)vmaf_thread_data;
+
+    // set the local variables from the thread shared data
+    size_t data_sz = thread_data->data_sz;
+    int stride = thread_data->stride;
+    int frm_stride = stride / sizeof(float);
+    double peak = thread_data->peak;
+    double psnr_max = thread_data->psnr_max;
+    int w = thread_data->w;
+    int h = thread_data->h;
+    char* errmsg = thread_data->errmsg;
+    void* user_data = thread_data->user_data;
+    const char* fmt = thread_data->fmt;
+    int n_subsample = thread_data->n_subsample;
+
+    double score = 0;
+    double score2 = 0;
+    double scores[4 * 2];
+    double score_num = 0;
+    double score_den = 0;
+    double l_score = 0, c_score = 0, s_score = 0;
+    double l_scores[SCALES], c_scores[SCALES], s_scores[SCALES];
+
+#ifdef COMPUTE_ANSNR
+    double score_psnr = 0;
+#endif
+
+    float *ref_buf = 0;
+    float *dis_buf = 0;
+    float *prev_blur_buf = 0;
+    float *blur_buf = 0;
+    float *next_ref_buf = 0;
+    float *next_dis_buf = 0;
+    float *next_blur_buf = 0;
+    float *temp_buf = 0;
+
+    int16_t *integer_ref_buf = 0;
+    int16_t *integer_dis_buf = 0;
+    int16_t *integer_prev_blur_buf = 0;
+    int16_t *integer_blur_buf = 0;
+    int16_t *integer_next_ref_buf = 0;
+    int16_t *integer_next_dis_buf = 0;
+    int16_t *integer_next_blur_buf = 0;
+    int16_t *integer_temp_buf = 0;
+
+    int ret = 0;
+    bool next_frame_read;
+
+    bool offset_flag = false;
+
+    float *prev_blur_buf_ = 0;
+    float *ref_buf_ = 0;
+    float *dis_buf_ = 0;
+    float *blur_buf_ = 0;
+
+    int16_t *integer_prev_blur_buf_ = 0;
+    int16_t *integer_ref_buf_ = 0;
+    int16_t *integer_dis_buf_ = 0;
+    int16_t *integer_blur_buf_ = 0;
+
+    // use temp_buf for convolution_f32_c, and fread u and v
+    if (!(temp_buf = aligned_malloc(data_sz * 2, MAX_ALIGN)))
+    {
+        sprintf(errmsg, "aligned_malloc failed for temp_buf.\n");
+        goto fail_or_end;
+    }
+
+    if (!(integer_ref_buf = aligned_malloc(data_sz, 16)))
+    {
+        sprintf(errmsg, "aligned_malloc failed for ref_buf.\n");
+        goto fail_or_end;
+    }
+    if (!(integer_next_ref_buf = aligned_malloc(data_sz, 16)))
+    {
+        sprintf(errmsg, "aligned_malloc failed for next_ref_buf.\n");
+        goto fail_or_end;
+    }
+
+    if (!(integer_dis_buf = aligned_malloc(data_sz, 16)))
+    {
+        sprintf(errmsg, "aligned_malloc failed for dis_buf.\n");
+        goto fail_or_end;
+    }
+    if (!(integer_next_dis_buf = aligned_malloc(data_sz, 16)))
+    {
+        sprintf(errmsg, "aligned_malloc failed for next_dis_buf.\n");
+        goto fail_or_end;
+    }
+
+    if (!(integer_prev_blur_buf = aligned_malloc(data_sz, 16)))
+    {
+        sprintf(errmsg, "aligned_malloc failed for prev_blur_buf.\n");
+        goto fail_or_end;
+    }
+    if (!(integer_blur_buf = aligned_malloc(data_sz, 16)))
+    {
+        sprintf(errmsg, "aligned_malloc failed for integer_blur_buf.\n");
+        goto fail_or_end;
+    }
+    if (!(integer_next_blur_buf = aligned_malloc(data_sz * 2, 16)))
+    {
+        sprintf(errmsg, "aligned_malloc failed for next_blur_buf.\n");
+        goto fail_or_end;
+    }
+
+    // use temp_buf for convolution_f32_c, and fread u and v
+    if (!(integer_temp_buf = aligned_malloc(data_sz, 16)))
+    {
+        sprintf(errmsg, "aligned_malloc failed for temp_buf.\n");
+        goto fail_or_end;
+    }
+    int frm_idx = -1;
+
+    log_generate();
+
+    int mul_inp_float_to_integer = 1;  //Should be 4 if input is 10bit, 16 if input is 12bits
+    int inp_size_bits = 8;
+
+    if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+    {
+        inp_size_bits = 10;
+        mul_inp_float_to_integer = 4;
+    }
+    else if (!strcmp(fmt, "yuv420p12le") || !strcmp(fmt, "yuv422p12le") || !strcmp(fmt, "yuv444p12le"))
+    {
+        inp_size_bits = 12;
+        mul_inp_float_to_integer = 16;
+    }
+
+    while (1)
+    {
+
+        pthread_mutex_lock(&thread_data->mutex_readframe);
+
+        if (thread_data->stop_threads)
+        {
+            // this is the signal that another thread has reached the end of the input file, so we all quit
+            pthread_mutex_unlock(&thread_data->mutex_readframe);
+            goto fail_or_end;
+        }
+
+        // the next frame
+        frm_idx = thread_data->frm_idx;
+        thread_data->frm_idx++;
+
+        if (frm_idx == 0)
+        {
+            // Allocating the free buffers from buffer array
+            blur_buf = get_free_blur_buf_slot(&thread_data->blur_buf_array, frm_idx);
+            ref_buf = get_free_blur_buf_slot(&thread_data->ref_buf_array, frm_idx);
+            dis_buf = get_free_blur_buf_slot(&thread_data->dis_buf_array, frm_idx);
+
+            if ((NULL == blur_buf) || (NULL == ref_buf) || (NULL == dis_buf))
+            {
+                thread_data->stop_threads = 1;
+                sprintf(errmsg, "No free slot found for buffer allocation.\n");
+                pthread_mutex_unlock(&thread_data->mutex_readframe);
+                goto fail_or_end;
+            }
+
+            // read frame from file
+
+            ret = thread_data->read_frame(ref_buf, dis_buf, temp_buf, stride, user_data);
+            if (ret == 1)
+            {
+                thread_data->stop_threads = 1;
+                pthread_mutex_unlock(&thread_data->mutex_readframe);
+                goto fail_or_end;
+            }
+            if (ret == 2)
+            {
+                thread_data->stop_threads = 1;
+                pthread_mutex_unlock(&thread_data->mutex_readframe);
+                goto fail_or_end;
+            }
+
+            // ===============================================================
+            // offset pixel by OPT_RANGE_PIXEL_OFFSET
+            // ===============================================================
+            offset_image(ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+            offset_image(dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+
+            int i, j;
+            if (inp_size_bits != 8)
+            {
+                for (i = 0; i < h; i++)
+                {
+                    for (j = 0; j < frm_stride; j++)
+                    {
+                        *(integer_ref_buf++) = (int16_t)(*(ref_buf++) * mul_inp_float_to_integer);
+                        *(integer_dis_buf++) = (int16_t)(*(dis_buf++) * mul_inp_float_to_integer);
+                    }
+
+                }
+            }
+            else
+            {
+                for (i = 0; i < h; i++)
+                {
+                    for (j = 0; j < frm_stride; j++)
+                    {
+                        *(integer_ref_buf++) = (int16_t) *(ref_buf++);
+                        *(integer_dis_buf++) = (int16_t) *(dis_buf++);
+                    }
+                }
+            }
+
+            integer_ref_buf -= h * frm_stride;
+            integer_dis_buf -= h * frm_stride;
+            ref_buf -= h * frm_stride;
+            dis_buf -= h * frm_stride;
+
+            // ===============================================================
+            // filter
+            // apply filtering (to eliminate effects film grain)
+            // stride input to convolution_f32_c is in terms of (sizeof(float) bytes)
+            // since stride = ALIGN_CEIL(w * sizeof(float)), stride divides sizeof(float)
+            // ===============================================================
+
+            integer_convolution_f32_c(INTEGER_FILTER_5, 5, integer_ref_buf, integer_blur_buf, integer_temp_buf, w, h, stride / sizeof(float), stride / sizeof(float), inp_size_bits);
+
+            integer_put_blur_buf(&thread_data->integer_blur_buf_array, frm_idx, integer_blur_buf);
+
+        }
+        else
+        {
+            // retrieve from buffer array
+            ref_buf = get_blur_buf(&thread_data->ref_buf_array, frm_idx);
+            dis_buf = get_blur_buf(&thread_data->dis_buf_array, frm_idx);
+            blur_buf = get_blur_buf(&thread_data->blur_buf_array, frm_idx);
+
+            if ((NULL == ref_buf) || (NULL == dis_buf) || (NULL == blur_buf))
+            {
+                thread_data->stop_threads = 1;
+                sprintf(errmsg, "Data not available.\n");
+                pthread_mutex_unlock(&thread_data->mutex_readframe);
+                goto fail_or_end;
+            }
+
+            // don't releave blur_buf_array of frm_idx yet, since it will be used by the next frame again
+            integer_ref_buf_ = integer_get_blur_buf(&thread_data->integer_ref_buf_array, frm_idx);
+            memcpy(integer_ref_buf, integer_ref_buf_, data_sz);
+            integer_release_blur_buf(&thread_data->integer_ref_buf_array, frm_idx);
+
+            integer_dis_buf_ = integer_get_blur_buf(&thread_data->integer_dis_buf_array, frm_idx);
+            memcpy(integer_dis_buf, integer_dis_buf_, data_sz);
+            integer_release_blur_buf(&thread_data->integer_dis_buf_array, frm_idx);
+
+            integer_blur_buf_ = integer_get_blur_buf(&thread_data->integer_blur_buf_array, frm_idx);
+            memcpy(integer_blur_buf, integer_blur_buf_, data_sz);
+            // don't releave blur_buf_array of frm_idx yet, since it will be used by the next frame again
+        }
+
+        // Allocate free buffer from the buffer array for next frame index
+        next_ref_buf = get_free_blur_buf_slot(&thread_data->ref_buf_array, frm_idx + 1);
+        next_dis_buf = get_free_blur_buf_slot(&thread_data->dis_buf_array, frm_idx + 1);
+        if ((NULL == next_ref_buf) || (NULL == next_dis_buf))
+        {
+            thread_data->stop_threads = 1;
+            sprintf(errmsg, "No free slot found for next buffer.\n");
+            pthread_mutex_unlock(&thread_data->mutex_readframe);
+            goto fail_or_end;
+        }
+
+        ret = thread_data->read_frame(next_ref_buf, next_dis_buf, temp_buf, stride, user_data);
+        if (ret == 1)
+        {
+            thread_data->stop_threads = 1;
+            pthread_mutex_unlock(&thread_data->mutex_readframe);
+            goto fail_or_end;
+        }
+        if (ret == 2)
+        {
+            thread_data->stop_threads = 1;
+            next_frame_read = false;
+        }
+        else
+        {
+            next_frame_read = true;
+        }
+
+        if (next_frame_read)
+        {
+            next_blur_buf = get_free_blur_buf_slot(&thread_data->blur_buf_array, frm_idx + 1);
+            if (NULL == next_blur_buf)
+            {
+                thread_data->stop_threads = 1;
+                sprintf(errmsg, "No free slot found for blur buffer.\n");
+                goto fail_or_end;
+            }
+            // ===============================================================
+            // offset pixel by OPT_RANGE_PIXEL_OFFSET
+            // ===============================================================
+            offset_image(next_ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+            offset_image(next_dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+
+            int i, j;
+            if (inp_size_bits != 8)
+            {
+                for (i = 0; i < h; i++)
+                {
+                    for (j = 0; j < frm_stride; j++)
+                    {
+                        *(integer_next_ref_buf++) = (int16_t)(*(next_ref_buf++) * mul_inp_float_to_integer);
+                        *(integer_next_dis_buf++) = (int16_t)(*(next_dis_buf++) * mul_inp_float_to_integer);
+                    }
+                }
+            }
+            else
+            {
+                for (i = 0; i < h; i++)
+                {
+                    for (j = 0; j < frm_stride; j++)
+                    {
+                        *(integer_next_ref_buf++) = (int16_t) *(next_ref_buf++);
+                        *(integer_next_dis_buf++) = (int16_t) *(next_dis_buf++);
+                    }
+                }
+            }
+            integer_next_ref_buf -= h * frm_stride;
+            integer_next_dis_buf -= h * frm_stride;
+            next_ref_buf -= h * frm_stride;
+            next_dis_buf -= h * frm_stride;
+
+            // ===============================================================
+            // filter
+            // apply filtering (to eliminate effects film grain)
+            // stride input to convolution_f32_c is in terms of (sizeof(float) bytes)
+            // since stride = ALIGN_CEIL(w * sizeof(float)), stride divides sizeof(float)
+            // ===============================================================
+
+            integer_convolution_f32_c(INTEGER_FILTER_5, 5, integer_next_ref_buf, integer_next_blur_buf, integer_temp_buf, w, h, stride / sizeof(float), stride / sizeof(float), inp_size_bits);
+
+            // save next_ref_buf, next_ref_buf and next_ref_buf to buffer array
+            integer_put_blur_buf(&thread_data->integer_ref_buf_array, frm_idx + 1, integer_next_ref_buf);
+            integer_put_blur_buf(&thread_data->integer_dis_buf_array, frm_idx + 1, integer_next_dis_buf);
+            integer_put_blur_buf(&thread_data->integer_blur_buf_array, frm_idx + 1, integer_next_blur_buf);
+        }
+
+        // release ref and dis buffer references after blur buf computation
+        release_blur_buf_reference(&thread_data->ref_buf_array, frm_idx + 1);
+        release_blur_buf_reference(&thread_data->dis_buf_array, frm_idx + 1);
+        pthread_mutex_unlock(&thread_data->mutex_readframe);
+
+        dbg_printf("frame: %d, ", frm_idx);
+
+        // ===============================================================
+        // for the PSNR, SSIM and MS-SSIM, offset are 0. Since in prev read
+        // step they have been offset by OPT_RANGE_PIXEL_OFFSET, now
+        // offset them back.
+        // ===============================================================
+
+        // offset back the buffers only if required
+        if (frm_idx % n_subsample == 0 && ((thread_data->psnr_array != NULL) || (thread_data->ssim_array != NULL) || (thread_data->ms_ssim_array != NULL)))
+        {
+            offset_image(ref_buf, -OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+            offset_image(dis_buf, -OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+            offset_flag = true;
+        }
+
+        if (frm_idx % n_subsample == 0 && thread_data->psnr_array != NULL)
+        {
+            /* =========== psnr ============== */
+            ret = compute_psnr(ref_buf, dis_buf, w, h, stride, stride, &score, peak, psnr_max);
+
+            if (ret)
+            {
+                sprintf(errmsg, "compute_psnr failed.\n");
+                goto fail_or_end;
+            }
+
+            dbg_printf("psnr: %.3f, ", score);
+
+            insert_array_at(thread_data->psnr_array, score, frm_idx);
+        }
+
+        if (frm_idx % n_subsample == 0 && thread_data->ssim_array != NULL)
+        {
+
+            /* =========== ssim ============== */
+            if ((ret = compute_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, &l_score, &c_score, &s_score)))
+            {
+                sprintf(errmsg, "compute_ssim failed.\n");
+                goto fail_or_end;
+            }
+
+            dbg_printf("ssim: %.3f, ", score);
+
+            insert_array_at(thread_data->ssim_array, score, frm_idx);
+        }
+
+        if (frm_idx % n_subsample == 0 && thread_data->ms_ssim_array != NULL)
+        {
+            /* =========== ms-ssim ============== */
+            if ((ret = compute_ms_ssim(ref_buf, dis_buf, w, h, stride, stride, &score, l_scores, c_scores, s_scores)))
+            {
+                sprintf(errmsg, "compute_ms_ssim failed.\n");
+                goto fail_or_end;
+            }
+
+            dbg_printf("ms_ssim: %.3f, ", score);
+
+            insert_array_at(thread_data->ms_ssim_array, score, frm_idx);
+        }
+
+        // ===============================================================
+        // for the rest, offset pixel by OPT_RANGE_PIXEL_OFFSET
+        // ===============================================================
+
+        if (offset_flag)
+        {
+            offset_image(ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+            offset_image(dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+            offset_flag = false;
+        }
+
+        /* =========== adm ============== */
+        if (frm_idx % n_subsample == 0)
+        {
+            if ((ret = integer_compute_adm(integer_ref_buf, integer_dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores, ADM_BORDER_FACTOR, inp_size_bits)))
+            {
+                sprintf(errmsg, "integer_compute_adm failed.\n");
+                goto fail_or_end;
+            }
+
+            dbg_printf("adm: %.3f, ", score);
+            dbg_printf("adm_num: %.3f, ", score_num);
+            dbg_printf("adm_den: %.3f, ", score_den);
+            dbg_printf("adm_num_scale0: %.3f, ", scores[0]);
+            dbg_printf("adm_den_scale0: %.3f, ", scores[1]);
+            dbg_printf("adm_num_scale1: %.3f, ", scores[2]);
+            dbg_printf("adm_den_scale1: %.3f, ", scores[3]);
+            dbg_printf("adm_num_scale2: %.3f, ", scores[4]);
+            dbg_printf("adm_den_scale2: %.3f, ", scores[5]);
+            dbg_printf("adm_num_scale3: %.3f, ", scores[6]);
+            dbg_printf("adm_den_scale3: %.3f, ", scores[7]);
+
+            insert_array_at(thread_data->adm_num_array, score_num, frm_idx);
+            insert_array_at(thread_data->adm_den_array, score_den, frm_idx);
+            insert_array_at(thread_data->adm_num_scale0_array, scores[0], frm_idx);
+            insert_array_at(thread_data->adm_den_scale0_array, scores[1], frm_idx);
+            insert_array_at(thread_data->adm_num_scale1_array, scores[2], frm_idx);
+            insert_array_at(thread_data->adm_den_scale1_array, scores[3], frm_idx);
+            insert_array_at(thread_data->adm_num_scale2_array, scores[4], frm_idx);
+            insert_array_at(thread_data->adm_den_scale2_array, scores[5], frm_idx);
+            insert_array_at(thread_data->adm_num_scale3_array, scores[6], frm_idx);
+            insert_array_at(thread_data->adm_den_scale3_array, scores[7], frm_idx);
+        }
+#ifdef COMPUTE_ANSNR
+
+        if (frm_idx % n_subsample == 0)
+        {
+
+            /* =========== ansnr ============== */
+            if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv444p"))
+            {
+                // max psnr 60.0 for 8-bit per Ioannis
+                ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score, &score_psnr, 255.0, 60.0);
+            }
+            else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+            {
+                // 10 bit gets normalized to 8 bit, peak is 1023 / 4.0 = 255.75
+                // max psnr 72.0 for 10-bit per Ioannis
+                ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score, &score_psnr, 255.75, 72.0);
+            }
+            else
+            {
+                sprintf(errmsg, "unknown format %s.\n", fmt);
+                goto fail_or_end;
+            }
+            if (ret)
+            {
+                sprintf(errmsg, "compute_ansnr failed.\n");
+                goto fail_or_end;
+            }
+
+            dbg_printf("ansnr: %.3f, ", score);
+            dbg_printf("anpsnr: %.3f, ", score_psnr);
+        }
+
+#endif
+
+        /* =========== motion ============== */
+
+        if (frm_idx % n_subsample == 0)
+        {
+
+            // compute
+            if (frm_idx == 0)
+            {
+                score = 0.0;
+                score2 = 0.0;
+            }
+            else
+            {
+                // avoid multiple memory copies
+                prev_blur_buf = get_blur_buf(&thread_data->blur_buf_array, frm_idx - 1);
+                if (NULL == prev_blur_buf)
+                {
+                    thread_data->stop_threads = 1;
+                    sprintf(errmsg, "Data not available for prev_blur_buf.\n");
+                    goto fail_or_end;
+                }
+                integer_prev_blur_buf_ = integer_get_blur_buf(&thread_data->integer_blur_buf_array, frm_idx - 1);
+                memcpy(integer_prev_blur_buf, integer_prev_blur_buf_, data_sz);
+
+                if ((ret = integer_compute_motion(integer_prev_blur_buf, integer_blur_buf, w, h, stride, stride, &score)))
+                {
+                    sprintf(errmsg, "integer_compute_motion (prev) failed.\n");
+                    goto fail_or_end;
+                }
+                release_blur_buf_reference(&thread_data->blur_buf_array, frm_idx - 1);
+                integer_release_blur_buf(&thread_data->integer_blur_buf_array, frm_idx - 1);
+
+                if (next_frame_read)
+                {
+                    if ((ret = integer_compute_motion(integer_blur_buf, integer_next_blur_buf, w, h, stride, stride, &score2)))
+                    {
+                        sprintf(errmsg, "integer_compute_motion (next) failed.\n");
+                        goto fail_or_end;
+                    }
+                    score2 = MIN(score, score2);
+                }
+                else
+                {
+                    score2 = score;
+
+                    integer_release_blur_buf(&thread_data->integer_blur_buf_array, frm_idx);
+                }
+            }
+
+            dbg_printf("motion: %.3f, ", score);
+            dbg_printf("motion2: %.3f, ", score2);
+
+            insert_array_at(thread_data->motion_array, score, frm_idx);
+            insert_array_at(thread_data->motion2_array, score2, frm_idx);
+
+        }
+        /* Indicate that motion score computation for this frame is complete */
+        insert_array_at(thread_data->motion_score_compute_flag_array, 1.0, frm_idx);
+        release_blur_buf_reference(&thread_data->blur_buf_array, frm_idx + 1);
+
+        /* =========== vif ============== */
+
+        if (frm_idx % n_subsample == 0)
+        {
+            if ((ret = integer_compute_vif(integer_ref_buf, integer_dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores, inp_size_bits)))
+            {
+                sprintf(errmsg, "integer_compute_vif failed.\n");
+                goto fail_or_end;
+            }
+
+            // dbg_printf("vif_num: %.3f, ", score_num);
+            // dbg_printf("vif_den: %.3f, ", score_den);
+            dbg_printf("vif_num_scale0: %.3f, ", scores[0]);
+            dbg_printf("vif_den_scale0: %.3f, ", scores[1]);
+            dbg_printf("vif_num_scale1: %.3f, ", scores[2]);
+            dbg_printf("vif_den_scale1: %.3f, ", scores[3]);
+            dbg_printf("vif_num_scale2: %.3f, ", scores[4]);
+            dbg_printf("vif_den_scale2: %.3f, ", scores[5]);
+            dbg_printf("vif_num_scale3: %.3f, ", scores[6]);
+            dbg_printf("vif_den_scale3: %.3f, ", scores[7]);
+            dbg_printf("vif: %.3f, ", score);
+
+            insert_array_at(thread_data->vif_num_scale0_array, scores[0], frm_idx);
+            insert_array_at(thread_data->vif_den_scale0_array, scores[1], frm_idx);
+            insert_array_at(thread_data->vif_num_scale1_array, scores[2], frm_idx);
+            insert_array_at(thread_data->vif_den_scale1_array, scores[3], frm_idx);
+            insert_array_at(thread_data->vif_num_scale2_array, scores[4], frm_idx);
+            insert_array_at(thread_data->vif_den_scale2_array, scores[5], frm_idx);
+            insert_array_at(thread_data->vif_num_scale3_array, scores[6], frm_idx);
+            insert_array_at(thread_data->vif_den_scale3_array, scores[7], frm_idx);
+            insert_array_at(thread_data->vif_array, score, frm_idx);
+        }
+
+        dbg_printf("\n");
+
+        //Release references to reference and distorted buffers
+        release_blur_buf_reference(&thread_data->ref_buf_array, frm_idx);
+        release_blur_buf_reference(&thread_data->dis_buf_array, frm_idx);
+        release_blur_buf_reference(&thread_data->blur_buf_array, frm_idx);
+        /*Loop through the slots and release slots if there are no more
+          reference till the current index. Not releasing next frame as
+          it may be required for the next loop						   */
+        for (int i = 0; i <= frm_idx; i++)
+        {
+            int ref_reference_count = get_blur_buf_reference_count(&thread_data->ref_buf_array, i);
+            int dis_reference_count = get_blur_buf_reference_count(&thread_data->dis_buf_array, i);
+
+            if ((ref_reference_count == 0) && (dis_reference_count == 0))
+            {
+                release_blur_buf_slot(&thread_data->ref_buf_array, i);
+                release_blur_buf_slot(&thread_data->dis_buf_array, i);
+            }
+        }
+
+        /* Loop through the blur buffer array and release slots only till current index - 1 */
+        /* Only for those whose reference counter is zero */
+        for (int i = 0; i <= (frm_idx - 1); i++)
+        {
+            int reference_count = get_blur_buf_reference_count(&thread_data->blur_buf_array, i);
+            if (reference_count == 0)
+            {
+                /* Release buffer only if motion score is computed for current, previous and next frame */
+                if (
+                    (get_at(thread_data->motion_score_compute_flag_array, i)) &&
+                    (get_at(thread_data->motion_score_compute_flag_array, i + 1)) &&
+                    ((i == 0) || (get_at(thread_data->motion_score_compute_flag_array, i - 1)))
+                    )
+                {
+                    release_blur_buf_slot(&thread_data->blur_buf_array, i);
+                }
+            }
+        }
+
+        /* If this is the last frame then release any subsequent slots */
+        if (!next_frame_read)
+        {
+            release_blur_buf_slot(&thread_data->ref_buf_array, frm_idx + 1);
+            release_blur_buf_slot(&thread_data->dis_buf_array, frm_idx + 1);
+            release_blur_buf_slot(&thread_data->blur_buf_array, frm_idx);
+        }
+
+        if (!next_frame_read)
+        {
+            thread_data->stop_threads = 1;
+            goto fail_or_end;
+        }
+
+    }
+
+fail_or_end:
+
+    aligned_free(temp_buf);
+
+    aligned_free(integer_ref_buf);
+    aligned_free(integer_dis_buf);
+    aligned_free(integer_prev_blur_buf);
+    aligned_free(integer_next_ref_buf);
+    aligned_free(integer_next_dis_buf);
+    aligned_free(integer_next_blur_buf);
+    aligned_free(integer_blur_buf);
+    aligned_free(integer_temp_buf);
+
+    // when one thread ends we signal all other threads to also stop
+    thread_data->stop_threads = 1;
+    thread_data->ret = ret;
+    pthread_exit(&ret);
+    thread_data->ret = ret;
+
 }

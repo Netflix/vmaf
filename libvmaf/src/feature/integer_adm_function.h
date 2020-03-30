@@ -16,24 +16,6 @@
  *
  */
 
-#pragma once
-
-#ifndef MOTION_TOOLS_H_
-#define MOTION_TOOLS_H_
-
-static const float FILTER_5_s[5] = {
-        0.054488685,
-        0.244201342,
-        0.402619947,
-        0.244201342,
-        0.054488685};
-
-/**
- * INTEGER_FILTER_5_s[i] = round(FILTER_5_s[i] * 2^16)
-*/        
-static const uint16_t INTEGER_FILTER_5_s[5] = {
-
-       3571, 16004, 26386, 16004, 3571
-};
-
-#endif /* MOTION_TOOLS_H_ */
+int integer_compute_adm(const int16_t *ref, const int16_t *dis, int w, int h,
+    int ref_stride, int dis_stride, double *score, double *score_num,
+    double *score_den, double *scores, double border_factor, int inp_size_bits);

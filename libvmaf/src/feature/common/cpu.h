@@ -27,6 +27,12 @@ enum vmaf_cpu {
 	VMAF_CPU_AVX
 };
 
+//types of implementation
+enum vmaf_run_type {
+    VMAF_FLOAT,
+    VMAF_INTEGER,
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
