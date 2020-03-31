@@ -17,3 +17,5 @@
  */
 
 void picture_copy(float *dst, VmafPicture *src, int offset, unsigned bpc);
+
+void integer_picture_copy(int16_t *dst, VmafPicture *src, int offset, unsigned bpc);
