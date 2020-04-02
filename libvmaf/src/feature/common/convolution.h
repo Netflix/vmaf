@@ -34,7 +34,6 @@
  * dst_stride - distance between lines in dst image (pixels, not bytes)
  */
 void convolution_f32_c_s(const float *filter, int filter_width, const float *src, float *dst, float *tmp, int width, int height, int src_stride, int dst_stride);
-void integer_convolution_f32_c_s(const uint16_t *filter, int filter_width, const int16_t *src, int16_t *dst, int16_t *tmp, int width, int height, int src_stride, int dst_stride, int inp_size_bits);
 
 void convolution_f32_avx_s(const float *filter, int filter_width, const float *src, float *dst, float *tmp, int width, int height, int src_stride, int dst_stride);
 

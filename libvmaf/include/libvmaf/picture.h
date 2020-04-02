@@ -36,7 +36,9 @@ typedef struct {
     unsigned bpc;
     unsigned w[3], h[3];
     ptrdiff_t stride[3];
+    ptrdiff_t offset_stride[3];
     pixel *data[3];
+    int16_t *offset_data[3];  //offseted frame data
     atomic_int *ref_cnt;
 } VmafPicture;
 

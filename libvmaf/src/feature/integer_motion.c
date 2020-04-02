@@ -20,18 +20,13 @@
 #include <math.h>
 #include <string.h>
 
-#include "common/convolution.h"
 #include "feature_collector.h"
 #include "feature_extractor.h"
 #include "mem.h"
 #include "integer_motion_function.h"
-#include "motion_tools.h"
-
-#include "picture_copy.h"
 
 typedef struct Integer_MotionState {
     size_t integer_stride;
-    int16_t *ref;
     int16_t *tmp;
     int16_t *blur[3];
     unsigned index;
@@ -44,19 +39,17 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     Integer_MotionState *s = fex->priv;
 
     s->integer_stride = sizeof(int16_t) * w;
-    s->ref = aligned_malloc(s->integer_stride * h, 32);
     s->tmp = aligned_malloc(s->integer_stride * h, 32);
     s->blur[0] = aligned_malloc(s->integer_stride * h, 32);
     s->blur[1] = aligned_malloc(s->integer_stride * h, 32);
     s->blur[2] = aligned_malloc(s->integer_stride * h, 32);
-    if (!s->ref || !s->tmp || !s->blur[0] || !s->blur[1] || !s->blur[2])
+    if (!s->tmp || !s->blur[0] || !s->blur[1] || !s->blur[2])
         goto fail;
 
     s->score = 0;
     return 0;
 
 fail:
-    if (s->ref) aligned_free(s->ref);
     if (s->blur[0]) aligned_free(s->blur[0]);
     if (s->blur[1]) aligned_free(s->blur[1]);
     if (s->blur[2]) aligned_free(s->blur[2]);
@@ -87,11 +80,10 @@ static int extract(VmafFeatureExtractor *fex,
     unsigned blur_idx_1 = (index + 1) % 3;
     unsigned blur_idx_2 = (index + 2) % 3;
 
-    integer_picture_copy(s->ref, ref_pic, 0 - (1<<(ref_pic->bpc - 1)), ref_pic->bpc);
-    integer_convolution_f32_c_s(INTEGER_FILTER_5_s, 5, s->ref, s->blur[blur_idx_0], s->tmp,
+    integer_convolution_f32_c_s(INTEGER_FILTER_5_s, 5, ref_pic->offset_data[0], s->blur[blur_idx_0], s->tmp,
                         ref_pic->w[0], ref_pic->h[0],
-                        s->integer_stride / sizeof(int16_t),
-                        s->integer_stride / sizeof(int16_t), ref_pic->bpc);
+                        ref_pic->offset_stride[0] / sizeof(int16_t),
+                        dist_pic->offset_stride[0] / sizeof(int16_t), ref_pic->bpc);
 
     if (index == 0)
         return vmaf_feature_collector_append(feature_collector,
@@ -99,10 +91,10 @@ static int extract(VmafFeatureExtractor *fex,
                                              0., index);
 
     double score;
-    //the stride pass to integer_compute_motion is in multiple of sizeof(float)
+    //the stride pass to integer_compute_motion is in multiple of sizeof(int16_t)
     err = integer_compute_motion(s->blur[blur_idx_2], s->blur[blur_idx_0],
                          ref_pic->w[0], ref_pic->h[0],
-                         (s->integer_stride) * 2, (s->integer_stride) * 2, &score);
+                         s->integer_stride, s->integer_stride, &score);
     if (err) return err;
     s->score = score;
 
@@ -110,10 +102,10 @@ static int extract(VmafFeatureExtractor *fex,
         return 0;
     
     double score2;
-    //the stride pass to integer_compute_motion is in multiple of sizeof(float)
+    //the stride pass to integer_compute_motion is in multiple of sizeof(int16_t)
     err = integer_compute_motion(s->blur[blur_idx_2], s->blur[blur_idx_1],
                          ref_pic->w[0], ref_pic->h[0],
-                         (s->integer_stride) * 2, (s->integer_stride) * 2, &score2);
+                         s->integer_stride, s->integer_stride, &score2);
     if (err) return err;
     score2 = score2 < score ? score2 : score;
     err = vmaf_feature_collector_append(feature_collector,
@@ -128,7 +120,6 @@ static int close(VmafFeatureExtractor *fex)
 {
     Integer_MotionState *s = fex->priv;
 
-    if (s->ref) aligned_free(s->ref);
     if (s->blur[0]) aligned_free(s->blur[0]);
     if (s->blur[1]) aligned_free(s->blur[1]);
     if (s->blur[2]) aligned_free(s->blur[2]);

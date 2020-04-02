@@ -16,4 +16,14 @@
  *
  */
 
+/**
+ * INTEGER_FILTER_5_s[i] = round(FILTER_5_s[i] * 2^16)
+ */
+static const uint16_t INTEGER_FILTER_5_s[5] = {
+
+       3571, 16004, 26386, 16004, 3571
+};
+
+void integer_convolution_f32_c_s(const uint16_t *filter, int filter_width, const int16_t *src, int16_t *dst, int16_t *tmp, int width, int height, int src_stride, int dst_stride, int inp_size_bits);
+
 int integer_compute_motion(const int16_t *ref, const int16_t *dis, int w, int h, int ref_stride, int dis_stride, double *score);

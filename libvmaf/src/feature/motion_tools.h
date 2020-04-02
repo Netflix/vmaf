@@ -28,12 +28,4 @@ static const float FILTER_5_s[5] = {
         0.244201342,
         0.054488685};
 
-/**
- * INTEGER_FILTER_5_s[i] = round(FILTER_5_s[i] * 2^16)
-*/        
-static const uint16_t INTEGER_FILTER_5_s[5] = {
-
-       3571, 16004, 26386, 16004, 3571
-};
-
 #endif /* MOTION_TOOLS_H_ */

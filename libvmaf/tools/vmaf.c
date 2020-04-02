@@ -66,6 +66,7 @@ static int validate_videos(video_input *vid1, video_input *vid2)
 static int fetch_picture(video_input *vid, VmafPicture *pic)
 {
     int ret;
+    int offset_value;
     video_input_ycbcr ycbcr;
     video_input_info info;
 
@@ -84,6 +85,8 @@ static int fetch_picture(video_input *vid, VmafPicture *pic)
     assert(pic->w[1] == ycbcr[1].width);
     assert(pic->w[2] == ycbcr[2].width);
 
+    offset_value = (1 << (info.depth - 1)); //value needed to be offseted for input pixels
+
     if (info.depth == 8) {
         for (unsigned i = 0; i < 3; i++) {
             int xdec = i&&!(info.pixel_fmt&1);
@@ -99,6 +102,18 @@ static int fetch_picture(video_input *vid, VmafPicture *pic)
                 memcpy(pic_data, ycbcr_data, sizeof(*pic_data) * pic->w[i]);
                 pic_data += pic->stride[i];
                 ycbcr_data += ycbcr[i].stride;
+            }
+
+            //copy and offset data
+            int16_t *integer_data = pic->offset_data[i];
+            uint8_t *data = pic->data[i];
+
+            for (unsigned k = 0; k < pic->h[i]; k++) {
+                for (unsigned j = 0; j < pic->w[i]; j++) {
+                    integer_data[j] = (int16_t)data[j] - offset_value;
+                }
+                integer_data += pic->w[i];
+                data += pic->stride[i];
             }
         }
     } else {
@@ -116,6 +131,18 @@ static int fetch_picture(video_input *vid, VmafPicture *pic)
                 memcpy(pic_data, ycbcr_data, sizeof(*pic_data) * pic->w[i]);
                 pic_data += pic->stride[i] / 2;
                 ycbcr_data += ycbcr[i].stride / 2;
+            }
+
+            //copy and offset data for HBD
+            int16_t *integer_data = pic->offset_data[i];
+            uint16_t *data = pic->data[i];
+
+            for (unsigned k = 0; k < pic->h[i]; k++) {
+                for (unsigned j = 0; j < pic->w[i]; j++) {
+                    integer_data[j] = (int16_t)data[j] - offset_value;
+                }
+                integer_data += pic->w[i];
+                data += pic->stride[i] / 2;
             }
         }
     }
