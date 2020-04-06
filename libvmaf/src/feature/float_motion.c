@@ -70,7 +70,7 @@ static int flush(VmafFeatureExtractor *fex,
 {
     MotionState *s = fex->priv;
     int ret = vmaf_feature_collector_append(feature_collector,
-                                            "'VMAF_feature_motion2_score'",
+                                            "'VMAF_feature_motion3_score'",
                                             s->score, s->index);
     return (ret < 0) ? ret : !ret;
 }
@@ -94,9 +94,7 @@ static int extract(VmafFeatureExtractor *fex,
                         s->float_stride / sizeof(float));
 
     if (index == 0)
-        return vmaf_feature_collector_append(feature_collector,
-                                             "'VMAF_feature_motion2_score'",
-                                             0., index);
+        return 0;
 
     double score;
     err = compute_motion(s->blur[blur_idx_2], s->blur[blur_idx_0],
@@ -106,8 +104,10 @@ static int extract(VmafFeatureExtractor *fex,
     s->score = score;
 
     if (index == 1)
-        return 0;
-    
+        return vmaf_feature_collector_append(feature_collector,
+                                             "'VMAF_feature_motion3_score'",
+                                             score, index - 1);
+
     double score2;
     err = compute_motion(s->blur[blur_idx_2], s->blur[blur_idx_1],
                          ref_pic->w[0], ref_pic->h[0],
@@ -115,7 +115,7 @@ static int extract(VmafFeatureExtractor *fex,
     if (err) return err;
     score2 = score2 < score ? score2 : score;
     err = vmaf_feature_collector_append(feature_collector,
-                                        "'VMAF_feature_motion2_score'",
+                                        "'VMAF_feature_motion3_score'",
                                         score2, index - 1);
     if (err) return err;
 
@@ -135,7 +135,7 @@ static int close(VmafFeatureExtractor *fex)
 }
 
 static const char *provided_features[] = {
-    "'VMAF_feature_motion2_score'",
+    "'VMAF_feature_motion3_score'",
     NULL
 };
 
@@ -149,3 +149,4 @@ VmafFeatureExtractor vmaf_fex_float_motion = {
     .provided_features = provided_features,
     .flags = VMAF_FEATURE_EXTRACTOR_TEMPORAL,
 };
+
