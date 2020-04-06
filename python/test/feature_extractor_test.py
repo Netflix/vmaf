@@ -49,7 +49,7 @@ class FeatureExtractorTest(unittest.TestCase):
 
         self.fextractor = VmafFeatureExtractor(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             result_store=None
         )
         self.fextractor.run()

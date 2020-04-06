@@ -114,27 +114,16 @@ class VmafFeatureExtractor(FeatureExtractor):
     # VERSION = '0.2.3'  # AVX for VMAF convolution; update adm features by folding noise floor into per coef
     # VERSION = '0.2.4'  # Fix a bug in adm feature passing scale into dwt_quant_step
     # VERSION = '0.2.4b'  # Modify by adding ADM noise floor outside cube root; add derived feature motion2
-    VERSION = '0.2.4c'  # Modify by moving motion2 to c code
+    # VERSION = '0.2.4c'  # Modify by moving motion2 to c code
+    VERSION = '0.2.4d'  # Modify by calling vmaf_rc for features
 
-    ATOM_FEATURES = ['vif', 'adm', 'ansnr', 'motion', 'motion2',
-                     'vif_num', 'vif_den', 'adm_num', 'adm_den', 'anpsnr',
-                     'vif_num_scale0', 'vif_den_scale0',
-                     'vif_num_scale1', 'vif_den_scale1',
-                     'vif_num_scale2', 'vif_den_scale2',
-                     'vif_num_scale3', 'vif_den_scale3',
-                     'adm_num_scale0', 'adm_den_scale0',
-                     'adm_num_scale1', 'adm_den_scale1',
-                     'adm_num_scale2', 'adm_den_scale2',
-                     'adm_num_scale3', 'adm_den_scale3',
-                     ]
+    ATOM_FEATURES = [
+        'adm2', 'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
+        'motion2',
+        'vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
+    ]
 
-    DERIVED_ATOM_FEATURES = ['vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
-                             'vif2', 'adm2', 'adm3',
-                             'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
-                             ]
-
-    ADM2_CONSTANT = 0
-    ADM_SCALE_CONSTANT = 0
+    DERIVED_ATOM_FEATURES = []
 
     def _generate_result(self, asset):
         # routine to call the command-line executable and generate feature

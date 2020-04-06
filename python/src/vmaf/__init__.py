@@ -48,6 +48,25 @@ def required(path):
     return path
 
 
+def convert_pixel_format_ffmpeg2vmafrc(old_fmt):
+    assert old_fmt in ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
+    if old_fmt in ['yuv420p', 'yuv420p10le']:
+        pixel_format = '420'
+    elif old_fmt in ['yuv422p', 'yuv422p10le']:
+        pixel_format = '422'
+    elif old_fmt in ['yuv444p', 'yuv444p10le']:
+        pixel_format = '444'
+    else:
+        assert False
+    if old_fmt in ['yuv420p', 'yuv422p', 'yuv444p']:
+        bitdepth = 8
+    elif old_fmt in ['yuv420p10le', 'yuv422p10le', 'yuv444p10le']:
+        bitdepth = 10
+    else:
+        assert False
+    return pixel_format, bitdepth
+
+
 class ExternalProgram(object):
     """
     External C programs relied upon by the python vmaf code
@@ -146,18 +165,25 @@ class ExternalProgramCaller(object):
     @staticmethod
     def call_vmaf_feature(yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None):
 
-        # APPEND (>>) result (since _prepare_generate_log_file method has already created the file
-        # and written something in advance).
-        vmaf_feature_cmd = "{vmaf} all {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
-            .format(
-            vmaf=required(ExternalProgram.vmaf),
-            yuv_type=yuv_type,
-            ref_path=ref_path,
-            dis_path=dis_path,
-            w=w,
-            h=h,
-            log_file_path=log_file_path,
-        )
+        pixel_format, bitdepth = convert_pixel_format_ffmpeg2vmafrc(yuv_type)
+
+        vmaf_feature_cmd = "{exe} --reference {reference} --distorted {distorted} " \
+                           "--width {width} --height {height} " \
+                           "--pixel_format {pixel_format} --bitdepth {bitdepth} " \
+                           "--no_prediction " \
+                           "--feature float_adm " \
+                           "--feature float_motion " \
+                           "--feature float_vif " \
+                           "--output {output}" \
+            .format(exe=required(ExternalProgram.vmafrc),
+                    reference=ref_path,
+                    distorted=dis_path,
+                    width=w,
+                    height=h,
+                    pixel_format=pixel_format,
+                    bitdepth=bitdepth,
+                    output=log_file_path)
+
         if logger:
             logger.info(vmaf_feature_cmd)
         run_process(vmaf_feature_cmd, shell=True)

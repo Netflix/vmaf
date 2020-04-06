@@ -6,7 +6,7 @@ import copy
 import numpy as np
 
 from vmaf.config import VmafConfig
-from vmaf import ExternalProgramCaller
+from vmaf import ExternalProgramCaller, convert_pixel_format_ffmpeg2vmafrc
 from vmaf.core.executor import Executor
 from vmaf.core.niqe_train_test_model import NiqeTrainTestModel
 from vmaf.core.result import Result
@@ -1247,7 +1247,7 @@ class VmafrcQualityRunner(QualityRunner):
         distorted = dis_path
         width = quality_width
         height = quality_height
-        pixel_format, bitdepth = self._convert_format(fmt)
+        pixel_format, bitdepth = convert_pixel_format_ffmpeg2vmafrc(fmt)
         output = log_file_path
         exe = self._get_exec()
         logger = self.logger
@@ -1258,25 +1258,6 @@ class VmafrcQualityRunner(QualityRunner):
 
     def _get_exec(self):
         return None # signaling default
-
-    @staticmethod
-    def _convert_format(old_fmt):
-        assert old_fmt in ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
-        if old_fmt in ['yuv420p', 'yuv420p10le']:
-            pixel_format = '420'
-        elif old_fmt in ['yuv422p', 'yuv422p10le']:
-            pixel_format = '422'
-        elif old_fmt in ['yuv444p', 'yuv444p10le']:
-            pixel_format = '444'
-        else:
-            assert False
-        if old_fmt in ['yuv420p', 'yuv422p', 'yuv444p']:
-            bitdepth = 8
-        elif old_fmt in ['yuv420p10le', 'yuv422p10le', 'yuv444p10le']:
-            bitdepth = 10
-        else:
-            assert False
-        return pixel_format, bitdepth
 
     def _get_quality_scores(self, asset):
         # routine to read the quality scores from the log file, and return
