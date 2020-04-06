@@ -14,17 +14,19 @@ RUN apt-get update && \
         python3-dev \
         python3-pip \
         python3-setuptools \
+        python3-wheel \
         python3-tk \
         && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists
 
-# get and install tools for python
-RUN pip3 install --upgrade pip
-RUN pip install numpy scipy matplotlib notebook pandas sympy nose scikit-learn scikit-image h5py sureal meson
-
 # retrieve source code
 COPY . /vmaf
+
+# install python requirements
+RUN pip3 install --upgrade pip
+RUN pip3 install --no-cache-dir meson
+RUN pip3 install --no-cache-dir -r /vmaf/python/requirements.txt
 
 # setup environment
 ENV PYTHONPATH=/vmaf/python/src:/vmaf:$PYTHONPATH

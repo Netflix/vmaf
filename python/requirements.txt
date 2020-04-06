@@ -1,9 +1,9 @@
-numpy
-scipy>=0.17.1
-matplotlib>=2.0.0
-pandas>=0.19.2
-scikit-learn>=0.18.1
-scikit-image>=0.13.1
+numpy>=1.18.2
+scipy>=1.4.1
+matplotlib>=3.2.1
+pandas>=1.0.3
+scikit-learn>=0.22.2
+scikit-image>=0.16.2
 h5py>=2.6.0
-sureal>=0.1.0
+sureal>=0.4.2
 dill>=0.3.1
