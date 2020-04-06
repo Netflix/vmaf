@@ -26,7 +26,7 @@ static char *test_model_load_and_destroy()
 
     VmafModel *model;
     VmafModelConfig cfg = {
-        .path = "../../model/vmaf_v0.6.1.pkl",
+        .path = "../../model/vmaf_v0.6.2.pkl",
     };
     err = vmaf_model_load_from_path(&model, &cfg);
     mu_assert("problem during vmaf_model_load_from_path", !err);
@@ -51,7 +51,7 @@ static char *test_model_check_default_behavior_unset_flags()
 
     VmafModel *model;
     VmafModelConfig cfg = {
-        .path = "../../model/vmaf_v0.6.1.pkl",
+        .path = "../../model/vmaf_v0.6.2.pkl",
         .name = "some_vmaf",
     };
     err = vmaf_model_load_from_path(&model, &cfg);
@@ -73,7 +73,7 @@ static char *test_model_check_default_behavior_set_flags()
 
     VmafModel *model;
     VmafModelConfig cfg = {
-        .path = "../../model/vmaf_v0.6.1.pkl",
+        .path = "../../model/vmaf_v0.6.2.pkl",
         .name = "some_vmaf",
         .flags = VMAF_MODEL_FLAGS_DEFAULT,
     };
@@ -96,7 +96,7 @@ static char *test_model_set_flags()
 
     VmafModel *model1;
     VmafModelConfig cfg1 = {
-        .path = "../../model/vmaf_v0.6.1.pkl",
+        .path = "../../model/vmaf_v0.6.2.pkl",
         .flags = VMAF_MODEL_FLAG_ENABLE_TRANSFORM,
     };
     err = vmaf_model_load_from_path(&model1, &cfg1);
@@ -109,7 +109,7 @@ static char *test_model_set_flags()
 
     VmafModel *model2;
     VmafModelConfig cfg2 = {
-        .path = "../../model/vmaf_v0.6.1.pkl",
+        .path = "../../model/vmaf_v0.6.2.pkl",
         .flags = VMAF_MODEL_FLAG_DISABLE_CLIP,
     };
     err = vmaf_model_load_from_path(&model2, &cfg2);

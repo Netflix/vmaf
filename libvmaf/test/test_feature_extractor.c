@@ -106,17 +106,17 @@ static char *test_feature_extractor_flush()
     double score;
     err = vmaf_feature_extractor_context_extract(fex_ctx, &ref, &dist, 0, vfc);
     mu_assert("problem during vmaf_feature_extractor_context_extract", !err);
-    err = vmaf_feature_collector_get_score(vfc, "'VMAF_feature_motion2_score'",
+    err = vmaf_feature_collector_get_score(vfc, "'VMAF_feature_motion3_score'",
                                            &score, 0);
     mu_assert("problem during vmaf_feature_collector_get_score", !err);
     err = vmaf_feature_extractor_context_extract(fex_ctx, &ref, &dist, 1, vfc);
     mu_assert("problem during vmaf_feature_extractor_context_extract", !err);
-    err = vmaf_feature_collector_get_score(vfc, "'VMAF_feature_motion2_score'",
+    err = vmaf_feature_collector_get_score(vfc, "'VMAF_feature_motion3_score'",
                                            &score, 0);
     mu_assert("problem during vmaf_feature_extractor_context_flush", !err);
     err = vmaf_feature_extractor_context_flush(fex_ctx, vfc);
     mu_assert("problem during vmaf_feature_extractor_context_flush", !err);
-    err = vmaf_feature_collector_get_score(vfc, "'VMAF_feature_motion2_score'",
+    err = vmaf_feature_collector_get_score(vfc, "'VMAF_feature_motion3_score'",
                                            &score, 1);
     mu_assert("problem during vmaf_feature_collector_get_score", !err);
 

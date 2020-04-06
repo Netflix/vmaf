@@ -33,7 +33,7 @@ static char *test_predict_score_at_index()
 
     VmafModel *model;
     VmafModelConfig cfg = {
-        .path = "../../model/vmaf_v0.6.1.pkl",
+        .path = "../../model/vmaf_v0.6.2.pkl",
         .name = "vmaf",
         .flags = VMAF_MODEL_FLAGS_DEFAULT,
     };
