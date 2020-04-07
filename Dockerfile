@@ -30,9 +30,9 @@ RUN pip3 install --no-cache-dir -r /vmaf/python/requirements.txt
 
 # setup environment
 ENV PYTHONPATH=/vmaf/python/src:/vmaf:$PYTHONPATH
-ENV PATH=/vmaf:/vmaf/src/libvmaf:$PATH
+ENV PATH=/vmaf:/vmaf/libvmaf/build/tools:$PATH
 
 # make vmaf
-RUN cd /vmaf && make
+RUN cd /vmaf && make clean && make
 
 WORKDIR /root/
