@@ -26,13 +26,14 @@ COPY . /vmaf
 # install python requirements
 RUN pip3 install --upgrade pip
 RUN pip3 install --no-cache-dir meson
-RUN pip3 install --no-cache-dir -r /vmaf/python/requirements.txt
 
 # setup environment
-ENV PYTHONPATH=/vmaf/python/src:/vmaf:$PYTHONPATH
 ENV PATH=/vmaf:/vmaf/libvmaf/build/tools:$PATH
 
 # make vmaf
 RUN cd /vmaf && make clean && make
+
+# install python tools
+RUN pip3 install --no-cache-dir /vmaf/python
 
 WORKDIR /root/

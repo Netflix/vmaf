@@ -6,7 +6,7 @@ __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
 PYTHON_ROOT = os.path.dirname(os.path.realpath(__file__))
-ROOT = os.path.abspath(os.path.join(PYTHON_ROOT, '..', '..', '..',))
+ROOT = os.path.abspath(os.path.join(PYTHON_ROOT, '..', '..',))
 
 
 class VmafExternalConfig(object):
@@ -175,7 +175,7 @@ class VmafConfig(object):
 
     @classmethod
     def tools_resource_path(cls, *components):
-        return cls.root_path('python', 'src', 'vmaf', 'tools', 'resource', *components)
+        return cls.root_path('python', 'vmaf', 'tools', 'resource', *components)
 
     @classmethod
     def encode_path(cls, *components):

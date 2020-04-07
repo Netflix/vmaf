@@ -27,7 +27,7 @@ class CommandLineTest(unittest.TestCase):
             os.remove(self.batch_filename)
 
     def test_run_ffmpeg2vmaf(self):
-        exe = VmafConfig.root_path('ffmpeg2vmaf')
+        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'ffmpeg2vmaf.py')
         line = '576 324 {root}/python/test/resource/mp4/Seeking_30_480_1050.mp4 ' \
                '{root}/python/test/resource/mp4/Seeking_10_288_375.mp4'.format(root=VmafConfig.root_path())
         cmd = "{exe} {line} >/dev/null 2>&1".format(line=line, exe=exe)
@@ -35,7 +35,7 @@ class CommandLineTest(unittest.TestCase):
         self.assertEqual(ret, 0)
 
     def test_run_ffmpeg2vmaf_ci(self):
-        exe = VmafConfig.root_path('ffmpeg2vmaf')
+        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'ffmpeg2vmaf.py')
         line = '576 324 {root}/python/test/resource/mp4/Seeking_30_480_1050.mp4 ' \
                '{root}/python/test/resource/mp4/Seeking_10_288_375.mp4'.format(root=VmafConfig.root_path())
         cmd = "{exe} {line} --ci >/dev/null 2>&1".format(line=line, exe=exe)
@@ -43,7 +43,7 @@ class CommandLineTest(unittest.TestCase):
         self.assertEqual(ret, 0)
 
     def test_run_ffmpeg2vmaf_ci_and_local_explain(self):
-        exe = VmafConfig.root_path('ffmpeg2vmaf')
+        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'ffmpeg2vmaf.py')
         line = '576 324 {root}/python/test/resource/mp4/Seeking_30_480_1050.mp4 ' \
                '{root}/python/test/resource/mp4/Seeking_10_288_375.mp4'.format(root=VmafConfig.root_path())
         cmd = "{exe} {line} --ci --local-explain >/dev/null 2>&1".format(line=line, exe=exe)

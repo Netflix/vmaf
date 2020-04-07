@@ -35,10 +35,3 @@ python3 -mvenv .venv
 ```
 
 Expect all tests pass.
-
-You can alternatively use python2 (not recommended), by changing the 2nd line above to this,
-but you will need to install `virtualenv` module yourself:
-
-```
-python2 -mvirtualenv .venv
-```

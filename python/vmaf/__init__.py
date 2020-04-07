@@ -3,7 +3,7 @@ import subprocess
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
-
+__version__ = "1.5.1"
 
 try:
     from matplotlib import pyplot as plt
@@ -26,7 +26,7 @@ VMAF_LIB_FOLDER = os.path.dirname(os.path.abspath(__file__))
 
 
 # Assuming vmaf source checkout, path to top checked out folder
-VMAF_PROJECT = os.path.abspath(os.path.join(VMAF_LIB_FOLDER, '../../..',))
+VMAF_PROJECT = os.path.abspath(os.path.join(VMAF_LIB_FOLDER, '../..',))
 
 
 def run_process(cmd, **kwargs):
