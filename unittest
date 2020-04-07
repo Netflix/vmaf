@@ -5,5 +5,5 @@
 
 #echo "Run tests in python/test..."
 cd python
-PYTHONPATH=src python3 -m unittest discover -t . -s test -p '*_test.py'
+PYTHONPATH=src python3 -m unittest discover -v -t . -s test -p '*_test.py'
 cd ..
