@@ -10,14 +10,12 @@
 
 char *generate_model_name(VmafModelConfig *cfg) {
 
-    char *clip_phrase = "_clip_disabled";
-    char *transform_phrase = "_score_transform_enabled";
+    char *default_name = "vmaf";
     size_t name_sz;
     char *name;
 
     if (!cfg->name) {
-        name_sz = strlen(cfg->path) + strlen(clip_phrase) +
-            strlen(transform_phrase) + 1 * sizeof(char);
+        name_sz = strlen(default_name) + 1 * sizeof(char);
     } else {
         name_sz = strlen(cfg->name) + 1 * sizeof(char);
     }
@@ -30,13 +28,7 @@ char *generate_model_name(VmafModelConfig *cfg) {
 
     /* if there is no name, create a default one */
     if (!cfg->name) {
-        strncat(name, cfg->path, strlen(cfg->path));
-        if (cfg->flags && (cfg->flags & VMAF_MODEL_FLAG_DISABLE_CLIP)) {
-            strncat(name, clip_phrase, strlen(clip_phrase));
-        }
-        if (cfg->flags && (cfg->flags & VMAF_MODEL_FLAG_ENABLE_TRANSFORM)) {
-            strncat(name, transform_phrase, strlen(transform_phrase));
-        }
+        strcpy(name, default_name);
     } else {
         strcpy(name, cfg->name);
     }
