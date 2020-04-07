@@ -29,8 +29,6 @@ class VmafExternalConfig(object):
                 return path
 
         except ImportError:
-            print('ImportError')
-
             pass
 
         return None
