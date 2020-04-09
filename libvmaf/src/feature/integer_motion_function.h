@@ -24,6 +24,8 @@ static const uint16_t INTEGER_FILTER_5_s[5] = {
        3571, 16004, 26386, 16004, 3571
 };
 
-void integer_convolution_f32_c_s(const uint16_t *filter, int filter_width, const int16_t *src, int16_t *dst, int16_t *tmp, int width, int height, int src_stride, int dst_stride, int inp_size_bits);
+void integer_convolution_8(const uint16_t *filter, int filter_width, const uint8_t *src, uint16_t *dst, uint16_t *tmp, int width, int height, int src_stride, int dst_stride, int inp_size_bits);
 
-int integer_compute_motion(const int16_t *ref, const int16_t *dis, int w, int h, int ref_stride, int dis_stride, double *score);
+void integer_convolution_16(const uint16_t *filter, int filter_width, const uint16_t *src, uint16_t *dst, uint16_t *tmp, int width, int height, int src_stride, int dst_stride, int inp_size_bits);
+
+int integer_compute_motion(const uint16_t *ref, const uint16_t *dis, int w, int h, int ref_stride, int dis_stride, double *score);

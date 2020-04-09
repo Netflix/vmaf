@@ -35,22 +35,6 @@ void picture_copy_hbd(float *dst, VmafPicture *src, int offset)
     return;
 }
 
-//similar to picture_copy_hbd but for integer
-void integer_picture_copy_hbd(int16_t *dst, VmafPicture *src, int offset)
-{
-    int16_t *integer_data = dst;
-    uint16_t *data = src->data[0];
-
-    for (unsigned i = 0; i < src->h[0]; i++) {
-        for (unsigned j = 0; j < src->w[0]; j++) {
-            integer_data[j] = (int16_t)data[j] + offset;
-        }
-        integer_data += src->w[0];
-        data += src->stride[0] / 2;
-    }
-    return;
-}
-
 void picture_copy(float *dst, VmafPicture *src, int offset, unsigned bpc)
 {
     if (bpc > 8)
@@ -64,26 +48,6 @@ void picture_copy(float *dst, VmafPicture *src, int offset, unsigned bpc)
             float_data[j] = (float) data[j] + offset;
         }
         float_data += src->w[0];
-        data += src->stride[0];
-    }
-
-    return;
-}
-
-//similar to picture_copy but for integer
-void integer_picture_copy(int16_t *dst, VmafPicture *src, int offset, unsigned bpc)
-{
-    if (bpc > 8)
-        return integer_picture_copy_hbd(dst, src, offset);
-
-    int16_t *integer_data = dst;
-    uint8_t *data = src->data[0];
-
-    for (unsigned i = 0; i < src->h[0]; i++) {
-        for (unsigned j = 0; j < src->w[0]; j++) {
-            integer_data[j] = (int16_t)data[j] + offset;
-        }
-        integer_data += src->w[0];
         data += src->stride[0];
     }
 

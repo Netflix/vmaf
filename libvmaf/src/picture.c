@@ -58,22 +58,6 @@ int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
     pic->data[1] = data + y_sz;
     pic->data[2] = data + y_sz + uv_sz;
 
-    //offset data memory allocation
-    //the offset data buffer is in int16_t format to handle all bitdepth 8,10,12...
-    pic->offset_stride[0] = pic->w[0] * sizeof(int16_t);
-    pic->offset_stride[1] = pic->offset_stride[2] = pic->w[1] * sizeof(int16_t);
-    const size_t offset_y_sz = pic->offset_stride[0] * pic->h[0];
-    const size_t offset_uv_sz = pic->offset_stride[1] * pic->h[1];
-    const size_t offset_pic_size = offset_y_sz + 2 * offset_uv_sz;
-
-    uint8_t *offset_data_pointer = aligned_malloc(offset_pic_size, DATA_ALIGN);
-    if (!offset_data_pointer) goto fail_offset;
-    memset(offset_data_pointer, 0, sizeof(*offset_data_pointer));
-
-    pic->offset_data[0] = offset_data_pointer;
-    pic->offset_data[1] = offset_data_pointer + offset_y_sz;
-    pic->offset_data[2] = offset_data_pointer + offset_y_sz + offset_uv_sz;
-
     pic->ref_cnt = malloc(sizeof(*pic->ref_cnt));
     if (!pic->ref_cnt) goto free_data;
 
@@ -82,12 +66,6 @@ int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
 
 free_data:
     free(data);
-    data = NULL;
-    free(offset_data_pointer);
-    offset_data_pointer = NULL;
-fail_offset:
-    if(data!=NULL)
-        free(data);
 fail:
     return -ENOMEM;
 }
@@ -107,7 +85,6 @@ int vmaf_picture_unref(VmafPicture *pic) {
     atomic_fetch_sub(pic->ref_cnt, 1);
     if (atomic_load(pic->ref_cnt) == 0) {
         aligned_free(pic->data[0]);
-        aligned_free(pic->offset_data[0]);
         free(pic->ref_cnt);
     }
     memset(pic, 0, sizeof(*pic));
