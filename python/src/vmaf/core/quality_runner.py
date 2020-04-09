@@ -16,6 +16,7 @@ from vmaf.core.train_test_model import TrainTestModel, LibsvmNusvrTrainTestModel
 from vmaf.core.feature_extractor import SsimFeatureExtractor, MsSsimFeatureExtractor, \
     VmafFeatureExtractor, PsnrFeatureExtractor
 from vmaf.core.noref_feature_extractor import BrisqueNorefFeatureExtractor
+from vmaf.tools.decorator import override
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
@@ -145,9 +146,11 @@ class PsnrQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
     TYPE = 'PSNR'
     VERSION = '1.0'
 
+    @override(QualityRunnerFromFeatureExtractor)
     def _get_feature_extractor_class(self):
         return PsnrFeatureExtractor
 
+    @override(QualityRunnerFromFeatureExtractor)
     def _get_feature_key_for_score(self):
         return 'psnr'
 
@@ -762,9 +765,11 @@ class SsimQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
     TYPE = 'SSIM'
     VERSION = '1.0'
 
+    @override(QualityRunnerFromFeatureExtractor)
     def _get_feature_extractor_class(self):
         return SsimFeatureExtractor
 
+    @override(QualityRunnerFromFeatureExtractor)
     def _get_feature_key_for_score(self):
         return 'ssim'
 
@@ -774,9 +779,11 @@ class MsSsimQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
     TYPE = 'MS_SSIM'
     VERSION = '1.0'
 
+    @override(QualityRunnerFromFeatureExtractor)
     def _get_feature_extractor_class(self):
         return MsSsimFeatureExtractor
 
+    @override(QualityRunnerFromFeatureExtractor)
     def _get_feature_key_for_score(self):
         return 'ms_ssim'
 
