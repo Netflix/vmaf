@@ -181,6 +181,7 @@ class VmafConfig(object):
     def encode_path(cls, *components):
         return cls.root_path('workspace', 'encode', *components)
 
+
 class DisplayConfig(object):
 
     @staticmethod

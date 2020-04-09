@@ -54,13 +54,23 @@ class ExternalProgram(object):
     These external programs should be compiled before vmaf is ran, as per instructions in README
     """
 
-    external_psnr = config.VmafExternalConfig.psnr_path()
-    external_moment = config.VmafExternalConfig.moment_path()
-    external_ssim = config.VmafExternalConfig.ssim_path()
-    external_ms_ssim = config.VmafExternalConfig.ms_ssim_path()
-    external_vmaf = config.VmafExternalConfig.vmaf_path()
-    external_vmafossexec = config.VmafExternalConfig.vmafossexec_path()
-    external_vmafrc = config.VmafExternalConfig.vmafrc_path()
+    try:
+        from . import externals
+        external_psnr = config.VmafExternalConfig.psnr_path()
+        external_moment = config.VmafExternalConfig.moment_path()
+        external_ssim = config.VmafExternalConfig.ssim_path()
+        external_ms_ssim = config.VmafExternalConfig.ms_ssim_path()
+        external_vmaf = config.VmafExternalConfig.vmaf_path()
+        external_vmafossexec = config.VmafExternalConfig.vmafossexec_path()
+        external_vmafrc = config.VmafExternalConfig.vmafrc_path()
+    except ImportError:
+        external_psnr = None
+        external_moment = None
+        external_ssim = None
+        external_ms_ssim = None
+        external_vmaf = None
+        external_vmafossexec = None
+        external_vmafrc = None
 
     psnr = project_path(os.path.join("libvmaf", "build", "tools", "psnr")) if external_psnr is None else external_psnr
     moment = project_path(os.path.join("libvmaf", "build", "tools", "moment")) if external_moment is None else external_moment
