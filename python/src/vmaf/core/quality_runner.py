@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, ABC
 import re
 from xml.etree import ElementTree
 import copy
@@ -82,10 +82,17 @@ class QualityRunner(Executor):
         return cls.TYPE + '_score'
 
 
-class PsnrQualityRunner(QualityRunner):
+class QualityRunnerFromFeatureExtractor(QualityRunner):
 
-    TYPE = 'PSNR'
-    VERSION = '1.0'
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def _get_feature_extractor_class(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def _get_feature_key_for_score(self):
+        raise NotImplementedError
 
     def _get_quality_scores(self, asset):
         raise NotImplementedError
@@ -95,7 +102,9 @@ class PsnrQualityRunner(QualityRunner):
 
     def _get_feature_assembler_instance(self, asset):
 
-        feature_dict = {PsnrFeatureExtractor.TYPE: PsnrFeatureExtractor.ATOM_FEATURES}
+        feature_dict = {self._get_feature_extractor_class().TYPE:
+                            self._get_feature_extractor_class().ATOM_FEATURES +
+                            getattr(self._get_feature_extractor_class(), 'DERIVED_ATOM_FEATURES', [])}
 
         feature_assembler = FeatureAssembler(
             feature_dict=feature_dict,
@@ -119,8 +128,8 @@ class PsnrQualityRunner(QualityRunner):
         result_dict = {}
         result_dict.update(feature_result.result_dict.copy()) # add feature result
         result_dict[self.get_scores_key()] = feature_result.result_dict[
-            PsnrFeatureExtractor.get_scores_key('psnr')] # add psnr score
-        del result_dict[PsnrFeatureExtractor.get_scores_key('psnr')] # delete redundant
+            self._get_feature_extractor_class().get_scores_key(self._get_feature_key_for_score())] # add score
+        del result_dict[self._get_feature_extractor_class().get_scores_key(self._get_feature_key_for_score())] # delete redundant
         return Result(asset, self.executor_id, result_dict)
 
     def _remove_result(self, asset):
@@ -129,6 +138,18 @@ class PsnrQualityRunner(QualityRunner):
 
         vmaf_fassembler = self._get_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
+
+
+class PsnrQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
+
+    TYPE = 'PSNR'
+    VERSION = '1.0'
+
+    def _get_feature_extractor_class(self):
+        return PsnrFeatureExtractor
+
+    def _get_feature_key_for_score(self):
+        return 'psnr'
 
 
 class VmafLegacyQualityRunner(QualityRunner):
@@ -736,102 +757,28 @@ class VmafossExecQualityRunner(QualityRunner):
         return quality_result
 
 
-class SsimQualityRunner(QualityRunner):
+class SsimQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
 
     TYPE = 'SSIM'
     VERSION = '1.0'
 
-    def _get_quality_scores(self, asset):
-        raise NotImplementedError
+    def _get_feature_extractor_class(self):
+        return SsimFeatureExtractor
 
-    def _generate_result(self, asset):
-        raise NotImplementedError
-
-    def _get_feature_assembler_instance(self, asset):
-
-        feature_dict = {SsimFeatureExtractor.TYPE: SsimFeatureExtractor.ATOM_FEATURES}
-
-        feature_assembler = FeatureAssembler(
-            feature_dict=feature_dict,
-            feature_option_dict=None,
-            assets=[asset],
-            logger=self.logger,
-            fifo_mode=self.fifo_mode,
-            delete_workdir=self.delete_workdir,
-            result_store=self.result_store,
-            optional_dict=None,
-            optional_dict2=None,
-            parallelize=False, # parallelization already in a higher level
-        )
-        return feature_assembler
-
-    def _run_on_asset(self, asset):
-        # Override Executor._run_on_asset(self, asset)
-        vmaf_fassembler = self._get_feature_assembler_instance(asset)
-        vmaf_fassembler.run()
-        feature_result = vmaf_fassembler.results[0]
-        result_dict = {}
-        result_dict.update(feature_result.result_dict.copy()) # add feature result
-        result_dict[self.get_scores_key()] = feature_result.result_dict[
-            SsimFeatureExtractor.get_scores_key('ssim')] # add ssim score
-        del result_dict[SsimFeatureExtractor.get_scores_key('ssim')] # delete redundant
-        return Result(asset, self.executor_id, result_dict)
-
-    def _remove_result(self, asset):
-        # Override Executor._remove_result(self, asset) by redirecting it to the
-        # FeatureAssembler.
-
-        vmaf_fassembler = self._get_feature_assembler_instance(asset)
-        vmaf_fassembler.remove_results()
+    def _get_feature_key_for_score(self):
+        return 'ssim'
 
 
-class MsSsimQualityRunner(QualityRunner):
+class MsSsimQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
 
     TYPE = 'MS_SSIM'
     VERSION = '1.0'
 
-    def _get_quality_scores(self, asset):
-        raise NotImplementedError
+    def _get_feature_extractor_class(self):
+        return MsSsimFeatureExtractor
 
-    def _generate_result(self, asset):
-        raise NotImplementedError
-
-    def _get_feature_assembler_instance(self, asset):
-
-        feature_dict = {MsSsimFeatureExtractor.TYPE: MsSsimFeatureExtractor.ATOM_FEATURES}
-
-        feature_assembler = FeatureAssembler(
-            feature_dict=feature_dict,
-            feature_option_dict=None,
-            assets=[asset],
-            logger=self.logger,
-            fifo_mode=self.fifo_mode,
-            delete_workdir=self.delete_workdir,
-            result_store=self.result_store,
-            optional_dict=None,
-            optional_dict2=None,
-            parallelize=False, # parallelization already in a higher level
-        )
-        return feature_assembler
-
-    def _run_on_asset(self, asset):
-        # Override Executor._run_on_asset(self, asset)
-        vmaf_fassembler = self._get_feature_assembler_instance(asset)
-        vmaf_fassembler.run()
-        feature_result = vmaf_fassembler.results[0]
-        result_dict = {}
-        result_dict.update(feature_result.result_dict.copy()) # add feature result
-        result_dict[self.get_scores_key()] = feature_result.result_dict[
-            MsSsimFeatureExtractor.get_scores_key('ms_ssim')] # add ssim score
-        del result_dict[MsSsimFeatureExtractor.get_scores_key('ms_ssim')] # delete redundant
-        return Result(asset, self.executor_id, result_dict)
-
-    def _remove_result(self, asset):
-        # Override Executor._remove_result(self, asset) by redirecting it to the
-        # FeatureAssembler.
-
-        vmaf_fassembler = self._get_feature_assembler_instance(asset)
-        vmaf_fassembler.remove_results()
+    def _get_feature_key_for_score(self):
+        return 'ms_ssim'
 
 
 class VmafSingleFeatureQualityRunner(QualityRunner):
