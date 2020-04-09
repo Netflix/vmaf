@@ -210,19 +210,6 @@ class FeatureTest(unittest.TestCase):
         score, scores = read_log(ALL_LOG, "adm_den_scale3")
         self.assertAlmostEqual(score, 159.71829710416668, places=4)
 
-    def test_psnr(self):
-        PSNR_LOG = self.LOG_FILENAME + '_psnr'
-
-        cmd = "{psnr} {fmt} {ref} {dis} {w} {h} > {log}".format(
-            psnr=required(ExternalProgram.psnr), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
-            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=PSNR_LOG
-        )
-        run_process(cmd, shell=True)
-        score, scores = read_log(PSNR_LOG, "psnr")
-        self.assertAlmostEqual(score, 30.7550639792, places=4)
-        self.assertAlmostEqual(scores[0], 34.760779, places=4)
-        self.assertAlmostEqual(scores[1], 31.88322, places=4)
-
     def test_2nd_moment(self):
         MOMENT_LOG = self.LOG_FILENAME + '_moment'
 
@@ -484,19 +471,6 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         self.assertAlmostEqual(score, 154.16224066666666, places=4)
         score, scores = read_log(ALL_LOG, "adm_den_scale3")
         self.assertAlmostEqual(score, 159.71829710416668, places=4)
-
-    def test_psnr(self):
-        PSNR_LOG = self.LOG_FILENAME + '_psnr'
-
-        cmd = "{psnr} {fmt} {ref} {dis} {w} {h} > {log}".format(
-            psnr=required(ExternalProgram.psnr), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
-            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=PSNR_LOG
-        )
-        run_process(cmd, shell=True)
-        score, scores = read_log(PSNR_LOG, "psnr")
-        self.assertAlmostEqual(score, 30.7805732917, places=4)
-        self.assertAlmostEqual(scores[0], 34.786288, places=4)
-        self.assertAlmostEqual(scores[1], 31.908737, places=4)
 
     def test_ssim(self):
         SSIM_LOG = self.LOG_FILENAME + '_ssim'

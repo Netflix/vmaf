@@ -48,6 +48,31 @@ def required(path):
     return path
 
 
+def convert_pixel_format_ffmpeg2vmafrc(ffmpeg_pix_fmt):
+    '''
+    Convert FFmpeg-style pixel format (pix_fmt) to vmaf_rc style.
+
+    :param ffmpeg_pix_fmt: FFmpeg-style pixel format, for example: yuv420p, yuv420p10le
+    :return: (pixel_format: str, bitdepth: int), for example: (420, 8), (420, 10)
+    '''
+    assert ffmpeg_pix_fmt in ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
+    if ffmpeg_pix_fmt in ['yuv420p', 'yuv420p10le']:
+        pixel_format = '420'
+    elif ffmpeg_pix_fmt in ['yuv422p', 'yuv422p10le']:
+        pixel_format = '422'
+    elif ffmpeg_pix_fmt in ['yuv444p', 'yuv444p10le']:
+        pixel_format = '444'
+    else:
+        assert False
+    if ffmpeg_pix_fmt in ['yuv420p', 'yuv422p', 'yuv444p']:
+        bitdepth = 8
+    elif ffmpeg_pix_fmt in ['yuv420p10le', 'yuv422p10le', 'yuv444p10le']:
+        bitdepth = 10
+    else:
+        assert False
+    return pixel_format, bitdepth
+
+
 class ExternalProgram(object):
     """
     External C programs relied upon by the python vmaf code
@@ -56,7 +81,6 @@ class ExternalProgram(object):
 
     try:
         from . import externals
-        external_psnr = config.VmafExternalConfig.psnr_path()
         external_moment = config.VmafExternalConfig.moment_path()
         external_ssim = config.VmafExternalConfig.ssim_path()
         external_ms_ssim = config.VmafExternalConfig.ms_ssim_path()
@@ -64,7 +88,6 @@ class ExternalProgram(object):
         external_vmafossexec = config.VmafExternalConfig.vmafossexec_path()
         external_vmafrc = config.VmafExternalConfig.vmafrc_path()
     except ImportError:
-        external_psnr = None
         external_moment = None
         external_ssim = None
         external_ms_ssim = None
@@ -72,7 +95,6 @@ class ExternalProgram(object):
         external_vmafossexec = None
         external_vmafrc = None
 
-    psnr = project_path(os.path.join("libvmaf", "build", "tools", "psnr")) if external_psnr is None else external_psnr
     moment = project_path(os.path.join("libvmaf", "build", "tools", "moment")) if external_moment is None else external_moment
     ssim = project_path(os.path.join("libvmaf", "build", "tools", "ssim")) if external_ssim is None else external_ssim
     ms_ssim = project_path(os.path.join("libvmaf", "build", "tools", "ms_ssim")) if external_ms_ssim is None else external_ms_ssim
@@ -89,21 +111,31 @@ class ExternalProgramCaller(object):
     @staticmethod
     def call_psnr(yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None):
 
-        # APPEND (>>) result (since _prepare_generate_log_file method has already created the file
-        # and written something in advance).
-        psnr_cmd = "{psnr} {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
-            .format(
-            psnr=required(ExternalProgram.psnr),
-            yuv_type=yuv_type,
-            ref_path=ref_path,
-            dis_path=dis_path,
-            w=w,
-            h=h,
-            log_file_path=log_file_path,
-        )
+        # ./libvmaf/build/tools/vmaf_rc
+        # --reference python/test/resource/yuv/src01_hrc00_576x324.yuv
+        # --distorted python/test/resource/yuv/src01_hrc01_576x324.yuv
+        # --width 576 --height 324 --pixel_format 420 --bitdepth 8
+        # --output /dev/stdout --xml --no_prediction --feature float_psnr
+
+        pixel_format, bitdepth = convert_pixel_format_ffmpeg2vmafrc(yuv_type)
+
+        psnr_cmd = [
+            required(ExternalProgram.vmafrc),
+            '--reference', ref_path,
+            '--distorted', dis_path,
+            '--width', str(w),
+            '--height', str(h),
+            '--pixel_format', pixel_format,
+            '--bitdepth', str(bitdepth),
+            '--output', log_file_path,
+            '--xml',
+            '--no_prediction',
+            '--feature', 'float_psnr',
+        ]
+
         if logger:
-            logger.info(psnr_cmd)
-        run_process(psnr_cmd, shell=True)
+            logger.info(' '.join(psnr_cmd))
+        run_process(psnr_cmd)
 
     @staticmethod
     def call_ssim(yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None):

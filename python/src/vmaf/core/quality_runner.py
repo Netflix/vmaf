@@ -6,7 +6,7 @@ import copy
 import numpy as np
 
 from vmaf.config import VmafConfig
-from vmaf import ExternalProgramCaller
+from vmaf import ExternalProgramCaller, convert_pixel_format_ffmpeg2vmafrc
 from vmaf.core.executor import Executor
 from vmaf.core.niqe_train_test_model import NiqeTrainTestModel
 from vmaf.core.result import Result
@@ -14,7 +14,7 @@ from vmaf.core.feature_assembler import FeatureAssembler
 from vmaf.core.train_test_model import TrainTestModel, LibsvmNusvrTrainTestModel, \
     BootstrapLibsvmNusvrTrainTestModel
 from vmaf.core.feature_extractor import SsimFeatureExtractor, MsSsimFeatureExtractor, \
-    VmafFeatureExtractor
+    VmafFeatureExtractor, PsnrFeatureExtractor
 from vmaf.core.noref_feature_extractor import BrisqueNorefFeatureExtractor
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
@@ -87,46 +87,48 @@ class PsnrQualityRunner(QualityRunner):
     TYPE = 'PSNR'
     VERSION = '1.0'
 
-    def _generate_result(self, asset):
-        # routine to call the command-line executable and generate quality
-        # scores in the log file.
-
-        quality_width, quality_height = asset.quality_width_height
-        log_file_path = self._get_log_file_path(asset)
-
-        yuv_type = self._get_workfile_yuv_type(asset)
-        ref_path = asset.ref_procfile_path
-        dis_path = asset.dis_procfile_path
-        w = quality_width
-        h = quality_height
-        logger = self.logger
-
-        ExternalProgramCaller.call_psnr(yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
-
     def _get_quality_scores(self, asset):
-        # routine to read the quality scores from the log file, and return
-        # the scores in a dictionary format.
+        raise NotImplementedError
 
-        log_file_path = self._get_log_file_path(asset)
+    def _generate_result(self, asset):
+        raise NotImplementedError
 
-        psnr_scores = []
-        counter = 0
-        with open(log_file_path, 'rt') as log_file:
-            for line in log_file.readlines():
-                mo = re.match(r"psnr: ([0-9]+) ([0-9.-]+)", line)
-                if mo:
-                    cur_idx = int(mo.group(1))
-                    assert cur_idx == counter
-                    psnr_scores.append(float(mo.group(2)))
-                    counter += 1
+    def _get_feature_assembler_instance(self, asset):
 
-        assert len(psnr_scores) != 0
+        feature_dict = {PsnrFeatureExtractor.TYPE: PsnrFeatureExtractor.ATOM_FEATURES}
 
-        scores_key = self.get_scores_key()
-        quality_result = {
-            scores_key: psnr_scores
-        }
-        return quality_result
+        feature_assembler = FeatureAssembler(
+            feature_dict=feature_dict,
+            feature_option_dict=None,
+            assets=[asset],
+            logger=self.logger,
+            fifo_mode=self.fifo_mode,
+            delete_workdir=self.delete_workdir,
+            result_store=self.result_store,
+            optional_dict=None,
+            optional_dict2=None,
+            parallelize=False, # parallelization already in a higher level
+        )
+        return feature_assembler
+
+    def _run_on_asset(self, asset):
+        # Override Executor._run_on_asset(self, asset)
+        vmaf_fassembler = self._get_feature_assembler_instance(asset)
+        vmaf_fassembler.run()
+        feature_result = vmaf_fassembler.results[0]
+        result_dict = {}
+        result_dict.update(feature_result.result_dict.copy()) # add feature result
+        result_dict[self.get_scores_key()] = feature_result.result_dict[
+            PsnrFeatureExtractor.get_scores_key('psnr')] # add psnr score
+        del result_dict[PsnrFeatureExtractor.get_scores_key('psnr')] # delete redundant
+        return Result(asset, self.executor_id, result_dict)
+
+    def _remove_result(self, asset):
+        # Override Executor._remove_result(self, asset) by redirecting it to the
+        # FeatureAssembler.
+
+        vmaf_fassembler = self._get_feature_assembler_instance(asset)
+        vmaf_fassembler.remove_results()
 
 
 class VmafLegacyQualityRunner(QualityRunner):
@@ -1254,7 +1256,7 @@ class VmafrcQualityRunner(QualityRunner):
         distorted = dis_path
         width = quality_width
         height = quality_height
-        pixel_format, bitdepth = self._convert_format(fmt)
+        pixel_format, bitdepth = convert_pixel_format_ffmpeg2vmafrc(fmt)
         output = log_file_path
         exe = self._get_exec()
         logger = self.logger
@@ -1265,25 +1267,6 @@ class VmafrcQualityRunner(QualityRunner):
 
     def _get_exec(self):
         return None # signaling default
-
-    @staticmethod
-    def _convert_format(old_fmt):
-        assert old_fmt in ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
-        if old_fmt in ['yuv420p', 'yuv420p10le']:
-            pixel_format = '420'
-        elif old_fmt in ['yuv422p', 'yuv422p10le']:
-            pixel_format = '422'
-        elif old_fmt in ['yuv444p', 'yuv444p10le']:
-            pixel_format = '444'
-        else:
-            assert False
-        if old_fmt in ['yuv420p', 'yuv422p', 'yuv444p']:
-            bitdepth = 8
-        elif old_fmt in ['yuv420p10le', 'yuv422p10le', 'yuv444p10le']:
-            bitdepth = 10
-        else:
-            assert False
-        return pixel_format, bitdepth
 
     def _get_quality_scores(self, asset):
         # routine to read the quality scores from the log file, and return
