@@ -6,6 +6,7 @@ import scipy.special
 import scipy.interpolate
 
 from vmaf.core.mixin import TypeVersionEnabled
+from vmaf.tools.decorator import override
 from vmaf.tools.misc import empty_object, indices
 from vmaf.tools.sigproc import fastDeLong, calpvalue, significanceHM, \
     significanceBinomial
@@ -58,8 +59,8 @@ class RawScorePerfMetric(PerfMetric):
     """
     Groundtruth is a list of raw scores (list of list of real numbers)
     """
+    @override(PerfMetric)
     def _assert_args(self):
-        # override PerfMetric._assert_args
         super(RawScorePerfMetric, self)._assert_args()
 
         # require the raw scores to be more than 1
@@ -107,8 +108,8 @@ class AucPerfMetric(RawScorePerfMetric):
     VERSION = "0.1"
 
     @classmethod
+    @override(PerfMetric)
     def _preprocess(cls, groundtruths, predictions, **kwargs):
-        # override - do not preprocess
         return groundtruths, predictions
 
     @staticmethod
@@ -385,8 +386,8 @@ class ResolvingPowerPerfMetric(RawScorePerfMetric):
         return xs
 
     @classmethod
+    @override(PerfMetric)
     def _preprocess(cls, groundtruths, predictions, **kwargs):
-        # override - do not preprocess
         enable_mapping = kwargs['enable_mapping'] if 'enable_mapping' in kwargs else False
 
         if enable_mapping:

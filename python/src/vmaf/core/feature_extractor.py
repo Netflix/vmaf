@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractmethod
 import os
 from xml.etree import ElementTree
 
+from vmaf.tools.decorator import override
 from vmaf.tools.misc import make_absolute_path, run_process
 from vmaf.tools.stats import ListStats
 
@@ -155,8 +156,8 @@ class VmafFeatureExtractor(FeatureExtractor):
         ExternalProgramCaller.call_vmaf_feature(yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
 
     @classmethod
+    @override(Executor)
     def _post_process_result(cls, result):
-        # override Executor._post_process_result
 
         result = super(VmafFeatureExtractor, cls)._post_process_result(result)
 
@@ -310,8 +311,8 @@ class VifFrameDifferenceFeatureExtractor(FeatureExtractor):
         ExternalProgramCaller.call_vifdiff_feature(yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
 
     @classmethod
+    @override(Executor)
     def _post_process_result(cls, result):
-        # override Executor._post_process_result
 
         result = super(VifFrameDifferenceFeatureExtractor, cls)._post_process_result(result)
 
@@ -354,8 +355,8 @@ class VifFrameDifferenceFeatureExtractor(FeatureExtractor):
 
 class VmafrcFeatureExtractorMixin(object):
 
+    @override(FeatureExtractor)
     def _get_feature_scores(self, asset):
-        # override FeatureExtractor._get_feature_scores
 
         assert hasattr(self, '_get_log_file_path')
         assert hasattr(self, 'ATOM_FEATURES')
@@ -494,8 +495,8 @@ class MomentFeatureExtractor(FeatureExtractor):
         return feature_result
 
     @classmethod
+    @override(Executor)
     def _post_process_result(cls, result):
-        # override Executor._post_process_result
 
         result = super(MomentFeatureExtractor, cls)._post_process_result(result)
 

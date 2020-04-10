@@ -8,7 +8,8 @@ import numpy as np
 import copy
 from scipy import ndimage
 
-from vmaf.core.executor import NorefExecutorMixin
+from vmaf.core.executor import NorefExecutorMixin, Executor
+from vmaf.tools.decorator import override
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
@@ -70,8 +71,8 @@ class MomentNorefFeatureExtractor(NorefExecutorMixin, FeatureExtractor):
         return feature_result
 
     @classmethod
+    @override(Executor)
     def _post_process_result(cls, result):
-        # override Executor._post_process_result
 
         result = super(MomentNorefFeatureExtractor, cls)._post_process_result(result)
 

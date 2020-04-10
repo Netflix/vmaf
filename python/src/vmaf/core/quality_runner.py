@@ -121,8 +121,8 @@ class QualityRunnerFromFeatureExtractor(QualityRunner):
         )
         return feature_assembler
 
+    @override(Executor)
     def _run_on_asset(self, asset):
-        # Override Executor._run_on_asset(self, asset)
         vmaf_fassembler = self._get_feature_assembler_instance(asset)
         vmaf_fassembler.run()
         feature_result = vmaf_fassembler.results[0]
@@ -133,8 +133,9 @@ class QualityRunnerFromFeatureExtractor(QualityRunner):
         del result_dict[self._get_feature_extractor_class().get_scores_key(self._get_feature_key_for_score())] # delete redundant
         return Result(asset, self.executor_id, result_dict)
 
+    @override(Executor)
     def _remove_result(self, asset):
-        # Override Executor._remove_result(self, asset) by redirecting it to the
+        # override by redirecting it to the
         # FeatureAssembler.
 
         vmaf_fassembler = self._get_feature_assembler_instance(asset)
@@ -198,8 +199,9 @@ class VmafLegacyQualityRunner(QualityRunner):
         )
         return vmaf_fassembler
 
+    @override(Executor)
     def _run_on_asset(self, asset):
-        # Override Executor._run_on_asset(self, asset), which runs a
+        # override Executor._run_on_asset(self, asset), which runs a
         # FeatureAssembler, collect a feature vector, run
         # TrainTestModel.predict() on it, and return a Result object
         # (in this case, both Executor._run_on_asset(self, asset) and
@@ -262,7 +264,7 @@ class VmafLegacyQualityRunner(QualityRunner):
         vals = (vals - lower_bound) / (upper_bound - lower_bound)
         return vals
 
-    # override
+    @override(Executor)
     def _remove_result(self, asset):
         # Override Executor._remove_result by redirecting it to the
         # FeatureAssembler.
@@ -327,6 +329,7 @@ class VmafQualityRunner(QualityRunner):
         )
         return vmaf_fassembler
 
+    @override(Executor)
     def _run_on_asset(self, asset):
         # Override Executor._run_on_asset(self, asset), which runs a
         # FeatureAssembler, collect a feature vector, run
@@ -450,6 +453,7 @@ class VmafQualityRunner(QualityRunner):
     def get_train_test_model_class(self):
         return LibsvmNusvrTrainTestModel
 
+    @override(Executor)
     def _remove_result(self, asset):
         # Override Executor._remove_result(self, asset) by redirecting it to the
         # FeatureAssembler.
@@ -507,6 +511,7 @@ class EnsembleVmafQualityRunner(VmafQualityRunner):
 
         return len(pred_result['ys_pred'])
 
+    @override(Executor)
     def _run_on_asset(self, asset):
         # Override Executor._run_on_asset(self, asset), which runs a
         # FeatureAssembler, collect a feature vector, run
@@ -581,6 +586,7 @@ class EnsembleVmafQualityRunner(VmafQualityRunner):
             model.append(TrainTestModel.from_file(model_filepath_part, self.logger))
         return model
 
+    @override(Executor)
     def _remove_result(self, asset):
         # Override Executor._remove_result(self, asset) by redirecting it to the
         # FeatureAssembler.
@@ -821,8 +827,8 @@ class VmafSingleFeatureQualityRunner(QualityRunner):
         )
         return vmaf_fassembler
 
+    @override(Executor)
     def _run_on_asset(self, asset):
-        # Override Executor._run_on_asset(self, asset)
         vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
         vmaf_fassembler.run()
         feature_result = vmaf_fassembler.results[0]
@@ -832,6 +838,7 @@ class VmafSingleFeatureQualityRunner(QualityRunner):
 
         return Result(asset, self.executor_id, result_dict)
 
+    @override(Executor)
     def _remove_result(self, asset):
         # Override Executor._remove_result(self, asset) by redirecting it to the
         # FeatureAssembler.
@@ -1065,6 +1072,7 @@ class NiqeQualityRunner(QualityRunner):
         model = TrainTestModel.from_file(model_filepath, self.logger)
         return model
 
+    @override(Executor)
     def _run_on_asset(self, asset):
         # Override Executor._run_on_asset(self, asset), which runs a
         # FeatureAssembler, collect a feature vector, run
@@ -1091,6 +1099,7 @@ class NiqeQualityRunner(QualityRunner):
 
         return Result(asset, self.executor_id, result_dict)
 
+    @override(Executor)
     def _remove_result(self, asset):
         # Override Executor._remove_result(self, asset) by redirecting it to the
         # FeatureAssembler.

@@ -1,6 +1,7 @@
 from vmaf.core.local_explainer import LocalExplainer
 from vmaf.core.quality_runner import VmafQualityRunner
 from vmaf.core.result import Result
+from vmaf.tools.decorator import override
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
@@ -20,6 +21,7 @@ class VmafQualityRunnerWithLocalExplainer(VmafQualityRunner):
     def get_explanations_key(cls):
         return cls.get_scores_key() + '_exps'
 
+    @override(VmafQualityRunner)
     def _run_on_asset(self, asset):
         # Override VmafQualityRunner._run_on_asset(self, asset), by adding
         # additional local explanation info.

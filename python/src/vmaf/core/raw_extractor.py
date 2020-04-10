@@ -4,6 +4,7 @@ from time import sleep
 import numpy as np
 
 from vmaf.core.h5py_mixin import H5pyMixin
+from vmaf.tools.decorator import override
 from vmaf.tools.reader import YuvReader
 from vmaf.core.executor import Executor
 from vmaf.core.result import RawResult
@@ -39,22 +40,23 @@ class AssetExtractor(RawExtractor):
     VERSION = '1.0'
 
     @classmethod
+    @override(Executor)
     def _assert_an_asset(cls, asset):
         # override Executor._assert_an_asset bypassing ffmpeg check
         pass
 
+    @override(Executor)
     def _open_ref_workfile(self, asset, fifo_mode):
-        # override Executor._open_ref_workfile
         # do nothing
         pass
 
+    @override(Executor)
     def _open_dis_workfile(self, asset, fifo_mode):
-        # override Executor._open_dis_workfile
         # do nothing
         pass
 
+    @override(Executor)
     def _wait_for_workfiles(self, asset):
-        # override Executor._wait_for_workfiles
         pass
 
     def _generate_result(self, asset):
@@ -89,8 +91,8 @@ class DisYUVRawVideoExtractor(H5pyMixin, RawExtractor):
             assert channels.issubset(set('yuv'))
             return ''.join(channels)
 
+    @override(Executor)
     def run(self, **kwargs):
-        # override Executor.run
         if 'parallelize' in kwargs:
             parallelize = kwargs['parallelize']
         else:
@@ -104,11 +106,12 @@ class DisYUVRawVideoExtractor(H5pyMixin, RawExtractor):
         super(DisYUVRawVideoExtractor, self)._assert_args()
         self.assert_h5py_file()
 
+    @override(Executor)
     def _open_ref_workfile(self, asset, fifo_mode):
-        # override Executor._open_ref_workfile
         # do nothing
         pass
 
+    @override(Executor)
     def _wait_for_workfiles(self, asset):
         # Override Executor._wait_for_workfiles to skip ref_workfile_path
         # wait til workfile paths being generated

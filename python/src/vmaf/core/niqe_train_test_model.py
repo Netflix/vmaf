@@ -1,3 +1,5 @@
+from vmaf.tools.decorator import override
+
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
@@ -13,8 +15,9 @@ class NiqeTrainTestModel(TrainTestModel, RegressorMixin):
     VERSION = "0.1"
 
     @classmethod
+    @override(TrainTestModel)
     def _assert_dimension(cls, feature_names, results):
-        # Override TrainTestModel._assert_dimension. allow input to be list
+        # Allow input to be list
         # For each result, the dimension of each result[feature_name]
         # should be consistent
         assert isinstance(results[0][feature_names[0]], list)
@@ -24,27 +27,27 @@ class NiqeTrainTestModel(TrainTestModel, RegressorMixin):
                 assert len(result[name]) == len0
 
     @classmethod
+    @override(TrainTestModel)
     def get_xs_from_results(cls, results, indexs=None, aggregate=False):
         """
-        override TrainTestModel.get_xs_from_results by altering aggregate
+        override by altering aggregate
         default to False
         """
         return super(NiqeTrainTestModel, cls).get_xs_from_results(
             results, indexs, aggregate)
 
     @classmethod
+    @override(TrainTestModel)
     def get_xys_from_results(cls, results, indexs=None, aggregate=False):
         """
-        override TrainTestModel.get_xys_from_results by altering aggregate
+        override by altering aggregate
         default to False
         """
         return super(NiqeTrainTestModel, cls).get_xys_from_results(
             results, indexs, aggregate)
 
+    @override(TrainTestModel)
     def train(self, xys):
-        """
-        override TrainTestModel.train
-        """
         self.model_type = self.TYPE
 
         assert 'label' in xys
@@ -76,10 +79,8 @@ class NiqeTrainTestModel(TrainTestModel, RegressorMixin):
 
         self.model = {'mu': mu, 'cov': cov}
 
+    @override(TrainTestModel)
     def predict(self, xs):
-        """
-        override TrainTestModel.predict
-        """
         self._assert_trained()
 
         for name in self.feature_names:
