@@ -81,23 +81,14 @@ class ExternalProgram(object):
 
     try:
         from . import externals
-        external_moment = config.VmafExternalConfig.moment_path()
-        external_ssim = config.VmafExternalConfig.ssim_path()
-        external_ms_ssim = config.VmafExternalConfig.ms_ssim_path()
         external_vmaf = config.VmafExternalConfig.vmaf_path()
         external_vmafossexec = config.VmafExternalConfig.vmafossexec_path()
         external_vmafrc = config.VmafExternalConfig.vmafrc_path()
     except ImportError:
-        external_moment = None
-        external_ssim = None
-        external_ms_ssim = None
         external_vmaf = None
         external_vmafossexec = None
         external_vmafrc = None
 
-    moment = project_path(os.path.join("libvmaf", "build", "tools", "moment")) if external_moment is None else external_moment
-    ssim = project_path(os.path.join("libvmaf", "build", "tools", "ssim")) if external_ssim is None else external_ssim
-    ms_ssim = project_path(os.path.join("libvmaf", "build", "tools", "ms_ssim")) if external_ms_ssim is None else external_ms_ssim
     vmaf = project_path(os.path.join("libvmaf", "build", "tools", "vmaf")) if external_vmaf is None else external_vmaf
     vmafossexec = project_path(os.path.join("libvmaf", "build", "tools", "vmafossexec")) if external_vmafossexec is None else external_vmafossexec
     vmafrc = project_path(os.path.join("libvmaf", "build", "tools", "vmaf_rc")) if external_vmafrc is None else external_vmafrc
