@@ -1152,9 +1152,10 @@ class VmafrcQualityRunner(QualityRunner):
 
     DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_v0.6.1.pkl")
 
-    FEATURES = ['adm2', 'motion2', 'vif_scale0', 'vif_scale1', 'vif_scale2',
-                'vif_scale3', 'float_psnr', 'float_ssim', 'float_ms_ssim',
+    FEATURES = ['adm2', 'motion2', 'vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
+                'float_psnr', 'float_ssim', 'float_ms_ssim',
                 'psnr_y', 'psnr_cb', 'psnr_cr', 'ssim', 'ms_ssim',
+                'float_moment_ref1st', 'float_moment_dis1st', 'float_moment_ref2nd', 'float_moment_dis2nd',
                 ]
 
     @classmethod
@@ -1193,6 +1194,12 @@ class VmafrcQualityRunner(QualityRunner):
         else:
             float_ms_ssim = False
         assert isinstance(float_ms_ssim, bool)
+
+        if self.optional_dict is not None and 'float_moment' in self.optional_dict:
+            float_moment = self.optional_dict['float_moment']
+        else:
+            float_moment = False
+        assert isinstance(float_ssim, bool)
 
         if self.optional_dict is not None and 'psnr' in self.optional_dict:
             psnr = self.optional_dict['psnr']
@@ -1252,9 +1259,9 @@ class VmafrcQualityRunner(QualityRunner):
         exe = self._get_exec()
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth, float_psnr, psnr,
-                                          float_ssim, ssim, float_ms_ssim, ms_ssim, no_prediction, models, subsample,
-                                          n_threads, disable_avx, output, exe, logger)
+        ExternalProgramCaller.call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth,
+                                          float_psnr, psnr, float_ssim, ssim, float_ms_ssim, ms_ssim, float_moment,
+                                          no_prediction, models, subsample, n_threads, disable_avx, output, exe, logger)
 
     def _get_exec(self):
         return None # signaling default
