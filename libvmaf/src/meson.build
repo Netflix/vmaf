@@ -168,6 +168,7 @@ libvmaf_rc_feature_sources = [
   feature_src_dir + 'float_ms_ssim.c',
   feature_src_dir + 'float_vif.c',
   feature_src_dir + 'integer_ssim.c',
+  feature_src_dir + 'float_moment.c',
 ]
 
 libvmaf_rc_feature_static_lib = static_library(

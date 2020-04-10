@@ -566,6 +566,29 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results_rc[0]['VMAFRC_score'], results[0]['VMAFOSSEXEC_score'], places=4)
         self.assertAlmostEqual(results_rc[1]['VMAFRC_score'], results[1]['VMAFOSSEXEC_score'], places=4)
 
+    def test_run_vmafrc_runner_float_moment(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = VmafrcQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={
+                'float_moment': True,
+                'no_prediction': True,
+            }
+        )
+        self.runner.run(parallelize=False)
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAFRC_float_moment_ref1st_score'], 59.788567354166666, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_float_moment_dis1st_score'], 61.332006625, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_float_moment_ref2nd_score'], 4696.668388125, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_float_moment_dis2nd_score'], 4798.659574041666, places=4)
+
 
 class VmafrcQualityRunnerSubsamplingTest(unittest.TestCase):
 
