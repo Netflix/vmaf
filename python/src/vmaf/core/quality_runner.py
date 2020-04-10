@@ -76,15 +76,14 @@ class QualityRunner(Executor):
 
     @classmethod
     def get_scores_key(cls):
-        return cls.TYPE + '_scores'
+        return f"{cls.TYPE}_scores"
 
     @classmethod
     def get_score_key(cls):
-        return cls.TYPE + '_score'
+        return f"{cls.TYPE}_score"
 
 
 class QualityRunnerFromFeatureExtractor(QualityRunner):
-
     __metaclass__ = ABCMeta
 
     @abstractmethod
@@ -102,10 +101,11 @@ class QualityRunnerFromFeatureExtractor(QualityRunner):
         raise NotImplementedError
 
     def _get_feature_assembler_instance(self, asset):
-
-        feature_dict = {self._get_feature_extractor_class().TYPE:
-                            self._get_feature_extractor_class().ATOM_FEATURES +
-                            getattr(self._get_feature_extractor_class(), 'DERIVED_ATOM_FEATURES', [])}
+        feature_dict = {
+            self._get_feature_extractor_class().TYPE:
+                self._get_feature_extractor_class().ATOM_FEATURES +
+                getattr(self._get_feature_extractor_class(), 'DERIVED_ATOM_FEATURES', [])
+        }
 
         feature_assembler = FeatureAssembler(
             feature_dict=feature_dict,
@@ -117,7 +117,7 @@ class QualityRunnerFromFeatureExtractor(QualityRunner):
             result_store=self.result_store,
             optional_dict=None,
             optional_dict2=None,
-            parallelize=False, # parallelization already in a higher level
+            parallelize=False,  # parallelization already in a higher level
         )
         return feature_assembler
 
@@ -127,23 +127,21 @@ class QualityRunnerFromFeatureExtractor(QualityRunner):
         vmaf_fassembler.run()
         feature_result = vmaf_fassembler.results[0]
         result_dict = {}
-        result_dict.update(feature_result.result_dict.copy()) # add feature result
+        result_dict.update(feature_result.result_dict.copy())  # add feature result
         result_dict[self.get_scores_key()] = feature_result.result_dict[
-            self._get_feature_extractor_class().get_scores_key(self._get_feature_key_for_score())] # add score
-        del result_dict[self._get_feature_extractor_class().get_scores_key(self._get_feature_key_for_score())] # delete redundant
+            self._get_feature_extractor_class().get_scores_key(self._get_feature_key_for_score())]  # add score
+        del result_dict[self._get_feature_extractor_class().get_scores_key(self._get_feature_key_for_score())]  # delete redundant
         return Result(asset, self.executor_id, result_dict)
 
     @override(Executor)
     def _remove_result(self, asset):
-        # override by redirecting it to the
-        # FeatureAssembler.
+        # override by redirecting it to the FeatureAssembler.
 
         vmaf_fassembler = self._get_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
 
 
 class PsnrQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
-
     TYPE = 'PSNR'
     VERSION = '1.0'
 
@@ -157,7 +155,6 @@ class PsnrQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
 
 
 class VmafLegacyQualityRunner(QualityRunner):
-
     TYPE = 'VMAF_legacy'
 
     # VERSION = '1.1'
@@ -274,7 +271,6 @@ class VmafLegacyQualityRunner(QualityRunner):
 
 
 class VmafQualityRunner(QualityRunner):
-
     TYPE = 'VMAF'
 
     # VERSION = '0.1' # using model nflxall_vmafv1.pkl, VmafFeatureExtractor VERSION 0.1
@@ -300,7 +296,7 @@ class VmafQualityRunner(QualityRunner):
     # trained with resource/param/vmaf_v6.py on private/user/zli/resource/dataset/dataset/derived/vmafplusstudy_laptop_raw_generalandcornercase.py, MLER, y=x+17
     DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_v0.6.1.pkl")
 
-    DEFAULT_FEATURE_DICT = {'VMAF_feature': ['vif', 'adm', 'motion', 'ansnr']} # for backward-compatible with older model only
+    DEFAULT_FEATURE_DICT = {'VMAF_feature': ['vif', 'adm', 'motion', 'ansnr']}  # for backward-compatible with older model only
 
     def _get_quality_scores(self, asset):
         raise NotImplementedError
@@ -325,7 +321,7 @@ class VmafQualityRunner(QualityRunner):
             result_store=self.result_store,
             optional_dict=None,
             optional_dict2=None,
-            parallelize=False, # parallelization already in a higher level
+            parallelize=False,  # parallelization already in a higher level
         )
         return vmaf_fassembler
 
@@ -353,8 +349,8 @@ class VmafQualityRunner(QualityRunner):
             enable_transform_score = False
 
         pred_result = self.predict_with_model(model, xs,
-                                          disable_clip_score=disable_clip_score,
-                                          enable_transform_score=enable_transform_score)
+                                              disable_clip_score=disable_clip_score,
+                                              enable_transform_score=enable_transform_score)
         result_dict = self._populate_result_dict(feature_result, pred_result)
         return Result(asset, self.executor_id, result_dict)
 
@@ -463,7 +459,6 @@ class VmafQualityRunner(QualityRunner):
 
 
 class EnsembleVmafQualityRunner(VmafQualityRunner):
-
     TYPE = 'EnsembleVMAF'
 
     VERSION = '{}-Ensemble'.format(VmafQualityRunner.VERSION)
@@ -544,8 +539,8 @@ class EnsembleVmafQualityRunner(VmafQualityRunner):
                 enable_transform_score = False
 
             pred_result = self.predict_with_model(model, xs,
-                                              disable_clip_score=disable_clip_score,
-                                              enable_transform_score=enable_transform_score)
+                                                  disable_clip_score=disable_clip_score,
+                                                  enable_transform_score=enable_transform_score)
             result_dict = self._populate_result_dict(feature_result, pred_result, result_dict)
             pred_result_ensem_models.append(pred_result)
 
@@ -597,7 +592,6 @@ class EnsembleVmafQualityRunner(VmafQualityRunner):
 
 
 class VmafPhoneQualityRunner(VmafQualityRunner):
-
     TYPE = 'VMAF_Phone'
 
     VERSION = '{}-phone'.format(VmafQualityRunner.VERSION)
@@ -615,7 +609,6 @@ class VmafPhoneQualityRunner(VmafQualityRunner):
 
 
 class VmafossExecQualityRunner(QualityRunner):
-
     TYPE = 'VMAFOSSEXEC'
 
     # VERSION = '0.3'
@@ -713,13 +706,13 @@ class VmafossExecQualityRunner(QualityRunner):
 
         quality_width, quality_height = asset.quality_width_height
 
-        fmt=self._get_workfile_yuv_type(asset)
-        w=quality_width
-        h=quality_height
-        ref_path=asset.ref_procfile_path
-        dis_path=asset.dis_procfile_path
-        model=model_filepath
-        exe=self._get_exec()
+        fmt = self._get_workfile_yuv_type(asset)
+        w = quality_width
+        h = quality_height
+        ref_path = asset.ref_procfile_path
+        dis_path = asset.dis_procfile_path
+        model = model_filepath
+        exe = self._get_exec()
         logger = self.logger
 
         ExternalProgramCaller.call_vmafossexec(fmt, w, h, ref_path, dis_path, model, log_file_path,
@@ -728,7 +721,7 @@ class VmafossExecQualityRunner(QualityRunner):
                                                psnr, ssim, ms_ssim, ci, exe, logger)
 
     def _get_exec(self):
-        return None # signaling default
+        return None  # signaling default
 
     def _get_quality_scores(self, asset):
         # routine to read the quality scores from the log file, and return
@@ -767,7 +760,6 @@ class VmafossExecQualityRunner(QualityRunner):
 
 
 class SsimQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
-
     TYPE = 'SSIM'
     VERSION = '1.0'
 
@@ -781,7 +773,6 @@ class SsimQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
 
 
 class MsSsimQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
-
     TYPE = 'MS_SSIM'
     VERSION = '1.0'
 
@@ -795,7 +786,6 @@ class MsSsimQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
 
 
 class VmafSingleFeatureQualityRunner(QualityRunner):
-
     __metaclass__ = ABCMeta
 
     VERSION = 'F{}-0'.format(VmafFeatureExtractor.VERSION)
@@ -812,7 +802,6 @@ class VmafSingleFeatureQualityRunner(QualityRunner):
         raise NotImplementedError
 
     def _get_vmaf_feature_assembler_instance(self, asset):
-
         vmaf_fassembler = FeatureAssembler(
             feature_dict={'VMAF_feature': [self.FEATURE_NAME]},
             feature_option_dict=None,
@@ -823,7 +812,7 @@ class VmafSingleFeatureQualityRunner(QualityRunner):
             result_store=self.result_store,
             optional_dict=None,
             optional_dict2=None,
-            parallelize=False, # parallelization already in a higher level
+            parallelize=False,  # parallelization already in a higher level
         )
         return vmaf_fassembler
 
@@ -890,7 +879,6 @@ class MotionQualityRunner(VmafSingleFeatureQualityRunner):
 
 
 class BootstrapVmafQualityRunner(VmafQualityRunner):
-
     TYPE = "BOOTSTRAP_VMAF"
     VERSION = VmafQualityRunner.VERSION + '-' + 'M' + BootstrapLibsvmNusvrTrainTestModel.VERSION
     ALGO_VERSION = None
@@ -1003,7 +991,6 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
 
 
 class BaggingVmafQualityRunner(BootstrapVmafQualityRunner):
-
     TYPE = "BAGGING_VMAF"
     VERSION = VmafQualityRunner.VERSION + '-' + BootstrapLibsvmNusvrTrainTestModel.VERSION
 
@@ -1017,7 +1004,6 @@ class BaggingVmafQualityRunner(BootstrapVmafQualityRunner):
 
 
 class NiqeQualityRunner(QualityRunner):
-
     TYPE = 'NIQE'
 
     # VERSION = '0.1'
@@ -1109,7 +1095,6 @@ class NiqeQualityRunner(QualityRunner):
 
 
 class VmafrcQualityRunner(QualityRunner):
-
     TYPE = 'VMAFRC'
 
     VERSION = 'F' + VmafFeatureExtractor.VERSION + '-0.6.1'
@@ -1229,7 +1214,7 @@ class VmafrcQualityRunner(QualityRunner):
                                           no_prediction, models, subsample, n_threads, disable_avx, output, exe, logger)
 
     def _get_exec(self):
-        return None # signaling default
+        return None  # signaling default
 
     def _get_quality_scores(self, asset):
         # routine to read the quality scores from the log file, and return

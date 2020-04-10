@@ -390,7 +390,8 @@ class VmafrcFeatureExtractorMixin(object):
 class PsnrFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "PSNR_feature"
-    VERSION = "1.0"
+    # VERSION = "1.0"
+    VERSION = "1.1"  # call vmaf_rc to replace standalone psnr exec
 
     ATOM_FEATURES = ['psnr']
 
@@ -522,13 +523,20 @@ class MomentFeatureExtractor(FeatureExtractor):
         return result
 
 
-class SsimFeatureExtractor(FeatureExtractor):
+class SsimFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "SSIM_feature"
     # VERSION = "1.0"
-    VERSION = "1.1" # fix OPT_RANGE_PIXEL_OFFSET = 0
+    # VERSION = "1.1"  # fix OPT_RANGE_PIXEL_OFFSET = 0
+    VERSION = "1.2"  # call vmaf_rc to replace standalone ssim exec
 
-    ATOM_FEATURES = ['ssim', 'ssim_l', 'ssim_c', 'ssim_s']
+    ATOM_FEATURES = ['ssim',
+                     # 'ssim_l', 'ssim_c', 'ssim_s',
+                     ]
+
+    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
+        'ssim': 'float_ssim',
+    }
 
     def _generate_result(self, asset):
         # routine to call the command-line executable and generate quality
@@ -547,19 +555,24 @@ class SsimFeatureExtractor(FeatureExtractor):
         ExternalProgramCaller.call_ssim(yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
 
 
-class MsSsimFeatureExtractor(FeatureExtractor):
+class MsSsimFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "MS_SSIM_feature"
     # VERSION = "1.0"
-    VERSION = "1.1" # fix OPT_RANGE_PIXEL_OFFSET = 0
+    # VERSION = "1.1"  # fix OPT_RANGE_PIXEL_OFFSET = 0
+    VERSION = "1.2"  # call vmaf_rc to replace standalone ms_ssim exec
 
     ATOM_FEATURES = ['ms_ssim',
-                     'ms_ssim_l_scale0', 'ms_ssim_c_scale0', 'ms_ssim_s_scale0',
-                     'ms_ssim_l_scale1', 'ms_ssim_c_scale1', 'ms_ssim_s_scale1',
-                     'ms_ssim_l_scale2', 'ms_ssim_c_scale2', 'ms_ssim_s_scale2',
-                     'ms_ssim_l_scale3', 'ms_ssim_c_scale3', 'ms_ssim_s_scale3',
-                     'ms_ssim_l_scale4', 'ms_ssim_c_scale4', 'ms_ssim_s_scale4',
+                     # 'ms_ssim_l_scale0', 'ms_ssim_c_scale0', 'ms_ssim_s_scale0',
+                     # 'ms_ssim_l_scale1', 'ms_ssim_c_scale1', 'ms_ssim_s_scale1',
+                     # 'ms_ssim_l_scale2', 'ms_ssim_c_scale2', 'ms_ssim_s_scale2',
+                     # 'ms_ssim_l_scale3', 'ms_ssim_c_scale3', 'ms_ssim_s_scale3',
+                     # 'ms_ssim_l_scale4', 'ms_ssim_c_scale4', 'ms_ssim_s_scale4',
                      ]
+
+    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
+        'ms_ssim': 'float_ms_ssim',
+    }
 
     def _generate_result(self, asset):
         # routine to call the command-line executable and generate quality
