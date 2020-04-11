@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, ABC
 import re
 from xml.etree import ElementTree
 import copy
@@ -6,7 +6,7 @@ import copy
 import numpy as np
 
 from vmaf.config import VmafConfig
-from vmaf import ExternalProgramCaller
+from vmaf import ExternalProgramCaller, convert_pixel_format_ffmpeg2vmafrc
 from vmaf.core.executor import Executor
 from vmaf.core.niqe_train_test_model import NiqeTrainTestModel
 from vmaf.core.result import Result
@@ -14,8 +14,9 @@ from vmaf.core.feature_assembler import FeatureAssembler
 from vmaf.core.train_test_model import TrainTestModel, LibsvmNusvrTrainTestModel, \
     BootstrapLibsvmNusvrTrainTestModel
 from vmaf.core.feature_extractor import SsimFeatureExtractor, MsSsimFeatureExtractor, \
-    VmafFeatureExtractor
+    VmafFeatureExtractor, PsnrFeatureExtractor
 from vmaf.core.noref_feature_extractor import BrisqueNorefFeatureExtractor
+from vmaf.tools.decorator import override
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
@@ -75,62 +76,85 @@ class QualityRunner(Executor):
 
     @classmethod
     def get_scores_key(cls):
-        return cls.TYPE + '_scores'
+        return f"{cls.TYPE}_scores"
 
     @classmethod
     def get_score_key(cls):
-        return cls.TYPE + '_score'
+        return f"{cls.TYPE}_score"
 
 
-class PsnrQualityRunner(QualityRunner):
+class QualityRunnerFromFeatureExtractor(QualityRunner):
+    __metaclass__ = ABCMeta
 
+    @abstractmethod
+    def _get_feature_extractor_class(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def _get_feature_key_for_score(self):
+        raise NotImplementedError
+
+    def _get_quality_scores(self, asset):
+        raise NotImplementedError
+
+    def _generate_result(self, asset):
+        raise NotImplementedError
+
+    def _get_feature_assembler_instance(self, asset):
+        feature_dict = {
+            self._get_feature_extractor_class().TYPE:
+                self._get_feature_extractor_class().ATOM_FEATURES +
+                getattr(self._get_feature_extractor_class(), 'DERIVED_ATOM_FEATURES', [])
+        }
+
+        feature_assembler = FeatureAssembler(
+            feature_dict=feature_dict,
+            feature_option_dict=None,
+            assets=[asset],
+            logger=self.logger,
+            fifo_mode=self.fifo_mode,
+            delete_workdir=self.delete_workdir,
+            result_store=self.result_store,
+            optional_dict=None,
+            optional_dict2=None,
+            parallelize=False,  # parallelization already in a higher level
+        )
+        return feature_assembler
+
+    @override(Executor)
+    def _run_on_asset(self, asset):
+        vmaf_fassembler = self._get_feature_assembler_instance(asset)
+        vmaf_fassembler.run()
+        feature_result = vmaf_fassembler.results[0]
+        result_dict = {}
+        result_dict.update(feature_result.result_dict.copy())  # add feature result
+        result_dict[self.get_scores_key()] = feature_result.result_dict[
+            self._get_feature_extractor_class().get_scores_key(self._get_feature_key_for_score())]  # add score
+        del result_dict[self._get_feature_extractor_class().get_scores_key(self._get_feature_key_for_score())]  # delete redundant
+        return Result(asset, self.executor_id, result_dict)
+
+    @override(Executor)
+    def _remove_result(self, asset):
+        # override by redirecting it to the FeatureAssembler.
+
+        vmaf_fassembler = self._get_feature_assembler_instance(asset)
+        vmaf_fassembler.remove_results()
+
+
+class PsnrQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
     TYPE = 'PSNR'
     VERSION = '1.0'
 
-    def _generate_result(self, asset):
-        # routine to call the command-line executable and generate quality
-        # scores in the log file.
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_extractor_class(self):
+        return PsnrFeatureExtractor
 
-        quality_width, quality_height = asset.quality_width_height
-        log_file_path = self._get_log_file_path(asset)
-
-        yuv_type = self._get_workfile_yuv_type(asset)
-        ref_path = asset.ref_procfile_path
-        dis_path = asset.dis_procfile_path
-        w = quality_width
-        h = quality_height
-        logger = self.logger
-
-        ExternalProgramCaller.call_psnr(yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
-
-    def _get_quality_scores(self, asset):
-        # routine to read the quality scores from the log file, and return
-        # the scores in a dictionary format.
-
-        log_file_path = self._get_log_file_path(asset)
-
-        psnr_scores = []
-        counter = 0
-        with open(log_file_path, 'rt') as log_file:
-            for line in log_file.readlines():
-                mo = re.match(r"psnr: ([0-9]+) ([0-9.-]+)", line)
-                if mo:
-                    cur_idx = int(mo.group(1))
-                    assert cur_idx == counter
-                    psnr_scores.append(float(mo.group(2)))
-                    counter += 1
-
-        assert len(psnr_scores) != 0
-
-        scores_key = self.get_scores_key()
-        quality_result = {
-            scores_key: psnr_scores
-        }
-        return quality_result
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_key_for_score(self):
+        return 'psnr'
 
 
 class VmafLegacyQualityRunner(QualityRunner):
-
     TYPE = 'VMAF_legacy'
 
     # VERSION = '1.1'
@@ -172,8 +196,9 @@ class VmafLegacyQualityRunner(QualityRunner):
         )
         return vmaf_fassembler
 
+    @override(Executor)
     def _run_on_asset(self, asset):
-        # Override Executor._run_on_asset(self, asset), which runs a
+        # override Executor._run_on_asset(self, asset), which runs a
         # FeatureAssembler, collect a feature vector, run
         # TrainTestModel.predict() on it, and return a Result object
         # (in this case, both Executor._run_on_asset(self, asset) and
@@ -236,7 +261,7 @@ class VmafLegacyQualityRunner(QualityRunner):
         vals = (vals - lower_bound) / (upper_bound - lower_bound)
         return vals
 
-    # override
+    @override(Executor)
     def _remove_result(self, asset):
         # Override Executor._remove_result by redirecting it to the
         # FeatureAssembler.
@@ -246,7 +271,6 @@ class VmafLegacyQualityRunner(QualityRunner):
 
 
 class VmafQualityRunner(QualityRunner):
-
     TYPE = 'VMAF'
 
     # VERSION = '0.1' # using model nflxall_vmafv1.pkl, VmafFeatureExtractor VERSION 0.1
@@ -272,7 +296,7 @@ class VmafQualityRunner(QualityRunner):
     # trained with resource/param/vmaf_v6.py on private/user/zli/resource/dataset/dataset/derived/vmafplusstudy_laptop_raw_generalandcornercase.py, MLER, y=x+17
     DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_v0.6.1.pkl")
 
-    DEFAULT_FEATURE_DICT = {'VMAF_feature': ['vif', 'adm', 'motion', 'ansnr']} # for backward-compatible with older model only
+    DEFAULT_FEATURE_DICT = {'VMAF_feature': ['vif', 'adm', 'motion', 'ansnr']}  # for backward-compatible with older model only
 
     def _get_quality_scores(self, asset):
         raise NotImplementedError
@@ -297,10 +321,11 @@ class VmafQualityRunner(QualityRunner):
             result_store=self.result_store,
             optional_dict=None,
             optional_dict2=None,
-            parallelize=False, # parallelization already in a higher level
+            parallelize=False,  # parallelization already in a higher level
         )
         return vmaf_fassembler
 
+    @override(Executor)
     def _run_on_asset(self, asset):
         # Override Executor._run_on_asset(self, asset), which runs a
         # FeatureAssembler, collect a feature vector, run
@@ -324,8 +349,8 @@ class VmafQualityRunner(QualityRunner):
             enable_transform_score = False
 
         pred_result = self.predict_with_model(model, xs,
-                                          disable_clip_score=disable_clip_score,
-                                          enable_transform_score=enable_transform_score)
+                                              disable_clip_score=disable_clip_score,
+                                              enable_transform_score=enable_transform_score)
         result_dict = self._populate_result_dict(feature_result, pred_result)
         return Result(asset, self.executor_id, result_dict)
 
@@ -424,6 +449,7 @@ class VmafQualityRunner(QualityRunner):
     def get_train_test_model_class(self):
         return LibsvmNusvrTrainTestModel
 
+    @override(Executor)
     def _remove_result(self, asset):
         # Override Executor._remove_result(self, asset) by redirecting it to the
         # FeatureAssembler.
@@ -433,7 +459,6 @@ class VmafQualityRunner(QualityRunner):
 
 
 class EnsembleVmafQualityRunner(VmafQualityRunner):
-
     TYPE = 'EnsembleVMAF'
 
     VERSION = '{}-Ensemble'.format(VmafQualityRunner.VERSION)
@@ -481,6 +506,7 @@ class EnsembleVmafQualityRunner(VmafQualityRunner):
 
         return len(pred_result['ys_pred'])
 
+    @override(Executor)
     def _run_on_asset(self, asset):
         # Override Executor._run_on_asset(self, asset), which runs a
         # FeatureAssembler, collect a feature vector, run
@@ -513,8 +539,8 @@ class EnsembleVmafQualityRunner(VmafQualityRunner):
                 enable_transform_score = False
 
             pred_result = self.predict_with_model(model, xs,
-                                              disable_clip_score=disable_clip_score,
-                                              enable_transform_score=enable_transform_score)
+                                                  disable_clip_score=disable_clip_score,
+                                                  enable_transform_score=enable_transform_score)
             result_dict = self._populate_result_dict(feature_result, pred_result, result_dict)
             pred_result_ensem_models.append(pred_result)
 
@@ -555,6 +581,7 @@ class EnsembleVmafQualityRunner(VmafQualityRunner):
             model.append(TrainTestModel.from_file(model_filepath_part, self.logger))
         return model
 
+    @override(Executor)
     def _remove_result(self, asset):
         # Override Executor._remove_result(self, asset) by redirecting it to the
         # FeatureAssembler.
@@ -565,7 +592,6 @@ class EnsembleVmafQualityRunner(VmafQualityRunner):
 
 
 class VmafPhoneQualityRunner(VmafQualityRunner):
-
     TYPE = 'VMAF_Phone'
 
     VERSION = '{}-phone'.format(VmafQualityRunner.VERSION)
@@ -583,7 +609,6 @@ class VmafPhoneQualityRunner(VmafQualityRunner):
 
 
 class VmafossExecQualityRunner(QualityRunner):
-
     TYPE = 'VMAFOSSEXEC'
 
     # VERSION = '0.3'
@@ -681,13 +706,13 @@ class VmafossExecQualityRunner(QualityRunner):
 
         quality_width, quality_height = asset.quality_width_height
 
-        fmt=self._get_workfile_yuv_type(asset)
-        w=quality_width
-        h=quality_height
-        ref_path=asset.ref_procfile_path
-        dis_path=asset.dis_procfile_path
-        model=model_filepath
-        exe=self._get_exec()
+        fmt = self._get_workfile_yuv_type(asset)
+        w = quality_width
+        h = quality_height
+        ref_path = asset.ref_procfile_path
+        dis_path = asset.dis_procfile_path
+        model = model_filepath
+        exe = self._get_exec()
         logger = self.logger
 
         ExternalProgramCaller.call_vmafossexec(fmt, w, h, ref_path, dis_path, model, log_file_path,
@@ -696,7 +721,7 @@ class VmafossExecQualityRunner(QualityRunner):
                                                psnr, ssim, ms_ssim, ci, exe, logger)
 
     def _get_exec(self):
-        return None # signaling default
+        return None  # signaling default
 
     def _get_quality_scores(self, asset):
         # routine to read the quality scores from the log file, and return
@@ -734,106 +759,33 @@ class VmafossExecQualityRunner(QualityRunner):
         return quality_result
 
 
-class SsimQualityRunner(QualityRunner):
-
+class SsimQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
     TYPE = 'SSIM'
     VERSION = '1.0'
 
-    def _get_quality_scores(self, asset):
-        raise NotImplementedError
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_extractor_class(self):
+        return SsimFeatureExtractor
 
-    def _generate_result(self, asset):
-        raise NotImplementedError
-
-    def _get_feature_assembler_instance(self, asset):
-
-        feature_dict = {SsimFeatureExtractor.TYPE: SsimFeatureExtractor.ATOM_FEATURES}
-
-        feature_assembler = FeatureAssembler(
-            feature_dict=feature_dict,
-            feature_option_dict=None,
-            assets=[asset],
-            logger=self.logger,
-            fifo_mode=self.fifo_mode,
-            delete_workdir=self.delete_workdir,
-            result_store=self.result_store,
-            optional_dict=None,
-            optional_dict2=None,
-            parallelize=False, # parallelization already in a higher level
-        )
-        return feature_assembler
-
-    def _run_on_asset(self, asset):
-        # Override Executor._run_on_asset(self, asset)
-        vmaf_fassembler = self._get_feature_assembler_instance(asset)
-        vmaf_fassembler.run()
-        feature_result = vmaf_fassembler.results[0]
-        result_dict = {}
-        result_dict.update(feature_result.result_dict.copy()) # add feature result
-        result_dict[self.get_scores_key()] = feature_result.result_dict[
-            SsimFeatureExtractor.get_scores_key('ssim')] # add ssim score
-        del result_dict[SsimFeatureExtractor.get_scores_key('ssim')] # delete redundant
-        return Result(asset, self.executor_id, result_dict)
-
-    def _remove_result(self, asset):
-        # Override Executor._remove_result(self, asset) by redirecting it to the
-        # FeatureAssembler.
-
-        vmaf_fassembler = self._get_feature_assembler_instance(asset)
-        vmaf_fassembler.remove_results()
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_key_for_score(self):
+        return 'ssim'
 
 
-class MsSsimQualityRunner(QualityRunner):
-
+class MsSsimQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
     TYPE = 'MS_SSIM'
     VERSION = '1.0'
 
-    def _get_quality_scores(self, asset):
-        raise NotImplementedError
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_extractor_class(self):
+        return MsSsimFeatureExtractor
 
-    def _generate_result(self, asset):
-        raise NotImplementedError
-
-    def _get_feature_assembler_instance(self, asset):
-
-        feature_dict = {MsSsimFeatureExtractor.TYPE: MsSsimFeatureExtractor.ATOM_FEATURES}
-
-        feature_assembler = FeatureAssembler(
-            feature_dict=feature_dict,
-            feature_option_dict=None,
-            assets=[asset],
-            logger=self.logger,
-            fifo_mode=self.fifo_mode,
-            delete_workdir=self.delete_workdir,
-            result_store=self.result_store,
-            optional_dict=None,
-            optional_dict2=None,
-            parallelize=False, # parallelization already in a higher level
-        )
-        return feature_assembler
-
-    def _run_on_asset(self, asset):
-        # Override Executor._run_on_asset(self, asset)
-        vmaf_fassembler = self._get_feature_assembler_instance(asset)
-        vmaf_fassembler.run()
-        feature_result = vmaf_fassembler.results[0]
-        result_dict = {}
-        result_dict.update(feature_result.result_dict.copy()) # add feature result
-        result_dict[self.get_scores_key()] = feature_result.result_dict[
-            MsSsimFeatureExtractor.get_scores_key('ms_ssim')] # add ssim score
-        del result_dict[MsSsimFeatureExtractor.get_scores_key('ms_ssim')] # delete redundant
-        return Result(asset, self.executor_id, result_dict)
-
-    def _remove_result(self, asset):
-        # Override Executor._remove_result(self, asset) by redirecting it to the
-        # FeatureAssembler.
-
-        vmaf_fassembler = self._get_feature_assembler_instance(asset)
-        vmaf_fassembler.remove_results()
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_key_for_score(self):
+        return 'ms_ssim'
 
 
 class VmafSingleFeatureQualityRunner(QualityRunner):
-
     __metaclass__ = ABCMeta
 
     VERSION = 'F{}-0'.format(VmafFeatureExtractor.VERSION)
@@ -850,7 +802,6 @@ class VmafSingleFeatureQualityRunner(QualityRunner):
         raise NotImplementedError
 
     def _get_vmaf_feature_assembler_instance(self, asset):
-
         vmaf_fassembler = FeatureAssembler(
             feature_dict={'VMAF_feature': [self.FEATURE_NAME]},
             feature_option_dict=None,
@@ -861,12 +812,12 @@ class VmafSingleFeatureQualityRunner(QualityRunner):
             result_store=self.result_store,
             optional_dict=None,
             optional_dict2=None,
-            parallelize=False, # parallelization already in a higher level
+            parallelize=False,  # parallelization already in a higher level
         )
         return vmaf_fassembler
 
+    @override(Executor)
     def _run_on_asset(self, asset):
-        # Override Executor._run_on_asset(self, asset)
         vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
         vmaf_fassembler.run()
         feature_result = vmaf_fassembler.results[0]
@@ -876,6 +827,7 @@ class VmafSingleFeatureQualityRunner(QualityRunner):
 
         return Result(asset, self.executor_id, result_dict)
 
+    @override(Executor)
     def _remove_result(self, asset):
         # Override Executor._remove_result(self, asset) by redirecting it to the
         # FeatureAssembler.
@@ -927,7 +879,6 @@ class MotionQualityRunner(VmafSingleFeatureQualityRunner):
 
 
 class BootstrapVmafQualityRunner(VmafQualityRunner):
-
     TYPE = "BOOTSTRAP_VMAF"
     VERSION = VmafQualityRunner.VERSION + '-' + 'M' + BootstrapLibsvmNusvrTrainTestModel.VERSION
     ALGO_VERSION = None
@@ -1040,7 +991,6 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
 
 
 class BaggingVmafQualityRunner(BootstrapVmafQualityRunner):
-
     TYPE = "BAGGING_VMAF"
     VERSION = VmafQualityRunner.VERSION + '-' + BootstrapLibsvmNusvrTrainTestModel.VERSION
 
@@ -1054,7 +1004,6 @@ class BaggingVmafQualityRunner(BootstrapVmafQualityRunner):
 
 
 class NiqeQualityRunner(QualityRunner):
-
     TYPE = 'NIQE'
 
     # VERSION = '0.1'
@@ -1109,6 +1058,7 @@ class NiqeQualityRunner(QualityRunner):
         model = TrainTestModel.from_file(model_filepath, self.logger)
         return model
 
+    @override(Executor)
     def _run_on_asset(self, asset):
         # Override Executor._run_on_asset(self, asset), which runs a
         # FeatureAssembler, collect a feature vector, run
@@ -1135,6 +1085,7 @@ class NiqeQualityRunner(QualityRunner):
 
         return Result(asset, self.executor_id, result_dict)
 
+    @override(Executor)
     def _remove_result(self, asset):
         # Override Executor._remove_result(self, asset) by redirecting it to the
         # FeatureAssembler.
@@ -1144,7 +1095,6 @@ class NiqeQualityRunner(QualityRunner):
 
 
 class VmafrcQualityRunner(QualityRunner):
-
     TYPE = 'VMAFRC'
 
     VERSION = 'F' + VmafFeatureExtractor.VERSION + '-0.6.1'
@@ -1254,7 +1204,7 @@ class VmafrcQualityRunner(QualityRunner):
         distorted = dis_path
         width = quality_width
         height = quality_height
-        pixel_format, bitdepth = self._convert_format(fmt)
+        pixel_format, bitdepth = convert_pixel_format_ffmpeg2vmafrc(fmt)
         output = log_file_path
         exe = self._get_exec()
         logger = self.logger
@@ -1264,26 +1214,7 @@ class VmafrcQualityRunner(QualityRunner):
                                           no_prediction, models, subsample, n_threads, disable_avx, output, exe, logger)
 
     def _get_exec(self):
-        return None # signaling default
-
-    @staticmethod
-    def _convert_format(old_fmt):
-        assert old_fmt in ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
-        if old_fmt in ['yuv420p', 'yuv420p10le']:
-            pixel_format = '420'
-        elif old_fmt in ['yuv422p', 'yuv422p10le']:
-            pixel_format = '422'
-        elif old_fmt in ['yuv444p', 'yuv444p10le']:
-            pixel_format = '444'
-        else:
-            assert False
-        if old_fmt in ['yuv420p', 'yuv422p', 'yuv444p']:
-            bitdepth = 8
-        elif old_fmt in ['yuv420p10le', 'yuv422p10le', 'yuv444p10le']:
-            bitdepth = 10
-        else:
-            assert False
-        return pixel_format, bitdepth
+        return None  # signaling default
 
     def _get_quality_scores(self, asset):
         # routine to read the quality scores from the log file, and return

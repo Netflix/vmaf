@@ -140,3 +140,11 @@ def persist_to_dir(dir_name):
         return new_func
 
     return decorator
+
+
+def override(interface_class):
+    def overrider(method):
+        assert(method.__name__ in dir(interface_class)), \
+            f"{method.__name__} does not override any method in {interface_class.__name__}"
+        return method
+    return overrider

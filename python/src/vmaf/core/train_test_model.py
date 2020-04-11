@@ -6,7 +6,7 @@ from numbers import Number
 from sklearn.metrics import f1_score
 import numpy as np
 
-from vmaf.tools.decorator import deprecated
+from vmaf.tools.decorator import deprecated, override
 from vmaf.tools.misc import indices
 from vmaf.core.mixin import TypeVersionEnabled
 from vmaf.core.perf_metric import RmsePerfMetric, SrccPerfMetric, PccPerfMetric, \
@@ -854,6 +854,7 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
         return model
 
     @classmethod
+    @override(TrainTestModel)
     def _predict(cls, model, xs_2d):
         # override TrainTestModel._predict
         try:
@@ -869,6 +870,7 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
         return ys_label_pred
 
     @staticmethod
+    @override(TrainTestModel)
     def _to_file(filename, param_dict, model_dict):
         try:
             svmutil
@@ -906,8 +908,8 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
         return train_test_model
 
     @classmethod
+    @override(TrainTestModel)
     def _delete(cls, filename):
-        # override TrainTestModel._delete
         if os.path.exists(filename):
             os.remove(filename)
         if os.path.exists(filename + '.model'):
@@ -1076,6 +1078,7 @@ class RawVideoTrainTestModelMixin(object):
     """
 
     @classmethod
+    @override(TrainTestModel)
     def _assert_dimension(cls, feature_names, results):
         # Override TrainTestModel._assert_dimension. Allow input to be a numpy
         # ndarray or equivalent (e.g. H5py object) -- they must have attribute
@@ -1103,6 +1106,7 @@ class MomentRandomForestTrainTestModel(RawVideoTrainTestModelMixin,
     VERSION = "0.1"
 
     @classmethod
+    @override(TrainTestModel)
     def _to_tabular_xys(cls, xkeys, xys):
         # Override TrainTestModel._to_tabular_xys. For each image, extract
         # 1st, 2nd moment and var
@@ -1117,6 +1121,7 @@ class MomentRandomForestTrainTestModel(RawVideoTrainTestModelMixin,
         return xys_2d
 
     @classmethod
+    @override(TrainTestModel)
     def _to_tabular_xs(cls, xkeys, xs):
         # Override TrainTestModel._to_tabular_xs
         # from raw video to 1st, 2nd moment and var, format xs properly in
@@ -1147,8 +1152,9 @@ class MomentRandomForestTrainTestModel(RawVideoTrainTestModelMixin,
 class BootstrapRegressorMixin(RegressorMixin):
 
     @classmethod
+    @override(RegressorMixin)
     def get_stats(cls, ys_label, ys_label_pred, **kwargs):
-        # override RegressionMixin.get_stats
+        # override RegressorMixin.get_stats
         try:
             assert 'ys_label_pred_bagging' in kwargs
             assert 'ys_label_pred_stddev' in kwargs
@@ -1164,8 +1170,8 @@ class BootstrapRegressorMixin(RegressorMixin):
             return super(BootstrapRegressorMixin, cls).get_stats(ys_label, ys_label_pred, **kwargs)
 
     @classmethod
+    @override(RegressorMixin)
     def plot_scatter(cls, ax, stats, **kwargs):
-        # override RegressionMixin.plot_scatter
 
         assert len(stats['ys_label']) == len(stats['ys_label_pred'])
 
@@ -1244,8 +1250,8 @@ class BootstrapMixin(object):
     # Therefore, we use 100 bootstrap models or (DEFAULT_NUM_MODELS - 1) bootstrap models.
     DEFAULT_NUM_MODELS = 101
 
+    @override(TrainTestModel)
     def train(self, xys, **kwargs):
-        # override TrainTestModel.train()
         xys_2d = self._preproc_train(xys)
         num_models = self._get_num_models()
         sample_size = xys_2d.shape[0]
@@ -1276,8 +1282,8 @@ class BootstrapMixin(object):
             'num_models'] if 'num_models' in param_dict else cls.DEFAULT_NUM_MODELS
         return num_models
 
+    @override(TrainTestModel)
     def predict(self, xs):
-        # override TrainTestModel.predict()
         xs_2d = self._preproc_predict(xs)
 
         models = self.model
@@ -1325,8 +1331,8 @@ class BootstrapMixin(object):
         stats = self.get_stats(ys_label, ys_label_pred_bagging)
         return stats
 
+    @override(TrainTestModel)
     def to_file(self, filename):
-        # override TrainTestModel.to_file()
         self._assert_trained()
         param_dict = self.param_dict
         model_dict = self.model_dict
@@ -1353,8 +1359,8 @@ class BootstrapMixin(object):
         return filename_
 
     @classmethod
+    @override(TrainTestModel)
     def from_file(cls, filename, logger=None, optional_dict2=None):
-        # override TrainTestModel.from_file()
         filename_0 = cls._get_model_i_filename(filename, 0)
         assert os.path.exists(filename_0), 'File name {} does not exist.'.format(filename_0)
         with open(filename_0, 'rb') as file:
@@ -1380,8 +1386,8 @@ class BootstrapMixin(object):
         return train_test_model_0
 
     @classmethod
+    @override(TrainTestModel)
     def delete(cls, filename):
-        # override TrainTestModel.delete()
         filename_0 = cls._get_model_i_filename(filename, 0)
         assert os.path.exists(filename_0)
         with open(filename_0, 'rb') as file:
@@ -1408,8 +1414,8 @@ class ResidueBootstrapMixin(BootstrapMixin):
 
     MIXIN_VERSION = 'RB0.0.1'
 
+    @override(TrainTestModel)
     def train(self, xys, **kwargs):
-        # override TrainTestModel.train()
         xys_2d = self._preproc_train(xys)
         num_models = self._get_num_models()
         sample_size = xys_2d.shape[0]

@@ -6,6 +6,8 @@ import numpy as np
 import scipy.stats
 from sklearn.metrics import f1_score
 
+from vmaf.tools.decorator import override
+
 try:
     import tensorflow as tf
 
@@ -106,9 +108,8 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
         assert 'dis_u' in xs
         assert 'dis_v' in xs
 
+    @override(TrainTestModel)
     def train(self, xys):
-        # Override TrainTestModel.train.
-
         self._assert_xs(xys)
 
         self.model_type = self.TYPE
@@ -131,8 +132,8 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
         model = self._train(patches_cache, labels_cache)
         self.model = model
 
+    @override(TrainTestModel)
     def predict(self, xs):
-        # Override TrainTestModel.predict
 
         self._assert_xs(xs)
         self._assert_trained()
@@ -263,10 +264,8 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
         yss = xys['dis_y'] # yss
         return np.sum(map(lambda ys:len(ys), yss))
 
+    @override(TrainTestModel)
     def to_file(self, filename):
-        """
-        override TrainTestModel.to_file
-        """
 
         self._assert_trained()
 
@@ -284,8 +283,8 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
             pickle.dump(info_to_save, file)
 
     @classmethod
+    @override(TrainTestModel)
     def from_file(cls, filename, logger=None, optional_dict2=None):
-        # override TrainTestModel.from_file
 
         with open(filename, 'rb') as file:
             info_loaded = pickle.load(file)
@@ -318,10 +317,8 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
         return train_test_model
 
     @staticmethod
+    @override(TrainTestModel)
     def delete(filename):
-        """
-        override TrainTestModel.delete
-        """
         if os.path.exists(filename):
             os.remove(filename)
         if os.path.exists(filename + '.model'):

@@ -7,7 +7,7 @@ import hashlib
 import numpy as np
 
 from vmaf.core.asset import Asset
-from vmaf.tools.decorator import deprecated
+from vmaf.tools.decorator import deprecated, override
 
 from vmaf.tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_slash, \
     parallel_map, match_any_files, run_process, \
@@ -791,8 +791,8 @@ class NorefExecutorMixin(object):
     """ Override Executor whenever reference video is mentioned. """
 
     @staticmethod
+    @override(Executor)
     def _need_ffmpeg(asset):
-        # Override Executor._need_ffmpeg.
         # 1) if quality width/height do not to agree with dis width/height,
         # must rely on ffmpeg for scaling
         # 2) if crop/pad/etc. is need, need ffmpeg
@@ -834,8 +834,8 @@ class NorefExecutorMixin(object):
         else:
             return asset.dis_yuv_type
 
+    @override(Executor)
     def _wait_for_workfiles(self, asset):
-        # Override Executor._wait_for_workfiles to skip ref_workfile_path
         # wait til workfile paths being generated
         for i in range(10):
             if os.path.exists(asset.dis_workfile_path):
@@ -845,8 +845,8 @@ class NorefExecutorMixin(object):
             raise RuntimeError("dis video workfile path {} is missing.".format(
                 asset.dis_workfile_path))
 
+    @override(Executor)
     def _wait_for_procfiles(self, asset):
-        # Override Executor._wait_for_procfiles to skip ref_procfile_path
         # wait til procfile paths being generated
         for i in range(10):
             if os.path.exists(asset.dis_procfile_path):
@@ -856,40 +856,40 @@ class NorefExecutorMixin(object):
             raise RuntimeError("dis video procfile path {} is missing.".format(
                 asset.dis_procfile_path))
 
+    @override(Executor)
     def _assert_paths(self, asset):
-        # Override Executor._assert_paths to skip asserting on ref_path
         assert os.path.exists(asset.dis_path) or match_any_files(asset.dis_path), \
             "Distorted path {} does not exist.".format(asset.dis_path)
 
+    @override(Executor)
     def _open_workfiles(self, asset):
-        # Override Executor._open_workfiles to skip ref.
         self._open_dis_workfile(asset, fifo_mode=False)
 
+    @override(Executor)
     def _open_workfiles_in_fifo_mode(self, asset):
-        # Override Executor._open_workfiles_in_fifo_mode to skip ref
         dis_p = multiprocessing.Process(target=self._open_dis_workfile,
                                         args=(asset, True))
         dis_p.start()
         self._wait_for_workfiles(asset)
 
+    @override(Executor)
     def _open_procfiles(self, asset):
-        # Override Executor._open_procfiles to skip ref.
         self._open_dis_procfile(asset, fifo_mode=False)
 
+    @override(Executor)
     def _open_procfiles_in_fifo_mode(self, asset):
-        # Override Executor._open_procfiles_in_fifo_mode to skip ref
         dis_p = multiprocessing.Process(target=self._open_dis_procfile,
                                         args=(asset, True))
         dis_p.start()
         self._wait_for_procfiles(asset)
 
     @classmethod
+    @override(Executor)
     def _close_workfiles(cls, asset):
-        # Override Executor._close_workfiles to skip ref.
         cls._close_dis_workfile(asset)
 
     @classmethod
+    @override(Executor)
     def _close_procfiles(cls, asset):
-        # Override Executor._close_procfiles to skip ref.
         cls._close_dis_procfile(asset)
 

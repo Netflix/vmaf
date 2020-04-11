@@ -2,7 +2,9 @@ import os
 import numpy as np
 
 from vmaf.config import VmafConfig, VmafExternalConfig
+from vmaf.core.executor import Executor
 from vmaf.core.feature_extractor import FeatureExtractor
+from vmaf.tools.decorator import override
 from vmaf.tools.misc import make_absolute_path, run_process
 from vmaf.tools.stats import ListStats
 
@@ -13,8 +15,8 @@ __license__ = "BSD+Patent"
 class MatlabFeatureExtractor(FeatureExtractor):
 
     @classmethod
+    @override(Executor)
     def _assert_class(cls):
-        # override Executor._assert_class
         super(MatlabFeatureExtractor, cls)._assert_class()
         VmafExternalConfig.get_and_assert_matlab()
 
@@ -72,8 +74,8 @@ class StrredFeatureExtractor(MatlabFeatureExtractor):
         os.chdir(current_dir)
 
     @classmethod
+    @override(Executor)
     def _post_process_result(cls, result):
-        # override Executor._post_process_result
 
         def _strred(srred_trred):
             srred, trred = srred_trred
@@ -162,8 +164,8 @@ class StrredOptFeatureExtractor(MatlabFeatureExtractor):
             os.chdir(current_dir)
 
         @classmethod
+        @override(Executor)
         def _post_process_result(cls, result):
-            # override Executor._post_process_result
 
             def _strred(srred_trred):
                 srred, trred = srred_trred
@@ -250,9 +252,9 @@ class SpEEDMatlabFeatureExtractor(MatlabFeatureExtractor):
         os.chdir(current_dir)
 
     @classmethod
+    @override(Executor)
     def _post_process_result(cls, result):
 
-        # override Executor._post_process_result
         def _speed(sspeed_tspeed):
             sspeed, tspeed = sspeed_tspeed
             if sspeed is not None and tspeed is not None:
@@ -355,8 +357,8 @@ class STMADFeatureExtractor(MatlabFeatureExtractor):
         os.chdir(current_dir)
 
     @classmethod
+    @override(Executor)
     def _post_process_result(cls, result):
-        # override Executor._post_process_result
 
         result = super(STMADFeatureExtractor, cls)._post_process_result(result)
 

@@ -55,7 +55,7 @@ class FeatureTest(unittest.TestCase):
         ADM_LOG = self.LOG_FILENAME + '_adm'
 
         cmd = "{vmaf} adm {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf_feature), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ADM_LOG
         )
         run_process(cmd, shell=True)
@@ -87,7 +87,7 @@ class FeatureTest(unittest.TestCase):
         ANSNR_LOG = self.LOG_FILENAME + '_ansnr'
 
         cmd = "{vmaf} ansnr {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf_feature), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ANSNR_LOG
         )
         run_process(cmd, shell=True)
@@ -100,7 +100,7 @@ class FeatureTest(unittest.TestCase):
         MOTION_LOG = self.LOG_FILENAME + '_motion'
 
         cmd = "{vmaf} motion {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf_feature), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MOTION_LOG
         )
         run_process(cmd, shell=True)
@@ -111,7 +111,7 @@ class FeatureTest(unittest.TestCase):
         MOTION_LOG = self.LOG_FILENAME + '_motion2'
 
         cmd = "{vmaf} motion {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf_feature), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MOTION_LOG
         )
         run_process(cmd, shell=True)
@@ -122,7 +122,7 @@ class FeatureTest(unittest.TestCase):
         VIF_LOG = self.LOG_FILENAME + '_vif'
 
         cmd = "{vmaf} vif {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf_feature), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=VIF_LOG
         )
         run_process(cmd, shell=True)
@@ -155,7 +155,7 @@ class FeatureTest(unittest.TestCase):
         ALL_LOG = self.LOG_FILENAME + "_all"
 
         cmd = "{vmaf} all {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf_feature), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ALL_LOG
         )
         run_process(cmd, shell=True)
@@ -210,100 +210,6 @@ class FeatureTest(unittest.TestCase):
         score, scores = read_log(ALL_LOG, "adm_den_scale3")
         self.assertAlmostEqual(score, 159.71829710416668, places=4)
 
-    def test_psnr(self):
-        PSNR_LOG = self.LOG_FILENAME + '_psnr'
-
-        cmd = "{psnr} {fmt} {ref} {dis} {w} {h} > {log}".format(
-            psnr=required(ExternalProgram.psnr), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
-            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=PSNR_LOG
-        )
-        run_process(cmd, shell=True)
-        score, scores = read_log(PSNR_LOG, "psnr")
-        self.assertAlmostEqual(score, 30.7550639792, places=4)
-        self.assertAlmostEqual(scores[0], 34.760779, places=4)
-        self.assertAlmostEqual(scores[1], 31.88322, places=4)
-
-    def test_2nd_moment(self):
-        MOMENT_LOG = self.LOG_FILENAME + '_moment'
-
-        cmd = "{moment} 2 {fmt} {dis} {w} {h} > {log}".format(
-            moment=required(ExternalProgram.moment), fmt=self.YUV_FMT, dis=self.DIS_YUV,
-            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MOMENT_LOG
-        )
-        run_process(cmd, shell=True)
-        score, scores = read_log(MOMENT_LOG, "1stmoment")
-        self.assertAlmostEqual(score, 61.332006624999984, places=4)
-        score, scores = read_log(MOMENT_LOG, "2ndmoment")
-        self.assertAlmostEqual(score, 4798.659574041666, places=4)
-
-    def test_ssim(self):
-        SSIM_LOG = self.LOG_FILENAME + '_ssim'
-
-        cmd = "{ssim} {fmt} {ref} {dis} {w} {h} > {log}".format(
-            ssim=required(ExternalProgram.ssim), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
-            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=SSIM_LOG
-        )
-        run_process(cmd, shell=True)
-        score, scores = read_log(SSIM_LOG, "ssim")
-        self.assertAlmostEqual(score, 0.863226541666667, places=4)
-        self.assertAlmostEqual(scores[0], 0.925023, places=4)
-        self.assertAlmostEqual(scores[1], 0.891992, places=4)
-        score, scores = read_log(SSIM_LOG, "ssim_l")
-        self.assertAlmostEqual(score, 0.998147458333333, places=4)
-        self.assertAlmostEqual(scores[0], 0.999524, places=4)
-        self.assertAlmostEqual(scores[1], 0.998983, places=4)
-        score, scores = read_log(SSIM_LOG, "ssim_c")
-        self.assertAlmostEqual(score, 0.9612679375000001, places=4)
-        self.assertAlmostEqual(scores[0], 0.979614, places=4)
-        self.assertAlmostEqual(scores[1], 0.96981, places=4)
-        score, scores = read_log(SSIM_LOG, "ssim_s")
-        self.assertAlmostEqual(score, 0.8977363333333335, places=4)
-        self.assertAlmostEqual(scores[0], 0.943966, places=4)
-        self.assertAlmostEqual(scores[1], 0.919507, places=4)
-
-    def test_ms_ssim(self):
-        MS_SSIM_LOG = self.LOG_FILENAME + '_msssim'
-
-        cmd = "{ms_ssim} {fmt} {ref} {dis} {w} {h} > {log}".format(
-            ms_ssim=required(ExternalProgram.ms_ssim), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
-            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MS_SSIM_LOG
-        )
-        run_process(cmd, shell=True)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim")
-        self.assertAlmostEqual(score, 0.9632498125, places=4)
-        self.assertAlmostEqual(scores[0], 0.981968, places=4)
-        self.assertAlmostEqual(scores[1], 0.973366, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_l_scale0")
-        self.assertAlmostEqual(score, 0.998147458333333, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_c_scale0")
-        self.assertAlmostEqual(score, 0.9612679375000001, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_s_scale0")
-        self.assertAlmostEqual(score, 0.8977363333333335, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_l_scale1")
-        self.assertAlmostEqual(score, 0.9989961250000002, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_c_scale1")
-        self.assertAlmostEqual(score, 0.9857694375, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_s_scale1")
-        self.assertAlmostEqual(score, 0.941185875, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_l_scale2")
-        self.assertAlmostEqual(score, 0.9992356458333332, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_c_scale2")
-        self.assertAlmostEqual(score, 0.997034020833, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_s_scale2")
-        self.assertAlmostEqual(score, 0.977992145833, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_l_scale3")
-        self.assertAlmostEqual(score, 0.9992921041666665, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_c_scale3")
-        self.assertAlmostEqual(score, 0.999588104167, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_s_scale3")
-        self.assertAlmostEqual(score, 0.99387125, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_l_scale4")
-        self.assertAlmostEqual(score, 0.9994035625000003, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_c_scale4")
-        self.assertAlmostEqual(score, 0.999907625, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_s_scale4")
-        self.assertAlmostEqual(score, 0.998222583333, places=4)
-
 
 class FeatureTestYuv422p10le(unittest.TestCase):
 
@@ -332,7 +238,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         ADM_LOG = self.LOG_FILENAME + '_adm'
 
         cmd = "{vmaf} adm {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf_feature), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ADM_LOG
         )
         run_process(cmd, shell=True)
@@ -362,7 +268,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         ANSNR_LOG = self. LOG_FILENAME + '_ansnr'
 
         cmd = "{vmaf} ansnr {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf_feature), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ANSNR_LOG
         )
         run_process(cmd, shell=True)
@@ -375,7 +281,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         MOTION_LOG = self.LOG_FILENAME + '_motion'
 
         cmd = "{vmaf} motion {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf_feature), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MOTION_LOG
         )
         run_process(cmd, shell=True)
@@ -386,7 +292,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         MOTION_LOG = self.LOG_FILENAME + '_motion2'
 
         cmd = "{vmaf} motion {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf_feature), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MOTION_LOG
         )
         run_process(cmd, shell=True)
@@ -397,7 +303,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         VIF_LOG = self.LOG_FILENAME + '_vif'
 
         cmd = "{vmaf} vif {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf_feature), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=VIF_LOG
         )
         run_process(cmd, shell=True)
@@ -430,7 +336,7 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         ALL_LOG = self.LOG_FILENAME + "_all"
 
         cmd = "{vmaf} all {fmt} {ref} {dis} {w} {h} > {log}".format(
-            vmaf=required(ExternalProgram.vmaf), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
+            vmaf=required(ExternalProgram.vmaf_feature), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
             w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=ALL_LOG
         )
         run_process(cmd, shell=True)
@@ -485,87 +391,6 @@ class FeatureTestYuv422p10le(unittest.TestCase):
         score, scores = read_log(ALL_LOG, "adm_den_scale3")
         self.assertAlmostEqual(score, 159.71829710416668, places=4)
 
-    def test_psnr(self):
-        PSNR_LOG = self.LOG_FILENAME + '_psnr'
-
-        cmd = "{psnr} {fmt} {ref} {dis} {w} {h} > {log}".format(
-            psnr=required(ExternalProgram.psnr), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
-            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=PSNR_LOG
-        )
-        run_process(cmd, shell=True)
-        score, scores = read_log(PSNR_LOG, "psnr")
-        self.assertAlmostEqual(score, 30.7805732917, places=4)
-        self.assertAlmostEqual(scores[0], 34.786288, places=4)
-        self.assertAlmostEqual(scores[1], 31.908737, places=4)
-
-    def test_ssim(self):
-        SSIM_LOG = self.LOG_FILENAME + '_ssim'
-
-        cmd = "{ssim} {fmt} {ref} {dis} {w} {h} > {log}".format(
-            ssim=required(ExternalProgram.ssim), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
-            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=SSIM_LOG
-        )
-        run_process(cmd, shell=True)
-        score, scores = read_log(SSIM_LOG, "ssim")
-        self.assertAlmostEqual(score, 0.863226541666667, places=4)
-        self.assertAlmostEqual(scores[0], 0.925023, places=4)
-        self.assertAlmostEqual(scores[1], 0.891992, places=4)
-        score, scores = read_log(SSIM_LOG, "ssim_l")
-        self.assertAlmostEqual(score,0.998147458333333, places=4)
-        self.assertAlmostEqual(scores[0], 0.999524, places=4)
-        self.assertAlmostEqual(scores[1], 0.998983, places=4)
-        score, scores = read_log(SSIM_LOG, "ssim_c")
-        self.assertAlmostEqual(score, 0.9612679375000001, places=4)
-        self.assertAlmostEqual(scores[0], 0.979614, places=4)
-        self.assertAlmostEqual(scores[1], 0.96981, places=4)
-        score, scores = read_log(SSIM_LOG, "ssim_s")
-        self.assertAlmostEqual(score, 0.8977363333333335, places=4)
-        self.assertAlmostEqual(scores[0], 0.943966, places=4)
-        self.assertAlmostEqual(scores[1], 0.919507, places=4)
-
-    def test_ms_ssim(self):
-        MS_SSIM_LOG = self.LOG_FILENAME + '_msssim'
-
-        cmd = "{ms_ssim} {fmt} {ref} {dis} {w} {h} > {log}".format(
-            ms_ssim=required(ExternalProgram.ms_ssim), fmt=self.YUV_FMT, ref=self.REF_YUV, dis=self.DIS_YUV,
-            w=self.YUV_WIDTH, h=self.YUV_HEIGHT, log=MS_SSIM_LOG
-        )
-        run_process(cmd, shell=True)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim")
-        self.assertAlmostEqual(score, 0.9632498125, places=4)
-        self.assertAlmostEqual(scores[0], 0.981968, places=4)
-        self.assertAlmostEqual(scores[1], 0.973366, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_l_scale0")
-        self.assertAlmostEqual(score, 0.998147458333333, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_c_scale0")
-        self.assertAlmostEqual(score, 0.9612679375000001, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_s_scale0")
-        self.assertAlmostEqual(score, 0.8977363333333335, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_l_scale1")
-        self.assertAlmostEqual(score, 0.9989961250000002, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_c_scale1")
-        self.assertAlmostEqual(score, 0.9857694375, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_s_scale1")
-        self.assertAlmostEqual(score, 0.941185875, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_l_scale2")
-        self.assertAlmostEqual(score, 0.9992356458333332, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_c_scale2")
-        self.assertAlmostEqual(score, 0.997034020833, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_s_scale2")
-        self.assertAlmostEqual(score, 0.977992145833, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_l_scale3")
-        self.assertAlmostEqual(score, 0.9992921041666665, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_c_scale3")
-        self.assertAlmostEqual(score, 0.9995884375000003, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_s_scale3")
-        self.assertAlmostEqual(score, 0.9938712499999998, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_l_scale4")
-        self.assertAlmostEqual(score, 0.9994035625000003, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_c_scale4")
-        self.assertAlmostEqual(score, 0.999907625, places=4)
-        score, scores = read_log(MS_SSIM_LOG, "ms_ssim_s_scale4")
-        self.assertAlmostEqual(score,0.998222583333, places=4)
-
 
 class CornerCaseTest(unittest.TestCase):
 
@@ -600,7 +425,7 @@ class CornerCaseTest(unittest.TestCase):
         yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080
-        cmd = self.CMD_TEMPLATE.format(vmaf=required(ExternalProgram.vmaf), fmt=yuv_fmt, ref=ref_yuv,
+        cmd = self.CMD_TEMPLATE.format(vmaf=required(ExternalProgram.vmaf_feature), fmt=yuv_fmt, ref=ref_yuv,
                                        dis=dis_yuv, w=yuv_width, h=yuv_height,
                                        log=LOCAL_LOG_FILENAME)
         run_process(cmd, shell=True)
@@ -632,7 +457,7 @@ class CornerCaseTest(unittest.TestCase):
         yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080
-        cmd = self.CMD_TEMPLATE.format(vmaf=required(ExternalProgram.vmaf), fmt=yuv_fmt, ref=ref_yuv,
+        cmd = self.CMD_TEMPLATE.format(vmaf=required(ExternalProgram.vmaf_feature), fmt=yuv_fmt, ref=ref_yuv,
                                        dis=dis_yuv, w=yuv_width, h=yuv_height,
                                        log=LOCAL_LOG_FILENAME)
         run_process(cmd, shell=True)
@@ -664,7 +489,7 @@ class CornerCaseTest(unittest.TestCase):
         yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080
-        cmd = self.CMD_TEMPLATE.format(vmaf=required(ExternalProgram.vmaf), fmt=yuv_fmt, ref=ref_yuv,
+        cmd = self.CMD_TEMPLATE.format(vmaf=required(ExternalProgram.vmaf_feature), fmt=yuv_fmt, ref=ref_yuv,
                                        dis=dis_yuv, w=yuv_width, h=yuv_height,
                                        log=LOCAL_LOG_FILENAME)
         run_process(cmd, shell=True)
@@ -696,7 +521,7 @@ class CornerCaseTest(unittest.TestCase):
         yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080
-        cmd = self.CMD_TEMPLATE.format(vmaf=required(ExternalProgram.vmaf), fmt=yuv_fmt, ref=ref_yuv,
+        cmd = self.CMD_TEMPLATE.format(vmaf=required(ExternalProgram.vmaf_feature), fmt=yuv_fmt, ref=ref_yuv,
                                        dis=dis_yuv, w=yuv_width, h=yuv_height,
                                        log=LOCAL_LOG_FILENAME)
         run_process(cmd, shell=True)
@@ -728,7 +553,7 @@ class CornerCaseTest(unittest.TestCase):
         yuv_fmt = "yuv420p"
         yuv_width = 1920
         yuv_height = 1080
-        cmd = self.CMD_TEMPLATE.format(vmaf=required(ExternalProgram.vmaf), fmt=yuv_fmt, ref=ref_yuv,
+        cmd = self.CMD_TEMPLATE.format(vmaf=required(ExternalProgram.vmaf_feature), fmt=yuv_fmt, ref=ref_yuv,
                                        dis=dis_yuv, w=yuv_width, h=yuv_height,
                                        log=LOCAL_LOG_FILENAME)
         run_process(cmd, shell=True)

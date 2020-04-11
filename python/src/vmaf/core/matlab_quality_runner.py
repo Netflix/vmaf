@@ -1,6 +1,8 @@
 import os
 
 from vmaf.config import VmafExternalConfig, VmafConfig
+from vmaf.core.executor import Executor
+from vmaf.tools.decorator import override
 from vmaf.tools.misc import run_process
 from vmaf.core.feature_assembler import FeatureAssembler
 from vmaf.core.matlab_feature_extractor import StrredFeatureExtractor, StrredOptFeatureExtractor, SpEEDMatlabFeatureExtractor, STMADFeatureExtractor
@@ -42,8 +44,8 @@ class StrredQualityRunner(QualityRunner):
         )
         return feature_assembler
 
+    @override(Executor)
     def _run_on_asset(self, asset):
-        # Override Executor._run_on_asset(self, asset)
         vmaf_fassembler = self._get_feature_assembler_instance(asset)
         vmaf_fassembler.run()
         feature_result = vmaf_fassembler.results[0]
@@ -54,9 +56,9 @@ class StrredQualityRunner(QualityRunner):
         del result_dict[StrredFeatureExtractor.get_scores_key('strred')] # delete redundant
         return Result(asset, self.executor_id, result_dict)
 
+    @override(Executor)
     def _remove_result(self, asset):
-        # Override Executor._remove_result(self, asset) by redirecting it to the
-        # FeatureAssembler.
+        # override by redirecting it to the FeatureAssembler.
 
         vmaf_fassembler = self._get_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
@@ -92,8 +94,8 @@ class StrredOptQualityRunner(QualityRunner):
         )
         return feature_assembler
 
+    @override(Executor)
     def _run_on_asset(self, asset):
-        # Override Executor._run_on_asset(self, asset)
         vmaf_fassembler = self._get_feature_assembler_instance(asset)
         vmaf_fassembler.run()
         feature_result = vmaf_fassembler.results[0]
@@ -104,9 +106,9 @@ class StrredOptQualityRunner(QualityRunner):
         del result_dict[StrredOptFeatureExtractor.get_scores_key('strred')] # delete redundant
         return Result(asset, self.executor_id, result_dict)
 
+    @override(Executor)
     def _remove_result(self, asset):
-        # Override Executor._remove_result(self, asset) by redirecting it to the
-        # FeatureAssembler.
+        # override by redirecting it to the FeatureAssembler.
 
         vmaf_fassembler = self._get_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
@@ -144,8 +146,8 @@ class SpEEDMatlabQualityRunner(QualityRunner):
             )
             return feature_assembler
 
+        @override(Executor)
         def _run_on_asset(self, asset):
-            # Override Executor._run_on_asset(self, asset)
             speed_fassembler = self._get_feature_assembler_instance(asset)
             speed_fassembler.run()
             feature_result = speed_fassembler.results[0]
@@ -157,9 +159,9 @@ class SpEEDMatlabQualityRunner(QualityRunner):
 
             return Result(asset, self.executor_id, result_dict)
 
+        @override(Executor)
         def _remove_result(self, asset):
-            # Override Executor._remove_result(self, asset) by redirecting it to the
-            # FeatureAssembler.
+            # override by redirecting it to the FeatureAssembler.
 
             speed_fassembler = self._get_feature_assembler_instance(asset)
             speed_fassembler.remove_results()
@@ -195,8 +197,8 @@ class STMADQualityRunner(QualityRunner):
         )
         return feature_assembler
 
+    @override(Executor)
     def _run_on_asset(self, asset):
-        # Override Executor._run_on_asset(self, asset)
         vmaf_fassembler = self._get_feature_assembler_instance(asset)
         vmaf_fassembler.run()
         feature_result = vmaf_fassembler.results[0]
@@ -207,9 +209,9 @@ class STMADQualityRunner(QualityRunner):
         del result_dict[STMADFeatureExtractor.get_scores_key('stmad')]  # delete redundant
         return Result(asset, self.executor_id, result_dict)
 
+    @override(Executor)
     def _remove_result(self, asset):
-        # Override Executor._remove_result(self, asset) by redirecting it to the
-        # FeatureAssembler.
+        # override by redirecting it to the FeatureAssembler.
 
         vmaf_fassembler = self._get_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()

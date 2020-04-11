@@ -1,5 +1,8 @@
 from abc import ABCMeta, abstractmethod
 import os
+from xml.etree import ElementTree
+
+from vmaf.tools.decorator import override
 from vmaf.tools.misc import make_absolute_path, run_process
 from vmaf.tools.stats import ListStats
 
@@ -153,8 +156,8 @@ class VmafFeatureExtractor(FeatureExtractor):
         ExternalProgramCaller.call_vmaf_feature(yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
 
     @classmethod
+    @override(Executor)
     def _post_process_result(cls, result):
-        # override Executor._post_process_result
 
         result = super(VmafFeatureExtractor, cls)._post_process_result(result)
 
@@ -308,8 +311,8 @@ class VifFrameDifferenceFeatureExtractor(FeatureExtractor):
         ExternalProgramCaller.call_vifdiff_feature(yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
 
     @classmethod
+    @override(Executor)
     def _post_process_result(cls, result):
-        # override Executor._post_process_result
 
         result = super(VifFrameDifferenceFeatureExtractor, cls)._post_process_result(result)
 
@@ -350,12 +353,51 @@ class VifFrameDifferenceFeatureExtractor(FeatureExtractor):
         return result
 
 
-class PsnrFeatureExtractor(FeatureExtractor):
+class VmafrcFeatureExtractorMixin(object):
+
+    @override(FeatureExtractor)
+    def _get_feature_scores(self, asset):
+
+        assert hasattr(self, '_get_log_file_path')
+        assert hasattr(self, 'ATOM_FEATURES')
+        assert hasattr(self, 'ATOM_FEATURES_TO_VMAFRC_KEY_DICT')
+        assert hasattr(self, 'get_scores_key')
+
+        log_file_path = self._get_log_file_path(asset)
+        tree = ElementTree.parse(log_file_path)
+        root = tree.getroot()
+
+        feature_scores = [[] for _ in self.ATOM_FEATURES]
+
+        for frame in root.findall('frames/frame'):
+            for i_feature, feature in enumerate(self.ATOM_FEATURES):
+                try:
+                    feature_scores[i_feature].append(float(frame.attrib[self.ATOM_FEATURES_TO_VMAFRC_KEY_DICT[feature]]))
+                except KeyError:
+                    pass  # some features may be missing
+
+        for i_feature, feature in enumerate(self.ATOM_FEATURES):
+            assert len(feature_scores[i_feature]) != 0
+            assert len(feature_scores[i_feature]) == len(feature_scores[0])
+
+        feature_result = {}
+        for i_feature, feature in enumerate(self.ATOM_FEATURES):
+            feature_result[self.get_scores_key(feature)] = feature_scores[i_feature]
+
+        return feature_result
+
+
+class PsnrFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "PSNR_feature"
-    VERSION = "1.0"
+    # VERSION = "1.0"
+    VERSION = "1.1"  # call vmaf_rc to replace standalone psnr exec
 
     ATOM_FEATURES = ['psnr']
+
+    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
+        'psnr': 'float_psnr',
+    }
 
     def _generate_result(self, asset):
         # routine to call the command-line executable and generate quality
@@ -454,8 +496,8 @@ class MomentFeatureExtractor(FeatureExtractor):
         return feature_result
 
     @classmethod
+    @override(Executor)
     def _post_process_result(cls, result):
-        # override Executor._post_process_result
 
         result = super(MomentFeatureExtractor, cls)._post_process_result(result)
 
@@ -481,13 +523,20 @@ class MomentFeatureExtractor(FeatureExtractor):
         return result
 
 
-class SsimFeatureExtractor(FeatureExtractor):
+class SsimFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "SSIM_feature"
     # VERSION = "1.0"
-    VERSION = "1.1" # fix OPT_RANGE_PIXEL_OFFSET = 0
+    # VERSION = "1.1"  # fix OPT_RANGE_PIXEL_OFFSET = 0
+    VERSION = "1.2"  # call vmaf_rc to replace standalone ssim exec
 
-    ATOM_FEATURES = ['ssim', 'ssim_l', 'ssim_c', 'ssim_s']
+    ATOM_FEATURES = ['ssim',
+                     # 'ssim_l', 'ssim_c', 'ssim_s',
+                     ]
+
+    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
+        'ssim': 'float_ssim',
+    }
 
     def _generate_result(self, asset):
         # routine to call the command-line executable and generate quality
@@ -506,19 +555,24 @@ class SsimFeatureExtractor(FeatureExtractor):
         ExternalProgramCaller.call_ssim(yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
 
 
-class MsSsimFeatureExtractor(FeatureExtractor):
+class MsSsimFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "MS_SSIM_feature"
     # VERSION = "1.0"
-    VERSION = "1.1" # fix OPT_RANGE_PIXEL_OFFSET = 0
+    # VERSION = "1.1"  # fix OPT_RANGE_PIXEL_OFFSET = 0
+    VERSION = "1.2"  # call vmaf_rc to replace standalone ms_ssim exec
 
     ATOM_FEATURES = ['ms_ssim',
-                     'ms_ssim_l_scale0', 'ms_ssim_c_scale0', 'ms_ssim_s_scale0',
-                     'ms_ssim_l_scale1', 'ms_ssim_c_scale1', 'ms_ssim_s_scale1',
-                     'ms_ssim_l_scale2', 'ms_ssim_c_scale2', 'ms_ssim_s_scale2',
-                     'ms_ssim_l_scale3', 'ms_ssim_c_scale3', 'ms_ssim_s_scale3',
-                     'ms_ssim_l_scale4', 'ms_ssim_c_scale4', 'ms_ssim_s_scale4',
+                     # 'ms_ssim_l_scale0', 'ms_ssim_c_scale0', 'ms_ssim_s_scale0',
+                     # 'ms_ssim_l_scale1', 'ms_ssim_c_scale1', 'ms_ssim_s_scale1',
+                     # 'ms_ssim_l_scale2', 'ms_ssim_c_scale2', 'ms_ssim_s_scale2',
+                     # 'ms_ssim_l_scale3', 'ms_ssim_c_scale3', 'ms_ssim_s_scale3',
+                     # 'ms_ssim_l_scale4', 'ms_ssim_c_scale4', 'ms_ssim_s_scale4',
                      ]
+
+    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
+        'ms_ssim': 'float_ms_ssim',
+    }
 
     def _generate_result(self, asset):
         # routine to call the command-line executable and generate quality

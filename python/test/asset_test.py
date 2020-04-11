@@ -641,7 +641,7 @@ class AssetTest(unittest.TestCase):
                                   'crop_cmd': '570:320:3:2'})
         new_asset = asset.copy(ref_path='xyz')
         self.assertEqual(new_asset.ref_path, 'abc')
-        new_asset2 = asset.copy_as_Asset(ref_path='xyz')
+        new_asset2 = asset.copy_as_asset(ref_path='xyz')
         self.assertEqual(new_asset2.ref_path, 'xyz')
 
     def test_clear_up_yuv_type(self):

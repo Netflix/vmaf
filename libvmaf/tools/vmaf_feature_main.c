@@ -31,7 +31,7 @@ int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, i
 
 static void usage(void)
 {
-    puts("usage: vmaf app fmt ref dis w h\n"
+    puts("usage: vmaf_feature app fmt ref dis w h\n"
          "apps:\n"
          "\tadm\n"
          "\tansnr\n"

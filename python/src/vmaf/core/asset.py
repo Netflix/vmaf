@@ -1,5 +1,5 @@
 import copy
-from vmaf.tools.decorator import deprecated
+from vmaf.tools.decorator import deprecated, override
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
@@ -846,9 +846,8 @@ class NorefAsset(Asset):
             workdir_root
         )
 
+    @override(Asset)
     def copy(self, **kwargs):
-        # Override Asset.copy, since NorefAsset has a different constructor
-        # signature
         new_asset_dict = copy.deepcopy(self.asset_dict)
 
         # reset the following arguments:
@@ -869,7 +868,7 @@ class NorefAsset(Asset):
                                    workdir_root)
         return new_asset
 
-    def copy_as_Asset(self, **kwargs):
+    def copy_as_asset(self, **kwargs):
         """ similar to Noref.copy, except that the returned object is of
         (super)class Asset. """
         new_asset = self.copy()
