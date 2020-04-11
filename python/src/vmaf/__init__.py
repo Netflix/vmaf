@@ -81,15 +81,15 @@ class ExternalProgram(object):
 
     try:
         from . import externals
-        external_vmaf = config.VmafExternalConfig.vmaf_path()
+        external_vmaf_feature = config.VmafExternalConfig.vmaf_path()
         external_vmafossexec = config.VmafExternalConfig.vmafossexec_path()
         external_vmafrc = config.VmafExternalConfig.vmafrc_path()
     except ImportError:
-        external_vmaf = None
+        external_vmaf_feature = None
         external_vmafossexec = None
         external_vmafrc = None
 
-    vmaf = project_path(os.path.join("libvmaf", "build", "tools", "vmaf")) if external_vmaf is None else external_vmaf
+    vmaf_feature = project_path(os.path.join("libvmaf", "build", "tools", "vmaf_feature")) if external_vmaf_feature is None else external_vmaf_feature
     vmafossexec = project_path(os.path.join("libvmaf", "build", "tools", "vmafossexec")) if external_vmafossexec is None else external_vmafossexec
     vmafrc = project_path(os.path.join("libvmaf", "build", "tools", "vmaf_rc")) if external_vmafrc is None else external_vmafrc
 
@@ -193,7 +193,7 @@ class ExternalProgramCaller(object):
         # and written something in advance).
         vmaf_feature_cmd = "{vmaf} all {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
             .format(
-            vmaf=required(ExternalProgram.vmaf),
+            vmaf=required(ExternalProgram.vmaf_feature),
             yuv_type=yuv_type,
             ref_path=ref_path,
             dis_path=dis_path,
@@ -212,7 +212,7 @@ class ExternalProgramCaller(object):
         # and written something in advance).
         vifdiff_feature_cmd = "{vmaf} vifdiff {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
             .format(
-            vmaf=required(ExternalProgram.vmaf),
+            vmaf=required(ExternalProgram.vmaf_feature),
             yuv_type=yuv_type,
             ref_path=ref_path,
             dis_path=dis_path,

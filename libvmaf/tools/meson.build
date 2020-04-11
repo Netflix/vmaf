@@ -24,9 +24,9 @@ vmaf_rc = executable(
     install : false,
 )
 
-vmaf = executable(
-    'vmaf',
-    [src_dir + 'vmaf_main.c', src_dir + 'read_frame.c'],
+vmaf_feature = executable(
+    'vmaf_feature',
+    [src_dir + 'vmaf_feature_main.c', src_dir + 'read_frame.c'],
     include_directories : libvmaf_inc,
     dependencies: [stdatomic_dependency],
     c_args : vmaf_cflags_common,
