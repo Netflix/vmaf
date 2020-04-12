@@ -3,7 +3,6 @@ __license__ = "BSD+Patent"
 
 from vmaf.core.feature_extractor import FeatureExtractor
 from vmaf.core.result import BasicResult
-from vmaf.core.executor import run_executors_in_parallel
 from vmaf.core.matlab_feature_extractor import StrredFeatureExtractor, SpEEDMatlabFeatureExtractor
 
 

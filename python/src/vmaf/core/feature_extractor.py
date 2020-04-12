@@ -1,10 +1,7 @@
 from abc import ABCMeta, abstractmethod
-import os
 from xml.etree import ElementTree
 
 from vmaf.tools.decorator import override
-from vmaf.tools.misc import make_absolute_path, run_process
-from vmaf.tools.stats import ListStats
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
@@ -14,7 +11,6 @@ import numpy as np
 import ast
 
 from vmaf import ExternalProgramCaller
-from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.executor import Executor
 from vmaf.core.result import Result
 from vmaf.tools.reader import YuvReader

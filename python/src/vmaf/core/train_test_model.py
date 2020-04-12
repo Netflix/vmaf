@@ -1272,6 +1272,7 @@ class BootstrapMixin(object):
         self.model = models
 
     def _get_num_models(self):
+        # without this line Pycharm highlights the self.param_dict
         num_models = self.param_dict[
             'num_models'] if 'num_models' in self.param_dict else self.DEFAULT_NUM_MODELS
         return num_models

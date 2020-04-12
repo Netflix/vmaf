@@ -7,7 +7,6 @@ import os
 import numpy as np
 
 from vmaf.config import VmafConfig
-from vmaf.core.executor import run_executors_in_parallel
 from vmaf.core.train_test_model import TrainTestModel
 from vmaf.routine import read_dataset
 from vmaf.tools.misc import import_python_file, empty_object
@@ -32,16 +31,17 @@ class NiqeTrainTestModelTest(unittest.TestCase):
 
         optional_dict = {'mode': 'train'}
 
-        _, self.features = run_executors_in_parallel(
-            NiqeNorefFeatureExtractor,
+        self.fextractor = NiqeNorefFeatureExtractor(
             train_assets,
+            None,
             fifo_mode=True,
             delete_workdir=True,
-            parallelize=True,
             result_store=None,
             optional_dict=optional_dict,
             optional_dict2=None,
         )
+        self.fextractor.run(parallelize=True)
+        self.features = self.fextractor.results
 
         self.model_filename = VmafConfig.workspace_path('model', 'test_save_load.pkl')
 
@@ -50,7 +50,6 @@ class NiqeTrainTestModelTest(unittest.TestCase):
             os.remove(self.model_filename)
 
     def test_get_xs_from_results(self):
-
         xs = NiqeTrainTestModel.get_xs_from_results(self.features)
 
         self.assertEqual(len(xs['NIQE_noref_feature_N11_scores'][0]), 5)
@@ -59,7 +58,7 @@ class NiqeTrainTestModelTest(unittest.TestCase):
         self.assertEqual(len(xs['NIQE_noref_feature_N11_scores'][3]), 11)
         self.assertEqual(len(xs['NIQE_noref_feature_N11_scores'][4]), 3)
         self.assertAlmostEqual(xs['NIQE_noref_feature_N11_scores'][0][3],
-                                -0.016672410493636325)
+                               -0.016672410493636325)
 
     def test_train(self):
         xys = NiqeTrainTestModel.get_xys_from_results(self.features)

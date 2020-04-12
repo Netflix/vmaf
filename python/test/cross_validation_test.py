@@ -8,7 +8,6 @@ from vmaf.core.train_test_model import SklearnRandomForestTrainTestModel, Libsvm
     SklearnExtraTreesTrainTestModel
 from vmaf.core.cross_validation import ModelCrossValidation
 from vmaf.config import VmafConfig
-from vmaf.core.executor import run_executors_in_parallel
 from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
 from vmaf.routine import read_dataset
 from vmaf.tools.misc import import_python_file, unroll_dict_of_lists

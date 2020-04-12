@@ -304,7 +304,10 @@ class AucPerfMetric(RawScorePerfMetric):
             n_b = len(b)
             var_a = np.var(a, ddof=1)
             var_b = np.var(b, ddof=1)
-            z = (mos_a - mos_b) / np.sqrt(var_a/n_a + var_b/n_b)
+            den = var_a/n_a + var_b/n_b
+            if den == 0.0:
+                den = 1e-8
+            z = (mos_a - mos_b) / np.sqrt(den)
             if z < -2:
                 return -1
             elif z > 2:
@@ -454,6 +457,7 @@ class ResolvingPowerPerfMetric(RawScorePerfMetric):
         mos_pairs = mos_pairs - mos_pairs.T
         stand_err_diff = np.tile(variance / num_viewers, (num_comb, 1))
         stand_err_diff = np.sqrt(stand_err_diff + stand_err_diff.T)
+        stand_err_diff[stand_err_diff == 0.0] = 1e-8
         z_pairs = mos_pairs / stand_err_diff
 
         # % Include everything above the diagonal.
@@ -521,8 +525,11 @@ class ResolvingPowerPerfMetric(RawScorePerfMetric):
         # end
         mean_cdf_z_vqm = np.zeros(len_centers)
         for i in range(0, len_centers):
-            in_bin = indices(delta_vqm, lambda x:low_limits[i] <= x and x < high_limits[i])
-            mean_cdf_z_vqm[i] = np.mean(cdf_z_vqm[in_bin])
+            in_bin = indices(delta_vqm, lambda x: low_limits[i] <= x < high_limits[i])
+            if len(in_bin) == 0:
+                mean_cdf_z_vqm[i] = np.float('NaN')
+            else:
+                mean_cdf_z_vqm[i] = np.mean(cdf_z_vqm[in_bin])
         centers__mean_cdf_z_vqm = filter(lambda p: not np.isnan(p[1]), zip(centers, mean_cdf_z_vqm))
         centers, mean_cdf_z_vqm = zip(*centers__mean_cdf_z_vqm)
 

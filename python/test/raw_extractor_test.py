@@ -1,8 +1,3 @@
-from vmaf.core.executor import run_executors_in_parallel
-
-__copyright__ = "Copyright 2016-2020, Netflix, Inc."
-__license__ = "BSD+Patent"
-
 import unittest
 import os
 
@@ -11,6 +6,9 @@ import numpy as np
 from vmaf.config import VmafConfig
 from vmaf.core.asset import Asset
 from vmaf.core.raw_extractor import AssetExtractor, DisYUVRawVideoExtractor
+
+__copyright__ = "Copyright 2016-2020, Netflix, Inc."
+__license__ = "BSD+Patent"
 
 
 class RawExtractorTest(unittest.TestCase):

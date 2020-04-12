@@ -5,7 +5,6 @@ from functools import partial
 
 import numpy as np
 
-from vmaf.core.executor import run_executors_in_parallel
 from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor, \
     NiqeNorefFeatureExtractor, BrisqueNorefFeatureExtractor, SiTiNorefFeatureExtractor
 
@@ -312,14 +311,16 @@ class ParallelNorefFeatureExtractorTestNew(unittest.TestCase):
 
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
-        self.fextractors, results = run_executors_in_parallel(
-            BrisqueNorefFeatureExtractor,
+        self.fextractor = BrisqueNorefFeatureExtractor(
             [asset, asset_original],
+            None,
             fifo_mode=True,
             delete_workdir=True,
-            parallelize=True,
             result_store=None,
         )
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
 
         self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_alpha23_score'], 0.7640625000000005, places=4)
         self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_alpha13_score'], 0.6322500000000002, places=4)

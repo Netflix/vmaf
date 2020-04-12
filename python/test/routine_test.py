@@ -282,9 +282,9 @@ class TestTrainOnDataset(unittest.TestCase):
         test_dataset = import_python_file(
             VmafConfig.test_resource_path('dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
-                        None, None,
-                        parallelize=True,
-                        aggregate_method=None)
+                                                   None, None,
+                                                   parallelize=True,
+                                                   aggregate_method=None)
 
         self.assertAlmostEqual(results[0]['VMAF_score'], 99.142659046424384, places=4)
         self.assertAlmostEqual(results[1]['VMAF_score'], 35.066157497128764, places=4)
@@ -300,9 +300,9 @@ class TestTrainOnDataset(unittest.TestCase):
         test_dataset = import_python_file(
             VmafConfig.test_resource_path('dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, BootstrapVmafQualityRunner, None,
-                        None, None,
-                        parallelize=True,
-                        aggregate_method=None)
+                                                   None, None,
+                                                   parallelize=True,
+                                                   aggregate_method=None)
 
         expecteds = [98.7927560599655, 100.0, 100.0, 98.82959541116277, 99.80711961053976, 98.91713244333198, 100.0,
                      99.33233498293374, 98.99337537979711, 99.62668672314118, 99.00879643796763, 100.0, 97.29492843378944,
@@ -355,10 +355,10 @@ class TestTrainOnDataset(unittest.TestCase):
         test_dataset = import_python_file(
             VmafConfig.test_resource_path('raw_dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
-                        None, None,
-                        parallelize=True,
-                        aggregate_method=None,
-                        subj_model_class=MosModel)
+                                                   None, None,
+                                                   parallelize=True,
+                                                   aggregate_method=None,
+                                                   subj_model_class=MosModel)
 
         self.assertAlmostEqual(results[0]['VMAF_score'], 99.142659046424384, places=4)
         self.assertAlmostEqual(results[1]['VMAF_score'], 35.066157497128764, places=4)
@@ -389,7 +389,7 @@ class TestGenerateDatasetFromRaw(unittest.TestCase):
 
     def test_generate_dataset_from_raw_default(self):  # DMOS
         generate_dataset_from_raw(raw_dataset_filepath=self.raw_dataset_filepath,
-                         output_dataset_filepath=self.derived_dataset_path)
+                                  output_dataset_filepath=self.derived_dataset_path)
         dataset = import_python_file(self.derived_dataset_path)
         self.assertAlmostEqual(dataset.dis_videos[0]['groundtruth'], 1.42307692308, places=4)
 

@@ -7,7 +7,6 @@ from vmaf.config import VmafConfig
 from vmaf.core.train_test_model import TrainTestModel, \
     LibsvmNusvrTrainTestModel, SklearnRandomForestTrainTestModel, \
     MomentRandomForestTrainTestModel, SklearnExtraTreesTrainTestModel, SklearnLinearRegressionTrainTestModel
-from vmaf.core.executor import run_executors_in_parallel
 from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
 from vmaf.routine import read_dataset
 from vmaf.tools.misc import import_python_file
@@ -271,22 +270,25 @@ class TrainTestModelTest(unittest.TestCase):
         xys = SklearnExtraTreesTrainTestModel.get_xys_from_results(self.features, [0, 1, 2])
 
         model = SklearnExtraTreesTrainTestModel({'norm_type': 'normalize',
-                                            'random_state': 0}, None)
+                                                 'n_estimators': 10,
+                                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertAlmostEqual(result['RMSE'], 0.042867322777879642, places=4)
 
         model = SklearnExtraTreesTrainTestModel({'norm_type': 'clip_0to1',
-                                'random_state': 0}, None)
+                                                 'n_estimators': 10,
+                                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertAlmostEqual(result['RMSE'], 0.042867322777879642, places=4)
 
         model = SklearnExtraTreesTrainTestModel(
             {'norm_type': 'custom_clip_0to1',
+             'n_estimators': 10,
              'custom_clip_0to1_map': {
-                'Moment_noref_feature_1st_score': [0.0, 100.0],
-              },
+                 'Moment_noref_feature_1st_score': [0.0, 100.0],
+             },
              'random_state': 0
              }, None)
         model.train(xys)
@@ -294,12 +296,15 @@ class TrainTestModelTest(unittest.TestCase):
         self.assertAlmostEqual(result['RMSE'], 0.042867322777879642, places=4)
 
         model = SklearnExtraTreesTrainTestModel({'norm_type': 'clip_minus1to1',
-                                'random_state': 0}, None)
+                                                 'n_estimators': 10,
+                                                 'random_state': 0}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertAlmostEqual(result['RMSE'], 0.042867322777879642, places=4)
 
-        model = SklearnExtraTreesTrainTestModel({'norm_type': 'none', 'random_state': 0}, None)
+        model = SklearnExtraTreesTrainTestModel({'norm_type': 'none',
+                                                 'n_estimators': 10,
+                                                 'random_state': 0,}, None)
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertAlmostEqual(result['RMSE'], 0.042867322777879642, places=4)
