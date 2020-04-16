@@ -95,6 +95,7 @@ libvmaf_feature_sources = [
     feature_src_dir + 'ansnr_tools.c',
     feature_src_dir + 'vif.c',
     feature_src_dir + 'vif_tools.c',
+    feature_src_dir + 'integer_vif_function.c',
     feature_src_dir + 'motion.c',
     feature_src_dir + 'psnr.c',
     feature_src_dir + 'ssim.c',
@@ -163,6 +164,7 @@ libvmaf_rc_feature_sources = [
   feature_src_dir + 'float_ssim.c',
   feature_src_dir + 'float_ms_ssim.c',
   feature_src_dir + 'float_vif.c',
+  feature_src_dir + 'integer_vif.c',
   feature_src_dir + 'integer_ssim.c',
 ]
 

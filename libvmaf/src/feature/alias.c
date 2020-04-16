@@ -47,6 +47,22 @@ static Alias alias_map[] = {
         .name = "'VMAF_feature_vif_scale3_score'",
         .alias = "vif_scale3",
     },
+    {
+        .name = "'VMAF_feature_vif_scale0_integer_score'",
+        .alias = "integer_vif_scale0",
+    },
+    {
+        .name = "'VMAF_feature_vif_scale1_integer_score'",
+        .alias = "integer_vif_scale1",
+    },
+    {
+        .name = "'VMAF_feature_vif_scale2_integer_score'",
+        .alias = "integer_vif_scale2",
+    },
+    {
+        .name = "'VMAF_feature_vif_scale3_integer_score'",
+        .alias = "integer_vif_scale3",
+    },
 };
 
 const char *vmaf_feature_name_alias(const char *feature_name)
