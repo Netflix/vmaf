@@ -67,7 +67,7 @@ matrix:
       script: *base-gcc-script
     - name: Python3 Tox
       language: python
-      python: "3.7"
+      python: "3.8"
       env: CC=gcc-7 CXX=g++-7
       cache: &python-cache
         pip: true
