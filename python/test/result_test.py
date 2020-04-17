@@ -13,7 +13,7 @@ from vmaf.core.result_store import FileSystemResultStore
 from vmaf.core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner
 from vmaf.tools.stats import ListStats
 
-from .testutil import set_default_576_324_videos_for_testing
+from test.testutil import set_default_576_324_videos_for_testing
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"

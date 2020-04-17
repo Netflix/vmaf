@@ -9,7 +9,7 @@ from vmaf.core.feature_assembler import FeatureAssembler
 from vmaf.core.feature_extractor import VmafFeatureExtractor, FeatureExtractor, \
     MomentFeatureExtractor
 
-from .testutil import set_default_576_324_videos_for_testing
+from test.testutil import set_default_576_324_videos_for_testing
 
 
 class FeatureAssemblerTest(unittest.TestCase):

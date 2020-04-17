@@ -5,127 +5,53 @@ The VMAF Python library offers full functionalities from running basic VMAF comm
 
 ## Prerequisites
 
-The VMAF Python library has its core feature extraction library written in C, and the rest scripting code written in Python. To build the C code, it requires `gcc` and `g++` (>=4.8). To run scripts and tests, it requires Python 3.
+In order to use the Python library, first install the `libvmaf` C library according to [the instructions](../../libvmaf/README.md).
 
-It also requires a number of Python packages:
-
-  - [`numpy`](http://www.numpy.org/) (>=1.12.0)
-  - [`scipy`](http://www.scipy.org/) (>=0.17.1)
-  - [`matplotlib`](http://matplotlib.org/1.3.1/index.html) (>=2.0.0)
-  - [`pandas`](http://pandas.pydata.org/) (>=0.19.2)
-  - [`scikit-learn`](http://scikit-learn.org/stable/) (>=0.18.1)
-  - [`scikit-image`](http://scikit-image.org/) (>=0.13.1)
-  - [`h5py`](http://www.h5py.org/) (>=2.6.0)
-  - [`sureal`](https://github.com/Netflix/sureal) (>=0.1.1)
-
-You will need to install `gfortran` for compiling `scipy`, `freetype` and `pkg-config` required by `matplotlib`, and `hdf5` required by `h5py` (C header files needed). These can't be compiled from source here.
-
-### Prerequisite Installation
-
-#### Linux (Ubuntu)
+### Linux (Ubuntu)
 
 Install the dependencies:
 
 ```
 sudo apt-get update -qq && \
 sudo apt-get install -y \
-  pkg-config gfortran libhdf5-dev libfreetype6-dev liblapack-dev \
   python3 \
   python3-dev \
   python3-pip \
   python3-setuptools \
+  python3-wheel \
   python3-tk
 ```
 
-Upgrade `pip` to the newest version:
+### macOS
+
+First, install [Homebrew](https://brew.sh), then install the dependencies:
 
 ```
-sudo -H pip3 install --upgrade pip
+brew install python
 ```
 
-Then install the required Python packages:
+This will install an up-to-date version of Python and `pip` (see [Homebrew's Python guide](https://docs.brew.sh/Homebrew-and-Python) for more info).
+
+## Installation
+
+Install the required Python packages from the `python` directory:
 
 ```
-pip3 install --user numpy scipy matplotlib pandas scikit-learn scikit-image h5py sureal
+cd python
+pip3 install --user .
 ```
 
-Make sure your user install executable directory is on your PATH. Add this to the end of `~/.bashrc` and restart your shell:
+Make sure your user install executable directory is on your PATH. Add this to the end of `~/.bashrc` (or `~/.bash_profile` under macOS) and restart your shell:
 
 ```
 export PATH="$PATH:$HOME/.local/bin"
 ```
 
-#### macOS
-
-First, install [Homebrew](https://brew.sh), then install the dependencies:
-
-```
-brew install gcc freetype pkg-config homebrew/core/hdf5 python@2 ninja
-```
-
-This will install an up-to-date version of Python 2.7 and `pip` (see [Homebrew's Python guide](https://docs.brew.sh/Homebrew-and-Python) for more info).
-
-Now install the required Python packages:
-
-```
-brew install numpy scipy
-pip install matplotlib notebook pandas sympy nose scikit-learn scikit-image h5py sureal
-pip3 install meson
-```
-
-### Troubleshooting
-
-You can verify if these packages are properly installed and its version/location by:
-
-```
-python3 -c 'import numpy as pkg; print(pkg.__version__); print(pkg.__file__)'
-python3 -c 'import scipy as pkg; print(pkg.__version__); print(pkg.__file__)'
-python3 -c 'import matplotlib as pkg; print(pkg.__version__); print(pkg.__file__)'
-python3 -c 'import pandas as pkg; print(pkg.__version__); print(pkg.__file__)'
-python3 -c 'import sklearn as pkg; print(pkg.__version__); print(pkg.__file__)'
-python3 -c 'import skimage as pkg; print(pkg.__version__); print(pkg.__file__)'
-python3 -c 'import h5py as pkg; print(pkg.__version__); print(pkg.__file__)'
-python3 -c 'import sureal as pkg; print(pkg.__version__); print(pkg.__file__)'
-```
-
-If you see that the printed version number is older than the ones aforementioned, it could suggest that a previously installed package with the same name but older version at a different location may have overshadowed the new one. Make sure that the new one's path appears early in the path list, which can be printed by:
-
-```
-python3 -c 'import sys; print(sys.path)'
-```
-
-(Or simply delete the older one).
-
-## Installation
-
-After cloning VMAF repository, `cd` to the repo directory and run:
-
-```
-make
-```
-
-to build the binaries.
-
-Add the `python/src` subdirectories to the environment variable `PYTHONPATH`:
-
-```
-export PYTHONPATH="$(pwd)/python/src:$PYTHONPATH"
-```
-
-You can also add it to the environment permanently, by appending to `~/.bashrc`:
-
-```
-echo export PYTHONPATH="$(pwd)/python/src:$PYTHONPATH" >> ~/.bashrc
-source ~/.bashrc
-```
-
-Under macOS, use `~/.bash_profile` instead.
-
 ## Testing
 
 The package has thus far been tested on Ubuntu 16.04 LTS and macOS 10.13.
 
-After installation, run:
+After installation, run this from the repository root:
 
 ```
 ./unittest

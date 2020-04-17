@@ -41,28 +41,28 @@ class CommandLineTest(unittest.TestCase):
             os.remove(self.batch_filename)
 
     def test_run_testing_vmaf(self):
-        exe = VmafConfig.root_path('run_testing')
+        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_testing.py')
         cmd = "{exe} VMAF {dataset} --parallelize --suppress-plot".format(
             exe=exe, dataset=self.dataset_filename)
         ret = run_process(cmd, shell=True)
         self.assertEqual(ret, 0)
 
     def test_run_testing_vmaf_raw_dataset(self):
-        exe = VmafConfig.root_path('run_testing')
+        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_testing.py')
         cmd = "{exe} VMAF {dataset} --parallelize --suppress-plot".format(
             exe=exe, dataset=self.raw_dataset_filename)
         ret = run_process(cmd, shell=True)
         self.assertEqual(ret, 0)
 
     def test_run_testing_psnr(self):
-        exe = VmafConfig.root_path('run_testing')
+        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_testing.py')
         cmd = "{exe} PSNR {dataset} --parallelize --suppress-plot".format(
             exe=exe, dataset=self.dataset_filename)
         ret = run_process(cmd, shell=True)
         self.assertEqual(ret, 0)
 
     def test_run_vmaf_training(self):
-        exe = VmafConfig.root_path('run_vmaf_training')
+        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_vmaf_training.py')
         cmd = "{exe} {dataset} {param} {param} {output} --parallelize --suppress-plot".format(
             exe=exe,
             dataset=self.dataset_filename,
@@ -72,7 +72,7 @@ class CommandLineTest(unittest.TestCase):
         self.assertEqual(ret, 0)
 
     def test_run_vmaf_training_raw_dataset(self):
-        exe = VmafConfig.root_path('run_vmaf_training')
+        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_vmaf_training.py')
         cmd = "{exe} {dataset} {param} {param} {output} --parallelize --suppress-plot".format(
             exe=exe,
             dataset=self.raw_dataset_filename,
@@ -89,7 +89,7 @@ class CommandLineTest(unittest.TestCase):
         ret = run_process(cmd, shell=True)
         self.assertEqual(ret, 0)
 
-        exe = VmafConfig.root_path('run_vmaf_in_batch')
+        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_vmaf_in_batch.py')
         cmd = "{exe} {input} --parallelize >/dev/null 2>&1".format(
             exe=exe, input=self.batch_filename)
         ret = run_process(cmd, shell=True)
@@ -103,14 +103,14 @@ class CommandLineTest(unittest.TestCase):
         ret = run_process(cmd, shell=True)
         self.assertEqual(ret, 0)
 
-        exe = VmafConfig.root_path('run_vmaf_in_batch')
+        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_vmaf_in_batch.py')
         cmd = "{exe} {input} --parallelize --ci >/dev/null 2>&1".format(
             exe=exe, input=self.batch_filename)
         ret = run_process(cmd, shell=True)
         self.assertEqual(ret, 0)
 
     def test_run_vmaf(self):
-        exe = VmafConfig.root_path('run_vmaf')
+        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_vmaf.py')
         line = 'yuv420p 576 324 {root}/python/test/resource/yuv/src01_hrc00_576x324.yuv ' \
                '{root}/python/test/resource/yuv/src01_hrc01_576x324.yuv'.format(root=VmafConfig.root_path())
         cmd = "{exe} {line} >/dev/null 2>&1".format(line=line, exe=exe)
@@ -118,7 +118,7 @@ class CommandLineTest(unittest.TestCase):
         self.assertEqual(ret, 0)
 
     def test_run_vmaf_ci(self):
-        exe = VmafConfig.root_path('run_vmaf')
+        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_vmaf.py')
         line = 'yuv420p 576 324 {root}/python/test/resource/yuv/src01_hrc00_576x324.yuv ' \
                '{root}/python/test/resource/yuv/src01_hrc01_576x324.yuv'.format(root=VmafConfig.root_path())
         cmd = "{exe} {line} --ci >/dev/null 2>&1".format(line=line, exe=exe)
@@ -126,7 +126,7 @@ class CommandLineTest(unittest.TestCase):
         self.assertEqual(ret, 0)
 
     def test_run_vmaf_both_local_explain_and_ci(self):
-        exe = VmafConfig.root_path('run_vmaf')
+        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_vmaf.py')
         line = 'yuv420p 576 324 {root}/python/test/resource/yuv/src01_hrc00_576x324.yuv ' \
                '{root}/python/test/resource/yuv/src01_hrc01_576x324.yuv'.format(root=VmafConfig.root_path())
         cmd = "{exe} {line} --local-explain --ci >/dev/null 2>&1".format(line=line, exe=exe)
@@ -134,7 +134,7 @@ class CommandLineTest(unittest.TestCase):
         self.assertEqual(ret, 2)
 
     def test_run_psnr(self):
-        exe = VmafConfig.root_path('run_psnr')
+        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_psnr.py')
         line = 'yuv420p 576 324 {root}/python/test/resource/yuv/src01_hrc00_576x324.yuv ' \
                '{root}/python/test/resource/yuv/src01_hrc01_576x324.yuv'.format(root=VmafConfig.root_path())
         cmd = "{exe} {line} >/dev/null 2>&1".format(line=line, exe=exe)
@@ -142,13 +142,13 @@ class CommandLineTest(unittest.TestCase):
         self.assertEqual(ret, 0)
 
     def test_run_cleaning_cache_psnr(self):
-        exe = VmafConfig.root_path('run_testing')
+        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_testing.py')
         cmd = "{exe} PSNR {dataset} --parallelize --cache-result --suppress-plot".format(
             exe=exe, dataset=self.dataset_filename)
         ret = run_process(cmd, shell=True)
         self.assertEqual(ret, 0)
 
-        exe = VmafConfig.root_path('python', 'script', 'run_cleaning_cache.py')
+        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_cleaning_cache.py')
         cmd = "{exe} PSNR {dataset}".format(
             exe=exe, dataset=self.dataset_filename)
         ret = run_process(cmd, shell=True)

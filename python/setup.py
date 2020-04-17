@@ -9,20 +9,19 @@ as well as a set of tools that allows a user to train and test a custom VMAF mod
 """
 
 import os
-from setuptools import setup, find_packages
+from setuptools import setup
 
 
 PYTHON_PROJECT = os.path.dirname(os.path.abspath(__file__))
-VMAF_PROJECT = os.path.dirname(PYTHON_PROJECT)
 
 
 def get_version():
-    """Version from project's VERSION file"""
+    """Version from vmaf __init__"""
     try:
-        with open(os.path.join(VMAF_PROJECT, "VERSION")) as fh:
+        with open(os.path.join(PYTHON_PROJECT, "vmaf", "__init__.py")) as fh:
             for line in fh:
-                if line.startswith("VMAF Development"):
-                    return line.strip().rpartition(" ")[2]
+                if line.startswith("__version__"):
+                    return line.strip().rpartition(" ")[2].replace('"', "")
     except Exception:
         pass
     return "0.0-dev"
@@ -31,25 +30,38 @@ def get_version():
 setup(
     name="vmaf",
     version=get_version(),
-
     author="Zhi Li",
     author_email="zli@netflix.com",
     description="Video Multimethod Assessment Fusion",
     long_description=open(os.path.join(PYTHON_PROJECT, "README.rst")).read(),
     long_description_content_type="text/x-rst",
     url="https://github.com/Netflix/vmaf",
-
-    package_dir={"": "src"},
-    packages=find_packages("src"),
+    packages=["vmaf", "vmaf.tools", "vmaf.core", "vmaf.script"],
     include_package_data=True,
     install_requires=[
-        "numpy>=1.12.0",
-        "scipy>=0.17.1",
-        "matplotlib>=2.0.0",
-        "pandas>=0.19.2",
-        "scikit-learn>=0.18.1",
-        "scikit-image>=0.13.1",
+        "numpy>=1.18.2",
+        "scipy>=1.4.1",
+        "matplotlib>=3.2.1",
+        "pandas>=1.0.3",
+        "scikit-learn>=0.22.2",
+        "scikit-image>=0.16.2",
         "h5py>=2.6.0",
-        "sureal>=0.1.0",
-    ]
+        "sureal>=0.4.2",
+        "dill>=0.3.1",
+    ],
+    entry_points = {
+        'console_scripts': [
+            'ffmpeg2vmaf=vmaf.script.ffmpeg2vmaf:main',
+            'run_cleaning_cache=vmaf.script.run_cleaning_cache:main',
+            'run_psnr=vmaf.script.run_psnr:main',
+            'run_result_assembly=vmaf.script.run_result_assembly:main',
+            'run_testing=vmaf.script.run_testing:main',
+            'run_toddnoiseclassifier=vmaf.script.run_toddnoiseclassifier:main',
+            'run_vmaf=vmaf.script.run_vmaf:main',
+            'run_vmaf_cross_validation=vmaf.script.run_vmaf_cross_validation:main',
+            'run_vmaf_in_batch=vmaf.script.run_vmaf_in_batch:main',
+            'run_vmaf_training=vmaf.script.run_vmaf_training:main',
+            'run_vmafossexec_subsampling=vmaf.script.run_vmafossexec_subsampling:main',
+        ],
+    }
 )

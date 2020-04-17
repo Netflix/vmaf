@@ -8,7 +8,7 @@ import numpy as np
 from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor, \
     NiqeNorefFeatureExtractor, BrisqueNorefFeatureExtractor, SiTiNorefFeatureExtractor
 
-from .testutil import set_default_576_324_videos_for_testing, set_default_576_324_noref_videos_for_testing
+from test.testutil import set_default_576_324_videos_for_testing, set_default_576_324_noref_videos_for_testing
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
