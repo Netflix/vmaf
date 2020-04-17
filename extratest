@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
 
-PYTHONPATH=python python -m unittest discover -s python/test/extra -p '*_extratest.py'
+PYTHONPATH=python python3 -m unittest discover -v -s python/test/extra -p '*_extratest.py'

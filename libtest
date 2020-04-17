@@ -1,3 +1,0 @@
-#!/usr/bin/env sh
-
-PYTHONPATH=python python -m unittest discover -s python/test/lib -p '*_libtest.py'
