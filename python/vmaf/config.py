@@ -178,6 +178,7 @@ class VmafConfig(object):
             if not os.path.exists(os.path.dirname(local_path)):
                 os.makedirs(os.path.dirname(local_path))
             remote_path = os.path.join(VMAF_RESOURCE_ROOT, 'python', 'test', 'resource', *components)
+            print(f'download {local_path} from {remote_path}')
             urllib.request.urlretrieve(remote_path, local_path)
         return local_path
 
