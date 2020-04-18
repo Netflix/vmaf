@@ -11,14 +11,14 @@ Install these dependencies under Ubuntu with:
 
 ```
 sudo apt update -qq && \
-sudo apt install python3 python3-pip python3-setuptools python3-wheel ninja-build
+sudo apt install python3 python3-pip python3-setuptools python3-wheel ninja-build doxygen
 pip3 install --user meson
 ```
 
 Under macOS, install [Homebrew](https://brew.sh), then:
 
 ```
-brew install meson
+brew install meson doxygen
 ```
 
 ## Compile

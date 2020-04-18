@@ -10,6 +10,7 @@ RUN apt-get update && \
         build-essential \
         git \
         ninja-build \
+        doxygen \
         python3 \
         python3-dev \
         python3-pip \
