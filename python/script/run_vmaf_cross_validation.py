@@ -6,10 +6,9 @@ import numpy as np
 from vmaf.config import VmafConfig, DisplayConfig
 from vmaf.routine import run_vmaf_cv, run_vmaf_kfold_cv
 
-if __name__ == '__main__':
 
+def main():
     # ==== Run simple cross validation: one training and one testing dataset ====
-
     run_vmaf_cv(
         train_dataset_filepath=VmafConfig.resource_path('dataset', 'NFLX_dataset_public.py'),
         test_dataset_filepath=VmafConfig.resource_path('dataset', 'VQEGHD3_dataset.py'),
@@ -43,3 +42,7 @@ if __name__ == '__main__':
     DisplayConfig.show()
 
     print('Done.')
+
+
+if __name__ == '__main__':
+    main()
