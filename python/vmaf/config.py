@@ -1,12 +1,15 @@
 from __future__ import absolute_import
 
 import os
+import urllib.request
+import urllib.error
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
 PYTHON_ROOT = os.path.dirname(os.path.realpath(__file__))
 ROOT = os.path.abspath(os.path.join(PYTHON_ROOT, '..', '..',))
+VMAF_RESOURCE_ROOT = "https://github.com/li-zhi/vmaf_resource/raw/master"
 
 
 class VmafExternalConfig(object):
@@ -171,7 +174,18 @@ class VmafConfig(object):
 
     @classmethod
     def test_resource_path(cls, *components):
-        return cls.root_path('python', 'test', 'resource', *components)
+        local_path = cls.root_path('python', 'test', 'resource', *components)
+        if not os.path.exists(local_path):
+            if not os.path.exists(os.path.dirname(local_path)):
+                os.makedirs(os.path.dirname(local_path))
+            remote_path = os.path.join(VMAF_RESOURCE_ROOT, 'python', 'test', 'resource', *components)
+            print(f'download {local_path} from {remote_path}')
+            try:
+                urllib.request.urlretrieve(remote_path, local_path)
+            except urllib.error.HTTPError as e:
+                print(f"error downloading from {remote_path}")
+                raise e
+        return local_path
 
     @classmethod
     def tools_resource_path(cls, *components):

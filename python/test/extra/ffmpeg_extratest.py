@@ -54,7 +54,7 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.45136466666666664, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 2.8779373333333331, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'],0.9362876630569382, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 24.109544854166668, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 24.110899416666665, places=4)
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 0.9789283541666666, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 2.8779373333333331, places=4)
@@ -89,9 +89,9 @@ class NorefFeatureExtractorTest(unittest.TestCase):
 
         results = self.fextractor.results
 
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_1st_score'], 63.273978452932084, places=4)
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_2nd_score'], 5124.572291840278, places=4)
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_var_score'], 1111.9962740092349, places=4)
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_1st_score'], 63.25902145061728, places=4)
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_2nd_score'], 5123.705637307099, places=4)
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_var_score'], 1113.0346638689637, places=4)
 
 
 class QualityRunnerTest(unittest.TestCase):
@@ -125,7 +125,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner.run()
 
         results = self.runner.results
-        self.assertAlmostEqual(results[0]['PSNR_score'], 51.12090432666667, places=4)
+        self.assertAlmostEqual(results[0]['PSNR_score'], 50.99313338666667, places=4)
 
     def test_run_vmaf_runner_with_notyuv_gblur(self):
 
@@ -148,7 +148,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner.run()
 
         results = self.runner.results
-        self.assertAlmostEqual(results[0]['VMAF_score'], 77.28044458354246, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 77.28938600125885, places=4)
 
     def test_run_vmaf_runner_with_yuv_lutyuv(self):
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
