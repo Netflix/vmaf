@@ -28,24 +28,24 @@ class CommandLineTest(unittest.TestCase):
 
     def test_run_ffmpeg2vmaf(self):
         exe = VmafConfig.root_path('python', 'vmaf', 'script', 'ffmpeg2vmaf.py')
-        line = '576 324 {root}/python/test/resource/mp4/Seeking_30_480_1050.mp4 ' \
-               '{root}/python/test/resource/mp4/Seeking_10_288_375.mp4'.format(root=VmafConfig.root_path())
+        line = '576 324 {ref} {dis}'.format(ref=VmafConfig.test_resource_path('mp4', 'Seeking_30_480_1050.mp4'),
+                                            dis=VmafConfig.test_resource_path('mp4', 'Seeking_10_288_375.mp4'))
         cmd = "{exe} {line} >/dev/null 2>&1".format(line=line, exe=exe)
         ret = run_process(cmd, shell=True)
         self.assertEqual(ret, 0)
 
     def test_run_ffmpeg2vmaf_ci(self):
         exe = VmafConfig.root_path('python', 'vmaf', 'script', 'ffmpeg2vmaf.py')
-        line = '576 324 {root}/python/test/resource/mp4/Seeking_30_480_1050.mp4 ' \
-               '{root}/python/test/resource/mp4/Seeking_10_288_375.mp4'.format(root=VmafConfig.root_path())
+        line = '576 324 {ref} {dis}'.format(ref=VmafConfig.test_resource_path('mp4', 'Seeking_30_480_1050.mp4'),
+                                            dis=VmafConfig.test_resource_path('mp4', 'Seeking_10_288_375.mp4'))
         cmd = "{exe} {line} --ci >/dev/null 2>&1".format(line=line, exe=exe)
         ret = run_process(cmd, shell=True)
         self.assertEqual(ret, 0)
 
     def test_run_ffmpeg2vmaf_ci_and_local_explain(self):
         exe = VmafConfig.root_path('python', 'vmaf', 'script', 'ffmpeg2vmaf.py')
-        line = '576 324 {root}/python/test/resource/mp4/Seeking_30_480_1050.mp4 ' \
-               '{root}/python/test/resource/mp4/Seeking_10_288_375.mp4'.format(root=VmafConfig.root_path())
+        line = '576 324 {ref} {dis}'.format(ref=VmafConfig.test_resource_path('mp4', 'Seeking_30_480_1050.mp4'),
+                                            dis=VmafConfig.test_resource_path('mp4', 'Seeking_10_288_375.mp4'))
         cmd = "{exe} {line} --ci --local-explain >/dev/null 2>&1".format(line=line, exe=exe)
         ret = subprocess.call(cmd, shell=True)
         self.assertEqual(ret, 2)

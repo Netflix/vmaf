@@ -44,6 +44,11 @@ ref_videos = [
   'height': 321,
   'path': VmafConfig.test_resource_path('test_image_yuv', '102062.yuv'),
   'width': 481},
+ {'content_id': 13,
+  'content_name': '1012576_0m14s_15',
+  'height': 486,
+  'path': VmafConfig.test_resource_path('test_image_yuv', '1012576_0m14s_15.yuv'),
+  'width': 720}
 ]
 
 dis_videos = [
@@ -71,4 +76,7 @@ dis_videos = [
  {'asset_id': 12,
   'content_id': 12,
   'path': VmafConfig.test_resource_path('test_image_yuv', '102062.yuv'), 'mos': 3.3},
+ {'asset_id': 13,
+  'content_id': 13,
+  'path': VmafConfig.test_resource_path('test_image_yuv', '1012576_0m14s_15.yuv'), 'mos': 4.7}
 ]

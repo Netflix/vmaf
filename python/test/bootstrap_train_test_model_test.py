@@ -18,7 +18,7 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
 
     def setUp(self):
 
-        train_dataset_path = VmafConfig.test_resource_path('test_image_dataset_diffdim.py')
+        train_dataset_path = VmafConfig.test_resource_path('test_image_dataset_diffdim2.py')
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
 

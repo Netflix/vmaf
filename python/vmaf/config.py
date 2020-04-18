@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import os
 import urllib.request
+import urllib.error
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
@@ -179,7 +180,11 @@ class VmafConfig(object):
                 os.makedirs(os.path.dirname(local_path))
             remote_path = os.path.join(VMAF_RESOURCE_ROOT, 'python', 'test', 'resource', *components)
             print(f'download {local_path} from {remote_path}')
-            urllib.request.urlretrieve(remote_path, local_path)
+            try:
+                urllib.request.urlretrieve(remote_path, local_path)
+            except urllib.error.HTTPError as e:
+                print(f"error downloading from {remote_path}")
+                raise e
         return local_path
 
     @classmethod
