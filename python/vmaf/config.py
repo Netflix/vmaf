@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import os
+import ssl
 import urllib.request
 import urllib.error
 
@@ -9,7 +10,7 @@ __license__ = "BSD+Patent"
 
 PYTHON_ROOT = os.path.dirname(os.path.realpath(__file__))
 ROOT = os.path.abspath(os.path.join(PYTHON_ROOT, '..', '..',))
-VMAF_RESOURCE_ROOT = "https://github.com/li-zhi/vmaf_resource/raw/master"
+VMAF_RESOURCE_ROOT = "https://github.com/Netflix/vmaf_resource/raw/master"
 
 
 class VmafExternalConfig(object):
@@ -181,6 +182,7 @@ class VmafConfig(object):
             remote_path = os.path.join(VMAF_RESOURCE_ROOT, 'python', 'test', 'resource', *components)
             print(f'download {local_path} from {remote_path}')
             try:
+                ssl._create_default_https_context = ssl._create_unverified_context
                 urllib.request.urlretrieve(remote_path, local_path)
             except urllib.error.HTTPError as e:
                 print(f"error downloading from {remote_path}")
