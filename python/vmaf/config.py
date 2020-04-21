@@ -187,10 +187,13 @@ class VmafConfig(object):
         return cls.root_path('resource', *components)
 
     @classmethod
-    def test_resource_path(cls, *components):
+    def test_resource_path(cls, *components, bypass_download=False):
         local_path = cls.root_path('python', 'test', 'resource', *components)
-        remote_path = os.path.join(VMAF_RESOURCE_ROOT, 'python', 'test', 'resource', *components)
-        download_reactively(local_path, remote_path)
+        if bypass_download:
+            pass
+        else:
+            remote_path = os.path.join(VMAF_RESOURCE_ROOT, 'python', 'test', 'resource', *components)
+            download_reactively(local_path, remote_path)
         return local_path
 
     @classmethod

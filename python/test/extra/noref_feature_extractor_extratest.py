@@ -88,6 +88,5 @@ class NorefFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['Moment_noref_feature_var_score'], 1118.4952858425261, places=4)
 
 
-
 if __name__ == '__main__':
     unittest.main(verbosity=2)
