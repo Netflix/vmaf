@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import unittest
 
-from vmaf.config import VmafConfig
+from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.asset import Asset, NorefAsset
 from vmaf.core.feature_extractor import VmafFeatureExtractor
 from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
@@ -20,6 +20,7 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
             self.fextractor.remove_results()
         pass
 
+    @unittest.skipIf('apps' in VmafExternalConfig.ffmpeg_path(), 'ffmpeg should not be in apps')
     def test_run_vmaf_fextractor_with_gaussian_blurring(self):
 
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
@@ -69,6 +70,7 @@ class NorefFeatureExtractorTest(unittest.TestCase):
             self.fextractor.remove_results()
             pass
 
+    @unittest.skipIf('apps' in VmafExternalConfig.ffmpeg_path(), 'ffmpeg should not be in apps')
     def test_noref_moment_fextractor_with_noref_asset_notyuv_gaussianblur(self):
 
         dis_path = VmafConfig.test_resource_path("mp4", "Seeking_10_288_375.mp4")
@@ -82,7 +84,7 @@ class NorefFeatureExtractorTest(unittest.TestCase):
 
         self.fextractor = MomentNorefFeatureExtractor(
             [asset],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             result_store=None
         )
         self.fextractor.run()
@@ -104,6 +106,7 @@ class QualityRunnerTest(unittest.TestCase):
     def setUp(self):
         self.result_store = FileSystemResultStore()
 
+    @unittest.skipIf('apps' in VmafExternalConfig.ffmpeg_path(), 'ffmpeg should not be in apps')
     def test_run_psnr_runner_with_notyuv_gblur(self):
 
         ref_path = VmafConfig.test_resource_path("mp4", "Seeking_10_288_375.mp4")
@@ -118,7 +121,7 @@ class QualityRunnerTest(unittest.TestCase):
                                   })
         self.runner = PsnrQualityRunner(
             [asset],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None
         )
@@ -127,6 +130,7 @@ class QualityRunnerTest(unittest.TestCase):
         results = self.runner.results
         self.assertAlmostEqual(results[0]['PSNR_score'], 50.99313338666667, places=4)
 
+    @unittest.skipIf('apps' in VmafExternalConfig.ffmpeg_path(), 'ffmpeg should not be in apps')
     def test_run_vmaf_runner_with_notyuv_gblur(self):
 
         ref_path = VmafConfig.test_resource_path("mp4", "Seeking_30_480_1050.mp4")
@@ -170,4 +174,4 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner.run()
 
         results = self.runner.results
-        self.assertAlmostEqual(results[0]['VMAF_score'], 78.06249411099073, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 77.18873019841408, places=4)
