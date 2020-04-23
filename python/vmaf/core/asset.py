@@ -840,7 +840,7 @@ class NorefAsset(Asset):
             dataset,
             content_id,
             asset_id,
-            dis_path, # repeat dis_path for both ref_path and dis_path
+            dis_path,  # repeat dis_path for both ref_path and dis_path
             dis_path,
             asset_dict,
             workdir_root

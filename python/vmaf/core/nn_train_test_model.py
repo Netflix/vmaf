@@ -9,8 +9,8 @@ from sklearn.metrics import f1_score
 from vmaf.tools.decorator import override
 
 try:
-    import tensorflow as tf
-
+    import tensorflow.compat.v1 as tf
+    tf.disable_v2_behavior()
 except ImportError:
     tf = None
 
@@ -262,7 +262,7 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
 
     def _get_total_frames(self, xys):
         yss = xys['dis_y'] # yss
-        return np.sum(map(lambda ys:len(ys), yss))
+        return np.sum(list(map(lambda ys:len(ys), yss)))
 
     @override(TrainTestModel)
     def to_file(self, filename):
@@ -360,8 +360,8 @@ class ToddNoiseClassifierTrainTestModel(NeuralNetTrainTestModel, ClassifierMixin
         num_train_data = int(num_data / 2) # do even split
         train_indices = indices[:num_train_data]
         validate_indices = indices[num_train_data:]
-        train_posindices = filter(lambda idx: labels[idx] == 1, train_indices)
-        train_negindices = filter(lambda idx: labels[idx] == 0, train_indices)
+        train_posindices = list(filter(lambda idx: labels[idx] == 1, train_indices))
+        train_negindices = list(filter(lambda idx: labels[idx] == 0, train_indices))
 
         input_image_batch, logits, y_, y_p, W_conv0, W_conv1, loss, train_step \
             = self.create_tf_variables(self.param_dict)
@@ -406,14 +406,14 @@ class ToddNoiseClassifierTrainTestModel(NeuralNetTrainTestModel, ClassifierMixin
                 print("Checkpointing -> %s" % (outputfile,))
                 saver.save(sess, outputfile)
 
-            halfbatch = self.batch_size / 2
+            halfbatch = self.batch_size // 2
 
             # here, we enforce balanced training, so that if we would like to
             # use hinge loss, we will always have representatives from both
             # target classes
 
-            n_iterations = np.min((len(train_posindices)/halfbatch,
-                                   len(train_negindices)/halfbatch))
+            n_iterations = np.min((len(train_posindices) // halfbatch,
+                                   len(train_negindices) // halfbatch))
 
             for i in range(n_iterations):
                 # must sort, since h5py needs ordered indices
@@ -452,7 +452,7 @@ class ToddNoiseClassifierTrainTestModel(NeuralNetTrainTestModel, ClassifierMixin
         ys_pred = []
         ys_true = []
         loss_cum = 0.0
-        n_steps = len(indices) / self.batch_size
+        n_steps = len(indices) // self.batch_size
         for M in range(n_steps):
             sys.stdout.write("Evaluating {type} data: {M} / {nstep}\r"
                              .format(type=type_, M=M, nstep=n_steps))
@@ -516,10 +516,10 @@ class ToddNoiseClassifierTrainTestModel(NeuralNetTrainTestModel, ClassifierMixin
         tf.set_random_seed(seed)
 
         n_channels = cls.n_channels
-        response_map_size_width = patch_width - (cls.fsize0 / 2) * 2
-        response_map_size_width -= (cls.fsize1 / 2) * 2
-        response_map_size_height = patch_height - (cls.fsize0 / 2) * 2
-        response_map_size_height -= (cls.fsize1 / 2) * 2
+        response_map_size_width = patch_width - (cls.fsize0 // 2) * 2
+        response_map_size_width -= (cls.fsize1 // 2) * 2
+        response_map_size_height = patch_height - (cls.fsize0 // 2) * 2
+        response_map_size_height -= (cls.fsize1 // 2) * 2
         response_map_size = response_map_size_height * response_map_size_width
         input_image_batch = tf.placeholder(
             tf.float32, shape=[None, patch_height, patch_width, n_channels])
