@@ -349,7 +349,7 @@ Overtime, a number of helper tools have been incorporated into the VDK, to facil
 
 ### BD-Rate Calculator
 
-A Bjøntegaard-Delta (BD) rate [implementation](../../python/src/vmaf/tools/bd_rate_calculator.py) is added. Example usage can be found [here](../../python/test/bd_rate_calculator_test.py). The implementation is validated against [MPEG JCTVC-E137](http://phenix.it-sudparis.eu/jct/doc_end_user/documents/5_Geneva/wg11/JCTVC-E137-v1.zip).
+A Bjøntegaard-Delta (BD) rate [implementation](../../python/vmaf/tools/bd_rate_calculator.py) is added. Example usage can be found [here](../../python/test/bd_rate_calculator_test.py). The implementation is validated against [MPEG JCTVC-E137](http://phenix.it-sudparis.eu/jct/doc_end_user/documents/5_Geneva/wg11/JCTVC-E137-v1.zip).
 
 ### LIME (Local-Explainer Model-Agnostic Explanation) Implementation
 

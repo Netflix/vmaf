@@ -3,7 +3,7 @@ Matlab Usage
 
 ## Prerequisites
 
-To be able to use Matlab, you need to first successfully download and activate Matlab, as described [here](https://www.mathworks.com/). Then, add a line to python/src/vmaf/externals.py, like:
+To be able to use Matlab, you need to first successfully download and activate Matlab, as described [here](https://www.mathworks.com/). Then, add a line to python/vmaf/externals.py, like:
 
 ```
 MATLAB_PATH = <path_to_matlab>
