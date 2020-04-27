@@ -85,7 +85,7 @@ class MatlabFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[0].result_dict[self.fextractor.TYPE + '_tspeed_3_scores'][2], 22.404285, places=4)
         self.assertAlmostEqual(results[0].result_dict[self.fextractor.TYPE + '_tspeed_4_scores'][2], 15.233468, places=4)
 
-    @unittest.skip("Need signal processing toolbox in Matlab.")
+    # @unittest.skip("Need signal processing toolbox in Matlab.")
     def test_run_stmad_fextractor(self):
 
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -184,6 +184,7 @@ class ParallelMatlabFeatureExtractorTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[1]['STRRED_feature_strred_score'], 0.0, places=4)
 
 
+@unittest.skipIf(not VmafExternalConfig.ffmpeg_path(), "ffmpeg not installed")
 class ParallelFeatureExtractorTestNew(unittest.TestCase):
 
     def tearDown(self):
@@ -394,6 +395,7 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 0.7203213958333331, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 40.280504208333333, places=4)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

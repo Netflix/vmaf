@@ -14,7 +14,7 @@ __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
 
-# @unittest.skipIf(not VmafExternalConfig.ffmpeg_path(), "ffmpeg not installed")
+@unittest.skipIf(not VmafExternalConfig.ffmpeg_path(), "ffmpeg not installed")
 class QualityRunnerTest(unittest.TestCase):
 
     def tearDown(self):
@@ -284,17 +284,6 @@ class ParallelMatlabQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['SpEED_Matlab_feature_sspeed_4_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['SpEED_Matlab_feature_tspeed_4_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['SpEED_Matlab_score'], 0.0, places=4)
-
-
-class ParallelQualityRunnerTest(unittest.TestCase):
-
-    def tearDown(self):
-        if hasattr(self, 'runner'):
-            self.runner.remove_results()
-            pass
-
-    def setUp(self):
-        self.result_store = FileSystemResultStore()
 
 
 if __name__ == '__main__':

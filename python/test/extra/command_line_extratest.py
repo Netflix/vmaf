@@ -3,12 +3,13 @@ import subprocess
 import unittest
 
 from vmaf import run_process
-from vmaf.config import VmafConfig
+from vmaf.config import VmafConfig, VmafExternalConfig
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
 
+@unittest.skipIf(not VmafExternalConfig.ffmpeg_path(), "ffmpeg not installed")
 class CommandLineTest(unittest.TestCase):
 
     def setUp(self):

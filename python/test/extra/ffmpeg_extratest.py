@@ -13,6 +13,7 @@ if __name__ == '__main__':
     unittest.main(verbosity=2)
 
 
+@unittest.skipIf(not VmafExternalConfig.ffmpeg_path(), "ffmpeg not installed")
 class ParallelFeatureExtractorTestNew(unittest.TestCase):
 
     def tearDown(self):
@@ -63,6 +64,7 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 31.128021979166665, places=4)
 
 
+@unittest.skipIf(not VmafExternalConfig.ffmpeg_path(), "ffmpeg not installed")
 class NorefFeatureExtractorTest(unittest.TestCase):
 
     def tearDown(self):
@@ -96,6 +98,7 @@ class NorefFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['Moment_noref_feature_var_score'], 1113.0346638689637, places=4)
 
 
+@unittest.skipIf(not VmafExternalConfig.ffmpeg_path(), "ffmpeg not installed")
 class QualityRunnerTest(unittest.TestCase):
 
     def tearDown(self):
@@ -154,6 +157,7 @@ class QualityRunnerTest(unittest.TestCase):
         results = self.runner.results
         self.assertAlmostEqual(results[0]['VMAF_score'], 77.28938600125885, places=4)
 
+    @unittest.skipIf('apps' in VmafExternalConfig.ffmpeg_path(), 'ffmpeg should not be in apps')
     def test_run_vmaf_runner_with_yuv_lutyuv(self):
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
