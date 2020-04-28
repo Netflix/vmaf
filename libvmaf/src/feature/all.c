@@ -248,6 +248,15 @@ int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, i
         {
             score = 0.0;
             score2 = 0.0;
+            if (next_frame_read)
+            {
+                if ((ret = compute_motion(blur_buf, next_blur_buf, w, h, stride, stride, &score2)))
+                {
+                    printf("error: compute_motion (next) failed.\n");
+                    fflush(stdout);
+                    goto fail_or_end;
+                }
+            }
         }
         else
         {
