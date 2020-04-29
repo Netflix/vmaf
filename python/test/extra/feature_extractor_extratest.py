@@ -85,7 +85,6 @@ class MatlabFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[0].result_dict[self.fextractor.TYPE + '_tspeed_3_scores'][2], 22.404285, places=4)
         self.assertAlmostEqual(results[0].result_dict[self.fextractor.TYPE + '_tspeed_4_scores'][2], 15.233468, places=4)
 
-    # @unittest.skip("Need signal processing toolbox in Matlab.")
     def test_run_stmad_fextractor(self):
 
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
