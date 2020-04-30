@@ -47,6 +47,7 @@ typedef struct VmafContext {
         unsigned bpc;
     } pic_params;
     unsigned pic_cnt;
+    enum vmaf_cpu cpu_flags;
 } VmafContext;
 
 enum vmaf_cpu cpu;
@@ -59,12 +60,13 @@ int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
     if (!vmaf) return -EINVAL;
     int err = 0;
 
-    cpu = cpu_autodetect() & (~cfg.cpumask); //FIXME, see above
-
     VmafContext *const v = *vmaf = malloc(sizeof(*v));
     if (!v) goto fail;
     memset(v, 0, sizeof(*v));
     v->cfg = cfg;
+
+    cpu = //FIXME, see above
+    v->cpu_flags = cpu_autodetect() & (~cfg.cpumask);
 
     err = vmaf_feature_collector_init(&(v->feature_collector));
     if (err) goto free_v;
