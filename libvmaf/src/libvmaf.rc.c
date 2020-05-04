@@ -198,10 +198,6 @@ static int threaded_read_pictures(VmafContext *vmaf, VmafPicture *ref,
     int err = 0;
 
     for (unsigned i = 0; i < vmaf->registered_feature_extractors.cnt; i++) {
-        VmafPicture pic_a, pic_b;
-        vmaf_picture_ref(&pic_a, ref);
-        vmaf_picture_ref(&pic_b, dist);
-
         VmafFeatureExtractor *fex =
             vmaf->registered_feature_extractors.fex_ctx[i]->fex;
 
@@ -215,6 +211,10 @@ static int threaded_read_pictures(VmafContext *vmaf, VmafPicture *ref,
         err = vmaf_fex_ctx_pool_aquire(vmaf->fex_ctx_pool, fex, &fex_ctx);
         if (err) return err;
 
+        VmafPicture pic_a, pic_b;
+        vmaf_picture_ref(&pic_a, ref);
+        vmaf_picture_ref(&pic_b, dist);
+
         struct ThreadData data = {
             .fex_ctx = fex_ctx,
             .ref = pic_a,
@@ -227,7 +227,11 @@ static int threaded_read_pictures(VmafContext *vmaf, VmafPicture *ref,
 
         err = vmaf_thread_pool_enqueue(vmaf->thread_pool, threaded_extract_func,
                                        &data, sizeof(data));
-        if (err) return err;
+        if (err) {
+            vmaf_picture_unref(&pic_a);
+            vmaf_picture_unref(&pic_b);
+            return err;
+        }
     }
 
     return vmaf_picture_unref(ref) | vmaf_picture_unref(dist);
