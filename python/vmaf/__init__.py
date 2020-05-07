@@ -99,18 +99,33 @@ class ExternalProgramCaller(object):
     Caller of ExternalProgram.
     """
 
+    @classmethod
+    def call_psnr(cls, yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None):
+
+        cls.call_vmafrc_single_feature('float_psnr', yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
+
+    @classmethod
+    def call_ssim(cls, yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None):
+
+        cls.call_vmafrc_single_feature('float_ssim', yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
+
+    @classmethod
+    def call_ms_ssim(cls, yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None):
+
+        cls.call_vmafrc_single_feature('float_ms_ssim', yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
+
     @staticmethod
-    def call_psnr(yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None):
+    def call_vmafrc_single_feature(feature, yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None):
 
         # ./libvmaf/build/tools/vmaf_rc
         # --reference python/test/resource/yuv/src01_hrc00_576x324.yuv
         # --distorted python/test/resource/yuv/src01_hrc01_576x324.yuv
         # --width 576 --height 324 --pixel_format 420 --bitdepth 8
-        # --output /dev/stdout --xml --no_prediction --feature float_psnr
+        # --output /dev/stdout --xml --no_prediction --feature float_motion
 
         pixel_format, bitdepth = convert_pixel_format_ffmpeg2vmafrc(yuv_type)
 
-        psnr_cmd = [
+        cmd = [
             required(ExternalProgram.vmafrc),
             '--reference', ref_path,
             '--distorted', dis_path,
@@ -121,70 +136,12 @@ class ExternalProgramCaller(object):
             '--output', log_file_path,
             '--xml',
             '--no_prediction',
-            '--feature', 'float_psnr',
+            '--feature', feature,
         ]
 
         if logger:
-            logger.info(' '.join(psnr_cmd))
-        run_process(psnr_cmd)
-
-    @staticmethod
-    def call_ssim(yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None):
-
-        # ./libvmaf/build/tools/vmaf_rc
-        # --reference python/test/resource/yuv/src01_hrc00_576x324.yuv
-        # --distorted python/test/resource/yuv/src01_hrc01_576x324.yuv
-        # --width 576 --height 324 --pixel_format 420 --bitdepth 8
-        # --output /dev/stdout --xml --no_prediction --feature float_ssim
-
-        pixel_format, bitdepth = convert_pixel_format_ffmpeg2vmafrc(yuv_type)
-
-        ssim_cmd = [
-            required(ExternalProgram.vmafrc),
-            '--reference', ref_path,
-            '--distorted', dis_path,
-            '--width', str(w),
-            '--height', str(h),
-            '--pixel_format', pixel_format,
-            '--bitdepth', str(bitdepth),
-            '--output', log_file_path,
-            '--xml',
-            '--no_prediction',
-            '--feature', 'float_ssim',
-        ]
-
-        if logger:
-            logger.info(' '.join(ssim_cmd))
-        run_process(ssim_cmd)
-
-    @staticmethod
-    def call_ms_ssim(yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None):
-
-        # ./libvmaf/build/tools/vmaf_rc
-        # --reference python/test/resource/yuv/src01_hrc00_576x324.yuv
-        # --distorted python/test/resource/yuv/src01_hrc01_576x324.yuv
-        # --width 576 --height 324 --pixel_format 420 --bitdepth 8
-        # --output /dev/stdout --xml --no_prediction --feature float_ms_ssim
-
-        pixel_format, bitdepth = convert_pixel_format_ffmpeg2vmafrc(yuv_type)
-
-        ms_ssim_cmd = [
-            required(ExternalProgram.vmafrc),
-            '--reference', ref_path,
-            '--distorted', dis_path,
-            '--width', str(w),
-            '--height', str(h),
-            '--pixel_format', pixel_format,
-            '--bitdepth', str(bitdepth),
-            '--output', log_file_path,
-            '--xml',
-            '--no_prediction',
-            '--feature', 'float_ms_ssim',
-        ]
-
-        if logger:
-            logger.info(' '.join(ms_ssim_cmd))
-        run_process(ms_ssim_cmd)
+            logger.info(' '.join(cmd))
+        run_process(cmd)
 
     @staticmethod
     def call_vmaf_feature(yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None):
