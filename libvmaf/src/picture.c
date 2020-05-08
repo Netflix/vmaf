@@ -42,8 +42,8 @@ int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
     pic->w[1] = pic->w[2] = w >> ss_hor;
     pic->h[0] = h;
     pic->h[1] = pic->h[2] = h >> ss_ver;
-    const int aligned_y = pic->w[0] + DATA_ALIGN - (pic->w[0] % DATA_ALIGN);
-    const int aligned_c = pic->w[1] + DATA_ALIGN - (pic->w[1] % DATA_ALIGN);
+    const int aligned_y = (pic->w[0] + DATA_ALIGN - 1) & ~(DATA_ALIGN - 1);
+    const int aligned_c = (pic->w[1] + DATA_ALIGN - 1) & ~(DATA_ALIGN - 1);
     const int hbd = pic->bpc > 8;
     pic->stride[0] = aligned_y << hbd;
     pic->stride[1] = pic->stride[2] = aligned_c << hbd;
@@ -53,7 +53,7 @@ int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
 
     uint8_t *data = aligned_malloc(pic_size, DATA_ALIGN);
     if (!data) goto fail;
-    memset(data, 0, sizeof(*data));
+    memset(data, 0, pic_size);
     pic->data[0] = data;
     pic->data[1] = data + y_sz;
     pic->data[2] = data + y_sz + uv_sz;
@@ -65,7 +65,7 @@ int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
     return 0;
 
 free_data:
-    free(data);
+    aligned_free(data);
 fail:
     return -ENOMEM;
 }
