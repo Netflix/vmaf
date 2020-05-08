@@ -204,6 +204,7 @@ void vmaf_feature_collector_destroy(VmafFeatureCollector *feature_collector)
     for (unsigned i = 0; i < feature_collector->cnt; i++)
         feature_vector_destroy(feature_collector->feature_vector[i]);
     free(feature_collector->feature_vector);
+    pthread_mutex_unlock(&(feature_collector->lock));
     pthread_mutex_destroy(&(feature_collector->lock));
     free(feature_collector);
 }
