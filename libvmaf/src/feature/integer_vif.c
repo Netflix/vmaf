@@ -26,31 +26,11 @@
 #include "mem.h"
 
 #include "picture.h"
+#include "vif_buffer.h"
 
 typedef struct VifState {
-    size_t buf_stride;
-    size_t buf_frame_size;
-    pixel *buf;
+    VifBuffer buf;
     uint16_t log_values[65537];
-
-    uint16_t *ref;
-    uint16_t *dis;
-    uint16_t *mu1;
-    uint16_t *mu2;
-    uint32_t *mu1_32;
-    uint32_t *mu2_32;
-    uint32_t *ref_sq;
-    uint32_t *dis_sq;
-    uint32_t *ref_dis;
-
-    //tmp buffers used between horizontal and virtical pass for 1-D filters
-    uint32_t *tmp_ref_convol;
-    uint32_t *tmp_dis_convol;
-    uint32_t *tmp_mu1;
-    uint32_t *tmp_mu2;
-    uint32_t *tmp_ref;
-    uint32_t *tmp_dis;
-    uint32_t *tmp_ref_dis;
 } VifState;
 
 static const uint16_t vif_filter1d_table[4][17] = {
@@ -107,35 +87,22 @@ get_best16_from64(uint64_t temp, int *x)
     return (uint16_t)temp;
 }
 
-static void vif_filter1d_8(VifState *s, const uint8_t *ref,
+static void vif_filter1d_8(VifBuffer buf, const uint8_t *ref,
                            const uint8_t *dis, int w, int h, ptrdiff_t ref_stride,
                            ptrdiff_t dis_stride, ptrdiff_t dst_stride)
 {
     const int fwidth = vif_filter1d_width[0];
     const uint16_t *vif_filt_s0 = vif_filter1d_table[0];
 
-    uint32_t *mu1 = s->mu1_32;
-    uint32_t *mu2 = s->mu2_32;
-    uint32_t *ref_sq = s->ref_sq;
-    uint32_t *dis_sq = s->dis_sq;
-    uint32_t *ref_dis = s->ref_dis;
-    uint32_t *tmp_mu1 = s->tmp_mu1;
-    uint32_t *tmp_mu2 = s->tmp_mu2;
-    uint32_t *tmp_ref = s->tmp_ref;
-    uint32_t *tmp_dis = s->tmp_dis;
-    uint32_t *tmp_ref_dis = s->tmp_ref_dis;
-
     for (unsigned i = 0; i < h; ++i) {
         /* Vertical pass. */
         int ii = i - fwidth / 2;
-
         for (unsigned j = 0; j < w; ++j) {
             uint32_t accum_mu1 = 0;
             uint32_t accum_mu2 = 0;
             uint32_t accum_ref = 0;
             uint32_t accum_dis = 0;
             uint32_t accum_ref_dis = 0;
-
             for (unsigned fi = 0; fi < fwidth; ++fi) {
                 int ii_check = ii + fi;
                 ii_check = ii_check < 0 ? -ii_check
@@ -153,12 +120,13 @@ static void vif_filter1d_8(VifState *s, const uint8_t *ref,
                 accum_dis += img_coeff_dis * (uint32_t)imgcoeff_dis;
                 accum_ref_dis += img_coeff_ref * (uint32_t)imgcoeff_dis;
             }
-            tmp_mu1[j] = (accum_mu1 + 128) >> 8;
-            tmp_mu2[j] = (accum_mu2 + 128) >> 8;
-            tmp_ref[j] = accum_ref;
-            tmp_dis[j] = accum_dis;
-            tmp_ref_dis[j] = accum_ref_dis;
+            buf.tmp.mu1[j] = (accum_mu1 + 128) >> 8;
+            buf.tmp.mu2[j] = (accum_mu2 + 128) >> 8;
+            buf.tmp.ref[j] = accum_ref;
+            buf.tmp.dis[j] = accum_dis;
+            buf.tmp.ref_dis[j] = accum_ref_dis;
         }
+
         /* Horizontal pass. */
         for (unsigned j = 0; j < w; ++j) {
             uint32_t accum_mu1 = 0;
@@ -175,38 +143,27 @@ static void vif_filter1d_8(VifState *s, const uint8_t *ref,
                     (jj_check >= w ? 2 * w - jj_check - 1 : jj_check);
 
                 const uint16_t fcoeff = vif_filt_s0[fj];
-                accum_mu1 += fcoeff * ((uint32_t)tmp_mu1[jj_check]);
-                accum_mu2 += fcoeff * ((uint32_t)tmp_mu2[jj_check]);
-                accum_ref += fcoeff * ((uint64_t)tmp_ref[jj_check]);
-                accum_dis += fcoeff * ((uint64_t)tmp_dis[jj_check]);
-                accum_ref_dis += fcoeff * ((uint64_t)tmp_ref_dis[jj_check]);
+                accum_mu1 += fcoeff * ((uint32_t)buf.tmp.mu1[jj_check]);
+                accum_mu2 += fcoeff * ((uint32_t)buf.tmp.mu2[jj_check]);
+                accum_ref += fcoeff * ((uint64_t)buf.tmp.ref[jj_check]);
+                accum_dis += fcoeff * ((uint64_t)buf.tmp.dis[jj_check]);
+                accum_ref_dis += fcoeff * ((uint64_t)buf.tmp.ref_dis[jj_check]);
             }
-            mu1[i * dst_stride + j] = accum_mu1;
-            mu2[i * dst_stride + j] = accum_mu2;
-            ref_sq[i * dst_stride + j] = (uint32_t)((accum_ref + 32768) >> 16);
-            dis_sq[i * dst_stride + j] = (uint32_t)((accum_dis + 32768) >> 16);
-            ref_dis[i * dst_stride + j] = (uint32_t)((accum_ref_dis + 32768) >> 16);
+            buf.mu1_32[i * dst_stride + j] = accum_mu1;
+            buf.mu2_32[i * dst_stride + j] = accum_mu2;
+            buf.ref_sq[i * dst_stride + j] = (uint32_t)((accum_ref + 32768) >> 16);
+            buf.dis_sq[i * dst_stride + j] = (uint32_t)((accum_dis + 32768) >> 16);
+            buf.ref_dis[i * dst_stride + j] = (uint32_t)((accum_ref_dis + 32768) >> 16);
         }
     }
 }
 
-static void vif_filter1d_16(VifState *s, const uint16_t *ref,
+static void vif_filter1d_16(VifBuffer buf, const uint16_t *ref,
                             const uint16_t *dis, int w, int h, ptrdiff_t ref_stride,
                             ptrdiff_t dis_stride, ptrdiff_t dst_stride, int scale, int bpc)
 {
     const int fwidth = vif_filter1d_width[scale];
     const uint16_t *vif_filt = vif_filter1d_table[scale];
-
-    uint32_t *mu1 = s->mu1_32;
-    uint32_t *mu2 = s->mu2_32;
-    uint32_t *ref_sq = s->ref_sq;
-    uint32_t *dis_sq = s->dis_sq;
-    uint32_t *ref_dis = s->ref_dis;
-    uint32_t *tmp_mu1 = s->tmp_mu1;
-    uint32_t *tmp_mu2 = s->tmp_mu2;
-    uint32_t *tmp_ref = s->tmp_ref;
-    uint32_t *tmp_dis = s->tmp_dis;
-    uint32_t *tmp_ref_dis = s->tmp_ref_dis;
 
     int32_t add_shift_round_HP, shift_HP;
     int32_t add_shift_round_VP, shift_VP;
@@ -256,11 +213,11 @@ static void vif_filter1d_16(VifState *s, const uint16_t *ref,
                 accum_dis += img_coeff_dis * (uint64_t)imgcoeff_dis;
                 accum_ref_dis += img_coeff_ref * (uint64_t)imgcoeff_dis;
             }
-            tmp_mu1[j] = (uint16_t)((accum_mu1 + add_shift_round_VP) >> shift_VP);
-            tmp_mu2[j] = (uint16_t)((accum_mu2 + add_shift_round_VP) >> shift_VP);
-            tmp_ref[j] = (uint32_t)((accum_ref + add_shift_round_VP_sq) >> shift_VP_sq);
-            tmp_dis[j] = (uint32_t)((accum_dis + add_shift_round_VP_sq) >> shift_VP_sq);
-            tmp_ref_dis[j] = (uint32_t)((accum_ref_dis + add_shift_round_VP_sq) >> shift_VP_sq);
+            buf.tmp.mu1[j] = (uint16_t)((accum_mu1 + add_shift_round_VP) >> shift_VP);
+            buf.tmp.mu2[j] = (uint16_t)((accum_mu2 + add_shift_round_VP) >> shift_VP);
+            buf.tmp.ref[j] = (uint32_t)((accum_ref + add_shift_round_VP_sq) >> shift_VP_sq);
+            buf.tmp.dis[j] = (uint32_t)((accum_dis + add_shift_round_VP_sq) >> shift_VP_sq);
+            buf.tmp.ref_dis[j] = (uint32_t)((accum_ref_dis + add_shift_round_VP_sq) >> shift_VP_sq);
         }
         /* Horizontal pass. */
         for (unsigned j = 0; j < w; ++j) {
@@ -276,29 +233,27 @@ static void vif_filter1d_16(VifState *s, const uint16_t *ref,
                     (jj_check >= w ? 2 * w - jj_check - 1 : jj_check);
 
                 const uint16_t fcoeff = vif_filt[fj];
-                accum_mu1 += fcoeff * ((uint32_t)tmp_mu1[jj_check]);
-                accum_mu2 += fcoeff * ((uint32_t)tmp_mu2[jj_check]);
-                accum_ref += fcoeff * ((uint64_t)tmp_ref[jj_check]);
-                accum_dis += fcoeff * ((uint64_t)tmp_dis[jj_check]);
-                accum_ref_dis += fcoeff * ((uint64_t)tmp_ref_dis[jj_check]);
+                accum_mu1 += fcoeff * ((uint32_t)buf.tmp.mu1[jj_check]);
+                accum_mu2 += fcoeff * ((uint32_t)buf.tmp.mu2[jj_check]);
+                accum_ref += fcoeff * ((uint64_t)buf.tmp.ref[jj_check]);
+                accum_dis += fcoeff * ((uint64_t)buf.tmp.dis[jj_check]);
+                accum_ref_dis += fcoeff * ((uint64_t)buf.tmp.ref_dis[jj_check]);
             }
-            mu1[i * dst_stride + j] = accum_mu1;
-            mu2[i * dst_stride + j] = accum_mu2;
-            ref_sq[i * dst_stride + j] = (uint32_t)((accum_ref + add_shift_round_HP) >> shift_HP);
-            dis_sq[i * dst_stride + j] = (uint32_t)((accum_dis + add_shift_round_HP) >> shift_HP);
-            ref_dis[i * dst_stride + j] = (uint32_t)((accum_ref_dis + add_shift_round_HP) >> shift_HP);
+            buf.mu1_32[i * dst_stride + j] = accum_mu1;
+            buf.mu2_32[i * dst_stride + j] = accum_mu2;
+            buf.ref_sq[i * dst_stride + j] = (uint32_t)((accum_ref + add_shift_round_HP) >> shift_HP);
+            buf.dis_sq[i * dst_stride + j] = (uint32_t)((accum_dis + add_shift_round_HP) >> shift_HP);
+            buf.ref_dis[i * dst_stride + j] = (uint32_t)((accum_ref_dis + add_shift_round_HP) >> shift_HP);
         }
     }
 }
 
-static void vif_statistic(VifState *s, float *num, float *den,
-                          int w, int h, ptrdiff_t stride, int scale)
+static void vif_statistic(VifBuffer buf, float *num, float *den,  int w, int h,
+                          ptrdiff_t stride, int scale, uint16_t *log_values)
 {
-    uint32_t *mu1 = s->mu1_32;
-    uint32_t *mu2 = s->mu2_32;
-    uint32_t *xx_filt = s->ref_sq;
-    uint32_t *yy_filt = s->dis_sq;
-    uint32_t *xy_filt = s->ref_dis;
+    uint32_t *xx_filt = buf.ref_sq;
+    uint32_t *yy_filt = buf.dis_sq;
+    uint32_t *xy_filt = buf.ref_dis;
 
     //float equivalent of 2. (2 * 65536)
     static const int32_t sigma_nsq = 65536 << 1;
@@ -324,8 +279,8 @@ static void vif_statistic(VifState *s, float *num, float *den,
     */
     for (unsigned i = 0; i < h; ++i) {
         for (unsigned j = 0; j < w; ++j) {
-            uint32_t mu1_val = mu1[i * stride + j];
-            uint32_t mu2_val = mu2[i * stride + j];
+            uint32_t mu1_val = buf.mu1_32[i * stride + j];
+            uint32_t mu2_val = buf.mu2_32[i * stride + j];
             uint32_t mu1_sq_val = (uint32_t)((((uint64_t)mu1_val * mu1_val)
                                     + 2147483648) >> 32);
             uint32_t mu2_sq_val = (uint32_t)((((uint64_t)mu2_val * mu2_val)
@@ -359,7 +314,7 @@ static void vif_statistic(VifState *s, float *num, float *den,
                 */
                 num_accum_x++;
                 accum_x += x;
-                den_val = s->log_values[log_den1];
+                den_val = log_values[log_den1];
 
                 if (sigma12 >= 0) {
                     /**
@@ -380,7 +335,7 @@ static void vif_statistic(VifState *s, float *num, float *den,
                     if (denom > 0) {
                         uint16_t denlog = get_best16_from64((uint64_t)denom, &x2);
                         accum_x2 += (x2 - x1);
-                        num_val = s->log_values[numlog] - s->log_values[denlog];
+                        num_val = log_values[numlog] - log_values[denlog];
                         accum_num_log += num_val;
                         accum_den_log += den_val;
                     } else {
@@ -410,15 +365,10 @@ static void vif_statistic(VifState *s, float *num, float *den,
     den[0] = accum_den_log / 2048.0 - (accum_x + (num_accum_x * 17)) + accum_den_non_log;
 }
 
-static void vif_filter1d_rd_8(VifState *s, const uint8_t *ref, const uint8_t *dis,
+static void vif_filter1d_rd_8(VifBuffer buf, const uint8_t *ref, const uint8_t *dis,
                               int w, int h, ptrdiff_t ref_stride,
                               ptrdiff_t dis_stride, ptrdiff_t dst_stride)
 {
-    uint16_t *mu1 = s->mu1;
-    uint16_t *mu2 = s->mu2;
-    uint32_t *ref_convol = s->tmp_ref_convol;
-    uint32_t *dis_convol = s->tmp_dis_convol;
-
     const int fwidth = vif_filter1d_width[1];
     const uint16_t *vif_filt_s1 = vif_filter1d_table[1];
 
@@ -437,8 +387,8 @@ static void vif_filter1d_rd_8(VifState *s, const uint8_t *ref, const uint8_t *di
                 accum_ref += fcoeff * (uint32_t)ref[ii_check * ref_stride + j];
                 accum_dis += fcoeff * (uint32_t)dis[ii_check * dis_stride + j];
             }
-            ref_convol[j] = (accum_ref + 128) >> 8;
-            dis_convol[j] = (accum_dis + 128) >> 8;
+            buf.tmp.ref_convol[j] = (accum_ref + 128) >> 8;
+            buf.tmp.dis_convol[j] = (accum_dis + 128) >> 8;
         }
         /* Horizontal pass. */
         for (unsigned j = 0; j < w; ++j) {
@@ -451,25 +401,20 @@ static void vif_filter1d_rd_8(VifState *s, const uint8_t *ref, const uint8_t *di
                     (jj_check >= w ? 2 * w - jj_check - 1 : jj_check);
 
                 const uint16_t fcoeff = vif_filt_s1[fj];
-                accum_ref += fcoeff * ref_convol[jj_check];
-                accum_dis += fcoeff * dis_convol[jj_check];
+                accum_ref += fcoeff * buf.tmp.ref_convol[jj_check];
+                accum_dis += fcoeff * buf.tmp.dis_convol[jj_check];
             }
-            mu1[i * dst_stride + j] = (uint16_t)((accum_ref + 32768) >> 16);
-            mu2[i * dst_stride + j] = (uint16_t)((accum_dis + 32768) >> 16);
+            buf.mu1[i * dst_stride + j] = (uint16_t)((accum_ref + 32768) >> 16);
+            buf.mu2[i * dst_stride + j] = (uint16_t)((accum_dis + 32768) >> 16);
         }
     }
 }
 
-static void vif_filter1d_rd_16(VifState *s, const uint16_t *ref,
+static void vif_filter1d_rd_16(VifBuffer buf, const uint16_t *ref,
                                const uint16_t *dis, int w, int h,
                                ptrdiff_t ref_stride,  ptrdiff_t dis_stride,
                                ptrdiff_t dst_stride, int scale, int bpc)
 {
-    uint16_t *mu1 = s->mu1;
-    uint16_t *mu2 = s->mu2;
-    uint32_t *ref_convol = s->tmp_ref_convol;
-    uint32_t *dis_convol = s->tmp_dis_convol;
-
     const int fwidth = vif_filter1d_width[scale + 1];
     const uint16_t *vif_filt = vif_filter1d_table[scale + 1];
     int32_t add_shift_round_VP, shift_VP;
@@ -499,8 +444,8 @@ static void vif_filter1d_rd_16(VifState *s, const uint16_t *ref,
                 accum_ref += fcoeff * ((uint32_t)ref[ii_check * ref_stride + j]);
                 accum_dis += fcoeff * ((uint32_t)dis[ii_check * dis_stride + j]);
             }
-            ref_convol[j] = (uint16_t)((accum_ref + add_shift_round_VP) >> shift_VP);
-            dis_convol[j] = (uint16_t)((accum_dis + add_shift_round_VP) >> shift_VP);
+            buf.tmp.ref_convol[j] = (uint16_t)((accum_ref + add_shift_round_VP) >> shift_VP);
+            buf.tmp.dis_convol[j] = (uint16_t)((accum_dis + add_shift_round_VP) >> shift_VP);
         }
         /* Horizontal pass. */
         for (unsigned j = 0; j < w; ++j) {
@@ -513,11 +458,11 @@ static void vif_filter1d_rd_16(VifState *s, const uint16_t *ref,
                     (jj_check >= w ? 2 * w - jj_check - 1 : jj_check);
 
                 const uint16_t fcoeff = vif_filt[fj];
-                accum_ref += fcoeff * ((uint32_t)ref_convol[jj_check]);
-                accum_dis += fcoeff * ((uint32_t)dis_convol[jj_check]);
+                accum_ref += fcoeff * ((uint32_t)buf.tmp.ref_convol[jj_check]);
+                accum_dis += fcoeff * ((uint32_t)buf.tmp.dis_convol[jj_check]);
             }
-            mu1[i * dst_stride + j] = (uint16_t)((accum_ref + 32768) >> 16);
-            mu2[i * dst_stride + j] = (uint16_t)((accum_dis + 32768) >> 16);
+            buf.mu1[i * dst_stride + j] = (uint16_t)((accum_ref + 32768) >> 16);
+            buf.mu2[i * dst_stride + j] = (uint16_t)((accum_dis + 32768) >> 16);
         }
     }
 }
@@ -579,38 +524,38 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     VifState *s = fex->priv;
     log_generate(&s->log_values);
 
-    s->buf_stride = ALIGN_CEIL(w * sizeof(uint32_t)); //stride in uint32_t format
-    s->buf_frame_size = (size_t)s->buf_stride * h ;
+    s->buf.stride = ALIGN_CEIL(w * sizeof(uint32_t)); //stride in uint32_t format
+    const size_t frame_size = s->buf.stride * h;
 
     //7 frame size buffer + 7 stride size buffer for intermidate calculations in integer vif
-    s->buf = aligned_malloc((s->buf_frame_size * 7) + (s->buf_stride * 7), MAX_ALIGN);
-    if (!s->buf) goto fail;
+    void *data =
+        aligned_malloc((frame_size * 7) + (s->buf.stride * 7), MAX_ALIGN);
+    if (!data) goto fail;
 
-    uint8_t *data_top = (uint8_t *)s->buf;
-    s->ref = (uint16_t *)data_top; data_top += s->buf_frame_size / 2;
-    s->dis = (uint16_t *)data_top; data_top += s->buf_frame_size / 2;
-    s->mu1 = (uint16_t *)data_top; data_top += s->buf_frame_size / 2;
-    s->mu2 = (uint16_t *)data_top; data_top += s->buf_frame_size / 2;
+    s->buf.ref = data; data += frame_size / 2;
+    s->buf.dis = data; data += frame_size / 2;
+    s->buf.mu1 = data; data += frame_size / 2;
+    s->buf.mu2 = data; data += frame_size / 2;
 
-    s->mu1_32 = (uint32_t *)data_top; data_top += s->buf_frame_size;
-    s->mu2_32 = (uint32_t *)data_top; data_top += s->buf_frame_size;
-    s->ref_sq = (uint32_t *)data_top; data_top += s->buf_frame_size;
-    s->dis_sq = (uint32_t *)data_top; data_top += s->buf_frame_size;
-    s->ref_dis = (uint32_t *)data_top; data_top += s->buf_frame_size;
+    s->buf.mu1_32 = data; data += frame_size;
+    s->buf.mu2_32 = data; data += frame_size;
+    s->buf.ref_sq = data; data += frame_size;
+    s->buf.dis_sq = data; data += frame_size;
+    s->buf.ref_dis = data; data += frame_size;
 
-    //tmp buffers used between horizontal and virtical pass for 1-D filters
-    s->tmp_mu1 = (uint32_t *)data_top; data_top += s->buf_stride;
-    s->tmp_mu2 = (uint32_t *)data_top; data_top += s->buf_stride;
-    s->tmp_ref = (uint32_t *)data_top; data_top += s->buf_stride;
-    s->tmp_dis = (uint32_t *)data_top; data_top += s->buf_stride;
-    s->tmp_ref_dis = (uint32_t *)data_top; data_top += s->buf_stride;
-    s->tmp_ref_convol = (uint32_t *)data_top; data_top += s->buf_stride;
-    s->tmp_dis_convol = (uint32_t *)data_top; data_top += s->buf_stride;
+    //tmp buffers used between horizontal and vertical pass for 1-D filters
+    s->buf.tmp.mu1 = data; data += s->buf.stride;
+    s->buf.tmp.mu2 = data; data += s->buf.stride;
+    s->buf.tmp.ref = data; data += s->buf.stride;
+    s->buf.tmp.dis = data; data += s->buf.stride;
+    s->buf.tmp.ref_dis = data; data += s->buf.stride;
+    s->buf.tmp.ref_convol = data; data += s->buf.stride;
+    s->buf.tmp.dis_convol = data; data += s->buf.stride;
 
     return 0;
 
 fail:
-    aligned_free(s->buf);
+    aligned_free(data);
     return -ENOMEM;
 }
 
@@ -637,49 +582,49 @@ static int extract(VmafFeatureExtractor *fex,
         curr_dis_stride = dis_pic->stride[0] >> 1;
     }
 
-    ptrdiff_t buf_stride = s->buf_stride >> 2;
+    ptrdiff_t buf_stride = s->buf.stride >> 2;
     unsigned buf_valid_w = ref_pic->w[0];
     unsigned buf_valid_h = dis_pic->h[0];
 
     for (unsigned scale = 0; scale < 4; ++scale) {
         if (scale > 0) {
             if (ref_pic->bpc == 8 && scale == 1) {
-                vif_filter1d_rd_8(s, curr_ref, curr_dis, buf_valid_w,
+                vif_filter1d_rd_8(s->buf, curr_ref, curr_dis, buf_valid_w,
                                   buf_valid_h, curr_ref_stride,
                                   curr_dis_stride, buf_stride);
             }
             else {
-                vif_filter1d_rd_16(s, curr_ref, curr_dis, buf_valid_w,
+                vif_filter1d_rd_16(s->buf, curr_ref, curr_dis, buf_valid_w,
                                    buf_valid_h, curr_ref_stride, curr_dis_stride,
                                    buf_stride, scale - 1, ref_pic->bpc);
             }
 
-            vif_dec2(s->mu1, s->ref, buf_valid_w,
+            vif_dec2(s->buf.mu1, s->buf.ref, buf_valid_w,
                      buf_valid_h, buf_stride, buf_stride);
-            vif_dec2(s->mu2, s->dis, buf_valid_w,
+            vif_dec2(s->buf.mu2, s->buf.dis, buf_valid_w,
                      buf_valid_h, buf_stride, buf_stride);
 
             buf_valid_w = buf_valid_w / 2;
             buf_valid_h = buf_valid_h / 2;
 
-            curr_ref = s->ref;
-            curr_dis = s->dis;
+            curr_ref = s->buf.ref;
+            curr_dis = s->buf.dis;
 
             curr_ref_stride = buf_stride;
             curr_dis_stride = buf_stride;
         }
         if (ref_pic->bpc == 8 && scale == 0) {
-            vif_filter1d_8(s, curr_ref, curr_dis, buf_valid_w, buf_valid_h,
+            vif_filter1d_8(s->buf, curr_ref, curr_dis, buf_valid_w, buf_valid_h,
                            curr_ref_stride, curr_dis_stride, buf_stride);
         } else {
-            vif_filter1d_16(s, curr_ref, curr_dis, buf_valid_w, buf_valid_h,
+            vif_filter1d_16(s->buf, curr_ref, curr_dis, buf_valid_w, buf_valid_h,
                             curr_ref_stride, curr_dis_stride, buf_stride,
                             scale, ref_pic->bpc);
         }
         float num_array, den_array;
 
-        vif_statistic(s, &num_array, &den_array, buf_valid_w,
-                      buf_valid_h, buf_stride, scale);
+        vif_statistic(s->buf, &num_array, &den_array, buf_valid_w,
+                      buf_valid_h, buf_stride, scale, s->log_values);
 
         scores[2 * scale] = num_array;
         scores[2 * scale + 1] = den_array;
@@ -709,7 +654,7 @@ static int extract(VmafFeatureExtractor *fex,
 static int close(VmafFeatureExtractor *fex)
 {
     VifState *s = fex->priv;
-    if (s->buf) aligned_free(s->buf);
+    if (s->buf.ref) aligned_free(s->buf.ref);
     return 0;
 }
 
