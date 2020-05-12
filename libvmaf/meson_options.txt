@@ -1,0 +1,9 @@
+option('enable_tests',
+    type: 'boolean',
+    value: true,
+    description: 'Build libvmaf tests')
+
+option('enable_docs',
+    type: 'boolean',
+    value: true,
+    description: 'Build libvmaf documentation')

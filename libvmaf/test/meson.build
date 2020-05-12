@@ -1,3 +1,7 @@
+if not get_option('enable_tests')
+    subdir_done()
+endif
+
 test_inc = include_directories('.')
 
 test_picture = executable('test_picture',

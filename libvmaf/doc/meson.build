@@ -1,3 +1,7 @@
+if not get_option('enable_docs')
+    subdir_done()
+endif
+
 doxygen = find_program('doxygen', required: false)
 
 if doxygen.found()
