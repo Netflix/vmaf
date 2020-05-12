@@ -1,3 +1,8 @@
+# Leave subdir if documentation is disabled
+if not get_option('documentation')
+    subdir_done()
+endif
+
 doxygen = find_program('doxygen', required: false)
 
 if doxygen.found()

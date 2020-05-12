@@ -1,0 +1,9 @@
+option('tests', 
+    type: 'boolean', 
+    value: true, 
+    description: 'Enable libvmaf tests')
+
+option('documentation', 
+    type: 'boolean', 
+    value: true, 
+    description: 'Build documentation')
