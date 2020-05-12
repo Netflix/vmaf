@@ -1,5 +1,5 @@
 project('libvmaf', ['c', 'cpp'],
-    version : '1.3.16',
+    version : '1.5.2',
     default_options : ['c_std=c99',
                        'cpp_std=c++11',
                        'warning_level=2',
