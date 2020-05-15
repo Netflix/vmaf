@@ -21,16 +21,49 @@
 
 typedef void pixel;
 
-typedef struct Integer_AdmState {
-    size_t integer_stride, ind_size_x, ind_size_y, buf_sz_one;  //strides size for intermidate buffers
-    pixel *data_buf;    //buffer for adm intermidiate data calculations
-    pixel *tmp_ref;     //buffer for adm intermidiate data calculations
-    pixel *buf_x_orig;  //buffer for storing imgcoeff values to reduces the control code cycles along x.
-    pixel *buf_y_orig;  //buffer for storing imgcoeff values to reduces the control code cycles along y.
-} Integer_AdmState;
+typedef struct adm_dwt_band_t {
+    int16_t *band_a; /* Low-pass V + low-pass H. */
+    int16_t *band_v; /* Low-pass V + high-pass H. */
+    int16_t *band_h; /* High-pass V + low-pass H. */
+    int16_t *band_d; /* High-pass V + high-pass H. */
+} adm_dwt_band_t;
 
-int integer_compute_adm(const pixel *ref, const pixel *dis, int w, int h,
-    int ref_stride, int dis_stride, double *score, double *score_num,
-    double *score_den, double *scores, double border_factor, int inp_size_bits, Integer_AdmState *s);
+typedef struct i4_adm_dwt_band_t {
+    int32_t *band_a; /* Low-pass V + low-pass H. */
+    int32_t *band_v; /* Low-pass V + high-pass H. */
+    int32_t *band_h; /* High-pass V + low-pass H. */
+    int32_t *band_d; /* High-pass V + high-pass H. */
+} i4_adm_dwt_band_t;
+
+typedef struct AdmBuffer {
+    size_t ind_size_x, ind_size_y;  //strides size for intermidate buffers
+    pixel *data_buf;                //buffer for adm intermidiate data calculations
+    pixel *tmp_ref;                 //buffer for adm intermidiate data calculations
+    pixel *buf_x_orig;              //buffer for storing imgcoeff values along x.
+    pixel *buf_y_orig;              //buffer for storing imgcoeff values along y.
+    int *ind_y[4], *ind_x[4];
+
+    adm_dwt_band_t ref_dwt2;
+    adm_dwt_band_t dis_dwt2;
+    adm_dwt_band_t decouple_r;
+    adm_dwt_band_t decouple_a;
+    adm_dwt_band_t csf_a;
+    adm_dwt_band_t csf_f;
+
+    i4_adm_dwt_band_t i4_ref_dwt2;
+    i4_adm_dwt_band_t i4_dis_dwt2;
+    i4_adm_dwt_band_t i4_decouple_r;
+    i4_adm_dwt_band_t i4_decouple_a;
+    i4_adm_dwt_band_t i4_csf_a;
+    i4_adm_dwt_band_t i4_csf_f;
+} AdmBuffer;
+
+typedef struct AdmState {
+    size_t integer_stride;
+    AdmBuffer buf;
+} AdmState;
+
+void integer_compute_adm(VmafPicture *ref_pic, VmafPicture *dis_pic, double *score,
+                         double *scores, double border_factor, AdmBuffer buf);
 
 #endif /* INTEGER_ADM_FUNCTION_H_ */
