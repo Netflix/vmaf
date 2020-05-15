@@ -2,7 +2,7 @@ all:
 	cd third_party/libsvm && make lib
 
 	cd libvmaf && mkdir -p build && \
-	meson . build --buildtype debug && \
+	meson . build --buildtype release && \
 	ninja -vC build
 
 clean:
