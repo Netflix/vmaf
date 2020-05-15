@@ -173,9 +173,9 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         model.train(xys)
         self.assertAlmostEqual(model.evaluate(xs, ys)['RMSE'], 0.17634739353518517, places=4)
         self.assertAlmostEqual(model.evaluate_bagging(xs, ys)['RMSE'], 0.1734023350765026, places=4)
-        self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_stddev'], 0.35136642421562986)
-        self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_ci95_low'], 3.4185833333333333)
-        self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_ci95_high'], 4.6789999999999985)
+        self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_stddev'], 0.35136642421562986, places=3)
+        self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_ci95_low'], 3.4185833333333333, places=3)
+        self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_ci95_high'], 4.6789999999999985, places=3)
 
         model = BootstrapSklearnRandomForestTrainTestModel(
             {'norm_type': 'clip_0to1',
@@ -184,9 +184,9 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         model.train(xys)
         self.assertAlmostEqual(model.evaluate(xs, ys)['RMSE'], 0.15634392282439, places=4)
         self.assertAlmostEqual(model.evaluate_bagging(xs, ys)['RMSE'], 0.16538552470948875, places=4)
-        self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_stddev'], 0.3539523612820203)
-        self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_ci95_low'], 3.4091111111111108)
-        self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_ci95_high'], 4.667805555555555)
+        self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_stddev'], 0.3539523612820203, places=3)
+        self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_ci95_low'], 3.4091111111111108, places=3)
+        self.assertAlmostEqual(model.evaluate_stddev(xs)['mean_ci95_high'], 4.667805555555555, places=3)
 
         model = BootstrapSklearnRandomForestTrainTestModel(
             {'norm_type': 'custom_clip_0to1',
@@ -242,15 +242,15 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
 
         self.assertAlmostEqual(self.model.evaluate(xs, ys)['RMSE'], 0.17634739353518517, places=4)
         self.assertAlmostEqual(self.model.evaluate_bagging(xs, ys)['RMSE'], 0.1734023350765026, places=4)
-        self.assertAlmostEqual(self.model.evaluate_stddev(xs)['mean_stddev'], 0.35136642421562986)
-        self.assertAlmostEqual(self.model.evaluate_stddev(xs)['mean_ci95_low'], 3.4185833333333333)
-        self.assertAlmostEqual(self.model.evaluate_stddev(xs)['mean_ci95_high'], 4.6789999999999985)
+        self.assertAlmostEqual(self.model.evaluate_stddev(xs)['mean_stddev'], 0.35136642421562986, places=3)
+        self.assertAlmostEqual(self.model.evaluate_stddev(xs)['mean_ci95_low'], 3.4185833333333333, places=3)
+        self.assertAlmostEqual(self.model.evaluate_stddev(xs)['mean_ci95_high'], 4.6789999999999985, places=3)
 
         self.assertAlmostEqual(loaded_model.evaluate(xs, ys)['RMSE'], 0.17634739353518517, places=4)
         self.assertAlmostEqual(loaded_model.evaluate_bagging(xs, ys)['RMSE'], 0.1734023350765026, places=4)
-        self.assertAlmostEqual(loaded_model.evaluate_stddev(xs)['mean_stddev'], 0.35136642421562986)
-        self.assertAlmostEqual(loaded_model.evaluate_stddev(xs)['mean_ci95_low'], 3.4185833333333333)
-        self.assertAlmostEqual(loaded_model.evaluate_stddev(xs)['mean_ci95_high'], 4.6789999999999985)
+        self.assertAlmostEqual(loaded_model.evaluate_stddev(xs)['mean_stddev'], 0.35136642421562986, places=3)
+        self.assertAlmostEqual(loaded_model.evaluate_stddev(xs)['mean_ci95_low'], 3.4185833333333333, places=3)
+        self.assertAlmostEqual(loaded_model.evaluate_stddev(xs)['mean_ci95_high'], 4.6789999999999985, places=3)
 
     def test_train_save_load_predict_residue_bootstrap_libsvmnusvr(self):
 
