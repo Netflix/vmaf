@@ -49,8 +49,8 @@ if not cc.check_header('stdatomic.h')
     endif
 endif
 
-subdir('src')
 subdir('include')
+subdir('src')
 subdir('tools')
 subdir('doc')
 subdir('test')
