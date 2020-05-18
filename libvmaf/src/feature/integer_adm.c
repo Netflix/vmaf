@@ -31,6 +31,12 @@
 #define NUM_BUFS_ADM 30
 #endif
 
+#define PROFILE_INTEGER_ADM 1
+
+#if PROFILE_INTEGER_ADM
+#include <sys/time.h>
+#endif
+
 static inline void *init_dwt_band(adm_dwt_band_t *band, char *data_top, size_t stride)
 {
     band->band_a = (int16_t *)data_top; data_top += stride;
@@ -136,7 +142,21 @@ static int extract(VmafFeatureExtractor *fex,
     double score;
     double scores[8];
 
+#if PROFILE_INTEGER_ADM
+    double time_useconds;
+    struct timeval s_tv;
+    struct timeval e_tv;
+    gettimeofday(&s_tv, NULL);
+#endif // PROFILE_INTEGER_ADM
+
     integer_compute_adm(ref_pic, dist_pic, &score, scores, ADM_BORDER_FACTOR, s->buf);
+
+#if PROFILE_INTEGER_ADM
+    gettimeofday(&e_tv, NULL);
+    time_useconds = ((e_tv.tv_sec - s_tv.tv_sec) * 1000000) +
+        (e_tv.tv_usec - s_tv.tv_usec);
+    printf("Frame_No %d, time(ms) %lf \n", index, time_useconds);
+#endif // PROFILE_INTEGER_ADM
 
     err |= vmaf_feature_collector_append(feature_collector,
                                         "'VMAF_feature_adm2_integer_score'",
