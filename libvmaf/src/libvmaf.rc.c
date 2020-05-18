@@ -34,6 +34,7 @@
 #include "picture.h"
 #include "predict.h"
 #include "thread_pool.h"
+#include "vcs_version.h"
 
 typedef struct VmafContext {
     VmafConfiguration cfg;
@@ -360,7 +361,7 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
 
 const char *vmaf_version(void)
 {
-    return "RELEASE_CANDIDATE";
+    return VMAF_VERSION;
 }
 
 int vmaf_write_output(VmafContext *vmaf, FILE *outfile,
