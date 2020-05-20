@@ -32,7 +32,7 @@
 #endif
 
 #if defined(__MINGW32__) || !defined(_WIN32)
-#define PROFILE_FLOAT_ADM 1
+#define PROFILE_INTEGER_ADM 1
 #endif
 
 #if PROFILE_INTEGER_ADM
