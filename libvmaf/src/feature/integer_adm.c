@@ -31,7 +31,9 @@
 #define NUM_BUFS_ADM 30
 #endif
 
-#define PROFILE_INTEGER_ADM 1 && (defined(__MINGW32__) || (!defined(_WIN32)))
+#if defined(__MINGW32__) || !defined(_WIN32)
+#define PROFILE_FLOAT_ADM 1
+#endif
 
 #if PROFILE_INTEGER_ADM
 #include <sys/time.h>
