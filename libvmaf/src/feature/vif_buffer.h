@@ -16,24 +16,12 @@
  *
  */
 
-#pragma once
-
 #ifndef VIF_BUFFER_H_
 #define VIF_BUFFER_H_
 
-typedef struct Intermediate_VifBuffer {
-    //intermediate buffers used between horizontal and virtical pass for 1-D filters
-    uint32_t *mu1;
-    uint32_t *mu2;
-    uint32_t *ref;
-    uint32_t *dis;
-    uint32_t *ref_dis;
-    uint32_t *ref_convol;
-    uint32_t *dis_convol;
-} Intermediate_VifBuffer;
-
 typedef struct VifBuffer {
-    size_t stride;
+    void *data;
+
     uint16_t *ref;
     uint16_t *dis;
     uint16_t *mu1;
@@ -43,7 +31,19 @@ typedef struct VifBuffer {
     uint32_t *ref_sq;
     uint32_t *dis_sq;
     uint32_t *ref_dis;
-    Intermediate_VifBuffer tmp;
+
+    //intermediate buffers used between horizontal and virtical pass for 1-D filters
+    struct {
+        uint32_t *mu1;
+        uint32_t *mu2;
+        uint32_t *ref;
+        uint32_t *dis;
+        uint32_t *ref_dis;
+        uint32_t *ref_convol;
+        uint32_t *dis_convol;
+    } tmp;
+
+    ptrdiff_t stride;
 } VifBuffer;
 
 #endif /* VIF_BUFFER_H_ */
