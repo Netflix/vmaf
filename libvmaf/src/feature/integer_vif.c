@@ -65,13 +65,17 @@ pad_top_and_bottom(VifBuffer buf, unsigned h, int fwidth)
 }
 
 static FORCE_INLINE inline void
-decimate_and_pad(VifBuffer buf, int w, int h, int scale)
+decimate_and_pad(VifBuffer buf, unsigned w, unsigned h, int scale)
 {
+    uint16_t *ref = buf.ref;
+    uint16_t *dis = buf.dis;
     const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
+    const ptrdiff_t mu_stride = buf.stride_16 / sizeof(uint16_t);
+
     for (unsigned i = 0; i < h / 2; ++i) {
         for (unsigned j = 0; j < w / 2; ++j) {
-            buf.ref[i * stride + j] = buf.mu1[(i * 2) * stride + (j * 2)];
-            buf.dis[i * stride + j] = buf.mu2[(i * 2) * stride + (j * 2)];
+            ref[i * stride + j] = buf.mu1[(i * 2) * mu_stride + (j * 2)];
+            dis[i * stride + j] = buf.mu2[(i * 2) * mu_stride + (j * 2)];
         }
     }
     pad_top_and_bottom(buf, h / 2, vif_filter1d_width[scale]);
@@ -95,13 +99,11 @@ get_best16_from64(uint64_t temp, int *x)
         k -= 48;
         temp = temp << k;
         *x = k;
-    }
-    else if (k < 47) {
+    } else if (k < 47) {
         k = 48 - k;
         temp = temp >> k;
         *x = -k;
-    }
-    else {
+    } else {
         *x = 0;
         if (temp >> 16) {
             temp = temp >> 1;
@@ -116,7 +118,7 @@ get_best16_from64(uint64_t temp, int *x)
  * Padding on right is mirrored accrossed imaginary mirror after right end column
  */
 static FORCE_INLINE inline void
-PADDING_SQ_DATA(VifBuffer buf, int w, int fwidth_half)
+PADDING_SQ_DATA(VifBuffer buf, int w, unsigned fwidth_half)
 {
     for (unsigned f = 1; f <= fwidth_half; ++f) {
         int left_point = -f;
@@ -138,7 +140,7 @@ PADDING_SQ_DATA(VifBuffer buf, int w, int fwidth_half)
 }
 
 static FORCE_INLINE inline void
-PADDING_SQ_DATA_2(VifBuffer buf, int w, int fwidth_half)
+PADDING_SQ_DATA_2(VifBuffer buf, int w, unsigned fwidth_half)
 {
     for (unsigned f = 1; f <= fwidth_half; ++f) {
         int left_point = -f;
@@ -155,7 +157,7 @@ PADDING_SQ_DATA_2(VifBuffer buf, int w, int fwidth_half)
 
 static void vif_filter1d_8(VifBuffer buf, unsigned w, unsigned h)
 {
-    const int fwidth = vif_filter1d_width[0];
+    const unsigned fwidth = vif_filter1d_width[0];
     const uint16_t *vif_filt_s0 = vif_filter1d_table[0];
 
     for (unsigned i = 0; i < h; ++i) {
@@ -208,7 +210,7 @@ static void vif_filter1d_8(VifBuffer buf, unsigned w, unsigned h)
                 accum_dis += fcoeff * ((uint64_t)buf.tmp.dis[jj_check]);
                 accum_ref_dis += fcoeff * ((uint64_t)buf.tmp.ref_dis[jj_check]);
             }
-            const ptrdiff_t dst_stride = buf.stride / sizeof(uint32_t);
+            const ptrdiff_t dst_stride = buf.stride_32 / sizeof(uint32_t);
             buf.mu1_32[i * dst_stride + j] = accum_mu1;
             buf.mu2_32[i * dst_stride + j] = accum_mu2;
             buf.ref_sq[i * dst_stride + j] = (uint32_t)((accum_ref + 32768) >> 16);
@@ -221,7 +223,7 @@ static void vif_filter1d_8(VifBuffer buf, unsigned w, unsigned h)
 static void vif_filter1d_16(VifBuffer buf, unsigned w, unsigned h, int scale,
                             int bpc)
 {
-    const int fwidth = vif_filter1d_width[scale];
+    const unsigned fwidth = vif_filter1d_width[scale];
     const uint16_t *vif_filt = vif_filter1d_table[scale];
 
     int32_t add_shift_round_HP, shift_HP;
@@ -256,8 +258,10 @@ static void vif_filter1d_16(VifBuffer buf, unsigned w, unsigned h, int scale,
                 int ii_check = ii + fi;
                 const uint16_t fcoeff = vif_filt[fi];
                 const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
-                uint16_t imgcoeff_ref = buf.ref[ii_check * stride + j];
-                uint16_t imgcoeff_dis = buf.dis[ii_check * stride + j];
+                uint16_t *ref = buf.ref;
+                uint16_t *dis = buf.dis;
+                uint16_t imgcoeff_ref = ref[ii_check * stride + j];
+                uint16_t imgcoeff_dis = dis[ii_check * stride + j];
                 uint32_t img_coeff_ref = fcoeff * (uint32_t)imgcoeff_ref;
                 uint32_t img_coeff_dis = fcoeff * (uint32_t)imgcoeff_dis;
                 accum_mu1 += img_coeff_ref;
@@ -292,7 +296,7 @@ static void vif_filter1d_16(VifBuffer buf, unsigned w, unsigned h, int scale,
                 accum_dis += fcoeff * ((uint64_t)buf.tmp.dis[jj_check]);
                 accum_ref_dis += fcoeff * ((uint64_t)buf.tmp.ref_dis[jj_check]);
             }
-            const ptrdiff_t dst_stride = buf.stride / sizeof(uint32_t);
+            const ptrdiff_t dst_stride = buf.stride_32 / sizeof(uint32_t);
             buf.mu1_32[i * dst_stride + j] = accum_mu1;
             buf.mu2_32[i * dst_stride + j] = accum_mu2;
             buf.ref_sq[i * dst_stride + j] = (uint32_t)((accum_ref + add_shift_round_HP) >> shift_HP);
@@ -302,8 +306,8 @@ static void vif_filter1d_16(VifBuffer buf, unsigned w, unsigned h, int scale,
     }
 }
 
-static void vif_statistic(VifBuffer buf, float *num, float *den,  int w, int h,
-                          int scale, uint16_t *log2_table)
+static void vif_statistic(VifBuffer buf, float *num, float *den,
+                          unsigned w, unsigned h, uint16_t *log2_table)
 {
     uint32_t *xx_filt = buf.ref_sq;
     uint32_t *yy_filt = buf.dis_sq;
@@ -311,8 +315,6 @@ static void vif_statistic(VifBuffer buf, float *num, float *den,  int w, int h,
 
     //float equivalent of 2. (2 * 65536)
     static const int32_t sigma_nsq = 65536 << 1;
-    //float equivalent of 4/(256*256)
-    static const int16_t sigma_max_inv = 2;
 
     int64_t num_val, den_val;
     int64_t accum_x = 0, accum_x2 = 0;
@@ -333,7 +335,7 @@ static void vif_statistic(VifBuffer buf, float *num, float *den,  int w, int h,
     */
     for (unsigned i = 0; i < h; ++i) {
         for (unsigned j = 0; j < w; ++j) {
-            const ptrdiff_t stride = buf.stride / sizeof(uint32_t);
+            const ptrdiff_t stride = buf.stride_32 / sizeof(uint32_t);
             uint32_t mu1_val = buf.mu1_32[i * stride + j];
             uint32_t mu2_val = buf.mu2_32[i * stride + j];
             uint32_t mu1_sq_val = (uint32_t)((((uint64_t)mu1_val * mu1_val)
@@ -422,7 +424,7 @@ static void vif_statistic(VifBuffer buf, float *num, float *den,  int w, int h,
 
 static void vif_filter1d_rd_8(VifBuffer buf, unsigned w, unsigned h)
 {
-    const int fwidth = vif_filter1d_width[1];
+    const unsigned fwidth = vif_filter1d_width[1];
     const uint16_t *vif_filt_s1 = vif_filter1d_table[1];
 
     for (unsigned i = 0; i < h; ++i) {
@@ -456,7 +458,7 @@ static void vif_filter1d_rd_8(VifBuffer buf, unsigned w, unsigned h)
                 accum_ref += fcoeff * buf.tmp.ref_convol[jj_check];
                 accum_dis += fcoeff * buf.tmp.dis_convol[jj_check];
             }
-            const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
+            const ptrdiff_t stride = buf.stride_16 / sizeof(uint16_t);
             buf.mu1[i * stride + j] = (uint16_t)((accum_ref + 32768) >> 16);
             buf.mu2[i * stride + j] = (uint16_t)((accum_dis + 32768) >> 16);
         }
@@ -466,7 +468,7 @@ static void vif_filter1d_rd_8(VifBuffer buf, unsigned w, unsigned h)
 static void vif_filter1d_rd_16(VifBuffer buf, unsigned w, unsigned h, int scale,
                                int bpc)
 {
-    const int fwidth = vif_filter1d_width[scale + 1];
+    const unsigned fwidth = vif_filter1d_width[scale + 1];
     const uint16_t *vif_filt = vif_filter1d_table[scale + 1];
     int32_t add_shift_round_VP, shift_VP;
 
@@ -488,8 +490,10 @@ static void vif_filter1d_rd_16(VifBuffer buf, unsigned w, unsigned h, int scale,
                 int ii_check = ii + fi;
                 const uint16_t fcoeff = vif_filt[fi];
                 const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
-                accum_ref += fcoeff * ((uint32_t)buf.ref[ii_check * stride + j]);
-                accum_dis += fcoeff * ((uint32_t)buf.dis[ii_check * stride + j]);
+                uint16_t *ref = buf.ref;
+                uint16_t *dis = buf.dis;
+                accum_ref += fcoeff * ((uint32_t)ref[ii_check * stride + j]);
+                accum_dis += fcoeff * ((uint32_t)dis[ii_check * stride + j]);
             }
             buf.tmp.ref_convol[j] = (uint16_t)((accum_ref + add_shift_round_VP) >> shift_VP);
             buf.tmp.dis_convol[j] = (uint16_t)((accum_dis + add_shift_round_VP) >> shift_VP);
@@ -501,7 +505,6 @@ static void vif_filter1d_rd_16(VifBuffer buf, unsigned w, unsigned h, int scale,
         for (unsigned j = 0; j < w; ++j) {
             uint32_t accum_ref = 0;
             uint32_t accum_dis = 0;
-            int jj = j - fwidth / 2;
             for (unsigned fj = 0; fj < fwidth; ++fj) {
                 int jj = j - fwidth / 2;
                 int jj_check = jj + fj;
@@ -509,7 +512,7 @@ static void vif_filter1d_rd_16(VifBuffer buf, unsigned w, unsigned h, int scale,
                 accum_ref += fcoeff * ((uint32_t)buf.tmp.ref_convol[jj_check]);
                 accum_dis += fcoeff * ((uint32_t)buf.tmp.dis_convol[jj_check]);
             }
-            const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
+            const ptrdiff_t stride = buf.stride_16 / sizeof(uint16_t);
             buf.mu1[i * stride + j] = (uint16_t)((accum_ref + 32768) >> 16);
             buf.mu2[i * stride + j] = (uint16_t)((accum_dis + 32768) >> 16);
         }
@@ -571,38 +574,40 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
 {
     VifState *s = fex->priv;
-    log_generate(&s->log2_table);
+    log_generate(s->log2_table);
 
-    const size_t pad_left = MAX_ALIGN;
-    const size_t pad_right = MAX_ALIGN;
-    s->buf.stride = ALIGN_CEIL((pad_left + w + pad_right) * sizeof(uint32_t));
+    (void) pix_fmt;
+    const bool hbd = bpc > 8;
+
+    s->buf.stride = ALIGN_CEIL(w << hbd);
+    s->buf.stride_16 = ALIGN_CEIL(w * sizeof(uint16_t));
+    s->buf.stride_32 = ALIGN_CEIL(w * sizeof(uint32_t));
+    s->buf.stride_tmp =
+        ALIGN_CEIL((MAX_ALIGN + w + MAX_ALIGN) * sizeof(uint32_t));
     const size_t frame_size = s->buf.stride * h;
-    const size_t pad_top = s->buf.stride * 8;
-    const size_t pad_bottom = s->buf.stride * 8;
-    void *data =
-        aligned_malloc((frame_size * 9) +
-                       ((pad_top + pad_bottom) * 2) +
-                       (s->buf.stride * 7), MAX_ALIGN);
+    const size_t pad_size = s->buf.stride * 8;
+    const size_t data_sz = 
+        2 * (pad_size + frame_size + pad_size) + 2 * (h * s->buf.stride_16) +
+        5 * (h * s->buf.stride_32) + 7 * s->buf.stride_tmp;
+    void *data = aligned_malloc(data_sz, MAX_ALIGN);
     if (!data) goto fail;
 
-    s->buf.data = data; data += pad_top + pad_left;
-    s->buf.ref = data; data += frame_size + pad_bottom + pad_top;
-    s->buf.dis = data; data += frame_size + pad_bottom;
-    s->buf.mu1 = data; data += frame_size;
-    s->buf.mu2 = data; data += frame_size;
-
-    s->buf.mu1_32 = data; data += frame_size;
-    s->buf.mu2_32 = data; data += frame_size;
-    s->buf.ref_sq = data; data += frame_size;
-    s->buf.dis_sq = data; data += frame_size;
-    s->buf.ref_dis = data; data += frame_size;
-
-    s->buf.tmp.mu1 = data; data += s->buf.stride;
-    s->buf.tmp.mu2 = data; data += s->buf.stride;
-    s->buf.tmp.ref = data; data += s->buf.stride;
-    s->buf.tmp.dis = data; data += s->buf.stride;
-    s->buf.tmp.ref_dis = data; data += s->buf.stride;
-    s->buf.tmp.ref_convol = data; data += s->buf.stride;
+    s->buf.data = data; data += pad_size;
+    s->buf.ref = data; data += frame_size + pad_size + pad_size;
+    s->buf.dis = data; data += frame_size + pad_size;
+    s->buf.mu1 = data; data += h * s->buf.stride_16;
+    s->buf.mu2 = data; data += h * s->buf.stride_16;
+    s->buf.mu1_32 = data; data += h * s->buf.stride_32;
+    s->buf.mu2_32 = data; data += h * s->buf.stride_32;
+    s->buf.ref_sq = data; data += h * s->buf.stride_32;
+    s->buf.dis_sq = data; data += h * s->buf.stride_32;
+    s->buf.ref_dis = data; data += h * s->buf.stride_32;
+    s->buf.tmp.mu1 = data; data += s->buf.stride_tmp;
+    s->buf.tmp.mu2 = data; data += s->buf.stride_tmp;
+    s->buf.tmp.ref = data; data += s->buf.stride_tmp;
+    s->buf.tmp.dis = data; data += s->buf.stride_tmp;
+    s->buf.tmp.ref_dis = data; data += s->buf.stride_tmp;
+    s->buf.tmp.ref_convol = data; data += s->buf.stride_tmp;
     s->buf.tmp.dis_convol = data;
 
     return 0;
@@ -656,15 +661,14 @@ static int extract(VmafFeatureExtractor *fex,
             vif_filter1d_16(s->buf, w, h, scale, ref_pic->bpc);
 
         float num, den;
-        vif_statistic(s->buf, &num, &den, w, h, scale, s->log2_table);
+        vif_statistic(s->buf, &num, &den, w, h, s->log2_table);
         scores[2 * scale] = num;
         scores[2 * scale + 1] = den;
         score_num += scores[2 * scale];
         score_den += scores[2 * scale + 1];
     }
 
-    double score =
-        score_den = 0.0 ? 1.0 : score_num / score_den;
+    //double score = score_den = 0.0 ? 1.0 : score_num / score_den;
 
     int err = 0;
     err |= vmaf_feature_collector_append(feature_collector,
