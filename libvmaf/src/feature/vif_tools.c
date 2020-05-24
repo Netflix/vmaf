@@ -225,7 +225,7 @@ void vif_statistic_s(const float *mu1, const float *mu2, const float *mu1_mu2, c
 	int xy_filt_px_stride = xy_filt_stride / sizeof(float);
 
 	float mu1_sq_val, mu2_sq_val, mu1_mu2_val, xx_filt_val, yy_filt_val, xy_filt_val;
-	float sigma1_sq, sigma2_sq, sigma12, g, sv_sq;
+	float sigma1_sq, sigma2_sq, sigma12, num_log_den, num_log_num;
 	float num_val, den_val;
 	int i, j;
 
@@ -254,15 +254,15 @@ void vif_statistic_s(const float *mu1, const float *mu2, const float *mu1_mu2, c
 				den_val = 1.0;
 			}
 			else {
-				sv_sq = (sigma2_sq + sigma_nsq) * sigma1_sq;
+				num_log_num = (sigma2_sq + sigma_nsq) * sigma1_sq;
 				if (sigma12 < 0)
 				{
 					num_val = 0.0;
 				}
 				else
 				{
-					g = sv_sq - sigma12 * sigma12;
-					num_val = log2f(sv_sq / g);
+					num_log_den = num_log_num - sigma12 * sigma12;
+					num_val = log2f(num_log_num / num_log_den);
 				}
 				den_val = log2f(1.0f + sigma1_sq / sigma_nsq);
 			}
