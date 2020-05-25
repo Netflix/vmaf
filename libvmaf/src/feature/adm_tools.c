@@ -769,20 +769,20 @@ void dwt2_src_indices_filt_s(int **src_ind_y, int **src_ind_x, int w, int h)
 	int i, j;
 	int ind0, ind1, ind2, ind3;
 	/* Vertical pass */
-	for (i = 0; i < (h + 1) / 2; ++i) { /* Index = 2 * i - 1 + fi */
+	for (i = 0; i < (h + 1) / 2; ++i) { /* periodic */
 		ind0 = 2 * i - 1;
-		ind0 = (ind0 < 0) ? -ind0 : ((ind0 >= h) ? (2 * h - ind0 - 1) : ind0);
+		ind0 = (ind0 < 0) ? (h + ind0) : ((ind0 >= h) ? (ind0 - h) : ind0);
 		ind1 = 2 * i;
 		if (ind1 >= h) {
-			ind1 = (2 * h - ind1 - 1);
+			ind1 = (ind1 - h);
 		}
 		ind2 = 2 * i + 1;
 		if (ind2 >= h) {
-			ind2 = (2 * h - ind2 - 1);
+			ind2 = (ind2 - h);
 		}
 		ind3 = 2 * i + 2;
 		if (ind3 >= h) {
-			ind3 = (2 * h - ind3 - 1);
+			ind3 = (ind3 - h);
 		}
 		src_ind_y[0][i] = ind0;
 		src_ind_y[1][i] = ind1;
@@ -790,20 +790,20 @@ void dwt2_src_indices_filt_s(int **src_ind_y, int **src_ind_x, int w, int h)
 		src_ind_y[3][i] = ind3;
 	}
 	/* Horizontal pass */
-	for (j = 0; j < (w + 1) / 2; ++j) { /* Index = 2 * j - 1 + fj */
+	for (j = 0; j < (w + 1) / 2; ++j) { /* periodic */
 		ind0 = 2 * j - 1;
-		ind0 = (ind0 < 0) ? -ind0 : ((ind0 >= w) ? (2 * w - ind0 - 1) : ind0);
+		ind0 = (ind0 < 0) ? (w + ind0) : ((ind0 >= w) ? (ind0 - w) : ind0);
 		ind1 = 2 * j;
 		if (ind1 >= w) {
-			ind1 = (2 * w - ind1 - 1);
+			ind1 = (ind1 - w);
 		}
 		ind2 = 2 * j + 1;
 		if (ind2 >= w) {
-			ind2 = (2 * w - ind2 - 1);
+			ind2 = (ind2 - w);
 		}
 		ind3 = 2 * j + 2;
 		if (ind3 >= w) {
-			ind3 = (2 * w - ind3 - 1);
+			ind3 = (ind3 - w);
 		}
 		src_ind_x[0][j] = ind0;
 		src_ind_x[1][j] = ind1;
