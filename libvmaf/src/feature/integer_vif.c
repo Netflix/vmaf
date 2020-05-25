@@ -42,6 +42,10 @@ static const uint16_t vif_filter1d_table[4][17] = {
 
 static const int vif_filter1d_width[4] = { 17, 9, 5, 3 };
 
+/**
+ * Padding on top is mirrored accrossed first row
+ * Padding on bottom is mirrored accrossed imaginary mirror after bottom end row
+ */
 static FORCE_INLINE inline void
 pad_top_and_bottom(VifBuffer buf, unsigned h, int fwidth)
 {
@@ -52,16 +56,16 @@ pad_top_and_bottom(VifBuffer buf, unsigned h, int fwidth)
         memcpy(ref - offset, ref + offset, buf.stride);
         memcpy(dis - offset, dis + offset, buf.stride);
         memcpy(ref + buf.stride * (h - 1) + buf.stride * i,
-               ref + buf.stride * (h - 1) - buf.stride * i,
+               ref + buf.stride * (h - 1) - buf.stride * (i - 1),
                buf.stride); 
         memcpy(dis + buf.stride * (h - 1) + buf.stride * i,
-               dis + buf.stride * (h - 1) - buf.stride * i,
+               dis + buf.stride * (h - 1) - buf.stride * (i - 1),
                buf.stride); 
     }
 }
 
 static FORCE_INLINE inline void
-decimate_and_pad(VifBuffer buf, int w, h, int scale)
+decimate_and_pad(VifBuffer buf, int w, int h, int scale)
 {
     const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
     for (unsigned i = 0; i < h / 2; ++i) {
@@ -107,6 +111,10 @@ get_best16_from64(uint64_t temp, int *x)
     return (uint16_t)temp;
 }
 
+/**
+ * Padding on left is mirrored accrossed first column
+ * Padding on right is mirrored accrossed imaginary mirror after right end column
+ */
 static FORCE_INLINE inline void
 PADDING_SQ_DATA(VifBuffer buf, int w, int fwidth_half)
 {
@@ -119,7 +127,7 @@ PADDING_SQ_DATA(VifBuffer buf, int w, int fwidth_half)
         buf.tmp.dis[left_point] = buf.tmp.dis[right_point];
         buf.tmp.ref_dis[left_point] = buf.tmp.ref_dis[right_point];
         
-        left_point = w - 1 - f;
+        left_point = w - f;
         right_point = w - 1 + f;
         buf.tmp.mu1[right_point] = buf.tmp.mu1[left_point];
         buf.tmp.mu2[right_point] = buf.tmp.mu2[left_point];
@@ -138,7 +146,7 @@ PADDING_SQ_DATA_2(VifBuffer buf, int w, int fwidth_half)
         buf.tmp.ref_convol[left_point] = buf.tmp.ref_convol[right_point];
         buf.tmp.dis_convol[left_point] = buf.tmp.dis_convol[right_point];
         
-        left_point = w - 1 - f;
+        left_point = w - f;
         right_point = w - 1 + f;
         buf.tmp.ref_convol[right_point] = buf.tmp.ref_convol[left_point];
         buf.tmp.dis_convol[right_point] = buf.tmp.dis_convol[left_point];
@@ -161,8 +169,6 @@ static void vif_filter1d_8(VifBuffer buf, unsigned w, unsigned h)
             for (unsigned fi = 0; fi < fwidth; ++fi) {
                 int ii = i - fwidth / 2;
                 int ii_check = ii + fi;
-                //if (ii_check >= h) ii_check -= 1;
-                //^FIXME, off by one when mirroring the bottom
                 const uint16_t fcoeff = vif_filt_s0[fi];
                 const uint8_t *ref = (uint8_t*)buf.ref;
                 const uint8_t *dis = (uint8_t*)buf.dis;
@@ -195,8 +201,6 @@ static void vif_filter1d_8(VifBuffer buf, unsigned w, unsigned h)
             for (unsigned fj = 0; fj < fwidth; ++fj) {
                 int jj = j - fwidth / 2;
                 int jj_check = jj + fj;
-                //if (jj_check >= w) jj_check -= 1;
-                //^FIXME, off by one when mirroring the right side
                 const uint16_t fcoeff = vif_filt_s0[fj];
                 accum_mu1 += fcoeff * ((uint32_t)buf.tmp.mu1[jj_check]);
                 accum_mu2 += fcoeff * ((uint32_t)buf.tmp.mu2[jj_check]);
@@ -250,8 +254,6 @@ static void vif_filter1d_16(VifBuffer buf, unsigned w, unsigned h, int scale,
             for (unsigned fi = 0; fi < fwidth; ++fi) {
                 int ii = i - fwidth / 2;
                 int ii_check = ii + fi;
-                //if (ii_check >= h) ii_check -= 1;
-                //^FIXME, off by one when mirroring the bottom
                 const uint16_t fcoeff = vif_filt[fi];
                 const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
                 uint16_t imgcoeff_ref = buf.ref[ii_check * stride + j];
@@ -283,8 +285,6 @@ static void vif_filter1d_16(VifBuffer buf, unsigned w, unsigned h, int scale,
             for (unsigned fj = 0; fj < fwidth; ++fj) {
                 int jj = j - fwidth / 2;
                 int jj_check = jj + fj;
-                //if (jj_check >= w) jj_check -= 1;
-                //^FIXME, off by one when mirroring the right side
                 const uint16_t fcoeff = vif_filt[fj];
                 accum_mu1 += fcoeff * ((uint32_t)buf.tmp.mu1[jj_check]);
                 accum_mu2 += fcoeff * ((uint32_t)buf.tmp.mu2[jj_check]);
@@ -433,8 +433,6 @@ static void vif_filter1d_rd_8(VifBuffer buf, unsigned w, unsigned h)
             for (unsigned fi = 0; fi < fwidth; ++fi) {
                 int ii = i - fwidth / 2;
                 int ii_check = ii + fi;
-                //if (ii_check >= h) ii_check -= 1;
-                //^FIXME, off by one when mirroring the bottom
                 const uint16_t fcoeff = vif_filt_s1[fi];
                 const uint8_t *ref = (uint8_t*)buf.ref;
                 const uint8_t *dis = (uint8_t*)buf.dis;
@@ -454,8 +452,6 @@ static void vif_filter1d_rd_8(VifBuffer buf, unsigned w, unsigned h)
             for (unsigned fj = 0; fj < fwidth; ++fj) {
                 int jj = j - fwidth / 2;
                 int jj_check = jj + fj;
-                //if (jj_check >= w) jj_check -= 1;
-                //^FIXME, off by one when mirroring the right side
                 const uint16_t fcoeff = vif_filt_s1[fj];
                 accum_ref += fcoeff * buf.tmp.ref_convol[jj_check];
                 accum_dis += fcoeff * buf.tmp.dis_convol[jj_check];
@@ -490,8 +486,6 @@ static void vif_filter1d_rd_16(VifBuffer buf, unsigned w, unsigned h, int scale,
             for (unsigned fi = 0; fi < fwidth; ++fi) {
                 int ii = i - fwidth / 2;
                 int ii_check = ii + fi;
-                //if (ii_check >= h) ii_check -= 1;
-                //^FIXME, off by one when mirroring the bottom
                 const uint16_t fcoeff = vif_filt[fi];
                 const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
                 accum_ref += fcoeff * ((uint32_t)buf.ref[ii_check * stride + j]);
@@ -511,8 +505,6 @@ static void vif_filter1d_rd_16(VifBuffer buf, unsigned w, unsigned h, int scale,
             for (unsigned fj = 0; fj < fwidth; ++fj) {
                 int jj = j - fwidth / 2;
                 int jj_check = jj + fj;
-                //if (jj_check >= w) jj_check -= 1;
-                //^FIXME, off by one when mirroring the right side
                 const uint16_t fcoeff = vif_filt[fj];
                 accum_ref += fcoeff * ((uint32_t)buf.tmp.ref_convol[jj_check]);
                 accum_dis += fcoeff * ((uint32_t)buf.tmp.dis_convol[jj_check]);
@@ -632,9 +624,10 @@ static int extract(VmafFeatureExtractor *fex,
     void *dis_in = dis_pic->data[0];
     void *ref_out = s->buf.ref;
     void *dis_out = s->buf.dis;
+
     for (unsigned i = 0; i < h; i++) {
-        memcpy(ref_out, ref_in, w);
-        memcpy(dis_out, dis_in, w);
+        memcpy(ref_out, ref_in, ref_pic->stride[0]);
+        memcpy(dis_out, dis_in, dis_pic->stride[0]);
         ref_in += ref_pic->stride[0];
         dis_in += dis_pic->stride[0];
         ref_out += s->buf.stride;
