@@ -48,6 +48,9 @@ static float rcp_s(float x)
 static const float dwt2_db2_coeffs_lo_s[4] = { 0.482962913144690, 0.836516303737469, 0.224143868041857, -0.129409522550921 };
 static const float dwt2_db2_coeffs_hi_s[4] = { -0.129409522550921, -0.224143868041857, 0.836516303737469, -0.482962913144690 };
 
+static const double dwt2_db2_coeffs_lo_d[4] = { 0.482962913144690, 0.836516303737469, 0.224143868041857, -0.129409522550921 };
+static const double dwt2_db2_coeffs_hi_d[4] = { -0.129409522550921, -0.224143868041857, 0.836516303737469, -0.482962913144690 };
+
 #ifndef FLOAT_ONE_BY_30
 #define FLOAT_ONE_BY_30	0.0333333351
 
@@ -907,9 +910,9 @@ void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int 
 
 void adm_dwt2_d(const double *src, const adm_dwt_band_t_d *dst, int **ind_y, int **ind_x, int w, int h, int src_stride, int dst_stride)
 {
-	const double *filter_lo = dwt2_db2_coeffs_lo_s;
-	const double *filter_hi = dwt2_db2_coeffs_hi_s;
-	int fwidth = sizeof(dwt2_db2_coeffs_lo_s) / sizeof(double);
+	const double *filter_lo = dwt2_db2_coeffs_lo_d;
+	const double *filter_hi = dwt2_db2_coeffs_hi_d;
+	int fwidth = sizeof(dwt2_db2_coeffs_lo_d) / sizeof(double);
 
 	int src_px_stride = src_stride / sizeof(double);
 	int dst_px_stride = dst_stride / sizeof(double);

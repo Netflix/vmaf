@@ -20,10 +20,10 @@ class AdmDwt2CyTest(unittest.TestCase):
         self.assertEqual(ds[0].shape, (162, 288))
         self.assertEqual(ds[1].shape, (162, 288))
         self.assertEqual(ds[2].shape, (162, 288))
-        self.assertAlmostEqual(np.float(np.std(a)), 73.8959273922819, places=6)
-        self.assertAlmostEqual(np.float(np.std(ds[0])), 73.5355886699825, places=6)
-        self.assertAlmostEqual(np.float(np.std(ds[1])), 73.69196438463929, places=6)
-        self.assertAlmostEqual(np.float(np.std(ds[2])), 73.52173319007242, places=6)
+        self.assertAlmostEqual(np.float(np.std(a)), 73.94278958581368, places=6)
+        self.assertAlmostEqual(np.float(np.std(ds[0])), 73.30349892103438, places=6)
+        self.assertAlmostEqual(np.float(np.std(ds[1])), 73.6191713793981, places=6)
+        self.assertAlmostEqual(np.float(np.std(ds[2])), 73.19024438119925, places=6)
 
     def test_adm_dwt2_py(self):
         np.random.seed(0)
