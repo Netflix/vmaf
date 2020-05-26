@@ -16,7 +16,7 @@ cdef extern from "../../../libvmaf/src/feature/adm_tools.c":
     void adm_dwt2_d(const double *src, const adm_dwt_band_t_d *dst, int **ind_y, int **ind_x, int w, int h, int src_stride, int dst_stride)
 
 cdef extern from "../../../libvmaf/src/feature/adm.c":
-    char *init_dwt_band(adm_dwt_band_t_d *band, char *data_top, size_t buf_sz_one)
+    char *init_dwt_band_d(adm_dwt_band_t_d *band, char *data_top, size_t buf_sz_one)
 
 cdef extern from "../../../libvmaf/src/mem.c":
     void aligned_free(void *ptr)
@@ -71,11 +71,11 @@ def adm_dwt2_cy(np.ndarray[np.float_t, ndim=2, mode='c'] a):
     cdef int w = len(a[0])
 
     cdef int curr_ref_stride = w * sizeof(np_float)
-    cdef int buf_stride = ALIGN_CEIL(((w + 1) / 2) * sizeof(np_float))
-    cdef size_t buf_sz_one = <size_t> buf_stride * ((h + 1) / 2)
+    cdef int buf_stride = ALIGN_CEIL(((w + 1) // 2) * sizeof(np_float))
+    cdef size_t buf_sz_one = <size_t> buf_stride * ((h + 1) // 2)
 
-    cdef int ind_size_y = ALIGN_CEIL(((h + 1) / 2) * sizeof(int))
-    cdef int ind_size_x = ALIGN_CEIL(((w + 1) / 2) * sizeof(int))
+    cdef int ind_size_y = ALIGN_CEIL(((h + 1) // 2) * sizeof(int))
+    cdef int ind_size_x = ALIGN_CEIL(((w + 1) // 2) * sizeof(int))
 
     cdef int *ind_y_mem = <int *>malloc(ind_size_y * 4)  # TODO: combine allocating ind_x_mem and ind_y_mem and data_mem
     if not ind_y_mem:
@@ -86,7 +86,7 @@ def adm_dwt2_cy(np.ndarray[np.float_t, ndim=2, mode='c'] a):
         free(ind_y_mem)
         raise MemoryError
 
-    cdef char * data_mem = <char *>malloc(buf_sz_one * 16)  # FIXME: supposed to be * 4, but resulting in corrupted data
+    cdef char * data_mem = <char *>malloc(buf_sz_one * 16)   # FIXME: supposed to be * 4, but resulting in corrupted data
     if not data_mem:
         free(ind_y_mem)
         free(ind_x_mem)
@@ -116,7 +116,7 @@ def adm_dwt2_cy(np.ndarray[np.float_t, ndim=2, mode='c'] a):
         ind_x[3] = <int *> ptr
 
         ptr = <char *>data_mem
-        ptr = init_dwt_band(&aa_band, ptr, buf_sz_one)
+        ptr = init_dwt_band_d(&aa_band, ptr, buf_sz_one)
 
         dwt2_src_indices_filt_s(ind_y, ind_x, w, h)
 
@@ -138,10 +138,10 @@ def adm_dwt2_cy(np.ndarray[np.float_t, ndim=2, mode='c'] a):
         # print("aa_band->band_v: {}, {}, {}, {}, {}".format(aa_band.band_v[0], aa_band.band_v[1], aa_band.band_v[2], aa_band.band_v[3], aa_band.band_v[4]))
         # print("aa_band->band_h: {}, {}, {}, {}, {}".format(aa_band.band_h[0], aa_band.band_h[1], aa_band.band_h[2], aa_band.band_h[3], aa_band.band_h[4]))
         # print("aa_band->band_d: {}, {}, {}, {}, {}".format(aa_band.band_d[0], aa_band.band_d[1], aa_band.band_d[2], aa_band.band_d[3], aa_band.band_d[4]))
-        print("np.max(aa_band.band_a)={}".format(np.max(np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_a))))
-        print("np.max(aa_band.band_v)={}".format(np.max(np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_v))))
-        print("np.max(aa_band.band_h)={}".format(np.max(np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_h))))
-        print("np.max(aa_band.band_d)={}".format(np.max(np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_d))))
+        # print("np.mean(aa_band.band_a)={}".format(np.mean(np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_a))))
+        # print("np.mean(aa_band.band_v)={}".format(np.mean(np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_v))))
+        # print("np.mean(aa_band.band_h)={}".format(np.mean(np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_h))))
+        # print("np.mean(aa_band.band_d)={}".format(np.mean(np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_d))))
 
         a_new = np.ones((h_new, w_new))
         ds_h  = np.ones((h_new, w_new))
