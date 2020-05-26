@@ -9,7 +9,8 @@ as well as a set of tools that allows a user to train and test a custom VMAF mod
 """
 
 import os
-from setuptools import setup
+from distutils.core import setup
+from Cython.Build import cythonize
 
 
 PYTHON_PROJECT = os.path.dirname(os.path.abspath(__file__))
@@ -63,5 +64,6 @@ setup(
             'run_vmaf_training=vmaf.script.run_vmaf_training:main',
             'run_vmafossexec_subsampling=vmaf.script.run_vmafossexec_subsampling:main',
         ],
-    }
+    },
+    ext_modules=cythonize('python/vmaf/core/adm_dwt2_cy.pyx'),
 )
