@@ -67,5 +67,5 @@ setup(
         ],
     },
     ext_modules=cythonize(['python/vmaf/core/adm_dwt2_cy.pyx']),
-    include_dirs=[numpy.get_include()]
+    include_dirs=[numpy.get_include(), 'libvmaf/src']
 )
