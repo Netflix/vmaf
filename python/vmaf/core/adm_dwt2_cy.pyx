@@ -1,5 +1,3 @@
-# import pywt
-
 import numpy as np
 cimport numpy as np
 
@@ -24,18 +22,6 @@ cdef extern from "../../../libvmaf/src/mem.c":
 cdef extern from "../../../libvmaf/src/feature/offset.c":
     int offset_image_s(float *buf, float off, int width, int height, int stride)  # TODO: find out why need this _s - doesn't seem to be called but if not, symbol not found error
 
-# cdef extern from "spam.c":
-#     void order_spam(int tons)
-#
-# from libc.stdlib cimport atoi
-# cdef parse_charptr_to_py_int(char* s):
-#     assert s is not NULL, "byte string value is NULL"
-#     return atoi(s)  # note: atoi() has no error detection!
-#
-# from libc.math cimport sin
-# cdef double f(double x):
-#     return sin(x * x)
-
 ctypedef double np_float
 
 MAX_ALIGN = 32
@@ -49,20 +35,6 @@ def ALIGN_CEIL(x):
     return x + y
 
 def adm_dwt2_cy(np.ndarray[np.float_t, ndim=2, mode='c'] a):
-
-    # cdef np.ndarray[np.uint32_t, ndim=3, mode = 'c'] np_buff = np.ascontiguousarray(im, dtype = np.uint32)
-    # cdef unsigned int* im_buff = <unsigned int*> np_buff.data
-
-    # cdef np.ndarray[double, ndim=2, mode="c"] a_cython = np.asarray(a, dtype = float, order="C")
-    # cdef double** point_to_a = <double **>malloc(N * sizeof(double*))
-    # if not point_to_a: raise MemoryError
-    # try:
-    #     for i in range(N):
-    #         point_to_a[i] = &a_cython[i, 0]
-    #     # Call the C function that expects a double**
-    #     myfunc(... &point_to_a[0], ...)
-    # finally:
-    #     free(point_to_a)
 
     cdef np.ndarray[np.float_t, ndim=2, mode='c'] a_buf = np.ascontiguousarray(a, dtype=np.float)
     cdef np_float *aa = <np_float*> a_buf.data
@@ -158,15 +130,4 @@ def adm_dwt2_cy(np.ndarray[np.float_t, ndim=2, mode='c'] a):
         free(ind_x_mem)
         free(data_mem)
 
-    # print("order_spam(5) prints:")
-    # order_spam(5)
-    #
-    # cdef int x = parse_charptr_to_py_int('5')
-    # print("parse_charptr_to_py_int('5') returns {} of type {}".format(x, type(x)))
-    #
-    # print("f(3) = {}".format(f(3)))
-
-    # a, ds = pywt.dwt2(a, 'db2', 'periodization')
-
-    # return a, ds
     return a_new, [ds_h, ds_v, ds_d]
