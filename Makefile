@@ -3,7 +3,7 @@ all:
 
 	meson setup libvmaf/build libvmaf --buildtype release && \
 	ninja -vC libvmaf/build
-	python3 python/setup.py build_ext --build-lib python
+	cd python && python3 setup.py build_ext --build-lib .
 
 clean:
 	cd third_party/libsvm && make clean && cd -

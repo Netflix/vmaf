@@ -66,6 +66,6 @@ setup(
             'run_vmafossexec_subsampling=vmaf.script.run_vmafossexec_subsampling:main',
         ],
     },
-    ext_modules=cythonize(['python/vmaf/core/adm_dwt2_cy.pyx']),
-    include_dirs=[numpy.get_include(), 'libvmaf/src']
+    ext_modules=cythonize(['vmaf/core/adm_dwt2_cy.pyx']),
+    include_dirs=[numpy.get_include(), '../libvmaf/src']
 )
