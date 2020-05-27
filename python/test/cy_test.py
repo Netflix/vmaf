@@ -14,7 +14,8 @@ class AdmDwt2CyTest(unittest.TestCase):
     def test_adm_dwt2_cy(self):
         np.random.seed(0)
         x = np.random.uniform(low=-128, high=127, size=[324, 576])
-        a, ds = adm_dwt2_cy(x)
+        a, v, h, d = adm_dwt2_cy(x)
+        ds = [h, v, d]
         self.assertEqual(a.shape, (162, 288))
         self.assertEqual(len(ds), 3)
         self.assertEqual(ds[0].shape, (162, 288))

@@ -71,7 +71,7 @@ def adm_dwt2_cy(np.ndarray[np.float_t, ndim=2, mode='c'] a):
     cdef int h_new = (h + 1) // 2
     cdef int w_new = (w + 1) // 2
 
-    cdef np.ndarray[np.float_t, ndim=2, mode='c'] a_new, ds_h, ds_v, ds_d
+    cdef np.ndarray[np.float_t, ndim=2, mode='c'] out_a, out_v, out_h, out_d
 
     cdef char *ptr
     try:
@@ -115,19 +115,19 @@ def adm_dwt2_cy(np.ndarray[np.float_t, ndim=2, mode='c'] a):
         # print("np.mean(aa_band.band_h)={}".format(np.mean(np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_h))))
         # print("np.mean(aa_band.band_d)={}".format(np.mean(np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_d))))
 
-        a_new = np.ones((h_new, w_new))
-        ds_h  = np.ones((h_new, w_new))
-        ds_v  = np.ones((h_new, w_new))
-        ds_d  = np.ones((h_new, w_new))
+        out_a = np.ones((h_new, w_new))
+        out_v  = np.ones((h_new, w_new))
+        out_h  = np.ones((h_new, w_new))
+        out_d  = np.ones((h_new, w_new))
 
-        a_new[...] = np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_a)[...]
-        ds_h[...]  = np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_h)[...]
-        ds_v[...]  = np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_v)[...]
-        ds_d[...]  = np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_d)[...]
+        out_a[...] = np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_a)[...]
+        out_v[...]  = np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_v)[...]
+        out_h[...]  = np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_h)[...]
+        out_d[...]  = np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_d)[...]
 
     finally:
         free(ind_y_mem)
         free(ind_x_mem)
         free(data_mem)
 
-    return a_new, [ds_h, ds_v, ds_d]
+    return out_a, out_v, out_h, out_d
