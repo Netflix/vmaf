@@ -68,7 +68,7 @@ One can run VMAF either in single mode by `run_vmaf` or in batch mode by `run_vm
 To run VMAF on a single reference/distorted video pair, run:
 
 ```
-run_vmaf format width height reference_path distorted_path [--out-fmt output_format]
+PYTHONPATH=python ./python/vmaf/script/run_vmaf.py format width height reference_path distorted_path [--out-fmt output_format]
 ```
 
 The arguments are the following:
@@ -86,7 +86,8 @@ The arguments are the following:
 For example:
 
 ```
-run_vmaf yuv420p 576 324 \
+ PYTHONPATH=python ./python/vmaf/script/run_vmaf.py \
+  yuv420p 576 324 \
   python/test/resource/yuv/src01_hrc00_576x324.yuv \
   python/test/resource/yuv/src01_hrc01_576x324.yuv \
   --out-fmt json
@@ -140,7 +141,8 @@ where enabling `--parallelize` allows execution on multiple reference-distorted 
 For example:
 
 ```
-run_vmaf_in_batch resource/example/example_batch_input --parallelize
+PYTHONPATH=python ./python/vmaf/script/run_vmaf_in_batch.py \
+  resource/example/example_batch_input --parallelize
 ```
 
 ### Using `ffmpeg2vmaf`
@@ -148,7 +150,7 @@ run_vmaf_in_batch resource/example/example_batch_input --parallelize
 There is also an `ffmpeg2vmaf` command line tool which can compare any file format decodable by `ffmpeg`. `ffmpeg2vmaf` essentially pipes FFmpeg-decoded videos to VMAF. Note that you need a recent version of `ffmpeg` installed (for the first time, run the command line, follow the prompted instruction to specify the path of `ffmpeg`). 
 
 ```
-ffmpeg2vmaf quality_width quality_height reference_path distorted_path \
+PYTHONPATH=python ./python/vmaf/script/ffmpeg2vmaf.py quality_width quality_height reference_path distorted_path \
   [--model model_path] [--out-fmt out_fmt]
 ```
 
@@ -163,20 +165,22 @@ VMAF follows a machine-learning based approach to first extract a number of qual
 In addition to the basic commands, the VMAF package also provides a framework to allow any user to train his/her own perceptual quality assessment model. For example, directory [`model`](../../model) contains a number of pre-trained models, which can be loaded by the aforementioned commands:
 
 ```
-run_vmaf format width height reference_path distorted_path [--model model_path]
-run_vmaf_in_batch input_file [--model model_path] --parallelize
+PYTHONPATH=python ./python/vmaf/script/run_vmaf.py format width height reference_path distorted_path [--model model_path]
+PYTHONPATH=python ./python/vmaf/script/run_vmaf_in_batch.py input_file [--model model_path] --parallelize
 ```
 
 For example:
 
 ```
-run_vmaf yuv420p 576 324 \
+PYTHONPATH=python ./python/vmaf/script/run_vmaf.py \
+  yuv420p 576 324 \
   python/test/resource/yuv/src01_hrc00_576x324.yuv \
   python/test/resource/yuv/src01_hrc01_576x324.yuv \
-  --model model/nflxtrain_vmafv3.pkl
+  --model model/other_models/nflxtrain_vmafv3.pkl
 
-run_vmaf_in_batch resource/example/example_batch_input \
-  --model model/nflxtrain_vmafv3.pkl --parallelize
+PYTHONPATH=python ./python/vmaf/script/run_vmaf_in_batch.py \
+  resource/example/example_batch_input \
+  --model model/other_models/nflxtrain_vmafv3.pkl --parallelize
 ```
 
 A user can customize the model based on:
@@ -215,7 +219,8 @@ See the directory [`resource/dataset`](../../resource/dataset) for more examples
 Once a dataset is created, first validate the dataset using existing VMAF or other (PSNR, SSIM or MS-SSIM) metrics. Run:
 
 ```
-run_testing quality_type test_dataset_file \
+PYTHONPATH=python ./python/vmaf/script/run_testing.py \
+ quality_type test_dataset_file \
 [--vmaf-model optional_VMAF_model_path] [--cache-result] [--parallelize]
 ```
 
@@ -228,7 +233,8 @@ Enabling `--parallelize` allows execution on multiple reference-distorted video 
 For example:
 
 ```
-run_testing VMAF resource/example/example_dataset.py \
+PYTHONPATH=python ./python/vmaf/script/run_testing.py \
+VMAF resource/example/example_dataset.py \
   --cache-result --parallelize
 ```
 
@@ -245,13 +251,13 @@ When creating a dataset file, one may make errors (for example, having a typo in
 If the problem persists, one may need to run the script:
 
 ```
-python3 python/script/run_cleaning_cache.py quality_type test_dataset_file
+PYTHONPATH=python ./python/vmaf/script/run_cleaning_cache.py quality_type test_dataset_file
 ```
 
 to clean up corrupted results in the store before retrying. For example:
 
 ```
-python3 python/script/run_cleaning_cache.py VMAF \
+PYTHONPATH=python ./python/vmaf/script/run_cleaning_cache.py VMAF \
   resource/example/example_dataset.py
 ```
 
@@ -260,14 +266,16 @@ python3 python/script/run_cleaning_cache.py VMAF \
 Now that we are confident that the dataset is created correctly and we have some benchmark result on existing metrics, we proceed to train a new quality assessment model. Run:
 
 ```
-run_vmaf_training train_dataset_filepath feature_param_file model_param_file \
+PYTHONPATH=python ./python/vmaf/script/run_vmaf_training.py \
+  train_dataset_filepath feature_param_file model_param_file \
   output_model_file [--cache-result] [--parallelize]
 ```
 
 For example:
 
 ```
-run_vmaf_training resource/example/example_dataset.py \
+PYTHONPATH=python ./python/vmaf/script/run_vmaf_training.py \
+  resource/example/example_dataset.py \
   resource/feature_param/vmaf_feature_v2.py \
   resource/model_param/libsvmnusvr_v2.py \
   workspace/model/test_model.pkl \
@@ -314,18 +322,20 @@ Above are two example scatter plots obtained from running the `run_vmaf_training
 
 ### Using Custom Subjective Models
 
-The commands `./run_vmaf_training` and `./run_testing` also support custom subjective models (e.g. DMOS (default), MLE and more), through the package [sureal](https://github.com/Netflix/sureal).
+The commands `run_vmaf_training` and `run_testing` also support custom subjective models (e.g. DMOS (default), MLE and more), through the package [sureal](https://github.com/Netflix/sureal).
 
 The subjective model option can be specified with option `--subj-model subjective_model`, for example:
 
 ```
-run_vmaf_training resource/example/example_raw_dataset.py \
+PYTHONPATH=python ./python/vmaf/script/run_vmaf_training.py \
+  resource/example/example_raw_dataset.py \
   resource/feature_param/vmaf_feature_v2.py \
   resource/model_param/libsvmnusvr_v2.py \
   workspace/model/test_model.pkl \
   --subj-model MLE --cache-result --parallelize
 
-run_testing VMAF resource/example/example_raw_dataset.py \
+PYTHONPATH=python ./python/vmaf/script/run_testing.py \
+  VMAF resource/example/example_raw_dataset.py \
   --subj-model MLE --cache-result --parallelize
 ```
 
@@ -356,14 +366,16 @@ A Bjøntegaard-Delta (BD) rate [implementation](../../python/vmaf/tools/bd_rate_
 An implementation of [LIME](https://arxiv.org/pdf/1602.04938.pdf) is also added as part of the repository. The main idea is to perform a local linear approximation to any regressor or classifier and then use the coefficients of the linearized model as indicators of feature importance. LIME can be used as part of the VMAF regression framework, for example:
 
 ```
-run_vmaf yuv420p 1920 1080 NFLX_dataset_public/ref/OldTownCross_25fps.yuv \
-    NFLX_dataset_public/dis/OldTownCross_90_1080_4300.yuv --local-explain
+PYTHONPATH=python ./python/vmaf/script/run_vmaf.py yuv420p 576 324 \
+    python/test/resource/yuv/src01_hrc00_576x324.yuv \
+    python/test/resource/yuv/src01_hrc00_576x324.yuv --local-explain
 ```
 
 Naturally, LIME can also be applied to any other regression scheme as long as there exists a pre-trained model. For example, applying to BRISQUE:
 
 ```
-run_vmaf yuv420p 1920 1080 NFLX_dataset_public/ref/OldTownCross_25fps.yuv \
-    NFLX_dataset_public/dis/OldTownCross_90_1080_4300.yuv --local-explain \
-    --model model/vmaf_brisque_all_v0.0rc.pkl
+PYTHONPATH=python ./python/vmaf/script/run_vmaf.py yuv420p 576 324 \
+    python/test/resource/yuv/src01_hrc00_576x324.yuv \
+    python/test/resource/yuv/src01_hrc00_576x324.yuv --local-explain \
+    --model model/other_models/nflxall_vmafv1.pkl
 ```

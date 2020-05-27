@@ -364,8 +364,7 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
                                      ys_label_stddev=groundtruths_std,
                                      split_test_indices_for_perf_ci=split_test_indices_for_perf_ci)
     except Exception as e:
-        print('Stats calculation failed, using default stats calculation. Error cause: ')
-        print(e)
+        print('Warning: stats calculation failed, fall back to default stats calculation: {}'.format(e))
         stats = model_type.get_stats(groundtruths, predictions,
                                      ys_label_raw=raw_grountruths,
                                      ys_label_stddev=groundtruths_std,
