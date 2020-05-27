@@ -4,3 +4,4 @@ test/resource/mp4
 test/resource/test_image_yuv
 test/resource/test_images
 test/resource/yuv
+adm_dwt2_cy.c*
