@@ -252,13 +252,6 @@ typedef struct adm_dwt_band_t_s {
     float *band_d; /* High-pass V + high-pass H. */
 } adm_dwt_band_t_s;
 
-typedef struct adm_dwt_band_t_d {
-    double *band_a; /* Low-pass V + low-pass H. */
-    double *band_v; /* Low-pass V + high-pass H. */
-    double *band_h; /* High-pass V + low-pass H. */
-    double *band_d; /* High-pass V + high-pass H. */
-} adm_dwt_band_t_d;
-
 float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_factor);
 
 void adm_decouple_s(const adm_dwt_band_t_s *ref, const adm_dwt_band_t_s *dis, const adm_dwt_band_t_s *r, const adm_dwt_band_t_s *a, int w, int h, int ref_stride, int dis_stride, int r_stride, int a_stride, double border_factor);
@@ -274,8 +267,6 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const a
 void dwt2_src_indices_filt_s(int **src_ind_y, int **src_ind_x, int w, int h);
 
 void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int **ind_x, int w, int h, int src_stride, int dst_stride);
-
-void adm_dwt2_d(const double *src, const adm_dwt_band_t_d *dst, int **ind_y, int **ind_x, int w, int h, int src_stride, int dst_stride);
 
 /* ================= */
 /* Noise floor model */

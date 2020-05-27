@@ -5,18 +5,18 @@ cimport numpy as np
 
 from libc.stdlib cimport malloc, free
 
-cdef struct adm_dwt_band_t_d:
-    double *band_a
-    double *band_v
-    double *band_h
-    double *band_d
+cdef struct adm_dwt_band_t_s:
+    float *band_a
+    float *band_v
+    float *band_h
+    float *band_d
 
 cdef extern from "../../../libvmaf/src/feature/adm_tools.c":
     void dwt2_src_indices_filt_s(int **src_ind_y, int **src_ind_x, int w, int h)
-    void adm_dwt2_d(const double *src, const adm_dwt_band_t_d *dst, int **ind_y, int **ind_x, int w, int h, int src_stride, int dst_stride)
+    void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int **ind_x, int w, int h, int src_stride, int dst_stride)
 
 cdef extern from "../../../libvmaf/src/feature/adm.c":
-    char *init_dwt_band_d(adm_dwt_band_t_d *band, char *data_top, size_t buf_sz_one)
+    char *init_dwt_band(adm_dwt_band_t_s *band, char *data_top, size_t buf_sz_one)
 
 cdef extern from "../../../libvmaf/src/mem.c":
     void aligned_free(void *ptr)
@@ -36,8 +36,6 @@ cdef extern from "../../../libvmaf/src/feature/offset.c":
 # cdef double f(double x):
 #     return sin(x * x)
 
-ctypedef double np_float
-
 MAX_ALIGN = 32
 
 def ALIGN_CEIL(x):
@@ -48,7 +46,7 @@ def ALIGN_CEIL(x):
         y = 0
     return x + y
 
-def adm_dwt2_cy(np.ndarray[np.float_t, ndim=2, mode='c'] a):
+def adm_dwt2_cy(np.ndarray[np.float32_t, ndim=2, mode='c'] a):
 
     # cdef np.ndarray[np.uint32_t, ndim=3, mode = 'c'] np_buff = np.ascontiguousarray(im, dtype = np.uint32)
     # cdef unsigned int* im_buff = <unsigned int*> np_buff.data
@@ -64,14 +62,14 @@ def adm_dwt2_cy(np.ndarray[np.float_t, ndim=2, mode='c'] a):
     # finally:
     #     free(point_to_a)
 
-    cdef np.ndarray[np.float_t, ndim=2, mode='c'] a_buf = np.ascontiguousarray(a, dtype=np.float)
-    cdef np_float *aa = <np_float*> a_buf.data
+    cdef np.ndarray[np.float32_t, ndim=2, mode='c'] a_buf = np.ascontiguousarray(a, dtype=np.float32)
+    cdef float *aa = <float*> a_buf.data
 
     cdef int h = len(a)
     cdef int w = len(a[0])
 
-    cdef int curr_ref_stride = w * sizeof(np_float)
-    cdef int buf_stride = ALIGN_CEIL(((w + 1) // 2) * sizeof(np_float))
+    cdef int curr_ref_stride = w * sizeof(float)
+    cdef int buf_stride = ALIGN_CEIL(((w + 1) // 2) * sizeof(float))
     cdef size_t buf_sz_one = <size_t> buf_stride * ((h + 1) // 2)
 
     cdef int ind_size_y = ALIGN_CEIL(((h + 1) // 2) * sizeof(int))
@@ -86,7 +84,7 @@ def adm_dwt2_cy(np.ndarray[np.float_t, ndim=2, mode='c'] a):
         free(ind_y_mem)
         raise MemoryError
 
-    cdef char * data_mem = <char *>malloc(buf_sz_one * 16)   # FIXME: supposed to be * 4, but resulting in corrupted data
+    cdef char * data_mem = <char *>malloc(buf_sz_one * 4)   # FIXME: supposed to be * 4, but resulting in corrupted data
     if not data_mem:
         free(ind_y_mem)
         free(ind_x_mem)
@@ -94,12 +92,12 @@ def adm_dwt2_cy(np.ndarray[np.float_t, ndim=2, mode='c'] a):
 
     cdef int *ind_y[4]
     cdef int *ind_x[4]
-    cdef adm_dwt_band_t_d aa_band
+    cdef adm_dwt_band_t_s aa_band
 
     cdef int h_new = (h + 1) // 2
     cdef int w_new = (w + 1) // 2
 
-    cdef np.ndarray[np.float_t, ndim=2, mode='c'] a_new, ds_h, ds_v, ds_d
+    cdef np.ndarray[np.float32_t, ndim=2, mode='c'] a_new, ds_h, ds_v, ds_d
 
     cdef char *ptr
     try:
@@ -116,11 +114,11 @@ def adm_dwt2_cy(np.ndarray[np.float_t, ndim=2, mode='c'] a):
         ind_x[3] = <int *> ptr
 
         ptr = <char *>data_mem
-        ptr = init_dwt_band_d(&aa_band, ptr, buf_sz_one)
+        ptr = init_dwt_band(&aa_band, ptr, buf_sz_one)
 
         dwt2_src_indices_filt_s(ind_y, ind_x, w, h)
 
-        adm_dwt2_d(aa, &aa_band, ind_y, ind_x, w, h, curr_ref_stride, buf_stride)
+        adm_dwt2_s(aa, &aa_band, ind_y, ind_x, w, h, curr_ref_stride, buf_stride)
 
         # # ====== debug ======
         # print("h={}, w={}, aa[0]={}, aa[1]={}, aa[2]={}".format(h, w, aa[0], aa[1], aa[2]))
@@ -138,20 +136,20 @@ def adm_dwt2_cy(np.ndarray[np.float_t, ndim=2, mode='c'] a):
         # print("aa_band->band_v: {}, {}, {}, {}, {}".format(aa_band.band_v[0], aa_band.band_v[1], aa_band.band_v[2], aa_band.band_v[3], aa_band.band_v[4]))
         # print("aa_band->band_h: {}, {}, {}, {}, {}".format(aa_band.band_h[0], aa_band.band_h[1], aa_band.band_h[2], aa_band.band_h[3], aa_band.band_h[4]))
         # print("aa_band->band_d: {}, {}, {}, {}, {}".format(aa_band.band_d[0], aa_band.band_d[1], aa_band.band_d[2], aa_band.band_d[3], aa_band.band_d[4]))
-        # print("np.mean(aa_band.band_a)={}".format(np.mean(np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_a))))
-        # print("np.mean(aa_band.band_v)={}".format(np.mean(np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_v))))
-        # print("np.mean(aa_band.band_h)={}".format(np.mean(np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_h))))
-        # print("np.mean(aa_band.band_d)={}".format(np.mean(np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_d))))
+        print("np.max(aa_band.band_a)={}".format(np.max(np.asarray(<np.float32_t[:h_new, :w_new]> aa_band.band_a))))
+        print("np.max(aa_band.band_v)={}".format(np.max(np.asarray(<np.float32_t[:h_new, :w_new]> aa_band.band_v))))
+        print("np.max(aa_band.band_h)={}".format(np.max(np.asarray(<np.float32_t[:h_new, :w_new]> aa_band.band_h))))
+        print("np.max(aa_band.band_d)={}".format(np.max(np.asarray(<np.float32_t[:h_new, :w_new]> aa_band.band_d))))
 
-        a_new = np.ones((h_new, w_new))
-        ds_h  = np.ones((h_new, w_new))
-        ds_v  = np.ones((h_new, w_new))
-        ds_d  = np.ones((h_new, w_new))
+        a_new = np.zeros((h_new, w_new)).astype(np.float32)
+        ds_h  = np.zeros((h_new, w_new)).astype(np.float32)
+        ds_v  = np.zeros((h_new, w_new)).astype(np.float32)
+        ds_d  = np.zeros((h_new, w_new)).astype(np.float32)
 
-        a_new[...] = np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_a)[...]
-        ds_h[...]  = np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_h)[...]
-        ds_v[...]  = np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_v)[...]
-        ds_d[...]  = np.asarray(<np.float_t[:h_new, :w_new]> aa_band.band_d)[...]
+        a_new[...] = np.asarray(<np.float32_t[:h_new, :w_new]> aa_band.band_a)[...]
+        ds_h[...]  = np.asarray(<np.float32_t[:h_new, :w_new]> aa_band.band_h)[...]
+        ds_v[...]  = np.asarray(<np.float32_t[:h_new, :w_new]> aa_band.band_v)[...]
+        ds_d[...]  = np.asarray(<np.float32_t[:h_new, :w_new]> aa_band.band_d)[...]
 
     finally:
         free(ind_y_mem)
