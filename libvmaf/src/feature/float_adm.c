@@ -28,14 +28,6 @@
 #include "mem.h"
 #include "picture_copy.h"
 
-#if defined(__MINGW32__) || !defined(_WIN32)
-#define PROFILE_FLOAT_ADM 1
-#endif
-
-#if PROFILE_FLOAT_ADM
-#include <sys/time.h>
-#endif
-
 typedef struct AdmState {
     size_t float_stride;
     float *ref;
@@ -72,24 +64,9 @@ static int extract(VmafFeatureExtractor *fex,
 
     double score, score_num, score_den;
     double scores[8];
-
-#if PROFILE_FLOAT_ADM
-    double time_useconds;
-    struct timeval s_tv;
-    struct timeval e_tv;
-    gettimeofday(&s_tv, NULL);
-#endif // PROFILE_FLOAT_ADM
-
     err = compute_adm(s->ref, s->dist, ref_pic->w[0], ref_pic->h[0],
                       s->float_stride, s->float_stride, &score, &score_num,
                       &score_den, scores, ADM_BORDER_FACTOR);
-#if PROFILE_FLOAT_ADM
-    gettimeofday(&e_tv, NULL);
-    time_useconds = ((e_tv.tv_sec - s_tv.tv_sec) * 1000000) +
-        (e_tv.tv_usec - s_tv.tv_usec);
-    printf("Frame_No %d, time(ms) %lf \n", index, time_useconds);
-#endif // PROFILE_FLOAT_ADM
-
     if (err) return err;
 
     err = vmaf_feature_collector_append(feature_collector,
