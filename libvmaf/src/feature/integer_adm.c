@@ -76,8 +76,6 @@ typedef struct AdmState {
 
 #define M_PI 3.14159265358979323846264338327
 
-#ifdef ADM_OPT_RECIP_DIVISION
-
 static float rcp_s(float x)
 {
     float xi = _mm_cvtss_f32(_mm_rcp_ss(_mm_load_ss(&x)));
@@ -85,12 +83,6 @@ static float rcp_s(float x)
 }
 
 #define DIVS(n, d) ((n) * rcp_s(d))
-
-#else
-
-#define DIVS(n, d) ((n) / (d))
-
-#endif /* ADM_OPT_RECIP_DIVISION */
 
 static const int16_t dwt2_db2_coeffs_lo[4] = { 15826, 27411, 7345, -4240 };
 static const int16_t dwt2_db2_coeffs_hi[4] = { -4240, -7345, 27411, -15826 };
@@ -738,9 +730,7 @@ static void adm_decouple(const adm_dwt_band_t *ref, const adm_dwt_band_t *dis,
                          int h, int ref_stride, int dis_stride, int r_stride,
                          int a_stride, double border_factor)
 {
-#ifdef ADM_OPT_AVOID_ATAN
     const float cos_1deg_sq = cos(1.0 * M_PI / 180.0) * cos(1.0 * M_PI / 180.0);
-#endif
     const float eps = 1e-30;
 
     int left = w * border_factor - 0.5 - 1; // -1 for filter tap
@@ -761,11 +751,7 @@ static void adm_decouple(const adm_dwt_band_t *ref, const adm_dwt_band_t *dis,
         bottom = h;
     }
 
-#ifdef ADM_OPT_AVOID_ATAN
     int64_t ot_dp, o_mag_sq, t_mag_sq;
-#else
-    float oa, ta, diff;
-#endif
 
     for (int i = top; i < bottom; ++i) {
         for (int j = left; j < right; ++j) {
@@ -799,7 +785,6 @@ static void adm_decouple(const adm_dwt_band_t *ref, const adm_dwt_band_t *dis,
             int16_t tmph = ((kh * oh) + 16384) >> 15;
             int16_t tmpv = ((kv * ov) + 16384) >> 15;
             int16_t tmpd = ((kd * od) + 16384) >> 15;
-#ifdef ADM_OPT_AVOID_ATAN
             /* Determine if angle between (oh,ov) and (th,tv) is less than 1 degree.
              * Given that u is the angle (oh,ov) and v is the angle (th,tv), this can
              * be done by testing the inequvality.
@@ -832,18 +817,6 @@ static void adm_decouple(const adm_dwt_band_t *ref, const adm_dwt_band_t *dis,
             int angle_flag = (((float)ot_dp / 4096.0) >= 0.0f) && 
                 (((float)ot_dp / 4096.0) * ((float)ot_dp / 4096.0) >= 
                     cos_1deg_sq * ((float)o_mag_sq / 4096.0) * ((float)t_mag_sq / 4096.0));
-#else
-            oa = atanf(DIVS(ov, oh + eps));
-            ta = atanf(DIVS(tv, th + eps));
-
-            if (oh < 0.0f)
-                oa += (float)M_PI;
-            if (th < 0.0f)
-                ta += (float)M_PI;
-
-            diff = fabsf(oa - ta) * 180.0f / M_PI;
-            angle_flag = diff < 1.0f;
-#endif
             if (angle_flag) {
                 tmph = th;
                 tmpv = tv;
@@ -866,10 +839,7 @@ static void adm_decouple_s123(const i4_adm_dwt_band_t *ref, const i4_adm_dwt_ban
                               int w, int h, int ref_stride, int dis_stride, int r_stride,
                               int a_stride, double border_factor)
 {
-#ifdef ADM_OPT_AVOID_ATAN
     const float cos_1deg_sq = cos(1.0 * M_PI / 180.0) * cos(1.0 * M_PI / 180.0);
-#endif
-    const float eps = 1e-30;
 
     /* The computation of the score is not required for the regions 
     which lie outside the frame borders */
@@ -891,11 +861,7 @@ static void adm_decouple_s123(const i4_adm_dwt_band_t *ref, const i4_adm_dwt_ban
         bottom = h;
     }
 
-#ifdef ADM_OPT_AVOID_ATAN
     int64_t ot_dp, o_mag_sq, t_mag_sq;
-#else
-    float oa, ta, diff;
-#endif
 
     for (int i = top; i < bottom; ++i)
     {
@@ -923,7 +889,6 @@ static void adm_decouple_s123(const i4_adm_dwt_band_t *ref, const i4_adm_dwt_ban
             int32_t tmph = ((kh * oh) + 16384) >> 15;
             int32_t tmpv = ((kv * ov) + 16384) >> 15;
             int32_t tmpd = ((kd * od) + 16384) >> 15;
-#ifdef ADM_OPT_AVOID_ATAN
             /* Determine if angle between (oh,ov) and (th,tv) is less than 1 degree.
              * Given that u is the angle (oh,ov) and v is the angle (th,tv), this can
              * be done by testing the inequvality.
@@ -952,18 +917,6 @@ static void adm_decouple_s123(const i4_adm_dwt_band_t *ref, const i4_adm_dwt_ban
             int angle_flag = (((float)ot_dp / 4096.0) >= 0.0f) && 
                 (((float)ot_dp / 4096.0) * ((float)ot_dp / 4096.0) >=
                     cos_1deg_sq * ((float)o_mag_sq / 4096.0) * ((float)t_mag_sq / 4096.0));
-#else
-            oa = atanf(DIVS(ov, oh + eps));
-            ta = atanf(DIVS(tv, th + eps));
-
-            if (oh < 0.0f)
-                oa += (float)M_PI;
-            if (th < 0.0f)
-                ta += (float)M_PI;
-
-            diff = fabsf(oa - ta) * 180.0f / M_PI;
-            angle_flag = diff < 1.0f;
-#endif
             if (angle_flag) {
                 tmph = th;
                 tmpv = tv;
