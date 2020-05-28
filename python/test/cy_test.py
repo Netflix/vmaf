@@ -83,7 +83,6 @@ class AdmDwt2CyTestOnAkiyo(unittest.TestCase):
         ) as yuv_reader_ref:
             self.y_dis = yuv_reader_ref.next()[0].astype(np.float)
 
-    @unittest.skip
     def test_adm_dwt2_cy_on_akiyo_single_scale(self):
 
         a, v, h, d = adm_dwt2_cy(self.y_ref - 128.0)
@@ -95,7 +94,7 @@ class AdmDwt2CyTestOnAkiyo(unittest.TestCase):
         self.assertAlmostEqual(np.float(np.std(v)), 8.238639778464304, places=6)
         self.assertAlmostEqual(np.float(np.std(h)), 4.652637049444403, places=6)
         self.assertAlmostEqual(np.float(np.std(d)), 2.1727321628143614, places=6)
-        self.assertAlmostEqual(np.float(np.mean(a)), 187.72058926699722, places=6)
+        self.assertAlmostEqual(np.float(np.mean(a)), -68.27941073300276, places=6)
         self.assertAlmostEqual(np.float(np.mean(v)), -0.05449070177725589, places=6)
         self.assertAlmostEqual(np.float(np.mean(h)), 0.004257626855952768, places=6)
         self.assertAlmostEqual(np.float(np.mean(d)), -0.002311283312114316, places=6)
@@ -109,15 +108,15 @@ class AdmDwt2CyTestOnAkiyo(unittest.TestCase):
         self.assertAlmostEqual(np.float(np.std(v)), 9.51322612796857, places=6)
         self.assertAlmostEqual(np.float(np.std(h)), 5.4237937163381, places=6)
         self.assertAlmostEqual(np.float(np.std(d)), 2.6714361298075886, places=6)
-        self.assertAlmostEqual(np.float(np.mean(a)), 214.85870219517582, places=6)
+        self.assertAlmostEqual(np.float(np.mean(a)), -41.14129780482415, places=6)
         self.assertAlmostEqual(np.float(np.mean(v)), -0.05419786586456123, places=6)
         self.assertAlmostEqual(np.float(np.mean(h)), 0.002907897856746483, places=6)
         self.assertAlmostEqual(np.float(np.mean(d)), -0.000920162342243558, places=6)
-        self.assertAlmostEqual(np.float(np.max(a)), 502.64342088710976, places=6)
+        self.assertAlmostEqual(np.float(np.max(a)), 246.64342088710973, places=6)
         self.assertAlmostEqual(np.float(np.max(v)), 153.63339344423332, places=6)
         self.assertAlmostEqual(np.float(np.max(h)), 120.05215038354704, places=6)
         self.assertAlmostEqual(np.float(np.max(d)), 113.9025450046058, places=6)
-        self.assertAlmostEqual(np.float(np.min(a)), -13.444023598269602, places=6)
+        self.assertAlmostEqual(np.float(np.min(a)), -269.44402359826955, places=6)
         self.assertAlmostEqual(np.float(np.min(v)), -128.21006288062947, places=6)
         self.assertAlmostEqual(np.float(np.min(h)), -101.95207793605813, places=6)
         self.assertAlmostEqual(np.float(np.min(d)), -51.79502250236081, places=6)
