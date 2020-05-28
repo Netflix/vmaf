@@ -2,8 +2,10 @@ import unittest
 
 import numpy as np
 
+from vmaf.config import VmafConfig
 from vmaf.core.adm_dwt2_cy import adm_dwt2_cy
 from vmaf.core.adm_dwt2_py import adm_dwt2_py
+from vmaf.tools.reader import YuvReader
 
 
 class AdmDwt2CyTest(unittest.TestCase):
@@ -15,30 +17,197 @@ class AdmDwt2CyTest(unittest.TestCase):
         np.random.seed(0)
         x = np.random.uniform(low=-128, high=127, size=[324, 576])
         a, v, h, d = adm_dwt2_cy(x)
-        ds = [h, v, d]
         self.assertEqual(a.shape, (162, 288))
-        self.assertEqual(len(ds), 3)
-        self.assertEqual(ds[0].shape, (162, 288))
-        self.assertEqual(ds[1].shape, (162, 288))
-        self.assertEqual(ds[2].shape, (162, 288))
+        self.assertEqual(v.shape, (162, 288))
+        self.assertEqual(h.shape, (162, 288))
+        self.assertEqual(d.shape, (162, 288))
         self.assertAlmostEqual(np.float(np.std(a)), 73.94278958581368, places=6)
-        self.assertAlmostEqual(np.float(np.std(ds[0])), 73.30349892103438, places=6)
-        self.assertAlmostEqual(np.float(np.std(ds[1])), 73.6191713793981, places=6)
-        self.assertAlmostEqual(np.float(np.std(ds[2])), 73.19024438119925, places=6)
+        self.assertAlmostEqual(np.float(np.std(v)), 73.6191713793981, places=6)
+        self.assertAlmostEqual(np.float(np.std(h)), 73.30349892103438, places=6)
+        self.assertAlmostEqual(np.float(np.std(d)), 73.19024438119925, places=6)
 
     def test_adm_dwt2_py(self):
         np.random.seed(0)
         x = np.random.uniform(low=-128, high=127, size=[324, 576])
         a, ds = adm_dwt2_py(x)
+        h, v, d = ds
         self.assertEqual(a.shape, (162, 288))
-        self.assertEqual(len(ds), 3)
-        self.assertEqual(ds[0].shape, (162, 288))
-        self.assertEqual(ds[1].shape, (162, 288))
-        self.assertEqual(ds[2].shape, (162, 288))
+        self.assertEqual(v.shape, (162, 288))
+        self.assertEqual(h.shape, (162, 288))
+        self.assertEqual(d.shape, (162, 288))
         self.assertAlmostEqual(np.float(np.std(a)), 73.8959273922819, places=6)
-        self.assertAlmostEqual(np.float(np.std(ds[0])), 73.5355886699825, places=6)
-        self.assertAlmostEqual(np.float(np.std(ds[1])), 73.69196438463929, places=6)
-        self.assertAlmostEqual(np.float(np.std(ds[2])), 73.52173319007242, places=6)
+        self.assertAlmostEqual(np.float(np.std(v)), 73.69196438463929, places=6)
+        self.assertAlmostEqual(np.float(np.std(h)), 73.5355886699825, places=6)
+        self.assertAlmostEqual(np.float(np.std(d)), 73.52173319007242, places=6)
+
+    @unittest.skip
+    def test_adm_dwt2_cy_small(self):
+        np.random.seed(0)
+        x = np.random.uniform(low=-128, high=127, size=[36, 44])
+        a, v, h, d = adm_dwt2_cy(x)
+        self.assertEqual(a.shape, (18, 22))
+        self.assertEqual(v.shape, (18, 22))
+        self.assertEqual(h.shape, (18, 22))
+        self.assertEqual(d.shape, (18, 22))
+        self.assertAlmostEqual(np.float(np.std(a)), 71.41875192644292, places=6)
+        self.assertAlmostEqual(np.float(np.std(v)), 72.01703463816919, places=6)
+        self.assertAlmostEqual(np.float(np.std(h)), 71.96445272697756, places=6)
+        self.assertAlmostEqual(np.float(np.std(d)), 67.12256460863848, places=6)
+
+    @unittest.skip
+    def test_adm_dwt2_cy_xsmall(self):
+        np.random.seed(0)
+        x = np.random.uniform(low=-128, high=127, size=[18, 22])
+        a, v, h, d = adm_dwt2_cy(x)
+        self.assertEqual(a.shape, (9, 11))
+        self.assertEqual(v.shape, (9, 11))
+        self.assertEqual(h.shape, (9, 11))
+        self.assertEqual(d.shape, (9, 11))
+        self.assertAlmostEqual(np.float(np.std(a)), 68.16857895299466, places=6)
+        self.assertAlmostEqual(np.float(np.std(v)), 64.45100717633085, places=6)
+        self.assertAlmostEqual(np.float(np.std(h)), 74.53569012139673, places=6)
+        self.assertAlmostEqual(np.float(np.std(d)), 61.761051507492866, places=6)
+
+
+class AdmDwt2CyTestOnAkiyo(unittest.TestCase):
+
+    def setUp(self) -> None:
+        with YuvReader(
+                filepath=VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288"),
+                width=352, height=288, yuv_type='yuv420p'
+        ) as yuv_reader_ref:
+            self.y_ref = yuv_reader_ref.next()[0].astype(np.float)
+        with YuvReader(
+                filepath=VmafConfig.test_resource_path("yuv", "disp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288"),
+                width=352, height=288, yuv_type='yuv420p'
+        ) as yuv_reader_ref:
+            self.y_dis = yuv_reader_ref.next()[0].astype(np.float)
+
+    @unittest.skip
+    def test_adm_dwt2_cy_on_akiyo_single_scale(self):
+
+        a, v, h, d = adm_dwt2_cy(self.y_ref - 128.0)
+        self.assertEqual(a.shape, (144, 176))
+        self.assertEqual(v.shape, (144, 176))
+        self.assertEqual(h.shape, (144, 176))
+        self.assertEqual(d.shape, (144, 176))
+        self.assertAlmostEqual(np.float(np.std(a)), 94.61946432328955, places=6)
+        self.assertAlmostEqual(np.float(np.std(v)), 8.238639778464304, places=6)
+        self.assertAlmostEqual(np.float(np.std(h)), 4.652637049444403, places=6)
+        self.assertAlmostEqual(np.float(np.std(d)), 2.1727321628143614, places=6)
+        self.assertAlmostEqual(np.float(np.mean(a)), 187.72058926699722, places=6)
+        self.assertAlmostEqual(np.float(np.mean(v)), -0.05449070177725589, places=6)
+        self.assertAlmostEqual(np.float(np.mean(h)), 0.004257626855952768, places=6)
+        self.assertAlmostEqual(np.float(np.mean(d)), -0.002311283312114316, places=6)
+
+        a, v, h, d = adm_dwt2_cy(self.y_dis - 128.0)
+        self.assertEqual(a.shape, (144, 176))
+        self.assertEqual(v.shape, (144, 176))
+        self.assertEqual(h.shape, (144, 176))
+        self.assertEqual(d.shape, (144, 176))
+        self.assertAlmostEqual(np.float(np.std(a)), 108.79343831916911, places=6)
+        self.assertAlmostEqual(np.float(np.std(v)), 9.51322612796857, places=6)
+        self.assertAlmostEqual(np.float(np.std(h)), 5.4237937163381, places=6)
+        self.assertAlmostEqual(np.float(np.std(d)), 2.6714361298075886, places=6)
+        self.assertAlmostEqual(np.float(np.mean(a)), 214.85870219517582, places=6)
+        self.assertAlmostEqual(np.float(np.mean(v)), -0.05419786586456123, places=6)
+        self.assertAlmostEqual(np.float(np.mean(h)), 0.002907897856746483, places=6)
+        self.assertAlmostEqual(np.float(np.mean(d)), -0.000920162342243558, places=6)
+        self.assertAlmostEqual(np.float(np.max(a)), 502.64342088710976, places=6)
+        self.assertAlmostEqual(np.float(np.max(v)), 153.63339344423332, places=6)
+        self.assertAlmostEqual(np.float(np.max(h)), 120.05215038354704, places=6)
+        self.assertAlmostEqual(np.float(np.max(d)), 113.9025450046058, places=6)
+        self.assertAlmostEqual(np.float(np.min(a)), -13.444023598269602, places=6)
+        self.assertAlmostEqual(np.float(np.min(v)), -128.21006288062947, places=6)
+        self.assertAlmostEqual(np.float(np.min(h)), -101.95207793605813, places=6)
+        self.assertAlmostEqual(np.float(np.min(d)), -51.79502250236081, places=6)
+
+    @unittest.skip
+    def test_adm_dwt2_cy_on_akiyo_n_scales(self):
+
+        a = self.y_dis - 128.0
+
+        a, v, h, d = adm_dwt2_cy(a)
+        self.assertEqual(a.shape, (144, 176))
+        self.assertEqual(v.shape, (144, 176))
+        self.assertEqual(h.shape, (144, 176))
+        self.assertEqual(d.shape, (144, 176))
+        self.assertAlmostEqual(np.float(np.std(a)), 108.79343831916911, places=6)
+        self.assertAlmostEqual(np.float(np.std(v)), 9.51322612796857, places=6)
+        self.assertAlmostEqual(np.float(np.std(h)), 5.4237937163381, places=6)
+        self.assertAlmostEqual(np.float(np.std(d)), 2.6714361298075886, places=6)
+
+        a, v, h, d = adm_dwt2_cy(a)
+        self.assertEqual(a.shape, (72, 88))
+        self.assertEqual(v.shape, (72, 88))
+        self.assertEqual(h.shape, (72, 88))
+        self.assertEqual(d.shape, (72, 88))
+        self.assertAlmostEqual(np.float(np.std(a)), 214.13138192032943, places=6)
+        self.assertAlmostEqual(np.float(np.std(v)), 25.622761528555454, places=6)
+        self.assertAlmostEqual(np.float(np.std(h)), 17.70038682132729, places=6)
+        self.assertAlmostEqual(np.float(np.std(d)), 11.180386017176657, places=6)
+
+        a, v, h, d = adm_dwt2_cy(a)
+        self.assertEqual(a.shape, (36, 44))
+        self.assertEqual(v.shape, (36, 44))
+        self.assertEqual(h.shape, (36, 44))
+        self.assertEqual(d.shape, (36, 44))
+        self.assertAlmostEqual(np.float(np.std(a)), 417.73602985019386, places=6)
+        self.assertAlmostEqual(np.float(np.std(v)), 56.121495017612745, places=6)
+        self.assertAlmostEqual(np.float(np.std(h)), 45.419327754665, places=6)
+        self.assertAlmostEqual(np.float(np.std(d)), 23.307968058054453, places=6)
+
+        a, v, h, d = adm_dwt2_cy(a)
+        self.assertEqual(a.shape, (18, 22))
+        self.assertEqual(v.shape, (18, 22))
+        self.assertEqual(h.shape, (18, 22))
+        self.assertEqual(d.shape, (18, 22))
+        self.assertAlmostEqual(np.float(np.std(a)), 854.0379602629766, places=6)
+        self.assertAlmostEqual(np.float(np.std(v)), 116.17313934292187, places=6)
+        self.assertAlmostEqual(np.float(np.std(h)), 112.95528846009412, places=6)
+        self.assertAlmostEqual(np.float(np.std(d)), 45.1585324738835, places=6)
+
+        a, v, h, d = adm_dwt2_cy(a)
+        self.assertEqual(a.shape, (9, 11))
+        self.assertEqual(v.shape, (9, 11))
+        self.assertEqual(h.shape, (9, 11))
+        self.assertEqual(d.shape, (9, 11))
+        self.assertAlmostEqual(np.float(np.std(a)), 1366.6905701652233, places=6)
+        self.assertAlmostEqual(np.float(np.std(v)), 329.74334170533484, places=6)
+        self.assertAlmostEqual(np.float(np.std(h)), 652.7157233088448, places=6)
+        self.assertAlmostEqual(np.float(np.std(d)), 416.39129271383905, places=6)
+
+
+class AdmDwt2CyTestOnAkiyoXsmall(unittest.TestCase):
+
+    def setUp(self) -> None:
+        with YuvReader(
+                filepath=VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_18x22"),
+                width=22, height=18, yuv_type='yuv420p'
+        ) as yuv_reader_ref:
+            self.y_ref = yuv_reader_ref.next()[0].astype(np.float)
+        with YuvReader(
+                filepath=VmafConfig.test_resource_path("yuv", "disp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_18x22"),
+                width=22, height=18, yuv_type='yuv420p'
+        ) as yuv_reader_ref:
+            self.y_dis = yuv_reader_ref.next()[0].astype(np.float)
+
+    @unittest.skip
+    def test_adm_dwt2_cy_on_akiyo_single_scale(self):
+
+        a, v, h, d = adm_dwt2_cy(self.y_ref - 128.0)
+        self.assertEqual(a.shape, (9, 11))
+        self.assertEqual(v.shape, (9, 11))
+        self.assertEqual(h.shape, (9, 11))
+        self.assertEqual(d.shape, (9, 11))
+        self.assertAlmostEqual(np.float(np.std(a)), 94.61946432328955, places=6)
+        self.assertAlmostEqual(np.float(np.std(v)), 8.238639778464304, places=6)
+        self.assertAlmostEqual(np.float(np.std(h)), 4.652637049444403, places=6)
+        self.assertAlmostEqual(np.float(np.std(d)), 2.1727321628143614, places=6)
+        self.assertAlmostEqual(np.float(np.mean(a)), 187.72058926699722, places=6)
+        self.assertAlmostEqual(np.float(np.mean(v)), -0.05449070177725589, places=6)
+        self.assertAlmostEqual(np.float(np.mean(h)), 0.004257626855952768, places=6)
+        self.assertAlmostEqual(np.float(np.mean(d)), -0.002311283312114316, places=6)
 
 
 if __name__ == '__main__':
