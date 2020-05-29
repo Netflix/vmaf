@@ -48,6 +48,9 @@ static float rcp_s(float x)
 static const float dwt2_db2_coeffs_lo_s[4] = { 0.482962913144690, 0.836516303737469, 0.224143868041857, -0.129409522550921 };
 static const float dwt2_db2_coeffs_hi_s[4] = { -0.129409522550921, -0.224143868041857, 0.836516303737469, -0.482962913144690 };
 
+static const double dwt2_db2_coeffs_lo_d[4] = { 0.482962913144690, 0.836516303737469, 0.224143868041857, -0.129409522550921 };
+static const double dwt2_db2_coeffs_hi_d[4] = { -0.129409522550921, -0.224143868041857, 0.836516303737469, -0.482962913144690 };
+
 #ifndef FLOAT_ONE_BY_30
 #define FLOAT_ONE_BY_30	0.0333333351
 
@@ -891,6 +894,99 @@ void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int 
 			accum += filter_lo[3] * s3;
 			dst->band_h[i * dst_px_stride + j] = accum;
 			
+			accum = 0;
+			accum += filter_hi[0] * s0;
+			accum += filter_hi[1] * s1;
+			accum += filter_hi[2] * s2;
+			accum += filter_hi[3] * s3;
+			dst->band_d[i * dst_px_stride + j] = accum;
+
+		}
+	}
+
+	aligned_free(tmplo);
+	aligned_free(tmphi);
+}
+
+void adm_dwt2_d(const double *src, const adm_dwt_band_t_d *dst, int **ind_y, int **ind_x, int w, int h, int src_stride, int dst_stride)
+{
+	const double *filter_lo = dwt2_db2_coeffs_lo_d;
+	const double *filter_hi = dwt2_db2_coeffs_hi_d;
+	int fwidth = sizeof(dwt2_db2_coeffs_lo_d) / sizeof(double);
+
+	int src_px_stride = src_stride / sizeof(double);
+	int dst_px_stride = dst_stride / sizeof(double);
+
+	double *tmplo = aligned_malloc(ALIGN_CEIL(sizeof(double) * w), MAX_ALIGN);
+	double *tmphi = aligned_malloc(ALIGN_CEIL(sizeof(double) * w), MAX_ALIGN);
+	double fcoeff_lo, fcoeff_hi, imgcoeff;
+	double s0, s1, s2, s3;
+	double accum;
+
+	int i, j, fi, fj, ii, jj;
+	int j0, j1, j2, j3;
+
+	for (i = 0; i < (h + 1) / 2; ++i) {
+		/* Vertical pass. */
+		for (j = 0; j < w; ++j) {
+			s0 = src[ind_y[0][i] * src_px_stride + j];
+			s1 = src[ind_y[1][i] * src_px_stride + j];
+			s2 = src[ind_y[2][i] * src_px_stride + j];
+			s3 = src[ind_y[3][i] * src_px_stride + j];
+
+
+			accum = 0;
+			accum += filter_lo[0] * s0;
+			accum += filter_lo[1] * s1;
+			accum += filter_lo[2] * s2;
+			accum += filter_lo[3] * s3;
+			tmplo[j] = accum;
+
+			accum = 0;
+			accum += filter_hi[0] * s0;
+			accum += filter_hi[1] * s1;
+			accum += filter_hi[2] * s2;
+			accum += filter_hi[3] * s3;
+			tmphi[j] = accum;
+		}
+
+		/* Horizontal pass (lo and hi). */
+		for (j = 0; j < (w + 1) / 2; ++j) {
+
+			j0 = ind_x[0][j];
+			j1 = ind_x[1][j];
+			j2 = ind_x[2][j];
+			j3 = ind_x[3][j];
+			s0 = tmplo[j0];
+			s1 = tmplo[j1];
+			s2 = tmplo[j2];
+			s3 = tmplo[j3];
+
+			accum = 0;
+			accum += filter_lo[0] * s0;
+			accum += filter_lo[1] * s1;
+			accum += filter_lo[2] * s2;
+			accum += filter_lo[3] * s3;
+			dst->band_a[i * dst_px_stride + j] = accum;
+
+			accum = 0;
+			accum += filter_hi[0] * s0;
+			accum += filter_hi[1] * s1;
+			accum += filter_hi[2] * s2;
+			accum += filter_hi[3] * s3;
+			dst->band_v[i * dst_px_stride + j] = accum;
+			s0 = tmphi[j0];
+			s1 = tmphi[j1];
+			s2 = tmphi[j2];
+			s3 = tmphi[j3];
+
+			accum = 0;
+			accum += filter_lo[0] * s0;
+			accum += filter_lo[1] * s1;
+			accum += filter_lo[2] * s2;
+			accum += filter_lo[3] * s3;
+			dst->band_h[i * dst_px_stride + j] = accum;
+
 			accum = 0;
 			accum += filter_hi[0] * s0;
 			accum += filter_hi[1] * s1;
