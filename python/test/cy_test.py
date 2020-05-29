@@ -121,7 +121,6 @@ class AdmDwt2CyTestOnAkiyo(unittest.TestCase):
         self.assertAlmostEqual(np.float(np.min(h)), -101.95207793605813, places=5)
         self.assertAlmostEqual(np.float(np.min(d)), -51.79502250236081, places=5)
 
-    @unittest.skip
     def test_adm_dwt2_cy_on_akiyo_n_scales(self):
 
         a = self.y_dis - 128.0
@@ -151,30 +150,30 @@ class AdmDwt2CyTestOnAkiyo(unittest.TestCase):
         self.assertEqual(v.shape, (36, 44))
         self.assertEqual(h.shape, (36, 44))
         self.assertEqual(d.shape, (36, 44))
-        self.assertAlmostEqual(np.float(np.std(a)), 417.73602985019386, places=5)
-        self.assertAlmostEqual(np.float(np.std(v)), 56.121495017612745, places=5)
-        self.assertAlmostEqual(np.float(np.std(h)), 45.419327754665, places=5)
-        self.assertAlmostEqual(np.float(np.std(d)), 23.307968058054453, places=5)
+        self.assertAlmostEqual(np.float(np.std(a)), 388.2596130371094, places=5)
+        self.assertAlmostEqual(np.float(np.std(v)), 49.79795455932617, places=5)
+        self.assertAlmostEqual(np.float(np.std(h)), 44.297210693359375, places=5)
+        self.assertAlmostEqual(np.float(np.std(d)), 21.884857177734375, places=5)
 
         a, v, h, d = adm_dwt2_cy(a)
         self.assertEqual(a.shape, (18, 22))
         self.assertEqual(v.shape, (18, 22))
         self.assertEqual(h.shape, (18, 22))
         self.assertEqual(d.shape, (18, 22))
-        self.assertAlmostEqual(np.float(np.std(a)), 854.0379602629766, places=5)
-        self.assertAlmostEqual(np.float(np.std(v)), 116.17313934292187, places=5)
-        self.assertAlmostEqual(np.float(np.std(h)), 112.95528846009412, places=5)
-        self.assertAlmostEqual(np.float(np.std(d)), 45.1585324738835, places=5)
+        self.assertAlmostEqual(np.float(np.std(a)), 615.3699951171875, places=5)
+        self.assertAlmostEqual(np.float(np.std(v)), 93.22431945800781, places=5)
+        self.assertAlmostEqual(np.float(np.std(h)), 336.55194091796875, places=5)
+        self.assertAlmostEqual(np.float(np.std(d)), 111.64820861816406, places=5)
 
         a, v, h, d = adm_dwt2_cy(a)
         self.assertEqual(a.shape, (9, 11))
         self.assertEqual(v.shape, (9, 11))
         self.assertEqual(h.shape, (9, 11))
         self.assertEqual(d.shape, (9, 11))
-        self.assertAlmostEqual(np.float(np.std(a)), 1366.6905701652233, places=5)
-        self.assertAlmostEqual(np.float(np.std(v)), 329.74334170533484, places=5)
-        self.assertAlmostEqual(np.float(np.std(h)), 652.7157233088448, places=5)
-        self.assertAlmostEqual(np.float(np.std(d)), 416.39129271383905, places=5)
+        self.assertAlmostEqual(np.float(np.std(a)), 814.2235717773438, places=5)
+        self.assertAlmostEqual(np.float(np.std(v)), 152.11126708984375, places=5)
+        self.assertAlmostEqual(np.float(np.std(h)), 451.4018249511719, places=5)
+        self.assertAlmostEqual(np.float(np.std(d)), 209.05331420898438, places=5)
 
 
 class AdmDwt2CyTestOnAkiyoXsmall(unittest.TestCase):
@@ -191,7 +190,6 @@ class AdmDwt2CyTestOnAkiyoXsmall(unittest.TestCase):
         ) as yuv_reader_ref:
             self.y_dis = yuv_reader_ref.next()[0].astype(np.float32)
 
-    # @unittest.skip
     def test_adm_dwt2_cy_on_akiyo_single_scale(self):
 
         a, v, h, d = adm_dwt2_cy((self.y_ref - 128.0).astype(np.float32))
