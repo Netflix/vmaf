@@ -636,7 +636,7 @@ def cv_on_dataset(dataset, feature_param, model_param, ax, result_store,
     print('Stats: {}'.format(model_class.format_stats_for_print(cv_output['aggr_stats'])))
 
     if ax is not None:
-        model_class.plot_scatter(ax, cv_output['aggr_stats'], cv_output['contentids'])
+        model_class.plot_scatter(ax, cv_output['aggr_stats'], content_ids=cv_output['contentids'])
         ax.set_xlabel('True Score')
         ax.set_ylabel("Predicted Score")
         ax.grid()
