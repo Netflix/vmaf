@@ -50,7 +50,7 @@ matrix:
       env: CC=gcc-7 CXX=g++-7
       script: &base-gcc-script
         - mkdir libvmaf/build && cd libvmaf/build
-        - LDFLAGS='-fsanitize=address' meson .. --buildtype debug -Db_sanitize=address
+        - LDFLAGS='-fsanitize=address,undefined' meson build --buildtype debug -Db_sanitize=address,undefined -Db_lundef=false
         - sudo ninja -v install
         - sudo ninja -v test
         - cd $TRAVIS_BUILD_DIR
