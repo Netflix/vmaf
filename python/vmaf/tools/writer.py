@@ -9,20 +9,24 @@ class YuvWriter(object):
     SUPPORTED_YUV_8BIT_TYPES = ['yuv420p',
                                 'yuv422p',
                                 'yuv444p',
+                                'gray',
                                 ]
 
     SUPPORTED_YUV_10BIT_LE_TYPES = ['yuv420p10le',
                                     'yuv422p10le',
                                     'yuv444p10le',
+                                    'gray10le',
                                     ]
 
     # ex: for yuv420p, the width and height of U/V is 0.5x, 0.5x of Y
     UV_WIDTH_HEIGHT_MULTIPLIERS_DICT = {'yuv420p': (0.5, 0.5),
                                         'yuv422p': (0.5, 1.0),
                                         'yuv444p': (1.0, 1.0),
+                                        'gray': (0.0, 0.0),
                                         'yuv420p10le': (0.5, 0.5),
                                         'yuv422p10le': (0.5, 1.0),
                                         'yuv444p10le': (1.0, 1.0),
+                                        'gray10le': (0.0, 0.0),
                                         }
 
     def __init__(self, filepath, width, height, yuv_type):
@@ -82,8 +86,15 @@ class YuvWriter(object):
         uv_height = int(y_height * uv_h_multiplier)
 
         assert (y_height, y_width) == y.shape
-        assert (uv_height, uv_width) == u.shape
-        assert (uv_height, uv_width) == v.shape
+
+        if uv_width == 0 and uv_height == 0:
+            assert u is None
+            assert v is None
+        elif uv_width > 0 and uv_height > 0:
+            assert (uv_height, uv_width) == u.shape
+            assert (uv_height, uv_width) == v.shape
+        else:
+            assert False, f'Unsupported uv_width and uv_height: {uv_width}, {uv_height}'
 
         if self._is_8bit():
             pix_type = np.uint8
@@ -96,18 +107,20 @@ class YuvWriter(object):
             pass
         elif format == 'float2uint':
             if self._is_8bit():
-                y, u, v = y.astype(np.double) * (2.0**8 - 1.0), \
-                          u.astype(np.double) * (2.0**8 - 1.0), \
-                          v.astype(np.double) * (2.0**8 - 1.0)
+                y = y.astype(np.double) * (2.0**8 - 1.0)
+                u = u.astype(np.double) * (2.0**8 - 1.0) if u is not None else None
+                v = v.astype(np.double) * (2.0**8 - 1.0) if v is not None else None
             elif self._is_10bitle():
-                y, u, v = y.astype(np.double) * (2.0**10 - 1.0), \
-                          u.astype(np.double) * (2.0**10 - 1.0), \
-                          v.astype(np.double) * (2.0**10 - 1.0)
+                y = y.astype(np.double) * (2.0**10 - 1.0)
+                u = u.astype(np.double) * (2.0**10 - 1.0) if u is not None else None
+                v = v.astype(np.double) * (2.0**10 - 1.0) if v is not None else None
             else:
                 assert False
         else:
             assert False
 
         self.file.write(y.astype(pix_type).tobytes())
-        self.file.write(u.astype(pix_type).tobytes())
-        self.file.write(v.astype(pix_type).tobytes())
+        if u is not None:
+            self.file.write(u.astype(pix_type).tobytes())
+        if v is not None:
+            self.file.write(v.astype(pix_type).tobytes())

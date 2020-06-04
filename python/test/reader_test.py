@@ -77,6 +77,31 @@ class YuvReaderTest(unittest.TestCase):
             self.assertAlmostEqual(u.mean(), 114.72515860768175, places=4)
             self.assertAlmostEqual(v.mean(), 122.12022033607681, places=4)
 
+    def test_next_y_u_v_gray(self):
+
+        with YuvReader(
+            filepath=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
+            width=576,
+            height=324,
+            yuv_type='gray'
+        ) as yuv_reader:
+
+            y, u, v = yuv_reader.next()
+            y = y.astype(np.double)
+
+            self.assertEqual(y[0][0], 87)
+            self.assertTrue(u is None)
+            self.assertTrue(v is None)
+
+            self.assertAlmostEqual(y.mean(), 61.928749785665296, places=4)
+
+            y, u, v = yuv_reader.next()
+            y = y.astype(np.double)
+
+            self.assertEqual(y[0][0], 92)
+            self.assertTrue(u is None)
+            self.assertTrue(v is None)
+
     def test_iteration(self):
 
         y_1stmoments = []
