@@ -1,8 +1,11 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 #include "cli_parse.h"
+#include "spinner.h"
 #include "vidinput.h"
 
 #include <libvmaf/picture.h>
@@ -126,6 +129,9 @@ static int fetch_picture(video_input *vid, VmafPicture *pic)
 int main(int argc, char *argv[])
 {
     int err = 0;
+    const int istty = isatty(fileno(stderr));
+
+    fprintf(stderr, "VMAF version %s\n", vmaf_version());
 
     CLISettings c;
     cli_parse(argc, argv, &c);
@@ -213,6 +219,7 @@ int main(int argc, char *argv[])
         }
     }
 
+    const time_t t = clock();
     unsigned picture_index;
     for (picture_index = 0 ;; picture_index++) {
         VmafPicture pic_ref, pic_dist;
@@ -222,23 +229,31 @@ int main(int argc, char *argv[])
         if (ret1 && ret2) {
             break;
         } else if (ret1 < 0 || ret2 < 0) {
-            fprintf(stderr, "problem while reading pictures\n",
+            fprintf(stderr, "\nproblem while reading pictures\n",
                     c.path_ref, c.path_dist);
             break;
         } else if (ret1) {
-            fprintf(stderr, "\"%s\" ended before \"%s\".\n",
+            fprintf(stderr, "\n\"%s\" ended before \"%s\".\n",
                     c.path_ref, c.path_dist);
             break;
         } else if (ret2) {
-            fprintf(stderr, "\"%s\" ended before \"%s\".\n",
+            fprintf(stderr, "\n\"%s\" ended before \"%s\".\n",
                     c.path_dist, c.path_ref);
             break;
         }
 
-        fprintf(stderr, "\r%d", picture_index);
+        if (istty) {
+            fprintf(stderr, "\r%d frame%s %s %.2f FPS\033[K",
+                    picture_index + 1, picture_index ? "s" : " ",
+                    spinner[picture_index % spinner_length],
+                    (picture_index + 1) /
+                    (((float)clock() - t) / CLOCKS_PER_SEC));
+            fflush(stderr);
+        }
+
         err = vmaf_read_pictures(vmaf, &pic_ref, &pic_dist, picture_index);
         if (err) {
-            fprintf(stderr, "problem reading pictures\n");
+            fprintf(stderr, "\nproblem reading pictures\n");
             break;
         }
     }
