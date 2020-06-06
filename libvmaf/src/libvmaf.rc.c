@@ -390,7 +390,10 @@ int vmaf_write_output(VmafContext *vmaf, FILE *outfile,
     case VMAF_OUTPUT_FORMAT_CSV:
         return vmaf_write_output_csv(vmaf->feature_collector, outfile,
                                      vmaf->cfg.n_subsample);
+    case VMAF_OUTPUT_FORMAT_SUB:
+        return vmaf_write_output_sub(vmaf->feature_collector, outfile,
+                                     vmaf->cfg.n_subsample);
     default:
-        return 0;
+        return -EINVAL;
     }
 }
