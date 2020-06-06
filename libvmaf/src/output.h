@@ -29,4 +29,7 @@ int vmaf_write_output_json(VmafFeatureCollector *fc, FILE *outfile,
 int vmaf_write_output_csv(VmafFeatureCollector *fc, FILE *outfile,
                            unsigned subsample);
 
+int vmaf_write_output_sub(VmafFeatureCollector *fc, FILE *outfile,
+                          unsigned subsample);
+
 #endif /* __VMAF_OUTPUT_H__ */
