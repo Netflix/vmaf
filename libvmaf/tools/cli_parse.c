@@ -11,6 +11,10 @@
 
 static const char short_opts[] = "r:d:w:h:p:b:m:o:xjet:f:i:s:c:nv";
 
+enum {
+    ARG_SUB = 256,
+};
+
 static const struct option long_opts[] = {
     { "reference",        1, NULL, 'r' },
     { "distorted",        1, NULL, 'd' },
@@ -23,6 +27,7 @@ static const struct option long_opts[] = {
     { "xml",              0, NULL, 'x' },
     { "json",             0, NULL, 'j' },
     { "csv",              0, NULL, 'e' },
+    { "sub",              0, NULL, ARG_SUB },
     { "threads",          1, NULL, 't' },
     { "feature",          1, NULL, 'f' },
     { "import",           1, NULL, 'i' },
@@ -59,6 +64,7 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --xml/-x:                  write output file as XML (default)\n"
             " --json/-j:                 write output file as JSON\n"
             " --csv/-c:                  write output file as CSV\n"
+            " --sub:                     write output file as subtitle\n"
             " --threads/-t $unsigned:    number of threads to use\n"
             " --feature/-f $string:      additional feature\n"
             " --import/-i $path:         path to precomputed feature log\n"
@@ -205,6 +211,9 @@ void cli_parse(const int argc, char *const *const argv,
             break;
         case 'e':
             settings->output_fmt = VMAF_OUTPUT_FORMAT_CSV;
+            break;
+        case ARG_SUB:
+            settings->output_fmt = VMAF_OUTPUT_FORMAT_SUB;
             break;
         case 'm':
             if (settings->model_cnt == CLI_SETTINGS_STATIC_ARRAY_LEN) {
