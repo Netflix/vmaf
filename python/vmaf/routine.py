@@ -308,6 +308,12 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
             optional_dict = {}
         optional_dict['subsample'] = kwargs['subsample']
 
+    if 'additional_optional_dict' in kwargs and kwargs['additional_optional_dict'] is not None:
+        assert isinstance(kwargs['additional_optional_dict'], dict)
+        if not optional_dict:
+            optional_dict = {}
+        optional_dict.update(kwargs['additional_optional_dict'])
+
     # run
     runner = runner_class(
         test_assets,
