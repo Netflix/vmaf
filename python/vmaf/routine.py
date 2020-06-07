@@ -314,6 +314,14 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
             optional_dict = {}
         optional_dict.update(kwargs['additional_optional_dict'])
 
+    if 'processes' in kwargs and kwargs['processes'] is not None:
+        assert isinstance(kwargs['processes'], int)
+        processes = kwargs['processes']
+    else:
+        processes = None
+    if processes is not None:
+        assert parallelize is True
+
     # run
     runner = runner_class(
         test_assets,
@@ -323,7 +331,7 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
         optional_dict=optional_dict,
         optional_dict2=None,
     )
-    runner.run(parallelize=parallelize)
+    runner.run(parallelize=parallelize, processes=processes)
     results = runner.results
 
     for result in results:
