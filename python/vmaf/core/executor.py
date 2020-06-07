@@ -120,7 +120,7 @@ class Executor(TypeVersionEnabled):
             parallelize = False
         assert isinstance(parallelize, bool)
 
-        if 'processes' in kwargs:
+        if 'processes' in kwargs and kwargs['processes'] is not None:
             assert parallelize is True, 'Cannot specify processes if parallelize is False.'
             processes = kwargs['processes']
         else:
