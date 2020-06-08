@@ -26,8 +26,6 @@
 #include "mem.h"
 #include "adm_options.h"
 
-#include <emmintrin.h>
-
 typedef struct adm_dwt_band_t {
     int16_t *band_a; /* Low-pass V + low-pass H. */
     int16_t *band_v; /* Low-pass V + high-pass H. */
@@ -76,13 +74,7 @@ typedef struct AdmState {
 
 #define M_PI 3.14159265358979323846264338327
 
-static float rcp_s(float x)
-{
-    float xi = _mm_cvtss_f32(_mm_rcp_ss(_mm_load_ss(&x)));
-    return xi + xi * (1.0f - x * xi);
-}
-
-#define DIVS(n, d) ((n) * rcp_s(d))
+#define DIVS(n, d) ((n) / (d))
 
 static const int16_t dwt2_db2_coeffs_lo[4] = { 15826, 27411, 7345, -4240 };
 static const int16_t dwt2_db2_coeffs_hi[4] = { -4240, -7345, 27411, -15826 };
