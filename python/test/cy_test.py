@@ -66,6 +66,44 @@ class AdmDwt2CyTest(unittest.TestCase):
         self.assertAlmostEqual(np.float(np.std(h)), 74.53569012139673, places=5)
         self.assertAlmostEqual(np.float(np.std(d)), 61.761051507492866, places=5)
 
+    def test_adm_dwt2_cy_xsmallP_dc(self):
+        x = (55 * np.ones([18, 22])).astype(np.float64)
+        a, v, h, d = adm_dwt2_cy(x)
+
+        self.assertEqual(a.shape, (9, 11))
+        self.assertEqual(v.shape, (9, 11))
+        self.assertEqual(h.shape, (9, 11))
+        self.assertEqual(d.shape, (9, 11))
+
+        self.assertAlmostEqual(np.float(np.max(a)), 109.99999999999997, places=16)
+        self.assertAlmostEqual(np.float(np.max(v)), 8.526512829121202e-14, places=16)
+        self.assertAlmostEqual(np.float(np.max(h)), 8.038873388460928e-14, places=16)
+        self.assertAlmostEqual(np.float(np.max(d)), 0.0, places=16)
+
+        self.assertAlmostEqual(np.float(np.min(a)), 0.0, places=16)
+        self.assertAlmostEqual(np.float(np.min(v)), 0.0, places=16)
+        self.assertAlmostEqual(np.float(np.min(h)), 0.0, places=16)
+        self.assertAlmostEqual(np.float(np.min(d)), 0.0, places=16)
+
+    def test_adm_dwt2_cy_dc(self):
+        x = (55 * np.ones([324, 576])).astype(np.float64)
+        a, v, h, d = adm_dwt2_cy(x)
+
+        self.assertEqual(a.shape, (162, 288))
+        self.assertEqual(v.shape, (162, 288))
+        self.assertEqual(h.shape, (162, 288))
+        self.assertEqual(d.shape, (162, 288))
+
+        self.assertAlmostEqual(np.float(np.max(a)), 109.99999999999999, places=8)
+        self.assertAlmostEqual(np.float(np.max(v)), 8.526512829121202e-14, places=16)
+        self.assertAlmostEqual(np.float(np.max(h)), 8.038873388460928e-14, places=16)
+        self.assertAlmostEqual(np.float(np.max(d)), 0.0, places=16)
+
+        self.assertAlmostEqual(np.float(np.min(a)), 109.99999999999997, places=16)
+        self.assertAlmostEqual(np.float(np.min(v)), 8.526512829121202e-14, places=16)
+        self.assertAlmostEqual(np.float(np.min(h)), 8.038873388460928e-14, places=16)
+        self.assertAlmostEqual(np.float(np.min(d)), 0.0, places=16)
+
 
 class AdmDwt2CyTestOnAkiyo(unittest.TestCase):
 
