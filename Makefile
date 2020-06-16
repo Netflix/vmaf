@@ -8,7 +8,7 @@ all:
 clean:
 	cd third_party/libsvm && make clean && cd -
 	rm -rf libvmaf/build
-	rm python/vmaf/core/adm_dwt2_cy.c*
+	rm -f python/vmaf/core/adm_dwt2_cy.c*
 
 install:
 	meson setup libvmaf/build libvmaf --buildtype release && \
