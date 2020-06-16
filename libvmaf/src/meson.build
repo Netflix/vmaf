@@ -192,6 +192,7 @@ libvmaf_rc_sources = [
     src_dir + 'output.c',
     src_dir + 'fex_ctx_vector.c',
     src_dir + 'thread_pool.c',
+    src_dir + 'dict.c',
 ]
 
 libvmaf_rc = both_libraries(
