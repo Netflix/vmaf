@@ -18,20 +18,39 @@
 
 #include <errno.h>
 #include <math.h>
+#include <stddef.h>
 #include <string.h>
 
 #include "feature_collector.h"
 #include "feature_extractor.h"
+#include "opt.h"
+
+typedef struct PsnrState {
+    bool enable_chroma;
+} PsnrState;
+
+static const VmafOption options[] = {
+    {
+        .name = "enable_chroma",
+        .help = "enable PSNR calculation for chroma channels",
+        .offset = offsetof(PsnrState, enable_chroma),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = true,
+    },
+    { NULL }
+};
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 static int psnr8(VmafPicture *ref_pic, VmafPicture *dist_pic,
-                 unsigned index, VmafFeatureCollector *feature_collector)
+                 unsigned index, VmafFeatureCollector *feature_collector,
+                 bool enable_chroma)
 {
     int err = 0;
+    const unsigned n = enable_chroma ? 3 : 1;
 
-    for (unsigned i = 0; i < 3; i++) {
+    for (unsigned i = 0; i < n; i++) {
         uint8_t *ref = ref_pic->data[i];
         uint8_t *dist = dist_pic->data[i];
 
@@ -61,11 +80,13 @@ static int psnr8(VmafPicture *ref_pic, VmafPicture *dist_pic,
 }
 
 static int psnr10(VmafPicture *ref_pic, VmafPicture *dist_pic,
-                  unsigned index, VmafFeatureCollector *feature_collector)
+                  unsigned index, VmafFeatureCollector *feature_collector,
+                  bool enable_chroma)
 {
     int err = 0;
+    const unsigned n = enable_chroma ? 3 : 1;
 
-    for (unsigned i = 0; i < 3; i++) {
+    for (unsigned i = 0; i < n; i++) {
         uint16_t *ref = ref_pic->data[i];
         uint16_t *dist = dist_pic->data[i];
 
@@ -98,11 +119,15 @@ static int extract(VmafFeatureExtractor *fex,
                    VmafPicture *ref_pic, VmafPicture *dist_pic,
                    unsigned index, VmafFeatureCollector *feature_collector)
 {
+    PsnrState *s = fex->priv;
+
     switch(ref_pic->bpc) {
     case 8:
-        return psnr8(ref_pic, dist_pic, index, feature_collector);
+        return psnr8(ref_pic, dist_pic, index, feature_collector,
+                     s->enable_chroma);
     case 10:
-        return psnr10(ref_pic, dist_pic, index, feature_collector);
+        return psnr10(ref_pic, dist_pic, index, feature_collector,
+                      s->enable_chroma);
     default:
         return -EINVAL;
     }
@@ -116,5 +141,7 @@ static const char *provided_features[] = {
 VmafFeatureExtractor vmaf_fex_psnr = {
     .name = "psnr",
     .extract = extract,
+    .options = options,
+    .priv_size = sizeof(PsnrState),
     .provided_features = provided_features,
 };
