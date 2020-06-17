@@ -44,7 +44,8 @@ test_predict = executable('test_predict',
 )
 
 test_feature_extractor = executable('test_feature_extractor',
-    ['test.c', 'test_feature_extractor.c', '../src/mem.c', '../src/picture.c'],
+    ['test.c', 'test_feature_extractor.c', '../src/mem.c', '../src/picture.c',
+     '../src/dict.c', '../src/opt.c'],
     include_directories : [libvmaf_inc, test_inc, '../src/'],
     dependencies : [math_lib, stdatomic_dependency],
     objects : [
