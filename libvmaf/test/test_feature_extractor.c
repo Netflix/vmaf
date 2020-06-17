@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "dict.h"
 #include "feature/feature_extractor.h"
 #include "feature/feature_collector.h"
 #include "feature/common/cpu.h"
@@ -90,7 +91,7 @@ static char *test_feature_extractor_flush()
     mu_assert("problem vmaf_get_feature_extractor_by_name",
               !strcmp(fex->name, "float_motion"));
     VmafFeatureExtractorContext *fex_ctx;
-    err = vmaf_feature_extractor_context_create(&fex_ctx, fex);
+    err = vmaf_feature_extractor_context_create(&fex_ctx, fex, NULL);
     mu_assert("problem during vmaf_feature_extractor_context_create", !err);
 
     VmafPicture ref, dist;
@@ -123,10 +124,51 @@ static char *test_feature_extractor_flush()
     return NULL;
 }
 
+static char *test_feature_extractor_initialization_options()
+{
+    int err = 0;
+
+    VmafFeatureExtractor *fex;
+    fex = vmaf_get_feature_extractor_by_name("psnr");
+    mu_assert("problem vmaf_get_feature_extractor_by_name",
+              !strcmp(fex->name, "psnr"));
+
+    VmafDictionary *opts_dict = NULL;
+    err = vmaf_dictionary_set(&opts_dict, "enable_chroma", "false", 0);
+    mu_assert("problem during vmaf_dictionary_set", !err);
+
+    VmafFeatureExtractorContext *fex_ctx;
+    err = vmaf_feature_extractor_context_create(&fex_ctx, fex, opts_dict);
+    mu_assert("problem during vmaf_feature_extractor_context_create", !err);
+
+    VmafPicture ref, dist;
+    err = vmaf_picture_alloc(&ref, VMAF_PIX_FMT_YUV420P, 8, 1920, 1080);
+    mu_assert("problem during vmaf_picture_alloc", !err);
+    err = vmaf_picture_alloc(&dist, VMAF_PIX_FMT_YUV420P, 8, 1920, 1080);
+    mu_assert("problem during vmaf_picture_alloc", !err);
+
+    VmafFeatureCollector *vfc;
+    err = vmaf_feature_collector_init(&vfc);
+    mu_assert("problem during vmaf_feature_collector_init", !err);
+
+    err = vmaf_feature_extractor_context_extract(fex_ctx, &ref, &dist, 0, vfc);
+    mu_assert("problem during vmaf_feature_extractor_context_extract", !err);
+
+    double score;
+    err = vmaf_feature_collector_get_score(vfc, "psnr_cb", &score, 0);
+    mu_assert("chroma PSNR was not disabled via option", err);
+
+    err = vmaf_dictionary_free(&opts_dict);
+    mu_assert("problem during vmaf_dictionary_free", !err);
+
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_get_feature_extractor_by_name_and_feature_name);
     mu_run_test(test_feature_extractor_context_pool);
     mu_run_test(test_feature_extractor_flush);
+    mu_run_test(test_feature_extractor_initialization_options);
     return NULL;
 }
