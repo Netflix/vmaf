@@ -22,7 +22,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "dict.h"
 #include "feature_collector.h"
+#include "opt.h"
 
 #include "libvmaf/picture.h"
 
@@ -73,6 +75,7 @@ typedef struct VmafFeatureExtractor {
      * @param               fex self.
      */
     int (*close)(struct VmafFeatureExtractor *fex);
+    const VmafOption *options; ///< Optional initialization options.
     void *priv; ///< Custom data.
     size_t priv_size; ///< sizeof private data.
     uint64_t flags; ///< Feauture extraction flags, binary or'd.
@@ -84,11 +87,13 @@ VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(char *name);
 
 typedef struct VmafFeatureExtractorContext {
     bool is_initialized, is_closed;
+    VmafDictionary *opts_dict;
     VmafFeatureExtractor *fex;
 } VmafFeatureExtractorContext;
 
 int vmaf_feature_extractor_context_create(VmafFeatureExtractorContext **fex_ctx,
-                                          VmafFeatureExtractor *fex);
+                                          VmafFeatureExtractor *fex,
+                                          VmafDictionary *opts_dict);
 
 int vmaf_feature_extractor_context_init(VmafFeatureExtractorContext *fex_ctx,
                                         enum VmafPixelFormat pix_fmt,
