@@ -131,7 +131,7 @@ int vmaf_use_feature(VmafContext *vmaf, const char *feature_name)
     if (!fex) return -EINVAL;
 
     VmafFeatureExtractorContext *fex_ctx;
-    err = vmaf_feature_extractor_context_create(&fex_ctx, fex);
+    err = vmaf_feature_extractor_context_create(&fex_ctx, fex, NULL);
     if (err) return err;
 
     RegisteredFeatureExtractors *rfe = &(vmaf->registered_feature_extractors);
@@ -157,7 +157,7 @@ int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model)
         if (!fex) return -EINVAL;
 
         VmafFeatureExtractorContext *fex_ctx;
-        err = vmaf_feature_extractor_context_create(&fex_ctx, fex);
+        err = vmaf_feature_extractor_context_create(&fex_ctx, fex, NULL);
         if (err) return err;
         err = feature_extractor_vector_append(rfe, fex_ctx);
         if (err) {

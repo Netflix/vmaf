@@ -78,8 +78,24 @@ VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(char *name)
     return NULL;
 }
 
+static int parse_options(VmafFeatureExtractorContext *fex_ctx)
+{
+    VmafOption *opt = NULL;
+    for (unsigned i = 0; (opt = &fex_ctx->fex->options[i]); i++) {
+        if (!opt->name) break;
+        VmafDictionaryEntry *entry =
+            vmaf_dictionary_get(&fex_ctx->opts_dict, opt->name, 0);
+        int err = vmaf_option_set(opt, fex_ctx->fex->priv,
+                                  entry ? entry->val : NULL);
+        if (err) return -EINVAL;
+    }
+
+    return 0;
+}
+
 int vmaf_feature_extractor_context_create(VmafFeatureExtractorContext **fex_ctx,
-                                          VmafFeatureExtractor *fex)
+                                          VmafFeatureExtractor *fex,
+                                          VmafDictionary *opts_dict)
 {
     VmafFeatureExtractorContext *f = *fex_ctx = malloc(sizeof(*f));
     if (!f) return -ENOMEM;
@@ -96,6 +112,13 @@ int vmaf_feature_extractor_context_create(VmafFeatureExtractorContext **fex_ctx,
         memset(priv, 0, f->fex->priv_size);
         f->fex->priv = priv;
     }
+
+    f->opts_dict = opts_dict;
+    if (f->fex->options && f->fex->priv) {
+        int err = parse_options(f);
+        if (err) return err;
+    }
+
     return 0;
 
 free_x:
@@ -113,14 +136,13 @@ int vmaf_feature_extractor_context_init(VmafFeatureExtractorContext *fex_ctx,
     if (fex_ctx->is_initialized) return -EINVAL;
     if (!pix_fmt) return -EINVAL;
 
-    int err = 0;
     if (!fex_ctx->is_initialized) {
         int err = fex_ctx->fex->init(fex_ctx->fex, pix_fmt, bpc, w, h);
         if (err) return err;
     }
 
     fex_ctx->is_initialized = true;
-    return err;
+    return 0;
 }
 
 int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
@@ -255,7 +277,7 @@ int vmaf_fex_ctx_pool_aquire(VmafFeatureExtractorContextPool *pool,
     for (unsigned i = 0; i < atomic_load(&entry->capacity); i++) {
         VmafFeatureExtractorContext *f = entry->ctx_list[i].fex_ctx;
         if (!f) {
-            err = vmaf_feature_extractor_context_create(&f, entry->fex);
+            err = vmaf_feature_extractor_context_create(&f, entry->fex, NULL);
             if (err) goto unlock;
         }
         if (!entry->ctx_list[i].in_use) {
