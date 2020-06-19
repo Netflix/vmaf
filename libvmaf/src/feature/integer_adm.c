@@ -26,6 +26,19 @@
 #include "mem.h"
 #include "adm_options.h"
 
+static int32_t div_lookup[65536];
+static const int32_t div_Q_factor = 1073741824;   //2^30
+
+static inline void div_lookup_generator()
+{
+    for (int i = 1; i <= 32768; ++i)
+    {
+        int32_t recip = (int32_t)(div_Q_factor / i);
+        div_lookup[32768 + i] = recip;
+        div_lookup[32768 - i] = 0 - recip;
+    }
+}
+
 typedef struct adm_dwt_band_t {
     int16_t *band_a; /* Low-pass V + low-pass H. */
     int16_t *band_v; /* Low-pass V + high-pass H. */
@@ -72,7 +85,9 @@ typedef struct AdmState {
 #define NUM_BUFS_ADM 30
 #endif
 
+#ifndef M_PI
 #define M_PI 3.14159265358979323846264338327
+#endif // M_PI
 
 #define DIVS(n, d) ((n) / (d))
 
@@ -119,7 +134,7 @@ static const int32_t dwt2_db2_coeffs_hi_sum = 0;
   * Chose those corresponding to subject "sfl" since they are lower
   * These thresholds were obtained and modeled for the 7-9 biorthogonal wavelet basis
   */
-static struct dwt_model_params {
+struct dwt_model_params {
     float a;
     float k;
     float f0;
@@ -365,7 +380,6 @@ dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta)
 // i = 1,..,h-2, j = w-1: indices y: i-1,i,i+1, x: w-2,w-1,w-1
 #define ADM_CM_THRESH_S_I_W_M_1(angles,flt_angles,src_stride,accum,w,h,i,j) \
 { \
-	int32_t sum = 0; \
 	*accum = 0; \
 	for (int theta = 0; theta < 3; ++theta) { \
 		int16_t *src_ptr = angles[theta]; \
@@ -585,7 +599,6 @@ dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta)
 // i = 1,..,h-2, j = w-1: indices y: i-1,i,i+1, x: w-2,w-1,w-1
 #define I4_ADM_CM_THRESH_S_I_W_M_1(angles,flt_angles,src_stride,accum,w,h,i,j,add_bef_shift,shift) \
 { \
-	int32_t sum = 0; \
 	*accum = 0; \
 	for (int theta = 0; theta < 3; ++theta) { \
 		int32_t *src_ptr = angles[theta]; \
@@ -633,8 +646,8 @@ dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta)
 static void dwt2_src_indices_filt(int **src_ind_y, int **src_ind_x, int w, int h)
 {
     int ind0, ind1, ind2, ind3;
-    const int h_half = (h + 1) / 2;
-    const int w_half = (w + 1) / 2;
+    const unsigned h_half = (h + 1) / 2;
+    const unsigned w_half = (w + 1) / 2;
     unsigned i, j;
     /* Vertical pass */
     {   /* i : 0 */
@@ -653,7 +666,7 @@ static void dwt2_src_indices_filt(int **src_ind_y, int **src_ind_x, int w, int h
         src_ind_y[2][i] = ind2;
         src_ind_y[3][i] = ind3;
     }
-    for (i; i < h_half; ++i) { /* i : h_half - 3 to  h_half */
+    for (i = h_half - 2; i < h_half; ++i) { /* i : h_half - 3 to  h_half */
         ind1 = 2 * i;
         ind0 = ind1 - 1;
         ind2 = ind1 + 1;
@@ -693,7 +706,7 @@ static void dwt2_src_indices_filt(int **src_ind_y, int **src_ind_x, int w, int h
         src_ind_x[2][j] = ind2;
         src_ind_x[3][j] = ind3;
     }
-    for (j; j < w_half; ++j) { /* j : w_half - 3 to  w_half */
+    for (j = w_half - 2; j < w_half; ++j) { /* j : w_half - 3 to  w_half */
         ind1 = 2 * j;
         ind0 = ind1 - 1;
         ind2 = ind1 + 1;
@@ -723,7 +736,6 @@ static void adm_decouple(const adm_dwt_band_t *ref, const adm_dwt_band_t *dis,
                          int a_stride, double border_factor)
 {
     const float cos_1deg_sq = cos(1.0 * M_PI / 180.0) * cos(1.0 * M_PI / 180.0);
-    const float eps = 1e-30;
 
     int left = w * border_factor - 0.5 - 1; // -1 for filter tap
     int top = h * border_factor - 0.5 - 1;
@@ -753,30 +765,8 @@ static void adm_decouple(const adm_dwt_band_t *ref, const adm_dwt_band_t *dis,
             int16_t th = dis->band_h[i * dis_stride + j];
             int16_t tv = dis->band_v[i * dis_stride + j];
             int16_t td = dis->band_d[i * dis_stride + j];
+            int16_t tmph, tmpv, tmpd;
 
-            /**
-             * This shift is done so that precision is maintained after division
-             * division is Q31/Q16
-             */
-            int32_t tmp_th = ((int32_t)th) << 15;
-            int32_t tmp_tv = ((int32_t)tv) << 15;
-            int32_t tmp_td = ((int32_t)td) << 15;
-
-            int32_t tmp_kh = (oh == 0) ? 32768 : (tmp_th / oh);
-            int32_t tmp_kv = (ov == 0) ? 32768 : (tmp_tv / ov);
-            int32_t tmp_kd = (od == 0) ? 32768 : (tmp_td / od);
-
-            int32_t kh = tmp_kh < 0 ? 0 : (tmp_kh >  32768 ? 32768 : tmp_kh);
-            int32_t kv = tmp_kv < 0 ? 0 : (tmp_kv >  32768 ? 32768 : tmp_kv);
-            int32_t kd = tmp_kd < 0 ? 0 : (tmp_kd >  32768 ? 32768 : tmp_kd);
-
-            /**
-             * kh,kv,kd are in Q15 type and oh,ov,od are in Q16 type hence shifted by
-             * 15 to make result Q16
-             */
-            int16_t tmph = ((kh * oh) + 16384) >> 15;
-            int16_t tmpv = ((kv * ov) + 16384) >> 15;
-            int16_t tmpd = ((kd * od) + 16384) >> 15;
             /* Determine if angle between (oh,ov) and (th,tv) is less than 1 degree.
              * Given that u is the angle (oh,ov) and v is the angle (th,tv), this can
              * be done by testing the inequvality.
@@ -810,20 +800,54 @@ static void adm_decouple(const adm_dwt_band_t *ref, const adm_dwt_band_t *dis,
                 (((float)ot_dp / 4096.0) * ((float)ot_dp / 4096.0) >= 
                     cos_1deg_sq * ((float)o_mag_sq / 4096.0) * ((float)t_mag_sq / 4096.0));
             if (angle_flag) {
-                tmph = th;
-                tmpv = tv;
-                tmpd = td;
+                r->band_h[i * r_stride + j] = th;
+                r->band_v[i * r_stride + j] = tv;
+                r->band_d[i * r_stride + j] = td;
+
+                a->band_h[i * a_stride + j] = 0;
+                a->band_v[i * a_stride + j] = 0;
+                a->band_d[i * a_stride + j] = 0;
             }
+            else {
+                /**
+                 * Division th/oh is carried using lookup table and converted to multiplication
+                 */
 
-            r->band_h[i * r_stride + j] = tmph;
-            r->band_v[i * r_stride + j] = tmpv;
-            r->band_d[i * r_stride + j] = tmpd;
+                int32_t tmp_kh = (oh == 0) ? 32768 : (((int64_t)div_lookup[oh + 32768] * th) + 16384) >> 15;
+                int32_t tmp_kv = (ov == 0) ? 32768 : (((int64_t)div_lookup[ov + 32768] * tv) + 16384) >> 15;
+                int32_t tmp_kd = (od == 0) ? 32768 : (((int64_t)div_lookup[od + 32768] * td) + 16384) >> 15;
 
-            a->band_h[i * a_stride + j] = th - tmph;
-            a->band_v[i * a_stride + j] = tv - tmpv;
-            a->band_d[i * a_stride + j] = td - tmpd;
+                int32_t kh = tmp_kh < 0 ? 0 : (tmp_kh > 32768 ? 32768 : tmp_kh);
+                int32_t kv = tmp_kv < 0 ? 0 : (tmp_kv > 32768 ? 32768 : tmp_kv);
+                int32_t kd = tmp_kd < 0 ? 0 : (tmp_kd > 32768 ? 32768 : tmp_kd);
+
+                /**
+                 * kh,kv,kd are in Q15 type and oh,ov,od are in Q16 type hence shifted by
+                 * 15 to make result Q16
+                 */
+                tmph = ((kh * oh) + 16384) >> 15;
+                tmpv = ((kv * ov) + 16384) >> 15;
+                tmpd = ((kd * od) + 16384) >> 15;
+
+                r->band_h[i * r_stride + j] = tmph;
+                r->band_v[i * r_stride + j] = tmpv;
+                r->band_d[i * r_stride + j] = tmpd;
+
+                a->band_h[i * a_stride + j] = th - tmph;
+                a->band_v[i * a_stride + j] = tv - tmpv;
+                a->band_d[i * a_stride + j] = td - tmpd;
+            }
         }
     }
+}
+
+static inline uint16_t get_best15_from32(uint32_t temp, int *x)
+{
+    int k = __builtin_clz(temp);    //built in for intel
+    k = 17 - k;
+    temp = (temp + (1 << (k - 1))) >> k;
+    *x = k;
+    return temp;
 }
 
 static void adm_decouple_s123(const i4_adm_dwt_band_t *ref, const i4_adm_dwt_band_t *dis,
@@ -865,22 +889,8 @@ static void adm_decouple_s123(const i4_adm_dwt_band_t *ref, const i4_adm_dwt_ban
             int32_t th = dis->band_h[i * dis_stride + j];
             int32_t tv = dis->band_v[i * dis_stride + j];
             int32_t td = dis->band_d[i * dis_stride + j];
+            int32_t tmph, tmpv, tmpd;
 
-            int64_t tmp_th = ((int64_t)th) << 15;
-            int64_t tmp_tv = ((int64_t)tv) << 15;
-            int64_t tmp_td = ((int64_t)td) << 15;
-
-            int64_t tmp_kh = (oh == 0) ? 32768 : (tmp_th / oh);
-            int64_t tmp_kv = (ov == 0) ? 32768 : (tmp_tv / ov);
-            int64_t tmp_kd = (od == 0) ? 32768 : (tmp_td / od);
-
-            int64_t kh = tmp_kh < 0 ? 0 : (tmp_kh > 32768 ? 32768 : tmp_kh);
-            int64_t kv = tmp_kv < 0 ? 0 : (tmp_kv > 32768 ? 32768 : tmp_kv);
-            int64_t kd = tmp_kd < 0 ? 0 : (tmp_kd > 32768 ? 32768 : tmp_kd);
-
-            int32_t tmph = ((kh * oh) + 16384) >> 15;
-            int32_t tmpv = ((kv * ov) + 16384) >> 15;
-            int32_t tmpd = ((kd * od) + 16384) >> 15;
             /* Determine if angle between (oh,ov) and (th,tv) is less than 1 degree.
              * Given that u is the angle (oh,ov) and v is the angle (th,tv), this can
              * be done by testing the inequvality.
@@ -910,18 +920,70 @@ static void adm_decouple_s123(const i4_adm_dwt_band_t *ref, const i4_adm_dwt_ban
                 (((float)ot_dp / 4096.0) * ((float)ot_dp / 4096.0) >=
                     cos_1deg_sq * ((float)o_mag_sq / 4096.0) * ((float)t_mag_sq / 4096.0));
             if (angle_flag) {
-                tmph = th;
-                tmpv = tv;
-                tmpd = td;
+                r->band_h[i * r_stride + j] = th;
+                r->band_v[i * r_stride + j] = tv;
+                r->band_d[i * r_stride + j] = td;
+
+                a->band_h[i * a_stride + j] = 0;
+                a->band_v[i * a_stride + j] = 0;
+                a->band_d[i * a_stride + j] = 0;
             }
+            else {
+                /**
+                 * Division th/oh is carried using lookup table and converted to multiplication
+                 * int64 / int32 is converted to multiplication using following method
+                 * num /den :
+                 * DenAbs = Abs(den)
+                 * MSBDen = MSB(DenAbs)     (gives position of first 1 bit form msb side)
+                 * If (DenAbs < (1 << 15))
+                 *      Round = (1<<14)
+                 *      Score = (num *  div_lookup[den] + Round ) >> 15
+                 * else
+                 *      RoundD  = (1<< (16 - MSBDen))
+                 *      Round   = (1<< (14 + (17 - MSBDen))
+                 *      Score   = (num * div_lookup[(DenAbs + RoundD )>>(17 - MSBDen)]*sign(Denominator) + Round)
+                 *                  >> ((15 + (17 - MSBDen))
+                 */
 
-            r->band_h[i * r_stride + j] = tmph;
-            r->band_v[i * r_stride + j] = tmpv;
-            r->band_d[i * r_stride + j] = tmpd;
+                int32_t kh_shift = 0;
+                int32_t kv_shift = 0;
+                int32_t kd_shift = 0;
 
-            a->band_h[i * a_stride + j] = th - tmph;
-            a->band_v[i * a_stride + j] = tv - tmpv;
-            a->band_d[i * a_stride + j] = td - tmpd;
+                uint32_t abs_oh = abs(oh);
+                uint32_t abs_ov = abs(ov);
+                uint32_t abs_od = abs(od);
+
+                int8_t kh_sign = (oh < 0 ? -1 : 1);
+                int8_t kv_sign = (ov < 0 ? -1 : 1);
+                int8_t kd_sign = (od < 0 ? -1 : 1);
+
+                uint16_t kh_msb = (abs_oh < (32768) ? abs_oh : get_best15_from32(abs_oh, &kh_shift));
+                uint16_t kv_msb = (abs_ov < (32768) ? abs_ov : get_best15_from32(abs_ov, &kv_shift));
+                uint16_t kd_msb = (abs_od < (32768) ? abs_od : get_best15_from32(abs_od, &kd_shift));
+
+                int64_t tmp_kh = (oh == 0) ? 32768 : (((int64_t)div_lookup[kh_msb + 32768] * th)*(kh_sign) +
+                    (1 << (14 + kh_shift))) >> (15 + kh_shift);
+                int64_t tmp_kv = (ov == 0) ? 32768 : (((int64_t)div_lookup[kv_msb + 32768] * tv)*(kv_sign) +
+                    (1 << (14 + kv_shift))) >> (15 + kv_shift);
+                int64_t tmp_kd = (od == 0) ? 32768 : (((int64_t)div_lookup[kd_msb + 32768] * td)*(kd_sign) +
+                    (1 << (14 + kd_shift))) >> (15 + kd_shift);
+
+                int64_t kh = tmp_kh < 0 ? 0 : (tmp_kh > 32768 ? 32768 : tmp_kh);
+                int64_t kv = tmp_kv < 0 ? 0 : (tmp_kv > 32768 ? 32768 : tmp_kv);
+                int64_t kd = tmp_kd < 0 ? 0 : (tmp_kd > 32768 ? 32768 : tmp_kd);
+
+                tmph = ((kh * oh) + 16384) >> 15;
+                tmpv = ((kv * ov) + 16384) >> 15;
+                tmpd = ((kd * od) + 16384) >> 15;
+
+                r->band_h[i * r_stride + j] = tmph;
+                r->band_v[i * r_stride + j] = tmpv;
+                r->band_d[i * r_stride + j] = tmpd;
+
+                a->band_h[i * a_stride + j] = th - tmph;
+                a->band_v[i * a_stride + j] = tv - tmpv;
+                a->band_d[i * a_stride + j] = td - tmpd;
+            }
         }
     }
 }
@@ -931,15 +993,12 @@ static void adm_csf(const adm_dwt_band_t *src, const adm_dwt_band_t *dst,
                     int src_stride, int dst_stride, double border_factor)
 {
     const int16_t *src_angles[3] = { src->band_h, src->band_v, src->band_d };
-    const int16_t *dst_angles[3] = { dst->band_h, dst->band_v, dst->band_d };
-    const int16_t *flt_angles[3] = { flt->band_h, flt->band_v, flt->band_d };
+    int16_t *dst_angles[3] = { dst->band_h, dst->band_v, dst->band_d };
+    int16_t *flt_angles[3] = { flt->band_h, flt->band_v, flt->band_d };
 
     // for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
     // 1 to 4 (from finest scale to coarsest scale).
     // 0 is scale zero passed to dwt_quant_step
-    float factor1 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], 0, 1);
-    float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], 0, 2);
-    float rfactor[3] = { 1.0f / factor1, 1.0f / factor1, 1.0f / factor2 };
 
     /**
      * rfactor is converted to fixed-point for scale0 and stored in i_rfactor 
@@ -981,7 +1040,7 @@ static void adm_csf(const adm_dwt_band_t *src, const adm_dwt_band_t *dst,
     }
 
     for (int theta = 0; theta < 3; ++theta) {
-        int16_t *src_ptr = src_angles[theta];
+        const int16_t *src_ptr = src_angles[theta];
         int16_t *dst_ptr = dst_angles[theta];
         int16_t *flt_ptr = flt_angles[theta];
 
@@ -1005,8 +1064,8 @@ static void i4_adm_csf(const i4_adm_dwt_band_t *src, const i4_adm_dwt_band_t *ds
                        int src_stride, int dst_stride, double border_factor)
 {
     const int32_t *src_angles[3] = { src->band_h, src->band_v, src->band_d };
-    const int32_t *dst_angles[3] = { dst->band_h, dst->band_v, dst->band_d };
-    const int32_t *flt_angles[3] = { flt->band_h, flt->band_v, flt->band_d };
+    int32_t *dst_angles[3] = { dst->band_h, dst->band_v, dst->band_d };
+    int32_t *flt_angles[3] = { flt->band_h, flt->band_v, flt->band_d };
 
     // for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
     // 1 to 4 (from finest scale to coarsest scale).
@@ -1053,7 +1112,7 @@ static void i4_adm_csf(const i4_adm_dwt_band_t *src, const i4_adm_dwt_band_t *ds
 
     for (int theta = 0; theta < 3; ++theta)
     {
-        int32_t *src_ptr = src_angles[theta];
+        const int32_t *src_ptr = src_angles[theta];
         int32_t *dst_ptr = dst_angles[theta];
         int32_t *flt_ptr = flt_angles[theta];
 
@@ -1238,7 +1297,7 @@ static float adm_csf_den_s123(const i4_adm_dwt_band_t *src, int scale, int w, in
 
 static float adm_cm(const adm_dwt_band_t *src, const adm_dwt_band_t *csf_f, 
                     const adm_dwt_band_t *csf_a, int w, int h, int src_stride, 
-                    int flt_stride, int csf_a_stride, double border_factor)
+                    int csf_a_stride, double border_factor)
 {
     //rfactor is left shifted by 21 for rfactor[0,1] and by 23 for rfactor[2]
     const uint16_t rfactor[3] = { 36453, 36453, 49417 };
@@ -1266,8 +1325,8 @@ static float adm_cm(const adm_dwt_band_t *src, const adm_dwt_band_t *csf_f,
     const int32_t shift_xvsub = 10;
     const int32_t shift_xdsub = 12;
 
-    const int16_t *angles[3] = { csf_a->band_h, csf_a->band_v, csf_a->band_d };
-    const int16_t *flt_angles[3] = { csf_f->band_h, csf_f->band_v, csf_f->band_d };
+    int16_t *angles[3] = { csf_a->band_h, csf_a->band_v, csf_a->band_d };
+    int16_t *flt_angles[3] = { csf_f->band_h, csf_f->band_v, csf_f->band_d };
 
     /* The computation of the scales is not required for the regions which lie 
      * outside the frame borders 
@@ -1591,7 +1650,7 @@ static float adm_cm(const adm_dwt_band_t *src, const adm_dwt_band_t *csf_f,
 
 static float i4_adm_cm(const i4_adm_dwt_band_t *src, const i4_adm_dwt_band_t *csf_f,
                        const i4_adm_dwt_band_t *csf_a, int w, int h, int src_stride,
-                       int flt_stride, int csf_a_stride, double border_factor, int scale)
+                       int csf_a_stride, double border_factor, int scale)
 {
     // for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
     // 1 to 4 (from finest scale to coarsest scale).
@@ -1626,8 +1685,8 @@ static float i4_adm_cm(const i4_adm_dwt_band_t *src, const i4_adm_dwt_band_t *cs
     const int32_t shift_sq = 30;
     const int32_t add_shift_sq = 536870912; //2^29
     const int32_t shift_sub = 0;
-    const int32_t *angles[3] = { csf_a->band_h, csf_a->band_v, csf_a->band_d };
-    const int32_t *flt_angles[3] = { csf_f->band_h, csf_f->band_v, csf_f->band_d };
+    int32_t *angles[3] = { csf_a->band_h, csf_a->band_v, csf_a->band_d };
+    int32_t *flt_angles[3] = { csf_f->band_h, csf_f->band_v, csf_f->band_d };
 
     /* The computation of the scales is not required for the regions which lie
      * outside the frame borders 
@@ -1994,7 +2053,7 @@ static float i4_adm_cm(const i4_adm_dwt_band_t *src, const i4_adm_dwt_band_t *cs
     return (num_scale_h + num_scale_v + num_scale_d);
 }
 
-static void i16_to_i32(const adm_dwt_band_t *src, i4_adm_dwt_band_t *dst,
+static void i16_to_i32(adm_dwt_band_t *src, i4_adm_dwt_band_t *dst,
                        int w, int h, int src_stride, int dst_stride)
 {
     for (int i = 0; i < (h + 1) / 2; ++i) {
@@ -2018,7 +2077,7 @@ static void adm_dwt2_8(const uint8_t *src, const adm_dwt_band_t *dst, int **ind_
     const int32_t add_shift_VP = 128;
     const int32_t add_shift_HP = 32768;
     
-    int16_t *tmplo = tmp_ref;
+    int16_t *tmplo = (int16_t *)tmp_ref;
     int16_t *tmphi = tmplo + w;
     int32_t accum;
 
@@ -2113,7 +2172,7 @@ static void adm_dwt2_16(const uint16_t *src, const adm_dwt_band_t *dst, int **in
     const int32_t add_shift_VP = 1 << (inp_size_bits - 1);
     const int32_t add_shift_HP = 32768;
 
-    int16_t *tmplo = tmp_ref;
+    int16_t *tmplo = (int16_t *)tmp_ref;
     int16_t *tmphi = tmplo + w;
     int32_t accum;
 
@@ -2202,7 +2261,7 @@ static void adm_dwt2_s123_combined(const int32_t *i4_ref_scale,
                                    const i4_adm_dwt_band_t *i4_dis_dwt2, 
                                    int **ind_y, int **ind_x, int w, int h, int ref_stride,
                                    int dis_stride, int dst_stride, int scale, 
-                                   const int32_t *tmp_ref)
+                                   int32_t *tmp_ref)
 {
     const int16_t *filter_lo = dwt2_db2_coeffs_lo;
     const int16_t *filter_hi = dwt2_db2_coeffs_hi;
@@ -2418,7 +2477,7 @@ void integer_compute_adm(VmafPicture *ref_pic, VmafPicture *dis_pic, double *sco
                     buf_stride, border_factor);
 
 			num_scale = adm_cm(&buf.decouple_r, &buf.csf_f, &buf.csf_a, w, h, buf_stride,
-                               buf_stride, buf_stride, border_factor);
+                               buf_stride, border_factor);
 		}
 		else {
             adm_dwt2_s123_combined(i4_curr_ref_scale, &buf.i4_ref_dwt2, i4_curr_dis_scale,
@@ -2438,7 +2497,7 @@ void integer_compute_adm(VmafPicture *ref_pic, VmafPicture *dis_pic, double *sco
                        buf_stride, buf_stride, border_factor);
 
 			num_scale = i4_adm_cm(&buf.i4_decouple_r, &buf.i4_csf_f, &buf.i4_csf_a, w, h,
-                                  buf_stride, buf_stride, buf_stride, border_factor, scale);
+                                  buf_stride, buf_stride, border_factor, scale);
 		}
 
 		num += num_scale;
@@ -2514,6 +2573,8 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
 {
     AdmState *s = fex->priv;
+    (void) pix_fmt;
+    (void) bpc;
 
     s->integer_stride   = ALIGN_CEIL(w * sizeof(int32_t));
     s->buf.ind_size_x   = ALIGN_CEIL(((w + 1) / 2) * sizeof(int32_t));
@@ -2548,6 +2609,8 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     init_index(s->buf.ind_y, ind_buf_y, s->buf.ind_size_y);
     void *ind_buf_x = s->buf.buf_x_orig;
     init_index(s->buf.ind_x, ind_buf_x, s->buf.ind_size_x);
+
+    div_lookup_generator();
 
     return 0;
 
