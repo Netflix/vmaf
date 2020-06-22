@@ -100,7 +100,7 @@ class ExternalProgramCaller(object):
     """
 
     @staticmethod
-    def call_vmafrc_single_feature(feature, yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None):
+    def call_vmafrc_single_feature(feature, yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None, options=None):
 
         # ./libvmaf/build/tools/vmaf_rc
         # --reference python/test/resource/yuv/src01_hrc00_576x324.yuv
@@ -109,6 +109,18 @@ class ExternalProgramCaller(object):
         # --output /dev/stdout --xml --no_prediction --feature float_motion
 
         pixel_format, bitdepth = convert_pixel_format_ffmpeg2vmafrc(yuv_type)
+
+        if options is None:
+            feature_str = feature
+        else:
+            assert isinstance(options, dict)
+            options_lst = []
+            for k, v in options.items():
+                if isinstance(v, bool):
+                    v = str(v).lower()
+                options_lst.append(f'{k}={v}')
+            options_str = ':'.join(options_lst)
+            feature_str = '='.join([feature, options_str])
 
         cmd = [
             required(ExternalProgram.vmafrc),
@@ -121,7 +133,7 @@ class ExternalProgramCaller(object):
             '--output', log_file_path,
             '--xml',
             '--no_prediction',
-            '--feature', feature,
+            '--feature', feature_str,
         ]
 
         if logger:

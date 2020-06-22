@@ -524,14 +524,18 @@ class SsimFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
     TYPE = "SSIM_feature"
     # VERSION = "1.0"
     # VERSION = "1.1"  # fix OPT_RANGE_PIXEL_OFFSET = 0
-    VERSION = "1.2"  # call vmaf_rc to replace standalone ssim exec
+    # VERSION = "1.2"  # call vmaf_rc to replace standalone ssim exec
+    VERSION = "1.3"  # add ssim_l, ssim_c, ssim_s as optional output
 
     ATOM_FEATURES = ['ssim',
-                     # 'ssim_l', 'ssim_c', 'ssim_s',
+                     'ssim_l', 'ssim_c', 'ssim_s',
                      ]
 
     ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
         'ssim': 'float_ssim',
+        'ssim_l': 'float_ssim_l',
+        'ssim_c': 'float_ssim_c',
+        'ssim_s': 'float_ssim_s',
     }
 
     def _generate_result(self, asset):
@@ -548,7 +552,8 @@ class SsimFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc_single_feature('float_ssim', yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
+        ExternalProgramCaller.call_vmafrc_single_feature('float_ssim', yuv_type, ref_path, dis_path, w, h,
+                                                         log_file_path, logger, options={'enable_lcs': True})
 
 
 class MsSsimFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
@@ -556,18 +561,37 @@ class MsSsimFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
     TYPE = "MS_SSIM_feature"
     # VERSION = "1.0"
     # VERSION = "1.1"  # fix OPT_RANGE_PIXEL_OFFSET = 0
-    VERSION = "1.2"  # call vmaf_rc to replace standalone ms_ssim exec
+    # VERSION = "1.2"  # call vmaf_rc to replace standalone ms_ssim exec
+    VERSION = "1.3"  # add ssim_l_scalex, ssim_c_scalex, ssim_s_scalex as optional output
 
     ATOM_FEATURES = ['ms_ssim',
-                     # 'ms_ssim_l_scale0', 'ms_ssim_c_scale0', 'ms_ssim_s_scale0',
-                     # 'ms_ssim_l_scale1', 'ms_ssim_c_scale1', 'ms_ssim_s_scale1',
-                     # 'ms_ssim_l_scale2', 'ms_ssim_c_scale2', 'ms_ssim_s_scale2',
-                     # 'ms_ssim_l_scale3', 'ms_ssim_c_scale3', 'ms_ssim_s_scale3',
-                     # 'ms_ssim_l_scale4', 'ms_ssim_c_scale4', 'ms_ssim_s_scale4',
+                     'ms_ssim_l_scale0', 'ms_ssim_c_scale0', 'ms_ssim_s_scale0',
+                     'ms_ssim_l_scale1', 'ms_ssim_c_scale1', 'ms_ssim_s_scale1',
+                     'ms_ssim_l_scale2', 'ms_ssim_c_scale2', 'ms_ssim_s_scale2',
+                     'ms_ssim_l_scale3', 'ms_ssim_c_scale3', 'ms_ssim_s_scale3',
+                     'ms_ssim_l_scale4', 'ms_ssim_c_scale4', 'ms_ssim_s_scale4',
                      ]
 
     ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
         'ms_ssim': 'float_ms_ssim',
+
+        'ms_ssim_l_scale0': 'float_ms_ssim_l_scale0',
+        'ms_ssim_l_scale1': 'float_ms_ssim_l_scale1',
+        'ms_ssim_l_scale2': 'float_ms_ssim_l_scale2',
+        'ms_ssim_l_scale3': 'float_ms_ssim_l_scale3',
+        'ms_ssim_l_scale4': 'float_ms_ssim_l_scale4',
+
+        'ms_ssim_c_scale0': 'float_ms_ssim_c_scale0',
+        'ms_ssim_c_scale1': 'float_ms_ssim_c_scale1',
+        'ms_ssim_c_scale2': 'float_ms_ssim_c_scale2',
+        'ms_ssim_c_scale3': 'float_ms_ssim_c_scale3',
+        'ms_ssim_c_scale4': 'float_ms_ssim_c_scale4',
+
+        'ms_ssim_s_scale0': 'float_ms_ssim_s_scale0',
+        'ms_ssim_s_scale1': 'float_ms_ssim_s_scale1',
+        'ms_ssim_s_scale2': 'float_ms_ssim_s_scale2',
+        'ms_ssim_s_scale3': 'float_ms_ssim_s_scale3',
+        'ms_ssim_s_scale4': 'float_ms_ssim_s_scale4',
     }
 
     def _generate_result(self, asset):
@@ -584,6 +608,7 @@ class MsSsimFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc_single_feature('float_ms_ssim', yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
+        ExternalProgramCaller.call_vmafrc_single_feature('float_ms_ssim', yuv_type, ref_path, dis_path, w, h,
+                                                         log_file_path, logger, options={'enable_lcs': True})
 
 

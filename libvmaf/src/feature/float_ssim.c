@@ -17,6 +17,7 @@
  */
 
 #include <errno.h>
+#include <stddef.h>
 
 #include "feature_collector.h"
 #include "feature_extractor.h"
@@ -29,7 +30,19 @@ typedef struct SsimState {
     size_t float_stride;
     float *ref;
     float *dist;
+    bool enable_lcs;
 } SsimState;
+
+static const VmafOption options[] = {
+    {
+        .name = "enable_lcs",
+        .help = "enable luminance, contrast and structure intermediate output",
+        .offset = offsetof(SsimState, enable_lcs),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
+    { NULL }
+};
 
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
@@ -66,6 +79,17 @@ static int extract(VmafFeatureExtractor *fex,
     err = vmaf_feature_collector_append(feature_collector, "float_ssim",
                                         score, index);
     if (err) return err;
+    if (s->enable_lcs) {
+        err = vmaf_feature_collector_append(feature_collector, "float_ssim_l",
+                                            l_score, index);
+        if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector, "float_ssim_c",
+                                            c_score, index);
+        if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector, "float_ssim_s",
+                                            s_score, index);
+        if (err) return err;
+    }
     return 0;
 }
 
@@ -86,6 +110,7 @@ VmafFeatureExtractor vmaf_fex_float_ssim = {
     .name = "float_ssim",
     .init = init,
     .extract = extract,
+    .options = options,
     .close = close,
     .priv_size = sizeof(SsimState),
     .provided_features = provided_features,

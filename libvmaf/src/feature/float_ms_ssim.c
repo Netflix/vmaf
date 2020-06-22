@@ -17,6 +17,7 @@
  */
 
 #include <errno.h>
+#include <stddef.h>
 
 #include "feature_collector.h"
 #include "feature_extractor.h"
@@ -29,7 +30,19 @@ typedef struct MsSsimState {
     size_t float_stride;
     float *ref;
     float *dist;
+    bool enable_lcs;
 } MsSsimState;
+
+static const VmafOption options[] = {
+        {
+                .name = "enable_lcs",
+                .help = "enable luminance, contrast and structure intermediate output",
+                .offset = offsetof(MsSsimState, enable_lcs),
+                .type = VMAF_OPT_TYPE_BOOL,
+                .default_val.b = false,
+        },
+        { NULL }
+};
 
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
@@ -67,6 +80,25 @@ static int extract(VmafFeatureExtractor *fex,
     err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim",
                                         score, index);
     if (err) return err;
+    if (s->enable_lcs) {
+        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_l_scale0", l_scores[0], index); if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_l_scale1", l_scores[1], index); if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_l_scale2", l_scores[2], index); if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_l_scale3", l_scores[3], index); if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_l_scale4", l_scores[4], index); if (err) return err;
+
+        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_c_scale0", c_scores[0], index); if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_c_scale1", c_scores[1], index); if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_c_scale2", c_scores[2], index); if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_c_scale3", c_scores[3], index); if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_c_scale4", c_scores[4], index); if (err) return err;
+
+        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_s_scale0", s_scores[0], index); if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_s_scale1", s_scores[1], index); if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_s_scale2", s_scores[2], index); if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_s_scale3", s_scores[3], index); if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_s_scale4", s_scores[4], index); if (err) return err;
+    }
     return 0;
 }
 
@@ -87,6 +119,7 @@ VmafFeatureExtractor vmaf_fex_float_ms_ssim = {
     .name = "float_ms_ssim",
     .init = init,
     .extract = extract,
+    .options = options,
     .close = close,
     .priv_size = sizeof(MsSsimState),
     .provided_features = provided_features,
