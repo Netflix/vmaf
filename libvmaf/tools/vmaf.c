@@ -211,10 +211,11 @@ int main(int argc, char *argv[])
     }
 
     for (unsigned i = 0; i < c.feature_cnt; i++) {
-        err = vmaf_use_feature(vmaf, c.feature[i]);
+        err = vmaf_use_feature(vmaf, c.feature_cfg[i].name,
+                               c.feature_cfg[i].opts_dict);
         if (err) {
             fprintf(stderr, "problem loading feature extractor: %s\n",
-                    c.feature[i]);
+                    c.feature_cfg[i].name);
             return -1;
         }
     }
