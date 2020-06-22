@@ -201,6 +201,8 @@ int vmaf_feature_extractor_context_destroy(VmafFeatureExtractorContext *fex_ctx)
             free(fex_ctx->fex->priv);
         free(fex_ctx->fex);
     }
+    if (fex_ctx->opts_dict)
+        vmaf_dictionary_free(&fex_ctx->opts_dict);
     free(fex_ctx);
     return 0;
 }
@@ -250,6 +252,7 @@ free_p:
 
 int vmaf_fex_ctx_pool_aquire(VmafFeatureExtractorContextPool *pool,
                              VmafFeatureExtractor *fex,
+                             VmafDictionary *opts_dict,
                              VmafFeatureExtractorContext **fex_ctx)
 {
     if (!pool) return -EINVAL;
@@ -277,7 +280,12 @@ int vmaf_fex_ctx_pool_aquire(VmafFeatureExtractorContextPool *pool,
     for (unsigned i = 0; i < atomic_load(&entry->capacity); i++) {
         VmafFeatureExtractorContext *f = entry->ctx_list[i].fex_ctx;
         if (!f) {
-            err = vmaf_feature_extractor_context_create(&f, entry->fex, NULL);
+            VmafDictionary *d = NULL;
+            if (opts_dict) {
+                err = vmaf_dictionary_copy(&opts_dict, &d);
+                if (err) return err;
+            }
+            err = vmaf_feature_extractor_context_create(&f, entry->fex, d);
             if (err) goto unlock;
         }
         if (!entry->ctx_list[i].in_use) {

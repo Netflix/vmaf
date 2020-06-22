@@ -23,7 +23,8 @@
 #include <string.h>
 #include <time.h>
 
-#include <libvmaf/libvmaf.rc.h>
+#include "libvmaf/libvmaf.rc.h"
+#include "libvmaf/feature.h"
 
 #include "feature/common/cpu.h"
 #include "feature/feature_extractor.h"
@@ -119,7 +120,8 @@ int vmaf_import_feature_score(VmafContext *vmaf, char *feature_name,
                                          value, index);
 }
 
-int vmaf_use_feature(VmafContext *vmaf, const char *feature_name)
+int vmaf_use_feature(VmafContext *vmaf, const char *feature_name,
+                     VmafFeatureDictionary *opts_dict)
 {
     if (!vmaf) return -EINVAL;
     if (!feature_name) return -EINVAL;
@@ -130,8 +132,16 @@ int vmaf_use_feature(VmafContext *vmaf, const char *feature_name)
         vmaf_get_feature_extractor_by_name(feature_name);
     if (!fex) return -EINVAL;
 
+    VmafDictionary *d = NULL;
+    if (opts_dict) {
+        err = vmaf_dictionary_copy(&opts_dict, &d);
+        if (err) return err;
+        err = vmaf_dictionary_free(&opts_dict);
+        if (err) return err;
+    }
+
     VmafFeatureExtractorContext *fex_ctx;
-    err = vmaf_feature_extractor_context_create(&fex_ctx, fex, NULL);
+    err = vmaf_feature_extractor_context_create(&fex_ctx, fex, d);
     if (err) return err;
 
     RegisteredFeatureExtractors *rfe = &(vmaf->registered_feature_extractors);
@@ -201,6 +211,8 @@ static int threaded_read_pictures(VmafContext *vmaf, VmafPicture *ref,
     for (unsigned i = 0; i < vmaf->registered_feature_extractors.cnt; i++) {
         VmafFeatureExtractor *fex =
             vmaf->registered_feature_extractors.fex_ctx[i]->fex;
+        VmafDictionary *opts_dict =
+            vmaf->registered_feature_extractors.fex_ctx[i]->opts_dict;
 
         if ((vmaf->cfg.n_subsample > 1) && (index % vmaf->cfg.n_subsample) &&
             !(fex->flags & VMAF_FEATURE_EXTRACTOR_TEMPORAL))
@@ -209,7 +221,8 @@ static int threaded_read_pictures(VmafContext *vmaf, VmafPicture *ref,
         }
 
         VmafFeatureExtractorContext *fex_ctx;
-        err = vmaf_fex_ctx_pool_aquire(vmaf->fex_ctx_pool, fex, &fex_ctx);
+        err = vmaf_fex_ctx_pool_aquire(vmaf->fex_ctx_pool, fex, opts_dict,
+                                       &fex_ctx);
         if (err) return err;
 
         VmafPicture pic_a, pic_b;

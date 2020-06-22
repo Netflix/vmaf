@@ -130,6 +130,7 @@ int vmaf_fex_ctx_pool_create(VmafFeatureExtractorContextPool **pool,
 
 int vmaf_fex_ctx_pool_aquire(VmafFeatureExtractorContextPool *pool,
                              VmafFeatureExtractor *fex,
+                             VmafDictionary *opts_dict,
                              VmafFeatureExtractorContext **fex_ctx);
 
 int vmaf_fex_ctx_pool_release(VmafFeatureExtractorContextPool *pool,

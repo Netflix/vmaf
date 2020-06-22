@@ -87,8 +87,17 @@ static char *test_vmaf_dictionary()
               !strcmp(entry->key, pre_existing_key) &&
               !strcmp(entry->val, new_value));
 
+    VmafDictionary *new_dict = NULL;
+    err = vmaf_dictionary_copy(&dict, &new_dict);
+    mu_assert("problem during vmaf_dictionary_copy", !err);
+    mu_assert("new_dict should no longer be NULL", new_dict);
+    mu_assert("new_dict should have a matching cnt",
+              dict->cnt == new_dict->cnt);
+
     vmaf_dictionary_free(&dict);
     mu_assert("dictionary should be NULL after free", !dict);
+    vmaf_dictionary_free(&new_dict);
+    mu_assert("dictionary should be NULL after free", !new_dict);
 
     return NULL;
 }
