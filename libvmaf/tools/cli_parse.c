@@ -7,7 +7,9 @@
 
 #include "cli_parse.h"
 
-#include <libvmaf/libvmaf.rc.h>
+#include "libvmaf/feature.h"
+#include "libvmaf/libvmaf.rc.h"
+#include "libvmaf/model.h"
 
 static const char short_opts[] = "r:d:w:h:p:b:m:o:xjet:f:i:s:c:nv";
 
@@ -170,6 +172,31 @@ static VmafModelConfig parse_model_config(const char *const optarg,
     return cfg;
 }
 
+static CLIFeatureConfig parse_feature_config(const char *const optarg,
+                                             const char *const app)
+{
+    char *optarg_copy = (char *)optarg;
+    CLIFeatureConfig feature_cfg = {
+        .name = strsep(&optarg_copy, "="),
+        .opts_dict = NULL,
+    };
+
+    char *key_val;
+    while ((key_val = strsep(&optarg_copy, ":")) != NULL) {
+        const char *key = strsep(&key_val, "=");
+        const char *val = strsep(&key_val, "=");
+        if (!val) {
+            usage(app, "Problem parsing feature \"%s\","
+                       " bad option string \"%s\".\n", feature_cfg.name, key);
+        }
+        int err = vmaf_feature_dictionary_set(&feature_cfg.opts_dict, key, val);
+        if (err)
+            usage(app, "Problem parsing feature \"%s\"\n", optarg);
+    }
+
+    return feature_cfg;
+}
+
 void cli_parse(const int argc, char *const *const argv,
                CLISettings *const settings)
 {
@@ -228,7 +255,8 @@ void cli_parse(const int argc, char *const *const argv,
                 usage(argv[0], "A maximum of %d features is supported\n",
                       CLI_SETTINGS_STATIC_ARRAY_LEN);
             }
-            settings->feature[settings->feature_cnt++] = optarg;
+            settings->feature_cfg[settings->feature_cnt++] =
+                parse_feature_config(optarg, argv[0]);
             break;
         case 'i':
             if (settings->import_cnt == CLI_SETTINGS_STATIC_ARRAY_LEN) {

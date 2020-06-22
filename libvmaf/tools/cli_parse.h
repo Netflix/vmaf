@@ -4,10 +4,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <libvmaf/libvmaf.rc.h>
-#include <libvmaf/model.h>
+#include "libvmaf/libvmaf.rc.h"
+#include "libvmaf/model.h"
+#include "libvmaf/feature.h"
 
 #define CLI_SETTINGS_STATIC_ARRAY_LEN 256
+
+typedef struct {
+    const char *name;
+    VmafFeatureDictionary *opts_dict;
+} CLIFeatureConfig;
 
 typedef struct {
     char *path_ref, *path_dist;
@@ -19,7 +25,7 @@ typedef struct {
     enum VmafOutputFormat output_fmt;
     VmafModelConfig model_config[CLI_SETTINGS_STATIC_ARRAY_LEN];
     unsigned model_cnt;
-    char *feature[CLI_SETTINGS_STATIC_ARRAY_LEN];
+    CLIFeatureConfig feature_cfg[CLI_SETTINGS_STATIC_ARRAY_LEN];
     unsigned feature_cnt;
     char *import_path[CLI_SETTINGS_STATIC_ARRAY_LEN];
     unsigned import_cnt;
