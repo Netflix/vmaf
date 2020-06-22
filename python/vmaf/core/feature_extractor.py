@@ -409,7 +409,7 @@ class PsnrFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_psnr(yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
+        ExternalProgramCaller.call_vmafrc_single_feature('float_psnr', yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
 
 
 class MomentFeatureExtractor(FeatureExtractor):
@@ -548,7 +548,7 @@ class SsimFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_ssim(yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
+        ExternalProgramCaller.call_vmafrc_single_feature('float_ssim', yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
 
 
 class MsSsimFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
@@ -584,6 +584,6 @@ class MsSsimFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_ms_ssim(yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
+        ExternalProgramCaller.call_vmafrc_single_feature('float_ms_ssim', yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
 
 

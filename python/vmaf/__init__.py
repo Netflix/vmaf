@@ -99,21 +99,6 @@ class ExternalProgramCaller(object):
     Caller of ExternalProgram.
     """
 
-    @classmethod
-    def call_psnr(cls, yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None):
-
-        cls.call_vmafrc_single_feature('float_psnr', yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
-
-    @classmethod
-    def call_ssim(cls, yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None):
-
-        cls.call_vmafrc_single_feature('float_ssim', yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
-
-    @classmethod
-    def call_ms_ssim(cls, yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None):
-
-        cls.call_vmafrc_single_feature('float_ms_ssim', yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
-
     @staticmethod
     def call_vmafrc_single_feature(feature, yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None):
 
