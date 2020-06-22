@@ -24,6 +24,7 @@
 
 #include "libvmaf/model.h"
 #include "libvmaf/picture.h"
+#include "libvmaf/feature.h"
 
 enum VmafLogLevel {
     VMAF_LOG_LEVEL_NONE = 0,
@@ -94,10 +95,14 @@ int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model);
  *
  * @param feature_name Name of feature.
  *
+ * @param opts_dict    Feature extractor options set via
+ *                     `vmaf_feature_dictionary_set()`. If no special options
+ *                     are required this parameter can be set to NULL.
  *
  * @return 0 on success, or < 0 (a negative errno code) on error.
  */
-int vmaf_use_feature(VmafContext *vmaf, const char *feature_name);
+int vmaf_use_feature(VmafContext *vmaf, const char *feature_name,
+                     VmafFeatureDictionary *opts_dict);
 
 /**
  * Import an external feature score.

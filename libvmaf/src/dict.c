@@ -1,7 +1,9 @@
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "dict.h"
+#include "libvmaf/feature.h"
 
 typedef struct VmafDictionary {
     VmafDictionaryEntry *entry;
@@ -89,6 +91,21 @@ fail:
     return -ENOMEM;
 }
 
+int vmaf_dictionary_copy(VmafDictionary **src, VmafDictionary **dst)
+{
+    if (!src) return -EINVAL;
+    if (!(*src)) return -EINVAL;
+    if (!dst) return -EINVAL;
+
+    int err = 0;
+
+    VmafDictionary *d = *src;
+    for (unsigned i = 0; i < d->cnt; i++)
+        err |= vmaf_dictionary_set(dst, d->entry[i].key, d->entry[i].val, 0);
+
+    return err;
+}
+
 int vmaf_dictionary_free(VmafDictionary **dict)
 {
     if (!dict) return -EINVAL;
@@ -104,4 +121,9 @@ int vmaf_dictionary_free(VmafDictionary **dict)
     *dict = NULL;
 
     return 0;
+}
+
+int vmaf_feature_dictionary_set(VmafFeatureDictionary **dict, char *key, char *val)
+{
+    return vmaf_dictionary_set((VmafDictionary**)dict, key, val, 0);
 }

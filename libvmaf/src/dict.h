@@ -37,6 +37,8 @@ int vmaf_dictionary_set(VmafDictionary **dict, const char *key, const char *val,
 const VmafDictionaryEntry *vmaf_dictionary_get(VmafDictionary **dict,
                                                const char *key, uint64_t flags);
 
+int vmaf_dictionary_copy(VmafDictionary **src, VmafDictionary **dst);
+
 int vmaf_dictionary_free(VmafDictionary **dict);
 
 #endif /* __VMAF_SRC_DICT_H__ */
