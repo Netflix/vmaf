@@ -101,7 +101,41 @@ class FeatureExtractor(Executor):
         return feature_result
 
 
-class VmafFeatureExtractor(FeatureExtractor):
+class VmafrcFeatureExtractorMixin(object):
+
+    @override(FeatureExtractor)
+    def _get_feature_scores(self, asset):
+
+        assert hasattr(self, '_get_log_file_path')
+        assert hasattr(self, 'ATOM_FEATURES')
+        assert hasattr(self, 'ATOM_FEATURES_TO_VMAFRC_KEY_DICT')
+        assert hasattr(self, 'get_scores_key')
+
+        log_file_path = self._get_log_file_path(asset)
+        tree = ElementTree.parse(log_file_path)
+        root = tree.getroot()
+
+        feature_scores = [[] for _ in self.ATOM_FEATURES]
+
+        for frame in root.findall('frames/frame'):
+            for i_feature, feature in enumerate(self.ATOM_FEATURES):
+                try:
+                    feature_scores[i_feature].append(float(frame.attrib[self.ATOM_FEATURES_TO_VMAFRC_KEY_DICT[feature]]))
+                except KeyError:
+                    pass  # some features may be missing
+
+        for i_feature, feature in enumerate(self.ATOM_FEATURES):
+            assert len(feature_scores[i_feature]) != 0
+            assert len(feature_scores[i_feature]) == len(feature_scores[0])
+
+        feature_result = {}
+        for i_feature, feature in enumerate(self.ATOM_FEATURES):
+            feature_result[self.get_scores_key(feature)] = feature_scores[i_feature]
+
+        return feature_result
+
+
+class VmafFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "VMAF_feature"
 
@@ -113,7 +147,8 @@ class VmafFeatureExtractor(FeatureExtractor):
     # VERSION = '0.2.3'  # AVX for VMAF convolution; update adm features by folding noise floor into per coef
     # VERSION = '0.2.4'  # Fix a bug in adm feature passing scale into dwt_quant_step
     # VERSION = '0.2.4b'  # Modify by adding ADM noise floor outside cube root; add derived feature motion2
-    VERSION = '0.2.4c'  # Modify by moving motion2 to c code
+    # VERSION = '0.2.4c'  # Modify by moving motion2 to c code
+    VERSION = '0.2.5'  # replace executable vmaf_feature with vmaf_rc
 
     ATOM_FEATURES = ['vif', 'adm', 'ansnr', 'motion', 'motion2',
                      'vif_num', 'vif_den', 'adm_num', 'adm_den', 'anpsnr',
@@ -126,6 +161,10 @@ class VmafFeatureExtractor(FeatureExtractor):
                      'adm_num_scale2', 'adm_den_scale2',
                      'adm_num_scale3', 'adm_den_scale3',
                      ]
+
+    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = dict(zip(ATOM_FEATURES, ATOM_FEATURES))
+    ATOM_FEATURES_TO_VMAFRC_KEY_DICT['ansnr'] = 'float_ansnr'
+    ATOM_FEATURES_TO_VMAFRC_KEY_DICT['anpsnr'] = 'float_anpsnr'
 
     DERIVED_ATOM_FEATURES = ['vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
                              'vif2', 'adm2', 'adm3',
@@ -149,7 +188,14 @@ class VmafFeatureExtractor(FeatureExtractor):
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_vmaf_feature(yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
+        ExternalProgramCaller.call_vmafrc_multi_features(
+            ['float_adm', 'float_vif', 'float_motion', 'float_ansnr'],
+            yuv_type, ref_path, dis_path, w, h, log_file_path, logger, options={
+                'float_adm': {'debug': True},
+                'float_vif': {'debug': True},
+                'float_motion': {'debug': True},
+            }
+        )
 
     @classmethod
     @override(Executor)
@@ -347,40 +393,6 @@ class VifFrameDifferenceFeatureExtractor(FeatureExtractor):
             assert cls.get_scores_key(feature) in result.result_dict
 
         return result
-
-
-class VmafrcFeatureExtractorMixin(object):
-
-    @override(FeatureExtractor)
-    def _get_feature_scores(self, asset):
-
-        assert hasattr(self, '_get_log_file_path')
-        assert hasattr(self, 'ATOM_FEATURES')
-        assert hasattr(self, 'ATOM_FEATURES_TO_VMAFRC_KEY_DICT')
-        assert hasattr(self, 'get_scores_key')
-
-        log_file_path = self._get_log_file_path(asset)
-        tree = ElementTree.parse(log_file_path)
-        root = tree.getroot()
-
-        feature_scores = [[] for _ in self.ATOM_FEATURES]
-
-        for frame in root.findall('frames/frame'):
-            for i_feature, feature in enumerate(self.ATOM_FEATURES):
-                try:
-                    feature_scores[i_feature].append(float(frame.attrib[self.ATOM_FEATURES_TO_VMAFRC_KEY_DICT[feature]]))
-                except KeyError:
-                    pass  # some features may be missing
-
-        for i_feature, feature in enumerate(self.ATOM_FEATURES):
-            assert len(feature_scores[i_feature]) != 0
-            assert len(feature_scores[i_feature]) == len(feature_scores[0])
-
-        feature_result = {}
-        for i_feature, feature in enumerate(self.ATOM_FEATURES):
-            feature_result[self.get_scores_key(feature)] = feature_scores[i_feature]
-
-        return feature_result
 
 
 class PsnrFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):

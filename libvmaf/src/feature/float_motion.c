@@ -17,8 +17,8 @@
  */
 
 #include <errno.h>
-#include <math.h>
 #include <string.h>
+#include <stddef.h>
 
 #include "common/convolution.h"
 #include "feature_collector.h"
@@ -36,7 +36,19 @@ typedef struct MotionState {
     float *blur[3];
     unsigned index;
     double score;
+    bool debug;
 } MotionState;
+
+static const VmafOption options[] = {
+        {
+                .name = "debug",
+                .help = "debug mode: enable additional output",
+                .offset = offsetof(MotionState, debug),
+                .type = VMAF_OPT_TYPE_BOOL,
+                .default_val.b = false,
+        },
+        { NULL }
+};
 
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
@@ -93,16 +105,29 @@ static int extract(VmafFeatureExtractor *fex,
                         s->float_stride / sizeof(float),
                         s->float_stride / sizeof(float));
 
-    if (index == 0)
-        return vmaf_feature_collector_append(feature_collector,
+    if (index == 0) {
+        err = vmaf_feature_collector_append(feature_collector,
                                              "'VMAF_feature_motion2_score'",
                                              0., index);
+        if (s->debug) {
+            err |= vmaf_feature_collector_append(feature_collector,
+                                                "motion",
+                                                0., index);
+        }
+        return err;
+    }
 
     double score;
     err = compute_motion(s->blur[blur_idx_2], s->blur[blur_idx_0],
                          ref_pic->w[0], ref_pic->h[0],
                          s->float_stride, s->float_stride, &score);
     if (err) return err;
+    if (s->debug) {
+        err = vmaf_feature_collector_append(feature_collector,
+                                            "motion",
+                                            score, index);
+        if (err) return err;
+    }
     s->score = score;
 
     if (index == 1)
@@ -143,6 +168,7 @@ VmafFeatureExtractor vmaf_fex_float_motion = {
     .name = "float_motion",
     .init = init,
     .extract = extract,
+    .options = options,
     .flush = flush,
     .close = close,
     .priv_size = sizeof(MotionState),

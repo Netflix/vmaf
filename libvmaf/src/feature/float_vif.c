@@ -17,8 +17,8 @@
  */
 
 #include <errno.h>
-#include <math.h>
 #include <string.h>
+#include <stddef.h>
 
 #include "feature_collector.h"
 #include "feature_extractor.h"
@@ -32,7 +32,19 @@ typedef struct VifState {
     size_t float_stride;
     float *ref;
     float *dist;
+    bool debug;
 } VifState;
+
+static const VmafOption options[] = {
+        {
+                .name = "debug",
+                .help = "debug mode: enable additional output",
+                .offset = offsetof(VifState, debug),
+                .type = VMAF_OPT_TYPE_BOOL,
+                .default_val.b = false,
+        },
+        { NULL }
+};
 
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
@@ -86,6 +98,30 @@ static int extract(VmafFeatureExtractor *fex,
                                         scores[6] / scores[7], index);
     if (err) return err;
 
+    if (s->debug) {
+        err = vmaf_feature_collector_append(feature_collector,"vif", score, index);
+        if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector,"vif_num", score_num, index);
+        if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector,"vif_den", score_den, index);
+        if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector,"vif_num_scale0", scores[0], index);
+        if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector,"vif_den_scale0", scores[1], index);
+        if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector,"vif_num_scale1", scores[2], index);
+        if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector,"vif_den_scale1", scores[3], index);
+        if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector,"vif_num_scale2", scores[4], index);
+        if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector,"vif_den_scale2", scores[5], index);
+        if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector,"vif_num_scale3", scores[6], index);
+        if (err) return err;
+        err = vmaf_feature_collector_append(feature_collector,"vif_den_scale3", scores[7], index);
+        if (err) return err;
+    }
     return 0;
 }
 
@@ -107,6 +143,7 @@ VmafFeatureExtractor vmaf_fex_float_vif = {
     .name = "float_vif",
     .init = init,
     .extract = extract,
+    .options = options,
     .close = close,
     .priv_size = sizeof(VifState),
     .provided_features = provided_features,
