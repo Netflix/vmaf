@@ -193,6 +193,7 @@ class VmafFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
             yuv_type, ref_path, dis_path, w, h, log_file_path, logger, options={
                 'float_adm': {'debug': True},
                 'float_vif': {'debug': True},
+                'float_motion': {'debug': True},
             }
         )
 
