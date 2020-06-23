@@ -17,7 +17,6 @@
  */
 
 #include <errno.h>
-#include <math.h>
 #include <string.h>
 
 #include "common/convolution.h"
