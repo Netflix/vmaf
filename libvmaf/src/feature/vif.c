@@ -290,104 +290,104 @@ fail_or_end:
     return ret;
 }
 
-int vif(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt)
-{
-    double score = 0;
-    double scores[4 * 2];
-    double score_num = 0;
-    double score_den = 0;
-    float *ref_buf = 0;
-    float *dis_buf = 0;
-    float *temp_buf = 0;
-    size_t data_sz;
-    int stride;
-    int ret = 1;
-
-    if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float))
-    {
-        goto fail_or_end;
-    }
-
-    stride = ALIGN_CEIL(w * sizeof(float));
-
-    if ((size_t)h > SIZE_MAX / stride)
-    {
-        goto fail_or_end;
-    }
-
-    data_sz = (size_t)stride * h;
-
-    if (!(ref_buf = aligned_malloc(data_sz, MAX_ALIGN)))
-    {
-        printf("error: aligned_malloc failed for ref_buf.\n");
-        fflush(stdout);
-        goto fail_or_end;
-    }
-    if (!(dis_buf = aligned_malloc(data_sz, MAX_ALIGN)))
-    {
-        printf("error: aligned_malloc failed for dis_buf.\n");
-        fflush(stdout);
-        goto fail_or_end;
-    }
-    if (!(temp_buf = aligned_malloc(data_sz * 2, MAX_ALIGN)))
-    {
-        printf("error: aligned_malloc failed for temp_buf.\n");
-        fflush(stdout);
-        goto fail_or_end;
-    }
-
-    int frm_idx = 0;
-    while (1)
-    {
-        ret = read_frame(ref_buf, dis_buf, temp_buf, stride, user_data);
-
-        if(ret == 1){
-            goto fail_or_end;
-        }
-        if (ret == 2)
-        {
-            break;
-        }
-
-        // ===============================================================
-        // offset pixel by OPT_RANGE_PIXEL_OFFSET
-        // ===============================================================
-        offset_image(ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
-        offset_image(dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
-
-        // compute
-        if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores)))
-        {
-            printf("error: compute_vif failed.\n");
-            fflush(stdout);
-            goto fail_or_end;
-        }
-
-        // print
-        printf("vif: %d %f\n", frm_idx, score);
-        fflush(stdout);
-        printf("vif_num: %d %f\n", frm_idx, score_num);
-        fflush(stdout);
-        printf("vif_den: %d %f\n", frm_idx, score_den);
-        fflush(stdout);
-        for(int scale = 0; scale < 4; scale++){
-            printf("vif_num_scale%d: %d %f\n", scale, frm_idx, scores[2 * scale]);
-            printf("vif_den_scale%d: %d %f\n", scale, frm_idx, scores[2 * scale + 1]);
-        }
-
-        frm_idx++;
-    }
-
-    ret = 0;
-
-fail_or_end:
-
-    aligned_free(ref_buf);
-    aligned_free(dis_buf);
-    aligned_free(temp_buf);
-
-    return ret;
-}
+//int vif(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt)
+//{
+//    double score = 0;
+//    double scores[4 * 2];
+//    double score_num = 0;
+//    double score_den = 0;
+//    float *ref_buf = 0;
+//    float *dis_buf = 0;
+//    float *temp_buf = 0;
+//    size_t data_sz;
+//    int stride;
+//    int ret = 1;
+//
+//    if (w <= 0 || h <= 0 || (size_t)w > ALIGN_FLOOR(INT_MAX) / sizeof(float))
+//    {
+//        goto fail_or_end;
+//    }
+//
+//    stride = ALIGN_CEIL(w * sizeof(float));
+//
+//    if ((size_t)h > SIZE_MAX / stride)
+//    {
+//        goto fail_or_end;
+//    }
+//
+//    data_sz = (size_t)stride * h;
+//
+//    if (!(ref_buf = aligned_malloc(data_sz, MAX_ALIGN)))
+//    {
+//        printf("error: aligned_malloc failed for ref_buf.\n");
+//        fflush(stdout);
+//        goto fail_or_end;
+//    }
+//    if (!(dis_buf = aligned_malloc(data_sz, MAX_ALIGN)))
+//    {
+//        printf("error: aligned_malloc failed for dis_buf.\n");
+//        fflush(stdout);
+//        goto fail_or_end;
+//    }
+//    if (!(temp_buf = aligned_malloc(data_sz * 2, MAX_ALIGN)))
+//    {
+//        printf("error: aligned_malloc failed for temp_buf.\n");
+//        fflush(stdout);
+//        goto fail_or_end;
+//    }
+//
+//    int frm_idx = 0;
+//    while (1)
+//    {
+//        ret = read_frame(ref_buf, dis_buf, temp_buf, stride, user_data);
+//
+//        if(ret == 1){
+//            goto fail_or_end;
+//        }
+//        if (ret == 2)
+//        {
+//            break;
+//        }
+//
+//        // ===============================================================
+//        // offset pixel by OPT_RANGE_PIXEL_OFFSET
+//        // ===============================================================
+//        offset_image(ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+//        offset_image(dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+//
+//        // compute
+//        if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores)))
+//        {
+//            printf("error: compute_vif failed.\n");
+//            fflush(stdout);
+//            goto fail_or_end;
+//        }
+//
+//        // print
+//        printf("vif: %d %f\n", frm_idx, score);
+//        fflush(stdout);
+//        printf("vif_num: %d %f\n", frm_idx, score_num);
+//        fflush(stdout);
+//        printf("vif_den: %d %f\n", frm_idx, score_den);
+//        fflush(stdout);
+//        for(int scale = 0; scale < 4; scale++){
+//            printf("vif_num_scale%d: %d %f\n", scale, frm_idx, scores[2 * scale]);
+//            printf("vif_den_scale%d: %d %f\n", scale, frm_idx, scores[2 * scale + 1]);
+//        }
+//
+//        frm_idx++;
+//    }
+//
+//    ret = 0;
+//
+//fail_or_end:
+//
+//    aligned_free(ref_buf);
+//    aligned_free(dis_buf);
+//    aligned_free(temp_buf);
+//
+//    return ret;
+//}
 
 int vifdiff(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt)
 {
