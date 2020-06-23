@@ -93,15 +93,24 @@ static int extract(VmafFeatureExtractor *fex,
                         s->float_stride / sizeof(float),
                         s->float_stride / sizeof(float));
 
-    if (index == 0)
-        return vmaf_feature_collector_append(feature_collector,
+    if (index == 0) {
+        err = vmaf_feature_collector_append(feature_collector,
+                                            "'VMAF_feature_motion_score'",
+                                            0., index);
+        err |= vmaf_feature_collector_append(feature_collector,
                                              "'VMAF_feature_motion2_score'",
                                              0., index);
+        return err;
+    }
 
     double score;
     err = compute_motion(s->blur[blur_idx_2], s->blur[blur_idx_0],
                          ref_pic->w[0], ref_pic->h[0],
                          s->float_stride, s->float_stride, &score);
+    if (err) return err;
+    err = vmaf_feature_collector_append(feature_collector,
+                                        "'VMAF_feature_motion_score'",
+                                        score, index);
     if (err) return err;
     s->score = score;
 
@@ -113,6 +122,7 @@ static int extract(VmafFeatureExtractor *fex,
                          ref_pic->w[0], ref_pic->h[0],
                          s->float_stride, s->float_stride, &score2);
     if (err) return err;
+
     score2 = score2 < score ? score2 : score;
     err = vmaf_feature_collector_append(feature_collector,
                                         "'VMAF_feature_motion2_score'",
@@ -135,7 +145,7 @@ static int close(VmafFeatureExtractor *fex)
 }
 
 static const char *provided_features[] = {
-    "'VMAF_feature_motion2_score'",
+    "'VMAF_feature_motion_score'", "'VMAF_feature_motion2_score'",
     NULL
 };
 

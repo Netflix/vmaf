@@ -303,15 +303,24 @@ static int extract(VmafFeatureExtractor *fex,
 
     s->convolution(ref_pic, &s->blur[blur_idx_0], &s->tmp);
 
-    if (index == 0)
-        return vmaf_feature_collector_append(feature_collector,
+    if (index == 0) {
+        err = vmaf_feature_collector_append(feature_collector,
+                                            "'VMAF_feature_motion_integer_score'",
+                                             0., index);
+        err |= vmaf_feature_collector_append(feature_collector,
                                              "'VMAF_feature_motion2_integer_score'",
                                              0., index);
+        return err;
+    }
 
     uint64_t sad;
     s->sad(&s->blur[blur_idx_2], &s->blur[blur_idx_0], &sad);
     double score = s->score =
         normalize_and_scale_sad(sad, ref_pic->h[0], ref_pic->w[0]);
+    err = vmaf_feature_collector_append(feature_collector,
+                                        "'VMAF_feature_motion_integer_score'",
+                                         score, index);
+    if (err) return err;
 
     if (index == 1) return 0;
 
@@ -341,6 +350,7 @@ static int close(VmafFeatureExtractor *fex)
 }
 
 static const char *provided_features[] = {
+    "'VMAF_feature_motion_integer_score'",
     "'VMAF_feature_motion2_integer_score'",
     NULL
 };
