@@ -1,6 +1,6 @@
 import unittest
 
-from testutil import set_default_576_324_videos_for_testing
+from test.testutil import set_default_576_324_videos_for_testing
 
 from vmaf.core.vmafrc_feature_extractor import FloatMotion2FeatureExtractor, IntegerMotion2FeatureExtractor, FloatVifFeatureExtractor, FloatAdmFeatureExtractor, IntegerVifFeatureExtractor, IntegerPsnrFeatureExtractor
 
