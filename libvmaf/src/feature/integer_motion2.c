@@ -346,7 +346,7 @@ static const char *provided_features[] = {
 };
 
 VmafFeatureExtractor vmaf_fex_integer_motion2 = {
-    .name = "motion",
+    .name = "motion2",
     .init = init,
     .extract = extract,
     .flush = flush,
