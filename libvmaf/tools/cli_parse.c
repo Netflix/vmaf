@@ -135,6 +135,19 @@ static enum VmafPixelFormat parse_pix_fmt(const char *const optarg,
     return pix_fmt;
 }
 
+#ifndef HAVE_STRSEP
+char *strsep(char **sp, char *sep)
+{
+    char *p, *s;
+    if (sp == NULL || *sp == NULL || **sp == '\0') return NULL;
+    s = *sp;
+    p = s + strcspn(s, sep);
+    if (*p != '\0') *p++ = '\0';
+    *sp = p;
+    return s;
+}
+#endif
+
 static VmafModelConfig parse_model_config(const char *const optarg,
                                           const char *const app)
 {

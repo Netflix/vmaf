@@ -1,6 +1,7 @@
-libvmaf_dep = declare_dependency(
-    link_with : libvmaf,
-)
+compat_cflags = []
+if cc.has_function('strsep')
+  compat_cflags += '-DHAVE_STRSEP'
+endif
 
 vmafossexec = executable(
     'vmafossexec',
@@ -18,8 +19,7 @@ vmaf_rc = executable(
     ['vmaf.c', 'cli_parse.c', 'y4m_input.c', 'vidinput.c', 'yuv_input.c'],
     include_directories : [libvmaf_inc, vmaf_include],
     dependencies: [stdatomic_dependency],
-    c_args : vmaf_cflags_common,
-    cpp_args : vmaf_cflags_common,
+    c_args : [vmaf_cflags_common, compat_cflags],
     link_with : libvmaf_rc.get_static_lib(),
     install : false,
 )
