@@ -111,7 +111,7 @@ class ExternalProgramCaller(object):
         # --reference python/test/resource/yuv/src01_hrc00_576x324.yuv
         # --distorted python/test/resource/yuv/src01_hrc01_576x324.yuv
         # --width 576 --height 324 --pixel_format 420 --bitdepth 8
-        # --output /dev/stdout --xml --no_prediction --feature float_motion2 --feature integer_motion
+        # --output /dev/stdout --xml --no_prediction --feature float_motion2 --feature integer_motion2
 
         pixel_format, bitdepth = convert_pixel_format_ffmpeg2vmafrc(yuv_type)
 
