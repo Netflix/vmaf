@@ -101,26 +101,19 @@ class ExternalProgramCaller(object):
 
     @staticmethod
     def call_vmafrc_single_feature(feature, yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None, options=None):
+        return ExternalProgramCaller.call_vmafrc_multi_features(
+            [feature], yuv_type, ref_path, dis_path, w, h, log_file_path, logger=logger, options={feature: options})
+
+    @staticmethod
+    def call_vmafrc_multi_features(features, yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None, options=None):
 
         # ./libvmaf/build/tools/vmaf_rc
         # --reference python/test/resource/yuv/src01_hrc00_576x324.yuv
         # --distorted python/test/resource/yuv/src01_hrc01_576x324.yuv
         # --width 576 --height 324 --pixel_format 420 --bitdepth 8
-        # --output /dev/stdout --xml --no_prediction --feature float_motion
+        # --output /dev/stdout --xml --no_prediction --feature float_motion --feature integer_motion
 
         pixel_format, bitdepth = convert_pixel_format_ffmpeg2vmafrc(yuv_type)
-
-        if options is None:
-            feature_str = feature
-        else:
-            assert isinstance(options, dict)
-            options_lst = []
-            for k, v in options.items():
-                if isinstance(v, bool):
-                    v = str(v).lower()
-                options_lst.append(f'{k}={v}')
-            options_str = ':'.join(options_lst)
-            feature_str = '='.join([feature, options_str])
 
         cmd = [
             required(ExternalProgram.vmafrc),
@@ -133,8 +126,25 @@ class ExternalProgramCaller(object):
             '--output', log_file_path,
             '--xml',
             '--no_prediction',
-            '--feature', feature_str,
         ]
+
+        for feature in features:
+            if options is None:
+                feature_str = feature
+            else:
+                assert isinstance(options, dict)
+                if feature in options and options[feature] is not None:
+                    assert isinstance(options[feature], dict)
+                    options_lst = []
+                    for k, v in options[feature].items():
+                        if isinstance(v, bool):
+                            v = str(v).lower()
+                        options_lst.append(f'{k}={v}')
+                    options_str = ':'.join(options_lst)
+                    feature_str = '='.join([feature, options_str])
+                else:
+                    feature_str = feature
+            cmd += ['--feature', feature_str]
 
         if logger:
             logger.info(' '.join(cmd))
