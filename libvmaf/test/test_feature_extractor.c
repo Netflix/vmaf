@@ -87,9 +87,9 @@ static char *test_feature_extractor_flush()
     int err = 0;
 
     VmafFeatureExtractor *fex;
-    fex = vmaf_get_feature_extractor_by_name("float_motion");
+    fex = vmaf_get_feature_extractor_by_name("float_motion2");
     mu_assert("problem vmaf_get_feature_extractor_by_name",
-              !strcmp(fex->name, "float_motion"));
+              !strcmp(fex->name, "float_motion2"));
     VmafFeatureExtractorContext *fex_ctx;
     err = vmaf_feature_extractor_context_create(&fex_ctx, fex, NULL);
     mu_assert("problem during vmaf_feature_extractor_context_create", !err);

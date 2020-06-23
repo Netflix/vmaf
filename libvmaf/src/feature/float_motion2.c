@@ -139,8 +139,8 @@ static const char *provided_features[] = {
     NULL
 };
 
-VmafFeatureExtractor vmaf_fex_float_motion = {
-    .name = "float_motion",
+VmafFeatureExtractor vmaf_fex_float_motion2 = {
+    .name = "float_motion2",
     .init = init,
     .extract = extract,
     .flush = flush,
