@@ -136,7 +136,7 @@ static enum VmafPixelFormat parse_pix_fmt(const char *const optarg,
 }
 
 #ifndef HAVE_STRSEP
-char *strsep(char **sp, char *sep)
+static char *strsep(char **sp, char *sep)
 {
     char *p, *s;
     if (sp == NULL || *sp == NULL || **sp == '\0') return NULL;
