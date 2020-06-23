@@ -612,3 +612,30 @@ class MsSsimFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
                                                          log_file_path, logger, options={'enable_lcs': True})
 
 
+class AnsnrFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
+
+    TYPE = "ANSNR_feature"
+    VERSION = "1.0"
+
+    ATOM_FEATURES = ['ansnr', 'anpsnr']
+
+    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
+        'ansnr': 'float_ansnr',
+        'anpsnr': 'float_anpsnr',
+    }
+
+    def _generate_result(self, asset):
+        # routine to call the command-line executable and generate quality
+        # scores in the log file.
+
+        quality_width, quality_height = asset.quality_width_height
+        log_file_path = self._get_log_file_path(asset)
+
+        yuv_type=self._get_workfile_yuv_type(asset)
+        ref_path=asset.ref_procfile_path
+        dis_path=asset.dis_procfile_path
+        w=quality_width
+        h=quality_height
+        logger = self.logger
+
+        ExternalProgramCaller.call_vmafrc_single_feature('float_ansnr', yuv_type, ref_path, dis_path, w, h, log_file_path, logger)

@@ -6,7 +6,8 @@ import re
 
 from vmaf.config import VmafConfig
 from vmaf.core.feature_extractor import VmafFeatureExtractor, MomentFeatureExtractor, \
-    PsnrFeatureExtractor, SsimFeatureExtractor, MsSsimFeatureExtractor, VifFrameDifferenceFeatureExtractor
+    PsnrFeatureExtractor, SsimFeatureExtractor, MsSsimFeatureExtractor, VifFrameDifferenceFeatureExtractor, \
+    AnsnrFeatureExtractor
 from vmaf.core.asset import Asset
 from vmaf.core.result_store import FileSystemResultStore
 
@@ -244,6 +245,24 @@ class FeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['PSNR_feature_psnr_score'], 30.755063979166664, places=4)
         self.assertAlmostEqual(results[1]['PSNR_feature_psnr_score'], 60.0, places=4)
+
+    def test_run_ansnr_fextractor(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.fextractor = AnsnrFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['ANSNR_feature_ansnr_score'], 23.509571520833333, places=4)
+        self.assertAlmostEqual(results[0]['ANSNR_feature_anpsnr_score'], 34.16477641666666, places=4)
+        self.assertAlmostEqual(results[1]['ANSNR_feature_ansnr_score'], 31.271439270833337, places=4)
+        self.assertAlmostEqual(results[1]['ANSNR_feature_anpsnr_score'], 41.926644187499996, places=4)
 
     def test_run_ssim_fextractor(self):
 
