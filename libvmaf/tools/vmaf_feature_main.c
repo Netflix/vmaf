@@ -22,23 +22,13 @@
 
 #include "read_frame.h"
 
-//int adm(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt);
-//int ansnr(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt);
-//int vif(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt);
-//int motion(int (*read_noref_frame)(float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt);
-//int all(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt);
 int vifdiff(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt);
 
 static void usage(void)
 {
     puts("usage: vmaf_feature app fmt ref dis w h\n"
          "apps:\n"
-//         "\tadm\n"
-//         "\tansnr\n"
-//         "\tmotion\n"
-//         "\tvif\n"
          "\tvifdiff\n"
-//         "\tall\n"
          "fmts:\n"
          "\tyuv420p\n"
          "\tyuv422p\n"
@@ -53,99 +43,50 @@ int run_vmaf(const char *app, const char *fmt, const char *ref_path, const char 
 {
     int ret = 0;
 
-//    if (!strcmp(app, "motion"))
-//    {
-//        struct noref_data *s;
-//        s = (struct noref_data *)malloc(sizeof(struct noref_data));
-//        s->format = fmt;
-//        s->width = w;
-//        s->height = h;
-//
-//        ret = get_frame_offset(fmt, w, h, &(s->offset));
-//        if (ret)
-//        {
-//            goto fail_or_end_noref;
-//        }
-//
-//        /* NOTE: below is legitimate: noref_data has a field called dis_rfile,
-//         * but what's needed to be passed to motion is ref_path!
-//         */
-//        if (!(s->dis_rfile = fopen(ref_path, "rb")))
-//        {
-//            fprintf(stderr, "fopen ref_path %s failed.\n", ref_path);
-//            ret = 1;
-//            goto fail_or_end_noref;
-//        }
-//
-//        ret = motion(read_noref_frame, s, w, h, fmt);
-//
-//fail_or_end_noref:
-//        if (s->dis_rfile)
-//        {
-//            fclose(s->dis_rfile);
-//        }
-//        if (s)
-//        {
-//            free(s);
-//        }
-//        return ret;
-//    }
-//    else
-//    {
-        struct data *s;
-        s = (struct data *)malloc(sizeof(struct data));
-        s->format = fmt;
-        s->width = w;
-        s->height = h;
+    struct data *s;
+    s = (struct data *)malloc(sizeof(struct data));
+    s->format = fmt;
+    s->width = w;
+    s->height = h;
 
-        ret = get_frame_offset(fmt, w, h, &(s->offset));
-        if (ret)
-        {
-            goto fail_or_end;
-        }
+    ret = get_frame_offset(fmt, w, h, &(s->offset));
+    if (ret)
+    {
+        goto fail_or_end;
+    }
 
-        if (!(s->ref_rfile = fopen(ref_path, "rb")))
-        {
-            fprintf(stderr, "fopen ref_path %s failed.\n", ref_path);
-            ret = 1;
-            goto fail_or_end;
-        }
-        if (!(s->dis_rfile = fopen(dis_path, "rb")))
-        {
-            fprintf(stderr, "fopen ref_path %s failed.\n", dis_path);
-            ret = 1;
-            goto fail_or_end;
-        }
+    if (!(s->ref_rfile = fopen(ref_path, "rb")))
+    {
+        fprintf(stderr, "fopen ref_path %s failed.\n", ref_path);
+        ret = 1;
+        goto fail_or_end;
+    }
+    if (!(s->dis_rfile = fopen(dis_path, "rb")))
+    {
+        fprintf(stderr, "fopen ref_path %s failed.\n", dis_path);
+        ret = 1;
+        goto fail_or_end;
+    }
 
-//        if (!strcmp(app, "adm"))
-//            ret = adm(read_frame, s,  w, h, fmt);
-//        else if (!strcmp(app, "ansnr"))
-//            ret = ansnr(read_frame, s, w, h, fmt);
-//        else if (!strcmp(app, "vif"))
-//            ret = vif(read_frame, s, w, h, fmt);
-//        else if (!strcmp(app, "all"))
-//            ret = all(read_frame, s, w, h, fmt);
-//        else
-        if (!strcmp(app, "vifdiff"))
-            ret = vifdiff(read_frame, s, w, h, fmt);
-        else
-            ret = 2;
+    if (!strcmp(app, "vifdiff"))
+        ret = vifdiff(read_frame, s, w, h, fmt);
+    else
+        ret = 2;
 
 fail_or_end:
-        if (s->ref_rfile)
-        {
-            fclose(s->ref_rfile);
-        }
-        if (s->dis_rfile)
-        {
-            fclose(s->dis_rfile);
-        }
-        if (s)
-        {
-            free(s);
-        }
-        return ret;
-//    }
+    if (s->ref_rfile)
+    {
+        fclose(s->ref_rfile);
+    }
+    if (s->dis_rfile)
+    {
+        fclose(s->dis_rfile);
+    }
+    if (s)
+    {
+        free(s);
+    }
+    return ret;
 }
 
 int main(int argc, const char **argv)
