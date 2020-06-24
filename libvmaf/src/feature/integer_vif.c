@@ -375,9 +375,9 @@ static void vif_statistic(VifBuffer buf, float *num, float *den,
 
                 if (sigma12 >= 0) {
                     /**
-                    * In floating-point numerator = log2(sv_sq/g)
-                    * and sv_sq = (sigma2_sq+sigma_nsq)*sigma1_sq
-                    * g = sv_sq - sigma12*sigma12
+                    * In floating-point numerator = log2(num_log_num/num_log_den)
+                    * and num_log_num = (sigma2_sq+sigma_nsq)*sigma1_sq
+                    * num_log_den = num_log_num - sigma12*sigma12
                     *
                     * In Fixed-point the above is converted to
                     * numerator = log2((sigma2_sq+sigma_nsq)/((sigma2_sq+sigma_nsq)-(sigma12*sigma12/sigma1_sq)))
