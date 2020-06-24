@@ -48,7 +48,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
 {
     SsimState *s = fex->priv;
-    s->float_stride = sizeof(float) * w;
+    s->float_stride = ALIGN_CEIL(w * sizeof(float));
     s->ref = aligned_malloc(s->float_stride * h, 32);
     if (!s->ref) goto fail;
     s->dist = aligned_malloc(s->float_stride * h, 32);
@@ -69,8 +69,8 @@ static int extract(VmafFeatureExtractor *fex,
     SsimState *s = fex->priv;
     int err = 0;
 
-    picture_copy(s->ref, ref_pic, 0, ref_pic->bpc);
-    picture_copy(s->dist, dist_pic, 0, dist_pic->bpc);
+    picture_copy(s->ref, s->float_stride, ref_pic, 0, ref_pic->bpc);
+    picture_copy(s->dist, s->float_stride, dist_pic, 0, dist_pic->bpc);
 
     double score, l_score, c_score, s_score;
     err = compute_ssim(s->ref, s->dist, ref_pic->w[0], ref_pic->h[0], s->float_stride,

@@ -55,7 +55,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 {
     MotionState *s = fex->priv;
 
-    s->float_stride = sizeof(float) * w;
+    s->float_stride = ALIGN_CEIL(w * sizeof(float));
     s->ref = aligned_malloc(s->float_stride * h, 32);
     s->tmp = aligned_malloc(s->float_stride * h, 32);
     s->blur[0] = aligned_malloc(s->float_stride * h, 32);
@@ -99,7 +99,7 @@ static int extract(VmafFeatureExtractor *fex,
     unsigned blur_idx_1 = (index + 1) % 3;
     unsigned blur_idx_2 = (index + 2) % 3;
 
-    picture_copy(s->ref, ref_pic, -128, ref_pic->bpc);
+    picture_copy(s->ref, s->float_stride, ref_pic, -128, ref_pic->bpc);
     convolution_f32_c_s(FILTER_5_s, 5, s->ref, s->blur[blur_idx_0], s->tmp,
                         ref_pic->w[0], ref_pic->h[0],
                         s->float_stride / sizeof(float),
