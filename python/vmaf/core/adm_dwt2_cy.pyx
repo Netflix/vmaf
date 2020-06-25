@@ -101,6 +101,8 @@ def adm_dwt2_cy(np.ndarray[np.float64_t, ndim=2, mode='c'] a):
         w_new = (w + 1) // 2
         h_new = (h + 1) // 2
 
+        w_new_strided = ALIGN_CEIL(w_new * sizeof(np_float)) // sizeof(np_float)
+
         # # # ====== debug ======
         # print("h={}, w={}, aa[0]={}, aa[1]={}, aa[2]={}".format(h, w, aa[0], aa[1], aa[2]))
         # print("sizeof(np_float)={}".format(sizeof(np_float)))
@@ -122,10 +124,10 @@ def adm_dwt2_cy(np.ndarray[np.float64_t, ndim=2, mode='c'] a):
         out_h = np.empty((h_new, w_new)).astype(np.float64)
         out_d = np.empty((h_new, w_new)).astype(np.float64)
 
-        out_a[...] = np.asarray(<np.float64_t[:h_new, :w_new]> aa_dwt2.band_a)[...]
-        out_v[...] = np.asarray(<np.float64_t[:h_new, :w_new]> aa_dwt2.band_v)[...]
-        out_h[...] = np.asarray(<np.float64_t[:h_new, :w_new]> aa_dwt2.band_h)[...]
-        out_d[...] = np.asarray(<np.float64_t[:h_new, :w_new]> aa_dwt2.band_d)[...]
+        out_a[...] = np.asarray(<np.float64_t[:h_new, :w_new_strided]> aa_dwt2.band_a)[:, :w_new]
+        out_v[...] = np.asarray(<np.float64_t[:h_new, :w_new_strided]> aa_dwt2.band_v)[:, :w_new]
+        out_h[...] = np.asarray(<np.float64_t[:h_new, :w_new_strided]> aa_dwt2.band_h)[:, :w_new]
+        out_d[...] = np.asarray(<np.float64_t[:h_new, :w_new_strided]> aa_dwt2.band_d)[:, :w_new]
 
     finally:
         free(data_buf)
