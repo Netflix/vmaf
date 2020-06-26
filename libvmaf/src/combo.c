@@ -30,6 +30,7 @@
 #include "common/convolution_internal.h"
 #include "iqa/ssim_tools.h"
 #include "darray.h"
+#include "vif_options.h"
 #include "adm_options.h"
 #include "combo.h"
 #include "debug.h"
@@ -46,7 +47,7 @@ int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride
 #ifdef COMPUTE_ANSNR
 int compute_ansnr(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_psnr, double peak, double psnr_max);
 #endif
-int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores);
+int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores, double vif_enhn_gain_limit);
 int compute_motion(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);
 int compute_psnr(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double peak, double psnr_max);
 int compute_ssim(const float *ref, const float *cmp, int w, int h, int ref_stride, int cmp_stride, double *score, double *l_score, double *c_score, double *s_score);
@@ -439,7 +440,8 @@ void* combo_threadfunc(void* vmaf_thread_data)
 
         if (frm_idx % n_subsample == 0)
         {
-            if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores)))
+            if ((ret = compute_vif(ref_buf, dis_buf, w, h, stride, stride,
+                    &score, &score_num, &score_den, scores, DEFAULT_VIF_ENHN_GAIN_LIMIT)))
             {
                 sprintf(errmsg, "compute_vif failed.\n");
                 goto fail_or_end;

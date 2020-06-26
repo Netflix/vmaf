@@ -29,7 +29,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         self.runner = VmafrcQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={
@@ -38,7 +38,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
                 'float_ms_ssim': True,
             }
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 

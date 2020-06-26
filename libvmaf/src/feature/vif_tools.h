@@ -39,7 +39,7 @@ float vif_sum_s(const float *x, int w, int h, int stride);
 void vif_xx_yy_xy_s(const float *x, const float *y, float *xx, float *yy, float *xy, int w, int h, int xstride, int ystride, int xxstride, int yystride, int xystride);
 
 void vif_statistic_s(const float *mu1_sq, const float *mu2_sq, const float *mu1_mu2, const float *xx_filt, const float *yy_filt, const float *xy_filt, float *num, float *den,
-                     int w, int h, int mu1_sq_stride, int mu2_sq_stride, int mu1_mu2_stride, int xx_filt_stride, int yy_filt_stride, int xy_filt_stride, int num_stride, int den_stride);
+                     int w, int h, int mu1_sq_stride, int mu2_sq_stride, int mu1_mu2_stride, int xx_filt_stride, int yy_filt_stride, int xy_filt_stride, int num_stride, int den_stride, double vif_enhn_gain_limit);
 
 void vif_filter1d_s(const float *f, const float *src, float *dst, float *tmpbuf, int w, int h, int src_stride, int dst_stride, int fwidth);
 

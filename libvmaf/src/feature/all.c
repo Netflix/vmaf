@@ -37,7 +37,7 @@
 #define FILTER_5           FILTER_5_s
 int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores, double border_factor, double adm_enhn_gain_limit);
 int compute_ansnr(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_psnr, double peak, double psnr_max);
-int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores);
+int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores, double vif_enhn_gain_limit);
 int compute_motion(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
