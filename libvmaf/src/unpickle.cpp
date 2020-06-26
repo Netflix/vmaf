@@ -40,6 +40,7 @@ static int unpickle(VmafModel *model, const char *pickle_path,
     Val intercepts = pickle_model["model_dict"]["intercepts"];
     Val score_clip = pickle_model["model_dict"]["score_clip"];
     Val score_transform = pickle_model["model_dict"]["score_transform"];
+    Val enhn_gain = pickle_model["model_dict"]["enhn_gain"];
 
     if (!((VAL_IS_NONE(score_clip)) || VAL_IS_LIST(score_clip)))
         return -EINVAL;
