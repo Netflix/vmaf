@@ -148,7 +148,8 @@ class FloatAdmFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc_single_feature('float_adm', yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
+        ExternalProgramCaller.call_vmafrc_single_feature('float_adm', yuv_type, ref_path, dis_path, w, h,
+                                                         log_file_path, logger, options=self.optional_dict)
 
 
 class IntegerPsnrFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):

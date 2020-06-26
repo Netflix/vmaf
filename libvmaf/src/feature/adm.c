@@ -67,7 +67,8 @@ static char *init_dwt_band_hvd(adm_dwt_band_t *band, char *data_top, size_t buf_
 	return data_top;
 }
 
-int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores, double border_factor)
+int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score,
+        double *score_num, double *score_den, double *scores, double border_factor, double adm_enhn_gain_limit)
 {
 #ifdef ADM_OPT_SINGLE_PRECISION
 	double numden_limit = 1e-2 * (w * h) / (1920.0 * 1080.0);

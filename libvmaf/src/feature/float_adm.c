@@ -33,6 +33,7 @@ typedef struct AdmState {
     float *ref;
     float *dist;
     bool debug;
+    double adm_enhn_gain_limit;
 } AdmState;
 
 static const VmafOption options[] = {
@@ -42,6 +43,13 @@ static const VmafOption options[] = {
                 .offset = offsetof(AdmState, debug),
                 .type = VMAF_OPT_TYPE_BOOL,
                 .default_val.b = false,
+        },
+        {
+                .name = "adm_enhn_gain_limit",
+                .help = "enhancement gain imposed on adm, must be >= 1.0, where 1.0 means the gain is completely disabled",
+                .offset = offsetof(AdmState, adm_enhn_gain_limit),
+                .type = VMAF_OPT_TYPE_DOUBLE,
+                .default_val.d = DEFAULT_ADM_ENHN_GAIN_LIMIT,
         },
         { NULL }
 };
@@ -78,7 +86,7 @@ static int extract(VmafFeatureExtractor *fex,
     double scores[8];
     err = compute_adm(s->ref, s->dist, ref_pic->w[0], ref_pic->h[0],
                       s->float_stride, s->float_stride, &score, &score_num,
-                      &score_den, scores, ADM_BORDER_FACTOR);
+                      &score_den, scores, ADM_BORDER_FACTOR, s->adm_enhn_gain_limit);
     if (err) return err;
 
     err = vmaf_feature_collector_append(feature_collector,

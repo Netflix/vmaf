@@ -42,7 +42,7 @@
 #define convolution_f32_c  convolution_f32_c_s
 #define offset_image       offset_image_s
 #define FILTER_5           FILTER_5_s
-int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores, double border_factor);
+int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores, double border_factor, double adm_enhn_gain_limit);
 #ifdef COMPUTE_ANSNR
 int compute_ansnr(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_psnr, double peak, double psnr_max);
 #endif
@@ -317,7 +317,8 @@ void* combo_threadfunc(void* vmaf_thread_data)
         /* =========== adm ============== */
         if (frm_idx % n_subsample == 0)
         {
-            if ((ret = compute_adm(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores, ADM_BORDER_FACTOR)))
+            if ((ret = compute_adm(ref_buf, dis_buf, w, h, stride, stride, &score, &score_num, &score_den, scores,
+                    ADM_BORDER_FACTOR, DEFAULT_ADM_ENHN_GAIN_LIMIT)))
             {
                 sprintf(errmsg, "compute_adm failed.\n");
                 goto fail_or_end;
