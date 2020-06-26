@@ -151,25 +151,6 @@ class ExternalProgramCaller(object):
         run_process(cmd)
 
     @staticmethod
-    def call_vmaf_feature(yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None):
-
-        # APPEND (>>) result (since _prepare_generate_log_file method has already created the file
-        # and written something in advance).
-        vmaf_feature_cmd = "{vmaf} all {yuv_type} {ref_path} {dis_path} {w} {h} >> {log_file_path}" \
-            .format(
-            vmaf=required(ExternalProgram.vmaf_feature),
-            yuv_type=yuv_type,
-            ref_path=ref_path,
-            dis_path=dis_path,
-            w=w,
-            h=h,
-            log_file_path=log_file_path,
-        )
-        if logger:
-            logger.info(vmaf_feature_cmd)
-        run_process(vmaf_feature_cmd, shell=True)
-
-    @staticmethod
     def call_vifdiff_feature(yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None):
 
         # APPEND (>>) result (since _prepare_generate_log_file method has already created the file
