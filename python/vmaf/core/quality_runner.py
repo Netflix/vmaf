@@ -671,6 +671,11 @@ class VmafossExecQualityRunner(QualityRunner):
         else:
             disable_avx = False
 
+        if self.optional_dict is not None and 'disable_avx' in self.optional_dict:
+            disable_avx = self.optional_dict['disable_avx']
+        else:
+            disable_avx = False
+
         if self.optional_dict is not None and 'thread' in self.optional_dict:
             n_thread = self.optional_dict['thread']
         else:
@@ -1125,7 +1130,27 @@ class VmafrcQualityRunner(QualityRunner):
             assert isinstance(self.optional_dict['models'], list)
             models = self.optional_dict['models']
         else:
-            models = ['path={}:name=vmaf'.format(self.DEFAULT_MODEL_FILEPATH)]
+            model0 = []
+            model0.append(f'path={self.DEFAULT_MODEL_FILEPATH}')
+            model0.append(f'name=vmaf')
+
+            if self.optional_dict is not None and 'disable_clip_score' in self.optional_dict:
+                disable_clip_score = self.optional_dict['disable_clip_score']
+            else:
+                disable_clip_score = False
+            assert isinstance(disable_clip_score, bool)
+            if disable_clip_score:
+                model0.append('disable_clip')
+
+            if self.optional_dict is not None and 'enhn_gain' in self.optional_dict:
+                enhn_gain = self.optional_dict['enhn_gain']
+            else:
+                enhn_gain = True
+            assert isinstance(enhn_gain, bool)
+            if enhn_gain is False:
+                model0.append('no_enhn_gain')
+
+            models = [':'.join(model0)]
 
         if self.optional_dict is not None and 'float_psnr' in self.optional_dict:
             float_psnr = self.optional_dict['float_psnr']
