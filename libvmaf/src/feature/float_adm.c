@@ -50,6 +50,8 @@ static const VmafOption options[] = {
                 .offset = offsetof(AdmState, adm_enhn_gain_limit),
                 .type = VMAF_OPT_TYPE_DOUBLE,
                 .default_val.d = DEFAULT_ADM_ENHN_GAIN_LIMIT,
+                .min = 1.0,
+                .max = DEFAULT_ADM_ENHN_GAIN_LIMIT,
         },
         { NULL }
 };
