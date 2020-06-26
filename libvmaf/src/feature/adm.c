@@ -177,7 +177,8 @@ int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride
 		w = (w + 1) / 2;
 		h = (h + 1) / 2;
 	
-		adm_decouple(&ref_dwt2, &dis_dwt2, &decouple_r, &decouple_a, w, h, buf_stride, buf_stride, buf_stride, buf_stride, border_factor);
+		adm_decouple(&ref_dwt2, &dis_dwt2, &decouple_r, &decouple_a, w, h,
+		        buf_stride, buf_stride, buf_stride, buf_stride, border_factor, adm_enhn_gain_limit);
 
 		den_scale = adm_csf_den_scale(&ref_dwt2, orig_h, scale, w, h, buf_stride, border_factor);
 
