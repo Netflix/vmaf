@@ -193,6 +193,16 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    for (unsigned i = 0; i < c.feature_cnt; i++) {
+        err = vmaf_use_feature(vmaf, c.feature_cfg[i].name,
+                               c.feature_cfg[i].opts_dict);
+        if (err) {
+            fprintf(stderr, "problem loading feature extractor: %s\n",
+                    c.feature_cfg[i].name);
+            return -1;
+        }
+    }
+
     VmafModel *model[c.model_cnt];
     for (unsigned i = 0; i < c.model_cnt; i++) {
         err = vmaf_model_load_from_path(&model[i], &c.model_config[i]);
@@ -206,16 +216,6 @@ int main(int argc, char *argv[])
             fprintf(stderr,
                     "problem loading feature extractors from model file: %s\n",
                     c.model_config[i].path);
-            return -1;
-        }
-    }
-
-    for (unsigned i = 0; i < c.feature_cnt; i++) {
-        err = vmaf_use_feature(vmaf, c.feature_cfg[i].name,
-                               c.feature_cfg[i].opts_dict);
-        if (err) {
-            fprintf(stderr, "problem loading feature extractor: %s\n",
-                    c.feature_cfg[i].name);
             return -1;
         }
     }
