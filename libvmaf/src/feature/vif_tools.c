@@ -29,6 +29,9 @@
 
 extern enum vmaf_cpu cpu;
 
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+
 #ifdef VIF_OPT_FAST_LOG2 // option to replace log2 calculation with faster speed
 
 static const float log2_poly_s[9] = { -0.012671635276421, 0.064841182402670, -0.157048836463065, 0.257167726303123, -0.353800560300520, 0.480131410397451, -0.721314327952201, 1.442694803896991, 0 };
@@ -279,19 +282,13 @@ void vif_statistic_s(const float *mu1, const float *mu2, const float *mu1_mu2, c
 
             /* ==== vif_stat_mode = 'matching_matlab' ==== */
 
-			if (sigma1_sq < 0.0f) {
-			    sigma1_sq = 0.0f;
-			}
-			if (sigma2_sq < 0.0f) {
-			    sigma2_sq = 0.0f;
-			}
+            sigma1_sq = MAX(sigma1_sq, 0.0f);
+            sigma2_sq = MAX(sigma2_sq, 0.0f);
 
 			g = sigma12 / (sigma1_sq + eps);
 			sv_sq = sigma2_sq - g * sigma12;
 
-			if (g > vif_enhn_gain_limit_f) {
-			    g = vif_enhn_gain_limit_f;
-			}
+			g = MIN(g, vif_enhn_gain_limit_f);
 
 			if (sigma1_sq < eps) {
 			    g = 0.0f;
@@ -308,9 +305,7 @@ void vif_statistic_s(const float *mu1, const float *mu2, const float *mu1_mu2, c
 			    sv_sq = sigma2_sq;
 			    g = 0.0f;
 			}
-			if (sv_sq <= eps) {
-			    sv_sq = eps;
-			}
+			sv_sq = MAX(sv_sq, eps);
 
 			num_val = log2f(1.0f + (g * g * sigma1_sq) / (sv_sq + sigma_nsq));
             den_val = log2f(1.0f + (sigma1_sq) / (sigma_nsq));
