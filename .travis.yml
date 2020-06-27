@@ -90,8 +90,8 @@ matrix:
         - vmaf_score=$(ffmpeg -hide_banner -nostats -i encoded.mkv -i orig.mkv -filter_complex libvmaf -f null - 2>&1 | grep 'VMAF score' | tr ' ' '\n' | tail -n1)
         - echo "$vmaf_score"
         - |
-          if [[ $vmaf_score != "93.656212" ]]; then
-            echo "vmaf Score doesn't match 93.656212"
+          if [[ $vmaf_score != "93.656203" ]]; then
+            echo "vmaf Score doesn't match 93.656203"
             return 1
           else
             echo "vmaf score matches"
