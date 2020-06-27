@@ -288,8 +288,6 @@ void vif_statistic_s(const float *mu1, const float *mu2, const float *mu1_mu2, c
 			g = sigma12 / (sigma1_sq + eps);
 			sv_sq = sigma2_sq - g * sigma12;
 
-			g = MIN(g, vif_enhn_gain_limit_f);
-
 			if (sigma1_sq < eps) {
 			    g = 0.0f;
                 sv_sq = sigma2_sq;
@@ -307,7 +305,9 @@ void vif_statistic_s(const float *mu1, const float *mu2, const float *mu1_mu2, c
 			}
 			sv_sq = MAX(sv_sq, eps);
 
-			num_val = log2f(1.0f + (g * g * sigma1_sq) / (sv_sq + sigma_nsq));
+            g = MIN(g, vif_enhn_gain_limit_f);
+
+            num_val = log2f(1.0f + (g * g * sigma1_sq) / (sv_sq + sigma_nsq));
             den_val = log2f(1.0f + (sigma1_sq) / (sigma_nsq));
 
             if (sigma12 < 0.0f) {
