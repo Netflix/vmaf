@@ -42,7 +42,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale2_score'], 0.8628533333333334, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale3_score'], 0.9159719583333334, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_motion2_score'], 3.895352291666667, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm2_score'], 0.9345877291666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm2_score'], 0.9345148541666667, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_psnr_score'], 30.7550666667, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ssim_score'], 0.86322654166666657, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ms_ssim_score'], 0.9632406874999999, places=4)
@@ -57,7 +57,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ssim_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ms_ssim_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.69926875, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.68425208333333, places=4)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.94641666666666, places=4)
 
     def test_run_vmafossexec_runner_with_thread(self):
@@ -75,7 +75,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.699271272486044, places=3)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.68425208333333, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.946416604585025, places=4)
 
     def test_run_vmafossexec_runner_with_subsample(self):
@@ -93,7 +93,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.954390000000018, places=3)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.94069999999999, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.742800000000003, places=4)
 
     def test_run_vmafossexec_runner_with_phone_score(self):
@@ -113,7 +113,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 92.542390144364546, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 92.53270416666665, places=4)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 100.0, places=4)
 
     def test_run_vmafossexec_runner_norm_type_none(self):
@@ -138,7 +138,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale2_score'], 0.862854708333, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale3_score'], 0.915971791667, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_motion_score'], 4.04982583333, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm2_score'], 0.93458777083333333, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm2_score'], 0.9345148541666667, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_psnr_score'], 30.7550666667, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ssim_score'], 0.86322654166666657, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ms_ssim_score'], 0.9632498125, places=4)
@@ -153,7 +153,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ssim_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ms_ssim_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 74.253349625150562, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 74.25323125, places=4)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 77.996338095161946, places=4)
 
     def test_run_vmafossexec_runner_yuv422p10le(self):
@@ -189,7 +189,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale2_score'], 0.8628533333333334, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale3_score'], 0.9159719583333334, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_motion2_score'], 3.895352291666667, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm2_score'], 0.9345877291666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm2_score'], 0.9345148541666667, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_psnr_score'], 30.780577083333331, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ssim_score'], 0.86322654166666657, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ms_ssim_score'], 0.9632406874999999, places=4)
@@ -204,7 +204,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ssim_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ms_ssim_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.69926875, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.68425208333333, places=4)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.94641666666666, places=4)
 
     def test_run_vmafossexec_runner_yuv420p10le_sparks(self):
@@ -255,7 +255,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ssim_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ms_ssim_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 97.90585999999999, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 97.89993999999999, places=4)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 98.47138, places=4)
 
     def test_run_vmafossexec_runner_with_transform_score(self):
@@ -451,7 +451,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale2_score'], 0.862854708333, places=5)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale3_score'], 0.915971791667, places=5)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_motion2_score'], 3.8953527083333337, places=5)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm2_score'], 0.93458777083333333, places=5)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm2_score'], 0.9345148541666667, places=5)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_psnr_score'], 30.7550666667, places=5)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ssim_score'], 0.86322654166666657, places=5)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ms_ssim_score'], 0.96324068749999991, places=5)
@@ -466,7 +466,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ssim_score'], 1.0, places=5)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ms_ssim_score'], 1.0, places=5)
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.699306249999992, places=5)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.68429583333334, places=5)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.946416666666664, places=5)
 
     def test_run_vmafossexec_runner_enable_avx_precise(self):
@@ -488,7 +488,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale2_score'], 0.86285333333333336, places=5)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale3_score'], 0.91597195833333345, places=5)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_motion2_score'], 3.8953527083333337, places=5)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm2_score'], 0.93458777083333333, places=5)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm2_score'], 0.9345148541666667, places=5)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_psnr_score'], 30.7550666667, places=5)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ssim_score'], 0.86322654166666657, places=5)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ms_ssim_score'], 0.96324068749999991, places=5)
@@ -503,7 +503,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ssim_score'], 1.0, places=5)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ms_ssim_score'], 1.0, places=5)
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.699266666666674, places=5)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.68425208333333, places=5)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.946416666666664, places=5)
 
     def test_run_vmafossexec_runner_with_motion2(self):
@@ -529,7 +529,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_motion_score'], 4.04982583333, places=4)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_motion2_score'], 3.8953522916666672, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 78.532525000000007, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 78.51201666666667, places=4)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 97.089554166666673, places=4)
 
     def test_run_vmafossexec_runner_with_ci(self):
@@ -555,7 +555,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale2_score'], 0.862854708333, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale3_score'], 0.915971791667, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_motion2_score'], 3.8953518541666665, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm2_score'], 0.93458777083333333, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm2_score'], 0.9345148541666667, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_psnr_score'], 30.7550666667, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ssim_score'], 0.86322654166666657, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ms_ssim_score'], 0.9632498125, places=4)
@@ -570,23 +570,23 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ssim_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ms_ssim_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 75.443043750000001, places=3)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 75.42800833333332, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.958047916666672, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_bagging_score'], 73.10273541666668, places=3)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_bagging_score'], 73.0913125, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_bagging_score'], 99.79000416666668, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_stddev_score'], 1.1991330833333333, places=3)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_stddev_score'], 1.1982760416666667, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_stddev_score'], 1.3028828125, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ci95_low_score'], 70.82471875, places=3)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ci95_low_score'], 70.81472708333332, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ci95_low_score'], 94.79667083333334, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ci95_high_score'], 74.85038125, places=3)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ci95_high_score'], 74.83768541666666, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ci95_high_score'], 99.99736666666666, places=4)
 
         # per model score checks
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_0001_score'], 73.26853333333334, places=3)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_0002_score'], 70.38517916666667, places=3)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_0003_score'], 71.59264583333334, places=3)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_0020_score'], 73.15570625, places=3)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_0001_score'], 73.25864166666666, places=3)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_0002_score'], 70.37462916666668, places=3)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_0003_score'], 71.58177291666668, places=3)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_0020_score'], 73.14455, places=3)
 
     def test_run_vmafossexec_runner_with_ci_and_custom_model(self):
 
@@ -606,9 +606,9 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 75.443043750000001, places=3)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 75.42800833333332, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.958047916666672, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_bagging_score'], 75.13012623785923, places=3)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_bagging_score'], 75.11496458333333, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_bagging_score'], 99.96504855577571, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_stddev_score'], 0.6812993325967104, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_stddev_score'], 0.03947607207290399, places=4)
@@ -632,18 +632,18 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 91.723012127641823, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 91.71303333333334, places=4)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 100.0, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_bagging_score'], 90.13159583333334, places=3)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_bagging_score'], 90.12363958333333, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_bagging_score'], 100.0, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_stddev_score'], 0.8371132083333332, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_stddev_score'], 0.0, places=4)
 
         # per model score checks
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_0001_score'], 90.25032499999999, places=3)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_0002_score'], 88.18534583333333, places=3)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_0003_score'], 89.04952291666666, places=3)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_0020_score'], 90.16633958333334, places=3)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_0001_score'], 90.24346041666666, places=3)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_0002_score'], 88.17759791666667, places=3)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_0003_score'], 89.04172708333333, places=3)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_0020_score'], 90.1585875, places=3)
 
     def test_run_vmafossexec_runner_vmafplus1080model(self):
 
@@ -682,9 +682,9 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vif_scale3_score'], 0.91597177803640772, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_motion_score'], 4.0498253541666669, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm_scale0_score'], 0.90791927083333324, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm_scale1_score'], 0.89395658333333339, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm_scale2_score'], 0.93010039583333326, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm_scale3_score'], 0.96503527083333329, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm_scale1_score'], 0.8938705625000001, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm_scale2_score'], 0.9300123749999999, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_adm_scale3_score'], 0.9649663541666667, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_psnr_score'], 30.755066666666664, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ssim_score'], 0.86322654166666657, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ms_ssim_score'], 0.96324981249999997, places=4)
@@ -702,7 +702,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ssim_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ms_ssim_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 35.445304166666666, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 35.4220125, places=4)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 65.559652083333333, places=4)
 
         with self.assertRaises(KeyError):
@@ -755,7 +755,7 @@ class VmafossexecQualityRunnerSubsamplingTest(unittest.TestCase):
 class QualityRunnerVersionTest(unittest.TestCase):
 
     def test_vmafossexec_quality_runner_version(self):
-        self.assertEqual(VmafossExecQualityRunner.VERSION, 'F0.2.5-0.6.1')
+        self.assertEqual(VmafossExecQualityRunner.VERSION, 'F0.2.6-0.6.1')
         self.assertEqual(VmafossExecQualityRunner.ALGO_VERSION, 2)
 
 
@@ -783,10 +783,10 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.runner.run(parallelize=True)
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.699266666666674, places=3)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 76.68425208333333, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.946416666666664, places=4)
-        self.assertAlmostEqual(results[2]['VMAFOSSEXEC_score'], 76.699266666666674, places=3)
-        self.assertAlmostEqual(results[3]['VMAFOSSEXEC_score'], 76.699266666666674, places=3)
+        self.assertAlmostEqual(results[2]['VMAFOSSEXEC_score'], 76.68425208333333, places=3)
+        self.assertAlmostEqual(results[3]['VMAFOSSEXEC_score'], 76.68425208333333, places=3)
 
 
 if __name__ == '__main__':

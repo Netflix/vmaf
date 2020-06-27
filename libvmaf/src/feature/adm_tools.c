@@ -27,6 +27,9 @@
   #define M_PI 3.1415926535897932384626433832795028841971693993751
 #endif
 
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+
 #ifdef ADM_OPT_RECIP_DIVISION
 
 #include <emmintrin.h>
@@ -94,7 +97,10 @@ float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_fac
     return powf(accum, 1.0f / 3.0f) + powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
 }
 
-void adm_decouple_s(const adm_dwt_band_t_s *ref, const adm_dwt_band_t_s *dis, const adm_dwt_band_t_s *r, const adm_dwt_band_t_s *a, int w, int h, int ref_stride, int dis_stride, int r_stride, int a_stride, double border_factor)
+void adm_decouple_s(const adm_dwt_band_t_s *ref, const adm_dwt_band_t_s *dis,
+        const adm_dwt_band_t_s *r, const adm_dwt_band_t_s *a, int w, int h,
+        int ref_stride, int dis_stride, int r_stride, int a_stride,
+        double border_factor, double adm_enhn_gain_limit)
 {
 #ifdef ADM_OPT_AVOID_ATAN
 	const float cos_1deg_sq = cos(1.0 * M_PI / 180.0) * cos(1.0 * M_PI / 180.0);
@@ -126,13 +132,13 @@ void adm_decouple_s(const adm_dwt_band_t_s *ref, const adm_dwt_band_t_s *dis, co
 	}
 
 	float oh, ov, od, th, tv, td;
-	float kh, kv, kd, tmph, tmpv, tmpd;
+	float kh, kv, kd, rst_h, rst_v, rst_d;
 #ifdef ADM_OPT_AVOID_ATAN
 	float ot_dp, o_mag_sq, t_mag_sq;
 #else
 	float oa, ta, diff;
 #endif
-	int angle_flag;
+	int angle_flag, angle_flag_pos, angle_flag_neg;
 	int i, j;
 
 	for (i = top; i < bottom; ++i) {
@@ -152,9 +158,9 @@ void adm_decouple_s(const adm_dwt_band_t_s *ref, const adm_dwt_band_t_s *dis, co
 			kv = kv < 0.0f ? 0.0f : (kv > 1.0f ? 1.0f : kv);
 			kd = kd < 0.0f ? 0.0f : (kd > 1.0f ? 1.0f : kd);
 
-			tmph = kh * oh;
-			tmpv = kv * ov;
-			tmpd = kd * od;
+            rst_h = kh * oh;
+            rst_v = kv * ov;
+            rst_d = kd * od;
 #ifdef ADM_OPT_AVOID_ATAN
 			/* Determine if angle between (oh,ov) and (th,tv) is less than 1 degree.
 			 * Given that u is the angle (oh,ov) and v is the angle (th,tv), this can
@@ -194,19 +200,33 @@ void adm_decouple_s(const adm_dwt_band_t_s *ref, const adm_dwt_band_t_s *dis, co
 			diff = fabsf(oa - ta) * 180.0f / M_PI;
 			angle_flag = diff < 1.0f;
 #endif
-			if (angle_flag) {
-				tmph = th;
-				tmpv = tv;
-				tmpd = td;
-			}
+            /* ==== original ==== */
+			// if (angle_flag) {
+            //     rst_h = th;
+            //     rst_v = tv;
+            //     rst_d = td;
+			// }
 
-			r->band_h[i * r_px_stride + j] = tmph;
-			r->band_v[i * r_px_stride + j] = tmpv;
-			r->band_d[i * r_px_stride + j] = tmpd;
+			/* ==== modification ==== */
 
-			a->band_h[i * a_px_stride + j] = th - tmph;
-			a->band_v[i * a_px_stride + j] = tv - tmpv;
-			a->band_d[i * a_px_stride + j] = td - tmpd;
+            if (angle_flag && (rst_h > 0.0)) rst_h = MIN(rst_h * adm_enhn_gain_limit, th);
+            if (angle_flag && (rst_h < 0.0)) rst_h = MAX(rst_h * adm_enhn_gain_limit, th);
+
+            if (angle_flag && (rst_v > 0.0)) rst_v = MIN(rst_v * adm_enhn_gain_limit, tv);
+            if (angle_flag && (rst_v < 0.0)) rst_v = MAX(rst_v * adm_enhn_gain_limit, tv);
+
+            if (angle_flag && (rst_d > 0.0)) rst_d = MIN(rst_d * adm_enhn_gain_limit, td);
+            if (angle_flag && (rst_d < 0.0)) rst_d = MAX(rst_d * adm_enhn_gain_limit, td);
+
+            /* == end of modification == */
+
+			r->band_h[i * r_px_stride + j] = rst_h;
+			r->band_v[i * r_px_stride + j] = rst_v;
+			r->band_d[i * r_px_stride + j] = rst_d;
+
+			a->band_h[i * a_px_stride + j] = th - rst_h;
+			a->band_v[i * a_px_stride + j] = tv - rst_v;
+			a->band_d[i * a_px_stride + j] = td - rst_d;
 		}
 	}
 }

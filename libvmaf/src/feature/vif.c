@@ -54,7 +54,8 @@ void apply_frame_differencing(const float *current_frame, const float *previous_
     }
 }
 
-int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores)
+int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride,
+        double *score, double *score_num, double *score_den, double *scores, double vif_enhn_gain_limit)
 {
     float *data_buf = 0;
     char *data_top;
@@ -215,7 +216,8 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
         vif_filter2d(filter, ref_dis, ref_dis_filt, w, h, buf_stride, buf_stride, filter_width);
 #endif
 		vif_statistic(mu1, mu2, NULL, ref_sq_filt, dis_sq_filt, ref_dis_filt, num_array, den_array,
-			w, h, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride);
+			w, h, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride,
+			vif_enhn_gain_limit);
         mu1_adj = ADJUST(mu1);
         mu2_adj = ADJUST(mu2);
 
@@ -411,7 +413,8 @@ int vifdiff(int (*read_frame)(float *ref_data, float *main_data, float *temp_dat
 		else
 		{
             // compute
-            if ((ret = compute_vif(ref_diff_buf, dis_diff_buf, w, h, stride, stride, &score, &score_num, &score_den, scores)))
+            if ((ret = compute_vif(ref_diff_buf, dis_diff_buf, w, h, stride, stride,
+                    &score, &score_num, &score_den, scores, DEFAULT_VIF_ENHN_GAIN_LIMIT)))
             {
                 printf("error: compute_vifdiff failed.\n");
                 fflush(stdout);

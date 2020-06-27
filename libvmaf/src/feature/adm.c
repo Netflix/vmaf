@@ -67,7 +67,8 @@ static char *init_dwt_band_hvd(adm_dwt_band_t *band, char *data_top, size_t buf_
 	return data_top;
 }
 
-int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores, double border_factor)
+int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score,
+        double *score_num, double *score_den, double *scores, double border_factor, double adm_enhn_gain_limit)
 {
 #ifdef ADM_OPT_SINGLE_PRECISION
 	double numden_limit = 1e-2 * (w * h) / (1920.0 * 1080.0);
@@ -176,7 +177,8 @@ int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride
 		w = (w + 1) / 2;
 		h = (h + 1) / 2;
 	
-		adm_decouple(&ref_dwt2, &dis_dwt2, &decouple_r, &decouple_a, w, h, buf_stride, buf_stride, buf_stride, buf_stride, border_factor);
+		adm_decouple(&ref_dwt2, &dis_dwt2, &decouple_r, &decouple_a, w, h,
+		        buf_stride, buf_stride, buf_stride, buf_stride, border_factor, adm_enhn_gain_limit);
 
 		den_scale = adm_csf_den_scale(&ref_dwt2, orig_h, scale, w, h, buf_stride, border_factor);
 
