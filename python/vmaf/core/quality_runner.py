@@ -1125,7 +1125,19 @@ class VmafrcQualityRunner(QualityRunner):
             assert isinstance(self.optional_dict['models'], list)
             models = self.optional_dict['models']
         else:
-            models = ['path={}:name=vmaf'.format(self.DEFAULT_MODEL_FILEPATH)]
+            model0 = []
+            model0.append(f'path={self.DEFAULT_MODEL_FILEPATH}')
+            model0.append(f'name=vmaf')
+
+            if self.optional_dict is not None and 'disable_clip_score' in self.optional_dict:
+                disable_clip_score = self.optional_dict['disable_clip_score']
+            else:
+                disable_clip_score = False
+            assert isinstance(disable_clip_score, bool)
+            if disable_clip_score:
+                model0.append('disable_clip')
+
+            models = [':'.join(model0)]
 
         if self.optional_dict is not None and 'float_psnr' in self.optional_dict:
             float_psnr = self.optional_dict['float_psnr']
@@ -1193,6 +1205,18 @@ class VmafrcQualityRunner(QualityRunner):
             disable_avx = False
         assert isinstance(disable_avx, bool)
 
+        if self.optional_dict is not None and 'vif_enhn_gain_limit' in self.optional_dict:
+            vif_enhn_gain_limit = self.optional_dict['vif_enhn_gain_limit']
+        else:
+            vif_enhn_gain_limit = None
+        assert vif_enhn_gain_limit is None or vif_enhn_gain_limit >= 1.0
+
+        if self.optional_dict is not None and 'adm_enhn_gain_limit' in self.optional_dict:
+            adm_enhn_gain_limit = self.optional_dict['adm_enhn_gain_limit']
+        else:
+            adm_enhn_gain_limit = None
+        assert adm_enhn_gain_limit is None or adm_enhn_gain_limit >= 1.0
+
         quality_width, quality_height = asset.quality_width_height
 
         fmt = self._get_workfile_yuv_type(asset)
@@ -1211,7 +1235,8 @@ class VmafrcQualityRunner(QualityRunner):
 
         ExternalProgramCaller.call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth,
                                           float_psnr, psnr, float_ssim, ssim, float_ms_ssim, ms_ssim, float_moment,
-                                          no_prediction, models, subsample, n_threads, disable_avx, output, exe, logger)
+                                          no_prediction, models, subsample, n_threads, disable_avx, output, exe, logger,
+                                          vif_enhn_gain_limit, adm_enhn_gain_limit)
 
     def _get_exec(self):
         return None  # signaling default

@@ -210,7 +210,8 @@ class ExternalProgramCaller(object):
     @staticmethod
     def call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth,
                     float_psnr, psnr, float_ssim, ssim, float_ms_ssim, ms_ssim, float_moment,
-                    no_prediction, models, subsample, n_threads, disable_avx, output, exe, logger):
+                    no_prediction, models, subsample, n_threads, disable_avx, output, exe, logger,
+                    vif_enhn_gain_limit=None, adm_enhn_gain_limit=None):
 
         if exe is None:
             exe = required(ExternalProgram.vmafrc)
@@ -261,6 +262,12 @@ class ExternalProgramCaller(object):
 
         if disable_avx:
             vmafrc_cmd += ' --cpumask -1'
+
+        if vif_enhn_gain_limit is not None:
+            vmafrc_cmd += f' --feature float_vif=vif_enhn_gain_limit={vif_enhn_gain_limit}'
+
+        if adm_enhn_gain_limit is not None:
+            vmafrc_cmd += f' --feature float_adm=adm_enhn_gain_limit={adm_enhn_gain_limit}'
 
         if logger:
             logger.info(vmafrc_cmd)
