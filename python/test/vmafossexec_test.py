@@ -255,7 +255,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ssim_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_ms_ssim_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 97.90016, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 97.89993999999999, places=4)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 98.47138, places=4)
 
     def test_run_vmafossexec_runner_with_transform_score(self):

@@ -226,12 +226,19 @@ void vif_statistic_s(const float *mu1, const float *mu2, const float *mu1_mu2, c
 	int xy_filt_px_stride = xy_filt_stride / sizeof(float);
 
 	float mu1_sq_val, mu2_sq_val, mu1_mu2_val, xx_filt_val, yy_filt_val, xy_filt_val;
-	float sigma1_sq, sigma2_sq, sigma12, num_log_den, num_log_num;
+	float sigma1_sq, sigma2_sq, sigma12;
 	float num_val, den_val;
 	int i, j;
 
-	float accum_num = 0.0;
-	float accum_den = 0.0;
+    /* ==== vif_stat_mode = 'matching_c' ==== */
+    // float num_log_den, num_log_num;
+    /* ==== vif_stat_mode = 'matching_matlab' ==== */
+	float g, sv_sq, eps = 1.0e-10f;
+	float vif_enhn_gain_limit_f = (float) vif_enhn_gain_limit;
+    /* == end of vif_stat_mode = 'matching_matlab' == */
+
+	float accum_num = 0.0f;
+	float accum_den = 0.0f;
 
 	for (i = 0; i < h; ++i) {
 		float accum_inner_num = 0;
@@ -250,25 +257,76 @@ void vif_statistic_s(const float *mu1, const float *mu2, const float *mu1_mu2, c
 			sigma2_sq = yy_filt_val - mu2_sq_val;
 			sigma12 = xy_filt_val - mu1_mu2_val;
 
-			if (sigma1_sq < sigma_nsq) {
-				num_val = 1.0 - sigma2_sq * sigma_max_inv;
-				den_val = 1.0;
+			/* ==== vif_stat_mode = 'matching_c' ==== */
+
+            /* if (sigma1_sq < sigma_nsq) {
+                num_val = 1.0 - sigma2_sq * sigma_max_inv;
+                den_val = 1.0;
+            }
+            else {
+                num_log_num = (sigma2_sq + sigma_nsq) * sigma1_sq;
+                if (sigma12 < 0)
+                {
+                    num_val = 0.0;
+                }
+                else
+                {
+                    num_log_den = num_log_num - sigma12 * sigma12;
+                    num_val = log2f(num_log_num / num_log_den);
+                }
+                den_val = log2f(1.0f + sigma1_sq / sigma_nsq);
+            } */
+
+            /* ==== vif_stat_mode = 'matching_matlab' ==== */
+
+			if (sigma1_sq < 0.0f) {
+			    sigma1_sq = 0.0f;
 			}
-			else {
-				num_log_num = (sigma2_sq + sigma_nsq) * sigma1_sq;
-				if (sigma12 < 0)
-				{
-					num_val = 0.0;
-				}
-				else
-				{
-					num_log_den = num_log_num - sigma12 * sigma12;
-					num_val = log2f(num_log_num / num_log_den);
-				}
-				den_val = log2f(1.0f + sigma1_sq / sigma_nsq);
+			if (sigma2_sq < 0.0f) {
+			    sigma2_sq = 0.0f;
 			}
 
-			accum_inner_num += num_val;
+			g = sigma12 / (sigma1_sq + eps);
+			sv_sq = sigma2_sq - g * sigma12;
+
+			if (g > vif_enhn_gain_limit_f) {
+			    g = vif_enhn_gain_limit_f;
+			}
+
+			if (sigma1_sq < eps) {
+			    g = 0.0f;
+                sv_sq = sigma2_sq;
+                sigma1_sq = 0.0f;
+			}
+
+			if (sigma2_sq < eps) {
+			    g = 0.0f;
+			    sv_sq = 0.0f;
+			}
+
+			if (g < 0.0f) {
+			    sv_sq = sigma2_sq;
+			    g = 0.0f;
+			}
+			if (sv_sq <= eps) {
+			    sv_sq = eps;
+			}
+
+			num_val = log2f(1.0f + (g * g * sigma1_sq) / (sv_sq + sigma_nsq));
+            den_val = log2f(1.0f + (sigma1_sq) / (sigma_nsq));
+
+            if (sigma12 < 0.0f) {
+                num_val = 0.0f;
+            }
+
+            if (sigma1_sq < sigma_nsq) {
+                num_val = 1.0f - sigma2_sq * sigma_max_inv;
+                den_val = 1.0f;
+            }
+
+            /* == end of vif_stat_mode = 'matching_matlab' == */
+
+            accum_inner_num += num_val;
 			accum_inner_den += den_val;
 		}
 

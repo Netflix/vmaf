@@ -360,7 +360,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFRC_float_ssim_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFRC_float_ms_ssim_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAFRC_score'], 97.90016779999999, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 97.8999562, places=4)
         self.assertAlmostEqual(results[1]['VMAFRC_score'], 98.47138, places=4)
 
     def test_run_vmafrc_compare_directly_with_ossexec_420_8bit(self):
