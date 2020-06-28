@@ -149,7 +149,8 @@ class VmafFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
     # VERSION = '0.2.4b'  # Modify by adding ADM noise floor outside cube root; add derived feature motion2
     # VERSION = '0.2.4c'  # Modify by moving motion2 to c code
     # VERSION = '0.2.5'  # replace executable vmaf_feature with vmaf_rc
-    VERSION = '0.2.6'  # incorporate adm_enhn_gain_limit and vif_enhn_gain_limit
+    # VERSION = '0.2.6'  # incorporate adm_enhn_gain_limit and vif_enhn_gain_limit
+    VERSION = '0.2.7'  # move vif_enhn_gain_limit right before log calculation
 
     ATOM_FEATURES = ['vif', 'adm', 'ansnr', 'motion', 'motion2',
                      'vif_num', 'vif_den', 'adm_num', 'adm_den', 'anpsnr',
