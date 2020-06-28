@@ -1137,6 +1137,14 @@ class VmafrcQualityRunner(QualityRunner):
             if disable_clip_score:
                 model0.append('disable_clip')
 
+            if self.optional_dict is not None and 'disable_enhn_gain' in self.optional_dict:
+                disable_enhn_gain = self.optional_dict['disable_enhn_gain']
+            else:
+                disable_enhn_gain = False
+            assert isinstance(disable_enhn_gain, bool)
+            if disable_enhn_gain:
+                model0.append('disable_enhn_gain')
+
             models = [':'.join(model0)]
 
         if self.optional_dict is not None and 'float_psnr' in self.optional_dict:

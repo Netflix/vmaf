@@ -673,6 +673,34 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAFRC_score'], 129.516141, places=4)  # 132.78849246495625
 
+    def test_run_vmafrc_runner_akiyo_multiply_disable_enhn_gain(self):
+        ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        dis_path = VmafConfig.test_resource_path("yuv", "disp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 352, 'height': 288})
+
+        self.runner = VmafrcQualityRunner(
+            [asset],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={'disable_clip_score': True, 'disable_enhn_gain': True}
+        )
+        self.runner.run(parallelize=False)
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 0.9574308606115118, places=4)  # 1.116691484215469
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'], 0.983699512450884, places=4)  # 1.0522544319369052
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.9974276726830457, places=4)  # 1.0705609423182443
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.999146211879154, places=4)  # 1.0728060231246508
+
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 88.032956, places=4)  # 132.78849246495625
+
 
 class VmafrcQualityRunnerSubsamplingTest(unittest.TestCase):
 

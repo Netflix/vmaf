@@ -120,6 +120,25 @@ static char *test_model_set_flags()
               !model2->score_clip.enabled);
     vmaf_model_destroy(model2);
 
+    VmafModel  *model3;
+    VmafModelConfig  cfg3 = {
+            .path = "../../model/vmaf_v0.6.1.pkl",
+            .flags = VMAF_MODEL_FLAG_DISABLE_ENHN_GAIN,
+    };
+    err = vmaf_model_load_from_path(&model3, &cfg3);
+    mu_assert("problem during vmaf_model_load_from_path", !err);
+    mu_assert("Enhn gain must be disabled.\n",
+              !model2->enhn_gain.enabled);
+
+    VmafModel  *model4;
+    VmafModelConfig  cfg4 = {
+            .path = "../../model/vmaf_v0.6.1.pkl",
+    };
+    err = vmaf_model_load_from_path(&model4, &cfg4);
+    mu_assert("problem during vmaf_model_load_from_path", !err);
+    mu_assert("Enhancement gain must be enabled.\n",
+              model2->enhn_gain.enabled);
+
     return NULL;
 }
 

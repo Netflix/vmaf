@@ -60,6 +60,13 @@ typedef struct VmafModel {
         bool out_lte_in, out_gte_in;
     } score_transform;
     struct svm_model *svm;
+    struct {
+        bool enabled;
+        struct {
+            bool enabled;
+            double value;
+        } adm_enhn_gain_limit, vif_enhn_gain_limit;
+    } enhn_gain;
 } VmafModel;
 
 #endif /* __VMAF_SRC_MODEL_H__ */
