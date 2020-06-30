@@ -32,6 +32,10 @@
 static int unpickle(VmafModel *model, const char *pickle_path,
                     enum VmafModelFlags flags)
 {
+    VmafDictionary *dict = NULL;
+    int err = vmaf_dictionary_set(&dict, "key", "val", 0);
+
+
     Val pickle_model;
     LoadValFromFile(pickle_path, pickle_model, SERIALIZE_P0);
     Val model_type = pickle_model["model_dict"]["model_type"];
@@ -138,10 +142,11 @@ static int unpickle(VmafModel *model, const char *pickle_path,
        Tab feature_opts_dict_tab = feature_opts_dict;
        Arr keys = feature_opts_dict_tab.keys();
        for (unsigned j = 0; j < keys.length(); j++) {
-           vmaf_dictionary_set(&(model->feature[i].opts_dict),
-                               strdup(Stringize(keys[j]).c_str()),
-                               strdup(Stringize(feature_opts_dict_tab[keys[j]]).c_str()),
-                   0);
+//           vmaf_dictionary_set(&(model->feature[i].opts_dict),
+//                               strdup(Stringize(keys[j]).c_str()),
+//                               strdup(Stringize(feature_opts_dict_tab[keys[j]]).c_str()),
+//                   0);
+            ;
        }
     }
 
