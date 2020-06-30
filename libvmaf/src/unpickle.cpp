@@ -121,9 +121,11 @@ static int unpickle(VmafModel *model, const char *pickle_path,
         return -EINVAL;
     if (VAL_IS_LIST(feature_opts_dicts) && feature_opts_dicts.length() != model->n_features)
         return -EINVAL;
-    for (unsigned i = 0; i < model->n_features; i++) {
-        if (!(VAL_IS_NONE(feature_opts_dicts[i]) || VAL_IS_DICT(feature_opts_dicts[i])))
-            return -EINVAL;
+    if (VAL_IS_LIST(feature_opts_dicts)) {
+        for (unsigned i = 0; i < model->n_features; i++) {
+            if (!(VAL_IS_NONE(feature_opts_dicts[i]) || VAL_IS_DICT(feature_opts_dicts[i])))
+                return -EINVAL;
+        }
     }
 
     model->feature = (VmafModelFeature *)
@@ -136,17 +138,18 @@ static int unpickle(VmafModel *model, const char *pickle_path,
        if (!model->feature[i].name) goto free_name;
        model->feature[i].slope = double(slopes[i + 1]);
        model->feature[i].intercept = double(intercepts[i + 1]);
-       Val feature_opts_dict = feature_opts_dicts[i];
-       if (!VAL_IS_DICT(feature_opts_dict))
-           return -EINVAL;
-       Tab feature_opts_dict_tab = feature_opts_dict;
-       Arr keys = feature_opts_dict_tab.keys();
-       for (unsigned j = 0; j < keys.length(); j++) {
-//           vmaf_dictionary_set(&(model->feature[i].opts_dict),
-//                               strdup(Stringize(keys[j]).c_str()),
-//                               strdup(Stringize(feature_opts_dict_tab[keys[j]]).c_str()),
-//                   0);
-            ;
+       if (VAL_IS_LIST(feature_opts_dicts)) {
+           Val feature_opts_dict = feature_opts_dicts[i];
+           if (!VAL_IS_DICT(feature_opts_dict))
+               return -EINVAL;
+           Tab feature_opts_dict_tab = feature_opts_dict;
+           Arr keys = feature_opts_dict_tab.keys();
+           for (unsigned j = 0; j < keys.length(); j++) {
+           vmaf_dictionary_set(&(model->feature[i].opts_dict),
+                               strdup(Stringize(keys[j]).c_str()),
+                               strdup(Stringize(feature_opts_dict_tab[keys[j]]).c_str()),
+                   0);
+           }
        }
     }
 

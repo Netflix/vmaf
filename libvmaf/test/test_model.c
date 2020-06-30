@@ -126,10 +126,18 @@ static char *test_model_set_flags()
     };
     err = vmaf_model_load_from_path(&model3, &cfg3);
     mu_assert("problem during vmaf_model_load_from_path", !err);
-//    mu_assert("vif_enhn_gain_limit must be disabled.\n",
-//              !model3->enhn_gain.vif_enhn_gain_limit.enabled);
-//    mu_assert("adm_enhn_gain_limit must be disabled.\n",
-//              !model3->enhn_gain.adm_enhn_gain_limit.enabled);
+    mu_assert("feature[0].opts_dict must be NULL.\n",
+              !model3->feature[0].opts_dict);
+    mu_assert("feature[1].opts_dict must be NULL.\n",
+              !model3->feature[1].opts_dict);
+    mu_assert("feature[2].opts_dict must be NULL.\n",
+              !model3->feature[2].opts_dict);
+    mu_assert("feature[3].opts_dict must be NULL.\n",
+              !model3->feature[3].opts_dict);
+    mu_assert("feature[4].opts_dict must be NULL.\n",
+              !model3->feature[4].opts_dict);
+    mu_assert("feature[5].opts_dict must be NULL.\n",
+              !model3->feature[5].opts_dict);
 
     VmafModel  *model4;
     VmafModelConfig  cfg4 = {
@@ -137,14 +145,45 @@ static char *test_model_set_flags()
     };
     err = vmaf_model_load_from_path(&model4, &cfg4);
     mu_assert("problem during vmaf_model_load_from_path", !err);
-//    mu_assert("vif_enhn_gain_limit must be enabled.\n",
-//              model4->enhn_gain.vif_enhn_gain_limit.enabled);
-//    mu_assert("vif_enhn_gain_limit must have value 1.0.\n",
-//              model4->enhn_gain.vif_enhn_gain_limit.value==1.0);
-//    mu_assert("adm_enhn_gain_limit must be enabled.\n",
-//              model4->enhn_gain.adm_enhn_gain_limit.enabled);
-//    mu_assert("adm_enhn_gain_limit must have value 1.0.\n",
-//              model4->enhn_gain.adm_enhn_gain_limit.value==1.0);
+    mu_assert("feature[0].opts_dict must not be NULL.\n",
+              model4->feature[0].opts_dict);
+    mu_assert("feature[1].opts_dict must be NULL.\n",
+              !model4->feature[1].opts_dict);
+    mu_assert("feature[2].opts_dict must not be NULL.\n",
+              model4->feature[2].opts_dict);
+    mu_assert("feature[3].opts_dict must not be NULL.\n",
+              model4->feature[3].opts_dict);
+    mu_assert("feature[4].opts_dict must not be NULL.\n",
+              model4->feature[4].opts_dict);
+    mu_assert("feature[5].opts_dict must not be NULL.\n",
+              model4->feature[5].opts_dict);
+
+    VmafDictionaryEntry *entry = NULL;
+    entry = vmaf_dictionary_get(&model4->feature[0].opts_dict, "'adm_enhn_gain_limit'", 0);
+    mu_assert("feature[0].opts_dict must have key adm_enhn_gain_limit.\n",
+              strcmp(entry->key, "'adm_enhn_gain_limit'")==0);
+    mu_assert("feature[0].opts_dict[\"adm_enhn_gain_limit\"] must have value 1.0.\n",
+              strcmp(entry->val, "1.0")==0);
+    entry = vmaf_dictionary_get(&model4->feature[2].opts_dict, "'vif_enhn_gain_limit'", 0);
+    mu_assert("feature[2].opts_dict must have key vif_enhn_gain_limit.\n",
+              strcmp(entry->key, "'vif_enhn_gain_limit'")==0);
+    mu_assert("feature[2].opts_dict[\"vif_enhn_gain_limit\"] must have value 1.0.\n",
+              strcmp(entry->val, "1.0")==0);
+    entry = vmaf_dictionary_get(&model4->feature[3].opts_dict, "'vif_enhn_gain_limit'", 0);
+    mu_assert("feature[3].opts_dict must have key vif_enhn_gain_limit.\n",
+              strcmp(entry->key, "'vif_enhn_gain_limit'")==0);
+    mu_assert("feature[3].opts_dict[\"vif_enhn_gain_limit\"] must have value 1.0.\n",
+              strcmp(entry->val, "1.0")==0);
+    entry = vmaf_dictionary_get(&model4->feature[4].opts_dict, "'vif_enhn_gain_limit'", 0);
+    mu_assert("feature[4].opts_dict must have key vif_enhn_gain_limit.\n",
+              strcmp(entry->key, "'vif_enhn_gain_limit'")==0);
+    mu_assert("feature[4].opts_dict[\"vif_enhn_gain_limit\"] must have value 1.0.\n",
+              strcmp(entry->val, "1.0")==0);
+    entry = vmaf_dictionary_get(&model4->feature[5].opts_dict, "'vif_enhn_gain_limit'", 0);
+    mu_assert("feature[5].opts_dict must have key vif_enhn_gain_limit.\n",
+              strcmp(entry->key, "'vif_enhn_gain_limit'")==0);
+    mu_assert("feature[5].opts_dict[\"vif_enhn_gain_limit\"] must have value 1.0.\n",
+              strcmp(entry->val, "1.0")==0);
 
     return NULL;
 }
