@@ -14,9 +14,14 @@ def convert_vmaf_model_to_vmaf_no_enhn_gain_model(vmaf_model_path, output_vmaf_n
                                  # encoding='latin1',
                                  )
         vmaf_neg_model = copy.deepcopy(vmaf_model)
-        vmaf_neg_model['model_dict']['enhn_gain'] = dict()
-        vmaf_neg_model['model_dict']['enhn_gain']['vif_enhn_gain_limit'] = 1.0
-        vmaf_neg_model['model_dict']['enhn_gain']['adm_enhn_gain_limit'] = 1.0
+        vmaf_neg_model['model_dict']['feature_opts_dicts'] = [
+            {'adm_enhn_gain_limit': 1.0},  # 'VMAF_feature_adm2_score'
+            {},                            # 'VMAF_feature_motion2_score'
+            {'vif_enhn_gain_limit': 1.0},  # 'VMAF_feature_vif_scale0_score'
+            {'vif_enhn_gain_limit': 1.0},  # 'VMAF_feature_vif_scale1_score'
+            {'vif_enhn_gain_limit': 1.0},  # 'VMAF_feature_vif_scale2_score'
+            {'vif_enhn_gain_limit': 1.0},  # 'VMAF_feature_vif_scale3_score'
+        ]
     if not os.path.exists(os.path.dirname(output_vmaf_neg_model_path)):
         os.makedirs(os.path.dirname(output_vmaf_neg_model_path))
     with open(output_vmaf_neg_model_path, 'wb') as output_file:

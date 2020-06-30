@@ -20,6 +20,7 @@
 
 #include <libvmaf/model.h>
 
+#include "dict.h"
 #include "chooseser.h"
 #include "model.h"
 
@@ -40,7 +41,7 @@ static int unpickle(VmafModel *model, const char *pickle_path,
     Val intercepts = pickle_model["model_dict"]["intercepts"];
     Val score_clip = pickle_model["model_dict"]["score_clip"];
     Val score_transform = pickle_model["model_dict"]["score_transform"];
-    Val enhn_gain = pickle_model["model_dict"]["enhn_gain"];
+    Val feature_opts_dicts = pickle_model["model_dict"]["feature_opts_dicts"];
 
     if (!((VAL_IS_NONE(score_clip)) || VAL_IS_LIST(score_clip)))
         return -EINVAL;
@@ -108,39 +109,62 @@ static int unpickle(VmafModel *model, const char *pickle_path,
     if (!VAL_IS_LIST(feature_names))
         return -EINVAL;
     model->n_features = feature_names.length();
+    if (!VAL_IS_LIST(slopes) || slopes.length() != model->n_features + 1)
+        return -EINVAL;
+    if (!VAL_IS_LIST(intercepts) || intercepts.length() != model->n_features + 1)
+        return -EINVAL;
+    if (!((VAL_IS_NONE(feature_opts_dicts)) || VAL_IS_LIST(feature_opts_dicts)))
+        return -EINVAL;
+    if (VAL_IS_LIST(feature_opts_dicts) && feature_opts_dicts.length() != model->n_features)
+        return -EINVAL;
+    for (unsigned i = 0; i < model->n_features; i++) {
+        if (!(VAL_IS_NONE(feature_opts_dicts[i]) || VAL_IS_DICT(feature_opts_dicts[i])))
+            return -EINVAL;
+    }
+
     model->feature = (VmafModelFeature *)
         malloc(sizeof(*(model->feature)) * model->n_features);
     if (!model->feature) goto fail;
     memset(model->feature, 0, sizeof(*(model->feature)) * model->n_features);
+
     for (unsigned i = 0; i < model->n_features; i++) {
        model->feature[i].name = strdup(Stringize(feature_names[i]).c_str());
        if (!model->feature[i].name) goto free_name;
        model->feature[i].slope = double(slopes[i + 1]);
        model->feature[i].intercept = double(intercepts[i + 1]);
+       Val feature_opts_dict = feature_opts_dicts[i];
+       if (!VAL_IS_DICT(feature_opts_dict))
+           return -EINVAL;
+       Tab feature_opts_dict_tab = feature_opts_dict;
+       Arr keys = feature_opts_dict_tab.keys();
+       for (unsigned j = 0; j < keys.length(); j++) {
+           vmaf_dictionary_set(&(model->feature[i].opts_dict),
+                               strdup(Stringize(keys[j]).c_str()),
+                               strdup(Stringize(feature_opts_dict_tab[keys[j]]).c_str()),
+                   0);
+       }
     }
 
     model->slope = double(slopes[0]);
     model->intercept = double(intercepts[0]);
 
-    if (!((VAL_IS_NONE(enhn_gain)) || VAL_IS_DICT(enhn_gain)))
-        return -EINVAL;
-    if (VAL_IS_NONE(enhn_gain)) {
-        model->enhn_gain.vif_enhn_gain_limit.enabled = false;
-        model->enhn_gain.adm_enhn_gain_limit.enabled = false;
-    } else {
-        if (VAL_IS_NONE(enhn_gain["vif_enhn_gain_limit"])) {
-            model->enhn_gain.vif_enhn_gain_limit.enabled = false;
-        } else {
-            model->enhn_gain.vif_enhn_gain_limit.enabled = true;
-            model->enhn_gain.vif_enhn_gain_limit.value = enhn_gain["vif_enhn_gain_limit"];
-        }
-        if (VAL_IS_NONE(enhn_gain["adm_enhn_gain_limit"])) {
-            model->enhn_gain.adm_enhn_gain_limit.enabled = false;
-        } else {
-            model->enhn_gain.adm_enhn_gain_limit.enabled = true;
-            model->enhn_gain.adm_enhn_gain_limit.value = enhn_gain["adm_enhn_gain_limit"];
-        }
-    }
+//    if (VAL_IS_NONE(enhn_gain)) {
+//        model->enhn_gain.vif_enhn_gain_limit.enabled = false;
+//        model->enhn_gain.adm_enhn_gain_limit.enabled = false;
+//    } else {
+//        if (VAL_IS_NONE(enhn_gain["vif_enhn_gain_limit"])) {
+//            model->enhn_gain.vif_enhn_gain_limit.enabled = false;
+//        } else {
+//            model->enhn_gain.vif_enhn_gain_limit.enabled = true;
+//            model->enhn_gain.vif_enhn_gain_limit.value = enhn_gain["vif_enhn_gain_limit"];
+//        }
+//        if (VAL_IS_NONE(enhn_gain["adm_enhn_gain_limit"])) {
+//            model->enhn_gain.adm_enhn_gain_limit.enabled = false;
+//        } else {
+//            model->enhn_gain.adm_enhn_gain_limit.enabled = true;
+//            model->enhn_gain.adm_enhn_gain_limit.value = enhn_gain["adm_enhn_gain_limit"];
+//        }
+//    }
 
     return 0;
 
