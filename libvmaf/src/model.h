@@ -61,7 +61,6 @@ typedef struct VmafModel {
     } score_transform;
     struct svm_model *svm;
     struct {
-        bool enabled;
         struct {
             bool enabled;
             double value;

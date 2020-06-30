@@ -122,30 +122,8 @@ static int unpickle(VmafModel *model, const char *pickle_path,
     model->slope = double(slopes[0]);
     model->intercept = double(intercepts[0]);
 
-    /* populating model->enhn_gain:
-     * 1) enhn_gain["disable_enhn_gain"] and (flags & VMAF_MODEL_FLAG_DISABLE_ENHN_GAIN)) jointly determine
-     * model->enhn_gain.enabled, with the flags taking higher priority; by default, model->enhn_gain.enabled
-     * is true.
-     * 2) enhn_gain["adm_enhn_gain_limit"] determines model->enhn_gain.adm_enhn_gain_limit
-     * 3) enhn_gain["vif_enhn_gain_limit"] determines model->enhn_gain.vif_enhn_gain_limit
-     * */
     if (!((VAL_IS_NONE(enhn_gain)) || VAL_IS_DICT(enhn_gain)))
         return -EINVAL;
-    if (flags & VMAF_MODEL_FLAG_DISABLE_ENHN_GAIN) {
-        model->enhn_gain.enabled = false;
-    } else {
-        if (VAL_IS_NONE(enhn_gain)) {
-            model->enhn_gain.enabled = true;
-        } else {
-            if (VAL_EQUAL_STR(enhn_gain["disable_enhn_gain"], "'true'")) {
-                model->enhn_gain.enabled = false;
-            } else if (VAL_EQUAL_STR(enhn_gain["disable_enhn_gain"], "'false'")) {
-                model->enhn_gain.enabled = true;
-            } else {
-                return -EINVAL;
-            }
-        }
-    }
     if (VAL_IS_NONE(enhn_gain)) {
         model->enhn_gain.vif_enhn_gain_limit.enabled = false;
         model->enhn_gain.adm_enhn_gain_limit.enabled = false;

@@ -173,8 +173,6 @@ static VmafModelConfig parse_model_config(const char *const optarg,
             cfg.flags |= VMAF_MODEL_FLAG_ENABLE_TRANSFORM;
         } else if (!strcmp(token, "enable_ci")) {
             cfg.flags |= VMAF_MODEL_FLAG_ENABLE_CONFIDENCE_INTERVAL;
-        } else if (!strcmp(token, "disable_enhn_gain")) {
-            cfg.flags |= VMAF_MODEL_FLAG_DISABLE_ENHN_GAIN;
         } else {
             usage(app, "Unknown parameter %s for model.\n", token);
         }
