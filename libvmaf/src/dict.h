@@ -21,6 +21,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct VmafDictionary VmafDictionary;
 
 typedef struct VmafDictionaryEntry {
@@ -40,5 +44,9 @@ const VmafDictionaryEntry *vmaf_dictionary_get(VmafDictionary **dict,
 int vmaf_dictionary_copy(VmafDictionary **src, VmafDictionary **dst);
 
 int vmaf_dictionary_free(VmafDictionary **dict);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __VMAF_SRC_DICT_H__ */
