@@ -32,10 +32,6 @@
 static int unpickle(VmafModel *model, const char *pickle_path,
                     enum VmafModelFlags flags)
 {
-    VmafDictionary *dict = NULL;
-    int err = vmaf_dictionary_set(&dict, "key", "val", 0);
-
-
     Val pickle_model;
     LoadValFromFile(pickle_path, pickle_model, SERIALIZE_P0);
     Val model_type = pickle_model["model_dict"]["model_type"];
@@ -145,35 +141,17 @@ static int unpickle(VmafModel *model, const char *pickle_path,
            Tab feature_opts_dict_tab = feature_opts_dict;
            Arr keys = feature_opts_dict_tab.keys();
            for (unsigned j = 0; j < keys.length(); j++) {
-           vmaf_dictionary_set(&(model->feature[i].opts_dict),
-                               strdup(Stringize(keys[j]).c_str()),
-                               strdup(Stringize(feature_opts_dict_tab[keys[j]]).c_str()),
-                   0);
+               char *key = strdup(Stringize(keys[j]).c_str());
+               char *val = strdup(Stringize(feature_opts_dict_tab[keys[j]]).c_str());
+               vmaf_dictionary_set(&(model->feature[i].opts_dict), key, val, 0);
+               free(key);
+               free(val);
            }
        }
     }
 
     model->slope = double(slopes[0]);
     model->intercept = double(intercepts[0]);
-
-//    if (VAL_IS_NONE(enhn_gain)) {
-//        model->enhn_gain.vif_enhn_gain_limit.enabled = false;
-//        model->enhn_gain.adm_enhn_gain_limit.enabled = false;
-//    } else {
-//        if (VAL_IS_NONE(enhn_gain["vif_enhn_gain_limit"])) {
-//            model->enhn_gain.vif_enhn_gain_limit.enabled = false;
-//        } else {
-//            model->enhn_gain.vif_enhn_gain_limit.enabled = true;
-//            model->enhn_gain.vif_enhn_gain_limit.value = enhn_gain["vif_enhn_gain_limit"];
-//        }
-//        if (VAL_IS_NONE(enhn_gain["adm_enhn_gain_limit"])) {
-//            model->enhn_gain.adm_enhn_gain_limit.enabled = false;
-//        } else {
-//            model->enhn_gain.adm_enhn_gain_limit.enabled = true;
-//            model->enhn_gain.adm_enhn_gain_limit.value = enhn_gain["adm_enhn_gain_limit"];
-//        }
-//    }
-
     return 0;
 
 free_name:
