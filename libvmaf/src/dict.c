@@ -123,6 +123,33 @@ int vmaf_dictionary_free(VmafDictionary **dict)
     return 0;
 }
 
+VmafDictionary *vmaf_dictionary_merge(VmafDictionary **dict_a,
+                                      VmafDictionary **dict_b)
+{
+    if (!dict_a) return -EINVAL;
+    if (!(*dict_a)) return -EINVAL;
+    if (!dict_b) return -EINVAL;
+    if (!(*dict_b)) return -EINVAL;
+
+    int err = 0;
+    VmafDictionary *a = *dict_a;
+    VmafDictionary *b = *dict_b;
+
+    VmafDictionary *d = NULL;
+    err = vmaf_dictionary_copy(&a, &d);
+    if (err) goto fail;
+
+    for (unsigned i = 0; i < b->cnt; i++)
+        err |= vmaf_dictionary_set(&d, b->entry[i].key, b->entry[i].val, 0);
+    if (err) goto fail;
+    return d;
+
+fail:
+    err = vmaf_dictionary_free(&d);
+    return NULL;
+}
+
+
 int vmaf_feature_dictionary_set(VmafFeatureDictionary **dict, char *key, char *val)
 {
     return vmaf_dictionary_set((VmafDictionary**)dict, key, val, 0);

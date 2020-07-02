@@ -43,6 +43,9 @@ const VmafDictionaryEntry *vmaf_dictionary_get(VmafDictionary **dict,
 
 int vmaf_dictionary_copy(VmafDictionary **src, VmafDictionary **dst);
 
+VmafDictionary *vmaf_dictionary_merge(VmafDictionary **dict_a,
+                                      VmafDictionary **dict_b);
+
 int vmaf_dictionary_free(VmafDictionary **dict);
 
 #ifdef __cplusplus
