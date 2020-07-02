@@ -167,7 +167,8 @@ int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model)
         if (!fex) return -EINVAL;
 
         VmafFeatureExtractorContext *fex_ctx;
-        err = vmaf_feature_extractor_context_create(&fex_ctx, fex, NULL);
+        VmafDictionary *d = model->feature[i].opts_dict;
+        err = vmaf_feature_extractor_context_create(&fex_ctx, fex, d);
         if (err) return err;
         err = feature_extractor_vector_append(rfe, fex_ctx);
         if (err) {
