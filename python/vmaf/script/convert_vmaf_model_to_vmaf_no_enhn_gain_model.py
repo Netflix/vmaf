@@ -36,14 +36,11 @@ def convert_vmaf_model_to_vmaf_no_enhn_gain_model(vmaf_model_path, output_vmaf_n
 if not sys.version_info[0] == 2:
     print('warning: running {} skipped - must to use py2 to generate the output pickle file.'.format(
         os.path.basename(__file__)))
-    exit(0)
-
-
-convert_vmaf_model_to_vmaf_no_enhn_gain_model(
-    # VmafConfig.model_path('vmaf_v0.6.1.pkl'),
-    './model/vmaf_v0.6.1.pkl',
-    # VmafConfig.workspace_path('model', 'vmaf_v0.6.1neg.pkl')
-    './model/vmaf_v0.6.1neg.pkl',
-)
-
-print('Done.')
+else:
+    convert_vmaf_model_to_vmaf_no_enhn_gain_model(
+        # VmafConfig.model_path('vmaf_v0.6.1.pkl'),
+        './model/vmaf_v0.6.1.pkl',
+        # VmafConfig.workspace_path('model', 'vmaf_v0.6.1neg.pkl')
+        './model/vmaf_v0.6.1neg.pkl',
+    )
+    print('Done.')
