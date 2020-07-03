@@ -142,8 +142,9 @@ static int unpickle(VmafModel *model, const char *pickle_path,
            Arr keys = feature_opts_dict_tab.keys();
            for (unsigned j = 0; j < keys.length(); j++) {
                char *key = strdup(Stringize(keys[j]).c_str());
+               key[strlen(key) - 1] = 0; //FIXME: ptools
                char *val = strdup(Stringize(feature_opts_dict_tab[keys[j]]).c_str());
-               vmaf_dictionary_set(&(model->feature[i].opts_dict), key, val, 0);
+               vmaf_dictionary_set(&(model->feature[i].opts_dict), key + 1, val, 0);
                free(key);
                free(val);
            }
