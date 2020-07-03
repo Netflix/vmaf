@@ -6,7 +6,6 @@ import sys
 
 # from vmaf.config import VmafConfig
 
-assert sys.version_info[0] == 2, 'Must to use py2 to generate the output pickle file.'
 
 def convert_vmaf_model_to_vmaf_no_enhn_gain_model(vmaf_model_path, output_vmaf_neg_model_path):
     with open(vmaf_model_path, 'rb') as file:
@@ -32,6 +31,13 @@ def convert_vmaf_model_to_vmaf_no_enhn_gain_model(vmaf_model_path, output_vmaf_n
     vmaf_svm_model_path = vmaf_model_path + '.model'
     output_vmaf_neg_svm_model_path = output_vmaf_neg_model_path + '.model'
     shutil.copyfile(vmaf_svm_model_path, output_vmaf_neg_svm_model_path)
+
+
+try:
+    assert sys.version_info[0] == 2, 'Must to use py2 to generate the output pickle file.'
+except AssertionError as e:
+    print('warning: running {} skipped - {}'.format(os.path.basename(__file__), str(e)))
+    exit(0)
 
 
 convert_vmaf_model_to_vmaf_no_enhn_gain_model(
