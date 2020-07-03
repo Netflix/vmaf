@@ -33,10 +33,9 @@ def convert_vmaf_model_to_vmaf_no_enhn_gain_model(vmaf_model_path, output_vmaf_n
     shutil.copyfile(vmaf_svm_model_path, output_vmaf_neg_svm_model_path)
 
 
-try:
-    assert sys.version_info[0] == 2, 'Must to use py2 to generate the output pickle file.'
-except AssertionError as e:
-    print('warning: running {} skipped - {}'.format(os.path.basename(__file__), str(e)))
+if not sys.version_info[0] == 2:
+    print('warning: running {} skipped - must to use py2 to generate the output pickle file.'.format(
+        os.path.basename(__file__)))
     exit(0)
 
 
