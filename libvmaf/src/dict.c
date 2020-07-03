@@ -126,22 +126,22 @@ int vmaf_dictionary_free(VmafDictionary **dict)
 VmafDictionary *vmaf_dictionary_merge(VmafDictionary **dict_a,
                                       VmafDictionary **dict_b)
 {
-    if (!dict_a) return -EINVAL;
-    if (!(*dict_a)) return -EINVAL;
-    if (!dict_b) return -EINVAL;
-    if (!(*dict_b)) return -EINVAL;
-
     int err = 0;
     VmafDictionary *a = *dict_a;
     VmafDictionary *b = *dict_b;
-
     VmafDictionary *d = NULL;
-    err = vmaf_dictionary_copy(&a, &d);
-    if (err) goto fail;
 
-    for (unsigned i = 0; i < b->cnt; i++)
-        err |= vmaf_dictionary_set(&d, b->entry[i].key, b->entry[i].val, 0);
-    if (err) goto fail;
+    if (a) {
+        err = vmaf_dictionary_copy(&a, &d);
+        if (err) goto fail;
+    }
+
+    if (b) {
+        for (unsigned i = 0; i < b->cnt; i++)
+            err |= vmaf_dictionary_set(&d, b->entry[i].key, b->entry[i].val, 0);
+        if (err) goto fail;
+    }
+
     return d;
 
 fail:
