@@ -37,34 +37,23 @@ typedef struct AdmState {
 } AdmState;
 
 static const VmafOption options[] = {
-    {
-        .name = "debug",
-        .help = "debug mode: enable additional output",
-        .offset = offsetof(AdmState, debug),
-        .type = VMAF_OPT_TYPE_BOOL,
-        .default_val.b = false,
-    },
-    {
-        .name = "adm_enhn_gain_limit",
-        .help = "enhancement gain imposed on adm, must be >= 1.0, "
-                "where 1.0 means the gain is completely disabled",
-        .offset = offsetof(AdmState, adm_enhn_gain_limit),
-        .type = VMAF_OPT_TYPE_DOUBLE,
-        .default_val.d = DEFAULT_ADM_ENHN_GAIN_LIMIT,
-        .min = 1.0,
-        .max = DEFAULT_ADM_ENHN_GAIN_LIMIT,
-    },
-    {
-        .name = "'adm_enhn_gain_limit'", //FIXME: ptools
-        .help = "enhancement gain imposed on adm, must be >= 1.0, "
-                "where 1.0 means the gain is completely disabled",
-        .offset = offsetof(AdmState, adm_enhn_gain_limit),
-        .type = VMAF_OPT_TYPE_DOUBLE,
-        .default_val.d = DEFAULT_ADM_ENHN_GAIN_LIMIT,
-        .min = 1.0,
-        .max = DEFAULT_ADM_ENHN_GAIN_LIMIT,
-    },
-    { NULL }
+        {
+                .name = "debug",
+                .help = "debug mode: enable additional output",
+                .offset = offsetof(AdmState, debug),
+                .type = VMAF_OPT_TYPE_BOOL,
+                .default_val.b = false,
+        },
+        {
+                .name = "adm_enhn_gain_limit",
+                .help = "enhancement gain imposed on adm, must be >= 1.0, where 1.0 means the gain is completely disabled",
+                .offset = offsetof(AdmState, adm_enhn_gain_limit),
+                .type = VMAF_OPT_TYPE_DOUBLE,
+                .default_val.d = DEFAULT_ADM_ENHN_GAIN_LIMIT,
+                .min = 1.0,
+                .max = DEFAULT_ADM_ENHN_GAIN_LIMIT,
+        },
+        { NULL }
 };
 
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
