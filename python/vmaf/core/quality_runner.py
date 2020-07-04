@@ -1126,8 +1126,14 @@ class VmafrcQualityRunner(QualityRunner):
             models = self.optional_dict['models']
         else:
             model0 = []
-            model0.append(f'path={self.DEFAULT_MODEL_FILEPATH}')
             model0.append(f'name=vmaf')
+
+            if self.optional_dict is not None and 'model_filepath' in self.optional_dict:
+                model_filepath = self.optional_dict['model_filepath']
+            else:
+                model_filepath = self.DEFAULT_MODEL_FILEPATH
+            assert isinstance(model_filepath, str)
+            model0.append(f'path={model_filepath}')
 
             if self.optional_dict is not None and 'disable_clip_score' in self.optional_dict:
                 disable_clip_score = self.optional_dict['disable_clip_score']
@@ -1205,17 +1211,35 @@ class VmafrcQualityRunner(QualityRunner):
             disable_avx = False
         assert isinstance(disable_avx, bool)
 
-        if self.optional_dict is not None and 'vif_enhn_gain_limit' in self.optional_dict:
-            vif_enhn_gain_limit = self.optional_dict['vif_enhn_gain_limit']
-        else:
-            vif_enhn_gain_limit = None
+        disable_enhn_gain = self.optional_dict['disable_enhn_gain'] \
+            if self.optional_dict is not None and 'disable_enhn_gain' in self.optional_dict else None
+        assert disable_enhn_gain is None or isinstance(disable_enhn_gain, bool)
+
+        vif_enhn_gain_limit = self.optional_dict['vif_enhn_gain_limit'] \
+            if self.optional_dict is not None and 'vif_enhn_gain_limit' in self.optional_dict else None
         assert vif_enhn_gain_limit is None or vif_enhn_gain_limit >= 1.0
 
-        if self.optional_dict is not None and 'adm_enhn_gain_limit' in self.optional_dict:
-            adm_enhn_gain_limit = self.optional_dict['adm_enhn_gain_limit']
-        else:
-            adm_enhn_gain_limit = None
+        adm_enhn_gain_limit = self.optional_dict['adm_enhn_gain_limit'] \
+            if self.optional_dict is not None and 'adm_enhn_gain_limit' in self.optional_dict else None
         assert adm_enhn_gain_limit is None or adm_enhn_gain_limit >= 1.0
+
+        assert (disable_enhn_gain is None and vif_enhn_gain_limit is None and adm_enhn_gain_limit is None) or \
+               (disable_enhn_gain is not None and vif_enhn_gain_limit is None and adm_enhn_gain_limit is None) or \
+               (disable_enhn_gain is None and vif_enhn_gain_limit is not None and adm_enhn_gain_limit is not None)
+
+        # ==== translate disable_enhn_gain into vif_enhn_gain_limit and adm_enhn_gain_limit: ====
+        if disable_enhn_gain is None and vif_enhn_gain_limit is None and adm_enhn_gain_limit is None:
+            pass
+        elif disable_enhn_gain is not None and vif_enhn_gain_limit is None and adm_enhn_gain_limit is None:
+            if disable_enhn_gain is True:
+                vif_enhn_gain_limit = 1.0
+                adm_enhn_gain_limit = 1.0
+            else:
+                pass
+        elif disable_enhn_gain is None and vif_enhn_gain_limit is not None and adm_enhn_gain_limit is not None:
+            pass
+        else:
+            assert False
 
         quality_width, quality_height = asset.quality_width_height
 
