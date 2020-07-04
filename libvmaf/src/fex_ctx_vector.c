@@ -39,8 +39,14 @@ int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
     if (!fex_ctx) return -EINVAL;
 
     for (unsigned i = 0; i < rfe->cnt; i++) {
-        if (!strcmp(rfe->fex_ctx[i]->fex->name, fex_ctx->fex->name))
+        if (!strcmp(rfe->fex_ctx[i]->fex->name, fex_ctx->fex->name)) {
+            VmafDictionary *d =
+                vmaf_dictionary_merge(&rfe->fex_ctx[i]->opts_dict,
+                                      &fex_ctx->opts_dict);
+            vmaf_dictionary_free(&rfe->fex_ctx[i]->opts_dict);
+            rfe->fex_ctx[i]->opts_dict = d;
             return vmaf_feature_extractor_context_destroy(fex_ctx);
+        }
     }
 
     if (rfe->cnt >= rfe->capacity) {
