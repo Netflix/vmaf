@@ -22,7 +22,7 @@ test_thread_pool = executable('test_thread_pool',
 )
 
 test_model = executable('test_model',
-    ['test.c', 'test_model.c', '../src/svm.cpp', '../src/unpickle.cpp'],
+    ['test.c', 'test_model.c', '../src/dict.c', '../src/svm.cpp', '../src/unpickle.cpp'],
     include_directories : [libvmaf_inc, test_inc, opencontainers_include,
                            include_directories('../src/third_party/ptools/'), include_directories('../src')],
     c_args : vmaf_cflags_common,
@@ -32,7 +32,7 @@ test_model = executable('test_model',
 )
 
 test_predict = executable('test_predict',
-    ['test.c', 'test_predict.c', '../src/predict.c',
+    ['test.c', 'test_predict.c', '../src/predict.c', '../src/dict.c',
      '../src/feature/feature_collector.c', '../src/model.c', '../src/svm.cpp',
      '../src/unpickle.cpp'],
     include_directories : [libvmaf_inc, test_inc, opencontainers_include,

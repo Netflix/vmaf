@@ -85,8 +85,10 @@ void vmaf_model_destroy(VmafModel *model)
     free(model->path);
     free(model->name);
     svm_free_and_destroy_model(&(model->svm));
-    for (unsigned i = 0; i < model->n_features; i++)
+    for (unsigned i = 0; i < model->n_features; i++) {
         free(model->feature[i].name);
+        vmaf_dictionary_free(&model->feature[i].opts_dict);
+    }
     free(model->feature);
     free(model);
 }
