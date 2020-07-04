@@ -20,6 +20,7 @@
 #define __VMAF_SRC_MODEL_H__
 
 #include <stdbool.h>
+#include "dict.h"
 
 enum VmafModelType {
     VMAF_MODEL_TYPE_UNKNOWN = 0,
@@ -37,6 +38,7 @@ enum VmafModelNormalizationType {
 typedef struct {
     char *name;
     double slope, intercept;
+    VmafDictionary *opts_dict;
 } VmafModelFeature;
 
 typedef struct VmafModel {
