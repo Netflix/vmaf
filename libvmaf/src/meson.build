@@ -199,7 +199,7 @@ libvmaf_rc_sources = [
 
 libvmaf_rc = both_libraries(
     'vmaf_rc',
-    libvmaf_rc_sources,
+    [libvmaf_rc_sources, rev_target],
     include_directories : [vmaf_include, libvmaf_inc],
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,
