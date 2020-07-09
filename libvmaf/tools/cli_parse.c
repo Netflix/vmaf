@@ -15,6 +15,7 @@ static const char short_opts[] = "r:d:w:h:p:b:m:o:xjet:f:i:s:c:nv";
 
 enum {
     ARG_SUB = 256,
+    ARG_POOL_METHOD,
 };
 
 static const struct option long_opts[] = {
@@ -30,6 +31,7 @@ static const struct option long_opts[] = {
     { "json",             0, NULL, 'j' },
     { "csv",              0, NULL, 'e' },
     { "sub",              0, NULL, ARG_SUB },
+    { "pool",             1, NULL, ARG_POOL_METHOD },
     { "threads",          1, NULL, 't' },
     { "feature",          1, NULL, 'f' },
     { "import",           1, NULL, 'i' },
@@ -67,6 +69,7 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --json/-j:                 write output file as JSON\n"
             " --csv/-c:                  write output file as CSV\n"
             " --sub:                     write output file as subtitle\n"
+            " --pool:                    pooling method to use\n"
             " --threads/-t $unsigned:    number of threads to use\n"
             " --feature/-f $string:      additional feature\n"
             " --import/-i $path:         path to precomputed feature log\n"
@@ -133,6 +136,18 @@ static enum VmafPixelFormat parse_pix_fmt(const char *const optarg,
                                              "(420/422/444)");
 
     return pix_fmt;
+}
+
+static enum VmafPoolingMethod parse_pool_method(const char *const optarg)
+{
+    if (!strcmp(optarg, "min"))
+        return VMAF_POOL_METHOD_MIN;
+    if (!strcmp(optarg, "mean"))
+        return VMAF_POOL_METHOD_MEAN;
+    if (!strcmp(optarg, "harmonic_mean"))
+        return VMAF_POOL_METHOD_HARMONIC_MEAN;
+
+    return VMAF_POOL_METHOD_UNKNOWN;
 }
 
 #ifndef HAVE_STRSEP
@@ -255,6 +270,9 @@ void cli_parse(const int argc, char *const *const argv,
         case ARG_SUB:
             settings->output_fmt = VMAF_OUTPUT_FORMAT_SUB;
             break;
+        case ARG_POOL_METHOD:
+            settings->pool_method = parse_pool_method(optarg);
+            break;
         case 'm':
             if (settings->model_cnt == CLI_SETTINGS_STATIC_ARRAY_LEN) {
                 usage(argv[0], "A maximum of %d models is supported\n",
@@ -298,6 +316,8 @@ void cli_parse(const int argc, char *const *const argv,
         }
     }
 
+    if (!settings->pool_method)
+        settings->pool_method = VMAF_POOL_METHOD_MEAN;
     if (!settings->output_fmt)
         settings->output_fmt = VMAF_OUTPUT_FORMAT_XML;
     if (!settings->path_ref)

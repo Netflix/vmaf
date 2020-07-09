@@ -19,6 +19,7 @@ typedef struct {
     char *path_ref, *path_dist;
     unsigned width, height;
     enum VmafPixelFormat pix_fmt;
+    enum VmafPoolingMethod pool_method;
     unsigned bitdepth;
     bool use_yuv;
     char *output_path;

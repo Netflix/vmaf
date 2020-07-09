@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
 
     for (unsigned i = 0; i < c.model_cnt; i++) {
         double vmaf_score;
-        err = vmaf_score_pooled(vmaf, model[i], VMAF_POOL_METHOD_MEAN,
+        err = vmaf_score_pooled(vmaf, model[i], c.pool_method,
                                 &vmaf_score, 0, picture_index);
         if (err) {
             fprintf(stderr, "problem generating pooled VMAF score\n");
