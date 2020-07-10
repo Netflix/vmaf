@@ -4,6 +4,13 @@ endif
 
 test_inc = include_directories('.')
 
+test_context = executable('test_context',
+    ['test.c', 'test_context.c'],
+    include_directories : [libvmaf_inc, test_inc],
+    link_with : libvmaf_rc.get_static_lib(),
+    dependencies:[stdatomic_dependency],
+)
+
 test_picture = executable('test_picture',
     ['test.c', 'test_picture.c', '../src/picture.c', '../src/mem.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],

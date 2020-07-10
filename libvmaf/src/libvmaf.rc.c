@@ -320,14 +320,77 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     return 0;
 }
 
+int vmaf_feature_score_at_index(VmafContext *vmaf, const char *feature_name,
+                                double *score, unsigned index)
+{
+    if (!vmaf) return -EINVAL;
+    if (!feature_name) return -EINVAL;
+    if (!score) return -EINVAL;
+
+    return vmaf_feature_collector_get_score(vmaf->feature_collector,
+                                            feature_name, score, index);
+}
+
+
 int vmaf_score_at_index(VmafContext *vmaf, VmafModel *model, double *score,
                         unsigned index)
 {
     if (!vmaf) return -EINVAL;
+    if (!model) return -EINVAL;
     if (!score) return -EINVAL;
 
     return vmaf_predict_score_at_index(model, vmaf->feature_collector, index,
                                        score);
+}
+
+int vmaf_feature_score_pooled(VmafContext *vmaf, const char *feature_name,
+                              enum VmafPoolingMethod pool_method, double *score,
+                              unsigned index_low, unsigned index_high)
+{
+    if (!vmaf) return -EINVAL;
+    if (!feature_name) return -EINVAL;
+    if (index_low >= index_high) return -EINVAL;
+    if (!pool_method) return -EINVAL;
+
+    vmaf_thread_pool_wait(vmaf->thread_pool);
+    RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
+    for (unsigned i = 0; i < rfe.cnt; i++) {
+        vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
+                                             vmaf->feature_collector);
+    }
+    vmaf_fex_ctx_pool_flush(vmaf->fex_ctx_pool, vmaf->feature_collector);
+
+    unsigned pic_cnt = 0;
+    double min = 0., sum = 0., i_sum = 0.;
+    for (unsigned i = index_low; i <= index_high; i++) {
+        if ((vmaf->cfg.n_subsample > 1) && (i % vmaf->cfg.n_subsample))
+            continue;
+        pic_cnt++;
+        double s;
+        int err = vmaf_feature_score_at_index(vmaf, feature_name, &s, i);
+        if (err) return err;
+        sum += s;
+        i_sum += 1. / (s + 1.);
+        if ((i == index_low) || (min < s))
+            min = s;
+    }
+
+    switch (pool_method) {
+    case VMAF_POOL_METHOD_MEAN:
+        *score = sum / pic_cnt;
+        break;
+    case VMAF_POOL_METHOD_MIN:
+        *score = min;
+        break;
+    case VMAF_POOL_METHOD_HARMONIC_MEAN:
+        *score = pic_cnt / i_sum - 1.0;
+        break;
+    default:
+        return -EINVAL;
+    }
+
+    return 0;
+
 }
 
 int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
@@ -347,34 +410,16 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
     }
     vmaf_fex_ctx_pool_flush(vmaf->fex_ctx_pool, vmaf->feature_collector);
 
-    double min, sum, i_sum = 0.;
-    for (unsigned i = index_low; i < index_high; i++) {
+    for (unsigned i = index_low; i <= index_high; i++) {
         if ((vmaf->cfg.n_subsample > 1) && (i % vmaf->cfg.n_subsample))
             continue;
         double vmaf_score;
         int err = vmaf_score_at_index(vmaf, model, &vmaf_score, i);
         if (err) return err;
-        sum += vmaf_score;
-        i_sum += 1. / (vmaf_score + 1.);
-        if ((i == index_low) || (min < vmaf_score))
-            min = vmaf_score;
     }
 
-    switch (pool_method) {
-    case VMAF_POOL_METHOD_MEAN:
-        *score = sum / (index_high - index_low);
-        break;
-    case VMAF_POOL_METHOD_MIN:
-        *score = min;
-        break;
-    case VMAF_POOL_METHOD_HARMONIC_MEAN:
-        *score = (index_high - index_low) / i_sum - 1.0;
-        break;
-    default:
-        return -EINVAL;
-    }
-
-    return 0;
+    return vmaf_feature_score_pooled(vmaf, model->name, pool_method, score,
+                                     index_low, index_high);
 }
 
 const char *vmaf_version(void)
