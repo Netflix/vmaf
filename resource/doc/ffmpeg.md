@@ -13,7 +13,9 @@ Using FFmpeg+libvmaf is very powerful, as you can create complex filters to calc
 
 We provide a few examples how you can construct the FFmpeg command line and use VMAF as a filter. Note that you may need to download the test videos from [vmaf_resource](https://github.com/Netflix/vmaf_resource/tree/master/python/test/resource).
 
-Below is an example on how you can run FFmpeg+libvmaf on a pair of YUV files. Note that `src01_hrc00_576x324.yuv` is the reference video and `src01_hrc01_576x324.yuv` is the distorted video. `-r 24` sets the frame rate, and `PTS-STARTPTS` synchronizes the PTS (presentation timestamp) of the two videos. The `log_path` is set to standard output `/dev/stdout`. It uses the `model_path` at location `/usr/local/share/model/vmaf_v0.6.1.pkl` (which is the default and can be omitted).
+Below is an example on how you can run FFmpeg+libvmaf on a pair of YUV files. Note that `src01_hrc00_576x324.yuv` is the reference video and `src01_hrc01_576x324.yuv` is the distorted video. `-r 24` sets the frame rate, and `PTS-STARTPTS` synchronizes the PTS (presentation timestamp) of the two videos. Note that it is important to set the frame rate and the PTS right, since FFmpeg filters synchronize based on timestamps instead of frames. 
+
+The `log_path` is set to standard output `/dev/stdout`. It uses the `model_path` at location `/usr/local/share/model/vmaf_v0.6.1.pkl` (which is the default and can be omitted).
 
 ```
 ffmpeg -video_size 576x324 -r 24 -pixel_format yuv420p -i yuv/src01_hrc00_576x324.yuv \
