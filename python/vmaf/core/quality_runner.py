@@ -668,7 +668,7 @@ class VmafossExecQualityRunner(QualityRunner):
     FEATURES = ['adm2', 'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
                 'motion', 'vif_scale0', 'vif_scale1', 'vif_scale2',
                 'vif_scale3', 'vif', 'psnr', 'ssim', 'ms_ssim', 'motion2',
-                'bagging', 'stddev', 'ci95_low', 'ci95_high']
+                'vmaf_bagging', 'vmaf_stddev', 'vmaf_ci_p95_lo', 'vmaf_ci_p95_hi']
 
     @classmethod
     def get_feature_scores_key(cls, atom_feature):
@@ -768,14 +768,14 @@ class VmafossExecQualityRunner(QualityRunner):
         root = tree.getroot()
         scores = []
 
-        # check if vmafossexec returned additional info about the bootstrapped models
-        # bootstrap_model_list_str is a comma-separated string of model names
-        vmaf_params = root.findall('params')[0].attrib
-        augmented_features = copy.copy(self.FEATURES)
-        if 'bootstrap_model_list_str' in vmaf_params:
-            bootstrap_model_list_str = vmaf_params['bootstrap_model_list_str']
-            bootstrap_model_list = bootstrap_model_list_str.split(',') if len(bootstrap_model_list_str) > 0 else []
-            augmented_features += bootstrap_model_list
+        # add all logged features to augmented_features[]
+        # in a previous implementaion, individual bootstrap scores
+        # were given as a csv string as an attribute in <params>.
+        # "vmaf" is excluded from augmented_features[] because
+        # it has it's own special list: scores[].
+        augmented_features = [key for key in root.findall('frames/frame')[0].attrib.keys()]
+        augmented_features.remove("frameNum")
+        augmented_features.remove("vmaf")
 
         feature_scores = [[] for _ in augmented_features]
 

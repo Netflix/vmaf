@@ -27,6 +27,7 @@ enum VmafModelFlags {
     VMAF_MODEL_FLAGS_DEFAULT = 0,
     VMAF_MODEL_FLAG_DISABLE_CLIP = (1 << 0),
     VMAF_MODEL_FLAG_ENABLE_TRANSFORM = (1 << 1),
+    VMAF_MODEL_FLAG_DISABLE_TRANSFORM = (1 << 2),
 };
 
 typedef struct VmafModelConfig {

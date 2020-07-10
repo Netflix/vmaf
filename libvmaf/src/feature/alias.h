@@ -18,3 +18,4 @@
 
 const char *vmaf_feature_name_alias(const char *feature_name);
 const char *vmaf_internal_feature_name_alias(const char *feature_name);
+void vmaf_use_vmafossexec_aliases(void); // FIXME, deprecate
