@@ -349,7 +349,7 @@ int vmaf_feature_score_pooled(VmafContext *vmaf, const char *feature_name,
 {
     if (!vmaf) return -EINVAL;
     if (!feature_name) return -EINVAL;
-    if (index_low >= index_high) return -EINVAL;
+    if (index_low > index_high) return -EINVAL;
     if (!pool_method) return -EINVAL;
 
     vmaf_thread_pool_wait(vmaf->thread_pool);
@@ -399,7 +399,7 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
 {
     if (!vmaf) return -EINVAL;
     if (!score) return -EINVAL;
-    if (index_low >= index_high) return -EINVAL;
+    if (index_low > index_high) return -EINVAL;
     if (!pool_method) return -EINVAL;
 
     vmaf_thread_pool_wait(vmaf->thread_pool);
