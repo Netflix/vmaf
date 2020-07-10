@@ -74,12 +74,16 @@ static char *test_vmaf_dictionary()
     const char *pre_existing_key = "key_9";
     const char *new_value = "new_value";
     err = vmaf_dictionary_set(&dict, pre_existing_key, new_value,
-                               VMAF_DICT_DO_NOT_OVERWRITE);
+                              VMAF_DICT_DO_NOT_OVERWRITE);
     mu_assert("vmaf_dictionary_set should fail with pre-existing key", err);
     entry = vmaf_dictionary_get(&dict, pre_existing_key, 0);
     mu_assert("dictionary should return original value with pre-existing key",
               !strcmp(entry->key, pre_existing_key) &&
               !strcmp(entry->val, "val_9"));
+    err = vmaf_dictionary_set(&dict, pre_existing_key, "val_9",
+                              VMAF_DICT_DO_NOT_OVERWRITE);
+    mu_assert("vmaf_dictionary_set should not fail when pre-existing key "
+              "matches pre-existing value", !err);
     err = vmaf_dictionary_set(&dict, pre_existing_key, new_value, 0);
     mu_assert("problem during vmaf_dictionary_set", !err);
     entry = vmaf_dictionary_get(&dict, pre_existing_key, 0);

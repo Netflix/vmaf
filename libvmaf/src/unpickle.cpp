@@ -124,31 +124,47 @@ static int unpickle(VmafModel *model, const char *pickle_path,
         }
     }
 
+    int err = 0;
     model->feature = (VmafModelFeature *)
         malloc(sizeof(*(model->feature)) * model->n_features);
-    if (!model->feature) goto fail;
+    if (!model->feature) {
+        err = -ENOMEM;
+        goto fail;
+    }
     memset(model->feature, 0, sizeof(*(model->feature)) * model->n_features);
 
     for (unsigned i = 0; i < model->n_features; i++) {
-       model->feature[i].name = strdup(Stringize(feature_names[i]).c_str());
-       if (!model->feature[i].name) goto free_name;
-       model->feature[i].slope = double(slopes[i + 1]);
-       model->feature[i].intercept = double(intercepts[i + 1]);
-       if (VAL_IS_LIST(feature_opts_dicts)) {
-           Val feature_opts_dict = feature_opts_dicts[i];
-           if (!VAL_IS_DICT(feature_opts_dict))
-               return -EINVAL;
-           Tab feature_opts_dict_tab = feature_opts_dict;
-           Arr keys = feature_opts_dict_tab.keys();
-           for (unsigned j = 0; j < keys.length(); j++) {
-               char *key = strdup(Stringize(keys[j]).c_str());
-               key[strlen(key) - 1] = 0; //FIXME: ptools
-               char *val = strdup(Stringize(feature_opts_dict_tab[keys[j]]).c_str());
-               vmaf_dictionary_set(&(model->feature[i].opts_dict), key + 1, val, 0);
-               free(key);
-               free(val);
-           }
-       }
+        model->feature[i].name = strdup(Stringize(feature_names[i]).c_str());
+        if (!model->feature[i].name) {
+            err = -ENOMEM;
+            goto free_name;
+        }
+
+        model->feature[i].slope = double(slopes[i + 1]);
+        model->feature[i].intercept = double(intercepts[i + 1]);
+
+        if (VAL_IS_LIST(feature_opts_dicts)) {
+            Val feature_opts_dict = feature_opts_dicts[i];
+            if (!VAL_IS_DICT(feature_opts_dict)) {
+                err = -EINVAL;
+                goto free_name;
+            }
+
+            Tab feature_opts_dict_tab = feature_opts_dict;
+            Arr keys = feature_opts_dict_tab.keys();
+            for (unsigned j = 0; j < keys.length(); j++) {
+                char *key = strdup(Stringize(keys[j]).c_str());
+                key[strlen(key) - 1] = 0; //FIXME: ptools
+                char *val =
+                    strdup(Stringize(feature_opts_dict_tab[keys[j]]).c_str());
+                err = vmaf_dictionary_set(&(model->feature[i].opts_dict),
+                                          key + 1, val,
+                                          VMAF_DICT_DO_NOT_OVERWRITE);
+                free(key);
+                free(val);
+                if (err) goto free_name;
+            }
+        }
     }
 
     model->slope = double(slopes[0]);
@@ -163,7 +179,7 @@ free_name:
 free_feature:
     free(model->feature);
 fail:
-    return -ENOMEM;
+    return err;
 }
 
 extern "C" {

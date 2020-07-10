@@ -54,7 +54,7 @@ int vmaf_dictionary_set(VmafDictionary **dict, const char *key, const char *val,
 
     VmafDictionaryEntry *existing_entry = vmaf_dictionary_get(&d, key, 0);
     if (existing_entry && (flags & VMAF_DICT_DO_NOT_OVERWRITE))
-        return -EINVAL;
+        return !strcmp(existing_entry->val, val) ? 0 : -EINVAL;
 
     if (d->cnt == d->size) {
         const size_t sz = d->size * sizeof(*d->entry) * 2;
