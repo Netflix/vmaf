@@ -26,7 +26,7 @@ There are a number of ways one can use the package:
   - [VMAF Python library](resource/doc/VMAF_Python_library.md) offers full functionalities including running basic VMAF command line, running VMAF on a batch of video files, training and testing a VMAF model on video datasets, and visualization tools, etc.
   - [`vmafossexec` - a C++ executable](resource/doc/vmafossexec.md) offers running the prediction part of the algorithm in full, such that one can easily deploy VMAF in a production environment without needing to configure the Python dependencies. Additionally, `vmafossexec` offers a number of exclusive features, such as 1) speed optimization using multi-threading and skipping frames, 2) optionally computing PSNR, SSIM and MS-SSIM metrics in the output.
   - [`libvmaf` - a C library](libvmaf/README.md) offers an interface to incorporate VMAF into your C/C++ code.
-  - VMAF is now included as a filter in [FFmpeg](http://ffmpeg.org/) and can be configured using: `./configure --enable-libvmaf --enable-version3`. See the [FFmpeg documentation](https://ffmpeg.org/ffmpeg-filters.html#libvmaf) for usage.
+  - VMAF is now included as a filter in [FFmpeg](http://ffmpeg.org/) and can be configured using: `./configure --enable-libvmaf`. See the [FFmpeg documentation](resource/doc/ffmpeg.md) for usage.
   - [VMAF Dockerfile](Dockerfile) generates a VMAF docker image from the [VMAF Python library](resource/doc/VMAF_Python_library.md). Refer to [this](resource/doc/docker.md) document for detailed usages.
   - Build VMAF on Windows: follow instructions on [this](resource/doc/BuildForWindows.md) page.
 
