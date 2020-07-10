@@ -1223,12 +1223,11 @@ class VmafrcQualityRunner(QualityRunner):
             if self.optional_dict is not None and 'adm_enhn_gain_limit' in self.optional_dict else None
         assert adm_enhn_gain_limit is None or adm_enhn_gain_limit >= 1.0
 
-        assert (disable_enhn_gain is None and vif_enhn_gain_limit is None and adm_enhn_gain_limit is None) or \
-               (disable_enhn_gain is not None and vif_enhn_gain_limit is None and adm_enhn_gain_limit is None) or \
-               (disable_enhn_gain is None and vif_enhn_gain_limit is not None and adm_enhn_gain_limit is not None)
+        assert (disable_enhn_gain is None) or \
+               (disable_enhn_gain is not None and vif_enhn_gain_limit is None and adm_enhn_gain_limit is None)
 
         # ==== translate disable_enhn_gain into vif_enhn_gain_limit and adm_enhn_gain_limit: ====
-        if disable_enhn_gain is None and vif_enhn_gain_limit is None and adm_enhn_gain_limit is None:
+        if disable_enhn_gain is None:
             pass
         elif disable_enhn_gain is not None and vif_enhn_gain_limit is None and adm_enhn_gain_limit is None:
             if disable_enhn_gain is True:
@@ -1236,8 +1235,6 @@ class VmafrcQualityRunner(QualityRunner):
                 adm_enhn_gain_limit = 1.0
             else:
                 pass
-        elif disable_enhn_gain is None and vif_enhn_gain_limit is not None and adm_enhn_gain_limit is not None:
-            pass
         else:
             assert False
 
