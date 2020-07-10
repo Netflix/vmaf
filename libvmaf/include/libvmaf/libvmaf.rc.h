@@ -163,7 +163,24 @@ int vmaf_score_at_index(VmafContext *vmaf, VmafModel *model, double *score,
                         unsigned index);
 
 /**
- * Predict pooled VMAF score for a specific interval.
+ * Fetch feature score at specific index.
+ *
+ * @param vmaf          The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param feature_name  Name of the feature to fetch.
+ *
+ * @param index         Picture index.
+ *
+ * @param score         Score.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_feature_score_at_index(VmafContext *vmaf, const char *feature_name,
+                                double *score, unsigned index);
+
+/**
+ * Pooled VMAF score for a specific interval.
  *
  * @param vmaf         The VMAF context allocated with `vmaf_init()`.
  *
@@ -171,7 +188,7 @@ int vmaf_score_at_index(VmafContext *vmaf, VmafModel *model, double *score,
  *
  * @param pool_method  Temporal pooling method to use.
  *
- * @param score        Predicted score.
+ * @param score        Pooled score.
  *
  * @param index_low    Low picture index of pooling interval.
  *
@@ -183,6 +200,28 @@ int vmaf_score_at_index(VmafContext *vmaf, VmafModel *model, double *score,
 int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
                       enum VmafPoolingMethod pool_method, double *score,
                       unsigned index_low, unsigned index_high);
+
+/**
+ * Pooled feature score for a specific interval.
+ *
+ * @param vmaf          The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param feature_name  Name of the feature to fetch.
+ *
+ * @param pool_method   Temporal pooling method to use.
+ *
+ * @param score         Pooled score.
+ *
+ * @param index_low     Low picture index of pooling interval.
+ *
+ * @param index_high    High picture index of pooling interval.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_feature_score_pooled(VmafContext *vmaf, const char *feature_name,
+                              enum VmafPoolingMethod pool_method, double *score,
+                              unsigned index_low, unsigned index_high);
 
 /**
  * Close a VMAF instance and free all associated memory.
