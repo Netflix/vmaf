@@ -1,4 +1,5 @@
-### Use libvmaf with FFmpeg
+Using libvmaf with FFmpeg
+===================
 
 After installing libvmaf, you can use it with FFmpeg. Under FFmpeg directory, configure, build and install FFmpeg with:
 
