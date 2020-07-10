@@ -164,6 +164,7 @@ class VmafossexecCommandLineTest(unittest.TestCase):
     RC_SEGMENTATION_FAULT = 139
     RC_ARGUMENT_ISSUE = 1
     RC_MORE_ARGUMENT_ISSUE = 256 - 1
+    RC_ENOMEM = 244
 
     def test_run_vmafossexec(self):
         exe = ExternalProgram.vmafossexec
@@ -179,7 +180,7 @@ class VmafossexecCommandLineTest(unittest.TestCase):
             exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
             dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.pkl_XXX"))
         ret = subprocess.call(cmd, shell=True)
-        self.assertEqual(ret, self.RC_VMAF_EXCEPTION)
+        self.assertEqual(ret, self.RC_ENOMEM)
 
     def test_run_vmafossexec_wrong_model_fmt(self):
         exe = ExternalProgram.vmafossexec
@@ -187,7 +188,7 @@ class VmafossexecCommandLineTest(unittest.TestCase):
             exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
             dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.pkl.model"))
         ret = subprocess.call(cmd, shell=True)
-        self.assertEqual(ret, self.RC_LOGIC_ERROR)
+        self.assertEqual(ret, self.RC_ENOMEM)
 
     def test_run_vmafossexec_nonexist_ref_file(self):
         exe = ExternalProgram.vmafossexec
