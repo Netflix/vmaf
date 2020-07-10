@@ -31,6 +31,7 @@ VMAF_PROJECT = os.path.abspath(os.path.join(VMAF_LIB_FOLDER, '../..',))
 
 def run_process(cmd, **kwargs):
     try:
+        print(cmd)
         subprocess.check_output(cmd, stderr=subprocess.STDOUT, **kwargs)
     except subprocess.CalledProcessError as e:
         raise AssertionError(f'Process returned {e.returncode}, cmd: {cmd}, msg: {str(e.output)}')
@@ -215,6 +216,7 @@ class ExternalProgramCaller(object):
             vmafossexec_cmd += ' --ci'
         if logger:
             logger.info(vmafossexec_cmd)
+
         run_process(vmafossexec_cmd, shell=True)
 
     @staticmethod

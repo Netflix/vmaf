@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "libvmaf/compute_vmaf.h"
 #include "libvmaf/model.h"
 #include "libvmaf/picture.h"
 #include "libvmaf/feature.h"
