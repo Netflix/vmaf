@@ -125,7 +125,7 @@ int vmaf_dictionary_free(VmafDictionary **dict)
 
 VmafDictionary *vmaf_dictionary_merge(VmafDictionary **dict_a,
                                       VmafDictionary **dict_b,
-                                      u_int64_t flags)
+                                      uint64_t flags)
 {
     int err = 0;
     VmafDictionary *a = *dict_a;
