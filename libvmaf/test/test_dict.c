@@ -114,19 +114,19 @@ static char *test_vmaf_dictionary_merge()
     VmafDictionary *d = NULL;
     VmafDictionaryEntry *entry = NULL;
 
-    d = vmaf_dictionary_merge(&a, &b);
+    d = vmaf_dictionary_merge(&a, &b, 0);
     mu_assert("merging two NULL dicts should result in a NULL dict", !d);
 
     err = vmaf_dictionary_set(&a, "key_a", "val_a", 0);
     mu_assert("problem during vmaf_dictionary_set", !err);
-    d = vmaf_dictionary_merge(&a, &b);
+    d = vmaf_dictionary_merge(&a, &b, 0);
     mu_assert("merging one NULL and one non-NULL dict should work", d);
     entry = vmaf_dictionary_get(&d, "key_a", 0);
     mu_assert("dictionary should return an entry with valid key", entry);
     mu_assert("entry should have correct value", !strcmp(entry->val, "val_a"));
     vmaf_dictionary_free(&d);
     mu_assert("dictionary should be NULL after free", !d);
-    d = vmaf_dictionary_merge(&b, &a);
+    d = vmaf_dictionary_merge(&b, &a, 0);
     mu_assert("merging one NULL and one non-NULL dict should work", d);
     entry = vmaf_dictionary_get(&d, "key_a", 0);
     mu_assert("dictionary should return an entry with valid key", entry);
@@ -136,7 +136,7 @@ static char *test_vmaf_dictionary_merge()
 
     err = vmaf_dictionary_set(&b, "key_b", "val_b", 0);
     mu_assert("problem during vmaf_dictionary_set", !err);
-    d = vmaf_dictionary_merge(&b, &a);
+    d = vmaf_dictionary_merge(&b, &a, 0);
     mu_assert("merging two non-NULL dicts should work", d);
     entry = vmaf_dictionary_get(&d, "key_a", 0);
     mu_assert("dictionary should return an entry with valid key", entry);
@@ -151,7 +151,7 @@ static char *test_vmaf_dictionary_merge()
     mu_assert("problem during vmaf_dictionary_set", !err);
     err = vmaf_dictionary_set(&a, "duplicate_key", "val_b", 0);
     mu_assert("problem during vmaf_dictionary_set", !err);
-    d = vmaf_dictionary_merge(&b, &a);
+    d = vmaf_dictionary_merge(&b, &a, 0);
     mu_assert("merging two non-NULL dicts with duplicate keys should work", d);
     entry = vmaf_dictionary_get(&d, "duplicate_key", 0);
     mu_assert("dictionary should return an entry with valid key", entry);

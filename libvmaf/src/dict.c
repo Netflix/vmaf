@@ -124,7 +124,8 @@ int vmaf_dictionary_free(VmafDictionary **dict)
 }
 
 VmafDictionary *vmaf_dictionary_merge(VmafDictionary **dict_a,
-                                      VmafDictionary **dict_b)
+                                      VmafDictionary **dict_b,
+                                      u_int64_t flags)
 {
     int err = 0;
     VmafDictionary *a = *dict_a;
@@ -138,7 +139,7 @@ VmafDictionary *vmaf_dictionary_merge(VmafDictionary **dict_a,
 
     if (b) {
         for (unsigned i = 0; i < b->cnt; i++)
-            err |= vmaf_dictionary_set(&d, b->entry[i].key, b->entry[i].val, 0);
+            err |= vmaf_dictionary_set(&d, b->entry[i].key, b->entry[i].val, flags);
         if (err) goto fail;
     }
 

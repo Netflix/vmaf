@@ -29,7 +29,8 @@ typedef struct {
 int feature_extractor_vector_init(RegisteredFeatureExtractors *rfe);
 
 int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
-                                    VmafFeatureExtractorContext *fex_ctx);
+                                    VmafFeatureExtractorContext *fex_ctx,
+                                    uint64_t flags);
 
 void feature_extractor_vector_destroy(RegisteredFeatureExtractors *rfe);
 
