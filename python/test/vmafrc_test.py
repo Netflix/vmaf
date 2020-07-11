@@ -778,6 +778,26 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
                                                    "different input arguments, but the exception is not raised."):
             self.runner.run(parallelize=False)
 
+    def test_run_vmafrc_runner_with_enhn_gain_enabled_disabled2(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = VmafrcQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={
+                'models': [
+                    'path={}:name=vmafneg'.format(VmafConfig.model_path("vmaf_v0.6.1neg.pkl")),
+                    'path={}:name=vmaf'.format(VmafConfig.model_path("vmaf_v0.6.1.pkl")),
+                ]
+            }
+        )
+        with self.assertRaises(AssertionError, msg="vmaf_v0.6.1neg.pkl and vmaf_v0.6.1.pkl require different input "
+                                                   "arguments for the same fex, but the exception is not raised."):
+            self.runner.run(parallelize=False)
+
     def test_run_vmafrc_runner_akiyo_multiply_no_enhn_gain_model_inconsist(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
         dis_path = VmafConfig.test_resource_path("yuv", "disp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")

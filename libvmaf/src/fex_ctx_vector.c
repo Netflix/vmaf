@@ -44,8 +44,17 @@ int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
             /* same fex */
             if (flags & VMAF_FEATURE_EXTRACTOR_CONTEXT_DO_NOT_OVERWRITE) {
                 /* if do not overwrite, check opts_dict consistency */
-                if (!rfe->fex_ctx[i]->opts_dict || !fex_ctx->opts_dict)
-                    return 0; /* skip if either opts_dict is NULL */
+                if (!rfe->fex_ctx[i]->opts_dict && !fex_ctx->opts_dict) {
+                    /* skip if both opts_dict are NULL */
+                    return 0;
+                } else if (!rfe->fex_ctx[i]->opts_dict || !fex_ctx->opts_dict) {
+                    /* error if one dict is NULL and the other is not.
+                     * Note that this does not handle the case the non-NULL dict's value is
+                     * equal to the default value of the NULL dict's. But this is not fixable
+                     * in the current framework unless the default values of fex's options
+                     * are exposed in the current layer. FIXME */
+                    return -ENOMEM;
+                }
                 VmafDictionary *d =
                         vmaf_dictionary_merge(&rfe->fex_ctx[i]->opts_dict,
                                               &fex_ctx->opts_dict, VMAF_DICT_DO_NOT_OVERWRITE);
@@ -65,7 +74,6 @@ int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
                     int err = parse_options(f);
                     if (err) return err;
                 }
-
                 return vmaf_feature_extractor_context_destroy(fex_ctx);
             }
         }
