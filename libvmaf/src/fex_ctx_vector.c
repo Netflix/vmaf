@@ -58,10 +58,13 @@ int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
                 VmafDictionary *d =
                         vmaf_dictionary_merge(&rfe->fex_ctx[i]->opts_dict,
                                               &fex_ctx->opts_dict, VMAF_DICT_DO_NOT_OVERWRITE);
-                if (!d)
+                if (!d) {
                     return -ENOMEM;
-                else
+                }
+                else {
+                    vmaf_dictionary_free(&d);
                     return 0;
+                }
             } else {
                 /* if allow overwrite, merge opt_dict */
                 VmafDictionary *d =
