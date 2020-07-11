@@ -44,6 +44,8 @@ int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
             /* same fex */
             if (flags & VMAF_FEATURE_EXTRACTOR_CONTEXT_DO_NOT_OVERWRITE) {
                 /* if do not overwrite, check opts_dict consistency */
+                if (!rfe->fex_ctx[i]->opts_dict || !fex_ctx->opts_dict)
+                    return 0; /* skip if either opts_dict is NULL */
                 VmafDictionary *d =
                         vmaf_dictionary_merge(&rfe->fex_ctx[i]->opts_dict,
                                               &fex_ctx->opts_dict, VMAF_DICT_DO_NOT_OVERWRITE);
@@ -57,7 +59,13 @@ int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
                         vmaf_dictionary_merge(&rfe->fex_ctx[i]->opts_dict,
                                               &fex_ctx->opts_dict, 0);
                 vmaf_dictionary_free(&rfe->fex_ctx[i]->opts_dict);
-                rfe->fex_ctx[i]->opts_dict = d;
+                VmafFeatureExtractorContext *f = rfe->fex_ctx[i];
+                f->opts_dict = d;
+                if (f->fex->options && f->fex->priv) {
+                    int err = parse_options(f);
+                    if (err) return err;
+                }
+
                 return vmaf_feature_extractor_context_destroy(fex_ctx);
             }
         }

@@ -145,4 +145,6 @@ int vmaf_fex_ctx_pool_flush(VmafFeatureExtractorContextPool *pool,
 
 int vmaf_fex_ctx_pool_destroy(VmafFeatureExtractorContextPool *pool);
 
+int parse_options(VmafFeatureExtractorContext *fex_ctx);
+
 #endif /* __VMAF_FEATURE_EXTRACTOR_H__ */

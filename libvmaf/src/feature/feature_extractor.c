@@ -80,7 +80,7 @@ VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(char *name)
     return NULL;
 }
 
-static int parse_options(VmafFeatureExtractorContext *fex_ctx)
+int parse_options(VmafFeatureExtractorContext *fex_ctx)
 {
     VmafOption *opt = NULL;
     for (unsigned i = 0; (opt = &fex_ctx->fex->options[i]); i++) {
