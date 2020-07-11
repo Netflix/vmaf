@@ -151,6 +151,7 @@ static char *test_vmaf_dictionary_merge()
     mu_assert("problem during vmaf_dictionary_set", !err);
     err = vmaf_dictionary_set(&a, "duplicate_key", "val_b", 0);
     mu_assert("problem during vmaf_dictionary_set", !err);
+
     d = vmaf_dictionary_merge(&b, &a, 0);
     mu_assert("merging two non-NULL dicts with duplicate keys should work", d);
     entry = vmaf_dictionary_get(&d, "duplicate_key", 0);
@@ -158,6 +159,10 @@ static char *test_vmaf_dictionary_merge()
     mu_assert("entry should have expected value", !strcmp(entry->val, "val_b"));
     vmaf_dictionary_free(&d);
     mu_assert("dictionary should be NULL after free", !d);
+
+    err = vmaf_dictionary_set(&b, "duplicate_key", "val_c", 0);
+    d = vmaf_dictionary_merge(&b, &a, VMAF_DICT_DO_NOT_OVERWRITE);
+    mu_assert("dictionary should be NULL for duplicated key but different values", !d);
 
     vmaf_dictionary_free(&a);
     mu_assert("dictionary should be NULL after free", !a);
