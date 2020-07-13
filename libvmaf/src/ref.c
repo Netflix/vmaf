@@ -16,32 +16,38 @@
  *
  */
 
-#ifndef __VMAF_PICTURE_H__
-#define __VMAF_PICTURE_H__
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include <stddef.h>
+#include "ref.h"
 
-enum VmafPixelFormat {
-    VMAF_PIX_FMT_UNKNOWN,
-    VMAF_PIX_FMT_YUV420P,
-    VMAF_PIX_FMT_YUV422P,
-    VMAF_PIX_FMT_YUV444P,
-};
+int vmaf_ref_init(VmafRef **ref)
+{
+    VmafRef *const r = *ref = malloc(sizeof(*r));
+    if (!r) return -ENOMEM;
+    memset(r, 0, sizeof(*r));
+    atomic_init(&r->cnt, 1);
+    return 0;
+}
 
-typedef struct VmafRef VmafRef;
+void vmaf_ref_fetch_increment(VmafRef *ref)
+{
+    atomic_fetch_add(&ref->cnt, 1);
+}
 
-typedef struct {
-    enum VmafPixelFormat pix_fmt;
-    unsigned bpc;
-    unsigned w[3], h[3];
-    ptrdiff_t stride[3];
-    void *data[3];
-    VmafRef *ref;
-} VmafPicture;
+void vmaf_ref_fetch_decrement(VmafRef *ref)
+{
+    atomic_fetch_sub(&ref->cnt, 1);
+}
 
-int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
-                       unsigned bpc, unsigned w, unsigned h);
+long vmaf_ref_load(VmafRef *ref)
+{
+    return atomic_load(&ref->cnt);
+}
 
-int vmaf_picture_unref(VmafPicture *pic);
-
-#endif /* __VMAF_PICTURE_H__ */
+int vmaf_ref_close(VmafRef *ref)
+{
+    free(ref);
+    return 0;
+}
