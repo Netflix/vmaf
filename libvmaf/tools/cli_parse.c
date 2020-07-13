@@ -11,10 +11,17 @@
 #include "libvmaf/libvmaf.rc.h"
 #include "libvmaf/model.h"
 
-static const char short_opts[] = "r:d:w:h:p:b:m:o:xjet:f:i:s:c:nv";
+static const char short_opts[] = "r:d:w:h:p:b:m:o:nv";
 
 enum {
-    ARG_SUB = 256,
+    ARG_OUTPUT_XML = 256,
+    ARG_OUTPUT_JSON,
+    ARG_OUTPUT_CSV,
+    ARG_OUTPUT_SUB,
+    ARG_THREADS,
+    ARG_FEATURE,
+    ARG_SUBSAMPLE,
+    ARG_CPUMASK,
 };
 
 static const struct option long_opts[] = {
@@ -26,15 +33,14 @@ static const struct option long_opts[] = {
     { "bitdepth",         1, NULL, 'b' },
     { "model",            1, NULL, 'm' },
     { "output",           1, NULL, 'o' },
-    { "xml",              0, NULL, 'x' },
-    { "json",             0, NULL, 'j' },
-    { "csv",              0, NULL, 'e' },
-    { "sub",              0, NULL, ARG_SUB },
-    { "threads",          1, NULL, 't' },
-    { "feature",          1, NULL, 'f' },
-    { "import",           1, NULL, 'i' },
-    { "subsample",        1, NULL, 's' },
-    { "cpumask",          1, NULL, 'c' },
+    { "xml",              0, NULL, ARG_OUTPUT_XML },
+    { "json",             0, NULL, ARG_OUTPUT_JSON },
+    { "csv",              0, NULL, ARG_OUTPUT_CSV },
+    { "sub",              0, NULL, ARG_OUTPUT_SUB },
+    { "threads",          1, NULL, ARG_THREADS },
+    { "feature",          1, NULL, ARG_FEATURE },
+    { "subsample",        1, NULL, ARG_SUBSAMPLE },
+    { "cpumask",          1, NULL, ARG_CPUMASK },
     { "no_prediction",    0, NULL, 'n' },
     { "version",          0, NULL, 'v' },
     { NULL,               0, NULL, 0 },
@@ -63,15 +69,14 @@ static void usage(const char *const app, const char *const reason, ...) {
             "                               path=foo.pkl:disable_clip\n"
             "                               path=foo.pkl:name=foo:enable_transform\n"
             " --output/-o $path:         path to output file\n"
-            " --xml/-x:                  write output file as XML (default)\n"
-            " --json/-j:                 write output file as JSON\n"
-            " --csv/-c:                  write output file as CSV\n"
+            " --xml:                     write output file as XML (default)\n"
+            " --json:                    write output file as JSON\n"
+            " --csv:                     write output file as CSV\n"
             " --sub:                     write output file as subtitle\n"
-            " --threads/-t $unsigned:    number of threads to use\n"
-            " --feature/-f $string:      additional feature\n"
-            " --import/-i $path:         path to precomputed feature log\n"
-            " --cpumask/-c: $mask        restrict permitted CPU instruction sets\n"
-            " --subsample/-s: $unsigned  compute scores only every N frames\n"
+            " --threads $unsigned:       number of threads to use\n"
+            " --feature $string:         additional feature\n"
+            " --cpumask: $bitmask        restrict permitted CPU instruction sets\n"
+            " --subsample: $unsigned     compute scores only every N frames\n"
             " --no_prediction/-n:        no prediction, extract features only\n"
             " --version/-v:              print version and exit\n"
            );
@@ -243,16 +248,16 @@ void cli_parse(const int argc, char *const *const argv,
         case 'o':
             settings->output_path = optarg;
             break;
-        case 'x':
+        case ARG_OUTPUT_XML:
             settings->output_fmt = VMAF_OUTPUT_FORMAT_XML;
             break;
-        case 'j':
+        case ARG_OUTPUT_JSON:
             settings->output_fmt = VMAF_OUTPUT_FORMAT_JSON;
             break;
-        case 'e':
+        case ARG_OUTPUT_CSV:
             settings->output_fmt = VMAF_OUTPUT_FORMAT_CSV;
             break;
-        case ARG_SUB:
+        case ARG_OUTPUT_SUB:
             settings->output_fmt = VMAF_OUTPUT_FORMAT_SUB;
             break;
         case 'm':
@@ -263,7 +268,7 @@ void cli_parse(const int argc, char *const *const argv,
             settings->model_config[settings->model_cnt++] =
                 parse_model_config(optarg, argv[0]);
             break;
-        case 'f':
+        case ARG_FEATURE:
             if (settings->feature_cnt == CLI_SETTINGS_STATIC_ARRAY_LEN) {
                 usage(argv[0], "A maximum of %d features is supported\n",
                       CLI_SETTINGS_STATIC_ARRAY_LEN);
@@ -271,20 +276,13 @@ void cli_parse(const int argc, char *const *const argv,
             settings->feature_cfg[settings->feature_cnt++] =
                 parse_feature_config(optarg, argv[0]);
             break;
-        case 'i':
-            if (settings->import_cnt == CLI_SETTINGS_STATIC_ARRAY_LEN) {
-                usage(argv[0], "A maximum of %d imports is supported\n",
-                      CLI_SETTINGS_STATIC_ARRAY_LEN);
-            }
-            settings->import_path[settings->import_cnt++] = optarg;
-            break;
-        case 't':
+        case ARG_THREADS:
             settings->thread_cnt = parse_unsigned(optarg, 't', argv[0]);
             break;
-        case 's':
+        case ARG_SUBSAMPLE:
             settings->subsample = parse_unsigned(optarg, 's', argv[0]);
             break;
-        case 'c':
+        case ARG_CPUMASK:
             settings->cpumask = parse_unsigned(optarg, 'c', argv[0]);
             break;
         case 'n':
