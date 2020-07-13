@@ -19,6 +19,8 @@
 #ifndef __VMAF_MODEL_H__
 #define __VMAF_MODEL_H__
 
+#include <stdint.h>
+
 typedef struct VmafModel VmafModel;
 
 enum VmafModelFlags {
@@ -29,12 +31,13 @@ enum VmafModelFlags {
 };
 
 typedef struct VmafModelConfig {
-    enum VmafModelFlags flags;
     char *name;
     char *path;
+    uint64_t flags;
 } VmafModelConfig;
 
 int vmaf_model_load_from_path(VmafModel **model, VmafModelConfig *cfg);
+
 void vmaf_model_destroy(VmafModel *model);
 
 #endif /* __VMAF_MODEL_H__ */
