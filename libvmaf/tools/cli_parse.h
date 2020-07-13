@@ -27,8 +27,6 @@ typedef struct {
     unsigned model_cnt;
     CLIFeatureConfig feature_cfg[CLI_SETTINGS_STATIC_ARRAY_LEN];
     unsigned feature_cnt;
-    char *import_path[CLI_SETTINGS_STATIC_ARRAY_LEN];
-    unsigned import_cnt;
     enum VmafLogLevel log_level;
     unsigned subsample;
     unsigned thread_cnt;
