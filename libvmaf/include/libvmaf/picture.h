@@ -29,14 +29,12 @@ enum VmafPixelFormat {
     VMAF_PIX_FMT_YUV444P,
 };
 
-typedef void pixel;
-
 typedef struct {
     enum VmafPixelFormat pix_fmt;
     unsigned bpc;
     unsigned w[3], h[3];
     ptrdiff_t stride[3];
-    pixel *data[3];
+    void *data[3];
     atomic_int *ref_cnt;
 } VmafPicture;
 
