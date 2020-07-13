@@ -19,6 +19,7 @@
 #ifndef __VMAF_FEATURE_EXTRACTOR_H__
 #define __VMAF_FEATURE_EXTRACTOR_H__
 
+#include <stdatomic.h>
 #include <stdint.h>
 #include <stdlib.h>
 

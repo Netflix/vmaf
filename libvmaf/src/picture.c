@@ -23,6 +23,7 @@
 
 #include "mem.h"
 #include "picture.h"
+#include "ref.h"
 
 #define DATA_ALIGN 32
 
@@ -58,10 +59,9 @@ int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
     pic->data[1] = data + y_sz;
     pic->data[2] = data + y_sz + uv_sz;
 
-    pic->ref_cnt = malloc(sizeof(*pic->ref_cnt));
-    if (!pic->ref_cnt) goto free_data;
+    int err = vmaf_ref_init(&pic->ref);
+    if (err) goto free_data;
 
-    atomic_init(pic->ref_cnt, 1);
     return 0;
 
 free_data:
@@ -74,18 +74,18 @@ int vmaf_picture_ref(VmafPicture *dst, VmafPicture *src) {
     if (!dst || !src) return -EINVAL;
 
     memcpy(dst, src, sizeof(*src));
-    atomic_fetch_add(src->ref_cnt, 1);
+    vmaf_ref_fetch_increment(src->ref);
     return 0;
 }
 
 int vmaf_picture_unref(VmafPicture *pic) {
     if (!pic) return -EINVAL;
-    if (!pic->ref_cnt) return -EINVAL;
+    if (!pic->ref) return -EINVAL;
 
-    atomic_fetch_sub(pic->ref_cnt, 1);
-    if (atomic_load(pic->ref_cnt) == 0) {
+    vmaf_ref_fetch_decrement(pic->ref);
+    if (vmaf_ref_load(pic->ref) == 0) {
         aligned_free(pic->data[0]);
-        free(pic->ref_cnt);
+        vmaf_ref_close(pic->ref);
     }
     memset(pic, 0, sizeof(*pic));
     return 0;

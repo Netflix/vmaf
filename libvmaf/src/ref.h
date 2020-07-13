@@ -16,32 +16,19 @@
  *
  */
 
-#ifndef __VMAF_PICTURE_H__
-#define __VMAF_PICTURE_H__
+#ifndef __VMAF_SRC_REF_H__
+#define __VMAF_SRC_REF_H__
 
-#include <stddef.h>
+#include <stdatomic.h>
 
-enum VmafPixelFormat {
-    VMAF_PIX_FMT_UNKNOWN,
-    VMAF_PIX_FMT_YUV420P,
-    VMAF_PIX_FMT_YUV422P,
-    VMAF_PIX_FMT_YUV444P,
-};
+typedef struct VmafRef {
+    atomic_int cnt;
+} VmafRef;
 
-typedef struct VmafRef VmafRef;
+int vmaf_ref_init(VmafRef **ref);
+void vmaf_ref_increment(VmafRef *ref);
+void vmaf_ref_decrement(VmafRef *ref);
+long vmaf_ref_load(VmafRef *ref);
+int vmaf_ref_close(VmafRef *ref);
 
-typedef struct {
-    enum VmafPixelFormat pix_fmt;
-    unsigned bpc;
-    unsigned w[3], h[3];
-    ptrdiff_t stride[3];
-    void *data[3];
-    VmafRef *ref;
-} VmafPicture;
-
-int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
-                       unsigned bpc, unsigned w, unsigned h);
-
-int vmaf_picture_unref(VmafPicture *pic);
-
-#endif /* __VMAF_PICTURE_H__ */
+#endif /* __VMAF_SRC_REF_H__ */
