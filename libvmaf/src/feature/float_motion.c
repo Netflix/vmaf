@@ -40,14 +40,14 @@ typedef struct MotionState {
 } MotionState;
 
 static const VmafOption options[] = {
-        {
-                .name = "debug",
-                .help = "debug mode: enable additional output",
-                .offset = offsetof(MotionState, debug),
-                .type = VMAF_OPT_TYPE_BOOL,
-                .default_val.b = false,
-        },
-        { NULL }
+    {
+        .name = "debug",
+        .help = "debug mode: enable additional output",
+        .offset = offsetof(MotionState, debug),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
+    { NULL }
 };
 
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,

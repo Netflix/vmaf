@@ -73,24 +73,23 @@ static int extract(VmafFeatureExtractor *fex,
     picture_copy(s->dist, s->float_stride, dist_pic, 0, dist_pic->bpc);
 
     double score, l_score, c_score, s_score;
-    err = compute_ssim(s->ref, s->dist, ref_pic->w[0], ref_pic->h[0], s->float_stride,
-                       s->float_stride, &score, &l_score, &c_score, &s_score);
+    err = compute_ssim(s->ref, s->dist, ref_pic->w[0], ref_pic->h[0],
+                       s->float_stride, s->float_stride,
+                       &score, &l_score, &c_score, &s_score);
     if (err) return err;
+
     err = vmaf_feature_collector_append(feature_collector, "float_ssim",
                                         score, index);
-    if (err) return err;
     if (s->enable_lcs) {
-        err = vmaf_feature_collector_append(feature_collector, "float_ssim_l",
+        err |= vmaf_feature_collector_append(feature_collector, "float_ssim_l",
                                             l_score, index);
-        if (err) return err;
-        err = vmaf_feature_collector_append(feature_collector, "float_ssim_c",
+        err |= vmaf_feature_collector_append(feature_collector, "float_ssim_c",
                                             c_score, index);
-        if (err) return err;
-        err = vmaf_feature_collector_append(feature_collector, "float_ssim_s",
+        err |= vmaf_feature_collector_append(feature_collector, "float_ssim_s",
                                             s_score, index);
-        if (err) return err;
     }
-    return 0;
+
+    return err;
 }
 
 static int close(VmafFeatureExtractor *fex)
