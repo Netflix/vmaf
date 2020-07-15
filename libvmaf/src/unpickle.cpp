@@ -54,7 +54,7 @@ static int unpickle(VmafModel *model, const char *pickle_path,
 
     if (VAL_EQUAL_STR(model_type, "'RESIDUEBOOTSTRAP_LIBSVMNUSVR'"))
         model->type = VMAF_MODEL_RESIDUE_BOOTSTRAP_SVM_NUSVR;
-    else if (VAL_EQUAL_STR(model_type, "BOOTSTRAP_LIBSVMNUSVR"))
+    else if (VAL_EQUAL_STR(model_type, "'BOOTSTRAP_LIBSVMNUSVR'"))
         model->type = VMAF_MODEL_BOOTSTRAP_SVM_NUSVR;
     else if (VAL_EQUAL_STR(model_type, "'LIBSVMNUSVR'"))
         model->type = VMAF_MODEL_TYPE_SVM_NUSVR;

@@ -820,6 +820,78 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
                                    "values for the same fex but the exception is not raised."):
             self.runner.run(parallelize=False)
 
+    def test_run_vmafrc_runner_akiyo_multiply_no_enhn_gain_model_and_cmd_options_illegal(self):
+        ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        dis_path = VmafConfig.test_resource_path("yuv", "disp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 352, 'height': 288})
+
+        self.runner = VmafrcQualityRunner(
+            [asset],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_v0.6.1neg.pkl"),
+                           'adm_enhn_gain_limit': 0.9}
+        )
+        with self.assertRaises(AssertionError,
+                               msg="adm_enhn_gain_limit is below 1 but the exception is not raised"):
+            self.runner.run(parallelize=False)
+
+    def test_run_vmafrc_runner_akiyo_multiply_no_enhn_gain_model_and_cmd_options_illegal2(self):
+        ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        dis_path = VmafConfig.test_resource_path("yuv", "disp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 352, 'height': 288})
+
+        self.runner = VmafrcQualityRunner(
+            [asset],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_v0.6.1neg.pkl"),
+                           'vif_enhn_gain_limit': 0.9}
+        )
+        with self.assertRaises(AssertionError,
+                               msg="vif_enhn_gain_limit is below 1 but the exception is not raised"):
+            self.runner.run(parallelize=False)
+
+    def test_run_vmafrc_runner_akiyo_multiply_with_feature_enhn_gain_limit_b_v063(self):
+        ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        dis_path = VmafConfig.test_resource_path("yuv", "disp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 352, 'height': 288})
+
+        self.runner = VmafrcQualityRunner(
+            [asset],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={'disable_clip_score': True,
+                           'model_filepath': VmafConfig.model_path("vmaf_b_v0.6.3", "vmaf_b_v0.6.3.pkl"),
+                           'adm_enhn_gain_limit': 1.0, 'vif_enhn_gain_limit': 1.0}
+        )
+        self.runner.run(parallelize=False)
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 0.9574308606115118, places=4)  # 1.116691484215469
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'], 0.983699512450884, places=4)  # 1.0522544319369052
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.9974276726830457, places=4)  # 1.0705609423182443
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.999146211879154, places=4)  # 1.0728060231246508
+
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 88.4895, places=4)  # 88.032956
+
 
 class VmafrcQualityRunnerSubsamplingTest(unittest.TestCase):
 

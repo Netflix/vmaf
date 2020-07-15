@@ -1217,11 +1217,11 @@ class VmafrcQualityRunner(QualityRunner):
 
         vif_enhn_gain_limit = self.optional_dict['vif_enhn_gain_limit'] \
             if self.optional_dict is not None and 'vif_enhn_gain_limit' in self.optional_dict else None
-        assert vif_enhn_gain_limit is None or vif_enhn_gain_limit >= 1.0
+        assert vif_enhn_gain_limit is None or isinstance(vif_enhn_gain_limit, int) or isinstance(vif_enhn_gain_limit, float)
 
         adm_enhn_gain_limit = self.optional_dict['adm_enhn_gain_limit'] \
             if self.optional_dict is not None and 'adm_enhn_gain_limit' in self.optional_dict else None
-        assert adm_enhn_gain_limit is None or adm_enhn_gain_limit >= 1.0
+        assert adm_enhn_gain_limit is None or isinstance(adm_enhn_gain_limit, int) or isinstance(adm_enhn_gain_limit, float)
 
         assert (disable_enhn_gain is None) or \
                (disable_enhn_gain is not None and vif_enhn_gain_limit is None and adm_enhn_gain_limit is None)
