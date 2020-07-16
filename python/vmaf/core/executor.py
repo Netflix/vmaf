@@ -650,7 +650,7 @@ class Executor(TypeVersionEnabled):
         else:
             assert False, 'target cannot be {}'.format(target)
 
-        if 'icpf' == get_file_name_extension(path) or 'j2c' == get_file_name_extension(path) or 'j2k' == get_file_name_extension(path):
+        if get_file_name_extension(path) in ['icpf', 'j2c', 'j2k', 'tiff']:
             # 2147483647 is INT_MAX if int is 4 bytes
             return "-start_number_range 2147483647"
         else:
