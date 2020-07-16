@@ -85,6 +85,10 @@ typedef struct VmafFeatureExtractor {
 VmafFeatureExtractor *vmaf_get_feature_extractor_by_name(char *name);
 VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(char *name);
 
+enum VmafFeatureExtractorContextFlags {
+    VMAF_FEATURE_EXTRACTOR_CONTEXT_DO_NOT_OVERWRITE = 1 << 0,
+};
+
 typedef struct VmafFeatureExtractorContext {
     bool is_initialized, is_closed;
     VmafDictionary *opts_dict;
@@ -140,5 +144,7 @@ int vmaf_fex_ctx_pool_flush(VmafFeatureExtractorContextPool *pool,
                             VmafFeatureCollector *feature_collector);
 
 int vmaf_fex_ctx_pool_destroy(VmafFeatureExtractorContextPool *pool);
+
+int parse_options(VmafFeatureExtractorContext *fex_ctx);
 
 #endif /* __VMAF_FEATURE_EXTRACTOR_H__ */

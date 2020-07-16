@@ -33,19 +33,52 @@ int feature_extractor_vector_init(RegisteredFeatureExtractors *rfe)
 }
 
 int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
-                                    VmafFeatureExtractorContext *fex_ctx)
+                                    VmafFeatureExtractorContext *fex_ctx,
+                                    uint64_t flags)
 {
     if (!rfe) return -EINVAL;
     if (!fex_ctx) return -EINVAL;
 
     for (unsigned i = 0; i < rfe->cnt; i++) {
         if (!strcmp(rfe->fex_ctx[i]->fex->name, fex_ctx->fex->name)) {
-            VmafDictionary *d =
-                vmaf_dictionary_merge(&rfe->fex_ctx[i]->opts_dict,
-                                      &fex_ctx->opts_dict);
-            vmaf_dictionary_free(&rfe->fex_ctx[i]->opts_dict);
-            rfe->fex_ctx[i]->opts_dict = d;
-            return vmaf_feature_extractor_context_destroy(fex_ctx);
+            /* same fex */
+            if (flags & VMAF_FEATURE_EXTRACTOR_CONTEXT_DO_NOT_OVERWRITE) {
+                /* if do not overwrite, check opts_dict consistency */
+                if (!rfe->fex_ctx[i]->opts_dict && !fex_ctx->opts_dict) {
+                    /* skip if both opts_dict are NULL */
+                    return 0;
+                } else if (!rfe->fex_ctx[i]->opts_dict || !fex_ctx->opts_dict) {
+                    /* error if one dict is NULL and the other is not.
+                     * Note that this does not handle the case the non-NULL dict's value is
+                     * equal to the default value of the NULL dict's. But this is not fixable
+                     * in the current framework unless the default values of fex's options
+                     * are exposed in the current layer. FIXME */
+                    return -ENOMEM;
+                }
+                VmafDictionary *d =
+                        vmaf_dictionary_merge(&rfe->fex_ctx[i]->opts_dict,
+                                              &fex_ctx->opts_dict, VMAF_DICT_DO_NOT_OVERWRITE);
+                if (!d) {
+                    return -ENOMEM;
+                }
+                else {
+                    vmaf_dictionary_free(&d);
+                    return 0;
+                }
+            } else {
+                /* if allow overwrite, merge opt_dict */
+                VmafDictionary *d =
+                        vmaf_dictionary_merge(&rfe->fex_ctx[i]->opts_dict,
+                                              &fex_ctx->opts_dict, 0);
+                vmaf_dictionary_free(&rfe->fex_ctx[i]->opts_dict);
+                VmafFeatureExtractorContext *f = rfe->fex_ctx[i];
+                f->opts_dict = d;
+                if (f->fex->options && f->fex->priv) {
+                    int err = parse_options(f);
+                    if (err) return err;
+                }
+                return vmaf_feature_extractor_context_destroy(fex_ctx);
+            }
         }
     }
 

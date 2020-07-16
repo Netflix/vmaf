@@ -74,12 +74,16 @@ static char *test_vmaf_dictionary()
     const char *pre_existing_key = "key_9";
     const char *new_value = "new_value";
     err = vmaf_dictionary_set(&dict, pre_existing_key, new_value,
-                               VMAF_DICT_DO_NOT_OVERWRITE);
+                              VMAF_DICT_DO_NOT_OVERWRITE);
     mu_assert("vmaf_dictionary_set should fail with pre-existing key", err);
     entry = vmaf_dictionary_get(&dict, pre_existing_key, 0);
     mu_assert("dictionary should return original value with pre-existing key",
               !strcmp(entry->key, pre_existing_key) &&
               !strcmp(entry->val, "val_9"));
+    err = vmaf_dictionary_set(&dict, pre_existing_key, "val_9",
+                              VMAF_DICT_DO_NOT_OVERWRITE);
+    mu_assert("vmaf_dictionary_set should not fail when pre-existing key "
+              "matches pre-existing value", !err);
     err = vmaf_dictionary_set(&dict, pre_existing_key, new_value, 0);
     mu_assert("problem during vmaf_dictionary_set", !err);
     entry = vmaf_dictionary_get(&dict, pre_existing_key, 0);
@@ -110,19 +114,19 @@ static char *test_vmaf_dictionary_merge()
     VmafDictionary *d = NULL;
     VmafDictionaryEntry *entry = NULL;
 
-    d = vmaf_dictionary_merge(&a, &b);
+    d = vmaf_dictionary_merge(&a, &b, 0);
     mu_assert("merging two NULL dicts should result in a NULL dict", !d);
 
     err = vmaf_dictionary_set(&a, "key_a", "val_a", 0);
     mu_assert("problem during vmaf_dictionary_set", !err);
-    d = vmaf_dictionary_merge(&a, &b);
+    d = vmaf_dictionary_merge(&a, &b, 0);
     mu_assert("merging one NULL and one non-NULL dict should work", d);
     entry = vmaf_dictionary_get(&d, "key_a", 0);
     mu_assert("dictionary should return an entry with valid key", entry);
     mu_assert("entry should have correct value", !strcmp(entry->val, "val_a"));
     vmaf_dictionary_free(&d);
     mu_assert("dictionary should be NULL after free", !d);
-    d = vmaf_dictionary_merge(&b, &a);
+    d = vmaf_dictionary_merge(&b, &a, 0);
     mu_assert("merging one NULL and one non-NULL dict should work", d);
     entry = vmaf_dictionary_get(&d, "key_a", 0);
     mu_assert("dictionary should return an entry with valid key", entry);
@@ -132,7 +136,7 @@ static char *test_vmaf_dictionary_merge()
 
     err = vmaf_dictionary_set(&b, "key_b", "val_b", 0);
     mu_assert("problem during vmaf_dictionary_set", !err);
-    d = vmaf_dictionary_merge(&b, &a);
+    d = vmaf_dictionary_merge(&b, &a, 0);
     mu_assert("merging two non-NULL dicts should work", d);
     entry = vmaf_dictionary_get(&d, "key_a", 0);
     mu_assert("dictionary should return an entry with valid key", entry);
@@ -147,13 +151,18 @@ static char *test_vmaf_dictionary_merge()
     mu_assert("problem during vmaf_dictionary_set", !err);
     err = vmaf_dictionary_set(&a, "duplicate_key", "val_b", 0);
     mu_assert("problem during vmaf_dictionary_set", !err);
-    d = vmaf_dictionary_merge(&b, &a);
+
+    d = vmaf_dictionary_merge(&b, &a, 0);
     mu_assert("merging two non-NULL dicts with duplicate keys should work", d);
     entry = vmaf_dictionary_get(&d, "duplicate_key", 0);
     mu_assert("dictionary should return an entry with valid key", entry);
     mu_assert("entry should have expected value", !strcmp(entry->val, "val_b"));
     vmaf_dictionary_free(&d);
     mu_assert("dictionary should be NULL after free", !d);
+
+    err = vmaf_dictionary_set(&b, "duplicate_key", "val_c", 0);
+    d = vmaf_dictionary_merge(&b, &a, VMAF_DICT_DO_NOT_OVERWRITE);
+    mu_assert("dictionary should be NULL for duplicated key but different values", !d);
 
     vmaf_dictionary_free(&a);
     mu_assert("dictionary should be NULL after free", !a);

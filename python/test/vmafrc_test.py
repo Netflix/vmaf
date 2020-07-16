@@ -729,6 +729,169 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAFRC_score'], 88.032956, places=4)  # 132.78849246495625
 
+    def test_run_vmafrc_runner_akiyo_multiply_no_enhn_gain_model_and_cmd_options(self):
+        ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        dis_path = VmafConfig.test_resource_path("yuv", "disp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 352, 'height': 288})
+
+        self.runner = VmafrcQualityRunner(
+            [asset],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_v0.6.1neg.pkl"),
+                           'adm_enhn_gain_limit': 1.2}
+        )
+        self.runner.run(parallelize=False)
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 1.116595, places=4)  # 1.116691484215469
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'], 0.983699512450884, places=4)  # 1.0522544319369052
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.9974276726830457, places=4)  # 1.0705609423182443
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.999146211879154, places=4)  # 1.0728060231246508
+
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 122.804272, places=4)  # 132.78849246495625
+
+    def test_run_vmafrc_runner_with_enhn_gain_enabled_disabled(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = VmafrcQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={
+                'models': [
+                    'path={}:name=vmaf'.format(VmafConfig.model_path("vmaf_v0.6.1.pkl")),
+                    'path={}:name=vmafneg'.format(VmafConfig.model_path("vmaf_v0.6.1neg.pkl")),
+                ]
+            }
+        )
+        with self.assertRaises(AssertionError, msg="vmaf_v0.6.1.pkl and vmaf_v0.6.1neg.pkl require the same fex with "
+                                                   "different input arguments, but the exception is not raised."):
+            self.runner.run(parallelize=False)
+
+    def test_run_vmafrc_runner_with_enhn_gain_enabled_disabled2(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = VmafrcQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={
+                'models': [
+                    'path={}:name=vmafneg'.format(VmafConfig.model_path("vmaf_v0.6.1neg.pkl")),
+                    'path={}:name=vmaf'.format(VmafConfig.model_path("vmaf_v0.6.1.pkl")),
+                ]
+            }
+        )
+        with self.assertRaises(AssertionError, msg="vmaf_v0.6.1neg.pkl and vmaf_v0.6.1.pkl require different input "
+                                                   "arguments for the same fex, but the exception is not raised."):
+            self.runner.run(parallelize=False)
+
+    def test_run_vmafrc_runner_akiyo_multiply_no_enhn_gain_model_inconsist(self):
+        ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        dis_path = VmafConfig.test_resource_path("yuv", "disp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 352, 'height': 288})
+
+        self.runner = VmafrcQualityRunner(
+            [asset],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={'disable_clip_score': True,
+                           'model_filepath': VmafConfig.test_resource_path("vmaf_v0.6.1neg.inconsist.pkl")}
+        )
+        with self.assertRaises(AssertionError,
+                               msg="vmaf_v0.6.1neg.inconsist.pkl has inconsistent vif_enhn_gain_limit "
+                                   "values for the same fex but the exception is not raised."):
+            self.runner.run(parallelize=False)
+
+    def test_run_vmafrc_runner_akiyo_multiply_no_enhn_gain_model_and_cmd_options_illegal(self):
+        ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        dis_path = VmafConfig.test_resource_path("yuv", "disp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 352, 'height': 288})
+
+        self.runner = VmafrcQualityRunner(
+            [asset],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_v0.6.1neg.pkl"),
+                           'adm_enhn_gain_limit': 0.9}
+        )
+        with self.assertRaises(AssertionError,
+                               msg="adm_enhn_gain_limit is below 1 but the exception is not raised"):
+            self.runner.run(parallelize=False)
+
+    def test_run_vmafrc_runner_akiyo_multiply_no_enhn_gain_model_and_cmd_options_illegal2(self):
+        ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        dis_path = VmafConfig.test_resource_path("yuv", "disp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 352, 'height': 288})
+
+        self.runner = VmafrcQualityRunner(
+            [asset],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_v0.6.1neg.pkl"),
+                           'vif_enhn_gain_limit': 0.9}
+        )
+        with self.assertRaises(AssertionError,
+                               msg="vif_enhn_gain_limit is below 1 but the exception is not raised"):
+            self.runner.run(parallelize=False)
+
+    def test_run_vmafrc_runner_akiyo_multiply_with_feature_enhn_gain_limit_b_v063(self):
+        ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        dis_path = VmafConfig.test_resource_path("yuv", "disp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 352, 'height': 288})
+
+        self.runner = VmafrcQualityRunner(
+            [asset],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={'disable_clip_score': True,
+                           'model_filepath': VmafConfig.model_path("vmaf_b_v0.6.3", "vmaf_b_v0.6.3.pkl"),
+                           'adm_enhn_gain_limit': 1.0, 'vif_enhn_gain_limit': 1.0}
+        )
+        self.runner.run(parallelize=False)
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 0.9574308606115118, places=4)  # 1.116691484215469
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'], 0.983699512450884, places=4)  # 1.0522544319369052
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.9974276726830457, places=4)  # 1.0705609423182443
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.999146211879154, places=4)  # 1.0728060231246508
+
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 88.4895, places=4)  # 88.032956
+
 
 class VmafrcQualityRunnerSubsamplingTest(unittest.TestCase):
 

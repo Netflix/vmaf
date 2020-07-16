@@ -54,7 +54,7 @@ int vmaf_dictionary_set(VmafDictionary **dict, const char *key, const char *val,
 
     VmafDictionaryEntry *existing_entry = vmaf_dictionary_get(&d, key, 0);
     if (existing_entry && (flags & VMAF_DICT_DO_NOT_OVERWRITE))
-        return -EINVAL;
+        return !strcmp(existing_entry->val, val) ? 0 : -EINVAL;
 
     if (d->cnt == d->size) {
         const size_t sz = d->size * sizeof(*d->entry) * 2;
@@ -124,7 +124,8 @@ int vmaf_dictionary_free(VmafDictionary **dict)
 }
 
 VmafDictionary *vmaf_dictionary_merge(VmafDictionary **dict_a,
-                                      VmafDictionary **dict_b)
+                                      VmafDictionary **dict_b,
+                                      uint64_t flags)
 {
     int err = 0;
     VmafDictionary *a = *dict_a;
@@ -138,7 +139,7 @@ VmafDictionary *vmaf_dictionary_merge(VmafDictionary **dict_a,
 
     if (b) {
         for (unsigned i = 0; i < b->cnt; i++)
-            err |= vmaf_dictionary_set(&d, b->entry[i].key, b->entry[i].val, 0);
+            err |= vmaf_dictionary_set(&d, b->entry[i].key, b->entry[i].val, flags);
         if (err) goto fail;
     }
 
