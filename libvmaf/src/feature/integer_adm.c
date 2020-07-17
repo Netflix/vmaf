@@ -26,6 +26,9 @@
 #include "mem.h"
 #include "adm_options.h"
 
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+
 static int32_t div_lookup[65536];
 static const int32_t div_Q_factor = 1073741824;   //2^30
 
@@ -79,7 +82,21 @@ typedef struct AdmBuffer {
 typedef struct AdmState {
     size_t integer_stride;
     AdmBuffer buf;
+    double adm_enhn_gain_limit;
 } AdmState;
+
+static const VmafOption options[] = {
+        {
+                .name = "adm_enhn_gain_limit",
+                .help = "enhancement gain imposed on adm, must be >= 1.0, where 1.0 means the gain is completely disabled",
+                .offset = offsetof(AdmState, adm_enhn_gain_limit),
+                .type = VMAF_OPT_TYPE_DOUBLE,
+                .default_val.d = DEFAULT_ADM_ENHN_GAIN_LIMIT,
+                .min = 1.0,
+                .max = DEFAULT_ADM_ENHN_GAIN_LIMIT,
+        },
+        { NULL }
+};
 
 #ifndef NUM_BUFS_ADM
 #define NUM_BUFS_ADM 30
@@ -735,7 +752,7 @@ static void dwt2_src_indices_filt(int **src_ind_y, int **src_ind_x, int w, int h
     }
 }
 
-static void adm_decouple(AdmBuffer *buf, int w, int h, int stride)
+static void adm_decouple(AdmBuffer *buf, int w, int h, int stride, double adm_enhn_gain_limit)
 {
     const float cos_1deg_sq = cos(1.0 * M_PI / 180.0) * cos(1.0 * M_PI / 180.0);
 
@@ -772,7 +789,7 @@ static void adm_decouple(AdmBuffer *buf, int w, int h, int stride)
             int16_t th = dis->band_h[i * stride + j];
             int16_t tv = dis->band_v[i * stride + j];
             int16_t td = dis->band_d[i * stride + j];
-            int16_t tmph, tmpv, tmpd;
+            int16_t rst_h, rst_v, rst_d;
 
             /* Determine if angle between (oh,ov) and (th,tv) is less than 1 degree.
              * Given that u is the angle (oh,ov) and v is the angle (th,tv), this can
@@ -806,10 +823,29 @@ static void adm_decouple(AdmBuffer *buf, int w, int h, int stride)
             int angle_flag = (((float)ot_dp / 4096.0) >= 0.0f) &&
                 (((float)ot_dp / 4096.0) * ((float)ot_dp / 4096.0) >=
                     cos_1deg_sq * ((float)o_mag_sq / 4096.0) * ((float)t_mag_sq / 4096.0));
+
             if (angle_flag) {
-                r->band_h[i * stride + j] = th;
-                r->band_v[i * stride + j] = tv;
-                r->band_d[i * stride + j] = td;
+                if (rst_h > 0.0) {
+                    rst_h = MIN(rst_h * adm_enhn_gain_limit, th);
+                } else if (rst_h < 0.0) {
+                    rst_h = MAX(rst_h * adm_enhn_gain_limit, th);
+                }
+
+                if (rst_v > 0.0) {
+                    rst_v = MIN(rst_v * adm_enhn_gain_limit, tv);
+                } else if (rst_v < 0.0) {
+                    rst_v = MAX(rst_v * adm_enhn_gain_limit, tv);
+                }
+
+                if (rst_d > 0.0) {
+                    rst_d = MIN(rst_d * adm_enhn_gain_limit, td);
+                } else if (rst_d < 0.0) {
+                    rst_d = MAX(rst_d * adm_enhn_gain_limit, td);
+                }
+
+                r->band_h[i * stride + j] = rst_h;
+                r->band_v[i * stride + j] = rst_v;
+                r->band_d[i * stride + j] = rst_d;
 
                 a->band_h[i * stride + j] = 0;
                 a->band_v[i * stride + j] = 0;
@@ -832,17 +868,17 @@ static void adm_decouple(AdmBuffer *buf, int w, int h, int stride)
                  * kh,kv,kd are in Q15 type and oh,ov,od are in Q16 type hence shifted by
                  * 15 to make result Q16
                  */
-                tmph = ((kh * oh) + 16384) >> 15;
-                tmpv = ((kv * ov) + 16384) >> 15;
-                tmpd = ((kd * od) + 16384) >> 15;
+                rst_h = ((kh * oh) + 16384) >> 15;
+                rst_v = ((kv * ov) + 16384) >> 15;
+                rst_d = ((kd * od) + 16384) >> 15;
 
-                r->band_h[i * stride + j] = tmph;
-                r->band_v[i * stride + j] = tmpv;
-                r->band_d[i * stride + j] = tmpd;
+                r->band_h[i * stride + j] = rst_h;
+                r->band_v[i * stride + j] = rst_v;
+                r->band_d[i * stride + j] = rst_d;
 
-                a->band_h[i * stride + j] = th - tmph;
-                a->band_v[i * stride + j] = tv - tmpv;
-                a->band_d[i * stride + j] = td - tmpd;
+                a->band_h[i * stride + j] = th - rst_h;
+                a->band_v[i * stride + j] = tv - rst_v;
+                a->band_d[i * stride + j] = td - rst_d;
             }
         }
     }
@@ -857,7 +893,7 @@ static inline uint16_t get_best15_from32(uint32_t temp, int *x)
     return temp;
 }
 
-static void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride)
+static void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride, double adm_enhn_gain_limit)
 {
     const float cos_1deg_sq = cos(1.0 * M_PI / 180.0) * cos(1.0 * M_PI / 180.0);
 
@@ -897,7 +933,7 @@ static void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride)
             int32_t th = dis->band_h[i * stride + j];
             int32_t tv = dis->band_v[i * stride + j];
             int32_t td = dis->band_d[i * stride + j];
-            int32_t tmph, tmpv, tmpd;
+            int32_t rst_h, rst_v, rst_d;
 
             /* Determine if angle between (oh,ov) and (th,tv) is less than 1 degree.
              * Given that u is the angle (oh,ov) and v is the angle (th,tv), this can
@@ -927,10 +963,29 @@ static void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride)
             int angle_flag = (((float)ot_dp / 4096.0) >= 0.0f) &&
                 (((float)ot_dp / 4096.0) * ((float)ot_dp / 4096.0) >=
                     cos_1deg_sq * ((float)o_mag_sq / 4096.0) * ((float)t_mag_sq / 4096.0));
+
             if (angle_flag) {
-                r->band_h[i * stride + j] = th;
-                r->band_v[i * stride + j] = tv;
-                r->band_d[i * stride + j] = td;
+                if (rst_h > 0.0) {
+                    rst_h = MIN(rst_h * adm_enhn_gain_limit, th);
+                } else if (rst_h < 0.0) {
+                    rst_h = MAX(rst_h * adm_enhn_gain_limit, th);
+                }
+
+                if (rst_v > 0.0) {
+                    rst_v = MIN(rst_v * adm_enhn_gain_limit, tv);
+                } else if (rst_v < 0.0) {
+                    rst_v = MAX(rst_v * adm_enhn_gain_limit, tv);
+                }
+
+                if (rst_d > 0.0) {
+                    rst_d = MIN(rst_d * adm_enhn_gain_limit, td);
+                } else if (rst_d < 0.0) {
+                    rst_d = MAX(rst_d * adm_enhn_gain_limit, td);
+                }
+
+                r->band_h[i * stride + j] = rst_h;
+                r->band_v[i * stride + j] = rst_v;
+                r->band_d[i * stride + j] = rst_d;
 
                 a->band_h[i * stride + j] = 0;
                 a->band_v[i * stride + j] = 0;
@@ -980,17 +1035,17 @@ static void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride)
                 int64_t kv = tmp_kv < 0 ? 0 : (tmp_kv > 32768 ? 32768 : tmp_kv);
                 int64_t kd = tmp_kd < 0 ? 0 : (tmp_kd > 32768 ? 32768 : tmp_kd);
 
-                tmph = ((kh * oh) + 16384) >> 15;
-                tmpv = ((kv * ov) + 16384) >> 15;
-                tmpd = ((kd * od) + 16384) >> 15;
+                rst_h = ((kh * oh) + 16384) >> 15;
+                rst_v = ((kv * ov) + 16384) >> 15;
+                rst_d = ((kd * od) + 16384) >> 15;
 
-                r->band_h[i * stride + j] = tmph;
-                r->band_v[i * stride + j] = tmpv;
-                r->band_d[i * stride + j] = tmpd;
+                r->band_h[i * stride + j] = rst_h;
+                r->band_v[i * stride + j] = rst_v;
+                r->band_d[i * stride + j] = rst_d;
 
-                a->band_h[i * stride + j] = th - tmph;
-                a->band_v[i * stride + j] = tv - tmpv;
-                a->band_d[i * stride + j] = td - tmpd;
+                a->band_h[i * stride + j] = th - rst_h;
+                a->band_v[i * stride + j] = tv - rst_v;
+                a->band_d[i * stride + j] = td - rst_d;
             }
         }
     }
@@ -2438,7 +2493,7 @@ static void adm_dwt2_s123_combined(const int32_t *i4_ref_scale, const int32_t *i
 }
 
 void integer_compute_adm(VmafPicture *ref_pic, VmafPicture *dis_pic, double *score,
-                         double *scores, AdmBuffer *buf)
+                         double *scores, AdmBuffer *buf, double adm_enhn_gain_limit)
 {
     int w = ref_pic->w[0];
     int h = ref_pic->h[0];
@@ -2488,7 +2543,7 @@ void integer_compute_adm(VmafPicture *ref_pic, VmafPicture *dis_pic, double *sco
 			w = (w + 1) / 2;
 			h = (h + 1) / 2;
 
-			adm_decouple(buf, w, h, buf_stride);
+			adm_decouple(buf, w, h, buf_stride, adm_enhn_gain_limit);
 
 			den_scale = adm_csf_den_scale(&buf->ref_dwt2, w, h, buf_stride);
 
@@ -2503,7 +2558,7 @@ void integer_compute_adm(VmafPicture *ref_pic, VmafPicture *dis_pic, double *sco
 			w = (w + 1) / 2;
 			h = (h + 1) / 2;
 
-			adm_decouple_s123(buf, w, h, buf_stride);
+			adm_decouple_s123(buf, w, h, buf_stride, adm_enhn_gain_limit);
 
 			den_scale = adm_csf_den_s123(&buf->i4_ref_dwt2, scale, w, h, buf_stride);
 
@@ -2645,7 +2700,7 @@ static int extract(VmafFeatureExtractor *fex,
     double score;
     double scores[8];
 
-    integer_compute_adm(ref_pic, dist_pic, &score, scores, &s->buf);
+    integer_compute_adm(ref_pic, dist_pic, &score, scores, &s->buf, s->adm_enhn_gain_limit);
 
     err |= vmaf_feature_collector_append(feature_collector,
                                         "'VMAF_feature_adm2_integer_score'",
@@ -2694,6 +2749,7 @@ VmafFeatureExtractor vmaf_fex_integer_adm = {
     .name = "adm",
     .init = init,
     .extract = extract,
+    .options = options,
     .close = close,
     .priv_size = sizeof(AdmState),
     .provided_features = provided_features,
