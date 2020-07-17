@@ -209,14 +209,25 @@ void adm_decouple_s(const adm_dwt_band_t_s *ref, const adm_dwt_band_t_s *dis,
 
 			/* ==== modification ==== */
 
-            if (angle_flag && (rst_h > 0.0)) rst_h = MIN(rst_h * adm_enhn_gain_limit, th);
-            if (angle_flag && (rst_h < 0.0)) rst_h = MAX(rst_h * adm_enhn_gain_limit, th);
+			if (angle_flag) {
+			    if (rst_h > 0.0) {
+                    rst_h = MIN(rst_h * adm_enhn_gain_limit, th);
+			    } else if (rst_h < 0.0) {
+                    rst_h = MAX(rst_h * adm_enhn_gain_limit, th);
+			    }
 
-            if (angle_flag && (rst_v > 0.0)) rst_v = MIN(rst_v * adm_enhn_gain_limit, tv);
-            if (angle_flag && (rst_v < 0.0)) rst_v = MAX(rst_v * adm_enhn_gain_limit, tv);
+			    if (rst_v > 0.0) {
+                    rst_v = MIN(rst_v * adm_enhn_gain_limit, tv);
+			    } else if (rst_v < 0.0) {
+                    rst_v = MAX(rst_v * adm_enhn_gain_limit, tv);
+			    }
 
-            if (angle_flag && (rst_d > 0.0)) rst_d = MIN(rst_d * adm_enhn_gain_limit, td);
-            if (angle_flag && (rst_d < 0.0)) rst_d = MAX(rst_d * adm_enhn_gain_limit, td);
+			    if (rst_d > 0.0) {
+                    rst_d = MIN(rst_d * adm_enhn_gain_limit, td);
+			    } else if (rst_d < 0.0) {
+                    rst_d = MAX(rst_d * adm_enhn_gain_limit, td);
+			    }
+			}
 
             /* == end of modification == */
 
