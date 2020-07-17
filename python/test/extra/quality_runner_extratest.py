@@ -321,7 +321,7 @@ class QualityRunnerTiffTest(unittest.TestCase):
         results = self.runner.results
         pprint.pprint(results[0]['PSNR_scores'])
         pprint.pprint(results[0]['PSNR_score'])
-        self.assertAlmostEqual(results[0]['PSNR_score'], 32.26007525, places=4)
+        self.assertAlmostEqual(results[0]['PSNR_score'], 32.12685675, places=4)
 
 
 if __name__ == '__main__':
