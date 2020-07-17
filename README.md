@@ -9,9 +9,9 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ## News
 
-- (2/27/20) We have changed VMAF's license from Apache 2.0 to [BSD+Patent](https://opensource.org/licenses/BSDplusPatent), a more permissive license compared to Apache that also includes an express patent grant. VMAF has been increasingly used in a number of open-source multimedia projects. However, it posed a problem to more deeply integrate VMAF into these projects to perform advanced tasks. Many of the open-source projects are licensed under GPLv2/LGPLv2, and the old Apache 2.0 license was incompatible with GPLv2/LGPLv2. Due to this incompatibility, when integrating VMAF source code into these projects, the license automatically got bumped to GPLv3/LGPLv3, which could prove challenging for downstream projects who might want to integrate VMAF. Changing VMAF’s license to BSD+Patent have resolved this issue, because it is compatible with GPLv2/LGPLv2.
+- (7/13/20) We have create a [memo](https://docs.google.com/document/d/1dJczEhXO0MZjBSNyKmd3ARiCTdFVMNPBykH4_HMPoyY/edit?usp=sharing) to share our thoughts on VMAF's property in the presence of image enhancement operations, its impact on codec evaluation, and our solutions.
+- (2/27/20) We have changed VMAF's license from Apache 2.0 to [BSD+Patent](https://opensource.org/licenses/BSDplusPatent), a more permissive license compared to Apache that also includes an express patent grant.
 - (2/27/20) We made a few changes in a recent refactoring effort: 1) migrated the build system from makefile to meson, 2) restructured the code, and 3) introduced a new release candidate API with the associated library `libvmaf_rc` and executable `vmaf_rc`, co-existing with the current `libvmaf` and `vmafossexec`, all under `libvmaf/build`. The new release candidate API is designed for better interoperrability with encoding optimization. We will deprecate the old API on a future date.
-- (9/8/19) Added a [link to report VMAF bad cases](https://docs.google.com/forms/d/e/1FAIpQLSdJntNoBuucMSiYoK3SDWoY1QN0yiFAi5LyEXuOyXEWJbQBtQ/viewform?usp=sf_link). Over time, we have received feedbacks on when VMAF's prediction does not reflect the expected perceptual quality of videos, either they are corner cases where VMAF fails to cover, or new application scenarios which VMAF was not initially intended for. In response to that, we have created the Google form to allow users to upload their video samples and describe the scenarios. The bad cases are valuable for improving future versions of VMAF. Users can opt in or out for sharing their sample videos publicly.
 
 ## Frequently Asked Questions
 
@@ -45,6 +45,10 @@ Since VDK v1.3.7 (June 2018), we have introduced a way to quantify the level of 
 ## Matlab Functionality
 
 Besides the Python/C/C++ part of the repository, we also introduced a number of algorithms that are implemented in Matlab. For example, users can calculate ST-RRED, ST-MAD, SpEED-QA, and BRISQUE. For more details, see the [Matlab Usage](resource/doc/matlab_usage.md) page for more details.
+
+## Report of VMAF Bad Cases
+
+Over time, we have received feedbacks on when VMAF's prediction does not reflect the expected perceptual quality of videos, either they are corner cases where VMAF fails to cover, or new application scenarios which VMAF was not initially intended for. In response to that, we have created the Google form to allow users to upload their video samples and describe the scenarios. The bad cases are valuable for improving future versions of VMAF. Users can opt in or out for sharing their sample videos publicly. Please submit the bad cases through [this link](https://docs.google.com/forms/d/e/1FAIpQLSdJntNoBuucMSiYoK3SDWoY1QN0yiFAi5LyEXuOyXEWJbQBtQ/viewform?usp=sf_link).
 
 ## References
 
