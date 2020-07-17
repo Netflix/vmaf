@@ -6,7 +6,7 @@ from vmaf.config import VmafConfig
 
 from test.testutil import set_default_576_324_videos_for_testing
 
-from vmaf.core.vmafrc_feature_extractor import FloatMotionFeatureExtractor, IntegerMotionFeatureExtractor, FloatVifFeatureExtractor, FloatAdmFeatureExtractor, IntegerVifFeatureExtractor, IntegerPsnrFeatureExtractor
+from vmaf.core.vmafrc_feature_extractor import FloatMotionFeatureExtractor, IntegerMotionFeatureExtractor, FloatVifFeatureExtractor, FloatAdmFeatureExtractor, IntegerVifFeatureExtractor, IntegerPsnrFeatureExtractor, IntegerAdmFeatureExtractor
 
 
 class FeatureExtractorTest(unittest.TestCase):
@@ -218,6 +218,18 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_score'], 1.046596975760772, places=3)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale2_score'], 1.0485607628500504, places=3)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale3_score'], 1.0491232394147363, places=3)
+
+    def test_run_integer_adm_fextractor(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = IntegerAdmFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 0.934578625, places=4)
+        self.assertAlmostEqual(results[1]['integer_ADM_feature_adm2_score'], 1.000002, places=6)
 
 
 if __name__ == '__main__':
