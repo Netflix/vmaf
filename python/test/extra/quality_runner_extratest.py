@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import unittest
+import pprint
 
 from vmaf.core.matlab_quality_runner import SpEEDMatlabQualityRunner, StrredQualityRunner
 from vmaf.config import VmafConfig, VmafExternalConfig
@@ -284,6 +285,43 @@ class ParallelMatlabQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['SpEED_Matlab_feature_sspeed_4_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['SpEED_Matlab_feature_tspeed_4_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['SpEED_Matlab_score'], 0.0, places=4)
+
+
+@unittest.skipIf(not VmafExternalConfig.ffmpeg_path(), "ffmpeg not installed")
+class QualityRunnerTiffTest(unittest.TestCase):
+
+    def setUp(self) -> None:
+        for i in range(4):
+            VmafConfig.test_resource_path('tiff', 'src01_hrc00_576x324%05d.tiff' % (i+1))
+            VmafConfig.test_resource_path('tiff', 'src01_hrc01_576x324%05d.tiff' % (i+1))
+
+    def tearDown(self):
+        if hasattr(self, 'runner'):
+            self.runner.remove_results()
+            pass
+
+    def test_run_psnr_runner_with_notyuv(self):
+        ref_path = VmafConfig.test_resource_path("tiff", "src01_hrc00_576x324%05d.tiff", bypass_download=True)
+        dis_path = VmafConfig.test_resource_path("tiff", "src01_hrc01_576x324%05d.tiff", bypass_download=True)
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'yuv_type': 'notyuv',
+                                  'quality_width': 576, 'quality_height': 324,
+                                  })
+        self.runner = PsnrQualityRunner(
+            [asset],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            result_store=None
+        )
+        self.runner.run()
+
+        results = self.runner.results
+        pprint.pprint(results[0]['PSNR_scores'])
+        pprint.pprint(results[0]['PSNR_score'])
+        self.assertAlmostEqual(results[0]['PSNR_score'], 32.26007525, places=4)
 
 
 if __name__ == '__main__':
