@@ -262,7 +262,7 @@ void vif_statistic_s(const float *mu1, const float *mu2, const float *mu1_mu2, c
 
 			/* ==== vif_stat_mode = 'matching_c' ==== */
 
-            /* if (sigma1_sq < sigma_nsq) {
+            if (sigma1_sq < sigma_nsq) {
                 num_val = 1.0 - sigma2_sq * sigma_max_inv;
                 den_val = 1.0;
             }
@@ -278,11 +278,16 @@ void vif_statistic_s(const float *mu1, const float *mu2, const float *mu1_mu2, c
                     num_val = log2f(num_log_num / num_log_den);
                 }
                 den_val = log2f(1.0f + sigma1_sq / sigma_nsq);
-            } */
+            }
+
+            float tmp = den_val *  vif_enhn_gain_limit_f;
+            if (num_val > tmp) {
+                num_val = tmp;
+            }
 
             /* ==== vif_stat_mode = 'matching_matlab' ==== */
 
-            sigma1_sq = MAX(sigma1_sq, 0.0f);
+            /* sigma1_sq = MAX(sigma1_sq, 0.0f);
             sigma2_sq = MAX(sigma2_sq, 0.0f);
 
 			g = sigma12 / (sigma1_sq + eps);
@@ -317,7 +322,7 @@ void vif_statistic_s(const float *mu1, const float *mu2, const float *mu1_mu2, c
             if (sigma1_sq < sigma_nsq) {
                 num_val = 1.0f - sigma2_sq * sigma_max_inv;
                 den_val = 1.0f;
-            }
+            } */
 
             /* == end of vif_stat_mode = 'matching_matlab' == */
 
