@@ -234,9 +234,9 @@ void vif_statistic_s(const float *mu1, const float *mu2, const float *mu1_mu2, c
 	int i, j;
 
     /* ==== vif_stat_mode = 'matching_c' ==== */
-    // float num_log_den, num_log_num;
+    float num_log_den, num_log_num;
     /* ==== vif_stat_mode = 'matching_matlab' ==== */
-	float g, sv_sq, eps = 1.0e-10f;
+	// float g, sv_sq, eps = 1.0e-10f;
 	float vif_enhn_gain_limit_f = (float) vif_enhn_gain_limit;
     /* == end of vif_stat_mode = 'matching_matlab' == */
 
