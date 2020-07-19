@@ -151,7 +151,7 @@ class VmafFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
     # VERSION = '0.2.5'  # replace executable vmaf_feature with vmaf_rc
     # VERSION = '0.2.6'  # incorporate adm_enhn_gain_limit and vif_enhn_gain_limit
     # VERSION = '0.2.7'  # move vif_enhn_gain_limit right before log calculation
-    # VERSION = '0.2.7i' # ioannis alternative VIF enhn gain limit
+    VERSION = '0.2.7i' # ioannis alternative VIF enhn gain limit
 
     ATOM_FEATURES = ['vif', 'adm', 'ansnr', 'motion', 'motion2',
                      'vif_num', 'vif_den', 'adm_num', 'adm_den', 'anpsnr',
