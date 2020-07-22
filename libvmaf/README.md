@@ -15,8 +15,7 @@ sudo apt install python3 python3-pip python3-setuptools python3-wheel ninja-buil
 pip3 install --user meson
 ```
 
-Make sure your user install executable directory is on your PATH. Add this to the end of `~/.bashrc` (or `~/.bash_profile` under macOS) and restart your shell:
-
+Make sure your user install executable directory is on your PATH.
 ```
 export PATH="$PATH:$HOME/.local/bin"
 ```
@@ -29,11 +28,6 @@ brew install meson doxygen
 
 ## Compile
 
-First, change to the `libvmaf` directory:
-
-```
-cd libvmaf
-```
 
 Run:
 
@@ -71,4 +65,19 @@ Generate HTML documentation with:
 
 ```
 ninja -vC build doc/html
+```
+
+## Example
+
+The following example shows a comparison using a pair of y4m inputs (`reference.y4m`, `distorted.y4m`).
+In addition to VMAF which is enabled with the model `../model/vmaf_v0.6.1.pkl`, the following metrics
+are computed and logged: `psnr`, `ssim`, `ms-ssim`.
+
+```sh
+./build/tools/vmaf_rc \
+    --reference reference.y4m \
+    --distorted distorted.y4m \
+    --model path=../model/vmaf_v0.6.1.pkl \
+    --feature psnr --feature float_ssim --feature float_ms_ssim \
+    --output /dev/stdout
 ```
