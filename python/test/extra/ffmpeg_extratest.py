@@ -9,9 +9,6 @@ from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
 from vmaf.core.quality_runner import VmafQualityRunner, PsnrQualityRunner
 from vmaf.core.result_store import FileSystemResultStore
 
-if __name__ == '__main__':
-    unittest.main(verbosity=2)
-
 
 @unittest.skipIf(not VmafExternalConfig.ffmpeg_path() or 'apps' in VmafExternalConfig.ffmpeg_path(), 'ffmpeg not installed or ffmpeg should not be in apps')
 class ParallelFeatureExtractorTestNew(unittest.TestCase):
@@ -174,3 +171,7 @@ class QualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
         self.assertAlmostEqual(results[0]['VMAF_score'], 77.18873019841408, places=4)
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)

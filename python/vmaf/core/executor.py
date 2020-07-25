@@ -505,7 +505,7 @@ class Executor(TypeVersionEnabled):
 
         ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
                      '-pix_fmt {yuv_type} {vframes_cmd} -vf {vf_cmd} -f rawvideo ' \
-                     '-sws_flags {resampling_type} -y {dst}'
+                     '-sws_flags {resampling_type} -y -nostdin {dst}'
         ffmpeg_cmd = ffmpeg_cmd.format(
             ffmpeg=VmafExternalConfig.get_and_assert_ffmpeg(),
             src=asset.ref_path,
@@ -558,7 +558,7 @@ class Executor(TypeVersionEnabled):
 
         ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
                      '-pix_fmt {yuv_type} {vframes_cmd} -vf {vf_cmd} -f rawvideo ' \
-                     '-sws_flags {resampling_type} -y {dst}'.format(
+                     '-sws_flags {resampling_type} -y -nostdin {dst}'.format(
             ffmpeg=VmafExternalConfig.get_and_assert_ffmpeg(),
             src=asset.dis_path, dst=asset.dis_workfile_path,
             src_fmt_cmd=src_fmt_cmd,
