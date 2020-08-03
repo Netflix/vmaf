@@ -272,15 +272,8 @@ int main(int argc, char *argv[])
         fprintf(stderr, "%s: %f\n", c.model_config[i].path, vmaf_score);
     }
 
-    if (c.output_path) {
-        FILE *outfile = fopen(c.output_path, "w");
-        if (!outfile) {
-            fprintf(stderr, "could not open file: %s\n", c.output_path);
-            return -1;
-        }
-        vmaf_write_output(vmaf, outfile, c.output_fmt);
-        fclose(outfile);
-    }
+    if (c.output_path)
+        vmaf_write_output(vmaf, c.output_path, c.output_fmt);
 
     for (unsigned i = 0; i < c.model_cnt; i++) {
         vmaf_model_destroy(model[i]);

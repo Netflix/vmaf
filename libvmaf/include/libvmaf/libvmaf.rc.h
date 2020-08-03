@@ -236,16 +236,17 @@ int vmaf_close(VmafContext *vmaf);
 /**
  * Write VMAF stats to an output file.
  *
- * @param vmaf    The VMAF context allocated with `vmaf_init()`.
+ * @param vmaf         The VMAF context allocated with `vmaf_init()`.
  *
- * @param logfile Output file, previously `fopen()`'d by calling application.
+ * @param output_path  Output file path.
  *
- * @param fmt     Output file format. See `enum VmafOutputFormat` for options.
+ * @param fmt          Output file format.
+ *                     See `enum VmafOutputFormat` for options.
  *
  *
  * @return 0 on success, or < 0 (a negative errno code) on error.
  */
-int vmaf_write_output(VmafContext *vmaf, FILE *logfile,
+int vmaf_write_output(VmafContext *vmaf, const char *output_path,
                       enum VmafOutputFormat fmt);
 
 /**
