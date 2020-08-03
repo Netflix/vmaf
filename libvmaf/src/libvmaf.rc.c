@@ -427,9 +427,15 @@ const char *vmaf_version(void)
     return VMAF_VERSION;
 }
 
-int vmaf_write_output(VmafContext *vmaf, FILE *outfile,
+int vmaf_write_output(VmafContext *vmaf, const char *output_path,
                       enum VmafOutputFormat fmt)
 {
+    FILE *outfile = fopen(output_path, "w");
+    if (!outfile) {
+        fprintf(stderr, "could not open file: %s\n", output_path);
+        return -EINVAL;
+    }
+
     vmaf_thread_pool_wait(vmaf->thread_pool);
     RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
     for (unsigned i = 0; i < rfe.cnt; i++) {
@@ -441,22 +447,31 @@ int vmaf_write_output(VmafContext *vmaf, FILE *outfile,
                 ((double) (vmaf->feature_collector->timer.end -
                 vmaf->feature_collector->timer.begin) / CLOCKS_PER_SEC);
 
+    int ret;
     switch (fmt) {
     case VMAF_OUTPUT_FORMAT_XML:
-        return vmaf_write_output_xml(vmaf->feature_collector, outfile,
-                                     vmaf->cfg.n_subsample,
-                                     vmaf->pic_params.w, vmaf->pic_params.h,
-                                     fps);
+        ret = vmaf_write_output_xml(vmaf->feature_collector, outfile,
+                                    vmaf->cfg.n_subsample,
+                                    vmaf->pic_params.w, vmaf->pic_params.h,
+                                    fps);
+        break;
     case VMAF_OUTPUT_FORMAT_JSON:
-        return vmaf_write_output_json(vmaf->feature_collector, outfile,
-                                      vmaf->cfg.n_subsample);
+        ret = vmaf_write_output_json(vmaf->feature_collector, outfile,
+                                     vmaf->cfg.n_subsample);
+        break;
     case VMAF_OUTPUT_FORMAT_CSV:
-        return vmaf_write_output_csv(vmaf->feature_collector, outfile,
-                                     vmaf->cfg.n_subsample);
+        ret = vmaf_write_output_csv(vmaf->feature_collector, outfile,
+                                    vmaf->cfg.n_subsample);
+        break;
     case VMAF_OUTPUT_FORMAT_SUB:
-        return vmaf_write_output_sub(vmaf->feature_collector, outfile,
-                                     vmaf->cfg.n_subsample);
+        ret = vmaf_write_output_sub(vmaf->feature_collector, outfile,
+                                    vmaf->cfg.n_subsample);
+        break;
     default:
-        return -EINVAL;
+        ret -EINVAL;
+        break;
     }
+
+    fclose(outfile);
+    return ret;
 }
