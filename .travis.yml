@@ -45,6 +45,8 @@ after_script:
 
 matrix:
   fast_finish: true
+  allow_failures:
+    - arch: arm64
   include:
     - name: libvmaf GCC-7
       env: CC=gcc-7 CXX=g++-7
@@ -64,6 +66,9 @@ matrix:
       os: osx
       osx_image: xcode11.2
       compiler: clang
+      script: *base-gcc-script
+    - name: libvmaf arm
+      arch: arm64
       script: *base-gcc-script
     - name: Python3 Tox
       language: python
