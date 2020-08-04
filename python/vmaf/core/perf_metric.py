@@ -182,7 +182,7 @@ class AucPerfMetric(RawScorePerfMetric):
         pDS_HM, CI_DS = significanceHM(S, D, AUC_DS)
 
         # THR = prctile(D',95);
-        THR = np.percentile(D, 95, axis=1)
+        THR = np.percentile(S, 95, axis=1)
 
         # %%%%%%%%%%%%%%%%%%%%%%% Better / Worse %%%%%%%%%%%%%%%%%%%%%%%%%%%
 
