@@ -173,13 +173,13 @@ class AucPerfMetric(RawScorePerfMetric):
         # end
         pDS_DL = np.ones([M, M])
         for i in range(1, M):
-            for j in range(i+1, M+1):
+            for j in range(i + 1, M + 1):
                 # http://stackoverflow.com/questions/4257394/slicing-of-a-numpy-2d-array-or-how-do-i-extract-an-mxm-submatrix-from-an-nxn-ar
-                pDS_DL[i-1, j-1] = calpvalue(AUC_DS[[i-1, j-1]], C[[[i-1],[j-1]],[i-1, j-1]])
-                pDS_DL[j-1, i-1] = pDS_DL[i-1, j-1]
+                pDS_DL[i - 1, j - 1] = calpvalue(AUC_DS[[i - 1, j - 1]], C[[[i - 1], [j - 1]], [i - 1, j - 1]])
+                pDS_DL[j - 1, i - 1] = pDS_DL[i - 1, j - 1]
 
-        # [pDS_HM,CI_DS] = significanceHM(S, D, AUC_DS);
-        pDS_HM, CI_DS = significanceHM(S, D, AUC_DS)
+        ## [pDS_HM,CI_DS] = significanceHM(S, D, AUC_DS);
+        # pDS_HM, CI_DS = significanceHM(S, D, AUC_DS)
 
         # THR = prctile(D',95);
         THR = np.percentile(S, 95, axis=1)
@@ -213,7 +213,7 @@ class AucPerfMetric(RawScorePerfMetric):
         L = B.shape[1] + W.shape[1]
         CC_0 = np.zeros(M)
         for m in range(M):
-            CC_0[m] = float(np.sum(B[m,:] > 0) + np.sum(W[m,:] < 0)) / L
+            CC_0[m] = float(np.sum(B[m, :] > 0) + np.sum(W[m, :] < 0)) / L
 
         # % significance calculation
 
@@ -236,18 +236,18 @@ class AucPerfMetric(RawScorePerfMetric):
         pCC0_b = np.ones([M, M])
         # pCC0_F = np.ones([M, M])
         for i in range(1, M):
-            for j in range(i+1, M+1):
-                pBW_DL[i-1, j-1] = calpvalue(AUC_BW[[i-1, j-1]], C[[[i-1],[j-1]],[i-1, j-1]])
-                pBW_DL[j-1, i-1] = pBW_DL[i-1, j-1]
+            for j in range(i + 1, M + 1):
+                pBW_DL[i - 1, j - 1] = calpvalue(AUC_BW[[i - 1, j - 1]], C[[[i - 1], [j - 1]], [i - 1, j - 1]])
+                pBW_DL[j - 1, i - 1] = pBW_DL[i - 1, j - 1]
 
-                pCC0_b[i-1, j-1] = significanceBinomial(CC_0[i-1], CC_0[j-1], L)
-                pCC0_b[j-1, i-1] = pCC0_b[i-1, j-1]
+                pCC0_b[i - 1, j - 1] = significanceBinomial(CC_0[i - 1], CC_0[j - 1], L)
+                pCC0_b[j - 1, i - 1] = pCC0_b[i - 1, j - 1]
 
                 # pCC0_F[i-1, j-1] = fexact(CC_0[i-1]*L, 2*L, CC_0[i-1]*L + CC_0[j-1]*L, L, 'tail', 'b') / 2.0
                 # pCC0_F[j-1, i-1] = pCC0_F[i-1,j]
 
-        # [pBW_HM,CI_BW] = significanceHM(B, W, AUC_BW);
-        pBW_HM,CI_BW = significanceHM(B, W, AUC_BW)
+        # # [pBW_HM,CI_BW] = significanceHM(B, W, AUC_BW);
+        # pBW_HM, CI_BW = significanceHM(B, W, AUC_BW)
 
         # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -266,10 +266,10 @@ class AucPerfMetric(RawScorePerfMetric):
         result = {
             'AUC_DS': AUC_DS,
             'pDS_DL': pDS_DL,
-            'pDS_HM': pDS_HM,
+            # 'pDS_HM': pDS_HM,
             'AUC_BW': AUC_BW,
             'pBW_DL': pBW_DL,
-            'pBW_HM': pBW_HM,
+            # 'pBW_HM': pBW_HM,
             'CC_0': CC_0,
             'pCC0_b': pCC0_b,
             # 'pCC0_F': pCC0_F,
@@ -304,7 +304,7 @@ class AucPerfMetric(RawScorePerfMetric):
             n_b = len(b)
             var_a = np.var(a, ddof=1)
             var_b = np.var(b, ddof=1)
-            den = var_a/n_a + var_b/n_b
+            den = var_a / n_a + var_b / n_b
             if den == 0.0:
                 den = 1e-8
             z = (mos_a - mos_b) / np.sqrt(den)
@@ -317,18 +317,40 @@ class AucPerfMetric(RawScorePerfMetric):
 
         # generate pairs
         N = len(groundtruths)
-        objscodif_mtx = np.zeros([N, N])
         signif_mtx = np.zeros([N, N])
         i = 0
-        for groundtruth, prediction in zip(groundtruths, predictions):
+        for groundtruth in groundtruths:
             j = 0
-            for groundtruth2, prediction2 in zip(groundtruths, predictions):
-                objscodif = prediction - prediction2
+            for groundtruth2 in groundtruths:
                 signif = _signif(groundtruth, groundtruth2)
-                objscodif_mtx[i, j] = objscodif
                 signif_mtx[i, j] = signif
                 j += 1
             i += 1
+
+        if isinstance(predictions[0], list):
+            M = len(predictions)
+        else:
+            M = 1
+
+        objscodif_all = np.zeros([M, N * N])
+        for metric_idx in range(M):
+            objscodif_mtx = np.zeros([N, N])
+
+            if M > 1:
+                metric_predictions = predictions[metric_idx]
+            else:
+                metric_predictions = predictions
+
+            i = 0
+            for prediction in metric_predictions:
+                j = 0
+                for prediction2 in metric_predictions:
+                    objscodif = prediction - prediction2
+                    objscodif_mtx[i, j] = objscodif
+                    j += 1
+                i += 1
+
+            objscodif_all[metric_idx, :] = objscodif_mtx.reshape(1, N * N)
 
         # import matplotlib.pyplot as plt
         # plt.figure()
@@ -341,18 +363,27 @@ class AucPerfMetric(RawScorePerfMetric):
         # plt.colorbar()
         # DisplayConfig.show()
 
-        results = cls._metrics_performance(objscodif_mtx.reshape(1, N*N), signif_mtx.reshape(1, N*N))
+        results = cls._metrics_performance(objscodif_all, signif_mtx.reshape(1, N * N))
 
-        # _metrics_performance allows processing multiple objective quality
-        # metrics together. Here we just process one:
-        result = {}
-        for key in results:
-            result[key] = results[key][0]
+        # # _metrics_performance allows processing multiple objective quality
+        # # metrics together. Here we just process one:
+        # result = {}
+        # for key in results:
+        #     result[key] = results[key][0]
 
-        result['score'] = result['AUC_DS']
+        results['score'] = results['AUC_DS']
 
-        return result
+        return results
 
+    def _assert_args(self):
+        if isinstance(self.predictions[0], list):
+            for metric in self.predictions:
+                assert len(self.groundtruths) == len(metric), 'The lengths of groundtruth labels and predictions do not match.'
+                for score in metric:
+                    assert isinstance(score, float) or isinstance(score, int), 'Predictions need to be a list of lists of numbers.'
+
+        else:
+            assert len(self.groundtruths) == len(self.predictions), 'The lengths of groundtruth labels and predictions do not match.'
 
 class ResolvingPowerPerfMetric(RawScorePerfMetric):
     """
