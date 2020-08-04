@@ -371,7 +371,7 @@ class AucPerfMetric(RawScorePerfMetric):
         # for key in results:
         #     result[key] = results[key][0]
 
-        results['score'] = results['AUC_DS']
+        results['score'] = results['AUC_BW']
 
         return results
 

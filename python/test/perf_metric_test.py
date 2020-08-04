@@ -97,7 +97,7 @@ class AggrScorePerfMetricTest(unittest.TestCase):
         predictions = [1, 2, 3, 4]
         metric = AucPerfMetric(groundtruths, predictions)
         result = metric.evaluate()
-        self.assertAlmostEqual(result['score'][0], 0.9375, places=6)
+        self.assertAlmostEqual(result['score'][0], 0.9999999999999999, places=6)
         self.assertAlmostEqual(result['AUC_BW'][0], 0.9999999999999999, places=6)
         self.assertAlmostEqual(result['AUC_DS'][0], 0.9375, places=6)
         self.assertAlmostEqual(result['CC_0'][0], 1.0, places=6)
@@ -110,12 +110,12 @@ class AggrScorePerfMetricTest(unittest.TestCase):
         predictions = [[1, 2, 3, 4], [3, 1, 2, 4]]
         metric = AucPerfMetric(groundtruths, predictions)
         result = metric.evaluate()
-        self.assertAlmostEqual(result['score'][0], 0.9375, places=6)
+        self.assertAlmostEqual(result['score'][0], 0.9999999999999999, places=6)
         self.assertAlmostEqual(result['AUC_BW'][0], 0.9999999999999999, places=6)
         self.assertAlmostEqual(result['AUC_DS'][0], 0.9375, places=6)
         self.assertAlmostEqual(result['CC_0'][0], 1.0, places=6)
         self.assertAlmostEqual(result['THR'][0], 1.0, places=6)
-        self.assertAlmostEqual(result['score'][1], 0.6250, places=6)
+        self.assertAlmostEqual(result['score'][1], 0.8125, places=6)
         self.assertAlmostEqual(result['AUC_BW'][1], 0.8125, places=6)
         self.assertAlmostEqual(result['AUC_DS'][1], 0.6250, places=6)
         self.assertAlmostEqual(result['CC_0'][1], 0.75, places=6)
