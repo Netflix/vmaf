@@ -29,6 +29,7 @@ install:
   - ccache -s
   - pip3 install meson
   - |
+    sudo apt-get update
     if type apt-get; then
       case "$CC" in
       gcc-7) sudo apt-get install -qq gcc-7 g++-7 ;;
