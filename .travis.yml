@@ -1,5 +1,5 @@
 os: linux
-dist: bionic
+dist: focal
 language: c++
 cache: ccache
 
