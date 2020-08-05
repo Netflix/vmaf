@@ -16,18 +16,25 @@
  *
  */
 
-#include "cpudetect.h"
-#include "feature/common/cpu.h"
+#include "config.h"
+#include "cpu.h"
 
+static unsigned flags = 0;
+static unsigned flags_mask = -1;
 
-enum vmaf_cpu cpu_autodetect()
+void vmaf_init_cpu(void)
 {
-    X86Capabilities caps = query_x86_capabilities();
+#if ARCH_X86
+    flags = vmaf_get_cpu_flags_x86();
+#endif
+}
 
-    if (caps.avx)
-        return VMAF_CPU_AVX;
-    else if (caps.sse2)
-        return VMAF_CPU_SSE2;
-    else
-        return VMAF_CPU_NONE;
+void vmaf_set_cpu_flags_mask(const unsigned mask)
+{
+    flags_mask = mask;
+}
+
+unsigned vmaf_get_cpu_flags(void)
+{
+    return flags & flags_mask;
 }

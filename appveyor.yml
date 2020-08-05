@@ -34,7 +34,7 @@ install:
   - set MSYS2_PATH_TYPE=inherit
   # Download ninja and meson
   - pacman -Syyuu --ask=20 --noconfirm --noprogressbar --needed
-  - pacman -Sy --ask=20 --noconfirm --noprogressbar --needed mingw-w64-x86_64-ninja mingw-w64-x86_64-meson
+  - pacman -Sy --ask=20 --noconfirm --noprogressbar --needed mingw-w64-x86_64-ninja mingw-w64-x86_64-meson mingw-w64-x86_64-nasm
   #- set CFLAGS=/D_TIMESPEC_DEFINED /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   # Set up the build environment
   - |
