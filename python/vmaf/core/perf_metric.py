@@ -364,16 +364,15 @@ class AucPerfMetric(RawScorePerfMetric):
         # DisplayConfig.show()
 
         results = cls._metrics_performance(objscodif_all, signif_mtx.reshape(1, N * N))
-
-        # # _metrics_performance allows processing multiple objective quality
-        # # metrics together. Here we just process one:
-        # result = {}
-        # for key in results:
-        #     result[key] = results[key][0]
-
         results['score'] = results['AUC_BW']
 
-        return results
+        if isinstance(predictions[0], list):
+            return results
+        else:
+            result = {}
+            for key in results:
+                result[key] = results[key][0]
+            return result
 
     def _assert_args(self):
         if isinstance(self.predictions[0], list):
