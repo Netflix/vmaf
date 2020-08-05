@@ -79,6 +79,7 @@ matrix:
           - $HOME/.ccache
       before_script: *base-gcc-script
       script: &python-tox
+        - '[ -d ~/.ccache ] && sudo chown -R "$USER": ~/.ccache'
         - pip3 install tox-travis
         - make -C third_party/libsvm -j lib
         - tox -c python/ -- -v -p no:warnings -m 'main or lib' --doctest-modules
