@@ -1,3 +1,4 @@
+
 # Build libptools
 ptools_path = './third_party/ptools/'
 opencontainers_path = ptools_path + 'opencontainers_1_8_4'
@@ -198,6 +199,109 @@ libvmaf_rc_sources = [
     src_dir + 'opt.c',
 ]
 
+cdata = configuration_data()
+cdata_asm = configuration_data()
+
+if cc.symbols_have_underscore_prefix()
+    cdata.set10('PREFIX', true)
+    cdata_asm.set10('PREFIX', true)
+endif
+
+is_asm_enabled = get_option('enable_asm') == true
+
+if is_asm_enabled
+    if host_machine.cpu_family().startswith('x86')
+        cdata.set10('HAVE_ASM', is_asm_enabled)
+        cdata.set10('ARCH_X86', host_machine.cpu_family().startswith('x86'))
+        cdata.set10('ARCH_X86_64', host_machine.cpu_family() == 'x86_64')
+        cdata.set10('ARCH_X86_32', host_machine.cpu_family() == 'x86')
+
+        # check NASM version
+        nasm = find_program('nasm')
+        if nasm.found()
+            nasm_r = run_command(nasm, '-v')
+
+            if nasm_r.returncode() != 0
+                error('failed running nasm to obtain its version')
+            endif
+
+            out = nasm_r.stdout().strip().split()
+            if out[1].to_lower() == 'version'
+                if out[2].version_compare('<2.13.02')
+                    error('nasm 2.13.02 or later is required, found nasm @0@'.format(out[2]))
+                elif out[2].version_compare('<2.14') and get_option('enable_avx512')
+                    error('nasm 2.14 or later is required for AVX-512 asm.\n' +
+                           'AVX-512 asm can be disabled with \'-Denable_avx512=false\'')
+                endif
+                cdata.set10('HAVE_AVX512ICL', get_option('enable_avx512'))
+                cdata_asm.set10('HAVE_AVX512ICL', get_option('enable_avx512'))
+            else
+                error('unexpected nasm version string: @0@'.format(nasm_r.stdout()))
+            endif
+        endif
+
+        # Generate config.asm
+        cdata_asm.set10('ARCH_X86_64', host_machine.cpu_family() == 'x86_64')
+        cdata_asm.set10('ARCH_X86_32', host_machine.cpu_family() == 'x86')
+        cdata_asm.set10('PIC', true)
+        config_asm_target = configure_file(output: 'config.asm', output_format: 'nasm', configuration: cdata_asm)
+
+        if host_machine.system() == 'windows'
+            nasm_format = 'win'
+        elif host_machine.system() == 'darwin'
+            nasm_format = 'macho'
+        else
+            nasm_format = 'elf'
+        endif
+        if host_machine.cpu_family() == 'x86_64'
+            nasm_format += '64'
+        else
+            nasm_format += '32'
+        endif
+
+        nasm_gen = generator(nasm,
+            output: '@BASENAME@.obj',
+            depfile: '@BASENAME@.obj.ndep',
+            arguments: [
+                '-f', nasm_format,
+                '-I', '@0@/src/'.format(libvmaf_src_root),
+                '-I', '@0@/'.format(meson.current_build_dir()),
+                '-MQ', '@OUTPUT@', '-MF', '@DEPFILE@',
+                '@EXTRA_ARGS@',
+                '@INPUT@',
+                '-o', '@OUTPUT@'
+            ])
+    endif
+endif
+
+config_h_target = configure_file(output: 'config.h', configuration: cdata)
+
+libvmaf_rc_cpu_sources = [
+    src_dir + 'cpu.c',
+]
+
+if is_asm_enabled
+    if host_machine.cpu_family().startswith('x86')
+        # NASM source files
+        libvmaf_sources_asm = files(
+            'x86/cpuid.asm',
+        )
+        libvmaf_nasm_objects = nasm_gen.process(libvmaf_sources_asm)
+        libvmaf_rc_cpu_sources += libvmaf_nasm_objects
+
+        libvmaf_rc_cpu_sources += files(
+            src_dir + 'x86/cpu.c',
+        )
+    endif
+endif
+
+
+libvmaf_rc_cpu_static_lib = static_library(
+    'libvmaf_rc_cpu',
+    libvmaf_rc_cpu_sources,
+    include_directories : [libvmaf_rc_include],
+)
+
 libvmaf_rc = both_libraries(
     'vmaf_rc',
     [libvmaf_rc_sources, rev_target],
@@ -214,6 +318,7 @@ libvmaf_rc = both_libraries(
         libptools.extract_all_objects(),
         libvmaf_feature_static_lib.extract_all_objects(),
         libvmaf_rc_feature_static_lib.extract_all_objects(),
+        libvmaf_rc_cpu_static_lib.extract_all_objects(),
     ],
     install: false,
 )

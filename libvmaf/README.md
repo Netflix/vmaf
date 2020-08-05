@@ -6,12 +6,13 @@ For building, you need the following:
 
 - [Meson](https://mesonbuild.com/) (0.47 or higher)
 - [Ninja](https://ninja-build.org/)
+- [NASM](https://www.nasm.us/) (for x86 builds only, 2.14 or higher)
 
 Install these dependencies under Ubuntu with:
 
 ```
 sudo apt update -qq && \
-sudo apt install python3 python3-pip python3-setuptools python3-wheel ninja-build doxygen
+sudo apt install python3 python3-pip python3-setuptools python3-wheel ninja-build doxygen nasm
 pip3 install --user meson
 ```
 
@@ -23,7 +24,7 @@ export PATH="$PATH:$HOME/.local/bin"
 Under macOS, install [Homebrew](https://brew.sh), then:
 
 ```
-brew install meson doxygen
+brew install meson doxygen nasm
 ```
 
 ## Compile

@@ -15,13 +15,13 @@ addons:
       - ninja-build
       - python3-setuptools
       - ccache
-      - yasm
+      - nasm
       - clang
   homebrew:
     packages:
       - ninja
       - ccache
-      - yasm
+      - nasm
     update: true
 
 before_install: "sudo chown -R travis: $HOME/.ccache"

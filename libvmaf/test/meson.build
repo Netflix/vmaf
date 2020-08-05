@@ -67,6 +67,12 @@ test_dict = executable('test_dict',
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
 )
 
+test_cpu = executable('test_cpu',
+    ['test.c', 'test_cpu.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    objects : libvmaf_rc_cpu_static_lib.extract_all_objects(),
+)
+
 test('test_picture', test_picture)
 test('test_feature_collector', test_feature_collector)
 test('test_thread_pool', test_thread_pool)
@@ -74,3 +80,4 @@ test('test_model', test_model)
 test('test_predict', test_predict)
 test('test_feature_extractor', test_feature_extractor)
 test('test_dict', test_dict)
+test('test_cpu', test_cpu)
