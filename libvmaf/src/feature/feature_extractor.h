@@ -115,6 +115,8 @@ int vmaf_feature_extractor_context_close(VmafFeatureExtractorContext *fex_ctx);
 
 int vmaf_feature_extractor_context_delete(VmafFeatureExtractorContext *fex_ctx);
 
+int vmaf_feature_extractor_context_destroy(VmafFeatureExtractorContext *fex_ctx);
+
 typedef struct VmafFeatureExtractorContextPool {
     struct fex_list_entry {
         VmafFeatureExtractor *fex;
