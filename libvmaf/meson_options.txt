@@ -7,3 +7,13 @@ option('enable_docs',
     type: 'boolean',
     value: true,
     description: 'Build libvmaf documentation')
+
+option('enable_asm',
+    type: 'boolean',
+    value: true,
+    description: 'Build asm files, if available')
+
+option('enable_avx512',
+    type: 'boolean',
+    value: false,
+    description: 'Build AVX-512 asm files, requires nasm 2.14')

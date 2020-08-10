@@ -29,14 +29,14 @@ static char *test_picture_alloc_ref_and_unref()
     VmafPicture pic_a, pic_b;
     err = vmaf_picture_alloc(&pic_a, VMAF_PIX_FMT_YUV420P, 8, 1920, 1080);
     mu_assert("problem during vmaf_picture_alloc", !err);
-    mu_assert("pic_a.ref_cnt should be 1", *pic_a.ref_cnt == 1);
+    mu_assert("pic_a.ref->cnt should be 1", vmaf_ref_load(pic_a.ref) == 1);
     err = vmaf_picture_ref(&pic_b, &pic_a);
     mu_assert("problem during vmaf_picture_ref", !err);
-    mu_assert("pic_a.ref_cnt should be 2", *pic_a.ref_cnt == 2);
-    mu_assert("pic_b.ref_cnt should be 2", *pic_b.ref_cnt == 2);
+    mu_assert("pic_a.ref->cnt should be 2", vmaf_ref_load(pic_a.ref) == 2);
+    mu_assert("pic_b.ref->cnt should be 2", vmaf_ref_load(pic_b.ref) == 2);
     err = vmaf_picture_unref(&pic_a);
     mu_assert("problem during vmaf_picture_unref", !err);
-    mu_assert("pic_b.ref_cnt should be 1", *pic_b.ref_cnt == 1);
+    mu_assert("pic_b.ref->cnt should be 1", vmaf_ref_load(pic_b.ref) == 1);
     err = vmaf_picture_unref(&pic_b);
     mu_assert("problem during vmaf_picture_unref", !err);
 

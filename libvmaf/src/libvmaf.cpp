@@ -18,7 +18,7 @@
 
 #include "vmaf.h"
 #include <cstdio>
-#include "cpu.h"
+#include "feature/common/cpu.h"
 
 Asset::Asset(int w, int h, const char *fmt)
     :w(w), h(h), fmt(fmt) 

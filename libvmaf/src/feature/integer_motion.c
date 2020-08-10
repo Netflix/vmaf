@@ -20,6 +20,7 @@
 #include <math.h>
 #include <string.h>
 
+#include "common/alignment.h"
 #include "feature_collector.h"
 #include "feature_extractor.h"
 #include "mem.h"

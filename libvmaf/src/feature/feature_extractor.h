@@ -19,6 +19,7 @@
 #ifndef __VMAF_FEATURE_EXTRACTOR_H__
 #define __VMAF_FEATURE_EXTRACTOR_H__
 
+#include <stdatomic.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -114,6 +115,8 @@ int vmaf_feature_extractor_context_flush(VmafFeatureExtractorContext *fex_ctx,
 int vmaf_feature_extractor_context_close(VmafFeatureExtractorContext *fex_ctx);
 
 int vmaf_feature_extractor_context_delete(VmafFeatureExtractorContext *fex_ctx);
+
+int vmaf_feature_extractor_context_destroy(VmafFeatureExtractorContext *fex_ctx);
 
 typedef struct VmafFeatureExtractorContextPool {
     struct fex_list_entry {

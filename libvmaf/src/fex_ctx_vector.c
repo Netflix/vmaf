@@ -17,6 +17,7 @@
  */
 
 #include <errno.h>
+#include <string.h>
 
 #include "feature/feature_extractor.h"
 #include "fex_ctx_vector.h"

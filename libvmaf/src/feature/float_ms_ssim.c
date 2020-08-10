@@ -34,14 +34,14 @@ typedef struct MsSsimState {
 } MsSsimState;
 
 static const VmafOption options[] = {
-        {
-                .name = "enable_lcs",
-                .help = "enable luminance, contrast and structure intermediate output",
-                .offset = offsetof(MsSsimState, enable_lcs),
-                .type = VMAF_OPT_TYPE_BOOL,
-                .default_val.b = false,
-        },
-        { NULL }
+    {
+        .name = "enable_lcs",
+        .help = "enable luminance, contrast and structure intermediate output",
+        .offset = offsetof(MsSsimState, enable_lcs),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
+    { NULL }
 };
 
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
@@ -77,29 +77,45 @@ static int extract(VmafFeatureExtractor *fex,
                           s->float_stride, s->float_stride,
                           &score, l_scores, c_scores, s_scores);
     if (err) return err;
+
     err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim",
                                         score, index);
-    if (err) return err;
     if (s->enable_lcs) {
-        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_l_scale0", l_scores[0], index); if (err) return err;
-        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_l_scale1", l_scores[1], index); if (err) return err;
-        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_l_scale2", l_scores[2], index); if (err) return err;
-        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_l_scale3", l_scores[3], index); if (err) return err;
-        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_l_scale4", l_scores[4], index); if (err) return err;
+        err |= vmaf_feature_collector_append(feature_collector,
+                "float_ms_ssim_l_scale0", l_scores[0], index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                "float_ms_ssim_l_scale1", l_scores[1], index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                "float_ms_ssim_l_scale2", l_scores[2], index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                "float_ms_ssim_l_scale3", l_scores[3], index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                "float_ms_ssim_l_scale4", l_scores[4], index);
 
-        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_c_scale0", c_scores[0], index); if (err) return err;
-        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_c_scale1", c_scores[1], index); if (err) return err;
-        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_c_scale2", c_scores[2], index); if (err) return err;
-        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_c_scale3", c_scores[3], index); if (err) return err;
-        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_c_scale4", c_scores[4], index); if (err) return err;
+        err |= vmaf_feature_collector_append(feature_collector,
+                "float_ms_ssim_c_scale0", c_scores[0], index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                "float_ms_ssim_c_scale1", c_scores[1], index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                "float_ms_ssim_c_scale2", c_scores[2], index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                "float_ms_ssim_c_scale3", c_scores[3], index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                "float_ms_ssim_c_scale4", c_scores[4], index);
 
-        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_s_scale0", s_scores[0], index); if (err) return err;
-        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_s_scale1", s_scores[1], index); if (err) return err;
-        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_s_scale2", s_scores[2], index); if (err) return err;
-        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_s_scale3", s_scores[3], index); if (err) return err;
-        err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim_s_scale4", s_scores[4], index); if (err) return err;
+        err |= vmaf_feature_collector_append(feature_collector,
+                "float_ms_ssim_s_scale0", s_scores[0], index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                "float_ms_ssim_s_scale1", s_scores[1], index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                "float_ms_ssim_s_scale2", s_scores[2], index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                "float_ms_ssim_s_scale3", s_scores[3], index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                "float_ms_ssim_s_scale4", s_scores[4], index);
     }
-    return 0;
+
+    return err;
 }
 
 static int close(VmafFeatureExtractor *fex)

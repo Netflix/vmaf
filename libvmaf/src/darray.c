@@ -17,6 +17,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include "darray.h"
 #include "common/blur_array.h"
 

@@ -16,32 +16,17 @@
  *
  */
 
-#ifndef __VMAF_PICTURE_H__
-#define __VMAF_PICTURE_H__
+#ifndef __VMAF_SRC_CPU_H__
+#define __VMAF_SRC_CPU_H__
 
-#include <stddef.h>
+#include "config.h"
 
-enum VmafPixelFormat {
-    VMAF_PIX_FMT_UNKNOWN,
-    VMAF_PIX_FMT_YUV420P,
-    VMAF_PIX_FMT_YUV422P,
-    VMAF_PIX_FMT_YUV444P,
-};
+#if ARCH_X86
+#include "x86/cpu.h"
+#endif
 
-typedef struct VmafRef VmafRef;
+void vmaf_init_cpu(void);
+void vmaf_set_cpu_flags_mask(const unsigned mask);
+unsigned vmaf_get_cpu_flags(void);
 
-typedef struct {
-    enum VmafPixelFormat pix_fmt;
-    unsigned bpc;
-    unsigned w[3], h[3];
-    ptrdiff_t stride[3];
-    void *data[3];
-    VmafRef *ref;
-} VmafPicture;
-
-int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
-                       unsigned bpc, unsigned w, unsigned h);
-
-int vmaf_picture_unref(VmafPicture *pic);
-
-#endif /* __VMAF_PICTURE_H__ */
+#endif /* __VMAF_SRC_CPU_H__ */

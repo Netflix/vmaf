@@ -37,12 +37,12 @@ if not cc.check_header('stdatomic.h')
     if cc.get_id() == 'msvc'
         # we have a custom replacement for MSVC
         stdatomic_dependency = declare_dependency(
-            include_directories : include_directories('include/compat/msvc'),
+            include_directories : include_directories('src/compat/msvc'),
         )
     elif cc.compiles('''int main() { int v = 0; return __atomic_fetch_add(&v, 1, __ATOMIC_SEQ_CST); }''',
                      name : 'GCC-style atomics', args : test_args)
         stdatomic_dependency = declare_dependency(
-            include_directories : include_directories('include/compat/gcc'),
+            include_directories : include_directories('src/compat/gcc'),
         )
     else
         error('Atomics not supported')

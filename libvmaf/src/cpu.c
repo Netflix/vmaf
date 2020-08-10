@@ -16,32 +16,25 @@
  *
  */
 
-#ifndef __VMAF_PICTURE_H__
-#define __VMAF_PICTURE_H__
+#include "config.h"
+#include "cpu.h"
 
-#include <stddef.h>
+static unsigned flags = 0;
+static unsigned flags_mask = -1;
 
-enum VmafPixelFormat {
-    VMAF_PIX_FMT_UNKNOWN,
-    VMAF_PIX_FMT_YUV420P,
-    VMAF_PIX_FMT_YUV422P,
-    VMAF_PIX_FMT_YUV444P,
-};
+void vmaf_init_cpu(void)
+{
+#if ARCH_X86
+    flags = vmaf_get_cpu_flags_x86();
+#endif
+}
 
-typedef struct VmafRef VmafRef;
+void vmaf_set_cpu_flags_mask(const unsigned mask)
+{
+    flags_mask = mask;
+}
 
-typedef struct {
-    enum VmafPixelFormat pix_fmt;
-    unsigned bpc;
-    unsigned w[3], h[3];
-    ptrdiff_t stride[3];
-    void *data[3];
-    VmafRef *ref;
-} VmafPicture;
-
-int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
-                       unsigned bpc, unsigned w, unsigned h);
-
-int vmaf_picture_unref(VmafPicture *pic);
-
-#endif /* __VMAF_PICTURE_H__ */
+unsigned vmaf_get_cpu_flags(void)
+{
+    return flags & flags_mask;
+}

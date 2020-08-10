@@ -17,7 +17,7 @@
  */
 
 #include "cpudetect.h"
-#include "cpu.h"
+#include "feature/common/cpu.h"
 
 
 enum vmaf_cpu cpu_autodetect()

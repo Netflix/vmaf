@@ -1,5 +1,5 @@
 os: linux
-dist: bionic
+dist: focal
 language: c++
 cache: ccache
 
@@ -8,19 +8,20 @@ addons:
     update: true
     sources:
       - sourceline: "ppa:ubuntu-toolchain-r/test"
-      - sourceline: "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main"
+      - sourceline: "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-11 main"
         key_url: "https://apt.llvm.org/llvm-snapshot.gpg.key"
     packages:
       - python3-pip
       - ninja-build
       - python3-setuptools
       - ccache
-      - yasm
+      - nasm
+      - clang
   homebrew:
     packages:
       - ninja
       - ccache
-      - yasm
+      - nasm
     update: true
 
 before_install: "sudo chown -R travis: $HOME/.ccache"
@@ -29,13 +30,11 @@ install:
   - ccache -s
   - pip3 install meson
   - |
-    if type apt-get; then
+    if type apt-get &>/dev/null; then
       case "$CC" in
       gcc-7) sudo apt-get install -qq gcc-7 g++-7 ;;
       gcc-8) sudo apt-get install -qq gcc-8 g++-8 ;;
       gcc-9) sudo apt-get install -qq gcc-9 g++-9 ;;
-      clang-6.0) sudo apt-get install -qq clang-6.0 ;;
-      clang) sudo apt-get install -qq clang ;;
       esac
     fi
   - export CC="ccache $CC" CXX="ccache $CXX"
@@ -45,6 +44,8 @@ after_script:
 
 matrix:
   fast_finish: true
+  allow_failures:
+    - arch: arm64
   include:
     - name: libvmaf GCC-7
       env: CC=gcc-7 CXX=g++-7
@@ -58,12 +59,15 @@ matrix:
       env: CC=gcc-9 CXX=g++-9
       script: *base-gcc-script
     - name: libvmaf Clang
-      env: CC=clang CXX=clang++
+      compiler: clang
       script: *base-gcc-script
     - name: libvmaf AppleClang
       os: osx
       osx_image: xcode11.2
       compiler: clang
+      script: *base-gcc-script
+    - name: libvmaf arm
+      arch: arm64
       script: *base-gcc-script
     - name: Python3 Tox
       language: python
@@ -75,6 +79,7 @@ matrix:
           - $HOME/.ccache
       before_script: *base-gcc-script
       script: &python-tox
+        - '[ -d ~/.ccache ] && sudo chown -R "$USER": ~/.ccache'
         - pip3 install tox-travis
         - make -C third_party/libsvm -j lib
         - tox -c python/ -- -v -p no:warnings -m 'main or lib' --doctest-modules
