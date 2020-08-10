@@ -1,0 +1,111 @@
+name: Windows
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-2019
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Disabled 32-bit job due to vmaf score mismatch
+          #- msystem: MINGW32
+          #  MINGW_PACKAGE_PREFIX: mingw-w64-i686
+          #  CFLAGS: -msse
+          - msystem: MINGW64
+            MINGW_PACKAGE_PREFIX: mingw-w64-x86_64
+    env:
+      CC: ccache gcc
+      CXX: ccache g++
+      CFLAGS: -pipe -static -O3 -mtune=generic -D_FILE_OFFSET_BITS=64 -mthreads ${{ matrix.CFLAGS }}
+      CXXFLAGS: -pipe -static -O3 -mtune=generic -D_FILE_OFFSET_BITS=64 -mthreads ${{ matrix.CXXFLAGS }}
+      LDFLAGS: -pipe -static -static-libgcc -static-libstdc++ ${{ matrix.LDFLAGS }}
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Cache ccache files
+        uses: actions/cache@v2
+        with:
+          path: |
+            .ccache
+          key: ${{ runner.os }}-${{ matrix.msystem }}-0-${{ hashFiles('**/*.c') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.msystem }}-0-
+            ${{ runner.os }}-${{ matrix.msystem }}-
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.msystem }}
+          install: ${{ matrix.MINGW_PACKAGE_PREFIX }}-ccache ${{ matrix.MINGW_PACKAGE_PREFIX }}-nasm ${{ matrix.MINGW_PACKAGE_PREFIX }}-pkg-config ${{ matrix.MINGW_PACKAGE_PREFIX }}-gcc ${{ matrix.MINGW_PACKAGE_PREFIX }}-meson ${{ matrix.MINGW_PACKAGE_PREFIX }}-ninja make diffutils
+          update: true
+          path-type: inherit
+
+      - name: Set ccache dir
+        run: echo "::set-env name=CCACHE_DIR::$PWD/.ccache"
+
+      - name: Configure vmaf
+        run: meson setup libvmaf libvmaf/build --buildtype release --default-library static --prefix "$MINGW_PREFIX"
+      - name: Build vmaf
+        run: meson install -C libvmaf/build
+
+      - name: Test vmaf
+        run: meson test -C libvmaf/build --num-processes $(nproc)
+
+      - name: Clone FFmpeg
+        uses: actions/checkout@v2
+        with:
+          repository: FFmpeg/FFmpeg
+          path: ffmpeg
+
+      - name: Build FFmpeg
+        run: |
+          sed -i 's;Libs.private.*;& -lstdc++;' "$MINGW_PREFIX/lib/pkgconfig/libvmaf.pc"
+          cd ffmpeg
+          ./configure --prefix=$MINGW_PREFIX --pkg-config-flags="--static" --enable-libvmaf --enable-pthreads --disable-w32threads --cc="$CC" --cxx="$CXX" || {
+            less ffbuild/config.log
+            exit 1
+          }
+          make --quiet -j $(nproc) install
+
+      - name: Test ffmpeg
+        run: |
+          curl "https://gist.githubusercontent.com/1480c1/0c4575da638ef6e8203feffd0597de16/raw/akiyo_cif.tar.xz.base64" | base64 -d | xz -d | 7z x -si -ttar
+          vmaf_score=$(ffmpeg -hide_banner -nostdin -nostats -i encoded.mkv -i orig.mkv -filter_complex libvmaf=model_path=model/vmaf_v0.6.1.pkl -f null - 2>&1 | tee temp.txt | grep 'VMAF score' | tr ' ' '\n' | tail -n1)
+          cat temp.txt
+          echo "$vmaf_score"
+          if [[ $vmaf_score != "93.656203" ]]; then
+            echo "vmaf Score doesn't match 93.656203"
+            exit 1
+          else
+            echo "vmaf score matches"
+            exit 0
+          fi
+
+      - name: Get binary path & Current Release
+        id: get_info
+        run: |
+          ldd "$MINGW_PREFIX/bin/vmafossexec.exe" || true
+          echo "::set-output name=path::$(cygpath -m "$(command -v vmafossexec)")"
+          echo "::set-output name=upload_url::$(curl -L https://api.github.com/repos/${{ github.repository }}/releases/tags/$(cut -d/ -f3 <<< ${{ github.ref }}) | jq -r ."upload_url")"
+
+      - name: Upload vmafossexec
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.msystem }}-vmafossexec
+          path: ${{ steps.get_info.outputs.path }}
+      - name: Upload vmafossexec
+        if: steps.get_info.outputs.upload_url != 'null' && matrix.msystem == 'MINGW64'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get_info.outputs.upload_url }}
+          asset_path: ${{ steps.get_info.outputs.path }}
+          asset_name: vmafossexec.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
