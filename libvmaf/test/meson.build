@@ -56,9 +56,10 @@ test_feature_extractor = executable('test_feature_extractor',
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
     dependencies : [math_lib, stdatomic_dependency],
     objects : [
-      convolution_and_psnr_avx_static_lib.extract_all_objects(),
+      platform_specific_cpu_objects,
       libvmaf_feature_static_lib.extract_all_objects(),
       libvmaf_rc_feature_static_lib.extract_all_objects(),
+      libvmaf_rc_cpu_static_lib.extract_all_objects(),
     ]
 )
 

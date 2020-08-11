@@ -21,13 +21,13 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+
+#include "config.h"
+#include "cpu.h"
 #include "mem.h"
 #include "common/convolution.h"
 #include "vif_options.h"
 #include "vif_tools.h"
-#include "common/cpu.h"
-
-extern enum vmaf_cpu cpu;
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
@@ -340,11 +340,14 @@ void vif_filter1d_s(const float *f, const float *src, float *dst, float *tmpbuf,
 
     /* if support avx */
 
-    if (cpu >= VMAF_CPU_AVX)
-    {
-        convolution_f32_avx_s(f, fwidth, src, dst, tmpbuf, w, h, src_px_stride, dst_px_stride);
+#if ARCH_X86
+    const unsigned flags = vmaf_get_cpu_flags();
+    if (flags & VMAF_X86_CPU_FLAG_AVX2) {
+        convolution_f32_avx_s(f, fwidth, src, dst, tmpbuf, w, h,
+                              src_px_stride, dst_px_stride);
         return;
     }
+#endif
 
     /* fall back */
 
@@ -405,11 +408,14 @@ void vif_filter1d_sq_s(const float *f, const float *src, float *dst, float *tmpb
 
 	/* if support avx */
 	
-	if (cpu >= VMAF_CPU_AVX)
-	{
-		convolution_f32_avx_sq_s(f, fwidth, src, dst, tmpbuf, w, h, src_px_stride, dst_px_stride);
-		return;
-	}
+#if ARCH_X86
+    const unsigned flags = vmaf_get_cpu_flags();
+    if (flags & VMAF_X86_CPU_FLAG_AVX2) {
+        convolution_f32_avx_sq_s(f, fwidth, src, dst, tmpbuf, w, h,
+                                 src_px_stride, dst_px_stride);
+        return;
+    }
+#endif
 
 	/* fall back */
 
@@ -468,11 +474,14 @@ void vif_filter1d_xy_s(const float *f, const float *src1, const float *src2, flo
 
 	/* if support avx */
 
-	if (cpu >= VMAF_CPU_AVX)
-	{
-		convolution_f32_avx_xy_s(f, fwidth, src1, src2, dst, tmpbuf, w, h, src1_px_stride, src2_px_stride, dst_px_stride);
-		return;
-	}
+#if ARCH_X86
+    const unsigned flags = vmaf_get_cpu_flags();
+    if (flags & VMAF_X86_CPU_FLAG_AVX2) {
+        convolution_f32_avx_xy_s(f, fwidth, src1, src2, dst, tmpbuf, w, h,
+                                 src1_px_stride, src2_px_stride, dst_px_stride);
+        return;
+    }
+#endif
 
 	/* fall back */
 

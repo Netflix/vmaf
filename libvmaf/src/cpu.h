@@ -19,6 +19,10 @@
 #ifndef __VMAF_SRC_CPU_H__
 #define __VMAF_SRC_CPU_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "config.h"
 
 #if ARCH_X86
@@ -28,5 +32,9 @@
 void vmaf_init_cpu(void);
 void vmaf_set_cpu_flags_mask(const unsigned mask);
 unsigned vmaf_get_cpu_flags(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __VMAF_SRC_CPU_H__ */

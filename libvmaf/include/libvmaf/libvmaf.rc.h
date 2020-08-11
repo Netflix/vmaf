@@ -50,7 +50,7 @@ typedef struct VmafConfiguration {
     enum VmafLogLevel log_level;
     unsigned n_threads;
     unsigned n_subsample;
-    uint32_t cpumask;
+    unsigned cpumask;
 } VmafConfiguration;
 
 typedef struct VmafContext VmafContext;

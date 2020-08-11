@@ -18,7 +18,6 @@
 
 #include <stdint.h>
 
-#include "feature/common/cpu.h"
 #include "test.h"
 #include "thread_pool.h"
 

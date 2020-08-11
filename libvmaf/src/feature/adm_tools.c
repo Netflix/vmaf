@@ -19,6 +19,11 @@
 #include <math.h>
 #include <stddef.h>
 #include <string.h>
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "mem.h"
 #include "adm_options.h"
 #include "adm_tools.h"
@@ -30,6 +35,7 @@
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
+#if ARCH_X86
 #ifdef ADM_OPT_RECIP_DIVISION
 
 #include <emmintrin.h>
@@ -41,12 +47,10 @@ static float rcp_s(float x)
 }
 
 #define DIVS(n, d) ((n) * rcp_s(d))
-
+#endif //ADM_OPT_RECIP_DIVISION
 #else
-
 #define DIVS(n, d) ((n) / (d))
-
-#endif /* ADM_OPT_RECIP_DIVISION */
+#endif //ARCH_X86
 
 static const float dwt2_db2_coeffs_lo_s[4] = { 0.482962913144690, 0.836516303737469, 0.224143868041857, -0.129409522550921 };
 static const float dwt2_db2_coeffs_hi_s[4] = { -0.129409522550921, -0.224143868041857, 0.836516303737469, -0.482962913144690 };

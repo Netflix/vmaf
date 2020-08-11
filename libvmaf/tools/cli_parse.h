@@ -31,7 +31,7 @@ typedef struct {
     unsigned subsample;
     unsigned thread_cnt;
     bool no_prediction;
-    uint32_t cpumask;
+    unsigned cpumask;
 } CLISettings;
 
 void cli_parse(const int argc, char *const *const argv,
