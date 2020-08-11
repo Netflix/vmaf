@@ -16,9 +16,10 @@
  *
  */
 
-#include "vmaf.h"
 #include <cstdio>
-#include "feature/common/cpu.h"
+
+#include "cpu.h"
+#include "vmaf.h"
 
 Asset::Asset(int w, int h, const char *fmt)
     :w(w), h(h), fmt(fmt) 
@@ -226,14 +227,11 @@ VmafQualityRunnerFactory::createVmafQualityRunner(const char *model_path, bool e
 
 extern "C" {
 
-    enum vmaf_cpu cpu = cpu_autodetect(); // global
-
     int compute_vmaf(double* vmaf_score, char* fmt, int width, int height, int(*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride_byte, void *user_data),
         void *user_data, char *model_path, char *log_path, char *log_fmt, int disable_clip, int disable_avx, int enable_transform, int phone_model, int do_psnr,
         int do_ssim, int do_ms_ssim, char *pool_method, int n_thread, int n_subsample, int enable_conf_interval)
     {
         bool d_c = false;
-        bool d_a = false;
         bool e_t = false;
         bool d_p = false;
         bool d_s = false;
@@ -245,9 +243,6 @@ extern "C" {
         if (disable_clip) {
             d_c = true;
         }
-        if (disable_avx) {
-            d_a = true;
-        }
         if (do_psnr) {
             d_p = true;
         }
@@ -258,10 +253,12 @@ extern "C" {
             d_m_s = true;
         }
 
+        vmaf_init_cpu();
+
+#ifdef ARCH_X86
         if (disable_avx)
-        {
-            cpu = VMAF_CPU_NONE;
-        }
+            vmaf_set_cpu_flags_mask(~VMAF_X86_CPU_FLAG_AVX2);
+#endif
 
         try {
             double score = RunVmaf(fmt, width, height, read_frame, user_data, model_path, log_path, log_fmt, d_c, e_t, d_p, d_s, d_m_s, pool_method, n_thread, n_subsample, enable_conf_interval);

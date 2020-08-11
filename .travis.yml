@@ -44,8 +44,6 @@ after_script:
 
 matrix:
   fast_finish: true
-  allow_failures:
-    - arch: arm64
   include:
     - name: libvmaf GCC-7
       env: CC=gcc-7 CXX=g++-7

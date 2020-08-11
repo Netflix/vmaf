@@ -26,7 +26,7 @@
 #include "libvmaf/libvmaf.rc.h"
 #include "libvmaf/feature.h"
 
-#include "feature/common/cpu.h"
+#include "cpu.h"
 #include "feature/feature_extractor.h"
 #include "feature/feature_collector.h"
 #include "fex_ctx_vector.h"
@@ -49,13 +49,7 @@ typedef struct VmafContext {
         unsigned bpc;
     } pic_params;
     unsigned pic_cnt;
-    enum vmaf_cpu cpu_flags;
 } VmafContext;
-
-enum vmaf_cpu cpu;
-// ^ FIXME, this is a global in the old libvmaf
-// A few wrapped floating point feature extractors rely on it being a global
-// After we clean those up, We'll add this to the VmafContext
 
 int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
 {
@@ -67,8 +61,8 @@ int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
     memset(v, 0, sizeof(*v));
     v->cfg = cfg;
 
-    cpu = //FIXME, see above
-    v->cpu_flags = cpu_autodetect() & (~cfg.cpumask);
+    vmaf_init_cpu();
+    vmaf_set_cpu_flags_mask(~cfg.cpumask);
 
     err = vmaf_feature_collector_init(&(v->feature_collector));
     if (err) goto free_v;
