@@ -97,11 +97,32 @@ class AggrScorePerfMetricTest(unittest.TestCase):
         predictions = [1, 2, 3, 4]
         metric = AucPerfMetric(groundtruths, predictions)
         result = metric.evaluate()
-        self.assertAlmostEqual(result['score'], 0.9375, places=6)
+        self.assertAlmostEqual(result['score'], 0.9999999999999999, places=6)
         self.assertAlmostEqual(result['AUC_BW'], 0.9999999999999999, places=6)
         self.assertAlmostEqual(result['AUC_DS'], 0.9375, places=6)
         self.assertAlmostEqual(result['CC_0'], 1.0, places=6)
-        self.assertAlmostEqual(result['THR'], 3.0, places=6)
+        self.assertAlmostEqual(result['THR'], 1.0, places=6)
+
+    @unittest.skipIf(sys.version_info < (3,), reason="For py3 only: py2 uses a different random seed.")
+    def test_auc_perf_multiple_metrics(self):
+        np.random.seed(1)
+        groundtruths = np.random.normal(0, 1.0, [4, 10]) + np.tile(np.array([1, 2, 3, 4]), [10, 1]).T
+        predictions = [[1, 2, 3, 4], [3, 1, 2, 4]]
+        metric = AucPerfMetric(groundtruths, predictions)
+        result = metric.evaluate()
+        self.assertAlmostEqual(result['score'][0], 0.9999999999999999, places=6)
+        self.assertAlmostEqual(result['AUC_BW'][0], 0.9999999999999999, places=6)
+        self.assertAlmostEqual(result['AUC_DS'][0], 0.9375, places=6)
+        self.assertAlmostEqual(result['CC_0'][0], 1.0, places=6)
+        self.assertAlmostEqual(result['THR'][0], 1.0, places=6)
+        self.assertAlmostEqual(result['score'][1], 0.8125, places=6)
+        self.assertAlmostEqual(result['AUC_BW'][1], 0.8125, places=6)
+        self.assertAlmostEqual(result['AUC_DS'][1], 0.6250, places=6)
+        self.assertAlmostEqual(result['CC_0'][1], 0.75, places=6)
+        self.assertAlmostEqual(result['THR'][1], 2, places=6)
+        self.assertAlmostEqual(result['pDS_DL'][0, 1], 0.02746864, places=6)
+        self.assertAlmostEqual(result['pBW_DL'][0, 1], 0.06136883, places=6)
+        self.assertAlmostEqual(result['pCC0_b'][0, 1], 0.03250944, places=6)
 
     def test_auc_metrics_performance(self):
         mat_filepath = VmafConfig.test_resource_path('data_Toyama.mat')
@@ -110,7 +131,7 @@ class AggrScorePerfMetricTest(unittest.TestCase):
         self.assertAlmostEqual(np.float(np.mean(results['AUC_DS'])), 0.69767003960902052, places=6)
         self.assertAlmostEqual(np.float(np.mean(results['AUC_BW'])), 0.94454700301894534, places=6)
         self.assertAlmostEqual(np.float(np.mean(results['CC_0'])), 0.88105386206276415, places=6)
-        self.assertAlmostEqual(np.float(np.mean(results['THR'])), 6.2392849606450556, places=6)
+        self.assertAlmostEqual(np.float(np.mean(results['THR'])), 3.899105581509778, places=6)
 
     def test_respow_perf_metric(self):
         np.random.seed(0)
