@@ -6,8 +6,12 @@ matplotlib.use('Agg')
 import sys
 import os
 
-import numpy as np
+curpath = os.path.abspath(os.path.dirname(__file__))
+root_path = os.path.split(os.path.split(curpath)[0])[0]
+if root_path not in sys.path:
+    sys.path.append(root_path)
 
+import numpy as np
 from vmaf.config import VmafConfig, DisplayConfig
 from vmaf.core.asset import Asset
 from vmaf.core.quality_runner import VmafQualityRunner
@@ -32,10 +36,12 @@ def print_usage():
 
 
 def main():
+    # 检查参数数量
     if len(sys.argv) < 6:
         print_usage()
         return 2
 
+    # 获取各参赛
     try:
         fmt = sys.argv[1]
         width = int(sys.argv[2])
@@ -46,17 +52,21 @@ def main():
         print_usage()
         return 2
 
+    # 检查width height
     if width < 0 or height < 0:
         print("width and height must be non-negative, but are {w} and {h}".format(w=width, h=height))
         print_usage()
         return 2
 
+    # 检查fmt
     if fmt not in FMTS:
         print_usage()
         return 2
 
+    # 如果有model，获取model_path
     model_path = get_cmd_option(sys.argv, 6, len(sys.argv), '--model')
 
+    # 获取out_fmt
     out_fmt = get_cmd_option(sys.argv, 6, len(sys.argv), '--out-fmt')
     if not (out_fmt is None
             or out_fmt == 'xml'
@@ -65,6 +75,7 @@ def main():
         print_usage()
         return 2
 
+    # 获取pool method
     pool_method = get_cmd_option(sys.argv, 6, len(sys.argv), '--pool')
     if not (pool_method is None
             or pool_method in POOL_METHODS):
