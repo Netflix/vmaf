@@ -211,7 +211,7 @@ class ExternalProgramCaller(object):
     def call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth,
                     float_psnr, psnr, float_ssim, ssim, float_ms_ssim, ms_ssim, float_moment,
                     no_prediction, models, subsample, n_threads, disable_avx, output, exe, logger,
-                    vif_enhn_gain_limit=None, adm_enhn_gain_limit=None):
+                    vif_enhn_gain_limit=None, adm_enhn_gain_limit=None, motion_force_zero=False):
 
         if exe is None:
             exe = required(ExternalProgram.vmafrc)
@@ -268,6 +268,11 @@ class ExternalProgramCaller(object):
 
         if adm_enhn_gain_limit is not None:
             vmafrc_cmd += f' --feature float_adm=adm_enhn_gain_limit={adm_enhn_gain_limit}'
+
+        if motion_force_zero:
+            assert isinstance(motion_force_zero, bool)
+            motion_force_zero = str(motion_force_zero).lower()
+            vmafrc_cmd += f' --feature float_motion=motion_force_zero={motion_force_zero}'
 
         if logger:
             logger.info(vmafrc_cmd)

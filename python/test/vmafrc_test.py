@@ -65,6 +65,43 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFRC_score'], 76.68425579166666, places=4)
         self.assertAlmostEqual(results[1]['VMAFRC_score'], 99.94641666666666, places=4)
 
+    def test_run_vmafrc_runner_motion_force_zero(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = VmafrcQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={
+                'motion_force_zero': True,
+            }
+        )
+        self.runner.run(parallelize=False)
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'],0.3634208125, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.7666474166666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.8628533333333334, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.9159719583333334, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_motion2_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 0.9345148541666667, places=4)
+
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale0_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale1_score'],0.9999998541666666, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale2_score'],0.9999996041666667, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale3_score'], 0.9999991458333334, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_motion2_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_adm2_score'], 1.0, places=4)
+
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 72.33647241666667, places=4)  # 76.68425579166666
+        self.assertAlmostEqual(results[1]['VMAFRC_score'], 97.4279688125, places=4)  # 99.94641666666666
+
+        self.assertEqual(len(results[0]['VMAFRC_motion2_scores']), 48)
+        self.assertEqual(len(results[1]['VMAFRC_motion2_scores']), 48)
+
     def test_run_vmafrc_runner_fixed_psnr_ssim(self):
 
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
