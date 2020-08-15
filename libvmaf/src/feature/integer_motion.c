@@ -295,7 +295,6 @@ static int extract(VmafFeatureExtractor *fex,
 {
     MotionState *s = fex->priv;
     (void) dist_pic;
-    int err = 0;
 
     s->index = index;
     const unsigned blur_idx_0 = (index + 0) % 3;
@@ -321,12 +320,9 @@ static int extract(VmafFeatureExtractor *fex,
     double score2 = normalize_and_scale_sad(sad2, ref_pic->w[0], ref_pic->h[0]);
 
     score2 = score2 < score ? score2 : score;
-    err = vmaf_feature_collector_append(feature_collector,
-                                        "'VMAF_feature_motion2_integer_score'",
-                                        score2, index - 1);
-    if (err) return err;
-
-    return 0;
+    return vmaf_feature_collector_append(feature_collector,
+                                         "'VMAF_feature_motion2_integer_score'",
+                                         score2, index - 1);
 }
 
 static int close(VmafFeatureExtractor *fex)
