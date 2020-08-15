@@ -37,6 +37,7 @@ typedef struct MotionState {
     unsigned index;
     double score;
     bool debug;
+    bool motion_force_zero;
 } MotionState;
 
 static const VmafOption options[] = {
@@ -46,6 +47,13 @@ static const VmafOption options[] = {
         .offset = offsetof(MotionState, debug),
         .type = VMAF_OPT_TYPE_BOOL,
         .default_val.b = false,
+    },
+    {
+            .name = "motion_force_zero",
+            .help = "forcing motion score to zero",
+            .offset = offsetof(MotionState, motion_force_zero),
+            .type = VMAF_OPT_TYPE_BOOL,
+            .default_val.b = false,
     },
     { NULL }
 };
@@ -63,7 +71,8 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     s->blur[2] = aligned_malloc(s->float_stride * h, 32);
     if (!s->ref || !s->tmp || !s->blur[0] || !s->blur[1] || !s->blur[2])
         goto fail;
-
+    if (s->motion_force_zero)
+        fex->flush = NULL;
     s->score = 0;
     return 0;
 
@@ -93,6 +102,18 @@ static int extract(VmafFeatureExtractor *fex,
 {
     MotionState *s = fex->priv;
     int err = 0;
+
+    if (s->motion_force_zero) {
+        err = vmaf_feature_collector_append(feature_collector,
+                                            "'VMAF_feature_motion2_score'",
+                                            0., index);
+        if (s->debug) {
+            err |= vmaf_feature_collector_append(feature_collector,
+                                                 "motion",
+                                                 0., index);
+        }
+        return err;
+    }
 
     s->index = index;
     unsigned blur_idx_0 = (index + 0) % 3;

@@ -1226,6 +1226,12 @@ class VmafrcQualityRunner(QualityRunner):
         assert (disable_enhn_gain is None) or \
                (disable_enhn_gain is not None and vif_enhn_gain_limit is None and adm_enhn_gain_limit is None)
 
+        if self.optional_dict is not None and 'motion_force_zero' in self.optional_dict:
+            motion_force_zero = self.optional_dict['motion_force_zero']
+        else:
+            motion_force_zero = False
+        assert isinstance(motion_force_zero, bool)
+
         # ==== translate disable_enhn_gain into vif_enhn_gain_limit and adm_enhn_gain_limit: ====
         if disable_enhn_gain is None:
             pass
@@ -1257,7 +1263,7 @@ class VmafrcQualityRunner(QualityRunner):
         ExternalProgramCaller.call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth,
                                           float_psnr, psnr, float_ssim, ssim, float_ms_ssim, ms_ssim, float_moment,
                                           no_prediction, models, subsample, n_threads, disable_avx, output, exe, logger,
-                                          vif_enhn_gain_limit, adm_enhn_gain_limit)
+                                          vif_enhn_gain_limit, adm_enhn_gain_limit, motion_force_zero)
 
     def _get_exec(self):
         return None  # signaling default
