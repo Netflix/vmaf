@@ -312,7 +312,7 @@ static int extract(VmafFeatureExtractor *fex,
     uint64_t sad;
     s->sad(&s->blur[blur_idx_2], &s->blur[blur_idx_0], &sad);
     double score = s->score =
-        normalize_and_scale_sad(sad, ref_pic->h[0], ref_pic->w[0]);
+        normalize_and_scale_sad(sad, ref_pic->w[0], ref_pic->h[0]);
 
     if (index == 1) return 0;
 
