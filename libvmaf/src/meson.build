@@ -142,13 +142,14 @@ if is_asm_enabled
     if host_machine.cpu_family().startswith('x86')
       x86_avx_sources = [
           feature_src_dir + 'common/convolution_avx.c',
+          feature_src_dir + 'x86/motion_avx2.c'
       ]
 
       x86_avx_static_lib = static_library(
           'x86_avx',
           x86_avx_sources,
           include_directories : vmaf_base_include,
-          c_args : ['-mavx'] + vmaf_cflags_common,
+          c_args : ['-mavx', '-mavx2'] + vmaf_cflags_common,
       )
 
     platform_specific_cpu_objects += x86_avx_static_lib.extract_all_objects()
