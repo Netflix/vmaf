@@ -11,7 +11,7 @@
 #include "libvmaf/libvmaf.rc.h"
 #include "libvmaf/model.h"
 
-static const char short_opts[] = "r:d:w:h:p:b:m:o:nv";
+static const char short_opts[] = "r:d:w:h:p:b:m:o:nvq";
 
 enum {
     ARG_OUTPUT_XML = 256,
@@ -43,6 +43,7 @@ static const struct option long_opts[] = {
     { "cpumask",          1, NULL, ARG_CPUMASK },
     { "no_prediction",    0, NULL, 'n' },
     { "version",          0, NULL, 'v' },
+    { "quiet",            0, NULL, 'q' },
     { NULL,               0, NULL, 0 },
 };
 
@@ -77,6 +78,7 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --feature $string:         additional feature\n"
             " --cpumask: $bitmask        restrict permitted CPU instruction sets\n"
             " --subsample: $unsigned     compute scores only every N frames\n"
+            " --quiet/-q:                disable FPS meter when run in a TTY\n"
             " --no_prediction/-n:        no prediction, extract features only\n"
             " --version/-v:              print version and exit\n"
            );
@@ -287,6 +289,9 @@ void cli_parse(const int argc, char *const *const argv,
             break;
         case 'n':
             settings->no_prediction = true;
+            break;
+        case 'q':
+            settings->quiet = true;
             break;
         case 'v':
             fprintf(stderr, "%s\n", vmaf_version());

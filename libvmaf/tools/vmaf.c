@@ -220,7 +220,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    const time_t t = clock();
+    float fps = 0.;
+    const time_t t0 = clock();
     unsigned picture_index;
     for (picture_index = 0 ;; picture_index++) {
         VmafPicture pic_ref, pic_dist;
@@ -243,12 +244,15 @@ int main(int argc, char *argv[])
             break;
         }
 
-        if (istty) {
+        if (istty && !c.quiet) {
+            if (picture_index > 0 && !(picture_index % 10)) {
+                fps = (picture_index + 1) /
+                      (((float)clock() - t0) / CLOCKS_PER_SEC);
+            }
+
             fprintf(stderr, "\r%d frame%s %s %.2f FPS\033[K",
                     picture_index + 1, picture_index ? "s" : " ",
-                    spinner[picture_index % spinner_length],
-                    (picture_index + 1) /
-                    (((float)clock() - t) / CLOCKS_PER_SEC));
+                    spinner[picture_index % spinner_length], fps);
             fflush(stderr);
         }
 

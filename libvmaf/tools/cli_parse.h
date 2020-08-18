@@ -31,6 +31,7 @@ typedef struct {
     unsigned subsample;
     unsigned thread_cnt;
     bool no_prediction;
+    bool quiet;
     unsigned cpumask;
 } CLISettings;
 
