@@ -20,23 +20,31 @@
 #include <math.h>
 #include <string.h>
 
+#include "cpu.h"
 #include "common/alignment.h"
 #include "feature_collector.h"
 #include "feature_extractor.h"
+#include "integer_motion.h"
 #include "mem.h"
 #include "picture.h"
+
+#if ARCH_X86
+#include "x86/motion_avx2.h"
+#endif
 
 typedef struct MotionState {
     VmafPicture tmp;
     VmafPicture blur[3];
     unsigned index;
     double score;
-    void (*convolution)(VmafPicture *src, VmafPicture *dst, VmafPicture *tmp);
+    void (*y_convolution)(void *src, uint16_t *dst, unsigned width,
+                          unsigned height, ptrdiff_t src_stride,
+                          ptrdiff_t dst_stride, unsigned inp_size_bits);
+    void (*x_convolution)(const uint16_t *src, uint16_t *dst, unsigned width,
+                          unsigned height, ptrdiff_t src_stride,
+                          ptrdiff_t dst_stride);
     void (*sad)(VmafPicture *pic_a, VmafPicture *pic_b, uint64_t *sad);
 } MotionState;
-
-static const uint16_t filter[5] = { 3571, 16004, 26386, 16004, 3571 };
-static const int filter_width = sizeof(filter) / sizeof(filter[0]);
 
 static inline uint32_t
 edge_16(bool horizontal, const uint16_t *src, int width,
@@ -107,7 +115,7 @@ x_convolution_16(const uint16_t *src, uint16_t *dst, unsigned width,
 }
 
 static inline void
-y_convolution_16(const uint16_t *src, uint16_t *dst, unsigned width,
+y_convolution_16(void *src, uint16_t *dst, unsigned width,
                  unsigned height, ptrdiff_t src_stride,
                  ptrdiff_t dst_stride, unsigned inp_size_bits)
 {
@@ -150,14 +158,6 @@ y_convolution_16(const uint16_t *src, uint16_t *dst, unsigned width,
     }
 }
 
-static void convolution_16(VmafPicture *src, VmafPicture *dst, VmafPicture *tmp)
-{
-    y_convolution_16(src->data[0], tmp->data[0], src->w[0], src->h[0],
-                     src->stride[0] / 2, tmp->stride[0] / 2, src->bpc);
-    x_convolution_16(tmp->data[0], dst->data[0], tmp->w[0], tmp->h[0],
-                     tmp->stride[0] / 2, dst->stride[0] / 2);
-}
-
 static inline uint32_t
 edge_8(const uint8_t *src, int height, int stride, int i, int j)
 {
@@ -180,9 +180,11 @@ edge_8(const uint8_t *src, int height, int stride, int i, int j)
 }
 
 static inline void
-y_convolution_8(const uint8_t *src, uint16_t *dst, unsigned width,
-                unsigned height, ptrdiff_t src_stride, ptrdiff_t dst_stride)
+y_convolution_8(void *src, uint16_t *dst, unsigned width,
+                unsigned height, ptrdiff_t src_stride, ptrdiff_t dst_stride,
+                unsigned inp_size_bits)
 {
+    (void) inp_size_bits;
     const unsigned radius = filter_width / 2;
     const unsigned top_edge = vmaf_ceiln(radius, 1);
     const unsigned bottom_edge = vmaf_floorn(height - (filter_width - radius), 1);
@@ -222,14 +224,6 @@ y_convolution_8(const uint8_t *src, uint16_t *dst, unsigned width,
     }
 }
 
-static void convolution_8(VmafPicture *src, VmafPicture *dst, VmafPicture *tmp)
-{
-    y_convolution_8(src->data[0], tmp->data[0], src->w[0], src->h[0],
-                    src->stride[0], dst->stride[0] / 2);
-    x_convolution_16(tmp->data[0], dst->data[0], tmp->w[0], tmp->h[0],
-                     tmp->stride[0] / 2, dst->stride[0] / 2);
-}
-
 static void sad_c(VmafPicture *pic_a, VmafPicture *pic_b, uint64_t *sad)
 {
     *sad = 0;
@@ -259,7 +253,15 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     err |= vmaf_picture_alloc(&s->blur[2], pix_fmt, 16, w, h);
     if (err) goto fail;
 
-    s->convolution = bpc == 8 ? convolution_8 : convolution_16;
+    s->y_convolution = bpc == 8 ? y_convolution_8 : y_convolution_16;
+    s->x_convolution = x_convolution_16;
+
+#if ARCH_X86
+    unsigned flags = vmaf_get_cpu_flags();
+    if (flags & VMAF_X86_CPU_FLAG_AVX2)
+        s->x_convolution = x_convolution_16_avx2;
+#endif
+
     s->sad = sad_c;
     s->score = 0.;
     return 0;
@@ -301,7 +303,16 @@ static int extract(VmafFeatureExtractor *fex,
     const unsigned blur_idx_1 = (index + 1) % 3;
     const unsigned blur_idx_2 = (index + 2) % 3;
 
-    s->convolution(ref_pic, &s->blur[blur_idx_0], &s->tmp);
+    const ptrdiff_t y_src_stride =
+        ref_pic->bpc == 8 ? ref_pic->stride[0] : ref_pic->stride[0] / 2;
+
+    s->y_convolution(ref_pic->data[0], s->tmp.data[0], ref_pic->w[0],
+                     ref_pic->h[0], y_src_stride, s->tmp.stride[0] / 2,
+                     ref_pic->bpc);
+
+    s->x_convolution(s->tmp.data[0], s->blur[blur_idx_0].data[0],
+                     s->tmp.w[0], s->tmp.h[0], s->tmp.stride[0] / 2,
+                     s->blur[blur_idx_0].stride[0] / 2);
 
     if (index == 0)
         return vmaf_feature_collector_append(feature_collector,
