@@ -1,5 +1,31 @@
 # Change Log
 
+## (8/24/2020) [1.5.3]
+
+(Updates since 1.5.1)
+
+**Fixed bugs:**
+- Fix inverted height and width in integer_motion in vmaf_rc (#650).
+
+**New features:**
+- libvmaf: add support for CSV and JSON logging
+- Python: Add an (optional) step in Executor class to do python-based processing to ref/dis files (#523).
+- Restructure python project and documentation (#544).
+- Move test resource to Netflix/vmaf_resource repo (#552).
+- Add Github CI (#558).
+- Add vmaf_v0.6.1neg model; add vif_enhn_gain_limit and adm_enhn_gain_limit options to vmaf_rc.
+- Update documentation for FFmpeg+libvmaf.
+- Improvements to AucPerfMetric (#643).
+- Add motion_force_zero option to vmaf_rc.
+
+## (6/30/2020) [1.5.2]
+
+**Fixed bugs:**
+- Fix pkgconfig version sync issue (#572)
+
+**New features:**
+- libvmaf_rc general improvements
+
 ## (2/27/2020) [1.5.1]
     
 **New features:**
