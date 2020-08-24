@@ -3,7 +3,7 @@ import subprocess
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
-__version__ = "1.5.1"
+__version__ = "1.5.3"
 
 try:
     from matplotlib import pyplot as plt
