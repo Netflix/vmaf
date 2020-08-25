@@ -9,9 +9,12 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 
 ## News
 
-- (7/13/20) We have create a [memo](https://docs.google.com/document/d/1dJczEhXO0MZjBSNyKmd3ARiCTdFVMNPBykH4_HMPoyY/edit?usp=sharing) to share our thoughts on VMAF's property in the presence of image enhancement operations, its impact on codec evaluation, and our solutions.
+- (7/13/20) We have created a [memo](https://docs.google.com/document/d/1dJczEhXO0MZjBSNyKmd3ARiCTdFVMNPBykH4_HMPoyY/edit?usp=sharing) to share our thoughts on VMAF's property in the presence of image enhancement operations, its impact on codec evaluation, and our solutions.
 - (2/27/20) We have changed VMAF's license from Apache 2.0 to [BSD+Patent](https://opensource.org/licenses/BSDplusPatent), a more permissive license compared to Apache that also includes an express patent grant.
-- (2/27/20) We made a few changes in a recent refactoring effort: 1) migrated the build system from makefile to meson, 2) restructured the code, and 3) introduced a new release candidate API with the associated library `libvmaf_rc` and executable `vmaf_rc`, co-existing with the current `libvmaf` and `vmafossexec`, all under `libvmaf/build`. The new release candidate API is designed for better interoperrability with encoding optimization. We will deprecate the old API on a future date.
+- (2/27/20) We made a few changes in a recent refactoring effort:
+    * Migrated the build system from makefile to meson.
+    * Restructured the code. 
+    * Introduced a new release candidate API with the associated library `libvmaf_rc` and executable `vmaf_rc`, co-existing with the current `libvmaf` and `vmafossexec`, all under `libvmaf/build`. The new release candidate API is designed for better interoperability with encoding optimization. We will deprecate the old API on a future date.
 
 ## Frequently Asked Questions
 
