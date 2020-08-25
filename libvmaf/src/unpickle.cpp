@@ -109,18 +109,14 @@ static int unpickle(VmafModel *model, const char *pickle_path,
     if (!VAL_IS_LIST(feature_names))
         return -EINVAL;
     model->n_features = feature_names.length();
-    if (!VAL_IS_LIST(slopes) || slopes.length() != model->n_features + 1)
-        return -EINVAL;
-    if (!VAL_IS_LIST(intercepts) || intercepts.length() != model->n_features + 1)
-        return -EINVAL;
-    if (!((VAL_IS_NONE(feature_opts_dicts)) || VAL_IS_LIST(feature_opts_dicts)))
-        return -EINVAL;
-    if (VAL_IS_LIST(feature_opts_dicts) && feature_opts_dicts.length() != model->n_features)
-        return -EINVAL;
-    if (VAL_IS_LIST(feature_opts_dicts)) {
-        for (unsigned i = 0; i < model->n_features; i++) {
-            if (!(VAL_IS_NONE(feature_opts_dicts[i]) || VAL_IS_DICT(feature_opts_dicts[i])))
-                return -EINVAL;
+
+    if (model->norm_type > VMAF_MODEL_NORMALIZATION_TYPE_NONE) {
+        if (!VAL_IS_NONE(slopes) && slopes.length() != model->n_features + 1)
+            return -EINVAL;
+        if (!VAL_IS_NONE(intercepts) &&
+            intercepts.length() != model->n_features + 1)
+        {
+            return -EINVAL;
         }
     }
 
@@ -140,8 +136,10 @@ static int unpickle(VmafModel *model, const char *pickle_path,
             goto free_name;
         }
 
-        model->feature[i].slope = double(slopes[i + 1]);
-        model->feature[i].intercept = double(intercepts[i + 1]);
+        if (model->norm_type > VMAF_MODEL_NORMALIZATION_TYPE_NONE) {
+            model->feature[i].slope = double(slopes[i + 1]);
+            model->feature[i].intercept = double(intercepts[i + 1]);
+        }
 
         if (VAL_IS_LIST(feature_opts_dicts)) {
             Val feature_opts_dict = feature_opts_dicts[i];
@@ -167,8 +165,10 @@ static int unpickle(VmafModel *model, const char *pickle_path,
         }
     }
 
-    model->slope = double(slopes[0]);
-    model->intercept = double(intercepts[0]);
+    if (model->norm_type > VMAF_MODEL_NORMALIZATION_TYPE_NONE) {
+        model->slope = double(slopes[0]);
+        model->intercept = double(intercepts[0]);
+    }
     return 0;
 
 free_name:
