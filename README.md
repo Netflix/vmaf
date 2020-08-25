@@ -14,7 +14,7 @@ VMAF is a perceptual video quality assessment algorithm developed by Netflix. VM
 - (2/27/20) We made a few changes in a recent refactoring effort:
     * Migrated the build system from makefile to meson.
     * Restructured the code. 
-    * Introduced a new release candidate API with the associated library `libvmaf_rc` and executable `vmaf_rc`, co-existing with the current `libvmaf` and `vmafossexec`,                all under `libvmaf/build`. The new release candidate API is designed for better interoperability with encoding optimization. We will deprecate the old API on a future            date.
+    * Introduced a new release candidate API with the associated library `libvmaf_rc` and executable `vmaf_rc`, co-existing with the current `libvmaf` and `vmafossexec`, all under `libvmaf/build`. The new release candidate API is designed for better interoperability with encoding optimization. We will deprecate the old API on a future date.
 
 ## Frequently Asked Questions
 
