@@ -46,7 +46,7 @@ int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
     const int aligned_y = (pic->w[0] + DATA_ALIGN - 1) & ~(DATA_ALIGN - 1);
     const int aligned_c = (pic->w[1] + DATA_ALIGN - 1) & ~(DATA_ALIGN - 1);
     const int hbd = pic->bpc > 8;
-    pic->stride[0] = aligned_y << hbd;
+    pic->stride[0] = DATA_ALIGN + (aligned_y << hbd) + DATA_ALIGN;
     pic->stride[1] = pic->stride[2] = aligned_c << hbd;
     const size_t y_sz = pic->stride[0] * pic->h[0];
     const size_t uv_sz = pic->stride[1] * pic->h[1];
@@ -55,7 +55,7 @@ int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
     uint8_t *data = aligned_malloc(pic_size, DATA_ALIGN);
     if (!data) goto fail;
     memset(data, 0, pic_size);
-    pic->data[0] = data;
+    pic->data[0] = data + DATA_ALIGN;
     pic->data[1] = data + y_sz;
     pic->data[2] = data + y_sz + uv_sz;
 
@@ -71,7 +71,8 @@ fail:
 }
 
 int vmaf_picture_ref(VmafPicture *dst, VmafPicture *src) {
-    if (!dst || !src) return -EINVAL;
+    if (!dst) return -EINVAL;
+    if (!src) return -EINVAL;
 
     memcpy(dst, src, sizeof(*src));
     vmaf_ref_fetch_increment(src->ref);
@@ -84,9 +85,104 @@ int vmaf_picture_unref(VmafPicture *pic) {
 
     vmaf_ref_fetch_decrement(pic->ref);
     if (vmaf_ref_load(pic->ref) == 0) {
-        aligned_free(pic->data[0]);
+        aligned_free(pic->data[0] - DATA_ALIGN);
         vmaf_ref_close(pic->ref);
     }
     memset(pic, 0, sizeof(*pic));
     return 0;
+}
+
+#define PAD_WIDTH 7
+
+static int picture_pad_16(VmafPicture *pic)
+{
+    uint16_t *data = pic->data[0];
+    for (unsigned i = 0; i < pic->h[0]; i++) {
+        for (unsigned j = 1; j <= PAD_WIDTH; j++) {
+            *(data - j) = data[j];
+            data[pic->w[0] + j] = data[pic->w[0] - j];
+        }
+        data += (pic->stride[0] >> 1);
+    }
+    return 0;
+}
+
+static int picture_pad_8(VmafPicture *pic)
+{
+    uint8_t *data = pic->data[0];
+    for (unsigned i = 0; i < pic->h[0]; i++) {
+        for (unsigned j = 1; j <= PAD_WIDTH; j++) {
+            *(data - j) = data[j];
+            data[pic->w[0] + j] = data[pic->w[0] - j];
+        }
+        data += pic->stride[0];
+    }
+    return 0;
+}
+
+int vmaf_picture_pad(VmafPicture *pic)
+{
+    if (!pic) return -EINVAL;
+
+    switch (pic->bpc) {
+    case 8:
+        return picture_pad_8(pic);
+    case 10:
+    case 12:
+    case 16:
+        return picture_pad_16(pic);
+    default:
+        return -EINVAL;
+    }
+}
+
+static int picture_translate_16(VmafPicture *pic, VmafPicture *pic_90)
+{
+    int err = vmaf_picture_alloc(pic_90, pic->pix_fmt, pic->bpc,
+                                 pic->h[0], pic->w[0]);
+    if (err) return err;
+
+    uint16_t *data = pic->data[0];
+    uint16_t *data_90 = pic_90->data[0];
+    for (unsigned i = 0; i < pic->h[0]; i++) {
+        for (unsigned j = 0; j < pic->w[0]; j++) {
+            data_90[j * (pic_90->stride[0] >> 1) + i] =
+            data[i * (pic->stride[0] >> 1) + j];
+        }
+    }
+    return 0;
+}
+
+static int picture_translate_8(VmafPicture *pic, VmafPicture *pic_90)
+{
+    int err = vmaf_picture_alloc(pic_90, pic->pix_fmt, pic->bpc,
+                                 pic->h[0], pic->w[0]);
+    if (err) return err;
+
+    uint8_t *data = pic->data[0];
+    uint8_t *data_90 = pic_90->data[0];
+    for (unsigned i = 0; i < pic->h[0]; i++) {
+        for (unsigned j = 0; j < pic->w[0]; j++) {
+            data_90[j * pic_90->stride[0] + i] =
+            data[i * pic->stride[0] + j];
+        }
+    }
+    return 0;
+}
+
+int vmaf_picture_translate(VmafPicture *pic, VmafPicture *pic_90)
+{
+    if (!pic) return -EINVAL;
+    if (!pic_90) return -EINVAL;
+
+    switch (pic->bpc) {
+    case 8:
+        return picture_translate_8(pic, pic_90);
+    case 10:
+    case 12:
+    case 16:
+        return picture_translate_16(pic, pic_90);
+    default:
+        return -EINVAL;
+    }
 }

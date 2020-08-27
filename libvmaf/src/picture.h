@@ -23,4 +23,8 @@
 
 int vmaf_picture_ref(VmafPicture *dst, VmafPicture *src);
 
+int vmaf_picture_translate(VmafPicture *pic, VmafPicture *pic_90);
+
+int vmaf_picture_pad(VmafPicture *pic);
+
 #endif /* __VMAF_SRC_PICTURE_H__ */

@@ -64,9 +64,64 @@ static char *test_picture_data_alignment()
     return NULL;
 }
 
+static char *test_picture_translate()
+{
+    int err;
+    VmafPicture pic, pic_90;
+
+    err = vmaf_picture_alloc(&pic, VMAF_PIX_FMT_YUV420P, 8, 1920, 1080);
+    mu_assert("problem during vmaf_picture_alloc", !err);
+    err = vmaf_picture_translate(&pic, &pic_90);
+    mu_assert("problem during vmaf_picture_translate", !err);
+    mu_assert("pic_90 was not translated 90 degrees",
+              (pic.w[0] == pic_90.h[0]) && (pic.h[0] == pic_90.w[0]));
+    err = vmaf_picture_unref(&pic);
+    mu_assert("problem during vmaf_picture_unref, pic", !err);
+    err = vmaf_picture_unref(&pic_90);
+    mu_assert("problem during vmaf_picture_unref, pic_90", !err);
+
+    err = vmaf_picture_alloc(&pic, VMAF_PIX_FMT_YUV420P, 10, 1920, 1080);
+    mu_assert("problem during vmaf_picture_alloc", !err);
+    err = vmaf_picture_translate(&pic, &pic_90);
+    mu_assert("problem during vmaf_picture_translate (10-bit)", !err);
+    mu_assert("pic_90 was not translated 90 degrees (10-bit)",
+              (pic.w[0] == pic_90.h[0]) && (pic.h[0] == pic_90.w[0]));
+    err = vmaf_picture_unref(&pic);
+    mu_assert("problem during vmaf_picture_unref, pic", !err);
+    err = vmaf_picture_unref(&pic_90);
+    mu_assert("problem during vmaf_picture_unref, pic_90", !err);
+
+    return NULL;
+}
+
+static char *test_picture_pad()
+{
+    int err;
+
+    VmafPicture pic;
+    err = vmaf_picture_alloc(&pic, VMAF_PIX_FMT_YUV420P, 8, 1920, 1080);
+    mu_assert("problem during vmaf_picture_alloc", !err);
+    err = vmaf_picture_pad(&pic);
+    mu_assert("problem during vmaf_picture_pad", !err);
+    err = vmaf_picture_unref(&pic);
+    mu_assert("problem during vmaf_picture_unref", !err);
+
+    VmafPicture pic_10;
+    err = vmaf_picture_alloc(&pic_10, VMAF_PIX_FMT_YUV420P, 10, 1920, 1080);
+    mu_assert("problem during vmaf_picture_alloc", !err);
+    err = vmaf_picture_pad(&pic_10);
+    mu_assert("problem during vmaf_picture_pad (10-bit)", !err);
+    err = vmaf_picture_unref(&pic_10);
+    mu_assert("problem during vmaf_picture_unref", !err);
+
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_picture_alloc_ref_and_unref);
     mu_run_test(test_picture_data_alignment);
+    mu_run_test(test_picture_translate);
+    mu_run_test(test_picture_pad);
     return NULL;
 }
