@@ -275,6 +275,18 @@ static int validate_pic_params(VmafContext *vmaf, VmafPicture *ref,
     return 0;
 }
 
+static void translate_picture(VmafPicture *pic_a, VmafPicture *pic_b)
+{
+    uint8_t *data_a = pic_a->data[0];
+    uint8_t *data_b = pic_b->data[0];
+
+    for (unsigned i = 0; i < pic_a->h[0]; i++) {
+        for (unsigned j = 0; j < pic_a->w[0]; j++) {
+            data_b[j * pic_b->stride[0] + i] = data_a[i * pic_a->stride[0] + j];
+        }
+    }
+}
+
 int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
                        unsigned index)
 {
@@ -287,6 +299,15 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     vmaf->pic_cnt++;
     err = validate_pic_params(vmaf, ref, dist);
     if (err) return err;
+
+    VmafPicture ref_90, dist_90;
+    err |= vmaf_picture_alloc(&ref_90, ref->pix_fmt, ref->bpc,
+                              ref->h[0], ref->w[0]);
+    err |= vmaf_picture_alloc(&dist_90, dist->pix_fmt, dist->bpc,
+                              dist->h[0], dist->w[0]);
+    if (err) goto unref_translated_pics;
+    translate_picture(ref, &ref_90);
+    translate_picture(dist, &dist_90);
 
     if (vmaf->thread_pool)
         return threaded_read_pictures(vmaf, ref, dist, index);
@@ -306,12 +327,13 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
         if (err) return err;
     }
 
-    err = vmaf_picture_unref(ref);
-    if (err) return err;
-    err = vmaf_picture_unref(dist);
-    if (err) return err;
-
-    return 0;
+unref_pics:
+    err |= vmaf_picture_unref(ref);
+    err |= vmaf_picture_unref(dist);
+unref_translated_pics:
+    err |= vmaf_picture_unref(&ref_90);
+    err |= vmaf_picture_unref(&dist_90);
+    return err;
 }
 
 int vmaf_feature_score_at_index(VmafContext *vmaf, const char *feature_name,
