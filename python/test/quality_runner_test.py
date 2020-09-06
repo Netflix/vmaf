@@ -1260,7 +1260,7 @@ class ParallelQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=True, processes=None)
         results = self.runner.results
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.363420489439, places=4)
@@ -1276,6 +1276,26 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_scale3_score'], 0.999999399683, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_motion2_score'], 3.8953518541666665, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
+
+        self.assertAlmostEqual(results[0]['VMAF_score'], 76.68425574067017, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 99.946416604585025, places=4)
+        self.assertAlmostEqual(results[2]['VMAF_score'], 76.68425574067017, places=4)
+        self.assertAlmostEqual(results[3]['VMAF_score'], 99.946416604585025, places=4)
+
+    def test_run_parallel_vmaf_runner_processes(self):
+
+        _, _, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = VmafQualityRunner(
+            [asset, asset_original, asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None
+        )
+        self.runner.run(parallelize=True,
+                        processes=1,
+                        )
+        results = self.runner.results
 
         self.assertAlmostEqual(results[0]['VMAF_score'], 76.68425574067017, places=4)
         self.assertAlmostEqual(results[1]['VMAF_score'], 99.946416604585025, places=4)
