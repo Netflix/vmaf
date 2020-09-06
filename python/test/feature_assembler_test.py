@@ -39,6 +39,39 @@ class FeatureAssemblerTest(unittest.TestCase):
             optional_dict=None,
             optional_dict2=None,
             parallelize=True,
+            processes=None,
+        )
+
+        self.fassembler.run()
+
+        results = self.fassembler.results
+
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.44609306249999997, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 4.0498253541666669, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'], 0.9345149030293786, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 23.509571520833333, places=4)
+
+        self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 4.0498253541666669, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 31.271439270833337, places=4)
+
+    def test_feature_assembler_whole_feature_processes(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.fassembler = FeatureAssembler(
+            feature_dict={'VMAF_feature': 'all'},
+            feature_option_dict=None,
+            assets=[asset, asset_original],
+            logger=None,
+            fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict=None,
+            optional_dict2=None,
+            parallelize=True,
+            processes=1,
         )
 
         self.fassembler.run()

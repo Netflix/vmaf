@@ -458,6 +458,8 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         train_raw_assets = train_assets
         train_assets = read_dataset(train_dataset_aggregate, **kwargs)
 
+    processes = kwargs['processes'] if 'processes' in kwargs else None
+
     train_fassembler = FeatureAssembler(
         feature_dict=feature_param.feature_dict,
         feature_option_dict=None,
@@ -469,6 +471,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         optional_dict=None,
         optional_dict2=None,
         parallelize=parallelize,
+        processes=processes,
     )
     train_fassembler.run()
     train_features = train_fassembler.results
