@@ -5,6 +5,7 @@ matplotlib.use('Agg')
 
 import os
 import sys
+import re
 
 import numpy as np
 from vmaf.config import DisplayConfig
@@ -29,9 +30,10 @@ def print_usage():
     print("usage: " + os.path.basename(sys.argv[0]) + \
           " quality_type test_dataset_filepath [--vmaf-model VMAF_model_path] " \
           "[--vmaf-phone-model] [--subj-model subjective_model] [--cache-result] " \
-          "[--parallelize] [--print-result] [--save-plot plot_dir]\n")
+          "[--parallelize] [--print-result] [--save-plot plot_dir] [--plot-wh plot_wh]\n")
     print("quality_type:\n\t" + "\n\t".join(quality_runner_types) +"\n")
     print("subjective_model:\n\t" + "\n\t".join(SUBJECTIVE_MODELS) + "\n")
+    print("plot_wh: plot width and height in inches, example: 5x5 (default)")
 
 
 def main():
@@ -72,6 +74,20 @@ def main():
         return 1
 
     save_plot_dir = get_cmd_option(sys.argv, 3, len(sys.argv), '--save-plot')
+
+    plot_wh = get_cmd_option(sys.argv, 3, len(sys.argv), '--plot-wh')
+    if plot_wh is not None:
+        try:
+            mo = re.match(r"([0-9]+)x([0-9]+)", plot_wh)
+            assert mo is not None
+            w = mo.group(1)
+            h = mo.group(2)
+            w = int(w)
+            h = int(h)
+            plot_wh = (w, h)
+        except Exception as e:
+            print("Error: plot_wh must be in the format of WxH, example: 5x5")
+            return 1
 
     try:
         runner_class = QualityRunner.find_subclass(quality_type)
@@ -128,7 +144,9 @@ def main():
             raise AssertionError
 
         from vmaf import plt
-        fig, ax = plt.subplots(figsize=(5, 5), nrows=1, ncols=1)
+        if plot_wh is None:
+            plot_wh = (5, 5)
+        fig, ax = plt.subplots(figsize=plot_wh, nrows=1, ncols=1)
 
         assets, results = run_test_on_dataset(test_dataset, runner_class, ax,
                                           result_store, vmaf_model_path,

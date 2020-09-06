@@ -1180,7 +1180,7 @@ class BootstrapRegressorMixin(RegressorMixin):
 
         try:
 
-            ci_assume_gaussian = kwargs['ci_assume_gaussian'] if 'ci_assume_gaussian' in kwargs else True
+            ci_assume_gaussian = kwargs['ci_assume_gaussian'] if 'ci_assume_gaussian' in kwargs else False
 
             assert 'ys_label_pred_bagging' in stats
             assert 'ys_label_pred_stddev' in stats
@@ -1196,6 +1196,7 @@ class BootstrapRegressorMixin(RegressorMixin):
                     yerr = [stats['ys_label_pred_bagging'] - avg_ci95_low, avg_ci95_high - stats['ys_label_pred_bagging']] # 95% C.I.
                 ax.errorbar(stats['ys_label'], stats['ys_label_pred'],
                             yerr=yerr,
+                            capsize=2,
                             marker='o', linestyle='')
             else:
                 assert len(stats['ys_label']) == len(content_ids)
@@ -1221,10 +1222,12 @@ class BootstrapRegressorMixin(RegressorMixin):
                         ax.errorbar(curr_ys_label, curr_ys_label_pred,
                                     yerr=yerr,
                                     xerr=1.96 * curr_ys_label_stddev,
+                                    capsize=2,
                                     marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)])
                     except:
                         ax.errorbar(curr_ys_label, curr_ys_label_pred,
                                     yerr=yerr,
+                                    capsize=2,
                                     marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)])
 
             ax.text(0.45, 0.1, 'Avg. Pred. Std.: {:.2f}'.format(avg_std),
