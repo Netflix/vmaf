@@ -261,7 +261,7 @@ class RegressorMixin(object):
 
             unique_content_ids = list(set(content_ids))
             from vmaf import plt
-            cmap = plt.get_cmap()
+            cmap = plt.get_cmap('jet')
             colors = [cmap(i) for i in np.linspace(0, 1, len(unique_content_ids))]
             for idx, curr_content_id in enumerate(unique_content_ids):
                 curr_idxs = indices(content_ids, lambda cid: cid == curr_content_id)
@@ -1203,7 +1203,7 @@ class BootstrapRegressorMixin(RegressorMixin):
 
                 unique_content_ids = list(set(content_ids))
                 from vmaf import plt
-                cmap = plt.get_cmap()
+                cmap = plt.get_cmap('jet')
                 colors = [cmap(i) for i in np.linspace(0, 1, len(unique_content_ids))]
                 for idx, curr_content_id in enumerate(unique_content_ids):
                     curr_idxs = indices(content_ids, lambda cid: cid == curr_content_id)
