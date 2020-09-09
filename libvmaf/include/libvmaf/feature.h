@@ -21,6 +21,6 @@
 
 typedef struct VmafFeatureDictionary VmafFeatureDictionary;
 
-vmaf_feature_dictionary_set(VmafFeatureDictionary **dict, char *key, char *val);
+int vmaf_feature_dictionary_set(VmafFeatureDictionary **dict, char *key, char *val);
 
 #endif /* __VMAF_FEATURE_H__ */
