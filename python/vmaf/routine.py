@@ -490,7 +490,14 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
 
     model = model_class(model_param_dict, logger)
 
-    model.train(train_xys, **kwargs)
+    train_assets2 = []
+    for asset in train_assets:
+        asset2 = asset.copy()
+        asset2.dis_path = asset2.dis_path.replace('dis_yuv', 'dis_264').replace('.yuv', '.264').replace('/mnt/calgnas102/zli/datasets', '/Volumes/zli-nflx3')
+        asset2.asset_dict['duration_sec'] = 10
+        train_assets2.append(asset2)
+
+    model.train(train_xys, assets=train_assets2, **kwargs)
 
     # append additional information to model before saving, so that
     # VmafQualityRunner can read and process
@@ -695,7 +702,7 @@ def run_vmaf_cv(train_dataset_filepath,
     fig, axs = plt.subplots(figsize=(5*ncols, 5*nrows), nrows=nrows, ncols=ncols)
 
     train_test_vmaf_on_dataset(train_dataset, test_dataset, param, param, axs[0], axs[1],
-                               result_store, parallelize=True, logger=None,
+                               result_store, logger=None,
                                output_model_filepath=output_model_filepath,
                                **kwargs)
 

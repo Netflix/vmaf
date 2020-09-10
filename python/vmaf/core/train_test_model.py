@@ -1255,14 +1255,26 @@ class BootstrapMixin(object):
 
     @override(TrainTestModel)
     def train(self, xys, **kwargs):
+        if 'assets' in kwargs:
+            assets = kwargs['assets']
+        else:
+            assets = None
+
         xys_2d = self._preproc_train(xys)
         num_models = self._get_num_models()
         sample_size = xys_2d.shape[0]
         models = []
+        if assets is not None:
+            bitrates = []
+        else:
+            bitrates = None
 
         # first model: use full training data
         model_0 = self._train(self.param_dict, xys_2d, **kwargs)
         models.append(model_0)
+        if assets is not None:
+            bitrate_0 = [a.dis_bitrate_kbps_for_entire_file for a in assets]
+            bitrates.append(bitrate_0)
 
         # rest models: resample training data with replacement
         for i_model in range(1, num_models):
@@ -1270,9 +1282,14 @@ class BootstrapMixin(object):
             # random sample with replacement:
             indices = np.random.choice(range(sample_size), size=sample_size, replace=True)
             xys_2d_ = xys_2d[indices, :]
+            if assets is not None:
+                assets_ = [assets[i] for i in indices]
+                bitrate = [a.dis_bitrate_kbps_for_entire_file for a in assets_]
+                bitrates.append(bitrate)
             model_ = self._train(self.param_dict, xys_2d_, **kwargs)
             models.append(model_)
         self.model = models
+        self.bitrates = bitrates
 
     def _get_num_models(self):
         # without this line Pycharm highlights the self.param_dict
@@ -1303,22 +1320,33 @@ class BootstrapMixin(object):
         # first check if there are any bootstrapped models
         if num_models > 1:
             ys_list = []
-            for model_ in models[1:]:
-                ys = self._predict(model_, xs_2d)
-                ys_list.append(ys)
+            model_bitrate_list = []
+            if 'bitrates' in self.model_dict:
+                assert len(models) == len(self.model_dict['bitrates'])
+                for model_, bitrate in zip(models[1:], self.model_dict['bitrates'][1:]):
+                    ys = self._predict(model_, xs_2d)
+                    ys_list.append(ys)
+                    model_bitrate_list.append(bitrate)
+            else:
+                for model_ in models[1:]:
+                    ys = self._predict(model_, xs_2d)
+                    ys_list.append(ys)
             ys_2d = np.vstack(ys_list)
             ys_2d = self.denormalize_ys(ys_2d)
             ys_label_pred_bagging = np.mean(ys_2d, axis=0)
             ys_label_pred_stddev = np.std(ys_2d, axis=0)
             ys_label_pred_ci95_low = np.percentile(ys_2d, 2.5, axis=0)
             ys_label_pred_ci95_high = np.percentile(ys_2d, 97.5, axis=0)
-            return {'ys_label_pred_all_models': ys_2d,
+            ret = {'ys_label_pred_all_models': ys_2d,
                     'ys_label_pred': ys_label_pred,
                     'ys_label_pred_bagging': ys_label_pred_bagging,
                     'ys_label_pred_stddev': ys_label_pred_stddev,
                     'ys_label_pred_ci95_low': ys_label_pred_ci95_low,
                     'ys_label_pred_ci95_high': ys_label_pred_ci95_high,
                     }
+            if len(model_bitrate_list) > 0:
+                ret['bitrates_all_models'] = model_bitrate_list
+            return ret
         else:
             return {'ys_label_pred': ys_label_pred,
                     }
@@ -1351,6 +1379,10 @@ class BootstrapMixin(object):
                 os.makedirs(filedir)
             model_dict_ = model_dict.copy()
             model_dict_['model'] = model
+
+            if hasattr(self, 'bitrates'):
+                model_dict_['bitrates'] = self.bitrates[i_model]
+
             self._to_file(filename_, param_dict, model_dict_)
 
     @staticmethod
@@ -1376,6 +1408,7 @@ class BootstrapMixin(object):
         num_models = cls._get_num_models_from_param_dict(info_loaded_0['param_dict'])
 
         models = []
+        bitrates = []
         for i_model in range(num_models):
             filename_ = cls._get_model_i_filename(filename, i_model)
             assert os.path.exists(filename_), 'File name {} does not exist.'.format(filename_)
@@ -1384,8 +1417,13 @@ class BootstrapMixin(object):
             train_test_model_ = model_class._from_info_loaded(info_loaded_, filename_, None, None)
             model_ = train_test_model_.model
             models.append(model_)
+            if 'bitrates' in info_loaded_['model_dict']:
+                bitrate = info_loaded_['model_dict']['bitrates']
+                bitrates.append(bitrate)
 
         train_test_model_0.model = models
+        if len(bitrates) > 0:
+            train_test_model_0.model_dict['bitrates'] = bitrates
 
         return train_test_model_0
 

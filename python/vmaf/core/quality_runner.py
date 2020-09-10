@@ -891,6 +891,8 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
         result_dict.update(feature_result.result_dict)  # add feature result
         result_dict[self.get_scores_key()] = pred_result['ys_pred']  # add quality score
         result_dict[self.get_all_models_scores_key()] = pred_result['ys_pred_all_models']  # add quality score from all models
+        if 'bitrates_all_models' in pred_result:
+            result_dict[self.get_all_models_bitrate_scores_key()] = pred_result['bitrates_all_models']
         result_dict[self.get_bagging_scores_key()] = pred_result['ys_pred_bagging']  # add bagging quality score
         result_dict[self.get_stddev_scores_key()] = pred_result['ys_pred_stddev']  # add stddev of bootstrapped quality score
         result_dict[self.get_ci95_low_scores_key()] = pred_result['ys_pred_ci95_low']  # add ci95 of bootstrapped quality score
@@ -937,13 +939,16 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
         slope = ((ys_pred_plus - ys_pred_minus) / (2.0 * DELTA))
         ys_pred_stddev = ys_pred_stddev * slope
 
-        return {'ys_pred_all_models': ys_pred_all_models,
-                'ys_pred': ys_pred,
-                'ys_pred_bagging': ys_pred_bagging,
-                'ys_pred_stddev': ys_pred_stddev,
-                'ys_pred_ci95_low': ys_pred_ci95_low,
-                'ys_pred_ci95_high': ys_pred_ci95_high,
-                }
+        ret = {'ys_pred_all_models': ys_pred_all_models,
+               'ys_pred': ys_pred,
+               'ys_pred_bagging': ys_pred_bagging,
+               'ys_pred_stddev': ys_pred_stddev,
+               'ys_pred_ci95_low': ys_pred_ci95_low,
+               'ys_pred_ci95_high': ys_pred_ci95_high,
+               }
+        if 'bitrates_all_models' in result:
+            ret['bitrates_all_models'] = result['bitrates_all_models']
+        return ret
 
     def get_train_test_model_class(self):
         # overide VmafQualityRunner.get_train_test_model_class
@@ -956,6 +961,14 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
     @classmethod
     def get_all_models_score_key(cls):
         return cls.TYPE + '_all_models_score'
+
+    @classmethod
+    def get_all_models_bitrate_scores_key(cls):
+        return cls.TYPE + '_all_models_bitrate_scores'
+
+    @classmethod
+    def get_all_models_bitrate_score_key(cls):
+        return cls.TYPE + '_all_models_bitrate_score'
 
     @classmethod
     def get_bagging_scores_key(cls):
