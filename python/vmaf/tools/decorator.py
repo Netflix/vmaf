@@ -148,3 +148,17 @@ def override(interface_class):
             f"{method.__name__} does not override any method in {interface_class.__name__}"
         return method
     return overrider
+
+
+class change_repr(object):
+    def __init__(self, functor):
+        self.functor = functor
+        #  lets copy some key attributes from the original function
+        self.__name__ = functor.__name__
+        self.__doc__ = functor.__doc__
+
+    def __call__(self, *args, **kwargs):
+        return self.functor(*args, **kwargs)
+
+    def __repr__(self):
+        return self.functor.__name__

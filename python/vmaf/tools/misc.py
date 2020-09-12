@@ -442,19 +442,6 @@ def unroll_dict_of_lists(dict_of_lists):
     return list_of_dicts
 
 
-def slugify(value):
-    """
-    Normalizes string, converts to lowercase, removes non-alpha characters,
-    and converts spaces to hyphens.
-    """
-    import unicodedata
-    value = unicodedata.normalize('NFKD', unicode(value)).encode('ascii', 'ignore')
-    value = unicode(re.sub('[^\w\s-]', '', value).strip().lower())
-    value = unicode(re.sub('[-\s]+', '-', value))
-
-    return value
-
-
 def neg_if_even(x):
     """
     >>> neg_if_even(2)
