@@ -889,13 +889,16 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
     def _populate_result_dict(self, feature_result, pred_result):
         result_dict = {}
         result_dict.update(feature_result.result_dict)  # add feature result
-        result_dict[self.get_scores_key()] = pred_result['ys_pred']  # add quality score
+        self._populate_default_scores(pred_result, result_dict)
         result_dict[self.get_all_models_scores_key()] = pred_result['ys_pred_all_models']  # add quality score from all models
         result_dict[self.get_bagging_scores_key()] = pred_result['ys_pred_bagging']  # add bagging quality score
         result_dict[self.get_stddev_scores_key()] = pred_result['ys_pred_stddev']  # add stddev of bootstrapped quality score
         result_dict[self.get_ci95_low_scores_key()] = pred_result['ys_pred_ci95_low']  # add ci95 of bootstrapped quality score
         result_dict[self.get_ci95_high_scores_key()] = pred_result['ys_pred_ci95_high']  # add ci95 of bootstrapped quality score
         return result_dict
+
+    def _populate_default_scores(self, pred_result, result_dict):
+        result_dict[self.get_scores_key()] = pred_result['ys_pred']  # add quality score
 
     @classmethod
     def predict_with_model(cls, model, xs, **kwargs):
