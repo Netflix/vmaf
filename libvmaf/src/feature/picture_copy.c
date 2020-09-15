@@ -28,7 +28,8 @@ void picture_copy_hbd(float *dst, ptrdiff_t dst_stride,
 
     for (unsigned i = 0; i < src->h[0]; i++) {
         for (unsigned j = 0; j < src->w[0]; j++) {
-            float_data[j] = (float) data[j] / 4.0 + offset;
+            //float_data[j] = (float) data[j] / 4.0 + offset;
+            float_data[j] = (float)data[j] + offset;
         }
         float_data += dst_stride / sizeof(float);
         data += src->stride[0] / 2;

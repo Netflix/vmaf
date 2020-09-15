@@ -33,6 +33,7 @@ class Asset(WorkdirEnabled):
 
     SUPPORTED_YUV_TYPES = ['yuv420p', 'yuv422p', 'yuv444p',
                            'yuv420p10le', 'yuv422p10le', 'yuv444p10le',
+                           'yuv420p12le', 'yuv422p12le', 'yuv444p12le',
                            'notyuv']
     DEFAULT_YUV_TYPE = 'yuv420p'
 

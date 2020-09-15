@@ -34,6 +34,13 @@ int psnr_constants(const char *fmt, double *peak, double *psnr_max) {
     {
         // 10 bit gets normalized to 8 bit, peak is 1023 / 4.0 = 255.75
         // max psnr 72.0 for 10-bit per Ioannis
+        //TODO: Need to change these values as we do not normalize to 8 bit
+        *peak = 255.75;
+        *psnr_max = 72.0;
+    }
+    else if (!strcmp(fmt, "yuv420p12le") || !strcmp(fmt, "yuv422p12le") || !strcmp(fmt, "yuv444p12le"))
+    {
+        //TODO: Need to change these values as we do not normalize to 8 bit
         *peak = 255.75;
         *psnr_max = 72.0;
     }
