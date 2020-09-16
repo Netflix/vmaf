@@ -5,7 +5,7 @@ import unittest
 from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.asset import Asset
 from vmaf.core.feature_extractor import VmafFeatureExtractor
-from vmaf.core.matlab_feature_extractor import StrredFeatureExtractor, StrredOptFeatureExtractor, SpEEDMatlabFeatureExtractor, STMADFeatureExtractor
+from vmaf.core.matlab_feature_extractor import StrredFeatureExtractor, StrredOptFeatureExtractor, SpEEDMatlabFeatureExtractor, STMADFeatureExtractor, iCIDFeatureExtractor
 from vmaf.tools.stats import ListStats
 
 from test.testutil import set_default_576_324_videos_for_testing
@@ -105,6 +105,22 @@ class MatlabFeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1].result_dict['STMAD_feature_smad_all_same_scores'][0], 1.000000, places=4)
         self.assertAlmostEqual(results[1].result_dict['STMAD_feature_tmad_all_same_scores'][0], 0.000000, places=4)
         self.assertAlmostEqual(results[1].result_dict['STMAD_feature_stmad_all_same_scores'][0], -1.818097, places=4)
+
+    def test_run_iCID_fextractor(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.fextractor = iCIDFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run(parallelize=False)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['ICID_feature_icid_score'], 0.14382252083333333, places=4)
+        self.assertAlmostEqual(results[1]['ICID_feature_icid_score'], 0.0, places=4)
 
 
 @unittest.skipIf(not VmafExternalConfig.matlab_path(), "matlab not installed")
