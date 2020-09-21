@@ -310,6 +310,7 @@ libvmaf_rc_sources = [
     src_dir + 'dict.c',
     src_dir + 'opt.c',
     src_dir + 'ref.c',
+    src_dir + 'bootstrap.c',
 ]
 
 libvmaf_rc = both_libraries(
