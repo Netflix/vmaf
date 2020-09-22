@@ -16,17 +16,15 @@
  *
  */
 
-#ifndef __VMAF_JSON_MODEL_H__
-#define __VMAF_JSON_MODEL_H__
+#ifndef __VMAF_SRC_BOOTSTRAP_H__
+#define __VMAF_SRC_BOOTSTRAP_H__
 
-#include "model.h"
+#include "feature/feature_collector.h"
+#include "predict.h"
 
-int vmaf_read_json_model_from_path(VmafModel **model, VmafModelConfig *cfg,
-                                   const char *path);
+int vmaf_bootstrap_predict_score_at_index(VmafModelCollection *model_collection,
+                                          VmafFeatureCollector *feature_collector,
+                                          unsigned index,
+                                          VmafModelCollectionScore *score);
 
-int vmaf_read_json_model_collection_from_path(VmafModel **model,
-                                              VmafModelCollection **model_collection,
-                                              VmafModelConfig *cfg,
-                                              const char *path);
-
-#endif /* __VMAF_JSON_MODEL_H__ */
+#endif /* __VMAF_SRC_BOOTSTRAP_H__ */

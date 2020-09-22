@@ -20,8 +20,10 @@
 #include <stdlib.h>
 
 #include "feature/alias.h"
+#include "bootstrap.h"
 #include "feature/feature_collector.h"
 #include "model.h"
+#include "predict.h"
 #include "svm.h"
 
 static int normalize(VmafModel *model, double slope, double intercept,
@@ -94,7 +96,9 @@ static int clip(VmafModel *model, double *prediction)
 
 int vmaf_predict_score_at_index(VmafModel *model,
                                 VmafFeatureCollector *feature_collector,
-                                unsigned index, double *vmaf_score)
+                                unsigned index, double *vmaf_score,
+                                bool write_prediction,
+                                enum VmafModelFlags flags)
 {
     if (!model) return -EINVAL;
     if (!feature_collector) return -EINVAL;
@@ -107,11 +111,11 @@ int vmaf_predict_score_at_index(VmafModel *model,
 
     for (unsigned i = 0; i < model->n_features; i++) {
         double feature_score;
-
         err = vmaf_feature_collector_get_score(feature_collector,
-                                               vmaf_internal_feature_name_alias(model->feature[i].name),
-                                               &feature_score, index);
+                       vmaf_internal_feature_name_alias(model->feature[i].name),
+                       &feature_score, index);
         if (err) goto free_node;
+
         err = normalize(model, model->feature[i].slope,
                         model->feature[i].intercept, &feature_score);
         if (err) goto free_node;
@@ -125,18 +129,41 @@ int vmaf_predict_score_at_index(VmafModel *model,
 
     err = denormalize(model, &prediction);
     if (err) goto free_node;
+
     err = transform(model, &prediction);
     if (err) goto free_node;
-    err = clip(model, &prediction);
-    if (err) goto free_node;
 
-    err = vmaf_feature_collector_append(feature_collector, model->name,
-                                        prediction, index);
-    if (err) goto free_node;
+    if (!(flags & VMAF_MODEL_FLAG_DISABLE_CLIP)) {
+        err = clip(model, &prediction);
+        if (err) goto free_node;
+    }
+
+    if (write_prediction) {
+        err = vmaf_feature_collector_append(feature_collector, model->name,
+                                            prediction, index);
+        if (err) goto free_node;
+    }
 
     *vmaf_score = prediction;
 
 free_node:
     free(node);
     return err;
+}
+
+int vmaf_predict_score_at_index_model_collection(
+                                VmafModelCollection *model_collection,
+                                VmafFeatureCollector *feature_collector,
+                                unsigned index,
+                                VmafModelCollectionScore *score)
+{
+    switch (model_collection->type) {
+    case VMAF_MODEL_BOOTSTRAP_SVM_NUSVR:
+    case VMAF_MODEL_RESIDUE_BOOTSTRAP_SVM_NUSVR:
+        return vmaf_bootstrap_predict_score_at_index(model_collection,
+                                                     feature_collector,
+                                                     index, score);
+    default:
+        return -EINVAL;
+    }
 }
