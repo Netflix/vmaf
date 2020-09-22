@@ -54,12 +54,15 @@ typedef struct VmafFeatureExtractor {
      *
      * @param               fex self.
      * @param           ref_pic Reference VmafPicture.
+     * @param        ref_pic_90 Reference VmafPicture, translated 90 degrees.
      * @param          dist_pic Distorted VmafPicture.
+     * @param       dist_pic_90 Distorted VmafPicture, translated 90 degrees.
      * @param             index Picture index.
      * @param feature_collector VmafFeatureCollector used to write out scores.
      */
     int (*extract)(struct VmafFeatureExtractor *fex,
-                   VmafPicture *ref_pic, VmafPicture *dist_pic,
+                   VmafPicture *ref_pic, VmafPicture *ref_pic_90,
+                   VmafPicture *dist_pic, VmafPicture *dist_pic_90,
                    unsigned index, VmafFeatureCollector *feature_collector);
     /**
      * Buffer flush callback. Optional.
@@ -105,7 +108,8 @@ int vmaf_feature_extractor_context_init(VmafFeatureExtractorContext *fex_ctx,
                                         unsigned bpc, unsigned w, unsigned h);
 
 int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
-                                           VmafPicture *ref, VmafPicture *dist,
+                                           VmafPicture *ref, VmafPicture *ref_90,
+                                           VmafPicture *dist, VmafPicture *dist_90,
                                            unsigned pic_index,
                                            VmafFeatureCollector *vfc);
 

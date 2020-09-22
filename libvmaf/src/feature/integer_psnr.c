@@ -116,10 +116,14 @@ static int psnr10(VmafPicture *ref_pic, VmafPicture *dist_pic,
 }
 
 static int extract(VmafFeatureExtractor *fex,
-                   VmafPicture *ref_pic, VmafPicture *dist_pic,
+                   VmafPicture *ref_pic, VmafPicture *ref_pic_90,
+                   VmafPicture *dist_pic, VmafPicture *dist_pic_90,
                    unsigned index, VmafFeatureCollector *feature_collector)
 {
     PsnrState *s = fex->priv;
+
+    (void) ref_pic_90;
+    (void) dist_pic_90;
 
     switch(ref_pic->bpc) {
     case 8:

@@ -190,8 +190,8 @@ static void threaded_extract_func(void *e)
 {
     struct ThreadData *f = e;
 
-    f->err = vmaf_feature_extractor_context_extract(f->fex_ctx, &f->ref,
-                                                    &f->dist, f->index,
+    f->err = vmaf_feature_extractor_context_extract(f->fex_ctx, &f->ref, NULL,
+                                                    &f->dist, NULL, f->index,
                                                     f->feature_collector);
     f->err = vmaf_fex_ctx_pool_release(f->fex_ctx_pool, f->fex_ctx);
     vmaf_picture_unref(&f->ref);
@@ -301,7 +301,8 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
             continue;
         }
 
-        err = vmaf_feature_extractor_context_extract(fex_ctx, ref, dist, index,
+        err = vmaf_feature_extractor_context_extract(fex_ctx, ref, NULL, dist,
+                                                     NULL, index,
                                                      vmaf->feature_collector);
         if (err) return err;
     }

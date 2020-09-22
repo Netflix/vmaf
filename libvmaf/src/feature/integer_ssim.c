@@ -203,9 +203,13 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 }
 
 static int extract(VmafFeatureExtractor *fex,
-                   VmafPicture *ref_pic, VmafPicture *dist_pic,
+                   VmafPicture *ref_pic, VmafPicture *ref_pic_90,
+                   VmafPicture *dist_pic, VmafPicture *dist_pic_90,
                    unsigned index, VmafFeatureCollector *feature_collector)
 {
+    (void) ref_pic_90;
+    (void) dist_pic_90;
+
     double score =
         calc_ssim(ref_pic->data[0], ref_pic->stride[0],
                   dist_pic->data[0], dist_pic->stride[0], 1.0, ref_pic->bpc,
