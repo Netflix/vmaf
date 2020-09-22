@@ -55,19 +55,29 @@ def convert_pixel_format_ffmpeg2vmafrc(ffmpeg_pix_fmt):
     :param ffmpeg_pix_fmt: FFmpeg-style pixel format, for example: yuv420p, yuv420p10le
     :return: (pixel_format: str, bitdepth: int), for example: (420, 8), (420, 10)
     '''
-    assert ffmpeg_pix_fmt in ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
-    if ffmpeg_pix_fmt in ['yuv420p', 'yuv420p10le']:
+    assert ffmpeg_pix_fmt in ['yuv420p', 'yuv422p', 'yuv444p',
+                              'yuv420p10le', 'yuv422p10le', 'yuv444p10le',
+                              'yuv420p12le', 'yuv422p12le', 'yuv444p12le',
+                              'yuv420p16le', 'yuv422p16le', 'yuv444p16le',
+                              ]
+
+    if ffmpeg_pix_fmt in ['yuv420p', 'yuv420p10le', 'yuv420p12le', 'yuv420p16le']:
         pixel_format = '420'
-    elif ffmpeg_pix_fmt in ['yuv422p', 'yuv422p10le']:
+    elif ffmpeg_pix_fmt in ['yuv422p', 'yuv422p10le', 'yuv422p12le', 'yuv422p16le']:
         pixel_format = '422'
-    elif ffmpeg_pix_fmt in ['yuv444p', 'yuv444p10le']:
+    elif ffmpeg_pix_fmt in ['yuv444p', 'yuv444p10le', 'yuv444p12le', 'yuv444p16le']:
         pixel_format = '444'
     else:
         assert False
+
     if ffmpeg_pix_fmt in ['yuv420p', 'yuv422p', 'yuv444p']:
         bitdepth = 8
     elif ffmpeg_pix_fmt in ['yuv420p10le', 'yuv422p10le', 'yuv444p10le']:
         bitdepth = 10
+    elif ffmpeg_pix_fmt in ['yuv420p12le', 'yuv422p12le', 'yuv444p12le']:
+        bitdepth = 12
+    elif ffmpeg_pix_fmt in ['yuv420p16le', 'yuv422p16le', 'yuv444p16le']:
+        bitdepth = 16
     else:
         assert False
     return pixel_format, bitdepth

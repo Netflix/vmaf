@@ -4,9 +4,12 @@ from vmaf.core.asset import Asset
 
 from vmaf.config import VmafConfig
 
-from test.testutil import set_default_576_324_videos_for_testing
+from test.testutil import set_default_576_324_videos_for_testing, set_default_576_324_12bit_videos_for_testing, \
+    set_default_576_324_16bit_videos_for_testing, set_default_576_324_10bit_videos_for_testing_b
 
-from vmaf.core.vmafrc_feature_extractor import FloatMotionFeatureExtractor, IntegerMotionFeatureExtractor, FloatVifFeatureExtractor, FloatAdmFeatureExtractor, IntegerVifFeatureExtractor, IntegerPsnrFeatureExtractor, IntegerAdmFeatureExtractor
+from vmaf.core.vmafrc_feature_extractor import FloatMotionFeatureExtractor, IntegerMotionFeatureExtractor, \
+    FloatVifFeatureExtractor, FloatAdmFeatureExtractor, IntegerVifFeatureExtractor, IntegerPsnrFeatureExtractor, \
+    IntegerAdmFeatureExtractor
 
 
 class FeatureExtractorTest(unittest.TestCase):
@@ -56,6 +59,18 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 3.895345229166667, places=8)
         self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 3.895345229166667, places=8)
 
+    def test_run_integer_motion_fextractor_12bit(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_12bit_videos_for_testing()
+        self.fextractor = IntegerMotionFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 2.8104533333333332, places=8)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 2.8104533333333332, places=8)
+
     def test_run_float_vif_fextractor(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
         self.fextractor = FloatVifFeatureExtractor(
@@ -92,6 +107,24 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['integer_VIF_feature_vif_scale2_score'], 1.0000022916666667, places=6)
         self.assertAlmostEqual(results[1]['integer_VIF_feature_vif_scale3_score'], 1.0, places=5)
 
+    def test_run_integer_vif_fextractor_12bit(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_12bit_videos_for_testing()
+        self.fextractor = IntegerVifFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale0_score'], 0.4326293333333333, places=6)
+        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale1_score'], 0.8292446666666665, places=6)
+        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale2_score'], 0.9067896666666667, places=6)
+        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale3_score'], 0.9460693333333333, places=6)
+        self.assertAlmostEqual(results[1]['integer_VIF_feature_vif_scale0_score'], 1.000002, places=6)
+        self.assertAlmostEqual(results[1]['integer_VIF_feature_vif_scale1_score'], 1.0000023541666667, places=6)
+        self.assertAlmostEqual(results[1]['integer_VIF_feature_vif_scale2_score'], 1.0000022916666667, places=6)
+        self.assertAlmostEqual(results[1]['integer_VIF_feature_vif_scale3_score'], 1.0, places=5)
+
     def test_run_float_adm_fextractor(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
         self.fextractor = FloatAdmFeatureExtractor(
@@ -119,6 +152,38 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['integer_PSNR_feature_psnr_y_score'], 60.0, places=4)
         self.assertAlmostEqual(results[1]['integer_PSNR_feature_psnr_cb_score'], 60.0, places=4)
         self.assertAlmostEqual(results[1]['integer_PSNR_feature_psnr_cr_score'], 60.0, places=4)
+
+    def test_run_integer_psnr_fextractor_12bit(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_12bit_videos_for_testing()
+        self.fextractor = IntegerPsnrFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_PSNR_feature_psnr_y_score'], 32.577818, places=4)
+        self.assertAlmostEqual(results[0]['integer_PSNR_feature_psnr_cb_score'], 39.044961, places=4)
+        self.assertAlmostEqual(results[0]['integer_PSNR_feature_psnr_cr_score'], 41.286965333333335, places=4)
+        self.assertAlmostEqual(results[1]['integer_PSNR_feature_psnr_y_score'], 84.0, places=4)
+        self.assertAlmostEqual(results[1]['integer_PSNR_feature_psnr_cb_score'], 84.0, places=4)
+        self.assertAlmostEqual(results[1]['integer_PSNR_feature_psnr_cr_score'], 84.0, places=4)
+
+    def test_run_integer_psnr_fextractor_16bit(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_16bit_videos_for_testing()
+        self.fextractor = IntegerPsnrFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_PSNR_feature_psnr_y_score'], 32.579806000000005, places=4)
+        self.assertAlmostEqual(results[0]['integer_PSNR_feature_psnr_cb_score'], 39.04694966666667, places=4)
+        self.assertAlmostEqual(results[0]['integer_PSNR_feature_psnr_cr_score'], 41.288954, places=4)
+        self.assertAlmostEqual(results[1]['integer_PSNR_feature_psnr_y_score'], 108.0, places=4)
+        self.assertAlmostEqual(results[1]['integer_PSNR_feature_psnr_cb_score'], 108.0, places=4)
+        self.assertAlmostEqual(results[1]['integer_PSNR_feature_psnr_cr_score'], 108.0, places=4)
 
     def test_run_float_adm_fextractor_akiyo_multiply(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -247,6 +312,17 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 0.934578625, places=4)
         self.assertAlmostEqual(results[1]['integer_ADM_feature_adm2_score'], 1.000002, places=6)
 
+    def test_run_integer_adm_fextractor_12bit(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_12bit_videos_for_testing()
+        self.fextractor = IntegerAdmFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 0.9518436666666666, places=4)
+        self.assertAlmostEqual(results[1]['integer_ADM_feature_adm2_score'], 1.000002, places=6)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

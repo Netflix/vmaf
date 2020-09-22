@@ -20,6 +20,18 @@ class YuvReader(object):
                                     'gray10le',
                                     ]
 
+    SUPPORTED_YUV_12BIT_LE_TYPES = ['yuv420p12le',
+                                    'yuv422p12le',
+                                    'yuv444p12le',
+                                    'gray12le',
+                                    ]
+
+    SUPPORTED_YUV_16BIT_LE_TYPES = ['yuv420p16le',
+                                    'yuv422p16le',
+                                    'yuv444p16le',
+                                    'gray16le',
+                                    ]
+
     # ex: for yuv420p, the width and height of U/V is 0.5x, 0.5x of Y
     UV_WIDTH_HEIGHT_MULTIPLIERS_DICT = {'yuv420p': (0.5, 0.5),
                                         'yuv422p': (0.5, 1.0),
@@ -29,6 +41,14 @@ class YuvReader(object):
                                         'yuv422p10le': (0.5, 1.0),
                                         'yuv444p10le': (1.0, 1.0),
                                         'gray10le': (0.0, 0.0),
+                                        'yuv420p12le': (0.5, 0.5),
+                                        'yuv422p12le': (0.5, 1.0),
+                                        'yuv444p12le': (1.0, 1.0),
+                                        'gray12le': (0.0, 0.0),
+                                        'yuv420p16le': (0.5, 0.5),
+                                        'yuv422p16le': (0.5, 1.0),
+                                        'yuv444p16le': (1.0, 1.0),
+                                        'gray16le': (0.0, 0.0),
                                         }
 
     def __init__(self, filepath, width, height, yuv_type):
@@ -73,7 +93,7 @@ class YuvReader(object):
     def num_frms(self):
         w_multiplier, h_multiplier = self._get_uv_width_height_multiplier()
 
-        if self._is_10bitle():
+        if self._is_10bitle() or self._is_12bitle() or self._is_16bitle():
             num_frms = float(self.num_bytes) / self.width / self.height / (1.0 + w_multiplier * h_multiplier * 2) / 2
 
         elif self._is_8bit():
@@ -92,7 +112,9 @@ class YuvReader(object):
 
     def _assert_yuv_type(self):
         assert (self.yuv_type in self.SUPPORTED_YUV_8BIT_TYPES
-                or self.yuv_type in self.SUPPORTED_YUV_10BIT_LE_TYPES), \
+                or self.yuv_type in self.SUPPORTED_YUV_10BIT_LE_TYPES
+                or self.yuv_type in self.SUPPORTED_YUV_12BIT_LE_TYPES
+                or self.yuv_type in self.SUPPORTED_YUV_16BIT_LE_TYPES), \
             'Unsupported YUV type: {}'.format(self.yuv_type)
 
     def _assert_file_exist(self):
@@ -116,6 +138,12 @@ class YuvReader(object):
     def _is_10bitle(self):
         return self.yuv_type in self.SUPPORTED_YUV_10BIT_LE_TYPES
 
+    def _is_12bitle(self):
+        return self.yuv_type in self.SUPPORTED_YUV_12BIT_LE_TYPES
+
+    def _is_16bitle(self):
+        return self.yuv_type in self.SUPPORTED_YUV_16BIT_LE_TYPES
+
     def next(self, format='uint'):
 
         assert format == 'uint' or format == 'float'
@@ -126,12 +154,12 @@ class YuvReader(object):
         uv_width = int(y_width * uv_w_multiplier)
         uv_height = int(y_height * uv_h_multiplier)
 
-        if self._is_10bitle():
-            pix_type = np.uint16
-            word = 2
-        elif self._is_8bit():
+        if self._is_8bit():
             pix_type = np.uint8
             word = 1
+        elif self._is_10bitle() or self._is_12bitle() or self._is_16bitle():
+            pix_type = np.uint16
+            word = 2
         else:
             assert False
 
@@ -170,6 +198,16 @@ class YuvReader(object):
                 y = y.astype(np.double) / (2.0**10 - 1.0)
                 u = u.astype(np.double) / (2.0**10 - 1.0) if u is not None else None
                 v = v.astype(np.double) / (2.0**10 - 1.0) if v is not None else None
+                return y, u, v
+            elif self._is_12bitle():
+                y = y.astype(np.double) / (2.0**12 - 1.0)
+                u = u.astype(np.double) / (2.0**12 - 1.0) if u is not None else None
+                v = v.astype(np.double) / (2.0**12 - 1.0) if v is not None else None
+                return y, u, v
+            elif self._is_16bitle():
+                y = y.astype(np.double) / (2.0**16 - 1.0)
+                u = u.astype(np.double) / (2.0**16 - 1.0) if u is not None else None
+                v = v.astype(np.double) / (2.0**16 - 1.0) if v is not None else None
                 return y, u, v
             else:
                 assert False

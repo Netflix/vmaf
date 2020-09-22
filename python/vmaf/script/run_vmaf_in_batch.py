@@ -15,7 +15,12 @@ from vmaf.tools.stats import ListStats
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
-FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 'yuv420p10le', 'yuv422p10le', 'yuv444p10le']
+FMTS = ['yuv420p', 'yuv422p', 'yuv444p', 
+        'yuv420p10le', 'yuv422p10le', 'yuv444p10le',
+        'yuv420p12le', 'yuv422p12le', 'yuv444p12le',
+        'yuv420p16le', 'yuv422p16le', 'yuv444p16le',
+        ]
+
 OUT_FMTS = ['text (default)', 'xml', 'json']
 POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'perc20']
 
@@ -153,7 +158,7 @@ def main():
             print('Asset {asset_id}:'.format(asset_id=result.asset.asset_id))
             print('============================')
             print(result)
-
+        
     return 0
 
 

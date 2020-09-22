@@ -7,11 +7,13 @@ import re
 from vmaf.config import VmafConfig
 from vmaf.core.feature_extractor import VmafFeatureExtractor, MomentFeatureExtractor, \
     PsnrFeatureExtractor, SsimFeatureExtractor, MsSsimFeatureExtractor, VifFrameDifferenceFeatureExtractor, \
-    AnsnrFeatureExtractor
+    AnsnrFeatureExtractor, PypsnrFeatureExtractor
 from vmaf.core.asset import Asset
 from vmaf.core.result_store import FileSystemResultStore
 
-from test.testutil import set_default_576_324_videos_for_testing, set_default_flat_1920_1080_videos_for_testing
+from test.testutil import set_default_576_324_videos_for_testing, set_default_flat_1920_1080_videos_for_testing, \
+    set_default_576_324_10bit_videos_for_testing, set_default_576_324_12bit_videos_for_testing, \
+    set_default_576_324_16bit_videos_for_testing, set_default_576_324_10bit_videos_for_testing_b
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
@@ -230,6 +232,87 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['Moment_feature_dis2nd_score'], 4696.668388042269, places=4)
         self.assertAlmostEqual(results[1]['Moment_feature_disvar_score'], 1121.519917231203, places=4)
 
+    def test_run_moment_fextractor_10bit(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_10bit_videos_for_testing()
+
+        self.fextractor = MomentFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['Moment_feature_ref1st_score'], 59.788567297525134 * 4, places=4)
+        self.assertAlmostEqual(results[0]['Moment_feature_ref2nd_score'], 4696.668388042269 * 16, places=4)
+        self.assertAlmostEqual(results[0]['Moment_feature_refvar_score'], 1121.519917231203 * 16, places=4)
+        self.assertAlmostEqual(results[0]['Moment_feature_dis1st_score'], 61.332006624999984 * 4, places=4)
+        self.assertAlmostEqual(results[0]['Moment_feature_dis2nd_score'], 4798.659574041666 * 16, places=4)
+        self.assertAlmostEqual(results[0]['Moment_feature_disvar_score'], 1036.837184348847 * 16, places=4)
+
+        self.assertAlmostEqual(results[1]['Moment_feature_ref1st_score'], 59.788567297525134 * 4, places=4)
+        self.assertAlmostEqual(results[1]['Moment_feature_ref2nd_score'], 4696.668388042269 * 16, places=4)
+        self.assertAlmostEqual(results[1]['Moment_feature_refvar_score'], 1121.519917231203 * 16, places=4)
+        self.assertAlmostEqual(results[1]['Moment_feature_dis1st_score'], 59.788567297525134 * 4, places=4)
+        self.assertAlmostEqual(results[1]['Moment_feature_dis2nd_score'], 4696.668388042269 * 16, places=4)
+        self.assertAlmostEqual(results[1]['Moment_feature_disvar_score'], 1121.519917231203 * 16, places=4)
+
+    def test_run_moment_fextractor_12bit(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_12bit_videos_for_testing()
+
+        self.fextractor = MomentFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['Moment_feature_ref1st_score'], 979.6711819844536, places=4)
+        self.assertAlmostEqual(results[0]['Moment_feature_ref2nd_score'], 1238135.8363054413, places=4)
+        self.assertAlmostEqual(results[0]['Moment_feature_refvar_score'], 278292.25886465114, places=4)
+        self.assertAlmostEqual(results[0]['Moment_feature_dis1st_score'], 996.2818072702333, places=4)
+        self.assertAlmostEqual(results[0]['Moment_feature_dis2nd_score'], 1255533.4389574758, places=4)
+        self.assertAlmostEqual(results[0]['Moment_feature_disvar_score'], 262952.8893540034, places=4)
+
+        self.assertAlmostEqual(results[1]['Moment_feature_ref1st_score'], 979.6711819844536, places=4)
+        self.assertAlmostEqual(results[1]['Moment_feature_ref2nd_score'], 1238135.8363054413, places=4)
+        self.assertAlmostEqual(results[1]['Moment_feature_refvar_score'], 278292.25886465114, places=4)
+        self.assertAlmostEqual(results[1]['Moment_feature_dis1st_score'], 979.6711819844536, places=4)
+        self.assertAlmostEqual(results[1]['Moment_feature_dis2nd_score'], 1238135.8363054413, places=4)
+        self.assertAlmostEqual(results[1]['Moment_feature_disvar_score'], 278292.25886465114, places=4)
+
+    def test_run_moment_fextractor_16bit(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_16bit_videos_for_testing()
+
+        self.fextractor = MomentFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['Moment_feature_ref1st_score'], 979.6711819844536 * 16.0, places=4)
+        self.assertAlmostEqual(results[0]['Moment_feature_ref2nd_score'], 1238135.8363054413 * 256.0, places=4)
+        self.assertAlmostEqual(results[0]['Moment_feature_refvar_score'], 278292.25886465114 * 256.0, places=4)
+        self.assertAlmostEqual(results[0]['Moment_feature_dis1st_score'], 996.2818072702333 * 16.0, places=4)
+        self.assertAlmostEqual(results[0]['Moment_feature_dis2nd_score'], 1255533.4389574758 * 256.0, places=4)
+        self.assertAlmostEqual(results[0]['Moment_feature_disvar_score'], 262952.8893540034 * 256.0, places=4)
+
+        self.assertAlmostEqual(results[1]['Moment_feature_ref1st_score'], 979.6711819844536 * 16.0, places=4)
+        self.assertAlmostEqual(results[1]['Moment_feature_ref2nd_score'], 1238135.8363054413 * 256.0, places=4)
+        self.assertAlmostEqual(results[1]['Moment_feature_refvar_score'], 278292.25886465114 * 256.0, places=4)
+        self.assertAlmostEqual(results[1]['Moment_feature_dis1st_score'], 979.6711819844536 * 16.0, places=4)
+        self.assertAlmostEqual(results[1]['Moment_feature_dis2nd_score'], 1238135.8363054413 * 256.0, places=4)
+        self.assertAlmostEqual(results[1]['Moment_feature_disvar_score'], 278292.25886465114 * 256.0, places=4)
+
     def test_run_psnr_fextractor(self):
 
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -442,6 +525,106 @@ class FeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['PSNR_feature_psnr_score'], 27.645446604166665, places=8)
         self.assertAlmostEqual(results[1]['PSNR_feature_psnr_score'], 31.87683660416667, places=8)
+
+    def test_run_pypsnr_fextractor(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.fextractor = PypsnrFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['Pypsnr_feature_psnry_score'], 30.755063979166664, places=4)
+        self.assertAlmostEqual(results[0]['Pypsnr_feature_psnru_score'], 38.449441057158786, places=4)
+        self.assertAlmostEqual(results[0]['Pypsnr_feature_psnrv_score'], 40.9919102486235, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_feature_psnry_score'], 60.0, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_feature_psnru_score'], 60.0, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_feature_psnrv_score'], 60.0, places=4)
+
+    def test_run_pypsnr_fextractor_10bit(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_10bit_videos_for_testing()
+
+        self.fextractor = PypsnrFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['Pypsnr_feature_psnry_score'], 30.780573260053277, places=4)
+        self.assertAlmostEqual(results[0]['Pypsnr_feature_psnru_score'], 38.769832063651364, places=4)
+        self.assertAlmostEqual(results[0]['Pypsnr_feature_psnrv_score'], 41.28418847734209, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_feature_psnry_score'], 72.0, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_feature_psnru_score'], 72.0, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_feature_psnrv_score'], 72.0, places=4)
+
+    def test_run_pypsnr_fextractor_10bit_b(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_10bit_videos_for_testing_b()
+
+        self.fextractor = PypsnrFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['Pypsnr_feature_psnry_score'], 32.57145231892744, places=4)
+        self.assertAlmostEqual(results[0]['Pypsnr_feature_psnru_score'], 39.03859552689696, places=4)
+        self.assertAlmostEqual(results[0]['Pypsnr_feature_psnrv_score'], 41.28060001337217, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_feature_psnry_score'], 72.0, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_feature_psnru_score'], 72.0, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_feature_psnrv_score'], 72.0, places=4)
+
+    def test_run_pypsnr_fextractor_12bit(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_12bit_videos_for_testing()
+
+        self.fextractor = PypsnrFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['Pypsnr_feature_psnry_score'], 32.577817940053734, places=4)
+        self.assertAlmostEqual(results[0]['Pypsnr_feature_psnru_score'], 39.044961148023255, places=4)
+        self.assertAlmostEqual(results[0]['Pypsnr_feature_psnrv_score'], 41.28696563449846, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_feature_psnry_score'], 84.0, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_feature_psnru_score'], 84.0, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_feature_psnrv_score'], 84.0, places=4)
+
+    def test_run_pypsnr_fextractor_16bit(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_16bit_videos_for_testing()
+
+        self.fextractor = PypsnrFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['Pypsnr_feature_psnry_score'], 32.579806240311484, places=4)
+        self.assertAlmostEqual(results[0]['Pypsnr_feature_psnru_score'], 39.046949448281005, places=4)
+        self.assertAlmostEqual(results[0]['Pypsnr_feature_psnrv_score'], 41.288953934756215, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_feature_psnry_score'], 108.0, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_feature_psnru_score'], 108.0, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_feature_psnrv_score'], 108.0, places=4)
 
 
 class ParallelFeatureExtractorTest(unittest.TestCase):

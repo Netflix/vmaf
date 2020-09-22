@@ -37,6 +37,20 @@ int psnr_constants(const char *fmt, double *peak, double *psnr_max) {
         *peak = 255.75;
         *psnr_max = 72.0;
     }
+    else if (!strcmp(fmt, "yuv420p12le") || !strcmp(fmt, "yuv422p12le") || !strcmp(fmt, "yuv444p12le"))
+    {
+        // 12 bit gets normalized to 8 bit, peak is (2^12 - 1) / 16.0 = 255.9375
+        // max psnr 84.0 for 12-bit
+        *peak = 255.9375;
+        *psnr_max = 84.0;
+    }
+    else if (!strcmp(fmt, "yuv420p16le") || !strcmp(fmt, "yuv422p16le") || !strcmp(fmt, "yuv444p16le"))
+    {
+        // 16 bit gets normalized to 8 bit, peak is (2^16 - 1)) / 256.0 = 255.99609375
+        // max psnr 108.0 for 16-bit
+        *peak = 255.99609375;
+        *psnr_max = 108.0;
+    }
     else
     {
         return 1;

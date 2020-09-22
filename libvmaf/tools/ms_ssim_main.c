@@ -32,7 +32,13 @@ static void usage(void)
          "\tyuv444p\n"
          "\tyuv420p10le\n"
          "\tyuv422p10le\n"
-         "\tyuv444p10le"
+         "\tyuv444p10le\n"
+         "\tyuv420p12le\n"
+         "\tyuv422p12le\n"
+         "\tyuv444p12le\n"
+         "\tyuv420p16le\n"
+         "\tyuv422p16le\n"
+         "\tyuv444p16le\n"
     );
 }
 

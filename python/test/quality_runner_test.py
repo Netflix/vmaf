@@ -14,7 +14,8 @@ from vmaf.core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner,
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.tools.stats import ListStats
 
-from test.testutil import set_default_576_324_videos_for_testing, set_default_flat_1920_1080_videos_for_testing
+from test.testutil import set_default_576_324_videos_for_testing, set_default_flat_1920_1080_videos_for_testing, \
+    set_default_576_324_10bit_videos_for_testing, set_default_576_324_12bit_videos_for_testing
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
@@ -65,21 +66,7 @@ class QualityRunnerTest(unittest.TestCase):
 
     def test_run_vmaf_legacy_runner_10le(self):
 
-        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv422p10le.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv422p10le.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width': 576, 'height': 324,
-                                  'yuv_type': 'yuv422p10le'})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width': 576, 'height': 324,
-                                  'yuv_type': 'yuv422p10le'})
+        ref_path, dis_path, asset, asset_original = set_default_576_324_10bit_videos_for_testing()
 
         self.runner = VmafLegacyQualityRunner(
             [asset, asset_original],
@@ -103,6 +90,33 @@ class QualityRunnerTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAF_legacy_score'], 65.37503585467225, places=4)
         self.assertAlmostEqual(results[1]['VMAF_legacy_score'], 96.444658329804156, places=4)
+
+    def test_run_vmaf_legacy_runner_12le(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_12bit_videos_for_testing()
+
+        self.runner = VmafLegacyQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            result_store=None
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.5129766666666666, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 2.932176666666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_score'], 0.9517763333333334, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 24.906395333333336, places=4)
+
+        self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 2.932176666666667, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_adm_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 31.004588333333334, places=4)
+
+        self.assertAlmostEqual(results[0]['VMAF_legacy_score'], 72.18465772375357, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_legacy_score'], 95.94112242732263, places=4)
 
     def test_run_vmaf_legacy_runner_with_result_store(self):
 

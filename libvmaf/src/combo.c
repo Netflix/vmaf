@@ -365,6 +365,18 @@ void* combo_threadfunc(void* vmaf_thread_data)
                 // max psnr 72.0 for 10-bit per Ioannis
                 ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score, &score_psnr, 255.75, 72.0);
             }
+            else if (!strcmp(fmt, "yuv420p12le") || !strcmp(fmt, "yuv422p12le") || !strcmp(fmt, "yuv444p12le"))
+            {
+                // 12 bit gets normalized to 8 bit, peak is (2^12 - 1) / 16.0 = 255.9375
+                // max psnr 84.0 for 12-bit
+                ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score, &score_psnr, 255.9375, 84.0);
+            }
+            else if (!strcmp(fmt, "yuv420p16le") || !strcmp(fmt, "yuv422p16le") || !strcmp(fmt, "yuv444p16le"))
+            {
+                // 16 bit gets normalized to 8 bit, peak is (2^16 - 1)) / 256.0 = 255.99609375
+                // max psnr 108.0 for 16-bit
+                ret = compute_ansnr(ref_buf, dis_buf, w, h, stride, stride, &score, &score_psnr, 255.99609375, 108.0);
+            }
             else
             {
                 sprintf(errmsg, "unknown format %s.\n", fmt);
