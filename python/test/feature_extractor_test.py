@@ -13,7 +13,7 @@ from vmaf.core.result_store import FileSystemResultStore
 
 from test.testutil import set_default_576_324_videos_for_testing, set_default_flat_1920_1080_videos_for_testing, \
     set_default_576_324_10bit_videos_for_testing, set_default_576_324_12bit_videos_for_testing, \
-    set_default_576_324_16bit_videos_for_testing
+    set_default_576_324_16bit_videos_for_testing, set_default_576_324_10bit_videos_for_testing_b
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
@@ -562,6 +562,26 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['Pypsnr_feature_psnry_score'], 30.780573260053277, places=4)
         self.assertAlmostEqual(results[0]['Pypsnr_feature_psnru_score'], 38.769832063651364, places=4)
         self.assertAlmostEqual(results[0]['Pypsnr_feature_psnrv_score'], 41.28418847734209, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_feature_psnry_score'], 72.0, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_feature_psnru_score'], 72.0, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_feature_psnrv_score'], 72.0, places=4)
+
+    def test_run_pypsnr_fextractor_10bit_b(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_10bit_videos_for_testing_b()
+
+        self.fextractor = PypsnrFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['Pypsnr_feature_psnry_score'], 32.57145231892744, places=4)
+        self.assertAlmostEqual(results[0]['Pypsnr_feature_psnru_score'], 39.03859552689696, places=4)
+        self.assertAlmostEqual(results[0]['Pypsnr_feature_psnrv_score'], 41.28060001337217, places=4)
         self.assertAlmostEqual(results[1]['Pypsnr_feature_psnry_score'], 72.0, places=4)
         self.assertAlmostEqual(results[1]['Pypsnr_feature_psnru_score'], 72.0, places=4)
         self.assertAlmostEqual(results[1]['Pypsnr_feature_psnrv_score'], 72.0, places=4)

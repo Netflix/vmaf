@@ -101,7 +101,7 @@ fail_or_end:
 /**
  * Note: stride is in terms of bytes; image is 10-bit little-endian
  */
-static int read_image_w(FILE * rfile, float *buf, float off, int width, int height, int stride)
+static int read_image_w(FILE * rfile, float *buf, float off, int width, int height, int stride, float scaler)
 {
 	// make sure unsigned short is 2 bytes
 	assert(sizeof(unsigned short) == 2);
@@ -132,8 +132,7 @@ static int read_image_w(FILE * rfile, float *buf, float off, int width, int heig
 
 		for (j = 0; j < width; ++j)
 		{
-			//row_ptr[j] = tmp_buf[j] / 4.0 + off; // '/4' to convert from 10 to 8-bit
-            row_ptr[j] = tmp_buf[j] + off; 
+			row_ptr[j] = tmp_buf[j] / scaler + off; // '/4' to convert from x-bit to 8-bit
         }
 
 		byte_ptr += stride;
@@ -161,10 +160,17 @@ int read_frame(float *ref_data, float *dis_data, float *temp_data, int stride_by
     {
         ret = read_image_b(user_data->ref_rfile, ref_data, 0, w, h, stride_byte);
     }
-    else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le") ||
-             !strcmp(fmt, "yuv420p12le") || !strcmp(fmt, "yuv422p12le") || !strcmp(fmt, "yuv444p12le"))
+    else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
     {
-        ret = read_image_w(user_data->ref_rfile, ref_data, 0, w, h, stride_byte);
+        ret = read_image_w(user_data->ref_rfile, ref_data, 0, w, h, stride_byte, 4.0f);
+    }
+    else if (!strcmp(fmt, "yuv420p12le") || !strcmp(fmt, "yuv422p12le") || !strcmp(fmt, "yuv444p12le"))
+    {
+        ret = read_image_w(user_data->ref_rfile, ref_data, 0, w, h, stride_byte, 16.0f);
+    }
+    else if (!strcmp(fmt, "yuv420p16le") || !strcmp(fmt, "yuv422p16le") || !strcmp(fmt, "yuv444p16le"))
+    {
+        ret = read_image_w(user_data->ref_rfile, ref_data, 0, w, h, stride_byte, 256.0f);
     }
     else
     {
@@ -185,10 +191,17 @@ int read_frame(float *ref_data, float *dis_data, float *temp_data, int stride_by
     {
         ret = read_image_b(user_data->dis_rfile, dis_data, 0, w, h, stride_byte);
     }
-    else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le") ||
-             !strcmp(fmt, "yuv420p12le") || !strcmp(fmt, "yuv422p12le") || !strcmp(fmt, "yuv444p12le"))
+    else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
     {
-        ret = read_image_w(user_data->dis_rfile, dis_data, 0, w, h, stride_byte);
+        ret = read_image_w(user_data->dis_rfile, dis_data, 0, w, h, stride_byte, 4.0f);
+    }
+    else if (!strcmp(fmt, "yuv420p12le") || !strcmp(fmt, "yuv422p12le") || !strcmp(fmt, "yuv444p12le"))
+    {
+        ret = read_image_w(user_data->dis_rfile, dis_data, 0, w, h, stride_byte, 16.0f);
+    }
+    else if (!strcmp(fmt, "yuv420p16le") || !strcmp(fmt, "yuv422p16le") || !strcmp(fmt, "yuv444p16le"))
+    {
+        ret = read_image_w(user_data->dis_rfile, dis_data, 0, w, h, stride_byte, 256.0f);
     }
     else
     {
@@ -214,7 +227,9 @@ int read_frame(float *ref_data, float *dis_data, float *temp_data, int stride_by
         }
     }
     else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le") ||
-             !strcmp(fmt, "yuv420p12le") || !strcmp(fmt, "yuv422p12le") || !strcmp(fmt, "yuv444p12le"))
+             !strcmp(fmt, "yuv420p12le") || !strcmp(fmt, "yuv422p12le") || !strcmp(fmt, "yuv444p12le") ||
+             !strcmp(fmt, "yuv420p16le") || !strcmp(fmt, "yuv422p16le") || !strcmp(fmt, "yuv444p16le")
+            )
     {
         if (fread(temp_data, 2, user_data->offset, user_data->ref_rfile) != (size_t)user_data->offset)
         {
@@ -238,7 +253,9 @@ int read_frame(float *ref_data, float *dis_data, float *temp_data, int stride_by
         }
     }
     else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le") ||
-             !strcmp(fmt, "yuv420p12le") || !strcmp(fmt, "yuv422p12le") || !strcmp(fmt, "yuv444p12le"))
+             !strcmp(fmt, "yuv420p12le") || !strcmp(fmt, "yuv422p12le") || !strcmp(fmt, "yuv444p12le") ||
+             !strcmp(fmt, "yuv420p16le") || !strcmp(fmt, "yuv422p16le") || !strcmp(fmt, "yuv444p16le")
+            )
     {
         if (fread(temp_data, 2, user_data->offset, user_data->dis_rfile) != (size_t)user_data->offset)
         {
@@ -272,10 +289,17 @@ int read_noref_frame(float *dis_data, float *temp_data, int stride_byte, void *s
     {
         ret = read_image_b(user_data->dis_rfile, dis_data, 0, w, h, stride_byte);
     }
-    else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le") ||
-             !strcmp(fmt, "yuv420p12le") || !strcmp(fmt, "yuv422p12le") || !strcmp(fmt, "yuv444p12le"))
+    else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
     {
-        ret = read_image_w(user_data->dis_rfile, dis_data, 0, w, h, stride_byte);
+        ret = read_image_w(user_data->dis_rfile, dis_data, 0, w, h, stride_byte, 4.0f);
+    }
+    else if (!strcmp(fmt, "yuv420p12le") || !strcmp(fmt, "yuv422p12le") || !strcmp(fmt, "yuv444p12le"))
+    {
+        ret = read_image_w(user_data->dis_rfile, dis_data, 0, w, h, stride_byte, 16.0f);
+    }
+    else if (!strcmp(fmt, "yuv420p16le") || !strcmp(fmt, "yuv422p16le") || !strcmp(fmt, "yuv444p16le"))
+    {
+        ret = read_image_w(user_data->dis_rfile, dis_data, 0, w, h, stride_byte, 256.0f);
     }
     else
     {
@@ -301,7 +325,9 @@ int read_noref_frame(float *dis_data, float *temp_data, int stride_byte, void *s
         }
     }
     else if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le") ||
-             !strcmp(fmt, "yuv420p12le") || !strcmp(fmt, "yuv422p12le") || !strcmp(fmt, "yuv444p12le"))
+            !strcmp(fmt, "yuv420p12le") || !strcmp(fmt, "yuv422p12le") || !strcmp(fmt, "yuv444p12le") ||
+            !strcmp(fmt, "yuv420p16le") || !strcmp(fmt, "yuv422p16le") || !strcmp(fmt, "yuv444p16le")
+             )
     {
         if (fread(temp_data, 2, user_data->offset, user_data->dis_rfile) != (size_t)user_data->offset)
         {

@@ -49,7 +49,7 @@ static bool cmdOptionExists(char** begin, char** end, const std::string& option)
 static void print_usage(int argc, char *argv[])
 {
     fprintf(stderr, "Usage: %s fmt width height ref_path dis_path model_path [--log log_path] [--log-fmt log_fmt] [--thread n_thread] [--subsample n_subsample] [--disable-clip] [--disable-avx] [--psnr] [--ssim] [--ms-ssim] [--phone-model] [--pool pool_method] [--ci]\n", argv[0]);
-    fprintf(stderr, "fmt:\n\tyuv420p\n\tyuv422p\n\tyuv444p\n\tyuv420p10le\n\tyuv422p10le\n\tyuv444p10le\n\n");
+    fprintf(stderr, "fmt:\n\tyuv420p\n\tyuv422p\n\tyuv444p\n\tyuv420p10le\n\tyuv422p10le\n\tyuv444p10le\n\tyuv420p12le\n\tyuv422p12le\n\tyuv444p12le\n\tyuv420p16le\n\tyuv422p16le\n\tyuv444p16le\n\n");
     fprintf(stderr, "log_fmt:\n\txml (default)\n\tjson\n\tcsv\n\n");
     fprintf(stderr, "n_thread:\n\tmaximum threads to use (default 0 - use all threads)\n\n");
     fprintf(stderr, "n_subsample:\n\tn indicates computing on one of every n frames (default 1)\n\n");
@@ -119,7 +119,7 @@ static int run_wrapper(char *fmt, int width, int height, char *ref_path, char *d
     s->ref_rfile = NULL;
     s->dis_rfile = NULL;
 
-    if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv420p10le"))
+    if (!strcmp(fmt, "yuv420p") || !strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv420p12le") || !strcmp(fmt, "yuv420p16le"))
     {
         if ((width * height) % 2 != 0)
         {
@@ -129,11 +129,11 @@ static int run_wrapper(char *fmt, int width, int height, char *ref_path, char *d
         }
         s->offset = width * height / 2;
     }
-    else if (!strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv422p10le"))
+    else if (!strcmp(fmt, "yuv422p") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv422p12le") || !strcmp(fmt, "yuv422p16le"))
     {
         s->offset = width * height;
     }
-    else if (!strcmp(fmt, "yuv444p") || !strcmp(fmt, "yuv444p10le"))
+    else if (!strcmp(fmt, "yuv444p") || !strcmp(fmt, "yuv444p10le") || !strcmp(fmt, "yuv444p12le") || !strcmp(fmt, "yuv444p16le"))
     {
         s->offset = width * height * 2;
     }
@@ -170,7 +170,10 @@ static int run_wrapper(char *fmt, int width, int height, char *ref_path, char *d
 #endif
         {
             size_t frame_size = width * height + s->offset;
-            if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le"))
+            if (!strcmp(fmt, "yuv420p10le") || !strcmp(fmt, "yuv422p10le") || !strcmp(fmt, "yuv444p10le")
+                || !strcmp(fmt, "yuv420p12le") || !strcmp(fmt, "yuv422p12le") || !strcmp(fmt, "yuv444p12le")
+                || !strcmp(fmt, "yuv420p16le") || !strcmp(fmt, "yuv422p16le") || !strcmp(fmt, "yuv444p16le")
+            )
             {
                 frame_size *= 2;
             }
