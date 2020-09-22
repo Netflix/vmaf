@@ -20,7 +20,9 @@
 #define __VMAF_SRC_MODEL_H__
 
 #include <stdbool.h>
+
 #include "dict.h"
+#include "libvmaf/model.h"
 
 enum VmafModelType {
     VMAF_MODEL_TYPE_UNKNOWN = 0,
@@ -63,5 +65,17 @@ typedef struct VmafModel {
     } score_transform;
     struct svm_model *svm;
 } VmafModel;
+
+typedef struct VmafModelCollection {
+    VmafModel **model;
+    unsigned cnt, size;
+    enum VmafModelType type;
+    const char *name;
+} VmafModelCollection;
+
+char *vmaf_model_generate_name(VmafModelConfig *cfg);
+
+int vmaf_model_collection_append(VmafModelCollection **model_collection,
+                                 VmafModel *model);
 
 #endif /* __VMAF_SRC_MODEL_H__ */

@@ -188,14 +188,44 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    VmafModel *model[c.model_cnt];
+    VmafModel **model = malloc(sizeof(*model) * c.model_cnt);
+    VmafModelCollection **model_collection =
+        malloc(sizeof(*model_collection) * c.model_cnt);
+    const char *model_collection_path[c.model_cnt];
+    unsigned model_collection_cnt = 0;
+
     for (unsigned i = 0; i < c.model_cnt; i++) {
-        err = vmaf_model_load_from_path(&model[i], &c.model_config[i]);
+        err = vmaf_model_load_from_path(&model[i], &c.model_config[i].cfg,
+                                        c.model_config[i].path);
         if (err) {
-            fprintf(stderr, "problem loading model file: %s\n",
-                    c.model_config[i].path);
-            return -1;
+            // check for model_collection before failing
+            // this is implicit because the `--model` option could take either
+            // a model or model_collection
+            err = vmaf_model_collection_load_from_path(&model[i],
+                                        &model_collection[model_collection_cnt],
+                                        &c.model_config[i].cfg,
+                                        c.model_config[i].path);
+            if (err) {
+                fprintf(stderr, "problem loading model file: %s\n",
+                        c.model_config[i].path);
+                return -1;
+            }
+
+            model_collection_path[model_collection_cnt] = c.model_config[i].path;
+
+            err = vmaf_use_features_from_model_collection(vmaf,
+                                        model_collection[model_collection_cnt]);
+            if (err) {
+                fprintf(stderr,
+                        "problem loading feature extractors from "
+                        "model collection file: %s\n",
+                        c.model_config[i].path);
+                return -1;
+            }
+
+            model_collection_cnt++;
         }
+
         err = vmaf_use_features_from_model(vmaf, model[i]);
         if (err) {
             fprintf(stderr,
@@ -271,12 +301,37 @@ int main(int argc, char *argv[])
         fprintf(stderr, "%s: %f\n", c.model_config[i].path, vmaf_score);
     }
 
+    for (unsigned i = 0; i < model_collection_cnt; i++) {
+        VmafModelCollectionScore score = { 0 };
+        err = vmaf_score_pooled_model_collection(vmaf, model_collection[i],
+                                                 VMAF_POOL_METHOD_MEAN, &score,
+                                                 0, picture_index - 1);
+        if (err) {
+            fprintf(stderr, "problem generating pooled VMAF score\n");
+            return -1;
+        }
+
+        switch (score.type) {
+        case VMAF_MODEL_COLLECTION_SCORE_BOOTSTRAP:
+            fprintf(stderr, "%s: %f, ci.p95: [%f, %f], stddev: %f\n",
+                    model_collection_path[i],
+                    score.bootstrap.bagging_score, score.bootstrap.ci.p95.lo,
+                    score.bootstrap.ci.p95.hi,
+                    score.bootstrap.stddev);
+            break;
+        default:
+            break;
+        }
+    }
+
     if (c.output_path)
         vmaf_write_output(vmaf, c.output_path, c.output_fmt);
 
-    for (unsigned i = 0; i < c.model_cnt; i++) {
+    for (unsigned i = 0; i < c.model_cnt; i++)
         vmaf_model_destroy(model[i]);
-    }
+
+    for (unsigned i = 0; i < model_collection_cnt; i++)
+        vmaf_model_collection_destroy(model_collection[i]);
 
     video_input_close(&vid_ref);
     video_input_close(&vid_dist);

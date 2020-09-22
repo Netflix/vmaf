@@ -301,6 +301,7 @@ libvmaf_rc_feature_static_lib = static_library(
 
 libvmaf_rc_sources = [
     src_dir + 'libvmaf.rc.c',
+    src_dir + 'bootstrap.c',
     src_dir + 'predict.c',
     src_dir + 'model.c',
     src_dir + 'unpickle.cpp',
