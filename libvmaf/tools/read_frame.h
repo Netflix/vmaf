@@ -21,7 +21,7 @@
 
 struct data
 {
-    char* format; /* yuv420p, yuv422p, yuv444p, yuv420p10le, yuv422p10le, yuv444p10le */
+    char* format; /* yuv420p, yuv422p, yuv444p, yuv420p10le, yuv422p10le, yuv444p10le, yuv420p12le, yuv422p12le, yuv444p12le, yuv420p16le, yuv422p16le, yuv444p16le */
     int width;
     int height;
     size_t offset;
@@ -32,7 +32,7 @@ struct data
 
 struct noref_data
 {
-    char* format; /* yuv420p, yuv422p, yuv444p, yuv420p10le, yuv422p10le, yuv444p10le */
+    char* format; /* yuv420p, yuv422p, yuv444p, yuv420p10le, yuv422p10le, yuv444p10le, yuv420p12le, yuv422p12le, yuv444p12le, yuv420p16le, yuv422p16le, yuv444p16le */
     int width;
     int height;
     size_t offset;

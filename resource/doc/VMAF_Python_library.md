@@ -76,6 +76,8 @@ The arguments are the following:
 - `format` can be one of:
     - `yuv420p`, `yuv422p`, `yuv444p` (8-Bit YUV)
     - `yuv420p10le`, `yuv422p10le`, `yuv444p10le` (10-Bit little-endian YUV)
+    - `yuv420p12le`, `yuv422p12le`, `yuv444p12le` (12-Bit little-endian YUV)
+    - `yuv420p16le`, `yuv422p16le`, `yuv444p16le` (16-Bit little-endian YUV)
 - `width` and `height` are the width and height of the videos, in pixels
 - `reference_path` and `distorted_path` are the paths to the reference and distorted video files
 - `output_format` can be one of:

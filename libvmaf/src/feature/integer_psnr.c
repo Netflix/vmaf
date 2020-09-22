@@ -65,7 +65,7 @@ static int psnr8(VmafPicture *ref_pic, VmafPicture *dist_pic,
         }
         noise /= (ref_pic->w[i] * ref_pic->h[i]);
 
-        double eps = 1e-10;
+        double eps = 1e-16; // make consistent with PyspnrFeatureExtractor
         double psnr_max = 60.;
         double peak = 255.0;
         double score = MIN(10 * log10(peak * peak / MAX(noise, eps)), psnr_max);
@@ -79,9 +79,9 @@ static int psnr8(VmafPicture *ref_pic, VmafPicture *dist_pic,
     return 0;
 }
 
-static int psnr10(VmafPicture *ref_pic, VmafPicture *dist_pic,
-                  unsigned index, VmafFeatureCollector *feature_collector,
-                  bool enable_chroma)
+static int psnr10plus(VmafPicture *ref_pic, VmafPicture *dist_pic,
+                      unsigned index, VmafFeatureCollector *feature_collector,
+                      bool enable_chroma, float scaler, double peak, double psnr_max)
 {
     int err = 0;
     const unsigned n = enable_chroma ? 3 : 1;
@@ -93,7 +93,7 @@ static int psnr10(VmafPicture *ref_pic, VmafPicture *dist_pic,
         double noise = 0.;
         for (unsigned j = 0; j < ref_pic->h[i]; j++) {
             for (unsigned k = 0; k < ref_pic->w[i]; k++) {
-                double diff = (ref[k] / 4.0) - (dist[k] / 4.0);
+                double diff = (ref[k] / scaler) - (dist[k] / scaler);
                 noise += diff * diff;
             }
             ref += (ref_pic->stride[i] / 2);
@@ -101,9 +101,7 @@ static int psnr10(VmafPicture *ref_pic, VmafPicture *dist_pic,
         }
         noise /= (ref_pic->w[i] * ref_pic->h[i]);
 
-        double eps = 1e-10;
-        double psnr_max = 72.;
-        double peak = 255.75;
+        double eps = 1e-16; // make consistent with PyspnrFeatureExtractor
         double score = MIN(10 * log10(peak * peak / MAX(noise, eps)), psnr_max);
 
         const char *feature_name[3] = { "psnr_y", "psnr_cb", "psnr_cr" };
@@ -126,8 +124,14 @@ static int extract(VmafFeatureExtractor *fex,
         return psnr8(ref_pic, dist_pic, index, feature_collector,
                      s->enable_chroma);
     case 10:
-        return psnr10(ref_pic, dist_pic, index, feature_collector,
-                      s->enable_chroma);
+        return psnr10plus(ref_pic, dist_pic, index, feature_collector,
+                          s->enable_chroma, 4.0f, 255.75, 72.0);
+    case 12:
+        return psnr10plus(ref_pic, dist_pic, index, feature_collector,
+                          s->enable_chroma, 16.0f, 255.9375, 84.0);
+    case 16:
+        return psnr10plus(ref_pic, dist_pic, index, feature_collector,
+                          s->enable_chroma, 256.0f, 255.99609375, 108.0);
     default:
         return -EINVAL;
     }

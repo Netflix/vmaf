@@ -118,8 +118,8 @@ static unsigned parse_bitdepth(const char *const optarg, const int option,
                                const char *const app)
 {
     unsigned bitdepth = parse_unsigned(optarg, option, app);
-    if (!((bitdepth == 8) || (bitdepth == 10) || (bitdepth == 12)))
-        error(app, optarg, option, "a valid bitdepth (8/10/12)");
+    if (!((bitdepth == 8) || (bitdepth == 10) || (bitdepth == 12) || (bitdepth == 16)))
+        error(app, optarg, option, "a valid bitdepth (8/10/12/16)");
     return bitdepth;
 }
 
