@@ -2636,11 +2636,15 @@ free_ref:
 }
 
 static int extract(VmafFeatureExtractor *fex,
-                   VmafPicture *ref_pic, VmafPicture *dist_pic,
+                   VmafPicture *ref_pic, VmafPicture *ref_pic_90,
+                   VmafPicture *dist_pic, VmafPicture *dist_pic_90,
                    unsigned index, VmafFeatureCollector *feature_collector)
 {
     AdmState *s = fex->priv;
     int err = 0;
+
+    (void) ref_pic_90;
+    (void) dist_pic_90;
 
     double score;
     double scores[8];

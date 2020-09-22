@@ -292,11 +292,15 @@ static inline double normalize_and_scale_sad(uint64_t sad,
 }
 
 static int extract(VmafFeatureExtractor *fex,
-                   VmafPicture *ref_pic, VmafPicture *dist_pic,
+                   VmafPicture *ref_pic, VmafPicture *ref_pic_90,
+                   VmafPicture *dist_pic, VmafPicture *dist_pic_90,
                    unsigned index, VmafFeatureCollector *feature_collector)
 {
     MotionState *s = fex->priv;
+
     (void) dist_pic;
+    (void) ref_pic_90;
+    (void) dist_pic_90;
 
     s->index = index;
     const unsigned blur_idx_0 = (index + 0) % 3;

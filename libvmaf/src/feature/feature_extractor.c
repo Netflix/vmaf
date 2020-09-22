@@ -150,7 +150,8 @@ int vmaf_feature_extractor_context_init(VmafFeatureExtractorContext *fex_ctx,
 }
 
 int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
-                                           VmafPicture *ref, VmafPicture *dist,
+                                           VmafPicture *ref, VmafPicture *ref_90,
+                                           VmafPicture *dist, VmafPicture *dist_90,
                                            unsigned pic_index,
                                            VmafFeatureCollector *vfc)
 {
@@ -167,7 +168,8 @@ int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
         if (err) return err;
     }
 
-    return fex_ctx->fex->extract(fex_ctx->fex, ref, dist, pic_index, vfc);
+    return fex_ctx->fex->extract(fex_ctx->fex, ref, ref_90, dist, dist_90,
+                                 pic_index, vfc);
 }
 
 int vmaf_feature_extractor_context_flush(VmafFeatureExtractorContext *fex_ctx,

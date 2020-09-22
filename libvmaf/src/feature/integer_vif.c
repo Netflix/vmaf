@@ -618,23 +618,28 @@ fail:
 }
 
 static int extract(VmafFeatureExtractor *fex,
-                   VmafPicture *ref_pic, VmafPicture *dis_pic,
+                   VmafPicture *ref_pic, VmafPicture *ref_pic_90,
+                   VmafPicture *dist_pic, VmafPicture *dist_pic_90,
                    unsigned index, VmafFeatureCollector *feature_collector)
 {
     VifState *s = fex->priv;
+
+    (void) ref_pic_90;
+    (void) dist_pic_90;
+
     unsigned w = ref_pic->w[0];
-    unsigned h = dis_pic->h[0];
+    unsigned h = dist_pic->h[0];
 
     void *ref_in = ref_pic->data[0];
-    void *dis_in = dis_pic->data[0];
+    void *dis_in = dist_pic->data[0];
     void *ref_out = s->buf.ref;
     void *dis_out = s->buf.dis;
 
     for (unsigned i = 0; i < h; i++) {
         memcpy(ref_out, ref_in, ref_pic->stride[0]);
-        memcpy(dis_out, dis_in, dis_pic->stride[0]);
+        memcpy(dis_out, dis_in, dist_pic->stride[0]);
         ref_in += ref_pic->stride[0];
-        dis_in += dis_pic->stride[0];
+        dis_in += dist_pic->stride[0];
         ref_out += s->buf.stride;
         dis_out += s->buf.stride;
     }

@@ -97,11 +97,16 @@ static int flush(VmafFeatureExtractor *fex,
 }
 
 static int extract(VmafFeatureExtractor *fex,
-                   VmafPicture *ref_pic, VmafPicture *dist_pic,
+                   VmafPicture *ref_pic, VmafPicture *ref_pic_90,
+                   VmafPicture *dist_pic, VmafPicture *dist_pic_90,
                    unsigned index, VmafFeatureCollector *feature_collector)
 {
     MotionState *s = fex->priv;
     int err = 0;
+
+    (void) dist_pic;
+    (void) ref_pic_90;
+    (void) dist_pic_90;
 
     if (s->motion_force_zero) {
         err = vmaf_feature_collector_append(feature_collector,
