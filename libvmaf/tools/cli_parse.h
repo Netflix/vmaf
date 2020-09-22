@@ -16,6 +16,11 @@ typedef struct {
 } CLIFeatureConfig;
 
 typedef struct {
+    const char *path;
+    VmafModelConfig cfg;
+} CLIModelConfig;
+
+typedef struct {
     char *path_ref, *path_dist;
     unsigned width, height;
     enum VmafPixelFormat pix_fmt;
@@ -23,8 +28,10 @@ typedef struct {
     bool use_yuv;
     char *output_path;
     enum VmafOutputFormat output_fmt;
-    VmafModelConfig model_config[CLI_SETTINGS_STATIC_ARRAY_LEN];
+    CLIModelConfig model_config[CLI_SETTINGS_STATIC_ARRAY_LEN];
     unsigned model_cnt;
+    CLIModelConfig model_collection_config[CLI_SETTINGS_STATIC_ARRAY_LEN];
+    unsigned model_collection_cnt;
     CLIFeatureConfig feature_cfg[CLI_SETTINGS_STATIC_ARRAY_LEN];
     unsigned feature_cnt;
     enum VmafLogLevel log_level;

@@ -17,6 +17,7 @@
  */
 
 #include <stdint.h>
+
 #include "test.h"
 #include "model.c"
 
@@ -25,10 +26,9 @@ static char *test_model_load_and_destroy()
     int err;
 
     VmafModel *model;
-    VmafModelConfig cfg = {
-        .path = "../../model/vmaf_v0.6.1.pkl",
-    };
-    err = vmaf_model_load_from_path(&model, &cfg);
+    VmafModelConfig cfg = { 0 };
+    const char *path = "../../model/vmaf_v0.6.1.pkl";
+    err = vmaf_model_load_from_path(&model, &cfg, path);
     mu_assert("problem during vmaf_model_load_from_path", !err);
 
     /*
@@ -45,16 +45,30 @@ static char *test_model_load_and_destroy()
     return NULL;
 }
 
+static char *test_model_collection()
+{
+    int err = 0;
+    const char *path = "../../model/vmaf_rb_v0.6.3/vmaf_rb_v0.6.3.pkl";
+    VmafModelCollection *model_collection = NULL;
+    const VmafModelConfig cfg = { 0 };
+
+    err = vmaf_model_collection_load_from_path(&model_collection, &cfg, path);
+    mu_assert("problem during load_model_collection", !err);
+    vmaf_model_collection_destroy(model_collection);
+
+    return NULL;
+}
+
 static char *test_model_check_default_behavior_unset_flags()
 {
     int err;
 
     VmafModel *model;
     VmafModelConfig cfg = {
-        .path = "../../model/vmaf_v0.6.1.pkl",
         .name = "some_vmaf",
     };
-    err = vmaf_model_load_from_path(&model, &cfg);
+    const char *path = "../../model/vmaf_v0.6.1.pkl";
+    err = vmaf_model_load_from_path(&model, &cfg, path);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("Model name is inconsistent.\n", !strcmp(model->name, "some_vmaf"));
     mu_assert("Clipping must be enabled by default.\n", model->score_clip.enabled);
@@ -73,11 +87,11 @@ static char *test_model_check_default_behavior_set_flags()
 
     VmafModel *model;
     VmafModelConfig cfg = {
-        .path = "../../model/vmaf_v0.6.1.pkl",
         .name = "some_vmaf",
         .flags = VMAF_MODEL_FLAGS_DEFAULT,
     };
-    err = vmaf_model_load_from_path(&model, &cfg);
+    const char *path = "../../model/vmaf_v0.6.1.pkl";
+    err = vmaf_model_load_from_path(&model, &cfg, path);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("Model name is inconsistent.\n", !strcmp(model->name, "some_vmaf"));
     mu_assert("Clipping must be enabled by default.\n", model->score_clip.enabled);
@@ -96,10 +110,10 @@ static char *test_model_set_flags()
 
     VmafModel *model1;
     VmafModelConfig cfg1 = {
-        .path = "../../model/vmaf_v0.6.1.pkl",
         .flags = VMAF_MODEL_FLAG_ENABLE_TRANSFORM,
     };
-    err = vmaf_model_load_from_path(&model1, &cfg1);
+    const char *path1 = "../../model/vmaf_v0.6.1.pkl";
+    err = vmaf_model_load_from_path(&model1, &cfg1, path1);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("Score transform must be enabled.\n",
               model1->score_transform.enabled);
@@ -109,10 +123,10 @@ static char *test_model_set_flags()
 
     VmafModel *model2;
     VmafModelConfig cfg2 = {
-        .path = "../../model/vmaf_v0.6.1.pkl",
         .flags = VMAF_MODEL_FLAG_DISABLE_CLIP,
     };
-    err = vmaf_model_load_from_path(&model2, &cfg2);
+    const char *path2 = "../../model/vmaf_v0.6.1.pkl";
+    err = vmaf_model_load_from_path(&model2, &cfg2, path2);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("Score transform must be disabled.\n",
               !model2->score_transform.enabled);
@@ -121,10 +135,9 @@ static char *test_model_set_flags()
     vmaf_model_destroy(model2);
 
     VmafModel  *model3;
-    VmafModelConfig  cfg3 = {
-            .path = "../../model/vmaf_v0.6.1.pkl",
-    };
-    err = vmaf_model_load_from_path(&model3, &cfg3);
+    VmafModelConfig  cfg3 = { 0 };
+    const char *path3 = "../../model/vmaf_v0.6.1.pkl";
+    err = vmaf_model_load_from_path(&model3, &cfg3, path3);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("feature[0].opts_dict must be NULL.\n",
               !model3->feature[0].opts_dict);
@@ -140,10 +153,9 @@ static char *test_model_set_flags()
               !model3->feature[5].opts_dict);
 
     VmafModel  *model4;
-    VmafModelConfig  cfg4 = {
-            .path = "../../model/vmaf_v0.6.1neg.pkl",
-    };
-    err = vmaf_model_load_from_path(&model4, &cfg4);
+    VmafModelConfig  cfg4 = { 0 };
+    const char *path4 = "../../model/vmaf_v0.6.1neg.pkl";
+    err = vmaf_model_load_from_path(&model4, &cfg4, path4);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("feature[0].opts_dict must not be NULL.\n",
               model4->feature[0].opts_dict);
@@ -191,6 +203,7 @@ static char *test_model_set_flags()
 char *run_tests()
 {
     mu_run_test(test_model_load_and_destroy);
+    mu_run_test(test_model_collection);
     mu_run_test(test_model_check_default_behavior_unset_flags);
     mu_run_test(test_model_check_default_behavior_set_flags);
     mu_run_test(test_model_set_flags);

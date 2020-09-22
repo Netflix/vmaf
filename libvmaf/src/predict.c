@@ -19,8 +19,10 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#include "bootstrap.h"
 #include "feature/feature_collector.h"
 #include "model.h"
+#include "predict.h"
 #include "svm.h"
 
 static int normalize(VmafModel *model, double slope, double intercept,
@@ -138,4 +140,21 @@ int vmaf_predict_score_at_index(VmafModel *model,
 free_node:
     free(node);
     return err;
+}
+
+int vmaf_predict_score_at_index_model_collection(
+                                VmafModelCollection *model_collection,
+                                VmafFeatureCollector *feature_collector,
+                                unsigned index,
+                                VmafModelCollectionScore *score)
+{
+    switch (model_collection->type) {
+    case VMAF_MODEL_BOOTSTRAP_SVM_NUSVR:
+    case VMAF_MODEL_RESIDUE_BOOTSTRAP_SVM_NUSVR:
+        return vmaf_bootstrap_predict_score_at_index(model_collection,
+                                                     feature_collector,
+                                                     index, score);
+    default:
+        return -EINVAL;
+    }
 }

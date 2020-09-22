@@ -16,20 +16,15 @@
  *
  */
 
-#ifndef __VMAF_PREDICT_H__
-#define __VMAF_PREDICT_H__
+#ifndef __VMAF_SRC_BOOTSTRAP_H__
+#define __VMAF_SRC_BOOTSTRAP_H__
 
 #include "feature/feature_collector.h"
-#include "model.h"
+#include "predict.h"
 
-int vmaf_predict_score_at_index(VmafModel *model,
-                                VmafFeatureCollector *feature_collector,
-                                unsigned index, double *vmaf_score);
+int vmaf_bootstrap_predict_score_at_index(VmafModelCollection *model_collection,
+                                          VmafFeatureCollector *feature_collector,
+                                          unsigned index,
+                                          VmafModelCollectionScore *score);
 
-int vmaf_predict_score_at_index_model_collection(
-                                VmafModelCollection *model_collection,
-                                VmafFeatureCollector *feature_collector,
-                                unsigned index,
-                                VmafModelCollectionScore *score);
-
-#endif /* __VMAF_PREDICT_H__ */
+#endif /* __VMAF_SRC_BOOTSTRAP_H__ */

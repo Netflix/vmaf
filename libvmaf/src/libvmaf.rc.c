@@ -177,6 +177,19 @@ int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model)
     return 0;
 }
 
+int vmaf_use_features_from_model_collection(VmafContext *vmaf,
+                                            VmafModelCollection *model_collection)
+{
+    if (!vmaf) return -EINVAL;
+    if (!model_collection) return -EINVAL;
+
+    int err = 0;
+    for (unsigned i = 0; i < model_collection->cnt; i++)
+        err |= vmaf_use_features_from_model(vmaf, model_collection->model[i]);
+
+    return err;
+}
+
 struct ThreadData {
     VmafFeatureExtractorContext *fex_ctx;
     VmafPicture ref, dist;
@@ -338,6 +351,20 @@ int vmaf_score_at_index(VmafContext *vmaf, VmafModel *model, double *score,
                                        score);
 }
 
+int vmaf_score_at_index_model_collection(VmafContext *vmaf,
+                                         VmafModelCollection *model_collection,
+                                         VmafModelCollectionScore *score,
+                                         unsigned index)
+{
+    if (!vmaf) return -EINVAL;
+    if (!model_collection) return -EINVAL;
+    if (!score) return -EINVAL;
+
+    return vmaf_predict_score_at_index_model_collection(model_collection,
+                                                        vmaf->feature_collector,
+                                                        index, score);
+}
+
 int vmaf_feature_score_pooled(VmafContext *vmaf, const char *feature_name,
                               enum VmafPoolingMethod pool_method, double *score,
                               unsigned index_low, unsigned index_high)
@@ -397,6 +424,7 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
                       unsigned index_low, unsigned index_high)
 {
     if (!vmaf) return -EINVAL;
+    if (!model) return -EINVAL;
     if (!score) return -EINVAL;
     if (index_low > index_high) return -EINVAL;
     if (!pool_method) return -EINVAL;
@@ -419,6 +447,38 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
 
     return vmaf_feature_score_pooled(vmaf, model->name, pool_method, score,
                                      index_low, index_high);
+}
+
+int vmaf_score_pooled_model_collection(VmafContext *vmaf,
+                                       VmafModelCollection *model_collection,
+                                       enum VmafPoolingMethod pool_method,
+                                       VmafModelCollectionScore *score,
+                                       unsigned index_low, unsigned index_high)
+{
+    if (!vmaf) return -EINVAL;
+    if (!model_collection) return -EINVAL;
+    if (!score) return -EINVAL;
+    if (index_low > index_high) return -EINVAL;
+    if (!pool_method) return -EINVAL;
+
+    vmaf_thread_pool_wait(vmaf->thread_pool);
+    RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
+    for (unsigned i = 0; i < rfe.cnt; i++) {
+        vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
+                                             vmaf->feature_collector);
+    }
+    vmaf_fex_ctx_pool_flush(vmaf->fex_ctx_pool, vmaf->feature_collector);
+
+    int err = 0;
+    for (unsigned i = index_low; i <= index_high; i++) {
+        if ((vmaf->cfg.n_subsample > 1) && (i % vmaf->cfg.n_subsample))
+            continue;
+        err = vmaf_score_at_index_model_collection(vmaf, model_collection,
+                                                   score, i);
+        if (err) return err;
+    }
+
+    return err;
 }
 
 const char *vmaf_version(void)

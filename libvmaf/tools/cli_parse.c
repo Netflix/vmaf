@@ -11,7 +11,7 @@
 #include "libvmaf/libvmaf.rc.h"
 #include "libvmaf/model.h"
 
-static const char short_opts[] = "r:d:w:h:p:b:m:o:nvq";
+static const char short_opts[] = "r:d:w:h:p:b:m:c:o:nvq";
 
 enum {
     ARG_OUTPUT_XML = 256,
@@ -32,6 +32,7 @@ static const struct option long_opts[] = {
     { "pixel_format",     1, NULL, 'p' },
     { "bitdepth",         1, NULL, 'b' },
     { "model",            1, NULL, 'm' },
+    { "model_collection", 1, NULL, 'c' },
     { "output",           1, NULL, 'o' },
     { "xml",              0, NULL, ARG_OUTPUT_XML },
     { "json",             0, NULL, ARG_OUTPUT_JSON },
@@ -63,12 +64,13 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --height/-h $unsigned:     height\n"
             " --pixel_format/-p: $string pixel format (420/422/444)\n"
             " --bitdepth/-b $unsigned:   bitdepth (8/10/12)\n"
-            " --model/-m $model-params:  model parameters, separated by the colon sign \":\"\n"
+            " --model/-m $params:        model parameters, separated by the colon sign \":\"\n"
             "                            1. path to model file (required)\n"
             "                            2. name of model (required only if >1 models are used)\n"
             "                            3. other optional model parameters, e.g.\n"
             "                               path=foo.pkl:disable_clip\n"
             "                               path=foo.pkl:name=foo:enable_transform\n"
+            " --model_collection/-c      model parameters. See `--model/-m` for details\n"
             " --output/-o $path:         path to output file\n"
             " --xml:                     write output file as XML (default)\n"
             " --json:                    write output file as JSON\n"
@@ -155,41 +157,40 @@ static char *strsep(char **sp, char *sep)
 }
 #endif
 
-static VmafModelConfig parse_model_config(const char *const optarg,
-                                          const char *const app)
+static CLIModelConfig parse_model_config(const char *const optarg,
+                                         const char *const app)
 {
-    /* some initializations */
-    VmafModelConfig cfg = {
-        .flags = VMAF_MODEL_FLAGS_DEFAULT,
+    char *optarg_copy = (char *)optarg;
+    CLIModelConfig cli_cfg = {
+        .cfg = { .flags = VMAF_MODEL_FLAGS_DEFAULT, },
+        .path = NULL,
     };
+
     char *token;
     char delim[] = "=:";
-    bool path_set = false;
-    char *optarg_copy = (char *)optarg;
     token = strtok(optarg_copy, delim);
-    /* loop over tokens and populate model configuration */
+
     while (token != 0) {
         if(!strcmp(token, "path")) {
-            path_set = true;
-            cfg.path = strtok(0, delim);
+            cli_cfg.path = strtok(0, delim);
         } else if (!strcmp(token, "name")) {
-            cfg.name = strtok(0, delim);
+            cli_cfg.cfg.name = strtok(0, delim);
         } else if (!strcmp(token, "disable_clip")) {
-            cfg.flags |= VMAF_MODEL_FLAG_DISABLE_CLIP;
+            cli_cfg.cfg.flags |= VMAF_MODEL_FLAG_DISABLE_CLIP;
         } else if (!strcmp(token, "enable_transform")) {
-            cfg.flags |= VMAF_MODEL_FLAG_ENABLE_TRANSFORM;
+            cli_cfg.cfg.flags |= VMAF_MODEL_FLAG_ENABLE_TRANSFORM;
         } else if (!strcmp(token, "enable_ci")) {
-            cfg.flags |= VMAF_MODEL_FLAG_ENABLE_CONFIDENCE_INTERVAL;
+            cli_cfg.cfg.flags |= VMAF_MODEL_FLAG_ENABLE_CONFIDENCE_INTERVAL;
         } else {
             usage(app, "Unknown parameter %s for model.\n", token);
         }
         token = strtok(0, delim);
     }
-    /* path always needs to be set for each model specified */
-    if (!path_set) {
+
+    if (!cli_cfg.path)
         usage(app, "For every model, path needs to be set.\n");
-    }
-    return cfg;
+
+    return cli_cfg;
 }
 
 static CLIFeatureConfig parse_feature_config(const char *const optarg,
@@ -264,10 +265,18 @@ void cli_parse(const int argc, char *const *const argv,
             break;
         case 'm':
             if (settings->model_cnt == CLI_SETTINGS_STATIC_ARRAY_LEN) {
-                usage(argv[0], "A maximum of %d models is supported\n",
+                usage(argv[0], "A maximum of %d models are supported\n",
                       CLI_SETTINGS_STATIC_ARRAY_LEN);
             }
             settings->model_config[settings->model_cnt++] =
+                parse_model_config(optarg, argv[0]);
+            break;
+        case 'c':
+            if (settings->model_collection_cnt == CLI_SETTINGS_STATIC_ARRAY_LEN) {
+                usage(argv[0], "A maximum of %d model collections are supported\n",
+                      CLI_SETTINGS_STATIC_ARRAY_LEN);
+            }
+            settings->model_collection_config[settings->model_collection_cnt++] =
                 parse_model_config(optarg, argv[0]);
             break;
         case ARG_FEATURE:
@@ -316,6 +325,10 @@ void cli_parse(const int argc, char *const *const argv,
                        "  --pixel_format/-p\n"
                        "  --bitdepth/-b\n");
     }
-    if ((settings->model_cnt == 0) && !settings->no_prediction)
-        usage(argv[0], "At least one model file (-m/--model) is required");
+    if ((settings->model_cnt == 0 && settings->model_collection_cnt == 0) &&
+        !settings->no_prediction)
+    {
+        usage(argv[0], "At least one model or model_collection "
+                       "(-m/--model, -c/--model_collection) is required");
+    }
 }
