@@ -32,12 +32,19 @@ enum VmafModelFlags {
 
 typedef struct VmafModelConfig {
     char *name;
-    char *path;
     uint64_t flags;
 } VmafModelConfig;
 
-int vmaf_model_load_from_path(VmafModel **model, VmafModelConfig *cfg);
+int vmaf_model_load_from_path(VmafModel **model, VmafModelConfig *cfg,
+                              const char *path);
 
 void vmaf_model_destroy(VmafModel *model);
+
+typedef struct VmafModelCollection VmafModelCollection;
+
+int vmaf_model_collection_append(VmafModelCollection **model_collection,
+                                 VmafModel *model);
+
+void vmaf_model_collection_destroy(VmafModelCollection *model_collection);
 
 #endif /* __VMAF_MODEL_H__ */

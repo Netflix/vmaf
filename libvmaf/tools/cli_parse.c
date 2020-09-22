@@ -155,41 +155,40 @@ static char *strsep(char **sp, char *sep)
 }
 #endif
 
-static VmafModelConfig parse_model_config(const char *const optarg,
-                                          const char *const app)
+static CLIModelConfig parse_model_config(const char *const optarg,
+                                         const char *const app)
 {
-    /* some initializations */
-    VmafModelConfig cfg = {
-        .flags = VMAF_MODEL_FLAGS_DEFAULT,
+    char *optarg_copy = (char *)optarg;
+    CLIModelConfig cli_cfg = {
+        .cfg = { .flags = VMAF_MODEL_FLAGS_DEFAULT, },
+        .path = NULL,
     };
+
     char *token;
     char delim[] = "=:";
-    bool path_set = false;
-    char *optarg_copy = (char *)optarg;
     token = strtok(optarg_copy, delim);
-    /* loop over tokens and populate model configuration */
+
     while (token != 0) {
         if(!strcmp(token, "path")) {
-            path_set = true;
-            cfg.path = strtok(0, delim);
+            cli_cfg.path = strtok(0, delim);
         } else if (!strcmp(token, "name")) {
-            cfg.name = strtok(0, delim);
+            cli_cfg.cfg.name = strtok(0, delim);
         } else if (!strcmp(token, "disable_clip")) {
-            cfg.flags |= VMAF_MODEL_FLAG_DISABLE_CLIP;
+            cli_cfg.cfg.flags |= VMAF_MODEL_FLAG_DISABLE_CLIP;
         } else if (!strcmp(token, "enable_transform")) {
-            cfg.flags |= VMAF_MODEL_FLAG_ENABLE_TRANSFORM;
+            cli_cfg.cfg.flags |= VMAF_MODEL_FLAG_ENABLE_TRANSFORM;
         } else if (!strcmp(token, "enable_ci")) {
-            cfg.flags |= VMAF_MODEL_FLAG_ENABLE_CONFIDENCE_INTERVAL;
+            cli_cfg.cfg.flags |= VMAF_MODEL_FLAG_ENABLE_CONFIDENCE_INTERVAL;
         } else {
             usage(app, "Unknown parameter %s for model.\n", token);
         }
         token = strtok(0, delim);
     }
-    /* path always needs to be set for each model specified */
-    if (!path_set) {
+
+    if (!cli_cfg.path)
         usage(app, "For every model, path needs to be set.\n");
-    }
-    return cfg;
+
+    return cli_cfg;
 }
 
 static CLIFeatureConfig parse_feature_config(const char *const optarg,

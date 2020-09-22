@@ -64,4 +64,9 @@ typedef struct VmafModel {
     struct svm_model *svm;
 } VmafModel;
 
+typedef struct VmafModelCollection {
+    VmafModel **model;
+    unsigned cnt, size;
+} VmafModelCollection;
+
 #endif /* __VMAF_SRC_MODEL_H__ */

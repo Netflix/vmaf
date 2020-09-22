@@ -8,7 +8,7 @@
 #include "svm.h"
 #include "unpickle.h"
 
-char *generate_model_name(VmafModelConfig *cfg) {
+static char *generate_model_name(VmafModelConfig *cfg) {
 
     char *default_name = "vmaf";
     size_t name_sz;
@@ -37,23 +37,23 @@ char *generate_model_name(VmafModelConfig *cfg) {
 
 }
 
-int vmaf_model_load_from_path(VmafModel **model, VmafModelConfig *cfg)
+int vmaf_model_load_from_path(VmafModel **model, VmafModelConfig *cfg,
+                              const char *path)
 {
     VmafModel *const m = *model = malloc(sizeof(*m));
     if (!m) goto fail;
     memset(m, 0, sizeof(*m));
-    m->path = malloc(strlen(cfg->path) + 1);
+    m->path = malloc(strlen(path) + 1);
     if (!m->path) goto free_m;
-    strcpy(m->path, cfg->path);
+    strcpy(m->path, path);
 
     /* if config does not have a name, create a default one */
     m->name = generate_model_name(cfg);
     if (!m->name) goto free_path;
 
-    // ugly, this shouldn't be implict (but it is)
     char *svm_path_suffix = ".model";
     size_t svm_path_sz =
-        strlen(m->path) + strlen(svm_path_suffix) + 1 * sizeof(char);
+        strlen(path) + strlen(svm_path_suffix) + 1 * sizeof(char);
     char *svm_path = malloc(svm_path_sz);
     if (!svm_path) goto free_name;
     memset(svm_path, 0, svm_path_sz);
@@ -91,4 +91,52 @@ void vmaf_model_destroy(VmafModel *model)
     }
     free(model->feature);
     free(model);
+}
+
+int vmaf_model_collection_append(VmafModelCollection **model_collection,
+                                 VmafModel *model)
+{
+    if (!model_collection) return -EINVAL;
+    if (!model) return -EINVAL;
+
+    VmafModelCollection *mc = *model_collection;
+
+    if (!mc) {
+        mc = *model_collection = malloc(sizeof(*mc));
+        if (!mc) goto fail;
+        memset(mc, 0, sizeof(*mc));
+        const size_t initial_sz = 8 * sizeof(*mc->model);
+        mc->model = malloc(initial_sz);
+        if (!mc->model) {
+            free(mc);
+            *model_collection = NULL;
+            goto fail;
+        }
+        memset(mc->model, 0, initial_sz);
+        mc->size = 8;
+    }
+
+    if (mc->cnt == mc->size) {
+        const size_t sz = mc->size * sizeof(*mc->model) * 2;
+        VmafModel *model = realloc(mc->model, sz);
+        if (!model) goto fail;
+        mc->model = model;
+        mc->size *= 2;
+    }
+
+    mc->model[mc->cnt++] = model;
+    return 0;
+
+fail:
+    return -ENOMEM;
+}
+
+void vmaf_model_collection_destroy(VmafModelCollection *model_collection)
+{
+    if (!model_collection) return;
+    for (unsigned i = 0; i < model_collection->cnt; i++)
+        vmaf_model_destroy(model_collection->model[i]);
+    free(model_collection->model);
+    free(model_collection);
+    memset(model_collection, 0, sizeof(*model_collection));
 }
