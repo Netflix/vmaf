@@ -843,18 +843,16 @@ void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int 
 {
 	const float *filter_lo = dwt2_db2_coeffs_lo_s;
 	const float *filter_hi = dwt2_db2_coeffs_hi_s;
-	int fwidth = sizeof(dwt2_db2_coeffs_lo_s) / sizeof(float);
 
 	int src_px_stride = src_stride / sizeof(float);
 	int dst_px_stride = dst_stride / sizeof(float);
 
 	float *tmplo = aligned_malloc(ALIGN_CEIL(sizeof(float) * w), MAX_ALIGN);
 	float *tmphi = aligned_malloc(ALIGN_CEIL(sizeof(float) * w), MAX_ALIGN);
-	float fcoeff_lo, fcoeff_hi, imgcoeff;
 	float s0, s1, s2, s3;
 	float accum;
 
-	int i, j, fi, fj, ii, jj;
+	int i, j;
 	int j0, j1, j2, j3;
 
 	for (i = 0; i < (h + 1) / 2; ++i) {
@@ -864,7 +862,6 @@ void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int 
 			s1 = src[ind_y[1][i] * src_px_stride + j];
 			s2 = src[ind_y[2][i] * src_px_stride + j];
 			s3 = src[ind_y[3][i] * src_px_stride + j];
-			
 			
 			accum = 0;
 			accum += filter_lo[0] * s0;
@@ -936,18 +933,16 @@ void adm_dwt2_d(const double *src, const adm_dwt_band_t_d *dst, int **ind_y, int
 {
 	const double *filter_lo = dwt2_db2_coeffs_lo_d;
 	const double *filter_hi = dwt2_db2_coeffs_hi_d;
-	int fwidth = sizeof(dwt2_db2_coeffs_lo_d) / sizeof(double);
 
 	int src_px_stride = src_stride / sizeof(double);
 	int dst_px_stride = dst_stride / sizeof(double);
 
 	double *tmplo = aligned_malloc(ALIGN_CEIL(sizeof(double) * w), MAX_ALIGN);
 	double *tmphi = aligned_malloc(ALIGN_CEIL(sizeof(double) * w), MAX_ALIGN);
-	double fcoeff_lo, fcoeff_hi, imgcoeff;
 	double s0, s1, s2, s3;
 	double accum;
 
-	int i, j, fi, fj, ii, jj;
+	int i, j;
 	int j0, j1, j2, j3;
 
 	for (i = 0; i < (h + 1) / 2; ++i) {
@@ -957,7 +952,6 @@ void adm_dwt2_d(const double *src, const adm_dwt_band_t_d *dst, int **ind_y, int
 			s1 = src[ind_y[1][i] * src_px_stride + j];
 			s2 = src[ind_y[2][i] * src_px_stride + j];
 			s3 = src[ind_y[3][i] * src_px_stride + j];
-
 
 			accum = 0;
 			accum += filter_lo[0] * s0;

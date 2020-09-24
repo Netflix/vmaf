@@ -4,8 +4,35 @@ import numpy as np
 
 from vmaf.config import VmafConfig
 from vmaf.core.adm_dwt2_cy import adm_dwt2_cy
-from vmaf.core.adm_dwt2_py import adm_dwt2_py
+from vmaf.core.adm_dwt2_py import adm_dwt2_py, adm_idwt2_py
 from vmaf.tools.reader import YuvReader
+
+
+class AdmDwt2PyTest(unittest.TestCase):
+
+    def setUp(self) -> None:
+        pass
+
+    def test_adm_dwt2_py(self):
+        np.random.seed(0)
+        x = np.random.uniform(low=-128, high=127, size=[324, 576]).astype(np.float64)
+        a, ds = adm_dwt2_py(x)
+        h, v, d = ds
+        self.assertEqual(a.shape, (162, 288))
+        self.assertEqual(v.shape, (162, 288))
+        self.assertEqual(h.shape, (162, 288))
+        self.assertEqual(d.shape, (162, 288))
+        self.assertAlmostEqual(np.float(np.std(a)), 73.8959273922819, places=5)
+        self.assertAlmostEqual(np.float(np.std(v)), 73.69196319580078, places=5)
+        self.assertAlmostEqual(np.float(np.std(h)), 73.53559112548828, places=5)
+        self.assertAlmostEqual(np.float(np.std(d)), 73.52173614501953, places=5)
+
+    def test_adm_dwt2_idwt2_py(self):
+        np.random.seed(0)
+        x = np.random.uniform(low=-128, high=127, size=[324, 576]).astype(np.float64)
+        a, ds = adm_dwt2_py(x)
+        x2 = adm_idwt2_py((a, ds))
+        self.assertAlmostEqual(np.abs(np.max(x - x2)), 0.0, places=10)
 
 
 class AdmDwt2CyTest(unittest.TestCase):
@@ -25,20 +52,6 @@ class AdmDwt2CyTest(unittest.TestCase):
         self.assertAlmostEqual(np.float(np.std(v)), 73.61917114257812, places=5)
         self.assertAlmostEqual(np.float(np.std(h)), 73.30349892103438, places=5)
         self.assertAlmostEqual(np.float(np.std(d)), 73.19024658203125, places=5)
-
-    def test_adm_dwt2_py(self):
-        np.random.seed(0)
-        x = np.random.uniform(low=-128, high=127, size=[324, 576]).astype(np.float64)
-        a, ds = adm_dwt2_py(x)
-        h, v, d = ds
-        self.assertEqual(a.shape, (162, 288))
-        self.assertEqual(v.shape, (162, 288))
-        self.assertEqual(h.shape, (162, 288))
-        self.assertEqual(d.shape, (162, 288))
-        self.assertAlmostEqual(np.float(np.std(a)), 73.8959273922819, places=5)
-        self.assertAlmostEqual(np.float(np.std(v)), 73.69196319580078, places=5)
-        self.assertAlmostEqual(np.float(np.std(h)), 73.53559112548828, places=5)
-        self.assertAlmostEqual(np.float(np.std(d)), 73.52173614501953, places=5)
 
     def test_adm_dwt2_cy_small(self):
         np.random.seed(0)
