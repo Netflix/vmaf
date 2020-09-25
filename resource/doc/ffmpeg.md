@@ -52,3 +52,6 @@ The expected output is:
 ```
 
 See the [FFmpeg's guide to libvmaf](https://ffmpeg.org/ffmpeg-filters.html#libvmaf), the [FFmpeg Filtering Guide](https://trac.ffmpeg.org/wiki/FilteringGuide) for more examples of complex filters, and the [Scaling Guide](https://trac.ffmpeg.org/wiki/Scaling) for information about scaling and using different scaling algorithms.
+
+# External resources
+[Bash wrapper script](https://gist.github.com/Audition-CSBlock/bef34e553132efad883c0f128c46d638) for running `libvmaf` through `ffmpeg`
