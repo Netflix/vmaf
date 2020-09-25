@@ -58,6 +58,9 @@ static const float dwt2_db2_coeffs_hi_s[4] = { -0.129409522550921, -0.2241438680
 static const double dwt2_db2_coeffs_lo_d[4] = { 0.482962913144690, 0.836516303737469, 0.224143868041857, -0.129409522550921 };
 static const double dwt2_db2_coeffs_hi_d[4] = { -0.129409522550921, -0.224143868041857, 0.836516303737469, -0.482962913144690 };
 
+static const double idwt2_db2_coeffs_lo_d[4] = {-0.129409522550921, 0.224143868041857, 0.836516303737469, 0.482962913144690};
+static const double idwt2_db2_coeffs_hi_d[4] = {-0.482962913144690, 0.836516303737469, -0.224143868041857, -0.129409522550921};
+
 #ifndef FLOAT_ONE_BY_30
 #define FLOAT_ONE_BY_30	0.0333333351
 
@@ -885,6 +888,7 @@ void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int 
 			j1 = ind_x[1][j];
 			j2 = ind_x[2][j];
 			j3 = ind_x[3][j];
+
 			s0 = tmplo[j0];
 			s1 = tmplo[j1];
 			s2 = tmplo[j2];
@@ -903,6 +907,7 @@ void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int 
 			accum += filter_hi[2] * s2;
 			accum += filter_hi[3] * s3;
 			dst->band_v[i * dst_px_stride + j] = accum;
+
 			s0 = tmphi[j0];
 			s1 = tmphi[j1];
 			s2 = tmphi[j2];
@@ -975,6 +980,7 @@ void adm_dwt2_d(const double *src, const adm_dwt_band_t_d *dst, int **ind_y, int
 			j1 = ind_x[1][j];
 			j2 = ind_x[2][j];
 			j3 = ind_x[3][j];
+
 			s0 = tmplo[j0];
 			s1 = tmplo[j1];
 			s2 = tmplo[j2];
@@ -993,6 +999,7 @@ void adm_dwt2_d(const double *src, const adm_dwt_band_t_d *dst, int **ind_y, int
 			accum += filter_hi[2] * s2;
 			accum += filter_hi[3] * s3;
 			dst->band_v[i * dst_px_stride + j] = accum;
+
 			s0 = tmphi[j0];
 			s1 = tmphi[j1];
 			s2 = tmphi[j2];
@@ -1018,6 +1025,24 @@ void adm_dwt2_d(const double *src, const adm_dwt_band_t_d *dst, int **ind_y, int
 	aligned_free(tmplo);
 	aligned_free(tmphi);
 }
+
+//void adm_idwt2_d(const adm_dwt_band_t_d *src, const double *dst, int **ind_y, int **ind_x, int w, int h, int src_stride, int dst_stride) {
+//
+//    const double *filter_lo = idwt2_db2_coeffs_lo_d;
+//    const double *filter_hi = idwt2_db2_coeffs_hi_d;
+//
+//    int src_px_stride = src_stride / sizeof(double);
+//    int dst_px_stride = dst_stride / sizeof(double);
+//
+//    double *tmplo = aligned_malloc(ALIGN_CEIL(sizeof(double) * w), MAX_ALIGN);
+//    double *tmphi = aligned_malloc(ALIGN_CEIL(sizeof(double) * w), MAX_ALIGN);
+//    double s0, s1, s2, s3;
+//    double accum;
+//
+//    int i, j;
+//    int j0, j1, j2, j3;
+//
+//}
 
 void adm_buffer_copy(const void *src, void *dst, int linewidth, int h, int src_stride, int dst_stride)
 {
