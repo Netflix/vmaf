@@ -16,8 +16,7 @@ class AdmDwt2PyTest(unittest.TestCase):
     def test_adm_dwt2_py(self):
         np.random.seed(0)
         x = np.random.uniform(low=-128, high=127, size=[324, 576]).astype(np.float64)
-        a, ds = adm_dwt2_py(x)
-        h, v, d = ds
+        a, v, h, d = adm_dwt2_py(x)
         self.assertEqual(a.shape, (162, 288))
         self.assertEqual(v.shape, (162, 288))
         self.assertEqual(h.shape, (162, 288))
@@ -30,8 +29,8 @@ class AdmDwt2PyTest(unittest.TestCase):
     def test_adm_dwt2_idwt2_py(self):
         np.random.seed(0)
         x = np.random.uniform(low=-128, high=127, size=[324, 576]).astype(np.float64)
-        a, ds = adm_dwt2_py(x)
-        x2 = adm_idwt2_py((a, ds))
+        a, v, h, d = adm_dwt2_py(x)
+        x2 = adm_idwt2_py((a, v, h, d))
         self.assertAlmostEqual(np.abs(np.max(x - x2)), 0.0, places=10)
 
 
