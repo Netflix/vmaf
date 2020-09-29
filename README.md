@@ -57,6 +57,6 @@ Over time, we have received feedbacks on when VMAF's prediction does not reflect
 
 Refer to the [references](resource/doc/references.md) page.
 
-## External resources
+## External Resources
 
 Refer to [this page](resource/doc/external_resource.md) for a list of 3rd-party tools built on top of VMAF.
