@@ -21,6 +21,7 @@
 #include "test.h"
 #include "picture.h"
 #include "libvmaf/picture.h"
+#include "ref.h"
 
 static char *test_picture_alloc_ref_and_unref()
 {
