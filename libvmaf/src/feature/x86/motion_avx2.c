@@ -21,6 +21,7 @@
 #include <stddef.h>
 
 #include "feature/integer_motion.h"
+#include "feature/common/alignment.h"
 
 static inline uint32_t
 edge_16(bool horizontal, const uint16_t *src, int width,

@@ -26,8 +26,8 @@ typedef struct VmafRef {
 } VmafRef;
 
 int vmaf_ref_init(VmafRef **ref);
-void vmaf_ref_increment(VmafRef *ref);
-void vmaf_ref_decrement(VmafRef *ref);
+void vmaf_ref_fetch_increment(VmafRef *ref);
+void vmaf_ref_fetch_decrement(VmafRef *ref);
 long vmaf_ref_load(VmafRef *ref);
 int vmaf_ref_close(VmafRef *ref);
 
