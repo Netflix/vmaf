@@ -55,4 +55,4 @@ See the [FFmpeg's guide to libvmaf](https://ffmpeg.org/ffmpeg-filters.html#libvm
 
 ## External resources
 
-Refer to [this page](resource/doc/external_resource.md) for a list of FFmpeg-based 3rd-party tools.
+Refer to [this page](external_resource.md) for a list of FFmpeg-based 3rd-party tools.
