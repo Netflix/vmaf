@@ -50,6 +50,15 @@ The expected output is:
 
 See the [FFmpeg's guide to libvmaf](https://ffmpeg.org/ffmpeg-filters.html#libvmaf), the [FFmpeg Filtering Guide](https://trac.ffmpeg.org/wiki/FilteringGuide) for more examples of complex filters, and the [Scaling Guide](https://trac.ffmpeg.org/wiki/Scaling) for information about scaling and using different scaling algorithms.
 
+## Note on moving the model files to another folder other than the default
+
+If you plan to move the pkl files to another folder, you will need to move the associated `.model` file as well, and make sure it's available by simply appending `.model` to the end of the path to the pkl file so your folder looks like
+
+```none
+vmaf_v0.6.1.pkl
+vmaf_v0.6.1.pkl.model
+```
+
 ## External resources
 
 Refer to [this page](external_resource.md) for a list of FFmpeg-based 3rd-party tools.
