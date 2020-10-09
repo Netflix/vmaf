@@ -336,7 +336,7 @@ class AucPerfMetric(RawScorePerfMetric):
         for metric_idx in range(M):
             objscodif_mtx = np.zeros([N, N])
 
-            if M > 1:
+            if isinstance(predictions[0], list):
                 metric_predictions = predictions[metric_idx]
             else:
                 metric_predictions = predictions

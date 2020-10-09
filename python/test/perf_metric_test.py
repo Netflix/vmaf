@@ -104,6 +104,19 @@ class AggrScorePerfMetricTest(unittest.TestCase):
         self.assertAlmostEqual(result['THR'], 1.0, places=6)
 
     @unittest.skipIf(sys.version_info < (3,), reason="For py3 only: py2 uses a different random seed.")
+    def test_auc_perf_single_metric_in_list(self):
+        np.random.seed(1)
+        groundtruths = np.random.normal(0, 1.0, [4, 10]) + np.tile(np.array([1, 2, 3, 4]), [10, 1]).T
+        predictions = [[1, 2, 3, 4]]
+        metric = AucPerfMetric(groundtruths, predictions)
+        result = metric.evaluate()
+        self.assertAlmostEqual(result['score'][0], 0.9999999999999999, places=6)
+        self.assertAlmostEqual(result['AUC_BW'][0], 0.9999999999999999, places=6)
+        self.assertAlmostEqual(result['AUC_DS'][0], 0.9375, places=6)
+        self.assertAlmostEqual(result['CC_0'][0], 1.0, places=6)
+        self.assertAlmostEqual(result['THR'][0], 1.0, places=6)
+
+    @unittest.skipIf(sys.version_info < (3,), reason="For py3 only: py2 uses a different random seed.")
     def test_auc_perf_multiple_metrics(self):
         np.random.seed(1)
         groundtruths = np.random.normal(0, 1.0, [4, 10]) + np.tile(np.array([1, 2, 3, 4]), [10, 1]).T
