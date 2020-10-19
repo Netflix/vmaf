@@ -43,7 +43,8 @@ void vmaf_model_destroy(VmafModel *model);
 typedef struct VmafModelCollection VmafModelCollection;
 
 typedef struct VmafModelCollectionScore {
-    double score;
+    double bagging_score;
+    double stddev;
     struct {
         struct { double lo, hi; } p95;
     } ci;

@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
 
         fprintf(stderr, "%s: %f, ci.p95: [%f, %f]\n",
                 c.model_collection_config[i].path,
-                score.score, score.ci.p95.lo, score.ci.p95.hi);
+                score.bagging_score, score.ci.p95.lo, score.ci.p95.hi);
     }
 
     if (c.output_path)

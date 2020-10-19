@@ -153,7 +153,6 @@ int vmaf_model_collection_load_from_path(VmafModelCollection **model_collection,
     const size_t check_path_sz = strlen(path) + 5 + 1;
     char check_path[check_path_sz];
     memset(check_path, 0, check_path_sz);
-    strncpy(check_path, path, strlen(path));
 
     char *name = generate_model_name(cfg);
     if (!name) return -ENOMEM;
@@ -162,7 +161,8 @@ int vmaf_model_collection_load_from_path(VmafModelCollection **model_collection,
     tmp_cfg.name = cfg_name;
 
     for (unsigned i = 1; i <= 9999; i++) {
-        sprintf(tmp_cfg.name, "%s_%04d", name, i - 1);
+        sprintf(tmp_cfg.name, "%s_%04d", name, i);
+        sprintf(check_path, "%s.%04d", path, i);
         struct stat s;
         if (stat(check_path, &s))
             break;
@@ -175,7 +175,6 @@ int vmaf_model_collection_load_from_path(VmafModelCollection **model_collection,
             vmaf_model_destroy(model);
             goto fail;
         }
-        sprintf(check_path, "%s.%04d", path, i);
     }
 
     free(name);

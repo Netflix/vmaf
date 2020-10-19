@@ -42,26 +42,32 @@ int vmaf_bootstrap_predict_score_at_index(VmafModelCollection *model_collection,
     for (unsigned i = 0; i < model_collection->cnt; i++)
         sum += scores[i]; 
     const double mean = sum / model_collection->cnt;
-    score->score = mean;
+    score->bagging_score = mean;
 
-    //double ssd = 0.;
-    //for (unsigned i = 0; i < model_collection->cnt; i++)
-    //    ssd += pow(scores[i] - mean, 2);
-    //const double std = sqrt(ssd / model_collection->cnt);
+    double ssd = 0.;
+    for (unsigned i = 0; i < model_collection->cnt; i++)
+        ssd += pow(scores[i] - mean, 2);
+    score->stddev = sqrt(ssd / model_collection->cnt);
 
     qsort(scores, model_collection->cnt, sizeof(double), score_compare);
     score->ci.p95.lo = percentile(scores, model_collection->cnt, 2.5);
     score->ci.p95.hi = percentile(scores, model_collection->cnt, 97.5);
 
-    err = vmaf_feature_collector_append(feature_collector,
-                                        model_collection->name,
-                                        score->score, index);
     const char *suffix_lo = "_ci_p95_lo";
     const char *suffix_hi = "_ci_p95_hi";
+    const char *suffix_bagging = "_bagging";
+    const char *suffix_stddev = "_stddev";
     const size_t name_sz =
         strlen(model_collection->name) + strlen(suffix_lo) + 1;
     const char name[name_sz];
     memset(name, 0, name_sz);
+
+    snprintf(name, name_sz, "%s%s", model_collection->name, suffix_bagging);
+    err = vmaf_feature_collector_append(feature_collector, name,
+                                        score->bagging_score, index);
+    snprintf(name, name_sz, "%s%s", model_collection->name, suffix_stddev);
+    err = vmaf_feature_collector_append(feature_collector, name,
+                                        score->stddev, index);
     snprintf(name, name_sz, "%s%s", model_collection->name, suffix_lo);
     err |= vmaf_feature_collector_append(feature_collector, name,
                                          score->ci.p95.lo, index);
