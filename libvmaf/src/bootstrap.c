@@ -1,7 +1,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-#include "feature_collector.h"
+#include "feature/feature_collector.h"
 #include "model.h"
 #include "predict.h"
 

@@ -39,7 +39,7 @@ test_model = executable('test_model',
 )
 
 test_predict = executable('test_predict',
-    ['test.c', 'test_predict.c', '../src/predict.c', '../src/dict.c',
+    ['test.c', 'test_predict.c', '../src/predict.c', '../src/dict.c', '../src/bootstrap.c',
      '../src/feature/feature_collector.c', '../src/model.c', '../src/svm.cpp',
      '../src/unpickle.cpp'],
     include_directories : [libvmaf_inc, test_inc, opencontainers_include,
