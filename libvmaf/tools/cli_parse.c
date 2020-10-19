@@ -32,7 +32,6 @@ static const struct option long_opts[] = {
     { "pixel_format",     1, NULL, 'p' },
     { "bitdepth",         1, NULL, 'b' },
     { "model",            1, NULL, 'm' },
-    { "model_collection", 1, NULL, 'c' },
     { "output",           1, NULL, 'o' },
     { "xml",              0, NULL, ARG_OUTPUT_XML },
     { "json",             0, NULL, ARG_OUTPUT_JSON },
@@ -70,7 +69,6 @@ static void usage(const char *const app, const char *const reason, ...) {
             "                            3. other optional model parameters, e.g.\n"
             "                               path=foo.pkl:disable_clip\n"
             "                               path=foo.pkl:name=foo:enable_transform\n"
-            " --model_collection/-c      model parameters. See `--model/-m` for details\n"
             " --output/-o $path:         path to output file\n"
             " --xml:                     write output file as XML (default)\n"
             " --json:                    write output file as JSON\n"
@@ -271,14 +269,6 @@ void cli_parse(const int argc, char *const *const argv,
             settings->model_config[settings->model_cnt++] =
                 parse_model_config(optarg, argv[0]);
             break;
-        case 'c':
-            if (settings->model_collection_cnt == CLI_SETTINGS_STATIC_ARRAY_LEN) {
-                usage(argv[0], "A maximum of %d model collections are supported\n",
-                      CLI_SETTINGS_STATIC_ARRAY_LEN);
-            }
-            settings->model_collection_config[settings->model_collection_cnt++] =
-                parse_model_config(optarg, argv[0]);
-            break;
         case ARG_FEATURE:
             if (settings->feature_cnt == CLI_SETTINGS_STATIC_ARRAY_LEN) {
                 usage(argv[0], "A maximum of %d features is supported\n",
@@ -325,9 +315,8 @@ void cli_parse(const int argc, char *const *const argv,
                        "  --pixel_format/-p\n"
                        "  --bitdepth/-b\n");
     }
-    if ((settings->model_cnt == 0 && settings->model_collection_cnt == 0) &&
-        !settings->no_prediction)
-    {
+
+    if (settings->model_cnt == 0 && !settings->no_prediction) {
         usage(argv[0], "At least one model or model_collection "
                        "(-m/--model, -c/--model_collection) is required");
     }

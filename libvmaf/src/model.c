@@ -178,6 +178,7 @@ int vmaf_model_collection_load_from_path(VmafModelCollection **model_collection,
     }
 
     free(name);
+    if (!model_collection) return -EINVAL;
     return 0;
 
 fail:

@@ -30,8 +30,6 @@ typedef struct {
     enum VmafOutputFormat output_fmt;
     CLIModelConfig model_config[CLI_SETTINGS_STATIC_ARRAY_LEN];
     unsigned model_cnt;
-    CLIModelConfig model_collection_config[CLI_SETTINGS_STATIC_ARRAY_LEN];
-    unsigned model_collection_cnt;
     CLIFeatureConfig feature_cfg[CLI_SETTINGS_STATIC_ARRAY_LEN];
     unsigned feature_cnt;
     enum VmafLogLevel log_level;
