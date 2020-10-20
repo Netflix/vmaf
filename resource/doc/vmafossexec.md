@@ -12,7 +12,7 @@ libvmaf/build/tools/vmafossexec yuv420p 576 324 \
   python/test/resource/yuv/src01_hrc00_576x324.yuv \
   python/test/resource/yuv/src01_hrc01_576x324.yuv \
   model/vmaf_v0.6.1.pkl \
-  --log vmaf_output.xml \
+  --log /dev/stdout \
   --psnr --ssim --ms-ssim \
   --thread 0 --subsample 5
 ```
