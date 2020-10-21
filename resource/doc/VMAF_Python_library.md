@@ -3,61 +3,44 @@ VMAF Python Library
 
 The VMAF Python library offers full functionalities from running basic VMAF command line, running VMAF on a batch of video files, training and testing a VMAF model on video datasets, and visualization tools, etc. It is the playground to experiment with VMAF.
 
-## Prerequisites
+## Build
 
-In order to use the Python library, first install the `libvmaf` C library according to [the instructions](../../libvmaf/README.md).
+Make sure you have `python3` (python 3.6 or higher). You can check the version by `python3 --version`.
 
-### Linux (Ubuntu)
-
-Install the dependencies:
-
+Follow the steps below:
 ```
-sudo apt-get update -qq && \
-sudo apt-get install -y \
-  python3 \
-  python3-dev \
-  python3-pip \
-  python3-setuptools \
-  python3-wheel \
-  python3-tk
+python3 -m pip install virtualenv
+python3 -m virtualenv .venv
+source .venv/bin/activate
+pip install meson cython numpy
+sudo [package-manager] install nasm ninja doxygen
 ```
+You need to invoke `[package-manager]` depending on which system you are on: `apt-get` for Ubuntu and Debian, `yum` for CentOS and RHEL, `dnf` for Fedora, `zypper` for openSUSE, `brew` for MacOS (no `sudo`).
 
-### macOS
+Make sure `nasm` is 2.13.02 or higher (check by `nasm --version`) and `ninja` is 1.7.1 or higher (check by `ninja --version`.
 
-First, install [Homebrew](https://brew.sh), then install the dependencies:
-
+Depending on the system, you may also need to install `python-dev`:
 ```
-brew install python
+sudo [package-manager] install [python-dev]
 ```
+where `[python-dev]` is either `python3-dev` or `python3-devel` depending on the system.
 
-This will install an up-to-date version of Python and `pip` (see [Homebrew's Python guide](https://docs.brew.sh/Homebrew-and-Python) for more info).
-
-## Installation
-
-Install the required Python packages from the `python` directory:
-
+Build the binary by:
 ```
-cd python
-pip3 install --user .
+make
 ```
 
-Make sure your user install executable directory is on your PATH. Add this to the end of `~/.bashrc` (or `~/.bash_profile` under macOS) and restart your shell:
-
+Install the rest of the required Python packages:
 ```
-export PATH="$PATH:$HOME/.local/bin"
+pip install -r python/requirements.txt
 ```
 
 ## Testing
 
-The package has thus far been tested on Ubuntu 16.04 LTS and macOS 10.13.
-
-After installation, run this from the repository root:
-
+Run unittests and make sure they all pass:
 ```
 ./unittest
 ```
-
-and expect all tests pass.
 
 ## Basic Usage
 

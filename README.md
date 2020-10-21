@@ -22,7 +22,7 @@ Refer to the [FAQ](FAQ.md) page.
 
 ## Usages
 
-The VDK package offers a number of ways for a user to interact with the VMAF algorithm implementations. The core feature extraction library is written in C. The rest scripting code including the classes for machine learning regression, training and testing VMAF models and etc., is written in Python. Besides, there is C++ an implementation partially replicating the logic in the regression classes, such that the VMAF prediction (excluding training) is fully implemented.
+The VDK package offers a number of ways that a user can interact with the VMAF algorithm implementations. The core `libvmaf` library with feature extractors is written in C. The rest of the code including the classes for machine learning regression, training and testing VMAF models and etc., is written in Python. Besides, the `libvmaf` C library partially replicates the logic in the regression classes, such that the VMAF prediction (excluding training) is fully implemented.
 
 There are a number of ways one can use the package:
 
