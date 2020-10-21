@@ -390,3 +390,70 @@ class STMADFeatureExtractor(MatlabFeatureExtractor):
             assert cls.get_scores_key(feature) in result.result_dict
 
         return result
+
+
+class iCIDFeatureExtractor(MatlabFeatureExtractor):
+
+   TYPE = 'ICID_feature'
+
+   VERSION = '1.0'
+
+   ATOM_FEATURES = ['icid']
+   # DERIVED_ATOM_FEATURES = ['icid_all_same']
+
+   MATLAB_WORKSPACE = VmafConfig.root_path('matlab', 'cid_icid')
+
+   @classmethod
+   def _assert_an_asset(cls, asset):
+       super(iCIDFeatureExtractor, cls)._assert_an_asset(asset)
+       assert asset.ref_yuv_type == asset.dis_yuv_type
+
+   def _generate_result(self, asset):
+       # routine to call the command-line executable and generate quality
+       # scores in the log file.
+
+       ref_workfile_path = asset.ref_workfile_path
+       dis_workfile_path = asset.dis_workfile_path
+       log_file_path = self._get_log_file_path(asset)
+
+       current_dir = os.getcwd() + '/'
+
+       ref_workfile_path = make_absolute_path(ref_workfile_path, current_dir)
+       dis_workfile_path = make_absolute_path(dis_workfile_path, current_dir)
+       log_file_path = make_absolute_path(log_file_path, current_dir)
+
+       quality_width, quality_height = asset.quality_width_height
+
+       icid_cmd = '''{matlab} -nodisplay -nosplash -nodesktop -r "run_icid('{ref}', '{dis}', {h}, {w}, '{yuvtype}'); exit;" >> {log_file_path}'''.format(
+           matlab=VmafExternalConfig.get_and_assert_matlab(),
+           ref=ref_workfile_path,
+           dis=dis_workfile_path,
+           w=quality_width,
+           h=quality_height,
+           yuvtype=asset.ref_yuv_type,
+           log_file_path=log_file_path,
+       )
+       if self.logger:
+           self.logger.info(icid_cmd)
+
+       os.chdir(self.MATLAB_WORKSPACE)
+       run_process(icid_cmd, shell=True)
+       os.chdir(current_dir)
+
+   @classmethod
+   def _post_process_result(cls, result):
+       # override Executor._post_process_result
+
+       result = super(iCIDFeatureExtractor, cls)._post_process_result(result)
+
+       # icid_scores_key = cls.get_scores_key('icid')
+       # icid_all_same_scores_key = cls.get_scores_key('icid_all_same')
+       # icid_scores = result.result_dict[icid_scores_key]
+       # result.result_dict[icid_scores_key] = icid_scores
+       # result.result_dict[icid_all_same_scores_key] = icid_scores
+       #
+       # # validate
+       # for feature in cls.DERIVED_ATOM_FEATURES:
+       #     assert cls.get_scores_key(feature) in result.result_dict
+
+       return result

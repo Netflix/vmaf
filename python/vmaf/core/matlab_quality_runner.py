@@ -5,7 +5,7 @@ from vmaf.core.executor import Executor
 from vmaf.tools.decorator import override
 from vmaf.tools.misc import run_process
 from vmaf.core.feature_assembler import FeatureAssembler
-from vmaf.core.matlab_feature_extractor import StrredFeatureExtractor, StrredOptFeatureExtractor, SpEEDMatlabFeatureExtractor, STMADFeatureExtractor
+from vmaf.core.matlab_feature_extractor import StrredFeatureExtractor, StrredOptFeatureExtractor, SpEEDMatlabFeatureExtractor, STMADFeatureExtractor, iCIDFeatureExtractor
 from vmaf.core.quality_runner import QualityRunner
 from vmaf.core.result import Result
 
@@ -215,3 +215,53 @@ class STMADQualityRunner(QualityRunner):
 
         vmaf_fassembler = self._get_feature_assembler_instance(asset)
         vmaf_fassembler.remove_results()
+
+
+class ICIDQualityRunner(QualityRunner):
+
+   TYPE = 'ICID'
+
+   VERSION = 'F' + iCIDFeatureExtractor.VERSION + '-1.0'
+
+   def _get_quality_scores(self, asset):
+       raise NotImplementedError
+
+   def _generate_result(self, asset):
+       raise NotImplementedError
+
+   def _get_feature_assembler_instance(self, asset):
+       feature_dict = {iCIDFeatureExtractor.TYPE: iCIDFeatureExtractor.ATOM_FEATURES + getattr(
+           iCIDFeatureExtractor, 'DERIVED_ATOM_FEATURES', [])}
+
+       feature_assembler = FeatureAssembler(
+           feature_dict=feature_dict,
+           feature_option_dict=None,
+           assets=[asset],
+           logger=self.logger,
+           fifo_mode=self.fifo_mode,
+           delete_workdir=self.delete_workdir,
+           result_store=self.result_store,
+           optional_dict=None,
+           optional_dict2=None,
+           parallelize=False,  # parallelization already in a higher level
+       )
+       return feature_assembler
+
+   def _run_on_asset(self, asset):
+       # Override Executor._run_on_asset(self, asset)
+       vmaf_fassembler = self._get_feature_assembler_instance(asset)
+       vmaf_fassembler.run()
+       feature_result = vmaf_fassembler.results[0]
+       result_dict = {}
+       result_dict.update(feature_result.result_dict.copy())  # add feature result
+       result_dict[self.get_scores_key()] = feature_result.result_dict[
+           iCIDFeatureExtractor.get_scores_key('icid')]  # add strred score
+       del result_dict[iCIDFeatureExtractor.get_scores_key('icid')]  # delete redundant
+       return Result(asset, self.executor_id, result_dict)
+
+   def _remove_result(self, asset):
+       # Override Executor._remove_result(self, asset) by redirecting it to the
+       # FeatureAssembler.
+
+       vmaf_fassembler = self._get_feature_assembler_instance(asset)
+       vmaf_fassembler.remove_results()

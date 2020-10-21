@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import unittest
 import pprint
 
-from vmaf.core.matlab_quality_runner import SpEEDMatlabQualityRunner, StrredQualityRunner
+from vmaf.core.matlab_quality_runner import SpEEDMatlabQualityRunner, StrredQualityRunner, ICIDQualityRunner
 from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.asset import Asset
 from vmaf.core.quality_runner import PsnrQualityRunner, VmafQualityRunner, VmafossExecQualityRunner
@@ -231,6 +231,24 @@ class MatlabQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['SpEED_Matlab_feature_sspeed_4_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['SpEED_Matlab_feature_tspeed_4_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['SpEED_Matlab_score'], 0.0, places=4)
+
+    def test_run_icid_runner(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = ICIDQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None
+        )
+        self.runner.run(parallelize=False)
+
+        results = self.runner.results
+
+        self.assertEqual(self.runner.VERSION, "F1.0-1.0")
+        self.assertAlmostEqual(results[0]['ICID_score'], 0.14382252083333333, places=4)
+        self.assertAlmostEqual(results[1]['ICID_score'], 0.0, places=4)
 
 
 @unittest.skipIf(not VmafExternalConfig.matlab_path(), "matlab not installed")
