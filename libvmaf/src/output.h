@@ -19,12 +19,12 @@
 #ifndef __VMAF_OUTPUT_H__
 #define __VMAF_OUTPUT_H__
 
-int vmaf_write_output_xml(VmafFeatureCollector *fc, FILE *outfile,
+int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc, FILE *outfile,
                           unsigned subsample, unsigned width, unsigned height,
                           double fps);
 
-int vmaf_write_output_json(VmafFeatureCollector *fc, FILE *outfile,
-                           unsigned subsample);
+int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
+                           FILE *outfile, unsigned subsample);
 
 int vmaf_write_output_csv(VmafFeatureCollector *fc, FILE *outfile,
                            unsigned subsample);

@@ -42,8 +42,10 @@ enum VmafOutputFormat {
 enum VmafPoolingMethod {
     VMAF_POOL_METHOD_UNKNOWN = 0,
     VMAF_POOL_METHOD_MIN,
+    VMAF_POOL_METHOD_MAX,
     VMAF_POOL_METHOD_MEAN,
     VMAF_POOL_METHOD_HARMONIC_MEAN,
+    VMAF_POOL_METHOD_NB
 };
 
 typedef struct VmafConfiguration {
