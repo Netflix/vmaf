@@ -36,10 +36,18 @@ static unsigned max_capacity(VmafFeatureCollector *fc)
     return capacity;
 }
 
-int vmaf_write_output_xml(VmafFeatureCollector *fc, FILE *outfile,
-                          unsigned subsample, unsigned width, unsigned height,
-                          double fps)
+static const char *pool_method_name[] = {
+    [VMAF_POOL_METHOD_MIN] = "min",
+    [VMAF_POOL_METHOD_MAX] = "max",
+    [VMAF_POOL_METHOD_MEAN] = "mean",
+    [VMAF_POOL_METHOD_HARMONIC_MEAN] = "harmonic_mean",
+};
+
+int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc,
+                          FILE *outfile, unsigned subsample, unsigned width,
+                          unsigned height, double fps)
 {
+    if (!vmaf) return -EINVAL;
     if (!fc) return -EINVAL;
     if (!outfile) return -EINVAL;
 
@@ -48,6 +56,7 @@ int vmaf_write_output_xml(VmafFeatureCollector *fc, FILE *outfile,
             width, height);
     fprintf(outfile, "  <fyi fps=\"%.2f\" />\n", fps);
 
+    unsigned n_frames = 0;
     fprintf(outfile, "  <frames>\n");
     for (unsigned i = 0 ; i < max_capacity(fc); i++) {
         if ((subsample > 1) && (i % subsample))
@@ -73,22 +82,41 @@ int vmaf_write_output_xml(VmafFeatureCollector *fc, FILE *outfile,
                 fc->feature_vector[j]->score[i].value
             );
         }
+        n_frames++;
         fprintf(outfile, "/>\n");
     }
     fprintf(outfile, "  </frames>\n");
+
+    fprintf(outfile, "  <pooled_metrics>\n");
+    for (unsigned i = 0; i < fc->cnt; i++) {
+        const char *feature_name = fc->feature_vector[i]->name;
+        fprintf(outfile, "    <metric name=\"%s\" ",
+                vmaf_feature_name_alias(feature_name));
+
+        for (unsigned j = 1; j < VMAF_POOL_METHOD_NB; j++) {
+            double score;
+            int err = vmaf_feature_score_pooled(vmaf, feature_name, j, &score,
+                                                0, n_frames - 1);
+            if (!err)
+                fprintf(outfile, "%s=\"%.6f\" ", pool_method_name[j], score);
+        }
+        fprintf(outfile, "/>\n");
+    }
+    fprintf(outfile, "  </pooled_metrics>\n");
 
     fprintf(outfile, "</VMAF>\n");
 
     return 0;
 }
 
-int vmaf_write_output_json(VmafFeatureCollector *fc, FILE *outfile,
-                           unsigned subsample)
+int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
+                           FILE *outfile, unsigned subsample)
 {
     fprintf(outfile, "{\n");
     fprintf(outfile, "  \"version\": \"%s\",\n", vmaf_version());
-    fprintf(outfile, "  \"frames\": [");
 
+    unsigned n_frames = 0;
+    fprintf(outfile, "  \"frames\": [");
     for (unsigned i = 0 ; i < max_capacity(fc); i++) {
         if ((subsample > 1) && (i % subsample))
             continue;
@@ -122,8 +150,35 @@ int vmaf_write_output_json(VmafFeatureCollector *fc, FILE *outfile,
         }
         fprintf(outfile, "      }\n");
         fprintf(outfile, "    }");
+        n_frames++;
+    }
+    fprintf(outfile, "\n  ],\n");
+
+    fprintf(outfile, "  \"pooled_metrics\": [");
+    for (unsigned i = 0; i < fc->cnt; i++) {
+        const char *feature_name = fc->feature_vector[i]->name;
+        fprintf(outfile, "%s", i > 0 ? ",\n" : "\n");
+        fprintf(outfile, "    {\n");
+        fprintf(outfile, "      \"metric\": \"%s\",\n",
+                vmaf_feature_name_alias(feature_name));
+
+        fprintf(outfile, "      \"pooling_methods\": {");
+        for (unsigned j = 1; j < VMAF_POOL_METHOD_NB; j++) {
+            double score;
+            int err = vmaf_feature_score_pooled(vmaf, feature_name, j, &score,
+                                                0, n_frames - 1);
+            if (!err) {
+                fprintf(outfile, "%s", j > 1 ? ",\n" : "\n");
+                fprintf(outfile, "        \"%s\": %.6f",
+                        pool_method_name[j], score);
+            }
+        }
+        fprintf(outfile, "\n");
+        fprintf(outfile, "      }\n");
+        fprintf(outfile, "    }");
     }
     fprintf(outfile, "\n  ]\n");
+
     fprintf(outfile, "}\n");
     return 0;
 }

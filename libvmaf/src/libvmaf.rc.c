@@ -356,7 +356,7 @@ int vmaf_feature_score_pooled(VmafContext *vmaf, const char *feature_name,
     vmaf_fex_ctx_pool_flush(vmaf->fex_ctx_pool, vmaf->feature_collector);
 
     unsigned pic_cnt = 0;
-    double min = 0., sum = 0., i_sum = 0.;
+    double min = 0., max = 0., sum = 0., i_sum = 0.;
     for (unsigned i = index_low; i <= index_high; i++) {
         if ((vmaf->cfg.n_subsample > 1) && (i % vmaf->cfg.n_subsample))
             continue;
@@ -366,8 +366,10 @@ int vmaf_feature_score_pooled(VmafContext *vmaf, const char *feature_name,
         if (err) return err;
         sum += s;
         i_sum += 1. / (s + 1.);
-        if ((i == index_low) || (min < s))
+        if ((i == index_low) || (s < min))
             min = s;
+        if ((i == index_low) || (s > max))
+            max = s;
     }
 
     switch (pool_method) {
@@ -377,6 +379,9 @@ int vmaf_feature_score_pooled(VmafContext *vmaf, const char *feature_name,
     case VMAF_POOL_METHOD_MIN:
         *score = min;
         break;
+    case VMAF_POOL_METHOD_MAX:
+        *score = max;
+        break;
     case VMAF_POOL_METHOD_HARMONIC_MEAN:
         *score = pic_cnt / i_sum - 1.0;
         break;
@@ -385,7 +390,6 @@ int vmaf_feature_score_pooled(VmafContext *vmaf, const char *feature_name,
     }
 
     return 0;
-
 }
 
 int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
@@ -445,13 +449,13 @@ int vmaf_write_output(VmafContext *vmaf, const char *output_path,
     int ret;
     switch (fmt) {
     case VMAF_OUTPUT_FORMAT_XML:
-        ret = vmaf_write_output_xml(vmaf->feature_collector, outfile,
+        ret = vmaf_write_output_xml(vmaf, vmaf->feature_collector, outfile,
                                     vmaf->cfg.n_subsample,
                                     vmaf->pic_params.w, vmaf->pic_params.h,
                                     fps);
         break;
     case VMAF_OUTPUT_FORMAT_JSON:
-        ret = vmaf_write_output_json(vmaf->feature_collector, outfile,
+        ret = vmaf_write_output_json(vmaf, vmaf->feature_collector, outfile,
                                      vmaf->cfg.n_subsample);
         break;
     case VMAF_OUTPUT_FORMAT_CSV:
