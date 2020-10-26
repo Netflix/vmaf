@@ -58,8 +58,16 @@ jobs:
       - name: Install dependencies (mac)
         if: matrix.os == 'macos-10.15'
         run: |
+          # https://github.com/actions/virtual-environments/issues/1811#issuecomment-708480190
+          brew uninstall openssl@1.0.2t
+          brew uninstall python@2.7.17
+          brew untap local/openssl
+          brew untap local/python2
+          # ^ FIXME
           brew update
-          brew install ccache ninja nasm
+          brew upgrade
+          brew install -q ccache ninja nasm
+
           $CC --version
           meson --version
           ccache --version
@@ -67,7 +75,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Run meson
         run: |
-          sudo chown -R runner: $HOME/.ccache
+          #sudo chown -R runner: $HOME/.ccache
           meson setup libvmaf libvmaf/build --buildtype release
       - name: Run ninja
         run: |

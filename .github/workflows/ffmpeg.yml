@@ -14,11 +14,11 @@ jobs:
       matrix:
         include:
           - os: ubuntu-18.04
-            CC: ccache gcc
-            CXX: ccache g++
+            CC: gcc
+            CXX: g++
           - os: macos-10.15
-            CC: ccache clang
-            CXX: ccache clang++
+            CC: clang
+            CXX: clang++
     runs-on: ${{ matrix.os }}
     env:
       CC: ${{ matrix.CC }}
@@ -36,22 +36,27 @@ jobs:
         if: matrix.os == 'ubuntu-18.04'
         run: |
           sudo apt-get update
-          sudo -E apt-get -yq install ccache ninja-build gcc nasm
+          sudo -E apt-get -yq install ninja-build gcc nasm
       - name: Install dependencies (mac)
         if: matrix.os == 'macos-10.15'
         run: |
+          # https://github.com/actions/virtual-environments/issues/1811#issuecomment-708480190
+          brew uninstall openssl@1.0.2t
+          brew uninstall python@2.7.17
+          brew untap local/openssl
+          brew untap local/python2
+          # ^ FIXME
           brew update
-          brew install ccache ninja nasm pkg-config
+          brew upgrade
+          brew install -q ninja nasm
       - uses: actions/checkout@v2
       - name: Build vmaf
         run: |
-          [ -d "$HOME/.ccache" ] && sudo chown -R runner: "$HOME/.ccache"
           meson setup libvmaf libvmaf/build --buildtype release
           sudo ninja -vC libvmaf/build install
       - name: Prepare FFmpeg
         run: |
           git clone -q --branch master --depth=1 "https://github.com/FFmpeg/FFmpeg" ffmpeg
-          sudo chown -R runner: "$HOME/.ccache"
           cd ffmpeg
           ./configure --enable-version3 --enable-libvmaf --cc="$CC" --cxx="$CXX" || { less ffbuild/config.log; exit 1; }
       - name: Make FFmpeg
