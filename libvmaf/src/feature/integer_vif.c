@@ -20,27 +20,29 @@
 #include <math.h>
 #include <string.h>
 
+#include "cpu.h"
 #include "common/macros.h"
 #include "feature_collector.h"
 #include "feature_extractor.h"
 #include "mem.h"
 
 #include "picture.h"
-#include "vif_buffer.h"
+#include "integer_vif.h"
+
+#if ARCH_X86
+#include "x86/vif_avx2.h"
+#endif
 
 typedef struct VifState {
     VifBuffer buf;
     uint16_t log2_table[65537];
+    void (*filter1d_8)(VifBuffer buf, unsigned w, unsigned h);
+    void (*filter1d_16)(VifBuffer buf, unsigned w, unsigned h, int scale,
+                        int bpc);
+    void (*filter1d_rd_8)(VifBuffer buf, unsigned w, unsigned h);
+    void (*filter1d_rd_16)(VifBuffer buf, unsigned w, unsigned h, int scale,
+                           int bpc);
 } VifState;
-
-static const uint16_t vif_filter1d_table[4][17] = {
-    { 489, 935, 1640, 2640, 3896, 5274, 6547, 7455, 7784, 7455, 6547, 5274, 3896, 2640, 1640, 935, 489 },
-    { 1244, 3663, 7925, 12590, 14692, 12590, 7925, 3663, 1244 },
-    { 3571, 16004, 26386, 16004, 3571 },
-    { 10904, 43728, 10904 }
-};
-
-static const int vif_filter1d_width[4] = { 17, 9, 5, 3 };
 
 /**
  * Padding on top is mirrored accrossed first row
@@ -57,10 +59,10 @@ pad_top_and_bottom(VifBuffer buf, unsigned h, int fwidth)
         memcpy(dis - offset, dis + offset, buf.stride);
         memcpy(ref + buf.stride * (h - 1) + buf.stride * i,
                ref + buf.stride * (h - 1) - buf.stride * (i - 1),
-               buf.stride); 
+               buf.stride);
         memcpy(dis + buf.stride * (h - 1) + buf.stride * i,
                dis + buf.stride * (h - 1) - buf.stride * (i - 1),
-               buf.stride); 
+               buf.stride);
     }
 }
 
@@ -113,49 +115,7 @@ get_best16_from64(uint64_t temp, int *x)
     return (uint16_t)temp;
 }
 
-/**
- * Padding on left is mirrored accrossed first column
- * Padding on right is mirrored accrossed imaginary mirror after right end column
- */
-static FORCE_INLINE inline void
-PADDING_SQ_DATA(VifBuffer buf, int w, unsigned fwidth_half)
-{
-    for (unsigned f = 1; f <= fwidth_half; ++f) {
-        int left_point = -f;
-        int right_point = f;
-        buf.tmp.mu1[left_point] = buf.tmp.mu1[right_point];
-        buf.tmp.mu2[left_point] = buf.tmp.mu2[right_point];
-        buf.tmp.ref[left_point] = buf.tmp.ref[right_point];
-        buf.tmp.dis[left_point] = buf.tmp.dis[right_point];
-        buf.tmp.ref_dis[left_point] = buf.tmp.ref_dis[right_point];
-        
-        left_point = w - f;
-        right_point = w - 1 + f;
-        buf.tmp.mu1[right_point] = buf.tmp.mu1[left_point];
-        buf.tmp.mu2[right_point] = buf.tmp.mu2[left_point];
-        buf.tmp.ref[right_point] = buf.tmp.ref[left_point];
-        buf.tmp.dis[right_point] = buf.tmp.dis[left_point];
-        buf.tmp.ref_dis[right_point] = buf.tmp.ref_dis[left_point];
-    }
-}
-
-static FORCE_INLINE inline void
-PADDING_SQ_DATA_2(VifBuffer buf, int w, unsigned fwidth_half)
-{
-    for (unsigned f = 1; f <= fwidth_half; ++f) {
-        int left_point = -f;
-        int right_point = f;
-        buf.tmp.ref_convol[left_point] = buf.tmp.ref_convol[right_point];
-        buf.tmp.dis_convol[left_point] = buf.tmp.dis_convol[right_point];
-        
-        left_point = w - f;
-        right_point = w - 1 + f;
-        buf.tmp.ref_convol[right_point] = buf.tmp.ref_convol[left_point];
-        buf.tmp.dis_convol[right_point] = buf.tmp.dis_convol[left_point];
-    }
-}
-
-static void vif_filter1d_8(VifBuffer buf, unsigned w, unsigned h)
+static void filter1d_8(VifBuffer buf, unsigned w, unsigned h)
 {
     const unsigned fwidth = vif_filter1d_width[0];
     const uint16_t *vif_filt_s0 = vif_filter1d_table[0];
@@ -220,8 +180,8 @@ static void vif_filter1d_8(VifBuffer buf, unsigned w, unsigned h)
     }
 }
 
-static void vif_filter1d_16(VifBuffer buf, unsigned w, unsigned h, int scale,
-                            int bpc)
+static void filter1d_16(VifBuffer buf, unsigned w, unsigned h, int scale,
+                        int bpc)
 {
     const unsigned fwidth = vif_filter1d_width[scale];
     const uint16_t *vif_filt = vif_filter1d_table[scale];
@@ -386,7 +346,7 @@ static void vif_statistic(VifBuffer buf, float *num, float *den,
                     int x1, x2;
                     int32_t numer1 = (sigma2_sq + sigma_nsq);
                     int64_t sigma12_sq = (int64_t)sigma12*sigma12;
-                    int64_t numer1_tmp = (int64_t)numer1*sigma1_sq; //numerator 
+                    int64_t numer1_tmp = (int64_t)numer1*sigma1_sq; //numerator
                     uint16_t numlog = get_best16_from64((uint64_t)numer1_tmp, &x1);
                     int64_t denom = numer1_tmp - sigma12_sq;
                     if (denom > 0) {
@@ -417,12 +377,12 @@ static void vif_statistic(VifBuffer buf, float *num, float *den,
     //num[0] = accum_num_log / 2048.0 + (accum_den_non_log - (accum_num_non_log / 65536.0) / (255.0*255.0));
     //den[0] = accum_den_log / 2048.0 + accum_den_non_log;
 
-    //changed calculation to increase performance 
+    //changed calculation to increase performance
     num[0] = accum_num_log / 2048.0 + accum_x2 + (accum_den_non_log - ((accum_num_non_log) / 16384.0) / (65025.0));
     den[0] = accum_den_log / 2048.0 - (accum_x + (num_accum_x * 17)) + accum_den_non_log;
 }
 
-static void vif_filter1d_rd_8(VifBuffer buf, unsigned w, unsigned h)
+static void filter1d_rd_8(VifBuffer buf, unsigned w, unsigned h)
 {
     const unsigned fwidth = vif_filter1d_width[1];
     const uint16_t *vif_filt_s1 = vif_filter1d_table[1];
@@ -445,7 +405,7 @@ static void vif_filter1d_rd_8(VifBuffer buf, unsigned w, unsigned h)
             buf.tmp.dis_convol[j] = (accum_dis + 128) >> 8;
         }
 
-        PADDING_SQ_DATA_2(buf, w, fwidth / 2); 
+        PADDING_SQ_DATA_2(buf, w, fwidth / 2);
 
         //HORIZONTAL
         for (unsigned j = 0; j < w; ++j) {
@@ -465,8 +425,8 @@ static void vif_filter1d_rd_8(VifBuffer buf, unsigned w, unsigned h)
     }
 }
 
-static void vif_filter1d_rd_16(VifBuffer buf, unsigned w, unsigned h, int scale,
-                               int bpc)
+static void filter1d_rd_16(VifBuffer buf, unsigned w, unsigned h, int scale,
+                           int bpc)
 {
     const unsigned fwidth = vif_filter1d_width[scale + 1];
     const uint16_t *vif_filt = vif_filter1d_table[scale + 1];
@@ -499,7 +459,7 @@ static void vif_filter1d_rd_16(VifBuffer buf, unsigned w, unsigned h, int scale,
             buf.tmp.dis_convol[j] = (uint16_t)((accum_dis + add_shift_round_VP) >> shift_VP);
         }
 
-        PADDING_SQ_DATA_2(buf, w, fwidth / 2); 
+        PADDING_SQ_DATA_2(buf, w, fwidth / 2);
 
         //HORIZONTAL
         for (unsigned j = 0; j < w; ++j) {
@@ -574,6 +534,22 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
 {
     VifState *s = fex->priv;
+
+    s->filter1d_8 = filter1d_8;
+    s->filter1d_16 = filter1d_16;
+    s->filter1d_rd_8 = filter1d_rd_8;
+    s->filter1d_rd_16 = filter1d_rd_16;
+
+#if ARCH_X86
+    unsigned flags = vmaf_get_cpu_flags();
+    if (flags & VMAF_X86_CPU_FLAG_AVX2) {
+        s->filter1d_8 = vif_filter1d_8_avx2;
+        if (bpc < 12) s->filter1d_16 = vif_filter1d_16_avx2; //FIXME
+        s->filter1d_rd_8 = vif_filter1d_rd_8_avx2;
+        s->filter1d_rd_16 = vif_filter1d_rd_16_avx2;
+    }
+#endif
+
     log_generate(s->log2_table);
 
     (void) pix_fmt;
@@ -586,7 +562,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         ALIGN_CEIL((MAX_ALIGN + w + MAX_ALIGN) * sizeof(uint32_t));
     const size_t frame_size = s->buf.stride * h;
     const size_t pad_size = s->buf.stride * 8;
-    const size_t data_sz = 
+    const size_t data_sz =
         2 * (pad_size + frame_size + pad_size) + 2 * (h * s->buf.stride_16) +
         5 * (h * s->buf.stride_32) + 7 * s->buf.stride_tmp;
     void *data = aligned_malloc(data_sz, MAX_ALIGN);
@@ -652,18 +628,18 @@ static int extract(VmafFeatureExtractor *fex,
     for (unsigned scale = 0; scale < 4; ++scale) {
         if (scale > 0) {
             if (ref_pic->bpc == 8 && scale == 1)
-                vif_filter1d_rd_8(s->buf, w, h);
+                s->filter1d_rd_8(s->buf, w, h);
             else
-                vif_filter1d_rd_16(s->buf, w, h, scale - 1, ref_pic->bpc);
+                s->filter1d_rd_16(s->buf, w, h, scale - 1, ref_pic->bpc);
 
             decimate_and_pad(s->buf, w, h, scale);
             w /= 2; h /= 2;
         }
 
         if (ref_pic->bpc == 8 && scale == 0)
-            vif_filter1d_8(s->buf, w, h);
+            s->filter1d_8(s->buf, w, h);
         else
-            vif_filter1d_16(s->buf, w, h, scale, ref_pic->bpc);
+            s->filter1d_16(s->buf, w, h, scale, ref_pic->bpc);
 
         float num, den;
         vif_statistic(s->buf, &num, &den, w, h, s->log2_table);

@@ -16,36 +16,19 @@
  *
  */
 
-#ifndef VIF_BUFFER_H_
-#define VIF_BUFFER_H_
+#ifndef X86_AVX2_VIF_H_
+#define X86_AVX2_VIF_H_
 
-typedef struct VifBuffer {
-    void *data;
+#include "feature/integer_vif.h"
 
-    void *ref;
-    void *dis;
-    uint16_t *mu1;
-    uint16_t *mu2;
-    uint32_t *mu1_32;
-    uint32_t *mu2_32;
-    uint32_t *ref_sq;
-    uint32_t *dis_sq;
-    uint32_t *ref_dis;
+void vif_filter1d_8_avx2(VifBuffer buf, unsigned w, unsigned h);
 
-    struct {
-        uint32_t *mu1;
-        uint32_t *mu2;
-        uint32_t *ref;
-        uint32_t *dis;
-        uint32_t *ref_dis;
-        uint32_t *ref_convol;
-        uint32_t *dis_convol;
-    } tmp;
+void vif_filter1d_rd_8_avx2(VifBuffer buf, unsigned w, unsigned h);
 
-    ptrdiff_t stride;
-    ptrdiff_t stride_16;
-    ptrdiff_t stride_32;
-    ptrdiff_t stride_tmp;
-} VifBuffer;
+void vif_filter1d_rd_16_avx2(VifBuffer buf, unsigned w, unsigned h, int scale,
+                             int bpc);
 
-#endif /* VIF_BUFFER_H_ */
+void vif_filter1d_16_avx2(VifBuffer buf, unsigned w, unsigned h, int scale,
+                            int bpc);
+
+#endif /* X86_AVX2_VIF_H_ */
