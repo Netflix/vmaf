@@ -16,18 +16,13 @@
  *
  */
 
-#ifndef __VMAF_MEM_H__
-#define __VMAF_MEM_H__
+#ifndef X86_AVX2_ADM_H_
+#define X86_AVX2_ADM_H_
 
-#include <stddef.h>
+#include "feature/integer_adm.h"
 
-#define MAX_ALIGN 32
+void adm_dwt2_8_avx2(const uint8_t *src, const adm_dwt_band_t *dst,
+                     AdmBuffer *buf, int w, int h, int src_stride,
+                     int dst_stride);
 
-#define ALIGN_FLOOR(x) ((x) - (x) % MAX_ALIGN)
-#define ALIGN_CEIL(x) ((x) + ((x) % MAX_ALIGN ? MAX_ALIGN - (x) % MAX_ALIGN : 0))
-
-void *aligned_malloc(size_t size, size_t alignment);
-
-void aligned_free(void *ptr);
-
-#endif /* __VMAF_MEM_H__ */
+#endif /* X86_AVX2_ADM_H_ */
