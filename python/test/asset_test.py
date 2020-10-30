@@ -768,6 +768,23 @@ class AssetTest(unittest.TestCase):
         self.assertEqual(asset.get_filter_cmd('gblur', 'dis'), 'sigma=0.3:steps=3')
         self.assertEqual(str(asset), "test_0_0__720x480_yuv422p_gblursigma=1:steps=2_vs__720x480_yuv422p_gblursigma=0.3:steps=3_q_720x320")
 
+    def test_long_string(self):
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path='a'*128, dis_path='b'*128,
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
+                                  'ref_pad_cmd': 'iw+6:ih+4:3:2'})
+        self.assertEqual(str(asset), "f85b44408a6484d02a14991a2739bfd109dcdd82")
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path='a'*90, dis_path='b'*90,
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
+                                  'ref_pad_cmd': 'iw+6:ih+4:3:2'})
+        self.assertEqual(str(asset), "test_0_0_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_720x480_yuv422p_padiw+6:ih+4:3:2_vs_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb_720x480_yuv422p_q_720x320")
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

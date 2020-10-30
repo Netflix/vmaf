@@ -1,4 +1,6 @@
 import copy
+import hashlib
+
 from vmaf.tools.decorator import deprecated, override
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
@@ -489,6 +491,10 @@ class Asset(WorkdirEnabled):
         quality_str = self.quality_str
         if quality_str:
             s += "_q_{quality_str}".format(quality_str=quality_str)
+
+        if len(s) > 255:
+            s = hashlib.sha1(s.encode("utf-8")).hexdigest()
+
         return s
 
     def to_normalized_dict(self):
