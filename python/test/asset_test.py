@@ -778,12 +778,28 @@ class AssetTest(unittest.TestCase):
         self.assertEqual(str(asset), "f85b44408a6484d02a14991a2739bfd109dcdd82")
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      ref_path='a'*90, dis_path='b'*90,
+                      ref_path='a'*60, dis_path='b'*60,
                       asset_dict={'width': 720, 'height': 480,
                                   'quality_width': 720, 'quality_height': 320,
                                   'yuv_type': 'yuv422p',
                                   'ref_pad_cmd': 'iw+6:ih+4:3:2'})
-        self.assertEqual(str(asset), "test_0_0_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_720x480_yuv422p_padiw+6:ih+4:3:2_vs_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb_720x480_yuv422p_q_720x320")
+        self.assertEqual(str(asset), "test_0_0_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_720x480_yuv422p_padiw+6:ih+4:3:2_vs_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb_720x480_yuv422p_q_720x320")
+
+        asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
+                      dis_path='a'*128,
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
+                                  'ref_pad_cmd': 'iw+6:ih+4:3:2'})
+        self.assertEqual(str(asset), "02727195abe59c854dfc4f62828200550860e3db")
+
+        asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
+                      dis_path='b'*60,
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
+                                  'ref_pad_cmd': 'iw+6:ih+4:3:2'})
+        self.assertEqual(str(asset), "test_0_0_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb_720x480_yuv422p_padiw+6:ih+4:3:2_vs_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb_720x480_yuv422p_q_720x320")
 
 
 if __name__ == '__main__':

@@ -492,7 +492,7 @@ class Asset(WorkdirEnabled):
         if quality_str:
             s += "_q_{quality_str}".format(quality_str=quality_str)
 
-        if len(s) > 255:
+        if len(s) > 196:  # upper limit of filename is 256 but leave some space for prefix/suffix
             s = hashlib.sha1(s.encode("utf-8")).hexdigest()
 
         return s
