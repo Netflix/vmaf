@@ -94,7 +94,7 @@ static void copy_data_hbd(float *src, VmafPicture *dst, unsigned width,
                           unsigned height, int src_stride)
 {
     float *a = src;
-    uint8_t *b = dst->data[0];
+    uint16_t *b = dst->data[0];
     for (unsigned i = 0; i < height; i++) {
         for (unsigned j = 0; j < width; j++) {
             b[j] = a[j];
