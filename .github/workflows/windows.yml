@@ -13,7 +13,7 @@ jobs:
           # Disabled 32-bit job due to vmaf score mismatch
           #- msystem: MINGW32
           #  MINGW_PACKAGE_PREFIX: mingw-w64-i686
-          #  CFLAGS: -msse
+          #  CFLAGS: -msse2 -mfpmath=sse -mstackrealign
           - msystem: MINGW64
             MINGW_PACKAGE_PREFIX: mingw-w64-x86_64
     env:
