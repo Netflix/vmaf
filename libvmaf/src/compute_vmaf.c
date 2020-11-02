@@ -91,16 +91,16 @@ static void copy_data(float *src, VmafPicture *dst, unsigned width,
 }
 
 static void copy_data_hbd(float *src, VmafPicture *dst, unsigned width,
-                          unsigned height, int src_stride)
+                          unsigned height, int src_stride, unsigned bpc)
 {
     float *a = src;
     uint16_t *b = dst->data[0];
     for (unsigned i = 0; i < height; i++) {
         for (unsigned j = 0; j < width; j++) {
-            b[j] = a[j];
+            b[j] = a[j] * (1 << (bpc - 8));
         }
         a += src_stride / sizeof(float);
-        b += dst->stride[0];
+        b += dst->stride[0] / sizeof(uint16_t);
     }
 }
 
@@ -217,14 +217,14 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
             goto free_data;
         }
 
-        if (pix_fmt_map(fmt) > 8) {
-            copy_data_hbd(ref_data, &pic_ref, width, height, stride);
-            copy_data_hbd(main_data, &pic_dist, width, height, stride);
+        const unsigned bpc = bitdepth_map(fmt);
+        if (bpc > 8) {
+            copy_data_hbd(ref_data, &pic_ref, width, height, stride, bpc);
+            copy_data_hbd(main_data, &pic_dist, width, height, stride, bpc);
         } else {
             copy_data(ref_data, &pic_ref, width, height, stride);
             copy_data(main_data, &pic_dist, width, height, stride);
         }
-            
 
         err = vmaf_read_pictures(vmaf, &pic_ref, &pic_dist, picture_index);
         if (err) {
