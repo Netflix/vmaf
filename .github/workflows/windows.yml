@@ -47,7 +47,7 @@ jobs:
           path-type: inherit
 
       - name: Set ccache dir
-        run: echo "::set-env name=CCACHE_DIR::$PWD/.ccache"
+        run: echo "name=CCACHE_DIR::$PWD/.ccache" >> $GITHUB_ENV
 
       - name: Configure vmaf
         run: meson setup libvmaf libvmaf/build --buildtype release --default-library static --prefix "$MINGW_PREFIX"
