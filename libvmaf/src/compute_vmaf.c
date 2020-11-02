@@ -44,6 +44,12 @@ static int pix_fmt_map(char *fmt)
             return VMAF_PIX_FMT_YUV444P;
         if (!strcmp(fmt, "yuv420p10le"))
             return VMAF_PIX_FMT_YUV420P;
+        if (!strcmp(fmt, "yuv420p12le"))
+            return VMAF_PIX_FMT_YUV420P;
+        if (!strcmp(fmt, "yuv420p16le"))
+            return VMAF_PIX_FMT_YUV420P;
+        if (!strcmp(fmt, "yuv422p10le"))
+            return VMAF_PIX_FMT_YUV422P;
         if (!strcmp(fmt, "yuv422p10le"))
             return VMAF_PIX_FMT_YUV422P;
         if (!strcmp(fmt, "yuv444p10le"))
@@ -54,13 +60,18 @@ static int pix_fmt_map(char *fmt)
 
 }
 
-static int bitdepth_map(char *fmt) {
+static int bitdepth_map(char *fmt)
+{
     if (!strcmp(fmt, "yuv420p10le"))
         return 10;
     if (!strcmp(fmt, "yuv422p10le"))
         return 10;
     if (!strcmp(fmt, "yuv444p10le"))
         return 10;
+    if (!strcmp(fmt, "yuv420p12le"))
+        return 12;
+    if (!strcmp(fmt, "yuv420p16le"))
+        return 16;
 
     return 8;
 }
