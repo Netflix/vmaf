@@ -446,7 +446,7 @@ int vmaf_write_output(VmafContext *vmaf, const char *output_path,
                 ((double) (vmaf->feature_collector->timer.end -
                 vmaf->feature_collector->timer.begin) / CLOCKS_PER_SEC);
 
-    int ret;
+    int ret = 0;
     switch (fmt) {
     case VMAF_OUTPUT_FORMAT_XML:
         ret = vmaf_write_output_xml(vmaf, vmaf->feature_collector, outfile,
@@ -467,7 +467,7 @@ int vmaf_write_output(VmafContext *vmaf, const char *output_path,
                                     vmaf->cfg.n_subsample);
         break;
     default:
-        ret -EINVAL;
+        ret = -EINVAL;
         break;
     }
 
