@@ -49,13 +49,13 @@ static const VmafOption options[] = {
         .default_val.b = false,
     },
     {
-            .name = "motion_force_zero",
-            .help = "forcing motion score to zero",
-            .offset = offsetof(MotionState, motion_force_zero),
-            .type = VMAF_OPT_TYPE_BOOL,
-            .default_val.b = false,
+        .name = "motion_force_zero",
+        .help = "forcing motion score to zero",
+        .offset = offsetof(MotionState, motion_force_zero),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
     },
-    { NULL }
+    { 0 }
 };
 
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,

@@ -37,6 +37,7 @@ typedef struct MotionState {
     VmafPicture blur[3];
     unsigned index;
     double score;
+    bool motion_force_zero;
     void (*y_convolution)(void *src, uint16_t *dst, unsigned width,
                           unsigned height, ptrdiff_t src_stride,
                           ptrdiff_t dst_stride, unsigned inp_size_bits);
@@ -45,6 +46,17 @@ typedef struct MotionState {
                           ptrdiff_t dst_stride);
     void (*sad)(VmafPicture *pic_a, VmafPicture *pic_b, uint64_t *sad);
 } MotionState;
+
+static const VmafOption options[] = {
+    {
+        .name = "motion_force_zero",
+        .help = "forcing motion score to zero",
+        .offset = offsetof(MotionState, motion_force_zero),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
+    { 0 }
+};
 
 static inline uint32_t
 edge_16(bool horizontal, const uint16_t *src, int width,
@@ -241,10 +253,34 @@ static void sad_c(VmafPicture *pic_a, VmafPicture *pic_b, uint64_t *sad)
     }
 }
 
+static int extract_force_zero(VmafFeatureExtractor *fex,
+                              VmafPicture *ref_pic, VmafPicture *ref_pic_90,
+                              VmafPicture *dist_pic, VmafPicture *dist_pic_90,
+                              unsigned index,
+                              VmafFeatureCollector *feature_collector)
+{
+    (void) fex;
+    (void) ref_pic;
+    (void) ref_pic_90;
+    (void) dist_pic;
+    (void) dist_pic_90;
+
+    return vmaf_feature_collector_append(feature_collector,
+                                         "'VMAF_feature_motion2_integer_score'",
+                                         0., index);
+}
+
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
 {
     MotionState *s = fex->priv;
+
+    if (s->motion_force_zero) {
+        fex->extract = extract_force_zero;
+        fex->flush = NULL;
+        fex->close = NULL;
+        return 0;
+    }
 
     int err = 0;
     err |= vmaf_picture_alloc(&s->tmp, pix_fmt, 16, w, h);
@@ -363,6 +399,7 @@ VmafFeatureExtractor vmaf_fex_integer_motion = {
     .extract = extract,
     .flush = flush,
     .close = close,
+    .options = options,
     .priv_size = sizeof(MotionState),
     .provided_features = provided_features,
     .flags = VMAF_FEATURE_EXTRACTOR_TEMPORAL,
