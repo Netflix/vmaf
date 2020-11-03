@@ -274,6 +274,7 @@ libvmaf = both_libraries(
 libvmaf_rc_feature_sources = [
     feature_src_dir + 'picture_copy.c',
     feature_src_dir + 'integer_psnr.c',
+    feature_src_dir + 'psnr_hvs.c',
     feature_src_dir + 'feature_extractor.c',
     feature_src_dir + 'alias.c',
     feature_src_dir + 'float_adm.c',
