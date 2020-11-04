@@ -17,3 +17,8 @@ option('enable_avx512',
     type: 'boolean',
     value: false,
     description: 'Build AVX-512 asm files, requires nasm 2.14')
+
+option('install_rc',
+    type: 'boolean',
+    value: false,
+    description: 'Add rc libs/bins to list of installed files')
