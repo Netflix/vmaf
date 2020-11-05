@@ -1,7 +1,6 @@
 #ifndef FEATURE_ADM_H_
 #define FEATURE_ADM_H_
 
-#include "adm_options.h"
 #include "mem.h"
 #include "stdio.h"
 #include <errno.h>

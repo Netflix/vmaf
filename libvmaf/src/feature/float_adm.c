@@ -54,7 +54,7 @@ static const VmafOption options[] = {
         .min = 1.0,
         .max = DEFAULT_ADM_ENHN_GAIN_LIMIT,
     },
-    { NULL }
+    { 0 }
 };
 
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
