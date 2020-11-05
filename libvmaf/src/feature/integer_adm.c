@@ -30,10 +30,27 @@
 typedef struct AdmState {
     size_t integer_stride;
     AdmBuffer buf;
+    double adm_enhn_gain_limit;
     void (*dwt2_8)(const uint8_t *src, const adm_dwt_band_t *dst,
                    AdmBuffer *buf, int w, int h, int src_stride,
                    int dst_stride);
 } AdmState;
+
+#define DEFAULT_ADM_ENHN_GAIN_LIMIT (100.0)
+
+static const VmafOption options[] = {
+    {
+        .name = "adm_enhn_gain_limit",
+        .help = "enhancement gain imposed on adm, must be >= 1.0, "
+                "where 1.0 means the gain is completely disabled",
+        .offset = offsetof(AdmState, adm_enhn_gain_limit),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = DEFAULT_ADM_ENHN_GAIN_LIMIT,
+        .min = 1.0,
+        .max = DEFAULT_ADM_ENHN_GAIN_LIMIT,
+    },
+    { 0 }
+};
 
 /*
  * lambda = 0 (finest scale), 1, 2, 3 (coarsest scale);
@@ -599,7 +616,11 @@ static void dwt2_src_indices_filt(int **src_ind_y, int **src_ind_x, int w, int h
     }
 }
 
-static void adm_decouple(AdmBuffer *buf, int w, int h, int stride)
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+
+static void adm_decouple(AdmBuffer *buf, int w, int h, int stride,
+                         double adm_enhn_gain_limit)
 {
     const float cos_1deg_sq = cos(1.0 * M_PI / 180.0) * cos(1.0 * M_PI / 180.0);
 
@@ -670,6 +691,7 @@ static void adm_decouple(AdmBuffer *buf, int w, int h, int stride)
             int angle_flag = (((float)ot_dp / 4096.0) >= 0.0f) &&
                 (((float)ot_dp / 4096.0) * ((float)ot_dp / 4096.0) >=
                     cos_1deg_sq * ((float)o_mag_sq / 4096.0) * ((float)t_mag_sq / 4096.0));
+
             if (angle_flag) {
                 r->band_h[i * stride + j] = th;
                 r->band_v[i * stride + j] = tv;
@@ -699,6 +721,21 @@ static void adm_decouple(AdmBuffer *buf, int w, int h, int stride)
                 tmph = ((kh * oh) + 16384) >> 15;
                 tmpv = ((kv * ov) + 16384) >> 15;
                 tmpd = ((kd * od) + 16384) >> 15;
+
+                if (angle_flag && (tmph > 0.0))
+                    tmph = MIN(tmph * adm_enhn_gain_limit, th);
+                if (angle_flag && (tmph < 0.0))
+                    tmph = MAX(tmph * adm_enhn_gain_limit, th);
+
+                if (angle_flag && (tmpv > 0.0))
+                    tmpv = MIN(tmpv * adm_enhn_gain_limit, tv);
+                if (angle_flag && (tmpv < 0.0))
+                    tmpv = MAX(tmpv * adm_enhn_gain_limit, tv);
+
+                if (angle_flag && (tmpd > 0.0))
+                    tmpd = MIN(tmpd * adm_enhn_gain_limit, td);
+                if (angle_flag && (tmpd < 0.0))
+                    tmpd = MAX(tmpd * adm_enhn_gain_limit, td);
 
                 r->band_h[i * stride + j] = tmph;
                 r->band_v[i * stride + j] = tmpv;
@@ -2303,7 +2340,8 @@ static void adm_dwt2_s123_combined(const int32_t *i4_ref_scale, const int32_t *i
 }
 
 void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic,
-                         double *score, double *scores, AdmBuffer *buf)
+                         double *score, double *scores, AdmBuffer *buf,
+                         double adm_enhn_gain_limit)
 {
     int w = ref_pic->w[0];
     int h = ref_pic->h[0];
@@ -2353,7 +2391,7 @@ void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic
 			w = (w + 1) / 2;
 			h = (h + 1) / 2;
 
-			adm_decouple(buf, w, h, buf_stride);
+			adm_decouple(buf, w, h, buf_stride, adm_enhn_gain_limit);
 
 			den_scale = adm_csf_den_scale(&buf->ref_dwt2, w, h, buf_stride);
 
@@ -2523,7 +2561,8 @@ static int extract(VmafFeatureExtractor *fex,
     double score;
     double scores[8];
 
-    integer_compute_adm(s, ref_pic, dist_pic, &score, scores, &s->buf);
+    integer_compute_adm(s, ref_pic, dist_pic, &score, scores, &s->buf,
+                        s->adm_enhn_gain_limit);
 
     err |= vmaf_feature_collector_append(feature_collector,
                                         "'VMAF_feature_adm2_integer_score'",
@@ -2572,6 +2611,7 @@ VmafFeatureExtractor vmaf_fex_integer_adm = {
     .name = "adm",
     .init = init,
     .extract = extract,
+    .options = options,
     .close = close,
     .priv_size = sizeof(AdmState),
     .provided_features = provided_features,
