@@ -692,59 +692,51 @@ static void adm_decouple(AdmBuffer *buf, int w, int h, int stride,
                 (((float)ot_dp / 4096.0) * ((float)ot_dp / 4096.0) >=
                     cos_1deg_sq * ((float)o_mag_sq / 4096.0) * ((float)t_mag_sq / 4096.0));
 
-            if (angle_flag) {
-                r->band_h[i * stride + j] = th;
-                r->band_v[i * stride + j] = tv;
-                r->band_d[i * stride + j] = td;
+            /**
+             * Division th/oh is carried using lookup table and converted to multiplication
+             */
 
-                a->band_h[i * stride + j] = 0;
-                a->band_v[i * stride + j] = 0;
-                a->band_d[i * stride + j] = 0;
-            }
-            else {
-                /**
-                 * Division th/oh is carried using lookup table and converted to multiplication
-                 */
+            int32_t tmp_kh = (oh == 0) ?
+                32768 : (((int64_t)div_lookup[oh + 32768] * th) + 16384) >> 15;
+            int32_t tmp_kv = (ov == 0) ?
+                32768 : (((int64_t)div_lookup[ov + 32768] * tv) + 16384) >> 15;
+            int32_t tmp_kd = (od == 0) ?
+                32768 : (((int64_t)div_lookup[od + 32768] * td) + 16384) >> 15;
 
-                int32_t tmp_kh = (oh == 0) ? 32768 : (((int64_t)div_lookup[oh + 32768] * th) + 16384) >> 15;
-                int32_t tmp_kv = (ov == 0) ? 32768 : (((int64_t)div_lookup[ov + 32768] * tv) + 16384) >> 15;
-                int32_t tmp_kd = (od == 0) ? 32768 : (((int64_t)div_lookup[od + 32768] * td) + 16384) >> 15;
+            int32_t kh = tmp_kh < 0 ? 0 : (tmp_kh > 32768 ? 32768 : tmp_kh);
+            int32_t kv = tmp_kv < 0 ? 0 : (tmp_kv > 32768 ? 32768 : tmp_kv);
+            int32_t kd = tmp_kd < 0 ? 0 : (tmp_kd > 32768 ? 32768 : tmp_kd);
 
-                int32_t kh = tmp_kh < 0 ? 0 : (tmp_kh > 32768 ? 32768 : tmp_kh);
-                int32_t kv = tmp_kv < 0 ? 0 : (tmp_kv > 32768 ? 32768 : tmp_kv);
-                int32_t kd = tmp_kd < 0 ? 0 : (tmp_kd > 32768 ? 32768 : tmp_kd);
+            /**
+             * kh,kv,kd are in Q15 type and oh,ov,od are in Q16 type hence shifted by
+             * 15 to make result Q16
+             */
+            tmph = ((kh * oh) + 16384) >> 15;
+            tmpv = ((kv * ov) + 16384) >> 15;
+            tmpd = ((kd * od) + 16384) >> 15;
 
-                /**
-                 * kh,kv,kd are in Q15 type and oh,ov,od are in Q16 type hence shifted by
-                 * 15 to make result Q16
-                 */
-                tmph = ((kh * oh) + 16384) >> 15;
-                tmpv = ((kv * ov) + 16384) >> 15;
-                tmpd = ((kd * od) + 16384) >> 15;
+            if (angle_flag && (tmph > 0.0))
+                tmph = MIN(tmph * adm_enhn_gain_limit, th);
+            if (angle_flag && (tmph < 0.0))
+                tmph = MAX(tmph * adm_enhn_gain_limit, th);
 
-                if (angle_flag && (tmph > 0.0))
-                    tmph = MIN(tmph * adm_enhn_gain_limit, th);
-                if (angle_flag && (tmph < 0.0))
-                    tmph = MAX(tmph * adm_enhn_gain_limit, th);
+            if (angle_flag && (tmpv > 0.0))
+                tmpv = MIN(tmpv * adm_enhn_gain_limit, tv);
+            if (angle_flag && (tmpv < 0.0))
+                tmpv = MAX(tmpv * adm_enhn_gain_limit, tv);
 
-                if (angle_flag && (tmpv > 0.0))
-                    tmpv = MIN(tmpv * adm_enhn_gain_limit, tv);
-                if (angle_flag && (tmpv < 0.0))
-                    tmpv = MAX(tmpv * adm_enhn_gain_limit, tv);
+            if (angle_flag && (tmpd > 0.0))
+                tmpd = MIN(tmpd * adm_enhn_gain_limit, td);
+            if (angle_flag && (tmpd < 0.0))
+                tmpd = MAX(tmpd * adm_enhn_gain_limit, td);
 
-                if (angle_flag && (tmpd > 0.0))
-                    tmpd = MIN(tmpd * adm_enhn_gain_limit, td);
-                if (angle_flag && (tmpd < 0.0))
-                    tmpd = MAX(tmpd * adm_enhn_gain_limit, td);
+            r->band_h[i * stride + j] = tmph;
+            r->band_v[i * stride + j] = tmpv;
+            r->band_d[i * stride + j] = tmpd;
 
-                r->band_h[i * stride + j] = tmph;
-                r->band_v[i * stride + j] = tmpv;
-                r->band_d[i * stride + j] = tmpd;
-
-                a->band_h[i * stride + j] = th - tmph;
-                a->band_v[i * stride + j] = tv - tmpv;
-                a->band_d[i * stride + j] = td - tmpd;
-            }
+            a->band_h[i * stride + j] = th - tmph;
+            a->band_v[i * stride + j] = tv - tmpv;
+            a->band_d[i * stride + j] = td - tmpd;
         }
     }
 }
