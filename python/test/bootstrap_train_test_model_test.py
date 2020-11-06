@@ -31,7 +31,7 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
             optional_dict=None,
             optional_dict2=None,
         )
-        runner.run(parallelize=True)
+        runner.run(parallelize=False)
         self.features = runner.results
 
         self.model_filename = VmafConfig.workspace_path("model", "test_save_load.pkl")
@@ -350,6 +350,98 @@ class BootstrapTrainTestModelTestJson(unittest.TestCase):
             self.assertFalse(os.path.exists('{}.{:04d}'.format(self.model_filename_json, i) + '.model'))
 
         loaded_model = BootstrapLibsvmNusvrTrainTestModel.from_file(self.model_filename_json, None, format='json')
+
+        self.assertAlmostEqual(self.model.evaluate(xs, ys)['RMSE'], 0.6226308662005923, places=4)
+        self.assertAlmostEqual(self.model.evaluate_bagging(xs, ys)['RMSE'], 0.6696474832672723, places=4)
+        self.assertAlmostEqual(self.model.evaluate_stddev(xs)['mean_stddev'], 0.39703824367678103, places=2)
+        self.assertAlmostEqual(self.model.evaluate_stddev(xs)['mean_ci95_low'], 3.3984211902006627, places=2)
+        self.assertAlmostEqual(self.model.evaluate_stddev(xs)['mean_ci95_high'], 4.753825468723706, places=2)
+
+        # loaded model generates slight numerical difference
+        self.assertAlmostEqual(loaded_model.evaluate(xs, ys)['RMSE'], 0.6226313987163097, places=4)
+        self.assertAlmostEqual(loaded_model.evaluate_bagging(xs, ys)['RMSE'], 0.6696478863129723, places=4)
+        self.assertAlmostEqual(loaded_model.evaluate_stddev(xs)['mean_stddev'], 0.3970382109813205, places=2)
+        self.assertAlmostEqual(loaded_model.evaluate_stddev(xs)['mean_ci95_low'], 3.398421319902801, places=2)
+        self.assertAlmostEqual(loaded_model.evaluate_stddev(xs)['mean_ci95_high'], 4.753825575324514, places=2)
+
+
+class BootstrapTrainTestModelTestPklCombined(unittest.TestCase):
+
+    def setUp(self):
+
+        train_dataset_path = VmafConfig.test_resource_path('test_image_dataset_diffdim2.py')
+        train_dataset = import_python_file(train_dataset_path)
+        train_assets = read_dataset(train_dataset)
+
+        runner = MomentNorefFeatureExtractor(
+            train_assets,
+            None,
+            fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict=None,
+            optional_dict2=None,
+        )
+        runner.run(parallelize=False)
+        self.features = runner.results
+
+        self.model_filename_pkl = VmafConfig.workspace_path("model", "test_save_load.pkl")
+
+    def tearDown(self):
+        pass
+
+    def test_train_save_load_predict_bootstrap_libsvmnusvr_pkl_combined(self):
+        xys = BootstrapLibsvmNusvrTrainTestModel.get_xys_from_results(self.features)
+        self.model = BootstrapLibsvmNusvrTrainTestModel({'norm_type': 'normalize'}, None)
+        self.model.train(xys)
+        with self.assertRaises(AssertionError):
+            self.model.to_file(self.model_filename_pkl, format='pkl', combined=True)
+
+
+class BootstrapTrainTestModelTestJsonCombined(unittest.TestCase):
+
+    def setUp(self):
+
+        train_dataset_path = VmafConfig.test_resource_path('test_image_dataset_diffdim2.py')
+        train_dataset = import_python_file(train_dataset_path)
+        train_assets = read_dataset(train_dataset)
+
+        runner = MomentNorefFeatureExtractor(
+            train_assets,
+            None,
+            fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict=None,
+            optional_dict2=None,
+        )
+        runner.run(parallelize=False)
+        self.features = runner.results
+
+        self.model_filename_json = VmafConfig.workspace_path("model", "test_save_load.json")
+
+    def tearDown(self):
+        if hasattr(self, 'model'):
+            self.model.delete(self.model_filename_json, format='json', combined=True)
+
+    def test_train_save_load_predict_bootstrap_libsvmnusvr_json_combined(self):
+
+        xs = BootstrapLibsvmNusvrTrainTestModel.get_xs_from_results(self.features)
+        ys = BootstrapLibsvmNusvrTrainTestModel.get_ys_from_results(self.features)
+        xys = BootstrapLibsvmNusvrTrainTestModel.get_xys_from_results(self.features)
+
+        self.model = BootstrapLibsvmNusvrTrainTestModel({'norm_type': 'normalize'}, None)
+        self.model.train(xys)
+
+        self.model.to_file(self.model_filename_json, format='json', combined=True)
+
+        self.assertTrue(os.path.exists('{}'.format(self.model_filename_json)))
+        self.assertFalse(os.path.exists('{}'.format(self.model_filename_json) + '.model'))
+        for i in range(1, 100):
+            self.assertFalse(os.path.exists('{}.{:04d}'.format(self.model_filename_json, i)))
+            self.assertFalse(os.path.exists('{}.{:04d}'.format(self.model_filename_json, i) + '.model'))
+
+        loaded_model = BootstrapLibsvmNusvrTrainTestModel.from_file(self.model_filename_json, None, format='json', combined=True)
 
         self.assertAlmostEqual(self.model.evaluate(xs, ys)['RMSE'], 0.6226308662005923, places=4)
         self.assertAlmostEqual(self.model.evaluate_bagging(xs, ys)['RMSE'], 0.6696474832672723, places=4)

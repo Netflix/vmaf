@@ -902,12 +902,13 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
         supported_formats = ['pkl', 'json']
         assert format in supported_formats, \
             f'format must be in {supported_formats}, but got: {format}'
-        try:
-            svmutil
-        except NameError:
-            from vmaf import svmutil
 
         if format == 'pkl':
+            try:
+                svmutil
+            except NameError:
+                from vmaf import svmutil
+
             # special handling of libsvmnusvr: save .model differently
             info_to_save = {'param_dict': param_dict,
                             'model_dict': model_dict.copy()}
@@ -918,19 +919,32 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
             svmutil.svm_save_model(filename + '.model', svm_model)
         elif format == 'json':
             # special handling of libsvmnusvr: save model into a string
-            info_to_save = {'param_dict': param_dict,
-                            'model_dict': model_dict.copy()}
-            svm_model = info_to_save['model_dict']['model']
-            with tempfile.TemporaryDirectory() as tmpdir:
-                svm_model_temppath = os.path.join(tmpdir, os.path.basename(filename) + '.svm')
-                svmutil.svm_save_model(svm_model_temppath, svm_model)
-                with open(svm_model_temppath, 'rt') as file:
-                    svm_model_str = file.read()
-            info_to_save['model_dict']['model'] = svm_model_str
+            tmp_svm_filename = os.path.basename(filename) + '.svm'
+            info_to_save = LibsvmNusvrTrainTestModel._to_json(param_dict,
+                                                              model_dict,
+                                                              tmp_svm_filename)
             with open(filename, 'wt') as file:
                 json.dump(info_to_save, file, indent=4)
         else:
             assert False
+
+    @staticmethod
+    def _to_json(param_dict, model_dict, tmp_svm_filename):
+        try:
+            svmutil
+        except NameError:
+            from vmaf import svmutil
+
+        info_to_save = {'param_dict': param_dict,
+                        'model_dict': model_dict.copy()}
+        svm_model = info_to_save['model_dict']['model']
+        with tempfile.TemporaryDirectory() as tmpdir:
+            svm_model_temppath = os.path.join(tmpdir, tmp_svm_filename)
+            svmutil.svm_save_model(svm_model_temppath, svm_model)
+            with open(svm_model_temppath, 'rt') as file:
+                svm_model_str = file.read()
+        info_to_save['model_dict']['model'] = svm_model_str
+        return info_to_save
 
     @classmethod
     @override(TrainTestModel)
@@ -948,7 +962,7 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
         train_test_model = cls(
             param_dict={}, logger=logger, optional_dict2=optional_dict2)
         train_test_model.param_dict = info_loaded['param_dict']
-        train_test_model.model_dict = info_loaded['model_dict']
+        train_test_model.model_dict = info_loaded['model_dict'].copy()
 
         if issubclass(cls, LibsvmNusvrTrainTestModel):
             if format == 'pkl':
@@ -1408,6 +1422,24 @@ class BootstrapMixin(object):
 
     @override(TrainTestModel)
     def to_file(self, filename, **more):
+        format = more['format'] if 'format' in more else 'pkl'
+        supported_formats = ['pkl', 'json']
+        assert format in supported_formats, \
+            f'format must be in {supported_formats}, but got: {format}'
+
+        combined = more['combined'] if 'combined' in more else False
+        assert isinstance(combined, bool)
+
+        if combined is True:
+            supported_formats_for_combined = ['json']
+            assert format in supported_formats_for_combined, \
+                f'combine=True only supports format in ' \
+                    f'{supported_formats_for_combined}, but format is {format}'
+
+        if combined is True:
+            assert issubclass(self.__class__, LibsvmNusvrTrainTestModel), \
+                f'combined=True only supports subclass of LibsvmNusvrTrainTestModel'
+
         self._assert_trained()
         param_dict = self.param_dict
         model_dict = self.model_dict
@@ -1415,14 +1447,31 @@ class BootstrapMixin(object):
         models = self.model
         num_models = self._get_num_models()
         assert num_models == len(models)
-        for i_model, model in enumerate(models):
-            filename_ = self._get_model_i_filename(filename, i_model)
-            filedir = os.path.dirname(filename_)
-            if not os.path.exists(filedir):
-                os.makedirs(filedir)
-            model_dict_ = model_dict.copy()
-            model_dict_['model'] = model
-            self._to_file(filename_, param_dict, model_dict_, **more)
+        if combined is True:
+            meta_model = dict()
+            for i_model, model in enumerate(models):
+                model_dict_ = model_dict.copy()
+                model_dict_['model'] = model
+                if format == 'json' and issubclass(self.__class__, LibsvmNusvrTrainTestModel):
+                    tmp_svm_filename = os.path.basename(filename) + '.svm'
+                    info_to_save = LibsvmNusvrTrainTestModel._to_json(
+                        param_dict,
+                        model_dict_,
+                        tmp_svm_filename)
+                    meta_model[str(i_model)] = info_to_save
+                else:
+                    assert False
+            with open(filename, 'wt') as file:
+                json.dump(meta_model, file, indent=4)
+        else:
+            for i_model, model in enumerate(models):
+                filename_ = self._get_model_i_filename(filename, i_model)
+                filedir = os.path.dirname(filename_)
+                if not os.path.exists(filedir):
+                    os.makedirs(filedir)
+                model_dict_ = model_dict.copy()
+                model_dict_['model'] = model
+                self._to_file(filename_, param_dict, model_dict_, **more)
 
     @staticmethod
     def _get_model_i_filename(filename, i_model):
@@ -1438,41 +1487,86 @@ class BootstrapMixin(object):
     def from_file(cls, filename, logger=None, optional_dict2=None, **more):
         format = more['format'] if 'format' in more else 'pkl'
         supported_format = ['pkl', 'json']
-        assert format in supported_format, f'format must be in {supported_format} but is {format}'
+        assert format in supported_format, \
+            f'format must be in {supported_format} but is {format}'
 
-        filename_0 = cls._get_model_i_filename(filename, 0)
-        assert os.path.exists(filename_0), 'File name {} does not exist.'.format(filename_0)
-        if format == 'pkl':
-            with open(filename_0, 'rb') as file:
-                info_loaded_0 = pickle.load(file)
-        elif format == 'json':
-            with open(filename_0, 'rt') as file:
-                info_loaded_0 = json.load(file)
+        combined = more['combined'] if 'combined' in more else False
+        assert isinstance(combined, bool)
+
+        if combined is True:
+            supported_formats_for_combined = ['json']
+            assert format in supported_formats_for_combined, \
+                f'combine=True only supports format in ' \
+                    f'{supported_formats_for_combined}, but format is {format}'
+
+        if combined is True:
+
+            if format == 'json':
+                with open(filename, 'rt') as file:
+                    info_loaded_meta = json.load(file)
+                assert str(0) in info_loaded_meta
+                info_loaded_0 = info_loaded_meta[str(0)]
+                model_type = info_loaded_0['model_dict']['model_type']
+                model_class = TrainTestModel.find_subclass(model_type)
+
+                assert issubclass(model_class, LibsvmNusvrTrainTestModel), \
+                    f'combined=True only supports subclass of LibsvmNusvrTrainTestModel'
+
+                train_test_model_0 = model_class._from_info_loaded(
+                    info_loaded_0, None, logger, optional_dict2, **more)
+                num_models = cls._get_num_models_from_param_dict(info_loaded_0['param_dict'])
+
+                models = []
+                for i_model in range(num_models):
+                    info_loaded_ = info_loaded_meta[str(i_model)]
+                    train_test_model_ = model_class._from_info_loaded(
+                        info_loaded_, None, logger, optional_dict2, **more)
+                    model_ = train_test_model_.model
+                    models.append(model_)
+
+                train_test_model_0.model = models
+
+                return train_test_model_0
+
+            else:
+                assert False
+
         else:
-            assert False
-        model_type = info_loaded_0['model_dict']['model_type']
-        model_class = TrainTestModel.find_subclass(model_type)
-        train_test_model_0 = model_class._from_info_loaded(
-            info_loaded_0, filename_0, logger, optional_dict2, **more)
-        num_models = cls._get_num_models_from_param_dict(info_loaded_0['param_dict'])
 
-        models = []
-        for i_model in range(num_models):
-            filename_ = cls._get_model_i_filename(filename, i_model)
-            assert os.path.exists(filename_), 'File name {} does not exist.'.format(filename_)
+            filename_0 = cls._get_model_i_filename(filename, 0)
+            assert os.path.exists(filename_0), 'File name {} does not exist.'.format(filename_0)
             if format == 'pkl':
-                with open(filename_, 'rb') as file:
-                    info_loaded_ = pickle.load(file)
+                with open(filename_0, 'rb') as file:
+                    info_loaded_0 = pickle.load(file)
             elif format == 'json':
-                with open(filename_, 'rt') as file:
-                    info_loaded_ = json.load(file)
-            train_test_model_ = model_class._from_info_loaded(info_loaded_, filename_, None, None, **more)
-            model_ = train_test_model_.model
-            models.append(model_)
+                with open(filename_0, 'rt') as file:
+                    info_loaded_0 = json.load(file)
+            else:
+                assert False
+            model_type = info_loaded_0['model_dict']['model_type']
+            model_class = TrainTestModel.find_subclass(model_type)
+            train_test_model_0 = model_class._from_info_loaded(
+                info_loaded_0, filename_0, logger, optional_dict2, **more)
+            num_models = cls._get_num_models_from_param_dict(info_loaded_0['param_dict'])
 
-        train_test_model_0.model = models
+            models = []
+            for i_model in range(num_models):
+                filename_ = cls._get_model_i_filename(filename, i_model)
+                assert os.path.exists(filename_), 'File name {} does not exist.'.format(filename_)
+                if format == 'pkl':
+                    with open(filename_, 'rb') as file:
+                        info_loaded_ = pickle.load(file)
+                elif format == 'json':
+                    with open(filename_, 'rt') as file:
+                        info_loaded_ = json.load(file)
+                train_test_model_ = model_class._from_info_loaded(
+                    info_loaded_, filename_, logger, optional_dict2, **more)
+                model_ = train_test_model_.model
+                models.append(model_)
 
-        return train_test_model_0
+            train_test_model_0.model = models
+
+            return train_test_model_0
 
     @classmethod
     @override(TrainTestModel)
@@ -1481,20 +1575,32 @@ class BootstrapMixin(object):
         supported_formats = ['pkl', 'json']
         assert format in supported_formats, f'format must be in {supported_formats} but got {format}'
 
-        filename_0 = cls._get_model_i_filename(filename, 0)
-        assert os.path.exists(filename_0)
-        if format == 'pkl':
-            with open(filename_0, 'rb') as file:
-                info_loaded_0 = pickle.load(file)
-        elif format == 'json':
-            with open(filename_0, 'rt') as file:
-                info_loaded_0 = json.load(file)
+        combined = more['combined'] if 'combined' in more else False
+        assert isinstance(combined, bool)
+
+        if combined is True:
+            supported_formats_for_combined = ['json']
+            assert format in supported_formats_for_combined, \
+                f'combine=True only supports format in ' \
+                    f'{supported_formats_for_combined}, but format is {format}'
+
+        if combined:
+            cls._delete(filename, **more)
         else:
-            assert False
-        num_models = cls._get_num_models_from_param_dict(info_loaded_0['param_dict'])
-        for i_model in range(num_models):
-            filename_ = cls._get_model_i_filename(filename, i_model)
-            cls._delete(filename_, **more)
+            filename_0 = cls._get_model_i_filename(filename, 0)
+            assert os.path.exists(filename_0)
+            if format == 'pkl':
+                with open(filename_0, 'rb') as file:
+                    info_loaded_0 = pickle.load(file)
+            elif format == 'json':
+                with open(filename_0, 'rt') as file:
+                    info_loaded_0 = json.load(file)
+            else:
+                assert False
+            num_models = cls._get_num_models_from_param_dict(info_loaded_0['param_dict'])
+            for i_model in range(num_models):
+                filename_ = cls._get_model_i_filename(filename, i_model)
+                cls._delete(filename_, **more)
 
 
 class BootstrapLibsvmNusvrTrainTestModel(BootstrapRegressorMixin, BootstrapMixin, LibsvmNusvrTrainTestModel):
