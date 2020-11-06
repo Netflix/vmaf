@@ -1,3 +1,4 @@
+import os
 from abc import ABCMeta, abstractmethod, ABC
 import re
 from xml.etree import ElementTree
@@ -439,8 +440,16 @@ class VmafQualityRunner(QualityRunner):
         else:
             model_filepath = self.DEFAULT_MODEL_FILEPATH
         train_test_model_class = self.get_train_test_model_class()
+        format = os.path.splitext(model_filepath)[1]
+        assert format in ['.pkl', '.json'], \
+            f'{self.__class__.__name__} supports .pkl or .json model file, but the file format is: {format}'
         try:
-            model = train_test_model_class.from_file(model_filepath, self.logger)
+            if format == '.pkl':
+                model = train_test_model_class.from_file(model_filepath, self.logger, format='pkl')
+            elif format == '.json':
+                model = train_test_model_class.from_file(model_filepath, self.logger, format='json', combined=True)
+            else:
+                assert False
         except AssertionError as e:
             raise AssertionError("File {filepath} may not be a valid model file for class {cls}: {e}".
                                  format(filepath=model_filepath, cls=train_test_model_class.__name__, e=e))
