@@ -364,3 +364,37 @@ PYTHONPATH=python ./python/vmaf/script/run_vmaf.py yuv420p 576 324 \
     python/test/resource/yuv/src01_hrc00_576x324.yuv --local-explain \
     --model model/other_models/nflxall_vmafv1.pkl
 ```
+
+## Format Tools
+
+### Convert Model File from pickle (pkl) to json
+
+A tool to convert a model file (currently support libsvm model) from pickle to json is added. Usage:
+```text
+usage: convert_model_from_pkl_to_json.py [-h] --input-pkl-filepath
+                                         INPUT_PKL_FILEPATH
+                                         --output-json-filepath
+                                         OUTPUT_JSON_FILEPATH
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --input-pkl-filepath INPUT_PKL_FILEPATH
+                        path to the input pkl file, example:
+                        model/vmaf_v0.6.1.pkl or
+                        model/vmaf_b_v0.6.3/vmaf_b_v0.6.3.pkl
+  --output-json-filepath OUTPUT_JSON_FILEPATH
+                        path to the output json file, example:
+                        model/vmaf_v0.6.1.json or model/vmaf_b_v0.6.3.json
+```
+
+Examples:
+```bash
+
+python/vmaf/script/convert_model_from_pkl_to_json.py \
+--input-pkl-filepath model/vmaf_b_v0.6.3/vmaf_b_v0.6.3.pkl \
+--output-json-filepath ./vmaf_b_v0.6.3.json
+
+python/vmaf/script/convert_model_from_pkl_to_json.py \
+--input-pkl-filepath model/vmaf_v0.6.1.pkl \
+--output-json-filepath ./vmaf_v0.6.1.json
+```
