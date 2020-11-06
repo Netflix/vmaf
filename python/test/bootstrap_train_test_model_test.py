@@ -120,6 +120,7 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         self.assertAlmostEqual(self.model.evaluate_stddev(xs)['mean_ci95_low'], 3.3984211902006627, places=2)
         self.assertAlmostEqual(self.model.evaluate_stddev(xs)['mean_ci95_high'], 4.753825468723706, places=2)
 
+        # loaded model generates slight numerical difference
         self.assertAlmostEqual(loaded_model.evaluate(xs, ys)['RMSE'], 0.6226313987163097, places=4)
         self.assertAlmostEqual(loaded_model.evaluate_bagging(xs, ys)['RMSE'], 0.6696478863129723, places=4)
         self.assertAlmostEqual(loaded_model.evaluate_stddev(xs)['mean_stddev'], 0.3970382109813205, places=2)
