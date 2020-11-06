@@ -1,3 +1,5 @@
+import json
+import tempfile
 from abc import ABCMeta, abstractmethod
 import os
 import pickle
@@ -498,38 +500,59 @@ class TrainTestModel(TypeVersionEnabled):
     def model(self, value):
         self.model_dict['model'] = value
 
-    def to_file(self, filename):
+    def to_file(self, filename, **more):
         self._assert_trained()
         param_dict = self.param_dict
         model_dict = self.model_dict
-        self._to_file(filename, param_dict, model_dict)
+        self._to_file(filename, param_dict, model_dict, **more)
 
     @staticmethod
-    def _to_file(filename, param_dict, model_dict):
+    def _to_file(filename, param_dict, model_dict, **more):
+        format = more['format'] if 'format' in more else 'pkl'
+        assert format in ['pkl'], f'format must be pkl, but got: {format}'
+
         info_to_save = {'param_dict': param_dict,
                         'model_dict': model_dict}
         with open(filename, 'wb') as file:
             pickle.dump(info_to_save, file)
 
     @classmethod
-    def from_file(cls, filename, logger=None, optional_dict2=None):
+    def from_file(cls, filename, logger=None, optional_dict2=None, **more):
+        format = more['format'] if 'format' in more else 'pkl'
+        supported_format = ['pkl', 'json']
+        assert format in supported_format, f'format must be in {supported_format} but is {format}'
+
         assert os.path.exists(filename), 'File name {} does not exist.'.format(filename)
-        with open(filename, 'rb') as file:
-            info_loaded = pickle.load(file)
+
+        if format == 'pkl':
+            with open(filename, 'rb') as file:
+                info_loaded = pickle.load(file)
+        elif format == 'json':
+            with open(filename, 'rt') as file:
+                info_loaded = json.load(file)
+        else:
+            assert False
+
         model_type = info_loaded['model_dict']['model_type']
         model_class = TrainTestModel.find_subclass(model_type)
         if model_class == cls:
             train_test_model = model_class._from_info_loaded(info_loaded, filename,
-                                                             logger, optional_dict2)
+                                                             logger, optional_dict2, **more)
         else:
-            # the newly found model_class can be a different class (e.g. a subclass of cls). In this
-            # case, call from_file() of that model_class.
-            train_test_model = model_class.from_file(filename, logger, optional_dict2)
+            # the newly found model_class can be a different class (e.g. a
+            # subclass of cls). In this case, call from_file() of that
+            # model_class.
+            train_test_model = model_class.from_file(filename, logger, optional_dict2, **more)
 
         return train_test_model
 
     @classmethod
-    def _from_info_loaded(cls, info_loaded, filename, logger, optional_dict2):
+    def _from_info_loaded(cls, info_loaded, filename, logger, optional_dict2, **more):
+        format = more['format'] if 'format' in more else 'pkl'
+        supported_format = ['pkl']
+        assert format in supported_format, f'format must be in {supported_format} but is {format}'
+
+
         train_test_model = cls(
             param_dict={}, logger=logger, optional_dict2=optional_dict2)
         train_test_model.param_dict = info_loaded['param_dict']
@@ -871,24 +894,48 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
 
     @staticmethod
     @override(TrainTestModel)
-    def _to_file(filename, param_dict, model_dict):
+    def _to_file(filename, param_dict, model_dict, **more):
+        format = more['format'] if 'format' in more else 'pkl'
+        supported_formats = ['pkl', 'json']
+        assert format in supported_formats, \
+            f'format must be in {supported_formats}, but got: {format}'
         try:
             svmutil
         except NameError:
             from vmaf import svmutil
 
-        # override TrainTestModel._to_file
-        # special handling of libsvmnusvr: save .model differently
-        info_to_save = {'param_dict': param_dict,
-                        'model_dict': model_dict.copy()}
-        svm_model = info_to_save['model_dict']['model']
-        info_to_save['model_dict']['model'] = None
-        with open(filename, 'wb') as file:
-            pickle.dump(info_to_save, file)
-        svmutil.svm_save_model(filename + '.model', svm_model)
+        if format == 'pkl':
+            # special handling of libsvmnusvr: save .model differently
+            info_to_save = {'param_dict': param_dict,
+                            'model_dict': model_dict.copy()}
+            svm_model = info_to_save['model_dict']['model']
+            info_to_save['model_dict']['model'] = None
+            with open(filename, 'wb') as file:
+                pickle.dump(info_to_save, file)
+            svmutil.svm_save_model(filename + '.model', svm_model)
+        elif format == 'json':
+            # special handling of libsvmnusvr: save model into a string
+            info_to_save = {'param_dict': param_dict,
+                            'model_dict': model_dict.copy()}
+            svm_model = info_to_save['model_dict']['model']
+            with tempfile.TemporaryDirectory() as tmpdir:
+                svm_model_temppath = os.path.join(tmpdir, os.path.basename(filename) + '.svm')
+                svmutil.svm_save_model(svm_model_temppath, svm_model)
+                with open(svm_model_temppath, 'rt') as file:
+                    svm_model_str = file.read()
+            info_to_save['model_dict']['model'] = svm_model_str
+            with open(filename, 'wt') as file:
+                json.dump(info_to_save, file, indent=4)
+        else:
+            assert False
 
     @classmethod
-    def _from_info_loaded(cls, info_loaded, filename, logger, optional_dict2):
+    @override(TrainTestModel)
+    def _from_info_loaded(cls, info_loaded, filename, logger, optional_dict2, **more):
+        format = more['format'] if 'format' in more else 'pkl'
+        supported_format = ['pkl', 'json']
+        assert format in supported_format, f'format must be in {supported_format} but is {format}'
+
         try:
             svmutil
         except NameError:
@@ -901,9 +948,20 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
         train_test_model.model_dict = info_loaded['model_dict']
 
         if issubclass(cls, LibsvmNusvrTrainTestModel):
-            # == special handling of libsvmnusvr: load .model differently ==
-            model = svmutil.svm_load_model(filename + '.model')
-            train_test_model.model_dict['model'] = model
+            if format == 'pkl':
+                # special handling of libsvmnusvr: load .model differently
+                model = svmutil.svm_load_model(filename + '.model')
+                train_test_model.model_dict['model'] = model
+            elif format == 'json':
+                # special handling of libsvmnusvr: load model from a string
+                svm_model_str = info_loaded['model_dict']['model']
+                with tempfile.NamedTemporaryFile(mode='w+t', delete=False) as tmpfile:
+                    tmpfile.write(svm_model_str)
+                model = svmutil.svm_load_model(tmpfile.name)
+                os.unlink(tmpfile.name)
+                train_test_model.model_dict['model'] = model
+            else:
+                assert False
 
         return train_test_model
 
@@ -1336,7 +1394,7 @@ class BootstrapMixin(object):
         return stats
 
     @override(TrainTestModel)
-    def to_file(self, filename):
+    def to_file(self, filename, **more):
         self._assert_trained()
         param_dict = self.param_dict
         model_dict = self.model_dict
@@ -1364,7 +1422,7 @@ class BootstrapMixin(object):
 
     @classmethod
     @override(TrainTestModel)
-    def from_file(cls, filename, logger=None, optional_dict2=None):
+    def from_file(cls, filename, logger=None, optional_dict2=None, **more):
         filename_0 = cls._get_model_i_filename(filename, 0)
         assert os.path.exists(filename_0), 'File name {} does not exist.'.format(filename_0)
         with open(filename_0, 'rb') as file:
