@@ -968,6 +968,8 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
     @classmethod
     @override(TrainTestModel)
     def _delete(cls, filename):
+        # this works for both pkl and json; for json, since .model file does
+        # not exist, it will just skip it.
         if os.path.exists(filename):
             os.remove(filename)
         if os.path.exists(filename + '.model'):
