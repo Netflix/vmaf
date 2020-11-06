@@ -728,11 +728,14 @@ class TrainTestModel(TypeVersionEnabled):
         return stats
 
     @classmethod
-    def delete(cls, filename):
-        cls._delete(filename)
+    def delete(cls, filename, **more):
+        cls._delete(filename, **more)
 
     @staticmethod
-    def _delete(filename):
+    def _delete(filename, **more):
+        format = more['format'] if 'format' in more else 'pkl'
+        assert format in ['pkl'], f'format must be pkl, but got: {format}'
+
         if os.path.exists(filename):
             os.remove(filename)
 
@@ -967,13 +970,21 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
 
     @classmethod
     @override(TrainTestModel)
-    def _delete(cls, filename):
-        # this works for both pkl and json; for json, since .model file does
-        # not exist, it will just skip it.
-        if os.path.exists(filename):
-            os.remove(filename)
-        if os.path.exists(filename + '.model'):
-            os.remove(filename + '.model')
+    def _delete(cls, filename, **more):
+        format = more['format'] if 'format' in more else 'pkl'
+        supported_formats = ['pkl', 'json']
+        assert format in supported_formats, f'format must be in {supported_formats}, but got: {format}'
+
+        if format == 'pkl':
+            if os.path.exists(filename):
+                os.remove(filename)
+            if os.path.exists(filename + '.model'):
+                os.remove(filename + '.model')
+        elif format == 'json':
+            if os.path.exists(filename):
+                os.remove(filename)
+        else:
+            assert False
 
     @classmethod
     def from_raw_file(cls, model_filename, additional_model_dict, logger):
@@ -1411,7 +1422,7 @@ class BootstrapMixin(object):
                 os.makedirs(filedir)
             model_dict_ = model_dict.copy()
             model_dict_['model'] = model
-            self._to_file(filename_, param_dict, model_dict_)
+            self._to_file(filename_, param_dict, model_dict_, **more)
 
     @staticmethod
     def _get_model_i_filename(filename, i_model):
@@ -1425,23 +1436,37 @@ class BootstrapMixin(object):
     @classmethod
     @override(TrainTestModel)
     def from_file(cls, filename, logger=None, optional_dict2=None, **more):
+        format = more['format'] if 'format' in more else 'pkl'
+        supported_format = ['pkl', 'json']
+        assert format in supported_format, f'format must be in {supported_format} but is {format}'
+
         filename_0 = cls._get_model_i_filename(filename, 0)
         assert os.path.exists(filename_0), 'File name {} does not exist.'.format(filename_0)
-        with open(filename_0, 'rb') as file:
-            info_loaded_0 = pickle.load(file)
+        if format == 'pkl':
+            with open(filename_0, 'rb') as file:
+                info_loaded_0 = pickle.load(file)
+        elif format == 'json':
+            with open(filename_0, 'rt') as file:
+                info_loaded_0 = json.load(file)
+        else:
+            assert False
         model_type = info_loaded_0['model_dict']['model_type']
         model_class = TrainTestModel.find_subclass(model_type)
         train_test_model_0 = model_class._from_info_loaded(
-            info_loaded_0, filename_0, logger, optional_dict2)
+            info_loaded_0, filename_0, logger, optional_dict2, **more)
         num_models = cls._get_num_models_from_param_dict(info_loaded_0['param_dict'])
 
         models = []
         for i_model in range(num_models):
             filename_ = cls._get_model_i_filename(filename, i_model)
             assert os.path.exists(filename_), 'File name {} does not exist.'.format(filename_)
-            with open(filename_, 'rb') as file:
-                info_loaded_ = pickle.load(file)
-            train_test_model_ = model_class._from_info_loaded(info_loaded_, filename_, None, None)
+            if format == 'pkl':
+                with open(filename_, 'rb') as file:
+                    info_loaded_ = pickle.load(file)
+            elif format == 'json':
+                with open(filename_, 'rt') as file:
+                    info_loaded_ = json.load(file)
+            train_test_model_ = model_class._from_info_loaded(info_loaded_, filename_, None, None, **more)
             model_ = train_test_model_.model
             models.append(model_)
 
@@ -1451,15 +1476,25 @@ class BootstrapMixin(object):
 
     @classmethod
     @override(TrainTestModel)
-    def delete(cls, filename):
+    def delete(cls, filename, **more):
+        format = more['format'] if 'format' in more else 'pkl'
+        supported_formats = ['pkl', 'json']
+        assert format in supported_formats, f'format must be in {supported_formats} but got {format}'
+
         filename_0 = cls._get_model_i_filename(filename, 0)
         assert os.path.exists(filename_0)
-        with open(filename_0, 'rb') as file:
-            info_loaded_0 = pickle.load(file)
+        if format == 'pkl':
+            with open(filename_0, 'rb') as file:
+                info_loaded_0 = pickle.load(file)
+        elif format == 'json':
+            with open(filename_0, 'rt') as file:
+                info_loaded_0 = json.load(file)
+        else:
+            assert False
         num_models = cls._get_num_models_from_param_dict(info_loaded_0['param_dict'])
         for i_model in range(num_models):
             filename_ = cls._get_model_i_filename(filename, i_model)
-            cls._delete(filename_)
+            cls._delete(filename_, **more)
 
 
 class BootstrapLibsvmNusvrTrainTestModel(BootstrapRegressorMixin, BootstrapMixin, LibsvmNusvrTrainTestModel):

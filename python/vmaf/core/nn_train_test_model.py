@@ -321,7 +321,10 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
 
     @staticmethod
     @override(TrainTestModel)
-    def delete(filename):
+    def delete(filename, **more):
+        format = more['format'] if 'format' in more else 'pkl'
+        assert format in ['pkl'], f'format must be pkl but got {format}'
+
         if os.path.exists(filename):
             os.remove(filename)
         if os.path.exists(filename + '.model'):
