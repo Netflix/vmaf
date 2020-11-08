@@ -441,12 +441,12 @@ class VmafQualityRunner(QualityRunner):
             model_filepath = self.DEFAULT_MODEL_FILEPATH
         train_test_model_class = self.get_train_test_model_class()
         format = os.path.splitext(model_filepath)[1]
-        assert format in ['.pkl', '.json'], \
-            f'{self.__class__.__name__} supports .pkl or .json model file, but the file format is: {format}'
+        supported_formats = ['.pkl', '.json']
+        self._assert_extension_format(supported_formats, format)
         try:
-            if format == '.pkl':
+            if '.pkl' in format:
                 model = train_test_model_class.from_file(model_filepath, self.logger, format='pkl')
-            elif format == '.json':
+            elif '.json' in format:
                 model = train_test_model_class.from_file(model_filepath, self.logger, format='json', combined=True)
             else:
                 assert False
@@ -454,6 +454,31 @@ class VmafQualityRunner(QualityRunner):
             raise AssertionError("File {filepath} may not be a valid model file for class {cls}: {e}".
                                  format(filepath=model_filepath, cls=train_test_model_class.__name__, e=e))
         return model
+
+    @classmethod
+    def _assert_extension_format(cls, supported_formats, format):
+        """
+        >>> supported_formats = ['.pkl', '.json']
+        >>> VmafQualityRunner._assert_extension_format(supported_formats, '.pkl')
+        >>> VmafQualityRunner._assert_extension_format(supported_formats, '.pkl_2160')
+        >>> VmafQualityRunner._assert_extension_format(supported_formats, '.pkkl')
+        Traceback (most recent call last):
+        ...
+        AssertionError: VmafQualityRunner supports .pkl or .json model file, but the file format is: .pkkl
+        >>> VmafQualityRunner._assert_extension_format(supported_formats, '.json')
+        >>> VmafQualityRunner._assert_extension_format(supported_formats, '.json_720')
+        >>> VmafQualityRunner._assert_extension_format(supported_formats, '.jsonn')
+        >>> VmafQualityRunner._assert_extension_format(supported_formats, '.jsson')
+        Traceback (most recent call last):
+        ...
+        AssertionError: VmafQualityRunner supports .pkl or .json model file, but the file format is: .jsson
+        """
+        for supported_format in supported_formats:
+            if supported_format in format:
+                break
+        else:
+            assert False, \
+                f'{cls.__name__} supports .pkl or .json model file, but the file format is: {format}'
 
     def get_train_test_model_class(self):
         return LibsvmNusvrTrainTestModel
@@ -1340,3 +1365,8 @@ class VmafrcQualityRunner(QualityRunner):
             if len(feature_scores[i_feature]) != 0:
                 quality_result[self.get_feature_scores_key(feature)] = feature_scores[i_feature]
         return quality_result
+
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
