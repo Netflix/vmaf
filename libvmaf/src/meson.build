@@ -318,6 +318,7 @@ libvmaf_rc_feature_sources = [
     feature_src_dir + 'integer_vif.c',
     feature_src_dir + 'integer_ssim.c',
     feature_src_dir + 'float_moment.c',
+    feature_src_dir + 'ciede.c',
 ]
 
 libvmaf_rc_feature_static_lib = static_library(
