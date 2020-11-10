@@ -187,6 +187,7 @@ static int close(VmafFeatureExtractor *fex)
 
 static const char *provided_features[] = {
     "'VMAF_feature_motion2_score'",
+    "VMAF_feature_motion2_score",
     NULL
 };
 

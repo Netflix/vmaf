@@ -73,6 +73,57 @@ static Alias alias_map[] = {
     },
 };
 
+static Alias internal_alias_map[] = {
+    {
+        .name = "VMAF_feature_adm2_score",
+        .alias = "'VMAF_feature_adm2_score'",
+    },
+    {
+        .name = "VMAF_feature_adm2_integer_score",
+        .alias = "'VMAF_feature_adm2_integer_score'",
+    },
+    {
+        .name = "VMAF_feature_motion2_score",
+        .alias = "'VMAF_feature_motion2_score'",
+    },
+    {
+        .name = "VMAF_feature_motion2_integer_score",
+        .alias = "'VMAF_feature_motion2_integer_score'",
+    },
+    {
+        .name = "VMAF_feature_vif_scale0_score",
+        .alias = "'VMAF_feature_vif_scale0_score'",
+    },
+    {
+        .name = "VMAF_feature_vif_scale1_score",
+        .alias = "'VMAF_feature_vif_scale1_score'",
+    },
+    {
+        .name = "VMAF_feature_vif_scale2_score",
+        .alias = "'VMAF_feature_vif_scale2_score'",
+    },
+    {
+        .name = "VMAF_feature_vif_scale3_score",
+        .alias = "'VMAF_feature_vif_scale3_score'",
+    },
+    {
+        .name = "VMAF_feature_vif_scale0_integer_score",
+        .alias = "'VMAF_feature_vif_scale0_integer_score'",
+    },
+    {
+        .name = "VMAF_feature_vif_scale1_integer_score",
+        .alias = "'VMAF_feature_vif_scale1_integer_score'",
+    },
+    {
+        .name = "VMAF_feature_vif_scale2_integer_score",
+        .alias = "'VMAF_feature_vif_scale2_integer_score'",
+    },
+    {
+        .name = "VMAF_feature_vif_scale3_integer_score",
+        .alias = "'VMAF_feature_vif_scale3_integer_score'",
+    },
+};
+
 const char *vmaf_feature_name_alias(const char *feature_name)
 {
     unsigned alias_cnt = sizeof(alias_map) / sizeof(alias_map[0]);
@@ -80,6 +131,19 @@ const char *vmaf_feature_name_alias(const char *feature_name)
     for (unsigned i = 0; i < alias_cnt; i++) {
        if (!strcmp(feature_name, alias_map[i].name))
            return alias_map[i].alias;
+    }
+
+    return feature_name;
+}
+
+const char *vmaf_internal_feature_name_alias(const char *feature_name)
+{
+    unsigned alias_cnt =
+        sizeof(internal_alias_map) / sizeof(internal_alias_map[0]);
+
+    for (unsigned i = 0; i < alias_cnt; i++) {
+       if (!strcmp(feature_name, internal_alias_map[i].name))
+           return internal_alias_map[i].alias;
     }
 
     return feature_name;
