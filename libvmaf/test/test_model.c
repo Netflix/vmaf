@@ -19,6 +19,70 @@
 #include <stdint.h>
 #include "test.h"
 #include "model.c"
+#include "read_json_model.h"
+
+static int model_compare(VmafModel *model_a, VmafModel *model_b)
+{
+    int err = 0;
+
+    err += model_a->type != model_b->type;
+
+    err += model_a->slope != model_b->slope;
+    err += model_a->intercept != model_b->intercept;
+
+    err += model_a->n_features != model_a->n_features;
+    for (unsigned i = 0; i < model_a->n_features; i++) {
+       //err += strcmp(model_a->feature[i].name, model_b->feature[i].name) != 0;
+       err += model_a->feature[i].slope != model_b->feature[i].slope;
+       err += model_a->feature[i].intercept != model_b->feature[i].intercept;
+       err += !model_a->feature[i].opts_dict != !model_b->feature[i].opts_dict;
+    }
+
+    err += model_a->score_clip.enabled != model_b->score_clip.enabled;
+    err += model_a->score_clip.min != model_b->score_clip.min;
+    err += model_a->score_clip.max != model_b->score_clip.max;
+
+    err += model_a->norm_type != model_b->norm_type;
+
+    err += model_a->score_transform.enabled != model_b->score_transform.enabled;
+    err += model_a->score_transform.p0.enabled != model_b->score_transform.p0.enabled;
+    err += model_a->score_transform.p0.value != model_b->score_transform.p0.value;
+    err += model_a->score_transform.p1.enabled != model_b->score_transform.p1.enabled;
+    err += model_a->score_transform.p1.value != model_b->score_transform.p1.value;
+    err += model_a->score_transform.p2.enabled != model_b->score_transform.p2.enabled;
+    err += model_a->score_transform.p2.value != model_b->score_transform.p2.value;
+    err += model_a->score_transform.out_lte_in != model_b->score_transform.out_lte_in;
+    err += model_a->score_transform.out_gte_in != model_b->score_transform.out_gte_in;
+
+    return err;
+}
+
+
+static char *test_json_model()
+{
+    int err;
+
+    VmafModel *model_json;
+    VmafModelConfig cfg_json = {
+        .path = "../../model/vmaf_v0.6.1neg.json",
+    };
+    err = vmaf_read_json_model(&model_json, &cfg_json);
+    mu_assert("problem during vmaf_read_json_model", !err);
+
+    VmafModel *model_pkl;
+    VmafModelConfig cfg_pkl = {
+        .path = "../../model/vmaf_v0.6.1neg.pkl",
+    };
+    err = vmaf_model_load_from_path(&model_pkl, &cfg_pkl);
+    mu_assert("problem during vmaf_model_load_from_path", !err);
+
+    err = model_compare(model_json, model_pkl);
+    mu_assert("parsed json/pkl models do not match", !err);
+
+    vmaf_model_destroy(model_json);
+    vmaf_model_destroy(model_pkl);
+    return NULL;
+}
 
 static char *test_model_load_and_destroy()
 {
@@ -190,6 +254,7 @@ static char *test_model_set_flags()
 
 char *run_tests()
 {
+    mu_run_test(test_json_model);
     mu_run_test(test_model_load_and_destroy);
     mu_run_test(test_model_check_default_behavior_unset_flags);
     mu_run_test(test_model_check_default_behavior_set_flags);

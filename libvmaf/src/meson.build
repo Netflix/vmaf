@@ -314,6 +314,8 @@ libvmaf_rc_sources = [
     src_dir + 'dict.c',
     src_dir + 'opt.c',
     src_dir + 'ref.c',
+    src_dir + 'read_json_model.c',
+    src_dir + 'pdjson.c',
 ]
 
 libvmaf_rc = both_libraries(
