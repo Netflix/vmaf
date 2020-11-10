@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#include "feature/alias.h"
 #include "feature/feature_collector.h"
 #include "model.h"
 #include "svm.h"
@@ -108,7 +109,7 @@ int vmaf_predict_score_at_index(VmafModel *model,
         double feature_score;
 
         err = vmaf_feature_collector_get_score(feature_collector,
-                                               model->feature[i].name,
+                                               vmaf_internal_feature_name_alias(model->feature[i].name),
                                                &feature_score, index);
         if (err) goto free_node;
         err = normalize(model, model->feature[i].slope,
