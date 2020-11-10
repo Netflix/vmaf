@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -82,10 +81,6 @@ static int fetch_picture(video_input *vid, VmafPicture *pic)
         fprintf(stderr, "problem allocating picture.\n");
         return -1;
     }
-
-    assert(pic->w[0] == ycbcr[0].width);
-    assert(pic->w[1] == ycbcr[1].width);
-    assert(pic->w[2] == ycbcr[2].width);
 
     if (info.depth == 8) {
         for (unsigned i = 0; i < 3; i++) {
