@@ -5,6 +5,7 @@
 #include <libvmaf/model.h>
 
 #include "model.h"
+#include "read_json_model.h"
 #include "svm.h"
 #include "unpickle.h"
 
@@ -39,6 +40,13 @@ char *generate_model_name(VmafModelConfig *cfg) {
 
 int vmaf_model_load_from_path(VmafModel **model, VmafModelConfig *cfg)
 {
+    const char *ext = strrchr(cfg->path, '.');
+    if (!strcmp(ext, ".json")) {
+        int err = vmaf_read_json_model(model, cfg);
+        (*model)->name = generate_model_name(cfg);
+        return err;
+    }
+
     VmafModel *const m = *model = malloc(sizeof(*m));
     if (!m) goto fail;
     memset(m, 0, sizeof(*m));
