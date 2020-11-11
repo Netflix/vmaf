@@ -64,6 +64,7 @@ int vmaf_model_load_from_path(VmafModel **model, VmafModelConfig *cfg,
     strncat(svm_path, m->path, strlen(m->path));
     strncat(svm_path, svm_path_suffix, strlen(svm_path_suffix));
 
+    if (stat(svm_path, &s)) return -EINVAL;
     m->svm = svm_load_model(svm_path);
     free(svm_path);
     if (!m->svm) goto free_name;
@@ -111,6 +112,8 @@ static int vmaf_model_load_from_path_internal(VmafModel **model,
     strncat(svm_path, m->path, strlen(m->path));
     strncat(svm_path, svm_path_suffix, strlen(svm_path_suffix));
 
+    struct stat s;
+    if (stat(svm_path, &s)) return -EINVAL;
     m->svm = svm_load_model(svm_path);
     free(svm_path);
     if (!m->svm) goto free_name;
