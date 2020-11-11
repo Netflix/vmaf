@@ -145,17 +145,35 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
     };
 
     VmafModel *model;
-    err = vmaf_model_load_from_path(&model, &model_cfg, model_path);
-    if (err) {
-        fprintf(stderr, "problem loading model file: %s\n", model_path);
-        goto end;
-    }
-    err = vmaf_use_features_from_model(vmaf, model);
-    if (err) {
-        fprintf(stderr,
-                "problem loading feature extractors from model file: %s\n",
-                model_path);
-        goto end;
+    VmafModelCollection *model_collection;
+
+    if (enable_conf_interval) {
+        err = vmaf_model_collection_load_from_path(&model, &model_collection,
+                                                   &model_cfg, model_path);
+        if (err) {
+            fprintf(stderr, "problem loading model file: %s\n", model_path);
+            goto end;
+        }
+        err = vmaf_use_features_from_model_collection(vmaf, model_collection);
+        if (err) {
+            fprintf(stderr,
+                    "problem loading feature extractors from model file: %s\n",
+                    model_path);
+            goto end;
+        }
+    } else {
+        err = vmaf_model_load_from_path(&model, &model_cfg, model_path);
+        if (err) {
+            fprintf(stderr, "problem loading model file: %s\n", model_path);
+            goto end;
+        }
+        err = vmaf_use_features_from_model(vmaf, model);
+        if (err) {
+            fprintf(stderr,
+                    "problem loading feature extractors from model file: %s\n",
+                    model_path);
+            goto end;
+        }
     }
 
     if (do_psnr) {
@@ -228,6 +246,18 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
             fprintf(stderr, "\nproblem reading pictures\n");
             break;
         }
+    }
+
+     if (enable_conf_interval) {
+         VmafModelCollectionScore model_collection_score;
+         err = vmaf_score_pooled_model_collection(vmaf, model_collection,
+                                                  pool_method_map(pool_method),
+                                                  &model_collection_score, 0,
+                                                  picture_index - 1);
+         if (err) {
+             fprintf(stderr, "problem generating pooled VMAF score\n");
+             goto free_data;
+         }
     }
 
      err = vmaf_score_pooled(vmaf, model, pool_method_map(pool_method),
