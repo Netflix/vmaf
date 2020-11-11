@@ -671,8 +671,8 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 75.42800833333332, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.958047916666672, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_bagging_score'], 73.0913125, places=3)
-        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_bagging_score'], 99.79000416666668, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_bagging_score'], 73.0913125, places=3)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_vmaf_bagging_score'], 99.79000416666668, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_stddev_score'], 1.1982760416666667, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_stddev_score'], 1.3028828125, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_ci95_low_score'], 70.81472708333332, places=3)
@@ -706,8 +706,8 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 75.42800833333332, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.958047916666672, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_bagging_score'], 75.11496458333333, places=3)
-        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_bagging_score'], 99.96504855577571, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_bagging_score'], 75.11496458333333, places=3)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_vmaf_bagging_score'], 99.96504855577571, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_stddev_score'], 0.6812993325967104, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_stddev_score'], 0.03947607207290399, places=4)
 
@@ -732,8 +732,8 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 91.71303333333334, places=4)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 100.0, places=4)
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_bagging_score'], 90.12363958333333, places=3)
-        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_bagging_score'], 100.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_vmaf_bagging_score'], 90.12363958333333, places=3)
+        self.assertAlmostEqual(results[1]['VMAFOSSEXEC_vmaf_bagging_score'], 100.0, places=4)
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_stddev_score'], 0.8371132083333332, places=3)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_stddev_score'], 0.0, places=4)
 
