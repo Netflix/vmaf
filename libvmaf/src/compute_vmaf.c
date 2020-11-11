@@ -138,26 +138,23 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
         flags |= VMAF_MODEL_FLAG_DISABLE_CLIP;
     if (enable_transform || phone_model)
         flags |= VMAF_MODEL_FLAG_ENABLE_TRANSFORM;
-    if (enable_conf_interval)
-        flags |= VMAF_MODEL_FLAG_ENABLE_CONFIDENCE_INTERVAL;
 
     VmafModelConfig model_cfg = {
         .name = "vmaf",
-        .path = model_path,
         .flags = flags,
     };
 
     VmafModel *model;
-    err = vmaf_model_load_from_path(&model, &model_cfg);
+    err = vmaf_model_load_from_path(&model, &model_cfg, model_path);
     if (err) {
-        fprintf(stderr, "problem loading model file: %s\n", model_cfg.path);
+        fprintf(stderr, "problem loading model file: %s\n", model_path);
         goto end;
     }
     err = vmaf_use_features_from_model(vmaf, model);
     if (err) {
         fprintf(stderr,
                 "problem loading feature extractors from model file: %s\n",
-                model_cfg.path);
+                model_path);
         goto end;
     }
 
