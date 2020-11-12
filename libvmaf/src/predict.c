@@ -18,7 +18,9 @@
 
 #include <errno.h>
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "feature/alias.h"
 #include "feature/feature_collector.h"
