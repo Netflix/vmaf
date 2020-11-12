@@ -59,10 +59,6 @@ typedef struct VifBuffer {
     ptrdiff_t stride_tmp;
 } VifBuffer;
 
-/**
- * Padding on left is mirrored accrossed first column
- * Padding on right is mirrored accrossed imaginary mirror after right end column
- */
 static inline void PADDING_SQ_DATA(VifBuffer buf, int w, unsigned fwidth_half)
 {
     for (unsigned f = 1; f <= fwidth_half; ++f) {
@@ -74,7 +70,7 @@ static inline void PADDING_SQ_DATA(VifBuffer buf, int w, unsigned fwidth_half)
         buf.tmp.dis[left_point] = buf.tmp.dis[right_point];
         buf.tmp.ref_dis[left_point] = buf.tmp.ref_dis[right_point];
 
-        left_point = w - f;
+        left_point = w - 1 - f;
         right_point = w - 1 + f;
         buf.tmp.mu1[right_point] = buf.tmp.mu1[left_point];
         buf.tmp.mu2[right_point] = buf.tmp.mu2[left_point];
@@ -92,7 +88,7 @@ static inline void PADDING_SQ_DATA_2(VifBuffer buf, int w, unsigned fwidth_half)
         buf.tmp.ref_convol[left_point] = buf.tmp.ref_convol[right_point];
         buf.tmp.dis_convol[left_point] = buf.tmp.dis_convol[right_point];
 
-        left_point = w - f;
+        left_point = w - 1 - f;
         right_point = w - 1 + f;
         buf.tmp.ref_convol[right_point] = buf.tmp.ref_convol[left_point];
         buf.tmp.dis_convol[right_point] = buf.tmp.dis_convol[left_point];

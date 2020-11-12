@@ -61,10 +61,6 @@ static const VmafOption options[] = {
     { 0 }
 };
 
-/**
- * Padding on top is mirrored accrossed first row
- * Padding on bottom is mirrored accrossed imaginary mirror after bottom end row
- */
 static FORCE_INLINE inline void
 pad_top_and_bottom(VifBuffer buf, unsigned h, int fwidth)
 {
@@ -75,10 +71,10 @@ pad_top_and_bottom(VifBuffer buf, unsigned h, int fwidth)
         memcpy(ref - offset, ref + offset, buf.stride);
         memcpy(dis - offset, dis + offset, buf.stride);
         memcpy(ref + buf.stride * (h - 1) + buf.stride * i,
-               ref + buf.stride * (h - 1) - buf.stride * (i - 1),
+               ref + buf.stride * (h - 1) - buf.stride * i,
                buf.stride);
         memcpy(dis + buf.stride * (h - 1) + buf.stride * i,
-               dis + buf.stride * (h - 1) - buf.stride * (i - 1),
+               dis + buf.stride * (h - 1) - buf.stride * i,
                buf.stride);
     }
 }
