@@ -59,6 +59,19 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 3.895345229166667, places=8)
         self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 3.895345229166667, places=8)
 
+    def test_run_integer_motion_fextractor_forcing_zero(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = IntegerMotionFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'motion_force_zero': True}
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 0.0, places=8)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 0.0, places=8)
+
     def test_run_integer_motion_fextractor_12bit(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_12bit_videos_for_testing()
         self.fextractor = IntegerMotionFeatureExtractor(
