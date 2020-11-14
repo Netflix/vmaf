@@ -425,8 +425,8 @@ static void vif_statistic(VifBuffer buf, float *num, float *den,
     //den[0] = accum_den_log / 2048.0 + accum_den_non_log;
 
     //changed calculation to increase performance
-    num[0] = accum_num_log  + accum_x2 + (accum_den_non_log - ((accum_num_non_log) / 16384.0) / (65025.0));
-    den[0] = accum_den_log  - (accum_x + (num_accum_x * 17)) + accum_den_non_log;
+    num[0] = accum_num_log / 2048.0 + accum_x2 + (accum_den_non_log - ((accum_num_non_log) / 16384.0) / (65025.0));
+    den[0] = accum_den_log / 2048.0 - (accum_x + (num_accum_x * 17)) + accum_den_non_log;
 }
 
 static void filter1d_rd_8(VifBuffer buf, unsigned w, unsigned h)
@@ -526,10 +526,54 @@ static void filter1d_rd_16(VifBuffer buf, unsigned w, unsigned h, int scale,
     }
 }
 
+static const float log2_poly[9] = { -0.012671635276421, 0.064841182402670,
+                                    -0.157048836463065, 0.257167726303123,
+                                    -0.353800560300520, 0.480131410397451,
+                                    -0.721314327952201, 1.442694803896991, 0 };
+
+static const int log2_poly_width = sizeof(log2_poly) / sizeof(float);
+
+static inline float horner(float x)
+{
+    float var = 0;
+    for (unsigned i = 0; i < log2_poly_width; ++i)
+        var = var * x + log2_poly[i];
+    return var;
+}
+
+static inline float log2f_approx(float x)
+{
+    const uint32_t exp_zero_const = 0x3F800000UL;
+    const uint32_t exp_expo_mask = 0x7F800000UL;
+    const uint32_t exp_mant_mask = 0x007FFFFFUL;
+
+    float remain;
+    float log_base, log_remain;
+    uint32_t u32, u32remain;
+    uint32_t exponent, mant;
+
+    if (x == 0)
+        return -INFINITY;
+    if (x < 0)
+        return NAN;
+
+    memcpy(&u32, &x, sizeof(float));
+    exponent = (u32 & exp_expo_mask) >> 23;
+    mant = (u32 & exp_mant_mask) >> 0;
+    u32remain = mant | exp_zero_const;
+
+    memcpy(&remain, &u32remain, sizeof(float));
+
+    log_base = (int32_t)exponent - 127;
+    log_remain = horner(remain - 1.0f);
+
+    return log_base + log_remain;
+}
+
 static inline void log_generate(uint16_t *log2_table)
 {
     for (unsigned i = 32767; i < 65536; ++i) {
-        log2_table[i] = (uint16_t)round(log2((float)i));
+        log2_table[i] = (uint16_t)round(log2f_approx((float)i) * 2048);
     }
 }
 
