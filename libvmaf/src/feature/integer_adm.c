@@ -707,6 +707,8 @@ static void adm_decouple(AdmBuffer *buf, int w, int h, int stride,
             int32_t kv = tmp_kv < 0 ? 0 : (tmp_kv > 32768 ? 32768 : tmp_kv);
             int32_t kd = tmp_kd < 0 ? 0 : (tmp_kd > 32768 ? 32768 : tmp_kd);
 
+
+
             /**
              * kh,kv,kd are in Q15 type and oh,ov,od are in Q16 type hence shifted by
              * 15 to make result Q16
@@ -715,19 +717,23 @@ static void adm_decouple(AdmBuffer *buf, int w, int h, int stride,
             tmpv = ((kv * ov) + 16384) >> 15;
             tmpd = ((kd * od) + 16384) >> 15;
 
-            if (angle_flag && (tmph > 0.0))
-                tmph = MIN(tmph * adm_enhn_gain_limit, th);
-            if (angle_flag && (tmph < 0.0))
-                tmph = MAX(tmph * adm_enhn_gain_limit, th);
+            const float tmph_f = ((float)kh / 32768) * ((float)oh / 64);
+            const float tmpv_f = ((float)kv / 32768) * ((float)ov / 64);
+            const float tmpd_f = ((float)kd / 32768) * ((float)od / 64);
 
-            if (angle_flag && (tmpv > 0.0))
+            if (angle_flag && (tmph_f > 0.))
+                tmph = MIN((tmph * adm_enhn_gain_limit), th);
+            if (angle_flag && (tmph_f < 0.))
+                tmph = MAX((tmph * adm_enhn_gain_limit), th);
+
+            if (angle_flag && (tmpv_f > 0.))
                 tmpv = MIN(tmpv * adm_enhn_gain_limit, tv);
-            if (angle_flag && (tmpv < 0.0))
+            if (angle_flag && (tmpv_f < 0.))
                 tmpv = MAX(tmpv * adm_enhn_gain_limit, tv);
 
-            if (angle_flag && (tmpd > 0.0))
+            if (angle_flag && (tmpd_f > 0.))
                 tmpd = MIN(tmpd * adm_enhn_gain_limit, td);
-            if (angle_flag && (tmpd < 0.0))
+            if (angle_flag && (tmpd_f < 0.))
                 tmpd = MAX(tmpd * adm_enhn_gain_limit, td);
 
             r->band_h[i * stride + j] = tmph;
@@ -750,7 +756,8 @@ static inline uint16_t get_best15_from32(uint32_t temp, int *x)
     return temp;
 }
 
-static void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride)
+static void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride,
+                              double adm_enhn_gain_limit)
 {
     const float cos_1deg_sq = cos(1.0 * M_PI / 180.0) * cos(1.0 * M_PI / 180.0);
 
@@ -820,71 +827,80 @@ static void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride)
             int angle_flag = (((float)ot_dp / 4096.0) >= 0.0f) &&
                 (((float)ot_dp / 4096.0) * ((float)ot_dp / 4096.0) >=
                     cos_1deg_sq * ((float)o_mag_sq / 4096.0) * ((float)t_mag_sq / 4096.0));
-            if (angle_flag) {
-                r->band_h[i * stride + j] = th;
-                r->band_v[i * stride + j] = tv;
-                r->band_d[i * stride + j] = td;
 
-                a->band_h[i * stride + j] = 0;
-                a->band_v[i * stride + j] = 0;
-                a->band_d[i * stride + j] = 0;
-            }
-            else {
-                /**
-                 * Division th/oh is carried using lookup table and converted to multiplication
-                 * int64 / int32 is converted to multiplication using following method
-                 * num /den :
-                 * DenAbs = Abs(den)
-                 * MSBDen = MSB(DenAbs)     (gives position of first 1 bit form msb side)
-                 * If (DenAbs < (1 << 15))
-                 *      Round = (1<<14)
-                 *      Score = (num *  div_lookup[den] + Round ) >> 15
-                 * else
-                 *      RoundD  = (1<< (16 - MSBDen))
-                 *      Round   = (1<< (14 + (17 - MSBDen))
-                 *      Score   = (num * div_lookup[(DenAbs + RoundD )>>(17 - MSBDen)]*sign(Denominator) + Round)
-                 *                  >> ((15 + (17 - MSBDen))
-                 */
+            /**
+             * Division th/oh is carried using lookup table and converted to multiplication
+             * int64 / int32 is converted to multiplication using following method
+             * num /den :
+             * DenAbs = Abs(den)
+             * MSBDen = MSB(DenAbs)     (gives position of first 1 bit form msb side)
+             * If (DenAbs < (1 << 15))
+             *      Round = (1<<14)
+             *      Score = (num *  div_lookup[den] + Round ) >> 15
+             * else
+             *      RoundD  = (1<< (16 - MSBDen))
+             *      Round   = (1<< (14 + (17 - MSBDen))
+             *      Score   = (num * div_lookup[(DenAbs + RoundD )>>(17 - MSBDen)]*sign(Denominator) + Round)
+             *                  >> ((15 + (17 - MSBDen))
+             */
 
-                int32_t kh_shift = 0;
-                int32_t kv_shift = 0;
-                int32_t kd_shift = 0;
+            int32_t kh_shift = 0;
+            int32_t kv_shift = 0;
+            int32_t kd_shift = 0;
 
-                uint32_t abs_oh = abs(oh);
-                uint32_t abs_ov = abs(ov);
-                uint32_t abs_od = abs(od);
+            uint32_t abs_oh = abs(oh);
+            uint32_t abs_ov = abs(ov);
+            uint32_t abs_od = abs(od);
 
-                int8_t kh_sign = (oh < 0 ? -1 : 1);
-                int8_t kv_sign = (ov < 0 ? -1 : 1);
-                int8_t kd_sign = (od < 0 ? -1 : 1);
+            int8_t kh_sign = (oh < 0 ? -1 : 1);
+            int8_t kv_sign = (ov < 0 ? -1 : 1);
+            int8_t kd_sign = (od < 0 ? -1 : 1);
 
-                uint16_t kh_msb = (abs_oh < (32768) ? abs_oh : get_best15_from32(abs_oh, &kh_shift));
-                uint16_t kv_msb = (abs_ov < (32768) ? abs_ov : get_best15_from32(abs_ov, &kv_shift));
-                uint16_t kd_msb = (abs_od < (32768) ? abs_od : get_best15_from32(abs_od, &kd_shift));
+            uint16_t kh_msb = (abs_oh < (32768) ? abs_oh : get_best15_from32(abs_oh, &kh_shift));
+            uint16_t kv_msb = (abs_ov < (32768) ? abs_ov : get_best15_from32(abs_ov, &kv_shift));
+            uint16_t kd_msb = (abs_od < (32768) ? abs_od : get_best15_from32(abs_od, &kd_shift));
 
-                int64_t tmp_kh = (oh == 0) ? 32768 : (((int64_t)div_lookup[kh_msb + 32768] * th)*(kh_sign) +
-                    (1 << (14 + kh_shift))) >> (15 + kh_shift);
-                int64_t tmp_kv = (ov == 0) ? 32768 : (((int64_t)div_lookup[kv_msb + 32768] * tv)*(kv_sign) +
-                    (1 << (14 + kv_shift))) >> (15 + kv_shift);
-                int64_t tmp_kd = (od == 0) ? 32768 : (((int64_t)div_lookup[kd_msb + 32768] * td)*(kd_sign) +
-                    (1 << (14 + kd_shift))) >> (15 + kd_shift);
+            int64_t tmp_kh = (oh == 0) ? 32768 : (((int64_t)div_lookup[kh_msb + 32768] * th)*(kh_sign) +
+                (1 << (14 + kh_shift))) >> (15 + kh_shift);
+            int64_t tmp_kv = (ov == 0) ? 32768 : (((int64_t)div_lookup[kv_msb + 32768] * tv)*(kv_sign) +
+                (1 << (14 + kv_shift))) >> (15 + kv_shift);
+            int64_t tmp_kd = (od == 0) ? 32768 : (((int64_t)div_lookup[kd_msb + 32768] * td)*(kd_sign) +
+                (1 << (14 + kd_shift))) >> (15 + kd_shift);
 
-                int64_t kh = tmp_kh < 0 ? 0 : (tmp_kh > 32768 ? 32768 : tmp_kh);
-                int64_t kv = tmp_kv < 0 ? 0 : (tmp_kv > 32768 ? 32768 : tmp_kv);
-                int64_t kd = tmp_kd < 0 ? 0 : (tmp_kd > 32768 ? 32768 : tmp_kd);
+            int64_t kh = tmp_kh < 0 ? 0 : (tmp_kh > 32768 ? 32768 : tmp_kh);
+            int64_t kv = tmp_kv < 0 ? 0 : (tmp_kv > 32768 ? 32768 : tmp_kv);
+            int64_t kd = tmp_kd < 0 ? 0 : (tmp_kd > 32768 ? 32768 : tmp_kd);
 
-                tmph = ((kh * oh) + 16384) >> 15;
-                tmpv = ((kv * ov) + 16384) >> 15;
-                tmpd = ((kd * od) + 16384) >> 15;
+            tmph = ((kh * oh) + 16384) >> 15;
+            tmpv = ((kv * ov) + 16384) >> 15;
+            tmpd = ((kd * od) + 16384) >> 15;
 
-                r->band_h[i * stride + j] = tmph;
-                r->band_v[i * stride + j] = tmpv;
-                r->band_d[i * stride + j] = tmpd;
+            const float tmph_f = ((float)kh / 32768) * ((float)oh / 64);
+            const float tmpv_f = ((float)kv / 32768) * ((float)ov / 64);
+            const float tmpd_f = ((float)kd / 32768) * ((float)od / 64);
 
-                a->band_h[i * stride + j] = th - tmph;
-                a->band_v[i * stride + j] = tv - tmpv;
-                a->band_d[i * stride + j] = td - tmpd;
-            }
+            if (angle_flag && (tmph_f > 0.))
+                tmph = MIN((tmph * adm_enhn_gain_limit), th);
+            if (angle_flag && (tmph_f < 0.))
+                tmph = MAX((tmph * adm_enhn_gain_limit), th);
+
+            if (angle_flag && (tmpv_f > 0.))
+                tmpv = MIN(tmpv * adm_enhn_gain_limit, tv);
+            if (angle_flag && (tmpv_f < 0.))
+                tmpv = MAX(tmpv * adm_enhn_gain_limit, tv);
+
+            if (angle_flag && (tmpd_f > 0.))
+                tmpd = MIN(tmpd * adm_enhn_gain_limit, td);
+            if (angle_flag && (tmpd_f < 0.))
+                tmpd = MAX(tmpd * adm_enhn_gain_limit, td);
+
+            r->band_h[i * stride + j] = tmph;
+            r->band_v[i * stride + j] = tmpv;
+            r->band_d[i * stride + j] = tmpd;
+
+            a->band_h[i * stride + j] = th - tmph;
+            a->band_v[i * stride + j] = tv - tmpv;
+            a->band_d[i * stride + j] = td - tmpd;
         }
     }
 }
@@ -2398,7 +2414,7 @@ void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic
 			w = (w + 1) / 2;
 			h = (h + 1) / 2;
 
-			adm_decouple_s123(buf, w, h, buf_stride);
+			adm_decouple_s123(buf, w, h, buf_stride, adm_enhn_gain_limit);
 
 			den_scale = adm_csf_den_s123(&buf->i4_ref_dwt2, scale, w, h, buf_stride);
 
