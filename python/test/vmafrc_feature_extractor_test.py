@@ -322,7 +322,7 @@ class FeatureExtractorTest(unittest.TestCase):
         )
         self.fextractor.run()
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 0.934578625, places=4)
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 0.9345057916666667, places=4)
         self.assertAlmostEqual(results[1]['integer_ADM_feature_adm2_score'], 1.000002, places=6)
 
     def test_run_integer_adm_fextractor_12bit(self):
@@ -334,7 +334,7 @@ class FeatureExtractorTest(unittest.TestCase):
         )
         self.fextractor.run()
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 0.9518436666666666, places=4)
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 0.9517706666666667, places=4)
         self.assertAlmostEqual(results[1]['integer_ADM_feature_adm2_score'], 1.000002, places=6)
 
     def test_run_integer_adm_fextractor_akiyo_multiply(self):
@@ -352,7 +352,7 @@ class FeatureExtractorTest(unittest.TestCase):
         )
         self.fextractor.run()
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 1.116705, places=6)  # float 1.116686
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 1.1167, places=6)  # float 1.116686
 
     def test_run_integer_adm_fextractor_akiyo_multiply_enhn_gain_limit_1(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -370,7 +370,7 @@ class FeatureExtractorTest(unittest.TestCase):
         )
         self.fextractor.run()
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 0.9574308606115118, places=6)  # float 0.9574308606115118
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 0.957433, places=6)  # float 0.9574308606115118
 
     def test_run_integer_adm_fextractor_akiyo_multiply_enhn_gain_limit_1d2(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -388,7 +388,7 @@ class FeatureExtractorTest(unittest.TestCase):
         )
         self.fextractor.run()
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 1.116595, places=6)  # float 1.116595
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 1.116609, places=6)  # float 1.116595
 
 
 if __name__ == '__main__':

@@ -657,7 +657,7 @@ static void adm_decouple(AdmBuffer *buf, int w, int h, int stride,
             int16_t th = dis->band_h[i * stride + j];
             int16_t tv = dis->band_v[i * stride + j];
             int16_t td = dis->band_d[i * stride + j];
-            int16_t tmph, tmpv, tmpd;
+            int16_t rst_h, rst_v, rst_d;
 
             /* Determine if angle between (oh,ov) and (th,tv) is less than 1 degree.
              * Given that u is the angle (oh,ov) and v is the angle (th,tv), this can
@@ -707,42 +707,34 @@ static void adm_decouple(AdmBuffer *buf, int w, int h, int stride,
             int32_t kv = tmp_kv < 0 ? 0 : (tmp_kv > 32768 ? 32768 : tmp_kv);
             int32_t kd = tmp_kd < 0 ? 0 : (tmp_kd > 32768 ? 32768 : tmp_kd);
 
-
-
             /**
              * kh,kv,kd are in Q15 type and oh,ov,od are in Q16 type hence shifted by
              * 15 to make result Q16
              */
-            tmph = ((kh * oh) + 16384) >> 15;
-            tmpv = ((kv * ov) + 16384) >> 15;
-            tmpd = ((kd * od) + 16384) >> 15;
+            rst_h = ((kh * oh) + 16384) >> 15;
+            rst_v = ((kv * ov) + 16384) >> 15;
+            rst_d = ((kd * od) + 16384) >> 15;
 
-            const float tmph_f = ((float)kh / 32768) * ((float)oh / 64);
-            const float tmpv_f = ((float)kv / 32768) * ((float)ov / 64);
-            const float tmpd_f = ((float)kd / 32768) * ((float)od / 64);
+            const float rst_h_f = ((float)kh / 32768) * ((float)oh / 64);
+            const float rst_v_f = ((float)kv / 32768) * ((float)ov / 64);
+            const float rst_d_f = ((float)kd / 32768) * ((float)od / 64);
 
-            if (angle_flag && (tmph_f > 0.))
-                tmph = MIN((tmph * adm_enhn_gain_limit), th);
-            if (angle_flag && (tmph_f < 0.))
-                tmph = MAX((tmph * adm_enhn_gain_limit), th);
+            if (angle_flag && (rst_h_f > 0.)) rst_h = MIN((rst_h * adm_enhn_gain_limit), th);
+            if (angle_flag && (rst_h_f < 0.)) rst_h = MAX((rst_h * adm_enhn_gain_limit), th);
 
-            if (angle_flag && (tmpv_f > 0.))
-                tmpv = MIN(tmpv * adm_enhn_gain_limit, tv);
-            if (angle_flag && (tmpv_f < 0.))
-                tmpv = MAX(tmpv * adm_enhn_gain_limit, tv);
+            if (angle_flag && (rst_v_f > 0.)) rst_v = MIN(rst_v * adm_enhn_gain_limit, tv);
+            if (angle_flag && (rst_v_f < 0.)) rst_v = MAX(rst_v * adm_enhn_gain_limit, tv);
 
-            if (angle_flag && (tmpd_f > 0.))
-                tmpd = MIN(tmpd * adm_enhn_gain_limit, td);
-            if (angle_flag && (tmpd_f < 0.))
-                tmpd = MAX(tmpd * adm_enhn_gain_limit, td);
+            if (angle_flag && (rst_d_f > 0.)) rst_d = MIN(rst_d * adm_enhn_gain_limit, td);
+            if (angle_flag && (rst_d_f < 0.)) rst_d = MAX(rst_d * adm_enhn_gain_limit, td);
 
-            r->band_h[i * stride + j] = tmph;
-            r->band_v[i * stride + j] = tmpv;
-            r->band_d[i * stride + j] = tmpd;
+            r->band_h[i * stride + j] = rst_h;
+            r->band_v[i * stride + j] = rst_v;
+            r->band_d[i * stride + j] = rst_d;
 
-            a->band_h[i * stride + j] = th - tmph;
-            a->band_v[i * stride + j] = tv - tmpv;
-            a->band_d[i * stride + j] = td - tmpd;
+            a->band_h[i * stride + j] = th - rst_h;
+            a->band_v[i * stride + j] = tv - rst_v;
+            a->band_d[i * stride + j] = td - rst_d;
         }
     }
 }
@@ -797,7 +789,7 @@ static void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride,
             int32_t th = dis->band_h[i * stride + j];
             int32_t tv = dis->band_v[i * stride + j];
             int32_t td = dis->band_d[i * stride + j];
-            int32_t tmph, tmpv, tmpd;
+            int32_t rst_h, rst_v, rst_d;
 
             /* Determine if angle between (oh,ov) and (th,tv) is less than 1 degree.
              * Given that u is the angle (oh,ov) and v is the angle (th,tv), this can
@@ -871,36 +863,30 @@ static void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride,
             int64_t kv = tmp_kv < 0 ? 0 : (tmp_kv > 32768 ? 32768 : tmp_kv);
             int64_t kd = tmp_kd < 0 ? 0 : (tmp_kd > 32768 ? 32768 : tmp_kd);
 
-            tmph = ((kh * oh) + 16384) >> 15;
-            tmpv = ((kv * ov) + 16384) >> 15;
-            tmpd = ((kd * od) + 16384) >> 15;
+            rst_h = ((kh * oh) + 16384) >> 15;
+            rst_v = ((kv * ov) + 16384) >> 15;
+            rst_d = ((kd * od) + 16384) >> 15;
 
-            const float tmph_f = ((float)kh / 32768) * ((float)oh / 64);
-            const float tmpv_f = ((float)kv / 32768) * ((float)ov / 64);
-            const float tmpd_f = ((float)kd / 32768) * ((float)od / 64);
+            const float rst_h_f = ((float)kh / 32768) * ((float)oh / 64);
+            const float rst_v_f = ((float)kv / 32768) * ((float)ov / 64);
+            const float rst_d_f = ((float)kd / 32768) * ((float)od / 64);
 
-            if (angle_flag && (tmph_f > 0.))
-                tmph = MIN((tmph * adm_enhn_gain_limit), th);
-            if (angle_flag && (tmph_f < 0.))
-                tmph = MAX((tmph * adm_enhn_gain_limit), th);
+            if (angle_flag && (rst_h_f > 0.)) rst_h = MIN((rst_h * adm_enhn_gain_limit), th);
+            if (angle_flag && (rst_h_f < 0.)) rst_h = MAX((rst_h * adm_enhn_gain_limit), th);
 
-            if (angle_flag && (tmpv_f > 0.))
-                tmpv = MIN(tmpv * adm_enhn_gain_limit, tv);
-            if (angle_flag && (tmpv_f < 0.))
-                tmpv = MAX(tmpv * adm_enhn_gain_limit, tv);
+            if (angle_flag && (rst_v_f > 0.)) rst_v = MIN(rst_v * adm_enhn_gain_limit, tv);
+            if (angle_flag && (rst_v_f < 0.)) rst_v = MAX(rst_v * adm_enhn_gain_limit, tv);
 
-            if (angle_flag && (tmpd_f > 0.))
-                tmpd = MIN(tmpd * adm_enhn_gain_limit, td);
-            if (angle_flag && (tmpd_f < 0.))
-                tmpd = MAX(tmpd * adm_enhn_gain_limit, td);
+            if (angle_flag && (rst_d_f > 0.)) rst_d = MIN(rst_d * adm_enhn_gain_limit, td);
+            if (angle_flag && (rst_d_f < 0.)) rst_d = MAX(rst_d * adm_enhn_gain_limit, td);
 
-            r->band_h[i * stride + j] = tmph;
-            r->band_v[i * stride + j] = tmpv;
-            r->band_d[i * stride + j] = tmpd;
+            r->band_h[i * stride + j] = rst_h;
+            r->band_v[i * stride + j] = rst_v;
+            r->band_d[i * stride + j] = rst_d;
 
-            a->band_h[i * stride + j] = th - tmph;
-            a->band_v[i * stride + j] = tv - tmpv;
-            a->band_d[i * stride + j] = td - tmpd;
+            a->band_h[i * stride + j] = th - rst_h;
+            a->band_v[i * stride + j] = tv - rst_v;
+            a->band_d[i * stride + j] = td - rst_d;
         }
     }
 }
