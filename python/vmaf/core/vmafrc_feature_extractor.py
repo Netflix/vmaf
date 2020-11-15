@@ -188,7 +188,8 @@ class IntegerPsnrFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor)
 class IntegerAdmFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "integer_ADM_feature"
-    VERSION = "1.0"
+    # VERSION = "1.0"
+    VERSION = "1.1"  # vectorization; small numerical diff introduced by adm_enhn_gain_limit
 
     ATOM_FEATURES = ['adm2']
 
