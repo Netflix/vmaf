@@ -324,23 +324,23 @@ static void vif_statistic(VifBuffer buf, float *num, float *den,
 
             uint32_t xx_filt_val = xx_filt[i * stride + j];
             uint32_t yy_filt_val = yy_filt[i * stride + j];
+            uint32_t xy_filt_val = xy_filt[i * stride + j];
 
             int32_t sigma1_sq = (int32_t)(xx_filt_val - mu1_sq_val);
             int32_t sigma2_sq = (int32_t)(yy_filt_val - mu2_sq_val);
+            int32_t sigma12 = (int32_t)(xy_filt_val - mu1_mu2_val);
 
             sigma1_sq = MAX(sigma1_sq, 0.0);
             sigma2_sq = MAX(sigma2_sq, 0.0);
-            double g,eps=  65536*1.0e-10;
-            int32_t sv_sq= 0;
-            int32_t vif_enhn_gain_limit_f = (int) vif_enhn_gain_limit;
-            uint32_t xy_filt_val = xy_filt[i * stride + j];
-            int32_t sigma12 = (int32_t)(xy_filt_val - mu1_mu2_val);
 
-            g = sigma12 / (sigma1_sq + eps);
+            //eps is zero, an int will not be less then 1.0e-10, it can be changed to one
+            const double eps = 65536 * 1.0e-10;
+            double g = sigma12 / (sigma1_sq + eps);
+            int32_t sv_sq = sigma2_sq - g * sigma12;
 
 			sv_sq = sigma2_sq - g * sigma12;
 
-            //eps is zero, an int will not be less then 1.0e-10, it can be changed to one
+
 			if (sigma1_sq < eps) {
 			    g = 0.0;
                 sv_sq = sigma2_sq;
@@ -356,16 +356,12 @@ static void vif_statistic(VifBuffer buf, float *num, float *den,
 			    sv_sq = sigma2_sq;
 			    g = 0.0;
 			}
-			sv_sq = (uint32_t)(MAX(sv_sq, eps));
-            g = MIN(g, vif_enhn_gain_limit_f);
-            // uint32_t g1 = (MIN((g+0.5), vif_enhn_gain_limit_f))*10;
 
-            // if(g!=g1){
-            //     int a =0;
-            // }
+			sv_sq = (uint32_t)(MAX(sv_sq, eps));
+
+            g = MIN(g, vif_enhn_gain_limit);
 
             if (sigma1_sq >= sigma_nsq) {
-
                 uint32_t log_den_stage1 = (uint32_t)(sigma_nsq + sigma1_sq);
                 int x;
                 uint16_t log_den1 = get_best16_from32(log_den_stage1, &x);
