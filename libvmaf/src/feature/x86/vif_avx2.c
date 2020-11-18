@@ -1552,15 +1552,15 @@ void vif_filter1d_16_avx2(VifBuffer buf, unsigned w, unsigned h, int scale,
                 _mm256_permute2x128_si256(accumd_lo, accumd_hi, 0x31);
             _mm256_storeu_si256((__m256i *)(buf.tmp.mu2 + j), accumu3_lo);
             _mm256_storeu_si256((__m256i *)(buf.tmp.mu2 + j + 8), accumu3_hi);
-            addnum = _mm256_set1_epi64x(add_shift_round_VP);
+            addnum = _mm256_set1_epi64x(add_shift_round_VP_sq);
             accumref1 = _mm256_add_epi64(accumref1, addnum);
             accumref2 = _mm256_add_epi64(accumref2, addnum);
             accumref3 = _mm256_add_epi64(accumref3, addnum);
             accumref4 = _mm256_add_epi64(accumref4, addnum);
-            accumref1 = _mm256_srli_epi64(accumref1, shift_VP);
-            accumref2 = _mm256_srli_epi64(accumref2, shift_VP);
-            accumref3 = _mm256_srli_epi64(accumref3, shift_VP);
-            accumref4 = _mm256_srli_epi64(accumref4, shift_VP);
+            accumref1 = _mm256_srli_epi64(accumref1, shift_VP_sq);
+            accumref2 = _mm256_srli_epi64(accumref2, shift_VP_sq);
+            accumref3 = _mm256_srli_epi64(accumref3, shift_VP_sq);
+            accumref4 = _mm256_srli_epi64(accumref4, shift_VP_sq);
 
             accumref2 = _mm256_slli_si256(accumref2, 4);
             accumref1 = _mm256_blend_epi32(accumref1, accumref2, 0xAA);
@@ -1577,10 +1577,10 @@ void vif_filter1d_16_avx2(VifBuffer buf, unsigned w, unsigned h, int scale,
             accumrefdis2 = _mm256_add_epi64(accumrefdis2, addnum);
             accumrefdis3 = _mm256_add_epi64(accumrefdis3, addnum);
             accumrefdis4 = _mm256_add_epi64(accumrefdis4, addnum);
-            accumrefdis1 = _mm256_srli_epi64(accumrefdis1, shift_VP);
-            accumrefdis2 = _mm256_srli_epi64(accumrefdis2, shift_VP);
-            accumrefdis3 = _mm256_srli_epi64(accumrefdis3, shift_VP);
-            accumrefdis4 = _mm256_srli_epi64(accumrefdis4, shift_VP);
+            accumrefdis1 = _mm256_srli_epi64(accumrefdis1, shift_VP_sq);
+            accumrefdis2 = _mm256_srli_epi64(accumrefdis2, shift_VP_sq);
+            accumrefdis3 = _mm256_srli_epi64(accumrefdis3, shift_VP_sq);
+            accumrefdis4 = _mm256_srli_epi64(accumrefdis4, shift_VP_sq);
 
             accumrefdis2 = _mm256_slli_si256(accumrefdis2, 4);
             accumrefdis1 = _mm256_blend_epi32(accumrefdis1, accumrefdis2, 0xAA);
@@ -1598,10 +1598,10 @@ void vif_filter1d_16_avx2(VifBuffer buf, unsigned w, unsigned h, int scale,
             accumdis2 = _mm256_add_epi64(accumdis2, addnum);
             accumdis3 = _mm256_add_epi64(accumdis3, addnum);
             accumdis4 = _mm256_add_epi64(accumdis4, addnum);
-            accumdis1 = _mm256_srli_epi64(accumdis1, shift_VP);
-            accumdis2 = _mm256_srli_epi64(accumdis2, shift_VP);
-            accumdis3 = _mm256_srli_epi64(accumdis3, shift_VP);
-            accumdis4 = _mm256_srli_epi64(accumdis4, shift_VP);
+            accumdis1 = _mm256_srli_epi64(accumdis1, shift_VP_sq);
+            accumdis2 = _mm256_srli_epi64(accumdis2, shift_VP_sq);
+            accumdis3 = _mm256_srli_epi64(accumdis3, shift_VP_sq);
+            accumdis4 = _mm256_srli_epi64(accumdis4, shift_VP_sq);
 
             accumdis2 = _mm256_slli_si256(accumdis2, 4);
             accumdis1 = _mm256_blend_epi32(accumdis1, accumdis2, 0xAA);
@@ -1769,7 +1769,7 @@ void vif_filter1d_16_avx2(VifBuffer buf, unsigned w, unsigned h, int scale,
             uint64_t accum_dis = 0;
             uint64_t accum_ref_dis = 0;
             int jj = j - fwidth_half;
-            int jj_check = ii;
+            int jj_check = jj;
             for (unsigned fj = 0; fj < fwidth; ++fj, jj_check = jj + fj) {
                 const uint16_t fcoeff = vif_filt[fj];
                 accum_mu1 += fcoeff * ((uint32_t)buf.tmp.mu1[jj_check]);
@@ -2272,12 +2272,12 @@ void vif_filter1d_rd_16_avx2(VifBuffer buf, unsigned w, unsigned h, int scale,
                                 accumu2_hi);
         }
 
-        // //VERTICAL
+        // VERTICAL
         for (unsigned j = n << 4; j < w; ++j) {
             uint32_t accum_ref = 0;
             uint32_t accum_dis = 0;
             int ii_check = ii;
-            for (unsigned fi = 0; fi < fwidth; ++fi, ii + fi) {
+            for (unsigned fi = 0; fi < fwidth; ++fi, ii_check = ii + fi) {
                 const uint16_t fcoeff = vif_filt[fi];
                 accum_ref += fcoeff * ((uint32_t)ref[ii_check * stride + j]);
                 accum_dis += fcoeff * ((uint32_t)dis[ii_check * stride + j]);
