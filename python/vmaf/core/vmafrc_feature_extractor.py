@@ -95,7 +95,8 @@ class FloatVifFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
 class IntegerVifFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "integer_VIF_feature"
-    VERSION = "1.0"
+    # VERSION = "1.0"
+    VERSION = "1.1b"  # vif_enhn_gain_limit with matching_matlab code
 
     ATOM_FEATURES = ['vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
                      ]
