@@ -111,8 +111,12 @@ class ExternalProgramCaller(object):
 
     @staticmethod
     def call_vmafrc_single_feature(feature, yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None, options=None):
+        options2 = {feature: options.copy() if options is not None else None}
+        if options2[feature] is not None and 'disable_avx' in options2[feature]:
+            options2['disable_avx'] = options2[feature]['disable_avx']
+            del options2[feature]['disable_avx']
         return ExternalProgramCaller.call_vmafrc_multi_features(
-            [feature], yuv_type, ref_path, dis_path, w, h, log_file_path, logger=logger, options={feature: options})
+            [feature], yuv_type, ref_path, dis_path, w, h, log_file_path, logger=logger, options=options2)
 
     @staticmethod
     def call_vmafrc_multi_features(features, yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None, options=None):
@@ -138,12 +142,17 @@ class ExternalProgramCaller(object):
             '--no_prediction',
         ]
 
+        if options is not None and 'disable_avx' in options:
+            assert isinstance(options['disable_avx'], bool)
+            if options['disable_avx'] is True:
+                cmd += ['--cpumask', '-1']
+
         for feature in features:
             if options is None:
                 feature_str = feature
             else:
                 assert isinstance(options, dict)
-                if feature in options and options[feature] is not None:
+                if feature in options and options[feature] is not None and len(options[feature]) > 0:
                     assert isinstance(options[feature], dict)
                     options_lst = []
                     for k, v in options[feature].items():
