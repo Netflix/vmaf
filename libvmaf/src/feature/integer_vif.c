@@ -71,10 +71,10 @@ pad_top_and_bottom(VifBuffer buf, unsigned h, int fwidth)
         memcpy(ref - offset, ref + offset, buf.stride);
         memcpy(dis - offset, dis + offset, buf.stride);
         memcpy(ref + buf.stride * (h - 1) + buf.stride * i,
-               ref + buf.stride * (h - 1) - buf.stride * (i - 1),
+               ref + buf.stride * (h - 1) - buf.stride * i,
                buf.stride);
         memcpy(dis + buf.stride * (h - 1) + buf.stride * i,
-               dis + buf.stride * (h - 1) - buf.stride * (i - 1),
+               dis + buf.stride * (h - 1) - buf.stride * i,
                buf.stride);
     }
 }
