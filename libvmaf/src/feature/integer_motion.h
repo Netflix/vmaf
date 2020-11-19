@@ -19,6 +19,7 @@
 #ifndef FEATURE_MOTION_H_
 #define FEATURE_MOTION_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 
 static const uint16_t filter[5] = { 3571, 16004, 26386, 16004, 3571 };

@@ -30,6 +30,7 @@ if cc.symbols_have_underscore_prefix()
 endif
 
 is_asm_enabled = get_option('enable_asm') == true
+is_avx512_enabled = get_option('enable_avx512') == true
 
 if is_asm_enabled
     if host_machine.cpu_family().startswith('x86')
@@ -55,8 +56,8 @@ if is_asm_enabled
                     error('nasm 2.14 or later is required for AVX-512 asm.\n' +
                            'AVX-512 asm can be disabled with \'-Denable_avx512=false\'')
                 endif
-                cdata.set10('HAVE_AVX512ICL', get_option('enable_avx512'))
-                cdata_asm.set10('HAVE_AVX512ICL', get_option('enable_avx512'))
+                cdata.set10('HAVE_AVX512', get_option('enable_avx512'))
+                cdata_asm.set10('HAVE_AVX512', get_option('enable_avx512'))
             else
                 error('unexpected nasm version string: @0@'.format(nasm_r.stdout()))
             endif
@@ -170,21 +171,39 @@ platform_specific_cpu_objects = []
 
 if is_asm_enabled
     if host_machine.cpu_family().startswith('x86')
-      x86_avx_sources = [
+      x86_avx2_sources = [
           feature_src_dir + 'common/convolution_avx.c',
           feature_src_dir + 'x86/motion_avx2.c',
           feature_src_dir + 'x86/vif_avx2.c',
           feature_src_dir + 'x86/adm_avx2.c',
       ]
 
-      x86_avx_static_lib = static_library(
-          'x86_avx',
-          x86_avx_sources,
+      x86_avx2_static_lib = static_library(
+          'x86_avx2',
+          x86_avx2_sources,
           include_directories : vmaf_base_include,
           c_args : ['-mavx', '-mavx2'] + vmaf_cflags_common,
       )
 
-    platform_specific_cpu_objects += x86_avx_static_lib.extract_all_objects()
+      platform_specific_cpu_objects += x86_avx2_static_lib.extract_all_objects()
+
+      if is_avx512_enabled
+        x86_avx512_sources = [
+            feature_src_dir + 'x86/motion_avx512.c',
+            feature_src_dir + 'x86/vif_avx512.c',
+        ]
+
+        x86_avx512_static_lib = static_library(
+            'x86_avx512',
+            x86_avx512_sources,
+            include_directories : vmaf_base_include,
+            c_args : ['-mavx512f', '-mavx512dq', '-mavx512bw',
+                      '-mavx512vbmi', '-mavx512vbmi2', '-mavx512vl'] +
+                     vmaf_cflags_common,
+        )
+
+        platform_specific_cpu_objects += x86_avx512_static_lib.extract_all_objects()
+      endif
 
     endif
 endif

@@ -31,6 +31,9 @@
 
 #if ARCH_X86
 #include "x86/vif_avx2.h"
+#if HAVE_AVX512
+#include "x86/vif_avx512.h"
+#endif
 #endif
 
 typedef struct VifState {
@@ -553,6 +556,14 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         s->filter1d_rd_8 = vif_filter1d_rd_8_avx2;
         s->filter1d_rd_16 = vif_filter1d_rd_16_avx2;
     }
+#if HAVE_AVX512
+    if (flags & VMAF_X86_CPU_FLAG_AVX512) {
+        s->filter1d_8 = vif_filter1d_8_avx512;
+        if (bpc < 12) s->filter1d_16 = vif_filter1d_16_avx512; //FIXME
+        s->filter1d_rd_8 = vif_filter1d_rd_8_avx512;
+        s->filter1d_rd_16 = vif_filter1d_rd_16_avx512;
+    }
+#endif
 #endif
 
     log_generate(s->log2_table);
