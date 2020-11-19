@@ -30,15 +30,21 @@
 typedef struct AdmState {
     size_t integer_stride;
     AdmBuffer buf;
+    bool debug;
     double adm_enhn_gain_limit;
     void (*dwt2_8)(const uint8_t *src, const adm_dwt_band_t *dst,
                    AdmBuffer *buf, int w, int h, int src_stride,
                    int dst_stride);
 } AdmState;
 
-#define DEFAULT_ADM_ENHN_GAIN_LIMIT (100.0)
-
 static const VmafOption options[] = {
+    {
+        .name = "debug",
+        .help = "debug mode: enable additional output",
+        .offset = offsetof(AdmState, debug),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
     {
         .name = "adm_enhn_gain_limit",
         .help = "enhancement gain imposed on adm, must be >= 1.0, "
@@ -2334,7 +2340,7 @@ static void adm_dwt2_s123_combined(const int32_t *i4_ref_scale, const int32_t *i
 }
 
 void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic,
-                         double *score, double *scores, AdmBuffer *buf,
+                         double *score, double *score_num, double *score_den, double *scores, AdmBuffer *buf,
                          double adm_enhn_gain_limit)
 {
     int w = ref_pic->w[0];
@@ -2431,6 +2437,9 @@ void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic
 	else {
 		*score = num / den;
 	}
+    *score_num = num;
+    *score_den = den;
+
 }
 
 static inline void *init_dwt_band(adm_dwt_band_t *band, char *data_top, size_t stride)
@@ -2552,11 +2561,11 @@ static int extract(VmafFeatureExtractor *fex,
     (void) ref_pic_90;
     (void) dist_pic_90;
 
-    double score;
+    double score, score_num, score_den;
     double scores[8];
 
-    integer_compute_adm(s, ref_pic, dist_pic, &score, scores, &s->buf,
-                        s->adm_enhn_gain_limit);
+    integer_compute_adm(s, ref_pic, dist_pic, &score, &score_num, &score_den,
+            scores, &s->buf, s->adm_enhn_gain_limit);
 
     err |= vmaf_feature_collector_append(feature_collector,
                                         "'VMAF_feature_adm2_integer_score'",
@@ -2577,6 +2586,32 @@ static int extract(VmafFeatureExtractor *fex,
     err |= vmaf_feature_collector_append(feature_collector,
                                         "integer_adm_scale3",
                                         scores[6] / scores[7], index);
+
+    if (s->debug) {
+        err |= vmaf_feature_collector_append(feature_collector, "integer_adm",
+                                             score, index);
+        err |= vmaf_feature_collector_append(feature_collector,"integer_adm_num",
+                                             score_num, index);
+        err |= vmaf_feature_collector_append(feature_collector,"integer_adm_den",
+                                             score_den, index);
+        err |= vmaf_feature_collector_append(feature_collector,"integer_adm_num_scale0",
+                                             scores[0], index);
+        err |= vmaf_feature_collector_append(feature_collector,"integer_adm_den_scale0",
+                                             scores[1], index);
+        err |= vmaf_feature_collector_append(feature_collector,"integer_adm_num_scale1",
+                                             scores[2], index);
+        err |= vmaf_feature_collector_append(feature_collector,"integer_adm_den_scale1",
+                                             scores[3], index);
+        err |= vmaf_feature_collector_append(feature_collector,"integer_adm_num_scale2",
+                                             scores[4], index);
+        err |= vmaf_feature_collector_append(feature_collector,"integer_adm_den_scale2",
+                                             scores[5], index);
+        err |= vmaf_feature_collector_append(feature_collector,"integer_adm_num_scale3",
+                                             scores[6], index);
+        err |= vmaf_feature_collector_append(feature_collector,"integer_adm_den_scale3",
+                                             scores[7], index);
+    }
+
     if (err) return err;
 
     return 0;
