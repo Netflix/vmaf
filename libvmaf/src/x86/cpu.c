@@ -66,6 +66,8 @@ unsigned vmaf_get_cpu_flags_x86(void) {
                     if (X(r.ebx, 0x00000128)) /* BMI1/BMI2/AVX2 */ {
                         flags |= VMAF_X86_CPU_FLAG_AVX2;
                         if (X(xcr0, 0x000000e0)) /* ZMM/OPMASK */ {
+                            if (X(r.ebx, 0xd0030000))
+                                flags |= VMAF_X86_CPU_FLAG_AVX512;
                             if (X(r.ebx, 0xd0230000) && X(r.ecx, 0x00005f42))
                                 flags |= VMAF_X86_CPU_FLAG_AVX512ICL;
                         }

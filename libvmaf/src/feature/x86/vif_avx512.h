@@ -16,18 +16,19 @@
  *
  */
 
-#ifndef __VMAF_SRC_X86_CPU_H__
-#define __VMAF_SRC_X86_CPU_H__
+#ifndef X86_AVX512_VIF_H_
+#define X86_AVX512_VIF_H_
 
-enum VmafCpuFlags {
-    VMAF_X86_CPU_FLAG_SSE2 = 1 << 0,
-    VMAF_X86_CPU_FLAG_SSSE3 = 1 << 1,
-    VMAF_X86_CPU_FLAG_SSE41 = 1 << 2,
-    VMAF_X86_CPU_FLAG_AVX2 = 1 << 3,
-    VMAF_X86_CPU_FLAG_AVX512 = 1 << 4,
-    VMAF_X86_CPU_FLAG_AVX512ICL = 1 << 5,
-};
+#include "feature/integer_vif.h"
 
-unsigned vmaf_get_cpu_flags_x86(void);
+void vif_filter1d_8_avx512(VifBuffer buf, unsigned w, unsigned h);
 
-#endif /* __VMAF_SRC_X86_CPU_H__ */
+void vif_filter1d_rd_8_avx512(VifBuffer buf, unsigned w, unsigned h);
+
+void vif_filter1d_rd_16_avx512(VifBuffer buf, unsigned w, unsigned h, int scale,
+                             int bpc);
+
+void vif_filter1d_16_avx512(VifBuffer buf, unsigned w, unsigned h, int scale,
+                            int bpc);
+
+#endif /* X86_AVX512_VIF_H_ */
