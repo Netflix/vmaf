@@ -125,12 +125,13 @@ class VmafrcFeatureExtractorMixin(object):
                     pass  # some features may be missing
 
         for i_feature, feature in enumerate(self.ATOM_FEATURES):
-            assert len(feature_scores[i_feature]) != 0
-            assert len(feature_scores[i_feature]) == len(feature_scores[0])
+            if len(feature_scores[i_feature]) != 0:
+                assert len(feature_scores[i_feature]) == len(feature_scores[0])
 
         feature_result = {}
         for i_feature, feature in enumerate(self.ATOM_FEATURES):
-            feature_result[self.get_scores_key(feature)] = feature_scores[i_feature]
+            if len(feature_scores[i_feature]) != 0:
+                feature_result[self.get_scores_key(feature)] = feature_scores[i_feature]
 
         return feature_result
 

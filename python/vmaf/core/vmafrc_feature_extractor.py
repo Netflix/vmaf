@@ -137,10 +137,40 @@ class FloatAdmFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
     VERSION = "1.0"
 
     ATOM_FEATURES = ['adm2',
+                     'adm_scale0',
+                     'adm_scale1',
+                     'adm_scale2',
+                     'adm_scale3',
+                     'adm',
+                     'adm_num',
+                     'adm_den',
+                     'adm_num_scale0',
+                     'adm_den_scale0',
+                     'adm_num_scale1',
+                     'adm_den_scale1',
+                     'adm_num_scale2',
+                     'adm_den_scale2',
+                     'adm_num_scale3',
+                     'adm_den_scale3',
                      ]
 
     ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
         'adm2': 'adm2',
+        'adm_scale0': 'adm_scale0',
+        'adm_scale1': 'adm_scale1',
+        'adm_scale2': 'adm_scale2',
+        'adm_scale3': 'adm_scale3',
+        'adm': 'adm',
+        'adm_num': 'adm_num',
+        'adm_den': 'adm_den',
+        'adm_num_scale0': 'adm_num_scale0',
+        'adm_den_scale0': 'adm_den_scale0',
+        'adm_num_scale1': 'adm_num_scale1',
+        'adm_den_scale1': 'adm_den_scale1',
+        'adm_num_scale2': 'adm_num_scale2',
+        'adm_den_scale2': 'adm_den_scale2',
+        'adm_num_scale3': 'adm_num_scale3',
+        'adm_den_scale3': 'adm_den_scale3',
     }
 
     def _generate_result(self, asset):
@@ -198,10 +228,41 @@ class IntegerAdmFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
     # VERSION = "1.0"
     VERSION = "1.1"  # vectorization; small numerical diff introduced by adm_enhn_gain_limit
 
-    ATOM_FEATURES = ['adm2']
+    ATOM_FEATURES = ['adm2',
+                     'adm_scale0',
+                     'adm_scale1',
+                     'adm_scale2',
+                     'adm_scale3',
+                     'adm',
+                     'adm_num',
+                     'adm_den',
+                     'adm_num_scale0',
+                     'adm_den_scale0',
+                     'adm_num_scale1',
+                     'adm_den_scale1',
+                     'adm_num_scale2',
+                     'adm_den_scale2',
+                     'adm_num_scale3',
+                     'adm_den_scale3',
+                     ]
 
     ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
         'adm2': 'integer_adm2',
+        'adm_scale0': 'integer_adm_scale0',
+        'adm_scale1': 'integer_adm_scale1',
+        'adm_scale2': 'integer_adm_scale2',
+        'adm_scale3': 'integer_adm_scale3',
+        'adm': 'integer_adm',
+        'adm_num': 'integer_adm_num',
+        'adm_den': 'integer_adm_den',
+        'adm_num_scale0': 'integer_adm_num_scale0',
+        'adm_den_scale0': 'integer_adm_den_scale0',
+        'adm_num_scale1': 'integer_adm_num_scale1',
+        'adm_den_scale1': 'integer_adm_den_scale1',
+        'adm_num_scale2': 'integer_adm_num_scale2',
+        'adm_den_scale2': 'integer_adm_den_scale2',
+        'adm_num_scale3': 'integer_adm_num_scale3',
+        'adm_den_scale3': 'integer_adm_den_scale3',
     }
 
     def _generate_result(self, asset):

@@ -214,12 +214,66 @@ class FeatureExtractorTest(unittest.TestCase):
         self.fextractor = FloatAdmFeatureExtractor(
             [asset, asset_original],
             None, fifo_mode=False,
-            result_store=None
+            result_store=None,
         )
         self.fextractor.run()
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm2_score'], 0.9345148541666667, places=4)
         self.assertAlmostEqual(results[1]['float_ADM_feature_adm2_score'], 1.0, places=6)
+        try: self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale0_score'], 0.9078873333333334, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale1_score'], 0.8938705625000001, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale2_score'], 0.9300123749999999, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale3_score'], 0.9649663541666667, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        with self.assertRaises(KeyError):
+            s = results[0]['float_ADM_feature_adm_num_score']
+
+    def test_run_float_adm_fextractor_with_debug(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = FloatAdmFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'debug': True},
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm2_score'], 0.9345148541666667, places=4)
+        self.assertAlmostEqual(results[1]['float_ADM_feature_adm2_score'], 1.0, places=6)
+        try: self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale0_score'], 0.9078873333333334, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale1_score'], 0.8938705625000001, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale2_score'], 0.9300123749999999, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale3_score'], 0.9649663541666667, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_ADM_feature_adm_score'], 0.9345148541666667, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+
+        try: self.assertAlmostEqual(results[0]['float_ADM_feature_adm_num_score'], 371.80645372916666, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_ADM_feature_adm_den_score'], 397.83379106250004, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_ADM_feature_adm_num_scale0_score'], 45.526146958333335, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_ADM_feature_adm_den_scale0_score'], 50.14385129166667, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_ADM_feature_adm_num_scale1_score'], 66.574236, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_ADM_feature_adm_den_scale1_score'], 74.47438383333333, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_ADM_feature_adm_num_scale2_score'], 105.55483329166668, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_ADM_feature_adm_den_scale2_score'], 113.49725864583333, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_ADM_feature_adm_num_scale3_score'], 154.15123754166666, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_ADM_feature_adm_den_scale3_score'], 159.7182974375, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
 
     def test_run_integer_psnr_fextractor(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -469,6 +523,58 @@ class FeatureExtractorTest(unittest.TestCase):
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 0.9345057916666667, places=4)
         self.assertAlmostEqual(results[1]['integer_ADM_feature_adm2_score'], 1.000002, places=6)
+        try: self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_scale0_score'], 0.9078873333333334, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_scale1_score'], 0.8938705625000001, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_scale2_score'], 0.9300123749999999, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_scale3_score'], 0.9649663541666667, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        with self.assertRaises(KeyError):
+            s = results[0]['integer_ADM_feature_adm_num_score']
+
+    def test_run_integer_adm_fextractor_with_debug(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = IntegerAdmFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'debug': True},
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 0.9345057916666667, places=4)
+        self.assertAlmostEqual(results[1]['integer_ADM_feature_adm2_score'], 1.000002, places=6)
+        try: self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_scale0_score'], 0.9078873333333334, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_scale1_score'], 0.8938705625000001, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_scale2_score'], 0.9300123749999999, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_scale3_score'], 0.9649663541666667, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+
+        try: self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_num_score'], 371.8243668541666, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_den_score'], 397.8567857291667, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_num_scale0_score'], 45.526718708333334, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_den_scale0_score'], 50.14397566666668, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_num_scale1_score'], 66.57503025, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_den_scale1_score'], 74.47584229166667, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_num_scale2_score'], 105.5588711875, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_den_scale2_score'], 113.50324393750002, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_num_scale3_score'], 154.1637464375, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_den_scale3_score'], 159.733723875, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
 
     def test_run_integer_adm_fextractor_12bit(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_12bit_videos_for_testing()
