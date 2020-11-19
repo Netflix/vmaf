@@ -24,4 +24,32 @@
 static const uint16_t filter[5] = { 3571, 16004, 26386, 16004, 3571 };
 static const int filter_width = sizeof(filter) / sizeof(filter[0]);
 
+static inline uint32_t
+edge_16(bool horizontal, const uint16_t *src, int width,
+        int height, int stride, int i, int j)
+{
+    const int radius = filter_width / 2;
+    uint32_t accum = 0;
+
+    // MIRROR | ЯOЯЯIM
+    for (unsigned k = 0; k < filter_width; ++k) {
+        int i_tap = horizontal ? i : i - radius + k;
+        int j_tap = horizontal ? j - radius + k : j;
+
+        if (horizontal) {
+            if (j_tap < 0)
+                j_tap = -j_tap;
+            else if (j_tap >= width)
+                j_tap = width - (j_tap - width + 1);
+        } else {
+            if (i_tap < 0)
+                i_tap = -i_tap;
+            else if (i_tap >= height)
+                i_tap = height - (i_tap - height + 1);
+        }
+        accum += filter[k] * src[i_tap * stride + j_tap];
+    }
+    return accum;
+}
+
 #endif /* _FEATURE_MOTION_H_ */

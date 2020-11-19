@@ -66,34 +66,6 @@ static const VmafOption options[] = {
     { 0 }
 };
 
-static inline uint32_t
-edge_16(bool horizontal, const uint16_t *src, int width,
-        int height, int stride, int i, int j)
-{
-    const int radius = filter_width / 2;
-    uint32_t accum = 0;
-
-    // MIRROR | ЯOЯЯIM
-    for (unsigned k = 0; k < filter_width; ++k) {
-        int i_tap = horizontal ? i : i - radius + k;
-        int j_tap = horizontal ? j - radius + k : j;
-
-        if (horizontal) {
-            if (j_tap < 0)
-                j_tap = -j_tap;
-            else if (j_tap >= width)
-                j_tap = width - (j_tap - width + 1);
-        } else {
-            if (i_tap < 0)
-                i_tap = -i_tap;
-            else if (i_tap >= height)
-                i_tap = height - (i_tap - height + 1);
-        }
-        accum += filter[k] * src[i_tap * stride + j_tap];
-    }
-    return accum;
-}
-
 static inline void
 x_convolution_16(const uint16_t *src, uint16_t *dst, unsigned width,
                  unsigned height, ptrdiff_t src_stride,
