@@ -421,8 +421,8 @@ static void vif_statistic(VifBuffer buf, float *num, float *den,
     //den[0] = accum_den_log / 2048.0 + accum_den_non_log;
 
     //changed calculation to increase performance
-    num[0] = accum_num_log  + accum_x2 + (accum_den_non_log - ((accum_num_non_log) / 16384.0) / (65025.0));
-    den[0] = accum_den_log  - (accum_x + (num_accum_x * 17)) + accum_den_non_log;
+    num[0] = accum_num_log / 2048.0  + accum_x2 + (accum_den_non_log - ((accum_num_non_log) / 16384.0) / (65025.0));
+    den[0] = accum_den_log / 2048.0  - (accum_x + (num_accum_x * 17)) + accum_den_non_log;
 }
 
 static void filter1d_rd_8(VifBuffer buf, unsigned w, unsigned h)
@@ -525,7 +525,7 @@ static void filter1d_rd_16(VifBuffer buf, unsigned w, unsigned h, int scale,
 static inline void log_generate(uint16_t *log2_table)
 {
     for (unsigned i = 32767; i < 65536; ++i) {
-        log2_table[i] = (uint16_t)round(log2((float)i));
+        log2_table[i] = (uint16_t)round(log2f((float)i) * 2048);
     }
 }
 
