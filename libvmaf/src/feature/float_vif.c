@@ -149,6 +149,8 @@ static int close(VmafFeatureExtractor *fex)
 static const char *provided_features[] = {
     "'VMAF_feature_vif_scale0_score'", "'VMAF_feature_vif_scale1_score'",
     "'VMAF_feature_vif_scale2_score'", "'VMAF_feature_vif_scale3_score'",
+    "VMAF_feature_vif_scale0_score", "VMAF_feature_vif_scale1_score",
+    "VMAF_feature_vif_scale2_score", "VMAF_feature_vif_scale3_score",
     NULL
 };
 

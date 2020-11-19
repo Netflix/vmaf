@@ -24,6 +24,14 @@
 
 int vmaf_predict_score_at_index(VmafModel *model,
                                 VmafFeatureCollector *feature_collector,
-                                unsigned index, double *vmaf_score);
+                                unsigned index, double *vmaf_score,
+                                bool write_prediction,
+                                enum VmafModelFlags flags);
+
+int vmaf_predict_score_at_index_model_collection(
+                                VmafModelCollection *model_collection,
+                                VmafFeatureCollector *feature_collector,
+                                unsigned index,
+                                VmafModelCollectionScore *score);
 
 #endif /* __VMAF_PREDICT_H__ */

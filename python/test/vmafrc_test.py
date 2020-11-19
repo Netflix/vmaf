@@ -43,7 +43,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'],0.3634208125, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'], 0.3634208125, places=4)
         self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.7666474166666667, places=4)
         self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.8628533333333334, places=4)
         self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.9159719583333334, places=4)

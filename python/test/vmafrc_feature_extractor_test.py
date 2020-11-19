@@ -4,8 +4,11 @@ from vmaf.core.asset import Asset
 
 from vmaf.config import VmafConfig
 
-from test.testutil import set_default_576_324_videos_for_testing, set_default_576_324_12bit_videos_for_testing, \
-    set_default_576_324_16bit_videos_for_testing, set_default_576_324_10bit_videos_for_testing_b
+from test.testutil import set_default_576_324_videos_for_testing, \
+    set_default_576_324_12bit_videos_for_testing, \
+    set_default_576_324_16bit_videos_for_testing, \
+    set_default_576_324_10bit_videos_for_testing_b, \
+    set_default_576_324_10bit_videos_for_testing
 
 from vmaf.core.vmafrc_feature_extractor import FloatMotionFeatureExtractor, IntegerMotionFeatureExtractor, \
     FloatVifFeatureExtractor, FloatAdmFeatureExtractor, IntegerVifFeatureExtractor, IntegerPsnrFeatureExtractor, \
@@ -63,6 +66,19 @@ class FeatureExtractorTest(unittest.TestCase):
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 3.895345229166667, places=8)
         self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 3.895345229166667, places=8)
+
+    def test_run_integer_motion_fextractor_forcing_zero(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = IntegerMotionFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'motion_force_zero': True}
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 0.0, places=8)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 0.0, places=8)
 
     def test_run_integer_motion_fextractor_12bit(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_12bit_videos_for_testing()
@@ -145,6 +161,53 @@ class FeatureExtractorTest(unittest.TestCase):
         except AssertionError as e: self.verificationErrors.append(str(e))
         try: self.assertAlmostEqual(results[1]['integer_VIF_feature_vif_scale3_score'], 1.0, places=5)
         except AssertionError as e: self.verificationErrors.append(str(e))
+
+    def test_run_integer_vif_fextractor_debug1_yuv422p10le(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_10bit_videos_for_testing()
+        self.fextractor = IntegerVifFeatureExtractor(
+            [asset],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale0_scores'][-1], 0.416114, places=6)
+
+    def test_run_integer_vif_fextractor_debug2_160x90(self):
+        ref_path = VmafConfig.test_resource_path("yuv", "ref_test_0_1_src01_hrc00_576x324_576x324_vs_src01_hrc01_576x324_576x324_q_160x90.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "dis_test_0_1_src01_hrc00_576x324_576x324_vs_src01_hrc01_576x324_576x324_q_160x90.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 160, 'height': 90})
+        self.fextractor = IntegerVifFeatureExtractor(
+            [asset],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale3_scores'][31], 0.983114, places=6)
+
+    def test_run_integer_vif_fextractor_debug3_yuv420p10le(self):
+        ref_path = VmafConfig.test_resource_path("yuv", "sparks_ref_480x270.yuv42010le.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "sparks_dis_480x270.yuv42010le.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 480, 'height': 270,
+                                  'yuv_type': 'yuv420p10le'})
+        self.fextractor = IntegerVifFeatureExtractor(
+            [asset],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale0_scores'][0], 0.933165, places=6)
+        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale3_scores'][2], 0.999352, places=6)
 
     def test_run_float_adm_fextractor(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -404,7 +467,7 @@ class FeatureExtractorTest(unittest.TestCase):
         )
         self.fextractor.run()
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 0.934578625, places=4)
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 0.9345057916666667, places=4)
         self.assertAlmostEqual(results[1]['integer_ADM_feature_adm2_score'], 1.000002, places=6)
 
     def test_run_integer_adm_fextractor_12bit(self):
@@ -416,8 +479,62 @@ class FeatureExtractorTest(unittest.TestCase):
         )
         self.fextractor.run()
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 0.9518436666666666, places=4)
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 0.9517706666666667, places=4)
         self.assertAlmostEqual(results[1]['integer_ADM_feature_adm2_score'], 1.000002, places=6)
+
+    def test_run_integer_adm_fextractor_akiyo_multiply(self):
+        ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        dis_path = VmafConfig.test_resource_path("yuv", "disp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 352, 'height': 288})
+        self.fextractor = IntegerAdmFeatureExtractor(
+            [asset],
+            None, fifo_mode=False,
+            result_store=None
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 1.1167, places=6)  # float 1.116686
+
+    def test_run_integer_adm_fextractor_akiyo_multiply_enhn_gain_limit_1(self):
+        ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        dis_path = VmafConfig.test_resource_path("yuv", "disp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 352, 'height': 288})
+        self.fextractor = IntegerAdmFeatureExtractor(
+            [asset],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'adm_enhn_gain_limit': 1.0}
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 0.957433, places=6)  # float 0.9574308606115118
+
+    def test_run_integer_adm_fextractor_akiyo_multiply_enhn_gain_limit_1d2(self):
+        ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        dis_path = VmafConfig.test_resource_path("yuv", "disp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 352, 'height': 288})
+        self.fextractor = IntegerAdmFeatureExtractor(
+            [asset],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'adm_enhn_gain_limit': 1.2}
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 1.116609, places=6)  # float 1.116595
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

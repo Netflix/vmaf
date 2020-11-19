@@ -1,3 +1,4 @@
+import os
 from abc import ABCMeta, abstractmethod, ABC
 import re
 from xml.etree import ElementTree
@@ -270,7 +271,58 @@ class VmafLegacyQualityRunner(QualityRunner):
         vmaf_fassembler.remove_results()
 
 
-class VmafQualityRunner(QualityRunner):
+class VmafQualityRunnerModelMixin(object):
+
+    def _load_model(self, asset):
+        if self.optional_dict is not None \
+                and 'model_filepath' in self.optional_dict \
+                and self.optional_dict['model_filepath'] is not None:
+            model_filepath = self.optional_dict['model_filepath']
+        else:
+            model_filepath = self.DEFAULT_MODEL_FILEPATH
+        train_test_model_class = self.get_train_test_model_class()
+        format = os.path.splitext(model_filepath)[1]
+        supported_formats = ['.pkl', '.json']
+        self._assert_extension_format(supported_formats, format)
+        try:
+            if '.pkl' in format:
+                model = train_test_model_class.from_file(model_filepath, self.logger, format='pkl')
+            elif '.json' in format:
+                model = train_test_model_class.from_file(model_filepath, self.logger, format='json', combined=True)
+            else:
+                assert False
+        except AssertionError as e:
+            raise AssertionError("File {filepath} may not be a valid model file for class {cls}: {e}".
+                                 format(filepath=model_filepath, cls=train_test_model_class.__name__, e=e))
+        return model
+
+    @classmethod
+    def _assert_extension_format(cls, supported_formats, format):
+        """
+        >>> supported_formats = ['.pkl', '.json']
+        >>> VmafQualityRunner._assert_extension_format(supported_formats, '.pkl')
+        >>> VmafQualityRunner._assert_extension_format(supported_formats, '.pkl_2160')
+        >>> VmafQualityRunner._assert_extension_format(supported_formats, '.pkkl')
+        Traceback (most recent call last):
+        ...
+        AssertionError: VmafQualityRunner supports .pkl or .json model file, but the file format is: .pkkl
+        >>> VmafQualityRunner._assert_extension_format(supported_formats, '.json')
+        >>> VmafQualityRunner._assert_extension_format(supported_formats, '.json_720')
+        >>> VmafQualityRunner._assert_extension_format(supported_formats, '.jsonn')
+        >>> VmafQualityRunner._assert_extension_format(supported_formats, '.jsson')
+        Traceback (most recent call last):
+        ...
+        AssertionError: VmafQualityRunner supports .pkl or .json model file, but the file format is: .jsson
+        """
+        for supported_format in supported_formats:
+            if supported_format in format:
+                break
+        else:
+            assert False, \
+                f'{cls.__name__} supports .pkl or .json model file, but the file format is: {format}'
+
+
+class VmafQualityRunner(VmafQualityRunnerModelMixin, QualityRunner):
     TYPE = 'VMAF'
 
     # VERSION = '0.1' # using model nflxall_vmafv1.pkl, VmafFeatureExtractor VERSION 0.1
@@ -430,21 +482,6 @@ class VmafQualityRunner(QualityRunner):
             ys_pred = np.clip(ys_pred, lb, ub)
 
         return ys_pred
-
-    def _load_model(self, asset):
-        if self.optional_dict is not None \
-                and 'model_filepath' in self.optional_dict \
-                and self.optional_dict['model_filepath'] is not None:
-            model_filepath = self.optional_dict['model_filepath']
-        else:
-            model_filepath = self.DEFAULT_MODEL_FILEPATH
-        train_test_model_class = self.get_train_test_model_class()
-        try:
-            model = train_test_model_class.from_file(model_filepath, self.logger)
-        except AssertionError as e:
-            raise AssertionError("File {filepath} may not be a valid model file for class {cls}: {e}".
-                                 format(filepath=model_filepath, cls=train_test_model_class.__name__, e=e))
-        return model
 
     def get_train_test_model_class(self):
         return LibsvmNusvrTrainTestModel
@@ -631,7 +668,7 @@ class VmafossExecQualityRunner(QualityRunner):
     FEATURES = ['adm2', 'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
                 'motion', 'vif_scale0', 'vif_scale1', 'vif_scale2',
                 'vif_scale3', 'vif', 'psnr', 'ssim', 'ms_ssim', 'motion2',
-                'bagging', 'stddev', 'ci95_low', 'ci95_high']
+                'vmaf_bagging', 'vmaf_stddev', 'vmaf_ci_p95_lo', 'vmaf_ci_p95_hi']
 
     @classmethod
     def get_feature_scores_key(cls, atom_feature):
@@ -731,14 +768,14 @@ class VmafossExecQualityRunner(QualityRunner):
         root = tree.getroot()
         scores = []
 
-        # check if vmafossexec returned additional info about the bootstrapped models
-        # bootstrap_model_list_str is a comma-separated string of model names
-        vmaf_params = root.findall('params')[0].attrib
-        augmented_features = copy.copy(self.FEATURES)
-        if 'bootstrap_model_list_str' in vmaf_params:
-            bootstrap_model_list_str = vmaf_params['bootstrap_model_list_str']
-            bootstrap_model_list = bootstrap_model_list_str.split(',') if len(bootstrap_model_list_str) > 0 else []
-            augmented_features += bootstrap_model_list
+        # add all logged features to augmented_features[]
+        # in a previous implementaion, individual bootstrap scores
+        # were given as a csv string as an attribute in <params>.
+        # "vmaf" is excluded from augmented_features[] because
+        # it has it's own special list: scores[].
+        augmented_features = [key for key in root.findall('frames/frame')[0].attrib.keys()]
+        augmented_features.remove("frameNum")
+        augmented_features.remove("vmaf")
 
         feature_scores = [[] for _ in augmented_features]
 
@@ -1331,3 +1368,8 @@ class VmafrcQualityRunner(QualityRunner):
             if len(feature_scores[i_feature]) != 0:
                 quality_result[self.get_feature_scores_key(feature)] = feature_scores[i_feature]
         return quality_result
+
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()

@@ -17,6 +17,7 @@
  */
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -177,6 +178,19 @@ int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model)
     return 0;
 }
 
+int vmaf_use_features_from_model_collection(VmafContext *vmaf,
+                                            VmafModelCollection *model_collection)
+{
+    if (!vmaf) return -EINVAL;
+    if (!model_collection) return -EINVAL;
+
+    int err = 0;
+    for (unsigned i = 0; i < model_collection->cnt; i++)
+        err |= vmaf_use_features_from_model(vmaf, model_collection->model[i]);
+
+    return err;
+}
+
 struct ThreadData {
     VmafFeatureExtractorContext *fex_ctx;
     VmafPicture ref, dist;
@@ -335,7 +349,21 @@ int vmaf_score_at_index(VmafContext *vmaf, VmafModel *model, double *score,
     if (!score) return -EINVAL;
 
     return vmaf_predict_score_at_index(model, vmaf->feature_collector, index,
-                                       score);
+                                       score, true, 0);
+}
+
+int vmaf_score_at_index_model_collection(VmafContext *vmaf,
+                                         VmafModelCollection *model_collection,
+                                         VmafModelCollectionScore *score,
+                                         unsigned index)
+{
+    if (!vmaf) return -EINVAL;
+    if (!model_collection) return -EINVAL;
+    if (!score) return -EINVAL;
+
+    return vmaf_predict_score_at_index_model_collection(model_collection,
+                                                        vmaf->feature_collector,
+                                                        index, score);
 }
 
 int vmaf_feature_score_pooled(VmafContext *vmaf, const char *feature_name,
@@ -397,6 +425,7 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
                       unsigned index_low, unsigned index_high)
 {
     if (!vmaf) return -EINVAL;
+    if (!model) return -EINVAL;
     if (!score) return -EINVAL;
     if (index_low > index_high) return -EINVAL;
     if (!pool_method) return -EINVAL;
@@ -419,6 +448,70 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
 
     return vmaf_feature_score_pooled(vmaf, model->name, pool_method, score,
                                      index_low, index_high);
+}
+
+int vmaf_score_pooled_model_collection(VmafContext *vmaf,
+                                       VmafModelCollection *model_collection,
+                                       enum VmafPoolingMethod pool_method,
+                                       VmafModelCollectionScore *score,
+                                       unsigned index_low, unsigned index_high)
+{
+    if (!vmaf) return -EINVAL;
+    if (!model_collection) return -EINVAL;
+    if (!score) return -EINVAL;
+    if (index_low > index_high) return -EINVAL;
+    if (!pool_method) return -EINVAL;
+
+    vmaf_thread_pool_wait(vmaf->thread_pool);
+    RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
+    for (unsigned i = 0; i < rfe.cnt; i++) {
+        vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
+                                             vmaf->feature_collector);
+    }
+    vmaf_fex_ctx_pool_flush(vmaf->fex_ctx_pool, vmaf->feature_collector);
+
+    int err = 0;
+    for (unsigned i = index_low; i <= index_high; i++) {
+        if ((vmaf->cfg.n_subsample > 1) && (i % vmaf->cfg.n_subsample))
+            continue;
+        VmafModelCollectionScore s;
+        err = vmaf_score_at_index_model_collection(vmaf, model_collection, &s, i);
+        if (err) return err;
+    }
+
+    score->type = VMAF_MODEL_COLLECTION_SCORE_BOOTSTRAP;
+
+    //TODO: dedupe, vmaf_bootstrap_predict_score_at_index()
+    const char *suffix_lo = "_ci_p95_lo";
+    const char *suffix_hi = "_ci_p95_hi";
+    const char *suffix_bagging = "_bagging";
+    const char *suffix_stddev = "_stddev";
+    const size_t name_sz =
+        strlen(model_collection->name) + strlen(suffix_lo) + 1;
+    char name[name_sz];
+    memset(name, 0, name_sz);
+
+    snprintf(name, name_sz, "%s%s", model_collection->name, suffix_bagging);
+    err |= vmaf_feature_score_pooled(vmaf, name, pool_method,
+                                     &score->bootstrap.bagging_score,
+                                     index_low, index_high);
+
+    snprintf(name, name_sz, "%s%s", model_collection->name, suffix_stddev);
+    err |= vmaf_feature_score_pooled(vmaf, name, pool_method,
+                                     &score->bootstrap.stddev,
+                                     index_low, index_high);
+
+    snprintf(name, name_sz, "%s%s", model_collection->name, suffix_lo);
+    err |= vmaf_feature_score_pooled(vmaf, name, pool_method,
+                                     &score->bootstrap.ci.p95.lo,
+                                     index_low, index_high);
+
+    snprintf(name, name_sz, "%s%s", model_collection->name, suffix_hi);
+    err |= vmaf_feature_score_pooled(vmaf, name, pool_method,
+                                     &score->bootstrap.ci.p95.hi,
+                                     index_low, index_high);
+
+    return err;
 }
 
 const char *vmaf_version(void)
@@ -446,7 +539,7 @@ int vmaf_write_output(VmafContext *vmaf, const char *output_path,
                 ((double) (vmaf->feature_collector->timer.end -
                 vmaf->feature_collector->timer.begin) / CLOCKS_PER_SEC);
 
-    int ret;
+    int ret = 0;
     switch (fmt) {
     case VMAF_OUTPUT_FORMAT_XML:
         ret = vmaf_write_output_xml(vmaf, vmaf->feature_collector, outfile,
@@ -467,7 +560,7 @@ int vmaf_write_output(VmafContext *vmaf, const char *output_path,
                                     vmaf->cfg.n_subsample);
         break;
     default:
-        ret -EINVAL;
+        ret = -EINVAL;
         break;
     }
 

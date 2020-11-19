@@ -34,7 +34,8 @@ class FloatMotionFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor)
 class IntegerMotionFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "integer_motion_feature"
-    VERSION = "1.0"
+    # VERSION = "1.0"
+    VERSION = "1.1"  # vectorization
 
     ATOM_FEATURES = ['motion2']
 
@@ -56,7 +57,8 @@ class IntegerMotionFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtracto
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc_single_feature('motion', yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
+        ExternalProgramCaller.call_vmafrc_single_feature('motion', yuv_type, ref_path, dis_path, w, h,
+                                                         log_file_path, logger, options=self.optional_dict)
 
 
 class FloatVifFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
@@ -98,7 +100,8 @@ class IntegerVifFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
     # VERSION = "1.0"
     # VERSION = "1.1b"  # vif_enhn_gain_limit with matching_matlab code
     # VERSION = "1.1c"  # update boundary calculation
-    VERSION = "1.1d"  # update log2 to replace log2f_approx
+    # VERSION = "1.1d"  # update to use log2f to replace log2f_approx
+    VERSION = "1.2"  # fix vectorization corner cases
 
     ATOM_FEATURES = ['vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
                      ]
@@ -192,7 +195,8 @@ class IntegerPsnrFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor)
 class IntegerAdmFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "integer_ADM_feature"
-    VERSION = "1.0"
+    # VERSION = "1.0"
+    VERSION = "1.1"  # vectorization; small numerical diff introduced by adm_enhn_gain_limit
 
     ATOM_FEATURES = ['adm2']
 
@@ -214,4 +218,5 @@ class IntegerAdmFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc_single_feature('adm', yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
+        ExternalProgramCaller.call_vmafrc_single_feature('adm', yuv_type, ref_path, dis_path, w, h,
+                                                         log_file_path, logger, options=self.optional_dict)

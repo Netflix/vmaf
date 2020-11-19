@@ -26,6 +26,8 @@ jobs:
     steps:
       - name: Setup python
         uses: actions/setup-python@v1.2.0
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         with:
           python-version: 3.8
       - name: Install meson and ninja
@@ -50,6 +52,8 @@ jobs:
           brew upgrade
           brew install -q ninja nasm
       - uses: actions/checkout@v2
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
       - name: Build vmaf
         run: |
           meson setup libvmaf libvmaf/build --buildtype release

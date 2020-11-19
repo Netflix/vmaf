@@ -10,7 +10,7 @@ vmafossexec = executable(
     dependencies: [stdatomic_dependency],
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,
-    link_with : libvmaf.get_static_lib(),
+    link_with : libvmaf_rc.get_static_lib(),
     install : true,
 )
 
@@ -21,7 +21,7 @@ vmaf_rc = executable(
     dependencies: [stdatomic_dependency],
     c_args : [vmaf_cflags_common, compat_cflags],
     link_with : libvmaf_rc.get_static_lib(),
-    install : false,
+    install : get_option('install_rc'),
 )
 
 vmaf_feature = executable(

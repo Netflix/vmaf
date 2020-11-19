@@ -461,5 +461,55 @@ class TrainTestModelWithDisYRawVideoExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(result['RMSE'], 0.51128487038576109, places=4)
 
 
+class TrainTestModelTestJson(unittest.TestCase):
+
+    def setUp(self):
+
+        train_dataset_path = VmafConfig.test_resource_path('test_image_dataset_diffdim2.py')
+        train_dataset = import_python_file(train_dataset_path)
+        train_assets = read_dataset(train_dataset)
+
+        runner = MomentNorefFeatureExtractor(
+            train_assets,
+            None,
+            fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict=None,
+            optional_dict2=None,
+        )
+        runner.run(parallelize=False)
+        self.features = runner.results
+
+        self.model_filename_json = VmafConfig.workspace_path("model", "test_save_load.json")
+
+    def tearDown(self):
+        if hasattr(self, 'model'):
+            self.model.delete(self.model_filename_json, format='json')
+
+    def test_train_save_load_predict_libsvmnusvr_json(self):
+
+        xs = LibsvmNusvrTrainTestModel.get_xs_from_results(self.features)
+        ys = LibsvmNusvrTrainTestModel.get_ys_from_results(self.features)
+        xys = LibsvmNusvrTrainTestModel.get_xys_from_results(self.features)
+
+        self.model = LibsvmNusvrTrainTestModel({'norm_type': 'normalize'}, None)
+        self.model.train(xys)
+
+        self.model.to_file(self.model_filename_json, format='json')
+        self.assertTrue(os.path.exists(self.model_filename_json))
+        self.assertFalse(os.path.exists(self.model_filename_json + '.model'))
+
+        loaded_model = LibsvmNusvrTrainTestModel.from_file(
+            self.model_filename_json, logger=None, format='json')
+
+        result = self.model.evaluate(xs, ys)
+        self.assertAlmostEqual(result['RMSE'], 0.62263086620058783, places=4)
+
+        # loaded model generates slight numerical difference
+        result = loaded_model.evaluate(xs, ys)
+        self.assertAlmostEqual(result['RMSE'], 0.62263139871631323, places=4)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

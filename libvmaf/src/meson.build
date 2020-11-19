@@ -274,6 +274,7 @@ libvmaf = both_libraries(
 libvmaf_rc_feature_sources = [
     feature_src_dir + 'picture_copy.c',
     feature_src_dir + 'integer_psnr.c',
+    feature_src_dir + 'psnr_hvs.c',
     feature_src_dir + 'feature_extractor.c',
     feature_src_dir + 'alias.c',
     feature_src_dir + 'float_adm.c',
@@ -300,6 +301,7 @@ libvmaf_rc_feature_static_lib = static_library(
 
 libvmaf_rc_sources = [
     src_dir + 'libvmaf.rc.c',
+    src_dir + 'compute_vmaf.c',
     src_dir + 'predict.c',
     src_dir + 'model.c',
     src_dir + 'unpickle.cpp',
@@ -313,6 +315,8 @@ libvmaf_rc_sources = [
     src_dir + 'dict.c',
     src_dir + 'opt.c',
     src_dir + 'ref.c',
+    src_dir + 'read_json_model.c',
+    src_dir + 'pdjson.c',
 ]
 
 libvmaf_rc = both_libraries(
@@ -333,7 +337,7 @@ libvmaf_rc = both_libraries(
         libvmaf_rc_feature_static_lib.extract_all_objects(),
         libvmaf_rc_cpu_static_lib.extract_all_objects(),
     ],
-    install: false,
+    install: get_option('install_rc'),
 )
 
 pkg_mod = import('pkgconfig')

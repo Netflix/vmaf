@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "libvmaf/compute_vmaf.h"
 #include "libvmaf/model.h"
 #include "libvmaf/picture.h"
 #include "libvmaf/feature.h"
@@ -86,6 +87,21 @@ int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg);
  * @return 0 on success, or < 0 (a negative errno code) on error.
  */
 int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model);
+
+/**
+ * Register feature extractors required by a specific `VmafModelCollection`
+ * Like `vmaf_use_features_from_model()`, this function may be called
+ * multiple times using different model collections.
+ *
+ * @param vmaf             The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param model_collection Opaque model collection context.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_use_features_from_model_collection(VmafContext *vmaf,
+                                            VmafModelCollection *model_collection);
 
 /**
  * Register specific feature extractor.
@@ -165,6 +181,25 @@ int vmaf_score_at_index(VmafContext *vmaf, VmafModel *model, double *score,
                         unsigned index);
 
 /**
+ * Predict VMAF score at specific index, using a model collection.
+ *
+ * @param vmaf              The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param model_collection  Opaque model collection context.
+ *
+ * @param index             Picture index.
+ *
+ * @param score             Predicted score.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_score_at_index_model_collection(VmafContext *vmaf,
+                                         VmafModelCollection *model_collection,
+                                         VmafModelCollectionScore *score,
+                                         unsigned index);
+
+/**
  * Fetch feature score at specific index.
  *
  * @param vmaf          The VMAF context allocated with `vmaf_init()`.
@@ -202,6 +237,30 @@ int vmaf_feature_score_at_index(VmafContext *vmaf, const char *feature_name,
 int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
                       enum VmafPoolingMethod pool_method, double *score,
                       unsigned index_low, unsigned index_high);
+
+/**
+ * Pooled VMAF score for a specific interval, using a model collection.
+ *
+ * @param vmaf              The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param model_collection  Opaque model collection context.
+ *
+ * @param pool_method       Temporal pooling method to use.
+ *
+ * @param score             Pooled score.
+ *
+ * @param index_low         Low picture index of pooling interval.
+ *
+ * @param index_high        High picture index of pooling interval.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_score_pooled_model_collection(VmafContext *vmaf,
+                                       VmafModelCollection *model_collection,
+                                       enum VmafPoolingMethod pool_method,
+                                       VmafModelCollectionScore *score,
+                                       unsigned index_low, unsigned index_high);
 
 /**
  * Pooled feature score for a specific interval.

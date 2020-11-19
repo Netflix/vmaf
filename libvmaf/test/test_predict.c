@@ -33,11 +33,11 @@ static char *test_predict_score_at_index()
 
     VmafModel *model;
     VmafModelConfig cfg = {
-        .path = "../../model/vmaf_v0.6.1.pkl",
         .name = "vmaf",
         .flags = VMAF_MODEL_FLAGS_DEFAULT,
     };
-    err = vmaf_model_load_from_path(&model, &cfg);
+    const char *path = "../../model/vmaf_v0.6.1.pkl";
+    err = vmaf_model_load_from_path(&model, &cfg, path);
     mu_assert("problem during vmaf_model_load_from_path", !err);
 
     for (unsigned i = 0; i < model->n_features; i++) {
@@ -47,7 +47,8 @@ static char *test_predict_score_at_index()
     }
 
     double vmaf_score = 0.;
-    err = vmaf_predict_score_at_index(model, feature_collector, 0, &vmaf_score);
+    err = vmaf_predict_score_at_index(model, feature_collector, 0, &vmaf_score,
+                                      true, 0);
     mu_assert("problem during vmaf_predict_score_at_index", !err);
 
     vmaf_model_destroy(model);

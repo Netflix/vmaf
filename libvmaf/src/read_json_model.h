@@ -16,6 +16,17 @@
  *
  */
 
-const char *vmaf_feature_name_alias(const char *feature_name);
-const char *vmaf_internal_feature_name_alias(const char *feature_name);
-void vmaf_use_vmafossexec_aliases(void); // FIXME, deprecate
+#ifndef __VMAF_JSON_MODEL_H__
+#define __VMAF_JSON_MODEL_H__
+
+#include "model.h"
+
+int vmaf_read_json_model_from_path(VmafModel **model, VmafModelConfig *cfg,
+                                   const char *path);
+
+int vmaf_read_json_model_collection_from_path(VmafModel **model,
+                                              VmafModelCollection **model_collection,
+                                              VmafModelConfig *cfg,
+                                              const char *path);
+
+#endif /* __VMAF_JSON_MODEL_H__ */

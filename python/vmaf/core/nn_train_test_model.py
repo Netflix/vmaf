@@ -265,7 +265,7 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
         return np.sum(list(map(lambda ys:len(ys), yss)))
 
     @override(TrainTestModel)
-    def to_file(self, filename):
+    def to_file(self, filename, **more):
 
         self._assert_trained()
 
@@ -284,8 +284,11 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
 
     @classmethod
     @override(TrainTestModel)
-    def from_file(cls, filename, logger=None, optional_dict2=None):
+    def from_file(cls, filename, logger=None, optional_dict2=None, **more):
+        format = more['format'] if 'format' in more else 'pkl'
+        assert format in ['pkl'], f'format must be pkl but got {format}'
 
+        assert os.path.exists(filename), 'File name {} does not exist.'.format(filename)
         with open(filename, 'rb') as file:
             info_loaded = pickle.load(file)
 
@@ -318,7 +321,10 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
 
     @staticmethod
     @override(TrainTestModel)
-    def delete(filename):
+    def delete(filename, **more):
+        format = more['format'] if 'format' in more else 'pkl'
+        assert format in ['pkl'], f'format must be pkl but got {format}'
+
         if os.path.exists(filename):
             os.remove(filename)
         if os.path.exists(filename + '.model'):
