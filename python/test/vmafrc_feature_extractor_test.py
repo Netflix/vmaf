@@ -4,8 +4,11 @@ from vmaf.core.asset import Asset
 
 from vmaf.config import VmafConfig
 
-from test.testutil import set_default_576_324_videos_for_testing, set_default_576_324_12bit_videos_for_testing, \
-    set_default_576_324_16bit_videos_for_testing, set_default_576_324_10bit_videos_for_testing_b
+from test.testutil import set_default_576_324_videos_for_testing, \
+    set_default_576_324_12bit_videos_for_testing, \
+    set_default_576_324_16bit_videos_for_testing, \
+    set_default_576_324_10bit_videos_for_testing_b, \
+    set_default_576_324_10bit_videos_for_testing
 
 from vmaf.core.vmafrc_feature_extractor import FloatMotionFeatureExtractor, IntegerMotionFeatureExtractor, \
     FloatVifFeatureExtractor, FloatAdmFeatureExtractor, IntegerVifFeatureExtractor, IntegerPsnrFeatureExtractor, \
@@ -137,6 +140,53 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['integer_VIF_feature_vif_scale1_score'], 1.0000023541666667, places=6)
         self.assertAlmostEqual(results[1]['integer_VIF_feature_vif_scale2_score'], 1.0000022916666667, places=6)
         self.assertAlmostEqual(results[1]['integer_VIF_feature_vif_scale3_score'], 1.0, places=5)
+
+    def test_run_integer_vif_fextractor_debug1_yuv422p10le(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_10bit_videos_for_testing()
+        self.fextractor = IntegerVifFeatureExtractor(
+            [asset],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale0_scores'][-1], 0.416114, places=6)
+
+    def test_run_integer_vif_fextractor_debug2_160x90(self):
+        ref_path = VmafConfig.test_resource_path("yuv", "ref_test_0_1_src01_hrc00_576x324_576x324_vs_src01_hrc01_576x324_576x324_q_160x90.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "dis_test_0_1_src01_hrc00_576x324_576x324_vs_src01_hrc01_576x324_576x324_q_160x90.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 160, 'height': 90})
+        self.fextractor = IntegerVifFeatureExtractor(
+            [asset],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale3_scores'][31], 0.983114, places=6)
+
+    def test_run_integer_vif_fextractor_debug3_yuv420p10le(self):
+        ref_path = VmafConfig.test_resource_path("yuv", "sparks_ref_480x270.yuv42010le.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "sparks_dis_480x270.yuv42010le.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 480, 'height': 270,
+                                  'yuv_type': 'yuv420p10le'})
+        self.fextractor = IntegerVifFeatureExtractor(
+            [asset],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale0_scores'][0], 0.933165, places=6)
+        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale3_scores'][2], 0.999352, places=6)
 
     def test_run_float_adm_fextractor(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
