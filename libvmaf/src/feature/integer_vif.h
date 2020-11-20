@@ -21,6 +21,11 @@
 
 #include <stdint.h>
 
+/* Enhancement gain imposed on vif, must be >= 1.0, where 1.0 means the gain is completely disabled */
+#ifndef DEFAULT_VIF_ENHN_GAIN_LIMIT
+#define DEFAULT_VIF_ENHN_GAIN_LIMIT (100.0)
+#endif // !DEFAULT_VIF_ENHN_GAIN_LIMIT
+
 static const uint16_t vif_filter1d_table[4][18] = {
     { 489, 935, 1640, 2640, 3896, 5274, 6547, 7455, 7784, 7455, 6547, 5274, 3896, 2640, 1640, 935, 489, 0 },
     { 1244, 3663, 7925, 12590, 14692, 12590, 7925, 3663, 1244, 0 },

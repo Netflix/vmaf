@@ -36,6 +36,7 @@
 typedef struct VifState {
     VifBuffer buf;
     uint16_t log2_table[65537];
+    bool debug;
     double vif_enhn_gain_limit;
     void (*filter1d_8)(VifBuffer buf, unsigned w, unsigned h);
     void (*filter1d_16)(VifBuffer buf, unsigned w, unsigned h, int scale,
@@ -45,9 +46,14 @@ typedef struct VifState {
                            int bpc);
 } VifState;
 
-#define DEFAULT_VIF_ENHN_GAIN_LIMIT (100.0)
-
 static const VmafOption options[] = {
+    {
+        .name = "debug",
+        .help = "debug mode: enable additional output",
+        .offset = offsetof(VifState, debug),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
     {
         .name = "vif_enhn_gain_limit",
         .help = "enhancement gain imposed on vif, must be >= 1.0, "
@@ -649,7 +655,13 @@ static int extract(VmafFeatureExtractor *fex,
         score_den += scores[2 * scale + 1];
     }
 
-    //double score = score_den = 0.0 ? 1.0 : score_num / score_den;
+    double score;
+    if (score_den == 0.0) {
+        score = 1.0f;
+    }
+    else {
+        score = score_num / score_den;
+    }
 
     int err = 0;
     err |= vmaf_feature_collector_append(feature_collector,
@@ -664,6 +676,31 @@ static int extract(VmafFeatureExtractor *fex,
     err |= vmaf_feature_collector_append(feature_collector,
                                          "'VMAF_feature_vif_scale3_integer_score'",
                                          scores[6] / scores[7], index);
+
+    if (s->debug) {
+        err |= vmaf_feature_collector_append(feature_collector,
+                                             "integer_vif", score, index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                                             "integer_vif_num", score_num, index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                                             "integer_vif_den", score_den, index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                                             "integer_vif_num_scale0", scores[0], index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                                             "integer_vif_den_scale0", scores[1], index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                                             "integer_vif_num_scale1", scores[2], index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                                             "integer_vif_den_scale1", scores[3], index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                                             "integer_vif_num_scale2", scores[4], index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                                             "integer_vif_den_scale2", scores[5], index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                                             "integer_vif_num_scale3", scores[6], index);
+        err |= vmaf_feature_collector_append(feature_collector,
+                                             "integer_vif_den_scale3", scores[7], index);
+    }
     return err;
 }
 
