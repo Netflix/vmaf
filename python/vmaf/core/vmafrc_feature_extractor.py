@@ -64,9 +64,19 @@ class IntegerMotionFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtracto
 class FloatVifFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "float_VIF_feature"
-    VERSION = "1.0"
+    # VERSION = "1.0"
+    VERSION = "1.1"  # add debug features
 
     ATOM_FEATURES = ['vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
+                     'vif', 'vif_num', 'vif_den',
+                     'vif_num_scale0',
+                     'vif_den_scale0',
+                     'vif_num_scale1',
+                     'vif_den_scale1',
+                     'vif_num_scale2',
+                     'vif_den_scale2',
+                     'vif_num_scale3',
+                     'vif_den_scale3',
                      ]
 
     ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
@@ -74,6 +84,17 @@ class FloatVifFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
         'vif_scale1': 'vif_scale1',
         'vif_scale2': 'vif_scale2',
         'vif_scale3': 'vif_scale3',
+        'vif': 'vif',
+        'vif_num': 'vif_num',
+        'vif_den': 'vif_den',
+        'vif_num_scale0': 'vif_num_scale0',
+        'vif_den_scale0': 'vif_den_scale0',
+        'vif_num_scale1': 'vif_num_scale1',
+        'vif_den_scale1': 'vif_den_scale1',
+        'vif_num_scale2': 'vif_num_scale2',
+        'vif_den_scale2': 'vif_den_scale2',
+        'vif_num_scale3': 'vif_num_scale3',
+        'vif_den_scale3': 'vif_den_scale3',
     }
 
     def _generate_result(self, asset):
@@ -101,9 +122,19 @@ class IntegerVifFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
     # VERSION = "1.1b"  # vif_enhn_gain_limit with matching_matlab code
     # VERSION = "1.1c"  # update boundary calculation
     # VERSION = "1.1d"  # update to use log2f to replace log2f_approx
-    VERSION = "1.2"  # fix vectorization corner cases
+    # VERSION = "1.2"  # fix vectorization corner cases
+    VERSION = "1.3"  # add debug features
 
     ATOM_FEATURES = ['vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
+                     'vif', 'vif_num', 'vif_den',
+                     'vif_num_scale0',
+                     'vif_den_scale0',
+                     'vif_num_scale1',
+                     'vif_den_scale1',
+                     'vif_num_scale2',
+                     'vif_den_scale2',
+                     'vif_num_scale3',
+                     'vif_den_scale3',
                      ]
 
     ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
@@ -111,6 +142,17 @@ class IntegerVifFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
         'vif_scale1': 'integer_vif_scale1',
         'vif_scale2': 'integer_vif_scale2',
         'vif_scale3': 'integer_vif_scale3',
+        'vif': 'integer_vif',
+        'vif_num': 'integer_vif_num',
+        'vif_den': 'integer_vif_den',
+        'vif_num_scale0': 'integer_vif_num_scale0',
+        'vif_den_scale0': 'integer_vif_den_scale0',
+        'vif_num_scale1': 'integer_vif_num_scale1',
+        'vif_den_scale1': 'integer_vif_den_scale1',
+        'vif_num_scale2': 'integer_vif_num_scale2',
+        'vif_den_scale2': 'integer_vif_den_scale2',
+        'vif_num_scale3': 'integer_vif_num_scale3',
+        'vif_den_scale3': 'integer_vif_den_scale3',
     }
 
     def _generate_result(self, asset):
@@ -134,7 +176,8 @@ class IntegerVifFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
 class FloatAdmFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "float_ADM_feature"
-    VERSION = "1.0"
+    # VERSION = "1.0"
+    VERSION = "1.1"  # add debug features
 
     ATOM_FEATURES = ['adm2',
                      'adm_scale0',
@@ -226,7 +269,8 @@ class IntegerAdmFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "integer_ADM_feature"
     # VERSION = "1.0"
-    VERSION = "1.1"  # vectorization; small numerical diff introduced by adm_enhn_gain_limit
+    # VERSION = "1.1"  # vectorization; small numerical diff introduced by adm_enhn_gain_limit
+    VERSION = "1.2"  # add debug features
 
     ATOM_FEATURES = ['adm2',
                      'adm_scale0',
