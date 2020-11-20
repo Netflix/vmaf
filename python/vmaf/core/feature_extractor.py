@@ -319,6 +319,38 @@ class VmafFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
         return result
 
 
+class VmafIntegerFeatureExtractor(VmafFeatureExtractor):
+
+    TYPE = "VMAF_integer_feature"
+
+    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = dict(
+        zip(VmafFeatureExtractor.ATOM_FEATURES,
+            [f'integer_{f}' for f in VmafFeatureExtractor.ATOM_FEATURES]))
+    ATOM_FEATURES_TO_VMAFRC_KEY_DICT['ansnr'] = 'float_ansnr'
+    ATOM_FEATURES_TO_VMAFRC_KEY_DICT['anpsnr'] = 'float_anpsnr'
+
+    def _generate_result(self, asset):
+
+        quality_width, quality_height = asset.quality_width_height
+        log_file_path = self._get_log_file_path(asset)
+
+        yuv_type=self._get_workfile_yuv_type(asset)
+        ref_path=asset.ref_procfile_path
+        dis_path=asset.dis_procfile_path
+        w=quality_width
+        h=quality_height
+        logger = self.logger
+
+        ExternalProgramCaller.call_vmafrc_multi_features(
+            ['adm', 'vif', 'motion', 'float_ansnr'],
+            yuv_type, ref_path, dis_path, w, h, log_file_path, logger, options={
+                'adm': {'debug': True},
+                'vif': {'debug': True},
+                'motion': {'debug': True},
+            }
+        )
+
+
 class VifFrameDifferenceFeatureExtractor(FeatureExtractor):
 
     TYPE = "VifDiff_feature"
