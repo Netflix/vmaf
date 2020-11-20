@@ -51,7 +51,7 @@ class NorefFeatureExtractorTest(unittest.TestCase):
             None, fifo_mode=True,
             result_store=None
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
 
         results = self.fextractor.results
 
@@ -73,7 +73,7 @@ class NorefFeatureExtractorTest(unittest.TestCase):
             result_store=None
         )
 
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
 
         results = self.fextractor.results
 
@@ -95,7 +95,7 @@ class NorefFeatureExtractorTest(unittest.TestCase):
             result_store=None
         )
 
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
 
         results = self.fextractor.results
 
@@ -121,7 +121,7 @@ class NorefFeatureExtractorTest(unittest.TestCase):
             optional_dict2=None,
         )
 
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
 
         results = self.fextractor.results
 
@@ -147,7 +147,7 @@ class NorefFeatureExtractorTest(unittest.TestCase):
             optional_dict2=None,
         )
 
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
 
         results = self.fextractor.results
 
@@ -170,7 +170,7 @@ class NorefFeatureExtractorTest(unittest.TestCase):
             None, fifo_mode=True,
             result_store=None
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
 
         results = self.fextractor.results
 
@@ -197,138 +197,6 @@ class NorefFeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[1]['SITI_noref_feature_si_score'], 85.28055474796807)
         self.assertAlmostEqual(results[1]['SITI_noref_feature_ti_score'], 19.500837587311423)
-
-    def test_noref_moment_fextractor_proc(self):
-
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
-
-        callback_dict = {
-            'dis_proc_callback': 'identity',
-        }
-        asset.asset_dict.update(callback_dict)
-        asset_original.asset_dict.update(callback_dict)
-
-        self.fextractor = MomentNorefFeatureExtractor(
-            [asset, asset_original],
-            None, fifo_mode=True,
-            result_store=None
-        )
-        self.fextractor.run()
-
-        results = self.fextractor.results
-
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_1st_score'], 61.332006624999984)
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_2nd_score'], 4798.659574041666)
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_var_score'], 1036.8371843488285)
-
-        self.assertAlmostEqual(results[1]['Moment_noref_feature_1st_score'], 59.788567297525134)
-        self.assertAlmostEqual(results[1]['Moment_noref_feature_2nd_score'], 4696.668388042271)
-        self.assertAlmostEqual(results[1]['Moment_noref_feature_var_score'], 1121.519917231207)
-
-
-class ParallelNorefFeatureExtractorTest(unittest.TestCase):
-
-    def tearDown(self):
-        if hasattr(self, 'fextractors'):
-            for fextractor in self.fextractors:
-                fextractor.remove_results()
-            pass
-
-    def test_run_parallel_moment_noref_fextractor(self):
-
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
-
-        fextractor = MomentNorefFeatureExtractor(
-            [asset, asset_original],
-            None,
-            fifo_mode=True,
-            delete_workdir=True,
-            result_store=None,
-        )
-        self.fextractors = [fextractor]
-        fextractor.run(parallelize=True)
-        results = fextractor.results
-
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_1st_score'], 61.332006624999984)
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_2nd_score'], 4798.659574041666)
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_var_score'], 1036.8371843488285)
-
-        self.assertAlmostEqual(results[1]['Moment_noref_feature_1st_score'], 59.788567297525134)
-        self.assertAlmostEqual(results[1]['Moment_noref_feature_2nd_score'], 4696.668388042271)
-        self.assertAlmostEqual(results[1]['Moment_noref_feature_var_score'], 1121.519917231207)
-
-
-class ParallelNorefFeatureExtractorTestNew(unittest.TestCase):
-
-    def tearDown(self):
-        if hasattr(self, 'fextractor'):
-            self.fextractor.remove_results()
-            pass
-
-    def test_noref_moment_fextractor(self):
-
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
-
-        self.fextractor = MomentNorefFeatureExtractor(
-            [asset, asset_original],
-            None, fifo_mode=True,
-            result_store=None
-        )
-        self.fextractor.run(parallelize=True)
-
-        results = self.fextractor.results
-
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_1st_score'], 61.332006624999984)
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_2nd_score'], 4798.659574041666)
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_var_score'], 1036.8371843488285)
-
-        self.assertAlmostEqual(results[1]['Moment_noref_feature_1st_score'], 59.788567297525134)
-        self.assertAlmostEqual(results[1]['Moment_noref_feature_2nd_score'], 4696.668388042271)
-        self.assertAlmostEqual(results[1]['Moment_noref_feature_var_score'], 1121.519917231207)
-
-    def test_noref_moment_fextractor_with_noref_asset(self):
-
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
-
-        self.fextractor = MomentNorefFeatureExtractor(
-            [asset, asset_original],
-            None, fifo_mode=True,
-            result_store=None
-        )
-        self.fextractor.run(parallelize=True)
-
-        results = self.fextractor.results
-
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_1st_score'], 61.332006624999984)
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_2nd_score'], 4798.659574041666)
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_var_score'], 1036.8371843488285)
-
-        self.assertAlmostEqual(results[1]['Moment_noref_feature_1st_score'], 59.788567297525134)
-        self.assertAlmostEqual(results[1]['Moment_noref_feature_2nd_score'], 4696.668388042271)
-        self.assertAlmostEqual(results[1]['Moment_noref_feature_var_score'], 1121.519917231207)
-
-    def test_run_parallel_brisque_noref_fextractor(self):
-
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
-
-        self.fextractor = BrisqueNorefFeatureExtractor(
-            [asset, asset_original],
-            None,
-            fifo_mode=True,
-            delete_workdir=True,
-            result_store=None,
-        )
-        self.fextractor.run(parallelize=True)
-
-        results = self.fextractor.results
-
-        self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_alpha23_score'], 0.7640625000000005, places=4)
-        self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_alpha13_score'], 0.6322500000000002, places=4)
-        self.assertAlmostEqual(results[0]['BRISQUE_noref_feature_N34_score'],     -0.007239876204980851, places=4)
-
-        self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_alpha23_score'], 0.8644583333333339, places=4)
-        self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_alpha13_score'], 0.82906250000000103, places=4)
-        self.assertAlmostEqual(results[1]['BRISQUE_noref_feature_N34_score'],     -0.0092448158862212092, places=4)
 
     def test_noref_moment_fextractor_proc(self):
 

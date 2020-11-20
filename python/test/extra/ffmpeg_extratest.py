@@ -143,7 +143,10 @@ class QualityRunnerTest(unittest.TestCase):
             [asset],
             None, fifo_mode=True,
             delete_workdir=True,
-            result_store=None
+            result_store=None,
+            optional_dict={
+                'model_filepath': VmafConfig.model_path("vmaf_v0.6.1.json"),
+            },
         )
         self.runner.run()
 
@@ -165,7 +168,10 @@ class QualityRunnerTest(unittest.TestCase):
             [asset],
             None, fifo_mode=False,
             delete_workdir=True,
-            result_store=None
+            result_store=None,
+            optional_dict={
+                'model_filepath': VmafConfig.model_path("vmaf_v0.6.1.json"),
+            },
         )
         self.runner.run()
 

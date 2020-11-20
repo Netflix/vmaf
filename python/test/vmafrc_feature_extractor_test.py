@@ -35,7 +35,7 @@ class FeatureExtractorTest(unittest.TestCase):
             result_store=None,
             optional_dict={'debug': False}
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['float_motion_feature_motion2_score'], 3.8953518541666665, places=8)
         self.assertAlmostEqual(results[1]['float_motion_feature_motion2_score'], 3.8953518541666665, places=8)
@@ -50,7 +50,7 @@ class FeatureExtractorTest(unittest.TestCase):
             result_store=None,
             optional_dict={'debug': True}
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['float_motion_feature_motion2_score'], 3.8953518541666665, places=8)
         self.assertAlmostEqual(results[1]['float_motion_feature_motion2_score'], 3.8953518541666665, places=8)
@@ -65,7 +65,7 @@ class FeatureExtractorTest(unittest.TestCase):
             result_store=None,
             optional_dict={'motion_force_zero': True, 'debug': True},
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['float_motion_feature_motion2_score'], 0.0, places=8)
         self.assertAlmostEqual(results[1]['float_motion_feature_motion2_score'], 0.0, places=8)
@@ -83,7 +83,7 @@ class FeatureExtractorTest(unittest.TestCase):
             result_store=None,
             optional_dict={'debug': False},
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 3.895345229166667, places=8)
         self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 3.895345229166667, places=8)
@@ -98,7 +98,7 @@ class FeatureExtractorTest(unittest.TestCase):
             result_store=None,
             optional_dict={'debug': True}
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 3.895345229166667, places=8)
         self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 3.895345229166667, places=8)
@@ -113,7 +113,7 @@ class FeatureExtractorTest(unittest.TestCase):
             result_store=None,
             optional_dict={'motion_force_zero': True, 'debug': True}
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 0.0, places=8)
         self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 0.0, places=8)
@@ -127,7 +127,7 @@ class FeatureExtractorTest(unittest.TestCase):
             None, fifo_mode=False,
             result_store=None
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 2.8104533333333332, places=8)
         self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 2.8104533333333332, places=8)
@@ -139,7 +139,7 @@ class FeatureExtractorTest(unittest.TestCase):
             None, fifo_mode=False,
             result_store=None
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale0_score'], 0.3634208125, places=6)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_score'], 0.7666474166666667, places=6)
@@ -160,7 +160,7 @@ class FeatureExtractorTest(unittest.TestCase):
             result_store=None,
             optional_dict={'debug': True}
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale0_score'], 0.3634208125, places=6)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_score'], 0.7666474166666667, places=6)
@@ -201,7 +201,7 @@ class FeatureExtractorTest(unittest.TestCase):
             None, fifo_mode=False,
             result_store=None
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         try: self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale0_score'], 0.3636620625, places=6)
         except AssertionError as e: self.verificationErrors.append(str(e))
@@ -230,7 +230,7 @@ class FeatureExtractorTest(unittest.TestCase):
             result_store=None,
             optional_dict={'debug': True}
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         try: self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale0_score'], 0.3636620625, places=6)
         except AssertionError as e: self.verificationErrors.append(str(e))
@@ -279,7 +279,7 @@ class FeatureExtractorTest(unittest.TestCase):
             None, fifo_mode=False,
             result_store=None
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         try: self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale0_score'], 0.4330893333333334, places=6)
         except AssertionError as e: self.verificationErrors.append(str(e))
@@ -305,7 +305,7 @@ class FeatureExtractorTest(unittest.TestCase):
             None, fifo_mode=True,
             result_store=None
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale0_scores'][-1], 0.416638, places=6)
 
@@ -322,7 +322,7 @@ class FeatureExtractorTest(unittest.TestCase):
             None, fifo_mode=True,
             result_store=None
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale3_scores'][31], 0.982747, places=6)
 
@@ -340,7 +340,7 @@ class FeatureExtractorTest(unittest.TestCase):
             None, fifo_mode=True,
             result_store=None
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale0_scores'][0], 0.933186, places=6)
         self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale3_scores'][2], 0.999348, places=6)
@@ -352,7 +352,7 @@ class FeatureExtractorTest(unittest.TestCase):
             None, fifo_mode=False,
             result_store=None,
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm2_score'], 0.9345148541666667, places=4)
         self.assertAlmostEqual(results[1]['float_ADM_feature_adm2_score'], 1.0, places=6)
@@ -375,7 +375,7 @@ class FeatureExtractorTest(unittest.TestCase):
             result_store=None,
             optional_dict={'debug': True},
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm2_score'], 0.9345148541666667, places=4)
         self.assertAlmostEqual(results[1]['float_ADM_feature_adm2_score'], 1.0, places=6)
@@ -418,7 +418,7 @@ class FeatureExtractorTest(unittest.TestCase):
             None, fifo_mode=False,
             result_store=None
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_PSNR_feature_psnr_y_score'], 30.755063979166664, places=4)
         self.assertAlmostEqual(results[0]['integer_PSNR_feature_psnr_cb_score'], 38.4494410625, places=4)
@@ -434,7 +434,7 @@ class FeatureExtractorTest(unittest.TestCase):
             None, fifo_mode=False,
             result_store=None
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_PSNR_feature_psnr_y_score'], 32.577818, places=4)
         self.assertAlmostEqual(results[0]['integer_PSNR_feature_psnr_cb_score'], 39.044961, places=4)
@@ -450,7 +450,7 @@ class FeatureExtractorTest(unittest.TestCase):
             None, fifo_mode=False,
             result_store=None
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_PSNR_feature_psnr_y_score'], 32.579806000000005, places=4)
         self.assertAlmostEqual(results[0]['integer_PSNR_feature_psnr_cb_score'], 39.04694966666667, places=4)
@@ -472,7 +472,7 @@ class FeatureExtractorTest(unittest.TestCase):
             None, fifo_mode=False,
             result_store=None
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm2_score'], 1.116686, places=6)
 
@@ -490,7 +490,7 @@ class FeatureExtractorTest(unittest.TestCase):
             result_store=None,
             optional_dict={'adm_enhn_gain_limit': 1.0}
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm2_score'], 0.9574308606115118, places=6)
 
@@ -508,7 +508,7 @@ class FeatureExtractorTest(unittest.TestCase):
             result_store=None,
             optional_dict={'adm_enhn_gain_limit': 1.2}
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm2_score'], 1.116595, places=6)
 
@@ -525,7 +525,7 @@ class FeatureExtractorTest(unittest.TestCase):
             None, fifo_mode=False,
             result_store=None
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale0_score'], 1.0522544319369052, places=5)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_score'], 1.0705609423182443, places=5)
@@ -546,7 +546,7 @@ class FeatureExtractorTest(unittest.TestCase):
             result_store=None,
             optional_dict={'vif_enhn_gain_limit': 1.0},
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale0_score'], 0.983699512450884, places=4)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_score'], 0.9974276726830457, places=4)
@@ -567,7 +567,7 @@ class FeatureExtractorTest(unittest.TestCase):
             result_store=None,
             optional_dict={'vif_enhn_gain_limit': 1.1},
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale0_score'], 1.0298451531242514, places=3)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_score'], 1.046596975760772, places=3)
@@ -587,7 +587,7 @@ class FeatureExtractorTest(unittest.TestCase):
             None, fifo_mode=False,
             result_store=None
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         try: self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale0_score'], 1.052403, places=5)
         except AssertionError as e: self.verificationErrors.append(str(e))
@@ -612,7 +612,7 @@ class FeatureExtractorTest(unittest.TestCase):
             result_store=None,
             optional_dict={'vif_enhn_gain_limit': 1.0},
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         try: self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale0_score'], 0.983699512450884, places=4)
         except AssertionError as e: self.verificationErrors.append(str(e))
@@ -637,7 +637,7 @@ class FeatureExtractorTest(unittest.TestCase):
             result_store=None,
             optional_dict={'vif_enhn_gain_limit': 1.1},
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         try: self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale0_score'], 1.0298451531242514, places=3)
         except AssertionError as e: self.verificationErrors.append(str(e))
@@ -655,7 +655,7 @@ class FeatureExtractorTest(unittest.TestCase):
             None, fifo_mode=False,
             result_store=None
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 0.9345057916666667, places=4)
         self.assertAlmostEqual(results[1]['integer_ADM_feature_adm2_score'], 1.000002, places=6)
@@ -678,7 +678,7 @@ class FeatureExtractorTest(unittest.TestCase):
             result_store=None,
             optional_dict={'debug': True},
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 0.9345057916666667, places=4)
         self.assertAlmostEqual(results[1]['integer_ADM_feature_adm2_score'], 1.000002, places=6)
@@ -719,7 +719,7 @@ class FeatureExtractorTest(unittest.TestCase):
             None, fifo_mode=False,
             result_store=None
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 0.9517706666666667, places=4)
         self.assertAlmostEqual(results[1]['integer_ADM_feature_adm2_score'], 1.000002, places=6)
@@ -737,7 +737,7 @@ class FeatureExtractorTest(unittest.TestCase):
             None, fifo_mode=False,
             result_store=None
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 1.1167, places=6)  # float 1.116686
 
@@ -755,7 +755,7 @@ class FeatureExtractorTest(unittest.TestCase):
             result_store=None,
             optional_dict={'adm_enhn_gain_limit': 1.0}
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 0.957433, places=6)  # float 0.9574308606115118
 
@@ -773,7 +773,7 @@ class FeatureExtractorTest(unittest.TestCase):
             result_store=None,
             optional_dict={'adm_enhn_gain_limit': 1.2}
         )
-        self.fextractor.run()
+        self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 1.116609, places=6)  # float 1.116595
 

@@ -108,6 +108,7 @@ class LocalExplainerTest(unittest.TestCase):
             None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
+            optional_dict={'model_filepath': VmafConfig.model_path("vmaf_v0.6.1.json")},
             optional_dict2={'explainer': LocalExplainer(neighbor_samples=100)}
         )
 
