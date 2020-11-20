@@ -304,7 +304,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
                 'float_ms_ssim': True,
             }
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -346,7 +346,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
                 'float_ms_ssim': True,
             }
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -388,7 +388,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
                 'float_ms_ssim': True,
             }
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -430,7 +430,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
                 'float_ms_ssim': True,
             }
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -1077,7 +1077,7 @@ class VmafrcQualityRunnerSubsamplingTest(unittest.TestCase):
             result_store=None,
             optional_dict={'subsample': subsample}
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
         results = self.runner.results
 
         for i in range(48):

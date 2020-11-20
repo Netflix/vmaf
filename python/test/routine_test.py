@@ -282,7 +282,7 @@ class TestTrainOnDataset(unittest.TestCase):
         test_dataset = import_python_file(
             VmafConfig.test_resource_path('dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
-                                                   None, None,
+                                                   None, VmafConfig.model_path("vmaf_v0.6.1.json"),
                                                    parallelize=True,
                                                    aggregate_method=None)
 
@@ -300,7 +300,7 @@ class TestTrainOnDataset(unittest.TestCase):
         test_dataset = import_python_file(
             VmafConfig.test_resource_path('dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, BootstrapVmafQualityRunner, None,
-                                                   None, None,
+                                                   None, VmafConfig.model_path("vmaf_b_v0.6.3.json"),
                                                    parallelize=True,
                                                    aggregate_method=None)
 
@@ -321,7 +321,7 @@ class TestTrainOnDataset(unittest.TestCase):
         from vmaf.routine import run_test_on_dataset
         test_dataset = import_python_file(VmafConfig.test_resource_path('dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
-                                                   None, None, parallelize=False,
+                                                   None, VmafConfig.model_path("vmaf_v0.6.1.json"), parallelize=False,
                                                    aggregate_method=None,
                                                    split_test_indices_for_perf_ci=True,
                                                    n_splits_test_indices=10)
@@ -333,7 +333,7 @@ class TestTrainOnDataset(unittest.TestCase):
         test_dataset = import_python_file(
             VmafConfig.test_resource_path('raw_dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
-                                                   None, None,
+                                                   None, VmafConfig.model_path("vmaf_v0.6.1.json"),
                                                    parallelize=True,
                                                    aggregate_method=None)
 
@@ -355,7 +355,7 @@ class TestTrainOnDataset(unittest.TestCase):
         test_dataset = import_python_file(
             VmafConfig.test_resource_path('raw_dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
-                                                   None, None,
+                                                   None, VmafConfig.model_path("vmaf_v0.6.1.json"),
                                                    parallelize=True,
                                                    aggregate_method=None,
                                                    subj_model_class=MosModel)

@@ -73,7 +73,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
             result_store=None,
             optional_dict={'thread': 3}
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -91,7 +91,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
             result_store=None,
             optional_dict={'subsample': 5}
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -111,7 +111,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
                 'enable_transform_score': True,
             }
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -131,7 +131,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
                 'model_filepath':VmafConfig.model_path("other_models", "nflxtrain_norm_type_none.pkl"),
             },
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -168,7 +168,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -205,7 +205,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -242,7 +242,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -278,7 +278,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -376,7 +376,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
             },
             result_store=self.result_store,
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -413,7 +413,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
             },
             result_store=self.result_store,
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -449,7 +449,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
             },
             result_store=self.result_store,
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -484,7 +484,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
             },
             result_store=self.result_store,
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -516,7 +516,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
             },
             result_store=self.result_store,
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -540,7 +540,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
             result_store=None,
             optional_dict={'disable_avx': True}
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -577,7 +577,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -617,7 +617,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
                 'model_filepath':VmafConfig.test_resource_path("test_motion2.pkl")
             },
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -644,7 +644,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
                 'ci': True
             },
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -702,7 +702,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
                 'ci': True
             },
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -728,7 +728,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
                 'ci': True,
             },
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -772,7 +772,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
                 'model_filepath': VmafConfig.test_resource_path('vmafplus_laptop_480source_vmafplusv2_sa.pkl')
             },
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -840,7 +840,7 @@ class VmafossexecQualityRunnerSubsamplingTest(unittest.TestCase):
             result_store=None,
             optional_dict={'subsample': subsample}
         )
-        self.runner.run()
+        self.runner.run(parallelize=True)
         results = self.runner.results
 
         for i in range(48):
@@ -904,25 +904,6 @@ class VmafossexecQualityRunnerSubsamplingTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 88.032956, places=4)  # 132.78849246495625
 
-
-class QualityRunnerVersionTest(unittest.TestCase):
-
-    def test_vmafossexec_quality_runner_version(self):
-        self.assertEqual(VmafossExecQualityRunner.VERSION, 'F0.2.7-0.6.1')
-        self.assertEqual(VmafossExecQualityRunner.ALGO_VERSION, 2)
-
-
-class ParallelQualityRunnerTest(unittest.TestCase):
-
-    def setUp(self):
-        self.result_store = FileSystemResultStore()
-
-    def tearDown(self):
-        if hasattr(self, 'runners'):
-            for runner in self.runners:
-                runner.remove_results()
-            pass
-
     def test_run_parallel_vmafossexec_runner_with_repeated_assets(self):
 
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -940,6 +921,13 @@ class ParallelQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 99.946416666666664, places=4)
         self.assertAlmostEqual(results[2]['VMAFOSSEXEC_score'], 76.68425208333333, places=3)
         self.assertAlmostEqual(results[3]['VMAFOSSEXEC_score'], 76.68425208333333, places=3)
+
+
+class QualityRunnerVersionTest(unittest.TestCase):
+
+    def test_vmafossexec_quality_runner_version(self):
+        self.assertEqual(VmafossExecQualityRunner.VERSION, 'F0.2.7-0.6.1')
+        self.assertEqual(VmafossExecQualityRunner.ALGO_VERSION, 2)
 
 
 if __name__ == '__main__':
