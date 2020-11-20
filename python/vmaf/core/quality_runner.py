@@ -15,7 +15,7 @@ from vmaf.core.feature_assembler import FeatureAssembler
 from vmaf.core.train_test_model import TrainTestModel, LibsvmNusvrTrainTestModel, \
     BootstrapLibsvmNusvrTrainTestModel
 from vmaf.core.feature_extractor import SsimFeatureExtractor, MsSsimFeatureExtractor, \
-    VmafFeatureExtractor, PsnrFeatureExtractor
+    VmafFeatureExtractor, PsnrFeatureExtractor, VmafIntegerFeatureExtractor
 from vmaf.core.noref_feature_extractor import BrisqueNorefFeatureExtractor
 from vmaf.tools.decorator import override
 
@@ -341,12 +341,17 @@ class VmafQualityRunner(VmafQualityRunnerModelMixin, QualityRunner):
     # ALGO_VERSION = 0
     # DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("nflxall_vmafv4.pkl")  # trained with resource/param/vmaf_v4.py on private/resource/dataset/NFLX_dataset.py (26 subjects)
 
-    # using model vmaf_v0.6.1.pkl. VmafFeatureExtractor VERSION 0.2.4b.
-    VERSION = 'F' + VmafFeatureExtractor.VERSION + '-0.6.1'
-    ALGO_VERSION = 2
+    # # using model vmaf_v0.6.1.pkl. VmafFeatureExtractor VERSION 0.2.4b.
+    # VERSION = 'F' + VmafFeatureExtractor.VERSION + '-0.6.1'
+    # ALGO_VERSION = 2
+
+    # default model vmaf_int_v0.6.1.json
+    VERSION = 'F' + VmafFeatureExtractor.VERSION + 'int' + '-0.6.1'
+    ALGO_VERSION = 4
 
     # trained with resource/param/vmaf_v6.py on private/user/zli/resource/dataset/dataset/derived/vmafplusstudy_laptop_raw_generalandcornercase.py, MLER, y=x+17
-    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_v0.6.1.pkl")
+    # modified from vmaf_v0.6.1.pkl to use integer features
+    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_int_v0.6.1.json")
 
     DEFAULT_FEATURE_DICT = {'VMAF_feature': ['vif', 'adm', 'motion', 'ansnr']}  # for backward-compatible with older model only
 
@@ -825,7 +830,8 @@ class MsSsimQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
 class VmafSingleFeatureQualityRunner(QualityRunner):
     __metaclass__ = ABCMeta
 
-    VERSION = 'F{}-0'.format(VmafFeatureExtractor.VERSION)
+    # VERSION = 'F{}-0'.format(VmafFeatureExtractor.VERSION)
+    VERSION = f'F{VmafIntegerFeatureExtractor.VERSION}int-0'
 
     @property
     @abstractmethod
@@ -840,7 +846,7 @@ class VmafSingleFeatureQualityRunner(QualityRunner):
 
     def _get_vmaf_feature_assembler_instance(self, asset):
         vmaf_fassembler = FeatureAssembler(
-            feature_dict={'VMAF_feature': [self.FEATURE_NAME]},
+            feature_dict={'VMAF_integer_feature': [self.FEATURE_NAME]},
             feature_option_dict=None,
             assets=[asset],
             logger=self.logger,
@@ -859,7 +865,7 @@ class VmafSingleFeatureQualityRunner(QualityRunner):
         vmaf_fassembler.run()
         feature_result = vmaf_fassembler.results[0]
         result_dict = {
-            self.get_scores_key(): feature_result[VmafFeatureExtractor.get_scores_key(self.FEATURE_NAME)]
+            self.get_scores_key(): feature_result[VmafIntegerFeatureExtractor.get_scores_key(self.FEATURE_NAME)]
         }
 
         return Result(asset, self.executor_id, result_dict)
@@ -921,7 +927,7 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
     ALGO_VERSION = None
 
     # "vmaf_b_v0.6.3": plain bootstrapping, "vmaf_rb_v0.6.3": residue bootstrapping
-    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_b_v0.6.3", "vmaf_b_v0.6.3.pkl")
+    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_int_b_v0.6.3.json")
 
     def _populate_result_dict(self, feature_result, pred_result):
         result_dict = {}
