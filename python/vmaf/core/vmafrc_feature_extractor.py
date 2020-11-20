@@ -5,12 +5,16 @@ from vmaf.core.feature_extractor import VmafrcFeatureExtractorMixin, FeatureExtr
 class FloatMotionFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "float_motion_feature"
-    VERSION = "1.0"
+    # VERSION = "1.0"
+    VERSION = "1.1"  # add debug features
 
-    ATOM_FEATURES = ['motion2']
+    ATOM_FEATURES = ['motion2',
+                     'motion',
+                     ]
 
     ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
         'motion2': 'motion2',
+        'motion': 'motion',
     }
 
     def _generate_result(self, asset):
@@ -35,12 +39,16 @@ class IntegerMotionFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtracto
 
     TYPE = "integer_motion_feature"
     # VERSION = "1.0"
-    VERSION = "1.1"  # vectorization
+    # VERSION = "1.1"  # vectorization
+    VERSION = "1.2"  # add debug features
 
-    ATOM_FEATURES = ['motion2']
+    ATOM_FEATURES = ['motion2',
+                     'motion',
+                     ]
 
     ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
         'motion2': 'integer_motion2',
+        'motion': 'integer_motion',
     }
 
     def _generate_result(self, asset):

@@ -38,6 +38,23 @@ class FeatureExtractorTest(unittest.TestCase):
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['float_motion_feature_motion2_score'], 3.8953518541666665, places=8)
         self.assertAlmostEqual(results[1]['float_motion_feature_motion2_score'], 3.8953518541666665, places=8)
+        with self.assertRaises(KeyError):
+            s = results[0]['float_motion_feature_motion_score']
+
+    def test_run_float_motion_fextractor_with_debug(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = FloatMotionFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'debug': True}
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_score'], 3.8953518541666665, places=8)
+        self.assertAlmostEqual(results[1]['float_motion_feature_motion2_score'], 3.8953518541666665, places=8)
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion_score'], 4.0498253125, places=8)
+        self.assertAlmostEqual(results[1]['float_motion_feature_motion_score'], 4.0498253125, places=8)
 
     def test_run_float_motion_fextractor_forcing_zero(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -45,12 +62,14 @@ class FeatureExtractorTest(unittest.TestCase):
             [asset, asset_original],
             None, fifo_mode=False,
             result_store=None,
-            optional_dict={'motion_force_zero': True},
+            optional_dict={'motion_force_zero': True, 'debug': True},
         )
         self.fextractor.run()
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['float_motion_feature_motion2_score'], 0.0, places=8)
         self.assertAlmostEqual(results[1]['float_motion_feature_motion2_score'], 0.0, places=8)
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion_score'], 0.0, places=8)
+        self.assertAlmostEqual(results[1]['float_motion_feature_motion_score'], 0.0, places=8)
 
         self.assertEqual(len(results[0]['float_motion_feature_motion2_scores']), 48)
         self.assertEqual(len(results[1]['float_motion_feature_motion2_scores']), 48)
@@ -60,12 +79,29 @@ class FeatureExtractorTest(unittest.TestCase):
         self.fextractor = IntegerMotionFeatureExtractor(
             [asset, asset_original],
             None, fifo_mode=False,
-            result_store=None
+            result_store=None,
         )
         self.fextractor.run()
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 3.895345229166667, places=8)
         self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 3.895345229166667, places=8)
+        with self.assertRaises(KeyError):
+            s = results[0]['float_motion_feature_motion_score']
+
+    def test_run_integer_motion_fextractor_with_debug(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = IntegerMotionFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'debug': True}
+        )
+        self.fextractor.run()
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 3.895345229166667, places=8)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 3.895345229166667, places=8)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion_score'], 4.0498181041666665, places=8)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion_score'], 4.0498181041666665, places=8)
 
     def test_run_integer_motion_fextractor_forcing_zero(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -73,12 +109,14 @@ class FeatureExtractorTest(unittest.TestCase):
             [asset, asset_original],
             None, fifo_mode=False,
             result_store=None,
-            optional_dict={'motion_force_zero': True}
+            optional_dict={'motion_force_zero': True, 'debug': True}
         )
         self.fextractor.run()
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 0.0, places=8)
         self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 0.0, places=8)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion_score'], 0.0, places=8)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion_score'], 0.0, places=8)
 
     def test_run_integer_motion_fextractor_12bit(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_12bit_videos_for_testing()
