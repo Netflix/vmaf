@@ -2568,7 +2568,7 @@ static int extract(VmafFeatureExtractor *fex,
             scores, &s->buf, s->adm_enhn_gain_limit);
 
     err |= vmaf_feature_collector_append(feature_collector,
-                                        "'VMAF_feature_adm2_integer_score'",
+                                        "'VMAF_integer_feature_adm2_score'",
                                         score, index);
 
     err |= vmaf_feature_collector_append(feature_collector,
@@ -2630,7 +2630,7 @@ static int close(VmafFeatureExtractor *fex)
 }
 
 static const char *provided_features[] = {
-    "'VMAF_feature_adm2_integer_score'",
+    "'VMAF_integer_feature_adm2_score'",
     "integer_adm_scale0", "integer_adm_scale1",
     "integer_adm_scale2", "integer_adm_scale3",
     NULL
