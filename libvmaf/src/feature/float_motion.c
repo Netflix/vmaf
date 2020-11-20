@@ -112,9 +112,11 @@ static int extract(VmafFeatureExtractor *fex,
         err = vmaf_feature_collector_append(feature_collector,
                                             "'VMAF_feature_motion2_score'",
                                             0., index);
-        err |= vmaf_feature_collector_append(feature_collector,
-                                             "'VMAF_feature_motion_score'",
-                                             0., index);
+        if (s->debug) {
+            err |= vmaf_feature_collector_append(feature_collector,
+                                                 "'VMAF_feature_motion_score'",
+                                                 0., index);
+        }
         return err;
     }
 
@@ -133,9 +135,11 @@ static int extract(VmafFeatureExtractor *fex,
         err = vmaf_feature_collector_append(feature_collector,
                                              "'VMAF_feature_motion2_score'",
                                              0., index);
-        err |= vmaf_feature_collector_append(feature_collector,
-                                            "'VMAF_feature_motion_score'",
-                                            0., index);
+        if (s->debug) {
+            err |= vmaf_feature_collector_append(feature_collector,
+                                                 "'VMAF_feature_motion_score'",
+                                                 0., index);
+        }
         return err;
     }
 
@@ -145,9 +149,11 @@ static int extract(VmafFeatureExtractor *fex,
                          s->float_stride, s->float_stride, &score);
     if (err) return err;
 
-    err = vmaf_feature_collector_append(feature_collector,
-                                        "'VMAF_feature_motion_score'",
-                                        score, index);
+    if (s->debug) {
+        err |= vmaf_feature_collector_append(feature_collector,
+                                            "'VMAF_feature_motion_score'",
+                                            score, index);
+    }
     if (err) return err;
     s->score = score;
 

@@ -37,6 +37,7 @@ typedef struct MotionState {
     VmafPicture blur[3];
     unsigned index;
     double score;
+    bool debug;
     bool motion_force_zero;
     void (*y_convolution)(void *src, uint16_t *dst, unsigned width,
                           unsigned height, ptrdiff_t src_stride,
@@ -48,6 +49,13 @@ typedef struct MotionState {
 } MotionState;
 
 static const VmafOption options[] = {
+    {
+        .name = "debug",
+        .help = "debug mode: enable additional output",
+        .offset = offsetof(MotionState, debug),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
     {
         .name = "motion_force_zero",
         .help = "forcing motion score to zero",
@@ -259,15 +267,24 @@ static int extract_force_zero(VmafFeatureExtractor *fex,
                               unsigned index,
                               VmafFeatureCollector *feature_collector)
 {
+    MotionState *s = fex->priv;
+
     (void) fex;
     (void) ref_pic;
     (void) ref_pic_90;
     (void) dist_pic;
     (void) dist_pic_90;
+    int err = 0;
 
-    return vmaf_feature_collector_append(feature_collector,
+    err = vmaf_feature_collector_append(feature_collector,
                                          "'VMAF_feature_motion2_integer_score'",
                                          0., index);
+    if (s->debug) {
+        err |= vmaf_feature_collector_append(feature_collector,
+                                            "'VMAF_feature_motion_integer_score'",
+                                            0., index);
+    }
+    return err;
 }
 
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
@@ -333,6 +350,7 @@ static int extract(VmafFeatureExtractor *fex,
                    unsigned index, VmafFeatureCollector *feature_collector)
 {
     MotionState *s = fex->priv;
+    int err = 0;
 
     (void) dist_pic;
     (void) ref_pic_90;
@@ -354,26 +372,42 @@ static int extract(VmafFeatureExtractor *fex,
                      s->tmp.w[0], s->tmp.h[0], s->tmp.stride[0] / 2,
                      s->blur[blur_idx_0].stride[0] / 2);
 
-    if (index == 0)
-        return vmaf_feature_collector_append(feature_collector,
-                                             "'VMAF_feature_motion2_integer_score'",
-                                             0., index);
+    if (index == 0) {
+        err = vmaf_feature_collector_append(feature_collector,
+                                            "'VMAF_feature_motion2_integer_score'",
+                                            0., index);
+        if (s->debug) {
+            err |= vmaf_feature_collector_append(feature_collector,
+                                                 "'VMAF_feature_motion_integer_score'",
+                                                 0., index);
+        }
+        return err;
+    }
 
     uint64_t sad;
     s->sad(&s->blur[blur_idx_2], &s->blur[blur_idx_0], &sad);
     double score = s->score =
         normalize_and_scale_sad(sad, ref_pic->w[0], ref_pic->h[0]);
 
-    if (index == 1) return 0;
+    if (s->debug) {
+        err |= vmaf_feature_collector_append(feature_collector,
+                                             "'VMAF_feature_motion_integer_score'",
+                                             score, index);
+    }
+    if (err) return err;
+
+    if (index == 1)
+        return 0;
 
     uint64_t sad2;
     s->sad(&s->blur[blur_idx_2], &s->blur[blur_idx_1], &sad2);
     double score2 = normalize_and_scale_sad(sad2, ref_pic->w[0], ref_pic->h[0]);
 
     score2 = score2 < score ? score2 : score;
-    return vmaf_feature_collector_append(feature_collector,
-                                         "'VMAF_feature_motion2_integer_score'",
-                                         score2, index - 1);
+    err = vmaf_feature_collector_append(feature_collector,
+                                        "'VMAF_feature_motion2_integer_score'",
+                                        score2, index - 1);
+    return err;
 }
 
 static int close(VmafFeatureExtractor *fex)
@@ -389,7 +423,8 @@ static int close(VmafFeatureExtractor *fex)
 }
 
 static const char *provided_features[] = {
-    "'VMAF_feature_motion2_integer_score'",
+    "'VMAF_feature_motion_integer_score'", "'VMAF_feature_motion2_integer_score'",
+    "VMAF_feature_motion2_integer_score",
     NULL
 };
 
