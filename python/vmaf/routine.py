@@ -436,7 +436,7 @@ def print_matplotlib_warning():
 def train_test_vmaf_on_dataset(train_dataset, test_dataset,
                                feature_param, model_param,
                                train_ax, test_ax, result_store,
-                               parallelize=True, logger=None, fifo_mode=True,
+                               logger=None, fifo_mode=True,
                                output_model_filepath=None,
                                aggregate_method=np.mean,
                                **kwargs):
@@ -458,7 +458,11 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         train_raw_assets = train_assets
         train_assets = read_dataset(train_dataset_aggregate, **kwargs)
 
+    parallelize = kwargs['parallelize'] if 'parallelize' in kwargs else True
+    isinstance(parallelize, bool)
     processes = kwargs['processes'] if 'processes' in kwargs else None
+    if processes is not None:
+        assert isinstance(processes, int) and processes > 0
 
     train_fassembler = FeatureAssembler(
         feature_dict=feature_param.feature_dict,
@@ -515,7 +519,15 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
 
     # save model
     if output_model_filepath is not None:
-        model.to_file(output_model_filepath)
+        ext = os.path.splitext(output_model_filepath)[1]
+        assert ext in ['.pkl', '.json'], f'only support .pkl or .json file ' \
+            f'but output model path is : {output_model_filepath}'
+        if ext == '.pkl':
+            model.to_file(output_model_filepath, format='pkl')
+        elif ext == '.json':
+            model.to_file(output_model_filepath, format='json', combined=True)
+        else:
+            assert False
 
     if train_ax is not None:
         train_content_ids = list(map(lambda asset: asset.content_id, train_assets))
@@ -564,7 +576,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
             result_store=result_store,
             optional_dict=None,
             optional_dict2=None,
-            parallelize=True,
+            parallelize=parallelize,
         )
         test_fassembler.run()
         test_features = test_fassembler.results
@@ -680,6 +692,9 @@ def run_vmaf_cv(train_dataset_filepath,
 
     result_store_dir = kwargs['result_store_dir'] if 'result_store_dir' in kwargs else VmafConfig.file_result_store_path()
 
+    parallelize = kwargs['parallelize'] if 'parallelize' in kwargs else True
+    isinstance(parallelize, bool)
+
     logger = get_stdout_logger()
     result_store = FileSystemResultStore(result_store_dir)
 
@@ -695,7 +710,7 @@ def run_vmaf_cv(train_dataset_filepath,
     fig, axs = plt.subplots(figsize=(5*ncols, 5*nrows), nrows=nrows, ncols=ncols)
 
     train_test_vmaf_on_dataset(train_dataset, test_dataset, param, param, axs[0], axs[1],
-                               result_store, parallelize=True, logger=None,
+                               result_store, logger=None,
                                output_model_filepath=output_model_filepath,
                                **kwargs)
 
