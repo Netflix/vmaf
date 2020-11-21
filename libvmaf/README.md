@@ -61,7 +61,7 @@ ninja -vC build doc/html
 
 ## Example
 
-The following example shows a comparison using a pair of yuv inputs (`src01_hrc00_576x324.yuv`, `src01_hrc01_576x324.yuv`). In addition to VMAF which is enabled with the model `../model/vmaf_v0.6.1.pkl`, the `psnr` metric is also computed and logged.
+The following example shows a comparison using a pair of yuv inputs (`src01_hrc00_576x324.yuv`, `src01_hrc01_576x324.yuv`). In addition to VMAF which is enabled with the model `../model/vmaf_float_v0.6.1.pkl`, the `psnr` metric is also computed and logged.
 
 ```sh
 wget https://github.com/Netflix/vmaf_resource/raw/master/python/test/resource/yuv/src01_hrc00_576x324.yuv
@@ -70,7 +70,7 @@ wget https://github.com/Netflix/vmaf_resource/raw/master/python/test/resource/yu
     --reference src01_hrc00_576x324.yuv \
     --distorted src01_hrc01_576x324.yuv \
     --width 576 --height 324 --pixel_format 420 --bitdepth 8 \
-    --model path=../model/vmaf_v0.6.1.pkl \
+    --model path=../model/vmaf_float_v0.6.1.pkl \
     --feature psnr \
     --output /dev/stdout
 ```

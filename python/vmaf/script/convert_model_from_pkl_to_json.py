@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     parser.add_argument(
         "--input-pkl-filepath", dest="input_pkl_filepath", nargs=1, type=str,
-        help="path to the input pkl file, example: model/vmaf_v0.6.1.pkl or model/vmaf_b_v0.6.3/vmaf_b_v0.6.3.pkl", required=True)
+        help="path to the input pkl file, example: model/vmaf_float_v0.6.1.pkl or model/vmaf_b_v0.6.3/vmaf_b_v0.6.3.pkl", required=True)
 
     parser.add_argument(
         "--output-json-filepath", dest="output_json_filepath", nargs=1, type=str,

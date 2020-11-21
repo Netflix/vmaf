@@ -5,7 +5,7 @@ VDK offers a number of trained VMAF models to be used in different scenarios. Be
 
 ### Predict Quality on a 1080p HDTV screen at 3H
 
-The default VMAF model (`model/vmaf_v0.6.1.pkl`) is trained to predict the quality of videos displayed on a 1080p HDTV in a living-room-like environment. All the subjective data were collected in such a way that the distorted videos (with native resolutions of 1080p, 720p, 480p etc.) get rescaled to 1080 resolution and shown on the 1080p display with a viewing distance of three times the screen height (3H). Note that 3H is the critical distance for a viewer to appreciate 1080p resolution sharpness (see [recommendation](https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.2022-0-201208-I!!PDF-E.pdf)).
+The default VMAF model (`model/vmaf_float_v0.6.1.pkl`) is trained to predict the quality of videos displayed on a 1080p HDTV in a living-room-like environment. All the subjective data were collected in such a way that the distorted videos (with native resolutions of 1080p, 720p, 480p etc.) get rescaled to 1080 resolution and shown on the 1080p display with a viewing distance of three times the screen height (3H). Note that 3H is the critical distance for a viewer to appreciate 1080p resolution sharpness (see [recommendation](https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.2022-0-201208-I!!PDF-E.pdf)).
 
 This model is trained using subjective data collected in a lab experiment, based on the [absolute categorical rating (ACR)](https://en.wikipedia.org/wiki/Absolute_Category_Rating) methodology, with the exception that after viewing a video sequence, a subject votes on a continuous scale (from "bad" to "excellent", with evenly spaced markers of "poor", "fair" and "good" in between), instead of the more conventional five-level discrete scale. The test content are video clips selected from the Netflix catalog, each 10 seconds long. For each clip, a combination of 6 resolutions and 3 encoding parameters are used to generate the processed video sequences, resulting 18 impairment conditions for testing. 
 
@@ -13,7 +13,7 @@ The raw subjective scores collected are then cleaned up using the MLE methodolog
 
 ### Predict Quality on a Cellular Phone Screen
 
-The default VMAF model (`model/vmaf_v0.6.1.pkl`) also offers a custom model for cellular phone screen viewing. This model can be invoked by adding `--phone-model` option in the commands `run_vmaf`, `run_vmaf_in_batch`, `run_testing` and `vmafossexec`, e.g.:
+The default VMAF model (`model/vmaf_float_v0.6.1.pkl`) also offers a custom model for cellular phone screen viewing. This model can be invoked by adding `--phone-model` option in the commands `run_vmaf`, `run_vmaf_in_batch`, `run_testing` and `vmafossexec`, e.g.:
 
 ```
 ./run_vmaf yuv420p 576 324 \

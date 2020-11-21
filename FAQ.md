@@ -6,7 +6,7 @@ A: It is associated with the underlying assumption of VMAF on the subject viewin
 
 Fundamentally, any perceptual quality model should take into account the viewing distance and the display size (or the ratio between the two). The same distorted video, if viewed closed-up, could contain more visual artifacts hence yield lower perceptual quality.
 
-In the case of the default VMAF model (`model/vmaf_v0.6.1.pkl`), which is trained to predict the quality of videos displayed on a 1080p HDTV in a living-room-like environment, all the subjective data were collected in such a way that the distorted videos get rescaled to 1080 resolution and displayed with a viewing distance of three times the screen height (3H), or angular resolution of 60 pixels/degree. Effectively, what the VMAF model trying to capture is the perceptual quality of a 1080 video displayed from 3H away. That’s the implicit assumption of the default VMAF model.
+In the case of the default VMAF model (`model/vmaf_float_v0.6.1.pkl`), which is trained to predict the quality of videos displayed on a 1080p HDTV in a living-room-like environment, all the subjective data were collected in such a way that the distorted videos get rescaled to 1080 resolution and displayed with a viewing distance of three times the screen height (3H), or angular resolution of 60 pixels/degree. Effectively, what the VMAF model trying to capture is the perceptual quality of a 1080 video displayed from 3H away. That’s the implicit assumption of the default VMAF model.
 
 Now, think about what it means when the VMAF score is calculated on a reference/distorted video pair of 480 resolution. It is similar to as if the 480 video is CROPPED from a 1080 video. If the height of the 480 video is H’, then H’ = 480 / 1080 * H = 0.44 * H, where H is the height of the 1080 video displayed. As a result, VMAF is modeling the viewing distance of 3*H = 6.75*H’. In other words, if you calculate VMAF on the 480 resolution video pair, you are going to predict the perceptual quality of viewing distance 6.75 times its height. This is going to hide a lot of artifacts, hence yielding a very high score. 
 
@@ -30,7 +30,7 @@ To provide some flexibility, in command-line tools *run_vmaf*, *run_psnr*, *run_
 
 #### Q: Will VMAF work on 4K videos?
 
-A: The default VMAF model at `model/vmaf_v0.6.1.pkl` was trained on videos encoded at resolutions *up to* 1080p. It is still useful for measuring 4K videos, if you are interested in a relative score. In other words, for two 4K videos A and B with A perceptually better than B, the VMAF scores will tell you so too. However, if you are interested in an absolute score, say if a 4K video is perceptually acceptable, you may not get an accurate answer.
+A: The default VMAF model at `model/vmaf_float_v0.6.1.pkl` was trained on videos encoded at resolutions *up to* 1080p. It is still useful for measuring 4K videos, if you are interested in a relative score. In other words, for two 4K videos A and B with A perceptually better than B, the VMAF scores will tell you so too. However, if you are interested in an absolute score, say if a 4K video is perceptually acceptable, you may not get an accurate answer.
 
 As of VDK v1.3.7 (June 2018), we have added a new 4K model at `model/vmaf_4k_v0.6.1.pkl`, which is trained to predict 4KTV viewing at distance of 1.5X the display height. Refer to [this](resource/doc/models.md/#predict-quality-on-a-4ktv-screen-at-15h) section for details.
 

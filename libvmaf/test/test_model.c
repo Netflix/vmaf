@@ -124,7 +124,7 @@ static char *test_model_load_and_destroy()
 
     VmafModel *model;
     VmafModelConfig cfg = { 0 };
-    const char *path = "../../model/vmaf_v0.6.1.pkl";
+    const char *path = "../../model/vmaf_float_v0.6.1.pkl";
     err = vmaf_model_load_from_path(&model, &cfg, path);
     mu_assert("problem during vmaf_model_load_from_path", !err);
 
@@ -151,7 +151,7 @@ static char *test_model_check_default_behavior_unset_flags()
     VmafModelConfig cfg = {
         .name = "some_vmaf",
     };
-    const char *path = "../../model/vmaf_v0.6.1.pkl";
+    const char *path = "../../model/vmaf_float_v0.6.1.pkl";
     err = vmaf_model_load_from_path(&model, &cfg, path);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("Model name is inconsistent.\n", !strcmp(model->name, "some_vmaf"));
@@ -174,7 +174,7 @@ static char *test_model_check_default_behavior_set_flags()
         .name = "some_vmaf",
         .flags = VMAF_MODEL_FLAGS_DEFAULT,
     };
-    const char *path = "../../model/vmaf_v0.6.1.pkl";
+    const char *path = "../../model/vmaf_float_v0.6.1.pkl";
     err = vmaf_model_load_from_path(&model, &cfg, path);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("Model name is inconsistent.\n", !strcmp(model->name, "some_vmaf"));
@@ -196,7 +196,7 @@ static char *test_model_set_flags()
     VmafModelConfig cfg1 = {
         .flags = VMAF_MODEL_FLAG_ENABLE_TRANSFORM,
     };
-    const char *path1 = "../../model/vmaf_v0.6.1.pkl";
+    const char *path1 = "../../model/vmaf_float_v0.6.1.pkl";
     err = vmaf_model_load_from_path(&model1, &cfg1, path1);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("Score transform must be enabled.\n",
@@ -209,7 +209,7 @@ static char *test_model_set_flags()
     VmafModelConfig cfg2 = {
         .flags = VMAF_MODEL_FLAG_DISABLE_CLIP,
     };
-    const char *path2 = "../../model/vmaf_v0.6.1.pkl";
+    const char *path2 = "../../model/vmaf_float_v0.6.1.pkl";
     err = vmaf_model_load_from_path(&model2, &cfg2, path2);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("Score transform must be disabled.\n",
@@ -220,7 +220,7 @@ static char *test_model_set_flags()
 
     VmafModel  *model3;
     VmafModelConfig  cfg3 = { 0 };
-    const char *path3 = "../../model/vmaf_v0.6.1.pkl";
+    const char *path3 = "../../model/vmaf_float_v0.6.1.pkl";
     err = vmaf_model_load_from_path(&model3, &cfg3, path3);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("feature[0].opts_dict must be NULL.\n",

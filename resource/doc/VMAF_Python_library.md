@@ -380,7 +380,7 @@ optional arguments:
   -h, --help            show this help message and exit
   --input-pkl-filepath INPUT_PKL_FILEPATH
                         path to the input pkl file, example:
-                        model/vmaf_v0.6.1.pkl or
+                        model/vmaf_float_v0.6.1.pkl or
                         model/vmaf_b_v0.6.3/vmaf_b_v0.6.3.pkl
   --output-json-filepath OUTPUT_JSON_FILEPATH
                         path to the output json file, example:
@@ -395,6 +395,6 @@ python/vmaf/script/convert_model_from_pkl_to_json.py \
 --output-json-filepath ./vmaf_b_v0.6.3.json
 
 python/vmaf/script/convert_model_from_pkl_to_json.py \
---input-pkl-filepath model/vmaf_v0.6.1.pkl \
+--input-pkl-filepath model/vmaf_float_v0.6.1.pkl \
 --output-json-filepath ./vmaf_v0.6.1.json
 ```

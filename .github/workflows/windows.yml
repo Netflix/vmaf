@@ -76,7 +76,7 @@ jobs:
       - name: Test ffmpeg
         run: |
           curl "https://gist.githubusercontent.com/1480c1/0c4575da638ef6e8203feffd0597de16/raw/akiyo_cif.tar.xz.base64" | base64 -d | xz -d | 7z x -si -ttar
-          vmaf_score=$(ffmpeg -hide_banner -nostdin -nostats -i encoded.mkv -i orig.mkv -filter_complex libvmaf=model_path=model/vmaf_v0.6.1.pkl -f null - 2>&1 | tee temp.txt | grep 'VMAF score' | tr ' ' '\n' | tail -n1)
+          vmaf_score=$(ffmpeg -hide_banner -nostdin -nostats -i encoded.mkv -i orig.mkv -filter_complex libvmaf=model_path=model/vmaf_float_v0.6.1.pkl -f null - 2>&1 | tee temp.txt | grep 'VMAF score' | tr ' ' '\n' | tail -n1)
           cat temp.txt
           echo "$vmaf_score"
           if [[ $vmaf_score != "93.656203" ]]; then
