@@ -198,8 +198,8 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             result_store=None,
             optional_dict={
                 'models': [
-                    'path={}:name=custom_vmaf_0'.format(VmafConfig.model_path("vmaf_v0.6.1.pkl")),
-                    'path={}:name=custom_vmaf_1'.format(VmafConfig.model_path("vmaf_v0.6.1.pkl")),
+                    'path={}:name=custom_vmaf_0'.format(VmafConfig.model_path("vmaf_float_v0.6.1.pkl")),
+                    'path={}:name=custom_vmaf_1'.format(VmafConfig.model_path("vmaf_float_v0.6.1.pkl")),
                 ]
             }
         )
@@ -223,8 +223,8 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             result_store=None,
             optional_dict={
                 'models': [
-                    'path={}:name=custom_vmaf_0'.format(VmafConfig.model_path("vmaf_v0.6.1.pkl")),
-                    'path={}:name=custom_vmaf_1:enable_transform'.format(VmafConfig.model_path("vmaf_v0.6.1.pkl")),
+                    'path={}:name=custom_vmaf_0'.format(VmafConfig.model_path("vmaf_float_v0.6.1.pkl")),
+                    'path={}:name=custom_vmaf_1:enable_transform'.format(VmafConfig.model_path("vmaf_float_v0.6.1.pkl")),
                 ]
             }
         )
@@ -919,12 +919,12 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             result_store=None,
             optional_dict={
                 'models': [
-                    'path={}:name=vmaf'.format(VmafConfig.model_path("vmaf_v0.6.1.pkl")),
+                    'path={}:name=vmaf'.format(VmafConfig.model_path("vmaf_float_v0.6.1.pkl")),
                     'path={}:name=vmafneg'.format(VmafConfig.model_path("vmaf_v0.6.1neg.pkl")),
                 ]
             }
         )
-        with self.assertRaises(AssertionError, msg="vmaf_v0.6.1.pkl and vmaf_v0.6.1neg.pkl require the same fex with "
+        with self.assertRaises(AssertionError, msg="vmaf_float_v0.6.1.pkl and vmaf_v0.6.1neg.pkl require the same fex with "
                                                    "different input arguments, but the exception is not raised."):
             self.runner.run(parallelize=False)
 
@@ -940,11 +940,11 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             optional_dict={
                 'models': [
                     'path={}:name=vmafneg'.format(VmafConfig.model_path("vmaf_v0.6.1neg.pkl")),
-                    'path={}:name=vmaf'.format(VmafConfig.model_path("vmaf_v0.6.1.pkl")),
+                    'path={}:name=vmaf'.format(VmafConfig.model_path("vmaf_float_v0.6.1.pkl")),
                 ]
             }
         )
-        with self.assertRaises(AssertionError, msg="vmaf_v0.6.1neg.pkl and vmaf_v0.6.1.pkl require different input "
+        with self.assertRaises(AssertionError, msg="vmaf_v0.6.1neg.pkl and vmaf_float_v0.6.1.pkl require different input "
                                                    "arguments for the same fex, but the exception is not raised."):
             self.runner.run(parallelize=False)
 

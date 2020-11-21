@@ -263,7 +263,7 @@ class ResultAggregatingTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath': VmafConfig.model_path("vmaf_v0.6.1.pkl"),
+                'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1.pkl"),
             },
             optional_dict2=None,
         )
