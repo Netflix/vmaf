@@ -313,7 +313,7 @@ class ScoreAggregationTest(unittest.TestCase):
             [asset], None, fifo_mode=True,
             delete_workdir=True, result_store=FileSystemResultStore(),
             optional_dict={
-                'model_filepath': VmafConfig.model_path("vmaf_v0.6.1.json"),
+                'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1.json"),
             },
         )
         self.runner.run()

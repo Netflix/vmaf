@@ -19,7 +19,7 @@ if __name__ == '__main__':
 
     parser.add_argument(
         "--output-json-filepath", dest="output_json_filepath", nargs=1, type=str,
-        help="path to the output json file, example: model/vmaf_v0.6.1.json or model/vmaf_b_v0.6.3.json", required=True)
+        help="path to the output json file, example: model/vmaf_float_v0.6.1.json or model/vmaf_b_v0.6.3.json", required=True)
 
     args = parser.parse_args()
 

@@ -384,7 +384,7 @@ optional arguments:
                         model/vmaf_b_v0.6.3/vmaf_b_v0.6.3.pkl
   --output-json-filepath OUTPUT_JSON_FILEPATH
                         path to the output json file, example:
-                        model/vmaf_v0.6.1.json or model/vmaf_b_v0.6.3.json
+                        model/vmaf_float_v0.6.1.json or model/vmaf_b_v0.6.3.json
 ```
 
 Examples:
@@ -396,5 +396,5 @@ python/vmaf/script/convert_model_from_pkl_to_json.py \
 
 python/vmaf/script/convert_model_from_pkl_to_json.py \
 --input-pkl-filepath model/vmaf_float_v0.6.1.pkl \
---output-json-filepath ./vmaf_v0.6.1.json
+--output-json-filepath ./vmaf_float_v0.6.1.json
 ```
