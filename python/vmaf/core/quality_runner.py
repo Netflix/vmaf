@@ -345,13 +345,13 @@ class VmafQualityRunner(VmafQualityRunnerModelMixin, QualityRunner):
     # VERSION = 'F' + VmafFeatureExtractor.VERSION + '-0.6.1'
     # ALGO_VERSION = 2
 
-    # default model vmaf_int_v0.6.1.json
+    # default model vmaf_v0.6.1.json
     VERSION = 'F' + VmafFeatureExtractor.VERSION + 'int' + '-0.6.1'
     ALGO_VERSION = 4
 
     # trained with resource/param/vmaf_v6.py on private/user/zli/resource/dataset/dataset/derived/vmafplusstudy_laptop_raw_generalandcornercase.py, MLER, y=x+17
     # modified from vmaf_float_v0.6.1.pkl to use integer features
-    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_int_v0.6.1.json")
+    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_v0.6.1.json")
 
     DEFAULT_FEATURE_DICT = {'VMAF_feature': ['vif', 'adm', 'motion', 'ansnr']}  # for backward-compatible with older model only
 
@@ -927,7 +927,7 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
     ALGO_VERSION = None
 
     # "vmaf_float_b_v0.6.3": plain bootstrapping, "vmaf_rb_v0.6.3": residue bootstrapping
-    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_int_b_v0.6.3.json")
+    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_b_v0.6.3.json")
 
     def _populate_result_dict(self, feature_result, pred_result):
         result_dict = {}
