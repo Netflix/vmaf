@@ -862,7 +862,7 @@ class VmafossexecQualityRunnerSubsamplingTest(unittest.TestCase):
             None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
-            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_v0.6.1neg.pkl")}
+            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1neg.pkl")}
         )
         self.runner.run(parallelize=False)
 
@@ -890,7 +890,7 @@ class VmafossexecQualityRunnerSubsamplingTest(unittest.TestCase):
             None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
-            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_v0.6.1neg.json")}
+            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1neg.json")}
         )
         self.runner.run(parallelize=False)
 

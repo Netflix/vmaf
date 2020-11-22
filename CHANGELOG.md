@@ -13,7 +13,7 @@
 - Restructure python project and documentation (#544).
 - Move test resource to Netflix/vmaf_resource repo (#552).
 - Add Github CI (#558).
-- Add vmaf_v0.6.1neg model; add vif_enhn_gain_limit and adm_enhn_gain_limit options to vmaf_rc.
+- Add vmaf_float_v0.6.1neg model; add vif_enhn_gain_limit and adm_enhn_gain_limit options to vmaf_rc.
 - Update documentation for FFmpeg+libvmaf.
 - Improvements to AucPerfMetric (#643).
 - Add motion_force_zero option to vmaf_rc.

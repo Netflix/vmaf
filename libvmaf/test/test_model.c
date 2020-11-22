@@ -65,14 +65,14 @@ static char *test_json_model()
 
     VmafModel *model_json;
     VmafModelConfig cfg_json = { 0 };
-    const char *path_json = "../../model/vmaf_v0.6.1neg.json";
+    const char *path_json = "../../model/vmaf_float_v0.6.1neg.json";
 
     err = vmaf_read_json_model_from_path(&model_json, &cfg_json, path_json);
     mu_assert("problem during vmaf_read_json_model", !err);
 
     VmafModel *model_pkl;
     VmafModelConfig cfg_pkl = { 0 };
-    const char *path_pkl = "../../model/vmaf_v0.6.1neg.pkl";
+    const char *path_pkl = "../../model/vmaf_float_v0.6.1neg.pkl";
 
     err = vmaf_model_load_from_path(&model_pkl, &cfg_pkl, path_pkl);
     mu_assert("problem during vmaf_model_load_from_path", !err);
@@ -238,7 +238,7 @@ static char *test_model_set_flags()
 
     VmafModel  *model4;
     VmafModelConfig  cfg4 = { 0 };
-    const char *path4 = "../../model/vmaf_v0.6.1neg.pkl";
+    const char *path4 = "../../model/vmaf_float_v0.6.1neg.pkl";
     err = vmaf_model_load_from_path(&model4, &cfg4, path4);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("feature[0].opts_dict must not be NULL.\n",
