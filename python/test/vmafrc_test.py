@@ -1027,7 +1027,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={'disable_clip_score': True,
-                           'model_filepath': VmafConfig.model_path("vmaf_b_v0.6.3", "vmaf_b_v0.6.3.pkl"),
+                           'model_filepath': VmafConfig.model_path("vmaf_float_b_v0.6.3", "vmaf_float_b_v0.6.3.pkl"),
                            'adm_enhn_gain_limit': 1.0, 'vif_enhn_gain_limit': 1.0}
         )
         self.runner.run(parallelize=False)

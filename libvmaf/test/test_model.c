@@ -101,7 +101,7 @@ static char *test_model_collection()
     mu_assert("problem during load_model_collection", !err);
 
     // json
-    const char *json_path = "../../model/vmaf_b_v0.6.3.json";
+    const char *json_path = "../../model/vmaf_float_b_v0.6.3.json";
     VmafModel *json_model;
     VmafModelCollection *json_model_collection = NULL;
     const VmafModelConfig json_cfg = { 0 };
