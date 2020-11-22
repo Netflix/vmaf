@@ -65,14 +65,14 @@ static char *test_json_model()
 
     VmafModel *model_json;
     VmafModelConfig cfg_json = { 0 };
-    const char *path_json = "../../model/vmaf_v0.6.1neg.json";
+    const char *path_json = "../../model/vmaf_float_v0.6.1neg.json";
 
     err = vmaf_read_json_model_from_path(&model_json, &cfg_json, path_json);
     mu_assert("problem during vmaf_read_json_model", !err);
 
     VmafModel *model_pkl;
     VmafModelConfig cfg_pkl = { 0 };
-    const char *path_pkl = "../../model/vmaf_v0.6.1neg.pkl";
+    const char *path_pkl = "../../model/vmaf_float_v0.6.1neg.pkl";
 
     err = vmaf_model_load_from_path(&model_pkl, &cfg_pkl, path_pkl);
     mu_assert("problem during vmaf_model_load_from_path", !err);
@@ -101,7 +101,7 @@ static char *test_model_collection()
     mu_assert("problem during load_model_collection", !err);
 
     // json
-    const char *json_path = "../../model/vmaf_b_v0.6.3.json";
+    const char *json_path = "../../model/vmaf_float_b_v0.6.3.json";
     VmafModel *json_model;
     VmafModelCollection *json_model_collection = NULL;
     const VmafModelConfig json_cfg = { 0 };
@@ -124,7 +124,7 @@ static char *test_model_load_and_destroy()
 
     VmafModel *model;
     VmafModelConfig cfg = { 0 };
-    const char *path = "../../model/vmaf_v0.6.1.pkl";
+    const char *path = "../../model/vmaf_float_v0.6.1.pkl";
     err = vmaf_model_load_from_path(&model, &cfg, path);
     mu_assert("problem during vmaf_model_load_from_path", !err);
 
@@ -151,7 +151,7 @@ static char *test_model_check_default_behavior_unset_flags()
     VmafModelConfig cfg = {
         .name = "some_vmaf",
     };
-    const char *path = "../../model/vmaf_v0.6.1.pkl";
+    const char *path = "../../model/vmaf_float_v0.6.1.pkl";
     err = vmaf_model_load_from_path(&model, &cfg, path);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("Model name is inconsistent.\n", !strcmp(model->name, "some_vmaf"));
@@ -174,7 +174,7 @@ static char *test_model_check_default_behavior_set_flags()
         .name = "some_vmaf",
         .flags = VMAF_MODEL_FLAGS_DEFAULT,
     };
-    const char *path = "../../model/vmaf_v0.6.1.pkl";
+    const char *path = "../../model/vmaf_float_v0.6.1.pkl";
     err = vmaf_model_load_from_path(&model, &cfg, path);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("Model name is inconsistent.\n", !strcmp(model->name, "some_vmaf"));
@@ -196,7 +196,7 @@ static char *test_model_set_flags()
     VmafModelConfig cfg1 = {
         .flags = VMAF_MODEL_FLAG_ENABLE_TRANSFORM,
     };
-    const char *path1 = "../../model/vmaf_v0.6.1.pkl";
+    const char *path1 = "../../model/vmaf_float_v0.6.1.pkl";
     err = vmaf_model_load_from_path(&model1, &cfg1, path1);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("Score transform must be enabled.\n",
@@ -209,7 +209,7 @@ static char *test_model_set_flags()
     VmafModelConfig cfg2 = {
         .flags = VMAF_MODEL_FLAG_DISABLE_CLIP,
     };
-    const char *path2 = "../../model/vmaf_v0.6.1.pkl";
+    const char *path2 = "../../model/vmaf_float_v0.6.1.pkl";
     err = vmaf_model_load_from_path(&model2, &cfg2, path2);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("Score transform must be disabled.\n",
@@ -220,7 +220,7 @@ static char *test_model_set_flags()
 
     VmafModel  *model3;
     VmafModelConfig  cfg3 = { 0 };
-    const char *path3 = "../../model/vmaf_v0.6.1.pkl";
+    const char *path3 = "../../model/vmaf_float_v0.6.1.pkl";
     err = vmaf_model_load_from_path(&model3, &cfg3, path3);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("feature[0].opts_dict must be NULL.\n",
@@ -238,7 +238,7 @@ static char *test_model_set_flags()
 
     VmafModel  *model4;
     VmafModelConfig  cfg4 = { 0 };
-    const char *path4 = "../../model/vmaf_v0.6.1neg.pkl";
+    const char *path4 = "../../model/vmaf_float_v0.6.1neg.pkl";
     err = vmaf_model_load_from_path(&model4, &cfg4, path4);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("feature[0].opts_dict must not be NULL.\n",

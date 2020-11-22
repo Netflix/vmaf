@@ -11,13 +11,13 @@ You will find `vmafossexec` in `libvmaf/build/tools/vmafossexec`, run `vmafossex
 libvmaf/build/tools/vmafossexec yuv420p 576 324 \
   python/test/resource/yuv/src01_hrc00_576x324.yuv \
   python/test/resource/yuv/src01_hrc01_576x324.yuv \
-  model/vmaf_v0.6.1.pkl \
+  model/vmaf_float_v0.6.1.pkl \
   --log /dev/stdout \
   --psnr --ssim --ms-ssim \
   --thread 0 --subsample 5
 ```
 
-For VMAF v0.6.1, the model file is `model/vmaf_v0.6.1.pkl`.
+For VMAF v0.6.1, the model file is `model/vmaf_float_v0.6.1.pkl`.
 
 The options `--psnr`, `--ssim` and `--ms-ssim` also allow reporting PSNR, SSIM and MS-SSIM results, respectively. The option `--thread` specifies the number of threads to use. Apply `--thread 0` to use all threads available. The option `--subsample` specifies the subsampling of frames to speed up calculation. For example, `--subsample 5` calculates VMAF on one of every 5 frames. The following plot shows the trend of how the subsample number impacts the processing speed (based on the [Netflix Public Dataset](datasets.md#netflix-public-dataset) of 1080p videos, with PSNR, SSIM and MS-SSIM calculation enabled):
 

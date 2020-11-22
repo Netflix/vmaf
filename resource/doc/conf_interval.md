@@ -7,18 +7,18 @@ The CI is a consequence of the fact that the VMAF model is trained on a sample o
 
 ### Implementation Details of Bootstrapping
 
-There are two ways to perform bootstrapping on VMAF. The first one is called plain/vanilla bootstrapping (b) and the latter one is called residue bootstrapping (rb). In the first case, the training data is resampled with replacement to create multiple models and, in the second case, the bootstrapping is performed on the prediction residue. For example, vmaf_b_v0.6.3.pkl and vmaf_rb_v0.6.3.pkl are the VMAF models using plain and residue bootstrapping respectively. We recommend using plain bootstrapping, e.g., vmaf_b_v0.6.3.pkl. While plain bootstrapping tends to produce larger measurement uncertainty compared to its residue counterpart, it is unbiased with respect to the full VMAF model (which uses the full training data).
+There are two ways to perform bootstrapping on VMAF. The first one is called plain/vanilla bootstrapping (b) and the latter one is called residue bootstrapping (rb). In the first case, the training data is resampled with replacement to create multiple models and, in the second case, the bootstrapping is performed on the prediction residue. For example, vmaf_float_b_v0.6.3.pkl and vmaf_rb_v0.6.3.pkl are the VMAF models using plain and residue bootstrapping respectively. We recommend using plain bootstrapping, e.g., vmaf_float_b_v0.6.3.pkl. While plain bootstrapping tends to produce larger measurement uncertainty compared to its residue counterpart, it is unbiased with respect to the full VMAF model (which uses the full training data).
 
 ### Run in Command Line
 
-To enable CI, use the option `--ci` in the command line tools with a bootstrapping model such as `model/vmaf_b_v0.6.3/vmaf_b_v0.6.3.pkl`. The `--ci` option is available for both `./run_vmaf` and `./src/libvmaf/vmafossexec`. In [libvmaf](libvmaf/README.md), CI can be enabled by setting the argument `enable_conf_interval` to 1.
+To enable CI, use the option `--ci` in the command line tools with a bootstrapping model such as `model/vmaf_float_b_v0.6.3/vmaf_float_b_v0.6.3.pkl`. The `--ci` option is available for both `./run_vmaf` and `./src/libvmaf/vmafossexec`. In [libvmaf](libvmaf/README.md), CI can be enabled by setting the argument `enable_conf_interval` to 1.
 
 For example, running
 
 ```
 ./run_vmaf yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv \
 python/test/resource/yuv/src01_hrc01_576x324.yuv \
---model model/vmaf_b_v0.6.3/vmaf_b_v0.6.3.pkl --out-fmt json --ci
+--model model/vmaf_float_b_v0.6.3/vmaf_float_b_v0.6.3.pkl --out-fmt json --ci
 ```
 
 yields:
@@ -55,7 +55,7 @@ CI can also be enabled in [`run_testing`](VMAF_Python_library.md/#validate-a-dat
 
 ```
 ./run_testing BOOTSTRAP_VMAF resource/dataset/NFLX_dataset_public.py \
-  --vmaf-model model/vmaf_b_v0.6.3/vmaf_b_v0.6.3.pkl --cache-result --parallelize
+  --vmaf-model model/vmaf_float_b_v0.6.3/vmaf_float_b_v0.6.3.pkl --cache-result --parallelize
 ```
 
 Running the command line above will generate scatter plot:

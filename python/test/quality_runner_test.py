@@ -253,7 +253,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath': VmafConfig.model_path("vmaf_v0.6.1.json"),
+                'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1.json"),
             }
         )
         self.runner.run(parallelize=True)
@@ -524,7 +524,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath': [VmafConfig.model_path("vmaf_v0.6.1.pkl"), VmafConfig.model_path("other_models", "vmaf_v0.6.0.pkl")],
+                'model_filepath': [VmafConfig.model_path("vmaf_float_v0.6.1.pkl"), VmafConfig.model_path("other_models", "vmaf_v0.6.0.pkl")],
             },
         )
         self.runner.run(parallelize=True)
@@ -1288,7 +1288,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath': VmafConfig.model_path("vmaf_v0.6.1.json"),
+                'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1.json"),
             }
         )
         self.runner.run(parallelize=True)
@@ -1331,7 +1331,7 @@ class QualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={
-                'model_filepath': VmafConfig.model_path("vmaf_b_v0.6.3.json"),
+                'model_filepath': VmafConfig.model_path("vmaf_float_b_v0.6.3.json"),
             }
         )
         self.runner.run(parallelize=True)

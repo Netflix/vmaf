@@ -25,7 +25,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -40,12 +40,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,
@@ -95,7 +95,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -110,12 +110,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,
@@ -165,7 +165,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -180,12 +180,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,
@@ -235,7 +235,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -250,12 +250,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,
@@ -305,7 +305,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -320,12 +320,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,
@@ -375,7 +375,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -390,12 +390,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,
@@ -445,7 +445,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -460,12 +460,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,
@@ -515,7 +515,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -530,12 +530,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,
@@ -585,7 +585,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -600,12 +600,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,
@@ -655,7 +655,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -670,12 +670,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,
@@ -725,7 +725,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -740,12 +740,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,
@@ -795,7 +795,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -810,12 +810,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,
@@ -865,7 +865,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -880,12 +880,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,
@@ -935,7 +935,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -950,12 +950,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,
@@ -1005,7 +1005,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -1020,12 +1020,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,
@@ -1075,7 +1075,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -1090,12 +1090,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,
@@ -1145,7 +1145,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -1160,12 +1160,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,
@@ -1215,7 +1215,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -1230,12 +1230,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,
@@ -1285,7 +1285,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -1300,12 +1300,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,
@@ -1355,7 +1355,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -1370,12 +1370,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,
@@ -1425,7 +1425,7 @@
                 "p1": 1.72643844
             },
             "feature_dict": {
-                "VMAF_integer_feature": [
+                "VMAF_feature": [
                     "vif_scale0",
                     "vif_scale1",
                     "vif_scale2",
@@ -1440,12 +1440,12 @@
                 100.0
             ],
             "feature_names": [
-                "VMAF_integer_feature_adm2_score",
-                "VMAF_integer_feature_motion2_score",
-                "VMAF_integer_feature_vif_scale0_score",
-                "VMAF_integer_feature_vif_scale1_score",
-                "VMAF_integer_feature_vif_scale2_score",
-                "VMAF_integer_feature_vif_scale3_score"
+                "VMAF_feature_adm2_score",
+                "VMAF_feature_motion2_score",
+                "VMAF_feature_vif_scale0_score",
+                "VMAF_feature_vif_scale1_score",
+                "VMAF_feature_vif_scale2_score",
+                "VMAF_feature_vif_scale3_score"
             ],
             "intercepts": [
                 -0.3092981927591963,

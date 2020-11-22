@@ -38,6 +38,6 @@ docker run --rm -v $(pwd):/files vmaf \
   vmafossexec yuv420p 576 324 \
   /files/src01_hrc00_576x324.yuv \
   /files/src01_hrc01_576x324.yuv \
-  /files/model/vmaf_v0.6.1.pkl \
+  /files/model/vmaf_float_v0.6.1.pkl \
   --log /dev/stdout
 ```
