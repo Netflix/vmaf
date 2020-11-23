@@ -191,35 +191,54 @@ int main(int argc, char *argv[])
     VmafModel **model = malloc(sizeof(*model) * c.model_cnt);
     VmafModelCollection **model_collection =
         malloc(sizeof(*model_collection) * c.model_cnt);
-    const char *model_collection_path[c.model_cnt];
+    const char *model_collection_label[c.model_cnt];
     unsigned model_collection_cnt = 0;
 
     for (unsigned i = 0; i < c.model_cnt; i++) {
-        err = vmaf_model_load_from_path(&model[i], &c.model_config[i].cfg,
-                                        c.model_config[i].path);
+        if (c.model_config[i].version) {
+            err = vmaf_model_load(&model[i], &c.model_config[i].cfg,
+                                  c.model_config[i].version);
+        } else {
+            err = vmaf_model_load_from_path(&model[i], &c.model_config[i].cfg,
+                                            c.model_config[i].path);
+        }
+
         if (err) {
             // check for model_collection before failing
             // this is implicit because the `--model` option could take either
             // a model or model_collection
-            err = vmaf_model_collection_load_from_path(&model[i],
+            if (c.model_config[i].version) {
+                err = vmaf_model_collection_load(&model[i],
+                                        &model_collection[model_collection_cnt],
+                                        &c.model_config[i].cfg,
+                                        c.model_config[i].version);
+            } else {
+                err = vmaf_model_collection_load_from_path(&model[i],
                                         &model_collection[model_collection_cnt],
                                         &c.model_config[i].cfg,
                                         c.model_config[i].path);
+            }
+
             if (err) {
-                fprintf(stderr, "problem loading model file: %s\n",
-                        c.model_config[i].path);
+                fprintf(stderr, "problem loading model: %s\n",
+                        c.model_config[i].version ?
+                            c.model_config[i].version : c.model_config[i].path);
                 return -1;
             }
 
-            model_collection_path[model_collection_cnt] = c.model_config[i].path;
+            model_collection_label[model_collection_cnt] =
+                c.model_config[i].version ?
+                    c.model_config[i].version : c.model_config[i].path;
+
 
             err = vmaf_use_features_from_model_collection(vmaf,
                                         model_collection[model_collection_cnt]);
             if (err) {
                 fprintf(stderr,
                         "problem loading feature extractors from "
-                        "model collection file: %s\n",
-                        c.model_config[i].path);
+                        "model collection: %s\n",
+                        c.model_config[i].version ?
+                            c.model_config[i].version : c.model_config[i].path);
                 return -1;
             }
 
@@ -229,8 +248,9 @@ int main(int argc, char *argv[])
         err = vmaf_use_features_from_model(vmaf, model[i]);
         if (err) {
             fprintf(stderr,
-                    "problem loading feature extractors from model file: %s\n",
-                    c.model_config[i].path);
+                    "problem loading feature extractors from model: %s\n",
+                     c.model_config[i].version ?
+                         c.model_config[i].version : c.model_config[i].path);
             return -1;
         }
     }
@@ -298,7 +318,10 @@ int main(int argc, char *argv[])
             return -1;
         }
 
-        fprintf(stderr, "%s: %f\n", c.model_config[i].path, vmaf_score);
+        fprintf(stderr, "%s: %f\n",
+                c.model_config[i].version ?
+                    c.model_config[i].version : c.model_config[i].path,
+                vmaf_score);
     }
 
     for (unsigned i = 0; i < model_collection_cnt; i++) {
@@ -314,7 +337,7 @@ int main(int argc, char *argv[])
         switch (score.type) {
         case VMAF_MODEL_COLLECTION_SCORE_BOOTSTRAP:
             fprintf(stderr, "%s: %f, ci.p95: [%f, %f], stddev: %f\n",
-                    model_collection_path[i],
+                    model_collection_label[i],
                     score.bootstrap.bagging_score, score.bootstrap.ci.p95.lo,
                     score.bootstrap.ci.p95.hi,
                     score.bootstrap.stddev);

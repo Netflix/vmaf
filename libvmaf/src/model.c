@@ -6,10 +6,89 @@
 
 #include <libvmaf/model.h>
 
+#include "config.h"
 #include "model.h"
 #include "read_json_model.h"
 #include "svm.h"
 #include "unpickle.h"
+
+typedef struct VmafBuiltInModel {
+    const char *version;
+    const char *data;
+    const int *data_len;
+} VmafBuiltInModel;
+
+#if VMAF_BUILT_IN_MODELS
+extern const char ___src_______model_vmaf_float_v0_6_1neg_json;
+extern const int ___src_______model_vmaf_float_v0_6_1neg_json_len;
+extern const char ___src_______model_vmaf_v0_6_1_json;
+extern const int ___src_______model_vmaf_v0_6_1_json_len;
+extern const char ___src_______model_vmaf_float_v0_6_1_json;
+extern const int ___src_______model_vmaf_float_v0_6_1_json_len;
+extern const char ___src_______model_vmaf_b_v0_6_3_json;
+extern const int ___src_______model_vmaf_b_v0_6_3_json_len;
+extern const char ___src_______model_vmaf_v0_6_1neg_json;
+extern const int ___src_______model_vmaf_v0_6_1neg_json_len;
+extern const char ___src_______model_vmaf_float_b_v0_6_3_json;
+extern const int ___src_______model_vmaf_float_b_v0_6_3_json_len;
+#endif
+
+static const VmafBuiltInModel built_in_models[] = {
+#if VMAF_BUILT_IN_MODELS
+    {
+        .version = "vmaf_float_v0.6.1neg",
+        .data = &___src_______model_vmaf_float_v0_6_1neg_json,
+        .data_len = &___src_______model_vmaf_float_v0_6_1neg_json_len,
+    },
+    {
+        .version = "vmaf_v0.6.1",
+        .data = &___src_______model_vmaf_v0_6_1_json,
+        .data_len = &___src_______model_vmaf_v0_6_1_json_len,
+    },
+    {
+        .version = "vmaf_float_v0.6.1",
+        .data = &___src_______model_vmaf_float_v0_6_1_json,
+        .data_len = &___src_______model_vmaf_float_v0_6_1_json_len,
+    },
+    {
+        .version = "vmaf_b_v0.6.3",
+        .data = &___src_______model_vmaf_b_v0_6_3_json,
+        .data_len = &___src_______model_vmaf_b_v0_6_3_json_len,
+    },
+    {
+        .version = "vmaf_v0.6.1neg",
+        .data = &___src_______model_vmaf_v0_6_1neg_json,
+        .data_len = &___src_______model_vmaf_v0_6_1neg_json_len,
+    },
+    {
+        .version = "vmaf_float_b_v0.6.3",
+        .data = &___src_______model_vmaf_float_b_v0_6_3_json,
+        .data_len = &___src_______model_vmaf_float_b_v0_6_3_json_len,
+    },
+#endif
+};
+
+
+int vmaf_model_load(VmafModel **model, VmafModelConfig *cfg,
+                    const char *version)
+{
+    const VmafBuiltInModel *built_in_model = NULL;
+
+    const unsigned built_in_model_cnt =
+        sizeof(built_in_models) / sizeof(built_in_models[0]);
+
+    for (unsigned i = 0; i < built_in_model_cnt; i++) {
+        if (!strcmp(version, built_in_models[i].version)) {
+            built_in_model = &built_in_models[i];
+            break;
+        }
+    }
+
+    if (!built_in_model) return -EINVAL;
+
+    return vmaf_read_json_model_from_buffer(model, cfg, built_in_model->data,
+                                            *built_in_model->data_len);
+}
 
 char *vmaf_model_generate_name(VmafModelConfig *cfg)
 {
@@ -206,6 +285,30 @@ void vmaf_model_collection_destroy(VmafModelCollection *model_collection)
     free(model_collection);
 }
 
+int vmaf_model_collection_load(VmafModel **model,
+                               VmafModelCollection **model_collection,
+                               VmafModelConfig *cfg,
+                               const char *version)
+{
+    const VmafBuiltInModel *built_in_model = NULL;
+
+    const unsigned built_in_model_cnt =
+        sizeof(built_in_models) / sizeof(built_in_models[0]);
+
+    for (unsigned i = 0; i < built_in_model_cnt; i++) {
+        if (!strcmp(version, built_in_models[i].version)) {
+            built_in_model = &built_in_models[i];
+            break;
+        }
+    }
+
+    if (!built_in_model) return -EINVAL;
+
+    return vmaf_read_json_model_collection_from_buffer(model, model_collection,
+                                                     cfg, built_in_model->data,
+                                                     *built_in_model->data_len);
+}
+
 int vmaf_model_collection_load_from_path(VmafModel **model,
                                          VmafModelCollection **model_collection,
                                          VmafModelConfig *cfg,
@@ -214,7 +317,7 @@ int vmaf_model_collection_load_from_path(VmafModel **model,
     const char *ext = strrchr(path, '.');
     if (!strcmp(ext, ".json")) {
         return vmaf_read_json_model_collection_from_path(model,
-                                                model_collection, cfg, path);
+                                                   model_collection, cfg, path);
     }
 
     int err = 0;

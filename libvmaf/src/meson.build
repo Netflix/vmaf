@@ -4,6 +4,8 @@ vmaf_soversion = vmaf_api_version_major
 third_party_dir = './third_party/'
 feature_src_dir = './feature/'
 src_dir = './'
+model_dir = '../../model/'
+
 vmaf_base_include = include_directories('./', './feature/common')
 
 if cc.get_id() != 'msvc'
@@ -94,6 +96,34 @@ if is_asm_enabled
     endif
 endif
 
+json_model_c_sources = []
+built_in_models_enabled = get_option('built_in_models') == true
+
+if built_in_models_enabled
+    xxd = find_program('xxd')
+    if xxd.found()
+        model_files = [
+            'vmaf_float_v0.6.1neg.json',
+            'vmaf_v0.6.1.json',
+            'vmaf_float_v0.6.1.json',
+            'vmaf_b_v0.6.3.json',
+            'vmaf_v0.6.1neg.json',
+            'vmaf_float_b_v0.6.3.json',
+        ]
+
+        foreach model_file : model_files
+            json_model_c_sources += custom_target(
+                  model_file,
+                  output : '@PLAINNAME@.c',
+                  input : model_dir + model_file,
+                  command : [xxd, '--include', '@INPUT@', '@OUTPUT@'],
+            )
+        endforeach
+
+        cdata.set10('VMAF_BUILT_IN_MODELS', built_in_models_enabled)
+    endif
+endif
+
 config_h_target = configure_file(output: 'config.h', configuration: cdata)
 
 libvmaf_rc_cpu_sources = [
@@ -158,8 +188,6 @@ if is_asm_enabled
 
     endif
 endif
-
-
 
 if cc.get_id() != 'msvc'
     ptools_cpp_args = [
@@ -321,7 +349,7 @@ libvmaf_rc_sources = [
 
 libvmaf_rc = both_libraries(
     'vmaf_rc',
-    [libvmaf_rc_sources, rev_target],
+    [libvmaf_rc_sources, rev_target, json_model_c_sources],
     include_directories : [vmaf_include, libvmaf_inc],
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,

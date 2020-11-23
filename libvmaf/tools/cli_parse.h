@@ -17,6 +17,7 @@ typedef struct {
 
 typedef struct {
     const char *path;
+    const char *version;
     VmafModelConfig cfg;
 } CLIModelConfig;
 

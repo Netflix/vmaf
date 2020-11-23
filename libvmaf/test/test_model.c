@@ -18,6 +18,7 @@
 
 #include <stdint.h>
 
+#include "config.h"
 #include "test.h"
 #include "model.c"
 #include "read_json_model.h"
@@ -58,7 +59,6 @@ static int model_compare(VmafModel *model_a, VmafModel *model_b)
     return err;
 }
 
-
 static char *test_json_model()
 {
     int err = 0;
@@ -84,6 +84,32 @@ static char *test_json_model()
     vmaf_model_destroy(model_pkl);
     return NULL;
 }
+
+#if VMAF_BUILT_IN_MODELS
+static char *test_built_in_model()
+{
+    int err = 0;
+
+    VmafModel *model;
+    VmafModelConfig cfg = { 0 };
+    const char *version = "vmaf_float_v0.6.1neg";
+    err = vmaf_model_load(&model, &cfg, version);
+    mu_assert("problem during vmaf_model_load", !err);
+
+    VmafModel *model_file;
+    VmafModelConfig cfg_file = { 0 };
+    const char *path = "../../model/vmaf_float_v0.6.1neg.json";
+    err = vmaf_model_load_from_path(&model_file, &cfg_file, path);
+    mu_assert("problem during vmaf_model_load_from_path", !err);
+
+    err = model_compare(model, model_file);
+    mu_assert("parsed buffer/file models do not match", !err);
+
+    vmaf_model_destroy(model);
+    vmaf_model_destroy(model_file);
+    return NULL;
+}
+#endif
 
 static char *test_model_collection()
 {
@@ -287,6 +313,9 @@ static char *test_model_set_flags()
 char *run_tests()
 {
     mu_run_test(test_json_model);
+#if VMAF_BUILT_IN_MODELS
+    mu_run_test(test_built_in_model);
+#endif
     //mu_run_test(test_model_collection);
     mu_run_test(test_model_load_and_destroy);
     mu_run_test(test_model_check_default_behavior_unset_flags);
