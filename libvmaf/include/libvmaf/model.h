@@ -35,6 +35,9 @@ typedef struct VmafModelConfig {
     uint64_t flags;
 } VmafModelConfig;
 
+int vmaf_model_load(VmafModel **model, VmafModelConfig *cfg,
+                    const char *version);
+
 int vmaf_model_load_from_path(VmafModel **model, VmafModelConfig *cfg,
                               const char *path);
 
@@ -57,6 +60,11 @@ typedef struct VmafModelCollectionScore {
         } ci;
     } bootstrap;
 } VmafModelCollectionScore;
+
+int vmaf_model_collection_load(VmafModel **model,
+                               VmafModelCollection **model_collection,
+                               VmafModelConfig *cfg,
+                               const char *version);
 
 int vmaf_model_collection_load_from_path(VmafModel **model,
                                          VmafModelCollection **model_collection,

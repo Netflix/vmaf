@@ -162,6 +162,7 @@ static CLIModelConfig parse_model_config(const char *const optarg,
     CLIModelConfig cli_cfg = {
         .cfg = { .flags = VMAF_MODEL_FLAGS_DEFAULT, },
         .path = NULL,
+        .version = NULL,
     };
 
     char *token;
@@ -169,8 +170,10 @@ static CLIModelConfig parse_model_config(const char *const optarg,
     token = strtok(optarg_copy, delim);
 
     while (token != 0) {
-        if(!strcmp(token, "path")) {
+        if (!strcmp(token, "path")) {
             cli_cfg.path = strtok(0, delim);
+        } else if (!strcmp(token, "version")) {
+            cli_cfg.version = strtok(0, delim);
         } else if (!strcmp(token, "name")) {
             cli_cfg.cfg.name = strtok(0, delim);
         } else if (!strcmp(token, "disable_clip")) {
@@ -183,8 +186,10 @@ static CLIModelConfig parse_model_config(const char *const optarg,
         token = strtok(0, delim);
     }
 
-    if (!cli_cfg.path)
-        usage(app, "For every model, path needs to be set.\n");
+    if (!(!cli_cfg.version != !cli_cfg.path)) {
+        usage(app, "For every model, either a version or "
+                   "a path needs to be set.\n");
+    }
 
     return cli_cfg;
 }

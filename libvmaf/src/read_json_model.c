@@ -362,6 +362,17 @@ static int vmaf_read_json_model(VmafModel **model, VmafModelConfig *cfg,
     return model_parse(s, m, cfg->flags);
 }
 
+int vmaf_read_json_model_from_buffer(VmafModel **model, VmafModelConfig *cfg,
+                                     const char *data, const int data_len)
+{
+    int err = 0;
+    json_stream s;
+    json_open_buffer(&s, data, data_len);
+    err = vmaf_read_json_model(model, cfg, &s);
+    json_close(&s);
+    return err;
+}
+
 int vmaf_read_json_model_from_path(VmafModel **model, VmafModelConfig *cfg,
                                    const char *path)
 {
@@ -439,6 +450,19 @@ int vmaf_read_json_model_collection_from_path(VmafModel **model,
     if (!in) return -EINVAL;
     json_stream s;
     json_open_stream(&s, in);
+    err = model_collection_parse(&s, model, model_collection, cfg);
+    json_close(&s);
+    return err;
+}
+
+int vmaf_read_json_model_collection_from_buffer(VmafModel **model,
+                                         VmafModelCollection **model_collection,
+                                         VmafModelConfig *cfg,
+                                         const char *data, const int data_len)
+{
+    int err = 0;
+    json_stream s;
+    json_open_buffer(&s, data, data_len);
     err = model_collection_parse(&s, model, model_collection, cfg);
     json_close(&s);
     return err;

@@ -22,3 +22,8 @@ option('install_rc',
     type: 'boolean',
     value: false,
     description: 'Add rc libs/bins to list of installed files')
+
+option('built_in_models',
+    type: 'boolean',
+    value: true,
+    description: 'Compile default vmaf models into the library')
