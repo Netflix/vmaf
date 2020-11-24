@@ -29,10 +29,6 @@ static Alias alias_map[] = {
         .alias = "adm2",
     },
     {
-        .name = "'VMAF_integer_feature_adm2_score'",
-        .alias = "integer_adm2",
-    },
-    {
         .name = "'VMAF_feature_adm_scale0_score'",
         .alias = "adm_scale0",
     },
@@ -57,14 +53,6 @@ static Alias alias_map[] = {
         .alias = "motion2",
     },
     {
-        .name = "'VMAF_integer_feature_motion_score'",
-        .alias = "integer_motion",
-    },
-    {
-        .name = "'VMAF_integer_feature_motion2_score'",
-        .alias = "integer_motion2",
-    },
-    {
         .name = "'VMAF_feature_vif_scale0_score'",
         .alias = "vif_scale0",
     },
@@ -81,19 +69,31 @@ static Alias alias_map[] = {
         .alias = "vif_scale3",
     },
     {
-        .name = "'VMAF_integer_feature_vif_scale0_score'",
+        .name = "VMAF_integer_feature_adm2_score",
+        .alias = "integer_adm2",
+    },
+    {
+        .name = "VMAF_integer_feature_motion_score",
+        .alias = "integer_motion",
+    },
+    {
+        .name = "VMAF_integer_feature_motion2_score",
+        .alias = "integer_motion2",
+    },
+    {
+        .name = "VMAF_integer_feature_vif_scale0_score",
         .alias = "integer_vif_scale0",
     },
     {
-        .name = "'VMAF_integer_feature_vif_scale1_score'",
+        .name = "VMAF_integer_feature_vif_scale1_score",
         .alias = "integer_vif_scale1",
     },
     {
-        .name = "'VMAF_integer_feature_vif_scale2_score'",
+        .name = "VMAF_integer_feature_vif_scale2_score",
         .alias = "integer_vif_scale2",
     },
     {
-        .name = "'VMAF_integer_feature_vif_scale3_score'",
+        .name = "VMAF_integer_feature_vif_scale3_score",
         .alias = "integer_vif_scale3",
     },
 };
@@ -104,16 +104,8 @@ static Alias internal_alias_map[] = {
         .alias = "'VMAF_feature_adm2_score'",
     },
     {
-        .name = "VMAF_integer_feature_adm2_score",
-        .alias = "'VMAF_integer_feature_adm2_score'",
-    },
-    {
         .name = "VMAF_feature_motion2_score",
         .alias = "'VMAF_feature_motion2_score'",
-    },
-    {
-        .name = "VMAF_integer_feature_motion2_score",
-        .alias = "'VMAF_integer_feature_motion2_score'",
     },
     {
         .name = "VMAF_feature_vif_scale0_score",
@@ -130,22 +122,6 @@ static Alias internal_alias_map[] = {
     {
         .name = "VMAF_feature_vif_scale3_score",
         .alias = "'VMAF_feature_vif_scale3_score'",
-    },
-    {
-        .name = "VMAF_integer_feature_vif_scale0_score",
-        .alias = "'VMAF_integer_feature_vif_scale0_score'",
-    },
-    {
-        .name = "VMAF_integer_feature_vif_scale1_score",
-        .alias = "'VMAF_integer_feature_vif_scale1_score'",
-    },
-    {
-        .name = "VMAF_integer_feature_vif_scale2_score",
-        .alias = "'VMAF_integer_feature_vif_scale2_score'",
-    },
-    {
-        .name = "VMAF_integer_feature_vif_scale3_score",
-        .alias = "'VMAF_integer_feature_vif_scale3_score'",
     },
 };
 
