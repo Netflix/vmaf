@@ -42,7 +42,7 @@ jobs:
       - uses: msys2/setup-msys2@v2
         with:
           msystem: ${{ matrix.msystem }}
-          install: ${{ matrix.MINGW_PACKAGE_PREFIX }}-ccache ${{ matrix.MINGW_PACKAGE_PREFIX }}-nasm ${{ matrix.MINGW_PACKAGE_PREFIX }}-pkg-config ${{ matrix.MINGW_PACKAGE_PREFIX }}-gcc ${{ matrix.MINGW_PACKAGE_PREFIX }}-meson ${{ matrix.MINGW_PACKAGE_PREFIX }}-ninja make diffutils
+          install: ${{ matrix.MINGW_PACKAGE_PREFIX }}-ccache ${{ matrix.MINGW_PACKAGE_PREFIX }}-nasm ${{ matrix.MINGW_PACKAGE_PREFIX }}-pkg-config ${{ matrix.MINGW_PACKAGE_PREFIX }}-gcc ${{ matrix.MINGW_PACKAGE_PREFIX }}-meson ${{ matrix.MINGW_PACKAGE_PREFIX }}-ninja vim make diffutils
           update: true
           path-type: inherit
 
