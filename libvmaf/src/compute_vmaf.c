@@ -248,6 +248,12 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
         }
     }
 
+    err = vmaf_read_pictures(vmaf, NULL, NULL, 0);
+    if (err) {
+        fprintf(stderr, "problem flushing context\n");
+        return err;
+    }
+
      if (enable_conf_interval) {
          VmafModelCollectionScore model_collection_score;
          err = vmaf_score_pooled_model_collection(vmaf, model_collection,

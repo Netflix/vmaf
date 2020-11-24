@@ -149,6 +149,9 @@ int vmaf_import_feature_score(VmafContext *vmaf, char *feature_name,
  * `VmafContext` will take ownership of both `VmafPicture`s (`ref` and `dist`)
  * and `vmaf_picture_unref()`.
  *
+ * When you're done reading pictures call this function again with both `ref`
+ * and `dist` set to NULL to flush all feature extractors.
+ *
  * @param vmaf  The VMAF context allocated with `vmaf_init()`.
  *
  * @param ref   Reference picture.

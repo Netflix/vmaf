@@ -309,6 +309,12 @@ int main(int argc, char *argv[])
     }
     fprintf(stderr, "\n");
 
+    err |= vmaf_read_pictures(vmaf, NULL, NULL, 0);
+    if (err) {
+        fprintf(stderr, "problem flushing context\n");
+        return err;
+    }
+
     for (unsigned i = 0; i < c.model_cnt; i++) {
         double vmaf_score;
         err = vmaf_score_pooled(vmaf, model[i], VMAF_POOL_METHOD_MEAN,

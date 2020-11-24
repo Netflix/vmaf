@@ -50,6 +50,7 @@ typedef struct VmafContext {
         unsigned bpc;
     } pic_params;
     unsigned pic_cnt;
+    bool flushed;
 } VmafContext;
 
 int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
@@ -289,12 +290,41 @@ static int validate_pic_params(VmafContext *vmaf, VmafPicture *ref,
     return 0;
 }
 
+static int flush_context_threaded(VmafContext *vmaf)
+{
+    int err = 0;
+    err |= vmaf_thread_pool_wait(vmaf->thread_pool);
+    err |= vmaf_fex_ctx_pool_flush(vmaf->fex_ctx_pool, vmaf->feature_collector);
+
+    if (!err) vmaf->flushed = true;
+    return err;
+}
+
+static int flush_context(VmafContext *vmaf)
+{
+    int err = 0;
+
+    if (vmaf->thread_pool)
+        return flush_context_threaded(vmaf);
+
+    RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
+    for (unsigned i = 0; i < rfe.cnt; i++) {
+        err |= vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
+                                                    vmaf->feature_collector);
+    }
+
+    if (!err) vmaf->flushed = true;
+    return err;
+}
+
+
 int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
                        unsigned index)
 {
     if (!vmaf) return -EINVAL;
-    if (!ref) return -EINVAL;
-    if (!dist) return -EINVAL;
+    if (vmaf->flushed) return -EINVAL;
+    if (!ref != !dist) return -EINVAL;
+    if (!ref && !dist) return flush_context(vmaf);
 
     int err = 0;
 
@@ -382,14 +412,6 @@ int vmaf_feature_score_pooled(VmafContext *vmaf, const char *feature_name,
     if (index_low > index_high) return -EINVAL;
     if (!pool_method) return -EINVAL;
 
-    vmaf_thread_pool_wait(vmaf->thread_pool);
-    RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
-    for (unsigned i = 0; i < rfe.cnt; i++) {
-        vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
-                                             vmaf->feature_collector);
-    }
-    vmaf_fex_ctx_pool_flush(vmaf->fex_ctx_pool, vmaf->feature_collector);
-
     unsigned pic_cnt = 0;
     double min = 0., max = 0., sum = 0., i_sum = 0.;
     for (unsigned i = index_low; i <= index_high; i++) {
@@ -437,14 +459,6 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
     if (index_low > index_high) return -EINVAL;
     if (!pool_method) return -EINVAL;
 
-    vmaf_thread_pool_wait(vmaf->thread_pool);
-    RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
-    for (unsigned i = 0; i < rfe.cnt; i++) {
-        vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
-                                             vmaf->feature_collector);
-    }
-    vmaf_fex_ctx_pool_flush(vmaf->fex_ctx_pool, vmaf->feature_collector);
-
     for (unsigned i = index_low; i <= index_high; i++) {
         if ((vmaf->cfg.n_subsample > 1) && (i % vmaf->cfg.n_subsample))
             continue;
@@ -468,14 +482,6 @@ int vmaf_score_pooled_model_collection(VmafContext *vmaf,
     if (!score) return -EINVAL;
     if (index_low > index_high) return -EINVAL;
     if (!pool_method) return -EINVAL;
-
-    vmaf_thread_pool_wait(vmaf->thread_pool);
-    RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
-    for (unsigned i = 0; i < rfe.cnt; i++) {
-        vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
-                                             vmaf->feature_collector);
-    }
-    vmaf_fex_ctx_pool_flush(vmaf->fex_ctx_pool, vmaf->feature_collector);
 
     int err = 0;
     for (unsigned i = index_low; i <= index_high; i++) {
@@ -535,13 +541,6 @@ int vmaf_write_output(VmafContext *vmaf, const char *output_path,
         return -EINVAL;
     }
 
-    vmaf_thread_pool_wait(vmaf->thread_pool);
-    RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
-    for (unsigned i = 0; i < rfe.cnt; i++) {
-        vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
-                                             vmaf->feature_collector);
-    }
-    vmaf_fex_ctx_pool_flush(vmaf->fex_ctx_pool, vmaf->feature_collector);
     const double fps = vmaf->pic_cnt /
                 ((double) (vmaf->feature_collector->timer.end -
                 vmaf->feature_collector->timer.begin) / CLOCKS_PER_SEC);
