@@ -328,7 +328,7 @@ void cli_parse(const int argc, char *const *const argv,
         settings->model_config[settings->model_cnt++] = cfg;
 #else
         usage(argv[0], "At least one model (-m/--model) is required "
-                       "unless no prediction (--n/--no_prediction) is set");
+                       "unless no prediction (-n/--no_prediction) is set");
 #endif
     }
 }
