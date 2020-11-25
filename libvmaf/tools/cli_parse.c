@@ -7,6 +7,7 @@
 
 #include "cli_parse.h"
 
+#include "config.h"
 #include "libvmaf/feature.h"
 #include "libvmaf/libvmaf.rc.h"
 #include "libvmaf/model.h"
@@ -320,7 +321,14 @@ void cli_parse(const int argc, char *const *const argv,
     }
 
     if (settings->model_cnt == 0 && !settings->no_prediction) {
-        usage(argv[0], "At least one model or model_collection "
-                       "(-m/--model, -c/--model_collection) is required");
+#if VMAF_BUILT_IN_MODELS
+        CLIModelConfig cfg = {
+            .version = "vmaf_v0.6.1",
+        };
+        settings->model_config[settings->model_cnt++] = cfg;
+#else
+        usage(argv[0], "At least one model (-m/--model) is required "
+                       "unless no prediction (--n/--no_prediction) is set");
+#endif
     }
 }
