@@ -100,7 +100,7 @@ json_model_c_sources = []
 built_in_models_enabled = get_option('built_in_models') == true
 
 if built_in_models_enabled
-    xxd = find_program('xxd')
+    xxd = find_program('xxd', required: false)
     if xxd.found()
         model_files = [
             'vmaf_float_v0.6.1neg.json',
