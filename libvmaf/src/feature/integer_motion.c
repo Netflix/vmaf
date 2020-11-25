@@ -331,10 +331,14 @@ static int flush(VmafFeatureExtractor *fex,
                  VmafFeatureCollector *feature_collector)
 {
     MotionState *s = fex->priv;
-    int ret =
-        vmaf_feature_collector_append(feature_collector,
-                                      "VMAF_integer_feature_motion2_score",
-                                      s->score, s->index);
+    int ret = 0;
+
+    if (s->index > 0) {
+        ret = vmaf_feature_collector_append(feature_collector,
+                                            "VMAF_integer_feature_motion2_score",
+                                            s->score, s->index);
+    }
+
     return (ret < 0) ? ret : !ret;
 }
 
