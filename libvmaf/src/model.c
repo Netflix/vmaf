@@ -66,18 +66,18 @@ static const VmafBuiltInModel built_in_models[] = {
         .data_len = &___src_______model_vmaf_float_b_v0_6_3_json_len,
     },
 #endif
+    { 0 }
 };
 
+#define BUILT_IN_MODEL_CNT \
+    ((sizeof(built_in_models)) / (sizeof(built_in_models[0]))) - 1
 
 int vmaf_model_load(VmafModel **model, VmafModelConfig *cfg,
                     const char *version)
 {
     const VmafBuiltInModel *built_in_model = NULL;
 
-    const unsigned built_in_model_cnt =
-        sizeof(built_in_models) / sizeof(built_in_models[0]);
-
-    for (unsigned i = 0; i < built_in_model_cnt; i++) {
+    for (unsigned i = 0; i < BUILT_IN_MODEL_CNT; i++) {
         if (!strcmp(version, built_in_models[i].version)) {
             built_in_model = &built_in_models[i];
             break;
@@ -292,10 +292,7 @@ int vmaf_model_collection_load(VmafModel **model,
 {
     const VmafBuiltInModel *built_in_model = NULL;
 
-    const unsigned built_in_model_cnt =
-        sizeof(built_in_models) / sizeof(built_in_models[0]);
-
-    for (unsigned i = 0; i < built_in_model_cnt; i++) {
+    for (unsigned i = 0; i < BUILT_IN_MODEL_CNT; i++) {
         if (!strcmp(version, built_in_models[i].version)) {
             built_in_model = &built_in_models[i];
             break;
