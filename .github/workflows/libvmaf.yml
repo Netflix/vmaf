@@ -30,9 +30,7 @@ jobs:
       CXX: ${{ matrix.CXX }}
     steps:
       - name: Setup python
-        uses: actions/setup-python@v1.2.0
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: actions/setup-python@v2
         with:
           python-version: 3.8
       - name: Install meson and ninja
@@ -75,8 +73,6 @@ jobs:
           ccache --version
 
       - uses: actions/checkout@v2
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
       - name: Run meson
         run: |
           #sudo chown -R runner: $HOME/.ccache
