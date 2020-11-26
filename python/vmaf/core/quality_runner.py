@@ -1171,6 +1171,11 @@ class VmafrcQualityRunner(QualityRunner):
                 and self.optional_dict['models'] is not None:
             assert isinstance(self.optional_dict['models'], list)
             models = self.optional_dict['models']
+        elif self.optional_dict is not None and 'use_default_built_in_model' in self.optional_dict:
+            use_default_built_in_model = self.optional_dict['use_default_built_in_model']
+            assert isinstance(use_default_built_in_model, bool)
+            if use_default_built_in_model:
+                models = []
         else:
             model0 = []
             model0.append(f'name=vmaf')

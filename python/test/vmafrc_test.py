@@ -1109,6 +1109,40 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAFRC_score'], 88.4895, places=4)  # 88.032956
 
+    def test_run_vmafrc_runner_use_default_built_in_model(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = VmafrcQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={
+                'use_default_built_in_model': True
+            }
+        )
+        self.runner.run(parallelize=True)
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'], 0.3636620710647402, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.7674952820232231, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.8631077727416296, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.9157200890843669, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_motion2_score'], 3.8953518541666665, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 0.9345149030293786, places=4)
+
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale0_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale1_score'],0.99999972612, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale2_score'],0.999999465724, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale3_score'], 0.999999399683, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_motion2_score'], 3.8953518541666665, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_adm2_score'], 1.0, places=4)
+
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 76.66890519623612, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_score'], 99.946416604585025, places=4)
+
 
 class VmafrcQualityRunnerSubsamplingTest(unittest.TestCase):
 
