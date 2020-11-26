@@ -16,13 +16,16 @@ __license__ = "BSD+Patent"
 
 class VmafrcQualityRunnerTest(unittest.TestCase):
 
+    def setUp(self):
+        self.result_store = FileSystemResultStore()
+        self.verificationErrors = []
+        self.maxDiff = None
+
     def tearDown(self):
         if hasattr(self, 'runner'):
             self.runner.remove_results()
             pass
-
-    def setUp(self):
-        self.result_store = FileSystemResultStore()
+        self.assertEqual([], self.verificationErrors)
 
     def test_run_vmafrc_runner_matched_to_vmafossexec(self):
 
@@ -30,7 +33,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         self.runner = VmafrcQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=False,
+            None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
             optional_dict={
@@ -39,7 +42,50 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
                 'float_ms_ssim': True,
             }
         )
-        self.runner.run(parallelize=False)
+        self.runner.run(parallelize=True)
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'], 0.3636620710647402, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.7674952820232231, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.8631077727416296, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.9157200890843669, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_motion2_score'], 3.8953518541666665, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 0.9345149030293786, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_float_psnr_score'], 30.7550666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_float_ssim_score'], 0.86322654166666657, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_float_ms_ssim_score'], 0.9632406874999999, places=4)
+
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale0_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale1_score'],0.99999972612, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale2_score'],0.999999465724, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale3_score'], 0.999999399683, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_motion2_score'], 3.8953518541666665, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_adm2_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_float_psnr_score'], 60.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_float_ssim_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_float_ms_ssim_score'], 1.0, places=4)
+
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 76.66890519623612, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_score'], 99.946416604585025, places=4)
+
+    def test_run_vmafrc_runner_float_fex(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = VmafrcQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={
+                'float_psnr': True,
+                'float_ssim': True,
+                'float_ms_ssim': True,
+                'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1.json")
+            }
+        )
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -72,33 +118,48 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         self.runner = VmafrcQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=False,
+            None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
             optional_dict={
                 'motion_force_zero': True,
+                'model_filepath': VmafConfig.model_path("vmaf_v0.6.1.json")
             }
         )
-        self.runner.run(parallelize=False)
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'],0.3634208125, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.7666474166666667, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.8628533333333334, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.9159719583333334, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_motion2_score'], 0.0, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 0.9345148541666667, places=4)
+        try: self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'], 0.3636620710647402, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.7674952820232231, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.8631077727416296, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.9157200890843669, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFRC_motion2_score'], 0.0, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 0.9345149030293786, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
 
-        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale0_score'], 1.0, places=4)
-        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale1_score'],0.9999998541666666, places=4)
-        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale2_score'],0.9999996041666667, places=4)
-        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale3_score'], 0.9999991458333334, places=4)
-        self.assertAlmostEqual(results[1]['VMAFRC_motion2_score'], 0.0, places=4)
-        self.assertAlmostEqual(results[1]['VMAFRC_adm2_score'], 1.0, places=4)
+        try: self.assertAlmostEqual(results[1]['VMAFRC_vif_scale0_score'], 1.0, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[1]['VMAFRC_vif_scale1_score'], 0.9999998541666666, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[1]['VMAFRC_vif_scale2_score'], 0.9999996041666667, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[1]['VMAFRC_vif_scale3_score'], 0.9999991458333334, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[1]['VMAFRC_motion2_score'], 0.0, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[1]['VMAFRC_adm2_score'], 1.0, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
 
-        self.assertAlmostEqual(results[0]['VMAFRC_score'], 72.33647241666667, places=4)  # 76.68425579166666
-        self.assertAlmostEqual(results[1]['VMAFRC_score'], 97.4279688125, places=4)  # 99.94641666666666
+        try: self.assertAlmostEqual(results[0]['VMAFRC_score'], 72.32054995833333, places=4)  # 76.68425579166666
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[1]['VMAFRC_score'], 97.42843597916665, places=4)  # 99.94641666666666
+        except AssertionError as e: self.verificationErrors.append(str(e))
 
         self.assertEqual(len(results[0]['VMAFRC_motion2_scores']), 48)
         self.assertEqual(len(results[1]['VMAFRC_motion2_scores']), 48)
@@ -156,12 +217,12 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'], 0.3634208125, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.7666474166666667, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.8628533333333334, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.9159719583333334, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_motion2_score'], 3.895352291666667, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 0.9345148541666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'], 0.3636620710647402, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.7674952820232231, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.8631077727416296, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.9157200890843669, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_motion2_score'], 3.8953518541666665, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 0.9345149030293786, places=4)
         self.assertAlmostEqual(results[0]['VMAFRC_float_psnr_score'], 30.7550666667, places=4)
         self.assertAlmostEqual(results[0]['VMAFRC_float_ssim_score'], 0.86322654166666657, places=4)
         self.assertAlmostEqual(results[0]['VMAFRC_float_ms_ssim_score'], 0.9632406874999999, places=4)
@@ -184,7 +245,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFRC_psnr_cr_score'], 60.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFRC_ssim_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAFRC_score'], 76.68425579166666, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 76.66890489583334, places=4)
         self.assertAlmostEqual(results[1]['VMAFRC_score'], 99.94641666666666, places=4)
 
     def test_run_vmafrc_runner_set_custom_models(self):
@@ -254,22 +315,22 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'],0.3634208125, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.7666474166666667, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.8628533333333334, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.9159719583333334, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_motion2_score'], 3.895352291666667, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 0.9345148541666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'], 0.3636620710647402, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.7674952820232231, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.8631077727416296, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.9157200890843669, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_motion2_score'], 3.8953518541666665, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 0.9345149030293786, places=4)
 
         self.assertAlmostEqual(results[1]['VMAFRC_vif_scale0_score'], 1.0, places=4)
-        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale1_score'],0.9999998541666666, places=4)
-        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale2_score'],0.9999996041666667, places=4)
-        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale3_score'], 0.9999991458333334, places=4)
-        self.assertAlmostEqual(results[1]['VMAFRC_motion2_score'], 3.895352291666667, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale1_score'], 0.99999972612, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale2_score'], 0.999999465724, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_vif_scale3_score'], 0.999999399683, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_motion2_score'], 3.8953518541666665, places=4)
         self.assertAlmostEqual(results[1]['VMAFRC_adm2_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAFRC_score'], 76.68429570833332, places=4)
-        self.assertAlmostEqual(results[1]['VMAFRC_score'], 99.94641666666666, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 76.66890519623612, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_score'], 99.946416604585025, places=4)
 
     def test_run_parallel_vmafrc_runner_with_repeated_assets(self):
 
@@ -284,10 +345,10 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.runner.run(parallelize=True)
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFRC_score'], 76.68425579166666, places=3)
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 76.66890519623612, places=3)
         self.assertAlmostEqual(results[1]['VMAFRC_score'], 99.946416666666664, places=4)
-        self.assertAlmostEqual(results[2]['VMAFRC_score'], 76.68425579166666, places=3)
-        self.assertAlmostEqual(results[3]['VMAFRC_score'], 76.68425579166666, places=3)
+        self.assertAlmostEqual(results[2]['VMAFRC_score'], 76.66890519623612, places=3)
+        self.assertAlmostEqual(results[3]['VMAFRC_score'], 76.66890519623612, places=3)
 
     def test_run_vmafrc_runner_yuv422p10le(self):
 
@@ -308,10 +369,10 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'],0.3634208125, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.7666474166666667, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.8628533333333334, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.9159719583333334, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'],0.3636620625, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.7674953125, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.8631078125, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.9157200833333333, places=4)
         self.assertAlmostEqual(results[0]['VMAFRC_motion2_score'], 3.895352291666667, places=4)
         self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 0.9345148541666667, places=4)
         self.assertAlmostEqual(results[0]['VMAFRC_float_psnr_score'], 30.780577083333331, places=4)
@@ -328,7 +389,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFRC_float_ssim_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFRC_float_ms_ssim_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAFRC_score'], 76.68425579166666, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 76.66890489583334, places=4)
         self.assertAlmostEqual(results[1]['VMAFRC_score'], 99.94641666666666, places=4)
 
     def test_run_vmafrc_runner_yuv420p10le_b(self):
@@ -350,10 +411,10 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'],0.4326273333333333, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.8292393333333333, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.9067786666666667, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.9460626666666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'], 0.4330893333333334, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.830613, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.9072123333333333, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.945896, places=4)
         self.assertAlmostEqual(results[0]['VMAFRC_motion2_score'], 2.8104600000000004, places=4)
         self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 0.9517763333333334, places=4)
         self.assertAlmostEqual(results[0]['VMAFRC_float_psnr_score'], 32.57143333333333, places=4)
@@ -370,8 +431,8 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFRC_float_ssim_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFRC_float_ms_ssim_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAFRC_score'], 82.56596666666667, places=4)
-        self.assertAlmostEqual(results[1]['VMAFRC_score'], 99.14266666666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 82.56523033333333, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_score'], 99.142826, places=4)
 
     def test_run_vmafrc_runner_yuv420p12le(self):
 
@@ -392,10 +453,10 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'],0.4326273333333333, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.8292393333333333, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.9067786666666667, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.9460626666666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'],0.4330893333333334, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.830613, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.9072123333333333, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.945896, places=4)
         self.assertAlmostEqual(results[0]['VMAFRC_motion2_score'], 2.8104600000000004, places=4)
         self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 0.9517763333333334, places=4)
         self.assertAlmostEqual(results[0]['VMAFRC_float_psnr_score'], 32.577818, places=4)
@@ -412,8 +473,8 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFRC_float_ssim_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFRC_float_ms_ssim_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAFRC_score'], 82.56596666666667, places=4)
-        self.assertAlmostEqual(results[1]['VMAFRC_score'], 99.14266666666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 82.56523033333333, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_score'], 99.142826, places=4)
 
     def test_run_vmafrc_runner_yuv420p16le(self):
 
@@ -434,10 +495,10 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'],0.4326273333333333, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.8292393333333333, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.9067786666666667, places=4)
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.9460626666666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'],0.4330893333333334, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 0.830613, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.9072123333333333, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.945896, places=4)
         self.assertAlmostEqual(results[0]['VMAFRC_motion2_score'], 2.8104600000000004, places=4)
         self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 0.9517763333333334, places=4)
         self.assertAlmostEqual(results[0]['VMAFRC_float_psnr_score'], 32.579806000000005, places=4)
@@ -454,8 +515,8 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFRC_float_ssim_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFRC_float_ms_ssim_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAFRC_score'], 82.56596666666667, places=4)
-        self.assertAlmostEqual(results[1]['VMAFRC_score'], 99.14266666666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 82.56523033333333, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_score'], 99.142826, places=4)
 
     def test_run_vmafrc_runner_yuv420p10le_sparks(self):
 
@@ -510,8 +571,8 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAFRC_float_ssim_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFRC_float_ms_ssim_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAFRC_score'], 97.8999562, places=4)
-        self.assertAlmostEqual(results[1]['VMAFRC_score'], 98.47138, places=4)
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 97.90069380000001, places=4)
+        self.assertAlmostEqual(results[1]['VMAFRC_score'], 98.47175940000001, places=4)
 
     def test_run_vmafrc_compare_directly_with_ossexec_420_8bit(self):
 
@@ -750,22 +811,28 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         self.runner = VmafrcQualityRunner(
             [asset],
-            None, fifo_mode=False,
+            None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
             optional_dict={'disable_clip_score': True}
         )
-        self.runner.run(parallelize=False)
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 1.116691, places=4)  # 1.116691484215469
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'], 1.052254, places=4)  # 1.0522544319369052
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 1.070561, places=4)  # 1.0705609423182443
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 1.073153, places=4)  # 1.0731529493098957
-        self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 1.072806, places=4)  # 1.0728060231246508
+        try: self.assertAlmostEqual(results[0]['VMAFRC_adm2_score'], 1.116691, places=4)  # 1.116691484215469
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFRC_vif_scale0_score'], 1.052403, places=4)  # 1.0522544319369052
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFRC_vif_scale1_score'], 1.070149, places=4)  # 1.0705609423182443
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 1.072518, places=4)  # 1.0731529493098957
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 1.072512, places=4)  # 1.0728060231246508
+        except AssertionError as e: self.verificationErrors.append(str(e))
 
-        self.assertAlmostEqual(results[0]['VMAFRC_score'], 132.786815, places=4)  # 132.78849246495625
+        try: self.assertAlmostEqual(results[0]['VMAFRC_score'], 132.732952, places=4)  # 132.78849246495625
+        except AssertionError as e: self.verificationErrors.append(str(e))
 
     def test_run_vmafrc_runner_akiyo_multiply_with_feature_enhn_gain_limit(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -778,12 +845,12 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         self.runner = VmafrcQualityRunner(
             [asset],
-            None, fifo_mode=False,
+            None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
             optional_dict={'disable_clip_score': True, 'adm_enhn_gain_limit': 1.0, 'vif_enhn_gain_limit': 1.0}
         )
-        self.runner.run(parallelize=False)
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -793,7 +860,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
         self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.999146211879154, places=4)  # 1.0728060231246508
 
-        self.assertAlmostEqual(results[0]['VMAFRC_score'], 88.032956, places=4)  # 132.78849246495625
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 88.030463, places=4)  # 132.78849246495625
 
     def test_run_vmafrc_runner_akiyo_multiply_with_feature_enhn_gain_limit_custom(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -806,12 +873,12 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         self.runner = VmafrcQualityRunner(
             [asset],
-            None, fifo_mode=False,
+            None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
             optional_dict={'disable_clip_score': True, 'adm_enhn_gain_limit': 1.2, 'vif_enhn_gain_limit': 1.1}
         )
-        self.runner.run(parallelize=False)
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -821,7 +888,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 1.049025, places=4)  # 1.0731529493098957
         self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 1.0491232394147363, places=4)  # 1.0728060231246508
 
-        self.assertAlmostEqual(results[0]['VMAFRC_score'], 129.516141, places=4)  # 132.78849246495625
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 129.474226, places=4)  # 132.78849246495625
 
     def test_run_vmafrc_runner_akiyo_multiply_disable_enhn_gain(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -834,12 +901,12 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         self.runner = VmafrcQualityRunner(
             [asset],
-            None, fifo_mode=False,
+            None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
             optional_dict={'disable_clip_score': True, 'disable_enhn_gain': True}
         )
-        self.runner.run(parallelize=False)
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -849,7 +916,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFRC_vif_scale2_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
         self.assertAlmostEqual(results[0]['VMAFRC_vif_scale3_score'], 0.999146211879154, places=4)  # 1.0728060231246508
 
-        self.assertAlmostEqual(results[0]['VMAFRC_score'], 88.032956, places=4)  # 132.78849246495625
+        self.assertAlmostEqual(results[0]['VMAFRC_score'], 88.030463, places=4)  # 132.78849246495625
 
     def test_run_vmafrc_runner_akiyo_multiply_no_enhn_gain_model(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -862,12 +929,12 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         self.runner = VmafrcQualityRunner(
             [asset],
-            None, fifo_mode=False,
+            None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
             optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1neg.pkl")}
         )
-        self.runner.run(parallelize=False)
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
@@ -890,13 +957,13 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
 
         self.runner = VmafrcQualityRunner(
             [asset],
-            None, fifo_mode=False,
+            None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
             optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1neg.pkl"),
                            'adm_enhn_gain_limit': 1.2}
         )
-        self.runner.run(parallelize=False)
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
