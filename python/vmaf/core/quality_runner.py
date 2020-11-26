@@ -668,7 +668,7 @@ class VmafossExecQualityRunner(QualityRunner):
     ALGO_VERSION = 2
 
     # trained with resource/param/vmaf_v6.py on private/user/zli/resource/dataset/dataset/derived/vmafplusstudy_laptop_raw_generalandcornercase.py, MLER, y=x+17
-    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_float_v0.6.1.pkl")
+    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_v0.6.1.json")
 
     FEATURES = ['adm2', 'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
                 'motion', 'vif_scale0', 'vif_scale1', 'vif_scale2',
@@ -773,14 +773,12 @@ class VmafossExecQualityRunner(QualityRunner):
         root = tree.getroot()
         scores = []
 
-        # add all logged features to augmented_features[]
-        # in a previous implementaion, individual bootstrap scores
-        # were given as a csv string as an attribute in <params>.
-        # "vmaf" is excluded from augmented_features[] because
-        # it has it's own special list: scores[].
-        augmented_features = [key for key in root.findall('frames/frame')[0].attrib.keys()]
-        augmented_features.remove("frameNum")
-        augmented_features.remove("vmaf")
+        augmented_features = copy.copy(self.FEATURES)
+
+        # check for per bootstrap model score
+        for feature in root.findall('frames/frame')[0].attrib.keys():
+            if re.match(r"vmaf_[0-9]+", feature):
+                augmented_features.append(feature)
 
         feature_scores = [[] for _ in augmented_features]
 
@@ -790,7 +788,10 @@ class VmafossExecQualityRunner(QualityRunner):
                 try:
                     feature_scores[i_feature].append(float(frame.attrib[feature]))
                 except KeyError:
-                    pass  # some features may be missing
+                    try:
+                        feature_scores[i_feature].append(float(frame.attrib['integer_' + feature]))
+                    except KeyError:
+                        pass  # some features may be missing
         assert len(scores) != 0
         quality_result = {
             self.get_scores_key(): scores,
@@ -1146,7 +1147,7 @@ class VmafrcQualityRunner(QualityRunner):
     VERSION = 'F' + VmafFeatureExtractor.VERSION + '-0.6.1'
     ALGO_VERSION = 2
 
-    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_float_v0.6.1.pkl")
+    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_v0.6.1.json")
 
     FEATURES = ['adm2', 'motion2', 'vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
                 'float_psnr', 'float_ssim', 'float_ms_ssim',
@@ -1353,14 +1354,12 @@ class VmafrcQualityRunner(QualityRunner):
                     scores_dict[scores_key].append(float(frame.attrib[scores_key]))
             for i_feature, feature in enumerate(self.FEATURES):
                 try:
-                    if feature in ['motion2']:
-                        feature_scores[i_feature].append(float(frame.attrib[feature]))
-                    elif feature in ['float_psnr']:
-                        feature_scores[i_feature].append(float(frame.attrib[feature]))
-                    else:
-                        feature_scores[i_feature].append(float(frame.attrib[feature]))
+                    feature_scores[i_feature].append(float(frame.attrib[feature]))
                 except KeyError:
-                    pass  # some features may be missing
+                    try:
+                        feature_scores[i_feature].append(float(frame.attrib['integer_' + feature]))
+                    except KeyError:
+                        pass  # some features may be missing
         for scores_key in scores_keys:
             assert len(scores_dict[scores_key]) != 0 \
                    or any([len(feature_score) != 0 for feature_score in feature_scores])

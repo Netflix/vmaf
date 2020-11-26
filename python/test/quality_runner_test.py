@@ -218,7 +218,7 @@ class QualityRunnerTest(unittest.TestCase):
 
         try: self.assertAlmostEqual(results[1]['VMAF_integer_feature_vif_scale0_score'], 1.00000001415, places=4)
         except AssertionError as e: self.verificationErrors.append(str(e))
-        try: self.assertAlmostEqual(results[1]['VMAF_integer_feature_vif_scale1_score'],0.99999972612, places=4)
+        try: self.assertAlmostEqual(results[1]['VMAF_integer_feature_vif_scale1_score'], 0.99999972612, places=4)
         except AssertionError as e: self.verificationErrors.append(str(e))
         try: self.assertAlmostEqual(results[1]['VMAF_integer_feature_vif_scale2_score'], 0.999999465724, places=4)
         except AssertionError as e: self.verificationErrors.append(str(e))

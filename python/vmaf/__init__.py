@@ -285,15 +285,22 @@ class ExternalProgramCaller(object):
             vmafrc_cmd += ' --cpumask -1'
 
         if vif_enhn_gain_limit is not None:
+            # FIXME: hacky - since we do not know which feature is the one used in the model, we have to set the
+            # parameter for both, which doubles the computation.
             vmafrc_cmd += f' --feature float_vif=vif_enhn_gain_limit={vif_enhn_gain_limit}'
+            vmafrc_cmd += f' --feature vif=vif_enhn_gain_limit={vif_enhn_gain_limit}'
 
         if adm_enhn_gain_limit is not None:
+            # FIXME: hacky
             vmafrc_cmd += f' --feature float_adm=adm_enhn_gain_limit={adm_enhn_gain_limit}'
+            vmafrc_cmd += f' --feature adm=adm_enhn_gain_limit={adm_enhn_gain_limit}'
 
         if motion_force_zero:
             assert isinstance(motion_force_zero, bool)
             motion_force_zero = str(motion_force_zero).lower()
+            # FIXME: hacky
             vmafrc_cmd += f' --feature float_motion=motion_force_zero={motion_force_zero}'
+            vmafrc_cmd += f' --feature motion=motion_force_zero={motion_force_zero}'
 
         if logger:
             logger.info(vmafrc_cmd)
