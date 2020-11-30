@@ -3,7 +3,8 @@ from __future__ import absolute_import
 import unittest
 import pprint
 
-from vmaf.core.matlab_quality_runner import SpEEDMatlabQualityRunner, StrredQualityRunner, ICIDQualityRunner
+from vmaf.core.matlab_quality_runner import SpEEDMatlabQualityRunner, \
+    StrredQualityRunner, ICIDQualityRunner, SpatioTemporalVmafQualityRunner
 from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.asset import Asset
 from vmaf.core.quality_runner import PsnrQualityRunner, VmafQualityRunner, VmafossExecQualityRunner
@@ -255,6 +256,22 @@ class MatlabQualityRunnerTest(unittest.TestCase):
         self.assertEqual(self.runner.VERSION, "F1.0-1.0")
         self.assertAlmostEqual(results[0]['ICID_score'], 0.14382252083333333, places=4)
         self.assertAlmostEqual(results[1]['ICID_score'], 0.0, places=4)
+
+    def test_run_stvmaf(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = SpatioTemporalVmafQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None
+        )
+        self.runner.run()
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['STVMAF_score'], 57.708169, places=4)
 
 
 @unittest.skipIf(not VmafExternalConfig.matlab_path(), "matlab not installed")
