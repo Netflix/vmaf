@@ -9,7 +9,7 @@
 
 #include "config.h"
 #include "libvmaf/feature.h"
-#include "libvmaf/libvmaf.rc.h"
+#include "libvmaf/libvmaf.h"
 #include "libvmaf/model.h"
 
 static const char short_opts[] = "r:d:w:h:p:b:m:c:o:nvq";

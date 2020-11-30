@@ -49,7 +49,7 @@ matrix:
       env: CC=gcc-7 CXX=g++-7
       script: &base-gcc-script
         - mkdir libvmaf/build && cd libvmaf/build
-        - meson .. --buildtype release
+        - meson .. --buildtype release -Denable_float=true
         - sudo ninja -v install
         - sudo ninja -v test
         - cd $TRAVIS_BUILD_DIR

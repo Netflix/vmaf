@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "libvmaf/libvmaf.rc.h"
+#include "libvmaf/libvmaf.h"
 #include "libvmaf/model.h"
 #include "libvmaf/feature.h"
 

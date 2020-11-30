@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "feature/alias.h"
-#include "libvmaf/libvmaf.rc.h"
+#include "libvmaf/libvmaf.h"
 #include "model.h"
 
 static enum VmafOutputFormat log_fmt_map(const char *log_fmt)

@@ -8,6 +8,10 @@ version_h_target = configure_file(input: 'version.h.in',
                                   configuration: version_h_data)
 
 # install headers
-install_headers('libvmaf.h',
+install_headers(['libvmaf.h',
+                'compute_vmaf.h',
+                'feature.h',
+                'model.h',
+                'picture.h'],
                 version_h_target,
                 subdir : 'libvmaf')

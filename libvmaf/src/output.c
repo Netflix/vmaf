@@ -22,7 +22,7 @@
 #include "feature/alias.h"
 #include "feature/feature_collector.h"
 
-#include <libvmaf/libvmaf.rc.h>
+#include "libvmaf/libvmaf.h"
 
 static unsigned max_capacity(VmafFeatureCollector *fc)
 {

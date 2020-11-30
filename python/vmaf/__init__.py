@@ -102,7 +102,7 @@ class ExternalProgram(object):
 
     vmaf_feature = project_path(os.path.join("libvmaf", "build", "tools", "vmaf_feature")) if external_vmaf_feature is None else external_vmaf_feature
     vmafossexec = project_path(os.path.join("libvmaf", "build", "tools", "vmafossexec")) if external_vmafossexec is None else external_vmafossexec
-    vmafrc = project_path(os.path.join("libvmaf", "build", "tools", "vmaf_rc")) if external_vmafrc is None else external_vmafrc
+    vmafrc = project_path(os.path.join("libvmaf", "build", "tools", "vmaf")) if external_vmafrc is None else external_vmafrc
 
 
 class ExternalProgramCaller(object):
