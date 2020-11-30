@@ -98,19 +98,19 @@ static int extract(VmafFeatureExtractor *fex,
     if (err) return err;
 
     err = vmaf_feature_collector_append(feature_collector,
-                                        "'VMAF_feature_adm2_score'",
+                                        "VMAF_feature_adm2_score",
                                         score, index);
     err |= vmaf_feature_collector_append(feature_collector,
-                                         "'VMAF_feature_adm_scale0_score'",
+                                         "VMAF_feature_adm_scale0_score",
                                          scores[0] / scores[1], index);
     err |= vmaf_feature_collector_append(feature_collector,
-                                         "'VMAF_feature_adm_scale1_score'",
+                                         "VMAF_feature_adm_scale1_score",
                                          scores[2] / scores[3], index);
     err |= vmaf_feature_collector_append(feature_collector,
-                                         "'VMAF_feature_adm_scale2_score'",
+                                         "VMAF_feature_adm_scale2_score",
                                          scores[4] / scores[5], index);
     err |= vmaf_feature_collector_append(feature_collector,
-                                         "'VMAF_feature_adm_scale3_score'",
+                                         "VMAF_feature_adm_scale3_score",
                                          scores[6] / scores[7], index);
 
     if (s->debug) {
@@ -150,10 +150,10 @@ static int close(VmafFeatureExtractor *fex)
 }
 
 static const char *provided_features[] = {
-    "'VMAF_feature_adm2_score'",
     "VMAF_feature_adm2_score",
-    "'VMAF_feature_adm_scale0_score'", "'VMAF_feature_adm_scale1_score'",
-    "'VMAF_feature_adm_scale2_score'", "'VMAF_feature_adm_scale3_score'",
+    "VMAF_feature_adm2_score",
+    "VMAF_feature_adm_scale0_score", "VMAF_feature_adm_scale1_score",
+    "VMAF_feature_adm_scale2_score", "VMAF_feature_adm_scale3_score",
     "adm_scale0", "adm_scale1", "adm_scale2", "adm_scale3",
     NULL
 };

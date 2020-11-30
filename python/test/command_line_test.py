@@ -28,7 +28,7 @@ class CommandLineTest(unittest.TestCase):
     def setUp(self):
         self.dataset_filename = VmafConfig.test_resource_path('example_dataset.py')
         self.raw_dataset_filename = VmafConfig.test_resource_path('example_raw_dataset.py')
-        self.out_model_filepath = VmafConfig.workdir_path('tmp.pkl')
+        self.out_model_filepath = VmafConfig.workdir_path('tmp.json')
         self.param_filename = VmafConfig.test_resource_path('vmaf_v4.py')
         self.batch_filename = VmafConfig.workdir_path('test_batch_input')
 
@@ -171,7 +171,7 @@ class VmafossexecCommandLineTest(unittest.TestCase):
         exe = ExternalProgram.vmafossexec
         cmd = "{exe} yuv420p 576 324 {ref} {dis} {model} --thread 1 --subsample 2".format(
             exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
-            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.pkl"))
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.json"))
         ret = subprocess.call(cmd, shell=True)
         self.assertEqual(ret, self.RC_SUCCESS)
 
@@ -179,7 +179,7 @@ class VmafossexecCommandLineTest(unittest.TestCase):
         exe = ExternalProgram.vmafossexec
         cmd = "{exe} yuv420p 576 324 {ref} {dis} {model} > /dev/null 2>&1".format(
             exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
-            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.pkl_XXX"))
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.json_XXX"))
         ret = subprocess.call(cmd, shell=True)
         self.assertEqual(ret, self.RC_EINVAL)
 
@@ -187,7 +187,7 @@ class VmafossexecCommandLineTest(unittest.TestCase):
         exe = ExternalProgram.vmafossexec
         cmd = "{exe} yuv420p 576 324 {ref} {dis} {model} > /dev/null 2>&1".format(
             exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
-            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.pkl.model"))
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.json.model"))
         ret = subprocess.call(cmd, shell=True)
         self.assertEqual(ret, self.RC_EINVAL)
 
@@ -195,7 +195,7 @@ class VmafossexecCommandLineTest(unittest.TestCase):
         exe = ExternalProgram.vmafossexec
         cmd = "{exe} yuv420p 576 324 {ref} {dis} {model} > /dev/null 2>&1".format(
             exe=exe, ref=VmafConfig.resource_path("yuv", "src01_hrc00_576x324_XXX.yuv"),
-            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.pkl"))
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.json"))
         ret = subprocess.call(cmd, shell=True)
         self.assertEqual(ret, self.RC_ARGUMENT_ISSUE)
 
@@ -203,7 +203,7 @@ class VmafossexecCommandLineTest(unittest.TestCase):
         exe = ExternalProgram.vmafossexec
         cmd = "{exe} yuv420p 576 324 {ref} {dis} {model} > /dev/null 2>&1".format(
             exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
-            dis=VmafConfig.resource_path("yuv", "src01_hrc01_576x324_XXX.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.pkl"))
+            dis=VmafConfig.resource_path("yuv", "src01_hrc01_576x324_XXX.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.json"))
         ret = subprocess.call(cmd, shell=True)
         self.assertEqual(ret, self.RC_ARGUMENT_ISSUE)
 
@@ -211,7 +211,7 @@ class VmafossexecCommandLineTest(unittest.TestCase):
         exe = ExternalProgram.vmafossexec
         cmd = "{exe} yuv420p_XXX 576 324 {ref} {dis} {model} > /dev/null 2>&1".format(
             exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
-            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.pkl"))
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.json"))
         ret = subprocess.call(cmd, shell=True)
         self.assertEqual(ret, self.RC_ARGUMENT_ISSUE)
 
@@ -219,7 +219,7 @@ class VmafossexecCommandLineTest(unittest.TestCase):
         exe = ExternalProgram.vmafossexec
         cmd = "{exe} yuv420p 575 323 {ref} {dis} {model} > /dev/null 2>&1".format(
             exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
-            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.pkl"))
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.json"))
         ret = subprocess.call(cmd, shell=True)
         self.assertEqual(ret, self.RC_ARGUMENT_ISSUE)
 
@@ -227,7 +227,7 @@ class VmafossexecCommandLineTest(unittest.TestCase):
         exe = ExternalProgram.vmafossexec
         cmd = "{exe} yuv420p 576 abc {ref} {dis} {model} > /dev/null 2>&1".format(
             exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
-            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.pkl"))
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.json"))
         ret = subprocess.call(cmd, shell=True)
         self.assertEqual(ret, self.RC_MORE_ARGUMENT_ISSUE)
 
@@ -235,7 +235,7 @@ class VmafossexecCommandLineTest(unittest.TestCase):
         exe = ExternalProgram.vmafossexec
         cmd = "{exe} yuv420p 0 324 {ref} {dis} {model} > /dev/null 2>&1".format(
             exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
-            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.pkl"))
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.json"))
         ret = subprocess.call(cmd, shell=True)
         self.assertEqual(ret, self.RC_MORE_ARGUMENT_ISSUE)
 
@@ -243,7 +243,7 @@ class VmafossexecCommandLineTest(unittest.TestCase):
         exe = ExternalProgram.vmafossexec
         cmd = "{exe} yuv420p 576 324 {ref} {dis} {model} --log-fmt xml_XXX > /dev/null 2>&1".format(
             exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
-            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.pkl"))
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.json"))
         ret = subprocess.call(cmd, shell=True)
         self.assertEqual(ret, self.RC_MORE_ARGUMENT_ISSUE)
 
@@ -251,7 +251,7 @@ class VmafossexecCommandLineTest(unittest.TestCase):
         exe = ExternalProgram.vmafossexec
         cmd = "{exe} yuv420p 576 324 {ref} {dis} {model} --pool mean_XXX > /dev/null 2>&1".format(
             exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
-            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.pkl"))
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.json"))
         ret = subprocess.call(cmd, shell=True)
         self.assertEqual(ret, self.RC_MORE_ARGUMENT_ISSUE)
 
@@ -259,7 +259,7 @@ class VmafossexecCommandLineTest(unittest.TestCase):
         exe = ExternalProgram.vmafossexec
         cmd = "{exe} yuv420p 576 324 {ref} {dis} {model} --thread -1 --subsample 2 > /dev/null 2>&1".format(
             exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
-            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.pkl"))
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.json"))
         ret = subprocess.call(cmd, shell=True)
         self.assertEqual(ret, self.RC_MORE_ARGUMENT_ISSUE)
 
@@ -267,7 +267,7 @@ class VmafossexecCommandLineTest(unittest.TestCase):
         exe = ExternalProgram.vmafossexec
         cmd = "{exe} yuv420p 576 324 {ref} {dis} {model} --thread 0 --subsample 0 > /dev/null 2>&1".format(
             exe=exe, ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
-            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.pkl"))
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"), model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.json"))
         ret = subprocess.call(cmd, shell=True)
         self.assertEqual(ret, self.RC_MORE_ARGUMENT_ISSUE)
 

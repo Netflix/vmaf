@@ -351,7 +351,6 @@ libvmaf_rc_sources = [
     src_dir + 'compute_vmaf.c',
     src_dir + 'predict.c',
     src_dir + 'model.c',
-    src_dir + 'unpickle.cpp',
     src_dir + 'svm.cpp',
     src_dir + 'picture.c',
     src_dir + 'mem.c',

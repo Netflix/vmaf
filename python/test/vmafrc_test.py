@@ -259,8 +259,8 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             result_store=None,
             optional_dict={
                 'models': [
-                    'path={}:name=custom_vmaf_0'.format(VmafConfig.model_path("vmaf_float_v0.6.1.pkl")),
-                    'path={}:name=custom_vmaf_1'.format(VmafConfig.model_path("vmaf_float_v0.6.1.pkl")),
+                    'path={}:name=custom_vmaf_0'.format(VmafConfig.model_path("vmaf_float_v0.6.1.json")),
+                    'path={}:name=custom_vmaf_1'.format(VmafConfig.model_path("vmaf_float_v0.6.1.json")),
                 ]
             }
         )
@@ -284,8 +284,8 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             result_store=None,
             optional_dict={
                 'models': [
-                    'path={}:name=custom_vmaf_0'.format(VmafConfig.model_path("vmaf_float_v0.6.1.pkl")),
-                    'path={}:name=custom_vmaf_1:enable_transform'.format(VmafConfig.model_path("vmaf_float_v0.6.1.pkl")),
+                    'path={}:name=custom_vmaf_0'.format(VmafConfig.model_path("vmaf_float_v0.6.1.json")),
+                    'path={}:name=custom_vmaf_1:enable_transform'.format(VmafConfig.model_path("vmaf_float_v0.6.1.json")),
                 ]
             }
         )
@@ -932,7 +932,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
-            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1neg.pkl")}
+            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1neg.json")}
         )
         self.runner.run(parallelize=True)
 
@@ -960,7 +960,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
-            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1neg.pkl"),
+            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1neg.json"),
                            'adm_enhn_gain_limit': 1.2}
         )
         self.runner.run(parallelize=True)
@@ -986,12 +986,12 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             result_store=None,
             optional_dict={
                 'models': [
-                    'path={}:name=vmaf'.format(VmafConfig.model_path("vmaf_float_v0.6.1.pkl")),
-                    'path={}:name=vmafneg'.format(VmafConfig.model_path("vmaf_float_v0.6.1neg.pkl")),
+                    'path={}:name=vmaf'.format(VmafConfig.model_path("vmaf_float_v0.6.1.json")),
+                    'path={}:name=vmafneg'.format(VmafConfig.model_path("vmaf_float_v0.6.1neg.json")),
                 ]
             }
         )
-        with self.assertRaises(AssertionError, msg="vmaf_float_v0.6.1.pkl and vmaf_float_v0.6.1neg.pkl require the same fex with "
+        with self.assertRaises(AssertionError, msg="vmaf_float_v0.6.1.json and vmaf_float_v0.6.1neg.json require the same fex with "
                                                    "different input arguments, but the exception is not raised."):
             self.runner.run(parallelize=False)
 
@@ -1006,12 +1006,12 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             result_store=None,
             optional_dict={
                 'models': [
-                    'path={}:name=vmafneg'.format(VmafConfig.model_path("vmaf_float_v0.6.1neg.pkl")),
-                    'path={}:name=vmaf'.format(VmafConfig.model_path("vmaf_float_v0.6.1.pkl")),
+                    'path={}:name=vmafneg'.format(VmafConfig.model_path("vmaf_float_v0.6.1neg.json")),
+                    'path={}:name=vmaf'.format(VmafConfig.model_path("vmaf_float_v0.6.1.json")),
                 ]
             }
         )
-        with self.assertRaises(AssertionError, msg="vmaf_float_v0.6.1neg.pkl and vmaf_float_v0.6.1.pkl require different input "
+        with self.assertRaises(AssertionError, msg="vmaf_float_v0.6.1neg.json and vmaf_float_v0.6.1.json require different input "
                                                    "arguments for the same fex, but the exception is not raised."):
             self.runner.run(parallelize=False)
 
@@ -1030,10 +1030,10 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={'disable_clip_score': True,
-                           'model_filepath': VmafConfig.test_resource_path("vmaf_float_v0.6.1neg.inconsist.pkl")}
+                           'model_filepath': VmafConfig.test_resource_path("vmaf_float_v0.6.1neg.inconsist.json")}
         )
         with self.assertRaises(AssertionError,
-                               msg="vmaf_float_v0.6.1neg.inconsist.pkl has inconsistent vif_enhn_gain_limit "
+                               msg="vmaf_float_v0.6.1neg.inconsist.json has inconsistent vif_enhn_gain_limit "
                                    "values for the same fex but the exception is not raised."):
             self.runner.run(parallelize=False)
 
@@ -1051,7 +1051,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
-            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1neg.pkl"),
+            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1neg.json"),
                            'adm_enhn_gain_limit': 0.9}
         )
         with self.assertRaises(AssertionError,
@@ -1072,7 +1072,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
-            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1neg.pkl"),
+            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1neg.json"),
                            'vif_enhn_gain_limit': 0.9}
         )
         with self.assertRaises(AssertionError,
@@ -1094,7 +1094,7 @@ class VmafrcQualityRunnerTest(unittest.TestCase):
             delete_workdir=True,
             result_store=None,
             optional_dict={'disable_clip_score': True,
-                           'model_filepath': VmafConfig.model_path("vmaf_float_b_v0.6.3", "vmaf_float_b_v0.6.3.pkl"),
+                           'model_filepath': VmafConfig.model_path("vmaf_float_b_v0.6.3", "vmaf_float_b_v0.6.3.json"),
                            'adm_enhn_gain_limit': 1.0, 'vif_enhn_gain_limit': 1.0}
         )
         self.runner.run(parallelize=False)

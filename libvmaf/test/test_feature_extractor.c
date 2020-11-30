@@ -36,7 +36,7 @@ static char *test_get_feature_extractor_by_name_and_feature_name()
               !strcmp(fex->name, "float_vif"));
 
     fex =
-        vmaf_get_feature_extractor_by_feature_name("'VMAF_feature_adm2_score'");
+        vmaf_get_feature_extractor_by_feature_name("VMAF_feature_adm2_score");
     mu_assert("problem during vmaf_get_feature_extractor_by_feature_name",
               fex && !strcmp(fex->name, "float_adm"));
 
@@ -100,18 +100,18 @@ static char *test_feature_extractor_flush()
     err = vmaf_feature_extractor_context_extract(fex_ctx, &ref, NULL, &dist,
                                                  NULL, 0, vfc);
     mu_assert("problem during vmaf_feature_extractor_context_extract", !err);
-    err = vmaf_feature_collector_get_score(vfc, "'VMAF_feature_motion2_score'",
+    err = vmaf_feature_collector_get_score(vfc, "VMAF_feature_motion2_score",
                                            &score, 0);
     mu_assert("problem during vmaf_feature_collector_get_score", !err);
     err = vmaf_feature_extractor_context_extract(fex_ctx, &ref, NULL, &dist,
                                                  NULL, 1, vfc);
     mu_assert("problem during vmaf_feature_extractor_context_extract", !err);
-    err = vmaf_feature_collector_get_score(vfc, "'VMAF_feature_motion2_score'",
+    err = vmaf_feature_collector_get_score(vfc, "VMAF_feature_motion2_score",
                                            &score, 0);
     mu_assert("problem during vmaf_feature_extractor_context_flush", !err);
     err = vmaf_feature_extractor_context_flush(fex_ctx, vfc);
     mu_assert("problem during vmaf_feature_extractor_context_flush", !err);
-    err = vmaf_feature_collector_get_score(vfc, "'VMAF_feature_motion2_score'",
+    err = vmaf_feature_collector_get_score(vfc, "VMAF_feature_motion2_score",
                                            &score, 1);
     mu_assert("problem during vmaf_feature_collector_get_score", !err);
 

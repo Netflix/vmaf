@@ -25,47 +25,47 @@ typedef struct {
 
 static Alias alias_map[] = {
     {
-        .name = "'VMAF_feature_adm2_score'",
+        .name = "VMAF_feature_adm2_score",
         .alias = "adm2",
     },
     {
-        .name = "'VMAF_feature_adm_scale0_score'",
+        .name = "VMAF_feature_adm_scale0_score",
         .alias = "adm_scale0",
     },
     {
-        .name = "'VMAF_feature_adm_scale1_score'",
+        .name = "VMAF_feature_adm_scale1_score",
         .alias = "adm_scale1",
     },
     {
-        .name = "'VMAF_feature_adm_scale2_score'",
+        .name = "VMAF_feature_adm_scale2_score",
         .alias = "adm_scale2",
     },
     {
-        .name = "'VMAF_feature_adm_scale3_score'",
+        .name = "VMAF_feature_adm_scale3_score",
         .alias = "adm_scale3",
     },
     {
-        .name = "'VMAF_feature_motion_score'",
+        .name = "VMAF_feature_motion_score",
         .alias = "motion",
     },
     {
-        .name = "'VMAF_feature_motion2_score'",
+        .name = "VMAF_feature_motion2_score",
         .alias = "motion2",
     },
     {
-        .name = "'VMAF_feature_vif_scale0_score'",
+        .name = "VMAF_feature_vif_scale0_score",
         .alias = "vif_scale0",
     },
     {
-        .name = "'VMAF_feature_vif_scale1_score'",
+        .name = "VMAF_feature_vif_scale1_score",
         .alias = "vif_scale1",
     },
     {
-        .name = "'VMAF_feature_vif_scale2_score'",
+        .name = "VMAF_feature_vif_scale2_score",
         .alias = "vif_scale2",
     },
     {
-        .name = "'VMAF_feature_vif_scale3_score'",
+        .name = "VMAF_feature_vif_scale3_score",
         .alias = "vif_scale3",
     },
     {
@@ -95,33 +95,6 @@ static Alias alias_map[] = {
     {
         .name = "VMAF_integer_feature_vif_scale3_score",
         .alias = "integer_vif_scale3",
-    },
-};
-
-static Alias internal_alias_map[] = {
-    {
-        .name = "VMAF_feature_adm2_score",
-        .alias = "'VMAF_feature_adm2_score'",
-    },
-    {
-        .name = "VMAF_feature_motion2_score",
-        .alias = "'VMAF_feature_motion2_score'",
-    },
-    {
-        .name = "VMAF_feature_vif_scale0_score",
-        .alias = "'VMAF_feature_vif_scale0_score'",
-    },
-    {
-        .name = "VMAF_feature_vif_scale1_score",
-        .alias = "'VMAF_feature_vif_scale1_score'",
-    },
-    {
-        .name = "VMAF_feature_vif_scale2_score",
-        .alias = "'VMAF_feature_vif_scale2_score'",
-    },
-    {
-        .name = "VMAF_feature_vif_scale3_score",
-        .alias = "'VMAF_feature_vif_scale3_score'",
     },
 };
 
@@ -171,17 +144,4 @@ const char *vmaf_feature_name_alias(const char *feature_name)
     }
 
     return vmafossexec_feature_name_alias(feature_name);
-}
-
-const char *vmaf_internal_feature_name_alias(const char *feature_name)
-{
-    unsigned alias_cnt =
-        sizeof(internal_alias_map) / sizeof(internal_alias_map[0]);
-
-    for (unsigned i = 0; i < alias_cnt; i++) {
-       if (!strcmp(feature_name, internal_alias_map[i].name))
-           return internal_alias_map[i].alias;
-    }
-
-    return feature_name;
 }

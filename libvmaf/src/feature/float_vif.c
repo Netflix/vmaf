@@ -98,16 +98,16 @@ static int extract(VmafFeatureExtractor *fex,
     if (err) return err;
 
     err = vmaf_feature_collector_append(feature_collector,
-                                        "'VMAF_feature_vif_scale0_score'",
+                                        "VMAF_feature_vif_scale0_score",
                                         scores[0] / scores[1], index);
     err |= vmaf_feature_collector_append(feature_collector,
-                                         "'VMAF_feature_vif_scale1_score'",
+                                         "VMAF_feature_vif_scale1_score",
                                          scores[2] / scores[3], index);
     err |= vmaf_feature_collector_append(feature_collector,
-                                         "'VMAF_feature_vif_scale2_score'",
+                                         "VMAF_feature_vif_scale2_score",
                                          scores[4] / scores[5], index);
     err |= vmaf_feature_collector_append(feature_collector,
-                                         "'VMAF_feature_vif_scale3_score'",
+                                         "VMAF_feature_vif_scale3_score",
                                          scores[6] / scores[7], index);
 
     if (s->debug) {
@@ -147,8 +147,8 @@ static int close(VmafFeatureExtractor *fex)
 }
 
 static const char *provided_features[] = {
-    "'VMAF_feature_vif_scale0_score'", "'VMAF_feature_vif_scale1_score'",
-    "'VMAF_feature_vif_scale2_score'", "'VMAF_feature_vif_scale3_score'",
+    "VMAF_feature_vif_scale0_score", "VMAF_feature_vif_scale1_score",
+    "VMAF_feature_vif_scale2_score", "VMAF_feature_vif_scale3_score",
     "VMAF_feature_vif_scale0_score", "VMAF_feature_vif_scale1_score",
     "VMAF_feature_vif_scale2_score", "VMAF_feature_vif_scale3_score",
     NULL
