@@ -116,6 +116,16 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
                       unsigned index_low, unsigned index_high);
 ```
 
+## Contributing a new VmafFeatureExtractor
+
+To write a new VmafFeatureExtractor, please first familiarize yourself with the [VmafFeatureExtractor API documentation](https://github.com/Netflix/vmaf/blob/master/libvmaf/src/feature/feature_extractor.h#L36-L87). Implementing a new feature extractor should be relatively painless. Create a new `VmafFeatureExtractor` and add it to the build as well as the `feature_extractor_list[]`. See [this diff](https://github.com/Netflix/vmaf/commit/fd3c79697c7e06586aa5b9cda8db0d9aedfd70c5) for an example. Once you do this your feature extractor may be registered and used inside of `libvmaf` via `vmaf_use_feature()` or `vmaf_use_features_from_model()`. To invoke this feature extractor directly from the command line with `vmaf` use the `--feature` flag.
+
+`VmafFeatureExtractor` is a feature extraction class with just a few callbacks. If you have preallocations and/or precomputations to make, it is best to do this in the `.init()` callback and store the output in `.priv`.  This is a place for custom data which is available for all subsequent callbacks. If you allocate anything in `.init()` be sure to clean it up in the `.close()` callback.
+
+The remainder of your work should take place in the `.extract()` callback. This callback is called for every pair of input pictures. Read the pixel data make some computations and then write the output(s) to the `VmafFeatureCollector` via the `vmaf_feature_collector_append()` api. An important thing to know about this callback is that it can (and probably is) being called in an arbitrary order. If your feature extractor has a temporal requirement (i.e. `motion`), set the `VMAF_FEATURE_EXTRACTOR_TEMPORAL` flag and the `VmafFeatureExtractorContext` will ensure that this callback is executed in serial. For an example of a feature extractor with a temporal dependency see the [motion](https://github.com/Netflix/vmaf/blob/master/libvmaf/src/feature/integer_motion.c) feature extractor.
+
+If the `VMAF_FEATURE_EXTRACTOR_TEMPORAL` is set, it is likely that you have buffers that need flushing. If this is the case, `.flush()` is called in a loop until something non-zero is returned.
+
 ## Example
 
 The following example shows a comparison using a pair of yuv inputs (`src01_hrc00_576x324.yuv`, `src01_hrc01_576x324.yuv`). In addition to VMAF which is enabled with the model `../model/vmaf_float_v0.6.1.pkl`, the `psnr` metric is also computed and logged.
