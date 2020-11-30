@@ -120,8 +120,8 @@ int vmaf_predict_score_at_index(VmafModel *model,
     for (unsigned i = 0; i < model->n_features; i++) {
         double feature_score;
         err = vmaf_feature_collector_get_score(feature_collector,
-                       vmaf_internal_feature_name_alias(model->feature[i].name),
-                       &feature_score, index);
+                                               model->feature[i].name,
+                                               &feature_score, index);
         if (err) goto free_node;
 
         err = normalize(model, model->feature[i].slope,

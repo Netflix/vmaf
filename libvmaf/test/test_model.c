@@ -70,18 +70,18 @@ static char *test_json_model()
     err = vmaf_read_json_model_from_path(&model_json, &cfg_json, path_json);
     mu_assert("problem during vmaf_read_json_model", !err);
 
-    VmafModel *model_pkl;
-    VmafModelConfig cfg_pkl = { 0 };
-    const char *path_pkl = "../../model/vmaf_float_v0.6.1neg.pkl";
+    VmafModel *model;
+    VmafModelConfig cfg = { 0 };
+    const char *version = "vmaf_float_v0.6.1neg";
 
-    err = vmaf_model_load_from_path(&model_pkl, &cfg_pkl, path_pkl);
+    err = vmaf_model_load(&model, &cfg, version);
     mu_assert("problem during vmaf_model_load_from_path", !err);
 
-    err = model_compare(model_json, model_pkl);
-    mu_assert("parsed json/pkl models do not match", !err);
+    err = model_compare(model_json, model);
+    mu_assert("parsed json/built-in models do not match", !err);
 
     vmaf_model_destroy(model_json);
-    vmaf_model_destroy(model_pkl);
+    vmaf_model_destroy(model);
     return NULL;
 }
 
@@ -115,18 +115,16 @@ static char *test_model_collection()
 {
     int err = 0;
 
-    // pkl
-    const char *pkl_path = "../../model/vmaf_rb_v0.6.3/vmaf_rb_v0.6.3.pkl";
-    VmafModel *pkl_model;
-    VmafModelCollection *pkl_model_collection = NULL;
-    const VmafModelConfig pkl_cfg = { 0 };
+    const char *version = "vmaf_rb_v0.6.3";
+    VmafModel *model;
+    VmafModelCollection *model_collection = NULL;
+    const VmafModelConfig cfg = { 0 };
 
-    err = vmaf_model_collection_load_from_path(&pkl_model,
-                                               &pkl_model_collection, &pkl_cfg,
-                                               pkl_path);
+    err = vmaf_model_collection_load_from_path(&model,
+                                               &model_collection, &cfg,
+                                               version);
     mu_assert("problem during load_model_collection", !err);
 
-    // json
     const char *json_path = "../../model/vmaf_float_b_v0.6.3.json";
     VmafModel *json_model;
     VmafModelCollection *json_model_collection = NULL;
@@ -136,10 +134,10 @@ static char *test_model_collection()
                                                &json_cfg, json_path);
     mu_assert("problem during load_model_collection", !err);
 
-    err = model_compare(json_model, pkl_model);
-    mu_assert("parsed json/pkl models do not match", !err);
+    err = model_compare(json_model, model);
+    mu_assert("parsed json/built-in models do not match", !err);
 
-    vmaf_model_collection_destroy(pkl_model_collection);
+    vmaf_model_collection_destroy(model_collection);
     vmaf_model_collection_destroy(json_model_collection);
     return NULL;
 }
@@ -150,7 +148,7 @@ static char *test_model_load_and_destroy()
 
     VmafModel *model;
     VmafModelConfig cfg = { 0 };
-    const char *path = "../../model/vmaf_float_v0.6.1.pkl";
+    const char *path = "../../model/vmaf_float_v0.6.1.json";
     err = vmaf_model_load_from_path(&model, &cfg, path);
     mu_assert("problem during vmaf_model_load_from_path", !err);
 
@@ -177,14 +175,15 @@ static char *test_model_check_default_behavior_unset_flags()
     VmafModelConfig cfg = {
         .name = "some_vmaf",
     };
-    const char *path = "../../model/vmaf_float_v0.6.1.pkl";
+    const char *path = "../../model/vmaf_float_v0.6.1.json";
     err = vmaf_model_load_from_path(&model, &cfg, path);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("Model name is inconsistent.\n", !strcmp(model->name, "some_vmaf"));
     mu_assert("Clipping must be enabled by default.\n", model->score_clip.enabled);
     mu_assert("Score transform must be disabled by default.\n", !model->score_transform.enabled);
     /* TODO: add check for confidence interval */
-    mu_assert("Feature 0 name must be VMAF_feature_adm2_score.\n", !strcmp(model->feature[0].name, "'VMAF_feature_adm2_score'"));
+    mu_assert("Feature 0 name must be VMAF_feature_adm2_score.\n",
+              !strcmp(model->feature[0].name, "VMAF_feature_adm2_score"));
 
     vmaf_model_destroy(model);
 
@@ -200,14 +199,15 @@ static char *test_model_check_default_behavior_set_flags()
         .name = "some_vmaf",
         .flags = VMAF_MODEL_FLAGS_DEFAULT,
     };
-    const char *path = "../../model/vmaf_float_v0.6.1.pkl";
+    const char *path = "../../model/vmaf_float_v0.6.1.json";
     err = vmaf_model_load_from_path(&model, &cfg, path);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("Model name is inconsistent.\n", !strcmp(model->name, "some_vmaf"));
     mu_assert("Clipping must be enabled by default.\n", model->score_clip.enabled);
     mu_assert("Score transform must be disabled by default.\n", !model->score_transform.enabled);
     /* TODO: add check for confidence interval */
-    mu_assert("Feature 0 name must be VMAF_feature_adm2_score.\n", !strcmp(model->feature[0].name, "'VMAF_feature_adm2_score'"));
+    mu_assert("Feature 0 name must be VMAF_feature_adm2_score.\n",
+              !strcmp(model->feature[0].name, "VMAF_feature_adm2_score"));
 
     vmaf_model_destroy(model);
 
@@ -222,7 +222,7 @@ static char *test_model_set_flags()
     VmafModelConfig cfg1 = {
         .flags = VMAF_MODEL_FLAG_ENABLE_TRANSFORM,
     };
-    const char *path1 = "../../model/vmaf_float_v0.6.1.pkl";
+    const char *path1 = "../../model/vmaf_float_v0.6.1.json";
     err = vmaf_model_load_from_path(&model1, &cfg1, path1);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("Score transform must be enabled.\n",
@@ -235,7 +235,7 @@ static char *test_model_set_flags()
     VmafModelConfig cfg2 = {
         .flags = VMAF_MODEL_FLAG_DISABLE_CLIP,
     };
-    const char *path2 = "../../model/vmaf_float_v0.6.1.pkl";
+    const char *path2 = "../../model/vmaf_float_v0.6.1.json";
     err = vmaf_model_load_from_path(&model2, &cfg2, path2);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("Score transform must be disabled.\n",
@@ -246,7 +246,7 @@ static char *test_model_set_flags()
 
     VmafModel  *model3;
     VmafModelConfig  cfg3 = { 0 };
-    const char *path3 = "../../model/vmaf_float_v0.6.1.pkl";
+    const char *path3 = "../../model/vmaf_float_v0.6.1.json";
     err = vmaf_model_load_from_path(&model3, &cfg3, path3);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("feature[0].opts_dict must be NULL.\n",
@@ -264,7 +264,7 @@ static char *test_model_set_flags()
 
     VmafModel  *model4;
     VmafModelConfig  cfg4 = { 0 };
-    const char *path4 = "../../model/vmaf_float_v0.6.1neg.pkl";
+    const char *path4 = "../../model/vmaf_float_v0.6.1neg.json";
     err = vmaf_model_load_from_path(&model4, &cfg4, path4);
     mu_assert("problem during vmaf_model_load_from_path", !err);
     mu_assert("feature[0].opts_dict must not be NULL.\n",

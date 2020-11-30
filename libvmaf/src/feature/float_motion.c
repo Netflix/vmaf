@@ -94,7 +94,7 @@ static int flush(VmafFeatureExtractor *fex,
 
     if (s->index > 0) {
         ret = vmaf_feature_collector_append(feature_collector,
-                                            "'VMAF_feature_motion2_score'",
+                                            "VMAF_feature_motion2_score",
                                             s->score, s->index);
     }
 
@@ -115,11 +115,11 @@ static int extract(VmafFeatureExtractor *fex,
 
     if (s->motion_force_zero) {
         err = vmaf_feature_collector_append(feature_collector,
-                                            "'VMAF_feature_motion2_score'",
+                                            "VMAF_feature_motion2_score",
                                             0., index);
         if (s->debug) {
             err |= vmaf_feature_collector_append(feature_collector,
-                                                 "'VMAF_feature_motion_score'",
+                                                 "VMAF_feature_motion_score",
                                                  0., index);
         }
         return err;
@@ -138,11 +138,11 @@ static int extract(VmafFeatureExtractor *fex,
 
     if (index == 0) {
         err = vmaf_feature_collector_append(feature_collector,
-                                             "'VMAF_feature_motion2_score'",
+                                             "VMAF_feature_motion2_score",
                                              0., index);
         if (s->debug) {
             err |= vmaf_feature_collector_append(feature_collector,
-                                                 "'VMAF_feature_motion_score'",
+                                                 "VMAF_feature_motion_score",
                                                  0., index);
         }
         return err;
@@ -156,7 +156,7 @@ static int extract(VmafFeatureExtractor *fex,
 
     if (s->debug) {
         err |= vmaf_feature_collector_append(feature_collector,
-                                            "'VMAF_feature_motion_score'",
+                                            "VMAF_feature_motion_score",
                                             score, index);
     }
     if (err) return err;
@@ -172,7 +172,7 @@ static int extract(VmafFeatureExtractor *fex,
     if (err) return err;
     score2 = score2 < score ? score2 : score;
     err = vmaf_feature_collector_append(feature_collector,
-                                        "'VMAF_feature_motion2_score'",
+                                        "VMAF_feature_motion2_score",
                                         score2, index - 1);
     if (err) return err;
 
@@ -192,7 +192,7 @@ static int close(VmafFeatureExtractor *fex)
 }
 
 static const char *provided_features[] = {
-    "'VMAF_feature_motion_score'", "'VMAF_feature_motion2_score'",
+    "VMAF_feature_motion_score", "VMAF_feature_motion2_score",
     "VMAF_feature_motion2_score",
     NULL
 };

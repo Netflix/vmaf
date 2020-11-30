@@ -36,7 +36,7 @@ static char *test_predict_score_at_index()
         .name = "vmaf",
         .flags = VMAF_MODEL_FLAGS_DEFAULT,
     };
-    const char *path = "../../model/vmaf_float_v0.6.1.pkl";
+    const char *path = "../../model/vmaf_float_v0.6.1.json";
     err = vmaf_model_load_from_path(&model, &cfg, path);
     mu_assert("problem during vmaf_model_load_from_path", !err);
 
