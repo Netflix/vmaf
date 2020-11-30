@@ -59,6 +59,63 @@ Generate HTML documentation with:
 ninja -vC build doc/html
 ```
 
+## API
+
+Create a `VmafContext` with `vmaf_init()`. `VmafContext` is an opaque type, and `VmafConfiguration` is a options struct used to initialize the context. Be sure to clean up the `VmafContext` with `vmaf_close()` when you are done with it.
+
+```c
+int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg);
+
+int vmaf_close(VmafContext *vmaf);
+```
+
+Calculating a VMAF score requires a VMAF model. The next step is to create a `VmafModel`. There are a few ways to get a `VmafModel`. Use `vmaf_model_load()` when you would like to load one of the default built-in models. Use `vmaf_model_load_from_path()` when you would like to read a model file from a filesystem. After you are done using the `VmafModel`, clean it up with `vmaf_model_destroy()`.
+
+```c
+int vmaf_model_load(VmafModel **model, VmafModelConfig *cfg,
+                     const char *version);
+
+int vmaf_model_load_from_path(VmafModel **model, VmafModelConfig *cfg,
+                              const char *path);
+
+void vmaf_model_destroy(VmafModel *model);
+```
+
+
+A VMAF score is a fusion of several elementary features which are specified by a model file. The next step is to register all feature extractors required by your model or models with `vmaf_use_features_from_model()`. If there are auxillary metrics (i.e. `PSNR`) you would also like to extract use `vmaf_use_feature()` to register it directly.
+
+```c
+int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model);
+
+int vmaf_use_feature(VmafContext *vmaf, const char *feature_name,
+                      VmafFeatureDictionary *opts_dict);
+```
+
+VMAF is a full-reference metric, meaning it is calculated on pairs of reference/distorted pictures. To allocate a `VmafPicture` use `vmaf_picture_alloc`. After allocation, you may fill the buffers with pixel data.
+
+```c
+int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
+                        unsigned bpc, unsigned w, unsigned h);
+```
+
+Read all of you input pictures in a loop with `vmaf_read_pictures()`. When you are done reading pictures, some feature extractors may have internal buffers may still need to be flushed. Call `vmaf_read_pictures()` again with `ref` and `dist` set to `NULL` to flush these buffers. Once buffers are flushed, all further calls to `vmaf_read_pictures()` are invalid.
+
+```c
+int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
+                       unsigned index);
+```
+
+After your pictures have been read, you can retrieve a vmaf score. Use `vmaf_score_at_index` to get the score at single index, and use `vmaf_score_pooled()` to get a pooled score across multiple frames.
+
+```c
+int vmaf_score_at_index(VmafContext *vmaf, VmafModel *model, double *score,
+                        unsigned index);
+
+int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
+                      enum VmafPoolingMethod pool_method, double *score,
+                      unsigned index_low, unsigned index_high);
+```
+
 ## Example
 
 The following example shows a comparison using a pair of yuv inputs (`src01_hrc00_576x324.yuv`, `src01_hrc01_576x324.yuv`). In addition to VMAF which is enabled with the model `../model/vmaf_float_v0.6.1.pkl`, the `psnr` metric is also computed and logged.
