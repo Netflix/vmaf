@@ -6,7 +6,7 @@ from vmaf.tools.decorator import override
 from vmaf.tools.misc import run_process
 from vmaf.core.feature_assembler import FeatureAssembler
 from vmaf.core.matlab_feature_extractor import StrredFeatureExtractor, StrredOptFeatureExtractor, SpEEDMatlabFeatureExtractor, STMADFeatureExtractor, iCIDFeatureExtractor
-from vmaf.core.quality_runner import QualityRunner
+from vmaf.core.quality_runner import QualityRunner, VmafQualityRunner
 from vmaf.core.result import Result
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
@@ -265,3 +265,12 @@ class ICIDQualityRunner(QualityRunner):
 
        vmaf_fassembler = self._get_feature_assembler_instance(asset)
        vmaf_fassembler.remove_results()
+
+
+class SpatioTemporalVmafQualityRunner(VmafQualityRunner):
+
+    TYPE = 'STVMAF'
+
+    VERSION = '1'
+
+    DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("stvmaf", "stvmaf_v1.pkl")
