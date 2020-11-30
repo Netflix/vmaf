@@ -16,52 +16,306 @@
  *
  */
 
-#ifndef LIBVMAF_H_
-#define LIBVMAF_H_
+#ifndef __VMAF_H__
+#define __VMAF_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <stdint.h>
+#include <stdio.h>
 
- /**
-  *
-  *
-  * **compute_vmaf** - Run VMAF on a series of frames from the supplied `read_frame` function
-  *
-  *
-  * `read_frame` takes the following arguments:
-  * - `float *ref_data` : A pointer to a floating point array of at least width * height elements,
-  *   which the read_frame function is to fill with the luminance data from the reference video.
-  *   The values must be between 0.0 to 255.0 (NOT 1.0).
-  *
-  * - `float *main_data` : A pointer to a floating point array of at least width * height elements,
-  *   which the read_frame function is to fill with the luminance data from the video to test.
-  *   The values must be between 0.0 to 255.0 (NOT 1.0).
-  *
-  * - `float *temp_data` : A pointer to a floating point array of at least width * height elements.
-  *   This is provided as a convenience for the user, and can be filled with any intermediate
-  *   values. The read_frame can ignore this if not needed.
-  *
-  * - `int stride_byte` : The number of bytes required between consecutive rows in
-  *   the buffers written to `ref_data` and `main_data`.
-  *
-  * - `void *user_data` : The same `user_data` pointer that the user provides to `compute_vmaf`.
-  *
-  * Other arguments to `compute_vmaf`:
-  * - `void *user_data` : Pointer to user-specific data structure that can be used to ensure `read_frame` is
-  *   provided with information of the image (width, height) and where to read it from
-  *   (e.g. file pointers, iteration counters).
-  *
-  * Most other parameters can be deduced from the usage printout of `vmafossexec`.
-  * The rest can be safely be left at 0 unless the user has specific requirements
-  */
+#include "libvmaf/compute_vmaf.h"
+#include "libvmaf/model.h"
+#include "libvmaf/picture.h"
+#include "libvmaf/feature.h"
 
-int compute_vmaf(double* vmaf_score, char* fmt, int width, int height, int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride_byte, void *user_data),
-				 void *user_data, char *model_path, char *log_path, char *log_fmt, int disable_clip, int disable_avx, int enable_transform, int phone_model, int do_psnr,
-				 int do_ssim, int do_ms_ssim, char *pool_method, int n_thread, int n_subsample, int enable_conf_interval);
+enum VmafLogLevel {
+    VMAF_LOG_LEVEL_NONE = 0,
+    VMAF_LOG_LEVEL_INFO = 1 << 0,
+};
 
-#ifdef __cplusplus
-}
-#endif
+enum VmafOutputFormat {
+    VMAF_OUTPUT_FORMAT_NONE = 0,
+    VMAF_OUTPUT_FORMAT_XML,
+    VMAF_OUTPUT_FORMAT_JSON,
+    VMAF_OUTPUT_FORMAT_CSV,
+    VMAF_OUTPUT_FORMAT_SUB,
+};
 
-#endif /* _LIBVMAF_H */
+enum VmafPoolingMethod {
+    VMAF_POOL_METHOD_UNKNOWN = 0,
+    VMAF_POOL_METHOD_MIN,
+    VMAF_POOL_METHOD_MAX,
+    VMAF_POOL_METHOD_MEAN,
+    VMAF_POOL_METHOD_HARMONIC_MEAN,
+    VMAF_POOL_METHOD_NB
+};
+
+typedef struct VmafConfiguration {
+    enum VmafLogLevel log_level;
+    unsigned n_threads;
+    unsigned n_subsample;
+    unsigned cpumask;
+} VmafConfiguration;
+
+typedef struct VmafContext VmafContext;
+
+/**
+ * Allocate and open a VMAF instance.
+ *
+ * @param vmaf The VMAF instance to open.
+ *             To be used in further libvmaf api calls.
+ *             $vmaf will be set to the allocated context.
+ *             Context should be cleaned up with `vmaf_close()` when finished.
+ *
+ * @param cfg  Configuration parameters.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg);
+
+/**
+ * Register feature extractors required by a specific `VmafModel`.
+ * This may be called multiple times using different models.
+ * In this case, the registered feature extractors will form a set, and any
+ * features required by multiple models will only be extracted once.
+ *
+ * @param vmaf  The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param model Opaque model context.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model);
+
+/**
+ * Register feature extractors required by a specific `VmafModelCollection`
+ * Like `vmaf_use_features_from_model()`, this function may be called
+ * multiple times using different model collections.
+ *
+ * @param vmaf             The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param model_collection Opaque model collection context.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_use_features_from_model_collection(VmafContext *vmaf,
+                                            VmafModelCollection *model_collection);
+
+/**
+ * Register specific feature extractor.
+ * Useful when a specific/additional feature is required, usually one which
+ * is not already provided by a model via `vmaf_use_features_from_model()`.
+ * This may be called multiple times.
+ *
+ * @param vmaf         The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param feature_name Name of feature.
+ *
+ * @param opts_dict    Feature extractor options set via
+ *                     `vmaf_feature_dictionary_set()`. If no special options
+ *                     are required this parameter can be set to NULL.
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_use_feature(VmafContext *vmaf, const char *feature_name,
+                     VmafFeatureDictionary *opts_dict);
+
+/**
+ * Import an external feature score.
+ * Useful when pre-computed feature scores are available.
+ * Also useful in the case where there is no libvmaf feature extractor
+ * implementation for a required feature.
+ *
+ * @param vmaf         The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param feature_name Name of feature.
+ *
+ * @param value        Score.
+ *
+ * @param index        Picture index.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_import_feature_score(VmafContext *vmaf, char *feature_name,
+                              double value, unsigned index);
+
+/**
+ * Read a pair of pictures and queue them for eventual feature extraction.
+ * This should be called after feature extractors are registered via
+ * `vmaf_use_features_from_model()` and/or `vmaf_use_feature()`.
+ * `VmafContext` will take ownership of both `VmafPicture`s (`ref` and `dist`)
+ * and `vmaf_picture_unref()`.
+ *
+ * When you're done reading pictures call this function again with both `ref`
+ * and `dist` set to NULL to flush all feature extractors.
+ *
+ * @param vmaf  The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param ref   Reference picture.
+ *
+ * @param dist  Distorted picture.
+ *
+ * @param index Picture index.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
+                       unsigned index);
+
+/**
+ * Predict VMAF score at specific index.
+ *
+ * @param vmaf   The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param model  Opaque model context.
+ *
+ * @param index  Picture index.
+ *
+ * @param score  Predicted score.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_score_at_index(VmafContext *vmaf, VmafModel *model, double *score,
+                        unsigned index);
+
+/**
+ * Predict VMAF score at specific index, using a model collection.
+ *
+ * @param vmaf              The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param model_collection  Opaque model collection context.
+ *
+ * @param index             Picture index.
+ *
+ * @param score             Predicted score.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_score_at_index_model_collection(VmafContext *vmaf,
+                                         VmafModelCollection *model_collection,
+                                         VmafModelCollectionScore *score,
+                                         unsigned index);
+
+/**
+ * Fetch feature score at specific index.
+ *
+ * @param vmaf          The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param feature_name  Name of the feature to fetch.
+ *
+ * @param index         Picture index.
+ *
+ * @param score         Score.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_feature_score_at_index(VmafContext *vmaf, const char *feature_name,
+                                double *score, unsigned index);
+
+/**
+ * Pooled VMAF score for a specific interval.
+ *
+ * @param vmaf         The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param model        Opaque model context.
+ *
+ * @param pool_method  Temporal pooling method to use.
+ *
+ * @param score        Pooled score.
+ *
+ * @param index_low    Low picture index of pooling interval.
+ *
+ * @param index_high   High picture index of pooling interval.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
+                      enum VmafPoolingMethod pool_method, double *score,
+                      unsigned index_low, unsigned index_high);
+
+/**
+ * Pooled VMAF score for a specific interval, using a model collection.
+ *
+ * @param vmaf              The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param model_collection  Opaque model collection context.
+ *
+ * @param pool_method       Temporal pooling method to use.
+ *
+ * @param score             Pooled score.
+ *
+ * @param index_low         Low picture index of pooling interval.
+ *
+ * @param index_high        High picture index of pooling interval.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_score_pooled_model_collection(VmafContext *vmaf,
+                                       VmafModelCollection *model_collection,
+                                       enum VmafPoolingMethod pool_method,
+                                       VmafModelCollectionScore *score,
+                                       unsigned index_low, unsigned index_high);
+
+/**
+ * Pooled feature score for a specific interval.
+ *
+ * @param vmaf          The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param feature_name  Name of the feature to fetch.
+ *
+ * @param pool_method   Temporal pooling method to use.
+ *
+ * @param score         Pooled score.
+ *
+ * @param index_low     Low picture index of pooling interval.
+ *
+ * @param index_high    High picture index of pooling interval.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_feature_score_pooled(VmafContext *vmaf, const char *feature_name,
+                              enum VmafPoolingMethod pool_method, double *score,
+                              unsigned index_low, unsigned index_high);
+
+/**
+ * Close a VMAF instance and free all associated memory.
+ *
+ * @param vmaf The VMAF instance to close.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_close(VmafContext *vmaf);
+
+/**
+ * Write VMAF stats to an output file.
+ *
+ * @param vmaf         The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param output_path  Output file path.
+ *
+ * @param fmt          Output file format.
+ *                     See `enum VmafOutputFormat` for options.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_write_output(VmafContext *vmaf, const char *output_path,
+                      enum VmafOutputFormat fmt);
+
+/**
+ * Get libvmaf version.
+ */
+const char *vmaf_version(void);
+
+#endif /* __VMAF_H__ */

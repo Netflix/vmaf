@@ -65,14 +65,14 @@ static char *test_json_model()
 
     VmafModel *model_json;
     VmafModelConfig cfg_json = { 0 };
-    const char *path_json = "../../model/vmaf_float_v0.6.1neg.json";
+    const char *path_json = "../../model/vmaf_v0.6.1neg.json";
 
     err = vmaf_read_json_model_from_path(&model_json, &cfg_json, path_json);
     mu_assert("problem during vmaf_read_json_model", !err);
 
     VmafModel *model;
     VmafModelConfig cfg = { 0 };
-    const char *version = "vmaf_float_v0.6.1neg";
+    const char *version = "vmaf_v0.6.1neg";
 
     err = vmaf_model_load(&model, &cfg, version);
     mu_assert("problem during vmaf_model_load_from_path", !err);
@@ -92,13 +92,13 @@ static char *test_built_in_model()
 
     VmafModel *model;
     VmafModelConfig cfg = { 0 };
-    const char *version = "vmaf_float_v0.6.1neg";
+    const char *version = "vmaf_v0.6.1neg";
     err = vmaf_model_load(&model, &cfg, version);
     mu_assert("problem during vmaf_model_load", !err);
 
     VmafModel *model_file;
     VmafModelConfig cfg_file = { 0 };
-    const char *path = "../../model/vmaf_float_v0.6.1neg.json";
+    const char *path = "../../model/vmaf_v0.6.1neg.json";
     err = vmaf_model_load_from_path(&model_file, &cfg_file, path);
     mu_assert("problem during vmaf_model_load_from_path", !err);
 
@@ -111,6 +111,7 @@ static char *test_built_in_model()
 }
 #endif
 
+#if VMAF_FLOAT_FEATURES
 static char *test_model_collection()
 {
     int err = 0;
@@ -141,6 +142,7 @@ static char *test_model_collection()
     vmaf_model_collection_destroy(json_model_collection);
     return NULL;
 }
+#endif
 
 static char *test_model_load_and_destroy()
 {

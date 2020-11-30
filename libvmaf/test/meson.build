@@ -7,7 +7,7 @@ test_inc = include_directories('.')
 test_context = executable('test_context',
     ['test.c', 'test_context.c'],
     include_directories : [libvmaf_inc, test_inc],
-    link_with : libvmaf_rc.get_static_lib(),
+    link_with : libvmaf.get_static_lib(),
     dependencies:[stdatomic_dependency],
 )
 
@@ -58,8 +58,7 @@ test_feature_extractor = executable('test_feature_extractor',
     objects : [
       platform_specific_cpu_objects,
       libvmaf_feature_static_lib.extract_all_objects(),
-      libvmaf_rc_feature_static_lib.extract_all_objects(),
-      libvmaf_rc_cpu_static_lib.extract_all_objects(),
+      libvmaf_cpu_static_lib.extract_all_objects(),
     ]
 )
 
@@ -71,7 +70,7 @@ test_dict = executable('test_dict',
 test_cpu = executable('test_cpu',
     ['test.c', 'test_cpu.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
-    objects : libvmaf_rc_cpu_static_lib.extract_all_objects(),
+    objects : libvmaf_cpu_static_lib.extract_all_objects(),
 )
 
 test_ref = executable('test_ref',

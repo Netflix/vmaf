@@ -73,27 +73,11 @@ jobs:
           }
           make --quiet -j $(nproc) install
 
-      - name: Test ffmpeg
-        run: |
-          curl "https://gist.githubusercontent.com/1480c1/0c4575da638ef6e8203feffd0597de16/raw/akiyo_cif.tar.xz.base64" | base64 -d | xz -d | 7z x -si -ttar
-          vmaf_score=$(ffmpeg -hide_banner -nostdin -nostats -i encoded.mkv -i orig.mkv -filter_complex libvmaf=model_path=model/vmaf_float_v0.6.1.pkl -f null - 2>&1 | tee temp.txt | grep 'VMAF score' | tr ' ' '\n' | tail -n1)
-          cat temp.txt
-          echo "$vmaf_score"
-          if [[ $vmaf_score != "93.656203" ]]; then
-            echo "vmaf Score doesn't match 93.656203"
-            exit 1
-          else
-            echo "vmaf score matches"
-            exit 0
-          fi
-
       - name: Get binary path & Current Release
         id: get_info
         run: |
-          ldd "$MINGW_PREFIX/bin/vmafossexec.exe" || true
-          echo "::set-output name=path::$(cygpath -m "$(command -v vmafossexec)")"
-          ldd "$MINGW_PREFIX/bin/vmaf_rc.exe" || true
-          echo "::set-output name=vmaf_rc_path::$(cygpath -m "$(command -v vmaf_rc)")"
+          ldd "$MINGW_PREFIX/bin/vmaf.exe" || true
+          echo "::set-output name=path::$(cygpath -m "$(command -v vmaf)")"
           echo "::set-output name=upload_url::$(curl -L https://api.github.com/repos/${{ github.repository }}/releases/tags/$(cut -d/ -f3 <<< ${{ github.ref }}) | jq -r ."upload_url")"
 
       - name: Upload vmafossexec
@@ -110,19 +94,4 @@ jobs:
           upload_url: ${{ steps.get_info.outputs.upload_url }}
           asset_path: ${{ steps.get_info.outputs.path }}
           asset_name: vmafossexec.exe
-          asset_content_type: application/vnd.microsoft.portable-executable
-      - name: Upload vmaf_rc
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.msystem }}-vmaf_rc
-          path: ${{ steps.get_info.outputs.vmaf_rc_path }}
-      - name: Upload vmaf_rc
-        if: steps.get_info.outputs.upload_url != 'null' && matrix.msystem == 'MINGW64'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.get_info.outputs.upload_url }}
-          asset_path: ${{ steps.get_info.outputs.vmaf_rc_path }}
-          asset_name: vmaf_rc.exe
           asset_content_type: application/vnd.microsoft.portable-executable

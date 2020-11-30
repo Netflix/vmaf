@@ -17,7 +17,7 @@
  */
 
 #include "test.h"
-#include "libvmaf/libvmaf.rc.h"
+#include "libvmaf/libvmaf.h"
 
 static char *test_context_init_and_close()
 {

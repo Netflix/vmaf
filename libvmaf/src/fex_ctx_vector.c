@@ -75,7 +75,7 @@ int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
                 VmafFeatureExtractorContext *f = rfe->fex_ctx[i];
                 f->opts_dict = d;
                 if (f->fex->options && f->fex->priv) {
-                    int err = parse_options(f);
+                    int err = vmaf_fex_ctx_parse_options(f);
                     if (err) return err;
                 }
                 return vmaf_feature_extractor_context_destroy(fex_ctx);

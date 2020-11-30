@@ -21,38 +21,43 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "config.h"
 #include "feature_extractor.h"
 
+#if VMAF_FLOAT_FEATURES
 extern VmafFeatureExtractor vmaf_fex_float_ssim;
-extern VmafFeatureExtractor vmaf_fex_psnr;
-extern VmafFeatureExtractor vmaf_fex_psnr_hvs;
 extern VmafFeatureExtractor vmaf_fex_float_psnr;
 extern VmafFeatureExtractor vmaf_fex_float_ansnr;
 extern VmafFeatureExtractor vmaf_fex_float_adm;
-extern VmafFeatureExtractor vmaf_fex_integer_adm;
-extern VmafFeatureExtractor vmaf_fex_float_vif;
-extern VmafFeatureExtractor vmaf_fex_integer_motion;
-extern VmafFeatureExtractor vmaf_fex_integer_vif;
 extern VmafFeatureExtractor vmaf_fex_float_motion;
 extern VmafFeatureExtractor vmaf_fex_float_ms_ssim;
 extern VmafFeatureExtractor vmaf_fex_float_moment;
+extern VmafFeatureExtractor vmaf_fex_float_vif;
+#endif
 extern VmafFeatureExtractor vmaf_fex_ciede;
+extern VmafFeatureExtractor vmaf_fex_psnr;
+extern VmafFeatureExtractor vmaf_fex_psnr_hvs;
+extern VmafFeatureExtractor vmaf_fex_integer_adm;
+extern VmafFeatureExtractor vmaf_fex_integer_motion;
+extern VmafFeatureExtractor vmaf_fex_integer_vif;
 
 static VmafFeatureExtractor *feature_extractor_list[] = {
+#if VMAF_FLOAT_FEATURES
     &vmaf_fex_float_ssim,
-    &vmaf_fex_psnr,
-    &vmaf_fex_psnr_hvs,
     &vmaf_fex_float_psnr,
     &vmaf_fex_float_ansnr,
     &vmaf_fex_float_adm,
-    &vmaf_fex_integer_adm,
     &vmaf_fex_float_vif,
-    &vmaf_fex_integer_motion,
-    &vmaf_fex_integer_vif,
     &vmaf_fex_float_motion,
     &vmaf_fex_float_ms_ssim,
     &vmaf_fex_float_moment,
+#endif
     &vmaf_fex_ciede,
+    &vmaf_fex_psnr,
+    &vmaf_fex_psnr_hvs,
+    &vmaf_fex_integer_adm,
+    &vmaf_fex_integer_motion,
+    &vmaf_fex_integer_vif,
     NULL
 };
 
@@ -84,7 +89,7 @@ VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(char *name)
     return NULL;
 }
 
-int parse_options(VmafFeatureExtractorContext *fex_ctx)
+int vmaf_fex_ctx_parse_options(VmafFeatureExtractorContext *fex_ctx)
 {
     VmafOption *opt = NULL;
     for (unsigned i = 0; (opt = &fex_ctx->fex->options[i]); i++) {
@@ -121,7 +126,7 @@ int vmaf_feature_extractor_context_create(VmafFeatureExtractorContext **fex_ctx,
 
     f->opts_dict = opts_dict;
     if (f->fex->options && f->fex->priv) {
-        int err = parse_options(f);
+        int err = vmaf_fex_ctx_parse_options(f);
         if (err) return err;
     }
 

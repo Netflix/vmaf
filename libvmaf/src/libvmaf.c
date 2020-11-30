@@ -24,7 +24,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "libvmaf/libvmaf.rc.h"
+#include "libvmaf/libvmaf.h"
 #include "libvmaf/feature.h"
 
 #include "cpu.h"

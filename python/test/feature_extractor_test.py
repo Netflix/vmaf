@@ -225,6 +225,7 @@ class FeatureExtractorTest(unittest.TestCase):
         try: self.assertAlmostEqual(results[1]['VMAF_integer_feature_adm3_score'], 1.0, places=4)
         except AssertionError as e: self.verificationErrors.append(str(e))
 
+    @unittest.skip("vifdiff alternative needed, vmaf_feature executable deprecated")
     def test_run_vif_frame_difference_fextractor(self):
 
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()

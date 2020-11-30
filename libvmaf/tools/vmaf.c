@@ -7,8 +7,8 @@
 #include "spinner.h"
 #include "vidinput.h"
 
-#include <libvmaf/picture.h>
-#include <libvmaf/libvmaf.rc.h>
+#include "libvmaf/picture.h"
+#include "libvmaf/libvmaf.h"
 
 static enum VmafPixelFormat pix_fmt_map(int pf)
 {

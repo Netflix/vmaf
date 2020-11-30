@@ -4,7 +4,7 @@
 
 #include "vidinput.h"
 
-#include <libvmaf/libvmaf.rc.h>
+#include "libvmaf/libvmaf.h"
 
 /** Linkage will break without this if using a C++ compiler, and will issue
  * warnings without this for a C compiler*/

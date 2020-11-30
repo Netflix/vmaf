@@ -99,18 +99,25 @@ endif
 
 json_model_c_sources = []
 built_in_models_enabled = get_option('built_in_models') == true
+float_enabled = get_option('enable_float') == true
+cdata.set10('VMAF_FLOAT_FEATURES', float_enabled)
 
 if built_in_models_enabled
     xxd = find_program('xxd', required: false)
     if xxd.found()
         model_files = [
-            'vmaf_float_v0.6.1neg.json',
             'vmaf_v0.6.1.json',
-            'vmaf_float_v0.6.1.json',
             'vmaf_b_v0.6.3.json',
             'vmaf_v0.6.1neg.json',
-            'vmaf_float_b_v0.6.3.json',
         ]
+
+        if float_enabled
+            model_files += [
+              'vmaf_float_v0.6.1neg.json',
+              'vmaf_float_v0.6.1.json',
+              'vmaf_float_b_v0.6.3.json',
+            ]
+        endif
 
         foreach model_file : model_files
             json_model_c_sources += custom_target(
@@ -127,7 +134,7 @@ endif
 
 config_h_target = configure_file(output: 'config.h', configuration: cdata)
 
-libvmaf_rc_cpu_sources = [
+libvmaf_cpu_sources = [
     src_dir + 'cpu.c',
 ]
 
@@ -138,9 +145,9 @@ if is_asm_enabled
             'x86/cpuid.asm',
         )
         libvmaf_nasm_objects = nasm_gen.process(libvmaf_sources_asm)
-        libvmaf_rc_cpu_sources += libvmaf_nasm_objects
+        libvmaf_cpu_sources += libvmaf_nasm_objects
 
-        libvmaf_rc_cpu_sources += files(
+        libvmaf_cpu_sources += files(
             src_dir + 'x86/cpu.c',
         )
     endif
@@ -151,7 +158,7 @@ ptools_path = './third_party/ptools/'
 opencontainers_path = ptools_path + 'opencontainers_1_8_4'
 opencontainers_include = include_directories(opencontainers_path + '/include')
 
-libvmaf_rc_include = include_directories(
+libvmaf_include = include_directories(
     opencontainers_path + '/include',
     '../include',
     src_dir,
@@ -161,10 +168,10 @@ libvmaf_rc_include = include_directories(
     opencontainers_path + '/include',
 )
 
-libvmaf_rc_cpu_static_lib = static_library(
-    'libvmaf_rc_cpu',
-    libvmaf_rc_cpu_sources,
-    include_directories : [libvmaf_rc_include],
+libvmaf_cpu_static_lib = static_library(
+    'libvmaf_cpu',
+    libvmaf_cpu_sources,
+    include_directories : [libvmaf_include],
 )
 
 platform_specific_cpu_objects = []
@@ -258,96 +265,63 @@ vmaf_include = include_directories(
 )
 
 libvmaf_feature_sources = [
-    feature_src_dir + 'common/alignment.c',
-    feature_src_dir + 'common/convolution.c',
-    feature_src_dir + 'offset.c',
-    feature_src_dir + 'adm.c',
-    feature_src_dir + 'adm_tools.c',
-    feature_src_dir + 'ansnr.c',
-    feature_src_dir + 'ansnr_tools.c',
-    feature_src_dir + 'vif.c',
-    feature_src_dir + 'vif_tools.c',
-    feature_src_dir + 'motion.c',
-    feature_src_dir + 'psnr.c',
-    feature_src_dir + 'psnr_tools.c',
-    feature_src_dir + 'ssim.c',
-    feature_src_dir + 'ms_ssim.c',
-    feature_src_dir + 'moment.c',
-    feature_src_dir + 'all.c',
-    feature_src_dir + 'common/blur_array.c',
-    feature_src_dir + 'iqa/math_utils.c',
-    feature_src_dir + 'iqa/convolve.c',
-    feature_src_dir + 'iqa/decimate.c',
-    feature_src_dir + 'iqa/ssim_tools.c',
-]
-
-libvmaf_feature_static_lib = static_library(
-    'libvmaf_feature',
-    libvmaf_feature_sources,
-    include_directories : [vmaf_include, vmaf_base_include],
-    c_args : ['-DHAVE_CONFIG_H'],
-    dependencies: [stdatomic_dependency],
-)
-
-vmaf_sources = [
-    third_party_dir + 'pugixml/pugixml.cpp',
-    src_dir + 'mem.c',
-    src_dir + 'combo.c',
-    src_dir + 'cpu_info.c',
-    src_dir + 'svm.cpp',
-    src_dir + 'darray.c',
-    src_dir + 'libvmaf.cpp',
-    src_dir + 'vmaf.cpp',
-]
-
-libvmaf = both_libraries(
-    'vmaf',
-    vmaf_sources,
-    include_directories : vmaf_include,
-    c_args : vmaf_cflags_common,
-    cpp_args : vmaf_cflags_common,
-    dependencies : [thread_lib, stdatomic_dependency],
-    objects : [
-        platform_specific_cpu_objects,
-        libptools.extract_all_objects(),
-        libvmaf_feature_static_lib.extract_all_objects(),
-        libvmaf_rc_cpu_static_lib.extract_all_objects(),
-    ],
-    install: true,
-    soversion: vmaf_soversion,
-    version: vmaf_soname_version,
-)
-
-libvmaf_rc_feature_sources = [
     feature_src_dir + 'picture_copy.c',
     feature_src_dir + 'integer_psnr.c',
     feature_src_dir + 'psnr_hvs.c',
     feature_src_dir + 'feature_extractor.c',
     feature_src_dir + 'alias.c',
-    feature_src_dir + 'float_adm.c',
     feature_src_dir + 'integer_adm.c',
     feature_src_dir + 'feature_collector.c',
-    feature_src_dir + 'float_psnr.c',
-    feature_src_dir + 'float_ansnr.c',
     feature_src_dir + 'integer_motion.c',
-    feature_src_dir + 'float_motion.c',
-    feature_src_dir + 'float_ssim.c',
-    feature_src_dir + 'float_ms_ssim.c',
-    feature_src_dir + 'float_vif.c',
     feature_src_dir + 'integer_vif.c',
-    feature_src_dir + 'float_moment.c',
+    feature_src_dir + 'integer_ssim.c',
     feature_src_dir + 'ciede.c',
+    feature_src_dir + 'common/alignment.c',
 ]
 
-libvmaf_rc_feature_static_lib = static_library(
-    'libvmaf_rc_feature',
-    libvmaf_rc_feature_sources,
-    include_directories : [libvmaf_rc_include],
+if float_enabled
+    libvmaf_feature_sources += [
+        feature_src_dir + 'float_adm.c',
+        feature_src_dir + 'float_psnr.c',
+        feature_src_dir + 'float_ansnr.c',
+        feature_src_dir + 'float_motion.c',
+        feature_src_dir + 'float_ssim.c',
+        feature_src_dir + 'float_ms_ssim.c',
+        feature_src_dir + 'float_vif.c',
+        feature_src_dir + 'float_moment.c',
+
+        feature_src_dir + 'common/convolution.c',
+        feature_src_dir + 'offset.c',
+        feature_src_dir + 'adm.c',
+        feature_src_dir + 'adm_tools.c',
+        feature_src_dir + 'ansnr.c',
+        feature_src_dir + 'ansnr_tools.c',
+        feature_src_dir + 'vif.c',
+        feature_src_dir + 'vif_tools.c',
+        feature_src_dir + 'motion.c',
+        feature_src_dir + 'psnr.c',
+        feature_src_dir + 'psnr_tools.c',
+        feature_src_dir + 'ssim.c',
+        feature_src_dir + 'ms_ssim.c',
+        feature_src_dir + 'moment.c',
+        feature_src_dir + 'all.c',
+        feature_src_dir + 'common/blur_array.c',
+        feature_src_dir + 'iqa/math_utils.c',
+        feature_src_dir + 'iqa/convolve.c',
+        feature_src_dir + 'iqa/decimate.c',
+        feature_src_dir + 'iqa/ssim_tools.c',
+    ]
+endif
+
+libvmaf_feature_static_lib = static_library(
+    'libvmaf_feature',
+    libvmaf_feature_sources,
+    include_directories : [libvmaf_include, vmaf_include],
     dependencies: [stdatomic_dependency],
 )
 
-libvmaf_rc_sources = [
-    src_dir + 'libvmaf.rc.c',
+libvmaf_sources = [
+    src_dir + 'libvmaf.c',
     src_dir + 'compute_vmaf.c',
     src_dir + 'predict.c',
     src_dir + 'model.c',
@@ -365,10 +339,16 @@ libvmaf_rc_sources = [
     src_dir + 'pdjson.c',
 ]
 
-libvmaf_rc = both_libraries(
-    'vmaf_rc',
-    [libvmaf_rc_sources, rev_target, json_model_c_sources],
-    include_directories : [vmaf_include, libvmaf_inc],
+if host_machine.system() == 'windows'
+    vmaf_soversion = ''
+else
+    vmaf_soversion = vmaf_api_version_major
+endif
+
+libvmaf = both_libraries(
+    'vmaf',
+    [libvmaf_sources, rev_target, json_model_c_sources],
+    include_directories : [libvmaf_inc, vmaf_include],
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,
     dependencies : [
@@ -380,10 +360,11 @@ libvmaf_rc = both_libraries(
         platform_specific_cpu_objects,
         libptools.extract_all_objects(),
         libvmaf_feature_static_lib.extract_all_objects(),
-        libvmaf_rc_feature_static_lib.extract_all_objects(),
-        libvmaf_rc_cpu_static_lib.extract_all_objects(),
+        libvmaf_cpu_static_lib.extract_all_objects(),
     ],
-    install: get_option('install_rc'),
+    version : vmaf_soname_version,
+    soversion : vmaf_soversion,
+    install: true,
 )
 
 pkg_mod = import('pkgconfig')

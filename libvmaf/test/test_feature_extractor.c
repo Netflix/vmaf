@@ -31,14 +31,14 @@ static char *test_get_feature_extractor_by_name_and_feature_name()
     VmafFeatureExtractor *fex;
     fex = vmaf_get_feature_extractor_by_name("");
     mu_assert("problem during vmaf_get_feature_extractor_by_name", !fex);
-    fex = vmaf_get_feature_extractor_by_name("float_vif");
+    fex = vmaf_get_feature_extractor_by_name("vif");
     mu_assert("problem vmaf_get_feature_extractor_by_name",
-              !strcmp(fex->name, "float_vif"));
+              !strcmp(fex->name, "vif"));
 
     fex =
-        vmaf_get_feature_extractor_by_feature_name("VMAF_feature_adm2_score");
+        vmaf_get_feature_extractor_by_feature_name("VMAF_integer_feature_adm2_score");
     mu_assert("problem during vmaf_get_feature_extractor_by_feature_name",
-              fex && !strcmp(fex->name, "float_adm"));
+              fex && !strcmp(fex->name, "adm"));
 
     return NULL;
 }
@@ -52,7 +52,7 @@ static char *test_feature_extractor_context_pool()
     err = vmaf_fex_ctx_pool_create(&pool, n_threads);
     mu_assert("problem during vmaf_fex_ctx_pool_create", !err);
 
-    VmafFeatureExtractor *fex = vmaf_get_feature_extractor_by_name("float_ssim");
+    VmafFeatureExtractor *fex = vmaf_get_feature_extractor_by_name("psnr");
     mu_assert("problem during vmaf_get_feature_extractor_by_name", fex);
 
     VmafFeatureExtractorContext *fex_ctx[n_threads];
@@ -60,7 +60,7 @@ static char *test_feature_extractor_context_pool()
         err = vmaf_fex_ctx_pool_aquire(pool, fex, NULL, &fex_ctx[i]);
         mu_assert("problem during vmaf_fex_ctx_pool_aquire", !err);
         mu_assert("fex_ctx[i] should be ssim feature extractor",
-                  !strcmp(fex_ctx[i]->fex->name, "float_ssim"));
+                  !strcmp(fex_ctx[i]->fex->name, "psnr"));
     }
 
     for (unsigned i = 0; i < n_threads; i++) {
@@ -79,9 +79,9 @@ static char *test_feature_extractor_flush()
     int err = 0;
 
     VmafFeatureExtractor *fex;
-    fex = vmaf_get_feature_extractor_by_name("float_motion");
+    fex = vmaf_get_feature_extractor_by_name("motion");
     mu_assert("problem vmaf_get_feature_extractor_by_name",
-              !strcmp(fex->name, "float_motion"));
+              !strcmp(fex->name, "motion"));
     VmafFeatureExtractorContext *fex_ctx;
     err = vmaf_feature_extractor_context_create(&fex_ctx, fex, NULL);
     mu_assert("problem during vmaf_feature_extractor_context_create", !err);
@@ -100,18 +100,18 @@ static char *test_feature_extractor_flush()
     err = vmaf_feature_extractor_context_extract(fex_ctx, &ref, NULL, &dist,
                                                  NULL, 0, vfc);
     mu_assert("problem during vmaf_feature_extractor_context_extract", !err);
-    err = vmaf_feature_collector_get_score(vfc, "VMAF_feature_motion2_score",
+    err = vmaf_feature_collector_get_score(vfc, "VMAF_integer_feature_motion2_score",
                                            &score, 0);
     mu_assert("problem during vmaf_feature_collector_get_score", !err);
     err = vmaf_feature_extractor_context_extract(fex_ctx, &ref, NULL, &dist,
                                                  NULL, 1, vfc);
     mu_assert("problem during vmaf_feature_extractor_context_extract", !err);
-    err = vmaf_feature_collector_get_score(vfc, "VMAF_feature_motion2_score",
+    err = vmaf_feature_collector_get_score(vfc, "VMAF_integer_feature_motion2_score",
                                            &score, 0);
     mu_assert("problem during vmaf_feature_extractor_context_flush", !err);
     err = vmaf_feature_extractor_context_flush(fex_ctx, vfc);
     mu_assert("problem during vmaf_feature_extractor_context_flush", !err);
-    err = vmaf_feature_collector_get_score(vfc, "VMAF_feature_motion2_score",
+    err = vmaf_feature_collector_get_score(vfc, "VMAF_integer_feature_motion2_score",
                                            &score, 1);
     mu_assert("problem during vmaf_feature_collector_get_score", !err);
 
