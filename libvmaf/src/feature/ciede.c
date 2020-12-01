@@ -29,23 +29,28 @@
 typedef struct CiedeState {
     VmafPicture ref;
     VmafPicture dist;
+    void (*scale_chroma_planes)(VmafPicture *in, VmafPicture *out);
 } CiedeState;
 
-static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
-                unsigned bpc, unsigned w, unsigned h)
+static void scale_chroma_planes_hbd(VmafPicture *in, VmafPicture *out)
 {
-    CiedeState *s = fex->priv;
-    int err = 0;
+    const int ss_hor = in->pix_fmt != VMAF_PIX_FMT_YUV444P;
+    const int ss_ver = in->pix_fmt == VMAF_PIX_FMT_YUV420P;
 
-    if (pix_fmt == VMAF_PIX_FMT_YUV444P)
-        return 0;
-
-    err |= vmaf_picture_alloc(&s->ref, VMAF_PIX_FMT_YUV444P, bpc, w, h);
-    err |= vmaf_picture_alloc(&s->dist, VMAF_PIX_FMT_YUV444P, bpc, w, h);
-    return err;
+    for (unsigned p = 0; p < 3; p++) {
+        uint8_t *in_buf = in->data[p];
+        uint8_t *out_buf = out->data[p];
+        for (unsigned i = 0; i < out->h[p]; i++) {
+            for (unsigned j = 0; j < out->w[p]; j++) {
+                out_buf[j] = in_buf[(j / ((p && ss_ver) ? 2 : 1))];
+            }
+            in_buf += (((p && ss_hor) ? i % 2 : 1) * in->stride[p]) / 2;
+            out_buf += out->stride[p] / 2;
+        }
+    }
 }
 
-static void scale_picture(VmafPicture *in, VmafPicture *out)
+static void scale_chroma_planes(VmafPicture *in, VmafPicture *out)
 {
     const int ss_hor = in->pix_fmt != VMAF_PIX_FMT_YUV444P;
     const int ss_ver = in->pix_fmt == VMAF_PIX_FMT_YUV420P;
@@ -61,6 +66,33 @@ static void scale_picture(VmafPicture *in, VmafPicture *out)
             out_buf += out->stride[p];
         }
     }
+}
+
+static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
+                unsigned bpc, unsigned w, unsigned h)
+{
+    CiedeState *s = fex->priv;
+    int err = 0;
+
+    if (pix_fmt == VMAF_PIX_FMT_YUV444P)
+        return 0;
+
+    switch (bpc) {
+    case 8:
+        s->scale_chroma_planes = scale_chroma_planes;
+        break;
+    case 10:
+    case 12:
+    case 16:
+        s->scale_chroma_planes = scale_chroma_planes_hbd;
+        break;
+    default:
+        return -EINVAL;
+    }
+
+    err |= vmaf_picture_alloc(&s->ref, VMAF_PIX_FMT_YUV444P, bpc, w, h);
+    err |= vmaf_picture_alloc(&s->dist, VMAF_PIX_FMT_YUV444P, bpc, w, h);
+    return err;
 }
 
 static float get_h_prime(const float x, const float y)
@@ -259,8 +291,8 @@ static int extract(VmafFeatureExtractor *fex,
         s->ref = *ref_pic;
         s->dist = *dist_pic;
     } else {
-        scale_picture(ref_pic, &s->ref);
-        scale_picture(dist_pic, &s->dist);
+        s->scale_chroma_planes(ref_pic, &s->ref);
+        s->scale_chroma_planes(dist_pic, &s->dist);
     }
 
     double de00_sum = 0.;
@@ -280,12 +312,12 @@ static int extract(VmafFeatureExtractor *fex,
             case 10:
             case 12:
             case 16:
-                r_y = ((uint16_t*)s->ref.data[0])[i * s->ref.stride[0] + j];
-                r_u = ((uint16_t*)s->ref.data[1])[i * s->ref.stride[1] + j];
-                r_v = ((uint16_t*)s->ref.data[2])[i * s->ref.stride[2] + j];
-                d_y = ((uint16_t*)s->dist.data[0])[i * s->dist.stride[0] + j];
-                d_u = ((uint16_t*)s->dist.data[1])[i * s->dist.stride[1] + j];
-                d_v = ((uint16_t*)s->dist.data[2])[i * s->dist.stride[2] + j];
+                r_y = ((uint16_t*)s->ref.data[0])[i * (s->ref.stride[0] / 2) + j];
+                r_u = ((uint16_t*)s->ref.data[1])[i * (s->ref.stride[1] / 2) + j];
+                r_v = ((uint16_t*)s->ref.data[2])[i * (s->ref.stride[2] / 2) + j];
+                d_y = ((uint16_t*)s->dist.data[0])[i * (s->dist.stride[0] / 2) + j];
+                d_u = ((uint16_t*)s->dist.data[1])[i * (s->dist.stride[1] / 2) + j];
+                d_v = ((uint16_t*)s->dist.data[2])[i * (s->dist.stride[2] / 2) + j];
                 break;
             default:
                 return -EINVAL;
