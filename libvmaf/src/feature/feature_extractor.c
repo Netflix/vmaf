@@ -23,7 +23,6 @@
 
 #include "feature_extractor.h"
 
-extern VmafFeatureExtractor vmaf_fex_ssim;
 extern VmafFeatureExtractor vmaf_fex_float_ssim;
 extern VmafFeatureExtractor vmaf_fex_psnr;
 extern VmafFeatureExtractor vmaf_fex_psnr_hvs;
@@ -39,7 +38,6 @@ extern VmafFeatureExtractor vmaf_fex_float_ms_ssim;
 extern VmafFeatureExtractor vmaf_fex_float_moment;
 
 static VmafFeatureExtractor *feature_extractor_list[] = {
-    &vmaf_fex_ssim,
     &vmaf_fex_float_ssim,
     &vmaf_fex_psnr,
     &vmaf_fex_psnr_hvs,
