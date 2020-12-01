@@ -281,14 +281,19 @@ class VmafQualityRunnerModelMixin(object):
         else:
             model_filepath = self.DEFAULT_MODEL_FILEPATH
         train_test_model_class = self.get_train_test_model_class()
+        model = self._load_model_from_filepath(train_test_model_class, model_filepath, self.logger)
+        return model
+
+    @classmethod
+    def _load_model_from_filepath(cls, train_test_model_class, model_filepath, logger):
         format = os.path.splitext(model_filepath)[1]
         supported_formats = ['.pkl', '.json']
-        self._assert_extension_format(supported_formats, format)
+        cls._assert_extension_format(supported_formats, format)
         try:
             if '.pkl' in format:
-                model = train_test_model_class.from_file(model_filepath, self.logger, format='pkl')
+                model = train_test_model_class.from_file(model_filepath, logger, format='pkl')
             elif '.json' in format:
-                model = train_test_model_class.from_file(model_filepath, self.logger, format='json', combined=True)
+                model = train_test_model_class.from_file(model_filepath, logger, format='json', combined=True)
             else:
                 assert False
         except AssertionError as e:
@@ -620,7 +625,8 @@ class EnsembleVmafQualityRunner(VmafQualityRunner):
 
         model = []
         for model_filepath_part in model_filepath:
-            model.append(TrainTestModel.from_file(model_filepath_part, self.logger))
+            model_ = self._load_model_from_filepath(TrainTestModel, model_filepath_part, self.logger)
+            model.append(model_)
         return model
 
     @override(Executor)
