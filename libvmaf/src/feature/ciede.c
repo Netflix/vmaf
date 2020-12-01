@@ -38,8 +38,8 @@ static void scale_chroma_planes_hbd(VmafPicture *in, VmafPicture *out)
     const int ss_ver = in->pix_fmt == VMAF_PIX_FMT_YUV420P;
 
     for (unsigned p = 0; p < 3; p++) {
-        uint8_t *in_buf = in->data[p];
-        uint8_t *out_buf = out->data[p];
+        uint16_t *in_buf = in->data[p];
+        uint16_t *out_buf = out->data[p];
         for (unsigned i = 0; i < out->h[p]; i++) {
             for (unsigned j = 0; j < out->w[p]; j++) {
                 out_buf[j] = in_buf[(j / ((p && ss_ver) ? 2 : 1))];
@@ -245,9 +245,9 @@ static LABColor get_lab_color(float y, float u, float v, unsigned bpc)
 {
     const float scale = 1 << (bpc - 8);
 
-    y = (y - 16.)  * scale * (1. / (219. * scale));
-    u = (u - 128.) * scale * (1. / (224. * scale));
-    v = (v - 128.) * scale * (1. / (224. * scale));
+    y = (y - 16.  * scale) * (1. / (219. * scale));
+    u = (u - 128. * scale) * (1. / (224. * scale));
+    v = (v - 128. * scale) * (1. / (224. * scale));
 
     // Assumes BT.709
     float r = y + 1.28033 * v;
