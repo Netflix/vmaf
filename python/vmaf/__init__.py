@@ -261,7 +261,8 @@ class ExternalProgramCaller(object):
         if psnr:
             vmafrc_cmd += ' --feature psnr'
         if ssim:
-            vmafrc_cmd += ' --feature ssim'
+            # vmafrc_cmd += ' --feature ssim'
+            assert False, 'ssim (the daala integer ssim) is deprecated'
         if ms_ssim:
             vmafrc_cmd += ' --feature ms_ssim'
 
