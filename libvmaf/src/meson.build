@@ -153,19 +153,11 @@ if is_asm_enabled
     endif
 endif
 
-# Build libptools
-ptools_path = './third_party/ptools/'
-opencontainers_path = ptools_path + 'opencontainers_1_8_4'
-opencontainers_include = include_directories(opencontainers_path + '/include')
-
 libvmaf_include = include_directories(
-    opencontainers_path + '/include',
     '../include',
     src_dir,
     feature_src_dir,
     feature_src_dir + 'common',
-    ptools_path,
-    opencontainers_path + '/include',
 )
 
 libvmaf_cpu_static_lib = static_library(
@@ -215,53 +207,13 @@ if is_asm_enabled
     endif
 endif
 
-if cc.get_id() != 'msvc'
-    ptools_cpp_args = [
-        '-fno-strict-aliasing',
-        '-DLINUX_',
-        '-DOC_NEW_STYLE_INCLUDES',
-        '-D_REENTRANT'
-    ]
-else
-    ptools_cpp_args = [
-      '-wd4028', # parameter different from declaration
-      '-wd4996', # use of POSIX functions
-      '-DOC_NEW_STYLE_INCLUDES',
-      '-D_REENTRANT',
-    ]
-endif
-
-ptools_sources = [
-    ptools_path + 'm2pythontools.cc',
-    ptools_path + 'valpython.cc',
-    ptools_path + 'midassocket.cc',
-    ptools_path + 'valprotocol2.cc',
-    ptools_path + 'm2ser.cc',
-    ptools_path + 'm2streamdataenc.cc',
-    ptools_path + 'm2convertrep.cc',
-    ptools_path + 'timeconv.cc'
-]
-
 thread_lib = dependency('threads')
 math_lib = cc.find_library('m', required : false)
 
-libptools = shared_library(
-    'ptools',
-    ptools_sources,
-    include_directories : [
-        opencontainers_include,
-    ],
-    cpp_args : ptools_cpp_args,
-    dependencies : thread_lib,
-)
-
 vmaf_include = include_directories(
-    opencontainers_path + '/include',
     src_dir,
     feature_src_dir,
     feature_src_dir + 'common',
-    ptools_path,
-    opencontainers_path + '/include'
 )
 
 libvmaf_feature_sources = [
@@ -358,7 +310,6 @@ libvmaf = both_libraries(
     ],
     objects : [
         platform_specific_cpu_objects,
-        libptools.extract_all_objects(),
         libvmaf_feature_static_lib.extract_all_objects(),
         libvmaf_cpu_static_lib.extract_all_objects(),
     ],

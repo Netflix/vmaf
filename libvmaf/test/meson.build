@@ -29,24 +29,20 @@ test_thread_pool = executable('test_thread_pool',
 )
 
 test_model = executable('test_model',
-    ['test.c', 'test_model.c', '../src/dict.c', '../src/svm.cpp', '../src/unpickle.cpp', '../src/pdjson.c', '../src/read_json_model.c', json_model_c_sources],
-    include_directories : [libvmaf_inc, test_inc, opencontainers_include,
-                           include_directories('../src/third_party/ptools/'), include_directories('../src')],
+    ['test.c', 'test_model.c', '../src/dict.c', '../src/svm.cpp', '../src/pdjson.c', '../src/read_json_model.c', json_model_c_sources],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src')],
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,
-    objects : libptools.extract_all_objects(),
     dependencies : thread_lib,
 )
 
 test_predict = executable('test_predict',
     ['test.c', 'test_predict.c', '../src/predict.c', '../src/dict.c',
      '../src/feature/feature_collector.c', '../src/feature/alias.c', '../src/model.c', '../src/svm.cpp',
-     '../src/unpickle.cpp', '../src/read_json_model.c', '../src/pdjson.c', json_model_c_sources],
-    include_directories : [libvmaf_inc, test_inc, opencontainers_include,
-                           include_directories('../src/third_party/ptools/'), include_directories('../src')],
+     '../src/read_json_model.c', '../src/pdjson.c', json_model_c_sources],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src')],
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,
-    objects : libptools.extract_all_objects(),
     dependencies : thread_lib,
 )
 
