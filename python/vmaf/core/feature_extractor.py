@@ -101,14 +101,14 @@ class FeatureExtractor(Executor):
         return feature_result
 
 
-class VmafrcFeatureExtractorMixin(object):
+class VmafexecFeatureExtractorMixin(object):
 
     @override(FeatureExtractor)
     def _get_feature_scores(self, asset):
 
         assert hasattr(self, '_get_log_file_path')
         assert hasattr(self, 'ATOM_FEATURES')
-        assert hasattr(self, 'ATOM_FEATURES_TO_VMAFRC_KEY_DICT')
+        assert hasattr(self, 'ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT')
         assert hasattr(self, 'get_scores_key')
 
         log_file_path = self._get_log_file_path(asset)
@@ -120,7 +120,7 @@ class VmafrcFeatureExtractorMixin(object):
         for frame in root.findall('frames/frame'):
             for i_feature, feature in enumerate(self.ATOM_FEATURES):
                 try:
-                    feature_scores[i_feature].append(float(frame.attrib[self.ATOM_FEATURES_TO_VMAFRC_KEY_DICT[feature]]))
+                    feature_scores[i_feature].append(float(frame.attrib[self.ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT[feature]]))
                 except KeyError:
                     pass  # some features may be missing
 
@@ -136,7 +136,7 @@ class VmafrcFeatureExtractorMixin(object):
         return feature_result
 
 
-class VmafFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
+class VmafFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "VMAF_feature"
 
@@ -149,7 +149,7 @@ class VmafFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
     # VERSION = '0.2.4'  # Fix a bug in adm feature passing scale into dwt_quant_step
     # VERSION = '0.2.4b'  # Modify by adding ADM noise floor outside cube root; add derived feature motion2
     # VERSION = '0.2.4c'  # Modify by moving motion2 to c code
-    # VERSION = '0.2.5'  # replace executable vmaf_feature with vmaf_rc
+    # VERSION = '0.2.5'  # replace executable vmaf_feature with vmaf
     # VERSION = '0.2.6'  # incorporate adm_enhn_gain_limit and vif_enhn_gain_limit
     VERSION = '0.2.7'  # move vif_enhn_gain_limit right before log calculation
 
@@ -165,9 +165,9 @@ class VmafFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
                      'adm_num_scale3', 'adm_den_scale3',
                      ]
 
-    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = dict(zip(ATOM_FEATURES, ATOM_FEATURES))
-    ATOM_FEATURES_TO_VMAFRC_KEY_DICT['ansnr'] = 'float_ansnr'
-    ATOM_FEATURES_TO_VMAFRC_KEY_DICT['anpsnr'] = 'float_anpsnr'
+    ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = dict(zip(ATOM_FEATURES, ATOM_FEATURES))
+    ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT['ansnr'] = 'float_ansnr'
+    ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT['anpsnr'] = 'float_anpsnr'
 
     DERIVED_ATOM_FEATURES = ['vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
                              'vif2', 'adm2', 'adm3',
@@ -191,7 +191,7 @@ class VmafFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc_multi_features(
+        ExternalProgramCaller.call_vmafexec_multi_features(
             ['float_adm', 'float_vif', 'float_motion', 'float_ansnr'],
             yuv_type, ref_path, dis_path, w, h, log_file_path, logger, options={
                 'float_adm': {'debug': True},
@@ -323,11 +323,11 @@ class VmafIntegerFeatureExtractor(VmafFeatureExtractor):
 
     TYPE = "VMAF_integer_feature"
 
-    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = dict(
+    ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = dict(
         zip(VmafFeatureExtractor.ATOM_FEATURES,
             [f'integer_{f}' for f in VmafFeatureExtractor.ATOM_FEATURES]))
-    ATOM_FEATURES_TO_VMAFRC_KEY_DICT['ansnr'] = 'float_ansnr'
-    ATOM_FEATURES_TO_VMAFRC_KEY_DICT['anpsnr'] = 'float_anpsnr'
+    ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT['ansnr'] = 'float_ansnr'
+    ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT['anpsnr'] = 'float_anpsnr'
 
     def _generate_result(self, asset):
 
@@ -341,7 +341,7 @@ class VmafIntegerFeatureExtractor(VmafFeatureExtractor):
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc_multi_features(
+        ExternalProgramCaller.call_vmafexec_multi_features(
             ['adm', 'vif', 'motion', 'float_ansnr'],
             yuv_type, ref_path, dis_path, w, h, log_file_path, logger, options={
                 'adm': {'debug': True},
@@ -525,15 +525,15 @@ class PypsnrFeatureExtractor(FeatureExtractor):
         return feature_result
 
 
-class PsnrFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
+class PsnrFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "PSNR_feature"
     # VERSION = "1.0"
-    VERSION = "1.1"  # call vmaf_rc to replace standalone psnr exec
+    VERSION = "1.1"  # call vmaf to replace standalone psnr exec
 
     ATOM_FEATURES = ['psnr']
 
-    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
+    ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
         'psnr': 'float_psnr',
     }
 
@@ -551,7 +551,7 @@ class PsnrFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc_single_feature('float_psnr', yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
+        ExternalProgramCaller.call_vmafexec_single_feature('float_psnr', yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
 
 
 class MomentFeatureExtractor(FeatureExtractor):
@@ -661,19 +661,19 @@ class MomentFeatureExtractor(FeatureExtractor):
         return result
 
 
-class SsimFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
+class SsimFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "SSIM_feature"
     # VERSION = "1.0"
     # VERSION = "1.1"  # fix OPT_RANGE_PIXEL_OFFSET = 0
-    # VERSION = "1.2"  # call vmaf_rc to replace standalone ssim exec
+    # VERSION = "1.2"  # call vmaf to replace standalone ssim exec
     VERSION = "1.3"  # add ssim_l, ssim_c, ssim_s as optional output
 
     ATOM_FEATURES = ['ssim',
                      'ssim_l', 'ssim_c', 'ssim_s',
                      ]
 
-    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
+    ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
         'ssim': 'float_ssim',
         'ssim_l': 'float_ssim_l',
         'ssim_c': 'float_ssim_c',
@@ -694,16 +694,16 @@ class SsimFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc_single_feature('float_ssim', yuv_type, ref_path, dis_path, w, h,
+        ExternalProgramCaller.call_vmafexec_single_feature('float_ssim', yuv_type, ref_path, dis_path, w, h,
                                                          log_file_path, logger, options={'enable_lcs': True})
 
 
-class MsSsimFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
+class MsSsimFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "MS_SSIM_feature"
     # VERSION = "1.0"
     # VERSION = "1.1"  # fix OPT_RANGE_PIXEL_OFFSET = 0
-    # VERSION = "1.2"  # call vmaf_rc to replace standalone ms_ssim exec
+    # VERSION = "1.2"  # call vmaf to replace standalone ms_ssim exec
     VERSION = "1.3"  # add ssim_l_scalex, ssim_c_scalex, ssim_s_scalex as optional output
 
     ATOM_FEATURES = ['ms_ssim',
@@ -714,7 +714,7 @@ class MsSsimFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
                      'ms_ssim_l_scale4', 'ms_ssim_c_scale4', 'ms_ssim_s_scale4',
                      ]
 
-    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
+    ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
         'ms_ssim': 'float_ms_ssim',
 
         'ms_ssim_l_scale0': 'float_ms_ssim_l_scale0',
@@ -750,18 +750,18 @@ class MsSsimFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc_single_feature('float_ms_ssim', yuv_type, ref_path, dis_path, w, h,
+        ExternalProgramCaller.call_vmafexec_single_feature('float_ms_ssim', yuv_type, ref_path, dis_path, w, h,
                                                          log_file_path, logger, options={'enable_lcs': True})
 
 
-class AnsnrFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
+class AnsnrFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "ANSNR_feature"
     VERSION = "1.0"
 
     ATOM_FEATURES = ['ansnr', 'anpsnr']
 
-    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
+    ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
         'ansnr': 'float_ansnr',
         'anpsnr': 'float_anpsnr',
     }
@@ -780,4 +780,4 @@ class AnsnrFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc_single_feature('float_ansnr', yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
+        ExternalProgramCaller.call_vmafexec_single_feature('float_ansnr', yuv_type, ref_path, dis_path, w, h, log_file_path, logger)

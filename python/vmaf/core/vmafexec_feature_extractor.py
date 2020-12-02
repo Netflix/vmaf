@@ -1,8 +1,8 @@
 from vmaf import ExternalProgramCaller
-from vmaf.core.feature_extractor import VmafrcFeatureExtractorMixin, FeatureExtractor
+from vmaf.core.feature_extractor import VmafexecFeatureExtractorMixin, FeatureExtractor
 
 
-class FloatMotionFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
+class FloatMotionFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "float_motion_feature"
     # VERSION = "1.0"
@@ -12,7 +12,7 @@ class FloatMotionFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor)
                      'motion',
                      ]
 
-    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
+    ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
         'motion2': 'motion2',
         'motion': 'motion',
     }
@@ -31,11 +31,11 @@ class FloatMotionFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor)
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc_single_feature('float_motion', yuv_type, ref_path, dis_path, w, h,
+        ExternalProgramCaller.call_vmafexec_single_feature('float_motion', yuv_type, ref_path, dis_path, w, h,
                                                          log_file_path, logger, options=self.optional_dict)
 
 
-class IntegerMotionFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
+class IntegerMotionFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "integer_motion_feature"
     # VERSION = "1.0"
@@ -46,7 +46,7 @@ class IntegerMotionFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtracto
                      'motion',
                      ]
 
-    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
+    ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
         'motion2': 'integer_motion2',
         'motion': 'integer_motion',
     }
@@ -65,11 +65,11 @@ class IntegerMotionFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtracto
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc_single_feature('motion', yuv_type, ref_path, dis_path, w, h,
+        ExternalProgramCaller.call_vmafexec_single_feature('motion', yuv_type, ref_path, dis_path, w, h,
                                                          log_file_path, logger, options=self.optional_dict)
 
 
-class FloatVifFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
+class FloatVifFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "float_VIF_feature"
     # VERSION = "1.0"
@@ -87,7 +87,7 @@ class FloatVifFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
                      'vif_den_scale3',
                      ]
 
-    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
+    ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
         'vif_scale0': 'vif_scale0',
         'vif_scale1': 'vif_scale1',
         'vif_scale2': 'vif_scale2',
@@ -119,11 +119,11 @@ class FloatVifFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc_single_feature('float_vif', yuv_type, ref_path, dis_path, w, h,
+        ExternalProgramCaller.call_vmafexec_single_feature('float_vif', yuv_type, ref_path, dis_path, w, h,
                                                          log_file_path, logger, options=self.optional_dict)
 
 
-class IntegerVifFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
+class IntegerVifFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "integer_VIF_feature"
     # VERSION = "1.0"
@@ -145,7 +145,7 @@ class IntegerVifFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
                      'vif_den_scale3',
                      ]
 
-    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
+    ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
         'vif_scale0': 'integer_vif_scale0',
         'vif_scale1': 'integer_vif_scale1',
         'vif_scale2': 'integer_vif_scale2',
@@ -177,11 +177,11 @@ class IntegerVifFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc_single_feature('vif', yuv_type, ref_path, dis_path, w, h,
+        ExternalProgramCaller.call_vmafexec_single_feature('vif', yuv_type, ref_path, dis_path, w, h,
                                                          log_file_path, logger, options=self.optional_dict)
 
 
-class FloatAdmFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
+class FloatAdmFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "float_ADM_feature"
     # VERSION = "1.0"
@@ -205,7 +205,7 @@ class FloatAdmFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
                      'adm_den_scale3',
                      ]
 
-    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
+    ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
         'adm2': 'adm2',
         'adm_scale0': 'adm_scale0',
         'adm_scale1': 'adm_scale1',
@@ -238,18 +238,18 @@ class FloatAdmFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc_single_feature('float_adm', yuv_type, ref_path, dis_path, w, h,
+        ExternalProgramCaller.call_vmafexec_single_feature('float_adm', yuv_type, ref_path, dis_path, w, h,
                                                          log_file_path, logger, options=self.optional_dict)
 
 
-class IntegerPsnrFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
+class IntegerPsnrFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = 'integer_PSNR_feature'
     VERSION = "1.0"
 
     ATOM_FEATURES = ['psnr_y', 'psnr_cb', 'psnr_cr']
 
-    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
+    ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
         'psnr_y': 'psnr_y',
         'psnr_cb': 'psnr_cb',
         'psnr_cr': 'psnr_cr',
@@ -269,11 +269,11 @@ class IntegerPsnrFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor)
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc_single_feature('psnr', yuv_type, ref_path, dis_path, w, h,
+        ExternalProgramCaller.call_vmafexec_single_feature('psnr', yuv_type, ref_path, dis_path, w, h,
                                                          log_file_path, logger, options=self.optional_dict)
 
 
-class IntegerAdmFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
+class IntegerAdmFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "integer_ADM_feature"
     # VERSION = "1.0"
@@ -298,7 +298,7 @@ class IntegerAdmFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
                      'adm_den_scale3',
                      ]
 
-    ATOM_FEATURES_TO_VMAFRC_KEY_DICT = {
+    ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
         'adm2': 'integer_adm2',
         'adm_scale0': 'integer_adm_scale0',
         'adm_scale1': 'integer_adm_scale1',
@@ -331,5 +331,5 @@ class IntegerAdmFeatureExtractor(VmafrcFeatureExtractorMixin, FeatureExtractor):
         h=quality_height
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc_single_feature('adm', yuv_type, ref_path, dis_path, w, h,
+        ExternalProgramCaller.call_vmafexec_single_feature('adm', yuv_type, ref_path, dis_path, w, h,
                                                          log_file_path, logger, options=self.optional_dict)

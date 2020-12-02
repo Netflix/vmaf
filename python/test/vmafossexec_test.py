@@ -909,7 +909,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 35.4220125, places=4)
         self.assertAlmostEqual(results[1]['VMAFOSSEXEC_score'], 65.559652083333333, places=4)
 
-    def test_run_vmafrc_runner_akiyo_multiply_no_enhn_gain_model_float(self):
+    def test_run_vmafossexec_runner_akiyo_multiply_no_enhn_gain_model_float(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
         dis_path = VmafConfig.test_resource_path("yuv", "disp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -937,7 +937,7 @@ class VmafossexecQualityRunnerTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 88.032956, places=4)  # 132.78849246495625
 
-    def test_run_vmafrc_runner_akiyo_multiply_no_enhn_gain_model_json(self):
+    def test_run_vmafossexec_runner_akiyo_multiply_no_enhn_gain_model_json(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
         dis_path = VmafConfig.test_resource_path("yuv", "disp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
         asset = Asset(dataset="test", content_id=0, asset_id=0,

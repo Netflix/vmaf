@@ -14,7 +14,7 @@ vmafossexec = executable(
     install : false,
 )
 
-vmaf_rc = executable(
+vmaf = executable(
     'vmaf',
     ['vmaf.c', 'cli_parse.c', 'y4m_input.c', 'vidinput.c', 'yuv_input.c'],
     include_directories : [libvmaf_inc, vmaf_include],

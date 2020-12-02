@@ -13,7 +13,7 @@ And to use it, just run:
 docker run --rm vmaf [CLI]
 ```
 
-Where `[CLI]` is one of `[run_vmaf, vmafossexec, vmaf_rc, run_vmaf_training, run_vmaf_in_batch, run_testing]`.
+Where `[CLI]` is one of `[run_vmaf, vmafossexec, vmaf, run_vmaf_training, run_vmaf_in_batch, run_testing]`.
 
 For example, if you are under root, to run `run_vmaf` on a sample reference/distorted video pair under `resource/yuv`:
 

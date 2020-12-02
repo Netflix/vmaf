@@ -51,9 +51,9 @@ def required(path):
     return path
 
 
-def convert_pixel_format_ffmpeg2vmafrc(ffmpeg_pix_fmt):
+def convert_pixel_format_ffmpeg2vmafexec(ffmpeg_pix_fmt):
     '''
-    Convert FFmpeg-style pixel format (pix_fmt) to vmaf_rc style.
+    Convert FFmpeg-style pixel format (pix_fmt) to vmaf style.
 
     :param ffmpeg_pix_fmt: FFmpeg-style pixel format, for example: yuv420p, yuv420p10le
     :return: (pixel_format: str, bitdepth: int), for example: (420, 8), (420, 10)
@@ -96,15 +96,15 @@ class ExternalProgram(object):
         from . import externals
         external_vmaf_feature = config.VmafExternalConfig.vmaf_path()
         external_vmafossexec = config.VmafExternalConfig.vmafossexec_path()
-        external_vmafrc = config.VmafExternalConfig.vmafrc_path()
+        external_vmafexec = config.VmafExternalConfig.vmafexec_path()
     except ImportError:
         external_vmaf_feature = None
         external_vmafossexec = None
-        external_vmafrc = None
+        external_vmafexec = None
 
     vmaf_feature = project_path(os.path.join("libvmaf", "build", "tools", "vmaf_feature")) if external_vmaf_feature is None else external_vmaf_feature
     vmafossexec = project_path(os.path.join("libvmaf", "build", "tools", "vmafossexec")) if external_vmafossexec is None else external_vmafossexec
-    vmafrc = project_path(os.path.join("libvmaf", "build", "tools", "vmaf")) if external_vmafrc is None else external_vmafrc
+    vmafexec = project_path(os.path.join("libvmaf", "build", "tools", "vmaf")) if external_vmafexec is None else external_vmafexec
 
 
 class ExternalProgramCaller(object):
@@ -113,27 +113,27 @@ class ExternalProgramCaller(object):
     """
 
     @staticmethod
-    def call_vmafrc_single_feature(feature, yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None, options=None):
+    def call_vmafexec_single_feature(feature, yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None, options=None):
         options2 = {feature: options.copy() if options is not None else None}
         if options2[feature] is not None and 'disable_avx' in options2[feature]:
             options2['disable_avx'] = options2[feature]['disable_avx']
             del options2[feature]['disable_avx']
-        return ExternalProgramCaller.call_vmafrc_multi_features(
+        return ExternalProgramCaller.call_vmafexec_multi_features(
             [feature], yuv_type, ref_path, dis_path, w, h, log_file_path, logger=logger, options=options2)
 
     @staticmethod
-    def call_vmafrc_multi_features(features, yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None, options=None):
+    def call_vmafexec_multi_features(features, yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None, options=None):
 
-        # ./libvmaf/build/tools/vmaf_rc
+        # ./libvmaf/build/tools/vmaf
         # --reference python/test/resource/yuv/src01_hrc00_576x324.yuv
         # --distorted python/test/resource/yuv/src01_hrc01_576x324.yuv
         # --width 576 --height 324 --pixel_format 420 --bitdepth 8
         # --output /dev/stdout --xml --no_prediction --feature float_motion --feature integer_motion
 
-        pixel_format, bitdepth = convert_pixel_format_ffmpeg2vmafrc(yuv_type)
+        pixel_format, bitdepth = convert_pixel_format_ffmpeg2vmafexec(yuv_type)
 
         cmd = [
-            required(ExternalProgram.vmafrc),
+            required(ExternalProgram.vmafexec),
             '--reference', ref_path,
             '--distorted', dis_path,
             '--width', str(w),
@@ -231,15 +231,15 @@ class ExternalProgramCaller(object):
         run_process(vmafossexec_cmd, shell=True)
 
     @staticmethod
-    def call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth,
+    def call_vmafexec(reference, distorted, width, height, pixel_format, bitdepth,
                     float_psnr, psnr, float_ssim, ssim, float_ms_ssim, ms_ssim, float_moment,
                     no_prediction, models, subsample, n_threads, disable_avx, output, exe, logger,
                     vif_enhn_gain_limit=None, adm_enhn_gain_limit=None, motion_force_zero=False):
 
         if exe is None:
-            exe = required(ExternalProgram.vmafrc)
+            exe = required(ExternalProgram.vmafexec)
 
-        vmafrc_cmd = "{exe} --reference {reference} --distorted {distorted} --width {width} --height {height} " \
+        vmafexec_cmd = "{exe} --reference {reference} --distorted {distorted} --width {width} --height {height} " \
                      "--pixel_format {pixel_format} --bitdepth {bitdepth} --output {output}" \
             .format(
             exe=exe,
@@ -252,60 +252,60 @@ class ExternalProgramCaller(object):
             output=output)
 
         if float_psnr:
-            vmafrc_cmd += ' --feature float_psnr'
+            vmafexec_cmd += ' --feature float_psnr'
         if float_ssim:
-            vmafrc_cmd += ' --feature float_ssim'
+            vmafexec_cmd += ' --feature float_ssim'
         if float_ms_ssim:
-            vmafrc_cmd += ' --feature float_ms_ssim'
+            vmafexec_cmd += ' --feature float_ms_ssim'
         if float_moment:
-            vmafrc_cmd += ' --feature float_moment'
+            vmafexec_cmd += ' --feature float_moment'
 
         if psnr:
-            vmafrc_cmd += ' --feature psnr'
+            vmafexec_cmd += ' --feature psnr'
         if ssim:
-            # vmafrc_cmd += ' --feature ssim'
+            # vmafexec_cmd += ' --feature ssim'
             assert False, 'ssim (the daala integer ssim) is deprecated'
         if ms_ssim:
-            vmafrc_cmd += ' --feature ms_ssim'
+            vmafexec_cmd += ' --feature ms_ssim'
 
         if no_prediction:
-            vmafrc_cmd += ' --no_prediction'
+            vmafexec_cmd += ' --no_prediction'
         else:
             assert models is not None
             assert isinstance(models, list)
             for model in models:
-                vmafrc_cmd += ' --model {}'.format(model)
+                vmafexec_cmd += ' --model {}'.format(model)
 
         assert isinstance(subsample, int) and subsample >= 1
         if subsample != 1:
-            vmafrc_cmd += ' --subsample {}'.format(subsample)
+            vmafexec_cmd += ' --subsample {}'.format(subsample)
 
         assert isinstance(n_threads, int) and n_threads >= 1
         if n_threads != 1:
-            vmafrc_cmd += ' --threads {}'.format(n_threads)
+            vmafexec_cmd += ' --threads {}'.format(n_threads)
 
         if disable_avx:
-            vmafrc_cmd += ' --cpumask -1'
+            vmafexec_cmd += ' --cpumask -1'
 
         if vif_enhn_gain_limit is not None:
             # FIXME: hacky - since we do not know which feature is the one used in the model,
             # we have to set the parameter for both, which doubles the computation.
-            vmafrc_cmd += f' --feature float_vif=vif_enhn_gain_limit={vif_enhn_gain_limit}'
-            vmafrc_cmd += f' --feature vif=vif_enhn_gain_limit={vif_enhn_gain_limit}'
+            vmafexec_cmd += f' --feature float_vif=vif_enhn_gain_limit={vif_enhn_gain_limit}'
+            vmafexec_cmd += f' --feature vif=vif_enhn_gain_limit={vif_enhn_gain_limit}'
 
         if adm_enhn_gain_limit is not None:
             # FIXME: hacky
-            vmafrc_cmd += f' --feature float_adm=adm_enhn_gain_limit={adm_enhn_gain_limit}'
-            vmafrc_cmd += f' --feature adm=adm_enhn_gain_limit={adm_enhn_gain_limit}'
+            vmafexec_cmd += f' --feature float_adm=adm_enhn_gain_limit={adm_enhn_gain_limit}'
+            vmafexec_cmd += f' --feature adm=adm_enhn_gain_limit={adm_enhn_gain_limit}'
 
         if motion_force_zero:
             assert isinstance(motion_force_zero, bool)
             motion_force_zero = str(motion_force_zero).lower()
             # FIXME: hacky
-            vmafrc_cmd += f' --feature float_motion=motion_force_zero={motion_force_zero}'
-            vmafrc_cmd += f' --feature motion=motion_force_zero={motion_force_zero}'
+            vmafexec_cmd += f' --feature float_motion=motion_force_zero={motion_force_zero}'
+            vmafexec_cmd += f' --feature motion=motion_force_zero={motion_force_zero}'
 
         if logger:
-            logger.info(vmafrc_cmd)
+            logger.info(vmafexec_cmd)
 
-        run_process(vmafrc_cmd, shell=True)
+        run_process(vmafexec_cmd, shell=True)

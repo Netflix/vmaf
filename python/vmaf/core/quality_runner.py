@@ -7,7 +7,7 @@ import copy
 import numpy as np
 
 from vmaf.config import VmafConfig
-from vmaf import ExternalProgramCaller, convert_pixel_format_ffmpeg2vmafrc
+from vmaf import ExternalProgramCaller, convert_pixel_format_ffmpeg2vmafexec
 from vmaf.core.executor import Executor
 from vmaf.core.niqe_train_test_model import NiqeTrainTestModel
 from vmaf.core.result import Result
@@ -1147,8 +1147,8 @@ class NiqeQualityRunner(QualityRunner):
         vmaf_fassembler.remove_results()
 
 
-class VmafrcQualityRunner(QualityRunner):
-    TYPE = 'VMAFRC'
+class VmafexecQualityRunner(QualityRunner):
+    TYPE = 'VMAFEXEC'
 
     VERSION = 'F' + VmafFeatureExtractor.VERSION + '-0.6.1'
     ALGO_VERSION = 2
@@ -1313,12 +1313,12 @@ class VmafrcQualityRunner(QualityRunner):
         distorted = dis_path
         width = quality_width
         height = quality_height
-        pixel_format, bitdepth = convert_pixel_format_ffmpeg2vmafrc(fmt)
+        pixel_format, bitdepth = convert_pixel_format_ffmpeg2vmafexec(fmt)
         output = log_file_path
         exe = self._get_exec()
         logger = self.logger
 
-        ExternalProgramCaller.call_vmafrc(reference, distorted, width, height, pixel_format, bitdepth,
+        ExternalProgramCaller.call_vmafexec(reference, distorted, width, height, pixel_format, bitdepth,
                                           float_psnr, psnr, float_ssim, ssim, float_ms_ssim, ms_ssim, float_moment,
                                           no_prediction, models, subsample, n_threads, disable_avx, output, exe, logger,
                                           vif_enhn_gain_limit, adm_enhn_gain_limit, motion_force_zero)

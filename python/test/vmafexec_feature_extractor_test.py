@@ -7,7 +7,6 @@ from vmaf.config import VmafConfig
 from test.testutil import set_default_576_324_videos_for_testing, \
     set_default_576_324_12bit_videos_for_testing, \
     set_default_576_324_16bit_videos_for_testing, \
-    set_default_576_324_10bit_videos_for_testing_b, \
     set_default_576_324_10bit_videos_for_testing
 
 from vmaf.core.vmafrc_feature_extractor import FloatMotionFeatureExtractor, IntegerMotionFeatureExtractor, \

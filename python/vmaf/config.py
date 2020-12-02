@@ -123,11 +123,11 @@ class VmafExternalConfig(object):
         return cls._path_from_external('VMAFOSSEXEC_PATH')
 
     @classmethod
-    def vmafrc_path(cls):
+    def vmafexec_path(cls):
         """
         :return str: Path to external vmafossexec executable, if installed and configured via `externals` module
         """
-        return cls._path_from_external('VMAFRC_PATH')
+        return cls._path_from_external('VMAFEXEC_PATH')
 
     @classmethod
     def get_and_assert_ffmpeg(cls):

@@ -133,7 +133,7 @@ The following example shows a comparison using a pair of yuv inputs (`src01_hrc0
 ```sh
 wget https://github.com/Netflix/vmaf_resource/raw/master/python/test/resource/yuv/src01_hrc00_576x324.yuv
 wget https://github.com/Netflix/vmaf_resource/raw/master/python/test/resource/yuv/src01_hrc01_576x324.yuv
-./build/tools/vmaf_rc \
+./build/tools/vmaf \
     --reference src01_hrc00_576x324.yuv \
     --distorted src01_hrc01_576x324.yuv \
     --width 576 --height 324 --pixel_format 420 --bitdepth 8 \
