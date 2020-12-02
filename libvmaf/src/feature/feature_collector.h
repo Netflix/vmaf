@@ -32,8 +32,17 @@ typedef struct {
     unsigned capacity;
 } FeatureVector;
 
+typedef struct {
+    struct {
+        char *name;
+        double value;
+    } *metric;
+    unsigned cnt, capacity;
+} AggregateVector;
+
 typedef struct VmafFeatureCollector {
     FeatureVector **feature_vector;
+    AggregateVector aggregate_vector;
     unsigned cnt, capacity;
     struct { clock_t begin, end; } timer;
     pthread_mutex_t lock;
@@ -48,6 +57,12 @@ int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
 int vmaf_feature_collector_get_score(VmafFeatureCollector *feature_collector,
                                      char *feature_name, double *score,
                                      unsigned index);
+
+int vmaf_feature_collector_set_aggregate(VmafFeatureCollector *feature_collector,
+                                         char *feature_name, double score);
+
+int vmaf_feature_collector_get_aggregate(VmafFeatureCollector *feature_collector,
+                                         char *feature_name, double *score);
 
 void vmaf_feature_collector_destroy(VmafFeatureCollector *feature_collector);
 
