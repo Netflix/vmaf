@@ -4,9 +4,7 @@ import logging
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
-
-with open(os.path.join(os.path.dirname(__file__), '..', '..', 'VERSION'), 'rt') as f:
-    __version__ = f.read().replace('\n', '')
+__version__ = "2.0.0"
 
 logging.basicConfig()
 logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
@@ -14,7 +12,6 @@ logger.setLevel("INFO")
 
 try:
     from matplotlib import pyplot as plt
-
 except BaseException:
     # TODO: importing matplotlib fails on OSX with system python, check what can be done there...
     # Error reported is:
