@@ -1,11 +1,16 @@
 import os
 import subprocess
+import logging
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
 with open(os.path.join(os.path.dirname(__file__), '..', '..', 'VERSION'), 'rt') as f:
     __version__ = f.read().replace('\n', '')
+
+logging.basicConfig()
+logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
+logger.setLevel("INFO")
 
 try:
     from matplotlib import pyplot as plt
@@ -33,7 +38,7 @@ VMAF_PROJECT = os.path.abspath(os.path.join(VMAF_LIB_FOLDER, '../..',))
 
 def run_process(cmd, **kwargs):
     try:
-        print(cmd)
+        logger.info(cmd)
         subprocess.check_output(cmd, stderr=subprocess.STDOUT, **kwargs)
     except subprocess.CalledProcessError as e:
         raise AssertionError(f'Process returned {e.returncode}, cmd: {cmd}, msg: {str(e.output)}')
@@ -170,7 +175,7 @@ class ExternalProgramCaller(object):
 
         if logger:
             logger.info(' '.join(cmd))
-        run_process(cmd)
+        run_process(' '.join(cmd), shell=True)
 
     @staticmethod
     def call_vifdiff_feature(yuv_type, ref_path, dis_path, w, h, log_file_path, logger=None):
