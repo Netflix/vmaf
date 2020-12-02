@@ -74,7 +74,7 @@ The final command line will depend on what shell you are running `ffmpeg` throug
 
 1. Convert all of the backslashes `\` to forward slashes `/` (`D:/mypath/vmaf_float_v0.6.1.pkl`)
 2. Escape the colon `:` character by using a backslash `\` (`D\:/mypath/vmaf_float_v0.6.1.pkl`)
-3. Then escape that backslash with another backslash (`D:\\:/mypath/vmaf_float_v0.6.1.pkl`)
+3. Then escape that backslash with another backslash (`D\\:/mypath/vmaf_float_v0.6.1.pkl`)
 4. The next step will depend on the shell that will run `ffmpeg`
     - For PowerShell and Command Prompt, this will be enough and your final `ffmpeg` command line will look something like
 
