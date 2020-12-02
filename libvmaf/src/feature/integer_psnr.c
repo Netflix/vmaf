@@ -28,7 +28,13 @@
 typedef struct PsnrState {
     bool enable_chroma;
     bool enable_mse;
+    bool enable_apsnr;
     bool reduced_hbd_peak;
+    uint32_t peak;
+    struct {
+        uint64_t sse[3];
+        uint64_t n_pixels[3];
+    } apsnr;
 } PsnrState;
 
 static const VmafOption options[] = {
@@ -47,6 +53,13 @@ static const VmafOption options[] = {
         .default_val.b = false,
     },
     {
+        .name = "enable_apsnr",
+        .help = "enable APSNR calculation",
+        .offset = offsetof(PsnrState, enable_apsnr),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
+    {
         .name = "reduced_hbd_peak",
         .help = "reduce hbd peak value to align with scaled 8-bit content",
         .offset = offsetof(PsnrState, reduced_hbd_peak),
@@ -56,6 +69,20 @@ static const VmafOption options[] = {
     { 0 }
 };
 
+
+static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
+                unsigned bpc, unsigned w, unsigned h)
+{
+    (void) pix_fmt;
+    (void) bpc;
+    (void) w;
+    (void) h;
+
+    PsnrState *s = fex->priv;
+    s->peak = s->reduced_hbd_peak ? 255 * 1 << (bpc - 8) : (1 << bpc) - 1;
+    return 0;
+}
+
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
@@ -63,12 +90,12 @@ static char *mse_name[3] = { "mse_y", "mse_cb", "mse_cr" };
 static char *psnr_name[3] = { "psnr_y", "psnr_cb", "psnr_cr" };
 
 static int psnr(VmafPicture *ref_pic, VmafPicture *dist_pic,
-                 unsigned index, VmafFeatureCollector *feature_collector,
-                 bool enable_chroma, bool enable_mse)
+                unsigned index, VmafFeatureCollector *feature_collector,
+                PsnrState *s)
 {
     const uint8_t peak = 255; // (1 << ref_pic->bpc) - 1;
     const double psnr_max = 60.; // (6 * ref_pic->bpc) + 12;
-    const unsigned n = enable_chroma ? 3 : 1;
+    const unsigned n = s->enable_chroma ? 3 : 1;
 
     int err = 0;
 
@@ -88,13 +115,18 @@ static int psnr(VmafPicture *ref_pic, VmafPicture *dist_pic,
             dis += dist_pic->stride[p];
         }
 
+        if (s->enable_apsnr) {
+            s->apsnr.sse[p] += sse;
+            s->apsnr.n_pixels[p] += ref_pic->h[p] * ref_pic->w[p];
+        }
+
         const double mse = ((double) sse) / (ref_pic->w[p] * ref_pic->h[p]);
         const double psnr =
             MIN(10. * log10(peak * peak / MAX(mse, 1e-16)), psnr_max);
 
         err |= vmaf_feature_collector_append(feature_collector, psnr_name[p],
                                              psnr, index);
-        if (enable_mse) {
+        if (s->enable_mse) {
             err |= vmaf_feature_collector_append(feature_collector, mse_name[p],
                                                  mse, index);
         }
@@ -105,12 +137,10 @@ static int psnr(VmafPicture *ref_pic, VmafPicture *dist_pic,
 
 static int psnr_hbd(VmafPicture *ref_pic, VmafPicture *dist_pic,
                     unsigned index, VmafFeatureCollector *feature_collector,
-                    bool enable_chroma, bool enable_mse, bool reduced_hbd_peak)
+                    PsnrState *s)
 {
-    const uint32_t peak = reduced_hbd_peak ?
-        255 * 1 << (ref_pic->bpc - 8) : (1 << ref_pic->bpc) - 1;
     const double psnr_max = (6 * ref_pic->bpc) + 12;
-    const unsigned n = enable_chroma ? 3 : 1;
+    const unsigned n = s->enable_chroma ? 3 : 1;
 
     int err = 0;
 
@@ -128,13 +158,18 @@ static int psnr_hbd(VmafPicture *ref_pic, VmafPicture *dist_pic,
             dis += dist_pic->stride[p] / 2;
         }
 
+        if (s->enable_apsnr) {
+            s->apsnr.sse[p] += sse;
+            s->apsnr.n_pixels[p] += ref_pic->h[p] * ref_pic->w[p];
+        }
+
         const double mse = ((double) sse) / (ref_pic->w[p] * ref_pic->h[p]);
         const double psnr =
-            MIN(10. * log10(peak * peak / MAX(mse, 1e-16)), psnr_max);
+            MIN(10. * log10(s->peak * s->peak / MAX(mse, 1e-16)), psnr_max);
 
         err |= vmaf_feature_collector_append(feature_collector, psnr_name[p],
                                              psnr, index);
-        if (enable_mse) {
+        if (s->enable_mse) {
             err |= vmaf_feature_collector_append(feature_collector, mse_name[p],
                                                  mse, index);
         }
@@ -155,16 +190,31 @@ static int extract(VmafFeatureExtractor *fex,
 
     switch(ref_pic->bpc) {
     case 8:
-        return psnr(ref_pic, dist_pic, index, feature_collector,
-                     s->enable_chroma, s->enable_mse);
+        return psnr(ref_pic, dist_pic, index, feature_collector, s);
     case 10:
     case 12:
     case 16:
-        return psnr_hbd(ref_pic, dist_pic, index, feature_collector,
-                        s->enable_chroma, s->enable_mse, s->reduced_hbd_peak);
+        return psnr_hbd(ref_pic, dist_pic, index, feature_collector, s);
     default:
         return -EINVAL;
     }
+}
+
+static int close(VmafFeatureExtractor *fex)
+{
+    PsnrState *s = fex->priv;
+    const char *apsnr_name[3] = { "apsnr_y", "apsnr_cb", "apsnr_cr" };
+
+    if (s->enable_apsnr) {
+        for (unsigned i = 0; i < 3; i++) {
+            double apsnr =
+                log10(s->peak * s->peak) +
+                log10(s->apsnr.n_pixels[i]) -
+                log10(s->apsnr.sse[i]);
+            (void) apsnr;
+        }
+    }
+    return 0;
 }
 
 static const char *provided_features[] = {
@@ -174,8 +224,10 @@ static const char *provided_features[] = {
 
 VmafFeatureExtractor vmaf_fex_psnr = {
     .name = "psnr",
-    .extract = extract,
     .options = options,
+    .init = init,
+    .extract = extract,
+    .close = close,
     .priv_size = sizeof(PsnrState),
     .provided_features = provided_features,
 };
