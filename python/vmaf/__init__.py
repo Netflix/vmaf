@@ -3,7 +3,9 @@ import subprocess
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
-__version__ = "1.5.3"
+
+with open(os.path.join(os.path.dirname(__file__), '..', '..', 'VERSION'), 'rt') as f:
+    __version__ = f.read().replace('\n', '')
 
 try:
     from matplotlib import pyplot as plt
@@ -286,8 +288,8 @@ class ExternalProgramCaller(object):
             vmafrc_cmd += ' --cpumask -1'
 
         if vif_enhn_gain_limit is not None:
-            # FIXME: hacky - since we do not know which feature is the one used in the model, we have to set the
-            # parameter for both, which doubles the computation.
+            # FIXME: hacky - since we do not know which feature is the one used in the model,
+            # we have to set the parameter for both, which doubles the computation.
             vmafrc_cmd += f' --feature float_vif=vif_enhn_gain_limit={vif_enhn_gain_limit}'
             vmafrc_cmd += f' --feature vif=vif_enhn_gain_limit={vif_enhn_gain_limit}'
 
