@@ -229,6 +229,15 @@ libvmaf_feature_sources = [
     feature_src_dir + 'integer_ssim.c',
     feature_src_dir + 'ciede.c',
     feature_src_dir + 'common/alignment.c',
+
+    feature_src_dir + 'float_ssim.c',
+    feature_src_dir + 'float_ms_ssim.c',
+    feature_src_dir + 'ssim.c',
+    feature_src_dir + 'ms_ssim.c',
+    feature_src_dir + 'iqa/decimate.c',
+    feature_src_dir + 'iqa/ssim_tools.c',
+    feature_src_dir + 'iqa/math_utils.c',
+    feature_src_dir + 'iqa/convolve.c',
 ]
 
 if float_enabled
@@ -237,8 +246,6 @@ if float_enabled
         feature_src_dir + 'float_psnr.c',
         feature_src_dir + 'float_ansnr.c',
         feature_src_dir + 'float_motion.c',
-        feature_src_dir + 'float_ssim.c',
-        feature_src_dir + 'float_ms_ssim.c',
         feature_src_dir + 'float_vif.c',
         feature_src_dir + 'float_moment.c',
 
@@ -253,15 +260,9 @@ if float_enabled
         feature_src_dir + 'motion.c',
         feature_src_dir + 'psnr.c',
         feature_src_dir + 'psnr_tools.c',
-        feature_src_dir + 'ssim.c',
-        feature_src_dir + 'ms_ssim.c',
         feature_src_dir + 'moment.c',
         feature_src_dir + 'all.c',
         feature_src_dir + 'common/blur_array.c',
-        feature_src_dir + 'iqa/math_utils.c',
-        feature_src_dir + 'iqa/convolve.c',
-        feature_src_dir + 'iqa/decimate.c',
-        feature_src_dir + 'iqa/ssim_tools.c',
     ]
 endif
 
