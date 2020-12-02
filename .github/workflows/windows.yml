@@ -50,7 +50,7 @@ jobs:
         run: echo "name=CCACHE_DIR::$PWD/.ccache" >> $GITHUB_ENV
 
       - name: Configure vmaf
-        run: meson setup libvmaf libvmaf/build --buildtype release --default-library static --prefix "$MINGW_PREFIX" -Dinstall_rc=true
+        run: meson setup libvmaf libvmaf/build --buildtype release --default-library static --prefix "$MINGW_PREFIX"
       - name: Build vmaf
         run: meson install -C libvmaf/build
 
@@ -80,12 +80,12 @@ jobs:
           echo "::set-output name=path::$(cygpath -m "$(command -v vmaf)")"
           echo "::set-output name=upload_url::$(curl -L https://api.github.com/repos/${{ github.repository }}/releases/tags/$(cut -d/ -f3 <<< ${{ github.ref }}) | jq -r ."upload_url")"
 
-      - name: Upload vmafossexec
+      - name: Upload vmaf
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.msystem }}-vmafossexec
+          name: ${{ matrix.msystem }}-vmaf
           path: ${{ steps.get_info.outputs.path }}
-      - name: Upload vmafossexec
+      - name: Upload vmaf
         if: steps.get_info.outputs.upload_url != 'null' && matrix.msystem == 'MINGW64'
         uses: actions/upload-release-asset@v1
         env:
@@ -93,5 +93,5 @@ jobs:
         with:
           upload_url: ${{ steps.get_info.outputs.upload_url }}
           asset_path: ${{ steps.get_info.outputs.path }}
-          asset_name: vmafossexec.exe
+          asset_name: vmaf.exe
           asset_content_type: application/vnd.microsoft.portable-executable

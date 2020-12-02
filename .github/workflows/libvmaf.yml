@@ -58,15 +58,7 @@ jobs:
       - name: Install dependencies (mac)
         if: matrix.os == 'macos-10.15'
         run: |
-          # https://github.com/actions/virtual-environments/issues/1811#issuecomment-708480190
-          brew uninstall openssl@1.0.2t
-          brew uninstall python@2.7.17
-          brew untap local/openssl
-          brew untap local/python2
-          # ^ FIXME
-          brew update
-          brew upgrade
-          brew install -q ccache ninja nasm
+          brew install -q ninja nasm ccache
 
           $CC --version
           meson --version
@@ -75,11 +67,33 @@ jobs:
       - uses: actions/checkout@v2
       - name: Run meson
         run: |
-          #sudo chown -R runner: $HOME/.ccache
-          meson setup libvmaf libvmaf/build --buildtype release
+          meson setup libvmaf libvmaf/build --buildtype release --prefix $PWD/install
       - name: Run ninja
         run: |
           sudo ninja -vC libvmaf/build install
       - name: Run tests
         run: |
           sudo ninja -vC libvmaf/build test
+
+      - name: Get binary path & Current Release
+        id: get_info
+        run: |
+          ldd "./install/bin/vmaf" || true
+          echo "::set-output name=path::./install/bin/vmaf"
+          echo "::set-output name=upload_url::$(curl -L https://api.github.com/repos/${{ github.repository }}/releases/tags/$(cut -d/ -f3 <<< ${{ github.ref }}) | jq -r ."upload_url")"
+
+      - name: Upload vmaf
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.os }}-vmaf
+          path: ${{ steps.get_info.outputs.path }}
+      - name: Upload vmaf
+        if: steps.get_info.outputs.upload_url != 'null'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get_info.outputs.upload_url }}
+          asset_path: ${{ steps.get_info.outputs.path }}
+          asset_name: vmaf
+          asset_content_type: application/octet-stream
