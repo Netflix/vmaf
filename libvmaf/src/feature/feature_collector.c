@@ -24,6 +24,104 @@
 
 #include "feature_collector.h"
 
+static int aggregate_vector_init(AggregateVector *aggregate_vector)
+{
+    if (!aggregate_vector) return -EINVAL;
+    memset(aggregate_vector, 0, sizeof(*aggregate_vector));
+    const unsigned initial_capacity = 8;
+    const size_t metric_vector_sz =
+        sizeof(aggregate_vector->metric[0]) * initial_capacity;
+    aggregate_vector->metric = malloc(metric_vector_sz);
+    if (!aggregate_vector->metric) return -ENOMEM;
+    memset(aggregate_vector->metric, 0, metric_vector_sz);
+    aggregate_vector->capacity = initial_capacity;
+
+    return 0;
+}
+
+static int aggregate_vector_append(AggregateVector *aggregate_vector,
+                                   char *feature_name, double score)
+{
+    if (!aggregate_vector) return -EINVAL;
+
+    const unsigned cnt = aggregate_vector->cnt;
+    if (cnt >= aggregate_vector->capacity) {
+        size_t initial_size =
+            sizeof(aggregate_vector->metric[0]) * aggregate_vector->capacity;
+        void *metric = realloc(aggregate_vector->metric, initial_size * 2);
+        if (!metric) return -ENOMEM;
+        memset(metric + initial_size, 0, initial_size);
+        aggregate_vector->metric = metric;
+        aggregate_vector->capacity *= 2;
+    }
+
+    const size_t feature_name_sz = strnlen(feature_name, 2048);
+    char *f = malloc(feature_name_sz + 1);
+    if (!f) return -EINVAL;
+    memset(f, 0, feature_name_sz + 1);
+    strncpy(f, feature_name, feature_name_sz);
+
+    aggregate_vector->metric[cnt].name = f;
+    aggregate_vector->metric[cnt].value = score;
+    aggregate_vector->cnt++;
+
+    return 0;
+}
+
+static void aggregate_vector_destroy(AggregateVector *aggregate_vector)
+{
+    if (!aggregate_vector) return;
+    for (unsigned i = 0; i < aggregate_vector->cnt; i++) {
+        if (aggregate_vector->metric[i].name)
+            free(aggregate_vector->metric[i].name);
+    }
+    free(aggregate_vector->metric);
+}
+
+int vmaf_feature_collector_set_aggregate(VmafFeatureCollector *feature_collector,
+                                         char *feature_name, double score)
+{
+    if (!feature_collector) return -EINVAL;
+    if (!feature_name) return -EINVAL;
+
+    pthread_mutex_lock(&(feature_collector->lock));
+    int err = aggregate_vector_append(&feature_collector->aggregate_vector,
+                                      feature_name, score);
+    pthread_mutex_unlock(&(feature_collector->lock));
+    return err;
+}
+
+int vmaf_feature_collector_get_aggregate(VmafFeatureCollector *feature_collector,
+                                         char *feature_name, double *score)
+{
+    if (!feature_collector) return -EINVAL;
+    if (!feature_name) return -EINVAL;
+    if (!score) return -EINVAL;
+
+    pthread_mutex_lock(&(feature_collector->lock));
+    int err = 0;
+
+    double *s = NULL;
+    for (unsigned i = 0; i < feature_collector->aggregate_vector.cnt; i++) {
+        const char *f = feature_collector->aggregate_vector.metric[i].name;
+        if (!strcmp(f, feature_name)) {
+            s = &(feature_collector->aggregate_vector.metric[i].value);
+            break;
+        }
+    }
+
+    if (!s) {
+        err = -EINVAL;
+        goto unlock;
+    };
+
+    *score = *s;
+
+unlock:
+    pthread_mutex_unlock(&(feature_collector->lock));
+    return err;
+}
+
 static int feature_vector_init(FeatureVector **const feature_vector,
                                const char *name)
 {
@@ -85,6 +183,7 @@ static int feature_vector_append(FeatureVector *feature_vector,
 int vmaf_feature_collector_init(VmafFeatureCollector **const feature_collector)
 {
     if (!feature_collector) return -EINVAL;
+    int err = 0;
 
     VmafFeatureCollector *const fc = *feature_collector = malloc(sizeof(*fc));
     if (!fc) goto fail;
@@ -93,10 +192,14 @@ int vmaf_feature_collector_init(VmafFeatureCollector **const feature_collector)
     fc->feature_vector = malloc(sizeof(*(fc->feature_vector)) * fc->capacity);
     if (!fc->feature_vector) goto free_fc;
     memset(fc->feature_vector, 0, sizeof(*(fc->feature_vector)) * fc->capacity);
-    int err = pthread_mutex_init(&(fc->lock), NULL);
+    err = aggregate_vector_init(&fc->aggregate_vector);
     if (err) goto free_feature_vector;
+    err = pthread_mutex_init(&(fc->lock), NULL);
+    if (err) goto free_aggregate_vector;
     return 0;
 
+free_aggregate_vector:
+    aggregate_vector_destroy(&(fc->aggregate_vector));
 free_feature_vector:
     free(fc->feature_vector);
 free_fc:
@@ -201,6 +304,7 @@ void vmaf_feature_collector_destroy(VmafFeatureCollector *feature_collector)
     if (!feature_collector) return;
 
     pthread_mutex_lock(&(feature_collector->lock));
+    aggregate_vector_destroy(&(feature_collector->aggregate_vector));
     for (unsigned i = 0; i < feature_collector->cnt; i++)
         feature_vector_destroy(feature_collector->feature_vector[i]);
     free(feature_collector->feature_vector);
