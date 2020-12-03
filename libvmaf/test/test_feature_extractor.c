@@ -52,15 +52,16 @@ static char *test_feature_extractor_context_pool()
     err = vmaf_fex_ctx_pool_create(&pool, n_threads);
     mu_assert("problem during vmaf_fex_ctx_pool_create", !err);
 
-    VmafFeatureExtractor *fex = vmaf_get_feature_extractor_by_name("psnr");
+    VmafFeatureExtractor *fex =
+        vmaf_get_feature_extractor_by_name("float_ssim");
     mu_assert("problem during vmaf_get_feature_extractor_by_name", fex);
 
     VmafFeatureExtractorContext *fex_ctx[n_threads];
     for (unsigned i = 0; i < n_threads; i++) {
         err = vmaf_fex_ctx_pool_aquire(pool, fex, NULL, &fex_ctx[i]);
         mu_assert("problem during vmaf_fex_ctx_pool_aquire", !err);
-        mu_assert("fex_ctx[i] should be ssim feature extractor",
-                  !strcmp(fex_ctx[i]->fex->name, "psnr"));
+        mu_assert("fex_ctx[i] should be float_ssim feature extractor",
+                  !strcmp(fex_ctx[i]->fex->name, "float_ssim"));
     }
 
     for (unsigned i = 0; i < n_threads; i++) {

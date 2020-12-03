@@ -200,21 +200,25 @@ static int extract(VmafFeatureExtractor *fex,
     }
 }
 
-static int close(VmafFeatureExtractor *fex)
+static int flush(VmafFeatureExtractor *fex,
+                 VmafFeatureCollector *feature_collector)
 {
     PsnrState *s = fex->priv;
     const char *apsnr_name[3] = { "apsnr_y", "apsnr_cb", "apsnr_cr" };
 
+    int err = 0;
     if (s->enable_apsnr) {
         for (unsigned i = 0; i < 3; i++) {
-            double apsnr =
-                log10(s->peak * s->peak) +
-                log10(s->apsnr.n_pixels[i]) -
-                log10(s->apsnr.sse[i]);
-            (void) apsnr;
+            double apsnr = 10 * (log10(s->peak * s->peak) +
+                                 log10(s->apsnr.n_pixels[i]) -
+                                 log10(s->apsnr.sse[i]));
+            err |=
+                vmaf_feature_collector_set_aggregate(feature_collector,
+                                                     apsnr_name[i], apsnr);
         }
     }
-    return 0;
+
+    return (err < 0) ? err : !err;
 }
 
 static const char *provided_features[] = {
@@ -227,7 +231,8 @@ VmafFeatureExtractor vmaf_fex_psnr = {
     .options = options,
     .init = init,
     .extract = extract,
-    .close = close,
+    .flush = flush,
     .priv_size = sizeof(PsnrState),
     .provided_features = provided_features,
+    .flags = VMAF_FEATURE_EXTRACTOR_TEMPORAL,
 };
