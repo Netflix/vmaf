@@ -104,6 +104,15 @@ int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc,
     }
     fprintf(outfile, "  </pooled_metrics>\n");
 
+
+    fprintf(outfile, "  <aggregate_metrics ");
+    for (unsigned i = 0; i < fc->aggregate_vector.cnt; i++) {
+        fprintf(outfile, "%s=\"%.6f\" ",
+                fc->aggregate_vector.metric[i].name,
+                fc->aggregate_vector.metric[i].value);
+    }
+    fprintf(outfile, "/>\n");
+
     fprintf(outfile, "</VMAF>\n");
 
     return 0;
@@ -177,7 +186,16 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
         fprintf(outfile, "      }\n");
         fprintf(outfile, "    }");
     }
-    fprintf(outfile, "\n  ]\n");
+    fprintf(outfile, "\n  ],\n");
+
+    fprintf(outfile, "  \"aggregate_metrics\": {");
+    for (unsigned i = 0; i < fc->aggregate_vector.cnt; i++) {
+        fprintf(outfile, "\n    \"%s\": %.6f",
+                fc->aggregate_vector.metric[i].name,
+                fc->aggregate_vector.metric[i].value);
+        fprintf(outfile, "%s", i < fc->aggregate_vector.cnt - 1 ? "," : "");
+    }
+    fprintf(outfile, "\n  }\n");
 
     fprintf(outfile, "}\n");
     return 0;
