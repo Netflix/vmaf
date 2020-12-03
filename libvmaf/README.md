@@ -70,8 +70,6 @@ This will install the following files:
         └── libvmaf.pc
 ```
 
-Under Linux, you may need `sudo` for the above command.
-
 ## Documentation
 
 Generate HTML documentation with:
@@ -82,11 +80,11 @@ ninja -vC build doc/html
 
 ## Models
 
-Previous versions of this library required a `.pkl` VMAF Model file. Since libvmaf v2.0.0, these `.pkl` model files have been depreciated in favor of `.json` model files. If you have a previously trained `.pkl` model you would like to convert to `.json`, we have provided this [Python script](../python/vmaf/script/convert_model_from_pkl_to_json.py) to do so. The library now has a number of VMAF models built-in. This means that no VMAF model files are required at all, the models are compiled into and read from the library itself. This compilation option requires `xxd` and defaults to true. If you do not wish to compile the built-in models into your build, you may disable them with `-Dbuilt_in_models=false`.
+`libvmaf` now has a number of VMAF models built-in. This means that no external VMAF model files are required, since the models are compiled into and read directly from the library. If you do not wish to compile the built-in models into your build, you may disable them with `-Dbuilt_in_models=false`. Previous versions of this library required a `.pkl` VMAF Model file. Since libvmaf v2.0.0, these `.pkl` model files have been depreciated in favor of `.json` model files. If you have a previously trained `.pkl` model you would like to convert to `.json`, we have provided this [Python script](../python/vmaf/script/convert_model_from_pkl_to_json.py) to do so. 
 
 ## `vmaf`
 
-A command line tool called `vmaf` is included as part of the build and installation. See the `vmaf` [README.md](tools/README.md) for details. `vmafossexec` is still part of the build, but not part of the installation. `vmafossexec` will be removed in a future version of this library.
+A command line tool called `vmaf` is included as part of the build/installation. See the `vmaf` [README.md](tools/README.md) for details. An older command line tool (`vmafossexec`) is still part of the build but is not part of the installation. `vmafossexec` will be removed in a future version of this library.
 
 ## API Walkthrough
 
@@ -145,7 +143,7 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
                       unsigned index_low, unsigned index_high);
 ```
 
-For more complete API documentation, see the public header files. For an example of API usage [vmaf.c](tools/vmaf.c) is a good place to look.
+For more complete API documentation, see [libvmaf.h](include/libvmaf/libvmaf.h). For an example of API usage [vmaf.c](tools/vmaf.c) is a good place to look.
 
 ## Contributing a new VmafFeatureExtractor
 
