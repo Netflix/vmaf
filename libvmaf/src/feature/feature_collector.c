@@ -44,6 +44,16 @@ static int aggregate_vector_append(AggregateVector *aggregate_vector,
 {
     if (!aggregate_vector) return -EINVAL;
 
+    for (unsigned i = 0; i < aggregate_vector->cnt; i++) {
+        if (!strcmp(feature_name, aggregate_vector->metric[i].name)) {
+            if (aggregate_vector->metric[i].value == score) {
+                return 0;
+            } else {
+                return -EINVAL;
+            }
+        }
+    }
+
     const unsigned cnt = aggregate_vector->cnt;
     if (cnt >= aggregate_vector->capacity) {
         size_t initial_size =
