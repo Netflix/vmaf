@@ -47,7 +47,7 @@ Pass your reference/distorted pair of videos to the tool using the `--reference`
 ## Model
 `vmaf` now has a number of VMAF models built-in. This means that no external VMAF model files are required, and the models are read from the binary itself. Previous versions of `libvmaf` required a `.pkl` format model file. Since v2.0.0, these `.pkl` model files have been depreciated in favor of `.json` model files. If you have a previously trained `.pkl` model you would like to convert to `.json`, the following [Python conversion script](../python/vmaf/script/convert_model_from_pkl_to_json.py) is available. If the `--model` parameter is not passed at all, `version=vmaf_v0.6.1` is enabled by default.
 
-```
+```sh
 # built-in model
 --model version=vmaf_v0.6.1
 
@@ -55,9 +55,19 @@ Pass your reference/distorted pair of videos to the tool using the `--reference`
 --model path=../model/vmaf_v0.6.1.json
 ```
 
+## Additional Metrics
+A number of addtional metrics are supported. Enable these metrics with the `--feature` flag.
+
+```sh
+# psnr, ssim, ms-ssim
+--feature psnr \
+--feature float_ssim \
+--feature float_ms_ssim
+```
+
 ## Example
 
-The following example shows a comparison using a pair of yuv inputs (`src01_hrc00_576x324.yuv`, `src01_hrc01_576x324.yuv`). In addition to VMAF which is enabled with the model `../model/vmaf_float_v0.6.1.pkl`, the `psnr` metric is also computed and logged.
+The following example shows a comparison using a pair of yuv inputs (`src01_hrc00_576x324.yuv`, `src01_hrc01_576x324.yuv`). In addition to VMAF, the `psnr` metric is also computed and logged.
 
 ```sh
 ./build/tools/vmaf \
