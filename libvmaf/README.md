@@ -43,13 +43,32 @@ ninja -vC build test
 
 ## Install
 
-Install the libraries and models to `/usr/local` using:
+Install the library, headers, and the `vmaf` command line tool:
 
 ```
 ninja -vC build install
 ```
 
-Under Linux, you may need `sudo` for the above command.
+This will install the following files:
+
+```
+├── bin
+│   └── vmaf
+├── include
+│   └── libvmaf
+│       ├── compute_vmaf.h
+│       ├── feature.h
+│       ├── libvmaf.h
+│       ├── model.h
+│       ├── picture.h
+│       └── version.h
+└── lib
+    ├── libvmaf.1.dylib
+    ├── libvmaf.a
+    ├── libvmaf.dylib -> libvmaf.1.dylib
+    └── pkgconfig
+        └── libvmaf.pc
+```
 
 ## Documentation
 
@@ -59,7 +78,15 @@ Generate HTML documentation with:
 ninja -vC build doc/html
 ```
 
-## API
+## Models
+
+`libvmaf` now has a number of VMAF models built-in. This means that no external VMAF model files are required, since the models are compiled into and read directly from the library. If you do not wish to compile the built-in models into your build, you may disable them with `-Dbuilt_in_models=false`. Previous versions of this library required a `.pkl` model file. Since libvmaf v2.0.0, these `.pkl` model files have been depreciated in favor of `.json` model files. If you have a previously trained `.pkl` model you would like to convert to `.json`, this [Python conversion script](../python/vmaf/script/convert_model_from_pkl_to_json.py) is available. 
+
+## `vmaf`
+
+A command line tool called `vmaf` is included as part of the build/installation. See the `vmaf` [README.md](tools/README.md) for details. An older command line tool (`vmafossexec`) is still part of the build but is not part of the installation. `vmafossexec` will be removed in a future version of this library.
+
+## API Walkthrough
 
 Create a `VmafContext` with `vmaf_init()`. `VmafContext` is an opaque type, and `VmafConfiguration` is a options struct used to initialize the context. Be sure to clean up the `VmafContext` with `vmaf_close()` when you are done with it.
 
@@ -116,6 +143,8 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
                       unsigned index_low, unsigned index_high);
 ```
 
+For  complete API documentation, see [libvmaf.h](include/libvmaf/libvmaf.h). For an example of API usage, see [vmaf.c](tools/vmaf.c).
+
 ## Contributing a new VmafFeatureExtractor
 
 To write a new VmafFeatureExtractor, please first familiarize yourself with the [VmafFeatureExtractor API documentation](https://github.com/Netflix/vmaf/blob/master/libvmaf/src/feature/feature_extractor.h#L36-L87). Implementing a new feature extractor should be relatively painless. Create a new `VmafFeatureExtractor` and add it to the build as well as the `feature_extractor_list[]`. See [this diff](https://github.com/Netflix/vmaf/commit/fd3c79697c7e06586aa5b9cda8db0d9aedfd70c5) for an example. Once you do this your feature extractor may be registered and used inside of `libvmaf` via `vmaf_use_feature()` or `vmaf_use_features_from_model()`. To invoke this feature extractor directly from the command line with `vmaf` use the `--feature` flag.
@@ -125,32 +154,3 @@ To write a new VmafFeatureExtractor, please first familiarize yourself with the 
 The remainder of your work should take place in the `.extract()` callback. This callback is called for every pair of input pictures. Read the pixel data make some computations and then write the output(s) to the `VmafFeatureCollector` via the `vmaf_feature_collector_append()` api. An important thing to know about this callback is that it can (and probably is) being called in an arbitrary order. If your feature extractor has a temporal requirement (i.e. `motion`), set the `VMAF_FEATURE_EXTRACTOR_TEMPORAL` flag and the `VmafFeatureExtractorContext` will ensure that this callback is executed in serial. For an example of a feature extractor with a temporal dependency see the [motion](https://github.com/Netflix/vmaf/blob/master/libvmaf/src/feature/integer_motion.c) feature extractor.
 
 If the `VMAF_FEATURE_EXTRACTOR_TEMPORAL` is set, it is likely that you have buffers that need flushing. If this is the case, `.flush()` is called in a loop until something non-zero is returned.
-
-## Example
-
-The following example shows a comparison using a pair of yuv inputs (`src01_hrc00_576x324.yuv`, `src01_hrc01_576x324.yuv`). In addition to VMAF which is enabled with the model `../model/vmaf_float_v0.6.1.pkl`, the `psnr` metric is also computed and logged.
-
-```sh
-wget https://github.com/Netflix/vmaf_resource/raw/master/python/test/resource/yuv/src01_hrc00_576x324.yuv
-wget https://github.com/Netflix/vmaf_resource/raw/master/python/test/resource/yuv/src01_hrc01_576x324.yuv
-./build/tools/vmaf \
-    --reference src01_hrc00_576x324.yuv \
-    --distorted src01_hrc01_576x324.yuv \
-    --width 576 --height 324 --pixel_format 420 --bitdepth 8 \
-    --model path=../model/vmaf_float_v0.6.1.pkl \
-    --feature psnr \
-    --output /dev/stdout
-```
-
-The output should look like this:
-```html
-<VMAF version="1.5.3">
-  <params qualityWidth="576" qualityHeight="324" />
-  <fyi fps="59.60" />
-  <frames>
-    <frame frameNum="0" adm2="0.962086" adm_scale0="0.946315" adm_scale1="0.939017" adm_scale2="0.957478" adm_scale3="0.980893" motion2="0.000000" vif_scale0="0.505393" vif_scale1="0.878155" vif_scale2="0.937589" vif_scale3="0.964357" psnr_y="34.760779" psnr_cb="39.229987" psnr_cr="41.349703" vmaf="83.849994" />
-    ...
-    <frame frameNum="47" adm2="0.946169" adm_scale0="0.924315" adm_scale1="0.908033" adm_scale2="0.943376" adm_scale3="0.971125" motion2="5.443212" vif_scale0="0.416110" vif_scale1="0.811470" vif_scale2="0.893364" vif_scale3="0.934516" psnr_y="31.888613" psnr_cb="38.667124" psnr_cr="41.353846" vmaf="83.019174" />
-  </frames>
-</VMAF>
-```
