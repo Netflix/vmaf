@@ -80,7 +80,7 @@ ninja -vC build doc/html
 
 ## Models
 
-`libvmaf` now has a number of VMAF models built-in. This means that no external VMAF model files are required, since the models are compiled into and read directly from the library. If you do not wish to compile the built-in models into your build, you may disable them with `-Dbuilt_in_models=false`. Previous versions of this library required a `.pkl` VMAF Model file. Since libvmaf v2.0.0, these `.pkl` model files have been depreciated in favor of `.json` model files. If you have a previously trained `.pkl` model you would like to convert to `.json`, we have provided this [Python script](../python/vmaf/script/convert_model_from_pkl_to_json.py) to do so. 
+`libvmaf` now has a number of VMAF models built-in. This means that no external VMAF model files are required, since the models are compiled into and read directly from the library. If you do not wish to compile the built-in models into your build, you may disable them with `-Dbuilt_in_models=false`. Previous versions of this library required a `.pkl` model file. Since libvmaf v2.0.0, these `.pkl` model files have been depreciated in favor of `.json` model files. If you have a previously trained `.pkl` model you would like to convert to `.json`, this [Python conversion script](../python/vmaf/script/convert_model_from_pkl_to_json.py) is available. 
 
 ## `vmaf`
 
