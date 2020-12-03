@@ -1,6 +1,6 @@
 # `vmaf`
 
-`vmaf` is a command line tool supports VMAF feature extraction and prediction. The tool takes a pair of input videos and a trained VMAF model and writes an output log. Input videos can be either .y4m/.yuv and output logs are available in a number of formats: XML, JSON, CSV, SUB.
+`vmaf` is a command line tool which supports VMAF feature extraction and prediction. The tool takes a pair of input videos as well as a trained VMAF model and writes an output log containing per-frame and pooled VMAF scores. Input videos can be either `.y4m` or `.yuv` and output logs are available in a number of formats: `.xml`, `.json`, `.csv`, `.sub`.
 
 ## Usage
 
@@ -31,7 +31,7 @@ Supported options:
 ```
 
 ## Input
-Pass your reference/distorted pair of videos to the tool using the `--reference` and `--distorted` flags. If your input is `.y4m` this is all that is required. If your input is raw `.yuv` the following command line flags are also required: `--width`, `--height`, `--pixel_format`, `--bitdepth`.
+Pass your reference/distorted pair of videos to the tool using the `--reference` and `--distorted` flags. If your inputs are `.y4m` this is all that is required. If your inputs are raw `.yuv` the following parameters are also required: `--width`, `--height`, `--pixel_format`, `--bitdepth`.
 
 ```sh
 # .y4m
@@ -45,7 +45,7 @@ Pass your reference/distorted pair of videos to the tool using the `--reference`
 ```
 
 ## Model
-Previous versions of this library required a `.pkl` VMAF Model file. Since libvmaf v2.0.0, these `.pkl` model files have been depreciated in favor of `.json` model files. If you have a previously trained `.pkl` model you would like to convert to `.json`, we have provided this [Python script](../python/vmaf/script/convert_model_from_pkl_to_json.py) to do so. `vmaf` now has a number of VMAF models built-in. This means that no VMAF model files are required at all, the models are read from the binary itself.
+`vmaf` now has a number of VMAF models built-in. This means that no external VMAF model files are required, and the models are read from the binary itself. Previous versions of `libvmaf` required a `.pkl` format model file. Since v2.0.0, these `.pkl` model files have been depreciated in favor of `.json` model files. If you have a previously trained `.pkl` model you would like to convert to `.json`, the following [Python conversion script](../python/vmaf/script/convert_model_from_pkl_to_json.py) is available. If the `--model` parameter is not passed at all, `version=vmaf_v0.6.1` is enabled by default.
 
 ```
 # built-in model
