@@ -151,7 +151,8 @@ class VmafFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
     # VERSION = '0.2.4c'  # Modify by moving motion2 to c code
     # VERSION = '0.2.5'  # replace executable vmaf_feature with vmaf
     # VERSION = '0.2.6'  # incorporate adm_enhn_gain_limit and vif_enhn_gain_limit
-    VERSION = '0.2.7'  # move vif_enhn_gain_limit right before log calculation
+    VERSION = '0.2.7'  # move vif_enhn_gain_limit right before log calculation;
+                       # add derived feature motion0 to match motion_force_zero mode
 
     ATOM_FEATURES = ['vif', 'adm', 'ansnr', 'motion', 'motion2',
                      'vif_num', 'vif_den', 'adm_num', 'adm_den', 'anpsnr',
@@ -172,6 +173,7 @@ class VmafFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
     DERIVED_ATOM_FEATURES = ['vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
                              'vif2', 'adm2', 'adm3',
                              'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
+                             'motion0',
                              ]
 
     ADM2_CONSTANT = 0
@@ -311,6 +313,10 @@ class VmafFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
                  / (np.array(result.result_dict[adm_den_scale3_scores_key]) + cls.ADM_SCALE_CONSTANT))
             ) / 4.0
         )
+
+        motion0_scores_key = cls.get_scores_key('motion0')
+        motion_scores_key = cls.get_scores_key('motion')
+        result.result_dict[motion0_scores_key] = list(np.zeros_like(result.result_dict[motion_scores_key]))
 
         # validate
         for feature in cls.DERIVED_ATOM_FEATURES:
