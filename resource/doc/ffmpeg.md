@@ -1,6 +1,6 @@
 # Using VMAF with FFmpeg
 
-After installing libvmaf, you can use it with FFmpeg. Under FFmpeg directory, configure, build and install FFmpeg with:
+After installing `libvmaf`, you can use it with [FFmpeg](http://ffmpeg.org/). Under the FFmpeg directory, configure, build and install FFmpeg with:
 
 ```bash
 ./configure --enable-libvmaf
@@ -8,7 +8,7 @@ make -j4
 make install
 ```
 
-Using FFmpeg+libvmaf is very powerful, as you can create complex filters to calculate VMAF directly on videos of different encoding formats and resolutions. For the best practices of computing VMAF at the right resolution, refer to our [techblog](https://medium.com/netflix-techblog/vmaf-the-journey-continues-44b51ee9ed12).
+Using FFmpeg+libvmaf is very powerful, as you can create complex filters to calculate VMAF directly on videos of different encoding formats and resolutions. For the best practices of computing VMAF at the right resolution, refer to our [tech blog](https://medium.com/netflix-techblog/vmaf-the-journey-continues-44b51ee9ed12).
 
 We provide a few examples how you can construct the FFmpeg command line and use VMAF as a filter. Note that you may need to download the test videos from [vmaf_resource](https://github.com/Netflix/vmaf_resource/tree/master/python/test/resource).
 

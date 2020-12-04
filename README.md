@@ -3,7 +3,7 @@ VMAF - Video Multi-Method Assessment Fusion
 
 [![Build Status](https://travis-ci.com/Netflix/vmaf.svg?branch=master)](https://travis-ci.com/Netflix/vmaf) [![libvmaf](https://github.com/Netflix/vmaf/workflows/libvmaf/badge.svg)](https://github.com/Netflix/vmaf/actions?query=workflow%3Alibvmaf) [![Windows](https://github.com/Netflix/vmaf/workflows/Windows/badge.svg)](https://github.com/Netflix/vmaf/actions?query=workflow%3AWindows)
 
-VMAF is a perceptual video quality assessment algorithm developed by Netflix. This software package includes a stand-alone C library `libvmaf` and its wrapping Python library, which also offers a set of tools that allows a user to train and test a custom VMAF model. Read [this](https://medium.com/netflix-techblog/toward-a-practical-perceptual-video-quality-metric-653f208b9652) tech blog post for an overview, or [this](https://medium.com/netflix-techblog/vmaf-the-journey-continues-44b51ee9ed12) post for the latest updates and tips for best practices.
+VMAF is a perceptual video quality assessment algorithm developed by Netflix. This software package includes a stand-alone C library `libvmaf` and its wrapping Python library. The Python library also provides a set of tools that allows a user to train and test a custom VMAF model. Read [this](https://medium.com/netflix-techblog/toward-a-practical-perceptual-video-quality-metric-653f208b9652) tech blog post for an overview, or [this](https://medium.com/netflix-techblog/vmaf-the-journey-continues-44b51ee9ed12) post for the latest updates and tips for best practices.
 
 Also included in `libvmaf` are implementations of several other metrics: PSNR, PSNR-HVS, SSIM, MS-SSIM and CIEDE2000.
 
@@ -11,7 +11,7 @@ Also included in `libvmaf` are implementations of several other metrics: PSNR, P
 
 ## News
 
-- (12/3/20) We are releasing `libvmaf v2.0.0`. It has a new fixed-point and SIMD-optimized [implementation](libvmaf/tools/README.md#example) that achieves 2x speed up compared to the previous floating-point version. It also has a [new API](libvmaf/README.md#api-walkthrough) that is more flexible and extensible.
+- (12/3/20) We are releasing `libvmaf v2.0.0`. It has a new fixed-point and SIMD-optimized implementation that achieves 2x speed up compared to the previous floating-point version. It also has a [new API](libvmaf/README.md) that is more flexible and extensible.
 - (7/13/20) We have created a [memo](https://docs.google.com/document/d/1dJczEhXO0MZjBSNyKmd3ARiCTdFVMNPBykH4_HMPoyY/edit?usp=sharing) to share our thoughts on VMAF's property in the presence of image enhancement operations, its impact on codec evaluation, and our solutions.
 - (2/27/20) We have changed VMAF's license from Apache 2.0 to [BSD+Patent](https://opensource.org/licenses/BSDplusPatent), a more permissive license compared to Apache that also includes an express patent grant.
 
@@ -23,11 +23,11 @@ Refer to the [FAQ](FAQ.md) page.
 
 The software package offers a number of ways to interact with the VMAF implementation.
 
-  - [The C executable `vmaf`](libvmaf/tools/README.md) has a complete algorithm implementation, such that one can easily deploy VMAF in a production environment. Additionally, the `vmaf` tool provides a number of auxillary metrics such as PSNR, SSIM and MS-SSIM.
-  - [The C library `libvmaf`](libvmaf/README.md) offers an interface to incorporate VMAF into your C code.
-  - [The Python library](resource/doc/VMAF_Python_library.md) offers a full array of wrapper classes and scripts for software testing, VMAF model training and validation, dataset processing, data visualization, etc.
-  - VMAF is now included as a filter in [FFmpeg](http://ffmpeg.org/) and can be configured using: `./configure --enable-libvmaf`. Refer to the [Using VMAF with FFmpeg](resource/doc/ffmpeg.md) page.
-  - [VMAF Dockerfile](Dockerfile) generates a docker image from the [VMAF Python library](resource/doc/VMAF_Python_library.md). Refer to [this](resource/doc/docker.md) document for detailed usages.
+  - The [C executable `vmaf`](libvmaf/tools/README.md) has a complete algorithm implementation, such that one can easily deploy VMAF in a production environment. Additionally, the `vmaf` tool provides a number of auxillary metrics such as PSNR, SSIM and MS-SSIM.
+  - The [C library `libvmaf`](libvmaf/README.md) provides an interface to incorporate VMAF into your C code, and tools to integrate other feature extractors into the library.
+  - The [Python library](resource/doc/VMAF_Python_library.md) offers a full array of wrapper classes and scripts for software testing, VMAF model training and validation, dataset processing, data visualization, etc.
+  - VMAF is now included as a filter in FFmpeg, and can be configured using: `./configure --enable-libvmaf`. Refer to the [Using VMAF with FFmpeg](resource/doc/ffmpeg.md) page.
+  - [VMAF Dockerfile](Dockerfile) generates a docker image from the [Python library](resource/doc/VMAF_Python_library.md). Refer to [this](resource/doc/docker.md) document for detailed usages.
   - To build VMAF on Windows, follow [this](resource/doc/BuildForWindows.md) instruction.
 
 ## Datasets
@@ -40,7 +40,7 @@ Besides the default VMAF model which predicts the quality of videos displayed on
 
 ## Confidence Interval
 
-Since June 2018, we have introduced a way to quantify the level of confidence that a VMAF prediction entails. Each VMAF prediction score now can come with a 95% confidence interval (CI), which quantifies the level of confidence that the prediction lies within the interval. Refer to the [VMAF confidence interval](resource/doc/conf_interval.md) page for more details.
+Since June 2018, we have introduced a way to quantify the level of confidence that a VMAF prediction entails. Each VMAF prediction score now can come with a 95% confidence interval, which quantifies the level of confidence of the prediction. Refer to the [VMAF Confidence Interval](resource/doc/conf_interval.md) page for more details.
 
 ## Matlab Functionality
 

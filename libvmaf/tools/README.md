@@ -1,10 +1,18 @@
-# `vmaf`
+# C Executable - `vmaf`
 
 `vmaf` is a command line tool which supports VMAF feature extraction and prediction. The tool takes a pair of input videos as well as a trained VMAF model and writes an output log containing per-frame and pooled VMAF scores. Input videos can be either `.y4m` or `.yuv` and output logs are available in a number of formats: `.xml`, `.json`, `.csv`, `.sub`.
+
+An older command line tool (`vmafossexec`) is still part of the build but is not part of the [installation](../README.md#install). `vmafossexec` will be removed in a future version of this library.
+
+## Compile
+
+Refer to the [`libvmaf`](../README.md) Compile section.
 
 ## Usage
 
 ```
+Usage: libvmaf/build/tools/vmaf [options]
+
 Supported options:
  --reference/-r $path:      path to reference .y4m or .yuv
  --distorted/-d $path:      path to distorted .y4m or .yuv
@@ -44,8 +52,8 @@ Pass your reference/distorted pair of videos to the tool using the `--reference`
 --width 1920 --height 1080 --pixel_format 420 --bitdepth 8 \
 ```
 
-## Model
-`vmaf` now has a number of VMAF models built-in. This means that no external VMAF model files are required, and the models are read from the binary itself. Previous versions of `libvmaf` required a `.pkl` format model file. Since v2.0.0, these `.pkl` model files have been depreciated in favor of `.json` model files. If you have a previously trained `.pkl` model you would like to convert to `.json`, the following [Python conversion script](../python/vmaf/script/convert_model_from_pkl_to_json.py) is available. If the `--model` parameter is not passed at all, `version=vmaf_v0.6.1` is enabled by default.
+## VMAF Models
+`vmaf` now has a number of VMAF models built-in. This means that no external VMAF model files are required, and the models are read from the binary itself. Previous versions of `libvmaf` required a `.pkl` format model file. Since v2.0.0, these `.pkl` model files have been depreciated in favor of `.json` model files. If you have a previously trained `.pkl` model you would like to convert to `.json`, the following [Python conversion script](../../python/vmaf/script/convert_model_from_pkl_to_json.py) is available. If the `--model` parameter is not passed at all, `version=vmaf_v0.6.1` is enabled by default.
 
 ```sh
 # built-in model
@@ -59,22 +67,50 @@ Pass your reference/distorted pair of videos to the tool using the `--reference`
 A number of addtional metrics are supported. Enable these metrics with the `--feature` flag.
 
 ```sh
-# psnr, ssim, ms-ssim
+# psnr, psnr_hvs, ssim, ms-ssim, ciede
 --feature psnr \
+--feature psnr_hvs \
 --feature float_ssim \
 --feature float_ms_ssim
+--feature ciede
 ```
 
 ## Example
 
-The following example shows a comparison using a pair of yuv inputs (`src01_hrc00_576x324.yuv`, `src01_hrc01_576x324.yuv`). In addition to VMAF, the `psnr` metric is also computed and logged.
+The following example shows a comparison using a pair of yuv inputs ([`src01_hrc00_576x324.yuv`](https://github.com/Netflix/vmaf_resource/blob/master/python/test/resource/yuv/src01_hrc00_576x324.yuv), [`src01_hrc01_576x324.yuv`](https://github.com/Netflix/vmaf_resource/blob/master/python/test/resource/yuv/src01_hrc01_576x324.yuv)). In addition to VMAF, the `psnr` metric is also computed and logged.
 
 ```sh
-./build/tools/vmaf \
+libvmaf/build/tools/vmaf \
     --reference src01_hrc00_576x324.yuv \
     --distorted src01_hrc01_576x324.yuv \
     --width 576 --height 324 --pixel_format 420 --bitdepth 8 \
     --model version=vmaf_v0.6.1 \
     --feature psnr \
     --output output.xml
+```
+Example output:
+```text
+VMAF version e1d466c
+48 frames ⠀⠩ 44.72 FPS
+vmaf_v0.6.1: 76.668905
+```
+with `output.xml`:
+```xml
+<VMAF version="e1d466c">
+  <params qualityWidth="576" qualityHeight="324" />
+  <fyi fps="41.98" />
+  <frames>
+    <frame frameNum="0" integer_adm2="0.962084" integer_adm_scale0="0.946338" integer_adm_scale1="0.939006" integer_adm_scale2="0.957474" integer_adm_scale3="0.980887" integer_motion2="0.000000" integer_motion="0.000000" integer_vif_scale0="0.505712" integer_vif_scale1="0.879061" integer_vif_scale2="0.937873" integer_vif_scale3="0.964301" psnr_y="34.760779" psnr_cb="39.229987" psnr_cr="41.349703" vmaf="83.856285" />
+    ...
+  </frames>
+  <pooled_metrics>
+    <metric name="integer_adm2" min="0.921008" max="0.962084" mean="0.934506" harmonic_mean="0.934463" />
+    ...
+    <metric name="psnr_y" min="29.640688" max="34.760779" mean="30.755064" harmonic_mean="30.727905" />
+    <metric name="psnr_cb" min="38.019979" max="39.229987" mean="38.449441" harmonic_mean="38.447866" />
+    <metric name="psnr_cr" min="40.649266" max="41.353846" mean="40.991910" harmonic_mean="40.991083" />
+    <metric name="vmaf" min="71.176557" max="87.181420" mean="76.668905" harmonic_mean="76.510006" />
+  </pooled_metrics>
+  <aggregate_metrics />
+</VMAF>
 ```

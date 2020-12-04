@@ -1,4 +1,6 @@
-# libvmaf
+# C library - `libvmaf`
+
+`libvmaf` is a C library that provides a complete VMAF implementation and an API to incorporate VMAF into your C code. Today FFmpeg incorporates VMAF [as a filter](../resource/doc/ffmpeg.md). `libvmaf` also provides tools to integrate a third-party feature extractors (for example: PSNR-HVS) into the library through the `VmafFeatureExtractor` API.
 
 ## Prerequisites
 
@@ -9,7 +11,7 @@ For building, you need the following:
 - [Ninja](https://ninja-build.org/) (1.7.1 or higher)
 - [NASM](https://www.nasm.us/) (for x86 builds only, 2.13.02 or higher)
 
-Follow the steps below:
+Follow the steps below to set up a clean virtual environment and install the tools:
 ```
 python3 -m pip install virtualenv
 python3 -m virtualenv .venv
@@ -21,7 +23,7 @@ You need to invoke `[package-manager]` depending on which system you are on: `ap
 
 ## Compile
 
-Run:
+Under the `libvmaf` directory, run:
 
 ```
 meson build --buildtype release
@@ -78,17 +80,16 @@ Generate HTML documentation with:
 ninja -vC build doc/html
 ```
 
-## Models
+## VMAF Models
 
 `libvmaf` now has a number of VMAF models built-in. This means that no external VMAF model files are required, since the models are compiled into and read directly from the library. If you do not wish to compile the built-in models into your build, you may disable them with `-Dbuilt_in_models=false`. Previous versions of this library required a `.pkl` model file. Since libvmaf v2.0.0, these `.pkl` model files have been depreciated in favor of `.json` model files. If you have a previously trained `.pkl` model you would like to convert to `.json`, this [Python conversion script](../python/vmaf/script/convert_model_from_pkl_to_json.py) is available. 
 
-## `vmaf`
+## Incorporate VMAF into Your C Code
 
-A command line tool called `vmaf` is included as part of the build/installation. See the `vmaf` [README.md](tools/README.md) for details. An older command line tool (`vmafossexec`) is still part of the build but is not part of the installation. `vmafossexec` will be removed in a future version of this library.
+Follow the steps below to incorporate VMAF into your C code. For complete API documentation, see [libvmaf.h](include/libvmaf/libvmaf.h). For an example of using the API to create the `vmaf` command line tool, see [vmaf.c](tools/vmaf.c).
 
-## API Walkthrough
 
-Create a `VmafContext` with `vmaf_init()`. `VmafContext` is an opaque type, and `VmafConfiguration` is a options struct used to initialize the context. Be sure to clean up the `VmafContext` with `vmaf_close()` when you are done with it.
+First, create a `VmafContext` with `vmaf_init()`. `VmafContext` is an opaque type, and `VmafConfiguration` is a options struct used to initialize the context. Be sure to clean up the `VmafContext` with `vmaf_close()` when you are done with it.
 
 ```c
 int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg);
@@ -143,11 +144,11 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
                       unsigned index_low, unsigned index_high);
 ```
 
-For  complete API documentation, see [libvmaf.h](include/libvmaf/libvmaf.h). For an example of API usage, see [vmaf.c](tools/vmaf.c).
+## Write a New Feature Extractor
 
-## Contributing a new VmafFeatureExtractor
+To write a new feature extractor, please first familiarize yourself with the [VmafFeatureExtractor API](https://github.com/Netflix/vmaf/blob/master/libvmaf/src/feature/feature_extractor.h#L36-L87) documentation.
 
-To write a new VmafFeatureExtractor, please first familiarize yourself with the [VmafFeatureExtractor API documentation](https://github.com/Netflix/vmaf/blob/master/libvmaf/src/feature/feature_extractor.h#L36-L87). Implementing a new feature extractor should be relatively painless. Create a new `VmafFeatureExtractor` and add it to the build as well as the `feature_extractor_list[]`. See [this diff](https://github.com/Netflix/vmaf/commit/fd3c79697c7e06586aa5b9cda8db0d9aedfd70c5) for an example. Once you do this your feature extractor may be registered and used inside of `libvmaf` via `vmaf_use_feature()` or `vmaf_use_features_from_model()`. To invoke this feature extractor directly from the command line with `vmaf` use the `--feature` flag.
+Create a new `VmafFeatureExtractor` and add it to the build as well as the `feature_extractor_list[]`. See [this diff](https://github.com/Netflix/vmaf/commit/fd3c79697c7e06586aa5b9cda8db0d9aedfd70c5) for an example to create a floating-point MS-SSIM feature extractor. Once you do this your feature extractor may be registered and used inside of `libvmaf` via `vmaf_use_feature()` or `vmaf_use_features_from_model()`. To invoke this feature extractor directly from the command line with `vmaf` use the `--feature` flag.
 
 `VmafFeatureExtractor` is a feature extraction class with just a few callbacks. If you have preallocations and/or precomputations to make, it is best to do this in the `.init()` callback and store the output in `.priv`.  This is a place for custom data which is available for all subsequent callbacks. If you allocate anything in `.init()` be sure to clean it up in the `.close()` callback.
 

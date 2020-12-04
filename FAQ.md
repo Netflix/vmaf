@@ -64,9 +64,7 @@ For example, to upscale the distorted video to 1080p:
 ffmpeg -i main.mpg -i ref.mpg -filter_complex "[0:v]scale=1920x1080:flags=bicubic[main];[main][1:v]libvmaf" -f null -
 ```
 
-This scales the first input video (`0:v`) and forwards it to VMAF (`libvmaf`) with the label `main`, where it is compared against the second input video, `1:v`.
-
-More documentations can be found [here](resource/doc/ffmpeg.md).
+This scales the first input video (`0:v`) and forwards it to VMAF (`libvmaf`) with the label `main`, where it is compared against the second input video, `1:v`. More details can be found [here](resource/doc/ffmpeg.md).
 
 ### Q: Why are the PSNR values capped at 60 dB for 8-bit inputs and 72 dB for 12-bit inputs in the package's implementation?
 
