@@ -17,6 +17,7 @@
  */
 
 #include <errno.h>
+#include <math.h>
 #include <stddef.h>
 
 #include "feature_collector.h"
@@ -31,6 +32,7 @@ typedef struct SsimState {
     float *ref;
     float *dist;
     bool enable_lcs;
+    bool enable_db;
 } SsimState;
 
 static const VmafOption options[] = {
@@ -38,6 +40,13 @@ static const VmafOption options[] = {
         .name = "enable_lcs",
         .help = "enable luminance, contrast and structure intermediate output",
         .offset = offsetof(SsimState, enable_lcs),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
+    {
+        .name = "enable_db",
+        .help = "write SSIM values as dB",
+        .offset = offsetof(SsimState, enable_db),
         .type = VMAF_OPT_TYPE_BOOL,
         .default_val.b = false,
     },
@@ -65,6 +74,11 @@ fail:
     return -ENOMEM;
 }
 
+static double convert_to_db(double score)
+{
+    return -10. * log10(1 - score);
+}
+
 static int extract(VmafFeatureExtractor *fex,
                    VmafPicture *ref_pic, VmafPicture *ref_pic_90,
                    VmafPicture *dist_pic, VmafPicture *dist_pic_90,
@@ -84,6 +98,9 @@ static int extract(VmafFeatureExtractor *fex,
                        s->float_stride, s->float_stride,
                        &score, &l_score, &c_score, &s_score);
     if (err) return err;
+
+    if (s->enable_db)
+        score = convert_to_db(score);
 
     err = vmaf_feature_collector_append(feature_collector, "float_ssim",
                                         score, index);
