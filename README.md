@@ -3,18 +3,17 @@ VMAF - Video Multi-Method Assessment Fusion
 
 [![Build Status](https://travis-ci.com/Netflix/vmaf.svg?branch=master)](https://travis-ci.com/Netflix/vmaf) [![libvmaf](https://github.com/Netflix/vmaf/workflows/libvmaf/badge.svg)](https://github.com/Netflix/vmaf/actions?query=workflow%3Alibvmaf) [![Windows](https://github.com/Netflix/vmaf/workflows/Windows/badge.svg)](https://github.com/Netflix/vmaf/actions?query=workflow%3AWindows)
 
-VMAF is a perceptual video quality assessment algorithm developed by Netflix. VMAF Development Kit (VDK) is a software package that contains the VMAF algorithm implementation, as well as a set of tools that allows a user to train and test a custom VMAF model. Read [this](https://medium.com/netflix-techblog/toward-a-practical-perceptual-video-quality-metric-653f208b9652) techblog post for an overview, or [this](https://medium.com/netflix-techblog/vmaf-the-journey-continues-44b51ee9ed12) post for the latest updates and tips for best practices.
+VMAF is a perceptual video quality assessment algorithm developed by Netflix. This software package includes a stand-alone C library `libvmaf` and its wrapping Python library, which also offers a set of tools that allows a user to train and test a custom VMAF model. Read [this](https://medium.com/netflix-techblog/toward-a-practical-perceptual-video-quality-metric-653f208b9652) tech blog post for an overview, or [this](https://medium.com/netflix-techblog/vmaf-the-journey-continues-44b51ee9ed12) post for the latest updates and tips for best practices.
+
+Also included in `libvmaf` are implementations of several other metrics: PSNR, PSNR-HVS, SSIM, MS-SSIM and CIEDE2000.
 
 ![vmaf logo](resource/images/vmaf_logo.jpg)
 
 ## News
 
+- (12/3/20) We are releasing `libvmaf v2.0.0`. It has a new fixed-point and SIMD-optimized [implementation](libvmaf/tools/README.md#example) that achieves 2x speed up compared to the previous floating-point version. It also has a [new API](libvmaf/README.md#api-walkthrough) that is more flexible and extensible.
 - (7/13/20) We have created a [memo](https://docs.google.com/document/d/1dJczEhXO0MZjBSNyKmd3ARiCTdFVMNPBykH4_HMPoyY/edit?usp=sharing) to share our thoughts on VMAF's property in the presence of image enhancement operations, its impact on codec evaluation, and our solutions.
 - (2/27/20) We have changed VMAF's license from Apache 2.0 to [BSD+Patent](https://opensource.org/licenses/BSDplusPatent), a more permissive license compared to Apache that also includes an express patent grant.
-- (2/27/20) We made a few changes in a recent refactoring effort:
-    * Migrated the build system from makefile to meson.
-    * Restructured the code. 
-    * Introduced a new release candidate API with the associated library `libvmaf_rc` and executable `vmaf_rc`, co-existing with the current `libvmaf` and `vmafossexec`, all under `libvmaf/build`. The new release candidate API is designed for better interoperability with encoding optimization. We will deprecate the old API on a future date.
 
 ## Frequently Asked Questions
 
@@ -22,16 +21,14 @@ Refer to the [FAQ](FAQ.md) page.
 
 ## Usages
 
-The VDK package offers a number of ways to interact with the VMAF implementation. The core `libvmaf` library with feature extractors is written in C. The rest of the code including the classes for machine learning regression, training and testing VMAF models and etc., is written in Python. Besides, the `libvmaf` C library partially replicates the logic in the regression classes, such that the VMAF prediction (excluding training) is fully implemented.
+The software package offers a number of ways to interact with the VMAF implementation.
 
-There are a number of ways one can use the package:
-
-  - [VMAF Python library](resource/doc/VMAF_Python_library.md) offers a full array of wrapper classes and scripts to allow running basic VMAF command line, training and testing a VMAF model on video datasets, and visualization tools, etc.
-  - [`vmaf` - a C executable](libvmaf/tools/README.md) offers feature extraction and prediction, such that one can easily deploy VMAF in a production environment. Additionally, the `vmaf` tool provides a number of auxillary metrics such as PSNR, SSIM and MS-SSIM.
-  - [`libvmaf` - a C library](libvmaf/README.md) offers an interface to incorporate VMAF into your C code.
-  - VMAF is now included as a filter in [FFmpeg](http://ffmpeg.org/) and can be configured using: `./configure --enable-libvmaf`. See the [FFmpeg documentation](resource/doc/ffmpeg.md) for usage.
-  - [VMAF Dockerfile](Dockerfile) generates a VMAF docker image from the [VMAF Python library](resource/doc/VMAF_Python_library.md). Refer to [this](resource/doc/docker.md) document for detailed usages.
-  - Build VMAF on Windows: follow instructions on [this](resource/doc/BuildForWindows.md) page.
+  - [The C executable `vmaf`](libvmaf/tools/README.md) has a complete algorithm implementation, such that one can easily deploy VMAF in a production environment. Additionally, the `vmaf` tool provides a number of auxillary metrics such as PSNR, SSIM and MS-SSIM.
+  - [The C library `libvmaf`](libvmaf/README.md) offers an interface to incorporate VMAF into your C code.
+  - [The Python library](resource/doc/VMAF_Python_library.md) offers a full array of wrapper classes and scripts for software testing, VMAF model training and validation, dataset processing, data visualization, etc.
+  - VMAF is now included as a filter in [FFmpeg](http://ffmpeg.org/) and can be configured using: `./configure --enable-libvmaf`. Refer to the [Using VMAF with FFmpeg](resource/doc/ffmpeg.md) page.
+  - [VMAF Dockerfile](Dockerfile) generates a docker image from the [VMAF Python library](resource/doc/VMAF_Python_library.md). Refer to [this](resource/doc/docker.md) document for detailed usages.
+  - To build VMAF on Windows, follow [this](resource/doc/BuildForWindows.md) instruction.
 
 ## Datasets
 
@@ -43,15 +40,15 @@ Besides the default VMAF model which predicts the quality of videos displayed on
 
 ## Confidence Interval
 
-Since VDK v1.3.7 (June 2018), we have introduced a way to quantify the level of confidence that a VMAF prediction entails. Each VMAF prediction score now can come with a 95% confidence interval (CI), which quantifies the level of confidence that the prediction lies within the interval. Refer to the [VMAF confidence interval](resource/doc/conf_interval.md) page for more details.
+Since June 2018, we have introduced a way to quantify the level of confidence that a VMAF prediction entails. Each VMAF prediction score now can come with a 95% confidence interval (CI), which quantifies the level of confidence that the prediction lies within the interval. Refer to the [VMAF confidence interval](resource/doc/conf_interval.md) page for more details.
 
 ## Matlab Functionality
 
-Besides the Python/C/C++ part of the repository, we also introduced a number of algorithms that are implemented in Matlab. For example, users can calculate ST-RRED, ST-MAD, SpEED-QA, and BRISQUE. For more details, see the [Matlab Usage](resource/doc/matlab_usage.md) page for more details.
+Besides the C and Python part of the software package, we also introduced a number of algorithms that are implemented in Matlab. For example, users can calculate ST-RRED, ST-MAD, SpEED-QA, and BRISQUE. For more details, see the [Matlab Usage](resource/doc/matlab_usage.md) page for more details.
 
 ## Report of VMAF Bad Cases
 
-Over time, we have received feedbacks on when VMAF's prediction does not reflect the expected perceptual quality of videos, either they are corner cases where VMAF fails to cover, or new application scenarios which VMAF was not initially intended for. In response to that, we have created the Google form to allow users to upload their video samples and describe the scenarios. The bad cases are valuable for improving future versions of VMAF. Users can opt in or out for sharing their sample videos publicly. Please submit the bad cases through [this link](https://docs.google.com/forms/d/e/1FAIpQLSdJntNoBuucMSiYoK3SDWoY1QN0yiFAi5LyEXuOyXEWJbQBtQ/viewform?usp=sf_link).
+Over time, we have received feedbacks on when VMAF's prediction does not reflect the expected perceptual quality of videos, either they are corner cases where VMAF fails to cover, or new application scenarios which VMAF was not initially intended for. In response to that, we have created a Google form to allow users to upload their video samples and describe their cases. The bad cases are valuable for improving future versions of VMAF. Users can opt in or out for sharing their sample videos publicly. Please submit the bad cases through [this link](https://docs.google.com/forms/d/e/1FAIpQLSdJntNoBuucMSiYoK3SDWoY1QN0yiFAi5LyEXuOyXEWJbQBtQ/viewform?usp=sf_link).
 
 ## References
 
