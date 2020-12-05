@@ -21,13 +21,20 @@ The available algorithms are ST-MAD [1], ST-RRED [2], SpEED-QA [3] and BRISQUE [
 
 Example usage for ST-MAD, ST-RRED and SpEED-QA with the run_testing script:
 
+```shell script
 ./run_testing quality_type dataset_file
+```
 
 where quality_type can be STMAD (for ST-MAD), STRRED (for ST-RRED) and SpEED_Matlab (for SpEED-QA). We have also implemented a computationally efficient version of ST-RRED (use STRREDOpt as the quality_type), which produces numerically identical results to ST-RRED.
 
 Example usage for BRISQUE:
 
-./run_vmaf yuv_420p 1920 1080 NFLX_dataset_public/ref/OldTownCross_25fps.yuv NFLX_dataset_public/dis/OldTownCross_90_1080_4300.yuv --model model/vmaf_brisque_all_v0.0rc.pkl
+```shell script
+./run_vmaf yuv_420p 1920 1080 \
+    NFLX_dataset_public/ref/OldTownCross_25fps.yuv \
+    NFLX_dataset_public/dis/OldTownCross_90_1080_4300.yuv \
+    --model model/vmaf_brisque_all_v0.0rc.pkl
+```
 
 ## References
 

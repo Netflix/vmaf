@@ -1,14 +1,14 @@
 VMAF Python Library
 ===================
 
-The VMAF Python library offers full functionalities from running basic VMAF command line, running VMAF on a batch of video files, training and testing a VMAF model on video datasets, and visualization tools, etc. It is the playground to experiment with VMAF.
+The VMAF Python library offers full functionalities from running basic VMAF command lines, software testing, training and validating a new VMAF model on video datasets, data visualization tools, etc. It is the playground to experiment with VMAF.
 
 ## Build
 
 Make sure you have `python3` (python 3.6 or higher). You can check the version by `python3 --version`.
 
-Follow the steps below:
-```
+Follow the steps below to set up a clean virtual environment and install the tools required:
+```shell script
 python3 -m pip install virtualenv
 python3 -m virtualenv .venv
 source .venv/bin/activate
@@ -20,38 +20,40 @@ You need to invoke `[package-manager]` depending on which system you are on: `ap
 Make sure `nasm` is 2.13.02 or higher (check by `nasm --version`) and `ninja` is 1.7.1 or higher (check by `ninja --version`.
 
 Depending on the system, you may also need to install `python-dev`:
-```
+```shell script
 sudo [package-manager] install [python-dev]
 ```
 where `[python-dev]` is either `python3-dev` or `python3-devel` depending on the system.
 
 Build the binary by:
-```
+```shell script
 make
 ```
 
 Install the rest of the required Python packages:
-```
+```shell script
 pip install -r python/requirements.txt
 ```
 
 ## Testing
 
 Run unittests and make sure they all pass:
-```
+```shell script
 ./unittest
 ```
 
 ## Basic Usage
 
-One can run VMAF either in single mode by `run_vmaf` or in batch mode by `run_vmaf_in_batch`. Besides, `ffmpeg2vmaf` is a command line tool that offers the capability of taking compressed video bitstreams as input.
+### Run VMAF Using `run_vmaf`
 
-### `run_vmaf` -- Running VMAF in Single Mode
+One can run VMAF in the command line by `run_vmaf`, which allows the input videos to be the `.yuv` format. To run VMAF on a single reference/distorted video pair, run:
 
-To run VMAF on a single reference/distorted video pair, run:
-
-```
-PYTHONPATH=python ./python/vmaf/script/run_vmaf.py format width height reference_path distorted_path [--out-fmt output_format]
+```shell script
+PYTHONPATH=python ./python/vmaf/script/run_vmaf.py \
+    format width height \
+    reference_path \
+    distorted_path \
+    [--out-fmt output_format]
 ```
 
 The arguments are the following:
@@ -68,80 +70,52 @@ The arguments are the following:
     - `xml`
     - `json`
 
-For example:
+For example, the following command runs VMAF on a pair of `.yuv` inputs ([`src01_hrc00_576x324.yuv`](https://github.com/Netflix/vmaf_resource/blob/master/python/test/resource/yuv/src01_hrc00_576x324.yuv), [`src01_hrc01_576x324.yuv`](https://github.com/Netflix/vmaf_resource/blob/master/python/test/resource/yuv/src01_hrc01_576x324.yuv)):
 
-```
+```shell script
  PYTHONPATH=python ./python/vmaf/script/run_vmaf.py \
   yuv420p 576 324 \
-  python/test/resource/yuv/src01_hrc00_576x324.yuv \
-  python/test/resource/yuv/src01_hrc01_576x324.yuv \
+  src01_hrc00_576x324.yuv \
+  src01_hrc01_576x324.yuv \
   --out-fmt json
 ```
 
 This will generate JSON output like:
 
-```
-"aggregate": {
-    "VMAF_feature_adm2_score": 0.93458780776205741, 
-    "VMAF_feature_motion2_score": 3.8953518541666665, 
-    "VMAF_feature_vif_scale0_score": 0.36342081156994926, 
-    "VMAF_feature_vif_scale1_score": 0.76664738784617292, 
-    "VMAF_feature_vif_scale2_score": 0.86285338927816291, 
-    "VMAF_feature_vif_scale3_score": 0.91597186913930484, 
-    "VMAF_score": 76.699271371151269, 
-    "method": "mean"
+```json
+{
+    ...
+    "aggregate": {
+        "VMAF_feature_adm2_score": 0.93458780776205741, 
+        "VMAF_feature_motion2_score": 3.8953518541666665, 
+        "VMAF_feature_vif_scale0_score": 0.36342081156994926, 
+        "VMAF_feature_vif_scale1_score": 0.76664738784617292, 
+        "VMAF_feature_vif_scale2_score": 0.86285338927816291, 
+        "VMAF_feature_vif_scale3_score": 0.91597186913930484, 
+        "VMAF_score": 76.699271371151269, 
+        "method": "mean"
+    }
 }
 ```
 
-where `VMAF_score` is the final score and the others are the scores for VMAF's elementary metrics.
-
+where `VMAF_score` is the final score and the others are the scores for VMAF's elementary metrics:
 - `adm2`, `vif_scalex` scores range from 0 (worst) to 1 (best)
 - `motion2` score typically ranges from 0 (static) to 20 (high-motion)
 
-### `run_vmaf_in_batch` -- Running VMAF in Batch Mode
+### `ffmpeg2vmaf`
 
-To run VMAF in batch mode, create an input text file, where each corresponds to the following format (check examples in [example_batch_input](../../resource/example/example_batch_input)):
+Historically, we provide `ffmpeg2vmaf` as a command line tool that offers the capability of taking compressed video bitstreams as the input. But it is now considered deprecated in favor of [using FFmpeg with VMAF](ffmpeg.md) to achieve the same purpose.
 
-```
-format width height reference_path distorted_path
-```
+`ffmpeg2vmaf` essentially pipes FFmpeg-decoded videos to VMAF. Note that you need a recent version of `ffmpeg` installed (for the first time, run the command line, follow the prompted instruction to specify the path of `ffmpeg`). 
 
-For example:
-
-```
-yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv \
-  python/test/resource/yuv/src01_hrc01_576x324.yuv
-yuv420p 576 324 python/test/resource/yuv/src01_hrc00_576x324.yuv \
-  python/test/resource/yuv/src01_hrc00_576x324.yuv
-```
-
-After that, run:
-
-```
-run_vmaf_in_batch input_file [--out-fmt out_fmt] [--parallelize]
-```
-
-where enabling `--parallelize` allows execution on multiple reference-distorted video pairs in parallel.
-
-For example:
-
-```
-PYTHONPATH=python ./python/vmaf/script/run_vmaf_in_batch.py \
-  resource/example/example_batch_input --parallelize
-```
-
-### Using `ffmpeg2vmaf`
-
-There is also an `ffmpeg2vmaf` command line tool which can compare any file format decodable by `ffmpeg`. `ffmpeg2vmaf` essentially pipes FFmpeg-decoded videos to VMAF. Note that you need a recent version of `ffmpeg` installed (for the first time, run the command line, follow the prompted instruction to specify the path of `ffmpeg`). 
-
-```
-PYTHONPATH=python ./python/vmaf/script/ffmpeg2vmaf.py quality_width quality_height reference_path distorted_path \
-  [--model model_path] [--out-fmt out_fmt]
+```shell script
+PYTHONPATH=python ./python/vmaf/script/ffmpeg2vmaf.py \
+    quality_width quality_height \
+    reference_path distorted_path \
+    [--model model_path] [--out-fmt out_fmt]
 ```
 
 Here `quality_width` and `quality_height` are the width and height the reference and distorted videos are scaled to before VMAF calculation. This is different from `run_vmaf`'s  `width` and `height`, which specify the raw YUV's width and height instead. The input to `ffmpeg2vmaf` must already have such information specified in the header so that they are FFmpeg-decodable.
-
-Note that with `libvmaf` as a filter in FFmpeg becoming available (see [this](https://ffmpeg.org/ffmpeg-filters.html#libvmaf) section for details), `ffmpeg2vmaf` is no longer the preferred way to pass in compressed video streams to VMAF. 
 
 ## Advanced Usage
 
@@ -149,23 +123,22 @@ VMAF follows a machine-learning based approach to first extract a number of qual
 
 In addition to the basic commands, the VMAF package also provides a framework to allow any user to train his/her own perceptual quality assessment model. For example, directory [`model`](../../model) contains a number of pre-trained models, which can be loaded by the aforementioned commands:
 
-```
-PYTHONPATH=python ./python/vmaf/script/run_vmaf.py format width height reference_path distorted_path [--model model_path]
-PYTHONPATH=python ./python/vmaf/script/run_vmaf_in_batch.py input_file [--model model_path] --parallelize
+```shell script
+PYTHONPATH=python ./python/vmaf/script/run_vmaf.py \
+    format width height \
+    reference_path \
+    distorted_path \
+    [--model model_path]
 ```
 
 For example:
 
-```
+```shell script
 PYTHONPATH=python ./python/vmaf/script/run_vmaf.py \
-  yuv420p 576 324 \
-  python/test/resource/yuv/src01_hrc00_576x324.yuv \
-  python/test/resource/yuv/src01_hrc01_576x324.yuv \
-  --model model/other_models/nflxtrain_vmafv3.pkl
-
-PYTHONPATH=python ./python/vmaf/script/run_vmaf_in_batch.py \
-  resource/example/example_batch_input \
-  --model model/other_models/nflxtrain_vmafv3.pkl --parallelize
+    yuv420p 576 324 \
+    python/test/resource/yuv/src01_hrc00_576x324.yuv \
+    python/test/resource/yuv/src01_hrc01_576x324.yuv \
+    --model model/other_models/nflxtrain_vmafv3.pkl
 ```
 
 A user can customize the model based on:
@@ -180,7 +153,7 @@ Once a model is trained, the VMAF package also provides tools to cross validate 
 
 To begin with, create a dataset file following the format in [`example_dataset.py`](../../resource/example/example_dataset.py). A dataset is a collection of distorted videos. Each has a unique asset ID and a corresponding reference video, identified by a unique content ID. Each distorted video is also associated with subjective quality score, typically a MOS (mean opinion score), obtained through subjective study. An example code snippet that defines a dataset is as follows:
 
-```
+```python
 dataset_name = 'example'
 yuv_fmt = 'yuv420p'
 width = 1920
@@ -191,9 +164,9 @@ ref_videos = [
 ]
 dis_videos = [
     {'content_id':0, 'asset_id': 0, 'dmos':100, 'path':'checkerboard.yuv'},
-    {'content_id':0, 'asset_id': 1, 'dmos':50,  'path':'checkerboard_dis.yuv'},
-    {'content_id':1, 'asset_id': 2, 'dmos':100,  'path':'flat.yuv'},
-    {'content_id':1, 'asset_id': 3, 'dmos':80,  'path':'flat_dis.yuv'},
+    {'content_id':0, 'asset_id': 1, 'dmos':50, 'path':'checkerboard_dis.yuv'},
+    {'content_id':1, 'asset_id': 2, 'dmos':100, 'path':'flat.yuv'},
+    {'content_id':1, 'asset_id': 3, 'dmos':80, 'path':'flat_dis.yuv'},
 ]
 ```
 
@@ -203,24 +176,29 @@ See the directory [`resource/dataset`](../../resource/dataset) for more examples
 
 Once a dataset is created, first validate the dataset using existing VMAF or other (PSNR, SSIM or MS-SSIM) metrics. Run:
 
-```
+```shell script
 PYTHONPATH=python ./python/vmaf/script/run_testing.py \
- quality_type test_dataset_file \
-[--vmaf-model optional_VMAF_model_path] [--cache-result] [--parallelize]
+    quality_type \
+    test_dataset_file \
+    [--vmaf-model optional_VMAF_model_path] \
+    [--cache-result] \
+    [--parallelize]
 ```
 
 where `quality_type` can be `VMAF`, `PSNR`, `SSIM`, `MS_SSIM`, etc.
 
-Enabling `--cache-result` allows storing/retrieving extracted features (or elementary quality metrics) in a data store (since feature extraction is the most expensive operations here).
+Enabling `--cache-result` allows storing/retrieving extracted features (or elementary quality metrics) in a data store (under `workspace/result_store_dir/file_result_store`), since feature extraction is the most expensive operations here.
 
 Enabling `--parallelize` allows execution on multiple reference-distorted video pairs in parallel. Sometimes it is desirable to disable parallelization for debugging purpose (e.g. some error messages can only be displayed when parallel execution is disabled).
 
 For example:
 
-```
+```shell script
 PYTHONPATH=python ./python/vmaf/script/run_testing.py \
-VMAF resource/example/example_dataset.py \
-  --cache-result --parallelize
+    VMAF \
+    resource/example/example_dataset.py \
+    --cache-result \
+    --parallelize
 ```
 
 Make sure `matplotlib` is installed to visualize the MOS-prediction scatter plot and inspect the statistics:
@@ -235,47 +213,55 @@ When creating a dataset file, one may make errors (for example, having a typo in
 
 If the problem persists, one may need to run the script:
 
-```
-PYTHONPATH=python ./python/vmaf/script/run_cleaning_cache.py quality_type test_dataset_file
+```shell script
+PYTHONPATH=python ./python/vmaf/script/run_cleaning_cache.py \
+    quality_type \
+    test_dataset_file
 ```
 
 to clean up corrupted results in the store before retrying. For example:
 
-```
-PYTHONPATH=python ./python/vmaf/script/run_cleaning_cache.py VMAF \
-  resource/example/example_dataset.py
+```shell script
+PYTHONPATH=python ./python/vmaf/script/run_cleaning_cache.py \
+    VMAF \
+    resource/example/example_dataset.py
 ```
 
 ### Train a New Model
 
 Now that we are confident that the dataset is created correctly and we have some benchmark result on existing metrics, we proceed to train a new quality assessment model. Run:
 
-```
+```shell script
 PYTHONPATH=python ./python/vmaf/script/run_vmaf_training.py \
-  train_dataset_filepath feature_param_file model_param_file \
-  output_model_file [--cache-result] [--parallelize]
+    train_dataset_filepath \
+    feature_param_file \
+    model_param_file \
+    output_model_file \
+    [--cache-result] \
+    [--parallelize]
 ```
 
 For example:
 
-```
+```shell script
 PYTHONPATH=python ./python/vmaf/script/run_vmaf_training.py \
-  resource/example/example_dataset.py \
-  resource/feature_param/vmaf_feature_v2.py \
-  resource/model_param/libsvmnusvr_v2.py \
-  workspace/model/test_model.pkl \
-  --cache-result --parallelize
+    resource/example/example_dataset.py \
+    resource/feature_param/vmaf_feature_v2.py \
+    resource/model_param/libsvmnusvr_v2.py \
+    workspace/model/test_model.pkl \
+    --cache-result \
+    --parallelize
 ```
 
 `feature_param_file` defines the set of features used. For example, both dictionaries below:
 
-```
+```python
 feature_dict = {'VMAF_feature':'all', }
 ```
 
 and
 
-```
+```python
 feature_dict = {'VMAF_feature':['vif', 'adm'], }
 ```
 
@@ -283,7 +269,7 @@ are valid specifications of selected features. Here `VMAF_feature` is an 'aggreg
 
 `model_param_file` defines the type and hyper-parameters of the regressor to be used. For details, refer to the self-explanatory examples in directory `resource/model_param`. One example is:
 
-```
+```python
 model_type = "LIBSVMNUSVR"
 model_param_dict = {
     # ==== preprocess: normalize each feature ==== #
@@ -307,24 +293,29 @@ Above are two example scatter plots obtained from running the `run_vmaf_training
 
 ### Using Custom Subjective Models
 
-The commands `run_vmaf_training` and `run_testing` also support custom subjective models (e.g. DMOS (default), MLE and more), through the package [sureal](https://github.com/Netflix/sureal).
+The commands `run_vmaf_training` and `run_testing` also support custom subjective models (e.g. DMOS (default), MLE_CO_AP2 and more), through the [sureal](https://github.com/Netflix/sureal) package.
 
 The subjective model option can be specified with option `--subj-model subjective_model`, for example:
 
-```
+```shell script
 PYTHONPATH=python ./python/vmaf/script/run_vmaf_training.py \
-  resource/example/example_raw_dataset.py \
-  resource/feature_param/vmaf_feature_v2.py \
-  resource/model_param/libsvmnusvr_v2.py \
-  workspace/model/test_model.pkl \
-  --subj-model MLE --cache-result --parallelize
+    resource/example/example_raw_dataset.py \
+    resource/feature_param/vmaf_feature_v2.py \
+    resource/model_param/libsvmnusvr_v2.py \
+    workspace/model/test_model.pkl \
+    --subj-model MLE_CO_AP2 \
+    --cache-result \
+    --parallelize
 
 PYTHONPATH=python ./python/vmaf/script/run_testing.py \
-  VMAF resource/example/example_raw_dataset.py \
-  --subj-model MLE --cache-result --parallelize
+    VMAF \
+    resource/example/example_raw_dataset.py \
+    --subj-model MLE_CO_AP2 \
+    --cache-result \
+    --parallelize
 ```
 
-Note that for the `--subj-model` option to have effect, the input dataset file must follow a format similar to [example_raw_dataset.py](../../resource/example/example_raw_dataset.py). Specifically, for each dictionary element in `dis_videos`, instead of having a key named 'dmos' or 'groundtruth' as in [example_dataset.py](../../resource/example/example_dataset.py), it must have a key named `os` (stands for opinion score), and the value must be a list of numbers. This is the "raw opinion score" collected from subjective experiments, which is used as the input to the custom subjective models.
+Note that for the `--subj-model` option to have effect, the input dataset file must follow a format similar to [example_raw_dataset.py](../../resource/example/example_raw_dataset.py). Specifically, for each dictionary element in `dis_videos`, instead of having a key named `dmos` or `groundtruth` as in [example_dataset.py](../../resource/example/example_dataset.py), it must have a key named `os` (stands for opinion score), and the value must be a list of numbers. This is the "raw opinion score" collected from subjective experiments, which is used as the input to the custom subjective models.
 
 ### Cross Validation
 
@@ -332,15 +323,15 @@ Note that for the `--subj-model` option to have effect, the input dataset file m
 
 ### Creating New Features And Regressors
 
-You can also customize VMAF by plugging in third-party features or inventing new features, and specify them in a `feature_param_file`. Essentially, the "aggregate" feature type (e.g. `VMAF_feature`) specified in the `feature_dict` corresponds to the `TYPE` field of a `FeatureExtractor` subclass (e.g. `VmafFeatureExtractor`). All you need to do is to create a new class extending the `FeatureExtractor` base class.
+You can also customize VMAF by plugging in third-party features or inventing new features, and specify them in a `feature_param_file`. Essentially, the "aggregate" feature type (for example: `VMAF_feature`) specified in the `feature_dict` corresponds to the `TYPE` field of a `FeatureExtractor` subclass (for example: `VmafFeatureExtractor`). All you need to do is to create a new class extending the `FeatureExtractor` base class.
 
-Similarly, you can plug in a third-party regressor or invent a new regressor and specify them in a `model_param_file`. The `model_type` (e.g. `LIBSVMNUSVR`) corresponds to the `TYPE` field of a `TrainTestModel` sublass (e.g. `LibsvmnusvrTrainTestModel`). All needed is to create a new class extending the `TrainTestModel` base class.
+Similarly, you can plug in a third-party regressor or invent a new regressor and specify them in a `model_param_file`. The `model_type` (for example: `LIBSVMNUSVR`) corresponds to the `TYPE` field of a `TrainTestModel` sublass (for example: `LibsvmnusvrTrainTestModel`). All needed is to create a new class extending the `TrainTestModel` base class.
 
 For instructions on how to extending the `FeatureExtractor` and `TrainTestModel` base classes, refer to [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
 
 ## Analysis Tools
 
-Overtime, a number of helper tools have been incorporated into the VDK, to facilitate training and validating VMAF models. An overview of the tools available can be found in [this slide deck](VQEG_SAM_2018_111_AnalysisToolsInVMAF.pdf).
+Overtime, a number of helper tools have been incorporated into the package, to facilitate training and validating VMAF models. An overview of the tools available can be found in [this slide deck](VQEG_SAM_2018_111_AnalysisToolsInVMAF.pdf).
 
 ### BD-Rate Calculator
 
@@ -350,18 +341,21 @@ A Bjøntegaard-Delta (BD) rate [implementation](../../python/vmaf/tools/bd_rate_
 
 An implementation of [LIME](https://arxiv.org/pdf/1602.04938.pdf) is also added as part of the repository. For more information, refer to our [analysis tools](VQEG_SAM_2018_111_AnalysisToolsInVMAF.pdf) presentation. The main idea is to perform a local linear approximation to any regressor or classifier and then use the coefficients of the linearized model as indicators of feature importance. LIME can be used as part of the VMAF regression framework, for example:
 
-```
-PYTHONPATH=python ./python/vmaf/script/run_vmaf.py yuv420p 576 324 \
-    python/test/resource/yuv/src01_hrc00_576x324.yuv \
-    python/test/resource/yuv/src01_hrc00_576x324.yuv --local-explain
+```shell script
+PYTHONPATH=python ./python/vmaf/script/run_vmaf.py \
+    yuv420p 576 324 \
+    src01_hrc00_576x324.yuv \
+    src01_hrc00_576x324.yuv \
+    --local-explain
 ```
 
 Naturally, LIME can also be applied to any other regression scheme as long as there exists a pre-trained model. For example, applying to BRISQUE:
 
-```
+```shell script
 PYTHONPATH=python ./python/vmaf/script/run_vmaf.py yuv420p 576 324 \
-    python/test/resource/yuv/src01_hrc00_576x324.yuv \
-    python/test/resource/yuv/src01_hrc00_576x324.yuv --local-explain \
+    src01_hrc00_576x324.yuv \
+    src01_hrc00_576x324.yuv \
+    --local-explain \
     --model model/other_models/nflxall_vmafv1.pkl
 ```
 
@@ -369,7 +363,7 @@ PYTHONPATH=python ./python/vmaf/script/run_vmaf.py yuv420p 576 324 \
 
 ### Convert Model File from pickle (pkl) to json
 
-A tool to convert a model file (currently support libsvm model) from pickle to json is added. Usage:
+A tool to convert a model file (currently support libsvm model) from pickle to json is added at `python/vmaf/script/convert_model_from_pkl_to_json.py`. Usage:
 ```text
 usage: convert_model_from_pkl_to_json.py [-h] --input-pkl-filepath
                                          INPUT_PKL_FILEPATH
@@ -388,7 +382,7 @@ optional arguments:
 ```
 
 Examples:
-```bash
+```shell script
 
 python/vmaf/script/convert_model_from_pkl_to_json.py \
 --input-pkl-filepath model/vmaf_float_b_v0.6.3/vmaf_float_b_v0.6.3.pkl \
@@ -398,3 +392,114 @@ python/vmaf/script/convert_model_from_pkl_to_json.py \
 --input-pkl-filepath model/vmaf_float_v0.6.1.pkl \
 --output-json-filepath ./vmaf_float_v0.6.1.json
 ```
+
+(The sections below may need to be updated)
+
+## Core Classes
+
+The core class architecture can be depicted in the diagram below:
+
+![UML](../images/uml.png)
+
+#### Asset
+
+An Asset is the most basic unit with enough information to perform an execution task. It includes basic information about a distorted video and its undistorted reference video, as well as the frame range on which to perform a task (i.e. *dis_start_end_frame* and *ref_start_end_frame*), and at what resolution to perform a task (e.g. a video frame is upscaled to the resolution specified by *quality_width_hight* before feature extraction).
+
+Asset extends WorkdirEnabled mixin, which comes with a thread-safe working directory to facilitate parallel execution.
+
+#### Executor
+
+An Executor takes in a list of Assets, and run computations on them, and return a list of corresponding Results. An Executor extends the TypeVersionEnabled mixin, and must specify a unique type and version combination (by the *TYPE* and *VERSION* attribute), so that the Result generated by it can be uniquely identified.
+
+Executor is the base class for FeatureExtractor and QualityRunner, and it provides a number of shared housekeeping functions, including storing and reusing Results, creating FIFO pipes, cleaning up log files/Results, etc.
+
+A function *run_executors_in_parallel* facilitates running Executors in parallel.
+
+#### Result
+
+A Result is a key-value store of read-only execution results generated by an Executor on an Asset. A key corresponds to a 'atom' feature type or a type of a quality score, and a value is a list of score values, each corresponding to a computation unit (i.e. in the current implementation, a frame).
+
+The Result class also provides a number of tools for aggregating the per-unit scores into a single score. The default aggregatijon method is the mean, but Result.set_score_aggregate_method() allows customizing other methods (see test_to_score_str() in test/result_test.py for examples).
+
+#### ResultStore
+
+ResultStore provides capability to save and load a Result. Current implementation FileSystemResultStore persists results by a simple file system that save/load result in a directory. The directory has multiple subdirectories, each corresponding to an Executor. Each subdirectory contains multiple files, each file storing dataframe for an Asset.
+
+#### FeatureExtractor
+
+FeatureExtractor subclasses Executor, and is specifically for extracting features (aka elementary quality metrics) from Assets. Any concrete feature extraction implementation should extend the FeatureExtractor base class (e.g. VmafFeatureExtractor). The *TYPE* field corresponds to the 'aggregate' feature name, and the 'ATOM_FEATURES'/'DERIVED_ATOM_FEATURES' field corresponds to the 'atom' feature names.
+
+#### FeatureAssembler
+
+FeatureAssembler assembles features for an input list of Assets on a input list of FeatureExtractor subclasses. The constructor argument *feature_dict* specifies the list of FeatureExtractor subclasses (i.e. the 'aggregate' feature) and selected 'atom' features. For each asset on a FeatureExtractor, it outputs a BasicResult object. FeatureAssembler is used by a QualityRunner to assemble the vector of features to be used by a TrainTestModel.
+
+#### TrainTestModel
+
+TrainTestModel is the base class for any concrete implementation of regressor, which must provide a *train()* method to perform training on a set of data and their groud-truth labels, and a *predict()* method to predict the labels on a set of data, and a *to_file()* and a *from_file()* method to save and load trained models. 
+
+A TrainTestModel constructor must supply a dictionary of parameters (i.e. *param_dict*) that contains the regressor's hyper-parameters. The base class also provides shared functionalities such as input data normalization/output data denormalization, evaluating prediction performance, etc.
+
+Like a Executor, a TrainTestModel must specify a unique type and version combination (by the *TYPE* and *VERSION attribute*).
+
+#### CrossValidation
+
+CrossValidation provides a collection of static methods to facilitate validation of a TrainTestModel object. As such, it also provides means to search the optimal hyper-parameter set for a TrainTestModel object.
+
+#### QualityRunner
+
+QualityRunner subclasses Executor, and is specifically for evaluating the quality score for Assets. Any concrete implementation to generate the final quality score should extend the QualityRunner base class (e.g. VmafQualityRunner, PsnrQualityRunner).
+
+There are two ways to extend a QualityRunner base class -- either by directly implementing the quality calculation (e.g. by calling a C executable, as in PsnrQualityRunner), or by calling a FeatureAssembler (with indirectly calls a FeatureExtractor) and a TrainTestModel subclass (as in VmafQualityRunner). For more details, refer to Section 'Extending Classes'.
+
+## Extending Classes
+
+#### Extending FeatureExtractor
+
+A derived class of FeatureExtractor must:
+
+  - Override *TYPE* and *VERSION* fields.
+  - Override *ATOM_FEATURES* field.
+  - Optionally, override *DERIVED_FEATURES* field. These are the features that are 'derived' from the ATOM_FEATURES.
+  - Override *_generate_result(self, asset)*, which call a command-line executable and generate feature scores in a log file.
+  - Optionally, override *_get_feature_scores(self, asset)*, which read the feature scores from the log file, and return the scores in a dictionary format. FeatureExtractor base class provides a template _get_feature_scores method, which has been used by VmafFeatureExtractor as an example. If your log file format is incompatible with VmafFeatureExtractor's, consider overriding this method for your custom case.
+  - Optionally, if you have override *DERIVED FEATURES* field, also override *_post_process_result(cls, result)* and put the calculation of the derived attom features here.
+
+Follow the example of VmafFeatureExtractor.
+
+#### Extending TrainTestModel
+
+A derived class of TrainTestModel must:
+
+  - Override *TYPE* and *VERSION* fields.
+  - Override *_train(model_param, xys_2d)*, which implements the training logic.
+  
+A basic example of wrapping the scikit-learn Ensemble.RandomForest class can be found in SklearnRandomForestTrainTestModel.
+
+The scikit-learn Python package has already provided many regressor tools to choose from. But if you do not want to call from scikit-learn but rather integrating/creating other regressor implementation, you will need some additional steps. Besides the two step above, you also need to:
+
+  - Override *to_file(self, filename)*, which must properly save the trained model and parameters to a file(s).
+  - Adding to the base-class static method TrainTestModel.from_file specific treatment for your subclass.
+  - Override static method *delete(filename)* if you have more than one file to delete.
+  - Override *_predict(cls, method, xs_2d)* with your customized prediction function.
+  
+For this type of subclassing, refer to the example of LibsvmnusvrTrainTestModel.
+
+#### Extending QualityRunner
+
+There are two ways to create a derived class of QualityRunner:
+
+The first way is to call a command-line executable directly, very similar to what FeatureExtractor does. A derived class must:
+    
+  - Override *TYPE* and *VERSION* fields.
+  - Override *_generate_result(self, asset)*, which call a command-line executable and generate quality scores in a log file.
+  - Override *_get_quality_scores(self, asset)*, which read the quality scores from the log file, and return the scores in a dictionary format.
+    
+For an example, follow PsnrQualityRunner.
+
+The second way is to override the Executor._run_on_asset(self, asset) method to bypass the regular routine, but instead, in the method construct a FeatureAssembler (which calls a FeatureExtractor or many) and assembles a list of features, followed by using a TrainTestModel (pre-trained somewhere else) to predict the final quality score. A derived class must:
+    
+  - Override *TYPE* and *VERSION* fields.    
+  - Override *_run_on_asset(self, asset)*, which runs a FeatureAssembler, collect a feature vector, run *TrainTestModel.predict()* on it, and return a Result object (in this case, both *Executor._run_on_asset(self, asset)* and *QualityRunner._read_result(self, asset)* get bypassed.    
+  - Override *_remove_result(self, asset)* by redirecting it to the FeatureAssembler.
+  
+For an example, follow VmafQualityRunner.

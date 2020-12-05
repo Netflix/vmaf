@@ -81,34 +81,6 @@ class CommandLineTest(unittest.TestCase):
         ret = run_process(cmd, shell=True)
         self.assertEqual(ret, 0)
 
-    def test_run_vmaf_in_batch(self):
-        line = 'yuv420p 576 324 {root}/python/test/resource/yuv/src01_hrc00_576x324.yuv ' \
-               '{root}/python/test/resource/yuv/src01_hrc01_576x324.yuv'.format(root=VmafConfig.root_path())
-        cmd = 'echo "{line}" > {batch_filename}'.format(
-            line=line, batch_filename=self.batch_filename)
-        ret = run_process(cmd, shell=True)
-        self.assertEqual(ret, 0)
-
-        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_vmaf_in_batch.py')
-        cmd = "{exe} {input} --parallelize >/dev/null 2>&1".format(
-            exe=exe, input=self.batch_filename)
-        ret = run_process(cmd, shell=True)
-        self.assertEqual(ret, 0)
-
-    def test_run_vmaf_in_batch_ci(self):
-        line = 'yuv420p 576 324 {root}/python/test/resource/yuv/src01_hrc00_576x324.yuv ' \
-               '{root}/python/test/resource/yuv/src01_hrc01_576x324.yuv'.format(root=VmafConfig.root_path())
-        cmd = 'echo "{line}" > {batch_filename}'.format(
-            line=line, batch_filename=self.batch_filename)
-        ret = run_process(cmd, shell=True)
-        self.assertEqual(ret, 0)
-
-        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_vmaf_in_batch.py')
-        cmd = "{exe} {input} --parallelize --ci >/dev/null 2>&1".format(
-            exe=exe, input=self.batch_filename)
-        ret = run_process(cmd, shell=True)
-        self.assertEqual(ret, 0)
-
     def test_run_vmaf(self):
         exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_vmaf.py')
         line = 'yuv420p 576 324 {root}/python/test/resource/yuv/src01_hrc00_576x324.yuv ' \

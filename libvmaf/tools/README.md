@@ -41,7 +41,7 @@ Supported options:
 ## Input
 Pass your reference/distorted pair of videos to the tool using the `--reference` and `--distorted` flags. If your inputs are `.y4m` this is all that is required. If your inputs are raw `.yuv` the following parameters are also required: `--width`, `--height`, `--pixel_format`, `--bitdepth`.
 
-```sh
+```shell script
 # .y4m
 --reference ducks.y4m \
 --distorted ducks_dist.y4m \
@@ -55,7 +55,7 @@ Pass your reference/distorted pair of videos to the tool using the `--reference`
 ## VMAF Models
 `vmaf` now has a number of VMAF models built-in. This means that no external VMAF model files are required, and the models are read from the binary itself. Previous versions of `libvmaf` required a `.pkl` format model file. Since v2.0.0, these `.pkl` model files have been depreciated in favor of `.json` model files. If you have a previously trained `.pkl` model you would like to convert to `.json`, the following [Python conversion script](../../python/vmaf/script/convert_model_from_pkl_to_json.py) is available. If the `--model` parameter is not passed at all, `version=vmaf_v0.6.1` is enabled by default.
 
-```sh
+```shell script
 # built-in model
 --model version=vmaf_v0.6.1
 
@@ -66,7 +66,7 @@ Pass your reference/distorted pair of videos to the tool using the `--reference`
 ## Additional Metrics
 A number of addtional metrics are supported. Enable these metrics with the `--feature` flag.
 
-```sh
+```shell script
 # psnr, psnr_hvs, ssim, ms-ssim, ciede
 --feature psnr \
 --feature psnr_hvs \
@@ -79,7 +79,7 @@ A number of addtional metrics are supported. Enable these metrics with the `--fe
 
 The following example shows a comparison using a pair of yuv inputs ([`src01_hrc00_576x324.yuv`](https://github.com/Netflix/vmaf_resource/blob/master/python/test/resource/yuv/src01_hrc00_576x324.yuv), [`src01_hrc01_576x324.yuv`](https://github.com/Netflix/vmaf_resource/blob/master/python/test/resource/yuv/src01_hrc01_576x324.yuv)). In addition to VMAF, the `psnr` metric is also computed and logged.
 
-```sh
+```shell script
 libvmaf/build/tools/vmaf \
     --reference src01_hrc00_576x324.yuv \
     --distorted src01_hrc01_576x324.yuv \

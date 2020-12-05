@@ -1,5 +1,34 @@
 # Change Log
 
+## (12/4/2020) [2.0.0]
+
+**New features:**
+- Add PSNR-HVS and CIEDE2000 metrics.
+- ci/actions: upload linux/macos artifacts (#738)
+- libvmaf/feature: deprecate daala_ssim (#735)
+- libvmaf: remove support for pkl models
+- libvmaf/psnr: rewrite using integer types, 2x speedup
+- vmaf: if no model is specified, enable v0.6.1 by default (#730)
+- libvmaf/x86: add AVX2/AVX-512 optimizations for adm, vif and motion
+- ci/actions: add xxd to build dependencies for Windows
+- libvmaf: add support for built-in models
+- libvmaf/integer_vif: use symmetrical mirroring on edges
+- Fix log2 by replacing log2f_approx with log2f
+- libvmaf_rc: provide a backwards compatible compute_vmaf(), link vmafossexec with libvmaf
+- libvmaf: add framework support for json models
+- libvmaf/libsvm: update libsvm to version 324
+- libvmaf/motion: add motion_force_zero to motion fex
+- return sha1 if Asset string is longer than 255
+- Add CID/iCID Matlab source code
+- build: unbreak x86 builds (Fixes: #374)
+- Add 12bit and 16bit support for python YUV reader; add tests.
+- Add PypsnrFeatureExtractor
+- Add processes to FeatureAssembler. (#662)
+
+**Fixed bugs:**
+- fix motion flush for single frame input
+- Fixing the perf_metric for a single entry list input
+
 ## (8/24/2020) [1.5.3]
 
 (Updates since 1.5.1)
