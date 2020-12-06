@@ -1,7 +1,6 @@
 vmaf_soversion = vmaf_api_version_major
 
 # Build libvmaf
-third_party_dir = './third_party/'
 feature_src_dir = './feature/'
 src_dir = './'
 model_dir = '../../model/'
@@ -219,7 +218,6 @@ vmaf_include = include_directories(
 libvmaf_feature_sources = [
     feature_src_dir + 'picture_copy.c',
     feature_src_dir + 'integer_psnr.c',
-    feature_src_dir + 'psnr_hvs.c',
     feature_src_dir + 'feature_extractor.c',
     feature_src_dir + 'alias.c',
     feature_src_dir + 'integer_adm.c',

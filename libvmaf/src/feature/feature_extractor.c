@@ -36,7 +36,6 @@ extern VmafFeatureExtractor vmaf_fex_float_ssim;
 extern VmafFeatureExtractor vmaf_fex_float_ms_ssim;
 extern VmafFeatureExtractor vmaf_fex_ciede;
 extern VmafFeatureExtractor vmaf_fex_psnr;
-extern VmafFeatureExtractor vmaf_fex_psnr_hvs;
 extern VmafFeatureExtractor vmaf_fex_integer_adm;
 extern VmafFeatureExtractor vmaf_fex_integer_motion;
 extern VmafFeatureExtractor vmaf_fex_integer_vif;
@@ -54,7 +53,6 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     &vmaf_fex_float_ssim,
     &vmaf_fex_ciede,
     &vmaf_fex_psnr,
-    &vmaf_fex_psnr_hvs,
     &vmaf_fex_integer_adm,
     &vmaf_fex_integer_motion,
     &vmaf_fex_integer_vif,
