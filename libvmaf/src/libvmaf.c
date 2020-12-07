@@ -106,7 +106,7 @@ int vmaf_close(VmafContext *vmaf)
     return 0;
 }
 
-int vmaf_import_feature_score(VmafContext *vmaf, char *feature_name,
+int vmaf_import_feature_score(VmafContext *vmaf, const char *feature_name,
                               double value, unsigned index)
 {
     if (!vmaf) return -EINVAL;
