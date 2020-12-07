@@ -151,7 +151,8 @@ fail:
 }
 
 
-int vmaf_feature_dictionary_set(VmafFeatureDictionary **dict, char *key, char *val)
+int vmaf_feature_dictionary_set(VmafFeatureDictionary **dict, const char *key,
+                                const char *val)
 {
     return vmaf_dictionary_set((VmafDictionary**)dict, key, val, 0);
 }

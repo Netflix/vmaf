@@ -139,7 +139,7 @@ int vmaf_use_feature(VmafContext *vmaf, const char *feature_name,
  *
  * @return 0 on success, or < 0 (a negative errno code) on error.
  */
-int vmaf_import_feature_score(VmafContext *vmaf, char *feature_name,
+int vmaf_import_feature_score(VmafContext *vmaf, const char *feature_name,
                               double value, unsigned index);
 
 /**

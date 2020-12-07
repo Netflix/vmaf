@@ -31,7 +31,7 @@ enum VmafModelFlags {
 };
 
 typedef struct VmafModelConfig {
-    char *name;
+    const char *name;
     uint64_t flags;
 } VmafModelConfig;
 
