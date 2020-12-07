@@ -3113,19 +3113,19 @@ private:
 	void parse_support_vectors() {
 		// prepare sv coefficient structure
 		model->sv_coef = Malloc(double *, model->nr_class - 1);
-		for(size_t i = 0; i < model->nr_class - 1; ++i) {
+		for(int i = 0; i < model->nr_class - 1; ++i) {
 			model->sv_coef[i] = Malloc(double, model->l);
 		}
 
 		std::string line_buffer;
 		svm_node node_buffer;
 		std::vector<svm_node> sv_buffer;
-		for(size_t i = 0; i < model->l; ++i) {
+		for(int i = 0; i < model->l; ++i) {
 			exceptAssert(model_source.read_line(line_buffer), "Failed to read SVs");
 			std::istringstream line(line_buffer);
 
 			// parse sv coefficients
-			for(size_t c = 0; c < model->nr_class - 1; ++c) {
+			for(int c = 0; c < model->nr_class - 1; ++c) {
 				exceptAssert(line >> model->sv_coef[c][i], "Failed to parse SV coefficient");
 			}
 
