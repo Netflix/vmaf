@@ -23,8 +23,8 @@ Refer to the [FAQ](FAQ.md) page.
 
 The software package offers a number of ways to interact with the VMAF implementation.
 
-  - The [C executable `vmaf`](libvmaf/tools/README.md) has a complete algorithm implementation, such that one can easily deploy VMAF in a production environment. Additionally, the `vmaf` tool provides a number of auxillary metrics such as PSNR, SSIM and MS-SSIM.
-  - The [C library `libvmaf`](libvmaf/README.md) provides an interface to incorporate VMAF into your C code, and tools to integrate other feature extractors into the library.
+  - The command-line tool [`vmaf`](libvmaf/tools/README.md) provides a complete algorithm implementation, such that one can easily deploy VMAF in a production environment. Additionally, the `vmaf` tool provides a number of auxillary metrics such as PSNR, SSIM and MS-SSIM.
+  - The [C library `libvmaf`](libvmaf/README.md) provides an interface to incorporate VMAF into your code, and tools to integrate other feature extractors into the library.
   - The [Python library](resource/doc/VMAF_Python_library.md) offers a full array of wrapper classes and scripts for software testing, VMAF model training and validation, dataset processing, data visualization, etc.
   - VMAF is now included as a filter in FFmpeg, and can be configured using: `./configure --enable-libvmaf`. Refer to the [Using VMAF with FFmpeg](resource/doc/ffmpeg.md) page.
   - [VMAF Dockerfile](Dockerfile) generates a docker image from the [Python library](resource/doc/VMAF_Python_library.md). Refer to [this](resource/doc/docker.md) document for detailed usages.
