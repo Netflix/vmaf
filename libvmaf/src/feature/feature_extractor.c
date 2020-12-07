@@ -61,7 +61,7 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     NULL
 };
 
-VmafFeatureExtractor *vmaf_get_feature_extractor_by_name(char *name)
+VmafFeatureExtractor *vmaf_get_feature_extractor_by_name(const char *name)
 {
     if (!name) return NULL;
 
@@ -73,7 +73,7 @@ VmafFeatureExtractor *vmaf_get_feature_extractor_by_name(char *name)
     return NULL;
 }
 
-VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(char *name)
+VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(const char *name)
 {
     if (!name) return NULL;
 
