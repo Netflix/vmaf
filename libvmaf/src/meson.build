@@ -225,7 +225,6 @@ libvmaf_feature_sources = [
     feature_src_dir + 'feature_collector.c',
     feature_src_dir + 'integer_motion.c',
     feature_src_dir + 'integer_vif.c',
-    feature_src_dir + 'integer_ssim.c',
     feature_src_dir + 'ciede.c',
     feature_src_dir + 'common/alignment.c',
 

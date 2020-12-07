@@ -41,6 +41,6 @@ typedef struct VmafOption {
     double min, max;
 } VmafOption;
 
-int vmaf_option_set(VmafOption *opt, void *obj, const char *val);
+int vmaf_option_set(const VmafOption *opt, void *obj, const char *val);
 
 #endif /* __VMAF_SRC_OPT_H__ */

@@ -28,7 +28,7 @@
 #include "predict.h"
 #include "svm.h"
 
-static int normalize(VmafModel *model, double slope, double intercept,
+static int normalize(const VmafModel *model, double slope, double intercept,
                      double *feature_score)
 {
     switch (model->norm_type) {
@@ -44,7 +44,7 @@ static int normalize(VmafModel *model, double slope, double intercept,
     return 0;
 }
 
-static int denormalize(VmafModel *model, double *prediction)
+static int denormalize(const VmafModel *model, double *prediction)
 {
     switch (model->norm_type) {
     case(VMAF_MODEL_NORMALIZATION_TYPE_NONE):
@@ -60,7 +60,7 @@ static int denormalize(VmafModel *model, double *prediction)
 }
 
 
-static int transform(VmafModel *model, double *prediction,
+static int transform(const VmafModel *model, double *prediction,
                      enum VmafModelFlags flags)
 {
     if (!model->score_transform.enabled)
@@ -86,7 +86,7 @@ static int transform(VmafModel *model, double *prediction,
     return 0;
 }
 
-static int clip(VmafModel *model, double *prediction,
+static int clip(const VmafModel *model, double *prediction,
                 enum VmafModelFlags flags)
 {
     if (!model->score_clip.enabled)

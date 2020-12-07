@@ -62,7 +62,7 @@ static int set_option_double(double *dst, double default_val, const char *val,
     return 0;
 }
 
-int vmaf_option_set(VmafOption *opt, void *obj, const char *val)
+int vmaf_option_set(const VmafOption *opt, void *obj, const char *val)
 {
     if (!obj) return -EINVAL;
     if (!opt) return -EINVAL;
