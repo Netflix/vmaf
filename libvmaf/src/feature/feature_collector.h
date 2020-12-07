@@ -51,18 +51,20 @@ typedef struct VmafFeatureCollector {
 int vmaf_feature_collector_init(VmafFeatureCollector **const feature_collector);
 
 int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
-                                  char *feature_name, double score,
+                                  const char *feature_name, double score,
                                   unsigned index);
 
 int vmaf_feature_collector_get_score(VmafFeatureCollector *feature_collector,
-                                     char *feature_name, double *score,
+                                     const char *feature_name, double *score,
                                      unsigned index);
 
 int vmaf_feature_collector_set_aggregate(VmafFeatureCollector *feature_collector,
-                                         char *feature_name, double score);
+                                         const char *feature_name,
+                                         double score);
 
 int vmaf_feature_collector_get_aggregate(VmafFeatureCollector *feature_collector,
-                                         char *feature_name, double *score);
+                                         const char *feature_name,
+                                         double *score);
 
 void vmaf_feature_collector_destroy(VmafFeatureCollector *feature_collector);
 

@@ -86,8 +86,8 @@ typedef struct VmafFeatureExtractor {
     const char **provided_features; ///< Provided feature list, NULL terminated.
 } VmafFeatureExtractor;
 
-VmafFeatureExtractor *vmaf_get_feature_extractor_by_name(char *name);
-VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(char *name);
+VmafFeatureExtractor *vmaf_get_feature_extractor_by_name(const char *name);
+VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(const char *name);
 
 enum VmafFeatureExtractorContextFlags {
     VMAF_FEATURE_EXTRACTOR_CONTEXT_DO_NOT_OVERWRITE = 1 << 0,

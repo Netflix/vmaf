@@ -40,7 +40,7 @@ static int aggregate_vector_init(AggregateVector *aggregate_vector)
 }
 
 static int aggregate_vector_append(AggregateVector *aggregate_vector,
-                                   char *feature_name, double score)
+                                   const char *feature_name, double score)
 {
     if (!aggregate_vector) return -EINVAL;
 
@@ -89,7 +89,7 @@ static void aggregate_vector_destroy(AggregateVector *aggregate_vector)
 }
 
 int vmaf_feature_collector_set_aggregate(VmafFeatureCollector *feature_collector,
-                                         char *feature_name, double score)
+                                         const char *feature_name, double score)
 {
     if (!feature_collector) return -EINVAL;
     if (!feature_name) return -EINVAL;
@@ -102,7 +102,8 @@ int vmaf_feature_collector_set_aggregate(VmafFeatureCollector *feature_collector
 }
 
 int vmaf_feature_collector_get_aggregate(VmafFeatureCollector *feature_collector,
-                                         char *feature_name, double *score)
+                                         const char *feature_name,
+                                         double *score)
 {
     if (!feature_collector) return -EINVAL;
     if (!feature_name) return -EINVAL;
@@ -219,7 +220,7 @@ fail:
 }
 
 static FeatureVector *find_feature_vector(VmafFeatureCollector *fc,
-                                          char *feature_name)
+                                          const char *feature_name)
 {
     FeatureVector *feature_vector = NULL;
     for (unsigned i = 0; i < fc->cnt; i++) {
@@ -233,7 +234,7 @@ static FeatureVector *find_feature_vector(VmafFeatureCollector *fc,
 }
 
 int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
-                                  char *feature_name, double score,
+                                  const char *feature_name, double score,
                                   unsigned picture_index)
 {
     if (!feature_collector) return -EINVAL;
@@ -279,7 +280,7 @@ unlock:
 }
 
 int vmaf_feature_collector_get_score(VmafFeatureCollector *feature_collector,
-                                     char *feature_name, double *score,
+                                     const char *feature_name, double *score,
                                      unsigned index)
 {
     if (!feature_collector) return -EINVAL;
