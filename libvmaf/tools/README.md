@@ -1,8 +1,6 @@
-# C Executable - `vmaf`
+# `vmaf`
 
 `vmaf` is a command line tool which supports VMAF feature extraction and prediction. The tool takes a pair of input videos as well as a trained VMAF model and writes an output log containing per-frame and pooled VMAF scores. Input videos can be either `.y4m` or `.yuv` and output logs are available in a number of formats: `.xml`, `.json`, `.csv`, `.sub`.
-
-An older command line tool (`vmafossexec`) is still part of the build but is not part of the [installation](../README.md#install). `vmafossexec` will be removed in a future version of this library.
 
 ## Compile
 
@@ -11,7 +9,7 @@ Refer to the [`libvmaf`](../README.md) Compile section.
 ## Usage
 
 ```
-Usage: libvmaf/build/tools/vmaf [options]
+Usage: vmaf [options]
 
 Supported options:
  --reference/-r $path:      path to reference .y4m or .yuv
@@ -80,7 +78,7 @@ A number of addtional metrics are supported. Enable these metrics with the `--fe
 The following example shows a comparison using a pair of yuv inputs ([`src01_hrc00_576x324.yuv`](https://github.com/Netflix/vmaf_resource/blob/master/python/test/resource/yuv/src01_hrc00_576x324.yuv), [`src01_hrc01_576x324.yuv`](https://github.com/Netflix/vmaf_resource/blob/master/python/test/resource/yuv/src01_hrc01_576x324.yuv)). In addition to VMAF, the `psnr` metric is also computed and logged.
 
 ```shell script
-libvmaf/build/tools/vmaf \
+./build/tools/vmaf \
     --reference src01_hrc00_576x324.yuv \
     --distorted src01_hrc01_576x324.yuv \
     --width 576 --height 324 --pixel_format 420 --bitdepth 8 \
