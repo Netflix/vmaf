@@ -27,36 +27,6 @@
 /**
  * Note: stride is in terms of bytes
  */
-static int read_image(FILE *rfile, void *buf, int width, int height, int stride, int elem_size)
-{
-	char *byte_ptr = buf;
-	int i;
-	int ret = 1;
-
-	if (width <= 0 || height <= 0 || elem_size <= 0)
-	{
-		goto fail_or_end;
-	}
-
-	for (i = 0; i < height; ++i)
-	{
-		if (fread(byte_ptr, elem_size, width, rfile) != (size_t)width)
-		{
-			goto fail_or_end;
-		}
-
-		byte_ptr += stride;
-	}
-
-	ret = 0;
-
-fail_or_end:
-	return ret;
-}
-
-/**
- * Note: stride is in terms of bytes
- */
 static int read_image_b(FILE * rfile, float *buf, float off, int width, int height, int stride)
 {
 	char *byte_ptr = (char *)buf;
