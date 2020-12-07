@@ -21,7 +21,7 @@
 
 int mu_tests_run;
 
-int main(int argc, char *argv[])
+int main(void)
 {
     char *msg = run_tests();
 
