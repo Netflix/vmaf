@@ -276,8 +276,7 @@ int main(int argc, char *argv[])
         if (ret1 && ret2) {
             break;
         } else if (ret1 < 0 || ret2 < 0) {
-            fprintf(stderr, "\nproblem while reading pictures\n",
-                    c.path_ref, c.path_dist);
+            fprintf(stderr, "\nproblem while reading pictures\n");
             break;
         } else if (ret1) {
             fprintf(stderr, "\n\"%s\" ended before \"%s\".\n",
