@@ -163,30 +163,26 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
     }
     fprintf(outfile, "\n  ],\n");
 
-    fprintf(outfile, "  \"pooled_metrics\": [");
+    fprintf(outfile, "  \"pooled_metrics\": {");
     for (unsigned i = 0; i < fc->cnt; i++) {
         const char *feature_name = fc->feature_vector[i]->name;
         fprintf(outfile, "%s", i > 0 ? ",\n" : "\n");
-        fprintf(outfile, "    {\n");
-        fprintf(outfile, "      \"metric\": \"%s\",\n",
+        fprintf(outfile, "    \"%s\": {",
                 vmaf_feature_name_alias(feature_name));
-
-        fprintf(outfile, "      \"pooling_methods\": {");
         for (unsigned j = 1; j < VMAF_POOL_METHOD_NB; j++) {
             double score;
             int err = vmaf_feature_score_pooled(vmaf, feature_name, j, &score,
                                                 0, n_frames - 1);
             if (!err) {
                 fprintf(outfile, "%s", j > 1 ? ",\n" : "\n");
-                fprintf(outfile, "        \"%s\": %.6f",
+                fprintf(outfile, "      \"%s\": %.6f",
                         pool_method_name[j], score);
             }
         }
         fprintf(outfile, "\n");
-        fprintf(outfile, "      }\n");
         fprintf(outfile, "    }");
     }
-    fprintf(outfile, "\n  ],\n");
+    fprintf(outfile, "\n  },\n");
 
     fprintf(outfile, "  \"aggregate_metrics\": {");
     for (unsigned i = 0; i < fc->aggregate_vector.cnt; i++) {
