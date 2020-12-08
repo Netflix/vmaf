@@ -306,7 +306,8 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    fprintf(stderr, "\n");
+    if (istty && !c.quiet)
+        fprintf(stderr, "\n");
 
     err |= vmaf_read_pictures(vmaf, NULL, NULL, 0);
     if (err) {
