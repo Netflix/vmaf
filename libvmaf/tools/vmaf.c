@@ -126,10 +126,12 @@ int main(int argc, char *argv[])
     int err = 0;
     const int istty = isatty(fileno(stderr));
 
-    fprintf(stderr, "VMAF version %s\n", vmaf_version());
-
     CLISettings c;
     cli_parse(argc, argv, &c);
+
+    if (istty && !c.quiet) {
+        fprintf(stderr, "VMAF version %s\n", vmaf_version());
+    }
 
     FILE *file_ref = fopen(c.path_ref, "rb");
     if (!file_ref) {
@@ -324,10 +326,12 @@ int main(int argc, char *argv[])
             return -1;
         }
 
-        fprintf(stderr, "%s: %f\n",
-                c.model_config[i].version ?
-                    c.model_config[i].version : c.model_config[i].path,
-                vmaf_score);
+        if (istty && (!c.quiet || !c.output_path)) {
+            fprintf(stderr, "%s: %f\n",
+                    c.model_config[i].version ?
+                        c.model_config[i].version : c.model_config[i].path,
+                    vmaf_score);
+        }
     }
 
     for (unsigned i = 0; i < model_collection_cnt; i++) {
