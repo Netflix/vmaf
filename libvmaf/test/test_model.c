@@ -263,6 +263,7 @@ static char *test_model_set_flags()
               !model3->feature[4].opts_dict);
     mu_assert("feature[5].opts_dict must be NULL.\n",
               !model3->feature[5].opts_dict);
+    vmaf_model_destroy(model3);
 
     VmafModel  *model4;
     VmafModelConfig  cfg4 = { 0 };
@@ -309,6 +310,7 @@ static char *test_model_set_flags()
     mu_assert("feature[5].opts_dict[\"vif_enhn_gain_limit\"] must have value 1.0.\n",
               strcmp(entry->val, "1.0")==0);
 
+    vmaf_model_destroy(model4);
     return NULL;
 }
 
