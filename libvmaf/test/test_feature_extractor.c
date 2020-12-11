@@ -116,6 +116,15 @@ static char *test_feature_extractor_flush()
                                            &score, 1);
     mu_assert("problem during vmaf_feature_collector_get_score", !err);
 
+    err = vmaf_feature_extractor_context_close(fex_ctx);
+    mu_assert("problem during vmaf_feature_extractor_context_close", !err);
+    err = vmaf_feature_extractor_context_destroy(fex_ctx);
+    mu_assert("problem during vmaf_feature_extractor_context_destroy", !err);
+
+    vmaf_feature_collector_destroy(vfc);
+    vmaf_picture_unref(&ref);
+    vmaf_picture_unref(&dist);
+
     return NULL;
 }
 
@@ -154,8 +163,14 @@ static char *test_feature_extractor_initialization_options()
     err = vmaf_feature_collector_get_score(vfc, "psnr_cb", &score, 0);
     mu_assert("chroma PSNR was not disabled via option", err);
 
-    err = vmaf_dictionary_free(&opts_dict);
-    mu_assert("problem during vmaf_dictionary_free", !err);
+    err = vmaf_feature_extractor_context_close(fex_ctx);
+    mu_assert("problem during vmaf_feature_extractor_context_close", !err);
+    err = vmaf_feature_extractor_context_destroy(fex_ctx);
+    mu_assert("problem during vmaf_feature_extractor_context_destroy", !err);
+
+    vmaf_feature_collector_destroy(vfc);
+    vmaf_picture_unref(&ref);
+    vmaf_picture_unref(&dist);
 
     return NULL;
 }
