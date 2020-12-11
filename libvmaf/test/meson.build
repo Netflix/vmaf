@@ -79,6 +79,11 @@ test_ref = executable('test_ref',
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
 )
 
+test_feature = executable('test_feature',
+    ['test.c', 'test_feature.c', '../src/feature/feature_name.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+)
+
 test('test_picture', test_picture)
 test('test_feature_collector', test_feature_collector)
 test('test_thread_pool', test_thread_pool)
@@ -88,3 +93,4 @@ test('test_feature_extractor', test_feature_extractor)
 test('test_dict', test_dict)
 test('test_cpu', test_cpu)
 test('test_ref', test_ref)
+test('test_feature', test_feature)
