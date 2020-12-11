@@ -362,9 +362,11 @@ int main(int argc, char *argv[])
 
     for (unsigned i = 0; i < c.model_cnt; i++)
         vmaf_model_destroy(model[i]);
+    free(model);
 
     for (unsigned i = 0; i < model_collection_cnt; i++)
         vmaf_model_collection_destroy(model_collection[i]);
+    free(model_collection);
 
     video_input_close(&vid_ref);
     video_input_close(&vid_dist);
