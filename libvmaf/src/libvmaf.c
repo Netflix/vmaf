@@ -173,7 +173,7 @@ int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model)
         }
         err = vmaf_feature_extractor_context_create(&fex_ctx, fex, d);
         if (err) return err;
-        err = feature_extractor_vector_append(rfe, fex_ctx, VMAF_FEATURE_EXTRACTOR_CONTEXT_DO_NOT_OVERWRITE);
+        err = feature_extractor_vector_append(rfe, fex_ctx, 0);
         if (err) {
             err |= vmaf_feature_extractor_context_destroy(fex_ctx);
             return err;
