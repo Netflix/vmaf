@@ -317,15 +317,17 @@ int main(int argc, char *argv[])
         return err;
     }
 
-    for (unsigned i = 0; i < c.model_cnt; i++) {
-        double vmaf_score;
-        err = vmaf_score_pooled(vmaf, model[i], VMAF_POOL_METHOD_MEAN,
-                                &vmaf_score, 0, picture_index - 1);
-        if (err) {
-            fprintf(stderr, "problem generating pooled VMAF score\n");
-            return -1;
-        }
+    if (!c.no_prediction) {
+        for (unsigned i = 0; i < c.model_cnt; i++) {
+            double vmaf_score;
+            err = vmaf_score_pooled(vmaf, model[i], VMAF_POOL_METHOD_MEAN,
+                    &vmaf_score, 0, picture_index - 1);
+            if (err) {
+                fprintf(stderr, "problem generating pooled VMAF score\n");
+                return -1;
+            }
 
+<<<<<<< HEAD
         if (istty && (!c.quiet || !c.output_path)) {
             fprintf(stderr, "%s: %f\n",
                     c.model_config[i].version ?
@@ -342,18 +344,50 @@ int main(int argc, char *argv[])
         if (err) {
             fprintf(stderr, "problem generating pooled VMAF score\n");
             return -1;
+||||||| parent of c8a1ee15... vmaf: do not predict when --model and --no_prediction are both present
+        fprintf(stderr, "%s: %f\n",
+                c.model_config[i].version ?
+                    c.model_config[i].version : c.model_config[i].path,
+                vmaf_score);
+    }
+
+    for (unsigned i = 0; i < model_collection_cnt; i++) {
+        VmafModelCollectionScore score = { 0 };
+        err = vmaf_score_pooled_model_collection(vmaf, model_collection[i],
+                                                 VMAF_POOL_METHOD_MEAN, &score,
+                                                 0, picture_index - 1);
+        if (err) {
+            fprintf(stderr, "problem generating pooled VMAF score\n");
+            return -1;
+=======
+            fprintf(stderr, "%s: %f\n",
+                    c.model_config[i].version ?
+                    c.model_config[i].version : c.model_config[i].path,
+                    vmaf_score);
+>>>>>>> c8a1ee15... vmaf: do not predict when --model and --no_prediction are both present
         }
 
-        switch (score.type) {
-        case VMAF_MODEL_COLLECTION_SCORE_BOOTSTRAP:
-            fprintf(stderr, "%s: %f, ci.p95: [%f, %f], stddev: %f\n",
-                    model_collection_label[i],
-                    score.bootstrap.bagging_score, score.bootstrap.ci.p95.lo,
-                    score.bootstrap.ci.p95.hi,
-                    score.bootstrap.stddev);
-            break;
-        default:
-            break;
+        for (unsigned i = 0; i < model_collection_cnt; i++) {
+            VmafModelCollectionScore score = { 0 };
+            err = vmaf_score_pooled_model_collection(vmaf, model_collection[i],
+                    VMAF_POOL_METHOD_MEAN, &score,
+                    0, picture_index - 1);
+            if (err) {
+                fprintf(stderr, "problem generating pooled VMAF score\n");
+                return -1;
+            }
+
+            switch (score.type) {
+                case VMAF_MODEL_COLLECTION_SCORE_BOOTSTRAP:
+                    fprintf(stderr, "%s: %f, ci.p95: [%f, %f], stddev: %f\n",
+                            model_collection_label[i],
+                            score.bootstrap.bagging_score,
+                            score.bootstrap.ci.p95.lo, score.bootstrap.ci.p95.hi,
+                            score.bootstrap.stddev);
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
