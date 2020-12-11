@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <string.h>
 
-static int32_t div_lookup[65536];
+static int32_t div_lookup[65537];
 static const int32_t div_Q_factor = 1073741824; // 2^30
 
 static inline void div_lookup_generator() {
@@ -75,8 +75,8 @@ typedef struct AdmBuffer {
 
 #define DIVS(n, d) ((n) / (d))
 
-static const int16_t dwt2_db2_coeffs_lo[4] = {15826, 27411, 7345, -4240};
-static const int16_t dwt2_db2_coeffs_hi[4] = {-4240, -7345, 27411, -15826};
+static const int16_t dwt2_db2_coeffs_lo[10] = {15826, 27411, 7345, -4240};
+static const int16_t dwt2_db2_coeffs_hi[10] = {-4240, -7345, 27411, -15826};
 
 static const int32_t dwt2_db2_coeffs_lo_sum = 46342;
 static const int32_t dwt2_db2_coeffs_hi_sum = 0;
