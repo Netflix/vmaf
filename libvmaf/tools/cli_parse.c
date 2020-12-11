@@ -24,6 +24,7 @@ enum {
     ARG_SUBSAMPLE,
     ARG_CPUMASK,
     ARG_AOM_CTC,
+    ARG_NEG,
 };
 
 static const struct option long_opts[] = {
@@ -44,6 +45,7 @@ static const struct option long_opts[] = {
     { "subsample",        1, NULL, ARG_SUBSAMPLE },
     { "cpumask",          1, NULL, ARG_CPUMASK },
     { "aom_ctc",          1, NULL, ARG_AOM_CTC },
+    { "neg",              0, NULL, ARG_NEG },
     { "no_prediction",    0, NULL, 'n' },
     { "version",          0, NULL, 'v' },
     { "quiet",            0, NULL, 'q' },
@@ -81,6 +83,7 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --subsample: $unsigned     compute scores only every N frames\n"
             " --quiet/-q:                disable FPS meter when run in a TTY\n"
             " --no_prediction/-n:        no prediction, extract features only\n"
+            " --neg:                     apply no enhancement gain parameters\n"
             " --version/-v:              print version and exit\n"
            );
     exit(1);
@@ -265,6 +268,25 @@ static void parse_aom_ctc(CLISettings *settings, const char *const optarg,
         usage(app, "bad aom_ctc version \"%s\", optarg");
 }
 
+/*
+ * Add no enhancement gain features to feature_cfg
+ */
+static void parse_neg(CLISettings *settings)
+{
+    CLIFeatureConfig vif_neg_cfg = {
+        .name = "vif",
+        .opts_dict = NULL,
+    };
+    vmaf_feature_dictionary_set(&vif_neg_cfg.opts_dict, "vif_enhn_gain_limit", "1.0");
+    settings->feature_cfg[settings->feature_cnt++] = vif_neg_cfg;
+    CLIFeatureConfig adm_neg_cfg = {
+        .name = "adm",
+        .opts_dict = NULL,
+    };
+    vmaf_feature_dictionary_set(&adm_neg_cfg.opts_dict, "adm_enhn_gain_limit", "1.0");
+    settings->feature_cfg[settings->feature_cnt++] = adm_neg_cfg;
+}
+
 void cli_parse(const int argc, char *const *const argv,
                CLISettings *const settings)
 {
@@ -337,6 +359,9 @@ void cli_parse(const int argc, char *const *const argv,
             break;
         case ARG_AOM_CTC:
             parse_aom_ctc(settings, optarg, argv[0]);
+            break;
+        case ARG_NEG:
+            parse_neg(settings);
             break;
         case 'n':
             settings->no_prediction = true;
