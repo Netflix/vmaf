@@ -247,10 +247,10 @@ static void aom_ctc_proposed(CLISettings *settings, const char *const app)
         parse_feature_config("ciede", app);
 
     settings->feature_cfg[settings->feature_cnt++] =
-        parse_feature_config("float_ssim", app);
+        parse_feature_config("float_ssim=enable_db=true", app);
 
     settings->feature_cfg[settings->feature_cnt++] =
-        parse_feature_config("float_ms_ssim", app);
+        parse_feature_config("float_ms_ssim=enable_db=true", app);
 
     settings->feature_cfg[settings->feature_cnt++] =
         parse_feature_config("psnr_hvs", app);
