@@ -605,8 +605,8 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     s->buf.tmp.ref_convol = data; data += s->buf.stride_tmp;
     s->buf.tmp.dis_convol = data;
 
-    //s->calculate_neg_statistics =
-    //    s->vif_enhn_gain_limit != DEFAULT_VIF_ENHN_GAIN_LIMIT;
+    s->calculate_neg_statistics =
+        (s->vif_enhn_gain_limit != DEFAULT_VIF_ENHN_GAIN_LIMIT);
 
     return 0;
 }
