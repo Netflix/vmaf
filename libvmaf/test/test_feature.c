@@ -25,18 +25,19 @@
 
 static char *test_feature_name()
 {
-    const size_t buf_sz = 255;
-    char buf[buf_sz];
+    char buf[VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE];
     char *feature_name;
 
     char *name = "VMAF_integer_feature_vif_scale0_score";
     char *key = "vif_enhn_gain_limit";
     const double val = 1.0;
 
-    feature_name = vmaf_feature_name(name, NULL, val, &buf[0], buf_sz);
+    feature_name = vmaf_feature_name(name, NULL, val, &buf[0],
+                                     VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE);
     mu_assert("name should not be modified", !strcmp(feature_name, name));
 
-    feature_name = vmaf_feature_name(name, key, val, &buf[0], buf_sz);
+    feature_name = vmaf_feature_name(name, key, val, &buf[0],
+                                     VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE);
     mu_assert("name should have been formatted according to key/val",
         !strcmp(feature_name, "VMAF_integer_feature_vif_scale0_score_vif_enhn_gain_limit_1.00"));
 
