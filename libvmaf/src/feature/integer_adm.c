@@ -2340,109 +2340,6 @@ static void adm_dwt2_s123_combined(const int32_t *i4_ref_scale, const int32_t *i
     }
 }
 
-void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic,
-                         double *score, double *score_num, double *score_den, double *scores, AdmBuffer *buf,
-                         double adm_enhn_gain_limit)
-{
-    int w = ref_pic->w[0];
-    int h = ref_pic->h[0];
-
-    const double numden_limit = 1e-10 * (w * h) / (1920.0 * 1080.0);
-
-    size_t curr_ref_stride;
-    size_t curr_dis_stride;
-    size_t buf_stride = buf->ind_size_x >> 2;
-
-    int32_t *i4_curr_ref_scale = NULL;
-    int32_t *i4_curr_dis_scale = NULL;
-
-    if (ref_pic->bpc == 8) {
-        curr_ref_stride = ref_pic->stride[0];
-        curr_dis_stride = dis_pic->stride[0];
-    }
-    else {
-        curr_ref_stride = ref_pic->stride[0] >> 1;
-        curr_dis_stride = dis_pic->stride[0] >> 1;
-    }
-
-    double num = 0;
-    double den = 0;
-	for (unsigned scale = 0; scale < 4; ++scale) {
-		float num_scale = 0.0;
-		float den_scale = 0.0;
-
-        dwt2_src_indices_filt(buf->ind_y, buf->ind_x, w, h);
-		if(scale==0) {
-            if (ref_pic->bpc == 8) {
-                s->dwt2_8(ref_pic->data[0], &buf->ref_dwt2, buf, w, h,
-                          curr_ref_stride, buf_stride);
-                s->dwt2_8(dis_pic->data[0], &buf->dis_dwt2, buf, w, h,
-                          curr_dis_stride, buf_stride);
-            }
-            else {
-                adm_dwt2_16(ref_pic->data[0], &buf->ref_dwt2, buf, w, h,
-                            curr_ref_stride, buf_stride, ref_pic->bpc);
-                adm_dwt2_16(dis_pic->data[0], &buf->dis_dwt2, buf, w, h,
-                            curr_dis_stride, buf_stride, dis_pic->bpc);
-            }
-
-			i16_to_i32(&buf->ref_dwt2, &buf->i4_ref_dwt2, w, h, buf_stride);
-			i16_to_i32(&buf->dis_dwt2, &buf->i4_dis_dwt2, w, h, buf_stride);
-
-			w = (w + 1) / 2;
-			h = (h + 1) / 2;
-
-			adm_decouple(buf, w, h, buf_stride, adm_enhn_gain_limit);
-
-			den_scale = adm_csf_den_scale(&buf->ref_dwt2, w, h, buf_stride);
-
-			adm_csf(buf, w, h, buf_stride);
-
-			num_scale = adm_cm(buf, w, h, buf_stride, buf_stride);
-		}
-		else {
-            adm_dwt2_s123_combined(i4_curr_ref_scale, i4_curr_dis_scale, buf, w, h, curr_ref_stride,
-                                   curr_dis_stride, buf_stride, scale);
-
-			w = (w + 1) / 2;
-			h = (h + 1) / 2;
-
-			adm_decouple_s123(buf, w, h, buf_stride, adm_enhn_gain_limit);
-
-			den_scale = adm_csf_den_s123(&buf->i4_ref_dwt2, scale, w, h, buf_stride);
-
-			i4_adm_csf(buf, scale, w, h, buf_stride);
-
-			num_scale = i4_adm_cm(buf, w, h, buf_stride, buf_stride, scale);
-		}
-
-		num += num_scale;
-		den += den_scale;
-
-		i4_curr_ref_scale = buf->i4_ref_dwt2.band_a;
-		i4_curr_dis_scale = buf->i4_dis_dwt2.band_a;
-
-		curr_ref_stride = buf_stride;
-		curr_dis_stride = buf_stride;
-
-		scores[2 * scale + 0] = num_scale;
-		scores[2 * scale + 1] = den_scale;
-	}
-
-	num = num < numden_limit ? 0 : num;
-	den = den < numden_limit ? 0 : den;
-
-	if (den == 0.0) {
-		*score = 1.0f;
-	}
-	else {
-		*score = num / den;
-	}
-    *score_num = num;
-    *score_den = den;
-
-}
-
 static inline void *init_dwt_band(adm_dwt_band_t *band, char *data_top, size_t stride)
 {
     band->band_a = (int16_t *)data_top; data_top += stride;
@@ -2639,12 +2536,92 @@ static int extract(VmafFeatureExtractor *fex,
     (void) dist_pic_90;
 
     AdmScore adm_score;
-    integer_compute_adm(s, ref_pic, dist_pic, &adm_score.score,
-                        &adm_score.score_num, &adm_score.score_den,
-                        &adm_score.scores[0], &s->buf, s->adm_enhn_gain_limit);
+
+    int w = ref_pic->w[0];
+    int h = ref_pic->h[0];
+
+    size_t curr_ref_stride;
+    size_t curr_dis_stride;
+    size_t buf_stride = s->buf.ind_size_x >> 2;
+
+    int32_t *i4_curr_ref_scale = NULL;
+    int32_t *i4_curr_dis_scale = NULL;
+
+    if (ref_pic->bpc == 8) {
+        curr_ref_stride = ref_pic->stride[0];
+        curr_dis_stride = dist_pic->stride[0];
+    } else {
+        curr_ref_stride = ref_pic->stride[0] >> 1;
+        curr_dis_stride = dist_pic->stride[0] >> 1;
+    }
+
+    double num = 0;
+    double den = 0;
+	for (unsigned scale = 0; scale < 4; ++scale) {
+		float num_scale = 0.0;
+		float den_scale = 0.0;
+
+        dwt2_src_indices_filt(s->buf.ind_y, s->buf.ind_x, w, h);
+		if (scale == 0) {
+            if (ref_pic->bpc == 8) {
+                s->dwt2_8(ref_pic->data[0], &s->buf.ref_dwt2, &s->buf, w, h,
+                          curr_ref_stride, buf_stride);
+                s->dwt2_8(dist_pic->data[0], &s->buf.dis_dwt2, &s->buf, w, h,
+                          curr_dis_stride, buf_stride);
+            } else {
+                adm_dwt2_16(ref_pic->data[0], &s->buf.ref_dwt2, &s->buf, w, h,
+                            curr_ref_stride, buf_stride, ref_pic->bpc);
+                adm_dwt2_16(dist_pic->data[0], &s->buf.dis_dwt2, &s->buf, w, h,
+                            curr_dis_stride, buf_stride, dist_pic->bpc);
+            }
+
+			i16_to_i32(&s->buf.ref_dwt2, &s->buf.i4_ref_dwt2, w, h, buf_stride);
+			i16_to_i32(&s->buf.dis_dwt2, &s->buf.i4_dis_dwt2, w, h, buf_stride);
+
+			w = (w + 1) / 2;
+			h = (h + 1) / 2;
+
+			adm_decouple(&s->buf, w, h, buf_stride, s->adm_enhn_gain_limit);
+			den_scale = adm_csf_den_scale(&s->buf.ref_dwt2, w, h, buf_stride);
+			adm_csf(&s->buf, w, h, buf_stride);
+			num_scale = adm_cm(&s->buf, w, h, buf_stride, buf_stride);
+		} else {
+            adm_dwt2_s123_combined(i4_curr_ref_scale, i4_curr_dis_scale,
+                                   &s->buf, w, h, curr_ref_stride,
+                                   curr_dis_stride, buf_stride, scale);
+
+			w = (w + 1) / 2;
+			h = (h + 1) / 2;
+
+			adm_decouple_s123(&s->buf, w, h, buf_stride, s->adm_enhn_gain_limit);
+			den_scale =
+                adm_csf_den_s123(&s->buf.i4_ref_dwt2, scale, w, h, buf_stride);
+			i4_adm_csf(&s->buf, scale, w, h, buf_stride);
+			num_scale = i4_adm_cm(&s->buf, w, h, buf_stride, buf_stride, scale);
+		}
+
+		num += num_scale;
+		den += den_scale;
+
+		i4_curr_ref_scale = s->buf.i4_ref_dwt2.band_a;
+		i4_curr_dis_scale = s->buf.i4_dis_dwt2.band_a;
+
+		curr_ref_stride = buf_stride;
+		curr_dis_stride = buf_stride;
+
+		adm_score.scores[2 * scale + 0] = num_scale;
+		adm_score.scores[2 * scale + 1] = den_scale;
+	}
+
+    const double numden_limit =
+        1e-10 * (ref_pic->w[0] * ref_pic->h[0]) / (1920.0 * 1080.0);
+	num = num < numden_limit ? 0 : num;
+	den = den < numden_limit ? 0 : den;
+    adm_score.score = den == 0.0 ? 1.0f : num / den;
+    adm_score.score_num = num;
+    adm_score.score_den = den;
 
     err |= write_scores(feature_collector, index, adm_score, s);
-
     return err;
 }
 
