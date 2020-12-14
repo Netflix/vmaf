@@ -125,8 +125,8 @@ int vmaf_predict_score_at_index(VmafModel *model,
         double val;
 
         if (model->feature[i].opts_dict) {
-            key = model->feature[0].opts_dict->entry[0].key;
-            val = atof(model->feature[0].opts_dict->entry[0].val);
+            key = model->feature[i].opts_dict->entry[0].key;
+            val = atof(model->feature[i].opts_dict->entry[0].val);
         }
 
         char *feature_name =
