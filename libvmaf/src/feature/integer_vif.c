@@ -608,7 +608,8 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 
 typedef struct VifScore {
     struct {
-        double num, den;
+        float num;
+        float den;
     } scale[4];
 } VifScore;
 
@@ -618,31 +619,38 @@ char *feature_name(char *name)
 }
 
 static int write_scores(VmafFeatureCollector *feature_collector, unsigned index,
-                float *scores, VifState *s)
+                        VifScore vif_score, VifState *s)
 {
     int err = 0;
 
     err |= vmaf_feature_collector_append(feature_collector,
                        feature_name("VMAF_integer_feature_vif_scale0_score"),
-                       scores[0] / scores[1], index);
+                       vif_score.scale[0].num / vif_score.scale[0].den, index);
 
     err |= vmaf_feature_collector_append(feature_collector,
                        feature_name("VMAF_integer_feature_vif_scale1_score"),
-                       scores[2] / scores[3], index);
+                       vif_score.scale[1].num / vif_score.scale[1].den, index);
 
     err |= vmaf_feature_collector_append(feature_collector,
                        feature_name("VMAF_integer_feature_vif_scale2_score"),
-                       scores[4] / scores[5], index);
+                       vif_score.scale[2].num / vif_score.scale[2].den, index);
 
     err |= vmaf_feature_collector_append(feature_collector,
                        feature_name("VMAF_integer_feature_vif_scale3_score"),
-                       scores[6] / scores[7], index);
+                       vif_score.scale[3].num / vif_score.scale[3].den, index);
 
     if (!s->debug) return err;
 
-    const double score_num = scores[0] + scores[2] + scores[4] + scores[6];
-    const double score_den = scores[1] + scores[3] + scores[5] + scores[7];
-    const double score = score_den == 0.0 ? 1.0f : score_num / score_den;
+    const double score_num =
+        vif_score.scale[0].num + vif_score.scale[1].num +
+        vif_score.scale[2].num + vif_score.scale[3].num;
+
+    const double score_den =
+        vif_score.scale[0].den + vif_score.scale[1].den +
+        vif_score.scale[2].den + vif_score.scale[3].den;
+
+    const double score =
+        score_den == 0.0 ? 1.0f : score_num / score_den;
 
     err |= vmaf_feature_collector_append(feature_collector,
             feature_name("integer_vif"), score, index);
@@ -654,28 +662,36 @@ static int write_scores(VmafFeatureCollector *feature_collector, unsigned index,
             feature_name("integer_vif_den"), score_den, index);
 
     err |= vmaf_feature_collector_append(feature_collector,
-            feature_name( "integer_vif_num_scale0"), scores[0], index);
+            feature_name( "integer_vif_num_scale0"),
+            vif_score.scale[0].num, index);
 
     err |= vmaf_feature_collector_append(feature_collector,
-            feature_name("integer_vif_den_scale0"), scores[1], index);
+            feature_name("integer_vif_den_scale0"),
+            vif_score.scale[0].den, index);
 
     err |= vmaf_feature_collector_append(feature_collector,
-            feature_name("integer_vif_num_scale1"), scores[2], index);
+            feature_name("integer_vif_num_scale1"),
+            vif_score.scale[1].num, index);
 
     err |= vmaf_feature_collector_append(feature_collector,
-            feature_name("integer_vif_den_scale1"), scores[3], index);
+            feature_name("integer_vif_den_scale1"),
+            vif_score.scale[1].den, index);
 
     err |= vmaf_feature_collector_append(feature_collector,
-            feature_name("integer_vif_num_scale2"), scores[4], index);
+            feature_name("integer_vif_num_scale2"),
+            vif_score.scale[2].num, index);
 
     err |= vmaf_feature_collector_append(feature_collector,
-            feature_name("integer_vif_den_scale2"), scores[5], index);
+            feature_name("integer_vif_den_scale2"),
+            vif_score.scale[2].den, index);
 
     err |= vmaf_feature_collector_append(feature_collector,
-            feature_name("integer_vif_num_scale3"), scores[6], index);
+            feature_name("integer_vif_num_scale3"),
+            vif_score.scale[3].num, index);
 
     err |= vmaf_feature_collector_append(feature_collector,
-            feature_name("integer_vif_den_scale3"), scores[7], index);
+            feature_name("integer_vif_den_scale3"),
+            vif_score.scale[3].den, index);
 
     return err;
 }
@@ -686,6 +702,7 @@ static int extract(VmafFeatureExtractor *fex,
                    unsigned index, VmafFeatureCollector *feature_collector)
 {
     VifState *s = fex->priv;
+    int err = 0;
 
     (void) ref_pic_90;
     (void) dist_pic_90;
@@ -708,7 +725,11 @@ static int extract(VmafFeatureExtractor *fex,
     }
     pad_top_and_bottom(s->buf, h, vif_filter1d_width[0]);
 
-    float scores[8];
+    //const bool calculate_neg_statistics = 
+    //    s->vif_enhn_gain_limit != DEFAULT_VIF_ENHN_GAIN_LIMIT;
+    const bool calculate_neg_statistics = false;
+
+    VifScore vif_score, vif_score_neg;
     for (unsigned scale = 0; scale < 4; ++scale) {
         if (scale > 0) {
             if (ref_pic->bpc == 8 && scale == 1)
@@ -725,11 +746,21 @@ static int extract(VmafFeatureExtractor *fex,
         else
             s->filter1d_16(s->buf, w, h, scale, ref_pic->bpc);
 
-        vif_statistic(s->buf, &scores[2 * scale], &scores[2 * scale + 1],
-                      w, h, s->log2_table, s->vif_enhn_gain_limit);
+        vif_statistic(s->buf, &vif_score.scale[scale].num,
+                      &vif_score.scale[scale].den, w, h, s->log2_table,
+                      DEFAULT_VIF_ENHN_GAIN_LIMIT);
+
+        if (calculate_neg_statistics) {
+            vif_statistic(s->buf, &vif_score_neg.scale[scale].num,
+                          &vif_score_neg.scale[scale].den, w, h, s->log2_table,
+                          s->vif_enhn_gain_limit);
+        }
     }
 
-    int err = write_scores(feature_collector, index, &scores[0], s);
+    err |= write_scores(feature_collector, index, vif_score, s);
+    if (calculate_neg_statistics)
+        err |= write_scores(feature_collector, index, vif_score_neg, s);
+
     return err;
 }
 
