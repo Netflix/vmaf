@@ -20,8 +20,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE 256
-
 char *vmaf_feature_name(char *name, char *key, double val,
                         char *buf, size_t buf_sz)
 {

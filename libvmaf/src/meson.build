@@ -153,6 +153,7 @@ if is_asm_enabled
 endif
 
 libvmaf_include = include_directories(
+    '.',
     '../include',
     src_dir,
     feature_src_dir,
@@ -220,6 +221,7 @@ libvmaf_feature_sources = [
     feature_src_dir + 'integer_psnr.c',
     feature_src_dir + 'third_party/xiph/psnr_hvs.c',
     feature_src_dir + 'feature_extractor.c',
+    feature_src_dir + 'feature_name.c',
     feature_src_dir + 'alias.c',
     feature_src_dir + 'integer_adm.c',
     feature_src_dir + 'feature_collector.c',
