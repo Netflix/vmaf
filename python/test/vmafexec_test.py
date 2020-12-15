@@ -912,7 +912,7 @@ class VmafexecQualityRunnerTest(unittest.TestCase):
             None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
-            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1neg.json")}
+            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_v0.6.1neg.json")}
         )
         self.runner.run(parallelize=True)
 
@@ -924,7 +924,7 @@ class VmafexecQualityRunnerTest(unittest.TestCase):
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 0.999146211879154, places=4)  # 1.0728060231246508
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 88.032956, places=4)  # 132.78849246495625
+        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 88.030463, places=4)  # 132.78849246495625
 
     def test_run_vmafexec_runner_akiyo_multiply_no_enhn_gain_model_and_cmd_options(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -940,7 +940,7 @@ class VmafexecQualityRunnerTest(unittest.TestCase):
             None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
-            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1neg.json"),
+            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_v0.6.1neg.json"),
                            'adm_enhn_gain_limit': 1.2}
         )
         self.runner.run(parallelize=True)
@@ -1122,6 +1122,29 @@ class VmafexecQualityRunnerTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 76.66890519623612, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_score'], 99.946416604585025, places=4)
+
+    def test_run_vmafexec_runner_akiyo_multiply_4k_model(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = VmafexecQualityRunner(
+            [asset],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_4k_v0.6.1.json")}
+        )
+        self.runner.run(parallelize=True)
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'], 0.3636620625, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 0.7674953125, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 0.8631078125, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 0.9157200833333333, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_motion2_score'], 3.895352291666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_score'], 0.9345148541666667, places=4)
+
+        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 84.95064735416668, places=4)
 
 
 class VmafexecQualityRunnerSubsamplingTest(unittest.TestCase):

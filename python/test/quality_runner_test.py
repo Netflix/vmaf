@@ -1165,7 +1165,7 @@ class QualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAF_score'], 84.97241763181641, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 84.9506475312982, places=4)
         self.assertAlmostEqual(results[1]['VMAF_score'], 100.0, places=4)
 
     def test_run_bootstrap_vmaf_runner_with_4k_1d5H_model(self):
