@@ -7,7 +7,7 @@ test_inc = include_directories('.')
 test_context = executable('test_context',
     ['test.c', 'test_context.c'],
     include_directories : [libvmaf_inc, test_inc],
-    link_with : libvmaf.get_static_lib(),
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
     dependencies:[stdatomic_dependency],
 )
 
