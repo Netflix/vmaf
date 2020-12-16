@@ -7,6 +7,7 @@
 #include <libvmaf/model.h>
 
 #include "config.h"
+#include "log.h"
 #include "model.h"
 #include "read_json_model.h"
 #include "svm.h"
@@ -88,7 +89,11 @@ int vmaf_model_load(VmafModel **model, VmafModelConfig *cfg,
         }
     }
 
-    if (!built_in_model) return -EINVAL;
+    if (!built_in_model) {
+        vmaf_log(VMAF_LOG_LEVEL_WARNING,
+                 "no such built-in model: \"%s\"\n", version);
+        return -EINVAL;
+    }
 
     return vmaf_read_json_model_from_buffer(model, cfg, built_in_model->data,
                                             *built_in_model->data_len);
@@ -115,7 +120,17 @@ char *vmaf_model_generate_name(VmafModelConfig *cfg)
 int vmaf_model_load_from_path(VmafModel **model, VmafModelConfig *cfg,
                               const char *path)
 {
-    return vmaf_read_json_model_from_path(model, cfg, path);
+    int err = vmaf_read_json_model_from_path(model, cfg, path);
+    if (err) {
+        vmaf_log(VMAF_LOG_LEVEL_WARNING,
+                 "could not read model from path: \"%s\"\n", path);
+        char *ext = strrchr(path, '.');
+        if (ext && !strcmp(ext, ".pkl")) {
+            vmaf_log(VMAF_LOG_LEVEL_WARNING,
+                     "pkl model files have been deprecated, use json\n");
+        }
+    }
+    return err;
 }
 
 void vmaf_model_destroy(VmafModel *model)
@@ -203,7 +218,11 @@ int vmaf_model_collection_load(VmafModel **model,
         }
     }
 
-    if (!built_in_model) return -EINVAL;
+    if (!built_in_model) {
+        vmaf_log(VMAF_LOG_LEVEL_WARNING,
+                 "no such built-in model collection: \"%s\"\n", version);
+        return -EINVAL;
+    }
 
     return vmaf_read_json_model_collection_from_buffer(model, model_collection,
                                                      cfg, built_in_model->data,
@@ -215,6 +234,18 @@ int vmaf_model_collection_load_from_path(VmafModel **model,
                                          VmafModelConfig *cfg,
                                          const char *path)
 {
-        return vmaf_read_json_model_collection_from_path(model,
-                                                   model_collection, cfg, path);
+    int err =
+        vmaf_read_json_model_collection_from_path(model, model_collection,
+                                                  cfg, path);
+    if (err) {
+        vmaf_log(VMAF_LOG_LEVEL_WARNING,
+                 "could not read model collection from path: \"%s\"\n", path);
+        char *ext = strrchr(path, '.');
+        if (ext && !strcmp(ext, ".pkl")) {
+            vmaf_log(VMAF_LOG_LEVEL_WARNING,
+                     "pkl model files have been deprecated, use json\n");
+        }
+    }
+
+    return err;
 }
