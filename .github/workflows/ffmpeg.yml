@@ -40,12 +40,6 @@ jobs:
       - name: Install dependencies (mac)
         if: matrix.os == 'macos-10.15'
         run: |
-          # https://github.com/actions/virtual-environments/issues/1811#issuecomment-708480190
-          brew uninstall openssl@1.0.2t
-          brew uninstall python@2.7.17
-          brew untap local/openssl
-          brew untap local/python2
-          # ^ FIXME
           brew update
           brew upgrade
           brew install -q ninja nasm
