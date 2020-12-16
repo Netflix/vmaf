@@ -43,7 +43,6 @@ typedef struct VifState {
     uint16_t log2_table[65537];
     bool debug;
     double vif_enhn_gain_limit;
-    bool calculate_neg_statistics;
     void (*filter1d_8)(VifBuffer buf, unsigned w, unsigned h);
     void (*filter1d_16)(VifBuffer buf, unsigned w, unsigned h, int scale,
                         int bpc);
@@ -605,9 +604,6 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     s->buf.tmp.ref_convol = data; data += s->buf.stride_tmp;
     s->buf.tmp.dis_convol = data;
 
-    s->calculate_neg_statistics =
-        (s->vif_enhn_gain_limit != DEFAULT_VIF_ENHN_GAIN_LIMIT);
-
     return 0;
 }
 
@@ -619,13 +615,13 @@ typedef struct VifScore {
 } VifScore;
 
 static int write_scores(VmafFeatureCollector *feature_collector, unsigned index,
-                        VifScore vif, VifState *s, bool vif_enhn_gain_limit)
+                        VifScore vif, VifState *s, const char *fex_name)
 {
     int err = 0;
 
     size_t buf_sz = VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE;
     char buf[buf_sz];
-    char *key = vif_enhn_gain_limit ? "vif_enhn_gain_limit" : NULL;
+    char *key = !strcmp(fex_name, "vif_neg") ? "vif_enhn_gain_limit" : NULL;
     double val = s->vif_enhn_gain_limit;
     char *feature_name;
 
@@ -734,7 +730,6 @@ static int extract(VmafFeatureExtractor *fex,
                    unsigned index, VmafFeatureCollector *feature_collector)
 {
     VifState *s = fex->priv;
-    int err = 0;
 
     (void) ref_pic_90;
     (void) dist_pic_90;
@@ -757,7 +752,7 @@ static int extract(VmafFeatureExtractor *fex,
     }
     pad_top_and_bottom(s->buf, h, vif_filter1d_width[0]);
 
-    VifScore vif_score, vif_score_neg;
+    VifScore vif_score;
     for (unsigned scale = 0; scale < 4; ++scale) {
         if (scale > 0) {
             if (ref_pic->bpc == 8 && scale == 1)
@@ -776,21 +771,10 @@ static int extract(VmafFeatureExtractor *fex,
 
         vif_statistic(s->buf, &vif_score.scale[scale].num,
                       &vif_score.scale[scale].den, w, h, s->log2_table,
-                      DEFAULT_VIF_ENHN_GAIN_LIMIT);
-
-        if (s->calculate_neg_statistics) {
-            vif_statistic(s->buf, &vif_score_neg.scale[scale].num,
-                          &vif_score_neg.scale[scale].den, w, h, s->log2_table,
-                          s->vif_enhn_gain_limit);
-        }
+                      s->vif_enhn_gain_limit);
     }
 
-    err |= write_scores(feature_collector, index, vif_score, s, false);
-
-    if (s->calculate_neg_statistics)
-        err |= write_scores(feature_collector, index, vif_score_neg, s, true);
-
-    return err;
+    return write_scores(feature_collector, index, vif_score, s, fex->name);
 }
 
 static int close(VmafFeatureExtractor *fex)
@@ -799,6 +783,24 @@ static int close(VmafFeatureExtractor *fex)
     if (s->buf.data) aligned_free(s->buf.data);
     return 0;
 }
+
+static const char *provided_features_neg[] = {
+    "VMAF_integer_feature_vif_scale0_score_vif_enhn_gain_limit_1.00",
+    "VMAF_integer_feature_vif_scale1_score_vif_enhn_gain_limit_1.00",
+    "VMAF_integer_feature_vif_scale2_score_vif_enhn_gain_limit_1.00",
+    "VMAF_integer_feature_vif_scale3_score_vif_enhn_gain_limit_1.00",
+    NULL
+};
+
+VmafFeatureExtractor vmaf_fex_integer_vif_neg = {
+    .name = "vif_neg",
+    .init = init,
+    .extract = extract,
+    .options = options,
+    .close = close,
+    .priv_size = sizeof(VifState),
+    .provided_features = provided_features_neg,
+};
 
 static const char *provided_features[] = {
     "VMAF_integer_feature_vif_scale0_score",

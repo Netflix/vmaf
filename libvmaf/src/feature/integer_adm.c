@@ -19,6 +19,7 @@
 
 #include "feature_collector.h"
 #include "feature_extractor.h"
+#include "feature_name.h"
 
 #include "cpu.h"
 #include "integer_adm.h"
@@ -2566,50 +2567,102 @@ static int extract(VmafFeatureExtractor *fex,
     double scores[8];
 
     integer_compute_adm(s, ref_pic, dist_pic, &score, &score_num, &score_den,
-            scores, &s->buf, s->adm_enhn_gain_limit);
+                        scores, &s->buf, s->adm_enhn_gain_limit);
 
-    err |= vmaf_feature_collector_append(feature_collector,
-                                        "VMAF_integer_feature_adm2_score",
-                                        score, index);
+    size_t buf_sz = VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE;
+    char buf[buf_sz];
+    char *key = !strcmp(fex->name, "adm_neg") ? "adm_enhn_gain_limit" : NULL;
+    double val = s->adm_enhn_gain_limit;
+    char *feature_name;
 
-    err |= vmaf_feature_collector_append(feature_collector,
-                                        "integer_adm_scale0",
+    feature_name =
+        vmaf_feature_name("VMAF_integer_feature_adm2_score", key, val,
+                          &buf[0], buf_sz);
+    err |= vmaf_feature_collector_append(feature_collector, feature_name,
+                                         score, index);
+
+    feature_name =
+        vmaf_feature_name("integer_adm_scale0", key, val, &buf[0], buf_sz);
+    err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                         scores[0] / scores[1], index);
 
-    err |= vmaf_feature_collector_append(feature_collector,
-                                        "integer_adm_scale1",
-                                        scores[2] / scores[3], index);
+    feature_name =
+        vmaf_feature_name("integer_adm_scale1", key, val, &buf[0], buf_sz);
+    err |= vmaf_feature_collector_append(feature_collector, feature_name,
+                                         scores[2] / scores[3], index);
 
-    err |= vmaf_feature_collector_append(feature_collector,
-                                        "integer_adm_scale2",
+    feature_name =
+        vmaf_feature_name("integer_adm_scale2", key, val, &buf[0], buf_sz);
+    err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                         scores[4] / scores[5], index);
 
-    err |= vmaf_feature_collector_append(feature_collector,
-                                        "integer_adm_scale3",
-                                        scores[6] / scores[7], index);
+    feature_name =
+        vmaf_feature_name("integer_adm_scale3", key, val, &buf[0], buf_sz);
+    err |= vmaf_feature_collector_append(feature_collector, feature_name,
+                                         scores[6] / scores[7], index);
 
     if (s->debug) {
-        err |= vmaf_feature_collector_append(feature_collector, "integer_adm",
+        feature_name =
+            vmaf_feature_name("integer_adm", key, val, &buf[0], buf_sz);
+        err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                              score, index);
-        err |= vmaf_feature_collector_append(feature_collector, "integer_adm_num",
+
+        feature_name =
+            vmaf_feature_name("integer_adm_num", key, val, &buf[0], buf_sz);
+        err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                              score_num, index);
-        err |= vmaf_feature_collector_append(feature_collector, "integer_adm_den",
+
+        feature_name =
+            vmaf_feature_name("integer_adm_num", key, val, &buf[0], buf_sz);
+        err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                              score_den, index);
-        err |= vmaf_feature_collector_append(feature_collector, "integer_adm_num_scale0",
+
+        feature_name =
+            vmaf_feature_name("integer_adm_num_scale0", key, val,
+                              &buf[0], buf_sz);
+        err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                              scores[0], index);
-        err |= vmaf_feature_collector_append(feature_collector, "integer_adm_den_scale0",
+
+        feature_name =
+            vmaf_feature_name("integer_adm_den_scale0", key, val,
+                              &buf[0], buf_sz);
+        err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                              scores[1], index);
-        err |= vmaf_feature_collector_append(feature_collector, "integer_adm_num_scale1",
+
+        feature_name =
+            vmaf_feature_name("integer_adm_num_scale1", key, val,
+                              &buf[0], buf_sz);
+        err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                              scores[2], index);
-        err |= vmaf_feature_collector_append(feature_collector, "integer_adm_den_scale1",
+
+        feature_name =
+            vmaf_feature_name("integer_adm_den_scale1", key, val,
+                              &buf[0], buf_sz);
+        err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                              scores[3], index);
-        err |= vmaf_feature_collector_append(feature_collector, "integer_adm_num_scale2",
+
+        feature_name =
+            vmaf_feature_name("integer_adm_num_scale2", key, val,
+                              &buf[0], buf_sz);
+        err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                              scores[4], index);
-        err |= vmaf_feature_collector_append(feature_collector, "integer_adm_den_scale2",
+
+        feature_name =
+            vmaf_feature_name("integer_adm_den_scale2", key, val,
+                              &buf[0], buf_sz);
+        err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                              scores[5], index);
-        err |= vmaf_feature_collector_append(feature_collector, "integer_adm_num_scale3",
+
+        feature_name =
+            vmaf_feature_name("integer_adm_num_scale3", key, val,
+                              &buf[0], buf_sz);
+        err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                              scores[6], index);
-        err |= vmaf_feature_collector_append(feature_collector, "integer_adm_den_scale3",
+
+        feature_name =
+            vmaf_feature_name("integer_adm_den_scale3", key, val,
+                              &buf[0], buf_sz);
+        err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                              scores[7], index);
     }
 
@@ -2629,6 +2682,21 @@ static int close(VmafFeatureExtractor *fex)
 
     return 0;
 }
+
+static const char *provided_features_neg[] = {
+    "VMAF_integer_feature_adm2_score_adm_enhn_gain_limit_1.00",
+    NULL
+};
+
+VmafFeatureExtractor vmaf_fex_integer_adm_neg = {
+    .name = "adm_neg",
+    .init = init,
+    .extract = extract,
+    .options = options,
+    .close = close,
+    .priv_size = sizeof(AdmState),
+    .provided_features = provided_features_neg,
+};
 
 static const char *provided_features[] = {
     "VMAF_integer_feature_adm2_score",
