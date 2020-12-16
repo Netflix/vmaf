@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "feature/alias.h"
+#include "log.h"
 #include "libvmaf/libvmaf.h"
 #include "model.h"
 
@@ -114,8 +115,10 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
                  int do_ssim, int do_ms_ssim, char *pool_method,
                  int n_thread, int n_subsample, int enable_conf_interval)
 {
-    fprintf(stderr, "[LIBVMAF] `compute_vmaf()` is deprecated "
-                    "and will be removed in a future libvmaf version\n");
+
+    vmaf_set_log_level(VMAF_LOG_LEVEL_INFO);
+    vmaf_log(VMAF_LOG_LEVEL_INFO, "`compute_vmaf()` is deprecated "
+             "and will be removed in a future libvmaf version\n");
 
     int err = 0;
 
@@ -129,7 +132,7 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
     VmafContext *vmaf;
     err = vmaf_init(&vmaf, cfg);
     if (err) {
-        fprintf(stderr, "problem initializing VMAF context\n");
+        vmaf_log(VMAF_LOG_LEVEL_ERROR, "problem initializing VMAF context\n");
         return -1;
     }
 
@@ -151,12 +154,13 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
         err = vmaf_model_collection_load_from_path(&model, &model_collection,
                                                    &model_cfg, model_path);
         if (err) {
-            fprintf(stderr, "problem loading model file: %s\n", model_path);
+            vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                     "problem loading model file: %s\n", model_path);
             goto end;
         }
         err = vmaf_use_features_from_model_collection(vmaf, model_collection);
         if (err) {
-            fprintf(stderr,
+            vmaf_log(VMAF_LOG_LEVEL_ERROR,
                     "problem loading feature extractors from model file: %s\n",
                     model_path);
             goto end;
@@ -164,12 +168,13 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
     } else {
         err = vmaf_model_load_from_path(&model, &model_cfg, model_path);
         if (err) {
-            fprintf(stderr, "problem loading model file: %s\n", model_path);
+            vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                     "problem loading model file: %s\n", model_path);
             goto end;
         }
         err = vmaf_use_features_from_model(vmaf, model);
         if (err) {
-            fprintf(stderr,
+            vmaf_log(VMAF_LOG_LEVEL_ERROR,
                     "problem loading feature extractors from model file: %s\n",
                     model_path);
             goto end;
@@ -179,7 +184,8 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
     if (do_psnr) {
         err = vmaf_use_feature(vmaf, "float_psnr", NULL);
         if (err) {
-            fprintf(stderr, "problem loading feature extractor: psnr");
+            vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                     "problem loading feature extractor: psnr\n");
             goto end;
         }
     }
@@ -187,7 +193,8 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
     if (do_ssim) {
         err = vmaf_use_feature(vmaf, "float_ssim", NULL);
         if (err) {
-            fprintf(stderr, "problem loading feature extractor: ssim");
+            vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                     "problem loading feature extractor: ssim\n");
             goto end;
         }
     }
@@ -195,7 +202,8 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
     if (do_ms_ssim) {
         err = vmaf_use_feature(vmaf, "float_ms_ssim", NULL);
         if (err) {
-            fprintf(stderr, "problem loading feature extractor: ms_ssim");
+            vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                     "problem loading feature extractor: ms_ssim\n");
             goto end;
         }
     }
@@ -205,7 +213,7 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
     float *main_data = malloc(height * stride);
     float *temp_data = malloc(height * stride);
     if (!ref_data | !main_data | !temp_data) {
-        fprintf(stderr, "problem allocating picture memory");
+        vmaf_log(VMAF_LOG_LEVEL_ERROR, "problem allocating picture memory\n");
         err = -1;
         goto free_data;
     }
@@ -214,7 +222,7 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
     for (picture_index = 0 ;; picture_index++) {
         err = read_frame(ref_data, main_data, temp_data, stride, user_data);
         if (err == 1) {
-            fprintf(stderr, "problem during read_frame");
+            vmaf_log(VMAF_LOG_LEVEL_ERROR, "problem during read_frame\n");
             goto free_data;
         } else if (err == 2) {
             break; //EOF
@@ -226,7 +234,8 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
         err |= vmaf_picture_alloc(&pic_dist, pix_fmt_map(fmt),
                                   bitdepth_map(fmt), width, height);
         if (err) {
-            fprintf(stderr, "problem allocating picture memory");
+            vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                     "problem allocating picture memory\n");
             vmaf_picture_unref(&pic_ref);
             vmaf_picture_unref(&pic_dist);
             goto free_data;
@@ -243,14 +252,14 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
 
         err = vmaf_read_pictures(vmaf, &pic_ref, &pic_dist, picture_index);
         if (err) {
-            fprintf(stderr, "\nproblem reading pictures\n");
+            vmaf_log(VMAF_LOG_LEVEL_ERROR, "problem reading pictures\n");
             break;
         }
     }
 
     err = vmaf_read_pictures(vmaf, NULL, NULL, 0);
     if (err) {
-        fprintf(stderr, "problem flushing context\n");
+        vmaf_log(VMAF_LOG_LEVEL_ERROR, "problem flushing context\n");
         return err;
     }
 
@@ -261,7 +270,8 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
                                                   &model_collection_score, 0,
                                                   picture_index - 1);
          if (err) {
-             fprintf(stderr, "problem generating pooled VMAF score\n");
+             vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                      "problem generating pooled VMAF score\n");
              goto free_data;
          }
     }
@@ -269,7 +279,8 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
      err = vmaf_score_pooled(vmaf, model, pool_method_map(pool_method),
                              vmaf_score, 0, picture_index - 1);
      if (err) {
-         fprintf(stderr, "problem generating pooled VMAF score\n");
+         vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                  "problem generating pooled VMAF score\n");
          goto free_data;
      }
 
@@ -278,7 +289,8 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
         vmaf_use_vmafossexec_aliases();
         err = vmaf_write_output(vmaf, log_path, output_fmt);
         if (err) {
-            fprintf(stderr, "could not write output: %s\n", log_path);
+            vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                     "could not write output: %s\n", log_path);
             goto free_data;
         }
     }
