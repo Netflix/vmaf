@@ -21,19 +21,19 @@ typedef struct VmafBuiltInModel {
 
 #if VMAF_BUILT_IN_MODELS
 #if VMAF_FLOAT_FEATURES
-extern const char ___src_______model_vmaf_float_v0_6_1neg_json;
-extern const int ___src_______model_vmaf_float_v0_6_1neg_json_len;
-extern const char ___src_______model_vmaf_float_v0_6_1_json;
-extern const int ___src_______model_vmaf_float_v0_6_1_json_len;
-extern const char ___src_______model_vmaf_float_b_v0_6_3_json;
-extern const int ___src_______model_vmaf_float_b_v0_6_3_json_len;
+extern const char src_vmaf_float_v0_6_1neg_json;
+extern const int src_vmaf_float_v0_6_1neg_json_len;
+extern const char src_vmaf_float_v0_6_1_json;
+extern const int src_vmaf_float_v0_6_1_json_len;
+extern const char src_vmaf_float_b_v0_6_3_json;
+extern const int src_vmaf_float_b_v0_6_3_json_len;
 #endif
-extern const char ___src_______model_vmaf_v0_6_1_json;
-extern const int ___src_______model_vmaf_v0_6_1_json_len;
-extern const char ___src_______model_vmaf_b_v0_6_3_json;
-extern const int ___src_______model_vmaf_b_v0_6_3_json_len;
-extern const char ___src_______model_vmaf_v0_6_1neg_json;
-extern const int ___src_______model_vmaf_v0_6_1neg_json_len;
+extern const char src_vmaf_v0_6_1_json;
+extern const int src_vmaf_v0_6_1_json_len;
+extern const char src_vmaf_b_v0_6_3_json;
+extern const int src_vmaf_b_v0_6_3_json_len;
+extern const char src_vmaf_v0_6_1neg_json;
+extern const int src_vmaf_v0_6_1neg_json_len;
 #endif
 
 static const VmafBuiltInModel built_in_models[] = {
@@ -41,34 +41,34 @@ static const VmafBuiltInModel built_in_models[] = {
 #if VMAF_FLOAT_FEATURES
     {
         .version = "vmaf_float_v0.6.1neg",
-        .data = &___src_______model_vmaf_float_v0_6_1neg_json,
-        .data_len = &___src_______model_vmaf_float_v0_6_1neg_json_len,
+        .data = &src_vmaf_float_v0_6_1neg_json,
+        .data_len = &src_vmaf_float_v0_6_1neg_json_len,
     },
     {
         .version = "vmaf_float_v0.6.1",
-        .data = &___src_______model_vmaf_float_v0_6_1_json,
-        .data_len = &___src_______model_vmaf_float_v0_6_1_json_len,
+        .data = &src_vmaf_float_v0_6_1_json,
+        .data_len = &src_vmaf_float_v0_6_1_json_len,
     },
     {
         .version = "vmaf_float_b_v0.6.3",
-        .data = &___src_______model_vmaf_float_b_v0_6_3_json,
-        .data_len = &___src_______model_vmaf_float_b_v0_6_3_json_len,
+        .data = &src_vmaf_float_b_v0_6_3_json,
+        .data_len = &src_vmaf_float_b_v0_6_3_json_len,
     },
 #endif
     {
         .version = "vmaf_v0.6.1",
-        .data = &___src_______model_vmaf_v0_6_1_json,
-        .data_len = &___src_______model_vmaf_v0_6_1_json_len,
+        .data = &src_vmaf_v0_6_1_json,
+        .data_len = &src_vmaf_v0_6_1_json_len,
     },
     {
         .version = "vmaf_b_v0.6.3",
-        .data = &___src_______model_vmaf_b_v0_6_3_json,
-        .data_len = &___src_______model_vmaf_b_v0_6_3_json_len,
+        .data = &src_vmaf_b_v0_6_3_json,
+        .data_len = &src_vmaf_b_v0_6_3_json_len,
     },
     {
         .version = "vmaf_v0.6.1neg",
-        .data = &___src_______model_vmaf_v0_6_1neg_json,
-        .data_len = &___src_______model_vmaf_v0_6_1neg_json_len,
+        .data = &src_vmaf_v0_6_1neg_json,
+        .data_len = &src_vmaf_v0_6_1neg_json_len,
     },
 #endif
     { 0 }

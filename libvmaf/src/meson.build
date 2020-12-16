@@ -122,7 +122,11 @@ if built_in_models_enabled
             json_model_c_sources += custom_target(
                   model_file,
                   output : '@PLAINNAME@.c',
-                  input : model_dir + model_file,
+                  input : configure_file(
+                    input : model_dir + model_file,
+                    output : model_file,
+                    copy: true
+                  ),
                   command : [xxd, '--include', '@INPUT@', '@OUTPUT@'],
             )
         endforeach
