@@ -31,6 +31,7 @@
 #include "feature/feature_extractor.h"
 #include "feature/feature_collector.h"
 #include "fex_ctx_vector.h"
+#include "log.h"
 #include "model.h"
 #include "output.h"
 #include "picture.h"
@@ -65,6 +66,8 @@ int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
 
     vmaf_init_cpu();
     vmaf_set_cpu_flags_mask(~cfg.cpumask);
+
+    vmaf_set_log_level(cfg.log_level);
 
     err = vmaf_feature_collector_init(&(v->feature_collector));
     if (err) goto free_v;

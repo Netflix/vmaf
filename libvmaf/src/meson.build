@@ -288,6 +288,7 @@ libvmaf_sources = [
     src_dir + 'ref.c',
     src_dir + 'read_json_model.c',
     src_dir + 'pdjson.c',
+    src_dir + 'log.c',
 ]
 
 if host_machine.system() == 'windows'
