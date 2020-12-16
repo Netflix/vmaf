@@ -4,6 +4,7 @@ project('libvmaf', ['c', 'cpp'],
                        'cpp_std=c++11',
                        'warning_level=2',
                        'buildtype=release',
+                       'default_library=both',
                       ],
     meson_version: '>= 0.47.0')
 

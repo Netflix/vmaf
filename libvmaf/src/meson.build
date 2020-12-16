@@ -297,7 +297,7 @@ else
     vmaf_soversion = vmaf_api_version_major
 endif
 
-libvmaf = both_libraries(
+libvmaf = library(
     'vmaf',
     [libvmaf_sources, rev_target, json_model_c_sources],
     include_directories : [libvmaf_inc, vmaf_include],

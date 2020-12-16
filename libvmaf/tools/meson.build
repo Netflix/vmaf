@@ -10,7 +10,7 @@ vmafossexec = executable(
     dependencies: [stdatomic_dependency],
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,
-    link_with : libvmaf.get_static_lib(),
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
     install : false,
 )
 
@@ -20,6 +20,6 @@ vmaf = executable(
     include_directories : [libvmaf_inc, vmaf_include],
     dependencies: [stdatomic_dependency],
     c_args : [vmaf_cflags_common, compat_cflags],
-    link_with : libvmaf.get_static_lib(),
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
     install : true,
 )
