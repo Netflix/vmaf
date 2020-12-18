@@ -24,7 +24,7 @@ jobs:
           - os: macos-10.15
             CC: ccache clang
             CXX: ccache clang++
-            python-version: [3.7]
+            experimental: true
     runs-on: ${{ matrix.os }}
     env:
       CC: ${{ matrix.CC }}
