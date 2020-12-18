@@ -24,6 +24,7 @@ jobs:
           - os: macos-10.15
             CC: ccache clang
             CXX: ccache clang++
+            python-version: [3.7]
     runs-on: ${{ matrix.os }}
     env:
       CC: ${{ matrix.CC }}
@@ -67,13 +68,19 @@ jobs:
       - uses: actions/checkout@v2
       - name: Run meson
         run: |
-          meson setup libvmaf libvmaf/build --buildtype release --prefix $PWD/install
+          meson setup libvmaf libvmaf/build --buildtype release --prefix $PWD/install -Denable_float=true
       - name: Run ninja
         run: |
           sudo ninja -vC libvmaf/build install
       - name: Run tests
         run: |
           sudo ninja -vC libvmaf/build test
+      - name: Run tox tests
+        run: |
+          mkdir -p ~/.ccache && sudo chown -R $(whoami) ~/.ccache
+          pip install tox
+          make -C third_party/libsvm -j lib
+          tox -c python/ -e py -- -v -p no:warnings -m 'main or lib' --doctest-modules
 
       - name: Get binary path & Current Release
         id: get_info
