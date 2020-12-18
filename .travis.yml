@@ -45,50 +45,11 @@ after_script:
 matrix:
   fast_finish: true
   include:
-    - name: libvmaf GCC-7
-      env: CC=gcc-7 CXX=g++-7
+    - name: libvmaf arm
+      arch: arm64
       script: &base-gcc-script
         - mkdir libvmaf/build && cd libvmaf/build
         - meson .. --buildtype release -Denable_float=true
         - sudo ninja -v install
         - sudo ninja -v test
         - cd $TRAVIS_BUILD_DIR
-    - name: libvmaf GCC-9
-      env: CC=gcc-9 CXX=g++-9
-      script: *base-gcc-script
-    - name: libvmaf Clang
-      compiler: clang
-      script: *base-gcc-script
-    - name: libvmaf AppleClang
-      os: osx
-      osx_image: xcode11.2
-      compiler: clang
-      script: *base-gcc-script
-    - name: libvmaf arm
-      arch: arm64
-      script: *base-gcc-script
-    - name: Python3 Tox
-      language: python
-      python: "3.7"
-      env: CC=gcc-7 CXX=g++-7
-      cache: &python-cache
-        pip: true
-        directories:
-          - $HOME/.ccache
-      before_script: *base-gcc-script
-      script: &python-tox
-        - '[ -d ~/.ccache ] && sudo chown -R "$USER": ~/.ccache'
-        - pip3 install tox-travis
-        - make -C third_party/libsvm -j lib
-        - tox -c python/ -- -v -p no:warnings -m 'main or lib' --doctest-modules
-    - name: libvmaf FFmpeg
-      before_script: *base-gcc-script
-      script:
-        - git clone https://github.com/FFmpeg/FFmpeg --branch master --depth=1 ffmpeg && cd ffmpeg
-        - "sudo chown -R travis: $HOME/.ccache"
-        - CFLAGS="-static" ./configure --enable-libvmaf --enable-version3 || less ffbuild/config.log
-        - make --quiet -j $(nproc) && sudo make install
-        - curl https://gist.githubusercontent.com/1480c1/0c4575da638ef6e8203feffd0597de16/raw/akiyo_cif.tar.xz.base64 | base64 -d | tar xJ
-        - export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib/x86_64-linux-gnu
-        - vmaf_score=$(ffmpeg -hide_banner -nostats -i encoded.mkv -i orig.mkv -filter_complex libvmaf -f null - 2>&1 | grep 'VMAF score' | tr ' ' '\n' | tail -n1)
-        - echo "$vmaf_score"
