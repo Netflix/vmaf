@@ -1,6 +1,7 @@
 import subprocess
 from fnmatch import fnmatch
 import multiprocessing
+multiprocessing.set_start_method('fork')
 from time import sleep, time
 import itertools
 
