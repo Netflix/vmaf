@@ -35,8 +35,10 @@ class FeatureExtractorTest(unittest.TestCase):
         )
         self.fextractor.run(parallelize=True)
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_score'], 3.8953518541666665, places=8)
-        self.assertAlmostEqual(results[1]['float_motion_feature_motion2_score'], 3.8953518541666665, places=8)
+        try: self.assertAlmostEqual(results[0]['float_motion_feature_motion2_score'], 3.8953518541666665, places=6)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[1]['float_motion_feature_motion2_score'], 3.8953518541666665, places=6)
+        except AssertionError as e: self.verificationErrors.append(str(e))
         with self.assertRaises(KeyError):
             s = results[0]['float_motion_feature_motion_score']
 
@@ -50,10 +52,14 @@ class FeatureExtractorTest(unittest.TestCase):
         )
         self.fextractor.run(parallelize=True)
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_score'], 3.8953518541666665, places=8)
-        self.assertAlmostEqual(results[1]['float_motion_feature_motion2_score'], 3.8953518541666665, places=8)
-        self.assertAlmostEqual(results[0]['float_motion_feature_motion_score'], 4.0498253125, places=8)
-        self.assertAlmostEqual(results[1]['float_motion_feature_motion_score'], 4.0498253125, places=8)
+        try: self.assertAlmostEqual(results[0]['float_motion_feature_motion2_score'], 3.8953518541666665, places=6)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[1]['float_motion_feature_motion2_score'], 3.8953518541666665, places=6)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_motion_feature_motion_score'], 4.0498253125, places=6)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[1]['float_motion_feature_motion_score'], 4.0498253125, places=6)
+        except AssertionError as e: self.verificationErrors.append(str(e))
 
     def test_run_float_motion_fextractor_forcing_zero(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -139,14 +145,22 @@ class FeatureExtractorTest(unittest.TestCase):
         )
         self.fextractor.run(parallelize=True)
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale0_score'], 0.3634208125, places=6)
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_score'], 0.7666474166666667, places=6)
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale2_score'], 0.8628533333333334, places=6)
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale3_score'], 0.9159719583333334, places=6)
-        self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale0_score'], 1.0, places=6)
-        self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale1_score'], 1.0, places=6)
-        self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale2_score'], 1.0, places=6)
-        self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale3_score'], 1.0, places=5)
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale0_score'], 0.3634208125, places=6)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_score'], 0.7666474166666667, places=6)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale2_score'], 0.8628533333333334, places=5)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale3_score'], 0.9159719583333334, places=5)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale0_score'], 1.0, places=5)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale1_score'], 1.0, places=5)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale2_score'], 1.0, places=5)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale3_score'], 1.0, places=5)
+        except AssertionError as e: self.verificationErrors.append(str(e))
         with self.assertRaises(KeyError):
             s = results[0]['float_VIF_feature_vif_num_score']
 
@@ -160,36 +174,44 @@ class FeatureExtractorTest(unittest.TestCase):
         )
         self.fextractor.run(parallelize=True)
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale0_score'], 0.3634208125, places=6)
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_score'], 0.7666474166666667, places=6)
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale2_score'], 0.8628533333333334, places=6)
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale3_score'], 0.9159719583333334, places=6)
-        self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale0_score'], 1.0, places=6)
-        self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale1_score'], 1.0, places=6)
-        self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale2_score'], 1.0, places=6)
-        self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale3_score'], 1.0, places=5)
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale0_score'], 0.3634208125, places=6)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_score'], 0.7666474166666667, places=6)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale2_score'], 0.8628533333333334, places=5)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale3_score'], 0.9159719583333334, places=6)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale0_score'], 1.0, places=5)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale1_score'], 1.0, places=5)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale2_score'], 1.0, places=5)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale3_score'], 1.0, places=5)
+        except AssertionError as e: self.verificationErrors.append(str(e))
 
         try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_score'], 0.44609339583333335, places=4)
         except AssertionError as e: self.verificationErrors.append(str(e))
-        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_num_score'], 712650.1518554376, places=4)
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_num_score'], 712650.1518554376, places=0)
         except AssertionError as e: self.verificationErrors.append(str(e))
-        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_den_score'], 1597314.4783325624, places=4)
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_den_score'], 1597314.4783325624, places=0)
         except AssertionError as e: self.verificationErrors.append(str(e))
-        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_num_scale0_score'], 468101.7565104167, places=4)
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_num_scale0_score'], 468101.7565104167, places=0)
         except AssertionError as e: self.verificationErrors.append(str(e))
-        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_den_scale0_score'], 1287822.3411458333, places=4)
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_den_scale0_score'], 1287822.3411458333, places=0)
         except AssertionError as e: self.verificationErrors.append(str(e))
-        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_num_scale1_score'], 184971.52506510416, places=4)
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_num_scale1_score'], 184971.52506510416, places=0)
         except AssertionError as e: self.verificationErrors.append(str(e))
-        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_den_scale1_score'], 241255.05696614584, places=4)
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_den_scale1_score'], 241255.05696614584, places=0)
         except AssertionError as e: self.verificationErrors.append(str(e))
-        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_num_scale2_score'], 47588.75968416667, places=4)
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_num_scale2_score'], 47588.75968416667, places=0)
         except AssertionError as e: self.verificationErrors.append(str(e))
-        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_den_scale2_score'], 55149.814208979165, places=4)
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_den_scale2_score'], 55149.814208979165, places=0)
         except AssertionError as e: self.verificationErrors.append(str(e))
-        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_num_scale3_score'], 11988.110595750002, places=4)
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_num_scale3_score'], 11988.110595750002, places=0)
         except AssertionError as e: self.verificationErrors.append(str(e))
-        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_den_scale3_score'], 13087.266011562499, places=4)
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_den_scale3_score'], 13087.266011562499, places=0)
         except AssertionError as e: self.verificationErrors.append(str(e))
 
     def test_run_integer_vif_fextractor(self):
@@ -525,10 +547,14 @@ class FeatureExtractorTest(unittest.TestCase):
         )
         self.fextractor.run(parallelize=True)
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale0_score'], 1.0522544319369052, places=5)
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_score'], 1.0705609423182443, places=5)
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale2_score'], 1.0731529493098957, places=5)
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale3_score'], 1.0728060231246508, places=5)
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale0_score'], 1.0522544319369052, places=5)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_score'], 1.0705609423182443, places=5)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale2_score'], 1.0731529493098957, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale3_score'], 1.0728060231246508, places=4)
+        except AssertionError as e: self.verificationErrors.append(str(e))
 
     def test_run_float_vif_fextractor_akiyo_multiply_enhn_gain_limit_1(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -737,7 +763,8 @@ class FeatureExtractorTest(unittest.TestCase):
         )
         self.fextractor.run(parallelize=True)
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 1.1167, places=6)  # float 1.116686
+        try: self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 1.1167, places=5)  # float 1.116686
+        except AssertionError as e: self.verificationErrors.append(str(e))
 
     def test_run_integer_adm_fextractor_akiyo_multiply_enhn_gain_limit_1(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -773,7 +800,8 @@ class FeatureExtractorTest(unittest.TestCase):
         )
         self.fextractor.run(parallelize=True)
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 1.116609, places=6)  # float 1.116595
+        try: self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_score'], 1.116609, places=5)  # float 1.116595
+        except AssertionError as e: self.verificationErrors.append(str(e))
 
     def test_run_ciede2000_fextractor(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()

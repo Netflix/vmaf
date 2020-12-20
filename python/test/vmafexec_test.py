@@ -811,7 +811,7 @@ class VmafexecQualityRunnerTest(unittest.TestCase):
         try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 1.072512, places=4)  # 1.0728060231246508
         except AssertionError as e: self.verificationErrors.append(str(e))
 
-        try: self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 132.732952, places=4)  # 132.78849246495625
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 132.732952, places=3)  # 132.78849246495625
         except AssertionError as e: self.verificationErrors.append(str(e))
 
     def test_run_vmafexec_runner_akiyo_multiply_with_feature_enhn_gain_limit(self):
@@ -862,13 +862,19 @@ class VmafexecQualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_score'], 1.116595, places=4)  # 1.116691484215469
-        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'], 1.029765, places=4)  # 1.0522544319369052
-        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 1.046767, places=4)  # 1.0705609423182443
-        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 1.049025, places=4)  # 1.0731529493098957
-        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 1.0491232394147363, places=4)  # 1.0728060231246508
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_score'], 1.116595, places=4)  # 1.116691484215469
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'], 1.029765, places=4)  # 1.0522544319369052
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 1.046767, places=4)  # 1.0705609423182443
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 1.049025, places=4)  # 1.0731529493098957
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 1.0491232394147363, places=4)  # 1.0728060231246508
+        except AssertionError as e: self.verificationErrors.append(str(e))
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 129.474226, places=4)  # 132.78849246495625
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 129.474226, places=3)  # 132.78849246495625
+        except AssertionError as e: self.verificationErrors.append(str(e))
 
     def test_run_vmafexec_runner_akiyo_multiply_disable_enhn_gain(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -947,13 +953,19 @@ class VmafexecQualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_score'], 1.116595, places=4)  # 1.116691484215469
-        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'], 0.983699512450884, places=4)  # 1.0522544319369052
-        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 0.9974276726830457, places=4)  # 1.0705609423182443
-        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
-        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 0.999146211879154, places=4)  # 1.0728060231246508
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_score'], 1.116595, places=4)  # 1.116691484215469
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'], 0.983699512450884, places=4)  # 1.0522544319369052
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 0.9974276726830457, places=4)  # 1.0705609423182443
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 0.999146211879154, places=4)  # 1.0728060231246508
+        except AssertionError as e: self.verificationErrors.append(str(e))
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 122.804272, places=4)  # 132.78849246495625
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 122.804272, places=3)  # 132.78849246495625
+        except AssertionError as e: self.verificationErrors.append(str(e))
 
     def test_run_vmafexec_runner_with_enhn_gain_enabled_disabled(self):
 
@@ -1081,13 +1093,19 @@ class VmafexecQualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_score'], 0.9574308606115118, places=4)  # 1.116691484215469
-        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'], 0.983699512450884, places=4)  # 1.0522544319369052
-        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 0.9974276726830457, places=4)  # 1.0705609423182443
-        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
-        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 0.999146211879154, places=4)  # 1.0728060231246508
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_score'], 0.9574308606115118, places=4)  # 1.116691484215469
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'], 0.983699512450884, places=4)  # 1.0522544319369052
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 0.9974276726830457, places=4)  # 1.0705609423182443
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 0.999146211879154, places=4)  # 1.0728060231246508
+        except AssertionError as e: self.verificationErrors.append(str(e))
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 88.4895, places=4)  # 88.032956
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 88.4895, places=2)  # 88.032956
+        except AssertionError as e: self.verificationErrors.append(str(e))
 
     def test_run_vmafexec_runner_use_default_built_in_model(self):
 
