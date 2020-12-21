@@ -993,13 +993,13 @@ static void i4_adm_csf(AdmBuffer *buf, int scale, int w, int h, int stride)
                                     (uint32_t)(rfactor1[2] * pow2_32) };
 
     const uint32_t FIX_ONE_BY_30 = 143165577;
-    const int32_t shift_dst[3] = { 28, 28, 28 };
-    const int32_t shift_flt[3] = { 32, 32, 32 };
+    const uint32_t shift_dst[3] = { 28, 28, 28 };
+    const uint32_t shift_flt[3] = { 32, 32, 32 };
     int32_t add_bef_shift_dst[3], add_bef_shift_flt[3];
 
-    for (int idx = 0; idx < 3; ++idx) {
-        add_bef_shift_dst[idx] = (int32_t)(1 << (shift_dst[idx] - 1));
-        add_bef_shift_flt[idx] = (int32_t)(1 << (shift_flt[idx] - 1));
+    for (unsigned idx = 0; idx < 3; ++idx) {
+        add_bef_shift_dst[idx] = (1u << (shift_dst[idx] - 1));
+        add_bef_shift_flt[idx] = (1u << (shift_flt[idx] - 1));
     }
 
     /* The computation of the csf values is not required for the regions
@@ -1067,8 +1067,8 @@ static float adm_csf_den_scale(const adm_dwt_band_t *src, int w, int h,
 
     int32_t shift_accum = (int32_t)ceil(log2((bottom - top)*(right - left)) - 20);
     shift_accum = shift_accum > 0 ? shift_accum : 0;
-    int32_t add_shift_accum = (int32_t)(1 << (shift_accum - 1));
-    add_shift_accum = add_shift_accum > 0 ? add_shift_accum : 0;
+    int32_t add_shift_accum =
+        shift_accum > 0 ? (1 << (shift_accum - 1)) : 0;
 
     /**
      * The rfactor is multiplied at the end after cubing
@@ -1140,7 +1140,8 @@ static float adm_csf_den_s123(const i4_adm_dwt_band_t *src, int scale, int w, in
     uint64_t accum_h = 0, accum_v = 0, accum_d = 0;
     const uint32_t shift_sq[3] = { 31, 30, 31 };
     const uint32_t accum_convert_float[3] = { 32, 27, 23 };
-    const uint32_t add_shift_sq[3] = {1 << shift_sq[0] , 1 << shift_sq[1] , 1 << shift_sq[2] };
+    const uint32_t add_shift_sq[3] =
+        { 1u << shift_sq[0], 1u << shift_sq[1], 1u << shift_sq[2] };
 
     /* The computation of the denominator scales is not required for the regions
      * which lie outside the frame borders
@@ -1578,13 +1579,13 @@ static float i4_adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_s
                                   (uint32_t)(rfactor1[1] * pow(2, 32)),
                                   (uint32_t)(rfactor1[2] * pow(2, 32)) };
 
-    const int32_t shift_dst[3] = { 28, 28, 28 };
-    const int32_t shift_flt[3] = { 32, 32, 32 };
+    const uint32_t shift_dst[3] = { 28, 28, 28 };
+    const uint32_t shift_flt[3] = { 32, 32, 32 };
     int32_t add_bef_shift_dst[3], add_bef_shift_flt[3];
 
-    for (int idx = 0; idx < 3; ++idx) {
-        add_bef_shift_dst[idx] = (int32_t)(1 << (shift_dst[idx] - 1));
-        add_bef_shift_flt[idx] = (int32_t)(1 << (shift_flt[idx] - 1));
+    for (unsigned idx = 0; idx < 3; ++idx) {
+        add_bef_shift_dst[idx] = (1u << (shift_dst[idx] - 1));
+        add_bef_shift_flt[idx] = (1u << (shift_flt[idx] - 1));
 
     }
 
