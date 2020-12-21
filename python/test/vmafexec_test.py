@@ -967,46 +967,6 @@ class VmafexecQualityRunnerTest(unittest.TestCase):
         try: self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 122.804272, places=3)  # 132.78849246495625
         except AssertionError as e: self.verificationErrors.append(str(e))
 
-    def test_run_vmafexec_runner_with_enhn_gain_enabled_disabled(self):
-
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
-
-        self.runner = VmafexecQualityRunner(
-            [asset, asset_original],
-            None, fifo_mode=True,
-            delete_workdir=True,
-            result_store=None,
-            optional_dict={
-                'models': [
-                    'path={}:name=vmaf'.format(VmafConfig.model_path("vmaf_float_v0.6.1.json")),
-                    'path={}:name=vmafneg'.format(VmafConfig.model_path("vmaf_float_v0.6.1neg.json")),
-                ]
-            }
-        )
-        with self.assertRaises(AssertionError, msg="vmaf_float_v0.6.1.json and vmaf_float_v0.6.1neg.json require the same fex with "
-                                                   "different input arguments, but the exception is not raised."):
-            self.runner.run(parallelize=False)
-
-    def test_run_vmafexec_runner_with_enhn_gain_enabled_disabled2(self):
-
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
-
-        self.runner = VmafexecQualityRunner(
-            [asset, asset_original],
-            None, fifo_mode=True,
-            delete_workdir=True,
-            result_store=None,
-            optional_dict={
-                'models': [
-                    'path={}:name=vmafneg'.format(VmafConfig.model_path("vmaf_float_v0.6.1neg.json")),
-                    'path={}:name=vmaf'.format(VmafConfig.model_path("vmaf_float_v0.6.1.json")),
-                ]
-            }
-        )
-        with self.assertRaises(AssertionError, msg="vmaf_float_v0.6.1neg.json and vmaf_float_v0.6.1.json require different input "
-                                                   "arguments for the same fex, but the exception is not raised."):
-            self.runner.run(parallelize=False)
-
     def test_run_vmafexec_runner_akiyo_multiply_no_enhn_gain_model_inconsist(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
         dis_path = VmafConfig.test_resource_path("yuv", "disp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
