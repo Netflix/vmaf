@@ -22,6 +22,11 @@ test_feature_collector = executable('test_feature_collector',
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/feature/')],
 )
 
+test_log = executable('test_log',
+    ['test.c', 'test_log.c', '../src/log.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+)
+
 test_thread_pool = executable('test_thread_pool',
     ['test.c', 'test_thread_pool.c', '../src/thread_pool.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
