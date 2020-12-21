@@ -2176,7 +2176,7 @@ void vif_filter1d_rd_8_avx2(VifBuffer buf, unsigned w, unsigned h) {
             _mm_storeu_si128((__m128i *)(buf.mu2 + i * stride + j),
                              _mm256_castsi256_si128(result));
         }
-        for (unsigned j = n << 3; j < w; j = j++) {
+        for (unsigned j = n << 3; j < w; ++j) {
             uint32_t accum_ref = 0;
             uint32_t accum_dis = 0;
             int jj = j - fwidth_half;
