@@ -27,9 +27,7 @@ void adm_dwt2_8_avx2(const uint8_t *src, const adm_dwt_band_t *dst,
     const int16_t *filter_lo = dwt2_db2_coeffs_lo;
     const int16_t *filter_hi = dwt2_db2_coeffs_hi;
 
-    const int16_t shift_VP = 8;
     const int16_t shift_HP = 16;
-    const int32_t add_shift_VP = 128;
     const int32_t add_shift_HP = 32768;
     int **ind_y = buf->ind_y;
     int **ind_x = buf->ind_x;
@@ -37,7 +35,6 @@ void adm_dwt2_8_avx2(const uint8_t *src, const adm_dwt_band_t *dst,
     int16_t *tmplo = (int16_t *)buf->tmp_ref;
     int16_t *tmphi = tmplo + w;
     int32_t accum;
-    int32_t accumv[16] = {0};
 
     __m256i dwt2_db2_coeffs_lo_sum_const = _mm256_set1_epi32(5931776);
     __m256i fl0 =
@@ -60,7 +57,7 @@ void adm_dwt2_8_avx2(const uint8_t *src, const adm_dwt_band_t *dst,
             __m256i accum_mu2_lo, accum_mu2_hi, accum_mu1_lo, accum_mu1_hi;
             accum_mu2_lo = accum_mu2_hi = accum_mu1_lo = accum_mu1_hi =
                 _mm256_setzero_si256();
-            __m256i s0, s1, s2, s3, s4;
+            __m256i s0, s1, s2, s3;
 
             s0 = _mm256_cvtepu8_epi16(_mm_loadu_si128(
                 (__m128i *)(src + (ind_y[0][i] * src_stride) + j)));
@@ -171,7 +168,7 @@ void adm_dwt2_8_avx2(const uint8_t *src, const adm_dwt_band_t *dst,
                 accum_mu2_lo = accum_mu2_hi = accum_mu1_lo = accum_mu1_hi =
                     _mm256_setzero_si256();
 
-                __m256i s00, s11, s22, s33, s44;
+                __m256i s00, s22, s33, s44;
 
                 s00 = _mm256_loadu_si256((__m256i *)(tmplo + ind_x[0][j]));
                 s22 = _mm256_loadu_si256((__m256i *)(tmplo + ind_x[2][j]));
@@ -224,7 +221,8 @@ void adm_dwt2_8_avx2(const uint8_t *src, const adm_dwt_band_t *dst,
                 accum_mu2_lo = accum_mu2_hi = accum_mu1_lo = accum_mu1_hi =
                     _mm256_setzero_si256();
 
-                __m256i s00, s11, s22, s33, s44;
+                __m256i s00, s22, s33, s44;
+
                 __m256i add_shift_HP_vex = _mm256_set1_epi32(32768);
 
                 s00 = _mm256_loadu_si256((__m256i *)(tmphi + ind_x[0][j]));
