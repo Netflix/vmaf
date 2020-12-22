@@ -1160,6 +1160,7 @@ class VmafexecQualityRunner(QualityRunner):
 
     FEATURES = ['adm2', 'motion2', 'vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
                 'VMAF_integer_feature_adm2_score_adm_enhn_gain_limit_1.00',
+                'VMAF_integer_feature_adm2_score_adm_enhn_gain_limit_1.20',
                 'VMAF_integer_feature_vif_scale0_score_vif_enhn_gain_limit_1.00', 'VMAF_integer_feature_vif_scale1_score_vif_enhn_gain_limit_1.00',
                 'VMAF_integer_feature_vif_scale2_score_vif_enhn_gain_limit_1.00', 'VMAF_integer_feature_vif_scale3_score_vif_enhn_gain_limit_1.00',
                 'float_psnr', 'float_ssim', 'float_ms_ssim',
