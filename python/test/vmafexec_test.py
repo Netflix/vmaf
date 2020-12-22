@@ -904,6 +904,7 @@ class VmafexecQualityRunnerTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 88.030463, places=4)  # 132.78849246495625
 
+    @unittest.skip("neg model prediction with override")
     def test_run_vmafexec_runner_akiyo_multiply_no_enhn_gain_model(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
         dis_path = VmafConfig.test_resource_path("yuv", "disp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -924,7 +925,7 @@ class VmafexecQualityRunnerTest(unittest.TestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_VMAF_integer_feature_adm2_score_adm_enhn_gain_limit_1.00_score'], 0.9574308606115118, places=4)  # 1.116691484215469
+        self.assertAlmostEqual(results[0]['VMAFEXEC_VMAF_integer_feature_adm2_score_adm_enhn_gain_limit_1.20_score'], 0.9574308606115118, places=4)  # 1.116691484215469
         self.assertAlmostEqual(results[0]['VMAFEXEC_VMAF_integer_feature_vif_scale0_score_vif_enhn_gain_limit_1.00_score'], 0.983699512450884, places=4)  # 1.0522544319369052
         self.assertAlmostEqual(results[0]['VMAFEXEC_VMAF_integer_feature_vif_scale1_score_vif_enhn_gain_limit_1.00_score'], 0.9974276726830457, places=4)  # 1.0705609423182443
         self.assertAlmostEqual(results[0]['VMAFEXEC_VMAF_integer_feature_vif_scale2_score_vif_enhn_gain_limit_1.00_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
