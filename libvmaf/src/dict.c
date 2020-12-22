@@ -5,11 +5,6 @@
 #include "dict.h"
 #include "libvmaf/feature.h"
 
-typedef struct VmafDictionary {
-    VmafDictionaryEntry *entry;
-    unsigned size, cnt;
-} VmafDictionary;
-
 const VmafDictionaryEntry *vmaf_dictionary_get(VmafDictionary **dict,
                                                const char *key, uint64_t flags)
 {
