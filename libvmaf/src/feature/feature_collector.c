@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "feature_collector.h"
+#include "log.h"
 
 static int aggregate_vector_init(AggregateVector *aggregate_vector)
 {
@@ -182,8 +183,12 @@ static int feature_vector_append(FeatureVector *feature_vector,
         feature_vector->capacity *= 2;
     }
 
-    if (feature_vector->score[index].written)
+    if (feature_vector->score[index].written) {
+        vmaf_log(VMAF_LOG_LEVEL_WARNING,
+                 "feature \"%s\" cannot be overwritten at index %d\n",
+                 feature_vector->name, index);
         return -EINVAL;
+    }
 
     feature_vector->score[index].written = true;
     feature_vector->score[index].value = score;
