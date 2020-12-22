@@ -232,12 +232,19 @@ static CLIFeatureConfig parse_feature_config(const char *const optarg,
     return feature_cfg;
 }
 
-static void aom_ctc_proposed(CLISettings *settings, const char *const app)
+static void aom_ctc_v1_0(CLISettings *settings, const char *const app)
 {
     CLIModelConfig cfg = {
         .version = "vmaf_v0.6.1",
+        .cfg = { .name = "vmaf" },
     };
     settings->model_config[settings->model_cnt++] = cfg;
+
+    CLIModelConfig cfg_neg = {
+        .version = "vmaf_v0.6.1neg",
+        .cfg = { .name = "vmaf_neg" },
+    };
+    settings->model_config[settings->model_cnt++] = cfg_neg;
 
     settings->feature_cfg[settings->feature_cnt++] =
         parse_feature_config("psnr=reduced_hbd_peak=true:"
@@ -259,8 +266,8 @@ static void aom_ctc_proposed(CLISettings *settings, const char *const app)
 static void parse_aom_ctc(CLISettings *settings, const char *const optarg,
                           const char *const app)
 {
-    if (!strcmp(optarg, "proposed"))
-        aom_ctc_proposed(settings, app);
+    if (!strcmp(optarg, "v1.0"))
+        aom_ctc_v1_0(settings, app);
     else
         usage(app, "bad aom_ctc version \"%s\", optarg");
 }

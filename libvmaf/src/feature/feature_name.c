@@ -42,7 +42,7 @@ char *vmaf_feature_name(char *name, char *key, double val,
                         char *buf, size_t buf_sz)
 {
     if (!key) return name;
-    if (!in_template_list(name)) return name;
+    //if (!in_template_list(name)) return name;
 
     memset(buf, 0, buf_sz);
     snprintf(buf, buf_sz - 1, "%s_%s_%.2f", name, key, val);
