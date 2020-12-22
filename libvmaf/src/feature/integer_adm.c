@@ -2500,7 +2500,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 #if ARCH_X86
     unsigned flags = vmaf_get_cpu_flags();
     if (flags & VMAF_X86_CPU_FLAG_AVX2) {
-        s->dwt2_8 = adm_dwt2_8_avx2;
+        if (!(w % 8)) s->dwt2_8 = adm_dwt2_8_avx2;
     }
 #endif
 
