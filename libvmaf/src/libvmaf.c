@@ -177,7 +177,12 @@ int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model)
 
         VmafFeatureExtractor *fex =
             vmaf_get_feature_extractor_by_feature_name(feature_name);
-        if (!fex) return -EINVAL;
+        if (!fex) {
+            vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                     "could not initialize feature extractor \"%s\"\n",
+                     feature_name);
+            return -EINVAL;
+        }
 
         VmafFeatureExtractorContext *fex_ctx;
         VmafDictionary *d = NULL;

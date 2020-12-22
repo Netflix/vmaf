@@ -18,8 +18,8 @@ test_picture = executable('test_picture',
 )
 
 test_feature_collector = executable('test_feature_collector',
-    ['test.c', 'test_feature_collector.c',],
-    include_directories : [libvmaf_inc, test_inc, include_directories('../src/feature/')],
+    ['test.c', 'test_feature_collector.c', '../src/log.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/feature/'), include_directories('../src')],
 )
 
 test_log = executable('test_log',
@@ -53,7 +53,7 @@ test_predict = executable('test_predict',
 
 test_feature_extractor = executable('test_feature_extractor',
     ['test.c', 'test_feature_extractor.c', '../src/mem.c', '../src/picture.c', '../src/ref.c',
-     '../src/dict.c', '../src/opt.c'],
+     '../src/dict.c', '../src/opt.c', '../src/log.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
     dependencies : [math_lib, stdatomic_dependency],
     objects : [

@@ -2581,6 +2581,8 @@ static int extract(VmafFeatureExtractor *fex,
     err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                          score, index);
 
+    if (!strcmp(fex->name, "adm_neg")) return err;
+
     feature_name =
         vmaf_feature_name("integer_adm_scale0", key, val, &buf[0], buf_sz);
     err |= vmaf_feature_collector_append(feature_collector, feature_name,
@@ -2613,7 +2615,7 @@ static int extract(VmafFeatureExtractor *fex,
                                              score_num, index);
 
         feature_name =
-            vmaf_feature_name("integer_adm_num", key, val, &buf[0], buf_sz);
+            vmaf_feature_name("integer_adm_den", key, val, &buf[0], buf_sz);
         err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                              score_den, index);
 
