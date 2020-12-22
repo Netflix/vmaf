@@ -23,6 +23,7 @@
 
 #include "config.h"
 #include "feature_extractor.h"
+#include "log.h"
 
 #if VMAF_FLOAT_FEATURES
 extern VmafFeatureExtractor vmaf_fex_float_psnr;
@@ -38,8 +39,10 @@ extern VmafFeatureExtractor vmaf_fex_ciede;
 extern VmafFeatureExtractor vmaf_fex_psnr;
 extern VmafFeatureExtractor vmaf_fex_psnr_hvs;
 extern VmafFeatureExtractor vmaf_fex_integer_adm;
+extern VmafFeatureExtractor vmaf_fex_integer_adm_neg;
 extern VmafFeatureExtractor vmaf_fex_integer_motion;
 extern VmafFeatureExtractor vmaf_fex_integer_vif;
+extern VmafFeatureExtractor vmaf_fex_integer_vif_neg;
 
 static VmafFeatureExtractor *feature_extractor_list[] = {
 #if VMAF_FLOAT_FEATURES
@@ -56,8 +59,10 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     &vmaf_fex_psnr,
     &vmaf_fex_psnr_hvs,
     &vmaf_fex_integer_adm,
+    &vmaf_fex_integer_adm_neg,
     &vmaf_fex_integer_motion,
     &vmaf_fex_integer_vif,
+    &vmaf_fex_integer_vif_neg,
     NULL
 };
 
@@ -176,8 +181,14 @@ int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
         if (err) return err;
     }
 
-    return fex_ctx->fex->extract(fex_ctx->fex, ref, ref_90, dist, dist_90,
-                                 pic_index, vfc);
+    int err = fex_ctx->fex->extract(fex_ctx->fex, ref, ref_90, dist, dist_90,
+                                    pic_index, vfc);
+    if (err) {
+        vmaf_log(VMAF_LOG_LEVEL_WARNING,
+                 "problem with feature extractor \"%s\" at index %d\n",
+                 fex_ctx->fex->name, pic_index);
+    }
+    return err;
 }
 
 int vmaf_feature_extractor_context_flush(VmafFeatureExtractorContext *fex_ctx,

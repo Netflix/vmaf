@@ -30,6 +30,7 @@
 #include "cpu.h"
 #include "feature/feature_extractor.h"
 #include "feature/feature_collector.h"
+#include "feature/feature_name.h"
 #include "fex_ctx_vector.h"
 #include "log.h"
 #include "model.h"
@@ -161,9 +162,27 @@ int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model)
     RegisteredFeatureExtractors *rfe = &(vmaf->registered_feature_extractors);
 
     for (unsigned i = 0; i < model->n_features; i++) {
+        char buf[VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE] = { 0 };
+        char *key = NULL;
+        double val;
+
+        if (model->feature[i].opts_dict) {
+            key = model->feature[i].opts_dict->entry[0].key;
+            val = atof(model->feature[i].opts_dict->entry[0].val);
+        }
+
+        char *feature_name =
+            vmaf_feature_name(model->feature[i].name, key, val, buf,
+                              VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE);
+
         VmafFeatureExtractor *fex =
-            vmaf_get_feature_extractor_by_feature_name(model->feature[i].name);
-        if (!fex) return -EINVAL;
+            vmaf_get_feature_extractor_by_feature_name(feature_name);
+        if (!fex) {
+            vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                     "could not initialize feature extractor \"%s\"\n",
+                     feature_name);
+            return -EINVAL;
+        }
 
         VmafFeatureExtractorContext *fex_ctx;
         VmafDictionary *d = NULL;

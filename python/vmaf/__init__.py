@@ -291,14 +291,16 @@ class ExternalProgramCaller(object):
 
         if vif_enhn_gain_limit is not None:
             # FIXME: hacky - since we do not know which feature is the one used in the model,
-            # we have to set the parameter for both, which doubles the computation.
+            # we have to set the parameter for all three, at the expense of extra computation.
             vmafexec_cmd += f' --feature float_vif=vif_enhn_gain_limit={vif_enhn_gain_limit}'
             vmafexec_cmd += f' --feature vif=vif_enhn_gain_limit={vif_enhn_gain_limit}'
+            vmafexec_cmd += f' --feature vif_neg=vif_enhn_gain_limit={vif_enhn_gain_limit}'
 
         if adm_enhn_gain_limit is not None:
             # FIXME: hacky
             vmafexec_cmd += f' --feature float_adm=adm_enhn_gain_limit={adm_enhn_gain_limit}'
             vmafexec_cmd += f' --feature adm=adm_enhn_gain_limit={adm_enhn_gain_limit}'
+            vmafexec_cmd += f' --feature adm_neg=adm_enhn_gain_limit={adm_enhn_gain_limit}'
 
         if motion_force_zero:
             assert isinstance(motion_force_zero, bool)

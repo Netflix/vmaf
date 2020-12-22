@@ -21,6 +21,7 @@
 
 #include "feature/feature_extractor.h"
 #include "fex_ctx_vector.h"
+#include "log.h"
 
 int feature_extractor_vector_init(RegisteredFeatureExtractors *rfe)
 {
@@ -55,17 +56,18 @@ int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
                      * equal to the default value of the NULL dict's. But this is not fixable
                      * in the current framework unless the default values of fex's options
                      * are exposed in the current layer. FIXME */
-                    vmaf_feature_extractor_context_destroy(fex_ctx);
                     return -ENOMEM;
                 }
                 VmafDictionary *d =
                         vmaf_dictionary_merge(&rfe->fex_ctx[i]->opts_dict,
                                               &fex_ctx->opts_dict, VMAF_DICT_DO_NOT_OVERWRITE);
                 if (!d) {
-                    vmaf_feature_extractor_context_destroy(fex_ctx);
+                    vmaf_log(VMAF_LOG_LEVEL_WARNING,
+                             "problem registering feature extractor \"%s\", "
+                             "inconsistent feature parameters\n",
+                             rfe->fex_ctx[i]->fex->name);
                     return -ENOMEM;
-                }
-                else {
+                } else {
                     vmaf_dictionary_free(&d);
                     vmaf_feature_extractor_context_destroy(fex_ctx);
                     return 0;
