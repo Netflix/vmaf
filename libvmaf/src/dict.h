@@ -25,11 +25,14 @@
 extern "C" {
 #endif
 
-typedef struct VmafDictionary VmafDictionary;
-
 typedef struct VmafDictionaryEntry {
     const char *key, *val;
 } VmafDictionaryEntry;
+
+typedef struct VmafDictionary {
+    VmafDictionaryEntry *entry;
+    unsigned size, cnt;
+} VmafDictionary;
 
 enum VmafDictionaryFlags {
     VMAF_DICT_DO_NOT_OVERWRITE = 1 << 0,
