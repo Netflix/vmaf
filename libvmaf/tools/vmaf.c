@@ -3,6 +3,10 @@
 #include <time.h>
 #include <unistd.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include "cli_parse.h"
 #include "spinner.h"
 #include "vidinput.h"
@@ -125,6 +129,10 @@ int main(int argc, char *argv[])
 {
     int err = 0;
     const int istty = isatty(fileno(stderr));
+
+#ifdef _WIN32
+    SetConsoleOutputCP(65001);
+#endif
 
     CLISettings c;
     cli_parse(argc, argv, &c);
