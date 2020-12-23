@@ -49,6 +49,10 @@ typedef struct VifState {
     void (*filter1d_rd_8)(VifBuffer buf, unsigned w, unsigned h);
     void (*filter1d_rd_16)(VifBuffer buf, unsigned w, unsigned h, int scale,
                            int bpc);
+    struct {
+        char buf[VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE];
+        char *key;
+    } feature_name;
 } VifState;
 
 static const VmafOption options[] = {
@@ -604,6 +608,10 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     s->buf.tmp.ref_convol = data; data += s->buf.stride_tmp;
     s->buf.tmp.dis_convol = data;
 
+    s->feature_name.key =
+        s->vif_enhn_gain_limit != DEFAULT_VIF_ENHN_GAIN_LIMIT ?
+        "vif_enhn_gain_limit" : NULL;
+
     return 0;
 }
 
@@ -615,40 +623,39 @@ typedef struct VifScore {
 } VifScore;
 
 static int write_scores(VmafFeatureCollector *feature_collector, unsigned index,
-                        VifScore vif, VifState *s, const char *fex_name)
+                        VifScore vif, VifState *s)
 {
     int err = 0;
 
     size_t buf_sz = VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE;
-    char buf[buf_sz];
-    char *key = !strcmp(fex_name, "vif_neg") ? "vif_enhn_gain_limit" : NULL;
+    char *key = s->feature_name.key;
     double val = s->vif_enhn_gain_limit;
     char *feature_name;
 
     feature_name =
         vmaf_feature_name("VMAF_integer_feature_vif_scale0_score", key, val,
-                          &buf[0], buf_sz);
+                          &s->feature_name.buf[0], buf_sz);
     err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                          vif.scale[0].num / vif.scale[0].den,
                                          index);
 
     feature_name =
         vmaf_feature_name("VMAF_integer_feature_vif_scale1_score", key, val,
-                          &buf[0], buf_sz);
+                          &s->feature_name.buf[0], buf_sz);
     err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                          vif.scale[1].num / vif.scale[1].den,
                                          index);
 
     feature_name =
         vmaf_feature_name("VMAF_integer_feature_vif_scale2_score", key, val,
-                          &buf[0], buf_sz);
+                          &s->feature_name.buf[0], buf_sz);
     err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                          vif.scale[2].num / vif.scale[2].den,
                                          index);
 
     feature_name =
         vmaf_feature_name("VMAF_integer_feature_vif_scale3_score", key, val,
-                          &buf[0], buf_sz);
+                          &s->feature_name.buf[0], buf_sz);
     err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                          vif.scale[3].num / vif.scale[3].den,
                                          index);
@@ -667,57 +674,57 @@ static int write_scores(VmafFeatureCollector *feature_collector, unsigned index,
         score_den == 0.0 ? 1.0f : score_num / score_den;
 
     feature_name =
-        vmaf_feature_name("integer_vif", key, val, &buf[0], buf_sz);
+        vmaf_feature_name("integer_vif", key, val, &s->feature_name.buf[0], buf_sz);
     err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                          score, index);
 
     feature_name =
-        vmaf_feature_name("integer_vif_num", key, val, &buf[0], buf_sz);
+        vmaf_feature_name("integer_vif_num", key, val, &s->feature_name.buf[0], buf_sz);
     err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                          score_num, index);
 
     feature_name =
-        vmaf_feature_name("integer_vif_den", key, val, &buf[0], buf_sz);
+        vmaf_feature_name("integer_vif_den", key, val, &s->feature_name.buf[0], buf_sz);
     err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                          score_den, index);
 
     feature_name =
-        vmaf_feature_name("integer_vif_num_scale0", key, val, &buf[0], buf_sz);
+        vmaf_feature_name("integer_vif_num_scale0", key, val, &s->feature_name.buf[0], buf_sz);
     err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                          vif.scale[0].num, index);
 
     feature_name =
-        vmaf_feature_name("integer_vif_den_scale0", key, val, &buf[0], buf_sz);
+        vmaf_feature_name("integer_vif_den_scale0", key, val, &s->feature_name.buf[0], buf_sz);
     err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                          vif.scale[0].den, index);
 
     feature_name =
-        vmaf_feature_name("integer_vif_num_scale1", key, val, &buf[0], buf_sz);
+        vmaf_feature_name("integer_vif_num_scale1", key, val, &s->feature_name.buf[0], buf_sz);
     err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                          vif.scale[1].num, index);
 
     feature_name =
-        vmaf_feature_name("integer_vif_den_scale1", key, val, &buf[0], buf_sz);
+        vmaf_feature_name("integer_vif_den_scale1", key, val, &s->feature_name.buf[0], buf_sz);
     err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                          vif.scale[1].den, index);
 
     feature_name =
-        vmaf_feature_name("integer_vif_num_scale2", key, val, &buf[0], buf_sz);
+        vmaf_feature_name("integer_vif_num_scale2", key, val, &s->feature_name.buf[0], buf_sz);
     err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                          vif.scale[2].num, index);
 
     feature_name =
-        vmaf_feature_name("integer_vif_den_scale2", key, val, &buf[0], buf_sz);
+        vmaf_feature_name("integer_vif_den_scale2", key, val, &s->feature_name.buf[0], buf_sz);
     err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                          vif.scale[2].den, index);
 
     feature_name =
-        vmaf_feature_name("integer_vif_num_scale3", key, val, &buf[0], buf_sz);
+        vmaf_feature_name("integer_vif_num_scale3", key, val, &s->feature_name.buf[0], buf_sz);
     err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                          vif.scale[3].num, index);
 
     feature_name =
-        vmaf_feature_name("integer_vif_den_scale3", key, val, &buf[0], buf_sz);
+        vmaf_feature_name("integer_vif_den_scale3", key, val, &s->feature_name.buf[0], buf_sz);
     err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                          vif.scale[3].den, index);
 
@@ -774,7 +781,7 @@ static int extract(VmafFeatureExtractor *fex,
                       s->vif_enhn_gain_limit);
     }
 
-    return write_scores(feature_collector, index, vif_score, s, fex->name);
+    return write_scores(feature_collector, index, vif_score, s);
 }
 
 static int close(VmafFeatureExtractor *fex)
@@ -783,24 +790,6 @@ static int close(VmafFeatureExtractor *fex)
     if (s->buf.data) aligned_free(s->buf.data);
     return 0;
 }
-
-static const char *provided_features_neg[] = {
-    "VMAF_integer_feature_vif_scale0_score_vif_enhn_gain_limit_1.00",
-    "VMAF_integer_feature_vif_scale1_score_vif_enhn_gain_limit_1.00",
-    "VMAF_integer_feature_vif_scale2_score_vif_enhn_gain_limit_1.00",
-    "VMAF_integer_feature_vif_scale3_score_vif_enhn_gain_limit_1.00",
-    NULL
-};
-
-VmafFeatureExtractor vmaf_fex_integer_vif_neg = {
-    .name = "vif_neg",
-    .init = init,
-    .extract = extract,
-    .options = options,
-    .close = close,
-    .priv_size = sizeof(VifState),
-    .provided_features = provided_features_neg,
-};
 
 static const char *provided_features[] = {
     "VMAF_integer_feature_vif_scale0_score",

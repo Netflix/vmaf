@@ -80,7 +80,7 @@ test_ref = executable('test_ref',
 )
 
 test_feature = executable('test_feature',
-    ['test.c', 'test_feature.c', '../src/feature/feature_name.c'],
+    ['test.c', 'test_feature.c', '../src/feature/feature_name.c', '../src/feature/alias.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
 )
 

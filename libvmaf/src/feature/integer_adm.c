@@ -2571,7 +2571,9 @@ static int extract(VmafFeatureExtractor *fex,
 
     size_t buf_sz = VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE;
     char buf[buf_sz];
-    char *key = !strcmp(fex->name, "adm_neg") ? "adm_enhn_gain_limit" : NULL;
+    char *key =
+        s->adm_enhn_gain_limit != DEFAULT_ADM_ENHN_GAIN_LIMIT ?
+        "adm_enhn_gain_limit" : NULL;
     double val = s->adm_enhn_gain_limit;
     char *feature_name;
 
@@ -2580,8 +2582,6 @@ static int extract(VmafFeatureExtractor *fex,
                           &buf[0], buf_sz);
     err |= vmaf_feature_collector_append(feature_collector, feature_name,
                                          score, index);
-
-    if (!strcmp(fex->name, "adm_neg")) return err;
 
     feature_name =
         vmaf_feature_name("integer_adm_scale0", key, val, &buf[0], buf_sz);
@@ -2684,21 +2684,6 @@ static int close(VmafFeatureExtractor *fex)
 
     return 0;
 }
-
-static const char *provided_features_neg[] = {
-    "VMAF_integer_feature_adm2_score_adm_enhn_gain_limit_1.00",
-    NULL
-};
-
-VmafFeatureExtractor vmaf_fex_integer_adm_neg = {
-    .name = "adm_neg",
-    .init = init,
-    .extract = extract,
-    .options = options,
-    .close = close,
-    .priv_size = sizeof(AdmState),
-    .provided_features = provided_features_neg,
-};
 
 static const char *provided_features[] = {
     "VMAF_integer_feature_adm2_score",
