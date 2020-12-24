@@ -7,6 +7,7 @@
 #include <libvmaf/model.h>
 
 #include "config.h"
+#include "feature/feature_extractor.h"
 #include "log.h"
 #include "model.h"
 #include "read_json_model.h"
@@ -130,6 +131,34 @@ int vmaf_model_load_from_path(VmafModel **model, VmafModelConfig *cfg,
                      "pkl model files have been deprecated, use json\n");
         }
     }
+    return err;
+}
+
+int vmaf_model_feature_overload(VmafModel *model, const char *feature_name,
+                                VmafFeatureDictionary *opts_dict)
+{
+    if (!model) return -EINVAL;
+    if (!feature_name) return -EINVAL;
+    if (!opts_dict) return -EINVAL;
+
+    int err;
+
+    for (unsigned i = 0; i < model->n_features; i++) {
+        VmafFeatureExtractor *fex =
+            vmaf_get_feature_extractor_by_feature_name(model->feature[i].name);
+        if (!fex) continue;
+        if (strcmp(feature_name, fex->name)) continue;
+        VmafDictionary *d =
+            vmaf_dictionary_merge(&model->feature[i].opts_dict,
+                                  &opts_dict, 0);
+        if (!d) return -ENOMEM;
+        err = vmaf_dictionary_free(&model->feature[i].opts_dict);
+        if (err) goto exit;
+        model->feature[i].opts_dict = d;
+    }
+
+exit:
+    err |= vmaf_dictionary_free(&opts_dict);
     return err;
 }
 
