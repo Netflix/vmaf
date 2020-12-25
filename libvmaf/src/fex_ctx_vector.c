@@ -41,51 +41,31 @@ int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
     if (!rfe) return -EINVAL;
     if (!fex_ctx) return -EINVAL;
 
+    (void) flags;
+
     for (unsigned i = 0; i < rfe->cnt; i++) {
         if (!strcmp(rfe->fex_ctx[i]->fex->name, fex_ctx->fex->name)) {
-            /* same fex */
-            if (flags & VMAF_FEATURE_EXTRACTOR_CONTEXT_DO_NOT_OVERWRITE) {
-                /* if do not overwrite, check opts_dict consistency */
-                if (!rfe->fex_ctx[i]->opts_dict && !fex_ctx->opts_dict) {
-                    /* skip if both opts_dict are NULL */
-                    vmaf_feature_extractor_context_destroy(fex_ctx);
-                    return 0;
-                } else if (!rfe->fex_ctx[i]->opts_dict || !fex_ctx->opts_dict) {
-                    /* error if one dict is NULL and the other is not.
-                     * Note that this does not handle the case the non-NULL dict's value is
-                     * equal to the default value of the NULL dict's. But this is not fixable
-                     * in the current framework unless the default values of fex's options
-                     * are exposed in the current layer. FIXME */
-                    return -ENOMEM;
-                }
-                VmafDictionary *d =
-                        vmaf_dictionary_merge(&rfe->fex_ctx[i]->opts_dict,
-                                              &fex_ctx->opts_dict, VMAF_DICT_DO_NOT_OVERWRITE);
-                if (!d) {
-                    vmaf_log(VMAF_LOG_LEVEL_WARNING,
-                             "problem registering feature extractor \"%s\", "
-                             "inconsistent feature parameters\n",
-                             rfe->fex_ctx[i]->fex->name);
-                    return -ENOMEM;
-                } else {
-                    vmaf_dictionary_free(&d);
-                    vmaf_feature_extractor_context_destroy(fex_ctx);
-                    return 0;
-                }
-            } else {
-                /* if allow overwrite, merge opt_dict */
-                VmafDictionary *d =
-                        vmaf_dictionary_merge(&rfe->fex_ctx[i]->opts_dict,
-                                              &fex_ctx->opts_dict, 0);
-                vmaf_dictionary_free(&rfe->fex_ctx[i]->opts_dict);
-                VmafFeatureExtractorContext *f = rfe->fex_ctx[i];
-                f->opts_dict = d;
-                if (f->fex->options && f->fex->priv) {
-                    int err = vmaf_fex_ctx_parse_options(f);
-                    if (err) return err;
-                }
+            if (!rfe->fex_ctx[i]->opts_dict && !fex_ctx->opts_dict)
                 return vmaf_feature_extractor_context_destroy(fex_ctx);
+
+            if (!rfe->fex_ctx[i]->opts_dict != !fex_ctx->opts_dict)
+                continue;
+
+            VmafDictionary *d =
+                vmaf_dictionary_merge(&rfe->fex_ctx[i]->opts_dict,
+                                      &fex_ctx->opts_dict,
+                                      VMAF_DICT_DO_NOT_OVERWRITE);
+            if (!d) continue;
+
+            vmaf_dictionary_free(&rfe->fex_ctx[i]->opts_dict);
+            VmafFeatureExtractorContext *f = rfe->fex_ctx[i];
+            f->opts_dict = d;
+            if (f->fex->options && f->fex->priv) {
+                int err = vmaf_fex_ctx_parse_options(f);
+                if (err) return err;
             }
+
+            return vmaf_feature_extractor_context_destroy(fex_ctx);
         }
     }
 
@@ -98,6 +78,18 @@ int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
         rfe->capacity = capacity;
         for (unsigned i = rfe->cnt; i < rfe->capacity; i++)
             rfe->fex_ctx[i] = NULL;
+    }
+
+    const unsigned cnt = fex_ctx->opts_dict ? fex_ctx->opts_dict->cnt : 0;
+    vmaf_log(VMAF_LOG_LEVEL_DEBUG,
+             "feature extractor \"%s\" registered "
+             "with %d opts\n",
+             fex_ctx->fex->name, cnt);
+
+    for (unsigned i = 0; i < cnt; i++) {
+        vmaf_log(VMAF_LOG_LEVEL_DEBUG,"%s: %s\n",
+                 fex_ctx->opts_dict->entry[i].key,
+                 fex_ctx->opts_dict->entry[i].val);
     }
 
     rfe->fex_ctx[rfe->cnt++] = fex_ctx;
