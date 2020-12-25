@@ -20,6 +20,7 @@ test_picture = executable('test_picture',
 test_feature_collector = executable('test_feature_collector',
     ['test.c', 'test_feature_collector.c', '../src/log.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/feature/'), include_directories('../src')],
+    link_with : libvmaf.get_static_lib(),
 )
 
 test_log = executable('test_log',
