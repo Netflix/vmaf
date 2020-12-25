@@ -30,7 +30,6 @@
 #include "cpu.h"
 #include "feature/feature_extractor.h"
 #include "feature/feature_collector.h"
-#include "feature/feature_name.h"
 #include "fex_ctx_vector.h"
 #include "log.h"
 #include "model.h"
