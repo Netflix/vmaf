@@ -29,6 +29,14 @@ typedef struct {
 
 static const Template template_list[] = {
     {
+        .name = "VMAF_integer_feature_motion2_score",
+        .key = { .name = "motion_force_zero", .alias = "force" },
+    },
+    {
+        .name = "VMAF_integer_feature_motion_score",
+        .key = { .name = "motion_force_zero", .alias = "force" },
+    },
+    {
         .name = "VMAF_integer_feature_adm2_score",
         .key = { .name = "adm_enhn_gain_limit", .alias = "egl" },
     },
