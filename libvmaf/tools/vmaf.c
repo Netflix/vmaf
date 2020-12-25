@@ -247,6 +247,21 @@ int main(int argc, char *argv[])
             model_collection_cnt++;
         }
 
+        for (unsigned j = 0; j < c.model_config[i].overload_cnt; j++) {
+            err = vmaf_model_feature_overload(model[i],
+                               c.model_config[i].feature_overload[j].name,
+                               c.model_config[i].feature_overload[j].opts_dict);
+            if (err) {
+                fprintf(stderr,
+                        "problem overloading feature extractors from "
+                        "model: %s\n",
+                        c.model_config[i].version ?
+                            c.model_config[i].version : c.model_config[i].path);
+                return -1;
+
+            }
+        }
+
         err = vmaf_use_features_from_model(vmaf, model[i]);
         if (err) {
             fprintf(stderr,

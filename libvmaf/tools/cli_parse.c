@@ -166,39 +166,54 @@ static CLIModelConfig parse_model_config(const char *const optarg,
     memset(optarg_copy, 0, optarg_sz + 1);
     strncpy(optarg_copy, optarg, optarg_sz);
 
-    CLIModelConfig cli_cfg = {
+    CLIModelConfig model_cfg = {
         .cfg = { .flags = VMAF_MODEL_FLAGS_DEFAULT, },
         .path = NULL,
         .version = NULL,
     };
 
-    char *token;
-    char delim[] = "=:";
-    token = strtok(optarg_copy, delim);
-
-    while (token != 0) {
-        if (!strcmp(token, "path")) {
-            cli_cfg.path = strtok(0, delim);
-        } else if (!strcmp(token, "version")) {
-            cli_cfg.version = strtok(0, delim);
-        } else if (!strcmp(token, "name")) {
-            cli_cfg.cfg.name = strtok(0, delim);
-        } else if (!strcmp(token, "disable_clip")) {
-            cli_cfg.cfg.flags |= VMAF_MODEL_FLAG_DISABLE_CLIP;
-        } else if (!strcmp(token, "enable_transform")) {
-            cli_cfg.cfg.flags |= VMAF_MODEL_FLAG_ENABLE_TRANSFORM;
-        } else {
-            usage(app, "Unknown parameter %s for model.\n", token);
+    char *key_val;
+    while ((key_val = strsep(&optarg_copy, ":")) != NULL) {
+        char *key = strsep(&key_val, "=");
+        char *val = strsep(&key_val, "=");
+        if (!val) {
+            if (!strcmp(key, "disable_clip")) {
+                val = "true";
+            } else if (!strcmp(key, "enable_transform")) {
+                val = "true";
+            } else {
+                usage(app, "Problem parsing model \"%s\","
+                           " bad option string \"%s\".\n", key);
+            }
         }
-        token = strtok(0, delim);
+
+        if (!strcmp(key, "path")) {
+            model_cfg.path = val;
+        } else if (!strcmp(key, "name")) {
+            model_cfg.cfg.name = val;
+        } else if (!strcmp(key, "version")) {
+            model_cfg.version = val;
+        } else if (!strcmp(key, "disable_clip")) {
+            model_cfg.cfg.flags |=
+                !strcmp(val, "true") ? VMAF_MODEL_FLAG_DISABLE_CLIP : 0;
+        } else if (!strcmp(key, "enable_transform")) {
+            model_cfg.cfg.flags |=
+                !strcmp(val, "true") ? VMAF_MODEL_FLAG_ENABLE_TRANSFORM : 0;
+        } else {
+            char *name = strsep(&key, ".");
+            model_cfg.feature_overload[model_cfg.overload_cnt].name = name;
+            char *opt = strsep(&key, ".");
+            int err =
+                vmaf_feature_dictionary_set(
+                    &model_cfg.feature_overload[model_cfg.overload_cnt].opts_dict,
+                    opt, val);
+            if (err) usage(app, "Problem parsing model: \"%s\"\n", name);
+
+            model_cfg.overload_cnt++;
+        }
     }
 
-    if (!(!cli_cfg.version != !cli_cfg.path)) {
-        usage(app, "For every model, either a version or "
-                   "a path needs to be set.\n");
-    }
-
-    return cli_cfg;
+    return model_cfg;
 }
 
 static CLIFeatureConfig parse_feature_config(const char *const optarg,

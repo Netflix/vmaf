@@ -8,7 +8,7 @@
 #include "libvmaf/model.h"
 #include "libvmaf/feature.h"
 
-#define CLI_SETTINGS_STATIC_ARRAY_LEN 256
+#define CLI_SETTINGS_STATIC_ARRAY_LEN 32
 
 typedef struct {
     const char *name;
@@ -19,6 +19,11 @@ typedef struct {
     const char *path;
     const char *version;
     VmafModelConfig cfg;
+    struct {
+        const char *name;
+        VmafFeatureDictionary *opts_dict;
+    } feature_overload[CLI_SETTINGS_STATIC_ARRAY_LEN];
+    unsigned overload_cnt;
 } CLIModelConfig;
 
 typedef struct {
