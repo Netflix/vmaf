@@ -23,6 +23,7 @@
 
 #include "config.h"
 #include "feature_extractor.h"
+#include "feature_name.h"
 #include "log.h"
 
 #if VMAF_FLOAT_FEATURES
