@@ -168,6 +168,91 @@ static char *test_model_load_and_destroy()
     return NULL;
 }
 
+static char *test_model_feature()
+{
+    int err;
+
+    VmafModel *model;
+    VmafModelConfig cfg = { 0 };
+    const char *version = "vmaf_v0.6.1";
+    err = vmaf_model_load(&model, &cfg, version);
+    mu_assert("problem during vmaf_model_load", !err);
+
+    VmafFeatureDictionary *dict = NULL;
+    err = vmaf_feature_dictionary_set(&dict, "adm_enhancement_gain_limit",
+                                      "1.0");
+    mu_assert("problem during vmaf_feature_dictionary_set", !err);
+
+    mu_assert("feature 0 should be \"VMAF_integer_feature_adm2_score\"",
+              !strcmp("VMAF_integer_feature_adm2_score",
+                      model->feature[0].name));
+    mu_assert("feature 0 \"VMAF_integer_feature_adm2_score\" "
+              "should have a NULL opts_dict",
+              !model->feature[0].opts_dict);
+
+    err = vmaf_model_feature_overload(model, "adm", dict);
+
+    mu_assert("feature 0 should be \"VMAF_integer_feature_adm2_score\"",
+              !strcmp("VMAF_integer_feature_adm2_score",
+                      model->feature[0].name));
+    mu_assert("feature 0 \"VMAF_integer_feature_adm2_score\" "
+              "should have a non-NULL opts_dict",
+              model->feature[0].opts_dict);
+
+    VmafDictionaryEntry *e =
+        vmaf_dictionary_get(&model->feature[0].opts_dict,
+                           "adm_enhancement_gain_limit", 0);
+    mu_assert("dict should have a new key/val pair",
+              !strcmp(e->key, "adm_enhancement_gain_limit") &&
+              !strcmp(e->val, "1.0"));
+
+    VmafModel *model_neg;
+    VmafModelConfig cfg_neg = { 0 };
+    const char *version_neg = "vmaf_v0.6.1neg";
+    err = vmaf_model_load(&model_neg, &cfg_neg, version_neg);
+    mu_assert("problem during vmaf_model_load", !err);
+
+    err = model_compare(model, model_neg);
+    mu_assert("overloaded model should match model_neg", err);
+
+    VmafFeatureDictionary *dict_neg = NULL;
+    err = vmaf_feature_dictionary_set(&dict_neg, "adm_enhancement_gain_limit",
+                                      "1.2");
+    mu_assert("problem during vmaf_feature_dictionary_set", !err);
+
+    mu_assert("feature 0 should be \"VMAF_integer_feature_adm2_score\"",
+              !strcmp("VMAF_integer_feature_adm2_score",
+                      model->feature[0].name));
+    mu_assert("feature 0 \"VMAF_integer_feature_adm2_score\" "
+              "should have a non-NULL opts_dict",
+              model->feature[0].opts_dict);
+    VmafDictionaryEntry *e2 =
+        vmaf_dictionary_get(&model->feature[0].opts_dict,
+                           "adm_enhancement_gain_limit", 0);
+    mu_assert("dict should have an existing key/val pair",
+              !strcmp(e2->key, "adm_enhancement_gain_limit") &&
+              !strcmp(e2->val, "1.0"));
+
+    err = vmaf_model_feature_overload(model, "adm", dict_neg);
+
+    mu_assert("feature 0 should be \"VMAF_integer_feature_adm2_score\"",
+              !strcmp("VMAF_integer_feature_adm2_score",
+                      model->feature[0].name));
+    mu_assert("feature 0 \"VMAF_integer_feature_adm2_score\" "
+              "should have a non-NULL opts_dict",
+              model->feature[0].opts_dict);
+    VmafDictionaryEntry *e3 =
+        vmaf_dictionary_get(&model->feature[0].opts_dict,
+                           "adm_enhancement_gain_limit", 0);
+    mu_assert("dict should have an updated key/val pair",
+              !strcmp(e3->key, "adm_enhancement_gain_limit") &&
+              !strcmp(e3->val, "1.2"));
+
+    vmaf_model_destroy(model);
+    vmaf_model_destroy(model_neg);
+
+    return NULL;
+}
 
 static char *test_model_check_default_behavior_unset_flags()
 {
@@ -325,5 +410,6 @@ char *run_tests()
     mu_run_test(test_model_check_default_behavior_unset_flags);
     mu_run_test(test_model_check_default_behavior_set_flags);
     mu_run_test(test_model_set_flags);
+    mu_run_test(test_model_feature);
     return NULL;
 }
