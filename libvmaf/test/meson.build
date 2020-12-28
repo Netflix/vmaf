@@ -18,8 +18,9 @@ test_picture = executable('test_picture',
 )
 
 test_feature_collector = executable('test_feature_collector',
-    ['test.c', 'test_feature_collector.c',],
-    include_directories : [libvmaf_inc, test_inc, include_directories('../src/feature/')],
+    ['test.c', 'test_feature_collector.c', '../src/log.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/feature/'), include_directories('../src')],
+    link_with : libvmaf.get_static_lib(),
 )
 
 test_log = executable('test_log',
@@ -36,6 +37,7 @@ test_thread_pool = executable('test_thread_pool',
 test_model = executable('test_model',
     ['test.c', 'test_model.c', '../src/dict.c', '../src/svm.cpp', '../src/pdjson.c', '../src/read_json_model.c', '../src/log.c', json_model_c_sources],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src')],
+    link_with : libvmaf.get_static_lib(),
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,
     dependencies : thread_lib,
@@ -44,8 +46,9 @@ test_model = executable('test_model',
 test_predict = executable('test_predict',
     ['test.c', 'test_predict.c', '../src/predict.c', '../src/dict.c',
      '../src/feature/feature_collector.c', '../src/feature/alias.c', '../src/model.c', '../src/svm.cpp', '../src/log.c',
-     '../src/read_json_model.c', '../src/pdjson.c', json_model_c_sources],
+     '../src/read_json_model.c', '../src/pdjson.c', json_model_c_sources, '../src/feature/feature_name.c', '../src/feature/feature_extractor.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src')],
+    link_with : libvmaf.get_static_lib(),
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,
     dependencies : thread_lib,
@@ -53,7 +56,7 @@ test_predict = executable('test_predict',
 
 test_feature_extractor = executable('test_feature_extractor',
     ['test.c', 'test_feature_extractor.c', '../src/mem.c', '../src/picture.c', '../src/ref.c',
-     '../src/dict.c', '../src/opt.c'],
+     '../src/dict.c', '../src/opt.c', '../src/log.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
     dependencies : [math_lib, stdatomic_dependency],
     objects : [
@@ -79,6 +82,11 @@ test_ref = executable('test_ref',
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
 )
 
+test_feature = executable('test_feature',
+    ['test.c', 'test_feature.c', '../src/feature/feature_name.c', '../src/feature/alias.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+)
+
 test('test_picture', test_picture)
 test('test_feature_collector', test_feature_collector)
 test('test_thread_pool', test_thread_pool)
@@ -88,3 +96,4 @@ test('test_feature_extractor', test_feature_extractor)
 test('test_dict', test_dict)
 test('test_cpu', test_cpu)
 test('test_ref', test_ref)
+test('test_feature', test_feature)
