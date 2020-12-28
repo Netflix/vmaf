@@ -114,13 +114,15 @@ static int extract(VmafFeatureExtractor *fex,
     (void) dist_pic_90;
 
     if (s->motion_force_zero) {
-        err = vmaf_feature_collector_append(feature_collector,
-                                            "VMAF_feature_motion2_score",
-                                            0., index);
+        err = vmaf_feature_collector_append_templated(feature_collector,
+                                                   "VMAF_feature_motion2_score",
+                                                   "motion_force_zero", 0,
+                                                   0., index);
         if (s->debug) {
-            err |= vmaf_feature_collector_append(feature_collector,
-                                                 "VMAF_feature_motion_score",
-                                                 0., index);
+            err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                    "VMAF_feature_motion_score",
+                                                    "motion_force_zero", 0,
+                                                    0., index);
         }
         return err;
     }

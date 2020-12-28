@@ -97,46 +97,78 @@ static int extract(VmafFeatureExtractor *fex,
                       s->adm_enhn_gain_limit);
     if (err) return err;
 
-    err = vmaf_feature_collector_append(feature_collector,
-                                        "VMAF_feature_adm2_score",
-                                        score, index);
-    err |= vmaf_feature_collector_append(feature_collector,
-                                         "VMAF_feature_adm_scale0_score",
-                                         scores[0] / scores[1], index);
-    err |= vmaf_feature_collector_append(feature_collector,
-                                         "VMAF_feature_adm_scale1_score",
-                                         scores[2] / scores[3], index);
-    err |= vmaf_feature_collector_append(feature_collector,
-                                         "VMAF_feature_adm_scale2_score",
-                                         scores[4] / scores[5], index);
-    err |= vmaf_feature_collector_append(feature_collector,
-                                         "VMAF_feature_adm_scale3_score",
-                                         scores[6] / scores[7], index);
+    const char *key =
+        s->adm_enhn_gain_limit != DEFAULT_ADM_ENHN_GAIN_LIMIT ?
+        "adm_enhn_gain_limit" : NULL;
+    const double val = s->adm_enhn_gain_limit;
 
-    if (s->debug) {
-        err |= vmaf_feature_collector_append(feature_collector, "adm",
-                                             score, index);
-        err |= vmaf_feature_collector_append(feature_collector,"adm_num",
-                                             score_num, index);
-        err |= vmaf_feature_collector_append(feature_collector,"adm_den",
-                                             score_den, index);
-        err |= vmaf_feature_collector_append(feature_collector,"adm_num_scale0",
-                                             scores[0], index);
-        err |= vmaf_feature_collector_append(feature_collector,"adm_den_scale0",
-                                             scores[1], index);
-        err |= vmaf_feature_collector_append(feature_collector,"adm_num_scale1",
-                                             scores[2], index);
-        err |= vmaf_feature_collector_append(feature_collector,"adm_den_scale1",
-                                             scores[3], index);
-        err |= vmaf_feature_collector_append(feature_collector,"adm_num_scale2",
-                                             scores[4], index);
-        err |= vmaf_feature_collector_append(feature_collector,"adm_den_scale2",
-                                             scores[5], index);
-        err |= vmaf_feature_collector_append(feature_collector,"adm_num_scale3",
-                                             scores[6], index);
-        err |= vmaf_feature_collector_append(feature_collector,"adm_den_scale3",
-                                             scores[7], index);
-    }
+    err = vmaf_feature_collector_append_templated(feature_collector,
+                                                  "VMAF_feature_adm2_score",
+                                                  key, val,
+                                                  score, index);
+
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                "VMAF_feature_adm_scale0_score",
+                                                key, val,
+                                                scores[0] / scores[1], index);
+
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                "VMAF_feature_adm_scale1_score",
+                                                key, val,
+                                                scores[2] / scores[3], index);
+
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                "VMAF_feature_adm_scale2_score",
+                                                key, val,
+                                                scores[4] / scores[5], index);
+
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                "VMAF_feature_adm_scale3_score",
+                                                key, val,
+                                                scores[6] / scores[7], index);
+
+    if (!s->debug) return err;
+
+    err |= vmaf_feature_collector_append_templated(feature_collector, "adm",
+                                                   key, val, score, index);
+
+    err |= vmaf_feature_collector_append_templated(feature_collector, "adm_num",
+                                                   key, val, score_num, index);
+
+    err |= vmaf_feature_collector_append_templated(feature_collector, "adm_den",
+                                                   key, val, score_den, index);
+
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                   "adm_num_scale0",
+                                                    key, val, scores[0], index);
+
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                   "adm_den_scale0",
+                                                   key, val, scores[1], index);
+
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                   "adm_num_scale1",
+                                                   key, val, scores[2], index);
+
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                   "adm_den_scale1",
+                                                   key, val, scores[3], index);
+
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                   "adm_num_scale2",
+                                                   key, val, scores[4], index);
+
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                   "adm_den_scale2",
+                                                   key, val, scores[5], index);
+
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                   "adm_num_scale3",
+                                                   key, val, scores[6], index);
+
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                   "adm_den_scale3",
+                                                   key, val, scores[7], index);
 
     return err;
 }

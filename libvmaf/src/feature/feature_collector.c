@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "feature_collector.h"
+#include "feature_name.h"
 #include "log.h"
 
 static int aggregate_vector_init(AggregateVector *aggregate_vector)
@@ -282,6 +283,23 @@ unlock:
     feature_collector->timer.end = clock();
     pthread_mutex_unlock(&(feature_collector->lock));
     return err;
+}
+
+int vmaf_feature_collector_append_templated(VmafFeatureCollector *feature_collector,
+                                            const char *feature_name,
+                                            const char *key, double val,
+                                            double score,
+                                            unsigned picture_index)
+{
+    if (!feature_collector) return -EINVAL;
+    if (!feature_name) return -EINVAL;
+
+    char buf[VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE];
+    feature_name = vmaf_feature_name(feature_name, key, val, &buf[0],
+                                     VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE);
+
+    return vmaf_feature_collector_append(feature_collector, feature_name,
+                                         score, picture_index);
 }
 
 int vmaf_feature_collector_get_score(VmafFeatureCollector *feature_collector,
