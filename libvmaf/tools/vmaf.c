@@ -190,9 +190,17 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    VmafModel **model = malloc(sizeof(*model) * c.model_cnt);
-    VmafModelCollection **model_collection =
-        malloc(sizeof(*model_collection) * c.model_cnt);
+    VmafModel **model;
+    const size_t model_sz = sizeof(*model) * c.model_cnt;
+    model = malloc(model_sz);
+    memset(model, 0, model_sz);
+
+    VmafModelCollection **model_collection;
+    const size_t model_collection_sz =
+        sizeof(*model_collection) * c.model_cnt;
+    model_collection = malloc(model_sz);
+    memset(model_collection, 0, model_collection_sz);
+
     const char *model_collection_label[c.model_cnt];
     unsigned model_collection_cnt = 0;
 
@@ -232,6 +240,21 @@ int main(int argc, char *argv[])
                 c.model_config[i].version ?
                     c.model_config[i].version : c.model_config[i].path;
 
+            for (unsigned j = 0; j < c.model_config[i].overload_cnt; j++) {
+                err = vmaf_model_collection_feature_overload(
+                               model[i],
+                               &model_collection[model_collection_cnt],
+                               c.model_config[i].feature_overload[j].name,
+                               c.model_config[i].feature_overload[j].opts_dict);
+                if (err) {
+                    fprintf(stderr,
+                            "problem overloading feature extractors from "
+                            "model collection: %s\n",
+                            c.model_config[i].version ?
+                            c.model_config[i].version : c.model_config[i].path);
+                    return -1;
+                }
+            }
 
             err = vmaf_use_features_from_model_collection(vmaf,
                                         model_collection[model_collection_cnt]);
@@ -245,6 +268,22 @@ int main(int argc, char *argv[])
             }
 
             model_collection_cnt++;
+            continue;
+        }
+
+        for (unsigned j = 0; j < c.model_config[i].overload_cnt; j++) {
+            err = vmaf_model_feature_overload(model[i],
+                               c.model_config[i].feature_overload[j].name,
+                               c.model_config[i].feature_overload[j].opts_dict);
+            if (err) {
+                fprintf(stderr,
+                        "problem overloading feature extractors from "
+                        "model: %s\n",
+                        c.model_config[i].version ?
+                            c.model_config[i].version : c.model_config[i].path);
+                return -1;
+
+            }
         }
 
         err = vmaf_use_features_from_model(vmaf, model[i]);
