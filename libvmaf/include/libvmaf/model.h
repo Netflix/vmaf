@@ -76,6 +76,11 @@ int vmaf_model_collection_load_from_path(VmafModel **model,
                                          VmafModelConfig *cfg,
                                          const char *path);
 
+int vmaf_model_collection_feature_overload(VmafModel *model,
+                                           VmafModelCollection **model_collection,
+                                           const char *feature_name,
+                                           VmafFeatureDictionary *opts_dict);
+
 void vmaf_model_collection_destroy(VmafModelCollection *model_collection);
 
 #endif /* __VMAF_MODEL_H__ */

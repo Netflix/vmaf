@@ -411,5 +411,6 @@ char *run_tests()
     mu_run_test(test_model_check_default_behavior_set_flags);
     mu_run_test(test_model_set_flags);
     mu_run_test(test_model_feature);
+    mu_run_test(test_model_collection_feature);
     return NULL;
 }

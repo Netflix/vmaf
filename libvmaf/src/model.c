@@ -278,3 +278,24 @@ int vmaf_model_collection_load_from_path(VmafModel **model,
 
     return err;
 }
+
+int vmaf_model_collection_feature_overload(VmafModel *model,
+                                           VmafModelCollection **model_collection,
+                                           const char *feature_name,
+                                           VmafFeatureDictionary *opts_dict)
+{
+    if (!model_collection) return -EINVAL;
+    VmafModelCollection *mc = *model_collection;
+
+    int err = 0;
+    for (unsigned i = 0; i < mc->cnt; i++) {
+        VmafFeatureDictionary *d = NULL;
+        if (!vmaf_dictionary_copy(&opts_dict, &d)) goto exit;
+        err |= vmaf_model_feature_overload(mc->model[i], feature_name, d);
+    }
+
+exit:
+    err |= vmaf_model_feature_overload(model, feature_name, opts_dict);
+    return err;
+}
+

@@ -278,6 +278,15 @@ class ExternalProgramCaller(object):
             for model in models:
                 vmafexec_cmd += ' --model {}'.format(model)
 
+                if vif_enhn_gain_limit is not None:
+                    vmafexec_cmd += f':vif.vif_enhn_gain_limit={vif_enhn_gain_limit}:float_vif.vif_enhn_gain_limit={vif_enhn_gain_limit}'
+                if adm_enhn_gain_limit is not None:
+                    vmafexec_cmd += f':adm.adm_enhn_gain_limit={adm_enhn_gain_limit}:float_adm.adm_enhn_gain_limit={adm_enhn_gain_limit}'
+                if motion_force_zero:
+                    assert isinstance(motion_force_zero, bool)
+                    motion_force_zero = str(motion_force_zero).lower()
+                    vmafexec_cmd += f':motion.motion_force_zero={motion_force_zero}:float_motion.motion_force_zero={motion_force_zero}'
+
         assert isinstance(subsample, int) and subsample >= 1
         if subsample != 1:
             vmafexec_cmd += ' --subsample {}'.format(subsample)
@@ -294,16 +303,14 @@ class ExternalProgramCaller(object):
             # we have to set the parameter for all three, at the expense of extra computation.
             vmafexec_cmd += f' --feature float_vif=vif_enhn_gain_limit={vif_enhn_gain_limit}'
             vmafexec_cmd += f' --feature vif=vif_enhn_gain_limit={vif_enhn_gain_limit}'
-            vmafexec_cmd += f' --feature vif_neg=vif_enhn_gain_limit={vif_enhn_gain_limit}'
 
         if adm_enhn_gain_limit is not None:
             # FIXME: hacky
             vmafexec_cmd += f' --feature float_adm=adm_enhn_gain_limit={adm_enhn_gain_limit}'
             vmafexec_cmd += f' --feature adm=adm_enhn_gain_limit={adm_enhn_gain_limit}'
-            vmafexec_cmd += f' --feature adm_neg=adm_enhn_gain_limit={adm_enhn_gain_limit}'
 
         if motion_force_zero:
-            assert isinstance(motion_force_zero, bool)
+            #assert isinstance(motion_force_zero, bool)
             motion_force_zero = str(motion_force_zero).lower()
             # FIXME: hacky
             vmafexec_cmd += f' --feature float_motion=motion_force_zero={motion_force_zero}'
