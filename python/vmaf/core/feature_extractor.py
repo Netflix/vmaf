@@ -124,9 +124,9 @@ class VmafexecFeatureExtractorMixin(object):
                 except KeyError:
                     pass  # some features may be missing
 
-        for i_feature, feature in enumerate(self.ATOM_FEATURES):
-            if len(feature_scores[i_feature]) != 0:
-                assert len(feature_scores[i_feature]) == len(feature_scores[0])
+        #for i_feature, feature in enumerate(self.ATOM_FEATURES):
+        #    if len(feature_scores[i_feature]) != 0:
+        #        assert len(feature_scores[i_feature]) == len(feature_scores[0])
 
         feature_result = {}
         for i_feature, feature in enumerate(self.ATOM_FEATURES):

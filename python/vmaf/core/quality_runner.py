@@ -677,6 +677,10 @@ class VmafossExecQualityRunner(QualityRunner):
     DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_v0.6.1.json")
 
     FEATURES = ['adm2', 'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
+                'motion_force_0.00',
+                'adm2_egl_1.00', 'adm2_egl_1.20',
+                'vif_scale0_egl_1.00', 'vif_scale1_egl_1.00',
+                'vif_scale2_egl_1.00', 'vif_scale3_egl_1.00',
                 'motion', 'vif_scale0', 'vif_scale1', 'vif_scale2',
                 'vif_scale3', 'vif', 'psnr', 'ssim', 'ms_ssim', 'motion2',
                 'vmaf_bagging', 'vmaf_stddev', 'vmaf_ci_p95_lo', 'vmaf_ci_p95_hi']
@@ -871,6 +875,7 @@ class VmafSingleFeatureQualityRunner(QualityRunner):
         vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
         vmaf_fassembler.run()
         feature_result = vmaf_fassembler.results[0]
+
         result_dict = {
             self.get_scores_key(): feature_result[VmafIntegerFeatureExtractor.get_scores_key(self.FEATURE_NAME)]
         }
@@ -1155,7 +1160,21 @@ class VmafexecQualityRunner(QualityRunner):
 
     DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_v0.6.1.json")
 
-    FEATURES = ['adm2', 'motion2', 'vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
+    FEATURES = [
+                'adm2', 'motion2', 'vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
+                'motion2_force_0.00',
+                'adm2_egl_1.00', 'adm2_egl_1.20',
+                'vif_scale0_egl_1.00', 'vif_scale1_egl_1.00',
+                'vif_scale2_egl_1.00', 'vif_scale3_egl_1.00',
+                'vif_scale0_egl_1.10', 'vif_scale1_egl_1.10',
+                'vif_scale2_egl_1.10', 'vif_scale3_egl_1.10',
+                'integer_adm2', 'integer_motion2', 'integer_vif_scale0', 'integer_vif_scale1', 'integer_vif_scale2', 'integer_vif_scale3',
+                'integer_motion2_force_0.00',
+                'integer_adm2_egl_1.00', 'integer_adm2_egl_1.20',
+                'integer_vif_scale0_egl_1.00', 'integer_vif_scale1_egl_1.00',
+                'integer_vif_scale2_egl_1.00', 'integer_vif_scale3_egl_1.00',
+                'integer_vif_scale0_egl_1.10', 'integer_vif_scale1_egl_1.10',
+                'integer_vif_scale2_egl_1.10', 'integer_vif_scale3_egl_1.10',
                 'float_psnr', 'float_ssim', 'float_ms_ssim',
                 'psnr_y', 'psnr_cb', 'psnr_cr', 'ssim', 'ms_ssim',
                 'float_moment_ref1st', 'float_moment_dis1st', 'float_moment_ref2nd', 'float_moment_dis2nd',
@@ -1368,7 +1387,7 @@ class VmafexecQualityRunner(QualityRunner):
                     feature_scores[i_feature].append(float(frame.attrib[feature]))
                 except KeyError:
                     try:
-                        feature_scores[i_feature].append(float(frame.attrib['integer_' + feature]))
+                        feature_scores[i_feature].append(float(frame.attrib['integer_' + feature])) #
                     except KeyError:
                         pass  # some features may be missing
         for scores_key in scores_keys:
