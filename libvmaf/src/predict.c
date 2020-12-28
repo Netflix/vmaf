@@ -22,8 +22,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "dict.h"
 #include "feature/alias.h"
 #include "feature/feature_collector.h"
+#include "feature/feature_name.h"
 #include "model.h"
 #include "predict.h"
 #include "svm.h"
@@ -118,9 +120,22 @@ int vmaf_predict_score_at_index(VmafModel *model,
     if (!node) return -ENOMEM;
 
     for (unsigned i = 0; i < model->n_features; i++) {
+        char buf[VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE] = { 0 };
+        char *key = NULL;
+        double val;
+
+        if (model->feature[i].opts_dict) {
+            key = model->feature[i].opts_dict->entry[0].key;
+            val = atof(model->feature[i].opts_dict->entry[0].val);
+        }
+
+        char *feature_name =
+            vmaf_feature_name(model->feature[i].name, key, val, buf,
+                              VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE);
+
         double feature_score;
         err = vmaf_feature_collector_get_score(feature_collector,
-                                               model->feature[i].name,
+                                               feature_name,
                                                &feature_score, index);
         if (err) goto free_node;
 

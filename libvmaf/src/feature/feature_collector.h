@@ -54,6 +54,12 @@ int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
                                   const char *feature_name, double score,
                                   unsigned index);
 
+int vmaf_feature_collector_append_templated(VmafFeatureCollector *feature_collector,
+                                            const char *feature_name,
+                                            const char *key, double val,
+                                            double score,
+                                            unsigned picture_index);
+
 int vmaf_feature_collector_get_score(VmafFeatureCollector *feature_collector,
                                      const char *feature_name, double *score,
                                      unsigned index);

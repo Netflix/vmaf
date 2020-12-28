@@ -251,13 +251,13 @@ static int extract_force_zero(VmafFeatureExtractor *fex,
     (void) dist_pic_90;
     int err = 0;
 
-    err = vmaf_feature_collector_append(feature_collector,
-                                         "VMAF_integer_feature_motion2_score",
-                                         0., index);
+    err = vmaf_feature_collector_append_templated(feature_collector,
+                                           "VMAF_integer_feature_motion2_score",
+                                           "motion_force_zero", 0., 0., index);
     if (s->debug) {
-        err |= vmaf_feature_collector_append(feature_collector,
+        err |= vmaf_feature_collector_append_templated(feature_collector,
                                             "VMAF_integer_feature_motion_score",
-                                            0., index);
+                                            "motion_force_zero", 0., 0., index);
     }
     return err;
 }

@@ -163,7 +163,12 @@ int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model)
     for (unsigned i = 0; i < model->n_features; i++) {
         VmafFeatureExtractor *fex =
             vmaf_get_feature_extractor_by_feature_name(model->feature[i].name);
-        if (!fex) return -EINVAL;
+        if (!fex) {
+            vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                     "could not initialize feature extractor \"%s\"\n",
+                     model->feature[i].name);
+            return -EINVAL;
+        }
 
         VmafFeatureExtractorContext *fex_ctx;
         VmafDictionary *d = NULL;
@@ -173,7 +178,7 @@ int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model)
         }
         err = vmaf_feature_extractor_context_create(&fex_ctx, fex, d);
         if (err) return err;
-        err = feature_extractor_vector_append(rfe, fex_ctx, VMAF_FEATURE_EXTRACTOR_CONTEXT_DO_NOT_OVERWRITE);
+        err = feature_extractor_vector_append(rfe, fex_ctx, 0);
         if (err) {
             err |= vmaf_feature_extractor_context_destroy(fex_ctx);
             return err;
