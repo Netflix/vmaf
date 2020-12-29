@@ -58,7 +58,7 @@ char *vmaf_feature_name(char *name, char *key, double val,
     if (!key_alias(key)) return name;
 
     memset(buf, 0, buf_sz);
-    snprintf(buf, buf_sz - 1, "%s_%s_%.2f",
+    snprintf(buf, buf_sz - 1, "%s_%s_%g",
              vmaf_feature_name_alias(name), key_alias(key), val);
     return buf;
 }
