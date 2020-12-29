@@ -108,6 +108,7 @@ if built_in_models_enabled
             'vmaf_v0.6.1.json',
             'vmaf_b_v0.6.3.json',
             'vmaf_v0.6.1neg.json',
+            'vmaf_4k_v0.6.1.json',
         ]
 
         if float_enabled
@@ -115,6 +116,7 @@ if built_in_models_enabled
               'vmaf_float_v0.6.1neg.json',
               'vmaf_float_v0.6.1.json',
               'vmaf_float_b_v0.6.3.json',
+              'vmaf_float_4k_v0.6.1.json',
             ]
         endif
 
