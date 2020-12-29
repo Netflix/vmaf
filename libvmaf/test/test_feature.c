@@ -39,7 +39,12 @@ static char *test_feature_name()
     feature_name = vmaf_feature_name(name, key, val, &buf[0],
                                      VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE);
     mu_assert("name should have been formatted according to key/val",
-        !strcmp(feature_name, "integer_vif_scale0_egl_1.00"));
+        !strcmp(feature_name, "integer_vif_scale0_egl_1"));
+
+    feature_name = vmaf_feature_name(name, key, 1.23, &buf[0],
+                                     VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE);
+    mu_assert("name should have been formatted according to key/val",
+        !strcmp(feature_name, "integer_vif_scale0_egl_1.23"));
 
     return NULL;
 }
