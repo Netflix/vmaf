@@ -125,6 +125,7 @@ int vmaf_feature_extractor_context_destroy(VmafFeatureExtractorContext *fex_ctx)
 typedef struct VmafFeatureExtractorContextPool {
     struct fex_list_entry {
         VmafFeatureExtractor *fex;
+        VmafDictionary *opts_dict;
         struct {
             VmafFeatureExtractorContext *fex_ctx;
             bool in_use;
@@ -132,8 +133,9 @@ typedef struct VmafFeatureExtractorContextPool {
         atomic_int capacity, in_use;
         pthread_cond_t full;
     } *fex_list;
-    unsigned length;
+    unsigned cnt, capacity;
     pthread_mutex_t lock;
+    unsigned n_threads;
 } VmafFeatureExtractorContextPool;
 
 int vmaf_fex_ctx_pool_create(VmafFeatureExtractorContextPool **pool,

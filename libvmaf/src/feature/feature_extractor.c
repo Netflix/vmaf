@@ -236,40 +236,73 @@ int vmaf_fex_ctx_pool_create(VmafFeatureExtractorContextPool **pool,
     if (!n_threads) return -EINVAL;
 
     VmafFeatureExtractorContextPool *const p = *pool = malloc(sizeof(*p));
-    if (!p) return -ENOMEM;
+    if (!p) goto fail;
     memset(p, 0, sizeof(*p));
 
-    p->length =
-        sizeof(feature_extractor_list) / sizeof(feature_extractor_list[0]) - 1;
-    p->fex_list = malloc(p->length * sizeof(*(p->fex_list)));
-    if (!p->fex_list) goto free_p;
+    p->n_threads = n_threads;
 
-    for (unsigned i = 0; i < p->length; i++) {
-        VmafFeatureExtractor *fex = feature_extractor_list[i];
-        p->fex_list[i].fex = fex;
-        atomic_init(&p->fex_list[i].capacity, (fex->flags & VMAF_FEATURE_EXTRACTOR_TEMPORAL ? 1 : n_threads));
-        atomic_init(&p->fex_list[i].in_use, 0);
-        pthread_cond_init(&(p->fex_list[i].full), NULL);
-        size_t ctx_array_sz =
-            sizeof(p->fex_list[i].ctx_list[0]) * p->fex_list[i].capacity;
-        p->fex_list[i].ctx_list = malloc(ctx_array_sz);
-        memset(p->fex_list[i].ctx_list, 0, ctx_array_sz);
-        if (!p->fex_list[i].ctx_list)
-            goto free_ctx_list;
-    }
+    p->cnt = 0;
+    p->capacity = 8;
+    const size_t fex_list_sz = sizeof(*(p->fex_list)) * p->capacity;
+    p->fex_list = malloc(fex_list_sz);
+    if (!p->fex_list) goto free_p;
+    memset(p->fex_list, 0, fex_list_sz);
 
     pthread_mutex_init(&(p->lock), NULL);
     return 0;
 
-free_ctx_list:
-    for (unsigned i = 0; i < p->length; i++) {
-        if (p->fex_list[i].ctx_list)
-            free(p->fex_list[i].ctx_list);
-    }
-    free(p->fex_list);
 free_p:
     free(p);
+fail:
     return -ENOMEM;
+}
+
+static struct fex_list_entry*
+get_fex_list_entry(VmafFeatureExtractorContextPool *pool,
+                   VmafFeatureExtractor *fex, VmafDictionary *opts_dict)
+{
+    if (!pool) return NULL;
+    if (!fex) return NULL;
+
+    for (unsigned i = 0; i < pool->cnt; i++) {
+        struct fex_list_entry *entry = &pool->fex_list[i];
+        if (!strcmp(fex->name, entry->fex->name) &&
+            !vmaf_dictionary_compare(opts_dict, entry->opts_dict))
+        {
+            return entry;
+        }
+    }
+
+    struct fex_list_entry entry = { 0 };
+
+    entry.fex = fex;
+    const unsigned n_threads =
+        (fex->flags & VMAF_FEATURE_EXTRACTOR_TEMPORAL ? 1 : pool->n_threads);
+    atomic_init(&entry.capacity, n_threads);
+    atomic_init(&entry.in_use, 0);
+    pthread_cond_init(&(entry.full), NULL);
+    size_t ctx_array_sz = sizeof(entry.ctx_list[0]) * entry.capacity;
+    entry.ctx_list = malloc(ctx_array_sz);
+    if (!entry.ctx_list) goto fail;
+    memset(entry.ctx_list, 0, ctx_array_sz);
+    int err = vmaf_dictionary_copy(&opts_dict, &entry.opts_dict);
+
+    if (pool->cnt >= pool->capacity) {
+        size_t capacity = pool->capacity * 2;
+        struct fex_list_entry *fex_list =
+            realloc(pool->fex_list, sizeof(*(pool->fex_list)) * capacity);
+        if (!fex_list) goto free_ctx_list;
+        pool->fex_list = fex_list;
+        pool->capacity = capacity;
+    }
+
+    pool->fex_list[pool->cnt] = entry;
+    return &pool->fex_list[pool->cnt++];
+
+free_ctx_list:
+    free(entry.ctx_list);
+fail:
+    return NULL;
 }
 
 int vmaf_fex_ctx_pool_aquire(VmafFeatureExtractorContextPool *pool,
@@ -284,13 +317,7 @@ int vmaf_fex_ctx_pool_aquire(VmafFeatureExtractorContextPool *pool,
     pthread_mutex_lock(&(pool->lock));
     int err = 0;
 
-    struct fex_list_entry *entry = NULL;
-    for (unsigned i = 0; i < pool->length; i++) {
-        if (!strcmp(fex->name, pool->fex_list[i].fex->name)) {
-            entry = &pool->fex_list[i];
-            break;
-        }
-    }
+    struct fex_list_entry *entry = get_fex_list_entry(pool, fex, opts_dict);
     if (!entry) {
         err = -EINVAL;
         goto unlock;
@@ -334,12 +361,16 @@ int vmaf_fex_ctx_pool_release(VmafFeatureExtractorContextPool *pool,
 
     VmafFeatureExtractor *fex = fex_ctx->fex;
     struct fex_list_entry *entry = NULL;
-    for (unsigned i = 0; i < pool->length; i++) {
-        if (!strcmp(fex->name, pool->fex_list[i].fex->name)) {
+    for (unsigned i = 0; i < pool->cnt; i++) {
+        if (!strcmp(fex->name, pool->fex_list[i].fex->name) &&
+            !vmaf_dictionary_compare(fex_ctx->opts_dict,
+                                     pool->fex_list[i].opts_dict))
+        {
             entry = &pool->fex_list[i];
             break;
         }
     }
+
     if (!entry) {
         err = -EINVAL;
         goto unlock;
@@ -367,7 +398,7 @@ int vmaf_fex_ctx_pool_flush(VmafFeatureExtractorContextPool *pool,
     if (!pool->fex_list) return -EINVAL;
     pthread_mutex_lock(&(pool->lock));
 
-    for (unsigned i = 0; i < pool->length; i++) {
+    for (unsigned i = 0; i < pool->cnt; i++) {
         VmafFeatureExtractor *fex = pool->fex_list[i].fex;
         if (!(fex->flags & VMAF_FEATURE_EXTRACTOR_TEMPORAL))
             continue;
@@ -389,7 +420,7 @@ int vmaf_fex_ctx_pool_destroy(VmafFeatureExtractorContextPool *pool)
     if (!pool->fex_list) goto free_pool;
     pthread_mutex_lock(&(pool->lock));
 
-    for (unsigned i = 0; i < pool->length; i++) {
+    for (unsigned i = 0; i < pool->cnt; i++) {
         if (!pool->fex_list[i].ctx_list) continue;
         for (int j = 0; j < atomic_load(&pool->fex_list[i].capacity); j++) {
             VmafFeatureExtractorContext *fex_ctx =
@@ -397,6 +428,7 @@ int vmaf_fex_ctx_pool_destroy(VmafFeatureExtractorContextPool *pool)
             if (!fex_ctx) continue;
             vmaf_feature_extractor_context_close(fex_ctx);
             vmaf_feature_extractor_context_destroy(fex_ctx);
+            vmaf_dictionary_free(&pool->fex_list[i].opts_dict);
         }
         free(pool->fex_list[i].ctx_list);
     }
