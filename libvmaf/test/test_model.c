@@ -199,7 +199,7 @@ static char *test_model_feature()
               "should have a non-NULL opts_dict",
               model->feature[0].opts_dict);
 
-    VmafDictionaryEntry *e =
+    const VmafDictionaryEntry *e =
         vmaf_dictionary_get(&model->feature[0].opts_dict,
                            "adm_enhancement_gain_limit", 0);
     mu_assert("dict should have a new key/val pair",
@@ -226,7 +226,7 @@ static char *test_model_feature()
     mu_assert("feature 0 \"VMAF_integer_feature_adm2_score\" "
               "should have a non-NULL opts_dict",
               model->feature[0].opts_dict);
-    VmafDictionaryEntry *e2 =
+    const VmafDictionaryEntry *e2 =
         vmaf_dictionary_get(&model->feature[0].opts_dict,
                            "adm_enhancement_gain_limit", 0);
     mu_assert("dict should have an existing key/val pair",
@@ -241,7 +241,7 @@ static char *test_model_feature()
     mu_assert("feature 0 \"VMAF_integer_feature_adm2_score\" "
               "should have a non-NULL opts_dict",
               model->feature[0].opts_dict);
-    VmafDictionaryEntry *e3 =
+    const VmafDictionaryEntry *e3 =
         vmaf_dictionary_get(&model->feature[0].opts_dict,
                            "adm_enhancement_gain_limit", 0);
     mu_assert("dict should have an updated key/val pair",
@@ -368,7 +368,7 @@ static char *test_model_set_flags()
     mu_assert("feature[5].opts_dict must not be NULL.\n",
               model4->feature[5].opts_dict);
 
-    VmafDictionaryEntry *entry = NULL;
+    const VmafDictionaryEntry *entry = NULL;
     entry = vmaf_dictionary_get(&model4->feature[0].opts_dict, "adm_enhn_gain_limit", 0);
     mu_assert("feature[0].opts_dict must have key adm_enhn_gain_limit.\n",
               strcmp(entry->key, "adm_enhn_gain_limit")==0);
