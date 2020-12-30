@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -47,9 +48,26 @@ int vmaf_dictionary_set(VmafDictionary **dict, const char *key, const char *val,
         d->size = 8;
     }
 
+    char *buf = NULL;
+    if (flags & VMAF_DICT_NORMALIZE_NUMERICAL_VALUES) {
+        char *end = NULL;
+        double d = strtof(val, &end);
+        if (!(d == 0 && val == end)) {
+            const char *fmt = "%g";
+            const size_t buf_sz = snprintf(NULL, 0, fmt, d) + 1;
+            buf = malloc(buf_sz);
+            if (!buf) return -ENOMEM;
+            snprintf(buf, buf_sz, fmt, d);
+        }
+    }
+
+    val = buf ? buf : val;
     VmafDictionaryEntry *existing_entry = vmaf_dictionary_get(&d, key, 0);
-    if (existing_entry && (flags & VMAF_DICT_DO_NOT_OVERWRITE))
-        return !strcmp(existing_entry->val, val) ? 0 : -EINVAL;
+    if (existing_entry && (flags & VMAF_DICT_DO_NOT_OVERWRITE)) {
+        int ret = !strcmp(existing_entry->val, val) ? 0 : -EINVAL;
+        free(buf);
+        return ret;
+    }
 
     if (d->cnt == d->size) {
         const size_t sz = d->size * sizeof(*d->entry) * 2;
@@ -61,6 +79,8 @@ int vmaf_dictionary_set(VmafDictionary **dict, const char *key, const char *val,
 
     const char *val_copy = strdup(val);
     if (!val_copy) goto fail;
+
+    free(buf);
 
     if (existing_entry && !(flags & VMAF_DICT_DO_NOT_OVERWRITE)) {
         free(existing_entry->val);
@@ -164,5 +184,6 @@ int vmaf_dictionary_compare(VmafDictionary *a, VmafDictionary *b)
 int vmaf_feature_dictionary_set(VmafFeatureDictionary **dict, const char *key,
                                 const char *val)
 {
-    return vmaf_dictionary_set((VmafDictionary**)dict, key, val, 0);
+    return vmaf_dictionary_set((VmafDictionary**)dict, key, val,
+                               VMAF_DICT_NORMALIZE_NUMERICAL_VALUES);
 }

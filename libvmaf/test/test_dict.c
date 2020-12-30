@@ -212,6 +212,83 @@ static char *test_vmaf_dictionary_compare()
     err = vmaf_dictionary_compare(a, b);
     mu_assert("dictionaries do not match, compare should fail", err);
 
+    vmaf_dictionary_free(&a);
+    mu_assert("dictionary should be NULL after free", !a);
+    vmaf_dictionary_free(&b);
+    mu_assert("dictionary should be NULL after free", !b);
+
+    return NULL;
+}
+
+static char *test_vmaf_dictionary_normalize_numerical_val()
+{
+    int err = 0;
+
+    VmafDictionary *d = NULL;
+    const VmafDictionaryEntry *e = NULL;
+
+    err = vmaf_dictionary_set(&d, "key", "1.0",
+                              VMAF_DICT_NORMALIZE_NUMERICAL_VALUES);
+    mu_assert("dictionary should have been created", d);
+    mu_assert("problem during vmaf_dictionary_set", !err);
+
+    e = vmaf_dictionary_get(&d, "key", 0);
+    mu_assert("dictionary should return an entry", e);
+    mu_assert("entry should have normalized val", !strcmp(e->val, "1"));
+
+    err = vmaf_dictionary_set(&d, "key", "1",
+                              VMAF_DICT_NORMALIZE_NUMERICAL_VALUES);
+    mu_assert("problem during vmaf_dictionary_set", !err);
+
+    e = vmaf_dictionary_get(&d, "key", 0);
+    mu_assert("dictionary should return an entry", e);
+    mu_assert("entry should have normalized val", !strcmp(e->val, "1"));
+
+    err = vmaf_dictionary_set(&d, "key", "1.0000",
+                              VMAF_DICT_NORMALIZE_NUMERICAL_VALUES);
+    mu_assert("problem during vmaf_dictionary_set", !err);
+
+    e = vmaf_dictionary_get(&d, "key", 0);
+    mu_assert("dictionary should return an entry", e);
+    mu_assert("entry should have normalized val", !strcmp(e->val, "1"));
+
+    err = vmaf_dictionary_set(&d, "key", "1.00",
+                              VMAF_DICT_NORMALIZE_NUMERICAL_VALUES |
+                              VMAF_DICT_DO_NOT_OVERWRITE);
+    mu_assert("problem during vmaf_dictionary_set", !err);
+    e = vmaf_dictionary_get(&d, "key", 0);
+    mu_assert("dictionary should return an entry", e);
+    mu_assert("entry should have normalized val", !strcmp(e->val, "1"));
+
+    err = vmaf_dictionary_set(&d, "key", " 1.00 ",
+                              VMAF_DICT_NORMALIZE_NUMERICAL_VALUES |
+                              VMAF_DICT_DO_NOT_OVERWRITE);
+    mu_assert("problem during vmaf_dictionary_set", !err);
+    e = vmaf_dictionary_get(&d, "key", 0);
+    mu_assert("dictionary should return an entry", e);
+    mu_assert("entry should have normalized val", !strcmp(e->val, "1"));
+
+    err = vmaf_dictionary_set(&d, "key", "1abc",
+                              VMAF_DICT_NORMALIZE_NUMERICAL_VALUES |
+                              VMAF_DICT_DO_NOT_OVERWRITE);
+    mu_assert("problem during vmaf_dictionary_set", !err);
+    e = vmaf_dictionary_get(&d, "key", 0);
+    mu_assert("dictionary should return an entry", e);
+    mu_assert("entry should have normalized val", !strcmp(e->val, "1"));
+
+    mu_assert("dictionary should have just 1 entry", d->cnt == 1);
+
+    err = vmaf_dictionary_set(&d, "debug", "true",
+                              VMAF_DICT_NORMALIZE_NUMERICAL_VALUES);
+    mu_assert("problem during vmaf_dictionary_set", !err);
+    e = vmaf_dictionary_get(&d, "debug", 0);
+    mu_assert("dictionary should return an entry", e);
+    mu_assert("flag should not affect non-numerical values",
+              !strcmp(e->val, "true"));
+
+    vmaf_dictionary_free(&d);
+    mu_assert("dictionary should be NULL after free", !d);
+
     return NULL;
 }
 
@@ -220,5 +297,6 @@ char *run_tests()
     mu_run_test(test_vmaf_dictionary);
     mu_run_test(test_vmaf_dictionary_merge);
     mu_run_test(test_vmaf_dictionary_compare);
+    mu_run_test(test_vmaf_dictionary_normalize_numerical_val);
     return NULL;
 }
