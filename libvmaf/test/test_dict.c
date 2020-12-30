@@ -172,9 +172,53 @@ static char *test_vmaf_dictionary_merge()
     return NULL;
 }
 
+static char *test_vmaf_dictionary_compare()
+{
+    int err = 0;
+
+    VmafDictionary *a = NULL;
+    VmafDictionary *b = NULL;
+
+    err = vmaf_dictionary_set(&a, "key_1", "val_1", 0);
+    err |= vmaf_dictionary_set(&b, "key_2", "val_2", 0);
+    mu_assert("problem during vmaf_dictionary_set", !err);
+
+    err = vmaf_dictionary_compare(a, b);
+    mu_assert("dictionaries do not match, compare should fail", err);
+
+    err = vmaf_dictionary_set(&a, "key_2", "val_2", 0);
+    err |= vmaf_dictionary_set(&b, "key_1", "val_1", 0);
+    mu_assert("problem during vmaf_dictionary_set", !err);
+
+    err = vmaf_dictionary_compare(a, b);
+    mu_assert("dictionaries match, compare should not fail", !err);
+
+    err = vmaf_dictionary_set(&a, "key_3", "val_3", 0);
+    mu_assert("problem during vmaf_dictionary_set", !err);
+
+    err = vmaf_dictionary_compare(a, b);
+    mu_assert("dictionaries do not match, compare should fail", err);
+
+    err = vmaf_dictionary_set(&b, "key_3", "val_3", 0);
+    mu_assert("problem during vmaf_dictionary_set", !err);
+
+    err = vmaf_dictionary_compare(a, b);
+    mu_assert("dictionaries match, compare should not fail", !err);
+
+    err = vmaf_dictionary_set(&a, "key_4", "val_4", 0);
+    err |= vmaf_dictionary_set(&b, "key_4", "not_val_4", 0);
+    mu_assert("problem during vmaf_dictionary_set", !err);
+
+    err = vmaf_dictionary_compare(a, b);
+    mu_assert("dictionaries do not match, compare should fail", err);
+
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_vmaf_dictionary);
     mu_run_test(test_vmaf_dictionary_merge);
+    mu_run_test(test_vmaf_dictionary_compare);
     return NULL;
 }
