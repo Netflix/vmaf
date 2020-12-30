@@ -412,5 +412,6 @@ int main(int argc, char *argv[])
     video_input_close(&vid_ref);
     video_input_close(&vid_dist);
     vmaf_close(vmaf);
+    cli_free(&c);
     return err;
 }

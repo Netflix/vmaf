@@ -13,6 +13,7 @@
 typedef struct {
     const char *name;
     VmafFeatureDictionary *opts_dict;
+    void *buf;
 } CLIFeatureConfig;
 
 typedef struct {
@@ -24,6 +25,7 @@ typedef struct {
         VmafFeatureDictionary *opts_dict;
     } feature_overload[CLI_SETTINGS_STATIC_ARRAY_LEN];
     unsigned overload_cnt;
+    void *buf;
 } CLIModelConfig;
 
 typedef struct {
@@ -48,5 +50,7 @@ typedef struct {
 
 void cli_parse(const int argc, char *const *const argv,
                CLISettings *const settings);
+
+void cli_free(CLISettings *settings);
 
 #endif /* __VMAF_CLI_PARSE_H__ */

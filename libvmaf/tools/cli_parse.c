@@ -170,6 +170,7 @@ static CLIModelConfig parse_model_config(const char *const optarg,
         .cfg = { .flags = VMAF_MODEL_FLAGS_DEFAULT, },
         .path = NULL,
         .version = NULL,
+        .buf = optarg_copy,
     };
 
     char *key_val;
@@ -225,10 +226,12 @@ static CLIFeatureConfig parse_feature_config(const char *const optarg,
         usage(app, "error while parsing feature option: %s", optarg);
     memset(optarg_copy, 0, optarg_sz + 1);
     strncpy(optarg_copy, optarg, optarg_sz);
+    void *buf = optarg_copy;
 
     CLIFeatureConfig feature_cfg = {
         .name = strsep(&optarg_copy, "="),
         .opts_dict = NULL,
+        .buf = buf,
     };
 
     char *key_val;
@@ -403,4 +406,12 @@ void cli_parse(const int argc, char *const *const argv,
                        "unless no prediction (-n/--no_prediction) is set");
 #endif
     }
+}
+
+void cli_free(CLISettings *settings)
+{
+    for (unsigned i = 0; i < settings->model_cnt; i++)
+        free(settings->model_config[i].buf);
+    for (unsigned i = 0; i < settings->feature_cnt; i++)
+        free(settings->feature_cfg[i].buf);
 }
