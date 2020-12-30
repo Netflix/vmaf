@@ -167,7 +167,10 @@ static CLIModelConfig parse_model_config(const char *const optarg,
     strncpy(optarg_copy, optarg, optarg_sz);
 
     CLIModelConfig model_cfg = {
-        .cfg = { .flags = VMAF_MODEL_FLAGS_DEFAULT, },
+        .cfg = {
+            .name = "vmaf",
+            .flags = VMAF_MODEL_FLAGS_DEFAULT,
+        },
         .path = NULL,
         .version = NULL,
         .buf = optarg_copy,
@@ -405,6 +408,18 @@ void cli_parse(const int argc, char *const *const argv,
         usage(argv[0], "At least one model (-m/--model) is required "
                        "unless no prediction (-n/--no_prediction) is set");
 #endif
+    }
+
+    for (unsigned i = 0; i < settings->model_cnt; i++) {
+        for (unsigned j = 0; j < settings->model_cnt; j++) {
+            if (i == j) continue;
+            if (!strcmp(settings->model_config[i].cfg.name,
+                        settings->model_config[j].cfg.name))
+            {
+                usage(argv[0], "Each model should be uniquely named. "
+                               "Set using `--model` via the `name=...` param.");
+            }
+        }
     }
 }
 
