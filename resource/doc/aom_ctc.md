@@ -37,5 +37,5 @@ There are also a few optional command-line settings you may find useful.
 * v1.0: `--aom_ctc v1.0`
   * 2020-12-22
   * Initial CTC release, `--aom_ctc proposed` deprecated.
-  * Release: [libvmaf v2.0.1](https://github.com/Netflix/vmaf/releases/tag/v2.0.1)
-  * Precompiled static binaries [here]()
+  * Release: [libvmaf v2.1.0](https://github.com/Netflix/vmaf/releases/tag/v2.1.0)
+  * Precompiled static binaries [here](https://github.com/Netflix/vmaf/releases/tag/v2.1.0)
