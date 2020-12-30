@@ -180,7 +180,7 @@ static char *test_model_feature()
 
     VmafFeatureDictionary *dict = NULL;
     err = vmaf_feature_dictionary_set(&dict, "adm_enhancement_gain_limit",
-                                      "1.0");
+                                      "1.1");
     mu_assert("problem during vmaf_feature_dictionary_set", !err);
 
     mu_assert("feature 0 should be \"VMAF_integer_feature_adm2_score\"",
@@ -204,7 +204,7 @@ static char *test_model_feature()
                            "adm_enhancement_gain_limit", 0);
     mu_assert("dict should have a new key/val pair",
               !strcmp(e->key, "adm_enhancement_gain_limit") &&
-              !strcmp(e->val, "1.0"));
+              !strcmp(e->val, "1.1"));
 
     VmafModel *model_neg;
     VmafModelConfig cfg_neg = { 0 };
@@ -231,7 +231,7 @@ static char *test_model_feature()
                            "adm_enhancement_gain_limit", 0);
     mu_assert("dict should have an existing key/val pair",
               !strcmp(e2->key, "adm_enhancement_gain_limit") &&
-              !strcmp(e2->val, "1.0"));
+              !strcmp(e2->val, "1.1"));
 
     err = vmaf_model_feature_overload(model, "adm", dict_neg);
 
@@ -372,28 +372,28 @@ static char *test_model_set_flags()
     entry = vmaf_dictionary_get(&model4->feature[0].opts_dict, "adm_enhn_gain_limit", 0);
     mu_assert("feature[0].opts_dict must have key adm_enhn_gain_limit.\n",
               strcmp(entry->key, "adm_enhn_gain_limit")==0);
-    mu_assert("feature[0].opts_dict[\"adm_enhn_gain_limit\"] must have value 1.0.\n",
-              strcmp(entry->val, "1.0")==0);
+    mu_assert("feature[0].opts_dict[\"adm_enhn_gain_limit\"] must have value 1.\n",
+              strcmp(entry->val, "1")==0);
     entry = vmaf_dictionary_get(&model4->feature[2].opts_dict, "vif_enhn_gain_limit", 0);
     mu_assert("feature[2].opts_dict must have key vif_enhn_gain_limit.\n",
               strcmp(entry->key, "vif_enhn_gain_limit")==0);
-    mu_assert("feature[2].opts_dict[\"vif_enhn_gain_limit\"] must have value 1.0.\n",
-              strcmp(entry->val, "1.0")==0);
+    mu_assert("feature[2].opts_dict[\"vif_enhn_gain_limit\"] must have value 1.\n",
+              strcmp(entry->val, "1")==0);
     entry = vmaf_dictionary_get(&model4->feature[3].opts_dict, "vif_enhn_gain_limit", 0);
     mu_assert("feature[3].opts_dict must have key vif_enhn_gain_limit.\n",
               strcmp(entry->key, "vif_enhn_gain_limit")==0);
-    mu_assert("feature[3].opts_dict[\"vif_enhn_gain_limit\"] must have value 1.0.\n",
-              strcmp(entry->val, "1.0")==0);
+    mu_assert("feature[3].opts_dict[\"vif_enhn_gain_limit\"] must have value 1.\n",
+              strcmp(entry->val, "1")==0);
     entry = vmaf_dictionary_get(&model4->feature[4].opts_dict, "vif_enhn_gain_limit", 0);
     mu_assert("feature[4].opts_dict must have key vif_enhn_gain_limit.\n",
               strcmp(entry->key, "vif_enhn_gain_limit")==0);
-    mu_assert("feature[4].opts_dict[\"vif_enhn_gain_limit\"] must have value 1.0.\n",
-              strcmp(entry->val, "1.0")==0);
+    mu_assert("feature[4].opts_dict[\"vif_enhn_gain_limit\"] must have value 1.\n",
+              strcmp(entry->val, "1")==0);
     entry = vmaf_dictionary_get(&model4->feature[5].opts_dict, "vif_enhn_gain_limit", 0);
     mu_assert("feature[5].opts_dict must have key vif_enhn_gain_limit.\n",
               strcmp(entry->key, "vif_enhn_gain_limit")==0);
-    mu_assert("feature[5].opts_dict[\"vif_enhn_gain_limit\"] must have value 1.0.\n",
-              strcmp(entry->val, "1.0")==0);
+    mu_assert("feature[5].opts_dict[\"vif_enhn_gain_limit\"] must have value 1.\n",
+              strcmp(entry->val, "1")==0);
 
     vmaf_model_destroy(model4);
     return NULL;

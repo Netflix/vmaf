@@ -36,6 +36,7 @@ typedef struct VmafDictionary {
 
 enum VmafDictionaryFlags {
     VMAF_DICT_DO_NOT_OVERWRITE = 1 << 0,
+    VMAF_DICT_NORMALIZE_NUMERICAL_VALUES = 1 << 1,
 };
 
 int vmaf_dictionary_set(VmafDictionary **dict, const char *key, const char *val,
