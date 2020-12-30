@@ -50,6 +50,8 @@ VmafDictionary *vmaf_dictionary_merge(VmafDictionary **dict_a,
                                       VmafDictionary **dict_b,
                                       uint64_t flags);
 
+int vmaf_dictionary_compare(VmafDictionary *dict_a, VmafDictionary *dict_b);
+
 int vmaf_dictionary_free(VmafDictionary **dict);
 
 #ifdef __cplusplus

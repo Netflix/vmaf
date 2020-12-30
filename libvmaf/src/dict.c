@@ -145,6 +145,21 @@ fail:
     return NULL;
 }
 
+int vmaf_dictionary_compare(VmafDictionary *a, VmafDictionary *b)
+{
+    if (!a && !b) return 0;
+    if (!a != !b) return -EINVAL;
+    if (a->cnt != b->cnt) return -EINVAL;
+
+    for (unsigned i = 0; i < a->cnt; i++) {
+        const VmafDictionaryEntry *e =
+            vmaf_dictionary_get(&b, a->entry[i].key, 0);
+        if (!e) return -EINVAL;
+        if (strcmp(e->val, a->entry[i].val)) return -EINVAL;
+    }
+
+    return 0;
+}
 
 int vmaf_feature_dictionary_set(VmafFeatureDictionary **dict, const char *key,
                                 const char *val)
