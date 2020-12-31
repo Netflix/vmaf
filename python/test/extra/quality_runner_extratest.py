@@ -120,7 +120,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner.run()
 
         results = self.runner.results
-        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 77.59110129333334, places=4)
+        self.assertAlmostEqual(results[0]['VMAFOSSEXEC_score'], 77.59110129333334, places=3)
 
     def test_run_psnr_runner_with_frames(self):
 
