@@ -293,7 +293,7 @@ Above are two example scatter plots obtained from running the `run_vmaf_training
 
 ### Using Custom Subjective Models
 
-The commands `run_vmaf_training` and `run_testing` also support custom subjective models (e.g. DMOS (default), MLE_CO_AP2 and more), through the [sureal](https://github.com/Netflix/sureal) package.
+The commands `run_vmaf_training` and `run_testing` also support custom subjective models (e.g. MLE_CO_AP2 (default), MOS, DMOS, SR_MOS (i.e. ITU-R BT.500), BR_SR_MOS (i.e. ITU-T P.913) and more), through the [sureal](https://github.com/Netflix/sureal) package.
 
 The subjective model option can be specified with option `--subj-model subjective_model`, for example:
 

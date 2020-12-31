@@ -13,7 +13,7 @@ from vmaf.config import DisplayConfig
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.tools.misc import import_python_file, get_cmd_option, cmd_option_exists
 from vmaf.core.quality_runner import QualityRunner, VmafQualityRunner, BootstrapVmafQualityRunner
-from vmaf.core.matlab_quality_runner import STMADQualityRunner, SpEEDMatlabQualityRunner, StrredQualityRunner, StrredOptQualityRunner
+from vmaf.core.matlab_quality_runner import STMADQualityRunner, SpEEDMatlabQualityRunner, StrredQualityRunner, StrredOptQualityRunner  # need these
 from vmaf.routine import run_test_on_dataset, print_matplotlib_warning
 from vmaf.tools.stats import ListStats
 
@@ -22,11 +22,14 @@ __license__ = "BSD+Patent"
 
 POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'perc20']
 
-SUBJECTIVE_MODELS = ['DMOS (default)', 'DMOS_MLE', 'MLE', 'MOS', 'SR_DMOS', 'SR_MOS', 'ZS_SR_DMOS', 'ZS_SR_MOS']
-
+SUBJECTIVE_MODELS = ['DMOS', 'DMOS_MLE', 'MLE', 'MLE_CO_AP',
+                     'MLE_CO_AP2 (default)', 'MOS', 'SR_DMOS',
+                     'SR_MOS (i.e. ITU-R BT.500)',
+                     'BR_SR_MOS (i.e. ITU-T P.913)',
+                     'ZS_SR_DMOS', 'ZS_SR_MOS', '...']
 
 def print_usage():
-    quality_runner_types = ['VMAF', 'PSNR', 'SSIM', 'MS_SSIM']
+    quality_runner_types = ['VMAF', 'PSNR', 'SSIM', 'MS_SSIM', '...']
     print("usage: " + os.path.basename(sys.argv[0]) + \
           " quality_type test_dataset_filepath [--vmaf-model VMAF_model_path] " \
           "[--vmaf-phone-model] [--subj-model subjective_model] [--cache-result] " \
@@ -64,11 +67,11 @@ def main():
     subj_model = get_cmd_option(sys.argv, 3, len(sys.argv), '--subj-model')
 
     try:
+        from sureal.subjective_model import SubjectiveModel
         if subj_model is not None:
-            from sureal.subjective_model import SubjectiveModel
             subj_model_class = SubjectiveModel.find_subclass(subj_model)
         else:
-            subj_model_class = None
+            subj_model_class = SubjectiveModel.find_subclass('MLE_CO_AP2')
     except Exception as e:
         print("Error: " + str(e))
         return 1
