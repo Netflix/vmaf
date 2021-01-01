@@ -415,6 +415,37 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['SSIM_feature_ssim_c_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['SSIM_feature_ssim_s_score'], 1.0, places=4)
 
+    def test_run_ssim_fextractor_flat(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_flat_1920_1080_videos_for_testing()
+
+        self.fextractor = SsimFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None
+        )
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        try: self.assertAlmostEqual(results[0]['SSIM_feature_ssim_score'], 0.9087330000000001, places=8)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['SSIM_feature_ssim_l_score'], 0.9087330000000001, places=8)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['SSIM_feature_ssim_c_score'], 1.0, places=8)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[0]['SSIM_feature_ssim_s_score'], 1.0, places=8)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+
+        try: self.assertAlmostEqual(results[1]['SSIM_feature_ssim_score'], 1.0, places=8)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[1]['SSIM_feature_ssim_l_score'], 1.0, places=8)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[1]['SSIM_feature_ssim_c_score'], 1.0, places=8)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+        try: self.assertAlmostEqual(results[1]['SSIM_feature_ssim_s_score'], 1.0, places=8)
+        except AssertionError as e: self.verificationErrors.append(str(e))
+
     def test_run_ms_ssim_fextractor(self):
 
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()

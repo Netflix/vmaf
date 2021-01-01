@@ -111,7 +111,8 @@ float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k,
     // double numerator, denominator; /* zli-nflx */
     double luminance_comp, contrast_comp, structure_comp, sigma_root;
     struct _ssim_int sint;
-    double l_sum, c_sum, s_sum, l, c, s, sigma_ref_sigma_cmp; /* zli-nflx */
+    double l_sum, c_sum, s_sum, l, c, s; /* zli-nflx */
+    float sigma_ref_sigma_cmp; /* zli-nflx */
 
     assert(!args); /* zli-nflx: for now only works for default case */
 
@@ -196,7 +197,15 @@ float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k,
                 sigma_ref_sigma_cmp = sqrt(ref_sigma_sqd[offset] * cmp_sigma_sqd[offset]);
                 l = (2.0 * ref_mu[offset] * cmp_mu[offset] + C1) / (ref_mu[offset]*ref_mu[offset] + cmp_mu[offset]*cmp_mu[offset] + C1);
                 c = (2.0 * sigma_ref_sigma_cmp + C2) /  (ref_sigma_sqd[offset] + cmp_sigma_sqd[offset] + C2);
-                s = (sigma_both[offset] + C2 / 2.0) / (sigma_ref_sigma_cmp + C2 / 2.0);
+
+                /* zli-nflx: fix corner case where ref and cmp are identical, and the local filtered region is
+                 * completely flat (zero std). In this case, sigma_both can become negative due to inprecise
+                 * float representation but sigma_ref_sigma_cmp is zero, resulting s < 1.0. The desiired
+                 * behavior should be that ssim score is 1.0. */
+                const float clamped_sigma_both = (sigma_both[offset] < 0.0f &&
+                        sigma_ref_sigma_cmp <= 0.0f) ? 0.0f : sigma_both[offset];
+                s = (clamped_sigma_both + C3) / (sigma_ref_sigma_cmp + C3);
+
                 ssim_sum += l * c * s;
                 l_sum += l;
                 c_sum += c;
