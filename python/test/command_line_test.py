@@ -61,6 +61,20 @@ class CommandLineTest(unittest.TestCase):
         ret = run_process(cmd, shell=True)
         self.assertEqual(ret, 0)
 
+    def test_run_testing_proccesses0(self):
+        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_testing.py')
+        cmd = "{exe} PSNR {dataset} --parallelize --suppress-plot --processes 0".format(
+            exe=exe, dataset=self.dataset_filename)
+        with self.assertRaises(AssertionError):
+            run_process(cmd, shell=True)
+
+    def test_run_testing_proccesses2_without_parallelize(self):
+        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_testing.py')
+        cmd = "{exe} PSNR {dataset} --suppress-plot --processes 2".format(
+            exe=exe, dataset=self.dataset_filename)
+        with self.assertRaises(AssertionError):
+            run_process(cmd, shell=True)
+
     def test_run_vmaf_training(self):
         exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_vmaf_training.py')
         cmd = "{exe} {dataset} {param} {param} {output} --parallelize --suppress-plot".format(
@@ -70,6 +84,26 @@ class CommandLineTest(unittest.TestCase):
             output=self.out_model_filepath)
         ret = run_process(cmd, shell=True)
         self.assertEqual(ret, 0)
+
+    def test_run_vmaf_training_processes0(self):
+        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_vmaf_training.py')
+        cmd = "{exe} {dataset} {param} {param} {output} --parallelize --suppress-plot --processes 0".format(
+            exe=exe,
+            dataset=self.dataset_filename,
+            param=self.param_filename,
+            output=self.out_model_filepath)
+        with self.assertRaises(AssertionError):
+            run_process(cmd, shell=True)
+
+    def test_run_vmaf_training_processes2_without_parallelize(self):
+        exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_vmaf_training.py')
+        cmd = "{exe} {dataset} {param} {param} {output} --suppress-plot --processes 2".format(
+            exe=exe,
+            dataset=self.dataset_filename,
+            param=self.param_filename,
+            output=self.out_model_filepath)
+        with self.assertRaises(AssertionError):
+            run_process(cmd, shell=True)
 
     def test_run_vmaf_training_raw_dataset(self):
         exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_vmaf_training.py')

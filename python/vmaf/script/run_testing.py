@@ -33,10 +33,12 @@ def print_usage():
     print("usage: " + os.path.basename(sys.argv[0]) + \
           " quality_type test_dataset_filepath [--vmaf-model VMAF_model_path] " \
           "[--vmaf-phone-model] [--subj-model subjective_model] [--cache-result] " \
-          "[--parallelize] [--print-result] [--save-plot plot_dir] [--plot-wh plot_wh]\n")
+          "[--parallelize] [--print-result] [--save-plot plot_dir] [--plot-wh plot_wh] "
+          "[--processes processes]\n")
     print("quality_type:\n\t" + "\n\t".join(quality_runner_types) +"\n")
     print("subjective_model:\n\t" + "\n\t".join(SUBJECTIVE_MODELS) + "\n")
     print("plot_wh: plot width and height in inches, example: 5x5 (default)")
+    print("processes: must be an integer >=1")
 
 
 def main():
@@ -54,6 +56,7 @@ def main():
     vmaf_model_path = get_cmd_option(sys.argv, 3, len(sys.argv), '--vmaf-model')
     cache_result = cmd_option_exists(sys.argv, 3, len(sys.argv), '--cache-result')
     parallelize = cmd_option_exists(sys.argv, 3, len(sys.argv), '--parallelize')
+    processes = get_cmd_option(sys.argv, 3, len(sys.argv), '--processes')
     print_result = cmd_option_exists(sys.argv, 3, len(sys.argv), '--print-result')
     suppress_plot = cmd_option_exists(sys.argv, 3, len(sys.argv), '--suppress-plot')
     vmaf_phone_model = cmd_option_exists(sys.argv, 3, len(sys.argv), '--vmaf-phone-model')
@@ -110,6 +113,13 @@ def main():
         print_usage()
         return 2
 
+    if processes is not None:
+        try:
+            processes = int(processes)
+        except ValueError:
+            print("Input error: processes must be an integer")
+        assert processes >= 1
+
     try:
         test_dataset = import_python_file(test_dataset_filepath)
     except Exception as e:
@@ -152,12 +162,13 @@ def main():
         fig, ax = plt.subplots(figsize=plot_wh, nrows=1, ncols=1)
 
         assets, results = run_test_on_dataset(test_dataset, runner_class, ax,
-                                          result_store, vmaf_model_path,
-                                          parallelize=parallelize,
-                                          aggregate_method=aggregate_method,
-                                          subj_model_class=subj_model_class,
-                                          enable_transform_score=enable_transform_score
-                                          )
+                                              result_store, vmaf_model_path,
+                                              parallelize=parallelize,
+                                              aggregate_method=aggregate_method,
+                                              subj_model_class=subj_model_class,
+                                              enable_transform_score=enable_transform_score,
+                                              processes=processes,
+                                              )
 
         bbox = {'facecolor':'white', 'alpha':0.5, 'pad':20}
         ax.annotate('Testing Set', xy=(0.1, 0.85), xycoords='axes fraction', bbox=bbox)
@@ -175,20 +186,22 @@ def main():
     except ImportError:
         print_matplotlib_warning()
         assets, results = run_test_on_dataset(test_dataset, runner_class, None,
-                                          result_store, vmaf_model_path,
-                                          parallelize=parallelize,
-                                          aggregate_method=aggregate_method,
-                                          subj_model_class=subj_model_class,
-                                          enable_transform_score=enable_transform_score
-                                          )
+                                              result_store, vmaf_model_path,
+                                              parallelize=parallelize,
+                                              aggregate_method=aggregate_method,
+                                              subj_model_class=subj_model_class,
+                                              enable_transform_score=enable_transform_score,
+                                              processes=processes,
+                                              )
     except AssertionError:
         assets, results = run_test_on_dataset(test_dataset, runner_class, None,
-                                          result_store, vmaf_model_path,
-                                          parallelize=parallelize,
-                                          aggregate_method=aggregate_method,
-                                          subj_model_class=subj_model_class,
-                                          enable_transform_score=enable_transform_score
-                                          )
+                                              result_store, vmaf_model_path,
+                                              parallelize=parallelize,
+                                              aggregate_method=aggregate_method,
+                                              subj_model_class=subj_model_class,
+                                              enable_transform_score=enable_transform_score,
+                                              processes=processes,
+                                              )
 
     if print_result:
         for result in results:

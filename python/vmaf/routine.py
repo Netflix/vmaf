@@ -320,7 +320,7 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
     else:
         processes = None
     if processes is not None:
-        assert parallelize is True
+        assert parallelize is True, 'if processes is not None, parallelize must be True'
 
     # run
     runner = runner_class(
@@ -460,9 +460,12 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
 
     parallelize = kwargs['parallelize'] if 'parallelize' in kwargs else True
     isinstance(parallelize, bool)
+
     processes = kwargs['processes'] if 'processes' in kwargs else None
     if processes is not None:
         assert isinstance(processes, int) and processes > 0
+    if processes is not None:
+        assert parallelize is True, 'if processes is not None, parallelize must be True'
 
     train_fassembler = FeatureAssembler(
         feature_dict=feature_param.feature_dict,

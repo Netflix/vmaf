@@ -19,14 +19,20 @@ __license__ = "BSD+Patent"
 
 POOL_METHODS = ['mean', 'harmonic_mean', 'min', 'median', 'perc5', 'perc10', 'perc20']
 
-SUBJECTIVE_MODELS = ['DMOS (default)', 'DMOS_MLE', 'MLE', 'MOS', 'SR_DMOS', 'SR_MOS', 'ZS_SR_DMOS', 'ZS_SR_MOS']
+SUBJECTIVE_MODELS = ['DMOS', 'DMOS_MLE', 'MLE', 'MLE_CO_AP',
+                     'MLE_CO_AP2 (default)', 'MOS', 'SR_DMOS',
+                     'SR_MOS (i.e. ITU-R BT.500)',
+                     'BR_SR_MOS (i.e. ITU-T P.913)',
+                     'ZS_SR_DMOS', 'ZS_SR_MOS', '...']
 
 
 def print_usage():
     print("usage: " + os.path.basename(sys.argv[0]) + \
         " train_dataset_filepath feature_param_filepath model_param_filepath output_model_filepath " \
-        "[--subj-model subjective_model] [--cache-result] [--parallelize] [--save-plot plot_dir]\n")
+        "[--subj-model subjective_model] [--cache-result] [--parallelize] [--save-plot plot_dir] "
+        "[--processes processes]\n")
     print("subjective_model:\n\t" + "\n\t".join(SUBJECTIVE_MODELS) + "\n")
+    print("processes: must be an integer >=1")
 
 
 def main():
@@ -54,6 +60,7 @@ def main():
 
     cache_result = cmd_option_exists(sys.argv, 3, len(sys.argv), '--cache-result')
     parallelize = cmd_option_exists(sys.argv, 3, len(sys.argv), '--parallelize')
+    processes = get_cmd_option(sys.argv, 3, len(sys.argv), '--processes')
     suppress_plot = cmd_option_exists(sys.argv, 3, len(sys.argv), '--suppress-plot')
 
     pool_method = get_cmd_option(sys.argv, 3, len(sys.argv), '--pool')
@@ -65,11 +72,11 @@ def main():
     subj_model = get_cmd_option(sys.argv, 3, len(sys.argv), '--subj-model')
 
     try:
+        from sureal.subjective_model import SubjectiveModel
         if subj_model is not None:
-            from sureal.subjective_model import SubjectiveModel
             subj_model_class = SubjectiveModel.find_subclass(subj_model)
         else:
-            subj_model_class = None
+            subj_model_class = SubjectiveModel.find_subclass('MLE_CO_AP2')
     except Exception as e:
         print("Error: %s" % e)
         return 1
@@ -80,6 +87,13 @@ def main():
         result_store = FileSystemResultStore()
     else:
         result_store = None
+
+    if processes is not None:
+        try:
+            processes = int(processes)
+        except ValueError:
+            print("Input error: processes must be an integer")
+        assert processes >= 1
 
     # pooling
     if pool_method == 'harmonic_mean':
@@ -115,6 +129,7 @@ def main():
                                    output_model_filepath=output_model_filepath,
                                    aggregate_method=aggregate_method,
                                    subj_model_class=subj_model_class,
+                                   processes=processes,
                                    )
 
         bbox = {'facecolor':'white', 'alpha':0.5, 'pad':20}
@@ -141,6 +156,7 @@ def main():
                                    output_model_filepath=output_model_filepath,
                                    aggregate_method=aggregate_method,
                                    subj_model_class=subj_model_class,
+                                   processes=processes,
                                    )
     except AssertionError:
         train_test_vmaf_on_dataset(train_dataset=train_dataset, test_dataset=None,
@@ -152,6 +168,7 @@ def main():
                                    output_model_filepath=output_model_filepath,
                                    aggregate_method=aggregate_method,
                                    subj_model_class=subj_model_class,
+                                   processes=processes,
                                    )
 
     return 0
