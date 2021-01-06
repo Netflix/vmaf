@@ -64,7 +64,7 @@ static char *test_vmaf_dictionary()
     mu_assert("dictionary capacity should have doubled",
               dict->cnt == initial_size + 1 && dict->size == initial_size * 2);
 
-    VmafDictionaryEntry *entry = NULL;
+    VmafDictionaryEntry const *entry = NULL;
     entry = vmaf_dictionary_get(&dict, "key_5", 0);
     mu_assert("dictionary should return an entry with valid key", entry);
 
@@ -112,7 +112,7 @@ static char *test_vmaf_dictionary_merge()
     VmafDictionary *a = NULL;
     VmafDictionary *b = NULL;
     VmafDictionary *d = NULL;
-    VmafDictionaryEntry *entry = NULL;
+    VmafDictionaryEntry const *entry = NULL;
 
     d = vmaf_dictionary_merge(&a, &b, 0);
     mu_assert("merging two NULL dicts should result in a NULL dict", !d);
