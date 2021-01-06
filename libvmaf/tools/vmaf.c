@@ -386,11 +386,13 @@ int main(int argc, char *argv[])
 
             switch (score.type) {
             case VMAF_MODEL_COLLECTION_SCORE_BOOTSTRAP:
-                fprintf(stderr, "%s: %f, ci.p95: [%f, %f], stddev: %f\n",
-                        model_collection_label[i],
-                        score.bootstrap.bagging_score, score.bootstrap.ci.p95.lo,
-                        score.bootstrap.ci.p95.hi,
-                        score.bootstrap.stddev);
+                if (istty && (!c.quiet || !c.output_path)) {
+                    fprintf(stderr, "%s: %f, ci.p95: [%f, %f], stddev: %f\n",
+                            model_collection_label[i],
+                            score.bootstrap.bagging_score, score.bootstrap.ci.p95.lo,
+                            score.bootstrap.ci.p95.hi,
+                            score.bootstrap.stddev);
+                }
                 break;
             default:
                 break;
