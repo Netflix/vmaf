@@ -12,7 +12,6 @@
 #include "model.h"
 #include "read_json_model.h"
 #include "svm.h"
-#include "unpickle.h"
 
 typedef struct VmafBuiltInModel {
     const char *version;
