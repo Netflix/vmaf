@@ -21,7 +21,7 @@
 #ifndef CONVOLUTION_INTERNAL_H_
 #define CONVOLUTION_INTERNAL_H_
 
-#include "macros.h"
+#include "feature/macros.h"
 #include <stdbool.h>
 
 FORCE_INLINE inline float convolution_edge_s(bool horizontal, const float *filter, int filter_width, const float *src, int width, int height, int stride, int i, int j)
