@@ -269,16 +269,16 @@ static void aom_ctc_v1_0(CLISettings *settings, const char *const app)
 
     settings->feature_cfg[settings->feature_cnt++] =
         parse_feature_config("psnr=reduced_hbd_peak=true:"
-                             "enable_apsnr=true", app);
+                             "enable_apsnr=true:min_sse=0.5", app);
 
     settings->feature_cfg[settings->feature_cnt++] =
         parse_feature_config("ciede", app);
 
     settings->feature_cfg[settings->feature_cnt++] =
-        parse_feature_config("float_ssim=enable_db=true", app);
+        parse_feature_config("float_ssim=enable_db=true:clip_db=true", app);
 
     settings->feature_cfg[settings->feature_cnt++] =
-        parse_feature_config("float_ms_ssim=enable_db=true", app);
+        parse_feature_config("float_ms_ssim=enable_db=true:clip_db=true", app);
 
     settings->feature_cfg[settings->feature_cnt++] =
         parse_feature_config("psnr_hvs", app);
