@@ -33,6 +33,8 @@ typedef struct SsimState {
     float *dist;
     bool enable_lcs;
     bool enable_db;
+    bool clip_db;
+    double max_db;
 } SsimState;
 
 static const VmafOption options[] = {
@@ -50,6 +52,13 @@ static const VmafOption options[] = {
         .type = VMAF_OPT_TYPE_BOOL,
         .default_val.b = false,
     },
+    {
+        .name = "clip_db",
+        .help = "clip dB scores",
+        .offset = offsetof(SsimState, clip_db),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
     { 0 }
 };
 
@@ -57,9 +66,17 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
 {
     (void) pix_fmt;
-    (void) bpc;
 
     SsimState *s = fex->priv;
+
+    const unsigned peak = (1 << bpc) - 1;
+    if (s->clip_db) {
+        const double mse = 0.5 / (w * h);
+        s->max_db = ceil(10. * log10(peak * peak / mse));
+    } else {
+        s->max_db = INFINITY;
+    }
+
     s->float_stride = ALIGN_CEIL(w * sizeof(float));
     s->ref = aligned_malloc(s->float_stride * h, 32);
     if (!s->ref) goto fail;
@@ -74,9 +91,11 @@ fail:
     return -ENOMEM;
 }
 
-static double convert_to_db(double score)
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+
+static double convert_to_db(double score, double max_db)
 {
-    return -10. * log10(1 - score);
+    return MIN(-10. * log10(1 - score), max_db);
 }
 
 static int extract(VmafFeatureExtractor *fex,
@@ -100,7 +119,7 @@ static int extract(VmafFeatureExtractor *fex,
     if (err) return err;
 
     if (s->enable_db)
-        score = convert_to_db(score);
+        score = convert_to_db(score, s->max_db);
 
     err = vmaf_feature_collector_append(feature_collector, "float_ssim",
                                         score, index);
