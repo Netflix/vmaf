@@ -57,22 +57,6 @@ jobs:
       - name: Test vmaf
         run: meson test -C libvmaf/build --num-processes $(nproc)
 
-      - name: Clone FFmpeg
-        uses: actions/checkout@v2
-        with:
-          repository: FFmpeg/FFmpeg
-          path: ffmpeg
-
-      - name: Build FFmpeg
-        run: |
-          sed -i 's;Libs.private.*;& -lstdc++;' "$MINGW_PREFIX/lib/pkgconfig/libvmaf.pc"
-          cd ffmpeg
-          ./configure --prefix=$MINGW_PREFIX --pkg-config-flags="--static" --enable-libvmaf --enable-pthreads --disable-w32threads --cc="$CC" --cxx="$CXX" || {
-            less ffbuild/config.log
-            exit 1
-          }
-          make --quiet -j $(nproc) install
-
       - name: Get binary path & Current Release
         id: get_info
         run: |
