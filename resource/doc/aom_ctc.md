@@ -35,6 +35,12 @@ There are also a few optional command-line settings you may find useful.
 
 # AOM CTC Version History
 * v1.0: `--aom_ctc v1.0`
+  * 2021-01-13
+  * Fix for lossless comparisons, dB clipping for PSNR/APSNR/SSIM/MS-SSIM according to the AOM CTC.
+  * Release: [libvmaf v2.1.1](https://github.com/Netflix/vmaf/releases/tag/v2.1.1)
+  * Precompiled static binaries [here](https://github.com/Netflix/vmaf/releases/tag/v2.1.1)
+
+* v1.0: `--aom_ctc v1.0`
   * 2020-12-22
   * Initial CTC release, `--aom_ctc proposed` deprecated.
   * Release: [libvmaf v2.1.0](https://github.com/Netflix/vmaf/releases/tag/v2.1.0)
