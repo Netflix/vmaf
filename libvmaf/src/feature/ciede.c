@@ -42,6 +42,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#ifdef __FreeBSD__
+/* Required to get M_PI from math.h */
+#define __BSD_VISIBLE 1
+#endif
+
 #include <errno.h>
 #include <math.h>
 #include <stddef.h>
