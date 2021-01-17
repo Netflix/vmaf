@@ -10,6 +10,9 @@
 #elif MACOS
 #include <sys/param.h>
 #include <sys/sysctl.h>
+#elif __FreeBSD__
+#include <sys/types.h>
+#include <sys/sysctl.h>
 #else
 #include <unistd.h>
 #endif
@@ -33,6 +36,11 @@ int getNumCores() {
         if(count < 1) { count = 1; }
     }
     return count;
+#elif __FreeBSD__
+    int ncpu;
+    size_t sz = sizeof(int);
+    sysctlbyname("hw.ncpu", &ncpu, &sz, 0,0);
+    return(ncpu);
 #else
     return sysconf(_SC_NPROCESSORS_ONLN);
 #endif
