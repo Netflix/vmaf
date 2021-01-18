@@ -1,7 +1,6 @@
 import subprocess
 from fnmatch import fnmatch
 import multiprocessing
-multiprocessing.set_start_method('fork')
 from time import sleep, time
 import itertools
 
@@ -21,6 +20,12 @@ try:
 
 except NameError:
     unicode = str
+
+
+try:
+    multiprocessing.set_start_method('fork')
+except ValueError:  # noqa, If platform does not support, just ignore
+    pass
 
 
 def get_stdout_logger():
