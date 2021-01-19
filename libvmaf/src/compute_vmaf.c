@@ -182,7 +182,10 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
     }
 
     if (do_psnr) {
-        err = vmaf_use_feature(vmaf, "psnr", NULL);
+        VmafFeatureDictionary *d = NULL;
+        vmaf_feature_dictionary_set(&d, "enable_chroma", "false");
+
+        err = vmaf_use_feature(vmaf, "psnr", d);
         if (err) {
             vmaf_log(VMAF_LOG_LEVEL_ERROR,
                      "problem loading feature extractor: psnr\n");

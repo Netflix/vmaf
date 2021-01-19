@@ -104,6 +104,10 @@ static Alias vmafossexec_alias_map[] = {
         .alias = "psnr",
     },
     {
+        .name = "psnr_y",
+        .alias = "psnr",
+    },
+    {
         .name = "float_ssim",
         .alias = "ssim",
     },
