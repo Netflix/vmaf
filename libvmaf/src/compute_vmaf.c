@@ -182,7 +182,7 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
     }
 
     if (do_psnr) {
-        err = vmaf_use_feature(vmaf, "float_psnr", NULL);
+        err = vmaf_use_feature(vmaf, "psnr", NULL);
         if (err) {
             vmaf_log(VMAF_LOG_LEVEL_ERROR,
                      "problem loading feature extractor: psnr\n");
