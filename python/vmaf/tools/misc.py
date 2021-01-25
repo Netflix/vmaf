@@ -83,6 +83,8 @@ def get_file_name_extension(path):
     'txt'
     >>> get_file_name_extension("abc")
     'abc'
+    >>> get_file_name_extension("test.265")
+    '265'
     '''
     return path.split('.')[-1]
 
