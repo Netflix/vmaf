@@ -3,6 +3,7 @@ from fnmatch import fnmatch
 import multiprocessing
 from time import sleep, time
 import itertools
+from pathlib import Path
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
@@ -58,7 +59,7 @@ def get_file_name_without_extension(path):
     'src01_hrc01.sdr.dvi'
 
     """
-    return os.path.splitext(path.split("/")[-1])[0]
+    return Path(path).stem
 
 
 def get_file_name_with_extension(path):
@@ -72,7 +73,7 @@ def get_file_name_with_extension(path):
     'src01_hrc01.yuv'
 
     """
-    return path.split("/")[-1]
+    return Path(path).name
 
 
 def get_file_name_extension(path):
@@ -82,11 +83,11 @@ def get_file_name_extension(path):
     >>> get_file_name_extension("test.txt")
     'txt'
     >>> get_file_name_extension("abc")
-    'abc'
+    ''
     >>> get_file_name_extension("test.265")
     '265'
     '''
-    return path.split('.')[-1]
+    return Path(path).suffix[1:]
 
 
 def get_normalized_path(dir_):
