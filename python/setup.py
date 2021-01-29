@@ -28,6 +28,8 @@ def get_version():
         pass
     return "0.0-dev"
 
+ext_module = cythonize(['vmaf/core/adm_dwt2_cy.pyx'])
+ext_module[0].include_dirs = [numpy.get_include(), '../libvmaf/src']
 
 setup(
     name="vmaf",
@@ -66,6 +68,5 @@ setup(
             'run_vmafossexec_subsampling=vmaf.script.run_vmafossexec_subsampling:main',
         ],
     },
-    ext_modules=cythonize(['vmaf/core/adm_dwt2_cy.pyx']),
-    include_dirs=[numpy.get_include(), '../libvmaf/src']
+    ext_modules=ext_module,
 )
