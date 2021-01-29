@@ -8,6 +8,14 @@ make -j4
 make install
 ```
 
+Alternatively, if you do not wish to compile FFmpeg yourself, you can download an FFmpeg binary that supports libvmaf:
+
+**Windows:** https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-essentials.7z
+
+**macOS:** https://evermeet.cx/ffmpeg/. You must download the **snapshot* build rather than the release build.
+
+**Linux (kernels 3.2.0+):** https://johnvansickle.com/ffmpeg/. Download the **git** build. Installation instructions, as well as how to add FFmpeg and FFprobe to your PATH, can be found [here](https://www.johnvansickle.com/ffmpeg/faq/).
+
 Using FFmpeg+libvmaf is very powerful, as you can create complex filters to calculate VMAF directly on videos of different encoding formats and resolutions. For the best practices of computing VMAF at the right resolution, refer to our [tech blog](https://medium.com/netflix-techblog/vmaf-the-journey-continues-44b51ee9ed12).
 
 We provide a few examples how you can construct the FFmpeg command line and use VMAF as a filter. Note that you may need to download the test videos from [vmaf_resource](https://github.com/Netflix/vmaf_resource/tree/master/python/test/resource).
