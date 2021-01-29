@@ -15,8 +15,7 @@ VMAF_RESOURCE_ROOT = "https://github.com/Netflix/vmaf_resource/raw/master"
 
 def download_reactively(local_path, remote_path):
     if not os.path.exists(local_path):
-        if not os.path.exists(os.path.dirname(local_path)):
-            os.makedirs(os.path.dirname(local_path))
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
         print(f'download {local_path} from {remote_path}')
         try:
             ssl._create_default_https_context = ssl._create_unverified_context
@@ -213,8 +212,7 @@ class DisplayConfig(object):
         if 'write_to_dir' in kwargs:
             format = kwargs['format'] if 'format' in kwargs else 'png'
             filedir = kwargs['write_to_dir'] if kwargs['write_to_dir'] is not None else VmafConfig.workspace_path('output')
-            if not os.path.exists(filedir):
-                os.makedirs(filedir)
+            os.makedirs(filedir, exist_ok=True)
             for fignum in plt.get_fignums():
                 fig = plt.figure(fignum)
                 fig.savefig(os.path.join(filedir, str(fignum) + '.' + format), format=format)

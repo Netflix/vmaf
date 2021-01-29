@@ -125,9 +125,7 @@ def get_dir_without_last_slash(path):
 
 def make_parent_dirs_if_nonexist(path):
     dst_dir = get_dir_without_last_slash(path)
-    # create dir if not exist yet
-    if not os.path.exists(dst_dir):
-        os.makedirs(dst_dir)
+    os.makedirs(dst_dir, exist_ok=True)
 
 
 def delete_dir_if_exists(dir):
