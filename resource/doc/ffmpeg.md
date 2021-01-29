@@ -10,7 +10,7 @@ make install
 
 Alternatively, if you do not wish to compile FFmpeg yourself, you can download an FFmpeg binary that supports libvmaf:
 
-**Windows:** https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-essentials.7z
+**Windows:** https://www.gyan.dev/ffmpeg/builds/. Download one of the git builds. The "git-essentials" build will suffice.
 
 **macOS:** https://evermeet.cx/ffmpeg/. You must download the **snapshot** build rather than the release build.
 
