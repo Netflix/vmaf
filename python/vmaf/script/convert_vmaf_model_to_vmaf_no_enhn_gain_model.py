@@ -21,8 +21,8 @@ def convert_vmaf_model_to_vmaf_no_enhn_gain_model(vmaf_model_path, output_vmaf_n
             {'vif_enhn_gain_limit': 1.0},  # 'VMAF_feature_vif_scale2_score'
             {'vif_enhn_gain_limit': 1.0},  # 'VMAF_feature_vif_scale3_score'
         ]
-    if not os.path.exists(os.path.dirname(output_vmaf_neg_model_path)):
-        os.makedirs(os.path.dirname(output_vmaf_neg_model_path))
+   
+    os.makedirs(os.path.dirname(output_vmaf_neg_model_path), exist_ok=True)
     with open(output_vmaf_neg_model_path, 'wb') as output_file:
         pickle.dump(vmaf_neg_model, output_file,
                     protocol=1

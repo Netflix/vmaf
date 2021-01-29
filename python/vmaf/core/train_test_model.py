@@ -1467,8 +1467,7 @@ class BootstrapMixin(object):
             for i_model, model in enumerate(models):
                 filename_ = self._get_model_i_filename(filename, i_model)
                 filedir = os.path.dirname(filename_)
-                if not os.path.exists(filedir):
-                    os.makedirs(filedir)
+                os.makedirs(filedir, exist_ok=True)
                 model_dict_ = model_dict.copy()
                 model_dict_['model'] = model
                 self._to_file(filename_, param_dict, model_dict_, **more)

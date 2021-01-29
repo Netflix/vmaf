@@ -108,8 +108,7 @@ def persist_to_file(file_name):
             if h not in cache:
                 cache[h] = original_func(*args)
                 file_dir = os.path.dirname(file_name)
-                if not os.path.exists(file_dir):
-                    os.makedirs(file_dir)
+                os.makedirs(file_dir, exist_ok=True)
                 json.dump(cache, open(file_name, 'wt'))
             return cache[h]
 
@@ -129,8 +128,7 @@ def persist_to_dir(dir_name):
             h = hashlib.sha1(str(original_func.__name__) + str(args)).hexdigest()
             file_name = os.path.join(dir_name, h)
             if not os.path.exists(file_name):
-                if not os.path.exists(dir_name):
-                    os.makedirs(dir_name)
+                os.makedirs(dir_name, exist_ok=True)
                 res = original_func(*args)
                 json.dump(res, open(file_name, 'wt'))
             else:
