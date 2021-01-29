@@ -21,6 +21,6 @@ If you do not wish to compile FFmpeg yourself, you can download an FFmpeg binary
 
 **Windows:** https://www.gyan.dev/ffmpeg/builds/. Download one of the git builds. The "git-essentials" build will suffice.
 
-**macOS:** https://evermeet.cx/ffmpeg/. You should download the **snapshot* build rather than the release build as the latter (at the time of writing) uses v1.5.2 of vmaf.
+**macOS:** https://evermeet.cx/ffmpeg/. You should download the **snapshot** build rather than the release build as the latter (at the time of writing) uses v1.5.2 of vmaf.
 
 **Linux (kernel 3.2.0+):** https://johnvansickle.com/ffmpeg/. Download the **git** build. Installation instructions, as well as how to add FFmpeg and FFprobe to your PATH, can be found [here](https://www.johnvansickle.com/ffmpeg/faq/).
