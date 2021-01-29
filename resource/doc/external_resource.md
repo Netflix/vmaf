@@ -14,7 +14,7 @@ This page contains a list of 3rd-party tools that are built on top of VMAF. You 
 - [ffmpeg-quality-metrics](https://github.com/slhck/ffmpeg-quality-metrics) -- command-line tool to calculate PSNR, SSIM and VMAF with FFmpeg
 - [EasyVMAF](https://github.com/gdavila/easyVmaf) -- command-line tool with video preprocessing for VMAF inputs
 - [Bash wrapper script](https://gist.github.com/Audition-CSBlock/bef34e553132efad883c0f128c46d638) for running `libvmaf` through FFmpeg
-- [Video Quality Metrics](https://github.com/BassThatHertz/video-quality-metrics) -- command-line tool which encodes a video with specified x264/x265/AV1 CRF values (or x264/x265 presets) and creates a (table)[https://github.com/BassThatHertz/video-quality-metrics#example-table] showing the PSNR/SSIM/VMAF of each encode. In addition, graphs (saved as PNG files) are created where PSNR/SSIM/VMAF score is plotted against frame number. (Here's)[https://github.com/BassThatHertz/video-quality-metrics/blob/master/CRF%2023.png] an example
+- [Video Quality Metrics](https://github.com/BassThatHertz/video-quality-metrics) -- command-line tool which encodes a video with specified x264/x265/AV1 CRF values (or x264/x265 presets) and creates a (table)[https://github.com/BassThatHertz/video-quality-metrics#example-table] showing the PSNR/SSIM/VMAF of each encode. In addition, graphs (saved as PNG files) are created where PSNR/SSIM/VMAF score is plotted against frame number. [Here's](https://github.com/BassThatHertz/video-quality-metrics/blob/master/CRF%2023.png) an example
 
 ### FFmpeg binaries that support libvmaf
 If you do not wish to compile FFmpeg yourself, you can download an FFmpeg binary that supports libvmaf.
