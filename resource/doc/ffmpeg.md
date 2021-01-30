@@ -14,7 +14,7 @@ We provide a few examples how you can construct the FFmpeg command line and use 
 
 Below is an example on how you can run FFmpeg+libvmaf on a pair of YUV files. First, download the reference video [`src01_hrc00_576x324.yuv`](https://github.com/Netflix/vmaf_resource/blob/master/python/test/resource/yuv/src01_hrc00_576x324.yuv) and the distorted video [`src01_hrc01_576x324.yuv`](https://github.com/Netflix/vmaf_resource/blob/master/python/test/resource/yuv/src01_hrc01_576x324.yuv). `-r 24` sets the frame rate (note that it needs to be before `-i`), and `PTS-STARTPTS` synchronizes the PTS (presentation timestamp) of the two videos (this is crucial if one of your videos does not start at PTS 0, for example, if you cut your video out of a long video stream). It is important to set the frame rate and the PTS right, since FFmpeg filters synchronize based on timestamps instead of frames.
 
-The `log_path` is set to standard output `/dev/stdout`. It uses the `model_path` at location `/usr/local/share/model/vmaf_float_v0.6.1.json` (which is the default and can be omitted).
+The `log_path` is set to standard output `/dev/stdout`. It uses the `model_path` at location `/usr/local/share/model/vmaf_v0.6.1.pkl` (which is the default and can be omitted).
 
 ```shell script
 ffmpeg -video_size 576x324 -r 24 -pixel_format yuv420p -i src01_hrc00_576x324.yuv \
