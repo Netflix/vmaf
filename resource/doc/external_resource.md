@@ -14,13 +14,13 @@ This page contains a list of 3rd-party tools that are built on top of VMAF. You 
 - [ffmpeg-quality-metrics](https://github.com/slhck/ffmpeg-quality-metrics) -- command-line tool to calculate PSNR, SSIM and VMAF with FFmpeg
 - [EasyVMAF](https://github.com/gdavila/easyVmaf) -- command-line tool with video preprocessing for VMAF inputs
 - [Bash wrapper script](https://gist.github.com/Audition-CSBlock/bef34e553132efad883c0f128c46d638) for running `libvmaf` through FFmpeg
-- [Command-line tool](https://github.com/BassThatHertz/video-quality-metrics) for running x264/x265 encodings and reporting PSNR, SSIM and VMAF
+- [Video Quality Metrics](https://github.com/BassThatHertz/video-quality-metrics) -- command-line tool which encodes a video using specified x264/x265/AV1 CRF values (or x264/x265 presets) and creates a [table](https://github.com/BassThatHertz/video-quality-metrics#example-table) showing the PSNR/SSIM/VMAF of each encode. In addition, graphs (saved as PNG files) are created where PSNR/SSIM/VMAF score is plotted against frame number. [Here's](https://github.com/BassThatHertz/video-quality-metrics/blob/master/CRF%2023.png) an example
 
 ### FFmpeg binaries that support libvmaf
 If you do not wish to compile FFmpeg yourself, you can download an FFmpeg binary that supports libvmaf.
 
 **Windows:** https://www.gyan.dev/ffmpeg/builds/. Download one of the git builds. The "git-essentials" build will suffice.
 
-**macOS:** https://evermeet.cx/ffmpeg/. You should download the **snapshot* build rather than the release build as the latter (at the time of writing) uses v1.5.2 of vmaf.
+**macOS:** https://evermeet.cx/ffmpeg/. You should download the **snapshot** build rather than the release build as the latter (at the time of writing) uses v1.5.2 of vmaf.
 
 **Linux (kernel 3.2.0+):** https://johnvansickle.com/ffmpeg/. Download the **git** build. Installation instructions, as well as how to add FFmpeg and FFprobe to your PATH, can be found [here](https://www.johnvansickle.com/ffmpeg/faq/).
