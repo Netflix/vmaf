@@ -6,7 +6,8 @@ import numpy as np
 from vmaf.config import VmafConfig
 from vmaf.core.train_test_model import TrainTestModel, \
     LibsvmNusvrTrainTestModel, SklearnRandomForestTrainTestModel, \
-    MomentRandomForestTrainTestModel, SklearnExtraTreesTrainTestModel, SklearnLinearRegressionTrainTestModel
+    MomentRandomForestTrainTestModel, SklearnExtraTreesTrainTestModel, \
+    SklearnLinearRegressionTrainTestModel, Logistic5PLRegressionTrainTestModel
 from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
 from vmaf.routine import read_dataset
 from vmaf.tools.misc import import_python_file
@@ -308,6 +309,20 @@ class TrainTestModelTest(unittest.TestCase):
         model.train(xys)
         result = model.evaluate(xs, ys)
         self.assertAlmostEqual(result['RMSE'], 0.042867322777879642, places=4)
+
+    def test_train_logistic_fit_5PL(self):    
+        xs = Logistic5PLRegressionTrainTestModel.get_xs_from_results(self.features, [0, 1, 2, 3, 4, 5], features=['Moment_noref_feature_1st_score'])
+        ys = Logistic5PLRegressionTrainTestModel.get_ys_from_results(self.features, [0, 1, 2, 3, 4, 5])
+
+        xys = {}
+        xys.update(xs)
+        xys.update(ys)
+        
+        model = Logistic5PLRegressionTrainTestModel({'norm_type': 'clip_0to1'}, None)
+        model.train(xys)
+        result = model.evaluate(xs, ys)
+
+        self.assertAlmostEqual(result['RMSE'], 0.3603374311919728, places=4)
 
 
 class TrainTestModelWithDisYRawVideoExtractorTest(unittest.TestCase):

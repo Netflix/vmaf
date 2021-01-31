@@ -740,7 +740,7 @@ class TrainTestModel(TypeVersionEnabled):
             os.remove(filename)
 
     @classmethod
-    def get_xs_from_results(cls, results, indexs=None, aggregate=True):
+    def get_xs_from_results(cls, results, indexs=None, aggregate=True, features=None):
         """
         :param results: list of BasicResult, or pandas.DataFrame
         :param indexs: indices of results to be used
@@ -756,8 +756,11 @@ class TrainTestModel(TypeVersionEnabled):
             # or get_ordered_list_scores_key. Instead, just get the sorted keys
             feature_names = results[0].get_ordered_results()
 
-        feature_names = list(feature_names)
-        cls._assert_dimension(feature_names, results)
+        if features is not None:
+            feature_names = [f for f in feature_names if f in features]
+        else:
+            feature_names = list(feature_names)            
+            cls._assert_dimension(feature_names, results)
 
         # collect results into xs
         xs = {}
@@ -1189,10 +1192,9 @@ class Logistic5PLRegressionTrainTestModel(TrainTestModel, RegressorMixin):
             del model_param_['num_models']
 
         from scipy.optimize import curve_fit
-
         [[b1, b2, b3, b4, b5], _] = curve_fit(
             lambda x, b1, b2, b3, b4, b5: b1 + (0.5 - 1/(1+np.exp(b2*(x-b3))))+b4*x+b5, 
-            np.ravel(xys_2d[:, 1:]), 
+            np.ravel(xys_2d[:, 1]), 
             np.ravel(xys_2d[:, 0]), 
             p0=0.5 * np.ones((5,)), 
             maxfev=20000
