@@ -498,7 +498,7 @@ class Executor(TypeVersionEnabled):
 
         filter_cmds = []
         for key in Asset.ORDERED_FILTER_LIST:
-            if key is not 'crop' and key is not 'pad':
+            if key != 'crop' and key != 'pad':
                 filter_cmds.append(self._get_filter_cmd(asset, key, 'ref'))
 
         vf_cmd = ','.join(filter(lambda s: s!='', [select_cmd, crop_cmd, pad_cmd, scale_cmd] + filter_cmds))
@@ -551,7 +551,7 @@ class Executor(TypeVersionEnabled):
 
         filter_cmds = []
         for key in Asset.ORDERED_FILTER_LIST:
-            if key is not 'crop' and key is not 'pad':
+            if key != 'crop' and key != 'pad':
                 filter_cmds.append(self._get_filter_cmd(asset, key, 'dis'))
 
         vf_cmd = ','.join(filter(lambda s: s!='', [select_cmd, crop_cmd, pad_cmd, scale_cmd] + filter_cmds))
