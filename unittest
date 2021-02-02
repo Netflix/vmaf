@@ -1,3 +1,9 @@
 #!/usr/bin/env sh
 
-PYTHONPATH=python python3 -m unittest discover -v -s python/test/ -p '*_test.py'
+if [ -z "$1" ]; then
+    pattern='*_test.py'
+else
+    pattern="$1"
+fi
+
+PYTHONPATH=python python3 -m unittest discover -v -s python/test/ -p $pattern

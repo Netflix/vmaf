@@ -28,13 +28,13 @@ class NiqeTrainTestModel(TrainTestModel, RegressorMixin):
 
     @classmethod
     @override(TrainTestModel)
-    def get_xs_from_results(cls, results, indexs=None, aggregate=False):
+    def get_xs_from_results(cls, results, indexs=None, aggregate=False, features=None):
         """
         override by altering aggregate
         default to False
         """
         return super(NiqeTrainTestModel, cls).get_xs_from_results(
-            results, indexs, aggregate)
+            results, indexs, aggregate, features)
 
     @classmethod
     @override(TrainTestModel)

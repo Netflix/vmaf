@@ -740,7 +740,7 @@ class TrainTestModel(TypeVersionEnabled):
             os.remove(filename)
 
     @classmethod
-    def get_xs_from_results(cls, results, indexs=None, aggregate=True):
+    def get_xs_from_results(cls, results, indexs=None, aggregate=True, features=None):
         """
         :param results: list of BasicResult, or pandas.DataFrame
         :param indexs: indices of results to be used
@@ -756,8 +756,11 @@ class TrainTestModel(TypeVersionEnabled):
             # or get_ordered_list_scores_key. Instead, just get the sorted keys
             feature_names = results[0].get_ordered_results()
 
-        feature_names = list(feature_names)
-        cls._assert_dimension(feature_names, results)
+        if features is not None:
+            feature_names = [f for f in feature_names if f in features]
+        else:
+            feature_names = list(feature_names)            
+            cls._assert_dimension(feature_names, results)
 
         # collect results into xs
         xs = {}
@@ -1156,6 +1159,81 @@ class SklearnExtraTreesTrainTestModel(TrainTestModel, RegressorMixin):
         ys_label_pred = model.predict(xs_2d)
         return ys_label_pred
 
+class Logistic5PLRegressionTrainTestModel(TrainTestModel, RegressorMixin):
+
+    TYPE = '5PL'
+    VERSION = "0.1"
+
+    @classmethod
+    def _train(cls, model_param, xys_2d, **kwargs):
+        """
+        Fit the following 5PL curve using scipy.optimize.curve_fit
+        
+        Q(x) = B1 + (1/2 - 1/(1 + exp(B2 * (x - B3)))) + B4 * x + B5
+        
+        H. R. Sheikh, M. F. Sabir, and A. C. Bovik, 
+        "A statistical evaluation of recent full reference image quality assessment algorithms"
+        IEEE Trans. Image Process., vol. 15, no. 11, pp. 3440–3451, Nov. 2006.
+
+        :param model_param:
+        :param xys_2d:
+        :return:
+        """
+        model_param_ = model_param.copy()
+
+        # remove keys unassociated with sklearn
+        if 'norm_type' in model_param_:
+            del model_param_['norm_type']
+        if 'score_clip' in model_param_:
+            del model_param_['score_clip']
+        if 'custom_clip_0to1_map' in model_param_:
+            del model_param_['custom_clip_0to1_map']
+        if 'num_models' in model_param_:
+            del model_param_['num_models']
+
+        from scipy.optimize import curve_fit
+        [[b1, b2, b3, b4, b5], _] = curve_fit(
+            lambda x, b1, b2, b3, b4, b5: b1 + (0.5 - 1/(1+np.exp(b2*(x-b3))))+b4*x+b5, 
+            np.ravel(xys_2d[:, 1]), 
+            np.ravel(xys_2d[:, 0]), 
+            p0=0.5 * np.ones((5,)), 
+            maxfev=20000
+        )
+
+        return dict(b1=b1, b2=b2, b3=b3, b4=b4, b5=b5)   
+
+    @staticmethod
+    @override(TrainTestModel)
+    def _to_file(filename, param_dict, model_dict, **more):
+        format = more['format'] if 'format' in more else 'pkl'
+        supported_formats = ['pkl', 'json']
+        assert format in supported_formats, \
+            f'format must be in {supported_formats}, but got: {format}'
+
+        info_to_save = {'param_dict': param_dict,
+                        'model_dict': model_dict.copy()}   
+
+        if format == 'pkl':                                 
+            with open(filename, 'wb') as file:
+                pickle.dump(info_to_save, file)
+        elif format == 'json':           
+            with open(filename, 'wt') as file:
+                json.dump(info_to_save, file, indent=4)
+        else:
+            assert False
+
+    @classmethod
+    def _predict(cls, model, xs_2d):
+        b1 = model['b1']
+        b2 = model['b2']
+        b3 = model['b3']
+        b4 = model['b4']
+        b5 = model['b5']
+
+        curve = lambda x: b1 + (0.5 - 1/(1+np.exp(b2*(x-b3))))+b4*x+b5
+        predicted = [curve(x) for x in np.ravel(xs_2d)]
+
+        return predicted
 
 class RawVideoTrainTestModelMixin(object):
     """
