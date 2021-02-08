@@ -278,6 +278,9 @@ class ExternalProgramCaller(object):
             for model in models:
                 vmafexec_cmd += ' --model {}'.format(model)
 
+                # FIXME: hacky - since we do not know which feature is the one used in the model,
+                # we have to set the parameter for all three, at the expense of extra computation.
+
                 if vif_enhn_gain_limit is not None:
                     vmafexec_cmd += f':vif.vif_enhn_gain_limit={vif_enhn_gain_limit}:float_vif.vif_enhn_gain_limit={vif_enhn_gain_limit}'
                 if adm_enhn_gain_limit is not None:
@@ -297,24 +300,6 @@ class ExternalProgramCaller(object):
 
         if disable_avx:
             vmafexec_cmd += ' --cpumask -1'
-
-        if vif_enhn_gain_limit is not None:
-            # FIXME: hacky - since we do not know which feature is the one used in the model,
-            # we have to set the parameter for all three, at the expense of extra computation.
-            vmafexec_cmd += f' --feature float_vif=vif_enhn_gain_limit={vif_enhn_gain_limit}'
-            vmafexec_cmd += f' --feature vif=vif_enhn_gain_limit={vif_enhn_gain_limit}'
-
-        if adm_enhn_gain_limit is not None:
-            # FIXME: hacky
-            vmafexec_cmd += f' --feature float_adm=adm_enhn_gain_limit={adm_enhn_gain_limit}'
-            vmafexec_cmd += f' --feature adm=adm_enhn_gain_limit={adm_enhn_gain_limit}'
-
-        if motion_force_zero:
-            #assert isinstance(motion_force_zero, bool)
-            motion_force_zero = str(motion_force_zero).lower()
-            # FIXME: hacky
-            vmafexec_cmd += f' --feature float_motion=motion_force_zero={motion_force_zero}'
-            vmafexec_cmd += f' --feature motion=motion_force_zero={motion_force_zero}'
 
         if logger:
             logger.info(vmafexec_cmd)

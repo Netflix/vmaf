@@ -1384,10 +1384,10 @@ class VmafexecQualityRunner(QualityRunner):
                     scores_dict[scores_key].append(float(frame.attrib[scores_key]))
             for i_feature, feature in enumerate(self.FEATURES):
                 try:
-                    feature_scores[i_feature].append(float(frame.attrib[feature]))
+                    feature_scores[i_feature].append(float(frame.attrib['integer_' + feature]))
                 except KeyError:
                     try:
-                        feature_scores[i_feature].append(float(frame.attrib['integer_' + feature])) #
+                        feature_scores[i_feature].append(float(frame.attrib[feature])) #
                     except KeyError:
                         pass  # some features may be missing
         for scores_key in scores_keys:

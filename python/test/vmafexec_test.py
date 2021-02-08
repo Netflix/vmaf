@@ -864,13 +864,13 @@ class VmafexecQualityRunnerTest(unittest.TestCase):
 
         try: self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_egl_1.2_score'], 1.116595, places=4)  # 1.116691484215469
         except AssertionError as e: self.verificationErrors.append(str(e))
-        try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_egl_1.1_score'], 1.029765, places=4)  # 1.0522544319369052
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_egl_1.1_score'], 1.029842, places=4)  # 1.0522544319369052
         except AssertionError as e: self.verificationErrors.append(str(e))
-        try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_egl_1.1_score'], 1.046767, places=4)  # 1.0705609423182443
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_egl_1.1_score'], 1.046578, places=4)  # 1.0705609423182443
         except AssertionError as e: self.verificationErrors.append(str(e))
-        try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_egl_1.1_score'], 1.049025, places=4)  # 1.0731529493098957
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_egl_1.1_score'], 1.04852, places=4)  # 1.0731529493098957
         except AssertionError as e: self.verificationErrors.append(str(e))
-        try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_egl_1.1_score'], 1.0491232394147363, places=4)  # 1.0728060231246508
+        try: self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_egl_1.1_score'], 1.04892, places=4)  # 1.0728060231246508
         except AssertionError as e: self.verificationErrors.append(str(e))
 
         try: self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 129.474226, places=3)  # 132.78849246495625
