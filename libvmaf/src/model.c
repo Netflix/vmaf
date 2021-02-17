@@ -45,11 +45,6 @@ static const VmafBuiltInModel built_in_models[] = {
 #if VMAF_BUILT_IN_MODELS
 #if VMAF_FLOAT_FEATURES
     {
-        .version = "vmaf_float_v0.6.1neg",
-        .data = &src_vmaf_float_v0_6_1neg_json,
-        .data_len = &src_vmaf_float_v0_6_1neg_json_len,
-    },
-    {
         .version = "vmaf_float_v0.6.1",
         .data = &src_vmaf_float_v0_6_1_json,
         .data_len = &src_vmaf_float_v0_6_1_json_len,
@@ -60,9 +55,14 @@ static const VmafBuiltInModel built_in_models[] = {
         .data_len = &src_vmaf_float_b_v0_6_3_json_len,
     },
     {
+        .version = "vmaf_float_v0.6.1neg",
+        .data = &src_vmaf_float_v0_6_1neg_json,
+        .data_len = &src_vmaf_float_v0_6_1neg_json_len,
+    },
+    {
         .version = "vmaf_float_4k_v0.6.1",
-        .data = &src_vmaf_float_b_v0_6_3_json,
-        .data_len = &src_vmaf_float_b_v0_6_3_json_len,
+        .data = &src_vmaf_float_4k_v0_6_1_json,
+        .data_len = &src_vmaf_float_4k_v0_6_1_json_len,
     },
 #endif
     {
@@ -82,8 +82,8 @@ static const VmafBuiltInModel built_in_models[] = {
     },
     {
         .version = "vmaf_4k_v0.6.1",
-        .data = &src_vmaf_v0_6_1neg_json,
-        .data_len = &src_vmaf_v0_6_1neg_json_len,
+        .data = &src_vmaf_4k_v0_6_1_json,
+        .data_len = &src_vmaf_4k_v0_6_1_json_len,
     },
 #endif
     { 0 }
