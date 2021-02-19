@@ -2880,7 +2880,7 @@ svm_model *svm_load_model(const char *model_file_name)
 	max_line_len = 1024;
 	line = Malloc(char,max_line_len);
 	char *p,*endptr,*idx,*val;
-    char *saveptr1, *saveptr2;
+       char *saveptr1, *saveptr2;
 
 	while(readline(fp)!=NULL)
 	{

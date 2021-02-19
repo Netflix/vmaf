@@ -53,7 +53,7 @@ void predict(FILE *input, FILE *output)
 	int nr_class=svm_get_nr_class(model);
 	double *prob_estimates=NULL;
 	int j;
-    char *saveptr;
+       char *saveptr;
 
 	if(predict_probability)
 	{

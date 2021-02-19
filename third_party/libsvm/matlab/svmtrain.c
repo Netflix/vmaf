@@ -110,7 +110,7 @@ int parse_command_line(int nrhs, const mxArray *prhs[], char *model_file_name)
 	int i, argc = 1;
 	char cmd[CMD_LEN];
 	char *argv[CMD_LEN/2];
-    char *saveptr;
+       char *saveptr;
 	void (*print_func)(const char *) = print_string_matlab;	// default printing to matlab display
 
 	// default values
