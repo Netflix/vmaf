@@ -110,6 +110,7 @@ int parse_command_line(int nrhs, const mxArray *prhs[], char *model_file_name)
 	int i, argc = 1;
 	char cmd[CMD_LEN];
 	char *argv[CMD_LEN/2];
+    char *saveptr;
 	void (*print_func)(const char *) = print_string_matlab;	// default printing to matlab display
 
 	// default values
@@ -137,8 +138,8 @@ int parse_command_line(int nrhs, const mxArray *prhs[], char *model_file_name)
 	{
 		// put options in argv[]
 		mxGetString(prhs[2], cmd, mxGetN(prhs[2]) + 1);
-		if((argv[argc] = strtok(cmd, " ")) != NULL)
-			while((argv[++argc] = strtok(NULL, " ")) != NULL)
+		if((argv[argc] = strtok_r(cmd, " ", &saveptr)) != NULL)
+			while((argv[++argc] = strtok_r(NULL, " ", &saveptr)) != NULL)
 				;
 	}
 

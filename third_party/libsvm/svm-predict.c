@@ -53,6 +53,7 @@ void predict(FILE *input, FILE *output)
 	int nr_class=svm_get_nr_class(model);
 	double *prob_estimates=NULL;
 	int j;
+    char *saveptr;
 
 	if(predict_probability)
 	{
@@ -80,7 +81,7 @@ void predict(FILE *input, FILE *output)
 		char *idx, *val, *label, *endptr;
 		int inst_max_index = -1; // strtol gives 0 if wrong format, and precomputed kernel has <index> start from 0
 
-		label = strtok(line," \t\n");
+		label = strtok_r(line," \t\n", &saveptr);
 		if(label == NULL) // empty line
 			exit_input_error(total+1);
 
@@ -96,8 +97,8 @@ void predict(FILE *input, FILE *output)
 				x = (struct svm_node *) realloc(x,max_nr_attr*sizeof(struct svm_node));
 			}
 
-			idx = strtok(NULL,":");
-			val = strtok(NULL," \t");
+			idx = strtok_r(NULL,":", &saveptr);
+			val = strtok_r(NULL," \t", &saveptr);
 
 			if(val == NULL)
 				break;

@@ -263,6 +263,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 	int prob_estimate_flag = 0;
 	struct svm_model *model;
 	info = &mexPrintf;
+    char *saveptr;
 
 	if(nrhs > 4 || nrhs < 3)
 	{
@@ -289,8 +290,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
 			// put options in argv[]
 			mxGetString(prhs[3], cmd,  mxGetN(prhs[3]) + 1);
-			if((argv[argc] = strtok(cmd, " ")) != NULL)
-				while((argv[++argc] = strtok(NULL, " ")) != NULL)
+			if((argv[argc] = strtok_r(cmd, " ", &saveptr)) != NULL)
+				while((argv[++argc] = strtok_r(NULL, " ", &saveptr)) != NULL)
 					;
 
 			for(i=1;i<argc;i++)

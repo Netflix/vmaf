@@ -281,6 +281,7 @@ void read_problem(const char *filename)
 	FILE *fp = fopen(filename,"r");
 	char *endptr;
 	char *idx, *val, *label;
+    char *saveptr1, *saveptr2;
 
 	if(fp == NULL)
 	{
@@ -295,12 +296,12 @@ void read_problem(const char *filename)
 	line = Malloc(char,max_line_len);
 	while(readline(fp)!=NULL)
 	{
-		char *p = strtok(line," \t"); // label
+		char *p = strtok_r(line," \t", &saveptr1); // label
 
 		// features
 		while(1)
 		{
-			p = strtok(NULL," \t");
+			p = strtok_r(NULL," \t", &saveptr1);
 			if(p == NULL || *p == '\n') // check '\n' as ' ' may be after the last feature
 				break;
 			++elements;
@@ -321,7 +322,7 @@ void read_problem(const char *filename)
 		inst_max_index = -1; // strtol gives 0 if wrong format, and precomputed kernel has <index> start from 0
 		readline(fp);
 		prob.x[i] = &x_space[j];
-		label = strtok(line," \t\n");
+		label = strtok_r(line," \t\n", &saveptr2);
 		if(label == NULL) // empty line
 			exit_input_error(i+1);
 
@@ -331,8 +332,8 @@ void read_problem(const char *filename)
 
 		while(1)
 		{
-			idx = strtok(NULL,":");
-			val = strtok(NULL," \t");
+			idx = strtok_r(NULL,":", &saveptr2);
+			val = strtok_r(NULL," \t", &saveptr2);
 
 			if(val == NULL)
 				break;

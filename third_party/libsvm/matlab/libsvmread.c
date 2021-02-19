@@ -62,6 +62,7 @@ void read_problem(const char *filename, mxArray *plhs[])
 	char *endptr;
 	mwIndex *ir, *jc;
 	double *labels, *samples;
+    char *saveptr1, *saveptr2;
 	
 	if(fp == NULL)
 	{
@@ -83,11 +84,11 @@ void read_problem(const char *filename, mxArray *plhs[])
 		int index = 0;
 
 		inst_max_index = -1; // strtol gives 0 if wrong format, and precomputed kernel has <index> start from 0
-		strtok(line," \t"); // label
+		strtok_r(line," \t", &saveptr1); // label
 		while (1)
 		{
-			idx = strtok(NULL,":"); // index:value
-			val = strtok(NULL," \t");
+			idx = strtok_r(NULL,":", &saveptr1); // index:value
+			val = strtok_r(NULL," \t", &saveptr1);
 			if(val == NULL)
 				break;
 
@@ -131,7 +132,7 @@ void read_problem(const char *filename, mxArray *plhs[])
 
 		readline(fp);
 
-		label = strtok(line," \t\n");
+		label = strtok_r(line," \t\n", &saveptr2);
 		if(label == NULL)
 		{
 			mexPrintf("Empty line at line %d\n",i+1);
@@ -149,8 +150,8 @@ void read_problem(const char *filename, mxArray *plhs[])
 		// features
 		while(1)
 		{
-			idx = strtok(NULL,":");
-			val = strtok(NULL," \t");
+			idx = strtok_r(NULL,":", &saveptr2);
+			val = strtok_r(NULL," \t", &saveptr2);
 			if(val == NULL)
 				break;
 
