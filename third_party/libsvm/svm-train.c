@@ -281,7 +281,7 @@ void read_problem(const char *filename)
 	FILE *fp = fopen(filename,"r");
 	char *endptr;
 	char *idx, *val, *label;
-       char *saveptr1, *saveptr2;
+      char *saveptr1, *saveptr2;
 
 	if(fp == NULL)
 	{

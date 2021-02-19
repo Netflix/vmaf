@@ -263,7 +263,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 	int prob_estimate_flag = 0;
 	struct svm_model *model;
 	info = &mexPrintf;
-       char *saveptr;
+      char *saveptr;
 
 	if(nrhs > 4 || nrhs < 3)
 	{

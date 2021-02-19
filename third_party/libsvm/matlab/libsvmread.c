@@ -62,7 +62,7 @@ void read_problem(const char *filename, mxArray *plhs[])
 	char *endptr;
 	mwIndex *ir, *jc;
 	double *labels, *samples;
-       char *saveptr1, *saveptr2;
+      char *saveptr1, *saveptr2;
 	
 	if(fp == NULL)
 	{
