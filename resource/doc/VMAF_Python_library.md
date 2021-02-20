@@ -7,19 +7,27 @@ The VMAF Python library offers full functionalities from running basic VMAF comm
 
 Make sure you have `python3` (python 3.6 or higher). You can check the version by `python3 --version`.
 
-Follow the steps below to set up a clean virtual environment and install the tools required:
+Follow the steps below to set up a clean virtual environment
 ```shell script
 python3 -m pip install virtualenv
 python3 -m virtualenv .venv
 source .venv/bin/activate
+```
+
+from this point forward `python3` and `pip` will be relative to the virtualenv and isolated from the system python. Returning to the project in subsequent shell sessions will require re-activating the virtualenv with `source .venv/bin/activate`.
+
+Now install the tools required to build VMAF into the virtualenv.
+
+```
 pip install meson cython numpy
 sudo [package-manager] install nasm ninja doxygen
 ```
-You need to invoke `[package-manager]` depending on which system you are on: `apt-get` for Ubuntu and Debian, `yum` for CentOS and RHEL, `dnf` for Fedora, `zypper` for openSUSE, `brew` for MacOS (no `sudo`).
+
+You need to invoke `[package-manager]` depending on which system you are on: `apt-get` for Ubuntu and Debian, `yum` for older CentOS and RHEL, `dnf` for Fedora and latest CentOS (and use `ninja-build` instead of `ninja`), `zypper` for openSUSE, `brew` for MacOS (no `sudo`).
 
 Make sure `nasm` is 2.13.02 or higher (check by `nasm --version`) and `ninja` is 1.7.1 or higher (check by `ninja --version`.
 
-Depending on the system, you may also need to install `python-dev`:
+Depending on the system, you may also need to install `python-dev` or equivalent (`python-devel` on CentOS):
 ```shell script
 sudo [package-manager] install [python-dev]
 ```
