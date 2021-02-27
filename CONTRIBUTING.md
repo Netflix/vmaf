@@ -4,11 +4,11 @@ If you would like to contribute code you can do so through GitHub by forking the
 
 #### License
 
-By contributing your code, you agree to license your contribution under the terms of the [BSD+Patent](https://opensource.org/licenses/BSDplusPatent). Your contributions should also include the following header:
+By submitting a pull request to the [Netflix/vmaf](https://github.com/Netflix/vmaf) Github repository, you agree to license your contribution under the terms of the [BSD+Patent](https://opensource.org/licenses/BSDplusPatent). Your contributions should also include the following header:
 
 ```
 /**
- * Copyright 2016-2020 the original author or authors.
+ * Copyright 2016-2020 [the original author or authors].
  * 
  * Licensed under the BSD+Patent License (the "License");
  * you may not use this file except in compliance with the License.
