@@ -456,9 +456,11 @@ class PypsnrFeatureExtractor(FeatureExtractor):
         else:
             assert False, 'unknown bit depth and type'
 
-    @staticmethod
-    def _get_max_db(ref_yuv_reader):
-        if ref_yuv_reader._is_8bit():
+    def _get_max_db(self, ref_yuv_reader):
+        if self.optional_dict is not None and 'max_db' in self.optional_dict:
+            assert type(self.optional_dict['max_db']) == int or float
+            return self.optional_dict['max_db']
+        elif ref_yuv_reader._is_8bit():
             return 60.0
         elif ref_yuv_reader._is_10bitle():
             return 72.0
