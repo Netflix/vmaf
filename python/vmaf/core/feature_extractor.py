@@ -533,6 +533,20 @@ class PypsnrFeatureExtractor(FeatureExtractor):
         return feature_result
 
 
+class PypsnrMaxdb100FeatureExtractor(PypsnrFeatureExtractor):
+
+    TYPE = "Pypsnr_maxdb100_feature"
+
+    @override(Executor)
+    def _custom_init(self):
+        super()._custom_init()
+        if self.optional_dict is not None:
+            assert 'max_db' not in self.optional_dict
+        if self.optional_dict is None:
+            self.optional_dict = dict()
+        self.optional_dict['max_db'] = 100.0
+
+
 class PsnrFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "PSNR_feature"

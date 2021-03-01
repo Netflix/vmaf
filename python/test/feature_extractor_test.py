@@ -9,7 +9,8 @@ from vmaf.core.feature_extractor import VmafFeatureExtractor, \
     MomentFeatureExtractor, \
     PsnrFeatureExtractor, SsimFeatureExtractor, MsSsimFeatureExtractor, \
     VifFrameDifferenceFeatureExtractor, \
-    AnsnrFeatureExtractor, PypsnrFeatureExtractor, VmafIntegerFeatureExtractor
+    AnsnrFeatureExtractor, PypsnrFeatureExtractor, VmafIntegerFeatureExtractor, \
+    PypsnrMaxdb100FeatureExtractor
 from vmaf.core.asset import Asset
 from vmaf.core.result_store import FileSystemResultStore
 
@@ -746,6 +747,26 @@ class FeatureExtractorTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['Pypsnr_feature_psnry_score'], 100.0, places=4)
         self.assertAlmostEqual(results[1]['Pypsnr_feature_psnru_score'], 100.0, places=4)
         self.assertAlmostEqual(results[1]['Pypsnr_feature_psnrv_score'], 100.0, places=4)
+
+    def test_run_pypsnr_fextractor_maxdb100_16bit(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_16bit_videos_for_testing()
+
+        self.fextractor = PypsnrMaxdb100FeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None,
+        )
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['Pypsnr_maxdb100_feature_psnry_score'], 32.579806240311484, places=4)
+        self.assertAlmostEqual(results[0]['Pypsnr_maxdb100_feature_psnru_score'], 39.046949448281005, places=4)
+        self.assertAlmostEqual(results[0]['Pypsnr_maxdb100_feature_psnrv_score'], 41.288953934756215, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_maxdb100_feature_psnry_score'], 100.0, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_maxdb100_feature_psnru_score'], 100.0, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_maxdb100_feature_psnrv_score'], 100.0, places=4)
 
 
 if __name__ == '__main__':
