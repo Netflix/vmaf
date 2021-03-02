@@ -1,5 +1,4 @@
-VMAF Usage through Docker
-========================
+# VMAF Usage through Docker
 
 Install Docker, then, from the VMAF directory, run:
 
