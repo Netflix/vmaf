@@ -49,7 +49,7 @@ For both cases, one can follow the procedure below:
 
 For the concepts of `FeatureExtractor`, `QualityRunner` and `VmafQualityRunner`, please refer to the [Core Classes](resource/doc/VMAF_Python_library.md#core-classes) section of the VMAF Python library documentation.
 
-### Creating A New `FeatureExtractor`
+### Creating a New `FeatureExtractor`
 
 #### Native Python
 To create a subclass of `FeatureExtractor` in native Python code, a minimalist example to follow is the `PypsnrFeatureExtractor` class ("Py-PSNR", see the [code diff](https://github.com/Netflix/vmaf/commit/e698b4d788fb3dcabdc4df2fd1bffe88dc0d3ecd)). The following steps discuss the implementation strategy.
@@ -100,17 +100,20 @@ Oftentimes for a well-known quality metric, its Matlab implementation already ex
     Therefore, we define the `strred` feature as "derived" and skip the caching process.
   - Create [test cases]((https://github.com/Netflix/vmaf/blob/e698b4d788fb3dcabdc4df2fd1bffe88dc0d3ecd/python/test/extra/feature_extractor_extratest.py#L25-L44)) to lock the numerical results.
 
-### Creating A Thin `QualityRunner` Wrapper
+### Creating a Thin `QualityRunner` Wrapper
 For the use case of implementing a *well-known quality metric*, after the feature extractor is created, the job is almost done. But to run tests and scripts uniformly, we need to create a thin wrapper of the `QualityRunner` subclass around the new `FeatureExtractor` already created. A good example of this is the `SsimQualityRunner` class (see [code](https://github.com/Netflix/vmaf/blob/master/python/vmaf/core/quality_runner.py#L815)). One simply needs to create a subclass from `QualityRunnerFromFeatureExtractor`, and override the `_get_feature_extractor_class()` and `_get_feature_key_for_score()` methods.
 
-### Training A Custom VMAF Model
+### Implementing a Custom VMAF Model
+For the use case of implementing a *custom VMAF model*, one basically follows the two-step approach of first extracting quality-inducing features, and then using a machine-learning regressor to fuse the features and align the final result with subjective scores. The first step is covered by the `FeatureExtractor` subclasses; the second step is done through the `TrainTestModel` subclasses.
 
-#### Creating A New `TrainTestModel`
+#### Creating a New `TrainTestModel` Class
+The default VMAF model has been using the `LibsvmNusvrTrainTestModel` class for training (via specifying the `model_type` field in the model parameter file, see the next section for more details). To use a different regressor, one needs to first create a new `TrainTestModel` class. One minimum example to follow is the `Logistic5PLRegressionTrainTestModel` (see [code diff](https://github.com/Netflix/vmaf/commit/bf607883f6bf37b9bdf6382ca191f3b1a4eb9102)). The following steps discuss the implementation strategy.
+  - Create a new class by subclassing `TrainTestModel` and `RegressorMixin`. Specify the `TYPE` and `VERSION` fields. The `TYPE` is to be specified by the `model_type` field in the model parameter file.
+  - Implement the `_train()` method, which fits the model with the input training data (preprocessed to be a 2D-array) and model parameters.
+  - Implement the `_predict()` method, which takes the fitted model and the input data (preprocess to be a 2D-array) and generate the predicted score.
+  - Optionally override housekeeping functions such as `_to_file()`, `_delete()`, `_from_info_loaded()` when needed.
 
-#### Calling `run_vmaf_training` Script
+#### Calling the `run_vmaf_training` Script
+Once the `FeatureExtractor` and `TrainTestModel` classes are ready, the actually training of a VMAF model against a dataset of subjective scores can be initiated by calling the `run_vmaf_training` script. Detailed description of how to use the script can be found in the [Train a New Model](resource/doc/VMAF_Python_library.md#train-a-new-model) section of VMAF Python Library documentation.
 
-
-
-
-
-
+Notice that the current `run_vmaf_training` implementation does not work with `FeatureExtractors` with a custom input parameter (e.g. the `max_db` of `PypsnrFeatureExtractor`). A workaround of this limitation is to create a subclass of the feature extractor with the hard-coded parameter (by overriding the `_custom_init()` method). Refer to [this code](https://github.com/Netflix/vmaf/commit/e698b4d788fb3dcabdc4df2fd1bffe88dc0d3ecd#diff-c5c651eeebd2949a31e059575be35f2018ec57ebdc09c0706cfc1187b9b32dbcR536) and [this test](https://github.com/Netflix/vmaf/commit/e698b4d788fb3dcabdc4df2fd1bffe88dc0d3ecd#diff-5b58c2457df7e9b30b0a678d6f79b1caaad6c3f036edfadb6ca9fb0955bede33R751) for an example.

@@ -1159,6 +1159,7 @@ class SklearnExtraTreesTrainTestModel(TrainTestModel, RegressorMixin):
         ys_label_pred = model.predict(xs_2d)
         return ys_label_pred
 
+
 class Logistic5PLRegressionTrainTestModel(TrainTestModel, RegressorMixin):
 
     TYPE = '5PL'
@@ -1234,6 +1235,7 @@ class Logistic5PLRegressionTrainTestModel(TrainTestModel, RegressorMixin):
         predicted = [curve(x) for x in np.ravel(xs_2d)]
 
         return predicted
+
 
 class RawVideoTrainTestModelMixin(object):
     """

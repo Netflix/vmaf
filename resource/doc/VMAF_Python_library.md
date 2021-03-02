@@ -291,7 +291,7 @@ model_param_dict = {
 }
 ```
 
-The trained model is output to `output_model_file`. Once it is obtained, it can be used by the `run_vmaf` or `run_vmaf_in_batch`, or used by `run_testing` to validate another dataset.
+The trained model is output to `output_model_file`. Once it is obtained, it can be used by the `run_vmaf`, or by `run_testing` to validate another dataset.
 
 ![training scatter](/resource/images/scatter_training.png)
 ![testing scatter](/resource/images/scatter_testing.png)
