@@ -436,6 +436,117 @@ class VifFrameDifferenceFeatureExtractor(FeatureExtractor):
         return result
 
 
+class PypsnrFeatureExtractor(FeatureExtractor):
+
+    TYPE = "Pypsnr_feature"
+    VERSION = "1.0"
+
+    ATOM_FEATURES = ['psnry', 'psnru', 'psnrv']
+
+    @staticmethod
+    def _assert_bit_depth(ref_yuv_reader, dis_yuv_reader):
+        if ref_yuv_reader._is_8bit():
+            assert dis_yuv_reader._is_8bit()
+        elif ref_yuv_reader._is_10bitle():
+            assert dis_yuv_reader._is_10bitle()
+        elif ref_yuv_reader._is_12bitle():
+            assert dis_yuv_reader._is_12bitle()
+        elif ref_yuv_reader._is_16bitle():
+            assert dis_yuv_reader._is_16bitle()
+        else:
+            assert False, 'unknown bit depth and type'
+
+    def _get_max_db(self, ref_yuv_reader):
+        if self.optional_dict is not None and 'max_db' in self.optional_dict:
+            assert type(self.optional_dict['max_db']) == int or float
+            return self.optional_dict['max_db']
+        elif ref_yuv_reader._is_8bit():
+            return 60.0
+        elif ref_yuv_reader._is_10bitle():
+            return 72.0
+        elif ref_yuv_reader._is_12bitle():
+            return 84.0
+        elif ref_yuv_reader._is_16bitle():
+            return 108.0
+        else:
+            assert False, 'unknown bit depth and type'
+
+    def _generate_result(self, asset):
+        quality_w, quality_h = asset.quality_width_height
+        yuv_type = self._get_workfile_yuv_type(asset)
+        log_dicts = list()
+        with YuvReader(filepath=asset.ref_procfile_path, width=quality_w, height=quality_h,
+                       yuv_type=yuv_type) as ref_yuv_reader:
+            with YuvReader(filepath=asset.dis_procfile_path, width=quality_w, height=quality_h,
+                           yuv_type=yuv_type) as dis_yuv_reader:
+
+                self._assert_bit_depth(ref_yuv_reader, dis_yuv_reader)
+                max_db = self._get_max_db(ref_yuv_reader)
+
+                frm = 0
+                while True:
+                    try:
+                        ref_yuv = ref_yuv_reader.next(format='float')
+                        dis_yuv = dis_yuv_reader.next(format='float')
+                    except StopIteration:
+                        break
+
+                    ref_y, ref_u, ref_v = ref_yuv
+                    dis_y, dis_u, dis_v = dis_yuv
+                    mse_y, mse_u, mse_v = np.mean((ref_y - dis_y)**2) + 1e-16, \
+                                          np.mean((ref_u - dis_u)**2) + 1e-16, \
+                                          np.mean((ref_v - dis_v)**2) + 1e-16
+                    psnr_y, psnr_u, psnr_v = min(10 * np.log10(1.0 / mse_y), max_db), \
+                                             min(10 * np.log10(1.0 / mse_u), max_db), \
+                                             min(10 * np.log10(1.0 / mse_v), max_db)
+
+                    log_dicts.append({
+                        'frame': frm,
+                        'psnry': psnr_y,
+                        'psnru': psnr_u,
+                        'psnrv': psnr_v,
+                    })
+
+                    frm += 1
+
+        log_file_path = self._get_log_file_path(asset)
+        with open(log_file_path, 'wt') as log_file:
+            log_file.write(str(log_dicts))
+
+    @override(FeatureExtractor)
+    def _get_feature_scores(self, asset):
+
+        log_file_path = self._get_log_file_path(asset)
+
+        with open(log_file_path, 'rt') as log_file:
+            log_str = log_file.read()
+            log_dicts = ast.literal_eval(log_str)
+
+        feature_result = dict()
+        frm = 0
+        for log_dict in log_dicts:
+            assert frm == log_dict['frame']
+            for ft in self.ATOM_FEATURES:
+                feature_result.setdefault(self.get_scores_key(ft), []).append(log_dict[ft])
+            frm += 1
+
+        return feature_result
+
+
+class PypsnrMaxdb100FeatureExtractor(PypsnrFeatureExtractor):
+
+    TYPE = "Pypsnr_maxdb100_feature"
+
+    @override(Executor)
+    def _custom_init(self):
+        super()._custom_init()
+        if self.optional_dict is not None:
+            assert 'max_db' not in self.optional_dict
+        if self.optional_dict is None:
+            self.optional_dict = dict()
+        self.optional_dict['max_db'] = 100.0
+
+
 class PsnrFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "PSNR_feature"
