@@ -1,5 +1,4 @@
-VMAF Python Library
-===================
+# VMAF Python Library
 
 The VMAF Python library offers full functionalities from running basic VMAF command lines, software testing, training and validating a new VMAF model on video datasets, data visualization tools, etc. It is the playground to experiment with VMAF.
 
@@ -25,7 +24,7 @@ sudo [package-manager] install nasm ninja doxygen
 
 You need to invoke `[package-manager]` depending on which system you are on: `apt-get` for Ubuntu and Debian, `yum` for older CentOS and RHEL, `dnf` for Fedora and latest CentOS (and use `ninja-build` instead of `ninja`), `zypper` for openSUSE, `brew` for MacOS (no `sudo`).
 
-Make sure `nasm` is 2.13.02 or higher (check by `nasm --version`) and `ninja` is 1.7.1 or higher (check by `ninja --version`.
+Make sure `nasm` is 2.13.02 or higher (check by `nasm --version`) and `ninja` is 1.7.1 or higher (check by `ninja --version`).
 
 Depending on the system, you may also need to install `python-dev` or equivalent (`python-devel` on CentOS):
 ```shell script
@@ -264,16 +263,16 @@ PYTHONPATH=python ./python/vmaf/script/run_vmaf_training.py \
 `feature_param_file` defines the set of features used. For example, both dictionaries below:
 
 ```python
-feature_dict = {'VMAF_feature':'all', }
+feature_dict = {'VMAF_feature': 'all', }
 ```
 
 and
 
 ```python
-feature_dict = {'VMAF_feature':['vif', 'adm'], }
+feature_dict = {'VMAF_feature': ['vif', 'adm'], }
 ```
 
-are valid specifications of selected features. Here `VMAF_feature` is an 'aggregate' feature type, and `vif`, `adm` are the 'atomic' feature types within the aggregate type. In the first case, `all` specifies that all atomic features of `VMAF_feature` are selected. A `feature_dict` dictionary can also contain more than one aggregate feature types.
+are valid specifications of selected features. Here `VMAF_feature` is an "aggregate" feature type, and `vif`, `adm` are the "atomic" feature types within the aggregate type. In the first case, `all` specifies that all atomic features of `VMAF_feature` are selected. A `feature_dict` dictionary can also contain more than one aggregate feature types.
 
 `model_param_file` defines the type and hyper-parameters of the regressor to be used. For details, refer to the self-explanatory examples in directory `resource/model_param`. One example is:
 
@@ -281,18 +280,18 @@ are valid specifications of selected features. Here `VMAF_feature` is an 'aggreg
 model_type = "LIBSVMNUSVR"
 model_param_dict = {
     # ==== preprocess: normalize each feature ==== #
-    'norm_type':'clip_0to1', # rescale to within [0, 1]
+    'norm_type':'clip_0to1',  # rescale to within [0, 1]
     # ==== postprocess: clip final quality score ==== #
-    'score_clip':[0.0, 100.0], # clip to within [0, 100]
+    'score_clip':[0.0, 100.0],  # clip to within [0, 100]
     # ==== libsvmnusvr parameters ==== #
     'gamma':0.85, # selected
-    'C':1.0, # default
-    'nu':0.5, # default
-    'cache_size':200 # default
+    'C':1.0,  # default
+    'nu':0.5,  # default
+    'cache_size':200,  # default
 }
 ```
 
-The trained model is output to `output_model_file`. Once it is obtained, it can be used by the `run_vmaf` or `run_vmaf_in_batch`, or used by `run_testing` to validate another dataset.
+The trained model is output to `output_model_file`. Once it is obtained, it can be used by the `run_vmaf`, or by `run_testing` to validate another dataset.
 
 ![training scatter](/resource/images/scatter_training.png)
 ![testing scatter](/resource/images/scatter_testing.png)
@@ -401,113 +400,62 @@ python/vmaf/script/convert_model_from_pkl_to_json.py \
 --output-json-filepath ./vmaf_float_v0.6.1.json
 ```
 
-(The sections below may need to be updated)
-
 ## Core Classes
 
-The core class architecture can be depicted in the diagram below:
+The core classes of the VMAF Python library can be depicted in the diagram below:
 
 ![UML](../images/uml.png)
 
-#### Asset
+### Asset
 
-An Asset is the most basic unit with enough information to perform an execution task. It includes basic information about a distorted video and its undistorted reference video, as well as the frame range on which to perform a task (i.e. *dis_start_end_frame* and *ref_start_end_frame*), and at what resolution to perform a task (e.g. a video frame is upscaled to the resolution specified by *quality_width_hight* before feature extraction).
+An Asset is the most basic unit with enough information to perform a task on a media. It includes basic information about a distorted video and its undistorted reference counterpart, as well as the auxiliary preprocessing information that can be understood by the `Executor` and its subclasses. For example: 
+  - The frame range on which to perform a task (i.e. `dis_start_end_frame` and `ref_start_end_frame`)
+  - At what resolution to perform a task (e.g. a video frame is upscaled with a `resampling_type` method to the resolution specified by `quality_width_hight` before feature extraction)
 
-Asset extends WorkdirEnabled mixin, which comes with a thread-safe working directory to facilitate parallel execution.
+Asset extends the `WorkdirEnabled` mixin, which comes with a thread-safe working directory to facilitate parallel execution.
 
-#### Executor
+### Executor
 
-An Executor takes in a list of Assets, and run computations on them, and return a list of corresponding Results. An Executor extends the TypeVersionEnabled mixin, and must specify a unique type and version combination (by the *TYPE* and *VERSION* attribute), so that the Result generated by it can be uniquely identified.
+An `Executor` takes a list of `Assets` as input, run computations on them, and return a list of corresponding `Results`. An `Executor` extends the `TypeVersionEnabled` mixin, and must specify a unique type and version combination (by the `TYPE` and `VERSION` attribute), so that the `Result` generated by it can be uniquely identified. This facilitates a number of shared housekeeping functions, including storing and reusing `Results` (`result_store`), creating FIFO pipes (`fifo_mode`), etc. `Executor` understands the preprocessing steps specified in its input `Assets`. It relies on FFmpeg to do the processing for it (FFmpeg must be pre-installed and its path specified in the `FFMPEG_PATH` field in the `python/vmaf/externals.py` file).
 
-Executor is the base class for FeatureExtractor and QualityRunner, and it provides a number of shared housekeeping functions, including storing and reusing Results, creating FIFO pipes, cleaning up log files/Results, etc.
+An `Executor` and its subclasses can take optional parameters during initialization. There are two fields to put the optional parameters:
+  - `optional_dict`: a dictionary field to specify parameters that will impact numerical result (e.g. which wavelet transform to use).
+  - `optional_dict2`: a dictionary field to specify parameters that will NOT impact numerical result (e.g. outputting optional results).
 
-A function *run_executors_in_parallel* facilitates running Executors in parallel.
+`Executor` is the base class for `FeatureExtractor` and `QualityRunner` (and the sub-subclass `VmafQualityRunner`).
 
-#### Result
+### Result
 
-A Result is a key-value store of read-only execution results generated by an Executor on an Asset. A key corresponds to a 'atom' feature type or a type of a quality score, and a value is a list of score values, each corresponding to a computation unit (i.e. in the current implementation, a frame).
+A `Result` is a key-value store of read-only execution results generated by an `Executor` on an `Asset`. A key corresponds to an "atom" feature type or a type of a quality score, and a value is a list of score values, each corresponding to a computation unit (i.e. in the current implementation, a frame).
 
-The Result class also provides a number of tools for aggregating the per-unit scores into a single score. The default aggregatijon method is the mean, but Result.set_score_aggregate_method() allows customizing other methods (see test_to_score_str() in test/result_test.py for examples).
+The `Result` class also provides a number of tools for aggregating the per-unit scores into an average score. The default aggregatijon method is the mean, but `Result.set_score_aggregate_method()` allows customizing other methods (see `test_to_score_str()` in `test/result_test.py` for examples).
 
-#### ResultStore
+### ResultStore
 
-ResultStore provides capability to save and load a Result. Current implementation FileSystemResultStore persists results by a simple file system that save/load result in a directory. The directory has multiple subdirectories, each corresponding to an Executor. Each subdirectory contains multiple files, each file storing dataframe for an Asset.
+`ResultStore` provides capability to save and load a `Result`. Current implementation `FileSystemResultStore` persists results by a simple file system that save/load result in a directory. The directory has multiple subdirectories, each corresponding to an `Executor`. Each subdirectory contains multiple files, each file storing the dataframe for an `Asset`.
 
-#### FeatureExtractor
+### FeatureExtractor
 
-FeatureExtractor subclasses Executor, and is specifically for extracting features (aka elementary quality metrics) from Assets. Any concrete feature extraction implementation should extend the FeatureExtractor base class (e.g. VmafFeatureExtractor). The *TYPE* field corresponds to the 'aggregate' feature name, and the 'ATOM_FEATURES'/'DERIVED_ATOM_FEATURES' field corresponds to the 'atom' feature names.
+`FeatureExtractor` subclasses `Executor`, and is specifically for extracting features (aka elementary quality metrics) from `Assets`. Any concrete feature extraction implementation should extend the `FeatureExtractor` base class (e.g. `VmafFeatureExtractor`). The `TYPE` field corresponds to the "aggregate" feature name, and the `ATOM_FEATURES`/`DERIVED_ATOM_FEATURES` field corresponds to the "atom" feature names.
 
-#### FeatureAssembler
+### FeatureAssembler
 
-FeatureAssembler assembles features for an input list of Assets on a input list of FeatureExtractor subclasses. The constructor argument *feature_dict* specifies the list of FeatureExtractor subclasses (i.e. the 'aggregate' feature) and selected 'atom' features. For each asset on a FeatureExtractor, it outputs a BasicResult object. FeatureAssembler is used by a QualityRunner to assemble the vector of features to be used by a TrainTestModel.
+`FeatureAssembler` assembles features for an input list of `Assets` on a input list of `FeatureExtractor` subclasses. The constructor argument `feature_dict` specifies the list of `FeatureExtractor` subclasses (i.e. the "aggregate" feature) and selected "atom" features. For each asset on a `FeatureExtractor`, it outputs a `BasicResult` object. `FeatureAssembler` is used by a `QualityRunner` to assemble the vector of features to be used by a `TrainTestModel`.
 
-#### TrainTestModel
+### TrainTestModel
 
-TrainTestModel is the base class for any concrete implementation of regressor, which must provide a *train()* method to perform training on a set of data and their groud-truth labels, and a *predict()* method to predict the labels on a set of data, and a *to_file()* and a *from_file()* method to save and load trained models. 
+`TrainTestModel` is the base class for any concrete implementation of regressor, which must provide a `train()` method to perform training on a set of data and their groud-truth labels, and a `predict()` method to predict the labels on a set of data, and a `to_file()` and a `from_file()` method to save and load trained models. 
 
-A TrainTestModel constructor must supply a dictionary of parameters (i.e. *param_dict*) that contains the regressor's hyper-parameters. The base class also provides shared functionalities such as input data normalization/output data denormalization, evaluating prediction performance, etc.
+A `TrainTestModel` constructor must supply a dictionary of parameters (i.e. `param_dict`) that contains the regressor's hyper-parameters. The base class also provides shared functionalities such as input data normalization/output data denormalization, evaluating prediction performance, etc.
 
-Like a Executor, a TrainTestModel must specify a unique type and version combination (by the *TYPE* and *VERSION attribute*).
+Like an `Executor`, a `TrainTestModel` extends `TypeVersionEnabled` and must specify a unique type and version combination (by the `TYPE` and `VERSION` attribute).
 
-#### CrossValidation
+### CrossValidation
 
-CrossValidation provides a collection of static methods to facilitate validation of a TrainTestModel object. As such, it also provides means to search the optimal hyper-parameter set for a TrainTestModel object.
+`CrossValidation` provides a collection of static methods to facilitate validation of a `TrainTestModel` object. As such, it also provides means to search the optimal hyper-parameter set for a `TrainTestModel` object.
 
-#### QualityRunner
+### QualityRunner
 
-QualityRunner subclasses Executor, and is specifically for evaluating the quality score for Assets. Any concrete implementation to generate the final quality score should extend the QualityRunner base class (e.g. VmafQualityRunner, PsnrQualityRunner).
+`QualityRunner` subclasses `Executor`, and is specifically for evaluating the quality score for `Assets`. Any concrete implementation to generate the final quality score should extend the `QualityRunner` base class (e.g. `VmafQualityRunner`, `PsnrQualityRunner`).
 
-There are two ways to extend a QualityRunner base class -- either by directly implementing the quality calculation (e.g. by calling a C executable, as in PsnrQualityRunner), or by calling a FeatureAssembler (with indirectly calls a FeatureExtractor) and a TrainTestModel subclass (as in VmafQualityRunner). For more details, refer to Section 'Extending Classes'.
-
-## Extending Classes
-
-#### Extending FeatureExtractor
-
-A derived class of FeatureExtractor must:
-
-  - Override *TYPE* and *VERSION* fields.
-  - Override *ATOM_FEATURES* field.
-  - Optionally, override *DERIVED_FEATURES* field. These are the features that are 'derived' from the ATOM_FEATURES.
-  - Override *_generate_result(self, asset)*, which call a command-line executable and generate feature scores in a log file.
-  - Optionally, override *_get_feature_scores(self, asset)*, which read the feature scores from the log file, and return the scores in a dictionary format. FeatureExtractor base class provides a template _get_feature_scores method, which has been used by VmafFeatureExtractor as an example. If your log file format is incompatible with VmafFeatureExtractor's, consider overriding this method for your custom case.
-  - Optionally, if you have override *DERIVED FEATURES* field, also override *_post_process_result(cls, result)* and put the calculation of the derived attom features here.
-
-Follow the example of VmafFeatureExtractor.
-
-#### Extending TrainTestModel
-
-A derived class of TrainTestModel must:
-
-  - Override *TYPE* and *VERSION* fields.
-  - Override *_train(model_param, xys_2d)*, which implements the training logic.
-  
-A basic example of wrapping the scikit-learn Ensemble.RandomForest class can be found in SklearnRandomForestTrainTestModel.
-
-The scikit-learn Python package has already provided many regressor tools to choose from. But if you do not want to call from scikit-learn but rather integrating/creating other regressor implementation, you will need some additional steps. Besides the two step above, you also need to:
-
-  - Override *to_file(self, filename)*, which must properly save the trained model and parameters to a file(s).
-  - Adding to the base-class static method TrainTestModel.from_file specific treatment for your subclass.
-  - Override static method *delete(filename)* if you have more than one file to delete.
-  - Override *_predict(cls, method, xs_2d)* with your customized prediction function.
-  
-For this type of subclassing, refer to the example of LibsvmnusvrTrainTestModel.
-
-#### Extending QualityRunner
-
-There are two ways to create a derived class of QualityRunner:
-
-The first way is to call a command-line executable directly, very similar to what FeatureExtractor does. A derived class must:
-    
-  - Override *TYPE* and *VERSION* fields.
-  - Override *_generate_result(self, asset)*, which call a command-line executable and generate quality scores in a log file.
-  - Override *_get_quality_scores(self, asset)*, which read the quality scores from the log file, and return the scores in a dictionary format.
-    
-For an example, follow PsnrQualityRunner.
-
-The second way is to override the Executor._run_on_asset(self, asset) method to bypass the regular routine, but instead, in the method construct a FeatureAssembler (which calls a FeatureExtractor or many) and assembles a list of features, followed by using a TrainTestModel (pre-trained somewhere else) to predict the final quality score. A derived class must:
-    
-  - Override *TYPE* and *VERSION* fields.    
-  - Override *_run_on_asset(self, asset)*, which runs a FeatureAssembler, collect a feature vector, run *TrainTestModel.predict()* on it, and return a Result object (in this case, both *Executor._run_on_asset(self, asset)* and *QualityRunner._read_result(self, asset)* get bypassed.    
-  - Override *_remove_result(self, asset)* by redirecting it to the FeatureAssembler.
-  
-For an example, follow VmafQualityRunner.
+There are two ways to extend a `QualityRunner` base class -- either by directly implementing the quality calculation (e.g. by calling a C executable, as in `PsnrQualityRunner`), or by calling a `FeatureAssembler` (with indirectly calls a `FeatureExtractor`) and a `TrainTestModel` subclass (as in `VmafQualityRunner`).
