@@ -49,6 +49,8 @@ For both cases, one can follow the procedure below:
 
 For the concepts of `FeatureExtractor`, `QualityRunner` and `VmafQualityRunner`, please refer to the [Core Classes](resource/doc/VMAF_Python_library.md#core-classes) section of the VMAF Python library documentation.
 
+For algorithmic contribution, for a clean organization of the repo, it is advised to submit new files under directory prefixed with `third_party/[orginization]`. For example, for a new model trained, it should go under `model/third_party/[organization]/`. As another example, the [PSNR-HVS feature extractor](https://github.com/Netflix/vmaf/commit/ce2ad1af0b1ba8dd1fbae3e03da0329f078e6bc6) code sits under `libvmaf/src/feature/third_party/xiph/`.
+
 ### Creating a New `FeatureExtractor`
 
 #### Native Python
