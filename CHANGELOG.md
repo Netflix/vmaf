@@ -15,7 +15,7 @@ This is a minor release for the initial AOM CTC. Support has been added for temp
 --model version=vmaf_v0.6.1:vif.vif_enhn_gain_limit=1.0:adm.adm_enhn_gain_limit=1.0
 ```
 
-**New features:
+**New features:**
 - Per-model feature overloading via new API `vmaf_model_feature_overload()`.
 - Multiple unique configurations of the same feature extractor may be registered run at the same time.
 - `--aom_ctc v1.0` preset, encompassing all metrics specified by the AOM CTC.
