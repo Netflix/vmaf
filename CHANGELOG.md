@@ -1,5 +1,25 @@
 # Change Log
 
+## (2021-01-13) [v2.1.1]
+
+This is a minor release to address a few last minute items for the initial AOM CTC.
+
+**New features:**
+- Fixes a SSIM/MS-SSIM precision bug where a lossless comparison did not always result in a perfect 1.0 score. (#796).
+- Adds feature extractor options to clip the dB scores for both PSNR/SSIM. --aom_ctc v1.0 has been updated to use these clipping options according to the AOM CTC. (#802).
+
+## (2020-12-30) [v2.1.0]
+This is a minor release for the initial AOM CTC. Support has been added for templated feature names. While this is a general purpose software feature, templated feature names are immediately useful for simultaneous computation of VMAF and VMAF NEG since the two metrics rely on slightly different VIF/ADM variations. Global feature overrides via the `--feature` flag are no longer supported, instead individual models can have their features overloaded individually, the syntax for which is as follows:
+
+ ```sh
+--model version=vmaf_v0.6.1:vif.vif_enhn_gain_limit=1.0:adm.adm_enhn_gain_limit=1.0
+```
+
+**New features:
+- Per-model feature overloading via new API `vmaf_model_feature_overload()`.
+- Multiple unique configurations of the same feature extractor may be registered run at the same time.
+- `--aom_ctc v1.0` preset, encompassing all metrics specified by the AOM CTC.
+
 ## (2020-12-4) [2.0.0]
 
 **New features:**
