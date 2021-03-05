@@ -44,8 +44,10 @@ This section focuses on *algorithmic contribution*, which cover two main use cas
   - Implementing a *custom VMAF model*, using new elementary features and trained on a specific dataset
 
 For both cases, one can follow the procedure below:
-- First, implement the feature extractor(s), by subclassing the `FeatureExtractor` Python class. A new `FeatureExtractor` class created could be either 1) native Python implementation, or 2) calling a subprocess implemented in a different language (in C or in Matlab, for example).
-- Second, implement the quality runner, by 1) creating a new `QualityRunner` class as a thin wrapper around the new `FeatureExtractor` created, or 2) using the established `VmafQualityRunner` class but training a custom VMAF model.
+  - First, implement the feature extractor(s), by subclassing the `FeatureExtractor` Python class. A new `FeatureExtractor` class created could be either 1) native Python implementation, or 2) calling a subprocess implemented in a different language (in C or in Matlab, for example).
+  - Second, implement the quality runner, by: 
+    - creating a new `QualityRunner` class as a thin wrapper around the new `FeatureExtractor` created, or
+    - using the established `VmafQualityRunner` class but training a custom VMAF model.
 
 For the concepts of `FeatureExtractor`, `QualityRunner` and `VmafQualityRunner`, please refer to the [Core Classes](resource/doc/VMAF_Python_library.md#core-classes) section of the VMAF Python library documentation.
 
