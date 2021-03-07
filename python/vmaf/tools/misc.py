@@ -1,4 +1,5 @@
 import subprocess
+import unittest
 from fnmatch import fnmatch
 import multiprocessing
 from time import sleep, time
@@ -500,6 +501,22 @@ def dedup_value_in_dict(d):
     for value, key in reversed_d.items():
         d_[key] = value
     return d_
+
+
+class MyTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.verificationErrors = []
+        self.maxDiff = None
+
+    def tearDown(self):
+        self.assertEqual([], self.verificationErrors)
+
+    def assertAlmostEqual(self, first, second, places=None, msg=None, delta=None):
+        try:
+            super().assertAlmostEqual(first, second, places, msg, delta)
+        except AssertionError as e:
+            self.verificationErrors.append(str(e))
 
 
 if __name__ == '__main__':
