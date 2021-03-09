@@ -612,6 +612,34 @@ class AssetTest(unittest.TestCase):
         self.assertTrue(asset.use_path_as_workpath)
         self.assertFalse(new_asset.use_path_as_workpath)
 
+    def test_copy_override_asset_dict(self):
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
+                                  'crop_cmd': '570:320:3:2'})
+        new_asset = asset.copy(asset_dict={'height': 481})
+        self.assertEqual(new_asset.ref_width_height, (720, 481))
+        self.assertEqual(new_asset.dis_width_height, (720, 481))
+        self.assertEqual(new_asset.ref_crop_cmd, '570:320:3:2')
+        self.assertEqual(new_asset.dis_crop_cmd, '570:320:3:2')
+
+    def test_copy_additional_asset_dict(self):
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'width': 720, 'height': 480,
+                                  'quality_width': 720, 'quality_height': 320,
+                                  'yuv_type': 'yuv422p',
+                                  'crop_cmd': '570:320:3:2'})
+        new_asset = asset.copy(asset_dict={'start_frame': 1, 'end_frame': 10})
+        self.assertEqual(new_asset.ref_start_end_frame, (1, 10))
+        self.assertEqual(new_asset.dis_start_end_frame, (1, 10))
+        self.assertEqual(new_asset.ref_width_height, (720, 480))
+        self.assertEqual(new_asset.dis_width_height, (720, 480))
+        self.assertEqual(new_asset.dis_crop_cmd, '570:320:3:2')
+        self.assertEqual(new_asset.ref_crop_cmd, '570:320:3:2')
+
     def test_copy_noref(self):
         asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
                       dis_path="",
