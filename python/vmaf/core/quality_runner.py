@@ -838,6 +838,19 @@ class MsSsimQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
         return 'ms_ssim'
 
 
+class Ciede2000QualityRunner(QualityRunnerFromFeatureExtractor, ABC):
+    TYPE = 'CIEDE2000'
+    VERSION = '1.0'
+
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_extractor_class(self):
+        return CIEDE2000FeatureExtractor
+
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_key_for_score(self):
+        return 'ciede2000'
+
+
 class VmafSingleFeatureQualityRunner(QualityRunner):
     __metaclass__ = ABCMeta
 
