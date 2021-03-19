@@ -384,6 +384,7 @@ int vmaf_read_json_model_from_path(VmafModel **model, VmafModelConfig *cfg,
     json_open_stream(&s, in);
     err = vmaf_read_json_model(model, cfg, &s);
     json_close(&s);
+    fclose(in);
     return err;
 }
 
@@ -453,6 +454,7 @@ int vmaf_read_json_model_collection_from_path(VmafModel **model,
     json_open_stream(&s, in);
     err = model_collection_parse(&s, model, model_collection, cfg);
     json_close(&s);
+    fclose(in);
     return err;
 }
 
