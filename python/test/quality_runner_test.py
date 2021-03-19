@@ -1314,6 +1314,27 @@ class QualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAF_score'], 72.3205499536087, places=4)
         self.assertAlmostEqual(results[1]['VMAF_score'], 97.42843608965536, places=4)
 
+    def test_run_vmaf_runner_neg_mode(self):
+        ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        dis_path = VmafConfig.test_resource_path("yuv", "disp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 352, 'height': 288})
+
+        self.runner = VmafQualityRunner(
+            [asset],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_v0.6.1neg.json")}
+        )
+        self.runner.run(parallelize=False)
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAF_score'], 88.030463, places=4)  # 132.7329528948058
+
 
 class QualityRunnerVersionTest(unittest.TestCase):
 
