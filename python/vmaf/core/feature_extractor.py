@@ -116,22 +116,48 @@ class VmafexecFeatureExtractorMixin(object):
         root = tree.getroot()
 
         feature_scores = [[] for _ in self.ATOM_FEATURES]
+        feature_fullnames = [None for _ in self.ATOM_FEATURES]
 
         for frame in root.findall('frames/frame'):
             for i_feature, feature in enumerate(self.ATOM_FEATURES):
-                try:
-                    feature_scores[i_feature].append(float(frame.attrib[self.ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT[feature]]))
-                except KeyError:
-                    pass  # some features may be missing
 
-        #for i_feature, feature in enumerate(self.ATOM_FEATURES):
-        #    if len(feature_scores[i_feature]) != 0:
-        #        assert len(feature_scores[i_feature]) == len(feature_scores[0])
+                feature_found = False
+
+                # first look for exact match
+                for feature_fullname in frame.attrib:
+                    if self.ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT[feature] == feature_fullname:
+                        feature_scores[i_feature].append(float(frame.attrib[feature_fullname]))
+                        if feature_fullnames[i_feature] is None:
+                            feature_fullnames[i_feature] = feature_fullname
+                        else:
+                            assert feature_fullnames[i_feature] == feature_fullname
+                        feature_found = True
+                        break
+
+                if feature_found:
+                    continue
+
+                # wildcard discovery: look for xxx features
+                feature_prefix = self.ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT[feature] + '_'
+                for feature_fullname in frame.attrib:
+                    if feature_prefix in feature_fullname:
+                        feature_scores[i_feature].append(float(frame.attrib[feature_fullname]))
+                        if feature_fullnames[i_feature] is None:
+                            feature_fullnames[i_feature] = feature_fullname
+                        else:
+                            assert feature_fullnames[i_feature] == feature_fullname
+                        feature_found = True
+                        break
+
+        for i_feature, feature in enumerate(self.ATOM_FEATURES):
+           if len(feature_scores[i_feature]) != 0:
+               assert len(feature_scores[i_feature]) == len(feature_scores[0])
 
         feature_result = {}
         for i_feature, feature in enumerate(self.ATOM_FEATURES):
             if len(feature_scores[i_feature]) != 0:
-                feature_result[self.get_scores_key(feature)] = feature_scores[i_feature]
+                assert feature_fullnames[i_feature] is not None
+                feature_result[self.get_scores_key(feature_fullnames[i_feature])] = feature_scores[i_feature]
 
         return feature_result
 

@@ -777,12 +777,12 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         self.runner = VmafexecQualityRunner(
             [asset],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={'disable_clip_score': True}
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1051,7 +1051,7 @@ class VmafexecQualityRunnerTest(MyTestCase):
             result_store=None,
             optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_4k_v0.6.1.json")}
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 

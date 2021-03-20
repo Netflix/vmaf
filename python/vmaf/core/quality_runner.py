@@ -796,9 +796,10 @@ class VmafossExecQualityRunner(QualityRunner):
 
                 feature_found = False
 
-                # first look for exact match
+                # first look for exact match integer_xxx
                 for feature_fullname in frame.attrib:
-                    if feature == feature_fullname:
+                    feature_ = 'integer_' + feature
+                    if feature_ == feature_fullname:
                         feature_scores[i_feature].append(float(frame.attrib[feature_fullname]))
                         if feature_fullnames[i_feature] is None:
                             feature_fullnames[i_feature] = feature_fullname
@@ -810,8 +811,23 @@ class VmafossExecQualityRunner(QualityRunner):
                 if feature_found:
                     continue
 
-                # wildcard discovery: look for xxx features
-                feature_prefix = feature
+                # look for exact match xxx
+                for feature_fullname in frame.attrib:
+                    feature_ = feature
+                    if feature_ == feature_fullname:
+                        feature_scores[i_feature].append(float(frame.attrib[feature_fullname]))
+                        if feature_fullnames[i_feature] is None:
+                            feature_fullnames[i_feature] = feature_fullname
+                        else:
+                            assert feature_fullnames[i_feature] == feature_fullname
+                        feature_found = True
+                        break
+
+                if feature_found:
+                    continue
+
+                # wildcard discovery: look for integer_xxx_*
+                feature_prefix = 'integer_' + feature + '_'
                 for feature_fullname in frame.attrib:
                     if feature_prefix in feature_fullname:
                         feature_scores[i_feature].append(float(frame.attrib[feature_fullname]))
@@ -825,8 +841,8 @@ class VmafossExecQualityRunner(QualityRunner):
                 if feature_found:
                     continue
 
-                # wildcard discovery: look for integer_xxx features
-                feature_prefix = 'integer_' + feature
+                # wildcard discovery: look for xxx_*
+                feature_prefix = feature + '_'
                 for feature_fullname in frame.attrib:
                     if feature_prefix in feature_fullname:
                         feature_scores[i_feature].append(float(frame.attrib[feature_fullname]))
@@ -1423,9 +1439,10 @@ class VmafexecQualityRunner(QualityRunner):
 
                 feature_found = False
 
-                # first look for exact match
+                # first look for exact match integer_xxx
                 for feature_fullname in frame.attrib:
-                    if feature == feature_fullname:
+                    feature_ = 'integer_' + feature
+                    if feature_ == feature_fullname:
                         feature_scores[i_feature].append(float(frame.attrib[feature_fullname]))
                         if feature_fullnames[i_feature] is None:
                             feature_fullnames[i_feature] = feature_fullname
@@ -1437,8 +1454,23 @@ class VmafexecQualityRunner(QualityRunner):
                 if feature_found:
                     continue
 
-                # wildcard discovery: look for integer_xxx features
-                feature_prefix = 'integer_' + feature
+                # look for exact match xxx
+                for feature_fullname in frame.attrib:
+                    feature_ = feature
+                    if feature_ == feature_fullname:
+                        feature_scores[i_feature].append(float(frame.attrib[feature_fullname]))
+                        if feature_fullnames[i_feature] is None:
+                            feature_fullnames[i_feature] = feature_fullname
+                        else:
+                            assert feature_fullnames[i_feature] == feature_fullname
+                        feature_found = True
+                        break
+
+                if feature_found:
+                    continue
+
+                # wildcard discovery: look for integer_xxx_*
+                feature_prefix = 'integer_' + feature + '_'
                 for feature_fullname in frame.attrib:
                     if feature_prefix in feature_fullname:
                         feature_scores[i_feature].append(float(frame.attrib[feature_fullname]))
@@ -1452,8 +1484,8 @@ class VmafexecQualityRunner(QualityRunner):
                 if feature_found:
                     continue
 
-                # wildcard discovery: look for xxx features
-                feature_prefix = feature
+                # wildcard discovery: look for xxx_*
+                feature_prefix = feature + '_'
                 for feature_fullname in frame.attrib:
                     if feature_prefix in feature_fullname:
                         feature_scores[i_feature].append(float(frame.attrib[feature_fullname]))
