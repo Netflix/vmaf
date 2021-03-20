@@ -129,9 +129,8 @@ class VmafexecFeatureExtractorMixin(object):
                     continue
 
                 # wildcard discovery: look for xxx features
-                feature_prefix = self.ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT[feature] + '_'
                 feature_found = self._discover_feature_wildcard(
-                    frame, i_feature, feature_prefix, feature_scores, feature_nicknames)
+                    frame, i_feature, feature, feature_scores, feature_nicknames)
 
         for i_feature, feature in enumerate(self.ATOM_FEATURES):
            if len(feature_scores[i_feature]) != 0:
@@ -145,32 +144,39 @@ class VmafexecFeatureExtractorMixin(object):
 
         return feature_result
 
-    def _discover_feature_exact(self, frame, i_feature, feature,
+    @classmethod
+    def _discover_feature_exact(cls, frame, i_feature, feature,
                                 feature_scores, feature_nicknames):
+        assert hasattr(cls, 'ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT')
         feature_found = False
         for feature_fullname in frame.attrib:
-            if self.ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT[feature] == feature_fullname:
+            if cls.ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT[feature] == feature_fullname:
                 feature_scores[i_feature].append(
                     float(frame.attrib[feature_fullname]))
                 if feature_nicknames[i_feature] is None:
-                    feature_nicknames[i_feature] = feature_fullname
+                    feature_nicknames[i_feature] = feature
                 else:
-                    assert feature_nicknames[i_feature] == feature_fullname
+                    assert feature_nicknames[i_feature] == feature
                 feature_found = True
                 break
         return feature_found
 
-    def _discover_feature_wildcard(self, frame, i_feature, feature_prefix,
+    @classmethod
+    def _discover_feature_wildcard(cls, frame, i_feature, feature,
                                    feature_scores, feature_nicknames):
+        assert hasattr(cls, 'ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT')
+        feature_prefix = cls.ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT[feature] + '_'
         feature_found = False
         for feature_fullname in frame.attrib:
             if feature_fullname.startswith(feature_prefix):
                 feature_scores[i_feature].append(
                     float(frame.attrib[feature_fullname]))
+                feature_suffix = feature_fullname[len(feature_prefix):]
+                feature_nickname = feature + '_' + feature_suffix
                 if feature_nicknames[i_feature] is None:
-                    feature_nicknames[i_feature] = feature_fullname
+                    feature_nicknames[i_feature] = feature_nickname
                 else:
-                    assert feature_nicknames[i_feature] == feature_fullname
+                    assert feature_nicknames[i_feature] == feature_nickname
                 feature_found = True
                 break
         return feature_found
