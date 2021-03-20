@@ -660,23 +660,7 @@ class VmafPhoneQualityRunner(VmafQualityRunner):
 class FeatureDiscoveryMixin(object):
 
     @staticmethod
-    def _discover_feature_wildcard(frame, i_feature, feature_prefix,
-                                   feature_scores, feature_nicknames):
-        feature_found = False
-        for feature_fullname in frame.attrib:
-            if feature_fullname.startswith(feature_prefix):
-                feature_scores[i_feature].append(
-                    float(frame.attrib[feature_fullname]))
-                if feature_nicknames[i_feature] is None:
-                    feature_nicknames[i_feature] = feature_fullname
-                else:
-                    assert feature_nicknames[i_feature] == feature_fullname
-                feature_found = True
-                break
-        return feature_found
-
-    @staticmethod
-    def _discover_feature_exact(frame, i_feature, feature_,
+    def _discover_feature_exact(frame, i_feature, feature_, feature_origin,
                                 feature_scores, feature_nicknames):
         feature_found = False
         for feature_fullname in frame.attrib:
@@ -684,9 +668,27 @@ class FeatureDiscoveryMixin(object):
                 feature_scores[i_feature].append(
                     float(frame.attrib[feature_fullname]))
                 if feature_nicknames[i_feature] is None:
-                    feature_nicknames[i_feature] = feature_fullname
+                    feature_nicknames[i_feature] = feature_origin
                 else:
-                    assert feature_nicknames[i_feature] == feature_fullname
+                    assert feature_nicknames[i_feature] == feature_origin
+                feature_found = True
+                break
+        return feature_found
+
+    @staticmethod
+    def _discover_feature_wildcard(frame, i_feature, feature_prefix, feature_origin,
+                                   feature_scores, feature_nicknames):
+        feature_found = False
+        for feature_fullname in frame.attrib:
+            if feature_fullname.startswith(feature_prefix):
+                feature_scores[i_feature].append(
+                    float(frame.attrib[feature_fullname]))
+                feature_suffix = feature_fullname[len(feature_prefix):]
+                feature_nickname = feature_origin + '_' + feature_suffix
+                if feature_nicknames[i_feature] is None:
+                    feature_nicknames[i_feature] = feature_nickname
+                else:
+                    assert feature_nicknames[i_feature] == feature_nickname
                 feature_found = True
                 break
         return feature_found
@@ -832,7 +834,7 @@ class VmafossExecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
                 # first look for exact match integer_xxx
                 feature_found = self._discover_feature_exact(
                     frame, i_feature,
-                    'integer_' + feature,
+                    'integer_' + feature, feature,
                     feature_scores, feature_nicknames)
 
                 if feature_found:
@@ -841,7 +843,7 @@ class VmafossExecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
                 # look for exact match xxx
                 feature_found = self._discover_feature_exact(
                     frame, i_feature,
-                    feature,
+                    feature, feature,
                     feature_scores, feature_nicknames)
 
                 if feature_found:
@@ -850,7 +852,7 @@ class VmafossExecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
                 # wildcard discovery: look for integer_xxx_*
                 feature_found = self._discover_feature_wildcard(
                     frame, i_feature,
-                    'integer_' + feature + '_',
+                    'integer_' + feature + '_', feature,
                     feature_scores, feature_nicknames)
 
                 if feature_found:
@@ -859,7 +861,7 @@ class VmafossExecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
                 # wildcard discovery: look for xxx_*
                 feature_found = self._discover_feature_wildcard(
                     frame, i_feature,
-                    feature + '_',
+                    feature + '_', feature,
                     feature_scores, feature_nicknames)
 
         assert len(scores) != 0
@@ -1450,7 +1452,7 @@ class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
                 # first look for exact match integer_xxx
                 feature_found = self._discover_feature_exact(
                     frame, i_feature,
-                    'integer_' + feature,
+                    'integer_' + feature, feature,
                     feature_scores, feature_nicknames)
 
                 if feature_found:
@@ -1459,7 +1461,7 @@ class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
                 # look for exact match xxx
                 feature_found = self._discover_feature_exact(
                     frame, i_feature,
-                    feature,
+                    feature, feature,
                     feature_scores, feature_nicknames)
 
                 if feature_found:
@@ -1468,7 +1470,7 @@ class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
                 # wildcard discovery: look for integer_xxx_*
                 feature_found = self._discover_feature_wildcard(
                     frame, i_feature,
-                    'integer_' + feature + '_',
+                    'integer_' + feature + '_', feature,
                     feature_scores, feature_nicknames)
 
                 if feature_found:
@@ -1477,7 +1479,7 @@ class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
                 # wildcard discovery: look for xxx_*
                 feature_found = self._discover_feature_wildcard(
                     frame, i_feature,
-                    feature + '_',
+                    feature + '_', feature,
                     feature_scores, feature_nicknames)
 
         for scores_key in scores_keys:

@@ -46,22 +46,22 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale0_score'], 0.3636620710647402, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale1_score'], 0.7674952820232231, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale2_score'], 0.8631077727416296, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale3_score'], 0.9157200890843669, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_motion2_score'], 3.8953518541666665, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_adm2_score'], 0.9345149030293786, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'], 0.3636620710647402, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 0.7674952820232231, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 0.8631077727416296, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 0.9157200890843669, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_motion2_score'], 3.8953518541666665, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_score'], 0.9345149030293786, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_psnr_score'], 30.7550666667, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_ssim_score'], 0.86322654166666657, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_ms_ssim_score'], 0.9632406874999999, places=4)
 
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale0_score'], 1.0, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale1_score'],0.99999972612, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale2_score'],0.999999465724, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale3_score'], 0.999999399683, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_motion2_score'], 3.8953518541666665, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_adm2_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale0_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale1_score'],0.99999972612, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale2_score'],0.999999465724, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale3_score'], 0.999999399683, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_motion2_score'], 3.8953518541666665, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_adm2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_psnr_score'], 60.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_ssim_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_ms_ssim_score'], 1.0, places=4)
@@ -130,25 +130,25 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale0_score'], 0.3636620710647402, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale1_score'], 0.7674952820232231, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale2_score'], 0.8631077727416296, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale3_score'], 0.9157200890843669, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_motion2_force_0_score'], 0.0, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_adm2_score'], 0.9345149030293786, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'], 0.3636620710647402, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 0.7674952820232231, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 0.8631077727416296, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 0.9157200890843669, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_motion2_force_0_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_score'], 0.9345149030293786, places=4)
 
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale0_score'], 1.0, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale1_score'], 0.9999998541666666, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale2_score'], 0.9999996041666667, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale3_score'], 0.9999991458333334, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_motion2_force_0_score'], 0.0, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_adm2_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale0_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale1_score'], 0.9999998541666666, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale2_score'], 0.9999996041666667, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale3_score'], 0.9999991458333334, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_motion2_force_0_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_adm2_score'], 1.0, places=4)
 
         self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 72.32054995833333, places=4)  # 76.68425579166666
         self.assertAlmostEqual(results[1]['VMAFEXEC_score'], 97.42843597916665, places=4)  # 99.94641666666666
 
-        self.assertEqual(len(results[0]['VMAFEXEC_integer_motion2_force_0_scores']), 48)
-        self.assertEqual(len(results[1]['VMAFEXEC_integer_motion2_force_0_scores']), 48)
+        self.assertEqual(len(results[0]['VMAFEXEC_motion2_force_0_scores']), 48)
+        self.assertEqual(len(results[1]['VMAFEXEC_motion2_force_0_scores']), 48)
 
     def test_run_vmafexec_runner_fixed_psnr(self):
 
@@ -197,12 +197,12 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale0_score'], 0.3636620710647402, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale1_score'], 0.7674952820232231, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale2_score'], 0.8631077727416296, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale3_score'], 0.9157200890843669, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_motion2_score'], 3.8953518541666665, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_adm2_score'], 0.9345149030293786, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'], 0.3636620710647402, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 0.7674952820232231, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 0.8631077727416296, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 0.9157200890843669, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_motion2_score'], 3.8953518541666665, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_score'], 0.9345149030293786, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_psnr_score'], 30.7550666667, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_ssim_score'], 0.86322654166666657, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_ms_ssim_score'], 0.9632406874999999, places=4)
@@ -210,12 +210,12 @@ class VmafexecQualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAFEXEC_psnr_cb_score'], 38.4494410625, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_psnr_cr_score'], 40.99191027083334, places=4)
 
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale0_score'], 1.0, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale1_score'], 0.9999998541666666, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale2_score'], 0.9999996041666667, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale3_score'], 0.9999991458333334, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_motion2_score'], 3.895352291666667, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_adm2_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale0_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale1_score'], 0.9999998541666666, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale2_score'], 0.9999996041666667, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale3_score'], 0.9999991458333334, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_motion2_score'], 3.895352291666667, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_adm2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_psnr_score'], 60.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_ssim_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_ms_ssim_score'], 1.0, places=4)
@@ -293,19 +293,19 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale0_score'], 0.3636620710647402, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale1_score'], 0.7674952820232231, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale2_score'], 0.8631077727416296, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale3_score'], 0.9157200890843669, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_motion2_score'], 3.8953518541666665, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_adm2_score'], 0.9345149030293786, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'], 0.3636620710647402, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 0.7674952820232231, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 0.8631077727416296, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 0.9157200890843669, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_motion2_score'], 3.8953518541666665, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_score'], 0.9345149030293786, places=4)
 
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale0_score'], 1.0, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale1_score'], 0.99999972612, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale2_score'], 0.999999465724, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale3_score'], 0.999999399683, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_motion2_score'], 3.8953518541666665, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_adm2_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale0_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale1_score'], 0.99999972612, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale2_score'], 0.999999465724, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale3_score'], 0.999999399683, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_motion2_score'], 3.8953518541666665, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_adm2_score'], 1.0, places=4)
 
         self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 76.66890519623612, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_score'], 99.946416604585025, places=4)
@@ -347,22 +347,22 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale0_score'],0.3636620625, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale1_score'], 0.7674953125, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale2_score'], 0.8631078125, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale3_score'], 0.9157200833333333, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_motion2_score'], 3.895352291666667, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_adm2_score'], 0.9345148541666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'],0.3636620625, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 0.7674953125, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 0.8631078125, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 0.9157200833333333, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_motion2_score'], 3.895352291666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_score'], 0.9345148541666667, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_psnr_score'], 30.780577083333331, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_ssim_score'], 0.86322654166666657, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_ms_ssim_score'], 0.9632406874999999, places=4)
 
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale0_score'], 1.0, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale1_score'], 0.9999998541666666, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale2_score'], 0.9999996041666667, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale3_score'], 0.9999991458333334, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_motion2_score'], 3.895352291666667, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_adm2_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale0_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale1_score'], 0.9999998541666666, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale2_score'], 0.9999996041666667, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale3_score'], 0.9999991458333334, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_motion2_score'], 3.895352291666667, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_adm2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_psnr_score'], 72.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_ssim_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_ms_ssim_score'], 1.0, places=4)
@@ -389,22 +389,22 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale0_score'], 0.4330893333333334, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale1_score'], 0.830613, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale2_score'], 0.9072123333333333, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale3_score'], 0.945896, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_motion2_score'], 2.8104600000000004, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_adm2_score'], 0.9517763333333334, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'], 0.4330893333333334, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 0.830613, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 0.9072123333333333, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 0.945896, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_motion2_score'], 2.8104600000000004, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_score'], 0.9517763333333334, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_psnr_score'], 32.57143333333333, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_ssim_score'], 0.8978630000000001, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_ms_ssim_score'], 0.9747490000000001, places=4)
 
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale0_score'], 1.0, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale1_score'], 0.9999998541666666, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale2_score'], 0.9999996041666667, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale3_score'], 0.9999991458333334, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_motion2_score'], 2.8104600000000004, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_adm2_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale0_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale1_score'], 0.9999998541666666, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale2_score'], 0.9999996041666667, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale3_score'], 0.9999991458333334, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_motion2_score'], 2.8104600000000004, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_adm2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_psnr_score'], 72.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_ssim_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_ms_ssim_score'], 1.0, places=4)
@@ -431,22 +431,22 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale0_score'],0.4330893333333334, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale1_score'], 0.830613, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale2_score'], 0.9072123333333333, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale3_score'], 0.945896, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_motion2_score'], 2.8104600000000004, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_adm2_score'], 0.9517763333333334, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'],0.4330893333333334, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 0.830613, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 0.9072123333333333, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 0.945896, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_motion2_score'], 2.8104600000000004, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_score'], 0.9517763333333334, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_psnr_score'], 32.577818, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_ssim_score'], 0.8978630000000001, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_ms_ssim_score'], 0.9747490000000001, places=4)
 
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale0_score'], 1.0, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale1_score'], 0.9999998541666666, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale2_score'], 0.9999996041666667, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale3_score'], 0.9999991458333334, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_motion2_score'], 2.8104600000000004, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_adm2_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale0_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale1_score'], 0.9999998541666666, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale2_score'], 0.9999996041666667, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale3_score'], 0.9999991458333334, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_motion2_score'], 2.8104600000000004, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_adm2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_psnr_score'], 84.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_ssim_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_ms_ssim_score'], 1.0, places=4)
@@ -473,22 +473,22 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale0_score'],0.4330893333333334, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale1_score'], 0.830613, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale2_score'], 0.9072123333333333, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale3_score'], 0.945896, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_motion2_score'], 2.8104600000000004, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_adm2_score'], 0.9517763333333334, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'],0.4330893333333334, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 0.830613, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 0.9072123333333333, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 0.945896, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_motion2_score'], 2.8104600000000004, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_score'], 0.9517763333333334, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_psnr_score'], 32.579806000000005, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_ssim_score'], 0.8978630000000001, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_ms_ssim_score'], 0.9747490000000001, places=4)
 
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale0_score'], 1.0, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale1_score'], 0.9999998541666666, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale2_score'], 0.9999996041666667, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale3_score'], 0.9999991458333334, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_motion2_score'], 2.8104600000000004, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_adm2_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale0_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale1_score'], 0.9999998541666666, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale2_score'], 0.9999996041666667, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale3_score'], 0.9999991458333334, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_motion2_score'], 2.8104600000000004, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_adm2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_psnr_score'], 108.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_ssim_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_ms_ssim_score'], 1.0, places=4)
@@ -529,22 +529,22 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale0_score'], 0.9240746, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale1_score'], 0.9968371999999999, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale2_score'], 0.9987575999999999, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale3_score'], 0.9993221999999999, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_motion2_score'], 0.7523685999999999, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_adm2_score'], 0.9981770000000001, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'], 0.9240746, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 0.9968371999999999, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 0.9987575999999999, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 0.9993221999999999, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_motion2_score'], 0.7523685999999999, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_score'], 0.9981770000000001, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_psnr_score'], 48.81622, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_ssim_score'], 0.99566, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_float_ms_ssim_score'], 0.9993778000000001, places=4)
 
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale0_score'], 1.0, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale1_score'], 0.9999990000000001, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale2_score'], 0.9999990000000001, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale3_score'], 0.9999990000000001, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_motion2_score'], 0.7523685999999999, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_adm2_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale0_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale1_score'], 0.9999990000000001, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale2_score'], 0.9999990000000001, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale3_score'], 0.9999990000000001, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_motion2_score'], 0.7523685999999999, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_adm2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_psnr_score'], 72.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_ssim_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_float_ms_ssim_score'], 1.0, places=4)
@@ -582,12 +582,12 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_integer_vif_scale0_score'], results[0]['VMAFOSSEXEC_integer_vif_scale0_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_integer_vif_scale1_score'], results[0]['VMAFOSSEXEC_integer_vif_scale1_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_integer_vif_scale2_score'], results[0]['VMAFOSSEXEC_integer_vif_scale2_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_integer_vif_scale3_score'], results[0]['VMAFOSSEXEC_integer_vif_scale3_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_integer_motion2_score'], results[0]['VMAFOSSEXEC_integer_motion2_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_integer_adm2_score'], results[0]['VMAFOSSEXEC_integer_adm2_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale0_score'], results[0]['VMAFOSSEXEC_vif_scale0_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale1_score'], results[0]['VMAFOSSEXEC_vif_scale1_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale2_score'], results[0]['VMAFOSSEXEC_vif_scale2_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale3_score'], results[0]['VMAFOSSEXEC_vif_scale3_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_motion2_score'], results[0]['VMAFOSSEXEC_motion2_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_adm2_score'], results[0]['VMAFOSSEXEC_adm2_score'], places=5)
         self.assertAlmostEqual(results_rc[0]['VMAFEXEC_float_psnr_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
         self.assertAlmostEqual(results_rc[0]['VMAFEXEC_float_ssim_score'], results[0]['VMAFOSSEXEC_ssim_score'], places=5)
         self.assertAlmostEqual(results_rc[0]['VMAFEXEC_float_ms_ssim_score'], results[0]['VMAFOSSEXEC_ms_ssim_score'], places=5)
@@ -595,12 +595,12 @@ class VmafexecQualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results_rc[0]['VMAFEXEC_psnr_cb_score'], 38.4494410625, places=4)
         self.assertAlmostEqual(results_rc[0]['VMAFEXEC_psnr_cr_score'], 40.99191027083334, places=4)
 
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_integer_vif_scale0_score'], results[1]['VMAFOSSEXEC_integer_vif_scale0_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_integer_vif_scale1_score'], results[1]['VMAFOSSEXEC_integer_vif_scale1_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_integer_vif_scale2_score'], results[1]['VMAFOSSEXEC_integer_vif_scale2_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_integer_vif_scale3_score'], results[1]['VMAFOSSEXEC_integer_vif_scale3_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_integer_motion2_score'], results[1]['VMAFOSSEXEC_integer_motion2_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_integer_adm2_score'], results[1]['VMAFOSSEXEC_integer_adm2_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale0_score'], results[1]['VMAFOSSEXEC_vif_scale0_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale1_score'], results[1]['VMAFOSSEXEC_vif_scale1_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale2_score'], results[1]['VMAFOSSEXEC_vif_scale2_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale3_score'], results[1]['VMAFOSSEXEC_vif_scale3_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_motion2_score'], results[1]['VMAFOSSEXEC_motion2_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_adm2_score'], results[1]['VMAFOSSEXEC_adm2_score'], places=5)
         self.assertAlmostEqual(results_rc[1]['VMAFEXEC_float_psnr_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
         self.assertAlmostEqual(results_rc[1]['VMAFEXEC_float_ssim_score'], results[1]['VMAFOSSEXEC_ssim_score'], places=5)
         self.assertAlmostEqual(results_rc[1]['VMAFEXEC_float_ms_ssim_score'], results[1]['VMAFOSSEXEC_ms_ssim_score'], places=5)
@@ -655,12 +655,12 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_integer_vif_scale0_score'], results[0]['VMAFOSSEXEC_integer_vif_scale0_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_integer_vif_scale1_score'], results[0]['VMAFOSSEXEC_integer_vif_scale1_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_integer_vif_scale2_score'], results[0]['VMAFOSSEXEC_integer_vif_scale2_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_integer_vif_scale3_score'], results[0]['VMAFOSSEXEC_integer_vif_scale3_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_integer_motion2_score'], results[0]['VMAFOSSEXEC_integer_motion2_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_integer_adm2_score'], results[0]['VMAFOSSEXEC_integer_adm2_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale0_score'], results[0]['VMAFOSSEXEC_vif_scale0_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale1_score'], results[0]['VMAFOSSEXEC_vif_scale1_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale2_score'], results[0]['VMAFOSSEXEC_vif_scale2_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale3_score'], results[0]['VMAFOSSEXEC_vif_scale3_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_motion2_score'], results[0]['VMAFOSSEXEC_motion2_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_adm2_score'], results[0]['VMAFOSSEXEC_adm2_score'], places=5)
         self.assertAlmostEqual(results_rc[0]['VMAFEXEC_float_psnr_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
         self.assertAlmostEqual(results_rc[0]['VMAFEXEC_float_ssim_score'], results[0]['VMAFOSSEXEC_ssim_score'], places=5)
         self.assertAlmostEqual(results_rc[0]['VMAFEXEC_float_ms_ssim_score'], results[0]['VMAFOSSEXEC_ms_ssim_score'], places=5)
@@ -668,12 +668,12 @@ class VmafexecQualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results_rc[0]['VMAFEXEC_psnr_cb_score'], 50.2879106, places=4)
         self.assertAlmostEqual(results_rc[0]['VMAFEXEC_psnr_cr_score'], 49.740259, places=4)
 
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_integer_vif_scale0_score'], results[1]['VMAFOSSEXEC_integer_vif_scale0_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_integer_vif_scale1_score'], results[1]['VMAFOSSEXEC_integer_vif_scale1_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_integer_vif_scale2_score'], results[1]['VMAFOSSEXEC_integer_vif_scale2_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_integer_vif_scale3_score'], results[1]['VMAFOSSEXEC_integer_vif_scale3_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_integer_motion2_score'], results[1]['VMAFOSSEXEC_integer_motion2_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_integer_adm2_score'], results[1]['VMAFOSSEXEC_integer_adm2_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale0_score'], results[1]['VMAFOSSEXEC_vif_scale0_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale1_score'], results[1]['VMAFOSSEXEC_vif_scale1_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale2_score'], results[1]['VMAFOSSEXEC_vif_scale2_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale3_score'], results[1]['VMAFOSSEXEC_vif_scale3_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_motion2_score'], results[1]['VMAFOSSEXEC_motion2_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_adm2_score'], results[1]['VMAFOSSEXEC_adm2_score'], places=5)
         self.assertAlmostEqual(results_rc[1]['VMAFEXEC_float_psnr_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
         self.assertAlmostEqual(results_rc[1]['VMAFEXEC_float_ssim_score'], results[1]['VMAFOSSEXEC_ssim_score'], places=5)
         self.assertAlmostEqual(results_rc[1]['VMAFEXEC_float_ms_ssim_score'], results[1]['VMAFOSSEXEC_ms_ssim_score'], places=5)
@@ -714,12 +714,12 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_integer_vif_scale0_score'], results[0]['VMAFOSSEXEC_integer_vif_scale0_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_integer_vif_scale1_score'], results[0]['VMAFOSSEXEC_integer_vif_scale1_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_integer_vif_scale2_score'], results[0]['VMAFOSSEXEC_integer_vif_scale2_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_integer_vif_scale3_score'], results[0]['VMAFOSSEXEC_integer_vif_scale3_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_integer_motion2_score'], results[0]['VMAFOSSEXEC_integer_motion2_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_integer_adm2_score'], results[0]['VMAFOSSEXEC_integer_adm2_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale0_score'], results[0]['VMAFOSSEXEC_vif_scale0_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale1_score'], results[0]['VMAFOSSEXEC_vif_scale1_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale2_score'], results[0]['VMAFOSSEXEC_vif_scale2_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale3_score'], results[0]['VMAFOSSEXEC_vif_scale3_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_motion2_score'], results[0]['VMAFOSSEXEC_motion2_score'], places=5)
+        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_adm2_score'], results[0]['VMAFOSSEXEC_adm2_score'], places=5)
         self.assertAlmostEqual(results_rc[0]['VMAFEXEC_float_psnr_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
         self.assertAlmostEqual(results_rc[0]['VMAFEXEC_float_ssim_score'], results[0]['VMAFOSSEXEC_ssim_score'], places=5)
         self.assertAlmostEqual(results_rc[0]['VMAFEXEC_float_ms_ssim_score'], results[0]['VMAFOSSEXEC_ms_ssim_score'], places=5)
@@ -727,12 +727,12 @@ class VmafexecQualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results_rc[0]['VMAFEXEC_psnr_cb_score'], 38.7698320625, places=4)
         self.assertAlmostEqual(results_rc[0]['VMAFEXEC_psnr_cr_score'], 41.284188416666666, places=4)
 
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_integer_vif_scale0_score'], results[1]['VMAFOSSEXEC_integer_vif_scale0_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_integer_vif_scale1_score'], results[1]['VMAFOSSEXEC_integer_vif_scale1_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_integer_vif_scale2_score'], results[1]['VMAFOSSEXEC_integer_vif_scale2_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_integer_vif_scale3_score'], results[1]['VMAFOSSEXEC_integer_vif_scale3_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_integer_motion2_score'], results[1]['VMAFOSSEXEC_integer_motion2_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_integer_adm2_score'], results[1]['VMAFOSSEXEC_integer_adm2_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale0_score'], results[1]['VMAFOSSEXEC_vif_scale0_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale1_score'], results[1]['VMAFOSSEXEC_vif_scale1_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale2_score'], results[1]['VMAFOSSEXEC_vif_scale2_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale3_score'], results[1]['VMAFOSSEXEC_vif_scale3_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_motion2_score'], results[1]['VMAFOSSEXEC_motion2_score'], places=5)
+        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_adm2_score'], results[1]['VMAFOSSEXEC_adm2_score'], places=5)
         self.assertAlmostEqual(results_rc[1]['VMAFEXEC_float_psnr_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
         self.assertAlmostEqual(results_rc[1]['VMAFEXEC_float_ssim_score'], results[1]['VMAFOSSEXEC_ssim_score'], places=5)
         self.assertAlmostEqual(results_rc[1]['VMAFEXEC_float_ms_ssim_score'], results[1]['VMAFOSSEXEC_ms_ssim_score'], places=5)
@@ -777,20 +777,20 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         self.runner = VmafexecQualityRunner(
             [asset],
-            None, fifo_mode=False,
+            None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
             optional_dict={'disable_clip_score': True}
         )
-        self.runner.run(parallelize=False)
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_adm2_score'], 1.116691, places=4)  # 1.116691484215469
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale0_score'], 1.052403, places=4)  # 1.0522544319369052
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale1_score'], 1.070149, places=4)  # 1.0705609423182443
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale2_score'], 1.072518, places=4)  # 1.0731529493098957
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale3_score'], 1.072512, places=4)  # 1.0728060231246508
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_score'], 1.116691, places=4)  # 1.116691484215469
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'], 1.052403, places=4)  # 1.0522544319369052
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 1.070149, places=4)  # 1.0705609423182443
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 1.072518, places=4)  # 1.0731529493098957
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 1.072512, places=4)  # 1.0728060231246508
 
         self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 132.732952, places=3)  # 132.78849246495625
 
@@ -814,11 +814,11 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_adm2_egl_1_score'], 0.9574308606115118, places=4)  # 1.116691484215469
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale0_egl_1_score'], 0.983699512450884, places=4)  # 1.0522544319369052
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale1_egl_1_score'], 0.9974276726830457, places=4)  # 1.0705609423182443
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale2_egl_1_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale3_egl_1_score'], 0.999146211879154, places=4)  # 1.0728060231246508
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_egl_1_score'], 0.9574308606115118, places=4)  # 1.116691484215469
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_egl_1_score'], 0.983699512450884, places=4)  # 1.0522544319369052
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_egl_1_score'], 0.9974276726830457, places=4)  # 1.0705609423182443
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_egl_1_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_egl_1_score'], 0.999146211879154, places=4)  # 1.0728060231246508
 
         self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 88.030463, places=4)  # 132.78849246495625
 
@@ -842,11 +842,11 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_adm2_egl_1.2_score'], 1.116595, places=4)  # 1.116691484215469
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale0_egl_1.1_score'], 1.029842, places=4)  # 1.0522544319369052
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale1_egl_1.1_score'], 1.046578, places=4)  # 1.0705609423182443
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale2_egl_1.1_score'], 1.04852, places=4)  # 1.0731529493098957
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale3_egl_1.1_score'], 1.04892, places=4)  # 1.0728060231246508
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_egl_1.2_score'], 1.116595, places=4)  # 1.116691484215469
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_egl_1.1_score'], 1.029842, places=4)  # 1.0522544319369052
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_egl_1.1_score'], 1.046578, places=4)  # 1.0705609423182443
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_egl_1.1_score'], 1.04852, places=4)  # 1.0731529493098957
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_egl_1.1_score'], 1.04892, places=4)  # 1.0728060231246508
 
         self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 129.474226, places=3)  # 132.78849246495625
 
@@ -870,11 +870,11 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_adm2_egl_1_score'], 0.9574308606115118, places=4)  # 1.116691484215469
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale0_egl_1_score'], 0.983699512450884, places=4)  # 1.0522544319369052
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale1_egl_1_score'], 0.9974276726830457, places=4)  # 1.0705609423182443
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale2_egl_1_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale3_egl_1_score'], 0.999146211879154, places=4)  # 1.0728060231246508
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_egl_1_score'], 0.9574308606115118, places=4)  # 1.116691484215469
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_egl_1_score'], 0.983699512450884, places=4)  # 1.0522544319369052
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_egl_1_score'], 0.9974276726830457, places=4)  # 1.0705609423182443
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_egl_1_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_egl_1_score'], 0.999146211879154, places=4)  # 1.0728060231246508
 
         self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 88.030463, places=4)  # 132.78849246495625
 
@@ -898,11 +898,11 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_adm2_egl_1_score'], 0.9574308606115118, places=4)  # 1.116691484215469
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale0_egl_1_score'], 0.983699512450884, places=4)  # 1.0522544319369052
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale1_egl_1_score'], 0.9974276726830457, places=4)  # 1.0705609423182443
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale2_egl_1_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale3_egl_1_score'], 0.999146211879154, places=4)  # 1.0728060231246508
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_egl_1_score'], 0.9574308606115118, places=4)  # 1.116691484215469
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_egl_1_score'], 0.983699512450884, places=4)  # 1.0522544319369052
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_egl_1_score'], 0.9974276726830457, places=4)  # 1.0705609423182443
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_egl_1_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_egl_1_score'], 0.999146211879154, places=4)  # 1.0728060231246508
 
         self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 88.030463, places=4)  # 132.78849246495625
 
@@ -927,11 +927,11 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_adm2_egl_1.2_score'], 1.116595, places=4)  # 1.116691484215469
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale0_egl_1_score'], 0.983699512450884, places=4)  # 1.0522544319369052
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale1_egl_1_score'], 0.9974276726830457, places=4)  # 1.0705609423182443
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale2_egl_1_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale3_egl_1_score'], 0.999146211879154, places=4)  # 1.0728060231246508
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_egl_1.2_score'], 1.116595, places=4)  # 1.116691484215469
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_egl_1_score'], 0.983699512450884, places=4)  # 1.0522544319369052
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_egl_1_score'], 0.9974276726830457, places=4)  # 1.0705609423182443
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_egl_1_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_egl_1_score'], 0.999146211879154, places=4)  # 1.0728060231246508
 
         self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 122.804272, places=3)  # 132.78849246495625
 
@@ -1024,19 +1024,19 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale0_score'], 0.3636620710647402, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale1_score'], 0.7674952820232231, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale2_score'], 0.8631077727416296, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale3_score'], 0.9157200890843669, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_motion2_score'], 3.8953518541666665, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_adm2_score'], 0.9345149030293786, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'], 0.3636620710647402, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 0.7674952820232231, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 0.8631077727416296, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 0.9157200890843669, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_motion2_score'], 3.8953518541666665, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_score'], 0.9345149030293786, places=4)
 
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale0_score'], 1.0, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale1_score'],0.99999972612, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale2_score'],0.999999465724, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_vif_scale3_score'], 0.999999399683, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_motion2_score'], 3.8953518541666665, places=4)
-        self.assertAlmostEqual(results[1]['VMAFEXEC_integer_adm2_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale0_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale1_score'],0.99999972612, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale2_score'],0.999999465724, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale3_score'], 0.999999399683, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_motion2_score'], 3.8953518541666665, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_adm2_score'], 1.0, places=4)
 
         self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 76.66890519623612, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_score'], 99.946416604585025, places=4)
@@ -1051,16 +1051,16 @@ class VmafexecQualityRunnerTest(MyTestCase):
             result_store=None,
             optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_4k_v0.6.1.json")}
         )
-        self.runner.run(parallelize=False)
+        self.runner.run(parallelize=True)
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale0_score'], 0.3636620625, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale1_score'], 0.7674953125, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale2_score'], 0.8631078125, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_vif_scale3_score'], 0.9157200833333333, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_motion2_score'], 3.895352291666667, places=4)
-        self.assertAlmostEqual(results[0]['VMAFEXEC_integer_adm2_score'], 0.9345148541666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'], 0.3636620625, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 0.7674953125, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 0.8631078125, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 0.9157200833333333, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_motion2_score'], 3.895352291666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_score'], 0.9345148541666667, places=4)
 
         self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 84.95064735416668, places=4)
 
