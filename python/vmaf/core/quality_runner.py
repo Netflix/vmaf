@@ -17,6 +17,7 @@ from vmaf.core.train_test_model import TrainTestModel, LibsvmNusvrTrainTestModel
 from vmaf.core.feature_extractor import SsimFeatureExtractor, MsSsimFeatureExtractor, \
     VmafFeatureExtractor, PsnrFeatureExtractor, VmafIntegerFeatureExtractor
 from vmaf.core.noref_feature_extractor import BrisqueNorefFeatureExtractor
+from vmaf.core.vmafexec_feature_extractor import CIEDE2000FeatureExtractor
 from vmaf.tools.decorator import override
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
@@ -656,7 +657,44 @@ class VmafPhoneQualityRunner(VmafQualityRunner):
         return True
 
 
-class VmafossExecQualityRunner(QualityRunner):
+class FeatureDiscoveryMixin(object):
+
+    @staticmethod
+    def _discover_feature_exact(frame, i_feature, feature_, feature_origin,
+                                feature_scores, feature_nicknames):
+        feature_found = False
+        for feature_fullname in frame.attrib:
+            if feature_ == feature_fullname:
+                feature_scores[i_feature].append(
+                    float(frame.attrib[feature_fullname]))
+                if feature_nicknames[i_feature] is None:
+                    feature_nicknames[i_feature] = feature_origin
+                else:
+                    assert feature_nicknames[i_feature] == feature_origin
+                feature_found = True
+                break
+        return feature_found
+
+    @staticmethod
+    def _discover_feature_wildcard(frame, i_feature, feature_prefix, feature_origin,
+                                   feature_scores, feature_nicknames):
+        feature_found = False
+        for feature_fullname in frame.attrib:
+            if feature_fullname.startswith(feature_prefix):
+                feature_scores[i_feature].append(
+                    float(frame.attrib[feature_fullname]))
+                feature_suffix = feature_fullname[len(feature_prefix):]
+                feature_nickname = feature_origin + '_' + feature_suffix
+                if feature_nicknames[i_feature] is None:
+                    feature_nicknames[i_feature] = feature_nickname
+                else:
+                    assert feature_nicknames[i_feature] == feature_nickname
+                feature_found = True
+                break
+        return feature_found
+
+
+class VmafossExecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
     TYPE = 'VMAFOSSEXEC'
 
     # VERSION = '0.3'
@@ -677,10 +715,6 @@ class VmafossExecQualityRunner(QualityRunner):
     DEFAULT_MODEL_FILEPATH = VmafConfig.model_path("vmaf_v0.6.1.json")
 
     FEATURES = ['adm2', 'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3',
-                'motion_force_0',
-                'adm2_egl_1', 'adm2_egl_1.2',
-                'vif_scale0_egl_1', 'vif_scale1_egl_1',
-                'vif_scale2_egl_1', 'vif_scale3_egl_1',
                 'motion', 'vif_scale0', 'vif_scale1', 'vif_scale2',
                 'vif_scale3', 'vif', 'psnr', 'ssim', 'ms_ssim', 'motion2',
                 'vmaf_bagging', 'vmaf_stddev', 'vmaf_ci_p95_lo', 'vmaf_ci_p95_hi']
@@ -791,24 +825,53 @@ class VmafossExecQualityRunner(QualityRunner):
                 augmented_features.append(feature)
 
         feature_scores = [[] for _ in augmented_features]
+        feature_nicknames = [None for _ in augmented_features]
 
         for frame in root.findall('frames/frame'):
             scores.append(float(frame.attrib['vmaf']))
             for i_feature, feature in enumerate(augmented_features):
-                try:
-                    feature_scores[i_feature].append(float(frame.attrib[feature]))
-                except KeyError:
-                    try:
-                        feature_scores[i_feature].append(float(frame.attrib['integer_' + feature]))
-                    except KeyError:
-                        pass  # some features may be missing
+
+                # first look for exact match integer_xxx
+                feature_found = self._discover_feature_exact(
+                    frame, i_feature,
+                    'integer_' + feature, feature,
+                    feature_scores, feature_nicknames)
+
+                if feature_found:
+                    continue
+
+                # look for exact match xxx
+                feature_found = self._discover_feature_exact(
+                    frame, i_feature,
+                    feature, feature,
+                    feature_scores, feature_nicknames)
+
+                if feature_found:
+                    continue
+
+                # wildcard discovery: look for integer_xxx_*
+                feature_found = self._discover_feature_wildcard(
+                    frame, i_feature,
+                    'integer_' + feature + '_', feature,
+                    feature_scores, feature_nicknames)
+
+                if feature_found:
+                    continue
+
+                # wildcard discovery: look for xxx_*
+                feature_found = self._discover_feature_wildcard(
+                    frame, i_feature,
+                    feature + '_', feature,
+                    feature_scores, feature_nicknames)
+
         assert len(scores) != 0
         quality_result = {
             self.get_scores_key(): scores,
         }
         for i_feature, feature in enumerate(augmented_features):
             if len(feature_scores[i_feature]) != 0:
-                quality_result[self.get_feature_scores_key(feature)] = feature_scores[i_feature]
+                assert feature_nicknames[i_feature] is not None
+                quality_result[self.get_feature_scores_key(feature_nicknames[i_feature])] = feature_scores[i_feature]
         return quality_result
 
 
@@ -1165,7 +1228,8 @@ class NiqeQualityRunner(QualityRunner):
         vmaf_fassembler.remove_results()
 
 
-class VmafexecQualityRunner(QualityRunner):
+class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
+
     TYPE = 'VMAFEXEC'
 
     VERSION = 'F' + VmafFeatureExtractor.VERSION + '-0.6.1'
@@ -1175,21 +1239,8 @@ class VmafexecQualityRunner(QualityRunner):
 
     FEATURES = [
                 'adm2', 'motion2', 'vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
-                'motion2_force_0',
-                'adm2_egl_1', 'adm2_egl_1.2',
-                'vif_scale0_egl_1', 'vif_scale1_egl_1',
-                'vif_scale2_egl_1', 'vif_scale3_egl_1',
-                'vif_scale0_egl_1.1', 'vif_scale1_egl_1.1',
-                'vif_scale2_egl_1.1', 'vif_scale3_egl_1.1',
-                'integer_adm2', 'integer_motion2', 'integer_vif_scale0', 'integer_vif_scale1', 'integer_vif_scale2', 'integer_vif_scale3',
-                'integer_motion2_force_0',
-                'integer_adm2_egl_1', 'integer_adm2_egl_1.2',
-                'integer_vif_scale0_egl_1', 'integer_vif_scale1_egl_1',
-                'integer_vif_scale2_egl_1', 'integer_vif_scale3_egl_1',
-                'integer_vif_scale0_egl_1.1', 'integer_vif_scale1_egl_1.1',
-                'integer_vif_scale2_egl_1.1', 'integer_vif_scale3_egl_1.1',
-                'float_psnr', 'float_ssim', 'float_ms_ssim',
-                'psnr_y', 'psnr_cb', 'psnr_cr', 'ssim', 'ms_ssim',
+                'float_psnr', 'psnr_y', 'psnr_cb', 'psnr_cr',
+                'float_ssim', 'float_ms_ssim', 'ssim', 'ms_ssim',
                 'float_moment_ref1st', 'float_moment_dis1st', 'float_moment_ref2nd', 'float_moment_dis2nd',
                 ]
 
@@ -1368,6 +1419,7 @@ class VmafexecQualityRunner(QualityRunner):
         scores_dict = {}
 
         feature_scores = [[] for _ in self.FEATURES]
+        feature_nicknames = [None for _ in self.FEATURES]
 
         if self.optional_dict is not None and 'no_prediction' in self.optional_dict:
             no_prediction = self.optional_dict['no_prediction']
@@ -1396,13 +1448,40 @@ class VmafexecQualityRunner(QualityRunner):
                 for scores_key in scores_keys:
                     scores_dict[scores_key].append(float(frame.attrib[scores_key]))
             for i_feature, feature in enumerate(self.FEATURES):
-                try:
-                    feature_scores[i_feature].append(float(frame.attrib['integer_' + feature]))
-                except KeyError:
-                    try:
-                        feature_scores[i_feature].append(float(frame.attrib[feature])) #
-                    except KeyError:
-                        pass  # some features may be missing
+
+                # first look for exact match integer_xxx
+                feature_found = self._discover_feature_exact(
+                    frame, i_feature,
+                    'integer_' + feature, feature,
+                    feature_scores, feature_nicknames)
+
+                if feature_found:
+                    continue
+
+                # look for exact match xxx
+                feature_found = self._discover_feature_exact(
+                    frame, i_feature,
+                    feature, feature,
+                    feature_scores, feature_nicknames)
+
+                if feature_found:
+                    continue
+
+                # wildcard discovery: look for integer_xxx_*
+                feature_found = self._discover_feature_wildcard(
+                    frame, i_feature,
+                    'integer_' + feature + '_', feature,
+                    feature_scores, feature_nicknames)
+
+                if feature_found:
+                    continue
+
+                # wildcard discovery: look for xxx_*
+                feature_found = self._discover_feature_wildcard(
+                    frame, i_feature,
+                    feature + '_', feature,
+                    feature_scores, feature_nicknames)
+
         for scores_key in scores_keys:
             assert len(scores_dict[scores_key]) != 0 \
                    or any([len(feature_score) != 0 for feature_score in feature_scores])
@@ -1412,9 +1491,11 @@ class VmafexecQualityRunner(QualityRunner):
                 quality_result[self.get_feature_scores_key(scores_key)] = scores_dict[scores_key]
             else:
                 quality_result[self.get_scores_key()] = scores_dict[scores_key]
+
         for i_feature, feature in enumerate(self.FEATURES):
             if len(feature_scores[i_feature]) != 0:
-                quality_result[self.get_feature_scores_key(feature)] = feature_scores[i_feature]
+                assert feature_nicknames[i_feature] is not None
+                quality_result[self.get_feature_scores_key(feature_nicknames[i_feature])] = feature_scores[i_feature]
         return quality_result
 
 

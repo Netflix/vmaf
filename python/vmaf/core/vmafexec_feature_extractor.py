@@ -10,13 +10,9 @@ class FloatMotionFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtracto
 
     ATOM_FEATURES = ['motion2',
                      'motion',
-                     'motion2_force_0',
-                     'motion_force_0',
                      ]
 
     ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
-        'motion2_force_0': 'motion2_force_0',
-        'motion_force_0': 'motion_force_0',
         'motion2': 'motion2',
         'motion': 'motion',
     }
@@ -48,13 +44,9 @@ class IntegerMotionFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtrac
 
     ATOM_FEATURES = ['motion2',
                      'motion',
-                     'motion2_force_0',
-                     'motion_force_0',
                      ]
 
     ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
-        'motion2_force_0': 'integer_motion2_force_0',
-        'motion_force_0': 'integer_motion_force_0',
         'motion2': 'integer_motion2',
         'motion': 'integer_motion',
     }
@@ -94,28 +86,6 @@ class FloatVifFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
                      'vif_den_scale2',
                      'vif_num_scale3',
                      'vif_den_scale3',
-
-                     'vif_scale0_egl_1', 'vif_scale1_egl_1', 'vif_scale2_egl_1', 'vif_scale3_egl_1',
-                     'vif_egl_1', 'vif_num_egl_1', 'vif_den_egl_1',
-                     'vif_num_scale0_egl_1',
-                     'vif_den_scale0_egl_1',
-                     'vif_num_scale1_egl_1',
-                     'vif_den_scale1_egl_1',
-                     'vif_num_scale2_egl_1',
-                     'vif_den_scale2_egl_1',
-                     'vif_num_scale3_egl_1',
-                     'vif_den_scale3_egl_1',
-
-                     'vif_scale0_egl_1.1', 'vif_scale1_egl_1.1', 'vif_scale2_egl_1.1', 'vif_scale3_egl_1.1',
-                     'vif_egl_1.1', 'vif_num_egl_1.1', 'vif_den_egl_1.1',
-                     'vif_num_scale0_egl_1.1',
-                     'vif_den_scale0_egl_1.1',
-                     'vif_num_scale1_egl_1.1',
-                     'vif_den_scale1_egl_1.1',
-                     'vif_num_scale2_egl_1.1',
-                     'vif_den_scale2_egl_1.1',
-                     'vif_num_scale3_egl_1.1',
-                     'vif_den_scale3_egl_1.1',
                      ]
 
     ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
@@ -134,38 +104,6 @@ class FloatVifFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
         'vif_den_scale2': 'vif_den_scale2',
         'vif_num_scale3': 'vif_num_scale3',
         'vif_den_scale3': 'vif_den_scale3',
-
-        'vif_scale0_egl_1': 'vif_scale0_egl_1',
-        'vif_scale1_egl_1': 'vif_scale1_egl_1',
-        'vif_scale2_egl_1': 'vif_scale2_egl_1',
-        'vif_scale3_egl_1': 'vif_scale3_egl_1',
-        'vif_egl_1': 'vif_egl_1',
-        'vif_num_egl_1': 'vif_num_egl_1',
-        'vif_den_egl_1': 'vif_den_egl_1',
-        'vif_num_scale0_egl_1': 'vif_num_scale0_egl_1',
-        'vif_den_scale0_egl_1': 'vif_den_scale0_egl_1',
-        'vif_num_scale1_egl_1': 'vif_num_scale1_egl_1',
-        'vif_den_scale1_egl_1': 'vif_den_scale1_egl_1',
-        'vif_num_scale2_egl_1': 'vif_num_scale2_egl_1',
-        'vif_den_scale2_egl_1': 'vif_den_scale2_egl_1',
-        'vif_num_scale3_egl_1': 'vif_num_scale3_egl_1',
-        'vif_den_scale3_egl_1': 'vif_den_scale3_egl_1',
-
-        'vif_scale0_egl_1.1': 'vif_scale0_egl_1.1',
-        'vif_scale1_egl_1.1': 'vif_scale1_egl_1.1',
-        'vif_scale2_egl_1.1': 'vif_scale2_egl_1.1',
-        'vif_scale3_egl_1.1': 'vif_scale3_egl_1.1',
-        'vif_egl_1.1': 'vif_egl_1.1',
-        'vif_num_egl_1.1': 'vif_num_egl_1.1',
-        'vif_den_egl_1.1': 'vif_den_egl_1.1',
-        'vif_num_scale0_egl_1.1': 'vif_num_scale0_egl_1.1',
-        'vif_den_scale0_egl_1.1': 'vif_den_scale0_egl_1.1',
-        'vif_num_scale1_egl_1.1': 'vif_num_scale1_egl_1.1',
-        'vif_den_scale1_egl_1.1': 'vif_den_scale1_egl_1.1',
-        'vif_num_scale2_egl_1.1': 'vif_num_scale2_egl_1.1',
-        'vif_den_scale2_egl_1.1': 'vif_den_scale2_egl_1.1',
-        'vif_num_scale3_egl_1.1': 'vif_num_scale3_egl_1.1',
-        'vif_den_scale3_egl_1.1': 'vif_den_scale3_egl_1.1',
     }
 
     def _generate_result(self, asset):
@@ -207,28 +145,6 @@ class IntegerVifFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor
                      'vif_den_scale2',
                      'vif_num_scale3',
                      'vif_den_scale3',
-
-                     'vif_scale0_egl_1', 'vif_scale1_egl_1', 'vif_scale2_egl_1', 'vif_scale3_egl_1',
-                     'vif_egl_1', 'vif_num_egl_1', 'vif_den_egl_1',
-                     'vif_num_scale0_egl_1',
-                     'vif_den_scale0_egl_1',
-                     'vif_num_scale1_egl_1',
-                     'vif_den_scale1_egl_1',
-                     'vif_num_scale2_egl_1',
-                     'vif_den_scale2_egl_1',
-                     'vif_num_scale3_egl_1',
-                     'vif_den_scale3_egl_1',
-
-                     'vif_scale0_egl_1.1', 'vif_scale1_egl_1.1', 'vif_scale2_egl_1.1', 'vif_scale3_egl_1.1',
-                     'vif_egl_1.1', 'vif_num_egl_1.1', 'vif_den_egl_1.1',
-                     'vif_num_scale0_egl_1.1',
-                     'vif_den_scale0_egl_1.1',
-                     'vif_num_scale1_egl_1.1',
-                     'vif_den_scale1_egl_1.1',
-                     'vif_num_scale2_egl_1.1',
-                     'vif_den_scale2_egl_1.1',
-                     'vif_num_scale3_egl_1.1',
-                     'vif_den_scale3_egl_1.1',
                      ]
 
     ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
@@ -247,38 +163,6 @@ class IntegerVifFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor
         'vif_den_scale2': 'integer_vif_den_scale2',
         'vif_num_scale3': 'integer_vif_num_scale3',
         'vif_den_scale3': 'integer_vif_den_scale3',
-
-        'vif_scale0_egl_1': 'integer_vif_scale0_egl_1',
-        'vif_scale1_egl_1': 'integer_vif_scale1_egl_1',
-        'vif_scale2_egl_1': 'integer_vif_scale2_egl_1',
-        'vif_scale3_egl_1': 'integer_vif_scale3_egl_1',
-        'vif_egl_1': 'integer_vif_egl_1',
-        'vif_num_egl_1': 'integer_vif_num_egl_1',
-        'vif_den_egl_1': 'integer_vif_den_egl_1',
-        'vif_num_scale0_egl_1': 'integer_vif_num_scale0_egl_1',
-        'vif_den_scale0_egl_1': 'integer_vif_den_scale0_egl_1',
-        'vif_num_scale1_egl_1': 'integer_vif_num_scale1_egl_1',
-        'vif_den_scale1_egl_1': 'integer_vif_den_scale1_egl_1',
-        'vif_num_scale2_egl_1': 'integer_vif_num_scale2_egl_1',
-        'vif_den_scale2_egl_1': 'integer_vif_den_scale2_egl_1',
-        'vif_num_scale3_egl_1': 'integer_vif_num_scale3_egl_1',
-        'vif_den_scale3_egl_1': 'integer_vif_den_scale3_egl_1',
-
-        'vif_scale0_egl_1.1': 'integer_vif_scale0_egl_1.1',
-        'vif_scale1_egl_1.1': 'integer_vif_scale1_egl_1.1',
-        'vif_scale2_egl_1.1': 'integer_vif_scale2_egl_1.1',
-        'vif_scale3_egl_1.1': 'integer_vif_scale3_egl_1.1',
-        'vif_egl_1.1': 'integer_vif_egl_1.1',
-        'vif_num_egl_1.1': 'integer_vif_num_egl_1.1',
-        'vif_den_egl_1.1': 'integer_vif_den_egl_1.1',
-        'vif_num_scale0_egl_1.1': 'integer_vif_num_scale0_egl_1.1',
-        'vif_den_scale0_egl_1.1': 'integer_vif_den_scale0_egl_1.1',
-        'vif_num_scale1_egl_1.1': 'integer_vif_num_scale1_egl_1.1',
-        'vif_den_scale1_egl_1.1': 'integer_vif_den_scale1_egl_1.1',
-        'vif_num_scale2_egl_1.1': 'integer_vif_num_scale2_egl_1.1',
-        'vif_den_scale2_egl_1.1': 'integer_vif_den_scale2_egl_1.1',
-        'vif_num_scale3_egl_1.1': 'integer_vif_num_scale3_egl_1.1',
-        'vif_den_scale3_egl_1.1': 'integer_vif_den_scale3_egl_1.1',
     }
 
     def _generate_result(self, asset):
@@ -306,8 +190,6 @@ class FloatAdmFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
     VERSION = "1.1"  # add debug features
 
     ATOM_FEATURES = ['adm2',
-                     'adm2_egl_1',
-                     'adm2_egl_1.2',
                      'adm_scale0',
                      'adm_scale1',
                      'adm_scale2',
@@ -327,8 +209,6 @@ class FloatAdmFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
         'adm2': 'adm2',
-        'adm2_egl_1': 'adm2_egl_1',
-        'adm2_egl_1.2': 'adm2_egl_1.2',
         'adm_scale0': 'adm_scale0',
         'adm_scale1': 'adm_scale1',
         'adm_scale2': 'adm_scale2',
@@ -403,9 +283,6 @@ class IntegerAdmFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor
     VERSION = "1.2"  # add debug features
 
     ATOM_FEATURES = ['adm2',
-                     'adm2_egl_1',
-                     'adm2_egl_1.1',
-                     'adm2_egl_1.2',
                      'adm_scale0',
                      'adm_scale1',
                      'adm_scale2',
@@ -425,9 +302,6 @@ class IntegerAdmFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor
 
     ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
         'adm2': 'integer_adm2',
-        'adm2_egl_1': 'integer_adm2_egl_1',
-        'adm2_egl_1.1': 'integer_adm2_egl_1.1',
-        'adm2_egl_1.2': 'integer_adm2_egl_1.2',
         'adm_scale0': 'integer_adm_scale0',
         'adm_scale1': 'integer_adm_scale1',
         'adm_scale2': 'integer_adm_scale2',
