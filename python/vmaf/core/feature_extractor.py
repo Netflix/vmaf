@@ -116,38 +116,22 @@ class VmafexecFeatureExtractorMixin(object):
         root = tree.getroot()
 
         feature_scores = [[] for _ in self.ATOM_FEATURES]
-        feature_fullnames = [None for _ in self.ATOM_FEATURES]
+        feature_nicknames = [None for _ in self.ATOM_FEATURES]
 
         for frame in root.findall('frames/frame'):
             for i_feature, feature in enumerate(self.ATOM_FEATURES):
 
-                feature_found = False
-
                 # first look for exact match
-                for feature_fullname in frame.attrib:
-                    if self.ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT[feature] == feature_fullname:
-                        feature_scores[i_feature].append(float(frame.attrib[feature_fullname]))
-                        if feature_fullnames[i_feature] is None:
-                            feature_fullnames[i_feature] = feature_fullname
-                        else:
-                            assert feature_fullnames[i_feature] == feature_fullname
-                        feature_found = True
-                        break
+                feature_found = self._discover_feature_exact(
+                    frame, i_feature, feature, feature_scores, feature_nicknames)
 
                 if feature_found:
                     continue
 
                 # wildcard discovery: look for xxx features
                 feature_prefix = self.ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT[feature] + '_'
-                for feature_fullname in frame.attrib:
-                    if feature_prefix in feature_fullname:
-                        feature_scores[i_feature].append(float(frame.attrib[feature_fullname]))
-                        if feature_fullnames[i_feature] is None:
-                            feature_fullnames[i_feature] = feature_fullname
-                        else:
-                            assert feature_fullnames[i_feature] == feature_fullname
-                        feature_found = True
-                        break
+                feature_found = self._discover_feature_wildcard(
+                    frame, i_feature, feature_prefix, feature_scores, feature_nicknames)
 
         for i_feature, feature in enumerate(self.ATOM_FEATURES):
            if len(feature_scores[i_feature]) != 0:
@@ -156,10 +140,40 @@ class VmafexecFeatureExtractorMixin(object):
         feature_result = {}
         for i_feature, feature in enumerate(self.ATOM_FEATURES):
             if len(feature_scores[i_feature]) != 0:
-                assert feature_fullnames[i_feature] is not None
-                feature_result[self.get_scores_key(feature_fullnames[i_feature])] = feature_scores[i_feature]
+                assert feature_nicknames[i_feature] is not None
+                feature_result[self.get_scores_key(feature_nicknames[i_feature])] = feature_scores[i_feature]
 
         return feature_result
+
+    def _discover_feature_exact(self, frame, i_feature, feature,
+                                feature_scores, feature_nicknames):
+        feature_found = False
+        for feature_fullname in frame.attrib:
+            if self.ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT[feature] == feature_fullname:
+                feature_scores[i_feature].append(
+                    float(frame.attrib[feature_fullname]))
+                if feature_nicknames[i_feature] is None:
+                    feature_nicknames[i_feature] = feature_fullname
+                else:
+                    assert feature_nicknames[i_feature] == feature_fullname
+                feature_found = True
+                break
+        return feature_found
+
+    def _discover_feature_wildcard(self, frame, i_feature, feature_prefix,
+                                   feature_scores, feature_nicknames):
+        feature_found = False
+        for feature_fullname in frame.attrib:
+            if feature_fullname.startswith(feature_prefix):
+                feature_scores[i_feature].append(
+                    float(frame.attrib[feature_fullname]))
+                if feature_nicknames[i_feature] is None:
+                    feature_nicknames[i_feature] = feature_fullname
+                else:
+                    assert feature_nicknames[i_feature] == feature_fullname
+                feature_found = True
+                break
+        return feature_found
 
 
 class VmafFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
