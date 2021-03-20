@@ -14,8 +14,10 @@ from vmaf.core.result import Result
 from vmaf.core.feature_assembler import FeatureAssembler
 from vmaf.core.train_test_model import TrainTestModel, LibsvmNusvrTrainTestModel, \
     BootstrapLibsvmNusvrTrainTestModel
-from vmaf.core.feature_extractor import SsimFeatureExtractor, MsSsimFeatureExtractor, \
-    VmafFeatureExtractor, PsnrFeatureExtractor, VmafIntegerFeatureExtractor
+from vmaf.core.feature_extractor import SsimFeatureExtractor, \
+    MsSsimFeatureExtractor, \
+    VmafFeatureExtractor, PsnrFeatureExtractor, VmafIntegerFeatureExtractor, \
+    FeatureExtractor
 from vmaf.core.noref_feature_extractor import BrisqueNorefFeatureExtractor
 from vmaf.core.vmafexec_feature_extractor import CIEDE2000FeatureExtractor
 from vmaf.tools.decorator import override
@@ -369,14 +371,29 @@ class VmafQualityRunner(VmafQualityRunnerModelMixin, QualityRunner):
 
     def _get_vmaf_feature_assembler_instance(self, asset):
 
-        # load TrainTestModel only to retrieve its 'feature_dict' extra info
-        feature_dict = self._load_model(asset).get_appended_info('feature_dict')
+        model = self._load_model(asset)
+
+        # load TrainTestModel to retrieve its 'feature_dict' extra info
+        feature_dict = model.get_appended_info('feature_dict')
         if feature_dict is None:
             feature_dict = self.DEFAULT_FEATURE_DICT
 
+        # create feature_option_dict:
+        # feature_opts_dicts in model is per-atom feature; need to map it to
+        # per-aggregate feature (if inconsistent, raise error)
+        atom_feature_opts_dicts = model.get_appended_info('feature_opts_dicts')
+        if atom_feature_opts_dicts is None:
+            aggr_feature_opts_dict = None
+        else:
+            atom_feature_names = model.get_appended_info('feature_names')
+            assert atom_feature_names is not None
+            assert feature_dict is not None
+            aggr_feature_opts_dict = self._get_aggr_feature_opts_dict_from_atom_feature_opts_dicts(
+                feature_dict, atom_feature_names, atom_feature_opts_dicts)
+
         vmaf_fassembler = FeatureAssembler(
             feature_dict=feature_dict,
-            feature_option_dict=None,
+            feature_option_dict=aggr_feature_opts_dict,
             assets=[asset],
             logger=self.logger,
             fifo_mode=self.fifo_mode,
@@ -387,6 +404,51 @@ class VmafQualityRunner(VmafQualityRunnerModelMixin, QualityRunner):
             parallelize=False,  # parallelization already in a higher level
         )
         return vmaf_fassembler
+
+    @staticmethod
+    def _get_aggr_feature_opts_dict_from_atom_feature_opts_dicts(feature_dict,
+                                                                 atom_feature_names,
+                                                                 atom_feature_opts_dicts):
+
+        """
+        >>> atom_feature_names = ['VMAF_integer_feature_adm2_score', 'VMAF_integer_feature_motion2_score', 'VMAF_integer_feature_vif_scale0_score', 'VMAF_integer_feature_vif_scale1_score', 'VMAF_integer_feature_vif_scale2_score', 'VMAF_integer_feature_vif_scale3_score']
+        >>> atom_feature_opts_dicts = [{'adm_enhn_gain_limit': 1.0}, {}, {'vif_enhn_gain_limit': 1.0}, {'vif_enhn_gain_limit': 1.0}, {'vif_enhn_gain_limit': 1.0}, {'vif_enhn_gain_limit': 1.0}]
+        >>> feature_dict = {'VMAF_integer_feature': ['vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3', 'adm2', 'motion2']}
+        >>> VmafQualityRunner._get_aggr_feature_opts_dict_from_atom_feature_opts_dicts(feature_dict, atom_feature_names, atom_feature_opts_dicts)
+        {'VMAF_integer_feature': {'vif_enhn_gain_limit': 1.0, 'adm_enhn_gain_limit': 1.0}}
+        >>> atom_feature_opts_dicts2 = [{'adm_enhn_gain_limit': 1.1}, {}, {'vif_enhn_gain_limit': 1.0}, {'vif_enhn_gain_limit': 1.0}, {'vif_enhn_gain_limit': 1.0}, {'vif_enhn_gain_limit': 1.0}]
+        >>> VmafQualityRunner._get_aggr_feature_opts_dict_from_atom_feature_opts_dicts(feature_dict, atom_feature_names, atom_feature_opts_dicts2)
+        {'VMAF_integer_feature': {'vif_enhn_gain_limit': 1.0, 'adm_enhn_gain_limit': 1.1}}
+        >>> atom_feature_opts_dicts3 = [{'adm_enhn_gain_limit': 1.1}, {}, {'vif_enhn_gain_limit': 1.0}, {'vif_enhn_gain_limit': 1.0}, {'vif_enhn_gain_limit': 1.4}, {'vif_enhn_gain_limit': 1.0}]
+        >>> VmafQualityRunner._get_aggr_feature_opts_dict_from_atom_feature_opts_dicts(feature_dict, atom_feature_names, atom_feature_opts_dicts3)
+        Traceback (most recent call last):
+        ...
+        AssertionError: feature_opts_dicts are inconsistent for atom features belong to the same aggregate features: 1.0 vs. 1.4
+        """
+
+        assert len(atom_feature_opts_dicts) == len(atom_feature_names)
+        d_fname_fopts = dict(zip(atom_feature_names, atom_feature_opts_dicts))
+        aggr_feature_opts_dict = {}
+        for aggr_feature in feature_dict:
+            fextractor_class = FeatureExtractor.find_subclass(aggr_feature)
+            for atom_feature in feature_dict[aggr_feature]:
+                atom_feature_full = fextractor_class.get_score_key(atom_feature)
+                if atom_feature_full in d_fname_fopts:
+                    if aggr_feature not in aggr_feature_opts_dict:
+                        aggr_feature_opts_dict[aggr_feature] = dict()
+
+                    for opt in d_fname_fopts[atom_feature_full]:
+                        if opt not in aggr_feature_opts_dict[aggr_feature]:
+                            aggr_feature_opts_dict[aggr_feature][opt] = \
+                            d_fname_fopts[atom_feature_full][opt]
+                        else:
+                            assert aggr_feature_opts_dict[aggr_feature][opt] == \
+                                   d_fname_fopts[atom_feature_full][opt], \
+                                'feature_opts_dicts are inconsistent for atom features belong to the same aggregate features: {} vs. {}'.format(
+                                    aggr_feature_opts_dict[aggr_feature][opt],
+                                    d_fname_fopts[atom_feature_full][opt]
+                                )
+        return aggr_feature_opts_dict
 
     @override(Executor)
     def _run_on_asset(self, asset):

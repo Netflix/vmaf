@@ -67,11 +67,13 @@ class FeatureAssembler(object):
         # of FeatureExtractor, run, and put results in a dict
         for fextractor_type in self.feature_dict:
 
-            # fextractor = self._get_fextractor_instance(fextractor_type)
-            # fextractor.run()
-            # results = fextractor.results
-
             fextractor_class = FeatureExtractor.find_subclass(fextractor_type)
+
+            if self.feature_option_dict is not None \
+                and fextractor_type in self.feature_option_dict:
+                optional_dict = self.feature_option_dict[fextractor_type]
+            else:
+                optional_dict = self.optional_dict  # FIXME: hacky
 
             runner = fextractor_class(
                  self.assets,
@@ -79,7 +81,7 @@ class FeatureAssembler(object):
                  fifo_mode=self.fifo_mode,
                  delete_workdir=self.delete_workdir,
                  result_store=self.result_store,
-                 optional_dict=self.optional_dict,
+                 optional_dict=optional_dict,
                  optional_dict2=self.optional_dict2,
             )
             runner.run(parallelize=self.parallelize, processes=self.processes)

@@ -239,14 +239,41 @@ class VmafFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
         h=quality_height
         logger = self.logger
 
+        features = ['float_adm', 'float_vif', 'float_motion', 'float_ansnr']
+        options = {
+            'float_adm': {'debug': True},
+            'float_vif': {'debug': True},
+            'float_motion': {'debug': True},
+        }
+
+        if self.optional_dict is not None:
+            for opt in self.optional_dict:
+                if opt == 'vif_enhn_gain_limit':
+                    options['float_vif']['vif_enhn_gain_limit'] = self.optional_dict['vif_enhn_gain_limit']
+                elif opt == 'adm_enhn_gain_limit':
+                    options['float_adm']['adm_enhn_gain_limit'] = self.optional_dict['adm_enhn_gain_limit']
+                else:
+                    pass
+
         ExternalProgramCaller.call_vmafexec_multi_features(
-            ['float_adm', 'float_vif', 'float_motion', 'float_ansnr'],
-            yuv_type, ref_path, dis_path, w, h, log_file_path, logger, options={
-                'float_adm': {'debug': True},
-                'float_vif': {'debug': True},
-                'float_motion': {'debug': True},
-            }
+            features, yuv_type, ref_path, dis_path, w, h, log_file_path,
+            logger, options=options
         )
+
+    @staticmethod
+    def _scores_key_wildcard_match(result_dict, scores_key):
+        """
+        >>> VmafFeatureExtractor._scores_key_wildcard_match({'VMAF_integer_feature_vif_scale0_egl_1_scores': [0.983708]}, 'VMAF_integer_feature_vif_scale0_scores')
+        'VMAF_integer_feature_vif_scale0_egl_1_scores'
+        >>> VmafFeatureExtractor._scores_key_wildcard_match({'VMAF_integer_feature_vif_scale0_egl_1_scores': [0.983708]}, 'VMAF_integer_feature_vif_scale1_scores')
+        Traceback (most recent call last):
+        ...
+        KeyError
+        """
+        for result_key in result_dict:
+            if result_key.startswith(scores_key[:-len('_scores')]):
+                return result_key
+        raise KeyError
 
     @classmethod
     @override(Executor)
@@ -257,22 +284,22 @@ class VmafFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
         # adm2 =
         # (adm_num + ADM2_CONSTANT) / (adm_den + ADM2_CONSTANT)
         adm2_scores_key = cls.get_scores_key('adm2')
-        adm_num_scores_key = cls.get_scores_key('adm_num')
-        adm_den_scores_key = cls.get_scores_key('adm_den')
+        adm_num_scores_key = cls._scores_key_wildcard_match(result.result_dict, cls.get_scores_key('adm_num'))
+        adm_den_scores_key = cls._scores_key_wildcard_match(result.result_dict, cls.get_scores_key('adm_den'))
         result.result_dict[adm2_scores_key] = list(
             (np.array(result.result_dict[adm_num_scores_key]) + cls.ADM2_CONSTANT) /
             (np.array(result.result_dict[adm_den_scores_key]) + cls.ADM2_CONSTANT)
         )
 
         # vif_scalei = vif_num_scalei / vif_den_scalei, i = 0, 1, 2, 3
-        vif_num_scale0_scores_key = cls.get_scores_key('vif_num_scale0')
-        vif_den_scale0_scores_key = cls.get_scores_key('vif_den_scale0')
-        vif_num_scale1_scores_key = cls.get_scores_key('vif_num_scale1')
-        vif_den_scale1_scores_key = cls.get_scores_key('vif_den_scale1')
-        vif_num_scale2_scores_key = cls.get_scores_key('vif_num_scale2')
-        vif_den_scale2_scores_key = cls.get_scores_key('vif_den_scale2')
-        vif_num_scale3_scores_key = cls.get_scores_key('vif_num_scale3')
-        vif_den_scale3_scores_key = cls.get_scores_key('vif_den_scale3')
+        vif_num_scale0_scores_key = cls._scores_key_wildcard_match(result.result_dict, cls.get_scores_key('vif_num_scale0'))
+        vif_den_scale0_scores_key = cls._scores_key_wildcard_match(result.result_dict, cls.get_scores_key('vif_den_scale0'))
+        vif_num_scale1_scores_key = cls._scores_key_wildcard_match(result.result_dict, cls.get_scores_key('vif_num_scale1'))
+        vif_den_scale1_scores_key = cls._scores_key_wildcard_match(result.result_dict, cls.get_scores_key('vif_den_scale1'))
+        vif_num_scale2_scores_key = cls._scores_key_wildcard_match(result.result_dict, cls.get_scores_key('vif_num_scale2'))
+        vif_den_scale2_scores_key = cls._scores_key_wildcard_match(result.result_dict, cls.get_scores_key('vif_den_scale2'))
+        vif_num_scale3_scores_key = cls._scores_key_wildcard_match(result.result_dict, cls.get_scores_key('vif_num_scale3'))
+        vif_den_scale3_scores_key = cls._scores_key_wildcard_match(result.result_dict, cls.get_scores_key('vif_den_scale3'))
         vif_scale0_scores_key = cls.get_scores_key('vif_scale0')
         vif_scale1_scores_key = cls.get_scores_key('vif_scale1')
         vif_scale2_scores_key = cls.get_scores_key('vif_scale2')
@@ -312,14 +339,14 @@ class VmafFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
         )
 
         # adm_scalei = adm_num_scalei / adm_den_scalei, i = 0, 1, 2, 3
-        adm_num_scale0_scores_key = cls.get_scores_key('adm_num_scale0')
-        adm_den_scale0_scores_key = cls.get_scores_key('adm_den_scale0')
-        adm_num_scale1_scores_key = cls.get_scores_key('adm_num_scale1')
-        adm_den_scale1_scores_key = cls.get_scores_key('adm_den_scale1')
-        adm_num_scale2_scores_key = cls.get_scores_key('adm_num_scale2')
-        adm_den_scale2_scores_key = cls.get_scores_key('adm_den_scale2')
-        adm_num_scale3_scores_key = cls.get_scores_key('adm_num_scale3')
-        adm_den_scale3_scores_key = cls.get_scores_key('adm_den_scale3')
+        adm_num_scale0_scores_key = cls._scores_key_wildcard_match(result.result_dict, cls.get_scores_key('adm_num_scale0'))
+        adm_den_scale0_scores_key = cls._scores_key_wildcard_match(result.result_dict, cls.get_scores_key('adm_den_scale0'))
+        adm_num_scale1_scores_key = cls._scores_key_wildcard_match(result.result_dict, cls.get_scores_key('adm_num_scale1'))
+        adm_den_scale1_scores_key = cls._scores_key_wildcard_match(result.result_dict, cls.get_scores_key('adm_den_scale1'))
+        adm_num_scale2_scores_key = cls._scores_key_wildcard_match(result.result_dict, cls.get_scores_key('adm_num_scale2'))
+        adm_den_scale2_scores_key = cls._scores_key_wildcard_match(result.result_dict, cls.get_scores_key('adm_den_scale2'))
+        adm_num_scale3_scores_key = cls._scores_key_wildcard_match(result.result_dict, cls.get_scores_key('adm_num_scale3'))
+        adm_den_scale3_scores_key = cls._scores_key_wildcard_match(result.result_dict, cls.get_scores_key('adm_den_scale3'))
         adm_scale0_scores_key = cls.get_scores_key('adm_scale0')
         adm_scale1_scores_key = cls.get_scores_key('adm_scale1')
         adm_scale2_scores_key = cls.get_scores_key('adm_scale2')
@@ -361,7 +388,7 @@ class VmafFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
         )
 
         motion0_scores_key = cls.get_scores_key('motion0')
-        motion_scores_key = cls.get_scores_key('motion')
+        motion_scores_key = cls._scores_key_wildcard_match(result.result_dict, cls.get_scores_key('motion'))
         result.result_dict[motion0_scores_key] = list(np.zeros_like(result.result_dict[motion_scores_key]))
 
         # validate
@@ -393,13 +420,25 @@ class VmafIntegerFeatureExtractor(VmafFeatureExtractor):
         h=quality_height
         logger = self.logger
 
+        features = ['adm', 'vif', 'motion', 'float_ansnr']
+        options = {
+            'adm': {'debug': True},
+            'vif': {'debug': True},
+            'motion': {'debug': True},
+        }
+
+        if self.optional_dict is not None:
+            for opt in self.optional_dict:
+                if opt == 'vif_enhn_gain_limit':
+                    options['vif']['vif_enhn_gain_limit'] = self.optional_dict['vif_enhn_gain_limit']
+                elif opt == 'adm_enhn_gain_limit':
+                    options['adm']['adm_enhn_gain_limit'] = self.optional_dict['adm_enhn_gain_limit']
+                else:
+                    pass
+
         ExternalProgramCaller.call_vmafexec_multi_features(
-            ['adm', 'vif', 'motion', 'float_ansnr'],
-            yuv_type, ref_path, dis_path, w, h, log_file_path, logger, options={
-                'adm': {'debug': True},
-                'vif': {'debug': True},
-                'motion': {'debug': True},
-            }
+            features, yuv_type, ref_path, dis_path, w, h, log_file_path,
+            logger, options=options
         )
 
 
