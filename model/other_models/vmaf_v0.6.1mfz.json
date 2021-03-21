@@ -23,6 +23,16 @@
             "p0": 1.70674692,
             "p1": 1.72643844
         },
+        "feature_opts_dicts": [
+            {},
+            {
+                "motion_force_zero": true
+            },
+            {},
+            {},
+            {},
+            {}
+        ],
         "norm_type": "linear_rescale",
         "score_clip": [
             0.0,
@@ -30,7 +40,7 @@
         ],
         "feature_names": [
             "VMAF_integer_feature_adm2_score",
-            "VMAF_integer_feature_motion0_score",
+            "VMAF_integer_feature_motion2_score",
             "VMAF_integer_feature_vif_scale0_score",
             "VMAF_integer_feature_vif_scale1_score",
             "VMAF_integer_feature_vif_scale2_score",
@@ -62,7 +72,7 @@
                 "vif_scale2",
                 "vif_scale3",
                 "adm2",
-                "motion0"
+                "motion2"
             ]
         }
     }
