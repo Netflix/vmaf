@@ -150,6 +150,43 @@ class VmafexecQualityRunnerTest(MyTestCase):
         self.assertEqual(len(results[0]['VMAFEXEC_motion2_force_0_scores']), 48)
         self.assertEqual(len(results[1]['VMAFEXEC_motion2_force_0_scores']), 48)
 
+    def test_run_vmafexec_runner_motion_force_zero2(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = VmafexecQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={
+                'model_filepath': VmafConfig.model_path("other_models", "vmaf_v0.6.1mfz.json")
+            }
+        )
+        self.runner.run(parallelize=False)
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'], 0.3636620710647402, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 0.7674952820232231, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 0.8631077727416296, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 0.9157200890843669, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_motion2_force_0_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm2_score'], 0.9345149030293786, places=4)
+
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale0_score'], 1.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale1_score'], 0.9999998541666666, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale2_score'], 0.9999996041666667, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_vif_scale3_score'], 0.9999991458333334, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_motion2_force_0_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[1]['VMAFEXEC_adm2_score'], 1.0, places=4)
+
+        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 72.32054995833333, places=4)  # 76.68425579166666
+        self.assertAlmostEqual(results[1]['VMAFEXEC_score'], 97.42843597916665, places=4)  # 99.94641666666666
+
+        self.assertEqual(len(results[0]['VMAFEXEC_motion2_force_0_scores']), 48)
+        self.assertEqual(len(results[1]['VMAFEXEC_motion2_force_0_scores']), 48)
+
     def test_run_vmafexec_runner_fixed_psnr(self):
 
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()

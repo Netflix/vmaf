@@ -97,7 +97,11 @@ class FeatureAssembler(object):
             for atom_feature in self._get_atom_features(fextractor_type):
                 scores_key = self._get_scores_key(fextractor_type, atom_feature)
                 for result_index, result in enumerate(self.type2results_dict[fextractor_type]):
-                    result_dicts[result_index][scores_key] = result[scores_key]
+                    try:
+                        result_dicts[result_index][scores_key] = result[scores_key]
+                    except KeyError:
+                        scores_key_alt = BasicResult.scores_key_wildcard_match(result.result_dict, scores_key)
+                        result_dicts[result_index][scores_key] = result[scores_key_alt]
 
         self.results = list(map(
             lambda tasset: BasicResult(tasset[0], tasset[1]),

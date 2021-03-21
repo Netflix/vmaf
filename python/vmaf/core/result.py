@@ -138,6 +138,21 @@ class BasicResult(object):
         ))
         return str_aggregate
 
+    @staticmethod
+    def scores_key_wildcard_match(result_dict, scores_key):
+        """
+        >>> BasicResult.scores_key_wildcard_match({'VMAF_integer_feature_vif_scale0_egl_1_scores': [0.983708]}, 'VMAF_integer_feature_vif_scale0_scores')
+        'VMAF_integer_feature_vif_scale0_egl_1_scores'
+        >>> BasicResult.scores_key_wildcard_match({'VMAF_integer_feature_vif_scale0_egl_1_scores': [0.983708]}, 'VMAF_integer_feature_vif_scale1_scores')
+        Traceback (most recent call last):
+        ...
+        KeyError
+        """
+        for result_key in result_dict:
+            if result_key.startswith(scores_key[:-len('_scores')]):
+                return result_key
+        raise KeyError
+
 
 class Result(BasicResult):
     """
@@ -570,3 +585,8 @@ class RawResult(object):
 
     def get_ordered_results(self):
         return sorted(self.result_dict.keys())
+
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
