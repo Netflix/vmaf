@@ -67,7 +67,6 @@ class FeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.4460930625, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 4.04982535417, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_motion2_score'], 3.8953518541666665, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_motion0_score'], 0.0, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_adm_score'], 0.9345148541666667, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'], 0.9345148541666667, places=4) # at version 0.2.4b (ioannis adm fix), adm and adm2 are now identical
         self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 23.5095715208, places=4)

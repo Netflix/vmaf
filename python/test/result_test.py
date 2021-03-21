@@ -11,6 +11,7 @@ from vmaf.config import VmafConfig
 from vmaf.core.result import Result
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner
+from vmaf.tools.misc import MyTestCase
 from vmaf.tools.stats import ListStats
 
 from test.testutil import set_default_576_324_videos_for_testing
@@ -19,10 +20,10 @@ __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
 
-class ResultTest(unittest.TestCase):
+class ResultTest(MyTestCase):
 
     def setUp(self):
-
+        super().setUp()
         ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_1_0.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -42,6 +43,7 @@ class ResultTest(unittest.TestCase):
     def tearDown(self):
         if hasattr(self, 'runner'):
             self.runner.remove_results()
+        super().tearDown()
 
     def test_todataframe_fromdataframe(self):
 
@@ -52,7 +54,7 @@ class ResultTest(unittest.TestCase):
         df_ansnr = df.loc[df['scores_key'] == 'VMAF_feature_ansnr_scores']
         df_motion = df.loc[df['scores_key'] == 'VMAF_feature_motion_scores']
         df_adm_den = df.loc[df['scores_key'] == 'VMAF_feature_adm_den_scores']
-        self.assertEqual(len(df), 39)
+        self.assertEqual(len(df), 38)
         self.assertEqual(len(df_vmaf), 1)
         self.assertEqual(len(df_adm), 1)
         self.assertEqual(len(df_vif), 1)

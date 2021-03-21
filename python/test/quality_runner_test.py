@@ -1361,6 +1361,7 @@ class QualityRunnerTest(MyTestCase):
         with self.assertRaises(KeyError):
             _ = results[0]['VMAF_feature_vif_scale0_egl_1_score']  # egl_1 not in feature name
 
+
 class QualityRunnerVersionTest(unittest.TestCase):
 
     def test_vmaf_quality_runner_version(self):
