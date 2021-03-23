@@ -17,6 +17,7 @@
  */
 
 #include <errno.h>
+#include <math.h>
 #include <stdio.h>
 
 #include "feature/alias.h"
@@ -151,11 +152,23 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
             if (!fc->feature_vector[j]->score[i].written)
                 continue;
             cnt2++;
-            fprintf(outfile, "        \"%s\": %.6f%s\n",
-                vmaf_feature_name_alias(fc->feature_vector[j]->name),
-                fc->feature_vector[j]->score[i].value,
-                cnt2 < cnt ? "," : ""
-            );
+            switch(fpclassify(fc->feature_vector[j]->score[i].value)) {
+            case FP_NORMAL:
+            case FP_ZERO:
+            case FP_SUBNORMAL:
+                fprintf(outfile, "        \"%s\": %.6f%s\n",
+                    vmaf_feature_name_alias(fc->feature_vector[j]->name),
+                    fc->feature_vector[j]->score[i].value,
+                    cnt2 < cnt ? "," : ""
+                );
+                break;
+            case FP_INFINITE:
+            case FP_NAN:
+                fprintf(outfile, "        \"%s\": null%s",
+                        vmaf_feature_name_alias(fc->feature_vector[j]->name),
+                        cnt2 < cnt ? "," : "");
+                break;
+            }
         }
         fprintf(outfile, "      }\n");
         fprintf(outfile, "    }");
@@ -175,8 +188,19 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
                                                 0, n_frames - 1);
             if (!err) {
                 fprintf(outfile, "%s", j > 1 ? ",\n" : "\n");
-                fprintf(outfile, "      \"%s\": %.6f",
-                        pool_method_name[j], score);
+                switch(fpclassify(score)) {
+                case FP_NORMAL:
+                case FP_ZERO:
+                case FP_SUBNORMAL:
+                    fprintf(outfile, "      \"%s\": %.6f",
+                            pool_method_name[j], score);
+                    break;
+                case FP_INFINITE:
+                case FP_NAN:
+                    fprintf(outfile, "      \"%s\": null",
+                            pool_method_name[j]);
+                    break;
+                }
             }
         }
         fprintf(outfile, "\n");
@@ -186,13 +210,23 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
 
     fprintf(outfile, "  \"aggregate_metrics\": {");
     for (unsigned i = 0; i < fc->aggregate_vector.cnt; i++) {
-        fprintf(outfile, "\n    \"%s\": %.6f",
-                fc->aggregate_vector.metric[i].name,
-                fc->aggregate_vector.metric[i].value);
+        switch(fpclassify(fc->aggregate_vector.metric[i].value)) {
+        case FP_NORMAL:
+        case FP_ZERO:
+        case FP_SUBNORMAL:
+            fprintf(outfile, "\n    \"%s\": %.6f",
+                    fc->aggregate_vector.metric[i].name,
+                    fc->aggregate_vector.metric[i].value);
+            break;
+        case FP_INFINITE:
+        case FP_NAN:
+            fprintf(outfile, "\n    \"%s\": null",
+                    fc->aggregate_vector.metric[i].name);
+            break;
+        }
         fprintf(outfile, "%s", i < fc->aggregate_vector.cnt - 1 ? "," : "");
     }
     fprintf(outfile, "\n  }\n");
-
     fprintf(outfile, "}\n");
     return 0;
 }
