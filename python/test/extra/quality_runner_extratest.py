@@ -15,16 +15,19 @@ from test.testutil import set_default_576_324_videos_for_testing
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
+from vmaf.tools.misc import MyTestCase
+
 
 @unittest.skipIf(not VmafExternalConfig.ffmpeg_path(), "ffmpeg not installed")
-class QualityRunnerTest(unittest.TestCase):
+class QualityRunnerTest(MyTestCase):
 
     def tearDown(self):
         if hasattr(self, 'runner'):
             self.runner.remove_results()
-            pass
+        super().tearDown()
 
     def setUp(self):
+        super().setUp()
         self.result_store = FileSystemResultStore()
 
     def test_run_psnr_runner_with_notyuv(self):
@@ -184,6 +187,49 @@ class QualityRunnerTest(unittest.TestCase):
         results = self.runner.results
         self.assertAlmostEqual(results[0]['PSNR_score'], 30.993823, places=4)
         self.assertAlmostEqual(results[1]['PSNR_score'], 19.393160, places=4)
+
+    def test_run_vmaf_runner_eq_cmd_gamma1d5(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        asset.asset_dict['eq_cmd'] = 'gamma=1.5'
+        asset_original.asset_dict['eq_cmd'] = 'gamma=1.5'
+
+        self.runner = VmafQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            result_store=None,
+        )
+        self.runner.run(parallelize=False)
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_vif_scale0_score'], 0.34796083546749507, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_vif_scale1_score'], 0.7430727630647906, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_vif_scale2_score'], 0.8432128968501337, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_vif_scale3_score'], 0.9003110626539442, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_score'], 3.951617145833333, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_adm2_score'], 0.9239987660077826, places=4)
+
+        self.assertAlmostEqual(results[1]['VMAF_integer_feature_vif_scale0_score'], 1.00000001415, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_integer_feature_vif_scale1_score'], 0.99999972612, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_integer_feature_vif_scale2_score'], 0.999999465724, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_integer_feature_vif_scale3_score'], 0.999999399683, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_integer_feature_motion2_score'], 3.951617145833333, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_integer_feature_adm2_score'], 1.0, places=4)
+
+        with self.assertRaises(KeyError):
+            self.assertAlmostEqual(results[1]['VMAF_integer_feature_vif_score'], 1.0, places=4)
+
+        with self.assertRaises(KeyError):
+            self.assertAlmostEqual(results[1]['VMAF_integer_feature_ansnr_score'], 1.0, places=4)
+
+        with self.assertRaises(KeyError):
+            self.assertAlmostEqual(results[1]['VMAF_integer_feature_motion_score'], 1.0, places=4)
+
+        self.assertAlmostEqual(results[0]['VMAF_score'], 72.90549596147889, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 99.946416604585025, places=4)
 
 
 @unittest.skipIf(not VmafExternalConfig.matlab_path(), "matlab not installed")
