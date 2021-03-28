@@ -146,12 +146,92 @@ class BasicResult(object):
         >>> BasicResult.scores_key_wildcard_match({'VMAF_integer_feature_vif_scale0_egl_1_scores': [0.983708]}, 'VMAF_integer_feature_vif_scale1_scores')
         Traceback (most recent call last):
         ...
-        KeyError
+        KeyError: 'no key matches VMAF_integer_feature_vif_scale1_scores'
+        >>> d = {'VMAF_feature_adm_den_scale0_scores': [111.207703], \
+                 'VMAF_feature_adm_den_scale1_scores': [109.423508], \
+                 'VMAF_feature_adm_den_scale2_scores': [196.427551], \
+                 'VMAF_feature_adm_den_scale3_scores': [328.864075], \
+                 'VMAF_feature_adm_den_scores': [745.922836], \
+                 'VMAF_feature_adm_num_scale0_scores': [107.988159], \
+                 'VMAF_feature_adm_num_scale1_scores': [96.965546], \
+                 'VMAF_feature_adm_num_scale2_scores': [178.08934], \
+                 'VMAF_feature_adm_num_scale3_scores': [317.582733], \
+                 'VMAF_feature_adm_num_scores': [700.625778], \
+                 'VMAF_feature_adm_scores': [0.939274], \
+                 'VMAF_feature_anpsnr_scores': [41.921087], \
+                 'VMAF_feature_ansnr_scores': [30.230282], \
+                 'VMAF_feature_motion2_scores': [0.0], \
+                 'VMAF_feature_motion_scores': [0.0], \
+                 'VMAF_feature_vif_den_scale0_scores': [30884050.0], \
+                 'VMAF_feature_vif_den_scale1_scores': [7006361.0], \
+                 'VMAF_feature_vif_den_scale2_scores': [1696758.0], \
+                 'VMAF_feature_vif_den_scale3_scores': [429003.59375], \
+                 'VMAF_feature_vif_den_scores': [40016172.59375], \
+                 'VMAF_feature_vif_num_scale0_scores': [18583060.0], \
+                 'VMAF_feature_vif_num_scale1_scores': [5836731.5], \
+                 'VMAF_feature_vif_num_scale2_scores': [1545453.125], \
+                 'VMAF_feature_vif_num_scale3_scores': [408037.5], \
+                 'VMAF_feature_vif_num_scores': [26373282.125], \
+                 'VMAF_feature_vif_scores': [0.659066]}
+        >>> BasicResult.scores_key_wildcard_match(d, 'VMAF_feature_adm_num_scores')
+        'VMAF_feature_adm_num_scores'
+        >>> BasicResult.scores_key_wildcard_match(d, 'VMAF_feature_adm_num_scale_scores')
+        Traceback (most recent call last):
+        ...
+        KeyError: "more than one keys matches VMAF_feature_adm_num_scale_scores: ['VMAF_feature_adm_num_scale0_scores', 'VMAF_feature_adm_num_scale1_scores', 'VMAF_feature_adm_num_scale2_scores', 'VMAF_feature_adm_num_scale3_scores']"
+        >>> e = {'VMAF_feature_adm_den_egl_1_scores': [290.148182], \
+                 'VMAF_feature_adm_den_scale0_egl_1_scores': [36.143059], \
+                 'VMAF_feature_adm_den_scale1_egl_1_scores': [56.709286], \
+                 'VMAF_feature_adm_den_scale2_egl_1_scores': [83.719971], \
+                 'VMAF_feature_adm_den_scale3_egl_1_scores': [113.575867], \
+                 'VMAF_feature_adm_num_egl_1_scores': [277.796806], \
+                 'VMAF_feature_adm_num_scale0_egl_1_scores': [35.399879], \
+                 'VMAF_feature_adm_num_scale1_egl_1_scores': [54.699654], \
+                 'VMAF_feature_adm_num_scale2_egl_1_scores': [80.061874], \
+                 'VMAF_feature_adm_num_scale3_egl_1_scores': [107.635399], \
+                 'VMAF_feature_adm_scale0_egl_1_scores': [0.979438], \
+                 'VMAF_feature_anpsnr_scores': [24.463257], \
+                 'VMAF_feature_ansnr_scores': [11.619336], \
+                 'VMAF_feature_motion2_scores': [0.0], \
+                 'VMAF_feature_motion_scores': [0.0], \
+                 'VMAF_feature_vif_den_egl_1_scores': [584014.634277], \
+                 'VMAF_feature_vif_den_scale0_egl_1_scores': [452763.03125], \
+                 'VMAF_feature_vif_den_scale1_egl_1_scores': [100037.859375], \
+                 'VMAF_feature_vif_den_scale2_egl_1_scores': [24712.830078], \
+                 'VMAF_feature_vif_den_scale3_egl_1_scores': [6500.913574], \
+                 'VMAF_feature_vif_num_egl_1_scores': [576352.736328], \
+                 'VMAF_feature_vif_num_scale0_egl_1_scores': [445400.1875], \
+                 'VMAF_feature_vif_num_scale1_egl_1_scores': [99781.773438], \
+                 'VMAF_feature_vif_num_scale2_egl_1_scores': [24675.099609], \
+                 'VMAF_feature_vif_num_scale3_egl_1_scores': [6495.675781], \
+                 'VMAF_feature_vif_scale0_egl_1_scores': [0.983738]}
+        >>> BasicResult.scores_key_wildcard_match(e, 'VMAF_feature_adm_num_scores')
+        'VMAF_feature_adm_num_egl_1_scores'
         """
-        for result_key in result_dict:
-            if result_key.startswith(scores_key[:-len('_scores')]):
+
+        # first look for exact match
+        result_keys_sorted = sorted(result_dict.keys())
+        for result_key in result_keys_sorted:
+            if result_key == scores_key:
                 return result_key
-        raise KeyError
+
+        # then look for wildcard match
+        matched_result_keys = []
+        for result_key in result_keys_sorted:
+            if result_key.startswith(scores_key[:-len('_scores')]):
+                matched_result_keys.append(result_key)
+        if len(matched_result_keys) == 0:
+            raise KeyError(f"no key matches {scores_key}")
+        elif len(matched_result_keys) == 1:
+            return matched_result_keys[0]
+        else:
+            # look for shortest match
+            strlens = [len(s) for s in matched_result_keys]
+            argmin_strlen = np.concatenate(np.where(strlens == np.min(strlens))).tolist()
+            if len(argmin_strlen) == 1:
+                return matched_result_keys[argmin_strlen[0]]
+            else:
+                raise KeyError(f"more than one keys matches {scores_key}: {matched_result_keys}")
 
 
 class Result(BasicResult):
