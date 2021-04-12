@@ -209,12 +209,22 @@ class DisplayConfig(object):
     @staticmethod
     def show(**kwargs):
         from vmaf import plt
-        if 'write_to_dir' in kwargs:
-            format = kwargs['format'] if 'format' in kwargs else 'png'
-            filedir = kwargs['write_to_dir'] if kwargs['write_to_dir'] is not None else VmafConfig.workspace_path('output')
-            os.makedirs(filedir, exist_ok=True)
-            for fignum in plt.get_fignums():
-                fig = plt.figure(fignum)
-                fig.savefig(os.path.join(filedir, str(fignum) + '.' + format), format=format)
+        import matplotlib
+
+        if matplotlib.rcParams['backend'] == 'agg':
+            if 'write_to_dir' in kwargs:
+                format = kwargs['format'] if 'format' in kwargs else 'png'
+                filedir = kwargs['write_to_dir'] if kwargs['write_to_dir'] is not None else VmafConfig.workspace_path('output')
+                os.makedirs(filedir, exist_ok=True)
+                for fignum in plt.get_fignums():
+                    fig = plt.figure(fignum)
+                    fig.savefig(os.path.join(filedir, str(fignum) + '.' + format), format=format)
+            else:
+                format = 'png'
+                filedir = VmafConfig.workspace_path('output')
+                os.makedirs(filedir, exist_ok=True)
+                for fignum in plt.get_fignums():
+                    fig = plt.figure(fignum)
+                    fig.savefig(os.path.join(filedir, str(fignum) + '.' + format), format=format)
         else:
             plt.show()
