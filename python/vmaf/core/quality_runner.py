@@ -25,6 +25,8 @@ from vmaf.tools.decorator import override
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
+from vmaf.tools.misc import piecewise_linear_mapping
+
 
 class QualityRunner(Executor):
     """
@@ -465,17 +467,23 @@ class VmafQualityRunner(VmafQualityRunnerModelMixin, QualityRunner):
 
         if self.optional_dict is not None and 'disable_clip_score' in self.optional_dict:
             disable_clip_score = self.optional_dict['disable_clip_score']
+            assert isinstance(disable_clip_score, bool)
         else:
-            disable_clip_score = False
+            disable_clip_score = None
 
         if self.optional_dict is not None and 'enable_transform_score' in self.optional_dict:
             enable_transform_score = self.optional_dict['enable_transform_score']
+            assert isinstance(enable_transform_score, bool)
         else:
-            enable_transform_score = False
+            enable_transform_score = None
 
-        pred_result = self.predict_with_model(model, xs,
-                                              disable_clip_score=disable_clip_score,
-                                              enable_transform_score=enable_transform_score)
+        more = dict()
+        if disable_clip_score is not None:
+            more['disable_clip_score'] = disable_clip_score
+        if enable_transform_score is not None:
+            more['enable_transform_score'] = enable_transform_score
+
+        pred_result = self.predict_with_model(model, xs, **more)
         result_dict = self._populate_result_dict(feature_result, pred_result)
         return Result(asset, self.executor_id, result_dict)
 
@@ -488,7 +496,7 @@ class VmafQualityRunner(VmafQualityRunnerModelMixin, QualityRunner):
     @classmethod
     def predict_with_model(cls, model, xs, **kwargs):
         ys_pred = model.predict(xs)['ys_label_pred']
-        do_transform_score = cls._do_transform_score(kwargs)
+        do_transform_score = cls._do_transform_score(model, kwargs)
         if do_transform_score:
             ys_pred = cls.transform_score(model, ys_pred)
         else:
@@ -500,8 +508,28 @@ class VmafQualityRunner(VmafQualityRunnerModelMixin, QualityRunner):
         return {'ys_pred': ys_pred}
 
     @staticmethod
-    def _do_transform_score(kwargs):
-        return 'enable_transform_score' in kwargs and kwargs['enable_transform_score'] is True
+    def _do_transform_score(model, kwargs):
+        model_flag = None
+        transform_dict = model.get_appended_info('score_transform')
+        if transform_dict is not None and 'enabled' in transform_dict:
+            assert isinstance(transform_dict['enabled'], bool)
+            model_flag = transform_dict['enabled']
+
+        kwargs_flag = None
+        if 'enable_transform_score' in kwargs:
+            assert isinstance(kwargs['enable_transform_score'], bool)
+            kwargs_flag = kwargs['enable_transform_score']
+
+        if model_flag is None and kwargs_flag is not None:
+            return kwargs_flag
+        elif model_flag is not None and kwargs_flag is None:
+            return model_flag
+        elif model_flag is None and kwargs_flag is None:
+            return False
+        else:
+            raise AssertionError('not allowed to specify score_transform.enabled in '
+                                 'the model file AND to use enable_transform_score '
+                                 'argument at the same time.')
 
     @staticmethod
     def set_transform_score(model, score_transform):
@@ -512,27 +540,43 @@ class VmafQualityRunner(VmafQualityRunnerModelMixin, QualityRunner):
         model.append_info('score_clip', score_clip)
 
     @staticmethod
-    def transform_score(model, ys_pred):
+    def transform_score(model, y_in):
         """
-        Do post processing: transform final quality score e.g. via polynomial
-        {'p0': 1, 'p1': 1, 'p2': 0.5} means transform through 1 + x + 0.5 * x^2.
-        For now, only support polynomail up to 2nd-order.
+        Transform final quality score in the following optional steps (in this
+        order):
+        1) polynomial mapping. e.g. {'p0': 1, 'p1': 1, 'p2': 0.5} means
+        transform through 1 + x + 0.5 * x^2. For now, only support polynomail
+        up to 2nd-order.
+        2) piecewise-linear mapping, where the change points are defined in
+        'knots', in the form of [[x0, y0], [x1, y1], ...].
+        3) rectification, supporting 'out_lte_in' (output is less than or equal
+        to input) and 'out_gte_in' (output is greater than or equal to input).
         """
+
         transform_dict = model.get_appended_info('score_transform')
 
         if transform_dict is None:
-            return ys_pred
+            return y_in
 
-        y_in = ys_pred
-        y_out = np.zeros(ys_pred.shape)
+        # polynomial mapping
+        y_stage = np.copy(y_in)
+        if 'p0' in transform_dict or 'p1' in transform_dict or 'p2' in transform_dict:
+            y_out = np.zeros(y_stage.shape)
+            if 'p0' in transform_dict:
+                y_out += transform_dict['p0']
+            if 'p1' in transform_dict:
+                y_out += transform_dict['p1'] * y_stage
+            if 'p2' in transform_dict:
+                y_out += transform_dict['p2'] * y_stage * y_stage
+        else:
+            y_out = y_stage
 
-        # quadratic transform
-        if 'p0' in transform_dict:
-            y_out += transform_dict['p0']
-        if 'p1' in transform_dict:
-            y_out += transform_dict['p1'] * y_in
-        if 'p2' in transform_dict:
-            y_out += transform_dict['p2'] * y_in * y_in
+        # piecewise-linear mapping
+        y_stage = np.copy(y_out)
+        if 'knots' in transform_dict:
+            y_out = piecewise_linear_mapping(y_stage, transform_dict['knots'])
+        else:
+            y_out = y_stage
 
         # rectification
         if 'out_lte_in' in transform_dict and transform_dict['out_lte_in'] == 'true':
@@ -715,7 +759,8 @@ class VmafPhoneQualityRunner(VmafQualityRunner):
                 'Cannot specify enable_transform_score option in {cls}.'.format(cls=self.__class__.__name__)
 
     @staticmethod
-    def _do_transform_score(kwargs):
+    @override(VmafQualityRunner)
+    def _do_transform_score(model, kwargs):
         return True
 
 
@@ -1106,7 +1151,7 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
         ys_pred_plus = ys_pred_bagging + DELTA
         ys_pred_minus = ys_pred_bagging - DELTA
 
-        do_transform_score = cls._do_transform_score(kwargs)
+        do_transform_score = cls._do_transform_score(model, kwargs)
         if do_transform_score:
             ys_pred_all_models = np.array([cls.transform_score(model, ys_pred_some_model) for ys_pred_some_model in ys_pred_all_models])
             ys_pred = cls.transform_score(model, ys_pred)
