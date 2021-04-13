@@ -811,6 +811,29 @@ class QualityRunnerTest(MyTestCase):
 
         self.assertAlmostEqual(results[0]['VMAF_score'], 8.262602639723815, places=4)
 
+    def test_run_vmaf_runner_with_transform_score_both_specified(self):
+
+        ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_10_0.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 1920, 'height': 1080})
+
+        self.runner = VmafQualityRunner(
+            [asset],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            optional_dict={
+                'model_filepath': VmafConfig.test_resource_path("test_model_transform_add40_piecewiselinear_forced.json"),
+                'enable_transform_score': True,
+            },
+            result_store=self.result_store,
+        )
+        with self.assertRaises(AssertionError):
+            self.runner.run(parallelize=False)
+
     def test_run_vmaf_runner_with_transform_score_disabled(self):
 
         ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")

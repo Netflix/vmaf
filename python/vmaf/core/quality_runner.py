@@ -467,17 +467,23 @@ class VmafQualityRunner(VmafQualityRunnerModelMixin, QualityRunner):
 
         if self.optional_dict is not None and 'disable_clip_score' in self.optional_dict:
             disable_clip_score = self.optional_dict['disable_clip_score']
+            assert isinstance(disable_clip_score, bool)
         else:
-            disable_clip_score = False
+            disable_clip_score = None
 
         if self.optional_dict is not None and 'enable_transform_score' in self.optional_dict:
             enable_transform_score = self.optional_dict['enable_transform_score']
+            assert isinstance(enable_transform_score, bool)
         else:
-            enable_transform_score = False
+            enable_transform_score = None
 
-        pred_result = self.predict_with_model(model, xs,
-                                              disable_clip_score=disable_clip_score,
-                                              enable_transform_score=enable_transform_score)
+        more = dict()
+        if disable_clip_score is not None:
+            more['disable_clip_score'] = disable_clip_score
+        if enable_transform_score is not None:
+            more['enable_transform_score'] = enable_transform_score
+
+        pred_result = self.predict_with_model(model, xs, **more)
         result_dict = self._populate_result_dict(feature_result, pred_result)
         return Result(asset, self.executor_id, result_dict)
 
@@ -503,11 +509,27 @@ class VmafQualityRunner(VmafQualityRunnerModelMixin, QualityRunner):
 
     @staticmethod
     def _do_transform_score(model, kwargs):
+        model_flag = None
         transform_dict = model.get_appended_info('score_transform')
-        if transform_dict is not None:
-            return 'enabled' in transform_dict and transform_dict['enabled'] is True
+        if transform_dict is not None and 'enabled' in transform_dict:
+            assert isinstance(transform_dict['enabled'], bool)
+            model_flag = transform_dict['enabled']
+
+        kwargs_flag = None
+        if 'enable_transform_score' in kwargs:
+            assert isinstance(kwargs['enable_transform_score'], bool)
+            kwargs_flag = kwargs['enable_transform_score']
+
+        if model_flag is None and kwargs_flag is not None:
+            return kwargs_flag
+        elif model_flag is not None and kwargs_flag is None:
+            return model_flag
+        elif model_flag is None and kwargs_flag is None:
+            return False
         else:
-            return 'enable_transform_score' in kwargs and kwargs['enable_transform_score'] is True
+            raise AssertionError('not allowed to specify score_transform.enabled in '
+                                 'the model file AND to use enable_transform_score '
+                                 'argument at the same time.')
 
     @staticmethod
     def set_transform_score(model, score_transform):
