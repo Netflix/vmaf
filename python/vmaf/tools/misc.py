@@ -6,16 +6,18 @@ from time import sleep, time
 import itertools
 from pathlib import Path
 
-__copyright__ = "Copyright 2016-2020, Netflix, Inc."
-__license__ = "BSD+Patent"
+import numpy as np
 
 import sys
 import errno
 import os
-import re
 
 from vmaf import run_process
 from vmaf.tools.scanf import sscanf, IncompleteCaptureError, FormatError
+
+__copyright__ = "Copyright 2016-2020, Netflix, Inc."
+__license__ = "BSD+Patent"
+
 
 try:
     unicode  # noqa, remove this once python2 support is dropped
@@ -533,6 +535,162 @@ class QualityRunnerTestMixin(object):
         runner.run(parallelize=False)
         results = runner.results
         self.assertAlmostEqual(results[0][runner_class.get_score_key()], score, places=5)
+
+
+def piecewise_linear_mapping(x_in, knots):
+    """
+    A piecewise linear mapping function, defined by the boundary points of each segment. For example,
+    a function consisting of 3 segments is defined by 4 points. The x-coordinate of each point need to be
+    grater that the x-coordinate of the previous point, the y-coordinate needs to be greater or equal.
+    The function continues with the same slope for the values below the first point and above the last point.
+    INPUT:
+        x_in - np.array of values to be mapped
+        knots - list of (at least 2) lists with x and y coordinates [[x0, y0], [x1, y1], ...]
+
+    >>> x = np.arange(0.0, 110.0)
+    >>> piecewise_linear_mapping(x, [[0, 1], [1, 2], [1, 3]])
+    Traceback (most recent call last):
+    ...
+    AssertionError: The x-coordinate of each point need to be grater that the x-coordinate of the previous point, the y-coordinate needs to be greater or equal.
+    >>> piecewise_linear_mapping(x, [[0, 0], []])
+    Traceback (most recent call last):
+    ...
+    AssertionError: Each point needs to have two coordinates [x, y]
+    >>> piecewise_linear_mapping(x, [0, 0])
+    Traceback (most recent call last):
+    ...
+    AssertionError: knots needs to be list of lists
+    >>> piecewise_linear_mapping(x, [[0, 2], [1, 1]])
+    Traceback (most recent call last):
+    ...
+    AssertionError: The x-coordinate of each point need to be grater that the x-coordinate of the previous point, the y-coordinate needs to be greater or equal.
+    >>> x0 = np.arange(0.0, 95.0, 0.1)
+    >>> x1 = np.arange(0.0, 90.0, 0.1)
+    >>> y0_true = 1.5 * x0 - 55.0
+    >>> y1_true = 1.33 * x1 - 36.66
+    >>> y0 = piecewise_linear_mapping(x0, [[0.0, -55.0], [95.0, 87.5], [105.0, 105.0], [110.0, 110.0]])
+    >>> y1 = piecewise_linear_mapping(x1, [[0.0, -36.66], [90.0, 83.04], [95.0, 95.0], [100.0, 100.0]])
+    >>> np.sqrt(np.mean((y0 - y0_true)**2))
+    0.0
+    >>> np.sqrt(np.mean((y1 - y1_true) ** 2))
+    0.0
+
+    >>> x0 = np.arange(95.0, 105.0, 0.1)
+    >>> x1 = np.arange(90.0, 95.0, 0.1)
+    >>> y0_true = 1.75 * x0 - 78.75
+    >>> y1_true = 2.392 * x1 - 132.24
+    >>> y0 = piecewise_linear_mapping(x0, [[0.0, -55.0], [95.0, 87.5], [105.0, 105.0], [110.0, 110.0]])
+    >>> y1 = piecewise_linear_mapping(x1, [[0.0, -36.66], [90.0, 83.04], [95.0, 95.0], [100.0, 100.0]])
+    >>> np.sqrt(np.mean((y0 - y0_true) ** 2))
+    0.0
+    >>> np.testing.assert_almost_equal(np.sqrt(np.mean((y1 - y1_true) ** 2)), 0.0)
+
+    >>> x0 = np.arange(105.0, 110.0, 0.1)
+    >>> x1 = np.arange(95.0, 100.0, 0.1)
+    >>> y0 = piecewise_linear_mapping(x0, [[0.0, -55.0], [95.0, 87.5], [105.0, 105.0], [110.0, 110.0]])
+    >>> y1 = piecewise_linear_mapping(x1, [[0.0, -36.66], [90.0, 83.04], [95.0, 95.0], [100.0, 100.0]])
+    >>> np.sqrt(np.mean((y0 - x0) ** 2))
+    0.0
+    >>> np.sqrt(np.mean((y1 - x1) ** 2))
+    0.0
+    """
+    assert len(knots) > 1
+    n_seg = len(knots) - 1
+
+    y_out = np.zeros(np.shape(x_in))
+
+    # construct the function
+    for idx in range(n_seg):
+        assert isinstance(knots[idx], list) and isinstance(knots[idx + 1], list), \
+            'knots needs to be list of lists'
+        assert len(knots[idx]) == len(knots[idx + 1]) == 2, \
+            'Each point needs to have two coordinates [x, y]'
+        assert knots[idx][0] < knots[idx + 1][0] and \
+               knots[idx][1] <= knots[idx + 1][1], \
+            'The x-coordinate of each point need to be grater that the x-coordinate of the previous point, ' \
+            'the y-coordinate needs to be greater or equal.'
+
+        cond0 = knots[idx][0] <= x_in
+        cond1 = x_in <= knots[idx + 1][0]
+
+        if knots[idx][1] == knots[idx + 1][1]:  # the segment is horizontal
+            y_out[cond0 & cond1] = knots[idx][1]
+
+            if idx == 0:
+                # for points below the defined range
+                y_out[x_in < knots[idx][0]] = knots[idx][1]
+            elif idx == n_seg - 1:
+                # for points above the defined range
+                y_out[x_in > knots[idx + 1][0]] = knots[idx][1]
+
+        else:
+            slope, offset = find_linear_function_parameters(tuple(knots[idx]),
+                                                            tuple(knots[idx + 1]))
+
+            y_out[cond0 & cond1] = slope * x_in[cond0 & cond1] + offset
+
+            if idx == 0:
+                # for points below the defined range
+                y_out[x_in < knots[idx][0]] = slope * x_in[x_in < knots[idx][0]] + offset
+            elif idx == n_seg - 1:
+                # for points above the defined range
+                y_out[x_in > knots[idx + 1][0]] = \
+                    slope * x_in[x_in > knots[idx + 1][0]] + offset
+
+    return y_out
+
+
+# TODO: to be moved upstream to the VMAF repo
+def find_linear_function_parameters(first_point, second_point):
+    """
+    Find parameters of a linear function connecting first_point and second_point
+
+    >>> find_linear_function_parameters((1, 1), (0, 0))
+    Traceback (most recent call last):
+    ...
+    AssertionError: first_point coordinates need to be smaller or equal to second_point coordinates
+    >>> find_linear_function_parameters((0, 1), (0, 0))
+    Traceback (most recent call last):
+    ...
+    AssertionError: first_point coordinates need to be smaller or equal to second_point coordinates
+    >>> find_linear_function_parameters((1, 0), (0, 0))
+    Traceback (most recent call last):
+    ...
+    AssertionError: first_point coordinates need to be smaller or equal to second_point coordinates
+    >>> find_linear_function_parameters((50.0, 30.0), (50.0, 100.0))
+    Traceback (most recent call last):
+    ...
+    AssertionError: first_point and second_point cannot lie on a horizontal or vertical line
+    >>> find_linear_function_parameters((50.0, 30.0), (100.0, 30.0))
+    Traceback (most recent call last):
+    ...
+    AssertionError: first_point and second_point cannot lie on a horizontal or vertical line
+    >>> find_linear_function_parameters((50.0, 20.0), (110.0, 110.0))
+    (1.5, -55.0)
+    >>> a, b = find_linear_function_parameters((50.0, 30.0), (110.0, 110.0))
+    >>> np.testing.assert_almost_equal(a, 1.333333333333333)
+    >>> np.testing.assert_almost_equal(b, -36.666666666666664)
+    >>> find_linear_function_parameters((50.0, 30.0), (50.0, 30.0))
+    (1, 0)
+
+    """
+    assert len(first_point) == 2, 'first_point needs to have exactly 2 coordinates'
+    assert len(second_point) == 2, 'second_point needs to have exactly 2 coordinates'
+    assert first_point[0] <= second_point[0] and first_point[1] <= second_point[1], \
+        'first_point coordinates need to be smaller or equal to second_point coordinates'
+
+    if second_point[0] - first_point[0] == 0 or second_point[1] - first_point[1] == 0:
+        assert second_point == first_point, 'first_point and second_point cannot lie on a horizontal or vertical line'
+        alpha = 1   # both points are the same
+        beta = 0
+    elif first_point[0] == 0:
+        beta = first_point[1]
+        alpha = (second_point[1] - beta) / second_point[0]
+    else:
+        beta = (second_point[1] * (first_point[1] - first_point[0])) / (second_point[0] - first_point[0])
+        alpha = (first_point[1] - beta) / first_point[0]
+
+    return alpha, beta
 
 
 if __name__ == '__main__':

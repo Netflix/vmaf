@@ -25,6 +25,8 @@ from vmaf.tools.decorator import override
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
+from vmaf.tools.misc import piecewise_linear_mapping
+
 
 class QualityRunner(Executor):
     """
@@ -512,27 +514,43 @@ class VmafQualityRunner(VmafQualityRunnerModelMixin, QualityRunner):
         model.append_info('score_clip', score_clip)
 
     @staticmethod
-    def transform_score(model, ys_pred):
+    def transform_score(model, y_in):
         """
-        Do post processing: transform final quality score e.g. via polynomial
-        {'p0': 1, 'p1': 1, 'p2': 0.5} means transform through 1 + x + 0.5 * x^2.
-        For now, only support polynomail up to 2nd-order.
+        Transform final quality score in the following optional steps (in this
+        order):
+        1) polynomial mapping. e.g. {'p0': 1, 'p1': 1, 'p2': 0.5} means
+        transform through 1 + x + 0.5 * x^2. For now, only support polynomail
+        up to 2nd-order.
+        2) piecewise-linear mapping, where the change points are defined in
+        'knots', in the form of [[x0, y0], [x1, y1], ...].
+        3) rectification, supporting 'out_lte_in' (output is less than or equal
+        to input) and 'out_gte_in' (output is greater than or equal to input).
         """
+
         transform_dict = model.get_appended_info('score_transform')
 
         if transform_dict is None:
-            return ys_pred
+            return y_in
 
-        y_in = ys_pred
-        y_out = np.zeros(ys_pred.shape)
+        # polynomial mapping
+        y_stage = np.copy(y_in)
+        if 'p0' in transform_dict or 'p1' in transform_dict or 'p2' in transform_dict:
+            y_out = np.zeros(y_stage.shape)
+            if 'p0' in transform_dict:
+                y_out += transform_dict['p0']
+            if 'p1' in transform_dict:
+                y_out += transform_dict['p1'] * y_stage
+            if 'p2' in transform_dict:
+                y_out += transform_dict['p2'] * y_stage * y_stage
+        else:
+            y_out = y_stage
 
-        # quadratic transform
-        if 'p0' in transform_dict:
-            y_out += transform_dict['p0']
-        if 'p1' in transform_dict:
-            y_out += transform_dict['p1'] * y_in
-        if 'p2' in transform_dict:
-            y_out += transform_dict['p2'] * y_in * y_in
+        # piecewise-linear mapping
+        y_stage = np.copy(y_out)
+        if 'knots' in transform_dict:
+            y_out = piecewise_linear_mapping(y_stage, transform_dict['knots'])
+        else:
+            y_out = y_stage
 
         # rectification
         if 'out_lte_in' in transform_dict and transform_dict['out_lte_in'] == 'true':
