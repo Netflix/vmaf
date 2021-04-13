@@ -1346,6 +1346,7 @@ class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
 
     FEATURES = [
                 'adm2', 'motion2', 'vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
+                'adm_scale0', 'adm_scale1','adm_scale2','adm_scale3', 'motion',
                 'float_psnr', 'psnr_y', 'psnr_cb', 'psnr_cr',
                 'float_ssim', 'float_ms_ssim', 'ssim', 'ms_ssim',
                 'float_moment_ref1st', 'float_moment_dis1st', 'float_moment_ref2nd', 'float_moment_dis2nd',
