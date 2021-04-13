@@ -490,7 +490,7 @@ class VmafQualityRunner(VmafQualityRunnerModelMixin, QualityRunner):
     @classmethod
     def predict_with_model(cls, model, xs, **kwargs):
         ys_pred = model.predict(xs)['ys_label_pred']
-        do_transform_score = cls._do_transform_score(kwargs)
+        do_transform_score = cls._do_transform_score(model, kwargs)
         if do_transform_score:
             ys_pred = cls.transform_score(model, ys_pred)
         else:
@@ -502,8 +502,12 @@ class VmafQualityRunner(VmafQualityRunnerModelMixin, QualityRunner):
         return {'ys_pred': ys_pred}
 
     @staticmethod
-    def _do_transform_score(kwargs):
-        return 'enable_transform_score' in kwargs and kwargs['enable_transform_score'] is True
+    def _do_transform_score(model, kwargs):
+        transform_dict = model.get_appended_info('score_transform')
+        if transform_dict is not None:
+            return 'enabled' in transform_dict and transform_dict['enabled'] is True
+        else:
+            return 'enable_transform_score' in kwargs and kwargs['enable_transform_score'] is True
 
     @staticmethod
     def set_transform_score(model, score_transform):
@@ -733,7 +737,8 @@ class VmafPhoneQualityRunner(VmafQualityRunner):
                 'Cannot specify enable_transform_score option in {cls}.'.format(cls=self.__class__.__name__)
 
     @staticmethod
-    def _do_transform_score(kwargs):
+    @override(VmafQualityRunner)
+    def _do_transform_score(model, kwargs):
         return True
 
 
@@ -1124,7 +1129,7 @@ class BootstrapVmafQualityRunner(VmafQualityRunner):
         ys_pred_plus = ys_pred_bagging + DELTA
         ys_pred_minus = ys_pred_bagging - DELTA
 
-        do_transform_score = cls._do_transform_score(kwargs)
+        do_transform_score = cls._do_transform_score(model, kwargs)
         if do_transform_score:
             ys_pred_all_models = np.array([cls.transform_score(model, ys_pred_some_model) for ys_pred_some_model in ys_pred_all_models])
             ys_pred = cls.transform_score(model, ys_pred)
