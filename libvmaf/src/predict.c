@@ -61,8 +61,18 @@ static int denormalize(const VmafModel *model, double *prediction)
     return 0;
 }
 
-
-static int transform(const VmafModel *model, double *prediction,
+/*  Reproducing the logic in quality_runner.VmafQualityRunner.transform_score().
+    Transform final quality score in the following optional steps (in this
+    order):
+    1) polynomial mapping. e.g. {'p0': 1, 'p1': 1, 'p2': 0.5} means
+    transform through 1 + x + 0.5 * x^2. For now, only support polynomail
+    up to 2nd-order.
+    2) piecewise-linear mapping, where the change points are defined in
+    'knots', in the form of [[x0, y0], [x1, y1], ...].
+    3) rectification, supporting 'out_lte_in' (output is less than or equal
+    to input) and 'out_gte_in' (output is greater than or equal to input).
+ */
+static int transform(const VmafModel *model, double *y_in,
                      enum VmafModelFlags flags)
 {
     if (!model->score_transform.enabled)
@@ -70,21 +80,35 @@ static int transform(const VmafModel *model, double *prediction,
     if (flags & VMAF_MODEL_FLAG_DISABLE_TRANSFORM)
         return 0;
 
-    double value = 0.;
-    double p = *prediction;
+    // polynomial mapping
+    double y_stage = *y_in;
+    double y_out;
+    if (model->score_transform.p0.enabled ||
+        model->score_transform.p1.enabled ||
+        model->score_transform.p2.enabled)
+    {
+        y_out = 0.;
+        if (model->score_transform.p0.enabled)
+            y_out += model->score_transform.p0.value;
+        if (model->score_transform.p1.enabled)
+            y_out += model->score_transform.p1.value * y_stage;
+        if (model->score_transform.p2.enabled)
+            y_out += model->score_transform.p2.value * y_stage * y_stage;
+    }
+    else {
+        y_out = y_stage;
+    }
 
-    if (model->score_transform.p0.enabled)
-        value += model->score_transform.p0.value;
-    if (model->score_transform.p1.enabled)
-        value += model->score_transform.p1.value * p;
-    if (model->score_transform.p2.enabled)
-        value += model->score_transform.p2.value * p * p;
+    // piecewise-linear mapping
+    // TODO
+
+    // rectification
     if (model->score_transform.out_lte_in)
-        value = (value > p) ? p : value;
+        y_out = (y_out > y_stage) ? y_stage : y_out;
     if (model->score_transform.out_gte_in)
-        value = (value < p) ? p : value;
+        y_out = (y_out < y_stage) ? y_stage : y_out;
 
-    *prediction = value;
+    *y_in = y_out;
     return 0;
 }
 

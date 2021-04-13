@@ -61,6 +61,11 @@ typedef struct VmafModel {
             bool enabled;
             double value;
         } p0, p1, p2;
+        struct {
+            bool enabled;
+            double* value_xs;
+            double* value_ys;
+        } knots;
         bool out_lte_in, out_gte_in;
     } score_transform;
     struct svm_model *svm;
