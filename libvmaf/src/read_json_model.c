@@ -178,11 +178,19 @@ static int parse_feature_names(json_stream *s, VmafModel *model)
 
 static int parse_score_transform(json_stream *s, VmafModel *model)
 {
+    model->score_transform.enabled = false;
     while (json_peek(s) != JSON_OBJECT_END && !json_get_error(s)) {
         if (json_next(s) != JSON_STRING)
             return -EINVAL;
 
         const char *key = json_get_string(s, NULL);
+
+        if (!strcmp(key, "enabled")) {
+            if (json_peek(s) != JSON_TRUE && json_peek(s) != JSON_FALSE)
+                return -EINVAL;
+            model->score_transform.enabled = (json_next(s) == JSON_TRUE);
+            continue;
+        }
 
         if (!strcmp(key, "p0")) {
             if (json_peek(s) == JSON_NULL) {
@@ -282,11 +290,15 @@ static int parse_model_dict(json_stream *s, VmafModel *model,
         if (!strcmp(key, "score_transform")) {
             if (json_next(s) != JSON_OBJECT)
                 return -EINVAL;
-            if (flags & VMAF_MODEL_FLAG_ENABLE_TRANSFORM) {
+
+            int err = parse_score_transform(s, model);
+            if (err) return err;
+
+            if (!model->score_transform.enabled &&
+            (flags & VMAF_MODEL_FLAG_ENABLE_TRANSFORM)) {
                 model->score_transform.enabled = true;
-                int err = parse_score_transform(s, model);
-                if (err) return err;
             }
+
             json_skip_until(s, JSON_OBJECT_END);
             continue;
         }

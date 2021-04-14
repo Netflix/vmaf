@@ -527,9 +527,9 @@ class VmafQualityRunner(VmafQualityRunnerModelMixin, QualityRunner):
         elif model_flag is None and kwargs_flag is None:
             return False
         else:
-            raise AssertionError('not allowed to specify score_transform.enabled in '
-                                 'the model file AND to use enable_transform_score '
-                                 'argument at the same time.')
+            # as long as one is True, transform is enabled
+            # this is consistent behavior with VmafexecQualityRunner (libvmaf)
+            return model_flag or kwargs_flag
 
     @staticmethod
     def set_transform_score(model, score_transform):
