@@ -46,7 +46,7 @@ typedef struct {
 typedef struct {
     double x;
     double y;
-} Point;
+} VmafPoint;
 
 typedef struct VmafModel {
     char *path;
@@ -68,7 +68,7 @@ typedef struct VmafModel {
         } p0, p1, p2;
         struct {
             bool enabled;
-            Point *list;
+            VmafPoint *list;
             unsigned n_knots;
         } knots;
         bool out_lte_in, out_gte_in;

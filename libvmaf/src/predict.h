@@ -22,10 +22,10 @@
 #include "feature/feature_collector.h"
 #include "model.h"
 
-int find_linear_function_parameters(Point p1, Point p2,
+int find_linear_function_parameters(VmafPoint p1, VmafPoint p2,
                                     double *alpha, double *beta);
 
-int piecewise_linear_mapping(double x, Point *knots, unsigned n_knots,
+int piecewise_linear_mapping(double x, VmafPoint *knots, unsigned n_knots,
                              double *y);
 
 int vmaf_predict_score_at_index(VmafModel *model,

@@ -437,7 +437,7 @@ static int vmaf_read_json_model(VmafModel **model, VmafModelConfig *cfg,
     m->name = vmaf_model_generate_name(cfg);
     if (!m->name) return -ENOMEM;
 
-    const size_t knots_sz = sizeof(Point) * MAX_KNOT_COUNT;
+    const size_t knots_sz = sizeof(VmafPoint) * MAX_KNOT_COUNT;
     m->score_transform.knots.list = malloc(knots_sz);
     if (!m->score_transform.knots.list) return -ENOMEM;
     memset(m->score_transform.knots.list, 0, knots_sz);
