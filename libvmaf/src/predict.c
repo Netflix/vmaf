@@ -193,9 +193,9 @@ static int transform(const VmafModel *model, double *y_in,
 
     // rectification
     if (model->score_transform.out_lte_in)
-        y_out = (y_out > y_stage) ? y_stage : y_out;
+        y_out = (y_out > *y_in) ? *y_in : y_out;
     if (model->score_transform.out_gte_in)
-        y_out = (y_out < y_stage) ? y_stage : y_out;
+        y_out = (y_out < *y_in) ? *y_in : y_out;
 
     *y_in = y_out;
     return 0;

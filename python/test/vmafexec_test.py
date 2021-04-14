@@ -1193,8 +1193,6 @@ class VmafexecQualityRunnerTest(MyTestCase):
                 'models': [
                     'path={}:name=vmat:enable_transform'.format(VmafConfig.test_resource_path("test_model_transform_add40_piecewiselinear.json")),
                 ],
-                'model_filepath': VmafConfig.test_resource_path("test_model_transform_add40_piecewiselinear.json"),
-                'enable_transform_score': True,
             },
             result_store=self.result_store,
         )
