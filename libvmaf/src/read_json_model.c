@@ -143,6 +143,7 @@ static int parse_knots(json_stream *s, struct VmafModel *model)
         i++;
     }
     model->score_transform.knots.n_knots = i;
+    model->score_transform.knots.enabled = true;
     return 0;
 }
 

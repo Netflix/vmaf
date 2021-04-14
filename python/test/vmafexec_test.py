@@ -1117,8 +1117,7 @@ class VmafexecQualityRunnerTest(MyTestCase):
             delete_workdir=True,
             optional_dict={
                 'models': [
-                    'path={}:name=famv:disable_clip'.format(VmafConfig.test_resource_path("test_model_transform_add40.json")),
-                    'path={}:name=vmat:enable_transform:disable_clip'.format(VmafConfig.test_resource_path("test_model_transform_add40.json")),
+                    'path={}:name=vmat:enable_transform'.format(VmafConfig.test_resource_path("test_model_transform_add40.json")),
                 ],
             },
             result_store=self.result_store,
@@ -1137,8 +1136,44 @@ class VmafexecQualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAFEXEC_adm_scale2_score'], 0.024058909404945077, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_adm_scale3_score'], 0.018034879735107798, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_famv_score'], -7.242566, places=4)
         self.assertAlmostEqual(results[0]['VMAFEXEC_vmat_score'], 32.757433750978919, places=4)
+
+    def test_run_vmaf_runner_with_transform_score_2(self):
+
+        ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_10_0.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 1920, 'height': 1080})
+
+        self.runner = VmafexecQualityRunner(
+            [asset],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            optional_dict={
+                'models': [
+                    'path={}:name=vmat:enable_transform:disable_clip'.format(VmafConfig.test_resource_path("test_model_transform_add40_outltein.json")),
+                ],
+            },
+            result_store=self.result_store,
+        )
+        self.runner.run(parallelize=True)
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_motion_score'], 12.5548366667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm_scale0_score'], 0.23738393128710478, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm_scale1_score'], 0.08524788663335138, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm_scale2_score'], 0.024058909404945077, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm_scale3_score'], 0.018034879735107798, places=4)
+
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vmat_score'], -7.2425662490210838, places=4)
 
     def test_run_vmaf_runner_with_transform_score3(self):
 
@@ -1156,8 +1191,7 @@ class VmafexecQualityRunnerTest(MyTestCase):
             delete_workdir=True,
             optional_dict={
                 'models': [
-                    'path={}:name=famv:disable_clip'.format(VmafConfig.test_resource_path("test_model_transform_add40_piecewiselinear.json")),
-                    'path={}:name=vmat:enable_transform:disable_clip'.format(VmafConfig.test_resource_path("test_model_transform_add40_piecewiselinear.json")),
+                    'path={}:name=vmat:enable_transform'.format(VmafConfig.test_resource_path("test_model_transform_add40_piecewiselinear.json")),
                 ],
                 'model_filepath': VmafConfig.test_resource_path("test_model_transform_add40_piecewiselinear.json"),
                 'enable_transform_score': True,
@@ -1168,7 +1202,16 @@ class VmafexecQualityRunnerTest(MyTestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_famv_score'], -7.242566, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale0_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale1_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_motion_score'], 12.5548366667, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm_scale0_score'], 0.23738393128710478, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm_scale1_score'], 0.08524788663335138, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm_scale2_score'], 0.024058909404945077, places=4)
+        self.assertAlmostEqual(results[0]['VMAFEXEC_adm_scale3_score'], 0.018034879735107798, places=4)
+
         self.assertAlmostEqual(results[0]['VMAFEXEC_vmat_score'], 8.262602639723815, places=4)
 
 
