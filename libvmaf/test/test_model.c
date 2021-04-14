@@ -53,6 +53,11 @@ static int model_compare(VmafModel *model_a, VmafModel *model_b)
     err += model_a->score_transform.p1.value != model_b->score_transform.p1.value;
     err += model_a->score_transform.p2.enabled != model_b->score_transform.p2.enabled;
     err += model_a->score_transform.p2.value != model_b->score_transform.p2.value;
+    err += model_a->score_transform.knots.enabled != model_b->score_transform.knots.enabled;
+    for (unsigned i = 0; i < model_a->score_transform.knots.n_knots; i++) {
+        err += model_a->score_transform.knots.list[i].x != model_b->score_transform.knots.list[i].x;
+        err += model_a->score_transform.knots.list[i].y != model_b->score_transform.knots.list[i].y;
+    }
     err += model_a->score_transform.out_lte_in != model_b->score_transform.out_lte_in;
     err += model_a->score_transform.out_gte_in != model_b->score_transform.out_gte_in;
 

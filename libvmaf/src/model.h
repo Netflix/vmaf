@@ -43,6 +43,11 @@ typedef struct {
     VmafDictionary *opts_dict;
 } VmafModelFeature;
 
+typedef struct {
+    double x;
+    double y;
+} Point;
+
 typedef struct VmafModel {
     char *path;
     char *name;
@@ -63,8 +68,8 @@ typedef struct VmafModel {
         } p0, p1, p2;
         struct {
             bool enabled;
-            double* value_xs;
-            double* value_ys;
+            Point *list;
+            unsigned n_knots;
         } knots;
         bool out_lte_in, out_gte_in;
     } score_transform;

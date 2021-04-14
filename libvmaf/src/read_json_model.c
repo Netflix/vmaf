@@ -26,6 +26,7 @@
 #include <string.h>
 
 #define MAX_FEATURE_COUNT 32 //FIXME
+#define MAX_KNOT_COUNT 10 //FIXME
 
 static int parse_feature_opts_dicts(json_stream *s, VmafModel *model)
 {
@@ -110,6 +111,41 @@ static int parse_slopes(json_stream *s, VmafModel *model)
     return 0;
 }
 
+static int parse_knots_list(struct json_stream *s, struct VmafModel *model, unsigned idx)
+{
+    unsigned i = 0;
+    while (json_peek(s) != JSON_ARRAY_END && !json_get_error(s)) {
+        if (json_next(s) != JSON_NUMBER)
+            return -EINVAL;
+        if (i >= 2)
+            return -EINVAL;
+        if (i == 0)
+            model->score_transform.knots.list[idx].x = json_get_number(s);
+        else
+            model->score_transform.knots.list[idx].y = json_get_number(s);
+        i++;
+    }
+
+    return 0;
+}
+
+static int parse_knots(json_stream *s, struct VmafModel *model)
+{
+    unsigned i = 0;
+    while (json_peek(s) != JSON_ARRAY_END && !json_get_error(s)) {
+        if (json_next(s) != JSON_ARRAY)
+            return -EINVAL;
+        if (i >= MAX_KNOT_COUNT)
+            return -EINVAL;
+        int err = parse_knots_list(s, model, i);
+        if (err) return err;
+        json_skip_until(s, JSON_ARRAY_END);
+        i++;
+    }
+    model->score_transform.knots.n_knots = i;
+    return 0;
+}
+
 static int append_feature_name(VmafModel *model, const char *name,
                                unsigned index)
 {
@@ -177,6 +213,20 @@ static int parse_score_transform(json_stream *s, VmafModel *model)
             } else if (json_next(s) == JSON_NUMBER) {
                 model->score_transform.p2.enabled = true;
                 model->score_transform.p2.value = json_get_number(s);
+            } else {
+                return -EINVAL;
+            }
+            continue;
+        }
+
+        if (!strcmp(key, "knots")) {
+            if (json_peek(s) == JSON_NULL) {
+                model->score_transform.knots.enabled = false;
+                model->score_transform.knots.n_knots = 0;
+            } else if (json_next(s) == JSON_ARRAY) {
+                int err = parse_knots(s, model);
+                if (err) return err;
+                json_skip_until(s, JSON_ARRAY_END);
             } else {
                 return -EINVAL;
             }
@@ -365,12 +415,19 @@ static int vmaf_read_json_model(VmafModel **model, VmafModelConfig *cfg,
     VmafModel *const m = *model = malloc(sizeof(*m));
     if (!m) return -ENOMEM;
     memset(m, 0, sizeof(*m));
+
     const size_t model_sz = sizeof(*m->feature) * MAX_FEATURE_COUNT;
     m->feature = malloc(model_sz);
     if (!m->feature) return -ENOMEM;
     memset(m->feature, 0, model_sz);
+
     m->name = vmaf_model_generate_name(cfg);
     if (!m->name) return -ENOMEM;
+
+    const size_t knots_sz = sizeof(Point) * MAX_KNOT_COUNT;
+    m->score_transform.knots.list = malloc(knots_sz);
+    if (!m->score_transform.knots.list) return -ENOMEM;
+    memset(m->score_transform.knots.list, 0, knots_sz);
 
     return model_parse(s, m, cfg->flags);
 }

@@ -187,6 +187,7 @@ void vmaf_model_destroy(VmafModel *model)
         vmaf_dictionary_free(&model->feature[i].opts_dict);
     }
     free(model->feature);
+    free(model->score_transform.knots.list);
     free(model);
 }
 
