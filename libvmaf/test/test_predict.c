@@ -20,6 +20,7 @@
 
 #include "test.h"
 #include "predict.h"
+#include "predict.c"
 
 #include <libvmaf/model.h>
 #include <math.h>

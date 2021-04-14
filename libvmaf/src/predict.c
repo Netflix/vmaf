@@ -61,7 +61,7 @@ static int denormalize(const VmafModel *model, double *prediction)
     return 0;
 }
 
-int find_linear_function_parameters(VmafPoint p1, VmafPoint p2, double *alpha, double *beta) {
+static int find_linear_function_parameters(VmafPoint p1, VmafPoint p2, double *alpha, double *beta) {
 
     if (!(p1.x <= p2.x && p1.y <= p2.y))
         return -EINVAL;  // first_point coordinates need to be smaller or equal to second_point coordinates
@@ -84,7 +84,7 @@ int find_linear_function_parameters(VmafPoint p1, VmafPoint p2, double *alpha, d
     return 0;
 }
 
-int piecewise_linear_mapping(double x, VmafPoint *knots, unsigned n_knots, double *y) {
+static int piecewise_linear_mapping(double x, VmafPoint *knots, unsigned n_knots, double *y) {
 
     double slope, offset;
 
