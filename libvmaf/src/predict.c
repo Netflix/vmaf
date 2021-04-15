@@ -61,8 +61,97 @@ static int denormalize(const VmafModel *model, double *prediction)
     return 0;
 }
 
+static int find_linear_function_parameters(VmafPoint p1, VmafPoint p2, double *alpha, double *beta) {
 
-static int transform(const VmafModel *model, double *prediction,
+    if (!(p1.x <= p2.x && p1.y <= p2.y))
+        return -EINVAL;  // first_point coordinates need to be smaller or equal to second_point coordinates
+
+    if (p2.x - p1.x == 0 || p2.y - p1.y == 0) {
+        if (!(p1.x == p2.x && p1.y == p2.y))
+            return -EINVAL;  // first_point and second_point cannot lie on a horizontal or vertical line
+        *alpha = 1.0;  // both points are the same
+        *beta = 0.0;
+    }
+    else if (p1.x == 0) {
+        *beta = p1.y;
+        *alpha = (p2.y - *beta) / p2.x;
+    }
+    else {
+        *beta = (p2.y * (p1.y - p1.x)) / (p2.x - p1.x);
+        *alpha = (p1.y - *beta) / p1.x;
+    }
+
+    return 0;
+}
+
+static int piecewise_linear_mapping(double x, VmafPoint *knots, unsigned n_knots, double *y) {
+
+    double slope, offset;
+
+    if (n_knots <= 1)
+        return EINVAL;
+    unsigned n_seg = n_knots - 1;
+
+    *y = 0.0;
+
+    // construct the function
+    for (unsigned idx = 0; idx < n_seg; idx++) {
+        if (!(knots[idx].x <  knots[idx + 1].x &&
+              knots[idx].y <= knots[idx + 1].y))
+            return EINVAL;
+
+        bool cond0 = knots[idx].x <= x;
+        bool cond1 = x <= knots[idx + 1].x;
+
+        if (knots[idx].y == knots[idx + 1].y) {  // the segment is horizontal
+            if (cond0 && cond1)
+                *y = knots[idx].y;
+
+            if (idx == 0) {
+                // for points below the defined range
+                if (x < knots[idx].x)
+                    *y = knots[idx].y;
+            }
+            else if (idx == n_seg - 1) {
+                // for points above the defined range
+                if (x > knots[idx + 1].x)
+                    *y = knots[idx].y;
+            }
+        } else {
+            find_linear_function_parameters(knots[idx], knots[idx + 1],
+                                            &slope, &offset);
+
+            if (cond0 && cond1)
+                *y = slope * x + offset;
+
+            if (idx == 0) {
+                // for points below the defined range
+                if (x < knots[idx].x)
+                    *y = slope * x + offset;
+            }
+            else if (idx == n_seg - 1) {
+                // for points above the defined range
+                if (x > knots[idx + 1].x)
+                    *y = slope * x + offset;
+            }
+        }
+    }
+
+    return 0;
+}
+
+/*  Reproducing the logic in quality_runner.VmafQualityRunner.transform_score().
+    Transform final quality score in the following optional steps (in this
+    order):
+    1) polynomial mapping. e.g. {'p0': 1, 'p1': 1, 'p2': 0.5} means
+    transform through 1 + x + 0.5 * x^2. For now, only support polynomail
+    up to 2nd-order.
+    2) piecewise-linear mapping, where the change points are defined in
+    'knots', in the form of [[x0, y0], [x1, y1], ...].
+    3) rectification, supporting 'out_lte_in' (output is less than or equal
+    to input) and 'out_gte_in' (output is greater than or equal to input).
+ */
+static int transform(const VmafModel *model, double *y_in,
                      enum VmafModelFlags flags)
 {
     if (!model->score_transform.enabled)
@@ -70,21 +159,45 @@ static int transform(const VmafModel *model, double *prediction,
     if (flags & VMAF_MODEL_FLAG_DISABLE_TRANSFORM)
         return 0;
 
-    double value = 0.;
-    double p = *prediction;
+    double y_stage, y_out;
 
-    if (model->score_transform.p0.enabled)
-        value += model->score_transform.p0.value;
-    if (model->score_transform.p1.enabled)
-        value += model->score_transform.p1.value * p;
-    if (model->score_transform.p2.enabled)
-        value += model->score_transform.p2.value * p * p;
+    // polynomial mapping
+    y_stage = *y_in;
+    if (model->score_transform.p0.enabled ||
+        model->score_transform.p1.enabled ||
+        model->score_transform.p2.enabled)
+    {
+        y_out = 0.;
+        if (model->score_transform.p0.enabled)
+            y_out += model->score_transform.p0.value;
+        if (model->score_transform.p1.enabled)
+            y_out += model->score_transform.p1.value * y_stage;
+        if (model->score_transform.p2.enabled)
+            y_out += model->score_transform.p2.value * y_stage * y_stage;
+    }
+    else {
+        y_out = y_stage;
+    }
+
+    // piecewise-linear mapping
+    y_stage = y_out;
+    if (model->score_transform.knots.enabled) {
+        piecewise_linear_mapping(y_stage,
+                                 model->score_transform.knots.list,
+                                 model->score_transform.knots.n_knots,
+                                 &y_out);
+    }
+    else {
+        y_out = y_stage;
+    }
+
+    // rectification
     if (model->score_transform.out_lte_in)
-        value = (value > p) ? p : value;
+        y_out = (y_out > *y_in) ? *y_in : y_out;
     if (model->score_transform.out_gte_in)
-        value = (value < p) ? p : value;
+        y_out = (y_out < *y_in) ? *y_in : y_out;
 
-    *prediction = value;
+    *y_in = y_out;
     return 0;
 }
 

@@ -823,7 +823,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset],
-            None, fifo_mode=False,
+            None, fifo_mode=True,
             delete_workdir=True,
             optional_dict={
                 'model_filepath': VmafConfig.test_resource_path("test_model_transform_add40_piecewiselinear_forced.json"),
@@ -831,8 +831,11 @@ class QualityRunnerTest(MyTestCase):
             },
             result_store=self.result_store,
         )
-        with self.assertRaises(AssertionError):
-            self.runner.run(parallelize=False)
+        self.runner.run(parallelize=True)
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAF_score'], 8.262602639723815, places=4)
 
     def test_run_vmaf_runner_with_transform_score_disabled(self):
 
