@@ -649,6 +649,12 @@ def piecewise_linear_mapping(x, knots):
     >>> y1 = piecewise_linear_mapping(x1, knots1080p)
     >>> np.sqrt(np.mean((y1 - x1) ** 2))
     0.0
+    >>> knots_single = [[10.0, 10.0], [50.0, 60.0]]
+    >>> x0 = np.arange(0.0, 110.0, 0.1)
+    >>> y0 = piecewise_linear_mapping(x0, knots_single)
+    >>> y_true = 1.25 * x0 - 2.5
+    >>> np.sqrt(np.mean((y0 - y0_true) ** 2))
+    0.0
     """
     assert len(knots) > 1
     n_seg = len(knots) - 1
@@ -675,7 +681,7 @@ def piecewise_linear_mapping(x, knots):
             if idx == 0:
                 # for points below the defined range
                 y[x < knots[idx][0]] = knots[idx][1]
-            elif idx == n_seg - 1:
+            if idx == n_seg - 1:
                 # for points above the defined range
                 y[x > knots[idx + 1][0]] = knots[idx][1]
 
@@ -688,7 +694,7 @@ def piecewise_linear_mapping(x, knots):
             if idx == 0:
                 # for points below the defined range
                 y[x < knots[idx][0]] = slope * x[x < knots[idx][0]] + offset
-            elif idx == n_seg - 1:
+            if idx == n_seg - 1:
                 # for points above the defined range
                 y[x > knots[idx + 1][0]] = slope * x[x > knots[idx + 1][0]] + offset
 
