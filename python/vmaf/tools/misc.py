@@ -568,6 +568,8 @@ def find_linear_function_parameters(p1, p2):
     >>> np.testing.assert_almost_equal(b, -36.666666666666664)
     >>> find_linear_function_parameters((50.0, 30.0), (50.0, 30.0))
     (1, 0)
+    >>> find_linear_function_parameters((10.0, 10.0), (50.0, 110.0))
+    (2.5, -15.0)
 
     """
     assert len(p1) == 2, 'first_point needs to have exactly 2 coordinates'
@@ -579,12 +581,9 @@ def find_linear_function_parameters(p1, p2):
         assert p1 == p2, 'first_point and second_point cannot lie on a horizontal or vertical line'
         alpha = 1   # both points are the same
         beta = 0
-    elif p1[0] == 0:
-        beta = p1[1]
-        alpha = (p2[1] - beta) / p2[0]
     else:
-        beta = (p2[1] * (p1[1] - p1[0])) / (p2[0] - p1[0])
-        alpha = (p1[1] - beta) / p1[0]
+        alpha = (p2[1] - p1[1]) / (p2[0] - p1[0])
+        beta = p1[1] - (p1[0] * alpha)
 
     return alpha, beta
 
