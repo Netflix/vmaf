@@ -652,7 +652,7 @@ def piecewise_linear_mapping(x, knots):
     >>> knots_single = [[10.0, 10.0], [50.0, 60.0]]
     >>> x0 = np.arange(0.0, 110.0, 0.1)
     >>> y0 = piecewise_linear_mapping(x0, knots_single)
-    >>> y_true = 1.25 * x0 - 2.5
+    >>> y0_true = 1.25 * x0 - 2.5
     >>> np.sqrt(np.mean((y0 - y0_true) ** 2))
     0.0
     """
