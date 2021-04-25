@@ -102,6 +102,12 @@ static char *test_find_linear_function_parameters()
     mu_assert("returned a does not match", a == 1.0);
     mu_assert("returned b does not match", b == 0.0);
 
+    VmafPoint p17 = { .x = 10, .y = 10 }, p18 = { .x = 50, .y = 110 };
+    err = find_linear_function_parameters(p17, p18, &a, &b);
+    mu_assert("error code should be 0", !err);
+    mu_assert("returned a does not match", a == 2.5);
+    mu_assert("returned b does not match", b == -15.0);
+
     return NULL;
 }
 
@@ -150,7 +156,14 @@ static char *test_piecewise_linear_mapping()
     }
     for (double x1 = 95.0; x1 < 100.0; x1 += 0.1) {
         piecewise_linear_mapping(x1, knots1080p, 4, &y1);
-        mu_assert("returned y1 does not match y1_true", fabs(y1 - x1) < 1e-8);
+        mu_assert("returned y1 does not match x1", fabs(y1 - x1) < 1e-8);
+    }
+
+    VmafPoint knots_single[] = {{ .x = 10.0, .y = 10.0  }, { .x = 50.0, .y = 60.0  }};
+    for (double x0 = 0.0; x0 < 110.0; x0 += 0.1) {
+        piecewise_linear_mapping(x0, knots_single, 2, &y0);
+        y0_true = 1.25 * x0 - 2.5;
+        mu_assert("returned y0 does not match y0_true", fabs(y0 - y0_true) < 1e-8);
     }
 
     return NULL;
