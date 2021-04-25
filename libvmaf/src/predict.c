@@ -77,8 +77,8 @@ static int find_linear_function_parameters(VmafPoint p1, VmafPoint p2, double *a
         *alpha = (p2.y - *beta) / p2.x;
     }
     else {
-        *beta = (p2.y * (p1.y - p1.x)) / (p2.x - p1.x);
-        *alpha = (p1.y - *beta) / p1.x;
+        *alpha = (p2.y - p1.y) / (p2.x - p1.x);
+        *beta = p1.y - (p1.x * (*alpha));
     }
 
     return 0;
@@ -104,15 +104,17 @@ static int piecewise_linear_mapping(double x, VmafPoint *knots, unsigned n_knots
         bool cond1 = x <= knots[idx + 1].x;
 
         if (knots[idx].y == knots[idx + 1].y) {  // the segment is horizontal
-            if (cond0 && cond1)
+            if (cond0 && cond1) {
                 *y = knots[idx].y;
+            }
 
             if (idx == 0) {
                 // for points below the defined range
                 if (x < knots[idx].x)
                     *y = knots[idx].y;
             }
-            else if (idx == n_seg - 1) {
+
+            if (idx == n_seg - 1) {
                 // for points above the defined range
                 if (x > knots[idx + 1].x)
                     *y = knots[idx].y;
@@ -121,15 +123,17 @@ static int piecewise_linear_mapping(double x, VmafPoint *knots, unsigned n_knots
             find_linear_function_parameters(knots[idx], knots[idx + 1],
                                             &slope, &offset);
 
-            if (cond0 && cond1)
+            if (cond0 && cond1){
                 *y = slope * x + offset;
+            }
 
             if (idx == 0) {
                 // for points below the defined range
                 if (x < knots[idx].x)
                     *y = slope * x + offset;
             }
-            else if (idx == n_seg - 1) {
+
+            if (idx == n_seg - 1) {
                 // for points above the defined range
                 if (x > knots[idx + 1].x)
                     *y = slope * x + offset;
