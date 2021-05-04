@@ -523,18 +523,20 @@ class MyTestCase(unittest.TestCase):
 
 class QualityRunnerTestMixin(object):
 
-    def run_each(self, score, runner_class, asset, optional_dict):
+    def run_each(self, score, runner_class, asset, optional_dict,
+                 result_store=None, places=5):
         runner = runner_class(
             [asset],
             None,
             fifo_mode=False,
             delete_workdir=True,
-            result_store=None,
+            result_store=result_store,
             optional_dict=optional_dict,
         )
         runner.run(parallelize=False)
         results = runner.results
-        self.assertAlmostEqual(results[0][runner_class.get_score_key()], score, places=5)
+        self.assertAlmostEqual(results[0][runner_class.get_score_key()],
+                               score, places=places)
 
 
 def find_linear_function_parameters(p1, p2):
