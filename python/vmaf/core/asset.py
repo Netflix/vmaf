@@ -1,6 +1,8 @@
 import copy
 import hashlib
 
+from slugify import slugify
+
 from vmaf.tools.decorator import deprecated, override
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
@@ -422,7 +424,7 @@ class Asset(WorkdirEnabled):
         if self.ref_proc_callback_str:
             s += f'_{self.ref_proc_callback_str}'
 
-        return s
+        return slugify(s, separator='_')
 
     @property
     def dis_str(self):
@@ -455,7 +457,7 @@ class Asset(WorkdirEnabled):
         if self.dis_proc_callback_str:
             s += f'_{self.dis_proc_callback_str}'
 
-        return s
+        return slugify(s, separator='_')
 
     @property
     def quality_str(self):
