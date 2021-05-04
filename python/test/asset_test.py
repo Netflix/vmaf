@@ -423,7 +423,7 @@ class AssetTest(unittest.TestCase):
         self.assertEqual(asset.crop_cmd, '570:320:3:2')
         self.assertEqual(asset.ref_crop_cmd, '570:320:3:2')
         self.assertEqual(asset.dis_crop_cmd, '570:320:3:2')
-        self.assertEqual(str(asset), "test_0_0__720x480_yuv422p_crop570:320:3:2_vs__720x480_yuv422p_crop570:320:3:2_q_720x320")
+        self.assertEqual(str(asset), "test_0_0_720x480_yuv422p_crop570_320_3_2_vs_720x480_yuv422p_crop570_320_3_2_q_720x320")
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
@@ -433,7 +433,7 @@ class AssetTest(unittest.TestCase):
         self.assertTrue(asset.crop_cmd is None)
         self.assertTrue(asset.ref_crop_cmd is None)
         self.assertTrue(asset.dis_crop_cmd is None)
-        self.assertEqual(str(asset), "test_0_0__720x480_yuv422p_vs__720x480_yuv422p_q_720x320")
+        self.assertEqual(str(asset), "test_0_0_720x480_yuv422p_vs_720x480_yuv422p_q_720x320")
 
     def test_ref_dis_crop_cmd(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -445,7 +445,7 @@ class AssetTest(unittest.TestCase):
         self.assertTrue(asset.crop_cmd is None)
         self.assertEqual(asset.ref_crop_cmd, '570:320:3:2')
         self.assertEqual(asset.dis_crop_cmd, '571:320:3:2')
-        self.assertEqual(str(asset), "test_0_0__720x480_yuv422p_crop570:320:3:2_vs__720x480_yuv422p_crop571:320:3:2_q_720x320")
+        self.assertEqual(str(asset), "test_0_0_720x480_yuv422p_crop570_320_3_2_vs_720x480_yuv422p_crop571_320_3_2_q_720x320")
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
@@ -455,7 +455,7 @@ class AssetTest(unittest.TestCase):
         self.assertEqual(asset.crop_cmd, '572:320:3:2')
         self.assertEqual(asset.ref_crop_cmd, '570:320:3:2')
         self.assertEqual(asset.dis_crop_cmd, '572:320:3:2')
-        self.assertEqual(str(asset), "test_0_0__720x480_yuv422p_crop570:320:3:2_vs__720x480_yuv422p_crop572:320:3:2_q_720x320")
+        self.assertEqual(str(asset), "test_0_0_720x480_yuv422p_crop570_320_3_2_vs_720x480_yuv422p_crop572_320_3_2_q_720x320")
 
     def test_pad_cmd(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -467,7 +467,7 @@ class AssetTest(unittest.TestCase):
         self.assertEqual(asset.pad_cmd, 'iw+6:ih+4:3:2')
         self.assertEqual(asset.ref_pad_cmd, 'iw+6:ih+4:3:2')
         self.assertEqual(asset.dis_pad_cmd, 'iw+6:ih+4:3:2')
-        self.assertEqual(str(asset), "test_0_0__720x480_yuv422p_padiw+6:ih+4:3:2_vs__720x480_yuv422p_padiw+6:ih+4:3:2_q_720x320")
+        self.assertEqual(str(asset), "test_0_0_720x480_yuv422p_padiw_6_ih_4_3_2_vs_720x480_yuv422p_padiw_6_ih_4_3_2_q_720x320")
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
@@ -477,7 +477,7 @@ class AssetTest(unittest.TestCase):
         self.assertTrue(asset.pad_cmd is None)
         self.assertTrue(asset.ref_pad_cmd is None)
         self.assertTrue(asset.pad_cmd is None)
-        self.assertEqual(str(asset), "test_0_0__720x480_yuv422p_vs__720x480_yuv422p_q_720x320")
+        self.assertEqual(str(asset), "test_0_0_720x480_yuv422p_vs_720x480_yuv422p_q_720x320")
 
     def test_ref_dis_pad_cmd(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -489,7 +489,7 @@ class AssetTest(unittest.TestCase):
         self.assertIsNone(asset.pad_cmd)
         self.assertEqual(asset.ref_pad_cmd, 'iw+6:ih+4:3:2')
         self.assertIsNone(asset.dis_pad_cmd)
-        self.assertEqual(str(asset), "test_0_0__720x480_yuv422p_padiw+6:ih+4:3:2_vs__720x480_yuv422p_q_720x320")
+        self.assertEqual(str(asset), "test_0_0_720x480_yuv422p_padiw_6_ih_4_3_2_vs_720x480_yuv422p_q_720x320")
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
@@ -500,7 +500,7 @@ class AssetTest(unittest.TestCase):
         self.assertIsNone(asset.pad_cmd)
         self.assertEqual(asset.ref_pad_cmd, 'iw+6:ih+4:3:2')
         self.assertEqual(asset.dis_pad_cmd, 'iw+6:ih+4:3:3')
-        self.assertEqual(str(asset), "test_0_0__720x480_yuv422p_padiw+6:ih+4:3:2_vs__720x480_yuv422p_padiw+6:ih+4:3:3_q_720x320")
+        self.assertEqual(str(asset), "test_0_0_720x480_yuv422p_padiw_6_ih_4_3_2_vs_720x480_yuv422p_padiw_6_ih_4_3_3_q_720x320")
 
     def test_notyuv(self):
         with self.assertRaises(AssertionError):
@@ -757,7 +757,7 @@ class AssetTest(unittest.TestCase):
         self.assertEqual(asset.get_filter_cmd('gblur'), 'sigma=1:steps=2')
         self.assertEqual(asset.get_filter_cmd('gblur', 'ref'), 'sigma=1:steps=2')
         self.assertEqual(asset.get_filter_cmd('gblur', 'dis'), 'sigma=1:steps=2')
-        self.assertEqual(str(asset), "test_0_0__720x480_yuv422p_gblursigma=1:steps=2_vs__720x480_yuv422p_gblursigma=1:steps=2_q_720x320")
+        self.assertEqual(str(asset), "test_0_0_720x480_yuv422p_gblursigma_1_steps_2_vs_720x480_yuv422p_gblursigma_1_steps_2_q_720x320")
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
@@ -767,7 +767,7 @@ class AssetTest(unittest.TestCase):
         self.assertTrue(asset.get_filter_cmd('gblur') is None)
         self.assertTrue(asset.get_filter_cmd('gblur', 'ref') is None)
         self.assertTrue(asset.get_filter_cmd('gblur', 'dis') is None)
-        self.assertEqual(str(asset), "test_0_0__720x480_yuv422p_vs__720x480_yuv422p_q_720x320")
+        self.assertEqual(str(asset), "test_0_0_720x480_yuv422p_vs_720x480_yuv422p_q_720x320")
 
     def test_ref_dis_gblur_cmd(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -781,7 +781,7 @@ class AssetTest(unittest.TestCase):
         self.assertEqual(asset.get_filter_cmd('gblur'), None)
         self.assertEqual(asset.get_filter_cmd('gblur', 'ref'), 'sigma=1:steps=2')
         self.assertEqual(asset.get_filter_cmd('gblur', 'dis'), 'sigma=0.3:steps=3')
-        self.assertEqual(str(asset), "test_0_0__720x480_yuv422p_gblursigma=1:steps=2_vs__720x480_yuv422p_gblursigma=0.3:steps=3_q_720x320")
+        self.assertEqual(str(asset), "test_0_0_720x480_yuv422p_gblursigma_1_steps_2_vs_720x480_yuv422p_gblursigma_0_3_steps_3_q_720x320")
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
@@ -794,7 +794,7 @@ class AssetTest(unittest.TestCase):
         self.assertEqual(asset.get_filter_cmd('gblur'), 'sigma=0.3:steps=3')
         self.assertEqual(asset.get_filter_cmd('gblur', 'ref'), 'sigma=1:steps=2')
         self.assertEqual(asset.get_filter_cmd('gblur', 'dis'), 'sigma=0.3:steps=3')
-        self.assertEqual(str(asset), "test_0_0__720x480_yuv422p_gblursigma=1:steps=2_vs__720x480_yuv422p_gblursigma=0.3:steps=3_q_720x320")
+        self.assertEqual(str(asset), "test_0_0_720x480_yuv422p_gblursigma_1_steps_2_vs_720x480_yuv422p_gblursigma_0_3_steps_3_q_720x320")
 
     def test_long_string(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -803,7 +803,7 @@ class AssetTest(unittest.TestCase):
                                   'quality_width': 720, 'quality_height': 320,
                                   'yuv_type': 'yuv422p',
                                   'ref_pad_cmd': 'iw+6:ih+4:3:2'})
-        self.assertEqual(str(asset), "f85b44408a6484d02a14991a2739bfd109dcdd82")
+        self.assertEqual(str(asset), "4a67755df3b8c599c9016a6d03171392ddfbf9c2")
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path='a'*60, dis_path='b'*60,
@@ -811,7 +811,7 @@ class AssetTest(unittest.TestCase):
                                   'quality_width': 720, 'quality_height': 320,
                                   'yuv_type': 'yuv422p',
                                   'ref_pad_cmd': 'iw+6:ih+4:3:2'})
-        self.assertEqual(str(asset), "test_0_0_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_720x480_yuv422p_padiw+6:ih+4:3:2_vs_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb_720x480_yuv422p_q_720x320")
+        self.assertEqual(str(asset), "test_0_0_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_720x480_yuv422p_padiw_6_ih_4_3_2_vs_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb_720x480_yuv422p_q_720x320")
 
         asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
                       dis_path='a'*128,
@@ -819,7 +819,7 @@ class AssetTest(unittest.TestCase):
                                   'quality_width': 720, 'quality_height': 320,
                                   'yuv_type': 'yuv422p',
                                   'ref_pad_cmd': 'iw+6:ih+4:3:2'})
-        self.assertEqual(str(asset), "02727195abe59c854dfc4f62828200550860e3db")
+        self.assertEqual(str(asset), "c4e39ac05957dbb235b86397e3ae9e0a7551aa8f")
 
         asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
                       dis_path='b'*60,
@@ -827,7 +827,23 @@ class AssetTest(unittest.TestCase):
                                   'quality_width': 720, 'quality_height': 320,
                                   'yuv_type': 'yuv422p',
                                   'ref_pad_cmd': 'iw+6:ih+4:3:2'})
-        self.assertEqual(str(asset), "test_0_0_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb_720x480_yuv422p_padiw+6:ih+4:3:2_vs_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb_720x480_yuv422p_q_720x320")
+        self.assertEqual(str(asset), "test_0_0_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb_720x480_yuv422p_padiw_6_ih_4_3_2_vs_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb_720x480_yuv422p_q_720x320")
+
+    def test_crop_pad_special(self):
+        import os
+        asset = \
+            Asset(
+                dataset='vp9eve_vmaf_investigation', content_id=0, asset_id=0,
+                ref_path=os.path.join('dir', 'inception', 'Inception_A__79_41_79_46__1920_1080__', 'frame%08d.icpf'),
+                dis_path=os.path.join('dir', 'inception', '10014993632.ivf'),
+                asset_dict={
+                    'ref_yuv_type': 'notyuv', 'ref_crop_cmd': '1920:800:0:140', 'ref_pad_cmd': 'iw+0:ih+280:0:140', 'ref_start_frame': 0, 'ref_end_frame': 2,
+                    'dis_yuv_type': 'notyuv', 'dis_start_frame': 114629, 'dis_end_frame': 114629 + 2,
+                    'quality_width': 1920, 'quality_height': 1080, 'resampling_type': 'bicubic',
+                    'workfile_yuv_type': 'yuv420p',
+                })
+        self.assertEqual(os.path.basename(asset.ref_workfile_path), "ref_vp9eve_vmaf_investigation_0_0_frame_08d_notyuv_0to2_crop1920_800_0_140_padiw_0_ih_280_0_140_vs_10014993632_notyuv_114629to114631_q_1920x1080")
+        self.assertEqual(os.path.basename(asset.dis_workfile_path), "dis_vp9eve_vmaf_investigation_0_0_frame_08d_notyuv_0to2_crop1920_800_0_140_padiw_0_ih_280_0_140_vs_10014993632_notyuv_114629to114631_q_1920x1080")
 
 
 if __name__ == '__main__':
