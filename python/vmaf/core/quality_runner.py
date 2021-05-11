@@ -1116,6 +1116,12 @@ class MotionQualityRunner(VmafSingleFeatureQualityRunner):
     FEATURE_NAME = 'motion'
 
 
+class Motion2QualityRunner(VmafSingleFeatureQualityRunner):
+    TYPE = 'MOTION2'
+    # TYPE = 'TI'
+    FEATURE_NAME = 'motion2'
+
+
 class BootstrapVmafQualityRunner(VmafQualityRunner):
     TYPE = "BOOTSTRAP_VMAF"
     VERSION = VmafQualityRunner.VERSION + '-' + 'M' + BootstrapLibsvmNusvrTrainTestModel.VERSION
