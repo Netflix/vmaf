@@ -20,8 +20,8 @@
 #include <math.h>
 #include <string.h>
 
-#include "alignment.h"
 #include "cpu.h"
+#include "common/alignment.h"
 #include "feature_collector.h"
 #include "feature_extractor.h"
 #include "integer_motion.h"

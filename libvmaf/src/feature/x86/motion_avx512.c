@@ -23,7 +23,7 @@
 #include <string.h>
 
 #include "feature/integer_motion.h"
-#include "feature/alignment.h"
+#include "feature/common/alignment.h"
 
 #include <immintrin.h>
 

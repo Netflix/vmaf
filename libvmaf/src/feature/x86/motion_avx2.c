@@ -21,7 +21,7 @@
 #include <stddef.h>
 
 #include "feature/integer_motion.h"
-#include "feature/alignment.h"
+#include "feature/common/alignment.h"
 
 void x_convolution_16_avx2(const uint16_t *src, uint16_t *dst, unsigned width,
                            unsigned height, ptrdiff_t src_stride,

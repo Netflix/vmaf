@@ -5,7 +5,7 @@ feature_src_dir = './feature/'
 src_dir = './'
 model_dir = '../../model/'
 
-vmaf_base_include = include_directories('./')
+vmaf_base_include = include_directories('./', './feature/common')
 
 if cc.get_id() != 'msvc'
     vmaf_cflags_common = [
@@ -163,6 +163,7 @@ libvmaf_include = include_directories(
     '../include',
     src_dir,
     feature_src_dir,
+    feature_src_dir + 'common',
 )
 
 libvmaf_cpu_static_lib = static_library(
@@ -176,7 +177,7 @@ platform_specific_cpu_objects = []
 if is_asm_enabled
     if host_machine.cpu_family().startswith('x86')
       x86_avx2_sources = [
-          feature_src_dir + 'float/common/convolution_avx.c',
+          feature_src_dir + 'common/convolution_avx.c',
           feature_src_dir + 'x86/motion_avx2.c',
           feature_src_dir + 'x86/vif_avx2.c',
           feature_src_dir + 'x86/adm_avx2.c',
@@ -218,6 +219,7 @@ math_lib = cc.find_library('m', required : false)
 vmaf_include = include_directories(
     src_dir,
     feature_src_dir,
+    feature_src_dir + 'common',
 )
 
 libvmaf_feature_sources = [
@@ -232,41 +234,41 @@ libvmaf_feature_sources = [
     feature_src_dir + 'integer_motion.c',
     feature_src_dir + 'integer_vif.c',
     feature_src_dir + 'ciede.c',
-    feature_src_dir + 'alignment.c',
+    feature_src_dir + 'common/alignment.c',
 
-    feature_src_dir + 'float/float_ssim.c',
-    feature_src_dir + 'float/float_ms_ssim.c',
-    feature_src_dir + 'float/ssim.c',
-    feature_src_dir + 'float/ms_ssim.c',
-    feature_src_dir + 'float/iqa/decimate.c',
-    feature_src_dir + 'float/iqa/ssim_tools.c',
-    feature_src_dir + 'float/iqa/math_utils.c',
-    feature_src_dir + 'float/iqa/convolve.c',
+    feature_src_dir + 'float_ssim.c',
+    feature_src_dir + 'float_ms_ssim.c',
+    feature_src_dir + 'ssim.c',
+    feature_src_dir + 'ms_ssim.c',
+    feature_src_dir + 'iqa/decimate.c',
+    feature_src_dir + 'iqa/ssim_tools.c',
+    feature_src_dir + 'iqa/math_utils.c',
+    feature_src_dir + 'iqa/convolve.c',
 ]
 
 if float_enabled
     libvmaf_feature_sources += [
-        feature_src_dir + 'float/float_adm.c',
-        feature_src_dir + 'float/float_psnr.c',
-        feature_src_dir + 'float/float_ansnr.c',
-        feature_src_dir + 'float/float_motion.c',
-        feature_src_dir + 'float/float_vif.c',
-        feature_src_dir + 'float/float_moment.c',
+        feature_src_dir + 'float_adm.c',
+        feature_src_dir + 'float_psnr.c',
+        feature_src_dir + 'float_ansnr.c',
+        feature_src_dir + 'float_motion.c',
+        feature_src_dir + 'float_vif.c',
+        feature_src_dir + 'float_moment.c',
 
-        feature_src_dir + 'float/common/convolution.c',
-        feature_src_dir + 'float/offset.c',
-        feature_src_dir + 'float/adm.c',
-        feature_src_dir + 'float/adm_tools.c',
-        feature_src_dir + 'float/ansnr.c',
-        feature_src_dir + 'float/ansnr_tools.c',
-        feature_src_dir + 'float/vif.c',
-        feature_src_dir + 'float/vif_tools.c',
-        feature_src_dir + 'float/motion.c',
-        feature_src_dir + 'float/psnr.c',
-        feature_src_dir + 'float/psnr_tools.c',
-        feature_src_dir + 'float/moment.c',
-        feature_src_dir + 'float/all.c',
-        feature_src_dir + 'float/common/blur_array.c',
+        feature_src_dir + 'common/convolution.c',
+        feature_src_dir + 'offset.c',
+        feature_src_dir + 'adm.c',
+        feature_src_dir + 'adm_tools.c',
+        feature_src_dir + 'ansnr.c',
+        feature_src_dir + 'ansnr_tools.c',
+        feature_src_dir + 'vif.c',
+        feature_src_dir + 'vif_tools.c',
+        feature_src_dir + 'motion.c',
+        feature_src_dir + 'psnr.c',
+        feature_src_dir + 'psnr_tools.c',
+        feature_src_dir + 'moment.c',
+        feature_src_dir + 'all.c',
+        feature_src_dir + 'common/blur_array.c',
     ]
 endif
 

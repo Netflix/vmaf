@@ -17,7 +17,7 @@
  */
 
 #include <immintrin.h>
-#include "feature/alignment.h"
+#include "alignment.h"
 #include "convolution.h"
 #include "convolution_internal.h"
 

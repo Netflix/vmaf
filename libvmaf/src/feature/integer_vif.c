@@ -22,7 +22,7 @@
 #include <stdio.h>
 
 #include "cpu.h"
-#include "macros.h"
+#include "common/macros.h"
 #include "feature_collector.h"
 #include "feature_extractor.h"
 #include "mem.h"
