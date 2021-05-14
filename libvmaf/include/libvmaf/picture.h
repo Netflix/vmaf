@@ -26,7 +26,6 @@ enum VmafPixelFormat {
     VMAF_PIX_FMT_YUV420P,
     VMAF_PIX_FMT_YUV422P,
     VMAF_PIX_FMT_YUV444P,
-    VMAF_PIX_FMT_YUV400P,
 };
 
 typedef struct VmafRef VmafRef;
