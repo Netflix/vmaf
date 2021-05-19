@@ -513,6 +513,7 @@ class TrainTestModel(TypeVersionEnabled):
 
         info_to_save = {'param_dict': param_dict,
                         'model_dict': model_dict}
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'wb') as file:
             pickle.dump(info_to_save, file)
 
@@ -917,10 +918,13 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
                             'model_dict': model_dict.copy()}
             svm_model = info_to_save['model_dict']['model']
             info_to_save['model_dict']['model'] = None
+
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
             with open(filename, 'wb') as file:
                 pickle.dump(info_to_save, file)
             svmutil.svm_save_model(filename + '.model', svm_model)
         elif format == 'json':
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
             # special handling of libsvmnusvr: save model into a string
             tmp_svm_filename = os.path.basename(filename) + '.svm'
             info_to_save = LibsvmNusvrTrainTestModel._to_json(param_dict,
@@ -1214,10 +1218,12 @@ class Logistic5PLRegressionTrainTestModel(TrainTestModel, RegressorMixin):
         info_to_save = {'param_dict': param_dict,
                         'model_dict': model_dict.copy()}   
 
-        if format == 'pkl':                                 
+        if format == 'pkl':
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
             with open(filename, 'wb') as file:
                 pickle.dump(info_to_save, file)
-        elif format == 'json':           
+        elif format == 'json':
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
             with open(filename, 'wt') as file:
                 json.dump(info_to_save, file, indent=4)
         else:
@@ -1541,13 +1547,13 @@ class BootstrapMixin(object):
                     meta_model[str(i_model)] = info_to_save
                 else:
                     assert False
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
             with open(filename, 'wt') as file:
                 json.dump(meta_model, file, indent=4)
         else:
             for i_model, model in enumerate(models):
                 filename_ = self._get_model_i_filename(filename, i_model)
-                filedir = os.path.dirname(filename_)
-                os.makedirs(filedir, exist_ok=True)
+                os.makedirs(os.path.dirname(filename_), exist_ok=True)
                 model_dict_ = model_dict.copy()
                 model_dict_['model'] = model
                 self._to_file(filename_, param_dict, model_dict_, **more)

@@ -4,7 +4,8 @@ import numpy as np
 from vmaf import plt
 from vmaf.core.cross_validation import ModelCrossValidation
 from vmaf.core.feature_assembler import FeatureAssembler
-from vmaf.core.quality_runner import VmafQualityRunner
+from vmaf.core.quality_runner import VmafQualityRunner, \
+    VmafQualityRunnerModelMixin
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.tools.misc import indices, get_stdout_logger, import_python_file, close_logger, get_file_name_without_extension
 from vmaf.config import VmafConfig, DisplayConfig
@@ -522,12 +523,12 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
 
     # save model
     if output_model_filepath is not None:
-        ext = os.path.splitext(output_model_filepath)[1]
-        assert ext in ['.pkl', '.json'], f'only support .pkl or .json file ' \
-            f'but output model path is : {output_model_filepath}'
-        if ext == '.pkl':
+        format = os.path.splitext(output_model_filepath)[1]
+        supported_formats = ['.pkl', '.json']
+        VmafQualityRunnerModelMixin._assert_extension_format(supported_formats, format)
+        if '.pkl' in format:
             model.to_file(output_model_filepath, format='pkl')
-        elif ext == '.json':
+        elif '.json' in format:
             model.to_file(output_model_filepath, format='json', combined=True)
         else:
             assert False
