@@ -281,12 +281,8 @@ void adm_dwt2_d(const double *src, const adm_dwt_band_t_d *dst, int **ind_y, int
 /* Noise floor model */
 /* ================= */
 
-#define VIEW_DIST 3.0f
-//#define VIEW_DIST 4.0f
-//#define VIEW_DIST 5.0f
-//#define VIEW_DIST 6.0f
-
-#define REF_DISPLAY_HEIGHT 1080
+#define NORM_VIEW_DIST 3.0f // normalized viewing distance = viewing distance / ref display's physical height
+#define REF_DISPLAY_HEIGHT 1080 // reference display height in pixels
 
 /*
  * The following dwt visibility threshold parameters are taken from
@@ -337,7 +333,7 @@ static const float dwt_7_9_basis_function_amplitudes[6][4] = {
 FORCE_INLINE inline float dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta)
 {
     // Formula (1), page 1165 - display visual resolution (DVR), in pixels/degree of visual angle. This should be 56.55
-    float r = VIEW_DIST * REF_DISPLAY_HEIGHT * M_PI / 180.0;
+    float r = NORM_VIEW_DIST * REF_DISPLAY_HEIGHT * M_PI / 180.0;
 
     // Formula (9), page 1171
     float temp = log10(pow(2.0,lambda+1)*params->f0*params->g[theta]/r);
