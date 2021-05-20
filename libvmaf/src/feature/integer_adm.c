@@ -67,7 +67,7 @@ dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta)
 {
     // Formula (1), page 1165 - display visual resolution (DVR), in pixels/degree
     // of visual angle. This should be 56.55
-    float r = VIEW_DIST * REF_DISPLAY_HEIGHT * M_PI / 180.0;
+    float r = NORM_VIEW_DIST * REF_DISPLAY_HEIGHT * M_PI / 180.0;
 
     // Formula (9), page 1171
     float temp = log10(pow(2.0, lambda + 1)*params->f0*params->g[theta] / r);

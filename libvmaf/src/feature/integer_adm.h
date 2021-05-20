@@ -93,9 +93,8 @@ static const int32_t dwt2_db2_coeffs_hi_sum = 0;
 /* Noise floor model */
 /* ================= */
 
-#define VIEW_DIST 3.0f
-
-#define REF_DISPLAY_HEIGHT 1080
+#define NORM_VIEW_DIST 3.0f // normalized viewing distance = viewing distance / ref display's physical height
+#define REF_DISPLAY_HEIGHT 1080 // reference display height in pixels
 
 /*
  * The following dwt visibility threshold parameters are taken from
