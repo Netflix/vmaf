@@ -69,6 +69,14 @@ typedef struct AdmBuffer {
 #define DEFAULT_ADM_ENHN_GAIN_LIMIT (100.0)
 #endif // !DEFAULT_ADM_ENHN_GAIN_LIMIT
 
+#ifndef DEFAULT_ADM_NORM_VIEW_DIST
+#define DEFAULT_ADM_NORM_VIEW_DIST (3.0)
+#endif // !DEFAULT_ADM_NORM_VIEW_DIST
+
+#ifndef DEFAULT_ADM_REF_DISPLAY_HEIGHT
+#define DEFAULT_ADM_REF_DISPLAY_HEIGHT (1080)
+#endif // !DEFAULT_ADM_REF_DISPLAY_HEIGHT
+
 #ifndef ADM_BORDER_FACTOR
 #define ADM_BORDER_FACTOR (0.1)
 #endif // !ADM_BORDER_FACTOR
@@ -92,9 +100,6 @@ static const int32_t dwt2_db2_coeffs_hi_sum = 0;
 /* ================= */
 /* Noise floor model */
 /* ================= */
-
-#define NORM_VIEW_DIST 3.0f // normalized viewing distance = viewing distance / ref display's physical height
-#define REF_DISPLAY_HEIGHT 1080 // reference display height in pixels
 
 /*
  * The following dwt visibility threshold parameters are taken from

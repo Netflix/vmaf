@@ -235,7 +235,9 @@ void adm_decouple_s(const adm_dwt_band_t_s *ref, const adm_dwt_band_t_s *dis,
 	}
 }
 
-void adm_csf_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const adm_dwt_band_t_s *flt, int orig_h, int scale, int w, int h, int src_stride, int dst_stride, double border_factor)
+void adm_csf_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const adm_dwt_band_t_s *flt,
+               int orig_h, int scale, int w, int h, int src_stride, int dst_stride, double border_factor,
+               double adm_norm_view_dist, int adm_ref_display_height)
 {
 	const float *src_angles[3] = { src->band_h, src->band_v, src->band_d };
 	float *dst_angles[3] = { dst->band_h, dst->band_v, dst->band_d };
@@ -250,8 +252,8 @@ void adm_csf_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const a
 
 	// for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
 	// 1 to 4 (from finest scale to coarsest scale).
-	float factor1 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1);
-	float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2);
+	float factor1 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1, adm_norm_view_dist, adm_ref_display_height);
+	float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist, adm_ref_display_height);
 	float rfactor[3] = { 1.0f / factor1, 1.0f / factor1, 1.0f / factor2 };
 
 	/* The computation of the csf values is not required for the regions which lie outside the frame borders */
@@ -295,7 +297,9 @@ void adm_csf_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const a
 }
 
 /* Combination of adm_csf_s and adm_sum_cube_s for csf_o based den_scale */
-float adm_csf_den_scale_s(const adm_dwt_band_t_s *src, int orig_h, int scale, int w, int h, int src_stride, double border_factor)
+float adm_csf_den_scale_s(const adm_dwt_band_t_s *src, int orig_h, int scale,
+                          int w, int h, int src_stride, double border_factor,
+                          double adm_norm_view_dist, int adm_ref_display_height)
 {
 	float *src_h = src->band_h, *src_v = src->band_v, *src_d = src->band_d;
 
@@ -303,8 +307,8 @@ float adm_csf_den_scale_s(const adm_dwt_band_t_s *src, int orig_h, int scale, in
 
 	// for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
 	// 1 to 4 (from finest scale to coarsest scale).
-	float factor1 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1);
-	float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2);
+	float factor1 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1, adm_norm_view_dist, adm_ref_display_height);
+	float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist, adm_ref_display_height);
 	float rfactor[3] = { 1.0f / factor1, 1.0f / factor1, 1.0f / factor2 };
 
 	float accum_h = 0, accum_v = 0, accum_d = 0;
@@ -355,15 +359,18 @@ float adm_csf_den_scale_s(const adm_dwt_band_t_s *src, int orig_h, int scale, in
 
 }
 
-float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f, const adm_dwt_band_t_s *csf_a, int w, int h, int src_stride, int flt_stride, int csf_a_stride, double border_factor, int scale)
+float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
+               const adm_dwt_band_t_s *csf_a, int w, int h, int src_stride,
+               int flt_stride, int csf_a_stride, double border_factor, int scale,
+               double adm_norm_view_dist, int adm_ref_display_height)
 {
 	/* Take decouple_r as src and do dsf_s on decouple_r here to get csf_r */
 	float *src_h = src->band_h, *src_v = src->band_v, *src_d = src->band_d;
 
 	// for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
 	// 1 to 4 (from finest scale to coarsest scale).
-	float factor1 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1);
-	float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2);
+	float factor1 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1, adm_norm_view_dist, adm_ref_display_height);
+	float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist, adm_ref_display_height);
 	float rfactor[3] = { 1.0f / factor1, 1.0f / factor1, 1.0f / factor2 };
 
 	const float *angles[3] = { csf_a->band_h, csf_a->band_v, csf_a->band_d };

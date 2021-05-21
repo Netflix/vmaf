@@ -39,6 +39,14 @@ static const Alias alias_list[] = {
         .name = "vif_enhn_gain_limit",
         .alias = "egl",
     },
+    {
+            .name = "adm_norm_view_dist",
+            .alias = "nvd",
+    },
+    {
+            .name = "adm_ref_display_height",
+            .alias = "rdh",
+    },
 };
 
 static const char *key_alias(char *key)
