@@ -918,7 +918,8 @@ static void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride,
     }
 }
 
-static void adm_csf(AdmBuffer *buf, int w, int h, int stride)
+static void adm_csf(AdmBuffer *buf, int w, int h, int stride,
+                    double adm_norm_view_dist, int adm_ref_display_height)
 {
     const adm_dwt_band_t *src = &buf->decouple_a;
     const adm_dwt_band_t *dst = &buf->csf_a;
@@ -932,11 +933,29 @@ static void adm_csf(AdmBuffer *buf, int w, int h, int stride)
     // 1 to 4 (from finest scale to coarsest scale).
     // 0 is scale zero passed to dwt_quant_step
 
+    const float factor1 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], 0, 1, adm_norm_view_dist, adm_ref_display_height);
+    const float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], 0, 2, adm_norm_view_dist, adm_ref_display_height);
+    const float rfactor1[3] = { 1.0f / factor1, 1.0f / factor1, 1.0f / factor2 };
+
     /**
      * rfactor is converted to fixed-point for scale0 and stored in i_rfactor
-     * multiplied by 2^21 for rfactor[0,1] and by 2^23 for rfactor[2]
+     * multiplied by 2^21 for rfactor[0,1] and by 2^23 for rfactor[2].
+     * For adm_norm_view_dist 3.0 and adm_ref_display_height 1080,
+     * i_rfactor is around { 36453,36453,49417 }
      */
-    const uint16_t i_rfactor[3] = { 36453,36453,49417 };
+    uint16_t i_rfactor[3];
+    if (fabs(adm_norm_view_dist * adm_ref_display_height - DEFAULT_ADM_NORM_VIEW_DIST * DEFAULT_ADM_REF_DISPLAY_HEIGHT) < 1.0e-8) {
+        i_rfactor[0] = 36453;
+        i_rfactor[1] = 36453;
+        i_rfactor[2] = 49417;
+    }
+    else {
+        const double pow2_21 = pow(2, 21);
+        const double pow2_23 = pow(2, 23);
+        i_rfactor[0] = (uint16_t) (rfactor1[0] * pow2_21);
+        i_rfactor[1] = (uint16_t) (rfactor1[1] * pow2_21);
+        i_rfactor[2] = (uint16_t) (rfactor1[2] * pow2_23);
+    }
 
     /**
      * Shifts pending from previous stage is 6
@@ -1008,7 +1027,7 @@ static void i4_adm_csf(AdmBuffer *buf, int scale, int w, int h, int stride,
     const float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist, adm_ref_display_height);
     const float rfactor1[3] = { 1.0f / factor1, 1.0f / factor1, 1.0f / factor2 };
 
-    //rfactor in fixed-point
+    //i_rfactor in fixed-point
     const double pow2_32 = pow(2, 32);
     const uint32_t i_rfactor[3] = { (uint32_t)(rfactor1[0] * pow2_32),
                                     (uint32_t)(rfactor1[1] * pow2_32),
@@ -1233,13 +1252,40 @@ static float adm_csf_den_s123(const i4_adm_dwt_band_t *src, int scale, int w, in
     return (den_scale_h + den_scale_v + den_scale_d);
 }
 
-static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride)
+static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride,
+                    double adm_norm_view_dist, int adm_ref_display_height)
 {
     const adm_dwt_band_t *src   = &buf->decouple_r;
     const adm_dwt_band_t *csf_f = &buf->csf_f;
     const adm_dwt_band_t *csf_a = &buf->csf_a;
-    //rfactor is left shifted by 21 for rfactor[0,1] and by 23 for rfactor[2]
-    const uint16_t rfactor[3] = { 36453, 36453, 49417 };
+
+    // for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
+    // 1 to 4 (from finest scale to coarsest scale).
+    // 0 is scale zero passed to dwt_quant_step
+
+    const float factor1 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], 0, 1, adm_norm_view_dist, adm_ref_display_height);
+    const float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], 0, 2, adm_norm_view_dist, adm_ref_display_height);
+    const float rfactor1[3] = { 1.0f / factor1, 1.0f / factor1, 1.0f / factor2 };
+
+    /**
+     * rfactor is converted to fixed-point for scale0 and stored in i_rfactor
+     * multiplied by 2^21 for rfactor[0,1] and by 2^23 for rfactor[2].
+     * For adm_norm_view_dist 3.0 and adm_ref_display_height 1080,
+     * i_rfactor is around { 36453,36453,49417 }
+     */
+    uint16_t i_rfactor[3];
+    if (fabs(adm_norm_view_dist * adm_ref_display_height - DEFAULT_ADM_NORM_VIEW_DIST * DEFAULT_ADM_REF_DISPLAY_HEIGHT) < 1.0e-8) {
+        i_rfactor[0] = 36453;
+        i_rfactor[1] = 36453;
+        i_rfactor[2] = 49417;
+    }
+    else {
+        const double pow2_21 = pow(2, 21);
+        const double pow2_23 = pow(2, 23);
+        i_rfactor[0] = (uint16_t) (rfactor1[0] * pow2_21);
+        i_rfactor[1] = (uint16_t) (rfactor1[1] * pow2_21);
+        i_rfactor[2] = (uint16_t) (rfactor1[2] * pow2_23);
+    }
 
     const int32_t shift_xhsq = 29;
     const int32_t shift_xvsq = 29;
@@ -1290,9 +1336,9 @@ static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
     /* i=0,j=0 */
     if ((top <= 0) && (left <= 0))
     {
-        xh = (int32_t)src->band_h[0] * rfactor[0];
-        xv = (int32_t)src->band_v[0] * rfactor[1];
-        xd = (int32_t)src->band_d[0] * rfactor[2];
+        xh = (int32_t)src->band_h[0] * i_rfactor[0];
+        xv = (int32_t)src->band_v[0] * i_rfactor[1];
+        xd = (int32_t)src->band_d[0] * i_rfactor[2];
         ADM_CM_THRESH_S_0_0(angles, flt_angles, csf_a_stride, &thr, w, h, 0, 0);
 
         //thr is shifted to make it's Q format equivalent to xh,xv,xd
@@ -1319,9 +1365,9 @@ static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
     /* i=0, j */
     if (top <= 0) {
         for (j = start_col; j < end_col; ++j) {
-            xh = src->band_h[j] * rfactor[0];
-            xv = src->band_v[j] * rfactor[1];
-            xd = src->band_d[j] * rfactor[2];
+            xh = src->band_h[j] * i_rfactor[0];
+            xv = src->band_v[j] * i_rfactor[1];
+            xd = src->band_d[j] * i_rfactor[2];
             ADM_CM_THRESH_S_0_J(angles, flt_angles, csf_a_stride, &thr, w, h, 0, j);
 
             ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -1336,9 +1382,9 @@ static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
     /* i=0,j=w-1 */
     if ((top <= 0) && (right > (w - 1)))
     {
-        xh = src->band_h[w - 1] * rfactor[0];
-        xv = src->band_v[w - 1] * rfactor[1];
-        xd = src->band_d[w - 1] * rfactor[2];
+        xh = src->band_h[w - 1] * i_rfactor[0];
+        xv = src->band_v[w - 1] * i_rfactor[1];
+        xd = src->band_d[w - 1] * i_rfactor[2];
         ADM_CM_THRESH_S_0_W_M_1(angles, flt_angles, csf_a_stride, &thr, w, h, 0, (w - 1));
 
         ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -1360,9 +1406,9 @@ static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
             accum_inner_v = 0;
             accum_inner_d = 0;
             for (j = start_col; j < end_col; ++j) {
-                xh = src->band_h[i * src_stride + j] * rfactor[0];
-                xv = src->band_v[i * src_stride + j] * rfactor[1];
-                xd = src->band_d[i * src_stride + j] * rfactor[2];
+                xh = src->band_h[i * src_stride + j] * i_rfactor[0];
+                xv = src->band_v[i * src_stride + j] * i_rfactor[1];
+                xd = src->band_d[i * src_stride + j] * i_rfactor[2];
                 ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_a_stride, &thr, w, h, i, j);
 
                 ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -1385,9 +1431,9 @@ static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
             accum_inner_d = 0;
 
             /* j = 0 */
-            xh = src->band_h[i * src_stride] * rfactor[0];
-            xv = src->band_v[i * src_stride] * rfactor[1];
-            xd = src->band_d[i * src_stride] * rfactor[2];
+            xh = src->band_h[i * src_stride] * i_rfactor[0];
+            xv = src->band_v[i * src_stride] * i_rfactor[1];
+            xd = src->band_d[i * src_stride] * i_rfactor[2];
             ADM_CM_THRESH_S_I_0(angles, flt_angles, csf_a_stride, &thr, w, h, i, 0);
 
             ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -1399,9 +1445,9 @@ static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
 
             /* j within frame */
             for (j = start_col; j < end_col; ++j) {
-                xh = src->band_h[i * src_stride + j] * rfactor[0];
-                xv = src->band_v[i * src_stride + j] * rfactor[1];
-                xd = src->band_d[i * src_stride + j] * rfactor[2];
+                xh = src->band_h[i * src_stride + j] * i_rfactor[0];
+                xv = src->band_v[i * src_stride + j] * i_rfactor[1];
+                xd = src->band_d[i * src_stride + j] * i_rfactor[2];
                 ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_a_stride, &thr, w, h, i, j);
 
                 ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -1424,9 +1470,9 @@ static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
             accum_inner_d = 0;
             /* j within frame */
             for (j = start_col; j < end_col; ++j) {
-                xh = src->band_h[i * src_stride + j] * rfactor[0];
-                xv = src->band_v[i * src_stride + j] * rfactor[1];
-                xd = src->band_d[i * src_stride + j] * rfactor[2];
+                xh = src->band_h[i * src_stride + j] * i_rfactor[0];
+                xv = src->band_v[i * src_stride + j] * i_rfactor[1];
+                xd = src->band_d[i * src_stride + j] * i_rfactor[2];
                 ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_a_stride, &thr, w, h, i, j);
 
                 ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -1437,9 +1483,9 @@ static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
                                    add_shift_xdcub, shift_xdcub, accum_inner_d);
             }
             /* j = w-1 */
-            xh = src->band_h[i * src_stride + w - 1] * rfactor[0];
-            xv = src->band_v[i * src_stride + w - 1] * rfactor[1];
-            xd = src->band_d[i * src_stride + w - 1] * rfactor[2];
+            xh = src->band_h[i * src_stride + w - 1] * i_rfactor[0];
+            xv = src->band_v[i * src_stride + w - 1] * i_rfactor[1];
+            xd = src->band_d[i * src_stride + w - 1] * i_rfactor[2];
             ADM_CM_THRESH_S_I_W_M_1(angles, flt_angles, csf_a_stride, &thr, w, h, i, (w - 1));
 
             ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -1463,9 +1509,9 @@ static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
             accum_inner_d = 0;
 
             /* j = 0 */
-            xh = src->band_h[i * src_stride] * rfactor[0];
-            xv = src->band_v[i * src_stride] * rfactor[1];
-            xd = src->band_d[i * src_stride] * rfactor[2];
+            xh = src->band_h[i * src_stride] * i_rfactor[0];
+            xv = src->band_v[i * src_stride] * i_rfactor[1];
+            xd = src->band_d[i * src_stride] * i_rfactor[2];
             ADM_CM_THRESH_S_I_0(angles, flt_angles, csf_a_stride, &thr, w, h, i, 0);
 
             ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -1477,9 +1523,9 @@ static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
 
             /* j within frame */
             for (j = start_col; j < end_col; ++j) {
-                xh = src->band_h[i * src_stride + j] * rfactor[0];
-                xv = src->band_v[i * src_stride + j] * rfactor[1];
-                xd = src->band_d[i * src_stride + j] * rfactor[2];
+                xh = src->band_h[i * src_stride + j] * i_rfactor[0];
+                xv = src->band_v[i * src_stride + j] * i_rfactor[1];
+                xd = src->band_d[i * src_stride + j] * i_rfactor[2];
                 ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_a_stride, &thr, w, h, i, j);
 
                 ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -1490,9 +1536,9 @@ static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
                                    add_shift_xdcub, shift_xdcub, accum_inner_d);
             }
             /* j = w-1 */
-            xh = src->band_h[i * src_stride + w - 1] * rfactor[0];
-            xv = src->band_v[i * src_stride + w - 1] * rfactor[1];
-            xd = src->band_d[i * src_stride + w - 1] * rfactor[2];
+            xh = src->band_h[i * src_stride + w - 1] * i_rfactor[0];
+            xv = src->band_v[i * src_stride + w - 1] * i_rfactor[1];
+            xd = src->band_d[i * src_stride + w - 1] * i_rfactor[2];
             ADM_CM_THRESH_S_I_W_M_1(angles, flt_angles, csf_a_stride, &thr, w, h, i, (w - 1));
 
             ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -1514,9 +1560,9 @@ static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
     /* i=h-1,j=0 */
     if ((bottom > (h - 1)) && (left <= 0))
     {
-        xh = src->band_h[(h - 1) * src_stride] * rfactor[0];
-        xv = src->band_v[(h - 1) * src_stride] * rfactor[1];
-        xd = src->band_d[(h - 1) * src_stride] * rfactor[2];
+        xh = src->band_h[(h - 1) * src_stride] * i_rfactor[0];
+        xv = src->band_v[(h - 1) * src_stride] * i_rfactor[1];
+        xd = src->band_d[(h - 1) * src_stride] * i_rfactor[2];
         ADM_CM_THRESH_S_H_M_1_0(angles, flt_angles, csf_a_stride, &thr, w, h, (h - 1), 0);
 
         ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -1530,9 +1576,9 @@ static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
     /* i=h-1,j */
     if (bottom > (h - 1)) {
         for (j = start_col; j < end_col; ++j) {
-            xh = src->band_h[(h - 1) * src_stride + j] * rfactor[0];
-            xv = src->band_v[(h - 1) * src_stride + j] * rfactor[1];
-            xd = src->band_d[(h - 1) * src_stride + j] * rfactor[2];
+            xh = src->band_h[(h - 1) * src_stride + j] * i_rfactor[0];
+            xv = src->band_v[(h - 1) * src_stride + j] * i_rfactor[1];
+            xd = src->band_d[(h - 1) * src_stride + j] * i_rfactor[2];
             ADM_CM_THRESH_S_H_M_1_J(angles, flt_angles, csf_a_stride, &thr, w, h, (h - 1), j);
 
             ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -1547,9 +1593,9 @@ static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
     /* i-h-1,j=w-1 */
     if ((bottom > (h - 1)) && (right > (w - 1)))
     {
-        xh = src->band_h[(h - 1) * src_stride + w - 1] * rfactor[0];
-        xv = src->band_v[(h - 1) * src_stride + w - 1] * rfactor[1];
-        xd = src->band_d[(h - 1) * src_stride + w - 1] * rfactor[2];
+        xh = src->band_h[(h - 1) * src_stride + w - 1] * i_rfactor[0];
+        xv = src->band_v[(h - 1) * src_stride + w - 1] * i_rfactor[1];
+        xd = src->band_d[(h - 1) * src_stride + w - 1] * i_rfactor[2];
         ADM_CM_THRESH_S_H_M_1_W_M_1(angles, flt_angles, csf_a_stride, &thr, w, h,
             (h - 1), (w - 1));
 
@@ -2423,9 +2469,10 @@ void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic
 			den_scale = adm_csf_den_scale(&buf->ref_dwt2, w, h, buf_stride,
                                  adm_norm_view_dist, adm_ref_display_height);
 
-			adm_csf(buf, w, h, buf_stride);
+			adm_csf(buf, w, h, buf_stride, adm_norm_view_dist, adm_ref_display_height);
 
-			num_scale = adm_cm(buf, w, h, buf_stride, buf_stride);
+			num_scale = adm_cm(buf, w, h, buf_stride, buf_stride,
+                               adm_norm_view_dist, adm_ref_display_height);
 		}
 		else {
             adm_dwt2_s123_combined(i4_curr_ref_scale, i4_curr_dis_scale, buf, w, h, curr_ref_stride,
