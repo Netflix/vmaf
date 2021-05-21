@@ -68,7 +68,8 @@ static char *init_dwt_band_hvd(adm_dwt_band_t *band, char *data_top, size_t buf_
 }
 
 int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score,
-        double *score_num, double *score_den, double *scores, double border_factor, double adm_enhn_gain_limit)
+        double *score_num, double *score_den, double *scores, double border_factor, double adm_enhn_gain_limit,
+        double adm_norm_view_dist, int adm_ref_display_height)
 {
 #ifdef ADM_OPT_SINGLE_PRECISION
 	double numden_limit = 1e-2 * (w * h) / (1920.0 * 1080.0);
@@ -180,11 +181,17 @@ int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride
 		adm_decouple(&ref_dwt2, &dis_dwt2, &decouple_r, &decouple_a, w, h,
 		        buf_stride, buf_stride, buf_stride, buf_stride, border_factor, adm_enhn_gain_limit);
 
-		den_scale = adm_csf_den_scale(&ref_dwt2, orig_h, scale, w, h, buf_stride, border_factor);
+		den_scale = adm_csf_den_scale(&ref_dwt2, orig_h, scale, w, h,
+                                buf_stride, border_factor,
+                                adm_norm_view_dist, adm_ref_display_height);
 
-		adm_csf(&decouple_a, &csf_a, &csf_f, orig_h, scale, w, h, buf_stride, buf_stride, border_factor);
+		adm_csf(&decouple_a, &csf_a, &csf_f, orig_h, scale, w, h, buf_stride,
+          buf_stride, border_factor,
+          adm_norm_view_dist, adm_ref_display_height);
 	
-		num_scale = adm_cm(&decouple_r, &csf_f, &csf_a, w, h, buf_stride, buf_stride, buf_stride, border_factor, scale);
+		num_scale = adm_cm(&decouple_r, &csf_f, &csf_a, w, h, buf_stride,
+                     buf_stride, buf_stride, border_factor, scale,
+                     adm_norm_view_dist, adm_ref_display_height);
 
 #ifdef ADM_OPT_DEBUG_DUMP
 		sprintf(pathbuf, "stage/ref[%d]_a.yuv", scale);

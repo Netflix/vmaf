@@ -263,13 +263,13 @@ float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_fac
 
 void adm_decouple_s(const adm_dwt_band_t_s *ref, const adm_dwt_band_t_s *dis, const adm_dwt_band_t_s *r, const adm_dwt_band_t_s *a, int w, int h, int ref_stride, int dis_stride, int r_stride, int a_stride, double border_factor, double adm_enhn_gain_limit);
 
-void adm_csf_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const adm_dwt_band_t_s *flt, int orig_h, int scale, int w, int h, int src_stride, int dst_stride, double border_factor);
+void adm_csf_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const adm_dwt_band_t_s *flt, int orig_h, int scale, int w, int h, int src_stride, int dst_stride, double border_factor, double adm_norm_view_dist, int adm_ref_display_height);
 
 void adm_cm_thresh_s(const adm_dwt_band_t_s *src, float *dst, int w, int h, int src_stride, int dst_stride);
 
-float adm_csf_den_scale_s(const adm_dwt_band_t_s *src, int orig_h, int scale, int w, int h, int src_stride, double border_factor);
+float adm_csf_den_scale_s(const adm_dwt_band_t_s *src, int orig_h, int scale, int w, int h, int src_stride, double border_factor, double adm_norm_view_dist, int adm_ref_display_height);
 
-float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const adm_dwt_band_t_s *csf_a, int w, int h, int src_stride, int dst_stride, int csf_a_stride, double border_factor, int scale);
+float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const adm_dwt_band_t_s *csf_a, int w, int h, int src_stride, int dst_stride, int csf_a_stride, double border_factor, int scale, double adm_norm_view_dist, int adm_ref_display_height);
 
 void dwt2_src_indices_filt_s(int **src_ind_y, int **src_ind_x, int w, int h);
 
@@ -280,9 +280,6 @@ void adm_dwt2_d(const double *src, const adm_dwt_band_t_d *dst, int **ind_y, int
 /* ================= */
 /* Noise floor model */
 /* ================= */
-
-#define NORM_VIEW_DIST 3.0f // normalized viewing distance = viewing distance / ref display's physical height
-#define REF_DISPLAY_HEIGHT 1080 // reference display height in pixels
 
 /*
  * The following dwt visibility threshold parameters are taken from
@@ -330,10 +327,11 @@ static const float dwt_7_9_basis_function_amplitudes[6][4] = {
  * lambda = 0 (finest scale), 1, 2, 3 (coarsest scale);
  * theta = 0 (ll), 1 (lh - vertical), 2 (hh - diagonal), 3(hl - horizontal).
  */
-FORCE_INLINE inline float dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta)
+FORCE_INLINE inline float dwt_quant_step(const struct dwt_model_params *params,
+        int lambda, int theta, double adm_norm_view_dist, int adm_ref_display_height)
 {
     // Formula (1), page 1165 - display visual resolution (DVR), in pixels/degree of visual angle. This should be 56.55
-    float r = NORM_VIEW_DIST * REF_DISPLAY_HEIGHT * M_PI / 180.0;
+    float r = adm_norm_view_dist * adm_ref_display_height * M_PI / 180.0;
 
     // Formula (9), page 1171
     float temp = log10(pow(2.0,lambda+1)*params->f0*params->g[theta]/r);

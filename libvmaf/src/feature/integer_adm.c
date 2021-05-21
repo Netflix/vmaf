@@ -32,6 +32,8 @@ typedef struct AdmState {
     AdmBuffer buf;
     bool debug;
     double adm_enhn_gain_limit;
+    double adm_norm_view_dist;
+    int adm_ref_display_height;
     void (*dwt2_8)(const uint8_t *src, const adm_dwt_band_t *dst,
                    AdmBuffer *buf, int w, int h, int src_stride,
                    int dst_stride);
@@ -55,6 +57,24 @@ static const VmafOption options[] = {
         .min = 1.0,
         .max = DEFAULT_ADM_ENHN_GAIN_LIMIT,
     },
+    {
+        .name = "adm_norm_view_dist",
+        .help = "normalized viewing distance = viewing distance / ref display's physical height",
+        .offset = offsetof(AdmState, adm_norm_view_dist),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = DEFAULT_ADM_NORM_VIEW_DIST,
+        .min = 0.75,
+        .max = 24.0,
+    },
+    {
+        .name = "adm_ref_display_height",
+        .help = "reference display height in pixels",
+        .offset = offsetof(AdmState, adm_ref_display_height),
+        .type = VMAF_OPT_TYPE_INT,
+        .default_val.i = DEFAULT_ADM_REF_DISPLAY_HEIGHT,
+        .min = 1,
+        .max = 4320,
+    },
     { 0 }
 };
 
@@ -63,11 +83,12 @@ static const VmafOption options[] = {
  * theta = 0 (ll), 1 (lh - vertical), 2 (hh - diagonal), 3(hl - horizontal).
  */
 static inline float
-dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta)
+dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta,
+        double adm_norm_view_dist, int adm_ref_display_height)
 {
     // Formula (1), page 1165 - display visual resolution (DVR), in pixels/degree
     // of visual angle. This should be 56.55
-    float r = NORM_VIEW_DIST * REF_DISPLAY_HEIGHT * M_PI / 180.0;
+    float r = adm_norm_view_dist * adm_ref_display_height * M_PI / 180.0;
 
     // Formula (9), page 1171
     float temp = log10(pow(2.0, lambda + 1)*params->f0*params->g[theta] / r);
@@ -970,7 +991,8 @@ static void adm_csf(AdmBuffer *buf, int w, int h, int stride)
     }
 }
 
-static void i4_adm_csf(AdmBuffer *buf, int scale, int w, int h, int stride)
+static void i4_adm_csf(AdmBuffer *buf, int scale, int w, int h, int stride,
+                       double adm_norm_view_dist, int adm_ref_display_height)
 {
     const i4_adm_dwt_band_t *src = &buf->i4_decouple_a;
     const i4_adm_dwt_band_t *dst = &buf->i4_csf_a;
@@ -982,8 +1004,8 @@ static void i4_adm_csf(AdmBuffer *buf, int scale, int w, int h, int stride)
 
     // for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
     // 1 to 4 (from finest scale to coarsest scale).
-    const float factor1 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1);
-    const float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2);
+    const float factor1 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1, adm_norm_view_dist, adm_ref_display_height);
+    const float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist, adm_ref_display_height);
     const float rfactor1[3] = { 1.0f / factor1, 1.0f / factor1, 1.0f / factor2 };
 
     //rfactor in fixed-point
@@ -1047,12 +1069,13 @@ static void i4_adm_csf(AdmBuffer *buf, int scale, int w, int h, int stride)
 }
 
 static float adm_csf_den_scale(const adm_dwt_band_t *src, int w, int h,
-                               int src_stride)
+                               int src_stride,
+                               double adm_norm_view_dist, int adm_ref_display_height)
 {
     // for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
     // 1 to 4 (from finest scale to coarsest scale).
-    const float factor1 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], 0, 1);
-    const float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], 0, 2);
+    const float factor1 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], 0, 1, adm_norm_view_dist, adm_ref_display_height);
+    const float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], 0, 2, adm_norm_view_dist, adm_ref_display_height);
     const float rfactor[3] = { 1.0f / factor1, 1.0f / factor1, 1.0f / factor2 };
 
     uint64_t accum_h = 0, accum_v = 0, accum_d = 0;
@@ -1129,12 +1152,13 @@ static float adm_csf_den_scale(const adm_dwt_band_t *src, int w, int h,
 }
 
 static float adm_csf_den_s123(const i4_adm_dwt_band_t *src, int scale, int w, int h,
-                              int src_stride)
+                              int src_stride,
+                              double adm_norm_view_dist, int adm_ref_display_height)
 {
     // for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
     // 1 to 4 (from finest scale to coarsest scale).
-    float factor1 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1);
-    float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2);
+    float factor1 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1, adm_norm_view_dist, adm_ref_display_height);
+    float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist, adm_ref_display_height);
     const float rfactor[3] = { 1.0f / factor1, 1.0f / factor1, 1.0f / factor2 };
 
     uint64_t accum_h = 0, accum_v = 0, accum_d = 0;
@@ -1563,7 +1587,8 @@ static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
     return (num_scale_h + num_scale_v + num_scale_d);
 }
 
-static float i4_adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride, int scale)
+static float i4_adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride, int scale,
+                       double adm_norm_view_dist, int adm_ref_display_height)
 {
     const i4_adm_dwt_band_t *src = &buf->i4_decouple_r;
     const i4_adm_dwt_band_t *csf_f = &buf->i4_csf_f;
@@ -1571,8 +1596,8 @@ static float i4_adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_s
 
     // for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
     // 1 to 4 (from finest scale to coarsest scale).
-    float factor1 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1);
-    float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2);
+    float factor1 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1, adm_norm_view_dist, adm_ref_display_height);
+    float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist, adm_ref_display_height);
     float rfactor1[3] = { 1.0f / factor1, 1.0f / factor1, 1.0f / factor2 };
 
     const uint32_t rfactor[3] = { (uint32_t)(rfactor1[0] * pow(2, 32)),
@@ -2342,7 +2367,8 @@ static void adm_dwt2_s123_combined(const int32_t *i4_ref_scale, const int32_t *i
 
 void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic,
                          double *score, double *score_num, double *score_den, double *scores, AdmBuffer *buf,
-                         double adm_enhn_gain_limit)
+                         double adm_enhn_gain_limit,
+                         double adm_norm_view_dist, int adm_ref_display_height)
 {
     int w = ref_pic->w[0];
     int h = ref_pic->h[0];
@@ -2394,7 +2420,8 @@ void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic
 
 			adm_decouple(buf, w, h, buf_stride, adm_enhn_gain_limit);
 
-			den_scale = adm_csf_den_scale(&buf->ref_dwt2, w, h, buf_stride);
+			den_scale = adm_csf_den_scale(&buf->ref_dwt2, w, h, buf_stride,
+                                 adm_norm_view_dist, adm_ref_display_height);
 
 			adm_csf(buf, w, h, buf_stride);
 
@@ -2409,11 +2436,15 @@ void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic
 
 			adm_decouple_s123(buf, w, h, buf_stride, adm_enhn_gain_limit);
 
-			den_scale = adm_csf_den_s123(&buf->i4_ref_dwt2, scale, w, h, buf_stride);
+			den_scale = adm_csf_den_s123(
+			        &buf->i4_ref_dwt2, scale, w, h, buf_stride,
+			        adm_norm_view_dist, adm_ref_display_height);
 
-			i4_adm_csf(buf, scale, w, h, buf_stride);
+			i4_adm_csf(buf, scale, w, h, buf_stride,
+              adm_norm_view_dist, adm_ref_display_height);
 
-			num_scale = i4_adm_cm(buf, w, h, buf_stride, buf_stride, scale);
+			num_scale = i4_adm_cm(buf, w, h, buf_stride, buf_stride, scale,
+                         adm_norm_view_dist, adm_ref_display_height);
 		}
 
 		num += num_scale;
@@ -2566,7 +2597,9 @@ static int extract(VmafFeatureExtractor *fex,
     double scores[8];
 
     integer_compute_adm(s, ref_pic, dist_pic, &score, &score_num, &score_den,
-                        scores, &s->buf, s->adm_enhn_gain_limit);
+                        scores, &s->buf,
+                        s->adm_enhn_gain_limit,
+                        s->adm_norm_view_dist, s->adm_ref_display_height);
 
     char *key =
         s->adm_enhn_gain_limit != DEFAULT_ADM_ENHN_GAIN_LIMIT ?

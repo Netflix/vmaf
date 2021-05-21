@@ -34,6 +34,8 @@ typedef struct AdmState {
     float *dist;
     bool debug;
     double adm_enhn_gain_limit;
+    double adm_norm_view_dist;
+    int adm_ref_display_height;
 } AdmState;
 
 static const VmafOption options[] = {
@@ -53,6 +55,24 @@ static const VmafOption options[] = {
         .default_val.d = DEFAULT_ADM_ENHN_GAIN_LIMIT,
         .min = 1.0,
         .max = DEFAULT_ADM_ENHN_GAIN_LIMIT,
+    },
+    {
+        .name = "adm_norm_view_dist",
+        .help = "normalized viewing distance = viewing distance / ref display's physical height",
+        .offset = offsetof(AdmState, adm_norm_view_dist),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = DEFAULT_ADM_NORM_VIEW_DIST,
+        .min = 0.75,
+        .max = 24.0,
+    },
+    {
+        .name = "adm_ref_display_height",
+        .help = "reference display height in pixels",
+        .offset = offsetof(AdmState, adm_ref_display_height),
+        .type = VMAF_OPT_TYPE_INT,
+        .default_val.i = DEFAULT_ADM_REF_DISPLAY_HEIGHT,
+        .min = 1,
+        .max = 4320,
     },
     { 0 }
 };
@@ -94,7 +114,8 @@ static int extract(VmafFeatureExtractor *fex,
     err = compute_adm(s->ref, s->dist, ref_pic->w[0], ref_pic->h[0],
                       s->float_stride, s->float_stride, &score, &score_num,
                       &score_den, scores, ADM_BORDER_FACTOR,
-                      s->adm_enhn_gain_limit);
+                      s->adm_enhn_gain_limit,
+                      s->adm_norm_view_dist, s->adm_ref_display_height);
     if (err) return err;
 
     const char *key =
