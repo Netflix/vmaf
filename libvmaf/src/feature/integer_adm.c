@@ -2643,6 +2643,13 @@ static int extract(VmafFeatureExtractor *fex,
     double score, score_num, score_den;
     double scores[8];
 
+    // current implementation is limited by the 16-bit data pipeline, thus
+    // cannot handle an angular frequency smaller than 1080p * 3H
+    if (s->adm_norm_view_dist * s->adm_ref_display_height <
+        DEFAULT_ADM_NORM_VIEW_DIST * DEFAULT_ADM_REF_DISPLAY_HEIGHT) {
+        return -EINVAL;
+    }
+
     integer_compute_adm(s, ref_pic, dist_pic, &score, &score_num, &score_den,
                         scores, &s->buf,
                         s->adm_enhn_gain_limit,
