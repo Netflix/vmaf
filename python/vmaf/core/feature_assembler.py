@@ -66,27 +66,9 @@ class FeatureAssembler(object):
         # for each FeatureExtractor_type key in feature_dict, find the subclass
         # of FeatureExtractor, run, and put results in a dict
         for fextractor_type in self.feature_dict:
-
-            fextractor_class = FeatureExtractor.find_subclass(fextractor_type)
-
-            if self.feature_option_dict is not None \
-                and fextractor_type in self.feature_option_dict:
-                optional_dict = self.feature_option_dict[fextractor_type]
-            else:
-                optional_dict = self.optional_dict  # FIXME: hacky
-
-            runner = fextractor_class(
-                 self.assets,
-                 logger=None,
-                 fifo_mode=self.fifo_mode,
-                 delete_workdir=self.delete_workdir,
-                 result_store=self.result_store,
-                 optional_dict=optional_dict,
-                 optional_dict2=self.optional_dict2,
-            )
+            runner = self._get_fextractor_instance(fextractor_type)
             runner.run(parallelize=self.parallelize, processes=self.processes)
             results = runner.results
-
             self.type2results_dict[fextractor_type] = results
 
         # assemble an output dict with demanded atom features
@@ -134,13 +116,21 @@ class FeatureAssembler(object):
         return atom_features
 
     def _get_fextractor_instance(self, fextractor_type):
+
         fextractor_class = FeatureExtractor.find_subclass(fextractor_type)
+
+        if self.feature_option_dict is not None \
+                and fextractor_type in self.feature_option_dict:
+            optional_dict = self.feature_option_dict[fextractor_type]
+        else:
+            optional_dict = self.optional_dict  # FIXME: hacky
+
         fextractor = fextractor_class(assets=self.assets,
                                       logger=self.logger,
                                       fifo_mode=self.fifo_mode,
                                       delete_workdir=self.delete_workdir,
                                       result_store=self.result_store,
-                                      optional_dict=self.optional_dict,
+                                      optional_dict=optional_dict,
                                       optional_dict2=self.optional_dict2,
                                       )
         return fextractor
