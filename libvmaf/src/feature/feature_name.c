@@ -40,12 +40,12 @@ static const Alias alias_list[] = {
         .alias = "egl",
     },
     {
-            .name = "adm_norm_view_dist",
-            .alias = "nvd",
+        .name = "adm_norm_view_dist",
+        .alias = "nvd",
     },
     {
-            .name = "adm_ref_display_height",
-            .alias = "rdh",
+        .name = "adm_ref_display_height",
+        .alias = "rdh",
     },
 };
 
