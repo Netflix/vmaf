@@ -1627,5 +1627,46 @@ class QualityRunnerVersionTest(unittest.TestCase):
         self.assertEqual(VmafQualityRunner.ALGO_VERSION, 4)
 
 
+class QualityRunnerResultStoreTest(unittest.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.result_store = FileSystemResultStore()
+
+    def tearDown(self):
+        self.runner1.remove_results()
+        self.runner2.remove_results()
+        super().tearDown()
+
+    def test_quality_runner_with_different_models(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner1 = VmafQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=self.result_store,
+            optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_rdh540.json')}
+        )
+        self.runner1.run(parallelize=True)
+        results1 = self.runner1.results
+
+        self.runner2 = VmafQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=self.result_store,
+            optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_nvd6.json')}
+        )
+        self.runner2.run(parallelize=True)
+        results2 = self.runner2.results
+
+        self.assertAlmostEqual(results1[0]['VMAF_score'], 73.28968543912883, places=4)
+        self.assertAlmostEqual(results1[1]['VMAF_score'], 99.946416604585025, places=4)
+
+        self.assertAlmostEqual(results2[0]['VMAF_score'], 80.61670115719328, places=4)
+        self.assertAlmostEqual(results2[1]['VMAF_score'], 99.946416604585025, places=4)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
