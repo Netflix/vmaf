@@ -468,9 +468,13 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
     if processes is not None:
         assert parallelize is True, 'if processes is not None, parallelize must be True'
 
+    assert hasattr(feature_param, 'feature_dict')
+    feature_dict = feature_param.feature_dict
+    feature_option_dict = feature_param.feature_optional_dict if hasattr(feature_param, 'feature_optional_dict') else None
+
     train_fassembler = FeatureAssembler(
-        feature_dict=feature_param.feature_dict,
-        feature_option_dict=None,
+        feature_dict=feature_dict,
+        feature_option_dict=feature_option_dict,
         assets=train_assets,
         logger=logger,
         fifo_mode=fifo_mode,
@@ -571,8 +575,8 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
             test_assets = read_dataset(test_dataset_aggregate, **kwargs)
 
         test_fassembler = FeatureAssembler(
-            feature_dict=feature_param.feature_dict,
-            feature_option_dict=None,
+            feature_dict=feature_dict,
+            feature_option_dict=feature_option_dict,
             assets=test_assets,
             logger=logger,
             fifo_mode=fifo_mode,
