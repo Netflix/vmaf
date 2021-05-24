@@ -411,6 +411,31 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(test_assets[2].groundtruth_std, 0.0, places=4)
         self.assertAlmostEqual(test_assets[3].groundtruth_std, 3.5355339059327373, places=4)
 
+    def test_train_test_on_dataset_with_dis1st_thr_with_feature_optional_dict(self):
+        from vmaf.routine import train_test_vmaf_on_dataset
+        train_dataset = import_python_file(
+            VmafConfig.test_resource_path('dataset_sample.py'))
+        model_param = import_python_file(
+            VmafConfig.test_resource_path('model_param_sample.py'))
+        feature_param = import_python_file(
+            VmafConfig.test_resource_path('feature_param_sample_with_optional_dict.py'))
+
+        with self.assertRaises(AssertionError):
+            # adm_ref_display_height 108000 exceeds the maximum allowed
+            train_fassembler, train_assets, train_stats, test_fassembler, test_assets, test_stats, _ = train_test_vmaf_on_dataset(
+                train_dataset=train_dataset,
+                test_dataset=train_dataset,
+                feature_param=feature_param,
+                model_param=model_param,
+                train_ax=None,
+                test_ax=None,
+                result_store=None,
+                parallelize=False,
+                logger=None,
+                fifo_mode=True,
+                output_model_filepath=self.output_model_filepath,
+            )
+
 
 class TestGenerateDatasetFromRaw(unittest.TestCase):
 
