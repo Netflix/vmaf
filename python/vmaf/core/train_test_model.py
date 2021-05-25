@@ -441,6 +441,16 @@ class TrainTestModel(TypeVersionEnabled):
         self.model_dict['feature_names'] = value
 
     @property
+    def feature_opts_dicts(self):
+        self._assert_trained()
+        return self.model_dict['feature_opts_dicts'] \
+            if 'feature_opts_dicts' in self.model_dict else None
+
+    @feature_opts_dicts.setter
+    def feature_opts_dicts(self, value):
+        self.model_dict['feature_opts_dicts'] = value
+
+    @property
     def model_type(self):
         return self.model_dict['model_type']
 
@@ -553,19 +563,22 @@ class TrainTestModel(TypeVersionEnabled):
         supported_format = ['pkl']
         assert format in supported_format, f'format must be in {supported_format} but is {format}'
 
-
         train_test_model = cls(
             param_dict={}, logger=logger, optional_dict2=optional_dict2)
         train_test_model.param_dict = info_loaded['param_dict']
         train_test_model.model_dict = info_loaded['model_dict']
         return train_test_model
 
-    def _preproc_train(self, xys):
+    def _preproc_train(self, xys, **kwargs):
+        feature_option_dict = kwargs['feature_option_dict'] \
+            if 'feature_option_dict' in kwargs else None
         self.model_type = self.TYPE
         assert 'label' in xys
         assert 'content_id' in xys
         feature_names = self.get_ordered_feature_names(xys)
         self.feature_names = feature_names
+        if feature_option_dict is not None:
+            self.feature_opts_dicts = self.get_feature_opts_dicts(feature_names, feature_option_dict)
         # note that feature_names is property (write). below cannot yet use
         # self.feature_names since additional things (_assert_trained()) is
         # not ready yet
@@ -577,7 +590,7 @@ class TrainTestModel(TypeVersionEnabled):
         return xys_2d
 
     def train(self, xys, **kwargs):
-        xys_2d = self._preproc_train(xys)
+        xys_2d = self._preproc_train(xys, **kwargs)
         model = self._train(self.param_dict, xys_2d, **kwargs)
         self.model = model
 
@@ -591,6 +604,36 @@ class TrainTestModel(TypeVersionEnabled):
         if 'content_id' in feature_names:
             feature_names.remove('content_id')
         return feature_names
+
+    @staticmethod
+    def get_feature_opts_dicts(feature_names, feature_option_dict):
+        """
+        Convention: match aggregate feature name and the option key by the string
+        before the first underscore "_".
+        >>> feature_names = ['VMAF_feature_adm2_score', 'VMAF_feature_motion2_score', 'VMAF_feature_vif_scale0_score', 'VMAF_feature_vif_scale1_score', 'VMAF_feature_vif_scale2_score', 'VMAF_feature_vif_scale3_score']
+        >>> feature_option_dict = {'VMAF_feature': {'adm_ref_display_height': 2160}}
+        >>> TrainTestModel.get_feature_opts_dicts(feature_names, feature_option_dict)
+        [{'adm_ref_display_height': 2160}, {}, {}, {}, {}, {}]
+        >>> feature_option_dict2 = {'VMAF_feature': {'adm_enhn_gain_limit': 1.1, 'vif_enhn_gain_limit': 1.05}}
+        >>> TrainTestModel.get_feature_opts_dicts(feature_names, feature_option_dict2)
+        [{'adm_enhn_gain_limit': 1.1}, {}, {'vif_enhn_gain_limit': 1.05}, {'vif_enhn_gain_limit': 1.05}, {'vif_enhn_gain_limit': 1.05}, {'vif_enhn_gain_limit': 1.05}]
+        >>> feature_option_dict3 = {'VMAF_feature': {'motion_force_zero': True}}
+        >>> TrainTestModel.get_feature_opts_dicts(feature_names, feature_option_dict3)
+        [{}, {'motion_force_zero': True}, {}, {}, {}, {}]
+        >>> feature_option_dict4 = {'VMAF_feature': {'motion_force_zero': True, 'adm_enhn_gain_limit': 1.1, 'vif_enhn_gain_limit': 1.05, 'adm_ref_display_height': 2160}}
+        >>> TrainTestModel.get_feature_opts_dicts(feature_names, feature_option_dict4)
+        [{'adm_enhn_gain_limit': 1.1, 'adm_ref_display_height': 2160}, {'motion_force_zero': True}, {'vif_enhn_gain_limit': 1.05}, {'vif_enhn_gain_limit': 1.05}, {'vif_enhn_gain_limit': 1.05}, {'vif_enhn_gain_limit': 1.05}]
+        """
+        feature_opts_dicts = []
+        for feature_name in feature_names:
+            d = dict()
+            for aggr_feature, aggr_feature_d in feature_option_dict.items():
+                for opt_key, opt_val in aggr_feature_d.items():
+                    if aggr_feature.split('_')[0] in aggr_feature \
+                            and opt_key.split('_')[0] in feature_name:
+                        d[opt_key] = opt_val
+            feature_opts_dicts.append(d)
+        return feature_opts_dicts
 
     def _calculate_normalization_params(self, xys_2d):
 
@@ -1744,3 +1787,8 @@ class ResidueBootstrapRandomForestTrainTestModel(BootstrapRegressorMixin, Residu
 
     TYPE = 'RESIDUEBOOTSTRAP_RANDOMFOREST'
     VERSION = SklearnRandomForestTrainTestModel.VERSION + '-' + ResidueBootstrapMixin.MIXIN_VERSION
+
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
