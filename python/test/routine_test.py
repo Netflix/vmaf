@@ -287,6 +287,21 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(train_stats['ys_label_pred'][0], 90.753010402770798, places=3)
         self.assertAlmostEqual(test_stats['ys_label_pred'][0], 90.753010402770798, places=3)
 
+        runner = VmafQualityRunner(
+            train_assets,
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={'model_filepath': self.output_model_filepath}
+        )
+        runner.run(parallelize=True)
+        results = runner.results
+
+        self.assertAlmostEqual(results[0]['VMAF_score'], 89.55494473011981, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 61.025217541256076, places=4)
+        self.assertAlmostEqual(results[2]['VMAF_score'], 90.75301241304798, places=4)
+        self.assertAlmostEqual(results[3]['VMAF_score'], 89.27013895870179, places=4)
+
     def test_train_test_on_raw_dataset_with_dis1st_thr(self):
         from vmaf.routine import train_test_vmaf_on_dataset
         train_dataset = import_python_file(
@@ -435,6 +450,49 @@ class TestTrainOnDataset(unittest.TestCase):
                 fifo_mode=True,
                 output_model_filepath=self.output_model_filepath,
             )
+
+    def test_train_test_on_dataset_with_dis1st_thr_with_feature_optional_dict_good(self):
+        from vmaf.routine import train_test_vmaf_on_dataset
+        train_dataset = import_python_file(
+            VmafConfig.test_resource_path('dataset_sample.py'))
+        model_param = import_python_file(
+            VmafConfig.test_resource_path('model_param_sample.py'))
+        feature_param = import_python_file(
+            VmafConfig.test_resource_path('feature_param_sample_with_optional_dict_good.py'))
+
+        train_fassembler, train_assets, train_stats, test_fassembler, test_assets, test_stats, _ = train_test_vmaf_on_dataset(
+            train_dataset=train_dataset,
+            test_dataset=train_dataset,
+            feature_param=feature_param,
+            model_param=model_param,
+            train_ax=None,
+            test_ax=None,
+            result_store=None,
+            parallelize=True,
+            logger=None,
+            fifo_mode=True,
+            output_model_filepath=self.output_model_filepath,
+        )
+
+        self.train_fassembler = train_fassembler
+        self.assertTrue(os.path.exists(self.output_model_filepath))
+        self.assertAlmostEqual(train_stats['ys_label_pred'][0], 90.753010402770798, places=3)
+        self.assertAlmostEqual(test_stats['ys_label_pred'][0], 90.753010402770798, places=3)
+
+        runner = VmafQualityRunner(
+            train_assets,
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={'model_filepath': self.output_model_filepath}
+        )
+        runner.run(parallelize=True)
+        results = runner.results
+
+        self.assertAlmostEqual(results[0]['VMAF_score'], 89.55494473011981, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 61.01289549048653, places=4)
+        self.assertAlmostEqual(results[2]['VMAF_score'], 90.75301241304798, places=4)
+        self.assertAlmostEqual(results[3]['VMAF_score'], 89.27013895870179, places=4)
 
 
 class TestGenerateDatasetFromRaw(unittest.TestCase):

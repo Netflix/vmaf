@@ -502,11 +502,11 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
 
     model = model_class(model_param_dict, logger)
 
-    model.train(train_xys, **kwargs)
+    model.train(train_xys, feature_option_dict=feature_option_dict, **kwargs)
 
     # append additional information to model before saving, so that
     # VmafQualityRunner can read and process
-    model.append_info('feature_dict', feature_param.feature_dict)
+    model.append_info('feature_dict', feature_param.feature_dict)  # need feature_dict so that VmafQualityRunner knows how to call FeatureAssembler
     if 'score_clip' in model_param_dict:
         VmafQualityRunner.set_clip_score(model, model_param_dict['score_clip'])
     if 'score_transform' in model_param_dict:
