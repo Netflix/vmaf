@@ -52,8 +52,8 @@ class TypeVersionEnabled(object):
 
     def _assert_type_version(self):
 
-        assert re.match(r"^[a-zA-Z0-9_]+$", self.TYPE), \
-            "TYPE can only contains alphabets, numbers and underscore (_)."
+        assert re.match(r"^[a-zA-Z0-9._-]+$", self.TYPE), \
+            "TYPE can only contains alphabets, numbers, dot (.), hyphen(-) and underscore (_)."
 
         assert re.match(r"^[a-zA-Z0-9._-]+$", self.VERSION), \
             "VERSION can only contains alphabets, numbers, dot (.), hyphen(-) and underscore (_)."
