@@ -245,7 +245,7 @@ class AssetTest(unittest.TestCase):
                                   'resampling_type': 'lanczos'})
         self.assertEqual(
             str(asset),
-            "test_0_2_refvideo_720x480_vs_disvideo_720x480_q_1920x1080_lanczos"
+            "test_0_2_refvideo_720x480_lanczos_vs_disvideo_720x480_lanczos_q_1920x1080"
         )
         expected_repr = '{"asset_dict": {"height": 480, "quality_height": 1080, "quality_width": 1920, "resampling_type": "lanczos", "width": 720}, "asset_id": 2, "content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", "ref_path": "refvideo.yuv", "workdir": ""}' # noqa
         self.assertEqual(repr(asset), expected_repr)
@@ -290,7 +290,7 @@ class AssetTest(unittest.TestCase):
                                   'resampling_type': 'lanczos'})
         self.assertEqual(
             str(asset),
-            "test_0_1_refvideo_720x480_vs_disvideo_1920x1080_q_720x480_lanczos"
+            "test_0_1_refvideo_720x480_vs_disvideo_1920x1080_lanczos_q_720x480"
         )
 
         asset = Asset(dataset="test", content_id=0, asset_id=1,
@@ -301,7 +301,7 @@ class AssetTest(unittest.TestCase):
                                   'resampling_type': 'lanczos'})
         self.assertEqual(
             str(asset),
-            "test_0_1_refvideo_1920x1080_vs_disvideo_720x480_q_720x480_lanczos"
+            "test_0_1_refvideo_1920x1080_lanczos_vs_disvideo_720x480_q_720x480"
         )
 
     def test_hash_equal(self):
@@ -377,18 +377,45 @@ class AssetTest(unittest.TestCase):
                       ref_path="", dis_path="",
                       asset_dict={'fps': 24, 'start_sec': 2, 'end_sec': 3})
         self.assertEqual(asset.resampling_type, 'bicubic')
+        self.assertEqual(asset.ref_resampling_type, 'bicubic')
+        self.assertEqual(asset.dis_resampling_type, 'bicubic')
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
                       asset_dict={'fps': 24, 'start_sec': 2, 'end_sec': 3,
                                   'resampling_type': 'lanczos'})
         self.assertEqual(asset.resampling_type, 'lanczos')
+        self.assertEqual(asset.ref_resampling_type, 'lanczos')
+        self.assertEqual(asset.dis_resampling_type, 'lanczos')
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
                       asset_dict={'fps': 24, 'start_sec': 2, 'end_sec': 3,
                                   'resampling_type': 'bicubic'})
         self.assertEqual(asset.resampling_type, 'bicubic')
+        self.assertEqual(asset.ref_resampling_type, 'bicubic')
+        self.assertEqual(asset.dis_resampling_type, 'bicubic')
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'fps': 24, 'start_sec': 2, 'end_sec': 3,
+                                  'ref_resampling_type': 'bilinear',
+                                  'dis_resampling_type': 'lanczos'})
+        self.assertEqual(asset.ref_resampling_type, 'bilinear')
+        self.assertEqual(asset.dis_resampling_type, 'lanczos')
+        with self.assertRaises(AssertionError):
+            _ = asset.resampling_type
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'fps': 24, 'start_sec': 2, 'end_sec': 3,
+                                  'ref_resampling_type': 'bilinear',
+                                  'dis_resampling_type': 'lanczos',
+                                  'resampling_type': 'bilinear'})
+        self.assertEqual(asset.ref_resampling_type, 'bilinear')
+        self.assertEqual(asset.dis_resampling_type, 'lanczos')
+        with self.assertRaises(AssertionError):
+            _ = asset.resampling_type
 
     def test_use_path_as_workpath(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,

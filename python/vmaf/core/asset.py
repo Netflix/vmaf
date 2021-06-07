@@ -411,6 +411,14 @@ class Asset(WorkdirEnabled):
         if self.ref_yuv_type != self.DEFAULT_YUV_TYPE:
             s += "_{}".format(self.ref_yuv_type)
 
+        # if resolutions are consistent, no resampling is taking place, so
+        # specificying resampling type should be ignored
+        if self.ref_resampling_type != self.DEFAULT_RESAMPLING_TYPE and \
+                not self.ref_width_height == self.quality_width_height:
+            if s != "":
+                s += "_"
+            s += "{}".format(self.ref_resampling_type)
+
         if self.ref_start_end_frame:
             start, end = self.ref_start_end_frame
             s += "_{start}to{end}".format(start=start, end=end)
@@ -444,6 +452,14 @@ class Asset(WorkdirEnabled):
         if self.dis_yuv_type != self.DEFAULT_YUV_TYPE:
             s += "_{}".format(self.dis_yuv_type)
 
+        # if resolutions are consistent, no resampling is taking place, so
+        # specificying resampling type should be ignored
+        if self.dis_resampling_type != self.DEFAULT_RESAMPLING_TYPE and \
+                not self.dis_width_height == self.quality_width_height:
+            if s != "":
+                s += "_"
+            s += "{}".format(self.dis_resampling_type)
+
         if self.dis_start_end_frame:
             start, end = self.dis_start_end_frame
             s += "_{start}to{end}".format(start=start, end=end)
@@ -472,15 +488,6 @@ class Asset(WorkdirEnabled):
             if s != "":
                 s += "_"
             s += "{w}x{h}".format(w=w, h=h)
-
-        # if resolutions are consistent, no resampling is taking place, so
-        # specificying resampling type should be ignored
-        if self.resampling_type != self.DEFAULT_RESAMPLING_TYPE and \
-                not (self.ref_width_height == self.quality_width_height
-                     and self.dis_width_height == self.quality_width_height):
-            if s != "":
-                s += "_"
-            s += "{}".format(self.resampling_type)
 
         return s
 
@@ -567,6 +574,7 @@ class Asset(WorkdirEnabled):
             return os.path.join(self.workdir, f"dis_{str(self)}")
 
     # ==== procfile ====
+
     @property
     def ref_procfile_path(self):
         if self.use_workpath_as_procpath:
@@ -642,6 +650,13 @@ class Asset(WorkdirEnabled):
             return self.DEFAULT_YUV_TYPE
 
     @property
+    @deprecated
+    def yuv_type(self):
+        """ For backward-compatibility """
+        assert self.ref_yuv_type == self.dis_yuv_type
+        return self.dis_yuv_type
+
+    @property
     def workfile_yuv_type(self):
         """
         for notyuv assets, we want to allow the decoded yuv format to be set by the user
@@ -658,12 +673,6 @@ class Asset(WorkdirEnabled):
         else:
             return self.DEFAULT_YUV_TYPE
 
-    @property
-    @deprecated
-    def yuv_type(self):
-        """ For backward-compatibility """
-        return self.dis_yuv_type
-
     def clear_up_yuv_type(self):
         if 'yuv_type' in self.asset_dict:
             del self.asset_dict['yuv_type']
@@ -672,9 +681,17 @@ class Asset(WorkdirEnabled):
         if 'dis_yuv_type' in self.asset_dict:
             del self.asset_dict['dis_yuv_type']
 
+    # ==== resampling type ====
+
     @property
-    def resampling_type(self):
-        if 'resampling_type' in self.asset_dict:
+    def ref_resampling_type(self):
+        if 'ref_resampling_type' in self.asset_dict:
+            if self.asset_dict['ref_resampling_type'] in self.SUPPORTED_RESAMPLING_TYPES:
+                return self.asset_dict['ref_resampling_type']
+            else:
+                assert False, "Unsupported resampling type: {}".format(
+                    self.asset_dict['ref_resampling_type'])
+        elif 'resampling_type' in self.asset_dict:
             if self.asset_dict['resampling_type'] in self.SUPPORTED_RESAMPLING_TYPES:
                 return self.asset_dict['resampling_type']
             else:
@@ -682,6 +699,30 @@ class Asset(WorkdirEnabled):
                     self.asset_dict['resampling_type'])
         else:
             return self.DEFAULT_RESAMPLING_TYPE
+
+    @property
+    def dis_resampling_type(self):
+        if 'dis_resampling_type' in self.asset_dict:
+            if self.asset_dict['dis_resampling_type'] in self.SUPPORTED_RESAMPLING_TYPES:
+                return self.asset_dict['dis_resampling_type']
+            else:
+                assert False, "Unsupported resampling type: {}".format(
+                    self.asset_dict['dis_resampling_type'])
+        elif 'resampling_type' in self.asset_dict:
+            if self.asset_dict['resampling_type'] in self.SUPPORTED_RESAMPLING_TYPES:
+                return self.asset_dict['resampling_type']
+            else:
+                assert False, "Unsupported resampling type: {}".format(
+                    self.asset_dict['resampling_type'])
+        else:
+            return self.DEFAULT_RESAMPLING_TYPE
+
+    @property
+    @deprecated
+    def resampling_type(self):
+        """ For backward-compatibility """
+        assert self.ref_resampling_type == self.dis_resampling_type
+        return self.dis_resampling_type
 
     @property
     def use_path_as_workpath(self):
