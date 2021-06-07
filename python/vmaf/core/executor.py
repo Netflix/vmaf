@@ -480,7 +480,7 @@ class Executor(TypeVersionEnabled):
 
         quality_width, quality_height = self._get_quality_width_height(asset)
         yuv_type = asset.ref_yuv_type
-        resampling_type = self._get_resampling_type(asset)
+        resampling_type = self._get_ref_resampling_type(asset)
 
         if yuv_type != 'notyuv':
             # in this case, for sure has ref_width_height
@@ -533,7 +533,7 @@ class Executor(TypeVersionEnabled):
 
         quality_width, quality_height = self._get_quality_width_height(asset)
         yuv_type = asset.dis_yuv_type
-        resampling_type = self._get_resampling_type(asset)
+        resampling_type = self._get_dis_resampling_type(asset)
 
         if yuv_type != 'notyuv':
             # in this case, for sure has dis_width_height
@@ -623,8 +623,11 @@ class Executor(TypeVersionEnabled):
                     except StopIteration:
                         break
 
-    def _get_resampling_type(self, asset):
-        return asset.resampling_type
+    def _get_ref_resampling_type(self, asset):
+        return asset.ref_resampling_type
+
+    def _get_dis_resampling_type(self, asset):
+        return asset.dis_resampling_type
 
     def _get_quality_width_height(self, asset):
         return asset.quality_width_height

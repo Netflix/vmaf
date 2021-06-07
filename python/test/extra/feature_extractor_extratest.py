@@ -6,6 +6,7 @@ from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.asset import Asset
 from vmaf.core.feature_extractor import VmafFeatureExtractor
 from vmaf.core.matlab_feature_extractor import StrredFeatureExtractor, StrredOptFeatureExtractor, SpEEDMatlabFeatureExtractor, STMADFeatureExtractor, iCIDFeatureExtractor
+from vmaf.tools.misc import MyTestCase
 from vmaf.tools.stats import ListStats
 
 from test.testutil import set_default_576_324_videos_for_testing
@@ -200,12 +201,12 @@ class ParallelMatlabFeatureExtractorTestNew(unittest.TestCase):
 
 
 @unittest.skipIf(not VmafExternalConfig.ffmpeg_path(), "ffmpeg not installed")
-class ParallelFeatureExtractorTestNew(unittest.TestCase):
+class ParallelFeatureExtractorTestNew(MyTestCase):
 
     def tearDown(self):
         if hasattr(self, 'fextractor'):
             self.fextractor.remove_results()
-        pass
+        super().tearDown()
 
     def test_run_vmaf_fextractor_with_resampling(self):
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
@@ -410,6 +411,30 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 0.7203213958333331, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 40.280504208333333, places=4)
+
+    def test_run_vmaf_fextractor_with_resampling_bilinear(self):
+        ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+        dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+        asset = Asset(dataset="test", content_id=0, asset_id=1,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'width': 576, 'height': 324,
+                                  'ref_resampling_type': 'lanczos',
+                                  'dis_resampling_type': 'bilinear',
+                                  'quality_width': 160, 'quality_height': 90})
+
+        self.fextractor = VmafFeatureExtractor(
+            [asset], None, fifo_mode=False)
+
+        self.fextractor.run(parallelize=False)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.6276097500000001, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'],1.418299520833333, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_score'], 0.9412648333333333, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 25.377805270833335, places=4)
 
 
 if __name__ == '__main__':
