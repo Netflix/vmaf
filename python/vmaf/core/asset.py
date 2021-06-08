@@ -930,3 +930,53 @@ class NorefAsset(Asset):
         new_asset = self.copy()
         new_asset.__class__ = Asset
         return new_asset.copy(**kwargs)
+
+    @property
+    @override(Asset)
+    def ref_width_height(self):
+        return self.dis_width_height
+
+    @property
+    @override(Asset)
+    def ref_start_end_frame(self):
+        return self.dis_start_end_frame
+
+    @property
+    @override(Asset)
+    def ref_duration_sec(self):
+        return self.dis_duration_sec
+
+    @property
+    @override
+    def ref_start_sec(self):
+        return self.dis_start_sec
+
+    @property
+    @override(Asset)
+    def ref_yuv_type(self):
+        return self.dis_yuv_type
+
+    @property
+    @override(Asset)
+    def ref_resampling_type(self):
+        return self.dis_resampling_type
+
+    @property
+    @override(Asset)
+    def ref_crop_cmd(self):
+        return self.dis_crop_cmd
+
+    @property
+    @override(Asset)
+    def ref_pad_cmd(self):
+        return self.dis_pad_cmd
+
+    @property
+    @override(Asset)
+    def ref_proc_callback_str(self):
+        return self.dis_proc_callback_str
+
+    @property
+    @override(Asset)
+    def ref_proc_callback(self):
+        return self.dis_proc_callback
