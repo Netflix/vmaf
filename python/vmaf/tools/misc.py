@@ -702,6 +702,15 @@ def piecewise_linear_mapping(x, knots):
     return y
 
 
+def round_up_to_odd(f):
+    """
+    >>> round_up_to_odd(32.6)
+    33
+    >>> round_up_to_odd(33.1)
+    35
+    """
+    return int(np.ceil(f) // 2 * 2 + 1)
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
