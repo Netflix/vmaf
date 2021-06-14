@@ -31,11 +31,8 @@
 
 #define vif_filter1d_table vif_filter1d_table_s
 #define vif_filter1d       vif_filter1d_s
-#define vif_filter2d_table vif_filter2d_table_s
-#define vif_filter2d       vif_filter2d_s
 #define vif_dec2           vif_dec2_s
 #define vif_sum            vif_sum_s
-#define vif_xx_yy_xy       vif_xx_yy_xy_s
 #define vif_statistic      vif_statistic_s
 #define offset_image       offset_image_s
 
@@ -62,9 +59,6 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
 
     float *ref_scale;
     float *dis_scale;
-    float *ref_sq;
-    float *dis_sq;
-    float *ref_dis;
 
     float *mu1;
     float *mu2;
@@ -144,13 +138,8 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
         char pathbuf[256];
 #endif
 
-#ifdef VIF_OPT_FILTER_1D
         const float *filter = vif_filter1d_table[scale];
         int filter_width       = vif_filter1d_width[scale];
-#else
-        const float *filter = vif_filter2d_table[scale];
-        int filter_width       = vif_filter2d_width[scale];
-#endif
 
 #ifdef VIF_OPT_HANDLE_BORDERS
         int buf_valid_w = w;
@@ -167,13 +156,9 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
 
         if (scale > 0)
         {
-#ifdef VIF_OPT_FILTER_1D
             vif_filter1d(filter, curr_ref_scale, mu1, tmpbuf, w, h, curr_ref_stride, buf_stride, filter_width);
             vif_filter1d(filter, curr_dis_scale, mu2, tmpbuf, w, h, curr_dis_stride, buf_stride, filter_width);
-#else
-            vif_filter2d(filter, curr_ref_scale, mu1, w, h, curr_ref_stride, buf_stride, filter_width);
-            vif_filter2d(filter, curr_dis_scale, mu2, w, h, curr_dis_stride, buf_stride, filter_width);
-#endif
+
             mu1_adj = ADJUST(mu1);
             mu2_adj = ADJUST(mu2);
 
@@ -196,25 +181,15 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
             curr_dis_stride = buf_stride;
         }
 
-#ifdef VIF_OPT_FILTER_1D
         vif_filter1d(filter, curr_ref_scale, mu1, tmpbuf, w, h, curr_ref_stride, buf_stride, filter_width);
         vif_filter1d(filter, curr_dis_scale, mu2, tmpbuf, w, h, curr_dis_stride, buf_stride, filter_width);
-#else
-        vif_filter2d(filter, curr_ref_scale, mu1, w, h, curr_ref_stride, buf_stride, filter_width);
-        vif_filter2d(filter, curr_dis_scale, mu2, w, h, curr_dis_stride, buf_stride, filter_width);
-#endif
-#ifdef VIF_OPT_FILTER_1D
 
-		// Code optimized by adding intrinsic code for the functions, 
+		// Code optimized by adding intrinsic code for the functions,
 		// vif_filter1d_sq and vif_filter1d_sq
 		vif_filter1d_sq(filter, curr_ref_scale, ref_sq_filt, tmpbuf, w, h, curr_ref_stride, buf_stride, filter_width);
 		vif_filter1d_sq(filter, curr_dis_scale, dis_sq_filt, tmpbuf, w, h, curr_dis_stride, buf_stride, filter_width);
 		vif_filter1d_xy(filter, curr_ref_scale, curr_dis_scale, ref_dis_filt, tmpbuf, w, h, curr_ref_stride, curr_dis_stride, buf_stride, filter_width);
-#else
-        vif_filter2d(filter, ref_sq, ref_sq_filt, w, h, buf_stride, buf_stride, filter_width);
-        vif_filter2d(filter, dis_sq, dis_sq_filt, w, h, buf_stride, buf_stride, filter_width);
-        vif_filter2d(filter, ref_dis, ref_dis_filt, w, h, buf_stride, buf_stride, filter_width);
-#endif
+
 		vif_statistic(mu1, mu2, NULL, ref_sq_filt, dis_sq_filt, ref_dis_filt, num_array, den_array,
 			w, h, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride,
 			vif_enhn_gain_limit);

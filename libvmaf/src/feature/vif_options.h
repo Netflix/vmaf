@@ -33,9 +33,6 @@
 /* Whether to keep the borders of the image after filtering. */
 #define VIF_OPT_HANDLE_BORDERS
 
-/* Whether to use a 1-D formulation of the Gaussian filter. */
-#define VIF_OPT_FILTER_1D
-
 /* Enhancement gain imposed on vif, must be >= 1.0, where 1.0 means the gain is completely disabled */
 #define DEFAULT_VIF_ENHN_GAIN_LIMIT (100.0)
 
