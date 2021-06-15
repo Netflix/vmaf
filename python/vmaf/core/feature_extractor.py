@@ -248,6 +248,8 @@ class VmafFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
             for opt in self.optional_dict:
                 if opt == 'vif_enhn_gain_limit':
                     options['float_vif']['vif_enhn_gain_limit'] = self.optional_dict['vif_enhn_gain_limit']
+                elif opt == 'vif_kernelscale':
+                    options['float_vif']['vif_kernelscale'] = self.optional_dict['vif_kernelscale']
                 elif opt == 'adm_enhn_gain_limit':
                     options['float_adm']['adm_enhn_gain_limit'] = self.optional_dict['adm_enhn_gain_limit']
                 elif opt == 'adm_norm_view_dist':
@@ -258,6 +260,11 @@ class VmafFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
                     options['float_motion']['motion_force_zero'] = self.optional_dict['motion_force_zero']
                 else:
                     pass
+
+        if self.optional_dict2 is not None:
+            for opt in self.optional_dict2:
+                if opt == 'disable_avx':
+                    options['disable_avx'] = self.optional_dict2['disable_avx']
 
         ExternalProgramCaller.call_vmafexec_multi_features(
             features, yuv_type, ref_path, dis_path, w, h, log_file_path,
@@ -426,6 +433,11 @@ class VmafIntegerFeatureExtractor(VmafFeatureExtractor):
                     options['motion']['motion_force_zero'] = self.optional_dict['motion_force_zero']
                 else:
                     pass
+
+        if self.optional_dict2 is not None:
+            for opt in self.optional_dict2:
+                if opt == 'disable_avx':
+                    options['disable_avx'] = self.optional_dict2['disable_avx']
 
         ExternalProgramCaller.call_vmafexec_multi_features(
             features, yuv_type, ref_path, dis_path, w, h, log_file_path,
