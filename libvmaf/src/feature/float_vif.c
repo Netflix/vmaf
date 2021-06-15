@@ -34,6 +34,7 @@ typedef struct VifState {
     float *dist;
     bool debug;
     double vif_enhn_gain_limit;
+    double vif_kernelscale;
 } VifState;
 
 static const VmafOption options[] = {
@@ -53,6 +54,17 @@ static const VmafOption options[] = {
         .default_val.d = DEFAULT_VIF_ENHN_GAIN_LIMIT,
         .min = 1.0,
         .max = DEFAULT_VIF_ENHN_GAIN_LIMIT,
+    },
+    {
+        .name = "vif_kernelscale",
+        .help = "scaling factor for the gaussian kernel (2.0 means "
+                "multiplying the standard deviation by 2 and enlarge "
+                "the kernel size accordingly",
+        .offset = offsetof(VifState, vif_kernelscale),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = DEFAULT_VIF_KERNELSCALE,
+        .min = 0.1,
+        .max = 2.0,
     },
     { NULL }
 };
@@ -94,7 +106,8 @@ static int extract(VmafFeatureExtractor *fex,
     err = compute_vif(s->ref, s->dist, ref_pic->w[0], ref_pic->h[0],
                       s->float_stride, s->float_stride,
                       &score, &score_num, &score_den, scores,
-                      s->vif_enhn_gain_limit);
+                      s->vif_enhn_gain_limit,
+                      s->vif_kernelscale);
     if (err) return err;
 
     const char *key =

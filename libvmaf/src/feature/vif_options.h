@@ -36,4 +36,8 @@
 /* Enhancement gain imposed on vif, must be >= 1.0, where 1.0 means the gain is completely disabled */
 #define DEFAULT_VIF_ENHN_GAIN_LIMIT (100.0)
 
+/* Scaling factor for the Gaussian kernel, where 2.0 means multiplying the
+ * standard deviation by 2 and expand the kernel length accordingly. */
+#define DEFAULT_VIF_KERNELSCALE (1.0)
+
 #endif /* VIF_OPTIONS_H_ */
