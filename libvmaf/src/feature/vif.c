@@ -150,24 +150,20 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
         char pathbuf[256];
 #endif
 
-//        if (fabs(vif_kernelscale - 1.0) < 1.0e-8) {
-//            filter = vif_filter1d_table[0][scale];
-//            filter_width = vif_filter1d_width[0][scale];
-//        } else if (fabs(vif_kernelscale - 0.5) < 1.0e-8) {
-//            filter = vif_filter1d_table[1][scale];
-//            filter_width = vif_filter1d_width[1][scale];
-//        } else if (fabs(vif_kernelscale - 1.5) < 1.0e-8) {
-//            filter = vif_filter1d_table[2][scale];
-//            filter_width = vif_filter1d_width[2][scale];
-//        } else {
-//            printf("error: vif_kernelscale can only be 0.5, 1.0, 1.5 for now, but is %f\n", vif_kernelscale);
-//            fflush(stdout);
-//            goto fail_or_end;
-//        }
-        // temp: TODO: change to above
-        filter = vif_filter1d_table[0][scale];
-        filter_width = vif_filter1d_width[0][scale];
-
+        if (fabs(vif_kernelscale - 1.0) < 1.0e-8) {
+            filter = vif_filter1d_table[0][scale];
+            filter_width = vif_filter1d_width[0][scale];
+        } else if (fabs(vif_kernelscale - 0.5) < 1.0e-8) {
+            filter = vif_filter1d_table[1][scale];
+            filter_width = vif_filter1d_width[1][scale];
+        } else if (fabs(vif_kernelscale - 1.5) < 1.0e-8) {
+            filter = vif_filter1d_table[2][scale];
+            filter_width = vif_filter1d_width[2][scale];
+        } else {
+            printf("error: vif_kernelscale can only be 0.5, 1.0, 1.5 for now, but is %f\n", vif_kernelscale);
+            fflush(stdout);
+            goto fail_or_end;
+        }
 
 #ifdef VIF_OPT_HANDLE_BORDERS
         int buf_valid_w = w;
