@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "mem.h"
 #include "common/convolution.h"
@@ -52,7 +53,8 @@ void apply_frame_differencing(const float *current_frame, const float *previous_
 }
 
 int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride,
-        double *score, double *score_num, double *score_den, double *scores, double vif_enhn_gain_limit)
+        double *score, double *score_num, double *score_den, double *scores,
+        double vif_enhn_gain_limit, double vif_kernelscale)
 {
     float *data_buf = 0;
     char *data_top;
@@ -67,9 +69,11 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
     float *ref_dis_filt;
     float *tmpbuf;
 
-
     float *num_array;
     float *den_array;
+
+    float *filter;
+    int filter_width;
 
     /* Offset pointers to adjust for convolution border handling. */
     float *mu1_adj = 0;
@@ -101,6 +105,14 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
 
     int scale;
     int ret = 1;
+
+    if (!(fabs(vif_kernelscale - 1.0) < 1.0e-8 ||
+          fabs(vif_kernelscale - 1.5) < 1.0e-8 ||
+          fabs(vif_kernelscale - 0.5) < 1.0e-8)) {
+        printf("error: vif_kernelscale can only be 0.5, 1.0, 1.5 for now, but is %f\n", vif_kernelscale);
+        fflush(stdout);
+        goto fail_or_end;
+    }
 
 	// Code optimized to save on multiple buffer copies
 	// hence the reduction in the number of buffers required from 15 to 10 
@@ -138,8 +150,24 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
         char pathbuf[256];
 #endif
 
-        const float *filter = vif_filter1d_table[scale];
-        int filter_width       = vif_filter1d_width[scale];
+//        if (fabs(vif_kernelscale - 1.0) < 1.0e-8) {
+//            filter = vif_filter1d_table[0][scale];
+//            filter_width = vif_filter1d_width[0][scale];
+//        } else if (fabs(vif_kernelscale - 0.5) < 1.0e-8) {
+//            filter = vif_filter1d_table[1][scale];
+//            filter_width = vif_filter1d_width[1][scale];
+//        } else if (fabs(vif_kernelscale - 1.5) < 1.0e-8) {
+//            filter = vif_filter1d_table[2][scale];
+//            filter_width = vif_filter1d_width[2][scale];
+//        } else {
+//            printf("error: vif_kernelscale can only be 0.5, 1.0, 1.5 for now, but is %f\n", vif_kernelscale);
+//            fflush(stdout);
+//            goto fail_or_end;
+//        }
+        // temp: TODO: change to above
+        filter = vif_filter1d_table[0][scale];
+        filter_width = vif_filter1d_width[0][scale];
+
 
 #ifdef VIF_OPT_HANDLE_BORDERS
         int buf_valid_w = w;
@@ -389,7 +417,9 @@ int vifdiff(int (*read_frame)(float *ref_data, float *main_data, float *temp_dat
 		{
             // compute
             if ((ret = compute_vif(ref_diff_buf, dis_diff_buf, w, h, stride, stride,
-                    &score, &score_num, &score_den, scores, DEFAULT_VIF_ENHN_GAIN_LIMIT)))
+                    &score, &score_num, &score_den, scores,
+                    DEFAULT_VIF_ENHN_GAIN_LIMIT,
+                    DEFAULT_VIF_KERNELSCALE)))
             {
                 printf("error: compute_vifdiff failed.\n");
                 fflush(stdout);
