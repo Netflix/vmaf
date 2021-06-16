@@ -261,6 +261,11 @@ class VmafFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
                 else:
                     pass
 
+        if self.optional_dict2 is not None:
+            for opt in self.optional_dict2:
+                if opt == 'disable_avx':
+                    options['disable_avx'] = self.optional_dict2['disable_avx']
+
         ExternalProgramCaller.call_vmafexec_multi_features(
             features, yuv_type, ref_path, dis_path, w, h, log_file_path,
             logger, options=options
@@ -428,6 +433,11 @@ class VmafIntegerFeatureExtractor(VmafFeatureExtractor):
                     options['motion']['motion_force_zero'] = self.optional_dict['motion_force_zero']
                 else:
                     pass
+
+        if self.optional_dict2 is not None:
+            for opt in self.optional_dict2:
+                if opt == 'disable_avx':
+                    options['disable_avx'] = self.optional_dict2['disable_avx']
 
         ExternalProgramCaller.call_vmafexec_multi_features(
             features, yuv_type, ref_path, dis_path, w, h, log_file_path,

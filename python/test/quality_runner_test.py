@@ -1628,13 +1628,14 @@ class QualityRunnerTest(MyTestCase):
             None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
-            optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_vifks1d5.json')}
+            optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_vifks1d5.json')},
+            optional_dict2={'disable_avx': False},
         )
         self.runner.run(parallelize=True)
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.7754234323086102, places=4)  # pyvif: 0.38410262511263354
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.7754234323086102, places=4)  # FIXME pyvif: 0.38410262511263354
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale1_score'], 0.8586900429503416, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale2_score'], 0.923546191983082, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale3_score'], 0.9531892263362162, places=4)
@@ -1660,7 +1661,8 @@ class QualityRunnerTest(MyTestCase):
             None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
-            optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_vifks0d5.json')}
+            optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_vifks0d5.json')},
+            optional_dict2={'disable_avx': False},
         )
         self.runner.run(parallelize=True)
 
