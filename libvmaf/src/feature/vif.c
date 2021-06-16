@@ -40,6 +40,8 @@
 #define vif_filter1d_sq    vif_filter1d_sq_s
 #define vif_filter1d_xy    vif_filter1d_xy_s
 
+#define ALMOST_EQUAL(x,c) fabs((x)-(c))<1.0e-8
+
 /**
  * Note: stride is in terms of bytes
  */
@@ -106,9 +108,9 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
     int scale;
     int ret = 1;
 
-    if (!(fabs(vif_kernelscale - 1.0) < 1.0e-8 ||
-          fabs(vif_kernelscale - 1.5) < 1.0e-8 ||
-          fabs(vif_kernelscale - 0.5) < 1.0e-8)) {
+    if (!(ALMOST_EQUAL(vif_kernelscale, 1.0) ||
+          ALMOST_EQUAL(vif_kernelscale, 1.5) ||
+          ALMOST_EQUAL(vif_kernelscale, 0.5))) {
         printf("error: vif_kernelscale can only be 0.5, 1.0, 1.5 for now, but is %f\n", vif_kernelscale);
         fflush(stdout);
         goto fail_or_end;
@@ -150,13 +152,13 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
         char pathbuf[256];
 #endif
 
-        if (fabs(vif_kernelscale - 1.0) < 1.0e-8) {
+        if (ALMOST_EQUAL(vif_kernelscale, 1.0)) {
             filter = vif_filter1d_table[0][scale];
             filter_width = vif_filter1d_width[0][scale];
-        } else if (fabs(vif_kernelscale - 0.5) < 1.0e-8) {
+        } else if (ALMOST_EQUAL(vif_kernelscale, 0.5)) {
             filter = vif_filter1d_table[1][scale];
             filter_width = vif_filter1d_width[1][scale];
-        } else if (fabs(vif_kernelscale - 1.5) < 1.0e-8) {
+        } else if (ALMOST_EQUAL(vif_kernelscale, 1.5)) {
             filter = vif_filter1d_table[2][scale];
             filter_width = vif_filter1d_width[2][scale];
         } else {
