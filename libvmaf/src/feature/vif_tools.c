@@ -294,7 +294,7 @@ void vif_filter1d_s(const float *f, const float *src, float *dst, float *tmpbuf,
 
 #if ARCH_X86
     const unsigned flags = vmaf_get_cpu_flags();
-    if (flags & VMAF_X86_CPU_FLAG_AVX2) {
+    if ((flags & VMAF_X86_CPU_FLAG_AVX2) && (fwidth == 17 || fwidth == 9 || fwidth == 5 || fwidth == 3)) {
         convolution_f32_avx_s(f, fwidth, src, dst, tmpbuf, w, h,
                               src_px_stride, dst_px_stride);
         return;
@@ -362,7 +362,7 @@ void vif_filter1d_sq_s(const float *f, const float *src, float *dst, float *tmpb
 	
 #if ARCH_X86
     const unsigned flags = vmaf_get_cpu_flags();
-    if (flags & VMAF_X86_CPU_FLAG_AVX2) {
+    if ((flags & VMAF_X86_CPU_FLAG_AVX2) && (fwidth == 17 || fwidth == 9 || fwidth == 5 || fwidth == 3)) {
         convolution_f32_avx_sq_s(f, fwidth, src, dst, tmpbuf, w, h,
                                  src_px_stride, dst_px_stride);
         return;
@@ -428,7 +428,7 @@ void vif_filter1d_xy_s(const float *f, const float *src1, const float *src2, flo
 
 #if ARCH_X86
     const unsigned flags = vmaf_get_cpu_flags();
-    if (flags & VMAF_X86_CPU_FLAG_AVX2) {
+    if ((flags & VMAF_X86_CPU_FLAG_AVX2) && (fwidth == 17 || fwidth == 9 || fwidth == 5 || fwidth == 3)) {
         convolution_f32_avx_xy_s(f, fwidth, src1, src2, dst, tmpbuf, w, h,
                                  src1_px_stride, src2_px_stride, dst_px_stride);
         return;
