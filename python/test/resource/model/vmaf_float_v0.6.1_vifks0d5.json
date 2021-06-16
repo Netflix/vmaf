@@ -32,14 +32,20 @@
             "p1": 1.72643844
         },
         "feature_opts_dicts": [
+            {},
+            {},
             {
                 "vif_kernelscale": 0.5
             },
-            {},
-            {},
-            {},
-            {},
-            {}
+            {
+                "vif_kernelscale": 0.5
+            },
+            {
+                "vif_kernelscale": 0.5
+            },
+            {
+                "vif_kernelscale": 0.5
+            }
         ],
         "norm_type": "linear_rescale",
         "score_clip": [
