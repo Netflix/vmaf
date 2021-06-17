@@ -25,9 +25,11 @@ enum vif_kernelscale_enum {
     vif_kernelscale_1 = 0,
     vif_kernelscale_1o2 = 1,
     vif_kernelscale_3o2 = 2,
+    vif_kernelscale_2 = 3,
+    vif_kernelscale_2o3 = 4,
 };
-extern const float vif_filter1d_table_s[3][4][27]; // 4 is scale. since this is separable filter, filtering is 1d repeat horizontally and vertically
-extern const int vif_filter1d_width[3][4];
+extern const float vif_filter1d_table_s[5][4][35]; // 4 is scale. since this is separable filter, filtering is 1d repeat horizontally and vertically
+extern const int vif_filter1d_width[5][4];
 
 /* s single precision, d double precision */
 
