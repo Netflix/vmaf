@@ -1619,7 +1619,7 @@ class QualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[1]['VMAF_integer_feature_motion2_score'], 3.8953518541666665, places=4)
         self.assertAlmostEqual(results[1]['VMAF_integer_feature_adm2_score'], 1.0, places=4)
 
-    def test_run_vmaf_runner_float_vifks1d5(self):
+    def test_run_vmaf_runner_float_vifks3o2(self):
 
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
@@ -1628,7 +1628,7 @@ class QualityRunnerTest(MyTestCase):
             None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
-            optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_vifks1d5.json')},
+            optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_vifks3o2.json')},
             optional_dict2={'disable_avx': False},
         )
         self.runner.run(parallelize=True)
@@ -1649,10 +1649,10 @@ class QualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_motion2_score'], 3.8953518541666665, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAF_score'], 81.50635007192874, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 81.50635007192874, places=4)  # pyvmaf: 81.46718219339385
         self.assertAlmostEqual(results[1]['VMAF_score'], 99.946416604585025, places=4)
 
-    def test_run_vmaf_runner_float_vifks0d5(self):
+    def test_run_vmaf_runner_float_vifks1o2(self):
 
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
@@ -1661,7 +1661,7 @@ class QualityRunnerTest(MyTestCase):
             None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
-            optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_vifks0d5.json')},
+            optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_vifks1o2.json')},
             optional_dict2={'disable_avx': False},
         )
         self.runner.run(parallelize=True)
@@ -1682,7 +1682,7 @@ class QualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_motion2_score'], 3.8953518541666665, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAF_score'], 75.26224138570674, places=2)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 75.26224138570674, places=2)  # pyvmaf: 75.14868810608671
         self.assertAlmostEqual(results[1]['VMAF_score'], 99.946416604585025, places=4)
 
 
