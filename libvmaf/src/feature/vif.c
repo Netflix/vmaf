@@ -153,13 +153,13 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
 #endif
 
         if (ALMOST_EQUAL(vif_kernelscale, 1.0)) {
-            filter = vif_filter1d_table[0][scale];
+            filter = vif_filter1d_table[vif_kernelscale_1][scale];
             filter_width = vif_filter1d_width[0][scale];
         } else if (ALMOST_EQUAL(vif_kernelscale, 0.5)) {
-            filter = vif_filter1d_table[1][scale];
+            filter = vif_filter1d_table[vif_kernelscale_0d5][scale];
             filter_width = vif_filter1d_width[1][scale];
         } else if (ALMOST_EQUAL(vif_kernelscale, 1.5)) {
-            filter = vif_filter1d_table[2][scale];
+            filter = vif_filter1d_table[vif_kernelscale_1d5][scale];
             filter_width = vif_filter1d_width[2][scale];
         } else {
             printf("error: vif_kernelscale can only be 0.5, 1.0, 1.5 for now, but is %f\n", vif_kernelscale);
