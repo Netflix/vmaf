@@ -20,25 +20,13 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
 #include "mem.h"
-#include "common/convolution.h"
 #include "offset.h"
 #include "vif_options.h"
 #include "vif_tools.h"
-
-#define vif_filter1d_table vif_filter1d_table_s
-#define vif_filter1d       vif_filter1d_s
-#define vif_dec2           vif_dec2_s
-#define vif_sum            vif_sum_s
-#define vif_statistic      vif_statistic_s
-#define offset_image       offset_image_s
-
-#define vif_filter1d_sq    vif_filter1d_sq_s
-#define vif_filter1d_xy    vif_filter1d_xy_s
 
 #define ALMOST_EQUAL(x,c) fabs((x)-(c))<1.0e-8
 
@@ -153,13 +141,13 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
 #endif
 
         if (ALMOST_EQUAL(vif_kernelscale, 1.0)) {
-            filter = vif_filter1d_table[vif_kernelscale_1][scale];
+            filter = vif_filter1d_table_s[vif_kernelscale_1][scale];
             filter_width = vif_filter1d_width[0][scale];
         } else if (ALMOST_EQUAL(vif_kernelscale, 0.5)) {
-            filter = vif_filter1d_table[vif_kernelscale_0d5][scale];
+            filter = vif_filter1d_table_s[vif_kernelscale_0d5][scale];
             filter_width = vif_filter1d_width[1][scale];
         } else if (ALMOST_EQUAL(vif_kernelscale, 1.5)) {
-            filter = vif_filter1d_table[vif_kernelscale_1d5][scale];
+            filter = vif_filter1d_table_s[vif_kernelscale_1d5][scale];
             filter_width = vif_filter1d_width[2][scale];
         } else {
             printf("error: vif_kernelscale can only be 0.5, 1.0, 1.5 for now, but is %f\n", vif_kernelscale);
@@ -182,14 +170,14 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
 
         if (scale > 0)
         {
-            vif_filter1d(filter, curr_ref_scale, mu1, tmpbuf, w, h, curr_ref_stride, buf_stride, filter_width);
-            vif_filter1d(filter, curr_dis_scale, mu2, tmpbuf, w, h, curr_dis_stride, buf_stride, filter_width);
+            vif_filter1d_s(filter, curr_ref_scale, mu1, tmpbuf, w, h, curr_ref_stride, buf_stride, filter_width);
+            vif_filter1d_s(filter, curr_dis_scale, mu2, tmpbuf, w, h, curr_dis_stride, buf_stride, filter_width);
 
             mu1_adj = ADJUST(mu1);
             mu2_adj = ADJUST(mu2);
 
-            vif_dec2(mu1_adj, ref_scale, buf_valid_w, buf_valid_h, buf_stride, buf_stride);
-            vif_dec2(mu2_adj, dis_scale, buf_valid_w, buf_valid_h, buf_stride, buf_stride);
+            vif_dec2_s(mu1_adj, ref_scale, buf_valid_w, buf_valid_h, buf_stride, buf_stride);
+            vif_dec2_s(mu2_adj, dis_scale, buf_valid_w, buf_valid_h, buf_stride, buf_stride);
 
             w  = buf_valid_w / 2;
             h  = buf_valid_h / 2;
@@ -207,16 +195,16 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
             curr_dis_stride = buf_stride;
         }
 
-        vif_filter1d(filter, curr_ref_scale, mu1, tmpbuf, w, h, curr_ref_stride, buf_stride, filter_width);
-        vif_filter1d(filter, curr_dis_scale, mu2, tmpbuf, w, h, curr_dis_stride, buf_stride, filter_width);
+        vif_filter1d_s(filter, curr_ref_scale, mu1, tmpbuf, w, h, curr_ref_stride, buf_stride, filter_width);
+        vif_filter1d_s(filter, curr_dis_scale, mu2, tmpbuf, w, h, curr_dis_stride, buf_stride, filter_width);
 
 		// Code optimized by adding intrinsic code for the functions,
 		// vif_filter1d_sq and vif_filter1d_sq
-		vif_filter1d_sq(filter, curr_ref_scale, ref_sq_filt, tmpbuf, w, h, curr_ref_stride, buf_stride, filter_width);
-		vif_filter1d_sq(filter, curr_dis_scale, dis_sq_filt, tmpbuf, w, h, curr_dis_stride, buf_stride, filter_width);
-		vif_filter1d_xy(filter, curr_ref_scale, curr_dis_scale, ref_dis_filt, tmpbuf, w, h, curr_ref_stride, curr_dis_stride, buf_stride, filter_width);
+        vif_filter1d_sq_s(filter, curr_ref_scale, ref_sq_filt, tmpbuf, w, h, curr_ref_stride, buf_stride, filter_width);
+        vif_filter1d_sq_s(filter, curr_dis_scale, dis_sq_filt, tmpbuf, w, h, curr_dis_stride, buf_stride, filter_width);
+        vif_filter1d_xy_s(filter, curr_ref_scale, curr_dis_scale, ref_dis_filt, tmpbuf, w, h, curr_ref_stride, curr_dis_stride, buf_stride, filter_width);
 
-		vif_statistic(mu1, mu2, NULL, ref_sq_filt, dis_sq_filt, ref_dis_filt, num_array, den_array,
+		vif_statistic_s(mu1, mu2, NULL, ref_sq_filt, dis_sq_filt, ref_dis_filt, num_array, den_array,
 			w, h, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride,
 			vif_enhn_gain_limit);
         mu1_adj = ADJUST(mu1);
@@ -383,8 +371,8 @@ int vifdiff(int (*read_frame)(float *ref_data, float *main_data, float *temp_dat
         // ===============================================================
         // offset pixel by OPT_RANGE_PIXEL_OFFSET
         // ===============================================================
-        offset_image(ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
-        offset_image(dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+        offset_image_s(ref_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
+        offset_image_s(dis_buf, OPT_RANGE_PIXEL_OFFSET, w, h, stride);
 
         if (frm_idx > 0)
         {
