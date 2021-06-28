@@ -187,3 +187,8 @@ int vmaf_feature_dictionary_set(VmafFeatureDictionary **dict, const char *key,
     return vmaf_dictionary_set((VmafDictionary**)dict, key, val,
                                VMAF_DICT_NORMALIZE_NUMERICAL_VALUES);
 }
+
+int vmaf_feature_dictionary_free(VmafFeatureDictionary **dict)
+{
+    return vmaf_dictionary_free((VmafDictionary**)dict);
+}

@@ -110,7 +110,9 @@ int vmaf_use_features_from_model_collection(VmafContext *vmaf,
  * Register specific feature extractor.
  * Useful when a specific/additional feature is required, usually one which
  * is not already provided by a model via `vmaf_use_features_from_model()`.
- * This may be called multiple times.
+ * This may be called multiple times. `VmafContext` will take ownership of the
+ * `VmafFeatureDictionary` (`opts_dict`). Use `vmaf_feature_dictionary_free()`
+ * only in the case of failure.
  *
  * @param vmaf         The VMAF context allocated with `vmaf_init()`.
  *

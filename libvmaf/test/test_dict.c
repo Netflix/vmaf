@@ -292,11 +292,28 @@ static char *test_vmaf_dictionary_normalize_numerical_val()
     return NULL;
 }
 
+
+static char *test_vmaf_feature_dictionary()
+{
+    int err = 0;
+
+    VmafFeatureDictionary *dict = NULL;
+    err = vmaf_feature_dictionary_set(&dict, "option", "value");
+    mu_assert("problem during vmaf_feature_dictionary_set", !err);
+    mu_assert("dictionary should not be NULL after setting first option", dict);
+    err = vmaf_feature_dictionary_free(&dict);
+    mu_assert("problem during vmaf_feature_dictionary_free", !err);
+    mu_assert("dictionary should be NULL after free", !dict);
+
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_vmaf_dictionary);
     mu_run_test(test_vmaf_dictionary_merge);
     mu_run_test(test_vmaf_dictionary_compare);
     mu_run_test(test_vmaf_dictionary_normalize_numerical_val);
+    mu_run_test(test_vmaf_feature_dictionary);
     return NULL;
 }
