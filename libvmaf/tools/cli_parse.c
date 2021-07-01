@@ -289,7 +289,7 @@ static void parse_aom_ctc(CLISettings *settings, const char *const optarg,
 {
     if (!strcmp(optarg, "proposed"))
         usage(app, "`--aom_ctc proposed` is deprecated. Use `--aom_ctc v1.0`");
-    else if (!strcmp(optarg, "v1.0"))
+    else if (!strcmp(optarg, "v1.0") || !strcmp(optarg, "v2.0"))
         aom_ctc_v1_0(settings, app);
     else
     usage(app, "bad aom_ctc version \"%s\"", optarg);
