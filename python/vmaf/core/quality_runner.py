@@ -121,7 +121,7 @@ class QualityRunnerFromFeatureExtractor(QualityRunner):
             fifo_mode=self.fifo_mode,
             delete_workdir=self.delete_workdir,
             result_store=self.result_store,
-            optional_dict=None,
+            optional_dict=self.optional_dict,
             optional_dict2=None,
             parallelize=False,  # parallelization already in a higher level
         )
