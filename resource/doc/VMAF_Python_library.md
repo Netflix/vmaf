@@ -2,35 +2,69 @@
 
 The VMAF Python library offers full functionalities from running basic VMAF command lines, software testing, training and validating a new VMAF model on video datasets, data visualization tools, etc. It is the playground to experiment with VMAF.
 
-## Build
+## Requirements
 
 Make sure you have `python3` (python 3.6 or higher). You can check the version by `python3 --version`.
 
+### Linux
+
+On Debian Buster (10), or Debian-based systems such as Ubuntu 18.04 or higher:
+
+```bash
+sudo apt install nasm doxygen python3-dev
+```
+
+On Fedora 22 or higher, or CentOS 8 or higher:
+
+```bash
+sudo dnf install nasm doxygen python3-devel
+```
+
+On older CentOS and RHEL:
+
+```bash
+sudo yum install nasm doxygen python3-devel
+```
+
+Make sure `nasm` is 2.13.02 or higher (check by `nasm --version`).
+
+### macOS
+
+First, install [Homebrew](https://brew.sh/).
+
+If you don't already have a `python3` installation on your Mac, run the following to install Python 3 via Homebrew:
+
+```bash
+brew install python3
+```
+
+Install the remaining dependencies:
+
+```bash
+brew install nasm doxygen
+```
+
+Note that `brew` requires no `sudo`.
+
+## Set up Virtualenv
+
 Follow the steps below to set up a clean virtual environment
+
 ```shell script
 python3 -m pip install virtualenv
 python3 -m virtualenv .venv
 source .venv/bin/activate
 ```
 
-from this point forward `python3` and `pip` will be relative to the virtualenv and isolated from the system python. Returning to the project in subsequent shell sessions will require re-activating the virtualenv with `source .venv/bin/activate`.
+From this point forward `python3` and `pip` will be relative to the virtualenv and isolated from the system python. Returning to the project in subsequent shell sessions will require re-activating the virtualenv with `source .venv/bin/activate`.
 
 Now install the tools required to build VMAF into the virtualenv.
 
 ```
-pip install meson cython numpy
-sudo [package-manager] install nasm ninja doxygen
+pip install cython numpy meson ninja
 ```
 
-You need to invoke `[package-manager]` depending on which system you are on: `apt-get` for Ubuntu and Debian, `yum` for older CentOS and RHEL, `dnf` for Fedora and latest CentOS (and use `ninja-build` instead of `ninja`), `zypper` for openSUSE, `brew` for MacOS (no `sudo`).
-
-Make sure `nasm` is 2.13.02 or higher (check by `nasm --version`) and `ninja` is 1.7.1 or higher (check by `ninja --version`).
-
-Depending on the system, you may also need to install `python-dev` or equivalent (`python-devel` on CentOS):
-```shell script
-sudo [package-manager] install [python-dev]
-```
-where `[python-dev]` is either `python3-dev` or `python3-devel` depending on the system.
+Make sure `ninja` is 1.7.1 or higher (check by `ninja --version`).
 
 Build the binary by:
 ```shell script
