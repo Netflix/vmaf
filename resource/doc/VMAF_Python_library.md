@@ -56,12 +56,12 @@ python3 -m virtualenv .venv
 source .venv/bin/activate
 ```
 
-From this point forward `python3` and `pip` will be relative to the virtualenv and isolated from the system python. Returning to the project in subsequent shell sessions will require re-activating the virtualenv with `source .venv/bin/activate`.
+From this point forward `python3` and `pip3` will be relative to the virtualenv and isolated from the system python. Returning to the project in subsequent shell sessions will require re-activating the virtualenv with `source .venv/bin/activate`.
 
 Now install the tools required to build VMAF into the virtualenv.
 
 ```
-pip install cython numpy meson ninja
+pip3 install cython numpy meson ninja
 ```
 
 Make sure `ninja` is 1.7.1 or higher (check by `ninja --version`).
@@ -73,7 +73,7 @@ make
 
 Install the rest of the required Python packages:
 ```shell script
-pip install -r python/requirements.txt
+pip3 install -r python/requirements.txt
 ```
 
 ## Testing
