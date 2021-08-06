@@ -556,13 +556,15 @@ static void y4m_convert_null(y4m_input *_y4m,unsigned char *_dst,
   (void)_aux;
 }
 
+#define Y4M_HEADER_BUFSIZE 256
+
 static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
-  char buffer[80];
+  char buffer[Y4M_HEADER_BUFSIZE];
   int  ret;
   int  i;
   int  xstride;
-  /*Read until newline, or 80 cols, whichever happens first.*/
-  for(i=0;i<79;i++){
+  /*Read until newline, or Y4M_HEADER_BUFSIZE cols, whichever happens first.*/
+  for(i=0;i<Y4M_HEADER_BUFSIZE-1;i++){
     ret=fread(buffer+i,1,1,_fin);
     if(ret<1)return -1;
     if(buffer[i]=='\n')break;
