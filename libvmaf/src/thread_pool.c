@@ -156,7 +156,8 @@ int vmaf_thread_pool_wait(VmafThreadPool *pool)
     if (!pool) return -EINVAL;
 
     pthread_mutex_lock(&(pool->queue.lock));
-    while((!pool->stop && pool->n_working) || (pool->stop && pool->n_threads))
+    while((!pool->stop && (pool->n_working || pool->queue.head)) ||
+          (pool->stop && pool->n_threads))
         pthread_cond_wait(&(pool->working), &(pool->queue.lock));
     pthread_mutex_unlock(&(pool->queue.lock));
     return 0;
