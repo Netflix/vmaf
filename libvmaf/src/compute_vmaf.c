@@ -15,6 +15,8 @@ static enum VmafOutputFormat log_fmt_map(const char *log_fmt)
             return VMAF_OUTPUT_FORMAT_JSON;
         if (!strcmp(log_fmt, "csv"))
             return VMAF_OUTPUT_FORMAT_CSV;
+        if (!strcmp(log_fmt, "sub"))
+            return VMAF_OUTPUT_FORMAT_SUB;
     }
 
     return VMAF_OUTPUT_FORMAT_NONE;
