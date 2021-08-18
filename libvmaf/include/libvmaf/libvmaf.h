@@ -27,6 +27,10 @@
 #include "libvmaf/picture.h"
 #include "libvmaf/feature.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum VmafLogLevel {
     VMAF_LOG_LEVEL_NONE = 0,
     VMAF_LOG_LEVEL_ERROR,
@@ -322,5 +326,9 @@ int vmaf_write_output(VmafContext *vmaf, const char *output_path,
  * Get libvmaf version.
  */
 const char *vmaf_version(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __VMAF_H__ */
