@@ -332,5 +332,5 @@ pkg_mod.generate(libraries: libvmaf,
     name: 'libvmaf',
     filebase: 'libvmaf',
     description: 'VMAF, Video Multimethod Assessment Fusion',
-    subdirs: 'libvmaf'
+    subdirs: [ '.', 'libvmaf']
 )
