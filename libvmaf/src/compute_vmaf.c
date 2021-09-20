@@ -15,6 +15,8 @@ static enum VmafOutputFormat log_fmt_map(const char *log_fmt)
             return VMAF_OUTPUT_FORMAT_JSON;
         if (!strcmp(log_fmt, "csv"))
             return VMAF_OUTPUT_FORMAT_CSV;
+        if (!strcmp(log_fmt, "sub"))
+            return VMAF_OUTPUT_FORMAT_SUB;
     }
 
     return VMAF_OUTPUT_FORMAT_NONE;
@@ -287,7 +289,11 @@ int compute_vmaf(double* vmaf_score, char* fmt, int width, int height,
          goto free_data;
      }
 
-    const enum VmafOutputFormat output_fmt = log_fmt_map(log_fmt);
+    enum VmafOutputFormat output_fmt = log_fmt_map(log_fmt);
+    if (output_fmt == VMAF_OUTPUT_FORMAT_NONE && log_path) {
+        output_fmt = VMAF_OUTPUT_FORMAT_XML;
+        vmaf_log(VMAF_LOG_LEVEL_WARNING, "use default log_fmt xml");
+    }
     if (output_fmt) {
         vmaf_use_vmafossexec_aliases();
         err = vmaf_write_output(vmaf, log_path, output_fmt);
