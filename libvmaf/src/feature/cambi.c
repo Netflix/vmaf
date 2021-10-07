@@ -98,7 +98,7 @@ static const VmafOption options[] = {
     },
     {
         .name = "topk",
-        .help = "Ratio of pixels for computation, must be 0 > topk >= 1.0",
+        .help = "Ratio of pixels for the spatial pooling computation, must be 0 > topk >= 1.0",
         .offset = offsetof(CambiState, topk),
         .type = VMAF_OPT_TYPE_DOUBLE,
         .default_val.d = DEFAULT_CAMBI_TOPK_POOLING,
