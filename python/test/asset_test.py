@@ -58,6 +58,25 @@ class AssetTest(unittest.TestCase):
                       asset_dict={'width': 720, 'height': 480})
         self.assertEqual(asset.dis_width_height, (720, 480))
 
+    def test_dis_encode_width_height(self):
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'dis_width': 1920, 'dis_height': 1080,
+                                  'dis_enc_width': 960, 'dis_enc_height': 540, })
+        self.assertEqual(asset.dis_width_height, (1920, 1080))
+        self.assertEqual(asset.dis_encode_width_height, (960, 540))
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'dis_width': 1920, 'dis_height': 1080,
+                                  'width': 720, 'height': 480})
+        self.assertEqual(asset.dis_encode_width_height, (1920, 1080))
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'width': 720, 'height': 480})
+        self.assertEqual(asset.dis_encode_width_height, (720, 480))
+
     def test_quality_width_height(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
@@ -252,6 +271,19 @@ class AssetTest(unittest.TestCase):
         recon_asset = Asset.from_repr(expected_repr)
         self.assertEqual(asset, recon_asset)
 
+        asset = Asset(dataset="test", content_id=0, asset_id=2,
+                      ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
+                      asset_dict={'width': 720, 'height': 480,
+                                  'dis_enc_width': 1920, 'dis_enc_height': 1080})
+        self.assertEqual(
+            str(asset),
+            "test_0_2_refvideo_720x480_vs_disvideo_720x480_e_1920x1080_q_720x480"
+        )
+        expected_repr = '{"asset_dict": {"dis_enc_height": 1080, "dis_enc_width": 1920, "height": 480, "width": 720}, "asset_id": 2, "content_id": 0, "dataset": "test", "dis_path": "disvideo.yuv", "ref_path": "refvideo.yuv", "workdir": ""}'  # noqa
+        self.assertEqual(repr(asset), expected_repr)
+        recon_asset = Asset.from_repr(expected_repr)
+        self.assertEqual(asset, recon_asset)
+
     def test_str(self):
 
         asset = Asset(dataset="test", content_id=0, asset_id=1,
@@ -302,6 +334,15 @@ class AssetTest(unittest.TestCase):
         self.assertEqual(
             str(asset),
             "test_0_1_refvideo_1920x1080_lanczos_vs_disvideo_720x480_q_720x480"
+        )
+
+        asset = Asset(dataset="test", content_id=0, asset_id=1,
+                      ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
+                      asset_dict={'width': 720, 'height': 480,
+                                  'dis_enc_width': 480, 'dis_enc_height': 320})
+        self.assertEqual(
+            str(asset),
+            "test_0_1_refvideo_720x480_vs_disvideo_720x480_e_480x320_q_720x480"
         )
 
     def test_hash_equal(self):
