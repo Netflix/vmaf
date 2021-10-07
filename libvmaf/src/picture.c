@@ -43,6 +43,9 @@ int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
     pic->w[1] = pic->w[2] = w >> ss_hor;
     pic->h[0] = h;
     pic->h[1] = pic->h[2] = h >> ss_ver;
+    if (pic->pix_fmt == VMAF_PIX_FMT_YUV400P)
+        pic->w[1] = pic->w[2] = pic->h[1] = pic->h[2] = 0;
+
     const int aligned_y = (pic->w[0] + DATA_ALIGN - 1) & ~(DATA_ALIGN - 1);
     const int aligned_c = (pic->w[1] + DATA_ALIGN - 1) & ~(DATA_ALIGN - 1);
     const int hbd = pic->bpc > 8;
@@ -58,6 +61,8 @@ int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
     pic->data[0] = data;
     pic->data[1] = data + y_sz;
     pic->data[2] = data + y_sz + uv_sz;
+    if (pic->pix_fmt == VMAF_PIX_FMT_YUV400P)
+        pic->data[1] = pic->data[2] = NULL;
 
     int err = vmaf_ref_init(&pic->ref);
     if (err) goto free_data;
