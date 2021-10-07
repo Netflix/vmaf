@@ -71,6 +71,7 @@ A number of addtional metrics are supported. Enable these metrics with the `--fe
 --feature float_ssim \
 --feature float_ms_ssim
 --feature ciede
+--feature cambi
 ```
 
 ## Example
