@@ -13,9 +13,10 @@ from vmaf.config import DisplayConfig
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.tools.misc import import_python_file, get_cmd_option, cmd_option_exists
 from vmaf.core.quality_runner import QualityRunner, VmafQualityRunner, BootstrapVmafQualityRunner
-from vmaf.core.matlab_quality_runner import STMADQualityRunner, SpEEDMatlabQualityRunner, StrredQualityRunner, StrredOptQualityRunner  # need these
+from vmaf.core.matlab_quality_runner import STMADQualityRunner, SpEEDMatlabQualityRunner, StrredQualityRunner, StrredOptQualityRunner  # need these to have the runners recognized
 from vmaf.routine import run_test_on_dataset, print_matplotlib_warning
 from vmaf.tools.stats import ListStats
+from vmaf.core.cambi_quality_runner import CambiQualityRunner  # need these to have the runners recognized
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"

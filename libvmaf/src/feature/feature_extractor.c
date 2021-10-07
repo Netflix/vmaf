@@ -42,6 +42,7 @@ extern VmafFeatureExtractor vmaf_fex_psnr_hvs;
 extern VmafFeatureExtractor vmaf_fex_integer_adm;
 extern VmafFeatureExtractor vmaf_fex_integer_motion;
 extern VmafFeatureExtractor vmaf_fex_integer_vif;
+extern VmafFeatureExtractor vmaf_fex_cambi;
 
 static VmafFeatureExtractor *feature_extractor_list[] = {
 #if VMAF_FLOAT_FEATURES
@@ -60,6 +61,7 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     &vmaf_fex_integer_adm,
     &vmaf_fex_integer_motion,
     &vmaf_fex_integer_vif,
+    &vmaf_fex_cambi,
     NULL
 };
 
