@@ -1,6 +1,8 @@
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
+import unittest
+
 from vmaf.config import VmafConfig
 from vmaf.core.asset import Asset, NorefAsset
 
@@ -37,6 +39,25 @@ def set_default_576_324_videos_for_testing():
                            ref_path=ref_path,
                            dis_path=ref_path,
                            asset_dict={'width': 576, 'height': 324})
+
+    return ref_path, dis_path, asset, asset_original
+
+def set_default_576_324_videos_for_testing_scaled():
+    ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+    dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+    asset = Asset(dataset="test", content_id=0, asset_id=0,
+                  workdir_root=VmafConfig.workdir_path(),
+                  ref_path=ref_path,
+                  dis_path=dis_path,
+                  asset_dict={'width': 576, 'height': 324,
+                              'dis_enc_width': 480, 'dis_enc_height': 270})
+
+    asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                           workdir_root=VmafConfig.workdir_path(),
+                           ref_path=ref_path,
+                           dis_path=ref_path,
+                           asset_dict={'width': 576, 'height': 324,
+                                       'dis_enc_width': 480, 'dis_enc_height': 270})
 
     return ref_path, dis_path, asset, asset_original
 
@@ -135,3 +156,25 @@ def set_default_576_324_noref_videos_for_testing():
                            asset_dict={'width': 576, 'height': 324})
 
     return ref_path, dis_path, asset, asset_original
+
+
+
+def set_default_cambi_video_for_testing():
+    dis_path = VmafConfig.test_resource_path("yuv", "blue_sky_360p_60f.yuv")
+    asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
+                       workdir_root=VmafConfig.workdir_path(),
+                       dis_path=dis_path,
+                       asset_dict={'width': 640, 'height': 360, 'yuv_type': 'yuv420p'})
+
+    return dis_path, asset
+
+def set_default_cambi_video_for_testing_b():
+    dis_path = VmafConfig.test_resource_path("yuv", "KristenAndSara_1280x720_8bit_processed.yuv")
+    asset = Asset(dataset="test", content_id=0, asset_id=0,
+                  workdir_root=VmafConfig.workdir_path(),
+                  ref_path=dis_path,
+                  dis_path=dis_path,
+                  asset_dict={'width': 1280, 'height': 720,
+                              'dis_enc_width': 960, 'dis_enc_height': 540})
+
+    return dis_path, dis_path, asset, asset

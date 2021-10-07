@@ -93,6 +93,12 @@ test_ciede = executable('test_ciede',
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
 )
 
+test_cambi = executable('test_cambi',
+    ['test.c', 'test_cambi.c', '../src/picture.c', '../src/mem.c', '../src/ref.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+)
+
 test('test_picture', test_picture)
 test('test_feature_collector', test_feature_collector)
 test('test_thread_pool', test_thread_pool)
@@ -104,3 +110,4 @@ test('test_cpu', test_cpu)
 test('test_ref', test_ref)
 test('test_feature', test_feature)
 test('test_ciede', test_ciede)
+test('test_cambi', test_cambi)
