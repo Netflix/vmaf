@@ -4,7 +4,6 @@ from vmaf.core.feature_extractor import VmafexecFeatureExtractorMixin, FeatureEx
 class CambiFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "Cambi_feature"
-    # VERSION = "0.3"
     VERSION = "0.4" # Supporting scaled encodes and minor change to the spatial mask
 
     ATOM_FEATURES = ['cambi']

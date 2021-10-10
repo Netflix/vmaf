@@ -344,17 +344,6 @@ static void decimate_generic_8b_and_convert_to_10b(const VmafPicture *pic, VmafP
     }
 }
 
-static void convert_8b_luma_to_10b(const VmafPicture *pic, VmafPicture *out_pic)
-{
-    uint8_t *data = pic->data[0];
-    ptrdiff_t stride = pic->stride[0];
-    uint16_t *out_data = out_pic->data[0];
-    ptrdiff_t out_stride = out_pic->stride[0] >> 1;
-    for (unsigned i=0; i<pic->h[0]; i++)
-        for (unsigned j=0; j<pic->w[0]; j++)
-            out_data[i * out_stride + j] = data[i * stride + j] << 2;
-}
-
 static void copy_10b_luma(const VmafPicture *pic, VmafPicture *out_pic)
 {
     memcpy(out_pic->data[0], pic->data[0], (size_t) pic->stride[0] * pic->h[0]);

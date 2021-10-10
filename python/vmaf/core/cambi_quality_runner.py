@@ -8,7 +8,6 @@ from vmaf.tools.decorator import override
 class CambiQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
 
     TYPE = 'Cambi'
-    # VERSION = "0.3"
     VERSION = "0.4" # Supporting scaled encodes and minor change to the spatial mask
 
     @override(QualityRunnerFromFeatureExtractor)
