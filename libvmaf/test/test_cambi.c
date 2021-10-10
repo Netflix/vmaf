@@ -147,20 +147,6 @@ static char *test_copy_10b_luma()
     return NULL;
 }
 
-static char *test_convert_8b_luma_to_10b()
-{
-    VmafPicture pic_8b, output_pic, expected;
-    get_sample_image_8b(&pic_8b);
-    get_sample_image(&output_pic, 0);
-    get_sample_image(&expected, 2);
-
-    convert_8b_luma_to_10b(&pic_8b, &output_pic);
-    bool equal = pic_data_equality(&output_pic, &expected);
-    mu_assert("convert_8b_luma_to_10b: wrong convert 8b to 10b", equal);
-
-    return NULL;
-}
-
 /* Banding detection functions */
 static char *test_decimate()
 {
@@ -580,7 +566,6 @@ char *run_tests()
     /* Preprocessing functions */
     mu_run_test(test_anti_dithering_filter);
     mu_run_test(test_copy_10b_luma);
-    mu_run_test(test_convert_8b_luma_to_10b);
     mu_run_test(test_decimate_generic);
 
     /* Banding detection functions */
