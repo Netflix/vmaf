@@ -623,46 +623,46 @@ static double average_topk_elements(const float *arr, int topk_elements)
     return (double) sum / topk_elements;
 }
 
-// C code for the quickselect algorithm taken from "Numerical Recipes in C"
-#define SWAP(a,b) temp=(a);(a)=(b);(b)=temp;
+#define SWAP(x, y)      \
+    {                   \
+        float temp = x; \
+        x = y;          \
+        y = temp;       \
+    }
+
 static void quick_select(float *arr, int n, int k)
 {
-    float a, temp;
-    int i, j, mid;
-    int ir=n-1, l=0;
-
-    for(;;) {
-        if (ir <= l+1) {
-            if (ir == l+1 && arr[ir] > arr[l]) {
-                SWAP(arr[l], arr[ir]);
+    int left = 0;
+    int right = n - 1;
+    while (left < right)
+    {
+        float pivot = arr[k];
+        int i = left;
+        int j = right;
+        do
+        {
+            while (arr[i] > pivot)
+            {
+                i++;
             }
-            return;
-        } else {
-            mid=(l+ir) >> 1;
-            SWAP(arr[mid], arr[l+1]);
-            if (arr[l] < arr[ir]) {
-                SWAP(arr[l], arr[ir]);
+            while (arr[j] < pivot)
+            {
+                j--;
             }
-            if (arr[l+1] < arr[ir]) {
-                SWAP(arr[l+1], arr[ir]);
-            }
-            if (arr[l] < arr[l+1]) {
-                SWAP(arr[l], arr[l+1]);
-            }
-            i=l+1;
-            j=ir;
-            a=arr[l+1];
-
-            for (;;) {
-                do i++; while (arr[i] > a);
-                do j--; while (arr[j] < a);
-                if (j < i) break;
+            if (i <= j)
+            {
                 SWAP(arr[i], arr[j]);
+                i++;
+                j--;
             }
-            arr[l+1] = arr[j];
-            arr[j] = a;
-            if (j >= k) ir = j-1;
-            if (j <= k) l = i;
+        } while (i <= j);
+        if (j < k)
+        {
+            left = i;
+        }
+        if (k < i)
+        {
+            right = j;
         }
     }
 }
