@@ -10,6 +10,7 @@ VMAF is an on-going project. It has gone through substantial updates since its i
   - [Optimized shot-based encodes: now streaming!](https://medium.com/netflix-techblog/optimized-shot-based-encodes-now-streaming-4b9464204830), March 9, 2018 -- tech blog describing systems design for the Dynamic Optimizer.
   - [VMAF: the journey continues](https://medium.com/netflix-techblog/vmaf-the-journey-continues-44b51ee9ed12), October 25, 2018 -- second tech blog on VMAF focus on new features and best practices.
   - [Toward a better quality metric for the video community](https://netflixtechblog.com/toward-a-better-quality-metric-for-the-video-community-7ed94e752a30), December 7, 2020 -- third tech blog on VMAF focus on speed optimization, new API design and the introduction of a codec evaluation-friendly NEG mode.
+  - [CAMBI, a banding artifact detector](https://netflixtechblog.medium.com/cambi-a-banding-artifact-detector-96777ae12fe2), October 12, 2021 -- tech blog introducing the CAMBI algorithm to detect banding artifacts.
 
 ### Academic Papers
 
