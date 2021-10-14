@@ -563,7 +563,7 @@ int vmaf_write_output(VmafContext *vmaf, const char *output_path,
         break;
     case VMAF_OUTPUT_FORMAT_JSON:
         ret = vmaf_write_output_json(vmaf, vmaf->feature_collector, outfile,
-                                     vmaf->cfg.n_subsample);
+                                     vmaf->cfg.n_subsample, fps);
         break;
     case VMAF_OUTPUT_FORMAT_CSV:
         ret = vmaf_write_output_csv(vmaf->feature_collector, outfile,
