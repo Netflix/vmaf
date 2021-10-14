@@ -120,10 +120,11 @@ int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc,
 }
 
 int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
-                           FILE *outfile, unsigned subsample)
+                           FILE *outfile, unsigned subsample, double fps)
 {
     fprintf(outfile, "{\n");
     fprintf(outfile, "  \"version\": \"%s\",\n", vmaf_version());
+    fprintf(outfile, "  \"fps\": %.2f,\n", fps);
 
     unsigned n_frames = 0;
     fprintf(outfile, "  \"frames\": [");
@@ -228,6 +229,7 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
     }
     fprintf(outfile, "\n  }\n");
     fprintf(outfile, "}\n");
+    
     return 0;
 }
 
