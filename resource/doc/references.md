@@ -41,9 +41,9 @@ The papers below independently evaluate the performance of VMAF.
 ### Presentations
   - [Measuring perceptual video quality at scale](https://www.twitch.tv/videos/94954102) by A. Aaron, at Demuxed 2016.
   - [More efficient encoding for mobile video](https://code.fb.com/video-engineering/video-scale-2017-recap/) by A. Aaron, at Video@Scale 2017.
-  - [Measure perceptual video quality with VMAF](VMAF_ICIP17.pdf) by Z. Li, at Netflix Industry Wrokshop: Video Encoding at Scale, 2017 IEEE International Conference on Image Processing (ICIP), Beijing, 2017.
-  - [A VMAF model for 4K](VQEG_SAM_2018_025_VMAF_4K.pdf) by Z. Li, T. Vigier and P. Le Callet, at Video Quality Experts Group (VQEG) Meeting in Madrid, March 2018.
-  - [Quantify VMAF model variability using bootstrapping](VQEG_SAM_2018_023_VMAF_Variability.pdf) by Z. Li and I. Katsavounidis, at Video Quality Experts Group (VQEG) Meeting in Madrid, March 2018.
+  - [Measure perceptual video quality with VMAF](presentations/VMAF_ICIP17.pdf) by Z. Li, at Netflix Industry Wrokshop: Video Encoding at Scale, 2017 IEEE International Conference on Image Processing (ICIP), Beijing, 2017.
+  - [A VMAF model for 4K](presentations/VQEG_SAM_2018_025_VMAF_4K.pdf) by Z. Li, T. Vigier and P. Le Callet, at Video Quality Experts Group (VQEG) Meeting in Madrid, March 2018.
+  - [Quantify VMAF model variability using bootstrapping](presentations/VQEG_SAM_2018_023_VMAF_Variability.pdf) by Z. Li and I. Katsavounidis, at Video Quality Experts Group (VQEG) Meeting in Madrid, March 2018.
   - [VMAF: the journey continues](http://www.streamingmedia.com/Articles/Editorial/Featured-Articles/Video-Engineering-Summit-Netflix-to-Discuss-VMAFs-Future-128457.aspx) by Z. Li, at Streaming Media West, Huntington Beach, CA, November 2018.
-  - [Analysis tools in the VMAF open-source package](VQEG_SAM_2018_111_AnalysisToolsInVMAF.pdf) by Z. Li and C. Bampis, at Video Quality Experts Group (VQEG) Meeting in Mountain View, CA, November 2018.
+  - [Analysis tools in the VMAF open-source package](presentations/VQEG_SAM_2018_111_AnalysisToolsInVMAF.pdf) by Z. Li and C. Bampis, at Video Quality Experts Group (VQEG) Meeting in Mountain View, CA, November 2018.
   - [Toward a better quality metric for the video community](https://atscaleconference.com/videos/video-scale-2020-vmaf/) By Z. Li, at Video@Scale, Novembler 2020.

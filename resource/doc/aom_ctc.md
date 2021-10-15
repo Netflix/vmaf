@@ -1,9 +1,8 @@
-AOM CTC
-=======
+# AOM CTC
 
 [AOM](http://aomedia.org/) has specified  [`vmaf`](../../libvmaf/tools/README.md) to be the standard implementation metrics tool according to the AOM common test conditions (CTC).
 
-# Metrics
+## Metrics
 Using the versioned `--aom_ctc` preset, the following metrics will be computed and logged. These metrics are specified according to the AOM CTC.
 
 * PSNR
@@ -15,7 +14,7 @@ Using the versioned `--aom_ctc` preset, the following metrics will be computed a
 * VMAF
 * VMAF NEG
 
-# Usage
+## Usage
 Basic usage of the tool is described in the [`vmaf` README](../../libvmaf/tools/README.md). Use the versioned `--aom_ctc` presets to register and configure all metrics according to the AOM CTC. Basic AOM CTC usage is as follows:
 
 ```
@@ -30,10 +29,10 @@ There are also a few optional command-line settings you may find useful.
 * Use `--threads` to set the thread count to be used for multi-threaded computation. This will decrease the overall latency.
 * If you prefer a JSON log over the default XML log, use the `--json` flag.
 
-# Output
+## Output
 `XML` and `JSON` logging formats provide per-frame metrics, pooled metrics, and aggregate metrics.
 
-# AOM CTC Version History
+## AOM CTC Version History
 * v1.0: `--aom_ctc v1.0`
   * 2021-01-13
   * Fix for lossless comparisons, dB clipping for PSNR/APSNR/SSIM/MS-SSIM according to the AOM CTC.
