@@ -226,6 +226,17 @@ static char *test_filter_mode()
     mu_assert("filter_mode: two ones (3,3) check", output_data[3 * output_stride + 3]==1);
     mu_assert("filter_mode: two ones (2,3) check", output_data[2 * output_stride + 3]==1);
 
+    data[0 * stride + 0] = 2;
+    data[0 * stride + 1] = 1;
+    filter_mode(&image, &filtered_image, w, h);
+    mu_assert("filter_mode: two in the corner check", output_data[0 * output_stride + 0]==2);
+    data[1 * stride + 0] = 1;
+    filter_mode(&image, &filtered_image, w, h);
+    mu_assert("filter_mode: two in the corner and adjacent ones check", output_data[0 * output_stride + 0]==1);
+    data[2 * stride + 0] = 2;
+    filter_mode(&image, &filtered_image, w, h);
+    mu_assert("filter_mode: two in corner and edge check", output_data[1 * output_stride + 0]==2);
+
     return NULL;
 }
 
