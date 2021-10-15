@@ -341,6 +341,20 @@ static double convert_score_db(double _score, double _weight)
     return 10 * (-1 * log10(_weight * _score));
 }
 
+static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
+                unsigned bpc, unsigned w, unsigned h)
+{
+    (void) fex;
+    (void) bpc;
+    (void) w;
+    (void) h;
+
+    if (pix_fmt == VMAF_PIX_FMT_YUV400P)
+        return -EINVAL;
+    else
+        return 0;
+}
+
 static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
                    VmafPicture *ref_pic_90, VmafPicture *dist_pic,
                    VmafPicture *dist_pic_90, unsigned index,
@@ -379,6 +393,7 @@ static const char *provided_features[] = {
 
 VmafFeatureExtractor vmaf_fex_psnr_hvs = {
     .name = "psnr_hvs",
+    .init = init,
     .extract = extract,
     .provided_features = provided_features,
 };

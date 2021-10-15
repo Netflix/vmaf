@@ -88,6 +88,9 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     PsnrState *s = fex->priv;
     s->peak = s->reduced_hbd_peak ? 255 * 1 << (bpc - 8) : (1 << bpc) - 1;
 
+    if (pix_fmt == VMAF_PIX_FMT_YUV400P)
+        s->enable_chroma = false;
+
     for (unsigned i = 0; i < 3; i++) {
         if (s->min_sse != 0.0) {
             const int ss_hor = pix_fmt != VMAF_PIX_FMT_YUV444P;
