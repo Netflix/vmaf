@@ -372,7 +372,7 @@ For instructions on how to extending the `FeatureExtractor` and `TrainTestModel`
 
 ## Analysis Tools
 
-Overtime, a number of helper tools have been incorporated into the package, to facilitate training and validating VMAF models. An overview of the tools available can be found in [this slide deck](VQEG_SAM_2018_111_AnalysisToolsInVMAF.pdf).
+Overtime, a number of helper tools have been incorporated into the package, to facilitate training and validating VMAF models. An overview of the tools available can be found in [this slide deck](presentations/VQEG_SAM_2018_111_AnalysisToolsInVMAF.pdf).
 
 ### BD-Rate Calculator
 
