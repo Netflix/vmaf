@@ -109,6 +109,8 @@ typedef enum{
      The Cb and Cr chroma planes are full width and full height.*/
   PF_444,
   /**The total number of currently defined pixel formats.*/
+  PF_400,
+  /**No Cb and Cr chroma planes.*/
   PF_NFORMATS
 }video_input_pixel_format;
 

@@ -19,6 +19,8 @@ static enum VmafPixelFormat pix_fmt_map(int pf)
         return VMAF_PIX_FMT_YUV422P;
     case PF_444:
         return VMAF_PIX_FMT_YUV444P;
+    case PF_400:
+        return VMAF_PIX_FMT_YUV400P;
     default:
         return VMAF_PIX_FMT_UNKNOWN;
     }

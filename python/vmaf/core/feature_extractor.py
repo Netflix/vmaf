@@ -581,12 +581,26 @@ class PypsnrFeatureExtractor(FeatureExtractor):
 
                     ref_y, ref_u, ref_v = ref_yuv
                     dis_y, dis_u, dis_v = dis_yuv
-                    mse_y, mse_u, mse_v = np.mean((ref_y - dis_y)**2) + 1e-16, \
-                                          np.mean((ref_u - dis_u)**2) + 1e-16, \
-                                          np.mean((ref_v - dis_v)**2) + 1e-16
-                    psnr_y, psnr_u, psnr_v = min(10 * np.log10(1.0 / mse_y), max_db), \
-                                             min(10 * np.log10(1.0 / mse_u), max_db), \
-                                             min(10 * np.log10(1.0 / mse_v), max_db)
+
+                    assert ref_y is not None and dis_y is not None
+                    mse_y = np.mean((ref_y - dis_y)**2) + 1e-16
+                    psnr_y = min(10 * np.log10(1.0 / mse_y), max_db)
+
+                    assert (ref_u is not None and dis_u is not None) or \
+                           (ref_u is None and dis_u is None)
+                    if ref_u is not None and dis_u is not None:
+                        mse_u = np.mean((ref_u - dis_u)**2) + 1e-16
+                        psnr_u = min(10 * np.log10(1.0 / mse_u), max_db)
+                    else:
+                        psnr_u = None
+
+                    assert (ref_v is not None and dis_v is not None) or \
+                           (ref_v is None and dis_v is None)
+                    if ref_v is not None and dis_v is not None:
+                        mse_v = np.mean((ref_v - dis_v)**2) + 1e-16
+                        psnr_v = min(10 * np.log10(1.0 / mse_v), max_db)
+                    else:
+                        psnr_v = None
 
                     log_dicts.append({
                         'frame': frm,

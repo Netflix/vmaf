@@ -13,9 +13,13 @@ from vmaf.core.feature_extractor import VmafFeatureExtractor, \
 from vmaf.core.asset import Asset
 from vmaf.tools.misc import MyTestCase
 
-from test.testutil import set_default_576_324_videos_for_testing, set_default_flat_1920_1080_videos_for_testing, \
-    set_default_576_324_10bit_videos_for_testing, set_default_576_324_12bit_videos_for_testing, \
-    set_default_576_324_16bit_videos_for_testing, set_default_576_324_10bit_videos_for_testing_b
+from test.testutil import set_default_576_324_videos_for_testing, \
+    set_default_flat_1920_1080_videos_for_testing, \
+    set_default_576_324_10bit_videos_for_testing, \
+    set_default_576_324_12bit_videos_for_testing, \
+    set_default_576_324_16bit_videos_for_testing, \
+    set_default_576_324_10bit_videos_for_testing_b, \
+    set_default_576_324_videos_for_testing_gray
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
@@ -689,6 +693,44 @@ class FeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[1]['Pypsnr_maxdb100_feature_psnry_score'], 100.0, places=4)
         self.assertAlmostEqual(results[1]['Pypsnr_maxdb100_feature_psnru_score'], 100.0, places=4)
         self.assertAlmostEqual(results[1]['Pypsnr_maxdb100_feature_psnrv_score'], 100.0, places=4)
+
+    def test_run_pypsnr_fextractor_gray(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing_gray()
+
+        self.fextractor = PypsnrFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['Pypsnr_feature_psnry_score'], 29.416755043865823, places=4)
+        self.assertAlmostEqual(results[1]['Pypsnr_feature_psnry_score'], 60.0, places=4)
+
+        with self.assertRaises(TypeError):
+            _ = results[0]['Pypsnr_feature_psnru_score']
+        with self.assertRaises(TypeError):
+            _ = results[0]['Pypsnr_feature_psnrv_score']
+
+    def test_run_psnr_fextractor_gray(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing_gray()
+
+        self.fextractor = PsnrFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None
+        )
+        self.fextractor.run(parallelize=False)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['PSNR_feature_psnr_score'], 30.755063979166664, places=4)
+        self.assertAlmostEqual(results[1]['PSNR_feature_psnr_score'], 60.0, places=4)
+
 
 
 if __name__ == '__main__':

@@ -16,7 +16,7 @@ Supported options:
  --distorted/-d $path:      path to distorted .y4m or .yuv
  --width/-w $unsigned:      width
  --height/-h $unsigned:     height
- --pixel_format/-p: $string pixel format (420/422/444)
+ --pixel_format/-p: $string pixel format (420/422/444/400)
  --bitdepth/-b $unsigned:   bitdepth (8/10/12)
  --model/-m $params:        model parameters, colon ":" delimited
                             `path=` path to model file

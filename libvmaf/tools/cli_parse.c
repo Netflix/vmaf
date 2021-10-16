@@ -64,7 +64,7 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --distorted/-d $path:      path to distorted .y4m or .yuv\n"
             " --width/-w $unsigned:      width\n"
             " --height/-h $unsigned:     height\n"
-            " --pixel_format/-p: $string pixel format (420/422/444)\n"
+            " --pixel_format/-p: $string pixel format (420/422/444/400)\n"
             " --bitdepth/-b $unsigned:   bitdepth (8/10/12)\n"
             " --model/-m $params:        model parameters, colon \":\" delimited\n"
             "                            `path=` path to model file\n"
@@ -136,9 +136,11 @@ static enum VmafPixelFormat parse_pix_fmt(const char *const optarg,
         pix_fmt = VMAF_PIX_FMT_YUV422P;
     if (!strcmp(optarg, "444"))
         pix_fmt = VMAF_PIX_FMT_YUV444P;
+    if (!strcmp(optarg, "400"))
+        pix_fmt = VMAF_PIX_FMT_YUV400P;
 
     if (!pix_fmt) error(app, optarg, option, "a valid pixel format "
-                                             "(420/422/444)");
+                                             "(420/422/444/400)");
 
     return pix_fmt;
 }

@@ -35,10 +35,10 @@ class Asset(WorkdirEnabled):
     can be decoded by ffmpeg.
     """
 
-    SUPPORTED_YUV_TYPES = ['yuv420p', 'yuv422p', 'yuv444p',
-                           'yuv420p10le', 'yuv422p10le', 'yuv444p10le',
-                           'yuv420p12le', 'yuv422p12le', 'yuv444p12le',
-                           'yuv420p16le', 'yuv422p16le', 'yuv444p16le',
+    SUPPORTED_YUV_TYPES = ['yuv420p', 'yuv422p', 'yuv444p', 'gray',
+                           'yuv420p10le', 'yuv422p10le', 'yuv444p10le', 'gray10le',
+                           'yuv420p12le', 'yuv422p12le', 'yuv444p12le', 'gray12le',
+                           'yuv420p16le', 'yuv422p16le', 'yuv444p16le', 'gray16le',
                            'notyuv']
     DEFAULT_YUV_TYPE = 'yuv420p'
 

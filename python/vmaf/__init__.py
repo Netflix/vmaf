@@ -60,10 +60,10 @@ def convert_pixel_format_ffmpeg2vmafexec(ffmpeg_pix_fmt):
     :param ffmpeg_pix_fmt: FFmpeg-style pixel format, for example: yuv420p, yuv420p10le
     :return: (pixel_format: str, bitdepth: int), for example: (420, 8), (420, 10)
     '''
-    assert ffmpeg_pix_fmt in ['yuv420p', 'yuv422p', 'yuv444p',
-                              'yuv420p10le', 'yuv422p10le', 'yuv444p10le',
-                              'yuv420p12le', 'yuv422p12le', 'yuv444p12le',
-                              'yuv420p16le', 'yuv422p16le', 'yuv444p16le',
+    assert ffmpeg_pix_fmt in ['yuv420p', 'yuv422p', 'yuv444p', 'gray',
+                              'yuv420p10le', 'yuv422p10le', 'yuv444p10le', 'gray10le',
+                              'yuv420p12le', 'yuv422p12le', 'yuv444p12le', 'gray12le',
+                              'yuv420p16le', 'yuv422p16le', 'yuv444p16le', 'gray16le',
                               ]
 
     if ffmpeg_pix_fmt in ['yuv420p', 'yuv420p10le', 'yuv420p12le', 'yuv420p16le']:
@@ -72,16 +72,18 @@ def convert_pixel_format_ffmpeg2vmafexec(ffmpeg_pix_fmt):
         pixel_format = '422'
     elif ffmpeg_pix_fmt in ['yuv444p', 'yuv444p10le', 'yuv444p12le', 'yuv444p16le']:
         pixel_format = '444'
+    elif ffmpeg_pix_fmt in ['gray', 'gray10le', 'gray12le', 'gray16le']:
+        pixel_format = '400'
     else:
         assert False
 
-    if ffmpeg_pix_fmt in ['yuv420p', 'yuv422p', 'yuv444p']:
+    if ffmpeg_pix_fmt in ['yuv420p', 'yuv422p', 'yuv444p', 'gray']:
         bitdepth = 8
-    elif ffmpeg_pix_fmt in ['yuv420p10le', 'yuv422p10le', 'yuv444p10le']:
+    elif ffmpeg_pix_fmt in ['yuv420p10le', 'yuv422p10le', 'yuv444p10le', 'gray10le']:
         bitdepth = 10
-    elif ffmpeg_pix_fmt in ['yuv420p12le', 'yuv422p12le', 'yuv444p12le']:
+    elif ffmpeg_pix_fmt in ['yuv420p12le', 'yuv422p12le', 'yuv444p12le', 'gray12le']:
         bitdepth = 12
-    elif ffmpeg_pix_fmt in ['yuv420p16le', 'yuv422p16le', 'yuv444p16le']:
+    elif ffmpeg_pix_fmt in ['yuv420p16le', 'yuv422p16le', 'yuv444p16le', 'gray16le']:
         bitdepth = 16
     else:
         assert False
