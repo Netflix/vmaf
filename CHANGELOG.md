@@ -1,12 +1,13 @@
 # Change Log
 
-## (2021-10-11) [v2.3.0]
+## (2021-10-16) [v2.3.0]
 
 New release to add CAMBI (Contrast Aware Multiscale Banding Index).
 
 - Python library: add encode width and height to Asset.
 - libvmaf: add pixel format VMAF_PIX_FMT_YUV400P.
-- Add cambi; add tests.
+- Add cambi; add tests. 
+- Improve documentation. (#912)
 
 ## (2021-09-20) [v2.2.1]
 
