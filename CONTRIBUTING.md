@@ -1,5 +1,7 @@
 # Contributing to VMAF
 
+Please refer to this [slide deck](https://docs.google.com/presentation/d/1Gr4-MvOXu9HUiH4nnqLGWupJYMeh6nl2MNz6Qy9153c/edit#slide=id.gc20398b4b7_0_132) for an overview contribution guide.
+
 If you would like to contribute code to the VMAF repository, you can do so through GitHub by forking the repository and sending a pull request. When submitting code, please make every effort to follow existing conventions and style in order to keep the code as readable as possible.
 
 ## License
@@ -49,7 +51,7 @@ For both cases, one can follow the procedure below:
     - creating a new `QualityRunner` class as a thin wrapper around the new `FeatureExtractor` created, or
     - using the established `VmafQualityRunner` class but training a custom VMAF model.
 
-For the concepts of `FeatureExtractor`, `QualityRunner` and `VmafQualityRunner`, please refer to the [Core Classes](resource/doc/VMAF_Python_library.md#core-classes) section of the VMAF Python library documentation.
+For the concepts of `FeatureExtractor`, `QualityRunner` and `VmafQualityRunner`, please refer to the [Core Classes](resource/doc/python.md#core-classes) section of the VMAF Python library documentation.
 
 For algorithmic contribution, for a clean organization of the repo, it is advised to submit new files under directory prefixed with `third_party/[orginization]`. For example, for a new model trained, it should go under `model/third_party/[organization]/`. As another example, the [PSNR-HVS feature extractor](https://github.com/Netflix/vmaf/commit/ce2ad1af0b1ba8dd1fbae3e03da0329f078e6bc6) code sits under `libvmaf/src/feature/third_party/xiph/`.
 
@@ -118,6 +120,6 @@ The default VMAF model has been using the `LibsvmNusvrTrainTestModel` class for 
   - Optionally override housekeeping functions such as `_to_file()`, `_delete()`, `_from_info_loaded()` when needed.
 
 #### Calling the `run_vmaf_training` Script
-Once the `FeatureExtractor` and `TrainTestModel` classes are ready, the actually training of a VMAF model against a dataset of subjective scores can be initiated by calling the `run_vmaf_training` script. Detailed description of how to use the script can be found in the [Train a New Model](resource/doc/VMAF_Python_library.md#train-a-new-model) section of VMAF Python Library documentation.
+Once the `FeatureExtractor` and `TrainTestModel` classes are ready, the actually training of a VMAF model against a dataset of subjective scores can be initiated by calling the `run_vmaf_training` script. Detailed description of how to use the script can be found in the [Train a New Model](resource/doc/python.md#train-a-new-model) section of VMAF Python Library documentation.
 
 Notice that the current `run_vmaf_training` implementation does not work with `FeatureExtractors` with a custom input parameter (e.g. the `max_db` of `PypsnrFeatureExtractor`). A workaround of this limitation is to create a subclass of the feature extractor with the hard-coded parameter (by overriding the `_custom_init()` method). Refer to [this code](https://github.com/Netflix/vmaf/commit/e698b4d788fb3dcabdc4df2fd1bffe88dc0d3ecd#diff-c5c651eeebd2949a31e059575be35f2018ec57ebdc09c0706cfc1187b9b32dbcR536) and [this test](https://github.com/Netflix/vmaf/commit/e698b4d788fb3dcabdc4df2fd1bffe88dc0d3ecd#diff-5b58c2457df7e9b30b0a678d6f79b1caaad6c3f036edfadb6ca9fb0955bede33R751) for an example.

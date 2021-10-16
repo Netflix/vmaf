@@ -372,7 +372,7 @@ For instructions on how to extending the `FeatureExtractor` and `TrainTestModel`
 
 ## Analysis Tools
 
-Overtime, a number of helper tools have been incorporated into the package, to facilitate training and validating VMAF models. An overview of the tools available can be found in [this slide deck](VQEG_SAM_2018_111_AnalysisToolsInVMAF.pdf).
+Overtime, a number of helper tools have been incorporated into the package, to facilitate training and validating VMAF models. An overview of the tools available can be found in [this slide deck](presentations/VQEG_SAM_2018_111_AnalysisToolsInVMAF.pdf).
 
 ### BD-Rate Calculator
 
@@ -380,7 +380,7 @@ A Bjøntegaard-Delta (BD) rate [implementation](../../python/vmaf/tools/bd_rate_
 
 ### LIME (Local-Explainer Model-Agnostic Explanation) Implementation
 
-An implementation of [LIME](https://arxiv.org/pdf/1602.04938.pdf) is also added as part of the repository. For more information, refer to our [analysis tools](VQEG_SAM_2018_111_AnalysisToolsInVMAF.pdf) presentation. The main idea is to perform a local linear approximation to any regressor or classifier and then use the coefficients of the linearized model as indicators of feature importance. LIME can be used as part of the VMAF regression framework, for example:
+An implementation of [LIME](https://arxiv.org/pdf/1602.04938.pdf) is also added as part of the repository. For more information, refer to our [analysis tools](presentations/VQEG_SAM_2018_111_AnalysisToolsInVMAF.pdf) presentation. The main idea is to perform a local linear approximation to any regressor or classifier and then use the coefficients of the linearized model as indicators of feature importance. LIME can be used as part of the VMAF regression framework, for example:
 
 ```shell script
 PYTHONPATH=python ./python/vmaf/script/run_vmaf.py \

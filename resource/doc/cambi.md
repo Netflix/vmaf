@@ -2,11 +2,17 @@
 
 CAMBI (Contrast Aware Multiscale Banding Index) is Netflix's detector for banding (aka contouring) artifacts.
 
-For an introduction to CAMBI, please refer to this [tech blog](https://netflixtechblog.medium.com/cambi-a-banding-artifact-detector-96777ae12fe2). For a detailed technical description, please refer to the [technical paper](CAMBI_PCS2021.pdf) published at PCS 2021. Note that the paper describes an initial version of CAMBI that no longer matches the code exactly, but it is still a good introduction.
+## Background
+
+For an introduction to CAMBI, please refer to the [tech blog](https://netflixtechblog.medium.com/cambi-a-banding-artifact-detector-96777ae12fe2). For a detailed technical description, please refer to the [technical paper](papers/CAMBI_PCS2021.pdf) published at PCS 2021. Note that the paper describes an initial version of CAMBI that no longer matches the code exactly, but it is still a good introduction.
 
 The current version of CAMBI is a [no-reference metric](https://en.wikipedia.org/wiki/Video_quality#Classification_of_objective_video_quality_models), and operates on a frame-by-frame basis (no temporal information is leveraged). To integrate it as part of the VMAF framework, which employs a [full-reference metric](https://en.wikipedia.org/wiki/Video_quality#Classification_of_objective_video_quality_models) API, CAMBI takes both a reference and a distorted video as its input. For simplicity, one can point the input arguments `--reference` and `--distorted` to the same video path.
 
+## Scores
+
 The CAMBI score starts at 0, meaning no banding is detected. A higher CAMBI score means more visible banding artifacts are identified. The maximum CAMBI observed in a sequence is 24 (unwatchable). As a rule of thumb, a CAMBI score around 5 is where banding starts to become slightly annoying (also note that banding is highly dependent on the viewing environment - the brigher the display, and the dimmer the ambient light, the more visible banding is).
+
+## How to run CAMBI
 
 To invoke CAMBI using the VMAF command line, follow the [instruction](../../libvmaf/tools/README.md) and use `cambi` as the feature name. For example, after downloading the input video [`src01_hrc01_576x324.yuv`](https://github.com/Netflix/vmaf_resource/blob/master/python/test/resource/yuv/src01_hrc01_576x324.yuv), invoke CAMBI via:
 
@@ -36,6 +42,8 @@ This will yield the output:
   <aggregate_metrics />
 </VMAF>
 ```
+
+## Options
 
 The CAMBI feature extractor also supports additional optional parameters as listed below:
 
@@ -69,7 +77,7 @@ This will yield the output:
 </VMAF>
 ```
 
-If, no encoding width and height parameters are specified:
+If no encoding width and height parameters are specified:
 
 ```shell script
 libvmaf/build/tools/vmaf \
@@ -94,4 +102,6 @@ The output will be:
 </VMAF>
 ```
 
-CAMBI can also be invoked in the [Python library](VMAF_Python_library.md). Use `CambiFeatureExtractor` as the feature exatractor, and `CambiQualityRunner` as the quality runner.
+## Python Library
+
+CAMBI can also be invoked in the [Python library](python.md). Use `CambiFeatureExtractor` as the feature exatractor, and `CambiQualityRunner` as the quality runner.
