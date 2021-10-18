@@ -29,7 +29,7 @@ Invoking the phone model will generate VMAF scores higher than in the regular mo
 
 From the figure it can be interpreted that due to the factors of screen size and viewing distance, the same distorted video would be perceived as having a higher quality when viewed on a phone screen than on a laptop/TV screen, and when the quality score reaches its maximum (100), further increasing the encoding bitrate would not result in any perceptual improvement in quality.
 
-### Predict Quality on a 4KTV Screen at 1.5H
+## Predict Quality on a 4KTV Screen at 1.5H
 
 As of v1.3.7 (June 2018), we have added a new 4K VMAF model at `model/vmaf_4k_v0.6.1.json`, which predicts the subjective quality of video displayed on a 4KTV and viewed from the distance of 1.5 times the height of the display device (1.5H). Again, this model is trained with subjective data collected in a lab experiment, using the ACR methodology (notice that it uses the original 5-level discrete scale instead of the continuous scale). The viewing distance of 1.5H is the critical distance for a human subject to appreciate the quality of 4K content (see [recommendation](https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.2022-0-201208-I!!PDF-E.pdf)). More details can be found in [this](presentations/VQEG_SAM_2018_025_VMAF_4K.pdf) slide deck.
 
@@ -42,7 +42,7 @@ To invoke this model, specify the model path using the `--model` option. For exa
     --model model/vmaf_4k_v0.6.1.json
 ```
 
-### Disabling Enhancement Gain (NEG mode)
+## Disabling Enhancement Gain (NEG mode)
 
 For comparing encoders, VMAF offers a special mode, called *No Enhancement Gain*. This is described in the [following blog post](https://netflixtechblog.com/toward-a-better-quality-metric-for-the-video-community-7ed94e752a30):
 
@@ -51,3 +51,11 @@ For comparing encoders, VMAF offers a special mode, called *No Enhancement Gain*
 To disable enhancement gain, use the versions of the model files ending with `neg`.
 
 More details on the reasoning behind NEG have been shared in [this tech memo](https://docs.google.com/document/d/1dJczEhXO0MZjBSNyKmd3ARiCTdFVMNPBykH4_HMPoyY/edit#heading=h.oaikhnw46pw5).
+
+## What are the Differences between Individual Models?
+
+There are no material differences comparing 0.6.2 and 0.6.3 to 0.6.1.
+
+0.6.2 and 0.6.3 were retrained later on the same dataset with the same hyperparameters, but based on the elementary features that have been slightly improved.
+
+The models 0.6.2 and 0.6.3 also come with a way to compute the prediction confidence interval based on bootstrapping.
