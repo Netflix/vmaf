@@ -398,26 +398,28 @@ static void decimate(VmafPicture *image, unsigned width, unsigned height)
 }
 
 static FORCE_INLINE inline uint16_t mode_selection(const VmafPicture *image, unsigned *block_rows,
-                                                   unsigned *block_cols, const unsigned block_size)
+                                                   unsigned *block_cols, const unsigned block_size, uint8_t *hist)
 {
     uint16_t *data = image->data[0];
     ptrdiff_t stride = image->stride[0]>>1;
 
     unsigned max_counts = 0;
     uint16_t max_mode = 1024;
+    // Set the 9 entries to 0
     for (unsigned col=0; col<block_size; col++) {
         for (unsigned row=0; row<block_size; row++) {
             uint16_t value = data[block_rows[row] * stride + block_cols[col]];
-            unsigned counts = 0;
-            if (value == max_mode)
-                continue;
-
-            for (unsigned c=0; c<block_size; c++)
-                for (unsigned r=0; r<block_size; r++)
-                    counts += (data[block_rows[r] * stride + block_cols[c]]==value);
-
-            if (counts > max_counts || (counts == max_counts && value < max_mode)) {
-                max_counts = counts;
+            hist[value] = 0;
+        }
+    }
+    // Increment the 9 entries and find the mode
+    for (unsigned col=0; col<block_size; col++) {
+        for (unsigned row=0; row<block_size; row++) {
+            uint16_t value = data[block_rows[row] * stride + block_cols[col]];
+            hist[value]++;
+            uint8_t count = hist[value];
+            if (count > max_counts || (count == max_counts && value < max_mode)) {
+                max_counts = count;
                 max_mode = value;
             }
         }
@@ -432,6 +434,7 @@ static void filter_mode(const VmafPicture *image, VmafPicture *filtered_image,
     const unsigned block_size = 3;
     unsigned block_rows[block_size], block_cols[block_size];
 
+    uint8_t *hist = malloc(1024 * sizeof(uint8_t));
     uint16_t *filtered_data = filtered_image->data[0];
     ptrdiff_t stride = filtered_image->stride[0]>>1;
 
@@ -444,9 +447,11 @@ static void filter_mode(const VmafPicture *image, VmafPicture *filtered_image,
             block_cols[1] = j;
             block_cols[2] = (j==width-1) ? j : j+1;
             filtered_data[i * stride + j] =
-                mode_selection(image, block_rows, block_cols, block_size);
+                mode_selection(image, block_rows, block_cols, block_size, hist);
         }
     }
+
+    free(hist);
 }
 
 static FORCE_INLINE inline uint16_t get_mask_index(unsigned input_width, unsigned input_height,
