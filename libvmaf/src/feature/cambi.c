@@ -466,24 +466,23 @@ static void get_zero_derivative(const VmafPicture *pic, VmafPicture *zero_deriva
     uint16_t *data = pic->data[0];
     uint16_t *output_data = zero_derivative->data[0];
     ptrdiff_t stride = pic->stride[0]>>1;
-    uint16_t hor_derivative, ver_derivative;
 
     for (unsigned i=0; i<height-1; i++) {
         for (unsigned j=0; j<width-1; j++) {
-            hor_derivative = data[i * stride + j] - data[i * stride + j+1];
-            ver_derivative = data[i * stride + j] - data[(i+1) * stride + j];
-            output_data[i * stride + j] = (hor_derivative==0 && ver_derivative==0);
+            output_data[i * stride + j] = 
+                (data[i * stride + j] == data[i * stride + j+1] 
+                && data[i * stride + j] == data[(i+1) * stride + j]);
         }
         // Last column
         unsigned j = width-1;
-        ver_derivative = data[i * stride + j] - data[(i+1) * stride + j];
-        output_data[i * stride + j] = (ver_derivative==0);
+        output_data[i * stride + j] = 
+            (data[i * stride + j] == data[(i+1) * stride + j]);
     }
     // Last row
     unsigned i = height-1;
     for (unsigned j=0; j<width-1; j++) {
-        hor_derivative = data[i * stride + j] - data[i * stride + j+1];
-        output_data[i * stride + j] = (hor_derivative==0);
+        output_data[i * stride + j] = 
+            (data[i * stride + j] == data[i * stride + j+1]);
     }
     output_data[(height-1) * stride + (width-1)] = 1;
 }
