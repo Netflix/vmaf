@@ -275,11 +275,21 @@ static char *test_get_spatial_mask_for_index()
     get_sample_image(&mask, 3);
 
     get_spatial_mask_for_index(&image, &mask, 2, filter_size, width, height);
-    mu_assert("spatial_mask_for_index wrong mask for index=2", data_pic_sum(&mask)==0);
+    mu_assert("spatial_mask_for_index wrong mask for index=2, image=3", data_pic_sum(&mask)==0);
     get_spatial_mask_for_index(&image, &mask, 1, filter_size, width, height);
-    mu_assert("spatial_mask_for_index wrong mask for index=1", data_pic_sum(&mask)==2);
+    mu_assert("spatial_mask_for_index wrong mask for index=1, image=3", data_pic_sum(&mask)==2);
     get_spatial_mask_for_index(&image, &mask, 0, filter_size, width, height);
-    mu_assert("spatial_mask_for_index wrong mask for index=0", data_pic_sum(&mask)==11);
+    mu_assert("spatial_mask_for_index wrong mask for index=0, image=3", data_pic_sum(&mask)==11);
+
+    get_sample_image(&image, 4);
+    get_sample_image(&image, 4);
+
+    get_spatial_mask_for_index(&image, &mask, 5, filter_size, width, height);
+    mu_assert("spatial_mask_for_index wrong mask for index=5, image=4", data_pic_sum(&mask)==2);
+    get_spatial_mask_for_index(&image, &mask, 4, filter_size, width, height);
+    mu_assert("spatial_mask_for_index wrong mask for index=4, image=4", data_pic_sum(&mask)==7);
+    get_spatial_mask_for_index(&image, &mask, 3, filter_size, width, height);
+    mu_assert("spatial_mask_for_index wrong mask for index=3, image=4", data_pic_sum(&mask)==9);
 
     return NULL;
 }
