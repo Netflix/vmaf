@@ -53,7 +53,7 @@ static const int g_all_diffs[NUM_ALL_DIFFS] = {-4, -3, -2, -1, 0, 1, 2, 3, 4};
 static const uint16_t g_c_value_histogram_offset = 4; // = -g_all_diffs[0]
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
-
+#define CLAMP(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 
 #define PICS_BUFFER_SIZE 4
 
@@ -398,56 +398,54 @@ static void decimate(VmafPicture *image, unsigned width, unsigned height)
             data[i * stride + j] = data[(i<<1) * stride + (j<<1)];
 }
 
-static FORCE_INLINE inline uint16_t mode_selection(const VmafPicture *image, unsigned *block_rows,
-                                                   unsigned *block_cols, const unsigned block_size)
+static FORCE_INLINE inline uint16_t mode_selection(uint16_t *elems, uint8_t *hist)
 {
-    uint16_t *data = image->data[0];
-    ptrdiff_t stride = image->stride[0]>>1;
-
     unsigned max_counts = 0;
     uint16_t max_mode = 1024;
-    for (unsigned col=0; col<block_size; col++) {
-        for (unsigned row=0; row<block_size; row++) {
-            uint16_t value = data[block_rows[row] * stride + block_cols[col]];
-            unsigned counts = 0;
-            if (value == max_mode)
-                continue;
-
-            for (unsigned c=0; c<block_size; c++)
-                for (unsigned r=0; r<block_size; r++)
-                    counts += (data[block_rows[r] * stride + block_cols[c]]==value);
-
-            if (counts > max_counts || (counts == max_counts && value < max_mode)) {
-                max_counts = counts;
-                max_mode = value;
-            }
+    // Set the 9 entries to 0
+    for (int i = 0; i < 9; i++) {
+        hist[elems[i]] = 0;
+    }
+    // Increment the 9 entries and find the mode
+    for (int i = 0; i < 9; i++) {
+        uint16_t value = elems[i];
+        hist[value]++;
+        uint8_t count = hist[value];
+        if (count >= 5) {
+            return value;
+        }
+        if (count > max_counts || (count == max_counts && value < max_mode)) {
+            max_counts = count;
+            max_mode = value;
         }
     }
-
     return max_mode;
 }
 
 static void filter_mode(const VmafPicture *image, VmafPicture *filtered_image,
-                        unsigned width, unsigned height)
+                        int width, int height)
 {
-    const unsigned block_size = 3;
-    unsigned block_rows[block_size], block_cols[block_size];
-
+    uint8_t *hist = malloc(1024 * sizeof(uint8_t));
+    uint16_t *data = image->data[0];
+    ptrdiff_t stride = image->stride[0]>>1;    
     uint16_t *filtered_data = filtered_image->data[0];
-    ptrdiff_t stride = filtered_image->stride[0]>>1;
-
-    for (unsigned i=0; i<height; i++) {
-        block_rows[0] = (i==0) ? 0 : i-1;
-        block_rows[1] = i;
-        block_rows[2] = (i==height-1) ? i : i+1;
-        for (unsigned j=0; j<width; j++) {
-            block_cols[0] = (j==0) ? j : j-1;
-            block_cols[1] = j;
-            block_cols[2] = (j==width-1) ? j : j+1;
-            filtered_data[i * stride + j] =
-                mode_selection(image, block_rows, block_cols, block_size);
+    ptrdiff_t out_stride = filtered_image->stride[0]>>1;
+    uint16_t curr[9];
+    for (int i=0; i<height; i++) {
+        for (int j=0; j<width; j++) {
+            // Get the 9 elements into an array for cache coherence
+            for (int row = 0; row < 3; row++) {
+                for (int col = 0; col < 3; col++) {
+                    int clamped_row = CLAMP(i + row - 1, 0, height - 1);
+                    int clamped_col = CLAMP(j + col - 1, 0, width - 1);
+                    curr[3 * row + col] = data[clamped_row * stride + clamped_col];
+                }
+            }
+            filtered_data[i * out_stride + j] = mode_selection(curr, hist);
         }
     }
+
+    free(hist);
 }
 
 static FORCE_INLINE inline uint16_t get_mask_index(unsigned input_width, unsigned input_height,
