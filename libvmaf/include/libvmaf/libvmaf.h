@@ -57,12 +57,15 @@ enum VmafPoolingMethod {
     VMAF_POOL_METHOD_NB
 };
 
+typedef int (*VMafThreadPoolFactory)(VmafThreadPool **tpool, unsigned n_threads, void* private_data);
+
 typedef struct VmafConfiguration {
     enum VmafLogLevel log_level;
     unsigned n_threads;
     unsigned n_subsample;
     uint64_t cpumask;
-	int (*thread_pool_factory)(VmafThreadPool **tpool, unsigned n_threads);
+	VMafThreadPoolFactory thread_pool_factory;
+	void* private_data;
 } VmafConfiguration;
 
 typedef struct VmafContext VmafContext;

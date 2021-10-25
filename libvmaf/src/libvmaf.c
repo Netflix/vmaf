@@ -77,9 +77,9 @@ int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
     if (v->cfg.n_threads > 0) {
 		
 		if(cfg.thread_pool_factory)
-			err = vmaf_thread_pool_create(&v->thread_pool, v->cfg.n_threads);
+			err = (*cfg.thread_pool_factory)(&v->thread_pool, v->cfg.n_threads, v->cfg.private_data);
 		else
-			err = (*cfg.thread_pool_factory)(&v->thread_pool, v->cfg.n_threads);
+			err = vmaf_thread_pool_create(&v->thread_pool, v->cfg.n_threads);
 		
         if (err) goto free_feature_extractor_vector;
     }
