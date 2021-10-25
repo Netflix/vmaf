@@ -28,7 +28,13 @@ typedef struct VmafThreadPoolJob {
     struct VmafThreadPoolJob *next;
 } VmafThreadPoolJob;
 
-typedef struct VmafTreadPool {
+typedef struct VmafThreadPool {
+	int (*enqueue)(struct VmafThreadPool *pool, void (*func)(void *data), void *data, size_t data_sz);
+
+	int (*wait)(struct VmafThreadPool *pool);
+
+	int (*destroy)(struct VmafThreadPool *tpool);
+
     struct {
         pthread_mutex_t lock;
         pthread_cond_t empty;
@@ -90,29 +96,6 @@ static void *vmaf_thread_pool_runner(void *p)
 
     pthread_mutex_unlock(&(pool->queue.lock));
     return NULL;
-}
-
-int vmaf_thread_pool_create(VmafThreadPool **pool, unsigned n_threads)
-{
-    if (!pool) return -EINVAL;
-    if (!n_threads) return -EINVAL;
-
-    VmafThreadPool *const p = *pool = malloc(sizeof(*p));
-    if (!p) return -ENOMEM;
-    memset(p, 0, sizeof(*p));
-    p->n_threads = n_threads;
-
-    pthread_mutex_init(&(p->queue.lock), NULL);
-    pthread_cond_init(&(p->queue.empty), NULL);
-    pthread_cond_init(&(p->working), NULL);
-
-    for (unsigned i = 0; i < n_threads; i++) {
-        pthread_t thread;
-        pthread_create(&thread, NULL, vmaf_thread_pool_runner, p);
-        pthread_detach(thread);
-    }
-
-    return 0;
 }
 
 int vmaf_thread_pool_enqueue(VmafThreadPool *pool, void (*func)(void *data),
@@ -183,5 +166,31 @@ int vmaf_thread_pool_destroy(VmafThreadPool *pool)
     pthread_cond_destroy(&(pool->working));
 
     free(pool);
+    return 0;
+}
+
+int vmaf_thread_pool_create(VmafThreadPool **pool, unsigned n_threads)
+{
+    if (!pool) return -EINVAL;
+    if (!n_threads) return -EINVAL;
+
+    VmafThreadPool *const p = *pool = malloc(sizeof(*p));
+    if (!p) return -ENOMEM;
+    memset(p, 0, sizeof(*p));
+    p->enqueue = vmaf_thread_pool_enqueue;
+    p->wait = vmaf_thread_pool_wait;
+    p->destroy = vmaf_thread_pool_destroy;
+    p->n_threads = n_threads;
+
+    pthread_mutex_init(&(p->queue.lock), NULL);
+    pthread_cond_init(&(p->queue.empty), NULL);
+    pthread_cond_init(&(p->working), NULL);
+
+    for (unsigned i = 0; i < n_threads; i++) {
+        pthread_t thread;
+        pthread_create(&thread, NULL, vmaf_thread_pool_runner, p);
+        pthread_detach(thread);
+    }
+
     return 0;
 }

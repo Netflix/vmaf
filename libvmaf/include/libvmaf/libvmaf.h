@@ -26,6 +26,7 @@
 #include "libvmaf/model.h"
 #include "libvmaf/picture.h"
 #include "libvmaf/feature.h"
+#include "libvmaf/thread_pool.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,6 +62,7 @@ typedef struct VmafConfiguration {
     unsigned n_threads;
     unsigned n_subsample;
     uint64_t cpumask;
+	int (*thread_pool_factory)(VmafThreadPool **tpool, unsigned n_threads);
 } VmafConfiguration;
 
 typedef struct VmafContext VmafContext;

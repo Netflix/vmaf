@@ -26,6 +26,7 @@
 
 #include "libvmaf/libvmaf.h"
 #include "libvmaf/feature.h"
+#include "libvmaf/thread_pool.h"
 
 #include "cpu.h"
 #include "feature/feature_extractor.h"
@@ -36,7 +37,6 @@
 #include "output.h"
 #include "picture.h"
 #include "predict.h"
-#include "thread_pool.h"
 #include "vcs_version.h"
 
 typedef struct VmafContext {
@@ -75,8 +75,16 @@ int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
     if (err) goto free_feature_collector;
 
     if (v->cfg.n_threads > 0) {
-        err = vmaf_thread_pool_create(&v->thread_pool, v->cfg.n_threads);
+		
+		if(cfg.thread_pool_factory)
+			err = vmaf_thread_pool_create(&v->thread_pool, v->cfg.n_threads);
+		else
+			err = (*cfg.thread_pool_factory)(&v->thread_pool, v->cfg.n_threads);
+		
         if (err) goto free_feature_extractor_vector;
+    }
+
+    if (v->cfg.n_threads > 0) {
         err = vmaf_fex_ctx_pool_create(&v->fex_ctx_pool, v->cfg.n_threads);
         if (err) goto free_thread_pool;
     }
@@ -84,7 +92,7 @@ int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
     return 0;
 
 free_thread_pool:
-    vmaf_thread_pool_destroy(v->thread_pool);
+    v->thread_pool->destroy(v->thread_pool);
 free_feature_extractor_vector:
     feature_extractor_vector_destroy(&(v->registered_feature_extractors));
 free_feature_collector:
@@ -99,10 +107,10 @@ int vmaf_close(VmafContext *vmaf)
 {
     if (!vmaf) return -EINVAL;
 
-    vmaf_thread_pool_wait(vmaf->thread_pool);
+    vmaf->thread_pool->wait(vmaf->thread_pool);
     feature_extractor_vector_destroy(&(vmaf->registered_feature_extractors));
     vmaf_feature_collector_destroy(vmaf->feature_collector);
-    vmaf_thread_pool_destroy(vmaf->thread_pool);
+    vmaf->thread_pool->destroy(vmaf->thread_pool);
     vmaf_fex_ctx_pool_destroy(vmaf->fex_ctx_pool);
     free(vmaf);
 
@@ -261,7 +269,7 @@ static int threaded_read_pictures(VmafContext *vmaf, VmafPicture *ref,
             .err = 0,
         };
 
-        err = vmaf_thread_pool_enqueue(vmaf->thread_pool, threaded_extract_func,
+        err = vmaf->thread_pool->enqueue(vmaf->thread_pool, threaded_extract_func,
                                        &data, sizeof(data));
         if (err) {
             vmaf_picture_unref(&pic_a);
@@ -301,7 +309,7 @@ static int validate_pic_params(VmafContext *vmaf, VmafPicture *ref,
 static int flush_context_threaded(VmafContext *vmaf)
 {
     int err = 0;
-    err |= vmaf_thread_pool_wait(vmaf->thread_pool);
+    err |= vmaf->thread_pool->wait(vmaf->thread_pool);
     err |= vmaf_fex_ctx_pool_flush(vmaf->fex_ctx_pool, vmaf->feature_collector);
 
     if (!err) vmaf->flushed = true;
