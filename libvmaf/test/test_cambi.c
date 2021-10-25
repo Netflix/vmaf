@@ -303,22 +303,25 @@ static char *test_calculate_c_values()
     unsigned width = 4, height = 4;
     uint16_t tvi_for_diff[4] = {178, 305, 432, 559};
     uint16_t window_size = 3;
+    uint16_t histograms[4*1032];
 
     get_sample_image(&input, 0);
     get_sample_image(&mask, 8);
-    calculate_c_values(&input, &mask, combined_c_values,
+    calculate_c_values(&input, &mask, combined_c_values, histograms,
                        window_size, tvi_for_diff, width, height);
 
-    for (unsigned i=0; i<16; i++)
+    for (unsigned i=0; i<16; i++) {
         mu_assert("calculate_c_values error ws=3",
             almost_equal(combined_c_values[i], expected_values[i]));
+    }
 
     VmafPicture input_8x8, mask_8x8;
     float combined_c_values_8x8[64];
     get_sample_image_8x8(&input_8x8, 0);
     get_sample_image_8x8(&mask_8x8, 1);
     window_size = 9;
-    calculate_c_values(&input_8x8, &mask_8x8, combined_c_values_8x8,
+    uint16_t histograms_8x8[8*1032];
+    calculate_c_values(&input_8x8, &mask_8x8, combined_c_values_8x8, histograms_8x8,
                        window_size, tvi_for_diff, 8, 8);
 
     double sum = 0;
@@ -352,19 +355,17 @@ static char *test_c_value_pixel()
     uint16_t num_diffs = 2;
     float c_value;
 
-    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds);
+    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds, 0, 1);
     mu_assert("c_value_all_diffs for value=2, weights=2,3", almost_equal(c_value, 2.6666667));
-
 
     diff_weights[0] = 4;
     diff_weights[1] = 5;
-    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds);
+    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds, 0, 1);
     mu_assert("c_value_all_diffs for value=2, weights=4,5", almost_equal(c_value, 6.6666667));
 
     value = 4;
-    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds);
+    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds, 0, 1);
     mu_assert("c_value_all_diffs for value=4, weights=4,5", almost_equal(c_value, 0));
-
     return NULL;
 }
 
