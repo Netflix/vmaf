@@ -56,7 +56,8 @@ static const uint16_t g_c_value_histogram_offset = 4; // = -g_all_diffs[0]
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define CLAMP(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 
-#define PICS_BUFFER_SIZE 4
+#define PICS_BUFFER_SIZE 3
+#define MASK_FILTER_SIZE 7
 
 typedef struct CambiState {
     VmafPicture pics[PICS_BUFFER_SIZE];
@@ -68,6 +69,7 @@ typedef struct CambiState {
     double tvi_threshold;
     float *c_values;
     uint16_t *c_values_histograms;
+    uint32_t *mask_dp;
 } CambiState;
 
 static const VmafOption options[] = {
@@ -271,6 +273,11 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     const uint16_t num_bins = 1024 + (g_all_diffs[NUM_ALL_DIFFS-1] - g_all_diffs[0]);
     s->c_values_histograms = aligned_malloc(ALIGN_CEIL(w * num_bins * sizeof(uint16_t)), 32);
 
+    int pad_size = MASK_FILTER_SIZE >> 1;
+    int dp_width = w + 2 * pad_size + 1;
+    int dp_height = 2 * pad_size + 2;
+    s->mask_dp = aligned_malloc(ALIGN_CEIL(dp_height * dp_width * sizeof(uint32_t)), 32);
+
     return err;
 }
 
@@ -438,7 +445,7 @@ static void filter_mode(const VmafPicture *image, VmafPicture *filtered_image,
     uint16_t curr[9];
     for (int i=0; i<height; i++) {
         for (int j=0; j<width; j++) {
-            // Get the 9 elements into an array for cache coherence
+            // Get the 9 elements into an array for cache optimization
             for (int row = 0; row < 3; row++) {
                 for (int col = 0; col < 3; col++) {
                     int clamped_row = CLAMP(i + row - 1, 0, height - 1);
@@ -463,76 +470,88 @@ static FORCE_INLINE inline uint16_t get_mask_index(unsigned input_width, unsigne
     return (uint16_t) (floor(pow(filter_size, 2)/2) - slope*(resolution_ratio-1));
 }
 
-static void get_zero_derivative(const VmafPicture *pic, VmafPicture *zero_derivative,
-                                unsigned width, unsigned height)
-{
-    uint16_t *data = pic->data[0];
-    uint16_t *output_data = zero_derivative->data[0];
-    ptrdiff_t stride = pic->stride[0]>>1;
-
-    for (unsigned i=0; i<height-1; i++) {
-        for (unsigned j=0; j<width-1; j++) {
-            output_data[i * stride + j] = 
-                (data[i * stride + j] == data[i * stride + j+1] 
-                && data[i * stride + j] == data[(i+1) * stride + j]);
-        }
-        // Last column
-        unsigned j = width-1;
-        output_data[i * stride + j] = 
-            (data[i * stride + j] == data[(i+1) * stride + j]);
-    }
-    // Last row
-    unsigned i = height-1;
-    for (unsigned j=0; j<width-1; j++) {
-        output_data[i * stride + j] = 
-            (data[i * stride + j] == data[i * stride + j+1]);
-    }
-    output_data[(height-1) * stride + (width-1)] = 1;
+static FORCE_INLINE inline bool get_derivative_data(const uint16_t *data, int width, int height, int i, int j, ptrdiff_t stride) {
+    return (i == height - 1 || (data[i * stride + j] == data[(i + 1) * stride + j])) && 
+           (j == width - 1 || (data[i * stride + j] == data[i * stride + j + 1]));
 }
 
-static void get_spatial_mask_for_index(const VmafPicture *zero_derivative, VmafPicture *mask,
-                                       uint16_t mask_index, uint16_t filter_size,
+/*
+* This function calculates the horizontal and vertical derivatives of the image using 2x1 and 1x2 kernels.
+* We say a pixel has zero_derivative=1 if it's equal to its right and bottom neighbours, and =0 otherwise (edges also count as "equal").
+* This function then computes the sum of zero_derivative on the filter_size x filter_size square around each pixel
+* and stores 1 into the corresponding mask index iff this number is larger than mask_index.
+* To calculate the square sums, it uses a dynamic programming algorithm based on inclusion-exclusion.
+* To save memory, it uses a DP matrix of only the necessary size, rather than the full matrix, and indexes its rows cyclically.
+*/
+static void get_spatial_mask_for_index(const VmafPicture *image, VmafPicture *mask,
+                                       uint32_t *dp, uint16_t mask_index, uint16_t filter_size,
                                        int width, int height)
 {
     uint16_t pad_size = filter_size >> 1;
-    uint16_t *derivative_data = zero_derivative->data[0];
+    uint16_t *image_data = image->data[0];
     uint16_t *mask_data = mask->data[0];
-    ptrdiff_t stride = zero_derivative->stride[0]>>1;
+    ptrdiff_t stride = image->stride[0]>>1;
 
-    for (int i=0; i<height; i++) {
-        uint16_t count = 0;
-        for (int r=-pad_size; r<=pad_size; r++)
-            for (int c=0; c<=pad_size; c++)
-                if (i+r>=0 && i+r<height)
-                    count += derivative_data[(i+r) * stride + c];
+    int dp_width = width + 2 * pad_size + 1;
+    int dp_height = 2 * pad_size + 2;
+    memset(dp, 0, dp_width * dp_height * sizeof(uint32_t));
 
-        mask_data[i * stride] = (count>mask_index);
-
-        for (int j=1; j<width; j++) {
-            if (j-pad_size-1>=0)
-                for (int r=-pad_size; r<=pad_size; r++)
-                    if (i+r>=0 && i+r<height)
-                        count -= derivative_data[(i+r) * stride + j-pad_size-1];
-
-            if (j+pad_size<width)
-                for (int r=-pad_size; r<=pad_size; r++)
-                    if (i+r>=0 && i+r<height)
-                        count += derivative_data[(i+r) * stride + j+pad_size];
-
-            mask_data[i * stride + j] = (count>mask_index);
+    // Initial computation: fill dp except for the last row
+    for (int i = 0; i < pad_size; i++) {
+        for (int j = 0; j < width + pad_size; j++) {
+            int value = (i < height && j < width ? get_derivative_data(image_data, width, height, i, j, stride) : 0);
+            int curr_row = i + pad_size + 1;
+            int curr_col = j + pad_size + 1;
+            dp[curr_row * dp_width + curr_col] = 
+                value
+                + dp[(curr_row - 1) * dp_width + curr_col]
+                + dp[curr_row * dp_width + curr_col - 1]
+                - dp[(curr_row - 1) * dp_width + curr_col - 1];
         }
+    }
+
+    // Start from the last row in the dp matrix
+    int curr_row = dp_height - 1;
+    int curr_compute = pad_size + 1;
+    for (int i = pad_size; i < height + pad_size; i++) {
+        // First compute the values of dp for curr_row
+        for (int j = 0; j < width + pad_size; j++) {
+            int value = (i < height && j < width ? get_derivative_data(image_data, width, height, i, j, stride) : 0);
+            int curr_col = j + pad_size + 1;
+            int prev_row = (curr_row + dp_height - 1)%dp_height;
+            dp[curr_row * dp_width + curr_col] =
+                value
+                + dp[prev_row * dp_width + curr_col]
+                + dp[curr_row * dp_width + curr_col - 1]
+                - dp[prev_row * dp_width + curr_col - 1];
+        }
+        curr_row = (curr_row + 1)%dp_height;
+
+        // Then use the values to compute the square sum for the curr_compute row.
+        for (int j = 0; j < width; j++) {
+            int curr_col = j + pad_size + 1;
+            int bottom = (curr_compute + pad_size)%dp_height;
+            int top = (curr_compute + dp_height - pad_size - 1)%dp_height;
+            int right = curr_col + pad_size;
+            int left = curr_col - pad_size - 1;
+            int result = 
+                dp[bottom * dp_width + right]
+                - dp[bottom * dp_width + left]
+                - dp[top * dp_width + right]
+                + dp[top * dp_width + left];
+            mask_data[(i - pad_size) * stride + j] = (result > mask_index);
+        }
+        curr_compute = (curr_compute + 1)%dp_height;
     }
 }
 
-static void get_spatial_mask(const VmafPicture *image, VmafPicture *mask, VmafPicture *zero_derivative,
-                             unsigned width, unsigned height)
+static void get_spatial_mask(const VmafPicture *image, VmafPicture *mask,
+                             uint32_t *dp, unsigned width, unsigned height)
 {
-    const uint16_t mask_filter_size = 7;
     unsigned input_width = image->w[0];
     unsigned input_height = image->h[0];
-    uint16_t mask_index = get_mask_index(input_width, input_height, mask_filter_size);
-    get_zero_derivative(image, zero_derivative, width, height);
-    get_spatial_mask_for_index(zero_derivative, mask, mask_index, mask_filter_size, width, height);
+    uint16_t mask_index = get_mask_index(input_width, input_height, MASK_FILTER_SIZE);
+    get_spatial_mask_for_index(image, mask, dp, mask_index, MASK_FILTER_SIZE, width, height);
 }
 
 static void pic_add_offset(VmafPicture *pic, uint16_t offset,
@@ -732,14 +751,13 @@ static FORCE_INLINE inline
     return score/normalization;
 }
 
-static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
+static int cambi_score(VmafPicture *pics, uint32_t *mask_dp, uint16_t window_size, double topk,
                        const uint16_t *tvi_for_diff, float *c_values, uint16_t *c_values_histograms, double *score)
 {
     double scores_per_scale[NUM_SCALES];
     VmafPicture *image = &pics[0];
     VmafPicture *filtered_image = &pics[1];
     VmafPicture *mask = &pics[2];
-    VmafPicture *temp_image = &pics[3];
 
     unsigned scaled_width = image->w[0];
     unsigned scaled_height = image->h[0];
@@ -750,7 +768,7 @@ static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
             decimate(image, scaled_width, scaled_height);
             decimate(mask, scaled_width, scaled_height);
         } else {
-            get_spatial_mask(image, mask, temp_image, scaled_width, scaled_height);
+            get_spatial_mask(image, mask, mask_dp, scaled_width, scaled_height);
         }
 
         filter_mode(image, filtered_image, scaled_width, scaled_height);
@@ -784,7 +802,7 @@ static int extract(VmafFeatureExtractor *fex,
     if (err) return err;
 
     double score;
-    err = cambi_score(s->pics, s->window_size, s->topk, s->tvi_for_diff, s->c_values, s->c_values_histograms, &score);
+    err = cambi_score(s->pics, s->mask_dp, s->window_size, s->topk, s->tvi_for_diff, s->c_values, s->c_values_histograms, &score);
     if (err) return err;
 
     err = vmaf_feature_collector_append(feature_collector, "cambi", score, index);
@@ -803,6 +821,7 @@ static int close(VmafFeatureExtractor *fex)
 
     aligned_free(s->c_values);
     aligned_free(s->c_values_histograms);
+    aligned_free(s->mask_dp);
     return err;
 }
 
