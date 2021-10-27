@@ -17,15 +17,15 @@
  */
 
 #include <errno.h>
-#include <string.h>
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
 
-#include "picture.h"
-#include "mem.h"
+#include "common/macros.h"
 #include "feature_collector.h"
 #include "feature_extractor.h"
-#include "common/macros.h"
+#include "mem.h"
+#include "picture.h"
 
 /* Ratio of pixels for computation, must be 0 > topk >= 1.0 */
 #define DEFAULT_CAMBI_TOPK_POOLING (0.6)
@@ -48,13 +48,19 @@ static const int g_scale_weights[NUM_SCALES] = {16, 8, 4, 2, 1};
 static const int g_diffs_to_consider[NUM_DIFFS] = {1, 2, 3, 4};
 static const int g_diffs_weights[NUM_DIFFS] = {1, 2, 3, 4};
 
-#define NUM_ALL_DIFFS (2*NUM_DIFFS+1)
+#define NUM_ALL_DIFFS (2 * NUM_DIFFS + 1)
 static const int g_all_diffs[NUM_ALL_DIFFS] = {-4, -3, -2, -1, 0, 1, 2, 3, 4};
 static const uint16_t g_c_value_histogram_offset = 4; // = -g_all_diffs[0]
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
-#define CLAMP(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
+#define CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
+#define SWAP_FLOAT(x, y) \
+    {                    \
+        float temp = x;  \
+        x = y;           \
+        y = temp;        \
+    }
 
 #define PICS_BUFFER_SIZE 3
 #define MASK_FILTER_SIZE 7
@@ -130,26 +136,22 @@ enum CambiTVIBisectFlag {
     CAMBI_TVI_BISECT_TOO_BIG
 };
 
-FORCE_INLINE inline int clip(int value, int low, int high)
-{
+static FORCE_INLINE inline int clip(int value, int low, int high) {
     return value < low ? low : (value > high ? high : value);
 }
 
-static FORCE_INLINE inline double bt1886_eotf(double V, double gamma, double Lw, double Lb)
-{
+static FORCE_INLINE inline double bt1886_eotf(double V, double gamma, double Lw, double Lb) {
     double a = pow(pow(Lw, 1.0 / gamma) - pow(Lb, 1.0 / gamma), gamma);
-    double b = pow(Lb, 1.0 / gamma) /(pow(Lw, 1.0 / gamma) - pow(Lb, 1.0 / gamma));
+    double b = pow(Lb, 1.0 / gamma) / (pow(Lw, 1.0 / gamma) - pow(Lb, 1.0 / gamma));
     double L = a * pow(MAX(V + b, 0), gamma);
     return L;
 }
 
 static FORCE_INLINE inline void range_foot_head(int bitdepth, const char *pix_range,
-                                                int *foot, int *head)
-{
+                                                int *foot, int *head) {
     int foot_8b = 0;
     int head_8b = 255;
-    if (!strcmp(pix_range, "standard"))
-    {
+    if (!strcmp(pix_range, "standard")) {
         foot_8b = 16;
         head_8b = 235;
     }
@@ -157,27 +159,24 @@ static FORCE_INLINE inline void range_foot_head(int bitdepth, const char *pix_ra
     *head = head_8b * (pow(2, bitdepth - 8));
 }
 
-static double normalize_range(int sample, int bitdepth, const char *pix_range)
-{
+static double normalize_range(int sample, int bitdepth, const char *pix_range) {
     int foot, head, clipped_sample;
     range_foot_head(bitdepth, pix_range, &foot, &head);
     clipped_sample = clip(sample, foot, head);
-    return (double)(clipped_sample-foot)/(head-foot);
+    return (double)(clipped_sample - foot) / (head - foot);
 }
 
 static double luminance_bt1886(int sample, int bitdepth,
-                               double Lw, double Lb, const char *pix_range)
-{
+                               double Lw, double Lb, const char *pix_range) {
     double normalized;
     normalized = normalize_range(sample, bitdepth, pix_range);
     return bt1886_eotf(normalized, BT1886_GAMMA, Lw, Lb);
 }
 
 static bool tvi_condition(int sample, int diff, double tvi_threshold,
-                          int bitdepth, double Lw, double Lb, const char *pix_range)
-{
+                          int bitdepth, double Lw, double Lb, const char *pix_range) {
     double mean_luminance = luminance_bt1886(sample, bitdepth, Lw, Lb, pix_range);
-    double diff_luminance = luminance_bt1886(sample+diff, bitdepth, Lw, Lb, pix_range);
+    double diff_luminance = luminance_bt1886(sample + diff, bitdepth, Lw, Lb, pix_range);
     double delta_luminance = diff_luminance - mean_luminance;
     return (delta_luminance > tvi_threshold * mean_luminance);
 }
@@ -185,21 +184,19 @@ static bool tvi_condition(int sample, int diff, double tvi_threshold,
 static enum CambiTVIBisectFlag tvi_hard_threshold_condition(int sample, int diff,
                                                             double tvi_threshold,
                                                             int bitdepth, double Lw, double Lb,
-                                                            const char *pix_range)
-{
+                                                            const char *pix_range) {
     bool condition;
     condition = tvi_condition(sample, diff, tvi_threshold, bitdepth, Lw, Lb, pix_range);
     if (!condition) return CAMBI_TVI_BISECT_TOO_BIG;
 
-    condition = tvi_condition(sample+1, diff, tvi_threshold, bitdepth, Lw, Lb, pix_range);
+    condition = tvi_condition(sample + 1, diff, tvi_threshold, bitdepth, Lw, Lb, pix_range);
     if (condition) return CAMBI_TVI_BISECT_TOO_SMALL;
 
     return CAMBI_TVI_BISECT_CORRECT;
 }
 
 static int get_tvi_for_diff(int diff, double tvi_threshold, int bitdepth,
-                            double Lw, double Lb, const char *pix_range)
-{
+                            double Lw, double Lb, const char *pix_range) {
     int foot, head, mid;
     enum CambiTVIBisectFlag tvi_bisect;
     const int max_val = (1 << bitdepth) - 1;
@@ -209,40 +206,38 @@ static int get_tvi_for_diff(int diff, double tvi_threshold, int bitdepth,
 
     tvi_bisect = tvi_hard_threshold_condition(foot, diff, tvi_threshold, bitdepth,
                                               Lw, Lb, pix_range);
-    if(tvi_bisect==CAMBI_TVI_BISECT_TOO_BIG) return 0;
-    if(tvi_bisect==CAMBI_TVI_BISECT_CORRECT) return foot;
+    if (tvi_bisect == CAMBI_TVI_BISECT_TOO_BIG) return 0;
+    if (tvi_bisect == CAMBI_TVI_BISECT_CORRECT) return foot;
 
     tvi_bisect = tvi_hard_threshold_condition(head, diff, tvi_threshold, bitdepth,
                                               Lw, Lb, pix_range);
-    if(tvi_bisect==CAMBI_TVI_BISECT_TOO_SMALL) return max_val;
-    if(tvi_bisect==CAMBI_TVI_BISECT_CORRECT) return head;
+    if (tvi_bisect == CAMBI_TVI_BISECT_TOO_SMALL) return max_val;
+    if (tvi_bisect == CAMBI_TVI_BISECT_CORRECT) return head;
 
     // bisect
-    while(1) {
+    while (1) {
         mid = foot + (head - foot) / 2;
         tvi_bisect = tvi_hard_threshold_condition(mid, diff, tvi_threshold, bitdepth,
                                                   Lw, Lb, pix_range);
-        if(tvi_bisect==CAMBI_TVI_BISECT_TOO_BIG)
+        if (tvi_bisect == CAMBI_TVI_BISECT_TOO_BIG)
             head = mid;
-        else if(tvi_bisect==CAMBI_TVI_BISECT_TOO_SMALL)
+        else if (tvi_bisect == CAMBI_TVI_BISECT_TOO_SMALL)
             foot = mid;
-        else if(tvi_bisect==CAMBI_TVI_BISECT_CORRECT)
+        else if (tvi_bisect == CAMBI_TVI_BISECT_CORRECT)
             return mid;
         else // Should never get here (todo: add assert)
-            (void) 0;
+            (void)0;
     }
 }
 
-static FORCE_INLINE inline void adjust_window_size(uint16_t *window_size, unsigned input_width)
-{
+static FORCE_INLINE inline void adjust_window_size(uint16_t *window_size, unsigned input_width) {
     (*window_size) = ((*window_size) * input_width) / CAMBI_4K_WIDTH;
 }
 
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
-                unsigned bpc, unsigned w, unsigned h)
-{
-    (void) pix_fmt;
-    (void) bpc;
+                unsigned bpc, unsigned w, unsigned h) {
+    (void)pix_fmt;
+    (void)bpc;
 
     CambiState *s = fex->priv;
 
@@ -257,10 +252,10 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     if (w < CAMBI_MIN_WIDTH || w > CAMBI_MAX_WIDTH)
         return -EINVAL;
     int err = 0;
-    for (unsigned i=0; i<PICS_BUFFER_SIZE; i++)
+    for (unsigned i = 0; i < PICS_BUFFER_SIZE; i++)
         err |= vmaf_picture_alloc(&s->pics[i], VMAF_PIX_FMT_YUV400P, 10, w, h);
 
-    for (int d=0; d<NUM_DIFFS; d++) {
+    for (int d = 0; d < NUM_DIFFS; d++) {
         // BT1886 parameters
         s->tvi_for_diff[d] = get_tvi_for_diff(g_diffs_to_consider[d], s->tvi_threshold, 10,
                                               300.0, 0.01, "standard");
@@ -269,8 +264,8 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 
     adjust_window_size(&s->window_size, w);
     s->c_values = aligned_malloc(ALIGN_CEIL(w * sizeof(float)) * h, 32);
-    
-    const uint16_t num_bins = 1024 + (g_all_diffs[NUM_ALL_DIFFS-1] - g_all_diffs[0]);
+
+    const uint16_t num_bins = 1024 + (g_all_diffs[NUM_ALL_DIFFS - 1] - g_all_diffs[0]);
     s->c_values_histograms = aligned_malloc(ALIGN_CEIL(w * num_bins * sizeof(uint16_t)), 32);
 
     int pad_size = MASK_FILTER_SIZE >> 1;
@@ -282,12 +277,11 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 }
 
 /* Preprocessing functions */
-static void decimate_generic_10b(const VmafPicture *pic, VmafPicture *out_pic)
-{
+static void decimate_generic_10b(const VmafPicture *pic, VmafPicture *out_pic) {
     uint16_t *data = pic->data[0];
     uint16_t *out_data = out_pic->data[0];
-    ptrdiff_t stride = pic->stride[0]>>1;
-    ptrdiff_t out_stride = out_pic->stride[0]>>1;
+    ptrdiff_t stride = pic->stride[0] >> 1;
+    ptrdiff_t out_stride = out_pic->stride[0] >> 1;
     unsigned in_w = pic->w[0];
     unsigned in_h = pic->h[0];
     unsigned out_w = out_pic->w[0];
@@ -295,7 +289,7 @@ static void decimate_generic_10b(const VmafPicture *pic, VmafPicture *out_pic)
 
     // if the input and output sizes are the same
     if (in_w == out_w && in_h == out_h){
-        memcpy(out_data, data, (size_t) stride * pic->h[0] * sizeof(uint16_t));
+        memcpy(out_data, data, stride * pic->h[0] * sizeof(uint16_t));
         return;
     }
 
@@ -306,11 +300,11 @@ static void decimate_generic_10b(const VmafPicture *pic, VmafPicture *out_pic)
     float start_y = ratio_y / 2 - 0.5;
 
     float y = start_y;
-    for(unsigned i=0; i<out_h; i++){
-        unsigned ori_y = (int)(y+0.5);
+    for (unsigned i = 0; i < out_h; i++) {
+        unsigned ori_y = (int)(y + 0.5);
         float x = start_x;
-        for (unsigned j=0; j<out_w; j++){
-            unsigned ori_x = (int)(x+0.5);
+        for (unsigned j = 0; j < out_w; j++) {
+            unsigned ori_x = (int)(x + 0.5);
             out_data[i * out_stride + j] = data[ori_y * stride + ori_x];
             x += ratio_x;
         }
@@ -318,21 +312,20 @@ static void decimate_generic_10b(const VmafPicture *pic, VmafPicture *out_pic)
     }
 }
 
-static void decimate_generic_8b_and_convert_to_10b(const VmafPicture *pic, VmafPicture *out_pic)
-{
+static void decimate_generic_8b_and_convert_to_10b(const VmafPicture *pic, VmafPicture *out_pic) {
     uint8_t *data = pic->data[0];
     uint16_t *out_data = out_pic->data[0];
     ptrdiff_t stride = pic->stride[0];
-    ptrdiff_t out_stride = out_pic->stride[0]>>1;
+    ptrdiff_t out_stride = out_pic->stride[0] >> 1;
     unsigned in_w = pic->w[0];
     unsigned in_h = pic->h[0];
     unsigned out_w = out_pic->w[0];
     unsigned out_h = out_pic->h[0];
 
     // if the input and output sizes are the same
-    if (in_w == out_w && in_h == out_h){
-        for (unsigned i=0; i<out_h; i++)
-            for (unsigned j=0; j<out_w; j++)
+    if (in_w == out_w && in_h == out_h) {
+        for (unsigned i = 0; i < out_h; i++)
+            for (unsigned j = 0; j < out_w; j++)
                 out_data[i * out_stride + j] = data[i * stride + j] << 2;
         return;
     }
@@ -344,11 +337,11 @@ static void decimate_generic_8b_and_convert_to_10b(const VmafPicture *pic, VmafP
     float start_y = ratio_y / 2 - 0.5;
 
     float y = start_y;
-    for(unsigned i=0; i<out_h; i++){
-        unsigned ori_y = (int)(y+0.5);
+    for (unsigned i = 0; i < out_h; i++) {
+        unsigned ori_y = (int)(y + 0.5);
         float x = start_x;
-        for (unsigned j=0; j<out_w; j++){
-            unsigned ori_x = (int)(x+0.5);
+        for (unsigned j = 0; j < out_w; j++) {
+            unsigned ori_x = (int)(x + 0.5);
             out_data[i * out_stride + j] = data[ori_y * stride + ori_x] << 2;
             x += ratio_x;
         }
@@ -362,34 +355,34 @@ static void copy_10b_luma(const VmafPicture *pic, VmafPicture *out_pic)
     memcpy(out_pic->data[0], pic->data[0], stride * pic->h[0] * sizeof(uint16_t));
 }
 
-static void anti_dithering_filter(VmafPicture *pic)
-{
+static void anti_dithering_filter(VmafPicture *pic) {
     uint16_t *data = pic->data[0];
     int stride = pic->stride[0] >> 1;
 
-    for (unsigned i=0; i<pic->h[0]-1; i++) {
-        for (unsigned j=0; j<pic->w[0]-1; j++)
+    for (unsigned i = 0; i < pic->h[0] - 1; i++) {
+        for (unsigned j = 0; j < pic->w[0] - 1; j++) {
             data[i * stride + j] = (data[i * stride + j] +
-                                    data[i * stride + j+1] +
-                                    data[(i+1) * stride + j] +
-                                    data[(i+1) * stride + j+1]) >> 2;
+                                    data[i * stride + j + 1] +
+                                    data[(i + 1) * stride + j] +
+                                    data[(i + 1) * stride + j + 1]) >> 2;
+        }
 
         // Last column
-        unsigned j = pic->w[0]-1;
+        unsigned j = pic->w[0] - 1;
         data[i * stride + j] = (data[i * stride + j] +
-                                data[(i+1) * stride + j]) >> 1;
+                                data[(i + 1) * stride + j]) >> 1;
     }
 
     // Last row
-    unsigned i = pic->h[0]-1;
-    for (unsigned j=0; j<pic->w[0]-1; j++)
+    unsigned i = pic->h[0] - 1;
+    for (unsigned j = 0; j < pic->w[0] - 1; j++) {
         data[i * stride + j] = (data[i * stride + j] +
-                                data[i * stride + j+1]) >> 1;
+                                data[i * stride + j + 1]) >> 1;
+    }
 }
 
-static int cambi_preprocessing(const VmafPicture *image, VmafPicture *preprocessed)
-{
-    if (image->bpc==8) {
+static int cambi_preprocessing(const VmafPicture *image, VmafPicture *preprocessed) {
+    if (image->bpc == 8) {
         decimate_generic_8b_and_convert_to_10b(image, preprocessed);
         anti_dithering_filter(preprocessed);
     }
@@ -401,17 +394,17 @@ static int cambi_preprocessing(const VmafPicture *image, VmafPicture *preprocess
 }
 
 /* Banding detection functions */
-static void decimate(VmafPicture *image, unsigned width, unsigned height)
-{
+static void decimate(VmafPicture *image, unsigned width, unsigned height) {
     uint16_t *data = image->data[0];
-    ptrdiff_t stride = image->stride[0]>>1;
-    for (unsigned i=0; i<height; i++)
-        for (unsigned j=0; j<width; j++)
-            data[i * stride + j] = data[(i<<1) * stride + (j<<1)];
+    ptrdiff_t stride = image->stride[0] >> 1;
+    for (unsigned i = 0; i < height; i++) {
+        for (unsigned j = 0; j < width; j++) {
+            data[i * stride + j] = data[(i << 1) * stride + (j << 1)];
+        }
+    }
 }
 
-static FORCE_INLINE inline uint16_t mode_selection(uint16_t *elems, uint8_t *hist)
-{
+static FORCE_INLINE inline uint16_t mode_selection(uint16_t *elems, uint8_t *hist) {
     unsigned max_counts = 0;
     uint16_t max_mode = 1024;
     // Set the 9 entries to 0
@@ -435,16 +428,15 @@ static FORCE_INLINE inline uint16_t mode_selection(uint16_t *elems, uint8_t *his
 }
 
 static void filter_mode(const VmafPicture *image, VmafPicture *filtered_image,
-                        int width, int height)
-{
+                        int width, int height) {
     uint8_t *hist = malloc(1024 * sizeof(uint8_t));
     uint16_t *data = image->data[0];
-    ptrdiff_t stride = image->stride[0]>>1;    
+    ptrdiff_t stride = image->stride[0] >> 1;
     uint16_t *filtered_data = filtered_image->data[0];
-    ptrdiff_t out_stride = filtered_image->stride[0]>>1;
+    ptrdiff_t out_stride = filtered_image->stride[0] >> 1;
     uint16_t curr[9];
-    for (int i=0; i<height; i++) {
-        for (int j=0; j<width; j++) {
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
             // Get the 9 elements into an array for cache optimization
             for (int row = 0; row < 3; row++) {
                 for (int col = 0; col < 3; col++) {
@@ -461,17 +453,15 @@ static void filter_mode(const VmafPicture *image, VmafPicture *filtered_image,
 }
 
 static FORCE_INLINE inline uint16_t get_mask_index(unsigned input_width, unsigned input_height,
-                                                   uint16_t filter_size)
-{
+                                                   uint16_t filter_size) {
     const int slope = 3;
-    double resolution_ratio =
-        sqrt((CAMBI_4K_WIDTH*CAMBI_4K_HEIGHT) / (input_width*input_height));
+    double resolution_ratio = sqrt((CAMBI_4K_WIDTH * CAMBI_4K_HEIGHT) / (input_width * input_height));
 
-    return (uint16_t) (floor(pow(filter_size, 2)/2) - slope*(resolution_ratio-1));
+    return (uint16_t)(floor(pow(filter_size, 2) / 2) - slope * (resolution_ratio - 1));
 }
 
 static FORCE_INLINE inline bool get_derivative_data(const uint16_t *data, int width, int height, int i, int j, ptrdiff_t stride) {
-    return (i == height - 1 || (data[i * stride + j] == data[(i + 1) * stride + j])) && 
+    return (i == height - 1 || (data[i * stride + j] == data[(i + 1) * stride + j])) &&
            (j == width - 1 || (data[i * stride + j] == data[i * stride + j + 1]));
 }
 
@@ -485,12 +475,11 @@ static FORCE_INLINE inline bool get_derivative_data(const uint16_t *data, int wi
 */
 static void get_spatial_mask_for_index(const VmafPicture *image, VmafPicture *mask,
                                        uint32_t *dp, uint16_t mask_index, uint16_t filter_size,
-                                       int width, int height)
-{
+                                       int width, int height) {
     uint16_t pad_size = filter_size >> 1;
     uint16_t *image_data = image->data[0];
     uint16_t *mask_data = mask->data[0];
-    ptrdiff_t stride = image->stride[0]>>1;
+    ptrdiff_t stride = image->stride[0] >> 1;
 
     int dp_width = width + 2 * pad_size + 1;
     int dp_height = 2 * pad_size + 2;
@@ -502,7 +491,7 @@ static void get_spatial_mask_for_index(const VmafPicture *image, VmafPicture *ma
             int value = (i < height && j < width ? get_derivative_data(image_data, width, height, i, j, stride) : 0);
             int curr_row = i + pad_size + 1;
             int curr_col = j + pad_size + 1;
-            dp[curr_row * dp_width + curr_col] = 
+            dp[curr_row * dp_width + curr_col] =
                 value
                 + dp[(curr_row - 1) * dp_width + curr_col]
                 + dp[curr_row * dp_width + curr_col - 1]
@@ -518,36 +507,35 @@ static void get_spatial_mask_for_index(const VmafPicture *image, VmafPicture *ma
         for (int j = 0; j < width + pad_size; j++) {
             int value = (i < height && j < width ? get_derivative_data(image_data, width, height, i, j, stride) : 0);
             int curr_col = j + pad_size + 1;
-            int prev_row = (curr_row + dp_height - 1)%dp_height;
+            int prev_row = (curr_row + dp_height - 1) % dp_height;
             dp[curr_row * dp_width + curr_col] =
                 value
                 + dp[prev_row * dp_width + curr_col]
                 + dp[curr_row * dp_width + curr_col - 1]
                 - dp[prev_row * dp_width + curr_col - 1];
         }
-        curr_row = (curr_row + 1)%dp_height;
+        curr_row = (curr_row + 1) % dp_height;
 
         // Then use the values to compute the square sum for the curr_compute row.
         for (int j = 0; j < width; j++) {
             int curr_col = j + pad_size + 1;
-            int bottom = (curr_compute + pad_size)%dp_height;
-            int top = (curr_compute + dp_height - pad_size - 1)%dp_height;
+            int bottom = (curr_compute + pad_size) % dp_height;
+            int top = (curr_compute + dp_height - pad_size - 1) % dp_height;
             int right = curr_col + pad_size;
             int left = curr_col - pad_size - 1;
-            int result = 
+            int result =
                 dp[bottom * dp_width + right]
                 - dp[bottom * dp_width + left]
                 - dp[top * dp_width + right]
                 + dp[top * dp_width + left];
             mask_data[(i - pad_size) * stride + j] = (result > mask_index);
         }
-        curr_compute = (curr_compute + 1)%dp_height;
+        curr_compute = (curr_compute + 1) % dp_height;
     }
 }
 
 static void get_spatial_mask(const VmafPicture *image, VmafPicture *mask,
-                             uint32_t *dp, unsigned width, unsigned height)
-{
+                             uint32_t *dp, unsigned width, unsigned height) {
     unsigned input_width = image->w[0];
     unsigned input_height = image->h[0];
     uint16_t mask_index = get_mask_index(input_width, input_height, MASK_FILTER_SIZE);
@@ -555,48 +543,51 @@ static void get_spatial_mask(const VmafPicture *image, VmafPicture *mask,
 }
 
 static void pic_add_offset(VmafPicture *pic, uint16_t offset,
-                           unsigned width, unsigned height)
-{
+                           unsigned width, unsigned height) {
     uint16_t *data = pic->data[0];
     ptrdiff_t stride = pic->stride[0] >> 1;
-    for (unsigned i=0; i<height; i++)
-        for (unsigned j=0; j<width; j++)
+    for (unsigned i = 0; i < height; i++)
+        for (unsigned j = 0; j < width; j++)
             data[i * stride + j] += offset;
 }
 
 static float c_value_pixel(const uint16_t *histograms, uint16_t value, const int *diff_weights,
-                           const int *diffs, uint16_t num_diffs, const uint16_t *tvi_thresholds, int histogram_col, int histogram_width)
-{
+                           const int *diffs, uint16_t num_diffs, const uint16_t *tvi_thresholds, int histogram_col, int histogram_width) {
     uint16_t p_0 = histograms[value * histogram_width + histogram_col];
     float val, c_value = 0.0;
-    for (uint16_t d=0; d<num_diffs; d++) {
+    for (uint16_t d = 0; d < num_diffs; d++) {
         if (value <= tvi_thresholds[d]) {
-            uint16_t p_1 = histograms[(value + diffs[num_diffs+d+1]) * histogram_width + histogram_col];
-            uint16_t p_2 = histograms[(value + diffs[num_diffs-d-1]) * histogram_width + histogram_col];
-            if (p_1 > p_2)
+            uint16_t p_1 = histograms[(value + diffs[num_diffs + d + 1]) * histogram_width + histogram_col];
+            uint16_t p_2 = histograms[(value + diffs[num_diffs - d - 1]) * histogram_width + histogram_col];
+            if (p_1 > p_2) {
                 val = (float)(diff_weights[d] * p_0 * p_1) / (p_1 + p_0);
-            else
+            }
+            else {
                 val = (float)(diff_weights[d] * p_0 * p_2) / (p_2 + p_0);
+            }
 
-            if (val > c_value)
+            if (val > c_value) {
                 c_value = val;
+            }
         }
     }
 
     return c_value;
 }
 
-static FORCE_INLINE inline void update_histogram_subtract(uint16_t *histograms, uint16_t *image, uint16_t *mask, int i, int j, int width, ptrdiff_t stride, uint16_t pad_size) {
+static FORCE_INLINE inline void update_histogram_subtract(uint16_t *histograms, uint16_t *image, uint16_t *mask,
+                                                          int i, int j, int width, ptrdiff_t stride, uint16_t pad_size) {
     uint16_t mask_val = mask[(i - pad_size - 1) * stride + j];
     if (mask_val) {
-        uint16_t top_val = image[(i - pad_size - 1) * stride + j];
+        uint16_t val = image[(i - pad_size - 1) * stride + j];
         for (int col = MAX(j - pad_size, 0); col < MIN(j + pad_size + 1, width); col++) {
-            histograms[top_val * width + col]--;
+            histograms[val * width + col]--;
         }
     }
 }
 
-static FORCE_INLINE inline void update_histogram_add(uint16_t *histograms, uint16_t *image, uint16_t *mask, int i, int j, int width, ptrdiff_t stride, uint16_t pad_size) {
+static FORCE_INLINE inline void update_histogram_add(uint16_t *histograms, uint16_t *image, uint16_t *mask,
+                                                     int i, int j, int width, ptrdiff_t stride, uint16_t pad_size) {
     uint16_t mask_val = mask[(i + pad_size) * stride + j];
     if (mask_val) {
         uint16_t val = image[(i + pad_size) * stride + j];
@@ -606,7 +597,9 @@ static FORCE_INLINE inline void update_histogram_add(uint16_t *histograms, uint1
     }
 }
 
-static FORCE_INLINE inline void calculate_c_values_row(float *c_values, uint16_t *histograms, uint16_t *image, uint16_t *mask, int row, int width, ptrdiff_t stride, const uint16_t *tvi_for_diff) {
+static FORCE_INLINE inline void calculate_c_values_row(float *c_values, uint16_t *histograms, uint16_t *image,
+                                                       uint16_t *mask, int row, int width, ptrdiff_t stride,
+                                                       const uint16_t *tvi_for_diff) {
     for (int col = 0; col < width; col++) {
         if (mask[row * stride + col]) {
             c_values[row * width + col] = c_value_pixel(
@@ -618,14 +611,13 @@ static FORCE_INLINE inline void calculate_c_values_row(float *c_values, uint16_t
 
 static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
                                float *c_values, uint16_t *histograms, uint16_t window_size,
-                               const uint16_t *tvi_for_diff, int width, int height)
-{
-    uint16_t pad_size = window_size>>1;
-    const uint16_t num_bins = 1024 + (g_all_diffs[NUM_ALL_DIFFS-1] - g_all_diffs[0]);
+                               const uint16_t *tvi_for_diff, int width, int height) {
+    uint16_t pad_size = window_size >> 1;
+    const uint16_t num_bins = 1024 + (g_all_diffs[NUM_ALL_DIFFS - 1] - g_all_diffs[0]);
 
     uint16_t *image = pic->data[0];
     uint16_t *mask = mask_pic->data[0];
-    ptrdiff_t stride = pic->stride[0]>>1;
+    ptrdiff_t stride = pic->stride[0] >> 1;
 
     pic_add_offset(pic, g_c_value_histogram_offset, width, height);
     memset(c_values, 0.0, sizeof(float) * width * height);
@@ -674,86 +666,65 @@ static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
     }
 }
 
-static double average_topk_elements(const float *arr, int topk_elements)
-{
+static double average_topk_elements(const float *arr, int topk_elements) {
     double sum = 0;
-    for (int i=0; i < topk_elements; i++)
+    for (int i = 0; i < topk_elements; i++)
         sum += arr[i];
 
-    return (double) sum / topk_elements;
+    return (double)sum / topk_elements;
 }
 
-#define SWAP(x, y)      \
-    {                   \
-        float temp = x; \
-        x = y;          \
-        y = temp;       \
-    }
-
-static void quick_select(float *arr, int n, int k)
-{
+static void quick_select(float *arr, int n, int k) {
     int left = 0;
     int right = n - 1;
-    while (left < right)
-    {
+    while (left < right) {
         float pivot = arr[k];
         int i = left;
         int j = right;
-        do
-        {
-            while (arr[i] > pivot)
-            {
+        do {
+            while (arr[i] > pivot) {
                 i++;
             }
-            while (arr[j] < pivot)
-            {
+            while (arr[j] < pivot) {
                 j--;
             }
-            if (i <= j)
-            {
-                SWAP(arr[i], arr[j]);
+            if (i <= j) {
+                SWAP_FLOAT(arr[i], arr[j]);
                 i++;
                 j--;
             }
         } while (i <= j);
-        if (j < k)
-        {
+        if (j < k) {
             left = i;
         }
-        if (k < i)
-        {
+        if (k < i) {
             right = j;
         }
     }
 }
 
-static double spatial_pooling(float *c_values, double topk, unsigned width, unsigned height)
-{
+static double spatial_pooling(float *c_values, double topk, unsigned width, unsigned height) {
     int num_elements = height * width;
     int topk_num_elements = clip(topk * num_elements, 1, num_elements);
     quick_select(c_values, num_elements, topk_num_elements);
     return average_topk_elements(c_values, topk_num_elements);
 }
 
-static FORCE_INLINE inline uint16_t get_pixels_in_window(uint16_t window_length)
-{
-    return (uint16_t) pow(2*(window_length>>1)+1, 2);
+static FORCE_INLINE inline uint16_t get_pixels_in_window(uint16_t window_length) {
+    return (uint16_t)pow(2 * (window_length >> 1) + 1, 2);
 }
 
 // Inner product weighting scores for each scale
-static FORCE_INLINE inline
-    double weight_scores_per_scale(double *scores_per_scale, uint16_t normalization)
-{
+static FORCE_INLINE inline double weight_scores_per_scale(double *scores_per_scale, uint16_t normalization) {
     double score = 0.0;
-    for (unsigned scale=0; scale < NUM_SCALES; scale++)
+    for (unsigned scale = 0; scale < NUM_SCALES; scale++)
         score += (scores_per_scale[scale] * g_scale_weights[scale]);
 
-    return score/normalization;
+    return score / normalization;
 }
 
 static int cambi_score(VmafPicture *pics, uint32_t *mask_dp, uint16_t window_size, double topk,
-                       const uint16_t *tvi_for_diff, float *c_values, uint16_t *c_values_histograms, double *score)
-{
+                       const uint16_t *tvi_for_diff, float *c_values, uint16_t *c_values_histograms, double *score) {
     double scores_per_scale[NUM_SCALES];
     VmafPicture *image = &pics[0];
     VmafPicture *filtered_image = &pics[1];
@@ -761,18 +732,19 @@ static int cambi_score(VmafPicture *pics, uint32_t *mask_dp, uint16_t window_siz
 
     unsigned scaled_width = image->w[0];
     unsigned scaled_height = image->h[0];
-    for (unsigned scale=0; scale < NUM_SCALES; scale++) {
-        if (scale>0) {
+    for (unsigned scale = 0; scale < NUM_SCALES; scale++) {
+        if (scale > 0) {
             scaled_width = (scaled_width + 1) >> 1;
             scaled_height = (scaled_height + 1) >> 1;
             decimate(image, scaled_width, scaled_height);
             decimate(mask, scaled_width, scaled_height);
-        } else {
+        }
+        else {
             get_spatial_mask(image, mask, mask_dp, scaled_width, scaled_height);
         }
 
         filter_mode(image, filtered_image, scaled_width, scaled_height);
-        if (scale < NUM_SCALES-1)
+        if (scale < NUM_SCALES - 1)
             copy_10b_luma(filtered_image, image);
 
         calculate_c_values(filtered_image, mask, c_values, c_values_histograms, window_size,
@@ -790,11 +762,10 @@ static int cambi_score(VmafPicture *pics, uint32_t *mask_dp, uint16_t window_siz
 static int extract(VmafFeatureExtractor *fex,
                    VmafPicture *ref_pic, VmafPicture *ref_pic_90,
                    VmafPicture *dist_pic, VmafPicture *dist_pic_90,
-                   unsigned index, VmafFeatureCollector *feature_collector)
-{
-    (void) ref_pic;
-    (void) ref_pic_90;
-    (void) dist_pic_90;
+                   unsigned index, VmafFeatureCollector *feature_collector) {
+    (void)ref_pic;
+    (void)ref_pic_90;
+    (void)dist_pic_90;
 
     CambiState *s = fex->priv;
 
@@ -811,12 +782,11 @@ static int extract(VmafFeatureExtractor *fex,
     return 0;
 }
 
-static int close(VmafFeatureExtractor *fex)
-{
+static int close(VmafFeatureExtractor *fex) {
     CambiState *s = fex->priv;
 
     int err = 0;
-    for (unsigned i=0; i<PICS_BUFFER_SIZE; i++)
+    for (unsigned i = 0; i < PICS_BUFFER_SIZE; i++)
         err |= vmaf_picture_unref(&s->pics[i]);
 
     aligned_free(s->c_values);
