@@ -27,6 +27,8 @@ Run:
 meson build --buildtype release
 ```
 
+(add `-Denable_float=true` flag in the rare case if you want to use the floating-point feature extractors.)
+
 Build with:
 
 ```
