@@ -68,7 +68,7 @@ static const uint16_t g_c_value_histogram_offset = 4; // = -g_all_diffs[0]
         y = temp;            \
     }
 
-#define PICS_BUFFER_SIZE 3
+#define PICS_BUFFER_SIZE 2
 #define MASK_FILTER_SIZE 7
 
 typedef struct CambiState {
@@ -427,14 +427,12 @@ static FORCE_INLINE inline uint16_t mode_selection(uint16_t *elems, uint8_t *his
     return max_mode;
 }
 
-static void filter_mode(const VmafPicture *image, VmafPicture *filtered_image,
-                        int width, int height) {
-    uint8_t *hist = malloc(1024 * sizeof(uint8_t));
+static void filter_mode(const VmafPicture *image, int width, int height) {
     uint16_t *data = image->data[0];
     ptrdiff_t stride = image->stride[0] >> 1;
-    uint16_t *filtered_data = filtered_image->data[0];
-    ptrdiff_t out_stride = filtered_image->stride[0] >> 1;
     uint16_t curr[9];
+    uint8_t *hist = malloc(1024 * sizeof(uint8_t));
+    uint16_t *buffer = malloc(3 * width * sizeof(uint16_t));
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             // Get the 9 elements into an array for cache optimization
@@ -445,11 +443,23 @@ static void filter_mode(const VmafPicture *image, VmafPicture *filtered_image,
                     curr[3 * row + col] = data[clamped_row * stride + clamped_col];
                 }
             }
-            filtered_data[i * out_stride + j] = mode_selection(curr, hist);
+            buffer[(i%3) * width + j] = mode_selection(curr, hist);
         }
+        if (i >= 2) {
+            uint16_t *dest = data + (i - 2) * stride;
+            uint16_t *src = buffer + ((i + 1)%3) * width;
+            memcpy(dest, src, width * sizeof(uint16_t));
+        }
+    }
+    // Copy last two rows
+    for (int i = height - 2; i < height; i++) {
+        uint16_t *dest = data + i * stride;
+        uint16_t *src = buffer + (i%3) * width;
+        memcpy(dest, src, width * sizeof(uint16_t));
     }
 
     free(hist);
+    free(buffer);
 }
 
 static FORCE_INLINE inline uint16_t get_mask_index(unsigned input_width, unsigned input_height,
@@ -717,8 +727,7 @@ static int cambi_score(VmafPicture *pics, uint32_t *mask_dp, uint16_t window_siz
                        const uint16_t *tvi_for_diff, float *c_values, uint16_t *c_values_histograms, double *score) {
     double scores_per_scale[NUM_SCALES];
     VmafPicture *image = &pics[0];
-    VmafPicture *filtered_image = &pics[1];
-    VmafPicture *mask = &pics[2];
+    VmafPicture *mask = &pics[1];
 
     unsigned scaled_width = image->w[0];
     unsigned scaled_height = image->h[0];
@@ -733,17 +742,13 @@ static int cambi_score(VmafPicture *pics, uint32_t *mask_dp, uint16_t window_siz
             get_spatial_mask(image, mask, mask_dp, scaled_width, scaled_height);
         }
 
-        filter_mode(image, filtered_image, scaled_width, scaled_height);
+        filter_mode(image, scaled_width, scaled_height);
 
-        calculate_c_values(filtered_image, mask, c_values, c_values_histograms, window_size,
+        calculate_c_values(image, mask, c_values, c_values_histograms, window_size,
                            tvi_for_diff, scaled_width, scaled_height);
 
         scores_per_scale[scale] =
             spatial_pooling(c_values, topk, scaled_width, scaled_height);
-
-        if (scale < NUM_SCALES - 1) {
-            SWAP_PICS(filtered_image->data[0], image->data[0]);
-        }
     }
 
     uint16_t pixels_in_window = get_pixels_in_window(window_size);

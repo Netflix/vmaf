@@ -198,30 +198,35 @@ static char *test_filter_mode()
 
     uint16_t *data = image.data[0];
     ptrdiff_t stride = image.stride[0]>>1;
-    uint16_t *output_data = filtered_image.data[0];
+    uint16_t *filtered_data = filtered_image.data[0];
     ptrdiff_t output_stride = filtered_image.stride[0]>>1;
 
     data[2 * stride + 2] = 1; data[3 * stride + 2] = 1;
     data[2 * stride + 3] = 1; data[3 * stride + 3] = 1;
-    filter_mode(&image, &filtered_image, w, h);
+    memcpy(filtered_data, data, stride * h * sizeof(uint16_t));
+    filter_mode(&filtered_image, w, h);
     mu_assert("filter_mode: all zeros", data_pic_sum(&filtered_image)==0);
 
     data[3 * stride + 4] = 1;
-    filter_mode(&image, &filtered_image, w, h);
+    memcpy(filtered_data, data, stride * h * sizeof(uint16_t));
+    filter_mode(&filtered_image, w, h);
     mu_assert("filter_mode: two ones sum check", data_pic_sum(&filtered_image)==2);
-    mu_assert("filter_mode: two ones (3,3) check", output_data[3 * output_stride + 3]==1);
-    mu_assert("filter_mode: two ones (2,3) check", output_data[2 * output_stride + 3]==1);
+    mu_assert("filter_mode: two ones (3,3) check", filtered_data[3 * output_stride + 3]==1);
+    mu_assert("filter_mode: two ones (2,3) check", filtered_data[2 * output_stride + 3]==1);
 
     data[0 * stride + 0] = 2;
     data[0 * stride + 1] = 1;
-    filter_mode(&image, &filtered_image, w, h);
-    mu_assert("filter_mode: two in the corner check", output_data[0 * output_stride + 0]==2);
+    memcpy(filtered_data, data, stride * h * sizeof(uint16_t));
+    filter_mode(&filtered_image, w, h);
+    mu_assert("filter_mode: two in the corner check", filtered_data[0 * output_stride + 0]==2);
     data[1 * stride + 0] = 1;
-    filter_mode(&image, &filtered_image, w, h);
-    mu_assert("filter_mode: two in the corner and adjacent ones check", output_data[0 * output_stride + 0]==1);
+    memcpy(filtered_data, data, stride * h * sizeof(uint16_t));
+    filter_mode(&filtered_image, w, h);
+    mu_assert("filter_mode: two in the corner and adjacent ones check", filtered_data[0 * output_stride + 0]==1);
     data[2 * stride + 0] = 2;
-    filter_mode(&image, &filtered_image, w, h);
-    mu_assert("filter_mode: two in corner and edge check", output_data[1 * output_stride + 0]==2);
+    memcpy(filtered_data, data, stride * h * sizeof(uint16_t));
+    filter_mode(&filtered_image, w, h);
+    mu_assert("filter_mode: two in corner and edge check", filtered_data[1 * output_stride + 0]==2);
 
     return NULL;
 }
