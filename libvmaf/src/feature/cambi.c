@@ -433,29 +433,25 @@ static void filter_mode(const VmafPicture *image, int width, int height) {
     uint16_t curr[9];
     uint8_t *hist = malloc(1024 * sizeof(uint8_t));
     uint16_t *buffer = malloc(3 * width * sizeof(uint16_t));
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            // Get the 9 elements into an array for cache optimization
-            for (int row = 0; row < 3; row++) {
-                for (int col = 0; col < 3; col++) {
-                    int clamped_row = CLAMP(i + row - 1, 0, height - 1);
-                    int clamped_col = CLAMP(j + col - 1, 0, width - 1);
-                    curr[3 * row + col] = data[clamped_row * stride + clamped_col];
+    for (int i = 0; i < height + 2; i++) {
+        if (i < height) {
+            for (int j = 0; j < width; j++) {
+                // Get the 9 elements into an array for cache optimization
+                for (int row = 0; row < 3; row++) {
+                    for (int col = 0; col < 3; col++) {
+                        int clamped_row = CLAMP(i + row - 1, 0, height - 1);
+                        int clamped_col = CLAMP(j + col - 1, 0, width - 1);
+                        curr[3 * row + col] = data[clamped_row * stride + clamped_col];
+                    }
                 }
+                buffer[(i % 3) * width + j] = mode_selection(curr, hist);
             }
-            buffer[(i % 3) * width + j] = mode_selection(curr, hist);
         }
         if (i >= 2) {
             uint16_t *dest = data + (i - 2) * stride;
             uint16_t *src = buffer + ((i + 1) % 3) * width;
             memcpy(dest, src, width * sizeof(uint16_t));
         }
-    }
-    // Copy last two rows
-    for (int i = height - 2; i < height; i++) {
-        uint16_t *dest = data + i * stride;
-        uint16_t *src = buffer + (i % 3) * width;
-        memcpy(dest, src, width * sizeof(uint16_t));
     }
 
     free(hist);
