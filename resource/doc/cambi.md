@@ -8,6 +8,8 @@ For an introduction to CAMBI, please refer to the [tech blog](https://netflixtec
 
 The current version of CAMBI is a [no-reference metric](https://en.wikipedia.org/wiki/Video_quality#Classification_of_objective_video_quality_models), and operates on a frame-by-frame basis (no temporal information is leveraged). To integrate it as part of the VMAF framework, which employs a [full-reference metric](https://en.wikipedia.org/wiki/Video_quality#Classification_of_objective_video_quality_models) API, CAMBI takes both a reference and a distorted video as its input. For simplicity, one can point the input arguments `--reference` and `--distorted` to the same video path.
 
+CAMBI was designed for a typical video encoding pipeline where the bit depth of the video is either 8-bit or 10-bit. In these scenarios, for regions with banding artifacts, the absolute intensity differences between adjacent bands is most often 1 (in 8-bit precision).
+
 ## Scores
 
 The CAMBI score starts at 0, meaning no banding is detected. A higher CAMBI score means more visible banding artifacts are identified. The maximum CAMBI observed in a sequence is 24 (unwatchable). As a rule of thumb, a CAMBI score around 5 is where banding starts to become slightly annoying (also note that banding is highly dependent on the viewing environment - the brigher the display, and the dimmer the ambient light, the more visible banding is).
