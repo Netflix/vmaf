@@ -133,20 +133,6 @@ static char *test_anti_dithering_filter()
     return NULL;
 }
 
-static char *test_copy_10b_luma()
-{
-    VmafPicture pic, copy_pic, expected;
-    get_sample_image(&pic, 0);
-    get_sample_image(&copy_pic, 0);
-    get_sample_image(&expected, 0);
-
-    copy_10b_luma(&pic, &copy_pic);
-    bool equal = pic_data_equality(&copy_pic, &expected);
-    mu_assert("convert_to_10b: wrong 10b luma copy", equal);
-
-    return NULL;
-}
-
 /* Banding detection functions */
 static char *test_decimate()
 {
@@ -317,19 +303,6 @@ static char *test_calculate_c_values()
     for (unsigned i=0; i<64; i++)
         sum += combined_c_values_8x8[i];
     mu_assert("combined_c_values 8x8 error", almost_equal(sum, 195.382527));
-
-    return NULL;
-}
-
-static char *test_pic_add_offset()
-{
-    VmafPicture image, expected;
-    get_sample_image(&image, 6);
-    get_sample_image(&expected, 7);
-
-    uint16_t const offset = 5;
-    pic_add_offset(&image, offset, 3, 2);
-    mu_assert("pic_add_offset output pic wrong", pic_data_equality(&expected, &image));
 
     return NULL;
 }
@@ -576,7 +549,6 @@ char *run_tests()
 {
     /* Preprocessing functions */
     mu_run_test(test_anti_dithering_filter);
-    mu_run_test(test_copy_10b_luma);
     mu_run_test(test_decimate_generic);
 
     /* Banding detection functions */
@@ -587,7 +559,6 @@ char *run_tests()
     mu_run_test(test_get_spatial_mask_for_index);
 
     mu_run_test(test_calculate_c_values);
-    mu_run_test(test_pic_add_offset);
     mu_run_test(test_c_value_pixel);
 
     mu_run_test(test_spatial_pooling);
