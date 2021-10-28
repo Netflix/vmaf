@@ -66,9 +66,9 @@ pip3 install cython numpy meson ninja
 
 Make sure `ninja` is 1.7.1 or higher (check by `ninja --version`).
 
-Build the binary by:
+Clean build the binary by:
 ```shell script
-make
+make clean; make
 ```
 
 Install the rest of the required Python packages:
