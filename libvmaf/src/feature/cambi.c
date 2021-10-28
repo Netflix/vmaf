@@ -55,11 +55,17 @@ static const uint16_t g_c_value_histogram_offset = 4; // = -g_all_diffs[0]
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
-#define SWAP_FLOAT(x, y) \
-    {                    \
-        float temp = x;  \
-        x = y;           \
-        y = temp;        \
+#define SWAP_FLOATS(x, y) \
+    {                     \
+        float temp = x;   \
+        x = y;            \
+        y = temp;         \
+    }
+#define SWAP_PICS(x, y)      \
+    {                        \
+        uint16_t *temp = x;  \
+        x = y;               \
+        y = temp;            \
     }
 
 #define PICS_BUFFER_SIZE 3
@@ -349,12 +355,6 @@ static void decimate_generic_8b_and_convert_to_10b(const VmafPicture *pic, VmafP
     }
 }
 
-static void copy_10b_luma(const VmafPicture *pic, VmafPicture *out_pic)
-{
-    ptrdiff_t stride = pic->stride[0] >> 1;
-    memcpy(out_pic->data[0], pic->data[0], stride * pic->h[0] * sizeof(uint16_t));
-}
-
 static void anti_dithering_filter(VmafPicture *pic) {
     uint16_t *data = pic->data[0];
     int stride = pic->stride[0] >> 1;
@@ -542,15 +542,6 @@ static void get_spatial_mask(const VmafPicture *image, VmafPicture *mask,
     get_spatial_mask_for_index(image, mask, dp, mask_index, MASK_FILTER_SIZE, width, height);
 }
 
-static void pic_add_offset(VmafPicture *pic, uint16_t offset,
-                           unsigned width, unsigned height) {
-    uint16_t *data = pic->data[0];
-    ptrdiff_t stride = pic->stride[0] >> 1;
-    for (unsigned i = 0; i < height; i++)
-        for (unsigned j = 0; j < width; j++)
-            data[i * stride + j] += offset;
-}
-
 static float c_value_pixel(const uint16_t *histograms, uint16_t value, const int *diff_weights,
                            const int *diffs, uint16_t num_diffs, const uint16_t *tvi_thresholds, int histogram_col, int histogram_width) {
     uint16_t p_0 = histograms[value * histogram_width + histogram_col];
@@ -579,7 +570,7 @@ static FORCE_INLINE inline void update_histogram_subtract(uint16_t *histograms, 
                                                           int i, int j, int width, ptrdiff_t stride, uint16_t pad_size) {
     uint16_t mask_val = mask[(i - pad_size - 1) * stride + j];
     if (mask_val) {
-        uint16_t val = image[(i - pad_size - 1) * stride + j];
+        uint16_t val = image[(i - pad_size - 1) * stride + j] + g_c_value_histogram_offset;
         for (int col = MAX(j - pad_size, 0); col < MIN(j + pad_size + 1, width); col++) {
             histograms[val * width + col]--;
         }
@@ -590,7 +581,7 @@ static FORCE_INLINE inline void update_histogram_add(uint16_t *histograms, uint1
                                                      int i, int j, int width, ptrdiff_t stride, uint16_t pad_size) {
     uint16_t mask_val = mask[(i + pad_size) * stride + j];
     if (mask_val) {
-        uint16_t val = image[(i + pad_size) * stride + j];
+        uint16_t val = image[(i + pad_size) * stride + j] + g_c_value_histogram_offset;
         for (int col = MAX(j - pad_size, 0); col < MIN(j + pad_size + 1, width); col++) {
             histograms[val * width + col]++;
         }
@@ -603,7 +594,7 @@ static FORCE_INLINE inline void calculate_c_values_row(float *c_values, uint16_t
     for (int col = 0; col < width; col++) {
         if (mask[row * stride + col]) {
             c_values[row * width + col] = c_value_pixel(
-                histograms, image[row * stride + col], g_diffs_weights, g_all_diffs, NUM_DIFFS, tvi_for_diff, col, width
+                histograms, image[row * stride + col] + g_c_value_histogram_offset, g_diffs_weights, g_all_diffs, NUM_DIFFS, tvi_for_diff, col, width
             );
         }
     }
@@ -619,7 +610,6 @@ static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
     uint16_t *mask = mask_pic->data[0];
     ptrdiff_t stride = pic->stride[0] >> 1;
 
-    pic_add_offset(pic, g_c_value_histogram_offset, width, height);
     memset(c_values, 0.0, sizeof(float) * width * height);
 
     // Use a histogram for each pixel in width
@@ -632,7 +622,7 @@ static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
         for (int j = 0; j < width; j++) {
             uint16_t mask_val = mask[i * stride + j];
             if (mask_val) {
-                uint16_t val = image[i * stride + j];
+                uint16_t val = image[i * stride + j] + g_c_value_histogram_offset;
                 for (int col = MAX(j - pad_size, 0); col < MIN(j + pad_size + 1, width); col++) {
                     histograms[val * width + col]++;
                 }
@@ -689,7 +679,7 @@ static void quick_select(float *arr, int n, int k) {
                 j--;
             }
             if (i <= j) {
-                SWAP_FLOAT(arr[i], arr[j]);
+                SWAP_FLOATS(arr[i], arr[j]);
                 i++;
                 j--;
             }
@@ -744,14 +734,16 @@ static int cambi_score(VmafPicture *pics, uint32_t *mask_dp, uint16_t window_siz
         }
 
         filter_mode(image, filtered_image, scaled_width, scaled_height);
-        if (scale < NUM_SCALES - 1)
-            copy_10b_luma(filtered_image, image);
 
         calculate_c_values(filtered_image, mask, c_values, c_values_histograms, window_size,
                            tvi_for_diff, scaled_width, scaled_height);
 
         scores_per_scale[scale] =
             spatial_pooling(c_values, topk, scaled_width, scaled_height);
+
+        if (scale < NUM_SCALES - 1) {
+            SWAP_PICS(filtered_image->data[0], image->data[0]);
+        }
     }
 
     uint16_t pixels_in_window = get_pixels_in_window(window_size);
