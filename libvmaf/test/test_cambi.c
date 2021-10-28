@@ -174,6 +174,14 @@ static char *test_decimate_generic()
     mu_assert("decimate generic 10b wrong pixel value (1,0)", data[stride]==2);
     mu_assert("decimate generic 10b wrong pixel value (1,1)", data[1+stride]==100);
 
+    VmafPicture out_pic_4x4;
+    err = vmaf_picture_alloc(&out_pic_4x4, VMAF_PIX_FMT_YUV400P, 10, 4, 4);
+    (void)err;
+
+    decimate_generic_10b(&pic, &out_pic_4x4);
+
+    mu_assert("decimate generic 10b wrong for same dimensions", pic_data_equality(&pic, &out_pic_4x4));
+
     VmafPicture pic_8b;
     get_sample_image_8b(&pic_8b);
 
