@@ -443,18 +443,18 @@ static void filter_mode(const VmafPicture *image, int width, int height) {
                     curr[3 * row + col] = data[clamped_row * stride + clamped_col];
                 }
             }
-            buffer[(i%3) * width + j] = mode_selection(curr, hist);
+            buffer[(i % 3) * width + j] = mode_selection(curr, hist);
         }
         if (i >= 2) {
             uint16_t *dest = data + (i - 2) * stride;
-            uint16_t *src = buffer + ((i + 1)%3) * width;
+            uint16_t *src = buffer + ((i + 1) % 3) * width;
             memcpy(dest, src, width * sizeof(uint16_t));
         }
     }
     // Copy last two rows
     for (int i = height - 2; i < height; i++) {
         uint16_t *dest = data + i * stride;
-        uint16_t *src = buffer + (i%3) * width;
+        uint16_t *src = buffer + (i % 3) * width;
         memcpy(dest, src, width * sizeof(uint16_t));
     }
 
