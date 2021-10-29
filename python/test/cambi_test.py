@@ -1,7 +1,9 @@
 import unittest
 from test.testutil import set_default_576_324_videos_for_testing, \
     set_default_576_324_videos_for_testing_scaled, \
-    set_default_cambi_video_for_testing_b
+    set_default_cambi_video_for_testing_b, \
+    set_default_cambi_video_for_testing_10b
+
 from vmaf.core.cambi_feature_extractor import CambiFeatureExtractor
 from vmaf.core.cambi_quality_runner import CambiQualityRunner
 from vmaf.tools.misc import MyTestCase
@@ -62,6 +64,21 @@ class CambiFeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
                                1.218365, places=4)
 
+    def test_run_cambi_fextractor_10b(self):
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_10b()
+        self.fextractor = CambiFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={}
+        )
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+
+        # score: arithmetic mean score over all frames
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
+                               0.047487, places=4)
+
 class CambiQualityRunnerTest(MyTestCase):
 
     def test_run_cambi_runner(self):
@@ -111,6 +128,21 @@ class CambiQualityRunnerTest(MyTestCase):
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_score'],
                                1.218365, places=4)
+
+    def test_run_cambi_runner_10b(self):
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_10b()
+        self.qrunner = CambiQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={}
+        )
+        self.qrunner.run(parallelize=True)
+        results = self.qrunner.results
+
+        # score: arithmetic mean score over all frames
+        self.assertAlmostEqual(results[0]['Cambi_score'],
+                               0.047487, places=4)
 
 
 if __name__ == '__main__':
