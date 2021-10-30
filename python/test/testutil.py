@@ -180,12 +180,12 @@ def set_default_cambi_video_for_testing_b():
     return dis_path, dis_path, asset, asset
 
 def set_default_cambi_video_for_testing_10b():
-    dis_path = VmafConfig.test_resource_path("yuv", "Meridian_1280x720_10bit_compressed.yuv")
+    dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv420p10le.yuv")
     asset = Asset(dataset="test", content_id=0, asset_id=0,
                   workdir_root=VmafConfig.workdir_path(),
                   ref_path=dis_path,
                   dis_path=dis_path,
-                  asset_dict={'width': 1280, 'height': 720,
+                  asset_dict={'width': 576, 'height': 324,
                               'yuv_type': 'yuv420p10le'})
 
     return dis_path, dis_path, asset, asset

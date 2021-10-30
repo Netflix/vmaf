@@ -77,7 +77,7 @@ class CambiFeatureExtractorTest(MyTestCase):
 
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
-                               0.047487, places=4)
+                               0.01451, places=4)
 
 class CambiQualityRunnerTest(MyTestCase):
 
@@ -142,7 +142,7 @@ class CambiQualityRunnerTest(MyTestCase):
 
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_score'],
-                               0.047487, places=4)
+                               0.01451, places=4)
 
 
 if __name__ == '__main__':
