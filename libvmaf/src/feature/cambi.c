@@ -283,7 +283,7 @@ static void decimate_generic_10b(const VmafPicture *pic, VmafPicture *out_pic)
 
     // if the input and output sizes are the same
     if (in_w == out_w && in_h == out_h){
-        memcpy(out_data, data, (size_t) stride * pic->h[0]);
+        memcpy(out_data, data, (size_t) stride * pic->h[0] * sizeof(uint16_t));
         return;
     }
 
@@ -346,7 +346,8 @@ static void decimate_generic_8b_and_convert_to_10b(const VmafPicture *pic, VmafP
 
 static void copy_10b_luma(const VmafPicture *pic, VmafPicture *out_pic)
 {
-    memcpy(out_pic->data[0], pic->data[0], (size_t) pic->stride[0] * pic->h[0]);
+    ptrdiff_t stride = pic->stride[0] >> 1;
+    memcpy(out_pic->data[0], pic->data[0], stride * pic->h[0] * sizeof(uint16_t));
 }
 
 static void anti_dithering_filter(VmafPicture *pic)
