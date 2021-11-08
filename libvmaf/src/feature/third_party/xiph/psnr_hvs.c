@@ -294,8 +294,8 @@ static double calc_psnrhvs(const unsigned char *_src, int _systride,
             for (i = 0; i < 8; i++)
                 for (j = (i == 0); j < 8; j++)
                     d_mask += dct_d[i * 8 + j] * dct_d[i * 8 + j] * mask[i][j];
-            s_mask = sqrt(s_mask * s_gvar) / 32.f;
-            d_mask = sqrt(d_mask * d_gvar) / 32.f;
+            s_mask = sqrt(s_mask * s_gvar) / 45.f;
+            d_mask = sqrt(d_mask * d_gvar) / 45.f;
             if (d_mask > s_mask)
                 s_mask = d_mask;
             for (i = 0; i < 8; i++) {
