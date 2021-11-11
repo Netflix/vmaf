@@ -1,6 +1,10 @@
 # External Resources
 
-This page contains a list of 3rd-party tools that are built on top of VMAF. You can also find links to webpages where you can download FFmpeg binaries that support libvmaf.
+This page contains external resources, including a list of 3rd-party tools that are built on top of VMAF. You can also find links to webpages where you can download FFmpeg binaries that support libvmaf.
+
+## Installation Guides
+- [How to VMAF (with ffmpeg), journey to the center of despair](https://blog.otterbro.com/how-to-vmaf-ffmpeg/) -- VMAF installation guide on Windows
+- [VMAF in FFmpeg – Installation and Usage Guide for Ubuntu](https://ottverse.com/vmaf-ffmpeg-ubuntu-compilation-installation-usage-guide/) -- VMAF installation guide on Ubuntu
 
 ## GUI Visualization Tools
 
@@ -18,8 +22,6 @@ This page contains a list of 3rd-party tools that are built on top of VMAF. You 
 ## FFmpeg binaries that support libvmaf
 If you do not wish to compile FFmpeg yourself, you can download an FFmpeg binary that supports libvmaf.
 
-**Windows:** https://www.gyan.dev/ffmpeg/builds/. Download one of the git builds. The "git-essentials" build will suffice.
-
-**macOS:** https://evermeet.cx/ffmpeg/. You should download the **snapshot** build rather than the release build as the latter (at the time of writing) uses v1.5.2 of vmaf.
-
-**Linux (kernel 3.2.0+):** https://johnvansickle.com/ffmpeg/. Download the **git** build. Installation instructions, as well as how to add FFmpeg and FFprobe to your PATH, can be found [here](https://www.johnvansickle.com/ffmpeg/faq/).
+- Windows: https://www.gyan.dev/ffmpeg/builds/. Download one of the git builds. The "git-essentials" build will suffice.
+- macOS: https://evermeet.cx/ffmpeg/. You should download the **snapshot** build rather than the release build as the latter (at the time of writing) uses v1.5.2 of vmaf.
+- Linux (kernel 3.2.0+): https://johnvansickle.com/ffmpeg/. Download the **git** build. Installation instructions, as well as how to add FFmpeg and FFprobe to your PATH, can be found [here](https://www.johnvansickle.com/ffmpeg/faq/).
