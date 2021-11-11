@@ -53,8 +53,6 @@ static int pix_fmt_map(char *fmt)
             return VMAF_PIX_FMT_YUV420P;
         if (!strcmp(fmt, "yuv422p10le"))
             return VMAF_PIX_FMT_YUV422P;
-        if (!strcmp(fmt, "yuv422p10le"))
-            return VMAF_PIX_FMT_YUV422P;
         if (!strcmp(fmt, "yuv444p10le"))
             return VMAF_PIX_FMT_YUV444P;
     }
