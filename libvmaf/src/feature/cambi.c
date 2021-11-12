@@ -82,6 +82,8 @@ typedef struct CambiState {
     float *c_values;
     uint16_t *c_values_histograms;
     uint32_t *mask_dp;
+    uint8_t *filter_mode_histogram;
+    uint16_t *filter_mode_buffer;
 } CambiState;
 
 static const VmafOption options[] = {
@@ -279,6 +281,9 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     int dp_height = 2 * pad_size + 2;
     s->mask_dp = aligned_malloc(ALIGN_CEIL(dp_height * dp_width * sizeof(uint32_t)), 32);
 
+    s->filter_mode_histogram = aligned_malloc(ALIGN_CEIL(1024 * sizeof(uint8_t)), 32);
+    s->filter_mode_buffer = aligned_malloc(ALIGN_CEIL(3 * w * sizeof(uint16_t)), 32);
+
     return err;
 }
 
@@ -427,12 +432,10 @@ static FORCE_INLINE inline uint16_t mode_selection(uint16_t *elems, uint8_t *his
     return max_mode;
 }
 
-static void filter_mode(const VmafPicture *image, int width, int height) {
+static void filter_mode(const VmafPicture *image, int width, int height, uint8_t *hist, uint16_t *buffer) {
     uint16_t *data = image->data[0];
     ptrdiff_t stride = image->stride[0] >> 1;
     uint16_t curr[9];
-    uint8_t *hist = malloc(1024 * sizeof(uint8_t));
-    uint16_t *buffer = malloc(3 * width * sizeof(uint16_t));
     for (int i = 0; i < height + 2; i++) {
         if (i < height) {
             for (int j = 0; j < width; j++) {
@@ -453,9 +456,6 @@ static void filter_mode(const VmafPicture *image, int width, int height) {
             memcpy(dest, src, width * sizeof(uint16_t));
         }
     }
-
-    free(hist);
-    free(buffer);
 }
 
 static FORCE_INLINE inline uint16_t get_mask_index(unsigned input_width, unsigned input_height,
@@ -720,7 +720,8 @@ static FORCE_INLINE inline double weight_scores_per_scale(double *scores_per_sca
 }
 
 static int cambi_score(VmafPicture *pics, uint32_t *mask_dp, uint16_t window_size, double topk,
-                       const uint16_t *tvi_for_diff, float *c_values, uint16_t *c_values_histograms, double *score) {
+                       const uint16_t *tvi_for_diff, float *c_values, uint16_t *c_values_histograms, 
+                       uint8_t *filter_mode_histogram, uint16_t *filter_mode_buffer, double *score) {
     double scores_per_scale[NUM_SCALES];
     VmafPicture *image = &pics[0];
     VmafPicture *mask = &pics[1];
@@ -738,7 +739,7 @@ static int cambi_score(VmafPicture *pics, uint32_t *mask_dp, uint16_t window_siz
             get_spatial_mask(image, mask, mask_dp, scaled_width, scaled_height);
         }
 
-        filter_mode(image, scaled_width, scaled_height);
+        filter_mode(image, scaled_width, scaled_height, filter_mode_histogram, filter_mode_buffer);
 
         calculate_c_values(image, mask, c_values, c_values_histograms, window_size,
                            tvi_for_diff, scaled_width, scaled_height);
@@ -766,7 +767,7 @@ static int extract(VmafFeatureExtractor *fex,
     if (err) return err;
 
     double score;
-    err = cambi_score(s->pics, s->mask_dp, s->window_size, s->topk, s->tvi_for_diff, s->c_values, s->c_values_histograms, &score);
+    err = cambi_score(s->pics, s->mask_dp, s->window_size, s->topk, s->tvi_for_diff, s->c_values, s->c_values_histograms, s->filter_mode_histogram, s->filter_mode_buffer, &score);
     if (err) return err;
 
     err = vmaf_feature_collector_append(feature_collector, "cambi", score, index);
@@ -785,6 +786,8 @@ static int close(VmafFeatureExtractor *fex) {
     aligned_free(s->c_values);
     aligned_free(s->c_values_histograms);
     aligned_free(s->mask_dp);
+    aligned_free(s->filter_mode_histogram);
+    aligned_free(s->filter_mode_buffer);
     return err;
 }
 
