@@ -199,6 +199,8 @@ static char *test_filter_mode()
 {
     VmafPicture filtered_image, image;
     unsigned w = 5, h = 5;
+    uint8_t histogram[1024];
+    uint16_t buffer[3 * w];
 
     int err = vmaf_picture_alloc(&filtered_image, VMAF_PIX_FMT_YUV400P, 10, w, h);
     err |= vmaf_picture_alloc(&image, VMAF_PIX_FMT_YUV400P, 10, w, h);
@@ -212,12 +214,12 @@ static char *test_filter_mode()
     data[2 * stride + 2] = 1; data[3 * stride + 2] = 1;
     data[2 * stride + 3] = 1; data[3 * stride + 3] = 1;
     memcpy(filtered_data, data, stride * h * sizeof(uint16_t));
-    filter_mode(&filtered_image, w, h);
+    filter_mode(&filtered_image, w, h, histogram, buffer);
     mu_assert("filter_mode: all zeros", data_pic_sum(&filtered_image)==0);
 
     data[3 * stride + 4] = 1;
     memcpy(filtered_data, data, stride * h * sizeof(uint16_t));
-    filter_mode(&filtered_image, w, h);
+    filter_mode(&filtered_image, w, h, histogram, buffer);
     mu_assert("filter_mode: two ones sum check", data_pic_sum(&filtered_image)==2);
     mu_assert("filter_mode: two ones (3,3) check", filtered_data[3 * output_stride + 3]==1);
     mu_assert("filter_mode: two ones (2,3) check", filtered_data[2 * output_stride + 3]==1);
@@ -225,15 +227,15 @@ static char *test_filter_mode()
     data[0 * stride + 0] = 2;
     data[0 * stride + 1] = 1;
     memcpy(filtered_data, data, stride * h * sizeof(uint16_t));
-    filter_mode(&filtered_image, w, h);
+    filter_mode(&filtered_image, w, h, histogram, buffer);
     mu_assert("filter_mode: two in the corner check", filtered_data[0 * output_stride + 0]==2);
     data[1 * stride + 0] = 1;
     memcpy(filtered_data, data, stride * h * sizeof(uint16_t));
-    filter_mode(&filtered_image, w, h);
+    filter_mode(&filtered_image, w, h, histogram, buffer);
     mu_assert("filter_mode: two in the corner and adjacent ones check", filtered_data[0 * output_stride + 0]==1);
     data[2 * stride + 0] = 2;
     memcpy(filtered_data, data, stride * h * sizeof(uint16_t));
-    filter_mode(&filtered_image, w, h);
+    filter_mode(&filtered_image, w, h, histogram, buffer);
     mu_assert("filter_mode: two in corner and edge check", filtered_data[1 * output_stride + 0]==2);
 
     return NULL;
