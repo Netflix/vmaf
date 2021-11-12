@@ -18,6 +18,7 @@
 
 #include <errno.h>
 #include <pthread.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -282,6 +283,26 @@ int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
 unlock:
     feature_collector->timer.end = clock();
     pthread_mutex_unlock(&(feature_collector->lock));
+    return err;
+}
+
+int vmaf_feature_collector_append_formatted(VmafFeatureCollector *feature_collector,
+                                            double score, unsigned index,
+                                            const char *fmt, ...)
+{
+    if (!feature_collector) return -EINVAL;
+    if (!fmt) return -EINVAL;
+
+    int err = 0;
+
+    va_list(args);
+    va_start(args, fmt);
+    char *feature_name = NULL;
+    vasprintf(&feature_name, fmt, args);
+    if (err || !feature_name) return -ENOMEM;
+    err = vmaf_feature_collector_append(feature_collector, feature_name,
+                                        score, index);
+    free(feature_name);
     return err;
 }
 
