@@ -156,10 +156,35 @@ static char *test_feature_collector_init_append_get_and_destroy()
     return NULL;
 }
 
+static char *test_feature_collector_append_formatted()
+{
+    int err = 0;
+
+    VmafFeatureCollector *feature_collector;
+    err = vmaf_feature_collector_init(&feature_collector);
+    mu_assert("problem during vmaf_feature_collector_init", !err);
+
+    err = vmaf_feature_collector_append_formatted(feature_collector, 60., 1,
+                                                  "feature_%s_%s_%.2f_%d",
+                                                  "a", "b", 123.456, 88);
+    mu_assert("problem during vmaf_feature_collector_append_formatted", !err);
+
+    double score;
+    err = vmaf_feature_collector_get_score(feature_collector,
+                                           "feature_a_b_123.46_88", &score, 1);
+    mu_assert("problem during vmaf_feature_collector_get_score", !err);
+    mu_assert("vmaf_feature_collector_get_score did not get the expected score",
+              score == 60.);
+
+    vmaf_feature_collector_destroy(feature_collector);
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_feature_vector_init_append_and_destroy);
     mu_run_test(test_feature_collector_init_append_get_and_destroy);
     mu_run_test(test_aggregate_vector_init_append_and_destroy);
+    mu_run_test(test_feature_collector_append_formatted);
     return NULL;
 }
