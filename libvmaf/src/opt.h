@@ -26,6 +26,7 @@ enum VmafOptionType {
     VMAF_OPT_TYPE_BOOL,
     VMAF_OPT_TYPE_INT,
     VMAF_OPT_TYPE_DOUBLE,
+    VMAF_OPT_TYPE_STRING,
 };
 
 typedef struct VmafOption {
@@ -37,6 +38,7 @@ typedef struct VmafOption {
         bool b;
         int i;
         double d;
+        char *s;
     } default_val;
     double min, max;
 } VmafOption;
