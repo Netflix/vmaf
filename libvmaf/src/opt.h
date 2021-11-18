@@ -31,6 +31,7 @@ enum VmafOptionType {
 typedef struct VmafOption {
     const char *name;
     const char *help;
+    const char *alias;
     int offset;
     enum VmafOptionType type;
     union {
