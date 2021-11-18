@@ -138,8 +138,8 @@ static const VmafOption options[] = {
     },
     {
         .name = "max_log_contrast",
-        .help = "Max contrast luma level at 10-bits, set to  2^max_log_contrast \
-                 \t 0 to 5: Default 2 is recommended for banding from compression",
+        .help = "Max contrast luma level at 10-bits, set to  2^max_log_contrast. "
+                "0 to 5: Default 2 is recommended for banding from compression",
         .offset = offsetof(CambiState, max_log_contrast),
         .type = VMAF_OPT_TYPE_INT,
         .default_val.i = DEFAULT_MAX_LOG_CONTRAST,
@@ -256,12 +256,17 @@ static FORCE_INLINE inline void adjust_window_size(uint16_t *window_size, unsign
     (*window_size) = ((*window_size) * input_width) / CAMBI_4K_WIDTH;
 }
 
-void  set_contrast_arrays(const uint16_t num_diffs, uint16_t **diffs_to_consider,
-                          int **diffs_weights, int **all_diffs)
+static int set_contrast_arrays(const uint16_t num_diffs, uint16_t **diffs_to_consider,
+                               int **diffs_weights, int **all_diffs)
 {
     *diffs_to_consider = aligned_malloc(ALIGN_CEIL(sizeof(uint16_t)) * num_diffs, 16);
+    if(!(*diffs_to_consider)) return -ENOMEM;
+
     *diffs_weights = aligned_malloc(ALIGN_CEIL(sizeof(int)) * num_diffs, 32);
+    if(!(*diffs_weights)) return -ENOMEM;
+
     *all_diffs = aligned_malloc(ALIGN_CEIL(sizeof(int)) * (2*num_diffs+1), 32);
+    if(!(*all_diffs)) return -ENOMEM;
 
     for (int d=0; d<num_diffs; d++) {
         (*diffs_to_consider)[d] = d+1;
@@ -270,6 +275,8 @@ void  set_contrast_arrays(const uint16_t num_diffs, uint16_t **diffs_to_consider
 
     for (int d=-num_diffs; d<=num_diffs; d++)
         (*all_diffs)[d+num_diffs] = d;
+
+    return 0;
 }
 
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
@@ -289,6 +296,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 
     if (w < CAMBI_MIN_WIDTH || w > CAMBI_MAX_WIDTH)
         return -EINVAL;
+
     int err = 0;
     for (unsigned i = 0; i < PICS_BUFFER_SIZE; i++)
         err |= vmaf_picture_alloc(&s->pics[i], VMAF_PIX_FMT_YUV400P, 10, w, h);
@@ -296,8 +304,9 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     const int num_diffs = 1<<s->max_log_contrast;
 
     set_contrast_arrays(num_diffs, &g_diffs_to_consider, &g_diffs_weights, &g_all_diffs);
-    s->tvi_for_diff = aligned_malloc(ALIGN_CEIL(sizeof(uint16_t)) * num_diffs, 16);
 
+    s->tvi_for_diff = aligned_malloc(ALIGN_CEIL(sizeof(uint16_t)) * num_diffs, 16);
+    if(!s->tvi_for_diff) return -ENOMEM;
     for (int d=0; d<num_diffs; d++) {
         // BT1886 parameters
         s->tvi_for_diff[d] = get_tvi_for_diff(g_diffs_to_consider[d], s->tvi_threshold, 10,
@@ -307,17 +316,22 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 
     adjust_window_size(&s->window_size, w);
     s->c_values = aligned_malloc(ALIGN_CEIL(w * sizeof(float)) * h, 32);
+    if(!s->c_values) return -ENOMEM;
 
     const uint16_t num_bins = 1024 + (g_all_diffs[2*num_diffs] - g_all_diffs[0]);
     s->c_values_histograms = aligned_malloc(ALIGN_CEIL(w * num_bins * sizeof(uint16_t)), 32);
+    if(!s->c_values_histograms) return -ENOMEM;
 
     int pad_size = MASK_FILTER_SIZE >> 1;
     int dp_width = w + 2 * pad_size + 1;
     int dp_height = 2 * pad_size + 2;
-    s->mask_dp = aligned_malloc(ALIGN_CEIL(dp_height * dp_width * sizeof(uint32_t)), 32);
 
+    s->mask_dp = aligned_malloc(ALIGN_CEIL(dp_height * dp_width * sizeof(uint32_t)), 32);
+    if(!s->mask_dp) return -ENOMEM;
     s->filter_mode_histogram = aligned_malloc(ALIGN_CEIL(1024 * sizeof(uint8_t)), 32);
+    if(!s->filter_mode_histogram) return -ENOMEM;
     s->filter_mode_buffer = aligned_malloc(ALIGN_CEIL(3 * w * sizeof(uint16_t)), 32);
+    if(!s->filter_mode_buffer) return -ENOMEM;
 
     return err;
 }
