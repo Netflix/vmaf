@@ -485,6 +485,63 @@ static char *test_tvi_condition()
     return NULL;
 }
 
+static char *test_set_contrast_arrays()
+{
+    uint16_t *diffs_to_consider;
+    int *diffs_weights;
+    int *all_diffs;
+
+    int max_log_diff = 2;
+    int expected_diffs_to_consider_4[4] = {1, 2, 3, 4};
+    int expected_diffs_weights_4[4] = {1, 2, 3, 4};
+    int expected_all_diffs_4[9] = {-4, -3, -2, -1, 0, 1, 2, 3, 4};
+
+    int num_diffs = (1<<max_log_diff);
+    set_contrast_arrays(num_diffs, &diffs_to_consider, &diffs_weights, &all_diffs);
+
+    for (int i=0; i < num_diffs; i++) {
+        mu_assert("set_contrast_arrays max_log_diff 2, error at diffs_to_consider",
+                   expected_diffs_to_consider_4[i] == diffs_to_consider[i]);
+        mu_assert("set_contrast_arrays max_log_diff 2, error at diffs_weights",
+                   expected_diffs_weights_4[i] == diffs_weights[i]);
+    }
+
+    for (int i=0; i < 2*num_diffs + 1; i++) {
+        mu_assert("set_contrast_arrays max_log_diff 2, error at all_diffs",
+                   expected_all_diffs_4[i] == all_diffs[i]);
+    }
+
+    aligned_free(diffs_to_consider);
+    aligned_free(diffs_weights);
+    aligned_free(all_diffs);
+
+    max_log_diff = 3;
+    int expected_diffs_to_consider_8[8] = {1, 2, 3, 4, 5, 6, 7, 8};
+    int expected_diffs_weights_8[8] = {1, 2, 3, 4, 4, 5, 5, 6};
+    int expected_all_diffs_8[17] = {-8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8};
+
+    num_diffs = (1<<max_log_diff);
+    set_contrast_arrays(num_diffs, &diffs_to_consider, &diffs_weights, &all_diffs);
+
+    for (int i=0; i < num_diffs; i++) {
+        mu_assert("set_contrast_arrays max_log_diff 3, error at diffs_to_consider",
+                   expected_diffs_to_consider_8[i] == diffs_to_consider[i]);
+        mu_assert("set_contrast_arrays max_log_diff 3, error at diffs_weights",
+                   expected_diffs_weights_8[i] == diffs_weights[i]);
+    }
+
+    for (int i=0; i < 2*num_diffs + 1; i++) {
+        mu_assert("set_contrast_arrays max_log_diff 3, error at all_diffs",
+                   expected_all_diffs_8[i] == all_diffs[i]);
+    }
+
+    aligned_free(diffs_to_consider);
+    aligned_free(diffs_weights);
+    aligned_free(all_diffs);
+
+    return NULL;
+}
+
 static char *test_tvi_hard_threshold_condition()
 {
     enum CambiTVIBisectFlag result;
@@ -589,6 +646,7 @@ char *run_tests()
     /* Visibility threshold functions */
     mu_run_test(test_get_tvi_for_diff);
     mu_run_test(test_tvi_condition);
+    mu_run_test(test_set_contrast_arrays);
     mu_run_test(test_tvi_hard_threshold_condition);
     mu_run_test(test_luminance_bt1886);
     mu_run_test(test_normalize_range);

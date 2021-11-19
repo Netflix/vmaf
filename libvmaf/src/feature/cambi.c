@@ -138,8 +138,9 @@ static const VmafOption options[] = {
     },
     {
         .name = "max_log_contrast",
-        .help = "Max contrast luma level at 10-bits, set to  2^max_log_contrast. "
-                "0 to 5: Default 2 is recommended for banding from compression",
+        .help = "Maximum contrast in log luma level (2^max_log_contrast) at 10-bits, "
+                "e.g., 2 is equivalent to 4 luma levels at 10-bit and 1 luma level at 8-bit. "
+                "From 0 to 5: default 2 is recommended for banding from compression.",
         .offset = offsetof(CambiState, max_log_contrast),
         .type = VMAF_OPT_TYPE_INT,
         .default_val.i = DEFAULT_MAX_LOG_CONTRAST,

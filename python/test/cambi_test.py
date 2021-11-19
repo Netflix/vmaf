@@ -79,6 +79,38 @@ class CambiFeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
                                0.01451, places=4)
 
+    def test_run_cambi_fextractor_max_log_contrast(self):
+        _, _, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = CambiFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'max_log_contrast': 4}
+        )
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+
+        # score: arithmetic mean score over all frames
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
+                               0.9182153958333333, places=4)
+        self.assertAlmostEqual(results[1]['Cambi_feature_cambi_score'],
+                               0.0024499791666667, places=4)
+
+        self.fextractor = CambiFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'max_log_contrast': 0}
+        )
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+
+        # score: arithmetic mean score over all frames
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
+                               0.015840666666666666, places=4)
+        self.assertAlmostEqual(results[1]['Cambi_feature_cambi_score'],
+                               0.000671125, places=4)
+
 class CambiQualityRunnerTest(MyTestCase):
 
     def test_run_cambi_runner(self):
