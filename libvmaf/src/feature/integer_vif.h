@@ -20,6 +20,7 @@
 #define FEATURE_VIF_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /* Enhancement gain imposed on vif, must be >= 1.0, where 1.0 means the gain is completely disabled */
 #ifndef DEFAULT_VIF_ENHN_GAIN_LIMIT
@@ -34,6 +35,7 @@ static const uint16_t vif_filter1d_table[4][18] = {
 };
 
 static const int vif_filter1d_width[4] = { 17, 9, 5, 3 };
+
 
 typedef struct VifBuffer {
     void *data;
@@ -64,10 +66,32 @@ typedef struct VifBuffer {
     ptrdiff_t stride_tmp;
 } VifBuffer;
 
+typedef struct VifResiduals {
+    int64_t accum_x;
+    int64_t accum_x2;
+    int64_t accum_num_log;
+    int64_t accum_den_log;
+    int64_t accum_num_non_log;
+    int64_t accum_den_non_log;
+} VifResiduals;
+
+typedef struct VifState {
+    VifBuffer buf;
+    uint16_t log2_table[65537];
+    bool debug;
+    double vif_enhn_gain_limit;
+    void (*subsample_rd_8)(VifBuffer buf, unsigned w, unsigned h);
+    void (*subsample_rd_16)(VifBuffer buf, unsigned w, unsigned h, int scale,
+        int bpc);
+    void (*vif_statistic_8)(struct VifState* state, float* num, float* den, unsigned w, unsigned h);
+    void (*vif_statistic_16)(struct VifState* s, float* num, float* den, unsigned w, unsigned h, int bpc, int scale);
+
+} VifState;
+
 static inline void PADDING_SQ_DATA(VifBuffer buf, int w, unsigned fwidth_half)
 {
     for (unsigned f = 1; f <= fwidth_half; ++f) {
-        int left_point = -f;
+        int left_point = -(int)f;
         int right_point = f;
         buf.tmp.mu1[left_point] = buf.tmp.mu1[right_point];
         buf.tmp.mu2[left_point] = buf.tmp.mu2[right_point];
@@ -88,7 +112,7 @@ static inline void PADDING_SQ_DATA(VifBuffer buf, int w, unsigned fwidth_half)
 static inline void PADDING_SQ_DATA_2(VifBuffer buf, int w, unsigned fwidth_half)
 {
     for (unsigned f = 1; f <= fwidth_half; ++f) {
-        int left_point = -f;
+        int left_point = -(int)f;
         int right_point = f;
         buf.tmp.ref_convol[left_point] = buf.tmp.ref_convol[right_point];
         buf.tmp.dis_convol[left_point] = buf.tmp.dis_convol[right_point];
@@ -99,5 +123,16 @@ static inline void PADDING_SQ_DATA_2(VifBuffer buf, int w, unsigned fwidth_half)
         buf.tmp.dis_convol[right_point] = buf.tmp.dis_convol[left_point];
     }
 }
+
+void vif_filter1d_8(VifBuffer buf, unsigned w, unsigned h);
+void vif_statistic_8(struct VifState* s, float* num, float* den, unsigned w, unsigned h);
+void vif_statistic_16(struct VifState* s, float* num, float* den, unsigned w, unsigned h, int bpc, int scale);
+
+/*
+ * Compute vif residuals on a vertically filtered line 
+ * This is a support method for block based vip_statistic_xxx method and is typically called
+ * only when to is not a multiple of the block size, with from = (to / block_size) + block_size
+ */
+VifResiduals computeLineResiduals(VifState* s, int from, int to, int bpc, int scale);
 
 #endif /* _FEATURE_VIF_H_ */
