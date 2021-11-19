@@ -20,6 +20,8 @@
 #define FEATURE_VIF_H_
 
 #include <stdint.h>
+#include <stdbool.h>
+#include <assert.h>
 
 /* Enhancement gain imposed on vif, must be >= 1.0, where 1.0 means the gain is completely disabled */
 #ifndef DEFAULT_VIF_ENHN_GAIN_LIMIT
@@ -64,10 +66,23 @@ typedef struct VifBuffer {
     ptrdiff_t stride_tmp;
 } VifBuffer;
 
+typedef struct VifResiduals {
+    int64_t accum_num_log;
+    int64_t accum_den_log;
+    int64_t accum_num_non_log;
+    int64_t accum_den_non_log;
+} VifResiduals;
+
+typedef struct VifPublicState {
+    VifBuffer buf;
+    uint16_t log2_table[65537];
+    double vif_enhn_gain_limit;
+} VifPublicState;
+
 static inline void PADDING_SQ_DATA(VifBuffer buf, int w, unsigned fwidth_half)
 {
     for (unsigned f = 1; f <= fwidth_half; ++f) {
-        int left_point = -f;
+        int left_point = -(int)f;
         int right_point = f;
         buf.tmp.mu1[left_point] = buf.tmp.mu1[right_point];
         buf.tmp.mu2[left_point] = buf.tmp.mu2[right_point];
@@ -88,7 +103,7 @@ static inline void PADDING_SQ_DATA(VifBuffer buf, int w, unsigned fwidth_half)
 static inline void PADDING_SQ_DATA_2(VifBuffer buf, int w, unsigned fwidth_half)
 {
     for (unsigned f = 1; f <= fwidth_half; ++f) {
-        int left_point = -f;
+        int left_point = -(int)f;
         int right_point = f;
         buf.tmp.ref_convol[left_point] = buf.tmp.ref_convol[right_point];
         buf.tmp.dis_convol[left_point] = buf.tmp.dis_convol[right_point];
@@ -98,6 +113,48 @@ static inline void PADDING_SQ_DATA_2(VifBuffer buf, int w, unsigned fwidth_half)
         buf.tmp.ref_convol[right_point] = buf.tmp.ref_convol[left_point];
         buf.tmp.dis_convol[right_point] = buf.tmp.dis_convol[left_point];
     }
+}
+
+void vif_statistic_8(struct VifPublicState *s, float *num, float *den, unsigned w, unsigned h);
+void vif_statistic_16(struct VifPublicState *s, float *num, float *den, unsigned w, unsigned h, int bpc, int scale);
+
+/*
+ * Compute vif residuals on a vertically filtered line 
+ * This is a support method for block based vip_statistic_xxx method and is typically called
+ * only when to is not a multiple of the block size, with from = (to / block_size) + block_size
+ */
+VifResiduals vif_compute_line_residuals(VifPublicState *s, unsigned from,
+                                        unsigned to, int bpc, int scale);
+
+
+#ifdef _MSC_VER
+#include <intrin.h>
+
+static inline int __builtin_clz(unsigned x) {
+    return (int)__lzcnt(x);
+}
+
+static inline int __builtin_clzll(unsigned long long x) {
+    return (int)__lzcnt64(x);
+}
+
+#endif
+
+static inline int32_t log2_32(const uint16_t *log2_table, uint32_t temp)
+{
+    int k = __builtin_clz(temp);
+    k = 16 - k;
+    temp = temp >> k;
+    return log2_table[temp] + 2048 * k;
+}
+
+static inline int32_t log2_64(const uint16_t *log2_table, uint64_t temp)
+{
+    assert(temp >= 0x20000);
+    int k = __builtin_clzll(temp);
+    k = 48 - k;
+    temp = temp >> k;
+    return log2_table[temp] + 2048 * k;
 }
 
 #endif /* _FEATURE_VIF_H_ */
