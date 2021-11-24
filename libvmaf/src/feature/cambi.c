@@ -671,6 +671,7 @@ static double average_topk_elements(const float *arr, int topk_elements) {
 }
 
 static void quick_select(float *arr, int n, int k) {
+    if (n == k) return;
     int left = 0;
     int right = n - 1;
     while (left < right) {
