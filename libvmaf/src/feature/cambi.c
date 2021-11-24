@@ -27,17 +27,20 @@
 #include "mem.h"
 #include "picture.h"
 
-/* Ratio of pixels for computation, must be 0 > topk >= 1.0 */
+/* Ratio of pixels for computation, must be 0 < topk <= 1.0 */
 #define DEFAULT_CAMBI_TOPK_POOLING (0.6)
 
 /* Window size to compute CAMBI: 63 corresponds to approximately 1 degree at 4k scale */
 #define DEFAULT_CAMBI_WINDOW_SIZE (63)
 
-/* Visibilty threshold for luminance ΔL < tvi_threshold*L_mean for BT.1886 */
+/* Visibility threshold for luminance ΔL < tvi_threshold*L_mean for BT.1886 */
 #define DEFAULT_CAMBI_TVI (0.019)
 
 /* Max log contrast luma levels */
 #define DEFAULT_MAX_LOG_CONTRAST (2)
+
+/* Path to an existing directory where the heatmaps will be dumped. If null, the heatmaps will not be dumped to disk. */
+#define DEFAULT_CAMBI_HEATMAPS_PATH (NULL)
 
 #define CAMBI_MIN_WIDTH (320)
 #define CAMBI_MAX_WIDTH (4096)
@@ -91,6 +94,7 @@ typedef struct CambiState {
     double topk;
     double tvi_threshold;
     uint16_t max_log_contrast;
+    char *heatmaps_path;
     CambiBuffers buffers;
 } CambiState;
 
@@ -150,6 +154,13 @@ static const VmafOption options[] = {
         .default_val.i = DEFAULT_MAX_LOG_CONTRAST,
         .min = 0,
         .max = 5,
+    },
+    {
+        .name = "heatmaps_path",
+        .help = "Path to an existing directory where the heatmaps will be dumped. If null, the heatmaps will not be dumped to disk.",
+        .offset = offsetof(CambiState, heatmaps_path),
+        .type = VMAF_OPT_TYPE_STRING,
+        .default_val.s = DEFAULT_CAMBI_HEATMAPS_PATH,
     },
     { 0 }
 };
@@ -778,10 +789,36 @@ static FORCE_INLINE inline double weight_scores_per_scale(double *scores_per_sca
     return score / normalization;
 }
 
+static void write_uint16(FILE *file, uint16_t v) {
+    fwrite((void*)(&v), sizeof(v), 1, file);
+}
+
+static void dump_c_values(const float *c_values, int width, int height, int scale, 
+                          int window_size, const char *dir_path, const uint16_t num_diffs) {
+    int max_diff_weight = g_diffs_weights[0];
+    for (int i = 0; i < num_diffs; i++) {
+        if (g_diffs_weights[i] > max_diff_weight) {
+            max_diff_weight = g_diffs_weights[i];
+        }
+    }
+    char path[1024];
+    snprintf(path, sizeof(path), "%s/cambi_heatmap_scale_%d_%dx%d_16b.gray", dir_path, scale, width, height);
+    int max_c_value = max_diff_weight * window_size * window_size / 4;
+    int max_16bit_value = (1 << 16) - 1;
+    double scaling_value = (double)max_16bit_value / max_c_value;
+    FILE *file = fopen(path, "a");
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            uint16_t val = (uint16_t)(scaling_value * c_values[i * width + j]);
+            write_uint16(file, val);
+        }
+    }
+    fclose(file);
+}
+
 static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
                        const uint16_t num_diffs, const uint16_t *tvi_for_diff,
-                       CambiBuffers buffers, double *score) {
-
+                       CambiBuffers buffers, double *score, char *heatmaps_path) {
     double scores_per_scale[NUM_SCALES];
     VmafPicture *image = &pics[0];
     VmafPicture *mask = &pics[1];
@@ -803,6 +840,10 @@ static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
 
         calculate_c_values(image, mask, buffers.c_values, buffers.c_values_histograms, window_size,
                            num_diffs, tvi_for_diff, scaled_width, scaled_height);
+
+        if (heatmaps_path) {
+            dump_c_values(buffers.c_values, scaled_width, scaled_height, scale, window_size, heatmaps_path, num_diffs);
+        }
 
         scores_per_scale[scale] =
             spatial_pooling(buffers.c_values, topk, scaled_width, scaled_height);
@@ -828,7 +869,7 @@ static int extract(VmafFeatureExtractor *fex,
 
     double score;
     const uint16_t num_diffs = 1 << s->max_log_contrast;
-    err = cambi_score(s->pics, s->window_size, s->topk, num_diffs, s->tvi_for_diff, s->buffers, &score);
+    err = cambi_score(s->pics, s->window_size, s->topk, num_diffs, s->tvi_for_diff, s->buffers, &score, s->heatmaps_path);
     if (err) return err;
 
     err = vmaf_feature_collector_append(feature_collector, "cambi", score, index);
