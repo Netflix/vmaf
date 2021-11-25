@@ -74,6 +74,12 @@ static int *g_all_diffs;
         y = temp;            \
     }
 
+#ifdef _WIN32
+    #define PATH_SEPARATOR '\\'
+#else
+    #define PATH_SEPARATOR '/'
+#endif
+
 #define PICS_BUFFER_SIZE 2
 #define MASK_FILTER_SIZE 7
 
@@ -793,7 +799,7 @@ static void write_uint16(FILE *file, uint16_t v) {
     fwrite((void*)(&v), sizeof(v), 1, file);
 }
 
-static void dump_c_values(const float *c_values, int width, int height, int scale, 
+static int dump_c_values(const float *c_values, int width, int height, int scale, 
                           int window_size, const char *dir_path, const uint16_t num_diffs) {
     int max_diff_weight = g_diffs_weights[0];
     for (int i = 0; i < num_diffs; i++) {
@@ -802,11 +808,12 @@ static void dump_c_values(const float *c_values, int width, int height, int scal
         }
     }
     char path[1024];
-    snprintf(path, sizeof(path), "%s/cambi_heatmap_scale_%d_%dx%d_16b.gray", dir_path, scale, width, height);
+    snprintf(path, sizeof(path), "%s%ccambi_heatmap_scale_%d_%dx%d_16b.gray", dir_path, PATH_SEPARATOR, scale, width, height);
     int max_c_value = max_diff_weight * window_size * window_size / 4;
     int max_16bit_value = (1 << 16) - 1;
     double scaling_value = (double)max_16bit_value / max_c_value;
     FILE *file = fopen(path, "a");
+    if (!file) return -EINVAL;
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             uint16_t val = (uint16_t)(scaling_value * c_values[i * width + j]);
@@ -814,6 +821,7 @@ static void dump_c_values(const float *c_values, int width, int height, int scal
         }
     }
     fclose(file);
+    return 0;
 }
 
 static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
@@ -842,7 +850,8 @@ static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
                            num_diffs, tvi_for_diff, scaled_width, scaled_height);
 
         if (heatmaps_path) {
-            dump_c_values(buffers.c_values, scaled_width, scaled_height, scale, window_size, heatmaps_path, num_diffs);
+            int err = dump_c_values(buffers.c_values, scaled_width, scaled_height, scale, window_size, heatmaps_path, num_diffs);
+            if (err) return err;
         }
 
         scores_per_scale[scale] =
