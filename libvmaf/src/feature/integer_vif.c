@@ -18,19 +18,6 @@
 
 #include <immintrin.h>
 
-#ifdef _MSC_VER
-#include <intrin.h>
-
-static inline int __builtin_clz(unsigned x) {
-	return (int)__lzcnt(x);
-}
-
-static inline int __builtin_clzll(unsigned long long x) {
-	return (int)__lzcnt64(x);
-}
-
-#endif
-
 #include <errno.h>
 #include <math.h>
 #include <string.h>
@@ -110,91 +97,6 @@ decimate_and_pad(VifBuffer buf, unsigned w, unsigned h, int scale)
 	pad_top_and_bottom(buf, h / 2, vif_filter1d_width[scale]);
 }
 
-static FORCE_INLINE inline uint16_t
-get_best16_from32(uint32_t temp, int* x)
-{
-	int k = __builtin_clz(temp);
-	k = 16 - k;
-	temp = temp >> k;
-	*x = -k;
-	return temp;
-}
-
-static FORCE_INLINE inline uint16_t get_best16_from64(uint64_t temp, int* x)
-{
-	assert(temp >= 0x20000);
-	int k = __builtin_clzll(temp);
-	k = 48 - k;
-	temp = temp >> k;
-	*x = -k;
-	return (uint16_t)temp;
-}
-
-void vif_filter1d_8(VifBuffer buf, unsigned w, unsigned h)
-{
-	const unsigned fwidth = vif_filter1d_width[0];
-	const uint16_t* vif_filt_s0 = vif_filter1d_table[0];
-
-	for (unsigned i = 0; i < h; ++i) {
-		//VERTICAL
-		for (unsigned j = 0; j < w; ++j) {
-			uint32_t accum_mu1 = 0;
-			uint32_t accum_mu2 = 0;
-			uint32_t accum_ref = 0;
-			uint32_t accum_dis = 0;
-			uint32_t accum_ref_dis = 0;
-			for (unsigned fi = 0; fi < fwidth; ++fi) {
-				int ii = i - fwidth / 2;
-				int ii_check = ii + fi;
-				const uint16_t fcoeff = vif_filt_s0[fi];
-				const uint8_t* ref = (uint8_t*)buf.ref;
-				const uint8_t* dis = (uint8_t*)buf.dis;
-				uint16_t imgcoeff_ref = ref[ii_check * buf.stride + j];
-				uint16_t imgcoeff_dis = dis[ii_check * buf.stride + j];
-				uint32_t img_coeff_ref = fcoeff * (uint32_t)imgcoeff_ref;
-				uint32_t img_coeff_dis = fcoeff * (uint32_t)imgcoeff_dis;
-				accum_mu1 += img_coeff_ref;
-				accum_mu2 += img_coeff_dis;
-				accum_ref += img_coeff_ref * (uint32_t)imgcoeff_ref;
-				accum_dis += img_coeff_dis * (uint32_t)imgcoeff_dis;
-				accum_ref_dis += img_coeff_ref * (uint32_t)imgcoeff_dis;
-			}
-			buf.tmp.mu1[j] = (accum_mu1 + 128) >> 8;
-			buf.tmp.mu2[j] = (accum_mu2 + 128) >> 8;
-			buf.tmp.ref[j] = accum_ref;
-			buf.tmp.dis[j] = accum_dis;
-			buf.tmp.ref_dis[j] = accum_ref_dis;
-		}
-
-		PADDING_SQ_DATA(buf, w, fwidth / 2);
-
-		//HORIZONTAL
-		for (unsigned j = 0; j < w; ++j) {
-			uint32_t accum_mu1 = 0;
-			uint32_t accum_mu2 = 0;
-			uint64_t accum_ref = 0;
-			uint64_t accum_dis = 0;
-			uint64_t accum_ref_dis = 0;
-			for (unsigned fj = 0; fj < fwidth; ++fj) {
-				int jj = j - fwidth / 2;
-				int jj_check = jj + fj;
-				const uint16_t fcoeff = vif_filt_s0[fj];
-				accum_mu1 += fcoeff * ((uint32_t)buf.tmp.mu1[jj_check]);
-				accum_mu2 += fcoeff * ((uint32_t)buf.tmp.mu2[jj_check]);
-				accum_ref += fcoeff * ((uint64_t)buf.tmp.ref[jj_check]);
-				accum_dis += fcoeff * ((uint64_t)buf.tmp.dis[jj_check]);
-				accum_ref_dis += fcoeff * ((uint64_t)buf.tmp.ref_dis[jj_check]);
-			}
-			const ptrdiff_t dst_stride = buf.stride_32 / sizeof(uint32_t);
-			buf.mu1_32[i * dst_stride + j] = accum_mu1;
-			buf.mu2_32[i * dst_stride + j] = accum_mu2;
-			buf.ref_sq[i * dst_stride + j] = (uint32_t)((accum_ref + 32768) >> 16);
-			buf.dis_sq[i * dst_stride + j] = (uint32_t)((accum_dis + 32768) >> 16);
-			buf.ref_dis[i * dst_stride + j] = (uint32_t)((accum_ref_dis + 32768) >> 16);
-		}
-	}
-}
-
 static void subsample_rd_8(VifBuffer buf, unsigned w, unsigned h)
 {
 	const unsigned fwidth = vif_filter1d_width[1];
@@ -237,93 +139,6 @@ static void subsample_rd_8(VifBuffer buf, unsigned w, unsigned h)
 		}
 	}
 	decimate_and_pad(buf, w, h, 0);
-}
-
-
-static void filter1d_16(VifBuffer buf, unsigned w, unsigned h, int scale, int bpc)
-{
-	const unsigned fwidth = vif_filter1d_width[scale];
-	const uint16_t* vif_filt = vif_filter1d_table[scale];
-
-	int32_t add_shift_round_HP, shift_HP;
-	int32_t add_shift_round_VP, shift_VP;
-	int32_t add_shift_round_VP_sq, shift_VP_sq;
-	if (scale == 0) {
-		shift_HP = 16;
-		add_shift_round_HP = 32768;
-		shift_VP = bpc;
-		add_shift_round_VP = 1 << (bpc - 1);
-		shift_VP_sq = (bpc - 8) * 2;
-		add_shift_round_VP_sq = (bpc == 8) ? 0 : 1 << (shift_VP_sq - 1);
-	}
-	else {
-		shift_HP = 16;
-		add_shift_round_HP = 32768;
-		shift_VP = 16;
-		add_shift_round_VP = 32768;
-		shift_VP_sq = 16;
-		add_shift_round_VP_sq = 32768;
-	}
-
-	for (unsigned i = 0; i < h; ++i) {
-		//VERTICAL
-		for (unsigned j = 0; j < w; ++j) {
-			uint32_t accum_mu1 = 0;
-			uint32_t accum_mu2 = 0;
-			uint64_t accum_ref = 0;
-			uint64_t accum_dis = 0;
-			uint64_t accum_ref_dis = 0;
-			for (unsigned fi = 0; fi < fwidth; ++fi) {
-				int ii = i - fwidth / 2;
-				int ii_check = ii + fi;
-				const uint16_t fcoeff = vif_filt[fi];
-				const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
-				uint16_t* ref = buf.ref;
-				uint16_t* dis = buf.dis;
-				uint16_t imgcoeff_ref = ref[ii_check * stride + j];
-				uint16_t imgcoeff_dis = dis[ii_check * stride + j];
-				uint32_t img_coeff_ref = fcoeff * (uint32_t)imgcoeff_ref;
-				uint32_t img_coeff_dis = fcoeff * (uint32_t)imgcoeff_dis;
-				accum_mu1 += img_coeff_ref;
-				accum_mu2 += img_coeff_dis;
-				accum_ref += img_coeff_ref * (uint64_t)imgcoeff_ref;
-				accum_dis += img_coeff_dis * (uint64_t)imgcoeff_dis;
-				accum_ref_dis += img_coeff_ref * (uint64_t)imgcoeff_dis;
-			}
-			buf.tmp.mu1[j] = (uint16_t)((accum_mu1 + add_shift_round_VP) >> shift_VP);
-			buf.tmp.mu2[j] = (uint16_t)((accum_mu2 + add_shift_round_VP) >> shift_VP);
-			buf.tmp.ref[j] = (uint32_t)((accum_ref + add_shift_round_VP_sq) >> shift_VP_sq);
-			buf.tmp.dis[j] = (uint32_t)((accum_dis + add_shift_round_VP_sq) >> shift_VP_sq);
-			buf.tmp.ref_dis[j] = (uint32_t)((accum_ref_dis + add_shift_round_VP_sq) >> shift_VP_sq);
-		}
-
-		PADDING_SQ_DATA(buf, w, fwidth / 2);
-
-		//HORIZONTAL
-		for (unsigned j = 0; j < w; ++j) {
-			uint32_t accum_mu1 = 0;
-			uint32_t accum_mu2 = 0;
-			uint64_t accum_ref = 0;
-			uint64_t accum_dis = 0;
-			uint64_t accum_ref_dis = 0;
-			for (unsigned fj = 0; fj < fwidth; ++fj) {
-				int jj = j - fwidth / 2;
-				int jj_check = jj + fj;
-				const uint16_t fcoeff = vif_filt[fj];
-				accum_mu1 += fcoeff * ((uint32_t)buf.tmp.mu1[jj_check]);
-				accum_mu2 += fcoeff * ((uint32_t)buf.tmp.mu2[jj_check]);
-				accum_ref += fcoeff * ((uint64_t)buf.tmp.ref[jj_check]);
-				accum_dis += fcoeff * ((uint64_t)buf.tmp.dis[jj_check]);
-				accum_ref_dis += fcoeff * ((uint64_t)buf.tmp.ref_dis[jj_check]);
-			}
-			const ptrdiff_t dst_stride = buf.stride_32 / sizeof(uint32_t);
-			buf.mu1_32[i * dst_stride + j] = accum_mu1;
-			buf.mu2_32[i * dst_stride + j] = accum_mu2;
-			buf.ref_sq[i * dst_stride + j] = (uint32_t)((accum_ref + add_shift_round_HP) >> shift_HP);
-			buf.dis_sq[i * dst_stride + j] = (uint32_t)((accum_dis + add_shift_round_HP) >> shift_HP);
-			buf.ref_dis[i * dst_stride + j] = (uint32_t)((accum_ref_dis + add_shift_round_HP) >> shift_HP);
-		}
-	}
 }
 
 static void subsample_rd_16(VifBuffer buf, unsigned w, unsigned h, int scale,
@@ -396,8 +211,6 @@ void vif_statistic_8(struct VifState* s, float* num, float* den, unsigned w, uns
 	const unsigned fwidth = vif_filter1d_width[0];
 	const uint16_t* vif_filt_s0 = vif_filter1d_table[0];
 	VifBuffer buf = s->buf;
-	int64_t num_val, den_val;
-	int64_t accum_x = 0, accum_x2 = 0;
 	int64_t accum_num_log = 0.0;
 	int64_t accum_den_log = 0.0;
 	int64_t accum_num_non_log = 0;
@@ -479,10 +292,6 @@ void vif_statistic_8(struct VifState* s, float* num, float* den, unsigned w, uns
 
 			sigma2_sq = MAX(sigma2_sq, 0);
 			if (sigma1_sq >= sigma_nsq) {
-				uint32_t log_den_stage1 = (uint32_t)(sigma_nsq + sigma1_sq);
-				int x;
-				uint16_t log_den1 = get_best16_from32(log_den_stage1, &x);
-
 				/**
 				* log values are taken from the look-up table generated by
 				* log_generate() function which is called in integer_combo_threadfunc
@@ -491,12 +300,9 @@ void vif_statistic_8(struct VifState* s, float* num, float* den, unsigned w, uns
 				* multiplied by 2048 as log_value = log2(i)*2048 i=16384 to 65535 generated using log_value
 				* x because best 16 bits are taken
 				*/
-				accum_x += x + 17;
-				den_val = log2_table[log_den1];
+				accum_den_log += log2_32(log2_table, sigma_nsq + sigma1_sq) - 2048 * 17;
 
-				// this check can go away, things will work anyway
-				if (sigma12 > 0) {
-					// num_val = log2f(1.0f + (g * g * sigma1_sq) / (sv_sq + sigma_nsq));
+				if (sigma12 > 0 && sigma2_sq > 0) {
 					/**
 					* In floating-point numerator = log2((1.0f + (g * g * sigma1_sq)/(sv_sq + sigma_nsq))
 					*
@@ -508,28 +314,13 @@ void vif_statistic_8(struct VifState* s, float* num, float* den, unsigned w, uns
 					double g = sigma12 / (sigma1_sq + eps); // this epsilon can go away
 					int32_t sv_sq = sigma2_sq - g * sigma12;
 
-					if (sigma2_sq == 0) { // this was... sigma2_sq < eps
-						g = 0.0;
-					}
-
 					sv_sq = (uint32_t)(MAX(sv_sq, 0));
 
 					g = MIN(g, vif_enhn_gain_limit);
 
-					int x1, x2;
 					uint32_t numer1 = (sv_sq + sigma_nsq);
 					int64_t numer1_tmp = (int64_t)((g * g * sigma1_sq)) + numer1; //numerator
-					uint16_t numlog = get_best16_from64((uint64_t)numer1_tmp, &x1);
-					uint16_t denlog = get_best16_from64((uint64_t)numer1, &x2);
-					accum_x2 += (x2 - x1);
-					num_val = log2_table[numlog] - log2_table[denlog];
-					accum_num_log += num_val;
-					accum_den_log += den_val;
-
-				}
-				else {
-					//accum_num_log += 0;
-					accum_den_log += den_val;
+					accum_num_log += log2_64(log2_table, numer1_tmp) - log2_64(log2_table, numer1);
 				}
 			}
 			else {
@@ -538,16 +329,14 @@ void vif_statistic_8(struct VifState* s, float* num, float* den, unsigned w, uns
 			}
 		}
 	}
-	num[0] = accum_num_log / 2048.0 + accum_x2 + (accum_den_non_log - ((accum_num_non_log) / 16384.0) / (65025.0));
-	den[0] = accum_den_log / 2048.0 - accum_x + accum_den_non_log;
+	num[0] = accum_num_log / 2048.0 + (accum_den_non_log - ((accum_num_non_log) / 16384.0) / (65025.0));
+	den[0] = accum_den_log / 2048.0 + accum_den_non_log;
 }
 
 void vif_statistic_16(struct VifState* s, float* num, float* den, unsigned w, unsigned h, int bpc, int scale) {
 	const unsigned fwidth = vif_filter1d_width[scale];
 	const uint16_t* vif_filt = vif_filter1d_table[scale];
 	VifBuffer buf = s->buf;
-	int64_t num_val, den_val;
-	int64_t accum_x = 0, accum_x2 = 0;
 	int64_t accum_num_log = 0.0;
 	int64_t accum_den_log = 0.0;
 	int64_t accum_num_non_log = 0;
@@ -649,10 +438,6 @@ void vif_statistic_16(struct VifState* s, float* num, float* den, unsigned w, un
 
 			sigma2_sq = MAX(sigma2_sq, 0);
 			if (sigma1_sq >= sigma_nsq) {
-				uint32_t log_den_stage1 = (uint32_t)(sigma_nsq + sigma1_sq);
-				int x;
-				uint16_t log_den1 = get_best16_from32(log_den_stage1, &x);
-
 				/**
 				* log values are taken from the look-up table generated by
 				* log_generate() function which is called in integer_combo_threadfunc
@@ -661,12 +446,9 @@ void vif_statistic_16(struct VifState* s, float* num, float* den, unsigned w, un
 				* multiplied by 2048 as log_value = log2(i)*2048 i=16384 to 65535 generated using log_value
 				* x because best 16 bits are taken
 				*/
-				accum_x += x + 17;
-				den_val = log2_table[log_den1];
+				accum_den_log += log2_32(log2_table, sigma_nsq + sigma1_sq) - 2048 * 17;
 
-				// this check can go away, things will work anyway
-				if (sigma12 > 0) {
-					// num_val = log2f(1.0f + (g * g * sigma1_sq) / (sv_sq + sigma_nsq));
+				if (sigma12 > 0 && sigma2_sq > 0) {
 					/**
 					* In floating-point numerator = log2((1.0f + (g * g * sigma1_sq)/(sv_sq + sigma_nsq))
 					*
@@ -678,28 +460,13 @@ void vif_statistic_16(struct VifState* s, float* num, float* den, unsigned w, un
 					double g = sigma12 / (sigma1_sq + eps); // this epsilon can go away
 					int32_t sv_sq = sigma2_sq - g * sigma12;
 
-					if (sigma2_sq == 0) { // this was... sigma2_sq < eps
-						g = 0.0;
-					}
-
 					sv_sq = (uint32_t)(MAX(sv_sq, 0));
 
 					g = MIN(g, vif_enhn_gain_limit);
 
-					int x1, x2;
 					uint32_t numer1 = (sv_sq + sigma_nsq);
 					int64_t numer1_tmp = (int64_t)((g * g * sigma1_sq)) + numer1; //numerator
-					uint16_t numlog = get_best16_from64((uint64_t)numer1_tmp, &x1);
-					uint16_t denlog = get_best16_from64((uint64_t)numer1, &x2);
-					accum_x2 += (x2 - x1);
-					num_val = log2_table[numlog] - log2_table[denlog];
-					accum_num_log += num_val;
-					accum_den_log += den_val;
-
-				}
-				else {
-					//accum_num_log += 0;
-					accum_den_log += den_val;
+					accum_num_log += log2_64(log2_table, numer1_tmp) - log2_64(log2_table, numer1);
 				}
 			}
 			else {
@@ -708,9 +475,8 @@ void vif_statistic_16(struct VifState* s, float* num, float* den, unsigned w, un
 			}
 		}
 	}
-	num[0] = accum_num_log / 2048.0 + accum_x2 + (accum_den_non_log - ((accum_num_non_log) / 16384.0) / (65025.0));
-	den[0] = accum_den_log / 2048.0 - accum_x + accum_den_non_log;
-
+	num[0] = accum_num_log / 2048.0 + (accum_den_non_log - ((accum_num_non_log) / 16384.0) / (65025.0));
+	den[0] = accum_den_log / 2048.0 + accum_den_non_log;
 }
 
 VifResiduals computeLineResiduals(VifState* s, int from, int to, int bpc, int scale) {
@@ -720,7 +486,6 @@ VifResiduals computeLineResiduals(VifState* s, int from, int to, int bpc, int sc
 	VifBuffer buf = s->buf;
 	const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
 	int fwidth_half = fwidth >> 1;
-	int64_t num_val, den_val;
 	int32_t add_shift_round_HP, shift_HP;
 	int32_t add_shift_round_VP, shift_VP;
 	int32_t add_shift_round_VP_sq, shift_VP_sq;
@@ -781,10 +546,6 @@ VifResiduals computeLineResiduals(VifState* s, int from, int to, int bpc, int sc
 
 		sigma2_sq = MAX(sigma2_sq, 0);
 		if (sigma1_sq >= sigma_nsq) {
-			uint32_t log_den_stage1 = (uint32_t)(sigma_nsq + sigma1_sq);
-			int x;
-			uint16_t log_den1 = get_best16_from32(log_den_stage1, &x);
-
 			/**
 			* log values are taken from the look-up table generated by
 			* log_generate() function which is called in integer_combo_threadfunc
@@ -793,12 +554,9 @@ VifResiduals computeLineResiduals(VifState* s, int from, int to, int bpc, int sc
 			* multiplied by 2048 as log_value = log2(i)*2048 i=16384 to 65535 generated using log_value
 			* x because best 16 bits are taken
 			*/
-			residuals.accum_x += x + 17;
-			den_val = log2_table[log_den1];
+			residuals.accum_den_log += log2_32(log2_table, sigma_nsq + sigma1_sq) - 2048 * 17;
 
-			// this check can go away, things will work anyway
-			if (sigma12 > 0) {
-				// num_val = log2f(1.0f + (g * g * sigma1_sq) / (sv_sq + sigma_nsq));
+			if (sigma12 > 0 && sigma2_sq > 0) {
 				/**
 				* In floating-point numerator = log2((1.0f + (g * g * sigma1_sq)/(sv_sq + sigma_nsq))
 				*
@@ -810,28 +568,13 @@ VifResiduals computeLineResiduals(VifState* s, int from, int to, int bpc, int sc
 				double g = sigma12 / (sigma1_sq + eps); // this epsilon can go away
 				int32_t sv_sq = sigma2_sq - g * sigma12;
 
-				if (sigma2_sq == 0) { // this was... sigma2_sq < eps
-					g = 0.0;
-				}
-
 				sv_sq = (uint32_t)(MAX(sv_sq, 0));
 
 				g = MIN(g, vif_enhn_gain_limit);
 
-				int x1, x2;
 				uint32_t numer1 = (sv_sq + sigma_nsq);
 				int64_t numer1_tmp = (int64_t)((g * g * sigma1_sq)) + numer1; //numerator
-				uint16_t numlog = get_best16_from64((uint64_t)numer1_tmp, &x1);
-				uint16_t denlog = get_best16_from64((uint64_t)numer1, &x2);
-				residuals.accum_x2 += (x2 - x1);
-				num_val = log2_table[numlog] - log2_table[denlog];
-				residuals.accum_num_log += num_val;
-				residuals.accum_den_log += den_val;
-
-			}
-			else {
-				//accum_num_log += 0;
-				residuals.accum_den_log += den_val;
+				residuals.accum_num_log += log2_64(log2_table, numer1_tmp) - log2_64(log2_table, numer1);
 			}
 		}
 		else {
