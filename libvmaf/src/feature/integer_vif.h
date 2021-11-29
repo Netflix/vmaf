@@ -67,8 +67,6 @@ typedef struct VifBuffer {
 } VifBuffer;
 
 typedef struct VifResiduals {
-    int64_t accum_x;
-    int64_t accum_x2;
     int64_t accum_num_log;
     int64_t accum_den_log;
     int64_t accum_num_non_log;
@@ -124,7 +122,6 @@ static inline void PADDING_SQ_DATA_2(VifBuffer buf, int w, unsigned fwidth_half)
     }
 }
 
-void vif_filter1d_8(VifBuffer buf, unsigned w, unsigned h);
 void vif_statistic_8(struct VifState* s, float* num, float* den, unsigned w, unsigned h);
 void vif_statistic_16(struct VifState* s, float* num, float* den, unsigned w, unsigned h, int bpc, int scale);
 
@@ -134,5 +131,36 @@ void vif_statistic_16(struct VifState* s, float* num, float* den, unsigned w, un
  * only when to is not a multiple of the block size, with from = (to / block_size) + block_size
  */
 VifResiduals computeLineResiduals(VifState* s, int from, int to, int bpc, int scale);
+
+
+#ifdef _MSC_VER
+#include <intrin.h>
+
+static inline int __builtin_clz(unsigned x) {
+    return (int)__lzcnt(x);
+}
+
+static inline int __builtin_clzll(unsigned long long x) {
+    return (int)__lzcnt64(x);
+}
+
+#endif
+
+static inline int32_t log2_32(const uint16_t* log2_table, uint32_t temp)
+{
+    int k = __builtin_clz(temp);
+    k = 16 - k;
+    temp = temp >> k;
+    return log2_table[temp] + 2048 * k;
+}
+
+static inline int32_t log2_64(const uint16_t* log2_table, uint64_t temp)
+{
+    assert(temp >= 0x20000);
+    int k = __builtin_clzll(temp);
+    k = 48 - k;
+    temp = temp >> k;
+    return log2_table[temp] + 2048 * k;
+}
 
 #endif /* _FEATURE_VIF_H_ */
