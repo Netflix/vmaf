@@ -16,13 +16,10 @@
  *
  */
 
-#include <immintrin.h>
-
 #include <errno.h>
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
-#include <assert.h>
 
 #include "cpu.h"
 #include "dict.h"
@@ -56,62 +53,60 @@ typedef struct VifState {
 } VifState;
 
 static const VmafOption options[] = {
-    {
-        .name = "debug",
-        .help = "debug mode: enable additional output",
-        .offset = offsetof(VifState, debug),
-        .type = VMAF_OPT_TYPE_BOOL,
-        .default_val.b = false,
-    },
-    {
-        .name = "vif_enhn_gain_limit",
-        .alias = "egl",
-        .help = "enhancement gain imposed on vif, must be >= 1.0, "
-                "where 1.0 means the gain is completely disabled",
-        .offset = offsetof(VifState, vif_enhn_gain_limit),
-        .type = VMAF_OPT_TYPE_DOUBLE,
-        .default_val.d = DEFAULT_VIF_ENHN_GAIN_LIMIT,
-        .min = 1.0,
-        .max = DEFAULT_VIF_ENHN_GAIN_LIMIT,
-        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
-    },
-    { 0 }
+	{
+		.name = "debug",
+		.help = "debug mode: enable additional output",
+		.offset = offsetof(VifState, debug),
+		.type = VMAF_OPT_TYPE_BOOL,
+		.default_val.b = false,
+	},
+	{
+		.name = "vif_enhn_gain_limit",
+		.help = "enhancement gain imposed on vif, must be >= 1.0, "
+				"where 1.0 means the gain is completely disabled",
+		.offset = offsetof(VifState, vif_enhn_gain_limit),
+		.type = VMAF_OPT_TYPE_DOUBLE,
+		.default_val.d = DEFAULT_VIF_ENHN_GAIN_LIMIT,
+		.min = 1.0,
+		.max = DEFAULT_VIF_ENHN_GAIN_LIMIT,
+	},
+	{ 0 }
 };
 
 static FORCE_INLINE inline void
 pad_top_and_bottom(VifBuffer buf, unsigned h, int fwidth)
 {
-	const unsigned fwidth_half = fwidth / 2;
+    const unsigned fwidth_half = fwidth / 2;
 	unsigned char* ref = buf.ref;
 	unsigned char* dis = buf.dis;
 	for (unsigned i = 1; i <= fwidth_half; ++i) {
-		size_t offset = buf.stride * i;
-		memcpy(ref - offset, ref + offset, buf.stride);
-		memcpy(dis - offset, dis + offset, buf.stride);
-		memcpy(ref + buf.stride * (h - 1) + buf.stride * i,
-			ref + buf.stride * (h - 1) - buf.stride * i,
-			buf.stride);
-		memcpy(dis + buf.stride * (h - 1) + buf.stride * i,
-			dis + buf.stride * (h - 1) - buf.stride * i,
-			buf.stride);
-	}
+        size_t offset = buf.stride * i;
+        memcpy(ref - offset, ref + offset, buf.stride);
+        memcpy(dis - offset, dis + offset, buf.stride);
+        memcpy(ref + buf.stride * (h - 1) + buf.stride * i,
+               ref + buf.stride * (h - 1) - buf.stride * i,
+               buf.stride);
+        memcpy(dis + buf.stride * (h - 1) + buf.stride * i,
+               dis + buf.stride * (h - 1) - buf.stride * i,
+               buf.stride);
+    }
 }
 
 static FORCE_INLINE inline void
 decimate_and_pad(VifBuffer buf, unsigned w, unsigned h, int scale)
 {
-	uint16_t* ref = buf.ref;
-	uint16_t* dis = buf.dis;
-	const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
-	const ptrdiff_t mu_stride = buf.stride_16 / sizeof(uint16_t);
+    uint16_t *ref = buf.ref;
+    uint16_t *dis = buf.dis;
+    const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
+    const ptrdiff_t mu_stride = buf.stride_16 / sizeof(uint16_t);
 
-	for (unsigned i = 0; i < h / 2; ++i) {
-		for (unsigned j = 0; j < w / 2; ++j) {
-			ref[i * stride + j] = buf.mu1[(i * 2) * mu_stride + (j * 2)];
-			dis[i * stride + j] = buf.mu2[(i * 2) * mu_stride + (j * 2)];
-		}
-	}
-	pad_top_and_bottom(buf, h / 2, vif_filter1d_width[scale]);
+    for (unsigned i = 0; i < h / 2; ++i) {
+        for (unsigned j = 0; j < w / 2; ++j) {
+            ref[i * stride + j] = buf.mu1[(i * 2) * mu_stride + (j * 2)];
+            dis[i * stride + j] = buf.mu2[(i * 2) * mu_stride + (j * 2)];
+        }
+    }
+    pad_top_and_bottom(buf, h / 2, vif_filter1d_width[scale]);
 }
 
 static void subsample_rd_8(VifBuffer buf, unsigned w, unsigned h)
@@ -604,30 +599,30 @@ VifResiduals computeLineResiduals(VifState* s, int from, int to, int bpc, int sc
 
 
 static int init(VmafFeatureExtractor* fex, enum VmafPixelFormat pix_fmt,
-	unsigned bpc, unsigned w, unsigned h)
+                unsigned bpc, unsigned w, unsigned h)
 {
-	VifState* s = fex->priv;
+    VifState *s = fex->priv;
 
-	s->subsample_rd_8 = subsample_rd_8;
-	s->subsample_rd_16 = subsample_rd_16;
-	s->vif_statistic_8 = vif_statistic_8;
-	s->vif_statistic_16 = vif_statistic_16;
+    s->subsample_rd_8 = subsample_rd_8;
+    s->subsample_rd_16 = subsample_rd_16;
+    s->vif_statistic_8 = vif_statistic_8;
+    s->vif_statistic_16 = vif_statistic_16;
 
 #if ARCH_X86
-	unsigned flags = vmaf_get_cpu_flags();
-	if (flags & VMAF_X86_CPU_FLAG_AVX2) {
-		s->subsample_rd_8 = vif_subsample_rd_8_avx2;
-		s->subsample_rd_16 = vif_subsample_rd_16_avx2;
-		s->vif_statistic_8 = vif_statistic_8_avx2;
-		s->vif_statistic_16 = vif_statistic_16_avx2;
-	}
+    unsigned flags = vmaf_get_cpu_flags();
+    if (flags & VMAF_X86_CPU_FLAG_AVX2) {
+        s->subsample_rd_8 = vif_subsample_rd_8_avx2;
+        s->subsample_rd_16 = vif_subsample_rd_16_avx2;
+        s->vif_statistic_8 = vif_statistic_8_avx2;
+        s->vif_statistic_16 = vif_statistic_16_avx2;
+    }
 #if HAVE_AVX512
-	if (flags & VMAF_X86_CPU_FLAG_AVX512) {
-		s->subsample_rd_8 = vif_subsample_rd_8_avx2;
-		s->subsample_rd_16 = vif_subsample_rd_16_avx512;
-		s->vif_statistic_8 = vif_statistic_8_avx512;
-		s->vif_statistic_16 = vif_statistic_16_avx512;
-	}
+    if (flags & VMAF_X86_CPU_FLAG_AVX512) {
+        s->subsample_rd_8 = vif_subsample_rd_8_avx2;
+        s->subsample_rd_16 = vif_subsample_rd_16_avx512;
+        s->vif_statistic_8 = vif_statistic_8_avx512;
+        s->vif_statistic_16 = vif_statistic_16_avx512;
+    }
 #endif
 #endif
 
@@ -681,14 +676,14 @@ fail:
 }
 
 typedef struct VifScore {
-	struct {
-		float num;
-		float den;
-	} scale[4];
+    struct {
+        float num;
+        float den;
+    } scale[4];
 } VifScore;
 
-static int write_scores(VmafFeatureCollector* feature_collector, unsigned index,
-	VifScore vif, VifState* s)
+static int write_scores(VmafFeatureCollector *feature_collector, unsigned index,
+                        VifScore vif, VifState *s)
 {
     int err = 0;
 
