@@ -202,7 +202,7 @@ if is_asm_enabled
             'x86_avx512',
             x86_avx512_sources,
             include_directories : vmaf_base_include,
-            c_args : ['-mavx512f', '-mavx512dq', '-mavx512bw',
+            c_args : ['-mavx512f', '-mavx512dq', '-mavx512bw', '-mavx512cd', '-mavx512dq',
                       '-mavx512vbmi', '-mavx512vbmi2', '-mavx512vl'] +
                      vmaf_cflags_common,
         )
