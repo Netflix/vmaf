@@ -16,13 +16,10 @@
  *
  */
 
-#include <immintrin.h>
-
 #include <errno.h>
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
-#include <assert.h>
 
 #include "cpu.h"
 #include "common/macros.h"
@@ -41,60 +38,60 @@
 #endif
 
 static const VmafOption options[] = {
-	{
-		.name = "debug",
-		.help = "debug mode: enable additional output",
-		.offset = offsetof(VifState, debug),
-		.type = VMAF_OPT_TYPE_BOOL,
-		.default_val.b = false,
-	},
-	{
-		.name = "vif_enhn_gain_limit",
-		.help = "enhancement gain imposed on vif, must be >= 1.0, "
-				"where 1.0 means the gain is completely disabled",
-		.offset = offsetof(VifState, vif_enhn_gain_limit),
-		.type = VMAF_OPT_TYPE_DOUBLE,
-		.default_val.d = DEFAULT_VIF_ENHN_GAIN_LIMIT,
-		.min = 1.0,
-		.max = DEFAULT_VIF_ENHN_GAIN_LIMIT,
-	},
-	{ 0 }
+    {
+        .name = "debug",
+        .help = "debug mode: enable additional output",
+        .offset = offsetof(VifState, debug),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
+    {
+        .name = "vif_enhn_gain_limit",
+        .help = "enhancement gain imposed on vif, must be >= 1.0, "
+                "where 1.0 means the gain is completely disabled",
+        .offset = offsetof(VifState, vif_enhn_gain_limit),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = DEFAULT_VIF_ENHN_GAIN_LIMIT,
+        .min = 1.0,
+        .max = DEFAULT_VIF_ENHN_GAIN_LIMIT,
+    },
+    { 0 }
 };
 
 static FORCE_INLINE inline void
 pad_top_and_bottom(VifBuffer buf, unsigned h, int fwidth)
 {
-	const unsigned fwidth_half = fwidth / 2;
+    const unsigned fwidth_half = fwidth / 2;
 	unsigned char* ref = buf.ref;
 	unsigned char* dis = buf.dis;
 	for (unsigned i = 1; i <= fwidth_half; ++i) {
-		size_t offset = buf.stride * i;
-		memcpy(ref - offset, ref + offset, buf.stride);
-		memcpy(dis - offset, dis + offset, buf.stride);
-		memcpy(ref + buf.stride * (h - 1) + buf.stride * i,
-			ref + buf.stride * (h - 1) - buf.stride * i,
-			buf.stride);
-		memcpy(dis + buf.stride * (h - 1) + buf.stride * i,
-			dis + buf.stride * (h - 1) - buf.stride * i,
-			buf.stride);
-	}
+        size_t offset = buf.stride * i;
+        memcpy(ref - offset, ref + offset, buf.stride);
+        memcpy(dis - offset, dis + offset, buf.stride);
+        memcpy(ref + buf.stride * (h - 1) + buf.stride * i,
+               ref + buf.stride * (h - 1) - buf.stride * i,
+               buf.stride);
+        memcpy(dis + buf.stride * (h - 1) + buf.stride * i,
+               dis + buf.stride * (h - 1) - buf.stride * i,
+               buf.stride);
+    }
 }
 
 static FORCE_INLINE inline void
 decimate_and_pad(VifBuffer buf, unsigned w, unsigned h, int scale)
 {
-	uint16_t* ref = buf.ref;
-	uint16_t* dis = buf.dis;
-	const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
-	const ptrdiff_t mu_stride = buf.stride_16 / sizeof(uint16_t);
+    uint16_t *ref = buf.ref;
+    uint16_t *dis = buf.dis;
+    const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
+    const ptrdiff_t mu_stride = buf.stride_16 / sizeof(uint16_t);
 
-	for (unsigned i = 0; i < h / 2; ++i) {
-		for (unsigned j = 0; j < w / 2; ++j) {
-			ref[i * stride + j] = buf.mu1[(i * 2) * mu_stride + (j * 2)];
-			dis[i * stride + j] = buf.mu2[(i * 2) * mu_stride + (j * 2)];
-		}
-	}
-	pad_top_and_bottom(buf, h / 2, vif_filter1d_width[scale]);
+    for (unsigned i = 0; i < h / 2; ++i) {
+        for (unsigned j = 0; j < w / 2; ++j) {
+            ref[i * stride + j] = buf.mu1[(i * 2) * mu_stride + (j * 2)];
+            dis[i * stride + j] = buf.mu2[(i * 2) * mu_stride + (j * 2)];
+        }
+    }
+    pad_top_and_bottom(buf, h / 2, vif_filter1d_width[scale]);
 }
 
 static void subsample_rd_8(VifBuffer buf, unsigned w, unsigned h)
@@ -587,179 +584,179 @@ VifResiduals computeLineResiduals(VifState* s, int from, int to, int bpc, int sc
 
 
 static int init(VmafFeatureExtractor* fex, enum VmafPixelFormat pix_fmt,
-	unsigned bpc, unsigned w, unsigned h)
+                unsigned bpc, unsigned w, unsigned h)
 {
-	VifState* s = fex->priv;
+    VifState *s = fex->priv;
 
-	s->subsample_rd_8 = subsample_rd_8;
-	s->subsample_rd_16 = subsample_rd_16;
-	s->vif_statistic_8 = vif_statistic_8;
-	s->vif_statistic_16 = vif_statistic_16;
+    s->subsample_rd_8 = subsample_rd_8;
+    s->subsample_rd_16 = subsample_rd_16;
+    s->vif_statistic_8 = vif_statistic_8;
+    s->vif_statistic_16 = vif_statistic_16;
 
 #if ARCH_X86
-	unsigned flags = vmaf_get_cpu_flags();
-	if (flags & VMAF_X86_CPU_FLAG_AVX2) {
-		s->subsample_rd_8 = vif_subsample_rd_8_avx2;
-		s->subsample_rd_16 = vif_subsample_rd_16_avx2;
-		s->vif_statistic_8 = vif_statistic_8_avx2;
-		s->vif_statistic_16 = vif_statistic_16_avx2;
-	}
+    unsigned flags = vmaf_get_cpu_flags();
+    if (flags & VMAF_X86_CPU_FLAG_AVX2) {
+        s->subsample_rd_8 = vif_subsample_rd_8_avx2;
+        s->subsample_rd_16 = vif_subsample_rd_16_avx2;
+        s->vif_statistic_8 = vif_statistic_8_avx2;
+        s->vif_statistic_16 = vif_statistic_16_avx2;
+    }
 #if HAVE_AVX512
-	if (flags & VMAF_X86_CPU_FLAG_AVX512) {
-		s->subsample_rd_8 = vif_subsample_rd_8_avx2;
-		s->subsample_rd_16 = vif_subsample_rd_16_avx512;
-		s->vif_statistic_8 = vif_statistic_8_avx512;
-		s->vif_statistic_16 = vif_statistic_16_avx512;
-	}
+    if (flags & VMAF_X86_CPU_FLAG_AVX512) {
+        s->subsample_rd_8 = vif_subsample_rd_8_avx2;
+        s->subsample_rd_16 = vif_subsample_rd_16_avx512;
+        s->vif_statistic_8 = vif_statistic_8_avx512;
+        s->vif_statistic_16 = vif_statistic_16_avx512;
+    }
 #endif
 #endif
 
-	log_generate(s->log2_table);
+    log_generate(s->log2_table);
 
-	(void)pix_fmt;
-	const bool hbd = bpc > 8;
+    (void)pix_fmt;
+    const bool hbd = bpc > 8;
 
-	s->buf.stride = ALIGN_CEIL(w << hbd);
-	s->buf.stride_16 = ALIGN_CEIL(w * sizeof(uint16_t));
-	s->buf.stride_32 = ALIGN_CEIL(w * sizeof(uint32_t));
-	s->buf.stride_tmp =
-		ALIGN_CEIL((MAX_ALIGN + w + MAX_ALIGN) * sizeof(uint32_t));
-	const size_t frame_size = s->buf.stride * h;
-	const size_t pad_size = s->buf.stride * 8;
-	const size_t data_sz =
-		2 * (pad_size + frame_size + pad_size) + 2 * (h * s->buf.stride_16) +
-		5 * (s->buf.stride_32) + 7 * s->buf.stride_tmp;
-	unsigned char* data = aligned_malloc(data_sz, MAX_ALIGN);
-	if (!data) return -ENOMEM;
+    s->buf.stride = ALIGN_CEIL(w << hbd);
+    s->buf.stride_16 = ALIGN_CEIL(w * sizeof(uint16_t));
+    s->buf.stride_32 = ALIGN_CEIL(w * sizeof(uint32_t));
+    s->buf.stride_tmp =
+        ALIGN_CEIL((MAX_ALIGN + w + MAX_ALIGN) * sizeof(uint32_t));
+    const size_t frame_size = s->buf.stride * h;
+    const size_t pad_size = s->buf.stride * 8;
+    const size_t data_sz =
+        2 * (pad_size + frame_size + pad_size) + 2 * (h * s->buf.stride_16) +
+        5 * (s->buf.stride_32) + 7 * s->buf.stride_tmp;
+    unsigned char* data = aligned_malloc(data_sz, MAX_ALIGN);
+    if (!data) return -ENOMEM;
 
-	s->buf.data = data; data += pad_size;
-	s->buf.ref = data; data += frame_size + pad_size + pad_size;
-	s->buf.dis = data; data += frame_size + pad_size;
-	s->buf.mu1 = data; data += h * s->buf.stride_16;
-	s->buf.mu2 = data; data += h * s->buf.stride_16;
-	s->buf.mu1_32 = data; data += s->buf.stride_32;
-	s->buf.mu2_32 = data; data += s->buf.stride_32;
-	s->buf.ref_sq = data; data += s->buf.stride_32;
-	s->buf.dis_sq = data; data += s->buf.stride_32;
-	s->buf.ref_dis = data; data += s->buf.stride_32;
-	s->buf.tmp.mu1 = data; data += s->buf.stride_tmp;
-	s->buf.tmp.mu2 = data; data += s->buf.stride_tmp;
-	s->buf.tmp.ref = data; data += s->buf.stride_tmp;
-	s->buf.tmp.dis = data; data += s->buf.stride_tmp;
-	s->buf.tmp.ref_dis = data; data += s->buf.stride_tmp;
-	s->buf.tmp.ref_convol = data; data += s->buf.stride_tmp;
-	s->buf.tmp.dis_convol = data;
+    s->buf.data = data; data += pad_size;
+    s->buf.ref = data; data += frame_size + pad_size + pad_size;
+    s->buf.dis = data; data += frame_size + pad_size;
+    s->buf.mu1 = data; data += h * s->buf.stride_16;
+    s->buf.mu2 = data; data += h * s->buf.stride_16;
+    s->buf.mu1_32 = data; data += s->buf.stride_32;
+    s->buf.mu2_32 = data; data += s->buf.stride_32;
+    s->buf.ref_sq = data; data += s->buf.stride_32;
+    s->buf.dis_sq = data; data += s->buf.stride_32;
+    s->buf.ref_dis = data; data += s->buf.stride_32;
+    s->buf.tmp.mu1 = data; data += s->buf.stride_tmp;
+    s->buf.tmp.mu2 = data; data += s->buf.stride_tmp;
+    s->buf.tmp.ref = data; data += s->buf.stride_tmp;
+    s->buf.tmp.dis = data; data += s->buf.stride_tmp;
+    s->buf.tmp.ref_dis = data; data += s->buf.stride_tmp;
+    s->buf.tmp.ref_convol = data; data += s->buf.stride_tmp;
+    s->buf.tmp.dis_convol = data;
 
-	return 0;
+    return 0;
 }
 
 typedef struct VifScore {
-	struct {
-		float num;
-		float den;
-	} scale[4];
+    struct {
+        float num;
+        float den;
+    } scale[4];
 } VifScore;
 
-static int write_scores(VmafFeatureCollector* feature_collector, unsigned index,
-	VifScore vif, VifState* s)
+static int write_scores(VmafFeatureCollector *feature_collector, unsigned index,
+                        VifScore vif, VifState *s)
 {
-	int err = 0;
+    int err = 0;
 
-	const char* key =
-		s->vif_enhn_gain_limit != DEFAULT_VIF_ENHN_GAIN_LIMIT ?
-		"vif_enhn_gain_limit" : NULL;
-	const double val = s->vif_enhn_gain_limit;
+    const char *key =
+        s->vif_enhn_gain_limit != DEFAULT_VIF_ENHN_GAIN_LIMIT ?
+        "vif_enhn_gain_limit" : NULL;
+    const double val = s->vif_enhn_gain_limit;
 
-	err |= vmaf_feature_collector_append_templated(feature_collector,
-		"VMAF_integer_feature_vif_scale0_score",
-		key, val,
-		vif.scale[0].num / vif.scale[0].den,
-		index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                        "VMAF_integer_feature_vif_scale0_score",
+                                         key, val,
+                                         vif.scale[0].num / vif.scale[0].den,
+                                         index);
 
-	err |= vmaf_feature_collector_append_templated(feature_collector,
-		"VMAF_integer_feature_vif_scale1_score",
-		key, val,
-		vif.scale[1].num / vif.scale[1].den,
-		index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                        "VMAF_integer_feature_vif_scale1_score",
+                                        key, val,
+                                        vif.scale[1].num / vif.scale[1].den,
+                                        index);
 
-	err |= vmaf_feature_collector_append_templated(feature_collector,
-		"VMAF_integer_feature_vif_scale2_score",
-		key, val,
-		vif.scale[2].num / vif.scale[2].den,
-		index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                        "VMAF_integer_feature_vif_scale2_score",
+                                        key, val,
+                                        vif.scale[2].num / vif.scale[2].den,
+                                        index);
 
-	err |= vmaf_feature_collector_append_templated(feature_collector,
-		"VMAF_integer_feature_vif_scale3_score",
-		key, val,
-		vif.scale[3].num / vif.scale[3].den,
-		index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                        "VMAF_integer_feature_vif_scale3_score",
+                                        key, val,
+                                        vif.scale[3].num / vif.scale[3].den,
+                                        index);
 
-	if (!s->debug) return err;
+    if (!s->debug) return err;
 
-	const double score_num =
-		(double)vif.scale[0].num + (double)vif.scale[1].num +
-		(double)vif.scale[2].num + (double)vif.scale[3].num;
+    const double score_num =
+        (double)vif.scale[0].num + (double)vif.scale[1].num +
+        (double)vif.scale[2].num + (double)vif.scale[3].num;
 
-	const double score_den =
-		(double)vif.scale[0].den + (double)vif.scale[1].den +
-		(double)vif.scale[2].den + (double)vif.scale[3].den;
+    const double score_den =
+        (double)vif.scale[0].den + (double)vif.scale[1].den +
+        (double)vif.scale[2].den + (double)vif.scale[3].den;
 
-	const double score =
-		score_den == 0.0 ? 1.0f : score_num / score_den;
+    const double score =
+        score_den == 0.0 ? 1.0f : score_num / score_den;
 
-	err |= vmaf_feature_collector_append_templated(feature_collector,
-		"integer_vif", key, val,
-		score, index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                   "integer_vif", key, val,
+                                                   score, index);
 
-	err |= vmaf_feature_collector_append_templated(feature_collector,
-		"integer_vif_num", key, val,
-		score_num, index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                   "integer_vif_num", key, val,
+                                                   score_num, index);
 
-	err |= vmaf_feature_collector_append_templated(feature_collector,
-		"integer_vif_den", key, val,
-		score_den, index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                   "integer_vif_den", key, val,
+                                                   score_den, index);
 
-	err |= vmaf_feature_collector_append_templated(feature_collector,
-		"integer_vif_num_scale0",
-		key, val,
-		vif.scale[0].num, index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                   "integer_vif_num_scale0",
+                                                   key, val,
+                                                   vif.scale[0].num, index);
 
-	err |= vmaf_feature_collector_append_templated(feature_collector,
-		"integer_vif_den_scale0",
-		key, val,
-		vif.scale[0].den, index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                   "integer_vif_den_scale0",
+                                                   key, val,
+                                                   vif.scale[0].den, index);
 
-	err |= vmaf_feature_collector_append_templated(feature_collector,
-		"integer_vif_num_scale1",
-		key, val,
-		vif.scale[1].num, index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                   "integer_vif_num_scale1",
+                                                   key, val,
+                                                   vif.scale[1].num, index);
 
-	err |= vmaf_feature_collector_append_templated(feature_collector,
-		"integer_vif_den_scale1",
-		key, val,
-		vif.scale[1].den, index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                   "integer_vif_den_scale1",
+                                                   key, val,
+                                                   vif.scale[1].den, index);
 
-	err |= vmaf_feature_collector_append_templated(feature_collector,
-		"integer_vif_num_scale2",
-		key, val,
-		vif.scale[2].num, index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                   "integer_vif_num_scale2",
+                                                   key, val,
+                                                   vif.scale[2].num, index);
 
-	err |= vmaf_feature_collector_append_templated(feature_collector,
-		"integer_vif_den_scale2",
-		key, val,
-		vif.scale[2].den, index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                   "integer_vif_den_scale2",
+                                                   key, val,
+                                                   vif.scale[2].den, index);
 
-	err |= vmaf_feature_collector_append_templated(feature_collector,
-		"integer_vif_num_scale3",
-		key, val,
-		vif.scale[3].num, index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                   "integer_vif_num_scale3",
+                                                   key, val,
+                                                   vif.scale[3].num, index);
 
-	err |= vmaf_feature_collector_append_templated(feature_collector,
-		"integer_vif_den_scale3",
-		key, val,
-		vif.scale[3].den, index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                                   "integer_vif_den_scale3",
+                                                   key, val,
+                                                   vif.scale[3].den, index);
 
-	return err;
+    return err;
 }
 
 static int extract(VmafFeatureExtractor* fex,
