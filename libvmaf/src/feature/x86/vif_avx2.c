@@ -138,7 +138,6 @@ void vif_statistic_8_avx2(struct VifState* s, float* num, float* den, unsigned w
     ALIGNED(32) uint32_t xx[16];
     ALIGNED(32) uint32_t yy[16];
     ALIGNED(32) uint32_t xy[16];
-
     // loop on row, each iteration produces one line of output
     for (unsigned i = 0; i < h; ++i) {
         // Filter vertically
@@ -471,7 +470,8 @@ void vif_statistic_8_avx2(struct VifState* s, float* num, float* den, unsigned w
                     */
                     accum_den_log += log2_32(log2_table, sigma_nsq + sigma1_sq) - 2048 * 17;
 
-                    if (sigma12 > 0 && sigma2_sq > 0) {
+                    if (sigma12 > 0 && sigma2_sq > 0) 
+                    {
                         // num_val = log2f(1.0f + (g * g * sigma1_sq) / (sv_sq + sigma_nsq));
                         /**
                         * In floating-point numerator = log2((1.0f + (g * g * sigma1_sq)/(sv_sq + sigma_nsq))
