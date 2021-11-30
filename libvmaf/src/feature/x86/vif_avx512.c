@@ -28,6 +28,8 @@
 #ifdef __GNUC__
 #pragma GCC target "avx512f"
 #pragma GCC target "avx512bw"
+#pragma GCC target "avx512cd"
+#pragma GCC target "avx512dq"
 #endif
 
 #include "feature/integer_vif.h"
