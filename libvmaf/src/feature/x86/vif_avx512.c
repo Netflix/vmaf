@@ -71,6 +71,151 @@ decimate_and_pad(VifBuffer buf, unsigned w, unsigned h, int scale)
     pad_top_and_bottom(buf, h / 2, vif_filter1d_width[scale]);
 }
 
+typedef struct Residuals512 {
+    __m512i maccum_num_log;
+    __m512i maccum_den_log;
+    __m512i maccum_num_non_log;
+    __m512i maccum_den_non_log;
+} Residuals512;
+
+// proof of concept for VIF computation. Old APIs... to be integrated, and adapted to new API / structures
+// it is avx512 because there's a couple of instructions (lzcnt, 64 bit int <-> double conversion) which require avx512
+// what a pity... 
+static inline void vif_statistic_avx512(Residuals512* out, int xx[16], int xy[16], int yy[16], uint16_t* log2_table, double vif_enhn_gain_limit)
+{
+    //float equivalent of 2. (2 * 65536)
+    static const int32_t sigma_nsq = 65536 << 1;
+
+#ifdef CHECK_AVX
+    __m512i ref_accum_num_log = out->maccum_num_log;
+    __m512i ref_accum_den_log = out->maccum_den_log;
+    __m512i ref_accum_num_non_log = out->maccum_num_non_log;
+    __m512i ref_accum_den_non_log = out->maccum_den_non_log;
+#endif
+
+    __m512i maccum_num_log = out->maccum_num_log;
+    __m512i maccum_den_log = out->maccum_den_log;
+    __m512i maccum_num_non_log = out->maccum_num_non_log;
+    __m512i maccum_den_non_log = out->maccum_den_non_log;
+
+    const double eps = 65536 * 1.0e-10;
+
+    for (int b = 0; b < 16; b += 8) {
+        __m512i msigma1 = _mm512_cvtepi32_epi64(_mm256_loadu_si256((__m256i*)(xx + b)));
+        __m512i msigma2 = _mm512_cvtepi32_epi64(_mm256_loadu_si256((__m256i*)(yy + b)));
+        __m512i msigma12 = _mm512_cvtepi32_epi64(_mm256_loadu_si256((__m256i*)(xy + b)));
+        msigma2 = _mm512_max_epi64(msigma2, _mm512_setzero_si512());
+        msigma12 = _mm512_max_epi64(msigma12, _mm512_setzero_si512());
+
+        // log stage
+        __m512i mlog_den_stage1 = _mm512_add_epi64(msigma1, _mm512_set1_epi64(sigma_nsq));
+        __m512i mnorm = _mm512_sub_epi64(_mm512_set1_epi64(48), _mm512_lzcnt_epi64(mlog_den_stage1));
+        __m512i mlog_den1 = _mm512_srlv_epi64(mlog_den_stage1, mnorm);
+        // note: I'm getting 32 bit here, but I need just 16!
+        __m512i mden_val = _mm512_i32gather_epi64(_mm512_cvtusepi64_epi32(mlog_den1), log2_table, sizeof(*log2_table));
+        mden_val = _mm512_and_si512(mden_val, _mm512_set1_epi64(0xffff)); // we took 64 bits, we need 16
+        mden_val = _mm512_add_epi64(mden_val, _mm512_slli_epi64(mnorm, 11));
+        mden_val = _mm512_sub_epi64(mden_val, _mm512_set1_epi64(2048 * 17));
+        __mmask8 msigma1_mask = _mm512_cmpgt_epi64_mask(_mm512_set1_epi64(sigma_nsq), msigma1);
+        __mmask8 msigma2_mask = _mm512_cmpgt_epi64_mask(msigma2, _mm512_setzero_si512());
+        //msigma12 = _mm512_and_si512_(msigma2_mask, msigma12);
+        //maccum_x = _mm512_add_epi64(maccum_x, _mm512_andnot_si512(msigma1_mask, _mm512_add_epi64(mx, _mm512_set1_epi64(17))));
+        __m512d msigma1_d = _mm512_cvtepu64_pd(msigma1);
+        __m512d mg = _mm512_div_pd(_mm512_cvtepu64_pd(msigma12), _mm512_add_pd(msigma1_d, _mm512_set1_pd(eps)));
+        __m512i msv_sq = _mm512_cvttpd_epi64(_mm512_sub_pd(_mm512_cvtepi64_pd(msigma2), _mm512_mul_pd(mg, _mm512_cvtepi64_pd(msigma12))));
+        msv_sq = _mm512_max_epi64(msv_sq, _mm512_setzero_si512());
+        mg = _mm512_min_pd(mg, _mm512_set1_pd(vif_enhn_gain_limit));
+
+        __m512i mnumer1 = _mm512_add_epi64(msv_sq, _mm512_set1_epi64(sigma_nsq));
+        __m512i mnumer1_tmp = _mm512_add_epi64(mnumer1, _mm512_cvttpd_epi64(_mm512_mul_pd(_mm512_mul_pd(mg, mg), msigma1_d)));
+
+        // TODO: macro
+        __m512i mnumer1_tmp_lz = _mm512_sub_epi64(_mm512_set1_epi64(48), _mm512_lzcnt_epi64(mnumer1_tmp));
+        __m512i mnumer1_tmp_mantissa = _mm512_srlv_epi64(mnumer1_tmp, mnumer1_tmp_lz);
+        __m512i mnumer1_tmp_mantissa_log = _mm512_and_si512(_mm512_set1_epi64(0xffff), _mm512_i32gather_epi64(_mm512_cvtusepi64_epi32(mnumer1_tmp_mantissa), log2_table, sizeof(*log2_table))); // we took 64 bits, we need 16
+        __m512i mnumer1_tmp_log = _mm512_add_epi64(mnumer1_tmp_mantissa_log, _mm512_slli_epi64(mnumer1_tmp_lz, 11));
+
+        __m512i mnumer1_lz = _mm512_sub_epi64(_mm512_set1_epi64(48), _mm512_lzcnt_epi64(mnumer1));
+        __m512i mnumer1_mantissa = _mm512_srlv_epi64(mnumer1, mnumer1_lz);
+        __m512i mnumer1_mantissa_log = _mm512_and_si512(_mm512_set1_epi64(0xffff), _mm512_i32gather_epi64(_mm512_cvtusepi64_epi32(mnumer1_mantissa), log2_table, sizeof(*log2_table))); // we took 64 bits, we need 16
+        __m512i mnumer1_log = _mm512_add_epi64(mnumer1_mantissa_log, _mm512_slli_epi64(mnumer1_lz, 11));
+
+        __m512i mnum_val = _mm512_sub_epi64(mnumer1_tmp_log, mnumer1_log);
+
+        maccum_num_log = _mm512_mask_add_epi64(maccum_num_log, ~msigma1_mask, maccum_num_log, mnum_val);
+        maccum_den_log = _mm512_mask_add_epi64(maccum_den_log, ~msigma1_mask, maccum_den_log, mden_val);
+
+        // non log stage
+        maccum_num_non_log = _mm512_mask_add_epi64(maccum_num_non_log, msigma1_mask, maccum_num_non_log, msigma2);
+        maccum_den_non_log = _mm512_mask_add_epi64(maccum_den_non_log, msigma1_mask, maccum_den_non_log, _mm512_set1_epi64(1));
+
+#ifdef CHECK_AVX
+        for (unsigned i = 0; i < 8; i++) {
+            int32_t sigma1_sq = xx[b + i];
+            int32_t sigma2_sq = yy[b + i];
+            int32_t sigma12 = xy[b + i];
+
+            sigma2_sq = MAX(sigma2_sq, 0);
+            sigma12 = MAX(sigma12, 0);
+            if (sigma2_sq == 0) { // this will zero g, but we're still on integers!
+                sigma12 = 0;
+            }
+
+            assert(msigma1.m512i_u64[i] == sigma1_sq);
+            assert(msigma12.m512i_u64[i] == sigma12);
+            assert(msigma2.m512i_u64[i] == sigma2_sq);
+
+            if (sigma1_sq >= sigma_nsq) {
+                /**
+                * log values are taken from the look-up table generated by
+                * log_generate() function which is called in integer_combo_threadfunc
+                * den_val in float is log2(1 + sigma1_sq/2)
+                * here it is converted to equivalent of log2(2+sigma1_sq) - log2(2) i.e log2(2*65536+sigma1_sq) - 17
+                * multiplied by 2048 as log_value = log2(i)*2048 i=16384 to 65535 generated using log_value
+                * x because best 16 bits are taken
+                */
+                int64_t den_val = log2_32(log2_table, sigma_nsq + sigma1_sq) - 2048 * 17;
+                assert(mden_val.m512i_u64[i] == den_val);
+                ref_accum_den_log.m512i_u64[i] += den_val;
+
+                // num_val = log2f(1.0f + (g * g * sigma1_sq) / (sv_sq + sigma_nsq));
+                /**
+                * In floating-point numerator = log2((1.0f + (g * g * sigma1_sq)/(sv_sq + sigma_nsq))
+                *
+                * In Fixed-point the above is converted to
+                * numerator = log2((sv_sq + sigma_nsq)+(g * g * sigma1_sq))- log2(sv_sq + sigma_nsq)
+                */
+                double g = sigma12 / (sigma1_sq + eps); // this epsilon can go away
+                int32_t sv_sq = sigma2_sq - g * sigma12;
+                sv_sq = (uint32_t)(MAX(sv_sq, 0));
+                g = MIN(g, vif_enhn_gain_limit);
+                assert(msv_sq.m512i_i64[i] == sv_sq);
+                assert(mg.m512d_f64[i] == g);
+
+                uint32_t numer1 = (sv_sq + sigma_nsq);
+                int64_t numer1_tmp = (int64_t)((g * g * sigma1_sq)) + numer1; //numerator
+
+                assert(mnum_val.m512i_i64[i] == log2_64(log2_table, numer1_tmp) - log2_64(log2_table, numer1));
+                ref_accum_num_log.m512i_u64[i] += log2_64(log2_table, numer1_tmp) - log2_64(log2_table, numer1);
+            }
+            else {
+                ref_accum_num_non_log.m512i_u64[i] += sigma2_sq;
+                ref_accum_den_non_log.m512i_u64[i]++;
+            }
+            assert(maccum_num_log.m512i_i64[i] == ref_accum_num_log.m512i_u64[i]);
+            assert(maccum_den_log.m512i_i64[i] == ref_accum_den_log.m512i_u64[i]);
+            assert(maccum_num_non_log.m512i_i64[i] == ref_accum_num_non_log.m512i_u64[i]);
+            assert(maccum_den_non_log.m512i_i64[i] == ref_accum_den_non_log.m512i_u64[i]);
+        }
+#endif
+    }
+
+    out->maccum_num_log = maccum_num_log;
+    out->maccum_den_log = maccum_den_log;
+    out->maccum_num_non_log = maccum_num_non_log;
+    out->maccum_den_non_log = maccum_den_non_log;
+}
+
 void vif_statistic_8_avx512(struct VifState* s, float* num, float* den, unsigned w, unsigned h) {
     const unsigned fwidth = vif_filter1d_width[0];
     const uint16_t* vif_filt_s0 = vif_filter1d_table[0];
@@ -100,13 +245,18 @@ void vif_statistic_8_avx512(struct VifState* s, float* num, float* den, unsigned
     //float equivalent of 2. (2 * 65536)
     static const int32_t sigma_nsq = 65536 << 1;
 
-    int64_t accum_num_log = 0.0;
-    int64_t accum_den_log = 0.0;
+    int64_t accum_num_log = 0;
+    int64_t accum_den_log = 0;
     int64_t accum_num_non_log = 0;
     int64_t accum_den_non_log = 0;
 
     __m512i round_128 = _mm512_set1_epi32(128);
 
+    Residuals512 residuals;
+    residuals.maccum_den_log = _mm512_setzero_si512();
+    residuals.maccum_num_log = _mm512_setzero_si512();
+    residuals.maccum_den_non_log = _mm512_setzero_si512();
+    residuals.maccum_num_non_log = _mm512_setzero_si512();
     for (unsigned i = 0; i < h; ++i)
     {
         //VERTICAL
@@ -287,56 +437,14 @@ void vif_statistic_8_avx512(struct VifState* s, float* num, float* den, unsigned
                 __m512i mask = _mm512_set_epi32(30, 28, 26, 24, 22, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0);
                 __m512i refdis = _mm512_permutex2var_epi32(acc0_512, mask, acc2_512);
                 _mm512_storeu_si512((__m512i*)&xy[0], _mm512_sub_epi32(refdis, mu1mu2));
-
-
             }
-
-            for (unsigned int j = 0; j < 16; j++) {
-                int32_t sigma1_sq = xx[j];
-                int32_t sigma2_sq = yy[j];
-                int32_t sigma12 = xy[j];
-
-                if (sigma1_sq >= sigma_nsq) {
-                    /**
-                    * log values are taken from the look-up table generated by
-                    * log_generate() function which is called in integer_combo_threadfunc
-                    * den_val in float is log2(1 + sigma1_sq/2)
-                    * here it is converted to equivalent of log2(2+sigma1_sq) - log2(2) i.e log2(2*65536+sigma1_sq) - 17
-                    * multiplied by 2048 as log_value = log2(i)*2048 i=16384 to 65535 generated using log_value
-                    * x because best 16 bits are taken
-                    */
-                    accum_den_log += log2_32(log2_table, sigma_nsq + sigma1_sq) - 2048 * 17;
-
-                    if (sigma12 > 0 && sigma2_sq > 0) {
-                        // num_val = log2f(1.0f + (g * g * sigma1_sq) / (sv_sq + sigma_nsq));
-                        /**
-                        * In floating-point numerator = log2((1.0f + (g * g * sigma1_sq)/(sv_sq + sigma_nsq))
-                        *
-                        * In Fixed-point the above is converted to
-                        * numerator = log2((sv_sq + sigma_nsq)+(g * g * sigma1_sq))- log2(sv_sq + sigma_nsq)
-                        */
-
-                        const double eps = 65536 * 1.0e-10;
-                        double g = sigma12 / (sigma1_sq + eps); // this epsilon can go away
-                        int32_t sv_sq = sigma2_sq - g * sigma12;
-
-                        sv_sq = (uint32_t)(MAX(sv_sq, 0));
-
-                        g = MIN(g, vif_enhn_gain_limit);
-
-                        uint32_t numer1 = (sv_sq + sigma_nsq);
-                        int64_t numer1_tmp = (int64_t)((g * g * sigma1_sq)) + numer1; //numerator
-                        accum_num_log += log2_64(log2_table, numer1_tmp) - log2_64(log2_table, numer1);
-                    }
-                }
-                else {
-                    accum_num_non_log += sigma2_sq;
-                    accum_den_non_log++;
-                }
-            }
+            vif_statistic_avx512(&residuals, xx, xy, yy, log2_table, vif_enhn_gain_limit);
         }
     }
-    //changed calculation to increase performance
+    accum_num_log = _mm512_reduce_add_epi64(residuals.maccum_num_log);
+    accum_den_log = _mm512_reduce_add_epi64(residuals.maccum_den_log);
+    accum_num_non_log = _mm512_reduce_add_epi64(residuals.maccum_num_non_log);
+    accum_den_non_log = _mm512_reduce_add_epi64(residuals.maccum_den_non_log);
     num[0] = accum_num_log / 2048.0 + (accum_den_non_log - ((accum_num_non_log) / 16384.0) / (65025.0));
     den[0] = accum_den_log / 2048.0 + accum_den_non_log;
 }
@@ -1266,5 +1374,3 @@ void vif_subsample_rd_16_avx512(VifBuffer buf, unsigned w, unsigned h, int scale
     }
     decimate_and_pad(buf, w, h, scale);
 }
-
-#endif
