@@ -117,14 +117,14 @@ char *vmaf_feature_name_from_options(char *name, VmafOption *opts, void *obj,
 
     snprintfcat(buf, buf_sz, "%s", name);
 
-    va_list(args);
-    va_start(args, param_cnt);
 
-    for (unsigned i = 0; i < param_cnt; i++) {
-        VmafOption *opt = NULL;
-        const void *param = va_arg(args, void*);
-        for (unsigned j = 0; (opt = &opts[j]); j++) {
-            if (!opt->name) break;
+    VmafOption *opt = NULL;
+    for (unsigned i = 0; (opt = &opts[i]); i++) {
+        if (!opt->name) break;
+        va_list(args);
+        va_start(args, param_cnt);
+        for (unsigned j = 0; j < param_cnt; j++) {
+            const void *param = va_arg(args, void*);
             const void *data = (uint8_t*)obj + opt->offset;
             if (data != param) continue;
             if (option_is_default(opt, data)) continue;
@@ -146,9 +146,9 @@ char *vmaf_feature_name_from_options(char *name, VmafOption *opts, void *obj,
                 break;
             }
         }
+        va_end(args);
     }
 
-    va_end(args);
 
     const size_t dst_sz = strnlen(buf, buf_sz) + 1;
     char *dst = malloc(dst_sz);

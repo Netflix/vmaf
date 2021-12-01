@@ -157,8 +157,9 @@ static char *test_feature_name_from_options()
                                        &s5.opt_double, &s5.opt_bool, &s5.opt_int);
 
     mu_assert("feature_name should have a suffix with aliases and values, "
-              "ordering should follow the ordering of variadac params",
-              !strcmp(feature_name5, "feature_name_opt_double_alias_4.14_opt_bool_1_opt_int_alias_201"));
+              "ordering should not follow the ordering of variadac params,"
+              "rather it should follow the order of options",
+              !strcmp(feature_name5, "feature_name_opt_bool_1_opt_double_alias_4.14_opt_int_alias_201"));
 
     free(feature_name5);
 
