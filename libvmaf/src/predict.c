@@ -25,7 +25,9 @@
 #include "dict.h"
 #include "feature/alias.h"
 #include "feature/feature_collector.h"
+#include "feature/feature_extractor.h"
 #include "feature/feature_name.h"
+#include "log.h"
 #include "model.h"
 #include "predict.h"
 #include "svm.h"
@@ -237,24 +239,41 @@ int vmaf_predict_score_at_index(VmafModel *model,
     if (!node) return -ENOMEM;
 
     for (unsigned i = 0; i < model->n_features; i++) {
-        char buf[VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE] = { 0 };
-        char *key = NULL;
-        double val;
+        VmafFeatureExtractor *fex =
+            vmaf_get_feature_extractor_by_feature_name(model->feature[i].name);
 
-        if (model->feature[i].opts_dict) {
-            key = model->feature[i].opts_dict->entry[0].key;
-            val = atof(model->feature[i].opts_dict->entry[0].val);
+        if (!fex) {
+            vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                     "vmaf_predict_score_at_index(): no feature extractor "
+                     "providing feature '%s'\n", model->feature[i].name);
+            err = -EINVAL;
+            goto free_node;
         }
 
         char *feature_name =
-            vmaf_feature_name(model->feature[i].name, key, val, buf,
-                              VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE);
+            vmaf_feature_name_from_opts_dict(model->feature[i].name,
+                                             fex->options,
+                                             model->feature[i].opts_dict);
+        if (!feature_name) {
+            vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                     "vmaf_predict_score_at_index(): could not generate "
+                     "feature name\n");
+            err = -ENOMEM;
+            goto free_node;
+        }
 
         double feature_score;
         err = vmaf_feature_collector_get_score(feature_collector,
                                                feature_name,
                                                &feature_score, index);
-        if (err) goto free_node;
+        free(feature_name);
+
+        if (err) {
+            vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                     "vmaf_predict_score_at_index(): no feature '%s' "
+                     "at index %d\n", feature_name);
+            goto free_node;
+        }
 
         err = normalize(model, model->feature[i].slope,
                         model->feature[i].intercept, &feature_score);

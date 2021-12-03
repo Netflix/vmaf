@@ -47,6 +47,7 @@ static const VmafOption options[] = {
     },
     {
         .name = "vif_enhn_gain_limit",
+        .alias = "egl",
         .help = "enhancement gain imposed on vif, must be >= 1.0, "
                 "where 1.0 means the gain is completely disabled",
         .offset = offsetof(VifState, vif_enhn_gain_limit),

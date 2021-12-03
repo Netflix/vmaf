@@ -48,6 +48,7 @@ static const VmafOption options[] = {
     },
     {
         .name = "adm_enhn_gain_limit",
+        .alias = "egl",
         .help = "enhancement gain imposed on adm, must be >= 1.0, "
                 "where 1.0 means the gain is completely disabled",
         .offset = offsetof(AdmState, adm_enhn_gain_limit),
@@ -58,6 +59,7 @@ static const VmafOption options[] = {
     },
     {
         .name = "adm_norm_view_dist",
+        .alias = "nvd",
         .help = "normalized viewing distance = viewing distance / ref display's physical height",
         .offset = offsetof(AdmState, adm_norm_view_dist),
         .type = VMAF_OPT_TYPE_DOUBLE,
@@ -67,6 +69,7 @@ static const VmafOption options[] = {
     },
     {
         .name = "adm_ref_display_height",
+        .alias = "rdf",
         .help = "reference display height in pixels",
         .offset = offsetof(AdmState, adm_ref_display_height),
         .type = VMAF_OPT_TYPE_INT,
