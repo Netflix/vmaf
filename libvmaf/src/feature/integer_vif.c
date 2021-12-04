@@ -614,39 +614,32 @@ typedef struct VifScore {
     } scale[4];
 } VifScore;
 
-static int write_scores(VmafFeatureCollector *feature_collector, unsigned index,
-                        VifScore vif, VifState *s)
+static int write_scores(VmafFeatureCollector *fc, unsigned index,
+                        VifScore vif, VmafFeatureExtractor *fex)
 {
     int err = 0;
 
-    const char *key =
-        s->vif_enhn_gain_limit != DEFAULT_VIF_ENHN_GAIN_LIMIT ?
-        "vif_enhn_gain_limit" : NULL;
-    const double val = s->vif_enhn_gain_limit;
+    VifState *s = fex->priv;
 
-    err |= vmaf_feature_collector_append_templated(feature_collector,
-                                        "VMAF_integer_feature_vif_scale0_score",
-                                         key, val,
-                                         vif.scale[0].num / vif.scale[0].den,
-                                         index);
+    err |= vmaf_feature_collector_append_with_options(fc,
+            vif.scale[0].num / vif.scale[0].den, index,
+            "VMAF_integer_feature_vif_scale0_score", fex->options, s,
+            1, &s->vif_enhn_gain_limit);
 
-    err |= vmaf_feature_collector_append_templated(feature_collector,
-                                        "VMAF_integer_feature_vif_scale1_score",
-                                        key, val,
-                                        vif.scale[1].num / vif.scale[1].den,
-                                        index);
+    err |= vmaf_feature_collector_append_with_options(fc,
+            vif.scale[1].num / vif.scale[1].den, index,
+            "VMAF_integer_feature_vif_scale1_score", fex->options, s,
+            1, &s->vif_enhn_gain_limit);
 
-    err |= vmaf_feature_collector_append_templated(feature_collector,
-                                        "VMAF_integer_feature_vif_scale2_score",
-                                        key, val,
-                                        vif.scale[2].num / vif.scale[2].den,
-                                        index);
+    err |= vmaf_feature_collector_append_with_options(fc,
+            vif.scale[2].num / vif.scale[2].den, index,
+            "VMAF_integer_feature_vif_scale2_score", fex->options, s,
+            1, &s->vif_enhn_gain_limit);
 
-    err |= vmaf_feature_collector_append_templated(feature_collector,
-                                        "VMAF_integer_feature_vif_scale3_score",
-                                        key, val,
-                                        vif.scale[3].num / vif.scale[3].den,
-                                        index);
+    err |= vmaf_feature_collector_append_with_options(fc,
+            vif.scale[3].num / vif.scale[3].den, index,
+            "VMAF_integer_feature_vif_scale3_score", fex->options, s,
+            1, &s->vif_enhn_gain_limit);
 
     if (!s->debug) return err;
 
@@ -661,57 +654,46 @@ static int write_scores(VmafFeatureCollector *feature_collector, unsigned index,
     const double score =
         score_den == 0.0 ? 1.0f : score_num / score_den;
 
-    err |= vmaf_feature_collector_append_templated(feature_collector,
-                                                   "integer_vif", key, val,
-                                                   score, index);
+    err |= vmaf_feature_collector_append_with_options(fc, score, index,
+            "integer_vif", fex->options, s, 1, &s->vif_enhn_gain_limit);
 
-    err |= vmaf_feature_collector_append_templated(feature_collector,
-                                                   "integer_vif_num", key, val,
-                                                   score_num, index);
+    err |= vmaf_feature_collector_append_with_options(fc, score_num, index,
+            "integer_vif_num", fex->options, s, 1, &s->vif_enhn_gain_limit);
 
-    err |= vmaf_feature_collector_append_templated(feature_collector,
-                                                   "integer_vif_den", key, val,
-                                                   score_den, index);
+    err |= vmaf_feature_collector_append_with_options(fc, score_den, index,
+            "integer_vif_den", fex->options, s, 1, &s->vif_enhn_gain_limit);
 
-    err |= vmaf_feature_collector_append_templated(feature_collector,
-                                                   "integer_vif_num_scale0",
-                                                   key, val,
-                                                   vif.scale[0].num, index);
+    err |= vmaf_feature_collector_append_with_options(fc, vif.scale[0].num,
+            index, "integer_vif_num_scale0", fex->options, s, 1,
+            &s->vif_enhn_gain_limit);
 
-    err |= vmaf_feature_collector_append_templated(feature_collector,
-                                                   "integer_vif_den_scale0",
-                                                   key, val,
-                                                   vif.scale[0].den, index);
+    err |= vmaf_feature_collector_append_with_options(fc, vif.scale[0].den,
+            index, "integer_vif_den_scale0", fex->options, s, 1,
+            &s->vif_enhn_gain_limit);
 
-    err |= vmaf_feature_collector_append_templated(feature_collector,
-                                                   "integer_vif_num_scale1",
-                                                   key, val,
-                                                   vif.scale[1].num, index);
+    err |= vmaf_feature_collector_append_with_options(fc, vif.scale[1].num,
+            index, "integer_vif_num_scale1", fex->options, s, 1,
+            &s->vif_enhn_gain_limit);
 
-    err |= vmaf_feature_collector_append_templated(feature_collector,
-                                                   "integer_vif_den_scale1",
-                                                   key, val,
-                                                   vif.scale[1].den, index);
+    err |= vmaf_feature_collector_append_with_options(fc, vif.scale[1].den,
+            index, "integer_vif_den_scale1", fex->options, s, 1,
+            &s->vif_enhn_gain_limit);
 
-    err |= vmaf_feature_collector_append_templated(feature_collector,
-                                                   "integer_vif_num_scale2",
-                                                   key, val,
-                                                   vif.scale[2].num, index);
+    err |= vmaf_feature_collector_append_with_options(fc, vif.scale[2].num,
+            index, "integer_vif_num_scale2", fex->options, s, 1,
+            &s->vif_enhn_gain_limit);
 
-    err |= vmaf_feature_collector_append_templated(feature_collector,
-                                                   "integer_vif_den_scale2",
-                                                   key, val,
-                                                   vif.scale[2].den, index);
+    err |= vmaf_feature_collector_append_with_options(fc, vif.scale[2].den,
+            index, "integer_vif_den_scale2", fex->options, s, 1,
+            &s->vif_enhn_gain_limit);
 
-    err |= vmaf_feature_collector_append_templated(feature_collector,
-                                                   "integer_vif_num_scale3",
-                                                   key, val,
-                                                   vif.scale[3].num, index);
+    err |= vmaf_feature_collector_append_with_options(fc, vif.scale[3].num,
+            index, "integer_vif_num_scale3", fex->options, s, 1,
+            &s->vif_enhn_gain_limit);
 
-    err |= vmaf_feature_collector_append_templated(feature_collector,
-                                                   "integer_vif_den_scale3",
-                                                   key, val,
-                                                   vif.scale[3].den, index);
+    err |= vmaf_feature_collector_append_with_options(fc, vif.scale[3].den,
+            index, "integer_vif_den_scale3", fex->options, s, 1,
+            &s->vif_enhn_gain_limit);
 
     return err;
 }
@@ -766,7 +748,7 @@ static int extract(VmafFeatureExtractor *fex,
                       s->vif_enhn_gain_limit);
     }
 
-    return write_scores(feature_collector, index, vif_score, s);
+    return write_scores(feature_collector, index, vif_score, fex);
 }
 
 static int close(VmafFeatureExtractor *fex)
