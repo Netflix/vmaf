@@ -50,7 +50,6 @@ static char *test_feature_name()
     return NULL;
 }
 
-/*
 static char *test_feature_name_from_options()
 {
     typedef struct TestState {
@@ -179,11 +178,10 @@ static char *test_feature_name_from_options()
 
     return NULL;
 }
-*/
 
 char *run_tests()
 {
     mu_run_test(test_feature_name);
-    //mu_run_test(test_feature_name_from_options);
+    mu_run_test(test_feature_name_from_options);
     return NULL;
 }

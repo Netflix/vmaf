@@ -91,7 +91,7 @@ fail:
 static int extract(VmafFeatureExtractor *fex,
                    VmafPicture *ref_pic, VmafPicture *ref_pic_90,
                    VmafPicture *dist_pic, VmafPicture *dist_pic_90,
-                   unsigned index, VmafFeatureCollector *fc)
+                   unsigned index, VmafFeatureCollector *feature_collector)
 {
     VifState *s = fex->priv;
     int err = 0;
@@ -111,56 +111,59 @@ static int extract(VmafFeatureExtractor *fex,
                       s->vif_kernelscale);
     if (err) return err;
 
-    err |= vmaf_feature_collector_append_with_options(fc,
-            scores[0] / scores[1], index, "VMAF_feature_vif_scale0_score",
-            fex->options, s, 1, &s->vif_enhn_gain_limit);
+    const char *key =
+        s->vif_enhn_gain_limit != DEFAULT_VIF_ENHN_GAIN_LIMIT ?
+        "vif_enhn_gain_limit" : NULL;
+    const double val = s->vif_enhn_gain_limit;
 
-    err |= vmaf_feature_collector_append_with_options(fc,
-            scores[2] / scores[3], index, "VMAF_feature_vif_scale1_score",
-            fex->options, s, 1, &s->vif_enhn_gain_limit);
-
-    err |= vmaf_feature_collector_append_with_options(fc,
-            scores[4] / scores[5], index, "VMAF_feature_vif_scale2_score",
-            fex->options, s, 1, &s->vif_enhn_gain_limit);
-
-    err |= vmaf_feature_collector_append_with_options(fc,
-            scores[6] / scores[7], index, "VMAF_feature_vif_scale3_score",
-            fex->options, s, 1, &s->vif_enhn_gain_limit);
-
+    err = vmaf_feature_collector_append_templated(feature_collector,
+                                        "VMAF_feature_vif_scale0_score",
+                                        key, val,
+                                        scores[0] / scores[1], index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                         "VMAF_feature_vif_scale1_score",
+                                         key, val,
+                                         scores[2] / scores[3], index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                         "VMAF_feature_vif_scale2_score",
+                                         key, val,
+                                         scores[4] / scores[5], index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                         "VMAF_feature_vif_scale3_score",
+                                         key, val,
+                                         scores[6] / scores[7], index);
     if (!s->debug) return err;
 
-    err |= vmaf_feature_collector_append_with_options(fc, score, index,
-            "vif", fex->options, s, 1, &s->vif_enhn_gain_limit);
-
-    err |= vmaf_feature_collector_append_with_options(fc, score_num, index,
-            "vif_num", fex->options, s, 1, &s->vif_enhn_gain_limit);
-
-    err |= vmaf_feature_collector_append_with_options(fc, score_den, index,
-            "vif_den", fex->options, s, 1, &s->vif_enhn_gain_limit);
-
-    err |= vmaf_feature_collector_append_with_options(fc, scores[0], index,
-            "vif_num_scale0", fex->options, s, 1, &s->vif_enhn_gain_limit);
-
-    err |= vmaf_feature_collector_append_with_options(fc, scores[1], index,
-            "vif_den_scale0", fex->options, s, 1, &s->vif_enhn_gain_limit);
-
-    err |= vmaf_feature_collector_append_with_options(fc, scores[2], index,
-            "vif_num_scale1", fex->options, s, 1, &s->vif_enhn_gain_limit);
-
-    err |= vmaf_feature_collector_append_with_options(fc, scores[3], index,
-            "vif_den_scale1", fex->options, s, 1, &s->vif_enhn_gain_limit);
-
-    err |= vmaf_feature_collector_append_with_options(fc, scores[4], index,
-            "vif_num_scale2", fex->options, s, 1, &s->vif_enhn_gain_limit);
-
-    err |= vmaf_feature_collector_append_with_options(fc, scores[5], index,
-            "vif_den_scale2", fex->options, s, 1, &s->vif_enhn_gain_limit);
-
-    err |= vmaf_feature_collector_append_with_options(fc, scores[6], index,
-            "vif_num_scale3", fex->options, s, 1, &s->vif_enhn_gain_limit);
-
-    err |= vmaf_feature_collector_append_with_options(fc, scores[7], index,
-            "vif_den_scale3", fex->options, s, 1, &s->vif_enhn_gain_limit);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                         "vif", key, val, score, index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                         "vif_num", key, val, score_num, index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                         "vif_den", key, val, score_den, index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                        "vif_num_scale0",
+                                        key, val, scores[0], index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                        "vif_den_scale0",
+                                        key, val, scores[1], index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                        "vif_num_scale1",
+                                        key, val, scores[2], index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                        "vif_den_scale1",
+                                        key, val, scores[3], index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                        "vif_num_scale2",
+                                        key, val, scores[4], index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                        "vif_den_scale2",
+                                        key, val, scores[5], index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                        "vif_num_scale3",
+                                        key, val, scores[6], index);
+    err |= vmaf_feature_collector_append_templated(feature_collector,
+                                        "vif_den_scale3",
+                                        key, val, scores[7], index);
 
     return err;
 }

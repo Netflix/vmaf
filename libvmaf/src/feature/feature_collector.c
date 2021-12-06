@@ -26,7 +26,6 @@
 #include "feature_collector.h"
 #include "feature_name.h"
 #include "log.h"
-#include "opt.h"
 
 static int aggregate_vector_init(AggregateVector *aggregate_vector)
 {
@@ -322,74 +321,6 @@ int vmaf_feature_collector_append_templated(VmafFeatureCollector *feature_collec
 
     return vmaf_feature_collector_append(feature_collector, feature_name,
                                          score, picture_index);
-}
-
-static int option_is_default(const VmafOption *opt, const void *data)
-{
-    if (!opt) return -EINVAL;
-    if (!data) return -EINVAL;
-
-    switch (opt->type) {
-    case VMAF_OPT_TYPE_BOOL:
-        return opt->default_val.b == *((bool*)data);
-    case VMAF_OPT_TYPE_INT:
-        return opt->default_val.i == *((int*)data);
-    case VMAF_OPT_TYPE_DOUBLE:
-        return opt->default_val.d == *((double*)data);
-    default:
-        return -EINVAL;
-    }
-}
-
-int vmaf_feature_collector_append_with_options(VmafFeatureCollector *fc,
-        double score, unsigned index, const char *feature_name,
-        const VmafOption *opts, const void *obj, unsigned param_cnt, ...)
-{
-    if (!feature_name) return NULL;
-    if (!opts) return NULL;
-    if (!obj) return NULL;
-
-    VmafDictionary *opts_dict = NULL;
-    char *fn = NULL;
-
-    VmafOption *opt = NULL;
-    for (unsigned i = 0; (opt = &opts[i]); i++) {
-        if (!opt->name) break;
-        va_list(args);
-        va_start(args, param_cnt);
-        for (unsigned j = 0; j < param_cnt; j++) {
-            const void *param = va_arg(args, void*);
-            const void *data = (uint8_t*)obj + opt->offset;
-            if (data != param) continue;
-            if (option_is_default(opt, data)) continue;
-
-            const size_t buf_sz = VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE;
-            const char buf[VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE + 1] = { 0 };
-
-            switch (opt->type) {
-            case VMAF_OPT_TYPE_BOOL:
-                snprintf(buf, buf_sz, "%d", *(bool*)data);
-                break;
-            case VMAF_OPT_TYPE_INT:
-                snprintf(buf, buf_sz, "%d", *((int*)data));
-                break;
-            case VMAF_OPT_TYPE_DOUBLE:
-                snprintf(buf, buf_sz, "%g", *((double*)data));
-                break;
-            default:
-                break;
-            }
-
-            vmaf_dictionary_set(&opts_dict, opt->name, buf, 0);
-        }
-        va_end(args);
-    }
-
-    fn = vmaf_feature_name_from_opts_dict(feature_name, opts, opts_dict);
-    vmaf_dictionary_free(&opts_dict);
-    int err = vmaf_feature_collector_append(fc, fn, score, index);
-    free(fn);
-    return err;
 }
 
 int vmaf_feature_collector_get_score(VmafFeatureCollector *feature_collector,
