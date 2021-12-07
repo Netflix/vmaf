@@ -28,56 +28,6 @@
 #include "feature_name.h"
 #include "opt.h"
 
-typedef struct {
-    const char *name, *alias;
-} Alias;
-
-static const Alias alias_list[] = {
-    {
-        .name = "motion_force_zero",
-        .alias = "force",
-    },
-    {
-        .name = "adm_enhn_gain_limit",
-        .alias = "egl",
-    },
-    {
-        .name = "vif_enhn_gain_limit",
-        .alias = "egl",
-    },
-    {
-        .name = "adm_norm_view_dist",
-        .alias = "nvd",
-    },
-    {
-        .name = "adm_ref_display_height",
-        .alias = "rdh",
-    },
-};
-
-static const char *key_alias(char *key)
-{
-    const unsigned n = sizeof(alias_list) / sizeof(alias_list[0]);
-    for(unsigned i = 0; i < n; i++) {
-        if (!strcmp(key, alias_list[i].name))
-            return alias_list[i].alias;
-    }
-    return NULL;
-}
-
-
-char *vmaf_feature_name(char *name, char *key, double val,
-                        char *buf, size_t buf_sz)
-{
-    if (!key) return name;
-    if (!key_alias(key)) return name;
-
-    memset(buf, 0, buf_sz);
-    snprintf(buf, buf_sz - 1, "%s_%s_%g",
-             vmaf_feature_name_alias(name), key_alias(key), val);
-    return buf;
-}
-
 static size_t snprintfcat(char* buf, size_t buf_sz, char const* fmt, ...)
 {
     va_list args;
@@ -88,6 +38,8 @@ static size_t snprintfcat(char* buf, size_t buf_sz, char const* fmt, ...)
 
     return result + len;
 }
+
+#define VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE 256
 
 char *vmaf_feature_name_from_opts_dict(char *name, VmafOption *opts,
                                        VmafDictionary *opts_dict)

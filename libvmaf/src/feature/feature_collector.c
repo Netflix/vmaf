@@ -299,43 +299,6 @@ int vmaf_feature_collector_append_with_dict(VmafFeatureCollector *fc,
     return vmaf_feature_collector_append(fc, fn, score, index);
 }
 
-int vmaf_feature_collector_append_formatted(VmafFeatureCollector *feature_collector,
-                                            double score, unsigned index,
-                                            const char *fmt, ...)
-{
-    if (!feature_collector) return -EINVAL;
-    if (!fmt) return -EINVAL;
-
-    int err = 0;
-
-    va_list(args);
-    va_start(args, fmt);
-    char *feature_name = NULL;
-    vasprintf(&feature_name, fmt, args);
-    if (err || !feature_name) return -ENOMEM;
-    err = vmaf_feature_collector_append(feature_collector, feature_name,
-                                        score, index);
-    free(feature_name);
-    return err;
-}
-
-int vmaf_feature_collector_append_templated(VmafFeatureCollector *feature_collector,
-                                            const char *feature_name,
-                                            const char *key, double val,
-                                            double score,
-                                            unsigned picture_index)
-{
-    if (!feature_collector) return -EINVAL;
-    if (!feature_name) return -EINVAL;
-
-    char buf[VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE];
-    feature_name = vmaf_feature_name(feature_name, key, val, &buf[0],
-                                     VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE);
-
-    return vmaf_feature_collector_append(feature_collector, feature_name,
-                                         score, picture_index);
-}
-
 int vmaf_feature_collector_get_score(VmafFeatureCollector *feature_collector,
                                      const char *feature_name, double *score,
                                      unsigned index)

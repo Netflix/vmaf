@@ -22,13 +22,6 @@
 #include "dict.h"
 #include "opt.h"
 
-#define VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE 256
-
-char *vmaf_feature_name(char *name, char *key, double val,
-                        char *buf, size_t buf_sz);
-
-char *vmaf_feature_name_from_options(char *name, VmafOption *opts, void *obj);
-
 char *vmaf_feature_name_from_opts_dict(char *name, VmafOption *opts,
                                        VmafDictionary *opts_dict);
 

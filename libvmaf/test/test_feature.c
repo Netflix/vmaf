@@ -22,33 +22,7 @@
 
 #include "test.h"
 
-#include "feature/feature_name.h"
-
-static char *test_feature_name()
-{
-    char buf[VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE];
-    char *feature_name;
-
-    char *name = "VMAF_integer_feature_vif_scale0_score";
-    char *key = "vif_enhn_gain_limit";
-    const double val = 1.0;
-
-    feature_name = vmaf_feature_name(name, NULL, val, &buf[0],
-                                     VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE);
-    mu_assert("name should not be modified", !strcmp(feature_name, name));
-
-    feature_name = vmaf_feature_name(name, key, val, &buf[0],
-                                     VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE);
-    mu_assert("name should have been formatted according to key/val",
-        !strcmp(feature_name, "integer_vif_scale0_egl_1"));
-
-    feature_name = vmaf_feature_name(name, key, 1.23, &buf[0],
-                                     VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE);
-    mu_assert("name should have been formatted according to key/val",
-        !strcmp(feature_name, "integer_vif_scale0_egl_1.23"));
-
-    return NULL;
-}
+#include "feature/feature_name.c"
 
 static char *test_feature_name_from_options()
 {
@@ -179,7 +153,6 @@ static char *test_feature_name_from_options()
 
 char *run_tests()
 {
-    mu_run_test(test_feature_name);
     mu_run_test(test_feature_name_from_options);
     return NULL;
 }

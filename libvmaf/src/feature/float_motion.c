@@ -23,6 +23,7 @@
 #include "common/convolution.h"
 #include "feature_collector.h"
 #include "feature_extractor.h"
+#include "feature_name.h"
 #include "mem.h"
 #include "motion.h"
 #include "motion_tools.h"
