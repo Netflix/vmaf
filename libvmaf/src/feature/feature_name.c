@@ -44,22 +44,26 @@ static size_t snprintfcat(char* buf, size_t buf_sz, char const* fmt, ...)
 char *vmaf_feature_name_from_opts_dict(const char *name, const VmafOption *opts,
                                        VmafDictionary *opts_dict)
 {
+    VmafDictionary *sorted_dict = NULL;
+    vmaf_dictionary_copy(&opts_dict, &sorted_dict);
+    vmaf_dictionary_alphabetical_sort(sorted_dict);
+
     const size_t buf_sz = VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE;
     char buf[VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE + 1] = { 0 };
 
-    if (!opts || !opts_dict) {
+    if (!opts || !sorted_dict) {
         snprintfcat(buf, buf_sz, "%s", name);
     } else {
         snprintfcat(buf, buf_sz, "%s", vmaf_feature_name_alias(name));
 
-        const VmafOption *opt = NULL;
-        for (unsigned i = 0; (opt = &opts[i]); i++) {
-            if (!opt->name) break;
-            for (unsigned j = 0; j < opts_dict->cnt; j++) {
-                if (strcmp(opt->name, opts_dict->entry[j].key)) continue;
+        for (unsigned i = 0; i < sorted_dict->cnt; i++) {
+            const VmafOption *opt = NULL;
+            for (unsigned j = 0; (opt = &opts[j]); j++) {
+                if (!opt->name) break;
+                if (strcmp(opt->name, sorted_dict->entry[i].key)) continue;
                 if (!(opt->flags & VMAF_OPT_FLAG_FEATURE_PARAM)) continue;
                 const char *key = opt->alias ? opt->alias : opt->name;
-                const char *val = opts_dict->entry[j].val;
+                const char *val = sorted_dict->entry[i].val;
 
                 switch (opt->type) {
                 case VMAF_OPT_TYPE_BOOL:
@@ -71,7 +75,10 @@ char *vmaf_feature_name_from_opts_dict(const char *name, const VmafOption *opts,
                 }
             }
         }
+
     }
+
+    vmaf_dictionary_free(&sorted_dict);
 
     const size_t dst_sz = strnlen(buf, buf_sz) + 1;
     char *dst = malloc(dst_sz);
