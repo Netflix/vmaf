@@ -98,7 +98,7 @@ static char *test_feature_name_from_options()
 
     mu_assert("when opt_bool has a non-default value, "
               "feature_name should have a non-aliased opt_bool suffix",
-              !strcmp(feature_name2, "feature_name_opt_bool_1"));
+              !strcmp(feature_name2, "feature_name_opt_bool"));
 
     free(feature_name2);
 
@@ -132,7 +132,7 @@ static char *test_feature_name_from_options()
     mu_assert("when all opts have a non-default value, "
               "feature_name should have a suffix with aliases and values. "
               "opt_bool2 should not parameterize since its flags are unset.",
-              !strcmp(feature_name4, "feature_name_opt_bool_1_opt_double_alias_4.14_opt_int_alias_201"));
+              !strcmp(feature_name4, "feature_name_opt_bool_opt_double_alias_4.14_opt_int_alias_201"));
 
     free(feature_name4);
 
@@ -144,7 +144,7 @@ static char *test_feature_name_from_options()
     mu_assert("feature_name should have a suffix with aliases and values, "
               "ordering should not follow the ordering of variadac params,"
               "rather it should follow the order of options",
-              !strcmp(feature_name5, "feature_name_opt_bool_1_opt_double_alias_4.14_opt_int_alias_201"));
+              !strcmp(feature_name5, "feature_name_opt_bool_opt_double_alias_4.14_opt_int_alias_201"));
 
     free(feature_name5);
 

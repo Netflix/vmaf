@@ -60,7 +60,15 @@ char *vmaf_feature_name_from_opts_dict(char *name, VmafOption *opts,
                 if (!(opt->flags & VMAF_OPT_FLAG_FEATURE_PARAM)) continue;
                 const char *key = opt->alias ? opt->alias : opt->name;
                 const char *val = opts_dict->entry[j].val;
-                snprintfcat(buf, buf_sz, "_%s_%s", key, val);
+
+                switch (opt->type) {
+                case VMAF_OPT_TYPE_BOOL:
+                    snprintfcat(buf, buf_sz, "_%s", key);
+                    break;
+                default:
+                    snprintfcat(buf, buf_sz, "_%s_%s", key, val);
+                    break;
+                }
             }
         }
     }
