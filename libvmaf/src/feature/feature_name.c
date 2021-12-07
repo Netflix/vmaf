@@ -119,7 +119,7 @@ char *vmaf_feature_name_from_options(char *name, VmafOption *opts, void *obj)
 
         switch (opt->type) {
         case VMAF_OPT_TYPE_BOOL:
-            snprintf(buf, buf_sz, "%d", *(bool*)data);
+            snprintf(buf, buf_sz, "%d", *(bool*)data ? "true" : "false");
             break;
         case VMAF_OPT_TYPE_INT:
             snprintf(buf, buf_sz, "%d", *((int*)data));
