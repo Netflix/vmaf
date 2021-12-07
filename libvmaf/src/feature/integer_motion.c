@@ -274,6 +274,11 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 {
     MotionState *s = fex->priv;
 
+    s->feature_name_dict =
+        vmaf_feature_name_dict_from_provided_features(fex->provided_features,
+                fex->options, s);
+    if (!s->feature_name_dict) goto fail;
+
     if (s->motion_force_zero) {
         fex->extract = extract_force_zero;
         fex->flush = NULL;
@@ -303,11 +308,6 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 
     s->sad = sad_c;
     s->score = 0.;
-
-    s->feature_name_dict =
-        vmaf_feature_name_dict_from_provided_features(fex->provided_features,
-                fex->options, s);
-    if (!s->feature_name_dict) goto fail;
 
     return 0;
 
