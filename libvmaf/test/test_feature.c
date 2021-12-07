@@ -56,6 +56,7 @@ static char *test_feature_name_from_options()
         bool opt_bool;
         double opt_double;
         int opt_int;
+        bool opt_bool2;
     } TestState;
 
 #define opt_bool_default false
@@ -68,6 +69,7 @@ static char *test_feature_name_from_options()
             .offset = offsetof(TestState, opt_bool),
             .type = VMAF_OPT_TYPE_BOOL,
             .default_val.b = opt_bool_default,
+            .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
         },
         {
             .name = "opt_double",
@@ -75,6 +77,7 @@ static char *test_feature_name_from_options()
             .offset = offsetof(TestState, opt_double),
             .type = VMAF_OPT_TYPE_DOUBLE,
             .default_val.d = opt_double_default,
+            .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
         },
         {
             .name = "opt_int",
@@ -82,6 +85,14 @@ static char *test_feature_name_from_options()
             .offset = offsetof(TestState, opt_int),
             .type = VMAF_OPT_TYPE_INT,
             .default_val.i = opt_int_default,
+            .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+        },
+        {
+            .name = "opt_bool2",
+            .offset = offsetof(TestState, opt_bool),
+            .type = VMAF_OPT_TYPE_BOOL,
+            .default_val.b = opt_bool_default,
+            .flags = 0,
         },
         { 0 }
     };
@@ -90,11 +101,11 @@ static char *test_feature_name_from_options()
         .opt_bool = opt_bool_default,
         .opt_double = opt_double_default,
         .opt_int = opt_int_default,
+        .opt_bool2 = opt_bool_default,
     };
 
     char *feature_name1 =
-        vmaf_feature_name_from_options("feature_name", options, &s1, 3,
-                                       &s1.opt_bool, &s1.opt_double, &s1.opt_int);
+        vmaf_feature_name_from_options("feature_name", options, &s1);
 
     mu_assert("when all options are default, feature_name should not change",
               !strcmp(feature_name1, "feature_name"));
@@ -105,11 +116,11 @@ static char *test_feature_name_from_options()
         .opt_bool = !opt_bool_default,
         .opt_double = opt_double_default,
         .opt_int = opt_int_default,
+        .opt_bool2 = opt_bool_default,
     };
 
     char *feature_name2 =
-        vmaf_feature_name_from_options("feature_name", options, &s2, 3,
-                                       &s2.opt_bool, &s2.opt_double, &s2.opt_int);
+        vmaf_feature_name_from_options("feature_name", options, &s2);
 
     mu_assert("when opt_bool has a non-default value, "
               "feature_name should have a non-aliased opt_bool suffix",
@@ -121,11 +132,11 @@ static char *test_feature_name_from_options()
         .opt_bool = opt_bool_default,
         .opt_double = opt_double_default + 1,
         .opt_int = opt_int_default,
+        .opt_bool2 = opt_bool_default,
     };
 
     char *feature_name3 =
-        vmaf_feature_name_from_options("feature_name", options, &s3, 3,
-                                       &s3.opt_bool, &s3.opt_double, &s3.opt_int);
+        vmaf_feature_name_from_options("feature_name", options, &s3);
 
     mu_assert("when opt_double has a non-default value, "
               "feature_name should have a aliased opt_double_alias suffix",
@@ -137,15 +148,16 @@ static char *test_feature_name_from_options()
         .opt_bool = !opt_bool_default,
         .opt_double = opt_double_default + 1,
         .opt_int = opt_int_default + 1,
+        .opt_bool2 = !opt_bool_default,
     };
 
     char *feature_name4 =
-        vmaf_feature_name_from_options("feature_name", options, &s4, 3,
-                                       &s4.opt_bool, &s4.opt_double, &s4.opt_int);
+        vmaf_feature_name_from_options("feature_name", options, &s4);
 
 
     mu_assert("when all opts have a non-default value, "
-              "feature_name should have a suffix with aliases and values",
+              "feature_name should have a suffix with aliases and values. "
+              "opt_bool2 should not parameterize since its flags are unset.",
               !strcmp(feature_name4, "feature_name_opt_bool_1_opt_double_alias_4.14_opt_int_alias_201"));
 
     free(feature_name4);
@@ -153,8 +165,7 @@ static char *test_feature_name_from_options()
     TestState s5 = s4;
 
     char *feature_name5 =
-        vmaf_feature_name_from_options("feature_name", options, &s5, 3,
-                                       &s5.opt_double, &s5.opt_bool, &s5.opt_int);
+        vmaf_feature_name_from_options("feature_name", options, &s5);
 
     mu_assert("feature_name should have a suffix with aliases and values, "
               "ordering should not follow the ordering of variadac params,"
@@ -162,19 +173,6 @@ static char *test_feature_name_from_options()
               !strcmp(feature_name5, "feature_name_opt_bool_1_opt_double_alias_4.14_opt_int_alias_201"));
 
     free(feature_name5);
-
-    TestState s6 = s4;
-
-    char *feature_name6 =
-        vmaf_feature_name_from_options("feature_name", options, &s6, 1,
-                                       &s6.opt_double);
-
-    mu_assert("feature_name should have a single opt_double_alias suffix, "
-              "although all members of TestState have non-default values, "
-              "since just one variadic param is passed",
-              !strcmp(feature_name6, "feature_name_opt_double_alias_4.14"));
-
-    free(feature_name6);
 
     return NULL;
 }

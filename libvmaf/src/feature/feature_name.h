@@ -27,10 +27,13 @@
 char *vmaf_feature_name(char *name, char *key, double val,
                         char *buf, size_t buf_sz);
 
-char *vmaf_feature_name_from_options(char *name, VmafOption *opts, void *obj,
-                                     unsigned n, ...);
+char *vmaf_feature_name_from_options(char *name, VmafOption *opts, void *obj);
 
 char *vmaf_feature_name_from_opts_dict(char *name, VmafOption *opts,
                                        VmafDictionary *opts_dict);
+
+VmafDictionary *
+vmaf_feature_name_dict_from_provided_features(const char **provided_features,
+                                              const VmafOption *opts, void *obj);
 
 #endif /* __VMAF_FEATURE_NAME_H__ */

@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "dict.h"
 #include "feature_collector.h"
 #include "feature_name.h"
 #include "log.h"
@@ -284,6 +285,18 @@ unlock:
     feature_collector->timer.end = clock();
     pthread_mutex_unlock(&(feature_collector->lock));
     return err;
+}
+
+int vmaf_feature_collector_append_with_dict(VmafFeatureCollector *fc,
+        VmafDictionary *dict, const char *feature_name, double score,
+        unsigned index)
+{
+    if (!fc) return -EINVAL;
+    if (!dict) return -EINVAL;
+
+    VmafDictionaryEntry *entry = vmaf_dictionary_get(&dict, feature_name, 0);
+    const char *fn = entry ? entry->val : feature_name;
+    return vmaf_feature_collector_append(fc, fn, score, index);
 }
 
 int vmaf_feature_collector_append_formatted(VmafFeatureCollector *feature_collector,

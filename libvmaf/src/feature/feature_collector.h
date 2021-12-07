@@ -23,6 +23,8 @@
 #include <stdbool.h>
 #include <time.h>
 
+#include "dict.h"
+
 typedef struct {
     char *name;
     struct {
@@ -53,6 +55,10 @@ int vmaf_feature_collector_init(VmafFeatureCollector **const feature_collector);
 int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
                                   const char *feature_name, double score,
                                   unsigned index);
+
+int vmaf_feature_collector_append_with_dict(VmafFeatureCollector *fc,
+        VmafDictionary *dict, const char *feature_name, double score,
+        unsigned index);
 
 int vmaf_feature_collector_append_formatted(VmafFeatureCollector *feature_collector,
                                             double score, unsigned index,

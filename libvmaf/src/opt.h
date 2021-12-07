@@ -29,7 +29,7 @@ enum VmafOptionType {
 };
 
 enum VmafOptionFlag {
-    VMAF_OPTION_FLAG_FEATURE_PARAM = 1 << 0,
+    VMAF_OPT_FLAG_FEATURE_PARAM = 1 << 0,
 };
 
 typedef struct VmafOption {
