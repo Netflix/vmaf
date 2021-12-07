@@ -22,7 +22,7 @@
 #include "dict.h"
 #include "opt.h"
 
-char *vmaf_feature_name_from_opts_dict(char *name, VmafOption *opts,
+char *vmaf_feature_name_from_opts_dict(const char *name, const VmafOption *opts,
                                        VmafDictionary *opts_dict);
 
 VmafDictionary *
