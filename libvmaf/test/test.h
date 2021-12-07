@@ -22,7 +22,6 @@
 
 #define mu_assert(message, test) \
     do {                         \
-        fprintf(stderr, #message"\n"); \
         if (!(test))             \
             return message;      \
     } while (0)
