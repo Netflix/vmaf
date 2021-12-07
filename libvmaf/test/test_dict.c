@@ -308,6 +308,38 @@ static char *test_vmaf_feature_dictionary()
     return NULL;
 }
 
+static char *test_vmaf_dictionary_alphabetical_sort()
+{
+    int err = 0;
+
+    VmafDictionary *dict = NULL;
+    err |= vmaf_feature_dictionary_set(&dict, "z", "z");
+    err |= vmaf_feature_dictionary_set(&dict, "y", "y");
+    err |= vmaf_feature_dictionary_set(&dict, "x", "x");
+    err |= vmaf_feature_dictionary_set(&dict, "a", "a");
+    err |= vmaf_feature_dictionary_set(&dict, "b", "b");
+    err |= vmaf_feature_dictionary_set(&dict, "c", "c");
+    err |= vmaf_feature_dictionary_set(&dict, "2", "2");
+    err |= vmaf_feature_dictionary_set(&dict, "1", "1");
+    err |= vmaf_feature_dictionary_set(&dict, "0", "0");
+    mu_assert("problem during vmaf_feature_dictionary_set", !err);
+    mu_assert("dict should have 9 entries", dict->cnt == 9);
+
+    vmaf_dictionary_alphabetical_sort(dict);
+    mu_assert("dict should have 9 entries", dict->cnt == 9);
+    char *expected_order[9] = {"0", "1", "2", "a", "b", "c", "x", "y", "z"};
+
+    for (unsigned i = 0; i < 9; i++) {
+        mu_assert("dict is not alphabetically sorted",
+                  !strcmp(dict->entry[i].key, expected_order[i]));
+    }
+
+    err = vmaf_dictionary_free(&dict);
+    mu_assert("problem during vmaf_feature_dictionary_free", !err);
+
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_vmaf_dictionary);
@@ -315,5 +347,6 @@ char *run_tests()
     mu_run_test(test_vmaf_dictionary_compare);
     mu_run_test(test_vmaf_dictionary_normalize_numerical_val);
     mu_run_test(test_vmaf_feature_dictionary);
+    mu_run_test(test_vmaf_dictionary_alphabetical_sort);
     return NULL;
 }
