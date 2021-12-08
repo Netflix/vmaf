@@ -23,6 +23,7 @@
 #include "common/convolution.h"
 #include "feature_collector.h"
 #include "feature_extractor.h"
+#include "feature_name.h"
 #include "mem.h"
 #include "motion.h"
 #include "motion_tools.h"
@@ -38,6 +39,7 @@ typedef struct MotionState {
     double score;
     bool debug;
     bool motion_force_zero;
+    VmafDictionary *feature_name_dict;
 } MotionState;
 
 static const VmafOption options[] = {
@@ -50,10 +52,12 @@ static const VmafOption options[] = {
     },
     {
         .name = "motion_force_zero",
+        .alias = "force_0",
         .help = "forcing motion score to zero",
         .offset = offsetof(MotionState, motion_force_zero),
         .type = VMAF_OPT_TYPE_BOOL,
         .default_val.b = false,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     { 0 }
 };
@@ -74,6 +78,12 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     if (s->motion_force_zero)
         fex->flush = NULL;
     s->score = 0;
+
+    s->feature_name_dict =
+        vmaf_feature_name_dict_from_provided_features(fex->provided_features,
+                fex->options, s);
+    if (!s->feature_name_dict) goto fail;
+
     return 0;
 
 fail:
@@ -82,6 +92,7 @@ fail:
     if (s->blur[1]) aligned_free(s->blur[1]);
     if (s->blur[2]) aligned_free(s->blur[2]);
     if (s->tmp) aligned_free(s->tmp);
+    vmaf_dictionary_free(&s->feature_name_dict);
     return -ENOMEM;
 
 }
@@ -114,15 +125,15 @@ static int extract(VmafFeatureExtractor *fex,
     (void) dist_pic_90;
 
     if (s->motion_force_zero) {
-        err = vmaf_feature_collector_append_templated(feature_collector,
-                                                   "VMAF_feature_motion2_score",
-                                                   "motion_force_zero", 0,
-                                                   0., index);
+        int err =
+            vmaf_feature_collector_append_with_dict(feature_collector,
+                    s->feature_name_dict, "VMAF_feature_motion2_score",
+                    0., index);
+
         if (s->debug) {
-            err |= vmaf_feature_collector_append_templated(feature_collector,
-                                                    "VMAF_feature_motion_score",
-                                                    "motion_force_zero", 0,
-                                                    0., index);
+            err |= vmaf_feature_collector_append_with_dict(feature_collector,
+                    s->feature_name_dict, "VMAF_feature_motion_score", 0.,
+                    index);
         }
         return err;
     }
@@ -190,6 +201,7 @@ static int close(VmafFeatureExtractor *fex)
     if (s->blur[1]) aligned_free(s->blur[1]);
     if (s->blur[2]) aligned_free(s->blur[2]);
     if (s->tmp) aligned_free(s->tmp);
+    vmaf_dictionary_free(&s->feature_name_dict);
     return 0;
 }
 
