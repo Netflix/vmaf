@@ -53,6 +53,8 @@ VmafDictionary *vmaf_dictionary_merge(VmafDictionary **dict_a,
 
 int vmaf_dictionary_compare(VmafDictionary *dict_a, VmafDictionary *dict_b);
 
+void vmaf_dictionary_alphabetical_sort(VmafDictionary *dict);
+
 int vmaf_dictionary_free(VmafDictionary **dict);
 
 #ifdef __cplusplus
