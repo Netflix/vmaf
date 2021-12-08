@@ -44,29 +44,20 @@ int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
     (void) flags;
 
     for (unsigned i = 0; i < rfe->cnt; i++) {
-        if (!strcmp(rfe->fex_ctx[i]->fex->name, fex_ctx->fex->name)) {
-            if (!rfe->fex_ctx[i]->opts_dict && !fex_ctx->opts_dict)
-                return vmaf_feature_extractor_context_destroy(fex_ctx);
+        VmafFeatureExtractorContext *registered_fex_ctx = rfe->fex_ctx[i];
 
-            if (!rfe->fex_ctx[i]->opts_dict != !fex_ctx->opts_dict)
-                continue;
+        if (strcmp(registered_fex_ctx->fex->name, fex_ctx->fex->name))
+            continue;
 
-            VmafDictionary *d =
-                vmaf_dictionary_merge(&rfe->fex_ctx[i]->opts_dict,
-                                      &fex_ctx->opts_dict,
-                                      VMAF_DICT_DO_NOT_OVERWRITE);
-            if (!d) continue;
+        //TODO: OK to merge when VMAF_OPT_FLAG_FEATURE_PARAM is unset?
 
-            vmaf_dictionary_free(&rfe->fex_ctx[i]->opts_dict);
-            VmafFeatureExtractorContext *f = rfe->fex_ctx[i];
-            f->opts_dict = d;
-            if (f->fex->options && f->fex->priv) {
-                int err = vmaf_fex_ctx_parse_options(f);
-                if (err) return err;
-            }
+        int ret =
+            vmaf_dictionary_compare(registered_fex_ctx->opts_dict,
+                                    fex_ctx->opts_dict);
 
-            return vmaf_feature_extractor_context_destroy(fex_ctx);
-        }
+        if (ret != 0) continue;
+
+        return vmaf_feature_extractor_context_destroy(fex_ctx);
     }
 
     if (rfe->cnt >= rfe->capacity) {

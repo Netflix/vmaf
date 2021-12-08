@@ -38,9 +38,8 @@ static char *test_predict_score_at_index()
         .name = "vmaf",
         .flags = VMAF_MODEL_FLAGS_DEFAULT,
     };
-    const char *path = "../../model/vmaf_float_v0.6.1.json";
-    err = vmaf_model_load_from_path(&model, &cfg, path);
-    mu_assert("problem during vmaf_model_load_from_path", !err);
+    err = vmaf_model_load(&model, &cfg, "vmaf_v0.6.1");
+    mu_assert("problem during vmaf_model_load", !err);
 
     for (unsigned i = 0; i < model->n_features; i++) {
         err = vmaf_feature_collector_append(feature_collector,
