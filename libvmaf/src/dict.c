@@ -181,6 +181,19 @@ int vmaf_dictionary_compare(VmafDictionary *a, VmafDictionary *b)
     return 0;
 }
 
+static int alphabetical_compare(const void* a, const void* b)
+{
+    const VmafDictionaryEntry *entry_a = a;
+    const VmafDictionaryEntry *entry_b = b;
+    return strcmp(entry_a->key, entry_b->key);
+}
+
+void vmaf_dictionary_alphabetical_sort(VmafDictionary *dict)
+{
+    if (!dict) return;
+    qsort(dict->entry, dict->cnt, sizeof(*dict->entry), alphabetical_compare);
+}
+
 int vmaf_feature_dictionary_set(VmafFeatureDictionary **dict, const char *key,
                                 const char *val)
 {
