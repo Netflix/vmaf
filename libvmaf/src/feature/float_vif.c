@@ -69,7 +69,7 @@ static const VmafOption options[] = {
         .type = VMAF_OPT_TYPE_DOUBLE,
         .default_val.d = DEFAULT_VIF_KERNELSCALE,
         .min = 0.1,
-        .max = 2.0,
+        .max = 4.0,
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     { NULL }
