@@ -263,13 +263,13 @@ float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_fac
 
 void adm_decouple_s(const adm_dwt_band_t_s *ref, const adm_dwt_band_t_s *dis, const adm_dwt_band_t_s *r, const adm_dwt_band_t_s *a, int w, int h, int ref_stride, int dis_stride, int r_stride, int a_stride, double border_factor, double adm_enhn_gain_limit);
 
-void adm_csf_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const adm_dwt_band_t_s *flt, int orig_h, int scale, int w, int h, int src_stride, int dst_stride, double border_factor, double adm_norm_view_dist, int adm_ref_display_height);
+void adm_csf_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const adm_dwt_band_t_s *flt, int orig_h, int scale, int w, int h, int src_stride, int dst_stride, double border_factor, double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode);
 
 void adm_cm_thresh_s(const adm_dwt_band_t_s *src, float *dst, int w, int h, int src_stride, int dst_stride);
 
-float adm_csf_den_scale_s(const adm_dwt_band_t_s *src, int orig_h, int scale, int w, int h, int src_stride, double border_factor, double adm_norm_view_dist, int adm_ref_display_height);
+float adm_csf_den_scale_s(const adm_dwt_band_t_s *src, int orig_h, int scale, int w, int h, int src_stride, double border_factor, double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode);
 
-float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const adm_dwt_band_t_s *csf_a, int w, int h, int src_stride, int dst_stride, int csf_a_stride, double border_factor, int scale, double adm_norm_view_dist, int adm_ref_display_height);
+float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const adm_dwt_band_t_s *csf_a, int w, int h, int src_stride, int dst_stride, int csf_a_stride, double border_factor, int scale, double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode);
 
 void dwt2_src_indices_filt_s(int **src_ind_y, int **src_ind_x, int w, int h);
 

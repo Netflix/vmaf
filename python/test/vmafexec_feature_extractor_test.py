@@ -314,6 +314,23 @@ class FeatureExtractorTest(MyTestCase):
         with self.assertRaises(KeyError):
             s = results[0]['float_ADM_feature_adm_num_score']
 
+    def test_run_float_adm_fextractor_with_default_adm_csf_mode(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = FloatAdmFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'adm_csf_mode': 0}
+        )
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm2_score'], 0.9345148541666667, places=4)
+        self.assertAlmostEqual(results[1]['float_ADM_feature_adm2_score'], 1.0, places=6)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale0_score'], 0.9078873333333334, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale1_score'], 0.8938705625000001, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale2_score'], 0.9300123749999999, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale3_score'], 0.9649663541666667, places=4)
+
     def test_run_float_adm_fextractor_with_debug(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
         self.fextractor = FloatAdmFeatureExtractor(
