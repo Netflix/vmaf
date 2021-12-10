@@ -35,7 +35,7 @@
 #define convolution_f32_c  convolution_f32_c_s
 #define offset_image       offset_image_s
 #define FILTER_5           FILTER_5_s
-int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores, double border_factor, double adm_enhn_gain_limit, double adm_norm_view_dist, int adm_ref_display_height);
+int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores, double border_factor, double adm_enhn_gain_limit, double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode);
 int compute_ansnr(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_psnr, double peak, double psnr_max);
 int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score, double *score_num, double *score_den, double *scores, double vif_enhn_gain_limit, double vif_kernelscale);
 int compute_motion(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score);

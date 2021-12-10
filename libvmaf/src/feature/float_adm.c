@@ -38,6 +38,7 @@ typedef struct AdmState {
     double adm_enhn_gain_limit;
     double adm_norm_view_dist;
     int adm_ref_display_height;
+    int adm_csf_mode;
     VmafDictionary *feature_name_dict;
 } AdmState;
 
@@ -81,6 +82,17 @@ static const VmafOption options[] = {
         .default_val.i = DEFAULT_ADM_REF_DISPLAY_HEIGHT,
         .min = 1,
         .max = 4320,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "adm_csf_mode",
+        .alias = "csf",
+        .help = "contrast sensitivity function",
+        .offset = offsetof(AdmState, adm_csf_mode),
+        .type = VMAF_OPT_TYPE_INT,
+        .default_val.i = DEFAULT_ADM_CSF_MODE,
+        .min = 0,
+        .max = 9,
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     { 0 }
@@ -130,7 +142,8 @@ static int extract(VmafFeatureExtractor *fex,
                       s->float_stride, s->float_stride, &score, &score_num,
                       &score_den, scores, ADM_BORDER_FACTOR,
                       s->adm_enhn_gain_limit,
-                      s->adm_norm_view_dist, s->adm_ref_display_height);
+                      s->adm_norm_view_dist, s->adm_ref_display_height,
+                      s->adm_csf_mode);
     if (err) return err;
 
     err |= vmaf_feature_collector_append_with_dict(feature_collector,
