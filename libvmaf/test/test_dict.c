@@ -313,15 +313,15 @@ static char *test_vmaf_dictionary_alphabetical_sort()
     int err = 0;
 
     VmafDictionary *dict = NULL;
-    err |= vmaf_feature_dictionary_set(&dict, "z", "z");
-    err |= vmaf_feature_dictionary_set(&dict, "y", "y");
-    err |= vmaf_feature_dictionary_set(&dict, "x", "x");
-    err |= vmaf_feature_dictionary_set(&dict, "a", "a");
-    err |= vmaf_feature_dictionary_set(&dict, "b", "b");
-    err |= vmaf_feature_dictionary_set(&dict, "c", "c");
-    err |= vmaf_feature_dictionary_set(&dict, "2", "2");
-    err |= vmaf_feature_dictionary_set(&dict, "1", "1");
-    err |= vmaf_feature_dictionary_set(&dict, "0", "0");
+    err |= vmaf_dictionary_set(&dict, "z", "z", 0);
+    err |= vmaf_dictionary_set(&dict, "y", "y", 0);
+    err |= vmaf_dictionary_set(&dict, "x", "x", 0);
+    err |= vmaf_dictionary_set(&dict, "a", "a", 0);
+    err |= vmaf_dictionary_set(&dict, "b", "b", 0);
+    err |= vmaf_dictionary_set(&dict, "c", "c", 0);
+    err |= vmaf_dictionary_set(&dict, "2", "2", 0);
+    err |= vmaf_dictionary_set(&dict, "1", "1", 0);
+    err |= vmaf_dictionary_set(&dict, "0", "0", 0);
     mu_assert("problem during vmaf_feature_dictionary_set", !err);
     mu_assert("dict should have 9 entries", dict->cnt == 9);
 
