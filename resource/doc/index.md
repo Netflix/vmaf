@@ -9,7 +9,7 @@ This is an overview of the available documentation in the VMAF repository.
 ## Models and Metrics
 
 - [Models](models.md) – a summary of the available pre-trained models
-- [Metrics](metrics.md) – vMAF's core metrics
+- [Metrics](metrics.md) – VMAF's core metrics
 - [Datasets](datasets.md) – an overview of the two publicly available datasets for training custom models
 - [Confidence Interval](conf_interval.md) – how to use bootstrapping to provide CI estimates for VMAF scores
 - [Bad Cases](bad_cases.md) – how to report cases of VMAF not working well
