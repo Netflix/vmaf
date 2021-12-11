@@ -134,7 +134,7 @@ int vmaf_feature_extractor_context_create(VmafFeatureExtractorContext **fex_ctx,
         if (err) return err;
     }
 
-    return 0;
+    return vmaf_fex_ctx_parse_options(f);
 
 free_x:
     free(x);
