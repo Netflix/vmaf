@@ -250,10 +250,28 @@ int vmaf_predict_score_at_index(VmafModel *model,
             goto free_node;
         }
 
+        VmafDictionary *opts_dict = NULL;
+        if (model->feature[i].opts_dict) {
+            err = vmaf_dictionary_copy(&model->feature[i].opts_dict, &opts_dict);
+            if (err) return err;
+        }
+
+        VmafFeatureExtractorContext *fex_ctx;
+        err = vmaf_feature_extractor_context_create(&fex_ctx, fex, opts_dict);
+        if (err) {
+            vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                     "vmaf_predict_score_at_index(): could not generate "
+                     "feature extractor context\n");
+            vmaf_dictionary_free(&opts_dict);
+            return err;
+        }
+
         char *feature_name =
-            vmaf_feature_name_from_opts_dict(model->feature[i].name,
-                                             fex->options,
-                                             model->feature[i].opts_dict);
+            vmaf_feature_name_from_options(model->feature[i].name,
+                    fex_ctx->fex->options, fex_ctx->fex->priv);
+
+        vmaf_feature_extractor_context_destroy(fex_ctx);
+
         if (!feature_name) {
             vmaf_log(VMAF_LOG_LEVEL_ERROR,
                      "vmaf_predict_score_at_index(): could not generate "
@@ -264,8 +282,8 @@ int vmaf_predict_score_at_index(VmafModel *model,
 
         double feature_score;
         err = vmaf_feature_collector_get_score(feature_collector,
-                                               feature_name,
-                                               &feature_score, index);
+                                               feature_name, &feature_score,
+                                               index);
         free(feature_name);
 
         if (err) {
