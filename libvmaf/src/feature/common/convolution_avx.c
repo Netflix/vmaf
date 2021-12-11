@@ -158,6 +158,8 @@ static void convolution_f32_avx_s_1d_h_scanline(int N, const float * RESTRICT fi
 
 void convolution_f32_avx_s_1d_h_scanline_17(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end)
 {
+    (void) filter_width;
+
 	__m256 f0, f1, f2, f3, f4, f5, f6, f7, f8;
 
 	// Evaluate filter taps 0-8
@@ -281,6 +283,8 @@ void convolution_f32_avx_s_1d_h_scanline_17(const float * RESTRICT filter, int f
 
 void convolution_f32_avx_s_1d_h_scanline_9(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end)
 {
+    (void) filter_width;
+
 	__m256 f0, f1, f2, f3, f4, f5, f6, f7, f8;
 
 	f0 = _mm256_broadcast_ss(filter + 0);
@@ -346,6 +350,8 @@ void convolution_f32_avx_s_1d_h_scanline_9(const float * RESTRICT filter, int fi
 
 void convolution_f32_avx_s_1d_h_scanline_5(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end)
 {
+    (void) filter_width;
+
 	__m256 f0, f1, f2, f3, f4;
 
 	f0 = _mm256_broadcast_ss(filter + 0);
@@ -505,6 +511,8 @@ static void convolution_f32_avx_s_1d_v_scanline(int N, const float * RESTRICT fi
 
 void convolution_f32_avx_s_1d_v_scanline_17(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end)
 {
+    (void) filter_width;
+
 	__m256 f0, f1, f2, f3, f4, f5, f6, f7, f8;
 	src -= 8 * src_stride; // radius = 8
 
@@ -625,6 +633,8 @@ void convolution_f32_avx_s_1d_v_scanline_17(const float * RESTRICT filter, int f
 
 void convolution_f32_avx_s_1d_v_scanline_9(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end)
 {
+    (void) filter_width;
+
 	__m256 f0, f1, f2, f3, f4, f5, f6, f7, f8;
 	src -= 4 * src_stride; // radius = 4
 
@@ -690,6 +700,8 @@ void convolution_f32_avx_s_1d_v_scanline_9(const float * RESTRICT filter, int fi
 
 void convolution_f32_avx_s_1d_v_scanline_5(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end)
 {
+    (void) filter_width;
+
 	__m256 f0, f1, f2, f3, f4;
 	src -= 2 * src_stride; // radius = 2
 
@@ -808,6 +820,8 @@ void convolution_f32_avx_s(const float *filter, int filter_width, const float *s
 
 void convolution_f32_avx_s_1d_h_sq_scanline_17(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end)
 {
+    (void) filter_width;
+
 	__m256 f0, f1, f2, f3, f4, f5, f6, f7, f8;
 
 	// Evaluate filter taps 0-8
@@ -948,6 +962,8 @@ void convolution_f32_avx_s_1d_h_sq_scanline_17(const float * RESTRICT filter, in
 
 void convolution_f32_avx_s_1d_h_sq_scanline_9(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end)
 {
+    (void) filter_width;
+
 	__m256 f0, f1, f2, f3, f4, f5, f6, f7, f8;
 
 	f0 = _mm256_broadcast_ss(filter + 0);
@@ -1022,6 +1038,8 @@ void convolution_f32_avx_s_1d_h_sq_scanline_9(const float * RESTRICT filter, int
 
 void convolution_f32_avx_s_1d_h_sq_scanline_5(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end)
 {
+    (void) filter_width;
+
 	__m256 f0, f1, f2, f3, f4;
 
 	f0 = _mm256_broadcast_ss(filter + 0);
@@ -1195,6 +1213,8 @@ static void convolution_f32_avx_s_1d_v_sq_scanline(int N, const float * RESTRICT
 
 void convolution_f32_avx_s_1d_v_sq_scanline_17(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end)
 {
+    (void) filter_width;
+
 	__m256 f0, f1, f2, f3, f4, f5, f6, f7, f8;
 	src -= 8 * src_stride; // radius = 8
 
@@ -1332,6 +1352,8 @@ void convolution_f32_avx_s_1d_v_sq_scanline_17(const float * RESTRICT filter, in
 
 void convolution_f32_avx_s_1d_v_sq_scanline_9(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end)
 {
+    (void) filter_width;
+
 	__m256 f0, f1, f2, f3, f4, f5, f6, f7, f8;
 	src -= 4 * src_stride; // radius = 4
 
@@ -1406,6 +1428,8 @@ void convolution_f32_avx_s_1d_v_sq_scanline_9(const float * RESTRICT filter, int
 
 void convolution_f32_avx_s_1d_v_sq_scanline_5(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int src_stride, int j_end)
 {
+    (void) filter_width;
+
 	__m256 f0, f1, f2, f3, f4;
 	src -= 2 * src_stride; // radius = 2
 
@@ -1529,6 +1553,8 @@ void convolution_f32_avx_sq_s(const float *filter, int filter_width, const float
 
 void convolution_f32_avx_s_1d_h_xy_scanline_17(const float * RESTRICT filter, int filter_width, const float * RESTRICT src1, const float * RESTRICT src2, float * RESTRICT dst, int j_end)
 {
+    (void) filter_width;
+
 	__m256 f0, f1, f2, f3, f4, f5, f6, f7, f8;
 
 	// Evaluate filter taps 0-8
@@ -1686,6 +1712,8 @@ void convolution_f32_avx_s_1d_h_xy_scanline_17(const float * RESTRICT filter, in
 
 void convolution_f32_avx_s_1d_h_xy_scanline_9(const float * RESTRICT filter, int filter_width, const float * RESTRICT src1, const float * RESTRICT src2, float * RESTRICT dst, int j_end)
 {
+    (void) filter_width;
+
 	__m256 f0, f1, f2, f3, f4, f5, f6, f7, f8;
 
 	f0 = _mm256_broadcast_ss(filter + 0);
@@ -1769,6 +1797,8 @@ void convolution_f32_avx_s_1d_h_xy_scanline_9(const float * RESTRICT filter, int
 
 void convolution_f32_avx_s_1d_h_xy_scanline_5(const float * RESTRICT filter, int filter_width, const float * RESTRICT src1, const float * RESTRICT src2, float * RESTRICT dst, int j_end)
 {
+    (void) filter_width;
+
 	__m256 f0, f1, f2, f3, f4;
 
 	f0 = _mm256_broadcast_ss(filter + 0);
@@ -1957,6 +1987,8 @@ static void convolution_f32_avx_s_1d_v_xy_scanline(int N, const float * RESTRICT
 
 void convolution_f32_avx_s_1d_v_xy_scanline_17(const float * RESTRICT filter, int filter_width, const float * RESTRICT src1, const float * RESTRICT src2, float * RESTRICT dst, int src1_stride, int src2_stride, int j_end)
 {
+    (void) filter_width;
+
 	__m256 f0, f1, f2, f3, f4, f5, f6, f7, f8;
 	src1 -= 8 * src1_stride; // radius = 8
 	src2 -= 8 * src2_stride; // radius = 8
@@ -2112,6 +2144,8 @@ void convolution_f32_avx_s_1d_v_xy_scanline_17(const float * RESTRICT filter, in
 
 void convolution_f32_avx_s_1d_v_xy_scanline_9(const float * RESTRICT filter, int filter_width, const float * RESTRICT src1, const float * RESTRICT src2, float * RESTRICT dst, int src1_stride, int src2_stride, int j_end)
 {
+    (void) filter_width;
+
 	__m256 f0, f1, f2, f3, f4, f5, f6, f7, f8;
 	src1 -= 4 * src1_stride; // radius = 4
 	src2 -= 4 * src2_stride; // radius = 4
@@ -2196,6 +2230,8 @@ void convolution_f32_avx_s_1d_v_xy_scanline_9(const float * RESTRICT filter, int
 
 void convolution_f32_avx_s_1d_v_xy_scanline_5(const float * RESTRICT filter, int filter_width, const float * RESTRICT src1, const float * RESTRICT src2, float * RESTRICT dst, int src1_stride, int src2_stride, int j_end)
 {
+    (void) filter_width;
+
 	__m256 f0, f1, f2, f3, f4;
 	src1 -= 2 * src1_stride; // radius = 2
 	src2 -= 2 * src2_stride; // radius = 2
