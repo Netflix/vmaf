@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include "feature/feature_extractor.h"
+#include "feature/feature_name.h"
 #include "fex_ctx_vector.h"
 #include "log.h"
 
@@ -44,18 +45,20 @@ int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
     (void) flags;
 
     for (unsigned i = 0; i < rfe->cnt; i++) {
-        VmafFeatureExtractorContext *registered_fex_ctx = rfe->fex_ctx[i];
+        char *feature_a =
+            vmaf_feature_name_from_options(rfe->fex_ctx[i]->fex->name,
+                    rfe->fex_ctx[i]->fex->options, rfe->fex_ctx[i]->fex->priv);
 
-        if (strcmp(registered_fex_ctx->fex->name, fex_ctx->fex->name))
-            continue;
+        char *feature_b =
+            vmaf_feature_name_from_options(fex_ctx->fex->name,
+                    fex_ctx->fex->options, fex_ctx->fex->priv);
 
-        //TODO: OK to merge when VMAF_OPT_FLAG_FEATURE_PARAM is unset?
+        const int ret = strcmp(feature_a, feature_b);
 
-        int ret =
-            vmaf_dictionary_compare(registered_fex_ctx->opts_dict,
-                                    fex_ctx->opts_dict);
+        free(feature_a);
+        free(feature_b);
 
-        if (ret != 0) continue;
+        if (ret) continue;
 
         return vmaf_feature_extractor_context_destroy(fex_ctx);
     }
