@@ -273,6 +273,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
 {
     MotionState *s = fex->priv;
+    int err = 0;
 
     s->feature_name_dict =
         vmaf_feature_name_dict_from_provided_features(fex->provided_features,
@@ -286,7 +287,6 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         return 0;
     }
 
-    int err = 0;
     err |= vmaf_picture_alloc(&s->tmp, pix_fmt, 16, w, h);
     err |= vmaf_picture_alloc(&s->blur[0], pix_fmt, 16, w, h);
     err |= vmaf_picture_alloc(&s->blur[1], pix_fmt, 16, w, h);
