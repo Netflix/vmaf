@@ -41,8 +41,8 @@ static size_t snprintfcat(char* buf, size_t buf_sz, char const* fmt, ...)
 
 #define VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE 256
 
-char *vmaf_feature_name_from_opts_dict(const char *name, const VmafOption *opts,
-                                       VmafDictionary *opts_dict)
+static char *vmaf_feature_name_from_opts_dict(const char *name,
+                              const VmafOption *opts, VmafDictionary *opts_dict)
 {
     VmafDictionary *sorted_dict = NULL;
     vmaf_dictionary_copy(&opts_dict, &sorted_dict);
@@ -104,15 +104,16 @@ static int option_is_default(const VmafOption *opt, const void *data)
     }
 }
 
-static char *vmaf_feature_name_from_options(const char *name,
-                                            const VmafOption *opts, void *obj)
+char *vmaf_feature_name_from_options(const char *name, const VmafOption *opts,
+                                     void *obj)
 {
     if (!name) return NULL;
-    if (!opts) return NULL;
-    if (!obj) return NULL;
 
     VmafDictionary *opts_dict = NULL;
     char *output = NULL;
+
+    if (!opts) goto write_output;
+    if (!obj) goto write_output;
 
     const VmafOption *opt = NULL;
     for (unsigned i = 0; (opt = &opts[i]); i++) {
@@ -143,8 +144,8 @@ static char *vmaf_feature_name_from_options(const char *name,
         if (err) goto exit;
     }
 
+write_output:
     output = vmaf_feature_name_from_opts_dict(name, opts, opts_dict);
-
 exit:
     vmaf_dictionary_free(&opts_dict);
     return output;
