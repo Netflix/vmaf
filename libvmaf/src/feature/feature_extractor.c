@@ -93,7 +93,7 @@ VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(const char *nam
     return NULL;
 }
 
-int vmaf_fex_ctx_parse_options(VmafFeatureExtractorContext *fex_ctx)
+static int vmaf_fex_ctx_parse_options(VmafFeatureExtractorContext *fex_ctx)
 {
     const VmafOption *opt = NULL;
     for (unsigned i = 0; (opt = &fex_ctx->fex->options[i]); i++) {
