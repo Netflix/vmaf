@@ -50,7 +50,7 @@ For comparing encoders, VMAF offers a special mode, called *No Enhancement Gain*
 
 To disable enhancement gain, use the versions of the model files ending with `neg`.
 
-More details on the reasoning behind NEG have been shared in [this tech memo](https://docs.google.com/document/d/1dJczEhXO0MZjBSNyKmd3ARiCTdFVMNPBykH4_HMPoyY/edit#heading=h.oaikhnw46pw5).
+More details on the reasoning behind NEG have been shared in [this tech memo](https://docs.google.com/document/d/1dJczEhXO0MZjBSNyKmd3ARiCTdFVMNPBykH4_HMPoyY/edit#heading=h.oaikhnw46pw5). A high-level overview can be found in [this slide deck](https://docs.google.com/presentation/d/1ZVQPsA4N6K8uGW3aFgw4Ei9w953nYORUUPvgpigOq58/edit?usp=sharing).
 
 ## What are the Differences between Individual Models?
 
