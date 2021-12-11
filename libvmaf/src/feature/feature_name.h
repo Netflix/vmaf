@@ -22,8 +22,8 @@
 #include "dict.h"
 #include "opt.h"
 
-char *vmaf_feature_name_from_opts_dict(const char *name, const VmafOption *opts,
-                                       VmafDictionary *opts_dict);
+char *vmaf_feature_name_from_options(const char *name, const VmafOption *opts,
+                                     void *obj);
 
 VmafDictionary *
 vmaf_feature_name_dict_from_provided_features(const char **provided_features,
