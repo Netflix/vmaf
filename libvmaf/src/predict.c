@@ -401,7 +401,7 @@ static int vmaf_bootstrap_predict_score_at_index(
     const char *suffix_stddev = "_stddev";
     const size_t name_sz =
         strlen(model_collection->name) + strlen(suffix_lo) + 1;
-    const char name[name_sz];
+    char name[name_sz];
     memset(name, 0, name_sz);
 
     snprintf(name, name_sz, "%s%s", model_collection->name, suffix_bagging);
