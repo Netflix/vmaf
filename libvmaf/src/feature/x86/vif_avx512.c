@@ -2022,7 +2022,7 @@ void vif_filter1d_rd_8_avx512(VifBuffer buf, unsigned w, unsigned h)
             _mm256_storeu_si256((__m256i *)(buf.mu2 + i * stride + j), _mm512_castsi512_si256(result));
         }
 
-        for (unsigned j = n << 4; j < w; j = j++)
+        for (unsigned j = n << 4; j < w; ++j)
         {
             uint32_t accum_ref = 0;
             uint32_t accum_dis = 0;
