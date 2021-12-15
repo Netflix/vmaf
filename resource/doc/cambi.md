@@ -51,7 +51,9 @@ The CAMBI feature extractor also supports additional optional parameters as list
 - `topk` (min: 0, max: 1.0, default: 0.6): Ratio of pixels for the spatial pooling computation
 - `tvi_threshold` (min: 0.0001, max: 1.0, default: 0.019): Visibilty threshold for luminance ΔL < tvi_threshold*L_mean for BT.1886
 - `max_log_contrast` (min: 0, max: 5, default: 2): Maximum contrast in log luma level (2^max_log_contrast) at 10-bits. Default 2 is equivalent to 4 luma levels at 10-bit and 1 luma level at 8-bit. The default is recommended for banding artifacts coming from video compression.
+- `full_ref`: optional flag (default: false) to run CAMBI as a full-reference metric, outputting the per-frame difference between the encoded and source images as well as the existing no-reference score.
 - `enc_width` and `enc_height`: Encoding/processing resolution to compute the banding score, useful in cases where scaling was applied to the input prior to the computation of metrics
+- `src_width` and `src_height`: Encoding/processing resolution to compute the banding score on the reference image, only used if `full_ref=true`.
 
 An example using the `enc_width` and `enc_height` options on the input video [`KristenAndSara_1280x720_8bit_processed.yuv`](https://github.com/Netflix/vmaf_resource/blob/master/python/test/resource/yuv/KristenAndSara_1280x720_8bit_processed.yuv) which has been encoded at 540p and later upscaled to 1280p (specifying the accurate encoding width and height as input allows CAMBI to more accurately assess the banding artifact):
 
@@ -105,7 +107,7 @@ The output will be:
 
 ## Python Library
 
-CAMBI can also be invoked in the [Python library](python.md). Use `CambiFeatureExtractor` as the feature exatractor, and `CambiQualityRunner` as the quality runner.
+CAMBI can also be invoked in the [Python library](python.md). Use `CambiFeatureExtractor` as the feature extractor, and `CambiQualityRunner` as the quality runner. Use `CambiFullReferenceFeatureExtractor` and `CambiFullReferenceQualityRunner` to run the full-reference version of CAMBI.
 
 ```
     dis_path = VmafConfig.test_resource_path("yuv", "KristenAndSara_1280x720_8bit_processed.yuv")

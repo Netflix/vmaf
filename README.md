@@ -16,6 +16,7 @@ Also included in `libvmaf` are implementations of several other metrics: PSNR, P
 
 ## News
 
+- (2021-12-15) We have added to CAMBI the `full_ref` input parameter to allow running CAMBI as a full-reference metric, taking into account the banding that was already present on the source. Check out the [usage](resource/doc/cambi.md) page.
 - (2021-12-1) We have added to CAMBI the `max_log_contrast` input parameter to allow to capture banding with higher contrasts than the default. We have also sped up CAMBI (e.g., around 4.5x for 4k). Check out the [usage](resource/doc/cambi.md) page.
 - (2021-10-7) We are open-sourcing CAMBI (Contrast Aware Multiscale Banding Index) - Netflix's detector for banding (aka contouring) artifacts. Check out the [tech blog](https://netflixtechblog.medium.com/cambi-a-banding-artifact-detector-96777ae12fe2) for an overview and the [technical paper](resource/doc/papers/CAMBI_PCS2021.pdf) published in PCS 2021 (note that the paper describes an initial version of CAMBI that no longer matches the code exactly, but it is still a good introduction). Also check out the [usage](resource/doc/cambi.md) page.
 - (2020-12-7) Check out our [latest tech blog](https://netflixtechblog.com/toward-a-better-quality-metric-for-the-video-community-7ed94e752a30) on speed optimization, new API design and the introduction of a codec evaluation-friendly NEG mode.
