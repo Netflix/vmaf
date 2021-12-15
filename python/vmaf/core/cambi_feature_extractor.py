@@ -33,3 +33,22 @@ class CambiFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
         ExternalProgramCaller.call_vmafexec_single_feature(
             'cambi', yuv_type, ref_path, dis_path, quality_width, quality_height,
             log_file_path, logger, options=self.optional_dict)
+
+class CambiFullReferenceFeatureExtractor(CambiFeatureExtractor):
+    TYPE = "Cambi_FR_feature"
+
+    ATOM_FEATURES = ['cambi', 'cambi_full_reference', 'cambi_source']
+
+    ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
+        'cambi': 'cambi',
+        'cambi_full_reference': 'cambi_full_reference',
+        'cambi_source': 'cambi_source',
+    }
+
+    def _generate_result(self, asset):
+        if self.optional_dict is None:
+            self.optional_dict = {}
+
+        self.optional_dict["full_ref"] = True
+
+        return super()._generate_result(asset)
