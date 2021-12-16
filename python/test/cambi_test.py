@@ -5,7 +5,7 @@ from test.testutil import set_default_576_324_videos_for_testing, \
     set_default_cambi_video_for_testing_10b
 
 from vmaf.core.cambi_feature_extractor import CambiFeatureExtractor, CambiFullReferenceFeatureExtractor
-from vmaf.core.cambi_quality_runner import CambiQualityRunner
+from vmaf.core.cambi_quality_runner import CambiQualityRunner, CambiFullReferenceQualityRunner
 from vmaf.tools.misc import MyTestCase
 
 
@@ -213,6 +213,22 @@ class CambiQualityRunnerTest(MyTestCase):
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_score'],
                                0.01451, places=4)
+
+    def test_run_cambi_runner_fullref(self):
+        _, _, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.qrunner = CambiFullReferenceQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+        )
+        self.qrunner.run(parallelize=True)
+        results = self.qrunner.results
+
+        # score: arithmetic mean score over all frames
+        self.assertAlmostEqual(results[0]['Cambi_FR_score'],
+                               0.687784125, places=4)
+        self.assertAlmostEqual(results[0]['Cambi_FR_feature_cambi_score'],
+                               0.68925006249, places=4)
 
 
 if __name__ == '__main__':
