@@ -48,6 +48,7 @@
 
 #define NUM_SCALES 5
 static const int g_scale_weights[NUM_SCALES] = {16, 8, 4, 2, 1};
+static FILE *g_heatmaps_paths[NUM_SCALES];
 
 /* Suprathreshold contrast response */
 static const int g_contrast_weights[32] = {1, 2, 3, 4, 4, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 8,
@@ -294,6 +295,12 @@ static int set_contrast_arrays(const uint16_t num_diffs, uint16_t **diffs_to_con
     return 0;
 }
 
+#ifdef _WIN32
+    #define PATH_SEPARATOR '\\'
+#else
+    #define PATH_SEPARATOR '/'
+#endif
+
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h) {
     (void)pix_fmt;
@@ -347,6 +354,26 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     if(!s->buffers.filter_mode_histogram) return -ENOMEM;
     s->buffers.filter_mode_buffer = aligned_malloc(ALIGN_CEIL(3 * w * sizeof(uint16_t)), 32);
     if(!s->buffers.filter_mode_buffer) return -ENOMEM;
+
+    if (s->heatmaps_path) {
+        int err = mkdirp(s->heatmaps_path, 0770);
+        if (err) return -EINVAL;
+        char path[1024] = { 0 };
+        int scaled_w = s->enc_width;
+        int scaled_h = s->enc_height;
+        for (int scale = 0; scale < NUM_SCALES; scale++) {
+            snprintf(path, sizeof(path), "%s%ccambi_heatmap_scale_%d_%dx%d_16b.gray",
+                     s->heatmaps_path, PATH_SEPARATOR, scale, scaled_w, scaled_h);
+            g_heatmaps_paths[scale] = fopen(path, "w");
+            if (!g_heatmaps_paths[scale]) {
+                vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                "cambi: could not open heatmaps_path: %s\n", path);
+                return -EINVAL;
+            }
+            scaled_w = (scaled_w + 1) >> 1;
+            scaled_h = (scaled_h + 1) >> 1;
+        }
+    }
 
     return err;
 }
@@ -792,43 +819,25 @@ static void write_uint16(FILE *file, uint16_t v) {
     fwrite((void*)(&v), sizeof(v), 1, file);
 }
 
-#ifdef _WIN32
-    #define PATH_SEPARATOR '\\'
-#else
-    #define PATH_SEPARATOR '/'
-#endif
 
 static int dump_c_values(const float *c_values, int width, int height, int scale, 
-                          int window_size, const char *dir_path, const uint16_t num_diffs) {
+                          int window_size, const uint16_t num_diffs) {
     int max_diff_weight = g_diffs_weights[0];
     for (int i = 0; i < num_diffs; i++) {
         if (g_diffs_weights[i] > max_diff_weight) {
             max_diff_weight = g_diffs_weights[i];
         }
     }
-
-    int err = mkdirp(dir_path, 0770);
-    if (err) return -EINVAL;
-    char path[1024] = { 0 };
-    snprintf(path, sizeof(path), "%s%ccambi_heatmap_scale_%d_%dx%d_16b.gray",
-             dir_path, PATH_SEPARATOR, scale, width, height);
-
     int max_c_value = max_diff_weight * window_size * window_size / 4;
     int max_16bit_value = (1 << 16) - 1;
     double scaling_value = (double)max_16bit_value / max_c_value;
-    FILE *file = fopen(path, "a");
-    if (!file) {
-        vmaf_log(VMAF_LOG_LEVEL_ERROR,
-                 "cambi: could not open heatmaps_path: %s\n", path);
-        return -EINVAL;
-    }
+    FILE *file = g_heatmaps_paths[scale];
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             uint16_t val = (uint16_t)(scaling_value * c_values[i * width + j]);
             write_uint16(file, val);
         }
     }
-    fclose(file);
     return 0;
 }
 
@@ -858,7 +867,7 @@ static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
                            num_diffs, tvi_for_diff, scaled_width, scaled_height);
 
         if (heatmaps_path) {
-            int err = dump_c_values(buffers.c_values, scaled_width, scaled_height, scale, window_size, heatmaps_path, num_diffs);
+            int err = dump_c_values(buffers.c_values, scaled_width, scaled_height, scale, window_size, num_diffs);
             if (err) return err;
         }
 
@@ -911,6 +920,13 @@ static int close_cambi(VmafFeatureExtractor *fex) {
     aligned_free(s->buffers.mask_dp);
     aligned_free(s->buffers.filter_mode_histogram);
     aligned_free(s->buffers.filter_mode_buffer);
+
+    if (s->heatmaps_path) {
+        for (int scale = 0; scale < NUM_SCALES; scale++) {
+            fclose(g_heatmaps_paths[scale]);
+        }
+    }
+
     return err;
 }
 
