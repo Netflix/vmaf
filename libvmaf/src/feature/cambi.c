@@ -41,6 +41,9 @@
 /* Max log contrast luma levels */
 #define DEFAULT_MAX_LOG_CONTRAST (2)
 
+/* If true, CAMBI will be run in full-reference mode and will use both the reference and distorted inputs */
+#define DEFAULT_CAMBI_FULL_REF_FLAG (false)
+
 #define CAMBI_MIN_WIDTH (320)
 #define CAMBI_MAX_WIDTH (4096)
 #define CAMBI_4K_WIDTH (3840)
@@ -89,12 +92,16 @@ typedef struct CambiState {
     VmafPicture pics[PICS_BUFFER_SIZE];
     unsigned enc_width;
     unsigned enc_height;
+    unsigned src_width;
+    unsigned src_height;
     uint16_t *tvi_for_diff;
     uint16_t window_size;
+    uint16_t src_window_size;
     double topk;
     double tvi_threshold;
     uint16_t max_log_contrast;
     char *heatmaps_path;
+    bool full_ref;
     CambiBuffers buffers;
 } CambiState;
 
@@ -112,6 +119,24 @@ static const VmafOption options[] = {
         .name = "enc_height",
         .help = "Encoding height",
         .offset = offsetof(CambiState, enc_height),
+        .type = VMAF_OPT_TYPE_INT,
+        .default_val.i = 0,
+        .min = 200,
+        .max = 4320,
+    },
+    {
+        .name = "src_width",
+        .help = "Source width. Only used when full_ref=true.",
+        .offset = offsetof(CambiState, src_width),
+        .type = VMAF_OPT_TYPE_INT,
+        .default_val.i = 0,
+        .min = 320,
+        .max = 7680,
+    },
+    {
+        .name = "src_height",
+        .help = "Source height. Only used when full_ref=true.",
+        .offset = offsetof(CambiState, src_height),
         .type = VMAF_OPT_TYPE_INT,
         .default_val.i = 0,
         .min = 200,
@@ -161,6 +186,13 @@ static const VmafOption options[] = {
         .offset = offsetof(CambiState, heatmaps_path),
         .type = VMAF_OPT_TYPE_STRING,
         .default_val.s = NULL,
+    },
+    {
+        .name = "full_ref",
+        .help = "If true, CAMBI will be run in full-reference mode and will be computed on both the reference and distorted inputs",
+        .offset = offsetof(CambiState, full_ref),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = DEFAULT_CAMBI_FULL_REF_FLAG,
     },
     { 0 }
 };
@@ -281,16 +313,16 @@ static int set_contrast_arrays(const uint16_t num_diffs, uint16_t **diffs_to_con
     *diffs_weights = aligned_malloc(ALIGN_CEIL(sizeof(int)) * num_diffs, 32);
     if(!(*diffs_weights)) return -ENOMEM;
 
-    *all_diffs = aligned_malloc(ALIGN_CEIL(sizeof(int)) * (2*num_diffs+1), 32);
+    *all_diffs = aligned_malloc(ALIGN_CEIL(sizeof(int)) * (2 * num_diffs + 1), 32);
     if(!(*all_diffs)) return -ENOMEM;
 
-    for (int d=0; d<num_diffs; d++) {
-        (*diffs_to_consider)[d] = d+1;
+    for (int d = 0; d < num_diffs; d++) {
+        (*diffs_to_consider)[d] = d + 1;
         (*diffs_weights)[d] = g_contrast_weights[d];
     }
 
-    for (int d=-num_diffs; d<=num_diffs; d++)
-        (*all_diffs)[d+num_diffs] = d;
+    for (int d = -num_diffs; d <= num_diffs; d++)
+        (*all_diffs)[d + num_diffs] = d;
 
     return 0;
 }
@@ -312,40 +344,57 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         s->enc_width = w;
         s->enc_height = h;
     }
+    if (s->src_width == 0 || s->src_height == 0) {
+        s->src_width = w;
+        s->src_height = h;
+    }
 
-    w = s->enc_width;
-    h = s->enc_height;
-
-    if (w < CAMBI_MIN_WIDTH || w > CAMBI_MAX_WIDTH)
+    if (s->enc_width < CAMBI_MIN_WIDTH || s->enc_width > CAMBI_MAX_WIDTH) {
         return -EINVAL;
+    }
+    if (s->src_width < CAMBI_MIN_WIDTH || s->src_width > CAMBI_MAX_WIDTH) {
+        return -EINVAL;
+    }
+    if (s->src_width > s->enc_width && s->src_height < s->enc_height) {
+        return -EINVAL;
+    }
+    if (s->src_width < s->enc_width && s->src_height > s->enc_height) {
+        return -EINVAL;
+    }
+
+    int alloc_w = s->full_ref ? MAX(s->src_width, s->enc_width) : s->enc_width;
+    int alloc_h = s->full_ref ? MAX(s->src_height, s->enc_height) : s->enc_height;
 
     int err = 0;
-    for (unsigned i = 0; i < PICS_BUFFER_SIZE; i++)
-        err |= vmaf_picture_alloc(&s->pics[i], VMAF_PIX_FMT_YUV400P, 10, w, h);
+    for (unsigned i = 0; i < PICS_BUFFER_SIZE; i++) {
+        err |= vmaf_picture_alloc(&s->pics[i], VMAF_PIX_FMT_YUV400P, 10, alloc_w, alloc_h);
+    }
 
-    const int num_diffs = 1<<s->max_log_contrast;
+    const int num_diffs = 1 << s->max_log_contrast;
 
     set_contrast_arrays(num_diffs, &g_diffs_to_consider, &g_diffs_weights, &g_all_diffs);
 
     s->tvi_for_diff = aligned_malloc(ALIGN_CEIL(sizeof(uint16_t)) * num_diffs, 16);
     if(!s->tvi_for_diff) return -ENOMEM;
-    for (int d=0; d<num_diffs; d++) {
+    for (int d = 0; d < num_diffs; d++) {
         // BT1886 parameters
         s->tvi_for_diff[d] = get_tvi_for_diff(g_diffs_to_consider[d], s->tvi_threshold, 10,
                                               300.0, 0.01, "standard");
         s->tvi_for_diff[d] += num_diffs;
     }
 
-    adjust_window_size(&s->window_size, w);
+    s->src_window_size = s->window_size;
+    adjust_window_size(&s->window_size, s->enc_width);
+    adjust_window_size(&s->src_window_size, s->src_width);
     s->buffers.c_values = aligned_malloc(ALIGN_CEIL(w * sizeof(float)) * h, 32);
     if(!s->buffers.c_values) return -ENOMEM;
 
-    const uint16_t num_bins = 1024 + (g_all_diffs[2*num_diffs] - g_all_diffs[0]);
+    const uint16_t num_bins = 1024 + (g_all_diffs[2 * num_diffs] - g_all_diffs[0]);
     s->buffers.c_values_histograms = aligned_malloc(ALIGN_CEIL(w * num_bins * sizeof(uint16_t)), 32);
     if(!s->buffers.c_values_histograms) return -ENOMEM;
 
     int pad_size = MASK_FILTER_SIZE >> 1;
-    int dp_width = w + 2 * pad_size + 1;
+    int dp_width = alloc_w + 2 * pad_size + 1;
     int dp_height = 2 * pad_size + 2;
 
     s->buffers.mask_dp = aligned_malloc(ALIGN_CEIL(dp_height * dp_width * sizeof(uint32_t)), 32);
@@ -379,19 +428,17 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 }
 
 /* Preprocessing functions */
-static void decimate_generic_10b(const VmafPicture *pic, VmafPicture *out_pic) {
+static void decimate_generic_10b(const VmafPicture *pic, VmafPicture *out_pic, unsigned out_w, unsigned out_h) {
     uint16_t *data = pic->data[0];
     uint16_t *out_data = out_pic->data[0];
     ptrdiff_t stride = pic->stride[0] >> 1;
     ptrdiff_t out_stride = out_pic->stride[0] >> 1;
     unsigned in_w = pic->w[0];
     unsigned in_h = pic->h[0];
-    unsigned out_w = out_pic->w[0];
-    unsigned out_h = out_pic->h[0];
 
     // if the input and output sizes are the same
     if (in_w == out_w && in_h == out_h){
-        memcpy(out_data, data, stride * pic->h[0] * sizeof(uint16_t));
+        memcpy(out_data, data, stride * out_h * sizeof(uint16_t));
         return;
     }
 
@@ -414,15 +461,13 @@ static void decimate_generic_10b(const VmafPicture *pic, VmafPicture *out_pic) {
     }
 }
 
-static void decimate_generic_8b_and_convert_to_10b(const VmafPicture *pic, VmafPicture *out_pic) {
+static void decimate_generic_8b_and_convert_to_10b(const VmafPicture *pic, VmafPicture *out_pic, unsigned out_w, unsigned out_h) {
     uint8_t *data = pic->data[0];
     uint16_t *out_data = out_pic->data[0];
     ptrdiff_t stride = pic->stride[0];
     ptrdiff_t out_stride = out_pic->stride[0] >> 1;
     unsigned in_w = pic->w[0];
     unsigned in_h = pic->h[0];
-    unsigned out_w = out_pic->w[0];
-    unsigned out_h = out_pic->h[0];
 
     // if the input and output sizes are the same
     if (in_w == out_w && in_h == out_h) {
@@ -451,12 +496,12 @@ static void decimate_generic_8b_and_convert_to_10b(const VmafPicture *pic, VmafP
     }
 }
 
-static void anti_dithering_filter(VmafPicture *pic) {
+static void anti_dithering_filter(VmafPicture *pic, unsigned width, unsigned height) {
     uint16_t *data = pic->data[0];
     int stride = pic->stride[0] >> 1;
 
-    for (unsigned i = 0; i < pic->h[0] - 1; i++) {
-        for (unsigned j = 0; j < pic->w[0] - 1; j++) {
+    for (unsigned i = 0; i < height - 1; i++) {
+        for (unsigned j = 0; j < width - 1; j++) {
             data[i * stride + j] = (data[i * stride + j] +
                                     data[i * stride + j + 1] +
                                     data[(i + 1) * stride + j] +
@@ -464,26 +509,26 @@ static void anti_dithering_filter(VmafPicture *pic) {
         }
 
         // Last column
-        unsigned j = pic->w[0] - 1;
+        unsigned j = width - 1;
         data[i * stride + j] = (data[i * stride + j] +
                                 data[(i + 1) * stride + j]) >> 1;
     }
 
     // Last row
-    unsigned i = pic->h[0] - 1;
-    for (unsigned j = 0; j < pic->w[0] - 1; j++) {
+    unsigned i = height - 1;
+    for (unsigned j = 0; j < width - 1; j++) {
         data[i * stride + j] = (data[i * stride + j] +
                                 data[i * stride + j + 1]) >> 1;
     }
 }
 
-static int cambi_preprocessing(const VmafPicture *image, VmafPicture *preprocessed) {
+static int cambi_preprocessing(const VmafPicture *image, VmafPicture *preprocessed, int width, int height) {
     if (image->bpc == 8) {
-        decimate_generic_8b_and_convert_to_10b(image, preprocessed);
-        anti_dithering_filter(preprocessed);
+        decimate_generic_8b_and_convert_to_10b(image, preprocessed, width, height);
+        anti_dithering_filter(preprocessed, width, height);
     }
     else {
-        decimate_generic_10b(image, preprocessed);
+        decimate_generic_10b(image, preprocessed, width, height);
     }
 
     return 0;
@@ -633,9 +678,7 @@ static void get_spatial_mask_for_index(const VmafPicture *image, VmafPicture *ma
 
 static void get_spatial_mask(const VmafPicture *image, VmafPicture *mask,
                              uint32_t *dp, unsigned width, unsigned height) {
-    unsigned input_width = image->w[0];
-    unsigned input_height = image->h[0];
-    uint16_t mask_index = get_mask_index(input_width, input_height, MASK_FILTER_SIZE);
+    uint16_t mask_index = get_mask_index(width, height, MASK_FILTER_SIZE);
     get_spatial_mask_for_index(image, mask, dp, mask_index, MASK_FILTER_SIZE, width, height);
 }
 
@@ -843,13 +886,14 @@ static int dump_c_values(const float *c_values, int width, int height, int scale
 
 static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
                        const uint16_t num_diffs, const uint16_t *tvi_for_diff,
-                       CambiBuffers buffers, double *score, char *heatmaps_path) {
+                       CambiBuffers buffers, double *score, char *heatmaps_path,
+                       int width, int height, bool is_src) {
     double scores_per_scale[NUM_SCALES];
     VmafPicture *image = &pics[0];
     VmafPicture *mask = &pics[1];
 
-    unsigned scaled_width = image->w[0];
-    unsigned scaled_height = image->h[0];
+    int scaled_width = width;
+    int scaled_height = height;
     for (unsigned scale = 0; scale < NUM_SCALES; scale++) {
         if (scale > 0) {
             scaled_width = (scaled_width + 1) >> 1;
@@ -866,7 +910,7 @@ static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
         calculate_c_values(image, mask, buffers.c_values, buffers.c_values_histograms, window_size,
                            num_diffs, tvi_for_diff, scaled_width, scaled_height);
 
-        if (heatmaps_path) {
+        if (heatmaps_path && !is_src) {
             int err = dump_c_values(buffers.c_values, scaled_width, scaled_height, scale, window_size, num_diffs);
             if (err) return err;
         }
@@ -880,25 +924,52 @@ static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
     return 0;
 }
 
+static int preprocess_and_extract_cambi(CambiState *s, VmafPicture *pic, double *score, bool is_src) {
+    int width = is_src ? s->src_width : s->enc_width;
+    int height = is_src ? s->src_height : s->enc_height;
+    int window_size = is_src ? s->src_window_size : s->window_size;
+    int num_diffs = 1 << s->max_log_contrast;
+    
+    int err = cambi_preprocessing(pic, &s->pics[0], width, height);
+    if (err) return err;
+
+    err = cambi_score(s->pics, window_size, s->topk, num_diffs, s->tvi_for_diff, 
+                      s->buffers, score, s->heatmaps_path, width, height, is_src);
+    if (err) return err;
+
+    return 0;
+}
+
+static double combine_dist_src_scores(double dist_score, double src_score) {
+    return MAX(0, dist_score - src_score);
+}
+
 static int extract(VmafFeatureExtractor *fex,
                    VmafPicture *ref_pic, VmafPicture *ref_pic_90,
                    VmafPicture *dist_pic, VmafPicture *dist_pic_90,
                    unsigned index, VmafFeatureCollector *feature_collector) {
-    (void)ref_pic;
     (void)ref_pic_90;
     (void)dist_pic_90;
 
     CambiState *s = fex->priv;
-
-    int err = cambi_preprocessing(dist_pic, &s->pics[0]);
+    double dist_score;
+    int err = preprocess_and_extract_cambi(s, dist_pic, &dist_score, false);
     if (err) return err;
 
-    double score;
-    const uint16_t num_diffs = 1 << s->max_log_contrast;
-    err = cambi_score(s->pics, s->window_size, s->topk, num_diffs, s->tvi_for_diff, s->buffers, &score, s->heatmaps_path);
-    if (err) return err;
+    if (s->full_ref) {
+        double src_score;
+        int err = preprocess_and_extract_cambi(s, ref_pic, &src_score, true);
+        if (err) return err;
 
-    err = vmaf_feature_collector_append(feature_collector, "cambi", score, index);
+        err = vmaf_feature_collector_append(feature_collector, "cambi_source", src_score, index);
+        if (err) return err;
+
+        double combined_score = combine_dist_src_scores(dist_score, src_score);
+        err = vmaf_feature_collector_append(feature_collector, "cambi_full_reference", combined_score, index);
+        if (err) return err;
+    }
+
+    err = vmaf_feature_collector_append(feature_collector, "cambi", dist_score, index);
     if (err) return err;
 
     return 0;
