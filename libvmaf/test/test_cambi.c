@@ -126,7 +126,7 @@ static char *test_anti_dithering_filter()
 
     get_sample_image(&pic, 0);
     get_sample_image(&filtered_pic, 1);
-    anti_dithering_filter(&pic);
+    anti_dithering_filter(&pic, pic.w[0], pic.h[0]);
     bool equal = pic_data_equality(&pic, &filtered_pic);
     mu_assert("anti_dithering_filter output pic wrong", equal);
 
@@ -164,7 +164,7 @@ static char *test_decimate_generic()
     int err = vmaf_picture_alloc(&out_pic, VMAF_PIX_FMT_YUV400P, 10, 2, 2);
     (void)err;
 
-    decimate_generic_10b(&pic, &out_pic);
+    decimate_generic_10b(&pic, &out_pic, out_pic.w[0], out_pic.h[0]);
 
     uint16_t *data = out_pic.data[0];
     ptrdiff_t stride = out_pic.stride[0] >> 1;
@@ -178,14 +178,14 @@ static char *test_decimate_generic()
     err = vmaf_picture_alloc(&out_pic_4x4, VMAF_PIX_FMT_YUV400P, 10, 4, 4);
     (void)err;
 
-    decimate_generic_10b(&pic, &out_pic_4x4);
+    decimate_generic_10b(&pic, &out_pic_4x4, out_pic_4x4.w[0], out_pic_4x4.h[0]);
 
     mu_assert("decimate generic 10b wrong for same dimensions", pic_data_equality(&pic, &out_pic_4x4));
 
     VmafPicture pic_8b;
     get_sample_image_8b(&pic_8b);
 
-    decimate_generic_8b_and_convert_to_10b(&pic_8b, &out_pic);
+    decimate_generic_8b_and_convert_to_10b(&pic_8b, &out_pic, out_pic.w[0], out_pic.h[0]);
 
     mu_assert("decimate generic 8b to 10b wrong pixel value (0,0)", data[0]==8);
     mu_assert("decimate generic 8b to 10b wrong pixel value (0,1)", data[1]==400);
