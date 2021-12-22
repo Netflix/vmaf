@@ -225,8 +225,8 @@ static FORCE_INLINE inline void range_foot_head(int bitdepth, const char *pix_ra
         foot_8b = 16;
         head_8b = 235;
     }
-    *foot = foot_8b * (pow(2, bitdepth - 8));
-    *head = head_8b * (pow(2, bitdepth - 8));
+    *foot = foot_8b * (1 << (bitdepth - 8));
+    *head = head_8b * (1 << (bitdepth - 8));
 }
 
 static double normalize_range(int sample, int bitdepth, const char *pix_range) {
