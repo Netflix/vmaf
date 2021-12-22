@@ -42,6 +42,7 @@ static const char *pool_method_name[] = {
     [VMAF_POOL_METHOD_MAX] = "max",
     [VMAF_POOL_METHOD_MEAN] = "mean",
     [VMAF_POOL_METHOD_HARMONIC_MEAN] = "harmonic_mean",
+    [VMAF_POOL_METHOD_QUADRATIC_MEAN] = "quadratic_mean",
 };
 
 int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc,

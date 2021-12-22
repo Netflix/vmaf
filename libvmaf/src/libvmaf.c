@@ -17,6 +17,7 @@
  */
 
 #include <errno.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -423,7 +424,7 @@ int vmaf_feature_score_pooled(VmafContext *vmaf, const char *feature_name,
     if (!pool_method) return -EINVAL;
 
     unsigned pic_cnt = 0;
-    double min = 0., max = 0., sum = 0., i_sum = 0.;
+    double min = 0., max = 0., sum = 0., i_sum = 0., sq_sum = 0;
     for (unsigned i = index_low; i <= index_high; i++) {
         if ((vmaf->cfg.n_subsample > 1) && (i % vmaf->cfg.n_subsample))
             continue;
@@ -433,6 +434,7 @@ int vmaf_feature_score_pooled(VmafContext *vmaf, const char *feature_name,
         if (err) return err;
         sum += s;
         i_sum += 1. / (s + 1.);
+        sq_sum += s * s;
         if ((i == index_low) || (s < min))
             min = s;
         if ((i == index_low) || (s > max))
@@ -451,6 +453,9 @@ int vmaf_feature_score_pooled(VmafContext *vmaf, const char *feature_name,
         break;
     case VMAF_POOL_METHOD_HARMONIC_MEAN:
         *score = pic_cnt / i_sum - 1.0;
+        break;
+    case VMAF_POOL_METHOD_QUADRATIC_MEAN:
+        *score = sqrt(sq_sum / pic_cnt);
         break;
     default:
         return -EINVAL;

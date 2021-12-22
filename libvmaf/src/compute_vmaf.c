@@ -31,6 +31,8 @@ static enum VmafPoolingMethod pool_method_map(const char *pool_method)
             return VMAF_POOL_METHOD_MEAN;
         if (!strcmp(pool_method, "harmonic_mean"))
             return VMAF_POOL_METHOD_HARMONIC_MEAN;
+        if (!strcmp(pool_method, "quadratic_mean"))
+            return VMAF_POOL_METHOD_QUADRATIC_MEAN;
     }
 
     return VMAF_POOL_METHOD_MEAN;
