@@ -22,12 +22,17 @@
 #include <string.h>
 
 #include "common/macros.h"
+#include "cpu.h"
 #include "feature_collector.h"
 #include "feature_extractor.h"
 #include "log.h"
 #include "mem.h"
 #include "mkdirp.h"
 #include "picture.h"
+
+#if ARCH_X86
+#include "x86/cambi_avx2.h"
+#endif
 
 /* Ratio of pixels for computation, must be 0 < topk <= 1.0 */
 #define DEFAULT_CAMBI_TOPK_POOLING (0.6)
@@ -88,6 +93,8 @@ typedef struct CambiBuffers {
     uint8_t *filter_mode_histogram;
 } CambiBuffers;
 
+typedef void (*RangeUpdater)(uint16_t *arr, int left, int right, int val);
+
 typedef struct CambiState {
     VmafPicture pics[PICS_BUFFER_SIZE];
     unsigned enc_width;
@@ -102,6 +109,7 @@ typedef struct CambiState {
     uint16_t max_log_contrast;
     char *heatmaps_path;
     bool full_ref;
+    RangeUpdater add_to_range;
     CambiBuffers buffers;
 } CambiState;
 
@@ -327,6 +335,13 @@ static int set_contrast_arrays(const uint16_t num_diffs, uint16_t **diffs_to_con
     return 0;
 }
 
+// SIMD-able functions
+static inline void add_to_range(uint16_t *arr, int left, int right, int val) {
+    for (uint16_t *x = arr + left; x < arr + right; x++) {
+        *x += val;
+    }
+}
+
 #ifdef _WIN32
     #define PATH_SEPARATOR '\\'
 #else
@@ -423,6 +438,15 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
             scaled_h = (scaled_h + 1) >> 1;
         }
     }
+
+    s->add_to_range = add_to_range;
+
+#if ARCH_X86
+    unsigned flags = vmaf_get_cpu_flags();
+    if (flags & VMAF_X86_CPU_FLAG_AVX2) {
+        s->add_to_range = add_to_range_avx2;
+    }
+#endif
 
     return err;
 }
@@ -706,28 +730,8 @@ static float c_value_pixel(const uint16_t *histograms, uint16_t value, const int
     return c_value;
 }
 
-static FORCE_INLINE inline void update_histogram_subtract(uint16_t *histograms, uint16_t *image, uint16_t *mask,
-                                                          int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
-                                                          const uint16_t num_diffs) {
-    uint16_t mask_val = mask[(i - pad_size - 1) * stride + j];
-    if (mask_val) {
-        uint16_t val = image[(i - pad_size - 1) * stride + j] + num_diffs;
-        for (int col = MAX(j - pad_size, 0); col < MIN(j + pad_size + 1, width); col++) {
-            histograms[val * width + col]--;
-        }
-    }
-}
-
-static FORCE_INLINE inline void update_histogram_add(uint16_t *histograms, uint16_t *image, uint16_t *mask,
-                                                     int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
-                                                     const uint16_t num_diffs) {
-    uint16_t mask_val = mask[(i + pad_size) * stride + j];
-    if (mask_val) {
-        uint16_t val = image[(i + pad_size) * stride + j] + num_diffs;
-        for (int col = MAX(j - pad_size, 0); col < MIN(j + pad_size + 1, width); col++) {
-            histograms[val * width + col]++;
-        }
-    }
+static inline void update_histogram(uint16_t *histograms, uint16_t val, int j, int width, uint16_t pad_size, RangeUpdater add_to_range, int diff) {
+    add_to_range(&histograms[val * width], MAX(j - pad_size, 0), MIN(j + pad_size + 1, width), diff);
 }
 
 static FORCE_INLINE inline void calculate_c_values_row(float *c_values, uint16_t *histograms, uint16_t *image,
@@ -745,7 +749,7 @@ static FORCE_INLINE inline void calculate_c_values_row(float *c_values, uint16_t
 static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
                                float *c_values, uint16_t *histograms, uint16_t window_size,
                                const uint16_t num_diffs, const uint16_t *tvi_for_diff,
-                               int width, int height) {
+                               int width, int height, RangeUpdater add_to_range) {
 
     uint16_t pad_size = window_size >> 1;
     const uint16_t num_bins = 1024 + (g_all_diffs[2*num_diffs] - g_all_diffs[0]);
@@ -764,12 +768,9 @@ static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
     // First pass: first pad_size rows
     for (int i = 0; i < pad_size; i++) {
         for (int j = 0; j < width; j++) {
-            uint16_t mask_val = mask[i * stride + j];
-            if (mask_val) {
+            if (mask[i * stride + j]) {
                 uint16_t val = image[i * stride + j] + num_diffs;
-                for (int col = MAX(j - pad_size, 0); col < MIN(j + pad_size + 1, width); col++) {
-                    histograms[val * width + col]++;
-                }
+                update_histogram(histograms, val, j, width, pad_size, add_to_range, 1);
             }
         }
     }
@@ -778,22 +779,34 @@ static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
     for (int i = 0; i < pad_size + 1; i++) {
         if (i + pad_size < height) {
             for (int j = 0; j < width; j++) {
-                update_histogram_add(histograms, image, mask, i, j, width, stride, pad_size, num_diffs);
+                if (mask[(i + pad_size) * stride + j]) {
+                    uint16_t val = image[(i + pad_size) * stride + j] + num_diffs;
+                    update_histogram(histograms, val, j, width, pad_size, add_to_range, 1);
+                }
             }
         }
         calculate_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff);
     }
     for (int i = pad_size + 1; i < height - pad_size; i++) {
         for (int j = 0; j < width; j++) {
-            update_histogram_subtract(histograms, image, mask, i, j, width, stride, pad_size, num_diffs);
-            update_histogram_add(histograms, image, mask, i, j, width, stride, pad_size, num_diffs);
+            if (mask[(i - pad_size - 1) * stride + j]) {
+                uint16_t val = image[(i - pad_size - 1) * stride + j] + num_diffs;
+                update_histogram(histograms, val, j, width, pad_size, add_to_range, -1);
+            }
+            if (mask[(i + pad_size) * stride + j]) {
+                uint16_t val = image[(i + pad_size) * stride + j] + num_diffs;
+                update_histogram(histograms, val, j, width, pad_size, add_to_range, 1);
+            }
         }
         calculate_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff);
     }
     for (int i = height - pad_size; i < height; i++) {
         if (i - pad_size - 1 >= 0) {
             for (int j = 0; j < width; j++) {
-                update_histogram_subtract(histograms, image, mask, i, j, width, stride, pad_size, num_diffs);
+                if (mask[(i - pad_size - 1) * stride + j]) {
+                    uint16_t val = image[(i - pad_size - 1) * stride + j] + num_diffs;
+                    update_histogram(histograms, val, j, width, pad_size, add_to_range, -1);
+                }
             }
         }
         calculate_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff);
@@ -886,8 +899,8 @@ static int dump_c_values(const float *c_values, int width, int height, int scale
 
 static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
                        const uint16_t num_diffs, const uint16_t *tvi_for_diff,
-                       CambiBuffers buffers, double *score, char *heatmaps_path,
-                       int width, int height, bool is_src) {
+                       CambiBuffers buffers, RangeUpdater add_to_range, double *score, 
+                       char *heatmaps_path, int width, int height, bool is_src) {
     double scores_per_scale[NUM_SCALES];
     VmafPicture *image = &pics[0];
     VmafPicture *mask = &pics[1];
@@ -908,7 +921,7 @@ static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
         filter_mode(image, scaled_width, scaled_height, buffers.filter_mode_histogram, buffers.filter_mode_buffer);
 
         calculate_c_values(image, mask, buffers.c_values, buffers.c_values_histograms, window_size,
-                           num_diffs, tvi_for_diff, scaled_width, scaled_height);
+                           num_diffs, tvi_for_diff, scaled_width, scaled_height, add_to_range);
 
         if (heatmaps_path && !is_src) {
             int err = dump_c_values(buffers.c_values, scaled_width, scaled_height, scale, window_size, num_diffs);
@@ -934,7 +947,7 @@ static int preprocess_and_extract_cambi(CambiState *s, VmafPicture *pic, double 
     if (err) return err;
 
     err = cambi_score(s->pics, window_size, s->topk, num_diffs, s->tvi_for_diff, 
-                      s->buffers, score, s->heatmaps_path, width, height, is_src);
+                      s->buffers, s->add_to_range, score, s->heatmaps_path, width, height, is_src);
     if (err) return err;
 
     return 0;

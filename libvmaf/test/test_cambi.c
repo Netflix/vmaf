@@ -300,7 +300,7 @@ static char *test_calculate_c_values()
     get_sample_image(&input, 0);
     get_sample_image(&mask, 8);
     calculate_c_values(&input, &mask, combined_c_values, histograms,
-                       window_size, num_diffs, tvi_for_diff, width, height);
+                       window_size, num_diffs, tvi_for_diff, width, height, add_to_range);
 
     for (unsigned i=0; i<16; i++) {
         mu_assert("calculate_c_values error ws=3",
@@ -314,7 +314,7 @@ static char *test_calculate_c_values()
     window_size = 9;
     uint16_t histograms_8x8[8*1032];
     calculate_c_values(&input_8x8, &mask_8x8, combined_c_values_8x8, histograms_8x8,
-                       window_size, num_diffs, tvi_for_diff, 8, 8);
+                       window_size, num_diffs, tvi_for_diff, 8, 8, add_to_range);
 
     double sum = 0;
     for (unsigned i=0; i<64; i++)
@@ -345,6 +345,24 @@ static char *test_c_value_pixel()
     value = 4;
     c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds, 0, 1);
     mu_assert("c_value_all_diffs for value=4, weights=4,5", almost_equal(c_value, 0));
+    return NULL;
+}
+
+static char *test_add_to_range()
+{
+    uint16_t arr[15] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
+    add_to_range(arr, 5, 10, 2);
+    mu_assert("add_to_range +2 i=5", arr[5] == 7);
+    mu_assert("add_to_range +2 i=7", arr[7] == 7);
+    mu_assert("add_to_range +2 i=9", arr[9] == 7);
+    mu_assert("add_to_range +2 i=10", arr[10] == 5);
+
+    add_to_range(arr, 2, 6, -5);
+    mu_assert("add_to_range -5 i=2", arr[2] == 0);
+    mu_assert("add_to_range -5 i=4", arr[4] == 0);
+    mu_assert("add_to_range -5 i=5", arr[5] == 2);
+    mu_assert("add_to_range -5 i=8", arr[8] == 7);
+
     return NULL;
 }
 
@@ -634,6 +652,7 @@ char *run_tests()
 
     mu_run_test(test_calculate_c_values);
     mu_run_test(test_c_value_pixel);
+    mu_run_test(test_add_to_range);
 
     mu_run_test(test_spatial_pooling);
     mu_run_test(test_quick_select);
