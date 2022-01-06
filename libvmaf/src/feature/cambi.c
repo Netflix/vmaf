@@ -387,7 +387,49 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 }
 
 /* Preprocessing functions */
-static void decimate_generic_10b(const VmafPicture *pic, VmafPicture *out_pic, unsigned out_w, unsigned out_h) {
+
+// For bitdepths <= 8.
+static void decimate_generic_uint8_and_convert_to_10b(const VmafPicture *pic, VmafPicture *out_pic, unsigned out_w, unsigned out_h) {
+    uint8_t *data = pic->data[0];
+    uint16_t *out_data = out_pic->data[0];
+    ptrdiff_t stride = pic->stride[0];
+    ptrdiff_t out_stride = out_pic->stride[0] >> 1;
+    unsigned in_w = pic->w[0];
+    unsigned in_h = pic->h[0];
+
+    int shift_factor = 10 - pic->bpc;
+
+    // if the input and output sizes are the same
+    if (in_w == out_w && in_h == out_h){
+        for (unsigned i = 0; i < out_h; i++) {
+            for (unsigned j = 0; j < out_w; j++) {
+                out_data[i * out_stride + j] = data[i * stride + j] << shift_factor;
+            }
+        }
+        return;
+    }
+
+    float ratio_x = (float)in_w / out_w;
+    float ratio_y = (float)in_h / out_h;
+
+    float start_x = ratio_x / 2 - 0.5;
+    float start_y = ratio_y / 2 - 0.5;
+
+    float y = start_y;
+    for (unsigned i = 0; i < out_h; i++) {
+        unsigned ori_y = (int)(y + 0.5);
+        float x = start_x;
+        for (unsigned j = 0; j < out_w; j++) {
+            unsigned ori_x = (int)(x + 0.5);
+            out_data[i * out_stride + j] = data[ori_y * stride + ori_x] << shift_factor;
+            x += ratio_x;
+        }
+        y += ratio_y;
+    }
+}
+
+// For the special case of bitdepth 9, which doesn't fit into uint8_t but has to be upscaled to 10b.
+static void decimate_generic_9b_and_convert_to_10b(const VmafPicture *pic, VmafPicture *out_pic, unsigned out_w, unsigned out_h) {
     uint16_t *data = pic->data[0];
     uint16_t *out_data = out_pic->data[0];
     ptrdiff_t stride = pic->stride[0] >> 1;
@@ -396,8 +438,12 @@ static void decimate_generic_10b(const VmafPicture *pic, VmafPicture *out_pic, u
     unsigned in_h = pic->h[0];
 
     // if the input and output sizes are the same
-    if (in_w == out_w && in_h == out_h){
-        memcpy(out_data, data, stride * out_h * sizeof(uint16_t));
+    if (in_w == out_w && in_h == out_h) {
+        for (unsigned i = 0; i < out_h; i++) {
+            for (unsigned j = 0; j < out_w; j++) {
+                out_data[i * out_stride + j] = data[i * stride + j] << 1;
+            }
+        }
         return;
     }
 
@@ -413,26 +459,38 @@ static void decimate_generic_10b(const VmafPicture *pic, VmafPicture *out_pic, u
         float x = start_x;
         for (unsigned j = 0; j < out_w; j++) {
             unsigned ori_x = (int)(x + 0.5);
-            out_data[i * out_stride + j] = data[ori_y * stride + ori_x];
+            out_data[i * out_stride + j] = data[ori_y * stride + ori_x] << 1;
             x += ratio_x;
         }
         y += ratio_y;
     }
 }
 
-static void decimate_generic_8b_and_convert_to_10b(const VmafPicture *pic, VmafPicture *out_pic, unsigned out_w, unsigned out_h) {
-    uint8_t *data = pic->data[0];
+// For bitdepths >= 10.
+static void decimate_generic_uint16_and_convert_to_10b(const VmafPicture *pic, VmafPicture *out_pic, unsigned out_w, unsigned out_h) {
+    uint16_t *data = pic->data[0];
     uint16_t *out_data = out_pic->data[0];
-    ptrdiff_t stride = pic->stride[0];
+    ptrdiff_t stride = pic->stride[0] >> 1;
     ptrdiff_t out_stride = out_pic->stride[0] >> 1;
     unsigned in_w = pic->w[0];
     unsigned in_h = pic->h[0];
 
+    int shift_factor = pic->bpc - 10;
+    int rounding_offset = shift_factor == 0 ? 0 : 1 << (shift_factor - 1);
+
     // if the input and output sizes are the same
     if (in_w == out_w && in_h == out_h) {
-        for (unsigned i = 0; i < out_h; i++)
-            for (unsigned j = 0; j < out_w; j++)
-                out_data[i * out_stride + j] = data[i * stride + j] << 2;
+        if (pic->bpc == 10) {
+            // memcpy is faster in case the original bitdepth is already 10
+            memcpy(out_data, data, stride * pic->h[0] * sizeof(uint16_t));
+        }
+        else {
+            for (unsigned i = 0; i < out_h; i++) {
+                for (unsigned j = 0; j < out_w; j++) {
+                    out_data[i * out_stride + j] = (data[i * stride + j] + rounding_offset) >> shift_factor;
+                }
+            }
+        }
         return;
     }
 
@@ -448,7 +506,7 @@ static void decimate_generic_8b_and_convert_to_10b(const VmafPicture *pic, VmafP
         float x = start_x;
         for (unsigned j = 0; j < out_w; j++) {
             unsigned ori_x = (int)(x + 0.5);
-            out_data[i * out_stride + j] = data[ori_y * stride + ori_x] << 2;
+            out_data[i * out_stride + j] = (data[ori_y * stride + ori_x] + rounding_offset) >> shift_factor;
             x += ratio_x;
         }
         y += ratio_y;
@@ -482,14 +540,19 @@ static void anti_dithering_filter(VmafPicture *pic, unsigned width, unsigned hei
 }
 
 static int cambi_preprocessing(const VmafPicture *image, VmafPicture *preprocessed, int width, int height) {
-    if (image->bpc == 8) {
-        decimate_generic_8b_and_convert_to_10b(image, preprocessed, width, height);
-        anti_dithering_filter(preprocessed, width, height);
+    if (image->bpc >= 10) {
+        decimate_generic_uint16_and_convert_to_10b(image, preprocessed, width, height);
     }
     else {
-        decimate_generic_10b(image, preprocessed, width, height);
+        if (image->bpc <= 8) {
+            decimate_generic_uint8_and_convert_to_10b(image, preprocessed, width, height);
+        }
+        else {
+            decimate_generic_9b_and_convert_to_10b(image, preprocessed, width, height);
+        }
+        anti_dithering_filter(preprocessed, width, height);
     }
-
+    
     return 0;
 }
 
