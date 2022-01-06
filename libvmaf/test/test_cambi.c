@@ -164,7 +164,8 @@ static char *test_decimate_generic()
     int err = vmaf_picture_alloc(&out_pic, VMAF_PIX_FMT_YUV400P, 10, 2, 2);
     (void)err;
 
-    decimate_generic_10b(&pic, &out_pic, out_pic.w[0], out_pic.h[0]);
+    pic.bpc = 10;
+    decimate_generic_uint16_and_convert_to_10b(&pic, &out_pic, out_pic.w[0], out_pic.h[0]);
 
     uint16_t *data = out_pic.data[0];
     ptrdiff_t stride = out_pic.stride[0] >> 1;
@@ -174,18 +175,44 @@ static char *test_decimate_generic()
     mu_assert("decimate generic 10b wrong pixel value (1,0)", data[stride]==2);
     mu_assert("decimate generic 10b wrong pixel value (1,1)", data[1+stride]==100);
 
+    pic.bpc = 16;
+    decimate_generic_uint16_and_convert_to_10b(&pic, &out_pic, out_pic.w[0], out_pic.h[0]);
+
+    mu_assert("decimate generic 16b wrong pixel value (0,0)", data[0]==0);
+    mu_assert("decimate generic 16b wrong pixel value (0,1)", data[1]==2);
+    mu_assert("decimate generic 16b wrong pixel value (1,0)", data[stride]==0);
+    mu_assert("decimate generic 16b wrong pixel value (1,1)", data[1+stride]==2);
+
+    pic.bpc = 12;
+    decimate_generic_uint16_and_convert_to_10b(&pic, &out_pic, out_pic.w[0], out_pic.h[0]);
+
+    mu_assert("decimate generic 12b wrong pixel value (0,0)", data[0]==1);
+    mu_assert("decimate generic 12b wrong pixel value (0,1)", data[1]==25);
+    mu_assert("decimate generic 12b wrong pixel value (1,0)", data[stride]==1);
+    mu_assert("decimate generic 12b wrong pixel value (1,1)", data[1+stride]==25);
+
+    pic.bpc = 9;
+    decimate_generic_9b_and_convert_to_10b(&pic, &out_pic, out_pic.w[0], out_pic.h[0]);
+
+    mu_assert("decimate generic 9b to 10b wrong pixel value (0,0)", data[0]==4);
+    mu_assert("decimate generic 9b to 10b wrong pixel value (0,1)", data[1]==200);
+    mu_assert("decimate generic 9b to 10b wrong pixel value (1,0)", data[stride]==4);
+    mu_assert("decimate generic 9b to 10b wrong pixel value (1,1)", data[1+stride]==200);
+
     VmafPicture out_pic_4x4;
     err = vmaf_picture_alloc(&out_pic_4x4, VMAF_PIX_FMT_YUV400P, 10, 4, 4);
     (void)err;
 
-    decimate_generic_10b(&pic, &out_pic_4x4, out_pic_4x4.w[0], out_pic_4x4.h[0]);
+    pic.bpc = 10;
+    decimate_generic_uint16_and_convert_to_10b(&pic, &out_pic_4x4, out_pic_4x4.w[0], out_pic_4x4.h[0]);
 
     mu_assert("decimate generic 10b wrong for same dimensions", pic_data_equality(&pic, &out_pic_4x4));
 
     VmafPicture pic_8b;
     get_sample_image_8b(&pic_8b);
 
-    decimate_generic_8b_and_convert_to_10b(&pic_8b, &out_pic, out_pic.w[0], out_pic.h[0]);
+    pic_8b.bpc = 8;
+    decimate_generic_uint8_and_convert_to_10b(&pic_8b, &out_pic, out_pic.w[0], out_pic.h[0]);
 
     mu_assert("decimate generic 8b to 10b wrong pixel value (0,0)", data[0]==8);
     mu_assert("decimate generic 8b to 10b wrong pixel value (0,1)", data[1]==400);
