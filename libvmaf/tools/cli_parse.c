@@ -65,7 +65,7 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --width/-w $unsigned:      width\n"
             " --height/-h $unsigned:     height\n"
             " --pixel_format/-p: $string pixel format (420/422/444)\n"
-            " --bitdepth/-b $unsigned:   bitdepth (8/10/12)\n"
+            " --bitdepth/-b $unsigned:   bitdepth (8/10/12/16)\n"
             " --model/-m $params:        model parameters, colon \":\" delimited\n"
             "                            `path=` path to model file\n"
             "                            `version=` built-in model version\n"
