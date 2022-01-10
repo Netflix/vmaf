@@ -1613,6 +1613,14 @@ class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
         return quality_result
 
 
+class FFmpegCmdRunner(QualityRunner):
+
+    TYPE = 'FFMPEG_CMD'
+
+    VERSION = '1.0'
+
+
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()

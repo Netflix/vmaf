@@ -6,7 +6,8 @@ from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.asset import Asset, NorefAsset
 from vmaf.core.feature_extractor import VmafFeatureExtractor
 from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
-from vmaf.core.quality_runner import VmafQualityRunner, PsnrQualityRunner
+from vmaf.core.quality_runner import VmafQualityRunner, PsnrQualityRunner, \
+    FFmpegCmdRunner
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.tools.misc import MyTestCase
 
@@ -180,6 +181,40 @@ class QualityRunnerTest(MyTestCase):
         results = self.runner.results
         self.assertAlmostEqual(results[0]['VMAF_score'], 78.04870605403342, places=4)
 
+
+@unittest.skipIf(not VmafExternalConfig.ffmpeg_path() or 'apps' in VmafExternalConfig.ffmpeg_path(), 'ffmpeg not installed or ffmpeg should not be in apps')
+class FFmpegCmdRunnerTest(MyTestCase):
+
+    def tearDown(self):
+        if hasattr(self, 'runner'):
+            self.runner.remove_results()
+        super().tearDown()
+
+    def test_run_ffmpeg_cmd_runner(self):
+
+        ref_path = VmafConfig.test_resource_path("mp4", "Seeking_10_288_375.mp4")
+        dis_path = VmafConfig.test_resource_path("mp4", "Seeking_10_288_375.mp4")
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      workdir_root=VmafConfig.workdir_path(),
+                      ref_path=ref_path,
+                      dis_path=dis_path,
+                      asset_dict={'yuv_type': 'notyuv',
+                                  'quality_width': 720, 'quality_height': 480,
+                                  'dis_gblur_cmd': 'sigma=0.01:steps=1',
+                                  })
+        self.runner = FFmpegCmdRunner(
+            [asset],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={
+                'ffmpeg_template': """{ffmpeg} -video_size {quality_width}x{quality_height} -pixel_format {} -i src01_hrc00_576x324.yuv -video_size 576x324 -pixel_format yuv420p -i src01_hrc01_576x324.yuv -lavfi "[0:v]setpts=PTS-STARTPTS[reference]; [1:v]setpts=PTS-STARTPTS[distorted]; [distorted][reference]libvmaf=log_fmt=xml:log_path=/dev/stdout:model_path=/Users/zli/Projects/github/Netflix/vmaf/model/vmaf_v0.6.1.json" -f null -"""
+            },
+        )
+        self.runner.run()
+
+        results = self.runner.results
+        self.assertAlmostEqual(results[0]['VMAF_score'], 51.017497, places=4)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
