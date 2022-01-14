@@ -21,6 +21,20 @@
 
 typedef double (*EOTF)(double V);
 
+typedef struct LumaRange {
+    int bitdepth;
+    int foot;
+    int head;
+} LumaRange;
+
+LumaRange LumaRange_init(int bitdepth, const char *pix_range);
+
+void range_foot_head(int bitdepth, const char *pix_range, int *foot, int *head);
+
+double normalize_range(int sample, LumaRange range);
+
 double bt1886_eotf(double V);
+
+double get_luminance(int sample, LumaRange luma_range, EOTF eotf);
 
 #endif

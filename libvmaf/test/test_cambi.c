@@ -447,30 +447,35 @@ static char *test_adjust_window_size()
 /* Visibility threshold functions */
 static char *test_get_tvi_for_diff()
 {
-    int tvi = get_tvi_for_diff(1, 0.019, 10, "standard", bt1886_eotf);
+    LumaRange range_10b_standard = LumaRange_init(10, "standard");
+    
+    int tvi = get_tvi_for_diff(1, 0.019, range_10b_standard, bt1886_eotf);
     mu_assert("tvi_for_diff 1 and bd=10", tvi==178);
-    tvi = get_tvi_for_diff(2, 0.019, 10, "standard", bt1886_eotf);
+    tvi = get_tvi_for_diff(2, 0.019, range_10b_standard, bt1886_eotf);
     mu_assert("tvi_for_diff 2 and bd=10", tvi==305);
-    tvi = get_tvi_for_diff(3, 0.019, 10, "standard", bt1886_eotf);
+    tvi = get_tvi_for_diff(3, 0.019, range_10b_standard, bt1886_eotf);
     mu_assert("tvi_for_diff 3 and bd=10", tvi==432);
-    tvi = get_tvi_for_diff(4, 0.019, 10, "standard", bt1886_eotf);
+    tvi = get_tvi_for_diff(4, 0.019, range_10b_standard, bt1886_eotf);
     mu_assert("tvi_for_diff 4 and bd=10", tvi==559);
 
     return NULL;
 }
 
+
 static char *test_tvi_condition()
 {
+    LumaRange range_10b_standard = LumaRange_init(10, "standard");
+
     bool condition;
-    condition = tvi_condition(177, 1, 0.019, 10, "standard", bt1886_eotf);
+    condition = tvi_condition(177, 1, 0.019, range_10b_standard, bt1886_eotf);
     mu_assert("tvi_condition for bitdepth 10 and diff 1", condition);
-    condition = tvi_condition(178, 1, 0.019, 10, "standard", bt1886_eotf);
+    condition = tvi_condition(178, 1, 0.019, range_10b_standard, bt1886_eotf);
     mu_assert("tvi_condition for bitdepth 10 and diff 1", condition);
-    condition = tvi_condition(179, 1, 0.019, 10, "standard", bt1886_eotf);
+    condition = tvi_condition(179, 1, 0.019, range_10b_standard, bt1886_eotf);
     mu_assert("tvi_condition for bitdepth 10 and diff 4", !condition);
-    condition = tvi_condition(935, 4, 0.01, 10, "standard", bt1886_eotf);
+    condition = tvi_condition(935, 4, 0.01, range_10b_standard, bt1886_eotf);
     mu_assert("tvi_condition for bitdepth 10 and diff 4", condition);
-    condition = tvi_condition(936, 4, 0.01, 10, "standard", bt1886_eotf);
+    condition = tvi_condition(936, 4, 0.01, range_10b_standard, bt1886_eotf);
     mu_assert("tvi_condition for bitdepth 10 and diff 4", condition);
     return NULL;
 }
@@ -534,64 +539,19 @@ static char *test_set_contrast_arrays()
 
 static char *test_tvi_hard_threshold_condition()
 {
+    LumaRange range_10b_standard = LumaRange_init(10, "standard");
+
     enum CambiTVIBisectFlag result;
-    result = tvi_hard_threshold_condition(177, 1, 0.019, 10, "standard", bt1886_eotf);
+    result = tvi_hard_threshold_condition(177, 1, 0.019, range_10b_standard, bt1886_eotf);
     mu_assert("hard threshold error for bd=10 and diff=1", result==CAMBI_TVI_BISECT_TOO_SMALL);
-    result = tvi_hard_threshold_condition(178, 1, 0.019, 10, "standard", bt1886_eotf);
+    result = tvi_hard_threshold_condition(178, 1, 0.019, range_10b_standard, bt1886_eotf);
     mu_assert("hard threshold error for bd=10 and diff=1", result==CAMBI_TVI_BISECT_CORRECT);
-    result = tvi_hard_threshold_condition(179, 1, 0.019, 10, "standard", bt1886_eotf);
+    result = tvi_hard_threshold_condition(179, 1, 0.019, range_10b_standard, bt1886_eotf);
     mu_assert("hard threshold error for bd=10 and diff=1", result==CAMBI_TVI_BISECT_TOO_BIG);
-    result = tvi_hard_threshold_condition(305, 2, 0.019, 10, "standard", bt1886_eotf);
+    result = tvi_hard_threshold_condition(305, 2, 0.019, range_10b_standard, bt1886_eotf);
     mu_assert("hard threshold error for bd=10 and diff=2", result==CAMBI_TVI_BISECT_CORRECT);
     return NULL;
 }
-
-static char *test_get_luminance()
-{
-    double L;
-    L = get_luminance(100, 8, "standard", bt1886_eotf);
-    mu_assert("wrong 'standard' 8b luminance bt1886", almost_equal(L, 31.68933962217197));
-    L = get_luminance(400, 10, "standard", bt1886_eotf);
-    mu_assert("wrong 'standard' 10b luminance bt1886", almost_equal(L, 31.68933962217197));
-    L = get_luminance(400, 10, "full", bt1886_eotf);
-    mu_assert("wrong 'full' 10b luminance bt1886", almost_equal(L, 33.359349208106764));
-
-    return NULL;
-}
-
-static char *test_normalize_range()
-{
-    double n = normalize_range(0, 8, "full");
-    mu_assert("wrong 'full' 8b normalize range", almost_equal(n, 0.0));
-    n = normalize_range(128, 8, "standard");
-    mu_assert("wrong 'standard' 8b normalize range", almost_equal(n, 0.5114155251141552));
-    n = normalize_range(255, 8, "standard");
-    mu_assert("wrong 'standard' 8b normalize range", almost_equal(n, 1.0));
-
-    n = normalize_range(65, 10, "standard");
-    mu_assert("wrong 'standard' 10b normalize range", almost_equal(n, 0.001141552511415525));
-    n = normalize_range(512, 10, "standard");
-    mu_assert("wrong 'standard' 10b normalize range", almost_equal(n, 0.5114155251141552));
-    n = normalize_range(939, 10, "standard");
-    mu_assert("wrong 'standard' 10b normalize range", almost_equal(n, 0.9988584474885844));
-
-    return NULL;
-}
-
-static char *test_range_foot_head()
-{
-    int foot, head;
-
-    range_foot_head(8, "standard", &foot, &head);
-    mu_assert("wrong 'standard' 8b range computation", (foot==16 && head==235));
-    range_foot_head(8, "full", &foot, &head);
-    mu_assert("wrong 'full' 8b range computation", (foot==0 && head==255));
-    range_foot_head(10, "standard", &foot, &head);
-    mu_assert("wrong 'standard' 10b range computation", (foot==64 && head==940));
-
-    return NULL;
-}
-
 
 char *run_tests()
 {
@@ -622,9 +582,6 @@ char *run_tests()
     mu_run_test(test_tvi_condition);
     mu_run_test(test_set_contrast_arrays);
     mu_run_test(test_tvi_hard_threshold_condition);
-    mu_run_test(test_get_luminance);
-    mu_run_test(test_normalize_range);
-    mu_run_test(test_range_foot_head);
 
     return NULL;
 }
