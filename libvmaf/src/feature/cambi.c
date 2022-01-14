@@ -227,34 +227,35 @@ static double normalize_range(int sample, int bitdepth, const char *pix_range) {
     return (double)(clipped_sample - foot) / (head - foot);
 }
 
-static double luminance_bt1886(int sample, int bitdepth, const char *pix_range) {
+static double get_luminance(int sample, int bitdepth, const char *pix_range, EOTF eotf) {
     double normalized;
     normalized = normalize_range(sample, bitdepth, pix_range);
-    return bt1886_eotf(normalized);
+    return eotf(normalized);
 }
 
 static bool tvi_condition(int sample, int diff, double tvi_threshold,
-                          int bitdepth, const char *pix_range) {
-    double mean_luminance = luminance_bt1886(sample, bitdepth, pix_range);
-    double diff_luminance = luminance_bt1886(sample + diff, bitdepth, pix_range);
+                          int bitdepth, const char *pix_range, EOTF eotf) {
+    double mean_luminance = get_luminance(sample, bitdepth, pix_range, eotf);
+    double diff_luminance = get_luminance(sample + diff, bitdepth, pix_range, eotf);
     double delta_luminance = diff_luminance - mean_luminance;
     return (delta_luminance > tvi_threshold * mean_luminance);
 }
 
 static enum CambiTVIBisectFlag tvi_hard_threshold_condition(int sample, int diff,
-                                                            double tvi_threshold,
-                                                            int bitdepth, const char *pix_range) {
+                                                            double tvi_threshold, int bitdepth,
+                                                            const char *pix_range, EOTF eotf) {
     bool condition;
-    condition = tvi_condition(sample, diff, tvi_threshold, bitdepth, pix_range);
+    condition = tvi_condition(sample, diff, tvi_threshold, bitdepth, pix_range, eotf);
     if (!condition) return CAMBI_TVI_BISECT_TOO_BIG;
 
-    condition = tvi_condition(sample + 1, diff, tvi_threshold, bitdepth, pix_range);
+    condition = tvi_condition(sample + 1, diff, tvi_threshold, bitdepth, pix_range, eotf);
     if (condition) return CAMBI_TVI_BISECT_TOO_SMALL;
 
     return CAMBI_TVI_BISECT_CORRECT;
 }
 
-static int get_tvi_for_diff(int diff, double tvi_threshold, int bitdepth, const char *pix_range) {
+static int get_tvi_for_diff(int diff, double tvi_threshold, int bitdepth, 
+                            const char *pix_range, EOTF eotf) {
     int foot, head, mid;
     enum CambiTVIBisectFlag tvi_bisect;
     const int max_val = (1 << bitdepth) - 1;
@@ -262,18 +263,21 @@ static int get_tvi_for_diff(int diff, double tvi_threshold, int bitdepth, const 
     range_foot_head(bitdepth, pix_range, &foot, &head);
     head = head - diff - 1;
 
-    tvi_bisect = tvi_hard_threshold_condition(foot, diff, tvi_threshold, bitdepth, pix_range);
+    tvi_bisect = tvi_hard_threshold_condition(foot, diff, tvi_threshold, bitdepth, 
+                                              pix_range, eotf);
     if (tvi_bisect == CAMBI_TVI_BISECT_TOO_BIG) return 0;
     if (tvi_bisect == CAMBI_TVI_BISECT_CORRECT) return foot;
 
-    tvi_bisect = tvi_hard_threshold_condition(head, diff, tvi_threshold, bitdepth, pix_range);
+    tvi_bisect = tvi_hard_threshold_condition(head, diff, tvi_threshold, bitdepth, 
+                                              pix_range, eotf);
     if (tvi_bisect == CAMBI_TVI_BISECT_TOO_SMALL) return max_val;
     if (tvi_bisect == CAMBI_TVI_BISECT_CORRECT) return head;
 
     // bisect
     while (1) {
         mid = foot + (head - foot) / 2;
-        tvi_bisect = tvi_hard_threshold_condition(mid, diff, tvi_threshold, bitdepth, pix_range);
+        tvi_bisect = tvi_hard_threshold_condition(mid, diff, tvi_threshold, bitdepth, 
+                                                  pix_range, eotf);
         if (tvi_bisect == CAMBI_TVI_BISECT_TOO_BIG)
             head = mid;
         else if (tvi_bisect == CAMBI_TVI_BISECT_TOO_SMALL)
@@ -362,7 +366,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     s->tvi_for_diff = aligned_malloc(ALIGN_CEIL(sizeof(uint16_t)) * num_diffs, 16);
     if(!s->tvi_for_diff) return -ENOMEM;
     for (int d = 0; d < num_diffs; d++) {
-        s->tvi_for_diff[d] = get_tvi_for_diff(g_diffs_to_consider[d], s->tvi_threshold, 10, "standard");
+        s->tvi_for_diff[d] = get_tvi_for_diff(g_diffs_to_consider[d], s->tvi_threshold, 10, "standard", bt1886_eotf);
         s->tvi_for_diff[d] += num_diffs;
     }
 

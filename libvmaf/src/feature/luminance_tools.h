@@ -19,6 +19,8 @@
 #ifndef LUMINANCE_TOOLS_H_
 #define LUMINANCE_TOOLS_H_
 
+typedef double (*EOTF)(double V);
+
 double bt1886_eotf(double V);
 
 #endif
