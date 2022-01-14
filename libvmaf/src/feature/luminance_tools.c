@@ -58,7 +58,6 @@ inline void range_foot_head(int bitdepth, PixelRange pix_range, int *foot, int *
 
 LumaRange LumaRange_init(int bitdepth, PixelRange pix_range) {
     LumaRange luma_range;
-    luma_range.bitdepth = bitdepth;
     range_foot_head(bitdepth, pix_range, &luma_range.foot, &luma_range.head);
     return luma_range;
 }

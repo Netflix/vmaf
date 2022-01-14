@@ -449,13 +449,13 @@ static char *test_get_tvi_for_diff()
 {
     LumaRange range_10b_limited = LumaRange_init(10, LIMITED);
     
-    int tvi = get_tvi_for_diff(1, 0.019, range_10b_limited, bt1886_eotf);
+    int tvi = get_tvi_for_diff(1, 0.019, 10, range_10b_limited, bt1886_eotf);
     mu_assert("tvi_for_diff 1 and bd=10", tvi==178);
-    tvi = get_tvi_for_diff(2, 0.019, range_10b_limited, bt1886_eotf);
+    tvi = get_tvi_for_diff(2, 0.019, 10, range_10b_limited, bt1886_eotf);
     mu_assert("tvi_for_diff 2 and bd=10", tvi==305);
-    tvi = get_tvi_for_diff(3, 0.019, range_10b_limited, bt1886_eotf);
+    tvi = get_tvi_for_diff(3, 0.019, 10, range_10b_limited, bt1886_eotf);
     mu_assert("tvi_for_diff 3 and bd=10", tvi==432);
-    tvi = get_tvi_for_diff(4, 0.019, range_10b_limited, bt1886_eotf);
+    tvi = get_tvi_for_diff(4, 0.019, 10, range_10b_limited, bt1886_eotf);
     mu_assert("tvi_for_diff 4 and bd=10", tvi==559);
 
     return NULL;
