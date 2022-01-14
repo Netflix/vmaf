@@ -474,7 +474,7 @@ static char *test_adjust_window_size()
 /* Visibility threshold functions */
 static char *test_get_tvi_for_diff()
 {
-    LumaRange range_10b_limited = LumaRange_init(10, LIMITED);
+    LumaRange range_10b_limited = LumaRange_init(10, VMAF_PIXEL_RANGE_LIMITED);
     
     int tvi = get_tvi_for_diff(1, 0.019, 10, range_10b_limited, bt1886_eotf);
     mu_assert("tvi_for_diff 1 and bd=10", tvi==178);
@@ -491,7 +491,7 @@ static char *test_get_tvi_for_diff()
 
 static char *test_tvi_condition()
 {
-    LumaRange range_10b_limited = LumaRange_init(10, LIMITED);
+    LumaRange range_10b_limited = LumaRange_init(10, VMAF_PIXEL_RANGE_LIMITED);
 
     bool condition;
     condition = tvi_condition(177, 1, 0.019, range_10b_limited, bt1886_eotf);
@@ -566,7 +566,7 @@ static char *test_set_contrast_arrays()
 
 static char *test_tvi_hard_threshold_condition()
 {
-    LumaRange range_10b_limited = LumaRange_init(10, LIMITED);
+    LumaRange range_10b_limited = LumaRange_init(10, VMAF_PIXEL_RANGE_LIMITED);
 
     enum CambiTVIBisectFlag result;
     result = tvi_hard_threshold_condition(177, 1, 0.019, range_10b_limited, bt1886_eotf);
