@@ -17,7 +17,6 @@
  */
 
 #include <math.h>
-#include <string.h>
 
 #include "luminance_tools.h"
 
@@ -44,18 +43,20 @@ inline double bt1886_eotf(double V) {
  * Full range for 8 bit: [0, 255]
  * Full range for 10 bit: [0, 1023]
  */
-inline void range_foot_head(int bitdepth, const char *pix_range, int *foot, int *head) {
-    if (!strcmp(pix_range, "standard")) {
-        *foot = 16 * (1 << (bitdepth - 8));
-        *head = 235 * (1 << (bitdepth - 8));
-    }
-    else {
-        *foot = 0;
-        *head = (1 << bitdepth) - 1;
+inline void range_foot_head(int bitdepth, PixelRange pix_range, int *foot, int *head) {
+    switch (pix_range) {
+        case LIMITED:
+            *foot = 16 * (1 << (bitdepth - 8));
+            *head = 235 * (1 << (bitdepth - 8));
+            break;
+        case FULL:
+            *foot = 0;
+            *head = (1 << bitdepth) - 1;
+            break;
     }
 }
 
-LumaRange LumaRange_init(int bitdepth, const char *pix_range) {
+LumaRange LumaRange_init(int bitdepth, PixelRange pix_range) {
     LumaRange luma_range;
     luma_range.bitdepth = bitdepth;
     range_foot_head(bitdepth, pix_range, &luma_range.foot, &luma_range.head);

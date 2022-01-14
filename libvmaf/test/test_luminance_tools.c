@@ -17,7 +17,6 @@
  */
 
 #include "test.h"
-#include "ref.h"
 #include "feature/luminance_tools.h"
 
 #define EPS 0.00001
@@ -45,27 +44,27 @@ static char *test_range_foot_head()
 {
     int foot, head;
 
-    range_foot_head(8, "standard", &foot, &head);
-    mu_assert("wrong 'standard' 8b range computation", (foot==16 && head==235));
-    range_foot_head(8, "full", &foot, &head);
+    range_foot_head(8, LIMITED, &foot, &head);
+    mu_assert("wrong 'limited' 8b range computation", (foot==16 && head==235));
+    range_foot_head(8, FULL, &foot, &head);
     mu_assert("wrong 'full' 8b range computation", (foot==0 && head==255));
-    range_foot_head(10, "standard", &foot, &head);
-    mu_assert("wrong 'standard' 10b range computation", (foot==64 && head==940));
+    range_foot_head(10, LIMITED, &foot, &head);
+    mu_assert("wrong 'limited' 10b range computation", (foot==64 && head==940));
 
     return NULL;
 }
 
 static char *test_get_luminance()
 {
-    LumaRange range_8b_standard = LumaRange_init(8, "standard");
-    LumaRange range_10b_standard = LumaRange_init(10, "standard");
-    LumaRange range_10b_full = LumaRange_init(10, "full");
+    LumaRange range_8b_limited = LumaRange_init(8, LIMITED);
+    LumaRange range_10b_limited = LumaRange_init(10, LIMITED);
+    LumaRange range_10b_full = LumaRange_init(10, FULL);
 
     double L;
-    L = get_luminance(100, range_8b_standard, bt1886_eotf);
-    mu_assert("wrong 'standard' 8b luminance bt1886", almost_equal(L, 31.68933962217197));
-    L = get_luminance(400, range_10b_standard, bt1886_eotf);
-    mu_assert("wrong 'standard' 10b luminance bt1886", almost_equal(L, 31.68933962217197));
+    L = get_luminance(100, range_8b_limited, bt1886_eotf);
+    mu_assert("wrong 'limited' 8b luminance bt1886", almost_equal(L, 31.68933962217197));
+    L = get_luminance(400, range_10b_limited, bt1886_eotf);
+    mu_assert("wrong 'limited' 10b luminance bt1886", almost_equal(L, 31.68933962217197));
     L = get_luminance(400, range_10b_full, bt1886_eotf);
     printf("%.15lf\n", L);
     mu_assert("wrong 'full' 10b luminance bt1886", almost_equal(L, 33.133003757557773));
@@ -75,23 +74,23 @@ static char *test_get_luminance()
 
 static char *test_normalize_range()
 {
-    LumaRange range_8b_standard = LumaRange_init(8, "standard");
-    LumaRange range_8b_full = LumaRange_init(8, "full");
-    LumaRange range_10b_standard = LumaRange_init(10, "standard");
+    LumaRange range_8b_limited = LumaRange_init(8, LIMITED);
+    LumaRange range_8b_full = LumaRange_init(8, FULL);
+    LumaRange range_10b_limited = LumaRange_init(10, LIMITED);
 
     double n = normalize_range(0, range_8b_full);
     mu_assert("wrong 'full' 8b normalize range", almost_equal(n, 0.0));
-    n = normalize_range(128, range_8b_standard);
-    mu_assert("wrong 'standard' 8b normalize range", almost_equal(n, 0.5114155251141552));
-    n = normalize_range(255, range_8b_standard);
-    mu_assert("wrong 'standard' 8b normalize range", almost_equal(n, 1.0));
+    n = normalize_range(128, range_8b_limited);
+    mu_assert("wrong 'limited' 8b normalize range", almost_equal(n, 0.5114155251141552));
+    n = normalize_range(255, range_8b_limited);
+    mu_assert("wrong 'limited' 8b normalize range", almost_equal(n, 1.0));
 
-    n = normalize_range(65, range_10b_standard);
-    mu_assert("wrong 'standard' 10b normalize range", almost_equal(n, 0.001141552511415525));
-    n = normalize_range(512, range_10b_standard);
-    mu_assert("wrong 'standard' 10b normalize range", almost_equal(n, 0.5114155251141552));
-    n = normalize_range(939, range_10b_standard);
-    mu_assert("wrong 'standard' 10b normalize range", almost_equal(n, 0.9988584474885844));
+    n = normalize_range(65, range_10b_limited);
+    mu_assert("wrong 'limited' 10b normalize range", almost_equal(n, 0.001141552511415525));
+    n = normalize_range(512, range_10b_limited);
+    mu_assert("wrong 'limited' 10b normalize range", almost_equal(n, 0.5114155251141552));
+    n = normalize_range(939, range_10b_limited);
+    mu_assert("wrong 'limited' 10b normalize range", almost_equal(n, 0.9988584474885844));
 
     return NULL;
 }
