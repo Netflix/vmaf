@@ -228,9 +228,9 @@ static enum CambiTVIBisectFlag tvi_hard_threshold_condition(int sample, int diff
     return CAMBI_TVI_BISECT_CORRECT;
 }
 
-static int get_tvi_for_diff(int diff, double tvi_threshold, LumaRange luma_range, EOTF eotf) {
+static int get_tvi_for_diff(int diff, double tvi_threshold, int bitdepth, LumaRange luma_range, EOTF eotf) {
     enum CambiTVIBisectFlag tvi_bisect;
-    const int max_val = (1 << luma_range.bitdepth) - 1;
+    const int max_val = (1 << bitdepth) - 1;
 
     int foot = luma_range.foot;
     int head = luma_range.head;
@@ -338,7 +338,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     s->tvi_for_diff = aligned_malloc(ALIGN_CEIL(sizeof(uint16_t)) * num_diffs, 16);
     if(!s->tvi_for_diff) return -ENOMEM;
     for (int d = 0; d < num_diffs; d++) {
-        s->tvi_for_diff[d] = get_tvi_for_diff(g_diffs_to_consider[d], s->tvi_threshold, luma_range, bt1886_eotf);
+        s->tvi_for_diff[d] = get_tvi_for_diff(g_diffs_to_consider[d], s->tvi_threshold, 10, luma_range, bt1886_eotf);
         s->tvi_for_diff[d] += num_diffs;
     }
 

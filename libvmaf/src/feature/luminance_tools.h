@@ -35,7 +35,6 @@ typedef enum  {
  * Contains the necessary information to normalize a luma value down to [0, 1].
  */
 typedef struct LumaRange {
-    int bitdepth;
     int foot;
     int head;
 } LumaRange;
