@@ -333,7 +333,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 
     set_contrast_arrays(num_diffs, &g_diffs_to_consider, &g_diffs_weights, &g_all_diffs);
 
-    LumaRange luma_range = LumaRange_init(10, "standard");
+    LumaRange luma_range = LumaRange_init(10, LIMITED);
 
     s->tvi_for_diff = aligned_malloc(ALIGN_CEIL(sizeof(uint16_t)) * num_diffs, 16);
     if(!s->tvi_for_diff) return -ENOMEM;

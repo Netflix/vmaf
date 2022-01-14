@@ -21,15 +21,20 @@
 
 typedef double (*EOTF)(double V);
 
+typedef enum  {
+    LIMITED,
+    FULL,
+} PixelRange;
+
 typedef struct LumaRange {
     int bitdepth;
     int foot;
     int head;
 } LumaRange;
 
-LumaRange LumaRange_init(int bitdepth, const char *pix_range);
+LumaRange LumaRange_init(int bitdepth, PixelRange pix_range);
 
-void range_foot_head(int bitdepth, const char *pix_range, int *foot, int *head);
+void range_foot_head(int bitdepth, PixelRange pix_range, int *foot, int *head);
 
 double normalize_range(int sample, LumaRange range);
 
