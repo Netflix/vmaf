@@ -45,11 +45,11 @@ inline double bt1886_eotf(double V) {
  */
 inline void range_foot_head(int bitdepth, PixelRange pix_range, int *foot, int *head) {
     switch (pix_range) {
-        case LIMITED:
+        case VMAF_PIXEL_RANGE_LIMITED:
             *foot = 16 * (1 << (bitdepth - 8));
             *head = 235 * (1 << (bitdepth - 8));
             break;
-        case FULL:
+        case VMAF_PIXEL_RANGE_FULL:
             *foot = 0;
             *head = (1 << bitdepth) - 1;
             break;

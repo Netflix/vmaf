@@ -44,11 +44,11 @@ static char *test_range_foot_head()
 {
     int foot, head;
 
-    range_foot_head(8, LIMITED, &foot, &head);
+    range_foot_head(8, VMAF_PIXEL_RANGE_LIMITED, &foot, &head);
     mu_assert("wrong 'limited' 8b range computation", (foot==16 && head==235));
-    range_foot_head(8, FULL, &foot, &head);
+    range_foot_head(8, VMAF_PIXEL_RANGE_FULL, &foot, &head);
     mu_assert("wrong 'full' 8b range computation", (foot==0 && head==255));
-    range_foot_head(10, LIMITED, &foot, &head);
+    range_foot_head(10, VMAF_PIXEL_RANGE_LIMITED, &foot, &head);
     mu_assert("wrong 'limited' 10b range computation", (foot==64 && head==940));
 
     return NULL;
@@ -56,9 +56,9 @@ static char *test_range_foot_head()
 
 static char *test_get_luminance()
 {
-    LumaRange range_8b_limited = LumaRange_init(8, LIMITED);
-    LumaRange range_10b_limited = LumaRange_init(10, LIMITED);
-    LumaRange range_10b_full = LumaRange_init(10, FULL);
+    LumaRange range_8b_limited = LumaRange_init(8, VMAF_PIXEL_RANGE_LIMITED);
+    LumaRange range_10b_limited = LumaRange_init(10, VMAF_PIXEL_RANGE_LIMITED);
+    LumaRange range_10b_full = LumaRange_init(10, VMAF_PIXEL_RANGE_FULL);
 
     double L;
     L = get_luminance(100, range_8b_limited, bt1886_eotf);
@@ -74,9 +74,9 @@ static char *test_get_luminance()
 
 static char *test_normalize_range()
 {
-    LumaRange range_8b_limited = LumaRange_init(8, LIMITED);
-    LumaRange range_8b_full = LumaRange_init(8, FULL);
-    LumaRange range_10b_limited = LumaRange_init(10, LIMITED);
+    LumaRange range_8b_limited = LumaRange_init(8, VMAF_PIXEL_RANGE_LIMITED);
+    LumaRange range_8b_full = LumaRange_init(8, VMAF_PIXEL_RANGE_FULL);
+    LumaRange range_10b_limited = LumaRange_init(10, VMAF_PIXEL_RANGE_LIMITED);
 
     double n = normalize_range(0, range_8b_full);
     mu_assert("wrong 'full' 8b normalize range", almost_equal(n, 0.0));

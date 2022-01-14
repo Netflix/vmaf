@@ -27,8 +27,8 @@ typedef double (*EOTF)(double V);
  * Full pixel range means that values from 0 to 2^bitdepth - 1 will be used.
  */
 typedef enum  {
-    LIMITED,
-    FULL,
+    VMAF_PIXEL_RANGE_LIMITED,
+    VMAF_PIXEL_RANGE_FULL,
 } PixelRange;
 
 /*
