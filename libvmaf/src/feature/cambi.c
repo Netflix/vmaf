@@ -208,76 +208,46 @@ static FORCE_INLINE inline int clip(int value, int low, int high) {
     return value < low ? low : (value > high ? high : value);
 }
 
-static FORCE_INLINE inline void range_foot_head(int bitdepth, const char *pix_range,
-                                                int *foot, int *head) {
-    int foot_8b = 0;
-    int head_8b = 255;
-    if (!strcmp(pix_range, "standard")) {
-        foot_8b = 16;
-        head_8b = 235;
-    }
-    *foot = foot_8b * (1 << (bitdepth - 8));
-    *head = head_8b * (1 << (bitdepth - 8));
-}
-
-static double normalize_range(int sample, int bitdepth, const char *pix_range) {
-    int foot, head, clipped_sample;
-    range_foot_head(bitdepth, pix_range, &foot, &head);
-    clipped_sample = clip(sample, foot, head);
-    return (double)(clipped_sample - foot) / (head - foot);
-}
-
-static double get_luminance(int sample, int bitdepth, const char *pix_range, EOTF eotf) {
-    double normalized;
-    normalized = normalize_range(sample, bitdepth, pix_range);
-    return eotf(normalized);
-}
-
 static bool tvi_condition(int sample, int diff, double tvi_threshold,
-                          int bitdepth, const char *pix_range, EOTF eotf) {
-    double mean_luminance = get_luminance(sample, bitdepth, pix_range, eotf);
-    double diff_luminance = get_luminance(sample + diff, bitdepth, pix_range, eotf);
+                          LumaRange luma_range, EOTF eotf) {
+    double mean_luminance = get_luminance(sample, luma_range, eotf);
+    double diff_luminance = get_luminance(sample + diff, luma_range, eotf);
     double delta_luminance = diff_luminance - mean_luminance;
     return (delta_luminance > tvi_threshold * mean_luminance);
 }
 
-static enum CambiTVIBisectFlag tvi_hard_threshold_condition(int sample, int diff,
-                                                            double tvi_threshold, int bitdepth,
-                                                            const char *pix_range, EOTF eotf) {
+static enum CambiTVIBisectFlag tvi_hard_threshold_condition(int sample, int diff, double tvi_threshold, 
+                                                            LumaRange luma_range, EOTF eotf) {
     bool condition;
-    condition = tvi_condition(sample, diff, tvi_threshold, bitdepth, pix_range, eotf);
+    condition = tvi_condition(sample, diff, tvi_threshold, luma_range, eotf);
     if (!condition) return CAMBI_TVI_BISECT_TOO_BIG;
 
-    condition = tvi_condition(sample + 1, diff, tvi_threshold, bitdepth, pix_range, eotf);
+    condition = tvi_condition(sample + 1, diff, tvi_threshold, luma_range, eotf);
     if (condition) return CAMBI_TVI_BISECT_TOO_SMALL;
 
     return CAMBI_TVI_BISECT_CORRECT;
 }
 
-static int get_tvi_for_diff(int diff, double tvi_threshold, int bitdepth, 
-                            const char *pix_range, EOTF eotf) {
-    int foot, head, mid;
+static int get_tvi_for_diff(int diff, double tvi_threshold, LumaRange luma_range, EOTF eotf) {
     enum CambiTVIBisectFlag tvi_bisect;
-    const int max_val = (1 << bitdepth) - 1;
+    const int max_val = (1 << luma_range.bitdepth) - 1;
 
-    range_foot_head(bitdepth, pix_range, &foot, &head);
+    int foot = luma_range.foot;
+    int head = luma_range.head;
     head = head - diff - 1;
 
-    tvi_bisect = tvi_hard_threshold_condition(foot, diff, tvi_threshold, bitdepth, 
-                                              pix_range, eotf);
+    tvi_bisect = tvi_hard_threshold_condition(foot, diff, tvi_threshold, luma_range, eotf);
     if (tvi_bisect == CAMBI_TVI_BISECT_TOO_BIG) return 0;
     if (tvi_bisect == CAMBI_TVI_BISECT_CORRECT) return foot;
 
-    tvi_bisect = tvi_hard_threshold_condition(head, diff, tvi_threshold, bitdepth, 
-                                              pix_range, eotf);
+    tvi_bisect = tvi_hard_threshold_condition(head, diff, tvi_threshold, luma_range, eotf);
     if (tvi_bisect == CAMBI_TVI_BISECT_TOO_SMALL) return max_val;
     if (tvi_bisect == CAMBI_TVI_BISECT_CORRECT) return head;
 
     // bisect
     while (1) {
-        mid = foot + (head - foot) / 2;
-        tvi_bisect = tvi_hard_threshold_condition(mid, diff, tvi_threshold, bitdepth, 
-                                                  pix_range, eotf);
+        int mid = foot + (head - foot) / 2;
+        tvi_bisect = tvi_hard_threshold_condition(mid, diff, tvi_threshold, luma_range, eotf);
         if (tvi_bisect == CAMBI_TVI_BISECT_TOO_BIG)
             head = mid;
         else if (tvi_bisect == CAMBI_TVI_BISECT_TOO_SMALL)
@@ -363,10 +333,12 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 
     set_contrast_arrays(num_diffs, &g_diffs_to_consider, &g_diffs_weights, &g_all_diffs);
 
+    LumaRange luma_range = LumaRange_init(10, "standard");
+
     s->tvi_for_diff = aligned_malloc(ALIGN_CEIL(sizeof(uint16_t)) * num_diffs, 16);
     if(!s->tvi_for_diff) return -ENOMEM;
     for (int d = 0; d < num_diffs; d++) {
-        s->tvi_for_diff[d] = get_tvi_for_diff(g_diffs_to_consider[d], s->tvi_threshold, 10, "standard", bt1886_eotf);
+        s->tvi_for_diff[d] = get_tvi_for_diff(g_diffs_to_consider[d], s->tvi_threshold, luma_range, bt1886_eotf);
         s->tvi_for_diff[d] += num_diffs;
     }
 
