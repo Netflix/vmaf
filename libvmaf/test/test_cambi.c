@@ -474,15 +474,16 @@ static char *test_adjust_window_size()
 /* Visibility threshold functions */
 static char *test_get_tvi_for_diff()
 {
-    LumaRange range_10b_limited = LumaRange_init(10, VMAF_PIXEL_RANGE_LIMITED);
+    VmafLumaRange range_10b_limited;
+    vmaf_luminance_init_luma_range(&range_10b_limited, 10, VMAF_PIXEL_RANGE_LIMITED);
     
-    int tvi = get_tvi_for_diff(1, 0.019, 10, range_10b_limited, bt1886_eotf);
+    int tvi = get_tvi_for_diff(1, 0.019, 10, range_10b_limited, vmaf_luminance_bt1886_eotf);
     mu_assert("tvi_for_diff 1 and bd=10", tvi==178);
-    tvi = get_tvi_for_diff(2, 0.019, 10, range_10b_limited, bt1886_eotf);
+    tvi = get_tvi_for_diff(2, 0.019, 10, range_10b_limited, vmaf_luminance_bt1886_eotf);
     mu_assert("tvi_for_diff 2 and bd=10", tvi==305);
-    tvi = get_tvi_for_diff(3, 0.019, 10, range_10b_limited, bt1886_eotf);
+    tvi = get_tvi_for_diff(3, 0.019, 10, range_10b_limited, vmaf_luminance_bt1886_eotf);
     mu_assert("tvi_for_diff 3 and bd=10", tvi==432);
-    tvi = get_tvi_for_diff(4, 0.019, 10, range_10b_limited, bt1886_eotf);
+    tvi = get_tvi_for_diff(4, 0.019, 10, range_10b_limited, vmaf_luminance_bt1886_eotf);
     mu_assert("tvi_for_diff 4 and bd=10", tvi==559);
 
     return NULL;
@@ -491,18 +492,19 @@ static char *test_get_tvi_for_diff()
 
 static char *test_tvi_condition()
 {
-    LumaRange range_10b_limited = LumaRange_init(10, VMAF_PIXEL_RANGE_LIMITED);
+    VmafLumaRange range_10b_limited;
+    vmaf_luminance_init_luma_range(&range_10b_limited, 10, VMAF_PIXEL_RANGE_LIMITED);
 
     bool condition;
-    condition = tvi_condition(177, 1, 0.019, range_10b_limited, bt1886_eotf);
+    condition = tvi_condition(177, 1, 0.019, range_10b_limited, vmaf_luminance_bt1886_eotf);
     mu_assert("tvi_condition for bitdepth 10 and diff 1", condition);
-    condition = tvi_condition(178, 1, 0.019, range_10b_limited, bt1886_eotf);
+    condition = tvi_condition(178, 1, 0.019, range_10b_limited, vmaf_luminance_bt1886_eotf);
     mu_assert("tvi_condition for bitdepth 10 and diff 1", condition);
-    condition = tvi_condition(179, 1, 0.019, range_10b_limited, bt1886_eotf);
+    condition = tvi_condition(179, 1, 0.019, range_10b_limited, vmaf_luminance_bt1886_eotf);
     mu_assert("tvi_condition for bitdepth 10 and diff 4", !condition);
-    condition = tvi_condition(935, 4, 0.01, range_10b_limited, bt1886_eotf);
+    condition = tvi_condition(935, 4, 0.01, range_10b_limited, vmaf_luminance_bt1886_eotf);
     mu_assert("tvi_condition for bitdepth 10 and diff 4", condition);
-    condition = tvi_condition(936, 4, 0.01, range_10b_limited, bt1886_eotf);
+    condition = tvi_condition(936, 4, 0.01, range_10b_limited, vmaf_luminance_bt1886_eotf);
     mu_assert("tvi_condition for bitdepth 10 and diff 4", condition);
     return NULL;
 }
@@ -566,16 +568,17 @@ static char *test_set_contrast_arrays()
 
 static char *test_tvi_hard_threshold_condition()
 {
-    LumaRange range_10b_limited = LumaRange_init(10, VMAF_PIXEL_RANGE_LIMITED);
+    VmafLumaRange range_10b_limited;
+    vmaf_luminance_init_luma_range(&range_10b_limited, 10, VMAF_PIXEL_RANGE_LIMITED);
 
     enum CambiTVIBisectFlag result;
-    result = tvi_hard_threshold_condition(177, 1, 0.019, range_10b_limited, bt1886_eotf);
+    result = tvi_hard_threshold_condition(177, 1, 0.019, range_10b_limited, vmaf_luminance_bt1886_eotf);
     mu_assert("hard threshold error for bd=10 and diff=1", result==CAMBI_TVI_BISECT_TOO_SMALL);
-    result = tvi_hard_threshold_condition(178, 1, 0.019, range_10b_limited, bt1886_eotf);
+    result = tvi_hard_threshold_condition(178, 1, 0.019, range_10b_limited, vmaf_luminance_bt1886_eotf);
     mu_assert("hard threshold error for bd=10 and diff=1", result==CAMBI_TVI_BISECT_CORRECT);
-    result = tvi_hard_threshold_condition(179, 1, 0.019, range_10b_limited, bt1886_eotf);
+    result = tvi_hard_threshold_condition(179, 1, 0.019, range_10b_limited, vmaf_luminance_bt1886_eotf);
     mu_assert("hard threshold error for bd=10 and diff=1", result==CAMBI_TVI_BISECT_TOO_BIG);
-    result = tvi_hard_threshold_condition(305, 2, 0.019, range_10b_limited, bt1886_eotf);
+    result = tvi_hard_threshold_condition(305, 2, 0.019, range_10b_limited, vmaf_luminance_bt1886_eotf);
     mu_assert("hard threshold error for bd=10 and diff=2", result==CAMBI_TVI_BISECT_CORRECT);
     return NULL;
 }

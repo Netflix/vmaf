@@ -100,7 +100,7 @@ test_cambi = executable('test_cambi',
 )
 
 test_luminance_tools = executable('test_luminance_tools',
-    ['test.c', 'test_luminance_tools.c', '../src/feature/luminance_tools.c'],
+    ['test.c', 'test_luminance_tools.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
 )
