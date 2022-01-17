@@ -209,15 +209,15 @@ static FORCE_INLINE inline int clip(int value, int low, int high) {
 }
 
 static bool tvi_condition(int sample, int diff, double tvi_threshold,
-                          LumaRange luma_range, EOTF eotf) {
-    double mean_luminance = get_luminance(sample, luma_range, eotf);
-    double diff_luminance = get_luminance(sample + diff, luma_range, eotf);
+                          VmafLumaRange luma_range, VmafEOTF eotf) {
+    double mean_luminance = vmaf_luminance_get_luminance(sample, luma_range, eotf);
+    double diff_luminance = vmaf_luminance_get_luminance(sample + diff, luma_range, eotf);
     double delta_luminance = diff_luminance - mean_luminance;
     return (delta_luminance > tvi_threshold * mean_luminance);
 }
 
 static enum CambiTVIBisectFlag tvi_hard_threshold_condition(int sample, int diff, double tvi_threshold, 
-                                                            LumaRange luma_range, EOTF eotf) {
+                                                            VmafLumaRange luma_range, VmafEOTF eotf) {
     bool condition;
     condition = tvi_condition(sample, diff, tvi_threshold, luma_range, eotf);
     if (!condition) return CAMBI_TVI_BISECT_TOO_BIG;
@@ -228,7 +228,7 @@ static enum CambiTVIBisectFlag tvi_hard_threshold_condition(int sample, int diff
     return CAMBI_TVI_BISECT_CORRECT;
 }
 
-static int get_tvi_for_diff(int diff, double tvi_threshold, int bitdepth, LumaRange luma_range, EOTF eotf) {
+static int get_tvi_for_diff(int diff, double tvi_threshold, int bitdepth, VmafLumaRange luma_range, VmafEOTF eotf) {
     enum CambiTVIBisectFlag tvi_bisect;
     const int max_val = (1 << bitdepth) - 1;
 
@@ -328,17 +328,20 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     for (unsigned i = 0; i < PICS_BUFFER_SIZE; i++) {
         err |= vmaf_picture_alloc(&s->pics[i], VMAF_PIX_FMT_YUV400P, 10, alloc_w, alloc_h);
     }
+    if (err) return err;
 
     const int num_diffs = 1 << s->max_log_contrast;
 
     set_contrast_arrays(num_diffs, &g_diffs_to_consider, &g_diffs_weights, &g_all_diffs);
 
-    LumaRange luma_range = LumaRange_init(10, VMAF_PIXEL_RANGE_LIMITED);
+    VmafLumaRange luma_range;
+    err = vmaf_luminance_init_luma_range(&luma_range, 10, VMAF_PIXEL_RANGE_LIMITED);
+    if (err) return err;
 
     s->tvi_for_diff = aligned_malloc(ALIGN_CEIL(sizeof(uint16_t)) * num_diffs, 16);
     if(!s->tvi_for_diff) return -ENOMEM;
     for (int d = 0; d < num_diffs; d++) {
-        s->tvi_for_diff[d] = get_tvi_for_diff(g_diffs_to_consider[d], s->tvi_threshold, 10, luma_range, bt1886_eotf);
+        s->tvi_for_diff[d] = get_tvi_for_diff(g_diffs_to_consider[d], s->tvi_threshold, 10, luma_range, vmaf_luminance_bt1886_eotf);
         s->tvi_for_diff[d] += num_diffs;
     }
 

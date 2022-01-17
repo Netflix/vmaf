@@ -17,7 +17,7 @@
  */
 
 #include "test.h"
-#include "feature/luminance_tools.h"
+#include "feature/luminance_tools.c"
 
 #define EPS 0.00001
 
@@ -30,11 +30,11 @@ int almost_equal(double a, double b)
 
 static char *test_bt1886_eotf()
 {
-    double L = bt1886_eotf(0.5);
+    double L = vmaf_luminance_bt1886_eotf(0.5);
     mu_assert("wrong bt1886_eotf result", almost_equal(L, 58.716634));
-    L = bt1886_eotf(0.1);
+    L = vmaf_luminance_bt1886_eotf(0.1);
     mu_assert("wrong bt1886_eotf result", almost_equal(L, 1.576653));
-    L = bt1886_eotf(0.9);
+    L = vmaf_luminance_bt1886_eotf(0.9);
     mu_assert("wrong bt1886_eotf result", almost_equal(L, 233.819503));
 
     return NULL;
@@ -56,17 +56,19 @@ static char *test_range_foot_head()
 
 static char *test_get_luminance()
 {
-    LumaRange range_8b_limited = LumaRange_init(8, VMAF_PIXEL_RANGE_LIMITED);
-    LumaRange range_10b_limited = LumaRange_init(10, VMAF_PIXEL_RANGE_LIMITED);
-    LumaRange range_10b_full = LumaRange_init(10, VMAF_PIXEL_RANGE_FULL);
+    VmafLumaRange range_8b_limited;
+    vmaf_luminance_init_luma_range(&range_8b_limited, 8, VMAF_PIXEL_RANGE_LIMITED);
+    VmafLumaRange range_10b_limited;
+    vmaf_luminance_init_luma_range(&range_10b_limited, 10, VMAF_PIXEL_RANGE_LIMITED);
+    VmafLumaRange range_10b_full;
+    vmaf_luminance_init_luma_range(&range_10b_full, 10, VMAF_PIXEL_RANGE_FULL);
 
     double L;
-    L = get_luminance(100, range_8b_limited, bt1886_eotf);
+    L = vmaf_luminance_get_luminance(100, range_8b_limited, vmaf_luminance_bt1886_eotf);
     mu_assert("wrong 'limited' 8b luminance bt1886", almost_equal(L, 31.68933962217197));
-    L = get_luminance(400, range_10b_limited, bt1886_eotf);
+    L = vmaf_luminance_get_luminance(400, range_10b_limited, vmaf_luminance_bt1886_eotf);
     mu_assert("wrong 'limited' 10b luminance bt1886", almost_equal(L, 31.68933962217197));
-    L = get_luminance(400, range_10b_full, bt1886_eotf);
-    printf("%.15lf\n", L);
+    L = vmaf_luminance_get_luminance(400, range_10b_full, vmaf_luminance_bt1886_eotf);
     mu_assert("wrong 'full' 10b luminance bt1886", almost_equal(L, 33.133003757557773));
 
     return NULL;
@@ -74,9 +76,12 @@ static char *test_get_luminance()
 
 static char *test_normalize_range()
 {
-    LumaRange range_8b_limited = LumaRange_init(8, VMAF_PIXEL_RANGE_LIMITED);
-    LumaRange range_8b_full = LumaRange_init(8, VMAF_PIXEL_RANGE_FULL);
-    LumaRange range_10b_limited = LumaRange_init(10, VMAF_PIXEL_RANGE_LIMITED);
+    VmafLumaRange range_8b_limited;
+    vmaf_luminance_init_luma_range(&range_8b_limited, 8, VMAF_PIXEL_RANGE_LIMITED);
+    VmafLumaRange range_8b_full;
+    vmaf_luminance_init_luma_range(&range_8b_full, 10, VMAF_PIXEL_RANGE_FULL);
+    VmafLumaRange range_10b_limited;
+    vmaf_luminance_init_luma_range(&range_10b_limited, 10, VMAF_PIXEL_RANGE_LIMITED);
 
     double n = normalize_range(0, range_8b_full);
     mu_assert("wrong 'full' 8b normalize range", almost_equal(n, 0.0));
