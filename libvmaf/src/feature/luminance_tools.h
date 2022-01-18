@@ -46,6 +46,13 @@ typedef struct VmafLumaRange {
 int vmaf_luminance_init_luma_range(VmafLumaRange *luma_range, int bitdepth, enum VmafPixelRange pix_range);
 
 /*
+ * Returns the EOTF corresponding to the string given.
+ * eotf_str must be one of ['bt1886', 'pq']
+ */
+int vmaf_luminance_init_eotf(VmafEOTF *eotf, char* eotf_str);
+
+
+/*
  * Takes a normalized luma value in the [0, 1] range and returns a luminance value.
  */
 double vmaf_luminance_bt1886_eotf(double V);

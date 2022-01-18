@@ -40,10 +40,13 @@
 #define DEFAULT_CAMBI_TVI (0.019)
 
 /* Max log contrast luma levels */
-#define DEFAULT_MAX_LOG_CONTRAST (2)
+#define DEFAULT_CAMBI_MAX_LOG_CONTRAST (2)
 
 /* If true, CAMBI will be run in full-reference mode and will use both the reference and distorted inputs */
 #define DEFAULT_CAMBI_FULL_REF_FLAG (false)
+
+/* EOTF to use for the visibility threshold calculations. One of ['bt1886', 'pq']. Default: 'bt1886'. */
+#define DEFAULT_CAMBI_EOTF ("bt1886")
 
 #define CAMBI_MIN_WIDTH (320)
 #define CAMBI_MAX_WIDTH (4096)
@@ -102,6 +105,7 @@ typedef struct CambiState {
     double tvi_threshold;
     uint16_t max_log_contrast;
     char *heatmaps_path;
+    char *eotf;
     bool full_ref;
     CambiBuffers buffers;
 } CambiState;
@@ -154,7 +158,7 @@ static const VmafOption options[] = {
     },
     {
         .name = "topk",
-        .help = "Ratio of pixels for the spatial pooling computation, must be 0 > topk >= 1.0",
+        .help = "Ratio of pixels for the spatial pooling computation, must be 0 < topk <= 1.0",
         .offset = offsetof(CambiState, topk),
         .type = VMAF_OPT_TYPE_DOUBLE,
         .default_val.d = DEFAULT_CAMBI_TOPK_POOLING,
@@ -163,7 +167,7 @@ static const VmafOption options[] = {
     },
     {
         .name = "tvi_threshold",
-        .help = "Visibilty threshold for luminance ΔL < tvi_threshold*L_mean for BT.1886",
+        .help = "Visibilty threshold for luminance ΔL < tvi_threshold*L_mean",
         .offset = offsetof(CambiState, tvi_threshold),
         .type = VMAF_OPT_TYPE_DOUBLE,
         .default_val.d = DEFAULT_CAMBI_TVI,
@@ -177,7 +181,7 @@ static const VmafOption options[] = {
                 "From 0 to 5: default 2 is recommended for banding from compression.",
         .offset = offsetof(CambiState, max_log_contrast),
         .type = VMAF_OPT_TYPE_INT,
-        .default_val.i = DEFAULT_MAX_LOG_CONTRAST,
+        .default_val.i = DEFAULT_CAMBI_MAX_LOG_CONTRAST,
         .min = 0,
         .max = 5,
     },
@@ -194,6 +198,13 @@ static const VmafOption options[] = {
         .offset = offsetof(CambiState, full_ref),
         .type = VMAF_OPT_TYPE_BOOL,
         .default_val.b = DEFAULT_CAMBI_FULL_REF_FLAG,
+    },
+    {
+        .name = "eotf",
+        .help = "Determines the EOTF used to compute the visibility thresholds. Possible values: ['bt1886', 'pq']. Default: 'bt1886'",
+        .offset = offsetof(CambiState, eotf),
+        .type = VMAF_OPT_TYPE_STRING,
+        .default_val.s = DEFAULT_CAMBI_EOTF,
     },
     { 0 }
 };
@@ -338,10 +349,14 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     err = vmaf_luminance_init_luma_range(&luma_range, 10, VMAF_PIXEL_RANGE_LIMITED);
     if (err) return err;
 
+    VmafEOTF eotf;
+    err = vmaf_luminance_init_eotf(&eotf, s->eotf);
+    if (err) return err;
+
     s->tvi_for_diff = aligned_malloc(ALIGN_CEIL(sizeof(uint16_t)) * num_diffs, 16);
     if(!s->tvi_for_diff) return -ENOMEM;
     for (int d = 0; d < num_diffs; d++) {
-        s->tvi_for_diff[d] = get_tvi_for_diff(g_diffs_to_consider[d], s->tvi_threshold, 10, luma_range, vmaf_luminance_bt1886_eotf);
+        s->tvi_for_diff[d] = get_tvi_for_diff(g_diffs_to_consider[d], s->tvi_threshold, 10, luma_range, eotf);
         s->tvi_for_diff[d] += num_diffs;
     }
 

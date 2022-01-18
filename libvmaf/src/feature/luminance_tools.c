@@ -18,6 +18,7 @@
 
 #include <errno.h>
 #include <math.h>
+#include <string.h>
 
 #include "log.h"
 #include "luminance_tools.h"
@@ -65,6 +66,20 @@ int vmaf_luminance_init_luma_range(VmafLumaRange *luma_range, int bitdepth, enum
     return err;
 }
 
+int vmaf_luminance_init_eotf(VmafEOTF *eotf, char* eotf_str) {
+    if (strcmp(eotf_str, "bt1886") == 0) {
+        *eotf = vmaf_luminance_bt1886_eotf;
+    }
+    else if (strcmp(eotf_str, "pq") == 0) {
+        *eotf = vmaf_luminance_pq_eotf;
+    }
+    else {
+        vmaf_log(VMAF_LOG_LEVEL_ERROR, "unknown EOTF received");
+        return -EINVAL;
+    }
+    return 0;
+}
+
 double vmaf_luminance_bt1886_eotf(double V) {
     double a = pow(pow(BT1886_LW, 1.0 / BT1886_GAMMA) - pow(BT1886_LB, 1.0 / BT1886_GAMMA), BT1886_GAMMA);
     double b = pow(BT1886_LB, 1.0 / BT1886_GAMMA) / (pow(BT1886_LW, 1.0 / BT1886_GAMMA) - pow(BT1886_LB, 1.0 / BT1886_GAMMA));
@@ -72,7 +87,7 @@ double vmaf_luminance_bt1886_eotf(double V) {
     return L;
 }
 
-inline double vmaf_luminance_pq_eotf(double V) {
+double vmaf_luminance_pq_eotf(double V) {
     double m_1 = 0.1593017578125;
     double m_2 = 78.84375;
     double c_1 = 0.8359375;
