@@ -278,13 +278,13 @@ static int set_contrast_arrays(const uint16_t num_diffs, uint16_t **diffs_to_con
                                int **diffs_weights, int **all_diffs)
 {
     *diffs_to_consider = aligned_malloc(ALIGN_CEIL(sizeof(uint16_t)) * num_diffs, 16);
-    if(!(*diffs_to_consider)) return -ENOMEM;
+    if (!(*diffs_to_consider)) return -ENOMEM;
 
     *diffs_weights = aligned_malloc(ALIGN_CEIL(sizeof(int)) * num_diffs, 32);
-    if(!(*diffs_weights)) return -ENOMEM;
+    if (!(*diffs_weights)) return -ENOMEM;
 
     *all_diffs = aligned_malloc(ALIGN_CEIL(sizeof(int)) * (2 * num_diffs + 1), 32);
-    if(!(*all_diffs)) return -ENOMEM;
+    if (!(*all_diffs)) return -ENOMEM;
 
     for (int d = 0; d < num_diffs; d++) {
         (*diffs_to_consider)[d] = d + 1;
@@ -354,7 +354,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     if (err) return err;
 
     s->tvi_for_diff = aligned_malloc(ALIGN_CEIL(sizeof(uint16_t)) * num_diffs, 16);
-    if(!s->tvi_for_diff) return -ENOMEM;
+    if (!s->tvi_for_diff) return -ENOMEM;
     for (int d = 0; d < num_diffs; d++) {
         s->tvi_for_diff[d] = get_tvi_for_diff(g_diffs_to_consider[d], s->tvi_threshold, 10, luma_range, eotf);
         s->tvi_for_diff[d] += num_diffs;
@@ -364,22 +364,22 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     adjust_window_size(&s->window_size, s->enc_width);
     adjust_window_size(&s->src_window_size, s->src_width);
     s->buffers.c_values = aligned_malloc(ALIGN_CEIL(w * sizeof(float)) * h, 32);
-    if(!s->buffers.c_values) return -ENOMEM;
+    if (!s->buffers.c_values) return -ENOMEM;
 
     const uint16_t num_bins = 1024 + (g_all_diffs[2 * num_diffs] - g_all_diffs[0]);
     s->buffers.c_values_histograms = aligned_malloc(ALIGN_CEIL(w * num_bins * sizeof(uint16_t)), 32);
-    if(!s->buffers.c_values_histograms) return -ENOMEM;
+    if (!s->buffers.c_values_histograms) return -ENOMEM;
 
     int pad_size = MASK_FILTER_SIZE >> 1;
     int dp_width = alloc_w + 2 * pad_size + 1;
     int dp_height = 2 * pad_size + 2;
 
     s->buffers.mask_dp = aligned_malloc(ALIGN_CEIL(dp_height * dp_width * sizeof(uint32_t)), 32);
-    if(!s->buffers.mask_dp) return -ENOMEM;
+    if (!s->buffers.mask_dp) return -ENOMEM;
     s->buffers.filter_mode_histogram = aligned_malloc(ALIGN_CEIL(1024 * sizeof(uint8_t)), 32);
-    if(!s->buffers.filter_mode_histogram) return -ENOMEM;
+    if (!s->buffers.filter_mode_histogram) return -ENOMEM;
     s->buffers.filter_mode_buffer = aligned_malloc(ALIGN_CEIL(3 * w * sizeof(uint16_t)), 32);
-    if(!s->buffers.filter_mode_buffer) return -ENOMEM;
+    if (!s->buffers.filter_mode_buffer) return -ENOMEM;
 
     if (s->heatmaps_path) {
         int err = mkdirp(s->heatmaps_path, 0770);
