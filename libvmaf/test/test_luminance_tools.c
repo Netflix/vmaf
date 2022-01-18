@@ -40,6 +40,21 @@ static char *test_bt1886_eotf()
     return NULL;
 }
 
+static char *test_pq_eotf()
+{
+    double L;
+    L = vmaf_luminance_pq_eotf(0.0);
+    mu_assert("wrong pq_eotf result", almost_equal(L, 0.0));
+    L = vmaf_luminance_pq_eotf(0.1);
+    mu_assert("wrong pq_eotf result", almost_equal(L, 0.324565591464487));
+    L = vmaf_luminance_pq_eotf(0.3);
+    mu_assert("wrong pq_eotf result", almost_equal(L, 10.038226310511750));
+    L = vmaf_luminance_pq_eotf(0.8);
+    mu_assert("wrong pq_eotf result", almost_equal(L, 1555.178364289284673));
+
+    return NULL;
+}
+
 static char *test_range_foot_head()
 {
     int foot, head;
@@ -70,6 +85,13 @@ static char *test_get_luminance()
     mu_assert("wrong 'limited' 10b luminance bt1886", almost_equal(L, 31.68933962217197));
     L = vmaf_luminance_get_luminance(400, range_10b_full, vmaf_luminance_bt1886_eotf);
     mu_assert("wrong 'full' 10b luminance bt1886", almost_equal(L, 33.133003757557773));
+
+    L = vmaf_luminance_get_luminance(100, range_8b_limited, vmaf_luminance_pq_eotf);
+    mu_assert("wrong 'limited' 8b luminance pq", almost_equal(L, 27.048765018959795));
+    L = vmaf_luminance_get_luminance(400, range_10b_limited, vmaf_luminance_pq_eotf);
+    mu_assert("wrong 'limited' 10b luminance pq", almost_equal(L, 27.048765018959795));
+    L = vmaf_luminance_get_luminance(400, range_10b_full, vmaf_luminance_pq_eotf);
+    mu_assert("wrong 'full' 10b luminance pq", almost_equal(L, 29.385657130952264));
 
     return NULL;
 }
@@ -103,6 +125,7 @@ static char *test_normalize_range()
 char *run_tests()
 {
     mu_run_test(test_bt1886_eotf);
+    mu_run_test(test_pq_eotf);
     mu_run_test(test_range_foot_head);
     mu_run_test(test_get_luminance);
     mu_run_test(test_normalize_range);

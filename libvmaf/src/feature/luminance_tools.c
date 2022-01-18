@@ -72,6 +72,17 @@ double vmaf_luminance_bt1886_eotf(double V) {
     return L;
 }
 
+inline double vmaf_luminance_pq_eotf(double V) {
+    double m_1 = 0.1593017578125;
+    double m_2 = 78.84375;
+    double c_1 = 0.8359375;
+    double c_2 = 18.8515625;
+    double c_3 = 18.6875;  // c_3 = c_1 + c_2 - 1
+    double num = MAX(0, pow(V, 1.0 / m_2) - c_1);
+    double den = c_2 - c_3 * pow(V, 1.0 / m_2);
+    return 10000 * pow(num / den, 1.0 / m_1);
+}
+
 double vmaf_luminance_get_luminance(int sample, VmafLumaRange luma_range, VmafEOTF eotf) {
     double normalized = normalize_range(sample, luma_range);
     return eotf(normalized);

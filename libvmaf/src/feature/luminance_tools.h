@@ -51,6 +51,11 @@ int vmaf_luminance_init_luma_range(VmafLumaRange *luma_range, int bitdepth, enum
 double vmaf_luminance_bt1886_eotf(double V);
 
 /*
+ * Takes a normalized luma value in the [0, 1] range and returns a luminance value.
+ */
+double vmaf_luminance_pq_eotf(double V);
+
+/*
  * Takes a luma value, normalizes it and applies the given VmafEOTF
  * to return a luminance value.
  */
