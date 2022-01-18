@@ -96,6 +96,7 @@ typedef struct CambiState {
     VmafPicture pics[PICS_BUFFER_SIZE];
     unsigned enc_width;
     unsigned enc_height;
+    unsigned enc_bitdepth;
     unsigned src_width;
     unsigned src_height;
     uint16_t *tvi_for_diff;
@@ -128,6 +129,15 @@ static const VmafOption options[] = {
         .default_val.i = 0,
         .min = 200,
         .max = 4320,
+    },
+    {
+        .name = "enc_bitdepth",
+        .help = "Encoding bitdepth",
+        .offset = offsetof(CambiState, enc_bitdepth),
+        .type = VMAF_OPT_TYPE_INT,
+        .default_val.i = 0,
+        .min = 6,
+        .max = 16,
     },
     {
         .name = "src_width",
@@ -306,10 +316,12 @@ static int set_contrast_arrays(const uint16_t num_diffs, uint16_t **diffs_to_con
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h) {
     (void)pix_fmt;
-    (void)bpc;
 
     CambiState *s = fex->priv;
 
+    if (s->enc_bitdepth == 0) {
+        s->enc_bitdepth = bpc;
+    }
     if (s->enc_width == 0 || s->enc_height == 0) {
         s->enc_width = w;
         s->enc_height = h;
@@ -557,7 +569,7 @@ static void anti_dithering_filter(VmafPicture *pic, unsigned width, unsigned hei
     }
 }
 
-static int cambi_preprocessing(const VmafPicture *image, VmafPicture *preprocessed, int width, int height) {
+static int cambi_preprocessing(const VmafPicture *image, VmafPicture *preprocessed, int width, int height, int enc_bitdepth) {
     if (image->bpc >= 10) {
         decimate_generic_uint16_and_convert_to_10b(image, preprocessed, width, height);
     }
@@ -568,6 +580,8 @@ static int cambi_preprocessing(const VmafPicture *image, VmafPicture *preprocess
         else {
             decimate_generic_9b_and_convert_to_10b(image, preprocessed, width, height);
         }
+    }
+    if (enc_bitdepth < 10) {
         anti_dithering_filter(preprocessed, width, height);
     }
     
@@ -970,7 +984,7 @@ static int preprocess_and_extract_cambi(CambiState *s, VmafPicture *pic, double 
     int window_size = is_src ? s->src_window_size : s->window_size;
     int num_diffs = 1 << s->max_log_contrast;
     
-    int err = cambi_preprocessing(pic, &s->pics[0], width, height);
+    int err = cambi_preprocessing(pic, &s->pics[0], width, height, s->enc_bitdepth);
     if (err) return err;
 
     err = cambi_score(s->pics, window_size, s->topk, num_diffs, s->tvi_for_diff, 
