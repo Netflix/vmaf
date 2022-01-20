@@ -12,13 +12,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-18.04
+          - os: ubuntu-latest
             CC: ccache gcc
             CXX: ccache g++
-          - os: ubuntu-18.04
+          - os: ubuntu-latest
             CC: ccache gcc-9
             CXX: ccache g++-9
-          - os: ubuntu-18.04
+          - os: ubuntu-latest
             CC: ccache clang
             CXX: ccache clang++
           - os: macos-10.15
@@ -40,7 +40,7 @@ jobs:
           pip install meson
 
       - name: Install dependencies (ubuntu)
-        if: matrix.os == 'ubuntu-18.04'
+        if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo -E apt-get -yq install ccache ninja-build
@@ -75,6 +75,15 @@ jobs:
       - name: Run tests
         run: |
           sudo ninja -vC libvmaf/build test
+      - name: Run meson asan
+        run: |
+          CFLAGS=-fsanitize=address,undefined LDFLAGS=-fsanitize=address,undefined meson setup libvmaf libvmaf/build_asan --buildtype debug -Db_sanitize=address,undefined -Denable_float=true
+      - name: Run ninja asan
+        run: |
+          sudo ninja -vC libvmaf/build_asan install
+      - name: Run tests asan
+        run: |
+          sudo ninja -vC libvmaf/build_asan test
       - name: Run tox tests
         run: |
           mkdir -p ~/.ccache && sudo chown -R $(whoami) ~/.ccache
