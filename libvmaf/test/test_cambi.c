@@ -130,6 +130,9 @@ static char *test_anti_dithering_filter()
     bool equal = pic_data_equality(&pic, &filtered_pic);
     mu_assert("anti_dithering_filter output pic wrong", equal);
 
+    vmaf_picture_unref(&pic);
+    vmaf_picture_unref(&filtered_pic);
+
     return NULL;
 }
 
@@ -150,6 +153,8 @@ static char *test_decimate()
     mu_assert("decimate pic wrong pixel value (1,0)", data[1]==0);
     mu_assert("decimate pic wrong pixel value (0,1)", data[stride]==0);
     mu_assert("decimate pic wrong pixel value (1,1)", data[1+stride]==0);
+
+    vmaf_picture_unref(&pic);
 
     return NULL;
 }
@@ -219,6 +224,11 @@ static char *test_decimate_generic()
     mu_assert("decimate generic 8b to 10b wrong pixel value (1,0)", data[stride]==8);
     mu_assert("decimate generic 8b to 10b wrong pixel value (1,1)", data[1+stride]==400);
 
+    vmaf_picture_unref(&pic);
+    vmaf_picture_unref(&pic_8b);
+    vmaf_picture_unref(&out_pic);
+    vmaf_picture_unref(&out_pic_4x4);
+
     return NULL;
 }
 
@@ -265,6 +275,9 @@ static char *test_filter_mode()
     filter_mode(&filtered_image, w, h, histogram, buffer);
     mu_assert("filter_mode: two in corner and edge check", filtered_data[1 * output_stride + 0]==2);
 
+    vmaf_picture_unref(&image);
+    vmaf_picture_unref(&filtered_image);
+
     return NULL;
 }
 
@@ -298,7 +311,8 @@ static char *test_get_spatial_mask_for_index()
     get_spatial_mask_for_index(&image, &mask, mask_dp, 0, filter_size, width, height);
     mu_assert("spatial_mask_for_index wrong mask for index=0, image=3", data_pic_sum(&mask)==16);
 
-    get_sample_image(&image, 4);
+    vmaf_picture_unref(&image);
+    
     get_sample_image(&image, 4);
 
     get_spatial_mask_for_index(&image, &mask, mask_dp, 3, filter_size, width, height);
@@ -307,6 +321,9 @@ static char *test_get_spatial_mask_for_index()
     mu_assert("spatial_mask_for_index wrong mask for index=2, image=4", data_pic_sum(&mask)==6);
     get_spatial_mask_for_index(&image, &mask, mask_dp, 1, filter_size, width, height);
     mu_assert("spatial_mask_for_index wrong mask for index=1, image=4", data_pic_sum(&mask)==9);
+
+    vmaf_picture_unref(&image);
+    vmaf_picture_unref(&mask);
 
     return NULL;
 }
@@ -347,6 +364,11 @@ static char *test_calculate_c_values()
     for (unsigned i=0; i<64; i++)
         sum += combined_c_values_8x8[i];
     mu_assert("combined_c_values 8x8 error", almost_equal(sum, 195.382527));
+
+    vmaf_picture_unref(&input);
+    vmaf_picture_unref(&mask);
+    vmaf_picture_unref(&input_8x8);
+    vmaf_picture_unref(&mask_8x8);
 
     return NULL;
 }
