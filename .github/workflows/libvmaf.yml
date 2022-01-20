@@ -75,6 +75,15 @@ jobs:
       - name: Run tests
         run: |
           sudo ninja -vC libvmaf/build test
+      - name: Run meson asan
+        run: |
+          LDFLAGS=-fsanitize=address,undefined meson build_asan --buildtype debug -Db_sanitize=address,undefined -Denable_float=true
+      - name: Run ninja asan
+        run: |
+          sudo ninja -vC libvmaf/build_asan install
+      - name: Run tests asan
+        run: |
+          sudo ninja -vC libvmaf/build_asan test
       - name: Run tox tests
         run: |
           mkdir -p ~/.ccache && sudo chown -R $(whoami) ~/.ccache
