@@ -66,7 +66,7 @@ int vmaf_luminance_init_luma_range(VmafLumaRange *luma_range, int bitdepth, enum
     return err;
 }
 
-int vmaf_luminance_init_eotf(VmafEOTF *eotf, char* eotf_str) {
+int vmaf_luminance_init_eotf(VmafEOTF *eotf, const char *eotf_str) {
     if (strcmp(eotf_str, "bt1886") == 0) {
         *eotf = vmaf_luminance_bt1886_eotf;
     }
@@ -83,19 +83,19 @@ int vmaf_luminance_init_eotf(VmafEOTF *eotf, char* eotf_str) {
 double vmaf_luminance_bt1886_eotf(double V) {
     double a = pow(pow(BT1886_LW, 1.0 / BT1886_GAMMA) - pow(BT1886_LB, 1.0 / BT1886_GAMMA), BT1886_GAMMA);
     double b = pow(BT1886_LB, 1.0 / BT1886_GAMMA) / (pow(BT1886_LW, 1.0 / BT1886_GAMMA) - pow(BT1886_LB, 1.0 / BT1886_GAMMA));
-    double L = a * pow(MAX(V + b, 0), BT1886_GAMMA);
-    return L;
+    return a * pow(MAX(V + b, 0), BT1886_GAMMA);
 }
 
 double vmaf_luminance_pq_eotf(double V) {
-    double m_1 = 0.1593017578125;
-    double m_2 = 78.84375;
-    double c_1 = 0.8359375;
-    double c_2 = 18.8515625;
-    double c_3 = 18.6875;  // c_3 = c_1 + c_2 - 1
-    double num = MAX(0, pow(V, 1.0 / m_2) - c_1);
+    const double m_1 = 0.1593017578125;
+    const double m_2 = 78.84375;
+    const double c_1 = 0.8359375;
+    const double c_2 = 18.8515625;
+    const double c_3 = 18.6875;  // c_3 = c_1 + c_2 - 1
+    double num = pow(V, 1.0 / m_2) - c_1;
+    double num_clipped = MAX(num, 0);
     double den = c_2 - c_3 * pow(V, 1.0 / m_2);
-    return 10000 * pow(num / den, 1.0 / m_1);
+    return 10000 * pow(num_clipped / den, 1.0 / m_1);
 }
 
 double vmaf_luminance_get_luminance(int sample, VmafLumaRange luma_range, VmafEOTF eotf) {
