@@ -49,7 +49,7 @@ int vmaf_luminance_init_luma_range(VmafLumaRange *luma_range, int bitdepth, enum
  * Returns the EOTF corresponding to the string given.
  * eotf_str must be one of ['bt1886', 'pq']
  */
-int vmaf_luminance_init_eotf(VmafEOTF *eotf, char* eotf_str);
+int vmaf_luminance_init_eotf(VmafEOTF *eotf, const char *eotf_str);
 
 
 /*
