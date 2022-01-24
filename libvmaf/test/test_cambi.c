@@ -340,11 +340,15 @@ static char *test_calculate_c_values()
     const uint16_t num_diffs = 4;
     uint16_t histograms[4*1032];
 
-    set_contrast_arrays(num_diffs, &g_diffs_to_consider, &g_diffs_weights, &g_all_diffs);
+    uint16_t *diffs_to_consider;
+    int *diff_weights;
+    int *all_diffs;
+
+    set_contrast_arrays(num_diffs, &diffs_to_consider, &diff_weights, &all_diffs);
     get_sample_image(&input, 0);
     get_sample_image(&mask, 8);
-    calculate_c_values(&input, &mask, combined_c_values, histograms,
-                       window_size, num_diffs, tvi_for_diff, width, height);
+    calculate_c_values(&input, &mask, combined_c_values, histograms, window_size,
+                       num_diffs, tvi_for_diff, diff_weights, all_diffs, width, height);
 
     for (unsigned i=0; i<16; i++) {
         mu_assert("calculate_c_values error ws=3",
@@ -358,7 +362,7 @@ static char *test_calculate_c_values()
     window_size = 9;
     uint16_t histograms_8x8[8*1032];
     calculate_c_values(&input_8x8, &mask_8x8, combined_c_values_8x8, histograms_8x8,
-                       window_size, num_diffs, tvi_for_diff, 8, 8);
+                       window_size, num_diffs, tvi_for_diff, diff_weights, all_diffs, 8, 8);
 
     double sum = 0;
     for (unsigned i=0; i<64; i++)
