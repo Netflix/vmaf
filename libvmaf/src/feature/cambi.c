@@ -912,13 +912,8 @@ static FORCE_INLINE inline double weight_scores_per_scale(double *scores_per_sca
     return score / normalization;
 }
 
-static void write_uint16(FILE *file, uint16_t v) {
-    fwrite((void*)(&v), sizeof(v), 1, file);
-}
-
-
 static int dump_c_values(FILE *heatmaps_files[], const float *c_values, int width, int height, int scale, 
-                         int window_size, const uint16_t num_diffs, const int *diff_weights) {
+                         int window_size, const uint16_t num_diffs, const int *diff_weights, int frame) {
     int max_diff_weight = diff_weights[0];
     for (int i = 0; i < num_diffs; i++) {
         if (diff_weights[i] > max_diff_weight) {
@@ -929,19 +924,24 @@ static int dump_c_values(FILE *heatmaps_files[], const float *c_values, int widt
     int max_16bit_value = (1 << 16) - 1;
     double scaling_value = (double)max_16bit_value / max_c_value;
     FILE *file = heatmaps_files[scale];
+    uint16_t *to_write = malloc(width * sizeof(uint16_t));
+    if (!to_write) return -ENOMEM;
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            uint16_t val = (uint16_t)(scaling_value * c_values[i * width + j]);
-            write_uint16(file, val);
+            to_write[j] = (uint16_t)(scaling_value * c_values[i * width + j]);
         }
+        ptrdiff_t offset = (frame * height + i) * width * sizeof(uint16_t);
+        fseek(file, offset, SEEK_SET);
+        fwrite((void*)to_write, sizeof(uint16_t), width, file);
     }
+    free(to_write);
     return 0;
 }
 
 static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
                        const uint16_t num_diffs, const uint16_t *tvi_for_diff,
                        CambiBuffers buffers, double *score, bool write_heatmaps,
-                       FILE *heatmaps_files[], int width, int height) {
+                       FILE *heatmaps_files[], int width, int height, int frame) {
     double scores_per_scale[NUM_SCALES];
     VmafPicture *image = &pics[0];
     VmafPicture *mask = &pics[1];
@@ -965,7 +965,8 @@ static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
                            num_diffs, tvi_for_diff, buffers.diff_weights, buffers.all_diffs, scaled_width, scaled_height);
 
         if (write_heatmaps) {
-            int err = dump_c_values(heatmaps_files, buffers.c_values, scaled_width, scaled_height, scale, window_size, num_diffs, buffers.diff_weights);
+            int err = dump_c_values(heatmaps_files, buffers.c_values, scaled_width, scaled_height, scale, window_size, 
+                                    num_diffs, buffers.diff_weights, frame);
             if (err) return err;
         }
 
@@ -978,7 +979,7 @@ static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
     return 0;
 }
 
-static int preprocess_and_extract_cambi(CambiState *s, VmafPicture *pic, double *score, bool is_src) {
+static int preprocess_and_extract_cambi(CambiState *s, VmafPicture *pic, double *score, bool is_src, int frame) {
     int width = is_src ? s->src_width : s->enc_width;
     int height = is_src ? s->src_height : s->enc_height;
     int window_size = is_src ? s->src_window_size : s->window_size;
@@ -989,7 +990,7 @@ static int preprocess_and_extract_cambi(CambiState *s, VmafPicture *pic, double 
 
     bool write_heatmaps = s->heatmaps_path && !is_src;
     err = cambi_score(s->pics, window_size, s->topk, num_diffs, s->buffers.tvi_for_diff, 
-                      s->buffers, score, write_heatmaps, s->heatmaps_files, width, height);
+                      s->buffers, score, write_heatmaps, s->heatmaps_files, width, height, frame);
     if (err) return err;
 
     return 0;
@@ -1008,12 +1009,12 @@ static int extract(VmafFeatureExtractor *fex,
 
     CambiState *s = fex->priv;
     double dist_score;
-    int err = preprocess_and_extract_cambi(s, dist_pic, &dist_score, false);
+    int err = preprocess_and_extract_cambi(s, dist_pic, &dist_score, false, index);
     if (err) return err;
 
     if (s->full_ref) {
         double src_score;
-        int err = preprocess_and_extract_cambi(s, ref_pic, &src_score, true);
+        int err = preprocess_and_extract_cambi(s, ref_pic, &src_score, true, index);
         if (err) return err;
 
         err = vmaf_feature_collector_append(feature_collector, "cambi_source", src_score, index);
