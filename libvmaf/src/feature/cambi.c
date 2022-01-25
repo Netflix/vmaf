@@ -374,11 +374,11 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     s->src_window_size = s->window_size;
     adjust_window_size(&s->window_size, s->enc_width);
     adjust_window_size(&s->src_window_size, s->src_width);
-    s->buffers.c_values = aligned_malloc(ALIGN_CEIL(w * sizeof(float)) * h, 32);
+    s->buffers.c_values = aligned_malloc(ALIGN_CEIL(alloc_w * sizeof(float)) * alloc_h, 32);
     if (!s->buffers.c_values) return -ENOMEM;
 
     const uint16_t num_bins = 1024 + (s->buffers.all_diffs[2 * num_diffs] - s->buffers.all_diffs[0]);
-    s->buffers.c_values_histograms = aligned_malloc(ALIGN_CEIL(w * num_bins * sizeof(uint16_t)), 32);
+    s->buffers.c_values_histograms = aligned_malloc(ALIGN_CEIL(alloc_w * num_bins * sizeof(uint16_t)), 32);
     if (!s->buffers.c_values_histograms) return -ENOMEM;
 
     int pad_size = MASK_FILTER_SIZE >> 1;
@@ -389,7 +389,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     if (!s->buffers.mask_dp) return -ENOMEM;
     s->buffers.filter_mode_histogram = aligned_malloc(ALIGN_CEIL(1024 * sizeof(uint8_t)), 32);
     if (!s->buffers.filter_mode_histogram) return -ENOMEM;
-    s->buffers.filter_mode_buffer = aligned_malloc(ALIGN_CEIL(3 * w * sizeof(uint16_t)), 32);
+    s->buffers.filter_mode_buffer = aligned_malloc(ALIGN_CEIL(3 * alloc_w * sizeof(uint16_t)), 32);
     if (!s->buffers.filter_mode_buffer) return -ENOMEM;
 
     if (s->heatmaps_path) {
