@@ -34,3 +34,19 @@ class ExecutorTest(unittest.TestCase):
         asset = Asset(dataset="test", content_id=0, asset_id=0, ref_path="", dis_path="",
                       asset_dict={'ref_yuv_type': 'yuv444p', 'dis_yuv_type': 'yuv444p'}, workdir_root="my_workdir_root")
         self.assertEqual(Executor._get_workfile_yuv_type(asset), 'yuv444p')
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0, ref_path="", dis_path="",
+                      asset_dict={'ref_yuv_type': 'yuv444p', 'dis_yuv_type': 'yuv444p', 'workfile_yuv_type': 'yuv420p10le'}, workdir_root="my_workdir_root")
+        self.assertEqual(Executor._get_workfile_yuv_type(asset), 'yuv420p10le')
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0, ref_path="", dis_path="",
+                      asset_dict={'ref_yuv_type': 'yuv444p', 'dis_yuv_type': 'notyuv', 'workfile_yuv_type': 'yuv420p'}, workdir_root="my_workdir_root")
+        self.assertEqual(Executor._get_workfile_yuv_type(asset), 'yuv420p')
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0, ref_path="", dis_path="",
+                      asset_dict={'ref_yuv_type': 'yuv444p', 'dis_yuv_type': 'notyuv', 'workfile_yuv_type': 'yuv444p'}, workdir_root="my_workdir_root")
+        self.assertEqual(Executor._get_workfile_yuv_type(asset), 'yuv444p')
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
