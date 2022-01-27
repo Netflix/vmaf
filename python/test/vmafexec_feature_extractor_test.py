@@ -707,7 +707,7 @@ class FeatureExtractorTest(MyTestCase):
         self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['CIEDE2000_feature_ciede2000_score'], 33.10755745833333, places=4)
-        self.assertAlmostEqual(results[1]['CIEDE2000_feature_ciede2000_score'], np.float('inf'), places=4)
+        self.assertAlmostEqual(results[1]['CIEDE2000_feature_ciede2000_score'], float('inf'), places=4)
 
 
 if __name__ == '__main__':

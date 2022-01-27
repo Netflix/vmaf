@@ -141,10 +141,10 @@ class AggrScorePerfMetricTest(unittest.TestCase):
         mat_filepath = VmafConfig.test_resource_path('data_Toyama.mat')
         mat_dict = scipy.io.loadmat(mat_filepath)
         results = AucPerfMetric._metrics_performance(mat_dict['objScoDif'], mat_dict['signif'])
-        self.assertAlmostEqual(np.float(np.mean(results['AUC_DS'])), 0.69767003960902052, places=6)
-        self.assertAlmostEqual(np.float(np.mean(results['AUC_BW'])), 0.94454700301894534, places=6)
-        self.assertAlmostEqual(np.float(np.mean(results['CC_0'])), 0.88105386206276415, places=6)
-        self.assertAlmostEqual(np.float(np.mean(results['THR'])), 3.899105581509778, places=6)
+        self.assertAlmostEqual(float(np.mean(results['AUC_DS'])), 0.69767003960902052, places=6)
+        self.assertAlmostEqual(float(np.mean(results['AUC_BW'])), 0.94454700301894534, places=6)
+        self.assertAlmostEqual(float(np.mean(results['CC_0'])), 0.88105386206276415, places=6)
+        self.assertAlmostEqual(float(np.mean(results['THR'])), 3.899105581509778, places=6)
 
     def test_respow_perf_metric(self):
         np.random.seed(0)
