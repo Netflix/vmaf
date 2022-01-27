@@ -179,15 +179,18 @@ class Executor(TypeVersionEnabled):
 
     @staticmethod
     def _need_ffmpeg(asset):
-        # 1) if quality width/height do not to agree with ref/dis width/height,
+        # 1) if quality width/height do not agree with ref/dis width/height,
         # must rely on ffmpeg for scaling
         # 2) if crop/pad/etc. is needed, need ffmpeg
         # 3) if ref/dis videos' start/end frames specified, need ffmpeg for
         # frame extraction
+        # 4) if workfile_yuv_type specified and ref/yuv's yuv_type does not agree,
+        # need ffmpeg for conversion
         ret = asset.quality_width_height != asset.ref_width_height \
                or asset.quality_width_height != asset.dis_width_height \
                or asset.ref_yuv_type == 'notyuv' or asset.dis_yuv_type == 'notyuv' \
-               or asset.ref_start_end_frame is not None or asset.dis_start_end_frame is not None
+               or asset.ref_start_end_frame is not None or asset.dis_start_end_frame is not None \
+               or 'workfile_yuv_type' in asset.asset_dict and (asset.workfile_yuv_type != asset.ref_yuv_type or asset.workfile_yuv_type != asset.dis_yuv_type)
         for key in Asset.ORDERED_FILTER_LIST:
             ret = ret or asset.get_filter_cmd(key, 'ref') is not None or asset.get_filter_cmd(key, 'dis') is not None
 
@@ -206,7 +209,7 @@ class Executor(TypeVersionEnabled):
         # ref_yuv_type and dis_yuv_type must match, unless any of them is notyuv.
         # also check the logic in _get_workfile_yuv_type
         assert (asset.ref_yuv_type == 'notyuv' or asset.dis_yuv_type == 'notyuv') \
-               or (asset.ref_yuv_type == asset.dis_yuv_type)
+               or (asset.ref_yuv_type == asset.dis_yuv_type) or "workfile_yuv_type" in asset.asset_dict
 
         # if crop_cmd or pad_cmd or etc. is specified, make sure quality_width and
         # quality_height are EXPLICITLY specified in asset_dict
@@ -225,6 +228,10 @@ class Executor(TypeVersionEnabled):
         # also check the logic in _assert_an_asset. The assumption is:
         # assert (asset.ref_yuv_type == 'notyuv' or asset.dis_yuv_type == 'notyuv') \
         #        or (asset.ref_yuv_type == asset.dis_yuv_type)
+
+        # if the workfile_yuv_type is provided by the user, then we use it
+        if "workfile_yuv_type" in asset.asset_dict:
+            return asset.workfile_yuv_type
 
         if asset.ref_yuv_type == 'notyuv' and asset.dis_yuv_type == 'notyuv':
             return asset.workfile_yuv_type
@@ -523,7 +530,6 @@ class Executor(TypeVersionEnabled):
         run_process(ffmpeg_cmd, shell=True)
 
     def _open_dis_workfile(self, asset, fifo_mode):
-
         # only need to open dis workfile if the path is different from dis path
         assert asset.use_path_as_workpath is False and asset.dis_path != asset.dis_workfile_path
 
@@ -803,9 +809,11 @@ class NorefExecutorMixin(object):
         # 2) if crop/pad/etc. is need, need ffmpeg
         # 3) if dis videos' start/end frames specified, need ffmpeg for
         # frame extraction
+        # 4) if workfile_yuv_type specified and doesn't agree with the dis yuv_type
         ret = asset.quality_width_height != asset.dis_width_height \
                or asset.dis_yuv_type == 'notyuv' \
-               or asset.dis_start_end_frame is not None
+               or asset.dis_start_end_frame is not None \
+               or 'workfile_yuv_type' in asset.asset_dict and asset.workfile_yuv_type != asset.dis_yuv_type
         for key in Asset.ORDERED_FILTER_LIST:
             ret = ret or asset.get_filter_cmd(key, 'dis') is not None
 
@@ -831,10 +839,10 @@ class NorefExecutorMixin(object):
 
     @staticmethod
     def _get_workfile_yuv_type(asset):
-        """ Same as original yuv type, unless it is notyuv; in this case,
-        use format as set at a higher level"""
+        """ Same as original yuv type, unless it is notyuv or specified by the user; 
+        in this case, use format as set at a higher level"""
 
-        if asset.dis_yuv_type == 'notyuv':
+        if 'workfile_yuv_type' in asset.asset_dict or asset.dis_yuv_type == 'notyuv':
             return asset.workfile_yuv_type
         else:
             return asset.dis_yuv_type

@@ -42,6 +42,23 @@ def set_default_576_324_videos_for_testing():
 
     return ref_path, dis_path, asset, asset_original
 
+def set_default_576_324_videos_for_testing_workfile_yuv_10b():
+    ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+    dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+    asset = Asset(dataset="test", content_id=0, asset_id=0,
+                  workdir_root=VmafConfig.workdir_path(),
+                  ref_path=ref_path,
+                  dis_path=dis_path,
+                  asset_dict={'width': 576, 'height': 324, 'workfile_yuv_type': 'yuv420p10le'})
+
+    asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                           workdir_root=VmafConfig.workdir_path(),
+                           ref_path=ref_path,
+                           dis_path=ref_path,
+                           asset_dict={'width': 576, 'height': 324, 'workfile_yuv_type': 'yuv420p10le'})
+
+    return ref_path, dis_path, asset, asset_original
+
 def set_default_576_324_videos_for_testing_scaled():
     ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
     dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
@@ -157,6 +174,20 @@ def set_default_576_324_noref_videos_for_testing():
 
     return ref_path, dis_path, asset, asset_original
 
+def set_default_576_324_noref_videos_for_testing_workfile_yuv_10b():
+    ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
+    dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+    asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
+                  workdir_root=VmafConfig.workdir_path(),
+                  dis_path=dis_path,
+                  asset_dict={'width': 576, 'height': 324, 'workfile_yuv_type': 'yuv420p10le'})
+
+    asset_original = NorefAsset(dataset="test", content_id=0, asset_id=1,
+                           workdir_root=VmafConfig.workdir_path(),
+                           dis_path=ref_path,
+                           asset_dict={'width': 576, 'height': 324, 'workfile_yuv_type': 'yuv420p10le'})
+
+    return ref_path, dis_path, asset, asset_original
 
 def set_default_cambi_video_for_testing():
     dis_path = VmafConfig.test_resource_path("yuv", "blue_sky_360p_60f.yuv")
