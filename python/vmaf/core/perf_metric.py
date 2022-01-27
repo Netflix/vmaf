@@ -557,7 +557,7 @@ class ResolvingPowerPerfMetric(RawScorePerfMetric):
         for i in range(0, len_centers):
             in_bin = indices(delta_vqm, lambda x: low_limits[i] <= x < high_limits[i])
             if len(in_bin) == 0:
-                mean_cdf_z_vqm[i] = np.float('NaN')
+                mean_cdf_z_vqm[i] = float('NaN')
             else:
                 mean_cdf_z_vqm[i] = np.mean(cdf_z_vqm[in_bin])
         centers__mean_cdf_z_vqm = filter(lambda p: not np.isnan(p[1]), zip(centers, mean_cdf_z_vqm))
