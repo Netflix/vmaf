@@ -365,7 +365,8 @@ def check_program_exist(program):
 
     '''
     try:
-        subprocess.call(program.split(), stdout=open(os.devnull, 'wb'))
+        with open(os.devnull, "wb") as devnull_fd:
+            subprocess.call(program.split(), stdout=devnull_fd)
         return True
     except OSError as e:
         if e.errno == errno.ENOENT:
