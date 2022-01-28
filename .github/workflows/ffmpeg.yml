@@ -56,12 +56,11 @@ jobs:
           sudo make -C ffmpeg --quiet -j $(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu) install
       - name: Test ffmpeg
         run: |
-          cat /proc/cpuinfo
           curl "https://gist.githubusercontent.com/1480c1/0c4575da638ef6e8203feffd0597de16/raw/akiyo_cif.tar.xz.base64" | base64 -d | tar xJ
           vmaf_score=$(ffmpeg -hide_banner -nostats -i encoded.mkv -i orig.mkv -filter_complex libvmaf -f null - 2>&1 | grep 'VMAF score' | tr ' ' '\n' | tail -n1)
           echo "$vmaf_score"
-          if [[ $vmaf_score != "93.656203" ]]; then
-            echo "vmaf Score doesn't match 93.656203"
+          if [[ $vmaf_score != "93.663925" ]]; then
+            echo "vmaf score doesn't match 93.663925"
             exit 1
           else
             echo "vmaf score matches"
