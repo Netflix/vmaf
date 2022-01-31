@@ -312,7 +312,7 @@ static char *test_get_spatial_mask_for_index()
     mu_assert("spatial_mask_for_index wrong mask for index=0, image=3", data_pic_sum(&mask)==16);
 
     vmaf_picture_unref(&image);
-    
+
     get_sample_image(&image, 4);
 
     get_spatial_mask_for_index(&image, &mask, mask_dp, 3, filter_size, width, height);
@@ -502,7 +502,7 @@ static char *test_get_tvi_for_diff()
 {
     VmafLumaRange range_10b_limited;
     vmaf_luminance_init_luma_range(&range_10b_limited, 10, VMAF_PIXEL_RANGE_LIMITED);
-    
+
     int tvi = get_tvi_for_diff(1, 0.019, 10, range_10b_limited, vmaf_luminance_bt1886_eotf);
     mu_assert("tvi_for_diff 1 and bd=10", tvi==178);
     tvi = get_tvi_for_diff(2, 0.019, 10, range_10b_limited, vmaf_luminance_bt1886_eotf);
@@ -618,7 +618,7 @@ char *run_tests()
     /* Banding detection functions */
     mu_run_test(test_decimate);
     mu_run_test(test_filter_mode);
-    
+
     mu_run_test(test_get_mask_index);
     mu_run_test(test_get_spatial_mask_for_index);
 
