@@ -369,6 +369,9 @@ static char *test_calculate_c_values()
         sum += combined_c_values_8x8[i];
     mu_assert("combined_c_values 8x8 error", almost_equal(sum, 195.382527));
 
+    aligned_free(diffs_to_consider);
+    aligned_free(diff_weights);
+    aligned_free(all_diffs);
     vmaf_picture_unref(&input);
     vmaf_picture_unref(&mask);
     vmaf_picture_unref(&input_8x8);
