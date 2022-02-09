@@ -615,7 +615,12 @@ static void decimate(VmafPicture *image, unsigned width, unsigned height) {
     ptrdiff_t stride = image->stride[0] >> 1;
     for (unsigned i = 0; i < height; i++) {
         for (unsigned j = 0; j < width; j++) {
-            data[i * stride + j] = data[(i << 1) * stride + (j << 1)];
+            data[i * stride + j] = (
+                data[ (i << 1)      * stride + (j << 1)] +
+                data[((i << 1) + 1) * stride + (j << 1)] +
+                data[ (i << 1)      * stride + (j << 1) + 1] +
+                data[((i << 1) + 1) * stride + (j << 1) + 1]
+            ) >> 2;
         }
     }
 }
@@ -949,14 +954,14 @@ static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
     int scaled_width = width;
     int scaled_height = height;
 
-    get_spatial_mask(image, mask, buffers.mask_dp, MASK_FILTER_SIZE, width, height);
     for (unsigned scale = 0; scale < NUM_SCALES; scale++) {
         if (scale > 0) {
             scaled_width = (scaled_width + 1) >> 1;
             scaled_height = (scaled_height + 1) >> 1;
             decimate(image, scaled_width, scaled_height);
-            decimate(mask, scaled_width, scaled_height);
         }
+
+        get_spatial_mask(image, mask, buffers.mask_dp, MASK_FILTER_SIZE, scaled_width, scaled_height);
 
         filter_mode(image, scaled_width, scaled_height, buffers.filter_mode_histogram, buffers.filter_mode_buffer);
 

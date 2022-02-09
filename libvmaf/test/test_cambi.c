@@ -144,15 +144,15 @@ static char *test_decimate()
 
     uint16_t *data = pic.data[0];
     ptrdiff_t stride = pic.stride[0] >> 1;
-    uint16_t width = pic.w[0]>>1;
-    uint16_t height = pic.h[0]>>1;
+    uint16_t width = pic.w[0] >> 1;
+    uint16_t height = pic.h[0] >> 1;
 
     decimate(&pic, width, height);
 
     mu_assert("decimate pic wrong pixel value (0,0)", data[0]==1);
-    mu_assert("decimate pic wrong pixel value (1,0)", data[1]==0);
-    mu_assert("decimate pic wrong pixel value (0,1)", data[stride]==0);
-    mu_assert("decimate pic wrong pixel value (1,1)", data[1+stride]==0);
+    mu_assert("decimate pic wrong pixel value (1,0)", data[1]==50);
+    mu_assert("decimate pic wrong pixel value (0,1)", data[stride]==2);
+    mu_assert("decimate pic wrong pixel value (1,1)", data[1+stride]==50);
 
     vmaf_picture_unref(&pic);
 
