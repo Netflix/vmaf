@@ -281,6 +281,18 @@ static char *test_filter_mode()
     return NULL;
 }
 
+static char *test_populate_mask_weights()
+{
+    float weights[50];
+    populate_mask_weights(weights, 50, 21);
+
+    mu_assert("populate_mask_weights wrong weight for i=0", almost_equal(weights[0], 0.005220));
+    mu_assert("populate_mask_weights wrong weight for i=21", almost_equal(weights[21], 0.500000));
+    mu_assert("populate_mask_weights wrong weight for i=49", almost_equal(weights[49], 0.999089));
+    
+    return NULL;
+}
+
 static char *test_get_mask_index()
 {
     uint16_t index = get_mask_index(1980, 1080, 7);
@@ -292,7 +304,7 @@ static char *test_get_mask_index()
     return NULL;
 }
 
-static char *test_get_spatial_mask_for_index()
+static char *test_get_spatial_mask()
 {
     VmafPicture image, mask;
     uint16_t filter_size = 3;
@@ -304,23 +316,15 @@ static char *test_get_spatial_mask_for_index()
     get_sample_image(&image, 3);
     get_sample_image(&mask, 3);
 
-    get_spatial_mask_for_index(&image, &mask, mask_dp, 2, filter_size, width, height);
-    mu_assert("spatial_mask_for_index wrong mask for index=2, image=3", data_pic_sum(&mask)==14);
-    get_spatial_mask_for_index(&image, &mask, mask_dp, 1, filter_size, width, height);
-    mu_assert("spatial_mask_for_index wrong mask for index=1, image=3", data_pic_sum(&mask)==16);
-    get_spatial_mask_for_index(&image, &mask, mask_dp, 0, filter_size, width, height);
-    mu_assert("spatial_mask_for_index wrong mask for index=0, image=3", data_pic_sum(&mask)==16);
+    get_spatial_mask(&image, &mask, mask_dp, filter_size, width, height);
+    mu_assert("spatial_mask wrong mask for image=3", data_pic_sum(&mask) == 64);
 
     vmaf_picture_unref(&image);
 
     get_sample_image(&image, 4);
 
-    get_spatial_mask_for_index(&image, &mask, mask_dp, 3, filter_size, width, height);
-    mu_assert("spatial_mask_for_index wrong mask for index=3, image=4", data_pic_sum(&mask)==0);
-    get_spatial_mask_for_index(&image, &mask, mask_dp, 2, filter_size, width, height);
-    mu_assert("spatial_mask_for_index wrong mask for index=2, image=4", data_pic_sum(&mask)==6);
-    get_spatial_mask_for_index(&image, &mask, mask_dp, 1, filter_size, width, height);
-    mu_assert("spatial_mask_for_index wrong mask for index=1, image=4", data_pic_sum(&mask)==9);
+    get_spatial_mask(&image, &mask, mask_dp, filter_size, width, height);
+    mu_assert("spatial_mask wrong mask for image=4", data_pic_sum(&mask) == 31);
 
     vmaf_picture_unref(&image);
     vmaf_picture_unref(&mask);
@@ -332,9 +336,8 @@ static char *test_calculate_c_values()
 {
     VmafPicture input, mask;
     float combined_c_values[16];
-    float expected_values[16] = {0.6666667, 2.4, 0.0, 0.0, 2.4, 3.75, 3, 0.0,
-                                 2.6666667, 3.75, 3.0, 0.0, 2.0, 2.4, 2.0, 0.0};
-    unsigned width = 4, height = 4;
+    float expected_values[16] = {0.333333, 1.200000, 0.875647, 0.000000, 1.200000, 1.875000, 1.500000, 0.000000,
+                                 1.333333, 1.875000, 1.500000, 0.000000, 1.000000, 1.200000, 1.000000, 0.000000};
     uint16_t tvi_for_diff[4] = {178, 305, 432, 559};
     uint16_t window_size = 3;
     const uint16_t num_diffs = 4;
@@ -343,12 +346,15 @@ static char *test_calculate_c_values()
     uint16_t *diffs_to_consider;
     int *diff_weights;
     int *all_diffs;
+    float mask_weights[50];
+    populate_mask_weights(mask_weights, 50, 1);
 
     set_contrast_arrays(num_diffs, &diffs_to_consider, &diff_weights, &all_diffs);
     get_sample_image(&input, 0);
     get_sample_image(&mask, 8);
+
     calculate_c_values(&input, &mask, combined_c_values, histograms, window_size,
-                       num_diffs, tvi_for_diff, diff_weights, all_diffs, width, height);
+                       num_diffs, tvi_for_diff, diff_weights, all_diffs, mask_weights, 4, 4);
 
     for (unsigned i=0; i<16; i++) {
         mu_assert("calculate_c_values error ws=3",
@@ -362,13 +368,13 @@ static char *test_calculate_c_values()
     window_size = 9;
     uint16_t histograms_8x8[8*1032];
     calculate_c_values(&input_8x8, &mask_8x8, combined_c_values_8x8, histograms_8x8,
-                       window_size, num_diffs, tvi_for_diff, diff_weights, all_diffs, 8, 8);
+                       window_size, num_diffs, tvi_for_diff, diff_weights, all_diffs, mask_weights, 8, 8);
 
     double sum = 0;
     for (unsigned i=0; i<64; i++)
         sum += combined_c_values_8x8[i];
 
-    mu_assert("combined_c_values 8x8 error", almost_equal(sum, 254.914050));
+    mu_assert("combined_c_values 8x8 error", almost_equal(sum, 161.121135));
 
     vmaf_picture_unref(&input);
     vmaf_picture_unref(&mask);
@@ -620,8 +626,9 @@ char *run_tests()
     mu_run_test(test_decimate);
     mu_run_test(test_filter_mode);
 
+    mu_run_test(test_populate_mask_weights);
     mu_run_test(test_get_mask_index);
-    mu_run_test(test_get_spatial_mask_for_index);
+    mu_run_test(test_get_spatial_mask);
 
     mu_run_test(test_calculate_c_values);
     mu_run_test(test_c_value_pixel);

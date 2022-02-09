@@ -72,6 +72,7 @@ static const int g_contrast_weights[32] = {1, 2, 3, 4, 4, 5, 5, 6, 6, 6, 6, 7, 7
 
 #define PICS_BUFFER_SIZE 2
 #define MASK_FILTER_SIZE 7
+#define SIGMOID_FACTOR 4.0
 
 typedef struct CambiBuffers {
     float *c_values;
@@ -101,6 +102,10 @@ typedef struct CambiState {
     char *eotf;
     bool full_ref;
     FILE *heatmaps_files[NUM_SCALES];
+    int enc_mask_index;
+    int src_mask_index;
+    float enc_mask_weights[MASK_FILTER_SIZE * MASK_FILTER_SIZE + 1];
+    float src_mask_weights[MASK_FILTER_SIZE * MASK_FILTER_SIZE + 1];
     CambiBuffers buffers;
 } CambiState;
 
@@ -217,6 +222,23 @@ enum CambiTVIBisectFlag {
     CAMBI_TVI_BISECT_CORRECT,
     CAMBI_TVI_BISECT_TOO_BIG
 };
+
+static FORCE_INLINE inline float sigmoid(float x) {
+    return 1.0 / (1.0 + exp(-x));
+}
+
+static FORCE_INLINE inline uint16_t get_mask_index(unsigned input_width, unsigned input_height,
+                                                   uint16_t filter_size) {
+    const int slope = 3;
+    double resolution_ratio = sqrt((CAMBI_4K_WIDTH * CAMBI_4K_HEIGHT) / (input_width * input_height));
+    return (uint16_t)(((filter_size * filter_size) >> 1) - slope * (resolution_ratio - 1));
+}
+
+static void populate_mask_weights(float *mask_weights, int size, int mask_index) {
+    for (int i = 0; i < size; i++) {
+        mask_weights[i] = sigmoid((i - mask_index) / SIGMOID_FACTOR);
+    }
+}
 
 static FORCE_INLINE inline int clip(int value, int low, int high) {
     return value < low ? low : (value > high ? high : value);
@@ -349,6 +371,12 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     const int num_diffs = 1 << s->max_log_contrast;
 
     set_contrast_arrays(num_diffs, &s->buffers.diffs_to_consider, &s->buffers.diff_weights, &s->buffers.all_diffs);
+    s->enc_mask_index = get_mask_index(s->enc_width, s->enc_height, MASK_FILTER_SIZE);
+    populate_mask_weights(s->enc_mask_weights, MASK_FILTER_SIZE * MASK_FILTER_SIZE + 1, s->enc_mask_index);
+    if (s->full_ref) {
+        s->src_mask_index = get_mask_index(s->src_width, s->src_height, MASK_FILTER_SIZE);
+        populate_mask_weights(s->src_mask_weights, MASK_FILTER_SIZE * MASK_FILTER_SIZE + 1, s->src_mask_index);
+    }
 
     VmafLumaRange luma_range;
     err = vmaf_luminance_init_luma_range(&luma_range, 10, VMAF_PIXEL_RANGE_LIMITED);
@@ -641,13 +669,6 @@ static void filter_mode(const VmafPicture *image, int width, int height, uint8_t
     }
 }
 
-static FORCE_INLINE inline uint16_t get_mask_index(unsigned input_width, unsigned input_height,
-                                                   uint16_t filter_size) {
-    const int slope = 3;
-    double resolution_ratio = sqrt((CAMBI_4K_WIDTH * CAMBI_4K_HEIGHT) / (input_width * input_height));
-    return (uint16_t)(((filter_size * filter_size) >> 1) - slope * (resolution_ratio - 1));
-}
-
 static FORCE_INLINE inline bool get_derivative_data(const uint16_t *data, int width, int height, int i, int j, ptrdiff_t stride) {
     return (i == height - 1 || (data[i * stride + j] == data[(i + 1) * stride + j])) &&
            (j == width - 1 || (data[i * stride + j] == data[i * stride + j + 1]));
@@ -661,8 +682,8 @@ static FORCE_INLINE inline bool get_derivative_data(const uint16_t *data, int wi
 * To calculate the square sums, it uses a dynamic programming algorithm based on inclusion-exclusion.
 * To save memory, it uses a DP matrix of only the necessary size, rather than the full matrix, and indexes its rows cyclically.
 */
-static void get_spatial_mask_for_index(const VmafPicture *image, VmafPicture *mask,
-                                       uint32_t *dp, uint16_t mask_index, uint16_t filter_size,
+static void get_spatial_mask(const VmafPicture *image, VmafPicture *mask,
+                                       uint32_t *dp, uint16_t filter_size,
                                        int width, int height) {
     uint16_t pad_size = filter_size >> 1;
     uint16_t *image_data = image->data[0];
@@ -716,16 +737,10 @@ static void get_spatial_mask_for_index(const VmafPicture *image, VmafPicture *ma
                 - dp[bottom * dp_width + left]
                 - dp[top * dp_width + right]
                 + dp[top * dp_width + left];
-            mask_data[(i - pad_size) * stride + j] = (result > mask_index);
+            mask_data[(i - pad_size) * stride + j] = result;
         }
         curr_compute = (curr_compute + 1) % dp_height;
     }
-}
-
-static void get_spatial_mask(const VmafPicture *image, VmafPicture *mask,
-                             uint32_t *dp, unsigned width, unsigned height) {
-    uint16_t mask_index = get_mask_index(width, height, MASK_FILTER_SIZE);
-    get_spatial_mask_for_index(image, mask, dp, mask_index, MASK_FILTER_SIZE, width, height);
 }
 
 static float c_value_pixel(const uint16_t *histograms, uint16_t value, const int *diff_weights,
@@ -773,20 +788,19 @@ static FORCE_INLINE inline void update_histogram_add(uint16_t *histograms, uint1
 static FORCE_INLINE inline void calculate_c_values_row(float *c_values, uint16_t *histograms, uint16_t *image,
                                                        uint16_t *mask, int row, int width, ptrdiff_t stride,
                                                        const uint16_t num_diffs, const uint16_t *tvi_for_diff,
-                                                       const int *diff_weights, const int *all_diffs) {
+                                                       const int *diff_weights, const int *all_diffs, float *mask_weights) {
     for (int col = 0; col < width; col++) {
-        if (mask[row * stride + col]) {
-            c_values[row * width + col] = c_value_pixel(
-                histograms, image[row * stride + col] + num_diffs, diff_weights, all_diffs, num_diffs, tvi_for_diff, col, width
-            );
-        }
+        c_values[row * width + col] = c_value_pixel(
+            histograms, image[row * stride + col] + num_diffs, diff_weights, all_diffs, num_diffs, tvi_for_diff, col, width
+        ) * mask_weights[mask[row * stride + col]];
     }
 }
 
 static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
                                float *c_values, uint16_t *histograms, uint16_t window_size,
                                const uint16_t num_diffs, const uint16_t *tvi_for_diff,
-                               const int *diff_weights, const int *all_diffs, int width, int height) {
+                               const int *diff_weights, const int *all_diffs, 
+                               float *mask_weights, int width, int height) {
 
     uint16_t pad_size = window_size >> 1;
     const uint16_t num_bins = 1024 + (all_diffs[2*num_diffs] - all_diffs[0]);
@@ -819,14 +833,14 @@ static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
                 update_histogram_add(histograms, image, i, j, width, stride, pad_size, num_diffs);
             }
         }
-        calculate_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, diff_weights, all_diffs);
+        calculate_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, diff_weights, all_diffs, mask_weights);
     }
     for (int i = pad_size + 1; i < height - pad_size; i++) {
         for (int j = 0; j < width; j++) {
             update_histogram_subtract(histograms, image, i, j, width, stride, pad_size, num_diffs);
             update_histogram_add(histograms, image, i, j, width, stride, pad_size, num_diffs);
         }
-        calculate_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, diff_weights, all_diffs);
+        calculate_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, diff_weights, all_diffs, mask_weights);
     }
     for (int i = height - pad_size; i < height; i++) {
         if (i - pad_size - 1 >= 0) {
@@ -834,7 +848,7 @@ static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
                 update_histogram_subtract(histograms, image, i, j, width, stride, pad_size, num_diffs);
             }
         }
-        calculate_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, diff_weights, all_diffs);
+        calculate_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, diff_weights, all_diffs, mask_weights);
     }
 }
 
@@ -926,7 +940,8 @@ static int dump_c_values(FILE *heatmaps_files[], const float *c_values, int widt
 static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
                        const uint16_t num_diffs, const uint16_t *tvi_for_diff,
                        CambiBuffers buffers, double *score, bool write_heatmaps,
-                       FILE *heatmaps_files[], int width, int height, int frame) {
+                       FILE *heatmaps_files[], int width, int height, int frame,
+                       float *mask_weights) {
     double scores_per_scale[NUM_SCALES];
     VmafPicture *image = &pics[0];
     VmafPicture *mask = &pics[1];
@@ -934,7 +949,7 @@ static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
     int scaled_width = width;
     int scaled_height = height;
 
-    get_spatial_mask(image, mask, buffers.mask_dp, width, height);
+    get_spatial_mask(image, mask, buffers.mask_dp, MASK_FILTER_SIZE, width, height);
     for (unsigned scale = 0; scale < NUM_SCALES; scale++) {
         if (scale > 0) {
             scaled_width = (scaled_width + 1) >> 1;
@@ -946,7 +961,8 @@ static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
         filter_mode(image, scaled_width, scaled_height, buffers.filter_mode_histogram, buffers.filter_mode_buffer);
 
         calculate_c_values(image, mask, buffers.c_values, buffers.c_values_histograms, window_size,
-                           num_diffs, tvi_for_diff, buffers.diff_weights, buffers.all_diffs, scaled_width, scaled_height);
+                           num_diffs, tvi_for_diff, buffers.diff_weights, buffers.all_diffs, mask_weights,
+                           scaled_width, scaled_height);
 
         if (write_heatmaps) {
             int err = dump_c_values(heatmaps_files, buffers.c_values, scaled_width, scaled_height, scale, window_size,
@@ -967,14 +983,15 @@ static int preprocess_and_extract_cambi(CambiState *s, VmafPicture *pic, double 
     int width = is_src ? s->src_width : s->enc_width;
     int height = is_src ? s->src_height : s->enc_height;
     int window_size = is_src ? s->src_window_size : s->window_size;
+    float *mask_weights = is_src ? s->src_mask_weights : s->enc_mask_weights;
     int num_diffs = 1 << s->max_log_contrast;
 
     int err = cambi_preprocessing(pic, &s->pics[0], width, height, s->enc_bitdepth);
     if (err) return err;
 
     bool write_heatmaps = s->heatmaps_path && !is_src;
-    err = cambi_score(s->pics, window_size, s->topk, num_diffs, s->buffers.tvi_for_diff,
-                      s->buffers, score, write_heatmaps, s->heatmaps_files, width, height, frame);
+    err = cambi_score(s->pics, window_size, s->topk, num_diffs, s->buffers.tvi_for_diff, 
+                      s->buffers, score, write_heatmaps, s->heatmaps_files, width, height, frame, mask_weights);
     if (err) return err;
 
     return 0;
