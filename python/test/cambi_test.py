@@ -28,7 +28,7 @@ class CambiFeatureExtractorTest(MyTestCase):
 
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
-                               0.6892500624999999, places=4)
+                               0.7308609375000001, places=4)
         self.assertAlmostEqual(results[1]['Cambi_feature_cambi_score'],
                                0.0014658541666666667, places=4)
 
@@ -45,7 +45,7 @@ class CambiFeatureExtractorTest(MyTestCase):
 
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
-                               0.9204257916666666, places=4)
+                               0.9712994583333333, places=4)
         self.assertAlmostEqual(results[1]['Cambi_feature_cambi_score'],
                                0.004251791666666667, places=4)
 
@@ -62,7 +62,7 @@ class CambiFeatureExtractorTest(MyTestCase):
 
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
-                               1.218365, places=4)
+                               1.387623, places=4)
 
     def test_run_cambi_fextractor_10b(self):
         _, _, asset, asset_original = set_default_cambi_video_for_testing_10b()
@@ -77,7 +77,7 @@ class CambiFeatureExtractorTest(MyTestCase):
 
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
-                               0.01451, places=4)
+                               0.01497266666, places=4)
 
     def test_run_cambi_fextractor_max_log_contrast(self):
         _, _, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -92,7 +92,7 @@ class CambiFeatureExtractorTest(MyTestCase):
 
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
-                               0.9182153958333333, places=4)
+                               0.9576131666666666, places=4)
         self.assertAlmostEqual(results[1]['Cambi_feature_cambi_score'],
                                0.0024499791666667, places=4)
 
@@ -107,7 +107,7 @@ class CambiFeatureExtractorTest(MyTestCase):
 
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
-                               0.015840666666666666, places=4)
+                               0.017304916666666666, places=4)
         self.assertAlmostEqual(results[1]['Cambi_feature_cambi_score'],
                                0.000671125, places=4)
 
@@ -123,11 +123,11 @@ class CambiFeatureExtractorTest(MyTestCase):
 
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_FR_feature_cambi_score'],
-                               0.689250, places=4)
+                               0.7308609375, places=4)
         self.assertAlmostEqual(results[0]['Cambi_FR_feature_cambi_source_score'],
                                0.00146585416, places=4)
         self.assertAlmostEqual(results[0]['Cambi_FR_feature_cambi_full_reference_score'],
-                               0.687784, places=4)
+                               0.72939404166, places=4)
 
     def test_run_cambi_fextractor_full_reference_scaled_ref(self):
         _, _, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -142,11 +142,11 @@ class CambiFeatureExtractorTest(MyTestCase):
 
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_FR_feature_cambi_score'],
-                               0.689250, places=4)
+                               0.7308609375, places=4)
         self.assertAlmostEqual(results[0]['Cambi_FR_feature_cambi_source_score'],
                                0.0042517916, places=4)
         self.assertAlmostEqual(results[0]['Cambi_FR_feature_cambi_full_reference_score'],
-                               0.6849983125, places=4)
+                               0.7265804791, places=4)
 
 
 class CambiQualityRunnerTest(MyTestCase):
@@ -163,7 +163,7 @@ class CambiQualityRunnerTest(MyTestCase):
 
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_score'],
-                               0.6892500624999999, places=4)
+                               0.7308609375000001, places=4)
         self.assertAlmostEqual(results[1]['Cambi_score'],
                                0.0014658541666666667, places=4)
 
@@ -180,7 +180,7 @@ class CambiQualityRunnerTest(MyTestCase):
 
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_score'],
-                               0.9204257916666666, places=4)
+                               0.9712994583333333, places=4)
         self.assertAlmostEqual(results[1]['Cambi_score'],
                                0.004251791666666667, places=4)
 
@@ -197,7 +197,7 @@ class CambiQualityRunnerTest(MyTestCase):
 
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_score'],
-                               1.218365, places=4)
+                               1.387623, places=4)
 
     def test_run_cambi_runner_10b(self):
         _, _, asset, asset_original = set_default_cambi_video_for_testing_10b()
@@ -212,7 +212,7 @@ class CambiQualityRunnerTest(MyTestCase):
 
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_score'],
-                               0.01451, places=4)
+                               0.014972666666666667, places=4)
 
     def test_run_cambi_runner_fullref(self):
         _, _, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -226,9 +226,9 @@ class CambiQualityRunnerTest(MyTestCase):
 
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_FR_score'],
-                               0.687784125, places=4)
+                               0.7293940416666668, places=4)
         self.assertAlmostEqual(results[0]['Cambi_FR_feature_cambi_score'],
-                               0.68925006249, places=4)
+                               0.7308609375000001, places=4)
 
 
 if __name__ == '__main__':

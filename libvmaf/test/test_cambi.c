@@ -332,8 +332,8 @@ static char *test_calculate_c_values()
 {
     VmafPicture input, mask;
     float combined_c_values[16];
-    float expected_values[16] = {0.6666667, 2.0, 0.0, 0.0, 2.4, 3.4285715, 2.4, 0.0,
-                                 2.6666667, 3.75, 3.0, 0.0, 2.0, 2.4, 2.0, 0.0};
+    float expected_values[16] = {0.75, 2.0, 0.0, 0.0, 2.4, 3.4285715, 2.4, 0.0,
+                                 2.6666667, 4.0, 3.0, 0.0, 2.0, 2.6666667, 2.0, 0.0};
     unsigned width = 4, height = 4;
     uint16_t tvi_for_diff[4] = {178, 305, 432, 559};
     uint16_t window_size = 3;
@@ -365,9 +365,10 @@ static char *test_calculate_c_values()
                        window_size, num_diffs, tvi_for_diff, diff_weights, all_diffs, 8, 8);
 
     double sum = 0;
-    for (unsigned i=0; i<64; i++)
+    for (unsigned i=0; i<64; i++) {
         sum += combined_c_values_8x8[i];
-    mu_assert("combined_c_values 8x8 error", almost_equal(sum, 195.382527));
+    }
+    mu_assert("combined_c_values 8x8 error", almost_equal(sum, 198.835044));
 
     vmaf_picture_unref(&input);
     vmaf_picture_unref(&mask);

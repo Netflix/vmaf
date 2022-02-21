@@ -736,12 +736,8 @@ static float c_value_pixel(const uint16_t *histograms, uint16_t value, const int
         if (value <= tvi_thresholds[d]) {
             uint16_t p_1 = histograms[(value + diffs[num_diffs + d + 1]) * histogram_width + histogram_col];
             uint16_t p_2 = histograms[(value + diffs[num_diffs - d - 1]) * histogram_width + histogram_col];
-            if (p_1 > p_2) {
-                val = (float)(diff_weights[d] * p_0 * p_1) / (p_1 + p_0);
-            }
-            else {
-                val = (float)(diff_weights[d] * p_0 * p_2) / (p_2 + p_0);
-            }
+            uint16_t p_12 = p_1 + p_2;
+            val = (float)(diff_weights[d] * p_0 * p_12) / (p_12 + p_0);
 
             if (val > c_value) {
                 c_value = val;
