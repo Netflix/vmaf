@@ -82,7 +82,7 @@ typedef struct VmafFeatureExtractor {
     const VmafOption *options; ///< Optional initialization options.
     void *priv; ///< Custom data.
     size_t priv_size; ///< sizeof private data.
-    uint64_t flags; ///< Feauture extraction flags, binary or'd.
+    uint64_t flags; ///< Feature extraction flags, binary or'd.
     const char **provided_features; ///< Provided feature list, NULL terminated.
 } VmafFeatureExtractor;
 
@@ -141,7 +141,7 @@ typedef struct VmafFeatureExtractorContextPool {
 int vmaf_fex_ctx_pool_create(VmafFeatureExtractorContextPool **pool,
                              unsigned n_threads);
 
-int vmaf_fex_ctx_pool_aquire(VmafFeatureExtractorContextPool *pool,
+int vmaf_fex_ctx_pool_acquire(VmafFeatureExtractorContextPool *pool,
                              VmafFeatureExtractor *fex,
                              VmafDictionary *opts_dict,
                              VmafFeatureExtractorContext **fex_ctx);

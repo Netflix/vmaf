@@ -28,7 +28,7 @@ typedef struct VmafThreadPoolJob {
     struct VmafThreadPoolJob *next;
 } VmafThreadPoolJob;
 
-typedef struct VmafTreadPool {
+typedef struct VmafThreadPool {
     struct {
         pthread_mutex_t lock;
         pthread_cond_t empty;

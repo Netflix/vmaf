@@ -58,8 +58,8 @@ static char *test_feature_extractor_context_pool()
 
     VmafFeatureExtractorContext *fex_ctx[n_threads];
     for (unsigned i = 0; i < n_threads; i++) {
-        err = vmaf_fex_ctx_pool_aquire(pool, fex, NULL, &fex_ctx[i]);
-        mu_assert("problem during vmaf_fex_ctx_pool_aquire", !err);
+        err = vmaf_fex_ctx_pool_acquire(pool, fex, NULL, &fex_ctx[i]);
+        mu_assert("problem during vmaf_fex_ctx_pool_acquire", !err);
         mu_assert("fex_ctx[i] should be float_ssim feature extractor",
                   !strcmp(fex_ctx[i]->fex->name, "float_ssim"));
     }

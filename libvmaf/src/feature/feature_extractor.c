@@ -307,7 +307,7 @@ fail:
     return NULL;
 }
 
-int vmaf_fex_ctx_pool_aquire(VmafFeatureExtractorContextPool *pool,
+int vmaf_fex_ctx_pool_acquire(VmafFeatureExtractorContextPool *pool,
                              VmafFeatureExtractor *fex,
                              VmafDictionary *opts_dict,
                              VmafFeatureExtractorContext **fex_ctx)

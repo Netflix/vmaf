@@ -245,7 +245,7 @@ static int threaded_read_pictures(VmafContext *vmaf, VmafPicture *ref,
         }
 
         VmafFeatureExtractorContext *fex_ctx;
-        err = vmaf_fex_ctx_pool_aquire(vmaf->fex_ctx_pool, fex, opts_dict,
+        err = vmaf_fex_ctx_pool_acquire(vmaf->fex_ctx_pool, fex, opts_dict,
                                        &fex_ctx);
         if (err) return err;
 
