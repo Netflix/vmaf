@@ -248,7 +248,7 @@ int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
     if (!feature_collector) return -EINVAL;
     if (!feature_name) return -EINVAL;
 
-    pthread_mutex_lock(&(feature_collector->lock));
+    // pthread_mutex_lock(&(feature_collector->lock));
     int err = 0;
 
     if (!feature_collector->timer.begin)
@@ -283,7 +283,7 @@ int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
 
 unlock:
     feature_collector->timer.end = clock();
-    pthread_mutex_unlock(&(feature_collector->lock));
+    // pthread_mutex_unlock(&(feature_collector->lock));
     return err;
 }
 
