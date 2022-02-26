@@ -155,6 +155,7 @@ int vmaf_feature_extractor_context_init(VmafFeatureExtractorContext *fex_ctx,
         int err = fex_ctx->fex->init(fex_ctx->fex, pix_fmt, bpc, w, h);
         if (err) return err;
     }
+    vmaf_feature_collector_init(fex_ctx->fc);
 
     fex_ctx->is_initialized = true;
     return 0;
@@ -172,7 +173,6 @@ int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
     if (!vfc) return -EINVAL;
     if (!fex_ctx->fex->extract) return -EINVAL;
 
-
     if (!fex_ctx->is_initialized) {
         int err =
             vmaf_feature_extractor_context_init(fex_ctx, ref->pix_fmt, ref->bpc,
@@ -181,7 +181,7 @@ int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
     }
 
     int err = fex_ctx->fex->extract(fex_ctx->fex, ref, ref_90, dist, dist_90,
-                                    pic_index, vfc);
+                                    pic_index, fex_ctx->fc);
     if (err) {
         vmaf_log(VMAF_LOG_LEVEL_WARNING,
                  "problem with feature extractor \"%s\" at index %d\n",

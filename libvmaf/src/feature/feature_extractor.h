@@ -97,6 +97,7 @@ typedef struct VmafFeatureExtractorContext {
     bool is_initialized, is_closed;
     VmafDictionary *opts_dict;
     VmafFeatureExtractor *fex;
+    VmafFeatureCollector *fc;
 } VmafFeatureExtractorContext;
 
 int vmaf_feature_extractor_context_create(VmafFeatureExtractorContext **fex_ctx,
