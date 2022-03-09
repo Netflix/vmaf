@@ -48,8 +48,7 @@
 /* EOTF to use for the visibility threshold calculations. One of ['bt1886', 'pq']. Default: 'bt1886'. */
 #define DEFAULT_CAMBI_EOTF ("bt1886")
 
-#define CAMBI_MIN_WIDTH (320)
-#define CAMBI_MAX_WIDTH (4096)
+#define CAMBI_MIN_WIDTH_HEIGHT (320)
 #define CAMBI_4K_WIDTH (3840)
 #define CAMBI_4K_HEIGHT (2160)
 
@@ -324,10 +323,10 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         s->src_height = h;
     }
 
-    if (s->enc_width < CAMBI_MIN_WIDTH || s->enc_width > CAMBI_MAX_WIDTH) {
+    if (s->enc_width < CAMBI_MIN_WIDTH_HEIGHT && s->enc_height < CAMBI_MIN_WIDTH_HEIGHT) {
         return -EINVAL;
     }
-    if (s->src_width < CAMBI_MIN_WIDTH || s->src_width > CAMBI_MAX_WIDTH) {
+    if (s->src_width < CAMBI_MIN_WIDTH_HEIGHT && s->src_height < CAMBI_MIN_WIDTH_HEIGHT) {
         return -EINVAL;
     }
     if (s->src_width > s->enc_width && s->src_height < s->enc_height) {
