@@ -194,11 +194,20 @@ void vmaf_dictionary_alphabetical_sort(VmafDictionary *dict)
     qsort(dict->entry, dict->cnt, sizeof(*dict->entry), alphabetical_compare);
 }
 
+static int isnumeric(const char *str)
+{
+    float ignore;
+    char c;
+    int ret = sscanf(str, "%f %c", &ignore, &c);
+    return ret == 1;
+}
+
 int vmaf_feature_dictionary_set(VmafFeatureDictionary **dict, const char *key,
                                 const char *val)
 {
-    return vmaf_dictionary_set((VmafDictionary**)dict, key, val,
-                               VMAF_DICT_NORMALIZE_NUMERICAL_VALUES);
+    uint64_t flags = 0;
+    if (isnumeric(val)) flags |= VMAF_DICT_NORMALIZE_NUMERICAL_VALUES;
+    return vmaf_dictionary_set((VmafDictionary**)dict, key, val, flags);
 }
 
 int vmaf_feature_dictionary_free(VmafFeatureDictionary **dict)
