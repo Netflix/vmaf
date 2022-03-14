@@ -23,8 +23,6 @@
 
 void vif_filter1d_8_avx2(VifBuffer buf, unsigned w, unsigned h);
 
-void vif_filter1d_8_avx2_luca(VifBuffer buf, unsigned w, unsigned h);
-
 void vif_subsample_rd_8_avx2(VifBuffer buf, unsigned w, unsigned h);
 
 void vif_subsample_rd_16_avx2(VifBuffer buf, unsigned w, unsigned h, int scale,
@@ -32,8 +30,8 @@ void vif_subsample_rd_16_avx2(VifBuffer buf, unsigned w, unsigned h, int scale,
 
 void vif_filter1d_16_avx2(VifBuffer buf, unsigned w, unsigned h, int scale, int bpc);
 
-void vif_statistic_8_avx2(struct VifState* s, float* num, float* den, unsigned w, unsigned h);
+void vif_statistic_8_avx2(struct VifPublicState *s, float *num, float *den, unsigned w, unsigned h);
 
-void vif_statistic_16_avx2(struct VifState* s, float* num, float* den, unsigned w, unsigned h, int bpc, int scale);
+void vif_statistic_16_avx2(struct VifPublicState *s, float *num, float *den, unsigned w, unsigned h, int bpc, int scale);
 
 #endif /* X86_AVX2_VIF_H_ */

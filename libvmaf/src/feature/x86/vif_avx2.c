@@ -41,8 +41,8 @@ static FORCE_INLINE inline void
 pad_top_and_bottom(VifBuffer buf, unsigned h, int fwidth)
 {
     const unsigned fwidth_half = fwidth / 2;
-    unsigned char* ref = buf.ref; 
-    unsigned char* dis = buf.dis;
+    unsigned char *ref = buf.ref; 
+    unsigned char *dis = buf.dis;
     for (unsigned i = 1; i <= fwidth_half; ++i) {
         size_t offset = buf.stride * i;
         memcpy(ref - offset, ref + offset, buf.stride);
@@ -59,8 +59,8 @@ pad_top_and_bottom(VifBuffer buf, unsigned h, int fwidth)
 static FORCE_INLINE inline void
 copy_and_pad(VifBuffer buf, unsigned w, unsigned h, int scale)
 {
-    uint16_t* ref = buf.ref;
-    uint16_t* dis = buf.dis;
+    uint16_t *ref = buf.ref;
+    uint16_t *dis = buf.dis;
     const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
     const ptrdiff_t mu_stride = buf.stride_16 / sizeof(uint16_t);
 
@@ -118,10 +118,10 @@ acc_right = _mm256_madd_epi16(_mm256_unpackhi_epi16(r0, zero), f); \
 }
 
 
-void vif_statistic_8_avx2(struct VifState* s, float* num, float* den, unsigned w, unsigned h) {
+void vif_statistic_8_avx2(struct VifPublicState *s, float *num, float *den, unsigned w, unsigned h) {
     assert(vif_filter1d_width[0] == 17);
     static const unsigned fwidth = 17;
-    const uint16_t* vif_filt_s0 = vif_filter1d_table[0];
+    const uint16_t *vif_filt_s0 = vif_filter1d_table[0];
     VifBuffer buf = s->buf;
 
     //float equivalent of 2. (2 * 65536)
@@ -132,7 +132,7 @@ void vif_statistic_8_avx2(struct VifState* s, float* num, float* den, unsigned w
     int64_t accum_den_log = 0;
     int64_t accum_num_non_log = 0;
     int64_t accum_den_non_log = 0;
-    uint16_t* log2_table = s->log2_table;
+    uint16_t *log2_table = s->log2_table;
 
     // variables used for 16 sample block vif computation
     ALIGNED(32) uint32_t xx[16];
@@ -148,8 +148,8 @@ void vif_statistic_8_avx2(struct VifState* s, float* num, float* den, unsigned w
             __m256i accum_mu2_left, accum_mu2_right;
             __m256i accum_mu1_left, accum_mu1_right;
 
-            const uint8_t* ref = (uint8_t*)buf.ref;
-            const uint8_t* dis = (uint8_t*)buf.dis;
+            const uint8_t *ref = (uint8_t*)buf.ref;
+            const uint8_t *dis = (uint8_t*)buf.dis;
 
             __m256i f0 = _mm256_set1_epi16(vif_filt_s0[fwidth / 2]);
             __m256i r0 = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.ref) + (buf.stride * i) + jj)));
@@ -168,8 +168,8 @@ void vif_statistic_8_avx2(struct VifState* s, float* num, float* den, unsigned w
                 int ii = i - fwidth / 2;
                 int ii_check = i - fwidth / 2 + tap;
                 int ii_check_1 = i + fwidth / 2 - tap;
-                const uint8_t* ref = (uint8_t*)buf.ref;
-                const uint8_t* dis = (uint8_t*)buf.dis;
+                const uint8_t *ref = (uint8_t*)buf.ref;
+                const uint8_t *dis = (uint8_t*)buf.dis;
 
                 __m256i f0 = _mm256_set1_epi16(vif_filt_s0[tap]);
                 __m256i r0 = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.ref) + (buf.stride * ii_check) + jj)));
@@ -511,9 +511,9 @@ void vif_statistic_8_avx2(struct VifState* s, float* num, float* den, unsigned w
 
 }
 
-void vif_statistic_16_avx2(struct VifState* s, float* num, float* den, unsigned w, unsigned h, int bpc, int scale) {
+void vif_statistic_16_avx2(struct VifPublicState *s, float *num, float *den, unsigned w, unsigned h, int bpc, int scale) {
     const unsigned fwidth = vif_filter1d_width[scale];
-    const uint16_t* vif_filt = vif_filter1d_table[scale];
+    const uint16_t *vif_filt = vif_filter1d_table[scale];
     VifBuffer buf = s->buf;
     const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
     int fwidth_half = fwidth >> 1;
@@ -529,7 +529,7 @@ void vif_statistic_16_avx2(struct VifState* s, float* num, float* den, unsigned 
     int64_t accum_den_log = 0;
     int64_t accum_num_non_log = 0;
     int64_t accum_den_non_log = 0;
-    const uint16_t* log2_table = s->log2_table;
+    const uint16_t *log2_table = s->log2_table;
     double vif_enhn_gain_limit = s->vif_enhn_gain_limit;
 
     // variables used for 16 sample block vif computation
@@ -566,8 +566,8 @@ void vif_statistic_16_avx2(struct VifState* s, float* num, float* den, unsigned 
             __m256i mask2 = _mm256_set_epi32(7, 5, 3, 1, 6, 4, 2, 0);
             int ii_check = ii;
 
-            uint16_t* ref = buf.ref;
-            uint16_t* dis = buf.dis;
+            uint16_t *ref = buf.ref;
+            uint16_t *dis = buf.dis;
             __m256i accumr_lo, accumr_hi, accumd_lo, accumd_hi, rmul1, rmul2,
                 dmul1, dmul2, accumref1, accumref2, accumref3, accumref4,
                 accumrefdis1, accumrefdis2, accumrefdis3, accumrefdis4,
@@ -755,8 +755,8 @@ void vif_statistic_16_avx2(struct VifState* s, float* num, float* den, unsigned 
             int ii_check = ii;
             for (unsigned fi = 0; fi < fwidth; ++fi, ii_check = ii + fi) {
                 const uint16_t fcoeff = vif_filt[fi];
-                uint16_t* ref = buf.ref;
-                uint16_t* dis = buf.dis;
+                uint16_t *ref = buf.ref;
+                uint16_t *dis = buf.dis;
                 uint16_t imgcoeff_ref = ref[ii_check * stride + j];
                 uint16_t imgcoeff_dis = dis[ii_check * stride + j];
                 uint32_t img_coeff_ref = fcoeff * (uint32_t)imgcoeff_ref;
