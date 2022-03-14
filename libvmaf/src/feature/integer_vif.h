@@ -37,7 +37,6 @@ static const uint16_t vif_filter1d_table[4][18] = {
 
 static const int vif_filter1d_width[4] = { 17, 9, 5, 3 };
 
-
 typedef struct VifBuffer {
     void *data;
 
@@ -74,18 +73,11 @@ typedef struct VifResiduals {
     int64_t accum_den_non_log;
 } VifResiduals;
 
-typedef struct VifState {
+typedef struct VifPublicState {
     VifBuffer buf;
     uint16_t log2_table[65537];
-    bool debug;
     double vif_enhn_gain_limit;
-    void (*subsample_rd_8)(VifBuffer buf, unsigned w, unsigned h);
-    void (*subsample_rd_16)(VifBuffer buf, unsigned w, unsigned h, int scale,
-        int bpc);
-    void (*vif_statistic_8)(struct VifState* state, float* num, float* den, unsigned w, unsigned h);
-    void (*vif_statistic_16)(struct VifState* s, float* num, float* den, unsigned w, unsigned h, int bpc, int scale);
-
-} VifState;
+} VifPublicState;
 
 static inline void PADDING_SQ_DATA(VifBuffer buf, int w, unsigned fwidth_half)
 {
@@ -123,15 +115,15 @@ static inline void PADDING_SQ_DATA_2(VifBuffer buf, int w, unsigned fwidth_half)
     }
 }
 
-void vif_statistic_8(struct VifState* s, float* num, float* den, unsigned w, unsigned h);
-void vif_statistic_16(struct VifState* s, float* num, float* den, unsigned w, unsigned h, int bpc, int scale);
+void vif_statistic_8(struct VifPublicState *s, float *num, float *den, unsigned w, unsigned h);
+void vif_statistic_16(struct VifPublicState *s, float *num, float *den, unsigned w, unsigned h, int bpc, int scale);
 
 /*
  * Compute vif residuals on a vertically filtered line 
  * This is a support method for block based vip_statistic_xxx method and is typically called
  * only when to is not a multiple of the block size, with from = (to / block_size) + block_size
  */
-VifResiduals computeLineResiduals(VifState* s, int from, int to, int bpc, int scale);
+VifResiduals computeLineResiduals(VifPublicState *s, int from, int to, int bpc, int scale);
 
 
 #ifdef _MSC_VER
@@ -147,7 +139,7 @@ static inline int __builtin_clzll(unsigned long long x) {
 
 #endif
 
-static inline int32_t log2_32(const uint16_t* log2_table, uint32_t temp)
+static inline int32_t log2_32(const uint16_t *log2_table, uint32_t temp)
 {
     int k = __builtin_clz(temp);
     k = 16 - k;
@@ -155,7 +147,7 @@ static inline int32_t log2_32(const uint16_t* log2_table, uint32_t temp)
     return log2_table[temp] + 2048 * k;
 }
 
-static inline int32_t log2_64(const uint16_t* log2_table, uint64_t temp)
+static inline int32_t log2_64(const uint16_t *log2_table, uint64_t temp)
 {
     assert(temp >= 0x20000);
     int k = __builtin_clzll(temp);

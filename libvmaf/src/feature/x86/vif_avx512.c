@@ -33,8 +33,8 @@ static inline void
 pad_top_and_bottom(VifBuffer buf, unsigned h, int fwidth)
 {
     const unsigned fwidth_half = fwidth / 2;
-    unsigned char* ref = buf.ref;
-    unsigned char* dis = buf.dis;
+    unsigned char *ref = buf.ref;
+    unsigned char *dis = buf.dis;
     for (unsigned i = 1; i <= fwidth_half; ++i) {
         size_t offset = buf.stride * i;
         memcpy(ref - offset, ref + offset, buf.stride);
@@ -51,8 +51,8 @@ pad_top_and_bottom(VifBuffer buf, unsigned h, int fwidth)
 static inline void
 decimate_and_pad(VifBuffer buf, unsigned w, unsigned h, int scale)
 {
-    uint16_t* ref = buf.ref;
-    uint16_t* dis = buf.dis;
+    uint16_t *ref = buf.ref;
+    uint16_t *dis = buf.dis;
     const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
     const ptrdiff_t mu_stride = buf.stride_16 / sizeof(uint16_t);
 
@@ -73,7 +73,7 @@ typedef struct Residuals512 {
 } Residuals512;
 
 // compute VIF on a 16 pixel block from xx (ref variance), yy (clamped dis variance), xy (ref dis covariance)
-static inline void vif_statistic_avx512(Residuals512* out, __m512i xx, __m512i xy, __m512i yy, const uint16_t* log2_table, double vif_enhn_gain_limit)
+static inline void vif_statistic_avx512(Residuals512 *out, __m512i xx, __m512i xy, __m512i yy, const uint16_t *log2_table, double vif_enhn_gain_limit)
 {
     //float equivalent of 2. (2 * 65536)
     static const int32_t sigma_nsq = 65536 << 1;
@@ -209,14 +209,14 @@ static inline void vif_statistic_avx512(Residuals512* out, __m512i xx, __m512i x
     out->maccum_den_non_log = maccum_den_non_log;
 }
 
-void vif_statistic_8_avx512(struct VifState* s, float* num, float* den, unsigned w, unsigned h) {
+void vif_statistic_8_avx512(struct VifPublicState *s, float *num, float *den, unsigned w, unsigned h) {
     const unsigned fwidth = vif_filter1d_width[0];
-    const uint16_t* vif_filt = vif_filter1d_table[0];
+    const uint16_t *vif_filt = vif_filter1d_table[0];
     VifBuffer buf = s->buf;
-    const uint8_t* ref = (uint8_t*)buf.ref;
-    const uint8_t* dis = (uint8_t*)buf.dis;
+    const uint8_t *ref = (uint8_t*)buf.ref;
+    const uint8_t *dis = (uint8_t*)buf.dis;
     const unsigned fwidth_half = fwidth >> 1;
-    const uint16_t* log2_table = s->log2_table;
+    const uint16_t *log2_table = s->log2_table;
     double vif_enhn_gain_limit = s->vif_enhn_gain_limit;
 
 #if defined __GNUC__
@@ -249,8 +249,8 @@ void vif_statistic_8_avx512(struct VifState* s, float* num, float* den, unsigned
         int ii = i - fwidth_half;
         // Filter vertically
         for (unsigned jj = 0; jj < w; jj += 16) {
-            const uint8_t* ref = (uint8_t*)buf.ref;
-            const uint8_t* dis = (uint8_t*)buf.dis;
+            const uint8_t *ref = (uint8_t*)buf.ref;
+            const uint8_t *dis = (uint8_t*)buf.dis;
 
             __m512i f0 = _mm512_set1_epi32(vif_filt[fwidth / 2]);
             __m512i r0 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.ref) + (buf.stride * i) + jj)));
@@ -267,8 +267,8 @@ void vif_statistic_8_avx512(struct VifState* s, float* num, float* den, unsigned
                 int ii = i - fwidth / 2;
                 int ii_check = i - fwidth / 2 + tap;
                 int ii_check_1 = i + fwidth / 2 - tap;
-                const uint8_t* ref = (uint8_t*)buf.ref;
-                const uint8_t* dis = (uint8_t*)buf.dis;
+                const uint8_t *ref = (uint8_t*)buf.ref;
+                const uint8_t *dis = (uint8_t*)buf.dis;
 
                 __m512i f0 = _mm512_set1_epi32(vif_filt[tap]);
                 __m512i r0 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.ref) + (buf.stride * ii_check) + jj)));
@@ -419,9 +419,9 @@ void vif_statistic_8_avx512(struct VifState* s, float* num, float* den, unsigned
     den[0] = accum_den_log / 2048.0 + accum_den_non_log;
 }
 
-void vif_statistic_16_avx512(struct VifState* s, float* num, float* den, unsigned w, unsigned h, int bpc, int scale) {
+void vif_statistic_16_avx512(struct VifPublicState *s, float *num, float *den, unsigned w, unsigned h, int bpc, int scale) {
     const unsigned fwidth = vif_filter1d_width[scale];
-    const uint16_t* vif_filt = vif_filter1d_table[scale];
+    const uint16_t *vif_filt = vif_filter1d_table[scale];
     VifBuffer buf = s->buf;
     const ptrdiff_t dst_stride = buf.stride_32 / sizeof(uint32_t);
     const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
@@ -430,7 +430,7 @@ void vif_statistic_16_avx512(struct VifState* s, float* num, float* den, unsigne
     int32_t add_shift_round_HP, shift_HP;
     int32_t add_shift_round_VP, shift_VP;
     int32_t add_shift_round_VP_sq, shift_VP_sq;
-    const uint16_t* log2_table = s->log2_table;
+    const uint16_t *log2_table = s->log2_table;
     double vif_enhn_gain_limit = s->vif_enhn_gain_limit;
     __m512i mask2 = _mm512_set_epi32(30, 28, 26, 24, 22, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0);
 
@@ -468,8 +468,8 @@ void vif_statistic_16_avx512(struct VifState* s, float* num, float* den, unsigne
     }
     __m512i addnum64 = _mm512_set1_epi64(add_shift_round_VP_sq);
     __m512i addnum = _mm512_set1_epi32(add_shift_round_VP);
-    uint16_t* ref = buf.ref;
-    uint16_t* dis = buf.dis;
+    uint16_t *ref = buf.ref;
+    uint16_t *dis = buf.dis;
 
     for (unsigned i = 0; i < h; ++i)
     {
@@ -627,8 +627,8 @@ void vif_statistic_16_avx512(struct VifState* s, float* num, float* den, unsigne
                 int ii_check = ii + fi;
                 const uint16_t fcoeff = vif_filt[fi];
                 const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
-                uint16_t* ref = buf.ref;
-                uint16_t* dis = buf.dis;
+                uint16_t *ref = buf.ref;
+                uint16_t *dis = buf.dis;
                 uint16_t imgcoeff_ref = ref[ii_check * stride + j];
                 uint16_t imgcoeff_dis = dis[ii_check * stride + j];
                 uint32_t img_coeff_ref = fcoeff * (uint32_t)imgcoeff_ref;
