@@ -340,6 +340,45 @@ static char *test_vmaf_dictionary_alphabetical_sort()
     return NULL;
 }
 
+static char *test_isnumeric()
+{
+    int err = 0;
+
+    // not numeric
+    err = isnumeric("abc");
+    mu_assert("problem during isnumeric", !err);
+
+    err = isnumeric("/a/b/c");
+    mu_assert("problem during isnumeric", !err);
+
+    err = isnumeric("abc123");
+    mu_assert("problem during isnumeric", !err);
+
+    err = isnumeric("123abc");
+    mu_assert("problem during isnumeric", !err);
+
+    // numeric
+    err = isnumeric("123");
+    mu_assert("problem during isnumeric", err);
+
+    err = isnumeric("123.456");
+    mu_assert("problem during isnumeric", err);
+
+    err = isnumeric("    123.456    ");
+    mu_assert("problem during isnumeric", err);
+
+    err = isnumeric("NaN");
+    mu_assert("problem during isnumeric", err);
+
+    err = isnumeric("inf");
+    mu_assert("problem during isnumeric", err);
+
+    err = isnumeric("-inf");
+    mu_assert("problem during isnumeric", err);
+
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_vmaf_dictionary);
@@ -348,5 +387,6 @@ char *run_tests()
     mu_run_test(test_vmaf_dictionary_normalize_numerical_val);
     mu_run_test(test_vmaf_feature_dictionary);
     mu_run_test(test_vmaf_dictionary_alphabetical_sort);
+    mu_run_test(test_isnumeric);
     return NULL;
 }
