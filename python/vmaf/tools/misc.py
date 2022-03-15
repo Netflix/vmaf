@@ -525,7 +525,7 @@ class MyTestCase(unittest.TestCase):
 class QualityRunnerTestMixin(object):
 
     def run_each(self, score, runner_class, asset, optional_dict,
-                 result_store=None, places=5):
+                 optional_dict2=None, result_store=None, places=5):
         runner = runner_class(
             [asset],
             None,
@@ -533,6 +533,7 @@ class QualityRunnerTestMixin(object):
             delete_workdir=True,
             result_store=result_store,
             optional_dict=optional_dict,
+            optional_dict2=optional_dict2,
         )
         runner.run(parallelize=False)
         results = runner.results
