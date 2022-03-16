@@ -28,6 +28,33 @@
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define CHECK_AVX 1
+
+static inline uint64_t get_uint64(__m512i var, int index) {
+    uint64_t* ptr = (uint64_t*)&var;
+    return ptr[index];
+}
+
+static inline int64_t get_int64(__m512i var, int index) {
+    int64_t* ptr = (int64_t*)&var;
+    return ptr[index];
+}
+
+static inline double get_float64(__m512d var, int index) {
+    double* ptr = (double*)&var;
+    return ptr[index];
+}
+
+static inline void add_to_uint64(__m512i *var, int index, uint64_t x) {
+    uint64_t* ptr = (uint64_t*)var;
+    ptr[index] += x;
+}
+
+static inline void add_to_int64(__m512i *var, int index, int64_t x) {
+    int64_t* ptr = (int64_t*)var;
+    ptr[index] += x;
+}
+
 
 static inline void
 pad_top_and_bottom(VifBuffer buf, unsigned h, int fwidth)
@@ -143,6 +170,7 @@ static inline void vif_statistic_avx512(Residuals512 *out, __m512i xx, __m512i x
         maccum_den_non_log = _mm512_mask_add_epi64(maccum_den_non_log, msigma1_mask, maccum_den_non_log, _mm512_set1_epi64(1));
 
 #ifdef CHECK_AVX
+        uint64_t _msigma1[8], _msigma12[8], _msigma2[8];
         for (unsigned i = 0; i < 8; i++) {
             int32_t sigma1_sq = xx[b + i];
             int32_t sigma2_sq = yy[b + i];
@@ -154,9 +182,12 @@ static inline void vif_statistic_avx512(Residuals512 *out, __m512i xx, __m512i x
                 sigma12 = 0;
             }
 
-            assert(msigma1.m512i_u64[i] == sigma1_sq);
-            assert(msigma12.m512i_u64[i] == sigma12);
-            assert(msigma2.m512i_u64[i] == sigma2_sq);
+            assert(get_uint64(msigma1, i) == sigma1_sq);
+            assert(get_uint64(msigma12, i) == sigma12);
+            assert(get_uint64(msigma2, i) == sigma2_sq);
+            printf("i = %d, comparison 1: %llu <=> %llu\n", i, get_uint64(msigma1, i), sigma1_sq);
+            printf("i = %d, comparison 2: %llu <=> %llu\n", i, get_uint64(msigma12, i), sigma1_sq);
+            printf("i = %d, comparison 3: %llu <=> %llu\n", i, get_uint64(msigma2, i), sigma1_sq);
 
             if (sigma1_sq >= sigma_nsq) {
                 /**
@@ -168,8 +199,8 @@ static inline void vif_statistic_avx512(Residuals512 *out, __m512i xx, __m512i x
                 * x because best 16 bits are taken
                 */
                 int64_t den_val = log2_32(log2_table, sigma_nsq + sigma1_sq) - 2048 * 17;
-                assert(mden_val.m512i_u64[i] == den_val);
-                ref_accum_den_log.m512i_u64[i] += den_val;
+                assert(get_uint64(mden_val, i) == den_val);
+                add_to_uint64(&ref_accum_den_log, i, den_val);
 
                 // num_val = log2f(1.0f + (g * g * sigma1_sq) / (sv_sq + sigma_nsq));
                 /**
@@ -182,23 +213,23 @@ static inline void vif_statistic_avx512(Residuals512 *out, __m512i xx, __m512i x
                 int32_t sv_sq = sigma2_sq - g * sigma12;
                 sv_sq = (uint32_t)(MAX(sv_sq, 0));
                 g = MIN(g, vif_enhn_gain_limit);
-                assert(msv_sq.m512i_i64[i] == sv_sq);
-                assert(mg.m512d_f64[i] == g);
+                assert(get_int64(msv_sq, i) == sv_sq);
+                assert(get_float64(mg, i) == g);
 
                 uint32_t numer1 = (sv_sq + sigma_nsq);
                 int64_t numer1_tmp = (int64_t)((g * g * sigma1_sq)) + numer1; //numerator
 
-                assert(mnum_val.m512i_i64[i] == log2_64(log2_table, numer1_tmp) - log2_64(log2_table, numer1));
-                ref_accum_num_log.m512i_u64[i] += log2_64(log2_table, numer1_tmp) - log2_64(log2_table, numer1);
+                assert(get_int64(mnum_val, i) == log2_64(log2_table, numer1_tmp) - log2_64(log2_table, numer1));
+                add_to_uint64(&ref_accum_num_log, i, log2_64(log2_table, numer1_tmp) - log2_64(log2_table, numer1));
             }
             else {
-                ref_accum_num_non_log.m512i_u64[i] += sigma2_sq;
-                ref_accum_den_non_log.m512i_u64[i]++;
+                add_to_uint64(&ref_accum_num_non_log, i, sigma2_sq);
+                add_to_uint64(&ref_accum_den_non_log, i, 1);
             }
-            assert(maccum_num_log.m512i_i64[i] == ref_accum_num_log.m512i_u64[i]);
-            assert(maccum_den_log.m512i_i64[i] == ref_accum_den_log.m512i_u64[i]);
-            assert(maccum_num_non_log.m512i_i64[i] == ref_accum_num_non_log.m512i_u64[i]);
-            assert(maccum_den_non_log.m512i_i64[i] == ref_accum_den_non_log.m512i_u64[i]);
+            assert(get_int64(maccum_num_log, i) == get_int64(ref_accum_num_log, i));
+            assert(get_int64(maccum_den_log, i) == get_int64(ref_accum_den_log, i));
+            assert(get_int64(maccum_num_non_log, i) == get_int64(ref_accum_num_non_log, i));
+            assert(get_int64(maccum_den_non_log, i) == get_int64(ref_accum_den_non_log, i));
         }
 #endif
     }
