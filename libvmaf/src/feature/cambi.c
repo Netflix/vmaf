@@ -730,7 +730,7 @@ static float c_value_pixel(const uint16_t *histograms, uint16_t value, const int
     return c_value;
 }
 
-static FORCE_INLINE inline void update_histogram_subtract(uint16_t *histograms, uint16_t *image, uint16_t *mask,
+static FORCE_INLINE inline void update_histogram_subtract_edge(uint16_t *histograms, uint16_t *image, uint16_t *mask,
                                                           int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
                                                           const uint16_t num_diffs) {
     uint16_t mask_val = mask[(i - pad_size - 1) * stride + j];
@@ -742,13 +742,61 @@ static FORCE_INLINE inline void update_histogram_subtract(uint16_t *histograms, 
     }
 }
 
-static FORCE_INLINE inline void update_histogram_add(uint16_t *histograms, uint16_t *image, uint16_t *mask,
+static FORCE_INLINE inline void update_histogram_subtract(uint16_t *histograms, uint16_t *image, uint16_t *mask,
+                                                          int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
+                                                          const uint16_t num_diffs) {
+    uint16_t mask_val = mask[(i - pad_size - 1) * stride + j];
+    if (mask_val) {
+        uint16_t val = image[(i - pad_size - 1) * stride + j] + num_diffs;
+        for (int col = j - pad_size; col < j + pad_size + 1; col++) {
+            histograms[val * width + col]--;
+        }
+    }
+}
+
+static FORCE_INLINE inline void update_histogram_add_edge(uint16_t *histograms, uint16_t *image, uint16_t *mask,
                                                      int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
                                                      const uint16_t num_diffs) {
     uint16_t mask_val = mask[(i + pad_size) * stride + j];
     if (mask_val) {
         uint16_t val = image[(i + pad_size) * stride + j] + num_diffs;
         for (int col = MAX(j - pad_size, 0); col < MIN(j + pad_size + 1, width); col++) {
+            histograms[val * width + col]++;
+        }
+    }
+}
+
+static FORCE_INLINE inline void update_histogram_add(uint16_t *histograms, uint16_t *image, uint16_t *mask,
+                                                     int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
+                                                     const uint16_t num_diffs) {
+    uint16_t mask_val = mask[(i + pad_size) * stride + j];
+    if (mask_val) {
+        uint16_t val = image[(i + pad_size) * stride + j] + num_diffs;
+        for (int col = j - pad_size; col < j + pad_size + 1; col++) {
+            histograms[val * width + col]++;
+        }
+    }
+}
+
+static FORCE_INLINE inline void update_histogram_add_edge_first_pass(uint16_t *histograms, uint16_t *image, uint16_t *mask,
+                                                     int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
+                                                     const uint16_t num_diffs) {
+    uint16_t mask_val = mask[i * stride + j];
+    if (mask_val) {
+        uint16_t val = image[i * stride + j] + num_diffs;
+        for (int col = MAX(j - pad_size, 0); col < MIN(j + pad_size + 1, width); col++) {
+            histograms[val * width + col]++;
+        }
+    }
+}
+
+static FORCE_INLINE inline void update_histogram_add_first_pass(uint16_t *histograms, uint16_t *image, uint16_t *mask,
+                                                     int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
+                                                     const uint16_t num_diffs) {
+    uint16_t mask_val = mask[i * stride + j];
+    if (mask_val) {
+        uint16_t val = image[i * stride + j] + num_diffs;
+        for (int col = j - pad_size; col < j + pad_size + 1; col++) {
             histograms[val * width + col]++;
         }
     }
@@ -788,37 +836,57 @@ static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
 
     // First pass: first pad_size rows
     for (int i = 0; i < pad_size; i++) {
-        for (int j = 0; j < width; j++) {
-            uint16_t mask_val = mask[i * stride + j];
-            if (mask_val) {
-                uint16_t val = image[i * stride + j] + num_diffs;
-                for (int col = MAX(j - pad_size, 0); col < MIN(j + pad_size + 1, width); col++) {
-                    histograms[val * width + col]++;
-                }
-            }
+        for (int j = 0; j < pad_size; j++) {
+            update_histogram_add_edge_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs);
+        }
+        for (int j = pad_size; j < width - pad_size - 1; j++) {
+            update_histogram_add_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs);
+        }
+        for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++) {
+            update_histogram_add_edge_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs);
         }
     }
 
     // Iterate over all rows, unrolled into 3 loops to avoid conditions
     for (int i = 0; i < pad_size + 1; i++) {
         if (i + pad_size < height) {
-            for (int j = 0; j < width; j++) {
+            for (int j = 0; j < pad_size; j++) {
+                update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs);
+            }
+            for (int j = pad_size; j < width - pad_size - 1; j++) {
                 update_histogram_add(histograms, image, mask, i, j, width, stride, pad_size, num_diffs);
+            }
+            for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++) {
+                update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs);
             }
         }
         calculate_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, diff_weights, all_diffs);
     }
     for (int i = pad_size + 1; i < height - pad_size; i++) {
-        for (int j = 0; j < width; j++) {
+        for (int j = 0; j < pad_size; j++) {
+            update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs);
+            update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs);
+        }
+        for (int j = pad_size; j < width - pad_size - 1; j++) {
             update_histogram_subtract(histograms, image, mask, i, j, width, stride, pad_size, num_diffs);
             update_histogram_add(histograms, image, mask, i, j, width, stride, pad_size, num_diffs);
+        }
+        for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++) {
+            update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs);
+            update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs);
         }
         calculate_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, diff_weights, all_diffs);
     }
     for (int i = height - pad_size; i < height; i++) {
         if (i - pad_size - 1 >= 0) {
-            for (int j = 0; j < width; j++) {
+            for (int j = 0; j < pad_size; j++) {
+                update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs);
+            }
+            for (int j = pad_size; j < width - pad_size - 1; j++) {
                 update_histogram_subtract(histograms, image, mask, i, j, width, stride, pad_size, num_diffs);
+            }
+            for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++) {
+                update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs);
             }
         }
         calculate_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, diff_weights, all_diffs);
