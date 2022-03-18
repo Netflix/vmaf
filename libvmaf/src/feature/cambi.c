@@ -88,7 +88,7 @@ typedef struct CambiBuffers {
     int *all_diffs;
 } CambiBuffers;
 
-typedef void (*RangeUpdater)(uint16_t *arr, int left, int right, int val);
+typedef void (*RangeUpdater)(uint16_t *arr, int left, int right);
 
 typedef struct CambiState {
     VmafPicture pics[PICS_BUFFER_SIZE];
@@ -106,7 +106,8 @@ typedef struct CambiState {
     char *eotf;
     bool full_ref;
     FILE *heatmaps_files[NUM_SCALES];
-    RangeUpdater add_to_range;
+    RangeUpdater increment_range;
+    RangeUpdater decrement_range;
     CambiBuffers buffers;
 } CambiState;
 
@@ -307,9 +308,15 @@ static int set_contrast_arrays(const uint16_t num_diffs, uint16_t **diffs_to_con
 }
 
 // SIMD-able functions
-static inline void add_to_range(uint16_t *arr, int left, int right, int val) {
+static inline void increment_range(uint16_t *arr, int left, int right) {
     for (uint16_t *x = arr + left; x < arr + right; x++) {
-        *x += val;
+        (*x)++;
+    }
+}
+
+static inline void decrement_range(uint16_t *arr, int left, int right) {
+    for (uint16_t *x = arr + left; x < arr + right; x++) {
+        (*x)--;
     }
 }
 
@@ -417,12 +424,14 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         }
     }
 
-    s->add_to_range = add_to_range;
+    s->increment_range = increment_range;
+    s->decrement_range = decrement_range;
 
 #if ARCH_X86
     unsigned flags = vmaf_get_cpu_flags();
     if (flags & VMAF_X86_CPU_FLAG_AVX2) {
-        s->add_to_range = add_to_range_avx2;
+        s->increment_range = increment_range_avx2;
+        s->decrement_range = decrement_range_avx2;
     }
 #endif
 
@@ -754,8 +763,8 @@ static float c_value_pixel(const uint16_t *histograms, uint16_t value, const int
     return c_value;
 }
 
-static inline void update_histogram(uint16_t *histograms, uint16_t val, int j, int width, uint16_t pad_size, RangeUpdater add_to_range, int diff) {
-    add_to_range(&histograms[val * width], MAX(j - pad_size, 0), MIN(j + pad_size + 1, width), diff);
+static inline void update_histogram(uint16_t *histograms, uint16_t val, int j, int width, uint16_t pad_size, RangeUpdater update_range) {
+    update_range(&histograms[val * width], MAX(j - pad_size, 0), MIN(j + pad_size + 1, width));
 }
 
 static FORCE_INLINE inline void calculate_c_values_row(float *c_values, uint16_t *histograms, uint16_t *image,
@@ -774,7 +783,8 @@ static FORCE_INLINE inline void calculate_c_values_row(float *c_values, uint16_t
 static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
                                float *c_values, uint16_t *histograms, uint16_t window_size,
                                const uint16_t num_diffs, const uint16_t *tvi_for_diff,
-                               const int *diff_weights, const int *all_diffs, int width, int height, RangeUpdater add_to_range) {
+                               const int *diff_weights, const int *all_diffs, int width, int height, 
+                               RangeUpdater increment_range, RangeUpdater decrement_range) {
 
     uint16_t pad_size = window_size >> 1;
     const uint16_t num_bins = 1024 + (all_diffs[2*num_diffs] - all_diffs[0]);
@@ -795,7 +805,7 @@ static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
         for (int j = 0; j < width; j++) {
             if (mask[i * stride + j]) {
                 uint16_t val = image[i * stride + j] + num_diffs;
-                update_histogram(histograms, val, j, width, pad_size, add_to_range, 1);
+                update_histogram(histograms, val, j, width, pad_size, increment_range);
             }
         }
     }
@@ -806,7 +816,7 @@ static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
             for (int j = 0; j < width; j++) {
                 if (mask[(i + pad_size) * stride + j]) {
                     uint16_t val = image[(i + pad_size) * stride + j] + num_diffs;
-                    update_histogram(histograms, val, j, width, pad_size, add_to_range, 1);
+                    update_histogram(histograms, val, j, width, pad_size, increment_range);
                 }
             }
         }
@@ -816,11 +826,11 @@ static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
         for (int j = 0; j < width; j++) {
             if (mask[(i - pad_size - 1) * stride + j]) {
                 uint16_t val = image[(i - pad_size - 1) * stride + j] + num_diffs;
-                update_histogram(histograms, val, j, width, pad_size, add_to_range, -1);
+                update_histogram(histograms, val, j, width, pad_size, decrement_range);
             }
             if (mask[(i + pad_size) * stride + j]) {
                 uint16_t val = image[(i + pad_size) * stride + j] + num_diffs;
-                update_histogram(histograms, val, j, width, pad_size, add_to_range, 1);
+                update_histogram(histograms, val, j, width, pad_size, increment_range);
             }
         }
         calculate_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, diff_weights, all_diffs);
@@ -830,7 +840,7 @@ static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
             for (int j = 0; j < width; j++) {
                 if (mask[(i - pad_size - 1) * stride + j]) {
                     uint16_t val = image[(i - pad_size - 1) * stride + j] + num_diffs;
-                    update_histogram(histograms, val, j, width, pad_size, add_to_range, -1);
+                    update_histogram(histograms, val, j, width, pad_size, decrement_range);
                 }
             }
         }
@@ -925,8 +935,9 @@ static int dump_c_values(FILE *heatmaps_files[], const float *c_values, int widt
 
 static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
                        const uint16_t num_diffs, const uint16_t *tvi_for_diff,
-                       CambiBuffers buffers, RangeUpdater add_to_range, double *score, bool write_heatmaps,
-                       FILE *heatmaps_files[], int width, int height, int frame) {
+                       CambiBuffers buffers, RangeUpdater increment_range, RangeUpdater decrement_range, 
+                       double *score, bool write_heatmaps, FILE *heatmaps_files[], 
+                       int width, int height, int frame) {
     double scores_per_scale[NUM_SCALES];
     VmafPicture *image = &pics[0];
     VmafPicture *mask = &pics[1];
@@ -946,7 +957,8 @@ static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
         filter_mode(image, scaled_width, scaled_height, buffers.filter_mode_buffer);
 
         calculate_c_values(image, mask, buffers.c_values, buffers.c_values_histograms, window_size,
-                           num_diffs, tvi_for_diff, buffers.diff_weights, buffers.all_diffs, scaled_width, scaled_height, add_to_range);
+                           num_diffs, tvi_for_diff, buffers.diff_weights, buffers.all_diffs, scaled_width, scaled_height, 
+                           increment_range, decrement_range);
 
         if (write_heatmaps) {
             int err = dump_c_values(heatmaps_files, buffers.c_values, scaled_width, scaled_height, scale, window_size,
@@ -974,7 +986,7 @@ static int preprocess_and_extract_cambi(CambiState *s, VmafPicture *pic, double 
 
     bool write_heatmaps = s->heatmaps_path && !is_src;
     err = cambi_score(s->pics, window_size, s->topk, num_diffs, s->buffers.tvi_for_diff,
-                      s->buffers, s->add_to_range, score, write_heatmaps, s->heatmaps_files, width, height, frame);
+                      s->buffers, s->increment_range, s->decrement_range, score, write_heatmaps, s->heatmaps_files, width, height, frame);
     if (err) return err;
 
     return 0;

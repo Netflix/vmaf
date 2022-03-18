@@ -19,8 +19,8 @@
 #include <immintrin.h>
 #include <stdint.h>
 
-void add_to_range_avx2(uint16_t *arr, int left, int right, int val) {
-    __m256i val_vector = _mm256_set1_epi16(val);
+void increment_range_avx2(uint16_t *arr, int left, int right) {
+    __m256i val_vector = _mm256_set1_epi16(1);
     int col = left;
     for (; col + 16 < right; col += 16) {
         __m256i data = _mm256_loadu_si256((__m256i*) &arr[col]);
@@ -28,6 +28,19 @@ void add_to_range_avx2(uint16_t *arr, int left, int right, int val) {
         _mm256_storeu_si256((__m256i*) &arr[col], data);
     }
     for (; col < right; col++) {
-        arr[col] += val;
+        arr[col]++;
+    }
+}
+
+void decrement_range_avx2(uint16_t *arr, int left, int right) {
+    __m256i val_vector = _mm256_set1_epi16(1);
+    int col = left;
+    for (; col + 16 < right; col += 16) {
+        __m256i data = _mm256_loadu_si256((__m256i*) &arr[col]);
+        data = _mm256_sub_epi16(data, val_vector);
+        _mm256_storeu_si256((__m256i*) &arr[col], data);
+    }
+    for (; col < right; col++) {
+        arr[col]--;
     }
 }

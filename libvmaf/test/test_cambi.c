@@ -348,7 +348,8 @@ static char *test_calculate_c_values()
     get_sample_image(&input, 0);
     get_sample_image(&mask, 8);
     calculate_c_values(&input, &mask, combined_c_values, histograms, window_size,
-                       num_diffs, tvi_for_diff, diff_weights, all_diffs, width, height, add_to_range);
+                       num_diffs, tvi_for_diff, diff_weights, all_diffs, width, height, 
+                       increment_range, decrement_range);
 
     for (unsigned i=0; i<16; i++) {
         mu_assert("calculate_c_values error ws=3",
@@ -362,7 +363,8 @@ static char *test_calculate_c_values()
     window_size = 9;
     uint16_t histograms_8x8[8*1032];
     calculate_c_values(&input_8x8, &mask_8x8, combined_c_values_8x8, histograms_8x8,
-                       window_size, num_diffs, tvi_for_diff, diff_weights, all_diffs, 8, 8, add_to_range);
+                       window_size, num_diffs, tvi_for_diff, diff_weights, all_diffs, 8, 8, 
+                       increment_range, decrement_range);
 
     double sum = 0;
     for (unsigned i=0; i<64; i++)
@@ -401,20 +403,20 @@ static char *test_c_value_pixel()
     return NULL;
 }
 
-static char *test_add_to_range()
+static char *test_update_range()
 {
     uint16_t arr[15] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
-    add_to_range(arr, 5, 10, 2);
-    mu_assert("add_to_range +2 i=5", arr[5] == 7);
-    mu_assert("add_to_range +2 i=7", arr[7] == 7);
-    mu_assert("add_to_range +2 i=9", arr[9] == 7);
-    mu_assert("add_to_range +2 i=10", arr[10] == 5);
+    increment_range(arr, 5, 10);
+    mu_assert("increment_range i=5", arr[5] == 6);
+    mu_assert("increment_range i=7", arr[7] == 6);
+    mu_assert("increment_range i=9", arr[9] == 6);
+    mu_assert("increment_range i=10", arr[10] == 5);
 
-    add_to_range(arr, 2, 6, -5);
-    mu_assert("add_to_range -5 i=2", arr[2] == 0);
-    mu_assert("add_to_range -5 i=4", arr[4] == 0);
-    mu_assert("add_to_range -5 i=5", arr[5] == 2);
-    mu_assert("add_to_range -5 i=8", arr[8] == 7);
+    decrement_range(arr, 2, 6);
+    mu_assert("decrement_range i=2", arr[2] == 4);
+    mu_assert("decrement_range i=4", arr[4] == 4);
+    mu_assert("decrement_range i=5", arr[5] == 5);
+    mu_assert("decrement_range i=8", arr[8] == 6);
 
     return NULL;
 }
@@ -642,7 +644,7 @@ char *run_tests()
 
     mu_run_test(test_calculate_c_values);
     mu_run_test(test_c_value_pixel);
-    mu_run_test(test_add_to_range);
+    mu_run_test(test_update_range);
 
     mu_run_test(test_spatial_pooling);
     mu_run_test(test_quick_select);

@@ -22,6 +22,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-void add_to_range_avx2(uint16_t *arr, int left, int right, int val);
+void increment_range_avx2(uint16_t *arr, int left, int right);
+void decrement_range_avx2(uint16_t *arr, int left, int right);
 
 #endif /* X86_AVX2_CAMBI_H_ */
