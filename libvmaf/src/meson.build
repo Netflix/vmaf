@@ -181,6 +181,7 @@ if is_asm_enabled
           feature_src_dir + 'x86/motion_avx2.c',
           feature_src_dir + 'x86/vif_avx2.c',
           feature_src_dir + 'x86/adm_avx2.c',
+          feature_src_dir + 'x86/cambi_avx2.c',
       ]
 
       x86_avx2_static_lib = static_library(
