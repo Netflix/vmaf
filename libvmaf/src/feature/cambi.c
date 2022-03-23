@@ -280,7 +280,11 @@ static int get_tvi_for_diff(int diff, double tvi_threshold, int bitdepth, VmafLu
     }
 }
 
-static FORCE_INLINE inline void adjust_window_size(uint16_t *window_size, unsigned input_width) {
+static FORCE_INLINE inline void adjust_window_size(uint16_t *window_size,
+                                                   unsigned input_width,
+                                                   unsigned input_height)
+{
+    (void) input_height;
     (*window_size) = ((*window_size) * input_width) / CAMBI_4K_WIDTH;
 }
 
@@ -385,8 +389,8 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     }
 
     s->src_window_size = s->window_size;
-    adjust_window_size(&s->window_size, s->enc_width);
-    adjust_window_size(&s->src_window_size, s->src_width);
+    adjust_window_size(&s->window_size, s->enc_width, s->enc_height);
+    adjust_window_size(&s->src_window_size, s->src_width, s->src_height);
     s->buffers.c_values = aligned_malloc(ALIGN_CEIL(alloc_w * sizeof(float)) * alloc_h, 32);
     if (!s->buffers.c_values) return -ENOMEM;
 
