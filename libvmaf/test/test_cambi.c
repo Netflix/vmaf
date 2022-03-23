@@ -492,48 +492,48 @@ static char *test_weight_scores_per_scale()
 static char *test_adjust_window_size()
 {
     uint16_t window_size = 63;
-    adjust_window_size(&window_size, 3840);
-    mu_assert("adjusted window size for input=3840, ws=63", window_size==63);
+    adjust_window_size(&window_size, 3840, 2160);
+    mu_assert("adjusted window size for input=(3840, 2160), ws=63", window_size==63);
 
     window_size = 63;
-    adjust_window_size(&window_size, 2560);
-    mu_assert("adjusted window size for input=2560, ws=63", window_size==42);
+    adjust_window_size(&window_size, 2560, 1440);
+    mu_assert("adjusted window size for input=(2560, 1440), ws=63", window_size==42);
 
     window_size = 63;
-    adjust_window_size(&window_size, 1920);
-    mu_assert("adjusted window size for input=1920, ws=63", window_size==31);
+    adjust_window_size(&window_size, 1920, 1080);
+    mu_assert("adjusted window size for input=(1920, 1080), ws=63", window_size==31);
 
     window_size = 63;
-    adjust_window_size(&window_size, 1280);
-    mu_assert("adjusted window size for input=1280, ws=63", window_size==21);
+    adjust_window_size(&window_size, 1280, 720);
+    mu_assert("adjusted window size for input=(1280, 720), ws=63", window_size==21);
 
     window_size = 63;
-    adjust_window_size(&window_size, 960);
-    mu_assert("adjusted window size for input=960, ws=63", window_size==15);
+    adjust_window_size(&window_size, 960, 540);
+    mu_assert("adjusted window size for input=(960, 540), ws=63", window_size==15);
 
     window_size = 63;
-    adjust_window_size(&window_size, 640);
-    mu_assert("adjusted window size for input=640, ws=63", window_size==10);
+    adjust_window_size(&window_size, 640, 360);
+    mu_assert("adjusted window size for input=(640, 360), ws=63", window_size==10);
 
     window_size = 63;
-    adjust_window_size(&window_size, 480);
-    mu_assert("adjusted window size for input=480, ws=63", window_size==7);
+    adjust_window_size(&window_size, 480, 270);
+    mu_assert("adjusted window size for input=(480, 270), ws=63", window_size==7);
 
     window_size = 63;
-    adjust_window_size(&window_size, 320);
-    mu_assert("adjusted window size for input=320, ws=63", window_size==5);
+    adjust_window_size(&window_size, 320, 180);
+    mu_assert("adjusted window size for input=(320, 180), ws=63", window_size==5);
 
     window_size = 63;
-    adjust_window_size(&window_size, 6000);
-    mu_assert("adjusted window size for input=6000, ws=63", window_size==98);
+    adjust_window_size(&window_size, 6000, 4000);
+    mu_assert("adjusted window size for input=(6000, 4000), ws=63", window_size==98);
 
     window_size = 60;
-    adjust_window_size(&window_size, 1920);
-    mu_assert("adjusted window size for input=1920, ws=60", window_size==30);
+    adjust_window_size(&window_size, 1920, 1080);
+    mu_assert("adjusted window size for input=(1920, 1080), ws=60", window_size==30);
 
     window_size = 31;
-    adjust_window_size(&window_size, 1280);
-    mu_assert("adjusted window size for input=1280, ws=31", window_size==10);
+    adjust_window_size(&window_size, 1280, 720);
+    mu_assert("adjusted window size for input=(1280, 720), ws=31", window_size==10);
 
     return NULL;
 }
