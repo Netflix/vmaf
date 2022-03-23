@@ -283,10 +283,24 @@ static char *test_filter_mode()
 
 static char *test_get_mask_index()
 {
-    uint16_t index = get_mask_index(1980, 1080, 7);
-    mu_assert("get_mask_index wrong index for (1980, 1080)", index==21);
-    index = get_mask_index(3840, 2160, 7);
+    uint16_t index = get_mask_index(3840, 2160, 7);
     mu_assert("get_mask_index wrong index for (3840, 2160)", index==24);
+    index = get_mask_index(2560, 1440, 7);
+    mu_assert("get_mask_index wrong index for (2560, 1440)", index==22);
+    index = get_mask_index(1980, 1080, 7);
+    mu_assert("get_mask_index wrong index for (1980, 1080)", index==21);
+    index = get_mask_index(1280, 720, 7);
+    mu_assert("get_mask_index wrong index for (1280, 720)", index==18);
+    index = get_mask_index(960, 540, 7);
+    mu_assert("get_mask_index wrong index for (960, 540)", index==15);
+    index = get_mask_index(640, 360, 7);
+    mu_assert("get_mask_index wrong index for (640, 360)", index==9);
+    index = get_mask_index(480, 270, 7);
+    mu_assert("get_mask_index wrong index for (480, 270)", index==3);
+    index = get_mask_index(320, 180, 7);
+    mu_assert("get_mask_index wrong index for (320, 180)", index==65527);
+    index = get_mask_index(6000, 4000, 7);
+    mu_assert("get_mask_index wrong index for (6000, 4000)", index==27);
     index = get_mask_index(960, 540, 5);
     mu_assert("get_mask_index wrong index for (960, 540)", index==3);
     return NULL;
@@ -482,8 +496,36 @@ static char *test_adjust_window_size()
     mu_assert("adjusted window size for input=3840, ws=63", window_size==63);
 
     window_size = 63;
+    adjust_window_size(&window_size, 2560);
+    mu_assert("adjusted window size for input=2560, ws=63", window_size==42);
+
+    window_size = 63;
     adjust_window_size(&window_size, 1920);
     mu_assert("adjusted window size for input=1920, ws=63", window_size==31);
+
+    window_size = 63;
+    adjust_window_size(&window_size, 1280);
+    mu_assert("adjusted window size for input=1280, ws=63", window_size==21);
+
+    window_size = 63;
+    adjust_window_size(&window_size, 960);
+    mu_assert("adjusted window size for input=960, ws=63", window_size==15);
+
+    window_size = 63;
+    adjust_window_size(&window_size, 640);
+    mu_assert("adjusted window size for input=640, ws=63", window_size==10);
+
+    window_size = 63;
+    adjust_window_size(&window_size, 480);
+    mu_assert("adjusted window size for input=480, ws=63", window_size==7);
+
+    window_size = 63;
+    adjust_window_size(&window_size, 320);
+    mu_assert("adjusted window size for input=320, ws=63", window_size==5);
+
+    window_size = 63;
+    adjust_window_size(&window_size, 6000);
+    mu_assert("adjusted window size for input=6000, ws=63", window_size==98);
 
     window_size = 60;
     adjust_window_size(&window_size, 1920);
