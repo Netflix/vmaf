@@ -45,9 +45,9 @@ class CambiFeatureExtractorTest(MyTestCase):
 
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
-                               0.8740225, places=4)
+                               0.79470425, places=4)
         self.assertAlmostEqual(results[1]['Cambi_feature_cambi_score'],
-                               0.004161041666666666, places=4)
+                               0.0033943124999999998, places=4)
 
     def test_run_cambi_fextractor_scaled_b(self):
         _, _, asset, asset_original = set_default_cambi_video_for_testing_b()
@@ -62,7 +62,7 @@ class CambiFeatureExtractorTest(MyTestCase):
 
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
-                               1.309229, places=4)
+                               1.270708, places=4)
 
     def test_run_cambi_fextractor_10b(self):
         _, _, asset, asset_original = set_default_cambi_video_for_testing_10b()
@@ -144,9 +144,9 @@ class CambiFeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[0]['Cambi_FR_feature_cambi_score'],
                                0.664931, places=4)
         self.assertAlmostEqual(results[0]['Cambi_FR_feature_cambi_source_score'],
-                               0.004161041666666666, places=4)
+                               0.0033943124999999998, places=4)
         self.assertAlmostEqual(results[0]['Cambi_FR_feature_cambi_full_reference_score'],
-                               0.66077, places=4)
+                               0.6615367083333333, places=4)
 
 
 class CambiQualityRunnerTest(MyTestCase):
@@ -180,9 +180,9 @@ class CambiQualityRunnerTest(MyTestCase):
 
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_score'],
-                               0.8740225, places=4)
+                               0.79470425, places=4)
         self.assertAlmostEqual(results[1]['Cambi_score'],
-                               0.004161041666666666, places=4)
+                               0.0033943124999999998, places=4)
 
     def test_run_cambi_runner_scale_b(self):
         _, _, asset, asset_original = set_default_cambi_video_for_testing_b()
@@ -197,7 +197,7 @@ class CambiQualityRunnerTest(MyTestCase):
 
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_score'],
-                               1.309229, places=4)
+                               1.270708, places=4)
 
     def test_run_cambi_runner_10b(self):
         _, _, asset, asset_original = set_default_cambi_video_for_testing_10b()
