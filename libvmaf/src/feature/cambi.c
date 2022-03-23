@@ -33,8 +33,8 @@
 /* Ratio of pixels for computation, must be 0 < topk <= 1.0 */
 #define DEFAULT_CAMBI_TOPK_POOLING (0.6)
 
-/* Window size to compute CAMBI: 63 corresponds to approximately 1 degree at 4k scale */
-#define DEFAULT_CAMBI_WINDOW_SIZE (63)
+/* Window size to compute CAMBI: 65 corresponds to approximately 1 degree at 4k scale */
+#define DEFAULT_CAMBI_WINDOW_SIZE (65)
 
 /* Visibility threshold for luminance ΔL < tvi_threshold*L_mean for BT.1886 */
 #define DEFAULT_CAMBI_TVI (0.019)
