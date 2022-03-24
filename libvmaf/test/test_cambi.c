@@ -525,7 +525,7 @@ static char *test_adjust_window_size()
 
     window_size = 63;
     adjust_window_size(&window_size, 6000, 4000);
-    mu_assert("adjusted window size for input=(6000, 4000), ws=63", window_size==98);
+    mu_assert("adjusted window size for input=(6000, 4000), ws=63", window_size==105);
 
     window_size = 60;
     adjust_window_size(&window_size, 1920, 1080);

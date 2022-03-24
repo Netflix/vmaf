@@ -276,8 +276,8 @@ static FORCE_INLINE inline void adjust_window_size(uint16_t *window_size,
                                                    unsigned input_width,
                                                    unsigned input_height)
 {
-    (void) input_height;
-    (*window_size) = ((*window_size) * input_width) / CAMBI_4K_WIDTH;
+    // Adjustment weight: (input_width + input_height) / (CAMBI_4K_WIDTH + CAMBI_4K_HEIGHT)
+    (*window_size) = (((*window_size) * (input_width+input_height)) / 375) >> 4;
 }
 
 static int set_contrast_arrays(const uint16_t num_diffs, uint16_t **diffs_to_consider,
