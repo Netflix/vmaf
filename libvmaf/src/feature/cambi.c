@@ -17,7 +17,6 @@
  */
 
 #include <errno.h>
-#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -644,11 +643,23 @@ static void filter_mode(const VmafPicture *image, int width, int height, uint8_t
     }
 }
 
+static FORCE_INLINE inline uint16_t ceil_log2(uint32_t num) {
+    if (num==0)
+        return 0;
+
+    uint32_t tmp = num - 1;
+    uint16_t shift = 0;
+    while (tmp>0) {
+        tmp >>= 1;
+        shift += 1;
+    }
+    return shift;
+}
+
 static FORCE_INLINE inline uint16_t get_mask_index(unsigned input_width, unsigned input_height,
                                                    uint16_t filter_size) {
-    const int slope = 3;
-    double resolution_ratio = sqrt((CAMBI_4K_WIDTH * CAMBI_4K_HEIGHT) / (input_width * input_height));
-    return (uint16_t)(((filter_size * filter_size) >> 1) - slope * (resolution_ratio - 1));
+    uint32_t shifted_wh = (input_width >> 6) * (input_height >> 6);
+    return (filter_size * filter_size + 3 * (ceil_log2(shifted_wh) - 11) - 1)>>1;
 }
 
 static FORCE_INLINE inline bool get_derivative_data(const uint16_t *data, int width, int height, int i, int j, ptrdiff_t stride) {
