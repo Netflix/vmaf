@@ -163,8 +163,9 @@ int vmaf_model_feature_overload(VmafModel *model, const char *feature_name,
         if (!fex) continue;
         if (strcmp(feature_name, fex->name)) continue;
         VmafDictionary *d =
-            vmaf_dictionary_merge(&model->feature[i].opts_dict,
-                                  &opts_dict, 0);
+            vmaf_dictionary_merge((VmafDictionary**)&model->feature[i].opts_dict,
+                                  (VmafDictionary**)&opts_dict,
+                                  0);
         if (!d) return -ENOMEM;
         err = vmaf_dictionary_free(&model->feature[i].opts_dict);
         if (err) goto exit;
@@ -172,7 +173,7 @@ int vmaf_model_feature_overload(VmafModel *model, const char *feature_name,
     }
 
 exit:
-    err |= vmaf_dictionary_free(&opts_dict);
+    err |= vmaf_dictionary_free((VmafDictionary**)&opts_dict);
     return err;
 }
 
@@ -306,7 +307,7 @@ int vmaf_model_collection_feature_overload(VmafModel *model,
     int err = 0;
     for (unsigned i = 0; i < mc->cnt; i++) {
         VmafFeatureDictionary *d = NULL;
-        if (vmaf_dictionary_copy(&opts_dict, &d)) goto exit;
+        if (vmaf_dictionary_copy((VmafDictionary**)&opts_dict, (VmafDictionary**)&d)) goto exit;
         err |= vmaf_model_feature_overload(mc->model[i], feature_name, d);
     }
 
