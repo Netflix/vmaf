@@ -64,7 +64,7 @@ static int aggregate_vector_append(AggregateVector *aggregate_vector,
             sizeof(aggregate_vector->metric[0]) * aggregate_vector->capacity;
         void *metric = realloc(aggregate_vector->metric, initial_size * 2);
         if (!metric) return -ENOMEM;
-        memset(metric + initial_size, 0, initial_size);
+        memset((char*)metric + initial_size, 0, initial_size);
         aggregate_vector->metric = metric;
         aggregate_vector->capacity *= 2;
     }
@@ -181,7 +181,7 @@ static int feature_vector_append(FeatureVector *feature_vector,
             sizeof(feature_vector->score[0]) * feature_vector->capacity;
         void *score = realloc(feature_vector->score, initial_size * 2);
         if (!score) return -ENOMEM;
-        memset(score + initial_size, 0, initial_size);
+        memset((char*)score + initial_size, 0, initial_size);
         feature_vector->score = score;
         feature_vector->capacity *= 2;
     }
