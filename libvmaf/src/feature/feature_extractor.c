@@ -287,7 +287,7 @@ get_fex_list_entry(VmafFeatureExtractorContextPool *pool,
     entry.ctx_list = malloc(ctx_array_sz);
     if (!entry.ctx_list) goto fail;
     memset(entry.ctx_list, 0, ctx_array_sz);
-    int err = vmaf_dictionary_copy(&opts_dict, &entry.opts_dict);
+    vmaf_dictionary_copy(&opts_dict, &entry.opts_dict);
 
     if (pool->cnt >= pool->capacity) {
         size_t capacity = pool->capacity * 2;
