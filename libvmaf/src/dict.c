@@ -6,8 +6,8 @@
 #include "dict.h"
 #include "libvmaf/feature.h"
 
-const VmafDictionaryEntry *vmaf_dictionary_get(VmafDictionary **dict,
-                                               const char *key, uint64_t flags)
+VmafDictionaryEntry *vmaf_dictionary_get(VmafDictionary **dict,
+                                         const char *key, uint64_t flags)
 {
     if (!dict) return NULL;
     if (!(*dict)) return NULL;
@@ -83,7 +83,7 @@ int vmaf_dictionary_set(VmafDictionary **dict, const char *key, const char *val,
     free(buf);
 
     if (existing_entry && !(flags & VMAF_DICT_DO_NOT_OVERWRITE)) {
-        free(existing_entry->val);
+        free((char*)existing_entry->val);
         existing_entry->val = val_copy;
         return 0;
     }
@@ -101,7 +101,7 @@ int vmaf_dictionary_set(VmafDictionary **dict, const char *key, const char *val,
     return 0;
 
 free_val_copy:
-    free(val_copy);
+    free((char*)val_copy);
 fail:
     return -ENOMEM;
 }
@@ -128,8 +128,8 @@ int vmaf_dictionary_free(VmafDictionary **dict)
 
     VmafDictionary *d = *dict;
     for (unsigned i = 0; i < d->cnt; i++) {
-       if (d->entry[i].key) free(d->entry[i].key);
-       if (d->entry[i].val) free(d->entry[i].val);
+       if (d->entry[i].key) free((char*)d->entry[i].key);
+       if (d->entry[i].val) free((char*)d->entry[i].val);
     }
     free(d->entry);
     free(d);

@@ -212,8 +212,8 @@ int vmaf_model_collection_append(VmafModelCollection **model_collection,
         const size_t name_sz = strlen(model->name) - 5 + 1;
         mc->name = malloc(name_sz);
         if (!mc->name) goto fail_model;
-        memset(mc->name, 0, name_sz);
-        strncpy(mc->name, model->name, name_sz - 1);
+        memset((char*)mc->name, 0, name_sz);
+        strncpy((char*)mc->name, model->name, name_sz - 1);
     }
 
     if (mc->type != model->type) return -EINVAL;
@@ -244,7 +244,7 @@ void vmaf_model_collection_destroy(VmafModelCollection *model_collection)
     for (unsigned i = 0; i < model_collection->cnt; i++)
         vmaf_model_destroy(model_collection->model[i]);
     free(model_collection->model);
-    free(model_collection->name);
+    free((char*)model_collection->name);
     free(model_collection);
 }
 
