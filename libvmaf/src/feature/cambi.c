@@ -117,7 +117,7 @@ static const VmafOption options[] = {
         .offset = offsetof(CambiState, enc_width),
         .type = VMAF_OPT_TYPE_INT,
         .default_val.i = 0,
-        .min = 320,
+        .min = 180,
         .max = 7680,
     },
     {
@@ -126,8 +126,8 @@ static const VmafOption options[] = {
         .offset = offsetof(CambiState, enc_height),
         .type = VMAF_OPT_TYPE_INT,
         .default_val.i = 0,
-        .min = 200,
-        .max = 4320,
+        .min = 180,
+        .max = 7680,
     },
     {
         .name = "enc_bitdepth",
