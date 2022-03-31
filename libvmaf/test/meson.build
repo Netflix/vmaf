@@ -12,9 +12,9 @@ test_context = executable('test_context',
 )
 
 test_picture = executable('test_picture',
-    ['test.c', 'test_picture.c', '../src/picture.c', '../src/mem.c', '../src/ref.c'],
+    ['test.c', 'test_picture.c', '../src/picture.c', '../src/picture_pool.c', '../src/mem.c', '../src/ref.c', '../src/thread_pool.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
-    dependencies:[stdatomic_dependency],
+    dependencies:[stdatomic_dependency, thread_lib],
 )
 
 test_feature_collector = executable('test_feature_collector',

@@ -35,19 +35,37 @@ enum VmafPixelFormat {
 
 typedef struct VmafRef VmafRef;
 
-typedef struct {
+typedef struct VmafPicture {
     enum VmafPixelFormat pix_fmt;
     unsigned bpc;
     unsigned w[3], h[3];
     ptrdiff_t stride[3];
     void *data[3];
     VmafRef *ref;
+    void *priv;
 } VmafPicture;
 
 int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
                        unsigned bpc, unsigned w, unsigned h);
 
 int vmaf_picture_unref(VmafPicture *pic);
+
+typedef struct VmafPicturePoolConfig {
+    unsigned pic_cnt;
+    int (*alloc_picture_callback)(VmafPicture *pic, void *cookie);
+    int (*free_picture_callback)(VmafPicture *pic, void *cookie);
+    void *cookie;
+} VmafPicturePoolConfig;
+
+typedef struct VmafPicturePool VmafPicturePool;
+
+int vmaf_picture_pool_init(VmafPicturePool **pic_pool,
+                           VmafPicturePoolConfig cfg);
+
+int vmaf_picture_pool_request_picture(VmafPicturePool *pic_pool,
+                                      VmafPicture *pic);
+
+int vmaf_picture_pool_close(VmafPicturePool *pic_pool);
 
 #ifdef __cplusplus
 }

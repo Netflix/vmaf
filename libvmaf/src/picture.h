@@ -21,6 +21,16 @@
 
 #include "libvmaf/picture.h"
 
+typedef struct VmafPicturePrivate {
+    void *cookie;
+    int (*release_picture)(VmafPicture *pic, void *cookie);
+} VmafPicturePrivate;
+
+int vmaf_picture_priv_init(VmafPicture *pic);
+
 int vmaf_picture_ref(VmafPicture *dst, VmafPicture *src);
+
+int vmaf_picture_set_release_callback(VmafPicture *pic, void *cookie,
+                        int (*release_picture)(VmafPicture *pic, void *cookie));
 
 #endif /* __VMAF_SRC_PICTURE_H__ */
