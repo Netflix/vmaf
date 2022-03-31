@@ -65,7 +65,7 @@ static int set_option_double(double *dst, double default_val, const char *val,
 static int set_option_string(char **dst, char *default_val, const char *val) {
     *dst = default_val;
     if (!val) return 0;
-    *dst = val;
+    *dst = (char*)val;
     return 0;
 }
 
