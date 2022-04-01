@@ -112,12 +112,12 @@ static int yuv_input_fetch_frame(yuv_input *yuv, FILE *fin,
     
     (void) _tag;
 
-    unsigned xstride = (yuv->bitdepth>8)?2:1;
+    unsigned xstride = (yuv->bitdepth>8) ? 2 : 1;
     ptrdiff_t pic_sz = yuv->width * yuv->height * xstride;
     unsigned frame_c_w = yuv->width/yuv->dst_c_dec_h;
     unsigned frame_c_h = yuv->height/yuv->dst_c_dec_v;
-    unsigned c_w = (yuv->width+yuv->dst_c_dec_h-1)/yuv->dst_c_dec_h;
-    unsigned c_h = (yuv->height+yuv->dst_c_dec_v-1)/yuv->dst_c_dec_v;
+    unsigned c_w = (yuv->width+yuv->dst_c_dec_h-1) / yuv->dst_c_dec_h;
+    unsigned c_h = (yuv->height+yuv->dst_c_dec_v-1) / yuv->dst_c_dec_v;
     unsigned c_sz = c_w*c_h*xstride;
 
     _ycbcr[0].width = yuv->width;
@@ -140,8 +140,9 @@ static void yuv_input_close(yuv_input *_yuv){
   free(_yuv->dst_buf);
 }
 
-OC_EXTERN const raw_input_vtbl YUV_INPUT_VTBL={
+OC_EXTERN const video_input_vtbl YUV_INPUT_VTBL={
   (raw_input_open_func)yuv_input_open,
+  (video_input_open_func)NULL,
   (video_input_get_info_func)yuv_input_get_info,
   (video_input_fetch_frame_func)yuv_input_fetch_frame,
   (video_input_close_func)yuv_input_close

@@ -43,7 +43,7 @@ extern "C" {
 typedef struct video_input      video_input;
 typedef struct video_input_vtbl video_input_vtbl;
 typedef struct video_input_info video_input_info;
-struct video_input_plane{
+struct video_input_plane {
   uint32_t width;
   uint32_t height;
   uint32_t stride;
@@ -56,61 +56,54 @@ typedef void (*video_input_get_info_func)(void *_ctx,video_input_info *_ti);
 typedef int (*video_input_fetch_frame_func)(void *_ctx,FILE *_fin,
  video_input_ycbcr _ycbcr,char _tag[5]);
 typedef void (*video_input_close_func)(void *_ctx);
+typedef void* (*raw_input_open_func)(FILE *_fin,
+                                     unsigned width, unsigned height,
+                                     int pix_fmt,
+                                     unsigned bitdepth);
 
 /**Pluggable method table for accessing different formats.*/
-struct video_input_vtbl{
+struct video_input_vtbl {
+  raw_input_open_func           open_raw;
   video_input_open_func         open;
   video_input_get_info_func     get_info;
   video_input_fetch_frame_func  fetch_frame;
   video_input_close_func        close;
 };
 
-struct video_input{
+struct video_input {
   const video_input_vtbl *vtbl;
   void                   *ctx;
   FILE                   *fin;
 };
 
-typedef void* (*raw_input_open_func)(FILE *_fin,
-                                     unsigned width, unsigned height,
-                                     int pix_fmt,
-                                     unsigned bitdepth);
-
-int raw_input_open(video_input *_vid,FILE *_fin,
+int raw_input_open(video_input *_vid, FILE *_fin,
                    unsigned width, unsigned height,
                    int pix_fmt, unsigned bitdepth);
 
-typedef struct raw_input_vtbl {
-  raw_input_open_func           open;
-  video_input_get_info_func     get_info;
-  video_input_fetch_frame_func  fetch_frame;
-  video_input_close_func        close;
-} raw_input_vtbl;
-
-int video_input_open(video_input *_vid,FILE *_fin);
+int video_input_open(video_input *_vid, FILE *_fin);
 void video_input_close(video_input *_vid);
 
-void video_input_get_info(video_input *_vid,video_input_info *_ti);
-int video_input_fetch_frame(video_input *_vid,
- video_input_ycbcr _ycbcr,char _tag[5]);
+void video_input_get_info(video_input *_vid, video_input_info *_ti);
+int video_input_fetch_frame(video_input *_vid, video_input_ycbcr _ycbcr,
+                            char _tag[5]);
 
-typedef enum{
-  /**Chroma decimation by 2 in both the X and Y directions (4:2:0).
-     The Cb and Cr chroma planes are half the width and half the
-      height of the luma plane.*/
+typedef enum {
+  /** Chroma decimation by 2 in both the X and Y directions (4:2:0).
+   *  The Cb and Cr chroma planes are half the width and half the
+   *  height of the luma plane. */
   PF_420,
-  /**Currently reserved.*/
+  /** Currently reserved. */
   PF_RSVD,
-  /**Chroma decimation by 2 in the X direction (4:2:2).
-     The Cb and Cr chroma planes are half the width of the luma plane, but full
-      height.*/
+  /** Chroma decimation by 2 in the X direction (4:2:2).
+   *  The Cb and Cr chroma planes are half the width of the luma plane, 
+   *  but full height. */
   PF_422,
-  /**No chroma decimation (4:4:4).
-     The Cb and Cr chroma planes are full width and full height.*/
+  /** No chroma decimation (4:4:4).
+   *  The Cb and Cr chroma planes are full width and full height. */
   PF_444,
-  /**The total number of currently defined pixel formats.*/
+  /** The total number of currently defined pixel formats. */
   PF_NFORMATS
-}video_input_pixel_format;
+} video_input_pixel_format;
 
 struct video_input_info{
   int               frame_w;
@@ -130,7 +123,7 @@ struct video_input_info{
 };
 
 # if defined(__cplusplus)
-}
+} // extern "C"
 # endif
 
 #endif
