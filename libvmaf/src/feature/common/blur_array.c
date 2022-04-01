@@ -138,7 +138,6 @@ int release_blur_buf_slot(BLUR_BUF_ARRAY* arr, int search_frame_idx)
 void free_blur_buf(BLUR_BUF_ARRAY* arr)
 {
     int array_length = arr->actual_length;
-    size_t buf_size = arr->buffer_size;
     BLUR_BUF_STRUCT* s = arr->blur_buf_array;
 
     for (int i = 0; i < array_length; i++)
