@@ -116,39 +116,6 @@ static char *test_built_in_model()
 }
 #endif
 
-#if VMAF_FLOAT_FEATURES
-static char *test_model_collection()
-{
-    int err = 0;
-
-    const char *version = "vmaf_rb_v0.6.3";
-    VmafModel *model;
-    VmafModelCollection *model_collection = NULL;
-    const VmafModelConfig cfg = { 0 };
-
-    err = vmaf_model_collection_load_from_path(&model,
-                                               &model_collection, &cfg,
-                                               version);
-    mu_assert("problem during load_model_collection", !err);
-
-    const char *json_path = "../../model/vmaf_float_b_v0.6.3.json";
-    VmafModel *json_model;
-    VmafModelCollection *json_model_collection = NULL;
-    const VmafModelConfig json_cfg = { 0 };
-    err = vmaf_model_collection_load_from_path(&json_model,
-                                               &json_model_collection,
-                                               &json_cfg, json_path);
-    mu_assert("problem during load_model_collection", !err);
-
-    err = model_compare(json_model, model);
-    mu_assert("parsed json/built-in models do not match", !err);
-
-    vmaf_model_collection_destroy(model_collection);
-    vmaf_model_collection_destroy(json_model_collection);
-    return NULL;
-}
-#endif
-
 static char *test_model_load_and_destroy()
 {
     int err;
@@ -410,7 +377,6 @@ char *run_tests()
 #if VMAF_BUILT_IN_MODELS
     mu_run_test(test_built_in_model);
 #endif
-    //mu_run_test(test_model_collection);
     mu_run_test(test_model_load_and_destroy);
     mu_run_test(test_model_check_default_behavior_unset_flags);
     mu_run_test(test_model_check_default_behavior_set_flags);
