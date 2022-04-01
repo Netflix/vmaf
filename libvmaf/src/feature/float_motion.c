@@ -65,6 +65,9 @@ static const VmafOption options[] = {
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
 {
+    (void)pix_fmt;
+    (void)bpc;
+
     MotionState *s = fex->priv;
 
     s->float_stride = ALIGN_CEIL(w * sizeof(float));
