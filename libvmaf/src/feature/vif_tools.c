@@ -525,7 +525,7 @@ void vif_filter1d_xy_s(const float *f, const float *src1, const float *src2, flo
 {
 
 	int src1_px_stride = src1_stride / sizeof(float);
-	int src2_px_stride = src1_stride / sizeof(float);
+	int src2_px_stride = src2_stride / sizeof(float);
 	int dst_px_stride = dst_stride / sizeof(float);
 
 	/* if support avx */
