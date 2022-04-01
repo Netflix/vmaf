@@ -33,19 +33,19 @@
 { \
 	*accum = 0; \
 	for (int theta = 0; theta < 3; ++theta) { \
-			float sum = 0; \
-		float *src_ptr = angles[theta]; \
-			float *flt_ptr = flt_angles[theta]; \
-			sum += flt_ptr[src_px_stride + 1]; \
-			sum += flt_ptr[src_px_stride]; \
-			sum += flt_ptr[src_px_stride + 1]; \
-			sum += flt_ptr[1]; \
-			sum += FLOAT_ONE_BY_15 * fabsf(src_ptr[0]); \
-			sum += flt_ptr[1]; \
-			sum += flt_ptr[src_px_stride + 1]; \
-			sum += flt_ptr[src_px_stride]; \
-			sum += flt_ptr[src_px_stride + 1]; \
-			*accum += sum; \
+		const float *src_ptr = angles[theta]; \
+		const float *flt_ptr = flt_angles[theta]; \
+		float sum = 0; \
+		sum += flt_ptr[src_px_stride + 1]; \
+		sum += flt_ptr[src_px_stride]; \
+		sum += flt_ptr[src_px_stride + 1]; \
+		sum += flt_ptr[1]; \
+		sum += FLOAT_ONE_BY_15 * fabsf(src_ptr[0]); \
+		sum += flt_ptr[1]; \
+		sum += flt_ptr[src_px_stride + 1]; \
+		sum += flt_ptr[src_px_stride]; \
+		sum += flt_ptr[src_px_stride + 1]; \
+		*accum += sum; \
 	} \
 }
 
@@ -54,19 +54,19 @@
 { \
 	*accum = 0; \
 	for (int theta = 0; theta < 3; ++theta) { \
-		float *src_ptr = angles[theta]; \
-			float *flt_ptr = flt_angles[theta]; \
-			float sum = 0; \
-			sum += flt_ptr[src_px_stride + w - 2]; \
-			sum += flt_ptr[src_px_stride + w - 1]; \
-			sum += flt_ptr[src_px_stride + w - 1]; \
-			sum += flt_ptr[w - 2]; \
-			sum += FLOAT_ONE_BY_15 * fabsf(src_ptr[w - 1]); \
-			sum += flt_ptr[w - 1]; \
-			sum += flt_ptr[src_px_stride + w - 2]; \
-			sum += flt_ptr[src_px_stride + w - 1]; \
-			sum += flt_ptr[src_px_stride + w - 1]; \
-			*accum += sum; \
+		const float *src_ptr = angles[theta]; \
+		const float *flt_ptr = flt_angles[theta]; \
+		float sum = 0; \
+		sum += flt_ptr[src_px_stride + w - 2]; \
+		sum += flt_ptr[src_px_stride + w - 1]; \
+		sum += flt_ptr[src_px_stride + w - 1]; \
+		sum += flt_ptr[w - 2]; \
+		sum += FLOAT_ONE_BY_15 * fabsf(src_ptr[w - 1]); \
+		sum += flt_ptr[w - 1]; \
+		sum += flt_ptr[src_px_stride + w - 2]; \
+		sum += flt_ptr[src_px_stride + w - 1]; \
+		sum += flt_ptr[src_px_stride + w - 1]; \
+		*accum += sum; \
 	} \
 }
 
@@ -75,19 +75,19 @@
 { \
 	*accum = 0; \
 	for (int theta = 0; theta < 3; ++theta) { \
-			float sum = 0; \
-		float *src_ptr = angles[theta]; \
-			float *flt_ptr = flt_angles[theta]; \
-			sum += flt_ptr[src_px_stride + j - 1]; \
-			sum += flt_ptr[src_px_stride + j]; \
-			sum += flt_ptr[src_px_stride + j + 1]; \
-			sum += flt_ptr[j - 1]; \
-			sum += FLOAT_ONE_BY_15 * fabsf(src_ptr[j]); \
-			sum += flt_ptr[j + 1]; \
-			sum += flt_ptr[src_px_stride + j - 1]; \
-			sum += flt_ptr[src_px_stride + j]; \
-			sum += flt_ptr[src_px_stride + j + 1];  \
-			*accum += sum; \
+		const float *src_ptr = angles[theta]; \
+		const float *flt_ptr = flt_angles[theta]; \
+		float sum = 0; \
+		sum += flt_ptr[src_px_stride + j - 1]; \
+		sum += flt_ptr[src_px_stride + j]; \
+		sum += flt_ptr[src_px_stride + j + 1]; \
+		sum += flt_ptr[j - 1]; \
+		sum += FLOAT_ONE_BY_15 * fabsf(src_ptr[j]); \
+		sum += flt_ptr[j + 1]; \
+		sum += flt_ptr[src_px_stride + j - 1]; \
+		sum += flt_ptr[src_px_stride + j]; \
+		sum += flt_ptr[src_px_stride + j + 1];  \
+		*accum += sum; \
 	} \
 }
 
@@ -96,23 +96,23 @@
 { \
 	*accum = 0; \
 	for (int theta = 0; theta < 3; ++theta) { \
-			float sum = 0; \
-		float *src_ptr = angles[theta]; \
-			float *flt_ptr = flt_angles[theta]; \
+		const float *src_ptr = angles[theta]; \
+		const float *flt_ptr = flt_angles[theta]; \
+		float sum = 0; \
 		src_ptr += (src_px_stride * (h - 2)); \
-			flt_ptr += (src_px_stride * (h - 2)); \
-			sum += flt_ptr[1]; \
-			sum += flt_ptr[0]; \
-			sum += flt_ptr[1]; \
-			src_ptr += src_px_stride; \
-			flt_ptr += src_px_stride; \
-			sum += flt_ptr[1]; \
-			sum += FLOAT_ONE_BY_15 * fabsf(src_ptr[0]); \
-			sum += flt_ptr[1]; \
-			sum += flt_ptr[1]; \
-			sum += flt_ptr[0]; \
-			sum += flt_ptr[1]; \
-			*accum += sum; \
+		flt_ptr += (src_px_stride * (h - 2)); \
+		sum += flt_ptr[1]; \
+		sum += flt_ptr[0]; \
+		sum += flt_ptr[1]; \
+		src_ptr += src_px_stride; \
+		flt_ptr += src_px_stride; \
+		sum += flt_ptr[1]; \
+		sum += FLOAT_ONE_BY_15 * fabsf(src_ptr[0]); \
+		sum += flt_ptr[1]; \
+		sum += flt_ptr[1]; \
+		sum += flt_ptr[0]; \
+		sum += flt_ptr[1]; \
+		*accum += sum; \
 	} \
 }
 
@@ -121,23 +121,23 @@
 { \
 	*accum = 0; \
 	for (int theta = 0; theta < 3; ++theta) { \
-		float *src_ptr = angles[theta]; \
-			float *flt_ptr = flt_angles[theta]; \
-			float sum = 0; \
+		const float *src_ptr = angles[theta]; \
+		const float *flt_ptr = flt_angles[theta]; \
+		float sum = 0; \
 		src_ptr += (src_px_stride * (h - 2)); \
-			flt_ptr += (src_px_stride * (h - 2)); \
-			sum += flt_ptr[w - 2]; \
-			sum += flt_ptr[w - 1]; \
-			sum += flt_ptr[w - 1]; \
-			src_ptr += src_px_stride; \
-			flt_ptr += src_px_stride; \
-			sum += flt_ptr[w - 2]; \
-			sum += FLOAT_ONE_BY_15 * fabsf(src_ptr[w - 1]); \
-			sum += flt_ptr[w - 1]; \
-			sum += flt_ptr[w - 2]; \
-			sum += flt_ptr[w - 1]; \
-			sum += flt_ptr[w - 1]; \
-			*accum += sum; \
+		flt_ptr += (src_px_stride * (h - 2)); \
+		sum += flt_ptr[w - 2]; \
+		sum += flt_ptr[w - 1]; \
+		sum += flt_ptr[w - 1]; \
+		src_ptr += src_px_stride; \
+		flt_ptr += src_px_stride; \
+		sum += flt_ptr[w - 2]; \
+		sum += FLOAT_ONE_BY_15 * fabsf(src_ptr[w - 1]); \
+		sum += flt_ptr[w - 1]; \
+		sum += flt_ptr[w - 2]; \
+		sum += flt_ptr[w - 1]; \
+		sum += flt_ptr[w - 1]; \
+		*accum += sum; \
 	} \
 }
 
@@ -146,23 +146,23 @@
 { \
 	*accum = 0; \
 	for (int theta = 0; theta < 3; ++theta) { \
-		float *src_ptr = angles[theta]; \
-			float *flt_ptr = flt_angles[theta]; \
-			float sum = 0; \
+		const float *src_ptr = angles[theta]; \
+		const float *flt_ptr = flt_angles[theta]; \
+		float sum = 0; \
 		src_ptr += (src_px_stride * (h - 2)); \
-			flt_ptr += (src_px_stride * (h - 2)); \
-			sum += flt_ptr[j - 1];\
-			sum += flt_ptr[j]; \
-			sum += flt_ptr[j + 1]; \
-			src_ptr += src_px_stride; \
-			flt_ptr += src_px_stride; \
-			sum += flt_ptr[j - 1]; \
-			sum += FLOAT_ONE_BY_15 * fabsf(src_ptr[j]); \
-			sum += flt_ptr[j + 1]; \
-			sum += flt_ptr[j - 1]; \
-			sum += flt_ptr[j]; \
-			sum += flt_ptr[j + 1]; \
-			*accum += sum; \
+		flt_ptr += (src_px_stride * (h - 2)); \
+		sum += flt_ptr[j - 1];\
+		sum += flt_ptr[j]; \
+		sum += flt_ptr[j + 1]; \
+		src_ptr += src_px_stride; \
+		flt_ptr += src_px_stride; \
+		sum += flt_ptr[j - 1]; \
+		sum += FLOAT_ONE_BY_15 * fabsf(src_ptr[j]); \
+		sum += flt_ptr[j + 1]; \
+		sum += flt_ptr[j - 1]; \
+		sum += flt_ptr[j]; \
+		sum += flt_ptr[j + 1]; \
+		*accum += sum; \
 	} \
 }
 
@@ -171,25 +171,25 @@
 { \
 	*accum = 0; \
 	for (int theta = 0; theta < 3; ++theta) { \
-			float sum = 0; \
-			float *src_ptr = angles[theta]; \
-			float *flt_ptr = flt_angles[theta]; \
-			src_ptr += (src_px_stride * (i - 1)); \
-			flt_ptr += (src_px_stride * (i - 1)); \
-			sum += flt_ptr[j - 1]; \
-			sum += flt_ptr[j]; \
-			sum += flt_ptr[j + 1]; \
-			src_ptr += src_px_stride; \
-			flt_ptr += src_px_stride; \
-			sum += flt_ptr[j - 1]; \
-			sum += FLOAT_ONE_BY_15 * fabsf(src_ptr[j]); \
-			sum += flt_ptr[j + 1]; \
-			src_ptr += src_px_stride; \
-			flt_ptr += src_px_stride; \
-			sum += flt_ptr[j - 1]; \
-			sum += flt_ptr[j]; \
-			sum += flt_ptr[j + 1]; \
-			*accum += sum; \
+		const float *src_ptr = angles[theta]; \
+		const float *flt_ptr = flt_angles[theta]; \
+		float sum = 0; \
+		src_ptr += (src_px_stride * (i - 1)); \
+		flt_ptr += (src_px_stride * (i - 1)); \
+		sum += flt_ptr[j - 1]; \
+		sum += flt_ptr[j]; \
+		sum += flt_ptr[j + 1]; \
+		src_ptr += src_px_stride; \
+		flt_ptr += src_px_stride; \
+		sum += flt_ptr[j - 1]; \
+		sum += FLOAT_ONE_BY_15 * fabsf(src_ptr[j]); \
+		sum += flt_ptr[j + 1]; \
+		src_ptr += src_px_stride; \
+		flt_ptr += src_px_stride; \
+		sum += flt_ptr[j - 1]; \
+		sum += flt_ptr[j]; \
+		sum += flt_ptr[j + 1]; \
+		*accum += sum; \
 	} \
 }
 
@@ -198,53 +198,52 @@
 { \
 	*accum = 0; \
 	for (int theta = 0; theta < 3; ++theta) { \
-			float *src_ptr = angles[theta]; \
-			float *flt_ptr = flt_angles[theta]; \
-			float sum = 0; \
-			src_ptr += (src_px_stride * (i - 1)); \
-			flt_ptr += (src_px_stride * (i - 1)); \
-			sum += flt_ptr[1]; \
-			sum += flt_ptr[0]; \
-			sum += flt_ptr[1]; \
-			src_ptr += src_px_stride; \
-			flt_ptr += src_px_stride; \
-			sum += flt_ptr[1]; \
-			sum += FLOAT_ONE_BY_15 * fabsf(src_ptr[0]); \
-			sum += flt_ptr[1]; \
-			src_ptr += src_px_stride; \
-			flt_ptr += src_px_stride; \
-			sum += flt_ptr[1]; \
-			sum += flt_ptr[0]; \
-			sum += flt_ptr[1]; \
-			*accum += sum; \
+		const float *src_ptr = angles[theta]; \
+		const float *flt_ptr = flt_angles[theta]; \
+		float sum = 0; \
+		src_ptr += (src_px_stride * (i - 1)); \
+		flt_ptr += (src_px_stride * (i - 1)); \
+		sum += flt_ptr[1]; \
+		sum += flt_ptr[0]; \
+		sum += flt_ptr[1]; \
+		src_ptr += src_px_stride; \
+		flt_ptr += src_px_stride; \
+		sum += flt_ptr[1]; \
+		sum += FLOAT_ONE_BY_15 * fabsf(src_ptr[0]); \
+		sum += flt_ptr[1]; \
+		src_ptr += src_px_stride; \
+		flt_ptr += src_px_stride; \
+		sum += flt_ptr[1]; \
+		sum += flt_ptr[0]; \
+		sum += flt_ptr[1]; \
+		*accum += sum; \
 	} \
 }
 
 // i = 1,..,h-2, j = w-1: indices y: i-1,i,i+1, x: w-2,w-1,w-1 
 #define ADM_CM_THRESH_S_I_W_M_1(angles,flt_angles,src_px_stride,accum,w,h,i,j) \
 { \
-	float sum = 0; \
 	*accum = 0; \
 	for (int theta = 0; theta < 3; ++theta) { \
-		float *src_ptr = angles[theta]; \
-			float *flt_ptr = flt_angles[theta]; \
-			float sum = 0; \
+		const float *src_ptr = angles[theta]; \
+		const float *flt_ptr = flt_angles[theta]; \
+		float sum = 0; \
 		src_ptr += (src_px_stride * (i-1)); \
-			flt_ptr += (src_px_stride * (i - 1)); \
-			sum += flt_ptr[w - 2]; \
-			sum += flt_ptr[w - 1]; \
-			sum += flt_ptr[w - 1]; \
+		flt_ptr += (src_px_stride * (i - 1)); \
+		sum += flt_ptr[w - 2]; \
+		sum += flt_ptr[w - 1]; \
+		sum += flt_ptr[w - 1]; \
 		src_ptr += src_px_stride; \
-			flt_ptr += src_px_stride; \
-			sum += flt_ptr[w - 2]; \
-			sum += FLOAT_ONE_BY_15 * fabsf(src_ptr[w - 1]); \
-			sum += flt_ptr[w - 1]; \
+		flt_ptr += src_px_stride; \
+		sum += flt_ptr[w - 2]; \
+		sum += FLOAT_ONE_BY_15 * fabsf(src_ptr[w - 1]); \
+		sum += flt_ptr[w - 1]; \
 		src_ptr += src_px_stride; \
-			flt_ptr += src_px_stride; \
-			sum += flt_ptr[w - 2]; \
-			sum += flt_ptr[w - 1]; \
-			sum += flt_ptr[w - 1]; \
-			*accum += sum; \
+		flt_ptr += src_px_stride; \
+		sum += flt_ptr[w - 2]; \
+		sum += flt_ptr[w - 1]; \
+		sum += flt_ptr[w - 1]; \
+		*accum += sum; \
 	} \
 }
 
@@ -330,7 +329,7 @@ static const float dwt_7_9_basis_function_amplitudes[6][4] = {
  * lambda = 0 (finest scale), 1, 2, 3 (coarsest scale);
  * theta = 0 (ll), 1 (lh - vertical), 2 (hh - diagonal), 3(hl - horizontal).
  */
-FORCE_INLINE inline float dwt_quant_step(const struct dwt_model_params *params,
+static FORCE_INLINE inline float dwt_quant_step(const struct dwt_model_params *params,
         int lambda, int theta, double adm_norm_view_dist, int adm_ref_display_height)
 {
     // Formula (1), page 1165 - display visual resolution (DVR), in pixels/degree of visual angle. This should be 56.55
