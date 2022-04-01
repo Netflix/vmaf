@@ -62,7 +62,7 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
     float *num_array;
     float *den_array;
 
-    float *filter;
+    const float *filter;
     int filter_width;
 
     /* Offset pointers to adjust for convolution border handling. */
@@ -76,10 +76,9 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
     float *ref_sq_filt_adj;
     float *dis_sq_filt_adj;
     float *ref_dis_filt_adj = 0;
-#endif
-
     float *num_array_adj = 0;
     float *den_array_adj = 0;
+#endif
 
     /* Special handling of first scale. */
     const float *curr_ref_scale = ref;
@@ -236,9 +235,8 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
         vif_filter1d_sq_s(filter, curr_dis_scale, dis_sq_filt, tmpbuf, w, h, curr_dis_stride, buf_stride, filter_width);
         vif_filter1d_xy_s(filter, curr_ref_scale, curr_dis_scale, ref_dis_filt, tmpbuf, w, h, curr_ref_stride, curr_dis_stride, buf_stride, filter_width);
 
-		vif_statistic_s(mu1, mu2, NULL, ref_sq_filt, dis_sq_filt, ref_dis_filt, num_array, den_array,
-			w, h, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride,
-			vif_enhn_gain_limit);
+		vif_statistic_s(mu1, mu2, ref_sq_filt, dis_sq_filt, ref_dis_filt, num_array, den_array,
+			w, h, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, vif_enhn_gain_limit);
         mu1_adj = ADJUST(mu1);
         mu2_adj = ADJUST(mu2);
 
@@ -315,6 +313,8 @@ fail_or_end:
 
 int vifdiff(int (*read_frame)(float *ref_data, float *main_data, float *temp_data, int stride, void *user_data), void *user_data, int w, int h, const char *fmt)
 {
+    (void)fmt;
+
     double score = 0;
     double scores[4 * 2];
     double score_num = 0;
