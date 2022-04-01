@@ -72,12 +72,15 @@ static const VmafOption options[] = {
         .max = 4.0,
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
-    { NULL }
+    { 0 }
 };
 
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
 {
+    (void)pix_fmt;
+    (void)bpc;
+
     VifState *s = fex->priv;
     s->float_stride = ALIGN_CEIL(w * sizeof(float));
     s->ref = aligned_malloc(s->float_stride * h, 32);
