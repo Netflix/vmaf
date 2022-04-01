@@ -41,7 +41,7 @@ if is_asm_enabled
         # check NASM version
         nasm = find_program('nasm')
         if nasm.found()
-            nasm_r = run_command(nasm, '-v')
+            nasm_r = run_command(nasm, '-v', check: true)
 
             if nasm_r.returncode() != 0
                 error('failed running nasm to obtain its version')
@@ -190,7 +190,7 @@ if is_asm_enabled
           c_args : ['-mavx', '-mavx2'] + vmaf_cflags_common,
       )
 
-      platform_specific_cpu_objects += x86_avx2_static_lib.extract_all_objects()
+      platform_specific_cpu_objects += x86_avx2_static_lib.extract_all_objects(recursive: true)
 
       if is_avx512_enabled
         x86_avx512_sources = [
@@ -207,7 +207,7 @@ if is_asm_enabled
                      vmaf_cflags_common,
         )
 
-        platform_specific_cpu_objects += x86_avx512_static_lib.extract_all_objects()
+        platform_specific_cpu_objects += x86_avx512_static_lib.extract_all_objects(recursive: true)
       endif
 
     endif
@@ -321,8 +321,8 @@ libvmaf = library(
     ],
     objects : [
         platform_specific_cpu_objects,
-        libvmaf_feature_static_lib.extract_all_objects(),
-        libvmaf_cpu_static_lib.extract_all_objects(),
+        libvmaf_feature_static_lib.extract_all_objects(recursive: true),
+        libvmaf_cpu_static_lib.extract_all_objects(recursive: true),
     ],
     version : vmaf_soname_version,
     soversion : vmaf_soversion,
