@@ -60,17 +60,10 @@ static const double dwt2_db2_coeffs_hi_d[4] = { -0.129409522550921, -0.224143868
 
 #ifndef FLOAT_ONE_BY_30
 #define FLOAT_ONE_BY_30	0.0333333351
+#endif
 
 #ifndef FLOAT_ONE_BY_15
 #define FLOAT_ONE_BY_15 0.0666666701
-#endif
-
-static const float fcoeff_cm_thresh_s[3][3] =
-{
-	{ FLOAT_ONE_BY_30, FLOAT_ONE_BY_30, FLOAT_ONE_BY_30 },
-	{ FLOAT_ONE_BY_30, FLOAT_ONE_BY_15, FLOAT_ONE_BY_30 },
-	{ FLOAT_ONE_BY_30, FLOAT_ONE_BY_30, FLOAT_ONE_BY_30 }
-};
 #endif
 
 float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_factor)
@@ -142,7 +135,7 @@ void adm_decouple_s(const adm_dwt_band_t_s *ref, const adm_dwt_band_t_s *dis,
 #else
 	float oa, ta, diff;
 #endif
-	int angle_flag, angle_flag_pos, angle_flag_neg;
+	int angle_flag;
 	int i, j;
 
 	for (i = top; i < bottom; ++i) {
@@ -239,6 +232,9 @@ void adm_csf_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const a
                int orig_h, int scale, int w, int h, int src_stride, int dst_stride, double border_factor,
                double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode)
 {
+	(void)orig_h;
+	(void)adm_csf_mode;
+
 	const float *src_angles[3] = { src->band_h, src->band_v, src->band_d };
 	float *dst_angles[3] = { dst->band_h, dst->band_v, dst->band_d };
 	float *flt_angles[3] = { flt->band_h, flt->band_v, flt->band_d };
@@ -303,6 +299,9 @@ float adm_csf_den_scale_s(const adm_dwt_band_t_s *src, int orig_h, int scale,
                           int w, int h, int src_stride, double border_factor,
                           double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode)
 {
+	(void)adm_csf_mode;
+	(void)orig_h;
+
 	float *src_h = src->band_h, *src_v = src->band_v, *src_d = src->band_d;
 
 	int src_px_stride = src_stride / sizeof(float);
@@ -368,8 +367,8 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
                int flt_stride, int csf_a_stride, double border_factor, int scale,
                double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode)
 {
-	/* Take decouple_r as src and do dsf_s on decouple_r here to get csf_r */
-	float *src_h = src->band_h, *src_v = src->band_v, *src_d = src->band_d;
+	(void)flt_stride;
+	(void)adm_csf_mode;
 
 	// for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
 	// 1 to 4 (from finest scale to coarsest scale).
@@ -383,7 +382,6 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 	const float *flt_angles[3] = { csf_f->band_h, csf_f->band_v, csf_f->band_d };
 
 	int src_px_stride = src_stride / sizeof(float);
-	int flt_px_stride = flt_stride / sizeof(float);
 	int csf_px_stride = csf_a_stride / sizeof(float);
 
 	float xh, xv, xd, thr;
@@ -637,9 +635,9 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 	else /* Both borders outside frame */
 	{
 		for (i = start_row; i < end_row; ++i) {
-	accum_inner_h = 0;
-	accum_inner_v = 0;
-	accum_inner_d = 0;
+			accum_inner_h = 0;
+			accum_inner_v = 0;
+			accum_inner_d = 0;
 
 			/* j = 0 */
 			xh = src->band_h[i * src_px_stride] * rfactor[0];

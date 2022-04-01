@@ -60,16 +60,16 @@ static char *init_dwt_band_d(adm_dwt_band_t_d *band, char *data_top, size_t buf_
 
 static char *init_dwt_band_hvd(adm_dwt_band_t *band, char *data_top, size_t buf_sz_one)
 {
-	band->band_a = NULL;
-	band->band_h = (float *)data_top; data_top += buf_sz_one;
-	band->band_v = (float *)data_top; data_top += buf_sz_one;
-	band->band_d = (float *)data_top; data_top += buf_sz_one;
-	return data_top;
+    band->band_a = NULL;
+    band->band_h = (float *)data_top; data_top += buf_sz_one;
+    band->band_v = (float *)data_top; data_top += buf_sz_one;
+    band->band_d = (float *)data_top; data_top += buf_sz_one;
+    return data_top;
 }
 
 int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score,
-        double *score_num, double *score_den, double *scores, double border_factor, double adm_enhn_gain_limit,
-        double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode)
+                double *score_num, double *score_den, double *scores, double border_factor, double adm_enhn_gain_limit,
+                double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode)
 {
 #ifdef ADM_OPT_SINGLE_PRECISION
 	double numden_limit = 1e-2 * (w * h) / (1920.0 * 1080.0);
