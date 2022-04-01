@@ -804,6 +804,7 @@ static void y4m_input_close(y4m_input *_y4m){
 }
 
 OC_EXTERN const video_input_vtbl Y4M_INPUT_VTBL={
+  (raw_input_open_func)NULL,
   (video_input_open_func)y4m_input_open,
   (video_input_get_info_func)y4m_input_get_info,
   (video_input_fetch_frame_func)y4m_input_fetch_frame,
