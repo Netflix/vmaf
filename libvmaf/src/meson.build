@@ -247,6 +247,7 @@ libvmaf_feature_sources = [
     feature_src_dir + 'iqa/convolve.c',
     feature_src_dir + 'cambi.c',
     feature_src_dir + 'luminance_tools.c',
+    feature_src_dir + 'null.c',
 ]
 
 if float_enabled
