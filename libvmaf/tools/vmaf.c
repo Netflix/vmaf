@@ -310,6 +310,10 @@ int main(int argc, char *argv[])
     const time_t t0 = clock();
     unsigned picture_index;
     for (picture_index = 0 ;; picture_index++) {
+
+        if (c.frame_cnt && picture_index >= c.frame_cnt)
+            break;
+
         VmafPicture pic_ref, pic_dist;
         int ret1 = fetch_picture(&vid_ref, &pic_ref);
         int ret2 = fetch_picture(&vid_dist, &pic_dist);
