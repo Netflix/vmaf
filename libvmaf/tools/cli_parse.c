@@ -24,6 +24,7 @@ enum {
     ARG_SUBSAMPLE,
     ARG_CPUMASK,
     ARG_AOM_CTC,
+    ARG_FRAME_CNT,
 };
 
 static const struct option long_opts[] = {
@@ -44,6 +45,7 @@ static const struct option long_opts[] = {
     { "subsample",        1, NULL, ARG_SUBSAMPLE },
     { "cpumask",          1, NULL, ARG_CPUMASK },
     { "aom_ctc",          1, NULL, ARG_AOM_CTC },
+    { "frame_cnt",        1, NULL, ARG_FRAME_CNT },
     { "no_prediction",    0, NULL, 'n' },
     { "version",          0, NULL, 'v' },
     { "quiet",            0, NULL, 'q' },
@@ -78,6 +80,7 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --threads $unsigned:       number of threads to use\n"
             " --feature $string:         additional feature\n"
             " --cpumask: $bitmask        restrict permitted CPU instruction sets\n"
+            " --frame_cnt $unsigned:     maximum number of frames to process\n"
             " --subsample: $unsigned     compute scores only every N frames\n"
             " --quiet/-q:                disable FPS meter when run in a TTY\n"
             " --no_prediction/-n:        no prediction, extract features only\n"
@@ -367,6 +370,10 @@ void cli_parse(const int argc, char *const *const argv,
             break;
         case ARG_AOM_CTC:
             parse_aom_ctc(settings, optarg, argv[0]);
+            break;
+        case ARG_FRAME_CNT:
+            settings->frame_cnt =
+                parse_unsigned(optarg, ARG_FRAME_CNT, argv[0]);
             break;
         case 'n':
             settings->no_prediction = true;
