@@ -287,14 +287,39 @@ static void aom_ctc_v1_0(CLISettings *settings, const char *const app)
         parse_feature_config("psnr_hvs", app);
 }
 
+static void aom_ctc_v2_0(CLISettings *settings, const char *app)
+{
+    aom_ctc_v1_0(settings, app);
+}
+
+static void aom_ctc_v3_0(CLISettings *settings, const char *app)
+{
+    aom_ctc_v2_0(settings, app);
+    settings->feature_cfg[settings->feature_cnt++] =
+        parse_feature_config("cambi", app);
+}
+
 static void parse_aom_ctc(CLISettings *settings, const char *const optarg,
                           const char *const app)
 {
     if (!strcmp(optarg, "proposed"))
-        usage(app, "`--aom_ctc proposed` is deprecated. Use `--aom_ctc v1.0`");
-    else if (!strcmp(optarg, "v1.0") || !strcmp(optarg, "v2.0"))
+        usage(app, "`--aom_ctc proposed` is deprecated.");
+
+    if (!strcmp(optarg, "v1.0")) {
         aom_ctc_v1_0(settings, app);
-    else
+        return;
+    }
+
+    if (!strcmp(optarg, "v2.0")) {
+        aom_ctc_v2_0(settings, app);
+        return;
+    }
+
+    if (!strcmp(optarg, "v3.0")) {
+        aom_ctc_v3_0(settings, app);
+        return;
+    }
+
     usage(app, "bad aom_ctc version \"%s\"", optarg);
 }
 
