@@ -13,6 +13,7 @@ Using the versioned `--aom_ctc` preset, the following metrics will be computed a
 * CIEDE-2000
 * VMAF
 * VMAF NEG
+* CAMBI
 
 ## Usage
 Basic usage of the tool is described in the [`vmaf` README](../../libvmaf/tools/README.md). Use the versioned `--aom_ctc` presets to register and configure all metrics according to the AOM CTC. Basic AOM CTC usage is as follows:
@@ -46,9 +47,11 @@ There are also a few optional command-line settings you may find useful.
   * Precompiled static binaries [here](https://github.com/Netflix/vmaf/releases/tag/v2.1.0)
 
 * v2.0: `--aom_ctc v2.0`
-  * 2020-12-22.
   * Release: [libvmaf v2.2.1](https://github.com/Netflix/vmaf/releases/tag/v2.2.1)
   * Precompiled static binaries [here](https://github.com/Netflix/vmaf/releases/tag/v2.2.1)
 
 * v3.0: `--aom_ctc v3.0`
-  * TBD
+  * 2022-04-05
+  * Add CAMBI
+  * Release: [libvmaf v2.3.1](https://github.com/Netflix/vmaf/releases/tag/v2.3.1)
+  * Precompiled static binaries [here](https://github.com/Netflix/vmaf/releases/tag/v2.3.1)
