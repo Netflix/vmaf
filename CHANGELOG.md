@@ -1,5 +1,11 @@
 # Change Log
 
+## (2022-04-11) [v2.3.1]
+
+This is a minor release with some CAMBI extensions and speed-ups and adding it to AOM CTC v3, as well as a few minor fixes/cleanups.
+- CAMBI extensions: full reference, PQ eotf, up to 16 bit-depth support, max_log_contrast parameter.
+- CAMBI: option to output heatmaps.
+
 ## (2021-10-16) [v2.3.0]
 
 New release to add CAMBI (Contrast Aware Multiscale Banding Index).
