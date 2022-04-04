@@ -236,7 +236,6 @@ static char *test_filter_mode()
 {
     VmafPicture filtered_image, image;
     unsigned w = 5, h = 5;
-    uint8_t histogram[1024];
     uint16_t buffer[3 * w];
 
     int err = vmaf_picture_alloc(&filtered_image, VMAF_PIX_FMT_YUV400P, 10, w, h);
@@ -248,31 +247,32 @@ static char *test_filter_mode()
     uint16_t *filtered_data = filtered_image.data[0];
     ptrdiff_t output_stride = filtered_image.stride[0]>>1;
 
-    data[2 * stride + 2] = 1; data[3 * stride + 2] = 1;
-    data[2 * stride + 3] = 1; data[3 * stride + 3] = 1;
+    data[1 * stride + 2] = 1; data[2 * stride + 2] = 1;
+    data[1 * stride + 3] = 1; data[3 * stride + 3] = 1;
     memcpy(filtered_data, data, stride * h * sizeof(uint16_t));
-    filter_mode(&filtered_image, w, h, histogram, buffer);
+    filter_mode(&filtered_image, w, h, buffer);
     mu_assert("filter_mode: all zeros", data_pic_sum(&filtered_image)==0);
 
     data[3 * stride + 4] = 1;
     memcpy(filtered_data, data, stride * h * sizeof(uint16_t));
-    filter_mode(&filtered_image, w, h, histogram, buffer);
-    mu_assert("filter_mode: two ones sum check", data_pic_sum(&filtered_image)==2);
-    mu_assert("filter_mode: two ones (3,3) check", filtered_data[3 * output_stride + 3]==1);
-    mu_assert("filter_mode: two ones (2,3) check", filtered_data[2 * output_stride + 3]==1);
+    filter_mode(&filtered_image, w, h, buffer);
+
+    mu_assert("filter_mode: one one sum check", data_pic_sum(&filtered_image)==1);
+    mu_assert("filter_mode: zero (3,3) check", filtered_data[3 * output_stride + 3]==0);
+    mu_assert("filter_mode: one (2,3) check", filtered_data[2 * output_stride + 3]==1);
 
     data[0 * stride + 0] = 2;
     data[0 * stride + 1] = 1;
     memcpy(filtered_data, data, stride * h * sizeof(uint16_t));
-    filter_mode(&filtered_image, w, h, histogram, buffer);
+    filter_mode(&filtered_image, w, h, buffer);
     mu_assert("filter_mode: two in the corner check", filtered_data[0 * output_stride + 0]==2);
     data[1 * stride + 0] = 1;
     memcpy(filtered_data, data, stride * h * sizeof(uint16_t));
-    filter_mode(&filtered_image, w, h, histogram, buffer);
-    mu_assert("filter_mode: two in the corner and adjacent ones check", filtered_data[0 * output_stride + 0]==1);
+    filter_mode(&filtered_image, w, h, buffer);
+    mu_assert("filter_mode: two in the corner and adjacent one check", filtered_data[0 * output_stride + 1]==1);
     data[2 * stride + 0] = 2;
     memcpy(filtered_data, data, stride * h * sizeof(uint16_t));
-    filter_mode(&filtered_image, w, h, histogram, buffer);
+    filter_mode(&filtered_image, w, h, buffer);
     mu_assert("filter_mode: two in corner and edge check", filtered_data[1 * output_stride + 0]==2);
 
     vmaf_picture_unref(&image);
@@ -283,12 +283,26 @@ static char *test_filter_mode()
 
 static char *test_get_mask_index()
 {
-    uint16_t index = get_mask_index(1980, 1080, 7);
-    mu_assert("get_mask_index wrong index for (1980, 1080)", index==21);
-    index = get_mask_index(3840, 2160, 7);
+    uint16_t index = get_mask_index(3840, 2160, 7);
     mu_assert("get_mask_index wrong index for (3840, 2160)", index==24);
+    index = get_mask_index(2560, 1440, 7);
+    mu_assert("get_mask_index wrong index for (2560, 1440)", index==22);
+    index = get_mask_index(1980, 1080, 7);
+    mu_assert("get_mask_index wrong index for (1980, 1080)", index==21);
+    index = get_mask_index(1280, 720, 7);
+    mu_assert("get_mask_index wrong index for (1280, 720)", index==19);
+    index = get_mask_index(960, 540, 7);
+    mu_assert("get_mask_index wrong index for (960, 540)", index==18);
+    index = get_mask_index(640, 360, 7);
+    mu_assert("get_mask_index wrong index for (640, 360)", index==16);
+    index = get_mask_index(480, 270, 7);
+    mu_assert("get_mask_index wrong index for (480, 270)", index==15);
+    index = get_mask_index(320, 180, 7);
+    mu_assert("get_mask_index wrong index for (320, 180)", index==13);
+    index = get_mask_index(6000, 4000, 7);
+    mu_assert("get_mask_index wrong index for (6000, 4000)", index==27);
     index = get_mask_index(960, 540, 5);
-    mu_assert("get_mask_index wrong index for (960, 540)", index==3);
+    mu_assert("get_mask_index wrong index for (960, 540)", index==6);
     return NULL;
 }
 
@@ -348,7 +362,8 @@ static char *test_calculate_c_values()
     get_sample_image(&input, 0);
     get_sample_image(&mask, 8);
     calculate_c_values(&input, &mask, combined_c_values, histograms, window_size,
-                       num_diffs, tvi_for_diff, diff_weights, all_diffs, width, height);
+                       num_diffs, tvi_for_diff, diff_weights, all_diffs, width, height, 
+                       increment_range, decrement_range);
 
     for (unsigned i=0; i<16; i++) {
         mu_assert("calculate_c_values error ws=3",
@@ -362,7 +377,8 @@ static char *test_calculate_c_values()
     window_size = 9;
     uint16_t histograms_8x8[8*1032];
     calculate_c_values(&input_8x8, &mask_8x8, combined_c_values_8x8, histograms_8x8,
-                       window_size, num_diffs, tvi_for_diff, diff_weights, all_diffs, 8, 8);
+                       window_size, num_diffs, tvi_for_diff, diff_weights, all_diffs, 8, 8, 
+                       increment_range, decrement_range);
 
     double sum = 0;
     for (unsigned i=0; i<64; i++)
@@ -398,6 +414,24 @@ static char *test_c_value_pixel()
     value = 4;
     c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds, 0, 1);
     mu_assert("c_value_all_diffs for value=4, weights=4,5", almost_equal(c_value, 0));
+    return NULL;
+}
+
+static char *test_update_range()
+{
+    uint16_t arr[15] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
+    increment_range(arr, 5, 10);
+    mu_assert("increment_range i=5", arr[5] == 6);
+    mu_assert("increment_range i=7", arr[7] == 6);
+    mu_assert("increment_range i=9", arr[9] == 6);
+    mu_assert("increment_range i=10", arr[10] == 5);
+
+    decrement_range(arr, 2, 6);
+    mu_assert("decrement_range i=2", arr[2] == 4);
+    mu_assert("decrement_range i=4", arr[4] == 4);
+    mu_assert("decrement_range i=5", arr[5] == 5);
+    mu_assert("decrement_range i=8", arr[8] == 6);
+
     return NULL;
 }
 
@@ -478,20 +512,48 @@ static char *test_weight_scores_per_scale()
 static char *test_adjust_window_size()
 {
     uint16_t window_size = 63;
-    adjust_window_size(&window_size, 3840);
-    mu_assert("adjusted window size for input=3840, ws=63", window_size==63);
+    adjust_window_size(&window_size, 3840, 2160);
+    mu_assert("adjusted window size for input=(3840, 2160), ws=63", window_size==63);
 
     window_size = 63;
-    adjust_window_size(&window_size, 1920);
-    mu_assert("adjusted window size for input=1920, ws=63", window_size==31);
+    adjust_window_size(&window_size, 2560, 1440);
+    mu_assert("adjusted window size for input=(2560, 1440), ws=63", window_size==42);
+
+    window_size = 63;
+    adjust_window_size(&window_size, 1920, 1080);
+    mu_assert("adjusted window size for input=(1920, 1080), ws=63", window_size==31);
+
+    window_size = 63;
+    adjust_window_size(&window_size, 1280, 720);
+    mu_assert("adjusted window size for input=(1280, 720), ws=63", window_size==21);
+
+    window_size = 63;
+    adjust_window_size(&window_size, 960, 540);
+    mu_assert("adjusted window size for input=(960, 540), ws=63", window_size==15);
+
+    window_size = 63;
+    adjust_window_size(&window_size, 640, 360);
+    mu_assert("adjusted window size for input=(640, 360), ws=63", window_size==10);
+
+    window_size = 63;
+    adjust_window_size(&window_size, 480, 270);
+    mu_assert("adjusted window size for input=(480, 270), ws=63", window_size==7);
+
+    window_size = 63;
+    adjust_window_size(&window_size, 320, 180);
+    mu_assert("adjusted window size for input=(320, 180), ws=63", window_size==5);
+
+    window_size = 63;
+    adjust_window_size(&window_size, 6000, 4000);
+    mu_assert("adjusted window size for input=(6000, 4000), ws=63", window_size==105);
 
     window_size = 60;
-    adjust_window_size(&window_size, 1920);
-    mu_assert("adjusted window size for input=1920, ws=60", window_size==30);
+    adjust_window_size(&window_size, 1920, 1080);
+    mu_assert("adjusted window size for input=(1920, 1080), ws=60", window_size==30);
 
     window_size = 31;
-    adjust_window_size(&window_size, 1280);
-    mu_assert("adjusted window size for input=1280, ws=31", window_size==10);
+    adjust_window_size(&window_size, 1280, 720);
+    mu_assert("adjusted window size for input=(1280, 720), ws=31", window_size==10);
 
     return NULL;
 }
@@ -624,6 +686,7 @@ char *run_tests()
 
     mu_run_test(test_calculate_c_values);
     mu_run_test(test_c_value_pixel);
+    mu_run_test(test_update_range);
 
     mu_run_test(test_spatial_pooling);
     mu_run_test(test_quick_select);
