@@ -78,7 +78,6 @@ setup(
         "sureal>=0.4.2",
         "dill>=0.3.1",
     ],
-    setup_requires=["cython", "numpy"],
     entry_points = {
         'console_scripts': [
             'run_cleaning_cache=vmaf.script.run_cleaning_cache:main',
