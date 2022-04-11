@@ -58,7 +58,6 @@ This will install the following files:
 │   └── vmaf
 ├── include
 │   └── libvmaf
-│       ├── compute_vmaf.h
 │       ├── feature.h
 │       ├── libvmaf.h
 │       ├── model.h
