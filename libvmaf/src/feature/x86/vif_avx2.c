@@ -148,9 +148,6 @@ void vif_statistic_8_avx2(struct VifPublicState *s, float *num, float *den, unsi
             __m256i accum_mu2_left, accum_mu2_right;
             __m256i accum_mu1_left, accum_mu1_right;
 
-            const uint8_t *ref = (uint8_t*)buf.ref;
-            const uint8_t *dis = (uint8_t*)buf.dis;
-
             __m256i f0 = _mm256_set1_epi16(vif_filt_s0[fwidth / 2]);
             __m256i r0 = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.ref) + (buf.stride * i) + jj)));
             __m256i d0 = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.dis) + (buf.stride * i) + jj)));
@@ -165,11 +162,8 @@ void vif_statistic_8_avx2(struct VifPublicState *s, float *num, float *den, unsi
             multiply3(accum_ref_dis_left, accum_ref_dis_right, d0, r0, f0);
 
             for (unsigned int tap = 0; tap < fwidth / 2; tap++) {
-                int ii = i - fwidth / 2;
                 int ii_check = i - fwidth / 2 + tap;
                 int ii_check_1 = i + fwidth / 2 - tap;
-                const uint8_t *ref = (uint8_t*)buf.ref;
-                const uint8_t *dis = (uint8_t*)buf.dis;
 
                 __m256i f0 = _mm256_set1_epi16(vif_filt_s0[tap]);
                 __m256i r0 = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.ref) + (buf.stride * ii_check) + jj)));
@@ -558,11 +552,6 @@ void vif_statistic_16_avx2(struct VifPublicState *s, float *num, float *den, uns
         int ii = i - fwidth_half;
         int n = w >> 4;
         for (unsigned j = 0; j < n << 4; j = j + 16) {
-            uint32_t accum_mu1 = 0;
-            uint32_t accum_mu2 = 0;
-            uint64_t accum_ref = 0;
-            uint64_t accum_dis = 0;
-            uint64_t accum_ref_dis = 0;
             __m256i mask2 = _mm256_set_epi32(7, 5, 3, 1, 6, 4, 2, 0);
             int ii_check = ii;
 
@@ -579,7 +568,6 @@ void vif_statistic_16_avx2(struct VifPublicState *s, float *num, float *den, uns
                             _mm256_setzero_si256();
             __m256i addnum = _mm256_set1_epi32(add_shift_round_VP);
             for (unsigned fi = 0; fi < fwidth; ++fi, ii_check = ii + fi) {
-                const uint16_t fcoeff = vif_filt[fi];
                 __m256i f1 = _mm256_set1_epi16(vif_filt[fi]);
                 __m256i ref1 = _mm256_loadu_si256(
                     (__m256i *)(ref + (ii_check * stride) + j));
@@ -1073,7 +1061,6 @@ void vif_statistic_16_avx2(struct VifPublicState *s, float *num, float *den, uns
 void vif_subsample_rd_8_avx2(VifBuffer buf, unsigned w, unsigned h) {
     const unsigned fwidth = vif_filter1d_width[1];
     const uint16_t *vif_filt_s1 = vif_filter1d_table[1];
-    int fwidth_x = (fwidth % 2 == 0) ? fwidth : fwidth + 1;
     const uint8_t *ref = (uint8_t *)buf.ref;
     const uint8_t *dis = (uint8_t *)buf.dis;
     const ptrdiff_t stride = buf.stride_16 / sizeof(uint16_t);
@@ -1391,7 +1378,6 @@ void vif_subsample_rd_16_avx2(VifBuffer buf, unsigned w, unsigned h, int scale,
             accumr_lo = accumr_hi = accumd_lo = accumd_hi = rmul1 = rmul2 =
                 dmul1 = dmul2 = _mm256_setzero_si256();
             for (unsigned fi = 0; fi < fwidth; ++fi, ii_check = ii + fi) {
-                const uint16_t fcoeff = vif_filt[fi];
                 __m256i f1 = _mm256_set1_epi16(vif_filt[fi]);
                 __m256i ref1 = _mm256_loadu_si256(
                     (__m256i *)(ref + (ii_check * stride) + j));
@@ -1461,10 +1447,8 @@ void vif_subsample_rd_16_avx2(VifBuffer buf, unsigned w, unsigned h, int scale,
         for (unsigned j = 0; j < n << 3; j = j + 8) {
             int jj = j - fwidth_half;
             int jj_check = jj;
-            __m256i accumdl, accumrlo, accumdlo, accumrhi, accumdhi;
+            __m256i accumrlo, accumdlo, accumrhi, accumdhi;
             accumrlo = accumdlo = accumrhi = accumdhi = _mm256_setzero_si256();
-            const uint16_t *ref = (uint16_t *)buf.tmp.ref_convol;
-            const uint16_t *dis = (uint16_t *)buf.dis;
             for (unsigned fj = 0; fj < fwidth; ++fj, jj_check = jj + fj) {
                 __m256i refconvol = _mm256_loadu_si256(
                     (__m256i *)(buf.tmp.ref_convol + jj_check));
