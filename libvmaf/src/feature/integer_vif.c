@@ -223,9 +223,6 @@ void vif_statistic_8(struct VifPublicState *s, float *num, float *den, unsigned 
     int64_t accum_den_log = 0.0;
     int64_t accum_num_non_log = 0;
     int64_t accum_den_non_log = 0;
-    uint32_t *xx_filt = buf.ref_sq;
-    uint32_t *yy_filt = buf.dis_sq;
-    uint32_t *xy_filt = buf.ref_dis;
     static const int32_t sigma_nsq = 65536 << 1;
     uint16_t *log2_table = s->log2_table;
     double vif_enhn_gain_limit = s->vif_enhn_gain_limit;
@@ -349,9 +346,6 @@ void vif_statistic_16(struct VifPublicState *s, float *num, float *den, unsigned
     int64_t accum_den_log = 0.0;
     int64_t accum_num_non_log = 0;
     int64_t accum_den_non_log = 0;
-    uint32_t *xx_filt = buf.ref_sq;
-    uint32_t *yy_filt = buf.dis_sq;
-    uint32_t *xy_filt = buf.ref_dis;
     static const int32_t sigma_nsq = 65536 << 1;
     uint16_t *log2_table = s->log2_table;
     double vif_enhn_gain_limit = s->vif_enhn_gain_limit;
@@ -426,7 +420,7 @@ void vif_statistic_16(struct VifPublicState *s, float *num, float *den, unsigned
                 accum_dis += fcoeff * ((uint64_t)buf.tmp.dis[jj_check]);
                 accum_ref_dis += fcoeff * ((uint64_t)buf.tmp.ref_dis[jj_check]);
             }
-            const ptrdiff_t dst_stride = buf.stride_32 / sizeof(uint32_t);
+
             uint32_t mu1_val = accum_mu1;
             uint32_t mu2_val = accum_mu2;
             uint32_t mu1_sq_val = (uint32_t)((((uint64_t)mu1_val * mu1_val)
@@ -492,8 +486,6 @@ VifResiduals computeLineResiduals(VifPublicState *s, int from, int to, int bpc, 
     const unsigned fwidth = vif_filter1d_width[scale];
     const uint16_t *vif_filt = vif_filter1d_table[scale];
     VifBuffer buf = s->buf;
-    const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
-    int fwidth_half = fwidth >> 1;
     int32_t add_shift_round_HP, shift_HP;
     int32_t add_shift_round_VP, shift_VP;
     int32_t add_shift_round_VP_sq, shift_VP_sq;
