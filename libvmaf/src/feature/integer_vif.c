@@ -46,6 +46,7 @@ typedef struct VifState {
     void (*subsample_rd_16)(VifBuffer buf, unsigned w, unsigned h, int scale, int bpc);
     void (*vif_statistic_8)(VifPublicState *s, float *num, float *den, unsigned w, unsigned h);
     void (*vif_statistic_16)(VifPublicState *s, float *num, float *den, unsigned w, unsigned h, int bpc, int scale);
+    VmafDictionary *feature_name_dict;
 } VifState;
 
 static const VmafOption options[] = {
@@ -60,7 +61,7 @@ static const VmafOption options[] = {
 		.name = "vif_enhn_gain_limit",
 		.help = "enhancement gain imposed on vif, must be >= 1.0, "
 				"where 1.0 means the gain is completely disabled",
-		.offset = offsetof(VifState, vif_enhn_gain_limit),
+		.offset = offsetof(VifState, public.vif_enhn_gain_limit),
 		.type = VMAF_OPT_TYPE_DOUBLE,
 		.default_val.d = DEFAULT_VIF_ENHN_GAIN_LIMIT,
 		.min = 1.0,
@@ -625,7 +626,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 
     log_generate(s->public.log2_table);
 
-    (void) pix_fmt;
+    (void)pix_fmt;
     const bool hbd = bpc > 8;
 
     s->public.buf.stride = ALIGN_CEIL(w << hbd);
@@ -636,10 +637,6 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     const size_t frame_size = s->public.buf.stride * h;
     const size_t pad_size = s->public.buf.stride * 8;
     const size_t data_sz =
-        2 * (pad_size + frame_size + pad_size) + 2 * (h * s->buf.stride_16) +
-        5 * (s->buf.stride_32) + 7 * s->buf.stride_tmp;
-    unsigned char* data = aligned_malloc(data_sz, MAX_ALIGN);
-    if (!data) return -ENOMEM;
         2 * (pad_size + frame_size + pad_size) + 2 * (h * s->public.buf.stride_16) +
         5 * (s->public.buf.stride_32) + 7 * s->public.buf.stride_tmp;
     unsigned char *data = aligned_malloc(data_sz, MAX_ALIGN);
