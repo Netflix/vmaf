@@ -550,7 +550,7 @@ void vif_statistic_16_avx2(struct VifPublicState *s, float *num, float *den, uns
     for (unsigned i = 0; i < h; ++i) {
         // VERTICAL
         int ii = i - fwidth_half;
-        int n = w >> 4;
+        unsigned n = w >> 4;
         for (unsigned j = 0; j < n << 4; j = j + 16) {
             __m256i mask2 = _mm256_set_epi32(7, 5, 3, 1, 6, 4, 2, 0);
             int ii_check = ii;
@@ -1077,7 +1077,7 @@ void vif_subsample_rd_8_avx2(VifBuffer buf, unsigned w, unsigned h) {
 
     for (unsigned i = 0; i < h / 2; i ++) {
         // VERTICAL
-        int n = w >> 4;
+        unsigned n = w >> 4;
         for (unsigned j = 0; j < n << 4; j = j + 16) {
             int ii = i * 2 - fwidth_half;
             int ii_check = ii;
@@ -1369,7 +1369,7 @@ void vif_subsample_rd_16_avx2(VifBuffer buf, unsigned w, unsigned h, int scale,
     for (unsigned i = 0; i < h / 2; i++) {
         // VERTICAL
 
-        int n = w >> 4;
+        unsigned n = w >> 4;
         int ii = i * 2 - fwidth_half;
         for (unsigned j = 0; j < n << 4; j = j + 16) {
             int ii_check = ii;
