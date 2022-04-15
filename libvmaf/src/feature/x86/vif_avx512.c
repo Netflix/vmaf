@@ -1709,9 +1709,11 @@ void vif_filter1d_rd_8_avx512(VifBuffer buf, unsigned w, unsigned h)
     const uint8_t *dis = (uint8_t *)buf.dis;
     const ptrdiff_t stride = buf.stride_16 / sizeof(uint16_t);
     __m512i addnum = _mm512_set1_epi32(32768);
-    __m512i mask1 = _mm512_set_epi16(60, 56, 28, 24, 52, 48, 20, 16, 44,
-                                     40, 12, 8, 36, 32, 4, 0, 60, 56, 28, 24,
-                                     52, 48, 20, 16, 44, 40, 12, 8, 36, 32, 4, 0);
+    const int M = 1 << 16;
+    __m512i mask1 = _mm512_set_epi32(60 * M + 56, 28 * M + 24, 52 * M + 48, 20 * M + 16,
+                                     44 * M + 40, 12 * M +  8, 36 * M + 32,  4 * M +  0,
+                                     60 * M + 56, 28 * M + 24, 52 * M + 48, 20 * M + 16,
+                                     44 * M + 40, 12 * M +  8, 36 * M + 32,  4 * M + 0);
     __m512i x = _mm512_set1_epi32(128);
     __m512i mask2 = _mm512_set_epi64(11, 10, 3, 2, 9, 8, 1, 0);
     __m512i mask3 = _mm512_set_epi64(15, 14, 7, 6, 13, 12, 5, 4);
@@ -2174,10 +2176,11 @@ void vif_filter1d_rd_16_avx512(VifBuffer buf, unsigned w, unsigned h, int scale,
             accumrlo = _mm512_srli_epi32(accumrlo, 0x10);
             accumrhi = _mm512_srli_epi32(accumrhi, 0x10);
 
-            __m512i mask2 = _mm512_set_epi16(60, 56, 28, 24, 52, 48, 20, 16,
-                                             44, 40, 12, 8, 36, 32, 4, 0, 60,
-                                             56, 28, 24, 52, 48, 20, 16, 44,
-                                             40, 12, 8, 36, 32, 4, 0);
+            const int M = 1 << 16;
+            __m512i mask2 = _mm512_set_epi32(60 * M + 56, 28 * M + 24, 52 * M + 48, 20 * M + 16,
+                                             44 * M + 40, 12 * M +  8, 36 * M + 32,  4 * M +  0,
+                                             60 * M + 56, 28 * M + 24, 52 * M + 48, 20 * M + 16,
+                                             44 * M + 40, 12 * M +  8, 36 * M + 32,  4 * M +  0);
             _mm256_storeu_si256((__m256i *)(buf.mu1 + (stride16 * i) + j),
                                 _mm512_castsi512_si256(_mm512_permutex2var_epi16(accumrlo, mask2, accumrhi)));
             _mm256_storeu_si256((__m256i *)(buf.mu2 + (stride16 * i) + j),
