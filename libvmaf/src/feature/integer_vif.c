@@ -481,7 +481,9 @@ void vif_statistic_16(struct VifPublicState *s, float *num, float *den, unsigned
     den[0] = accum_den_log / 2048.0 + accum_den_non_log;
 }
 
-VifResiduals computeLineResiduals(VifPublicState *s, int from, int to, int bpc, int scale) {
+VifResiduals computeLineResiduals(VifPublicState *s, unsigned from, unsigned to,
+                                  int bpc, int scale)
+{
     VifResiduals residuals = { 0 };
     const unsigned fwidth = vif_filter1d_width[scale];
     const uint16_t *vif_filt = vif_filter1d_table[scale];

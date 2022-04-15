@@ -123,7 +123,8 @@ void vif_statistic_16(struct VifPublicState *s, float *num, float *den, unsigned
  * This is a support method for block based vip_statistic_xxx method and is typically called
  * only when to is not a multiple of the block size, with from = (to / block_size) + block_size
  */
-VifResiduals computeLineResiduals(VifPublicState *s, int from, int to, int bpc, int scale);
+VifResiduals computeLineResiduals(VifPublicState *s, unsigned from, unsigned to,
+                                  int bpc, int scale);
 
 
 #ifdef _MSC_VER
