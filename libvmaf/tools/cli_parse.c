@@ -189,8 +189,8 @@ static CLIModelConfig parse_model_config(const char *const optarg,
             } else if (!strcmp(key, "enable_transform")) {
                 val = "true";
             } else {
-                usage(app, "Problem parsing model \"%s\","
-                           " bad option string \"%s\".\n", key);
+                usage(app, "Problem parsing model, "
+                           "bad option string \"%s\".", key);
             }
         }
 
