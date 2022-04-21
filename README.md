@@ -6,7 +6,7 @@
 [![ffmpeg](https://github.com/Netflix/vmaf/workflows/ffmpeg/badge.svg)](https://github.com/Netflix/vmaf/actions?query=workflow%3Affmpeg)
 [![Docker](https://github.com/Netflix/vmaf/workflows/Docker/badge.svg)](https://github.com/Netflix/vmaf/actions?query=workflow%3ADocker)
 
-VMAF is a perceptual video quality assessment algorithm developed by Netflix. This software package includes a stand-alone C library `libvmaf` and its wrapping Python library. The Python library also provides a set of tools that allows a user to train and test a custom VMAF model.
+VMAF is an [Emmy-winning](https://theemmys.tv/) perceptual video quality assessment algorithm developed by Netflix. This software package includes a stand-alone C library `libvmaf` and its wrapping Python library. The Python library also provides a set of tools that allows a user to train and test a custom VMAF model.
 
 Read [this](https://medium.com/netflix-techblog/toward-a-practical-perceptual-video-quality-metric-653f208b9652) tech blog post for an overview, [this](https://medium.com/netflix-techblog/vmaf-the-journey-continues-44b51ee9ed12) post for the tips of best practices, and [this](https://netflixtechblog.com/toward-a-better-quality-metric-for-the-video-community-7ed94e752a30) post for our latest efforts on speed optimization, new API design and the introduction of a codec evaluation-friendly [NEG mode](resource/doc/models.md#disabling-enhancement-gain-neg-mode).
 
