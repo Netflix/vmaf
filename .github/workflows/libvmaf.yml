@@ -79,7 +79,6 @@ jobs:
         run: |
           mkdir -p ~/.ccache && sudo chown -R $(whoami) ~/.ccache
           pip install tox
-          make -C third_party/libsvm -j lib
           tox -c python/ -e py -- -v -p no:warnings -m 'main or lib' --doctest-modules
 
       - name: Get binary path & Current Release
