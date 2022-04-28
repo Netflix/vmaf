@@ -4,6 +4,7 @@ from abc import ABCMeta, abstractmethod
 import os
 import pickle
 from numbers import Number
+from libsvm import svmutil
 
 from sklearn.metrics import f1_score
 import numpy as np
@@ -893,11 +894,6 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
         nu = model_param['nu'] if 'nu' in model_param else 0.5
         cache_size = model_param['cache_size'] if 'cache_size' in model_param else 200
 
-        try:
-            svmutil
-        except NameError:
-            from vmaf import svmutil
-
         if kernel == 'rbf':
             ktype_int = svmutil.RBF
         elif kernel == 'linear':
@@ -930,10 +926,6 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
     @override(TrainTestModel)
     def _predict(cls, model, xs_2d):
         # override TrainTestModel._predict
-        try:
-            svmutil
-        except NameError:
-            from vmaf import svmutil
 
         f = list(xs_2d)
         for i, item in enumerate(f):
@@ -951,10 +943,6 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
             f'format must be in {supported_formats}, but got: {format}'
 
         if format == 'pkl':
-            try:
-                svmutil
-            except NameError:
-                from vmaf import svmutil
 
             # special handling of libsvmnusvr: save .model differently
             info_to_save = {'param_dict': param_dict,
@@ -980,10 +968,6 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
 
     @staticmethod
     def _to_json(param_dict, model_dict, tmp_svm_filename):
-        try:
-            svmutil
-        except NameError:
-            from vmaf import svmutil
 
         info_to_save = {'param_dict': param_dict,
                         'model_dict': model_dict.copy()}
@@ -1002,11 +986,6 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
         format = more['format'] if 'format' in more else 'pkl'
         supported_format = ['pkl', 'json']
         assert format in supported_format, f'format must be in {supported_format} but is {format}'
-
-        try:
-            svmutil
-        except NameError:
-            from vmaf import svmutil
 
         # override TrainTestModel._from_info_loaded
         train_test_model = cls(
@@ -1060,10 +1039,6 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
         :param logger:
         :return:
         """
-        try:
-            svmutil
-        except NameError:
-            from vmaf import svmutil
 
         # assert additional_model_dict
         assert 'feature_names' in additional_model_dict

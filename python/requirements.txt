@@ -10,3 +10,4 @@ dill>=0.3.1
 cython
 PyWavelets==1.1.1
 python-slugify>=5.0.0
+libsvm-official==3.25.0

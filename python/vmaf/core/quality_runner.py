@@ -6,6 +6,8 @@ import copy
 
 import numpy as np
 
+from libsvm import svmutil
+
 from vmaf.config import VmafConfig
 from vmaf import ExternalProgramCaller, convert_pixel_format_ffmpeg2vmafexec
 from vmaf.core.executor import Executor
@@ -215,11 +217,6 @@ class VmafLegacyQualityRunner(QualityRunner):
         feature_result = vmaf_fassembler.results[0]
 
         # =====================================================================
-
-        try:
-            svmutil
-        except NameError:
-            from vmaf import svmutil
 
         # SVR predict
         model = svmutil.svm_load_model(self.SVM_MODEL_FILE)
