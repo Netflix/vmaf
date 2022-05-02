@@ -287,10 +287,10 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         return 0;
     }
 
-    err |= vmaf_picture_alloc(&s->tmp, pix_fmt, 16, w, h);
-    err |= vmaf_picture_alloc(&s->blur[0], pix_fmt, 16, w, h);
-    err |= vmaf_picture_alloc(&s->blur[1], pix_fmt, 16, w, h);
-    err |= vmaf_picture_alloc(&s->blur[2], pix_fmt, 16, w, h);
+    err |= vmaf_picture_alloc(&s->tmp, VMAF_PIX_FMT_YUV400P, 16, w, h);
+    err |= vmaf_picture_alloc(&s->blur[0], VMAF_PIX_FMT_YUV400P, 16, w, h);
+    err |= vmaf_picture_alloc(&s->blur[1], VMAF_PIX_FMT_YUV400P, 16, w, h);
+    err |= vmaf_picture_alloc(&s->blur[2], VMAF_PIX_FMT_YUV400P, 16, w, h);
     if (err) goto fail;
 
     s->y_convolution = bpc == 8 ? y_convolution_8 : y_convolution_16;
