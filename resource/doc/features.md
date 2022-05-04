@@ -1,8 +1,10 @@
-# Metrics
+# Features
 
-## Core metrics
+Features are individual inputs that (VMAF) models may use to fuse into a final quality metric score. Note that an existing quality metric can serve as a feature of a new quality metric. Features can also be enabled individually without fusing (e.g., when using VMAF via FFmpeg)."
 
-The following core metrics are part of the pre-trained VMAF models, and they have been introduced in the original [VMAF tech blog article](https://netflixtechblog.com/toward-a-practical-perceptual-video-quality-metric-653f208b9652) from 2016:
+## Core features
+
+The following core features are part of the pre-trained VMAF models, and they have been introduced in the original [VMAF tech blog article](https://netflixtechblog.com/toward-a-practical-perceptual-video-quality-metric-653f208b9652) from 2016:
 
 ### Visual Information Fidelity (VIF)
 
@@ -20,9 +22,9 @@ ADM was previously named Detail Loss Metric (DLM), described in S. Li, F. Zhang,
 
 DLM is an image quality metric based on the rationale of separately measuring the loss of details which affects the content visibility, and the redundant impairment which distracts viewer attention. The original metric combines both DLM and additive impairment measure (AIM) to yield a final score. In VMAF, only the DLM part is added as an elementary metric. Particular care was taken for special cases, such as black frames, where numerical calculations for the original formulation break down.
 
-## Additional metrics
+## Additional features
 
-The following additional metrics are available and explained on dedicated pages:
+The following additional features are available and explained on dedicated pages:
 
 - [CAMBI](cambi.md)
 - CIEDE2000
