@@ -93,6 +93,18 @@ static int my_alloc_picture(VmafPicture *pic, void *cookie)
     return 0;
 }
 
+static int my_synchronize_picture(VmafPicture *pic, void *cookie)
+{
+    if (!pic) return -1;
+
+    MyCookie *my_cookie = cookie;
+    (void) my_cookie;
+
+    //fprintf(stderr, "my_synchronize_picture\n");
+
+    return 0;
+}
+
 static int my_free_picture(VmafPicture *pic, void *cookie)
 {
     if (!pic) return -1;
@@ -120,6 +132,7 @@ static char *test_picture_pool()
         .pic_cnt = 4,
         .cookie = &my_cookie,
         .alloc_picture_callback = my_alloc_picture,
+        .synchronize_picture_callback = my_synchronize_picture,
         .free_picture_callback = my_free_picture,
     };
 

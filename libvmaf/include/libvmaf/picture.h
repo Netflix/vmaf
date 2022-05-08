@@ -53,6 +53,7 @@ int vmaf_picture_unref(VmafPicture *pic);
 typedef struct VmafPicturePoolConfig {
     unsigned pic_cnt;
     int (*alloc_picture_callback)(VmafPicture *pic, void *cookie);
+    int (*synchronize_picture_callback)(VmafPicture *pic, void *cookie);
     int (*free_picture_callback)(VmafPicture *pic, void *cookie);
     void *cookie;
 } VmafPicturePoolConfig;

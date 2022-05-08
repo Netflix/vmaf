@@ -25,6 +25,9 @@ static int release_picture_callback(VmafPicture *pic, void *cookie)
     int err = 0;
     VmafPicturePool *pic_pool = cookie;
 
+    if (pic_pool->cfg.synchronize_picture_callback)
+        pic_pool->cfg.synchronize_picture_callback(pic, cookie);
+
     VmafPicture pic_copy;
     memcpy(&pic_copy, pic, sizeof(pic_copy));
 
