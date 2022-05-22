@@ -526,8 +526,9 @@ class MyTestCase(unittest.TestCase):
 
 class QualityRunnerTestMixin(object):
 
-    def run_each(self, score, runner_class, asset, optional_dict,
-                 optional_dict2=None, result_store=None, places=5):
+    @staticmethod
+    def _run_each_no_assert(runner_class, asset, optional_dict,
+                            optional_dict2=None, result_store=None, **more):
         runner = runner_class(
             [asset],
             None,
@@ -538,9 +539,28 @@ class QualityRunnerTestMixin(object):
             optional_dict2=optional_dict2,
         )
         runner.run(parallelize=False)
-        results = runner.results
-        self.assertAlmostEqual(results[0][runner_class.get_score_key()],
+        result = runner.results[0]
+        return result
+
+    def run_each(self, score, runner_class, asset, optional_dict,
+                 optional_dict2=None, result_store=None, places=5, **more):
+        result = self._run_each_no_assert(
+            runner_class, asset, optional_dict,
+            optional_dict2, result_store, **more)
+        self.assertAlmostEqual(result[runner_class.get_score_key()],
                                score, places=places)
+
+    def plot_frame_scores(self, ax, *args, **kwargs):
+        result = self._run_each_no_assert(*args, **kwargs)
+        runner_class, asset, optional_dict = args
+        avg_score = result[runner_class.get_score_key()]
+        label = [f'avg. {runner_class.TYPE}: {avg_score:.3f}']
+        if 'label' in kwargs:
+            label += [kwargs['label']]
+        label = ', '.join(label)
+        ax.set_xlabel('Frame Number')
+        ax.set_ylabel('Score')
+        ax.plot(result[runner_class.get_scores_key()], label=label)
 
 
 def find_linear_function_parameters(p1, p2):
