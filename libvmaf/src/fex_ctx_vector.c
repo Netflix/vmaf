@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include "feature/feature_extractor.h"
+#include "feature/feature_name.h"
 #include "fex_ctx_vector.h"
 #include "log.h"
 
@@ -44,29 +45,24 @@ int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
     (void) flags;
 
     for (unsigned i = 0; i < rfe->cnt; i++) {
-        if (!strcmp(rfe->fex_ctx[i]->fex->name, fex_ctx->fex->name)) {
-            if (!rfe->fex_ctx[i]->opts_dict && !fex_ctx->opts_dict)
-                return vmaf_feature_extractor_context_destroy(fex_ctx);
+        char *feature_a =
+            vmaf_feature_name_from_options(rfe->fex_ctx[i]->fex->name,
+                    rfe->fex_ctx[i]->fex->options, rfe->fex_ctx[i]->fex->priv);
 
-            if (!rfe->fex_ctx[i]->opts_dict != !fex_ctx->opts_dict)
-                continue;
+        char *feature_b =
+            vmaf_feature_name_from_options(fex_ctx->fex->name,
+                    fex_ctx->fex->options, fex_ctx->fex->priv);
 
-            VmafDictionary *d =
-                vmaf_dictionary_merge(&rfe->fex_ctx[i]->opts_dict,
-                                      &fex_ctx->opts_dict,
-                                      VMAF_DICT_DO_NOT_OVERWRITE);
-            if (!d) continue;
+        int ret = 1;
+        if (feature_a && feature_b)
+            ret = strcmp(feature_a, feature_b);
 
-            vmaf_dictionary_free(&rfe->fex_ctx[i]->opts_dict);
-            VmafFeatureExtractorContext *f = rfe->fex_ctx[i];
-            f->opts_dict = d;
-            if (f->fex->options && f->fex->priv) {
-                int err = vmaf_fex_ctx_parse_options(f);
-                if (err) return err;
-            }
+        free(feature_a);
+        free(feature_b);
 
-            return vmaf_feature_extractor_context_destroy(fex_ctx);
-        }
+        if (ret) continue;
+
+        return vmaf_feature_extractor_context_destroy(fex_ctx);
     }
 
     if (rfe->cnt >= rfe->capacity) {

@@ -24,6 +24,7 @@ enum {
     ARG_SUBSAMPLE,
     ARG_CPUMASK,
     ARG_AOM_CTC,
+    ARG_FRAME_CNT,
 };
 
 static const struct option long_opts[] = {
@@ -44,6 +45,7 @@ static const struct option long_opts[] = {
     { "subsample",        1, NULL, ARG_SUBSAMPLE },
     { "cpumask",          1, NULL, ARG_CPUMASK },
     { "aom_ctc",          1, NULL, ARG_AOM_CTC },
+    { "frame_cnt",        1, NULL, ARG_FRAME_CNT },
     { "no_prediction",    0, NULL, 'n' },
     { "version",          0, NULL, 'v' },
     { "quiet",            0, NULL, 'q' },
@@ -65,7 +67,7 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --width/-w $unsigned:      width\n"
             " --height/-h $unsigned:     height\n"
             " --pixel_format/-p: $string pixel format (420/422/444)\n"
-            " --bitdepth/-b $unsigned:   bitdepth (8/10/12)\n"
+            " --bitdepth/-b $unsigned:   bitdepth (8/10/12/16)\n"
             " --model/-m $params:        model parameters, colon \":\" delimited\n"
             "                            `path=` path to model file\n"
             "                            `version=` built-in model version\n"
@@ -78,6 +80,7 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --threads $unsigned:       number of threads to use\n"
             " --feature $string:         additional feature\n"
             " --cpumask: $bitmask        restrict permitted CPU instruction sets\n"
+            " --frame_cnt $unsigned:     maximum number of frames to process\n"
             " --subsample: $unsigned     compute scores only every N frames\n"
             " --quiet/-q:                disable FPS meter when run in a TTY\n"
             " --no_prediction/-n:        no prediction, extract features only\n"
@@ -186,8 +189,8 @@ static CLIModelConfig parse_model_config(const char *const optarg,
             } else if (!strcmp(key, "enable_transform")) {
                 val = "true";
             } else {
-                usage(app, "Problem parsing model \"%s\","
-                           " bad option string \"%s\".\n", key);
+                usage(app, "Problem parsing model, "
+                           "bad option string \"%s\".", key);
             }
         }
 
@@ -284,14 +287,39 @@ static void aom_ctc_v1_0(CLISettings *settings, const char *const app)
         parse_feature_config("psnr_hvs", app);
 }
 
+static void aom_ctc_v2_0(CLISettings *settings, const char *app)
+{
+    aom_ctc_v1_0(settings, app);
+}
+
+static void aom_ctc_v3_0(CLISettings *settings, const char *app)
+{
+    aom_ctc_v2_0(settings, app);
+    settings->feature_cfg[settings->feature_cnt++] =
+        parse_feature_config("cambi", app);
+}
+
 static void parse_aom_ctc(CLISettings *settings, const char *const optarg,
                           const char *const app)
 {
     if (!strcmp(optarg, "proposed"))
-        usage(app, "`--aom_ctc proposed` is deprecated. Use `--aom_ctc v1.0`");
-    else if (!strcmp(optarg, "v1.0"))
+        usage(app, "`--aom_ctc proposed` is deprecated.");
+
+    if (!strcmp(optarg, "v1.0")) {
         aom_ctc_v1_0(settings, app);
-    else
+        return;
+    }
+
+    if (!strcmp(optarg, "v2.0")) {
+        aom_ctc_v2_0(settings, app);
+        return;
+    }
+
+    if (!strcmp(optarg, "v3.0")) {
+        aom_ctc_v3_0(settings, app);
+        return;
+    }
+
     usage(app, "bad aom_ctc version \"%s\"", optarg);
 }
 
@@ -367,6 +395,10 @@ void cli_parse(const int argc, char *const *const argv,
             break;
         case ARG_AOM_CTC:
             parse_aom_ctc(settings, optarg, argv[0]);
+            break;
+        case ARG_FRAME_CNT:
+            settings->frame_cnt =
+                parse_unsigned(optarg, ARG_FRAME_CNT, argv[0]);
             break;
         case 'n':
             settings->no_prediction = true;

@@ -4,19 +4,23 @@ import unittest
 
 from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.asset import Asset, NorefAsset
-from vmaf.core.feature_extractor import VmafFeatureExtractor
+from vmaf.core.feature_extractor import VmafFeatureExtractor, MomentFeatureExtractor
 from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
 from vmaf.core.quality_runner import VmafQualityRunner, PsnrQualityRunner
 from vmaf.core.result_store import FileSystemResultStore
+from vmaf.tools.misc import MyTestCase
+
+from test.testutil import set_default_576_324_videos_for_testing_workfile_yuv_10b, \
+                          set_default_576_324_noref_videos_for_testing_workfile_yuv_10b
 
 
 @unittest.skipIf(not VmafExternalConfig.ffmpeg_path() or 'apps' in VmafExternalConfig.ffmpeg_path(), 'ffmpeg not installed or ffmpeg should not be in apps')
-class ParallelFeatureExtractorTestNew(unittest.TestCase):
+class ParallelFeatureExtractorTestNew(MyTestCase):
 
     def tearDown(self):
         if hasattr(self, 'fextractor'):
             self.fextractor.remove_results()
-        pass
+        super().tearDown()
 
     def test_run_vmaf_fextractor_with_gaussian_blurring(self):
 
@@ -51,8 +55,8 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.45136466666666664, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_motion_score'], 2.8779373333333331, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'],0.9362876630569382, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 24.110899416666665, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'],0.936222875508755, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_ansnr_score'], 24.109545916666665, places=4)
 
         self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 0.9789283541666666, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 2.8779373333333331, places=4)
@@ -61,12 +65,48 @@ class ParallelFeatureExtractorTestNew(unittest.TestCase):
 
 
 @unittest.skipIf(not VmafExternalConfig.ffmpeg_path() or 'apps' in VmafExternalConfig.ffmpeg_path(), 'ffmpeg not installed or ffmpeg should not be in apps')
-class NorefFeatureExtractorTest(unittest.TestCase):
+class FeatureExtractorTest(MyTestCase):
 
     def tearDown(self):
         if hasattr(self, 'fextractor'):
             self.fextractor.remove_results()
-            pass
+        super().tearDown()
+
+    def test_run_moment_fextractor_workfile_yuv_10b(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing_workfile_yuv_10b()
+
+        self.fextractor = MomentFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['Moment_feature_ref1st_score'], 239.15426919010056, places=4)
+        self.assertAlmostEqual(results[0]['Moment_feature_ref2nd_score'], 75146.69420867627, places=4)
+        self.assertAlmostEqual(results[0]['Moment_feature_refvar_score'], 17944.31867569925, places=4)
+        self.assertAlmostEqual(results[0]['Moment_feature_dis1st_score'], 245.32802631672953, places=4)
+        self.assertAlmostEqual(results[0]['Moment_feature_dis2nd_score'], 76778.55318537094, places=4)
+        self.assertAlmostEqual(results[0]['Moment_feature_disvar_score'], 16589.39494958155, places=4)
+
+        self.assertAlmostEqual(results[1]['Moment_feature_ref1st_score'], 239.15426919010056, places=4)
+        self.assertAlmostEqual(results[1]['Moment_feature_ref2nd_score'], 75146.69420867627, places=4)
+        self.assertAlmostEqual(results[1]['Moment_feature_refvar_score'], 17944.31867569925, places=4)
+        self.assertAlmostEqual(results[1]['Moment_feature_dis1st_score'], 239.15426919010056, places=4)
+        self.assertAlmostEqual(results[1]['Moment_feature_dis2nd_score'], 75146.69420867627, places=4)
+        self.assertAlmostEqual(results[1]['Moment_feature_disvar_score'], 17944.31867569925, places=4)
+
+
+@unittest.skipIf(not VmafExternalConfig.ffmpeg_path() or 'apps' in VmafExternalConfig.ffmpeg_path(), 'ffmpeg not installed or ffmpeg should not be in apps')
+class NorefFeatureExtractorTest(MyTestCase):
+
+    def tearDown(self):
+        if hasattr(self, 'fextractor'):
+            self.fextractor.remove_results()
+        super().tearDown()
 
     def test_noref_moment_fextractor_with_noref_asset_notyuv_gaussianblur(self):
 
@@ -88,20 +128,43 @@ class NorefFeatureExtractorTest(unittest.TestCase):
 
         results = self.fextractor.results
 
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_1st_score'], 63.25902145061728, places=4)
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_2nd_score'], 5123.705637307099, places=4)
-        self.assertAlmostEqual(results[0]['Moment_noref_feature_var_score'], 1113.0346638689637, places=4)
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_1st_score'], 63.273976755401236, places=4)
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_2nd_score'], 5124.572131500771, places=4)
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_var_score'], 1111.996326793719, places=4)
+
+    def test_noref_moment_fextractor_with_workfile_yuv_10b(self):
+        # workfile_yuv_type overrides the yuv type of the asset
+        ref_path, dis_path, asset, asset_original = set_default_576_324_noref_videos_for_testing_workfile_yuv_10b()
+
+        self.fextractor = MomentNorefFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            result_store=None
+        )
+
+        self.fextractor.run(parallelize=False)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_1st_score'], 245.32802631672953)
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_2nd_score'], 76778.55318537094)
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_var_score'], 16589.39494958155)
+
+        self.assertAlmostEqual(results[1]['Moment_noref_feature_1st_score'], 239.15426919010056)
+        self.assertAlmostEqual(results[1]['Moment_noref_feature_2nd_score'], 75146.69420867627)
+        self.assertAlmostEqual(results[1]['Moment_noref_feature_var_score'], 17944.31867569925)
 
 
 @unittest.skipIf(not VmafExternalConfig.ffmpeg_path() or 'apps' in VmafExternalConfig.ffmpeg_path(), 'ffmpeg not installed or ffmpeg should not be in apps')
-class QualityRunnerTest(unittest.TestCase):
+class QualityRunnerTest(MyTestCase):
 
     def tearDown(self):
         if hasattr(self, 'runner'):
             self.runner.remove_results()
-            pass
+        super().tearDown()
 
     def setUp(self):
+        super().setUp()
         self.result_store = FileSystemResultStore()
 
     def test_run_psnr_runner_with_notyuv_gblur(self):
@@ -125,7 +188,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner.run()
 
         results = self.runner.results
-        self.assertAlmostEqual(results[0]['PSNR_score'], 50.99313338666667, places=4)
+        self.assertAlmostEqual(results[0]['PSNR_score'], 51.12088967333333, places=4)
 
     def test_run_vmaf_runner_with_notyuv_gblur(self):
 
@@ -151,7 +214,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner.run()
 
         results = self.runner.results
-        self.assertAlmostEqual(results[0]['VMAF_score'], 77.28938600125885, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 77.293043887001, places=0)
 
     def test_run_vmaf_runner_with_yuv_lutyuv(self):
         ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
@@ -176,7 +239,7 @@ class QualityRunnerTest(unittest.TestCase):
         self.runner.run()
 
         results = self.runner.results
-        self.assertAlmostEqual(results[0]['VMAF_score'], 77.18873019841408, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 78.04870605403342, places=4)
 
 
 if __name__ == '__main__':

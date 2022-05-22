@@ -30,6 +30,8 @@ try:
     multiprocessing.set_start_method('fork')
 except ValueError:  # noqa, If platform does not support, just ignore
     pass
+except RuntimeError:  # noqa, If context has already being set, just ignore
+    pass
 
 
 def get_stdout_logger():
@@ -365,7 +367,8 @@ def check_program_exist(program):
 
     '''
     try:
-        subprocess.call(program.split(), stdout=open(os.devnull, 'wb'))
+        with open(os.devnull, "wb") as devnull_fd:
+            subprocess.call(program.split(), stdout=devnull_fd)
         return True
     except OSError as e:
         if e.errno == errno.ENOENT:
@@ -533,6 +536,7 @@ class QualityRunnerTestMixin(object):
             delete_workdir=True,
             result_store=result_store,
             optional_dict=optional_dict,
+            optional_dict2=optional_dict2,
         )
         runner.run(parallelize=False)
         result = runner.results[0]

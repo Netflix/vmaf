@@ -25,7 +25,7 @@ int main(int argc, const char **argv)
 		data_t d;
 		char *ptr = buf;
 
-		memset(buf, sizeof(buf), 0);
+		memset(buf, 0, sizeof(buf));
 
 		for (j = 0; j < n; ++j) {
 			if (fread(&d, sizeof(data_t), 1, file) != 1) {

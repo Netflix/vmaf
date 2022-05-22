@@ -42,6 +42,8 @@ extern VmafFeatureExtractor vmaf_fex_psnr_hvs;
 extern VmafFeatureExtractor vmaf_fex_integer_adm;
 extern VmafFeatureExtractor vmaf_fex_integer_motion;
 extern VmafFeatureExtractor vmaf_fex_integer_vif;
+extern VmafFeatureExtractor vmaf_fex_cambi;
+extern VmafFeatureExtractor vmaf_fex_null;
 
 static VmafFeatureExtractor *feature_extractor_list[] = {
 #if VMAF_FLOAT_FEATURES
@@ -60,6 +62,8 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     &vmaf_fex_integer_adm,
     &vmaf_fex_integer_motion,
     &vmaf_fex_integer_vif,
+    &vmaf_fex_cambi,
+    &vmaf_fex_null,
     NULL
 };
 
@@ -91,7 +95,7 @@ VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(const char *nam
     return NULL;
 }
 
-int vmaf_fex_ctx_parse_options(VmafFeatureExtractorContext *fex_ctx)
+static int vmaf_fex_ctx_parse_options(VmafFeatureExtractorContext *fex_ctx)
 {
     const VmafOption *opt = NULL;
     for (unsigned i = 0; (opt = &fex_ctx->fex->options[i]); i++) {
@@ -285,7 +289,7 @@ get_fex_list_entry(VmafFeatureExtractorContextPool *pool,
     entry.ctx_list = malloc(ctx_array_sz);
     if (!entry.ctx_list) goto fail;
     memset(entry.ctx_list, 0, ctx_array_sz);
-    int err = vmaf_dictionary_copy(&opts_dict, &entry.opts_dict);
+    vmaf_dictionary_copy(&opts_dict, &entry.opts_dict);
 
     if (pool->cnt >= pool->capacity) {
         size_t capacity = pool->capacity * 2;

@@ -100,6 +100,9 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     CiedeState *s = fex->priv;
     int err = 0;
 
+    if (pix_fmt == VMAF_PIX_FMT_YUV400P)
+        return -EINVAL;
+
     if (pix_fmt == VMAF_PIX_FMT_YUV444P)
         return 0;
 

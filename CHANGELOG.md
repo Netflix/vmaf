@@ -1,5 +1,34 @@
 # Change Log
 
+## (2022-04-11) [v2.3.1]
+
+This is a minor release with some CAMBI extensions and speed-ups and adding it to AOM CTC v3, as well as a few minor fixes/cleanups.
+- CAMBI extensions: full reference, PQ eotf, up to 16 bit-depth support, max_log_contrast parameter.
+- CAMBI: option to output heatmaps.
+
+## (2021-10-16) [v2.3.0]
+
+New release to add CAMBI (Contrast Aware Multiscale Banding Index).
+
+- Python library: add encode width and height to Asset.
+- libvmaf: add pixel format VMAF_PIX_FMT_YUV400P.
+- Add cambi; add tests. 
+- Improve documentation. (#912)
+
+## (2021-09-20) [v2.2.1]
+
+This is another minor release to address a few last minute items for the AOM CTC v2, as well as a few minor fixes/cleanups.
+
+- Fix a race condition in vmaf_thread_pool_wait(). (#894)
+- Avoid chroma resampling for 420mpeg2 y4m input (#906)
+
+## (2021-07-02) [v2.2.0]
+
+This is a minor release to address a few items for the AOM CTC v2, as well as a few minor fixes/cleanups.
+
+- Fixes a CIEDE-2000 precision issue, where cross-platform mismatches were seen. (#878)
+- Adds libvmaf API function vmaf_feature_dictionary_free(). (#879)
+
 ## (2021-01-13) [v2.1.1]
 
 This is a minor release to address a few last minute items for the initial AOM CTC.

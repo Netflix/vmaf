@@ -27,9 +27,15 @@ enum vif_kernelscale_enum {
     vif_kernelscale_3o2 = 2,
     vif_kernelscale_2 = 3,
     vif_kernelscale_2o3 = 4,
+    vif_kernelscale_24o10 = 5,
+    vif_kernelscale_360o97 = 6,
+    vif_kernelscale_4o3 = 7,
+    vif_kernelscale_3d5o3 = 8,
+    vif_kernelscale_3d75o3 = 9,
+    vif_kernelscale_4d25o3 = 10,
 };
-extern const float vif_filter1d_table_s[5][4][35]; // 4 is scale. since this is separable filter, filtering is 1d repeat horizontally and vertically
-extern const int vif_filter1d_width[5][4];
+extern const float vif_filter1d_table_s[11][4][65]; // 4 is scale. since this is separable filter, filtering is 1d repeat horizontally and vertically
+extern const int vif_filter1d_width[11][4];
 
 /* s single precision, d double precision */
 
@@ -37,8 +43,8 @@ void vif_dec2_s(const float *src, float *dst, int src_w, int src_h, int src_stri
 
 float vif_sum_s(const float *x, int w, int h, int stride);
 
-void vif_statistic_s(const float *mu1_sq, const float *mu2_sq, const float *mu1_mu2, const float *xx_filt, const float *yy_filt, const float *xy_filt, float *num, float *den,
-                     int w, int h, int mu1_sq_stride, int mu2_sq_stride, int mu1_mu2_stride, int xx_filt_stride, int yy_filt_stride, int xy_filt_stride, int num_stride, int den_stride, double vif_enhn_gain_limit);
+void vif_statistic_s(const float *mu1_sq, const float *mu2_sq, const float *xx_filt, const float *yy_filt, const float *xy_filt, float *num, float *den,
+                     int w, int h, int mu1_sq_stride, int mu2_sq_stride, int xx_filt_stride, int yy_filt_stride, int xy_filt_stride, double vif_enhn_gain_limit);
 
 void vif_filter1d_s(const float *f, const float *src, float *dst, float *tmpbuf, int w, int h, int src_stride, int dst_stride, int fwidth);
 

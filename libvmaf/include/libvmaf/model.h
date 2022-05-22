@@ -23,6 +23,10 @@
 
 #include "feature.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct VmafModel VmafModel;
 
 enum VmafModelFlags {
@@ -82,5 +86,9 @@ int vmaf_model_collection_feature_overload(VmafModel *model,
                                            VmafFeatureDictionary *opts_dict);
 
 void vmaf_model_collection_destroy(VmafModelCollection *model_collection);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __VMAF_MODEL_H__ */

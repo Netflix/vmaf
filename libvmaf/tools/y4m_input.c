@@ -556,13 +556,15 @@ static void y4m_convert_null(y4m_input *_y4m,unsigned char *_dst,
   (void)_aux;
 }
 
+#define Y4M_HEADER_BUFSIZE 256
+
 static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
-  char buffer[80];
+  char buffer[Y4M_HEADER_BUFSIZE];
   int  ret;
   int  i;
   int  xstride;
-  /*Read until newline, or 80 cols, whichever happens first.*/
-  for(i=0;i<79;i++){
+  /*Read until newline, or Y4M_HEADER_BUFSIZE cols, whichever happens first.*/
+  for(i=0;i<Y4M_HEADER_BUFSIZE-1;i++){
     ret=fread(buffer+i,1,1,_fin);
     if(ret<1)return -1;
     if(buffer[i]=='\n')break;
@@ -591,7 +593,8 @@ static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
   }
   _y4m->depth=8;
   if(strcmp(_y4m->chroma_type,"420")==0||
-   strcmp(_y4m->chroma_type,"420jpeg")==0){
+   strcmp(_y4m->chroma_type,"420jpeg")==0||
+   strcmp(_y4m->chroma_type,"420mpeg2")==0){
     _y4m->src_c_dec_h=_y4m->dst_c_dec_h=_y4m->src_c_dec_v=_y4m->dst_c_dec_v=2;
     _y4m->dst_buf_read_sz=_y4m->pic_w*_y4m->pic_h
      +2*((_y4m->pic_w+1)/2)*((_y4m->pic_h+1)/2);
@@ -608,6 +611,15 @@ static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
     _y4m->aux_buf_sz=_y4m->aux_buf_read_sz=0;
     _y4m->convert=y4m_convert_null;
   }
+  else if (strcmp(_y4m->chroma_type,"422p10")==0) {
+    _y4m->src_c_dec_h=_y4m->dst_c_dec_h=2;
+    _y4m->src_c_dec_v=_y4m->dst_c_dec_v=1;
+    _y4m->depth = 10;
+    _y4m->dst_buf_read_sz = 2*(_y4m->pic_w*_y4m->pic_h
+		    +2*((_y4m->pic_w+1)/2)*_y4m->pic_h);
+    _y4m->aux_buf_sz = _y4m->aux_buf_read_sz = 0;
+    _y4m->convert = y4m_convert_null;
+  }
   else if(strcmp(_y4m->chroma_type,"444p10")==0){
     _y4m->src_c_dec_h=_y4m->dst_c_dec_h=_y4m->src_c_dec_v=_y4m->dst_c_dec_v=1;
     _y4m->dst_buf_read_sz=_y4m->pic_w*_y4m->pic_h*3*2;
@@ -615,14 +627,6 @@ static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
     /*Natively supported: no conversion required.*/
     _y4m->aux_buf_sz=_y4m->aux_buf_read_sz=0;
     _y4m->convert=y4m_convert_null;
-  }
-  else if(strcmp(_y4m->chroma_type,"420mpeg2")==0){
-    _y4m->src_c_dec_h=_y4m->dst_c_dec_h=_y4m->src_c_dec_v=_y4m->dst_c_dec_v=2;
-    _y4m->dst_buf_read_sz=_y4m->pic_w*_y4m->pic_h;
-    /*Chroma filter required: read into the aux buf first.*/
-    _y4m->aux_buf_sz=_y4m->aux_buf_read_sz=
-     2*((_y4m->pic_w+1)/2)*((_y4m->pic_h+1)/2);
-    _y4m->convert=y4m_convert_42xmpeg2_42xjpeg;
   }
   else if(strcmp(_y4m->chroma_type,"420paldv")==0){
     _y4m->src_c_dec_h=_y4m->dst_c_dec_h=_y4m->src_c_dec_v=_y4m->dst_c_dec_v=2;
@@ -800,6 +804,7 @@ static void y4m_input_close(y4m_input *_y4m){
 }
 
 OC_EXTERN const video_input_vtbl Y4M_INPUT_VTBL={
+  (raw_input_open_func)NULL,
   (video_input_open_func)y4m_input_open,
   (video_input_get_info_func)y4m_input_get_info,
   (video_input_fetch_frame_func)y4m_input_fetch_frame,

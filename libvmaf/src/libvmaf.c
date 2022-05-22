@@ -125,6 +125,8 @@ int vmaf_use_feature(VmafContext *vmaf, const char *feature_name,
     if (!vmaf) return -EINVAL;
     if (!feature_name) return -EINVAL;
 
+    VmafDictionary *s = (VmafDictionary*) opts_dict;
+
     int err = 0;
 
     VmafFeatureExtractor *fex =
@@ -132,10 +134,10 @@ int vmaf_use_feature(VmafContext *vmaf, const char *feature_name,
     if (!fex) return -EINVAL;
 
     VmafDictionary *d = NULL;
-    if (opts_dict) {
-        err = vmaf_dictionary_copy(&opts_dict, &d);
+    if (s) {
+        err = vmaf_dictionary_copy(&s, &d);
         if (err) return err;
-        err = vmaf_dictionary_free(&opts_dict);
+        err = vmaf_dictionary_free(&s);
         if (err) return err;
     }
 
@@ -563,7 +565,7 @@ int vmaf_write_output(VmafContext *vmaf, const char *output_path,
         break;
     case VMAF_OUTPUT_FORMAT_JSON:
         ret = vmaf_write_output_json(vmaf, vmaf->feature_collector, outfile,
-                                     vmaf->cfg.n_subsample);
+                                     vmaf->cfg.n_subsample, fps);
         break;
     case VMAF_OUTPUT_FORMAT_CSV:
         ret = vmaf_write_output_csv(vmaf->feature_collector, outfile,

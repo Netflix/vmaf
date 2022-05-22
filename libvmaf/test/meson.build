@@ -61,8 +61,8 @@ test_feature_extractor = executable('test_feature_extractor',
     dependencies : [math_lib, stdatomic_dependency],
     objects : [
       platform_specific_cpu_objects,
-      libvmaf_feature_static_lib.extract_all_objects(),
-      libvmaf_cpu_static_lib.extract_all_objects(),
+      libvmaf_feature_static_lib.extract_all_objects(recursive: true),
+      libvmaf_cpu_static_lib.extract_all_objects(recursive: true),
     ]
 )
 
@@ -74,7 +74,7 @@ test_dict = executable('test_dict',
 test_cpu = executable('test_cpu',
     ['test.c', 'test_cpu.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
-    objects : libvmaf_cpu_static_lib.extract_all_objects(),
+    objects : libvmaf_cpu_static_lib.extract_all_objects(recursive: true),
 )
 
 test_ref = executable('test_ref',
@@ -83,12 +83,24 @@ test_ref = executable('test_ref',
 )
 
 test_feature = executable('test_feature',
-    ['test.c', 'test_feature.c', '../src/feature/feature_name.c', '../src/feature/alias.c'],
+    ['test.c', 'test_feature.c', '../src/feature/alias.c', '../src/dict.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
 )
 
 test_ciede = executable('test_ciede',
     ['test.c', 'test_ciede.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+)
+
+test_cambi = executable('test_cambi',
+    ['test.c', 'test_cambi.c', '../src/picture.c', '../src/mem.c', '../src/ref.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+)
+
+test_luminance_tools = executable('test_luminance_tools',
+    ['test.c', 'test_luminance_tools.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
 )
@@ -104,3 +116,5 @@ test('test_cpu', test_cpu)
 test('test_ref', test_ref)
 test('test_feature', test_feature)
 test('test_ciede', test_ciede)
+test('test_cambi', test_cambi)
+test('test_luminance_tools', test_luminance_tools)

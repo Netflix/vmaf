@@ -19,9 +19,14 @@
 #ifndef __VMAF_FEATURE_NAME_H__
 #define __VMAF_FEATURE_NAME_H__
 
-#define VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE 256
+#include "dict.h"
+#include "opt.h"
 
-char *vmaf_feature_name(char *name, char *key, double val,
-                        char *buf, size_t buf_sz);
+char *vmaf_feature_name_from_options(const char *name, const VmafOption *opts,
+                                     void *obj);
+
+VmafDictionary *
+vmaf_feature_name_dict_from_provided_features(const char **provided_features,
+                                              const VmafOption *opts, void *obj);
 
 #endif /* __VMAF_FEATURE_NAME_H__ */

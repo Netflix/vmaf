@@ -8,6 +8,7 @@ For building, you need the following:
 - [Meson](https://mesonbuild.com/) (0.47 or higher)
 - [Ninja](https://ninja-build.org/) (1.7.1 or higher)
 - [NASM](https://www.nasm.us/) (for x86 builds only, 2.13.02 or higher)
+- `xxd`
 
 Follow the steps below to set up a clean virtual environment and install the tools:
 ```
@@ -15,7 +16,7 @@ python3 -m pip install virtualenv
 python3 -m virtualenv .venv
 source .venv/bin/activate
 pip install meson
-sudo [package-manager] install nasm ninja doxygen
+sudo [package-manager] install nasm ninja doxygen xxd
 ```
 You need to invoke `[package-manager]` depending on which system you are on: `apt-get` for Ubuntu and Debian, `yum` for CentOS and RHEL, `dnf` for Fedora, `zypper` for openSUSE, `brew` for MacOS (no `sudo`).
 
@@ -26,6 +27,8 @@ Run:
 ```
 meson build --buildtype release
 ```
+
+(add `-Denable_float=true` flag in the rare case if you want to use the floating-point feature extractors.)
 
 Build with:
 

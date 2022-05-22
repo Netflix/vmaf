@@ -207,6 +207,19 @@ class Asset(WorkdirEnabled):
         else:
             return None
 
+    @property
+    def dis_encode_width_height(self):
+        """
+        Width and height of the encoded video before any scaling was applied.
+        :return: width and height at encode resolution.
+        Defaults to dis_width_height.
+        """
+
+        if 'dis_enc_width' in self.asset_dict and 'dis_enc_height' in self.asset_dict:
+            return self.asset_dict['dis_enc_width'], self.asset_dict['dis_enc_height']
+        else:
+            return self.dis_width_height
+
     def clear_up_width_height(self):
         if 'width' in self.asset_dict:
             del self.asset_dict['width']
@@ -448,6 +461,10 @@ class Asset(WorkdirEnabled):
         if self.dis_width_height:
             w, h = self.dis_width_height
             s += "_{w}x{h}".format(w=w, h=h)
+
+        if self.dis_encode_width_height != self.dis_width_height:
+            w, h = self.dis_encode_width_height
+            s += "_e_{w}x{h}".format(w=w, h=h)
 
         if self.dis_yuv_type != self.DEFAULT_YUV_TYPE:
             s += "_{}".format(self.dis_yuv_type)

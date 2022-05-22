@@ -41,7 +41,7 @@ if is_asm_enabled
         # check NASM version
         nasm = find_program('nasm')
         if nasm.found()
-            nasm_r = run_command(nasm, '-v')
+            nasm_r = run_command(nasm, '-v', check: true)
 
             if nasm_r.returncode() != 0
                 error('failed running nasm to obtain its version')
@@ -181,6 +181,7 @@ if is_asm_enabled
           feature_src_dir + 'x86/motion_avx2.c',
           feature_src_dir + 'x86/vif_avx2.c',
           feature_src_dir + 'x86/adm_avx2.c',
+          feature_src_dir + 'x86/cambi_avx2.c',
       ]
 
       x86_avx2_static_lib = static_library(
@@ -190,7 +191,7 @@ if is_asm_enabled
           c_args : ['-mavx', '-mavx2'] + vmaf_cflags_common,
       )
 
-      platform_specific_cpu_objects += x86_avx2_static_lib.extract_all_objects()
+      platform_specific_cpu_objects += x86_avx2_static_lib.extract_all_objects(recursive: true)
 
       if is_avx512_enabled
         x86_avx512_sources = [
@@ -202,12 +203,12 @@ if is_asm_enabled
             'x86_avx512',
             x86_avx512_sources,
             include_directories : vmaf_base_include,
-            c_args : ['-mavx512f', '-mavx512dq', '-mavx512bw',
-                      '-mavx512vbmi', '-mavx512vbmi2', '-mavx512vl'] +
+            c_args : ['-mavx512f', '-mavx512dq', '-mavx512bw', '-mavx512cd', '-mavx512dq',
+                      '-mavx512vbmi', '-mavx512vl'] +
                      vmaf_cflags_common,
         )
 
-        platform_specific_cpu_objects += x86_avx512_static_lib.extract_all_objects()
+        platform_specific_cpu_objects += x86_avx512_static_lib.extract_all_objects(recursive: true)
       endif
 
     endif
@@ -235,6 +236,7 @@ libvmaf_feature_sources = [
     feature_src_dir + 'integer_vif.c',
     feature_src_dir + 'ciede.c',
     feature_src_dir + 'common/alignment.c',
+    feature_src_dir + 'mkdirp.c',
 
     feature_src_dir + 'float_ssim.c',
     feature_src_dir + 'float_ms_ssim.c',
@@ -244,6 +246,9 @@ libvmaf_feature_sources = [
     feature_src_dir + 'iqa/ssim_tools.c',
     feature_src_dir + 'iqa/math_utils.c',
     feature_src_dir + 'iqa/convolve.c',
+    feature_src_dir + 'cambi.c',
+    feature_src_dir + 'luminance_tools.c',
+    feature_src_dir + 'null.c',
 ]
 
 if float_enabled
@@ -318,8 +323,8 @@ libvmaf = library(
     ],
     objects : [
         platform_specific_cpu_objects,
-        libvmaf_feature_static_lib.extract_all_objects(),
-        libvmaf_cpu_static_lib.extract_all_objects(),
+        libvmaf_feature_static_lib.extract_all_objects(recursive: true),
+        libvmaf_cpu_static_lib.extract_all_objects(recursive: true),
     ],
     version : vmaf_soname_version,
     soversion : vmaf_soversion,
@@ -332,5 +337,5 @@ pkg_mod.generate(libraries: libvmaf,
     name: 'libvmaf',
     filebase: 'libvmaf',
     description: 'VMAF, Video Multimethod Assessment Fusion',
-    subdirs: 'libvmaf'
+    subdirs: [ '.', 'libvmaf']
 )

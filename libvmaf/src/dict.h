@@ -42,8 +42,8 @@ enum VmafDictionaryFlags {
 int vmaf_dictionary_set(VmafDictionary **dict, const char *key, const char *val,
                         uint64_t flags);
 
-const VmafDictionaryEntry *vmaf_dictionary_get(VmafDictionary **dict,
-                                               const char *key, uint64_t flags);
+VmafDictionaryEntry *vmaf_dictionary_get(VmafDictionary **dict,
+                                         const char *key, uint64_t flags);
 
 int vmaf_dictionary_copy(VmafDictionary **src, VmafDictionary **dst);
 
@@ -52,6 +52,8 @@ VmafDictionary *vmaf_dictionary_merge(VmafDictionary **dict_a,
                                       uint64_t flags);
 
 int vmaf_dictionary_compare(VmafDictionary *dict_a, VmafDictionary *dict_b);
+
+void vmaf_dictionary_alphabetical_sort(VmafDictionary *dict);
 
 int vmaf_dictionary_free(VmafDictionary **dict);
 

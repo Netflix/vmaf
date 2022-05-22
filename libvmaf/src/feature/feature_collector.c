@@ -18,10 +18,12 @@
 
 #include <errno.h>
 #include <pthread.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "dict.h"
 #include "feature_collector.h"
 #include "feature_name.h"
 #include "log.h"
@@ -62,7 +64,7 @@ static int aggregate_vector_append(AggregateVector *aggregate_vector,
             sizeof(aggregate_vector->metric[0]) * aggregate_vector->capacity;
         void *metric = realloc(aggregate_vector->metric, initial_size * 2);
         if (!metric) return -ENOMEM;
-        memset(metric + initial_size, 0, initial_size);
+        memset((char*)metric + initial_size, 0, initial_size);
         aggregate_vector->metric = metric;
         aggregate_vector->capacity *= 2;
     }
@@ -179,7 +181,7 @@ static int feature_vector_append(FeatureVector *feature_vector,
             sizeof(feature_vector->score[0]) * feature_vector->capacity;
         void *score = realloc(feature_vector->score, initial_size * 2);
         if (!score) return -ENOMEM;
-        memset(score + initial_size, 0, initial_size);
+        memset((char*)score + initial_size, 0, initial_size);
         feature_vector->score = score;
         feature_vector->capacity *= 2;
     }
@@ -285,21 +287,16 @@ unlock:
     return err;
 }
 
-int vmaf_feature_collector_append_templated(VmafFeatureCollector *feature_collector,
-                                            const char *feature_name,
-                                            const char *key, double val,
-                                            double score,
-                                            unsigned picture_index)
+int vmaf_feature_collector_append_with_dict(VmafFeatureCollector *fc,
+        VmafDictionary *dict, const char *feature_name, double score,
+        unsigned index)
 {
-    if (!feature_collector) return -EINVAL;
-    if (!feature_name) return -EINVAL;
+    if (!fc) return -EINVAL;
+    if (!dict) return -EINVAL;
 
-    char buf[VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE];
-    feature_name = vmaf_feature_name(feature_name, key, val, &buf[0],
-                                     VMAF_FEATURE_NAME_DEFAULT_BUFFER_SIZE);
-
-    return vmaf_feature_collector_append(feature_collector, feature_name,
-                                         score, picture_index);
+    VmafDictionaryEntry *entry = vmaf_dictionary_get(&dict, feature_name, 0);
+    const char *fn = entry ? entry->val : feature_name;
+    return vmaf_feature_collector_append(fc, fn, score, index);
 }
 
 int vmaf_feature_collector_get_score(VmafFeatureCollector *feature_collector,

@@ -26,19 +26,27 @@ enum VmafOptionType {
     VMAF_OPT_TYPE_BOOL,
     VMAF_OPT_TYPE_INT,
     VMAF_OPT_TYPE_DOUBLE,
+    VMAF_OPT_TYPE_STRING,
+};
+
+enum VmafOptionFlag {
+    VMAF_OPT_FLAG_FEATURE_PARAM = 1 << 0,
 };
 
 typedef struct VmafOption {
     const char *name;
     const char *help;
+    const char *alias;
     int offset;
     enum VmafOptionType type;
     union {
         bool b;
         int i;
         double d;
+        char *s;
     } default_val;
     double min, max;
+    uint64_t flags;
 } VmafOption;
 
 int vmaf_option_set(const VmafOption *opt, void *obj, const char *val);

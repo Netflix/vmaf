@@ -21,11 +21,16 @@
 
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum VmafPixelFormat {
     VMAF_PIX_FMT_UNKNOWN,
     VMAF_PIX_FMT_YUV420P,
     VMAF_PIX_FMT_YUV422P,
     VMAF_PIX_FMT_YUV444P,
+    VMAF_PIX_FMT_YUV400P,
 };
 
 typedef struct VmafRef VmafRef;
@@ -43,5 +48,9 @@ int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
                        unsigned bpc, unsigned w, unsigned h);
 
 int vmaf_picture_unref(VmafPicture *pic);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __VMAF_PICTURE_H__ */

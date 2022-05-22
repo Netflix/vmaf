@@ -308,6 +308,77 @@ static char *test_vmaf_feature_dictionary()
     return NULL;
 }
 
+static char *test_vmaf_dictionary_alphabetical_sort()
+{
+    int err = 0;
+
+    VmafDictionary *dict = NULL;
+    err |= vmaf_dictionary_set(&dict, "z", "z", 0);
+    err |= vmaf_dictionary_set(&dict, "y", "y", 0);
+    err |= vmaf_dictionary_set(&dict, "x", "x", 0);
+    err |= vmaf_dictionary_set(&dict, "a", "a", 0);
+    err |= vmaf_dictionary_set(&dict, "b", "b", 0);
+    err |= vmaf_dictionary_set(&dict, "c", "c", 0);
+    err |= vmaf_dictionary_set(&dict, "2", "2", 0);
+    err |= vmaf_dictionary_set(&dict, "1", "1", 0);
+    err |= vmaf_dictionary_set(&dict, "0", "0", 0);
+    mu_assert("problem during vmaf_feature_dictionary_set", !err);
+    mu_assert("dict should have 9 entries", dict->cnt == 9);
+
+    vmaf_dictionary_alphabetical_sort(dict);
+    mu_assert("dict should have 9 entries", dict->cnt == 9);
+    char *expected_order[9] = {"0", "1", "2", "a", "b", "c", "x", "y", "z"};
+
+    for (unsigned i = 0; i < 9; i++) {
+        mu_assert("dict is not alphabetically sorted",
+                  !strcmp(dict->entry[i].key, expected_order[i]));
+    }
+
+    err = vmaf_dictionary_free(&dict);
+    mu_assert("problem during vmaf_feature_dictionary_free", !err);
+
+    return NULL;
+}
+
+static char *test_isnumeric()
+{
+    int err = 0;
+
+    // not numeric
+    err = isnumeric("abc");
+    mu_assert("problem during isnumeric", !err);
+
+    err = isnumeric("/a/b/c");
+    mu_assert("problem during isnumeric", !err);
+
+    err = isnumeric("abc123");
+    mu_assert("problem during isnumeric", !err);
+
+    err = isnumeric("123abc");
+    mu_assert("problem during isnumeric", !err);
+
+    // numeric
+    err = isnumeric("123");
+    mu_assert("problem during isnumeric", err);
+
+    err = isnumeric("123.456");
+    mu_assert("problem during isnumeric", err);
+
+    err = isnumeric("    123.456    ");
+    mu_assert("problem during isnumeric", err);
+
+    err = isnumeric("NaN");
+    mu_assert("problem during isnumeric", err);
+
+    err = isnumeric("inf");
+    mu_assert("problem during isnumeric", err);
+
+    err = isnumeric("-inf");
+    mu_assert("problem during isnumeric", err);
+
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_vmaf_dictionary);
@@ -315,5 +386,7 @@ char *run_tests()
     mu_run_test(test_vmaf_dictionary_compare);
     mu_run_test(test_vmaf_dictionary_normalize_numerical_val);
     mu_run_test(test_vmaf_feature_dictionary);
+    mu_run_test(test_vmaf_dictionary_alphabetical_sort);
+    mu_run_test(test_isnumeric);
     return NULL;
 }

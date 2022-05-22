@@ -250,6 +250,8 @@ class VmafFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
                     options['float_vif']['vif_enhn_gain_limit'] = self.optional_dict['vif_enhn_gain_limit']
                 elif opt == 'vif_kernelscale':
                     options['float_vif']['vif_kernelscale'] = self.optional_dict['vif_kernelscale']
+                elif opt == 'adm_csf_mode':
+                    options['float_adm']['adm_csf_mode'] = self.optional_dict['adm_csf_mode']
                 elif opt == 'adm_enhn_gain_limit':
                     options['float_adm']['adm_enhn_gain_limit'] = self.optional_dict['adm_enhn_gain_limit']
                 elif opt == 'adm_norm_view_dist':

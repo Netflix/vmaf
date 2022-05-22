@@ -32,7 +32,7 @@ static int model_compare(VmafModel *model_a, VmafModel *model_b)
     err += model_a->slope != model_b->slope;
     err += model_a->intercept != model_b->intercept;
 
-    err += model_a->n_features != model_a->n_features;
+    err += model_a->n_features != model_b->n_features;
     for (unsigned i = 0; i < model_a->n_features; i++) {
        //err += strcmp(model_a->feature[i].name, model_b->feature[i].name) != 0;
        err += model_a->feature[i].slope != model_b->feature[i].slope;
@@ -112,39 +112,6 @@ static char *test_built_in_model()
 
     vmaf_model_destroy(model);
     vmaf_model_destroy(model_file);
-    return NULL;
-}
-#endif
-
-#if VMAF_FLOAT_FEATURES
-static char *test_model_collection()
-{
-    int err = 0;
-
-    const char *version = "vmaf_rb_v0.6.3";
-    VmafModel *model;
-    VmafModelCollection *model_collection = NULL;
-    const VmafModelConfig cfg = { 0 };
-
-    err = vmaf_model_collection_load_from_path(&model,
-                                               &model_collection, &cfg,
-                                               version);
-    mu_assert("problem during load_model_collection", !err);
-
-    const char *json_path = "../../model/vmaf_float_b_v0.6.3.json";
-    VmafModel *json_model;
-    VmafModelCollection *json_model_collection = NULL;
-    const VmafModelConfig json_cfg = { 0 };
-    err = vmaf_model_collection_load_from_path(&json_model,
-                                               &json_model_collection,
-                                               &json_cfg, json_path);
-    mu_assert("problem during load_model_collection", !err);
-
-    err = model_compare(json_model, model);
-    mu_assert("parsed json/built-in models do not match", !err);
-
-    vmaf_model_collection_destroy(model_collection);
-    vmaf_model_collection_destroy(json_model_collection);
     return NULL;
 }
 #endif
@@ -410,7 +377,6 @@ char *run_tests()
 #if VMAF_BUILT_IN_MODELS
     mu_run_test(test_built_in_model);
 #endif
-    //mu_run_test(test_model_collection);
     mu_run_test(test_model_load_and_destroy);
     mu_run_test(test_model_check_default_behavior_unset_flags);
     mu_run_test(test_model_check_default_behavior_set_flags);

@@ -42,4 +42,12 @@
 /* reference display height in pixels */
 #define DEFAULT_ADM_REF_DISPLAY_HEIGHT (1080)
 
+/* Contrast sensitivity function */
+enum ADM_CSF_MODE {
+    ADM_CSF_MODE_WATSON97 = 0,
+};
+
+/* Default contrast sensitivity function */
+#define DEFAULT_ADM_CSF_MODE (ADM_CSF_MODE_WATSON97)
+
 #endif /* ADM_OPTIONS_H_ */

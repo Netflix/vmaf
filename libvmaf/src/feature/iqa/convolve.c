@@ -40,6 +40,7 @@
 
 float KBND_SYMMETRIC(const float *img, int w, int h, int x, int y, float bnd_const)
 {
+    (void) bnd_const;
     if (x<0) x=-1-x;
     else if (x>=w) x=(w-(x-w))-1;
     if (y<0) y=-1-y;
@@ -49,6 +50,7 @@ float KBND_SYMMETRIC(const float *img, int w, int h, int x, int y, float bnd_con
 
 float KBND_REPLICATE(const float *img, int w, int h, int x, int y, float bnd_const)
 {
+    (void) bnd_const;
     if (x<0) x=0;
     if (x>=w) x=w-1;
     if (y<0) y=0;

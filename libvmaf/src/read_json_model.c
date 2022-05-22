@@ -512,14 +512,14 @@ static int model_collection_parse(json_stream *s, VmafModel **model,
                 if (err) return err;
             }
 
-            sprintf(c.name, "%s_%04d", name, ++i);
+            sprintf((char*)c.name, "%s_%04d", name, ++i);
             continue;
         }
 
         json_skip(s);
     }
 
-    free(name);
+    free((char*)name);
     if (!(*model_collection)) return -EINVAL;
     return err;
 }

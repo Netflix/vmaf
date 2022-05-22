@@ -6,8 +6,8 @@
 #include "dict.h"
 #include "libvmaf/feature.h"
 
-const VmafDictionaryEntry *vmaf_dictionary_get(VmafDictionary **dict,
-                                               const char *key, uint64_t flags)
+VmafDictionaryEntry *vmaf_dictionary_get(VmafDictionary **dict,
+                                         const char *key, uint64_t flags)
 {
     if (!dict) return NULL;
     if (!(*dict)) return NULL;
@@ -83,7 +83,7 @@ int vmaf_dictionary_set(VmafDictionary **dict, const char *key, const char *val,
     free(buf);
 
     if (existing_entry && !(flags & VMAF_DICT_DO_NOT_OVERWRITE)) {
-        free(existing_entry->val);
+        free((char*)existing_entry->val);
         existing_entry->val = val_copy;
         return 0;
     }
@@ -101,7 +101,7 @@ int vmaf_dictionary_set(VmafDictionary **dict, const char *key, const char *val,
     return 0;
 
 free_val_copy:
-    free(val_copy);
+    free((char*)val_copy);
 fail:
     return -ENOMEM;
 }
@@ -128,8 +128,8 @@ int vmaf_dictionary_free(VmafDictionary **dict)
 
     VmafDictionary *d = *dict;
     for (unsigned i = 0; i < d->cnt; i++) {
-       if (d->entry[i].key) free(d->entry[i].key);
-       if (d->entry[i].val) free(d->entry[i].val);
+       if (d->entry[i].key) free((char*)d->entry[i].key);
+       if (d->entry[i].val) free((char*)d->entry[i].val);
     }
     free(d->entry);
     free(d);
@@ -181,11 +181,33 @@ int vmaf_dictionary_compare(VmafDictionary *a, VmafDictionary *b)
     return 0;
 }
 
+static int alphabetical_compare(const void* a, const void* b)
+{
+    const VmafDictionaryEntry *entry_a = a;
+    const VmafDictionaryEntry *entry_b = b;
+    return strcmp(entry_a->key, entry_b->key);
+}
+
+void vmaf_dictionary_alphabetical_sort(VmafDictionary *dict)
+{
+    if (!dict) return;
+    qsort(dict->entry, dict->cnt, sizeof(*dict->entry), alphabetical_compare);
+}
+
+static int isnumeric(const char *str)
+{
+    float ignore;
+    char c;
+    int ret = sscanf(str, "%f %c", &ignore, &c);
+    return ret == 1;
+}
+
 int vmaf_feature_dictionary_set(VmafFeatureDictionary **dict, const char *key,
                                 const char *val)
 {
-    return vmaf_dictionary_set((VmafDictionary**)dict, key, val,
-                               VMAF_DICT_NORMALIZE_NUMERICAL_VALUES);
+    uint64_t flags = 0;
+    if (isnumeric(val)) flags |= VMAF_DICT_NORMALIZE_NUMERICAL_VALUES;
+    return vmaf_dictionary_set((VmafDictionary**)dict, key, val, flags);
 }
 
 int vmaf_feature_dictionary_free(VmafFeatureDictionary **dict)
