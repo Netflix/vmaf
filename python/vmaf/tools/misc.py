@@ -735,6 +735,16 @@ def round_up_to_odd(f):
     """
     return int(np.ceil(f) // 2 * 2 + 1)
 
+
+class NoPrint(object):
+
+    def __enter__(self):
+        sys.stdout = open(os.devnull, 'w')
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout = sys.__stdout__
+
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
