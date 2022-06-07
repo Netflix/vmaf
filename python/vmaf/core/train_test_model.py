@@ -10,7 +10,7 @@ from sklearn.metrics import f1_score
 import numpy as np
 
 from vmaf.tools.decorator import deprecated, override
-from vmaf.tools.misc import indices
+from vmaf.tools.misc import indices, NoPrint
 from vmaf.core.mixin import TypeVersionEnabled
 from vmaf.core.perf_metric import RmsePerfMetric, SrccPerfMetric, PccPerfMetric, \
     KendallPerfMetric, AucPerfMetric, ResolvingPowerPerfMetric
@@ -930,7 +930,8 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
         f = list(xs_2d)
         for i, item in enumerate(f):
             f[i] = list(item)
-        score, _, _ = svmutil.svm_predict([0] * len(f), f, model)
+        with NoPrint():
+            score, _, _ = svmutil.svm_predict([0] * len(f), f, model)
         ys_label_pred = np.array(score)
         return ys_label_pred
 
