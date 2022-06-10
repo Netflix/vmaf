@@ -480,7 +480,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         fifo_mode=fifo_mode,
         delete_workdir=True,
         result_store=result_store,
-        optional_dict=None,
+        optional_dict=None,  # WARNING: feature param not passed
         optional_dict2=None,
         parallelize=parallelize,
         processes=processes,
@@ -582,7 +582,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
             fifo_mode=fifo_mode,
             delete_workdir=True,
             result_store=result_store,
-            optional_dict=None,
+            optional_dict=None,  # WARNING: feature param not passed
             optional_dict2=None,
             parallelize=parallelize,
         )
@@ -646,7 +646,7 @@ def cv_on_dataset(dataset, feature_param, model_param, ax, result_store,
         logger=logger,
         delete_workdir=True,
         result_store=result_store,
-        optional_dict=None,
+        optional_dict=None,  # WARNING: feature param not passed
         optional_dict2=None,
         parallelize=True, fifo_mode=True,
         # parallelize=False, fifo_mode=False, # VQM
@@ -791,7 +791,7 @@ def explain_model_on_dataset(model, test_assets_selected_indexs,
         fifo_mode=True,
         delete_workdir=True,
         result_store=result_store,
-        optional_dict=None,
+        optional_dict=None,  # WARNING: feature param not passed
         optional_dict2=None,
         parallelize=True,
     )

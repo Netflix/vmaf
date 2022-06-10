@@ -398,7 +398,7 @@ class VmafQualityRunner(VmafQualityRunnerModelMixin, QualityRunner):
             fifo_mode=self.fifo_mode,
             delete_workdir=self.delete_workdir,
             result_store=self.result_store,
-            optional_dict=None,
+            optional_dict=self.optional_dict,
             optional_dict2=self.optional_dict2,
             parallelize=False,  # parallelization already in a higher level
         )
@@ -644,7 +644,7 @@ class EnsembleVmafQualityRunner(VmafQualityRunner):
                 fifo_mode=self.fifo_mode,
                 delete_workdir=self.delete_workdir,
                 result_store=self.result_store,
-                optional_dict=None,
+                optional_dict=None,  # WARNING: feature param not passed
                 optional_dict2=None,
                 parallelize=False,  # parallelization already in a higher level
             )
@@ -1044,8 +1044,8 @@ class VmafSingleFeatureQualityRunner(QualityRunner):
             fifo_mode=self.fifo_mode,
             delete_workdir=self.delete_workdir,
             result_store=self.result_store,
-            optional_dict=None,
-            optional_dict2=None,
+            optional_dict=self.optional_dict,
+            optional_dict2=self.optional_dict2,
             parallelize=False,  # parallelization already in a higher level
         )
         return vmaf_fassembler

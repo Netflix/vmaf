@@ -38,7 +38,7 @@ class StrredQualityRunner(QualityRunner):
             fifo_mode=self.fifo_mode,
             delete_workdir=self.delete_workdir,
             result_store=self.result_store,
-            optional_dict=None,
+            optional_dict=None,  # WARNING: feature param not passed
             optional_dict2=None,
             parallelize=False, # parallelization already in a higher level
         )
@@ -88,7 +88,7 @@ class StrredOptQualityRunner(QualityRunner):
             fifo_mode=self.fifo_mode,
             delete_workdir=self.delete_workdir,
             result_store=self.result_store,
-            optional_dict=None,
+            optional_dict=None,  # WARNING: feature param not passed
             optional_dict2=None,
             parallelize=False, # parallelization already in a higher level
         )
@@ -140,7 +140,7 @@ class SpEEDMatlabQualityRunner(QualityRunner):
                 fifo_mode=self.fifo_mode,
                 delete_workdir=self.delete_workdir,
                 result_store=self.result_store,
-                optional_dict=None,
+                optional_dict=None,  # WARNING: feature param not passed
                 optional_dict2=None,
                 parallelize=False,  # parallelization already in a higher level
             )
@@ -191,7 +191,7 @@ class STMADQualityRunner(QualityRunner):
             fifo_mode=self.fifo_mode,
             delete_workdir=self.delete_workdir,
             result_store=self.result_store,
-            optional_dict=None,
+            optional_dict=None,  # WARNING: feature param not passed
             optional_dict2=None,
             parallelize=False,  # parallelization already in a higher level
         )
@@ -241,7 +241,7 @@ class ICIDQualityRunner(QualityRunner):
            fifo_mode=self.fifo_mode,
            delete_workdir=self.delete_workdir,
            result_store=self.result_store,
-           optional_dict=None,
+           optional_dict=None,  # WARNING: feature param not passed
            optional_dict2=None,
            parallelize=False,  # parallelization already in a higher level
        )
