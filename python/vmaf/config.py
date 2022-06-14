@@ -59,6 +59,14 @@ class VmafExternalConfig(object):
         return cls._path_from_external('FFMPEG_PATH')
 
     @classmethod
+    def ffmpeg_env(cls):
+        """
+        :return dict: Dictionary of environmental variables when running ffmpeg, if installed and configured via
+        'externals` module
+        """
+        return cls._path_from_external('FFMPEG_ENV')
+
+    @classmethod
     def matlab_path(cls):
         """
         :return str: Path to matlab, if installed and configured via `externals` module
