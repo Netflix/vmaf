@@ -527,7 +527,7 @@ class Executor(TypeVersionEnabled):
         if self.logger:
             self.logger.info(ffmpeg_cmd)
 
-        run_process(ffmpeg_cmd, shell=True)
+        run_process(ffmpeg_cmd, shell=True, env=VmafExternalConfig.ffmpeg_env())
 
     def _open_dis_workfile(self, asset, fifo_mode):
         # only need to open dis workfile if the path is different from dis path
@@ -577,7 +577,7 @@ class Executor(TypeVersionEnabled):
         if self.logger:
             self.logger.info(ffmpeg_cmd)
 
-        run_process(ffmpeg_cmd, shell=True)
+        run_process(ffmpeg_cmd, shell=True, env=VmafExternalConfig.ffmpeg_env())
 
     # ===== procfile =====
 
