@@ -1,4 +1,6 @@
+import re
 import subprocess
+import tempfile
 import unittest
 from fnmatch import fnmatch
 import multiprocessing
@@ -199,20 +201,51 @@ def indices(a, func):
     return [i for (i, val) in enumerate(a) if func(val)]
 
 
-def import_python_file(filepath):
+def import_python_file(filepath : str, override : dict = None):
     """
-    Import a python file as a module.
-    :param filepath:
-    :return:
+    Import a python file as a module, allowing overriding some of the variables.
+    Assumption: in the original python file, variables to be overridden get assigned once only, in a single line.
     """
-    filename = get_file_name_without_extension(filepath)
-    try:
-        from importlib.machinery import SourceFileLoader
-        ret = SourceFileLoader(filename, filepath).load_module()
-    except ImportError:
-        import imp
-        ret = imp.load_source(filename, filepath)
-    return ret
+    if override is None:
+        filename = get_file_name_without_extension(filepath)
+        try:
+            from importlib.machinery import SourceFileLoader
+            ret = SourceFileLoader(filename, filepath).load_module()
+        except ImportError:
+            import imp
+            ret = imp.load_source(filename, filepath)
+        return ret
+    else:
+        override_ = override.copy()
+        tmpfile = tempfile.NamedTemporaryFile(delete=False, suffix='.py')
+        with open(filepath, 'r') as fin:
+            with open(tmpfile.name, 'w') as fout:
+                while True:
+                    line = fin.readline()
+                    if len(override_) > 0:
+                        suffixes = []
+                        for key in list(override_.keys()):
+                            if key in line and '=' in line:
+                                s = f"{key} = '{override_[key]}'" if isinstance(override_[key], str) else f"{key} = {override_[key]}"
+                                suffixes.append(s)
+                                del override_[key]
+                        if len(suffixes) > 0:
+                            line = '\n'.join([line.strip()] + suffixes) + '\n'
+                    fout.write(line)
+                    if not line:
+                        break
+                if len(override_) > 0:
+                    for key in override_:
+                        s = f"{key} = '{override_[key]}'" if isinstance(override_[key], str) else f"{key} = {override_[key]}"
+                        s += '\n'
+                        fout.write(s)
+        #============= debug =================
+        # with open(tmpfile.name, 'r') as fin:
+        #     print(fin.read())
+        #=====================================
+        ret = import_python_file(tmpfile.name)
+        os.remove(tmpfile.name)
+        return ret
 
 
 def make_absolute_path(path, current_dir):
