@@ -98,7 +98,7 @@ class RegressorMixin(object):
                 respow = ResolvingPowerPerfMetric(ys_label_raw, ys_label_pred) \
                     .evaluate(enable_mapping=False)['score']
                 stats['ResPow'] = respow
-            except TypeError: # ResPow would not work with dictionary-style dataset
+            except (TypeError, AssertionError): # ResPow would not work with dictionary-style dataset
                 stats['ResPow'] = float('nan')
 
             try:
@@ -106,7 +106,7 @@ class RegressorMixin(object):
                 respow_norm = ResolvingPowerPerfMetric(ys_label_raw, ys_label_pred) \
                     .evaluate(enable_mapping=True)['score']
                 stats['ResPowNormalized'] = respow_norm
-            except TypeError: # ResPow would not work with dictionary-style dataset
+            except (TypeError, AssertionError): # ResPow would not work with dictionary-style dataset
                 stats['ResPowNormalized'] = float('nan')
 
         if 'ys_label_stddev' in kwargs and 'ys_label_stddev' and kwargs['ys_label_stddev'] is not None:
