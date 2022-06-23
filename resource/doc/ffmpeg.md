@@ -21,7 +21,7 @@ ffmpeg -video_size 576x324 -r 24 -pixel_format yuv420p -i src01_hrc00_576x324.yu
     -video_size 576x324 -r 24 -pixel_format yuv420p -i src01_hrc01_576x324.yuv \
     -lavfi "[0:v]setpts=PTS-STARTPTS[reference]; \
             [1:v]setpts=PTS-STARTPTS[distorted]; \
-            [distorted][reference]libvmaf=log_fmt=xml:log_path=/dev/stdout:model_path={your_vmaf_dir}/model/vmaf_v0.6.1.json" \
+            [distorted][reference]libvmaf=log_fmt=xml:log_path=/dev/stdout:model_path={your_vmaf_dir}/model/vmaf_v0.6.1.json:n_threads=4" \
     -f null -
 ```
 
@@ -39,7 +39,7 @@ ffmpeg \
     -r 24 -i Seeking_10_288_375.mp4 \
     -lavfi "[0:v]setpts=PTS-STARTPTS[reference]; \
             [1:v]scale=720:480:flags=bicubic,setpts=PTS-STARTPTS[distorted]; \
-            [distorted][reference]libvmaf=log_fmt=xml:log_path=/dev/stdout:model_path={your_vmaf_dir}/model/vmaf_v0.6.1.json" \
+            [distorted][reference]libvmaf=log_fmt=xml:log_path=/dev/stdout:model_path={your_vmaf_dir}/model/vmaf_v0.6.1.json:n_threads=4" \
     -f null -
 ```
 
