@@ -25,6 +25,7 @@ enum {
     ARG_CPUMASK,
     ARG_AOM_CTC,
     ARG_FRAME_CNT,
+    ARG_SKIP_REF_FRAME,
 };
 
 static const struct option long_opts[] = {
@@ -46,6 +47,7 @@ static const struct option long_opts[] = {
     { "cpumask",          1, NULL, ARG_CPUMASK },
     { "aom_ctc",          1, NULL, ARG_AOM_CTC },
     { "frame_cnt",        1, NULL, ARG_FRAME_CNT },
+    { "skip_ref_frame",   1, NULL, ARG_SKIP_REF_FRAME },
     { "no_prediction",    0, NULL, 'n' },
     { "version",          0, NULL, 'v' },
     { "quiet",            0, NULL, 'q' },
@@ -81,6 +83,7 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --feature $string:         additional feature\n"
             " --cpumask: $bitmask        restrict permitted CPU instruction sets\n"
             " --frame_cnt $unsigned:     maximum number of frames to process\n"
+            " --skip_ref_frame $unsigned:skip the first N frames in reference\n"
             " --subsample: $unsigned     compute scores only every N frames\n"
             " --quiet/-q:                disable FPS meter when run in a TTY\n"
             " --no_prediction/-n:        no prediction, extract features only\n"
@@ -399,6 +402,9 @@ void cli_parse(const int argc, char *const *const argv,
         case ARG_FRAME_CNT:
             settings->frame_cnt =
                 parse_unsigned(optarg, ARG_FRAME_CNT, argv[0]);
+            break;
+        case ARG_SKIP_REF_FRAME:
+            settings->skip_ref_frame = parse_unsigned(optarg, ARG_SKIP_REF_FRAME, argv[0]);
             break;
         case 'n':
             settings->no_prediction = true;

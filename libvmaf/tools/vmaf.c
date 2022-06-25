@@ -306,6 +306,14 @@ int main(int argc, char *argv[])
         }
     }
 
+    if (c.skip_ref_frame > 0) {
+        printf("reference skip %d frames\n", c.skip_ref_frame);
+        for (unsigned i = 0; i < c.skip_ref_frame; i++) {
+            VmafPicture pic_ref;
+            fetch_picture(&vid_ref, &pic_ref);
+        }
+    }
+
     float fps = 0.;
     const time_t t0 = clock();
     unsigned picture_index;
