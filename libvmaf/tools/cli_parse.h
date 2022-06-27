@@ -31,6 +31,7 @@ typedef struct {
 typedef struct {
     char *path_ref, *path_dist;
     unsigned skip_ref_frame;
+    unsigned skip_dist_frame;
     unsigned frame_cnt;
     unsigned width, height;
     enum VmafPixelFormat pix_fmt;
