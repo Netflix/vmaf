@@ -25,8 +25,8 @@ enum {
     ARG_CPUMASK,
     ARG_AOM_CTC,
     ARG_FRAME_CNT,
-    ARG_SKIP_REF_FRAME,
-    ARG_SKIP_DIST_FRAME,
+    ARG_FRAME_SKIP_REF,
+    ARG_FRAME_SKIP_DIST,
 };
 
 static const struct option long_opts[] = {
@@ -48,8 +48,8 @@ static const struct option long_opts[] = {
     { "cpumask",          1, NULL, ARG_CPUMASK },
     { "aom_ctc",          1, NULL, ARG_AOM_CTC },
     { "frame_cnt",        1, NULL, ARG_FRAME_CNT },
-    { "skip_ref_frame",   1, NULL, ARG_SKIP_REF_FRAME },
-    { "skip_dist_frame",  1, NULL, ARG_SKIP_DIST_FRAME },
+    { "frame_skip_ref",   1, NULL, ARG_FRAME_SKIP_REF },
+    { "frame_skip_dist",  1, NULL, ARG_FRAME_SKIP_DIST },
     { "no_prediction",    0, NULL, 'n' },
     { "version",          0, NULL, 'v' },
     { "quiet",            0, NULL, 'q' },
@@ -66,31 +66,31 @@ static void usage(const char *const app, const char *const reason, ...) {
     }
     fprintf(stderr, "Usage: %s [options]\n\n", app);
     fprintf(stderr, "Supported options:\n"
-            " --reference/-r $path:       path to reference .y4m or .yuv\n"
-            " --distorted/-d $path:       path to distorted .y4m or .yuv\n"
-            " --width/-w $unsigned:       width\n"
-            " --height/-h $unsigned:      height\n"
-            " --pixel_format/-p: $string  pixel format (420/422/444)\n"
-            " --bitdepth/-b $unsigned:    bitdepth (8/10/12/16)\n"
-            " --model/-m $params:         model parameters, colon \":\" delimited\n"
-            "                             `path=` path to model file\n"
-            "                             `version=` built-in model version\n"
-            "                             `name=` name used in log (optional)\n"
-            " --output/-o $path:          output file\n"
-            " --xml:                      write output file as XML (default)\n"
-            " --json:                     write output file as JSON\n"
-            " --csv:                      write output file as CSV\n"
-            " --sub:                      write output file as subtitle\n"
-            " --threads $unsigned:        number of threads to use\n"
-            " --feature $string:          additional feature\n"
-            " --cpumask: $bitmask         restrict permitted CPU instruction sets\n"
-            " --frame_cnt $unsigned:      maximum number of frames to process\n"
-            " --skip_ref_frame $unsigned: skip the first N frames in reference\n"
-            " --skip_dist_frame $unsigned:skip the first N frames in distorted\n"
-            " --subsample: $unsigned      compute scores only every N frames\n"
-            " --quiet/-q:                 disable FPS meter when run in a TTY\n"
-            " --no_prediction/-n:         no prediction, extract features only\n"
-            " --version/-v:               print version and exit\n"
+            " --reference/-r $path:        path to reference .y4m or .yuv\n"
+            " --distorted/-d $path:        path to distorted .y4m or .yuv\n"
+            " --width/-w $unsigned:        width\n"
+            " --height/-h $unsigned:       height\n"
+            " --pixel_format/-p: $string   pixel format (420/422/444)\n"
+            " --bitdepth/-b $unsigned:     bitdepth (8/10/12/16)\n"
+            " --model/-m $params:          model parameters, colon \":\" delimited\n"
+            "                              `path=` path to model file\n"
+            "                              `version=` built-in model version\n"
+            "                              `name=` name used in log (optional)\n"
+            " --output/-o $path:           output file\n"
+            " --xml:                       write output file as XML (default)\n"
+            " --json:                      write output file as JSON\n"
+            " --csv:                       write output file as CSV\n"
+            " --sub:                       write output file as subtitle\n"
+            " --threads $unsigned:         number of threads to use\n"
+            " --feature $string:           additional feature\n"
+            " --cpumask: $bitmask          restrict permitted CPU instruction sets\n"
+            " --frame_cnt $unsigned:       maximum number of frames to process\n"
+            " --frame_skip_ref $unsigned:  skip the first N frames in reference\n"
+            " --frame_skip_dist $unsigned: skip the first N frames in distorted\n"
+            " --subsample: $unsigned       compute scores only every N frames\n"
+            " --quiet/-q:                  disable FPS meter when run in a TTY\n"
+            " --no_prediction/-n:          no prediction, extract features only\n"
+            " --version/-v:                print version and exit\n"
            );
     exit(1);
 }
@@ -406,11 +406,11 @@ void cli_parse(const int argc, char *const *const argv,
             settings->frame_cnt =
                 parse_unsigned(optarg, ARG_FRAME_CNT, argv[0]);
             break;
-        case ARG_SKIP_REF_FRAME:
-            settings->skip_ref_frame = parse_unsigned(optarg, ARG_SKIP_REF_FRAME, argv[0]);
+        case ARG_FRAME_SKIP_REF:
+            settings->frame_skip_ref = parse_unsigned(optarg, ARG_FRAME_SKIP_REF, argv[0]);
             break;
-        case ARG_SKIP_DIST_FRAME:
-            settings->skip_dist_frame = parse_unsigned(optarg, ARG_SKIP_DIST_FRAME, argv[0]);
+        case ARG_FRAME_SKIP_DIST:
+            settings->frame_skip_dist = parse_unsigned(optarg, ARG_FRAME_SKIP_DIST, argv[0]);
             break;
         case 'n':
             settings->no_prediction = true;

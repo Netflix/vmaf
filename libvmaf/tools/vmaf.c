@@ -306,16 +306,16 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (c.skip_ref_frame > 0) {
-        printf("skip %d frames in reference\n", c.skip_ref_frame);
-        for (unsigned i = 0; i < c.skip_ref_frame; i++) {
+    if (c.frame_skip_ref > 0) {
+        printf("skip %d frames in reference\n", c.frame_skip_ref);
+        for (unsigned i = 0; i < c.frame_skip_ref; i++) {
             VmafPicture pic_ref;
             fetch_picture(&vid_ref, &pic_ref);
         }
     }
-    if (c.skip_dist_frame > 0) {
-        printf("skip %d frames in distorted\n", c.skip_dist_frame);
-        for (unsigned i = 0; i < c.skip_dist_frame; i++) {
+    if (c.frame_skip_dist > 0) {
+        printf("skip %d frames in distorted\n", c.frame_skip_dist);
+        for (unsigned i = 0; i < c.frame_skip_dist; i++) {
             VmafPicture pic_dist;
             fetch_picture(&vid_dist, &pic_dist);
         }
