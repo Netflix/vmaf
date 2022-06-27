@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "feature_collector.h"
 #include "feature_extractor.h"
+#include "log.h"
 
 typedef int32_t od_coeff;
 
@@ -348,6 +349,14 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     (void) bpc;
     (void) w;
     (void) h;
+
+    if (bpc > 12) {
+        vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                 "%s: invalid bitdepth (%d), "
+                 "bpc must be less than or equal to 12\n",
+                 fex->name, bpc);
+        return -EINVAL;
+    }
 
     if (pix_fmt == VMAF_PIX_FMT_YUV400P)
         return -EINVAL;
