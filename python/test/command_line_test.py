@@ -161,6 +161,47 @@ class CommandLineTest(unittest.TestCase):
         self.assertEqual(ret, 0)
 
 
+class VmafexecCommandLineTest(unittest.TestCase):
+
+    RC_SUCCESS = 0
+
+    def test_run_vmafexec(self):
+        exe = ExternalProgram.vmafexec
+        cmd = "{exe} --reference {ref} --distorted {dis} --width 576 --height 324 --pixel_format 420 --bitdepth 8 --xml --feature psnr " \
+              "--model path={model} --quiet --output /dev/null".format(
+            exe=exe,
+            ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"),
+            model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.json"),
+        )
+        ret = subprocess.call(cmd, shell=True)
+        self.assertEqual(ret, self.RC_SUCCESS)
+
+    def test_run_vmafexec_with_frame_skipping(self):
+        exe = ExternalProgram.vmafexec
+        cmd = "{exe} --reference {ref} --distorted {dis} --width 576 --height 324 --pixel_format 420 --bitdepth 8 --xml --feature psnr " \
+              "--model path={model} --quiet --output /dev/null --frame_skip_ref 2 --frame_skip_dist 2".format(
+            exe=exe,
+            ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"),
+            model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.json"),
+        )
+        ret = subprocess.call(cmd, shell=True)
+        self.assertEqual(ret, self.RC_SUCCESS)
+
+    def test_run_vmafexec_with_frame_skipping_unequal(self):
+        exe = ExternalProgram.vmafexec
+        cmd = "{exe} --reference {ref} --distorted {dis} --width 576 --height 324 --pixel_format 420 --bitdepth 8 --xml --feature psnr " \
+              "--model path={model} --quiet --output /dev/null --frame_skip_ref 2 --frame_skip_dist 5".format(
+            exe=exe,
+            ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"),
+            model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.json"),
+        )
+        ret = subprocess.call(cmd, shell=True)
+        self.assertEqual(ret, self.RC_SUCCESS)
+
+
 class VmafossexecCommandLineTest(unittest.TestCase):
 
     RC_SUCCESS = 0
