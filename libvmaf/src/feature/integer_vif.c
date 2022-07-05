@@ -37,6 +37,8 @@
 #if HAVE_AVX512
 #include "x86/vif_avx512.h"
 #endif
+#elif ARCH_AARCH64
+#include "arm64/vif_neon.h"
 #endif
 
 typedef struct VifState {
@@ -618,6 +620,11 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     }
 #endif
 */
+#elif ARCH_AARCH64
+    s->subsample_rd_8 = vif_subsample_rd_8_neon;
+    s->subsample_rd_16 = vif_subsample_rd_16_neon;
+    s->vif_statistic_8 = vif_statistic_8_neon;
+    s->vif_statistic_16 = vif_statistic_16_neon;
 #endif
 
     log_generate(s->public.log2_table);
