@@ -216,8 +216,7 @@ class VmafexecCommandLineTest(unittest.TestCase):
         self.assertEqual(ret, self.RC_SUCCESS)
         with open(self.output_file_path, 'rt') as fo:
             fc = fo.read()
-            self.assertTrue('<metric name="psnr_y" min="19.019327" max="21.084954" mean="20.269606" harmonic_mean="20.258113" />' in fc)  # psnr is not enough since it is symmetric
-            self.assertTrue('<metric name="vmaf" min="18.485443" max="31.672691" mean="26.446581" harmonic_mean="26.015527" />' in fc)  # vmaf ensures asymmetricity
+            self.assertTrue('<metric name="psnr_y" min="19.019327" max="21.084954" mean="20.269606" harmonic_mean="20.258113" />' in fc)
 
 
 class VmafossexecCommandLineTest(unittest.TestCase):
