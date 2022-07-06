@@ -780,26 +780,6 @@ class NoPrint(object):
         sys.stdout = self._original_stdout
 
 
-def linear_func(x, a, b):
-    return a*x + b
-
-
-def linear_fit(x, y):
-    """
-    >>> fit = linear_fit([0, 0], [1, 1])
-    >>> (fit[0][0], fit[0][1])
-    (1.0, 0.0)
-    """
-    assert isinstance(x, (list, tuple, np.ndarray)), 'x must be a list, tuple, or a numpy array'
-    assert len(x) == np.size(x) and len(x) > 0, 'x must be one-dimensional with non-zero length'
-    assert isinstance(y, (list, tuple, np.ndarray)), 'y must be a list or a numpy array'
-    assert len(y) == np.size(y) and len(y) > 0, 'y must be one-dimensional with non-zero length'
-    assert len(x) == len(y), 'x must be the same length as y'
-
-    import scipy.optimize
-    return scipy.optimize.curve_fit(linear_func, x, y, [1.0, 0.0])
-
-
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
