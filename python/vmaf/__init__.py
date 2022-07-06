@@ -26,11 +26,11 @@ except BaseException:
 from . import config
 
 # Path to folder containing this file
-VMAF_LIB_FOLDER = os.path.dirname(os.path.abspath(__file__))
+VMAF_PYTHON_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 
 # Assuming vmaf source checkout, path to top checked out folder
-VMAF_PROJECT = os.path.abspath(os.path.join(VMAF_LIB_FOLDER, '../..',))
+VMAF_ROOT = os.path.abspath(os.path.join(VMAF_PYTHON_ROOT, '..', '..', ))
 
 
 def run_process(cmd, **kwargs):
@@ -43,7 +43,7 @@ def run_process(cmd, **kwargs):
 
 
 def project_path(relative_path):
-    path = os.path.join(VMAF_PROJECT, relative_path)
+    path = os.path.join(VMAF_ROOT, relative_path)
     return path
 
 
@@ -305,3 +305,7 @@ class ExternalProgramCaller(object):
             logger.info(vmafexec_cmd)
 
         run_process(vmafexec_cmd, shell=True)
+
+
+def model_path(*components):
+    return os.path.join(VMAF_PYTHON_ROOT, "model", *components)
