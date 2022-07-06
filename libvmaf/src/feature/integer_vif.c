@@ -637,6 +637,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         5 * (s->public.buf.stride_32) + 7 * s->public.buf.stride_tmp;
     void *data = aligned_malloc(data_sz, MAX_ALIGN);
     if (!data) return -ENOMEM;
+    memset(data, 0, data_sz);
 
     s->public.buf.data = data; data += pad_size;
     s->public.buf.ref = data; data += frame_size + pad_size + pad_size;
