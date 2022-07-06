@@ -1,4 +1,5 @@
 import os
+import tempfile
 import unittest
 import subprocess
 
@@ -159,6 +160,63 @@ class CommandLineTest(unittest.TestCase):
             exe=exe, dataset=self.dataset_filename)
         ret = run_process(cmd, shell=True)
         self.assertEqual(ret, 0)
+
+
+class VmafexecCommandLineTest(unittest.TestCase):
+
+    RC_SUCCESS = 0
+
+    def setUp(self) -> None:
+        self.output_file_path = tempfile.NamedTemporaryFile().name
+
+    def tearDown(self) -> None:
+        if os.path.exists(self.output_file_path):
+            os.remove(self.output_file_path)
+
+    def test_run_vmafexec(self):
+        exe = ExternalProgram.vmafexec
+        cmd = "{exe} --reference {ref} --distorted {dis} --width 576 --height 324 --pixel_format 420 --bitdepth 8 --xml --feature psnr " \
+              "--model path={model} --quiet --output {output}".format(
+            exe=exe,
+            ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"),
+            model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.json"),
+            output=self.output_file_path)
+        ret = subprocess.call(cmd, shell=True)
+        self.assertEqual(ret, self.RC_SUCCESS)
+        with open(self.output_file_path, 'rt') as fo:
+            fc = fo.read()
+            self.assertTrue('<metric name="psnr_y" min="29.640688" max="34.760779" mean="30.755064" harmonic_mean="30.727905" />' in fc)
+
+    def test_run_vmafexec_with_frame_skipping(self):
+        exe = ExternalProgram.vmafexec
+        cmd = "{exe} --reference {ref} --distorted {dis} --width 576 --height 324 --pixel_format 420 --bitdepth 8 --xml --feature psnr " \
+              "--model path={model} --quiet --output {output} --frame_skip_ref 2 --frame_skip_dist 2".format(
+            exe=exe,
+            ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"),
+            model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.json"),
+            output=self.output_file_path)
+        ret = subprocess.call(cmd, shell=True)
+        self.assertEqual(ret, self.RC_SUCCESS)
+        with open(self.output_file_path, 'rt') as fo:
+            fc = fo.read()
+            self.assertTrue('<metric name="psnr_y" min="29.640688" max="33.788213" mean="30.643458" harmonic_mean="30.626214" />' in fc)
+
+    def test_run_vmafexec_with_frame_skipping_unequal(self):
+        exe = ExternalProgram.vmafexec
+        cmd = "{exe} --reference {ref} --distorted {dis} --width 576 --height 324 --pixel_format 420 --bitdepth 8 --xml --feature psnr " \
+              "--model path={model} --quiet --output {output} --frame_skip_ref 2 --frame_skip_dist 5".format(
+            exe=exe,
+            ref=VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv"),
+            dis=VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv"),
+            model=VmafConfig.model_path("other_models", "vmaf_v0.6.0.json"),
+            output=self.output_file_path)
+        ret = subprocess.call(cmd, shell=True)
+        self.assertEqual(ret, self.RC_SUCCESS)
+        with open(self.output_file_path, 'rt') as fo:
+            fc = fo.read()
+            self.assertTrue('<metric name="psnr_y" min="19.019327" max="21.084954" mean="20.269606" harmonic_mean="20.258113" />' in fc)
 
 
 class VmafossexecCommandLineTest(unittest.TestCase):
