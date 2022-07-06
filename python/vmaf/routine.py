@@ -411,7 +411,7 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
     if ax is not None:
         content_ids = list(map(lambda asset: asset.content_id, test_assets))
 
-        if 'point_label' in kwargs and kwargs['point_label'] is not None:
+        if 'point_label' in kwargs:
             if kwargs['point_label'] == 'asset_id':
                 point_labels = list(map(lambda asset: asset.asset_id, test_assets))
             elif kwargs['point_label'] == 'dis_path':
