@@ -284,14 +284,15 @@ int vmaf_predict_score_at_index(VmafModel *model,
         err = vmaf_feature_collector_get_score(feature_collector,
                                                feature_name, &feature_score,
                                                index);
-        free(feature_name);
 
         if (err) {
             vmaf_log(VMAF_LOG_LEVEL_ERROR,
                      "vmaf_predict_score_at_index(): no feature '%s' "
                      "at index %d\n", feature_name, index);
+            free(feature_name);
             goto free_node;
         }
+        free(feature_name);
 
         err = normalize(model, model->feature[i].slope,
                         model->feature[i].intercept, &feature_score);
