@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import unittest
 
+import vmaf
 from vmaf.config import VmafConfig
 from vmaf.core.asset import Asset
 from vmaf.core.quality_runner import VmafexecQualityRunner, VmafossExecQualityRunner
@@ -123,7 +124,7 @@ class VmafexecQualityRunnerTest(MyTestCase):
             result_store=None,
             optional_dict={
                 'motion_force_zero': True,
-                'model_filepath': VmafConfig.model_path("vmaf_v0.6.1.json")
+                'model_filepath': vmaf.model_path("vmaf_v0.6.1.json")
             }
         )
         self.runner.run(parallelize=True)
