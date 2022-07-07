@@ -17,9 +17,16 @@ class CambiFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
         # scores in the log file.
 
         quality_width, quality_height = asset.quality_width_height
+        assert asset.dis_encode_width_height is not None, \
+            'For Cambi, dis_encode_width_height cannot be None. One can specify dis_encode_width_height by adding ' \
+            'the following fields to asset_dict: 1) dis_enc_width and dis_enc_height, or 2) dis_width and ' \
+            'dis_height, or 3) width and height.'
         encode_width, encode_height = asset.dis_encode_width_height
 
         if encode_width != quality_width or encode_height != quality_height:
+            # hacky: unintended consequence of modifying the input. TODO: improve.
+            if self.optional_dict is None:
+                self.optional_dict = dict()
             self.optional_dict['enc_width'] = encode_width
             self.optional_dict['enc_height'] = encode_height
 
@@ -34,7 +41,9 @@ class CambiFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
             'cambi', yuv_type, ref_path, dis_path, quality_width, quality_height,
             log_file_path, logger, options=self.optional_dict)
 
+
 class CambiFullReferenceFeatureExtractor(CambiFeatureExtractor):
+
     TYPE = "Cambi_FR_feature"
 
     ATOM_FEATURES = ['cambi', 'cambi_full_reference', 'cambi_source']
