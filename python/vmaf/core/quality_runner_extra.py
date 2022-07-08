@@ -14,7 +14,7 @@ class VmafQualityRunnerWithLocalExplainer(VmafQualityRunner):
     want to be searchable by type 'VMAF', so it is put in a different module file.
     """
 
-    # TYPE = 'VMAF' # make same as parent class, as results won't get impacted
+    TYPE = 'VMAF_LE'
     VERSION = '{}-le1'.format(VmafQualityRunner.VERSION)
 
     @classmethod
