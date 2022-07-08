@@ -79,10 +79,12 @@ class TypeVersionEnabled(object):
                 matched_subclasses.append(subclass)
         assert len(matched_subclasses) == 1, \
             "Must have one and only one subclass of {class_name} with type " \
-            "{type}, but got {num}".format(
+            "{type}, but got {num}: {classes}".format(
                 class_name=cls.__name__,
                 type=subclass_type,
-                num=len(matched_subclasses))
+                num=len(matched_subclasses),
+                classes=[clss.__name__ for clss in matched_subclasses],
+            )
         return matched_subclasses[0]
 
     @classmethod
