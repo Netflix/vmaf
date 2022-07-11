@@ -1,7 +1,9 @@
+import glob
 import os
 import unittest
+import shutil
 
-from vmaf.config import VmafConfig
+from vmaf.config import VmafConfig, DisplayConfig
 # from vmaf.routine import train_test_vmaf_on_dataset, read_dataset, run_test_on_dataset, generate_dataset_from_raw
 from vmaf.routine import read_dataset, generate_dataset_from_raw
 from vmaf.tools.misc import import_python_file
@@ -361,6 +363,31 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(test_assets[1].groundtruth, 50, places=4)
         self.assertAlmostEqual(test_assets[2].groundtruth, 100, places=4)
         self.assertAlmostEqual(test_assets[3].groundtruth, 80, places=4)
+
+    def test_test_on_dataset_plot_per_content(self):
+        from vmaf.routine import run_test_on_dataset
+        test_dataset = import_python_file(
+            VmafConfig.test_resource_path('dataset_sample.py'))
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(1, 1, figsize=[20, 20])
+        run_test_on_dataset(test_dataset, VmafQualityRunner, ax,
+                            None, VmafConfig.model_path("vmaf_float_v0.6.1.json"),
+                            parallelize=False,
+                            fifo_mode=False,
+                            aggregate_method=None,
+                            point_label='asset_id',
+                            do_plot=['aggregate',  # plots all contents in one figure
+                                     'per_content'  # plots a separate figure per content
+                                     ],
+                            plot_linear_fit=True  # adds linear fit line to each plot
+                            )
+
+        output_dir = VmafConfig.workspace_path("output", "test_output")
+        DisplayConfig.show(write_to_dir=output_dir)
+        self.assertEqual(len(glob.glob(os.path.join(output_dir, '*.png'))), 3)
+
+        if os.path.exists(output_dir):
+            shutil.rmtree(output_dir)
 
     def test_test_on_dataset_bootstrap_quality_runner(self):
         from vmaf.routine import run_test_on_dataset

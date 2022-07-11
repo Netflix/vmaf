@@ -10,7 +10,7 @@ from sklearn.metrics import f1_score
 import numpy as np
 
 from vmaf.tools.decorator import deprecated, override
-from vmaf.tools.misc import indices, NoPrint
+from vmaf.tools.misc import indices, NoPrint, linear_fit, linear_func
 from vmaf.core.mixin import TypeVersionEnabled
 from vmaf.core.perf_metric import RmsePerfMetric, SrccPerfMetric, PccPerfMetric, \
     KendallPerfMetric, AucPerfMetric, ResolvingPowerPerfMetric
@@ -249,16 +249,59 @@ class RegressorMixin(object):
             aggregate_ys_label_pred += stats['ys_label_pred']
         return cls.get_stats(aggregate_ys_label, aggregate_ys_label_pred)
 
+    @staticmethod
+    def get_xlim_ylim(x, y, x_stddev):
+        xlim = [np.nanmin(x) - 2 * np.nanmax(x_stddev), np.nanmax(x) + 2 * np.nanmax(x_stddev)]
+        x_scale_offset = abs(xlim[1] - xlim[0]) * 0.05
+        xlim[0] -= x_scale_offset
+        xlim[1] += x_scale_offset
+
+        ylim = [np.nanmin(y), np.nanmax(y)]
+        y_scale_offset = abs(ylim[1] - ylim[0]) * 0.05
+        ylim[0] -= y_scale_offset
+        ylim[1] += y_scale_offset
+
+        return tuple(xlim), tuple(ylim)
+
     @classmethod
     def plot_scatter(cls, ax, stats, **kwargs):
 
         assert len(stats['ys_label']) == len(stats['ys_label_pred'])
+        ys_label = np.array(stats['ys_label'])
+        ys_label_pred = np.array(stats['ys_label_pred'])
+        ys_label_stddev = np.array(stats['ys_label_stddev']) if 'ys_label_stddev' in stats else np.zeros(len(ys_label))
+
+        try:
+            ys_label_stddev[np.isnan(ys_label_stddev)] = 0
+        except:
+            ys_label_stddev[ys_label_stddev == None] = 0
+
+        xlim, ylim = cls.get_xlim_ylim(ys_label, ys_label_pred, ys_label_stddev)
 
         content_ids = kwargs['content_ids'] if 'content_ids' in kwargs else None
         point_labels = kwargs['point_labels'] if 'point_labels' in kwargs else None
+        plot_linear_fit = kwargs['plot_linear_fit'] if 'plot_linear_fit' in kwargs else False
+        assert isinstance(plot_linear_fit, bool)
+
+        do_plot = kwargs['do_plot'] if 'do_plot' in kwargs else ['aggregate']
+        accepted_options = ['aggregate', 'per_content']
+        assert isinstance(do_plot, list), f"do_plot needs to be a list of plotting options. Accepted options are " \
+                                          f"{accepted_options}"
+
+        for option in do_plot:
+            assert option in accepted_options, f"{option} is not in {accepted_options}"
+
+        if plot_linear_fit:
+            overall_linear_fit = linear_fit(ys_label, ys_label_pred)
+            ax.set_xlim(xlim)
+            ax.set_ylim(ylim)
+            ax.axline((xlim[0], linear_func(xlim[0], overall_linear_fit[0][0], overall_linear_fit[0][1])),
+                      (xlim[1], linear_func(xlim[1], overall_linear_fit[0][0], overall_linear_fit[0][1])),
+                      color='gray', linestyle='--')
+            ax.legend(['overall fit'])
 
         if content_ids is None:
-            ax.scatter(stats['ys_label'], stats['ys_label_pred'])
+            ax.errorbar(ys_label, ys_label_pred, xerr=1.96 * ys_label_stddev, marker='o', linestyle='')
         else:
             assert len(stats['ys_label']) == len(content_ids)
 
@@ -268,21 +311,53 @@ class RegressorMixin(object):
             colors = [cmap(i) for i in np.linspace(0, 1, len(unique_content_ids))]
             for idx, curr_content_id in enumerate(unique_content_ids):
                 curr_idxs = indices(content_ids, lambda cid: cid == curr_content_id)
-                curr_ys_label = np.array(stats['ys_label'])[curr_idxs]
-                curr_ys_label_pred = np.array(stats['ys_label_pred'])[curr_idxs]
-                try:
-                    curr_ys_label_stddev = np.array(stats['ys_label_stddev'])[curr_idxs]
+                curr_ys_label = ys_label[curr_idxs]
+                curr_ys_label_pred = ys_label_pred[curr_idxs]
+
+                curr_ys_label_stddev = ys_label_stddev[curr_idxs]
+                if 'aggregate' in do_plot:
                     ax.errorbar(curr_ys_label, curr_ys_label_pred,
                                 xerr=1.96 * curr_ys_label_stddev,
                                 marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)])
-                except:
-                    ax.errorbar(curr_ys_label, curr_ys_label_pred,
-                                marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)])
 
-        if point_labels:
+                if 'per_content' in do_plot:
+                    new_fig, new_ax = plt.subplots(1, 1, figsize=ax.figure.get_size_inches())
+                    new_ax.update_from(ax)
+                    new_ax.set_xlim(xlim)
+                    new_ax.set_ylim(ylim)
+
+                    if plot_linear_fit:
+                        curr_linear_fit = linear_fit(curr_ys_label, curr_ys_label_pred)
+                        new_ax.axline((xlim[0], linear_func(xlim[0], overall_linear_fit[0][0], overall_linear_fit[0][1])),
+                                   (xlim[1], linear_func(xlim[1], overall_linear_fit[0][0], overall_linear_fit[0][1])),
+                                   color='gray', linestyle='--')
+                        new_ax.axline((xlim[0], linear_func(xlim[0], curr_linear_fit[0][0], curr_linear_fit[0][1])),
+                                   (xlim[1], linear_func(xlim[1], curr_linear_fit[0][0], curr_linear_fit[0][1])),
+                                   color='red', linestyle='--')
+                        new_ax.legend(['overall fit', 'current fit'])
+
+                    new_ax.errorbar(curr_ys_label, curr_ys_label_pred,
+                                 xerr=1.96 * curr_ys_label_stddev,
+                                 marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)])
+
+                    new_ax.set_title(f'Content id {str(curr_content_id)}')
+                    new_ax.set_xlabel('True Score')
+                    new_ax.set_ylabel("Predicted Score")
+                    new_ax.grid()
+
+                    if point_labels:
+                        curr_point_labels = np.array(point_labels)[curr_idxs]
+                        assert len(curr_point_labels) == len(curr_ys_label)
+                        for i, curr_point_label in enumerate(curr_point_labels):
+                            new_ax.annotate(curr_point_label, (curr_ys_label[i], curr_ys_label_pred[i]))
+
+        if point_labels and 'aggregate' in do_plot:
             assert len(point_labels) == len(stats['ys_label'])
             for i, point_label in enumerate(point_labels):
                 ax.annotate(point_label, (stats['ys_label'][i], stats['ys_label_pred'][i]))
+
+        if 'aggregate' not in do_plot:
+            plt.close(ax.figure)
 
     @staticmethod
     def get_objective_score(result, type='SRCC'):
