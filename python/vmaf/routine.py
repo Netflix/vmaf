@@ -52,7 +52,7 @@ def read_dataset(dataset, **kwargs):
     start_frame = dataset.start_frame if hasattr(dataset, 'start_frame') else None
     end_frame = dataset.end_frame if hasattr(dataset, 'end_frame') else None
 
-    ref_dict = {} # dictionary of content_id -> path for ref videos
+    ref_dict = {}  # dictionary of content_id -> path for ref videos
     for ref_video in ref_videos:
         ref_dict[ref_video['content_id']] = ref_video
 
@@ -244,6 +244,15 @@ def read_dataset(dataset, **kwargs):
             asset_dict['start_frame'] = start_frame_
         if end_frame_ is not None:
             asset_dict['end_frame'] = end_frame_
+
+        if 'ref_start_frame' in ref_video:
+            asset_dict['ref_start_frame'] = ref_video['ref_start_frame']
+        if 'dis_start_frame' in dis_video:
+            asset_dict['dis_start_frame'] = dis_video['dis_start_frame']
+        if 'ref_end_frame' in ref_video:
+            asset_dict['ref_end_frame'] = ref_video['ref_end_frame']
+        if 'dis_end_frame' in dis_video:
+            asset_dict['dis_end_frame'] = dis_video['dis_end_frame']
 
         if groundtruth is None and skip_asset_with_none_groundtruth:
             pass

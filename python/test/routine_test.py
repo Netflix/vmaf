@@ -190,6 +190,20 @@ class TestReadDataset(unittest.TestCase):
         self.assertEqual(assets[1].ref_start_end_frame, (200, 210))
         self.assertEqual(assets[1].dis_start_end_frame, (200, 210))
 
+    def test_read_dataset_refdif_start_end_frame(self):
+        dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset3.py')
+        dataset = import_python_file(dataset_path)
+        assets = read_dataset(dataset)
+
+        self.assertEqual(len(assets), 3)
+
+        self.assertEqual(assets[0].ref_start_end_frame, (250, 250))
+        self.assertEqual(assets[0].dis_start_end_frame, (250, 250))
+        self.assertEqual(assets[1].ref_start_end_frame, (250, 250))
+        self.assertEqual(assets[1].dis_start_end_frame, (200, 210))
+        self.assertEqual(assets[2].ref_start_end_frame, (250, 250))
+        self.assertEqual(assets[2].dis_start_end_frame, (250, 251))
+
     def test_read_dataset_fps_duration_sec(self):
         dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset2.py')
         dataset = import_python_file(dataset_path)
