@@ -10,3 +10,4 @@ clean:
 install:
 	meson setup libvmaf/build libvmaf --buildtype release && \
 	ninja -vC libvmaf/build install
+	cp libvmaf/build/tools/vmaf /usr/bin/vmaf
