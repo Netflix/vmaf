@@ -55,7 +55,6 @@ setup(
     ],
     entry_points = {
         'console_scripts': [
-            'ffmpeg2vmaf=vmaf.script.ffmpeg2vmaf:main',
             'run_cleaning_cache=vmaf.script.run_cleaning_cache:main',
             'run_psnr=vmaf.script.run_psnr:main',
             'run_result_assembly=vmaf.script.run_result_assembly:main',
