@@ -1,6 +1,6 @@
 # VMAF Python Library
 
-The VMAF Python library offers full functionalities from running basic VMAF command lines, software testing, training and validating a new VMAF model on video datasets, data visualization tools, etc. It is the playground to experiment with VMAF.
+The VMAF Python library offers full functionalities from running basic VMAF command lines, software testing, training and validating a new VMAF model on video datasets, data visualization tools, etc. It is the playground to experiment with VMAF and other video quality metrics.
 
 ## Requirements
 
@@ -83,7 +83,7 @@ Run unittests and make sure they all pass:
 ./unittest
 ```
 
-## Basic Usage
+## Command Line Tools
 
 ### Run VMAF Using `run_vmaf`
 
@@ -143,22 +143,7 @@ where `VMAF_score` is the final score and the others are the scores for VMAF's e
 - `adm2`, `vif_scalex` scores range from 0 (worst) to 1 (best)
 - `motion2` score typically ranges from 0 (static) to 20 (high-motion)
 
-### `ffmpeg2vmaf`
-
-Historically, we provide `ffmpeg2vmaf` as a command line tool that offers the capability of taking compressed video bitstreams as the input. But it is now considered deprecated in favor of [using FFmpeg with VMAF](ffmpeg.md) to achieve the same purpose.
-
-`ffmpeg2vmaf` essentially pipes FFmpeg-decoded videos to VMAF. Note that you need a recent version of `ffmpeg` installed (for the first time, run the command line, follow the prompted instruction to specify the path of `ffmpeg`). 
-
-```shell script
-PYTHONPATH=python ./python/vmaf/script/ffmpeg2vmaf.py \
-    quality_width quality_height \
-    reference_path distorted_path \
-    [--model model_path] [--out-fmt out_fmt]
-```
-
-Here `quality_width` and `quality_height` are the width and height the reference and distorted videos are scaled to before VMAF calculation. This is different from `run_vmaf`'s  `width` and `height`, which specify the raw YUV's width and height instead. The input to `ffmpeg2vmaf` must already have such information specified in the header so that they are FFmpeg-decodable.
-
-## Advanced Usage
+### Play with Models
 
 VMAF follows a machine-learning based approach to first extract a number of quality-relevant features (or elementary metrics) from a distorted video and its reference full-quality video, followed by fusing them into a final quality score using a non-linear regressor (e.g. an SVM regressor), hence the name “Video Multi-method Assessment Fusion”.
 
@@ -327,8 +312,8 @@ model_param_dict = {
 
 The trained model is output to `output_model_file`. Once it is obtained, it can be used by the `run_vmaf`, or by `run_testing` to validate another dataset.
 
-![training scatter](/resource/images/scatter_training.png)
-![testing scatter](/resource/images/scatter_testing.png)
+![training scatter](../images/scatter_training.png)
+![testing scatter](../images/scatter_testing.png)
 
 Above are two example scatter plots obtained from running the `run_vmaf_training` and `run_testing` commands on a training and a testing dataset, respectively.
 
