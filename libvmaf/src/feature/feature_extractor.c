@@ -39,11 +39,25 @@ extern VmafFeatureExtractor vmaf_fex_float_ms_ssim;
 extern VmafFeatureExtractor vmaf_fex_ciede;
 extern VmafFeatureExtractor vmaf_fex_psnr;
 extern VmafFeatureExtractor vmaf_fex_psnr_hvs;
+#if HAVE_CUDA
+extern VmafFeatureExtractor vmaf_fex_integer_adm_cuda;
+extern VmafFeatureExtractor vmaf_fex_integer_vif_cuda;
+extern VmafFeatureExtractor vmaf_fex_integer_motion_cuda;
+#endif
 extern VmafFeatureExtractor vmaf_fex_integer_adm;
 extern VmafFeatureExtractor vmaf_fex_integer_motion;
 extern VmafFeatureExtractor vmaf_fex_integer_vif;
 extern VmafFeatureExtractor vmaf_fex_cambi;
 extern VmafFeatureExtractor vmaf_fex_null;
+
+static VmafFeatureExtractor *cuda_feature_extractor_list[] = {
+#if HAVE_CUDA
+    &vmaf_fex_integer_adm_cuda,
+    &vmaf_fex_integer_vif_cuda,
+    &vmaf_fex_integer_motion_cuda,
+#endif
+    NULL
+};
 
 static VmafFeatureExtractor *feature_extractor_list[] = {
 #if VMAF_FLOAT_FEATURES
@@ -76,14 +90,30 @@ VmafFeatureExtractor *vmaf_get_feature_extractor_by_name(const char *name)
         if (!strcmp(name, fex->name))
            return fex;
     }
+
+    for (unsigned i = 0; (fex = cuda_feature_extractor_list[i]); i++) {
+        if (!strcmp(name, fex->name))
+           return fex;
+    }
     return NULL;
 }
 
-VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(const char *name)
+VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(const char *name, unsigned use_cuda)
 {
     if (!name) return NULL;
 
     VmafFeatureExtractor *fex = NULL;
+    if (use_cuda) {
+        for (unsigned i = 0; (fex = cuda_feature_extractor_list[i]); i++) {
+            if (!fex->provided_features) continue;
+            const char *fname = NULL;
+            for (unsigned j = 0; (fname = fex->provided_features[j]); j++) {
+                if (!strcmp(name, fname))
+                    return fex;
+            }
+        }
+    }
+
     for (unsigned i = 0; (fex = feature_extractor_list[i]); i++) {
         if (!fex->provided_features) continue;
         const char *fname = NULL;

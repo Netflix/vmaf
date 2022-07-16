@@ -9,6 +9,9 @@
 
 #include "libvmaf/picture.h"
 #include "libvmaf/libvmaf.h"
+#ifdef HAVE_CUDA
+#include "libvmaf/cuda.h"
+#endif
 
 static enum VmafPixelFormat pix_fmt_map(int pf)
 {
@@ -24,7 +27,8 @@ static enum VmafPixelFormat pix_fmt_map(int pf)
     }
 }
 
-static int validate_videos(video_input *vid1, video_input *vid2)
+static int validate_videos(video_input *vid1, video_input *vid2,
+                           video_input_info* vid_info)
 {
     int err_cnt = 0;
 
@@ -62,6 +66,7 @@ static int validate_videos(video_input *vid1, video_input *vid2)
 
     //TODO: more validations are possible.
 
+    *vid_info = info1;
     return err_cnt;
 }
 
@@ -169,7 +174,8 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    err = validate_videos(&vid_ref, &vid_dist);
+    video_input_info vid_info;
+    err = validate_videos(&vid_ref, &vid_dist, &vid_info);
     if (err) {
         fprintf(stderr, "videos are incompatible, %d %s.\n",
                 err, err == 1 ? "problem" : "problems");
@@ -314,7 +320,17 @@ int main(int argc, char *argv[])
     for (unsigned i = 0; i < c.frame_skip_dist; i++)
         fetch_picture(&vid_dist, &pic_dist);
 
-    float fps = 0.;
+#ifdef HAVE_CUDA
+    VmafCudaState *cu_state;
+    VmafCudaConfiguration cuda_cfg = { 0 };
+    err = vmaf_cuda_init(vmaf, &cu_state, cuda_cfg);
+    if (err) {
+        fprintf(stderr, "problem during vmaf_cuda_init\n");
+        return -1;
+    }
+#endif
+
+    float fps = 0.f;
     const time_t t0 = clock();
     unsigned picture_index;
     for (picture_index = 0 ;; picture_index++) {
@@ -358,7 +374,9 @@ int main(int argc, char *argv[])
             fprintf(stderr, "\nproblem reading pictures\n");
             break;
         }
+
     }
+
     if (istty && !c.quiet)
         fprintf(stderr, "\n");
 

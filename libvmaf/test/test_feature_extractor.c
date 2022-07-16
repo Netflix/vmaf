@@ -36,7 +36,7 @@ static char *test_get_feature_extractor_by_name_and_feature_name()
               !strcmp(fex->name, "vif"));
 
     fex =
-        vmaf_get_feature_extractor_by_feature_name("VMAF_integer_feature_adm2_score");
+        vmaf_get_feature_extractor_by_feature_name("VMAF_integer_feature_adm2_score" , 0);
     mu_assert("problem during vmaf_get_feature_extractor_by_feature_name",
               fex && !strcmp(fex->name, "adm"));
 

@@ -1,6 +1,7 @@
 /**
  *
  *  Copyright 2016-2020 Netflix, Inc.
+ *  Copyright 2021 NVIDIA Corporation.
  *
  *     Licensed under the BSD+Patent License (the "License");
  *     you may not use this file except in compliance with the License.
@@ -16,42 +17,20 @@
  *
  */
 
-#ifndef __VMAF_PICTURE_H__
-#define __VMAF_PICTURE_H__
+#include "integer_motion_cuda.h"
 
-#include <stddef.h>
-
+#include "common.h"
 #ifdef __cplusplus
+
 extern "C" {
 #endif
 
-enum VmafPixelFormat {
-    VMAF_PIX_FMT_UNKNOWN,
-    VMAF_PIX_FMT_YUV420P,
-    VMAF_PIX_FMT_YUV422P,
-    VMAF_PIX_FMT_YUV444P,
-    VMAF_PIX_FMT_YUV400P,
-};
-
-typedef struct VmafRef VmafRef;
-
-typedef struct VmafPicture {
-    enum VmafPixelFormat pix_fmt;
-    unsigned bpc;
-    unsigned w[3], h[3];
-    ptrdiff_t stride[3];
-    void *data[3];
-    VmafRef *ref;
-    void *priv;
-} VmafPicture;
-
-int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
-                       unsigned bpc, unsigned w, unsigned h);
-
-int vmaf_picture_unref(VmafPicture *pic);
+void calculate_motion_score(const VmafPicture* src, CudaVmafBuffer* src_blurred, 
+                          const CudaVmafBuffer* prev_blurred, CudaVmafBuffer* sad, 
+                          unsigned width, unsigned height, 
+                          ptrdiff_t src_stride, ptrdiff_t blurred_stride, unsigned src_bpc,
+                          CUstream stream);
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __VMAF_PICTURE_H__ */
