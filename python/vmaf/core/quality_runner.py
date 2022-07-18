@@ -609,6 +609,11 @@ class VmafQualityRunner(VmafQualityRunnerModelMixin, QualityRunner):
         vmaf_fassembler.remove_results()
 
 
+class VmafnegQualityRunner(VmafQualityRunner):
+    TYPE = 'VMAFNEG'
+    DEFAULT_MODEL_FILEPATH = vmaf.model_path('vmaf_v0.6.1neg.json')
+
+
 class EnsembleVmafQualityRunner(VmafQualityRunner):
     TYPE = 'EnsembleVMAF'
 
