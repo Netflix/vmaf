@@ -10,7 +10,7 @@ from vmaf.core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner,
     PsnrQualityRunner, MsSsimQualityRunner, \
     SsimQualityRunner, Adm2QualityRunner, VmafPhoneQualityRunner, VifQualityRunner, \
     Vif2QualityRunner, BootstrapVmafQualityRunner, BaggingVmafQualityRunner, NiqeQualityRunner, \
-    EnsembleVmafQualityRunner
+    EnsembleVmafQualityRunner, VmafnegQualityRunner
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.tools.misc import MyTestCase
 from vmaf.tools.stats import ListStats
@@ -1417,17 +1417,16 @@ class QualityRunnerTest(MyTestCase):
                       dis_path=dis_path,
                       asset_dict={'width': 352, 'height': 288})
 
-        self.runner = VmafQualityRunner(
+        self.runner = VmafnegQualityRunner(
             [asset],
             None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
-            optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_v0.6.1neg.json")}
         )
         self.runner.run(parallelize=True)
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAF_score'], 88.030463, places=4)  # 132.7329528948058
+        self.assertAlmostEqual(results[0]['VMAFNEG_score'], 88.030463, places=4)  # 132.7329528948058
 
         self.assertAlmostEqual(results[0]['VMAF_integer_feature_vif_scale0_score'], 0.9837379749630343, places=4)
         with self.assertRaises(KeyError):
