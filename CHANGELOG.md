@@ -71,7 +71,7 @@ This is a minor release for the initial AOM CTC. Support has been added for temp
 - Add CID/iCID Matlab source code
 - build: unbreak x86 builds (Fixes: #374)
 - Add 12bit and 16bit support for python YUV reader; add tests.
-- Add PypsnrFeatureExtractor
+- Add PyPsnrFeatureExtractor
 - Add processes to FeatureAssembler. (#662)
 
 **Fixed bugs:**

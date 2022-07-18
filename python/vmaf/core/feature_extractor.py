@@ -555,9 +555,9 @@ class PyFeatureExtractorMixin(object):
         return feature_result
 
 
-class PypsnrFeatureExtractor(PyFeatureExtractorMixin, FeatureExtractor):
+class PyPsnrFeatureExtractor(PyFeatureExtractorMixin, FeatureExtractor):
 
-    TYPE = "Pypsnr_feature"
+    TYPE = "PyPsnr_feature"
     VERSION = "1.0"
 
     ATOM_FEATURES = ['psnry', 'psnru', 'psnrv']
@@ -633,9 +633,9 @@ class PypsnrFeatureExtractor(PyFeatureExtractorMixin, FeatureExtractor):
             log_file.write(str(log_dicts))
 
 
-class PypsnrMaxdb100FeatureExtractor(PypsnrFeatureExtractor):
+class PyPsnrMaxdb100FeatureExtractor(PyPsnrFeatureExtractor):
 
-    TYPE = "Pypsnr_maxdb100_feature"
+    TYPE = "PyPsnr_maxdb100_feature"
 
     @override(Executor)
     def _custom_init(self):
