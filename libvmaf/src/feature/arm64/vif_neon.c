@@ -235,8 +235,8 @@ decimate_and_pad(VifBuffer buf, unsigned w, unsigned h, int scale)
     uint16x8_t vec_name = vld1q_u16(load_address);                                                         \
     uint32x4_t vec32_name##_l = vmovl_u16(vget_low_u16(vec_name));                                         \
     uint32x4_t vec32_name##_h = vmovl_high_u16(vec_name);                                                  \
-    uint16x8_t sqr_vec_name##_l = vmulq_u32(vec32_name##_l, vec32_name##_l);                               \
-    uint16x8_t sqr_vec_name##_h = vmulq_u32(vec32_name##_h, vec32_name##_h);
+    uint32x4_t sqr_vec_name##_l = vmulq_u32(vec32_name##_l, vec32_name##_l);                               \
+    uint32x4_t sqr_vec_name##_h = vmulq_u32(vec32_name##_h, vec32_name##_h);
 
 // End of macros
 
@@ -252,7 +252,7 @@ void vif_subsample_rd_8_neon(VifBuffer buf, unsigned int w, unsigned int h)
 
     const uint32x4_t offset_vec_v = vdupq_n_u32(128);
     const int32x4_t shift_vec_v = vdupq_n_s32(-8);
-    const uint32x4_t offset_vec_h = vdupq_n_s32(32768);
+    const uint32x4_t offset_vec_h = vdupq_n_u32(32768);
     const int32x4_t shift_vec_h = vdupq_n_s32(-16);
 
     for (unsigned int i = 0; i < h; ++i, i_dst_stride += dst_stride)
@@ -390,7 +390,7 @@ void vif_subsample_rd_16_neon(VifBuffer buf, unsigned int w, unsigned int h, int
 
     const uint32x4_t add_shift_round_VP_vec = vdupq_n_u32(add_shift_round_VP);
     const int32x4_t shift_VP_vec = vdupq_n_s32(-shift_VP);
-    const uint32x4_t offset_vec_h = vdupq_n_s32(32768);
+    const uint32x4_t offset_vec_h = vdupq_n_u32(32768);
     int32x4_t shift_vec_h = vdupq_n_s32(-16);
 
     const uint16_t *ref = (uint16_t *)buf.ref;
