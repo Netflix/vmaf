@@ -1,6 +1,6 @@
 /**
  *
- *  Copyright 2016-2020 Netflix, Inc.
+ *  Copyright 2016-2022 Netflix, Inc.
  *
  *     Licensed under the BSD+Patent License (the "License");
  *     you may not use this file except in compliance with the License.
@@ -16,27 +16,13 @@
  *
  */
 
-#include "config.h"
-#include "cpu.h"
+#ifndef __VMAF_SRC_ARM_CPU_H__
+#define __VMAF_SRC_ARM_CPU_H__
 
-static unsigned flags = 0;
-static unsigned flags_mask = -1;
+enum CpuFlags {
+    VMAF_ARM_CPU_FLAG_NEON = 1 << 0,
+};
 
-void vmaf_init_cpu(void)
-{
-#if ARCH_X86
-    flags = vmaf_get_cpu_flags_x86();
-#elif ARCH_AARCH64
-    flags = vmaf_get_cpu_flags_arm();
-#endif
-}
+unsigned vmaf_get_cpu_flags_arm(void);
 
-void vmaf_set_cpu_flags_mask(const unsigned mask)
-{
-    flags_mask = mask;
-}
-
-unsigned vmaf_get_cpu_flags(void)
-{
-    return flags & flags_mask;
-}
+#endif /* __VMAF_SRC_ARM_CPU_H__ */

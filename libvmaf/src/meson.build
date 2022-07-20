@@ -32,7 +32,7 @@ is_asm_enabled = get_option('enable_asm') == true
 is_avx512_enabled = get_option('enable_avx512') == true
 
 if is_asm_enabled
-    if host_machine.cpu_family().startswith('arm64') or host_machine.cpu_family().startswith('aarch64') 
+    if host_machine.cpu_family().startswith('arm64') or host_machine.cpu_family().startswith('aarch64')
         cdata.set10('HAVE_ASM', is_asm_enabled)
         cdata.set10('ARCH_AARCH64', host_machine.cpu_family() == 'aarch64' or host_machine.cpu() == 'arm64')
         cdata.set10('ARCH_ARM',     host_machine.cpu_family().startswith('arm') and host_machine.cpu() != 'arm64')
@@ -42,7 +42,7 @@ if is_asm_enabled
         else
             asm_format = 'elf'
         endif
-    endif    
+    endif
 
     if host_machine.cpu_family().startswith('x86')
         cdata.set10('HAVE_ASM', is_asm_enabled)
@@ -168,6 +168,12 @@ if is_asm_enabled
             src_dir + 'x86/cpu.c',
         )
     endif
+
+    if host_machine.cpu_family().startswith('arm64') or host_machine.cpu_family().startswith('aarch64')
+        libvmaf_cpu_sources += files(
+            src_dir + 'arm/cpu.c',
+        )
+    endif
 endif
 
 libvmaf_include = include_directories(
@@ -187,7 +193,7 @@ libvmaf_cpu_static_lib = static_library(
 platform_specific_cpu_objects = []
 
 if is_asm_enabled
-    if host_machine.cpu_family().startswith('arm64') or host_machine.cpu_family().startswith('aarch64') 
+    if host_machine.cpu_family().startswith('arm64') or host_machine.cpu_family().startswith('aarch64')
         arm64_sources = [
           feature_src_dir + 'arm64/vif_neon.c',
           feature_src_dir + 'arm64/adm_neon.c',
@@ -197,11 +203,11 @@ if is_asm_enabled
           'arm64_v8',
           arm64_sources,
           include_directories : vmaf_base_include,
-          c_args : vmaf_cflags_common + ['-DARCH_AARCH64'] 
+          c_args : vmaf_cflags_common + ['-DARCH_AARCH64']
         )
 
         platform_specific_cpu_objects += arm64_static_lib.extract_all_objects()
-    endif      
+    endif
 
     if host_machine.cpu_family().startswith('x86')
       x86_avx2_sources = [

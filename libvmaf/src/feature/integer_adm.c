@@ -2600,8 +2600,10 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         if (!(w % 8)) s->dwt2_8 = adm_dwt2_8_avx2;
     }
 #elif ARCH_AARCH64
-    if (!(w % 8))
-        s->dwt2_8 = adm_dwt2_8_neon;
+    unsigned flags = vmaf_get_cpu_flags();
+    if (flags & VMAF_ARM_CPU_FLAG_NEON) {
+        if (!(w % 8)) s->dwt2_8 = adm_dwt2_8_neon;
+    }
 #endif
 
     s->integer_stride   = ALIGN_CEIL(w * sizeof(int32_t));
