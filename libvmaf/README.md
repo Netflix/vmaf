@@ -16,9 +16,11 @@ python3 -m pip install virtualenv
 python3 -m virtualenv .venv
 source .venv/bin/activate
 pip install meson
-sudo [package-manager] install nasm ninja doxygen xxd
+sudo [package-manager] install nasm ninja-build doxygen xxd
 ```
 You need to invoke `[package-manager]` depending on which system you are on: `apt-get` for Ubuntu and Debian, `yum` for CentOS and RHEL, `dnf` for Fedora, `zypper` for openSUSE, `brew` for MacOS (no `sudo`).
+
+Ninja package name might be `ninja` or `ninja-build`, depending on your system. Check [the pre-built ninja packages](https://github.com/ninja-build/ninja/wiki/Pre-built-Ninja-packages) before running the install command.
 
 ## Compile
 
