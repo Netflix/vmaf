@@ -1,7 +1,7 @@
 `vmafossexec` -- a C++ Executable
 ===================
 
-The package combines feature extraction implementation in C and the rest scripting code in Python. The Python layer allows fast prototyping, but sometimes deploying the Python dependency in production is a pain. Under [`libvmaf/build/tools`](../../libvmaf/build/tools), we provide a C++ executable `vmafossexec` that has no dependency on Python.
+The package combines feature extraction implementation in C and the rest scripting code in Python. The Python layer allows fast prototyping, but sometimes deploying the Python dependency in production is a pain. Under `libvmaf/build/tools`, we provide a C++ executable `vmafossexec` that has no dependency on Python.
 
 To build `vmafossexec`, follow the instrunctions to build [libvmaf](../../libvmaf/README.md#compile).
 
