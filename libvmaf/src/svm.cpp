@@ -3013,7 +3013,7 @@ public:
 	}
 };
 
-#define exceptAssert(cond, err) if(!(cond)) { throw std::runtime_error(err); }
+#define exceptAssert(cond, err) if(!(cond)) { error_message = err; return false; }
 template<typename TSource>
 class SVMModelParser {
 	svm_model* model = nullptr;
@@ -3025,15 +3025,17 @@ public:
 	bool parse() {
 		model = Malloc(svm_model, 1);
 		memset(model, 0, sizeof(struct svm_model));
-		try {
-			parse_header();
-			parse_support_vectors();
-		} catch (std::runtime_error& e) {
-			fprintf(stderr, "ERROR: %s", e.what());
-			svm_free_and_destroy_model(&model);
-			return false;
-		}
-		return true;
+
+                std::string error_message;
+                if (parse_header(error_message) &&
+                    parse_support_vectors(error_message))
+		{
+			return true;
+                }
+
+                fprintf(stderr, "ERROR: %s", error_message.c_str());
+                svm_free_and_destroy_model(&model);
+                return false;
 	}
 
 	struct svm_model* get_model() {
@@ -3043,7 +3045,7 @@ public:
 	}
 
 private:
-	void parse_header() {
+	bool parse_header(std::string& error_message) {
 		svm_parameter& param = model->param;
 		size_t nr_class_permutations = 0;
 
@@ -3106,11 +3108,12 @@ private:
 					model_source.get_array(model->nSV, model->nr_class),
 					"Failed to read nr_sv");
 			} else {
-				throw std::runtime_error("Unknown text in model file");
+				error_message = "Unknown text in model file";
+				return false;
 			}
 		}
 	}
-	void parse_support_vectors() {
+	bool parse_support_vectors(std::string& error_message) {
 		// prepare sv coefficient structure
 		model->sv_coef = Malloc(double *, model->nr_class - 1);
 		for(int i = 0; i < model->nr_class - 1; ++i) {
