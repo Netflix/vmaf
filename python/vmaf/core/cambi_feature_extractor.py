@@ -37,9 +37,12 @@ class CambiFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
         dis_path = asset.dis_procfile_path
         logger = self.logger
 
+        optional_dict = self.optional_dict if self.optional_dict is not None else dict()
+        optional_dict2 = self.optional_dict2 if self.optional_dict2 is not None else dict()
+
         ExternalProgramCaller.call_vmafexec_single_feature(
             'cambi', yuv_type, ref_path, dis_path, quality_width, quality_height,
-            log_file_path, logger, options=self.optional_dict)
+            log_file_path, logger, options={**optional_dict, **optional_dict2})
 
 
 class CambiFullReferenceFeatureExtractor(CambiFeatureExtractor):
