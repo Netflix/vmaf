@@ -120,6 +120,9 @@ class ExternalProgramCaller(object):
         if options2[feature] is not None and 'disable_avx' in options2[feature]:
             options2['disable_avx'] = options2[feature]['disable_avx']
             del options2[feature]['disable_avx']
+        if options2[feature] is not None and 'n_threads' in options2[feature]:
+            options2['n_threads'] = options2[feature]['n_threads']
+            del options2[feature]['n_threads']
         return ExternalProgramCaller.call_vmafexec_multi_features(
             [feature], yuv_type, ref_path, dis_path, w, h, log_file_path, logger=logger, options=options2)
 
@@ -151,6 +154,10 @@ class ExternalProgramCaller(object):
             assert isinstance(options['disable_avx'], bool)
             if options['disable_avx'] is True:
                 cmd += ['--cpumask', '-1']
+
+        if options is not None and 'n_threads' in options:
+            assert isinstance(options['n_threads'], int) and options['n_threads'] >= 1
+            cmd += ['--threads', str(options['n_threads'])]
 
         for feature in features:
             if options is None:

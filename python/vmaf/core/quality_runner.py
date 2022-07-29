@@ -124,7 +124,7 @@ class QualityRunnerFromFeatureExtractor(QualityRunner):
             delete_workdir=self.delete_workdir,
             result_store=self.result_store,
             optional_dict=self.optional_dict,
-            optional_dict2=None,
+            optional_dict2=self.optional_dict2,
             parallelize=False,  # parallelization already in a higher level
         )
         return feature_assembler

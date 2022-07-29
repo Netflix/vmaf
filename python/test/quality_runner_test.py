@@ -229,6 +229,24 @@ class QualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAF_score'], 76.66890519623612, places=4)
         self.assertAlmostEqual(results[1]['VMAF_score'], 99.946416604585025, places=4)
 
+    def test_run_vmaf_runner_3threads(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = VmafQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict2={'n_threads': 3}
+        )
+        self.runner.run(parallelize=True)
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAF_score'], 76.66890519623612, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 99.946416604585025, places=4)
+
     def test_run_vmaf_runner_v061(self):
 
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
