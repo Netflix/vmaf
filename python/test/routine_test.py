@@ -377,14 +377,15 @@ class TestTrainOnDataset(unittest.TestCase):
                             aggregate_method=None,
                             point_label='asset_id',
                             do_plot=['aggregate',  # plots all contents in one figure
-                                     'per_content'  # plots a separate figure per content
+                                     'per_content',  # plots a separate figure per content
+                                     'groundtruth_predicted_in_parallel',  # plots of groundtruth and predicted in parallel
                                      ],
                             plot_linear_fit=True  # adds linear fit line to each plot
                             )
 
         output_dir = VmafConfig.workspace_path("output", "test_output")
         DisplayConfig.show(write_to_dir=output_dir)
-        self.assertEqual(len(glob.glob(os.path.join(output_dir, '*.png'))), 3)
+        self.assertEqual(len(glob.glob(os.path.join(output_dir, '*.png'))), 4)
 
         if os.path.exists(output_dir):
             shutil.rmtree(output_dir)
