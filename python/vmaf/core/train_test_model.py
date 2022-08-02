@@ -289,7 +289,7 @@ class RegressorMixin(object):
         plot_linear_fit = kwargs['plot_linear_fit'] if 'plot_linear_fit' in kwargs else False
         assert isinstance(plot_linear_fit, bool)
 
-        do_plot = kwargs['do_plot'] if 'do_plot' in kwargs else ['aggregate']
+        do_plot = kwargs['do_plot'] if 'do_plot' in kwargs else []
         accepted_options = ['aggregate', 'per_content', 'groundtruth_predicted_in_parallel']
         assert isinstance(do_plot, list), f"do_plot needs to be a list of plotting options. Accepted options are " \
                                           f"{accepted_options}"

@@ -3,12 +3,15 @@ import os
 import unittest
 import shutil
 
+import numpy as np
+import matplotlib.pyplot as plt
+
 from vmaf.config import VmafConfig, DisplayConfig
 # from vmaf.routine import train_test_vmaf_on_dataset, read_dataset, run_test_on_dataset, generate_dataset_from_raw
-from vmaf.routine import read_dataset, generate_dataset_from_raw
-from vmaf.tools.misc import import_python_file
-from vmaf.core.quality_runner import VmafQualityRunner, BootstrapVmafQualityRunner
-from sureal.subjective_model import MosModel
+from vmaf.routine import read_dataset, generate_dataset_from_raw, compare_two_quality_runners_on_dataset
+from vmaf.tools.misc import import_python_file, MyTestCase
+from vmaf.core.quality_runner import VmafQualityRunner, BootstrapVmafQualityRunner, PsnrQualityRunner
+from sureal.subjective_model import MosModel, SubjectiveModel
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
@@ -266,14 +269,16 @@ class TestTrainOnDatasetJsonFormat(unittest.TestCase):
         self.assertAlmostEqual(test_stats['ys_label_pred'][0], 90.753010402770798, places=3)
 
 
-class TestTrainOnDataset(unittest.TestCase):
+class TestTrainOnDataset(MyTestCase):
 
     def setUp(self):
+        super().setUp()
         self.output_model_filepath = VmafConfig.workspace_path("model", "test_output_model.pkl")
 
     def tearDown(self):
         if os.path.exists(self.output_model_filepath):
             os.remove(self.output_model_filepath)
+        super().tearDown()
 
     def test_train_test_on_dataset_with_dis1st_thr(self):
         from vmaf.routine import train_test_vmaf_on_dataset
@@ -364,31 +369,33 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(test_assets[2].groundtruth, 100, places=4)
         self.assertAlmostEqual(test_assets[3].groundtruth, 80, places=4)
 
-    def test_test_on_dataset_plot_per_content(self):
-        from vmaf.routine import run_test_on_dataset
-        test_dataset = import_python_file(
-            VmafConfig.test_resource_path('dataset_sample.py'))
-        import matplotlib.pyplot as plt
-        fig, ax = plt.subplots(1, 1, figsize=[20, 20])
-        run_test_on_dataset(test_dataset, VmafQualityRunner, ax,
-                            None, VmafConfig.model_path("vmaf_float_v0.6.1.json"),
-                            parallelize=False,
-                            fifo_mode=False,
-                            aggregate_method=None,
-                            point_label='asset_id',
-                            do_plot=['aggregate',  # plots all contents in one figure
-                                     'per_content',  # plots a separate figure per content
-                                     'groundtruth_predicted_in_parallel',  # plots of groundtruth and predicted in parallel
-                                     ],
-                            plot_linear_fit=True  # adds linear fit line to each plot
-                            )
+    def test_compare_two_quality_runners_on_dataset(self):
+        test_dataset = import_python_file(VmafConfig.test_resource_path('dataset_sample.py'))
+        result = compare_two_quality_runners_on_dataset(
+            test_dataset, VmafQualityRunner, PsnrQualityRunner,
+            result_store=None,
+            num_resample=10,
+            seed_resample=0,
+            subj_model_class=SubjectiveModel.find_subclass('MOS'),
+            parallelize=False, fifo_mode=False)
+        self.assertAlmostEqual(np.nanmean(list(zip(*result['plcc']))[0]), 0.8655928449687122, places=4)
+        self.assertAlmostEqual(np.nanmean(list(zip(*result['plcc']))[1]), 0.9875440797696373, places=4)
+        self.assertAlmostEqual(np.nanmean(list(zip(*result['srocc']))[0]), 0.8642507701111302, places=4)
+        self.assertAlmostEqual(np.nanmean(list(zip(*result['srocc']))[1]), 1.0, places=4)
 
-        output_dir = VmafConfig.workspace_path("output", "test_output")
-        DisplayConfig.show(write_to_dir=output_dir)
-        self.assertEqual(len(glob.glob(os.path.join(output_dir, '*.png'))), 4)
+        self.assertTrue(np.isnan(result['plcc_ci95_first'][0]))
+        self.assertTrue(np.isnan(result['plcc_ci95_first'][1]))
+        self.assertTrue(np.isnan(result['plcc_ci95_second'][0]))
+        self.assertTrue(np.isnan(result['plcc_ci95_second'][1]))
+        self.assertTrue(np.isnan(result['plcc_ci95_diff'][0]))
+        self.assertTrue(np.isnan(result['plcc_ci95_diff'][1]))
 
-        if os.path.exists(output_dir):
-            shutil.rmtree(output_dir)
+        self.assertTrue(np.isnan(result['srocc_ci95_first'][0]))
+        self.assertTrue(np.isnan(result['srocc_ci95_first'][1]))
+        self.assertTrue(np.isnan(result['srocc_ci95_second'][0]))
+        self.assertTrue(np.isnan(result['srocc_ci95_second'][1]))
+        self.assertTrue(np.isnan(result['srocc_ci95_diff'][0]))
+        self.assertTrue(np.isnan(result['srocc_ci95_diff'][1]))
 
     def test_test_on_dataset_bootstrap_quality_runner(self):
         from vmaf.routine import run_test_on_dataset
@@ -562,6 +569,62 @@ class TestGenerateDatasetFromRaw(unittest.TestCase):
                                   subj_model_class=MosModel)
         dataset = import_python_file(self.derived_dataset_path)
         self.assertAlmostEqual(dataset.dis_videos[0]['groundtruth'], 1.3076923076923077, places=4)
+
+
+class TestTrainOnDatasetPlot(MyTestCase):
+
+    def setUp(self):
+        super().setUp()
+        plt.close('all')
+        self.output_model_filepath = VmafConfig.workspace_path("model", "test_output_model.pkl")
+        self.output_dir = VmafConfig.workspace_path("output", "test_output")
+
+    def tearDown(self):
+        if os.path.exists(self.output_model_filepath):
+            os.remove(self.output_model_filepath)
+        if os.path.exists(self.output_dir):
+            shutil.rmtree(self.output_dir)
+        super().tearDown()
+
+    def test_test_on_dataset_plot_per_content(self):
+        from vmaf.routine import run_test_on_dataset
+        test_dataset = import_python_file(
+            VmafConfig.test_resource_path('dataset_sample.py'))
+        fig, ax = plt.subplots(1, 1, figsize=[20, 20])
+        run_test_on_dataset(test_dataset, VmafQualityRunner, ax,
+                            None, VmafConfig.model_path("vmaf_float_v0.6.1.json"),
+                            parallelize=False,
+                            fifo_mode=False,
+                            aggregate_method=None,
+                            point_label='asset_id',
+                            do_plot=['aggregate',  # plots all contents in one figure
+                                     'per_content',  # plots a separate figure per content
+                                     ],
+                            plot_linear_fit=True  # adds linear fit line to each plot
+                            )
+
+        DisplayConfig.show(write_to_dir=self.output_dir)
+        self.assertEqual(len(glob.glob(os.path.join(self.output_dir, '*.png'))), 3)
+
+    def test_test_on_dataset_plot_groundtruth_predicted_in_parallel(self):
+        from vmaf.routine import run_test_on_dataset
+        test_dataset = import_python_file(
+            VmafConfig.test_resource_path('dataset_sample.py'))
+        fig, ax = plt.subplots(1, 1, figsize=[20, 20])
+        run_test_on_dataset(test_dataset, VmafQualityRunner, ax,
+                            None, VmafConfig.model_path("vmaf_float_v0.6.1.json"),
+                            parallelize=False,
+                            fifo_mode=False,
+                            aggregate_method=None,
+                            point_label='asset_id',
+                            do_plot=[
+                                'groundtruth_predicted_in_parallel',  # plots of groundtruth and predicted in parallel
+                            ],
+                            plot_linear_fit=True  # adds linear fit line to each plot
+                            )
+
+        DisplayConfig.show(write_to_dir=self.output_dir)
+        self.assertEqual(len(glob.glob(os.path.join(self.output_dir, '*.png'))), 1)
 
 
 if __name__ == '__main__':
