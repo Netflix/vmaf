@@ -86,29 +86,37 @@ class RegressorMixin(object):
         ys_label_raw = kwargs['ys_label_raw'] if 'ys_label_raw' in kwargs else None
 
         if ys_label_raw is not None:
+
+            ys_label_raw_list = []
+            if isinstance(ys_label_raw[0], dict):
+                for d in ys_label_raw:
+                    ys_label_raw_list.append(list(d.values()))
+            else:
+                ys_label_raw_list = ys_label_raw
+
             try:
                 # AUC
-                result = AucPerfMetric(ys_label_raw, ys_label_pred).evaluate()
+                result = AucPerfMetric(ys_label_raw_list, ys_label_pred).evaluate()
                 stats['AUC_DS'] = result['AUC_DS']
                 stats['AUC_BW'] = result['AUC_BW']
-            except TypeError:  # AUC would not work with dictionary-style dataset
+            except TypeError:
                 stats['AUC_DS'] = float('nan')
                 stats['AUC_BW'] = float('nan')
 
             try:
                 # ResPow
-                respow = ResolvingPowerPerfMetric(ys_label_raw, ys_label_pred) \
+                respow = ResolvingPowerPerfMetric(ys_label_raw_list, ys_label_pred) \
                     .evaluate(enable_mapping=False)['score']
                 stats['ResPow'] = respow
-            except (TypeError, AssertionError): # ResPow would not work with dictionary-style dataset
+            except (TypeError, AssertionError):
                 stats['ResPow'] = float('nan')
 
             try:
                 # ResPow
-                respow_norm = ResolvingPowerPerfMetric(ys_label_raw, ys_label_pred) \
+                respow_norm = ResolvingPowerPerfMetric(ys_label_raw_list, ys_label_pred) \
                     .evaluate(enable_mapping=True)['score']
                 stats['ResPowNormalized'] = respow_norm
-            except (TypeError, AssertionError): # ResPow would not work with dictionary-style dataset
+            except (TypeError, AssertionError):
                 stats['ResPowNormalized'] = float('nan')
 
         if 'ys_label_stddev' in kwargs and 'ys_label_stddev' and kwargs['ys_label_stddev'] is not None:
