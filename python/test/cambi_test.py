@@ -1,3 +1,5 @@
+import os
+import shutil
 import unittest
 from test.testutil import set_default_576_324_videos_for_testing, \
     set_default_576_324_videos_for_testing_scaled, \
@@ -7,6 +9,7 @@ from test.testutil import set_default_576_324_videos_for_testing, \
 from vmaf.core.cambi_feature_extractor import CambiFeatureExtractor, CambiFullReferenceFeatureExtractor
 from vmaf.core.cambi_quality_runner import CambiQualityRunner, CambiFullReferenceQualityRunner
 from vmaf.tools.misc import MyTestCase
+from vmaf.core.result_store import FileSystemResultStore
 
 
 class CambiFeatureExtractorTest(MyTestCase):
@@ -229,6 +232,44 @@ class CambiQualityRunnerTest(MyTestCase):
                                0.2594353333333333, places=4)
         self.assertAlmostEqual(results[0]['Cambi_FR_feature_cambi_score'],
                                0.25968416666666666, places=4)
+
+
+class CambiResultsCachingTest(MyTestCase):
+
+    def setUp(self):
+        self.results_store_dir = FileSystemResultStore()
+
+    def tearDown(self):
+        if os.path.exists(self.store_dir):
+            shutil.rmtree(self.store_dir)
+
+    def test_run_cambi_runner(self):
+        _, _, asset, asset_original = set_default_576_324_videos_for_testing_scaled()
+        self.qrunner = CambiQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=self.results_store_dir,
+            optional_dict={}
+        )
+
+        # make sure the caching directory needs to be created by running the feature extractor
+        fextractor= self.qrunner._get_feature_extractor_class()
+        self.store_dir = os.path.join(
+            self.results_store_dir.result_store_dir, f'{fextractor.TYPE}_V{fextractor.VERSION}', 'test')
+        if os.path.exists(self.store_dir):
+            shutil.rmtree(self.store_dir)
+
+        self.qrunner.run(parallelize=False)
+        results = self.qrunner.results
+
+        # check if the correct directory was created
+        self.assertTrue(os.path.exists(self.store_dir))
+
+        # score: arithmetic mean score over all frames
+        self.assertAlmostEqual(results[0]['Cambi_score'],
+                               0.17871631249999997, places=4)
+        self.assertAlmostEqual(results[1]['Cambi_score'],
+                               0.00022027083333333336, places=4)
 
 
 if __name__ == '__main__':
