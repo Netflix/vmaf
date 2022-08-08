@@ -518,6 +518,7 @@ class Executor(TypeVersionEnabled):
             os.mkfifo(workfile_path)
         if yuv_type != 'notyuv':
             # in this case, for sure has width_height
+            assert width_height is not None
             width, height = width_height
             src_fmt_cmd = cls._get_yuv_src_fmt_cmd(asset, height, width, ref_or_dis)
         else:
