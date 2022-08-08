@@ -478,105 +478,74 @@ class Executor(TypeVersionEnabled):
 
     def _open_ref_workfile(self, asset, fifo_mode):
 
-        # only need to open ref workfile if the path is different from ref path
-        assert asset.use_path_as_workpath is False and asset.ref_path != asset.ref_workfile_path
-
-        # if fifo mode, mkfifo
-        if fifo_mode:
-            os.mkfifo(asset.ref_workfile_path)
-
-        quality_width, quality_height = self._get_quality_width_height(asset)
+        use_path_as_workpath = asset.use_path_as_workpath
+        path = asset.ref_path
+        workfile_path = asset.ref_workfile_path
+        quality_width_height = self._get_quality_width_height(asset)
         yuv_type = asset.ref_yuv_type
         resampling_type = self._get_ref_resampling_type(asset)
-
-        if yuv_type != 'notyuv':
-            # in this case, for sure has ref_width_height
-            width, height = asset.ref_width_height
-            src_fmt_cmd = self._get_yuv_src_fmt_cmd(asset, height, width, 'ref')
-        else:
-            src_fmt_cmd = self._get_notyuv_src_fmt_cmd(asset, 'ref')
-
+        width_height = asset.ref_width_height
+        ref_or_dis = 'ref'
         workfile_yuv_type = self._get_workfile_yuv_type(asset)
+        logger = self.logger
 
-        vframes_cmd, select_cmd = self._get_vframes_cmd(asset, 'ref')
-        crop_cmd = self._get_filter_cmd(asset, 'crop', 'ref')
-        pad_cmd = self._get_filter_cmd(asset, 'pad', 'ref')
-        scale_cmd = 'scale={width}x{height}'.format(width=quality_width, height=quality_height)
-
-        filter_cmds = []
-        for key in Asset.ORDERED_FILTER_LIST:
-            if key != 'crop' and key != 'pad':
-                filter_cmds.append(self._get_filter_cmd(asset, key, 'ref'))
-
-        vf_cmd = ','.join(filter(lambda s: s!='', [select_cmd, crop_cmd, pad_cmd, scale_cmd] + filter_cmds))
-
-        ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
-                     '-pix_fmt {yuv_type} {vframes_cmd} -vf {vf_cmd} -f rawvideo ' \
-                     '-sws_flags {resampling_type} -y -nostdin {dst}'
-        ffmpeg_cmd = ffmpeg_cmd.format(
-            ffmpeg=VmafExternalConfig.get_and_assert_ffmpeg(),
-            src=asset.ref_path,
-            dst=asset.ref_workfile_path,
-            src_fmt_cmd=src_fmt_cmd,
-            vf_cmd=vf_cmd,
-            yuv_type=workfile_yuv_type,
-            resampling_type=resampling_type,
-            vframes_cmd=vframes_cmd,
-        )
-
-        if self.logger:
-            self.logger.info(ffmpeg_cmd)
-
-        run_process(ffmpeg_cmd, shell=True, env=VmafExternalConfig.ffmpeg_env())
+        self._open_workfile(asset, path, workfile_path, yuv_type, workfile_yuv_type, resampling_type, width_height,
+                            quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, logger)
 
     def _open_dis_workfile(self, asset, fifo_mode):
-        # only need to open dis workfile if the path is different from dis path
-        assert asset.use_path_as_workpath is False and asset.dis_path != asset.dis_workfile_path
 
-        # if fifo mode, mkfifo
-        if fifo_mode:
-            os.mkfifo(asset.dis_workfile_path)
-
-        quality_width, quality_height = self._get_quality_width_height(asset)
+        use_path_as_workpath = asset.use_path_as_workpath
+        path = asset.dis_path
+        workfile_path = asset.dis_workfile_path
+        quality_width_height = self._get_quality_width_height(asset)
         yuv_type = asset.dis_yuv_type
         resampling_type = self._get_dis_resampling_type(asset)
-
-        if yuv_type != 'notyuv':
-            # in this case, for sure has dis_width_height
-            width, height = asset.dis_width_height
-            src_fmt_cmd = self._get_yuv_src_fmt_cmd(asset, height, width, 'dis')
-        else:
-            src_fmt_cmd = self._get_notyuv_src_fmt_cmd(asset, 'dis')
-
+        width_height = asset.dis_width_height
+        ref_or_dis = 'dis'
         workfile_yuv_type = self._get_workfile_yuv_type(asset)
+        logger = self.logger
 
-        vframes_cmd, select_cmd = self._get_vframes_cmd(asset, 'dis')
-        crop_cmd = self._get_filter_cmd(asset, 'crop', 'dis')
-        pad_cmd = self._get_filter_cmd(asset, 'pad', 'dis')
+        self._open_workfile(asset, path, workfile_path, yuv_type, workfile_yuv_type, resampling_type, width_height,
+                            quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, logger)
+
+    @classmethod
+    def _open_workfile(cls, asset, path, workfile_path, yuv_type, workfile_yuv_type, resampling_type, width_height,
+                       quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, logger):
+        # only need to open workfile if the path is different from path
+        assert use_path_as_workpath is False and path != workfile_path
+        # if fifo mode, mkfifo
+        if fifo_mode:
+            os.mkfifo(workfile_path)
+        if yuv_type != 'notyuv':
+            # in this case, for sure has width_height
+            width, height = width_height
+            src_fmt_cmd = cls._get_yuv_src_fmt_cmd(asset, height, width, ref_or_dis)
+        else:
+            src_fmt_cmd = cls._get_notyuv_src_fmt_cmd(asset, ref_or_dis)
+        vframes_cmd, select_cmd = cls._get_vframes_cmd(asset, ref_or_dis)
+        crop_cmd = cls._get_filter_cmd(asset, 'crop', ref_or_dis)
+        pad_cmd = cls._get_filter_cmd(asset, 'pad', ref_or_dis)
+        quality_width, quality_height = quality_width_height
         scale_cmd = 'scale={width}x{height}'.format(width=quality_width, height=quality_height)
-
         filter_cmds = []
         for key in Asset.ORDERED_FILTER_LIST:
             if key != 'crop' and key != 'pad':
-                filter_cmds.append(self._get_filter_cmd(asset, key, 'dis'))
-
-        vf_cmd = ','.join(filter(lambda s: s!='', [select_cmd, crop_cmd, pad_cmd, scale_cmd] + filter_cmds))
-
+                filter_cmds.append(cls._get_filter_cmd(asset, key, ref_or_dis))
+        vf_cmd = ','.join(filter(lambda s: s != '', [select_cmd, crop_cmd, pad_cmd, scale_cmd] + filter_cmds))
         ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
                      '-pix_fmt {yuv_type} {vframes_cmd} -vf {vf_cmd} -f rawvideo ' \
                      '-sws_flags {resampling_type} -y -nostdin {dst}'.format(
             ffmpeg=VmafExternalConfig.get_and_assert_ffmpeg(),
-            src=asset.dis_path, dst=asset.dis_workfile_path,
+            src=path,
+            dst=workfile_path,
             src_fmt_cmd=src_fmt_cmd,
             vf_cmd=vf_cmd,
             yuv_type=workfile_yuv_type,
             resampling_type=resampling_type,
             vframes_cmd=vframes_cmd,
         )
-
-        if self.logger:
-            self.logger.info(ffmpeg_cmd)
-
+        if logger:
+            logger.info(ffmpeg_cmd)
         run_process(ffmpeg_cmd, shell=True, env=VmafExternalConfig.ffmpeg_env())
 
     # ===== procfile =====
@@ -674,7 +643,8 @@ class Executor(TypeVersionEnabled):
         return "{}={}".format(key, asset.get_filter_cmd(key, target)) \
             if asset.get_filter_cmd(key, target) is not None else ""
 
-    def _get_vframes_cmd(self, asset, ref_or_dis):
+    @staticmethod
+    def _get_vframes_cmd(asset, ref_or_dis):
         if ref_or_dis == 'ref':
             start_end_frame = asset.ref_start_end_frame
         elif ref_or_dis == 'dis':
