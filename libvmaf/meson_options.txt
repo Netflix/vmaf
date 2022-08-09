@@ -30,7 +30,7 @@ option('enable_float',
 
 option('enable_cuda',
     type: 'boolean',
-    value: true,
+    value: false,
     description: 'Enable CUDA support')
 
 option('enable_nvtx',
