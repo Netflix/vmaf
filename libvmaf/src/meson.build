@@ -157,12 +157,9 @@ if built_in_models_enabled
 endif
 
 # check if cuda is present
-#if is_cuda_enabled
-#    is_cuda_enabled = dependency('cuda', version : '>=10', required : true).found()
-#    if not is_cuda_enabled
-#        warning('CUDA was enabled but could not be found!', 'CUDA compilation was disable.')
-#    endif
-#endif
+if is_cuda_enabled
+    is_cuda_enabled = dependency('cuda', version : '>=10', required : true).found()
+endif
 
 if is_cuda_enabled
     add_languages('cuda')
