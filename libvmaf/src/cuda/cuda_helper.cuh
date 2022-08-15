@@ -19,8 +19,8 @@
 #ifndef __CUDA_HELPER_H__
 #define __CUDA_HELPER_H__
 
-#include <cuda_runtime.h>
 #include "stdio.h"
+#include <cuda_runtime.h>
 
 #define DIV_ROUND_UP(x, y) (((x) + (y)-1) / (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
@@ -28,36 +28,41 @@
 
 #ifdef DEBUG
 #define CudaCheckError()                                                       \
-  {                                                                            \
+  do {                                                                         \
     cudaError err_ = cudaGetLastError();                                       \
     if (err_ != cudaSuccess) {                                                 \
-      vmaf_log(VMAF_LOG_LEVEL_ERROR, "CudaCheckError() failed at: %s:%d\n", __FILE__, __LINE__);       \
-      vmaf_log(VMAF_LOG_LEVEL_ERROR, "code: %d ; description: %s\n", err_, cudaGetErrorString(err_));  \
+      vmaf_log(VMAF_LOG_LEVEL_ERROR, "CudaCheckError() failed at: %s:%d\n",    \
+               __FILE__, __LINE__);                                            \
+      vmaf_log(VMAF_LOG_LEVEL_ERROR, "code: %d ; description: %s\n", err_,     \
+               cudaGetErrorString(err_));                                      \
       exit(1);                                                                 \
     }                                                                          \
                                                                                \
     err_ = cudaDeviceSynchronize();                                            \
     if (cudaSuccess != err_) {                                                 \
-      vmaf_log(VMAF_LOG_LEVEL_ERROR, "CudaCheckError() failed after sync at: %s:%d;\n", __FILE__,      \
-             __LINE__);                                                        \
-      vmaf_log(VMAF_LOG_LEVEL_ERROR, "code: %d; description: %s\n", err_, cudaGetErrorString(err_));   \
+      vmaf_log(VMAF_LOG_LEVEL_ERROR,                                           \
+               "CudaCheckError() failed after sync at: %s:%d;\n", __FILE__,    \
+               __LINE__);                                                      \
+      vmaf_log(VMAF_LOG_LEVEL_ERROR, "code: %d; description: %s\n", err_,      \
+               cudaGetErrorString(err_));                                      \
       exit(1);                                                                 \
     }                                                                          \
-  }
+  } while (0)
 #else
 #define CudaCheckError()
 #endif
 
-#define CHECK_CUDA(CALL)                                                                  \
-  do {                                                                                    \
-    if (CUDA_SUCCESS != CALL) {                                                           \
-      const char* err_txt;                                                                \
-      cuGetErrorName(CALL, &err_txt);                                                     \
-      vmaf_log(VMAF_LOG_LEVEL_ERROR, "Cuda error at  %s:%d with error %s(%i)\n", __FILE__, __LINE__, err_txt, CALL);   \
-      exit(CALL);                                                                         \
-    }                                                                                     \
+#define CHECK_CUDA(CALL)                                                       \
+  do {                                                                         \
+    if (CUDA_SUCCESS != CALL) {                                                \
+      const char *err_txt;                                                     \
+      cuGetErrorName(CALL, &err_txt);                                          \
+      vmaf_log(VMAF_LOG_LEVEL_ERROR,                                           \
+               "Cuda error at  %s:%d with error %s(%i)\n", __FILE__, __LINE__, \
+               err_txt, CALL);                                                 \
+      exit(CALL);                                                              \
+    }                                                                          \
   } while (0);
-
 
 #ifdef __CUDACC__
 #include <cstdint>
@@ -75,12 +80,13 @@ __forceinline__ __device__ int64_t warp_reduce(int64_t x) {
   return x;
 }
 
-
 typedef unsigned long long int uint64_cu;
-__forceinline__ __device__ int64_t atomicAdd_int64(int64_t *address, int64_t val) {
-  return atomicAdd(reinterpret_cast<uint64_cu *>(address), static_cast<uint64_cu>(val));
+__forceinline__ __device__ int64_t atomicAdd_int64(int64_t *address,
+                                                   int64_t val) {
+  return atomicAdd(reinterpret_cast<uint64_cu *>(address),
+                   static_cast<uint64_cu>(val));
 }
-}
+} // namespace
 #endif
 
 #endif

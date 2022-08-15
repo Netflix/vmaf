@@ -17,7 +17,9 @@
  *
  */
 
-#pragma once
+#ifndef __VMAF_SRC_CUDA_VIF_KERNELS_H__
+#define __VMAF_SRC_CUDA_VIF_KERNELS_H__
+
 #include "integer_vif_cuda.h"
 
 #include "common.h"
@@ -44,12 +46,14 @@ typedef struct vif_accums {
   int64_t den_non_log;
 } vif_accums;
 
-void filter1d_8(VifBufferCuda *buf, uint8_t* ref_in, uint8_t* dis_in, int w, int h, double vif_enhn_gain_limit,
-                CUstream stream);
+void filter1d_8(VifBufferCuda *buf, uint8_t *ref_in, uint8_t *dis_in, int w,
+                int h, double vif_enhn_gain_limit, CUstream stream);
 
-void filter1d_16(VifBufferCuda *buf, uint16_t* ref_in, uint16_t* dis_in, int w, int h, int scale, int bpc,
-                 double vif_enhn_gain_limit, CUstream stream);
+void filter1d_16(VifBufferCuda *buf, uint16_t *ref_in, uint16_t *dis_in, int w,
+                 int h, int scale, int bpc, double vif_enhn_gain_limit,
+                 CUstream stream);
 
 #ifdef __cplusplus
 }
 #endif
+#endif /* __VMAF_SRC_CUDA_VIF_KERNELS_H__ */

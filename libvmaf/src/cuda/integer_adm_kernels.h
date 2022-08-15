@@ -16,8 +16,12 @@
  *     limitations under the License.
  *
  */
-#include "integer_adm_cuda.h"
+
+#ifndef __VMAF_SRC_CUDA_ADM_KERNELS_H__
+#define __VMAF_SRC_CUDA_ADM_KERNELS_H__
+
 #include "feature_collector.h"
+#include "integer_adm_cuda.h"
 
 #include "common.h"
 #ifdef __cplusplus
@@ -25,14 +29,13 @@
 extern "C" {
 #endif
 
-
 // decouple function
 
-void adm_decouple_s123_device(AdmBufferCuda *buf, int w, int h, int stride, AdmFixedParametersCuda* p,
-                              CUstream c_stream);
+void adm_decouple_s123_device(AdmBufferCuda *buf, int w, int h, int stride,
+                              AdmFixedParametersCuda *p, CUstream c_stream);
 
-void adm_decouple_device(AdmBufferCuda *buf, int w, int h, int stride, AdmFixedParametersCuda* p,
-                         CUstream c_stream);
+void adm_decouple_device(AdmBufferCuda *buf, int w, int h, int stride,
+                         AdmFixedParametersCuda *p, CUstream c_stream);
 
 // csf_den_scale functions
 
@@ -55,29 +58,36 @@ void i4_adm_csf_device(AdmBufferCuda *buf, int scale, int w, int h, int stride,
 // adm cm functions
 
 void i4_adm_cm_device(AdmBufferCuda *buf, int w, int h, int src_stride,
-                      int csf_a_stride, int scale, AdmFixedParametersCuda* p, CUstream c_stream);
+                      int csf_a_stride, int scale, AdmFixedParametersCuda *p,
+                      CUstream c_stream);
 
 void adm_cm_device(AdmBufferCuda *buf, int w, int h, int src_stride,
-                   int csf_a_stride, AdmFixedParametersCuda* p, CUstream c_stream);
+                   int csf_a_stride, AdmFixedParametersCuda *p,
+                   CUstream c_stream);
 
 // adm dwt functions
 
-void dwt2_8_device(const uint8_t *d_picture, cuda_adm_dwt_band_t *d_dst, cuda_i4_adm_dwt_band_t i4_dwt_dst,
-                   short2 *tmp_buf, AdmBufferCuda *d_buf, int w, int h,
-                   int src_stride, int dst_stride, AdmFixedParametersCuda* p, CUstream c_stream);
+void dwt2_8_device(const uint8_t *d_picture, cuda_adm_dwt_band_t *d_dst,
+                   cuda_i4_adm_dwt_band_t i4_dwt_dst, short2 *tmp_buf,
+                   AdmBufferCuda *d_buf, int w, int h, int src_stride,
+                   int dst_stride, AdmFixedParametersCuda *p,
+                   CUstream c_stream);
 
-void adm_dwt2_16_device(const uint16_t *d_picture, cuda_adm_dwt_band_t *d_dst, cuda_i4_adm_dwt_band_t i4_dwt_dst,
-                        short2 *tmp_buf, AdmBufferCuda *d_buf, int w, int h,
-                        int src_stride, int dst_stride, int inp_size_bits,
-                        AdmFixedParametersCuda* p, CUstream c_stream);
+void adm_dwt2_16_device(const uint16_t *d_picture, cuda_adm_dwt_band_t *d_dst,
+                        cuda_i4_adm_dwt_band_t i4_dwt_dst, short2 *tmp_buf,
+                        AdmBufferCuda *d_buf, int w, int h, int src_stride,
+                        int dst_stride, int inp_size_bits,
+                        AdmFixedParametersCuda *p, CUstream c_stream);
 
 void adm_dwt2_s123_combined_device(const int32_t *d_i4_ref_scale,
                                    int32_t *tmp_buf,
                                    cuda_i4_adm_dwt_band_t i4_dwt,
                                    AdmBufferCuda *d_buf, int w, int h,
-                                   int ref_stride, int dst_stride, int scale, AdmFixedParametersCuda* p,
+                                   int ref_stride, int dst_stride, int scale,
+                                   AdmFixedParametersCuda *p,
                                    CUstream cu_stream);
 
 #ifdef __cplusplus
 }
 #endif
+#endif /* __VMAF_SRC_CUDA_ADM_KERNELS_H__ */

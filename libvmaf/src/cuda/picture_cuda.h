@@ -17,16 +17,18 @@
  *
  */
 
+#ifndef __VMAF_SRC_CUDA_PICTURE_CUDA_H__
+#define __VMAF_SRC_CUDA_PICTURE_CUDA_H__
+
 #include "common.h"
 #include "cuda.h"
 #include "libvmaf/picture.h"
 
 typedef struct VmafCudaCookie {
-    enum VmafPixelFormat pix_fmt;
-    unsigned bpc, w, h;
-    VmafCudaState *state;
+  enum VmafPixelFormat pix_fmt;
+  unsigned bpc, w, h;
+  VmafCudaState *state;
 } VmafCudaCookie;
-
 
 /**
  * Upload CPU VmafPicture to the CudaVmafPicture on the GPU on the CUstream that
@@ -41,7 +43,8 @@ typedef struct VmafCudaCookie {
  *
  * @return CUDA_SUCCESS on success, or < 0 (a negative errno code) on error.
  */
-int vmaf_cuda_picture_upload_async(VmafPicture *cuda_pic, VmafPicture *pic, uint8_t bitmask);
+int vmaf_cuda_picture_upload_async(VmafPicture *cuda_pic, VmafPicture *pic,
+                                   uint8_t bitmask);
 
 /**
  * Download a CudaVmafPicutre from the GPU to CPU on the CUstream passed.
@@ -54,7 +57,8 @@ int vmaf_cuda_picture_upload_async(VmafPicture *cuda_pic, VmafPicture *pic, uint
  *
  * @return CUDA_SUCCESS on success, or < 0 (a negative errno code) on error.
  */
-int vmaf_cuda_picture_download_async(VmafPicture *cuda_pic, VmafPicture *pic, uint8_t bitmask);
+int vmaf_cuda_picture_download_async(VmafPicture *cuda_pic, VmafPicture *pic,
+                                     uint8_t bitmask);
 
 int vmaf_picture_alloc_pinned(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
                               unsigned bpc, unsigned w, unsigned h,
@@ -71,3 +75,5 @@ CUstream vmaf_cuda_picture_get_stream(VmafPicture *pic);
 CUevent vmaf_cuda_picture_get_finished_event(VmafPicture *pic);
 
 CUevent vmaf_cuda_picture_get_ready_event(VmafPicture *pic);
+
+#endif /* __VMAF_SRC_CUDA_PICTURE_CUDA_H__ */

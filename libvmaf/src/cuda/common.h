@@ -16,7 +16,9 @@
  *
  */
 
-#pragma once
+#ifndef __VMAF_SRC_CUDA_COMMON_H__
+#define __VMAF_SRC_CUDA_COMMON_H__
+
 #include <pthread.h>
 #include <stdbool.h>
 
@@ -157,3 +159,5 @@ int vmaf_cuda_buffer_host_free(VmafCudaState *cu_state, void *buf);
 int vmaf_cuda_buffer_host_alloc(VmafCudaState *cu_state, void **p_buf,
                            size_t size);
 #endif // !HAVE_CUDA
+
+#endif /* __VMAF_SRC_CUDA_COMMON_H__ */

@@ -17,6 +17,9 @@
  *
  */
 
+#ifndef __VMAF_SRC_CUDA_MOTION_KERNELS_H__
+#define __VMAF_SRC_CUDA_MOTION_KERNELS_H__
+
 #include "integer_motion_cuda.h"
 
 #include "common.h"
@@ -25,12 +28,14 @@
 extern "C" {
 #endif
 
-void calculate_motion_score(const VmafPicture* src, CudaVmafBuffer* src_blurred, 
-                          const CudaVmafBuffer* prev_blurred, CudaVmafBuffer* sad, 
-                          unsigned width, unsigned height, 
-                          ptrdiff_t src_stride, ptrdiff_t blurred_stride, unsigned src_bpc,
-                          CUstream stream);
+void calculate_motion_score(const VmafPicture *src, CudaVmafBuffer *src_blurred,
+                            const CudaVmafBuffer *prev_blurred,
+                            CudaVmafBuffer *sad, unsigned width,
+                            unsigned height, ptrdiff_t src_stride,
+                            ptrdiff_t blurred_stride, unsigned src_bpc,
+                            CUstream stream);
 
 #ifdef __cplusplus
 }
 #endif
+#endif /* __VMAF_SRC_CUDA_MOTION_KERNELS_H__ */
