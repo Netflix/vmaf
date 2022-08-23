@@ -53,6 +53,7 @@ static const struct option long_opts[] = {
     { "no_prediction",    0, NULL, 'n' },
     { "version",          0, NULL, 'v' },
     { "quiet",            0, NULL, 'q' },
+    { "cuda",             0, NULL, 'c' },
     { NULL,               0, NULL, 0 },
 };
 
@@ -91,6 +92,7 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --quiet/-q:                  disable FPS meter when run in a TTY\n"
             " --no_prediction/-n:          no prediction, extract features only\n"
             " --version/-v:                print version and exit\n"
+            " --cuda/-c:                   activate gpu processing\n"
            );
     exit(1);
 }
@@ -414,6 +416,9 @@ void cli_parse(const int argc, char *const *const argv,
             break;
         case 'n':
             settings->no_prediction = true;
+            break;
+        case 'c':
+            settings->cuda = true;
             break;
         case 'q':
             settings->quiet = true;

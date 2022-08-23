@@ -196,6 +196,18 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+#ifdef HAVE_CUDA
+    if (c.cuda) {
+        VmafCudaState *cu_state;
+        VmafCudaConfiguration cuda_cfg = { 0 };
+        err = vmaf_cuda_init(vmaf, &cu_state, cuda_cfg);
+        if (err) {
+            fprintf(stderr, "problem during vmaf_cuda_init\n");
+            return -1;
+        }
+    }
+#endif
+
     VmafModel **model;
     const size_t model_sz = sizeof(*model) * c.model_cnt;
     model = malloc(model_sz);
@@ -320,15 +332,6 @@ int main(int argc, char *argv[])
     for (unsigned i = 0; i < c.frame_skip_dist; i++)
         fetch_picture(&vid_dist, &pic_dist);
 
-#ifdef HAVE_CUDA
-    VmafCudaState *cu_state;
-    VmafCudaConfiguration cuda_cfg = { 0 };
-    err = vmaf_cuda_init(vmaf, &cu_state, cuda_cfg);
-    if (err) {
-        fprintf(stderr, "problem during vmaf_cuda_init\n");
-        return -1;
-    }
-#endif
 
     float fps = 0.f;
     const time_t t0 = clock();
