@@ -23,6 +23,17 @@
 #include "common.h"
 #include "log.h"
 
+static int is_cudastate_empty(VmafCudaState *cu_state)
+{
+    if (!cu_state)
+        return 1;
+
+    if (!cu_state->ctx)
+        return 1;
+
+    return 0;
+}
+
 int vmaf_cuda_state_init(VmafCudaState *cu_state, int prio, int device_id)
 {
     if (!cu_state) return -EINVAL;
@@ -60,7 +71,8 @@ int vmaf_cuda_state_init(VmafCudaState *cu_state, int prio, int device_id)
 
 int vmaf_cuda_sync(VmafCudaState *cu_state) {
 
-    if(!cu_state) return -EINVAL;
+    if (is_cudastate_empty(cu_state))
+        return -EINVAL;
 
     CHECK_CUDA(cuCtxPushCurrent((cu_state->ctx)));
     int err = cuCtxSynchronize();
@@ -72,8 +84,8 @@ int vmaf_cuda_sync(VmafCudaState *cu_state) {
 
 int vmaf_cuda_release(VmafCudaState *cu_state, bool rel_ctx)
 {
-    if(!cu_state)
-        return -EINVAL;
+    if (is_cudastate_empty(cu_state))
+        return CUDA_SUCCESS;
 
     CHECK_CUDA(cuCtxPushCurrent(cu_state->ctx));
     CHECK_CUDA(cuStreamDestroy(cu_state->str));
@@ -92,7 +104,7 @@ int vmaf_cuda_release(VmafCudaState *cu_state, bool rel_ctx)
 int vmaf_cuda_buffer_alloc(VmafCudaState *cu_state, CudaVmafBuffer **p_buf,
                            size_t size)
 {
-    if (!cu_state || !p_buf)
+    if (is_cudastate_empty(cu_state) || !p_buf)
         return -EINVAL;
 
 
@@ -109,7 +121,7 @@ int vmaf_cuda_buffer_alloc(VmafCudaState *cu_state, CudaVmafBuffer **p_buf,
 
 int vmaf_cuda_buffer_free(VmafCudaState *cu_state, CudaVmafBuffer *buf)
 {
-    if (!cu_state || !buf)
+    if (is_cudastate_empty(cu_state) || !buf)
         return -EINVAL;
 
     CHECK_CUDA(cuCtxPushCurrent(cu_state->ctx));
@@ -123,7 +135,7 @@ int vmaf_cuda_buffer_free(VmafCudaState *cu_state, CudaVmafBuffer *buf)
 int vmaf_cuda_buffer_host_alloc(VmafCudaState *cu_state, void **p_buf,
                            size_t size)
 {
-    if (!cu_state || !p_buf)
+    if (is_cudastate_empty(cu_state) || !p_buf)
         return -EINVAL;
 
     CHECK_CUDA(cuCtxPushCurrent(cu_state->ctx));
@@ -135,7 +147,7 @@ int vmaf_cuda_buffer_host_alloc(VmafCudaState *cu_state, void **p_buf,
 
 int vmaf_cuda_buffer_host_free(VmafCudaState *cu_state, void *buf)
 {
-    if (!cu_state || !buf)
+    if (is_cudastate_empty(cu_state) || !buf)
         return -EINVAL;
 
     CHECK_CUDA(cuCtxPushCurrent(cu_state->ctx));
@@ -148,7 +160,7 @@ int vmaf_cuda_buffer_host_free(VmafCudaState *cu_state, void *buf)
 int vmaf_cuda_buffer_upload_async(VmafCudaState *cu_state, CudaVmafBuffer *buf,
                             const void *src, CUstream c_stream)
 {
-    if (!cu_state || !buf || !src)
+    if (is_cudastate_empty(cu_state) || !buf || !src)
         return -EINVAL;
 
     CHECK_CUDA(cuCtxPushCurrent(cu_state->ctx));
@@ -161,7 +173,7 @@ int vmaf_cuda_buffer_upload_async(VmafCudaState *cu_state, CudaVmafBuffer *buf,
 int vmaf_cuda_buffer_download_async(VmafCudaState *cu_state, CudaVmafBuffer *buf,
                               void *dst, CUstream c_stream)
 {
-    if (!cu_state || !buf || !dst)
+    if (is_cudastate_empty(cu_state) || !buf || !dst)
         return -EINVAL;
 
     CHECK_CUDA(cuCtxPushCurrent(cu_state->ctx));

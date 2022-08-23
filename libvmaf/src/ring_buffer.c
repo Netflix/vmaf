@@ -1,7 +1,7 @@
 /**
  *
  *  Copyright 2016-2020 Netflix, Inc.
- *  Copyright 2021 NVIDIA Corporation.
+ *  Copyright 2022 NVIDIA Corporation.
  *
  *     Licensed under the BSD+Patent License (the "License");
  *     you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 
 #include <pthread.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include "ring_buffer.h"
 
@@ -34,6 +35,8 @@ typedef struct VmafRingBuffer {
 } VmafRingBuffer;
 
 int vmaf_ring_buffer_init(VmafRingBuffer **ring_buffer, VmafRingBufferConfig cfg) {
+    if (!ring_buffer) return -EINVAL;
+
     *ring_buffer = calloc(1, sizeof(VmafRingBuffer));
     VmafRingBuffer *rb = *ring_buffer;
     rb->cfg = cfg;
@@ -53,6 +56,8 @@ int vmaf_ring_buffer_init(VmafRingBuffer **ring_buffer, VmafRingBufferConfig cfg
 }
 
 int vmaf_ring_buffer_close(VmafRingBuffer *ring_buffer) {
+    if (!ring_buffer) return -EINVAL;
+
     int err = pthread_mutex_lock(&ring_buffer->busy); 
     if (err) return err;
 
@@ -65,6 +70,9 @@ int vmaf_ring_buffer_close(VmafRingBuffer *ring_buffer) {
 
 
 int vmaf_ring_buffer_fetch_next_picture(VmafRingBuffer *ring_buffer, VmafPicture *pic) {
+    if (!ring_buffer) return -EINVAL;
+    if (!pic) return -EINVAL;
+
     int err = pthread_mutex_lock(&ring_buffer->busy); 
     if (err) return err;
     unsigned pic_idx = ring_buffer->curr_idx;
