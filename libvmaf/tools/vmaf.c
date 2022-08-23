@@ -10,7 +10,7 @@
 #include "libvmaf/picture.h"
 #include "libvmaf/libvmaf.h"
 #ifdef HAVE_CUDA
-#include "libvmaf/cuda.h"
+#include "libvmaf/vmaf_cuda.h"
 #endif
 
 static enum VmafPixelFormat pix_fmt_map(int pf)

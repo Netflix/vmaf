@@ -19,7 +19,7 @@
 #include "test.h"
 
 #define HAVE_CUDA 1
-#include "libvmaf/cuda.h"
+#include "libvmaf/vmaf_cuda.h"
 #include "libvmaf/libvmaf.h"
 #include "libvmaf/model.h"
 

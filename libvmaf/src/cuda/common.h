@@ -28,7 +28,7 @@
 #if HAVE_CUDA
 
 #include <cuda.h>
-#include "libvmaf/cuda.h"
+#include <libvmaf/vmaf_cuda.h>
 #include "cuda_helper.cuh"
 
 typedef struct CudaVmafBuffer {

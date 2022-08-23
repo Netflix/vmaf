@@ -20,7 +20,7 @@
 #define __VMAF_SRC_PICTURE_H__
 
 #ifdef HAVE_CUDA
-#include "libvmaf/cuda.h"
+#include "libvmaf/vmaf_cuda.h"
 #endif
 #include "libvmaf/picture.h"
 
