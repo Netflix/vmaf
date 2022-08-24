@@ -114,14 +114,16 @@ test_ring_buffer = executable('test_ring_buffer',
     ['test.c', 'test_ring_buffer.c', '../src/ring_buffer.c', '../src/cuda/picture_cuda.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
-    dependencies: cuda_dependency
+    dependencies: cuda_dependency,
+    c_args: ['-DHAVE_CUDA=1']
 )
 
 test_cuda_pic_preallocation = executable('test_cuda_pic_preallocation',
     ['test.c', 'test_cuda_pic_preallocation.c'],
     include_directories : [libvmaf_inc, test_inc],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
-    dependencies: cuda_dependency
+    dependencies: cuda_dependency,
+    c_args: ['-DHAVE_CUDA=1']
 )
 
 test('test_ring_buffer', test_ring_buffer)

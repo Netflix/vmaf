@@ -16,7 +16,6 @@
  *
  */
 
-#define HAVE_CUDA 1
 
 #include <stdint.h>
 #include <stdlib.h>

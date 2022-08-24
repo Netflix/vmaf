@@ -19,7 +19,6 @@
 
 #include "common.h"
 #include <stdio.h>
-#define HAVE_CUDA
 #include "cuda_helper.cuh"
 #include "mem.h"
 
