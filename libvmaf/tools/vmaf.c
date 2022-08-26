@@ -334,10 +334,12 @@ int main(int argc, char *argv[])
         } else if (ret1) {
             fprintf(stderr, "\n\"%s\" ended before \"%s\".\n",
                     c.path_ref, c.path_dist);
+            int err = vmaf_picture_unref(&pic_dist);
             break;
         } else if (ret2) {
             fprintf(stderr, "\n\"%s\" ended before \"%s\".\n",
                     c.path_dist, c.path_ref);
+            int err = vmaf_picture_unref(&pic_ref);
             break;
         }
 
