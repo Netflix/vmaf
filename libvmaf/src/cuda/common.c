@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "common.h"
+#include "libvmaf/vmaf_cuda_state.h"
 #include "log.h"
 
 int vmaf_cuda_state_init(VmafCudaState *cu_state, int prio, int device_id)
