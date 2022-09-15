@@ -26,6 +26,7 @@
 #include "test.h"
 #include "ring_buffer.h"
 #include "libvmaf/vmaf_cuda.h"
+#include "libvmaf/vmaf_cuda_state.h"
 #include "thread_pool.h"
 #include "cuda/common.h"
 #include "cuda/picture_cuda.h"
