@@ -21,7 +21,6 @@
 
 #include "libvmaf/libvmaf.h"
 
-#if HAVE_CUDA
 #include <cuda.h>
 
 #ifdef __cplusplus
@@ -86,8 +85,6 @@ int vmaf_cuda_fetch_preallocated_picture(VmafContext *vmaf, VmafPicture* pic);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
 
 #endif /* __VMAF_CUDA_H__ */
