@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "common.h"
+#include "libvmaf/vmaf_cuda_state.h"
 #include "log.h"
 
 static int is_cudastate_empty(VmafCudaState *cu_state)

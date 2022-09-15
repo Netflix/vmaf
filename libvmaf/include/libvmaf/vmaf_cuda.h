@@ -21,8 +21,6 @@
 
 #include "libvmaf/libvmaf.h"
 
-#include <cuda.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -45,11 +43,7 @@ typedef struct VmafCudaConfiguration {
     int stream_priority;
 } VmafCudaConfiguration;
 
-typedef struct VmafCudaState {
-    CUcontext ctx;
-    CUstream str;
-    CUdevice dev;
-} VmafCudaState;
+typedef struct VmafCudaState VmafCudaState;
 
 /**
  * Initialize and provide access to VmafCudaState.

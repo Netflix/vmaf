@@ -28,6 +28,7 @@
 #include "feature_name.h"
 #include "integer_motion_cuda.h"
 #include "integer_motion_kernels.h"
+#include "libvmaf/vmaf_cuda_state.h"
 #include "mem.h"
 #include "picture.h"
 #include "picture_cuda.h"

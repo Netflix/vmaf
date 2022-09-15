@@ -48,6 +48,7 @@
 
 #ifdef HAVE_CUDA
 #include "libvmaf/vmaf_cuda.h"
+#include "libvmaf/vmaf_cuda_state.h"
 #include "cuda/cuda_helper.cuh"
 #include "cuda/picture_cuda.h"
 #include "cuda/common.h"
