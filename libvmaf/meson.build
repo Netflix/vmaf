@@ -6,7 +6,7 @@ project('libvmaf', ['c', 'cpp'],
                        'buildtype=release',
                        'default_library=both',
                       ],
-    meson_version: '>= 0.47.0')
+    meson_version: '>= 0.56.1')
 
 vmaf_soname_version       = '1.1.3'
 vmaf_api_version_array    = vmaf_soname_version.split('.')
