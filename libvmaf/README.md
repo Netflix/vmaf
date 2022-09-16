@@ -5,7 +5,7 @@
 For building, you need the following:
 
 - [Python3](https://www.python.org/download/releases/3.0/) (3.6 or higher)
-- [Meson](https://mesonbuild.com/) (0.47 or higher)
+- [Meson](https://mesonbuild.com/) (0.56.1 or higher)
 - [Ninja](https://ninja-build.org/) (1.7.1 or higher)
 - [NASM](https://www.nasm.us/) (for x86 builds only, 2.13.02 or higher)
 - `xxd`
