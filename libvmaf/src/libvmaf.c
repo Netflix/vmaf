@@ -306,11 +306,8 @@ int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model)
 
     for (unsigned i = 0; i < model->n_features; i++) {
         VmafFeatureExtractor *fex =
-#ifdef HAVE_CUDA
-            vmaf_get_feature_extractor_by_feature_name(model->feature[i].name, vmaf->cuda.state.ctx);
-#else
-            vmaf_get_feature_extractor_by_feature_name(model->feature[i].name, 0);
-#endif
+
+        vmaf_get_feature_extractor_by_feature_name(model->feature[i].name, vmaf->cfg.gpumask);
         if (!fex) {
             vmaf_log(VMAF_LOG_LEVEL_ERROR,
                      "could not initialize feature extractor \"%s\"\n",
@@ -440,8 +437,8 @@ static int validate_pic_params(VmafContext *vmaf, VmafPicture *ref,
         vmaf->pic_params.h = ref->h[0];
         vmaf->pic_params.pix_fmt = ref->pix_fmt;
         vmaf->pic_params.bpc = ref->bpc;
-        vmaf->pic_params.buf_type = ref_priv->buf_type;
     }
+    vmaf->pic_params.buf_type = ref_priv->buf_type;
 
     if ((ref->w[0] != dist->w[0]) || (ref->w[0] != vmaf->pic_params.w))
         return -EINVAL;

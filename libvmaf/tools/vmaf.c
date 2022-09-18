@@ -187,6 +187,7 @@ int main(int argc, char *argv[])
         .n_threads = c.thread_cnt,
         .n_subsample = c.subsample,
         .cpumask = c.cpumask,
+        .gpumask = c.cuda,
     };
 
     VmafContext *vmaf;
@@ -196,17 +197,6 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-#ifdef HAVE_CUDA
-    if (c.cuda) {
-        VmafCudaState *cu_state;
-        VmafCudaConfiguration cuda_cfg = { 0 };
-        err = vmaf_cuda_init(vmaf, &cu_state, cuda_cfg);
-        if (err) {
-            fprintf(stderr, "problem during vmaf_cuda_init\n");
-            return -1;
-        }
-    }
-#endif
 
     VmafModel **model;
     const size_t model_sz = sizeof(*model) * c.model_cnt;
@@ -323,6 +313,22 @@ int main(int argc, char *argv[])
             return -1;
         }
     }
+
+#ifdef HAVE_CUDA
+    if (c.cuda) {
+        VmafCudaState *cu_state;
+        VmafCudaConfiguration cuda_cfg = { 0 };
+        cuda_cfg.pic_params.w = vid_info.pic_w;
+        cuda_cfg.pic_params.h = vid_info.pic_h;
+        cuda_cfg.pic_params.bpc = vid_info.depth;
+        cuda_cfg.pic_params.pix_fmt = pix_fmt_map(vid_info.pixel_fmt);
+        err = vmaf_cuda_init(vmaf, &cu_state, cuda_cfg);
+        if (err) {
+            fprintf(stderr, "problem during vmaf_cuda_init\n");
+            return -1;
+        }
+    }
+#endif
 
     VmafPicture pic_ref, pic_dist;
 
