@@ -772,7 +772,20 @@ def run_executors_in_parallel(executor_class,
 
 
 class NorefExecutorMixin(object):
-    """ Override Executor whenever reference video is mentioned. """
+    """
+    Override Executor whenever reference video is mentioned.
+
+    NorefExecutorMixin is useful for NorefAsset, i.e. assets that does not have a reference.
+
+    Example classes that inherits NorefExecutorMixin include: BrisqueNorefFeatureExtractor, VideoEncoder
+
+    (3/11/2020) added an (optional) step to allow python-based processing on
+    the dis file. The new processing pipeline looks like this:
+
+     notyuv  --------   dis_workfile   -----------------    dis_procfile      -----------------
+    -------> |FFmpeg| ---------------> |python-callback| -------------------> |   BRISQUE     | --->
+             --------                  -----------------                      -----------------
+    """
 
     @staticmethod
     @override(Executor)
