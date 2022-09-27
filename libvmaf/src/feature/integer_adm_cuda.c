@@ -19,6 +19,7 @@
 
 #include "common.h"
 #include <stdio.h>
+
 #include "cuda_helper.cuh"
 #include "mem.h"
 #include "libvmaf/vmaf_cuda_state.h"
