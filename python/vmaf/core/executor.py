@@ -660,25 +660,32 @@ class Executor(TypeVersionEnabled):
             num_frames = end_frame - start_frame + 1
             return f"-vframes {num_frames}", f"select='gte(n\\,{start_frame})*gte({end_frame}\\,n)',setpts=PTS-STARTPTS"
 
+    @classmethod
+    def _close_ref_workfile(cls, asset):
+
+        use_path_as_workpath = asset.use_path_as_workpath
+        path = asset.ref_path
+        workfile_path = asset.ref_workfile_path
+
+        cls._close_workfile(path, workfile_path, use_path_as_workpath)
+
+    @classmethod
+    def _close_dis_workfile(cls, asset):
+
+        use_path_as_workpath = asset.use_path_as_workpath
+        path = asset.dis_path
+        workfile_path = asset.dis_workfile_path
+
+        cls._close_workfile(path, workfile_path, use_path_as_workpath)
+
     @staticmethod
-    def _close_ref_workfile(asset):
+    def _close_workfile(path, workfile_path, use_path_as_workpath):
 
-        # only need to close ref workfile if the path is different from ref path
-        assert asset.use_path_as_workpath is False and asset.ref_path != asset.ref_workfile_path
+        # only need to close workfile if the workfile path is different from path
+        assert use_path_as_workpath is False and path != workfile_path
 
-        # caution: never remove ref file!!!!!!!!!!!!!!!
-        if os.path.exists(asset.ref_workfile_path):
-            os.remove(asset.ref_workfile_path)
-
-    @staticmethod
-    def _close_dis_workfile(asset):
-
-        # only need to close dis workfile if the path is different from dis path
-        assert asset.use_path_as_workpath is False and asset.dis_path != asset.dis_workfile_path
-
-        # caution: never remove dis file!!!!!!!!!!!!!!
-        if os.path.exists(asset.dis_workfile_path):
-            os.remove(asset.dis_workfile_path)
+        if os.path.exists(workfile_path):
+            os.remove(workfile_path)
 
     @staticmethod
     def _close_ref_procfile(asset):
