@@ -91,6 +91,30 @@ class Executor(TypeVersionEnabled):
     def _custom_init(self):
         pass
 
+    @staticmethod
+    def get_normalized_string_from_dict(d):
+        """ Normalized string representation with sorted keys, extended to cover callables.
+
+        >>> Executor.get_normalized_string_from_dict({"max_buffer_sec": 5.0, "bitrate_kbps": 45, })
+        'bitrate_kbps_45_max_buffer_sec_5.0'
+        >>> Executor.get_normalized_string_from_dict({"sorted_key": sorted, "_need_ffmpeg_key": Executor._need_ffmpeg, })
+        '_need_ffmpeg_key_Executor._need_ffmpeg_sorted_key_sorted'
+        """
+        def _slugify(v):
+            if callable(v):
+                s = str(v)
+                assert s[0] == '<' and s[-1] == '>'
+                s = s[1:-1]
+                l = s.split(' ')
+                assert 'function' in l
+                for idx, e in enumerate(l):
+                    if e == 'function':
+                        assert idx < len(l) - 1
+                        return l[idx + 1]
+            else:
+                return v
+        return '_'.join(map(lambda k: '{k}_{v}'.format(k=k,v=_slugify(d[k])), sorted(d.keys())))
+
     @property
     def executor_id(self):
         executor_id_ = TypeVersionEnabled.get_type_version_string(self)
@@ -98,7 +122,7 @@ class Executor(TypeVersionEnabled):
         if self.optional_dict is not None and len(self.optional_dict) > 0:
             # include optional_dict info in executor_id for result store,
             # as parameters in optional_dict will impact result
-            executor_id_ += '_{}'.format(get_normalized_string_from_dict(self.optional_dict))
+            executor_id_ += '_{}'.format(self.get_normalized_string_from_dict(self.optional_dict))
             replace_chars = ["'", " "]
             for c in replace_chars:
                 executor_id_ = executor_id_.replace(c, "_")
