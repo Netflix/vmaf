@@ -119,9 +119,10 @@ class FeatureAssembler(object):
 
         fextractor_class = FeatureExtractor.find_subclass(fextractor_type)
 
-        if self.feature_option_dict is not None \
-                and fextractor_type in self.feature_option_dict:
-            optional_dict = self.feature_option_dict[fextractor_type]
+        if self.feature_option_dict is not None and fextractor_type in self.feature_option_dict:
+            optional_dict = self.feature_option_dict[fextractor_type].copy()
+            if self.optional_dict is not None:
+                optional_dict.update(self.optional_dict)
         else:
             optional_dict = self.optional_dict  # FIXME: hacky
 
