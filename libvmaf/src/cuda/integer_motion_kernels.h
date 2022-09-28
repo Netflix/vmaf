@@ -33,7 +33,7 @@ void calculate_motion_score(const VmafPicture *src, CudaVmafBuffer *src_blurred,
                             CudaVmafBuffer *sad, unsigned width,
                             unsigned height, ptrdiff_t src_stride,
                             ptrdiff_t blurred_stride, unsigned src_bpc,
-                            CUstream stream);
+                            CUfunction funcbpc8, CUfunction funcbpc16, CUstream stream);
 
 #ifdef __cplusplus
 }

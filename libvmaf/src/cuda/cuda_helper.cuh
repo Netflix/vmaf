@@ -20,6 +20,7 @@
 #define __CUDA_HELPER_H__
 
 #include "stdio.h"
+#include <cuda.h>
 #include <cuda_runtime.h>
 
 #define DIV_ROUND_UP(x, y) (((x) + (y)-1) / (y))
@@ -31,21 +32,15 @@
   do {                                                                         \
     cudaError err_ = cudaGetLastError();                                       \
     if (err_ != cudaSuccess) {                                                 \
-      vmaf_log(VMAF_LOG_LEVEL_ERROR, "CudaCheckError() failed at: %s:%d\n",    \
-               __FILE__, __LINE__);                                            \
-      vmaf_log(VMAF_LOG_LEVEL_ERROR, "code: %d ; description: %s\n", err_,     \
-               cudaGetErrorString(err_));                                      \
-      exit(1);                                                                 \
+      printf("code: %d ; description: %s\n", err_, cudaGetErrorString(err_));  \
+      exit(err_);                                                              \
     }                                                                          \
                                                                                \
     err_ = cudaDeviceSynchronize();                                            \
     if (cudaSuccess != err_) {                                                 \
-      vmaf_log(VMAF_LOG_LEVEL_ERROR,                                           \
-               "CudaCheckError() failed after sync at: %s:%d;\n", __FILE__,    \
-               __LINE__);                                                      \
-      vmaf_log(VMAF_LOG_LEVEL_ERROR, "code: %d; description: %s\n", err_,      \
-               cudaGetErrorString(err_));                                      \
-      exit(1);                                                                 \
+                                                                               \
+      printf("code: %d; description: %s\n", err_, cudaGetErrorString(err_));   \
+      exit(err_);                                                              \
     }                                                                          \
   } while (0)
 #else
@@ -56,11 +51,10 @@
   do {                                                                         \
     if (CUDA_SUCCESS != CALL) {                                                \
       const char *err_txt;                                                     \
-      cuGetErrorName(CALL, &err_txt);                                          \
-      vmaf_log(VMAF_LOG_LEVEL_ERROR,                                           \
-               "Cuda error at  %s:%d with error %s(%i)\n", __FILE__, __LINE__, \
-               err_txt, CALL);                                                 \
-      exit(CALL);                                                              \
+      const CUresult err = CALL;                                               \
+      cuGetErrorName(err, &err_txt);                                           \
+      printf("code: %d; description: %s\n", (int)err, err_txt);                \
+      exit(err);                                                               \
     }                                                                          \
   } while (0);
 

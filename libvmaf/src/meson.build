@@ -303,6 +303,15 @@ if is_cuda_enabled
         endif
     endif
 
+    cuda_cubin = static_library(
+        'cuda_common_vmaf_device',
+        [cuda_sources],
+        dependencies: [cuda_drv_api_dependency, cuda_rt_api_dependency],
+        include_directories : [libvmaf_inc, vmaf_base_include, cuda_dir, feature_src_dir, include_directories('../src/cuda/'), nvtx_inc],
+        c_args : vmaf_cflags_common,
+        cuda_args: cuda_flags + ['-fatbin']# + ['-gencode', 'arch=compute_86,code=sm_86' ] #, '--use_fast_math']
+    )
+
     cuda_static_lib = static_library(
         'cuda_common_vmaf_lib',
         [cuda_sources],

@@ -31,6 +31,7 @@ __device__ __forceinline__ int mirror(const int idx, const int sup)
   return (out < sup) ? out : (sup - (out - sup + 1));
 }
 
+extern "C" {
 __global__ void calculate_motion_score_kernel_8bpc(const VmafPicture src, CudaVmafBuffer src_blurred, 
                           const CudaVmafBuffer prev_blurred, CudaVmafBuffer sad, 
                           unsigned width, unsigned height, 
@@ -123,28 +124,29 @@ __global__ void calculate_motion_score_kernel_16bpc(const VmafPicture src, CudaV
     atomicAdd(reinterpret_cast<unsigned long long*>(sad.data), static_cast<unsigned long long>(abs_dist));
 }
 
-extern "C" {
 void calculate_motion_score(const VmafPicture* src, CudaVmafBuffer* src_blurred, 
                           const CudaVmafBuffer* prev_blurred, CudaVmafBuffer* sad, 
                           unsigned width, unsigned height, 
                           ptrdiff_t src_stride, ptrdiff_t blurred_stride, unsigned src_bpc, 
-                          CUstream stream) {
+                          CUfunction funcbpc8, CUfunction funcbpc16, CUstream stream) {
   dim3 block(16,16);
   dim3 grid(DIV_ROUND_UP(width, block.x), DIV_ROUND_UP(height, block.y));
   
   if (src_bpc == 8)
   {
-    calculate_motion_score_kernel_8bpc<<<grid, block, 0, stream>>>(*src, *src_blurred,
-                                                                   *prev_blurred, *sad,
-                                                                   width, height,
-                                                                   src_stride, blurred_stride);
+    void *kernelParams[] = {(void*)src,   (void*) src_blurred, (void*)prev_blurred, (void*)sad,
+                           &width, &height,     &src_stride,  &blurred_stride};
+    CHECK_CUDA(cuLaunchKernel(funcbpc8, grid.x,
+                              grid.y, grid.z, block.x, block.y, block.z, 0,
+                              stream, kernelParams, NULL));
   }
   else
   {
-    calculate_motion_score_kernel_16bpc<<<grid, block, 0, stream>>>(*src, *src_blurred,
-                                                                   *prev_blurred, *sad,
-                                                                   width, height,
-                                                                   src_stride, blurred_stride);
+    void *kernelParams[] = {(void*)src,   (void*) src_blurred, (void*)prev_blurred, (void*)sad,
+                          &width, &height,     &src_stride,  &blurred_stride};
+    CHECK_CUDA(cuLaunchKernel(funcbpc16, grid.x,
+                              grid.y, grid.z, block.x, block.y, block.z, 0,
+                              stream, kernelParams, NULL));
   }
   CudaCheckError();
 }

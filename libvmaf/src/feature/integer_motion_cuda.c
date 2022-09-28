@@ -35,6 +35,7 @@
 
 typedef struct MotionStateCuda {
     CUevent event, finished;
+    CUfunction funcbpc8, funcbpc16;
     CUstream str, host_stream;
     CudaVmafBuffer* blur[2];
     CudaVmafBuffer* sad;
@@ -47,7 +48,8 @@ typedef struct MotionStateCuda {
     void (*calculate_motion_score)(const VmafPicture* src, CudaVmafBuffer* src_blurred, 
                           const CudaVmafBuffer* prev_blurred, CudaVmafBuffer* sad, 
                           unsigned width, unsigned height, 
-                          ptrdiff_t src_stride, ptrdiff_t blurred_stride, unsigned src_bpc, CUstream stream);
+                          ptrdiff_t src_stride, ptrdiff_t blurred_stride, unsigned src_bpc,
+                          CUfunction funcbpc8, CUfunction funcbpc16, CUstream stream);
     VmafDictionary *feature_name_dict;
 } MotionStateCuda;
 
@@ -114,6 +116,15 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CHECK_CUDA(cuStreamCreateWithPriority(&s->host_stream, CU_STREAM_NON_BLOCKING, 0));
     CHECK_CUDA(cuEventCreate(&s->event, CU_EVENT_DEFAULT));
     CHECK_CUDA(cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
+
+    CUmodule module;
+    const char* fname = "/home/maximilianm/repos/vmaf_private/libvmaf/build/src/libcuda_common_vmaf_device.a.p/cuda_integer_motion_motion_score.cu.o";
+    CHECK_CUDA(cuModuleLoad(&module, fname));
+    
+    CHECK_CUDA(cuModuleGetFunction(&s->funcbpc16, module, "calculate_motion_score_kernel_16bpc"));
+    CHECK_CUDA(cuModuleGetFunction(&s->funcbpc8, module, "calculate_motion_score_kernel_8bpc"));
+
+
     CHECK_CUDA(cuCtxPopCurrent(NULL));
 
     if (s->motion_force_zero) {
@@ -246,7 +257,7 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
     CHECK_CUDA(cuStreamWaitEvent(vmaf_cuda_picture_get_stream(ref_pic), vmaf_cuda_picture_get_ready_event(dist_pic), CU_EVENT_WAIT_DEFAULT));
     s->calculate_motion_score(ref_pic, s->blur[src_blurred_idx], s->blur[prev_blurred_idx], 
         s->sad, ref_pic->w[0], ref_pic->h[0], ref_pic->stride[0], sizeof(uint16_t) * ref_pic->w[0], 
-        ref_pic->bpc, vmaf_cuda_picture_get_stream(ref_pic));
+        ref_pic->bpc, s->funcbpc8, s->funcbpc16, vmaf_cuda_picture_get_stream(ref_pic));
     CHECK_CUDA(cuEventRecord(s->event, vmaf_cuda_picture_get_stream(ref_pic)));
     // This event ensures the input buffer is consumed
     CHECK_CUDA(cuStreamWaitEvent(s->str, s->event, CU_EVENT_WAIT_DEFAULT));
