@@ -922,10 +922,9 @@ class NorefExecutorMixin(object):
         dis_p.start()
         self._wait_for_procfiles(asset)
 
-    @classmethod
     @override(Executor)
-    def _close_workfiles(cls, asset):
-        cls._close_dis_workfile(asset)
+    def _close_workfiles(self, asset):
+        self._close_dis_workfile(asset)
 
     @classmethod
     @override(Executor)
