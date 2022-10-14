@@ -72,8 +72,8 @@ __global__ void i4_adm_csf_kernel(AdmBufferCuda buf, int scale, int top,
 
   if (y < bottom && x < right) {
     __align__(16) int32_t src[cols_per_thread];
-    __align__(8) int32_t dst_vec[cols_per_thread];
-    __align__(8) int32_t flt_vec[cols_per_thread];
+    __align__(16) int32_t dst_vec[cols_per_thread];
+    __align__(16) int32_t flt_vec[cols_per_thread];
 
     for (int row = 0;row < rows_per_thread;++row) {
       copy_vec_4<cols_per_thread>(src_ptr + offset + row * stride, src);
@@ -112,9 +112,9 @@ __global__ void adm_csf_kernel(AdmBufferCuda buf, int top, int bottom, int left,
   const uint16_t FIX_ONE_BY_30 = 4369; //(1/30)*2^17
 
   if (y < bottom && x < right) {
-    __align__(16) int16_t src[cols_per_thread];
-    __align__(16) int16_t dst_vec[cols_per_thread];
-    __align__(16) int16_t flt_vec[cols_per_thread];
+    __align__(8) int16_t src[cols_per_thread];
+    __align__(8) int16_t dst_vec[cols_per_thread];
+    __align__(8) int16_t flt_vec[cols_per_thread];
 
     const int offset = y * stride + x;
 
