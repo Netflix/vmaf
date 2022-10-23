@@ -887,15 +887,16 @@ class AssetTest(unittest.TestCase):
                                   'quality_width': 720, 'quality_height': 320,
                                   'yuv_type': 'yuv422p',
                                   'ref_pad_cmd': 'iw+6:ih+4:3:2'})
-        self.assertEqual(str(asset), "c4e39ac05957dbb235b86397e3ae9e0a7551aa8f")
+        self.assertEqual(str(asset), "test_0_0_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_720x480_yuv422p_q_720x320")
 
         asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
                       dis_path='b'*60,
                       asset_dict={'width': 720, 'height': 480,
                                   'quality_width': 720, 'quality_height': 320,
                                   'yuv_type': 'yuv422p',
-                                  'ref_pad_cmd': 'iw+6:ih+4:3:2'})
-        self.assertEqual(str(asset), "test_0_0_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb_720x480_yuv422p_padiw_6_ih_4_3_2_vs_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb_720x480_yuv422p_q_720x320")
+                                  'ref_pad_cmd': 'iw+6:ih+4:3:2',  # no effect
+                                  })
+        self.assertEqual(str(asset), "test_0_0_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb_720x480_yuv422p_q_720x320")
 
     def test_crop_pad_special(self):
         import os

@@ -997,3 +997,22 @@ class NorefAsset(Asset):
     @override(Asset)
     def ref_proc_callback(self):
         return self.dis_proc_callback
+
+    def to_string(self):
+        """
+        The compact string representation of asset, used by __str__.
+        :return:
+        """
+        s = "{dataset}_{content_id}_{asset_id}_{dis_str}". \
+            format(dataset=self.dataset,
+                   content_id=self.content_id,
+                   asset_id=self.asset_id,
+                   dis_str=self.dis_str)
+        quality_str = self.quality_str
+        if quality_str:
+            s += "_q_{quality_str}".format(quality_str=quality_str)
+
+        if len(s) > 196:  # upper limit of filename is 256 but leave some space for prefix/suffix
+            s = hashlib.sha1(s.encode("utf-8")).hexdigest()
+
+        return s
