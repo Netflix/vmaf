@@ -64,6 +64,7 @@ class Executor(TypeVersionEnabled):
                  result_store=None,
                  optional_dict=None,
                  optional_dict2=None,
+                 save_workfiles=False,
                  ):
         """
         Use optional_dict for parameters that would impact result (e.g. model,
@@ -81,6 +82,7 @@ class Executor(TypeVersionEnabled):
         self.result_store = result_store
         self.optional_dict = optional_dict
         self.optional_dict2 = optional_dict2
+        self.save_workfiles = save_workfiles
 
         self._assert_class()
         self._assert_args()
@@ -192,7 +194,8 @@ class Executor(TypeVersionEnabled):
         pass
 
     def _assert_args(self):
-        pass
+        if self.save_workfiles is True:
+            assert self.fifo_mode is False, 'To save workfiles, FIFO mode cannot be true.'
 
     def _assert_assets(self):
 
@@ -380,6 +383,17 @@ class Executor(TypeVersionEnabled):
 
             self._generate_result(asset)
 
+            if self.logger:
+                self.logger.info("Read {id} log file, get scores...".
+                                 format(id=self.executor_id))
+
+            # collect result from each asset's log file
+            result = self._read_result(asset)
+
+            # save result
+            if self.result_store:
+                result = self._save_result(result)
+
             # clean up workfiles
             if self.delete_workdir:
                 if asset.use_path_as_workpath:
@@ -393,17 +407,6 @@ class Executor(TypeVersionEnabled):
                     pass
                 else:
                     self._close_procfiles(asset)
-
-            if self.logger:
-                self.logger.info("Read {id} log file, get scores...".
-                                 format(id=self.executor_id))
-
-            # collect result from each asset's log file
-            result = self._read_result(asset)
-
-            # save result
-            if self.result_store:
-                result = self._save_result(result)
 
             # clean up workdir and log files in it
             if self.delete_workdir:
@@ -473,6 +476,9 @@ class Executor(TypeVersionEnabled):
 
     def _save_result(self, result):
         self.result_store.save(result)
+        if self.save_workfiles:
+            self.result_store.save_workfile(result, result.asset.ref_workfile_path, '_ref')
+            self.result_store.save_workfile(result, result.asset.dis_workfile_path, '_dis')
         return result
 
     @classmethod
@@ -746,6 +752,8 @@ class Executor(TypeVersionEnabled):
     def _remove_result(self, asset):
         if self.result_store:
             self.result_store.delete(asset, self.executor_id)
+            self.result_store.delete_workfile(asset, self.executor_id, '_ref')
+            self.result_store.delete_workfile(asset, self.executor_id, '_dis')
 
 @deprecated
 def run_executors_in_parallel(executor_class,
@@ -931,3 +939,9 @@ class NorefExecutorMixin(object):
     def _close_procfiles(cls, asset):
         cls._close_dis_procfile(asset)
 
+    @override(Executor)
+    def _save_result(self, result):
+        self.result_store.save(result)
+        if self.save_workfiles:
+            self.result_store.save_workfile(result, result.asset.dis_workfile_path, '_dis')
+        return result

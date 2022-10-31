@@ -41,6 +41,7 @@ class StrredQualityRunner(QualityRunner):
             optional_dict=None,  # WARNING: feature param not passed
             optional_dict2=None,
             parallelize=False, # parallelization already in a higher level
+            save_workfiles=self.save_workfiles,
         )
         return feature_assembler
 
@@ -91,6 +92,7 @@ class StrredOptQualityRunner(QualityRunner):
             optional_dict=None,  # WARNING: feature param not passed
             optional_dict2=None,
             parallelize=False, # parallelization already in a higher level
+            save_workfiles=self.save_workfiles,
         )
         return feature_assembler
 
@@ -143,6 +145,7 @@ class SpEEDMatlabQualityRunner(QualityRunner):
                 optional_dict=None,  # WARNING: feature param not passed
                 optional_dict2=None,
                 parallelize=False,  # parallelization already in a higher level
+                save_workfiles=self.save_workfiles,
             )
             return feature_assembler
 
@@ -194,6 +197,7 @@ class STMADQualityRunner(QualityRunner):
             optional_dict=None,  # WARNING: feature param not passed
             optional_dict2=None,
             parallelize=False,  # parallelization already in a higher level
+            save_workfiles=self.save_workfiles,
         )
         return feature_assembler
 
@@ -244,6 +248,7 @@ class ICIDQualityRunner(QualityRunner):
            optional_dict=None,  # WARNING: feature param not passed
            optional_dict2=None,
            parallelize=False,  # parallelization already in a higher level
+           save_workfiles=self.save_workfiles,
        )
        return feature_assembler
 
