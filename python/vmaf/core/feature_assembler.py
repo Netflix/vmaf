@@ -23,7 +23,9 @@ class FeatureAssembler(object):
                  optional_dict=None,
                  optional_dict2=None,
                  parallelize=False,
-                 processes=None):
+                 processes=None,
+                 save_workfiles=False,
+                 ):
         """
         :param feature_dict: in the format of:
         {FeatureExtractor_type:'all', ...}, or
@@ -54,6 +56,7 @@ class FeatureAssembler(object):
         self.optional_dict2 = optional_dict2
         self.parallelize = parallelize
         self.processes = processes
+        self.save_workfiles = save_workfiles
 
         self.type2results_dict = {}
 
@@ -133,5 +136,6 @@ class FeatureAssembler(object):
                                       result_store=self.result_store,
                                       optional_dict=optional_dict,
                                       optional_dict2=self.optional_dict2,
+                                      save_workfiles=self.save_workfiles,
                                       )
         return fextractor

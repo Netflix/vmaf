@@ -1834,6 +1834,21 @@ class QualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAF_score'], 73.12401678992882, places=2)  # pyvmaf: 72.97880576181906
         self.assertAlmostEqual(results[1]['VMAF_score'], 99.946416604585025, places=4)
 
+    def test_run_vmaf_runner_flat_save_workfiles_fifo_true(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_flat_1920_1080_videos_for_testing()
+
+        with self.assertRaises(AssertionError) as ctx:
+            self.runner = VmafQualityRunner(
+                [asset, asset_original],
+                None, fifo_mode=True,
+                delete_workdir=True,
+                result_store=self.result_store,
+                save_workfiles=True,
+            )
+            self.runner.run(parallelize=False)
+        self.assertTrue('To save workfiles, FIFO mode cannot be true.' in str(ctx.exception))
+
 
 class QualityRunnerVersionTest(unittest.TestCase):
 
@@ -1881,6 +1896,54 @@ class QualityRunnerResultStoreTest(unittest.TestCase):
 
         self.assertAlmostEqual(results2[0]['VMAF_score'], 80.61670115719328, places=4)
         self.assertAlmostEqual(results2[1]['VMAF_score'], 99.946416604585025, places=4)
+
+
+class QualityRunnerSaveWorkfilesTest(MyTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.result_store = FileSystemResultStore()
+
+    def tearDown(self):
+        if hasattr(self, 'runner'):
+            self.runner.remove_results()
+        super().tearDown()
+
+    def test_run_vmaf_runner_flat_save_workfiles(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = VmafQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            result_store=self.result_store,
+            save_workfiles=True,
+        )
+        self.runner.run(parallelize=False)
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['VMAF_score'], 76.66890511746402, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 99.94642662500576, places=4)
+
+    def test_run_psnr_runner_flat_save_workfiles(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.runner = PsnrQualityRunner(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            delete_workdir=True,
+            result_store=self.result_store,
+            save_workfiles=True,
+        )
+        self.runner.run(parallelize=False)
+
+        results = self.runner.results
+
+        self.assertAlmostEqual(results[0]['PSNR_score'], 30.755063979166668, places=4)
+        self.assertAlmostEqual(results[1]['PSNR_score'], 60.0, places=4)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 import os
 import hashlib
 import ast
+import shutil
 
 import pandas as pd
 
@@ -49,6 +50,15 @@ class FileSystemResultStore(ResultStore):
 
         self.save_result(result, result_file_path)
 
+    def save_workfile(self, result: Result, workfile_path: str, suffix: str):
+        result_file_path = self._get_result_file_path(result)
+        try:
+            make_parent_dirs_if_nonexist(result_file_path)
+        except OSError as e:
+            print('make_parent_dirs_if_nonexist {path} fails: {e}'.format(path=result_file_path, e=str(e)))
+
+        shutil.copyfile(workfile_path, result_file_path + suffix)
+
     def load(self, asset, executor_id):
         result_file_path = self._get_result_file_path2(asset, executor_id)
         if not os.path.isfile(result_file_path):
@@ -73,6 +83,12 @@ class FileSystemResultStore(ResultStore):
         if os.path.isfile(result_file_path):
             os.remove(result_file_path)
 
+    def delete_workfile(self, asset, executor_id, suffix: str):
+        result_file_path = self._get_result_file_path2(asset, executor_id)
+        workfile_path = result_file_path + suffix
+        if os.path.isfile(workfile_path):
+            os.remove(workfile_path)
+
     def clean_up(self):
         """
         WARNING: RMOVE ENTIRE RESULT STORE, USE WITH CAUTION!!!
@@ -84,7 +100,6 @@ class FileSystemResultStore(ResultStore):
 
     def _get_result_file_path(self, result):
         str_to_hash = str(result.asset).encode("utf-8")
-
         return "{dir}/{executor_id}/{dataset}/{content_id}/{str}".format(
             dir=self.result_store_dir, executor_id=result.executor_id,
             dataset=result.asset.dataset,

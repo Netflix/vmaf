@@ -126,6 +126,7 @@ class QualityRunnerFromFeatureExtractor(QualityRunner):
             optional_dict=self.optional_dict,
             optional_dict2=self.optional_dict2,
             parallelize=False,  # parallelization already in a higher level
+            save_workfiles=self.save_workfiles,
         )
         return feature_assembler
 
@@ -201,6 +202,7 @@ class VmafLegacyQualityRunner(QualityRunner):
             optional_dict=None,
             optional_dict2=None,
             parallelize=False,  # parallelization already in a higher level
+            save_workfiles=self.save_workfiles,
         )
         return vmaf_fassembler
 
@@ -401,6 +403,7 @@ class VmafQualityRunner(VmafQualityRunnerModelMixin, QualityRunner):
             optional_dict=self.optional_dict,
             optional_dict2=self.optional_dict2,
             parallelize=False,  # parallelization already in a higher level
+            save_workfiles=self.save_workfiles,
         )
         return vmaf_fassembler
 
@@ -1052,6 +1055,7 @@ class VmafSingleFeatureQualityRunner(QualityRunner):
             optional_dict=self.optional_dict,
             optional_dict2=self.optional_dict2,
             parallelize=False,  # parallelization already in a higher level
+            save_workfiles=self.save_workfiles,
         )
         return vmaf_fassembler
 
@@ -1293,6 +1297,7 @@ class NiqeQualityRunner(QualityRunner):
             optional_dict=feature_optional_dict,
             optional_dict2=None,
             parallelize=False,
+            save_workfiles=self.save_workfiles,
         )
 
         return vmaf_fassembler
