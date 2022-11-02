@@ -123,6 +123,12 @@ class ExternalProgramCaller(object):
         if options2[feature] is not None and 'n_threads' in options2[feature]:
             options2['n_threads'] = options2[feature]['n_threads']
             del options2[feature]['n_threads']
+        if options2[feature] is not None and '_open_workfile_method' in options2[feature]:
+            options2['_open_workfile_method'] = options2[feature]['_open_workfile_method']
+            del options2[feature]['_open_workfile_method']
+        if options2[feature] is not None and '_close_workfile_method' in options2[feature]:
+            options2['_close_workfile_method'] = options2[feature]['_close_workfile_method']
+            del options2[feature]['_close_workfile_method']
         return ExternalProgramCaller.call_vmafexec_multi_features(
             [feature], yuv_type, ref_path, dis_path, w, h, log_file_path, logger=logger, options=options2)
 

@@ -518,8 +518,8 @@ class Executor(TypeVersionEnabled):
         workfile_yuv_type = self._get_workfile_yuv_type(asset)
         logger = self.logger
 
-        _open_workfile_method = self.optional_dict['_open_workfile_method'] \
-            if self.optional_dict is not None and '_open_workfile_method' in self.optional_dict and self.optional_dict['_open_workfile_method'] is not None \
+        _open_workfile_method = self.optional_dict2['_open_workfile_method'] \
+            if self.optional_dict2 is not None and '_open_workfile_method' in self.optional_dict2 and self.optional_dict2['_open_workfile_method'] is not None \
             else self._open_workfile
         _open_workfile_method(self, asset, path, workfile_path, yuv_type, workfile_yuv_type, resampling_type, width_height,
                               quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, logger)
@@ -537,8 +537,8 @@ class Executor(TypeVersionEnabled):
         workfile_yuv_type = self._get_workfile_yuv_type(asset)
         logger = self.logger
 
-        _open_workfile_method = self.optional_dict['_open_workfile_method'] \
-            if self.optional_dict is not None and '_open_workfile_method' in self.optional_dict and self.optional_dict['_open_workfile_method'] is not None \
+        _open_workfile_method = self.optional_dict2['_open_workfile_method'] \
+            if self.optional_dict2 is not None and '_open_workfile_method' in self.optional_dict2 and self.optional_dict2['_open_workfile_method'] is not None \
             else self._open_workfile
         _open_workfile_method(self, asset, path, workfile_path, yuv_type, workfile_yuv_type, resampling_type, width_height,
                               quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, logger)
@@ -701,8 +701,8 @@ class Executor(TypeVersionEnabled):
         path = asset.ref_path
         workfile_path = asset.ref_workfile_path
 
-        _close_workfile_method = self.optional_dict['_close_workfile_method'] \
-            if self.optional_dict is not None and '_close_workfile_method' in self.optional_dict and self.optional_dict['_close_workfile_method'] is not None \
+        _close_workfile_method = self.optional_dict2['_close_workfile_method'] \
+            if self.optional_dict2 is not None and '_close_workfile_method' in self.optional_dict2 and self.optional_dict2['_close_workfile_method'] is not None \
             else self._close_workfile
         _close_workfile_method(path, workfile_path, use_path_as_workpath)
 
@@ -712,8 +712,8 @@ class Executor(TypeVersionEnabled):
         path = asset.dis_path
         workfile_path = asset.dis_workfile_path
 
-        _close_workfile_method = self.optional_dict['_close_workfile_method'] \
-            if self.optional_dict is not None and '_close_workfile_method' in self.optional_dict and self.optional_dict['_close_workfile_method'] is not None \
+        _close_workfile_method = self.optional_dict2['_close_workfile_method'] \
+            if self.optional_dict2 is not None and '_close_workfile_method' in self.optional_dict2 and self.optional_dict2['_close_workfile_method'] is not None \
             else self._close_workfile
         _close_workfile_method(path, workfile_path, use_path_as_workpath)
 
