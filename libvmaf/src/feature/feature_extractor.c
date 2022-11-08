@@ -26,6 +26,10 @@
 #include "feature_name.h"
 #include "log.h"
 
+#ifdef HAVE_NVTX
+#include "nvtx3/nvToolsExt.h"
+#endif
+
 #if VMAF_FLOAT_FEATURES
 extern VmafFeatureExtractor vmaf_fex_float_psnr;
 extern VmafFeatureExtractor vmaf_fex_float_ansnr;
@@ -39,25 +43,16 @@ extern VmafFeatureExtractor vmaf_fex_float_ms_ssim;
 extern VmafFeatureExtractor vmaf_fex_ciede;
 extern VmafFeatureExtractor vmaf_fex_psnr;
 extern VmafFeatureExtractor vmaf_fex_psnr_hvs;
+extern VmafFeatureExtractor vmaf_fex_integer_adm;
+extern VmafFeatureExtractor vmaf_fex_integer_motion;
+extern VmafFeatureExtractor vmaf_fex_integer_vif;
+extern VmafFeatureExtractor vmaf_fex_cambi;
 #if HAVE_CUDA
 extern VmafFeatureExtractor vmaf_fex_integer_adm_cuda;
 extern VmafFeatureExtractor vmaf_fex_integer_vif_cuda;
 extern VmafFeatureExtractor vmaf_fex_integer_motion_cuda;
 #endif
-extern VmafFeatureExtractor vmaf_fex_integer_adm;
-extern VmafFeatureExtractor vmaf_fex_integer_motion;
-extern VmafFeatureExtractor vmaf_fex_integer_vif;
-extern VmafFeatureExtractor vmaf_fex_cambi;
 extern VmafFeatureExtractor vmaf_fex_null;
-
-static VmafFeatureExtractor *cuda_feature_extractor_list[] = {
-#if HAVE_CUDA
-    &vmaf_fex_integer_adm_cuda,
-    &vmaf_fex_integer_vif_cuda,
-    &vmaf_fex_integer_motion_cuda,
-#endif
-    NULL
-};
 
 static VmafFeatureExtractor *feature_extractor_list[] = {
 #if VMAF_FLOAT_FEATURES
@@ -77,6 +72,11 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     &vmaf_fex_integer_motion,
     &vmaf_fex_integer_vif,
     &vmaf_fex_cambi,
+#if HAVE_CUDA
+    &vmaf_fex_integer_adm_cuda,
+    &vmaf_fex_integer_vif_cuda,
+    &vmaf_fex_integer_motion_cuda,
+#endif
     &vmaf_fex_null,
     NULL
 };
@@ -91,31 +91,19 @@ VmafFeatureExtractor *vmaf_get_feature_extractor_by_name(const char *name)
            return fex;
     }
 
-    for (unsigned i = 0; (fex = cuda_feature_extractor_list[i]); i++) {
-        if (!strcmp(name, fex->name))
-           return fex;
-    }
     return NULL;
 }
 
-VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(const char *name, unsigned use_cuda)
+VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(const char *name,
+        unsigned flags)
 {
     if (!name) return NULL;
 
     VmafFeatureExtractor *fex = NULL;
-    if (use_cuda) {
-        for (unsigned i = 0; (fex = cuda_feature_extractor_list[i]); i++) {
-            if (!fex->provided_features) continue;
-            const char *fname = NULL;
-            for (unsigned j = 0; (fname = fex->provided_features[j]); j++) {
-                if (!strcmp(name, fname))
-                    return fex;
-            }
-        }
-    }
 
     for (unsigned i = 0; (fex = feature_extractor_list[i]); i++) {
         if (!fex->provided_features) continue;
+        if (flags && !(fex->flags & flags)) continue;
         const char *fname = NULL;
         for (unsigned j = 0; (fname = fex->provided_features[j]); j++) {
             if (!strcmp(name, fname))
@@ -204,6 +192,26 @@ int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
     if (!vfc) return -EINVAL;
     if (!fex_ctx->fex->extract) return -EINVAL;
 
+    VmafPicturePrivate *ref_priv = ref->priv;
+    if (fex_ctx->fex->flags & VMAF_FEATURE_EXTRACTOR_CUDA) {
+        if (ref_priv->buf_type != VMAF_PICTURE_BUFFER_TYPE_CUDA_DEVICE) {
+            vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                     "picture buf_type mismatch: cuda fex (%s), cpu buf\n",
+                     fex_ctx->fex->name);
+            return -EINVAL;
+        }
+    } else {
+        if (ref_priv->buf_type == VMAF_PICTURE_BUFFER_TYPE_CUDA_DEVICE) {
+            vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                     "picture buf_type mismatch: cpu fex (%s), cuda buf\n",
+                     fex_ctx->fex->name);
+            return -EINVAL;
+        }
+    }
+
+#ifdef HAVE_NVTX
+    nvtxRangePushA(fex_ctx->fex->name);
+#endif
 
     if (!fex_ctx->is_initialized) {
         int err =
@@ -219,6 +227,11 @@ int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
                  "problem with feature extractor \"%s\" at index %d\n",
                  fex_ctx->fex->name, pic_index);
     }
+
+#ifdef HAVE_NVTX
+    nvtxRangePop();
+#endif
+
     return err;
 }
 
