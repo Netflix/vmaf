@@ -23,6 +23,7 @@ enum {
     ARG_FEATURE,
     ARG_SUBSAMPLE,
     ARG_CPUMASK,
+    ARG_GPUMASK,
     ARG_AOM_CTC,
     ARG_FRAME_CNT,
     ARG_FRAME_SKIP_REF,
@@ -46,6 +47,7 @@ static const struct option long_opts[] = {
     { "feature",          1, NULL, ARG_FEATURE },
     { "subsample",        1, NULL, ARG_SUBSAMPLE },
     { "cpumask",          1, NULL, ARG_CPUMASK },
+    { "gpumask",          1, NULL, ARG_GPUMASK },
     { "aom_ctc",          1, NULL, ARG_AOM_CTC },
     { "frame_cnt",        1, NULL, ARG_FRAME_CNT },
     { "frame_skip_ref",   1, NULL, ARG_FRAME_SKIP_REF },
@@ -53,7 +55,6 @@ static const struct option long_opts[] = {
     { "no_prediction",    0, NULL, 'n' },
     { "version",          0, NULL, 'v' },
     { "quiet",            0, NULL, 'q' },
-    { "cuda",             0, NULL, 'c' },
     { NULL,               0, NULL, 0 },
 };
 
@@ -85,6 +86,7 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --threads $unsigned:         number of threads to use\n"
             " --feature $string:           additional feature\n"
             " --cpumask: $bitmask          restrict permitted CPU instruction sets\n"
+            " --gpumask: $bitmask          restrict permitted GPU instruction sets\n"
             " --frame_cnt $unsigned:       maximum number of frames to process\n"
             " --frame_skip_ref $unsigned:  skip the first N frames in reference\n"
             " --frame_skip_dist $unsigned: skip the first N frames in distorted\n"
@@ -92,7 +94,6 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --quiet/-q:                  disable FPS meter when run in a TTY\n"
             " --no_prediction/-n:          no prediction, extract features only\n"
             " --version/-v:                print version and exit\n"
-            " --cuda/-c:                   activate gpu processing\n"
            );
     exit(1);
 }
@@ -401,6 +402,9 @@ void cli_parse(const int argc, char *const *const argv,
         case ARG_CPUMASK:
             settings->cpumask = parse_unsigned(optarg, 'c', argv[0]);
             break;
+        case ARG_GPUMASK:
+            settings->gpumask = parse_unsigned(optarg, ARG_GPUMASK, argv[0]);
+            break;
         case ARG_AOM_CTC:
             parse_aom_ctc(settings, optarg, argv[0]);
             break;
@@ -416,9 +420,6 @@ void cli_parse(const int argc, char *const *const argv,
             break;
         case 'n':
             settings->no_prediction = true;
-            break;
-        case 'c':
-            settings->cuda = true;
             break;
         case 'q':
             settings->quiet = true;

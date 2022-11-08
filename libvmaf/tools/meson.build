@@ -23,3 +23,5 @@ vmaf = executable(
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
     install : true,
 )
+
+subdir('test')
