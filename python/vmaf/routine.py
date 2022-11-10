@@ -294,14 +294,18 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
         test_raw_assets = test_assets
         test_assets = read_dataset(test_dataset_aggregate, **kwargs)
 
+    optional_dict = kwargs['optional_dict'] if 'optional_dict' in kwargs else None
+
     if model_filepath is not None:
-        optional_dict = {'model_filepath': model_filepath}
+        if not optional_dict:
+            optional_dict = {}
+        optional_dict['model_filepath'] = model_filepath
         if 'model_720_filepath' in kwargs and kwargs['model_720_filepath'] is not None:
             optional_dict['720model_filepath'] = kwargs['model_720_filepath']
         if 'model_480_filepath' in kwargs and kwargs['model_480_filepath'] is not None:
             optional_dict['480model_filepath'] = kwargs['model_480_filepath']
-    else:
-        optional_dict = None
+        if 'model_2160_filepath' in kwargs and kwargs['model_2160_filepath'] is not None:
+            optional_dict['2160model_filepath'] = kwargs['model_2160_filepath']
 
     if 'enable_transform_score' in kwargs and kwargs['enable_transform_score'] is not None:
         if not optional_dict:
