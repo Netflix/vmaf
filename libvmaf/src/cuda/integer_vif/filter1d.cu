@@ -24,7 +24,7 @@
  
  
  template <typename alignment_type = uint2, int fwidth_0 = 17, int fwidth_1 = 9>
- __global__ void filter1d_8_vertical_kernel(VifBufferCuda buf, uint8_t* ref_in, uint8_t* dis_in, 
+ __device__ __forceinline__ void filter1d_8_vertical_kernel(VifBufferCuda buf, uint8_t* ref_in, uint8_t* dis_in, 
                                             int w, int h, filter_table_stuct vif_filt_s0) {
    using writeback_type = uint4;
    constexpr int val_per_thread = sizeof(alignment_type);
@@ -111,7 +111,7 @@
  }
  
  template <int val_per_thread = 1, int fwidth_0 = 17, int fwidth_1 = 9>
- __global__ void filter1d_8_horizontal_kernel(VifBufferCuda buf, int w, int h,
+ __device__ __forceinline__ void filter1d_8_horizontal_kernel(VifBufferCuda buf, int w, int h,
                                               filter_table_stuct vif_filt_s0,
                                               double vif_enhn_gain_limit,
                                               vif_accums *accum) {
@@ -218,7 +218,7 @@
  }
  
  template <typename alignment_type = uint2, int fwidth, int fwidth_rd, int scale>
- __global__ void
+ __device__ __forceinline__ void
  filter1d_16_vertical_kernel(VifBufferCuda buf, uint16_t* ref_in, uint16_t* dis_in, int w, int h,
                              int32_t add_shift_round_VP, int32_t shift_VP,
                              int32_t add_shift_round_VP_sq, int32_t shift_VP_sq,
@@ -329,7 +329,7 @@
  }
  
  template <int val_per_thread = 2, int fwidth, int fwidth_rd, int scale>
- __global__ void
+ __device__ __forceinline__ void
  filter1d_16_horizontal_kernel(VifBufferCuda buf, int w, int h,
                                int32_t add_shift_round_HP, int32_t shift_HP,
                                filter_table_stuct vif_filt,
@@ -442,137 +442,193 @@
      }
    }
  }
+
+#define FILTER1D_8_VERT(alignment_type, fwidth_0, fwidth_1)                                \
+  __global__ void filter1d_8_vertical_kernel_##alignment_type##_##fwidth_0##_##fwidth_1 (   \
+    VifBufferCuda buf, uint8_t* ref_in, uint8_t* dis_in,                                    \
+      int w, int h, filter_table_stuct vif_filt_s0)                                         \
+    {                                                                                       \
+      filter1d_8_vertical_kernel<alignment_type, fwidth_0, fwidth_1>(                       \
+        buf, ref_in, dis_in, w, h, vif_filt_s0);                                            \
+    }
+
+#define FILTER1D_8_HORI(val_per_thread, fwidth_0, fwidth_1)                                 \
+  __global__ void filter1d_8_horizontal_kernel_##val_per_thread##_##fwidth_0##_##fwidth_1 (   \
+  VifBufferCuda buf, int w, int h,  filter_table_stuct vif_filt_s0,                         \
+    double vif_enhn_gain_limit,  vif_accums *accum)                                         \
+  {                                                                                         \
+    filter1d_8_horizontal_kernel<val_per_thread, fwidth_0, fwidth_1>(                       \
+      buf, w, h, vif_filt_s0, vif_enhn_gain_limit, accum);                                 \
+  }
+
+#define FILTER1D_16_VERT(alignment_type, fwidth, fwidth_rd, scale)                                    \
+  __global__ void filter1d_16_vertical_kernel_##alignment_type##_##fwidth##_##fwidth_rd##_##scale (   \
+    VifBufferCuda buf, uint16_t* ref_in, uint16_t* dis_in, int w, int h,                              \
+      int32_t add_shift_round_VP, int32_t shift_VP,                                                   \
+      int32_t add_shift_round_VP_sq, int32_t shift_VP_sq,                                             \
+      filter_table_stuct vif_filt)                                                                    \
+    {                                                                                                 \
+      filter1d_16_vertical_kernel<alignment_type, fwidth, fwidth_rd, scale>(                          \
+        buf, ref_in, dis_in, w, h, add_shift_round_VP, shift_VP,                                      \
+        add_shift_round_VP_sq, shift_VP_sq, vif_filt);                                                \
+    }
+
+#define FILTER1D_16_HORI(val_per_thread, fwidth, fwidth_rd, scale)                                      \
+  __global__ void filter1d_16_horizontal_kernel_##val_per_thread##_##fwidth##_##fwidth_rd##_##scale (   \
+    VifBufferCuda buf, int w, int h,                                                                    \
+      int32_t add_shift_round_HP, int32_t shift_HP,                                                     \
+      filter_table_stuct vif_filt,                                                                      \
+      double vif_enhn_gain_limit, vif_accums *accum)                                                    \
+    {                                                                                                   \
+      filter1d_16_horizontal_kernel<val_per_thread, fwidth, fwidth_rd, scale>(                          \
+        buf, w, h, add_shift_round_HP, shift_HP,                                                        \
+        vif_filt, vif_enhn_gain_limit, accum);                                                          \
+    }
+
+extern "C" {
+  // constexpr int fwidth[4] = {17, 9, 5, 3};
+  FILTER1D_8_VERT(uint32_t, 17, 9);   // filter1d_8_vertical_kernel_uint32_t_17_9
+  FILTER1D_8_HORI(2, 17, 9);          // filter1d_8_horizontal_kernel_2_17_9
+  FILTER1D_16_VERT(uint2, 17, 9, 0);  // filter1d_16_vertical_kernel_uint2_17_9_0
+  FILTER1D_16_VERT(uint2, 9, 5, 1);   // filter1d_16_vertical_kernel_uint2_9_5_1
+  FILTER1D_16_VERT(uint2, 5, 3, 2);   // filter1d_16_vertical_kernel_uint2_5_3_2
+  FILTER1D_16_VERT(uint2, 3, 0, 3);   // filter1d_16_vertical_kernel_uint2_3_0_3
+
+  FILTER1D_16_HORI(2, 17, 9, 0);      // filter1d_16_horizontal_kernel_2_17_9_0
+  FILTER1D_16_HORI(2, 9, 5, 1);       // filter1d_16_horizontal_kernel_2_9_5_1
+  FILTER1D_16_HORI(2, 5, 3, 2);       // filter1d_16_horizontal_kernel_2_5_3_2
+  FILTER1D_16_HORI(2, 3, 0, 3);       // filter1d_16_horizontal_kernel_2_3_0_3
+
+}
+    
+
+// extern "C" {
  
- extern "C" {
+//  void filter1d_8(VifBufferCuda *buf, uint8_t* ref_in, uint8_t* dis_in, int w, int h, double vif_enhn_gain_limit,
+//                  CUstream stream) {
+//    {
+//      using alignment_type = uint32_t;
+//      dim3 block(cache_line_size / sizeof(alignment_type),
+//                 128 / (cache_line_size / sizeof(alignment_type)));
+//      dim3 grid(DIV_ROUND_UP(w, block.x * sizeof(alignment_type)),
+//                DIV_ROUND_UP(h, block.y));
  
- void filter1d_8(VifBufferCuda *buf, uint8_t* ref_in, uint8_t* dis_in, int w, int h, double vif_enhn_gain_limit,
-                 CUstream stream) {
-   {
-     using alignment_type = uint32_t;
-     dim3 block(cache_line_size / sizeof(alignment_type),
-                128 / (cache_line_size / sizeof(alignment_type)));
-     dim3 grid(DIV_ROUND_UP(w, block.x * sizeof(alignment_type)),
-               DIV_ROUND_UP(h, block.y));
+//       filter1d_8_vertical_kernel_uint32_t_17_9<<<grid, block, 0, stream>>>(
+//          *buf, ref_in, dis_in, w, h, *(filter_table_stuct *)vif_filter1d_table);
+//      CudaCheckError();
+//    }
+//    {
+//      constexpr int val_per_thread = 2;
+//      dim3 block(128);
+//      dim3 grid(DIV_ROUND_UP(w, block.x * val_per_thread),
+//                DIV_ROUND_UP(h, block.y));
  
-     filter1d_8_vertical_kernel<alignment_type><<<grid, block, 0, stream>>>(
-         *buf, ref_in, dis_in, w, h, *(filter_table_stuct *)vif_filter1d_table);
-     CudaCheckError();
-   }
-   {
-     constexpr int val_per_thread = 2;
-     dim3 block(128);
-     dim3 grid(DIV_ROUND_UP(w, block.x * val_per_thread),
-               DIV_ROUND_UP(h, block.y));
+//                filter1d_8_horizontal_kernel_2_17_9<<<grid, block, 0, stream>>>(
+//          *buf, w, h, *(filter_table_stuct *)vif_filter1d_table,
+//          vif_enhn_gain_limit, &((vif_accums *)buf->accum)[0]);
+//      CudaCheckError();
+//    }
+//  }
  
-     filter1d_8_horizontal_kernel<val_per_thread><<<grid, block, 0, stream>>>(
-         *buf, w, h, *(filter_table_stuct *)vif_filter1d_table,
-         vif_enhn_gain_limit, &((vif_accums *)buf->accum)[0]);
-     CudaCheckError();
-   }
- }
+//  void filter1d_16(VifBufferCuda *buf, uint16_t* ref_in, uint16_t* dis_in, int w, int h, int scale, int bpc,
+//                   double vif_enhn_gain_limit, CUstream stream) {
  
- void filter1d_16(VifBufferCuda *buf, uint16_t* ref_in, uint16_t* dis_in, int w, int h, int scale, int bpc,
-                  double vif_enhn_gain_limit, CUstream stream) {
+//    int32_t add_shift_round_HP, shift_HP;
+//    int32_t add_shift_round_VP, shift_VP;
+//    int32_t add_shift_round_VP_sq, shift_VP_sq;
+//    if (scale == 0) {
+//      shift_HP = 16;
+//      add_shift_round_HP = 32768;
+//      shift_VP = bpc;
+//      add_shift_round_VP = 1 << (bpc - 1);
+//      shift_VP_sq = (bpc - 8) * 2;
+//      add_shift_round_VP_sq = (bpc == 8) ? 0 : 1 << (shift_VP_sq - 1);
+//    } else {
+//      shift_HP = 16;
+//      add_shift_round_HP = 32768;
+//      shift_VP = 16;
+//      add_shift_round_VP = 32768;
+//      shift_VP_sq = 16;
+//      add_shift_round_VP_sq = 32768;
+//    }
  
-   int32_t add_shift_round_HP, shift_HP;
-   int32_t add_shift_round_VP, shift_VP;
-   int32_t add_shift_round_VP_sq, shift_VP_sq;
-   if (scale == 0) {
-     shift_HP = 16;
-     add_shift_round_HP = 32768;
-     shift_VP = bpc;
-     add_shift_round_VP = 1 << (bpc - 1);
-     shift_VP_sq = (bpc - 8) * 2;
-     add_shift_round_VP_sq = (bpc == 8) ? 0 : 1 << (shift_VP_sq - 1);
-   } else {
-     shift_HP = 16;
-     add_shift_round_HP = 32768;
-     shift_VP = 16;
-     add_shift_round_VP = 32768;
-     shift_VP_sq = 16;
-     add_shift_round_VP_sq = 32768;
-   }
+//    constexpr int fwidth[4] = {17, 9, 5, 3};
  
-   constexpr int fwidth[4] = {17, 9, 5, 3};
+//    using alignment_type = uint2;
+//    dim3 block(128);
+//    constexpr int val_per_thread = sizeof(alignment_type) / sizeof(uint16_t);
+//    constexpr int val_per_thread_horizontal = 2;
+//    dim3 block_vertical(cache_line_size / val_per_thread,
+//                        128 / (cache_line_size / val_per_thread));
+//    dim3 grid_vertical(DIV_ROUND_UP(w, block.x), h);
+//    dim3 grid_horizontal(DIV_ROUND_UP(w, block.x), h);
  
-   using alignment_type = uint2;
-   dim3 block(128);
-   constexpr int val_per_thread = sizeof(alignment_type) / sizeof(uint16_t);
-   constexpr int val_per_thread_horizontal = 2;
-   dim3 block_vertical(cache_line_size / val_per_thread,
-                       128 / (cache_line_size / val_per_thread));
-   dim3 grid_vertical(DIV_ROUND_UP(w, block.x), h);
-   dim3 grid_horizontal(DIV_ROUND_UP(w, block.x), h);
+//    switch (scale) {
+//    case 0: {
+//     filter1d_16_vertical_kernel_uint2_17_9_0
+//          <<<grid_vertical, block_vertical, 0, stream>>>(
+//              *buf, ref_in, dis_in, w, h, add_shift_round_VP, shift_VP, add_shift_round_VP_sq,
+//              shift_VP_sq, *(filter_table_stuct *)vif_filter1d_table);
  
-   switch (scale) {
-   case 0: {
-     filter1d_16_vertical_kernel<alignment_type, fwidth[0], fwidth[1], 0>
-         <<<grid_vertical, block_vertical, 0, stream>>>(
-             *buf, ref_in, dis_in, w, h, add_shift_round_VP, shift_VP, add_shift_round_VP_sq,
-             shift_VP_sq, *(filter_table_stuct *)vif_filter1d_table);
+//      CudaCheckError();
  
-     CudaCheckError();
+//      filter1d_16_horizontal_kernel_2_17_9_0
+//          <<<grid_horizontal, block, 0, stream>>>(
+//              *buf, w, h, add_shift_round_HP, shift_HP,
+//              *(filter_table_stuct *)vif_filter1d_table, vif_enhn_gain_limit,
+//              &((vif_accums *)buf->accum)[scale]);
+//      CudaCheckError();
+//      break;
+//    }
+//    case 1: {
+//     filter1d_16_vertical_kernel_uint2_9_5_1
+//          <<<grid_vertical, block_vertical, 0, stream>>>(
+//              *buf, ref_in, dis_in, w, h, add_shift_round_VP, shift_VP, add_shift_round_VP_sq,
+//              shift_VP_sq, *(filter_table_stuct *)vif_filter1d_table);
  
-     filter1d_16_horizontal_kernel<val_per_thread_horizontal, fwidth[0],
-                                   fwidth[1], 0>
-         <<<grid_horizontal, block, 0, stream>>>(
-             *buf, w, h, add_shift_round_HP, shift_HP,
-             *(filter_table_stuct *)vif_filter1d_table, vif_enhn_gain_limit,
-             &((vif_accums *)buf->accum)[scale]);
-     CudaCheckError();
-     break;
-   }
-   case 1: {
-     filter1d_16_vertical_kernel<alignment_type, fwidth[1], fwidth[2], 1>
-         <<<grid_vertical, block_vertical, 0, stream>>>(
-             *buf, ref_in, dis_in, w, h, add_shift_round_VP, shift_VP, add_shift_round_VP_sq,
-             shift_VP_sq, *(filter_table_stuct *)vif_filter1d_table);
+//      CudaCheckError();
  
-     CudaCheckError();
+//      filter1d_16_horizontal_kernel_2_9_5_1
+//          <<<grid_horizontal, block, 0, stream>>>(
+//              *buf, w, h, add_shift_round_HP, shift_HP,
+//              *(filter_table_stuct *)vif_filter1d_table, vif_enhn_gain_limit,
+//              &((vif_accums *)buf->accum)[scale]);
+//      CudaCheckError();
+//      break;
+//    }
+//    case 2: {
+//     filter1d_16_vertical_kernel_uint2_5_3_2
+//          <<<grid_vertical, block_vertical, 0, stream>>>(
+//              *buf, ref_in, dis_in, w, h, add_shift_round_VP, shift_VP, add_shift_round_VP_sq,
+//              shift_VP_sq, *(filter_table_stuct *)vif_filter1d_table);
  
-     filter1d_16_horizontal_kernel<val_per_thread_horizontal, fwidth[1],
-                                   fwidth[2], 1>
-         <<<grid_horizontal, block, 0, stream>>>(
-             *buf, w, h, add_shift_round_HP, shift_HP,
-             *(filter_table_stuct *)vif_filter1d_table, vif_enhn_gain_limit,
-             &((vif_accums *)buf->accum)[scale]);
-     CudaCheckError();
-     break;
-   }
-   case 2: {
-     filter1d_16_vertical_kernel<alignment_type, fwidth[2], fwidth[3], 2>
-         <<<grid_vertical, block_vertical, 0, stream>>>(
-             *buf, ref_in, dis_in, w, h, add_shift_round_VP, shift_VP, add_shift_round_VP_sq,
-             shift_VP_sq, *(filter_table_stuct *)vif_filter1d_table);
+//      CudaCheckError();
  
-     CudaCheckError();
+//      filter1d_16_horizontal_kernel_2_5_3_2
+//          <<<grid_horizontal, block, 0, stream>>>(
+//              *buf, w, h, add_shift_round_HP, shift_HP,
+//              *(filter_table_stuct *)vif_filter1d_table, vif_enhn_gain_limit,
+//              &((vif_accums *)buf->accum)[scale]);
+//      CudaCheckError();
+//      break;
+//    }
+//    case 3: {
+//     filter1d_16_vertical_kernel_uint2_3_0_3
+//          <<<grid_vertical, block_vertical, 0, stream>>>(
+//              *buf, ref_in, dis_in, w, h, add_shift_round_VP, shift_VP, add_shift_round_VP_sq,
+//              shift_VP_sq, *(filter_table_stuct *)vif_filter1d_table);
  
-     filter1d_16_horizontal_kernel<val_per_thread_horizontal, fwidth[2],
-                                   fwidth[3], 2>
-         <<<grid_horizontal, block, 0, stream>>>(
-             *buf, w, h, add_shift_round_HP, shift_HP,
-             *(filter_table_stuct *)vif_filter1d_table, vif_enhn_gain_limit,
-             &((vif_accums *)buf->accum)[scale]);
-     CudaCheckError();
-     break;
-   }
-   case 3: {
-     filter1d_16_vertical_kernel<alignment_type, fwidth[3], 0, 3>
-         <<<grid_vertical, block_vertical, 0, stream>>>(
-             *buf, ref_in, dis_in, w, h, add_shift_round_VP, shift_VP, add_shift_round_VP_sq,
-             shift_VP_sq, *(filter_table_stuct *)vif_filter1d_table);
+//      CudaCheckError();
  
-     CudaCheckError();
- 
-     filter1d_16_horizontal_kernel<val_per_thread_horizontal, fwidth[3], 0, 3>
-         <<<grid_horizontal, block, 0, stream>>>(
-             *buf, w, h, add_shift_round_HP, shift_HP,
-             *(filter_table_stuct *)vif_filter1d_table, vif_enhn_gain_limit,
-             &((vif_accums *)buf->accum)[scale]);
-     CudaCheckError();
-     break;
-   }
-   }
- }
- }
+//      filter1d_16_horizontal_kernel_2_3_0_3
+//          <<<grid_horizontal, block, 0, stream>>>(
+//              *buf, w, h, add_shift_round_HP, shift_HP,
+//              *(filter_table_stuct *)vif_filter1d_table, vif_enhn_gain_limit,
+//              &((vif_accums *)buf->accum)[scale]);
+//      CudaCheckError();
+//      break;
+//    }
+//    }
+//  }
+// }
  

@@ -22,6 +22,10 @@
 
 #include <vector>
 
+
+
+
+
 // Calculates and returns vector with indices for dwt, if upper limit is
 // reached, the indices will be mirrored
 __device__ __forceinline__ int4 calculate_indices(const int n,
@@ -51,7 +55,7 @@ __device__ __forceinline__ int4 calculate_indices(const int n,
 }
 
 template<int32_t add_shift, int16_t shift, typename T>
-__global__ void dwt_s123_combined_vert_kernel(const T *d_image_scale, int32_t *tmplo_start, int w, int h, int img_stride, AdmFixedParametersCuda params) {
+__device__ __forceinline__ void dwt_s123_combined_vert_kernel(const T *d_image_scale, int32_t *tmplo_start, int w, int h, int img_stride, AdmFixedParametersCuda params) {
   const int idx = threadIdx.x + blockIdx.x * blockDim.x;
   const int i = blockIdx.y;
   if (idx >= w)
@@ -84,7 +88,7 @@ __global__ void dwt_s123_combined_vert_kernel(const T *d_image_scale, int32_t *t
 }
 
 template<int32_t add_shift, int16_t shift>
-__global__ void dwt_s123_combined_hori_kernel(cuda_i4_adm_dwt_band_t i4_dwt2, int32_t *tmplo_start, int w, int h,  int dst_stride, AdmFixedParametersCuda params) {
+__device__ __forceinline__ void dwt_s123_combined_hori_kernel(cuda_i4_adm_dwt_band_t i4_dwt2, int32_t *tmplo_start, int w, int h,  int dst_stride, AdmFixedParametersCuda params) {
   const int idx = threadIdx.x + blockIdx.x * blockDim.x;
   const int i = blockIdx.y;
   if (idx >= (w + 1) / 2)
@@ -138,129 +142,8 @@ __global__ void dwt_s123_combined_hori_kernel(cuda_i4_adm_dwt_band_t i4_dwt2, in
   i4_dwt2.band_d[i * dst_stride + idx] = (int32_t)((accum + add_shift) >> shift);
 }
 
-template<int16_t shift, int32_t add_shift, int items_per_thread, typename T>
-__global__ void adm_dwt2_8_vert_kernel(const T * d_picture,
-                                       cuda_adm_dwt_band_t dst,
-                                       short2 * tmp_start, int w, int h,
-                                       int src_stride, int dst_stride,
-                                       AdmFixedParametersCuda params) {
-
-  const int x = threadIdx.x + blockIdx.x * blockDim.x;
-  const int y_out = (threadIdx.y + blockIdx.y * blockDim.y) * items_per_thread;
-  if (x >= w)
-    return;
-
-  const int32_t *filter_lo = params.dwt2_db2_coeffs_lo;
-  const int32_t *filter_hi = params.dwt2_db2_coeffs_hi;
-
-  int32_t accum = 0;
-  short2 * const tmp = tmp_start + w * y_out + x;
-
-  // we need 2 addition rows for each item processed by a thread.
-  const int size_u = 2 + 2 * items_per_thread;
-  int32_t u_s[size_u];
-
-  // load size_u rows applying the mirroring on the top & bottom
-  const int read_backwards_elements = 1;
-  int y_in_start = (2 * y_out) - read_backwards_elements;
-
-  #pragma unroll
-  for (int i = 0;i < size_u;++i) {
-    int y_in = y_in_start + i;
-
-    // mirror bottom
-    y_in = y_in - max(0, 2*(y_in - h));
-
-    // mirror top, only required for read_backwards_elements elements.
-    if (i < read_backwards_elements) y_in = abs(y_in);
-
-    // no bounds check required due to the mirroring
-    u_s[i] = d_picture[y_in * src_stride + x];
-  }
-
-  // accumulate items_per_thread values and store them
-  #pragma unroll
-  for (int item = 0;item < items_per_thread;++item) {
-    // stop for the first row outside of the image
-    if ((y_out + item) >= h) {
-      break;
-    }
-
-    int32_t accum_lo = 0, accum_hi = 0;
-    #pragma unroll
-    for (int i = 0;i< 4;++i) {
-      accum_lo += filter_lo[i] * u_s[i + 2 * item];
-      accum_hi += filter_hi[i] * u_s[i + 2 * item];
-    }
-
-    /* normalizing is done for range from(0 to N) to (-N/2 to N/2) */
-    accum_lo -= params.dwt2_db2_coeffs_lo_sum * add_shift;
-    accum_hi -= params.dwt2_db2_coeffs_hi_sum * add_shift;
-
-    tmp[item * w] = make_short2((accum_lo + add_shift) >> shift, (accum_hi + add_shift) >> shift);
-  }
-}
-
-template<int16_t shift, int32_t add_shift>
-__global__ void adm_dwt2_8_hori_kernel(cuda_adm_dwt_band_t dst, cuda_i4_adm_dwt_band_t i4_dwt2, short2 * tmp_start, int w, int h, int dst_stride, AdmFixedParametersCuda params) {
-  const int i = blockIdx.y;
-  const int idx = threadIdx.x + blockIdx.x * blockDim.x;
-  if (idx >= (w + 1) / 2)
-    return;
-
-  const int32_t *filter_lo = params.dwt2_db2_coeffs_lo;
-  const int32_t *filter_hi = params.dwt2_db2_coeffs_hi;
-
-  int32_t accum = 0;
-
-  const int4 pixel = calculate_indices(idx, w);
-
-  short2 * const tmp = tmp_start + w * i;
-
-  const int32_t s0_lo = tmp[pixel.x].x;
-  const int32_t s0_hi = tmp[pixel.x].y;
-  const int32_t s1_lo = tmp[pixel.y].x;
-  const int32_t s1_hi = tmp[pixel.y].y;
-  const int32_t s2_lo = tmp[pixel.z].x;
-  const int32_t s2_hi = tmp[pixel.z].y;
-  const int32_t s3_lo = tmp[pixel.w].x;
-  const int32_t s3_hi = tmp[pixel.w].y;
-  
-
-  accum = 0;
-  accum += filter_lo[0] * s0_lo;
-  accum += filter_lo[1] * s1_lo;
-  accum += filter_lo[2] * s2_lo;
-  accum += filter_lo[3] * s3_lo;
-  accum = ((accum + add_shift) >> shift);
-  dst.band_a[i * dst_stride + idx] = accum;
-  i4_dwt2.band_a[i * dst_stride + idx] = accum;
-
-  accum = 0;
-  accum += filter_hi[0] * s0_lo;
-  accum += filter_hi[1] * s1_lo;
-  accum += filter_hi[2] * s2_lo;
-  accum += filter_hi[3] * s3_lo;
-  dst.band_v[i * dst_stride + idx] = (accum + add_shift) >> shift;
-
-
-  accum = 0;
-  accum += filter_lo[0] * s0_hi;
-  accum += filter_lo[1] * s1_hi;
-  accum += filter_lo[2] * s2_hi;
-  accum += filter_lo[3] * s3_hi;
-  dst.band_h[i * dst_stride + idx] = (accum + add_shift) >> shift;
-
-  accum = 0;
-  accum += filter_hi[0] * s0_hi;
-  accum += filter_hi[1] * s1_hi;
-  accum += filter_hi[2] * s2_hi;
-  accum += filter_hi[3] * s3_hi;
-  dst.band_d[i * dst_stride + idx] = (accum + add_shift) >> shift;
-}
-
 template<int16_t v_shift, int32_t v_add_shift, int v_rows_per_thread, int32_t h_shift, int32_t h_add_shift, int32_t tile_width, int tile_height, typename T>
-__global__ void adm_dwt2_8_vert_hori_kernel(const T * d_picture,
+__device__ __forceinline__ void adm_dwt2_8_vert_hori_kernel(const T * d_picture,
                                        cuda_adm_dwt_band_t dst,
                                        cuda_i4_adm_dwt_band_t i4_dwt2,
                                        int w, int h,
@@ -408,256 +291,51 @@ __global__ void adm_dwt2_8_vert_hori_kernel(const T * d_picture,
   }
 }
 
-__global__ void adm_dwt2_16_vert_kernel(const uint16_t * d_picture, short2 * tmp_start, int w, int h, int src_stride, int inp_size_bits, AdmFixedParametersCuda params) {
+// C __global__ KERNEL C DEFINES
+#pragma region
 
-  const int i = blockIdx.y;
-  const int idx = threadIdx.x + blockIdx.x * blockDim.x;
-  if (idx >= w)
-    return;
-
-  const int32_t *filter_lo = params.dwt2_db2_coeffs_lo;
-  const int32_t *filter_hi = params.dwt2_db2_coeffs_hi;
-
-  const int16_t shift_VP = inp_size_bits;
-  const int32_t add_shift_VP = 1 << (inp_size_bits - 1);
-
-  int32_t accum = 0;
-  const int4 pixel = calculate_indices(idx, w);
-  short2 * const tmp = tmp_start + w * i;
-
-  const int32_t u_s0 = d_picture[pixel.x * src_stride + idx];
-  const int32_t u_s1 = d_picture[pixel.y * src_stride + idx];
-  const int32_t u_s2 = d_picture[pixel.z * src_stride + idx];
-  const int32_t u_s3 = d_picture[pixel.w * src_stride + idx];
-
-  accum = 0;
-  accum += filter_lo[0] * u_s0;
-  accum += filter_lo[1] * u_s1;
-  accum += filter_lo[2] * u_s2;
-  accum += filter_lo[3] * u_s3;
-
-  /* normalizing is done for range from(0 to N) to (-N/2 to N/2) */
-  accum -= params.dwt2_db2_coeffs_lo_sum * add_shift_VP;
-
-  int16_t accum_lo = (accum + add_shift_VP) >> shift_VP;
-
-  accum = 0;
-  accum += filter_hi[0] * u_s0;
-  accum += filter_hi[1] * u_s1;
-  accum += filter_hi[2] * u_s2;
-  accum += filter_hi[3] * u_s3;
-
-  /* normalizing is done for range from(0 to N) to (-N/2 to N/2) */
-  accum -= params.dwt2_db2_coeffs_hi_sum * add_shift_VP;
-
-  int16_t accum_hi = (accum + add_shift_VP) >> shift_VP;
-  tmp[idx] = make_short2(accum_lo, accum_hi);
-}
-
-__global__ void adm_dwt2_16_hori_kernel(cuda_adm_dwt_band_t dst, cuda_i4_adm_dwt_band_t i4_dwt2, short2 * tmp_start, int w, int h, int dst_stride, AdmFixedParametersCuda params) {
-  const int i = blockIdx.y;
-  const int idx = threadIdx.x + blockIdx.x * blockDim.x;
-  if (idx >= (w + 1) / 2)
-    return;
-
-  const int32_t *filter_lo = params.dwt2_db2_coeffs_lo;
-  const int32_t *filter_hi = params.dwt2_db2_coeffs_hi;
-
-  const int16_t shift_HP = 16;
-  const int32_t add_shift_HP = 32768;
-
-  int32_t accum = 0;
-  const int4 pixel = calculate_indices(idx, w);
-  short2* const tmp = tmp_start + w * i;
-
-  const int32_t s0_lo = tmp[pixel.x].x;
-  const int32_t s0_hi = tmp[pixel.x].y;
-  const int32_t s1_lo = tmp[pixel.y].x;
-  const int32_t s1_hi = tmp[pixel.y].y;
-  const int32_t s2_lo = tmp[pixel.z].x;
-  const int32_t s2_hi = tmp[pixel.z].y;
-  const int32_t s3_lo = tmp[pixel.w].x;
-  const int32_t s3_hi = tmp[pixel.w].y;
-
-  accum = 0;
-  accum += filter_lo[0] * s0_lo;
-  accum += filter_lo[1] * s1_lo;
-  accum += filter_lo[2] * s2_lo;
-  accum += filter_lo[3] * s3_lo;
-  accum = (accum + add_shift_HP) >> shift_HP;
-  dst.band_a[i * dst_stride + idx] = accum;
-  i4_dwt2.band_a[i * dst_stride + idx] = accum;
-
-  accum = 0;
-  accum += filter_hi[0] * s0_lo;
-  accum += filter_hi[1] * s1_lo;
-  accum += filter_hi[2] * s2_lo;
-  accum += filter_hi[3] * s3_lo;
-  dst.band_v[i * dst_stride + idx] = (accum + add_shift_HP) >> shift_HP;
-
-  accum = 0;
-  accum += filter_lo[0] * s0_hi;
-  accum += filter_lo[1] * s1_hi;
-  accum += filter_lo[2] * s2_hi;
-  accum += filter_lo[3] * s3_hi;
-  dst.band_h[i * dst_stride + idx] = (accum + add_shift_HP) >> shift_HP;
-
-  accum = 0;
-  accum += filter_hi[0] * s0_hi;
-  accum += filter_hi[1] * s1_hi;
-  accum += filter_hi[2] * s2_hi;
-  accum += filter_hi[3] * s3_hi;
-  dst.band_d[i * dst_stride + idx] = (accum + add_shift_HP) >> shift_HP;
-}
-
-extern "C" {
-
-void dwt2_8_device(const uint8_t *d_picture, cuda_adm_dwt_band_t *d_dst, cuda_i4_adm_dwt_band_t i4_dwt_dst,
-                   short2 *tmp_buf, AdmBufferCuda *d_buf, int w, int h,
-                   int src_stride, int dst_stride, AdmFixedParametersCuda *p,
-                   CUstream c_stream) {
-
-//#define VERIFY_DWT2_8
-
-#if defined(VERIFY_DWT2_8)
-  std::vector<int> tmp1((h+1)/2 * dst_stride);
-  std::vector<int> tmp2((h+1)/2 * dst_stride);
-#endif
-
-#if 1
-
-  {
-    const int rows_per_thread = 4;
-
-    const int vert_out_tile_rows = 8;
-    const int vert_out_tile_cols = 128;
-
-    const int horz_out_tile_rows = vert_out_tile_rows;
-    const int horz_out_tile_cols = vert_out_tile_cols / 2 - 2;
-
-    dim3 cta_dim(vert_out_tile_cols, vert_out_tile_rows / rows_per_thread);
-    dim3 grid_dim(DIV_ROUND_UP((w+1)/2, horz_out_tile_cols), DIV_ROUND_UP((h + 1) / 2, horz_out_tile_rows));
-#if defined(VERIFY_DWT2_8)
-    cudaMemset(i4_dwt_dst.band_a, 0xcc, sizeof(*i4_dwt_dst.band_a) * tmp1.size());
-#endif
-
-    adm_dwt2_8_vert_hori_kernel<8, 128, rows_per_thread, 16, 32768, vert_out_tile_cols, vert_out_tile_rows><<<grid_dim, cta_dim, 0, c_stream>>>(d_picture, *d_dst, i4_dwt_dst, w, h, src_stride, dst_stride, *p);
-
-#if defined(VERIFY_DWT2_8)
-    cudaDeviceSynchronize();
-    cudaMemcpy(tmp1.data(), i4_dwt_dst.band_a, sizeof(*i4_dwt_dst.band_a) * tmp1.size(), cudaMemcpyDeviceToHost);
-#endif
-
-    CudaCheckError();
-  }
-#endif
-#if defined(VERIFY_DWT2_8)
-  // unfused launch for verification
-  {
-    const int rows_per_thread = 8;
-    const int vert_out_tile_rows = 32;
-    const int vert_out_tile_cols = 32;
-
-    const int horz_out_tile_rows = vert_out_tile_rows / 2 - 1;
-    const int horz_out_tile_cols = vert_out_tile_cols;
-
-    dim3 cta_dim(vert_out_tile_cols, vert_out_tile_rows / rows_per_thread);
-    dim3 grid_dim(DIV_ROUND_UP(w, vert_out_tile_cols), DIV_ROUND_UP((h + 1) / 2, vert_out_tile_rows));
-    adm_dwt2_8_vert_kernel<8, 128, rows_per_thread><<<grid_dim, cta_dim, 0, c_stream>>>(d_picture, *d_dst, tmp_buf, w, h, src_stride, dst_stride, *p);
-    CudaCheckError();
-  }
-
-  {
-    dim3 threads(128);
-    dim3 blocks_v(DIV_ROUND_UP(w, threads.x), (h + 1) / 2);
-    dim3 blocks_h(DIV_ROUND_UP(((w + 1) / 2), threads.x), (h + 1) / 2);
-
-#if defined(VERIFY_DWT2_8)
-    cudaMemset(i4_dwt_dst.band_a, 0xdd, sizeof(*i4_dwt_dst.band_a) * tmp1.size());
-#endif
-
-
-    adm_dwt2_8_hori_kernel<16, 32768><<<blocks_h, threads, 0, c_stream>>>(*d_dst, i4_dwt_dst, tmp_buf, w, h, dst_stride, *p);
-
-#if defined(VERIFY_DWT2_8)
-    cudaDeviceSynchronize();
-    cudaMemcpy(tmp2.data(), i4_dwt_dst.band_a, sizeof(*i4_dwt_dst.band_a) * tmp1.size(), cudaMemcpyDeviceToHost);
-#endif
-    CudaCheckError();
-  }
-
-  // verification
-  for (int y = 0;y < 32;++y) {
-    bool row_changed = false;
-    int first_column = 0;
-    int x;
-    for (x = 0;x < (w+1)/2;++x) {
-      auto offset = y * dst_stride + x;
-      row_changed = tmp1[offset] != tmp2[offset];
-      if (row_changed)
-        break;
+#define DWT_S123_COMBINED_VERT(add_shift, shift, type)                        \
+  __global__ void dwt_s123_combined_vert_kernel_##add_shift##_##shift##_##type (  \
+    const type *d_image_scale,                                                      \
+    int32_t *tmplo_start, int w, int h,                                             \
+    int img_stride,                                                                 \
+    AdmFixedParametersCuda params ) {                                               \
+      dwt_s123_combined_vert_kernel<add_shift, shift, type>(d_image_scale,          \
+      tmplo_start, w ,h,                                                            \
+      img_stride, params);                                                           \
     }
-    if (row_changed) {
-      printf("row %4d:", y);
-      x-=0;
-      int end = x + 20;
-      for (;x < end;++x) {
-        auto offset = y * dst_stride + x;
-        printf("%3d %08x:%08x ", x, tmp1[offset], tmp2[offset]);
-      }
-      printf("\n");
+
+#define DWT_S123_COMBINED_HORI(add_shift, shift)                                    \
+  __global__ void dwt_s123_combined_hori_kernel_##add_shift##_##shift (           \
+    const cuda_i4_adm_dwt_band_t i4_dwt2,                                          \
+    int32_t *tmplo_start, int w, int h,                                             \
+    int dst_stride,                                                                 \
+    AdmFixedParametersCuda params ) {                                               \
+      dwt_s123_combined_hori_kernel<add_shift, shift>(i4_dwt2,                      \
+      tmplo_start, w ,h,                                                            \
+      dst_stride, params);                                                          \
     }
-  }
-#endif
+    
 
+#define DWT_8_VERT_HORI(v_shift, v_add_shift, v_rows_per_thread, h_shift, h_add_shift, tile_width, tile_height, type)                                                 \
+  __global__ void adm_dwt2_8_vert_hori_kernel_##v_shift##_##v_add_shift##_##v_rows_per_thread##_##h_shift##_##h_add_shift##_##tile_width##_##tile_height##_##type (  \
+    const type * d_picture,                                                                                                                                         \
+    cuda_adm_dwt_band_t dst,                                                                                                                                        \
+    cuda_i4_adm_dwt_band_t i4_dwt2,                                                                                                                                 \
+    int w, int h,                                                                                                                                                   \
+    int src_stride, int dst_stride,                                                                                                                                 \
+    AdmFixedParametersCuda params) {                                                                                                                                \
+      adm_dwt2_8_vert_hori_kernel<v_shift, v_add_shift, v_rows_per_thread, h_shift, h_add_shift, tile_width, tile_height, type>(                                    \
+        d_picture, dst, i4_dwt2,                                                                                                                                    \
+        w, h, src_stride, dst_stride, params);                                                                                                                      \
+    }
+#pragma endregion 
+
+extern "C" { 
+  DWT_S123_COMBINED_VERT(0, 0, int32_t);                        // dwt_s123_combined_vert_kernel_0_0_int32_t
+  DWT_S123_COMBINED_VERT(32768, 16, int32_t);                   // dwt_s123_combined_vert_kernel_32768_16_int32_t
+  DWT_S123_COMBINED_HORI(16384, 15);                            // dwt_s123_combined_hori_kernel_16384_15
+  DWT_S123_COMBINED_HORI(32768, 16);                            // dwt_s123_combined_hori_kernel_32768_16
+  DWT_8_VERT_HORI(8, 128, 4, 16, 32768, 128, 8, uint8_t);       // adm_dwt2_8_vert_hori_kernel_8_128_4_16_32768_128_8_uint8_t
+  DWT_8_VERT_HORI(16, 32768, 4, 16, 32768, 128, 8, uint16_t);   // adm_dwt2_8_vert_hori_kernel_16_32768_4_16_32768_128_8_uint16_t
 }
-
-void adm_dwt2_16_device(const uint16_t *d_picture, cuda_adm_dwt_band_t *d_dst, cuda_i4_adm_dwt_band_t i4_dwt_dst,
-                        short2 *tmp_buf, AdmBufferCuda *d_buf, int w, int h,
-                        int src_stride, int dst_stride, int inp_size_bits,
-                        AdmFixedParametersCuda *p, CUstream c_stream) {
-  dim3 threads(128);
-  dim3 blocks_v(DIV_ROUND_UP(w, threads.x));
-  dim3 blocks_h(DIV_ROUND_UP(((w + 1) / 2), threads.x), (h + 1) / 2);
-  adm_dwt2_16_vert_kernel<<<blocks_v, threads, 0, c_stream>>>(d_picture, tmp_buf, w, h, src_stride, inp_size_bits, *p);
-  CudaCheckError();
-  adm_dwt2_16_hori_kernel<<<blocks_h, threads, 0, c_stream>>>(*d_dst, i4_dwt_dst, tmp_buf, w, h, dst_stride, *p);
-  CudaCheckError();
-}
-
-void adm_dwt2_s123_combined_device(const int32_t *d_i4_scale, int32_t *tmp_buf, cuda_i4_adm_dwt_band_t i4_dwt,
-    AdmBufferCuda *d_buf, int w, int h, int img_stride, int dst_stride, int scale, AdmFixedParametersCuda *p, CUstream cu_stream) {
-
-  const int rows_per_thread = 1;
-  const int cols_per_thread = 4;
-  dim3 threads(32,1);
-  dim3 blocks_v(DIV_ROUND_UP(w, threads.x), (h + 1) / 2);
-  switch (scale) {
-    case 1:
-      dwt_s123_combined_vert_kernel<0, 0><<<blocks_v, threads, 0, cu_stream>>>(d_i4_scale, tmp_buf, w, h, img_stride, *p);
-      break;
-    case 2:
-      dwt_s123_combined_vert_kernel<32768, 16><<<blocks_v, threads, 0, cu_stream>>>(d_i4_scale, tmp_buf, w, h, img_stride, *p);
-      break;
-    case 3:
-      dwt_s123_combined_vert_kernel<32768, 16><<<blocks_v, threads, 0, cu_stream>>>(d_i4_scale, tmp_buf, w, h, img_stride, *p);
-      break;
-  }
-  CudaCheckError();
-
-
-  dim3 blocks_h(DIV_ROUND_UP(((w + 1) / 2), threads.x), (h + 1) / 2);
-  switch (scale) {
-    case 1:
-      dwt_s123_combined_hori_kernel<16384, 15><<<blocks_h, threads, 0, cu_stream>>>(i4_dwt, tmp_buf, w, h, dst_stride, *p);
-      break;
-    case 2:
-      dwt_s123_combined_hori_kernel<32768, 16><<<blocks_h, threads, 0, cu_stream>>>(i4_dwt, tmp_buf, w, h, dst_stride, *p);
-      break;
-    case 3:
-      dwt_s123_combined_hori_kernel<16384, 15><<<blocks_h, threads, 0, cu_stream>>>(i4_dwt, tmp_buf, w, h, dst_stride, *p);
-      break;
-  }
-  CudaCheckError();
-}
-} // extern "C"

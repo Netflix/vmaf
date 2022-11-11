@@ -275,15 +275,19 @@ if is_nvtx_enabled
 endif
 
 if is_cuda_enabled
+
+    cuda_cu_sources = {
+        'adm_dwt2' : [cuda_dir + 'integer_adm/adm_dwt2.cu'],
+        'adm_cm' : [cuda_dir + 'integer_adm/adm_cm.cu'],
+        'adm_csf' : [cuda_dir + 'integer_adm/adm_csf.cu'],
+        'adm_csf_den' : [cuda_dir + 'integer_adm/adm_csf_den.cu'],
+        'adm_decouple' : [cuda_dir + 'integer_adm/adm_decouple.cu'],
+        'filter1d' : [cuda_dir + 'integer_vif/filter1d.cu'],
+        'motion_score' : [cuda_dir + 'integer_motion/motion_score.cu'],
+    }
+    message(cuda_cu_sources)
     cuda_sources = [
         cuda_dir + 'common.c',
-        cuda_dir + 'integer_adm/adm_dwt2.cu',
-        cuda_dir + 'integer_adm/adm_cm.cu',
-        cuda_dir + 'integer_adm/adm_csf.cu',
-        cuda_dir + 'integer_adm/adm_csf_den.cu',
-        cuda_dir + 'integer_adm/adm_decouple.cu',
-        cuda_dir + 'integer_vif/filter1d.cu',
-        cuda_dir + 'integer_motion/motion_score.cu',
         cuda_dir + 'picture_cuda.c',
     ]
 
@@ -303,23 +307,74 @@ if is_cuda_enabled
         endif
     endif
 
-    cuda_cubin = static_library(
-        'cuda_common_vmaf_device',
-        [cuda_sources],
-        dependencies: [cuda_drv_api_dependency, cuda_rt_api_dependency],
-        include_directories : [libvmaf_inc, vmaf_base_include, cuda_dir, feature_src_dir, include_directories('../src/cuda/'), nvtx_inc],
-        c_args : vmaf_cflags_common,
-        cuda_args: cuda_flags + ['-fatbin']# + ['-gencode', 'arch=compute_86,code=sm_86' ] #, '--use_fast_math']
-    )
+    nvcc_exe = find_program('nvcc')
+    ptx_files = {}
+    foreach name, _cu : cuda_cu_sources
+        t = custom_target('cu_ptx_target_' + name,
+            build_by_default: true,
+            output : ['@0@.ptx'.format(name)],
+            input : _cu,
+            command : [nvcc_exe, '--ptx', '@INPUT@', '-o', '@OUTPUT@' ,
+                '-I', './src',
+                '-I', '../src',
+                '-I', '../include',
+                '-I', '../src/feature',
+                '-I', '../src/' + cuda_dir,
+            ]
+        )
+        ptx_files += {name : [t]}
+        cuda_sources += _cu
+    endforeach
+
+    message('ptx_files = @0@'.format(ptx_files))
+
+    xxd_exe = find_program('xxd')
+    ptx_arrays = []
+    foreach name, _ptx : ptx_files
+        t = custom_target('ptx_xxd_@0@'.format(name),
+            build_by_default: true,
+            output : ['@PLAINNAME@.c'],
+            input : _ptx,
+            command : [xxd_exe, '--include','@INPUT@', '@OUTPUT@'],
+        )
+        ptx_arrays += t
+    endforeach
+
+    # ptx_arrays = gen.process(ptx_files)
+    
+    message('ptx_arrays = @0@'.format(ptx_arrays))
+
+    # cuda_device_lib = static_library('static_ptx',
+    #     ptx_arrays
+    # )
+    # message('cuda_device_lib = @0@'.format(cuda_device_lib))
 
     cuda_static_lib = static_library(
         'cuda_common_vmaf_lib',
-        [cuda_sources],
-        dependencies: [cuda_drv_api_dependency, cuda_rt_api_dependency],
-        include_directories : [libvmaf_inc, vmaf_base_include, cuda_dir, feature_src_dir, include_directories('../src/cuda/'), nvtx_inc],
+        [cuda_sources, ptx_arrays,],
+        dependencies: [cuda_drv_api_dependency],
+        include_directories : [libvmaf_include, vmaf_base_include, cuda_dir, feature_src_dir, include_directories('../src/cuda/'), nvtx_inc, ],
         c_args : vmaf_cflags_common,
         cuda_args: cuda_flags # + ['-gencode', 'arch=compute_86,code=sm_86' ] #, '--use_fast_math']
     )
+
+    # cuda_cubin = static_library(
+    #     'cuda_common_vmaf_device',
+    #     [cuda_sources],
+    #     dependencies: [cuda_drv_api_dependency, cuda_rt_api_dependency],
+    #     include_directories : [libvmaf_inc, vmaf_base_include, cuda_dir, feature_src_dir, include_directories('../src/cuda/'), nvtx_inc],
+    #     c_args : vmaf_cflags_common,
+    #     cuda_args: cuda_flags + ['-fatbin']# + ['-gencode', 'arch=compute_86,code=sm_86' ] #, '--use_fast_math']
+    # )
+
+    # cuda_static_lib = static_library(
+    #     'cuda_common_vmaf_lib',
+    #     [cuda_sources],
+    #     dependencies: [cuda_drv_api_dependency, cuda_rt_api_dependency],
+    #     include_directories : [libvmaf_inc, vmaf_base_include, cuda_dir, feature_src_dir, include_directories('../src/cuda/'), nvtx_inc],
+    #     c_args : vmaf_cflags_common,
+    #     cuda_args: cuda_flags # + ['-gencode', 'arch=compute_86,code=sm_86' ] #, '--use_fast_math']
+    # )
 
     common_cuda_objects += cuda_static_lib.extract_all_objects()
 endif

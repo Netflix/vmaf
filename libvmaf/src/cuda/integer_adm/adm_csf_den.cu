@@ -17,12 +17,12 @@
  *
  */
 
- #include "integer_adm_kernels.h"
+#include "integer_adm_kernels.h"
 #include "cuda_helper.cuh"
 
 
 template <int val_per_thread, int cta_size>
-__global__ void adm_csf_den_scale_line_kernel(const cuda_adm_dwt_band_t src, int h,
+__device__ __forceinline__ void adm_csf_den_scale_line_kernel(const cuda_adm_dwt_band_t src, int h,
                                               int top, int bottom, int left,
                                               int right, int src_stride,
                                               uint64_t *accum) {
@@ -65,7 +65,7 @@ __global__ void adm_csf_den_scale_line_kernel(const cuda_adm_dwt_band_t src, int
 }
 
 template <int val_per_thread, int cta_size>
-__global__ void adm_csf_den_s123_line_kernel(
+__device__ __forceinline__ void adm_csf_den_s123_line_kernel(
     const cuda_i4_adm_dwt_band_t src, int h, int top, int bottom, int left, int right,
     int src_stride, uint32_t add_shift_sq, uint32_t shift_sq, uint64_t *accum) {
   const uint32_t shift_cub = (uint32_t)__float2uint_ru(__log2f((right - left)));
@@ -108,68 +108,27 @@ __global__ void adm_csf_den_s123_line_kernel(
               (temp_value + add_shift_accum) >> shift_accum);
   }
 }
+#define ADM_CSF_SCALE_LINE(val_per_thread, cta_size)                                  \
+__global__ void adm_csf_den_scale_line_kernel_##val_per_thread##_##cta_size (         \
+  const cuda_adm_dwt_band_t src, int h, int top, int bottom, int left, int right,     \
+  int src_stride, uint64_t *accum)                                                    \
+  {                                                                                   \
+    adm_csf_den_scale_line_kernel<val_per_thread, cta_size>(                          \
+      src, h, top, bottom, left, right, src_stride, accum);                           \
+  }
+
+#define ADM_CSF_DEN_S123_LINE(val_per_thread, cta_size)                               \
+__global__ void adm_csf_den_s123_line_kernel_##val_per_thread##_##cta_size (          \
+  const cuda_i4_adm_dwt_band_t src, int h, int top, int bottom, int left, int right,  \
+  int src_stride, uint32_t add_shift_sq, uint32_t shift_sq, uint64_t *accum )         \
+  {                                                                                   \
+    adm_csf_den_s123_line_kernel<val_per_thread, cta_size>(                           \
+      src, h, top, bottom, left, right, src_stride, add_shift_sq, shift_sq, accum);   \
+  }
 
 extern "C" {
-
-void adm_csf_den_s123_device(AdmBufferCuda *buf, int scale, int w, int h,
-                             int src_stride, double adm_norm_view_dist,
-                             int adm_ref_display_height, CUstream c_stream) {
-  /* The computation of the denominator scales is not required for the regions
-   * which lie outside the frame borders
-   */
-
-  const int left = w * float(ADM_BORDER_FACTOR) - 0.5f;
-  const int top = h * float(ADM_BORDER_FACTOR) - 0.5f;
-  const int right = w - left;
-  const int bottom = h - top;
-
-  const int buffer_stride = right - left;
-  const int buffer_h = bottom - top;
-
-  const int val_per_thread = 8;
-  const int warps_per_cta = 4;
-  dim3 reduce_block(threads_per_warp * warps_per_cta);
-  dim3 reduce_grid(DIV_ROUND_UP(buffer_stride, reduce_block.x * val_per_thread),
-                   buffer_h, 3);
-  const uint32_t shift_sq[3] = {31, 30, 31};
-  const uint32_t add_shift_sq[3] = {1u << shift_sq[0], 1u << shift_sq[1],
-                                    1u << shift_sq[2]};
-
-  adm_csf_den_s123_line_kernel<val_per_thread, threads_per_warp * warps_per_cta>
-      <<<reduce_grid, reduce_block, 0, c_stream>>>(
-          buf->i4_ref_dwt2, h, top, bottom, left, right, src_stride,
-          add_shift_sq[scale - 1], shift_sq[scale - 1],
-          (uint64_t *)buf->adm_csf_den[scale]);
-  CudaCheckError();
+  // 128 = threads_per_warp * 4 -- we are assuming 32 threads per warp, this might change in the future
+  
+  ADM_CSF_SCALE_LINE(8, 128);      // adm_csf_den_scale_line_kernel_8_128
+  ADM_CSF_DEN_S123_LINE(8, 128);   // adm_csf_den_s123_line_kernel_8_128
 }
-
-void adm_csf_den_scale_device(AdmBufferCuda *buf, int w, int h, int src_stride,
-                              double adm_norm_view_dist,
-                              int adm_ref_display_height, CUstream c_stream) {
-  /* The computation of the denominator scales is not required for the regions
-   * which lie outside the frame borders
-   */
-  const int scale = 0;
-  const int left = w * float(ADM_BORDER_FACTOR) - 0.5f;
-  const int top = h * float(ADM_BORDER_FACTOR) - 0.5f;
-  const int right = w - left;
-  const int bottom = h - top;
-
-  const int buffer_stride = right - left;
-  const int buffer_h = bottom - top;
-
-  const int val_per_thread = 8;
-  const int warps_per_cta = 4;
-  dim3 reduce_block(threads_per_warp * warps_per_cta);
-  dim3 reduce_grid(DIV_ROUND_UP(buffer_stride, reduce_block.x * val_per_thread),
-                   buffer_h, 3);
-
-  adm_csf_den_scale_line_kernel<val_per_thread,
-                                threads_per_warp * warps_per_cta>
-      <<<reduce_grid, reduce_block, 0, c_stream>>>(
-          buf->ref_dwt2, h, top, bottom, left, right, src_stride,
-          (uint64_t *)buf->adm_csf_den[scale]);
-  CudaCheckError();
-}
-
-} // extern "C"
