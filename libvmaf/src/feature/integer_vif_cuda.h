@@ -67,4 +67,6 @@ typedef struct VifBufferCuda {
     ptrdiff_t stride_tmp;
 } VifBufferCuda;
 
+extern unsigned char src_filter1d_ptx[];
+
 #endif /* _FEATURE_VIF_CUDA_H_ */

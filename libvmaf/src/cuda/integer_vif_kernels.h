@@ -46,12 +46,12 @@ typedef struct vif_accums {
   int64_t den_non_log;
 } vif_accums;
 
-void filter1d_8(VifBufferCuda *buf, uint8_t *ref_in, uint8_t *dis_in, int w,
-                int h, double vif_enhn_gain_limit, CUstream stream);
+// void filter1d_8(VifBufferCuda *buf, uint8_t *ref_in, uint8_t *dis_in, int w,
+//                 int h, double vif_enhn_gain_limit, CUstream stream);
 
-void filter1d_16(VifBufferCuda *buf, uint16_t *ref_in, uint16_t *dis_in, int w,
-                 int h, int scale, int bpc, double vif_enhn_gain_limit,
-                 CUstream stream);
+// void filter1d_16(VifBufferCuda *buf, uint16_t *ref_in, uint16_t *dis_in, int w,
+//                  int h, int scale, int bpc, double vif_enhn_gain_limit,
+//                  CUstream stream);
 
 #ifdef __cplusplus
 }

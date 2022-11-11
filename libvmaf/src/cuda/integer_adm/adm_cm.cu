@@ -27,86 +27,86 @@
 #include <iostream>
 #endif
 
+extern "C" {
+  __global__ void i4_adm_cm_line_kernel(
+      AdmBufferCuda buf, int h, int w, int top, int bottom, int left, int right,
+      int start_row, int end_row, int start_col, int end_col, int src_stride,
+      int csf_a_stride, int scale, int buffer_h, int buffer_stride,
+      int32_t *accum_per_block, AdmFixedParametersCuda params) {
+    const cuda_i4_adm_dwt_band_t *src = &buf.i4_decouple_r;
+    const cuda_i4_adm_dwt_band_t *csf_f = &buf.i4_csf_f;
+    const cuda_i4_adm_dwt_band_t *csf_a = &buf.i4_csf_a;
+    const int band = blockIdx.z + 1;
+    int32_t *src_band = src->bands[band];
+    int32_t *const *angles = csf_a->bands + 1;
+    int32_t *const *flt_angles = csf_f->bands + 1;
 
-__global__ void i4_adm_cm_line_kernel(
-    AdmBufferCuda buf, int h, int w, int top, int bottom, int left, int right,
-    int start_row, int end_row, int start_col, int end_col, int src_stride,
-    int csf_a_stride, int scale, int buffer_h, int buffer_stride,
-    int32_t *accum_per_block, AdmFixedParametersCuda params) {
-  const cuda_i4_adm_dwt_band_t *src = &buf.i4_decouple_r;
-  const cuda_i4_adm_dwt_band_t *csf_f = &buf.i4_csf_f;
-  const cuda_i4_adm_dwt_band_t *csf_a = &buf.i4_csf_a;
-  const int band = blockIdx.z + 1;
-  int32_t *src_band = src->bands[band];
-  int32_t *const *angles = csf_a->bands + 1;
-  int32_t *const *flt_angles = csf_f->bands + 1;
+    // for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
+    // 1 to 4 (from finest scale to coarsest scale).
+    const uint32_t *rfactor = &params.i_rfactor[scale * 3];
 
-  // for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
-  // 1 to 4 (from finest scale to coarsest scale).
-  const uint32_t *rfactor = &params.i_rfactor[scale * 3];
+    const uint32_t shift_dst = 28;
+    const uint32_t shift_flt = 32;
+    const int32_t add_bef_shift_dst = (1u << (shift_dst - 1));
+    const int32_t add_bef_shift_flt = (1u << (shift_flt - 1));
 
-  const uint32_t shift_dst = 28;
-  const uint32_t shift_flt = 32;
-  const int32_t add_bef_shift_dst = (1u << (shift_dst - 1));
-  const int32_t add_bef_shift_flt = (1u << (shift_flt - 1));
+    uint32_t shift_cub = __float2uint_ru(__log2f(w));
 
-  uint32_t shift_cub = __float2uint_ru(__log2f(w));
+    const int32_t shift_sub = 0;
 
-  const int32_t shift_sub = 0;
+    int i = start_row + blockIdx.x;
+    int j = start_col + blockIdx.y * blockDim.x + threadIdx.x;
 
-  int i = start_row + blockIdx.x;
-  int j = start_col + blockIdx.y * blockDim.x + threadIdx.x;
+    int32_t accum_thread = 0;
+    if (i < end_row && j < end_col) {
 
-  int32_t accum_thread = 0;
-  if (i < end_row && j < end_col) {
+      int16_t offset_i[2] = {-1, 1};
+      if (i == 0 && top <= 0) {
+        offset_i[0] = 1;
+      } else if (i == (h - 1) && bottom > (h - 1)) {
+        offset_i[1] = 0;
+      }
 
-    int16_t offset_i[2] = {-1, 1};
-    if (i == 0 && top <= 0) {
-      offset_i[0] = 1;
-    } else if (i == (h - 1) && bottom > (h - 1)) {
-      offset_i[1] = 0;
+      int16_t offset_j[2] = {-1, 1};
+      if (j == 0 && left <= 0) {
+        offset_j[0] = 1;
+      } else if (j == (w - 1) && right > (w - 1)) {
+        offset_j[1] = 0;
+      }
+
+      int32_t thr = 0;
+      for (int theta = 0; theta < 3; ++theta) {
+        int32_t sum = 0;
+        int32_t src = angles[theta][src_stride * (i + offset_i[0] + 1) + j];
+        int32_t *flt_ptr = flt_angles[theta];
+        flt_ptr += (src_stride * (i + offset_i[0]));
+        sum += flt_ptr[j + offset_j[0]];
+        sum += flt_ptr[j];
+        sum += flt_ptr[j + offset_j[1]];
+        flt_ptr += src_stride;
+        sum += flt_ptr[j + offset_j[0]];
+        sum += (int32_t)((((int64_t)I4_ONE_BY_15 * abs((int32_t)src)) +
+                          add_bef_shift_flt) >>
+                        shift_flt);
+        sum += flt_ptr[j + offset_j[1]];
+        flt_ptr += src_stride * offset_i[1];
+        sum += flt_ptr[j + offset_j[0]];
+        sum += flt_ptr[j];
+        sum += flt_ptr[j + offset_j[1]];
+        thr += sum;
+      }
+      int32_t x = (int32_t)((((int64_t)src_band[i * src_stride + j] *
+                              rfactor[blockIdx.z]) +
+                            add_bef_shift_dst) >>
+                            shift_dst);
+      x = abs(x) - (thr >> shift_sub);
+      accum_thread = x < 0 ? 0 : x;
     }
-
-    int16_t offset_j[2] = {-1, 1};
-    if (j == 0 && left <= 0) {
-      offset_j[0] = 1;
-    } else if (j == (w - 1) && right > (w - 1)) {
-      offset_j[1] = 0;
-    }
-
-    int32_t thr = 0;
-    for (int theta = 0; theta < 3; ++theta) {
-      int32_t sum = 0;
-      int32_t src = angles[theta][src_stride * (i + offset_i[0] + 1) + j];
-      int32_t *flt_ptr = flt_angles[theta];
-      flt_ptr += (src_stride * (i + offset_i[0]));
-      sum += flt_ptr[j + offset_j[0]];
-      sum += flt_ptr[j];
-      sum += flt_ptr[j + offset_j[1]];
-      flt_ptr += src_stride;
-      sum += flt_ptr[j + offset_j[0]];
-      sum += (int32_t)((((int64_t)I4_ONE_BY_15 * abs((int32_t)src)) +
-                        add_bef_shift_flt) >>
-                       shift_flt);
-      sum += flt_ptr[j + offset_j[1]];
-      flt_ptr += src_stride * offset_i[1];
-      sum += flt_ptr[j + offset_j[0]];
-      sum += flt_ptr[j];
-      sum += flt_ptr[j + offset_j[1]];
-      thr += sum;
-    }
-    int32_t x = (int32_t)((((int64_t)src_band[i * src_stride + j] *
-                            rfactor[blockIdx.z]) +
-                           add_bef_shift_dst) >>
-                          shift_dst);
-    x = abs(x) - (thr >> shift_sub);
-    accum_thread = x < 0 ? 0 : x;
+    if ((blockIdx.y * blockDim.x + threadIdx.x) < buffer_stride)
+      accum_per_block[(blockIdx.z * buffer_h + blockIdx.x) * buffer_stride +
+                      blockIdx.y * blockDim.x + threadIdx.x] = accum_thread;
   }
-  if ((blockIdx.y * blockDim.x + threadIdx.x) < buffer_stride)
-    accum_per_block[(blockIdx.z * buffer_h + blockIdx.x) * buffer_stride +
-                    blockIdx.y * blockDim.x + threadIdx.x] = accum_thread;
 }
-
 __constant__ const int32_t shift_sub[3] = {10, 10, 12};
 __constant__ const int fixed_shift[3] = {4, 4, 3};
 
@@ -115,7 +115,7 @@ __constant__ const int32_t shift_xsq[3] = {29, 29, 30};
 __constant__ const int32_t add_shift_xsq[3] = {268435456, 268435456, 536870912};
 
 // HACK: the 256 byte alignment is required to ensure that the struct is not moved to lmem
-struct alignas(256) WarpShift 
+struct WarpShift 
 {
   uint32_t shift_cub[3];
   uint32_t add_shift_cub[3];
@@ -124,7 +124,7 @@ struct alignas(256) WarpShift
 };
 
 template <int fused_accumulator=true, int rows_per_thread>
-__global__ void adm_cm_line_kernel(AdmBufferCuda buf, int h, int w, int top,
+__device__ __forceinline__ void adm_cm_line_kernel(AdmBufferCuda buf, int h, int w, int top,
                                    int bottom, int left, int right,
                                    int start_row, int end_row, int start_col,
                                    int end_col, int src_stride,
@@ -258,7 +258,7 @@ __global__ void adm_cm_line_kernel(AdmBufferCuda buf, int h, int w, int top,
 }
 
 template <int val_per_thread, int cta_size>
-__global__ void adm_cm_reduce_line_kernel(int h, int w, int scale, int buffer_h,
+__device__ __forceinline__ void adm_cm_reduce_line_kernel(int h, int w, int scale, int buffer_h,
                                           int buffer_stride,
                                           const int32_t *buffer,
                                           int64_t *accum) {
@@ -299,163 +299,39 @@ __global__ void adm_cm_reduce_line_kernel(int h, int w, int scale, int buffer_h,
   }
 }
 
+#define ADM_CM_REDUCE_LINE(val_per_thread, cta_size)                                    \
+  __global__ void adm_cm_reduce_line_kernel_##val_per_thread##_##cta_size (             \
+    int h, int w, int scale, int buffer_h,                                              \
+    int buffer_stride, const int32_t *buffer, int64_t *accum)                           \
+    {                                                                                   \
+      adm_cm_reduce_line_kernel<val_per_thread, cta_size>(                              \
+        h, w, scale, buffer_h, buffer_stride,  buffer, accum);                          \
+    }
+
+#define ADM_CM_LINE(fused_accumulator, rows_per_thread)                                 \
+  __global__ void adm_cm_line_kernel_##fused_accumulator##_##rows_per_thread (          \
+    AdmBufferCuda buf, int h, int w, int top,                                           \
+    int bottom, int left, int right, int start_row, int end_row, int start_col,         \
+    int end_col, int src_stride, int csf_a_stride, int buffer_h,                        \
+    int buffer_stride, int32_t *accum_per_block, AdmFixedParametersCuda params,         \
+    int scale, int64_t* accum_global, WarpShift ws,                                     \
+    const uint32_t shift_inner_accum, const uint32_t add_shift_inner_accum)             \
+    {                                                                                   \
+      adm_cm_line_kernel<fused_accumulator, rows_per_thread>(                                     \
+        buf, h, w, top, bottom, left, right, start_row, end_row, start_col,             \
+        end_col, src_stride, csf_a_stride, buffer_h, buffer_stride,                     \
+        accum_per_block, params,scale, accum_global,                                    \
+        ws, shift_inner_accum, add_shift_inner_accum);                                  \
+    }
+
+  
+    
+extern "C" {
+  // 128 = warps_per_thread * val_per_thread = 32 * 4 -- assuming 32 threads per warp, this might change in the future
+  ADM_CM_REDUCE_LINE(4, 128);   // adm_cm_reduce_line_kernel_4_128
+  ADM_CM_LINE(1, 8);            // adm_cm_line_kernel_1_8
+}
+
 extern "C" {
 
-void i4_adm_cm_device(AdmBufferCuda *buf, int w, int h, int src_stride,
-                      int csf_a_stride, int scale, AdmFixedParametersCuda *p,
-                      CUstream c_stream) {
-
-  const int left = w * float(ADM_BORDER_FACTOR) - 0.5f;
-  const int top = h * float(ADM_BORDER_FACTOR) - 0.5f;
-  const int right = w - left;
-  const int bottom = h - top;
-
-  const int start_col = (left > 1) ? left : ((left <= 0) ? 0 : 1);
-  const int end_col =
-      (right < (w - 1)) ? right : ((right > (w - 1)) ? w : w - 1);
-  const int start_row = (top > 1) ? top : ((top <= 0) ? 0 : 1);
-  const int end_row =
-      (bottom < (h - 1)) ? bottom : ((bottom > (h - 1)) ? h : h - 1);
-
-  const int buffer_stride = end_col - start_col;
-  const int buffer_h = end_row - start_row;
-
-  {
-    dim3 block(128);
-    dim3 grid(buffer_h, DIV_ROUND_UP(buffer_stride, block.x),
-              3); // 3 for per band
-
-    i4_adm_cm_line_kernel<<<grid, block, 0, c_stream>>>(
-        *buf, h, w, top, bottom, left, right, start_row, end_row, start_col,
-        end_col, src_stride, csf_a_stride, scale, buffer_h, buffer_stride,
-        (int32_t *)buf->tmp_accum->data, *p);
-    CudaCheckError();
-  }
-  {
-    const int val_per_thread = 4;
-    const int warps_per_cta = 4;
-    dim3 reduce_block(threads_per_warp * warps_per_cta);
-    dim3 reduce_grid(
-        DIV_ROUND_UP(buffer_stride, reduce_block.x * val_per_thread), buffer_h,
-        3);
-
-    adm_cm_reduce_line_kernel<val_per_thread, threads_per_warp * warps_per_cta>
-        <<<reduce_grid, reduce_block, 0, c_stream>>>(
-            h, w, scale, buffer_h, buffer_stride,
-            (int32_t *)buf->tmp_accum->data, (int64_t *)buf->adm_cm[scale]);
-    CudaCheckError();
-  }
-}
-
-void adm_cm_device(AdmBufferCuda *buf, int w, int h, int src_stride,
-                   int csf_a_stride, AdmFixedParametersCuda *p,
-                   CUstream c_stream) {
-  const int scale = 0;
-  const int left = w * float(ADM_BORDER_FACTOR) - 0.5f;
-  const int top = h * float(ADM_BORDER_FACTOR) - 0.5f;
-  const int right = w - left;
-  const int bottom = h - top;
-
-  const int start_col = std::max(0, left);
-  const int end_col = std::min(right, w);
-  const int start_row = std::max(0, top);
-  const int end_row = std::min(bottom, h);
-
-  const int buffer_stride = end_col - start_col;
-  const int buffer_h = end_row - start_row;
-
-  // precompute warp shift per band
-  //const int32_t shift_sub[3] = {10, 10, 12};
-  const int fixed_shift[3] = {4, 4, 3};
-
-  // accumulation
-  const int32_t shift_xsq[3] = {29, 29, 30};
-  const int32_t add_shift_xsq[3] = {268435456, 268435456, 536870912};
-
-  const int NUM_BANDS = 3;
-  WarpShift ws;
-  for (int band = 0;band < NUM_BANDS;++band) {
-    ws.shift_cub[band] = uint32_t(ceil(log2f(w)));
-    if (scale == 0) {
-      ws.shift_cub[band] -= fixed_shift[band];
-      ws.shift_sq[band] = shift_xsq[band];
-      ws.add_shift_sq[band] = add_shift_xsq[band];
-    } else {
-      ws.shift_sq[band] = 30;
-      ws.add_shift_sq[band] = (1 << (ws.shift_sq[band]-1));
-    }
-    ws.add_shift_cub[band] = 1 << (ws.shift_cub[band] - 1);
-  }
-
-    // precompute global shift
-  const uint32_t shift_inner_accum = uint32_t(ceil(log2f(h)));
-  const uint32_t add_shift_inner_accum = 1 << (shift_inner_accum - 1);
-
-//#define COMPARE_FUSED_SPLIT
-
-#if defined(COMPARE_FUSED_SPLIT)
-    int64_t adm_cm_fused[4], adm_cm2[4];
-  // split
-  {
-    const int rows_per_thread = 2;
-    dim3 block(32,4);
-    dim3 grid(DIV_ROUND_UP(buffer_stride, block.x), DIV_ROUND_UP(buffer_h, block.y * rows_per_thread), 3); // 3 for per band
-
-    adm_cm_line_kernel<0, rows_per_thread><<<grid, block, 0, c_stream>>>(
-        *buf, h, w, top, bottom, left, right, start_row, end_row, start_col,
-        end_col, src_stride, csf_a_stride, buffer_h, buffer_stride,
-        (int32_t *)buf->tmp_accum->data, *p,
-        scale, (int64_t *)buf->adm_cm[scale],
-        ws,
-        shift_inner_accum, add_shift_inner_accum
-        );
-    CudaCheckError();
-    const int val_per_thread = 8;
-    const int warps_per_cta = 4;
-    dim3 reduce_block(threads_per_warp * warps_per_cta);
-    dim3 reduce_grid(
-        DIV_ROUND_UP(buffer_stride, reduce_block.x * val_per_thread), buffer_h,
-        3);
-
-    adm_cm_reduce_line_kernel<val_per_thread, threads_per_warp * warps_per_cta>
-        <<<reduce_grid, reduce_block, 0, c_stream>>>(
-            h, w, scale, buffer_h, buffer_stride,
-            (int32_t *)buf->tmp_accum->data, (int64_t *)buf->adm_cm[scale]);
-    CudaCheckError();
-
-    // for verification
-    cudaDeviceSynchronize();
-    cudaMemcpy(adm_cm2, buf->adm_cm[scale], 3 * sizeof(uint64_t), cudaMemcpyDeviceToHost);
-    cudaMemset(buf->adm_cm[scale], 0, 4 * sizeof(int64_t));
-  }
-
-#endif
-
-  // fused
-  {
-    const int rows_per_thread = 8;
-    dim3 block(32,4);
-    dim3 grid(DIV_ROUND_UP(buffer_stride, block.x), DIV_ROUND_UP(buffer_h, block.y * rows_per_thread), 3); // 3 for per band
-
-    adm_cm_line_kernel<1, rows_per_thread><<<grid, block, 0, c_stream>>>(
-        *buf, h, w, top, bottom, left, right, start_row, end_row, start_col,
-        end_col, src_stride, csf_a_stride, buffer_h, buffer_stride,
-        (int32_t *)buf->tmp_accum->data, *p,
-        scale, (int64_t *)buf->adm_cm[scale],
-        ws,
-        shift_inner_accum, add_shift_inner_accum);
-    CudaCheckError();
-
-#if defined(COMPARE_FUSED_SPLIT)
-    // for verification
-    cudaDeviceSynchronize();
-    cudaMemcpy(adm_cm_fused, buf->adm_cm[scale], 3 * sizeof(uint64_t), cudaMemcpyDeviceToHost);
-
-    printf("\nadm\n");
-    for (int i = 0;i < 3;++i) {
-      printf("fused[%d]: %16ld  unfused[%d]: %16ld delta[%d]: %16ld\n", i, adm_cm_fused[i], i, adm_cm2[i], i, adm_cm2[i] - adm_cm_fused[i]);
-    }
-#endif
-  }
-}
 }

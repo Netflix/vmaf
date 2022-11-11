@@ -27,11 +27,12 @@
 #include "feature_extractor.h"
 #include "feature_name.h"
 #include "integer_motion_cuda.h"
-#include "integer_motion_kernels.h"
 #include "libvmaf/vmaf_cuda_state.h"
 #include "mem.h"
 #include "picture.h"
 #include "picture_cuda.h"
+#include "cuda_helper.cuh"
+
 
 typedef struct MotionStateCuda {
     CUevent event, finished;
@@ -106,6 +107,36 @@ static int extract_force_zero(VmafFeatureExtractor *fex,
     return err;
 }
 
+void calculate_motion_score(const VmafPicture* src, CudaVmafBuffer* src_blurred, 
+                          const CudaVmafBuffer* prev_blurred, CudaVmafBuffer* sad, 
+                          unsigned width, unsigned height, 
+                          ptrdiff_t src_stride, ptrdiff_t blurred_stride, unsigned src_bpc, 
+                          CUfunction funcbpc8, CUfunction funcbpc16, CUstream stream) {
+
+  int block_dim_x = 16;
+  int block_dim_y = 16;
+  int grid_dim_x = DIV_ROUND_UP(width, block_dim_x);
+  int grid_dim_y = DIV_ROUND_UP(height, block_dim_y);
+  
+  if (src_bpc == 8)
+  {
+    void *kernelParams[] = {(void*)src,   (void*) src_blurred, (void*)prev_blurred, (void*)sad,
+                           &width, &height,     &src_stride,  &blurred_stride};
+    CHECK_CUDA(cuLaunchKernel(funcbpc8, grid_dim_x,
+                              grid_dim_y, 1, block_dim_x, block_dim_y, 1, 0,
+                              stream, kernelParams, NULL));
+  }
+  else
+  {
+    void *kernelParams[] = {(void*)src,   (void*) src_blurred, (void*)prev_blurred, (void*)sad,
+                          &width, &height,     &src_stride,  &blurred_stride};
+    CHECK_CUDA(cuLaunchKernel(funcbpc16, grid_dim_x,
+                              grid_dim_y, 1, block_dim_x, block_dim_y, 1, 0,
+                              stream, kernelParams, NULL));
+  }
+  CudaCheckError();
+}
+
 static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
 {
@@ -118,8 +149,7 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CHECK_CUDA(cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
 
     CUmodule module;
-    const char* fname = "/home/maximilianm/repos/vmaf_private/libvmaf/build/src/libcuda_common_vmaf_device.a.p/cuda_integer_motion_motion_score.cu.o";
-    CHECK_CUDA(cuModuleLoad(&module, fname));
+    CHECK_CUDA(cuModuleLoadData(&module, src_motion_score_ptx));
     
     CHECK_CUDA(cuModuleGetFunction(&s->funcbpc16, module, "calculate_motion_score_kernel_16bpc"));
     CHECK_CUDA(cuModuleGetFunction(&s->funcbpc8, module, "calculate_motion_score_kernel_8bpc"));

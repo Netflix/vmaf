@@ -24,4 +24,5 @@
 #include "integer_motion.h"
 #include "common.h"
 
+extern unsigned char src_motion_score_ptx[];
 #endif /* _FEATURE_MOTION_CUDA_H_ */
