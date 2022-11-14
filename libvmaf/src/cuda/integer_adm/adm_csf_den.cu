@@ -17,7 +17,10 @@
  *
  */
 
-#include "integer_adm_kernels.h"
+#include "feature_collector.h"
+#include "integer_adm_cuda.h"
+
+#include "common.h"
 #include "cuda_helper.cuh"
 
 
@@ -128,7 +131,6 @@ __global__ void adm_csf_den_s123_line_kernel_##val_per_thread##_##cta_size (    
 
 extern "C" {
   // 128 = threads_per_warp * 4 -- we are assuming 32 threads per warp, this might change in the future
-  
   ADM_CSF_SCALE_LINE(8, 128);      // adm_csf_den_scale_line_kernel_8_128
   ADM_CSF_DEN_S123_LINE(8, 128);   // adm_csf_den_s123_line_kernel_8_128
 }

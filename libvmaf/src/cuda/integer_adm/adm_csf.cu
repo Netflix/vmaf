@@ -17,10 +17,14 @@
  *
  */
 
-#include "cuda_helper.cuh"
-#include "integer_adm_kernels.h"
+#include "feature_collector.h"
+#include "integer_adm_cuda.h"
+
+#include "common.h"
 
 #include <assert.h>
+
+#include "cuda_helper.cuh"
 
 template <int cols_per_thread>
 static __device__ __forceinline__ void copy_vec_4(const int32_t * __restrict__ in, int32_t * __restrict__ out)

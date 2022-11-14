@@ -67,6 +67,24 @@ typedef struct VifBufferCuda {
     ptrdiff_t stride_tmp;
 } VifBufferCuda;
 
+typedef struct filter_table_stuct {
+  uint16_t filter[4][18];
+} filter_table_stuct;
+
+typedef struct filter_width_struct {
+  int w[4];
+} filter_width_struct;
+
+typedef struct vif_accums {
+  int64_t x;
+  int64_t x2;
+  int64_t num_x;
+  int64_t num_log;
+  int64_t den_log;
+  int64_t num_non_log;
+  int64_t den_non_log;
+} vif_accums;
+
 extern unsigned char src_filter1d_ptx[];
 
 #endif /* _FEATURE_VIF_CUDA_H_ */

@@ -31,7 +31,6 @@
 #include "cpu.h"
 #include "integer_adm_cuda.h"
 #include "picture_cuda.h"
-#include "integer_adm_kernels.h"
 #include <unistd.h>
 
 #include <assert.h>
@@ -120,8 +119,6 @@ void dwt2_8_device(AdmStateCuda *s, const uint8_t *d_picture, cuda_adm_dwt_band_
         DIV_ROUND_UP((w + 1) / 2, horz_out_tile_cols), DIV_ROUND_UP((h + 1) / 2, horz_out_tile_rows), 1, 
         vert_out_tile_cols, vert_out_tile_rows / rows_per_thread, 1, 
         0, c_stream, args, NULL));
-
-    CudaCheckError();
 }
 
 void adm_dwt2_16_device(AdmStateCuda *s, const uint16_t *d_picture, cuda_adm_dwt_band_t *d_dst, cuda_i4_adm_dwt_band_t i4_dwt_dst,
@@ -142,8 +139,6 @@ void adm_dwt2_16_device(AdmStateCuda *s, const uint16_t *d_picture, cuda_adm_dwt
         DIV_ROUND_UP((w + 1) / 2, horz_out_tile_cols), DIV_ROUND_UP((h + 1) / 2, horz_out_tile_rows), 1, 
         vert_out_tile_cols, vert_out_tile_rows / rows_per_thread, 1, 
         0, c_stream, args, NULL));
-
-    CudaCheckError();
 }
 
 void adm_dwt2_s123_combined_device(AdmStateCuda *s,const int32_t *d_i4_scale, int32_t *tmp_buf, cuda_i4_adm_dwt_band_t i4_dwt,
@@ -169,8 +164,6 @@ void adm_dwt2_s123_combined_device(AdmStateCuda *s,const int32_t *d_i4_scale, in
             0, cu_stream, args_vert, NULL));
         break;
     }
-    CudaCheckError();
-
 
     void * args_hori[] = {&i4_dwt, &tmp_buf, &w, &h, &dst_stride, &*p};
     switch (scale) {
@@ -193,7 +186,6 @@ void adm_dwt2_s123_combined_device(AdmStateCuda *s,const int32_t *d_i4_scale, in
                 0, cu_stream, args_hori, NULL));
         break;
     }
-    CudaCheckError();
 }
 
 
@@ -247,9 +239,6 @@ void adm_csf_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int strid
         DIV_ROUND_UP(right - left, BLOCKX * cols_per_thread), DIV_ROUND_UP(bottom - top, BLOCKY * rows_per_thread), 3, 
         BLOCKX, BLOCKY, 1, 
         0, c_stream, args, NULL));
-
-
-  CudaCheckError();
 }
 
 
@@ -305,8 +294,6 @@ void i4_adm_csf_device(AdmStateCuda *s, AdmBufferCuda *buf, int scale, int w, in
     DIV_ROUND_UP(right - left, BLOCKX * cols_per_thread), DIV_ROUND_UP(bottom - top, BLOCKY * rows_per_thread), 3, 
     BLOCKX, BLOCKY, 1, 
     0, c_stream, args, NULL));
-
-    CudaCheckError();
 }
 
 
@@ -339,7 +326,6 @@ void adm_decouple_s123_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h,
         DIV_ROUND_UP(right - left, BLOCKX), DIV_ROUND_UP(bottom - top, BLOCKY), 1, 
         BLOCKX, BLOCKY, 1, 
         0, c_stream, args, NULL));
-    CudaCheckError();
 }
 
 void adm_decouple_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int stride, AdmFixedParametersCuda* p,
@@ -370,7 +356,6 @@ void adm_decouple_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int 
         DIV_ROUND_UP(right - left, BLOCKX), DIV_ROUND_UP(bottom - top, BLOCKY), 1, 
         BLOCKX, BLOCKY, 1, 
         0, c_stream, args, NULL));
-    CudaCheckError();
 }
 
 
@@ -391,10 +376,8 @@ void adm_csf_den_s123_device(AdmStateCuda *s, AdmBufferCuda *buf, int scale, int
 
   const int val_per_thread = 8;
   const int warps_per_cta = 4;
-  const int THREADS_PER_WARP = 32, BLOCKX = THREADS_PER_WARP * warps_per_cta;
-//   dim3 reduce_block(threads_per_warp * warps_per_cta);
-//   dim3 reduce_grid(DIV_ROUND_UP(buffer_stride, reduce_block.x * val_per_thread),
-//                    buffer_h, 3);
+  const int BLOCKX = threads_per_warp * warps_per_cta;
+
   const uint32_t shift_sq[3] = {31, 30, 31};
   const uint32_t add_shift_sq[3] = {1u << shift_sq[0], 1u << shift_sq[1],
                                     1u << shift_sq[2]};
@@ -407,7 +390,6 @@ void adm_csf_den_s123_device(AdmStateCuda *s, AdmBufferCuda *buf, int scale, int
         DIV_ROUND_UP(buffer_stride, BLOCKX * val_per_thread), buffer_h, 3, 
         BLOCKX, 1, 1, 
         0, c_stream, args, NULL));
-    CudaCheckError();
 }
 
 void adm_csf_den_scale_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int src_stride,
@@ -428,7 +410,7 @@ void adm_csf_den_scale_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h,
   const int val_per_thread = 8;
   const int warps_per_cta = 4;
   
-  const int THREADS_PER_WARP = 32, BLOCKX = THREADS_PER_WARP * warps_per_cta;
+  const int BLOCKX = threads_per_warp * warps_per_cta;
 
     void* args[] = {
           &buf->ref_dwt2, &h, &top, &bottom, &left, &right, &src_stride,
@@ -437,7 +419,6 @@ void adm_csf_den_scale_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h,
         DIV_ROUND_UP(buffer_stride, BLOCKX * val_per_thread), buffer_h, 3, 
         BLOCKX, 1, 1, 
         0, c_stream, args, NULL));
-    CudaCheckError();
 }
 
 void i4_adm_cm_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int src_stride,
@@ -470,12 +451,11 @@ void i4_adm_cm_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int src
         buffer_h, DIV_ROUND_UP(buffer_stride, BLOCKX), 3, 
         BLOCKX, 1, 1, 
         0, c_stream, args, NULL));
-    CudaCheckError();
   }
   {
     const int val_per_thread = 4;
     const int warps_per_cta = 4;
-    const int THREADS_PER_WARP = 32, BLOCKX = THREADS_PER_WARP * warps_per_cta;
+    const int BLOCKX = threads_per_warp * warps_per_cta;
 
     void* args[] = {
         &h, &w, &scale, &buffer_h, &buffer_stride,
@@ -484,7 +464,6 @@ void i4_adm_cm_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int src
         DIV_ROUND_UP(buffer_stride, BLOCKX * val_per_thread), buffer_h, 3, 
         BLOCKX, 1, 1, 
         0, c_stream, args, NULL));
-    CudaCheckError();
   }
 }
 
@@ -551,7 +530,6 @@ void adm_cm_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int src_st
         DIV_ROUND_UP(buffer_stride, BLOCKX), DIV_ROUND_UP(buffer_h, BLOCKY * rows_per_thread), 3, 
         BLOCKX, BLOCKY, 1, 
         0, c_stream, args, NULL));
-    CudaCheckError();
   }
 }
 static void conclude_adm_cm(int64_t *accum, int h,

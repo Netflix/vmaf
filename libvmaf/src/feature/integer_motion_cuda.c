@@ -134,7 +134,6 @@ void calculate_motion_score(const VmafPicture* src, CudaVmafBuffer* src_blurred,
                               grid_dim_y, 1, block_dim_x, block_dim_y, 1, 0,
                               stream, kernelParams, NULL));
   }
-  CudaCheckError();
 }
 
 static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,

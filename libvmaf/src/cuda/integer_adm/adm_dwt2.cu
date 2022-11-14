@@ -17,10 +17,14 @@
  *
  */
  
-#include "cuda_helper.cuh"
-#include "integer_adm_kernels.h"
+#include "feature_collector.h"
+#include "integer_adm_cuda.h"
+
+#include "common.h"
 
 #include <vector>
+
+#include "cuda_helper.cuh"
 
 
 

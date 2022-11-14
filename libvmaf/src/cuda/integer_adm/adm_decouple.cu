@@ -16,9 +16,13 @@
  *     limitations under the License.
  *
  */
- 
+
+#include "feature_collector.h"
+#include "integer_adm_cuda.h"
+
+#include "common.h"
+
 #include "cuda_helper.cuh"
-#include "integer_adm_kernels.h"
 
 __device__ __forceinline__ uint16_t get_best15_from32(uint32_t temp, int *x) {
   int k = __clz(temp); // built in for cuda
