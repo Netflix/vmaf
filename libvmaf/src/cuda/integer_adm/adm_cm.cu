@@ -16,8 +16,9 @@
  *     limitations under the License.
  *
  */
-
-#include "integer_adm_kernels.h"
+#include "feature_collector.h"
+#include "integer_adm_cuda.h"
+#include "common.h"
 #include "cuda_helper.cuh"
 
 #include <algorithm>

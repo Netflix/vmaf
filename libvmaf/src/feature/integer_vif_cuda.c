@@ -31,7 +31,6 @@
 
 #include "picture.h"
 #include "integer_vif_cuda.h"
-#include "integer_vif_kernels.h"
 #include "picture_cuda.h"
 
 #if ARCH_X86
@@ -224,7 +223,7 @@ void filter1d_8(VifStateCuda *s, VifBufferCuda *buf, uint8_t* ref_in, uint8_t* d
     //   filter1d_8_vertical_kernel_uint32_t_17_9<<<grid, block, 0, stream>>>(
     //      *buf, ref_in, dis_in, w, h, *(filter_table_stuct *)vif_filter1d_table);
 
-    const int cache_line_size = 128, size_of_alignment_type = sizeof(uint32_t),
+    const int size_of_alignment_type = sizeof(uint32_t),
         BLOCKX = 128 / size_of_alignment_type, 
         BLOCKY = 128 / (cache_line_size / size_of_alignment_type), 
         val_per_thread = 2;
@@ -236,7 +235,6 @@ void filter1d_8(VifStateCuda *s, VifBufferCuda *buf, uint8_t* ref_in, uint8_t* d
         DIV_ROUND_UP(w, BLOCKX * size_of_alignment_type), DIV_ROUND_UP(h, BLOCKY), 1, 
         BLOCKX, BLOCKY, 1, 
         0, stream, args_vert, NULL));
-     CudaCheckError();
    }
    {
     const int BLOCKX = 128, BLOCKY = 1, val_per_thread = 2;
@@ -256,7 +254,6 @@ void filter1d_8(VifStateCuda *s, VifBufferCuda *buf, uint8_t* ref_in, uint8_t* d
         DIV_ROUND_UP(w, BLOCKX * val_per_thread), DIV_ROUND_UP(h, BLOCKY), 1, 
         BLOCKX, BLOCKY, 1, 
         0, stream, args_hori, NULL));
-     CudaCheckError();
    }
  }
  
@@ -284,16 +281,11 @@ void filter1d_8(VifStateCuda *s, VifBufferCuda *buf, uint8_t* ref_in, uint8_t* d
  
    const int fwidth[4] = {17, 9, 5, 3};
  
-//    using alignment_type = uint2;
-//    dim3 block(128);
-//    constexpr int val_per_thread = sizeof(alignment_type) / sizeof(uint16_t);
-//    constexpr int val_per_thread_horizontal = 2;
-//    dim3 block_vertical(cache_line_size / val_per_thread,
-//                        128 / (cache_line_size / val_per_thread));
-//    dim3 grid_vertical(DIV_ROUND_UP(w, block.x), h);
-//    dim3 grid_horizontal(DIV_ROUND_UP(w, block.x), h);
+    struct uint2 {
+        unsigned x ,y;
+    } uint2;
 
-    const int size_of_alginment = sizeof(uint2), cache_line_size = 128,
+    const int size_of_alginment = sizeof(uint2),
         val_per_thread = size_of_alginment / sizeof(uint16_t),
         val_per_thread_horizontal = 2,
         BLOCKX = 128,
@@ -322,14 +314,10 @@ void filter1d_8(VifStateCuda *s, VifBufferCuda *buf, uint8_t* ref_in, uint8_t* d
                 BLOCK_VERT_X, BLOCK_VERT_Y, 1, 
                 0, stream, args_vert, NULL));
 
-            CudaCheckError();
-
-
             CHECK_CUDA(cuLaunchKernel(s->func_filter1d_16_horizontal_kernel_2_17_9_0, 
                 GRID_HORI_X, GRID_HORI_Y, 1, 
                 BLOCKX, 1, 1, 
                 0, stream, args_hori, NULL));
-            CudaCheckError();
             break;
         }
         case 1: {
@@ -338,14 +326,11 @@ void filter1d_8(VifStateCuda *s, VifBufferCuda *buf, uint8_t* ref_in, uint8_t* d
                 BLOCK_VERT_X, BLOCK_VERT_Y, 1, 
                 0, stream, args_vert, NULL));
 
-            CudaCheckError();
-
             CHECK_CUDA(cuLaunchKernel(s->func_filter1d_16_horizontal_kernel_2_9_5_1, 
                 GRID_HORI_X, GRID_HORI_Y, 1, 
                 BLOCKX, 1, 1, 
                 0, stream, args_hori, NULL));
-                CudaCheckError();
-                break;
+            break;
         }
         case 2: {
             CHECK_CUDA(cuLaunchKernel(s->func_filter1d_16_vertical_kernel_uint2_5_3_2, 
@@ -353,28 +338,22 @@ void filter1d_8(VifStateCuda *s, VifBufferCuda *buf, uint8_t* ref_in, uint8_t* d
                 BLOCK_VERT_X, BLOCK_VERT_Y, 1, 
                 0, stream, args_vert, NULL));
 
-            CudaCheckError();
-
-
             CHECK_CUDA(cuLaunchKernel(s->func_filter1d_16_horizontal_kernel_2_5_3_2, 
                 GRID_HORI_X, GRID_HORI_Y, 1, 
                 BLOCKX, 1, 1, 
                 0, stream, args_hori, NULL));
-            CudaCheckError();
-        break;
+            break;
         }
         case 3: {
             CHECK_CUDA(cuLaunchKernel(s->func_filter1d_16_vertical_kernel_uint2_3_0_3, 
                 GRID_VERT_X, GRID_VERT_Y, 1, 
                 BLOCK_VERT_X, BLOCK_VERT_Y, 1, 
                 0, stream, args_vert, NULL));
-            CudaCheckError();
 
             CHECK_CUDA(cuLaunchKernel(s->func_filter1d_16_horizontal_kernel_2_3_0_3, 
                 GRID_HORI_X, GRID_HORI_Y, 1, 
                 BLOCKX, 1, 1, 
                 0, stream, args_hori, NULL));
-            CudaCheckError();
             break;
         }
    }

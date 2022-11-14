@@ -21,31 +21,11 @@
 
 #include "stdio.h"
 #include <cuda.h>
-#include <cuda_runtime.h>
+#include <vector_types.h>
 
 #define DIV_ROUND_UP(x, y) (((x) + (y)-1) / (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
-
-#ifdef DEBUG
-#define CudaCheckError()                                                       \
-  do {                                                                         \
-    cudaError err_ = cudaGetLastError();                                       \
-    if (err_ != cudaSuccess) {                                                 \
-      printf("code: %d ; description: %s\n", err_, cudaGetErrorString(err_));  \
-      exit(err_);                                                              \
-    }                                                                          \
-                                                                               \
-    err_ = cudaDeviceSynchronize();                                            \
-    if (cudaSuccess != err_) {                                                 \
-                                                                               \
-      printf("code: %d; description: %s\n", err_, cudaGetErrorString(err_));   \
-      exit(err_);                                                              \
-    }                                                                          \
-  } while (0)
-#else
-#define CudaCheckError()
-#endif
 
 #define CHECK_CUDA(CALL)                                                       \
   do {                                                                         \
@@ -61,9 +41,6 @@
 #ifdef __CUDACC__
 #include <cstdint>
 namespace {
-
-const int threads_per_warp = 32;
-const int cache_line_size = 128;
 
 __forceinline__ __device__ int64_t warp_reduce(int64_t x) {
 #pragma unroll

@@ -18,7 +18,9 @@
  */
 
 #include "cuda_helper.cuh"
-#include "integer_vif_kernels.h"
+#include "integer_vif_cuda.h"
+
+#include "common.h"
 
 __device__ __forceinline__ uint16_t get_best16_from32(uint32_t temp, int *x) {
   int k = __clz(temp);
