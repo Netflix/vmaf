@@ -214,14 +214,6 @@ free_ref:
 void filter1d_8(VifStateCuda *s, VifBufferCuda *buf, uint8_t* ref_in, uint8_t* dis_in, int w, int h, double vif_enhn_gain_limit,
                  CUstream stream) {
    {
-    //  using alignment_type = uint32_t;
-    //  dim3 block(cache_line_size / sizeof(alignment_type),
-    //             128 / (cache_line_size / sizeof(alignment_type)));
-    //  dim3 grid(DIV_ROUND_UP(w, block.x * sizeof(alignment_type)),
-    //            DIV_ROUND_UP(h, block.y));
- 
-    //   filter1d_8_vertical_kernel_uint32_t_17_9<<<grid, block, 0, stream>>>(
-    //      *buf, ref_in, dis_in, w, h, *(filter_table_stuct *)vif_filter1d_table);
 
     const int size_of_alignment_type = sizeof(uint32_t),
         BLOCKX = 128 / size_of_alignment_type, 
@@ -238,13 +230,7 @@ void filter1d_8(VifStateCuda *s, VifBufferCuda *buf, uint8_t* ref_in, uint8_t* d
    }
    {
     const int BLOCKX = 128, BLOCKY = 1, val_per_thread = 2;
-    //  dim3 block(128);
-    //  dim3 grid(DIV_ROUND_UP(w, block.x * val_per_thread),
-    //            DIV_ROUND_UP(h, block.y));
- 
-    // filter1d_8_horizontal_kernel_2_17_9<<<grid, block, 0, stream>>>(
-    //      *buf, w, h, *(filter_table_stuct *)vif_filter1d_table,
-    //      vif_enhn_gain_limit, &((vif_accums *)buf->accum)[0]);
+
     void* args_hori[] = {
         &*buf, &w, &h, &vif_filter1d_table,
         &vif_enhn_gain_limit, &buf->accum

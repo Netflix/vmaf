@@ -229,10 +229,7 @@ void adm_csf_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int strid
   const int cols_per_thread = 4;
   const int rows_per_thread = 1;
   const int BLOCKX = 32, BLOCKY = 4;
-//   dim3 block(32, 4);
-//   dim3 grid(DIV_ROUND_UP(right - left, block.x * cols_per_thread),
-//             DIV_ROUND_UP(bottom - top, block.y * rows_per_thread),
-//             3);
+
 
     void* args[] = {&*buf, &top, &bottom, &left, &right, &stride, &*p};
     CHECK_CUDA(cuLaunchKernel(s->func_adm_csf_kernel_1_4, 
@@ -281,13 +278,6 @@ void i4_adm_csf_device(AdmStateCuda *s, AdmBufferCuda *buf, int scale, int w, in
     const int cols_per_thread = 4;
     const int rows_per_thread = 1;
     const int BLOCKX = 32, BLOCKY = 4;
-    //   dim3 block(32, 4);
-    //   dim3 grid(DIV_ROUND_UP(right - left, block.x * cols_per_thread),
-    //             DIV_ROUND_UP(bottom - top, block.y * rows_per_thread),
-    //             3);
-    //   i4_adm_csf_kernel_1_4<<<grid, block, 0, c_stream>>>(*buf, scale, top, bottom, left, right, stride, *p);
-
-
 
     void* args[] = {&*buf, &scale, &top, &bottom, &left, &right, &stride, &*p};
     CHECK_CUDA(cuLaunchKernel(s->func_i4_adm_csf_kernel_1_4, 
