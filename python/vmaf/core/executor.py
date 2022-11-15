@@ -313,8 +313,9 @@ class Executor(TypeVersionEnabled):
 
         if self.result_store:
             result = self.result_store.load(asset, self.executor_id)
+            qw, qh = asset.quality_width_height
             if result is not None and self.save_workfiles is True \
-                    and not self.result_store.has_workfile(asset, self.executor_id, '_dis'):
+                    and not self.result_store.has_workfile(asset, self.executor_id, f'_dis.{qw}x{qh}.{self._get_workfile_yuv_type(asset)}.yuv'):
                 result = None  # if save_workfiles is True and has_workfile is False, invalidate result and rerun
         else:
             result = None
@@ -480,8 +481,9 @@ class Executor(TypeVersionEnabled):
     def _save_result(self, result):
         self.result_store.save(result)
         if self.save_workfiles:
-            self.result_store.save_workfile(result, result.asset.ref_workfile_path, '_ref')
-            self.result_store.save_workfile(result, result.asset.dis_workfile_path, '_dis')
+            qw, qh = result.asset.quality_width_height
+            self.result_store.save_workfile(result, result.asset.ref_workfile_path, f'_ref.{qw}x{qh}.{self._get_workfile_yuv_type(result.asset)}.yuv')
+            self.result_store.save_workfile(result, result.asset.dis_workfile_path, f'_dis.{qw}x{qh}.{self._get_workfile_yuv_type(result.asset)}.yuv')
         return result
 
     @classmethod
@@ -755,8 +757,9 @@ class Executor(TypeVersionEnabled):
     def _remove_result(self, asset):
         if self.result_store:
             self.result_store.delete(asset, self.executor_id)
-            self.result_store.delete_workfile(asset, self.executor_id, '_ref')
-            self.result_store.delete_workfile(asset, self.executor_id, '_dis')
+            qw, qh = asset.quality_width_height
+            self.result_store.delete_workfile(asset, self.executor_id, f'_ref.{qw}x{qh}.{self._get_workfile_yuv_type(asset)}.yuv')
+            self.result_store.delete_workfile(asset, self.executor_id, f'_dis.{qw}x{qh}.{self._get_workfile_yuv_type(asset)}.yuv')
 
 @deprecated
 def run_executors_in_parallel(executor_class,
@@ -946,5 +949,6 @@ class NorefExecutorMixin(object):
     def _save_result(self, result):
         self.result_store.save(result)
         if self.save_workfiles:
-            self.result_store.save_workfile(result, result.asset.dis_workfile_path, '_dis')
+            qw, qh = result.asset.quality_width_height
+            self.result_store.save_workfile(result, result.asset.dis_workfile_path, f'_dis.{qw}x{qh}.{self._get_workfile_yuv_type(result.asset)}.yuv')
         return result
