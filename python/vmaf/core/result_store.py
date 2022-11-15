@@ -6,6 +6,7 @@ import shutil
 import pandas as pd
 
 from vmaf.config import VmafConfig
+from vmaf.core.asset import Asset
 from vmaf.core.result import Result
 from vmaf.tools.misc import make_parent_dirs_if_nonexist
 
@@ -65,6 +66,10 @@ class FileSystemResultStore(ResultStore):
             return None
         result = self.load_result(result_file_path)
         return result
+
+    def has_workfile(self, asset: Asset, executor_id: str, suffix: str) -> bool:
+        result_file_path = self._get_result_file_path2(asset, executor_id)
+        return os.path.isfile(result_file_path + suffix)
 
     @staticmethod
     def save_result(result, result_file_path):
