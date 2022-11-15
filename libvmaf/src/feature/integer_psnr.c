@@ -173,7 +173,7 @@ static int psnr_hbd(VmafPicture *ref_pic, VmafPicture *dist_pic,
         for (unsigned i = 0; i < ref_pic->h[p]; i++) {
             for (unsigned j = 0; j < ref_pic->w[p]; j++) {
                 const int32_t e = ref[j] - dis[j];
-                sse += e * e;
+                sse += (uint32_t)(e * e);
             }
             ref += ref_pic->stride[p] / 2;
             dis += dist_pic->stride[p] / 2;
