@@ -313,6 +313,9 @@ class Executor(TypeVersionEnabled):
 
         if self.result_store:
             result = self.result_store.load(asset, self.executor_id)
+            if result is not None and self.save_workfiles is True \
+                    and not self.result_store.has_workfile(asset, self.executor_id, '_dis'):
+                result = None  # if save_workfiles is True and has_workfile is False, invalidate result and rerun
         else:
             result = None
 

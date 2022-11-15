@@ -263,6 +263,38 @@ class FeatureExtractorSaveWorkfilesTest(MyTestCase):
         self.assertAlmostEqual(results[1]['Moment_noref_feature_2nd_score'], 4696.668388042271)
         self.assertAlmostEqual(results[1]['Moment_noref_feature_var_score'], 1121.519917231207)
 
+        self.fextractor.run()
+
+    def test_noref_moment_fextractor_save_workfiles_second_time(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.fextractor = MomentNorefFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=self.result_store,
+            save_workfiles=False,
+        )
+        self.fextractor.run()
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_1st_score'], 61.332006624999984)
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_2nd_score'], 4798.659574041666)
+        self.assertAlmostEqual(results[0]['Moment_noref_feature_var_score'], 1036.8371843488285)
+
+        self.assertAlmostEqual(results[1]['Moment_noref_feature_1st_score'], 59.788567297525134)
+        self.assertAlmostEqual(results[1]['Moment_noref_feature_2nd_score'], 4696.668388042271)
+        self.assertAlmostEqual(results[1]['Moment_noref_feature_var_score'], 1121.519917231207)
+
+        self.fextractor = MomentNorefFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=self.result_store,
+            save_workfiles=True,
+        )
+        self.fextractor.run()
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
