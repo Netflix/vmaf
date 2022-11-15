@@ -554,6 +554,15 @@ int vmaf_write_output(VmafContext *vmaf, const char *output_path,
     const double fps = vmaf->pic_cnt /
                 ((double) (vmaf->feature_collector->timer.end -
                 vmaf->feature_collector->timer.begin) / CLOCKS_PER_SEC);
+    printf("FPS: %lf\n", fps);
+    printf("Clock start: %lu\n", vmaf->feature_collector->timer.begin);
+    printf("Clock end: %lu\n", vmaf->feature_collector->timer.end);
+    printf("Clock diff: %lf\n", (double)(vmaf->feature_collector->timer.end -
+                vmaf->feature_collector->timer.begin));
+    printf("Second diff: %lf\n", (double)(vmaf->feature_collector->timer.end -
+                vmaf->feature_collector->timer.begin) / CLOCKS_PER_SEC);
+    printf("Clocks/sec: %lu\n", CLOCKS_PER_SEC);
+
 
     int ret = 0;
     switch (fmt) {
