@@ -517,7 +517,10 @@ class Executor(TypeVersionEnabled):
         workfile_path = asset.ref_workfile_path
         quality_width_height = self._get_quality_width_height(asset)
         yuv_type = asset.ref_yuv_type
-        decoder_type = None
+        try:
+            decoder_type = asset.ref_decoder_type
+        except AttributeError:
+            decoder_type = None
         resampling_type = self._get_ref_resampling_type(asset)
         width_height = asset.ref_width_height
         ref_or_dis = 'ref'
@@ -537,7 +540,10 @@ class Executor(TypeVersionEnabled):
         workfile_path = asset.dis_workfile_path
         quality_width_height = self._get_quality_width_height(asset)
         yuv_type = asset.dis_yuv_type
-        decoder_type = None
+        try:
+            decoder_type = asset.dis_decoder_type
+        except AttributeError:
+            decoder_type = None
         resampling_type = self._get_dis_resampling_type(asset)
         width_height = asset.dis_width_height
         ref_or_dis = 'dis'
