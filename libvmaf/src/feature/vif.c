@@ -59,9 +59,6 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
     float *ref_dis_filt;
     float *tmpbuf;
 
-    float *num_array;
-    float *den_array;
-
     const float *filter;
     int filter_width;
 
@@ -76,8 +73,6 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
     float *ref_sq_filt_adj;
     float *dis_sq_filt_adj;
     float *ref_dis_filt_adj = 0;
-    float *num_array_adj = 0;
-    float *den_array_adj = 0;
 #endif
 
     /* Special handling of first scale. */
@@ -112,8 +107,8 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
     }
 
 	// Code optimized to save on multiple buffer copies
-	// hence the reduction in the number of buffers required from 15 to 10 
-#define VIF_BUF_CNT 10	
+	// hence the reduction in the number of buffers required from 15 to 8
+#define VIF_BUF_CNT 8
 	if (SIZE_MAX / buf_sz_one < VIF_BUF_CNT)
 	{
 		printf("error: SIZE_MAX / buf_sz_one < VIF_BUF_CNT, buf_sz_one = %zu.\n", buf_sz_one);
@@ -137,8 +132,6 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
 	ref_sq_filt = (float *)data_top; data_top += buf_sz_one;
 	dis_sq_filt = (float *)data_top; data_top += buf_sz_one;
 	ref_dis_filt = (float *)data_top; data_top += buf_sz_one;
-	num_array    = (float *)data_top; data_top += buf_sz_one;
-    den_array    = (float *)data_top; data_top += buf_sz_one;
 	tmpbuf = (float *)data_top; data_top += buf_sz_one;
 
     for (scale = 0; scale < 4; ++scale)
@@ -235,7 +228,8 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
         vif_filter1d_sq_s(filter, curr_dis_scale, dis_sq_filt, tmpbuf, w, h, curr_dis_stride, buf_stride, filter_width);
         vif_filter1d_xy_s(filter, curr_ref_scale, curr_dis_scale, ref_dis_filt, tmpbuf, w, h, curr_ref_stride, curr_dis_stride, buf_stride, filter_width);
 
-		vif_statistic_s(mu1, mu2, ref_sq_filt, dis_sq_filt, ref_dis_filt, num_array, den_array,
+        float num, den;
+		vif_statistic_s(mu1, mu2, ref_sq_filt, dis_sq_filt, ref_dis_filt, &num, &den,
 			w, h, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, vif_enhn_gain_limit);
         mu1_adj = ADJUST(mu1);
         mu2_adj = ADJUST(mu2);
@@ -269,16 +263,7 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
 
         sprintf(pathbuf, "stage/ref_dis_filt[%d].bin", scale);
         write_image(pathbuf, ref_dis_filt_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(float));
-
-        sprintf(pathbuf, "stage/num_array[%d].bin", scale);
-        write_image(pathbuf, num_array_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(float));
-
-        sprintf(pathbuf, "stage/den_array[%d].bin", scale);
-        write_image(pathbuf, den_array_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(float));
 #endif
-
-		num = *num_array;
-		den = *den_array;
 
         scores[2*scale] = num;
         scores[2*scale+1] = den;

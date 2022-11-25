@@ -384,8 +384,8 @@ void vif_statistic_s(const float *mu1, const float *mu2, const float *xx_filt, c
 		accum_num += accum_inner_num;
 		accum_den += accum_inner_den;
 	}
-	num[0] = accum_num;
-	den[0] = accum_den;
+	*num = accum_num;
+	*den = accum_den;
 }
 
 void vif_filter1d_s(const float *f, const float *src, float *dst, float *tmpbuf, int w, int h, int src_stride, int dst_stride, int fwidth)
