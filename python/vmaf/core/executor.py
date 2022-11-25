@@ -517,6 +517,7 @@ class Executor(TypeVersionEnabled):
         workfile_path = asset.ref_workfile_path
         quality_width_height = self._get_quality_width_height(asset)
         yuv_type = asset.ref_yuv_type
+        decoder_type = None
         resampling_type = self._get_ref_resampling_type(asset)
         width_height = asset.ref_width_height
         ref_or_dis = 'ref'
@@ -526,7 +527,7 @@ class Executor(TypeVersionEnabled):
         _open_workfile_method = self.optional_dict2['_open_workfile_method'] \
             if self.optional_dict2 is not None and '_open_workfile_method' in self.optional_dict2 and self.optional_dict2['_open_workfile_method'] is not None \
             else self._open_workfile
-        _open_workfile_method(self, asset, path, workfile_path, yuv_type, workfile_yuv_type, resampling_type, width_height,
+        _open_workfile_method(self, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type, resampling_type, width_height,
                               quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, logger)
 
     def _open_dis_workfile(self, asset, fifo_mode):
@@ -536,6 +537,7 @@ class Executor(TypeVersionEnabled):
         workfile_path = asset.dis_workfile_path
         quality_width_height = self._get_quality_width_height(asset)
         yuv_type = asset.dis_yuv_type
+        decoder_type = None
         resampling_type = self._get_dis_resampling_type(asset)
         width_height = asset.dis_width_height
         ref_or_dis = 'dis'
@@ -545,12 +547,14 @@ class Executor(TypeVersionEnabled):
         _open_workfile_method = self.optional_dict2['_open_workfile_method'] \
             if self.optional_dict2 is not None and '_open_workfile_method' in self.optional_dict2 and self.optional_dict2['_open_workfile_method'] is not None \
             else self._open_workfile
-        _open_workfile_method(self, asset, path, workfile_path, yuv_type, workfile_yuv_type, resampling_type, width_height,
+        _open_workfile_method(self, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type, resampling_type, width_height,
                               quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, logger)
 
     @staticmethod
-    def _open_workfile(cls, asset, path, workfile_path, yuv_type, workfile_yuv_type, resampling_type, width_height,
+    def _open_workfile(cls, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type, resampling_type, width_height,
                        quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, logger):
+        # decoder type must be None here
+        assert decoder_type is None
         # only need to open workfile if the path is different from path
         assert use_path_as_workpath is False and path != workfile_path
         # if fifo mode, mkfifo
