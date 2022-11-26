@@ -570,9 +570,9 @@ class Executor(TypeVersionEnabled):
             # in this case, for sure has width_height
             assert width_height is not None
             width, height = width_height
-            src_fmt_cmd = cls._get_yuv_src_fmt_cmd(asset, height, width, ref_or_dis)
+            src_fmt_cmd = cls._get_yuv_src_fmt_cmd(yuv_type, height, width)
         else:
-            src_fmt_cmd = cls._get_notyuv_src_fmt_cmd(asset, ref_or_dis)
+            src_fmt_cmd = cls._get_notyuv_src_fmt_cmd(path)
         vframes_cmd, select_cmd = cls._get_vframes_cmd(asset, ref_or_dis)
         crop_cmd = cls._get_filter_cmd(asset, 'crop', ref_or_dis)
         pad_cmd = cls._get_filter_cmd(asset, 'pad', ref_or_dis)
@@ -662,26 +662,13 @@ class Executor(TypeVersionEnabled):
         return asset.quality_width_height
 
     @staticmethod
-    def _get_yuv_src_fmt_cmd(asset, height, width, ref_or_dis):
-        if ref_or_dis == 'ref':
-            yuv_type = asset.ref_yuv_type
-        elif ref_or_dis == 'dis':
-            yuv_type = asset.dis_yuv_type
-        else:
-            raise AssertionError('Unknown ref_or_dis: {}'.format(ref_or_dis))
+    def _get_yuv_src_fmt_cmd(yuv_type, height, width):
         yuv_src_fmt_cmd = '-f rawvideo -pix_fmt {yuv_fmt} -s {width}x{height}'. \
             format(yuv_fmt=yuv_type, width=width, height=height)
         return yuv_src_fmt_cmd
 
     @staticmethod
-    def _get_notyuv_src_fmt_cmd(asset, target):
-        if target == 'ref':
-            path = asset.ref_path
-        elif target == 'dis':
-            path = asset.dis_path
-        else:
-            assert False, 'target cannot be {}'.format(target)
-
+    def _get_notyuv_src_fmt_cmd(path):
         if get_file_name_extension(path) in ['j2c', 'j2k', 'tiff']:
             # 2147483647 is INT_MAX if int is 4 bytes
             return "-f image2 -start_number_range 2147483647"
