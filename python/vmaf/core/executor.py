@@ -3,6 +3,7 @@ import multiprocessing
 import os
 from time import sleep
 import hashlib
+from typing import Optional
 
 import numpy as np
 
@@ -560,12 +561,21 @@ class Executor(TypeVersionEnabled):
     def _open_workfile(cls, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type, resampling_type, width_height,
                        quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, logger):
         # decoder type must be None here
-        assert decoder_type is None
+        assert decoder_type is None, f'decoder_type must be None but is: {decoder_type}'
+
         # only need to open workfile if the path is different from path
         assert use_path_as_workpath is False and path != workfile_path
         # if fifo mode, mkfifo
         if fifo_mode:
             os.mkfifo(workfile_path)
+
+        if ref_or_dis == 'ref':
+            start_end_frame = asset.ref_start_end_frame
+        elif ref_or_dis == 'dis':
+            start_end_frame = asset.dis_start_end_frame
+        else:
+            assert False
+
         if yuv_type != 'notyuv':
             # in this case, for sure has width_height
             assert width_height is not None
@@ -573,7 +583,9 @@ class Executor(TypeVersionEnabled):
             src_fmt_cmd = cls._get_yuv_src_fmt_cmd(yuv_type, height, width)
         else:
             src_fmt_cmd = cls._get_notyuv_src_fmt_cmd(path)
-        vframes_cmd, select_cmd = cls._get_vframes_cmd(asset, ref_or_dis)
+
+        vframes_cmd, select_cmd = cls._get_vframes_cmd(start_end_frame)
+
         crop_cmd = cls._get_filter_cmd(asset, 'crop', ref_or_dis)
         pad_cmd = cls._get_filter_cmd(asset, 'pad', ref_or_dis)
         quality_width, quality_height = quality_width_height
@@ -685,14 +697,7 @@ class Executor(TypeVersionEnabled):
             if asset.get_filter_cmd(key, target) is not None else ""
 
     @staticmethod
-    def _get_vframes_cmd(asset, ref_or_dis):
-        if ref_or_dis == 'ref':
-            start_end_frame = asset.ref_start_end_frame
-        elif ref_or_dis == 'dis':
-            start_end_frame = asset.dis_start_end_frame
-        else:
-            raise AssertionError('Unknown ref_or_dis: {}'.format(ref_or_dis))
-
+    def _get_vframes_cmd(start_end_frame: Optional[list]):
         if start_end_frame is None:
             return "", ""
         else:
