@@ -577,24 +577,27 @@ class Executor(TypeVersionEnabled):
         crop_cmd = cls._get_filter_cmd(asset, 'crop', ref_or_dis)
         pad_cmd = cls._get_filter_cmd(asset, 'pad', ref_or_dis)
         quality_width, quality_height = quality_width_height
-        scale_cmd = 'scale={width}x{height}'.format(width=quality_width, height=quality_height)
+        scale_cmd = f'scale={quality_width}x{quality_height}'
         filter_cmds = []
         for key in Asset.ORDERED_FILTER_LIST:
             if key != 'crop' and key != 'pad':
                 filter_cmds.append(cls._get_filter_cmd(asset, key, ref_or_dis))
-        vf_cmd = ','.join(filter(lambda s: s != '', [select_cmd, crop_cmd, pad_cmd, scale_cmd] + filter_cmds))
-        ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
-                     '-pix_fmt {yuv_type} {vframes_cmd} -vf {vf_cmd} -f rawvideo ' \
-                     '-sws_flags {resampling_type} -y -nostdin {dst}'.format(
-            ffmpeg=VmafExternalConfig.get_and_assert_ffmpeg(),
-            src=path,
-            dst=workfile_path,
-            src_fmt_cmd=src_fmt_cmd,
-            vf_cmd=vf_cmd,
-            yuv_type=workfile_yuv_type,
-            resampling_type=resampling_type,
-            vframes_cmd=vframes_cmd,
-        )
+        vf_cmd = [select_cmd, crop_cmd, pad_cmd, scale_cmd] + filter_cmds
+        vf_cmd = ','.join(filter(lambda s: s != '', vf_cmd))
+
+        ffmpeg_cmd = []
+        ffmpeg_cmd += [VmafExternalConfig.get_and_assert_ffmpeg()]
+        ffmpeg_cmd += [src_fmt_cmd]
+        ffmpeg_cmd += ['-i', path]
+        ffmpeg_cmd += ['-an', '-vsync', '0']
+        ffmpeg_cmd += ['-pix_fmt', workfile_yuv_type]
+        ffmpeg_cmd += [vframes_cmd]
+        ffmpeg_cmd += ['-vf', vf_cmd]
+        ffmpeg_cmd += ['-f', 'rawvideo']
+        ffmpeg_cmd += ['-sws_flags', resampling_type]
+        ffmpeg_cmd += ['-y', '-nostdin']
+        ffmpeg_cmd += [workfile_path]
+        ffmpeg_cmd = ' '.join(ffmpeg_cmd)
         if logger:
             logger.info(ffmpeg_cmd)
         run_process(ffmpeg_cmd, shell=True, env=VmafExternalConfig.ffmpeg_env())
