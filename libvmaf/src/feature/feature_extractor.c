@@ -25,6 +25,7 @@
 #include "feature_extractor.h"
 #include "feature_name.h"
 #include "log.h"
+#include "picture.h"
 
 #ifdef HAVE_NVTX
 #include "nvtx3/nvToolsExt.h"
