@@ -495,6 +495,7 @@ static int flush_context(VmafContext *vmaf)
     return err;
 }
 
+#ifdef HAVE_CUDA
 static int check_ring_buffer(VmafContext *vmaf)
 {
     if (!vmaf->cuda.state.ctx) return 0;
@@ -585,6 +586,7 @@ static int translate_picture(VmafContext *vmaf, VmafPicture *pic,
         return -EINVAL;
     }
 }
+#endif
 
 int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
                        unsigned index)
@@ -600,6 +602,7 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     err = validate_pic_params(vmaf, ref, dist);
     if (err) return err;
 
+#ifdef HAVE_CUDA
     err = check_ring_buffer(vmaf);
     if (err) return err;
 
@@ -610,6 +613,7 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     VmafPicture dist_host = { 0 }, dist_device = { 0 };
     err = translate_picture(vmaf, dist, &dist_host, &dist_device, 0);
     if (err) return err;
+#endif
 
     //multithreading for GPU does not yield performance benefits
     //disabled for now
@@ -625,11 +629,12 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
                 continue;
         }
 
+#ifdef HAVE_CUDA
         ref = fex_ctx->fex->flags & VMAF_FEATURE_EXTRACTOR_CUDA ?
             &ref_device : &ref_host;
-
         dist = fex_ctx->fex->flags & VMAF_FEATURE_EXTRACTOR_CUDA ?
             &dist_device : &dist_host;
+#endif
 
         err = vmaf_feature_extractor_context_extract(fex_ctx, ref, NULL, dist,
                                                      NULL, index,
@@ -644,7 +649,6 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
         CHECK_CUDA(cuEventRecord(vmaf_cuda_picture_get_finished_event(&dist_device),
                                 vmaf_cuda_picture_get_stream(&ref_device)));
     }
-#endif
 
     if (ref_host.data[0])
         err |= vmaf_picture_unref(&ref_host);
@@ -654,6 +658,10 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
         err |= vmaf_picture_unref(&ref_device);
     if (dist_device.data[0])
         err |= vmaf_picture_unref(&dist_device);
+#else
+    err |= vmaf_picture_unref(ref);
+    err |= vmaf_picture_unref(dist);
+#endif
 
     return err;
 }
