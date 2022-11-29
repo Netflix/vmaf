@@ -106,8 +106,7 @@ static inline void vif_statistic_avx512(Residuals512 *out, __m512i xx, __m512i x
         mden_val = _mm512_sub_epi64(mden_val, _mm512_set1_epi64(2048 * 17));
         __mmask8 msigma1_mask = _mm512_cmpgt_epi64_mask(_mm512_set1_epi64(sigma_nsq), msigma1);
         __mmask8 msigma2_mask = _mm512_cmpgt_epi64_mask(msigma2, _mm512_setzero_si512());
-        //msigma12 = _mm512_and_si512_(msigma2_mask, msigma12);
-        //maccum_x = _mm512_add_epi64(maccum_x, _mm512_andnot_si512(msigma1_mask, _mm512_add_epi64(mx, _mm512_set1_epi64(17))));
+        __mmask8 msigma12_mask = _mm512_cmpgt_epi64_mask(msigma12, _mm512_setzero_si512());
         __m512d msigma1_d = _mm512_cvtepu64_pd(msigma1);
         __m512d mg = _mm512_div_pd(_mm512_cvtepu64_pd(msigma12), _mm512_add_pd(msigma1_d, _mm512_set1_pd(eps)));
         __m512i msv_sq = _mm512_cvttpd_epi64(_mm512_sub_pd(_mm512_cvtepi64_pd(msigma2), _mm512_mul_pd(mg, _mm512_cvtepi64_pd(msigma12))));
@@ -128,7 +127,7 @@ static inline void vif_statistic_avx512(Residuals512 *out, __m512i xx, __m512i x
 
         __m512i mnum_val = _mm512_sub_epi64(mnumer1_tmp_log, mnumer1_log);
 
-        maccum_num_log = _mm512_mask_add_epi64(maccum_num_log, ~msigma1_mask, maccum_num_log, mnum_val);
+        maccum_num_log = _mm512_mask_add_epi64(maccum_num_log, (~msigma1_mask) & msigma12_mask & msigma2_mask, maccum_num_log, mnum_val);
         maccum_den_log = _mm512_mask_add_epi64(maccum_den_log, ~msigma1_mask, maccum_den_log, mden_val);
 
         // non log stage
