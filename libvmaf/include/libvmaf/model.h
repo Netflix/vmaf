@@ -70,6 +70,14 @@ typedef struct VmafModelCollectionScore {
     } bootstrap;
 } VmafModelCollectionScore;
 
+typedef struct VmafBuiltInModel {
+    const char *version;
+    const char *data;
+    const int *data_len;
+} VmafBuiltInModel;
+
+const VmafBuiltInModel *vmaf_built_in_model_next(const VmafBuiltInModel *prev);
+
 int vmaf_model_collection_load(VmafModel **model,
                                VmafModelCollection **model_collection,
                                VmafModelConfig *cfg,

@@ -316,3 +316,10 @@ exit:
     return err;
 }
 
+const VmafBuiltInModel *vmaf_built_in_model_next(const VmafBuiltInModel *prev){
+    if(!prev)
+        return &built_in_models[0];
+    if(prev - built_in_models < BUILT_IN_MODEL_CNT)
+        return prev + 1;
+    return NULL;
+}

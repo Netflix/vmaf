@@ -83,6 +83,14 @@ typedef struct VmafModelCollection {
     const char *name;
 } VmafModelCollection;
 
+typedef struct VmafBuiltInModel {
+    const char *version;
+    const char *data;
+    const int *data_len;
+} VmafBuiltInModel;
+
+const VmafBuiltInModel *vmaf_built_in_model_next(const VmafBuiltInModel *prev);
+
 char *vmaf_model_generate_name(VmafModelConfig *cfg);
 
 int vmaf_model_collection_append(VmafModelCollection **model_collection,
