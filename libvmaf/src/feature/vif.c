@@ -106,33 +106,33 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
         goto fail_or_end;
     }
 
-	// Code optimized to save on multiple buffer copies
-	// hence the reduction in the number of buffers required from 15 to 8
+    // Code optimized to save on multiple buffer copies
+    // hence the reduction in the number of buffers required from 15 to 8
 #define VIF_BUF_CNT 8
-	if (SIZE_MAX / buf_sz_one < VIF_BUF_CNT)
-	{
-		printf("error: SIZE_MAX / buf_sz_one < VIF_BUF_CNT, buf_sz_one = %zu.\n", buf_sz_one);
-		fflush(stdout);
-		goto fail_or_end;
-	}
+    if (SIZE_MAX / buf_sz_one < VIF_BUF_CNT)
+    {
+        printf("error: SIZE_MAX / buf_sz_one < VIF_BUF_CNT, buf_sz_one = %zu.\n", buf_sz_one);
+        fflush(stdout);
+        goto fail_or_end;
+    }
 
-	if (!(data_buf = aligned_malloc(buf_sz_one * VIF_BUF_CNT, MAX_ALIGN)))
-	{
-		printf("error: aligned_malloc failed for data_buf.\n");
-		fflush(stdout);
-		goto fail_or_end;
-	}
+    if (!(data_buf = aligned_malloc(buf_sz_one * VIF_BUF_CNT, MAX_ALIGN)))
+    {
+        printf("error: aligned_malloc failed for data_buf.\n");
+        fflush(stdout);
+        goto fail_or_end;
+    }
 
-	data_top = (char *)data_buf;
+    data_top = (char *)data_buf;
 
-	ref_scale = (float *)data_top; data_top += buf_sz_one;
-	dis_scale = (float *)data_top; data_top += buf_sz_one;
-	mu1 = (float *)data_top; data_top += buf_sz_one;
-	mu2 = (float *)data_top; data_top += buf_sz_one;
-	ref_sq_filt = (float *)data_top; data_top += buf_sz_one;
-	dis_sq_filt = (float *)data_top; data_top += buf_sz_one;
-	ref_dis_filt = (float *)data_top; data_top += buf_sz_one;
-	tmpbuf = (float *)data_top; data_top += buf_sz_one;
+    ref_scale = (float *)data_top; data_top += buf_sz_one;
+    dis_scale = (float *)data_top; data_top += buf_sz_one;
+    mu1 = (float *)data_top; data_top += buf_sz_one;
+    mu2 = (float *)data_top; data_top += buf_sz_one;
+    ref_sq_filt = (float *)data_top; data_top += buf_sz_one;
+    dis_sq_filt = (float *)data_top; data_top += buf_sz_one;
+    ref_dis_filt = (float *)data_top; data_top += buf_sz_one;
+    tmpbuf = (float *)data_top; data_top += buf_sz_one;
 
     for (scale = 0; scale < 4; ++scale)
     {
@@ -222,15 +222,15 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
         vif_filter1d_s(filter, curr_ref_scale, mu1, tmpbuf, w, h, curr_ref_stride, buf_stride, filter_width);
         vif_filter1d_s(filter, curr_dis_scale, mu2, tmpbuf, w, h, curr_dis_stride, buf_stride, filter_width);
 
-		// Code optimized by adding intrinsic code for the functions,
-		// vif_filter1d_sq and vif_filter1d_sq
+        // Code optimized by adding intrinsic code for the functions,
+        // vif_filter1d_sq and vif_filter1d_sq
         vif_filter1d_sq_s(filter, curr_ref_scale, ref_sq_filt, tmpbuf, w, h, curr_ref_stride, buf_stride, filter_width);
         vif_filter1d_sq_s(filter, curr_dis_scale, dis_sq_filt, tmpbuf, w, h, curr_dis_stride, buf_stride, filter_width);
         vif_filter1d_xy_s(filter, curr_ref_scale, curr_dis_scale, ref_dis_filt, tmpbuf, w, h, curr_ref_stride, curr_dis_stride, buf_stride, filter_width);
 
         float num, den;
-		vif_statistic_s(mu1, mu2, ref_sq_filt, dis_sq_filt, ref_dis_filt, &num, &den,
-			w, h, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, vif_enhn_gain_limit);
+        vif_statistic_s(mu1, mu2, ref_sq_filt, dis_sq_filt, ref_dis_filt, &num, &den,
+            w, h, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, vif_enhn_gain_limit);
         mu1_adj = ADJUST(mu1);
         mu2_adj = ADJUST(mu2);
 
@@ -394,8 +394,8 @@ int vifdiff(int (*read_frame)(float *ref_data, float *main_data, float *temp_dat
         if (frm_idx > 0)
         {
             apply_frame_differencing(ref_buf, prev_ref_buf, ref_diff_buf, w, h, stride / sizeof(float));
-		    apply_frame_differencing(dis_buf, prev_dis_buf, dis_diff_buf, w, h, stride / sizeof(float));
-		}
+            apply_frame_differencing(dis_buf, prev_dis_buf, dis_diff_buf, w, h, stride / sizeof(float));
+        }
 
         // copy the current frame to the previous frame buffer to have it available for next time you apply frame differencing
         memcpy(prev_ref_buf, ref_buf, data_sz);
@@ -407,17 +407,17 @@ int vifdiff(int (*read_frame)(float *ref_data, float *main_data, float *temp_dat
         // unreliable scores for an earlier video frame, rather than the latest one. This might be better for video quality calculations, since recency effects
         // places more weight on later frames.
         if (frm_idx == 0)
-		{
-		    score = 0.0;
-		    score_num = 0.0;
-		    score_den = 0.0;
-		    for(int scale = 0; scale < 4; scale++){
-		    	scores[2 * scale] = 0.0;
-		    	scores[2 * scale + 1] = 0.0 + 1e-5;
-		    }
-		}
-		else
-		{
+        {
+            score = 0.0;
+            score_num = 0.0;
+            score_den = 0.0;
+            for(int scale = 0; scale < 4; scale++){
+                scores[2 * scale] = 0.0;
+                scores[2 * scale + 1] = 0.0 + 1e-5;
+            }
+        }
+        else
+        {
             // compute
             if ((ret = compute_vif(ref_diff_buf, dis_diff_buf, w, h, stride, stride,
                     &score, &score_num, &score_den, scores,
