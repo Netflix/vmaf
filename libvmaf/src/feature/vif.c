@@ -90,18 +90,31 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
     int scale;
     int ret = 1;
 
-    if (!(ALMOST_EQUAL(vif_kernelscale, 1.0) ||
-          ALMOST_EQUAL(vif_kernelscale, 3.0/2) ||
-          ALMOST_EQUAL(vif_kernelscale, 1.0/2) ||
-          ALMOST_EQUAL(vif_kernelscale, 2.0) ||
-          ALMOST_EQUAL(vif_kernelscale, 2.0/3) ||
-          ALMOST_EQUAL(vif_kernelscale, 2.4/1.0) ||
-          ALMOST_EQUAL(vif_kernelscale, 360.0/97.0) ||
-          ALMOST_EQUAL(vif_kernelscale, 4.0/3.0) ||
-          ALMOST_EQUAL(vif_kernelscale, 3.5/3.0) ||
-          ALMOST_EQUAL(vif_kernelscale, 3.75/3.0) ||
-          ALMOST_EQUAL(vif_kernelscale, 4.25/3.0))) {
-            printf("error: vif_kernelscale can only be 0.5, 1.0, 1.5, 2.0, 2.0/3, 2.4, 360/97, 4.0/3.0, 3.5/3.0, 3.75/3.0, 4.25/3.0 for now, but is %f\n", vif_kernelscale);
+    int kernelscale_index = -1;
+    if (ALMOST_EQUAL(vif_kernelscale, 1.0)) {
+        kernelscale_index = vif_kernelscale_1;
+    } else if (ALMOST_EQUAL(vif_kernelscale, 1.0/2)) {
+        kernelscale_index = vif_kernelscale_1o2;
+    } else if (ALMOST_EQUAL(vif_kernelscale, 3.0/2)) {
+        kernelscale_index = vif_kernelscale_3o2;
+    } else if (ALMOST_EQUAL(vif_kernelscale, 2.0)) {
+        kernelscale_index = vif_kernelscale_2;
+    } else if (ALMOST_EQUAL(vif_kernelscale, 2.0/3)) {
+        kernelscale_index = vif_kernelscale_2o3;
+    } else if (ALMOST_EQUAL(vif_kernelscale, 2.4/1.0)) {
+        kernelscale_index = vif_kernelscale_24o10;
+    } else if (ALMOST_EQUAL(vif_kernelscale, 360/97.0)) {
+        kernelscale_index = vif_kernelscale_360o97;
+    } else if (ALMOST_EQUAL(vif_kernelscale, 4.0/3.0)) {
+        kernelscale_index = vif_kernelscale_4o3;
+    } else if (ALMOST_EQUAL(vif_kernelscale, 3.5/3.0)) {
+        kernelscale_index = vif_kernelscale_3d5o3;
+    } else if (ALMOST_EQUAL(vif_kernelscale, 3.75/3.0)) {
+        kernelscale_index = vif_kernelscale_3d75o3;
+    } else if (ALMOST_EQUAL(vif_kernelscale, 4.25/3.0)) {
+        kernelscale_index = vif_kernelscale_4d25o3;
+    } else {
+        printf("error: vif_kernelscale can only be 0.5, 1.0, 1.5, 2.0, 2.0/3, 2.4, 360/97, 4.0/3.0, 3.5/3.0, 3.75/3.0, 4.25/3.0 for now, but is %f\n", vif_kernelscale);
         fflush(stdout);
         goto fail_or_end;
     }
@@ -140,44 +153,8 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
         char pathbuf[256];
 #endif
 
-        if (ALMOST_EQUAL(vif_kernelscale, 1.0)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_1][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_1][scale];
-        } else if (ALMOST_EQUAL(vif_kernelscale, 1.0/2)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_1o2][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_1o2][scale];
-        } else if (ALMOST_EQUAL(vif_kernelscale, 3.0/2)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_3o2][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_3o2][scale];
-        } else if (ALMOST_EQUAL(vif_kernelscale, 2.0)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_2][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_2][scale];
-        } else if (ALMOST_EQUAL(vif_kernelscale, 2.0/3)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_2o3][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_2o3][scale];
-        } else if (ALMOST_EQUAL(vif_kernelscale, 2.4/1.0)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_24o10][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_24o10][scale];
-        } else if (ALMOST_EQUAL(vif_kernelscale, 360/97.0)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_360o97][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_360o97][scale];
-        } else if (ALMOST_EQUAL(vif_kernelscale, 4.0/3.0)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_4o3][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_4o3][scale];
-        } else if (ALMOST_EQUAL(vif_kernelscale, 3.5/3.0)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_3d5o3][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_3d5o3][scale];
-        } else if (ALMOST_EQUAL(vif_kernelscale, 3.75/3.0)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_3d75o3][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_3d75o3][scale];
-        } else if (ALMOST_EQUAL(vif_kernelscale, 4.25/3.0)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_4d25o3][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_4d25o3][scale];
-        } else {
-            printf("error: vif_kernelscale can only be 0.5, 1.0, 1.5, 2.0, 2.0/3, 2.4, 360/97, 4.0/3.0, 3.5/3.0, 3.75/3.0, 4.25/3.0 for now, but is %f\n", vif_kernelscale);
-            fflush(stdout);
-            goto fail_or_end;
-        }
+        filter = vif_filter1d_table_s[kernelscale_index][scale];
+        filter_width = vif_filter1d_width[kernelscale_index][scale];
 
 #ifdef VIF_OPT_HANDLE_BORDERS
         int buf_valid_w = w;
