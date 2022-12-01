@@ -13,12 +13,6 @@
 #include "read_json_model.h"
 #include "svm.h"
 
-typedef struct VmafBuiltInModel {
-    const char *version;
-    const char *data;
-    const int *data_len;
-} VmafBuiltInModel;
-
 #if VMAF_BUILT_IN_MODELS
 #if VMAF_FLOAT_FEATURES
 extern const char src_vmaf_float_v0_6_1neg_json;

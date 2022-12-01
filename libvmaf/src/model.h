@@ -83,12 +83,6 @@ typedef struct VmafModelCollection {
     const char *name;
 } VmafModelCollection;
 
-typedef struct VmafBuiltInModel {
-    const char *version;
-    const char *data;
-    const int *data_len;
-} VmafBuiltInModel;
-
 /**
  * Iterate through all built in vmaf models
  * 
