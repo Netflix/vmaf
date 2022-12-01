@@ -89,6 +89,14 @@ typedef struct VmafBuiltInModel {
     const int *data_len;
 } VmafBuiltInModel;
 
+/**
+ * Iterate through all built in vmaf models
+ * 
+ * @param prev previous model. NULL to get the first model
+ * 
+ * @return next model or NULL after the last model
+ * 
+*/
 const VmafBuiltInModel *vmaf_built_in_model_next(const VmafBuiltInModel *prev);
 
 char *vmaf_model_generate_name(VmafModelConfig *cfg);
