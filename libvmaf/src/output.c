@@ -124,7 +124,16 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
 {
     fprintf(outfile, "{\n");
     fprintf(outfile, "  \"version\": \"%s\",\n", vmaf_version());
-    fprintf(outfile, "  \"fps\": %.2f,\n", fps);
+    switch(fpclassify(fps)) {
+    case FP_NORMAL:
+    case FP_ZERO:
+    case FP_SUBNORMAL:
+        fprintf(outfile, "  \"fps\": %.2f,\n", fps);
+        break;
+    case FP_INFINITE:
+    case FP_NAN:
+        fprintf(outfile, "  \"fps\": null,\n");
+    }
 
     unsigned n_frames = 0;
     fprintf(outfile, "  \"frames\": [");
