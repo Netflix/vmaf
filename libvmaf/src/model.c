@@ -322,11 +322,11 @@ exit:
 }
 
 const VmafModelDescriptor *vmaf_model_descriptor_next(const VmafModelDescriptor *prev){
-    // Cast *VmafModelDescriptor into *VmafBuilInModel
+    // Cast *VmafModelDescriptor into *VmafBuiltInModel
     VmafBuiltInModel *builtin = (VmafBuiltInModel*)prev;
 
     if(!builtin)
-        return &built_in_models[0];
+        return (VmafModelDescriptor*)&built_in_models[0];
 
     if(builtin - built_in_models < BUILT_IN_MODEL_CNT)
         return (VmafModelDescriptor*)(builtin + 1);
