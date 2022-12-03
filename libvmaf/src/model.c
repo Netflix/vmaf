@@ -34,6 +34,17 @@ extern const char src_vmaf_4k_v0_6_1_json;
 extern const int src_vmaf_4k_v0_6_1_json_len;
 #endif
 
+/**
+ * For the purposes of working with vmaf_model_descriptor_next,
+ * the version property of VmafBuiltInModel must be the first property
+ * declared on this struct
+*/
+typedef struct VmafBuiltInModel {
+    const char *version;
+    const char *data;
+    const int *data_len;
+} VmafBuiltInModel;
+
 static const VmafBuiltInModel built_in_models[] = {
 #if VMAF_BUILT_IN_MODELS
 #if VMAF_FLOAT_FEATURES
@@ -310,10 +321,15 @@ exit:
     return err;
 }
 
-const VmafBuiltInModel *vmaf_built_in_model_next(const VmafBuiltInModel *prev){
-    if(!prev)
+const VmafModelDescriptor *vmaf_model_descriptor_next(const VmafModelDescriptor *prev){
+    // Cast *VmafModelDescriptor into *VmafBuilInModel
+    VmafBuiltInModel *builtin = (VmafBuiltInModel*)prev;
+
+    if(!builtin)
         return &built_in_models[0];
-    if(prev - built_in_models < BUILT_IN_MODEL_CNT)
-        return prev + 1;
+
+    if(builtin - built_in_models < BUILT_IN_MODEL_CNT)
+        return (VmafModelDescriptor*)(builtin + 1);
+
     return NULL;
 }
