@@ -70,11 +70,9 @@ typedef struct VmafModelCollectionScore {
     } bootstrap;
 } VmafModelCollectionScore;
 
-typedef struct VmafBuiltInModel {
+typedef struct VmafModelDescriptor{
     const char *version;
-    const char *data;
-    const int *data_len;
-} VmafBuiltInModel;
+} VmafModelDescriptor;
 
 /**
  * Iterate through all built in vmaf models
@@ -84,7 +82,7 @@ typedef struct VmafBuiltInModel {
  * @return next model or NULL after the last model
  * 
 */
-const VmafBuiltInModel *vmaf_built_in_model_next(const VmafBuiltInModel *prev);
+const VmafModelDescriptor *vmaf_model_descriptor_next(const VmafModelDescriptor *prev);
 
 int vmaf_model_collection_load(VmafModel **model,
                                VmafModelCollection **model_collection,
