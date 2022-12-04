@@ -1,3 +1,4 @@
+import shutil
 from abc import ABCMeta, abstractmethod
 import multiprocessing
 import os
@@ -421,16 +422,7 @@ class Executor(TypeVersionEnabled):
                 # remove dir
                 log_file_path = self._get_log_file_path(asset)
                 log_dir = get_dir_without_last_slash(log_file_path)
-                try:
-                    os.rmdir(log_dir)
-                except OSError as e:
-                    if e.errno == 39: # [Errno 39] Directory not empty
-                        # e.g. VQM could generate an error file with non-critical
-                        # information like: '3 File is longer than 15 seconds.
-                        # Results will be calculated using first 15 seconds
-                        # only.' In this case, want to keep this
-                        # informational file and pass
-                        pass
+                shutil.rmtree(log_dir)
 
         result = self._post_process_result(result)
 
