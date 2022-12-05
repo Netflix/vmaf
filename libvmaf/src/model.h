@@ -91,7 +91,7 @@ typedef struct VmafModelCollection {
  * @return next model or NULL after the last model
  * 
 */
-const VmafModelDescriptor *vmaf_built_in_model_next(const VmafModelDescriptor *prev);
+const VmafModelDescriptor *vmaf_model_descriptor_next(const VmafModelDescriptor *prev);
 
 char *vmaf_model_generate_name(VmafModelConfig *cfg);
 
