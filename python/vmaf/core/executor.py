@@ -4,8 +4,7 @@ import multiprocessing
 import os
 from time import sleep
 import hashlib
-
-import numpy as np
+from typing import Optional, List
 
 from vmaf.core.asset import Asset
 from vmaf.tools.decorator import deprecated, override
@@ -513,7 +512,15 @@ class Executor(TypeVersionEnabled):
             decoder_type = asset.ref_decoder_type
         except AttributeError:
             decoder_type = None
+        try:
+            preresampling_filterchain = asset.ref_preresampling_filterchain
+        except AttributeError:
+            preresampling_filterchain = None
         resampling_type = self._get_ref_resampling_type(asset)
+        try:
+            postresampling_filterchain = asset.ref_postresampling_filterchain
+        except AttributeError:
+            postresampling_filterchain = None
         width_height = asset.ref_width_height
         ref_or_dis = 'ref'
         workfile_yuv_type = self._get_workfile_yuv_type(asset)
@@ -522,8 +529,9 @@ class Executor(TypeVersionEnabled):
         _open_workfile_method = self.optional_dict2['_open_workfile_method'] \
             if self.optional_dict2 is not None and '_open_workfile_method' in self.optional_dict2 and self.optional_dict2['_open_workfile_method'] is not None \
             else self._open_workfile
-        _open_workfile_method(self, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type, resampling_type, width_height,
-                              quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, logger)
+        _open_workfile_method(self, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type,
+                              preresampling_filterchain, resampling_type, postresampling_filterchain,
+                              width_height, quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, logger)
 
     def _open_dis_workfile(self, asset, fifo_mode):
 
@@ -536,7 +544,15 @@ class Executor(TypeVersionEnabled):
             decoder_type = asset.dis_decoder_type
         except AttributeError:
             decoder_type = None
+        try:
+            preresampling_filterchain = asset.dis_preresampling_filterchain
+        except AttributeError:
+            preresampling_filterchain = None
         resampling_type = self._get_dis_resampling_type(asset)
+        try:
+            postresampling_filterchain = asset.dis_postresampling_filterchain
+        except AttributeError:
+            postresampling_filterchain = None
         width_height = asset.dis_width_height
         ref_or_dis = 'dis'
         workfile_yuv_type = self._get_workfile_yuv_type(asset)
@@ -545,14 +561,24 @@ class Executor(TypeVersionEnabled):
         _open_workfile_method = self.optional_dict2['_open_workfile_method'] \
             if self.optional_dict2 is not None and '_open_workfile_method' in self.optional_dict2 and self.optional_dict2['_open_workfile_method'] is not None \
             else self._open_workfile
-        _open_workfile_method(self, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type, resampling_type, width_height,
-                              quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, logger)
+        _open_workfile_method(self, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type,
+                              preresampling_filterchain, resampling_type, postresampling_filterchain,
+                              width_height, quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, logger)
 
     @staticmethod
-    def _open_workfile(cls, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type, resampling_type, width_height,
-                       quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, logger):
+    def _open_workfile(cls, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type: Optional[str],
+                       preresampling_filterchain: Optional[List[str]], resampling_type: str, postresampling_filterchain: Optional[List[str]],
+                       width_height, quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, logger):
+
         # decoder type must be None here
-        assert decoder_type is None
+        assert decoder_type is None, f'decoder_type must be None but is: {decoder_type}'
+
+        # preresampling_filterchain must be None here
+        assert preresampling_filterchain is None, f'preresampling_filterchain mut be None but is: {preresampling_filterchain}'
+
+        # postresampling_filterchain msut be None here
+        assert postresampling_filterchain is None, f'postresampling_filterchain must be None but is: {postresampling_filterchain}'
+
         # only need to open workfile if the path is different from path
         assert use_path_as_workpath is False and path != workfile_path
         # if fifo mode, mkfifo
