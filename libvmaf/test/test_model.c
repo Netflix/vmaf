@@ -373,10 +373,12 @@ static char *test_model_set_flags()
     return NULL;
 }
 
+/**
+ * This test may fail if VmafBuiltInModel's memory layout has changed
+ *  (version MUST be the first defined property in the struct)
+*/
 char *test_model_next()
 {
-    
-    
     VmafModelDescriptor *first = vmaf_model_descriptor_next(NULL);
     VmafBuiltInModel *builtin = first;
     mu_assert("When given null, return first item",first == &built_in_models[0]);
