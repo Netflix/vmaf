@@ -391,6 +391,7 @@ char *test_model_next()
 
         VmafModelDescriptor *next = vmaf_model_descriptor_next(current);
 
+        mu_assert("Pointer returned from vmaf_model_descriptor_next is not null",next);
         mu_assert("Given the address of a VmafBuiltInModel, returns the address of the next VmafBuiltInModel",next==expected);
         mu_assert("Version field should match on both pointers",expected->version == next->version);    
     }
