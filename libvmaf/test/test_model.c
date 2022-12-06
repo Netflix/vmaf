@@ -377,7 +377,7 @@ static char *test_model_set_flags()
  * This test may fail if VmafBuiltInModel's memory layout has changed
  *  (version MUST be the first defined property in the struct)
 */
-char *test_model_next()
+char *test_model_descriptor_next()
 {
     VmafModelDescriptor *first = vmaf_model_descriptor_next(NULL);
     VmafBuiltInModel *builtin = first;
@@ -415,6 +415,6 @@ char *run_tests()
     mu_run_test(test_model_check_default_behavior_set_flags);
     mu_run_test(test_model_set_flags);
     mu_run_test(test_model_feature);
-    mu_run_test(test_model_next);
+    mu_run_test(test_model_descriptor_next);
     return NULL;
 }
