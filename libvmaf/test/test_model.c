@@ -378,9 +378,8 @@ static char *test_model_set_flags()
 char *test_model_descriptor_next()
 {
     VmafModelDescriptor *next = NULL;
-    while (vmaf_model_descriptor_next(next))
+    while (next = vmaf_model_descriptor_next(next))
     {
-        next = vmaf_model_descriptor_next(next);
         VmafBuiltInModel *builtin = next;
         mu_assert("Version field should match on both builtin and next", next->version == builtin->version);
     }
