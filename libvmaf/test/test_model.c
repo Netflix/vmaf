@@ -374,31 +374,16 @@ static char *test_model_set_flags()
 /**
  * This test may fail if VmafBuiltInModel's memory layout has changed
  *  (version MUST be the first defined property in the struct)
-*/
+ */
 char *test_model_descriptor_next()
 {
-    VmafModelDescriptor *first = vmaf_model_descriptor_next(NULL);
-    VmafBuiltInModel *builtin = first;
-    mu_assert("When given null, return first item",first == &built_in_models[0]);
-    mu_assert("Version field matches on the first VmafBuiltInModel",first->version == builtin->version);
-    
-    for(int i=1;i==BUILT_IN_MODEL_CNT;i++){
-        VmafBuiltInModel *builtin = &built_in_models[i];
-        VmafModelDescriptor *current = builtin;
-        VmafBuiltInModel *expected = &built_in_models[i+1];
-
-        VmafModelDescriptor *next = vmaf_model_descriptor_next(current);
-
-        mu_assert("Pointer returned from vmaf_model_descriptor_next is not null",next);
-        mu_assert("Given the address of a VmafBuiltInModel, returns the address of the next VmafBuiltInModel",next==expected);
-        mu_assert("Version field should match on both pointers",expected->version == next->version);    
+    VmafModelDescriptor *next = NULL;
+    while (vmaf_model_descriptor_next(next))
+    {
+        next = vmaf_model_descriptor_next(next);
+        VmafBuiltInModel *builtin = next;
+        mu_assert("Version field should match on both builtin and next", next->version == builtin->version);
     }
-
-    VmafModelDescriptor *last = &built_in_models[BUILT_IN_MODEL_CNT];
-    
-    VmafModelDescriptor *shouldBeNull = vmaf_model_descriptor_next(last);
-
-    mu_assert("When given the last item in the array, returns null",!shouldBeNull);
     return NULL;
 }
 
