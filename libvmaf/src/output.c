@@ -46,7 +46,7 @@ static const char *pool_method_name[] = {
 
 int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc,
                           FILE *outfile, unsigned subsample, unsigned width,
-                          unsigned height, double fps)
+                          unsigned height, double fps, unsigned pic_cnt)
 {
     if (!vmaf) return -EINVAL;
     if (!fc) return -EINVAL;
@@ -97,7 +97,7 @@ int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc,
         for (unsigned j = 1; j < VMAF_POOL_METHOD_NB; j++) {
             double score;
             int err = vmaf_feature_score_pooled(vmaf, feature_name, j, &score,
-                                                0, n_frames - 1);
+                                                0, pic_cnt - 1);
             if (!err)
                 fprintf(outfile, "%s=\"%.6f\" ", pool_method_name[j], score);
         }
@@ -120,7 +120,8 @@ int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc,
 }
 
 int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
-                           FILE *outfile, unsigned subsample, double fps)
+                           FILE *outfile, unsigned subsample, double fps,
+                           unsigned pic_cnt)
 {
     fprintf(outfile, "{\n");
     fprintf(outfile, "  \"version\": \"%s\",\n", vmaf_version());
@@ -195,7 +196,7 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
         for (unsigned j = 1; j < VMAF_POOL_METHOD_NB; j++) {
             double score;
             int err = vmaf_feature_score_pooled(vmaf, feature_name, j, &score,
-                                                0, n_frames - 1);
+                                                0, pic_cnt - 1);
             if (!err) {
                 fprintf(outfile, "%s", j > 1 ? ",\n" : "\n");
                 switch(fpclassify(score)) {
