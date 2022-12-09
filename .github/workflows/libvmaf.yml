@@ -78,7 +78,7 @@ jobs:
       - name: Run tox tests
         run: |
           mkdir -p ~/.ccache && sudo chown -R $(whoami) ~/.ccache
-          pip install tox
+          pip install 'tox<4'
           tox -c python/ -e py -- -v -p no:warnings -m 'main or lib' --doctest-modules
 
       - name: Get binary path & Current Release
