@@ -1,5 +1,5 @@
 /**
- *
+ * 
  *  Copyright 2016-2020 Netflix, Inc.
  *
  *     Licensed under the BSD+Patent License (the "License");
