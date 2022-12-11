@@ -4,7 +4,7 @@ import multiprocessing
 import os
 from time import sleep
 import hashlib
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 from vmaf.core.asset import Asset
 from vmaf.tools.decorator import deprecated, override
@@ -568,7 +568,7 @@ class Executor(TypeVersionEnabled):
     @staticmethod
     def _open_workfile(cls, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type: Optional[str],
                        preresampling_filterchain: Optional[List[str]], resampling_type: str, postresampling_filterchain: Optional[List[str]],
-                       width_height, quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, logger):
+                       width_height: Optional[Tuple[int, int]], quality_width_height: Tuple[int, int], ref_or_dis, use_path_as_workpath, fifo_mode, logger):
 
         # decoder type must be None here
         assert decoder_type is None, f'decoder_type must be None but is: {decoder_type}'
