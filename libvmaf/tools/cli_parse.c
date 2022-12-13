@@ -86,7 +86,7 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --threads $unsigned:         number of threads to use\n"
             " --feature $string:           additional feature\n"
             " --cpumask: $bitmask          restrict permitted CPU instruction sets\n"
-            " --gpumask: $bitmask          restrict permitted GPU instruction sets\n"
+            " --gpumask: $bitmask          restrict permitted GPU operations\n"
             " --frame_cnt $unsigned:       maximum number of frames to process\n"
             " --frame_skip_ref $unsigned:  skip the first N frames in reference\n"
             " --frame_skip_dist $unsigned: skip the first N frames in distorted\n"
