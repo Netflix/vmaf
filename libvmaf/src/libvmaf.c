@@ -185,7 +185,6 @@ int vmaf_cuda_init(VmafContext *vmaf, VmafCudaState **cu_state,
         return -EINVAL;
     }
 
-
     return 0;
 }
 
