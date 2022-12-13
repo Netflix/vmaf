@@ -29,8 +29,13 @@
 
 #include "libvmaf/picture.h"
 
+#ifdef HAVE_CUDA
+#include "cuda/common.h"
+#endif
+
 enum VmafFeatureExtractorFlags {
     VMAF_FEATURE_EXTRACTOR_TEMPORAL = 1 << 0,
+    VMAF_FEATURE_EXTRACTOR_CUDA = 1 << 1,
 };
 
 typedef struct VmafFeatureExtractor {
@@ -84,10 +89,16 @@ typedef struct VmafFeatureExtractor {
     size_t priv_size; ///< sizeof private data.
     uint64_t flags; ///< Feauture extraction flags, binary or'd.
     const char **provided_features; ///< Provided feature list, NULL terminated.
+
+    #ifdef HAVE_CUDA
+    VmafCudaState *cu_state; ///< VmafCudaState, set by framework
+    #endif
+
 } VmafFeatureExtractor;
 
 VmafFeatureExtractor *vmaf_get_feature_extractor_by_name(const char *name);
-VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(const char *name);
+VmafFeatureExtractor *vmaf_get_feature_extractor_by_feature_name(const char *name,
+                                                                 unsigned flags);
 
 enum VmafFeatureExtractorContextFlags {
     VMAF_FEATURE_EXTRACTOR_CONTEXT_DO_NOT_OVERWRITE = 1 << 0,

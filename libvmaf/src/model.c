@@ -166,13 +166,12 @@ int vmaf_model_feature_overload(VmafModel *model, const char *feature_name,
 
     for (unsigned i = 0; i < model->n_features; i++) {
         VmafFeatureExtractor *fex =
-            vmaf_get_feature_extractor_by_feature_name(model->feature[i].name);
+            vmaf_get_feature_extractor_by_feature_name(model->feature[i].name, 0);
         if (!fex) continue;
         if (strcmp(feature_name, fex->name)) continue;
         VmafDictionary *d =
             vmaf_dictionary_merge((VmafDictionary**)&model->feature[i].opts_dict,
-                                  (VmafDictionary**)&opts_dict,
-                                  0);
+                                  (VmafDictionary**)&opts_dict, 0);
         if (!d) return -ENOMEM;
         err = vmaf_dictionary_free(&model->feature[i].opts_dict);
         if (err) goto exit;

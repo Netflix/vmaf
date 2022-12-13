@@ -23,6 +23,7 @@ enum {
     ARG_FEATURE,
     ARG_SUBSAMPLE,
     ARG_CPUMASK,
+    ARG_GPUMASK,
     ARG_AOM_CTC,
     ARG_NFLX_CTC,
     ARG_FRAME_CNT,
@@ -47,6 +48,7 @@ static const struct option long_opts[] = {
     { "feature",          1, NULL, ARG_FEATURE },
     { "subsample",        1, NULL, ARG_SUBSAMPLE },
     { "cpumask",          1, NULL, ARG_CPUMASK },
+    { "gpumask",          1, NULL, ARG_GPUMASK },
     { "aom_ctc",          1, NULL, ARG_AOM_CTC },
     { "nflx_ctc",         1, NULL, ARG_NFLX_CTC },
     { "frame_cnt",        1, NULL, ARG_FRAME_CNT },
@@ -86,6 +88,7 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --threads $unsigned:         number of threads to use\n"
             " --feature $string:           additional feature\n"
             " --cpumask: $bitmask          restrict permitted CPU instruction sets\n"
+            " --gpumask: $bitmask          restrict permitted GPU operations\n"
             " --frame_cnt $unsigned:       maximum number of frames to process\n"
             " --frame_skip_ref $unsigned:  skip the first N frames in reference\n"
             " --frame_skip_dist $unsigned: skip the first N frames in distorted\n"
@@ -435,6 +438,9 @@ void cli_parse(const int argc, char *const *const argv,
             break;
         case ARG_CPUMASK:
             settings->cpumask = parse_unsigned(optarg, 'c', argv[0]);
+            break;
+        case ARG_GPUMASK:
+            settings->gpumask = parse_unsigned(optarg, ARG_GPUMASK, argv[0]);
             break;
         case ARG_AOM_CTC:
             parse_aom_ctc(settings, optarg, argv[0]);
