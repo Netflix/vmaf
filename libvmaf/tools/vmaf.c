@@ -9,6 +9,9 @@
 
 #include "libvmaf/picture.h"
 #include "libvmaf/libvmaf.h"
+#ifdef HAVE_CUDA
+#include "libvmaf/vmaf_cuda.h"
+#endif
 
 static enum VmafPixelFormat pix_fmt_map(int pf)
 {
@@ -181,6 +184,7 @@ int main(int argc, char *argv[])
         .n_threads = c.thread_cnt,
         .n_subsample = c.subsample,
         .cpumask = c.cpumask,
+        .gpumask = c.gpumask,
     };
 
     VmafContext *vmaf;
@@ -189,6 +193,16 @@ int main(int argc, char *argv[])
         fprintf(stderr, "problem initializing VMAF context\n");
         return -1;
     }
+
+#ifdef HAVE_CUDA
+    VmafCudaState *cu_state;
+    VmafCudaConfiguration cuda_cfg = { 0 };
+    err = vmaf_cuda_init(vmaf, &cu_state, cuda_cfg);
+    if (err) {
+        fprintf(stderr, "problem during vmaf_cuda_init\n");
+        return -1;
+    }
+#endif
 
     VmafModel **model;
     const size_t model_sz = sizeof(*model) * c.model_cnt;

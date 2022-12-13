@@ -240,7 +240,7 @@ int vmaf_predict_score_at_index(VmafModel *model,
 
     for (unsigned i = 0; i < model->n_features; i++) {
         VmafFeatureExtractor *fex =
-            vmaf_get_feature_extractor_by_feature_name(model->feature[i].name);
+            vmaf_get_feature_extractor_by_feature_name(model->feature[i].name, 0);
 
         if (!fex) {
             vmaf_log(VMAF_LOG_LEVEL_ERROR,
