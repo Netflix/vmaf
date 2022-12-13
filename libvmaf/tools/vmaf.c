@@ -27,8 +27,7 @@ static enum VmafPixelFormat pix_fmt_map(int pf)
     }
 }
 
-static int validate_videos(video_input *vid1, video_input *vid2,
-                           video_input_info* vid_info)
+static int validate_videos(video_input *vid1, video_input *vid2)
 {
     int err_cnt = 0;
 
@@ -174,8 +173,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    video_input_info vid_info;
-    err = validate_videos(&vid_ref, &vid_dist, &vid_info);
+    err = validate_videos(&vid_ref, &vid_dist);
     if (err) {
         fprintf(stderr, "videos are incompatible, %d %s.\n",
                 err, err == 1 ? "problem" : "problems");
@@ -196,7 +194,6 @@ int main(int argc, char *argv[])
         fprintf(stderr, "problem initializing VMAF context\n");
         return -1;
     }
-
 
     VmafModel **model;
     const size_t model_sz = sizeof(*model) * c.model_cnt;
@@ -332,8 +329,7 @@ int main(int argc, char *argv[])
     for (unsigned i = 0; i < c.frame_skip_dist; i++)
         fetch_picture(&vid_dist, &pic_dist);
 
-
-    float fps = 0.f;
+    float fps = 0.;
     const time_t t0 = clock();
     unsigned picture_index;
     for (picture_index = 0 ;; picture_index++) {
@@ -379,9 +375,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "\nproblem reading pictures\n");
             break;
         }
-
     }
-
     if (istty && !c.quiet)
         fprintf(stderr, "\n");
 
