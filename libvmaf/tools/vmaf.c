@@ -65,7 +65,6 @@ static int validate_videos(video_input *vid1, video_input *vid2)
 
     //TODO: more validations are possible.
 
-    *vid_info = info1;
     return err_cnt;
 }
 
