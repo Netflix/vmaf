@@ -57,7 +57,7 @@ __device__ __forceinline__ void adm_csf_den_scale_line_kernel(const cuda_adm_dwt
   }
   temp_value = warp_reduce(temp_value);
 
-  if ((threadIdx.x % threads_per_warp) == 0) {
+  if ((threadIdx.x % VMAF_CUDA_THREADS_PER_WARP) == 0) {
     uint32_t shift_accum = (uint32_t)__float2uint_ru(
         __log2f((bottom - top) * (right - left)) - 20);
     shift_accum = shift_accum > 0 ? shift_accum : 0;
@@ -104,7 +104,7 @@ __device__ __forceinline__ void adm_csf_den_s123_line_kernel(
   }
   temp_value = warp_reduce(temp_value);
 
-  if ((threadIdx.x % threads_per_warp) == 0) {
+  if ((threadIdx.x % VMAF_CUDA_THREADS_PER_WARP) == 0) {
     uint32_t shift_accum = (uint32_t)__float2uint_ru(__log2f((bottom - top)));
     uint32_t add_shift_accum = (uint32_t)1 << (shift_accum - 1);
     atomicAdd((uint64_cu *)&accum[band - 1],
@@ -130,7 +130,7 @@ __global__ void adm_csf_den_s123_line_kernel_##val_per_thread##_##cta_size (    
   }
 
 extern "C" {
-  // 128 = threads_per_warp * 4 -- we are assuming 32 threads per warp, this might change in the future
+  // 128 = VMAF_CUDA_THREADS_PER_WARP * 4 -- we are assuming 32 threads per warp, this might change in the future
   ADM_CSF_SCALE_LINE(8, 128);      // adm_csf_den_scale_line_kernel_8_128
   ADM_CSF_DEN_S123_LINE(8, 128);   // adm_csf_den_s123_line_kernel_8_128
 }

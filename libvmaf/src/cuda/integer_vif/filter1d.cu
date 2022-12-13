@@ -192,7 +192,7 @@
      for (int i = 0; i < 7; ++i) {
        thread_accum_i64[i] = warp_reduce(thread_accum_i64[i]);
      }
-     const int warp_id = threadIdx.x % threads_per_warp;
+     const int warp_id = threadIdx.x % VMAF_CUDA_THREADS_PER_WARP;
      // each warp writes its sum to global mem
      if (warp_id == 0) {
        for (int i = 0; i < 7; ++i) {
@@ -418,7 +418,7 @@
      for (int i = 0; i < 7; ++i) {
        thread_accum_i64[i] = warp_reduce(thread_accum_i64[i]);
      }
-     const int warp_id = threadIdx.x % threads_per_warp;
+     const int warp_id = threadIdx.x % VMAF_CUDA_THREADS_PER_WARP;
      // each warp writes its sum to global mem
      if (warp_id == 0) {
        for (int i = 0; i < 7; ++i) {

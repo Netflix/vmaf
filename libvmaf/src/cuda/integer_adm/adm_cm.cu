@@ -292,7 +292,7 @@ __device__ __forceinline__ void adm_cm_reduce_line_kernel(int h, int w, int scal
   }
   temp_value = warp_reduce(temp_value);
 
-  if ((threadIdx.x % threads_per_warp) == 0) {
+  if ((threadIdx.x % VMAF_CUDA_THREADS_PER_WARP) == 0) {
     const uint32_t shift_inner_accum = __float2uint_ru(__log2f(h));
     const uint32_t add_shift_inner_accum = 1 << (shift_inner_accum - 1);
     atomicAdd_int64(&accum[band],

@@ -36,8 +36,8 @@ typedef struct VmafCudaBuffer {
     CUdeviceptr data;
 } VmafCudaBuffer;
 
-#define threads_per_warp 32
-#define cache_line_size 128
+#define VMAF_CUDA_THREADS_PER_WARP 32
+#define VMAF_CUDA_CACHE_LINE_SIZE 128
 
 /**
  * vmaf_cuda_state_init() initializes a VmafCudaState object by creating a

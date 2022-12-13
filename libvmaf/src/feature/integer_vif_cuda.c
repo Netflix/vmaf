@@ -217,7 +217,7 @@ void filter1d_8(VifStateCuda *s, VifBufferCuda *buf, uint8_t* ref_in, uint8_t* d
 
     const int size_of_alignment_type = sizeof(uint32_t),
         BLOCKX = 128 / size_of_alignment_type, 
-        BLOCKY = 128 / (cache_line_size / size_of_alignment_type), 
+        BLOCKY = 128 / (VMAF_CUDA_CACHE_LINE_SIZE / size_of_alignment_type), 
         val_per_thread = 2;
     void* args_vert[] = {
         &*buf, &ref_in, &dis_in, &w, &h, &vif_filter1d_table
@@ -275,7 +275,7 @@ void filter1d_8(VifStateCuda *s, VifBufferCuda *buf, uint8_t* ref_in, uint8_t* d
         val_per_thread = size_of_alginment / sizeof(uint16_t),
         val_per_thread_horizontal = 2,
         BLOCKX = 128,
-        BLOCK_VERT_X = cache_line_size / val_per_thread, BLOCK_VERT_Y = 128 / (cache_line_size / val_per_thread),
+        BLOCK_VERT_X = VMAF_CUDA_CACHE_LINE_SIZE / val_per_thread, BLOCK_VERT_Y = 128 / (VMAF_CUDA_CACHE_LINE_SIZE / val_per_thread),
         GRID_VERT_X = DIV_ROUND_UP(w, BLOCKX), GRID_VERT_Y = h,
         GRID_HORI_X = DIV_ROUND_UP(w, BLOCKX), GRID_HORI_Y = h;
 

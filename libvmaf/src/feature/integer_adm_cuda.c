@@ -366,7 +366,7 @@ void adm_csf_den_s123_device(AdmStateCuda *s, AdmBufferCuda *buf, int scale, int
 
   const int val_per_thread = 8;
   const int warps_per_cta = 4;
-  const int BLOCKX = threads_per_warp * warps_per_cta;
+  const int BLOCKX = VMAF_CUDA_THREADS_PER_WARP * warps_per_cta;
 
   const uint32_t shift_sq[3] = {31, 30, 31};
   const uint32_t add_shift_sq[3] = {1u << shift_sq[0], 1u << shift_sq[1],
@@ -400,7 +400,7 @@ void adm_csf_den_scale_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h,
   const int val_per_thread = 8;
   const int warps_per_cta = 4;
   
-  const int BLOCKX = threads_per_warp * warps_per_cta;
+  const int BLOCKX = VMAF_CUDA_THREADS_PER_WARP * warps_per_cta;
 
     void* args[] = {
           &buf->ref_dwt2, &h, &top, &bottom, &left, &right, &src_stride,
@@ -445,7 +445,7 @@ void i4_adm_cm_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int src
   {
     const int val_per_thread = 4;
     const int warps_per_cta = 4;
-    const int BLOCKX = threads_per_warp * warps_per_cta;
+    const int BLOCKX = VMAF_CUDA_THREADS_PER_WARP * warps_per_cta;
 
     void* args[] = {
         &h, &w, &scale, &buffer_h, &buffer_stride,
