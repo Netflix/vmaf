@@ -34,8 +34,8 @@ __device__ __forceinline__ int mirror(const int idx, const int sup)
 }
 
 extern "C" {
-__global__ void calculate_motion_score_kernel_8bpc(const VmafPicture src, CudaVmafBuffer src_blurred, 
-                          const CudaVmafBuffer prev_blurred, CudaVmafBuffer sad, 
+__global__ void calculate_motion_score_kernel_8bpc(const VmafPicture src, VmafCudaBuffer src_blurred, 
+                          const VmafCudaBuffer prev_blurred, VmafCudaBuffer sad, 
                           unsigned width, unsigned height, 
                           ptrdiff_t src_stride, ptrdiff_t blurred_stride) {
   
@@ -81,8 +81,8 @@ __global__ void calculate_motion_score_kernel_8bpc(const VmafPicture src, CudaVm
     atomicAdd(reinterpret_cast<unsigned long long*>(sad.data), static_cast<unsigned long long>(abs_dist));
 }
 
-__global__ void calculate_motion_score_kernel_16bpc(const VmafPicture src, CudaVmafBuffer src_blurred, 
-                          const CudaVmafBuffer prev_blurred, CudaVmafBuffer sad, 
+__global__ void calculate_motion_score_kernel_16bpc(const VmafPicture src, VmafCudaBuffer src_blurred, 
+                          const VmafCudaBuffer prev_blurred, VmafCudaBuffer sad, 
                           unsigned width, unsigned height, 
                           ptrdiff_t src_stride, ptrdiff_t blurred_stride) {
   

@@ -78,12 +78,12 @@ typedef struct AdmBufferCuda {
     size_t ind_size_x, ind_size_y; // strides size for intermidate buffers
     int *ind_y[4], *ind_x[4];
     
-    struct CudaVmafBuffer* data_buf;
-    struct CudaVmafBuffer* tmp_ref;
-    struct CudaVmafBuffer* tmp_dis;
-    struct CudaVmafBuffer* tmp_res;
-    struct CudaVmafBuffer* tmp_accum;
-    struct CudaVmafBuffer* tmp_accum_h;
+    struct VmafCudaBuffer* data_buf;
+    struct VmafCudaBuffer* tmp_ref;
+    struct VmafCudaBuffer* tmp_dis;
+    struct VmafCudaBuffer* tmp_res;
+    struct VmafCudaBuffer* tmp_accum;
+    struct VmafCudaBuffer* tmp_accum_h;
 
     cuda_adm_dwt_band_t ref_dwt2;
     cuda_adm_dwt_band_t dis_dwt2;

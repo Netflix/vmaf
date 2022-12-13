@@ -38,16 +38,16 @@ typedef struct MotionStateCuda {
     CUevent event, finished;
     CUfunction funcbpc8, funcbpc16;
     CUstream str, host_stream;
-    CudaVmafBuffer* blur[2];
-    CudaVmafBuffer* sad;
+    VmafCudaBuffer* blur[2];
+    VmafCudaBuffer* sad;
     uint64_t* sad_host;
     void* write_score_parameters;
     unsigned index;
     double score;
     bool debug;
     bool motion_force_zero;
-    void (*calculate_motion_score)(const VmafPicture* src, CudaVmafBuffer* src_blurred, 
-                          const CudaVmafBuffer* prev_blurred, CudaVmafBuffer* sad, 
+    void (*calculate_motion_score)(const VmafPicture* src, VmafCudaBuffer* src_blurred, 
+                          const VmafCudaBuffer* prev_blurred, VmafCudaBuffer* sad, 
                           unsigned width, unsigned height, 
                           ptrdiff_t src_stride, ptrdiff_t blurred_stride, unsigned src_bpc,
                           CUfunction funcbpc8, CUfunction funcbpc16, CUstream stream);
@@ -107,8 +107,8 @@ static int extract_force_zero(VmafFeatureExtractor *fex,
     return err;
 }
 
-void calculate_motion_score(const VmafPicture* src, CudaVmafBuffer* src_blurred, 
-                          const CudaVmafBuffer* prev_blurred, CudaVmafBuffer* sad, 
+void calculate_motion_score(const VmafPicture* src, VmafCudaBuffer* src_blurred, 
+                          const VmafCudaBuffer* prev_blurred, VmafCudaBuffer* sad, 
                           unsigned width, unsigned height, 
                           ptrdiff_t src_stride, ptrdiff_t blurred_stride, unsigned src_bpc, 
                           CUfunction funcbpc8, CUfunction funcbpc16, CUstream stream) {

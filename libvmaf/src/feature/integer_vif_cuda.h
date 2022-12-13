@@ -34,8 +34,8 @@
 typedef struct VifBufferCuda {
     VmafCudaState cu_state;
 
-    CudaVmafBuffer *data;
-    CudaVmafBuffer *accum_data;
+    VmafCudaBuffer *data;
+    VmafCudaBuffer *accum_data;
 
     CUdeviceptr ref;
     CUdeviceptr dis;

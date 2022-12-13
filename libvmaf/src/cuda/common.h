@@ -31,10 +31,10 @@
 #include <libvmaf/vmaf_cuda.h>
 #include "cuda_helper.cuh"
 
-typedef struct CudaVmafBuffer {
+typedef struct VmafCudaBuffer {
     size_t size;
     CUdeviceptr data;
-} CudaVmafBuffer;
+} VmafCudaBuffer;
 
 #define threads_per_warp 32
 #define cache_line_size 128
@@ -80,28 +80,28 @@ int vmaf_cuda_release(VmafCudaState *cu_state, bool rel_ctx);
  *
  * @param cu_state  Initialized VmafCudaState object.
  *
- * @param buf       CudaVmafBuffer to be allocated.
+ * @param buf       VmafCudaBuffer to be allocated.
  *
  * @param size      bytes to allocate.
  *
  * @return CUDA_SUCCESS on success, or < 0 (a negative errno code) on error.
  */
-int vmaf_cuda_buffer_alloc(VmafCudaState *cu_state, CudaVmafBuffer **buf,
+int vmaf_cuda_buffer_alloc(VmafCudaState *cu_state, VmafCudaBuffer **buf,
                            size_t size);
 
 /**
- * Frees a CudaVmafBuffer from the GPU and sets the passed pointer to 0.
+ * Frees a VmafCudaBuffer from the GPU and sets the passed pointer to 0.
  *
  * @param cu_state  Initialized VmafCudaState object.
  *
- * @param buf       CudaVmafBuffer to be freed.
+ * @param buf       VmafCudaBuffer to be freed.
  *
  * @return CUDA_SUCCESS on success, or < 0 (a negative errno code) on error.
  */
-int vmaf_cuda_buffer_free(VmafCudaState *cu_state, CudaVmafBuffer *buf);
+int vmaf_cuda_buffer_free(VmafCudaState *cu_state, VmafCudaBuffer *buf);
 
 /**
- * Uploads data in the size of the CudaVmafBuffer from src pointer (Host/CPU)
+ * Uploads data in the size of the VmafCudaBuffer from src pointer (Host/CPU)
  * to the Device/GPU asynchronously.
  *
  * @param cu_state  Initialized VmafCudaState object.
@@ -114,10 +114,10 @@ int vmaf_cuda_buffer_free(VmafCudaState *cu_state, CudaVmafBuffer *buf);
  *
  * @return CUDA_SUCCESS on success, or < 0 (a negative errno code) on error.
  */
-int vmaf_cuda_buffer_upload_async(VmafCudaState *cu_state, CudaVmafBuffer *buf,
+int vmaf_cuda_buffer_upload_async(VmafCudaState *cu_state, VmafCudaBuffer *buf,
                                   const void *src, CUstream c_stream);
 /**
- * Downloads data in the size of the CudaVmafBuffer from the GPU asynchronously.
+ * Downloads data in the size of the VmafCudaBuffer from the GPU asynchronously.
  *
  * @param cu_state  Initialized VmafCudaState object.
  *
@@ -129,18 +129,18 @@ int vmaf_cuda_buffer_upload_async(VmafCudaState *cu_state, CudaVmafBuffer *buf,
  *
  * @return CUDA_SUCCESS on success, or < 0 (a negative errno code) on error.
  */
-int vmaf_cuda_buffer_download_async(VmafCudaState *cu_state, CudaVmafBuffer *buf,
+int vmaf_cuda_buffer_download_async(VmafCudaState *cu_state, VmafCudaBuffer *buf,
                                     void *dst, CUstream c_stream);
 /**
- * Device pointer getter for CudaVmafBuffer
+ * Device pointer getter for VmafCudaBuffer
  *
- * @param buf   Initialized CudaVmafBuffer.
+ * @param buf   Initialized VmafCudaBuffer.
  *
  * @param ptr   CUdeviceptr to be set.
  *
  * @return 0 on success, or < 0 (a negative errno code) on error.
  */
-int vmaf_cuda_buffer_get_dptr(CudaVmafBuffer *buf, CUdeviceptr *ptr);
+int vmaf_cuda_buffer_get_dptr(VmafCudaBuffer *buf, CUdeviceptr *ptr);
 
 /**
  * Frees up pinned host (CPU) memory.

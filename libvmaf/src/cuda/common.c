@@ -96,13 +96,13 @@ int vmaf_cuda_release(VmafCudaState *cu_state, bool rel_ctx)
     return CUDA_SUCCESS;
 }
 
-int vmaf_cuda_buffer_alloc(VmafCudaState *cu_state, CudaVmafBuffer **p_buf,
+int vmaf_cuda_buffer_alloc(VmafCudaState *cu_state, VmafCudaBuffer **p_buf,
                            size_t size)
 {
     if (is_cudastate_empty(cu_state)) return -EINVAL;
     if (!p_buf) return -EINVAL;
 
-    CudaVmafBuffer *buf = (CudaVmafBuffer *)calloc(1, sizeof(*buf));
+    VmafCudaBuffer *buf = (VmafCudaBuffer *)calloc(1, sizeof(*buf));
     if (!buf) return -ENOMEM;
 
     *p_buf = buf;
@@ -115,7 +115,7 @@ int vmaf_cuda_buffer_alloc(VmafCudaState *cu_state, CudaVmafBuffer **p_buf,
     return CUDA_SUCCESS;
 }
 
-int vmaf_cuda_buffer_free(VmafCudaState *cu_state, CudaVmafBuffer *buf)
+int vmaf_cuda_buffer_free(VmafCudaState *cu_state, VmafCudaBuffer *buf)
 {
     if (is_cudastate_empty(cu_state)) return -EINVAL;
     if (!buf) return -EINVAL;
@@ -153,7 +153,7 @@ int vmaf_cuda_buffer_host_free(VmafCudaState *cu_state, void *buf)
     return CUDA_SUCCESS;
 }
 
-int vmaf_cuda_buffer_upload_async(VmafCudaState *cu_state, CudaVmafBuffer *buf,
+int vmaf_cuda_buffer_upload_async(VmafCudaState *cu_state, VmafCudaBuffer *buf,
                             const void *src, CUstream c_stream)
 {
     if (is_cudastate_empty(cu_state)) return -EINVAL;
@@ -168,7 +168,7 @@ int vmaf_cuda_buffer_upload_async(VmafCudaState *cu_state, CudaVmafBuffer *buf,
     return CUDA_SUCCESS;
 }
 
-int vmaf_cuda_buffer_download_async(VmafCudaState *cu_state, CudaVmafBuffer *buf,
+int vmaf_cuda_buffer_download_async(VmafCudaState *cu_state, VmafCudaBuffer *buf,
                               void *dst, CUstream c_stream)
 {
     if (is_cudastate_empty(cu_state)) return -EINVAL;
@@ -183,7 +183,7 @@ int vmaf_cuda_buffer_download_async(VmafCudaState *cu_state, CudaVmafBuffer *buf
     return CUDA_SUCCESS;
 }
 
-int vmaf_cuda_buffer_get_dptr(CudaVmafBuffer *buf, CUdeviceptr *ptr)
+int vmaf_cuda_buffer_get_dptr(VmafCudaBuffer *buf, CUdeviceptr *ptr)
 {
     if (!buf) return -EINVAL;
     if (!ptr) return -EINVAL;
