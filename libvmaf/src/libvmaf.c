@@ -56,7 +56,7 @@ typedef struct VmafContext {
     RegisteredFeatureExtractors registered_feature_extractors;
     VmafFeatureExtractorContextPool *fex_ctx_pool;
     VmafThreadPool *thread_pool;
-#if HAVE_CUDA
+#ifdef HAVE_CUDA
     struct {
         VmafCudaConfiguration cfg;
         VmafCudaState state;
@@ -117,7 +117,7 @@ fail:
     return -ENOMEM;
 }
 
-#if HAVE_CUDA
+#ifdef HAVE_CUDA
 static int prepare_ring_buffer(VmafContext *vmaf, unsigned w, unsigned h,
                                enum VmafPixelFormat pix_fmt, unsigned bpc)
 {
@@ -516,10 +516,11 @@ static int check_ring_buffer(VmafContext *vmaf)
 }
 
 static int translate_picture_host(VmafContext *vmaf, VmafPicture *pic,
-                                  VmafPicture *pic_device)
+                                  VmafPicture *pic_device, unsigned fex_flags)
 {
-
     int err = 0;
+
+    if (!(fex_flags & VMAF_FEATURE_EXTRACTOR_CUDA)) return err;
 
     //host to device
 
@@ -544,9 +545,11 @@ static int translate_picture_host(VmafContext *vmaf, VmafPicture *pic,
 }
 
 static int translate_picture_device(VmafContext *vmaf, VmafPicture *pic,
-                                    VmafPicture *pic_host)
+                                    VmafPicture *pic_host, unsigned fex_flags)
 {
     int err = 0;
+
+    //if (fex_flags & VMAF_FEATURE_EXTRACTOR_CUDA) return err;
 
     //device to host
 
@@ -578,10 +581,10 @@ static int translate_picture(VmafContext *vmaf, VmafPicture *pic,
     case VMAF_PICTURE_BUFFER_TYPE_HOST:
     case VMAF_PICTURE_BUFFER_TYPE_CUDA_HOST_PINNED:
         *pic_host = *pic;
-        return translate_picture_host(vmaf, pic, pic_device);
+        return translate_picture_host(vmaf, pic, pic_device, fex_flags);
     case VMAF_PICTURE_BUFFER_TYPE_CUDA_DEVICE:
         *pic_device = *pic;
-        return translate_picture_device(vmaf, pic, pic_host);
+        return translate_picture_device(vmaf, pic, pic_host, fex_flags);
     default:
         return -EINVAL;
     }
@@ -606,19 +609,22 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     err = check_ring_buffer(vmaf);
     if (err) return err;
 
+    const unsigned fex_flags =
+        feature_extractor_vector_flags(&vmaf->registered_feature_extractors);
+
     VmafPicture ref_host = { 0 }, ref_device = { 0 };
-    err = translate_picture(vmaf, ref, &ref_host, &ref_device, 0);
+    err = translate_picture(vmaf, ref, &ref_host, &ref_device, fex_flags);
     if (err) return err;
 
     VmafPicture dist_host = { 0 }, dist_device = { 0 };
-    err = translate_picture(vmaf, dist, &dist_host, &dist_device, 0);
+    err = translate_picture(vmaf, dist, &dist_host, &dist_device, fex_flags);
     if (err) return err;
-#endif
-
+#else
     //multithreading for GPU does not yield performance benefits
     //disabled for now
-    //if (vmaf->thread_pool)
-    //    return threaded_read_pictures(vmaf, ref, dist, index);
+    if (vmaf->thread_pool)
+        return threaded_read_pictures(vmaf, ref, dist, index);
+#endif
 
     for (unsigned i = 0; i < vmaf->registered_feature_extractors.cnt; i++) {
         VmafFeatureExtractorContext *fex_ctx =
@@ -643,21 +649,26 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     }
 
 #ifdef HAVE_CUDA
-    if (vmaf->cuda.state.ctx) {
+    if (ref_host.priv)
+        err |= vmaf_picture_unref(&ref_host);
+
+    if (dist_host.priv)
+        err |= vmaf_picture_unref(&dist_host);
+
+    if (ref_device.priv) {
         CHECK_CUDA(cuEventRecord(vmaf_cuda_picture_get_finished_event(&ref_device),
-                                vmaf_cuda_picture_get_stream(&ref_device)));
-        CHECK_CUDA(cuEventRecord(vmaf_cuda_picture_get_finished_event(&dist_device),
-                                vmaf_cuda_picture_get_stream(&ref_device)));
+                                 vmaf_cuda_picture_get_stream(&ref_device)));
+        //^FIXME: move to picture callback
+        err |= vmaf_picture_unref(&ref_device);
     }
 
-    if (ref_host.data[0])
-        err |= vmaf_picture_unref(&ref_host);
-    if (dist_host.data[0])
-        err |= vmaf_picture_unref(&dist_host);
-    if (ref_device.data[0])
-        err |= vmaf_picture_unref(&ref_device);
-    if (dist_device.data[0])
+    if (dist_device.priv) {
+        CHECK_CUDA(cuEventRecord(vmaf_cuda_picture_get_finished_event(&dist_device),
+                                vmaf_cuda_picture_get_stream(&dist_device)));
+        //^FIXME: move to picture callback
         err |= vmaf_picture_unref(&dist_device);
+    }
+
 #else
     err |= vmaf_picture_unref(ref);
     err |= vmaf_picture_unref(dist);
