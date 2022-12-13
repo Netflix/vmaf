@@ -61,6 +61,7 @@ typedef struct VmafConfiguration {
     unsigned n_threads;
     unsigned n_subsample;
     uint64_t cpumask;
+    uint64_t gpumask;
 } VmafConfiguration;
 
 typedef struct VmafContext VmafContext;

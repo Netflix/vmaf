@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "config.h"
 #include "dict.h"
 #include "feature/feature_extractor.h"
 #include "feature/feature_collector.h"
@@ -35,10 +36,18 @@ static char *test_get_feature_extractor_by_name_and_feature_name()
     mu_assert("problem vmaf_get_feature_extractor_by_name",
               !strcmp(fex->name, "vif"));
 
-    fex =
-        vmaf_get_feature_extractor_by_feature_name("VMAF_integer_feature_adm2_score");
+    fex = vmaf_get_feature_extractor_by_feature_name(
+            "VMAF_integer_feature_adm2_score", 0);
     mu_assert("problem during vmaf_get_feature_extractor_by_feature_name",
               fex && !strcmp(fex->name, "adm"));
+
+#if HAVE_CUDA
+    unsigned flags = VMAF_FEATURE_EXTRACTOR_CUDA;
+    fex = vmaf_get_feature_extractor_by_feature_name(
+            "VMAF_integer_feature_adm2_score", flags);
+    mu_assert("problem during vmaf_get_feature_extractor_by_feature_name",
+              fex && !strcmp(fex->name, "adm_cuda"));
+#endif
 
     return NULL;
 }
