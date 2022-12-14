@@ -378,11 +378,19 @@ static char *test_model_set_flags()
 char *test_model_descriptor_next()
 {
     VmafModelDescriptor *next = NULL;
+    VmafModelConfig config = {.name = NULL, .flags = VMAF_MODEL_FLAGS_DEFAULT};
     while (vmaf_model_descriptor_next(next))
     {
         next = vmaf_model_descriptor_next(next);
         VmafBuiltInModel *builtin = next;
         mu_assert("Version field should match on both builtin and next", next->version == builtin->version);
+        VmafModel *model;
+        printf(next->version);
+        printf("\n");
+        int err = vmaf_model_load(&model, &config, next->version);
+
+        mu_assert("Model load should not return an error",err==0);
+        vmaf_model_destroy(model);
     }
     return NULL;
 }
