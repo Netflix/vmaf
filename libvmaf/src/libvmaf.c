@@ -527,7 +527,7 @@ static int translate_picture_host(VmafContext *vmaf, VmafPicture *pic,
     case VMAF_PICTURE_BUFFER_TYPE_HOST:
     case VMAF_PICTURE_BUFFER_TYPE_CUDA_HOST_PINNED:
         if (!vmaf->cuda.state.ctx)
-            return 0;
+            return -EINVAL;
         err |= vmaf_ring_buffer_fetch_next_picture(vmaf->ring_buffer, pic_device);
         err |= vmaf_cuda_picture_upload_async(pic_device, pic, 0x1);
         if (err) {
