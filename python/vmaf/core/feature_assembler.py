@@ -124,10 +124,13 @@ class FeatureAssembler(object):
 
         if self.feature_option_dict is not None and fextractor_type in self.feature_option_dict:
             # Case I: when FeatureAssembler is used in VmafQualityRunner, or behavior that is supposed to mimic
-            # VmafQualityRunner, such as in train_test_vmaf_on_dataset().
+            # VmafQualityRunner, such as in train_test_vmaf_on_dataset(), cv_on_dataset() etc.
             # If feature_option_dict exists, optional_dict should use it, instead of self.optional_dict, which is
             # global QualityRunner behavior, instead of per FeatureExtractor behavior. This prevents non-FeatureExtractor
             # parameters from being passed to FeatureExtractor, for example: "model_filepath".
+            assert self.optional_dict is None or len(self.optional_dict) == 0, \
+                f'expect None or empty self.optinal_dict but get: {self.optional_dict}. ' \
+                f'Assert this to avoid passing in optional_dict but not using.'
             optional_dict = self.feature_option_dict[fextractor_type]
         else:
             # Case II: all other cases: for example, QualityRunnerFromFeatureExtractor, VmafSingleFeatureQualityRunner,
