@@ -138,7 +138,7 @@ class FeatureAssemblerUnitTest(unittest.TestCase):
             fifo_mode=False,
             delete_workdir=True,
             result_store=None,
-            optional_dict={'model_filepath': 'model/vmaf_float_v0.6.1_rdh540.json'},
+            optional_dict=None,
             optional_dict2=None,
             parallelize=False,
             save_workfiles=False,

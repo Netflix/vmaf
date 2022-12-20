@@ -10,6 +10,8 @@ class FeatureAssembler(object):
     """
     Assembles features for a input list of Assets on a input list of
     FeatureExtractors. For each asset, it outputs a BasicResult object.
+
+    Note: at least one of feature_option_dict or optional_dict must be None.
     """
 
     def __init__(self,
@@ -122,16 +124,20 @@ class FeatureAssembler(object):
 
         fextractor_class = FeatureExtractor.find_subclass(fextractor_type)
 
-        if self.feature_option_dict is not None and fextractor_type in self.feature_option_dict:
+        if self.feature_option_dict is not None:
             # Case I: when FeatureAssembler is used in VmafQualityRunner, or behavior that is supposed to mimic
             # VmafQualityRunner, such as in train_test_vmaf_on_dataset().
             # If feature_option_dict exists, optional_dict should use it, instead of self.optional_dict, which is
             # global QualityRunner behavior, instead of per FeatureExtractor behavior. This prevents non-FeatureExtractor
             # parameters from being passed to FeatureExtractor, for example: "model_filepath".
-            optional_dict = self.feature_option_dict[fextractor_type]
+            assert self.optional_dict is None, \
+                f"expect self.optional_dict to be None but is: {self.optional_dict}"
+            optional_dict = self.feature_option_dict.get(fextractor_type, None)
         else:
             # Case II: all other cases: for example, QualityRunnerFromFeatureExtractor, VmafSingleFeatureQualityRunner,
             # VmafLegacyQualityRunner, NiqeQualityRunner, etc. (hint: search FeatureAssembler)
+            assert self.feature_option_dict is None, \
+                f"expect self.feature_option_dict to be None but is: {self.feature_option_dict}"
             optional_dict = self.optional_dict
 
         fextractor = fextractor_class(assets=self.assets,
