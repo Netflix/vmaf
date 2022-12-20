@@ -123,11 +123,16 @@ class FeatureAssembler(object):
         fextractor_class = FeatureExtractor.find_subclass(fextractor_type)
 
         if self.feature_option_dict is not None and fextractor_type in self.feature_option_dict:
-            optional_dict = self.feature_option_dict[fextractor_type].copy()
-            if self.optional_dict is not None:
-                optional_dict.update(self.optional_dict)
+            # Case I: when FeatureAssembler is used in VmafQualityRunner, or behavior that is supposed to mimic
+            # VmafQualityRunner, such as in train_test_vmaf_on_dataset().
+            # If feature_option_dict exists, optional_dict should use it, instead of self.optional_dict, which is
+            # global QualityRunner behavior, instead of per FeatureExtractor behavior. This prevents non-FeatureExtractor
+            # parameters from being passed to FeatureExtractor, for example: "model_filepath".
+            optional_dict = self.feature_option_dict[fextractor_type]
         else:
-            optional_dict = self.optional_dict  # FIXME: hacky
+            # Case II: all other cases: for example, QualityRunnerFromFeatureExtractor, VmafSingleFeatureQualityRunner,
+            # VmafLegacyQualityRunner, NiqeQualityRunner, etc. (hint: search FeatureAssembler)
+            optional_dict = self.optional_dict
 
         fextractor = fextractor_class(assets=self.assets,
                                       logger=self.logger,
