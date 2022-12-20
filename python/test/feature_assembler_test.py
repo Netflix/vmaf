@@ -116,13 +116,13 @@ class FeatureAssemblerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 4.0498253541666669, places=4)
 
         with self.assertRaises(KeyError):
-            results[0]['VMAF_feature_ansnr_scores']
+            _ = results[0]['VMAF_feature_ansnr_scores']
         with self.assertRaises(KeyError):
-            results[0]['VMAF_feature_ansnr_score']
+            _ = results[0]['VMAF_feature_ansnr_score']
         with self.assertRaises(KeyError):
-            results[0]['VMAF_feature_adm_scores']
+            _ = results[0]['VMAF_feature_adm_scores']
         with self.assertRaises(KeyError):
-            results[0]['VMAF_feature_adm_score']
+            _ = results[0]['VMAF_feature_adm_score']
 
 
 class FeatureAssemblerUnitTest(unittest.TestCase):
@@ -145,7 +145,7 @@ class FeatureAssemblerUnitTest(unittest.TestCase):
         )
 
         fex = fassembler._get_fextractor_instance('VMAF_feature')
-        self.assertEqual(fex.optional_dict, {'adm_ref_display_height': 540, 'model_filepath': 'model/vmaf_float_v0.6.1_rdh540.json'})
+        self.assertEqual(fex.optional_dict, {'adm_ref_display_height': 540})
         self.assertEqual(fex.optional_dict2, None)
 
 

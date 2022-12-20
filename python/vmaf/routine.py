@@ -798,7 +798,7 @@ def explain_model_on_dataset(model, test_assets_selected_indexs,
     test_assets = [test_assets[i] for i in test_assets_selected_indexs]
     test_fassembler = FeatureAssembler(
         feature_dict=model.model_dict['feature_dict'],
-        feature_option_dict=None,
+        feature_option_dict=None,  # FIXME: as set to None, potential bug with inconsistent behavior with VmafQualityRunner
         assets=test_assets,
         logger=None,
         fifo_mode=True,
