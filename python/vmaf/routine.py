@@ -654,7 +654,7 @@ def cv_on_dataset(dataset, feature_param, model_param, ax, result_store,
 
     fassembler = FeatureAssembler(
         feature_dict=feature_param.feature_dict,
-        feature_option_dict=None,
+        feature_option_dict=None,  # FIXME: as set to None, potential bug with inconsistent behavior with VmafQualityRunner
         assets=assets,
         logger=logger,
         delete_workdir=True,

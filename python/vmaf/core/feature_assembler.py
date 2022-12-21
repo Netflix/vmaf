@@ -119,19 +119,20 @@ class FeatureAssembler(object):
         return atom_features
 
     def _get_fextractor_instance(self, fextractor_type):
+        """
+        On the assignment of feature extractor's optional_dict, the following rules are used:
+        1) If input feature_option_dict has been assigned (for example, this could come from a "feature_opts_dicts"
+        field in a model file passed to VmafQualityRunner or its subclass), use it.
+        2) If input feature_option_dict is not assigned (i.e. None), then use the input optional_dict. This happens,
+        for example, in VmafQualityRunner or its subclass, the model file does not specify a
+        "feature_opts_dicts" field, but we pass the fields in through input optional_dict.
+        """
 
         fextractor_class = FeatureExtractor.find_subclass(fextractor_type)
 
         if self.feature_option_dict is not None and fextractor_type in self.feature_option_dict:
-            # Case I: when FeatureAssembler is used in VmafQualityRunner, or behavior that is supposed to mimic
-            # VmafQualityRunner, such as in train_test_vmaf_on_dataset().
-            # If feature_option_dict exists, optional_dict should use it, instead of self.optional_dict, which is
-            # global QualityRunner behavior, instead of per FeatureExtractor behavior. This prevents non-FeatureExtractor
-            # parameters from being passed to FeatureExtractor, for example: "model_filepath".
             optional_dict = self.feature_option_dict[fextractor_type]
         else:
-            # Case II: all other cases: for example, QualityRunnerFromFeatureExtractor, VmafSingleFeatureQualityRunner,
-            # VmafLegacyQualityRunner, NiqeQualityRunner, etc. (hint: search FeatureAssembler)
             optional_dict = self.optional_dict
 
         fextractor = fextractor_class(assets=self.assets,
