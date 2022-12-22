@@ -3,12 +3,14 @@ import os
 import unittest
 import shutil
 
+import numpy as np
+
 from vmaf.config import VmafConfig, DisplayConfig
 # from vmaf.routine import train_test_vmaf_on_dataset, read_dataset, run_test_on_dataset, generate_dataset_from_raw
-from vmaf.routine import read_dataset, generate_dataset_from_raw
+from vmaf.routine import read_dataset, generate_dataset_from_raw, compare_two_quality_runners_on_dataset
 from vmaf.tools.misc import import_python_file
-from vmaf.core.quality_runner import VmafQualityRunner, BootstrapVmafQualityRunner
-from sureal.subjective_model import MosModel
+from vmaf.core.quality_runner import VmafQualityRunner, BootstrapVmafQualityRunner, PsnrQualityRunner
+from sureal.subjective_model import MosModel, SubjectiveModel
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
@@ -363,6 +365,34 @@ class TestTrainOnDataset(unittest.TestCase):
         self.assertAlmostEqual(test_assets[1].groundtruth, 50, places=4)
         self.assertAlmostEqual(test_assets[2].groundtruth, 100, places=4)
         self.assertAlmostEqual(test_assets[3].groundtruth, 80, places=4)
+
+    def test_compare_two_quality_runners_on_dataset(self):
+        test_dataset = import_python_file(VmafConfig.test_resource_path('dataset_sample.py'))
+        result = compare_two_quality_runners_on_dataset(
+            test_dataset, VmafQualityRunner, PsnrQualityRunner,
+            result_store=None,
+            num_resample=10,
+            seed_resample=0,
+            subj_model_class=SubjectiveModel.find_subclass('MOS'),
+            parallelize=False, fifo_mode=False)
+        self.assertAlmostEqual(np.nanmean(list(zip(*result['plcc']))[0]), 0.8655928449687122, places=4)
+        self.assertAlmostEqual(np.nanmean(list(zip(*result['plcc']))[1]), 0.9875440797696373, places=4)
+        self.assertAlmostEqual(np.nanmean(list(zip(*result['srocc']))[0]), 0.8642507701111302, places=4)
+        self.assertAlmostEqual(np.nanmean(list(zip(*result['srocc']))[1]), 1.0, places=4)
+
+        self.assertTrue(np.isnan(result['plcc_ci95_first'][0]))
+        self.assertTrue(np.isnan(result['plcc_ci95_first'][1]))
+        self.assertTrue(np.isnan(result['plcc_ci95_second'][0]))
+        self.assertTrue(np.isnan(result['plcc_ci95_second'][1]))
+        self.assertTrue(np.isnan(result['plcc_ci95_diff'][0]))
+        self.assertTrue(np.isnan(result['plcc_ci95_diff'][1]))
+
+        self.assertTrue(np.isnan(result['srocc_ci95_first'][0]))
+        self.assertTrue(np.isnan(result['srocc_ci95_first'][1]))
+        self.assertTrue(np.isnan(result['srocc_ci95_second'][0]))
+        self.assertTrue(np.isnan(result['srocc_ci95_second'][1]))
+        self.assertTrue(np.isnan(result['srocc_ci95_diff'][0]))
+        self.assertTrue(np.isnan(result['srocc_ci95_diff'][1]))
 
     def test_test_on_dataset_plot_per_content(self):
         from vmaf.routine import run_test_on_dataset

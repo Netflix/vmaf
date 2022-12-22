@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import pandas
 
 from vmaf import plt
 from vmaf.core.cross_validation import ModelCrossValidation
@@ -268,6 +269,106 @@ def read_dataset(dataset, **kwargs):
             assets.append(asset)
 
     return assets
+
+
+def compare_two_quality_runners_on_dataset(
+        test_dataset, first_runner_class, second_runner_class,
+        result_store,
+        parallelize=True, fifo_mode=True,
+        aggregate_method=np.mean,
+        type='regressor',
+        num_resample=1000,
+        seed_resample=None,
+        ax_plcc=None,
+        ax_srocc=None,
+        **kwargs):
+
+    def _get_stat(df: pandas.DataFrame,
+                  xcol: str,
+                  ycol: str,
+                  ) -> dict:
+        plcc = df[ycol].corr(df[xcol], method='pearson')
+        srocc = df[ycol].corr(df[xcol], method='spearman')
+        return {'plcc': plcc, 'srocc': srocc}
+
+    first_test_assets, first_results = run_test_on_dataset(
+        test_dataset, first_runner_class, None, result_store, None,
+        parallelize, fifo_mode, aggregate_method, type, **kwargs)
+
+    second_test_assets, second_results = run_test_on_dataset(
+        test_dataset, second_runner_class, None, result_store, None,
+        parallelize, fifo_mode, aggregate_method, type, **kwargs)
+
+    # collect data to list of dictionaries
+    ds = list()
+    assert len(first_test_assets) == len(second_test_assets) == len(first_results) == len(second_results)
+    for first_test_asset, first_result, second_test_asset, second_result in zip(first_test_assets, first_results, second_test_assets, second_results):
+        assert first_test_asset.groundtruth is not None
+        assert second_test_asset.groundtruth is not None
+        assert first_test_asset.groundtruth == second_test_asset.groundtruth
+        d = {
+            'groundtruth': first_test_asset.groundtruth,
+            'first_prediction': first_result[first_runner_class.get_score_key()],
+            'second_prediction': second_result[second_runner_class.get_score_key()],
+        }
+        ds.append(d)
+    df = pandas.DataFrame(ds)
+
+    # bootstrapping
+    np.random.seed(seed_resample)
+    xs = list()
+    ys = list()
+    xs2 = list()
+    ys2 = list()
+    for _ in range(num_resample):
+        dfb = df.sample(n=df.shape[0], replace=True)
+        d_stat_first = _get_stat(dfb, 'groundtruth', 'first_prediction')
+        d_stat_second = _get_stat(dfb, 'groundtruth', 'second_prediction')
+        x = d_stat_first['plcc']
+        y = d_stat_second['plcc']
+        x2 = d_stat_first['srocc']
+        y2 = d_stat_second['srocc']
+        xs.append(x)
+        ys.append(y)
+        xs2.append(x2)
+        ys2.append(y2)
+
+    ci95_xs = [np.percentile(xs, 2.5), np.percentile(xs, 97.5)]
+    ci95_ys = [np.percentile(ys, 2.5), np.percentile(ys, 97.5)]
+    diffs = np.array(ys) - np.array(xs)
+    ci95_diffs = [np.percentile(diffs, 2.5), np.percentile(diffs, 97.5)]
+    if ax_plcc is not None:
+        ax_plcc.scatter(xs, ys, alpha=0.2, label='PLCC with resampling')
+        ax_plcc.plot([min(xs), max(xs)], [min(xs), max(xs)], '-r')
+        ax_plcc.set_xlabel(f'{first_runner_class.TYPE} 95%-CI: [{ci95_xs[0]:.4f}, {ci95_xs[1]:.4f}]')
+        ax_plcc.set_ylabel(f'{second_runner_class.TYPE} 95%-CI: [{ci95_ys[0]:.4f}, {ci95_ys[1]:.4f}]')
+        ax_plcc.set_title(f'({second_runner_class.TYPE} - {first_runner_class.TYPE}) 95%-CI: [{ci95_diffs[0]:.4f}, {ci95_diffs[1]:.4f}]')
+        ax_plcc.grid()
+        ax_plcc.legend()
+
+    ci95_xs2 = [np.percentile(xs2, 2.5), np.percentile(xs2, 97.5)]
+    ci95_ys2 = [np.percentile(ys2, 2.5), np.percentile(ys2, 97.5)]
+    diffs2 = np.array(ys2) - np.array(xs2)
+    ci95_diffs2 = [np.percentile(diffs2, 2.5), np.percentile(diffs2, 97.5)]
+    if ax_srocc is not None:
+        ax_srocc.scatter(xs2, ys2, alpha=0.2, label='SROCC with resampling')
+        ax_srocc.plot([min(xs2), max(xs2)], [min(xs2), max(xs2)], '-r')
+        ax_srocc.set_xlabel(f'{first_runner_class.TYPE} 95%-CI: [{ci95_xs2[0]:.4f}, {ci95_xs2[1]:.4f}]')
+        ax_srocc.set_ylabel(f'{second_runner_class.TYPE} 95%-CI: [{ci95_ys2[0]:.4f}, {ci95_ys2[1]:.4f}]')
+        ax_srocc.set_title(f'({second_runner_class.TYPE} - {first_runner_class.TYPE})  95%-CI: [{ci95_diffs2[0]:.4f}, {ci95_diffs2[1]:.4f}]')
+        ax_srocc.grid()
+        ax_srocc.legend()
+
+    return {
+        'plcc': list(zip(xs, ys)),
+        'srocc': list(zip(xs2, ys2)),
+        'plcc_ci95_first': ci95_xs,
+        'plcc_ci95_second': ci95_ys,
+        'plcc_ci95_diff': ci95_diffs,
+        'srocc_ci95_first': ci95_xs2,
+        'srocc_ci95_second': ci95_ys2,
+        'srocc_ci95_diff': ci95_diffs2,
+    }
 
 
 def run_test_on_dataset(test_dataset, runner_class, ax,
