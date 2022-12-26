@@ -21,7 +21,7 @@
 
 #include "feature/integer_vif.h"
 
-void vif_subsample_rd_8_avx2(VifBuffer buf, unsigned w, unsigned h);
+void vif_subsample_rd_8_avx512(VifBuffer buf, unsigned w, unsigned h);
 
 void vif_subsample_rd_16_avx512(VifBuffer buf, unsigned w, unsigned h, int scale,
                              int bpc);
