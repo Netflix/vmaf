@@ -104,8 +104,6 @@ int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
 
     return 0;
 
-free_fex_ctx_pool:
-    vmaf_fex_ctx_pool_destroy(v->fex_ctx_pool);
 free_thread_pool:
     vmaf_thread_pool_destroy(v->thread_pool);
 free_feature_extractor_vector:
