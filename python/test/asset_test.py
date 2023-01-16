@@ -740,6 +740,17 @@ class AssetTest(unittest.TestCase):
         new_asset2 = asset.copy_as_asset(ref_path='xyz')
         self.assertEqual(new_asset2.ref_path, 'xyz')
 
+    def test_NorefAsset_copy_override_asset_dict(self):
+        asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
+                           dis_path="",
+                           asset_dict={'width': 720, 'height': 480,
+                                       'quality_width': 720, 'quality_height': 320,
+                                       'yuv_type': 'yuv422p',
+                                       'crop_cmd': '570:320:3:2'})
+        new_asset = asset.copy(asset_dict={'height': 481})
+        self.assertEqual(new_asset.dis_width_height, (720, 481))
+        self.assertEqual(new_asset.dis_crop_cmd, '570:320:3:2')
+
     def test_clear_up_yuv_type(self):
         asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
                       dis_path="abc",
