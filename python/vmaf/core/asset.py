@@ -936,6 +936,11 @@ class NorefAsset(Asset):
         dis_path = kwargs['dis_path'] if 'dis_path' in kwargs else self.dis_path
         workdir_root = kwargs['workdir_root'] if 'workdir_root' in kwargs else self.workdir_root
 
+        # additional or override elements in asset_dict
+        if 'asset_dict' in kwargs:
+            for key in kwargs['asset_dict']:
+                new_asset_dict[key] = kwargs['asset_dict'][key]
+
         new_asset = self.__class__(dataset, content_id, asset_id,
                                    dis_path, new_asset_dict,
                                    workdir_root)
