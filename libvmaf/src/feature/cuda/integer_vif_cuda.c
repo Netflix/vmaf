@@ -78,6 +78,7 @@ static const VmafOption options[] = {
     },
     {
         .name = "vif_enhn_gain_limit",
+        .alias = "egl",
         .help = "enhancement gain imposed on vif, must be >= 1.0, "
             "where 1.0 means the gain is completely disabled",
         .offset = offsetof(VifStateCuda, vif_enhn_gain_limit),
@@ -85,6 +86,7 @@ static const VmafOption options[] = {
         .default_val.d = DEFAULT_VIF_ENHN_GAIN_LIMIT,
         .min = 1.0,
         .max = DEFAULT_VIF_ENHN_GAIN_LIMIT,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     { 0 }
 };
