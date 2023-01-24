@@ -67,6 +67,7 @@ static const VmafOption options[] = {
         .offset = offsetof(MotionStateCuda, motion_force_zero),
         .type = VMAF_OPT_TYPE_BOOL,
         .default_val.b = false,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     { 0 }
 };

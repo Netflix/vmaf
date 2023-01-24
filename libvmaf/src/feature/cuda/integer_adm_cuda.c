@@ -596,6 +596,7 @@ static const VmafOption options_cuda[] = {
     },
     {
         .name = "adm_enhn_gain_limit",
+        .alias = "egl",
         .help = "enhancement gain imposed on adm, must be >= 1.0, "
             "where 1.0 means the gain is completely disabled",
         .offset = offsetof(AdmStateCuda, adm_enhn_gain_limit),
@@ -603,6 +604,7 @@ static const VmafOption options_cuda[] = {
         .default_val.d = DEFAULT_ADM_ENHN_GAIN_LIMIT,
         .min = 1.0,
         .max = DEFAULT_ADM_ENHN_GAIN_LIMIT,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     {
         .name = "adm_norm_view_dist",
