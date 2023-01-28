@@ -41,7 +41,7 @@ class LazyExtensions(list):
 
             self._extensions = cythonize([
                 'vmaf/core/adm_dwt2_cy.pyx'
-            ])
+            ], compiler_directives={'language_level' : "3"})
             self._extensions[0].include_dirs = [numpy.get_include(), '../libvmaf/src']
 
         return self._extensions
