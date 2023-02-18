@@ -317,6 +317,10 @@ int output_get_outputline_sub_Leo(VmafFeatureCollector* fc, unsigned frame, char
 	for (unsigned featidx = 0; featidx < fc->cnt; featidx++) {
         fprintf(stderr, "fc-cnt %d\n", fc->cnt);
         fprintf(stdout, "fc-cnt %d\n", fc->cnt);
+<<<<<<< HEAD
+=======
+        
+>>>>>>> a60178cbfe7b22657b0c59e2a4040f97921d2212
         if (frame > fc->feature_vector[featidx]->capacity)
 			continue;
 		if (!fc->feature_vector[featidx]->score[frame].written)
@@ -325,6 +329,7 @@ int output_get_outputline_sub_Leo(VmafFeatureCollector* fc, unsigned frame, char
 			vmaf_feature_name_alias(fc->feature_vector[featidx]->name),
 			fc->feature_vector[featidx]->score[frame].value);
         fprintf(stderr, "theline %s\n", outputline);
+        fprintf(stdout, "theline %s\n", outputline);
 
 		}
 	return 0;
@@ -347,6 +352,7 @@ int vmaf_write_output_sub_Leo(VmafFeatureCollector* fc, FILE* outfile,
 		if (!cnt) continue;  //was if (!cnt)  expla: !cnt expression will be true if cnt equals to zero
 		fprintf(outfile, "{%d}{%d}frame: %d|", frame, frame + 1, frame);
 		output_get_outputline_sub_Leo(fc, frame, MyLine);
+
 
 		//fprintf(stderr, MyLine);
 		fprintf(outfile, "\n");
