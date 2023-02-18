@@ -313,6 +313,27 @@ int vmaf_write_output_sub(VmafFeatureCollector *fc, FILE *outfile,
     return 0;
 }
 
+int vmaf_write_output_sub_Leo_line(VmafFeatureCollector* fc, FILE* outfile,
+    unsigned subsample, unsigned i)
+    {
+    for (unsigned j = 0; j < fc->cnt; j++) {
+        if (i > fc->feature_vector[j]->capacity)
+            continue;
+        if (!fc->feature_vector[j]->score[i].written)
+            continue;
+        fprintf(outfile, "%s: %.6f|",
+            vmaf_feature_name_alias(fc->feature_vector[j]->name),
+            fc->feature_vector[j]->score[i].value);
+        fprintf(stderr, "%s: %.6f|",
+            vmaf_feature_name_alias(fc->feature_vector[j]->name),
+            fc->feature_vector[j]->score[i].value);//Leo
+        }
+
+
+    return 0;
+    }
+
+
 int vmaf_write_output_sub_Leo(VmafFeatureCollector* fc, FILE* outfile,
     unsigned subsample)
     {
@@ -330,6 +351,12 @@ int vmaf_write_output_sub_Leo(VmafFeatureCollector* fc, FILE* outfile,
         if (!cnt) continue;
 
         fprintf(outfile, "{%d}{%d}frame: %d|", i, i + 1, i);
+        
+
+        vmaf_write_output_sub_Leo_line(fc, outfile, subsample,i);
+
+        
+        /*
         for (unsigned j = 0; j < fc->cnt; j++) {
             if (i > fc->feature_vector[j]->capacity)
                 continue;
@@ -342,6 +369,10 @@ int vmaf_write_output_sub_Leo(VmafFeatureCollector* fc, FILE* outfile,
                 vmaf_feature_name_alias(fc->feature_vector[j]->name),
                 fc->feature_vector[j]->score[i].value);//Leo
             }
+        */
+
+
+
         fprintf(outfile, "\n");
         }
 
