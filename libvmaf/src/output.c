@@ -313,28 +313,18 @@ int vmaf_write_output_sub(VmafFeatureCollector *fc, FILE *outfile,
     return 0;
 }
 
-int vmaf_write_output_sub_Leo_line(VmafFeatureCollector* fc, FILE* outfile,
-    unsigned subsample, unsigned i, char *outputline)
+//snprintf uses maximum capacity, it will not write more than n...
+int vmaf_get_outputline_sub_Leo(VmafFeatureCollector* fc, unsigned frame, char *outputline)
     {
-    for (unsigned j = 0; j < fc->cnt; j++) {
-        if (i > fc->feature_vector[j]->capacity)
+    for (unsigned featidx = 0; featidx < fc->cnt; featidx++) {
+        if (frame > fc->feature_vector[featidx]->capacity)
             continue;
-        if (!fc->feature_vector[j]->score[i].written)
+        if (!fc->feature_vector[featidx]->score[frame].written)
             continue;
-        fprintf(outfile, "%s: %.6f|",
-            vmaf_feature_name_alias(fc->feature_vector[j]->name),
-            fc->feature_vector[j]->score[i].value);
-        fprintf(stderr, "%s: %.6f|",
-            vmaf_feature_name_alias(fc->feature_vector[j]->name),
-            fc->feature_vector[j]->score[i].value);//Leo
-        //snprintf uses maximum capacity, it will not write more than n...
         snprintf(outputline,510, "%s: %.6f|",
-            vmaf_feature_name_alias(fc->feature_vector[j]->name),
-            fc->feature_vector[j]->score[i].value);//Leo
-
+            vmaf_feature_name_alias(fc->feature_vector[featidx]->name),
+            fc->feature_vector[featidx]->score[frame].value);
         }
-
-
     return 0;
     }
 
@@ -343,39 +333,25 @@ int vmaf_write_output_sub_Leo(VmafFeatureCollector* fc, FILE* outfile,
     unsigned subsample)
     {
     char MyLine[512];
-    for (unsigned i = 0; i < max_capacity(fc); i++) {
-        if ((subsample > 1) && (i % subsample))
+    for (unsigned frame = 0; frame < max_capacity(fc); frame++) 
+        {
+        if ((subsample > 1) && (frame % subsample))
             continue;
 
         unsigned cnt = 0;
         for (unsigned j = 0; j < fc->cnt; j++) {
-            if (i > fc->feature_vector[j]->capacity)
+            if (frame > fc->feature_vector[j]->capacity)
                 continue;
-            if (fc->feature_vector[j]->score[i].written)
+            if (fc->feature_vector[j]->score[frame].written)
                 cnt++;
             }
-        if (!cnt) continue;
+        if (cnt==0) continue;  //was if (!cnt)  expla: !cnt expression will be true if cnt equals to zero
 
-        fprintf(outfile, "{%d}{%d}frame: %d|", i, i + 1, i);
+        fprintf(outfile, "{%d}{%d}frame: %d|", frame, frame + 1, frame);
         
 
-        vmaf_write_output_sub_Leo_line(fc, outfile, subsample,i,MyLine);
+        vmaf_get_outputline_sub_Leo(fc,frame,MyLine);
 
-        
-        /*
-        for (unsigned j = 0; j < fc->cnt; j++) {
-            if (i > fc->feature_vector[j]->capacity)
-                continue;
-            if (!fc->feature_vector[j]->score[i].written)
-                continue;
-            fprintf(outfile, "%s: %.6f|",
-                vmaf_feature_name_alias(fc->feature_vector[j]->name),
-                fc->feature_vector[j]->score[i].value);
-            fprintf(stderr, "%s: %.6f|",
-                vmaf_feature_name_alias(fc->feature_vector[j]->name),
-                fc->feature_vector[j]->score[i].value);//Leo
-            }
-        */
         fprintf(stderr, MyLine);
 
 
