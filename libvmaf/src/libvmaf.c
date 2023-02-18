@@ -851,10 +851,22 @@ const char* vmaf_version(void)
 	return VMAF_VERSION;
 	}
 
+static unsigned max_capacity_Leo(VmafFeatureCollector* fc)
+	{
+	unsigned capacity = 0;
+
+	for (unsigned j = 0; j < fc->cnt; j++) {
+		if (fc->feature_vector[j]->capacity > capacity)
+			capacity = fc->feature_vector[j]->capacity;
+		}
+
+	return capacity;
+	}
+
 int vmaf_write_output_sub_Leo(VmafFeatureCollector* fc, FILE* outfile,
 	unsigned subsample)
 	{
-	for (unsigned i = 0; i < max_capacity(fc); i++) {
+	for (unsigned i = 0; i < max_capacity_Leo(fc); i++) {
 		if ((subsample > 1) && (i % subsample))
 			continue;
 
