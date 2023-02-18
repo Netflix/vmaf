@@ -851,6 +851,41 @@ const char* vmaf_version(void)
 	return VMAF_VERSION;
 	}
 
+int vmaf_write_output_sub_Leo(VmafFeatureCollector* fc, FILE* outfile,
+	unsigned subsample)
+	{
+	for (unsigned i = 0; i < max_capacity(fc); i++) {
+		if ((subsample > 1) && (i % subsample))
+			continue;
+
+		unsigned cnt = 0;
+		for (unsigned j = 0; j < fc->cnt; j++) {
+			if (i > fc->feature_vector[j]->capacity)
+				continue;
+			if (fc->feature_vector[j]->score[i].written)
+				cnt++;
+			}
+		if (!cnt) continue;
+
+		fprintf(outfile, "{%d}{%d}frame: %d|", i, i + 1, i);
+		for (unsigned j = 0; j < fc->cnt; j++) {
+			if (i > fc->feature_vector[j]->capacity)
+				continue;
+			if (!fc->feature_vector[j]->score[i].written)
+				continue;
+			fprintf(outfile, "%s: %.6f|",
+				vmaf_feature_name_alias(fc->feature_vector[j]->name),
+				fc->feature_vector[j]->score[i].value);
+			fprintf(stderr, "%s: %.6f|",
+				vmaf_feature_name_alias(fc->feature_vector[j]->name),
+				fc->feature_vector[j]->score[i].value);//Leo
+			}
+		fprintf(outfile, "\n");
+		}
+
+	return 0;
+	}
+
 int vmaf_write_output(VmafContext* vmaf, const char* output_path,
 	enum VmafOutputFormat fmt)
 	{
@@ -881,7 +916,7 @@ int vmaf_write_output(VmafContext* vmaf, const char* output_path,
 					vmaf->cfg.n_subsample);
 				break;
 			case VMAF_OUTPUT_FORMAT_SUB:
-				ret = vmaf_write_output_sub(vmaf->feature_collector, outfile,
+				ret = vmaf_write_output_sub_Leo(vmaf->feature_collector, outfile,
 					vmaf->cfg.n_subsample);
 				break;
 			default:
