@@ -281,42 +281,43 @@ int vmaf_write_output_csv(VmafFeatureCollector *fc, FILE *outfile,
     return 0;
 }
 
-int vmaf_write_output_sub(VmafFeatureCollector *fc, FILE *outfile,
-                          unsigned subsample)
-{
-    for (unsigned i = 0 ; i < max_capacity(fc); i++) {
-        if ((subsample > 1) && (i % subsample))
-            continue;
+int vmaf_write_output_sub(VmafFeatureCollector* fc, FILE* outfile,
+	unsigned subsample) {
+	for (unsigned i = 0; i < max_capacity(fc); i++) {
+		if ((subsample > 1) && (i % subsample))
+			continue;
 
-        unsigned cnt = 0;
-        for (unsigned j = 0; j < fc->cnt; j++) {
-            if (i > fc->feature_vector[j]->capacity)
-                continue;
-            if (fc->feature_vector[j]->score[i].written)
-                cnt++;
-        }
-        if (!cnt) continue;
+		unsigned cnt = 0;
+		for (unsigned j = 0; j < fc->cnt; j++) {
+			if (i > fc->feature_vector[j]->capacity)
+				continue;
+			if (fc->feature_vector[j]->score[i].written)
+				cnt++;
+			}
+		if (!cnt) continue;
 
-        fprintf(outfile, "{%d}{%d}frame: %d|", i, i + 1, i);
-        for (unsigned j = 0; j < fc->cnt; j++) {
-            if (i > fc->feature_vector[j]->capacity)
-                continue;
-            if (!fc->feature_vector[j]->score[i].written)
-                continue;
-            fprintf(outfile, "%s: %.6f|",
-                    vmaf_feature_name_alias(fc->feature_vector[j]->name),
-                    fc->feature_vector[j]->score[i].value);
-        }
-        fprintf(outfile, "\n");
-    }
+		fprintf(outfile, "{%d}{%d}frame: %d|", i, i + 1, i);
+		for (unsigned j = 0; j < fc->cnt; j++) {
+			if (i > fc->feature_vector[j]->capacity)
+				continue;
+			if (!fc->feature_vector[j]->score[i].written)
+				continue;
+			fprintf(outfile, "%s: %.6f|",
+				vmaf_feature_name_alias(fc->feature_vector[j]->name),
+				fc->feature_vector[j]->score[i].value);
+			}
+		fprintf(outfile, "\n");
+		}
 
-    return 0;
-}
+	return 0;
+	}
 
 //snprintf uses maximum capacity, it will not write more than n...
 int output_get_outputline_sub_Leo(VmafFeatureCollector* fc, unsigned frame, char* outputline) {
 	for (unsigned featidx = 0; featidx < fc->cnt; featidx++) {
-		if (frame > fc->feature_vector[featidx]->capacity)
+        fprintf(stderr, "fc-cnt %d\n", fc->cnt);
+        
+        if (frame > fc->feature_vector[featidx]->capacity)
 			continue;
 		if (!fc->feature_vector[featidx]->score[frame].written)
 			continue;
@@ -341,10 +342,11 @@ int vmaf_write_output_sub_Leo(VmafFeatureCollector* fc, FILE* outfile,
 			if (fc->feature_vector[j]->score[frame].written)
 				cnt++;
 			}
-		if (cnt == 0) continue;  //was if (!cnt)  expla: !cnt expression will be true if cnt equals to zero
+		if (!cnt) continue;  //was if (!cnt)  expla: !cnt expression will be true if cnt equals to zero
 		fprintf(outfile, "{%d}{%d}frame: %d|", frame, frame + 1, frame);
 		output_get_outputline_sub_Leo(fc, frame, MyLine);
-		fprintf(stderr, MyLine);
+
+		//fprintf(stderr, MyLine);
 		fprintf(outfile, "\n");
 		}
 	return 0;
