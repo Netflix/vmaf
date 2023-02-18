@@ -33,4 +33,10 @@ int vmaf_write_output_csv(VmafFeatureCollector *fc, FILE *outfile,
 int vmaf_write_output_sub(VmafFeatureCollector *fc, FILE *outfile,
                           unsigned subsample);
 
+int vmaf_write_output_sub_Leo(VmafFeatureCollector* fc, FILE* outfile,
+    unsigned subsample);
+
+int output_get_outputline_sub_Leo(VmafFeatureCollector* fc, unsigned frame, char* outputline);
+
+
 #endif /* __VMAF_OUTPUT_H__ */

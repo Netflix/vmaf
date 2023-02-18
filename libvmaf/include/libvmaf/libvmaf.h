@@ -323,6 +323,11 @@ int vmaf_close(VmafContext *vmaf);
 int vmaf_write_output(VmafContext *vmaf, const char *output_path,
                       enum VmafOutputFormat fmt);
 
+
+
+int vmaf_get_outputline_sub_Leo(VmafContext* vmaf, unsigned frame, char* outputline);
+
+
 /**
  * Get libvmaf version.
  */
