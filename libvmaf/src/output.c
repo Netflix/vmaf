@@ -327,7 +327,7 @@ int vmaf_write_output_sub_Leo_line(VmafFeatureCollector* fc, FILE* outfile,
         fprintf(stderr, "%s: %.6f|",
             vmaf_feature_name_alias(fc->feature_vector[j]->name),
             fc->feature_vector[j]->score[i].value);//Leo
-        sprintf(Maline, "%s: %.6f|",
+        sprintf(&Maline, "%s: %.6f|",
             vmaf_feature_name_alias(fc->feature_vector[j]->name),
             fc->feature_vector[j]->score[i].value);//Leo
 
