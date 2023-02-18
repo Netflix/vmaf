@@ -1,0 +1,16 @@
+CPPFLAGS: -D_FORTIFY_SOURCE=0 -D__USE_MINGW_ANSI_STDIO=1
+CFLAGS: -mthreads -mtune=generic -O2 -pipe
+CXXFLAGS: -mthreads -mtune=generic -O2 -pipe
+LDFLAGS: -pipe -static-libgcc -static-libstdc++
+vcs_reset 67eea663d730b4b7f4ac18179e74b03545669aea
+++ vcs_get_latest_tag 67eea663d730b4b7f4ac18179e74b03545669aea
+++ case $1 in
+++ false
+++ echo 67eea663d730b4b7f4ac18179e74b03545669aea
++ git checkout --no-track -fB ab-suite 67eea663d730b4b7f4ac18179e74b03545669aea
+Reset branch 'ab-suite'
+Your branch is behind 'origin/ab-suite' by 1 commit, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
++ git log --oneline --no-merges --no-color -n 1
++ tee /dev/null
+67eea663 Update output.c

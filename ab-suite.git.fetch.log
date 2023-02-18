@@ -1,0 +1,63 @@
+CPPFLAGS: -D_FORTIFY_SOURCE=0 -D__USE_MINGW_ANSI_STDIO=1
+CFLAGS: -mthreads -mtune=generic -O2 -pipe
+CXXFLAGS: -mthreads -mtune=generic -O2 -pipe
+LDFLAGS: -pipe -static-libgcc -static-libstdc++
+vcs_fetch 
+++ git rev-parse --git-dir
++ [[ -f .git/shallow ]]
++ unshallow=
++ git fetch --all -Ppft
+Fetching origin
+From https://github.com/Leo-van-Stee/vmaf
+ - [deleted]           (none)     -> v1.0.2
+ - [deleted]           (none)     -> v1.1.6
+ - [deleted]           (none)     -> v1.2.0
+ - [deleted]           (none)     -> v1.3.1
+ - [deleted]           (none)     -> v1.3.12
+ - [deleted]           (none)     -> v1.3.13
+ - [deleted]           (none)     -> v1.3.14
+ - [deleted]           (none)     -> v1.3.15
+ - [deleted]           (none)     -> v1.3.4
+ - [deleted]           (none)     -> v1.3.5
+ - [deleted]           (none)     -> v1.3.6rc
+ - [deleted]           (none)     -> v1.3.7
+ - [deleted]           (none)     -> v1.3.7rc
+ - [deleted]           (none)     -> v1.3.9
+ - [deleted]           (none)     -> v1.5.1
+ - [deleted]           (none)     -> v1.5.2
+ - [deleted]           (none)     -> v1.5.3
+ - [deleted]           (none)     -> v2.0.0
+ - [deleted]           (none)     -> v2.1.0
+ - [deleted]           (none)     -> v2.1.1
+ - [deleted]           (none)     -> v2.2.0
+ - [deleted]           (none)     -> v2.2.1
+ - [deleted]           (none)     -> v2.3.0
+ - [deleted]           (none)     -> v2.3.1
+Fetching upstream
+From https://github.com/Netflix/vmaf
+ * [new tag]           v1.0.2     -> v1.0.2
+ * [new tag]           v1.1.6     -> v1.1.6
+ * [new tag]           v1.2.0     -> v1.2.0
+ * [new tag]           v1.3.1     -> v1.3.1
+ * [new tag]           v1.3.12    -> v1.3.12
+ * [new tag]           v1.3.13    -> v1.3.13
+ * [new tag]           v1.3.14    -> v1.3.14
+ * [new tag]           v1.3.15    -> v1.3.15
+ * [new tag]           v1.3.4     -> v1.3.4
+ * [new tag]           v1.3.5     -> v1.3.5
+ * [new tag]           v1.3.6rc   -> v1.3.6rc
+ * [new tag]           v1.3.7     -> v1.3.7
+ * [new tag]           v1.3.7rc   -> v1.3.7rc
+ * [new tag]           v1.3.9     -> v1.3.9
+ * [new tag]           v1.5.1     -> v1.5.1
+ * [new tag]           v1.5.2     -> v1.5.2
+ * [new tag]           v1.5.3     -> v1.5.3
+ * [new tag]           v2.0.0     -> v2.0.0
+ * [new tag]           v2.1.0     -> v2.1.0
+ * [new tag]           v2.1.1     -> v2.1.1
+ * [new tag]           v2.2.0     -> v2.2.0
+ * [new tag]           v2.2.1     -> v2.2.1
+ * [new tag]           v2.3.0     -> v2.3.0
+ * [new tag]           v2.3.1     -> v2.3.1
++ git remote set-head -a origin
+origin/HEAD set to master
