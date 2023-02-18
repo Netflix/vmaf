@@ -317,10 +317,6 @@ int output_get_outputline_sub_Leo(VmafFeatureCollector* fc, unsigned frame, char
 	for (unsigned featidx = 0; featidx < fc->cnt; featidx++) {
         fprintf(stderr, "fc-cnt %d\n", fc->cnt);
         fprintf(stdout, "fc-cnt %d\n", fc->cnt);
-<<<<<<< HEAD
-=======
-        
->>>>>>> a60178cbfe7b22657b0c59e2a4040f97921d2212
         if (frame > fc->feature_vector[featidx]->capacity)
 			continue;
 		if (!fc->feature_vector[featidx]->score[frame].written)
