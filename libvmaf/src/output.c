@@ -316,7 +316,7 @@ int vmaf_write_output_sub(VmafFeatureCollector* fc, FILE* outfile,
 int output_get_outputline_sub_Leo(VmafFeatureCollector* fc, unsigned frame, char* outputline) {
 	for (unsigned featidx = 0; featidx < fc->cnt; featidx++) {
         fprintf(stderr, "fc-cnt %d\n", fc->cnt);
-        
+        fprintf(stdout, "fc-cnt %d\n", fc->cnt);
         if (frame > fc->feature_vector[featidx]->capacity)
 			continue;
 		if (!fc->feature_vector[featidx]->score[frame].written)
