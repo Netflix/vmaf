@@ -314,7 +314,7 @@ int vmaf_write_output_sub(VmafFeatureCollector *fc, FILE *outfile,
 }
 
 int vmaf_write_output_sub_Leo_line(VmafFeatureCollector* fc, FILE* outfile,
-    unsigned subsample, unsigned i, char *MaLine)
+    unsigned subsample, unsigned i, char *outputline)
     {
     for (unsigned j = 0; j < fc->cnt; j++) {
         if (i > fc->feature_vector[j]->capacity)
@@ -327,7 +327,8 @@ int vmaf_write_output_sub_Leo_line(VmafFeatureCollector* fc, FILE* outfile,
         fprintf(stderr, "%s: %.6f|",
             vmaf_feature_name_alias(fc->feature_vector[j]->name),
             fc->feature_vector[j]->score[i].value);//Leo
-        sprintf(MaLine, "%s: %.6f|",
+        //snprintf uses maximum capacity, it will not write more than n...
+        snprintf(outputline,510, "%s: %.6f|",
             vmaf_feature_name_alias(fc->feature_vector[j]->name),
             fc->feature_vector[j]->score[i].value);//Leo
 
@@ -375,7 +376,7 @@ int vmaf_write_output_sub_Leo(VmafFeatureCollector* fc, FILE* outfile,
                 fc->feature_vector[j]->score[i].value);//Leo
             }
         */
-
+        fprintf(stderr, MyLine);
 
 
         fprintf(outfile, "\n");
