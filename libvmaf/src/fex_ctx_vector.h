@@ -34,6 +34,4 @@ int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
 
 void feature_extractor_vector_destroy(RegisteredFeatureExtractors *rfe);
 
-unsigned feature_extractor_vector_flags(RegisteredFeatureExtractors *rfe);
-
 #endif /* __VMAF_SRC_FEX_CTX_VECTOR_H__ */

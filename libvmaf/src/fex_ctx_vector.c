@@ -102,15 +102,3 @@ void feature_extractor_vector_destroy(RegisteredFeatureExtractors *rfe)
     free(rfe->fex_ctx);
     return;
 }
-
-unsigned feature_extractor_vector_flags(RegisteredFeatureExtractors *rfe)
-{
-    if (!rfe) return -EINVAL;
-
-    unsigned flags = 0;
-
-    for (unsigned i = 0; i < rfe->cnt; i++)
-        flags |= rfe->fex_ctx[i]->fex->flags;
-
-    return flags;
-}
