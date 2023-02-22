@@ -217,7 +217,8 @@ int vmaf_cuda_fetch_preallocated_picture(VmafContext *vmaf, VmafPicture* pic)
 static int set_fex_cuda_state(VmafFeatureExtractorContext *fex_ctx,
                               VmafContext *vmaf)
 {
-    fex_ctx->fex->cu_state = &(vmaf->cuda.state);
+    if (fex_ctx->fex->flags & VMAF_FEATURE_EXTRACTOR_CUDA)
+        fex_ctx->fex->cu_state = &(vmaf->cuda.state);
     return 0;
 }
 
@@ -516,12 +517,16 @@ static int check_ring_buffer(VmafContext *vmaf)
     return err;
 }
 
+enum  {
+    HW_FLAG_HOST = 1 << 0,
+    HW_FLAG_DEVICE = 1 << 1,
+};
+
 static int translate_picture_host(VmafContext *vmaf, VmafPicture *pic,
-                                  VmafPicture *pic_device, unsigned fex_flags)
+                                  VmafPicture *pic_device, unsigned hw_flags)
 {
     int err = 0;
-
-    if (!(fex_flags & VMAF_FEATURE_EXTRACTOR_CUDA)) return err;
+    if (!(hw_flags & HW_FLAG_DEVICE)) return err;
 
     //host to device
 
@@ -546,11 +551,10 @@ static int translate_picture_host(VmafContext *vmaf, VmafPicture *pic,
 }
 
 static int translate_picture_device(VmafContext *vmaf, VmafPicture *pic,
-                                    VmafPicture *pic_host, unsigned fex_flags)
+                                    VmafPicture *pic_host, unsigned hw_flags)
 {
     int err = 0;
-
-    //if (fex_flags & VMAF_FEATURE_EXTRACTOR_CUDA) return err;
+    if (!(hw_flags & HW_FLAG_HOST)) return err;
 
     //device to host
 
@@ -558,14 +562,14 @@ static int translate_picture_device(VmafContext *vmaf, VmafPicture *pic,
                              pic->w[0], pic->h[0]);
     if (err) {
         vmaf_log(VMAF_LOG_LEVEL_ERROR,
-                "problem allocating host pic\n");
+                 "problem allocating host pic\n");
         return err;
     }
 
     err = vmaf_cuda_picture_download_async(pic, pic_host, 0x1);
     if (err) {
         vmaf_log(VMAF_LOG_LEVEL_ERROR,
-                "problem moving cuda pic into host buffer\n");
+                 "problem moving cuda pic into host buffer\n");
         return err;
     }
 
@@ -574,7 +578,7 @@ static int translate_picture_device(VmafContext *vmaf, VmafPicture *pic,
 
 static int translate_picture(VmafContext *vmaf, VmafPicture *pic,
                              VmafPicture *pic_host, VmafPicture *pic_device,
-                             unsigned fex_flags)
+                             unsigned hw_flags)
 {
     const VmafPicturePrivate *pic_priv = pic->priv;
 
@@ -582,14 +586,28 @@ static int translate_picture(VmafContext *vmaf, VmafPicture *pic,
     case VMAF_PICTURE_BUFFER_TYPE_HOST:
     case VMAF_PICTURE_BUFFER_TYPE_CUDA_HOST_PINNED:
         *pic_host = *pic;
-        return translate_picture_host(vmaf, pic, pic_device, fex_flags);
+        return translate_picture_host(vmaf, pic, pic_device, hw_flags);
     case VMAF_PICTURE_BUFFER_TYPE_CUDA_DEVICE:
         *pic_device = *pic;
-        return translate_picture_device(vmaf, pic, pic_host, fex_flags);
+        return translate_picture_device(vmaf, pic, pic_host, hw_flags);
     default:
         return -EINVAL;
     }
 }
+
+static unsigned rfe_hw_flags(RegisteredFeatureExtractors *rfe)
+{
+    if (!rfe) return -EINVAL;
+
+    unsigned flags = 0;
+    for (unsigned i = 0; i < rfe->cnt; i++) {
+        flags |= rfe->fex_ctx[i]->fex->cu_state ?
+            HW_FLAG_DEVICE : HW_FLAG_HOST;
+    }
+
+    return flags;
+}
+
 #endif
 
 int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
@@ -610,15 +628,15 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     err = check_ring_buffer(vmaf);
     if (err) return err;
 
-    const unsigned fex_flags =
-        feature_extractor_vector_flags(&vmaf->registered_feature_extractors);
+    const unsigned hw_flags =
+        rfe_hw_flags(&vmaf->registered_feature_extractors);
 
     VmafPicture ref_host = { 0 }, ref_device = { 0 };
-    err = translate_picture(vmaf, ref, &ref_host, &ref_device, fex_flags);
+    err = translate_picture(vmaf, ref, &ref_host, &ref_device, hw_flags);
     if (err) return err;
 
     VmafPicture dist_host = { 0 }, dist_device = { 0 };
-    err = translate_picture(vmaf, dist, &dist_host, &dist_device, fex_flags);
+    err = translate_picture(vmaf, dist, &dist_host, &dist_device, hw_flags);
     if (err) return err;
 #else
     //multithreading for GPU does not yield performance benefits
