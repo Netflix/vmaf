@@ -4,7 +4,8 @@ import unittest
 from test.testutil import set_default_576_324_videos_for_testing, \
     set_default_576_324_videos_for_testing_scaled, \
     set_default_cambi_video_for_testing_b, \
-    set_default_cambi_video_for_testing_10b
+    set_default_cambi_video_for_testing_10b, \
+    set_default_cambi_video_for_testing_mp4
 
 from vmaf.core.cambi_feature_extractor import CambiFeatureExtractor, CambiFullReferenceFeatureExtractor
 from vmaf.core.cambi_quality_runner import CambiQualityRunner, CambiFullReferenceQualityRunner
@@ -81,6 +82,49 @@ class CambiFeatureExtractorTest(MyTestCase):
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
                                0.0013863333333333334, places=4)
+
+    def test_run_cambi_fextractor_notyuv_unspecified_enc_bitdepth(self):
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_mp4()
+        self.fextractor = CambiFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={}
+        )
+        with self.assertRaises(AssertionError):
+            self.fextractor.run(parallelize=False)
+
+    def test_run_cambi_fextractor_notyuv_correct_enc_bitdepth(self):
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_mp4()
+        asset.asset_dict['dis_enc_bitdepth'] = 8
+        self.fextractor = CambiFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={}
+        )
+        self.fextractor.run(parallelize=False)
+        results = self.fextractor.results
+
+        # score: arithmetic mean score over all frames
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
+                               0.022446666666666667, places=4)
+
+    def test_run_cambi_fextractor_notyuv_incorrect_enc_bitdepth(self):
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_mp4()
+        asset.asset_dict['dis_enc_bitdepth'] = 10
+        self.fextractor = CambiFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={}
+        )
+        self.fextractor.run(parallelize=False)
+        results = self.fextractor.results
+
+        # score: arithmetic mean score over all frames
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
+                               0.020136333333333336, places=4)
 
     def test_run_cambi_fextractor_max_log_contrast(self):
         _, _, asset, asset_original = set_default_576_324_videos_for_testing()

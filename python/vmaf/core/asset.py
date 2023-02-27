@@ -220,6 +220,29 @@ class Asset(WorkdirEnabled):
         else:
             return self.dis_width_height
 
+    @property
+    def dis_encode_bitdepth(self):
+        """
+        Bitdepth of the encoded video before any conversions were applied.
+        :return: bitdepth of the encode.
+        Defaults to bitdepth of dis_yuv_type (e.g. 8 for yuv420p).
+        """
+        if 'dis_enc_bitdepth' in self.asset_dict:
+            assert self.asset_dict['dis_enc_bitdepth'] in [8, 10, 12, 16], \
+                "Supported encoding bitdepths are 8, 10, 12, and 16."
+            return self.asset_dict['dis_enc_bitdepth']
+        else:
+            if self.dis_yuv_type in ['yuv420p', 'yuv422p', 'yuv444p']:
+                return 8
+            elif self.dis_yuv_type in ['yuv420p10le', 'yuv422p10le', 'yuv444p10le']:
+                return 10
+            elif self.dis_yuv_type in ['yuv420p12le', 'yuv422p12le', 'yuv444p12le']:
+                return 12
+            elif self.dis_yuv_type in ['yuv420p16le', 'yuv422p16le', 'yuv444p16le']:
+                return 16
+            else:  # the encode is not a yuv encode and dis_enc_bitdepth is not specified
+                return None
+
     def clear_up_width_height(self):
         if 'width' in self.asset_dict:
             del self.asset_dict['width']

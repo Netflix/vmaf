@@ -220,3 +220,17 @@ def set_default_cambi_video_for_testing_10b():
                               'yuv_type': 'yuv420p10le'})
 
     return dis_path, dis_path, asset, asset
+
+def set_default_cambi_video_for_testing_mp4():
+    dis_path = VmafConfig.test_resource_path("mp4", "blue_sky_360p_60f_8b_converted_to_10b.mp4")
+    asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
+                       workdir_root=VmafConfig.workdir_path(),
+                       dis_path=dis_path,
+                       asset_dict={'yuv_type': 'notyuv',
+                                   'workfile_yuv_type': 'yuv420p10le',
+                                   'quality_width': 640,
+                                   'quality_height': 360,
+                                   'dis_enc_width': 640,
+                                   'dis_enc_height': 360})
+
+    return dis_path, dis_path, asset, asset

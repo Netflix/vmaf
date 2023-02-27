@@ -255,6 +255,13 @@ def read_dataset(dataset, **kwargs):
         if 'dis_end_frame' in dis_video:
             asset_dict['dis_end_frame'] = dis_video['dis_end_frame']
 
+        if 'enc_width' in dis_video:
+            asset_dict['dis_enc_width'] = dis_video['enc_width']
+        if 'enc_height' in dis_video:
+            asset_dict['dis_enc_height'] = dis_video['enc_height']
+        if 'enc_bitdepth' in dis_video:
+            asset_dict['dis_enc_bitdepth'] = dis_video['enc_bitdepth']
+
         if groundtruth is None and skip_asset_with_none_groundtruth:
             pass
         else:

@@ -77,6 +77,83 @@ class AssetTest(unittest.TestCase):
                       asset_dict={'width': 720, 'height': 480})
         self.assertEqual(asset.dis_encode_width_height, (720, 480))
 
+    def test_dis_encode_bitdepth(self):
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'dis_enc_bitdepth': 8})
+        self.assertEqual(asset.dis_encode_bitdepth, 8)
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'dis_enc_bitdepth': 24})
+        with self.assertRaises(AssertionError):
+            print(asset.dis_encode_bitdepth)
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'dis_yuv_type': 'yuv420p'})
+        self.assertEqual(asset.dis_encode_bitdepth, 8)
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'dis_yuv_type': 'yuv422p'})
+        self.assertEqual(asset.dis_encode_bitdepth, 8)
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'dis_yuv_type': 'yuv444p'})
+        self.assertEqual(asset.dis_encode_bitdepth, 8)
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'dis_yuv_type': 'yuv420p10le'})
+        self.assertEqual(asset.dis_encode_bitdepth, 10)
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'dis_yuv_type': 'yuv422p10le'})
+        self.assertEqual(asset.dis_encode_bitdepth, 10)
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'dis_yuv_type': 'yuv444p10le'})
+        self.assertEqual(asset.dis_encode_bitdepth, 10)
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'dis_yuv_type': 'yuv420p12le'})
+        self.assertEqual(asset.dis_encode_bitdepth, 12)
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'dis_yuv_type': 'yuv422p12le'})
+        self.assertEqual(asset.dis_encode_bitdepth, 12)
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'dis_yuv_type': 'yuv444p12le'})
+        self.assertEqual(asset.dis_encode_bitdepth, 12)
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'dis_yuv_type': 'yuv420p16le'})
+        self.assertEqual(asset.dis_encode_bitdepth, 16)
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'dis_yuv_type': 'yuv422p16le'})
+        self.assertEqual(asset.dis_encode_bitdepth, 16)
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'dis_yuv_type': 'yuv444p16le'})
+        self.assertEqual(asset.dis_encode_bitdepth, 16)
+
+        asset = Asset(dataset="test", content_id=0, asset_id=0,
+                      ref_path="", dis_path="",
+                      asset_dict={'dis_yuv_type': 'yuv420p10le', 'dis_enc_bitdepth': 8})
+        self.assertEqual(asset.dis_encode_bitdepth, 8)
+
     def test_quality_width_height(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
