@@ -5,7 +5,8 @@ from vmaf.core.feature_extractor import VmafexecFeatureExtractorMixin, FeatureEx
 class CambiFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "Cambi_feature"
-    VERSION = "0.4" # Supporting scaled encodes and minor change to the spatial mask
+    # VERSION = "0.4" # Supporting scaled encodes and minor change to the spatial mask
+    VERSION = "0.5"  # Supporting bitdepth converted encodes
 
     ATOM_FEATURES = ['cambi']
 
@@ -24,9 +25,15 @@ class CambiFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
             'dis_height, or 3) width and height.'
         encode_width, encode_height = asset.dis_encode_width_height
 
-        additional_params = dict()
+        assert asset.dis_encode_bitdepth is not None, \
+            'For Cambi, dis_encode_bitdepth cannot be None. One can specify dis_encode_bitdepth by adding ' \
+            'dis_enc_bitdepth field to asset_dict. The supported values are 8, 10, 12, or 16.'
+        encode_bitdepth = asset.dis_encode_bitdepth
+
+        additional_params = {'enc_bitdepth': encode_bitdepth}
         if encode_width != quality_width or encode_height != quality_height:
-            additional_params = {'enc_width': encode_width, 'enc_height': encode_height}
+            additional_params['enc_width'] = encode_width
+            additional_params['enc_height'] = encode_height
 
         log_file_path = self._get_log_file_path(asset)
 

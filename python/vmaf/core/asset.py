@@ -12,7 +12,8 @@ import os
 
 from vmaf.core.mixin import WorkdirEnabled
 from vmaf.tools.misc import get_file_name_without_extension, \
-    get_file_name_with_extension, get_unique_str_from_recursive_dict
+    get_file_name_with_extension, get_unique_str_from_recursive_dict, \
+    map_yuv_type_to_bitdepth
 from vmaf.config import VmafConfig
 from vmaf.core.proc_func import proc_func_dict
 
@@ -219,6 +220,20 @@ class Asset(WorkdirEnabled):
             return self.asset_dict['dis_enc_width'], self.asset_dict['dis_enc_height']
         else:
             return self.dis_width_height
+
+    @property
+    def dis_encode_bitdepth(self):
+        """
+        Bitdepth of the encoded video before any conversions were applied.
+        :return: bitdepth of the encode.
+        Defaults to bitdepth of dis_yuv_type (e.g. 8 for yuv420p).
+        """
+        if 'dis_enc_bitdepth' in self.asset_dict:
+            assert self.asset_dict['dis_enc_bitdepth'] in [8, 10, 12, 16], \
+                "Supported encoding bitdepths are 8, 10, 12, and 16."
+            return self.asset_dict['dis_enc_bitdepth']
+        else:
+            return map_yuv_type_to_bitdepth(self.dis_yuv_type)
 
     def clear_up_width_height(self):
         if 'width' in self.asset_dict:
@@ -465,6 +480,13 @@ class Asset(WorkdirEnabled):
         if self.dis_encode_width_height != self.dis_width_height:
             w, h = self.dis_encode_width_height
             s += "_e_{w}x{h}".format(w=w, h=h)
+
+        if self.dis_encode_bitdepth is not None and \
+                map_yuv_type_to_bitdepth(self.dis_yuv_type) != self.dis_encode_bitdepth:
+            # only add dis_encode_bitdepth to the string if it is not None and it is different from the bitdepth
+            # of dis_yuv_type
+            ebd = self.dis_encode_bitdepth
+            s += "_ebd_{ebd}".format(ebd=ebd)
 
         if self.dis_yuv_type != self.DEFAULT_YUV_TYPE:
             s += "_{}".format(self.dis_yuv_type)

@@ -800,6 +800,47 @@ def linear_fit(x, y):
     return scipy.optimize.curve_fit(linear_func, x, y, [1.0, 0.0])
 
 
+def map_yuv_type_to_bitdepth(yuv_type):
+    """
+    >>> map_yuv_type_to_bitdepth('yuv420p')
+    8
+    >>> map_yuv_type_to_bitdepth('yuv422p')
+    8
+    >>> map_yuv_type_to_bitdepth('yuv444p')
+    8
+    >>> map_yuv_type_to_bitdepth('yuv420p10le')
+    10
+    >>> map_yuv_type_to_bitdepth('yuv422p10le')
+    10
+    >>> map_yuv_type_to_bitdepth('yuv444p10le')
+    10
+    >>> map_yuv_type_to_bitdepth('yuv420p12le')
+    12
+    >>> map_yuv_type_to_bitdepth('yuv422p12le')
+    12
+    >>> map_yuv_type_to_bitdepth('yuv444p12le')
+    12
+    >>> map_yuv_type_to_bitdepth('yuv420p16le')
+    16
+    >>> map_yuv_type_to_bitdepth('yuv422p16le')
+    16
+    >>> map_yuv_type_to_bitdepth('yuv444p16le')
+    16
+    >>> map_yuv_type_to_bitdepth('notyuv') is None
+    True
+    """
+    if yuv_type in ['yuv420p', 'yuv422p', 'yuv444p']:
+        return 8
+    elif yuv_type in ['yuv420p10le', 'yuv422p10le', 'yuv444p10le']:
+        return 10
+    elif yuv_type in ['yuv420p12le', 'yuv422p12le', 'yuv444p12le']:
+        return 12
+    elif yuv_type in ['yuv420p16le', 'yuv422p16le', 'yuv444p16le']:
+        return 16
+    else:
+        return None
+
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
