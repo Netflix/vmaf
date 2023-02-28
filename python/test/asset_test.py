@@ -422,6 +422,24 @@ class AssetTest(unittest.TestCase):
             "test_0_1_refvideo_720x480_vs_disvideo_720x480_e_480x320_q_720x480"
         )
 
+        asset = Asset(dataset="test", content_id=0, asset_id=1,
+                      ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
+                      asset_dict={'width': 720, 'height': 480,
+                                  'dis_yuv_type': 'yuv420p10le', 'dis_enc_bitdepth': 10})
+        self.assertEqual(
+            str(asset),
+            "test_0_1_refvideo_720x480_vs_disvideo_720x480_yuv420p10le_q_720x480"
+        )
+
+        asset = Asset(dataset="test", content_id=0, asset_id=1,
+                      ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
+                      asset_dict={'width': 720, 'height': 480,
+                                  'dis_yuv_type': 'yuv420p10le', 'dis_enc_bitdepth': 8})
+        self.assertEqual(
+            str(asset),
+            "test_0_1_refvideo_720x480_vs_disvideo_720x480_ebd_8_yuv420p10le_q_720x480"
+        )
+
     def test_hash_equal(self):
         asset1 = Asset(dataset="test", content_id=0, asset_id=2,
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
