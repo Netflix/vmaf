@@ -826,8 +826,8 @@ def map_yuv_type_to_bitdepth(yuv_type):
     16
     >>> map_yuv_type_to_bitdepth('yuv444p16le')
     16
-    >>> map_yuv_type_to_bitdepth('notyuv')
-    None
+    >>> map_yuv_type_to_bitdepth('notyuv') is None
+    True
     """
     if yuv_type in ['yuv420p', 'yuv422p', 'yuv444p']:
         return 8
