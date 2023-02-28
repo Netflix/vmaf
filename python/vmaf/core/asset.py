@@ -489,6 +489,10 @@ class Asset(WorkdirEnabled):
             w, h = self.dis_encode_width_height
             s += "_e_{w}x{h}".format(w=w, h=h)
 
+        if self.dis_encode_bitdepth:
+            ebd = self.dis_encode_bitdepth
+            s += "_ebd_{ebd}".format(ebd=ebd)
+
         if self.dis_yuv_type != self.DEFAULT_YUV_TYPE:
             s += "_{}".format(self.dis_yuv_type)
 
