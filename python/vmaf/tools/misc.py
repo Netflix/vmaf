@@ -802,31 +802,31 @@ def linear_fit(x, y):
 
 def map_yuv_type_to_bitdepth(yuv_type):
     """
-    >>> bd = map_yuv_type_to_bitdepth('yuv420p')
+    >>> map_yuv_type_to_bitdepth('yuv420p')
     8
-    >>> bd = map_yuv_type_to_bitdepth('yuv422p')
+    >>> map_yuv_type_to_bitdepth('yuv422p')
     8
-    >>> bd = map_yuv_type_to_bitdepth('yuv444p')
+    >>> map_yuv_type_to_bitdepth('yuv444p')
     8
-    >>> bd = map_yuv_type_to_bitdepth('yuv420p10le')
+    >>> map_yuv_type_to_bitdepth('yuv420p10le')
     10
-    >>> bd = map_yuv_type_to_bitdepth('yuv422p10le')
+    >>> map_yuv_type_to_bitdepth('yuv422p10le')
     10
-    >>> bd = map_yuv_type_to_bitdepth('yuv444p10le')
+    >>> map_yuv_type_to_bitdepth('yuv444p10le')
     10
-    >>> bd = map_yuv_type_to_bitdepth('yuv420p12le')
+    >>> map_yuv_type_to_bitdepth('yuv420p12le')
     12
-    >>> bd = map_yuv_type_to_bitdepth('yuv422p12le')
+    >>> map_yuv_type_to_bitdepth('yuv422p12le')
     12
-    >>> bd = map_yuv_type_to_bitdepth('yuv444p12le')
+    >>> map_yuv_type_to_bitdepth('yuv444p12le')
     12
-    >>> bd = map_yuv_type_to_bitdepth('yuv420p16le')
+    >>> map_yuv_type_to_bitdepth('yuv420p16le')
     16
-    >>> bd = map_yuv_type_to_bitdepth('yuv422p16le')
+    >>> map_yuv_type_to_bitdepth('yuv422p16le')
     16
-    >>> bd = map_yuv_type_to_bitdepth('yuv444p16le')
+    >>> map_yuv_type_to_bitdepth('yuv444p16le')
     16
-    >>> bd = map_yuv_type_to_bitdepth('notyuv')
+    >>> map_yuv_type_to_bitdepth('notyuv')
     None
     """
     if yuv_type in ['yuv420p', 'yuv422p', 'yuv444p']:
