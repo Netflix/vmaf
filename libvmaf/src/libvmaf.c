@@ -275,10 +275,18 @@ int vmaf_use_feature(VmafContext *vmaf, const char *feature_name,
 
     int err = 0;
 
-    VmafFeatureExtractor *fex =
-        vmaf_get_feature_extractor_by_name(feature_name);
-    if (!fex) return -EINVAL;
+    unsigned fex_flags = 0;
 
+#ifdef HAVE_CUDA
+    if (!vmaf->cfg.gpumask && vmaf->cuda.state.ctx)
+        fex_flags |= VMAF_FEATURE_EXTRACTOR_CUDA;
+#endif
+    VmafFeatureExtractor *fex =
+        vmaf_get_feature_extractor_by_feature_name(feature_name, fex_flags);
+    if (!fex) {
+        fex = vmaf_get_feature_extractor_by_name(feature_name);
+        if (!fex) return -EINVAL;
+    }
     VmafDictionary *d = NULL;
     if (s) {
         err = vmaf_dictionary_copy(&s, &d);
