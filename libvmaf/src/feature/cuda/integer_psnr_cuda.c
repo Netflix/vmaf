@@ -204,12 +204,7 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
     (void) dist_pic_90;
 
     // this is done to ensure that the CPU does not overwrite the buffer params for 'write_scores
-    CHECK_CUDA(cuStreamSynchronize(s->str));
-    CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
-    // CHECK_CUDA(cuEventSynchronize(s->finished));
-    CHECK_CUDA(cuEventDestroy(s->finished));
-    CHECK_CUDA(cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
-    CHECK_CUDA(cuCtxPopCurrent(NULL));
+    CHECK_CUDA(cuEventSynchronize(s->finished));
 
     // Reset device SSE
     CHECK_CUDA(cuMemsetD8Async(s->sse_device->data, 0, sizeof(uint64_t) * 3, s->str));
@@ -236,10 +231,10 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
     CHECK_CUDA(cuEventRecord(s->event, vmaf_cuda_picture_get_stream(ref_pic)));
     // This event ensures the input buffer is consumed
     CHECK_CUDA(cuStreamWaitEvent(s->str, s->event, CU_EVENT_WAIT_DEFAULT));
-    CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
-    CHECK_CUDA(cuEventDestroy(s->event));
-    CHECK_CUDA(cuEventCreate(&s->event, CU_EVENT_DEFAULT));
-    CHECK_CUDA(cuCtxPopCurrent(NULL));
+    // CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
+    // CHECK_CUDA(cuEventDestroy(s->event));
+    // CHECK_CUDA(cuEventCreate(&s->event, CU_EVENT_DEFAULT));
+    // CHECK_CUDA(cuCtxPopCurrent(NULL));
     
     // Download sad
     // CHECK_CUDA(cuStreamSynchronize(s->host_stream));
