@@ -302,15 +302,14 @@ if is_cuda_enabled
     cuda_dependency += cuda_rt_api_dependency
 
     cuda_flags = []
-    if get_option('buildtype').startswith('debug')
-        cuda_flags += ['-DCUDA_DEBUG', '-lineinfo']
-    else
-        if is_nvtx_enabled
-                cuda_flags += ['-lineinfo']
-                cuda_dependency += declare_dependency(link_args : ['-lnvToolsExt'])
-        endif
+    if get_option('buildtype') == 'debug'
+        cuda_flags += ['-G']
     endif
-
+    if is_nvtx_enabled
+            cuda_flags += ['-lineinfo']
+            cuda_dependency += declare_dependency(link_args : ['-lnvToolsExt'])
+    endif
+    
     nvcc_exe = find_program('nvcc')
     ptx_files = {}
     foreach name, _cu : cuda_cu_sources
@@ -348,7 +347,7 @@ if is_cuda_enabled
 
     cuda_static_lib = static_library(
         'cuda_common_vmaf_lib',
-        [cuda_sources, ptx_arrays,],
+        cuda_sources + ptx_arrays,
         dependencies: [cuda_drv_api_dependency],
         include_directories : [
             libvmaf_include,
