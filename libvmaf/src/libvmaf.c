@@ -385,6 +385,8 @@ static int threaded_read_pictures(VmafContext *vmaf, VmafPicture *ref,
     for (unsigned i = 0; i < vmaf->registered_feature_extractors.cnt; i++) {
         VmafFeatureExtractor *fex =
             vmaf->registered_feature_extractors.fex_ctx[i]->fex;
+        if (fex->flags & VMAF_FEATURE_EXTRACTOR_CUDA)
+            continue;
         VmafDictionary *opts_dict =
             vmaf->registered_feature_extractors.fex_ctx[i]->opts_dict;
 
@@ -474,13 +476,21 @@ static int flush_context(VmafContext *vmaf)
     else {
         RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
         for (unsigned i = 0; i < rfe.cnt; i++) {
-            err |= vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
-                                                        vmaf->feature_collector);
+            if (!(rfe.fex_ctx[i]->fex->flags & VMAF_FEATURE_EXTRACTOR_CUDA))
+                err |= vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
+                                                            vmaf->feature_collector);
         }
     }
 
 #ifdef HAVE_CUDA
     if (vmaf->cuda.state.ctx) {
+        RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
+        for (unsigned i = 0; i < rfe.cnt; i++) {
+            if (rfe.fex_ctx[i]->fex->flags & VMAF_FEATURE_EXTRACTOR_CUDA)
+                err |= vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
+                                                            vmaf->feature_collector);
+        }
+
         err |= cuCtxPushCurrent(vmaf->cuda.state.ctx);
         err |= cuStreamSynchronize(vmaf->cuda.state.str);
         err |= cuCtxSynchronize();
@@ -601,7 +611,7 @@ static unsigned rfe_hw_flags(RegisteredFeatureExtractors *rfe)
 
     unsigned flags = 0;
     for (unsigned i = 0; i < rfe->cnt; i++) {
-        flags |= rfe->fex_ctx[i]->fex->cu_state ?
+        flags |= rfe->fex_ctx[i]->fex->flags & VMAF_FEATURE_EXTRACTOR_CUDA ?
             HW_FLAG_DEVICE : HW_FLAG_HOST;
     }
 
@@ -637,12 +647,6 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
 
     VmafPicture dist_host = { 0 }, dist_device = { 0 };
     err = translate_picture(vmaf, dist, &dist_host, &dist_device, hw_flags);
-    if (err) return err;
-#else
-    //multithreading for GPU does not yield performance benefits
-    //disabled for now
-    if (vmaf->thread_pool)
-        return threaded_read_pictures(vmaf, ref, dist, index);
 #endif
 
     for (unsigned i = 0; i < vmaf->registered_feature_extractors.cnt; i++) {
@@ -654,6 +658,9 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
                 continue;
         }
 
+        if (!(fex_ctx->fex->flags & VMAF_FEATURE_EXTRACTOR_CUDA) && vmaf->thread_pool) {
+            continue;
+        }
 #ifdef HAVE_CUDA
         ref = fex_ctx->fex->flags & VMAF_FEATURE_EXTRACTOR_CUDA ?
             &ref_device : &ref_host;
@@ -667,6 +674,16 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
         if (err) return err;
     }
 
+#ifdef HAVE_CUDA
+        ref = &ref_host;
+        dist = &dist_host;
+#endif
+
+    //multithreading for GPU does not yield performance benefits
+    //disabled for now
+    if (vmaf->thread_pool){
+        return threaded_read_pictures(vmaf, ref, dist, index);
+    }
 #ifdef HAVE_CUDA
     if (ref_host.priv)
         err |= vmaf_picture_unref(&ref_host);
