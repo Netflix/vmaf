@@ -593,7 +593,7 @@ static int translate_picture_device(VmafContext *vmaf, VmafPicture *pic,
         return err;
     }
 
-    err = vmaf_cuda_picture_download_async(pic, pic_host, 0x3);
+    err = vmaf_cuda_picture_download_async(pic, pic_host, 0xF);
     if (err) {
         vmaf_log(VMAF_LOG_LEVEL_ERROR,
                  "problem moving cuda pic into host buffer\n");

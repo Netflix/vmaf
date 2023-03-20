@@ -149,7 +149,6 @@ void adm_dwt2_s123_combined_device(AdmStateCuda *s,const int32_t *d_i4_scale, in
     const int BLOCK_Y = (h + 1) / 2;
     
     void * args_vert[] = {&d_i4_scale, &tmp_buf, &w, &h, &img_stride, &*p};
-    const int num_threads = 128;
     switch (scale) {
         case 1:
             CHECK_CUDA(cuLaunchKernel(s->func_dwt_s123_combined_vert_kernel_0_0_int32_t,

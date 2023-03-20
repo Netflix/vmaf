@@ -23,9 +23,8 @@
 #include <stddef.h>
 #include <string.h>
 
+#include "common.h"
 #include "cuda_helper.cuh"
-#include "libvmaf/vmaf_cuda_state.h"
-#include "picture_cuda.h"
 
 #include "feature_collector.h"
 #include "feature_extractor.h"
@@ -231,13 +230,8 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
     CHECK_CUDA(cuEventRecord(s->event, vmaf_cuda_picture_get_stream(ref_pic)));
     // This event ensures the input buffer is consumed
     CHECK_CUDA(cuStreamWaitEvent(s->str, s->event, CU_EVENT_WAIT_DEFAULT));
-    // CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
-    // CHECK_CUDA(cuEventDestroy(s->event));
-    // CHECK_CUDA(cuEventCreate(&s->event, CU_EVENT_DEFAULT));
-    // CHECK_CUDA(cuCtxPopCurrent(NULL));
     
-    // Download sad
-    // CHECK_CUDA(cuStreamSynchronize(s->host_stream));
+    // Download SSE
     CHECK_CUDA(cuMemcpyDtoHAsync(s->sse_host, (CUdeviceptr)s->sse_device->data,
                 sizeof(uint64_t) * 3, s->str));
     CHECK_CUDA(cuEventRecord(s->finished, s->str));
