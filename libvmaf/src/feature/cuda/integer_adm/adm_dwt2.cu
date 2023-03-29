@@ -142,12 +142,13 @@ __device__ __forceinline__ void dwt_s123_combined_hori_kernel(cuda_i4_adm_dwt_ba
     i4_dwt2.band_d[i * dst_stride + idx] = (int32_t)((accum + add_shift) >> shift);
 }
 
-template<int16_t v_shift, int32_t v_add_shift, int v_rows_per_thread, int32_t h_shift, int32_t h_add_shift, int32_t tile_width, int tile_height, typename T>
+template<int v_rows_per_thread, int32_t h_shift, int32_t h_add_shift, int32_t tile_width, int tile_height, typename T>
 __device__ __forceinline__ void adm_dwt2_8_vert_hori_kernel(const T * d_picture,
         cuda_adm_dwt_band_t dst,
         cuda_i4_adm_dwt_band_t i4_dwt2,
         int w, int h,
         int src_stride, int dst_stride,
+        int16_t v_shift, int32_t v_add_shift,
         AdmFixedParametersCuda params) {
 
     // The fused kernel writes the result of the vertical dwt2 to shared memory for consumption by the horizontal dwt2.
@@ -316,25 +317,26 @@ __device__ __forceinline__ void adm_dwt2_8_vert_hori_kernel(const T * d_picture,
     }
 
 
-#define DWT_8_VERT_HORI(v_shift, v_add_shift, v_rows_per_thread, h_shift, h_add_shift, tile_width, tile_height, type)                                                  \
-    __global__ void adm_dwt2_8_vert_hori_kernel_##v_shift##_##v_add_shift##_##v_rows_per_thread##_##h_shift##_##h_add_shift##_##tile_width##_##tile_height##_##type (  \
+#define DWT_8_VERT_HORI(v_rows_per_thread, h_shift, h_add_shift, tile_width, tile_height, type)                                                  \
+    __global__ void adm_dwt2_8_vert_hori_kernel_##v_rows_per_thread##_##h_shift##_##h_add_shift##_##tile_width##_##tile_height##_##type (  \
             const type * d_picture,                                                                                                                                    \
             cuda_adm_dwt_band_t dst,                                                                                                                                   \
             cuda_i4_adm_dwt_band_t i4_dwt2,                                                                                                                            \
             int w, int h,                                                                                                                                              \
             int src_stride, int dst_stride,                                                                                                                            \
+            int16_t v_shift, int32_t v_add_shift,                                                                                                                      \
             AdmFixedParametersCuda params) {                                                                                                                           \
-        adm_dwt2_8_vert_hori_kernel<v_shift, v_add_shift, v_rows_per_thread, h_shift, h_add_shift, tile_width, tile_height, type>(                                     \
+        adm_dwt2_8_vert_hori_kernel<v_rows_per_thread, h_shift, h_add_shift, tile_width, tile_height, type>(                                                           \
                 d_picture, dst, i4_dwt2,                                                                                                                               \
-                w, h, src_stride, dst_stride, params);                                                                                                                 \
+                w, h, src_stride, dst_stride, v_shift, v_add_shift, params);                                                                                           \
     }
 #pragma endregion
 
 extern "C" {
-    DWT_S123_COMBINED_VERT(0, 0, int32_t);                        // dwt_s123_combined_vert_kernel_0_0_int32_t
-    DWT_S123_COMBINED_VERT(32768, 16, int32_t);                   // dwt_s123_combined_vert_kernel_32768_16_int32_t
-    DWT_S123_COMBINED_HORI(16384, 15);                            // dwt_s123_combined_hori_kernel_16384_15
-    DWT_S123_COMBINED_HORI(32768, 16);                            // dwt_s123_combined_hori_kernel_32768_16
-    DWT_8_VERT_HORI(8, 128, 4, 16, 32768, 128, 8, uint8_t);       // adm_dwt2_8_vert_hori_kernel_8_128_4_16_32768_128_8_uint8_t
-    DWT_8_VERT_HORI(16, 32768, 4, 16, 32768, 128, 8, uint16_t);   // adm_dwt2_8_vert_hori_kernel_16_32768_4_16_32768_128_8_uint16_t
+    DWT_S123_COMBINED_VERT(0, 0, int32_t);             // dwt_s123_combined_vert_kernel_0_0_int32_t
+    DWT_S123_COMBINED_VERT(32768, 16, int32_t);        // dwt_s123_combined_vert_kernel_32768_16_int32_t
+    DWT_S123_COMBINED_HORI(16384, 15);                 // dwt_s123_combined_hori_kernel_16384_15
+    DWT_S123_COMBINED_HORI(32768, 16);                 // dwt_s123_combined_hori_kernel_32768_16
+    DWT_8_VERT_HORI(4, 16, 32768, 128, 8, uint8_t);    // adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint8_t
+    DWT_8_VERT_HORI(4, 16, 32768, 128, 8, uint16_t);   // adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint16_t
 }
