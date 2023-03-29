@@ -64,9 +64,9 @@ typedef struct AdmStateCuda {
                func_dwt_s123_combined_vert_kernel_32768_16_int32_t,
                func_dwt_s123_combined_hori_kernel_16384_15,
                func_dwt_s123_combined_hori_kernel_32768_16,
-               func_adm_dwt2_8_vert_hori_kernel_8_128_4_16_32768_128_8_uint8_t,
-               func_adm_dwt2_8_vert_hori_kernel_16_32768_4_16_32768_128_8_uint16_t,          // untested
-                                                                                             // adm_decouple kernel
+               func_adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint8_t,
+               func_adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint16_t,          // untested
+                                                                                    // adm_decouple kernel
                func_adm_decouple_kernel,
                func_adm_decouple_s123_kernel,
                // adm_csf kernel
@@ -111,9 +111,12 @@ void dwt2_8_device(AdmStateCuda *s, const uint8_t *d_picture, cuda_adm_dwt_band_
     const int horz_out_tile_rows = vert_out_tile_rows;
     const int horz_out_tile_cols = vert_out_tile_cols / 2 - 2;
 
-    void *args[] = {&d_picture, &*d_dst, &i4_dwt_dst, &w, &h, &src_stride, &dst_stride, &*p};
+    const int16_t v_shift = 8;
+    const int32_t v_add_shift = 1 << (v_shift - 1);
 
-    CHECK_CUDA(cuLaunchKernel(s->func_adm_dwt2_8_vert_hori_kernel_8_128_4_16_32768_128_8_uint8_t,
+    void *args[] = {&d_picture, &*d_dst, &i4_dwt_dst, &w, &h, &src_stride, &dst_stride, &v_shift, &v_add_shift, &*p};
+
+    CHECK_CUDA(cuLaunchKernel(s->func_adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint8_t,
                 DIV_ROUND_UP((w + 1) / 2, horz_out_tile_cols), DIV_ROUND_UP((h + 1) / 2, horz_out_tile_rows), 1,
                 vert_out_tile_cols, vert_out_tile_rows / rows_per_thread, 1,
                 0, c_stream, args, NULL));
@@ -131,9 +134,12 @@ void adm_dwt2_16_device(AdmStateCuda *s, const uint16_t *d_picture, cuda_adm_dwt
     const int horz_out_tile_rows = vert_out_tile_rows;
     const int horz_out_tile_cols = vert_out_tile_cols / 2 - 2;
 
-    void *args[] = {&d_picture, &*d_dst, &i4_dwt_dst, &w, &h, &src_stride, &dst_stride, &*p};
+    const int16_t v_shift = inp_size_bits;
+    const int32_t v_add_shift = 1 << (inp_size_bits - 1);
 
-    CHECK_CUDA(cuLaunchKernel(s->func_adm_dwt2_8_vert_hori_kernel_16_32768_4_16_32768_128_8_uint16_t,
+    void *args[] = {&d_picture, &*d_dst, &i4_dwt_dst, &w, &h, &src_stride, &dst_stride, &v_shift, &v_add_shift, &*p};
+
+    CHECK_CUDA(cuLaunchKernel(s->func_adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint16_t,
                 DIV_ROUND_UP((w + 1) / 2, horz_out_tile_cols), DIV_ROUND_UP((h + 1) / 2, horz_out_tile_rows), 1,
                 vert_out_tile_cols, vert_out_tile_rows / rows_per_thread, 1,
                 0, c_stream, args, NULL));
@@ -836,7 +842,7 @@ static void integer_compute_adm_cuda(VmafFeatureExtractor *fex, AdmStateCuda *s,
                 dwt2_8_device(s, (const uint8_t*)dis_pic->data[0], &buf->dis_dwt2, buf->i4_dis_dwt2, (int16_t*)buf->tmp_dis->data, buf, w, h, curr_dis_stride, buf_stride, &p,  vmaf_cuda_picture_get_stream(dis_pic));
             }
             else {
-                adm_dwt2_16_device(s,(uint16_t*)ref_pic->data[0], &buf->ref_dwt2, buf->i4_dis_dwt2, (int16_t*)buf->tmp_ref->data, buf, w, h, curr_ref_stride, buf_stride, ref_pic->bpc, &p,  vmaf_cuda_picture_get_stream(ref_pic));
+                adm_dwt2_16_device(s,(uint16_t*)ref_pic->data[0], &buf->ref_dwt2, buf->i4_ref_dwt2, (int16_t*)buf->tmp_ref->data, buf, w, h, curr_ref_stride, buf_stride, ref_pic->bpc, &p,  vmaf_cuda_picture_get_stream(ref_pic));
 
                 adm_dwt2_16_device(s,(uint16_t*)dis_pic->data[0], &buf->dis_dwt2, buf->i4_dis_dwt2, (int16_t*)buf->tmp_dis->data, buf, w, h, curr_dis_stride, buf_stride, dis_pic->bpc, &p,  vmaf_cuda_picture_get_stream(dis_pic));
 
@@ -1027,8 +1033,8 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CHECK_CUDA(cuModuleGetFunction(&s->func_dwt_s123_combined_vert_kernel_32768_16_int32_t, adm_dwt_module, "dwt_s123_combined_vert_kernel_32768_16_int32_t"));
     CHECK_CUDA(cuModuleGetFunction(&s->func_dwt_s123_combined_hori_kernel_16384_15, adm_dwt_module, "dwt_s123_combined_hori_kernel_16384_15"));
     CHECK_CUDA(cuModuleGetFunction(&s->func_dwt_s123_combined_hori_kernel_32768_16, adm_dwt_module, "dwt_s123_combined_hori_kernel_32768_16"));
-    CHECK_CUDA(cuModuleGetFunction(&s->func_adm_dwt2_8_vert_hori_kernel_8_128_4_16_32768_128_8_uint8_t, adm_dwt_module, "adm_dwt2_8_vert_hori_kernel_8_128_4_16_32768_128_8_uint8_t"));
-    CHECK_CUDA(cuModuleGetFunction(&s->func_adm_dwt2_8_vert_hori_kernel_16_32768_4_16_32768_128_8_uint16_t, adm_dwt_module, "adm_dwt2_8_vert_hori_kernel_16_32768_4_16_32768_128_8_uint16_t"));
+    CHECK_CUDA(cuModuleGetFunction(&s->func_adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint8_t, adm_dwt_module, "adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint8_t"));
+    CHECK_CUDA(cuModuleGetFunction(&s->func_adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint16_t, adm_dwt_module, "adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint16_t"));
 
 
     // Get csf kernel function pointers check adm_csf.cu for __global__ templated kernels
