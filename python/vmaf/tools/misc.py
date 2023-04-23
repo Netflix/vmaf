@@ -307,7 +307,7 @@ def index_and_value_of_min(l):
     return min(enumerate(l), key=lambda x: x[1])
 
 
-def parallel_map(func, list_args, processes=None):
+def parallel_map(func, list_args, processes=None, sleep_sec=0.01):
     """
     Build my own parallelized map function since multiprocessing's Process(),
     or Pool.map() cannot meet my both needs:
@@ -359,7 +359,7 @@ def parallel_map(func, list_args, processes=None):
         if len(waiting_procs) == 0 and len(active_procs) == 0:
             break
 
-        sleep(0.01) # check every x sec
+        sleep(sleep_sec) # check every x sec
 
     # finally, collect results
     rets = list(map(lambda idx: return_dict[idx], range(len(list_args))))
