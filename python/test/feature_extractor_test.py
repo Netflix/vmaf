@@ -38,6 +38,14 @@ class FeatureExtractorTest(MyTestCase):
         fextractor = VmafFeatureExtractor([asset], None)
         self.assertEqual(fextractor.executor_id, "VMAF_feature_V0.2.7")
 
+    def test_executor_id_long_opt_dict(self):
+        asset = Asset(dataset="test", content_id=0, asset_id=1,
+                      ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
+                      asset_dict={'width': 720, 'height': 480})
+        fextractor = VmafFeatureExtractor([asset], None,
+                                          optional_dict={"some_parameter": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
+        self.assertEqual("VMAF_feature_V0.2.9_ab1db6ba9be857303e99cbb0ef38fc4753ef1040", fextractor.executor_id)
+
     def test_get_log_file_path(self):
         import hashlib
 

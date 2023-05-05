@@ -115,7 +115,13 @@ class Executor(TypeVersionEnabled):
                         return l[idx + 1]
             else:
                 return v
-        return '_'.join(map(lambda k: '{k}_{v}'.format(k=k,v=_slugify(d[k])), sorted(d.keys())))
+
+        normalized_str = '_'.join(map(lambda k: '{k}_{v}'.format(k=k, v=_slugify(d[k])), sorted(d.keys())))
+
+        if len(normalized_str) > 196:  # upper limit of filename is 256 but leave some space for prefix/suffix
+            normalized_str = hashlib.sha1(normalized_str.encode("utf-8")).hexdigest()
+
+        return normalized_str
 
     @property
     def executor_id(self):
