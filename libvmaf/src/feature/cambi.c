@@ -126,7 +126,7 @@ static const VmafOption options[] = {
         .offset = offsetof(CambiState, enc_height),
         .type = VMAF_OPT_TYPE_INT,
         .default_val.i = 0,
-        .min = 180,
+        .min = 150,
         .max = 7680,
     },
     {
