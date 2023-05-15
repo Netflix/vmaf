@@ -21,7 +21,6 @@
 #define FEATURE_VIF_CUDA_H_
 
 #include <stdint.h>
-#include "libvmaf/vmaf_cuda_state.h"
 #include "integer_vif.h"
 #include "common.h"
 

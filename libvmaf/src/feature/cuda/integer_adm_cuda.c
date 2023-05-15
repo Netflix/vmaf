@@ -22,7 +22,6 @@
 
 #include "cuda_helper.cuh"
 #include "mem.h"
-#include "libvmaf/vmaf_cuda_state.h"
 
 #include "feature_collector.h"
 #include "feature_extractor.h"
