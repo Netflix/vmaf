@@ -10,7 +10,7 @@
 #include "libvmaf/picture.h"
 #include "libvmaf/libvmaf.h"
 #ifdef HAVE_CUDA
-#include "libvmaf/vmaf_cuda.h"
+#include "libvmaf/libvmaf_cuda.h"
 #endif
 
 static enum VmafPixelFormat pix_fmt_map(int pf)
@@ -197,9 +197,10 @@ int main(int argc, char *argv[])
 #ifdef HAVE_CUDA
     VmafCudaState *cu_state;
     VmafCudaConfiguration cuda_cfg = { 0 };
-    err = vmaf_cuda_init(vmaf, &cu_state, cuda_cfg);
+    err = vmaf_cuda_state_init(&cu_state, cuda_cfg);
+    err |= vmaf_cuda_import_state(vmaf, cu_state);
     if (err) {
-        fprintf(stderr, "problem during vmaf_cuda_init\n");
+        fprintf(stderr, "problem during vmaf_cuda_state_init\n");
         return -1;
     }
 #endif

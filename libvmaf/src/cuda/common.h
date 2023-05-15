@@ -29,7 +29,7 @@
 #if HAVE_CUDA
 
 #include <cuda.h>
-#include <libvmaf/vmaf_cuda.h>
+#include <libvmaf/libvmaf_cuda.h>
 #include "cuda_helper.cuh"
 
 typedef struct VmafCudaBuffer {
@@ -37,21 +37,15 @@ typedef struct VmafCudaBuffer {
     CUdeviceptr data;
 } VmafCudaBuffer;
 
+typedef struct VmafCudaState {
+    CUcontext ctx;
+    CUstream str;
+    CUdevice dev;
+    int release_ctx;
+} VmafCudaState;
+
 #define VMAF_CUDA_THREADS_PER_WARP 32
 #define VMAF_CUDA_CACHE_LINE_SIZE 128
-
-/**
- * vmaf_cuda_state_init() initializes a VmafCudaState object by creating a
- * CUstream and initializes the CUDA driver when used for the first time.
- * Change the constant nv_gpu_id to change the default GPU that should be
- * used in a Multi-GPU system.
- *
- * @param cu_state VmafCudaState object to be initialzed.
- * @param prio VmafCudaState priority. Range is checked.
- * @param device_id CUDA device id
- * @return CUDA_SUCCESS on success, or < 0 (a negative errno code) on error.
- */
-int vmaf_cuda_state_init(VmafCudaState *cu_state, int prio, int device_id);
 
 /**
  * Synchronize a CUcontext from a VmafCudaState object.
@@ -69,12 +63,10 @@ int vmaf_cuda_sync(VmafCudaState *cu_state);
  *
  * @param cu_state  VmafCudaState to free.
  *
- * @param rel_ctx   Releases static CUcontext for all VmafCudaState objects.
- *
  * @return CUDA_SUCCESS on success, or < 0 (a negative errno code) on error.
  */
 
-int vmaf_cuda_release(VmafCudaState *cu_state, bool rel_ctx);
+int vmaf_cuda_release(VmafCudaState *cu_state);
 
 /**
  * Allocates a 1D buffer on the GPU.

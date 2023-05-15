@@ -21,7 +21,6 @@
 #include "mem.h"
 #include "picture_cuda.h"
 #include "common.h"
-#include "libvmaf/vmaf_cuda_state.h"
 #include "log.h"
 
 #include <cuda.h>
