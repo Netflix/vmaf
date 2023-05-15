@@ -22,7 +22,6 @@
 #include <string.h>
 
 #include "common.h"
-#include "libvmaf/vmaf_cuda_state.h"
 #include "log.h"
 
 static int is_cudastate_empty(VmafCudaState *cu_state)
@@ -33,41 +32,95 @@ static int is_cudastate_empty(VmafCudaState *cu_state)
     return 0;
 }
 
-int vmaf_cuda_state_init(VmafCudaState *cu_state, int prio, int device_id)
+static int init_with_primary_context(VmafCudaState *cu_state)
 {
     if (!cu_state) return -EINVAL;
-    int n_gpu;
 
     CUdevice cu_device = 0;
     CUcontext cu_context = 0;
     CUresult res = CUDA_SUCCESS;
-    res |= cuInit(0);
+
+    const int device_id = 0;
+    int n_gpu;
     res |= cuDeviceGetCount(&n_gpu);
     if (device_id > n_gpu) {
         vmaf_log(VMAF_LOG_LEVEL_ERROR,
                  "Error: device_id %d is out of range\n", device_id);
+        return -EINVAL;
     }
 
     res |= cuDeviceGet(&cu_device, device_id);
     res |= cuDevicePrimaryCtxRetain(&cu_context, cu_device);
     if (res != CUDA_SUCCESS) {
         vmaf_log(VMAF_LOG_LEVEL_ERROR, "Error: failed to initialize CUDA\n");
-        return -1;
+        return -EINVAL;
     }
 
     cu_state->ctx = cu_context;
+    cu_state->release_ctx = 1;
     cu_state->dev = cu_device;
 
     CHECK_CUDA(cuCtxPushCurrent((cu_state->ctx)));
 
     int low, high;
     CHECK_CUDA(cuCtxGetStreamPriorityRange(&low, &high));
-    int prio2 = MAX(low, MIN(high, prio));
+    const int prio = 0;
+    const int prio2 = MAX(low, MIN(high, prio));
     CHECK_CUDA(cuStreamCreateWithPriority(&cu_state->str,
                                           CU_STREAM_NON_BLOCKING, prio2));
 
     CHECK_CUDA(cuCtxPopCurrent(NULL));
-    return CUDA_SUCCESS;
+    return 0;
+}
+
+static int init_with_provided_context(VmafCudaState *cu_state, CUcontext cu_context)
+{
+    if (!cu_state) return -EINVAL;
+    if (!cu_context) return -EINVAL;
+
+    CHECK_CUDA(cuCtxPushCurrent(cu_context));
+
+    CUdevice cu_device = 0;
+    int err = cuCtxGetDevice(&cu_device);
+    if (err) {
+        vmaf_log(VMAF_LOG_LEVEL_ERROR, "failed to get CUDA device\n");
+        return -EINVAL;
+    }
+
+    cu_state->ctx = cu_context;
+    cu_state->release_ctx = 0;
+    cu_state->dev = cu_device;
+
+    int low, high;
+    CHECK_CUDA(cuCtxGetStreamPriorityRange(&low, &high));
+    const int prio = 0;
+    const int prio2 = MAX(low, MIN(high, prio));
+    CHECK_CUDA(cuStreamCreateWithPriority(&cu_state->str,
+                                          CU_STREAM_NON_BLOCKING, prio2));
+
+    CHECK_CUDA(cuCtxPopCurrent(NULL));
+
+    return 0;
+}
+
+int vmaf_cuda_state_init(VmafCudaState **cu_state, VmafCudaConfiguration cfg)
+{
+    if (!cu_state) return -EINVAL;
+
+    VmafCudaState *const c = *cu_state = malloc(sizeof(*c));
+    if (!c) return -ENOMEM;
+    memset(c, 0, sizeof(*c));
+
+    int err = cuInit(0);
+    if (err) {
+        vmaf_log(VMAF_LOG_LEVEL_ERROR, "problem during CUDA initialization\n");
+        return -EINVAL;
+    }
+
+    if (cfg.cu_ctx)
+        return init_with_provided_context(c, cfg.cu_ctx);
+    else
+        return init_with_primary_context(c);
 }
 
 int vmaf_cuda_sync(VmafCudaState *cu_state)
@@ -81,7 +134,7 @@ int vmaf_cuda_sync(VmafCudaState *cu_state)
     return err;
 }
 
-int vmaf_cuda_release(VmafCudaState *cu_state, bool rel_ctx)
+int vmaf_cuda_release(VmafCudaState *cu_state)
 {
     if (is_cudastate_empty(cu_state)) return CUDA_SUCCESS;
 
@@ -89,7 +142,7 @@ int vmaf_cuda_release(VmafCudaState *cu_state, bool rel_ctx)
     CHECK_CUDA(cuStreamDestroy(cu_state->str));
     CHECK_CUDA(cuCtxPopCurrent(NULL));
 
-    if (rel_ctx)
+    if (cu_state->release_ctx)
         CHECK_CUDA(cuDevicePrimaryCtxRelease(cu_state->dev));
 
     memset((void *)cu_state, 0, sizeof(*cu_state));

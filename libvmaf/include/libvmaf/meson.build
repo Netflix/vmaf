@@ -12,8 +12,7 @@ is_cuda_enabled = get_option('enable_cuda') == true
 platform_specific_headers = []
 
 if is_cuda_enabled
-  platform_specific_headers += 'vmaf_cuda.h'
-  platform_specific_headers += 'vmaf_cuda_state.h'
+  platform_specific_headers += 'libvmaf_cuda.h'
 endif
 
 # install headers

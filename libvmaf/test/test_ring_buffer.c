@@ -24,7 +24,7 @@
 
 #include "test.h"
 
-#include "libvmaf/vmaf_cuda.h"
+#include "libvmaf/libvmaf_cuda.h"
 #include "libvmaf/vmaf_cuda_state.h"
 
 #include "cuda/common.h"
@@ -44,7 +44,8 @@ static char *test_ring_buffer()
         .state = malloc(sizeof(VmafCudaState)),
     };
 
-    vmaf_cuda_state_init(my_cookie.state, 0, 0);
+    VmafCudaConfiguration cu_cfg = { 0 };
+    vmaf_cuda_state_init(&my_cookie.state, cu_cfg);
 
     VmafRingBufferConfig cfg = {
         .pic_cnt = 4,
@@ -112,6 +113,7 @@ static char *test_ring_buffer()
     return NULL;
 }
 
+/*
 typedef struct MyThreadPoolData {
     VmafRingBuffer *ring_buffer;
     unsigned i;
@@ -144,7 +146,6 @@ static void request_picture(void *data)
     //fprintf(stderr, "unref: %i\n", my_thread_pool_data->i);
 }
 
-/*
 static char *test_ring_buffer_threaded()
 {
     int err;
@@ -157,7 +158,8 @@ static char *test_ring_buffer_threaded()
         .state = malloc(sizeof(VmafCudaState)),
     };
 
-    vmaf_cuda_state_init(my_cookie.state, 0, 0);
+    VmafCudaConfiguration cfg = { 0 };
+    vmaf_cuda_state_init(my_cookie.state, cfg);
 
     VmafRingBufferConfig cfg = {
         .pic_cnt = 4,

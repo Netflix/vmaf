@@ -42,13 +42,24 @@
 #include "vcs_version.h"
 
 #ifdef HAVE_CUDA
-#include "libvmaf/vmaf_cuda.h"
-#include "libvmaf/vmaf_cuda_state.h"
+#include "libvmaf/libvmaf_cuda.h"
 
 #include "cuda/common.h"
 #include "cuda/cuda_helper.cuh"
 #include "cuda/picture_cuda.h"
 #include "cuda/ring_buffer.h"
+
+typedef struct VmafCudaConfiguration3 {
+    struct {
+        unsigned w, h;
+        unsigned bpc;
+        enum VmafPixelFormat pix_fmt;
+    } pic_params;
+    enum VmafCudaPicturePreallocationMethod pic_prealloc_method;
+    int device_id;
+    int stream_priority;
+} VmafCudaConfiguration3;
+//^FIXME
 #endif
 
 typedef struct VmafContext {
@@ -59,7 +70,7 @@ typedef struct VmafContext {
     VmafThreadPool *thread_pool;
 #ifdef HAVE_CUDA
     struct {
-        VmafCudaConfiguration cfg;
+        VmafCudaConfiguration3 cfg;
         VmafCudaState state;
         VmafCudaCookie cookie;
         VmafRingBuffer* ring_buffer;
@@ -74,6 +85,7 @@ typedef struct VmafContext {
     unsigned pic_cnt;
     bool flushed;
 } VmafContext;
+
 
 int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
 {
@@ -143,25 +155,27 @@ static int prepare_ring_buffer(VmafContext *vmaf, unsigned w, unsigned h,
     return vmaf_ring_buffer_init(&vmaf->cuda.ring_buffer, cfg_buf);
 }
 
-int vmaf_cuda_init(VmafContext *vmaf, VmafCudaState **cu_state,
-                   VmafCudaConfiguration cfg)
+int vmaf_cuda_import_state(VmafContext *vmaf, VmafCudaState *cu_state)
 {
     if (!vmaf) return -EINVAL;
     if (!cu_state) return -EINVAL;
-    if (vmaf->cfg.gpumask) return 0;
 
-    vmaf->cuda.cfg = cfg;
+    vmaf->cuda.state = *cu_state;
+
+    return 0;
+}
+
+int vmaf_cuda_preallocate_pictures(VmafContext *vmaf, VmafCudaPictureConfiguration cfg)
+{
+    if (!vmaf) return -EINVAL;
 
     int err = 0;
 
-    err = (vmaf_cuda_state_init(&vmaf->cuda.state, cfg.stream_priority,
-                                cfg.device_id) != CUDA_SUCCESS);
-    if (err) {
-        vmaf_log(VMAF_LOG_LEVEL_ERROR, "problem initializing cuda state\n");
-        return -ENOMEM;
-    }
-
-    *cu_state = &vmaf->cuda.state;
+    vmaf->cuda.cfg.pic_params.w = cfg.pic_params.w;
+    vmaf->cuda.cfg.pic_params.h = cfg.pic_params.h;
+    vmaf->cuda.cfg.pic_params.bpc = cfg.pic_params.bpc;
+    vmaf->cuda.cfg.pic_params.pix_fmt = cfg.pic_params.pix_fmt;
+    vmaf->cuda.cfg.pic_prealloc_method = cfg.pic_prealloc_method;
 
     switch (cfg.pic_prealloc_method) {
     case VMAF_CUDA_PICTURE_PREALLOCATION_METHOD_NONE:
@@ -184,7 +198,7 @@ int vmaf_cuda_init(VmafContext *vmaf, VmafCudaState **cu_state,
         return -EINVAL;
     }
 
-    return 0;
+    return err;
 }
 
 int vmaf_cuda_fetch_preallocated_picture(VmafContext *vmaf, VmafPicture* pic)
@@ -234,12 +248,10 @@ int vmaf_close(VmafContext *vmaf)
     vmaf_thread_pool_destroy(vmaf->thread_pool);
     vmaf_fex_ctx_pool_destroy(vmaf->fex_ctx_pool);
 #ifdef HAVE_CUDA
-    if (vmaf->cuda.ring_buffer) {
+    if (vmaf->cuda.ring_buffer)
         vmaf_ring_buffer_close(vmaf->cuda.ring_buffer);
-    }
-    if (vmaf->cuda.state.ctx) {
-        vmaf_cuda_release(&vmaf->cuda.state, 1);
-    }
+    if (vmaf->cuda.state.ctx)
+        vmaf_cuda_release(&vmaf->cuda.state);
 #endif
     free(vmaf);
 

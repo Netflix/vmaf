@@ -21,7 +21,7 @@
 
 #ifdef HAVE_CUDA
 #include <cuda.h>
-#include "libvmaf/vmaf_cuda.h"
+#include "libvmaf/libvmaf_cuda.h"
 #endif
 #include "libvmaf/picture.h"
 
