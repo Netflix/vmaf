@@ -25,7 +25,6 @@
 #include "test.h"
 
 #include "libvmaf/libvmaf_cuda.h"
-#include "libvmaf/vmaf_cuda_state.h"
 
 #include "cuda/common.h"
 #include "cuda/picture_cuda.h"
