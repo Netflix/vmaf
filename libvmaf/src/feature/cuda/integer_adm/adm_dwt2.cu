@@ -172,8 +172,6 @@ __device__ __forceinline__ void adm_dwt2_8_vert_hori_kernel(const T * d_picture,
             const int32_t *filter_lo = params.dwt2_db2_coeffs_lo;
             const int32_t *filter_hi = params.dwt2_db2_coeffs_hi;
 
-            int32_t accum = 0;
-
             // we need 2 addition rows for each item processed by a thread.
             const int size_u = 2 + 2 * v_rows_per_thread;
             int32_t u_s[size_u];
