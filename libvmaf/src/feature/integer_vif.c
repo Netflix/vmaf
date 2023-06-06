@@ -818,6 +818,7 @@ static int close(VmafFeatureExtractor *fex)
 {
     VifState *s = fex->priv;
     if (s->public.buf.data) aligned_free(s->public.buf.data);
+    vmaf_dictionary_free(&s->feature_name_dict);
     return 0;
 }
 
