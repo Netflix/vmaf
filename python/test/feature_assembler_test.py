@@ -8,16 +8,17 @@ import unittest
 from vmaf.core.feature_assembler import FeatureAssembler
 from vmaf.core.feature_extractor import VmafFeatureExtractor, FeatureExtractor, \
     MomentFeatureExtractor
+from vmaf.tools.misc import MyTestCase
 
 from test.testutil import set_default_576_324_videos_for_testing
 
 
-class FeatureAssemblerTest(unittest.TestCase):
+class FeatureAssemblerTest(MyTestCase):
 
     def tearDown(self):
         if hasattr(self, 'fassembler'):
             self.fassembler.remove_results()
-        pass
+        super().tearDown()
 
     def test_get_fextractor_subclasses(self):
         fextractor_subclasses = FeatureExtractor.get_subclasses_recursively()
@@ -125,7 +126,7 @@ class FeatureAssemblerTest(unittest.TestCase):
             _ = results[0]['VMAF_feature_adm_score']
 
 
-class FeatureAssemblerUnitTest(unittest.TestCase):
+class FeatureAssemblerUnitTest(MyTestCase):
 
     def test_feature_assembler_get_fextractor_instance(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()

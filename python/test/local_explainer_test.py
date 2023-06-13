@@ -13,21 +13,18 @@ from vmaf.core.result_store import FileSystemResultStore
 from vmaf.core.train_test_model import SklearnRandomForestTrainTestModel, \
     MomentRandomForestTrainTestModel
 from vmaf.routine import read_dataset
-from vmaf.tools.misc import import_python_file
+from vmaf.tools.misc import import_python_file, MyTestCase
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
 
-class LocalExplainerTest(unittest.TestCase):
-
-    def setUp(self):
-        pass
+class LocalExplainerTest(MyTestCase):
 
     def tearDown(self):
         if hasattr(self, 'runner'):
             self.runner.remove_results()
-            pass
+        super().tearDown()
 
     def test_explain_train_test_model(self):
 

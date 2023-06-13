@@ -301,9 +301,10 @@ class ResultAggregatingTest(unittest.TestCase):
             assert combined_result.result_dict[key][len(combined_result.result_dict[key]) - 1] == results[1].result_dict[key][len(results[1].result_dict[key]) - 1]
 
 
-class ScoreAggregationTest(unittest.TestCase):
+class ScoreAggregationTest(MyTestCase):
 
     def setUp(self):
+        super().setUp()
 
         ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_1_0.yuv")
@@ -333,6 +334,7 @@ class ScoreAggregationTest(unittest.TestCase):
     def tearDown(self):
         if hasattr(self, 'runner'):
             self.runner.remove_results()
+        super().tearDown()
 
     def test_to_score_str(self):
 
