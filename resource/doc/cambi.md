@@ -129,7 +129,7 @@ containing the raw grayscale heatmap data.
 You can use `ffmpeg` to convert them:
 
 ```
-ffmpeg -f rawvideo -pix_fmt gray -s 1280x720 -i heatmaps/cambi_heatmap_scale_0_1280x720_16b.gray -frames:v 1 heatmaps/cambi_heatmap_scale_0_1280x720_16b.png
+ffmpeg -f rawvideo -pix_fmt gray16le -s 1280x720 -i heatmaps/cambi_heatmap_scale_0_1280x720_16b.gray -frames:v 1 heatmaps/cambi_heatmap_scale_0_1280x720_16b.png
 ```
 
 ## Python Library
