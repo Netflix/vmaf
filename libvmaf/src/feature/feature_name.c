@@ -99,6 +99,8 @@ static int option_is_default(const VmafOption *opt, const void *data)
         return opt->default_val.i == *((int*)data);
     case VMAF_OPT_TYPE_DOUBLE:
         return opt->default_val.d == *((double*)data);
+    case VMAF_OPT_TYPE_STRING:
+        return !strcmp(opt->default_val.s, *((char**)data));
     default:
         return -EINVAL;
     }
@@ -135,6 +137,9 @@ char *vmaf_feature_name_from_options(const char *name, const VmafOption *opts,
             break;
         case VMAF_OPT_TYPE_DOUBLE:
             snprintf(buf, buf_sz, "%g", *((double*)data));
+            break;
+        case VMAF_OPT_TYPE_STRING:
+            snprintf(buf, buf_sz, "%s", *((char**)data));
             break;
         default:
             break;
