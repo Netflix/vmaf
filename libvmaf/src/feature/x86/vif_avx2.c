@@ -1203,7 +1203,7 @@ void vif_subsample_rd_8_avx2(VifBuffer buf, unsigned w, unsigned h) {
             uint32_t accum_ref = 0;
             uint32_t accum_dis = 0;
             for (unsigned fi = 0; fi < fwidth; ++fi) {
-                int ii = i - fwidth_half;
+                int ii = i * 2 - fwidth_half;
                 int ii_check = ii + fi;
                 const uint16_t fcoeff = vif_filt_s1[fi];
                 const uint8_t *ref = (uint8_t *)buf.ref;
