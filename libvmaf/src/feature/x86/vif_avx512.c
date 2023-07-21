@@ -177,10 +177,13 @@ void vif_statistic_8_avx512(struct VifPublicState *s, float *num, float *den, un
     residuals.maccum_num_non_log = _mm512_setzero_si512();
     for (unsigned i = 0; i < h; ++i)
     {
-        //VERTICAL
-        int ii = i - fwidth_half;
-        // Filter vertically
-        for (unsigned jj = 0; jj < w; jj += 16) {
+        // VERTICAL
+        int i_back = i - fwidth_half;
+        int i_forward = i + fwidth_half;
+
+        // First consider all blocks of 16 elements until it's not possible anymore
+        unsigned n = w >> 4;
+        for (unsigned jj = 0; jj < n << 4; jj += 16) {
             const uint8_t *ref = (uint8_t*)buf.ref;
             const uint8_t *dis = (uint8_t*)buf.dis;
 
@@ -196,17 +199,16 @@ void vif_statistic_8_avx512(struct VifPublicState *s, float *num, float *den, un
             __m512i accum_ref_dis = _mm512_mullo_epi32(f0, _mm512_mullo_epi32(r0, d0));
 
             for (unsigned int tap = 0; tap < fwidth / 2; tap++) {
-                int ii = i - fwidth / 2;
-                int ii_check = i - fwidth / 2 + tap;
-                int ii_check_1 = i + fwidth / 2 - tap;
+                int ii_back = i_back + tap;
+                int ii_forward = i_forward - tap;
                 const uint8_t *ref = (uint8_t*)buf.ref;
                 const uint8_t *dis = (uint8_t*)buf.dis;
 
                 __m512i f0 = _mm512_set1_epi32(vif_filt[tap]);
-                __m512i r0 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.ref) + (buf.stride * ii_check) + jj)));
-                __m512i d0 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.dis) + (buf.stride * ii_check) + jj)));
-                __m512i r1 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.ref) + (buf.stride * ii_check_1) + jj)));
-                __m512i d1 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.dis) + (buf.stride * ii_check_1) + jj)));
+                __m512i r0 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.ref) + (buf.stride * ii_back) + jj)));
+                __m512i d0 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.dis) + (buf.stride * ii_back) + jj)));
+                __m512i r1 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.ref) + (buf.stride * ii_forward) + jj)));
+                __m512i d1 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.dis) + (buf.stride * ii_forward) + jj)));
 
                 accum_mu1 = _mm512_add_epi32(accum_mu1, _mm512_mullo_epi32(_mm512_add_epi32(r0, r1), f0));
                 accum_mu2 = _mm512_add_epi32(accum_mu2, _mm512_mullo_epi32(_mm512_add_epi32(d0, d1), f0));
@@ -218,18 +220,50 @@ void vif_statistic_8_avx512(struct VifPublicState *s, float *num, float *den, un
             accum_mu2 = _mm512_add_epi32(accum_mu2, round_128);
             accum_mu1 = _mm512_srli_epi32(accum_mu1, 0x08);
             accum_mu2 = _mm512_srli_epi32(accum_mu2, 0x08);
+
             _mm512_storeu_si512((__m512i*)(buf.tmp.mu1 + jj), accum_mu1);
             _mm512_storeu_si512((__m512i*)(buf.tmp.mu2 + jj), accum_mu2);
             _mm512_storeu_si512((__m512i*)(buf.tmp.ref + jj), accum_ref);
             _mm512_storeu_si512((__m512i*)(buf.tmp.dis + jj), accum_dis);
             _mm512_storeu_si512((__m512i*)(buf.tmp.ref_dis + jj), accum_ref_dis);
         }
+        // Then consider the remaining elements individually
+        for (unsigned j = n << 4; j < w; ++j) {
+            uint32_t accum_mu1 = 0;
+            uint32_t accum_mu2 = 0;
+            uint64_t accum_ref = 0;
+            uint64_t accum_dis = 0;
+            uint64_t accum_ref_dis = 0;
+
+            for (unsigned fi = 0; fi < fwidth; ++fi) {
+                int ii = i - fwidth_half;
+                int ii_check = ii + fi;
+                const uint16_t fcoeff = vif_filt[fi];
+                const uint8_t *ref = (uint8_t*)buf.ref;
+                const uint8_t *dis = (uint8_t*)buf.dis;
+                uint16_t imgcoeff_ref = ref[ii_check * buf.stride + j];
+                uint16_t imgcoeff_dis = dis[ii_check * buf.stride + j];
+                uint32_t img_coeff_ref = fcoeff * (uint32_t)imgcoeff_ref;
+                uint32_t img_coeff_dis = fcoeff * (uint32_t)imgcoeff_dis;
+                accum_mu1 += img_coeff_ref;
+                accum_mu2 += img_coeff_dis;
+                accum_ref += img_coeff_ref * (uint64_t)imgcoeff_ref;
+                accum_dis += img_coeff_dis * (uint64_t)imgcoeff_dis;
+                accum_ref_dis += img_coeff_ref * (uint64_t)imgcoeff_dis;
+            }
+
+            buf.tmp.mu1[j] = (accum_mu1 + 128) >> 8;
+            buf.tmp.mu2[j] = (accum_mu2 + 128) >> 8;
+            buf.tmp.ref[j] = accum_ref;
+            buf.tmp.dis[j] = accum_dis;
+            buf.tmp.ref_dis[j] = accum_ref_dis;
+        }
 
         PADDING_SQ_DATA(buf, w, fwidth_half);
 
         //HORIZONTAL
         const ptrdiff_t dst_stride = buf.stride_32 / sizeof(uint32_t);
-        for (unsigned j = 0; j < w; j += 16) {
+        for (unsigned j = 0; j < n << 4; j += 16) {
             __m512i mu1sq;
             __m512i mu2sq;
             __m512i mu1mu2;
@@ -342,11 +376,20 @@ void vif_statistic_8_avx512(struct VifPublicState *s, float *num, float *den, un
             }
             vif_statistic_avx512(&residuals, xx, xy, yy, log2_table, vif_enhn_gain_limit);
         }
+
+        if ((n << 4) != w) {
+            VifResiduals residuals = vif_compute_line_residuals(s, n << 4, w, 8, 0);
+            accum_num_log += residuals.accum_num_log;
+            accum_den_log += residuals.accum_den_log;
+            accum_num_non_log += residuals.accum_num_non_log;
+            accum_den_non_log += residuals.accum_den_non_log;
+        }
     }
-    accum_num_log = _mm512_reduce_add_epi64(residuals.maccum_num_log);
-    accum_den_log = _mm512_reduce_add_epi64(residuals.maccum_den_log);
-    accum_num_non_log = _mm512_reduce_add_epi64(residuals.maccum_num_non_log);
-    accum_den_non_log = _mm512_reduce_add_epi64(residuals.maccum_den_non_log);
+
+    accum_num_log += _mm512_reduce_add_epi64(residuals.maccum_num_log);
+    accum_den_log += _mm512_reduce_add_epi64(residuals.maccum_den_log);
+    accum_num_non_log += _mm512_reduce_add_epi64(residuals.maccum_num_non_log);
+    accum_den_non_log += _mm512_reduce_add_epi64(residuals.maccum_den_non_log);
     num[0] = accum_num_log / 2048.0 + (accum_den_non_log - ((accum_num_non_log) / 16384.0) / (65025.0));
     den[0] = accum_den_log / 2048.0 + accum_den_non_log;
 }
