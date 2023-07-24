@@ -2,8 +2,10 @@ from __future__ import absolute_import
 
 import unittest
 import re
+from unittest.mock import patch
 
-from vmaf.config import VmafConfig
+from vmaf import ProcessRunner, ExternalProgram
+from vmaf.config import VmafConfig, VmafExternalConfig
 from vmaf.core.feature_extractor import VmafFeatureExtractor, \
     MomentFeatureExtractor, \
     PsnrFeatureExtractor, SsimFeatureExtractor, MsSsimFeatureExtractor, \
@@ -15,7 +17,8 @@ from vmaf.tools.misc import MyTestCase
 
 from test.testutil import set_default_576_324_videos_for_testing, set_default_flat_1920_1080_videos_for_testing, \
     set_default_576_324_10bit_videos_for_testing, set_default_576_324_12bit_videos_for_testing, \
-    set_default_576_324_16bit_videos_for_testing, set_default_576_324_10bit_videos_for_testing_b
+    set_default_576_324_16bit_videos_for_testing, set_default_576_324_10bit_videos_for_testing_b, \
+    set_default_576_324_videos_for_testing_5frames
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
@@ -697,6 +700,28 @@ class FeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[1]['Pypsnr_maxdb100_feature_psnry_score'], 100.0, places=4)
         self.assertAlmostEqual(results[1]['Pypsnr_maxdb100_feature_psnru_score'], 100.0, places=4)
         self.assertAlmostEqual(results[1]['Pypsnr_maxdb100_feature_psnrv_score'], 100.0, places=4)
+
+
+class FeatureExtractorCommandTest(MyTestCase):
+
+    def test_run_psnr_fextractor_5frms(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing_5frames()
+
+        self.fextractor = PsnrFeatureExtractor(
+            [asset],
+            None, fifo_mode=False,
+            result_store=None
+        )
+
+        with patch.object(ProcessRunner, 'run') as mockProcessRunner_run:
+            with patch.object(PsnrFeatureExtractor, '_read_result', return_value=None):
+                self.fextractor.run(parallelize=False)
+
+        self.assertEqual(len(mockProcessRunner_run.call_args_list), 3)
+        self.assertEqual(mockProcessRunner_run.call_args_list[0][0][0], f"{VmafExternalConfig.get_and_assert_ffmpeg()} -f rawvideo -pix_fmt yuv420p -s 576x324 -i {asset.ref_path} -an -vsync 0 -pix_fmt yuv420p -vframes 5 -vf select='gte(n\\,0)*gte(4\\,n)',setpts=PTS-STARTPTS,scale=576x324 -f rawvideo -sws_flags bicubic -y -nostdin {asset.ref_workfile_path}")
+        self.assertEqual(mockProcessRunner_run.call_args_list[1][0][0], f"{VmafExternalConfig.get_and_assert_ffmpeg()} -f rawvideo -pix_fmt yuv420p -s 576x324 -i {asset.dis_path} -an -vsync 0 -pix_fmt yuv420p -vframes 5 -vf select='gte(n\\,0)*gte(4\\,n)',setpts=PTS-STARTPTS,scale=576x324 -f rawvideo -sws_flags bicubic -y -nostdin {asset.dis_workfile_path}")
+        self.assertEqual(mockProcessRunner_run.call_args_list[2][0][0], f"{ExternalProgram.vmafexec} --reference {asset.ref_workfile_path} --distorted {asset.dis_workfile_path} --width 576 --height 324 --pixel_format 420 --bitdepth 8 --output {self.fextractor._get_log_file_path(asset)} --xml --no_prediction --feature float_psnr")
 
 
 if __name__ == '__main__':
