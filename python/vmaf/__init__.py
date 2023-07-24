@@ -33,12 +33,19 @@ VMAF_PYTHON_ROOT = os.path.dirname(os.path.abspath(__file__))
 VMAF_ROOT = os.path.abspath(os.path.join(VMAF_PYTHON_ROOT, '..', '..', ))
 
 
+class ProcessRunner(object):
+
+    def run(self, cmd, kwargs):
+        try:
+            logger.info(cmd)
+            subprocess.check_output(cmd, stderr=subprocess.STDOUT, **kwargs)
+        except subprocess.CalledProcessError as e:
+            raise AssertionError(f'Process returned {e.returncode}, cmd: {cmd}, kwargs: {kwargs}, msg: {str(e.output)}')
+
+
 def run_process(cmd, **kwargs):
-    try:
-        logger.info(cmd)
-        subprocess.check_output(cmd, stderr=subprocess.STDOUT, **kwargs)
-    except subprocess.CalledProcessError as e:
-        raise AssertionError(f'Process returned {e.returncode}, cmd: {cmd}, msg: {str(e.output)}')
+    process_runner = ProcessRunner()
+    process_runner.run(cmd, kwargs)
     return 0
 
 
