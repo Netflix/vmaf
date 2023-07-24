@@ -548,11 +548,23 @@ class MyTestCase(unittest.TestCase):
         self.maxDiff = None
 
     def tearDown(self):
-        self.assertEqual([], self.verificationErrors)
+        unittest.TestCase.assertEqual(self, [], self.verificationErrors)
 
     def assertAlmostEqual(self, first, second, places=None, msg=None, delta=None):
         try:
             super().assertAlmostEqual(first, second, places, msg, delta)
+        except AssertionError as e:
+            self.verificationErrors.append(str(e))
+
+    def assertEqual(self, first, second, msg=None):
+        try:
+            super().assertEqual(first, second, msg)
+        except AssertionError as e:
+            self.verificationErrors.append(str(e))
+
+    def assertTrue(self, expr, msg=None):
+        try:
+            super().assertTrue(expr, msg)
         except AssertionError as e:
             self.verificationErrors.append(str(e))
 
