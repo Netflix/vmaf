@@ -48,18 +48,6 @@
 #include "cuda/cuda_helper.cuh"
 #include "cuda/picture_cuda.h"
 #include "cuda/ring_buffer.h"
-
-typedef struct VmafCudaConfiguration3 {
-    struct {
-        unsigned w, h;
-        unsigned bpc;
-        enum VmafPixelFormat pix_fmt;
-    } pic_params;
-    enum VmafCudaPicturePreallocationMethod pic_prealloc_method;
-    int device_id;
-    int stream_priority;
-} VmafCudaConfiguration3;
-//^FIXME
 #endif
 
 typedef struct VmafContext {
@@ -70,7 +58,16 @@ typedef struct VmafContext {
     VmafThreadPool *thread_pool;
 #ifdef HAVE_CUDA
     struct {
-        VmafCudaConfiguration3 cfg;
+        struct {
+            struct {
+                unsigned w, h;
+                unsigned bpc;
+                enum VmafPixelFormat pix_fmt;
+            } pic_params;
+            enum VmafCudaPicturePreallocationMethod pic_prealloc_method;
+            int device_id;
+            int stream_priority;
+        } cfg;
         VmafCudaState state;
         VmafCudaCookie cookie;
         VmafRingBuffer* ring_buffer;
