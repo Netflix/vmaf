@@ -13,10 +13,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-18.04
+          - os: ubuntu-latest
             CC: gcc
             CXX: g++
-          - os: macos-10.15
+          - os: macos-latest
             CC: clang
             CXX: clang++
     runs-on: ${{ matrix.os }}
@@ -33,12 +33,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install meson
       - name: Install dependencies (ubuntu)
-        if: matrix.os == 'ubuntu-18.04'
+        if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo -E apt-get -yq install ninja-build gcc nasm
       - name: Install dependencies (mac)
-        if: matrix.os == 'macos-10.15'
+        if: matrix.os == 'macos-latest'
         run: |
           brew install -q ninja nasm
       - uses: actions/checkout@v2
