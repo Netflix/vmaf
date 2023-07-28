@@ -71,11 +71,13 @@ if is_asm_enabled
                 if out[2].version_compare('<2.13.02')
                     error('nasm 2.13.02 or later is required, found nasm @0@'.format(out[2]))
                 elif out[2].version_compare('<2.14') and get_option('enable_avx512')
-                    error('nasm 2.14 or later is required for AVX-512 asm.\n' +
-                           'AVX-512 asm can be disabled with \'-Denable_avx512=false\'')
+                    warning('nasm 2.14 or later is required for AVX-512 asm. Disabling AVX-512.')
+                    is_avx512_supported = false
+                else
+                    is_avx512_supported = true
                 endif
-                cdata.set10('HAVE_AVX512', get_option('enable_avx512'))
-                cdata_asm.set10('HAVE_AVX512', get_option('enable_avx512'))
+                cdata.set10('HAVE_AVX512', get_option('enable_avx512') and is_avx512_supported)
+                cdata_asm.set10('HAVE_AVX512', get_option('enable_avx512') and is_avx512_supported)
             else
                 error('unexpected nasm version string: @0@'.format(nasm_r.stdout()))
             endif
@@ -245,7 +247,7 @@ if is_asm_enabled
 
       platform_specific_cpu_objects += x86_avx2_static_lib.extract_all_objects(recursive: true)
 
-      if is_avx512_enabled
+      if is_avx512_enabled and is_avx512_supported
         x86_avx512_sources = [
             feature_src_dir + 'x86/motion_avx512.c',
             feature_src_dir + 'x86/vif_avx512.c',
