@@ -13,7 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-18.04
+          - os: ubuntu-19.04
             CC: gcc
             CXX: g++
           - os: macos-10.15
@@ -33,7 +33,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install meson
       - name: Install dependencies (ubuntu)
-        if: matrix.os == 'ubuntu-18.04'
+        if: matrix.os == 'ubuntu-19.04'
         run: |
           sudo apt-get update
           sudo -E apt-get -yq install ninja-build gcc nasm
