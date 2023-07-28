@@ -12,13 +12,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-19.04
+          - os: ubuntu-20.04
             CC: ccache gcc
             CXX: ccache g++
-          - os: ubuntu-19.04
+          - os: ubuntu-20.04
             CC: ccache gcc-9
             CXX: ccache g++-9
-          - os: ubuntu-19.04
+          - os: ubuntu-20.04
             CC: ccache clang
             CXX: ccache clang++
           - os: macos-10.15
@@ -40,7 +40,7 @@ jobs:
           pip install meson
 
       - name: Install dependencies (ubuntu)
-        if: matrix.os == 'ubuntu-19.04'
+        if: matrix.os == 'ubuntu-20.04'
         run: |
           sudo apt-get update
           sudo -E apt-get -yq install ccache ninja-build
