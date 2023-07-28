@@ -43,7 +43,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo -E apt-get -yq install ccache ninja-build
+          sudo -E apt-get -yq install ccache ninja-build libomp-dev
           case "$CC" in
           *gcc) sudo -E apt-get -yq install gcc g++ nasm ;;
           *gcc-9)
