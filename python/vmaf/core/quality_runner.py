@@ -462,30 +462,30 @@ class VmafQualityRunner(VmafQualityRunnerModelMixin, QualityRunner):
         vmaf_fassembler = self._get_vmaf_feature_assembler_instance(asset)
         vmaf_fassembler.run()
         feature_result = vmaf_fassembler.results[0]
+        result_dict = self._create_prediction_result_dict(asset, feature_result)
+        return Result(asset, self.executor_id, result_dict)
+
+    def _create_prediction_result_dict(self, asset, feature_result):
         model = self._load_model(asset)
         xs = model.get_per_unit_xs_from_a_result(feature_result)
-
         if self.optional_dict is not None and 'disable_clip_score' in self.optional_dict:
             disable_clip_score = self.optional_dict['disable_clip_score']
             assert isinstance(disable_clip_score, bool)
         else:
             disable_clip_score = None
-
         if self.optional_dict is not None and 'enable_transform_score' in self.optional_dict:
             enable_transform_score = self.optional_dict['enable_transform_score']
             assert isinstance(enable_transform_score, bool)
         else:
             enable_transform_score = None
-
         more = dict()
         if disable_clip_score is not None:
             more['disable_clip_score'] = disable_clip_score
         if enable_transform_score is not None:
             more['enable_transform_score'] = enable_transform_score
-
         pred_result = self.predict_with_model(model, xs, **more)
         result_dict = self._populate_result_dict(feature_result, pred_result)
-        return Result(asset, self.executor_id, result_dict)
+        return result_dict
 
     def _populate_result_dict(self, feature_result, pred_result):
         result_dict = {}
