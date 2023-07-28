@@ -74,6 +74,14 @@ class FeatureAssembler(object):
             results = runner.results
             self.type2results_dict[fextractor_type] = results
 
+        result_dicts = self._create_feature_result_dicts()
+
+        self.results = list(map(
+            lambda tasset: BasicResult(tasset[0], tasset[1]),
+            zip(self.assets, result_dicts)
+        ))
+
+    def _create_feature_result_dicts(self):
         # assemble an output dict with demanded atom features
         # atom_features_dict = self.fextractor_atom_features_dict
         result_dicts = list(map(lambda x: dict(), self.assets))
@@ -87,11 +95,7 @@ class FeatureAssembler(object):
                     except KeyError:
                         scores_key_alt = BasicResult.scores_key_wildcard_match(result.result_dict, scores_key)
                         result_dicts[result_index][scores_key] = result[scores_key_alt]
-
-        self.results = list(map(
-            lambda tasset: BasicResult(tasset[0], tasset[1]),
-            zip(self.assets, result_dicts)
-        ))
+        return result_dicts
 
     def remove_results(self):
         """
