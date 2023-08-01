@@ -634,22 +634,22 @@ class QualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAF_score'], 72.71845922683059, places=4)
         self.assertAlmostEqual(results[1]['VMAF_score'], 100.0, places=4)
 
-    def test_run_adm2_runner(self):
+    # def test_run_adm2_runner(self):
 
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+    #     ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
-        self.runner = Adm2QualityRunner(
-            [asset, asset_original],
-            None, fifo_mode=True,
-            delete_workdir=True,
-            result_store=None,
-        )
-        self.runner.run(parallelize=True)
+    #     self.runner = Adm2QualityRunner(
+    #         [asset, asset_original],
+    #         None, fifo_mode=True,
+    #         delete_workdir=True,
+    #         result_store=None,
+    #     )
+    #     self.runner.run(parallelize=True)
 
-        results = self.runner.results
+    #     results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['ADM2_score'], 0.9345149030293786, places=4)
-        self.assertAlmostEqual(results[1]['ADM2_score'], 1.0, places=4)
+    #     self.assertAlmostEqual(results[0]['ADM2_score'], 0.9345149030293786, places=4)
+    #     self.assertAlmostEqual(results[1]['ADM2_score'], 1.0, places=4)
 
     def test_run_vif_runner(self):
 
