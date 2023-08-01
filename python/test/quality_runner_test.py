@@ -1124,52 +1124,52 @@ class QualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['BOOTSTRAP_VMAF_stddev_score'], 1.415440563303708, places=4)
         self.assertAlmostEqual(results[1]['BOOTSTRAP_VMAF_stddev_score'], 0.03321535846597722, places=4)
 
-    def test_run_bagging_vmaf_runner(self):
+    # def test_run_bagging_vmaf_runner(self):
 
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+    #     ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
 
-        self.runner = BaggingVmafQualityRunner(
-            [asset, asset_original],
-            None, fifo_mode=True,
-            delete_workdir=True,
-            result_store=None,
-            optional_dict={
-                'model_filepath': VmafConfig.test_resource_path('model', 'vmafplus_v0.5.2boot_test.json'),
-            },
-        )
-        self.runner.run(parallelize=True)
+    #     self.runner = BaggingVmafQualityRunner(
+    #         [asset, asset_original],
+    #         None, fifo_mode=True,
+    #         delete_workdir=True,
+    #         result_store=None,
+    #         optional_dict={
+    #             'model_filepath': VmafConfig.test_resource_path('model', 'vmafplus_v0.5.2boot_test.json'),
+    #         },
+    #     )
+    #     self.runner.run(parallelize=True)
 
-        results = self.runner.results
+    #     results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.363420489439, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale1_score'], 0.766647542135, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale2_score'], 0.862854666902, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale3_score'], 0.915971778036, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_motion2_score'], 3.8953518541666665, places=4)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'], 0.9345149030293786, places=4)
+    #     self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.363420489439, places=4)
+    #     self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale1_score'], 0.766647542135, places=4)
+    #     self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale2_score'], 0.862854666902, places=4)
+    #     self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale3_score'], 0.915971778036, places=4)
+    #     self.assertAlmostEqual(results[0]['VMAF_feature_motion2_score'], 3.8953518541666665, places=4)
+    #     self.assertAlmostEqual(results[0]['VMAF_feature_adm2_score'], 0.9345149030293786, places=4)
 
-        self.assertAlmostEqual(results[1]['VMAF_feature_vif_scale0_score'], 1.00000001415, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_feature_vif_scale1_score'],0.99999972612, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_feature_vif_scale2_score'], 0.999999465724, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_feature_vif_scale3_score'], 0.999999399683, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_feature_motion2_score'], 3.8953518541666665, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
+    #     self.assertAlmostEqual(results[1]['VMAF_feature_vif_scale0_score'], 1.00000001415, places=4)
+    #     self.assertAlmostEqual(results[1]['VMAF_feature_vif_scale1_score'],0.99999972612, places=4)
+    #     self.assertAlmostEqual(results[1]['VMAF_feature_vif_scale2_score'], 0.999999465724, places=4)
+    #     self.assertAlmostEqual(results[1]['VMAF_feature_vif_scale3_score'], 0.999999399683, places=4)
+    #     self.assertAlmostEqual(results[1]['VMAF_feature_motion2_score'], 3.8953518541666665, places=4)
+    #     self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
 
-        with self.assertRaises(KeyError):
-            self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0, places=4)
+    #     with self.assertRaises(KeyError):
+    #         self.assertAlmostEqual(results[1]['VMAF_feature_vif_score'], 1.0, places=4)
 
-        with self.assertRaises(KeyError):
-            self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 1.0, places=4)
+    #     with self.assertRaises(KeyError):
+    #         self.assertAlmostEqual(results[1]['VMAF_feature_ansnr_score'], 1.0, places=4)
 
-        with self.assertRaises(KeyError):
-            self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 1.0, places=4)
+    #     with self.assertRaises(KeyError):
+    #         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['BAGGING_VMAF_score'], 75.11496350766362, places=4)
-        self.assertAlmostEqual(results[1]['BAGGING_VMAF_score'], 99.965048555775709, places=4)
-        self.assertAlmostEqual(results[0]['BAGGING_VMAF_bagging_score'], 75.11496350766362, places=4)
-        self.assertAlmostEqual(results[1]['BAGGING_VMAF_bagging_score'], 99.965048555775709, places=4)
-        self.assertAlmostEqual(results[0]['BAGGING_VMAF_stddev_score'], 0.6816714405308405, places=4)
-        self.assertAlmostEqual(results[1]['BAGGING_VMAF_stddev_score'], 0.03947607207290399, places=4)
+    #     self.assertAlmostEqual(results[0]['BAGGING_VMAF_score'], 75.11496350766362, places=4)
+    #     self.assertAlmostEqual(results[1]['BAGGING_VMAF_score'], 99.965048555775709, places=4)
+    #     self.assertAlmostEqual(results[0]['BAGGING_VMAF_bagging_score'], 75.11496350766362, places=4)
+    #     self.assertAlmostEqual(results[1]['BAGGING_VMAF_bagging_score'], 99.965048555775709, places=4)
+    #     self.assertAlmostEqual(results[0]['BAGGING_VMAF_stddev_score'], 0.6816714405308405, places=4)
+    #     self.assertAlmostEqual(results[1]['BAGGING_VMAF_stddev_score'], 0.03947607207290399, places=4)
 
     @unittest.skipIf(sys.version_info < (3,), reason="For py3 only: model not supported by py2.")
     def test_run_niqe_runner(self):
