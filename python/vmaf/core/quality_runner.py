@@ -135,12 +135,17 @@ class QualityRunnerFromFeatureExtractor(QualityRunner):
         vmaf_fassembler = self._get_feature_assembler_instance(asset)
         vmaf_fassembler.run()
         feature_result = vmaf_fassembler.results[0]
+        result_dict = self._create_result_dict(feature_result)
+        return Result(asset, self.executor_id, result_dict)
+
+    def _create_result_dict(self, feature_result):
         result_dict = {}
         result_dict.update(feature_result.result_dict.copy())  # add feature result
         result_dict[self.get_scores_key()] = feature_result.result_dict[
             self._get_feature_extractor_class().get_scores_key(self._get_feature_key_for_score())]  # add score
-        del result_dict[self._get_feature_extractor_class().get_scores_key(self._get_feature_key_for_score())]  # delete redundant
-        return Result(asset, self.executor_id, result_dict)
+        del result_dict[
+            self._get_feature_extractor_class().get_scores_key(self._get_feature_key_for_score())]  # delete redundant
+        return result_dict
 
     @override(Executor)
     def _remove_result(self, asset):
