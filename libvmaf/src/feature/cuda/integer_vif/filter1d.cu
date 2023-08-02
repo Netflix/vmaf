@@ -202,7 +202,6 @@ __device__ __forceinline__ void filter1d_8_horizontal_kernel(VifBufferCuda buf, 
 
         uint16_t *ref = (uint16_t *)buf.ref;
         uint16_t *dis = (uint16_t *)buf.dis;
-        const ptrdiff_t stride = buf.stride_16 / sizeof(uint16_t);
         for (int off = 0; off < val_per_thread; ++off) {
             const int x = x_start + off;
             if (y < h && x < w) {
@@ -385,7 +384,7 @@ filter1d_16_horizontal_kernel(VifBufferCuda buf, int w, int h,
                     if (fj >= (fwidth - fwidth_rd) / 2 &&
                             fj < (fwidth - (fwidth - fwidth_rd) / 2) && fwidth_rd > 0 &&
                             off % 2 == 0) {
-                        const uint16_t fcoeff_rd =
+                        const uint32_t fcoeff_rd =
                             vif_filt.filter[scale + 1][fj - ((fwidth - fwidth_rd) / 2)];
                         accum_ref_rd[off / 2] +=
                             fcoeff_rd *
@@ -426,7 +425,6 @@ filter1d_16_horizontal_kernel(VifBufferCuda buf, int w, int h,
             }
         }
 
-        const ptrdiff_t dst_stride = buf.stride_32 / sizeof(uint32_t);
         for (int off = 0; off < val_per_thread; ++off) {
             const int x = x_start + off;
             if (y < h && x < w) {
