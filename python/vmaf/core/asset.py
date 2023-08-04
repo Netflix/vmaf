@@ -125,8 +125,8 @@ class Asset(WorkdirEnabled):
                                    workdir_root)
         return new_asset
 
-    @staticmethod
-    def from_repr(rp):
+    @classmethod
+    def from_repr(cls, rp):
         """
         Reconstruct Asset from repr string.
         :return:
@@ -140,13 +140,13 @@ class Asset(WorkdirEnabled):
         assert 'dis_path' in d
         assert 'asset_dict' in d
 
-        return Asset(dataset=d['dataset'],
-                     content_id=d['content_id'],
-                     asset_id=d['asset_id'],
-                     ref_path=d['ref_path'],
-                     dis_path=d['dis_path'],
-                     asset_dict=d['asset_dict']
-                     )
+        return cls(dataset=d['dataset'],
+                   content_id=d['content_id'],
+                   asset_id=d['asset_id'],
+                   ref_path=d['ref_path'],
+                   dis_path=d['dis_path'],
+                   asset_dict=d['asset_dict']
+                   )
 
     # ==== groundtruth ====
     @property

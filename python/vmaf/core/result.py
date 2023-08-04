@@ -596,13 +596,13 @@ class Result(BasicResult):
         return df
 
     @classmethod
-    def from_dataframe(cls, df):
+    def from_dataframe(cls, df, AssetClass=Asset):
 
         # first, make sure the df conform to the format for a single asset
         cls._assert_asset_dataframe(df)
 
         asset_repr = df.iloc[0]['asset']
-        asset = Asset.from_repr(asset_repr)
+        asset = AssetClass.from_repr(asset_repr)
 
         executor_id = df.iloc[0]['executor_id']
 

@@ -64,7 +64,7 @@ class FileSystemResultStore(ResultStore):
         result_file_path = self._get_result_file_path2(asset, executor_id)
         if not os.path.isfile(result_file_path):
             return None
-        result = self.load_result(result_file_path)
+        result = self.load_result(result_file_path, asset.__class__)
         return result
 
     def has_workfile(self, asset: Asset, executor_id: str, suffix: str) -> bool:
@@ -77,10 +77,10 @@ class FileSystemResultStore(ResultStore):
             result_file.write(str(result.to_dataframe().to_dict()))
 
     @staticmethod
-    def load_result(result_file_path):
+    def load_result(result_file_path, AssetClass=Asset):
         with open(result_file_path, "rt") as result_file:
             df = pd.DataFrame.from_dict(ast.literal_eval(result_file.read()))
-            result = Result.from_dataframe(df)
+            result = Result.from_dataframe(df, AssetClass)
         return result
 
     def delete(self, asset, executor_id):
