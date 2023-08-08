@@ -92,7 +92,13 @@ class FeatureAssembler(object):
                     try:
                         result_dicts[result_index][scores_key] = result[scores_key]
                     except KeyError:
-                        scores_key_alt = BasicResult.scores_key_wildcard_match(result.result_dict, scores_key)
+                        # Determine scores keys from other features. These need to be discarded when wildcard-querying
+                        # for all scores keys pertinent to a particular atom feature.
+                        other_scores_keys = [self._get_scores_key(fextractor_type, other_atom_feature)
+                                             for other_atom_feature in self._get_atom_features(fextractor_type)
+                                             if other_atom_feature is not atom_feature]
+                        scores_key_alt = BasicResult.scores_key_wildcard_match(result.result_dict, scores_key,
+                                                                               excluded_scores_keys=other_scores_keys)
                         result_dicts[result_index][scores_key] = result[scores_key_alt]
         return result_dicts
 
