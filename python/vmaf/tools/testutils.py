@@ -1,6 +1,7 @@
-import os.path
 import re
 from typing import List
+
+from vmaf.tools.misc import MyTestCase
 
 
 def get_tidy_mock_call_args_list(mockProcessRunner_run) -> List[str]:
@@ -48,11 +49,25 @@ def remove_redundant_whitespace(command_line: str) -> str:
     return " ".join(command_line.split())
 
 
-def assert_equivalent_commands(self, cmds: List[str], cmds_expected: List[str], root: str, root_expected: str):
+def assert_equivalent_commands(self, cmds: List[str], cmds_expected: List[str], root: str, root_expected: str, do_replace_uuid: bool = True):
+    """
+    >>> self = MyTestCase()
+    >>> self.setUp()
+    >>> assert_equivalent_commands(self, cmds=["/opt/project/vmaf/libvmaf/build/tools/vmaf /tmp/72b3a7af-204c-4455-afe5-be2d536f2fdd/dv_el_out_1.h265"], cmds_expected=["/opt/project/vmaf/libvmaf/build/tools/vmaf /tmp/82b3a7af-304c-5455-afe5-be2d536f2fdd/dv_el_out_1.h265"], root="/opt/project", root_expected="/opt/project")
+    >>> self.tearDown()
+    >>> self2 = MyTestCase()
+    >>> self2.setUp()
+    >>> assert_equivalent_commands(self2, cmds=["/opt/project/vmaf/libvmaf/build/tools/vmaf /tmp/72b3a7af-204c-4455-afe5-be2d536f2fdd/dv_el_out_1.h265"], cmds_expected=["/opt/project/vmaf/libvmaf/build/tools/vmaf /tmp/82b3a7af-304c-5455-afe5-be2d536f2fdd/dv_el_out_1.h265"], root="/opt/project", root_expected="/opt/project", do_replace_uuid=False)
+    >>> with self.assertRaises(AssertionError): self2.tearDown()
+    """
+
     assert len(cmds) == len(cmds_expected), f"length of cmds and cmds_expected are not equal: {len(cmds)} vs. {len(cmds_expected)}"
     for cmd, cmd_expected in zip(cmds, cmds_expected):
 
-        cmd1 = replace_uuid(cmd)
+        if do_replace_uuid is True:
+            cmd1 = replace_uuid(cmd)
+        else:
+            cmd1 = cmd
         cmd2 = replace_root(cmd1, root)
         cmd3 = remove_redundant_whitespace(cmd2)
 
