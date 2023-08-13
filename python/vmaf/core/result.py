@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import json
 import re
+from typing import Optional, Callable
 
 import numpy as np
 
@@ -21,7 +22,7 @@ class BasicResult(object):
         self.result_dict = result_dict
         self.score_aggregate_method = np.mean
 
-    def set_score_aggregate_method(self, score_aggregate_method):
+    def set_score_aggregate_method(self, score_aggregate_method: Optional[Callable]):
         if score_aggregate_method is not None:
             self.score_aggregate_method = score_aggregate_method
         else:
