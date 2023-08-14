@@ -118,7 +118,7 @@ class Executor(TypeVersionEnabled):
 
         normalized_str = '_'.join(map(lambda k: '{k}_{v}'.format(k=k, v=_slugify(d[k])), sorted(d.keys())))
 
-        if len(normalized_str) > 196:  # upper limit of filename is 256 but leave some space for prefix/suffix
+        if len(normalized_str) > 140:  # upper limit of filename is 256 but leave some space for prefix/suffix
             normalized_str = hashlib.sha1(normalized_str.encode("utf-8")).hexdigest()
 
         return normalized_str
