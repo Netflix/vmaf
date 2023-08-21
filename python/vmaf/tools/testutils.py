@@ -108,12 +108,12 @@ def assert_equivalent_commands(self, cmds: List[str], cmds_expected: List[str], 
     >>> with self.assertRaises(AssertionError): self2.tearDown()
     >>> self3 = MyTestCase()
     >>> self3.setUp()
-    >>> assert_equivalent_commands(self, cmds=["/opt/project/vmaf --reference ref.h265 --distorted dist.h265"], cmds_expected=["/opt/project/vmaf --reference ref.h265"], root="/opt/project", root_expected="/opt/project", options_to_remove=["distorted"])
+    >>> assert_equivalent_commands(self3, cmds=["/opt/project/vmaf --reference ref.h265 --distorted dist.h265"], cmds_expected=["/opt/project/vmaf --reference ref.h265 --distorted dist.h266"], root="/opt/project", root_expected="/opt/project", options_to_remove=["distorted"])
     >>> self3.tearDown()
-    >>> self3 = MyTestCase()
-    >>> self3.setUp()
-    >>> assert_equivalent_commands(self, cmds=["/opt/project/vmaf --reference ref.h265 --distorted dist.h265 --output output.xml"], cmds_expected=["/opt/project/vmaf  --output output.xml"], root="/opt/project", root_expected="/opt/project", options_to_remove=["distorted", "reference"])
-    >>> self3.tearDown()
+    >>> self4 = MyTestCase()
+    >>> self4.setUp()
+    >>> assert_equivalent_commands(self4, cmds=["/opt/project/vmaf --reference ref.h265 --distorted dist.h265 --output output.xml"], cmds_expected=["/opt/project/vmaf --reference ref.h266 --distorted dist.h266 --output output.xml"], root="/opt/project", root_expected="/opt/project", options_to_remove=["distorted", "reference"])
+    >>> self4.tearDown()
     """
 
     if options_to_remove is None:
@@ -136,4 +136,6 @@ def assert_equivalent_commands(self, cmds: List[str], cmds_expected: List[str], 
         for option_to_remove in options_to_remove:
             cmd_expected3 = remove_option(cmd_expected3, option_to_remove)
 
-        self.assertEqual(cmd3, cmd_expected3, msg=f"cmd and cmd_expected are not matched:\ncmd: {cmd}\ncmd:expected: {cmd_expected}")
+        self.assertEqual(cmd3, cmd_expected3, msg=f"cmd and cmd_expected are not matched:\ncmd: {cmd}\ncmd:expected: "
+                                                  f"{cmd_expected}\nprocessed cmd: {cmd3}\nprocessed cmd:expected: "
+                                                  f"{cmd_expected3}")
