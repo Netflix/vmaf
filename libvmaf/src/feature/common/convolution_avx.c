@@ -77,22 +77,31 @@ static void convolution_f32_avx_s_1d_h_scanline(int N, const float * RESTRICT fi
 			switch (filter_width - x) {
 			default:
 				f8 = _mm256_broadcast_ss(filter + x + 8);
+				// fall through
 			case 8:
 				f7 = _mm256_broadcast_ss(filter + x + 7);
+				// fall through
 			case 7:
 				f6 = _mm256_broadcast_ss(filter + x + 6);
+				// fall through
 			case 6:
 				f5 = _mm256_broadcast_ss(filter + x + 5);
+				// fall through
 			case 5:
 				f4 = _mm256_broadcast_ss(filter + x + 4);
+				// fall through
 			case 4:
 				f3 = _mm256_broadcast_ss(filter + x + 3);
+				// fall through
 			case 3:
 				f2 = _mm256_broadcast_ss(filter + x + 2);
+				// fall through
 			case 2:
 				f1 = _mm256_broadcast_ss(filter + x + 1);
+				// fall through
 			case 1:
 				f0 = _mm256_broadcast_ss(filter + x + 0);
+				// fall through
 			}
 
 			for (int j = 0; j < j_end; j += 8) {
@@ -109,35 +118,44 @@ static void convolution_f32_avx_s_1d_h_scanline(int N, const float * RESTRICT fi
 				default:
 					g = _mm256_loadu_ps(src + j + x + 8);
 					sum0 = _mm256_mul_ps(f8, g);
+					// fall through
 				case 8:
 					g = _mm256_loadu_ps(src + j + x + 7);
 					sum3 = _mm256_mul_ps(f7, g);
+					// fall through
 				case 7:
 					g = _mm256_loadu_ps(src + j + x + 6);
 					sum2 = _mm256_mul_ps(f6, g);
+					// fall through
 				case 6:
 					g = _mm256_loadu_ps(src + j + x + 5);
 					sum1 = _mm256_mul_ps(f5, g);
+					// fall through
 				case 5:
 					g = _mm256_loadu_ps(src + j + x + 4);
 					g = _mm256_mul_ps(f4, g);
 					sum0 = _mm256_add_ps(sum0, g);
+					// fall through
 				case 4:
 					g = _mm256_loadu_ps(src + j + x + 3);
 					g = _mm256_mul_ps(f3, g);
 					sum3 = _mm256_add_ps(sum3, g);
+					// fall through
 				case 3:
 					g = _mm256_loadu_ps(src + j + x + 2);
 					g = _mm256_mul_ps(f2, g);
 					sum2 = _mm256_add_ps(sum2, g);
+					// fall through
 				case 2:
 					g = _mm256_loadu_ps(src + j + x + 1);
 					g = _mm256_mul_ps(f1, g);
 					sum1 = _mm256_add_ps(sum1, g);
+					// fall through
 				case 1:
 					g = _mm256_loadu_ps(src + j + x + 0);
 					g = _mm256_mul_ps(f0, g);
 					sum0 = _mm256_add_ps(sum0, g);
+					// fall through
 				}
 
 				sum0 = _mm256_add_ps(sum0, sum2);
@@ -431,22 +449,31 @@ static void convolution_f32_avx_s_1d_v_scanline(int N, const float * RESTRICT fi
 			switch (filter_width - y) {
 			default:
 				f8 = _mm256_broadcast_ss(filter + y + 8);
+				// fall through
 			case 8:
 				f7 = _mm256_broadcast_ss(filter + y + 7);
+				// fall through
 			case 7:
 				f6 = _mm256_broadcast_ss(filter + y + 6);
+				// fall through
 			case 6:
 				f5 = _mm256_broadcast_ss(filter + y + 5);
+				// fall through
 			case 5:
 				f4 = _mm256_broadcast_ss(filter + y + 4);
+				// fall through
 			case 4:
 				f3 = _mm256_broadcast_ss(filter + y + 3);
+				// fall through
 			case 3:
 				f2 = _mm256_broadcast_ss(filter + y + 2);
+				// fall through
 			case 2:
 				f1 = _mm256_broadcast_ss(filter + y + 1);
+				// fall through
 			case 1:
 				f0 = _mm256_broadcast_ss(filter + y + 0);
+				// fall through
 			}
 
 			for (int j = 0; j < j_end; j += 8) {
@@ -463,35 +490,44 @@ static void convolution_f32_avx_s_1d_v_scanline(int N, const float * RESTRICT fi
 				default:
 					g = _mm256_load_ps(src + (y + 8) * src_stride + j);
 					sum0 = _mm256_mul_ps(f8, g);
+					// fall through
 				case 8:
 					g = _mm256_load_ps(src + (y + 7) * src_stride + j);
 					sum3 = _mm256_mul_ps(f7, g);
+					// fall through
 				case 7:
 					g = _mm256_load_ps(src + (y + 6) * src_stride + j);
 					sum2 = _mm256_mul_ps(f6, g);
+					// fall through
 				case 6:
 					g = _mm256_load_ps(src + (y + 5) * src_stride + j);
 					sum1 = _mm256_mul_ps(f5, g);
+					// fall through
 				case 5:
 					g = _mm256_load_ps(src + (y + 4) * src_stride + j);
 					g = _mm256_mul_ps(f4, g);
 					sum0 = _mm256_add_ps(sum0, g);
+					// fall through
 				case 4:
 					g = _mm256_load_ps(src + (y + 3) * src_stride + j);
 					g = _mm256_mul_ps(f3, g);
 					sum3 = _mm256_add_ps(sum3, g);
+					// fall through
 				case 3:
 					g = _mm256_load_ps(src + (y + 2) * src_stride + j);
 					g = _mm256_mul_ps(f2, g);
 					sum2 = _mm256_add_ps(sum2, g);
+					// fall through
 				case 2:
 					g = _mm256_load_ps(src + (y + 1) * src_stride + j);
 					g = _mm256_mul_ps(f1, g);
 					sum1 = _mm256_add_ps(sum1, g);
+					// fall through
 				case 1:
 					g = _mm256_load_ps(src + (y + 0) * src_stride + j);
 					g = _mm256_mul_ps(f0, g);
 					sum0 = _mm256_add_ps(sum0, g);
+					// fall through
 				}
 
 				sum0 = _mm256_add_ps(sum0, sum2);
@@ -1124,22 +1160,31 @@ static void convolution_f32_avx_s_1d_v_sq_scanline(int N, const float * RESTRICT
 			switch (filter_width - y) {
 			default:
 				f8 = _mm256_broadcast_ss(filter + y + 8);
+				// fall through
 			case 8:
 				f7 = _mm256_broadcast_ss(filter + y + 7);
+				// fall through
 			case 7:
 				f6 = _mm256_broadcast_ss(filter + y + 6);
+				// fall through
 			case 6:
 				f5 = _mm256_broadcast_ss(filter + y + 5);
+				// fall through
 			case 5:
 				f4 = _mm256_broadcast_ss(filter + y + 4);
+				// fall through
 			case 4:
 				f3 = _mm256_broadcast_ss(filter + y + 3);
+				// fall through
 			case 3:
 				f2 = _mm256_broadcast_ss(filter + y + 2);
+				// fall through
 			case 2:
 				f1 = _mm256_broadcast_ss(filter + y + 1);
+				// fall through
 			case 1:
 				f0 = _mm256_broadcast_ss(filter + y + 0);
+				// fall through
 			}
 
 			for (int j = 0; j < j_end; j += 8) {
@@ -1157,43 +1202,52 @@ static void convolution_f32_avx_s_1d_v_sq_scanline(int N, const float * RESTRICT
 					g = _mm256_load_ps(src + (y + 8) * src_stride + j);
 					g = _mm256_mul_ps(g, g);
 					sum0 = _mm256_mul_ps(f8, g);
+					// fall through
 				case 8:
 					g = _mm256_load_ps(src + (y + 7) * src_stride + j);
 					g = _mm256_mul_ps(g, g);
 					sum3 = _mm256_mul_ps(f7, g);
+					// fall through
 				case 7:
 					g = _mm256_load_ps(src + (y + 6) * src_stride + j);
 					g = _mm256_mul_ps(g, g);
 					sum2 = _mm256_mul_ps(f6, g);
+					// fall through
 				case 6:
 					g = _mm256_load_ps(src + (y + 5) * src_stride + j);
 					g = _mm256_mul_ps(g, g);
 					sum1 = _mm256_mul_ps(f5, g);
+					// fall through
 				case 5:
 					g = _mm256_load_ps(src + (y + 4) * src_stride + j);
 					g = _mm256_mul_ps(g, g);
 					g = _mm256_mul_ps(f4, g);
 					sum0 = _mm256_add_ps(sum0, g);
+					// fall through
 				case 4:
 					g = _mm256_load_ps(src + (y + 3) * src_stride + j);
 					g = _mm256_mul_ps(g, g);
 					g = _mm256_mul_ps(f3, g);
 					sum3 = _mm256_add_ps(sum3, g);
+					// fall through
 				case 3:
 					g = _mm256_load_ps(src + (y + 2) * src_stride + j);
 					g = _mm256_mul_ps(g, g);
 					g = _mm256_mul_ps(f2, g);
 					sum2 = _mm256_add_ps(sum2, g);
+					// fall through
 				case 2:
 					g = _mm256_load_ps(src + (y + 1) * src_stride + j);
 					g = _mm256_mul_ps(g, g);
 					g = _mm256_mul_ps(f1, g);
 					sum1 = _mm256_add_ps(sum1, g);
+					// fall through
 				case 1:
 					g = _mm256_load_ps(src + (y + 0) * src_stride + j);
 					g = _mm256_mul_ps(g, g);
 					g = _mm256_mul_ps(f0, g);
 					sum0 = _mm256_add_ps(sum0, g);
+					// fall through
 				}
 
 				sum0 = _mm256_add_ps(sum0, sum2);
@@ -1889,22 +1943,31 @@ static void convolution_f32_avx_s_1d_v_xy_scanline(int N, const float * RESTRICT
 			switch (filter_width - y) {
 			default:
 				f8 = _mm256_broadcast_ss(filter + y + 8);
+				// fall through
 			case 8:
 				f7 = _mm256_broadcast_ss(filter + y + 7);
+				// fall through
 			case 7:
 				f6 = _mm256_broadcast_ss(filter + y + 6);
+				// fall through
 			case 6:
 				f5 = _mm256_broadcast_ss(filter + y + 5);
+				// fall through
 			case 5:
 				f4 = _mm256_broadcast_ss(filter + y + 4);
+				// fall through
 			case 4:
 				f3 = _mm256_broadcast_ss(filter + y + 3);
+				// fall through
 			case 3:
 				f2 = _mm256_broadcast_ss(filter + y + 2);
+				// fall through
 			case 2:
 				f1 = _mm256_broadcast_ss(filter + y + 1);
+				// fall through
 			case 1:
 				f0 = _mm256_broadcast_ss(filter + y + 0);
+				// fall through
 			}
 
 			for (int j = 0; j < j_end; j += 8) {
@@ -1923,51 +1986,60 @@ static void convolution_f32_avx_s_1d_v_xy_scanline(int N, const float * RESTRICT
 					g2 = _mm256_load_ps(src2 + (y + 8) * src2_stride + j);
 					g = _mm256_mul_ps(g, g2);
 					sum0 = _mm256_mul_ps(f8, g);
+					// fall through
 				case 8:
 					g = _mm256_load_ps(src1 + (y + 7) * src1_stride + j);
 					g2 = _mm256_load_ps(src2 + (y + 7) * src2_stride + j);
 					g = _mm256_mul_ps(g, g2);
 					sum3 = _mm256_mul_ps(f7, g);
+					// fall through
 				case 7:
 					g = _mm256_load_ps(src1 + (y + 6) * src1_stride + j);
 					g2 = _mm256_load_ps(src2 + (y + 6) * src2_stride + j);
 					g = _mm256_mul_ps(g, g2);
 					sum2 = _mm256_mul_ps(f6, g);
+					// fall through
 				case 6:
 					g = _mm256_load_ps(src1 + (y + 5) * src1_stride + j);
 					g2 = _mm256_load_ps(src2 + (y + 5) * src2_stride + j);
 					g = _mm256_mul_ps(g, g2);
 					sum1 = _mm256_mul_ps(f5, g);
+					// fall through
 				case 5:
 					g = _mm256_load_ps(src1 + (y + 4) * src1_stride + j);
 					g2 = _mm256_load_ps(src2 + (y + 4) * src2_stride + j);
 					g = _mm256_mul_ps(g, g2);
 					g = _mm256_mul_ps(f4, g);
 					sum0 = _mm256_add_ps(sum0, g);
+					// fall through
 				case 4:
 					g = _mm256_load_ps(src1 + (y + 3) * src1_stride + j);
 					g2 = _mm256_load_ps(src2 + (y + 3) * src2_stride + j);
 					g = _mm256_mul_ps(g, g2);
 					g = _mm256_mul_ps(f3, g);
 					sum3 = _mm256_add_ps(sum3, g);
+					// fall through
 				case 3:
 					g = _mm256_load_ps(src1 + (y + 2) * src1_stride + j);
 					g2 = _mm256_load_ps(src2 + (y + 2) * src2_stride + j);
 					g = _mm256_mul_ps(g, g2);
 					g = _mm256_mul_ps(f2, g);
 					sum2 = _mm256_add_ps(sum2, g);
+					// fall through
 				case 2:
 					g = _mm256_load_ps(src1 + (y + 1) * src1_stride + j);
 					g2 = _mm256_load_ps(src2 + (y + 1) * src2_stride + j);
 					g = _mm256_mul_ps(g, g2);
 					g = _mm256_mul_ps(f1, g);
 					sum1 = _mm256_add_ps(sum1, g);
+					// fall through
 				case 1:
 					g = _mm256_load_ps(src1 + (y + 0) * src1_stride + j);
 					g2 = _mm256_load_ps(src2 + (y + 0) * src2_stride + j);
 					g = _mm256_mul_ps(g, g2);
 					g = _mm256_mul_ps(f0, g);
 					sum0 = _mm256_add_ps(sum0, g);
+					// fall through
 				}
 
 				sum0 = _mm256_add_ps(sum0, sum2);
