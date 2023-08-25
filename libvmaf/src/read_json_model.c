@@ -62,6 +62,13 @@ static int parse_feature_opts_dicts(json_stream *s, VmafModel *model)
                 }
                 free(key);
                 if (err) return err;
+            } else if (json_peek(s) == JSON_STRING) {
+                const char *val = json_get_string(s, NULL);
+                const uint64_t flags = VMAF_DICT_DO_NOT_OVERWRITE;
+                int err = vmaf_dictionary_set(&(model->feature[i].opts_dict),
+                                              key, val, flags);
+                free(key);
+                if (err) return err;
             } else {
                 return -EINVAL; //TODO
             }
