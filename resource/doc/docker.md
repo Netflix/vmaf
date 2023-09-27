@@ -63,3 +63,7 @@ To run a custom ffmpeg command line inside the container use:
 ```shell script
 docker run --gpus all -e NVIDIA_DRIVER_CAPABILITIES=compute,video --entrypoint=bash -it --rm vmaf_cuda 
 ```
+
+For 420 video format we will have to convert from NV12 to 420 as well: 
+`-filter_complex [0:v]scale_cuda=format=yuv420p[ref];[1:v]scale_cuda=format=yuv420p[dist];[ref][dist]libvmaf_cuda`
+ 

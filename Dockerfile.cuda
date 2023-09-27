@@ -7,12 +7,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteract
 
 RUN git clone https://github.com/Netflix/vmaf.git
 
-# ffmpeg patch from http://ffmpeg.org/pipermail/ffmpeg-devel/2023-August/313073.html
-RUN curl -LJ -o vf_libvmaf_cuda.diff https://ffmpeg.org/pipermail/ffmpeg-devel/attachments/20230807/29cf249a/attachment.obj
-
 RUN git clone https://github.com/FFmpeg/FFmpeg.git
-RUN cd FFmpeg && \
-    git apply --ignore-whitespace ../vf_libvmaf_cuda.diff
 
 RUN git clone https://github.com/FFmpeg/nv-codec-headers.git && cd nv-codec-headers && make && make install
 
@@ -32,7 +27,7 @@ RUN cd FFmpeg && ./configure \
     --enable-cuda \
     --enable-cuda-nvcc \
     --enable-libvmaf \
-    --enable-libvmaf-cuda \
+    --enable-ffnvcodec \
     --disable-stripping \
     --extra-cflags="-I/usr/local/cuda/include" \
     --extra-ldflags="-L/usr/local/cuda/lib64 -L/usr/local/cuda/lib64/stubs/" 
