@@ -97,24 +97,7 @@ def get_file_name_extension(path):
     return Path(path).suffix[1:]
 
 
-def get_normalized_path(dir_):
-    """
-
-    >>> get_normalized_path('abc/xyz/')
-    'abc/xyz'
-    >>> get_normalized_path('abc/xyz')
-    'abc/xyz'
-    >>> get_normalized_path('abc/xyz.txt')
-    'abc/xyz.txt'
-
-    """
-    if dir_[-1] == '/':
-        return dir_[:-1]
-    else:
-        return dir_
-
-
-def get_dir_without_last_slash(path):
+def get_dir_without_last_slash(path: str) -> str:
     """
 
     >>> get_dir_without_last_slash('abc/src01_hrc01.yuv')
@@ -127,7 +110,7 @@ def get_dir_without_last_slash(path):
     'abc/xyz'
 
     """
-    return "/".join(path.split("/")[:-1])
+    return os.path.dirname(path)
 
 
 def make_parent_dirs_if_nonexist(path):
@@ -248,15 +231,14 @@ def import_python_file(filepath : str, override : dict = None):
         return ret
 
 
-def make_absolute_path(path, current_dir):
-    '''
-
+def make_absolute_path(path: str, current_dir: str) -> str:
+    """
     >>> make_absolute_path('abc/cde.fg', '/xyz/')
     '/xyz/abc/cde.fg'
     >>> make_absolute_path('/abc/cde.fg', '/xyz/')
     '/abc/cde.fg'
-
-    '''
+    """
+    assert current_dir.endswith('/'), f"expect current_dir ends with '/', but is: {current_dir}"
     if path[0] == '/':
         return path
     else:
