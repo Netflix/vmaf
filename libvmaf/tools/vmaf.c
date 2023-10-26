@@ -89,10 +89,9 @@ static int fetch_picture(video_input *vid, VmafPicture *pic)
         for (unsigned i = 0; i < 3; i++) {
             int xdec = i&&!(info.pixel_fmt&1);
             int ydec = i&&!(info.pixel_fmt&2);
-            int xstride = info.depth > 8 ? 2 : 1;
             uint8_t *ycbcr_data = ycbcr[i].data +
                 (info.pic_y >> ydec) * ycbcr[i].stride +
-                (info.pic_x * xstride >> xdec);
+                (info.pic_x >> xdec);
             // ^ gross, but this is how the daala y4m API works. FIXME.
             uint8_t *pic_data = pic->data[i];
 
@@ -106,10 +105,9 @@ static int fetch_picture(video_input *vid, VmafPicture *pic)
         for (unsigned i = 0; i < 3; i++) {
             int xdec = i&&!(info.pixel_fmt&1);
             int ydec = i&&!(info.pixel_fmt&2);
-            int xstride = info.depth > 8 ? 2 : 1;
             uint16_t *ycbcr_data = (uint16_t*) ycbcr[i].data +
                 (info.pic_y >> ydec) * (ycbcr[i].stride / 2) +
-                (info.pic_x * xstride >> xdec);
+                (info.pic_x >> xdec);
             // ^ gross, but this is how the daala y4m API works. FIXME.
             uint16_t *pic_data = pic->data[i];
 
