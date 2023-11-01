@@ -51,7 +51,7 @@ struct video_input_plane {
 };
 typedef struct video_input_plane video_input_ycbcr[3];
 
-typedef void* (*video_input_open_func)(FILE *_fin);
+typedef void* (*video_input_open_func)(FILE *_fin,int _out_bd);
 typedef void (*video_input_get_info_func)(void *_ctx,video_input_info *_ti);
 typedef int (*video_input_fetch_frame_func)(void *_ctx,FILE *_fin,
  video_input_ycbcr _ycbcr,char _tag[5]);
@@ -80,7 +80,7 @@ int raw_input_open(video_input *_vid, FILE *_fin,
                    unsigned width, unsigned height,
                    int pix_fmt, unsigned bitdepth);
 
-int video_input_open(video_input *_vid, FILE *_fin);
+int video_input_open(video_input *_vid, FILE *_fin, int _out_bd);
 void video_input_close(video_input *_vid);
 
 void video_input_get_info(video_input *_vid, video_input_info *_ti);
@@ -119,6 +119,7 @@ struct video_input_info{
   video_input_pixel_format pixel_fmt;
   char              interlace;
   char              chroma_type[16];
+  int               depth_input;
   int               depth;
 };
 

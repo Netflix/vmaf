@@ -61,7 +61,8 @@ struct y4m_input{
   int               dst_c_dec_h;
   int               dst_c_dec_v;
   char              chroma_type[16];
-  int               depth;
+  int               depth_input; // original input bitdepth
+  int               depth; // bitdepth of buffer
   /*The size of each converted frame buffer.*/
   size_t            dst_buf_sz;
   /*The amount to read directly into the converted frame buffer.*/
@@ -548,6 +549,62 @@ static void y4m_convert_4xxjpeg_42xjpeg(y4m_input *_y4m,unsigned char *_dst,
 }
 #endif
 
+
+static void y4m_convert_scale_bitdepth(y4m_input *_y4m,unsigned char *_dst,
+ unsigned char *_aux){
+  int i;
+  unsigned short value;
+  int samples=_y4m->depth_input==8?_y4m->dst_buf_read_sz:_y4m->dst_buf_read_sz/2;
+  if (_y4m->depth>_y4m->depth_input){
+    int left_shift=_y4m->depth-_y4m->depth_input;
+    if (_y4m->depth_input==8){
+      for(i=samples-1;i>=0;i--){
+          value=_dst[i];
+          value<<=left_shift;
+          _dst[2*i]=(value)&0xff;
+          _dst[2*i+1]=(value>>8);
+      }
+    } else {
+      for(i=samples-1;i>=0;i--){
+          value=_dst[2*i+1];
+          value<<=8;
+          value+=_dst[2*i];
+          value<<=left_shift;
+          _dst[2*i]=(value)&0xff;
+          _dst[2*i+1]=(value>>8);
+      }
+    }
+  } else {
+    int right_shift=_y4m->depth_input-_y4m->depth;
+    unsigned short offset=1<<(right_shift-1);
+    unsigned short maxval=(1<<_y4m->depth)-1;
+    if (_y4m->depth==8) {
+      for(i=0;i<samples;i++){
+          value=_dst[2*i+1];
+          value<<=8;
+          value+=_dst[2*i];
+          value+=offset;
+          value>>=right_shift;
+          value=value>maxval?maxval:value;
+          _dst[i]=value;
+      }
+    } else {
+      for(i=0;i<samples;i++){
+          value=_dst[2*i+1];
+          value<<=8;
+          value+=_dst[2*i];
+          value+=offset;
+          value>>=right_shift;
+          value=value>maxval?maxval:value;
+          _dst[2*i]=(value)&0xff;
+          _dst[2*i+1]=(value>>8);
+      }
+    }
+  }
+  (void)_aux;
+}
+
+
 /*No conversion function needed.*/
 static void y4m_convert_null(y4m_input *_y4m,unsigned char *_dst,
  unsigned char *_aux){
@@ -558,7 +615,7 @@ static void y4m_convert_null(y4m_input *_y4m,unsigned char *_dst,
 
 #define Y4M_HEADER_BUFSIZE 256
 
-static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
+static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin,int _out_bd){
   char buffer[Y4M_HEADER_BUFSIZE];
   int  ret;
   int  i;
@@ -600,7 +657,7 @@ static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
      +2*((_y4m->pic_w+1)/2)*((_y4m->pic_h+1)/2);
     /*Natively supported: no conversion required.*/
     _y4m->aux_buf_sz=_y4m->aux_buf_read_sz=0;
-    _y4m->convert=y4m_convert_null;
+    _y4m->convert=_out_bd==0||_out_bd==_y4m->depth?y4m_convert_null:y4m_convert_scale_bitdepth;
   }
   else if(strcmp(_y4m->chroma_type,"420p10")==0){
     _y4m->src_c_dec_h=_y4m->dst_c_dec_h=_y4m->src_c_dec_v=_y4m->dst_c_dec_v=2;
@@ -609,7 +666,7 @@ static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
     _y4m->depth=10;
     /*Natively supported: no conversion required.*/
     _y4m->aux_buf_sz=_y4m->aux_buf_read_sz=0;
-    _y4m->convert=y4m_convert_null;
+    _y4m->convert=_out_bd==0||_out_bd==_y4m->depth?y4m_convert_null:y4m_convert_scale_bitdepth;
   }
   else if (strcmp(_y4m->chroma_type,"422p10")==0) {
     _y4m->src_c_dec_h=_y4m->dst_c_dec_h=2;
@@ -617,8 +674,9 @@ static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
     _y4m->depth = 10;
     _y4m->dst_buf_read_sz = 2*(_y4m->pic_w*_y4m->pic_h
 		    +2*((_y4m->pic_w+1)/2)*_y4m->pic_h);
+    /*Natively supported: no conversion required.*/
     _y4m->aux_buf_sz = _y4m->aux_buf_read_sz = 0;
-    _y4m->convert = y4m_convert_null;
+    _y4m->convert=_out_bd==0||_out_bd==_y4m->depth?y4m_convert_null:y4m_convert_scale_bitdepth;
   }
   else if(strcmp(_y4m->chroma_type,"444p10")==0){
     _y4m->src_c_dec_h=_y4m->dst_c_dec_h=_y4m->src_c_dec_v=_y4m->dst_c_dec_v=1;
@@ -626,7 +684,34 @@ static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
     _y4m->depth=10;
     /*Natively supported: no conversion required.*/
     _y4m->aux_buf_sz=_y4m->aux_buf_read_sz=0;
-    _y4m->convert=y4m_convert_null;
+    _y4m->convert=_out_bd==0||_out_bd==_y4m->depth?y4m_convert_null:y4m_convert_scale_bitdepth;
+  }
+  else if(strcmp(_y4m->chroma_type,"420p12")==0){
+    _y4m->src_c_dec_h=_y4m->dst_c_dec_h=_y4m->src_c_dec_v=_y4m->dst_c_dec_v=2;
+    _y4m->dst_buf_read_sz=(_y4m->pic_w*_y4m->pic_h
+                           +2*((_y4m->pic_w+1)/2)*((_y4m->pic_h+1)/2))*2;
+    _y4m->depth=12;
+    /*Natively supported: no conversion required.*/
+    _y4m->aux_buf_sz=_y4m->aux_buf_read_sz=0;
+    _y4m->convert=_out_bd==0||_out_bd==_y4m->depth?y4m_convert_null:y4m_convert_scale_bitdepth;
+  }
+  else if (strcmp(_y4m->chroma_type,"422p12")==0) {
+    _y4m->src_c_dec_h=_y4m->dst_c_dec_h=2;
+    _y4m->src_c_dec_v=_y4m->dst_c_dec_v=1;
+    _y4m->depth = 12;
+    _y4m->dst_buf_read_sz = 2*(_y4m->pic_w*_y4m->pic_h
+		    +2*((_y4m->pic_w+1)/2)*_y4m->pic_h);
+    /*Natively supported: no conversion required.*/
+    _y4m->aux_buf_sz = _y4m->aux_buf_read_sz = 0;
+    _y4m->convert=_out_bd==0||_out_bd==_y4m->depth?y4m_convert_null:y4m_convert_scale_bitdepth;
+  }
+  else if(strcmp(_y4m->chroma_type,"444p12")==0){
+    _y4m->src_c_dec_h=_y4m->dst_c_dec_h=_y4m->src_c_dec_v=_y4m->dst_c_dec_v=1;
+    _y4m->dst_buf_read_sz=_y4m->pic_w*_y4m->pic_h*3*2;
+    _y4m->depth=12;
+    /*Natively supported: no conversion required.*/
+    _y4m->aux_buf_sz=_y4m->aux_buf_read_sz=0;
+    _y4m->convert=_out_bd==0||_out_bd==_y4m->depth?y4m_convert_null:y4m_convert_scale_bitdepth;
   }
   else if(strcmp(_y4m->chroma_type,"420paldv")==0){
     _y4m->src_c_dec_h=_y4m->dst_c_dec_h=_y4m->src_c_dec_v=_y4m->dst_c_dec_v=2;
@@ -663,7 +748,7 @@ static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
     _y4m->dst_buf_read_sz=_y4m->pic_w*_y4m->pic_h*3;
     /*Natively supported: no conversion required.*/
     _y4m->aux_buf_sz=_y4m->aux_buf_read_sz=0;
-    _y4m->convert=y4m_convert_null;
+    _y4m->convert=_out_bd==0||_out_bd==_y4m->depth?y4m_convert_null:y4m_convert_scale_bitdepth;
   }
   else if(strcmp(_y4m->chroma_type,"444alpha")==0){
     _y4m->src_c_dec_h=_y4m->dst_c_dec_h=_y4m->src_c_dec_v=_y4m->dst_c_dec_v=1;
@@ -685,7 +770,9 @@ static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
     fprintf(stderr,"Unknown chroma sampling type: %s\n",_y4m->chroma_type);
     return -1;
   }
-  xstride = (_y4m->depth>8)?2:1;
+  _y4m->depth_input=_y4m->depth;
+  _y4m->depth=_out_bd==0?_y4m->depth:_out_bd;
+  xstride=_y4m->depth_input>8||_y4m->depth>8?2:1;
   /*The size of the final frame buffers is always computed from the
      destination chroma decimation type.*/
   _y4m->dst_buf_sz=_y4m->pic_w*_y4m->pic_h
@@ -704,13 +791,13 @@ static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
   return 0;
 }
 
-static y4m_input *y4m_input_open(FILE *_fin){
+static y4m_input *y4m_input_open(FILE *_fin,int _out_bd){
   y4m_input *y4m = (y4m_input *) malloc(sizeof(*y4m));
   if(y4m==NULL){
     fprintf(stderr,"Could not allocate y4m reader state.\n");
     return NULL;
   }
-  if(y4m_input_open_impl(y4m,_fin)<0){
+  if(y4m_input_open_impl(y4m,_fin,_out_bd)<0){
     fprintf(stderr,"Error opening y4m file.\n");
     free(y4m);
     return NULL;
@@ -731,6 +818,7 @@ static void y4m_input_get_info(y4m_input *_y4m,video_input_info *_info){
   _info->par_d=_y4m->par_d;
   _info->pixel_fmt=_y4m->dst_c_dec_h==2?
    (_y4m->dst_c_dec_v==2?PF_420:PF_422):PF_444;
+  _info->depth_input=_y4m->depth_input;
   _info->depth=_y4m->depth;
 }
 

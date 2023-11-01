@@ -46,9 +46,9 @@ int raw_input_open(video_input *_vid,FILE *_fin,
   return -1;
 }
 
-int video_input_open(video_input *_vid,FILE *_fin) {
+int video_input_open(video_input *_vid,FILE *_fin,int _out_bd) {
   void *ctx;
-  if ((ctx = Y4M_INPUT_VTBL.open(_fin))!=NULL){
+  if ((ctx = Y4M_INPUT_VTBL.open(_fin,_out_bd))!=NULL){
     _vid->vtbl=&Y4M_INPUT_VTBL;
     _vid->ctx=ctx;
     _vid->fin=_fin;

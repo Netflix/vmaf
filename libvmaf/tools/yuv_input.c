@@ -97,6 +97,7 @@ static void yuv_input_get_info(yuv_input *_yuv, video_input_info *_info)
     _info->frame_w = _info->pic_w = _yuv->width;
     _info->frame_h = _info->pic_h = _yuv->height;
     _info->pixel_fmt = pix_fmt_map(_yuv->pix_fmt);
+    _info->depth_input = _yuv->bitdepth;
     _info->depth = _yuv->bitdepth;
 }
 

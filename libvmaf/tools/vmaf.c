@@ -49,14 +49,13 @@ static int validate_videos(video_input *vid1, video_input *vid2)
         err_cnt++;
     }
 
-    if (info1.depth != info2.depth) {
-        fprintf(stderr, "bitdepths do not match: %d, %d\n",
-                info1.depth, info2.depth);
+    if (info1.depth < 8 || info1.depth > 16) {
+        fprintf(stderr, "unsupported bitdepth: %d\n", info1.depth);
         err_cnt++;
     }
 
-    if (info1.depth < 8 || info1.depth > 16) {
-        fprintf(stderr, "unsupported bitdepth: %d\n", info1.depth);
+    if (info2.depth < 8 || info2.depth > 16) {
+        fprintf(stderr, "unsupported bitdepth: %d\n", info2.depth);
         err_cnt++;
     }
 
@@ -124,6 +123,7 @@ static int fetch_picture(video_input *vid, VmafPicture *pic)
 int main(int argc, char *argv[])
 {
     int err = 0;
+    int err2 = 0;
     const int istty = isatty(fileno(stderr));
 
     CLISettings c;
@@ -146,25 +146,52 @@ int main(int argc, char *argv[])
     }
 
     video_input vid_ref;
+    video_input vid_dist;
     if (c.use_yuv) {
         err = raw_input_open(&vid_ref, file_ref,
                              c.width, c.height, c.pix_fmt, c.bitdepth);
+	err2 = raw_input_open(&vid_dist, file_dist,
+			      c.width, c.height, c.pix_fmt, c.bitdepth);
     } else {
-        err = video_input_open(&vid_ref, file_ref);
+	err = video_input_open(&vid_ref, file_ref, c.bitdepth);
+	if (!err) {
+	    err2 = video_input_open(&vid_dist, file_dist, c.bitdepth);
+	    if (!err2 && c.bitdepth == 0) {
+	      // check bitdepth for both input files
+	      video_input_info info1, info2;
+	      video_input_get_info(&vid_ref, &info1);
+	      video_input_get_info(&vid_dist, &info2);
+	      if (info1.depth != info2.depth) {
+		// set c.bitdepth to larger bitdepth
+		c.bitdepth = info1.depth > info2.depth ? info1.depth : info2.depth;
+
+		if (info1.depth != (int)c.bitdepth) {
+		  video_input_close(&vid_ref);
+		  file_ref = fopen(c.path_ref, "rb");
+		  if (!file_ref) {
+		    fprintf(stderr, "could not open file: %s\n", c.path_ref);
+		    return -1;
+		  }
+		  err = video_input_open(&vid_ref, file_ref, c.bitdepth);
+		}
+		if (info2.depth != (int)c.bitdepth) {
+		  video_input_close(&vid_dist);
+		  file_dist = fopen(c.path_dist, "rb");
+		  if (!file_dist) {
+		    fprintf(stderr, "could not open file: %s\n", c.path_dist);
+		    return -1;
+		  }
+		  err2 = video_input_open(&vid_dist, file_dist, c.bitdepth);
+		}
+	      }
+	    }
+	}
     }
     if (err) {
         fprintf(stderr, "problem with reference file: %s\n", c.path_ref);
         return -1;
     }
-
-    video_input vid_dist;
-    if (c.use_yuv) {
-        err = raw_input_open(&vid_dist, file_dist,
-                             c.width, c.height, c.pix_fmt, c.bitdepth);
-    } else {
-        err = video_input_open(&vid_dist, file_dist);
-    }
-    if (err) {
+    if (err2) {
         fprintf(stderr, "problem with distorted file: %s\n", c.path_dist);
         return -1;
     }
