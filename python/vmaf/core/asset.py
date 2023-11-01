@@ -528,6 +528,11 @@ class Asset(WorkdirEnabled):
                 s += "_"
             s += "{w}x{h}".format(w=w, h=h)
 
+        if self.workfile_yuv_type != self.DEFAULT_YUV_TYPE:
+            if s != "":
+                s += "_"
+            s += "wf_" + self.workfile_yuv_type
+
         return s
 
     def to_string(self):
