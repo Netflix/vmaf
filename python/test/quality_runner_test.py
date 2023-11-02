@@ -50,7 +50,7 @@ class QualityRunnerTest(MyTestCase):
             delete_workdir=True,
             result_store=None
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -77,7 +77,7 @@ class QualityRunnerTest(MyTestCase):
             delete_workdir=True,
             result_store=None
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -104,7 +104,7 @@ class QualityRunnerTest(MyTestCase):
             delete_workdir=True,
             result_store=None
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -134,7 +134,7 @@ class QualityRunnerTest(MyTestCase):
             result_store=result_store
         )
 
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
         result0, result1 = self.runner.results
 
         # NOTE: since stored results are actually VMAF_feature's not VMAF's,
@@ -142,7 +142,7 @@ class QualityRunnerTest(MyTestCase):
         self.assertFalse(os.path.exists(result_store._get_result_file_path(result0)))
         self.assertFalse(os.path.exists(result_store._get_result_file_path(result1)))
 
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
         results = self.runner.results
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_score'], 0.44609306249999997, places=4)
@@ -172,7 +172,7 @@ class QualityRunnerTest(MyTestCase):
             },
             optional_dict2=None,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -199,7 +199,7 @@ class QualityRunnerTest(MyTestCase):
             delete_workdir=True,
             result_store=None,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -240,7 +240,7 @@ class QualityRunnerTest(MyTestCase):
             result_store=None,
             optional_dict2={'n_threads': 3}
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -260,7 +260,7 @@ class QualityRunnerTest(MyTestCase):
                 'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1.json"),
             }
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -303,7 +303,7 @@ class QualityRunnerTest(MyTestCase):
                 'enable_transform_score': True,
             }
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -332,7 +332,7 @@ class QualityRunnerTest(MyTestCase):
             result_store=None,
             optional_dict={}
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -368,7 +368,7 @@ class QualityRunnerTest(MyTestCase):
             delete_workdir=True,
             result_store=self.result_store,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -407,7 +407,7 @@ class QualityRunnerTest(MyTestCase):
             delete_workdir=True,
             result_store=self.result_store,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -442,7 +442,7 @@ class QualityRunnerTest(MyTestCase):
             },
             optional_dict2=None,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -473,7 +473,7 @@ class QualityRunnerTest(MyTestCase):
             delete_workdir=True,
             result_store=None,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -496,7 +496,7 @@ class QualityRunnerTest(MyTestCase):
                 'model_filepath': [VmafConfig.model_path("vmaf_float_v0.6.1.json"), VmafConfig.model_path("other_models", "vmaf_v0.6.0.json")],
             },
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -516,7 +516,7 @@ class QualityRunnerTest(MyTestCase):
             delete_workdir=True,
             result_store=None
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
         self.assertAlmostEqual(results[0]['PSNR_score'], 30.755063979166664, places=4)
@@ -533,7 +533,7 @@ class QualityRunnerTest(MyTestCase):
             None, fifo_mode=False,
             result_store=None
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -556,7 +556,7 @@ class QualityRunnerTest(MyTestCase):
             None, fifo_mode=False,
             result_store=None
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -604,7 +604,7 @@ class QualityRunnerTest(MyTestCase):
             delete_workdir=True,
             result_store=None,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -624,7 +624,7 @@ class QualityRunnerTest(MyTestCase):
             delete_workdir=True,
             result_store=None,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -644,7 +644,7 @@ class QualityRunnerTest(MyTestCase):
             delete_workdir=True,
             result_store=None,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -661,7 +661,7 @@ class QualityRunnerTest(MyTestCase):
             delete_workdir=True,
             result_store=None,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -678,7 +678,7 @@ class QualityRunnerTest(MyTestCase):
             delete_workdir=True,
             result_store=None,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -705,7 +705,7 @@ class QualityRunnerTest(MyTestCase):
             },
             result_store=self.result_store,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -742,7 +742,7 @@ class QualityRunnerTest(MyTestCase):
             },
             result_store=self.result_store,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -778,7 +778,7 @@ class QualityRunnerTest(MyTestCase):
             },
             result_store=self.result_store,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -813,7 +813,7 @@ class QualityRunnerTest(MyTestCase):
             },
             result_store=self.result_store,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -849,7 +849,7 @@ class QualityRunnerTest(MyTestCase):
             },
             result_store=self.result_store,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -875,7 +875,7 @@ class QualityRunnerTest(MyTestCase):
             },
             result_store=self.result_store,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -910,7 +910,7 @@ class QualityRunnerTest(MyTestCase):
             },
             result_store=self.result_store,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -936,7 +936,7 @@ class QualityRunnerTest(MyTestCase):
                 'model_filepath': VmafConfig.test_resource_path('model', 'vmafplus_v0.5.2boot_test.json'),
             },
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -984,7 +984,7 @@ class QualityRunnerTest(MyTestCase):
                 'enable_transform_score': True,
             },
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1008,7 +1008,7 @@ class QualityRunnerTest(MyTestCase):
                 'model_filepath': VmafConfig.model_path('vmaf_rb_v0.6.2', 'vmaf_rb_v0.6.2.json'),
             },
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1036,7 +1036,7 @@ class QualityRunnerTest(MyTestCase):
                 'model_filepath': VmafConfig.model_path('vmaf_rb_v0.6.3', 'vmaf_rb_v0.6.3.json'),
             },
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1061,7 +1061,7 @@ class QualityRunnerTest(MyTestCase):
             delete_workdir=True,
             result_store=None,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1089,7 +1089,7 @@ class QualityRunnerTest(MyTestCase):
                 'enable_transform_score': True,
             }
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1113,7 +1113,7 @@ class QualityRunnerTest(MyTestCase):
                 'model_filepath': VmafConfig.test_resource_path('model', 'vmafplus_v0.5.2boot_test2.json'),
             },
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1137,7 +1137,7 @@ class QualityRunnerTest(MyTestCase):
                 'model_filepath': VmafConfig.test_resource_path('model', 'vmafplus_v0.5.2boot_test.json'),
             },
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1192,7 +1192,7 @@ class QualityRunnerTest(MyTestCase):
             delete_workdir=True,
             result_store=None
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
         self.assertAlmostEqual(results[0]['NIQE_score'], 4.8656072348129422, places=4)
@@ -1211,7 +1211,7 @@ class QualityRunnerTest(MyTestCase):
                 'model_filepath': VmafConfig.model_path("vmaf_4k_v0.6.1.json"),
             },
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1231,7 +1231,7 @@ class QualityRunnerTest(MyTestCase):
                 'model_filepath': VmafConfig.model_path('vmaf_4k_rb_v0.6.2', 'vmaf_4k_rb_v0.6.2.json'),
             },
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1255,7 +1255,7 @@ class QualityRunnerTest(MyTestCase):
                 'model_filepath': VmafConfig.test_resource_path('model', 'vmafplus_v0.5.2_test.json'),
             },
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1284,7 +1284,7 @@ class QualityRunnerTest(MyTestCase):
             delete_workdir=True,
             result_store=None,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1327,7 +1327,7 @@ class QualityRunnerTest(MyTestCase):
                 'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1.json"),
             }
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1370,7 +1370,7 @@ class QualityRunnerTest(MyTestCase):
                 'model_filepath': VmafConfig.model_path("vmaf_float_b_v0.6.3.json"),
             }
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1396,7 +1396,7 @@ class QualityRunnerTest(MyTestCase):
             result_store=None,
             optional_dict={'model_filepath': VmafConfig.model_path('other_models', 'vmaf_v0.6.1mfz.json')}
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1441,7 +1441,7 @@ class QualityRunnerTest(MyTestCase):
             delete_workdir=True,
             result_store=None,
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
         results = self.runner.results
 
         self.assertAlmostEqual(results[0]['VMAFNEG_score'], 88.030463, places=4)  # 132.7329528948058
@@ -1466,7 +1466,7 @@ class QualityRunnerTest(MyTestCase):
             result_store=None,
             optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1neg.json")}
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
         results = self.runner.results
 
         self.assertAlmostEqual(results[0]['VMAF_score'], 88.03295534339294, places=2)  # 132.7329528948058
@@ -1486,7 +1486,7 @@ class QualityRunnerTest(MyTestCase):
             result_store=None,
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_v0.6.1_nvd6.json')}
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1518,7 +1518,7 @@ class QualityRunnerTest(MyTestCase):
             result_store=None,
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_nvd6.json')}
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1586,7 +1586,7 @@ class QualityRunnerTest(MyTestCase):
             result_store=None,
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_rdh540.json')}
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1618,7 +1618,7 @@ class QualityRunnerTest(MyTestCase):
             result_store=None,
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_v0.6.1_rdh2160_nvd1d5.json')}
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1648,7 +1648,7 @@ class QualityRunnerTest(MyTestCase):
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_vifks3o2.json')},
             optional_dict2={'disable_avx': False},
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1681,7 +1681,7 @@ class QualityRunnerTest(MyTestCase):
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_vifks24o10.json')},
             optional_dict2={'disable_avx': False},
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1714,7 +1714,7 @@ class QualityRunnerTest(MyTestCase):
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_vifks360o97.json')},
             optional_dict2={'disable_avx': False},
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1747,7 +1747,7 @@ class QualityRunnerTest(MyTestCase):
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_vifks1o2.json')},
             optional_dict2={'disable_avx': False},
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1780,7 +1780,7 @@ class QualityRunnerTest(MyTestCase):
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_vifks2.json')},
             optional_dict2={'disable_avx': False},
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1813,7 +1813,7 @@ class QualityRunnerTest(MyTestCase):
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_vifks2o3.json')},
             optional_dict2={'disable_avx': False},
         )
-        self.runner.run(parallelize=True)
+        self.runner.run(parallelize=False)
 
         results = self.runner.results
 
@@ -1953,7 +1953,7 @@ class QualityRunnerResultStoreTest(unittest.TestCase):
             result_store=self.result_store,
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_rdh540.json')}
         )
-        self.runner1.run(parallelize=True)
+        self.runner1.run(parallelize=False)
         results1 = self.runner1.results
 
         self.runner2 = VmafQualityRunner(
@@ -1963,7 +1963,7 @@ class QualityRunnerResultStoreTest(unittest.TestCase):
             result_store=self.result_store,
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_nvd6.json')}
         )
-        self.runner2.run(parallelize=True)
+        self.runner2.run(parallelize=False)
         results2 = self.runner2.results
 
         self.assertAlmostEqual(results1[0]['VMAF_score'], 73.28968543912883, places=4)
