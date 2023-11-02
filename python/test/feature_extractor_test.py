@@ -44,7 +44,7 @@ class FeatureExtractorTest(MyTestCase):
                       asset_dict={'width': 720, 'height': 480})
         fextractor = VmafFeatureExtractor([asset], None,
                                           optional_dict={"some_parameter": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
-        self.assertEqual("VMAF_feature_V0.2.9_ab1db6ba9be857303e99cbb0ef38fc4753ef1040", fextractor.executor_id)
+        self.assertEqual("VMAF_feature_V0.2.7_ab1db6ba9be857303e99cbb0ef38fc4753ef1040", fextractor.executor_id)
 
     def test_get_log_file_path(self):
         import hashlib

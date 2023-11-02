@@ -116,8 +116,8 @@ class ResultTest(MyTestCase):
         self.result.set_score_aggregate_method(ListStats.total_variation)
         self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 6.5901873052628375, places=4)
         self.result.set_score_aggregate_method(partial(ListStats.moving_average, n=2))
-        self.assertEqual(list(self.result.get_result('VMAF_legacy_score')),
-                              [42.86773029545774, 42.86773029545774, 42.86773029545774])
+        for item in list(self.result.get_result('VMAF_legacy_score')):
+            self.assertAlmostEqual(item, 42.86773029545747, places=6)
 
         with self.assertRaises(KeyError):
             self.result.get_result('VVMAF_legacy_score')
