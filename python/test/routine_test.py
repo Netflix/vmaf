@@ -258,7 +258,7 @@ class TestTrainOnDatasetJsonFormat(unittest.TestCase):
             result_store=None,
             parallelize=True,
             logger=None,
-            fifo_mode=True,
+            fifo_mode=False,
             output_model_filepath=self.output_model_filepath,
         )
 
@@ -296,7 +296,7 @@ class TestTrainOnDataset(unittest.TestCase):
             result_store=None,
             parallelize=True,
             logger=None,
-            fifo_mode=True,
+            fifo_mode=False,
             output_model_filepath=self.output_model_filepath,
         )
 
@@ -307,7 +307,7 @@ class TestTrainOnDataset(unittest.TestCase):
 
         runner = VmafQualityRunner(
             train_assets,
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={'model_filepath': self.output_model_filepath}
@@ -339,7 +339,7 @@ class TestTrainOnDataset(unittest.TestCase):
             result_store=None,
             parallelize=True,
             logger=None,
-            fifo_mode=True,
+            fifo_mode=False,
             output_model_filepath=self.output_model_filepath
         )
 
@@ -519,7 +519,7 @@ class TestTrainOnDataset(unittest.TestCase):
                 result_store=None,
                 parallelize=False,
                 logger=None,
-                fifo_mode=True,
+                fifo_mode=False,
                 output_model_filepath=self.output_model_filepath,
             )
 
@@ -542,7 +542,7 @@ class TestTrainOnDataset(unittest.TestCase):
             result_store=None,
             parallelize=True,
             logger=None,
-            fifo_mode=True,
+            fifo_mode=False,
             output_model_filepath=self.output_model_filepath,
         )
 
@@ -553,7 +553,7 @@ class TestTrainOnDataset(unittest.TestCase):
 
         runner = VmafQualityRunner(
             train_assets,
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={'model_filepath': self.output_model_filepath}

@@ -46,7 +46,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafLegacyQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None
         )
@@ -129,7 +129,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafLegacyQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=result_store
         )
@@ -164,7 +164,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={
@@ -195,7 +195,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
         )
@@ -235,7 +235,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict2={'n_threads': 3}
@@ -253,7 +253,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={
@@ -296,7 +296,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={
@@ -317,7 +317,7 @@ class QualityRunnerTest(MyTestCase):
         with self.assertRaises(AssertionError):
             VmafPhoneQualityRunner(
                 [asset, asset_original],
-                None, fifo_mode=True,
+                None, fifo_mode=False,
                 delete_workdir=True,
                 result_store=None,
                 optional_dict={
@@ -327,7 +327,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafPhoneQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={}
@@ -364,7 +364,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original, asset2],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=self.result_store,
         )
@@ -403,7 +403,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=self.result_store,
         )
@@ -434,7 +434,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=self.result_store,
             optional_dict={
@@ -469,7 +469,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = EnsembleVmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
         )
@@ -489,7 +489,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = EnsembleVmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={
@@ -512,7 +512,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = PsnrQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None
         )
@@ -530,7 +530,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = SsimQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             result_store=None
         )
         self.runner.run(parallelize=True)
@@ -553,7 +553,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = MsSsimQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             result_store=None
         )
         self.runner.run(parallelize=True)
@@ -600,7 +600,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
         )
@@ -620,7 +620,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
         )
@@ -640,7 +640,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = Adm2QualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
         )
@@ -657,7 +657,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VifQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
         )
@@ -674,7 +674,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = Vif2QualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
         )
@@ -697,7 +697,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             optional_dict={
                 'model_filepath': VmafConfig.test_resource_path("test_model_transform_add40.json"),
@@ -733,7 +733,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             optional_dict={
                 'model_filepath': VmafConfig.test_resource_path("test_model_transform_add40_outltein.json"),
@@ -770,7 +770,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             optional_dict={
                 'model_filepath': VmafConfig.test_resource_path("test_model_transform_add40_piecewiselinear.json"),
@@ -806,7 +806,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             optional_dict={
                 'model_filepath': VmafConfig.test_resource_path("test_model_transform_add40_piecewiselinear_forced.json"),
@@ -841,7 +841,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             optional_dict={
                 'model_filepath': VmafConfig.test_resource_path("test_model_transform_add40_piecewiselinear_forced.json"),
@@ -867,7 +867,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             optional_dict={
                 'model_filepath': VmafConfig.test_resource_path("test_model_transform_add40.json"),
@@ -903,7 +903,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             optional_dict={
                 'enable_transform_score': True,
@@ -929,7 +929,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = BootstrapVmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={
@@ -976,7 +976,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = BootstrapVmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={
@@ -1001,7 +1001,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = BootstrapVmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={
@@ -1029,7 +1029,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = BootstrapVmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={
@@ -1057,7 +1057,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = BootstrapVmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
         )
@@ -1082,7 +1082,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = BootstrapVmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={
@@ -1106,7 +1106,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = BootstrapVmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={
@@ -1130,7 +1130,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = BaggingVmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={
@@ -1188,7 +1188,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = NiqeQualityRunner(
             [asset1, asset2],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None
         )
@@ -1204,7 +1204,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={
@@ -1224,7 +1224,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = BootstrapVmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={
@@ -1248,7 +1248,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={
@@ -1280,7 +1280,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
         )
@@ -1320,7 +1320,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={
@@ -1363,7 +1363,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = BootstrapVmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={
@@ -1391,7 +1391,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={'model_filepath': VmafConfig.model_path('other_models', 'vmaf_v0.6.1mfz.json')}
@@ -1437,7 +1437,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafnegQualityRunner(
             [asset],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
         )
@@ -1461,7 +1461,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={'disable_clip_score': True, 'model_filepath': VmafConfig.model_path("vmaf_float_v0.6.1neg.json")}
@@ -1481,7 +1481,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_v0.6.1_nvd6.json')}
@@ -1513,7 +1513,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_nvd6.json')}
@@ -1581,7 +1581,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_rdh540.json')}
@@ -1613,7 +1613,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_v0.6.1_rdh2160_nvd1d5.json')}
@@ -1642,7 +1642,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_vifks3o2.json')},
@@ -1675,7 +1675,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_vifks24o10.json')},
@@ -1708,7 +1708,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_vifks360o97.json')},
@@ -1741,7 +1741,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_vifks1o2.json')},
@@ -1774,7 +1774,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_vifks2.json')},
@@ -1807,7 +1807,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_vifks2o3.json')},
@@ -1841,7 +1841,7 @@ class QualityRunnerTest(MyTestCase):
         with self.assertRaises(AssertionError) as ctx:
             self.runner = VmafQualityRunner(
                 [asset, asset_original],
-                None, fifo_mode=True,
+                None, fifo_mode=False,
                 delete_workdir=True,
                 result_store=self.result_store,
                 save_workfiles=True,
@@ -1948,7 +1948,7 @@ class QualityRunnerResultStoreTest(unittest.TestCase):
 
         self.runner1 = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=self.result_store,
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_rdh540.json')}
@@ -1958,7 +1958,7 @@ class QualityRunnerResultStoreTest(unittest.TestCase):
 
         self.runner2 = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=self.result_store,
             optional_dict={'model_filepath': VmafConfig.test_resource_path('model', 'vmaf_float_v0.6.1_nvd6.json')}
