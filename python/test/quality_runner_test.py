@@ -1841,7 +1841,7 @@ class QualityRunnerTest(MyTestCase):
         with self.assertRaises(AssertionError) as ctx:
             self.runner = VmafQualityRunner(
                 [asset, asset_original],
-                None, fifo_mode=False,
+                None, fifo_mode=True,
                 delete_workdir=True,
                 result_store=self.result_store,
                 save_workfiles=True,
