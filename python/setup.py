@@ -64,7 +64,6 @@ setup(
             'run_vmaf_cross_validation=vmaf.script.run_vmaf_cross_validation:main',
             'run_vmaf_in_batch=vmaf.script.run_vmaf_in_batch:main',
             'run_vmaf_training=vmaf.script.run_vmaf_training:main',
-            'run_vmafossexec_subsampling=vmaf.script.run_vmafossexec_subsampling:main',
         ],
     },
     ext_modules=ext_module,

@@ -98,54 +98,14 @@ static Alias alias_map[] = {
     },
 };
 
-static Alias vmafossexec_alias_map[] = {
-    {
-        .name = "float_psnr",
-        .alias = "psnr",
-    },
-    {
-        .name = "psnr_y",
-        .alias = "psnr",
-    },
-    {
-        .name = "float_ssim",
-        .alias = "ssim",
-    },
-    {
-        .name = "float_ms_ssim",
-        .alias = "ms_ssim",
-    },
-};
-
-static bool vmafossexec_aliases = false;
-void vmaf_use_vmafossexec_aliases(void)
-{
-    vmafossexec_aliases = true;
-}
-
-static const char *vmafossexec_feature_name_alias(const char *feature_name)
-{
-    if (!vmafossexec_aliases) return feature_name;
-
-    unsigned alias_cnt =
-        sizeof(vmafossexec_alias_map) / sizeof(vmafossexec_alias_map[0]);
-
-    for (unsigned i = 0; i < alias_cnt; i++) {
-       if (!strcmp(feature_name, vmafossexec_alias_map[i].name))
-           return vmafossexec_alias_map[i].alias;
-    }
-
-    return feature_name;
-}
-
 const char *vmaf_feature_name_alias(const char *feature_name)
 {
     unsigned alias_cnt = sizeof(alias_map) / sizeof(alias_map[0]);
 
     for (unsigned i = 0; i < alias_cnt; i++) {
        if (!strcmp(feature_name, alias_map[i].name))
-           return vmafossexec_feature_name_alias(alias_map[i].alias);
+           return alias_map[i].alias;
     }
 
-    return vmafossexec_feature_name_alias(feature_name);
+    return feature_name;
 }
