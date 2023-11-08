@@ -447,7 +447,6 @@ libvmaf_feature_static_lib = static_library(
 
 libvmaf_sources = [
     src_dir + 'libvmaf.c',
-    src_dir + 'compute_vmaf.c',
     src_dir + 'predict.c',
     src_dir + 'model.c',
     src_dir + 'svm.cpp',

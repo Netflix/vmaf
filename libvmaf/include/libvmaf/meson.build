@@ -17,7 +17,6 @@ endif
 
 # install headers
 install_headers(['libvmaf.h',
-                'compute_vmaf.h',
                 'feature.h',
                 'model.h',
                 'picture.h'],

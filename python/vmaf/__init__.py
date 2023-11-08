@@ -104,15 +104,12 @@ class ExternalProgram(object):
     try:
         from . import externals
         external_vmaf_feature = config.VmafExternalConfig.vmaf_path()
-        external_vmafossexec = config.VmafExternalConfig.vmafossexec_path()
         external_vmafexec = config.VmafExternalConfig.vmafexec_path()
     except ImportError:
         external_vmaf_feature = None
-        external_vmafossexec = None
         external_vmafexec = None
 
     vmaf_feature = project_path(os.path.join("libvmaf", "build", "tools", "vmaf_feature")) if external_vmaf_feature is None else external_vmaf_feature
-    vmafossexec = project_path(os.path.join("libvmaf", "build", "tools", "vmafossexec")) if external_vmafossexec is None else external_vmafossexec
     vmafexec = project_path(os.path.join("libvmaf", "build", "tools", "vmaf")) if external_vmafexec is None else external_vmafexec
 
 
@@ -212,45 +209,6 @@ class ExternalProgramCaller(object):
         if logger:
             logger.info(vifdiff_feature_cmd)
         run_process(vifdiff_feature_cmd, shell=True)
-
-    @staticmethod
-    def call_vmafossexec(fmt, w, h, ref_path, dis_path, model, log_file_path, disable_clip_score,
-                         enable_transform_score, phone_model, disable_avx, n_thread, n_subsample,
-                         psnr, ssim, ms_ssim, ci, exe=None, logger=None):
-
-        if exe is None:
-            exe = required(ExternalProgram.vmafossexec)
-
-        vmafossexec_cmd = "{exe} {fmt} {w} {h} {ref_path} {dis_path} {model} --log {log_file_path} --log-fmt xml --thread {n_thread} --subsample {n_subsample}" \
-            .format(
-            exe=exe,
-            fmt=fmt,
-            w=w,
-            h=h,
-            ref_path=ref_path,
-            dis_path=dis_path,
-            model=model,
-            log_file_path=log_file_path,
-            n_thread=n_thread,
-            n_subsample=n_subsample)
-        if disable_clip_score:
-            vmafossexec_cmd += ' --disable-clip'
-        if enable_transform_score or phone_model:
-            vmafossexec_cmd += ' --enable-transform'
-        if disable_avx:
-            vmafossexec_cmd += ' --disable-avx'
-        if psnr:
-            vmafossexec_cmd += ' --psnr'
-        if ssim:
-            vmafossexec_cmd += ' --ssim'
-        if ms_ssim:
-            vmafossexec_cmd += ' --ms-ssim'
-        if ci:
-            vmafossexec_cmd += ' --ci'
-        if logger:
-            logger.info(vmafossexec_cmd)
-
-        run_process(vmafossexec_cmd, shell=True)
 
     @staticmethod
     def call_vmafexec(reference, distorted, width, height, pixel_format, bitdepth,
