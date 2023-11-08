@@ -61,7 +61,6 @@ This will install the following files:
 │   └── vmaf
 ├── include
 │   └── libvmaf
-│       ├── compute_vmaf.h
 │       ├── feature.h
 │       ├── libvmaf.h
 │       ├── model.h
@@ -89,7 +88,7 @@ ninja -vC build doc/html
 
 ## `vmaf`
 
-A command line tool called `vmaf` is included as part of the build/installation. See the `vmaf` [README.md](tools/README.md) for details. An older command line tool (`vmafossexec`) is still part of the build but is not part of the installation. `vmafossexec` will be removed in a future version of this library.
+A command line tool called `vmaf` is included as part of the build/installation. See the `vmaf` [README.md](tools/README.md) for details.
 
 ## API Walkthrough
 
