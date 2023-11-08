@@ -25,7 +25,7 @@ jobs:
             CC: ccache clang
             CXX: ccache clang++
             experimental: true
-          - os: macos-latest-xlarge
+          - os: macos-13-xlarge
             CC: ccache clang
             CXX: ccache clang++
             experimental: true
