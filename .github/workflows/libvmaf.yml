@@ -25,6 +25,10 @@ jobs:
             CC: ccache clang
             CXX: ccache clang++
             experimental: true
+          - os: macos-latest-xlarge
+            CC: ccache clang
+            CXX: ccache clang++
+            experimental: true
     runs-on: ${{ matrix.os }}
     env:
       CC: ${{ matrix.CC }}
@@ -57,7 +61,7 @@ jobs:
           ccache --version
 
       - name: Install dependencies (mac)
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-latest' || matrix.os == 'macos-latest-xlarge'
         run: |
           brew install -q ninja nasm ccache
 
