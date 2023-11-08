@@ -61,7 +61,7 @@ jobs:
           ccache --version
 
       - name: Install dependencies (mac)
-        if: matrix.os == 'macos-latest' || matrix.os == 'macos-latest-xlarge'
+        if: matrix.os == 'macos-latest' || matrix.os == 'macos-13-xlarge'
         run: |
           brew install -q ninja nasm ccache
 
