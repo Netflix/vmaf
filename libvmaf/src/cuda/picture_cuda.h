@@ -31,8 +31,8 @@ typedef struct VmafCudaCookie {
 } VmafCudaCookie;
 
 /**
- * Upload CPU VmafPicture to the CudaVmafPicture on the GPU on the CUstream that
- * is passed. CudaVmafPicture has a CUevent member that will be triggered as
+ * Upload CPU VmafPicture to the VmafPicture on the GPU on the CUstream that
+ * is passed. VmafPicture has a CUevent member that will be triggered as
  * soon as the upload is finished.
  *
  * @param cuda_pic   destination  image on the device/GPU
@@ -47,7 +47,7 @@ int vmaf_cuda_picture_upload_async(VmafPicture *cuda_pic, VmafPicture *pic,
                                    uint8_t bitmask);
 
 /**
- * Download a CudaVmafPicutre from the GPU to CPU on the CUstream passed.
+ * Download a VmafPicture from the GPU to CPU on the CUstream passed.
  *
  * @param cuda_pic  source image on the device/GPU.
  *
