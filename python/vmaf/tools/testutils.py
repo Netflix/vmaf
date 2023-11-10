@@ -95,21 +95,18 @@ def remove_option(command_line: str, option: str) -> str:
         return re.sub(r' --{option} [^\s]*'.format(option=option), '', command_line)
 
 
-def remove_elements_containing_substring(command_line: str, seq: str) -> str:
+def remove_elements_containing_substring(command_line: str, sub_str: str) -> str:
     """
     Removes strings from the command line that contain a specific substring
-    >>> remove_elements_containing_substring('cat /opt/project/vmaf/workspace/workdir/9e693ccc-7706-49c5-8c8e-40f5242e81a6/dis_test_0_0_seeking_10_288_375_notyuv_lanczos_accurate_rnd_10to14_prece_FFmpegDecoder_postunsharpunsharp_q_480x360_PostDecode_tmp/pixfmt/* >  /opt/project/vmaf/workspace/workdir/9e693ccc-7706-49c5-8c8e-40f5242e81a6/dis_test_0_0_seeking_10_288_375_notyuv_lanczos_accurate_rnd_10to14_prece_FFmpegDecoder_postunsharpunsharp_q_480x360_PostPreresamplingFilter0','workspace/workdir')
+    >>> remove_elements_containing_substring('cat /opt/project/vmaf/workspace/workdir/9e693ccc-7706-49c5-8c8e-40f5242e81a6/dis_test_0_0_seeking_10_288_375_notyuv_lanczos_accurate_rnd_10to14_prece_FFmpegDecoder_postunsharpunsharp_q_480x360_PostDecode_tmp/pixfmt/* >  /opt/project/vmaf/workspace/workdir/9e693ccc-7706-49c5-8c8e-40f5242e81a6/dis_test_0_0_seeking_10_288_375_notyuv_lanczos_accurate_rnd_10to14_prece_FFmpegDecoder_postunsharpunsharp_q_480x360_PostPreresamplingFilter0', 'workspace/workdir')
     'cat >'
     """
-    if seq is not None:
-        assert isinstance(seq, str)
-        return " ".join([x for x in command_line.split() if seq not in x])
-    else:
-        return command_line
+    assert isinstance(sub_str, str)
+    return " ".join([x for x in command_line.split() if sub_str not in x])
 
 
 def assert_equivalent_commands(self, cmds: List[str], cmds_expected: List[str], root: str, root_expected: str, do_replace_uuid: bool = True,
-                               options_to_remove=None, str_to_remove=None):
+                               options_to_remove=None, substrings_to_remove=None):
     """
     >>> self = MyTestCase()
     >>> self.setUp()
@@ -129,7 +126,7 @@ def assert_equivalent_commands(self, cmds: List[str], cmds_expected: List[str], 
     >>> self4.tearDown()
     >>> self5 = MyTestCase()
     >>> self5.setUp()
-    >>> assert_equivalent_commands(self5, cmds=["/opt/project/vmaf --reference /opt/project/vmaf/workspace/workdir/ref.h265 --distorted /opt/project/vmaf/workspace/workdir/dist.h265 --output output.xml"], cmds_expected=["/opt/project/vmaf --reference /opt/project/vmaf/workspace/workdir/ref.h266 --distorted /opt/project/vmaf/workspace/workdir/dist.h266 --output output.xml"], root="/opt/project", root_expected="/opt/project", str_to_remove=["workspace/workdir"])
+    >>> assert_equivalent_commands(self5, cmds=["/opt/project/vmaf --reference /opt/project/vmaf/workspace/workdir/ref.h265 --distorted /opt/project/vmaf/workspace/workdir/dist.h265 --output output.xml"], cmds_expected=["/opt/project/vmaf --reference /opt/project/vmaf/workspace/workdir/ref.h266 --distorted /opt/project/vmaf/workspace/workdir/dist.h266 --output output2.xml"], root="/opt/project", root_expected="/opt/project", substrings_to_remove=["workspace/workdir", "output"])
     >>> self5.tearDown()
     """
 
@@ -146,15 +143,17 @@ def assert_equivalent_commands(self, cmds: List[str], cmds_expected: List[str], 
         cmd3 = remove_redundant_whitespace(cmd2)
         for option_to_remove in options_to_remove:
             cmd3 = remove_option(cmd3, option_to_remove)
-        cmd4 = remove_elements_containing_substring(cmd3, str_to_remove)
+        for sbstr_to_remove in substrings_to_remove:
+            cmd3 = remove_elements_containing_substring(cmd3, sbstr_to_remove)
 
         cmd_expected1 = replace_uuid(cmd_expected)
         cmd_expected2 = replace_root(cmd_expected1, root_expected)
         cmd_expected3 = remove_redundant_whitespace(cmd_expected2)
         for option_to_remove in options_to_remove:
             cmd_expected3 = remove_option(cmd_expected3, option_to_remove)
-        cmd_expected4 = remove_elements_containing_substring(cmd_expected3, str_to_remove)
+        for sbstr_to_remove in substrings_to_remove:
+            cmd_expected3 = remove_elements_containing_substring(cmd_expected3, sbstr_to_remove)
 
-        self.assertEqual(cmd4, cmd_expected4, msg=f"cmd and cmd_expected are not matched:\ncmd: {cmd}\ncmd:expected: "
-                                                  f"{cmd_expected}\nprocessed cmd: {cmd4}\nprocessed cmd:expected: "
-                                                  f"{cmd_expected4}")
+        self.assertEqual(cmd3, cmd_expected3, msg=f"cmd and cmd_expected are not matched:\ncmd: {cmd}\ncmd:expected: "
+                                                  f"{cmd_expected}\nprocessed cmd: {cmd3}\nprocessed cmd:expected: "
+                                                  f"{cmd_expected3}")
