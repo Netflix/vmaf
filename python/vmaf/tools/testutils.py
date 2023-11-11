@@ -132,6 +132,8 @@ def assert_equivalent_commands(self, cmds: List[str], cmds_expected: List[str], 
 
     if options_to_remove is None:
         options_to_remove = []
+    if substrings_to_remove is None:
+        substrings_to_remove = []
     assert len(cmds) == len(cmds_expected), f"length of cmds and cmds_expected are not equal: {len(cmds)} vs. {len(cmds_expected)}"
     for cmd, cmd_expected in zip(cmds, cmds_expected):
 
