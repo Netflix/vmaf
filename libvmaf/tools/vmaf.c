@@ -115,7 +115,6 @@ static int fetch_picture(video_input *vid, VmafPicture *pic, int depth)
     } else if (depth > 8) {
         // unequal bit-depth
         // therefore depth must be > 8 since we do not support depth < 8
-        uint16_t value;
         int left_shift = depth - info.depth;
         if (info.depth == 8) {
             for (unsigned i = 0; i < 3; i++) {
@@ -124,15 +123,13 @@ static int fetch_picture(video_input *vid, VmafPicture *pic, int depth)
                 uint8_t *ycbcr_data = ycbcr[i].data +
                     (info.pic_y >> ydec) * ycbcr[i].stride +
                     (info.pic_x >> xdec);
-                uint8_t *pic_data = (uint8_t *)pic->data[i];
+                uint16_t *pic_data = (uint16_t*)pic->data[i];
 
                 for (unsigned j = 0; j < pic->h[i]; j++) {
                     for (unsigned k = 0; k < pic->w[i]; k++) {
-                        value=ycbcr_data[k]<<left_shift;
-                        pic_data[2*k]=(value)&0xff;
-                        pic_data[2*k+1]=(value>>8);
+                        pic_data[k] = ycbcr_data[k] << left_shift;
                     }
-                    pic_data += pic->stride[i];
+                    pic_data += pic->stride[i] / 2;
                     ycbcr_data += ycbcr[i].stride;
                 }
             }
@@ -140,19 +137,17 @@ static int fetch_picture(video_input *vid, VmafPicture *pic, int depth)
             for (unsigned i = 0; i < 3; i++) {
                 int xdec = i&&!(info.pixel_fmt&1);
                 int ydec = i&&!(info.pixel_fmt&2);
-                uint8_t *ycbcr_data = ycbcr[i].data +
-                    (info.pic_y >> ydec) * ycbcr[i].stride +
+                uint16_t *ycbcr_data = (uint16_t*) ycbcr[i].data +
+                    (info.pic_y >> ydec) * (ycbcr[i].stride / 2) +
                     (info.pic_x >> xdec);
-                uint8_t *pic_data = pic->data[i];
+                uint16_t *pic_data = pic->data[i];
 
                 for (unsigned j = 0; j < pic->h[i]; j++) {
                     for (unsigned k = 0; k < pic->w[i]; k++) {
-                        value=((ycbcr_data[2*k+1]<<8)+ycbcr_data[2*k])<<left_shift;
-                        pic_data[2*k]=(value)&0xff;
-                        pic_data[2*k+1]=(value>>8);
+                        pic_data[k] = ycbcr_data[k] << left_shift;
                     }
-                    pic_data += pic->stride[i];
-                    ycbcr_data += ycbcr[i].stride;
+                    pic_data += pic->stride[i] / 2;
+                    ycbcr_data += ycbcr[i].stride / 2;
                 }
             }
         }
