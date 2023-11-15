@@ -52,12 +52,6 @@ static int validate_videos(video_input *vid1, video_input *vid2)
         err_cnt++;
     }
 
-    if (info1.depth != info2.depth) {
-        fprintf(stderr, "bitdepths do not match: %d, %d\n",
-                info1.depth, info2.depth);
-        err_cnt++;
-    }
-
     if (info1.depth < 8 || info1.depth > 16) {
         fprintf(stderr, "unsupported bitdepth: %d\n", info1.depth);
         err_cnt++;
@@ -68,7 +62,7 @@ static int validate_videos(video_input *vid1, video_input *vid2)
     return err_cnt;
 }
 
-static int fetch_picture(video_input *vid, VmafPicture *pic)
+static int fetch_picture(video_input *vid, VmafPicture *pic, int depth)
 {
     int ret;
     video_input_ycbcr ycbcr;
@@ -78,43 +72,94 @@ static int fetch_picture(video_input *vid, VmafPicture *pic)
     if (ret < 1) return !ret;
 
     video_input_get_info(vid, &info);
-    ret = vmaf_picture_alloc(pic, pix_fmt_map(info.pixel_fmt), info.depth,
+    ret = vmaf_picture_alloc(pic, pix_fmt_map(info.pixel_fmt), depth,
                              info.pic_w, info.pic_h);
+
     if (ret) {
         fprintf(stderr, "problem allocating picture.\n");
         return -1;
     }
 
-    if (info.depth == 8) {
-        for (unsigned i = 0; i < 3; i++) {
-            int xdec = i&&!(info.pixel_fmt&1);
-            int ydec = i&&!(info.pixel_fmt&2);
-            uint8_t *ycbcr_data = ycbcr[i].data +
-                (info.pic_y >> ydec) * ycbcr[i].stride +
-                (info.pic_x >> xdec);
-            uint8_t *pic_data = pic->data[i];
+    if (info.depth == depth) {
+        if (info.depth == 8) {
+            for (unsigned i = 0; i < 3; i++) {
+                int xdec = i&&!(info.pixel_fmt&1);
+                int ydec = i&&!(info.pixel_fmt&2);
+                uint8_t *ycbcr_data = ycbcr[i].data +
+                    (info.pic_y >> ydec) * ycbcr[i].stride +
+                    (info.pic_x >> xdec);
+                uint8_t *pic_data = pic->data[i];
 
-            for (unsigned j = 0; j < pic->h[i]; j++) {
-                memcpy(pic_data, ycbcr_data, sizeof(*pic_data) * pic->w[i]);
-                pic_data += pic->stride[i];
-                ycbcr_data += ycbcr[i].stride;
+                for (unsigned j = 0; j < pic->h[i]; j++) {
+                    memcpy(pic_data, ycbcr_data, sizeof(*pic_data) * pic->w[i]);
+                    pic_data += pic->stride[i];
+                    ycbcr_data += ycbcr[i].stride;
+                }
+            }
+        } else {
+            for (unsigned i = 0; i < 3; i++) {
+                int xdec = i&&!(info.pixel_fmt&1);
+                int ydec = i&&!(info.pixel_fmt&2);
+                uint16_t *ycbcr_data = (uint16_t*) ycbcr[i].data +
+                    (info.pic_y >> ydec) * (ycbcr[i].stride / 2) +
+                    (info.pic_x >> xdec);
+                uint16_t *pic_data = pic->data[i];
+
+                for (unsigned j = 0; j < pic->h[i]; j++) {
+                    memcpy(pic_data, ycbcr_data, sizeof(*pic_data) * pic->w[i]);
+                    pic_data += pic->stride[i] / 2;
+                    ycbcr_data += ycbcr[i].stride / 2;
+                }
             }
         }
+    } else if (depth > 8) {
+        // unequal bit-depth
+        // therefore depth must be > 8 since we do not support depth < 8
+        uint16_t value;
+        int left_shift = depth - info.depth;
+        if (info.depth == 8) {
+            for (unsigned i = 0; i < 3; i++) {
+                int xdec = i&&!(info.pixel_fmt&1);
+                int ydec = i&&!(info.pixel_fmt&2);
+                uint8_t *ycbcr_data = ycbcr[i].data +
+                    (info.pic_y >> ydec) * ycbcr[i].stride +
+                    (info.pic_x >> xdec);
+                uint8_t *pic_data = (uint8_t *)pic->data[i];
+
+                for (unsigned j = 0; j < pic->h[i]; j++) {
+                    for (unsigned k = 0; k < pic->w[i]; k++) {
+                        value=ycbcr_data[k]<<left_shift;
+                        pic_data[2*k]=(value)&0xff;
+                        pic_data[2*k+1]=(value>>8);
+                    }
+                    pic_data += pic->stride[i];
+                    ycbcr_data += ycbcr[i].stride;
+                }
+            }
+        } else {
+            for (unsigned i = 0; i < 3; i++) {
+                int xdec = i&&!(info.pixel_fmt&1);
+                int ydec = i&&!(info.pixel_fmt&2);
+                uint8_t *ycbcr_data = ycbcr[i].data +
+                    (info.pic_y >> ydec) * ycbcr[i].stride +
+                    (info.pic_x >> xdec);
+                uint8_t *pic_data = pic->data[i];
+
+                for (unsigned j = 0; j < pic->h[i]; j++) {
+                    for (unsigned k = 0; k < pic->w[i]; k++) {
+                        value=((ycbcr_data[2*k+1]<<8)+ycbcr_data[2*k])<<left_shift;
+                        pic_data[2*k]=(value)&0xff;
+                        pic_data[2*k+1]=(value>>8);
+                    }
+                    pic_data += pic->stride[i];
+                    ycbcr_data += ycbcr[i].stride;
+                }
+            }
+        }
+        
     } else {
-        for (unsigned i = 0; i < 3; i++) {
-            int xdec = i&&!(info.pixel_fmt&1);
-            int ydec = i&&!(info.pixel_fmt&2);
-            uint16_t *ycbcr_data = (uint16_t*) ycbcr[i].data +
-                (info.pic_y >> ydec) * (ycbcr[i].stride / 2) +
-                (info.pic_x >> xdec);
-            uint16_t *pic_data = pic->data[i];
-
-            for (unsigned j = 0; j < pic->h[i]; j++) {
-                memcpy(pic_data, ycbcr_data, sizeof(*pic_data) * pic->w[i]);
-                pic_data += pic->stride[i] / 2;
-                ycbcr_data += ycbcr[i].stride / 2;
-            }
-        }
+        fprintf(stderr, "expect depth > 8\n");
+        return -1;
     }
 
     return 0;
@@ -173,6 +218,16 @@ int main(int argc, char *argv[])
         fprintf(stderr, "videos are incompatible, %d %s.\n",
                 err, err == 1 ? "problem" : "problems");
         return -1;
+    }
+
+    int common_bitdepth;
+    if (c.use_yuv) {
+        common_bitdepth = c.bitdepth;
+    } else {
+        video_input_info info1, info2;
+        video_input_get_info(&vid_ref, &info1);
+        video_input_get_info(&vid_dist, &info2);
+        common_bitdepth = info1.depth > info2.depth ? info1.depth : info2.depth;
     }
 
     VmafConfiguration cfg = {
@@ -320,10 +375,10 @@ int main(int argc, char *argv[])
     VmafPicture pic_ref, pic_dist;
 
     for (unsigned i = 0; i < c.frame_skip_ref; i++)
-        fetch_picture(&vid_ref, &pic_ref);
+        fetch_picture(&vid_ref, &pic_ref, common_bitdepth);
 
     for (unsigned i = 0; i < c.frame_skip_dist; i++)
-        fetch_picture(&vid_dist, &pic_dist);
+        fetch_picture(&vid_dist, &pic_dist, common_bitdepth);
 
     float fps = 0.;
     const time_t t0 = clock();
@@ -334,8 +389,8 @@ int main(int argc, char *argv[])
             break;
 
         VmafPicture pic_ref, pic_dist;
-        int ret1 = fetch_picture(&vid_ref, &pic_ref);
-        int ret2 = fetch_picture(&vid_dist, &pic_dist);
+        int ret1 = fetch_picture(&vid_ref, &pic_ref, common_bitdepth);
+        int ret2 = fetch_picture(&vid_dist, &pic_dist, common_bitdepth);
 
         if (ret1 && ret2) {
             break;
