@@ -204,8 +204,8 @@ class YuvReader(object):
                 assert False
 
             y = self.convert_format(y, bit_depth)
-            u = self.convert_format(u, bit_depth)
-            v = self.convert_format(v, bit_depth)
+            u = self.convert_format(u, bit_depth) if u is not None else None
+            v = self.convert_format(v, bit_depth) if v is not None else None
             return y, u, v
 
         else:
