@@ -1,5 +1,5 @@
 import re
-from typing import List
+from typing import List, Optional
 
 from vmaf.tools.misc import MyTestCase
 
@@ -106,7 +106,7 @@ def remove_elements_containing_substring(command_line: str, sub_str: str) -> str
 
 
 def assert_equivalent_commands(self, cmds: List[str], cmds_expected: List[str], root: str, root_expected: str, do_replace_uuid: bool = True,
-                               options_to_remove=None, substrings_to_remove=None):
+                               options_to_remove: Optional[List[str]] = None, substrings_to_remove: Optional[List[str]] = None):
     """
     >>> self = MyTestCase()
     >>> self.setUp()
