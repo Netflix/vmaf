@@ -320,6 +320,12 @@ static void aom_ctc_v5_0(CLISettings *settings, const char *app)
     aom_ctc_v4_0(settings, app);
 }
 
+static void aom_ctc_v6_0(CLISettings *settings, const char *app)
+{
+    aom_ctc_v5_0(settings, app);
+    settings->common_bitdepth = true;
+}
+
 static void parse_aom_ctc(CLISettings *settings, const char *const optarg,
                           const char *const app)
 {
@@ -348,6 +354,11 @@ static void parse_aom_ctc(CLISettings *settings, const char *const optarg,
 
     if (!strcmp(optarg, "v5.0")) {
         aom_ctc_v5_0(settings, app);
+        return;
+    }
+
+    if (!strcmp(optarg, "v6.0")) {
+        aom_ctc_v6_0(settings, app);
         return;
     }
 
