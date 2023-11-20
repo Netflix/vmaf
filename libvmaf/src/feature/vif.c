@@ -84,9 +84,6 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
     int buf_stride = ALIGN_CEIL(w * sizeof(float));
     size_t buf_sz_one = (size_t)buf_stride * h;
 
-    float num = 0;
-    float den = 0;
-
     int scale;
     int ret = 1;
 
