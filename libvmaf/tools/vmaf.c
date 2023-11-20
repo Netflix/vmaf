@@ -27,7 +27,7 @@ static enum VmafPixelFormat pix_fmt_map(int pf)
     }
 }
 
-static int validate_videos(video_input *vid1, video_input *vid2)
+static int validate_videos(video_input *vid1, video_input *vid2, bool common_bitdepth)
 {
     int err_cnt = 0;
 
@@ -49,6 +49,12 @@ static int validate_videos(video_input *vid1, video_input *vid2)
 
     if (!pix_fmt_map(info1.pixel_fmt) || !pix_fmt_map(info2.pixel_fmt)) {
         fprintf(stderr, "unsupported pixel format: %d\n", info1.pixel_fmt);
+        err_cnt++;
+    }
+
+    if (!common_bitdepth && info1.depth != info2.depth) {
+        fprintf(stderr, "bitdepths do not match: %d, %d\n",
+                info1.depth, info2.depth);
         err_cnt++;
     }
 
@@ -208,7 +214,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    err = validate_videos(&vid_ref, &vid_dist);
+    err = validate_videos(&vid_ref, &vid_dist, c.common_bitdepth);
     if (err) {
         fprintf(stderr, "videos are incompatible, %d %s.\n",
                 err, err == 1 ? "problem" : "problems");

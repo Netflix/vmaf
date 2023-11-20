@@ -48,6 +48,7 @@ typedef struct {
     unsigned thread_cnt;
     bool no_prediction;
     bool quiet;
+    bool common_bitdepth;
     unsigned cpumask;
     unsigned gpumask;
 } CLISettings;
