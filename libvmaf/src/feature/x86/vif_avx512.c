@@ -159,9 +159,6 @@ void vif_statistic_8_avx512(struct VifPublicState *s, float *num, float *den, un
 #define ALIGNED(x)
 #endif
 
-    //float equivalent of 2. (2 * 65536)
-    static const int32_t sigma_nsq = 65536 << 1;
-
     int64_t accum_num_log = 0;
     int64_t accum_den_log = 0;
     int64_t accum_num_non_log = 0;
@@ -184,12 +181,10 @@ void vif_statistic_8_avx512(struct VifPublicState *s, float *num, float *den, un
         // First consider all blocks of 16 elements until it's not possible anymore
         unsigned n = w >> 4;
         for (unsigned jj = 0; jj < n << 4; jj += 16) {
-            const uint8_t *ref = (uint8_t*)buf.ref;
-            const uint8_t *dis = (uint8_t*)buf.dis;
 
             __m512i f0 = _mm512_set1_epi32(vif_filt[fwidth / 2]);
-            __m512i r0 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.ref) + (buf.stride * i) + jj)));
-            __m512i d0 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.dis) + (buf.stride * i) + jj)));
+            __m512i r0 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(ref + (buf.stride * i) + jj)));
+            __m512i d0 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(dis + (buf.stride * i) + jj)));
 
             // filtered r,d
             __m512i accum_mu1 = _mm512_mullo_epi32(r0, f0);
@@ -201,14 +196,12 @@ void vif_statistic_8_avx512(struct VifPublicState *s, float *num, float *den, un
             for (unsigned int tap = 0; tap < fwidth / 2; tap++) {
                 int ii_back = i_back + tap;
                 int ii_forward = i_forward - tap;
-                const uint8_t *ref = (uint8_t*)buf.ref;
-                const uint8_t *dis = (uint8_t*)buf.dis;
 
                 __m512i f0 = _mm512_set1_epi32(vif_filt[tap]);
-                __m512i r0 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.ref) + (buf.stride * ii_back) + jj)));
-                __m512i d0 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.dis) + (buf.stride * ii_back) + jj)));
-                __m512i r1 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.ref) + (buf.stride * ii_forward) + jj)));
-                __m512i d1 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(((uint8_t*)buf.dis) + (buf.stride * ii_forward) + jj)));
+                __m512i r0 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(ref + (buf.stride * ii_back) + jj)));
+                __m512i d0 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(dis + (buf.stride * ii_back) + jj)));
+                __m512i r1 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(ref + (buf.stride * ii_forward) + jj)));
+                __m512i d1 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(dis + (buf.stride * ii_forward) + jj)));
 
                 accum_mu1 = _mm512_add_epi32(accum_mu1, _mm512_mullo_epi32(_mm512_add_epi32(r0, r1), f0));
                 accum_mu2 = _mm512_add_epi32(accum_mu2, _mm512_mullo_epi32(_mm512_add_epi32(d0, d1), f0));
@@ -239,8 +232,6 @@ void vif_statistic_8_avx512(struct VifPublicState *s, float *num, float *den, un
                 int ii = i - fwidth_half;
                 int ii_check = ii + fi;
                 const uint16_t fcoeff = vif_filt[fi];
-                const uint8_t *ref = (uint8_t*)buf.ref;
-                const uint8_t *dis = (uint8_t*)buf.dis;
                 uint16_t imgcoeff_ref = ref[ii_check * buf.stride + j];
                 uint16_t imgcoeff_dis = dis[ii_check * buf.stride + j];
                 uint32_t img_coeff_ref = fcoeff * (uint32_t)imgcoeff_ref;
@@ -262,7 +253,6 @@ void vif_statistic_8_avx512(struct VifPublicState *s, float *num, float *den, un
         PADDING_SQ_DATA(buf, w, fwidth_half);
 
         //HORIZONTAL
-        const ptrdiff_t dst_stride = buf.stride_32 / sizeof(uint32_t);
         for (unsigned j = 0; j < n << 4; j += 16) {
             __m512i mu1sq;
             __m512i mu2sq;
@@ -398,19 +388,14 @@ void vif_statistic_16_avx512(struct VifPublicState *s, float *num, float *den, u
     const unsigned fwidth = vif_filter1d_width[scale];
     const uint16_t *vif_filt = vif_filter1d_table[scale];
     VifBuffer buf = s->buf;
-    const ptrdiff_t dst_stride = buf.stride_32 / sizeof(uint32_t);
     const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
     int fwidth_half = fwidth >> 1;
 
-    int32_t add_shift_round_HP, shift_HP;
     int32_t add_shift_round_VP, shift_VP;
     int32_t add_shift_round_VP_sq, shift_VP_sq;
     const uint16_t *log2_table = s->log2_table;
     double vif_enhn_gain_limit = s->vif_enhn_gain_limit;
     __m512i mask2 = _mm512_set_epi32(30, 28, 26, 24, 22, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0);
-
-    //float equivalent of 2. (2 * 65536)
-    static const int32_t sigma_nsq = 65536 << 1;
 
     Residuals512 residuals;
     residuals.maccum_den_log = _mm512_setzero_si512();
@@ -425,8 +410,6 @@ void vif_statistic_16_avx512(struct VifPublicState *s, float *num, float *den, u
 
     if (scale == 0)
     {
-        shift_HP = 16;
-        add_shift_round_HP = 32768;
         shift_VP = bpc;
         add_shift_round_VP = 1 << (bpc - 1);
         shift_VP_sq = (bpc - 8) * 2;
@@ -434,8 +417,6 @@ void vif_statistic_16_avx512(struct VifPublicState *s, float *num, float *den, u
     }
     else
     {
-        shift_HP = 16;
-        add_shift_round_HP = 32768;
         shift_VP = 16;
         add_shift_round_VP = 32768;
         shift_VP_sq = 16;
@@ -468,7 +449,7 @@ void vif_statistic_16_avx512(struct VifPublicState *s, float *num, float *den, u
             {
 
                 const uint16_t fcoeff = vif_filt[fi];
-                __m512i f1 = _mm512_set1_epi16(vif_filt[fi]);
+                __m512i f1 = _mm512_set1_epi16(fcoeff);
                 __m512i ref1 = _mm512_loadu_si512(
                     (__m512i*)(ref + (ii_check * stride) + j));
                 __m512i dis1 = _mm512_loadu_si512(
@@ -779,8 +760,7 @@ void vif_subsample_rd_8_avx512(VifBuffer buf, unsigned w, unsigned h)
 {
     const unsigned fwidth = vif_filter1d_width[1];
     const uint16_t *vif_filt_s1 = vif_filter1d_table[1];
-    int fwidth_x = (fwidth % 2 == 0) ? fwidth : fwidth + 1;
-    const uint8_t *ref = (uint8_t *)(buf.ref);
+    const uint8_t *ref = (uint8_t *)buf.ref;
     const uint8_t *dis = (uint8_t *)buf.dis;
     const ptrdiff_t stride = buf.stride_16 / sizeof(uint16_t);
     __m512i addnum = _mm512_set1_epi32(32768);
@@ -1162,7 +1142,7 @@ void vif_subsample_rd_16_avx512(VifBuffer buf, unsigned w, unsigned h, int scale
             {
 
                 const uint16_t fcoeff = vif_filt[fi];
-                __m512i f1 = _mm512_set1_epi16(vif_filt[fi]);
+                __m512i f1 = _mm512_set1_epi16(fcoeff);
                 __m512i ref1 = _mm512_loadu_si512((__m512i *)(ref + (ii_check * stride) + j));
                 __m512i dis1 = _mm512_loadu_si512((__m512i *)(dis + (ii_check * stride) + j));
                 __m512i result2 = _mm512_mulhi_epu16(ref1, f1);
@@ -1226,8 +1206,6 @@ void vif_subsample_rd_16_avx512(VifBuffer buf, unsigned w, unsigned h, int scale
             int jj_check = jj;
             __m512i accumrlo, accumdlo, accumrhi, accumdhi;
             accumrlo = accumdlo = accumrhi = accumdhi = _mm512_setzero_si512();
-            const uint16_t *ref = (uint16_t *)buf.tmp.ref_convol;
-            const uint16_t *dis = (uint16_t *)buf.dis;
             for (unsigned fj = 0; fj < fwidth; ++fj, jj_check = jj + fj)
             {
 
