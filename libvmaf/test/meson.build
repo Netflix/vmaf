@@ -109,6 +109,13 @@ test_luminance_tools = executable('test_luminance_tools',
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
 )
 
+test_cli_parse = executable('test_cli_parse',
+    ['test.c', 'test_cli_parse.c', '../tools/cli_parse.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/'), include_directories('../tools/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    c_args : [compat_cflags],
+)
+
 if get_option('enable_cuda')
 test_ring_buffer = executable('test_ring_buffer',
     ['test.c', 'test_ring_buffer.c', '../src/cuda/ring_buffer.c', '../src/cuda/picture_cuda.c'],
@@ -143,3 +150,4 @@ test('test_feature', test_feature)
 test('test_ciede', test_ciede)
 test('test_cambi', test_cambi)
 test('test_luminance_tools', test_luminance_tools)
+test('test_cli_parse', test_cli_parse)
