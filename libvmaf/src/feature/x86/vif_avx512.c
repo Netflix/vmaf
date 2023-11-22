@@ -368,7 +368,7 @@ void vif_statistic_8_avx512(struct VifPublicState *s, float *num, float *den, un
         }
 
         if ((n << 4) != w) {
-            VifResiduals residuals = vif_compute_line_residuals(s, n << 4, w, 8, 0);
+            VifResiduals residuals = vif_compute_line_residuals(s, n << 4, w, 0);
             accum_num_log += residuals.accum_num_log;
             accum_den_log += residuals.accum_den_log;
             accum_num_non_log += residuals.accum_num_non_log;
@@ -723,7 +723,7 @@ void vif_statistic_16_avx512(struct VifPublicState *s, float *num, float *den, u
 
         if ((n << 4) != w) {
             VifResiduals residuals =
-                vif_compute_line_residuals(s, n << 4, w, bpc, scale);
+                vif_compute_line_residuals(s, n << 4, w, scale);
             accum_num_log += residuals.accum_num_log;
             accum_den_log += residuals.accum_den_log;
             accum_num_non_log += residuals.accum_num_non_log;
