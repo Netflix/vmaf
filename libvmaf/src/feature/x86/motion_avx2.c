@@ -114,7 +114,7 @@ void x_convolution_16_avx2(const uint16_t *src, uint16_t *dst, unsigned width,
         for (unsigned j = nr; j < (right_edge); j++) {
             uint32_t accum = 0;
             uint16_t *src_p2 = src_p1;
-            for (unsigned k = 0; k < filter_width; ++k) {
+            for (int k = 0; k < filter_width; ++k) {
                 accum += filter[k] * (*src_p2);
                 src_p2++;
             }

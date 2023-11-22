@@ -33,7 +33,7 @@ edge_16(bool horizontal, const uint16_t *src, int width,
     uint32_t accum = 0;
 
     // MIRROR | ЯOЯЯIM
-    for (unsigned k = 0; k < filter_width; ++k) {
+    for (int k = 0; k < filter_width; ++k) {
         int i_tap = horizontal ? i : i - radius + k;
         int j_tap = horizontal ? j - radius + k : j;
 
