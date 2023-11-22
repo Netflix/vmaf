@@ -36,7 +36,6 @@ void x_convolution_16_avx512(const uint16_t *src, uint16_t *dst, unsigned width,
     const unsigned right_edge = vmaf_floorn(width - (filter_width - radius), 1);
     const unsigned shift_add_round = 32768;
     const unsigned vector_loop = width < 32 ? 0 : (width>>5) -1;
-    uint16_t *tmpdst = dst;
     uint16_t *src_p = (uint16_t*) src + (left_edge - radius);
     unsigned nr = left_edge + 32 *vector_loop;
     uint16_t *src_pt = (uint16_t*) src + nr -radius;
@@ -114,10 +113,10 @@ void x_convolution_16_avx512(const uint16_t *src, uint16_t *dst, unsigned width,
 
    for (unsigned i = 0; i < height; ++i) {
         uint16_t *src_p1 = src_pt;
-        for (unsigned j = nr; j < (right_edge); j++) {
+        for (unsigned j = nr; j < right_edge; j++) {
             uint32_t accum = 0;
             uint16_t *src_p2 = src_p1;
-            for (unsigned k = 0; k < filter_width; ++k) {
+            for (int k = 0; k < filter_width; ++k) {
                 accum += filter[k] * (*src_p2);
                 src_p2++;
             }

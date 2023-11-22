@@ -432,7 +432,7 @@ void vif_statistic_16_avx512(struct VifPublicState *s, float *num, float *den, u
         //VERTICAL
         int ii = i - fwidth_half;
         int n = w >> 5;
-        for (unsigned j = 0; j < n << 5; j = j + 32)
+        for (int j = 0; j < n << 5; j = j + 32)
         {
 
             __m512i mask3 = _mm512_set_epi64(11, 10, 3, 2, 9, 8, 1, 0);   //first half of 512
@@ -606,7 +606,7 @@ void vif_statistic_16_avx512(struct VifPublicState *s, float *num, float *den, u
 
         //HORIZONTAL
         n = w >> 4;
-        for (unsigned j = 0; j < n << 4; j = j + 16)
+        for (int j = 0; j < n << 4; j = j + 16)
         {
             __m512i mu1sq;
             __m512i mu2sq;
@@ -721,7 +721,7 @@ void vif_statistic_16_avx512(struct VifPublicState *s, float *num, float *den, u
             vif_statistic_avx512(&residuals, xx, xy, yy, log2_table, vif_enhn_gain_limit);
         }
 
-        if ((n << 4) != w) {
+        if ((n << 4) != (int)w) {
             VifResiduals residuals =
                 vif_compute_line_residuals(s, n << 4, w, scale);
             accum_num_log += residuals.accum_num_log;
@@ -797,7 +797,7 @@ void vif_subsample_rd_8_avx512(VifBuffer buf, unsigned w, unsigned h)
         //VERTICAL
         int n = w >> 5;
         int ii = i - fwidth_half;
-        for (unsigned j = 0; j < n << 5; j = j + 32)
+        for (int j = 0; j < n << 5; j = j + 32)
         {
 
             int ii_check = ii;
@@ -931,7 +931,7 @@ void vif_subsample_rd_8_avx512(VifBuffer buf, unsigned w, unsigned h)
 
         //HORIZONTAL
         n = w >> 4;
-        for (unsigned j = 0; j < n << 4; j = j + 16)
+        for (int j = 0; j < n << 4; j = j + 16)
         {
             int jj = j - fwidth_half;
             int jj_check = jj;
@@ -1131,7 +1131,7 @@ void vif_subsample_rd_16_avx512(VifBuffer buf, unsigned w, unsigned h, int scale
 
         int n = w >> 4;
         int ii = i - fwidth_half;
-        for (unsigned j = 0; j < n << 4; j = j + 32)
+        for (int j = 0; j < n << 4; j = j + 32)
         {
             int ii_check = ii;
             __m512i accumr_lo, accumr_hi, accumd_lo, accumd_hi, rmul1, rmul2, dmul1, dmul2;
@@ -1200,7 +1200,7 @@ void vif_subsample_rd_16_avx512(VifBuffer buf, unsigned w, unsigned h, int scale
 
         //HORIZONTAL
         n = w >> 4;
-        for (unsigned j = 0; j < n << 4; j = j + 16)
+        for (int j = 0; j < n << 4; j = j + 16)
         {
             int jj = j - fwidth_half;
             int jj_check = jj;
