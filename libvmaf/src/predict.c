@@ -88,7 +88,8 @@ static int find_linear_function_parameters(VmafPoint p1, VmafPoint p2, double *a
 
 static int piecewise_linear_mapping(double x, VmafPoint *knots, unsigned n_knots, double *y) {
 
-    double slope, offset;
+    // initialize them to prevent uninitialized variable warnings
+    double slope = 0.0, offset = 0.0;
 
     if (n_knots <= 1)
         return EINVAL;
