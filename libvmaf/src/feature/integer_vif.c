@@ -486,35 +486,18 @@ void vif_statistic_16(struct VifPublicState *s, float *num, float *den, unsigned
 }
 
 VifResiduals vif_compute_line_residuals(VifPublicState *s, unsigned from,
-                                        unsigned to, int bpc, int scale)
+                                        unsigned to, int scale)
 {
     VifResiduals residuals = { 0 };
     const unsigned fwidth = vif_filter1d_width[scale];
     const uint16_t *vif_filt = vif_filter1d_table[scale];
     VifBuffer buf = s->buf;
-    int32_t add_shift_round_HP, shift_HP;
-    int32_t add_shift_round_VP, shift_VP;
-    int32_t add_shift_round_VP_sq, shift_VP_sq;
     const uint16_t *log2_table = s->log2_table;
     double vif_enhn_gain_limit = s->vif_enhn_gain_limit;
     static const int32_t sigma_nsq = 65536 << 1;
 
-    if (scale == 0) {
-        shift_HP = 16;
-        add_shift_round_HP = 32768;
-        shift_VP = bpc;
-        add_shift_round_VP = 1 << (bpc - 1);
-        shift_VP_sq = (bpc - 8) * 2;
-        add_shift_round_VP_sq = (bpc == 8) ? 0 : 1 << (shift_VP_sq - 1);
-    }
-    else {
-        shift_HP = 16;
-        add_shift_round_HP = 32768;
-        shift_VP = 16;
-        add_shift_round_VP = 32768;
-        shift_VP_sq = 16;
-        add_shift_round_VP_sq = 32768;
-    }
+    int32_t shift_HP = 16;
+    int32_t add_shift_round_HP = 32768;
 
     //HORIZONTAL
     for (unsigned j = from; j < to; ++j) {

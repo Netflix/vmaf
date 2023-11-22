@@ -1053,7 +1053,7 @@ void vif_statistic_16_neon(struct VifPublicState *s, float *num, float *den, uns
         if (j != w)
         {
             VifResiduals residuals =
-                vif_compute_line_residuals(s, j, w, bpc, scale);
+                vif_compute_line_residuals(s, j, w, scale);
             accum_num_log += residuals.accum_num_log;
             accum_den_log += residuals.accum_den_log;
             accum_num_non_log += residuals.accum_num_non_log;
