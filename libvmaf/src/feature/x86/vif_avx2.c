@@ -541,7 +541,8 @@ void vif_statistic_8_avx2(struct VifPublicState *s, float *num, float *den, unsi
     //den[0] = accum_den_log / 2048.0 + accum_den_non_log;
 
     //changed calculation to increase performance
-    num[0] = accum_num_log / 2048.0 + (accum_den_non_log - ((accum_num_non_log) / 16384.0) / (65025.0));
+    // DO NOT MERGE; THIS IS WRONG
+    num[0] = 100 + 100 * (accum_num_log / 2048.0 + (accum_den_non_log - ((accum_num_non_log) / 16384.0) / (65025.0)));
     den[0] = accum_den_log / 2048.0 + accum_den_non_log;
 
 }
