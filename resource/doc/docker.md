@@ -31,18 +31,6 @@ wget https://github.com/Netflix/vmaf_resource/raw/master/python/test/resource/yu
 wget https://github.com/Netflix/vmaf_resource/raw/master/python/test/resource/yuv/src01_hrc01_576x324.yuv
 ```
 
-To run `vmafossexec` with a specified model file:
-
-```shell script
-docker run --rm -v $(pwd):/files vmaf \
-    --entrypoint ""
-    vmafossexec yuv420p 576 324 \
-    /files/src01_hrc00_576x324.yuv \
-    /files/src01_hrc01_576x324.yuv \
-    /files/model/vmaf_float_v0.6.1.pkl \
-    --log /dev/stdout
-```
-
 ## Docker with CUDA support 
 
 To run docker containers with GPU support you have to install the [nvidia container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html).
