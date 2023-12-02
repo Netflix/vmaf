@@ -32,6 +32,8 @@ extern const char src_vmaf_v0_6_1neg_json;
 extern const int src_vmaf_v0_6_1neg_json_len;
 extern const char src_vmaf_4k_v0_6_1_json;
 extern const int src_vmaf_4k_v0_6_1_json_len;
+extern const char src_vmaf_4k_v0_6_1neg_json;
+extern const int src_vmaf_4k_v0_6_1neg_json_len;
 #endif
 
 /**
@@ -88,6 +90,11 @@ static const VmafBuiltInModel built_in_models[] = {
         .version = "vmaf_4k_v0.6.1",
         .data = &src_vmaf_4k_v0_6_1_json,
         .data_len = &src_vmaf_4k_v0_6_1_json_len,
+    },
+    {
+        .version = "vmaf_4k_v0.6.1neg",
+        .data = &src_vmaf_4k_v0_6_1neg_json,
+        .data_len = &src_vmaf_4k_v0_6_1neg_json_len,
     },
 #endif
     { 0 }
@@ -164,13 +171,12 @@ int vmaf_model_feature_overload(VmafModel *model, const char *feature_name,
 
     for (unsigned i = 0; i < model->n_features; i++) {
         VmafFeatureExtractor *fex =
-            vmaf_get_feature_extractor_by_feature_name(model->feature[i].name);
+            vmaf_get_feature_extractor_by_feature_name(model->feature[i].name, 0);
         if (!fex) continue;
         if (strcmp(feature_name, fex->name)) continue;
         VmafDictionary *d =
             vmaf_dictionary_merge((VmafDictionary**)&model->feature[i].opts_dict,
-                                  (VmafDictionary**)&opts_dict,
-                                  0);
+                                  (VmafDictionary**)&opts_dict, 0);
         if (!d) return -ENOMEM;
         err = vmaf_dictionary_free(&model->feature[i].opts_dict);
         if (err) goto exit;

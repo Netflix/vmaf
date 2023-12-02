@@ -272,6 +272,8 @@ static int extract_force_zero(VmafFeatureExtractor *fex,
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
 {
+    (void) pix_fmt;
+
     MotionState *s = fex->priv;
     int err = 0;
 

@@ -4,7 +4,7 @@ We also provide two sample datasets including the video files and the properly f
 
 ## Netflix Public Dataset
 
-We provide a dataset publicly available to the community for training, testing and verification of results purposes. The dataset file is at [`NFLX_dataset_public.py`](../dataset/NFLX_dataset_public.py), and the videos (in YUV420P format) can be downloaded [here](https://drive.google.com/folderview?id=0B3YWNICYMBIweGdJbERlUG9zc0k&usp=sharing). Each file name is in the format of `{content name}_{expert score}_{height in pixels}_{bitrate in Kbps}.yuv`. For example, `BirdsInCage_85_720_1050.yuv` is an decompressed video from content `BirdInCage`, with an expert opinion score 85 out of 100, compressed with 720p resolution at 1050 Kbps. Note that the expert opinion score is different from the MOS score offered in `NFLX_dataset_public.py`, which are from a panel of non-expert subjects.
+We provide a dataset publicly available to the community for training, testing and verification of results purposes. The dataset file is at [`NFLX_dataset_public.py`](../dataset/NFLX_dataset_public.py), and the videos (in YUV420P format) can be downloaded [here](https://drive.google.com/folderview?id=0B3YWNICYMBIweGdJbERlUG9zc0k&usp=sharing) (please request for access and we will grant it). Each file name is in the format of `{content name}_{expert score}_{height in pixels}_{bitrate in Kbps}.yuv`. For example, `BirdsInCage_85_720_1050.yuv` is an decompressed video from content `BirdInCage`, with an expert opinion score 85 out of 100, compressed with 720p resolution at 1050 Kbps. Note that the expert opinion score is different from the MOS score offered in `NFLX_dataset_public.py`, which are from a panel of non-expert subjects.
 
 ## VQEG HD3 Dataset
 

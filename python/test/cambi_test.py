@@ -82,6 +82,65 @@ class CambiFeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
                                0.0013863333333333334, places=4)
 
+    def test_run_cambi_fextractor_incorrect_enc_bitdepth(self):
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_10b()
+        asset.asset_dict['dis_enc_bitdepth'] = 10
+        self.fextractor = CambiFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={}
+        )
+        self.fextractor.run(parallelize=False)
+        results = self.fextractor.results
+
+        # score: arithmetic mean score over all frames
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
+                               0.0013863333333333334, places=4)
+
+    def test_run_cambi_fextractor_correct_enc_bitdepth(self):
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_10b()
+        asset.asset_dict['dis_enc_bitdepth'] = 8
+        self.fextractor = CambiFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={}
+        )
+        self.fextractor.run(parallelize=False)
+        results = self.fextractor.results
+
+        # score: arithmetic mean score over all frames
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
+                               0.00020733333333333332, places=4)
+
+    def test_run_cambi_fextractor_notyuv_correct_enc_bitdepth_8(self):
+        _, _, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = CambiFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={}
+        )
+        self.fextractor.run(parallelize=False)
+        results = self.fextractor.results
+
+        # score: arithmetic mean score over all frames
+        self.assertAlmostEqual(results[1]['Cambi_feature_cambi_score'],
+                               0.00020733333333333332, places=4)
+
+    def test_run_cambi_fextractor_enc_bitdepth_none(self):
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_10b()
+        asset.asset_dict['dis_enc_bitdepth'] = None
+        self.fextractor = CambiFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={}
+        )
+        with self.assertRaises(AssertionError):
+            self.fextractor.run(parallelize=False)
+
     def test_run_cambi_fextractor_max_log_contrast(self):
         _, _, asset, asset_original = set_default_576_324_videos_for_testing()
         self.fextractor = CambiFeatureExtractor(

@@ -141,7 +141,9 @@ void vif_statistic_8_avx2(struct VifPublicState *s, float *num, float *den, unsi
     // loop on row, each iteration produces one line of output
     for (unsigned i = 0; i < h; ++i) {
         // Filter vertically
-        for (unsigned jj = 0; jj < w; jj += 16) {
+        // First consider all blocks of 16 elements until it's not possible anymore
+        unsigned n = w >> 4;
+        for (unsigned jj = 0; jj < n << 4; jj += 16) {
             __m256i accum_ref_left, accum_ref_right;
             __m256i accum_dis_left, accum_dis_right;
             __m256i accum_ref_dis_left, accum_ref_dis_right;
@@ -203,10 +205,42 @@ void vif_statistic_8_avx2(struct VifPublicState *s, float *num, float *den, unsi
             shuffle_and_save(buf.tmp.ref_dis + jj, accum_ref_dis_left, accum_ref_dis_right);
         }
 
+        // Then consider the remaining elements individually
+        for (unsigned j = n << 4; j < w; ++j) {
+            uint32_t accum_mu1 = 0;
+            uint32_t accum_mu2 = 0;
+            uint64_t accum_ref = 0;
+            uint64_t accum_dis = 0;
+            uint64_t accum_ref_dis = 0;
+
+            for (unsigned fi = 0; fi < fwidth; ++fi) {
+                int ii = i - fwidth / 2;
+                int ii_check = ii + fi;
+                const uint16_t fcoeff = vif_filt_s0[fi];
+                const uint8_t *ref = (uint8_t*)buf.ref;
+                const uint8_t *dis = (uint8_t*)buf.dis;
+                uint16_t imgcoeff_ref = ref[ii_check * buf.stride + j];
+                uint16_t imgcoeff_dis = dis[ii_check * buf.stride + j];
+                uint32_t img_coeff_ref = fcoeff * (uint32_t)imgcoeff_ref;
+                uint32_t img_coeff_dis = fcoeff * (uint32_t)imgcoeff_dis;
+                accum_mu1 += img_coeff_ref;
+                accum_mu2 += img_coeff_dis;
+                accum_ref += img_coeff_ref * (uint64_t)imgcoeff_ref;
+                accum_dis += img_coeff_dis * (uint64_t)imgcoeff_dis;
+                accum_ref_dis += img_coeff_ref * (uint64_t)imgcoeff_dis;
+            }
+
+            buf.tmp.mu1[j] = (accum_mu1 + 128) >> 8;
+            buf.tmp.mu2[j] = (accum_mu2 + 128) >> 8;
+            buf.tmp.ref[j] = accum_ref;
+            buf.tmp.dis[j] = accum_dis;
+            buf.tmp.ref_dis[j] = accum_ref_dis;
+        }
+
         PADDING_SQ_DATA(buf, w, fwidth / 2);
 
         //HORIZONTAL
-        for (unsigned j = 0; j < w; j += 16) {
+        for (unsigned j = 0; j < n << 4; j += 16) {
             __m256i mu1_lo;
             __m256i mu1_hi;
             __m256i mu1sq_lo; // shuffled
@@ -492,6 +526,13 @@ void vif_statistic_8_avx2(struct VifPublicState *s, float *num, float *den, unsi
                     accum_den_non_log++;
                 }
             }
+        }
+        if ((n << 4) != w) {
+            VifResiduals residuals = vif_compute_line_residuals(s, n << 4, w, 8, 0);
+            accum_num_log += residuals.accum_num_log;
+            accum_den_log += residuals.accum_den_log;
+            accum_num_non_log += residuals.accum_num_non_log;
+            accum_den_non_log += residuals.accum_den_non_log;
         }
     }
 
@@ -1162,7 +1203,7 @@ void vif_subsample_rd_8_avx2(VifBuffer buf, unsigned w, unsigned h) {
             uint32_t accum_ref = 0;
             uint32_t accum_dis = 0;
             for (unsigned fi = 0; fi < fwidth; ++fi) {
-                int ii = i - fwidth_half;
+                int ii = i * 2 - fwidth_half;
                 int ii_check = ii + fi;
                 const uint16_t fcoeff = vif_filt_s1[fi];
                 const uint8_t *ref = (uint8_t *)buf.ref;

@@ -23,7 +23,9 @@ enum {
     ARG_FEATURE,
     ARG_SUBSAMPLE,
     ARG_CPUMASK,
+    ARG_GPUMASK,
     ARG_AOM_CTC,
+    ARG_NFLX_CTC,
     ARG_FRAME_CNT,
     ARG_FRAME_SKIP_REF,
     ARG_FRAME_SKIP_DIST,
@@ -46,7 +48,9 @@ static const struct option long_opts[] = {
     { "feature",          1, NULL, ARG_FEATURE },
     { "subsample",        1, NULL, ARG_SUBSAMPLE },
     { "cpumask",          1, NULL, ARG_CPUMASK },
+    { "gpumask",          1, NULL, ARG_GPUMASK },
     { "aom_ctc",          1, NULL, ARG_AOM_CTC },
+    { "nflx_ctc",         1, NULL, ARG_NFLX_CTC },
     { "frame_cnt",        1, NULL, ARG_FRAME_CNT },
     { "frame_skip_ref",   1, NULL, ARG_FRAME_SKIP_REF },
     { "frame_skip_dist",  1, NULL, ARG_FRAME_SKIP_DIST },
@@ -84,6 +88,7 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --threads $unsigned:         number of threads to use\n"
             " --feature $string:           additional feature\n"
             " --cpumask: $bitmask          restrict permitted CPU instruction sets\n"
+            " --gpumask: $bitmask          restrict permitted GPU operations\n"
             " --frame_cnt $unsigned:       maximum number of frames to process\n"
             " --frame_skip_ref $unsigned:  skip the first N frames in reference\n"
             " --frame_skip_dist $unsigned: skip the first N frames in distorted\n"
@@ -305,6 +310,22 @@ static void aom_ctc_v3_0(CLISettings *settings, const char *app)
         parse_feature_config("cambi", app);
 }
 
+static void aom_ctc_v4_0(CLISettings *settings, const char *app)
+{
+    aom_ctc_v3_0(settings, app);
+}
+
+static void aom_ctc_v5_0(CLISettings *settings, const char *app)
+{
+    aom_ctc_v4_0(settings, app);
+}
+
+static void aom_ctc_v6_0(CLISettings *settings, const char *app)
+{
+    aom_ctc_v5_0(settings, app);
+    settings->common_bitdepth = true;
+}
+
 static void parse_aom_ctc(CLISettings *settings, const char *const optarg,
                           const char *const app)
 {
@@ -326,7 +347,57 @@ static void parse_aom_ctc(CLISettings *settings, const char *const optarg,
         return;
     }
 
+    if (!strcmp(optarg, "v4.0")) {
+        aom_ctc_v4_0(settings, app);
+        return;
+    }
+
+    if (!strcmp(optarg, "v5.0")) {
+        aom_ctc_v5_0(settings, app);
+        return;
+    }
+
+    if (!strcmp(optarg, "v6.0")) {
+        aom_ctc_v6_0(settings, app);
+        return;
+    }
+
     usage(app, "bad aom_ctc version \"%s\"", optarg);
+}
+
+static void nflx_ctc_v1_0(CLISettings *settings, const char *const app)
+{
+    CLIModelConfig cfg = {
+        .version = "vmaf_4k_v0.6.1",
+        .cfg = { .name = "vmaf" },
+    };
+    settings->model_config[settings->model_cnt++] = cfg;
+
+    CLIModelConfig cfg_neg = {
+        .version = "vmaf_4k_v0.6.1neg",
+        .cfg = { .name = "vmaf_neg" },
+    };
+    settings->model_config[settings->model_cnt++] = cfg_neg;
+
+    settings->feature_cfg[settings->feature_cnt++] =
+        parse_feature_config("psnr=enable_chroma=true:enable_apsnr=true", app);
+
+    settings->feature_cfg[settings->feature_cnt++] =
+        parse_feature_config("float_ssim=enable_db=true:clip_db=true", app);
+
+    settings->feature_cfg[settings->feature_cnt++] =
+        parse_feature_config("cambi", app);
+}
+
+static void parse_nflx_ctc(CLISettings *settings, const char *const optarg,
+                         const char *const app)
+{
+    if (!strcmp(optarg, "v1.0")) {
+        nflx_ctc_v1_0(settings, app);
+        return;
+    }
+
+    usage(app, "bad nflx_ctc version \"%s\"", optarg);
 }
 
 void cli_parse(const int argc, char *const *const argv,
@@ -399,8 +470,14 @@ void cli_parse(const int argc, char *const *const argv,
         case ARG_CPUMASK:
             settings->cpumask = parse_unsigned(optarg, 'c', argv[0]);
             break;
+        case ARG_GPUMASK:
+            settings->gpumask = parse_unsigned(optarg, ARG_GPUMASK, argv[0]);
+            break;
         case ARG_AOM_CTC:
             parse_aom_ctc(settings, optarg, argv[0]);
+            break;
+        case ARG_NFLX_CTC:
+            parse_nflx_ctc(settings, optarg, argv[0]);
             break;
         case ARG_FRAME_CNT:
             settings->frame_cnt =

@@ -60,6 +60,7 @@ The CAMBI feature extractor also supports additional optional parameters as list
 - `full_ref`: optional flag (default: false) to run CAMBI as a full-reference metric, outputting the per-frame difference between the encoded and source images as well as the existing no-reference score.
 - `enc_width` and `enc_height`: Encoding/processing resolution to compute the banding score, useful in cases where scaling was applied to the input prior to the computation of metrics
 - `src_width` and `src_height`: Encoding/processing resolution to compute the banding score on the reference image, only used if `full_ref=true`.
+- `heatmaps_path`: Set to a folder where the heatmaps for different scales will be stored as `.gray` files
 
 An example using the `enc_width` and `enc_height` options on the input video [`KristenAndSara_1280x720_8bit_processed.yuv`](https://github.com/Netflix/vmaf_resource/blob/master/python/test/resource/yuv/KristenAndSara_1280x720_8bit_processed.yuv) which has been encoded at 540p and later upscaled to 1280p (specifying the accurate encoding width and height as input allows CAMBI to more accurately assess the banding artifact):
 
@@ -111,6 +112,26 @@ The output will be:
 </VMAF>
 ```
 
+## Generating and Decoding Heatmaps
+
+To generate the heatmaps, run CAMBI with the `heatmaps_path` option set to a local folder. It will write files such as:
+
+```
+cambi_heatmap_scale_0_1280x720_16b.gray
+cambi_heatmap_scale_1_640x360_16b.gray
+cambi_heatmap_scale_2_320x180_16b.gray
+cambi_heatmap_scale_3_160x90_16b.gray
+cambi_heatmap_scale_4_80x45_16b.gray
+```
+
+containing the raw grayscale heatmap data.
+
+You can use `ffmpeg` to convert them:
+
+```
+ffmpeg -f rawvideo -pix_fmt gray16le -s 1280x720 -i heatmaps/cambi_heatmap_scale_0_1280x720_16b.gray -frames:v 1 heatmaps/cambi_heatmap_scale_0_1280x720_16b.png
+```
+
 ## Python Library
 
 CAMBI can also be invoked in the [Python library](python.md). Use `CambiFeatureExtractor` as the feature extractor, and `CambiQualityRunner` as the quality runner. Use `CambiFullReferenceFeatureExtractor` and `CambiFullReferenceQualityRunner` to run the full-reference version of CAMBI.
@@ -136,5 +157,5 @@ CAMBI can also be invoked in the [Python library](python.md). Use `CambiFeatureE
         # score: arithmetic mean score over all frames
         self.assertAlmostEqual(results[0]['Cambi_score'],
                                1.218365, places=4)
-
 ```
+

@@ -136,16 +136,9 @@ class VmafExternalConfig(object):
         return cls._path_from_external('VMAF_PATH')
 
     @classmethod
-    def vmafossexec_path(cls):
-        """
-        :return str: Path to external vmafossexec executable, if installed and configured via `externals` module
-        """
-        return cls._path_from_external('VMAFOSSEXEC_PATH')
-
-    @classmethod
     def vmafexec_path(cls):
         """
-        :return str: Path to external vmafossexec executable, if installed and configured via `externals` module
+        :return str: Path to external vmafexec executable, if installed and configured via `externals` module
         """
         return cls._path_from_external('VMAFEXEC_PATH')
 

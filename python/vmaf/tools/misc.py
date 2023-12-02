@@ -97,24 +97,7 @@ def get_file_name_extension(path):
     return Path(path).suffix[1:]
 
 
-def get_normalized_path(dir_):
-    """
-
-    >>> get_normalized_path('abc/xyz/')
-    'abc/xyz'
-    >>> get_normalized_path('abc/xyz')
-    'abc/xyz'
-    >>> get_normalized_path('abc/xyz.txt')
-    'abc/xyz.txt'
-
-    """
-    if dir_[-1] == '/':
-        return dir_[:-1]
-    else:
-        return dir_
-
-
-def get_dir_without_last_slash(path):
+def get_dir_without_last_slash(path: str) -> str:
     """
 
     >>> get_dir_without_last_slash('abc/src01_hrc01.yuv')
@@ -127,7 +110,7 @@ def get_dir_without_last_slash(path):
     'abc/xyz'
 
     """
-    return "/".join(path.split("/")[:-1])
+    return os.path.dirname(path)
 
 
 def make_parent_dirs_if_nonexist(path):
@@ -248,15 +231,14 @@ def import_python_file(filepath : str, override : dict = None):
         return ret
 
 
-def make_absolute_path(path, current_dir):
-    '''
-
+def make_absolute_path(path: str, current_dir: str) -> str:
+    """
     >>> make_absolute_path('abc/cde.fg', '/xyz/')
     '/xyz/abc/cde.fg'
     >>> make_absolute_path('/abc/cde.fg', '/xyz/')
     '/abc/cde.fg'
-
-    '''
+    """
+    assert current_dir.endswith('/'), f"expect current_dir ends with '/', but is: {current_dir}"
     if path[0] == '/':
         return path
     else:
@@ -548,11 +530,23 @@ class MyTestCase(unittest.TestCase):
         self.maxDiff = None
 
     def tearDown(self):
-        self.assertEqual([], self.verificationErrors)
+        unittest.TestCase.assertEqual(self, [], self.verificationErrors)
 
     def assertAlmostEqual(self, first, second, places=None, msg=None, delta=None):
         try:
             super().assertAlmostEqual(first, second, places, msg, delta)
+        except AssertionError as e:
+            self.verificationErrors.append(str(e))
+
+    def assertEqual(self, first, second, msg=None):
+        try:
+            super().assertEqual(first, second, msg)
+        except AssertionError as e:
+            self.verificationErrors.append(str(e))
+
+    def assertTrue(self, expr, msg=None):
+        try:
+            super().assertTrue(expr, msg)
         except AssertionError as e:
             self.verificationErrors.append(str(e))
 
@@ -798,6 +792,47 @@ def linear_fit(x, y):
 
     import scipy.optimize
     return scipy.optimize.curve_fit(linear_func, x, y, [1.0, 0.0])
+
+
+def map_yuv_type_to_bitdepth(yuv_type):
+    """
+    >>> map_yuv_type_to_bitdepth('yuv420p')
+    8
+    >>> map_yuv_type_to_bitdepth('yuv422p')
+    8
+    >>> map_yuv_type_to_bitdepth('yuv444p')
+    8
+    >>> map_yuv_type_to_bitdepth('yuv420p10le')
+    10
+    >>> map_yuv_type_to_bitdepth('yuv422p10le')
+    10
+    >>> map_yuv_type_to_bitdepth('yuv444p10le')
+    10
+    >>> map_yuv_type_to_bitdepth('yuv420p12le')
+    12
+    >>> map_yuv_type_to_bitdepth('yuv422p12le')
+    12
+    >>> map_yuv_type_to_bitdepth('yuv444p12le')
+    12
+    >>> map_yuv_type_to_bitdepth('yuv420p16le')
+    16
+    >>> map_yuv_type_to_bitdepth('yuv422p16le')
+    16
+    >>> map_yuv_type_to_bitdepth('yuv444p16le')
+    16
+    >>> map_yuv_type_to_bitdepth('notyuv') is None
+    True
+    """
+    if yuv_type in ['yuv420p', 'yuv422p', 'yuv444p']:
+        return 8
+    elif yuv_type in ['yuv420p10le', 'yuv422p10le', 'yuv444p10le']:
+        return 10
+    elif yuv_type in ['yuv420p12le', 'yuv422p12le', 'yuv444p12le']:
+        return 12
+    elif yuv_type in ['yuv420p16le', 'yuv422p16le', 'yuv444p16le']:
+        return 16
+    else:
+        return None
 
 
 if __name__ == '__main__':

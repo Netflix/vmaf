@@ -27,8 +27,8 @@ elif host_machine.system() == 'darwin'
     test_args += '-D_DARWIN_C_SOURCE'
     add_project_arguments('-D_DARWIN_C_SOURCE', language: 'c')
 else
-    test_args += '-D_POSIX_C_SOURCE=200112L'
-    add_project_arguments('-D_POSIX_C_SOURCE=200112L', language: 'c')
+    test_args += '-D_XOPEN_SOURCE=600'
+    add_project_arguments('-D_XOPEN_SOURCE=600', language: 'c')
 endif
 
 # Header checks

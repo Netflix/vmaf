@@ -360,8 +360,8 @@ void vif_subsample_rd_8_neon(VifBuffer buf, unsigned int w, unsigned int h)
                 accum_ref += fcoeff * buf.tmp.ref_convol[jj_check];
                 accum_dis += fcoeff * buf.tmp.dis_convol[jj_check];
             }
-            buf.mu1[i * i_dst_stride + j] = (uint16_t)(accum_ref >> 16);
-            buf.mu2[i * i_dst_stride + j] = (uint16_t)(accum_dis >> 16);
+            buf.mu1[i_dst_stride + j] = (uint16_t)(accum_ref >> 16);
+            buf.mu2[i_dst_stride + j] = (uint16_t)(accum_dis >> 16);
         }
     }
 
@@ -496,8 +496,8 @@ void vif_subsample_rd_16_neon(VifBuffer buf, unsigned int w, unsigned int h, int
                 accum_ref += fcoeff * buf.tmp.ref_convol[jj_check];
                 accum_dis += fcoeff * buf.tmp.dis_convol[jj_check];
             }
-            buf.mu1[i * i_dst_stride + j] = (uint16_t)(accum_ref >> 16);
-            buf.mu2[i * i_dst_stride + j] = (uint16_t)(accum_dis >> 16);
+            buf.mu1[i_dst_stride + j] = (uint16_t)(accum_ref >> 16);
+            buf.mu2[i_dst_stride + j] = (uint16_t)(accum_dis >> 16);
         }
     }
 

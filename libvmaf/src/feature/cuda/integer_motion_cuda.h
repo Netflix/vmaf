@@ -1,6 +1,7 @@
 /**
  *
- *  Copyright 2016-2020 Netflix, Inc.
+ *  Copyright 2016-2023 Netflix, Inc.
+ *  Copyright 2021 NVIDIA Corporation.
  *
  *     Licensed under the BSD+Patent License (the "License");
  *     you may not use this file except in compliance with the License.
@@ -16,11 +17,12 @@
  *
  */
 
-#pragma once
+#ifndef FEATURE_MOTION_CUDA_H_
+#define FEATURE_MOTION_CUDA_H_
 
-#ifndef FILE_IO_H_
-#define FILE_IO_H_
+#include <stdint.h>
+#include "integer_motion.h"
+#include "common.h"
 
-int write_image(FILE *wfile, const void *buf, int width, int height, int stride, int elem_size);
-
-#endif /* FILE_IO_H_ */
+extern unsigned char src_motion_score_ptx[];
+#endif /* _FEATURE_MOTION_CUDA_H_ */

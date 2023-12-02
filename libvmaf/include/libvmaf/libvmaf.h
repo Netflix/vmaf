@@ -22,7 +22,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "libvmaf/compute_vmaf.h"
 #include "libvmaf/model.h"
 #include "libvmaf/picture.h"
 #include "libvmaf/feature.h"
@@ -61,6 +60,7 @@ typedef struct VmafConfiguration {
     unsigned n_threads;
     unsigned n_subsample;
     uint64_t cpumask;
+    uint64_t gpumask;
 } VmafConfiguration;
 
 typedef struct VmafContext VmafContext;
