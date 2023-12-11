@@ -59,9 +59,6 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
     float *ref_dis_filt;
     float *tmpbuf;
 
-    float *num_array;
-    float *den_array;
-
     const float *filter;
     int filter_width;
 
@@ -76,8 +73,6 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
     float *ref_sq_filt_adj;
     float *dis_sq_filt_adj;
     float *ref_dis_filt_adj = 0;
-    float *num_array_adj = 0;
-    float *den_array_adj = 0;
 #endif
 
     /* Special handling of first scale. */
@@ -89,57 +84,65 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
     int buf_stride = ALIGN_CEIL(w * sizeof(float));
     size_t buf_sz_one = (size_t)buf_stride * h;
 
-    float num = 0;
-    float den = 0;
-
     int scale;
     int ret = 1;
 
-    if (!(ALMOST_EQUAL(vif_kernelscale, 1.0) ||
-          ALMOST_EQUAL(vif_kernelscale, 3.0/2) ||
-          ALMOST_EQUAL(vif_kernelscale, 1.0/2) ||
-          ALMOST_EQUAL(vif_kernelscale, 2.0) ||
-          ALMOST_EQUAL(vif_kernelscale, 2.0/3) ||
-          ALMOST_EQUAL(vif_kernelscale, 2.4/1.0) ||
-          ALMOST_EQUAL(vif_kernelscale, 360.0/97.0) ||
-          ALMOST_EQUAL(vif_kernelscale, 4.0/3.0) ||
-          ALMOST_EQUAL(vif_kernelscale, 3.5/3.0) ||
-          ALMOST_EQUAL(vif_kernelscale, 3.75/3.0) ||
-          ALMOST_EQUAL(vif_kernelscale, 4.25/3.0))) {
-            printf("error: vif_kernelscale can only be 0.5, 1.0, 1.5, 2.0, 2.0/3, 2.4, 360/97, 4.0/3.0, 3.5/3.0, 3.75/3.0, 4.25/3.0 for now, but is %f\n", vif_kernelscale);
+    int kernelscale_index = -1;
+    if (ALMOST_EQUAL(vif_kernelscale, 1.0)) {
+        kernelscale_index = vif_kernelscale_1;
+    } else if (ALMOST_EQUAL(vif_kernelscale, 1.0/2)) {
+        kernelscale_index = vif_kernelscale_1o2;
+    } else if (ALMOST_EQUAL(vif_kernelscale, 3.0/2)) {
+        kernelscale_index = vif_kernelscale_3o2;
+    } else if (ALMOST_EQUAL(vif_kernelscale, 2.0)) {
+        kernelscale_index = vif_kernelscale_2;
+    } else if (ALMOST_EQUAL(vif_kernelscale, 2.0/3)) {
+        kernelscale_index = vif_kernelscale_2o3;
+    } else if (ALMOST_EQUAL(vif_kernelscale, 2.4/1.0)) {
+        kernelscale_index = vif_kernelscale_24o10;
+    } else if (ALMOST_EQUAL(vif_kernelscale, 360/97.0)) {
+        kernelscale_index = vif_kernelscale_360o97;
+    } else if (ALMOST_EQUAL(vif_kernelscale, 4.0/3.0)) {
+        kernelscale_index = vif_kernelscale_4o3;
+    } else if (ALMOST_EQUAL(vif_kernelscale, 3.5/3.0)) {
+        kernelscale_index = vif_kernelscale_3d5o3;
+    } else if (ALMOST_EQUAL(vif_kernelscale, 3.75/3.0)) {
+        kernelscale_index = vif_kernelscale_3d75o3;
+    } else if (ALMOST_EQUAL(vif_kernelscale, 4.25/3.0)) {
+        kernelscale_index = vif_kernelscale_4d25o3;
+    } else {
+        printf("error: vif_kernelscale can only be 0.5, 1.0, 1.5, 2.0, 2.0/3, 2.4, 360/97, 4.0/3.0, 3.5/3.0, 3.75/3.0, 4.25/3.0 for now, but is %f\n", vif_kernelscale);
         fflush(stdout);
         goto fail_or_end;
     }
 
-	// Code optimized to save on multiple buffer copies
-	// hence the reduction in the number of buffers required from 15 to 10 
-#define VIF_BUF_CNT 10	
-	if (SIZE_MAX / buf_sz_one < VIF_BUF_CNT)
-	{
-		printf("error: SIZE_MAX / buf_sz_one < VIF_BUF_CNT, buf_sz_one = %zu.\n", buf_sz_one);
-		fflush(stdout);
-		goto fail_or_end;
-	}
+    // Code optimized to save on multiple buffer copies
+    // hence the reduction in the number of buffers required from 15 to 8
+#define VIF_BUF_CNT 8
+    if (SIZE_MAX / buf_sz_one < VIF_BUF_CNT)
+    {
+        printf("error: SIZE_MAX / buf_sz_one < VIF_BUF_CNT, buf_sz_one = %zu.\n", buf_sz_one);
+        fflush(stdout);
+        goto fail_or_end;
+    }
 
-	if (!(data_buf = aligned_malloc(buf_sz_one * VIF_BUF_CNT, MAX_ALIGN)))
-	{
-		printf("error: aligned_malloc failed for data_buf.\n");
-		fflush(stdout);
-		goto fail_or_end;
-	}
+    if (!(data_buf = aligned_malloc(buf_sz_one * VIF_BUF_CNT, MAX_ALIGN)))
+    {
+        printf("error: aligned_malloc failed for data_buf.\n");
+        fflush(stdout);
+        goto fail_or_end;
+    }
 
-	data_top = (char *)data_buf;
+    data_top = (char *)data_buf;
 
-	ref_scale = (float *)data_top; data_top += buf_sz_one;
-	dis_scale = (float *)data_top; data_top += buf_sz_one;
-	mu1 = (float *)data_top; data_top += buf_sz_one;
-	mu2 = (float *)data_top; data_top += buf_sz_one;
-	ref_sq_filt = (float *)data_top; data_top += buf_sz_one;
-	dis_sq_filt = (float *)data_top; data_top += buf_sz_one;
-	ref_dis_filt = (float *)data_top; data_top += buf_sz_one;
-	num_array    = (float *)data_top; data_top += buf_sz_one;
-    den_array    = (float *)data_top; data_top += buf_sz_one;
-	tmpbuf = (float *)data_top; data_top += buf_sz_one;
+    ref_scale = (float *)data_top; data_top += buf_sz_one;
+    dis_scale = (float *)data_top; data_top += buf_sz_one;
+    mu1 = (float *)data_top; data_top += buf_sz_one;
+    mu2 = (float *)data_top; data_top += buf_sz_one;
+    ref_sq_filt = (float *)data_top; data_top += buf_sz_one;
+    dis_sq_filt = (float *)data_top; data_top += buf_sz_one;
+    ref_dis_filt = (float *)data_top; data_top += buf_sz_one;
+    tmpbuf = (float *)data_top; data_top += buf_sz_one;
 
     for (scale = 0; scale < 4; ++scale)
     {
@@ -147,44 +150,8 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
         char pathbuf[256];
 #endif
 
-        if (ALMOST_EQUAL(vif_kernelscale, 1.0)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_1][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_1][scale];
-        } else if (ALMOST_EQUAL(vif_kernelscale, 1.0/2)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_1o2][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_1o2][scale];
-        } else if (ALMOST_EQUAL(vif_kernelscale, 3.0/2)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_3o2][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_3o2][scale];
-        } else if (ALMOST_EQUAL(vif_kernelscale, 2.0)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_2][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_2][scale];
-        } else if (ALMOST_EQUAL(vif_kernelscale, 2.0/3)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_2o3][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_2o3][scale];
-        } else if (ALMOST_EQUAL(vif_kernelscale, 2.4/1.0)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_24o10][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_24o10][scale];
-        } else if (ALMOST_EQUAL(vif_kernelscale, 360/97.0)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_360o97][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_360o97][scale];
-        } else if (ALMOST_EQUAL(vif_kernelscale, 4.0/3.0)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_4o3][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_4o3][scale];
-        } else if (ALMOST_EQUAL(vif_kernelscale, 3.5/3.0)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_3d5o3][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_3d5o3][scale];
-        } else if (ALMOST_EQUAL(vif_kernelscale, 3.75/3.0)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_3d75o3][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_3d75o3][scale];
-        } else if (ALMOST_EQUAL(vif_kernelscale, 4.25/3.0)) {
-            filter = vif_filter1d_table_s[vif_kernelscale_4d25o3][scale];
-            filter_width = vif_filter1d_width[vif_kernelscale_4d25o3][scale];
-        } else {
-            printf("error: vif_kernelscale can only be 0.5, 1.0, 1.5, 2.0, 2.0/3, 2.4, 360/97, 4.0/3.0, 3.5/3.0, 3.75/3.0, 4.25/3.0 for now, but is %f\n", vif_kernelscale);
-            fflush(stdout);
-            goto fail_or_end;
-        }
+        filter = vif_filter1d_table_s[kernelscale_index][scale];
+        filter_width = vif_filter1d_width[kernelscale_index][scale];
 
 #ifdef VIF_OPT_HANDLE_BORDERS
         int buf_valid_w = w;
@@ -229,14 +196,15 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
         vif_filter1d_s(filter, curr_ref_scale, mu1, tmpbuf, w, h, curr_ref_stride, buf_stride, filter_width);
         vif_filter1d_s(filter, curr_dis_scale, mu2, tmpbuf, w, h, curr_dis_stride, buf_stride, filter_width);
 
-		// Code optimized by adding intrinsic code for the functions,
-		// vif_filter1d_sq and vif_filter1d_sq
+        // Code optimized by adding intrinsic code for the functions,
+        // vif_filter1d_sq and vif_filter1d_sq
         vif_filter1d_sq_s(filter, curr_ref_scale, ref_sq_filt, tmpbuf, w, h, curr_ref_stride, buf_stride, filter_width);
         vif_filter1d_sq_s(filter, curr_dis_scale, dis_sq_filt, tmpbuf, w, h, curr_dis_stride, buf_stride, filter_width);
         vif_filter1d_xy_s(filter, curr_ref_scale, curr_dis_scale, ref_dis_filt, tmpbuf, w, h, curr_ref_stride, curr_dis_stride, buf_stride, filter_width);
 
-		vif_statistic_s(mu1, mu2, ref_sq_filt, dis_sq_filt, ref_dis_filt, num_array, den_array,
-			w, h, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, vif_enhn_gain_limit);
+        float num, den;
+        vif_statistic_s(mu1, mu2, ref_sq_filt, dis_sq_filt, ref_dis_filt, &num, &den,
+            w, h, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, vif_enhn_gain_limit);
         mu1_adj = ADJUST(mu1);
         mu2_adj = ADJUST(mu2);
 
@@ -269,16 +237,7 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
 
         sprintf(pathbuf, "stage/ref_dis_filt[%d].bin", scale);
         write_image(pathbuf, ref_dis_filt_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(float));
-
-        sprintf(pathbuf, "stage/num_array[%d].bin", scale);
-        write_image(pathbuf, num_array_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(float));
-
-        sprintf(pathbuf, "stage/den_array[%d].bin", scale);
-        write_image(pathbuf, den_array_adj, buf_valid_w, buf_valid_h, buf_stride, sizeof(float));
 #endif
-
-		num = *num_array;
-		den = *den_array;
 
         scores[2*scale] = num;
         scores[2*scale+1] = den;
@@ -409,8 +368,8 @@ int vifdiff(int (*read_frame)(float *ref_data, float *main_data, float *temp_dat
         if (frm_idx > 0)
         {
             apply_frame_differencing(ref_buf, prev_ref_buf, ref_diff_buf, w, h, stride / sizeof(float));
-		    apply_frame_differencing(dis_buf, prev_dis_buf, dis_diff_buf, w, h, stride / sizeof(float));
-		}
+            apply_frame_differencing(dis_buf, prev_dis_buf, dis_diff_buf, w, h, stride / sizeof(float));
+        }
 
         // copy the current frame to the previous frame buffer to have it available for next time you apply frame differencing
         memcpy(prev_ref_buf, ref_buf, data_sz);
@@ -422,17 +381,17 @@ int vifdiff(int (*read_frame)(float *ref_data, float *main_data, float *temp_dat
         // unreliable scores for an earlier video frame, rather than the latest one. This might be better for video quality calculations, since recency effects
         // places more weight on later frames.
         if (frm_idx == 0)
-		{
-		    score = 0.0;
-		    score_num = 0.0;
-		    score_den = 0.0;
-		    for(int scale = 0; scale < 4; scale++){
-		    	scores[2 * scale] = 0.0;
-		    	scores[2 * scale + 1] = 0.0 + 1e-5;
-		    }
-		}
-		else
-		{
+        {
+            score = 0.0;
+            score_num = 0.0;
+            score_den = 0.0;
+            for(int scale = 0; scale < 4; scale++){
+                scores[2 * scale] = 0.0;
+                scores[2 * scale + 1] = 0.0 + 1e-5;
+            }
+        }
+        else
+        {
             // compute
             if ((ret = compute_vif(ref_diff_buf, dis_diff_buf, w, h, stride, stride,
                     &score, &score_num, &score_den, scores,

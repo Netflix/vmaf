@@ -12,16 +12,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-18.04
+          - os: ubuntu-latest
             CC: ccache gcc
             CXX: ccache g++
-          - os: ubuntu-18.04
+          - os: ubuntu-latest
             CC: ccache gcc-9
             CXX: ccache g++-9
-          - os: ubuntu-18.04
+          - os: ubuntu-latest
             CC: ccache clang
             CXX: ccache clang++
-          - os: macos-10.15
+          - os: macos-latest
             CC: ccache clang
             CXX: ccache clang++
             experimental: true
@@ -31,7 +31,7 @@ jobs:
       CXX: ${{ matrix.CXX }}
     steps:
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
       - name: Install meson and ninja
@@ -40,10 +40,10 @@ jobs:
           pip install meson
 
       - name: Install dependencies (ubuntu)
-        if: matrix.os == 'ubuntu-18.04'
+        if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo -E apt-get -yq install ccache ninja-build
+          sudo -E apt-get -yq install ccache ninja-build libomp-dev
           case "$CC" in
           *gcc) sudo -E apt-get -yq install gcc g++ nasm ;;
           *gcc-9)
@@ -57,7 +57,7 @@ jobs:
           ccache --version
 
       - name: Install dependencies (mac)
-        if: matrix.os == 'macos-10.15'
+        if: matrix.os == 'macos-latest'
         run: |
           brew install -q ninja nasm ccache
 
@@ -65,7 +65,7 @@ jobs:
           meson --version
           ccache --version
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Run meson
         run: |
           meson setup libvmaf libvmaf/build --buildtype release --prefix $PWD/install -Denable_float=true
@@ -78,7 +78,7 @@ jobs:
       - name: Run tox tests
         run: |
           mkdir -p ~/.ccache && sudo chown -R $(whoami) ~/.ccache
-          pip install tox
+          pip install 'tox<4'
           tox -c python/ -e py -- -v -p no:warnings -m 'main or lib' --doctest-modules
 
       - name: Get binary path & Current Release
@@ -89,7 +89,7 @@ jobs:
           echo "::set-output name=upload_url::$(curl -L https://api.github.com/repos/${{ github.repository }}/releases/tags/$(cut -d/ -f3 <<< ${{ github.ref }}) | jq -r ."upload_url")"
 
       - name: Upload vmaf
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.os }}-vmaf
           path: ${{ steps.get_info.outputs.path }}

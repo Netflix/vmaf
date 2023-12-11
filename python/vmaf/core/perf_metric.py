@@ -463,8 +463,8 @@ class ResolvingPowerPerfMetric(RawScorePerfMetric):
 
         vqm = np.array(predictions)
         num_viewers = np.array(list(map(lambda groundtruth: len(groundtruth), groundtruths)))
-        mos = np.mean(groundtruths, axis=1)
-        std = np.std(groundtruths, axis=1, ddof=deg_of_freedom)
+        mos = np.array(list(map(lambda groundtruth: np.nanmean(groundtruth), groundtruths)))
+        std = np.array(list(map(lambda groundtruth: np.nanstd(groundtruth, ddof=deg_of_freedom), groundtruths)))
 
         # variance = std.^2;
         variance = std**2

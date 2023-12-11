@@ -5,7 +5,7 @@
 For building, you need the following:
 
 - [Python3](https://www.python.org/download/releases/3.0/) (3.6 or higher)
-- [Meson](https://mesonbuild.com/) (0.47 or higher)
+- [Meson](https://mesonbuild.com/) (0.56.1 or higher)
 - [Ninja](https://ninja-build.org/) (1.7.1 or higher)
 - [NASM](https://www.nasm.us/) (for x86 builds only, 2.13.02 or higher)
 - `xxd`
@@ -61,7 +61,6 @@ This will install the following files:
 │   └── vmaf
 ├── include
 │   └── libvmaf
-│       ├── compute_vmaf.h
 │       ├── feature.h
 │       ├── libvmaf.h
 │       ├── model.h
@@ -89,7 +88,7 @@ ninja -vC build doc/html
 
 ## `vmaf`
 
-A command line tool called `vmaf` is included as part of the build/installation. See the `vmaf` [README.md](tools/README.md) for details. An older command line tool (`vmafossexec`) is still part of the build but is not part of the installation. `vmafossexec` will be removed in a future version of this library.
+A command line tool called `vmaf` is included as part of the build/installation. See the `vmaf` [README.md](tools/README.md) for details.
 
 ## API Walkthrough
 

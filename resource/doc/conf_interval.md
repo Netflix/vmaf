@@ -10,7 +10,7 @@ There are two ways to perform bootstrapping on VMAF. The first one is called pla
 
 ## Run in Command Line
 
-To enable CI, use the option `--ci` in the command line tools with a bootstrapping model such as `model/vmaf_float_b_v0.6.3/vmaf_float_b_v0.6.3.json`. The `--ci` option is available for both `run_vmaf` and `vmafossexec`. In [libvmaf](libvmaf/README.md), CI can be enabled by setting the argument `enable_conf_interval` to 1. For the `vmaf` executable, it can automatically detect if a model is a bootstrap model, so just pass in the model path and no `--ci` option is needed.
+To enable CI, use the option `--ci` in the command line tools with a bootstrapping model such as `model/vmaf_float_b_v0.6.3/vmaf_float_b_v0.6.3.json`. The `--ci` option is available for `run_vmaf`. In [libvmaf](libvmaf/README.md), CI can be enabled by setting the argument `enable_conf_interval` to 1. For the `vmaf` executable, it can automatically detect if a model is a bootstrap model, so just pass in the model path and no `--ci` option is needed.
 
 For example, running
 

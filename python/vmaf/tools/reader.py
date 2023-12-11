@@ -144,6 +144,9 @@ class YuvReader(object):
     def _is_16bitle(self):
         return self.yuv_type in self.SUPPORTED_YUV_16BIT_LE_TYPES
 
+    def convert_format(self, value, bit_depth):
+        return value.astype(np.double) / (2.0**bit_depth - 1.0)
+
     def next(self, format='uint'):
 
         assert format == 'uint' or format == 'float'
@@ -190,27 +193,20 @@ class YuvReader(object):
 
         elif format == 'float':
             if self._is_8bit():
-                y = y.astype(np.double) / (2.0**8 - 1.0)
-                u = u.astype(np.double) / (2.0**8 - 1.0) if u is not None else None
-                v = v.astype(np.double) / (2.0**8 - 1.0) if v is not None else None
-                return y, u, v
+                bit_depth = 8
             elif self._is_10bitle():
-                y = y.astype(np.double) / (2.0**10 - 1.0)
-                u = u.astype(np.double) / (2.0**10 - 1.0) if u is not None else None
-                v = v.astype(np.double) / (2.0**10 - 1.0) if v is not None else None
-                return y, u, v
+                bit_depth = 10
             elif self._is_12bitle():
-                y = y.astype(np.double) / (2.0**12 - 1.0)
-                u = u.astype(np.double) / (2.0**12 - 1.0) if u is not None else None
-                v = v.astype(np.double) / (2.0**12 - 1.0) if v is not None else None
-                return y, u, v
+                bit_depth = 12
             elif self._is_16bitle():
-                y = y.astype(np.double) / (2.0**16 - 1.0)
-                u = u.astype(np.double) / (2.0**16 - 1.0) if u is not None else None
-                v = v.astype(np.double) / (2.0**16 - 1.0) if v is not None else None
-                return y, u, v
+                bit_depth = 16
             else:
                 assert False
+
+            y = self.convert_format(y, bit_depth)
+            u = self.convert_format(u, bit_depth) if u is not None else None
+            v = self.convert_format(v, bit_depth) if v is not None else None
+            return y, u, v
 
         else:
             assert False

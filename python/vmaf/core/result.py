@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import json
 import re
+from typing import Optional, Callable
 
 import numpy as np
 
@@ -21,7 +22,7 @@ class BasicResult(object):
         self.result_dict = result_dict
         self.score_aggregate_method = np.mean
 
-    def set_score_aggregate_method(self, score_aggregate_method):
+    def set_score_aggregate_method(self, score_aggregate_method: Optional[Callable]):
         if score_aggregate_method is not None:
             self.score_aggregate_method = score_aggregate_method
         else:
@@ -596,13 +597,13 @@ class Result(BasicResult):
         return df
 
     @classmethod
-    def from_dataframe(cls, df):
+    def from_dataframe(cls, df, AssetClass=Asset):
 
         # first, make sure the df conform to the format for a single asset
         cls._assert_asset_dataframe(df)
 
         asset_repr = df.iloc[0]['asset']
-        asset = Asset.from_repr(asset_repr)
+        asset = AssetClass.from_repr(asset_repr)
 
         executor_id = df.iloc[0]['executor_id']
 

@@ -1,10 +1,12 @@
 from vmaf import ExternalProgramCaller
 from vmaf.core.feature_extractor import VmafexecFeatureExtractorMixin, FeatureExtractor
 
+
 class CambiFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "Cambi_feature"
-    VERSION = "0.4" # Supporting scaled encodes and minor change to the spatial mask
+    # VERSION = "0.4" # Supporting scaled encodes and minor change to the spatial mask
+    VERSION = "0.5"  # Supporting bitdepth converted encodes
 
     ATOM_FEATURES = ['cambi']
 
@@ -23,12 +25,15 @@ class CambiFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
             'dis_height, or 3) width and height.'
         encode_width, encode_height = asset.dis_encode_width_height
 
+        assert asset.dis_encode_bitdepth is not None, \
+            'For Cambi, dis_encode_bitdepth cannot be None. One can specify dis_encode_bitdepth by adding ' \
+            'dis_enc_bitdepth field to asset_dict. The supported values are 8, 10, 12, or 16.'
+        encode_bitdepth = asset.dis_encode_bitdepth
+
+        additional_params = {'enc_bitdepth': encode_bitdepth}
         if encode_width != quality_width or encode_height != quality_height:
-            # hacky: unintended consequence of modifying the input. TODO: improve.
-            if self.optional_dict is None:
-                self.optional_dict = dict()
-            self.optional_dict['enc_width'] = encode_width
-            self.optional_dict['enc_height'] = encode_height
+            additional_params['enc_width'] = encode_width
+            additional_params['enc_height'] = encode_height
 
         log_file_path = self._get_log_file_path(asset)
 
@@ -42,7 +47,7 @@ class CambiFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
         ExternalProgramCaller.call_vmafexec_single_feature(
             'cambi', yuv_type, ref_path, dis_path, quality_width, quality_height,
-            log_file_path, logger, options={**optional_dict, **optional_dict2})
+            log_file_path, logger, options={**optional_dict, **optional_dict2, **additional_params})
 
 
 class CambiFullReferenceFeatureExtractor(CambiFeatureExtractor):

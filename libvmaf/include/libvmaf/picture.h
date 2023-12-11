@@ -35,13 +35,14 @@ enum VmafPixelFormat {
 
 typedef struct VmafRef VmafRef;
 
-typedef struct {
+typedef struct VmafPicture {
     enum VmafPixelFormat pix_fmt;
     unsigned bpc;
     unsigned w[3], h[3];
     ptrdiff_t stride[3];
     void *data[3];
     VmafRef *ref;
+    void *priv;
 } VmafPicture;
 
 int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,

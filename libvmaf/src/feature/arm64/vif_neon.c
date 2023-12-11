@@ -360,8 +360,8 @@ void vif_subsample_rd_8_neon(VifBuffer buf, unsigned int w, unsigned int h)
                 accum_ref += fcoeff * buf.tmp.ref_convol[jj_check];
                 accum_dis += fcoeff * buf.tmp.dis_convol[jj_check];
             }
-            buf.mu1[i * i_dst_stride + j] = (uint16_t)(accum_ref >> 16);
-            buf.mu2[i * i_dst_stride + j] = (uint16_t)(accum_dis >> 16);
+            buf.mu1[i_dst_stride + j] = (uint16_t)(accum_ref >> 16);
+            buf.mu2[i_dst_stride + j] = (uint16_t)(accum_dis >> 16);
         }
     }
 
@@ -496,8 +496,8 @@ void vif_subsample_rd_16_neon(VifBuffer buf, unsigned int w, unsigned int h, int
                 accum_ref += fcoeff * buf.tmp.ref_convol[jj_check];
                 accum_dis += fcoeff * buf.tmp.dis_convol[jj_check];
             }
-            buf.mu1[i * i_dst_stride + j] = (uint16_t)(accum_ref >> 16);
-            buf.mu2[i * i_dst_stride + j] = (uint16_t)(accum_dis >> 16);
+            buf.mu1[i_dst_stride + j] = (uint16_t)(accum_ref >> 16);
+            buf.mu2[i_dst_stride + j] = (uint16_t)(accum_dis >> 16);
         }
     }
 
@@ -1053,7 +1053,7 @@ void vif_statistic_16_neon(struct VifPublicState *s, float *num, float *den, uns
         if (j != w)
         {
             VifResiduals residuals =
-                vif_compute_line_residuals(s, j, w, bpc, scale);
+                vif_compute_line_residuals(s, j, w, scale);
             accum_num_log += residuals.accum_num_log;
             accum_den_log += residuals.accum_den_log;
             accum_num_non_log += residuals.accum_num_non_log;

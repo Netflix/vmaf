@@ -12,7 +12,7 @@ The raw subjective scores collected are then cleaned up using the MLE methodolog
 
 ## Predict Quality on a Cellular Phone Screen
 
-The default VMAF model (`model/vmaf_v0.6.1.json`) also offers a custom model for cellular phone screen viewing. This model can be invoked by adding `--phone-model` option in the commands `run_vmaf`, `run_vmaf_in_batch`, `run_testing` and `vmafossexec`, e.g.:
+The default VMAF model (`model/vmaf_v0.6.1.json`) also offers a custom model for cellular phone screen viewing. This model can be invoked by adding `--phone-model` option in the commands `run_vmaf`, `run_vmaf_in_batch`, and `run_testing` e.g.:
 
 ```shell script
 ./run_vmaf yuv420p 576 324 \

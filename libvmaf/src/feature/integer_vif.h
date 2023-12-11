@@ -124,7 +124,7 @@ void vif_statistic_16(struct VifPublicState *s, float *num, float *den, unsigned
  * only when to is not a multiple of the block size, with from = (to / block_size) + block_size
  */
 VifResiduals vif_compute_line_residuals(VifPublicState *s, unsigned from,
-                                        unsigned to, int bpc, int scale);
+                                        unsigned to, int scale);
 
 
 #ifdef _MSC_VER

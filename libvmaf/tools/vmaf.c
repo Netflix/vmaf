@@ -9,6 +9,9 @@
 
 #include "libvmaf/picture.h"
 #include "libvmaf/libvmaf.h"
+#ifdef HAVE_CUDA
+#include "libvmaf/libvmaf_cuda.h"
+#endif
 
 static enum VmafPixelFormat pix_fmt_map(int pf)
 {
@@ -24,7 +27,7 @@ static enum VmafPixelFormat pix_fmt_map(int pf)
     }
 }
 
-static int validate_videos(video_input *vid1, video_input *vid2)
+static int validate_videos(video_input *vid1, video_input *vid2, bool common_bitdepth)
 {
     int err_cnt = 0;
 
@@ -49,7 +52,7 @@ static int validate_videos(video_input *vid1, video_input *vid2)
         err_cnt++;
     }
 
-    if (info1.depth != info2.depth) {
+    if (!common_bitdepth && info1.depth != info2.depth) {
         fprintf(stderr, "bitdepths do not match: %d, %d\n",
                 info1.depth, info2.depth);
         err_cnt++;
@@ -65,7 +68,7 @@ static int validate_videos(video_input *vid1, video_input *vid2)
     return err_cnt;
 }
 
-static int fetch_picture(video_input *vid, VmafPicture *pic)
+static int fetch_picture(video_input *vid, VmafPicture *pic, int depth)
 {
     int ret;
     video_input_ycbcr ycbcr;
@@ -75,47 +78,89 @@ static int fetch_picture(video_input *vid, VmafPicture *pic)
     if (ret < 1) return !ret;
 
     video_input_get_info(vid, &info);
-    ret = vmaf_picture_alloc(pic, pix_fmt_map(info.pixel_fmt), info.depth,
+    ret = vmaf_picture_alloc(pic, pix_fmt_map(info.pixel_fmt), depth,
                              info.pic_w, info.pic_h);
+
     if (ret) {
         fprintf(stderr, "problem allocating picture.\n");
         return -1;
     }
 
-    if (info.depth == 8) {
-        for (unsigned i = 0; i < 3; i++) {
-            int xdec = i&&!(info.pixel_fmt&1);
-            int ydec = i&&!(info.pixel_fmt&2);
-            int xstride = info.depth > 8 ? 2 : 1;
-            uint8_t *ycbcr_data = ycbcr[i].data +
-                (info.pic_y >> ydec) * ycbcr[i].stride +
-                (info.pic_x * xstride >> xdec);
-            // ^ gross, but this is how the daala y4m API works. FIXME.
-            uint8_t *pic_data = pic->data[i];
+    if (info.depth == depth) {
+        if (info.depth == 8) {
+            for (unsigned i = 0; i < 3; i++) {
+                int xdec = i&&!(info.pixel_fmt&1);
+                int ydec = i&&!(info.pixel_fmt&2);
+                uint8_t *ycbcr_data = ycbcr[i].data +
+                    (info.pic_y >> ydec) * ycbcr[i].stride +
+                    (info.pic_x >> xdec);
+                uint8_t *pic_data = pic->data[i];
 
-            for (unsigned j = 0; j < pic->h[i]; j++) {
-                memcpy(pic_data, ycbcr_data, sizeof(*pic_data) * pic->w[i]);
-                pic_data += pic->stride[i];
-                ycbcr_data += ycbcr[i].stride;
+                for (unsigned j = 0; j < pic->h[i]; j++) {
+                    memcpy(pic_data, ycbcr_data, sizeof(*pic_data) * pic->w[i]);
+                    pic_data += pic->stride[i];
+                    ycbcr_data += ycbcr[i].stride;
+                }
+            }
+        } else {
+            for (unsigned i = 0; i < 3; i++) {
+                int xdec = i&&!(info.pixel_fmt&1);
+                int ydec = i&&!(info.pixel_fmt&2);
+                uint16_t *ycbcr_data = (uint16_t*) ycbcr[i].data +
+                    (info.pic_y >> ydec) * (ycbcr[i].stride / 2) +
+                    (info.pic_x >> xdec);
+                uint16_t *pic_data = pic->data[i];
+
+                for (unsigned j = 0; j < pic->h[i]; j++) {
+                    memcpy(pic_data, ycbcr_data, sizeof(*pic_data) * pic->w[i]);
+                    pic_data += pic->stride[i] / 2;
+                    ycbcr_data += ycbcr[i].stride / 2;
+                }
             }
         }
+    } else if (depth > 8) {
+        // unequal bit-depth
+        // therefore depth must be > 8 since we do not support depth < 8
+        int left_shift = depth - info.depth;
+        if (info.depth == 8) {
+            for (unsigned i = 0; i < 3; i++) {
+                int xdec = i&&!(info.pixel_fmt&1);
+                int ydec = i&&!(info.pixel_fmt&2);
+                uint8_t *ycbcr_data = ycbcr[i].data +
+                    (info.pic_y >> ydec) * ycbcr[i].stride +
+                    (info.pic_x >> xdec);
+                uint16_t *pic_data = (uint16_t*)pic->data[i];
+
+                for (unsigned j = 0; j < pic->h[i]; j++) {
+                    for (unsigned k = 0; k < pic->w[i]; k++) {
+                        pic_data[k] = ycbcr_data[k] << left_shift;
+                    }
+                    pic_data += pic->stride[i] / 2;
+                    ycbcr_data += ycbcr[i].stride;
+                }
+            }
+        } else {
+            for (unsigned i = 0; i < 3; i++) {
+                int xdec = i&&!(info.pixel_fmt&1);
+                int ydec = i&&!(info.pixel_fmt&2);
+                uint16_t *ycbcr_data = (uint16_t*) ycbcr[i].data +
+                    (info.pic_y >> ydec) * (ycbcr[i].stride / 2) +
+                    (info.pic_x >> xdec);
+                uint16_t *pic_data = pic->data[i];
+
+                for (unsigned j = 0; j < pic->h[i]; j++) {
+                    for (unsigned k = 0; k < pic->w[i]; k++) {
+                        pic_data[k] = ycbcr_data[k] << left_shift;
+                    }
+                    pic_data += pic->stride[i] / 2;
+                    ycbcr_data += ycbcr[i].stride / 2;
+                }
+            }
+        }
+        
     } else {
-        for (unsigned i = 0; i < 3; i++) {
-            int xdec = i&&!(info.pixel_fmt&1);
-            int ydec = i&&!(info.pixel_fmt&2);
-            int xstride = info.depth > 8 ? 2 : 1;
-            uint16_t *ycbcr_data = (uint16_t*) ycbcr[i].data +
-                (info.pic_y >> ydec) * (ycbcr[i].stride / 2) +
-                (info.pic_x * xstride >> xdec);
-            // ^ gross, but this is how the daala y4m API works. FIXME.
-            uint16_t *pic_data = pic->data[i];
-
-            for (unsigned j = 0; j < pic->h[i]; j++) {
-                memcpy(pic_data, ycbcr_data, sizeof(*pic_data) * pic->w[i]);
-                pic_data += pic->stride[i] / 2;
-                ycbcr_data += ycbcr[i].stride / 2;
-            }
-        }
+        fprintf(stderr, "expect depth > 8\n");
+        return -1;
     }
 
     return 0;
@@ -169,11 +214,21 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    err = validate_videos(&vid_ref, &vid_dist);
+    err = validate_videos(&vid_ref, &vid_dist, c.common_bitdepth);
     if (err) {
         fprintf(stderr, "videos are incompatible, %d %s.\n",
                 err, err == 1 ? "problem" : "problems");
         return -1;
+    }
+
+    int common_bitdepth;
+    if (c.use_yuv) {
+        common_bitdepth = c.bitdepth;
+    } else {
+        video_input_info info1, info2;
+        video_input_get_info(&vid_ref, &info1);
+        video_input_get_info(&vid_dist, &info2);
+        common_bitdepth = info1.depth > info2.depth ? info1.depth : info2.depth;
     }
 
     VmafConfiguration cfg = {
@@ -181,6 +236,7 @@ int main(int argc, char *argv[])
         .n_threads = c.thread_cnt,
         .n_subsample = c.subsample,
         .cpumask = c.cpumask,
+        .gpumask = c.gpumask,
     };
 
     VmafContext *vmaf;
@@ -189,6 +245,17 @@ int main(int argc, char *argv[])
         fprintf(stderr, "problem initializing VMAF context\n");
         return -1;
     }
+
+#ifdef HAVE_CUDA
+    VmafCudaState *cu_state;
+    VmafCudaConfiguration cuda_cfg = { 0 };
+    err = vmaf_cuda_state_init(&cu_state, cuda_cfg);
+    err |= vmaf_cuda_import_state(vmaf, cu_state);
+    if (err) {
+        fprintf(stderr, "problem during vmaf_cuda_state_init\n");
+        return -1;
+    }
+#endif
 
     VmafModel **model;
     const size_t model_sz = sizeof(*model) * c.model_cnt;
@@ -309,10 +376,10 @@ int main(int argc, char *argv[])
     VmafPicture pic_ref, pic_dist;
 
     for (unsigned i = 0; i < c.frame_skip_ref; i++)
-        fetch_picture(&vid_ref, &pic_ref);
+        fetch_picture(&vid_ref, &pic_ref, common_bitdepth);
 
     for (unsigned i = 0; i < c.frame_skip_dist; i++)
-        fetch_picture(&vid_dist, &pic_dist);
+        fetch_picture(&vid_dist, &pic_dist, common_bitdepth);
 
     float fps = 0.;
     const time_t t0 = clock();
@@ -323,8 +390,8 @@ int main(int argc, char *argv[])
             break;
 
         VmafPicture pic_ref, pic_dist;
-        int ret1 = fetch_picture(&vid_ref, &pic_ref);
-        int ret2 = fetch_picture(&vid_dist, &pic_dist);
+        int ret1 = fetch_picture(&vid_ref, &pic_ref, common_bitdepth);
+        int ret2 = fetch_picture(&vid_dist, &pic_dist, common_bitdepth);
 
         if (ret1 && ret2) {
             break;
@@ -334,10 +401,16 @@ int main(int argc, char *argv[])
         } else if (ret1) {
             fprintf(stderr, "\n\"%s\" ended before \"%s\".\n",
                     c.path_ref, c.path_dist);
+            int err = vmaf_picture_unref(&pic_dist);
+            if (err)
+                fprintf(stderr, "\nproblem during vmaf_picture_unref\n");
             break;
         } else if (ret2) {
             fprintf(stderr, "\n\"%s\" ended before \"%s\".\n",
                     c.path_dist, c.path_ref);
+            int err = vmaf_picture_unref(&pic_ref);
+            if (err)
+                fprintf(stderr, "\nproblem during vmaf_picture_unref\n");
             break;
         }
 
