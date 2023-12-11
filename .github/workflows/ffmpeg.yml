@@ -16,7 +16,7 @@ jobs:
           - os: ubuntu-latest
             CC: gcc
             CXX: g++
-          - os: macos-latest
+          - os: macos-13
             CC: clang
             CXX: clang++
     runs-on: ${{ matrix.os }}
@@ -38,7 +38,7 @@ jobs:
           sudo apt-get update
           sudo -E apt-get -yq install ninja-build gcc nasm
       - name: Install dependencies (mac)
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-13'
         run: |
           brew install -q ninja nasm
       - uses: actions/checkout@v4
