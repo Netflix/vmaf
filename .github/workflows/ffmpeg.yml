@@ -16,7 +16,7 @@ jobs:
           - os: ubuntu-latest
             CC: gcc
             CXX: g++
-          - os: macos-13
+          - os: macos-latest
             CC: clang
             CXX: clang++
     runs-on: ${{ matrix.os }}
@@ -38,7 +38,7 @@ jobs:
           sudo apt-get update
           sudo -E apt-get -yq install ninja-build gcc nasm
       - name: Install dependencies (mac)
-        if: matrix.os == 'macos-13'
+        if: matrix.os == 'macos-latest'
         run: |
           brew install -q ninja nasm
       - uses: actions/checkout@v4
@@ -50,7 +50,7 @@ jobs:
         run: |
           git clone -q --branch master --depth=1 "https://github.com/FFmpeg/FFmpeg" ffmpeg
           cd ffmpeg
-          ./configure --enable-version3 --enable-libvmaf --cc="$CC" --cxx="$CXX" || { less ffbuild/config.log; exit 1; }
+          ./configure --enable-version3 --enable-libvmaf --disable-indevs --cc="$CC" --cxx="$CXX" || { less ffbuild/config.log; exit 1; }
       - name: Make FFmpeg
         run: |
           sudo make -C ffmpeg --quiet -j $(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu) install
