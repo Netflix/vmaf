@@ -22,6 +22,11 @@
 
 #include "cli_parse.h"
 
+static int cli_free_dicts(CLISettings *settings) {
+    for (int i = 0; i < settings->feature_cnt; i++)
+        vmaf_feature_dictionary_free(&(settings->feature_cfg[i].opts_dict));
+}
+
 static char *test_aom_ctc_v1_0()
 {
     char *argv[7] = {"vmaf", "-r", "ref.y4m", "-d", "dis.y4m", "--aom_ctc", "v1.0"};
@@ -33,6 +38,7 @@ static char *test_aom_ctc_v1_0()
     mu_assert("cli_parse: --aom_ctc v1.0 provided but number of features is not 5", settings.feature_cnt == 5);
     mu_assert("cli_parse: --aom_ctc v1.0 provided but number of models is not 2", settings.model_cnt == 2);
     cli_free(&settings);
+    cli_free_dicts(&settings);
 
     return NULL;
 }
@@ -48,6 +54,7 @@ static char *test_aom_ctc_v2_0()
     mu_assert("cli_parse: --aom_ctc v2.0 provided but number of features is not 5", settings.feature_cnt == 5);
     mu_assert("cli_parse: --aom_ctc v2.0 provided but number of models is not 2", settings.model_cnt == 2);
     cli_free(&settings);
+    cli_free_dicts(&settings);
 
     return NULL;
 }
@@ -63,6 +70,7 @@ static char *test_aom_ctc_v3_0()
     mu_assert("cli_parse: --aom_ctc v3.0 provided but number of features is not 6", settings.feature_cnt == 6);
     mu_assert("cli_parse: --aom_ctc v3.0 provided but number of models is not 2", settings.model_cnt == 2);
     cli_free(&settings);
+    cli_free_dicts(&settings);
 
     return NULL;
 }
@@ -78,6 +86,7 @@ static char *test_aom_ctc_v4_0()
     mu_assert("cli_parse: --aom_ctc v4.0 provided but number of features is not 6", settings.feature_cnt == 6);
     mu_assert("cli_parse: --aom_ctc v4.0 provided but number of models is not 2", settings.model_cnt == 2);
     cli_free(&settings);
+    cli_free_dicts(&settings);
 
     return NULL;
 }
@@ -93,6 +102,7 @@ static char *test_aom_ctc_v5_0()
     mu_assert("cli_parse: --aom_ctc v5.0 provided but number of features is not 6", settings.feature_cnt == 6);
     mu_assert("cli_parse: --aom_ctc v5.0 provided but number of models is not 2", settings.model_cnt == 2);
     cli_free(&settings);
+    cli_free_dicts(&settings);
 
     return NULL;
 }
@@ -108,6 +118,7 @@ static char *test_aom_ctc_v6_0()
     mu_assert("cli_parse: --aom_ctc v6.0 provided but number of features is not 6", settings.feature_cnt == 6);
     mu_assert("cli_parse: --aom_ctc v6.0 provided but number of models is not 2", settings.model_cnt == 2);
     cli_free(&settings);
+    cli_free_dicts(&settings);
 
     return NULL;
 }
@@ -123,6 +134,7 @@ static char *test_nflx_ctc_v1_0()
     mu_assert("cli_parse: --nflx_ctc v1.0 provided but number of features is not 3", settings.feature_cnt == 3);
     mu_assert("cli_parse: --nflx_ctc v1.0 provided but number of models is not 2", settings.model_cnt == 2);
     cli_free(&settings);
+    cli_free_dicts(&settings);
 
     return NULL;
 }
