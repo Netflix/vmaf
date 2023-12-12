@@ -26,7 +26,7 @@ static int almost_equal(double a, double b) {
     return diff < EPS;
 }
 
-static void get_picture_16b(VmafPicture *pic, int pic_index)
+static int get_picture_16b(VmafPicture *pic, int pic_index)
 {
     int count = 0;
     uint16_t sample_pic[2][16] = {
@@ -34,7 +34,8 @@ static void get_picture_16b(VmafPicture *pic, int pic_index)
         {65535, 65535, 65535, 65535, 65535, 65535},
     };
 
-    vmaf_picture_alloc(pic, VMAF_PIX_FMT_YUV420P, 16, 2, 2);
+    int err = vmaf_picture_alloc(pic, VMAF_PIX_FMT_YUV420P, 16, 2, 2);
+    if (err) return err;
     for (int c = 0; c < 3; c++) {
         uint16_t *data = (uint16_t *) pic->data[c];
         int stride = pic->stride[c] >> 1;
@@ -44,15 +45,19 @@ static void get_picture_16b(VmafPicture *pic, int pic_index)
             }
         }
     }
+    return 0;
 }
 
 static char *test_16b_large_diff()
 {
     VmafPicture pic1, pic2;
-    get_picture_16b(&pic1, 0);
-    get_picture_16b(&pic2, 1);
+    int err = 0;
+    err |= get_picture_16b(&pic1, 0);
+    err |= get_picture_16b(&pic2, 1);
+    mu_assert("test_16b_large_diff alloc error", !err);
     VmafFeatureCollector *fc;
-    vmaf_feature_collector_init(&fc);
+    err |= vmaf_feature_collector_init(&fc);
+    mu_assert("test_16b_large_diff vmaf_feature_collector_init error", !err);
     PsnrState psnr_state = {
         .enable_chroma = 1,
         .enable_mse = 1,
@@ -60,17 +65,18 @@ static char *test_16b_large_diff()
         .peak = 65535,
     };
 
-    int err = psnr_hbd(&pic1, &pic2, 0, fc, &psnr_state);
+    err |= psnr_hbd(&pic1, &pic2, 0, fc, &psnr_state);
     mu_assert("failed psnr_hbd", err == 0);
 
     double psnr_y, psnr_cb, psnr_cr;
-    vmaf_feature_collector_get_score(fc, "psnr_y", &psnr_y, 0);
-    vmaf_feature_collector_get_score(fc, "psnr_cb", &psnr_cb, 0);
-    vmaf_feature_collector_get_score(fc, "psnr_cr", &psnr_cr, 0);
+    err |= vmaf_feature_collector_get_score(fc, "psnr_y", &psnr_y, 0);
+    err |= vmaf_feature_collector_get_score(fc, "psnr_cb", &psnr_cb, 0);
+    err |= vmaf_feature_collector_get_score(fc, "psnr_cr", &psnr_cr, 0);
     double mse_y, mse_cb, mse_cr;
-    vmaf_feature_collector_get_score(fc, "mse_y", &mse_y, 0);
-    vmaf_feature_collector_get_score(fc, "mse_cb", &mse_cb, 0);
-    vmaf_feature_collector_get_score(fc, "mse_cr", &mse_cr, 0);
+    err |= vmaf_feature_collector_get_score(fc, "mse_y", &mse_y, 0);
+    err |= vmaf_feature_collector_get_score(fc, "mse_cb", &mse_cb, 0);
+    err |= vmaf_feature_collector_get_score(fc, "mse_cr", &mse_cr, 0);
+    mu_assert("test_16b_large_diff vmaf_feature_collector_get_score error", !err);
 
     mu_assert("wrong psnr_y", almost_equal(psnr_y, 0.0));
     mu_assert("wrong psnr_cb", almost_equal(psnr_cb, 0.0));
