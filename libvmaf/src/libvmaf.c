@@ -56,6 +56,7 @@ typedef struct VmafContext {
     RegisteredFeatureExtractors registered_feature_extractors;
     VmafFeatureExtractorContextPool *fex_ctx_pool;
     VmafThreadPool *thread_pool;
+    VmafFrameSyncContext *framesync;
 #ifdef HAVE_CUDA
     struct {
         struct {
@@ -99,8 +100,10 @@ int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
 
     vmaf_set_log_level(cfg.log_level);
 
-    err = vmaf_feature_collector_init(&(v->feature_collector));
+    err = vmaf_framesync_init(&(v->framesync));
     if (err) goto free_v;
+    err = vmaf_feature_collector_init(&(v->feature_collector));
+    if (err) goto free_framesync;
     err = feature_extractor_vector_init(&(v->registered_feature_extractors));
     if (err) goto free_feature_collector;
 
@@ -119,6 +122,8 @@ free_feature_extractor_vector:
     feature_extractor_vector_destroy(&(v->registered_feature_extractors));
 free_feature_collector:
     vmaf_feature_collector_destroy(v->feature_collector);
+free_framesync:
+    vmaf_framesync_destroy(v->framesync);
 free_v:
     free(v);
 fail:
@@ -235,11 +240,20 @@ static int set_fex_cuda_state(VmafFeatureExtractorContext *fex_ctx,
 
 #endif
 
+static int set_fex_framesync(VmafFeatureExtractorContext *fex_ctx,
+                              VmafContext *vmaf)
+{
+    if (fex_ctx->fex->flags & VMAF_FEATURE_FRAME_SYNC)
+        fex_ctx->fex->framesync = (vmaf->framesync);
+    return 0;
+}
+
 int vmaf_close(VmafContext *vmaf)
 {
     if (!vmaf) return -EINVAL;
 
     vmaf_thread_pool_wait(vmaf->thread_pool);
+    vmaf_framesync_destroy(vmaf->framesync);
     feature_extractor_vector_destroy(&(vmaf->registered_feature_extractors));
     vmaf_feature_collector_destroy(vmaf->feature_collector);
     vmaf_thread_pool_destroy(vmaf->thread_pool);
@@ -292,6 +306,7 @@ int vmaf_use_feature(VmafContext *vmaf, const char *feature_name,
 #ifdef HAVE_CUDA
     err |= set_fex_cuda_state(fex_ctx, vmaf);
 #endif
+    err |= set_fex_framesync(fex_ctx, vmaf);
     if (err) return err;
 
     RegisteredFeatureExtractors *rfe = &(vmaf->registered_feature_extractors);
@@ -339,6 +354,7 @@ int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model)
 #ifdef HAVE_CUDA
         err |= set_fex_cuda_state(fex_ctx, vmaf);
 #endif
+        err |= set_fex_framesync(fex_ctx, vmaf);
         if (err) return err;
         err = feature_extractor_vector_append(rfe, fex_ctx, 0);
         if (err) {
@@ -405,6 +421,7 @@ static int threaded_read_pictures(VmafContext *vmaf, VmafPicture *ref,
             continue;
         }
 
+        fex->framesync = vmaf->framesync;
         VmafFeatureExtractorContext *fex_ctx;
         err = vmaf_fex_ctx_pool_aquire(vmaf->fex_ctx_pool, fex, opts_dict,
                                        &fex_ctx);

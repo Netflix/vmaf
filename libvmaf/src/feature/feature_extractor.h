@@ -24,6 +24,7 @@
 #include <stdlib.h>
 
 #include "dict.h"
+#include "framesync.h"
 #include "feature_collector.h"
 #include "opt.h"
 
@@ -36,6 +37,7 @@
 enum VmafFeatureExtractorFlags {
     VMAF_FEATURE_EXTRACTOR_TEMPORAL = 1 << 0,
     VMAF_FEATURE_EXTRACTOR_CUDA = 1 << 1,
+    VMAF_FEATURE_FRAME_SYNC = 1 << 2,
 };
 
 typedef struct VmafFeatureExtractor {
@@ -93,6 +95,8 @@ typedef struct VmafFeatureExtractor {
     #ifdef HAVE_CUDA
     VmafCudaState *cu_state; ///< VmafCudaState, set by framework
     #endif
+
+    VmafFrameSyncContext *framesync;
 
 } VmafFeatureExtractor;
 
