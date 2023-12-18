@@ -27,7 +27,7 @@ Ninja package name might be `ninja` or `ninja-build`, depending on your system. 
 Run:
 
 ```
-meson build --buildtype release
+meson setup build --buildtype release
 ```
 
 Special cases:
