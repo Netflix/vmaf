@@ -23,8 +23,11 @@
 #include "cli_parse.h"
 
 static int cli_free_dicts(CLISettings *settings) {
-    for (int i = 0; i < settings->feature_cnt; i++)
-        vmaf_feature_dictionary_free(&(settings->feature_cfg[i].opts_dict));
+    for (unsigned i = 0; i < settings->feature_cnt; i++) {
+        int err = vmaf_feature_dictionary_free(&(settings->feature_cfg[i].opts_dict));
+        if (err) return err;
+    }
+    return 0;
 }
 
 static char *test_aom_ctc_v1_0()
