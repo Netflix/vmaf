@@ -61,8 +61,8 @@ jobs:
         id: get_info
         run: |
           ldd "$MINGW_PREFIX/bin/vmaf.exe" || true
-          echo "::set-output name=path::$(cygpath -m "$(command -v vmaf)")"
-          echo "::set-output name=upload_url::$(curl -L https://api.github.com/repos/${{ github.repository }}/releases/tags/$(cut -d/ -f3 <<< ${{ github.ref }}) | jq -r ."upload_url")"
+          echo "{path}={$(cygpath -m "$(command -v vmaf)")}" >> $GITHUB_OUTPUT
+          echo "{upload_url}={$(curl -L https://api.github.com/repos/${{ github.repository }}/releases/tags/$(cut -d/ -f3 <<< ${{ github.ref }}) | jq -r ."upload_url")}" >> $GITHUB_OUTPUT
 
       - name: Upload vmaf
         uses: actions/upload-artifact@v3
