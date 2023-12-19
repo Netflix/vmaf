@@ -1,10 +1,10 @@
 # VMAF - Video Multi-Method Assessment Fusion
 
 [![Build Status](https://travis-ci.com/Netflix/vmaf.svg?branch=master)](https://travis-ci.com/Netflix/vmaf)
-[![libvmaf](https://github.com/Netflix/vmaf/workflows/libvmaf/badge.svg)](https://github.com/Netflix/vmaf/actions?query=workflow%3Alibvmaf)
-[![Windows](https://github.com/Netflix/vmaf/workflows/Windows/badge.svg)](https://github.com/Netflix/vmaf/actions?query=workflow%3AWindows)
-[![ffmpeg](https://github.com/Netflix/vmaf/workflows/ffmpeg/badge.svg)](https://github.com/Netflix/vmaf/actions?query=workflow%3Affmpeg)
-[![Docker](https://github.com/Netflix/vmaf/workflows/Docker/badge.svg)](https://github.com/Netflix/vmaf/actions?query=workflow%3ADocker)
+[![libvmaf](https://github.com/Netflix/vmaf/actions/workflows/libvmaf.yml/badge.svg)](https://github.com/Netflix/vmaf/actions/workflows/libvmaf.yml)
+[![Windows](https://github.com/Netflix/vmaf/actions/workflows/windows.yml/badge.svg)](https://github.com/Netflix/vmaf/actions/workflows/windows.yml)
+[![ffmpeg](https://github.com/Netflix/vmaf/actions/workflows/ffmpeg.yml/badge.svg)](https://github.com/Netflix/vmaf/actions/workflows/ffmpeg.yml)
+[![Docker](https://github.com/Netflix/vmaf/actions/workflows/docker.yml/badge.svg)](https://github.com/Netflix/vmaf/actions/workflows/docker.yml)
 
 VMAF is an [Emmy-winning](https://theemmys.tv/) perceptual video quality assessment algorithm developed by Netflix. This software package includes a stand-alone C library `libvmaf` and its wrapping Python library. The Python library also provides a set of tools that allows a user to train and test a custom VMAF model.
 
@@ -16,6 +16,7 @@ Also included in `libvmaf` are implementations of several other metrics: PSNR, P
 
 ## News
 
+- (2023-12-07) We are releasing `libvmaf v3.0.0`. It contains several optimizations and bug fixes, and a full removal of the APIs which were deprecated in `v2.0.0`.
 - (2021-12-15) We have added to CAMBI the `full_ref` input parameter to allow running CAMBI as a full-reference metric, taking into account the banding that was already present on the source. Check out the [usage](resource/doc/cambi.md) page.
 - (2021-12-1) We have added to CAMBI the `max_log_contrast` input parameter to allow to capture banding with higher contrasts than the default. We have also sped up CAMBI (e.g., around 4.5x for 4k). Check out the [usage](resource/doc/cambi.md) page.
 - (2021-10-7) We are open-sourcing CAMBI (Contrast Aware Multiscale Banding Index) - Netflix's detector for banding (aka contouring) artifacts. Check out the [tech blog](https://netflixtechblog.medium.com/cambi-a-banding-artifact-detector-96777ae12fe2) for an overview and the [technical paper](resource/doc/papers/CAMBI_PCS2021.pdf) published in PCS 2021 (note that the paper describes an initial version of CAMBI that no longer matches the code exactly, but it is still a good introduction). Also check out the [usage](resource/doc/cambi.md) page.

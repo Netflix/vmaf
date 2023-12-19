@@ -52,7 +52,7 @@
 /* EOTF to use for the visibility threshold calculations. One of ['bt1886', 'pq']. Default: 'bt1886'. */
 #define DEFAULT_CAMBI_EOTF ("bt1886")
 
-#define CAMBI_MIN_WIDTH_HEIGHT (320)
+#define CAMBI_MIN_WIDTH_HEIGHT (216)
 #define CAMBI_4K_WIDTH (3840)
 #define CAMBI_4K_HEIGHT (2160)
 
