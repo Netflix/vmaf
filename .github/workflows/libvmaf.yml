@@ -87,6 +87,7 @@ jobs:
           ldd "./install/bin/vmaf" || true
           echo "{path}={./install/bin/vmaf}" >> $GITHUB_OUTPUT
           echo "{upload_url}={$(curl -L https://api.github.com/repos/${{ github.repository }}/releases/tags/$(cut -d/ -f3 <<< ${{ github.ref }}) | jq -r ."upload_url")}" >> $GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
 
       - name: Upload vmaf
         uses: actions/upload-artifact@v3
