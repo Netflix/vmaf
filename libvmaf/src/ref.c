@@ -31,14 +31,14 @@ int vmaf_ref_init(VmafRef **ref)
     return 0;
 }
 
-void vmaf_ref_fetch_increment(VmafRef *ref)
+long  vmaf_ref_fetch_increment(VmafRef* ref)
 {
-    atomic_fetch_add(&ref->cnt, 1);
+    return atomic_fetch_add(&ref->cnt, 1);
 }
 
-void vmaf_ref_fetch_decrement(VmafRef *ref)
+long  vmaf_ref_fetch_decrement(VmafRef* ref)
 {
-    atomic_fetch_sub(&ref->cnt, 1);
+    return atomic_fetch_sub(&ref->cnt, 1);
 }
 
 long vmaf_ref_load(VmafRef *ref)
