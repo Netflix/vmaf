@@ -131,9 +131,9 @@ char *vmaf_model_generate_name(VmafModelConfig *cfg)
     memset(name, 0, name_sz);
 
     if (!cfg->name)
-        strncpy(name, default_name, name_sz);
+        strcpy(name, default_name);
     else
-        strncpy(name, cfg->name, name_sz);
+        strcpy(name, cfg->name);
 
     return name;
 }
