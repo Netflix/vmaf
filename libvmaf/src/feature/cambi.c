@@ -23,6 +23,7 @@
 #include "common/macros.h"
 #include "cpu.h"
 #include "feature_collector.h"
+#include "framesync.h"
 #include "feature_extractor.h"
 #include "log.h"
 #include "luminance_tools.h"
@@ -1080,7 +1081,8 @@ static double combine_dist_src_scores(double dist_score, double src_score) {
 static int extract(VmafFeatureExtractor *fex,
                    VmafPicture *ref_pic, VmafPicture *ref_pic_90,
                    VmafPicture *dist_pic, VmafPicture *dist_pic_90,
-                   unsigned index, VmafFeatureCollector *feature_collector) {
+                   unsigned index, VmafFeatureCollector *feature_collector,
+				   VmafFrameSyncContext *framesync) {
     (void)ref_pic_90;
     (void)dist_pic_90;
 

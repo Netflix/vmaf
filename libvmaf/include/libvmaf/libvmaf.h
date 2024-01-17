@@ -30,6 +30,8 @@
 extern "C" {
 #endif
 
+#define MAX_VMAF_THREADS  8 // default maximum threads
+
 enum VmafLogLevel {
     VMAF_LOG_LEVEL_NONE = 0,
     VMAF_LOG_LEVEL_ERROR,

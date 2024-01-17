@@ -7,6 +7,7 @@
 #include <libvmaf/model.h>
 
 #include "config.h"
+#include "framesync.h"
 #include "feature/feature_extractor.h"
 #include "log.h"
 #include "model.h"

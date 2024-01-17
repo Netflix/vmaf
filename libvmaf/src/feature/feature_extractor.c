@@ -22,6 +22,7 @@
 #include <stdlib.h>
 
 #include "config.h"
+#include "framesync.h"
 #include "feature_extractor.h"
 #include "feature_name.h"
 #include "log.h"
@@ -187,7 +188,8 @@ int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
                                            VmafPicture *ref, VmafPicture *ref_90,
                                            VmafPicture *dist, VmafPicture *dist_90,
                                            unsigned pic_index,
-                                           VmafFeatureCollector *vfc)
+                                           VmafFeatureCollector *vfc,
+										   VmafFrameSyncContext *framesync)
 {
     if (!fex_ctx) return -EINVAL;
     if (!ref) return -EINVAL;
@@ -224,7 +226,7 @@ int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
     }
 
     int err = fex_ctx->fex->extract(fex_ctx->fex, ref, ref_90, dist, dist_90,
-                                    pic_index, vfc);
+                                    pic_index, vfc, framesync);
     if (err) {
         vmaf_log(VMAF_LOG_LEVEL_WARNING,
                  "problem with feature extractor \"%s\" at index %d\n",

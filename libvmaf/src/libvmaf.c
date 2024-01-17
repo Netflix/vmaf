@@ -30,6 +30,7 @@
 #include "libvmaf/picture.h"
 
 #include "cpu.h"
+#include "framesync.h"
 #include "feature/feature_extractor.h"
 #include "feature/feature_collector.h"
 #include "fex_ctx_vector.h"
@@ -56,6 +57,7 @@ typedef struct VmafContext {
     RegisteredFeatureExtractors registered_feature_extractors;
     VmafFeatureExtractorContextPool *fex_ctx_pool;
     VmafThreadPool *thread_pool;
+	VmafFrameSyncContext *framesync;
 #ifdef HAVE_CUDA
     struct {
         struct {
@@ -87,6 +89,7 @@ typedef struct VmafContext {
 int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
 {
     if (!vmaf) return -EINVAL;
+	if(cfg.n_threads > MAX_VMAF_THREADS) return -EINVAL;
     int err = 0;
 
     VmafContext *const v = *vmaf = malloc(sizeof(*v));
@@ -99,8 +102,10 @@ int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
 
     vmaf_set_log_level(cfg.log_level);
 
+	err = vmaf_framesync_init(&(v->framesync));
+	if (err) goto free_v;
     err = vmaf_feature_collector_init(&(v->feature_collector));
-    if (err) goto free_v;
+    if (err) goto free_framesync;
     err = feature_extractor_vector_init(&(v->registered_feature_extractors));
     if (err) goto free_feature_collector;
 
@@ -119,6 +124,8 @@ free_feature_extractor_vector:
     feature_extractor_vector_destroy(&(v->registered_feature_extractors));
 free_feature_collector:
     vmaf_feature_collector_destroy(v->feature_collector);
+free_framesync:
+	vmaf_framesync_destroy(v->framesync);
 free_v:
     free(v);
 fail:
@@ -240,6 +247,7 @@ int vmaf_close(VmafContext *vmaf)
     if (!vmaf) return -EINVAL;
 
     vmaf_thread_pool_wait(vmaf->thread_pool);
+	vmaf_framesync_destroy(vmaf->framesync);
     feature_extractor_vector_destroy(&(vmaf->registered_feature_extractors));
     vmaf_feature_collector_destroy(vmaf->feature_collector);
     vmaf_thread_pool_destroy(vmaf->thread_pool);
@@ -368,6 +376,7 @@ struct ThreadData {
     unsigned index;
     VmafFeatureCollector *feature_collector;
     VmafFeatureExtractorContextPool *fex_ctx_pool;
+	VmafFrameSyncContext *framesync;
     int err;
 };
 
@@ -376,7 +385,8 @@ static void threaded_extract_func(void *e)
     struct ThreadData *f = e;
     f->err = vmaf_feature_extractor_context_extract(f->fex_ctx, &f->ref, NULL,
                                                     &f->dist, NULL, f->index,
-                                                    f->feature_collector);
+                                                    f->feature_collector,
+													f->framesync);
     f->err = vmaf_fex_ctx_pool_release(f->fex_ctx_pool, f->fex_ctx);
     vmaf_picture_unref(&f->ref);
     vmaf_picture_unref(&f->dist);
@@ -424,6 +434,11 @@ static int threaded_read_pictures(VmafContext *vmaf, VmafPicture *ref,
             .err = 0,
         };
 
+		data.framesync = NULL;
+		if(fex->flags & VMAF_FEATURE_FRAME_SYNC)
+		{
+			data.framesync = vmaf->framesync;
+		}
         err = vmaf_thread_pool_enqueue(vmaf->thread_pool, threaded_extract_func,
                                        &data, sizeof(data));
         if (err) {
@@ -677,9 +692,14 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
             &dist_device : &dist_host;
 #endif
 
+		VmafFrameSyncContext *framesync = NULL;
+		if(fex_ctx->fex->flags & VMAF_FEATURE_FRAME_SYNC)
+		{
+			framesync = vmaf->framesync;
+		}
         err = vmaf_feature_extractor_context_extract(fex_ctx, ref, NULL, dist,
                                                      NULL, index,
-                                                     vmaf->feature_collector);
+                                                     vmaf->feature_collector, framesync);
         if (err) return err;
     }
 

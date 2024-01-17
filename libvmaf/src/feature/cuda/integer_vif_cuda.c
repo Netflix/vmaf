@@ -25,6 +25,7 @@
 #include "cpu.h"
 #include "common/macros.h"
 #include "feature_collector.h"
+#include "framesync.h"
 #include "feature_extractor.h"
 #include "feature_name.h"
 #include "mem.h"

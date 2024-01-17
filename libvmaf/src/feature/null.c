@@ -15,7 +15,7 @@
  *     limitations under the License.
  *
  */
-
+#include "framesync.h"
 #include "feature_extractor.h"
 
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
@@ -33,7 +33,8 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 static int extract(VmafFeatureExtractor *fex,
                    VmafPicture *ref_pic, VmafPicture *ref_pic_90,
                    VmafPicture *dist_pic, VmafPicture *dist_pic_90,
-                   unsigned index, VmafFeatureCollector *feature_collector)
+                   unsigned index, VmafFeatureCollector *feature_collector,
+				   VmafFrameSyncContext *framesync)
 {
     (void) fex;
     (void) ref_pic;

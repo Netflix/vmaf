@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <string.h>
 
+#include "framesync.h"
 #include "feature/feature_extractor.h"
 #include "feature/feature_name.h"
 #include "fex_ctx_vector.h"

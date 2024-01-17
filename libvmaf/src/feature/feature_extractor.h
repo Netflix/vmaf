@@ -36,6 +36,7 @@
 enum VmafFeatureExtractorFlags {
     VMAF_FEATURE_EXTRACTOR_TEMPORAL = 1 << 0,
     VMAF_FEATURE_EXTRACTOR_CUDA = 1 << 1,
+	VMAF_FEATURE_FRAME_SYNC         = 1 << 2
 };
 
 typedef struct VmafFeatureExtractor {
@@ -68,7 +69,8 @@ typedef struct VmafFeatureExtractor {
     int (*extract)(struct VmafFeatureExtractor *fex,
                    VmafPicture *ref_pic, VmafPicture *ref_pic_90,
                    VmafPicture *dist_pic, VmafPicture *dist_pic_90,
-                   unsigned index, VmafFeatureCollector *feature_collector);
+                   unsigned index, VmafFeatureCollector *feature_collector,
+				   VmafFrameSyncContext *framesync);
     /**
      * Buffer flush callback. Optional.
      * Called only when the VMAF_FEATURE_EXTRACTOR_TEMPORAL flag is set.
@@ -122,7 +124,8 @@ int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
                                            VmafPicture *ref, VmafPicture *ref_90,
                                            VmafPicture *dist, VmafPicture *dist_90,
                                            unsigned pic_index,
-                                           VmafFeatureCollector *vfc);
+                                           VmafFeatureCollector *vfc,
+										   VmafFrameSyncContext *framesync);
 
 int vmaf_feature_extractor_context_flush(VmafFeatureExtractorContext *fex_ctx,
                                          VmafFeatureCollector *vfc);

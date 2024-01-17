@@ -19,6 +19,7 @@
 #include "cpu.h"
 #include "dict.h"
 #include "feature_collector.h"
+#include "framesync.h"
 #include "feature_extractor.h"
 #include "feature_name.h"
 #include "integer_adm.h"
@@ -2661,7 +2662,8 @@ fail:
 static int extract(VmafFeatureExtractor *fex,
                    VmafPicture *ref_pic, VmafPicture *ref_pic_90,
                    VmafPicture *dist_pic, VmafPicture *dist_pic_90,
-                   unsigned index, VmafFeatureCollector *feature_collector)
+                   unsigned index, VmafFeatureCollector *feature_collector,
+				   VmafFrameSyncContext *framesync)
 {
     AdmState *s = fex->priv;
     int err = 0;

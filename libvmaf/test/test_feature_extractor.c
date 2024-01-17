@@ -21,6 +21,7 @@
 
 #include "config.h"
 #include "dict.h"
+#include "framesync.h"
 #include "feature/feature_extractor.h"
 #include "feature/feature_collector.h"
 #include "test.h"
@@ -108,13 +109,13 @@ static char *test_feature_extractor_flush()
 
     double score;
     err = vmaf_feature_extractor_context_extract(fex_ctx, &ref, NULL, &dist,
-                                                 NULL, 0, vfc);
+                                                 NULL, 0, vfc, NULL);
     mu_assert("problem during vmaf_feature_extractor_context_extract", !err);
     err = vmaf_feature_collector_get_score(vfc, "VMAF_integer_feature_motion2_score",
                                            &score, 0);
     mu_assert("problem during vmaf_feature_collector_get_score", !err);
     err = vmaf_feature_extractor_context_extract(fex_ctx, &ref, NULL, &dist,
-                                                 NULL, 1, vfc);
+                                                 NULL, 1, vfc, NULL);
     mu_assert("problem during vmaf_feature_extractor_context_extract", !err);
     err = vmaf_feature_collector_get_score(vfc, "VMAF_integer_feature_motion2_score",
                                            &score, 0);
@@ -165,7 +166,7 @@ static char *test_feature_extractor_initialization_options()
     mu_assert("problem during vmaf_feature_collector_init", !err);
 
     err = vmaf_feature_extractor_context_extract(fex_ctx, &ref, NULL, &dist,
-                                                 NULL, 0, vfc);
+                                                 NULL, 0, vfc, NULL);
     mu_assert("problem during vmaf_feature_extractor_context_extract", !err);
 
     double score;
