@@ -26,156 +26,193 @@
 
 int vmaf_framesync_init(VmafFrameSyncContext **fs_ctx)
 {
-	VmafFrameSyncContext *const ctx = *fs_ctx = malloc(sizeof(VmafFrameSyncContext));
+    VmafFrameSyncContext *const ctx = *fs_ctx = malloc(sizeof(VmafFrameSyncContext));
     if (!ctx) return -ENOMEM;
     memset(ctx, 0, sizeof(VmafFrameSyncContext));
-    ctx->buf_cnt = MAX_FRAME_SYNC_BUF_Q_LEN;
-	
-	pthread_mutex_init(&(ctx->aquire_lock), NULL);
-	pthread_mutex_init(&(ctx->retrive_lock), NULL);
-    pthread_cond_init(&(ctx->aquire), NULL);
+    ctx->buf_cnt = 1;
+    
+    pthread_mutex_init(&(ctx->aquire_lock), NULL);
+    pthread_mutex_init(&(ctx->retrive_lock), NULL);
     pthread_cond_init(&(ctx->retrive), NULL);
-	
-	VmafFrameSyncBuff *buf_que = ctx->buf_que;
-	
-	for (unsigned i = 0; i < ctx->buf_cnt; i++) {
-        buf_que[i].frame_data = NULL;
-		buf_que[i].buf_status = BUFF_FREE;
-		buf_que[i].index = -1;
-	}
-	
+    
+    VmafFrameSyncBuff *buf_que = ctx->buf_que = malloc(sizeof(VmafFrameSyncBuff));
+    
+    /* initialise 1st node */
+    {
+        buf_que->frame_data = NULL;
+        buf_que->buf_status = BUFF_FREE;
+        buf_que->index = -1;
+        buf_que->next  = NULL;
+    }
+    
     return 0;
 }
 
 int vmaf_framesync_aquire_new_buf(VmafFrameSyncContext *fs_ctx, void **data, unsigned data_sz, unsigned index)
 {
-	VmafFrameSyncBuff *buf_que = fs_ctx->buf_que;
-	*data = NULL;
-	
+    VmafFrameSyncBuff *buf_que = fs_ctx->buf_que;
+    *data = NULL;
     
-	while (*data == NULL)
-	{
-		pthread_mutex_lock(&(fs_ctx->aquire_lock));
-		/* loop unitl a free buffer is found */
-		for (unsigned i = 0; i < fs_ctx->buf_cnt; i++)
-		{
-			if(buf_que[i].buf_status == BUFF_FREE)
-			{
-				buf_que[i].buf_status = BUFF_AQUIRED;
-				buf_que[i].index = index;
-				buf_que[i].frame_data = *data = malloc(data_sz);
-				if (!buf_que[i].frame_data) return -ENOMEM;
-				break;
-			}
-		}  
-		
-		// check for successful new buffer allocation
-		if(*data == NULL)
-		{
-			pthread_cond_wait(&(fs_ctx->aquire), &(fs_ctx->aquire_lock));
-		}
-		pthread_mutex_unlock(&(fs_ctx->aquire_lock));
-	}    
-	
-	return 0;
+    pthread_mutex_lock(&(fs_ctx->aquire_lock));
+    
+    /* traverse unitl a free buffer is found */
+        for (unsigned i = 0; i < fs_ctx->buf_cnt; i++)
+        {
+            if(buf_que->buf_status == BUFF_FREE)
+            {
+            buf_que->frame_data = *data = malloc(data_sz);
+            if (!buf_que->frame_data) return -ENOMEM;
+            buf_que->buf_status = BUFF_AQUIRED;
+            buf_que->index = index;
+                break;
+            }
+        /* move to next node */
+        if(NULL != buf_que->next)
+            buf_que = buf_que->next;
+    }
+
+    /* create a new node if all nodes are occupied in the list and append to the tail */
+    if(*data == NULL)
+    {
+        VmafFrameSyncBuff *new_buf_node = malloc(sizeof(VmafFrameSyncBuff));
+        buf_que->next = new_buf_node;
+        new_buf_node->buf_status = BUFF_FREE;
+        new_buf_node->index = -1;
+        new_buf_node->next = NULL;
+        fs_ctx->buf_cnt++;    
+        
+        new_buf_node->frame_data = *data = malloc(data_sz);
+        if (!new_buf_node->frame_data) return -ENOMEM;
+        new_buf_node->buf_status = BUFF_AQUIRED;
+        new_buf_node->index = index;		
+        }  
+        
+        pthread_mutex_unlock(&(fs_ctx->aquire_lock));
+    
+    return 0;
 }
 
 int vmaf_framesync_submit_filled_data(VmafFrameSyncContext *fs_ctx, void *data, unsigned index)
 {
-	VmafFrameSyncBuff *buf_que = fs_ctx->buf_que;
-	
-	pthread_mutex_lock(&(fs_ctx->retrive_lock));
-	/* loop unitl a matchng buffer is found */
-	for (unsigned i = 0; i < fs_ctx->buf_cnt; i++)
-	{
-		if((buf_que[i].index == index) && (buf_que[i].buf_status == BUFF_AQUIRED))
-		{
-			buf_que[i].buf_status = BUFF_FILLED;
-			if (data != buf_que[i].frame_data){
-				return -1;
-			}
-			break;
-		}
-	} 
+    VmafFrameSyncBuff *buf_que = fs_ctx->buf_que;
+    
+    pthread_mutex_lock(&(fs_ctx->retrive_lock));
+    /* loop unitl a matchng buffer is found */
+    for (unsigned i = 0; i < fs_ctx->buf_cnt; i++)
+    {
+        if((buf_que->index == index) && (buf_que->buf_status == BUFF_AQUIRED))
+        {
+            buf_que->buf_status = BUFF_FILLED;
+            if (data != buf_que->frame_data){
+                return -1;
+            }
+            break;
+        }
+        
+        /* move to next node */
+        if(NULL != buf_que->next)
+            buf_que = buf_que->next;
+    } 
 
-	pthread_cond_broadcast(&(fs_ctx->retrive));	
-	pthread_mutex_unlock(&(fs_ctx->retrive_lock));
-	
+    pthread_cond_broadcast(&(fs_ctx->retrive));	
+    pthread_mutex_unlock(&(fs_ctx->retrive_lock));
+    
     return 0;
 }
 
 int vmaf_framesync_retrive_filled_data(VmafFrameSyncContext *fs_ctx, void **data, unsigned index)
 {
     VmafFrameSyncBuff *buf_que = fs_ctx->buf_que;
-	*data = NULL;
-	    
-	while (*data == NULL)
-	{
-		pthread_mutex_lock(&(fs_ctx->retrive_lock));
-		/* loop unitl a free buffer is found */
-		for (unsigned i = 0; i < fs_ctx->buf_cnt; i++)
-		{
-			if((buf_que[i].index == index) && (buf_que[i].buf_status == BUFF_FILLED))
-			{
-				buf_que[i].buf_status = BUFF_RETRIVED;
-				*data = buf_que[i].frame_data;
-				break;
-			}
-		}  
-		
-		if(*data == NULL)
-		{
-			pthread_cond_wait(&(fs_ctx->retrive), &(fs_ctx->retrive_lock));
-		}
-		pthread_mutex_unlock(&(fs_ctx->retrive_lock));
-	}    
-	
+    *data = NULL;
+        
+    while (*data == NULL)
+    {
+        pthread_mutex_lock(&(fs_ctx->retrive_lock));
+        /* loop unitl a free buffer is found */
+        for (unsigned i = 0; i < fs_ctx->buf_cnt; i++)
+        {
+            if((buf_que->index == index) && (buf_que->buf_status == BUFF_FILLED))
+            {
+                buf_que->buf_status = BUFF_RETRIVED;
+                *data = buf_que->frame_data;
+                break;
+            }
+            
+            /* move to next node */
+            if(NULL != buf_que->next)
+                buf_que = buf_que->next;
+        }  
+        
+        if(*data == NULL)
+        {
+            pthread_cond_wait(&(fs_ctx->retrive), &(fs_ctx->retrive_lock));
+        }
+        pthread_mutex_unlock(&(fs_ctx->retrive_lock));
+    }    
+    
     return 0;
 }
 
 int vmaf_framesync_release_buf(VmafFrameSyncContext *fs_ctx, void *data, unsigned index)
 {
-	VmafFrameSyncBuff *buf_que = fs_ctx->buf_que;
-	
-	pthread_mutex_lock(&(fs_ctx->aquire_lock));
-	/* loop unitl a matchng buffer is found */
-	for (unsigned i = 0; i < fs_ctx->buf_cnt; i++)
-	{
-		if((buf_que[i].index == index) && (buf_que[i].buf_status == BUFF_RETRIVED))
-		{
-			if (data != buf_que[i].frame_data){
-				return -1;
-			}
-			free(buf_que[i].frame_data);
-			buf_que[i].frame_data = NULL;
-			buf_que[i].buf_status = BUFF_FREE;
-			buf_que[i].index = -1;
-			break;
-		}
-	} 
+    VmafFrameSyncBuff *buf_que = fs_ctx->buf_que;
+    
+    pthread_mutex_lock(&(fs_ctx->aquire_lock));
+    /* loop unitl a matchng buffer is found */
+    for (unsigned i = 0; i < fs_ctx->buf_cnt; i++)
+    {
+        if((buf_que->index == index) && (buf_que->buf_status == BUFF_RETRIVED))
+        {
+            if (data != buf_que->frame_data){
+                return -1;
+            }
+            free(buf_que->frame_data);
+            buf_que->frame_data = NULL;
+            buf_que->buf_status = BUFF_FREE;
+            buf_que->index = -1;
+            break;
+        }
+        
+        /* move to next node */
+        if(NULL != buf_que->next)
+            buf_que = buf_que->next;
+    } 
 
-	pthread_cond_broadcast(&(fs_ctx->aquire));
-	pthread_mutex_unlock(&(fs_ctx->aquire_lock));
+    pthread_mutex_unlock(&(fs_ctx->aquire_lock));
     return 0;
 }
 
 int vmaf_framesync_destroy(VmafFrameSyncContext *fs_ctx)
 {
-	pthread_mutex_destroy(&(fs_ctx->aquire_lock));
-	pthread_mutex_destroy(&(fs_ctx->retrive_lock));
-    pthread_cond_destroy(&(fs_ctx->aquire));
+    VmafFrameSyncBuff *buf_que = fs_ctx->buf_que;
+    VmafFrameSyncBuff *buf_que_tmp;
+    
+    pthread_mutex_destroy(&(fs_ctx->aquire_lock));
+    pthread_mutex_destroy(&(fs_ctx->retrive_lock));
     pthread_cond_destroy(&(fs_ctx->retrive));
-	
-	//check for any data buffers which are not freed
-	for (unsigned i = 0; i < fs_ctx->buf_cnt; i++) {
-		if(NULL != fs_ctx->buf_que[i].frame_data)
-		{
-			free(fs_ctx->buf_que[i].frame_data);
-			fs_ctx->buf_que[i].frame_data = NULL;
-		}
-	}
-		
-	free(fs_ctx);
-	
+    
+    //check for any data buffers which are not freed
+    for (unsigned i = 0; i < fs_ctx->buf_cnt; i++)
+    {
+        if(NULL != buf_que->frame_data)
+        {
+            free(buf_que->frame_data);
+            buf_que->frame_data = NULL;
+        }
+        
+        /* move to next node */
+        if(NULL != buf_que->next)
+        {
+            buf_que_tmp = buf_que;
+            buf_que = buf_que->next;
+            free(buf_que_tmp);
+        }
+        else{
+            free(buf_que);
+        }
+    }
+        
+    free(fs_ctx);
+    
     return 0;
 }

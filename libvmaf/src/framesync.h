@@ -24,12 +24,6 @@
 #include <stdlib.h>
 #include "libvmaf/libvmaf.h"
 
-
-// defined based on maximum temporal dependency across all feature extractors
-// Motion score and STRRED features have dependency on previous frame. Dep is set to 1
-#define MAX_TEMPORAL_DEP 1 
-#define MAX_FRAME_SYNC_BUF_Q_LEN (MAX_VMAF_THREADS + MAX_TEMPORAL_DEP)
-
 typedef enum
 {
     BUFF_FREE = 0,
@@ -38,18 +32,20 @@ typedef enum
     BUFF_RETRIVED,
 } BUFF_STATUS_T;
 
-typedef struct VmafFrameSyncBuff {
+typedef struct VmafFrameSyncBuff VmafFrameSyncBuff;
+
+struct VmafFrameSyncBuff {
     void          *frame_data;	
-	unsigned      buf_status; //BUFF_STATUS_T
+    unsigned      buf_status; //BUFF_STATUS_T
     signed long   index;	    
-} VmafFrameSyncBuff;
+    VmafFrameSyncBuff *next;    
+};
 
 typedef struct VmafFrameSyncContext {
-  	VmafFrameSyncBuff buf_que[MAX_FRAME_SYNC_BUF_Q_LEN];
-	pthread_mutex_t aquire_lock;
-    pthread_cond_t  aquire;
-	pthread_mutex_t retrive_lock;
-	pthread_cond_t  retrive;
+    VmafFrameSyncBuff *buf_que; // linked list
+    pthread_mutex_t aquire_lock;
+    pthread_mutex_t retrive_lock;
+    pthread_cond_t  retrive;
     unsigned        buf_cnt;    
 } VmafFrameSyncContext; 
 

@@ -22,7 +22,6 @@
 #include <stdlib.h>
 
 #include "config.h"
-#include "framesync.h"
 #include "feature_extractor.h"
 #include "feature_name.h"
 #include "log.h"
@@ -188,8 +187,7 @@ int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
                                            VmafPicture *ref, VmafPicture *ref_90,
                                            VmafPicture *dist, VmafPicture *dist_90,
                                            unsigned pic_index,
-                                           VmafFeatureCollector *vfc,
-										   VmafFrameSyncContext *framesync)
+                                           VmafFeatureCollector *vfc)
 {
     if (!fex_ctx) return -EINVAL;
     if (!ref) return -EINVAL;
@@ -226,7 +224,7 @@ int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
     }
 
     int err = fex_ctx->fex->extract(fex_ctx->fex, ref, ref_90, dist, dist_90,
-                                    pic_index, vfc, framesync);
+                                    pic_index, vfc);
     if (err) {
         vmaf_log(VMAF_LOG_LEVEL_WARNING,
                  "problem with feature extractor \"%s\" at index %d\n",
@@ -388,6 +386,8 @@ int vmaf_fex_ctx_pool_aquire(VmafFeatureExtractorContextPool *pool,
             }
             err = vmaf_feature_extractor_context_create(&f, entry->fex, d);
             if (err) goto unlock;
+            if (f->fex->flags & VMAF_FEATURE_FRAME_SYNC)
+                f->fex->framesync = (fex->framesync);
         }
         if (!entry->ctx_list[i].in_use) {
             entry->ctx_list[i].fex_ctx = *fex_ctx = f;

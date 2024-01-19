@@ -22,7 +22,6 @@
 
 #include "common/convolution.h"
 #include "feature_collector.h"
-#include "framesync.h"
 #include "feature_extractor.h"
 #include "feature_name.h"
 #include "mem.h"
@@ -119,8 +118,7 @@ static int flush(VmafFeatureExtractor *fex,
 static int extract(VmafFeatureExtractor *fex,
                    VmafPicture *ref_pic, VmafPicture *ref_pic_90,
                    VmafPicture *dist_pic, VmafPicture *dist_pic_90,
-                   unsigned index, VmafFeatureCollector *feature_collector,
-				   VmafFrameSyncContext *framesync)
+                   unsigned index, VmafFeatureCollector *feature_collector)
 {
     MotionState *s = fex->priv;
     int err = 0;

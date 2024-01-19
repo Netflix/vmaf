@@ -48,7 +48,6 @@ SOFTWARE.
 #include <string.h>
 
 #include "feature_collector.h"
-#include "framesync.h"
 #include "feature_extractor.h"
 #include "mem.h"
 #include "opt.h"
@@ -311,8 +310,7 @@ static LABColor get_lab_color(double y, double u, double v, unsigned bpc)
 static int extract(VmafFeatureExtractor *fex,
                    VmafPicture *ref_pic, VmafPicture *ref_pic_90,
                    VmafPicture *dist_pic, VmafPicture *dist_pic_90,
-                   unsigned index, VmafFeatureCollector *feature_collector,
-				   VmafFrameSyncContext *framesync)
+                   unsigned index, VmafFeatureCollector *feature_collector)
 {
     CiedeState *s = fex->priv;
     (void) ref_pic_90;

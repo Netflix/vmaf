@@ -29,7 +29,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 
 #include "feature_collector.h"
-#include "framesync.h"
 #include "feature_extractor.h"
 
 #define KERNEL_SHIFT (8)
@@ -206,8 +205,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 static int extract(VmafFeatureExtractor *fex,
                    VmafPicture *ref_pic, VmafPicture *ref_pic_90,
                    VmafPicture *dist_pic, VmafPicture *dist_pic_90,
-                   unsigned index, VmafFeatureCollector *feature_collector,
-				   VmafFrameSyncContext *framesync)
+                   unsigned index, VmafFeatureCollector *feature_collector)
 {
     (void) ref_pic_90;
     (void) dist_pic_90;

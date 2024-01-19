@@ -32,7 +32,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 
 #include "feature_collector.h"
-#include "framesync.h"
 #include "feature_extractor.h"
 #include "log.h"
 
@@ -368,8 +367,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
                    VmafPicture *ref_pic_90, VmafPicture *dist_pic,
                    VmafPicture *dist_pic_90, unsigned index,
-                   VmafFeatureCollector *feature_collector,
-				   VmafFrameSyncContext *framesync)
+                   VmafFeatureCollector *feature_collector)
 {
     int err = 0;
 

@@ -23,7 +23,6 @@
 #include <string.h>
 
 #include "dict.h"
-#include "framesync.h"
 #include "feature/alias.h"
 #include "feature/feature_collector.h"
 #include "feature/feature_extractor.h"

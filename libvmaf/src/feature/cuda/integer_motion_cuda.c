@@ -24,7 +24,6 @@
 #include "cpu.h"
 #include "common/alignment.h"
 #include "feature_collector.h"
-#include "framesync.h"
 #include "feature_extractor.h"
 #include "feature_name.h"
 #include "cuda/integer_motion_cuda.h"
