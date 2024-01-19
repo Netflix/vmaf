@@ -41,7 +41,7 @@ brew install python3
 Install the remaining dependencies:
 
 ```bash
-brew install nasm doxygen
+brew install nasm doxygen llvm
 ```
 
 Note that `brew` requires no `sudo`.
@@ -75,6 +75,13 @@ Install the rest of the required Python packages:
 ```shell script
 pip3 install -r python/requirements.txt
 ```
+
+On macOS it's important to use the LLVM from homebrew as the macOS clang does not include support for OpenMP, which is needed for libsvm-official
+
+``` shell script
+LLVM_CONFIG=$HOMEBREW_PREFIX/opt/llvm/bin/llvm-config pip install -r ./python/requirements.txt
+```
+
 
 ## Testing
 
