@@ -19,6 +19,7 @@
 #ifndef __VMAF_FRAME_SYNC_H__
 #define __VMAF_FRAME_SYNC_H__
 
+#include <pthread.h>
 #include <stdatomic.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -26,38 +27,38 @@
 
 typedef enum
 {
-    BUFF_FREE = 0,
-    BUFF_AQUIRED,
-    BUFF_FILLED,
-    BUFF_RETRIVED,
-} BUFF_STATUS_T;
+    BUF_FREE = 0,
+    BUF_ACQUIRED,
+    BUF_FILLED,
+    BUF_RETRIEVED,
+} BUF_STATUS_T;
 
-typedef struct VmafFrameSyncBuff VmafFrameSyncBuff;
+typedef struct VmafFrameSyncBuf VmafFrameSyncBuf;
 
-struct VmafFrameSyncBuff {
-    void          *frame_data;	
-    unsigned      buf_status; //BUFF_STATUS_T
-    signed long   index;	    
-    VmafFrameSyncBuff *next;    
+struct VmafFrameSyncBuf {
+    void          *frame_data;
+    unsigned      buf_status; //BUF_STATUS_T
+    signed long   index;
+    VmafFrameSyncBuf *next;
 };
 
 typedef struct VmafFrameSyncContext {
-    VmafFrameSyncBuff *buf_que; // linked list
-    pthread_mutex_t aquire_lock;
-    pthread_mutex_t retrive_lock;
-    pthread_cond_t  retrive;
-    unsigned        buf_cnt;    
-} VmafFrameSyncContext; 
+    VmafFrameSyncBuf *buf_que; // linked list
+    pthread_mutex_t  acquire_lock;
+    pthread_mutex_t  retrieve_lock;
+    pthread_cond_t   retrieve;
+    unsigned         buf_cnt;
+} VmafFrameSyncContext;
 
 typedef struct VmafFrameSyncContext VmafFrameSyncContext;
 
 int vmaf_framesync_init(VmafFrameSyncContext **fs_ctx);
 
-int vmaf_framesync_aquire_new_buf(VmafFrameSyncContext *fs_ctx, void **data, unsigned data_sz, unsigned index);
+int vmaf_framesync_acquire_new_buf(VmafFrameSyncContext *fs_ctx, void **data, unsigned data_sz, unsigned index);
 
 int vmaf_framesync_submit_filled_data(VmafFrameSyncContext *fs_ctx, void *data, unsigned index);
 
-int vmaf_framesync_retrive_filled_data(VmafFrameSyncContext *fs_ctx, void **data, unsigned index);
+int vmaf_framesync_retrieve_filled_data(VmafFrameSyncContext *fs_ctx, void **data, unsigned index);
 
 int vmaf_framesync_release_buf(VmafFrameSyncContext *fs_ctx, void *data, unsigned index);
 
