@@ -91,7 +91,7 @@ jobs:
       - name: Upload vmaf
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.os }}-vmaf
+          name: ${{ matrix.os }}-${{ matrix.CC }}-vmaf
           path: ${{ steps.get_info.outputs.path }}
       - name: Upload vmaf
         if: steps.get_info.outputs.upload_url != 'null'
