@@ -70,7 +70,7 @@ enum VmafPoolingMethod {
  *                    https://github.com/Netflix/vmaf/issues/1214
  * 
  * @param cpumask     Restrict permitted CPU instruction sets.
- *                    if cpumask & 1:  disable SSE2
+ *                    if cpumask & 1:  disable SSE2 / disable NEON (on arm64)
  *                    if cpumask & 2:  disable SSE3/SSSE3
  *                    if cpumask & 4:  disable SSE4.1
  *                    if cpumask & 8:  disable AVX2
