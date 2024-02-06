@@ -55,8 +55,7 @@ static void my_worker(void *data)
         shared_buf[ctr] = thread_data->ref[ctr] + thread_data->dist[ctr] + 2;
 
     //submit filled buffer back to frame sync
-    vmaf_framesync_submit_filled_data(thread_data->fs_ctx, shared_buf,
-                                      thread_data->index);
+    vmaf_framesync_submit_filled_data(thread_data->fs_ctx, thread_data->index);
 
     //sleep to simulate work load
     const int sleep_seconds = 1;
@@ -81,8 +80,7 @@ static void my_worker(void *data)
     }
 
     //release dependent buffer from frame sync
-    vmaf_framesync_release_buf(thread_data->fs_ctx, dependent_buf,
-                               thread_data->index - 1);
+    vmaf_framesync_release_buf(thread_data->fs_ctx, thread_data->index - 1);
 
 cleanup:
     free(thread_data->ref);
