@@ -110,8 +110,7 @@ int vmaf_framesync_acquire_new_buf(VmafFrameSyncContext *fs_ctx, void **data,
     return 0;
 }
 
-int vmaf_framesync_submit_filled_data(VmafFrameSyncContext *fs_ctx, void *data,
-                                      unsigned index)
+int vmaf_framesync_submit_filled_data(VmafFrameSyncContext *fs_ctx, unsigned index)
 {
     VmafFrameSyncBuf *buf_que = fs_ctx->buf_que;
 
@@ -121,8 +120,6 @@ int vmaf_framesync_submit_filled_data(VmafFrameSyncContext *fs_ctx, void *data,
     for (unsigned i = 0; i < fs_ctx->buf_cnt; i++) {
         if ((buf_que->index == index) && (buf_que->buf_status == BUF_ACQUIRED)) {
             buf_que->buf_status = BUF_FILLED;
-            if (data != buf_que->frame_data)
-                return -1;
             break;
         }
 
@@ -167,8 +164,7 @@ int vmaf_framesync_retrieve_filled_data(VmafFrameSyncContext *fs_ctx,
     return 0;
 }
 
-int vmaf_framesync_release_buf(VmafFrameSyncContext *fs_ctx, void *data,
-                               unsigned index)
+int vmaf_framesync_release_buf(VmafFrameSyncContext *fs_ctx, unsigned index)
 {
     VmafFrameSyncBuf *buf_que = fs_ctx->buf_que;
 
@@ -176,9 +172,6 @@ int vmaf_framesync_release_buf(VmafFrameSyncContext *fs_ctx, void *data,
     // loop until a matching buffer is found
     for (unsigned i = 0; i < fs_ctx->buf_cnt; i++) {
         if ((buf_que->index == index) && (buf_que->buf_status == BUF_RETRIEVED)) {
-            if (data != buf_que->frame_data)
-                return -1;
-
             free(buf_que->frame_data);
             buf_que->frame_data = NULL;
             buf_que->buf_status = BUF_FREE;

@@ -32,14 +32,12 @@ int vmaf_framesync_init(VmafFrameSyncContext **fs_ctx);
 int vmaf_framesync_acquire_new_buf(VmafFrameSyncContext *fs_ctx, void **data,
                                    unsigned data_sz, unsigned index);
 
-int vmaf_framesync_submit_filled_data(VmafFrameSyncContext *fs_ctx, void *data,
-                                      unsigned index);
+int vmaf_framesync_submit_filled_data(VmafFrameSyncContext *fs_ctx, unsigned index);
 
 int vmaf_framesync_retrieve_filled_data(VmafFrameSyncContext *fs_ctx, void **data,
                                         unsigned index);
 
-int vmaf_framesync_release_buf(VmafFrameSyncContext *fs_ctx, void *data,
-                               unsigned index);
+int vmaf_framesync_release_buf(VmafFrameSyncContext *fs_ctx, unsigned index);
 
 int vmaf_framesync_destroy(VmafFrameSyncContext *fs_ctx);
 
