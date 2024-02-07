@@ -2,3 +2,7 @@ matlab
 workspace
 python/.tox
 .git
+.venv
+*.mp4
+*.yuv
+*.mov

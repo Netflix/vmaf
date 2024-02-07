@@ -1,18 +1,20 @@
-ARG CUDA_VERSION=12.1.0
+ARG CUDA_VERSION=12.3.1
+ARG VMAF_TAG=master
+ARG FFFMPEG_TAG=master
 # By copying the installation from a devel to a runtime container one could likely save a lot container size
 FROM nvidia/cuda:$CUDA_VERSION-devel-ubuntu22.04 
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y libopenjp2-7-dev \
     ninja-build cmake git python3 python3-pip nasm xxd pkg-config curl unzip
 
-RUN git clone https://github.com/Netflix/vmaf.git
+RUN git clone https://github.com/Netflix/vmaf.git && cd vmaf && git checkout $VMAF_TAG
 
-RUN git clone https://github.com/FFmpeg/FFmpeg.git
+RUN git clone https://github.com/FFmpeg/FFmpeg.git && cd FFmpeg && git checkout $FFFMPEG_TAG
 
 RUN git clone https://github.com/FFmpeg/nv-codec-headers.git && cd nv-codec-headers && make && make install
 
 # install vmaf
-RUN python3 -m pip install meson cpython
+RUN python3 -m pip install meson
 RUN cd vmaf && meson libvmaf/build libvmaf -Denable_cuda=true -Denable_avx512=true --buildtype release && \
     ninja -vC libvmaf/build  && \
     ninja -vC libvmaf/build  install
