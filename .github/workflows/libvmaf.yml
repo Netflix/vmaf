@@ -87,7 +87,7 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           CC=$(brew --prefix)/opt/llvm/bin/clang CXX=$(brew --prefix)/opt/llvm/bin/clang++ \
-            tox -c python
+            tox -c python -vvv
 
       - name: Get binary path & Current Release
         id: get_info
