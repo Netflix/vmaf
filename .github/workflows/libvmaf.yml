@@ -86,7 +86,7 @@ jobs:
       - name: Run tox tests (mac)
         if: matrix.os == 'macos-latest'
         run: |
-          CC=$HOMEBREW_PREFIX/opt/llvm/bin/clang CXX=$HOMEBREW_PREFIX/opt/llvm/bin/clang++ \
+          CC=$(brew --prefix)/opt/llvm/bin/clang CXX=$(brew --prefix)/opt/llvm/bin/clang++ \
             tox -c python
 
       - name: Get binary path & Current Release
