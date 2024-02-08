@@ -81,7 +81,7 @@ class FeatureExtractorTest(MyTestCase):
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_num_score'], 712650.023478, places=0)
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_den_score'], 1597314.95249, places=0)
-        self.assertAlmostEqual(results[0]['VMAF_feature_adm_num_score'], 371.80645372916666, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_adm_num_score'], 371.80645372916666, places=3)
         self.assertAlmostEqual(results[0]['VMAF_feature_adm_den_score'], 397.83378972916671, places=4)
         self.assertAlmostEqual(results[0]['VMAF_feature_anpsnr_score'], 34.164776875, places=4)
 

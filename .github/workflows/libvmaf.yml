@@ -78,7 +78,7 @@ jobs:
       - name: Run tox tests
         run: |
           mkdir -p ~/.ccache && sudo chown -R $(whoami) ~/.ccache
-          pip install 'tox<4'
+          pip install tox
           tox -c python/ -e py -- -v -p no:warnings -m 'main or lib' --doctest-modules
 
       - name: Get binary path & Current Release
@@ -89,9 +89,9 @@ jobs:
           echo "::set-output name=upload_url::$(curl -L https://api.github.com/repos/${{ github.repository }}/releases/tags/$(cut -d/ -f3 <<< ${{ github.ref }}) | jq -r ."upload_url")"
 
       - name: Upload vmaf
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}-vmaf
+          name: ${{ matrix.os }}-${{ matrix.CC }}-vmaf
           path: ${{ steps.get_info.outputs.path }}
       - name: Upload vmaf
         if: steps.get_info.outputs.upload_url != 'null'
