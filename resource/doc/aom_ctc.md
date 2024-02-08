@@ -55,3 +55,15 @@ There are also a few optional command-line settings you may find useful.
   * Add CAMBI
   * Release: [libvmaf v2.3.1](https://github.com/Netflix/vmaf/releases/tag/v2.3.1)
   * Precompiled static binaries [here](https://github.com/Netflix/vmaf/releases/tag/v2.3.1)
+
+* v4.0: `--aom_ctc v4.0`
+  * Identical to `v3.0`
+
+* v5.0: `--aom_ctc v5.0`
+  * Identical to `v4.0`
+
+* v6.0: `--aom_ctc v6.0`
+  * 2023-12-07
+  * Support bit depth conversion for Y4M inputs
+  * Release: [libvmaf v3.0.0](https://github.com/Netflix/vmaf/releases/tag/v3.0.0)
+  * Precompiled static binaries [here](https://github.com/Netflix/vmaf/releases/tag/v3.0.0)

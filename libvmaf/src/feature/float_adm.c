@@ -22,6 +22,7 @@
 
 #include "dict.h"
 #include "feature_collector.h"
+#include "framesync.h"
 #include "feature_extractor.h"
 #include "feature_name.h"
 

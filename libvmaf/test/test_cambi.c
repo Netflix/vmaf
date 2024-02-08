@@ -339,6 +339,7 @@ static char *test_get_spatial_mask_for_index()
     // dp_height = 2 * (filter_size >> 2) + 2
     uint32_t mask_dp[7*4];
     int err = 0;
+    uint16_t derivative_buffer[4];
 
     err |= get_sample_image(&image, 3);
     mu_assert("test_get_spatial_mask_for_index alloc #1 error", !err);
@@ -346,11 +347,11 @@ static char *test_get_spatial_mask_for_index()
     err |= get_sample_image(&mask, 3);
     mu_assert("test_get_spatial_mask_for_index alloc #2 error", !err);
 
-    get_spatial_mask_for_index(&image, &mask, mask_dp, 2, filter_size, width, height);
+    get_spatial_mask_for_index(&image, &mask, mask_dp, derivative_buffer, 2, filter_size, width, height, get_derivative_data_for_row);
     mu_assert("spatial_mask_for_index wrong mask for index=2, image=3", data_pic_sum(&mask)==14);
-    get_spatial_mask_for_index(&image, &mask, mask_dp, 1, filter_size, width, height);
+    get_spatial_mask_for_index(&image, &mask, mask_dp, derivative_buffer, 1, filter_size, width, height, get_derivative_data_for_row);
     mu_assert("spatial_mask_for_index wrong mask for index=1, image=3", data_pic_sum(&mask)==16);
-    get_spatial_mask_for_index(&image, &mask, mask_dp, 0, filter_size, width, height);
+    get_spatial_mask_for_index(&image, &mask, mask_dp, derivative_buffer, 0, filter_size, width, height, get_derivative_data_for_row);
     mu_assert("spatial_mask_for_index wrong mask for index=0, image=3", data_pic_sum(&mask)==16);
 
     vmaf_picture_unref(&image);
@@ -358,11 +359,11 @@ static char *test_get_spatial_mask_for_index()
     err |= get_sample_image(&image, 4);
     mu_assert("test_get_spatial_mask_for_index alloc #3 error", !err);
 
-    get_spatial_mask_for_index(&image, &mask, mask_dp, 3, filter_size, width, height);
+    get_spatial_mask_for_index(&image, &mask, mask_dp, derivative_buffer, 3, filter_size, width, height, get_derivative_data_for_row);
     mu_assert("spatial_mask_for_index wrong mask for index=3, image=4", data_pic_sum(&mask)==0);
-    get_spatial_mask_for_index(&image, &mask, mask_dp, 2, filter_size, width, height);
+    get_spatial_mask_for_index(&image, &mask, mask_dp, derivative_buffer, 2, filter_size, width, height, get_derivative_data_for_row);
     mu_assert("spatial_mask_for_index wrong mask for index=2, image=4", data_pic_sum(&mask)==6);
-    get_spatial_mask_for_index(&image, &mask, mask_dp, 1, filter_size, width, height);
+    get_spatial_mask_for_index(&image, &mask, mask_dp, derivative_buffer, 1, filter_size, width, height, get_derivative_data_for_row);
     mu_assert("spatial_mask_for_index wrong mask for index=1, image=4", data_pic_sum(&mask)==9);
 
     vmaf_picture_unref(&image);
