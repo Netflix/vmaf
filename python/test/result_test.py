@@ -87,6 +87,7 @@ class ResultTest(MyTestCase):
         self.assertEqual(self.result, recon_result)
         self.assertTrue(self.result == recon_result)
         self.assertFalse(self.result != recon_result)
+        self.assertEqual(recon_result.asset.__class__, Asset)
 
     def test_to_score_str(self):
         self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 40.421899030550769, places=4)
@@ -115,8 +116,8 @@ class ResultTest(MyTestCase):
         self.result.set_score_aggregate_method(ListStats.total_variation)
         self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 6.5901873052628375, places=4)
         self.result.set_score_aggregate_method(partial(ListStats.moving_average, n=2))
-        self.assertEqual(list(self.result.get_result('VMAF_legacy_score')),
-                              [42.86773029545774, 42.86773029545774, 42.86773029545774])
+        for item in list(self.result.get_result('VMAF_legacy_score')):
+            self.assertAlmostEqual(item, 42.86773029545747, places=6)
 
         with self.assertRaises(KeyError):
             self.result.get_result('VVMAF_legacy_score')
@@ -249,6 +250,7 @@ class ResultStoreTestWithNone(unittest.TestCase):
         result = FileSystemResultStore.load_result(VmafConfig.test_resource_path('result_with_none.txt'))
         result.set_score_aggregate_method(ListStats.nonemean)
         self.assertAlmostEqual(result['STRRED_feature_srred_score'], 5829.2644469999996, places=4)
+        self.assertEqual(result.asset.__class__, Asset)
 
 
 class ResultAggregatingTest(unittest.TestCase):

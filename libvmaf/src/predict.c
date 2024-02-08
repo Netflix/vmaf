@@ -88,7 +88,8 @@ static int find_linear_function_parameters(VmafPoint p1, VmafPoint p2, double *a
 
 static int piecewise_linear_mapping(double x, VmafPoint *knots, unsigned n_knots, double *y) {
 
-    double slope, offset;
+    // initialize them to prevent uninitialized variable warnings
+    double slope = 0.0, offset = 0.0;
 
     if (n_knots <= 1)
         return EINVAL;
@@ -240,7 +241,7 @@ int vmaf_predict_score_at_index(VmafModel *model,
 
     for (unsigned i = 0; i < model->n_features; i++) {
         VmafFeatureExtractor *fex =
-            vmaf_get_feature_extractor_by_feature_name(model->feature[i].name);
+            vmaf_get_feature_extractor_by_feature_name(model->feature[i].name, 0);
 
         if (!fex) {
             vmaf_log(VMAF_LOG_LEVEL_ERROR,
@@ -284,14 +285,15 @@ int vmaf_predict_score_at_index(VmafModel *model,
         err = vmaf_feature_collector_get_score(feature_collector,
                                                feature_name, &feature_score,
                                                index);
-        free(feature_name);
 
         if (err) {
             vmaf_log(VMAF_LOG_LEVEL_ERROR,
                      "vmaf_predict_score_at_index(): no feature '%s' "
                      "at index %d\n", feature_name, index);
+            free(feature_name);
             goto free_node;
         }
+        free(feature_name);
 
         err = normalize(model, model->feature[i].slope,
                         model->feature[i].intercept, &feature_score);

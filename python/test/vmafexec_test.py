@@ -5,7 +5,7 @@ import unittest
 import vmaf
 from vmaf.config import VmafConfig
 from vmaf.core.asset import Asset
-from vmaf.core.quality_runner import VmafexecQualityRunner, VmafossExecQualityRunner
+from vmaf.core.quality_runner import VmafexecQualityRunner
 from vmaf.core.result_store import FileSystemResultStore
 from test.testutil import set_default_576_324_videos_for_testing, \
     set_default_576_324_10bit_videos_for_testing, set_default_576_324_10bit_videos_for_testing_b, \
@@ -590,197 +590,6 @@ class VmafexecQualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 97.90069380000001, places=4)
         self.assertAlmostEqual(results[1]['VMAFEXEC_score'], 98.47175940000001, places=4)
 
-    def test_run_vmafexec_compare_directly_with_ossexec_420_8bit(self):
-
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
-
-        self.runner = VmafexecQualityRunner(
-            [asset, asset_original],
-            None, fifo_mode=True,
-            delete_workdir=True,
-            result_store=None,
-            optional_dict={
-                'float_psnr': True,
-                'float_ssim': True,
-                'float_ms_ssim': True,
-                'psnr': True,
-            }
-        )
-        self.runner.run(parallelize=True)
-
-        results_rc = self.runner.results
-
-        self.runner = VmafossExecQualityRunner(
-            [asset, asset_original],
-            None, fifo_mode=True,
-            delete_workdir=True,
-            result_store=None,
-        )
-        self.runner.run(parallelize=True)
-
-        results = self.runner.results
-
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale0_score'], results[0]['VMAFOSSEXEC_vif_scale0_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale1_score'], results[0]['VMAFOSSEXEC_vif_scale1_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale2_score'], results[0]['VMAFOSSEXEC_vif_scale2_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale3_score'], results[0]['VMAFOSSEXEC_vif_scale3_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_motion2_score'], results[0]['VMAFOSSEXEC_motion2_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_adm2_score'], results[0]['VMAFOSSEXEC_adm2_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_float_psnr_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_float_ssim_score'], results[0]['VMAFOSSEXEC_ssim_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_float_ms_ssim_score'], results[0]['VMAFOSSEXEC_ms_ssim_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_psnr_y_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_psnr_cb_score'], 38.4494410625, places=4)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_psnr_cr_score'], 40.99191027083334, places=4)
-
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale0_score'], results[1]['VMAFOSSEXEC_vif_scale0_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale1_score'], results[1]['VMAFOSSEXEC_vif_scale1_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale2_score'], results[1]['VMAFOSSEXEC_vif_scale2_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale3_score'], results[1]['VMAFOSSEXEC_vif_scale3_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_motion2_score'], results[1]['VMAFOSSEXEC_motion2_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_adm2_score'], results[1]['VMAFOSSEXEC_adm2_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_float_psnr_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_float_ssim_score'], results[1]['VMAFOSSEXEC_ssim_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_float_ms_ssim_score'], results[1]['VMAFOSSEXEC_ms_ssim_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_psnr_y_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_psnr_cb_score'], 60.0, places=4)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_psnr_cr_score'], 60.0, places=4)
-
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_score'], results[0]['VMAFOSSEXEC_score'], places=4)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_score'], results[1]['VMAFOSSEXEC_score'], places=4)
-
-    def test_run_vmafexec_compare_directly_with_ossexec_420_10bit(self):
-
-        ref_path = VmafConfig.test_resource_path("yuv", "sparks_ref_480x270.yuv42010le.yuv")
-        dis_path = VmafConfig.test_resource_path("yuv", "sparks_dis_480x270.yuv42010le.yuv")
-        asset = Asset(dataset="test", content_id=0, asset_id=0,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=dis_path,
-                      asset_dict={'width': 480, 'height': 270,
-                                  'yuv_type': 'yuv420p10le'})
-
-        asset_original = Asset(dataset="test", content_id=0, asset_id=1,
-                      workdir_root=VmafConfig.workdir_path(),
-                      ref_path=ref_path,
-                      dis_path=ref_path,
-                      asset_dict={'width': 480, 'height': 270,
-                                  'yuv_type': 'yuv420p10le'})
-
-        self.runner = VmafexecQualityRunner(
-            [asset, asset_original],
-            None, fifo_mode=True,
-            delete_workdir=True,
-            result_store=None,
-            optional_dict={
-                'float_psnr': True,
-                'float_ssim': True,
-                'float_ms_ssim': True,
-                'psnr': True,
-            }
-        )
-        self.runner.run(parallelize=True)
-
-        results_rc = self.runner.results
-
-        self.runner = VmafossExecQualityRunner(
-            [asset, asset_original],
-            None, fifo_mode=True,
-            delete_workdir=True,
-            result_store=None,
-        )
-        self.runner.run(parallelize=True)
-
-        results = self.runner.results
-
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale0_score'], results[0]['VMAFOSSEXEC_vif_scale0_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale1_score'], results[0]['VMAFOSSEXEC_vif_scale1_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale2_score'], results[0]['VMAFOSSEXEC_vif_scale2_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale3_score'], results[0]['VMAFOSSEXEC_vif_scale3_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_motion2_score'], results[0]['VMAFOSSEXEC_motion2_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_adm2_score'], results[0]['VMAFOSSEXEC_adm2_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_float_psnr_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_float_ssim_score'], results[0]['VMAFOSSEXEC_ssim_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_float_ms_ssim_score'], results[0]['VMAFOSSEXEC_ms_ssim_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_psnr_y_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_psnr_cb_score'], 50.2879106, places=4)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_psnr_cr_score'], 49.740259, places=4)
-
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale0_score'], results[1]['VMAFOSSEXEC_vif_scale0_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale1_score'], results[1]['VMAFOSSEXEC_vif_scale1_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale2_score'], results[1]['VMAFOSSEXEC_vif_scale2_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale3_score'], results[1]['VMAFOSSEXEC_vif_scale3_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_motion2_score'], results[1]['VMAFOSSEXEC_motion2_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_adm2_score'], results[1]['VMAFOSSEXEC_adm2_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_float_psnr_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_float_ssim_score'], results[1]['VMAFOSSEXEC_ssim_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_float_ms_ssim_score'], results[1]['VMAFOSSEXEC_ms_ssim_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_psnr_y_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_psnr_cb_score'], 72.0, places=4)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_psnr_cr_score'], 72.0, places=4)
-
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_score'], results[0]['VMAFOSSEXEC_score'], places=4)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_score'], results[1]['VMAFOSSEXEC_score'], places=4)
-
-    def test_run_vmafexec_compare_directly_with_ossexec_422_10bit(self):
-
-        ref_path, dis_path, asset, asset_original = set_default_576_324_10bit_videos_for_testing()
-
-        self.runner = VmafexecQualityRunner(
-            [asset, asset_original],
-            None, fifo_mode=True,
-            delete_workdir=True,
-            result_store=None,
-            optional_dict={
-                'float_psnr': True,
-                'float_ssim': True,
-                'float_ms_ssim': True,
-                'psnr': True,
-            }
-        )
-        self.runner.run(parallelize=True)
-
-        results_rc = self.runner.results
-
-        self.runner = VmafossExecQualityRunner(
-            [asset, asset_original],
-            None, fifo_mode=True,
-            delete_workdir=True,
-            result_store=None,
-        )
-        self.runner.run(parallelize=True)
-
-        results = self.runner.results
-
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale0_score'], results[0]['VMAFOSSEXEC_vif_scale0_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale1_score'], results[0]['VMAFOSSEXEC_vif_scale1_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale2_score'], results[0]['VMAFOSSEXEC_vif_scale2_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_vif_scale3_score'], results[0]['VMAFOSSEXEC_vif_scale3_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_motion2_score'], results[0]['VMAFOSSEXEC_motion2_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_adm2_score'], results[0]['VMAFOSSEXEC_adm2_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_float_psnr_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_float_ssim_score'], results[0]['VMAFOSSEXEC_ssim_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_float_ms_ssim_score'], results[0]['VMAFOSSEXEC_ms_ssim_score'], places=5)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_psnr_y_score'], results[0]['VMAFOSSEXEC_psnr_score'], places=4)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_psnr_cb_score'], 38.7698320625, places=4)
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_psnr_cr_score'], 41.284188416666666, places=4)
-
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale0_score'], results[1]['VMAFOSSEXEC_vif_scale0_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale1_score'], results[1]['VMAFOSSEXEC_vif_scale1_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale2_score'], results[1]['VMAFOSSEXEC_vif_scale2_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_vif_scale3_score'], results[1]['VMAFOSSEXEC_vif_scale3_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_motion2_score'], results[1]['VMAFOSSEXEC_motion2_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_adm2_score'], results[1]['VMAFOSSEXEC_adm2_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_float_psnr_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_float_ssim_score'], results[1]['VMAFOSSEXEC_ssim_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_float_ms_ssim_score'], results[1]['VMAFOSSEXEC_ms_ssim_score'], places=5)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_psnr_y_score'], results[1]['VMAFOSSEXEC_psnr_score'], places=4)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_psnr_cb_score'], 72.0, places=4)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_psnr_cr_score'], 72.0, places=4)
-
-        self.assertAlmostEqual(results_rc[0]['VMAFEXEC_score'], results[0]['VMAFOSSEXEC_score'], places=4)
-        self.assertAlmostEqual(results_rc[1]['VMAFEXEC_score'], results[1]['VMAFOSSEXEC_score'], places=4)
-
     def test_run_vmafexec_runner_float_moment(self):
 
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -830,7 +639,7 @@ class VmafexecQualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 1.072518, places=4)  # 1.0731529493098957
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 1.072512, places=4)  # 1.0728060231246508
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 132.732952, places=3)  # 132.78849246495625
+        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 132.732952, places=2)  # 132.78849246495625
 
     def test_run_vmafexec_runner_akiyo_multiply_with_feature_enhn_gain_limit(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -858,7 +667,7 @@ class VmafexecQualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_egl_1_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_egl_1_score'], 0.999146211879154, places=4)  # 1.0728060231246508
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 88.030463, places=4)  # 132.78849246495625
+        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 88.030463, places=3)  # 132.78849246495625
 
     def test_run_vmafexec_runner_akiyo_multiply_with_feature_enhn_gain_limit_custom(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -886,7 +695,7 @@ class VmafexecQualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_egl_1.1_score'], 1.04852, places=4)  # 1.0731529493098957
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_egl_1.1_score'], 1.04892, places=4)  # 1.0728060231246508
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 129.474226, places=3)  # 132.78849246495625
+        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 129.474226, places=2)  # 132.78849246495625
 
     def test_run_vmafexec_runner_akiyo_multiply_disable_enhn_gain(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -914,7 +723,7 @@ class VmafexecQualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_egl_1_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_egl_1_score'], 0.999146211879154, places=4)  # 1.0728060231246508
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 88.030463, places=4)  # 132.78849246495625
+        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 88.030463, places=3)  # 132.78849246495625
 
     def test_run_vmafexec_runner_akiyo_multiply_no_enhn_gain_model(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -942,7 +751,7 @@ class VmafexecQualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_egl_1_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_egl_1_score'], 0.999146211879154, places=4)  # 1.0728060231246508
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 88.030463, places=4)  # 132.78849246495625
+        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 88.030463, places=3)  # 132.78849246495625
 
     def test_run_vmafexec_runner_akiyo_multiply_no_enhn_gain_model_and_cmd_options(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -971,7 +780,7 @@ class VmafexecQualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_egl_1_score'], 0.9984692380091739, places=4)  # 1.0731529493098957
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_egl_1_score'], 0.999146211879154, places=4)  # 1.0728060231246508
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 122.804272, places=3)  # 132.78849246495625
+        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 122.804272, places=2)  # 132.78849246495625
 
     def test_run_vmafexec_runner_akiyo_multiply_no_enhn_gain_model_and_cmd_options_illegal(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")

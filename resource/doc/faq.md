@@ -66,7 +66,7 @@ ffmpeg -i main.mpg -i ref.mpg -filter_complex "[0:v]scale=1920x1080:flags=bicubi
 
 This scales the first input video (`0:v`) and forwards it to VMAF (`libvmaf`) with the label `main`, where it is compared against the second input video, `1:v`. More details can be found [here](resource/doc/ffmpeg.md).
 
-### Q: Why are the PSNR values capped at 60 dB for 8-bit inputs and 72 dB for 12-bit inputs in the package's implementation?
+### Q: Why are the PSNR values capped at 60 dB for 8-bit inputs and 72 dB for 10-bit inputs in the package's implementation?
 
 A: The peak PSNR values follow a rule-of-thumb formula of `6 * N + 12`, where `N` is the bit depth. In the most recent support of 12-bit and 16-bit inputs, we have followed this convention and capped the PSNR at 84 dB and 108 dB, respectively.
 

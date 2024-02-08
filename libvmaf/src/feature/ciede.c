@@ -316,44 +316,50 @@ static int extract(VmafFeatureExtractor *fex,
     (void) ref_pic_90;
     (void) dist_pic_90;
 
+    VmafPicture *ref;
+    VmafPicture *dist;
+
     if (ref_pic->pix_fmt == VMAF_PIX_FMT_YUV444P) {
-        s->ref = *ref_pic;
-        s->dist = *dist_pic;
+        // Reuse the provided buffers
+        ref = ref_pic;
+        dist = dist_pic;
     } else {
-        s->scale_chroma_planes(ref_pic, &s->ref);
-        s->scale_chroma_planes(dist_pic, &s->dist);
+        ref = &s->ref;
+        dist = &s->dist;
+        s->scale_chroma_planes(ref_pic, ref);
+        s->scale_chroma_planes(dist_pic, dist);
     }
 
     double de00_sum = 0.;
-    for (unsigned i = 0; i < s->ref.h[0]; i++) {
-        for (unsigned j = 0; j < s->ref.w[0]; j++) {
+    for (unsigned i = 0; i < ref->h[0]; i++) {
+        for (unsigned j = 0; j < ref->w[0]; j++) {
             float r_y, r_u, r_v, d_y, d_u, d_v;
 
-            switch (s->ref.bpc) {
+            switch (ref->bpc) {
             case 8:
-                r_y = ((uint8_t*)s->ref.data[0])[i * s->ref.stride[0] + j];
-                r_u = ((uint8_t*)s->ref.data[1])[i * s->ref.stride[1] + j];
-                r_v = ((uint8_t*)s->ref.data[2])[i * s->ref.stride[2] + j];
-                d_y = ((uint8_t*)s->dist.data[0])[i * s->dist.stride[0] + j];
-                d_u = ((uint8_t*)s->dist.data[1])[i * s->dist.stride[1] + j];
-                d_v = ((uint8_t*)s->dist.data[2])[i * s->dist.stride[2] + j];
+                r_y = ((uint8_t*)ref->data[0])[i * ref->stride[0] + j];
+                r_u = ((uint8_t*)ref->data[1])[i * ref->stride[1] + j];
+                r_v = ((uint8_t*)ref->data[2])[i * ref->stride[2] + j];
+                d_y = ((uint8_t*)dist->data[0])[i * dist->stride[0] + j];
+                d_u = ((uint8_t*)dist->data[1])[i * dist->stride[1] + j];
+                d_v = ((uint8_t*)dist->data[2])[i * dist->stride[2] + j];
                 break;
             case 10:
             case 12:
             case 16:
-                r_y = ((uint16_t*)s->ref.data[0])[i * (s->ref.stride[0] / 2) + j];
-                r_u = ((uint16_t*)s->ref.data[1])[i * (s->ref.stride[1] / 2) + j];
-                r_v = ((uint16_t*)s->ref.data[2])[i * (s->ref.stride[2] / 2) + j];
-                d_y = ((uint16_t*)s->dist.data[0])[i * (s->dist.stride[0] / 2) + j];
-                d_u = ((uint16_t*)s->dist.data[1])[i * (s->dist.stride[1] / 2) + j];
-                d_v = ((uint16_t*)s->dist.data[2])[i * (s->dist.stride[2] / 2) + j];
+                r_y = ((uint16_t*)ref->data[0])[i * (ref->stride[0] / 2) + j];
+                r_u = ((uint16_t*)ref->data[1])[i * (ref->stride[1] / 2) + j];
+                r_v = ((uint16_t*)ref->data[2])[i * (ref->stride[2] / 2) + j];
+                d_y = ((uint16_t*)dist->data[0])[i * (dist->stride[0] / 2) + j];
+                d_u = ((uint16_t*)dist->data[1])[i * (dist->stride[1] / 2) + j];
+                d_v = ((uint16_t*)dist->data[2])[i * (dist->stride[2] / 2) + j];
                 break;
             default:
                 return -EINVAL;
             }
 
-            const LABColor color_1 = get_lab_color(r_y, r_u, r_v, s->ref.bpc);
-            const LABColor color_2 = get_lab_color(d_y, d_u, d_v, s->dist.bpc);
+            const LABColor color_1 = get_lab_color(r_y, r_u, r_v, ref->bpc);
+            const LABColor color_2 = get_lab_color(d_y, d_u, d_v, dist->bpc);
             const KSubArgs default_ksub = { .l = 0.65, .c = 1.0, .h = 4.0 };
             const float de00 = ciede2000(color_1, color_2, default_ksub);
             de00_sum += de00;
@@ -369,8 +375,10 @@ static int extract(VmafFeatureExtractor *fex,
 static int close(VmafFeatureExtractor *fex)
 {
     CiedeState *s = fex->priv;
-    vmaf_picture_unref(&s->ref);
-    vmaf_picture_unref(&s->dist);
+    if (s->ref.data[0] && s->dist.data[0]) {
+        vmaf_picture_unref(&s->ref);
+        vmaf_picture_unref(&s->dist);
+    }
     return 0;
 }
 

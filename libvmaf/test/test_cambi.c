@@ -23,40 +23,45 @@
 #define EPS 0.00001
 
 /* Test support function */
-int almost_equal(double a, double b)
+static int almost_equal(double a, double b)
 {
     double diff = a > b ? a - b : b - a;
     return diff < EPS;
 }
 
-bool pic_data_equality(VmafPicture *pic, VmafPicture *pic2)
+static bool pic_data_equality(VmafPicture *pic, VmafPicture *pic2)
 {
     uint16_t *data = pic->data[0];
     ptrdiff_t stride = pic->stride[0] >> 1;
     uint16_t *data2 = pic2->data[0];
     ptrdiff_t stride2 = pic2->stride[0] >> 1;
 
-    for (unsigned i=0; i<pic->h[0]; i++)
-        for (unsigned j=0; j<pic->w[0]; j++)
-            if(data[i * stride + j]!=data2[i * stride2 + j])
+    for (unsigned i = 0; i < pic->h[0]; i++) {
+        for (unsigned j = 0; j < pic->w[0]; j++) {
+            if(data[i * stride + j] != data2[i * stride2 + j]) {
                 return 0;
+            }
+        }
+    }
     return 1;
 }
 
-int data_pic_sum(VmafPicture *pic)
+static int data_pic_sum(VmafPicture *pic)
 {
     int sum = 0;
     uint16_t *data = pic->data[0];
     ptrdiff_t stride = pic->stride[0] >> 1;
-    for (unsigned i=0; i<pic->h[0]; i++)
-        for (unsigned j=0; j<pic->w[0]; j++)
+    for (unsigned i = 0; i < pic->h[0]; i++) {
+        for (unsigned j = 0; j < pic->w[0]; j++) {
             sum += data[i * stride + j];
+        }
+    }
     return sum;
 }
 
-void get_sample_image(VmafPicture *pic, int pic_index)
+static int get_sample_image(VmafPicture *pic, int pic_index)
 {
-    int err, count = 0;
+    int count = 0;
     uint16_t sample_pic[9][16] = {
         {1, 2, 0, 100, 0, 2, 0, 100, 0, 2, 0, 100, 4, 2, 0, 100},
         {1, 1, 50, 100, 1, 1, 50, 100, 2, 1, 50, 100, 3, 1, 50, 100},
@@ -69,29 +74,37 @@ void get_sample_image(VmafPicture *pic, int pic_index)
         {1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
     };
 
-    err = vmaf_picture_alloc(pic, VMAF_PIX_FMT_YUV400P, 10, 4, 4);
+    int err = vmaf_picture_alloc(pic, VMAF_PIX_FMT_YUV400P, 10, 4, 4);
+    if (err) return err;
     uint16_t *data = (uint16_t *) pic->data[0];
     int stride = pic->stride[0] >> 1;
-    for (unsigned i=0; i<pic->h[0]; i++)
-        for (unsigned j=0; j<pic->w[0]; j++)
+    for (unsigned i = 0; i < pic->h[0]; i++) {
+        for (unsigned j = 0; j < pic->w[0]; j++) {
             data[i * stride + j] = sample_pic[pic_index][count++];
+        }
+    }
+    return 0;
 }
 
-void get_sample_image_8b(VmafPicture *pic)
+static int get_sample_image_8b(VmafPicture *pic)
 {
-    int err, count = 0;
+    int count = 0;
     uint16_t sample_pic[16] = {1, 2, 0, 100, 0, 2, 0, 100, 0, 2, 0, 100, 4, 2, 0, 100};
-    err = vmaf_picture_alloc(pic, VMAF_PIX_FMT_YUV400P, 8, 4, 4);
+    int err = vmaf_picture_alloc(pic, VMAF_PIX_FMT_YUV400P, 8, 4, 4);
+    if (err) return err;
     uint8_t *data = (uint8_t *) pic->data[0];
     int stride = pic->stride[0];
-    for (unsigned i=0; i<pic->h[0]; i++)
-        for (unsigned j=0; j<pic->w[0]; j++)
+    for (unsigned i = 0; i < pic->h[0]; i++) {
+        for (unsigned j = 0; j < pic->w[0]; j++) {
             data[i * stride + j] = sample_pic[count++];
+        }
+    }
+    return 0;
 }
 
-void get_sample_image_8x8(VmafPicture *pic, int pic_index)
+static int get_sample_image_8x8(VmafPicture *pic, int pic_index)
 {
-    int err, count = 0;
+    int count = 0;
     uint16_t sample_pic[2][64] = {
         {1, 2, 0, 100, 101, 100, 0, 1,
          0, 2, 0, 100, 101, 100, 1, 0,
@@ -110,12 +123,16 @@ void get_sample_image_8x8(VmafPicture *pic, int pic_index)
          1, 1, 1, 1, 1, 1, 1, 1,
          1, 1, 0, 0, 0, 1, 1, 1}};
 
-    err = vmaf_picture_alloc(pic, VMAF_PIX_FMT_YUV400P, 10, 8, 8);
+    int err = vmaf_picture_alloc(pic, VMAF_PIX_FMT_YUV400P, 10, 8, 8);
+    if (err) return err;
     uint16_t *data = (uint16_t *) pic->data[0];
     int stride = pic->stride[0] >> 1;
-    for (unsigned i=0; i<pic->h[0]; i++)
-        for (unsigned j=0; j<pic->w[0]; j++)
+    for (unsigned i = 0; i < pic->h[0]; i++) {
+        for (unsigned j = 0; j < pic->w[0]; j++) {
             data[i * stride + j] = sample_pic[pic_index][count++];
+        }
+    }
+    return 0;
 }
 
 
@@ -124,8 +141,10 @@ static char *test_anti_dithering_filter()
 {
     VmafPicture pic, filtered_pic;
 
-    get_sample_image(&pic, 0);
-    get_sample_image(&filtered_pic, 1);
+    int err = 0;
+    err |= get_sample_image(&pic, 0);
+    err |= get_sample_image(&filtered_pic, 1);
+    mu_assert("test_anti_dithering_filter alloc error", !err);
     anti_dithering_filter(&pic, pic.w[0], pic.h[0]);
     bool equal = pic_data_equality(&pic, &filtered_pic);
     mu_assert("anti_dithering_filter output pic wrong", equal);
@@ -140,7 +159,8 @@ static char *test_anti_dithering_filter()
 static char *test_decimate()
 {
     VmafPicture pic;
-    get_sample_image(&pic, 0);
+    int err = get_sample_image(&pic, 0);
+    mu_assert("test_decimate alloc error", !err);
 
     uint16_t *data = pic.data[0];
     ptrdiff_t stride = pic.stride[0] >> 1;
@@ -163,11 +183,13 @@ static char *test_decimate()
 static char *test_decimate_generic()
 {
     VmafPicture pic;
-    get_sample_image(&pic, 0);
+    int err = 0;
+    err |= get_sample_image(&pic, 0);
+    mu_assert("test_decimate_generic alloc #1 error", !err);
 
     VmafPicture out_pic;
-    int err = vmaf_picture_alloc(&out_pic, VMAF_PIX_FMT_YUV400P, 10, 2, 2);
-    (void)err;
+    err |= vmaf_picture_alloc(&out_pic, VMAF_PIX_FMT_YUV400P, 10, 2, 2);
+    mu_assert("test_decimate_generic alloc #2 error", !err);
 
     pic.bpc = 10;
     decimate_generic_uint16_and_convert_to_10b(&pic, &out_pic, out_pic.w[0], out_pic.h[0]);
@@ -205,8 +227,8 @@ static char *test_decimate_generic()
     mu_assert("decimate generic 9b to 10b wrong pixel value (1,1)", data[1+stride]==200);
 
     VmafPicture out_pic_4x4;
-    err = vmaf_picture_alloc(&out_pic_4x4, VMAF_PIX_FMT_YUV400P, 10, 4, 4);
-    (void)err;
+    err |= vmaf_picture_alloc(&out_pic_4x4, VMAF_PIX_FMT_YUV400P, 10, 4, 4);
+    mu_assert("test_decimate_generic alloc #3 error", !err);
 
     pic.bpc = 10;
     decimate_generic_uint16_and_convert_to_10b(&pic, &out_pic_4x4, out_pic_4x4.w[0], out_pic_4x4.h[0]);
@@ -214,7 +236,8 @@ static char *test_decimate_generic()
     mu_assert("decimate generic 10b wrong for same dimensions", pic_data_equality(&pic, &out_pic_4x4));
 
     VmafPicture pic_8b;
-    get_sample_image_8b(&pic_8b);
+    err |= get_sample_image_8b(&pic_8b);
+    mu_assert("test_decimate_generic alloc #4 error", !err);
 
     pic_8b.bpc = 8;
     decimate_generic_uint8_and_convert_to_10b(&pic_8b, &out_pic, out_pic.w[0], out_pic.h[0]);
@@ -238,9 +261,10 @@ static char *test_filter_mode()
     unsigned w = 5, h = 5;
     uint16_t buffer[3 * w];
 
-    int err = vmaf_picture_alloc(&filtered_image, VMAF_PIX_FMT_YUV400P, 10, w, h);
+    int err = 0;
+    err |= vmaf_picture_alloc(&filtered_image, VMAF_PIX_FMT_YUV400P, 10, w, h);
     err |= vmaf_picture_alloc(&image, VMAF_PIX_FMT_YUV400P, 10, w, h);
-    mu_assert("problem during vmaf_picture_alloc", !err);
+    mu_assert("test_filter_mode alloc error", !err);
 
     uint16_t *data = image.data[0];
     ptrdiff_t stride = image.stride[0]>>1;
@@ -314,26 +338,32 @@ static char *test_get_spatial_mask_for_index()
     // dp_width = width + 2 * (filter_size >> 2) + 1
     // dp_height = 2 * (filter_size >> 2) + 2
     uint32_t mask_dp[7*4];
+    int err = 0;
+    uint16_t derivative_buffer[4];
 
-    get_sample_image(&image, 3);
-    get_sample_image(&mask, 3);
+    err |= get_sample_image(&image, 3);
+    mu_assert("test_get_spatial_mask_for_index alloc #1 error", !err);
 
-    get_spatial_mask_for_index(&image, &mask, mask_dp, 2, filter_size, width, height);
+    err |= get_sample_image(&mask, 3);
+    mu_assert("test_get_spatial_mask_for_index alloc #2 error", !err);
+
+    get_spatial_mask_for_index(&image, &mask, mask_dp, derivative_buffer, 2, filter_size, width, height, get_derivative_data_for_row);
     mu_assert("spatial_mask_for_index wrong mask for index=2, image=3", data_pic_sum(&mask)==14);
-    get_spatial_mask_for_index(&image, &mask, mask_dp, 1, filter_size, width, height);
+    get_spatial_mask_for_index(&image, &mask, mask_dp, derivative_buffer, 1, filter_size, width, height, get_derivative_data_for_row);
     mu_assert("spatial_mask_for_index wrong mask for index=1, image=3", data_pic_sum(&mask)==16);
-    get_spatial_mask_for_index(&image, &mask, mask_dp, 0, filter_size, width, height);
+    get_spatial_mask_for_index(&image, &mask, mask_dp, derivative_buffer, 0, filter_size, width, height, get_derivative_data_for_row);
     mu_assert("spatial_mask_for_index wrong mask for index=0, image=3", data_pic_sum(&mask)==16);
 
     vmaf_picture_unref(&image);
 
-    get_sample_image(&image, 4);
+    err |= get_sample_image(&image, 4);
+    mu_assert("test_get_spatial_mask_for_index alloc #3 error", !err);
 
-    get_spatial_mask_for_index(&image, &mask, mask_dp, 3, filter_size, width, height);
+    get_spatial_mask_for_index(&image, &mask, mask_dp, derivative_buffer, 3, filter_size, width, height, get_derivative_data_for_row);
     mu_assert("spatial_mask_for_index wrong mask for index=3, image=4", data_pic_sum(&mask)==0);
-    get_spatial_mask_for_index(&image, &mask, mask_dp, 2, filter_size, width, height);
+    get_spatial_mask_for_index(&image, &mask, mask_dp, derivative_buffer, 2, filter_size, width, height, get_derivative_data_for_row);
     mu_assert("spatial_mask_for_index wrong mask for index=2, image=4", data_pic_sum(&mask)==6);
-    get_spatial_mask_for_index(&image, &mask, mask_dp, 1, filter_size, width, height);
+    get_spatial_mask_for_index(&image, &mask, mask_dp, derivative_buffer, 1, filter_size, width, height, get_derivative_data_for_row);
     mu_assert("spatial_mask_for_index wrong mask for index=1, image=4", data_pic_sum(&mask)==9);
 
     vmaf_picture_unref(&image);
@@ -354,13 +384,17 @@ static char *test_calculate_c_values()
     const uint16_t num_diffs = 4;
     uint16_t histograms[4*1032];
 
-    uint16_t *diffs_to_consider;
-    int *diff_weights;
-    int *all_diffs;
+    uint16_t *diffs_to_consider = NULL;
+    int *diff_weights = NULL;
+    int *all_diffs = NULL;
+    int err = 0;
 
     set_contrast_arrays(num_diffs, &diffs_to_consider, &diff_weights, &all_diffs);
-    get_sample_image(&input, 0);
-    get_sample_image(&mask, 8);
+    err |= get_sample_image(&input, 0);
+    mu_assert("test_calculate_c_values alloc #1 error", !err);
+    err |= get_sample_image(&mask, 8);
+    mu_assert("test_calculate_c_values alloc #2 error", !err);
+
     calculate_c_values(&input, &mask, combined_c_values, histograms, window_size,
                        num_diffs, tvi_for_diff, diff_weights, all_diffs, width, height, 
                        increment_range, decrement_range);
@@ -372,8 +406,10 @@ static char *test_calculate_c_values()
 
     VmafPicture input_8x8, mask_8x8;
     float combined_c_values_8x8[64];
-    get_sample_image_8x8(&input_8x8, 0);
-    get_sample_image_8x8(&mask_8x8, 1);
+    err |= get_sample_image_8x8(&input_8x8, 0);
+    mu_assert("test_calculate_c_values alloc #3 error", !err);
+    err |= get_sample_image_8x8(&mask_8x8, 1);
+    mu_assert("test_calculate_c_values alloc #4 error", !err);
     window_size = 9;
     uint16_t histograms_8x8[8*1032];
     calculate_c_values(&input_8x8, &mask_8x8, combined_c_values_8x8, histograms_8x8,
@@ -381,8 +417,9 @@ static char *test_calculate_c_values()
                        increment_range, decrement_range);
 
     double sum = 0;
-    for (unsigned i=0; i<64; i++)
+    for (unsigned i = 0; i < 64; i++) {
         sum += combined_c_values_8x8[i];
+    }
     mu_assert("combined_c_values 8x8 error", almost_equal(sum, 195.382527));
 
     vmaf_picture_unref(&input);
@@ -599,9 +636,9 @@ static char *test_tvi_condition()
 
 static char *test_set_contrast_arrays()
 {
-    uint16_t *diffs_to_consider;
-    int *diffs_weights;
-    int *all_diffs;
+    uint16_t *diffs_to_consider = NULL;
+    int *diffs_weights = NULL;
+    int *all_diffs = NULL;
 
     int max_log_diff = 2;
     int expected_diffs_to_consider_4[4] = {1, 2, 3, 4};

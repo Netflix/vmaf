@@ -19,8 +19,36 @@
 #ifndef __VMAF_SRC_PICTURE_H__
 #define __VMAF_SRC_PICTURE_H__
 
+#ifdef HAVE_CUDA
+#include <cuda.h>
+#include "libvmaf/libvmaf_cuda.h"
+#endif
 #include "libvmaf/picture.h"
 
+enum VmafPictureBufferType {
+    VMAF_PICTURE_BUFFER_TYPE_HOST = 0,
+    VMAF_PICTURE_BUFFER_TYPE_CUDA_HOST_PINNED,
+    VMAF_PICTURE_BUFFER_TYPE_CUDA_DEVICE,
+};
+
+typedef struct VmafPicturePrivate {
+    void *cookie;
+    int (*release_picture)(VmafPicture *pic, void *cookie);
+#ifdef HAVE_CUDA
+    struct {
+        CUcontext ctx;
+        CUevent ready, finished;
+        CUstream str;
+    } cuda;
+#endif
+    enum VmafPictureBufferType buf_type;
+} VmafPicturePrivate;
+
+int vmaf_picture_priv_init(VmafPicture *pic);
+
 int vmaf_picture_ref(VmafPicture *dst, VmafPicture *src);
+
+int vmaf_picture_set_release_callback(VmafPicture *pic, void *cookie,
+                        int (*release_picture)(VmafPicture *pic, void *cookie));
 
 #endif /* __VMAF_SRC_PICTURE_H__ */

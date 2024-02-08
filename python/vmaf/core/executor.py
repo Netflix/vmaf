@@ -1,10 +1,10 @@
+import shutil
 from abc import ABCMeta, abstractmethod
 import multiprocessing
 import os
 from time import sleep
 import hashlib
-
-import numpy as np
+from typing import Optional, List, Tuple
 
 from vmaf.core.asset import Asset
 from vmaf.tools.decorator import deprecated, override
@@ -64,6 +64,7 @@ class Executor(TypeVersionEnabled):
                  result_store=None,
                  optional_dict=None,
                  optional_dict2=None,
+                 save_workfiles=False,
                  ):
         """
         Use optional_dict for parameters that would impact result (e.g. model,
@@ -81,6 +82,7 @@ class Executor(TypeVersionEnabled):
         self.result_store = result_store
         self.optional_dict = optional_dict
         self.optional_dict2 = optional_dict2
+        self.save_workfiles = save_workfiles
 
         self._assert_class()
         self._assert_args()
@@ -91,6 +93,36 @@ class Executor(TypeVersionEnabled):
     def _custom_init(self):
         pass
 
+    @staticmethod
+    def get_normalized_string_from_dict(d):
+        """ Normalized string representation with sorted keys, extended to cover callables.
+
+        >>> Executor.get_normalized_string_from_dict({"max_buffer_sec": 5.0, "bitrate_kbps": 45, })
+        'bitrate_kbps_45_max_buffer_sec_5.0'
+        >>> Executor.get_normalized_string_from_dict({"sorted_key": sorted, "_need_ffmpeg_key": Executor._need_ffmpeg, })
+        '_need_ffmpeg_key_Executor._need_ffmpeg_sorted_key_sorted'
+        """
+        def _slugify(v):
+            if callable(v):
+                s = str(v)
+                assert s[0] == '<' and s[-1] == '>'
+                s = s[1:-1]
+                l = s.split(' ')
+                assert 'function' in l
+                for idx, e in enumerate(l):
+                    if e == 'function':
+                        assert idx < len(l) - 1
+                        return l[idx + 1]
+            else:
+                return v
+
+        normalized_str = '_'.join(map(lambda k: '{k}_{v}'.format(k=k, v=_slugify(d[k])), sorted(d.keys())))
+
+        if len(normalized_str) > 196:  # upper limit of filename is 256 but leave some space for prefix/suffix
+            normalized_str = hashlib.sha1(normalized_str.encode("utf-8")).hexdigest()
+
+        return normalized_str
+
     @property
     def executor_id(self):
         executor_id_ = TypeVersionEnabled.get_type_version_string(self)
@@ -98,7 +130,7 @@ class Executor(TypeVersionEnabled):
         if self.optional_dict is not None and len(self.optional_dict) > 0:
             # include optional_dict info in executor_id for result store,
             # as parameters in optional_dict will impact result
-            executor_id_ += '_{}'.format(get_normalized_string_from_dict(self.optional_dict))
+            executor_id_ += '_{}'.format(self.get_normalized_string_from_dict(self.optional_dict))
             replace_chars = ["'", " "]
             for c in replace_chars:
                 executor_id_ = executor_id_.replace(c, "_")
@@ -168,7 +200,8 @@ class Executor(TypeVersionEnabled):
         pass
 
     def _assert_args(self):
-        pass
+        if self.save_workfiles is True:
+            assert self.fifo_mode is False, 'To save workfiles, FIFO mode cannot be true.'
 
     def _assert_assets(self):
 
@@ -286,6 +319,10 @@ class Executor(TypeVersionEnabled):
 
         if self.result_store:
             result = self.result_store.load(asset, self.executor_id)
+            qw, qh = asset.quality_width_height
+            if result is not None and self.save_workfiles is True \
+                    and not self.result_store.has_workfile(asset, self.executor_id, f'_dis.{qw}x{qh}.{self._get_workfile_yuv_type(asset)}.yuv'):
+                result = None  # if save_workfiles is True and has_workfile is False, invalidate result and rerun
         else:
             result = None
 
@@ -356,6 +393,17 @@ class Executor(TypeVersionEnabled):
 
             self._generate_result(asset)
 
+            if self.logger:
+                self.logger.info("Read {id} log file, get scores...".
+                                 format(id=self.executor_id))
+
+            # collect result from each asset's log file
+            result = self._read_result(asset)
+
+            # save result
+            if self.result_store:
+                result = self._save_result(result)
+
             # clean up workfiles
             if self.delete_workdir:
                 if asset.use_path_as_workpath:
@@ -370,17 +418,6 @@ class Executor(TypeVersionEnabled):
                 else:
                     self._close_procfiles(asset)
 
-            if self.logger:
-                self.logger.info("Read {id} log file, get scores...".
-                                 format(id=self.executor_id))
-
-            # collect result from each asset's log file
-            result = self._read_result(asset)
-
-            # save result
-            if self.result_store:
-                result = self._save_result(result)
-
             # clean up workdir and log files in it
             if self.delete_workdir:
 
@@ -390,16 +427,7 @@ class Executor(TypeVersionEnabled):
                 # remove dir
                 log_file_path = self._get_log_file_path(asset)
                 log_dir = get_dir_without_last_slash(log_file_path)
-                try:
-                    os.rmdir(log_dir)
-                except OSError as e:
-                    if e.errno == 39: # [Errno 39] Directory not empty
-                        # e.g. VQM could generate an error file with non-critical
-                        # information like: '3 File is longer than 15 seconds.
-                        # Results will be calculated using first 15 seconds
-                        # only.' In this case, want to keep this
-                        # informational file and pass
-                        pass
+                shutil.rmtree(log_dir)
 
         result = self._post_process_result(result)
 
@@ -431,10 +459,9 @@ class Executor(TypeVersionEnabled):
         dis_p.start()
         self._wait_for_procfiles(asset)
 
-    @classmethod
-    def _close_workfiles(cls, asset):
-        cls._close_ref_workfile(asset)
-        cls._close_dis_workfile(asset)
+    def _close_workfiles(self, asset):
+        self._close_ref_workfile(asset)
+        self._close_dis_workfile(asset)
 
     @classmethod
     def _close_procfiles(cls, asset):
@@ -450,6 +477,10 @@ class Executor(TypeVersionEnabled):
 
     def _save_result(self, result):
         self.result_store.save(result)
+        if self.save_workfiles:
+            qw, qh = result.asset.quality_width_height
+            self.result_store.save_workfile(result, result.asset.ref_workfile_path, f'_ref.{qw}x{qh}.{self._get_workfile_yuv_type(result.asset)}.yuv')
+            self.result_store.save_workfile(result, result.asset.dis_workfile_path, f'_dis.{qw}x{qh}.{self._get_workfile_yuv_type(result.asset)}.yuv')
         return result
 
     @classmethod
@@ -478,105 +509,121 @@ class Executor(TypeVersionEnabled):
 
     def _open_ref_workfile(self, asset, fifo_mode):
 
-        # only need to open ref workfile if the path is different from ref path
-        assert asset.use_path_as_workpath is False and asset.ref_path != asset.ref_workfile_path
-
-        # if fifo mode, mkfifo
-        if fifo_mode:
-            os.mkfifo(asset.ref_workfile_path)
-
-        quality_width, quality_height = self._get_quality_width_height(asset)
+        use_path_as_workpath = asset.use_path_as_workpath
+        path = asset.ref_path
+        workfile_path = asset.ref_workfile_path
+        quality_width_height = self._get_quality_width_height(asset)
         yuv_type = asset.ref_yuv_type
+        try:
+            decoder_type = asset.ref_decoder_type
+        except AttributeError:
+            decoder_type = None
+        try:
+            preresampling_filterchain = asset.ref_preresampling_filterchain
+        except AttributeError:
+            preresampling_filterchain = None
         resampling_type = self._get_ref_resampling_type(asset)
-
-        if yuv_type != 'notyuv':
-            # in this case, for sure has ref_width_height
-            width, height = asset.ref_width_height
-            src_fmt_cmd = self._get_yuv_src_fmt_cmd(asset, height, width, 'ref')
-        else:
-            src_fmt_cmd = self._get_notyuv_src_fmt_cmd(asset, 'ref')
-
+        try:
+            postresampling_filterchain = asset.ref_postresampling_filterchain
+        except AttributeError:
+            postresampling_filterchain = None
+        width_height = asset.ref_width_height
+        ref_or_dis = 'ref'
         workfile_yuv_type = self._get_workfile_yuv_type(asset)
+        logger = self.logger
 
-        vframes_cmd, select_cmd = self._get_vframes_cmd(asset, 'ref')
-        crop_cmd = self._get_filter_cmd(asset, 'crop', 'ref')
-        pad_cmd = self._get_filter_cmd(asset, 'pad', 'ref')
-        scale_cmd = 'scale={width}x{height}'.format(width=quality_width, height=quality_height)
-
-        filter_cmds = []
-        for key in Asset.ORDERED_FILTER_LIST:
-            if key != 'crop' and key != 'pad':
-                filter_cmds.append(self._get_filter_cmd(asset, key, 'ref'))
-
-        vf_cmd = ','.join(filter(lambda s: s!='', [select_cmd, crop_cmd, pad_cmd, scale_cmd] + filter_cmds))
-
-        ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
-                     '-pix_fmt {yuv_type} {vframes_cmd} -vf {vf_cmd} -f rawvideo ' \
-                     '-sws_flags {resampling_type} -y -nostdin {dst}'
-        ffmpeg_cmd = ffmpeg_cmd.format(
-            ffmpeg=VmafExternalConfig.get_and_assert_ffmpeg(),
-            src=asset.ref_path,
-            dst=asset.ref_workfile_path,
-            src_fmt_cmd=src_fmt_cmd,
-            vf_cmd=vf_cmd,
-            yuv_type=workfile_yuv_type,
-            resampling_type=resampling_type,
-            vframes_cmd=vframes_cmd,
-        )
-
-        if self.logger:
-            self.logger.info(ffmpeg_cmd)
-
-        run_process(ffmpeg_cmd, shell=True, env=VmafExternalConfig.ffmpeg_env())
+        _open_workfile_method = self.optional_dict2['_open_workfile_method'] \
+            if self.optional_dict2 is not None and '_open_workfile_method' in self.optional_dict2 and self.optional_dict2['_open_workfile_method'] is not None \
+            else self._open_workfile
+        _open_workfile_method(self, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type,
+                              preresampling_filterchain, resampling_type, postresampling_filterchain,
+                              width_height, quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, logger)
 
     def _open_dis_workfile(self, asset, fifo_mode):
-        # only need to open dis workfile if the path is different from dis path
-        assert asset.use_path_as_workpath is False and asset.dis_path != asset.dis_workfile_path
 
+        use_path_as_workpath = asset.use_path_as_workpath
+        path = asset.dis_path
+        workfile_path = asset.dis_workfile_path
+        quality_width_height = self._get_quality_width_height(asset)
+        yuv_type = asset.dis_yuv_type
+        try:
+            decoder_type = asset.dis_decoder_type
+        except AttributeError:
+            decoder_type = None
+        try:
+            preresampling_filterchain = asset.dis_preresampling_filterchain
+        except AttributeError:
+            preresampling_filterchain = None
+        resampling_type = self._get_dis_resampling_type(asset)
+        try:
+            postresampling_filterchain = asset.dis_postresampling_filterchain
+        except AttributeError:
+            postresampling_filterchain = None
+        width_height = asset.dis_width_height
+        ref_or_dis = 'dis'
+        workfile_yuv_type = self._get_workfile_yuv_type(asset)
+        logger = self.logger
+
+        _open_workfile_method = self.optional_dict2['_open_workfile_method'] \
+            if self.optional_dict2 is not None and '_open_workfile_method' in self.optional_dict2 and self.optional_dict2['_open_workfile_method'] is not None \
+            else self._open_workfile
+        _open_workfile_method(self, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type,
+                              preresampling_filterchain, resampling_type, postresampling_filterchain,
+                              width_height, quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, logger)
+
+    @staticmethod
+    def _open_workfile(cls, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type: Optional[str],
+                       preresampling_filterchain: Optional[List[str]], resampling_type: str, postresampling_filterchain: Optional[List[str]],
+                       width_height: Optional[Tuple[int, int]], quality_width_height: Tuple[int, int], ref_or_dis, use_path_as_workpath, fifo_mode, logger):
+
+        # decoder type must be None here
+        assert decoder_type is None, f'decoder_type must be None but is: {decoder_type}'
+
+        # preresampling_filterchain must be None here
+        assert preresampling_filterchain is None, f'preresampling_filterchain mut be None but is: {preresampling_filterchain}'
+
+        # postresampling_filterchain msut be None here
+        assert postresampling_filterchain is None, f'postresampling_filterchain must be None but is: {postresampling_filterchain}'
+
+        # only need to open workfile if the path is different from path
+        assert use_path_as_workpath is False and path != workfile_path
         # if fifo mode, mkfifo
         if fifo_mode:
-            os.mkfifo(asset.dis_workfile_path)
-
-        quality_width, quality_height = self._get_quality_width_height(asset)
-        yuv_type = asset.dis_yuv_type
-        resampling_type = self._get_dis_resampling_type(asset)
-
+            os.mkfifo(workfile_path)
         if yuv_type != 'notyuv':
-            # in this case, for sure has dis_width_height
-            width, height = asset.dis_width_height
-            src_fmt_cmd = self._get_yuv_src_fmt_cmd(asset, height, width, 'dis')
+            # in this case, for sure has width_height
+            assert width_height is not None
+            width, height = width_height
+            src_fmt_cmd = cls._get_yuv_src_fmt_cmd(yuv_type, height, width)
         else:
-            src_fmt_cmd = self._get_notyuv_src_fmt_cmd(asset, 'dis')
-
-        workfile_yuv_type = self._get_workfile_yuv_type(asset)
-
-        vframes_cmd, select_cmd = self._get_vframes_cmd(asset, 'dis')
-        crop_cmd = self._get_filter_cmd(asset, 'crop', 'dis')
-        pad_cmd = self._get_filter_cmd(asset, 'pad', 'dis')
-        scale_cmd = 'scale={width}x{height}'.format(width=quality_width, height=quality_height)
-
+            src_fmt_cmd = cls._get_notyuv_src_fmt_cmd(path)
+        vframes_cmd, select_cmd = cls._get_vframes_cmd(asset, ref_or_dis)
+        crop_cmd = cls._get_filter_cmd(asset, 'crop', ref_or_dis)
+        pad_cmd = cls._get_filter_cmd(asset, 'pad', ref_or_dis)
+        quality_width, quality_height = quality_width_height
+        scale_cmd = f'scale={quality_width}x{quality_height}'
         filter_cmds = []
         for key in Asset.ORDERED_FILTER_LIST:
             if key != 'crop' and key != 'pad':
-                filter_cmds.append(self._get_filter_cmd(asset, key, 'dis'))
+                filter_cmds.append(cls._get_filter_cmd(asset, key, ref_or_dis))
+        vf_cmd = [select_cmd, crop_cmd, pad_cmd, scale_cmd] + filter_cmds
+        vf_cmd = ','.join(filter(lambda s: s != '', vf_cmd))
 
-        vf_cmd = ','.join(filter(lambda s: s!='', [select_cmd, crop_cmd, pad_cmd, scale_cmd] + filter_cmds))
-
-        ffmpeg_cmd = '{ffmpeg} {src_fmt_cmd} -i {src} -an -vsync 0 ' \
-                     '-pix_fmt {yuv_type} {vframes_cmd} -vf {vf_cmd} -f rawvideo ' \
-                     '-sws_flags {resampling_type} -y -nostdin {dst}'.format(
-            ffmpeg=VmafExternalConfig.get_and_assert_ffmpeg(),
-            src=asset.dis_path, dst=asset.dis_workfile_path,
-            src_fmt_cmd=src_fmt_cmd,
-            vf_cmd=vf_cmd,
-            yuv_type=workfile_yuv_type,
-            resampling_type=resampling_type,
-            vframes_cmd=vframes_cmd,
-        )
-
-        if self.logger:
-            self.logger.info(ffmpeg_cmd)
-
+        ffmpeg_cmd = []
+        ffmpeg_cmd += [VmafExternalConfig.get_and_assert_ffmpeg()]
+        ffmpeg_cmd += [src_fmt_cmd]
+        ffmpeg_cmd += ['-i', path]
+        ffmpeg_cmd += ['-an', '-vsync', '0']
+        ffmpeg_cmd += ['-pix_fmt', workfile_yuv_type]
+        ffmpeg_cmd += [vframes_cmd]
+        ffmpeg_cmd += ['-vf', vf_cmd]
+        ffmpeg_cmd += ['-f', 'rawvideo']
+        ffmpeg_cmd += ['-sws_flags', resampling_type]
+        ffmpeg_cmd += ['-y', '-nostdin']
+        ffmpeg_cmd += [workfile_path]
+        ffmpeg_cmd = ' '.join(ffmpeg_cmd)
+        if logger:
+            logger.info(ffmpeg_cmd)
         run_process(ffmpeg_cmd, shell=True, env=VmafExternalConfig.ffmpeg_env())
 
     # ===== procfile =====
@@ -639,26 +686,13 @@ class Executor(TypeVersionEnabled):
         return asset.quality_width_height
 
     @staticmethod
-    def _get_yuv_src_fmt_cmd(asset, height, width, ref_or_dis):
-        if ref_or_dis == 'ref':
-            yuv_type = asset.ref_yuv_type
-        elif ref_or_dis == 'dis':
-            yuv_type = asset.dis_yuv_type
-        else:
-            raise AssertionError('Unknown ref_or_dis: {}'.format(ref_or_dis))
+    def _get_yuv_src_fmt_cmd(yuv_type, height, width):
         yuv_src_fmt_cmd = '-f rawvideo -pix_fmt {yuv_fmt} -s {width}x{height}'. \
             format(yuv_fmt=yuv_type, width=width, height=height)
         return yuv_src_fmt_cmd
 
     @staticmethod
-    def _get_notyuv_src_fmt_cmd(asset, target):
-        if target == 'ref':
-            path = asset.ref_path
-        elif target == 'dis':
-            path = asset.dis_path
-        else:
-            assert False, 'target cannot be {}'.format(target)
-
+    def _get_notyuv_src_fmt_cmd(path):
         if get_file_name_extension(path) in ['j2c', 'j2k', 'tiff']:
             # 2147483647 is INT_MAX if int is 4 bytes
             return "-f image2 -start_number_range 2147483647"
@@ -674,7 +708,8 @@ class Executor(TypeVersionEnabled):
         return "{}={}".format(key, asset.get_filter_cmd(key, target)) \
             if asset.get_filter_cmd(key, target) is not None else ""
 
-    def _get_vframes_cmd(self, asset, ref_or_dis):
+    @staticmethod
+    def _get_vframes_cmd(asset, ref_or_dis):
         if ref_or_dis == 'ref':
             start_end_frame = asset.ref_start_end_frame
         elif ref_or_dis == 'dis':
@@ -689,25 +724,36 @@ class Executor(TypeVersionEnabled):
             num_frames = end_frame - start_frame + 1
             return f"-vframes {num_frames}", f"select='gte(n\\,{start_frame})*gte({end_frame}\\,n)',setpts=PTS-STARTPTS"
 
+    def _close_ref_workfile(self, asset):
+
+        use_path_as_workpath = asset.use_path_as_workpath
+        path = asset.ref_path
+        workfile_path = asset.ref_workfile_path
+
+        _close_workfile_method = self.optional_dict2['_close_workfile_method'] \
+            if self.optional_dict2 is not None and '_close_workfile_method' in self.optional_dict2 and self.optional_dict2['_close_workfile_method'] is not None \
+            else self._close_workfile
+        _close_workfile_method(path, workfile_path, use_path_as_workpath)
+
+    def _close_dis_workfile(self, asset):
+
+        use_path_as_workpath = asset.use_path_as_workpath
+        path = asset.dis_path
+        workfile_path = asset.dis_workfile_path
+
+        _close_workfile_method = self.optional_dict2['_close_workfile_method'] \
+            if self.optional_dict2 is not None and '_close_workfile_method' in self.optional_dict2 and self.optional_dict2['_close_workfile_method'] is not None \
+            else self._close_workfile
+        _close_workfile_method(path, workfile_path, use_path_as_workpath)
+
     @staticmethod
-    def _close_ref_workfile(asset):
+    def _close_workfile(path, workfile_path, use_path_as_workpath):
 
-        # only need to close ref workfile if the path is different from ref path
-        assert asset.use_path_as_workpath is False and asset.ref_path != asset.ref_workfile_path
+        # only need to close workfile if the workfile path is different from path
+        assert use_path_as_workpath is False and path != workfile_path
 
-        # caution: never remove ref file!!!!!!!!!!!!!!!
-        if os.path.exists(asset.ref_workfile_path):
-            os.remove(asset.ref_workfile_path)
-
-    @staticmethod
-    def _close_dis_workfile(asset):
-
-        # only need to close dis workfile if the path is different from dis path
-        assert asset.use_path_as_workpath is False and asset.dis_path != asset.dis_workfile_path
-
-        # caution: never remove dis file!!!!!!!!!!!!!!
-        if os.path.exists(asset.dis_workfile_path):
-            os.remove(asset.dis_workfile_path)
+        if os.path.exists(workfile_path):
+            os.remove(workfile_path)
 
     @staticmethod
     def _close_ref_procfile(asset):
@@ -735,6 +781,9 @@ class Executor(TypeVersionEnabled):
     def _remove_result(self, asset):
         if self.result_store:
             self.result_store.delete(asset, self.executor_id)
+            qw, qh = asset.quality_width_height
+            self.result_store.delete_workfile(asset, self.executor_id, f'_ref.{qw}x{qh}.{self._get_workfile_yuv_type(asset)}.yuv')
+            self.result_store.delete_workfile(asset, self.executor_id, f'_dis.{qw}x{qh}.{self._get_workfile_yuv_type(asset)}.yuv')
 
 @deprecated
 def run_executors_in_parallel(executor_class,
@@ -801,7 +850,20 @@ def run_executors_in_parallel(executor_class,
 
 
 class NorefExecutorMixin(object):
-    """ Override Executor whenever reference video is mentioned. """
+    """
+    Override Executor whenever reference video is mentioned.
+
+    NorefExecutorMixin is useful for NorefAsset, i.e. assets that does not have a reference.
+
+    Example classes that inherits NorefExecutorMixin include: BrisqueNorefFeatureExtractor, VideoEncoder
+
+    (3/11/2020) added an (optional) step to allow python-based processing on
+    the dis file. The new processing pipeline looks like this:
+
+     notyuv  --------   dis_workfile   -----------------    dis_procfile      -----------------
+    -------> |FFmpeg| ---------------> |python-callback| -------------------> |   BRISQUE     | --->
+             --------                  -----------------                      -----------------
+    """
 
     @staticmethod
     @override(Executor)
@@ -898,13 +960,19 @@ class NorefExecutorMixin(object):
         dis_p.start()
         self._wait_for_procfiles(asset)
 
-    @classmethod
     @override(Executor)
-    def _close_workfiles(cls, asset):
-        cls._close_dis_workfile(asset)
+    def _close_workfiles(self, asset):
+        self._close_dis_workfile(asset)
 
     @classmethod
     @override(Executor)
     def _close_procfiles(cls, asset):
         cls._close_dis_procfile(asset)
 
+    @override(Executor)
+    def _save_result(self, result):
+        self.result_store.save(result)
+        if self.save_workfiles:
+            qw, qh = result.asset.quality_width_height
+            self.result_store.save_workfile(result, result.asset.dis_workfile_path, f'_dis.{qw}x{qh}.{self._get_workfile_yuv_type(result.asset)}.yuv')
+        return result

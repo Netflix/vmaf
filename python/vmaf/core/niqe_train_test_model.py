@@ -64,9 +64,9 @@ class NiqeTrainTestModel(TrainTestModel, RegressorMixin):
 
         xs_2d = []
         for i_sample in range(num_samples):
-            xs_2d_ = np.vstack(map(
+            xs_2d_ = np.vstack(list(map(
                 lambda feature_name: xys[feature_name][i_sample], feature_names)
-            ).T
+            )).T
             xs_2d.append(xs_2d_)
         xs_2d = np.vstack(xs_2d)
 

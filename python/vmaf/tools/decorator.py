@@ -1,4 +1,4 @@
-import collections
+from collections.abc import Hashable
 from functools import partial
 import os
 
@@ -70,7 +70,7 @@ class memoized(object):
         self.cache = {}
 
     def __call__(self, *args):
-        if not isinstance(args, collections.Hashable):
+        if not isinstance(args, Hashable):
             return self.func(*args)
         if args in self.cache:
             return self.cache[args]

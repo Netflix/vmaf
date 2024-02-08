@@ -37,6 +37,8 @@
 #if HAVE_AVX512
 #include "x86/vif_avx512.h"
 #endif
+#elif ARCH_AARCH64
+#include "arm64/vif_neon.h"
 #endif
 
 typedef struct VifState {
@@ -484,35 +486,18 @@ void vif_statistic_16(struct VifPublicState *s, float *num, float *den, unsigned
 }
 
 VifResiduals vif_compute_line_residuals(VifPublicState *s, unsigned from,
-                                        unsigned to, int bpc, int scale)
+                                        unsigned to, int scale)
 {
     VifResiduals residuals = { 0 };
     const unsigned fwidth = vif_filter1d_width[scale];
     const uint16_t *vif_filt = vif_filter1d_table[scale];
     VifBuffer buf = s->buf;
-    int32_t add_shift_round_HP, shift_HP;
-    int32_t add_shift_round_VP, shift_VP;
-    int32_t add_shift_round_VP_sq, shift_VP_sq;
     const uint16_t *log2_table = s->log2_table;
     double vif_enhn_gain_limit = s->vif_enhn_gain_limit;
     static const int32_t sigma_nsq = 65536 << 1;
 
-    if (scale == 0) {
-        shift_HP = 16;
-        add_shift_round_HP = 32768;
-        shift_VP = bpc;
-        add_shift_round_VP = 1 << (bpc - 1);
-        shift_VP_sq = (bpc - 8) * 2;
-        add_shift_round_VP_sq = (bpc == 8) ? 0 : 1 << (shift_VP_sq - 1);
-    }
-    else {
-        shift_HP = 16;
-        add_shift_round_HP = 32768;
-        shift_VP = 16;
-        add_shift_round_VP = 32768;
-        shift_VP_sq = 16;
-        add_shift_round_VP_sq = 32768;
-    }
+    int32_t shift_HP = 16;
+    int32_t add_shift_round_HP = 32768;
 
     //HORIZONTAL
     for (unsigned j = from; j < to; ++j) {
@@ -608,16 +593,22 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         s->vif_statistic_8 = vif_statistic_8_avx2;
         s->vif_statistic_16 = vif_statistic_16_avx2;
     }
-/*
 #if HAVE_AVX512
     if (flags & VMAF_X86_CPU_FLAG_AVX512) {
-        s->subsample_rd_8 = vif_subsample_rd_8_avx2;
+        s->subsample_rd_8 = vif_subsample_rd_8_avx512;
         s->subsample_rd_16 = vif_subsample_rd_16_avx512;
         s->vif_statistic_8 = vif_statistic_8_avx512;
         s->vif_statistic_16 = vif_statistic_16_avx512;
     }
 #endif
-*/
+#elif ARCH_AARCH64
+    unsigned flags = vmaf_get_cpu_flags();
+    if (flags & VMAF_ARM_CPU_FLAG_NEON) {
+        s->subsample_rd_8 = vif_subsample_rd_8_neon;
+        s->subsample_rd_16 = vif_subsample_rd_16_neon;
+        s->vif_statistic_8 = vif_statistic_8_neon;
+        s->vif_statistic_16 = vif_statistic_16_neon;
+    }
 #endif
 
     log_generate(s->public.log2_table);
@@ -637,6 +628,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         5 * (s->public.buf.stride_32) + 7 * s->public.buf.stride_tmp;
     void *data = aligned_malloc(data_sz, MAX_ALIGN);
     if (!data) return -ENOMEM;
+    memset(data, 0, data_sz);
 
     s->public.buf.data = data; data += pad_size;
     s->public.buf.ref = data; data += frame_size + pad_size + pad_size;
@@ -809,6 +801,7 @@ static int close(VmafFeatureExtractor *fex)
 {
     VifState *s = fex->priv;
     if (s->public.buf.data) aligned_free(s->public.buf.data);
+    vmaf_dictionary_free(&s->feature_name_dict);
     return 0;
 }
 

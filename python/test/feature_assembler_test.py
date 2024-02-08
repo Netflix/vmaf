@@ -116,13 +116,37 @@ class FeatureAssemblerTest(unittest.TestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 4.0498253541666669, places=4)
 
         with self.assertRaises(KeyError):
-            results[0]['VMAF_feature_ansnr_scores']
+            _ = results[0]['VMAF_feature_ansnr_scores']
         with self.assertRaises(KeyError):
-            results[0]['VMAF_feature_ansnr_score']
+            _ = results[0]['VMAF_feature_ansnr_score']
         with self.assertRaises(KeyError):
-            results[0]['VMAF_feature_adm_scores']
+            _ = results[0]['VMAF_feature_adm_scores']
         with self.assertRaises(KeyError):
-            results[0]['VMAF_feature_adm_score']
+            _ = results[0]['VMAF_feature_adm_score']
+
+
+class FeatureAssemblerUnitTest(unittest.TestCase):
+
+    def test_feature_assembler_get_fextractor_instance(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        fassembler = FeatureAssembler(
+            feature_dict={'VMAF_feature': ['vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3', 'adm2', 'motion2']},
+            feature_option_dict={'VMAF_feature': {'adm_ref_display_height': 540}},
+            assets=[asset],
+            logger=None,
+            fifo_mode=False,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={'model_filepath': 'model/vmaf_float_v0.6.1_rdh540.json'},
+            optional_dict2=None,
+            parallelize=False,
+            save_workfiles=False,
+        )
+
+        fex = fassembler._get_fextractor_instance('VMAF_feature')
+        self.assertEqual(fex.optional_dict, {'adm_ref_display_height': 540})
+        self.assertEqual(fex.optional_dict2, None)
 
 
 if __name__ == '__main__':

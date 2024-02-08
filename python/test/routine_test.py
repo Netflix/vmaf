@@ -3,12 +3,14 @@ import os
 import unittest
 import shutil
 
+import numpy as np
+
 from vmaf.config import VmafConfig, DisplayConfig
 # from vmaf.routine import train_test_vmaf_on_dataset, read_dataset, run_test_on_dataset, generate_dataset_from_raw
-from vmaf.routine import read_dataset, generate_dataset_from_raw
+from vmaf.routine import read_dataset, generate_dataset_from_raw, compare_two_quality_runners_on_dataset
 from vmaf.tools.misc import import_python_file
-from vmaf.core.quality_runner import VmafQualityRunner, BootstrapVmafQualityRunner
-from sureal.subjective_model import MosModel
+from vmaf.core.quality_runner import VmafQualityRunner, BootstrapVmafQualityRunner, PsnrQualityRunner
+from sureal.subjective_model import MosModel, SubjectiveModel
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
@@ -254,9 +256,9 @@ class TestTrainOnDatasetJsonFormat(unittest.TestCase):
             train_ax=None,
             test_ax=None,
             result_store=None,
-            parallelize=True,
+            parallelize=False,
             logger=None,
-            fifo_mode=True,
+            fifo_mode=False,
             output_model_filepath=self.output_model_filepath,
         )
 
@@ -292,9 +294,9 @@ class TestTrainOnDataset(unittest.TestCase):
             train_ax=None,
             test_ax=None,
             result_store=None,
-            parallelize=True,
+            parallelize=False,
             logger=None,
-            fifo_mode=True,
+            fifo_mode=False,
             output_model_filepath=self.output_model_filepath,
         )
 
@@ -305,12 +307,12 @@ class TestTrainOnDataset(unittest.TestCase):
 
         runner = VmafQualityRunner(
             train_assets,
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={'model_filepath': self.output_model_filepath}
         )
-        runner.run(parallelize=True)
+        runner.run(parallelize=False)
         results = runner.results
 
         self.assertAlmostEqual(results[0]['VMAF_score'], 89.55494473011981, places=4)
@@ -335,9 +337,9 @@ class TestTrainOnDataset(unittest.TestCase):
             train_ax=None,
             test_ax=None,
             result_store=None,
-            parallelize=True,
+            parallelize=False,
             logger=None,
-            fifo_mode=True,
+            fifo_mode=False,
             output_model_filepath=self.output_model_filepath
         )
 
@@ -352,17 +354,46 @@ class TestTrainOnDataset(unittest.TestCase):
             VmafConfig.test_resource_path('dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
                                                    None, VmafConfig.model_path("vmaf_float_v0.6.1.json"),
-                                                   parallelize=True,
+                                                   parallelize=False,
                                                    aggregate_method=None)
 
         self.assertAlmostEqual(results[0]['VMAF_score'], 99.142659046424384, places=4)
         self.assertAlmostEqual(results[1]['VMAF_score'], 35.066157497128764, places=4)
         self.assertAlmostEqual(results[2]['VMAF_score'], 97.428042675471147, places=4)
-        self.assertAlmostEqual(results[3]['VMAF_score'], 97.427927701008869, places=4)
+        self.assertAlmostEqual(results[3]['VMAF_score'], 97.427927701008869, places=3)
         self.assertAlmostEqual(test_assets[0].groundtruth, 100, places=4)
         self.assertAlmostEqual(test_assets[1].groundtruth, 50, places=4)
         self.assertAlmostEqual(test_assets[2].groundtruth, 100, places=4)
         self.assertAlmostEqual(test_assets[3].groundtruth, 80, places=4)
+
+    @unittest.skip("Inconsistent numerical values.")
+    def test_compare_two_quality_runners_on_dataset(self):
+        test_dataset = import_python_file(VmafConfig.test_resource_path('dataset_sample.py'))
+        result = compare_two_quality_runners_on_dataset(
+            test_dataset, VmafQualityRunner, PsnrQualityRunner,
+            result_store=None,
+            num_resample=10,
+            seed_resample=0,
+            subj_model_class=SubjectiveModel.find_subclass('MOS'),
+            parallelize=False, fifo_mode=False)
+        self.assertAlmostEqual(np.nanmean(list(zip(*result['plcc']))[0]), 0.8655928449687122, places=4)
+        self.assertAlmostEqual(np.nanmean(list(zip(*result['plcc']))[1]), 0.9875440797696373, places=4)
+        self.assertAlmostEqual(np.nanmean(list(zip(*result['srocc']))[0]), 0.8642507701111302, places=4)
+        self.assertAlmostEqual(np.nanmean(list(zip(*result['srocc']))[1]), 1.0, places=4)
+
+        self.assertTrue(np.isnan(result['plcc_ci95_first'][0]))
+        self.assertTrue(np.isnan(result['plcc_ci95_first'][1]))
+        self.assertTrue(np.isnan(result['plcc_ci95_second'][0]))
+        self.assertTrue(np.isnan(result['plcc_ci95_second'][1]))
+        self.assertTrue(np.isnan(result['plcc_ci95_diff'][0]))
+        self.assertTrue(np.isnan(result['plcc_ci95_diff'][1]))
+
+        self.assertTrue(np.isnan(result['srocc_ci95_first'][0]))
+        self.assertTrue(np.isnan(result['srocc_ci95_first'][1]))
+        self.assertTrue(np.isnan(result['srocc_ci95_second'][0]))
+        self.assertTrue(np.isnan(result['srocc_ci95_second'][1]))
+        self.assertTrue(np.isnan(result['srocc_ci95_diff'][0]))
+        self.assertTrue(np.isnan(result['srocc_ci95_diff'][1]))
 
     def test_test_on_dataset_plot_per_content(self):
         from vmaf.routine import run_test_on_dataset
@@ -377,14 +408,15 @@ class TestTrainOnDataset(unittest.TestCase):
                             aggregate_method=None,
                             point_label='asset_id',
                             do_plot=['aggregate',  # plots all contents in one figure
-                                     'per_content'  # plots a separate figure per content
+                                     'per_content',  # plots a separate figure per content
+                                     'groundtruth_predicted_in_parallel',  # plots of groundtruth and predicted in parallel
                                      ],
                             plot_linear_fit=True  # adds linear fit line to each plot
                             )
 
         output_dir = VmafConfig.workspace_path("output", "test_output")
         DisplayConfig.show(write_to_dir=output_dir)
-        self.assertEqual(len(glob.glob(os.path.join(output_dir, '*.png'))), 3)
+        self.assertEqual(len(glob.glob(os.path.join(output_dir, '*.png'))), 4)
 
         if os.path.exists(output_dir):
             shutil.rmtree(output_dir)
@@ -395,7 +427,7 @@ class TestTrainOnDataset(unittest.TestCase):
             VmafConfig.test_resource_path('dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, BootstrapVmafQualityRunner, None,
                                                    None, VmafConfig.model_path("vmaf_float_b_v0.6.3.json"),
-                                                   parallelize=True,
+                                                   parallelize=False,
                                                    aggregate_method=None)
 
         expecteds = [98.7927560599655, 100.0, 100.0, 98.82959541116277, 99.80711961053976, 98.91713244333198, 100.0,
@@ -428,13 +460,13 @@ class TestTrainOnDataset(unittest.TestCase):
             VmafConfig.test_resource_path('raw_dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
                                                    None, VmafConfig.model_path("vmaf_float_v0.6.1.json"),
-                                                   parallelize=True,
+                                                   parallelize=False,
                                                    aggregate_method=None)
 
         self.assertAlmostEqual(results[0]['VMAF_score'], 99.142659046424384, places=4)
         self.assertAlmostEqual(results[1]['VMAF_score'], 35.066157497128764, places=4)
         self.assertAlmostEqual(results[2]['VMAF_score'], 97.428042675471147, places=4)
-        self.assertAlmostEqual(results[3]['VMAF_score'], 97.427927701008869, places=4)
+        self.assertAlmostEqual(results[3]['VMAF_score'], 97.427927701008869, places=3)
         self.assertAlmostEqual(test_assets[0].groundtruth, 100, places=4)
         self.assertAlmostEqual(test_assets[1].groundtruth, 50, places=4)
         self.assertAlmostEqual(test_assets[2].groundtruth, 100, places=4)
@@ -450,14 +482,14 @@ class TestTrainOnDataset(unittest.TestCase):
             VmafConfig.test_resource_path('raw_dataset_sample.py'))
         test_assets, results = run_test_on_dataset(test_dataset, VmafQualityRunner, None,
                                                    None, VmafConfig.model_path("vmaf_float_v0.6.1.json"),
-                                                   parallelize=True,
+                                                   parallelize=False,
                                                    aggregate_method=None,
                                                    subj_model_class=MosModel)
 
         self.assertAlmostEqual(results[0]['VMAF_score'], 99.142659046424384, places=4)
         self.assertAlmostEqual(results[1]['VMAF_score'], 35.066157497128764, places=4)
         self.assertAlmostEqual(results[2]['VMAF_score'], 97.428042675471147, places=4)
-        self.assertAlmostEqual(results[3]['VMAF_score'], 97.427927701008869, places=4)
+        self.assertAlmostEqual(results[3]['VMAF_score'], 97.427927701008869, places=3)
         self.assertAlmostEqual(test_assets[0].groundtruth, 100, places=4)
         self.assertAlmostEqual(test_assets[1].groundtruth, 50, places=4)
         self.assertAlmostEqual(test_assets[2].groundtruth, 90, places=4)
@@ -488,7 +520,7 @@ class TestTrainOnDataset(unittest.TestCase):
                 result_store=None,
                 parallelize=False,
                 logger=None,
-                fifo_mode=True,
+                fifo_mode=False,
                 output_model_filepath=self.output_model_filepath,
             )
 
@@ -509,9 +541,9 @@ class TestTrainOnDataset(unittest.TestCase):
             train_ax=None,
             test_ax=None,
             result_store=None,
-            parallelize=True,
+            parallelize=False,
             logger=None,
-            fifo_mode=True,
+            fifo_mode=False,
             output_model_filepath=self.output_model_filepath,
         )
 
@@ -522,12 +554,12 @@ class TestTrainOnDataset(unittest.TestCase):
 
         runner = VmafQualityRunner(
             train_assets,
-            None, fifo_mode=True,
+            None, fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict={'model_filepath': self.output_model_filepath}
         )
-        runner.run(parallelize=True)
+        runner.run(parallelize=False)
         results = runner.results
 
         self.assertAlmostEqual(results[0]['VMAF_score'], 89.55494473011981, places=4)

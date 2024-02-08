@@ -22,7 +22,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "libvmaf/compute_vmaf.h"
 #include "libvmaf/model.h"
 #include "libvmaf/picture.h"
 #include "libvmaf/feature.h"
@@ -56,11 +55,37 @@ enum VmafPoolingMethod {
     VMAF_POOL_METHOD_NB
 };
 
+/**
+ * @struct VmafConfiguration
+ * @brief  Configuration needed to initialize a `VmafContext`
+ *
+ * @param log_level   How verbose the logger is.
+ *
+ * @param n_threads   How many threads can be used to run
+ *                    feature extractors concurrently.
+ * 
+ * @param n_subsample Compute scores only every N frames.
+ *                    Note that setting an even value for N can lead to
+ *                    inaccurate results. For more detail, see
+ *                    https://github.com/Netflix/vmaf/issues/1214
+ * 
+ * @param cpumask     Restrict permitted CPU instruction sets.
+ *                    if cpumask & 1:  disable SSE2 / disable NEON (on arm64)
+ *                    if cpumask & 2:  disable SSE3/SSSE3
+ *                    if cpumask & 4:  disable SSE4.1
+ *                    if cpumask & 8:  disable AVX2
+ *                    if cpumask & 16: disable AVX512
+ *                    if cpumask & 32: disable AVX512ICL
+ * 
+ * @param gpumask     Restrict permitted GPU operations.
+ *                    if gpumask: disable CUDA
+ */
 typedef struct VmafConfiguration {
     enum VmafLogLevel log_level;
     unsigned n_threads;
     unsigned n_subsample;
     uint64_t cpumask;
+    uint64_t gpumask;
 } VmafConfiguration;
 
 typedef struct VmafContext VmafContext;

@@ -27,12 +27,43 @@
 
 #define DATA_ALIGN 32
 
+static int default_release_picture(VmafPicture *pic, void *cookie)
+{
+    (void) cookie;
+    aligned_free(pic->data[0]);
+    return 0;
+}
+
+int vmaf_picture_set_release_callback(VmafPicture *pic, void *cookie,
+                         int (*release_picture)(VmafPicture *pic, void *cookie))
+{
+    if (!pic) return -EINVAL;
+    if (!release_picture) return -EINVAL;
+
+    VmafPicturePrivate *priv = pic->priv;
+    priv->cookie = cookie;
+    priv->release_picture = release_picture;
+
+    return 0;
+}
+
+int vmaf_picture_priv_init(VmafPicture *pic)
+{
+    const size_t priv_sz = sizeof(VmafPicturePrivate);
+    pic->priv = malloc(priv_sz);
+    if (!pic->priv) return -EINVAL;
+    memset(pic->priv, 0, priv_sz);
+    return 0;
+}
+
 int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
                        unsigned bpc, unsigned w, unsigned h)
 {
     if (!pic) return -EINVAL;
     if (!pix_fmt) return -EINVAL;
     if (bpc < 8 || bpc > 16) return -EINVAL;
+
+    int err = 0;
 
     memset(pic, 0, sizeof(*pic));
     pic->pix_fmt = pix_fmt;
@@ -64,11 +95,17 @@ int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
     if (pic->pix_fmt == VMAF_PIX_FMT_YUV400P)
         pic->data[1] = pic->data[2] = NULL;
 
-    int err = vmaf_ref_init(&pic->ref);
+    err |= vmaf_picture_priv_init(pic);
+    err |= vmaf_picture_set_release_callback(pic, NULL, default_release_picture);
     if (err) goto free_data;
+
+    err = vmaf_ref_init(&pic->ref);
+    if (err) goto free_priv;
 
     return 0;
 
+free_priv:
+    free(pic->priv);
 free_data:
     aligned_free(data);
 fail:
@@ -89,7 +126,9 @@ int vmaf_picture_unref(VmafPicture *pic) {
 
     vmaf_ref_fetch_decrement(pic->ref);
     if (vmaf_ref_load(pic->ref) == 0) {
-        aligned_free(pic->data[0]);
+        const VmafPicturePrivate *priv = pic->priv;
+        priv->release_picture(pic, priv->cookie);
+        free(pic->priv);
         vmaf_ref_close(pic->ref);
     }
     memset(pic, 0, sizeof(*pic));

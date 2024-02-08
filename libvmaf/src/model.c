@@ -21,23 +21,25 @@ typedef struct VmafBuiltInModel {
 
 #if VMAF_BUILT_IN_MODELS
 #if VMAF_FLOAT_FEATURES
-extern const char src_vmaf_float_v0_6_1neg_json;
+extern const char src_vmaf_float_v0_6_1neg_json[];
 extern const int src_vmaf_float_v0_6_1neg_json_len;
-extern const char src_vmaf_float_v0_6_1_json;
+extern const char src_vmaf_float_v0_6_1_json[];
 extern const int src_vmaf_float_v0_6_1_json_len;
-extern const char src_vmaf_float_b_v0_6_3_json;
+extern const char src_vmaf_float_b_v0_6_3_json[];
 extern const int src_vmaf_float_b_v0_6_3_json_len;
-extern const char src_vmaf_float_4k_v0_6_1_json;
+extern const char src_vmaf_float_4k_v0_6_1_json[];
 extern const int src_vmaf_float_4k_v0_6_1_json_len;
 #endif
-extern const char src_vmaf_v0_6_1_json;
+extern const char src_vmaf_v0_6_1_json[];
 extern const int src_vmaf_v0_6_1_json_len;
-extern const char src_vmaf_b_v0_6_3_json;
+extern const char src_vmaf_b_v0_6_3_json[];
 extern const int src_vmaf_b_v0_6_3_json_len;
-extern const char src_vmaf_v0_6_1neg_json;
+extern const char src_vmaf_v0_6_1neg_json[];
 extern const int src_vmaf_v0_6_1neg_json_len;
-extern const char src_vmaf_4k_v0_6_1_json;
+extern const char src_vmaf_4k_v0_6_1_json[];
 extern const int src_vmaf_4k_v0_6_1_json_len;
+extern const char src_vmaf_4k_v0_6_1neg_json[];
+extern const int src_vmaf_4k_v0_6_1neg_json_len;
 #endif
 
 static const VmafBuiltInModel built_in_models[] = {
@@ -45,44 +47,49 @@ static const VmafBuiltInModel built_in_models[] = {
 #if VMAF_FLOAT_FEATURES
     {
         .version = "vmaf_float_v0.6.1",
-        .data = &src_vmaf_float_v0_6_1_json,
+        .data = src_vmaf_float_v0_6_1_json,
         .data_len = &src_vmaf_float_v0_6_1_json_len,
     },
     {
         .version = "vmaf_float_b_v0.6.3",
-        .data = &src_vmaf_float_b_v0_6_3_json,
+        .data = src_vmaf_float_b_v0_6_3_json,
         .data_len = &src_vmaf_float_b_v0_6_3_json_len,
     },
     {
         .version = "vmaf_float_v0.6.1neg",
-        .data = &src_vmaf_float_v0_6_1neg_json,
+        .data = src_vmaf_float_v0_6_1neg_json,
         .data_len = &src_vmaf_float_v0_6_1neg_json_len,
     },
     {
         .version = "vmaf_float_4k_v0.6.1",
-        .data = &src_vmaf_float_4k_v0_6_1_json,
+        .data = src_vmaf_float_4k_v0_6_1_json,
         .data_len = &src_vmaf_float_4k_v0_6_1_json_len,
     },
 #endif
     {
         .version = "vmaf_v0.6.1",
-        .data = &src_vmaf_v0_6_1_json,
+        .data = src_vmaf_v0_6_1_json,
         .data_len = &src_vmaf_v0_6_1_json_len,
     },
     {
         .version = "vmaf_b_v0.6.3",
-        .data = &src_vmaf_b_v0_6_3_json,
+        .data = src_vmaf_b_v0_6_3_json,
         .data_len = &src_vmaf_b_v0_6_3_json_len,
     },
     {
         .version = "vmaf_v0.6.1neg",
-        .data = &src_vmaf_v0_6_1neg_json,
+        .data = src_vmaf_v0_6_1neg_json,
         .data_len = &src_vmaf_v0_6_1neg_json_len,
     },
     {
         .version = "vmaf_4k_v0.6.1",
-        .data = &src_vmaf_4k_v0_6_1_json,
+        .data = src_vmaf_4k_v0_6_1_json,
         .data_len = &src_vmaf_4k_v0_6_1_json_len,
+    },
+    {
+        .version = "vmaf_4k_v0.6.1neg",
+        .data = src_vmaf_4k_v0_6_1neg_json,
+        .data_len = &src_vmaf_4k_v0_6_1neg_json_len,
     },
 #endif
     { 0 }
@@ -124,9 +131,9 @@ char *vmaf_model_generate_name(VmafModelConfig *cfg)
     memset(name, 0, name_sz);
 
     if (!cfg->name)
-        strncpy(name, default_name, name_sz);
+        strcpy(name, default_name);
     else
-        strncpy(name, cfg->name, name_sz);
+        strcpy(name, cfg->name);
 
     return name;
 }
@@ -159,13 +166,12 @@ int vmaf_model_feature_overload(VmafModel *model, const char *feature_name,
 
     for (unsigned i = 0; i < model->n_features; i++) {
         VmafFeatureExtractor *fex =
-            vmaf_get_feature_extractor_by_feature_name(model->feature[i].name);
+            vmaf_get_feature_extractor_by_feature_name(model->feature[i].name, 0);
         if (!fex) continue;
         if (strcmp(feature_name, fex->name)) continue;
         VmafDictionary *d =
             vmaf_dictionary_merge((VmafDictionary**)&model->feature[i].opts_dict,
-                                  (VmafDictionary**)&opts_dict,
-                                  0);
+                                  (VmafDictionary**)&opts_dict, 0);
         if (!d) return -ENOMEM;
         err = vmaf_dictionary_free(&model->feature[i].opts_dict);
         if (err) goto exit;

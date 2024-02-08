@@ -26,6 +26,8 @@ void vmaf_init_cpu(void)
 {
 #if ARCH_X86
     flags = vmaf_get_cpu_flags_x86();
+#elif ARCH_AARCH64
+    flags = vmaf_get_cpu_flags_arm();
 #endif
 }
 

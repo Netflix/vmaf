@@ -1,14 +1,14 @@
 project('libvmaf', ['c', 'cpp'],
-    version : '2.3.1',
+    version : '3.0.0',
     default_options : ['c_std=c11',
                        'cpp_std=c++11',
                        'warning_level=2',
                        'buildtype=release',
                        'default_library=both',
                       ],
-    meson_version: '>= 0.47.0')
+    meson_version: '>= 0.56.1')
 
-vmaf_soname_version       = '1.1.3'
+vmaf_soname_version       = '3.0.0'
 vmaf_api_version_array    = vmaf_soname_version.split('.')
 vmaf_api_version_major    = vmaf_api_version_array[0]
 vmaf_api_version_minor    = vmaf_api_version_array[1]
@@ -27,8 +27,8 @@ elif host_machine.system() == 'darwin'
     test_args += '-D_DARWIN_C_SOURCE'
     add_project_arguments('-D_DARWIN_C_SOURCE', language: 'c')
 else
-    test_args += '-D_POSIX_C_SOURCE=200112L'
-    add_project_arguments('-D_POSIX_C_SOURCE=200112L', language: 'c')
+    test_args += '-D_XOPEN_SOURCE=600'
+    add_project_arguments('-D_XOPEN_SOURCE=600', language: 'c')
 endif
 
 # Header checks

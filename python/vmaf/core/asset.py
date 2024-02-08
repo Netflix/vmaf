@@ -12,7 +12,8 @@ import os
 
 from vmaf.core.mixin import WorkdirEnabled
 from vmaf.tools.misc import get_file_name_without_extension, \
-    get_file_name_with_extension, get_unique_str_from_recursive_dict
+    get_file_name_with_extension, get_unique_str_from_recursive_dict, \
+    map_yuv_type_to_bitdepth
 from vmaf.config import VmafConfig
 from vmaf.core.proc_func import proc_func_dict
 
@@ -124,8 +125,8 @@ class Asset(WorkdirEnabled):
                                    workdir_root)
         return new_asset
 
-    @staticmethod
-    def from_repr(rp):
+    @classmethod
+    def from_repr(cls, rp):
         """
         Reconstruct Asset from repr string.
         :return:
@@ -139,13 +140,13 @@ class Asset(WorkdirEnabled):
         assert 'dis_path' in d
         assert 'asset_dict' in d
 
-        return Asset(dataset=d['dataset'],
-                     content_id=d['content_id'],
-                     asset_id=d['asset_id'],
-                     ref_path=d['ref_path'],
-                     dis_path=d['dis_path'],
-                     asset_dict=d['asset_dict']
-                     )
+        return cls(dataset=d['dataset'],
+                   content_id=d['content_id'],
+                   asset_id=d['asset_id'],
+                   ref_path=d['ref_path'],
+                   dis_path=d['dis_path'],
+                   asset_dict=d['asset_dict']
+                   )
 
     # ==== groundtruth ====
     @property
@@ -219,6 +220,20 @@ class Asset(WorkdirEnabled):
             return self.asset_dict['dis_enc_width'], self.asset_dict['dis_enc_height']
         else:
             return self.dis_width_height
+
+    @property
+    def dis_encode_bitdepth(self):
+        """
+        Bitdepth of the encoded video before any conversions were applied.
+        :return: bitdepth of the encode.
+        Defaults to bitdepth of dis_yuv_type (e.g. 8 for yuv420p).
+        """
+        if 'dis_enc_bitdepth' in self.asset_dict:
+            assert self.asset_dict['dis_enc_bitdepth'] in [8, 10, 12, 16], \
+                "Supported encoding bitdepths are 8, 10, 12, and 16."
+            return self.asset_dict['dis_enc_bitdepth']
+        else:
+            return map_yuv_type_to_bitdepth(self.dis_yuv_type)
 
     def clear_up_width_height(self):
         if 'width' in self.asset_dict:
@@ -466,6 +481,13 @@ class Asset(WorkdirEnabled):
             w, h = self.dis_encode_width_height
             s += "_e_{w}x{h}".format(w=w, h=h)
 
+        if self.dis_encode_bitdepth is not None and \
+                map_yuv_type_to_bitdepth(self.dis_yuv_type) != self.dis_encode_bitdepth:
+            # only add dis_encode_bitdepth to the string if it is not None and it is different from the bitdepth
+            # of dis_yuv_type
+            ebd = self.dis_encode_bitdepth
+            s += "_ebd_{ebd}".format(ebd=ebd)
+
         if self.dis_yuv_type != self.DEFAULT_YUV_TYPE:
             s += "_{}".format(self.dis_yuv_type)
 
@@ -505,6 +527,11 @@ class Asset(WorkdirEnabled):
             if s != "":
                 s += "_"
             s += "{w}x{h}".format(w=w, h=h)
+
+        if self.workfile_yuv_type != self.DEFAULT_YUV_TYPE:
+            if s != "":
+                s += "_"
+            s += "wf_" + self.workfile_yuv_type
 
         return s
 
@@ -936,6 +963,11 @@ class NorefAsset(Asset):
         dis_path = kwargs['dis_path'] if 'dis_path' in kwargs else self.dis_path
         workdir_root = kwargs['workdir_root'] if 'workdir_root' in kwargs else self.workdir_root
 
+        # additional or override elements in asset_dict
+        if 'asset_dict' in kwargs:
+            for key in kwargs['asset_dict']:
+                new_asset_dict[key] = kwargs['asset_dict'][key]
+
         new_asset = self.__class__(dataset, content_id, asset_id,
                                    dis_path, new_asset_dict,
                                    workdir_root)
@@ -997,3 +1029,22 @@ class NorefAsset(Asset):
     @override(Asset)
     def ref_proc_callback(self):
         return self.dis_proc_callback
+
+    def to_string(self):
+        """
+        The compact string representation of asset, used by __str__.
+        :return:
+        """
+        s = "{dataset}_{content_id}_{asset_id}_{dis_str}". \
+            format(dataset=self.dataset,
+                   content_id=self.content_id,
+                   asset_id=self.asset_id,
+                   dis_str=self.dis_str)
+        quality_str = self.quality_str
+        if quality_str:
+            s += "_q_{quality_str}".format(quality_str=quality_str)
+
+        if len(s) > 196:  # upper limit of filename is 256 but leave some space for prefix/suffix
+            s = hashlib.sha1(s.encode("utf-8")).hexdigest()
+
+        return s

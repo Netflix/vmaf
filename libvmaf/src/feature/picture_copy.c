@@ -39,12 +39,16 @@ void picture_copy_hbd(float *dst, ptrdiff_t dst_stride,
 void picture_copy(float *dst, ptrdiff_t dst_stride,
                   VmafPicture *src, int offset, unsigned bpc)
 {
-    if (bpc == 10)
-        return picture_copy_hbd(dst, dst_stride, src, offset, 4.0f);
-    else if (bpc == 12)
-        return picture_copy_hbd(dst, dst_stride, src, offset, 16.0f);
-    else if (bpc == 16)
-        return picture_copy_hbd(dst, dst_stride, src, offset, 256.0f);
+    if (bpc == 10) {
+        picture_copy_hbd(dst, dst_stride, src, offset, 4.0f);
+        return;
+    } else if (bpc == 12) {
+        picture_copy_hbd(dst, dst_stride, src, offset, 16.0f);
+        return;
+    } else if (bpc == 16) {
+        picture_copy_hbd(dst, dst_stride, src, offset, 256.0f);
+        return;
+    }
 
     float *float_data = dst;
     uint8_t *data = src->data[0];

@@ -5,7 +5,7 @@
 For building, you need the following:
 
 - [Python3](https://www.python.org/download/releases/3.0/) (3.6 or higher)
-- [Meson](https://mesonbuild.com/) (0.47 or higher)
+- [Meson](https://mesonbuild.com/) (0.56.1 or higher)
 - [Ninja](https://ninja-build.org/) (1.7.1 or higher)
 - [NASM](https://www.nasm.us/) (for x86 builds only, 2.13.02 or higher)
 - `xxd`
@@ -16,19 +16,25 @@ python3 -m pip install virtualenv
 python3 -m virtualenv .venv
 source .venv/bin/activate
 pip install meson
-sudo [package-manager] install nasm ninja doxygen xxd
+sudo [package-manager] install nasm ninja-build doxygen xxd
 ```
 You need to invoke `[package-manager]` depending on which system you are on: `apt-get` for Ubuntu and Debian, `yum` for CentOS and RHEL, `dnf` for Fedora, `zypper` for openSUSE, `brew` for MacOS (no `sudo`).
+
+Ninja package name might be `ninja` or `ninja-build`, depending on your system. Check [the pre-built ninja packages](https://github.com/ninja-build/ninja/wiki/Pre-built-Ninja-packages) before running the install command.
 
 ## Compile
 
 Run:
 
 ```
-meson build --buildtype release
+meson setup build --buildtype release
 ```
 
-(add `-Denable_float=true` flag in the rare case if you want to use the floating-point feature extractors.)
+Special cases:
+- add `-Denable_float=true` flag in the rare case if you want to use the floating-point feature extractors.
+- add `-Denable_avx512=true` to support wider SIMD instructions to achieve the fastest processing on supported CPUs
+- add `-Denable_cuda=true` to build with CUDA support, which requires `nvcc` for compilation (tested with CUDA >= 11)
+- add `-Denable_nvtx=true` to build with [NVTX](https://github.com/NVIDIA/NVTX) marker support, which enables easy profiling using Nsight Systems
 
 Build with:
 
@@ -59,7 +65,6 @@ This will install the following files:
 │   └── vmaf
 ├── include
 │   └── libvmaf
-│       ├── compute_vmaf.h
 │       ├── feature.h
 │       ├── libvmaf.h
 │       ├── model.h
@@ -87,7 +92,7 @@ ninja -vC build doc/html
 
 ## `vmaf`
 
-A command line tool called `vmaf` is included as part of the build/installation. See the `vmaf` [README.md](tools/README.md) for details. An older command line tool (`vmafossexec`) is still part of the build but is not part of the installation. `vmafossexec` will be removed in a future version of this library.
+A command line tool called `vmaf` is included as part of the build/installation. See the `vmaf` [README.md](tools/README.md) for details.
 
 ## API Walkthrough
 

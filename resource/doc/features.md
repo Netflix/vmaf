@@ -1,6 +1,26 @@
 # Features
 
-Features are individual inputs that (VMAF) models may use to fuse into a final quality metric score. Note that an existing quality metric can serve as a feature of a new quality metric. Features can also be enabled individually without fusing (e.g., when using VMAF via FFmpeg)."
+Features are individual inputs that (VMAF) models may use to fuse into a final quality metric score. Note that an existing quality metric can serve as a feature of a new quality metric. Features can also be enabled individually without fusing (e.g., when using VMAF via FFmpeg).
+
+## Feature Overview
+
+This is an overview of the available features including their identifier (e.g., when using libvmaf through `ffmpeg`) and the individual metrics that will be computed as part of the feature:
+
+| Feature name      | Identifier      | Core feature? | Individual Metrics                                             |
+|-------------------|-----------------|---------------|----------------------------------------------------------------|
+| VIF               | `vif`           | Yes           | `vif_scale0`, `vif_scale1`, `vif_scale2`, `vif_scale3`         |
+| Motion2           | `motion`        | Yes           | `motion`, `motion2`                                            |
+| ADM               | `adm`           | Yes           | `adm2`, `adm_scale0`, `adm_scale1`, `adm_scale2`, `adm_scale3` |
+| [CAMBI](cambi.md) | `cambi`         | No            | `cambi`                                                        |
+| CIEDE2000         | `ciede`         | No            | `ciede2000`                                                    |
+| MS-SSIM           | `float_ms_ssim` | No            |                                                                |
+| PSNR              | `psnr`          | No            | `psnr_y`, `psnr_cb`, `psnr_cr`                                 |
+| PSNR-HVS          | `psnr_hvs`      | No            | `psnr_hvs`, `psnr_hvs_y`, `psnr_hvs_cb`, `psnr_hvs_cr`         |
+| SSIM              | `float_ssim`    | No            |                                                                |
+
+**Note:** Depending on the build of libvmaf, not all features may be available.
+
+Read on for a detailed description.
 
 ## Core features
 
@@ -24,7 +44,7 @@ DLM is an image quality metric based on the rationale of separately measuring th
 
 ## Additional features
 
-The following additional features are available and explained on dedicated pages:
+The following additional features are available and partly explained on dedicated pages:
 
 - [CAMBI](cambi.md)
 - CIEDE2000

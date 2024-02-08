@@ -27,6 +27,8 @@ extern "C" {
 
 #if ARCH_X86
 #include "x86/cpu.h"
+#elif ARCH_AARCH64
+#include "arm/cpu.h"
 #endif
 
 void vmaf_init_cpu(void);

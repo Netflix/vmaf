@@ -13,10 +13,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-18.04
+          - os: ubuntu-latest
             CC: gcc
             CXX: g++
-          - os: macos-10.15
+          - os: macos-latest
             CC: clang
             CXX: clang++
     runs-on: ${{ matrix.os }}
@@ -25,7 +25,7 @@ jobs:
       CXX: ${{ matrix.CXX }}
     steps:
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: 3.8
       - name: Install meson and ninja
@@ -33,15 +33,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install meson
       - name: Install dependencies (ubuntu)
-        if: matrix.os == 'ubuntu-18.04'
+        if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo -E apt-get -yq install ninja-build gcc nasm
       - name: Install dependencies (mac)
-        if: matrix.os == 'macos-10.15'
+        if: matrix.os == 'macos-latest'
         run: |
           brew install -q ninja nasm
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Build vmaf
         run: |
           meson setup libvmaf libvmaf/build --buildtype release
@@ -50,7 +50,7 @@ jobs:
         run: |
           git clone -q --branch master --depth=1 "https://github.com/FFmpeg/FFmpeg" ffmpeg
           cd ffmpeg
-          ./configure --enable-version3 --enable-libvmaf --cc="$CC" --cxx="$CXX" || { less ffbuild/config.log; exit 1; }
+          ./configure --enable-version3 --enable-libvmaf --disable-indevs --cc="$CC" --cxx="$CXX" || { less ffbuild/config.log; exit 1; }
       - name: Make FFmpeg
         run: |
           sudo make -C ffmpeg --quiet -j $(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu) install

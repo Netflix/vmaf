@@ -9,9 +9,8 @@ as well as a set of tools that allows a user to train and test a custom VMAF mod
 """
 
 import os
-from distutils.core import setup
-from Cython.Build import cythonize
-import numpy
+
+from setuptools import setup
 
 
 PYTHON_PROJECT = os.path.dirname(os.path.abspath(__file__))
@@ -24,12 +23,38 @@ def get_version():
             for line in fh:
                 if line.startswith("__version__"):
                     return line.strip().rpartition(" ")[2].replace('"', "")
+
     except Exception:
         pass
+
     return "0.0-dev"
 
-ext_module = cythonize(['vmaf/core/adm_dwt2_cy.pyx'])
-ext_module[0].include_dirs = [numpy.get_include(), '../libvmaf/src']
+
+class LazyExtensions(list):
+    _extensions = None
+
+    @property
+    def extensions(self):
+        if self._extensions is None:
+            from Cython.Build import cythonize
+            import numpy
+
+            self._extensions = cythonize([
+                'vmaf/core/adm_dwt2_cy.pyx'
+            ], compiler_directives={'language_level' : "3"})
+            self._extensions[0].include_dirs = [numpy.get_include(), '../libvmaf/src']
+
+        return self._extensions
+
+    def __iter__(self):
+        return iter(self.extensions)
+
+    def __contains__(self, value):
+        return value in self.extensions
+
+    def __len__(self):
+        return len(self.extensions)
+
 
 setup(
     name="vmaf",
@@ -64,8 +89,7 @@ setup(
             'run_vmaf_cross_validation=vmaf.script.run_vmaf_cross_validation:main',
             'run_vmaf_in_batch=vmaf.script.run_vmaf_in_batch:main',
             'run_vmaf_training=vmaf.script.run_vmaf_training:main',
-            'run_vmafossexec_subsampling=vmaf.script.run_vmafossexec_subsampling:main',
         ],
     },
-    ext_modules=ext_module,
+    ext_modules=LazyExtensions(),
 )
