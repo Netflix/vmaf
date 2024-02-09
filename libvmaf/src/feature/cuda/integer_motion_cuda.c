@@ -210,13 +210,14 @@ static int flush_fex_cuda(VmafFeatureExtractor *fex,
     CHECK_CUDA(cuStreamSynchronize(s->str));
     CHECK_CUDA(cuStreamSynchronize(s->host_stream));
 
-    if (s->index > 0) {
-        ret = vmaf_feature_collector_append(feature_collector,
-                "VMAF_integer_feature_motion2_score",
-                s->score, s->index);
-    }
+    // Not required, write_scores takes care of this
+    // if (s->index > 0) {
+    //     ret = vmaf_feature_collector_append(feature_collector,
+    //             "VMAF_integer_feature_motion2_score",
+    //             s->score, s->index);
+    // }
 
-    return (ret < 0) ? ret : !ret;
+    return 0;
 }
 
 static inline double normalize_and_scale_sad(uint64_t sad,

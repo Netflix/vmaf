@@ -31,7 +31,6 @@
 #include "cuda/integer_adm_cuda.h"
 #include "picture_cuda.h"
 #include <unistd.h>
-
 #include <assert.h>
 
 #define RES_BUFFER_SIZE 4 * 3 * 2
@@ -1223,7 +1222,8 @@ static int flush_fex_cuda(VmafFeatureExtractor *fex,
 {
     AdmStateCuda *s = fex->priv;
     CHECK_CUDA(cuStreamSynchronize(s->str));
-    return 1;
+    CHECK_CUDA(cuStreamSynchronize(s->host_stream));
+    return 0;
 }
 
 static const char *provided_features[] = {

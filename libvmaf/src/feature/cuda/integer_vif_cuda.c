@@ -496,7 +496,7 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
     write_score_parameters_vif *data = s->buf.cpu_param_buf;
     data->feature_collector = feature_collector;
     data->index = index;
-    CHECK_CUDA(cuLaunchHostFunc(s->str, write_scores, data));
+    CHECK_CUDA(cuLaunchHostFunc(s->host_stream, write_scores, data));
     return 0;
 }
 
@@ -527,7 +527,8 @@ static int flush_fex_cuda(VmafFeatureExtractor *fex,
     VifStateCuda *s = fex->priv;
 
     CHECK_CUDA(cuStreamSynchronize(s->str));
-    return 1;
+    CHECK_CUDA(cuStreamSynchronize(s->host_stream));
+    return 0;
 }
 
 static const char *provided_features[] = {

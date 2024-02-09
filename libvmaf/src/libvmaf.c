@@ -362,6 +362,20 @@ int vmaf_use_features_from_model_collection(VmafContext *vmaf,
     return err;
 }
 
+
+int vmaf_cuda_fex_synchronize(VmafContext *vmaf) {
+    if(!vmaf) return -EINVAL;
+    int err = 0;
+    RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
+        for (unsigned i = 0; i < rfe.cnt; i++) {
+            if ((rfe.fex_ctx[i]->fex->flags & VMAF_FEATURE_EXTRACTOR_CUDA))
+                err |= vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
+                                                            vmaf->feature_collector);
+        }
+
+    return err;
+}
+
 struct ThreadData {
     VmafFeatureExtractorContext *fex_ctx;
     VmafPicture ref, dist;
