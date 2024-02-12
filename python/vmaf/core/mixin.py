@@ -94,5 +94,3 @@ class TypeVersionEnabled(object):
         for subclass in subclasses:
             subsubclasses += subclass.get_subclasses_recursively()
         return subclasses + subsubclasses
-
-

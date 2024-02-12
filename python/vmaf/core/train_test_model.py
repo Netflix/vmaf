@@ -142,20 +142,23 @@ class RegressorMixin(object):
             for i_test_split in range(n_splits_test_indices):
 
                 np.random.seed(i_test_split)  # seed is i_test_split
-                # random sample with replacement:
-                indices = np.random.choice(range(sample_size), size=sample_size, replace=True)
+                # random sample with replacement
+                idxs = np.random.choice(range(sample_size), size=sample_size, replace=True)
 
-                ys_label_resampled = ys_label[indices]
-                ys_label_pred_resampled = ys_label_pred[indices]
+                ys_label_resampled = ys_label[idxs]
+                ys_label_pred_resampled = ys_label_pred[idxs]
 
-                srcc_distribution.append(SrccPerfMetric(ys_label_resampled, ys_label_pred_resampled)
-                    .evaluate(enable_mapping=True)['score'])
+                srcc_distribution.append(
+                    SrccPerfMetric(ys_label_resampled, ys_label_pred_resampled).evaluate(enable_mapping=True)['score']
+                )
 
-                pcc_distribution.append(PccPerfMetric(ys_label_resampled, ys_label_pred_resampled)
-                    .evaluate(enable_mapping=True)['score'])
+                pcc_distribution.append(
+                    PccPerfMetric(ys_label_resampled, ys_label_pred_resampled).evaluate(enable_mapping=True)['score']
+                )
 
-                rmse_distribution.append(RmsePerfMetric(ys_label_resampled, ys_label_pred_resampled)
-                    .evaluate(enable_mapping=True)['score'])
+                rmse_distribution.append(
+                    RmsePerfMetric(ys_label_resampled, ys_label_pred_resampled).evaluate(enable_mapping=True)['score']
+                )
 
             stats['SRCC_across_test_splits_distribution'] = srcc_distribution
             stats['PCC_across_test_splits_distribution'] = pcc_distribution
@@ -305,6 +308,7 @@ class RegressorMixin(object):
         for option in do_plot:
             assert option in accepted_options, f"{option} is not in {accepted_options}"
 
+        overall_linear_fit = None
         if plot_linear_fit:
             overall_linear_fit = linear_fit(ys_label, ys_label_pred)
             ax.set_xlim(xlim)
@@ -357,17 +361,23 @@ class RegressorMixin(object):
 
                     if plot_linear_fit:
                         curr_linear_fit = linear_fit(curr_ys_label, curr_ys_label_pred)
-                        new_ax.axline((xlim[0], linear_func(xlim[0], overall_linear_fit[0][0], overall_linear_fit[0][1])),
-                                   (xlim[1], linear_func(xlim[1], overall_linear_fit[0][0], overall_linear_fit[0][1])),
-                                   color='gray', linestyle='--')
-                        new_ax.axline((xlim[0], linear_func(xlim[0], curr_linear_fit[0][0], curr_linear_fit[0][1])),
-                                   (xlim[1], linear_func(xlim[1], curr_linear_fit[0][0], curr_linear_fit[0][1])),
-                                   color='red', linestyle='--')
+                        new_ax.axline(
+                            (xlim[0], linear_func(xlim[0], overall_linear_fit[0][0], overall_linear_fit[0][1])),
+                            (xlim[1], linear_func(xlim[1], overall_linear_fit[0][0], overall_linear_fit[0][1])),
+                            color='gray', linestyle='--'
+                        )
+                        new_ax.axline(
+                            (xlim[0], linear_func(xlim[0], curr_linear_fit[0][0], curr_linear_fit[0][1])),
+                            (xlim[1], linear_func(xlim[1], curr_linear_fit[0][0], curr_linear_fit[0][1])),
+                            color='red', linestyle='--'
+                        )
                         new_ax.legend(['overall fit', 'current fit'])
 
-                    new_ax.errorbar(curr_ys_label, curr_ys_label_pred,
-                                 xerr=1.96 * curr_ys_label_stddev,
-                                 marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)])
+                    new_ax.errorbar(
+                        curr_ys_label, curr_ys_label_pred,
+                        xerr=1.96 * curr_ys_label_stddev,
+                        marker='o', linestyle='', label=curr_content_id, color=colors[idx % len(colors)]
+                    )
 
                     new_ax.set_title(f'Content id {str(curr_content_id)}')
                     new_ax.set_xlabel('True Score')
@@ -399,29 +409,29 @@ class RegressorMixin(object):
             fig_gt_pred.tight_layout()
 
     @staticmethod
-    def get_objective_score(result, type='SRCC'):
+    def get_objective_score(result, score_type='SRCC'):
         """
         Objective score is something to MAXIMIZE. e.g. SRCC, or -RMSE.
         :param result:
-        :param type:
+        :param score_type:
         :return:
         """
-        if type == 'SRCC':
+        if score_type == 'SRCC':
             return result['SRCC']
-        elif type == 'PCC':
+        elif score_type == 'PCC':
             return result['PCC']
-        elif type == 'KENDALL':
+        elif score_type == 'KENDALL':
             return result['KENDALL']
-        elif type == 'RMSE':
+        elif score_type == 'RMSE':
             return -result['RMSE']
         else:
-            assert False, 'Unknow type: {} for get_objective_score().'.format(type)
+            assert False, 'Unknow type: {} for get_objective_score().'.format(score_type)
 
 
 class ClassifierMixin(object):
 
     @classmethod
-    def get_stats(cls, ys_label, ys_label_pred, **kwargs):
+    def get_stats(cls, ys_label, ys_label_pred):
 
         # cannot have None
         assert all(x is not None for x in ys_label)
@@ -467,21 +477,21 @@ class ClassifierMixin(object):
         return cls.get_stats(aggregate_ys_label, aggregate_ys_label_pred)
 
     @staticmethod
-    def get_objective_score(result, type='RMSE'):
+    def get_objective_score(result, score_type='RMSE'):
         """
         Objective score is something to MAXIMIZE. e.g. f1, or -errorrate, or -RMSE.
         :param result:
-        :param type:
+        :param score_type:
         :return:
         """
-        if type == 'f1':
+        if score_type == 'f1':
             return result['f1']
-        elif type == 'errorrate':
+        elif score_type == 'errorrate':
             return -result['errorrate']
-        elif type == 'RMSE':
+        elif score_type == 'RMSE':
             return -result['RMSE']
         else:
-            assert False, 'Unknow type: {} for get_objective_score().'.format(type)
+            assert False, 'Unknow type: {} for get_objective_score().'.format(score_type)
 
 
 class TrainTestModel(TypeVersionEnabled):
@@ -499,10 +509,10 @@ class TrainTestModel(TypeVersionEnabled):
         raise NotImplementedError
 
     def __init__(self, param_dict, logger=None, optional_dict2=None):
-        '''
+        """
         Put in optional_dict2 optionals that would not impact result, e.g.
         path to checkpoint file directories, or h5py file
-        '''
+        """
         TypeVersionEnabled.__init__(self)
         self.param_dict = param_dict
         self.logger = logger
@@ -520,7 +530,7 @@ class TrainTestModel(TypeVersionEnabled):
         return TypeVersionEnabled.get_type_version_string(self)
 
     def _assert_trained(self):
-        assert 'model_type' in self.model_dict # need this to recover class
+        assert 'model_type' in self.model_dict  # need this to recover class
         assert 'feature_names' in self.model_dict
         assert 'norm_type' in self.model_dict
         assert 'model' in self.model_dict
@@ -633,8 +643,8 @@ class TrainTestModel(TypeVersionEnabled):
 
     @staticmethod
     def _to_file(filename, param_dict, model_dict, **more):
-        format = more['format'] if 'format' in more else 'pkl'
-        assert format in ['pkl'], f'format must be pkl, but got: {format}'
+        fmt = more['format'] if 'format' in more else 'pkl'
+        assert fmt in ['pkl'], f'format must be pkl, but got: {fmt}'
 
         info_to_save = {'param_dict': param_dict,
                         'model_dict': model_dict}
@@ -644,16 +654,16 @@ class TrainTestModel(TypeVersionEnabled):
 
     @classmethod
     def from_file(cls, filename, logger=None, optional_dict2=None, **more):
-        format = more['format'] if 'format' in more else 'pkl'
+        fmt = more['format'] if 'format' in more else 'pkl'
         supported_format = ['pkl', 'json']
-        assert format in supported_format, f'format must be in {supported_format} but is {format}'
+        assert fmt in supported_format, f'format must be in {supported_format} but is {fmt}'
 
         assert os.path.exists(filename), 'File name {} does not exist.'.format(filename)
 
-        if format == 'pkl':
+        if fmt == 'pkl':
             with open(filename, 'rb') as file:
                 info_loaded = pickle.load(file)
-        elif format == 'json':
+        elif fmt == 'json':
             with open(filename, 'rt') as file:
                 info_loaded = json.load(file)
         else:
@@ -674,9 +684,9 @@ class TrainTestModel(TypeVersionEnabled):
 
     @classmethod
     def _from_info_loaded(cls, info_loaded, filename, logger, optional_dict2, **more):
-        format = more['format'] if 'format' in more else 'pkl'
+        fmt = more['format'] if 'format' in more else 'pkl'
         supported_format = ['pkl']
-        assert format in supported_format, f'format must be in {supported_format} but is {format}'
+        assert fmt in supported_format, f'format must be in {supported_format} but is {fmt}'
 
         train_test_model = cls(
             param_dict={}, logger=logger, optional_dict2=optional_dict2)
@@ -803,8 +813,8 @@ class TrainTestModel(TypeVersionEnabled):
                 if feature in features:
                     fmin, fmax = custom_map[feature]
                     idx = features.index(feature)
-                    assert len(fmins) == len(features) + 1 # fmins[0] is for y
-                    assert len(fmins) == len(features) + 1 # fmaxs[0] is for y
+                    assert len(fmins) == len(features) + 1  # fmins[0] is for y
+                    assert len(fmins) == len(features) + 1  # fmaxs[0] is for y
                     fmins[idx + 1] = fmin
                     fmaxs[idx + 1] = fmax
 
@@ -892,8 +902,8 @@ class TrainTestModel(TypeVersionEnabled):
 
     @staticmethod
     def _delete(filename, **more):
-        format = more['format'] if 'format' in more else 'pkl'
-        assert format in ['pkl'], f'format must be pkl, but got: {format}'
+        fmt = more['format'] if 'format' in more else 'pkl'
+        assert fmt in ['pkl'], f'format must be pkl, but got: {fmt}'
 
         if os.path.exists(filename):
             os.remove(filename)
@@ -925,7 +935,7 @@ class TrainTestModel(TypeVersionEnabled):
         xs = {}
         for name in feature_names:
             if indexs is not None:
-                _results = list(map(lambda i:results[i], indexs))
+                _results = list(map(lambda i: results[i], indexs))
             else:
                 _results = results
             xs[name] = list(map(lambda result: result[name], _results))
@@ -963,7 +973,7 @@ class TrainTestModel(TypeVersionEnabled):
         """
         ys = {}
         if indexs is not None:
-            _results = list(map(lambda i:results[i], indexs))
+            _results = list(map(lambda i: results[i], indexs))
         else:
             _results = results
         ys['label'] = \
@@ -1052,12 +1062,12 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
     @staticmethod
     @override(TrainTestModel)
     def _to_file(filename, param_dict, model_dict, **more):
-        format = more['format'] if 'format' in more else 'pkl'
+        fmt = more['format'] if 'format' in more else 'pkl'
         supported_formats = ['pkl', 'json']
-        assert format in supported_formats, \
-            f'format must be in {supported_formats}, but got: {format}'
+        assert fmt in supported_formats, \
+            f'format must be in {supported_formats}, but got: {fmt}'
 
-        if format == 'pkl':
+        if fmt == 'pkl':
 
             # special handling of libsvmnusvr: save .model differently
             info_to_save = {'param_dict': param_dict,
@@ -1069,7 +1079,7 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
             with open(filename, 'wb') as file:
                 pickle.dump(info_to_save, file)
             svmutil.svm_save_model(filename + '.model', svm_model)
-        elif format == 'json':
+        elif fmt == 'json':
             os.makedirs(os.path.dirname(filename), exist_ok=True)
             # special handling of libsvmnusvr: save model into a string
             tmp_svm_filename = os.path.basename(filename) + '.svm'
@@ -1098,9 +1108,9 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
     @classmethod
     @override(TrainTestModel)
     def _from_info_loaded(cls, info_loaded, filename, logger, optional_dict2, **more):
-        format = more['format'] if 'format' in more else 'pkl'
+        fmt = more['format'] if 'format' in more else 'pkl'
         supported_format = ['pkl', 'json']
-        assert format in supported_format, f'format must be in {supported_format} but is {format}'
+        assert fmt in supported_format, f'format must be in {supported_format} but is {fmt}'
 
         # override TrainTestModel._from_info_loaded
         train_test_model = cls(
@@ -1109,11 +1119,11 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
         train_test_model.model_dict = info_loaded['model_dict'].copy()
 
         if issubclass(cls, LibsvmNusvrTrainTestModel):
-            if format == 'pkl':
+            if fmt == 'pkl':
                 # special handling of libsvmnusvr: load .model differently
                 model = svmutil.svm_load_model(filename + '.model')
                 train_test_model.model_dict['model'] = model
-            elif format == 'json':
+            elif fmt == 'json':
                 # special handling of libsvmnusvr: load model from a string
                 svm_model_str = info_loaded['model_dict']['model']
                 with tempfile.NamedTemporaryFile(mode='w+t', delete=False) as tmpfile:
@@ -1129,16 +1139,16 @@ class LibsvmNusvrTrainTestModel(TrainTestModel, RegressorMixin):
     @classmethod
     @override(TrainTestModel)
     def _delete(cls, filename, **more):
-        format = more['format'] if 'format' in more else 'pkl'
+        fmt = more['format'] if 'format' in more else 'pkl'
         supported_formats = ['pkl', 'json']
-        assert format in supported_formats, f'format must be in {supported_formats}, but got: {format}'
+        assert fmt in supported_formats, f'format must be in {supported_formats}, but got: {fmt}'
 
-        if format == 'pkl':
+        if fmt == 'pkl':
             if os.path.exists(filename):
                 os.remove(filename)
             if os.path.exists(filename + '.model'):
                 os.remove(filename + '.model')
-        elif format == 'json':
+        elif fmt == 'json':
             if os.path.exists(filename):
                 os.remove(filename)
         else:
@@ -1343,19 +1353,19 @@ class Logistic5PLRegressionTrainTestModel(TrainTestModel, RegressorMixin):
     @staticmethod
     @override(TrainTestModel)
     def _to_file(filename, param_dict, model_dict, **more):
-        format = more['format'] if 'format' in more else 'pkl'
+        fmt = more['format'] if 'format' in more else 'pkl'
         supported_formats = ['pkl', 'json']
-        assert format in supported_formats, \
-            f'format must be in {supported_formats}, but got: {format}'
+        assert fmt in supported_formats, \
+            f'format must be in {supported_formats}, but got: {fmt}'
 
         info_to_save = {'param_dict': param_dict,
                         'model_dict': model_dict.copy()}   
 
-        if format == 'pkl':
+        if fmt == 'pkl':
             os.makedirs(os.path.dirname(filename), exist_ok=True)
             with open(filename, 'wb') as file:
                 pickle.dump(info_to_save, file)
-        elif format == 'json':
+        elif fmt == 'json':
             os.makedirs(os.path.dirname(filename), exist_ok=True)
             with open(filename, 'wt') as file:
                 json.dump(info_to_save, file, indent=4)
@@ -1495,9 +1505,9 @@ class BootstrapRegressorMixin(RegressorMixin):
             avg_ci95_high = np.mean(stats['ys_label_pred_ci95_high'])
             if content_ids is None:
                 if ci_assume_gaussian:
-                    yerr = 1.96 * stats['ys_label_pred_stddev'] # 95% C.I. (assume Gaussian)
+                    yerr = 1.96 * stats['ys_label_pred_stddev']  # 95% C.I. (assume Gaussian)
                 else:
-                    yerr = [stats['ys_label_pred_bagging'] - avg_ci95_low, avg_ci95_high - stats['ys_label_pred_bagging']] # 95% C.I.
+                    yerr = [stats['ys_label_pred_bagging'] - avg_ci95_low, avg_ci95_high - stats['ys_label_pred_bagging']]  # 95% C.I.
                 ax.errorbar(stats['ys_label'], stats['ys_label_pred'],
                             yerr=yerr,
                             capsize=2,
@@ -1518,9 +1528,9 @@ class BootstrapRegressorMixin(RegressorMixin):
                     curr_ys_label_pred_ci95_low = np.array(stats['ys_label_pred_ci95_low'])[curr_idxs]
                     curr_ys_label_pred_ci95_high = np.array(stats['ys_label_pred_ci95_high'])[curr_idxs]
                     if ci_assume_gaussian:
-                        yerr = 1.96 * curr_ys_label_pred_stddev # 95% C.I. (assume Gaussian)
+                        yerr = 1.96 * curr_ys_label_pred_stddev  # 95% C.I. (assume Gaussian)
                     else:
-                        yerr = [curr_ys_label_pred_bagging - curr_ys_label_pred_ci95_low, curr_ys_label_pred_ci95_high - curr_ys_label_pred_bagging] # 95% C.I.
+                        yerr = [curr_ys_label_pred_bagging - curr_ys_label_pred_ci95_low, curr_ys_label_pred_ci95_high - curr_ys_label_pred_bagging]  # 95% C.I.
                     try:
                         curr_ys_label_stddev = np.array(stats['ys_label_stddev'])[curr_idxs]
                         ax.errorbar(curr_ys_label, curr_ys_label_pred,
@@ -1570,7 +1580,7 @@ class BootstrapMixin(object):
 
         # rest models: resample training data with replacement
         for i_model in range(1, num_models):
-            np.random.seed(i_model) # seed is i_model
+            np.random.seed(i_model)  # seed is i_model
             # random sample with replacement:
             indices = np.random.choice(range(sample_size), size=sample_size, replace=True)
             xys_2d_ = xys_2d[indices, :]
@@ -1641,19 +1651,19 @@ class BootstrapMixin(object):
 
     @override(TrainTestModel)
     def to_file(self, filename, **more):
-        format = more['format'] if 'format' in more else 'pkl'
+        fmt = more['format'] if 'format' in more else 'pkl'
         supported_formats = ['pkl', 'json']
-        assert format in supported_formats, \
-            f'format must be in {supported_formats}, but got: {format}'
+        assert fmt in supported_formats, \
+            f'format must be in {supported_formats}, but got: {fmt}'
 
         combined = more['combined'] if 'combined' in more else False
         assert isinstance(combined, bool)
 
         if combined is True:
             supported_formats_for_combined = ['json']
-            assert format in supported_formats_for_combined, \
+            assert fmt in supported_formats_for_combined, \
                 f'combine=True only supports format in ' \
-                    f'{supported_formats_for_combined}, but format is {format}'
+                f'{supported_formats_for_combined}, but format is {fmt}'
 
         if combined is True:
             assert issubclass(self.__class__, LibsvmNusvrTrainTestModel), \
@@ -1671,7 +1681,7 @@ class BootstrapMixin(object):
             for i_model, model in enumerate(models):
                 model_dict_ = model_dict.copy()
                 model_dict_['model'] = model
-                if format == 'json' and issubclass(self.__class__, LibsvmNusvrTrainTestModel):
+                if fmt == 'json' and issubclass(self.__class__, LibsvmNusvrTrainTestModel):
                     tmp_svm_filename = os.path.basename(filename) + '.svm'
                     info_to_save = LibsvmNusvrTrainTestModel._to_json(
                         param_dict,
@@ -1703,23 +1713,23 @@ class BootstrapMixin(object):
     @classmethod
     @override(TrainTestModel)
     def from_file(cls, filename, logger=None, optional_dict2=None, **more):
-        format = more['format'] if 'format' in more else 'pkl'
+        fmt = more['format'] if 'format' in more else 'pkl'
         supported_format = ['pkl', 'json']
-        assert format in supported_format, \
-            f'format must be in {supported_format} but is {format}'
+        assert fmt in supported_format, \
+            f'format must be in {supported_format} but is {fmt}'
 
         combined = more['combined'] if 'combined' in more else False
         assert isinstance(combined, bool)
 
         if combined is True:
             supported_formats_for_combined = ['json']
-            assert format in supported_formats_for_combined, \
+            assert fmt in supported_formats_for_combined, \
                 f'combine=True only supports format in ' \
-                    f'{supported_formats_for_combined}, but format is {format}'
+                f'{supported_formats_for_combined}, but format is {fmt}'
 
         if combined is True:
 
-            if format == 'json':
+            if fmt == 'json':
                 with open(filename, 'rt') as file:
                     info_loaded_meta = json.load(file)
                 assert str(0) in info_loaded_meta
@@ -1753,10 +1763,10 @@ class BootstrapMixin(object):
 
             filename_0 = cls._get_model_i_filename(filename, 0)
             assert os.path.exists(filename_0), 'File name {} does not exist.'.format(filename_0)
-            if format == 'pkl':
+            if fmt == 'pkl':
                 with open(filename_0, 'rb') as file:
                     info_loaded_0 = pickle.load(file)
-            elif format == 'json':
+            elif fmt == 'json':
                 with open(filename_0, 'rt') as file:
                     info_loaded_0 = json.load(file)
             else:
@@ -1771,10 +1781,10 @@ class BootstrapMixin(object):
             for i_model in range(num_models):
                 filename_ = cls._get_model_i_filename(filename, i_model)
                 assert os.path.exists(filename_), 'File name {} does not exist.'.format(filename_)
-                if format == 'pkl':
+                if fmt == 'pkl':
                     with open(filename_, 'rb') as file:
                         info_loaded_ = pickle.load(file)
-                elif format == 'json':
+                elif fmt == 'json':
                     with open(filename_, 'rt') as file:
                         info_loaded_ = json.load(file)
                 train_test_model_ = model_class._from_info_loaded(
@@ -1789,28 +1799,28 @@ class BootstrapMixin(object):
     @classmethod
     @override(TrainTestModel)
     def delete(cls, filename, **more):
-        format = more['format'] if 'format' in more else 'pkl'
+        fmt = more['format'] if 'format' in more else 'pkl'
         supported_formats = ['pkl', 'json']
-        assert format in supported_formats, f'format must be in {supported_formats} but got {format}'
+        assert fmt in supported_formats, f'format must be in {supported_formats} but got {fmt}'
 
         combined = more['combined'] if 'combined' in more else False
         assert isinstance(combined, bool)
 
         if combined is True:
             supported_formats_for_combined = ['json']
-            assert format in supported_formats_for_combined, \
+            assert fmt in supported_formats_for_combined, \
                 f'combine=True only supports format in ' \
-                    f'{supported_formats_for_combined}, but format is {format}'
+                f'{supported_formats_for_combined}, but format is {fmt}'
 
         if combined:
             cls._delete(filename, **more)
         else:
             filename_0 = cls._get_model_i_filename(filename, 0)
             assert os.path.exists(filename_0)
-            if format == 'pkl':
+            if fmt == 'pkl':
                 with open(filename_0, 'rb') as file:
                     info_loaded_0 = pickle.load(file)
-            elif format == 'json':
+            elif fmt == 'json':
                 with open(filename_0, 'rt') as file:
                     info_loaded_0 = json.load(file)
             else:
@@ -1856,7 +1866,7 @@ class ResidueBootstrapMixin(BootstrapMixin):
 
         # rest models: resample residue data with replacement
         for i_model in range(1, num_models):
-            np.random.seed(i_model) # seed is i_model
+            np.random.seed(i_model)  # seed is i_model
             # random sample with replacement:
             indices = np.random.choice(range(sample_size), size=sample_size, replace=True)
             residue_ys_resampled = residue_ys[indices]

@@ -23,7 +23,7 @@ class MomentNorefFeatureExtractor(NorefExecutorMixin, FeatureExtractor):
     TYPE = "Moment_noref_feature"
     VERSION = "1.0"  # python only
 
-    ATOM_FEATURES = ['1st', '2nd', ] # order matters
+    ATOM_FEATURES = ['1st', '2nd', ]  # order matters
 
     DERIVED_ATOM_FEATURES = ['var', ]
 
@@ -95,7 +95,7 @@ class BrisqueNorefFeatureExtractor(NorefExecutorMixin, FeatureExtractor):
     TYPE = "BRISQUE_noref_feature"
 
     # VERSION = "0.1"
-    VERSION = "0.2" # update PIL package to 3.2 to fix interpolation issue
+    VERSION = "0.2"  # update PIL package to 3.2 to fix interpolation issue
 
     ATOM_FEATURES = [
         "alpha_m1", "sq_m1",
@@ -116,7 +116,7 @@ class BrisqueNorefFeatureExtractor(NorefExecutorMixin, FeatureExtractor):
         "alpha32", "N32", "lsq32", "rsq32",
         "alpha33", "N33", "lsq33", "rsq33",
         "alpha34", "N34", "lsq34", "rsq34",
-    ] # order matters
+    ]  # order matters
 
     gamma_range = np.arange(0.2, 10, 0.001)
     a = gamma(2.0 / gamma_range)**2
@@ -195,24 +195,24 @@ class BrisqueNorefFeatureExtractor(NorefExecutorMixin, FeatureExtractor):
         alpha_m3, sq_m3 = cls.extract_ggd_features(m_image3)
 
         mscn_features = np.array([
-                alpha_m1, sq_m1, #0, 1
-                alpha_m2, sq_m2, #0, 1
-                alpha_m3, sq_m3, #0, 1
+                alpha_m1, sq_m1,  # 0, 1
+                alpha_m2, sq_m2,  # 0, 1
+                alpha_m3, sq_m3,  # 0, 1
         ])
 
         pp_features = np.array([
-                alpha11, N11, lsq11, rsq11, #6, 7, 8, 9 (V)
-                alpha12, N12, lsq12, rsq12, #10, 11, 12, 13 (H)
-                alpha13, N13, lsq13, rsq13, #14, 15, 16, 17 (D1)
-                alpha14, N14, lsq14, rsq14, #18, 19, 20, 21 (D2)
-                alpha21, N21, lsq21, rsq21, #6, 7, 8, 9 (V)
-                alpha22, N22, lsq22, rsq22, #10, 11, 12, 13 (H)
-                alpha23, N23, lsq23, rsq23, #14, 15, 16, 17 (D1)
-                alpha24, N24, lsq24, rsq24, #18, 19, 20, 21 (D2)
-                alpha31, N31, lsq31, rsq31, #6, 7, 8, 9 (V)
-                alpha32, N32, lsq32, rsq32, #10, 11, 12, 13 (H)
-                alpha33, N33, lsq33, rsq33, #14, 15, 16, 17 (D1)
-                alpha34, N34, lsq34, rsq34, #18, 19, 20, 21 (D2)
+                alpha11, N11, lsq11, rsq11,  # 6, 7, 8, 9 (V)
+                alpha12, N12, lsq12, rsq12,  # 10, 11, 12, 13 (H)
+                alpha13, N13, lsq13, rsq13,  # 14, 15, 16, 17 (D1)
+                alpha14, N14, lsq14, rsq14,  # 18, 19, 20, 21 (D2)
+                alpha21, N21, lsq21, rsq21,  # 6, 7, 8, 9 (V)
+                alpha22, N22, lsq22, rsq22,  # 10, 11, 12, 13 (H)
+                alpha23, N23, lsq23, rsq23,  # 14, 15, 16, 17 (D1)
+                alpha24, N24, lsq24, rsq24,  # 18, 19, 20, 21 (D2)
+                alpha31, N31, lsq31, rsq31,  # 6, 7, 8, 9 (V)
+                alpha32, N32, lsq32, rsq32,  # 10, 11, 12, 13 (H)
+                alpha33, N33, lsq33, rsq33,  # 14, 15, 16, 17 (D1)
+                alpha34, N34, lsq34, rsq34,  # 18, 19, 20, 21 (D2)
         ])
 
         return mscn_features, pp_features
@@ -223,15 +223,15 @@ class BrisqueNorefFeatureExtractor(NorefExecutorMixin, FeatureExtractor):
         lw = int(lw)
         weights = [0.0] * (2 * lw + 1)
         weights[lw] = 1.0
-        sum = 1.0
+        curr_sum = 1.0
         sd *= sd
         for ii in range(1, lw + 1):
             tmp = np.exp(-0.5 * float(ii * ii) / sd)
             weights[lw + ii] = tmp
             weights[lw - ii] = tmp
-            sum += 2.0 * tmp
+            curr_sum += 2.0 * tmp
         for ii in range(2 * lw + 1):
-            weights[ii] /= sum
+            weights[ii] /= curr_sum
         return weights
 
     @classmethod
@@ -256,12 +256,12 @@ class BrisqueNorefFeatureExtractor(NorefExecutorMixin, FeatureExtractor):
         vr_shift = np.roll(hr_shift, 1, axis=0)
         vl_shift = np.roll(hl_shift, 1, axis=0)
 
-        H_img  = hr_shift * new_im
-        V_img  = v_shift  * new_im
-        D1_img = vr_shift * new_im
+        h_img  = hr_shift * new_im
+        v_img  = v_shift  * new_im
+        d1_img = vr_shift * new_im
         D2_img = vl_shift * new_im
 
-        return V_img, H_img, D1_img, D2_img
+        return v_img, h_img, d1_img, D2_img
 
     @classmethod
     def extract_ggd_features(cls, imdata):
@@ -277,8 +277,8 @@ class BrisqueNorefFeatureExtractor(NorefExecutorMixin, FeatureExtractor):
         imdata_cp = imdata.copy()
         imdata_cp.shape = (len(imdata_cp.flat),)
         imdata2 = imdata_cp*imdata_cp
-        left_data = imdata2[imdata_cp<0]
-        right_data = imdata2[imdata_cp>=0]
+        left_data = imdata2[imdata_cp < 0]
+        right_data = imdata2[imdata_cp >= 0]
         left_mean_sqrt = 0
         right_mean_sqrt = 0
         if len(left_data) > 0:
@@ -327,7 +327,7 @@ class NiqeNorefFeatureExtractor(BrisqueNorefFeatureExtractor):
         "alpha22", "N22", "lsq22", "rsq22",
         "alpha23", "N23", "lsq23", "rsq23",
         "alpha24", "N24", "lsq24", "rsq24",
-    ] # order matters
+    ]  # order matters
 
     DEFAULT_PATCH_SIZE = 96
     DEFAULT_VAR_THRESHOLD = 0.75
@@ -407,18 +407,18 @@ class NiqeNorefFeatureExtractor(BrisqueNorefFeatureExtractor):
 
                 lvl1_features = np.array([
                         alpha_m1, (bl1 + br1) / 2.0,
-                        alpha11, N11, lsq11, rsq11, #6, 7, 8, 9 (V)
-                        alpha12, N12, lsq12, rsq12, #10, 11, 12, 13 (H)
-                        alpha13, N13, lsq13, rsq13, #14, 15, 16, 17 (D1)
-                        alpha14, N14, lsq14, rsq14, #18, 19, 20, 21 (D2)
+                        alpha11, N11, lsq11, rsq11,  # 6, 7, 8, 9 (V)
+                        alpha12, N12, lsq12, rsq12,  # 10, 11, 12, 13 (H)
+                        alpha13, N13, lsq13, rsq13,  # 14, 15, 16, 17 (D1)
+                        alpha14, N14, lsq14, rsq14,  # 18, 19, 20, 21 (D2)
                 ])
 
                 lvl2_features = np.array([
                         alpha_m2, (bl2 + br2) / 2.0,
-                        alpha21, N21, lsq21, rsq21, #6, 7, 8, 9 (V)
-                        alpha22, N22, lsq22, rsq22, #10, 11, 12, 13 (H)
-                        alpha23, N23, lsq23, rsq23, #14, 15, 16, 17 (D1)
-                        alpha24, N24, lsq24, rsq24, #18, 19, 20, 21 (D2)
+                        alpha21, N21, lsq21, rsq21,  # 6, 7, 8, 9 (V)
+                        alpha22, N22, lsq22, rsq22,  # 10, 11, 12, 13 (H)
+                        alpha23, N23, lsq23, rsq23,  # 14, 15, 16, 17 (D1)
+                        alpha24, N24, lsq24, rsq24,  # 18, 19, 20, 21 (D2)
                 ])
 
                 list_features.append(np.hstack((lvl1_features, lvl2_features)))

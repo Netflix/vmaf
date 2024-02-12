@@ -1,4 +1,5 @@
 import os
+import sys
 from time import sleep
 
 import numpy as np
@@ -12,10 +13,8 @@ from vmaf.core.result import RawResult
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
-try:
-    basestring
-except NameError:
-    # TODO: remove this once python2 support is dropped
+# TODO: remove this once python2 support is dropped
+if sys.version_info[0] == 3:
     basestring = str
 
 

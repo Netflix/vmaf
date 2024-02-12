@@ -5,12 +5,11 @@ __license__ = "BSD+Patent"
 
 import random
 from math import floor
+import sys
 
 
-try:
-    long
-except NameError:
-    # TODO: remove this once python2 support is dropped, in python3 all int are as long as you want
+# TODO: remove this once python2 support is dropped, in python3 all int are as long as you want
+if sys.version_info[0] == 3:
     long = int
 
 
@@ -57,7 +56,7 @@ class ModelCrossValidation(object):
                                    logger=None,
                                    optional_dict2=None):
         """
-        Standard k-fold cross validation, given hyper-parameter set model_param
+        Standard k-fold cross validation, given hyperparameter set model_param
         :param train_test_model_class:
         :param model_param:
         :param results_or_df: list of BasicResult, or pandas.DataFrame
@@ -144,7 +143,7 @@ class ModelCrossValidation(object):
                                           optional_dict2=None,
                                           ):
         """
-        Nested k-fold cross validation, given hyper-parameter search range. The
+        Nested k-fold cross validation, given hyperparameter search range. The
         search range is specified in the format of, e.g.:
         {'norm_type':['normalize', 'clip_0to1', 'clip_minus1to1'],
          'n_estimators':[10, 50],
@@ -228,20 +227,18 @@ class ModelCrossValidation(object):
                 stats = output['aggr_stats']
 
                 if (best_stats is None) or (
-                    train_test_model_class.get_objective_score(stats, type='SRCC')
+                    train_test_model_class.get_objective_score(stats, score_type='SRCC')
                     >
-                    train_test_model_class.get_objective_score(best_stats, type='SRCC')
+                    train_test_model_class.get_objective_score(best_stats, score_type='SRCC')
                 ):
                     best_stats = stats
                     best_model_param = model_param
 
             # run cross validation based on best model parameters
-            output_ = cls.run_cross_validation(train_test_model_class,
-                                              best_model_param,
-                                              results_or_df,
-                                              train_index_range,
-                                              test_index_range,
-                                               optional_dict2)
+            output_ = cls.run_cross_validation(
+                train_test_model_class, best_model_param, results_or_df,
+                train_index_range, test_index_range, optional_dict2
+            )
             stats_ = output_['stats']
 
             statss.append(stats_)
@@ -254,12 +251,12 @@ class ModelCrossValidation(object):
 
         assert contentids is not None
         output__ = {
-            'aggr_stats':aggr_stats,
-            'top_model_param':top_model_param,
-            'top_ratio':float(count) / len(model_params),
-            'statss':statss,
-            'model_params':model_params,
-            'contentids':contentids,
+            'aggr_stats': aggr_stats,
+            'top_model_param': top_model_param,
+            'top_ratio': float(count) / len(model_params),
+            'statss': statss,
+            'model_params': model_params,
+            'contentids': contentids,
         }
 
         return output__
@@ -308,7 +305,7 @@ class ModelCrossValidation(object):
 
     @staticmethod
     def _sample_model_param_list(model_param_search_range, random_search_times):
-        keys = sorted(model_param_search_range.keys()) # normalize order
+        keys = sorted(model_param_search_range.keys())  # normalize order
         list_of_dicts = []
         for i in range(random_search_times):
             d = {}
@@ -337,27 +334,27 @@ class ModelCrossValidation(object):
         :return:
         """
 
-        def _hash_dict(dict):
-            return tuple(sorted(dict.items()))
+        def _hash_dict(dict_to_hash):
+            return tuple(sorted(dict_to_hash.items()))
 
-        dict_count = {} # key: hash, value: list of indices
-        for idx_dict, dict in enumerate(dicts):
-            hash = _hash_dict(dict)
-            dict_count.setdefault(hash, []).append(idx_dict)
+        dict_count = {}  # key: hash, value: list of indices
+        for idx_dict, input_dict in enumerate(dicts):
+            dict_hash = _hash_dict(input_dict)
+            dict_count.setdefault(dict_hash, []).append(idx_dict)
 
         most_frequent_dict_hash = None
         most_frequent_dict_count = None
-        for hash in dict_count:
-            curr_count = len(dict_count[hash])
+        for dict_hash in dict_count:
+            curr_count = len(dict_count[dict_hash])
             if most_frequent_dict_count is None or most_frequent_dict_count < curr_count:
-                most_frequent_dict_hash = hash
+                most_frequent_dict_hash = dict_hash
                 most_frequent_dict_count = curr_count
 
         # find the dict matching the hash
         most_frequent_dict = None
-        for dict in dicts:
-            if _hash_dict(dict) == most_frequent_dict_hash:
-                most_frequent_dict = dict
+        for input_dict in dicts:
+            if _hash_dict(input_dict) == most_frequent_dict_hash:
+                most_frequent_dict = input_dict
                 break
 
         assert most_frequent_dict is not None

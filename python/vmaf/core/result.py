@@ -387,6 +387,8 @@ class Result(BasicResult):
 
         frames = top.find('frames')
 
+        pred_result_key = None
+
         for frame_ind, frame in enumerate(frames):
             for score_key, score_value in frame.attrib.items():
                 if 'score' in score_key:
@@ -411,6 +413,8 @@ class Result(BasicResult):
         result_dict = {}
 
         frames = json_data['frames']
+
+        pred_result_key = None
 
         for frame_ind, frame in enumerate(frames):
             for score_key, score_value in frame.items():

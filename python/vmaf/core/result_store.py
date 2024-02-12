@@ -11,7 +11,9 @@ from vmaf.core.result import Result
 from vmaf.tools.misc import make_parent_dirs_if_nonexist
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
-__license__ = "BSD+Patent"
+__license__ = ("BSD"
+               "+Patent")
+
 
 class ResultStore(object):
     """
@@ -32,7 +34,7 @@ class FileSystemResultStore(ResultStore):
     persist result by a simple file system that save/load result in a directory.
     The directory has multiple subdirectories, each corresponding to an Executor
     (e.g. a VMAF feature extractor, or a NO19 feature extractor, or a
-    VMAF quality runner, or a SSIM quality runner). Each subdirectory contains
+    VMAF quality runner, or an SSIM quality runner). Each subdirectory contains
     multiple files, each file stores dataframe for an asset, and has file name
     str(asset).
     """

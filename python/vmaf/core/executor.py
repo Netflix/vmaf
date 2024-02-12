@@ -11,7 +11,7 @@ from vmaf.tools.decorator import deprecated, override
 
 from vmaf.tools.misc import make_parent_dirs_if_nonexist, get_dir_without_last_slash, \
     parallel_map, match_any_files, run_process, \
-    get_file_name_extension, get_normalized_string_from_dict
+    get_file_name_extension
 from vmaf.core.mixin import TypeVersionEnabled
 from vmaf.config import VmafExternalConfig
 from vmaf.tools.reader import YuvReader
@@ -272,7 +272,7 @@ class Executor(TypeVersionEnabled):
             return asset.dis_yuv_type
         elif asset.ref_yuv_type != 'notyuv' and asset.dis_yuv_type == 'notyuv':
             return asset.ref_yuv_type
-        else: # neither notyuv
+        else:  # neither notyuv
             assert asset.ref_yuv_type == asset.dis_yuv_type, "YUV types for ref and dis do not match."
             return asset.ref_yuv_type
 
@@ -327,7 +327,7 @@ class Executor(TypeVersionEnabled):
             result = None
 
         # if result can be retrieved from result_store, skip log file
-        # generation and reading result from log file, but directly return
+        # generation and reading result from log file, but directly
         # return the retrieved result
         if result is not None:
             if self.logger:
