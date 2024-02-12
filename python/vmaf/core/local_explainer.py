@@ -92,7 +92,7 @@ class LocalExplainer(object):
         # normalize xs
         xs_2d = train_test_model.normalize_xs(xs_2d)
 
-        # for each row of xs, repreat feature of a unit (e.g. frame),
+        # for each row of xs, repeat feature of a unit (e.g. frame),
         # generate a new 2d_array by sampling its neighborhood
         n_sample, n_feature = xs_2d.shape
         feature_weights = np.zeros([n_sample, n_feature])
@@ -116,7 +116,7 @@ class LocalExplainer(object):
 
             model = train_test_model.model
             if isinstance(model, list):
-                model = model[0] # HACKY, TODO: fix it
+                model = model[0]  # HACKY, TODO: fix it
 
             # predict
             ys_label_pred_neighbor = train_test_model._predict(model, xs_2d_neighbor)

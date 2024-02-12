@@ -3,12 +3,11 @@ __license__ = "BSD+Patent"
 
 from vmaf.core.feature_extractor import FeatureExtractor
 from vmaf.core.result import BasicResult
-from vmaf.core.matlab_feature_extractor import StrredFeatureExtractor, SpEEDMatlabFeatureExtractor
 
 
 class FeatureAssembler(object):
     """
-    Assembles features for a input list of Assets on a input list of
+    Assembles features for an input list of Assets on an input list of
     FeatureExtractors. For each asset, it outputs a BasicResult object.
     """
 

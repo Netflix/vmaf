@@ -230,11 +230,11 @@ class VmafFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
         quality_width, quality_height = asset.quality_width_height
         log_file_path = self._get_log_file_path(asset)
 
-        yuv_type=self._get_workfile_yuv_type(asset)
-        ref_path=asset.ref_procfile_path
-        dis_path=asset.dis_procfile_path
-        w=quality_width
-        h=quality_height
+        yuv_type = self._get_workfile_yuv_type(asset)
+        ref_path = asset.ref_procfile_path
+        dis_path = asset.dis_procfile_path
+        w = quality_width
+        h = quality_height
         logger = self.logger
 
         features = ['float_adm', 'float_vif', 'float_motion', 'float_ansnr']
@@ -409,11 +409,11 @@ class VmafIntegerFeatureExtractor(VmafFeatureExtractor):
         quality_width, quality_height = asset.quality_width_height
         log_file_path = self._get_log_file_path(asset)
 
-        yuv_type=self._get_workfile_yuv_type(asset)
-        ref_path=asset.ref_procfile_path
-        dis_path=asset.dis_procfile_path
-        w=quality_width
-        h=quality_height
+        yuv_type = self._get_workfile_yuv_type(asset)
+        ref_path = asset.ref_procfile_path
+        dis_path = asset.dis_procfile_path
+        w = quality_width
+        h = quality_height
         logger = self.logger
 
         features = ['adm', 'vif', 'motion', 'float_ansnr']
@@ -478,11 +478,11 @@ class VifFrameDifferenceFeatureExtractor(FeatureExtractor):
         quality_width, quality_height = asset.quality_width_height
         log_file_path = self._get_log_file_path(asset)
 
-        yuv_type=self._get_workfile_yuv_type(asset)
-        ref_path=asset.ref_procfile_path
-        dis_path=asset.dis_procfile_path
-        w=quality_width
-        h=quality_height
+        yuv_type = self._get_workfile_yuv_type(asset)
+        ref_path = asset.ref_procfile_path
+        dis_path = asset.dis_procfile_path
+        w = quality_width
+        h = quality_height
         logger = self.logger
 
         ExternalProgramCaller.call_vifdiff_feature(yuv_type, ref_path, dis_path, w, h, log_file_path, logger)
@@ -581,8 +581,9 @@ class PypsnrFeatureExtractor(PyFeatureExtractorMixin, FeatureExtractor):
 
     def _get_max_db(self, ref_yuv_reader):
         if self.optional_dict is not None and 'max_db' in self.optional_dict:
-            assert type(self.optional_dict['max_db']) == int or float
-            return self.optional_dict['max_db']
+            max_db = self.optional_dict['max_db']
+            assert isinstance(max_db, (int, float))
+            return max_db
         elif ref_yuv_reader._is_8bit():
             return 60.0
         elif ref_yuv_reader._is_10bitle():
@@ -616,12 +617,16 @@ class PypsnrFeatureExtractor(PyFeatureExtractorMixin, FeatureExtractor):
 
                     ref_y, ref_u, ref_v = ref_yuv
                     dis_y, dis_u, dis_v = dis_yuv
-                    mse_y, mse_u, mse_v = np.mean((ref_y - dis_y)**2) + 1e-16, \
-                                          np.mean((ref_u - dis_u)**2) + 1e-16, \
-                                          np.mean((ref_v - dis_v)**2) + 1e-16
-                    psnr_y, psnr_u, psnr_v = min(10 * np.log10(1.0 / mse_y), max_db), \
-                                             min(10 * np.log10(1.0 / mse_u), max_db), \
-                                             min(10 * np.log10(1.0 / mse_v), max_db)
+                    mse_y, mse_u, mse_v = (
+                        np.mean((ref_y - dis_y)**2) + 1e-16,
+                        np.mean((ref_u - dis_u)**2) + 1e-16,
+                        np.mean((ref_v - dis_v)**2) + 1e-16
+                    )
+                    psnr_y, psnr_u, psnr_v = (
+                        min(10 * np.log10(1.0 / mse_y), max_db),
+                        min(10 * np.log10(1.0 / mse_u), max_db),
+                        min(10 * np.log10(1.0 / mse_v), max_db)
+                    )
 
                     log_dicts.append({
                         'frame': frm,
@@ -670,11 +675,11 @@ class PsnrFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
         quality_width, quality_height = asset.quality_width_height
         log_file_path = self._get_log_file_path(asset)
 
-        yuv_type=self._get_workfile_yuv_type(asset)
-        ref_path=asset.ref_procfile_path
-        dis_path=asset.dis_procfile_path
-        w=quality_width
-        h=quality_height
+        yuv_type = self._get_workfile_yuv_type(asset)
+        ref_path = asset.ref_procfile_path
+        dis_path = asset.dis_procfile_path
+        w = quality_width
+        h = quality_height
         logger = self.logger
 
         optional_dict2 = self.optional_dict2 if self.optional_dict2 is not None else dict()
@@ -689,7 +694,7 @@ class MomentFeatureExtractor(FeatureExtractor):
     TYPE = "Moment_feature"
 
     # VERSION = "1.0" # call executable
-    VERSION = "1.1" # python only
+    VERSION = "1.1"  # python only
 
     ATOM_FEATURES = ['ref1st', 'ref2nd', 'dis1st', 'dis2nd', ]
 
@@ -701,7 +706,6 @@ class MomentFeatureExtractor(FeatureExtractor):
 
         quality_w, quality_h = asset.quality_width_height
 
-        ref_scores_mtx = None
         with YuvReader(filepath=asset.ref_procfile_path, width=quality_w, height=quality_h,
                        yuv_type=self._get_workfile_yuv_type(asset)) as ref_yuv_reader:
             scores_mtx_list = []
@@ -715,7 +719,6 @@ class MomentFeatureExtractor(FeatureExtractor):
                 i += 1
             ref_scores_mtx = np.vstack(scores_mtx_list)
 
-        dis_scores_mtx = None
         with YuvReader(filepath=asset.dis_procfile_path, width=quality_w, height=quality_h,
                        yuv_type=self._get_workfile_yuv_type(asset)) as dis_yuv_reader:
             scores_mtx_list = []
@@ -751,15 +754,16 @@ class MomentFeatureExtractor(FeatureExtractor):
         dis_scores_mtx = np.array(log_dict['dis_scores_mtx'])
 
         _, num_ref_features = ref_scores_mtx.shape
-        assert num_ref_features == 2 # ref1st, ref2nd
+        assert num_ref_features == 2  # ref1st, ref2nd
         _, num_dis_features = dis_scores_mtx.shape
-        assert num_dis_features == 2 # dis1st, dis2nd
+        assert num_dis_features == 2  # dis1st, dis2nd
 
-        feature_result = {}
-        feature_result[self.get_scores_key('ref1st')] = list(ref_scores_mtx[:, 0])
-        feature_result[self.get_scores_key('ref2nd')] = list(ref_scores_mtx[:, 1])
-        feature_result[self.get_scores_key('dis1st')] = list(dis_scores_mtx[:, 0])
-        feature_result[self.get_scores_key('dis2nd')] = list(dis_scores_mtx[:, 1])
+        feature_result = {
+            self.get_scores_key('ref1st'): list(ref_scores_mtx[:, 0]),
+            self.get_scores_key('ref2nd'): list(ref_scores_mtx[:, 1]),
+            self.get_scores_key('dis1st'): list(dis_scores_mtx[:, 0]),
+            self.get_scores_key('dis2nd'): list(dis_scores_mtx[:, 1])
+        }
 
         return feature_result
 
@@ -779,10 +783,10 @@ class MomentFeatureExtractor(FeatureExtractor):
         get_var = lambda m: m[1] - m[0] * m[0]
         result.result_dict[refvar_scores_key] = \
             list(map(get_var, zip(result.result_dict[ref1st_scores_key],
-                             result.result_dict[ref2nd_scores_key])))
+                                  result.result_dict[ref2nd_scores_key])))
         result.result_dict[disvar_scores_key] = \
             list(map(get_var, zip(result.result_dict[dis1st_scores_key],
-                             result.result_dict[dis2nd_scores_key])))
+                                  result.result_dict[dis2nd_scores_key])))
 
         # validate
         for feature in cls.DERIVED_ATOM_FEATURES:
@@ -817,11 +821,11 @@ class SsimFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
         quality_width, quality_height = asset.quality_width_height
         log_file_path = self._get_log_file_path(asset)
 
-        yuv_type=self._get_workfile_yuv_type(asset)
-        ref_path=asset.ref_procfile_path
-        dis_path=asset.dis_procfile_path
-        w=quality_width
-        h=quality_height
+        yuv_type = self._get_workfile_yuv_type(asset)
+        ref_path = asset.ref_procfile_path
+        dis_path = asset.dis_procfile_path
+        w = quality_width
+        h = quality_height
         logger = self.logger
 
         optional_dict2 = self.optional_dict2 if self.optional_dict2 is not None else dict()
@@ -876,11 +880,11 @@ class MsSsimFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
         quality_width, quality_height = asset.quality_width_height
         log_file_path = self._get_log_file_path(asset)
 
-        yuv_type=self._get_workfile_yuv_type(asset)
-        ref_path=asset.ref_procfile_path
-        dis_path=asset.dis_procfile_path
-        w=quality_width
-        h=quality_height
+        yuv_type = self._get_workfile_yuv_type(asset)
+        ref_path = asset.ref_procfile_path
+        dis_path = asset.dis_procfile_path
+        w = quality_width
+        h = quality_height
         logger = self.logger
 
         optional_dict2 = self.optional_dict2 if self.optional_dict2 is not None else dict()
@@ -909,11 +913,11 @@ class AnsnrFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
         quality_width, quality_height = asset.quality_width_height
         log_file_path = self._get_log_file_path(asset)
 
-        yuv_type=self._get_workfile_yuv_type(asset)
-        ref_path=asset.ref_procfile_path
-        dis_path=asset.dis_procfile_path
-        w=quality_width
-        h=quality_height
+        yuv_type = self._get_workfile_yuv_type(asset)
+        ref_path = asset.ref_procfile_path
+        dis_path = asset.dis_procfile_path
+        w = quality_width
+        h = quality_height
         logger = self.logger
 
         optional_dict2 = self.optional_dict2 if self.optional_dict2 is not None else dict()

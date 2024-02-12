@@ -33,7 +33,7 @@ class PerfMetric(TypeVersionEnabled):
         """
         Performance metric on quality metrics
         :param groundtruths: either list of real numbers (aggregate scores like
-        MOS or DMOS or MLE), or list of list of real numbers (list of raw scores)
+        MOS or DMOS or MLE), or list of lists of real numbers (list of raw scores)
         :param predictions: list of real numbers
         :return:
         """
@@ -57,7 +57,7 @@ class PerfMetric(TypeVersionEnabled):
 
 class RawScorePerfMetric(PerfMetric):
     """
-    Groundtruth is a list of raw scores (list of list of real numbers)
+    Groundtruth is a list of raw scores (list of lists of real numbers)
     """
     @override(PerfMetric)
     def _assert_args(self):

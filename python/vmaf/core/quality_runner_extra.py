@@ -40,17 +40,17 @@ class VmafQualityRunnerWithLocalExplainer(VmafQualityRunner):
 
         exps = explainer.explain(model, xs)
         result_dict = {}
-        result_dict.update(feature_result.result_dict) # add feature result
-        result_dict[self.get_scores_key()] = ys_pred # add quality score
-        result_dict[self.get_explanations_key()] = exps # add local explanations
+        result_dict.update(feature_result.result_dict)  # add feature result
+        result_dict[self.get_scores_key()] = ys_pred  # add quality score
+        result_dict[self.get_explanations_key()] = exps  # add local explanations
         return Result(asset, self.executor_id, result_dict)
 
     @classmethod
-    def show_local_explanations(cls, results, indexs=None):
+    def show_local_explanations(cls, results, indexes=None):
         """Plot local explanations of results
 
         :param results:
-        :param indexs: a list of frame indices, or None. If None, will take the
+        :param indexes: a list of frame indices, or None. If None, will take the
         second frame.
         :return: figures of local explanation plots
         """
@@ -61,17 +61,17 @@ class VmafQualityRunnerWithLocalExplainer(VmafQualityRunner):
 
         N = len(results)
 
-        if indexs is None:
-            indexs = [1] # default: second frame
+        if indexes is None:
+            indexes = [1]  # default: second frame
 
         figss = []
         for n in range(N):
 
             exps = results[n][cls.get_explanations_key()]
             asset = results[n].asset
-            exps2 = LocalExplainer.select_from_exps(exps, indexs)
+            exps2 = LocalExplainer.select_from_exps(exps, indexes)
 
-            ys_pred = results[n][cls.get_scores_key()][indexs]
+            ys_pred = results[n][cls.get_scores_key()][indexes]
 
             N2 = LocalExplainer.assert_explanations(exps2)
             assets2 = [asset for _ in range(N2)]

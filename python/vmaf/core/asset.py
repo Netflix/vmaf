@@ -26,7 +26,7 @@ class Asset(WorkdirEnabled):
     extract features/calculate quality results (*dis_start_end_frame* and
     *ref_start_end_frame*), and at what resolution to perform such feature
     extraction (each video frame is upscaled to the resolution specified by
-    *quality_width_hight* before processing).
+    *quality_width_height* before processing).
 
     Asset extends WorkdirEnabled mixin, which comes with a thread-safe working
     directory to facilitate parallel execution.
@@ -55,7 +55,7 @@ class Asset(WorkdirEnabled):
                  asset_dict,
                  workdir_root=VmafConfig.workdir_path()):
         """
-        :param dataset
+        :param dataset:
         :param content_id: ID of content the asset correspond to within dataset
         :param asset_id: ID of asset
         :param ref_path: path to reference video
@@ -483,7 +483,7 @@ class Asset(WorkdirEnabled):
 
         if self.dis_encode_bitdepth is not None and \
                 map_yuv_type_to_bitdepth(self.dis_yuv_type) != self.dis_encode_bitdepth:
-            # only add dis_encode_bitdepth to the string if it is not None and it is different from the bitdepth
+            # only add dis_encode_bitdepth to the string if it is not None, and it is different from the bitdepth
             # of dis_yuv_type
             ebd = self.dis_encode_bitdepth
             s += "_ebd_{ebd}".format(ebd=ebd)
@@ -706,7 +706,7 @@ class Asset(WorkdirEnabled):
         for notyuv assets, we want to allow the decoded yuv format to be set by the user
         this is highly relevant to image decoding, where we would like to select yuv444p
         this property tries to read workfile_yuv_type from asset_dict, if it is there it is set
-        else it default to default_yuv_type
+        else it defaults to default_yuv_type
         """
         supported_yuv_types = list(set(Asset.SUPPORTED_YUV_TYPES) - {'notyuv'})
         if 'workfile_yuv_type' in self.asset_dict:
@@ -928,7 +928,7 @@ class NorefAsset(Asset):
                  asset_dict,
                  workdir_root=VmafConfig.workdir_path()):
         """
-        :param dataset
+        :param dataset:
         :param content_id: ID of content the asset correspond to within dataset
         :param asset_id: ID of asset
         :param dis_path: path to distorted video

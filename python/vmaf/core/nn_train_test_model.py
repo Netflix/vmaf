@@ -99,7 +99,7 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
 
     def _assert_args(self):
         super(NeuralNetTrainTestModel, self)._assert_args()
-        self.assert_h5py_file() # assert h5py_file in self.optional_dict2
+        self.assert_h5py_file()  # assert h5py_file in self.optional_dict2
 
     @staticmethod
     def _assert_xs(xs):
@@ -124,7 +124,7 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
         feature_names.remove('content_id')
         self.feature_names = feature_names
 
-        self.norm_type = 'none' # no conventional data normalization
+        self.norm_type = 'none'  # no conventional data normalization
 
         patches_cache, labels_cache = self._populate_patches_and_labels(
             feature_names, xys)
@@ -203,7 +203,7 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
         assert 'dis_u' in xkeys
         assert 'dis_v' in xkeys
 
-        yss = xys['dis_y'] # yss: Y * frames * videos
+        yss = xys['dis_y']  # yss: Y * frames * videos
         uss = xys['dis_u']
         vss = xys['dis_v']
         if mode == 'train':
@@ -217,9 +217,9 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
         assert len(yss) == len(uss) == len(vss) == len(labels)
 
         patch_idx = 0
-        for ys, us, vs, label in zip(yss, uss, vss, labels): # iterate videos
+        for ys, us, vs, label in zip(yss, uss, vss, labels):  # iterate videos
             assert len(ys) == len(us) == len(vs)
-            for y, u, v in zip(ys, us, vs): # iterate frames
+            for y, u, v in zip(ys, us, vs):  # iterate frames
 
                 yuvimg = dstack_y_u_v(y, u, v)
 
@@ -230,8 +230,7 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
                 adj_h = h - self.patch_height
                 adj_w = w - self.patch_width
 
-                iv, jv = np.meshgrid(np.arange(adj_h), np.arange(adj_w),
-                                     sparse=False, indexing='ij')
+                iv, jv = np.meshgrid(np.arange(adj_h), np.arange(adj_w), sparse=False, indexing='ij')
                 iv = iv.reshape(-1)
                 jv = jv.reshape(-1)
 
@@ -261,8 +260,8 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
         return patches_cache
 
     def _get_total_frames(self, xys):
-        yss = xys['dis_y'] # yss
-        return np.sum(list(map(lambda ys:len(ys), yss)))
+        yss = xys['dis_y']  # yss
+        return np.sum(list(map(lambda ys: len(ys), yss)))
 
     @override(TrainTestModel)
     def to_file(self, filename, **more):
@@ -285,8 +284,8 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
     @classmethod
     @override(TrainTestModel)
     def from_file(cls, filename, logger=None, optional_dict2=None, **more):
-        format = more['format'] if 'format' in more else 'pkl'
-        assert format in ['pkl'], f'format must be pkl but got {format}'
+        fmt = more['format'] if 'format' in more else 'pkl'
+        assert fmt in ['pkl'], f'format must be pkl but got {fmt}'
 
         assert os.path.exists(filename), 'File name {} does not exist.'.format(filename)
         with open(filename, 'rb') as file:
@@ -322,8 +321,8 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
     @staticmethod
     @override(TrainTestModel)
     def delete(filename, **more):
-        format = more['format'] if 'format' in more else 'pkl'
-        assert format in ['pkl'], f'format must be pkl but got {format}'
+        fmt = more['format'] if 'format' in more else 'pkl'
+        assert fmt in ['pkl'], f'format must be pkl but got {fmt}'
 
         if os.path.exists(filename):
             os.remove(filename)
@@ -363,7 +362,7 @@ class ToddNoiseClassifierTrainTestModel(NeuralNetTrainTestModel, ClassifierMixin
         # randomly split data into training and validation set
         num_data = len(patches)
         indices = np.random.permutation(num_data)
-        num_train_data = int(num_data / 2) # do even split
+        num_train_data = int(num_data / 2)  # do even split
         train_indices = indices[:num_train_data]
         validate_indices = indices[num_train_data:]
         train_posindices = list(filter(lambda idx: labels[idx] == 1, train_indices))
@@ -423,8 +422,8 @@ class ToddNoiseClassifierTrainTestModel(NeuralNetTrainTestModel, ClassifierMixin
 
             for i in range(n_iterations):
                 # must sort, since h5py needs ordered indices
-                poslst = np.sort(train_posindices[i*(halfbatch):(i+1)*(halfbatch)]).tolist()
-                neglst = np.sort(train_negindices[i*(halfbatch):(i+1)*(halfbatch)]).tolist()
+                poslst = np.sort(train_posindices[i * halfbatch: (i+1) * halfbatch]).tolist()
+                neglst = np.sort(train_negindices[i * halfbatch: (i+1) * halfbatch]).tolist()
 
                 X_batch = np.vstack((
                     patches[poslst],
@@ -463,13 +462,11 @@ class ToddNoiseClassifierTrainTestModel(NeuralNetTrainTestModel, ClassifierMixin
             sys.stdout.write("Evaluating {type} data: {M} / {nstep}\r"
                              .format(type=type_, M=M, nstep=n_steps))
             sys.stdout.flush()
-            curr_indices = indices[M * self.batch_size:
-                           (M + 1) * self.batch_size].tolist()
+            curr_indices = indices[M * self.batch_size: (M + 1) * self.batch_size].tolist()
             patches = list(map(lambda idx: patches_in[idx], curr_indices))
             labels_ = list(map(lambda idx: labels_in[idx], curr_indices))
             labels = as_one_hot(labels_)
-            y_pred, loss = sess.run([y_p, loss_in],
-                feed_dict={input_image_batch: patches, y_: labels})
+            y_pred, loss = sess.run([y_p, loss_in], feed_dict={input_image_batch: patches, y_: labels})
             ys_pred = np.hstack((ys_pred, y_pred))
             ys_true = np.hstack((ys_true, labels_))
             loss_cum += loss
