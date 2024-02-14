@@ -272,7 +272,7 @@ cuda_dependency = []
 common_cuda_objects = []
 cuda_inc = []
 
-if is_nvtx_enabled    
+if is_nvtx_enabled
     cuda_dependency += declare_dependency(link_args : ['-ldl'])
     cuda_inc += include_directories('/usr/local/cuda/include')
 endif
@@ -466,7 +466,7 @@ libvmaf_sources = [
 
 if is_cuda_enabled
     vmaf_cflags_common += '-DHAVE_CUDA'
-    if is_nvtx_enabled    
+    if is_nvtx_enabled
         vmaf_cflags_common += '-DHAVE_NVTX'
     endif
 endif
