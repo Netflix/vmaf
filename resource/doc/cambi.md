@@ -137,25 +137,25 @@ ffmpeg -f rawvideo -pix_fmt gray16le -s 1280x720 -i heatmaps/cambi_heatmap_scale
 CAMBI can also be invoked in the [Python library](python.md). Use `CambiFeatureExtractor` as the feature extractor, and `CambiQualityRunner` as the quality runner. Use `CambiFullReferenceFeatureExtractor` and `CambiFullReferenceQualityRunner` to run the full-reference version of CAMBI.
 
 ```
-    dis_path = VmafConfig.test_resource_path("yuv", "KristenAndSara_1280x720_8bit_processed.yuv")
-    asset = Asset(dataset="test", content_id=0, asset_id=0,
-                  workdir_root=VmafConfig.workdir_path(),
-                  ref_path=dis_path,
-                  dis_path=dis_path,
-                  asset_dict={'width': 1280, 'height': 720,
-                              'dis_enc_width': 960, 'dis_enc_height': 540})
+dis_path = VmafConfig.test_resource_path("yuv", "KristenAndSara_1280x720_8bit_processed.yuv")
+asset = Asset(dataset="test", content_id=0, asset_id=0,
+              workdir_root=VmafConfig.workdir_path(),
+              ref_path=dis_path,
+              dis_path=dis_path,
+              asset_dict={'width': 1280, 'height': 720,
+                          'dis_enc_width': 960, 'dis_enc_height': 540})
 
-        self.qrunner = CambiQualityRunner(
-            [asset, asset_original],
-            None, fifo_mode=False,
-            result_store=None,
-            optional_dict={}
-        )
-        self.qrunner.run(parallelize=True)
-        results = self.qrunner.results
+self.qrunner = CambiQualityRunner(
+    [asset, asset_original],
+    None, fifo_mode=False,
+    result_store=None,
+    optional_dict={}
+)
+self.qrunner.run(parallelize=True)
+results = self.qrunner.results
 
-        # score: arithmetic mean score over all frames
-        self.assertAlmostEqual(results[0]['Cambi_score'],
-                               1.218365, places=4)
+# score: arithmetic mean score over all frames
+self.assertAlmostEqual(results[0]['Cambi_score'],
+                        1.218365, places=4)
 ```
 
