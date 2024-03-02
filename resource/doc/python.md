@@ -71,6 +71,11 @@ Clean build the binary by:
 make clean; make
 ```
 
+Check if build is successful:
+```shell script
+./libvmaf/build/tools/vmaf --version
+```
+
 Install the rest of the required Python packages:
 ```shell script
 pip3 install -r python/requirements.txt
