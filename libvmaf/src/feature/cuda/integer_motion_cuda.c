@@ -31,7 +31,9 @@
 #include "picture.h"
 #include "picture_cuda.h"
 #include "cuda_helper.cuh"
+#ifdef HAVE_NVTX
 #include "nvtx3/nvToolsExt.h"
+#endif
 
 typedef struct MotionStateCuda {
     CUevent event, finished, scores_written;
@@ -212,7 +214,9 @@ free_ref:
 static int flush_fex_cuda(VmafFeatureExtractor *fex,
         VmafFeatureCollector *feature_collector)
 {
-    nvtxRangePushA("FLUSH MOT");
+#ifdef HAVE_NVTX
+    nvtxRangePushA("flush motion_cuda");
+#endif
 
     MotionStateCuda *s = fex->priv;
     int ret = 0;
@@ -224,7 +228,7 @@ static int flush_fex_cuda(VmafFeatureExtractor *fex,
             continue;
         }
         CHECK_CUDA(cuEventSynchronize(s->scores_written));
-        nvtxRangePop();
+
     } 
     else {
         if (s->index > 0 && !s->closed) {
@@ -235,6 +239,10 @@ static int flush_fex_cuda(VmafFeatureExtractor *fex,
         s->closed = true;
     }
     s->flushed = true;
+
+#ifdef HAVE_NVTX
+        nvtxRangePop();
+#endif
     return (ret < 0) ? ret : !ret;
 }
 

@@ -33,8 +33,9 @@
 #include "cuda/integer_vif_cuda.h"
 #include "picture_cuda.h"
 
-
+#ifdef HAVE_NVTX
 #include "nvtx3/nvToolsExt.h"
+#endif
 
 #if ARCH_X86
 #include "x86/vif_avx2.h"
@@ -349,7 +350,6 @@ typedef struct VifScore {
 
 static int write_scores(write_score_parameters_vif* data)
 {
-    nvtxRangePushA("write_scoes VIF");
     VmafFeatureCollector *feature_collector = data->feature_collector;
     VifStateCuda *s = data->s;
     unsigned index = data->index;
@@ -384,11 +384,7 @@ static int write_scores(write_score_parameters_vif* data)
             s->feature_name_dict, "VMAF_integer_feature_vif_scale3_score",
             vif.scale[3].num / vif.scale[3].den, index);
 
-    if (!s->debug) {
-
-        nvtxRangePop();
-        return err;
-    }
+    if (!s->debug) return err;
 
     const double score_num =
         (double)vif.scale[0].num + (double)vif.scale[1].num +
@@ -441,7 +437,7 @@ static int write_scores(write_score_parameters_vif* data)
     err |= vmaf_feature_collector_append_with_dict(feature_collector,
             s->feature_name_dict, "integer_vif_den_scale3", vif.scale[3].den,
             index);
-    nvtxRangePop();
+
     return err;
 }
 
@@ -536,14 +532,18 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
 static int flush_fex_cuda(VmafFeatureExtractor *fex,
         VmafFeatureCollector *feature_collector)
 {
-    nvtxRangePushA("flush VIF");
+#ifdef HAVE_NVTX
+    nvtxRangePushA("flush vif_cuda");
+#endif
     VifStateCuda *s = fex->priv;
 
     int ret = 0;
     CHECK_CUDA(cuStreamSynchronize(s->str));
     CHECK_CUDA(cuStreamSynchronize(s->host_stream));
     CHECK_CUDA(cuEventSynchronize(s->scores_written));
+#ifdef HAVE_NVTX
     nvtxRangePop();
+#endif
 
     return (ret < 0) ? ret : !ret;
 }

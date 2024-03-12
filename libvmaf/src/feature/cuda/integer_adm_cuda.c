@@ -32,7 +32,9 @@
 #include "picture_cuda.h"
 #include <unistd.h>
 #include <assert.h>
+#ifdef HAVE_NVTX
 #include "nvtx3/nvToolsExt.h"
+#endif
 
 #define RES_BUFFER_SIZE 4 * 3 * 2
 
@@ -642,7 +644,6 @@ typedef struct write_score_parameters_adm {
 
 static int write_scores(write_score_parameters_adm* params)
 {
-    nvtxRangePushA("write_scores ADM");
     VmafFeatureCollector *feature_collector = params->feature_collector;
     AdmStateCuda *s = params->s;
     unsigned index = params->index;
@@ -717,7 +718,6 @@ static int write_scores(write_score_parameters_adm* params)
 
     if (!s->debug) {
 
-        nvtxRangePop();
         return err;
     }
 
@@ -754,7 +754,6 @@ static int write_scores(write_score_parameters_adm* params)
 
     err |= vmaf_feature_collector_append_with_dict(feature_collector,
             s->feature_name_dict, "integer_adm_den_scale3", scores[7], index);
-    nvtxRangePop();
     return err;
 }
 
@@ -1233,11 +1232,17 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
 static int flush_fex_cuda(VmafFeatureExtractor *fex,
         VmafFeatureCollector *feature_collector)
 {
+#ifdef HAVE_NVTX
+    nvtxRangePushA("flush adm_cuda");
+#endif
     AdmStateCuda *s = fex->priv;
     int ret = 0;
     CHECK_CUDA(cuStreamSynchronize(s->str));
     CHECK_CUDA(cuStreamSynchronize(s->host_stream));
     CHECK_CUDA(cuEventSynchronize(s->scores_written));
+#ifdef HAVE_NVTX
+    nvtxRangePop();
+#endif
     return (ret < 0) ? ret : !ret;
 }
 
