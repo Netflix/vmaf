@@ -18,16 +18,13 @@ RUN apt-get update && \
     python3-setuptools \
     python3-wheel \
     python3-tk \
+    python3-venv \
     && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists
 
 # retrieve source code
 COPY . /vmaf
-
-# install python requirements
-RUN pip3 install --upgrade pip
-RUN pip3 install --no-cache-dir meson cython numpy
 
 # setup environment
 ENV PATH=/vmaf:/vmaf/libvmaf/build/tools:$PATH

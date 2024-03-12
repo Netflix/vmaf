@@ -2,14 +2,14 @@ VENV=.venv
 .PHONY: all install clean distclean deps
 
 all: deps
-	meson setup libvmaf/build libvmaf --buildtype release -Denable_float=true && \
-	ninja -vC libvmaf/build && \
+	$(VENV)/bin/meson setup libvmaf/build libvmaf --buildtype release -Denable_float=true && \
+	$(VENV)/bin/ninja -vC libvmaf/build && \
 	cd python && \
 	../$(VENV)/bin/python setup.py build_ext --build-lib .
 
 install: deps
-	meson setup libvmaf/build libvmaf --buildtype release && \
-	ninja -vC libvmaf/build install
+	$(VENV)/bin/meson setup libvmaf/build libvmaf --buildtype release && \
+	$(VENV)/bin/ninja -vC libvmaf/build install
 
 clean:
 	rm -rf libvmaf/build
