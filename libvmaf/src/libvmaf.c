@@ -507,7 +507,6 @@ static int flush_context(VmafContext *vmaf)
 
 #ifdef HAVE_CUDA
     vmaf_cuda_fex_synchronize(vmaf);
-    vmaf_cuda_fex_synchronize(vmaf);
     if (vmaf->cuda.state.ctx) {
         RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
         for (unsigned i = 0; i < rfe.cnt; i++) {
