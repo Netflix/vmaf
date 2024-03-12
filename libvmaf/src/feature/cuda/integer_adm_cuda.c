@@ -55,7 +55,7 @@ typedef struct AdmStateCuda {
             int dst_stride, CUstream c_stream);
     CUstream str, host_stream;
     void* write_score_parameters;
-    CUevent ref_event, dis_event, finished, write_scores;
+    CUevent ref_event, dis_event, finished, scores_written;
     VmafDictionary *feature_name_dict;
 
     // adm_dwt kernels
@@ -1023,7 +1023,7 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CHECK_CUDA(cuEventCreate(&s->finished, CU_EVENT_DISABLE_TIMING));
     CHECK_CUDA(cuEventCreate(&s->ref_event, CU_EVENT_DISABLE_TIMING));
     CHECK_CUDA(cuEventCreate(&s->dis_event, CU_EVENT_DISABLE_TIMING));
-    CHECK_CUDA(cuEventCreate(&s->write_scores, CU_EVENT_DISABLE_TIMING));
+    CHECK_CUDA(cuEventCreate(&s->scores_written, CU_EVENT_DISABLE_TIMING));
 
 
     CUmodule adm_cm_module, adm_csf_den_module, adm_csf_module, adm_decouple_module, adm_dwt_module;
@@ -1161,12 +1161,7 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
 
     // this is done to ensure that the CPU does not overwrite the buffer params for 'write_scores
     CHECK_CUDA(cuStreamSynchronize(s->str));
-    // CHECK_CUDA(cuEventSynchronize(s->finished));
     CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
-    CHECK_CUDA(cuEventDestroy(s->finished));
-    CHECK_CUDA(cuEventDestroy(s->write_scores));
-    CHECK_CUDA(cuEventCreate(&s->finished, CU_EVENT_DISABLE_TIMING));
-    CHECK_CUDA(cuEventCreate(&s->write_scores, CU_EVENT_DISABLE_TIMING));
     CHECK_CUDA(cuCtxPopCurrent(NULL));
 
     // current implementation is limited by the 16-bit data pipeline, thus
@@ -1187,7 +1182,7 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
     data->w = ref_pic->w[0];
     CHECK_CUDA(cuStreamWaitEvent(s->host_stream, s->finished, CU_EVENT_WAIT_DEFAULT));
     CHECK_CUDA(cuLaunchHostFunc(s->host_stream, (CUhostFn)write_scores, data));
-    CHECK_CUDA(cuEventRecord(s->write_scores, s->host_stream));
+    CHECK_CUDA(cuEventRecord(s->scores_written, s->host_stream));
     return 0;
 }
 
@@ -1224,23 +1219,25 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
     if (s->write_score_parameters)  free(s->write_score_parameters);
 
     ret |= vmaf_dictionary_free(&s->feature_name_dict);
+
+    if(s->ref_event) CHECK_CUDA(cuEventDestroy(s->ref_event));
+    if(s->dis_event) CHECK_CUDA(cuEventDestroy(s->dis_event));
+    if(s->finished) CHECK_CUDA(cuEventDestroy(s->finished));
+    if(s->scores_written) CHECK_CUDA(cuEventDestroy(s->scores_written));
+
+    //cuStreamDestroy(s->str);
+
     return ret;
 }
 
 static int flush_fex_cuda(VmafFeatureExtractor *fex,
         VmafFeatureCollector *feature_collector)
 {
-    nvtxRangePushA("flush ADM");
     AdmStateCuda *s = fex->priv;
     int ret = 0;
     CHECK_CUDA(cuStreamSynchronize(s->str));
     CHECK_CUDA(cuStreamSynchronize(s->host_stream));
-    while (cuEventQuery(s->write_scores) != CUDA_SUCCESS)
-    {
-        continue;
-    }
-    CHECK_CUDA(cuEventSynchronize(s->write_scores));
-    nvtxRangePop();
+    CHECK_CUDA(cuEventSynchronize(s->scores_written));
     return (ret < 0) ? ret : !ret;
 }
 

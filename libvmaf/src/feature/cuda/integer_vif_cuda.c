@@ -45,7 +45,7 @@
 
 typedef struct VifStateCuda {
     VifBufferCuda buf;
-    CUevent event, finished, write_scores;
+    CUevent event, finished, scores_written;
     CUstream str, host_stream;
     bool debug;
     double vif_enhn_gain_limit;
@@ -102,9 +102,9 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
     CHECK_CUDA(cuStreamCreateWithPriority(&s->str, CU_STREAM_NON_BLOCKING, 0));
     CHECK_CUDA(cuStreamCreateWithPriority(&s->host_stream, CU_STREAM_NON_BLOCKING, 0));
-    CHECK_CUDA(cuEventCreate(&s->event, CU_EVENT_DEFAULT));
-    CHECK_CUDA(cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
-    CHECK_CUDA(cuEventCreate(&s->write_scores, CU_EVENT_DISABLE_TIMING));
+    CHECK_CUDA(cuEventCreate(&s->event, CU_EVENT_DISABLE_TIMING));
+    CHECK_CUDA(cuEventCreate(&s->finished, CU_EVENT_DISABLE_TIMING));
+    CHECK_CUDA(cuEventCreate(&s->scores_written, CU_EVENT_DISABLE_TIMING));
     // make this static
     CUmodule filter1d_module;
     CHECK_CUDA(cuModuleLoadData(&filter1d_module, src_filter1d_ptx));
@@ -461,10 +461,6 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
     // before the GPU has finished writing to it.
     CHECK_CUDA(cuStreamSynchronize(s->str));
     CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
-    CHECK_CUDA(cuEventDestroy(s->finished));
-    CHECK_CUDA(cuEventDestroy(s->write_scores));
-    CHECK_CUDA(cuEventCreate(&s->finished, CU_EVENT_DISABLE_TIMING));
-    CHECK_CUDA(cuEventCreate(&s->write_scores, CU_EVENT_DISABLE_TIMING));
     CHECK_CUDA(cuCtxPopCurrent(NULL));
 
     CHECK_CUDA(cuMemsetD8Async(s->buf.accum_data->data, 0, sizeof(vif_accums) * 4, s->str));
@@ -488,7 +484,7 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
             CHECK_CUDA(cuStreamWaitEvent(s->str, s->event, CU_EVENT_WAIT_DEFAULT));
             CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
             CHECK_CUDA(cuEventDestroy(s->event));
-            CHECK_CUDA(cuEventCreate(&s->event, CU_EVENT_DEFAULT));
+            CHECK_CUDA(cuEventCreate(&s->event, CU_EVENT_DISABLE_TIMING));
             CHECK_CUDA(cuCtxPopCurrent(NULL));
         }
     }
@@ -507,7 +503,7 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
     data->feature_collector = feature_collector;
     data->index = index;
     CHECK_CUDA(cuLaunchHostFunc(s->host_stream, (CUhostFn)write_scores, data));
-    CHECK_CUDA(cuEventRecord(s->write_scores, s->host_stream));
+    CHECK_CUDA(cuEventRecord(s->scores_written, s->host_stream));
     return 0;
 }
 
@@ -528,6 +524,11 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
     if (s->buf.accum_host) {
         ret |= vmaf_cuda_buffer_host_free(fex->cu_state, s->buf.accum_host);
     }
+
+    if(s->event) CHECK_CUDA(cuEventDestroy(s->event));
+    if(s->finished) CHECK_CUDA(cuEventDestroy(s->finished));
+    if(s->scores_written) CHECK_CUDA(cuEventDestroy(s->scores_written));
+
     ret |= vmaf_dictionary_free(&s->feature_name_dict);
     return ret;
 }
@@ -541,11 +542,7 @@ static int flush_fex_cuda(VmafFeatureExtractor *fex,
     int ret = 0;
     CHECK_CUDA(cuStreamSynchronize(s->str));
     CHECK_CUDA(cuStreamSynchronize(s->host_stream));
-    while (cuEventQuery(s->write_scores) != CUDA_SUCCESS)
-    {
-        continue;
-    }
-    CHECK_CUDA(cuEventSynchronize(s->write_scores));
+    CHECK_CUDA(cuEventSynchronize(s->scores_written));
     nvtxRangePop();
 
     return (ret < 0) ? ret : !ret;

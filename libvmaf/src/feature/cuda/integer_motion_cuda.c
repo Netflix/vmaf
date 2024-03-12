@@ -284,8 +284,6 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
     CHECK_CUDA(cuStreamSynchronize(s->str));
     CHECK_CUDA(cuEventSynchronize(s->finished));
     CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
-    // CHECK_CUDA(cuEventDestroy(s->finished));
-    // CHECK_CUDA(cuEventCreate(&s->finished, CU_EVENT_DISABLE_TIMING));
     CHECK_CUDA(cuCtxPopCurrent(NULL));
 
     int err = 0;
@@ -308,12 +306,7 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
     CHECK_CUDA(cuEventRecord(s->event, vmaf_cuda_picture_get_stream(ref_pic)));
     // This event ensures the input buffer is consumed
     CHECK_CUDA(cuStreamWaitEvent(s->str, s->event, CU_EVENT_WAIT_DEFAULT));
-    // CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
-    // CHECK_CUDA(cuEventDestroy(s->event));
-    // CHECK_CUDA(cuEventDestroy(s->scores_written));
-    // CHECK_CUDA(cuEventCreate(&s->event, CU_EVENT_DISABLE_TIMING));
-    // CHECK_CUDA(cuEventCreate(&s->scores_written, CU_EVENT_BLOCKING_SYNC));
-    // CHECK_CUDA(cuCtxPopCurrent(NULL)); 
+
 
     if (index == 0) {
         err = vmaf_feature_collector_append(feature_collector,
@@ -368,6 +361,12 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
     if(s->write_score_parameters) {
         free(s->write_score_parameters);
     }
+
+
+    if(s->event) CHECK_CUDA(cuEventDestroy(s->event));
+    if(s->finished) CHECK_CUDA(cuEventDestroy(s->finished));
+    if(s->scores_written) CHECK_CUDA(cuEventDestroy(s->scores_written));
+
     return ret;
 }
 
