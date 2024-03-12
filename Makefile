@@ -1,12 +1,23 @@
-all:
+VENV=.venv
+.PHONY: all install clean distclean deps
+
+all: deps
 	meson setup libvmaf/build libvmaf --buildtype release -Denable_float=true && \
-	ninja -vC libvmaf/build
-	cd python && python3 setup.py build_ext --build-lib .
+	ninja -vC libvmaf/build && \
+	cd python && \
+	../$(VENV)/bin/python setup.py build_ext --build-lib .
+
+install: deps
+	meson setup libvmaf/build libvmaf --buildtype release && \
+	ninja -vC libvmaf/build install
 
 clean:
 	rm -rf libvmaf/build
 	rm -f python/vmaf/core/adm_dwt2_cy.c*
 
-install:
-	meson setup libvmaf/build libvmaf --buildtype release && \
-	ninja -vC libvmaf/build install
+distclean: clean
+	rm -rf $(VENV)
+
+deps:
+	test -d $(VENV) || python3 -mvenv $(VENV)
+	$(VENV)/bin/pip install meson ninja cython numpy
