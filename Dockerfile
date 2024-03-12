@@ -6,9 +6,8 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # get and install building tools
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+    apt-get install -y \
     build-essential \
-    git \
     ninja-build \
     nasm \
     doxygen \
@@ -17,11 +16,7 @@ RUN apt-get update && \
     python3-pip \
     python3-setuptools \
     python3-wheel \
-    python3-tk \
-    python3-venv \
-    && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists
+    python3-venv
 
 # retrieve source code
 COPY . /vmaf
