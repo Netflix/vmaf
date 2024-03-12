@@ -506,6 +506,8 @@ static int flush_context(VmafContext *vmaf)
     }
 
 #ifdef HAVE_CUDA
+    vmaf_cuda_fex_synchronize(vmaf);
+    vmaf_cuda_fex_synchronize(vmaf);
     if (vmaf->cuda.state.ctx) {
         RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
         for (unsigned i = 0; i < rfe.cnt; i++) {
@@ -761,6 +763,16 @@ int vmaf_score_at_index(VmafContext *vmaf, VmafModel *model, double *score,
     if (err) {
         err = vmaf_predict_score_at_index(model, vmaf->feature_collector, index,
                                           score, true, 0);
+        // if(err) {
+        //     // Error? Sync and try again
+        //     vmaf_cuda_fex_synchronize(vmaf);
+        //     err = vmaf_predict_score_at_index(model, vmaf->feature_collector, index,
+        //                             score, true, 0);
+        //     if(err == 0) {
+        //         // No error - got score
+        //         return 0;
+        //     }
+        // }
     }
 
     return err;
@@ -788,6 +800,8 @@ int vmaf_feature_score_pooled(VmafContext *vmaf, const char *feature_name,
     if (!feature_name) return -EINVAL;
     if (index_low > index_high) return -EINVAL;
     if (!pool_method) return -EINVAL;
+
+    // vmaf_cuda_fex_synchronize(vmaf);
 
     unsigned pic_cnt = 0;
     double min = 0., max = 0., sum = 0., i_sum = 0.;
