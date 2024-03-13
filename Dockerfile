@@ -9,7 +9,8 @@ RUN apt-get update && \
     doxygen \
     python3 \
     python3-pip \
-    python3-venv
+    python3-venv \
+    xxd
 
 # retrieve source code
 COPY . /vmaf
