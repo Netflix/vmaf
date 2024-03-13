@@ -1,9 +1,5 @@
 FROM ubuntu:22.04
 
-# setup timezone
-ENV TZ=UTC
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
 # get and install building tools
 RUN apt-get update && \
     apt-get install -y \
@@ -12,10 +8,7 @@ RUN apt-get update && \
     nasm \
     doxygen \
     python3 \
-    python3-dev \
     python3-pip \
-    python3-setuptools \
-    python3-wheel \
     python3-venv
 
 # retrieve source code
@@ -34,4 +27,4 @@ WORKDIR /vmaf
 
 ENV PYTHONPATH=python
 
-ENTRYPOINT [ "./python/vmaf/script/run_vmaf.py" ]
+ENTRYPOINT [ "vmaf" ]
