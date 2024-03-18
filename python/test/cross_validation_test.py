@@ -138,8 +138,8 @@ class CrossValidationTest(unittest.TestCase):
             {'n_estimators': 50, 'norm_type': 'clip_0to1', 'random_state': 0},
             {'n_estimators': 10, 'norm_type': 'normalize', 'random_state': 0},
         ]
-        for dict, expected_dict in zip(dicts, expected_dicts):
-            self.assertDictEqual(dict, expected_dict)
+        for actual_dict, expected_dict in zip(dicts, expected_dicts):
+            self.assertDictEqual(actual_dict, expected_dict)
 
         model_param_search_range = {'norm_type': ['normalize', 'clip_0to1'],
                                     'n_estimators': {'low': 10, 'high': 50, 'decimal': 0},
@@ -163,11 +163,11 @@ class CrossValidationTest(unittest.TestCase):
          {'norm_type': 'clip_0to1', 'n_estimators': 50, 'random_state': 0},
         ]
 
-        dict, count = ModelCrossValidation._find_most_frequent_dict(dicts)
+        actual_dict, count = ModelCrossValidation._find_most_frequent_dict(dicts)
         expected_dict = {'norm_type': 'clip_0to1', 'n_estimators': 50, 'random_state': 0}
         expected_count = 2
 
-        self.assertEqual(dict, expected_dict)
+        self.assertEqual(actual_dict, expected_dict)
         self.assertEqual(count, expected_count)
 
     def test_run_nested_kfold_cross_validation_randomforest(self):

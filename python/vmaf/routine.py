@@ -391,7 +391,7 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
         for test_asset in test_assets:
             assert test_asset.groundtruth is not None
     except AssertionError:
-        # no groundtruth, try do subjective modeling
+        # no groundtruth, try to do subjective modeling
         from sureal.dataset_reader import RawDatasetReader
         from sureal.subjective_model import DmosModel
         subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs and kwargs['subj_model_class'] is not None else DmosModel
@@ -548,11 +548,11 @@ def run_test_on_dataset(test_dataset, runner_class, ax,
 
 
 def print_matplotlib_warning():
-    print("Warning: cannot import matplotlib, no picture displayed. " \
-          "If you are on Mac OS and have installed matplotlib, you " \
-          "possibly need to run: \nsudo pip uninstall python-dateutil \n" \
-          "sudo pip install python-dateutil==2.2 \n" \
-          "Refer to: http://stackoverflow.com/questions/27630114/matplotlib-issue-on-os-x-importerror-cannot-import-name-thread")
+    print("Warning: cannot import matplotlib, no picture displayed. "
+          "If you are on Mac OS and have installed matplotlib, you "
+          "possibly need to run: \nsudo pip uninstall python-dateutil \n"
+          "sudo pip install python-dateutil==2.2 \n"
+          "Refer to: https://stackoverflow.com/questions/27630114/matplotlib-issue-on-os-x-importerror-cannot-import-name-thread")
 
 
 def train_test_vmaf_on_dataset(train_dataset, test_dataset,
@@ -569,7 +569,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         for train_asset in train_assets:
             assert train_asset.groundtruth is not None
     except AssertionError:
-        # no groundtruth, try do subjective modeling
+        # no groundtruth, try to do subjective modeling
         from sureal.dataset_reader import RawDatasetReader
         from sureal.subjective_model import DmosModel
         subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs and kwargs['subj_model_class'] is not None else DmosModel
@@ -684,7 +684,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
             for test_asset in test_assets:
                 assert test_asset.groundtruth is not None
         except AssertionError:
-            # no groundtruth, try do subjective modeling
+            # no groundtruth, try to do subjective modeling
             from sureal.dataset_reader import RawDatasetReader
             from sureal.subjective_model import DmosModel
             subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs and kwargs['subj_model_class'] is not None else DmosModel

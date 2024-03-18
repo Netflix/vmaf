@@ -56,17 +56,17 @@ def project_path(relative_path):
 
 def required(path):
     if not os.path.exists(path):
-        raise AssertionError("%s does not exist, did you build?" % (path))
+        raise AssertionError(f"{path} does not exist, did you build?")
     return path
 
 
 def convert_pixel_format_ffmpeg2vmafexec(ffmpeg_pix_fmt):
-    '''
+    """
     Convert FFmpeg-style pixel format (pix_fmt) to vmaf style.
 
     :param ffmpeg_pix_fmt: FFmpeg-style pixel format, for example: yuv420p, yuv420p10le
     :return: (pixel_format: str, bitdepth: int), for example: (420, 8), (420, 10)
-    '''
+    """
     assert ffmpeg_pix_fmt in ['yuv420p', 'yuv422p', 'yuv444p',
                               'yuv420p10le', 'yuv422p10le', 'yuv444p10le',
                               'yuv420p12le', 'yuv422p12le', 'yuv444p12le',

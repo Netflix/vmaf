@@ -84,7 +84,7 @@ def get_file_name_with_extension(path):
 
 
 def get_file_name_extension(path):
-    '''
+    """
     >>> get_file_name_extension("file:///mnt/zli/test.txt")
     'txt'
     >>> get_file_name_extension("test.txt")
@@ -93,7 +93,7 @@ def get_file_name_extension(path):
     ''
     >>> get_file_name_extension("test.265")
     '265'
-    '''
+    """
     return Path(path).suffix[1:]
 
 
@@ -118,9 +118,9 @@ def make_parent_dirs_if_nonexist(path):
     os.makedirs(dst_dir, exist_ok=True)
 
 
-def delete_dir_if_exists(dir):
-    if os.path.isdir(dir):
-        os.rmdir(dir)
+def delete_dir_if_exists(dir_to_delete):
+    if os.path.isdir(dir_to_delete):
+        os.rmdir(dir_to_delete)
 
 
 def get_normalized_string_from_dict(d):
@@ -174,7 +174,7 @@ def indices(a, func):
     [2, 3]
     >>> indices([1, 2, 3, 4], lambda x: x==2.5)
     []
-    >>> indices([1, 2, 3, 4], lambda x: x>1 and x<=3)
+    >>> indices([1, 2, 3, 4], lambda x: 1 < x <= 3)
     [1, 2]
     >>> indices([1, 2, 3, 4], lambda x: x in [2, 4])
     [1, 3]
@@ -250,7 +250,7 @@ def empty_object():
 
 
 def get_cmd_option(argv, begin, end, option):
-    '''
+    """
 
     >>> get_cmd_option(['a', 'b', 'c', '--xyz', '123'], 3, 5, '--xyz')
     '123'
@@ -264,7 +264,7 @@ def get_cmd_option(argv, begin, end, option):
     >>> get_cmd_option(['a', 'b', 'c', '--xyz', '123'], 0, 5, 'b')
     'c'
 
-    '''
+    """
     itr = None
     for itr in range(begin, end):
         if argv[itr] == option:
@@ -275,7 +275,7 @@ def get_cmd_option(argv, begin, end, option):
 
 
 def cmd_option_exists(argv, begin, end, option):
-    '''
+    """
 
     >>> cmd_option_exists(['a', 'b', 'c', 'd'], 2, 4, 'c')
     True
@@ -288,7 +288,7 @@ def cmd_option_exists(argv, begin, end, option):
     >>> cmd_option_exists(['a', 'b', 'c', 'd'], 2, 4, 'b')
     False
 
-    '''
+    """
     found = False
     for itr in range(begin, end):
         if argv[itr] == option:
@@ -298,12 +298,12 @@ def cmd_option_exists(argv, begin, end, option):
 
 
 def index_and_value_of_min(l):
-    '''
+    """
 
     >>> index_and_value_of_min([2, 0, 3])
     (1, 0)
 
-    '''
+    """
     return min(enumerate(l), key=lambda x: x[1])
 
 
@@ -348,7 +348,7 @@ def parallel_map(func, list_args, processes=None, sleep_sec=0.01):
             if not p.is_alive():
                 active_procs.remove(p)
 
-        # check if can add a proc to active_procs (add gradually one per loop)
+        # check if we can add a proc to active_procs (add gradually one per loop)
         if len(active_procs) < max_active_procs and len(waiting_procs) > 0:
             # move one proc from waiting_procs to active_procs
             p = waiting_procs.pop()
@@ -367,7 +367,7 @@ def parallel_map(func, list_args, processes=None, sleep_sec=0.01):
 
 
 def check_program_exist(program):
-    '''
+    """
 
     >>> check_program_exist("xxxafasd34df")
     False
@@ -380,7 +380,7 @@ def check_program_exist(program):
     >>> check_program_exist("pwd")
     True
 
-    '''
+    """
     try:
         with open(os.devnull, "wb") as devnull_fd:
             subprocess.call(program.split(), stdout=devnull_fd)
@@ -394,7 +394,7 @@ def check_program_exist(program):
 
 
 def check_scanf_match(string, template):
-    '''
+    """
     >>> check_scanf_match('frame00000000.icpf', 'frame%08d.icpf')
     True
     >>> check_scanf_match('frame00000003.icpf', 'frame%08d.icpf')
@@ -419,8 +419,7 @@ def check_scanf_match(string, template):
     True
     >>> check_scanf_match('/mnt/hgfs/ZLI-NFLX-10/USCJND/ref/1920x1080/videoSRC001_1920x1080_30.yuv.avi', '/mnt/hgfs/ZLI-NFLX-10/USCJND/ref/1920x1080/videoSRC001_1920x1080_*.yuv.avi')
     True
-    '''
-    ret = False
+    """
     try:
         sscanf(string, template)
         return True
