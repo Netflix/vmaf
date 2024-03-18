@@ -35,7 +35,7 @@ class InterpolationUtils(object):
             yk = log_rate[0]
             segmentOfInterest = 0
             for i in range(N-1):
-                if log_dist[i] <= distInLogScale and log_dist[i+1] >= distInLogScale:
+                if log_dist[i] <= distInLogScale <= log_dist[i + 1]:
                     distBegin = log_dist[i]
                     yk = log_rate[i]
                     segmentOfInterest = i
@@ -72,7 +72,7 @@ class InterpolationUtils(object):
         N = len(rdPointsList)
 
         for i in range(N):
-            if (convertRateUsingLogarithm):
+            if convertRateUsingLogarithm:
                 log_rate.append(np.log10(rdPointsList[i][0]))
             else:
                 log_rate.append(rdPointsList[i][0])

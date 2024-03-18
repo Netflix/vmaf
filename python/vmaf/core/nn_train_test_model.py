@@ -240,9 +240,9 @@ class NeuralNetTrainTestModel(RawVideoTrainTestModelMixin,
                 jv = jv[idx]
 
                 patches_found = 0
-                for (y, x) in zip(iv, jv):
-                    patches_cache[patch_idx] = img[y: y + self.patch_height,
-                                                   x: x + self.patch_width]
+                for (yy, xx) in zip(iv, jv):
+                    patches_cache[patch_idx] = img[yy: yy + self.patch_height,
+                                                   xx: xx + self.patch_width]
                     if mode == 'train':
                         labels_cache[patch_idx] = label
 

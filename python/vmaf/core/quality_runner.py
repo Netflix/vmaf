@@ -1219,8 +1219,7 @@ class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
             if use_default_built_in_model:
                 models = []
         else:
-            model0 = []
-            model0.append(f'name=vmaf')
+            model0 = ['name=vmaf']
 
             if self.optional_dict is not None and 'model_filepath' in self.optional_dict:
                 model_filepath = self.optional_dict['model_filepath']

@@ -14,7 +14,7 @@ import sys
 def deprecated(func):
     """
     Mark a function as deprecated.
-    It will result in a warning being emmitted when the function is used.
+    It will result in a warning being emitted when the function is used.
     """
 
     def new_func(*args, **kwargs):
