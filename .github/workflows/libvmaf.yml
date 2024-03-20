@@ -86,6 +86,8 @@ jobs:
       - name: Run tox tests (mac)
         if: matrix.os == 'macos-latest'
         run: |
+          ls -R /opt/homebrew/opt/llvm@14/
+          
           PATH=/opt/homebrew/opt/llvm@14/bin:$PATH \
           CC=/opt/homebrew/opt/llvm@14/bin/clang \
           CXX=/opt/homebrew/opt/llvm@14/bin/clang++ \
