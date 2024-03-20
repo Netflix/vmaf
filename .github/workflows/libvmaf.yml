@@ -33,7 +33,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: 3.12
       - name: Install meson and ninja
         run: |
           python -m pip install --upgrade pip
