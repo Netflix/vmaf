@@ -59,7 +59,7 @@ jobs:
       - name: Install dependencies (mac)
         if: matrix.os == 'macos-latest'
         run: |
-          brew install -q ninja nasm ccache llvm libomp
+          brew install -q ninja nasm ccache llvm@14 libomp
 
           $CC --version
           meson --version
@@ -86,9 +86,10 @@ jobs:
       - name: Run tox tests (mac)
         if: matrix.os == 'macos-latest'
         run: |
-          LDFLAGS="-L$(brew --prefix)/opt/libomp/lib" CPPFLAGS="-I$(brew --prefix)/opt/libomp/include" \
-          CC=$(brew --prefix)/opt/llvm/bin/clang CXX=$(brew --prefix)/opt/llvm/bin/clang++ \
-            tox -c python
+          PATH=/opt/homebrew/opt/llvm@14/bin:$PATH \
+          CC=clang \
+          CXX=clang++ \
+          tox -c python
 
       - name: Get binary path & Current Release
         id: get_info
