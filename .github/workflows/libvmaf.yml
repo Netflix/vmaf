@@ -61,9 +61,11 @@ jobs:
         run: |
           brew install -q ninja nasm ccache llvm@14 libomp
 
+          echo "BREW PREFIX"
+          echo $(brew --prefix)
           brew info llvm@14
           brew info libomp
-          ls -R /opt/homebrew/opt/
+          ls -R $(brew --prefix)/opt/
   
           $CC --version
           meson --version
@@ -90,9 +92,9 @@ jobs:
       - name: Run tox tests (mac)
         if: matrix.os == 'macos-latest'
         run: |
-          PATH=/opt/homebrew/opt/llvm@14/bin:$PATH \
-          CC=/opt/homebrew/opt/llvm@14/bin/clang \
-          CXX=/opt/homebrew/opt/llvm@14/bin/clang++ \
+          PATH=$(brew --prefix)/opt/llvm@14/bin:$PATH \
+          CC=$(brew --prefix)/opt/llvm@14/bin/clang \
+          CXX=$(brew --prefix)/opt/llvm@14/bin/clang++ \
           tox -c python
 
       - name: Get binary path & Current Release
