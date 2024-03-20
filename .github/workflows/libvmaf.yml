@@ -87,8 +87,8 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           PATH=/opt/homebrew/opt/llvm@14/bin:$PATH \
-          CC=clang \
-          CXX=clang++ \
+          CC=/opt/homebrew/opt/llvm@14/bin/clang \
+          CXX=/opt/homebrew/opt/llvm@14/bin/clang++ \
           tox -c python
 
       - name: Get binary path & Current Release
