@@ -33,7 +33,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: 3.11
       - name: Install meson and ninja
         run: |
           python -m pip install --upgrade pip
@@ -59,13 +59,7 @@ jobs:
       - name: Install dependencies (mac)
         if: matrix.os == 'macos-latest'
         run: |
-          brew install -q ninja nasm ccache llvm@14 libomp
-
-          echo "BREW PREFIX"
-          echo $(brew --prefix)
-          brew info llvm@14
-          brew info libomp
-          ls -R $(brew --prefix)/opt/
+          brew install -q ninja nasm ccache llvm libomp
   
           $CC --version
           meson --version
@@ -92,9 +86,9 @@ jobs:
       - name: Run tox tests (mac)
         if: matrix.os == 'macos-latest'
         run: |
-          PATH=$(brew --prefix)/opt/llvm@14/bin:$PATH \
-          CC=$(brew --prefix)/opt/llvm@14/bin/clang \
-          CXX=$(brew --prefix)/opt/llvm@14/bin/clang++ \
+          PATH=$(brew --prefix)/opt/llvm/bin:$PATH \
+          CC=$(brew --prefix)/opt/llvm/bin/clang \
+          CXX=$(brew --prefix)/opt/llvm/bin/clang++ \
           tox -c python
 
       - name: Get binary path & Current Release
