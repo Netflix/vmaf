@@ -453,6 +453,60 @@ static int threaded_read_pictures(VmafContext *vmaf, VmafPicture *ref,
     return vmaf_picture_unref(ref) | vmaf_picture_unref(dist);
 }
 
+static int validate_pixel_values_lbd(VmafPicture *pic) {
+    int bpc = pic->bpc;
+    uint8_t max_val = (1 << bpc) - 1;
+    int channel = 0;
+    uint8_t *data = (uint8_t *)pic->data[channel];
+    size_t stride = pic->stride[channel];
+    int middle_row = pic->h[channel] / 2;
+    for (unsigned j = 0; j < pic->w[channel]; j++) {
+        if (data[middle_row * stride + j] > max_val) {
+            vmaf_log(
+                VMAF_LOG_LEVEL_ERROR,
+                "Invalid input. The input contains values greater than %d, which exceeds the maximum value for a %d-bit depth format.",
+                max_val, bpc
+            );
+            return -EINVAL;
+        }
+    }
+    return 0;
+}
+
+static int validate_pixel_values_hbd(VmafPicture *pic) {
+    int bpc = pic->bpc;
+    uint16_t max_val = (1 << bpc) - 1;
+    int channel = 0;
+    uint16_t *data = (uint16_t *)pic->data[channel];
+    size_t stride = pic->stride[channel];
+    int middle_row = pic->h[channel] / 2;
+    for (unsigned j = 0; j < pic->w[channel]; j++) {
+        if (data[middle_row * stride + j] > max_val) {
+            vmaf_log(
+                VMAF_LOG_LEVEL_ERROR,
+                "Invalid input. The input contains values greater than %d, which exceeds the maximum value for a %d-bit depth format.",
+                max_val, bpc
+            );
+            return -EINVAL;
+        }
+    }
+    return 0;
+}
+
+/* This function validates that there are no pixel values above the maximum possible value for the given bitdepth.
+ * For example, if the given bitdepth is 10, no values should be above 1023. However, checking every pixel incurs
+ * significant overhead, so we only check the middle row as a heuristic.
+ */
+static int validate_pixel_values(VmafPicture *pic) {
+    int bpc = pic->bpc;
+    if (bpc <= 8) {
+        return validate_pixel_values_lbd(pic);
+    }
+    else {
+        return validate_pixel_values_hbd(pic);
+    }
+}
+
 static int validate_pic_params(VmafContext *vmaf, VmafPicture *ref,
                                VmafPicture *dist)
 {
@@ -480,6 +534,13 @@ static int validate_pic_params(VmafContext *vmaf, VmafPicture *ref,
         return -EINVAL;
     if (ref_priv->buf_type != dist_priv->buf_type)
         return -EINVAL;
+
+    if (validate_pixel_values(ref)) {
+        return -EINVAL;
+    }
+    if (validate_pixel_values(dist)) {
+        return -EINVAL;
+    }
 
     return 0;
 }
