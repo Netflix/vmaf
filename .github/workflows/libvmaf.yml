@@ -21,7 +21,7 @@ jobs:
           - os: ubuntu-latest
             CC: ccache clang
             CXX: ccache clang++
-          - os: macos-latest
+          - os: macos-14
             CC: ccache clang
             CXX: ccache clang++
             experimental: true
@@ -57,7 +57,7 @@ jobs:
           ccache --version
 
       - name: Install dependencies (mac)
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-14'
         run: |
           brew install -q ninja nasm ccache
 
