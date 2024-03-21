@@ -21,7 +21,7 @@ jobs:
           - os: ubuntu-latest
             CC: ccache clang
             CXX: ccache clang++
-          - os: macos-14
+          - os: macos-latest
             CC: ccache clang
             CXX: ccache clang++
             experimental: true
@@ -57,7 +57,7 @@ jobs:
           ccache --version
 
       - name: Install dependencies (mac)
-        if: matrix.os == 'macos-14'
+        if: matrix.os == 'macos-latest'
         run: |
           brew install -q ninja nasm ccache llvm
 
@@ -84,7 +84,7 @@ jobs:
         run: |
           tox -c python
       - name: Run tox tests (mac)
-        if: matrix.os == 'macos-14'
+        if: matrix.os == 'macos-latest'
         run: |
           PATH=$(brew --prefix)/opt/llvm/bin:$PATH \
           CC=$(brew --prefix)/opt/llvm/bin/clang \
