@@ -136,11 +136,13 @@ class TestReadDataset(unittest.TestCase):
         self.assertTrue('groundtruth' in assets[0].asset_dict.keys())
         self.assertTrue('os' not in assets[0].asset_dict.keys())
         self.assertEqual(assets[0].quality_width_height, (1920, 1080))
-        self.assertEqual(assets[0].resampling_type, 'bicubic')
+        self.assertEqual(assets[0].ref_resampling_type, 'bicubic')
+        self.assertEqual(assets[0].dis_resampling_type, 'bicubic')
         self.assertEqual(assets[0].ref_yuv_type, 'yuv420p')
         self.assertEqual(assets[0].dis_yuv_type, 'yuv420p')
         self.assertEqual(assets[1].quality_width_height, (1920, 1080))
-        self.assertEqual(assets[1].resampling_type, 'bicubic')
+        self.assertEqual(assets[1].ref_resampling_type, 'bicubic')
+        self.assertEqual(assets[1].dis_resampling_type, 'bicubic')
 
     def test_read_dataset_mixed(self):
         dataset_path = VmafConfig.test_resource_path('test_dataset_mixed.py')
@@ -149,25 +151,29 @@ class TestReadDataset(unittest.TestCase):
 
         self.assertEqual(len(assets), 4)
 
-        self.assertEqual(assets[0].resampling_type, 'bicubic')
+        self.assertEqual(assets[0].ref_resampling_type, 'bicubic')
+        self.assertEqual(assets[0].dis_resampling_type, 'bicubic')
         self.assertEqual(assets[0].ref_yuv_type, 'yuv420p')
         self.assertEqual(assets[0].dis_yuv_type, 'yuv420p')
         self.assertEqual(assets[0].ref_width_height, (1920, 1080))
         self.assertEqual(assets[0].dis_width_height, (1920, 1080))
 
-        self.assertEqual(assets[1].resampling_type, 'bicubic')
+        self.assertEqual(assets[1].ref_resampling_type, 'bicubic')
+        self.assertEqual(assets[1].dis_resampling_type, 'bicubic')
         self.assertEqual(assets[1].ref_yuv_type, 'yuv420p')
         self.assertEqual(assets[1].dis_yuv_type, 'notyuv')
         self.assertEqual(assets[1].ref_width_height, (1920, 1080))
         self.assertEqual(assets[1].dis_width_height, None)
 
-        self.assertEqual(assets[2].resampling_type, 'bicubic')
+        self.assertEqual(assets[2].ref_resampling_type, 'bicubic')
+        self.assertEqual(assets[2].dis_resampling_type, 'bicubic')
         self.assertEqual(assets[2].ref_yuv_type, 'yuv420p')
         self.assertEqual(assets[2].dis_yuv_type, 'yuv420p')
         self.assertEqual(assets[2].ref_width_height, (720, 480))
         self.assertEqual(assets[2].dis_width_height, (720, 480))
 
-        self.assertEqual(assets[3].resampling_type, 'bicubic')
+        self.assertEqual(assets[3].ref_resampling_type, 'bicubic')
+        self.assertEqual(assets[3].dis_resampling_type, 'bicubic')
         self.assertEqual(assets[3].ref_yuv_type, 'yuv420p')
         self.assertEqual(assets[3].dis_yuv_type, 'notyuv')
         self.assertEqual(assets[3].ref_width_height, (720, 480))
@@ -182,7 +188,8 @@ class TestReadDataset(unittest.TestCase):
 
         self.assertEqual(len(assets), 3)
 
-        self.assertEqual(assets[0].resampling_type, 'bicubic')
+        self.assertEqual(assets[0].ref_resampling_type, 'bicubic')
+        self.assertEqual(assets[0].dis_resampling_type, 'bicubic')
         self.assertEqual(assets[0].ref_yuv_type, 'notyuv')
         self.assertEqual(assets[0].dis_yuv_type, 'notyuv')
         self.assertEqual(assets[0].ref_width_height, None)
@@ -217,7 +224,8 @@ class TestReadDataset(unittest.TestCase):
 
         self.assertEqual(len(assets), 3)
 
-        self.assertEqual(assets[0].resampling_type, 'bicubic')
+        self.assertEqual(assets[0].ref_resampling_type, 'bicubic')
+        self.assertEqual(assets[0].dis_resampling_type, 'bicubic')
         self.assertEqual(assets[0].ref_yuv_type, 'notyuv')
         self.assertEqual(assets[0].dis_yuv_type, 'notyuv')
         self.assertEqual(assets[0].ref_width_height, None)

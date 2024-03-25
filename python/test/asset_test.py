@@ -521,7 +521,6 @@ class AssetTest(unittest.TestCase):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
                       asset_dict={'fps': 24, 'start_sec': 2, 'end_sec': 3})
-        self.assertEqual(asset.resampling_type, 'bicubic')
         self.assertEqual(asset.ref_resampling_type, 'bicubic')
         self.assertEqual(asset.dis_resampling_type, 'bicubic')
 
@@ -529,7 +528,6 @@ class AssetTest(unittest.TestCase):
                       ref_path="", dis_path="",
                       asset_dict={'fps': 24, 'start_sec': 2, 'end_sec': 3,
                                   'resampling_type': 'lanczos'})
-        self.assertEqual(asset.resampling_type, 'lanczos')
         self.assertEqual(asset.ref_resampling_type, 'lanczos')
         self.assertEqual(asset.dis_resampling_type, 'lanczos')
 
@@ -537,7 +535,6 @@ class AssetTest(unittest.TestCase):
                       ref_path="", dis_path="",
                       asset_dict={'fps': 24, 'start_sec': 2, 'end_sec': 3,
                                   'resampling_type': 'bicubic'})
-        self.assertEqual(asset.resampling_type, 'bicubic')
         self.assertEqual(asset.ref_resampling_type, 'bicubic')
         self.assertEqual(asset.dis_resampling_type, 'bicubic')
 
@@ -548,8 +545,6 @@ class AssetTest(unittest.TestCase):
                                   'dis_resampling_type': 'lanczos'})
         self.assertEqual(asset.ref_resampling_type, 'bilinear')
         self.assertEqual(asset.dis_resampling_type, 'lanczos')
-        with self.assertRaises(AssertionError):
-            _ = asset.resampling_type
 
         asset = Asset(dataset="test", content_id=0, asset_id=0,
                       ref_path="", dis_path="",
@@ -559,8 +554,6 @@ class AssetTest(unittest.TestCase):
                                   'resampling_type': 'bilinear'})
         self.assertEqual(asset.ref_resampling_type, 'bilinear')
         self.assertEqual(asset.dis_resampling_type, 'lanczos')
-        with self.assertRaises(AssertionError):
-            _ = asset.resampling_type
 
     def test_use_path_as_workpath(self):
         asset = Asset(dataset="test", content_id=0, asset_id=0,
