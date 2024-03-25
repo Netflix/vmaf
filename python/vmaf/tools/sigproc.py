@@ -125,7 +125,9 @@ def calpvalue(aucs, sigma):
     # pvalue = 2 * (1 - normcdf(z, 0, 1));
     l = np.array([[1, -1]])
     z = np.abs(np.diff(aucs)) / np.sqrt(np.dot(np.dot(l, sigma), l.T))
-    pvalue = 2 * (1 - scipy.stats.norm.cdf(z, loc=0, scale=1))
+    # numpy returns a 2-dimensional array with shape (1, 1), extract the element
+    z_val = z[0, 0]
+    pvalue = 2 * (1 - scipy.stats.norm.cdf(z_val, loc=0, scale=1))
     return pvalue
 
 
