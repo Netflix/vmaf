@@ -59,6 +59,13 @@ namespace {
         return atomicAdd(reinterpret_cast<uint64_cu *>(address),
                 static_cast<uint64_cu>(val));
     }
+
+    typedef unsigned long long int uint64_cu;
+    __forceinline__ __device__ int64_t atomicAdd_uint64(uint64_t *address,
+            uint64_t val) {
+        return atomicAdd(reinterpret_cast<uint64_cu *>(address),
+                static_cast<uint64_cu>(val));
+    }
 } // namespace
 #endif
 
