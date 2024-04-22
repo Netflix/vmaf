@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_FEATURE_COUNT 32 //FIXME
+#define MAX_FEATURE_COUNT 64 //FIXME
 #define MAX_KNOT_COUNT 10 //FIXME
 
 static int parse_feature_opts_dicts(json_stream *s, VmafModel *model)
