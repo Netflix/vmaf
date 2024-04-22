@@ -19,6 +19,8 @@
 #ifndef __VMAF_OUTPUT_H__
 #define __VMAF_OUTPUT_H__
 
+int countLeadingZeroesFloat(float x);
+
 int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc, FILE *outfile,
                           unsigned subsample, unsigned width, unsigned height,
                           double fps, unsigned pic_cnt);
