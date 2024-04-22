@@ -2,6 +2,7 @@ vmaf_soversion = vmaf_api_version_major
 
 # Build libvmaf
 feature_src_dir = './feature/'
+resizer_feature_dir = './feature/third_party/funque/'
 src_dir = './'
 model_dir = '../../model/'
 cuda_dir = './cuda/'
@@ -122,6 +123,8 @@ built_in_models_enabled = get_option('built_in_models') == true
 float_enabled = get_option('enable_float') == true
 cdata.set10('VMAF_FLOAT_FEATURES', float_enabled)
 
+sast_resizer_enabled = get_option('enable_sast_resizer') == true
+
 if built_in_models_enabled
     xxd = find_program('xxd', required: false)
     if xxd.found()
@@ -202,6 +205,7 @@ libvmaf_include = include_directories(
     src_dir,
     feature_src_dir,
     feature_src_dir + 'common',
+    resizer_feature_dir,
 )
 
 libvmaf_cpu_static_lib = static_library(
@@ -238,6 +242,13 @@ if is_asm_enabled
           feature_src_dir + 'x86/cambi_avx2.c',
       ]
 
+      if sast_resizer_enabled
+          x86_avx2_sources += [
+              resizer_feature_dir + 'x86/resizer_avx2.c',
+              resizer_feature_dir + 'x86/hbd_resizer_avx2.c',
+          ]
+      endif
+
       x86_avx2_static_lib = static_library(
           'x86_avx2',
           x86_avx2_sources,
@@ -252,6 +263,13 @@ if is_asm_enabled
             feature_src_dir + 'x86/motion_avx512.c',
             feature_src_dir + 'x86/vif_avx512.c',
         ]
+
+        if sast_resizer_enabled
+            x86_avx512_sources += [
+                resizer_feature_dir + 'x86/resizer_avx512.c',
+                resizer_feature_dir + 'x86/hbd_resizer_avx512.c',
+            ]
+        endif
 
         x86_avx512_static_lib = static_library(
             'x86_avx512',
@@ -434,6 +452,13 @@ if is_cuda_enabled
         feature_src_dir + 'cuda/integer_adm_cuda.c',
         feature_src_dir + 'cuda/integer_vif_cuda.c',
         feature_src_dir + 'cuda/integer_motion_cuda.c',
+    ]
+endif
+
+if sast_resizer_enabled
+    libvmaf_feature_sources += [
+        resizer_feature_dir + 'resizer.c',
+        resizer_feature_dir + 'hbd_resizer.c',
     ]
 endif
 
