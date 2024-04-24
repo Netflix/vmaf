@@ -44,8 +44,8 @@ static const char *pool_method_name[] = {
     [VMAF_POOL_METHOD_HARMONIC_MEAN] = "harmonic_mean",
 };
 
-int countLeadingZeroesFloat(double x)
-{   
+static int count_leading_zeros_flat(double x)
+{
     if(x < 0)
         x = fabs(x);
 
@@ -53,15 +53,15 @@ int countLeadingZeroesFloat(double x)
     double fractionalPart = x - intPart;
 
     // Count leading zeroes in the fractional part
-    int leadingZeroesCount = 0;
+    int leading_zeros_count = 0;
 
     while (fractionalPart < 1.0 && fractionalPart != 0)
     {
         fractionalPart *= 10; // Shift decimal point to the right
-        leadingZeroesCount++;
+        leading_zeros_count++;
     }
 
-    return leadingZeroesCount;
+    return leading_zeros_count;
 }
 
 int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc,
@@ -78,7 +78,7 @@ int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc,
     fprintf(outfile, "  <fyi fps=\"%.2f\" />\n", fps);
 
     unsigned n_frames = 0;
-    int leadingZeroesCount;
+    int leading_zeros_count;
     fprintf(outfile, "  <frames>\n");
     for (unsigned i = 0 ; i < max_capacity(fc); i++) {
         if ((subsample > 1) && (i % subsample))
@@ -99,8 +99,8 @@ int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc,
                 continue;
             if (!fc->feature_vector[j]->score[i].written)
                 continue;
-            leadingZeroesCount = countLeadingZeroesFloat(fc->feature_vector[j]->score[i].value);
-            if (leadingZeroesCount <= 6)
+            leading_zeros_count = count_leading_zeros_flat(fc->feature_vector[j]->score[i].value);
+            if (leading_zeros_count <= 6)
                 fprintf(outfile, "%s=\"%.6f\" ",
                     vmaf_feature_name_alias(fc->feature_vector[j]->name),
                     fc->feature_vector[j]->score[i].value);
@@ -126,8 +126,8 @@ int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc,
                                                 0, pic_cnt - 1);
             if (!err)
             {
-                leadingZeroesCount = countLeadingZeroesFloat(score);
-                if (leadingZeroesCount <= 6)
+                leading_zeros_count = count_leading_zeros_flat(score);
+                if (leading_zeros_count <= 6)
                     fprintf(outfile, "%s=\"%.6f\" ", pool_method_name[j], score);
                 else
                     fprintf(outfile, "%s=\"%.16f\" ", pool_method_name[j], score);
@@ -140,8 +140,8 @@ int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc,
 
     fprintf(outfile, "  <aggregate_metrics ");
     for (unsigned i = 0; i < fc->aggregate_vector.cnt; i++) {
-        leadingZeroesCount = countLeadingZeroesFloat(fc->aggregate_vector.metric[i].value);
-        if (leadingZeroesCount <= 6)
+        leading_zeros_count = count_leading_zeros_flat(fc->aggregate_vector.metric[i].value);
+        if (leading_zeros_count <= 6)
             fprintf(outfile, "%s=\"%.6f\" ",
                 fc->aggregate_vector.metric[i].name,
                 fc->aggregate_vector.metric[i].value);
@@ -161,7 +161,7 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
                            FILE *outfile, unsigned subsample, double fps,
                            unsigned pic_cnt)
 {
-    int leadingZeroesCount;
+    int leading_zeros_count;
     fprintf(outfile, "{\n");
     fprintf(outfile, "  \"version\": \"%s\",\n", vmaf_version());
     switch(fpclassify(fps)) {
@@ -206,8 +206,8 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
             case FP_NORMAL:
             case FP_ZERO:
             case FP_SUBNORMAL:
-                leadingZeroesCount = countLeadingZeroesFloat(fc->feature_vector[j]->score[i].value);
-                if (leadingZeroesCount <= 6)
+                leading_zeros_count = count_leading_zeros_flat(fc->feature_vector[j]->score[i].value);
+                if (leading_zeros_count <= 6)
                     fprintf(outfile, "        \"%s\": %.6f%s\n",
                         vmaf_feature_name_alias(fc->feature_vector[j]->name),
                         fc->feature_vector[j]->score[i].value,
@@ -249,8 +249,8 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
                 case FP_NORMAL:
                 case FP_ZERO:
                 case FP_SUBNORMAL:
-                    leadingZeroesCount = countLeadingZeroesFloat((double)score);
-                    if (leadingZeroesCount <= 6)
+                    leading_zeros_count = count_leading_zeros_flat((double)score);
+                    if (leading_zeros_count <= 6)
                         fprintf(outfile, "      \"%s\": %.6f",
                             pool_method_name[j], score);
                     else
@@ -276,8 +276,8 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
         case FP_NORMAL:
         case FP_ZERO:
         case FP_SUBNORMAL:
-            leadingZeroesCount = countLeadingZeroesFloat(fc->aggregate_vector.metric[i].value);
-            if (leadingZeroesCount <= 6)
+            leading_zeros_count = count_leading_zeros_flat(fc->aggregate_vector.metric[i].value);
+            if (leading_zeros_count <= 6)
                 fprintf(outfile, "\n    \"%s\": %.6f",
                     fc->aggregate_vector.metric[i].name,
                     fc->aggregate_vector.metric[i].value);
@@ -298,14 +298,14 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
     }
     fprintf(outfile, "\n  }\n");
     fprintf(outfile, "}\n");
-    
+
     return 0;
 }
 
 int vmaf_write_output_csv(VmafFeatureCollector *fc, FILE *outfile,
                            unsigned subsample)
 {
-    int leadingZeroesCount;
+    int leading_zeros_count;
     fprintf(outfile, "Frame,");
     for (unsigned i = 0; i < fc->cnt; i++) {
         fprintf(outfile, "%s,",
@@ -333,8 +333,8 @@ int vmaf_write_output_csv(VmafFeatureCollector *fc, FILE *outfile,
             if (!fc->feature_vector[j]->score[i].written)
                 continue;
 
-            leadingZeroesCount = countLeadingZeroesFloat(fc->feature_vector[j]->score[i].value);
-            if (leadingZeroesCount <= 6)
+            leading_zeros_count = count_leading_zeros_flat(fc->feature_vector[j]->score[i].value);
+            if (leading_zeros_count <= 6)
                 fprintf(outfile, "%.6f,", fc->feature_vector[j]->score[i].value);
             else
                 fprintf(outfile, "%.16f,", fc->feature_vector[j]->score[i].value);
@@ -348,7 +348,7 @@ int vmaf_write_output_csv(VmafFeatureCollector *fc, FILE *outfile,
 int vmaf_write_output_sub(VmafFeatureCollector *fc, FILE *outfile,
                           unsigned subsample)
 {
-    int leadingZeroesCount;
+    int leading_zeros_count;
     for (unsigned i = 0 ; i < max_capacity(fc); i++) {
         if ((subsample > 1) && (i % subsample))
             continue;
@@ -368,8 +368,8 @@ int vmaf_write_output_sub(VmafFeatureCollector *fc, FILE *outfile,
                 continue;
             if (!fc->feature_vector[j]->score[i].written)
                 continue;
-            leadingZeroesCount = countLeadingZeroesFloat(fc->feature_vector[j]->score[i].value);
-            if (leadingZeroesCount <= 6)
+            leading_zeros_count = count_leading_zeros_flat(fc->feature_vector[j]->score[i].value);
+            if (leading_zeros_count <= 6)
                 fprintf(outfile, "%s: %.6f|",
                     vmaf_feature_name_alias(fc->feature_vector[j]->name),
                     fc->feature_vector[j]->score[i].value);
