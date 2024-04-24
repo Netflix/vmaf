@@ -49,15 +49,15 @@ static int count_leading_zeros_flat(double x)
     if(x < 0)
         x = fabs(x);
 
-    int intPart = (int)x;
-    double fractionalPart = x - intPart;
+    int int_part = (int)x;
+    double fractional_part = x - int_part;
 
     // Count leading zeroes in the fractional part
     int leading_zeros_count = 0;
 
-    while (fractionalPart < 1.0 && fractionalPart != 0)
+    while (fractional_part < 1.0 && fractional_part != 0)
     {
-        fractionalPart *= 10; // Shift decimal point to the right
+        fractional_part *= 10; // Shift decimal point to the right
         leading_zeros_count++;
     }
 
