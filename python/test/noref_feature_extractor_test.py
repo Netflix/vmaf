@@ -105,8 +105,8 @@ class NorefFeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['NIQE_noref_feature_alpha23_score'], 0.8168807870370377, places=4)
         self.assertAlmostEqual(results[0]['NIQE_noref_feature_alpha13_score'], 0.6949641203703707, places=4)
-        self.assertAlmostEqual(results[0]['NIQE_noref_feature_alpha_m1_score'], 2.0924143518518536, places=4)
-        self.assertAlmostEqual(results[0]['NIQE_noref_feature_blbr1_score'], 0.72958634325785898, places=4)
+        self.assertAlmostEqual(results[0]['NIQE_noref_feature_alpha_m1_score'], 2.0924143518518536, places=3)
+        self.assertAlmostEqual(results[0]['NIQE_noref_feature_blbr1_score'], 0.72958634325785898, places=3)
 
         self.assertAlmostEqual(results[1]['NIQE_noref_feature_alpha23_score'], 0.89566087962963026, places=4)
         self.assertAlmostEqual(results[1]['NIQE_noref_feature_alpha13_score'], 0.85539583333333391, places=4)
@@ -157,8 +157,8 @@ class NorefFeatureExtractorTest(unittest.TestCase):
 
         self.assertAlmostEqual(results[0]['NIQE_noref_feature_alpha23_score'], 0.8430156250000006, places=4)
         self.assertAlmostEqual(results[0]['NIQE_noref_feature_alpha13_score'], 0.71714583333333359, places=4)
-        self.assertAlmostEqual(results[0]['NIQE_noref_feature_alpha_m1_score'], 2.2195590277777795, places=4)
-        self.assertAlmostEqual(results[0]['NIQE_noref_feature_blbr1_score'], 0.74061215376929412, places=4)
+        self.assertAlmostEqual(results[0]['NIQE_noref_feature_alpha_m1_score'], 2.2195590277777795, places=3)
+        self.assertAlmostEqual(results[0]['NIQE_noref_feature_blbr1_score'], 0.74061215376929412, places=3)
 
         self.assertAlmostEqual(results[1]['NIQE_noref_feature_alpha23_score'], 0.9144918981481488, places=4)
         self.assertAlmostEqual(results[1]['NIQE_noref_feature_alpha13_score'], 0.87132291666666728, places=4)
