@@ -59,7 +59,7 @@ test_feature_extractor = executable('test_feature_extractor',
     ['test.c', 'test_feature_extractor.c', '../src/mem.c', '../src/picture.c', '../src/ref.c',
      '../src/dict.c', '../src/opt.c', '../src/log.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
-    dependencies : [math_lib, stdatomic_dependency, cuda_dependency],
+    dependencies : [math_lib, stdatomic_dependency, thread_lib, cuda_dependency],
     objects : [
       common_cuda_objects,
       platform_specific_cpu_objects,
