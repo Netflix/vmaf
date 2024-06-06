@@ -124,8 +124,8 @@ int vmaf_picture_unref(VmafPicture *pic) {
     if (!pic) return -EINVAL;
     if (!pic->ref) return -EINVAL;
 
-    vmaf_ref_fetch_decrement(pic->ref);
-    if (vmaf_ref_load(pic->ref) == 0) {
+    const long old_cnt = vmaf_ref_fetch_decrement(pic->ref);
+    if (old_cnt == 1) {
         const VmafPicturePrivate *priv = pic->priv;
         priv->release_picture(pic, priv->cookie);
         free(pic->priv);
