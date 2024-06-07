@@ -182,7 +182,7 @@ class Executor(TypeVersionEnabled):
                 lock.release()
                 return result
 
-            self.results = parallel_map(_run, list_args, processes=processes, sleep_sec=0.1)
+            self.results = parallel_map(_run, list_args, processes=processes)
         else:
             self.results = list(map(self._run_on_asset, self.assets))
 
