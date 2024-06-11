@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from fnmatch import fnmatch
 import multiprocessing
+from concurrent.futures import ProcessPoolExecutor
 from time import sleep, time
 import itertools
 from pathlib import Path
@@ -336,8 +337,10 @@ def parallel_map(func, list_args, processes=None):
         _pm_list_args = list_args
         _pm_return_dict = return_dict
 
-    with context.Pool(processes, initializer=pool_init) as pool:
-        pool.map(_parallel_map_rt, range(len(list_args)))
+    with ProcessPoolExecutor(processes, mp_context=context, initializer=pool_init) as pool:
+        # ProcessPoolExecutor prevents hanging on the slowest processes that get too much work - delegates one at a time
+        for _ in pool.map(_parallel_map_rt, range(len(list_args))):
+            pass
     
     return [return_dict[i] for i in range(len(list_args))]
 
