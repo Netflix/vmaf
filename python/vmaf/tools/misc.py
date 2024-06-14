@@ -23,13 +23,6 @@ __license__ = "BSD+Patent"
 
 
 try:
-    unicode  # noqa, remove this once python2 support is dropped
-
-except NameError:
-    unicode = str
-
-
-try:
     multiprocessing.set_start_method('fork')
 except ValueError:  # noqa, If platform does not support, just ignore
     pass
