@@ -8,11 +8,6 @@ from math import floor
 import sys
 
 
-# TODO: remove this once python2 support is dropped, in python3 all int are as long as you want
-if sys.version_info[0] == 3:
-    long = int
-
-
 class ModelCrossValidation(object):
 
     @staticmethod
@@ -66,7 +61,7 @@ class ModelCrossValidation(object):
         :return: output
         """
 
-        if isinstance(kfold, (int, long)):
+        if isinstance(kfold, int):
             kfold_type = 'int'
         elif isinstance(kfold, (list, tuple)):
             kfold_type = 'list'
@@ -158,7 +153,7 @@ class ModelCrossValidation(object):
         :return: output
         """
 
-        if isinstance(kfold, (int, long)):
+        if isinstance(kfold, int):
             kfold_type = 'int'
         elif isinstance(kfold, (list, tuple)):
             kfold_type = 'list'

@@ -13,10 +13,6 @@ from vmaf.core.result import RawResult
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
-# TODO: remove this once python2 support is dropped
-if sys.version_info[0] == 3:
-    basestring = str
-
 
 class RawExtractor(Executor):
 
@@ -85,7 +81,7 @@ class DisYUVRawVideoExtractor(H5pyMixin, RawExtractor):
             return 'yuv'
         else:
             channels = self.optional_dict['channels']
-            assert isinstance(channels, basestring)
+            assert isinstance(channels, str)
             channels = set(channels.lower())
             assert channels.issubset(set('yuv'))
             return ''.join(channels)

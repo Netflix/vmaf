@@ -173,13 +173,7 @@ import string
 import sys
 import unittest
 
-try:
-    import StringIO
-
-    StringIO = StringIO.StringIO  # TODO: remove this once python2 support is dropped
-
-except ImportError:
-    from io import StringIO
+from io import StringIO
 
 
 __all__ = ['scanf', 'sscanf', 'fscanf']
