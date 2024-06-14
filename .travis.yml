@@ -1,5 +1,5 @@
 os: linux
-dist: focal
+dist: jammy
 language: c++
 cache: ccache
 
@@ -8,7 +8,7 @@ addons:
     update: true
     sources:
       - sourceline: "ppa:ubuntu-toolchain-r/test"
-      - sourceline: "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-11 main"
+      - sourceline: "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-11 main"
         key_url: "https://apt.llvm.org/llvm-snapshot.gpg.key"
     packages:
       - python3-pip
