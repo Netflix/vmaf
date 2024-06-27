@@ -431,6 +431,22 @@ int main(int argc, char *argv[])
             fprintf(stderr, "\nproblem reading pictures\n");
             break;
         }
+        for (unsigned i = 0; i < c.model_cnt; i++)
+        {
+            double vmaf_score;
+            err = vmaf_score_at_index(vmaf, model[i], &vmaf_score, picture_index);
+            if (err)
+            {
+                fprintf(stderr, "frame %d: problem generating VMAF score\n", picture_index + 1);
+                return err;
+            }
+            if (istty && (!c.quiet || !c.output_path))
+            {
+                fprintf(stderr, "%s: %f\n",
+                        c.model_config[i].version ? c.model_config[i].version : c.model_config[i].path,
+                        vmaf_score);
+            }
+        }
     }
     if (istty && !c.quiet)
         fprintf(stderr, "\n");
