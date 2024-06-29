@@ -63,12 +63,12 @@ enum VmafPoolingMethod {
  *
  * @param n_threads   How many threads can be used to run
  *                    feature extractors concurrently.
- * 
+ *
  * @param n_subsample Compute scores only every N frames.
  *                    Note that setting an even value for N can lead to
  *                    inaccurate results. For more detail, see
  *                    https://github.com/Netflix/vmaf/issues/1214
- * 
+ *
  * @param cpumask     Restrict permitted CPU instruction sets.
  *                    if cpumask & 1:  disable SSE2 / disable NEON (on arm64)
  *                    if cpumask & 2:  disable SSE3/SSSE3
@@ -76,12 +76,15 @@ enum VmafPoolingMethod {
  *                    if cpumask & 8:  disable AVX2
  *                    if cpumask & 16: disable AVX512
  *                    if cpumask & 32: disable AVX512ICL
- * 
+ *
  * @param gpumask     Restrict permitted GPU operations.
  *                    if gpumask: disable CUDA
  */
 typedef struct VmafConfiguration {
     enum VmafLogLevel log_level;
+    void (*callback)(void*, const char *, double);
+    void* meta_data;
+    size_t meta_data_sz;
     unsigned n_threads;
     unsigned n_subsample;
     uint64_t cpumask;

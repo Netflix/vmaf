@@ -24,6 +24,7 @@
 #include <time.h>
 
 #include "dict.h"
+#include "model.h"
 
 typedef struct {
     char *name;
@@ -42,15 +43,28 @@ typedef struct {
     unsigned cnt, capacity;
 } AggregateVector;
 
+typedef struct {
+        void (*callback)(void *, const char * ,double);
+        void *data;
+        size_t data_sz;
+} VmafMetadata;
+
 typedef struct VmafFeatureCollector {
     FeatureVector **feature_vector;
     AggregateVector aggregate_vector;
+    VmafMetadata *metadata;
+    struct {
+        VmafModel **models;
+        unsigned cnt, capacity;
+    } models;
     unsigned cnt, capacity;
     struct { clock_t begin, end; } timer;
     pthread_mutex_t lock;
 } VmafFeatureCollector;
 
-int vmaf_feature_collector_init(VmafFeatureCollector **const feature_collector);
+int vmaf_feature_collector_init(VmafFeatureCollector **const feature_collector, void *metadata);
+
+int vmaf_feature_collector_mount_model(VmafFeatureCollector *feature_collector, VmafModel *model);
 
 int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
                                   const char *feature_name, double score,

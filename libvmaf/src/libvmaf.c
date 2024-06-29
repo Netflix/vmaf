@@ -102,7 +102,14 @@ int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
 
     err = vmaf_framesync_init(&(v->framesync));
     if (err) goto free_v;
-    err = vmaf_feature_collector_init(&(v->feature_collector));
+
+    VmafMetadata m = {
+        .callback = v->cfg.callback,
+        .data     = v->cfg.meta_data,
+        .data_sz  = v->cfg.meta_data_sz
+    };
+
+    err = vmaf_feature_collector_init(&(v->feature_collector), &m);
     if (err) goto free_framesync;
     err = feature_extractor_vector_init(&(v->registered_feature_extractors));
     if (err) goto free_feature_collector;
@@ -362,6 +369,10 @@ int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model)
             return err;
         }
     }
+
+    err = vmaf_feature_collector_mount_model(vmaf->feature_collector, model);
+    if (err) return err;
+
     return 0;
 }
 
@@ -763,7 +774,7 @@ int vmaf_score_at_index(VmafContext *vmaf, VmafModel *model, double *score,
                                          score, index);
     if (err) {
         err = vmaf_predict_score_at_index(model, vmaf->feature_collector, index,
-                                          score, true, 0);
+                                          score, true, false, 0);
     }
 
     return err;
