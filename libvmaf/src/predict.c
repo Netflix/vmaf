@@ -228,6 +228,7 @@ int vmaf_predict_score_at_index(VmafModel *model,
                                 VmafFeatureCollector *feature_collector,
                                 unsigned index, double *vmaf_score,
                                 bool write_prediction,
+                                bool propagate_metadata,
                                 enum VmafModelFlags flags)
 {
     if (!model) return -EINVAL;
@@ -287,9 +288,11 @@ int vmaf_predict_score_at_index(VmafModel *model,
                                                index);
 
         if (err) {
-            vmaf_log(VMAF_LOG_LEVEL_ERROR,
-                     "vmaf_predict_score_at_index(): no feature '%s' "
-                     "at index %d\n", feature_name, index);
+            if (!propagate_metadata) {
+              vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                       "vmaf_predict_score_at_index(): no feature '%s' "
+                       "at index %d\n", feature_name, index);
+            }
             free(feature_name);
             goto free_node;
         }
@@ -366,7 +369,7 @@ static int vmaf_bootstrap_predict_score_at_index(
         err = vmaf_predict_score_at_index(model_collection->model[i],
                                           feature_collector, index,
                                           &scores[i], false,
-                                          flags);
+                                          false, flags);
         if (err) return err;
 
         // do not override the model's transform/clip behavior
@@ -374,7 +377,7 @@ static int vmaf_bootstrap_predict_score_at_index(
         double score;
         err = vmaf_predict_score_at_index(model_collection->model[i],
                                           feature_collector, index,
-                                          &score, true, 0);
+                                          &score, true, false, 0);
         if (err) return err;
     }
 

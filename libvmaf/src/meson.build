@@ -462,6 +462,7 @@ libvmaf_sources = [
     src_dir + 'pdjson.c',
     src_dir + 'log.c',
     src_dir + 'framesync.c',
+    src_dir + 'metadata_handler.c',
 ]
 
 if is_cuda_enabled

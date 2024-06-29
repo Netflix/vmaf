@@ -32,6 +32,7 @@
 #include "cpu.h"
 #include "feature/feature_extractor.h"
 #include "feature/feature_collector.h"
+#include "metadata_handler.h"
 #include "fex_ctx_vector.h"
 #include "log.h"
 #include "model.h"
@@ -362,6 +363,10 @@ int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model)
             return err;
         }
     }
+
+    err = vmaf_feature_collector_mount_model(vmaf->feature_collector, model);
+    if (err) return err;
+
     return 0;
 }
 
@@ -739,6 +744,13 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     return err;
 }
 
+int vmaf_register_metadata_handler(VmafContext *vmaf, VmafMetadataConfiguration cfg)
+{
+    if (!vmaf) return -EINVAL;
+
+    return vmaf_feature_collector_register_metadata(vmaf->feature_collector, cfg);
+}
+
 int vmaf_feature_score_at_index(VmafContext *vmaf, const char *feature_name,
                                 double *score, unsigned index)
 {
@@ -763,7 +775,7 @@ int vmaf_score_at_index(VmafContext *vmaf, VmafModel *model, double *score,
                                          score, index);
     if (err) {
         err = vmaf_predict_score_at_index(model, vmaf->feature_collector, index,
-                                          score, true, 0);
+                                          score, true, false, 0);
     }
 
     return err;
