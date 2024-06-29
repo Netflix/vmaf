@@ -30,7 +30,7 @@ static char *test_predict_score_at_index()
     int err;
 
     VmafFeatureCollector *feature_collector;
-    err = vmaf_feature_collector_init(&feature_collector);
+    err = vmaf_feature_collector_init(&feature_collector, NULL);
     mu_assert("problem during vmaf_feature_collector_init", !err);
 
     VmafModel *model;
@@ -49,7 +49,7 @@ static char *test_predict_score_at_index()
 
     double vmaf_score = 0.;
     err = vmaf_predict_score_at_index(model, feature_collector, 0, &vmaf_score,
-                                      true, 0);
+                                      true, false, 0);
     mu_assert("problem during vmaf_predict_score_at_index", !err);
 
     vmaf_model_destroy(model);

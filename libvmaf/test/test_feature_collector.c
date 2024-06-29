@@ -18,6 +18,7 @@
 
 #include "test.h"
 #include "feature_collector.c"
+#include <time.h>
 
 static char *test_aggregate_vector_init_append_and_destroy()
 {
@@ -89,7 +90,7 @@ static char *test_feature_collector_init_append_get_and_destroy()
     int err;
 
     VmafFeatureCollector *feature_collector;
-    err = vmaf_feature_collector_init(&feature_collector);
+    err = vmaf_feature_collector_init(&feature_collector, NULL);
     mu_assert("problem during vmaf_feature_collector_init", !err);
     unsigned initial_capacity = feature_collector->capacity;
     mu_assert("this test assumes an initial capacity of 8",

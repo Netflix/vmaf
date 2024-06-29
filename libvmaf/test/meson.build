@@ -18,7 +18,7 @@ test_picture = executable('test_picture',
 )
 
 test_feature_collector = executable('test_feature_collector',
-    ['test.c', 'test_feature_collector.c', '../src/log.c'],
+    ['test.c', 'test_feature_collector.c', '../src/log.c', '../src/predict.c', '../src/svm.cpp'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/feature/'), include_directories('../src')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
     dependencies: cuda_dependency
@@ -57,7 +57,7 @@ test_predict = executable('test_predict',
 
 test_feature_extractor = executable('test_feature_extractor',
     ['test.c', 'test_feature_extractor.c', '../src/mem.c', '../src/picture.c', '../src/ref.c',
-     '../src/dict.c', '../src/opt.c', '../src/log.c'],
+     '../src/dict.c', '../src/opt.c', '../src/log.c', '../src/predict.c', '../src/svm.cpp'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
     dependencies : [math_lib, stdatomic_dependency, thread_lib, cuda_dependency],
     objects : [

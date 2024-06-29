@@ -18,6 +18,7 @@
 
 #include "test.h"
 #include "feature/integer_psnr.c"
+#include <time.h>
 
 #define EPS 0.00001
 
@@ -56,7 +57,7 @@ static char *test_16b_large_diff()
     err |= get_picture_16b(&pic2, 1);
     mu_assert("test_16b_large_diff alloc error", !err);
     VmafFeatureCollector *fc;
-    err |= vmaf_feature_collector_init(&fc);
+    err |= vmaf_feature_collector_init(&fc, NULL);
     mu_assert("test_16b_large_diff vmaf_feature_collector_init error", !err);
     PsnrState psnr_state = {
         .enable_chroma = 1,
