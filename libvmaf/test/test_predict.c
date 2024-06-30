@@ -25,6 +25,11 @@
 #include <libvmaf/model.h>
 #include <math.h>
 
+typedef struct {
+    VmafDictionary **metadata;
+    int flags;
+} MetaStruct;
+
 static char *test_predict_score_at_index()
 {
     int err;
@@ -55,6 +60,99 @@ static char *test_predict_score_at_index()
     vmaf_model_destroy(model);
     vmaf_feature_collector_destroy(feature_collector);
     return NULL;
+}
+
+void set_meta(void *data, const char *key, double d)
+{
+    if (!data) return;
+    MetaStruct *meta = data;
+    char value[128];
+    snprintf(value, sizeof(value), "%f", d);
+    vmaf_dictionary_set(meta->metadata, key, value, meta->flags);
+}
+
+static char* test_propagate_metadata()
+{
+    int err;
+
+    VmafDictionary *dict = NULL;
+    MetaStruct meta_data = {
+        .metadata = &dict,
+        .flags    = 0,
+    };
+
+    VmafMetadata m = {
+        .callback = set_meta,
+        .data     = &meta_data,
+        .data_sz  = sizeof(meta_data),
+    };
+
+    VmafFeatureCollector *feature_collector;
+    err = vmaf_feature_collector_init(&feature_collector, &m);
+    mu_assert("problem during vmaf_feature_collector_init", !err);
+
+    VmafModel *model;
+    VmafModelConfig cfg = {
+        .name = "vmaf",
+        .flags = VMAF_MODEL_FLAGS_DEFAULT,
+    };
+    err = vmaf_model_load(&model, &cfg, "vmaf_v0.6.1");
+    mu_assert("problem during vmaf_model_load", !err);
+    err = vmaf_feature_collector_mount_model(feature_collector, model);
+    mu_assert("problem during vmaf_mount_model", !err);
+
+    for (unsigned i = 0; i < model->n_features; i++) {
+        err = vmaf_feature_collector_append(feature_collector,
+                                            model->feature[i].name, 60., 0);
+        mu_assert("problem during vmaf_feature_collector_append", !err);
+    }
+
+    VmafDictionaryEntry *e = vmaf_dictionary_get(&dict, "vmaf_0", 0);
+    mu_assert("error on propagaton metadata: propagated data wrong!",
+              !strcmp(e->val, "100.000000"));
+
+    vmaf_feature_collector_destroy(feature_collector);
+
+    m.data = NULL;
+    err = vmaf_feature_collector_init(&feature_collector, &m);
+    mu_assert("problem during vmaf_feature_collector_init", !err);
+
+    for (unsigned i = 0; i < model->n_features; i++) {
+        err = vmaf_feature_collector_append(feature_collector,
+                                            model->feature[i].name, 60., 0);
+        mu_assert("problem during vmaf_feature_collector_append", !err);
+    }
+
+    vmaf_feature_collector_destroy(feature_collector);
+
+    m.data = &meta_data;
+    m.data_sz = 0;
+    err = vmaf_feature_collector_init(&feature_collector, &m);
+    mu_assert("problem during vmaf_feature_collector_init", !err);
+
+    for (unsigned i = 0; i < model->n_features; i++) {
+        err = vmaf_feature_collector_append(feature_collector,
+                                            model->feature[i].name, 60., 0);
+        mu_assert("problem during vmaf_feature_collector_append", !err);
+    }
+
+    vmaf_feature_collector_destroy(feature_collector);
+
+    m.callback = NULL;
+    err = vmaf_feature_collector_init(&feature_collector, &m);
+    mu_assert("problem during vmaf_feature_collector_init", !err);
+
+    for (unsigned i = 0; i < model->n_features; i++) {
+        err = vmaf_feature_collector_append(feature_collector,
+                                            model->feature[i].name, 60., 0);
+        mu_assert("problem during vmaf_feature_collector_append", !err);
+    }
+
+    vmaf_feature_collector_destroy(feature_collector);
+
+    vmaf_model_destroy(model);
+    return NULL;
+
 }
 
 static char *test_find_linear_function_parameters()
@@ -173,5 +271,6 @@ char *run_tests()
     mu_run_test(test_predict_score_at_index);
     mu_run_test(test_find_linear_function_parameters);
     mu_run_test(test_piecewise_linear_mapping);
+    mu_run_test(test_propagate_metadata);
     return NULL;
 }

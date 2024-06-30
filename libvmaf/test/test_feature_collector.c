@@ -18,7 +18,91 @@
 
 #include "test.h"
 #include "feature_collector.c"
+#include "libvmaf.c"
 #include <time.h>
+
+static char *test_model_mount_with_use_features()
+{
+    int err = 0;
+
+    VmafConfiguration vmaf_cfg = { 0 };
+
+    VmafContext *vmaf;
+    vmaf_init(&vmaf, vmaf_cfg);
+    mu_assert("problem during vmaf_init", vmaf);
+
+    VmafModelConfig model_cfg = { 0 };
+    VmafModel *model;
+    vmaf_model_load(&model, &model_cfg, "vmaf_v0.6.1");
+    mu_assert("problem during vmaf_model_load", model);
+
+    err = vmaf_use_features_from_model(vmaf, model);
+    mu_assert("problem during vmaf_use_features_from_model", !err);
+
+    mu_assert("problem during vmaf_model_mount",
+            vmaf->feature_collector->models);
+
+    vmaf_model_destroy(model);
+    err = vmaf_close(vmaf);
+    mu_assert("problem During vmaf_close", !err);
+
+    return NULL;
+}
+
+static char* test_model_mount()
+{
+    int err = 0;
+
+    VmafFeatureCollector *feature_collector;
+    err = vmaf_feature_collector_init(&feature_collector, NULL);
+    mu_assert("problem during vmaf_feature_collector_init", !err);
+
+    VmafModelConfig model_cfg = { 0 };
+    VmafModel *model;
+    vmaf_model_load(&model, &model_cfg, "vmaf_v0.6.1");
+    mu_assert("problem during vmaf_model_load", model);
+
+
+    err = vmaf_feature_collector_mount_model(feature_collector, model);
+    mu_assert("problem during vmaf_model_mount",
+             feature_collector->models);
+
+    err = vmaf_feature_collector_mount_model(feature_collector, model);
+    mu_assert("problem during vmaf_model_mount",
+             feature_collector->models->next);
+
+    vmaf_model_destroy(model);
+    vmaf_feature_collector_destroy(feature_collector);
+
+    return NULL;
+}
+
+static char* test_model_unmount()
+{
+    int err = 0;
+
+    VmafFeatureCollector *feature_collector;
+    err = vmaf_feature_collector_init(&feature_collector, NULL);
+    mu_assert("problem during vmaf_feature_collector_init", !err);
+
+    VmafModelConfig model_cfg = { 0 };
+    VmafModel *model;
+    vmaf_model_load(&model, &model_cfg, "vmaf_v0.6.1");
+    mu_assert("problem during vmaf_model_load", model);
+
+    err = vmaf_feature_collector_mount_model(feature_collector, model);
+    mu_assert("problem during vmaf_model_mount",
+             feature_collector->models);
+
+    err = vmaf_feature_collector_unmount_model(feature_collector, model);
+    mu_assert("problem during vmaf_model_unmount",
+             !feature_collector->models);
+
+    vmaf_model_destroy(model);
+    vmaf_feature_collector_destroy(feature_collector);
+
+    return NULL;
+}
 
 static char *test_aggregate_vector_init_append_and_destroy()
 {
@@ -162,5 +246,8 @@ char *run_tests()
     mu_run_test(test_feature_vector_init_append_and_destroy);
     mu_run_test(test_feature_collector_init_append_get_and_destroy);
     mu_run_test(test_aggregate_vector_init_append_and_destroy);
+    mu_run_test(test_model_mount);
+    mu_run_test(test_model_unmount);
+    mu_run_test(test_model_mount_with_use_features);
     return NULL;
 }
