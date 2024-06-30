@@ -507,7 +507,7 @@ void cli_parse(const int argc, char *const *const argv,
         settings->output_fmt = VMAF_OUTPUT_FORMAT_XML;
     if (!settings->path_ref)
         usage(argv[0], "Reference .y4m or .yuv (-r/--reference) is required");
-    if (!settings->path_ref)
+    if (!settings->path_dist)
         usage(argv[0], "Distorted .y4m or .yuv (-d/--distorted) is required");
     if (settings->use_yuv && !(settings->width && settings->height &&
         settings->pix_fmt && settings->bitdepth))
