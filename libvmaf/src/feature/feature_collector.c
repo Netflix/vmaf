@@ -223,20 +223,18 @@ int vmaf_feature_collector_init(VmafFeatureCollector **const feature_collector, 
       fc->metadata = malloc(sizeof(VmafMetadata));
       if(!fc->metadata) goto fail;
       memcpy(fc->metadata, m, sizeof(*m));
-      fc->metadata->data = malloc(m->data_sz);
-      if(!fc->metadata->data) goto free_metadata;
-      memcpy(fc->metadata->data, m->data, m->data_sz);
+      if (m->data && m->data_sz > 0) {
+        fc->metadata->data = malloc(m->data_sz);
+        if(!fc->metadata->data) goto free_metadata;
+        memcpy(fc->metadata->data, m->data, m->data_sz);
+      } else {
+        fc->metadata->data = NULL;
+        fc->metadata->data_sz = 0;
+      }
     }
-
-    fc->models.models = malloc(sizeof(fc->models.models) * fc->models.capacity);
-    if (!fc->models.models) goto free_models;
-    memset(fc->models.models, 0, sizeof(fc->models.models) * fc->models.capacity);
-    fc->models.capacity = 8;
 
     return 0;
 
-free_models:
-    free(fc->models.models);
 free_metadata:
     free(fc->metadata);
 free_aggregate_vector:
@@ -254,19 +252,40 @@ int vmaf_feature_collector_mount_model(VmafFeatureCollector *feature_collector, 
     if (!feature_collector) return -EINVAL;
     if (!model) return -EINVAL;
 
-    if (feature_collector->models.cnt + 1 > feature_collector->models.capacity) {
-        feature_collector->models.models = realloc(feature_collector->models.models,
-                                                   sizeof(VmafModel *)
-                                                   * feature_collector->models.capacity * 2);
-        if (!feature_collector->models.models) return -ENOMEM;
-        feature_collector->models.capacity *= 2;
-    }
+    VmafPredictModel *m = malloc(sizeof(VmafPredictModel));
+    if (!m) return -ENOMEM;
+    m->model = model;
+    m->next = NULL;
 
-    feature_collector->models.models[feature_collector->models.cnt++] = model;
+    VmafPredictModel **head = &feature_collector->models;
+    while (*head && (*head)->next != NULL)
+        *head = (*head)->next;
+
+    if (!(*head))
+        *head = m;
+    else
+        (*head)->next = m;
 
     return 0;
 }
 
+int vmaf_feature_collector_unmount_model(VmafFeatureCollector *feature_collector, VmafModel *model)
+{
+    if (!feature_collector) return -EINVAL;
+    if (!model) return -EINVAL;
+
+    VmafPredictModel **head = &feature_collector->models;
+    while (*head && (*head)->model != model)
+        head = &(*head)->next;
+
+    if (!(*head)) return -EINVAL;
+
+    VmafPredictModel *m = *head;
+    *head = m->next;
+    free(m);
+
+    return 0;
+}
 static FeatureVector *find_feature_vector(VmafFeatureCollector *fc,
                                           const char *feature_name)
 {
@@ -323,28 +342,30 @@ int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
     if (err) goto unlock;
 
     int res = 0;
-    for (unsigned i = 0; i < feature_collector->models.cnt
-                    && feature_collector->metadata; i++) {
-        VmafModel *model = feature_collector->models.models[i];
+    VmafPredictModel *head = feature_collector->models;
+    while (head != NULL && feature_collector->metadata
+                        && feature_collector->metadata->callback)
+    {
+        VmafModel *model = head->model;
         double score = 0.0;
         pthread_mutex_unlock(&(feature_collector->lock));
-        res =
-        vmaf_feature_collector_get_score(feature_collector, model->name,
+        res = vmaf_feature_collector_get_score(feature_collector, model->name,
                                          &score, picture_index);
+        pthread_mutex_lock(&(feature_collector->lock));
         if (!res) {
-          pthread_mutex_lock(&(feature_collector->lock));
+          head = head->next;
           continue;
         }
+        pthread_mutex_unlock(&(feature_collector->lock));
         res = vmaf_predict_score_at_index(model, feature_collector, picture_index,
                                           &score, true, true, 0);
         pthread_mutex_lock(&(feature_collector->lock));
         if (res) goto unlock;
-        //vmaf_log(VMAF_LOG_LEVEL_ERROR, "model %s, index %d, score %f\n",
-        //    model->name, picture_index, score);
         char key[128];
         snprintf(key, sizeof(key), "%s_%d", model->name, picture_index);
         feature_collector->metadata->callback(feature_collector->metadata->data,
                                              key, score);
+        head = head->next;
     }
 
 unlock:
@@ -404,7 +425,15 @@ void vmaf_feature_collector_destroy(VmafFeatureCollector *feature_collector)
     aggregate_vector_destroy(&(feature_collector->aggregate_vector));
     for (unsigned i = 0; i < feature_collector->cnt; i++)
         feature_vector_destroy(feature_collector->feature_vector[i]);
-    free(feature_collector->models.models);
+    if(feature_collector->models) {
+      VmafPredictModel *head = feature_collector->models;
+      VmafPredictModel *next = NULL;
+      while (head != NULL) {
+        next = head->next;
+        free(head);
+        head = next;
+      }
+    }
     if (feature_collector->metadata) {
       free(feature_collector->metadata->data);
       free(feature_collector->metadata);

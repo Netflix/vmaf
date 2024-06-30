@@ -49,14 +49,18 @@ typedef struct {
         size_t data_sz;
 } VmafMetadata;
 
+typedef struct VmafPredictModel VmafPredictModel;
+
+typedef struct VmafPredictModel {
+    VmafModel *model;
+    VmafPredictModel *next;
+} VmafPredictModel;
+
 typedef struct VmafFeatureCollector {
     FeatureVector **feature_vector;
     AggregateVector aggregate_vector;
     VmafMetadata *metadata;
-    struct {
-        VmafModel **models;
-        unsigned cnt, capacity;
-    } models;
+    VmafPredictModel *models;
     unsigned cnt, capacity;
     struct { clock_t begin, end; } timer;
     pthread_mutex_t lock;
