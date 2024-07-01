@@ -31,8 +31,10 @@
 #include "cuda/integer_adm_cuda.h"
 #include "picture_cuda.h"
 #include <unistd.h>
-
 #include <assert.h>
+#ifdef HAVE_NVTX
+#include "nvtx3/nvToolsExt.h"
+#endif
 
 #define RES_BUFFER_SIZE 4 * 3 * 2
 
@@ -55,7 +57,7 @@ typedef struct AdmStateCuda {
             int dst_stride, CUstream c_stream);
     CUstream str, host_stream;
     void* write_score_parameters;
-    CUevent ref_event, dis_event, finished;
+    CUevent ref_event, dis_event, finished, scores_written;
     VmafDictionary *feature_name_dict;
 
     // adm_dwt kernels
@@ -642,7 +644,6 @@ typedef struct write_score_parameters_adm {
 
 static int write_scores(write_score_parameters_adm* params)
 {
-
     VmafFeatureCollector *feature_collector = params->feature_collector;
     AdmStateCuda *s = params->s;
     unsigned index = params->index;
@@ -715,7 +716,11 @@ static int write_scores(write_score_parameters_adm* params)
             s->feature_name_dict, "integer_adm_scale3", scores[6] / scores[7],
             index);
 
-    if (!s->debug) return err;
+    if (!s->debug) {
+
+        return err;
+    }
+
 
     err |= vmaf_feature_collector_append_with_dict(feature_collector,
             s->feature_name_dict, "integer_adm", score, index);
@@ -749,7 +754,6 @@ static int write_scores(write_score_parameters_adm* params)
 
     err |= vmaf_feature_collector_append_with_dict(feature_collector,
             s->feature_name_dict, "integer_adm_den_scale3", scores[7], index);
-
     return err;
 }
 
@@ -1015,9 +1019,10 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
     CHECK_CUDA(cuStreamCreateWithPriority(&s->str, CU_STREAM_NON_BLOCKING, 0));
     CHECK_CUDA(cuStreamCreateWithPriority(&s->host_stream, CU_STREAM_NON_BLOCKING, 0));
-    CHECK_CUDA(cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
-    CHECK_CUDA(cuEventCreate(&s->ref_event, CU_EVENT_DEFAULT));
-    CHECK_CUDA(cuEventCreate(&s->dis_event, CU_EVENT_DEFAULT));
+    CHECK_CUDA(cuEventCreate(&s->finished, CU_EVENT_DISABLE_TIMING));
+    CHECK_CUDA(cuEventCreate(&s->ref_event, CU_EVENT_DISABLE_TIMING));
+    CHECK_CUDA(cuEventCreate(&s->dis_event, CU_EVENT_DISABLE_TIMING));
+    CHECK_CUDA(cuEventCreate(&s->scores_written, CU_EVENT_DISABLE_TIMING));
 
 
     CUmodule adm_cm_module, adm_csf_den_module, adm_csf_module, adm_decouple_module, adm_dwt_module;
@@ -1155,10 +1160,7 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
 
     // this is done to ensure that the CPU does not overwrite the buffer params for 'write_scores
     CHECK_CUDA(cuStreamSynchronize(s->str));
-    // CHECK_CUDA(cuEventSynchronize(s->finished));
     CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
-    CHECK_CUDA(cuEventDestroy(s->finished));
-    CHECK_CUDA(cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
     CHECK_CUDA(cuCtxPopCurrent(NULL));
 
     // current implementation is limited by the 16-bit data pipeline, thus
@@ -1179,6 +1181,7 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
     data->w = ref_pic->w[0];
     CHECK_CUDA(cuStreamWaitEvent(s->host_stream, s->finished, CU_EVENT_WAIT_DEFAULT));
     CHECK_CUDA(cuLaunchHostFunc(s->host_stream, (CUhostFn)write_scores, data));
+    CHECK_CUDA(cuEventRecord(s->scores_written, s->host_stream));
     return 0;
 }
 
@@ -1215,15 +1218,32 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
     if (s->write_score_parameters)  free(s->write_score_parameters);
 
     ret |= vmaf_dictionary_free(&s->feature_name_dict);
+
+    if(s->ref_event) CHECK_CUDA(cuEventDestroy(s->ref_event));
+    if(s->dis_event) CHECK_CUDA(cuEventDestroy(s->dis_event));
+    if(s->finished) CHECK_CUDA(cuEventDestroy(s->finished));
+    if(s->scores_written) CHECK_CUDA(cuEventDestroy(s->scores_written));
+
+    //cuStreamDestroy(s->str);
+
     return ret;
 }
 
 static int flush_fex_cuda(VmafFeatureExtractor *fex,
         VmafFeatureCollector *feature_collector)
 {
+#ifdef HAVE_NVTX
+    nvtxRangePushA("flush adm_cuda");
+#endif
     AdmStateCuda *s = fex->priv;
+    int ret = 0;
     CHECK_CUDA(cuStreamSynchronize(s->str));
-    return 1;
+    CHECK_CUDA(cuStreamSynchronize(s->host_stream));
+    CHECK_CUDA(cuEventSynchronize(s->scores_written));
+#ifdef HAVE_NVTX
+    nvtxRangePop();
+#endif
+    return (ret < 0) ? ret : !ret;
 }
 
 static const char *provided_features[] = {

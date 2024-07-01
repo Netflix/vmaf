@@ -102,6 +102,17 @@ int vmaf_cuda_preallocate_pictures(VmafContext *vmaf,
  */
 int vmaf_cuda_fetch_preallocated_picture(VmafContext *vmaf, VmafPicture* pic);
 
+/**
+ * Synchronizes all CUDA feature extractors within the VmafContext 
+ * with the CPU using their flush function. All feature scores will 
+ * be written when this function returns.
+ *
+ * @param vmaf VMAF context allocated with `vmaf_init()` and
+ *             initialized with `vmaf_cuda_preallocate_pictures()`.
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_cuda_fex_synchronize(VmafContext *vmaf);
+
 #ifdef __cplusplus
 }
 #endif

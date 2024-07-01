@@ -31,9 +31,12 @@
 #include "picture.h"
 #include "picture_cuda.h"
 #include "cuda_helper.cuh"
+#ifdef HAVE_NVTX
+#include "nvtx3/nvToolsExt.h"
+#endif
 
 typedef struct MotionStateCuda {
-    CUevent event, finished;
+    CUevent event, finished, scores_written;
     CUfunction funcbpc8, funcbpc16;
     CUstream str, host_stream;
     VmafCudaBuffer* blur[2];
@@ -44,6 +47,8 @@ typedef struct MotionStateCuda {
     double score;
     bool debug;
     bool motion_force_zero;
+    bool flushed;
+    bool closed;
     void (*calculate_motion_score)(const VmafPicture* src, VmafCudaBuffer* src_blurred,
             const VmafCudaBuffer* prev_blurred, VmafCudaBuffer* sad,
             unsigned width, unsigned height,
@@ -136,12 +141,15 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
         unsigned bpc, unsigned w, unsigned h)
 {
     MotionStateCuda *s = fex->priv;
+    s->flushed = true;
+    s->closed = false;
 
     CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
     CHECK_CUDA(cuStreamCreateWithPriority(&s->str, CU_STREAM_NON_BLOCKING, 0));
     CHECK_CUDA(cuStreamCreateWithPriority(&s->host_stream, CU_STREAM_NON_BLOCKING, 0));
-    CHECK_CUDA(cuEventCreate(&s->event, CU_EVENT_DEFAULT));
-    CHECK_CUDA(cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
+    CHECK_CUDA(cuEventCreate(&s->event, CU_EVENT_DISABLE_TIMING));
+    CHECK_CUDA(cuEventCreate(&s->finished, CU_EVENT_DISABLE_TIMING));
+    CHECK_CUDA(cuEventCreate(&s->scores_written, CU_EVENT_BLOCKING_SYNC));
 
     CUmodule module;
     CHECK_CUDA(cuModuleLoadData(&module, src_motion_score_ptx));
@@ -202,20 +210,39 @@ free_ref:
     return -ENOMEM;
 }
 
+// if called twice in a row, finalize FEX and close
 static int flush_fex_cuda(VmafFeatureExtractor *fex,
         VmafFeatureCollector *feature_collector)
 {
+#ifdef HAVE_NVTX
+    nvtxRangePushA("flush motion_cuda");
+#endif
+
     MotionStateCuda *s = fex->priv;
     int ret = 0;
-    CHECK_CUDA(cuStreamSynchronize(s->str));
-    CHECK_CUDA(cuStreamSynchronize(s->host_stream));
+    if(!s->flushed) {
+        CHECK_CUDA(cuStreamSynchronize(s->str));
+        CHECK_CUDA(cuStreamSynchronize(s->host_stream));
+        while (cuEventQuery(s->scores_written) != CUDA_SUCCESS)
+        {
+            continue;
+        }
+        CHECK_CUDA(cuEventSynchronize(s->scores_written));
 
-    if (s->index > 0) {
-        ret = vmaf_feature_collector_append(feature_collector,
-                "VMAF_integer_feature_motion2_score",
-                s->score, s->index);
+    } 
+    else {
+        if (s->index > 0 && !s->closed) {
+            ret = vmaf_feature_collector_append(feature_collector,
+                                                "VMAF_integer_feature_motion2_score",
+                                                s->score, s->index);
+        }
+        s->closed = true;
     }
+    s->flushed = true;
 
+#ifdef HAVE_NVTX
+        nvtxRangePop();
+#endif
     return (ret < 0) ? ret : !ret;
 }
 
@@ -242,7 +269,7 @@ static int write_scores(write_score_parameters_moco* params)
     }
     if (err) return err;
 
-    if (params->index == 1)
+    if (params->index == 1) 
         return 0;
 
     err = vmaf_feature_collector_append(feature_collector,
@@ -257,13 +284,14 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
                             VmafFeatureCollector *feature_collector)
 {
     MotionStateCuda *s = fex->priv;
-
+    if(s->closed) {
+        return -ESHUTDOWN; // TODO: proper error code here     
+    }
+    s->flushed = false;
     // this is done to ensure that the CPU does not overwrite the buffer params for 'write_scores
     CHECK_CUDA(cuStreamSynchronize(s->str));
-    // CHECK_CUDA(cuEventSynchronize(s->finished));
+    CHECK_CUDA(cuEventSynchronize(s->finished));
     CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
-    CHECK_CUDA(cuEventDestroy(s->finished));
-    CHECK_CUDA(cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
     CHECK_CUDA(cuCtxPopCurrent(NULL));
 
     int err = 0;
@@ -286,10 +314,7 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
     CHECK_CUDA(cuEventRecord(s->event, vmaf_cuda_picture_get_stream(ref_pic)));
     // This event ensures the input buffer is consumed
     CHECK_CUDA(cuStreamWaitEvent(s->str, s->event, CU_EVENT_WAIT_DEFAULT));
-    CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
-    CHECK_CUDA(cuEventDestroy(s->event));
-    CHECK_CUDA(cuEventCreate(&s->event, CU_EVENT_DEFAULT));
-    CHECK_CUDA(cuCtxPopCurrent(NULL));
+
 
     if (index == 0) {
         err = vmaf_feature_collector_append(feature_collector,
@@ -311,11 +336,13 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
     CHECK_CUDA(cuStreamWaitEvent(s->host_stream, s->finished, CU_EVENT_WAIT_DEFAULT));
 
     write_score_parameters_moco* params = s->write_score_parameters;
+    cuEventSynchronize(s->scores_written);
     params->feature_collector = feature_collector;
     params->h = ref_pic->h[0];
     params->w = ref_pic->w[0];
     params->index = index;
     CHECK_CUDA(cuLaunchHostFunc(s->host_stream, write_scores, s->write_score_parameters));
+    CHECK_CUDA(cuEventRecord(s->scores_written, s->host_stream));
     return 0;
 }
 
@@ -342,6 +369,12 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
     if(s->write_score_parameters) {
         free(s->write_score_parameters);
     }
+
+
+    if(s->event) CHECK_CUDA(cuEventDestroy(s->event));
+    if(s->finished) CHECK_CUDA(cuEventDestroy(s->finished));
+    if(s->scores_written) CHECK_CUDA(cuEventDestroy(s->scores_written));
+
     return ret;
 }
 
