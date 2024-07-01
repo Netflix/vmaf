@@ -169,6 +169,85 @@ static char *test_feature_vector_init_append_and_destroy()
     return NULL;
 }
 
+static char *test_feature_collector_init_append_get_and_destroy_with_meta()
+{
+    int err;
+
+    VmafMetadata m = {
+        .callback = NULL,
+        .data     = NULL,
+        .data_sz  = 0,
+    };
+
+    VmafFeatureCollector *feature_collector;
+    err = vmaf_feature_collector_init(&feature_collector, &m);
+    mu_assert("problem during vmaf_feature_collector_init", !err);
+    unsigned initial_capacity = feature_collector->capacity;
+    mu_assert("this test assumes an initial capacity of 8",
+              initial_capacity == 8);
+    err  = vmaf_feature_collector_append(feature_collector, "feature0", 60., 1);
+    err |= vmaf_feature_collector_append(feature_collector, "feature1", 60., 1);
+    err |= vmaf_feature_collector_append(feature_collector, "feature2", 60., 1);
+    err |= vmaf_feature_collector_append(feature_collector, "feature3", 60., 1);
+    err |= vmaf_feature_collector_append(feature_collector, "feature4", 60., 1);
+    err |= vmaf_feature_collector_append(feature_collector, "feature5", 60., 1);
+    err |= vmaf_feature_collector_append(feature_collector, "feature6", 60., 1);
+    err |= vmaf_feature_collector_append(feature_collector, "feature7", 60., 1);
+    mu_assert("problem during vmaf_feature_collector_append", !err);
+    mu_assert("feature_collector->capacity should not have changed",
+              feature_collector->capacity == initial_capacity);
+    err = vmaf_feature_collector_append(feature_collector, "feature8", 60., 1);
+    mu_assert("problem during vmaf_feature_collector_append", !err);
+    mu_assert("feature_collector->capacity did not double its allocation",
+              feature_collector->capacity == initial_capacity * 2);
+
+    double score;
+    err = vmaf_feature_collector_get_score(feature_collector, "feature5",
+                                           &score, 1);
+    mu_assert("problem during vmaf_feature_collector_get_score", !err);
+    mu_assert("vmaf_feature_collector_get_score did not get the expected score",
+              score == 60.);
+    err = vmaf_feature_collector_get_score(feature_collector, "feature5",
+                                           &score, 2);
+    mu_assert("vmaf_feature_collector_get_score did not fail with bad index",
+              err);
+
+    err = vmaf_feature_collector_set_aggregate(feature_collector,
+                                               "aggregate0", 100.);
+    err |= vmaf_feature_collector_set_aggregate(feature_collector,
+                                                "aggregate1", 101.);
+    err |= vmaf_feature_collector_set_aggregate(feature_collector,
+                                                "aggregate2", 102.);
+    err |= vmaf_feature_collector_set_aggregate(feature_collector,
+                                                "aggregate3", 103.);
+    err |= vmaf_feature_collector_set_aggregate(feature_collector,
+                                                "aggregate4", 104.);
+    err |= vmaf_feature_collector_set_aggregate(feature_collector,
+                                                "aggregate5", 105.);
+    err |= vmaf_feature_collector_set_aggregate(feature_collector,
+                                                "aggregate6", 106.);
+    err |= vmaf_feature_collector_set_aggregate(feature_collector,
+                                                "aggregate7", 107.);
+    err |= vmaf_feature_collector_set_aggregate(feature_collector,
+                                                "aggregate8", 108.);
+    err |= vmaf_feature_collector_set_aggregate(feature_collector,
+                                                "aggregate9", 109.);
+    mu_assert("problem during vmaf_feature_collector_set_aggregate", !err);
+
+    err = vmaf_feature_collector_get_aggregate(feature_collector,
+                                               "aggregate5", &score);
+    mu_assert("problem during vmaf_feature_collector_get_aggregate", !err);
+    mu_assert("unexpected aggreggate_score", score = 105.);
+    err = vmaf_feature_collector_get_aggregate(feature_collector,
+                                               "aggregate9", &score);
+    mu_assert("problem during vmaf_feature_collector_get_aggregate", !err);
+    mu_assert("unexpected aggreggate_score", score = 109.);
+
+    vmaf_feature_collector_destroy(feature_collector);
+    return NULL;
+
+}
+
 static char *test_feature_collector_init_append_get_and_destroy()
 {
     int err;
@@ -245,6 +324,7 @@ char *run_tests()
 {
     mu_run_test(test_feature_vector_init_append_and_destroy);
     mu_run_test(test_feature_collector_init_append_get_and_destroy);
+    mu_run_test(test_feature_collector_init_append_get_and_destroy_with_meta);
     mu_run_test(test_aggregate_vector_init_append_and_destroy);
     mu_run_test(test_model_mount);
     mu_run_test(test_model_unmount);
