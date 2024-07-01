@@ -451,11 +451,8 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
 
     // this is done to ensure that the CPU does not overwrite the buffer params for 'write_scores
     // before the GPU has finished writing to it.
-    CHECK_CUDA(cuStreamSynchronize(s->str));
-    CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
-    CHECK_CUDA(cuEventDestroy(s->finished));
-    CHECK_CUDA(cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
-    CHECK_CUDA(cuCtxPopCurrent(NULL));
+    // CHECK_CUDA(cuStreamSynchronize(s->str));
+    CHECK_CUDA(cuEventSynchronize(s->finished));
 
     CHECK_CUDA(cuMemsetD8Async(s->buf.accum_data->data, 0, sizeof(vif_accums) * 4, s->str));
     CHECK_CUDA(cuStreamWaitEvent(vmaf_cuda_picture_get_stream(ref_pic), vmaf_cuda_picture_get_ready_event(dist_pic), CU_EVENT_WAIT_DEFAULT));
@@ -476,10 +473,6 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
             // This event ensures the input buffer is consumed
             CHECK_CUDA(cuEventRecord(s->event, vmaf_cuda_picture_get_stream(ref_pic)));
             CHECK_CUDA(cuStreamWaitEvent(s->str, s->event, CU_EVENT_WAIT_DEFAULT));
-            CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
-            CHECK_CUDA(cuEventDestroy(s->event));
-            CHECK_CUDA(cuEventCreate(&s->event, CU_EVENT_DEFAULT));
-            CHECK_CUDA(cuCtxPopCurrent(NULL));
         }
     }
 
@@ -496,7 +489,7 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
     write_score_parameters_vif *data = s->buf.cpu_param_buf;
     data->feature_collector = feature_collector;
     data->index = index;
-    CHECK_CUDA(cuLaunchHostFunc(s->str, write_scores, data));
+    CHECK_CUDA(cuLaunchHostFunc(s->host_stream, write_scores, data));
     return 0;
 }
 
