@@ -41,17 +41,13 @@ class AssetExtractor(RawExtractor):
         pass
 
     @override(Executor)
-    def _open_ref_workfile(self, asset, fifo_mode):
+    def _open_ref_workfile(self, asset, open_sem, fifo_mode):
         # do nothing
         pass
 
     @override(Executor)
-    def _open_dis_workfile(self, asset, fifo_mode):
+    def _open_dis_workfile(self, asset, open_sem, fifo_mode):
         # do nothing
-        pass
-
-    @override(Executor)
-    def _wait_for_workfiles(self, asset):
         pass
 
     def _generate_result(self, asset):
@@ -102,21 +98,10 @@ class DisYUVRawVideoExtractor(H5pyMixin, RawExtractor):
         self.assert_h5py_file()
 
     @override(Executor)
-    def _open_ref_workfile(self, asset, fifo_mode):
+    def _open_ref_workfile(self, asset, open_sem, fifo_mode):
         # do nothing
-        pass
-
-    @override(Executor)
-    def _wait_for_workfiles(self, asset):
-        # Override Executor._wait_for_workfiles to skip ref_workfile_path
-        # wait til workfile paths being generated
-        for i in range(10):
-            if os.path.exists(asset.dis_workfile_path):
-                break
-            sleep(0.1)
-        else:
-            raise RuntimeError("dis video workfile path {} is missing.".format(
-                asset.dis_workfile_path))
+        if open_sem is not None:
+            open_sem.release()
 
     def _generate_result(self, asset):
         quality_w, quality_h = asset.quality_width_height

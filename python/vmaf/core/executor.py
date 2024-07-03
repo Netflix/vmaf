@@ -276,24 +276,6 @@ class Executor(TypeVersionEnabled):
             assert asset.ref_yuv_type == asset.dis_yuv_type, "YUV types for ref and dis do not match."
             return asset.ref_yuv_type
 
-    def _wait_for_workfiles(self, asset):
-        # wait til workfile paths being generated
-        for i in range(10):
-            if os.path.exists(asset.ref_workfile_path) and os.path.exists(asset.dis_workfile_path):
-                break
-            sleep(0.1)
-        else:
-            raise RuntimeError("ref or dis video workfile path {ref} or {dis} is missing.".format(ref=asset.ref_workfile_path, dis=asset.dis_workfile_path))
-
-    def _wait_for_procfiles(self, asset):
-        # wait til procfile paths being generated
-        for i in range(10):
-            if os.path.exists(asset.ref_procfile_path) and os.path.exists(asset.dis_procfile_path):
-                break
-            sleep(0.1)
-        else:
-            raise RuntimeError("ref or dis video procfile path {ref} or {dis} is missing.".format(ref=asset.ref_procfile_path, dis=asset.dis_procfile_path))
-
     def _prepare_log_file(self, asset):
 
         log_file_path = self._get_log_file_path(asset)
@@ -434,30 +416,36 @@ class Executor(TypeVersionEnabled):
         return result
 
     def _open_workfiles(self, asset):
-        self._open_ref_workfile(asset, fifo_mode=False)
-        self._open_dis_workfile(asset, fifo_mode=False)
+        self._open_ref_workfile(asset, open_sem=None, fifo_mode=False)
+        self._open_dis_workfile(asset, open_sem=None, fifo_mode=False)
 
     def _open_workfiles_in_fifo_mode(self, asset):
+        sem = multiprocessing.Semaphore(0)
         ref_p = multiprocessing.Process(target=self._open_ref_workfile,
-                                        args=(asset, True))
+                                        args=(asset, sem, True))
         dis_p = multiprocessing.Process(target=self._open_dis_workfile,
-                                        args=(asset, True))
+                                        args=(asset, sem, True))
         ref_p.start()
         dis_p.start()
-        self._wait_for_workfiles(asset)
+
+        if not sem.acquire(timeout=5) or not sem.acquire(timeout=5):
+            raise TimeoutError(f"timed out waiting for reference and/or distorted workfiles {asset.ref_workfile_path} and {asset.dis_workfile_path} to be created")
 
     def _open_procfiles(self, asset):
-        self._open_ref_procfile(asset, fifo_mode=False)
-        self._open_dis_procfile(asset, fifo_mode=False)
+        self._open_ref_procfile(asset, open_sem=None, fifo_mode=False)
+        self._open_dis_procfile(asset, open_sem=None, fifo_mode=False)
 
     def _open_procfiles_in_fifo_mode(self, asset):
+        sem = multiprocessing.Semaphore(0)
         ref_p = multiprocessing.Process(target=self._open_ref_procfile,
-                                        args=(asset, True))
+                                        args=(asset, sem, True))
         dis_p = multiprocessing.Process(target=self._open_dis_procfile,
-                                        args=(asset, True))
+                                        args=(asset, sem, True))
         ref_p.start()
         dis_p.start()
-        self._wait_for_procfiles(asset)
+
+        if not sem.acquire(timeout=5) or not sem.acquire(timeout=5):
+            raise TimeoutError(f"timed out waiting for reference and/or distorted procfiles {asset.ref_procfile_path} and {asset.dis_procfile_path} to be created")
 
     def _close_workfiles(self, asset):
         self._close_ref_workfile(asset)
@@ -507,7 +495,7 @@ class Executor(TypeVersionEnabled):
 
     # ===== workfile =====
 
-    def _open_ref_workfile(self, asset, fifo_mode):
+    def _open_ref_workfile(self, asset, open_sem, fifo_mode):
 
         use_path_as_workpath = asset.use_path_as_workpath
         path = asset.ref_path
@@ -537,9 +525,9 @@ class Executor(TypeVersionEnabled):
             else self._open_workfile
         _open_workfile_method(self, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type,
                               preresampling_filterchain, resampling_type, postresampling_filterchain,
-                              width_height, quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, logger)
+                              width_height, quality_width_height, ref_or_dis, use_path_as_workpath, open_sem, fifo_mode, logger)
 
-    def _open_dis_workfile(self, asset, fifo_mode):
+    def _open_dis_workfile(self, asset, open_sem, fifo_mode):
 
         use_path_as_workpath = asset.use_path_as_workpath
         path = asset.dis_path
@@ -569,12 +557,12 @@ class Executor(TypeVersionEnabled):
             else self._open_workfile
         _open_workfile_method(self, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type,
                               preresampling_filterchain, resampling_type, postresampling_filterchain,
-                              width_height, quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, logger)
+                              width_height, quality_width_height, ref_or_dis, use_path_as_workpath, open_sem, fifo_mode, logger)
 
     @staticmethod
-    def _open_workfile(cls, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type: Optional[str],
-                       preresampling_filterchain: Optional[List[str]], resampling_type: str, postresampling_filterchain: Optional[List[str]],
-                       width_height: Optional[Tuple[int, int]], quality_width_height: Tuple[int, int], ref_or_dis, use_path_as_workpath, fifo_mode, logger):
+    def _open_workfile(cls, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type: Optional[str], preresampling_filterchain: Optional[List[str]],
+                       resampling_type: str, postresampling_filterchain: Optional[List[str]], width_height: Optional[Tuple[int, int]],
+                       quality_width_height: Tuple[int, int], ref_or_dis, use_path_as_workpath, open_sem, fifo_mode, logger):
 
         # decoder type must be None here
         assert decoder_type is None, f'decoder_type must be None but is: {decoder_type}'
@@ -587,9 +575,16 @@ class Executor(TypeVersionEnabled):
 
         # only need to open workfile if the path is different from path
         assert use_path_as_workpath is False and path != workfile_path
+
         # if fifo mode, mkfifo
         if fifo_mode:
             os.mkfifo(workfile_path)
+        else:
+            with open(workfile_path, 'wb'):
+                pass
+
+        if open_sem is not None:
+            open_sem.release()
 
         if ref_or_dis == 'ref':
             start_end_frame = asset.ref_start_end_frame
@@ -638,7 +633,7 @@ class Executor(TypeVersionEnabled):
 
     # ===== procfile =====
 
-    def _open_ref_procfile(self, asset, fifo_mode):
+    def _open_ref_procfile(self, asset, open_sem, fifo_mode):
 
         # only need to open ref procfile if the path is different from ref path
         assert asset.use_workpath_as_procpath is False and asset.ref_workfile_path != asset.ref_procfile_path
@@ -647,6 +642,12 @@ class Executor(TypeVersionEnabled):
 
         if fifo_mode:
             os.mkfifo(asset.ref_procfile_path)
+        else:
+            with open(asset.ref_procfile_path, 'wb'):
+                pass
+
+        if open_sem is not None:
+            open_sem.release()
 
         quality_width, quality_height = self._get_quality_width_height(asset)
         yuv_type = asset.workfile_yuv_type
@@ -662,7 +663,7 @@ class Executor(TypeVersionEnabled):
                     except StopIteration:
                         break
 
-    def _open_dis_procfile(self, asset, fifo_mode):
+    def _open_dis_procfile(self, asset, open_sem, fifo_mode):
 
         # only need to open dis procfile if the path is different from dis path
         assert asset.use_workpath_as_procpath is False and asset.dis_workfile_path != asset.dis_procfile_path
@@ -671,6 +672,12 @@ class Executor(TypeVersionEnabled):
 
         if fifo_mode:
             os.mkfifo(asset.dis_procfile_path)
+        else:
+            with open(asset.dis_procfile_path, 'wb'):
+                pass
+
+        if open_sem is not None:
+            open_sem.release()
 
         quality_width, quality_height = self._get_quality_width_height(asset)
         yuv_type = asset.workfile_yuv_type
@@ -915,53 +922,37 @@ class NorefExecutorMixin(object):
             return asset.dis_yuv_type
 
     @override(Executor)
-    def _wait_for_workfiles(self, asset):
-        # wait til workfile paths being generated
-        for i in range(10):
-            if os.path.exists(asset.dis_workfile_path):
-                break
-            sleep(0.1)
-        else:
-            raise RuntimeError("dis video workfile path {} is missing.".format(
-                asset.dis_workfile_path))
-
-    @override(Executor)
-    def _wait_for_procfiles(self, asset):
-        # wait til procfile paths being generated
-        for i in range(10):
-            if os.path.exists(asset.dis_procfile_path):
-                break
-            sleep(0.1)
-        else:
-            raise RuntimeError("dis video procfile path {} is missing.".format(
-                asset.dis_procfile_path))
-
-    @override(Executor)
     def _assert_paths(self, asset):
         assert os.path.exists(asset.dis_path) or match_any_files(asset.dis_path), \
             "Distorted path {} does not exist.".format(asset.dis_path)
 
     @override(Executor)
     def _open_workfiles(self, asset):
-        self._open_dis_workfile(asset, fifo_mode=False)
+        self._open_dis_workfile(asset, open_sem=None, fifo_mode=False)
 
     @override(Executor)
     def _open_workfiles_in_fifo_mode(self, asset):
+        sem = multiprocessing.Semaphore(0)
         dis_p = multiprocessing.Process(target=self._open_dis_workfile,
-                                        args=(asset, True))
+                                        args=(asset, sem, True))
         dis_p.start()
-        self._wait_for_workfiles(asset)
+
+        if not sem.acquire(timeout=5):
+            raise TimeoutError(f"timed out waiting for distorted workfile {asset.dis_workfile_path} to be created")
 
     @override(Executor)
     def _open_procfiles(self, asset):
-        self._open_dis_procfile(asset, fifo_mode=False)
+        self._open_dis_procfile(asset, open_sem=None, fifo_mode=False)
 
     @override(Executor)
     def _open_procfiles_in_fifo_mode(self, asset):
+        sem = multiprocessing.Semaphore(0)
         dis_p = multiprocessing.Process(target=self._open_dis_procfile,
-                                        args=(asset, True))
+                                        args=(asset, sem, True))
         dis_p.start()
-        self._wait_for_procfiles(asset)
+
+        if not sem.acquire(timeout=5):
+            raise TimeoutError(f"timed out waiting for distorted procfile {asset.dis_procfile_path} to be created")
 
     @override(Executor)
     def _close_workfiles(self, asset):
