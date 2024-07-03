@@ -416,15 +416,17 @@ class Executor(TypeVersionEnabled):
         return result
 
     def _open_workfiles(self, asset):
-        self._open_ref_workfile(asset, open_sem=None, fifo_mode=False)
-        self._open_dis_workfile(asset, open_sem=None, fifo_mode=False)
+        self._open_ref_workfile(asset, fifo_mode=False)
+        self._open_dis_workfile(asset, fifo_mode=False)
 
     def _open_workfiles_in_fifo_mode(self, asset):
         sem = multiprocessing.Semaphore(0)
         ref_p = multiprocessing.Process(target=self._open_ref_workfile,
-                                        args=(asset, sem, True))
+                                        args=(asset, True),
+                                        kwargs={'open_sem': sem})
         dis_p = multiprocessing.Process(target=self._open_dis_workfile,
-                                        args=(asset, sem, True))
+                                        args=(asset, True),
+                                        kwargs={'open_sem': sem})
         ref_p.start()
         dis_p.start()
 
@@ -438,9 +440,11 @@ class Executor(TypeVersionEnabled):
     def _open_procfiles_in_fifo_mode(self, asset):
         sem = multiprocessing.Semaphore(0)
         ref_p = multiprocessing.Process(target=self._open_ref_procfile,
-                                        args=(asset, sem, True))
+                                        args=(asset, True),
+                                        kwargs={'open_sem': sem})
         dis_p = multiprocessing.Process(target=self._open_dis_procfile,
-                                        args=(asset, sem, True))
+                                        args=(asset, True),
+                                        kwargs={'open_sem': sem})
         ref_p.start()
         dis_p.start()
 
@@ -495,7 +499,7 @@ class Executor(TypeVersionEnabled):
 
     # ===== workfile =====
 
-    def _open_ref_workfile(self, asset, open_sem, fifo_mode):
+    def _open_ref_workfile(self, asset, fifo_mode, open_sem=None):
 
         use_path_as_workpath = asset.use_path_as_workpath
         path = asset.ref_path
@@ -525,9 +529,9 @@ class Executor(TypeVersionEnabled):
             else self._open_workfile
         _open_workfile_method(self, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type,
                               preresampling_filterchain, resampling_type, postresampling_filterchain,
-                              width_height, quality_width_height, ref_or_dis, use_path_as_workpath, open_sem, fifo_mode, logger)
+                              width_height, quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, open_sem, logger)
 
-    def _open_dis_workfile(self, asset, open_sem, fifo_mode):
+    def _open_dis_workfile(self, asset, fifo_mode, open_sem=None):
 
         use_path_as_workpath = asset.use_path_as_workpath
         path = asset.dis_path
@@ -557,12 +561,12 @@ class Executor(TypeVersionEnabled):
             else self._open_workfile
         _open_workfile_method(self, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type,
                               preresampling_filterchain, resampling_type, postresampling_filterchain,
-                              width_height, quality_width_height, ref_or_dis, use_path_as_workpath, open_sem, fifo_mode, logger)
+                              width_height, quality_width_height, ref_or_dis, use_path_as_workpath, fifo_mode, open_sem, logger)
 
     @staticmethod
     def _open_workfile(cls, asset, path, workfile_path, yuv_type, workfile_yuv_type, decoder_type: Optional[str], preresampling_filterchain: Optional[List[str]],
                        resampling_type: str, postresampling_filterchain: Optional[List[str]], width_height: Optional[Tuple[int, int]],
-                       quality_width_height: Tuple[int, int], ref_or_dis, use_path_as_workpath, open_sem, fifo_mode, logger):
+                       quality_width_height: Tuple[int, int], ref_or_dis, use_path_as_workpath, fifo_mode, open_sem, logger):
 
         # decoder type must be None here
         assert decoder_type is None, f'decoder_type must be None but is: {decoder_type}'
@@ -633,7 +637,7 @@ class Executor(TypeVersionEnabled):
 
     # ===== procfile =====
 
-    def _open_ref_procfile(self, asset, open_sem, fifo_mode):
+    def _open_ref_procfile(self, asset, fifo_mode, open_sem=None):
 
         # only need to open ref procfile if the path is different from ref path
         assert asset.use_workpath_as_procpath is False and asset.ref_workfile_path != asset.ref_procfile_path
@@ -663,7 +667,7 @@ class Executor(TypeVersionEnabled):
                     except StopIteration:
                         break
 
-    def _open_dis_procfile(self, asset, open_sem, fifo_mode):
+    def _open_dis_procfile(self, asset, fifo_mode, open_sem=None):
 
         # only need to open dis procfile if the path is different from dis path
         assert asset.use_workpath_as_procpath is False and asset.dis_workfile_path != asset.dis_procfile_path
@@ -928,13 +932,14 @@ class NorefExecutorMixin(object):
 
     @override(Executor)
     def _open_workfiles(self, asset):
-        self._open_dis_workfile(asset, open_sem=None, fifo_mode=False)
+        self._open_dis_workfile(asset, fifo_mode=False)
 
     @override(Executor)
     def _open_workfiles_in_fifo_mode(self, asset):
         sem = multiprocessing.Semaphore(0)
         dis_p = multiprocessing.Process(target=self._open_dis_workfile,
-                                        args=(asset, sem, True))
+                                        args=(asset, True),
+                                        kwargs={'open_sem': sem})
         dis_p.start()
 
         if not sem.acquire(timeout=5):
@@ -942,13 +947,14 @@ class NorefExecutorMixin(object):
 
     @override(Executor)
     def _open_procfiles(self, asset):
-        self._open_dis_procfile(asset, open_sem=None, fifo_mode=False)
+        self._open_dis_procfile(asset, fifo_mode=False)
 
     @override(Executor)
     def _open_procfiles_in_fifo_mode(self, asset):
         sem = multiprocessing.Semaphore(0)
         dis_p = multiprocessing.Process(target=self._open_dis_procfile,
-                                        args=(asset, sem, True))
+                                        args=(asset, True),
+                                        kwargs={'open_sem': sem})
         dis_p.start()
 
         if not sem.acquire(timeout=5):

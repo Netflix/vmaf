@@ -41,14 +41,14 @@ class AssetExtractor(RawExtractor):
         pass
 
     @override(Executor)
-    def _open_ref_workfile(self, asset, open_sem, fifo_mode):
-        # do nothing
-        pass
+    def _open_ref_workfile(self, asset, fifo_mode, open_sem=None):
+        if open_sem is not None:
+            open_sem.release()
 
     @override(Executor)
-    def _open_dis_workfile(self, asset, open_sem, fifo_mode):
-        # do nothing
-        pass
+    def _open_dis_workfile(self, asset, fifo_mode, open_sem=None):
+        if open_sem is not None:
+            open_sem.release()
 
     def _generate_result(self, asset):
         # do nothing
@@ -98,7 +98,7 @@ class DisYUVRawVideoExtractor(H5pyMixin, RawExtractor):
         self.assert_h5py_file()
 
     @override(Executor)
-    def _open_ref_workfile(self, asset, open_sem, fifo_mode):
+    def _open_ref_workfile(self, asset, fifo_mode, open_sem=None):
         # do nothing
         if open_sem is not None:
             open_sem.release()
