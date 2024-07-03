@@ -430,8 +430,11 @@ class Executor(TypeVersionEnabled):
         ref_p.start()
         dis_p.start()
 
-        if not sem.acquire(timeout=5) or not sem.acquire(timeout=5):
-            raise TimeoutError(f"timed out waiting for reference and/or distorted workfiles {asset.ref_workfile_path} and {asset.dis_workfile_path} to be created")
+        if not sem.acquire(timeout=5):
+            if self.logger:
+                self.logger.warn(f">5 seconds elapsed waiting for reference and/or distorted workfiles {asset.ref_workfile_path} and {asset.dis_workfile_path} to be created; now blocking until created")
+            sem.acquire()
+        sem.acquire()
 
     def _open_procfiles(self, asset):
         self._open_ref_procfile(asset, open_sem=None, fifo_mode=False)
@@ -448,8 +451,11 @@ class Executor(TypeVersionEnabled):
         ref_p.start()
         dis_p.start()
 
-        if not sem.acquire(timeout=5) or not sem.acquire(timeout=5):
-            raise TimeoutError(f"timed out waiting for reference and/or distorted procfiles {asset.ref_procfile_path} and {asset.dis_procfile_path} to be created")
+        if not sem.acquire(timeout=5):
+            if self.logger:
+                self.logger.warn(f">5 seconds elapsed waiting for reference and/or distorted procfiles {asset.ref_procfile_path} and {asset.dis_procfile_path} to be created; now blocking until created")
+            sem.acquire()
+        sem.acquire()
 
     def _close_workfiles(self, asset):
         self._close_ref_workfile(asset)
@@ -943,7 +949,9 @@ class NorefExecutorMixin(object):
         dis_p.start()
 
         if not sem.acquire(timeout=5):
-            raise TimeoutError(f"timed out waiting for distorted workfile {asset.dis_workfile_path} to be created")
+            if self.logger:
+                self.logger.warn(f">5 seconds elapsed waiting for distorted workfile {asset.dis_workfile_path} to be created to be created; now blocking until created")
+            sem.acquire()
 
     @override(Executor)
     def _open_procfiles(self, asset):
@@ -958,7 +966,9 @@ class NorefExecutorMixin(object):
         dis_p.start()
 
         if not sem.acquire(timeout=5):
-            raise TimeoutError(f"timed out waiting for distorted procfile {asset.dis_procfile_path} to be created")
+            if self.logger:
+                self.logger.warn(f">5 seconds elapsed waiting for distorted procfile {asset.dis_procfile_path} to be created to be created; now blocking until created")
+            sem.acquire()
 
     @override(Executor)
     def _close_workfiles(self, asset):
