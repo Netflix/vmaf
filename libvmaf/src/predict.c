@@ -289,9 +289,9 @@ int vmaf_predict_score_at_index(VmafModel *model,
 
         if (err) {
             if (!propagate_metadata) {
-            vmaf_log(VMAF_LOG_LEVEL_ERROR,
-                     "vmaf_predict_score_at_index(): no feature '%s' "
-                     "at index %d\n", feature_name, index);
+              vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                       "vmaf_predict_score_at_index(): no feature '%s' "
+                       "at index %d\n", feature_name, index);
             }
             free(feature_name);
             goto free_node;

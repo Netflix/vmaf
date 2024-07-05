@@ -49,11 +49,9 @@ typedef struct {
         size_t data_sz;
 } VmafMetadata;
 
-typedef struct VmafPredictModel VmafPredictModel;
-
 typedef struct VmafPredictModel {
     VmafModel *model;
-    VmafPredictModel *next;
+    struct VmafPredictModel *next;
 } VmafPredictModel;
 
 typedef struct VmafFeatureCollector {
