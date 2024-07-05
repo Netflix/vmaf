@@ -437,8 +437,8 @@ class Executor(TypeVersionEnabled):
         sem.acquire()
 
     def _open_procfiles(self, asset):
-        self._open_ref_procfile(asset, open_sem=None, fifo_mode=False)
-        self._open_dis_procfile(asset, open_sem=None, fifo_mode=False)
+        self._open_ref_procfile(asset, fifo_mode=False)
+        self._open_dis_procfile(asset, fifo_mode=False)
 
     def _open_procfiles_in_fifo_mode(self, asset):
         sem = multiprocessing.Semaphore(0)
