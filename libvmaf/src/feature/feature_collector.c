@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include "dict.h"
+#include "propagate_metadata.h"
 #include "feature_collector.h"
 #include "feature_name.h"
 #include "libvmaf/libvmaf.h"
@@ -201,7 +202,7 @@ static int feature_vector_append(FeatureVector *feature_vector,
     return 0;
 }
 
-int vmaf_feature_collector_init(VmafFeatureCollector **const feature_collector, void *metadata)
+int vmaf_feature_collector_init(VmafFeatureCollector **const feature_collector)
 {
     if (!feature_collector) return -EINVAL;
     int err = 0;
@@ -217,26 +218,12 @@ int vmaf_feature_collector_init(VmafFeatureCollector **const feature_collector, 
     if (err) goto free_feature_vector;
     err = pthread_mutex_init(&(fc->lock), NULL);
     if (err) goto free_aggregate_vector;
-
-    if (metadata) {
-      VmafMetadata *m = metadata;
-      fc->metadata = malloc(sizeof(VmafMetadata));
-      if(!fc->metadata) goto fail;
-      memcpy(fc->metadata, m, sizeof(*m));
-      if (m->data && m->data_sz > 0) {
-        fc->metadata->data = malloc(m->data_sz);
-        if(!fc->metadata->data) goto free_metadata;
-        memcpy(fc->metadata->data, m->data, m->data_sz);
-      } else {
-        fc->metadata->data = NULL;
-        fc->metadata->data_sz = 0;
-      }
-    }
-
+    err = vmaf_metadata_init(&(fc->metadata));
+    if (err) goto free_mutex;
     return 0;
 
-free_metadata:
-    free(fc->metadata);
+free_mutex:
+    pthread_mutex_destroy(&(fc->lock));
 free_aggregate_vector:
     aggregate_vector_destroy(&(fc->aggregate_vector));
 free_feature_vector:
@@ -247,7 +234,8 @@ fail:
     return -ENOMEM;
 }
 
-int vmaf_feature_collector_mount_model(VmafFeatureCollector *feature_collector, VmafModel *model)
+int vmaf_feature_collector_mount_model(VmafFeatureCollector *feature_collector,
+                                       VmafModel *model)
 {
     if (!feature_collector) return -EINVAL;
     if (!model) return -EINVAL;
@@ -269,7 +257,8 @@ int vmaf_feature_collector_mount_model(VmafFeatureCollector *feature_collector, 
     return 0;
 }
 
-int vmaf_feature_collector_unmount_model(VmafFeatureCollector *feature_collector, VmafModel *model)
+int vmaf_feature_collector_unmount_model(VmafFeatureCollector *feature_collector,
+                                         VmafModel *model)
 {
     if (!feature_collector) return -EINVAL;
     if (!model) return -EINVAL;
@@ -286,6 +275,20 @@ int vmaf_feature_collector_unmount_model(VmafFeatureCollector *feature_collector
 
     return 0;
 }
+
+int vmaf_feature_collector_register_metadata(VmafFeatureCollector *feature_collector,
+                                             VmafMetadataConfig *metadata_config)
+{
+    if (!feature_collector) return -EINVAL;
+    if (!metadata_config) return -EINVAL;
+
+    VmafMetadata *metadata = feature_collector->metadata;
+    int err = vmaf_metadata_append(metadata, metadata_config);
+    if (err) return err;
+
+    return 0;
+}
+
 static FeatureVector *find_feature_vector(VmafFeatureCollector *fc,
                                           const char *feature_name)
 {
@@ -342,30 +345,35 @@ int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
     if (err) goto unlock;
 
     int res = 0;
-    VmafPredictModel *head = feature_collector->models;
-    while (head != NULL && feature_collector->metadata
-                        && feature_collector->metadata->callback)
+
+    VmafMetadataNode *metadata_iter = feature_collector->metadata ?
+                                      feature_collector->metadata->head : NULL;
+    while(metadata_iter)
     {
-        VmafModel *model = head->model;
-        double score = 0.0;
-        pthread_mutex_unlock(&(feature_collector->lock));
-        res = vmaf_feature_collector_get_score(feature_collector, model->name,
-                                         &score, picture_index);
-        pthread_mutex_lock(&(feature_collector->lock));
-        if (!res) {
-          head = head->next;
-          continue;
-        }
-        pthread_mutex_unlock(&(feature_collector->lock));
-        res = vmaf_predict_score_at_index(model, feature_collector, picture_index,
-                                          &score, true, true, 0);
-        pthread_mutex_lock(&(feature_collector->lock));
-        if (res) goto unlock;
-        char key[128];
-        snprintf(key, sizeof(key), "%s_%d", model->name, picture_index);
-        feature_collector->metadata->callback(feature_collector->metadata->data,
-                                             key, score);
-        head = head->next;
+      VmafPredictModel *model_iter = feature_collector->models;
+      while (model_iter)
+      {
+          VmafModel *model = model_iter->model;
+          double score = 0.0;
+          pthread_mutex_unlock(&(feature_collector->lock));
+          res = vmaf_feature_collector_get_score(feature_collector, model->name,
+                                           &score, picture_index);
+          pthread_mutex_lock(&(feature_collector->lock));
+          if (!res) {
+            model_iter = model_iter->next;
+            continue;
+          }
+          pthread_mutex_unlock(&(feature_collector->lock));
+          res = vmaf_predict_score_at_index(model, feature_collector, picture_index,
+                                            &score, true, true, 0);
+          pthread_mutex_lock(&(feature_collector->lock));
+          if (res) goto unlock;
+          char key[128];
+          snprintf(key, sizeof(key), "%s_%d", model->name, picture_index);
+          metadata_iter->callback(metadata_iter->data, key, score);
+          model_iter = model_iter->next;
+      }
+      metadata_iter = metadata_iter->next;
     }
 
 unlock:
@@ -434,10 +442,7 @@ void vmaf_feature_collector_destroy(VmafFeatureCollector *feature_collector)
         head = next;
       }
     }
-    if (feature_collector->metadata) {
-      free(feature_collector->metadata->data);
-      free(feature_collector->metadata);
-    }
+    vmaf_metadata_destroy(feature_collector->metadata);
     free(feature_collector->feature_vector);
     pthread_mutex_unlock(&(feature_collector->lock));
     pthread_mutex_destroy(&(feature_collector->lock));

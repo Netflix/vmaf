@@ -25,6 +25,7 @@
 #include "libvmaf/model.h"
 #include "libvmaf/picture.h"
 #include "libvmaf/feature.h"
+#include "libvmaf/propagate_metadata.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -82,9 +83,6 @@ enum VmafPoolingMethod {
  */
 typedef struct VmafConfiguration {
     enum VmafLogLevel log_level;
-    void (*callback)(void*, const char *, double);
-    void* meta_data;
-    size_t meta_data_sz;
     unsigned n_threads;
     unsigned n_subsample;
     uint64_t cpumask;
@@ -255,6 +253,8 @@ int vmaf_score_at_index_model_collection(VmafContext *vmaf,
  */
 int vmaf_feature_score_at_index(VmafContext *vmaf, const char *feature_name,
                                 double *score, unsigned index);
+
+int vmaf_register_metadata_callback(VmafContext *vmaf, VmafMetadataConfig *cfg);
 
 /**
  * Pooled VMAF score for a specific interval.

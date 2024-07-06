@@ -32,6 +32,7 @@
 #include "cpu.h"
 #include "feature/feature_extractor.h"
 #include "feature/feature_collector.h"
+#include "propagate_metadata.h"
 #include "fex_ctx_vector.h"
 #include "log.h"
 #include "model.h"
@@ -102,14 +103,7 @@ int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
 
     err = vmaf_framesync_init(&(v->framesync));
     if (err) goto free_v;
-
-    VmafMetadata m = {
-        .callback = v->cfg.callback,
-        .data     = v->cfg.meta_data,
-        .data_sz  = v->cfg.meta_data_sz
-    };
-
-    err = vmaf_feature_collector_init(&(v->feature_collector), &m);
+    err = vmaf_feature_collector_init(&(v->feature_collector));
     if (err) goto free_framesync;
     err = feature_extractor_vector_init(&(v->registered_feature_extractors));
     if (err) goto free_feature_collector;
@@ -748,6 +742,14 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
 #endif
 
     return err;
+}
+
+int vmaf_register_metadata_callback(VmafContext *vmaf, VmafMetadataConfig *cfg)
+{
+    if (!vmaf) return -EINVAL;
+    if (!cfg) return -EINVAL;
+
+    return vmaf_feature_collector_register_metadata(vmaf->feature_collector, cfg);
 }
 
 int vmaf_feature_score_at_index(VmafContext *vmaf, const char *feature_name,
