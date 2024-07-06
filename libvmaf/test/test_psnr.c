@@ -57,7 +57,7 @@ static char *test_16b_large_diff()
     err |= get_picture_16b(&pic2, 1);
     mu_assert("test_16b_large_diff alloc error", !err);
     VmafFeatureCollector *fc;
-    err |= vmaf_feature_collector_init(&fc, NULL);
+    err |= vmaf_feature_collector_init(&fc);
     mu_assert("test_16b_large_diff vmaf_feature_collector_init error", !err);
     PsnrState psnr_state = {
         .enable_chroma = 1,
@@ -85,7 +85,7 @@ static char *test_16b_large_diff()
     mu_assert("wrong mse_y", almost_equal(mse_y, 4294836225.0));
     mu_assert("wrong mse_cb", almost_equal(mse_cb, 4294836225.0));
     mu_assert("wrong mse_cr", almost_equal(mse_cr, 4294836225.0));
-    
+
     vmaf_feature_collector_destroy(fc);
     vmaf_picture_unref(&pic1);
     vmaf_picture_unref(&pic2);

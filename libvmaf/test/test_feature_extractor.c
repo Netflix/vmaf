@@ -104,7 +104,7 @@ static char *test_feature_extractor_flush()
     mu_assert("problem during vmaf_picture_alloc", !err);
 
     VmafFeatureCollector *vfc;
-    err = vmaf_feature_collector_init(&vfc, NULL);
+    err = vmaf_feature_collector_init(&vfc);
     mu_assert("vmaf_feature_collector_init", !err);
 
     double score;
@@ -162,7 +162,7 @@ static char *test_feature_extractor_initialization_options()
     mu_assert("problem during vmaf_picture_alloc", !err);
 
     VmafFeatureCollector *vfc;
-    err = vmaf_feature_collector_init(&vfc, NULL);
+    err = vmaf_feature_collector_init(&vfc);
     mu_assert("problem during vmaf_feature_collector_init", !err);
 
     err = vmaf_feature_extractor_context_extract(fex_ctx, &ref, NULL, &dist,

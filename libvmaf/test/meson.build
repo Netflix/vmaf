@@ -17,8 +17,13 @@ test_picture = executable('test_picture',
     dependencies:[stdatomic_dependency, thread_lib, cuda_dependency],
 )
 
+test_propagate_metadata = executable('test_propagate_metadata',
+    ['test.c', 'test_propagate_metadata.c', '../src/propagate_metadata.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+)
+
 test_feature_collector = executable('test_feature_collector',
-    ['test.c', 'test_feature_collector.c', '../src/log.c', '../src/predict.c', '../src/svm.cpp'],
+    ['test.c', 'test_feature_collector.c', '../src/log.c', '../src/predict.c', '../src/svm.cpp', '../src/propagate_metadata.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/feature/'), include_directories('../src')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
     dependencies: cuda_dependency
@@ -45,10 +50,10 @@ test_model = executable('test_model',
 )
 
 test_predict = executable('test_predict',
-    ['test.c', 'test_predict.c', '../src/dict.c',
+    ['test.c', 'test_predict.c', '../src/dict.c', '../src/propagate_metadata.c',
      '../src/feature/feature_collector.c', '../src/feature/alias.c', '../src/model.c', '../src/svm.cpp', '../src/log.c',
-     '../src/read_json_model.c', '../src/pdjson.c', json_model_c_sources, '../src/feature/feature_name.c', '../src/feature/feature_extractor.c'],
-    include_directories : [libvmaf_inc, test_inc, include_directories('../src')],
+     '../src/read_json_model.c', '../src/pdjson.c', json_model_c_sources, '../src/feature/feature_name.c', '../src/feature/feature_extractor.c',],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,
@@ -57,7 +62,8 @@ test_predict = executable('test_predict',
 
 test_feature_extractor = executable('test_feature_extractor',
     ['test.c', 'test_feature_extractor.c', '../src/mem.c', '../src/picture.c', '../src/ref.c',
-     '../src/dict.c', '../src/opt.c', '../src/log.c', '../src/predict.c', '../src/svm.cpp'],
+     '../src/dict.c', '../src/opt.c', '../src/log.c', '../src/predict.c', '../src/svm.cpp',
+     '../src/propagate_metadata.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
     dependencies : [math_lib, stdatomic_dependency, thread_lib, cuda_dependency],
     objects : [
@@ -168,3 +174,4 @@ test('test_luminance_tools', test_luminance_tools)
 test('test_cli_parse', test_cli_parse)
 test('test_psnr', test_psnr)
 test('test_framesync', test_framesync)
+test('test_propagate_metadata', test_propagate_metadata)
