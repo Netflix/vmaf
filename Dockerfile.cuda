@@ -42,4 +42,4 @@ ENTRYPOINT ["ffmpeg" ,"-hwaccel", "cuda", "-hwaccel_output_format" ,"cuda", \
     "-i" ,"/data/ref.mp4", \
     "-hwaccel", "cuda", "-hwaccel_output_format", "cuda", \
     "-i", "/data/dis.mp4"  ,\
-    "-filter_complex", "[0:v][1:v]libvmaf_cuda" ,"-f" ,"null", "-"]
+    "-filter_complex", "[0:v]scale_cuda=format=yuv420p[ref];[1:v]scale_cuda=format=yuv420p[dist];[dist][ref]libvmaf_cuda" ,"-f" ,"null", "-"]
