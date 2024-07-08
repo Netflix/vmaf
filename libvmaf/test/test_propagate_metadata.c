@@ -1,0 +1,95 @@
+/**
+ *
+ *  Copyright 2016-2020 Netflix, Inc.
+ *
+ *     Licensed under the BSD+Patent License (the "License");
+ *     you may not use this file except in compliance with the License.
+ *     You may obtain a copy of the License at
+ *
+ *         https://opensource.org/licenses/BSDplusPatent
+ *
+ *     Unless required by applicable law or agreed to in writing, software
+ *     distributed under the License is distributed on an "AS IS" BASIS,
+ *     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *     See the License for the specific language governing permissions and
+ *     limitations under the License.
+ *
+ */
+
+#include "propagate_metadata.h"
+#include "test.h"
+
+static char *test_propagate_metadata_init()
+{
+    VmafMetadata *propagate_metadata;
+    int err = vmaf_metadata_init(&propagate_metadata);
+    mu_assert("problem during vmaf_propagate_metadata_init", !err ||
+                                                         propagate_metadata ||
+                                                         !propagate_metadata->head);
+    return NULL;
+}
+
+static char *test_propagate_metadata_append()
+{
+    VmafMetadata *propagate_metadata;
+    int err = vmaf_metadata_init(&propagate_metadata);
+    mu_assert("problem during vmaf_propagate_metadata_init", !err ||
+                                                            propagate_metadata ||
+                                                            !propagate_metadata->head);
+
+    VmafMetadataConfig metadata_config;
+    metadata_config.callback = NULL;
+    metadata_config.data = NULL;
+    metadata_config.data_sz = 0;
+
+    err = vmaf_metadata_append(propagate_metadata, &metadata_config);
+    mu_assert("problem during vmaf_propagate_metadata_append", !err ||
+                                                             propagate_metadata ||
+                                                             !propagate_metadata->head);
+    return NULL;
+}
+
+
+static char *test_propagate_metadata_destroy()
+{
+    VmafMetadata *propagate_metadata;
+    int err = vmaf_metadata_init(&propagate_metadata);
+    mu_assert("problem during vmaf_propagate_metadata_init", !err ||
+                                                             propagate_metadata ||
+                                                             !propagate_metadata->head);
+
+    VmafMetadataConfig metadata_config;
+    metadata_config.callback = NULL;
+    metadata_config.data = NULL;
+    metadata_config.data_sz = 0;
+
+    err = vmaf_metadata_append(propagate_metadata, &metadata_config);
+    mu_assert("problem during vmaf_propagate_metadata_append", !err ||
+                                                             propagate_metadata ||
+                                                             !propagate_metadata->head);
+
+    err = vmaf_metadata_append(propagate_metadata, &metadata_config);
+    mu_assert("problem during vmaf_propagate_metadata_append", !err ||
+                                                             propagate_metadata ||
+                                                             !propagate_metadata->head);
+
+    err = vmaf_metadata_append(propagate_metadata, &metadata_config);
+    mu_assert("problem during vmaf_propagate_metadata_append", !err ||
+                                                             propagate_metadata ||
+                                                             !propagate_metadata->head);
+
+    err = vmaf_metadata_destroy(propagate_metadata);
+    mu_assert("problem during vmaf_propagate_metadata_destroy", !err ||
+                                                              !propagate_metadata ||
+                                                              !propagate_metadata->head);
+
+  return NULL;
+}
+
+char *run_tests()
+{
+    mu_run_test(test_propagate_metadata_init);
+    mu_run_test(test_propagate_metadata_append);
+    mu_run_test(test_propagate_metadata_destroy);
+    return NULL;
+}
