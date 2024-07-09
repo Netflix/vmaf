@@ -1,6 +1,6 @@
 # VMAF - Video Multi-Method Assessment Fusion
 
-[![Build Status](https://travis-ci.com/Netflix/vmaf.svg?branch=master)](https://travis-ci.com/Netflix/vmaf)
+[![Build Status](https://app.travis-ci.com/Netflix/vmaf.svg?token=KLMprpotiqp3mZnrjtA6&branch=master)](https://app.travis-ci.com/Netflix/vmaf)
 [![libvmaf](https://github.com/Netflix/vmaf/actions/workflows/libvmaf.yml/badge.svg)](https://github.com/Netflix/vmaf/actions/workflows/libvmaf.yml)
 [![Windows](https://github.com/Netflix/vmaf/actions/workflows/windows.yml/badge.svg)](https://github.com/Netflix/vmaf/actions/workflows/windows.yml)
 [![ffmpeg](https://github.com/Netflix/vmaf/actions/workflows/ffmpeg.yml/badge.svg)](https://github.com/Netflix/vmaf/actions/workflows/ffmpeg.yml)
