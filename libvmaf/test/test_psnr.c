@@ -18,7 +18,6 @@
 
 #include "test.h"
 #include "feature/integer_psnr.c"
-#include <time.h>
 
 #define EPS 0.00001
 

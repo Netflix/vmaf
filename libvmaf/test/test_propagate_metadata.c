@@ -23,19 +23,35 @@ static char *test_propagate_metadata_init()
 {
     VmafMetadata *propagate_metadata;
     int err = vmaf_metadata_init(&propagate_metadata);
-    mu_assert("problem during vmaf_propagate_metadata_init", !err ||
-                                                         propagate_metadata ||
-                                                         !propagate_metadata->head);
+    mu_assert("problem during vmaf_propagate_metadata_init", !err);
+    mu_assert("problem during vmaf_propagate_metadata_init, metadata is NULL",
+              propagate_metadata);
+
+    vmaf_metadata_destroy(propagate_metadata);
+    mu_assert("problem during vmaf_propagate_metadata_destroy", !err);
+
     return NULL;
+}
+
+static char *test_propagate_metadata_destroy()
+{
+    VmafMetadata *propagate_metadata;
+    int err = vmaf_metadata_init(&propagate_metadata);
+    mu_assert("problem during vmaf_propagate_metadata_init", !err);
+    mu_assert("problem during vmaf_propagate_metadata_init, metadata is NULL",
+              propagate_metadata);
+
+    err = vmaf_metadata_destroy(propagate_metadata);
+    mu_assert("problem during vmaf_propagate_metadata_destroy", !err);
+
+  return NULL;
 }
 
 static char *test_propagate_metadata_append()
 {
     VmafMetadata *propagate_metadata;
     int err = vmaf_metadata_init(&propagate_metadata);
-    mu_assert("problem during vmaf_propagate_metadata_init", !err ||
-                                                            propagate_metadata ||
-                                                            !propagate_metadata->head);
+    mu_assert("problem during vmaf_propagate_metadata_init", !err);
 
     VmafMetadataConfig metadata_config;
     metadata_config.callback = NULL;
@@ -43,53 +59,27 @@ static char *test_propagate_metadata_append()
     metadata_config.data_sz = 0;
 
     err = vmaf_metadata_append(propagate_metadata, &metadata_config);
-    mu_assert("problem during vmaf_propagate_metadata_append", !err ||
-                                                             propagate_metadata ||
-                                                             !propagate_metadata->head);
-    return NULL;
-}
-
-
-static char *test_propagate_metadata_destroy()
-{
-    VmafMetadata *propagate_metadata;
-    int err = vmaf_metadata_init(&propagate_metadata);
-    mu_assert("problem during vmaf_propagate_metadata_init", !err ||
-                                                             propagate_metadata ||
-                                                             !propagate_metadata->head);
-
-    VmafMetadataConfig metadata_config;
-    metadata_config.callback = NULL;
-    metadata_config.data = NULL;
-    metadata_config.data_sz = 0;
+    mu_assert("problem during vmaf_propagate_metadata_append", !err);
+    mu_assert("problem during vmaf_propagate_metadata_append, metadata->head is NULL",
+              propagate_metadata->head);
+    mu_assert("problem during vmaf_propagate_metadata_append, metadata->head->next is not NULL",
+              !propagate_metadata->head->next);
 
     err = vmaf_metadata_append(propagate_metadata, &metadata_config);
-    mu_assert("problem during vmaf_propagate_metadata_append", !err ||
-                                                             propagate_metadata ||
-                                                             !propagate_metadata->head);
-
-    err = vmaf_metadata_append(propagate_metadata, &metadata_config);
-    mu_assert("problem during vmaf_propagate_metadata_append", !err ||
-                                                             propagate_metadata ||
-                                                             !propagate_metadata->head);
-
-    err = vmaf_metadata_append(propagate_metadata, &metadata_config);
-    mu_assert("problem during vmaf_propagate_metadata_append", !err ||
-                                                             propagate_metadata ||
-                                                             !propagate_metadata->head);
+    mu_assert("problem during vmaf_propagate_metadata_append", !err);
+    mu_assert("problem during vmaf_propagate_metadata_append, metadata->head->next is NULL",
+              propagate_metadata->head->next);
 
     err = vmaf_metadata_destroy(propagate_metadata);
-    mu_assert("problem during vmaf_propagate_metadata_destroy", !err ||
-                                                              !propagate_metadata ||
-                                                              !propagate_metadata->head);
+    mu_assert("problem during vmaf_propagate_metadata_destroy", !err);
 
-  return NULL;
+    return NULL;
 }
 
 char *run_tests()
 {
     mu_run_test(test_propagate_metadata_init);
-    mu_run_test(test_propagate_metadata_append);
     mu_run_test(test_propagate_metadata_destroy);
+    mu_run_test(test_propagate_metadata_append);
     return NULL;
 }
