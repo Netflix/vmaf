@@ -433,15 +433,9 @@ void vmaf_feature_collector_destroy(VmafFeatureCollector *feature_collector)
     aggregate_vector_destroy(&(feature_collector->aggregate_vector));
     for (unsigned i = 0; i < feature_collector->cnt; i++)
         feature_vector_destroy(feature_collector->feature_vector[i]);
-    if(feature_collector->models) {
-      VmafPredictModel *head = feature_collector->models;
-      VmafPredictModel *next = NULL;
-      while (head != NULL) {
-        next = head->next;
-        free(head);
-        head = next;
-      }
-    }
+    while (feature_collector->models)
+        vmaf_feature_collector_unmount_model(feature_collector,
+                                             feature_collector->models->model);
     vmaf_metadata_destroy(feature_collector->metadata);
     free(feature_collector->feature_vector);
     pthread_mutex_unlock(&(feature_collector->lock));
