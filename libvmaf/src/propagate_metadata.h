@@ -19,7 +19,7 @@
 #ifndef __VMAF_SRC_PROPAGATE_METADATA_H__
 #define __VMAF_SRC_PROPAGATE_METADATA_H__
 
-#include "libvmaf/propagate_metadata.h"
+#include "libvmaf/libvmaf.h"
 
 typedef struct VmafMetadataNode {
     void (*callback)(void *, const char *, double);

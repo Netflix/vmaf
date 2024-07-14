@@ -25,7 +25,6 @@
 #include "libvmaf/model.h"
 #include "libvmaf/picture.h"
 #include "libvmaf/feature.h"
-#include "libvmaf/propagate_metadata.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -253,6 +252,23 @@ int vmaf_score_at_index_model_collection(VmafContext *vmaf,
  */
 int vmaf_feature_score_at_index(VmafContext *vmaf, const char *feature_name,
                                 double *score, unsigned index);
+
+typedef struct VmafMetadataConfig {
+    void (*callback)(void *, const char *, double);
+    void *data;
+    size_t data_sz;
+} VmafMetadataConfig;
+
+/**
+ * Register a callback to receive VMAF metadata.
+ *
+ * @param vmaf The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param cfg  Metadata configuration.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
 
 int vmaf_register_metadata_callback(VmafContext *vmaf, VmafMetadataConfig *cfg);
 

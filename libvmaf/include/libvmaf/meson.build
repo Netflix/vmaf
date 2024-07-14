@@ -19,8 +19,7 @@ endif
 install_headers(['libvmaf.h',
                 'feature.h',
                 'model.h',
-                'picture.h',
-                'propagate_metadata.h',],
+                'picture.h',],
                 version_h_target,
                 platform_specific_headers,
                 subdir : 'libvmaf')
