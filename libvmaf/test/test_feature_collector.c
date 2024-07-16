@@ -73,7 +73,6 @@ static char* test_model_mount()
 
     vmaf_model_destroy(model);
     vmaf_feature_collector_destroy(feature_collector);
-    mu_assert("problem during vmaf_feature_collector_destroy", feature_collector->models == NULL);
 
     return NULL;
 }
@@ -101,7 +100,6 @@ static char* test_model_unmount()
 
     vmaf_model_destroy(model);
     vmaf_feature_collector_destroy(feature_collector);
-    mu_assert("problem during vmaf_feature_collector_destroy", feature_collector->models == NULL);
 
     return NULL;
 }
