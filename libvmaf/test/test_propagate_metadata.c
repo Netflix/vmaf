@@ -19,6 +19,8 @@
 #include "propagate_metadata.h"
 #include "test.h"
 
+void set_meta() {}
+
 static char *test_propagate_metadata_init()
 {
     VmafMetadata *propagate_metadata;
@@ -54,7 +56,8 @@ static char *test_propagate_metadata_append()
     mu_assert("problem during vmaf_propagate_metadata_init", !err);
 
     VmafMetadataConfig metadata_config;
-    metadata_config.callback = NULL;
+    metadata_config.callback = set_meta;
+    metadata_config.data = NULL;
 
     err = vmaf_metadata_append(propagate_metadata, &metadata_config);
     mu_assert("problem during vmaf_propagate_metadata_append", !err);

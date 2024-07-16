@@ -42,6 +42,7 @@ int vmaf_metadata_append(VmafMetadata *metadata, const VmafMetadataConfig *metad
 {
     if (!metadata) return -EINVAL;
     if (!metadata_config) return -EINVAL;
+    if (!metadata_config->callback) return -EINVAL;
 
     VmafMetadataNode *node = malloc(sizeof(*node));
     if (!node) goto fail;
