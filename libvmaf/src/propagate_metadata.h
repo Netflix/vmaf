@@ -24,7 +24,6 @@
 typedef struct VmafMetadataNode {
     void (*callback)(void *, const char *, double);
     void *data;
-    size_t data_sz;
     struct VmafMetadataNode *next;
 } VmafMetadataNode;
 

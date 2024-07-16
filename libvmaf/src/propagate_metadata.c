@@ -48,7 +48,6 @@ int vmaf_metadata_append(VmafMetadata *metadata, const VmafMetadataConfig *metad
     memset(node, 0, sizeof(*node));
 
     node->data = metadata_config->data;
-    node->data_sz = metadata_config->data_sz;
     node->callback = metadata_config->callback;
 
     if (!metadata->head) {

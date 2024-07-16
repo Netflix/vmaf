@@ -256,7 +256,6 @@ int vmaf_feature_score_at_index(VmafContext *vmaf, const char *feature_name,
 typedef struct VmafMetadataConfig {
     void (*callback)(void *, const char *, double);
     void *data;
-    size_t data_sz;
 } VmafMetadataConfig;
 
 /**
