@@ -24,7 +24,7 @@
 #include <string.h>
 
 #include "dict.h"
-#include "propagate_metadata.h"
+#include "metadata_handler.h"
 #include "feature_collector.h"
 #include "feature_name.h"
 #include "libvmaf/libvmaf.h"
@@ -282,7 +282,7 @@ int vmaf_feature_collector_register_metadata(VmafFeatureCollector *feature_colle
     if (!feature_collector) return -EINVAL;
     if (!metadata_config) return -EINVAL;
 
-    VmafMetadata *metadata = feature_collector->metadata;
+    VmafCallbackList *metadata = feature_collector->metadata;
     int err = vmaf_metadata_append(metadata, metadata_config);
     if (err) return err;
 
@@ -346,7 +346,7 @@ int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
 
     int res = 0;
 
-    VmafMetadataNode *metadata_iter = feature_collector->metadata ?
+    VmafCallbackItem *metadata_iter = feature_collector->metadata ?
                                       feature_collector->metadata->head : NULL;
     while(metadata_iter)
     {
@@ -354,7 +354,6 @@ int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
       while (model_iter)
       {
           VmafModel *model = model_iter->model;
-          double score = 0.0;
           pthread_mutex_unlock(&(feature_collector->lock));
           res = vmaf_feature_collector_get_score(feature_collector, model->name,
                                            &score, picture_index);
@@ -370,7 +369,11 @@ int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
           if (res) goto unlock;
           char key[128];
           snprintf(key, sizeof(key), "%s_%d", model->name, picture_index);
-          metadata_iter->callback(metadata_iter->data, key, score);
+          VmafMetadata data = {
+                .key = key,
+                .value = score,
+          };
+          metadata_iter->callback(metadata_iter->data, &data);
           model_iter = model_iter->next;
       }
       metadata_iter = metadata_iter->next;

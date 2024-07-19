@@ -25,7 +25,7 @@
 
 #include "dict.h"
 #include "model.h"
-#include "propagate_metadata.h"
+#include "metadata_handler.h"
 
 typedef struct {
     char *name;
@@ -52,7 +52,7 @@ typedef struct VmafPredictModel {
 typedef struct VmafFeatureCollector {
     FeatureVector **feature_vector;
     AggregateVector aggregate_vector;
-    VmafMetadata *metadata;
+    VmafCallbackList *metadata;
     VmafPredictModel *models;
     unsigned cnt, capacity;
     struct { clock_t begin, end; } timer;

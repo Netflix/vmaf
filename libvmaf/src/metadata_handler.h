@@ -21,21 +21,21 @@
 
 #include "libvmaf/libvmaf.h"
 
-typedef struct VmafMetadataNode {
-    void (*callback)(void *, const char *, double);
+typedef struct VmafCallbackItem {
+    void (*callback)(void *, VmafMetadata *);
     void *data;
-    struct VmafMetadataNode *next;
-} VmafMetadataNode;
+    struct VmafCallbackItem *next;
+} VmafCallbackItem;
 
-typedef struct  VmafMetadata{
-    VmafMetadataNode *head;
-} VmafMetadata;
+typedef struct  VmafCallbackList{
+    VmafCallbackItem *head;
+} VmafCallbackList;
 
-int vmaf_metadata_init(VmafMetadata **const metadata);
+int vmaf_metadata_init(VmafCallbackList **const metadata);
 
-int vmaf_metadata_append(VmafMetadata *metadata,
-                                   const VmafMetadataConfig *metadata_config);
+int vmaf_metadata_append(VmafCallbackList *metadata,
+                         const VmafMetadataConfig *metadata_config);
 
-int vmaf_metadata_destroy(VmafMetadata *metadata);
+int vmaf_metadata_destroy(VmafCallbackList *metadata);
 
 #endif // !__VMAF_PROPAGATE_METADATA_H__

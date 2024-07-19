@@ -253,8 +253,13 @@ int vmaf_score_at_index_model_collection(VmafContext *vmaf,
 int vmaf_feature_score_at_index(VmafContext *vmaf, const char *feature_name,
                                 double *score, unsigned index);
 
+typedef struct VmafMetadata {
+    char *key;
+    double value;
+} VmafMetadata;
+
 typedef struct VmafMetadataConfig {
-    void (*callback)(void *, const char *, double);
+    void (*callback)(void *, VmafMetadata *);
     void *data;
 } VmafMetadataConfig;
 

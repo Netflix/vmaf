@@ -16,14 +16,14 @@
  *
  */
 
-#include "propagate_metadata.h"
+#include "metadata_handler.h"
 #include "test.h"
 
 void set_meta() {}
 
 static char *test_propagate_metadata_init()
 {
-    VmafMetadata *propagate_metadata;
+    VmafCallbackList *propagate_metadata;
     int err = vmaf_metadata_init(&propagate_metadata);
     mu_assert("problem during vmaf_propagate_metadata_init", !err);
     mu_assert("problem during vmaf_propagate_metadata_init, metadata is NULL",
@@ -37,7 +37,7 @@ static char *test_propagate_metadata_init()
 
 static char *test_propagate_metadata_destroy()
 {
-    VmafMetadata *propagate_metadata;
+    VmafCallbackList *propagate_metadata;
     int err = vmaf_metadata_init(&propagate_metadata);
     mu_assert("problem during vmaf_propagate_metadata_init", !err);
     mu_assert("problem during vmaf_propagate_metadata_init, metadata is NULL",
@@ -51,7 +51,7 @@ static char *test_propagate_metadata_destroy()
 
 static char *test_propagate_metadata_append()
 {
-    VmafMetadata *propagate_metadata;
+    VmafCallbackList *propagate_metadata;
     int err = vmaf_metadata_init(&propagate_metadata);
     mu_assert("problem during vmaf_propagate_metadata_init", !err);
 

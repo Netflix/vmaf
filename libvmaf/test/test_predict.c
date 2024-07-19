@@ -19,7 +19,7 @@
 #include <stdint.h>
 
 #include "feature/feature_collector.h"
-#include "propagate_metadata.h"
+#include "metadata_handler.h"
 #include "test.h"
 #include "predict.h"
 #include "predict.c"
@@ -66,13 +66,13 @@ static char *test_predict_score_at_index()
 }
 
 
-void set_meta(void *data, const char *key, double d)
+void set_meta(void *data, VmafMetadata *metadata)
 {
     if (!data) return;
     MetaStruct *meta = data;
     char value[128];
-    snprintf(value, sizeof(value), "%f", d);
-    vmaf_dictionary_set(meta->metadata, key, value, meta->flags);
+    snprintf(value, sizeof(value), "%f", metadata->value);
+    vmaf_dictionary_set(meta->metadata, metadata->key, value, meta->flags);
 }
 
 static char* test_propagate_metadata()

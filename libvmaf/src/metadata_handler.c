@@ -20,13 +20,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "propagate_metadata.h"
+#include "metadata_handler.h"
 
-int vmaf_metadata_init(VmafMetadata **const metadata)
+int vmaf_metadata_init(VmafCallbackList **const metadata)
 {
     if (!metadata) return -EINVAL;
 
-    VmafMetadata *const metadata_s = *metadata =
+    VmafCallbackList *const metadata_s = *metadata =
         malloc(sizeof(*metadata_s));
     if (!metadata_s) goto fail;
 
@@ -38,13 +38,13 @@ fail:
     return -ENOMEM;
 }
 
-int vmaf_metadata_append(VmafMetadata *metadata, const VmafMetadataConfig *metadata_config)
+int vmaf_metadata_append(VmafCallbackList *metadata, const VmafMetadataConfig *metadata_config)
 {
     if (!metadata) return -EINVAL;
     if (!metadata_config) return -EINVAL;
     if (!metadata_config->callback) return -EINVAL;
 
-    VmafMetadataNode *node = malloc(sizeof(*node));
+    VmafCallbackItem *node = malloc(sizeof(*node));
     if (!node) goto fail;
     memset(node, 0, sizeof(*node));
 
@@ -54,7 +54,7 @@ int vmaf_metadata_append(VmafMetadata *metadata, const VmafMetadataConfig *metad
     if (!metadata->head) {
         metadata->head = node;
     } else {
-        VmafMetadataNode *iter = metadata->head;
+        VmafCallbackItem *iter = metadata->head;
         while (iter->next) iter = iter->next;
         iter->next = node;
     }
@@ -65,13 +65,13 @@ fail:
     return -ENOMEM;
 }
 
-int vmaf_metadata_destroy(VmafMetadata *metadata)
+int vmaf_metadata_destroy(VmafCallbackList *metadata)
 {
     if (!metadata) return -EINVAL;
 
-    VmafMetadataNode *iter = metadata->head;
+    VmafCallbackItem *iter = metadata->head;
     while (iter) {
-        VmafMetadataNode *next = iter->next;
+        VmafCallbackItem *next = iter->next;
         free(iter);
         iter = next;
     }
