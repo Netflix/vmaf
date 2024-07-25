@@ -253,11 +253,23 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    VmafMetadataConfiguration metadata_cfg = {
+    VmafMetadataConfiguration metadata_cfg_1 = {
+        .feature_name = "vmaf",
         .callback = &my_callback,
     };
 
-    err = vmaf_register_metadata_callback(vmaf, metadata_cfg);
+    err = vmaf_register_metadata_callback(vmaf, metadata_cfg_1);
+    if (err) {
+        fprintf(stderr, "problem during vmaf_register_metadata_callback\n");
+        return -1;
+    }
+
+    VmafMetadataConfiguration metadata_cfg_2 = {
+        .feature_name = "psnr",
+        .callback = &my_callback,
+    };
+
+    err = vmaf_register_metadata_callback(vmaf, metadata_cfg_2);
     if (err) {
         fprintf(stderr, "problem during vmaf_register_metadata_callback\n");
         return -1;
