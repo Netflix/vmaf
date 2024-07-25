@@ -84,7 +84,7 @@ static char *test_16b_large_diff()
     mu_assert("wrong mse_y", almost_equal(mse_y, 4294836225.0));
     mu_assert("wrong mse_cb", almost_equal(mse_cb, 4294836225.0));
     mu_assert("wrong mse_cr", almost_equal(mse_cr, 4294836225.0));
-
+    
     vmaf_feature_collector_destroy(fc);
     vmaf_picture_unref(&pic1);
     vmaf_picture_unref(&pic2);
