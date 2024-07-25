@@ -34,7 +34,7 @@ is_cuda_enabled = get_option('enable_cuda') == true
 is_avx512_enabled = get_option('enable_avx512') == true
 is_nvtx_enabled = get_option('enable_nvtx') == true
 
-if is_nvtx_enabled
+if is_nvtx_enabled    
     cdata.set10('HAVE_NVTX', is_nvtx_enabled)
 endif
 
