@@ -373,7 +373,7 @@ int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
                 .score = score,
           };
 
-          metadata_iter->callback(metadata_iter->data, &data);
+          metadata_iter->metadata_cfg.callback(metadata_iter->metadata_cfg.data, &data);
           model_iter = model_iter->next;
       }
       metadata_iter = metadata_iter->next;

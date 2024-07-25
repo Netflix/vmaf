@@ -48,10 +48,6 @@ int vmaf_metadata_append(VmafCallbackList *metadata, const VmafMetadataConfigura
 
     node->metadata_cfg = metadata_cfg;
 
-    //FIXME, remove these
-    node->data = metadata_cfg.data;
-    node->callback = metadata_cfg.callback;
-
     if (!metadata->head) {
         metadata->head = node;
     } else {
