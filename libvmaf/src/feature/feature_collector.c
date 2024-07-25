@@ -277,13 +277,12 @@ int vmaf_feature_collector_unmount_model(VmafFeatureCollector *feature_collector
 }
 
 int vmaf_feature_collector_register_metadata(VmafFeatureCollector *feature_collector,
-                                             VmafMetadataConfig *metadata_config)
+                                             VmafMetadataConfiguration metadata_cfg)
 {
     if (!feature_collector) return -EINVAL;
-    if (!metadata_config) return -EINVAL;
 
     VmafCallbackList *metadata = feature_collector->metadata;
-    int err = vmaf_metadata_append(metadata, metadata_config);
+    int err = vmaf_metadata_append(metadata, metadata_cfg);
     if (err) return err;
 
     return 0;
@@ -367,12 +366,13 @@ int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
                                             &score, true, true, 0);
           pthread_mutex_lock(&(feature_collector->lock));
           if (res) goto unlock;
-          char key[128];
-          snprintf(key, sizeof(key), "%s_%d", model->name, picture_index);
+
           VmafMetadata data = {
-                .key = key,
-                .value = score,
+                .feature_name = model->name,
+                .picture_index = picture_index,
+                .score = score,
           };
+
           metadata_iter->callback(metadata_iter->data, &data);
           model_iter = model_iter->next;
       }

@@ -22,6 +22,7 @@
 #include "libvmaf/libvmaf.h"
 
 typedef struct VmafCallbackItem {
+    VmafMetadataConfiguration metadata_cfg;
     void (*callback)(void *, VmafMetadata *);
     void *data;
     struct VmafCallbackItem *next;
@@ -34,7 +35,7 @@ typedef struct  VmafCallbackList{
 int vmaf_metadata_init(VmafCallbackList **const metadata);
 
 int vmaf_metadata_append(VmafCallbackList *metadata,
-                         const VmafMetadataConfig *metadata_config);
+                         const VmafMetadataConfiguration metadata_cfg);
 
 int vmaf_metadata_destroy(VmafCallbackList *metadata);
 

@@ -85,7 +85,7 @@ static char* test_propagate_metadata()
         .flags    = 0,
     };
 
-    VmafMetadataConfig m = {
+    VmafMetadataConfiguration m = {
         .callback = set_meta,
         .data     = &meta_data,
     };
@@ -94,7 +94,7 @@ static char* test_propagate_metadata()
     err = vmaf_feature_collector_init(&feature_collector);
     mu_assert("problem during vmaf_feature_collector_init", !err);
 
-    err = vmaf_feature_collector_register_metadata(feature_collector, &m);
+    err = vmaf_feature_collector_register_metadata(feature_collector, m);
     mu_assert("problem during vmaf_feature_collector_register_metadata", !err);
 
     VmafModel *model;
@@ -123,7 +123,7 @@ static char* test_propagate_metadata()
     err = vmaf_feature_collector_init(&feature_collector);
     mu_assert("problem during vmaf_feature_collector_init", !err);
 
-    err = vmaf_feature_collector_register_metadata(feature_collector, &m);
+    err = vmaf_feature_collector_register_metadata(feature_collector, m);
     mu_assert("problem during vmaf_feature_collector_register_metadata", !err);
 
     for (unsigned i = 0; i < model->n_features; i++) {
@@ -138,7 +138,7 @@ static char* test_propagate_metadata()
     err = vmaf_feature_collector_init(&feature_collector);
     mu_assert("problem during vmaf_feature_collector_init", !err);
 
-    err = vmaf_feature_collector_register_metadata(feature_collector, &m);
+    err = vmaf_feature_collector_register_metadata(feature_collector, m);
     mu_assert("problem during vmaf_feature_collector_register_metadata", err);
 
     vmaf_feature_collector_destroy(feature_collector);

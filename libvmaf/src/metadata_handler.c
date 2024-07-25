@@ -38,18 +38,19 @@ fail:
     return -ENOMEM;
 }
 
-int vmaf_metadata_append(VmafCallbackList *metadata, const VmafMetadataConfig *metadata_config)
+int vmaf_metadata_append(VmafCallbackList *metadata, const VmafMetadataConfiguration metadata_cfg)
 {
     if (!metadata) return -EINVAL;
-    if (!metadata_config) return -EINVAL;
-    if (!metadata_config->callback) return -EINVAL;
 
     VmafCallbackItem *node = malloc(sizeof(*node));
     if (!node) goto fail;
     memset(node, 0, sizeof(*node));
 
-    node->data = metadata_config->data;
-    node->callback = metadata_config->callback;
+    node->metadata_cfg = metadata_cfg;
+
+    //FIXME, remove these
+    node->data = metadata_cfg.data;
+    node->callback = metadata_cfg.callback;
 
     if (!metadata->head) {
         metadata->head = node;

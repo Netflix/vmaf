@@ -55,18 +55,18 @@ static char *test_propagate_metadata_append()
     int err = vmaf_metadata_init(&propagate_metadata);
     mu_assert("problem during vmaf_propagate_metadata_init", !err);
 
-    VmafMetadataConfig metadata_config;
+    VmafMetadataConfiguration metadata_config;
     metadata_config.callback = set_meta;
     metadata_config.data = NULL;
 
-    err = vmaf_metadata_append(propagate_metadata, &metadata_config);
+    err = vmaf_metadata_append(propagate_metadata, metadata_config);
     mu_assert("problem during vmaf_propagate_metadata_append", !err);
     mu_assert("problem during vmaf_propagate_metadata_append, metadata->head is NULL",
               propagate_metadata->head);
     mu_assert("problem during vmaf_propagate_metadata_append, metadata->head->next is not NULL",
               !propagate_metadata->head->next);
 
-    err = vmaf_metadata_append(propagate_metadata, &metadata_config);
+    err = vmaf_metadata_append(propagate_metadata, metadata_config);
     mu_assert("problem during vmaf_propagate_metadata_append", !err);
     mu_assert("problem during vmaf_propagate_metadata_append, metadata->head->next is NULL",
               propagate_metadata->head->next);

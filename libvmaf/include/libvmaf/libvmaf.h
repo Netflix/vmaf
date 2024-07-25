@@ -254,14 +254,19 @@ int vmaf_feature_score_at_index(VmafContext *vmaf, const char *feature_name,
                                 double *score, unsigned index);
 
 typedef struct VmafMetadata {
+    char *feature_name;
+    unsigned picture_index;
+    double score;
+
     char *key;
     double value;
 } VmafMetadata;
 
-typedef struct VmafMetadataConfig {
-    void (*callback)(void *, VmafMetadata *);
+typedef struct VmafMetadataConfiguration {
+    char *feature_name;
+    void (*callback)(void *data, VmafMetadata *metadata);
     void *data;
-} VmafMetadataConfig;
+} VmafMetadataConfiguration;
 
 /**
  * Register a callback to receive VMAF metadata.
@@ -274,7 +279,7 @@ typedef struct VmafMetadataConfig {
  * @return 0 on success, or < 0 (a negative errno code) on error.
  */
 
-int vmaf_register_metadata_callback(VmafContext *vmaf, VmafMetadataConfig *cfg);
+int vmaf_register_metadata_callback(VmafContext *vmaf, VmafMetadataConfiguration cfg);
 
 /**
  * Pooled VMAF score for a specific interval.

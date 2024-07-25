@@ -166,6 +166,13 @@ static int fetch_picture(video_input *vid, VmafPicture *pic, int depth)
     return 0;
 }
 
+static void my_callback(void *data, VmafMetadata *metadata)
+{
+    (void) data;
+    fprintf(stdout, " my_callback: %s.%d=%f\n", metadata->feature_name,
+            metadata->picture_index, metadata->score);
+}
+
 int main(int argc, char *argv[])
 {
     int err = 0;
@@ -245,6 +252,17 @@ int main(int argc, char *argv[])
         fprintf(stderr, "problem initializing VMAF context\n");
         return -1;
     }
+
+    VmafMetadataConfiguration metadata_cfg = {
+        .callback = &my_callback,
+    };
+
+    err = vmaf_register_metadata_callback(vmaf, metadata_cfg);
+    if (err) {
+        fprintf(stderr, "problem during vmaf_register_metadata_callback\n");
+        return -1;
+    }
+
 
 #ifdef HAVE_CUDA
     VmafCudaState *cu_state;

@@ -744,10 +744,9 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     return err;
 }
 
-int vmaf_register_metadata_callback(VmafContext *vmaf, VmafMetadataConfig *cfg)
+int vmaf_register_metadata_callback(VmafContext *vmaf, VmafMetadataConfiguration cfg)
 {
     if (!vmaf) return -EINVAL;
-    if (!cfg) return -EINVAL;
 
     return vmaf_feature_collector_register_metadata(vmaf->feature_collector, cfg);
 }
