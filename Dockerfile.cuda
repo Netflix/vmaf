@@ -1,8 +1,9 @@
 ARG CUDA_VERSION=12.3.1
-ARG VMAF_TAG=master
-ARG FFFMPEG_TAG=master
 # By copying the installation from a devel to a runtime container one could likely save a lot container size
 FROM nvidia/cuda:$CUDA_VERSION-devel-ubuntu22.04 
+
+ARG VMAF_TAG=master
+ARG FFFMPEG_TAG=master
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y libopenjp2-7-dev \
     ninja-build cmake git python3 python3-pip nasm xxd pkg-config curl unzip
