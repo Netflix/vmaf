@@ -296,7 +296,7 @@ typedef struct VmafMetadataConfiguration {
  * @return 0 on success, or < 0 (a negative errno code) on error.
  */
 
-int vmaf_register_metadata_callback(VmafContext *vmaf, VmafMetadataConfiguration cfg);
+int vmaf_register_metadata_handler(VmafContext *vmaf, VmafMetadataConfiguration cfg);
 
 /**
  * Pooled VMAF score for a specific interval.
