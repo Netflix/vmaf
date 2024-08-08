@@ -26,6 +26,7 @@ int vmaf_predict_score_at_index(VmafModel *model,
                                 VmafFeatureCollector *feature_collector,
                                 unsigned index, double *vmaf_score,
                                 bool write_prediction,
+                                bool propagate_metadata,
                                 enum VmafModelFlags flags);
 
 int vmaf_predict_score_at_index_model_collection(

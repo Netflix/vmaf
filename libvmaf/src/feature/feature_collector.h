@@ -24,6 +24,8 @@
 #include <time.h>
 
 #include "dict.h"
+#include "model.h"
+#include "metadata_handler.h"
 
 typedef struct {
     char *name;
@@ -42,9 +44,16 @@ typedef struct {
     unsigned cnt, capacity;
 } AggregateVector;
 
+typedef struct VmafPredictModel {
+    VmafModel *model;
+    struct VmafPredictModel *next;
+} VmafPredictModel;
+
 typedef struct VmafFeatureCollector {
     FeatureVector **feature_vector;
     AggregateVector aggregate_vector;
+    VmafCallbackList *metadata;
+    VmafPredictModel *models;
     unsigned cnt, capacity;
     struct { clock_t begin, end; } timer;
     pthread_mutex_t lock;
@@ -52,9 +61,14 @@ typedef struct VmafFeatureCollector {
 
 int vmaf_feature_collector_init(VmafFeatureCollector **const feature_collector);
 
+int vmaf_feature_collector_mount_model(VmafFeatureCollector *feature_collector, VmafModel *model);
+
 int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
                                   const char *feature_name, double score,
                                   unsigned index);
+
+int vmaf_feature_collector_register_metadata(VmafFeatureCollector *feature_collector,
+                                             VmafMetadataConfiguration metadata_cfg);
 
 int vmaf_feature_collector_append_with_dict(VmafFeatureCollector *fc,
         VmafDictionary *dict, const char *feature_name, double score,

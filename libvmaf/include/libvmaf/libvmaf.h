@@ -254,6 +254,51 @@ int vmaf_feature_score_at_index(VmafContext *vmaf, const char *feature_name,
                                 double *score, unsigned index);
 
 /**
+ * Metadata structure.
+ *
+ * @param feature_name   Name of the feature to fetch.
+ *
+ * @param picture_index  Picture index.
+ *
+ * @param score          Score.
+ *
+ * @note This structure is used to pass metadata to a callback function.
+ */
+typedef struct VmafMetadata {
+    char *feature_name;
+    unsigned picture_index;
+    double score;
+} VmafMetadata;
+
+/**
+ * Metadata configuration.
+ *
+ * @param feature_name Name of the feature to fetch.
+ *
+ * @param callback     Callback to receive metadata.
+ *
+ * @param data         User data to pass to the callback.
+ */
+typedef struct VmafMetadataConfiguration {
+    char *feature_name;
+    void (*callback)(void *data, VmafMetadata *metadata);
+    void *data;
+} VmafMetadataConfiguration;
+
+/**
+ * Register a callback to receive VMAF metadata.
+ *
+ * @param vmaf The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param cfg  Metadata configuration.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+
+int vmaf_register_metadata_handler(VmafContext *vmaf, VmafMetadataConfiguration cfg);
+
+/**
  * Pooled VMAF score for a specific interval.
  *
  * @param vmaf         The VMAF context allocated with `vmaf_init()`.
