@@ -290,10 +290,18 @@ int vmaf_use_feature(VmafContext *vmaf, const char *feature_name,
 
     int err = 0;
 
-    VmafFeatureExtractor *fex =
-        vmaf_get_feature_extractor_by_name(feature_name);
-    if (!fex) return -EINVAL;
+    unsigned fex_flags = 0;
 
+#ifdef HAVE_CUDA
+    if (!vmaf->cfg.gpumask && vmaf->cuda.state.ctx)
+        fex_flags |= VMAF_FEATURE_EXTRACTOR_CUDA;
+#endif
+    VmafFeatureExtractor *fex =
+        vmaf_get_feature_extractor_by_feature_name(feature_name, fex_flags);
+    if (!fex) {
+        fex = vmaf_get_feature_extractor_by_name(feature_name);
+        if (!fex) return -EINVAL;
+    }
     VmafDictionary *d = NULL;
     if (s) {
         err = vmaf_dictionary_copy(&s, &d);
@@ -577,7 +585,7 @@ static int translate_picture_host(VmafContext *vmaf, VmafPicture *pic,
         if (!vmaf->cuda.state.ctx)
             return -EINVAL;
         err |= vmaf_ring_buffer_fetch_next_picture(vmaf->cuda.ring_buffer, pic_device);
-        err |= vmaf_cuda_picture_upload_async(pic_device, pic, 0x1);
+        err |= vmaf_cuda_picture_upload_async(pic_device, pic, 0xF);
         if (err) {
             vmaf_log(VMAF_LOG_LEVEL_ERROR,
                     "problem moving host pic into cuda device buffer\n");
@@ -607,7 +615,7 @@ static int translate_picture_device(VmafContext *vmaf, VmafPicture *pic,
         return err;
     }
 
-    err = vmaf_cuda_picture_download_async(pic, pic_host, 0x1);
+    err = vmaf_cuda_picture_download_async(pic, pic_host, 0xF);
     if (err) {
         vmaf_log(VMAF_LOG_LEVEL_ERROR,
                  "problem moving cuda pic into host buffer\n");
