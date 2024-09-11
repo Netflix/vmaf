@@ -69,6 +69,7 @@ int vmaf_metadata_destroy(VmafCallbackList *metadata)
     VmafCallbackItem *iter = metadata->head;
     while (iter) {
         VmafCallbackItem *next = iter->next;
+        free(iter->metadata_cfg.feature_name);
         free(iter);
         iter = next;
     }

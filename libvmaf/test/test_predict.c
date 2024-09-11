@@ -88,7 +88,7 @@ static char* test_propagate_metadata()
     };
 
     VmafMetadataConfiguration m = {
-        .feature_name = "vmaf",
+        .feature_name = strdup("vmaf"),
         .callback = set_meta,
         .data     = &meta_data,
     };
@@ -127,6 +127,7 @@ static char* test_propagate_metadata()
     vmaf_feature_collector_destroy(feature_collector);
 
     m.data = NULL;
+    m.feature_name = strdup("vmaf");
     err = vmaf_feature_collector_init(&feature_collector);
     mu_assert("problem during vmaf_feature_collector_init", !err);
 
@@ -142,6 +143,7 @@ static char* test_propagate_metadata()
     vmaf_feature_collector_destroy(feature_collector);
 
     m.callback = NULL;
+    m.feature_name = strdup("vmaf");
     err = vmaf_feature_collector_init(&feature_collector);
     mu_assert("problem during vmaf_feature_collector_init", !err);
 

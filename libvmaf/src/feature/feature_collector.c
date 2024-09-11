@@ -27,6 +27,7 @@
 #include "metadata_handler.h"
 #include "feature_collector.h"
 #include "feature_name.h"
+#include "feature_extractor.h"
 #include "libvmaf/libvmaf.h"
 #include "log.h"
 #include "predict.h"
@@ -286,6 +287,25 @@ int vmaf_feature_collector_register_metadata(VmafFeatureCollector *feature_colle
     VmafCallbackList *metadata = feature_collector->metadata;
     int err = vmaf_metadata_append(metadata, metadata_cfg);
     if (err) return err;
+
+    return 0;
+}
+
+int vmaf_feature_collector_get_metadata_count(VmafFeatureCollector *feature_collector,
+                                              unsigned *count)
+{
+    if (!feature_collector) return -EINVAL;
+    if (!count) return -EINVAL;
+
+    VmafCallbackList *metadata = feature_collector->metadata;
+    unsigned cnt = 0;
+    VmafCallbackItem *iter = metadata ? metadata->head : NULL;
+    while (iter) {
+        cnt++;
+        iter = iter->next;
+    }
+
+    *count = cnt;
 
     return 0;
 }
