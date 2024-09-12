@@ -55,7 +55,7 @@ static char *test_propagate_metadata_append()
     int err = vmaf_metadata_init(&propagate_metadata);
     mu_assert("problem during vmaf_propagate_metadata_init", !err);
 
-    VmafMetadataConfiguration metadata_config;
+    VmafMetadataConfiguration metadata_config = {0};
     metadata_config.callback = set_meta;
     metadata_config.data = NULL;
 
