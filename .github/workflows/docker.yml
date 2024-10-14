@@ -10,4 +10,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build Docker Image
         run: |
+          rm ~/.docker/config.json
+          docker login
           docker build -t vmaf .
