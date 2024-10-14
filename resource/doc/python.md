@@ -84,7 +84,7 @@ pip3 install -r python/requirements.txt
 On macOS it's important to use the LLVM from homebrew as the macOS clang does not include support for OpenMP, which is needed for libsvm-official
 
 ``` shell script
-PATH="$HOMEBREW_PREFIX/opt/llvm/bin:$PATH" pip3 install -r ./python/requirements.txt
+CC=$HOMEBREW_PREFIX/opt/llvm/bin/clang CXX=$HOMEBREW_PREFIX/opt/llvm/bin/clang++ pip3 install -r python/requirements.txt
 ```
 
 
