@@ -135,8 +135,8 @@ static void request_picture(void *data)
     //fprintf(stderr, "request: %i\n", my_thread_pool_data->i);
     vmaf_ring_buffer_fetch_next_picture(ring_buffer, &pic_cuda_ref);
     vmaf_ring_buffer_fetch_next_picture(ring_buffer, &pic_cuda_dist);
-    vmaf_cuda_picture_upload_async(&pic_cuda_ref, &pic, 0x1);
-    vmaf_cuda_picture_upload_async(&pic_cuda_dist, &pic, 0x1);
+    vmaf_cuda_picture_upload_async(&pic_cuda_ref, &pic, 0xF);
+    vmaf_cuda_picture_upload_async(&pic_cuda_dist, &pic, 0xF);
     //fprintf(stderr, "usleep=%d: %i\n",
     //        my_thread_pool_data->timeout, my_thread_pool_data->i);
     vmaf_picture_unref(&pic_cuda_ref);

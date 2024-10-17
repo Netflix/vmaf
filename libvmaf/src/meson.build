@@ -288,6 +288,7 @@ if is_cuda_enabled
         'adm_decouple' : [feature_src_dir + 'cuda/integer_adm/adm_decouple.cu'],
         'filter1d' : [feature_src_dir + 'cuda/integer_vif/filter1d.cu'],
         'motion_score' : [feature_src_dir + 'cuda/integer_motion/motion_score.cu'],
+        'psnr' : [feature_src_dir + 'cuda/integer_psnr/psnr.cu'],
     }
     message(cuda_cu_sources)
     cuda_sources = [
@@ -303,15 +304,14 @@ if is_cuda_enabled
     cuda_dependency += cuda_rt_api_dependency
 
     cuda_flags = []
-    if get_option('buildtype').startswith('debug')
-        cuda_flags += ['-DCUDA_DEBUG', '-lineinfo']
-    else
-        if is_nvtx_enabled
-                cuda_flags += ['-lineinfo']
-                cuda_dependency += declare_dependency(link_args : ['-lnvToolsExt'])
-        endif
+    if get_option('buildtype') == 'debug'
+        cuda_flags += ['-G']
     endif
-
+    if is_nvtx_enabled
+            cuda_flags += ['-lineinfo']
+            cuda_dependency += declare_dependency(link_args : ['-lnvToolsExt'])
+    endif
+    
     nvcc_exe = find_program('nvcc')
     ptx_files = {}
     foreach name, _cu : cuda_cu_sources
@@ -325,7 +325,7 @@ if is_cuda_enabled
                 '-I', '../include',
                 '-I', '../src/feature',
                 '-I', '../src/' + cuda_dir,
-            ]
+            ] + cuda_flags
         )
         ptx_files += {name : [t]}
         cuda_sources += _cu
@@ -349,7 +349,7 @@ if is_cuda_enabled
 
     cuda_static_lib = static_library(
         'cuda_common_vmaf_lib',
-        [cuda_sources, ptx_arrays,],
+        cuda_sources + ptx_arrays,
         dependencies: [cuda_drv_api_dependency],
         include_directories : [
             libvmaf_include,
@@ -434,6 +434,7 @@ if is_cuda_enabled
         feature_src_dir + 'cuda/integer_adm_cuda.c',
         feature_src_dir + 'cuda/integer_vif_cuda.c',
         feature_src_dir + 'cuda/integer_motion_cuda.c',
+        feature_src_dir + 'cuda/integer_psnr_cuda.c',
     ]
 endif
 
