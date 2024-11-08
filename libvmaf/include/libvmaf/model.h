@@ -70,6 +70,20 @@ typedef struct VmafModelCollectionScore {
     } bootstrap;
 } VmafModelCollectionScore;
 
+typedef struct VmafModelDescriptor{
+    const char *version;
+} VmafModelDescriptor;
+
+/**
+ * Iterate through all built in vmaf models
+ * 
+ * @param prev previous model. NULL to get the first model
+ * 
+ * @return next model or NULL after the last model
+ * 
+*/
+const VmafModelDescriptor *vmaf_model_descriptor_next(const VmafModelDescriptor *prev);
+
 int vmaf_model_collection_load(VmafModel **model,
                                VmafModelCollection **model_collection,
                                VmafModelConfig *cfg,
