@@ -223,7 +223,7 @@ int vmaf_cuda_picture_free(VmafPicture *pic, void *cookie)
 
     for (int i = 0; i < 3; i++) {
 	    if (pic->data[i])
-		    CHECK_CUDA(cuMemFreeAsync(pic->data[i], priv->cuda.str));
+	        CHECK_CUDA(cuMemFree(pic->data[i]));
     }
 
     CHECK_CUDA(cuEventDestroy(priv->cuda.finished));
