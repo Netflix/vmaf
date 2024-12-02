@@ -257,6 +257,7 @@ int vmaf_feature_score_at_index(VmafContext *vmaf, const char *feature_name,
  * Metadata structure.
  *
  * @param feature_name   Name of the feature to fetch.
+ *                       vmaf going to take ownership of this string.
  *
  * @param picture_index  Picture index.
  *
@@ -285,6 +286,31 @@ typedef struct VmafMetadataConfiguration {
     void *data;
 } VmafMetadataConfiguration;
 
+
+/**
+ * Metadata flags.
+ *
+ * Features can provide additional metrics about the score. To propagate those,
+ * the `VmafMetadataFlags` enum should be used for specifying which information should be
+ * propagated to the metadata.
+ *
+ * @param VMAF_METADATA_FLAG_NONE         No flags.
+ *
+ * @param VMAF_METADATA_FLAG_FEATURE      Include all indivual metrics.
+ *
+ * @param VMAF_METADATA_FLAG_MODEL        Propagate only model score.
+ *
+ * @param VMAF_METADATA_FLAG_FEATURE_NAME Propagate only given feature name..
+ *
+ */
+
+enum VmafMetadataFlags {
+    VMAF_METADATA_FLAG_NONE = 0,
+    VMAF_METADATA_FLAG_FEATURE = 1 << 0,
+    VMAF_METADATA_FLAG_MODEL = 1 << 1,
+    VMAF_METADATA_FLAG_FEATURE_NAME = 1 << 2,
+};
+
 /**
  * Register a callback to receive VMAF metadata.
  *
@@ -296,7 +322,20 @@ typedef struct VmafMetadataConfiguration {
  * @return 0 on success, or < 0 (a negative errno code) on error.
  */
 
-int vmaf_register_metadata_handler(VmafContext *vmaf, VmafMetadataConfiguration cfg);
+int vmaf_register_metadata_handler(VmafContext *vmaf, VmafMetadataConfiguration cfg, uint64_t flags);
+
+/**
+ * Get the number of registered metadata handlers.
+ *
+ * @param vmaf  The VMAF context allocated with `vmaf_init()`.
+ *
+ * @param count Number of registered metadata handlers.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+
+int vmaf_get_metadata_handler_count(VmafContext *vmaf, unsigned *count);
 
 /**
  * Pooled VMAF score for a specific interval.

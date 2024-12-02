@@ -70,6 +70,9 @@ int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
 int vmaf_feature_collector_register_metadata(VmafFeatureCollector *feature_collector,
                                              VmafMetadataConfiguration metadata_cfg);
 
+int vmaf_feature_collector_get_metadata_count(VmafFeatureCollector *feature_collector,
+                                              unsigned *count);
+
 int vmaf_feature_collector_append_with_dict(VmafFeatureCollector *fc,
         VmafDictionary *dict, const char *feature_name, double score,
         unsigned index);
