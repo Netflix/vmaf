@@ -1023,11 +1023,11 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CUmodule adm_cm_module, adm_csf_den_module, adm_csf_module, adm_decouple_module, adm_dwt_module;
 
 
-    CHECK_CUDA(cuModuleLoadData(&adm_dwt_module, src_adm_dwt2_ptx));
-    CHECK_CUDA(cuModuleLoadData(&adm_csf_module, src_adm_csf_ptx));
-    CHECK_CUDA(cuModuleLoadData(&adm_decouple_module, src_adm_decouple_ptx));
-    CHECK_CUDA(cuModuleLoadData(&adm_csf_den_module, src_adm_csf_den_ptx));
-    CHECK_CUDA(cuModuleLoadData(&adm_cm_module, src_adm_cm_ptx));
+    CHECK_CUDA(cuModuleLoadData(&adm_dwt_module, adm_dwt2_ptx));
+    CHECK_CUDA(cuModuleLoadData(&adm_csf_module, adm_csf_ptx));
+    CHECK_CUDA(cuModuleLoadData(&adm_decouple_module, adm_decouple_ptx));
+    CHECK_CUDA(cuModuleLoadData(&adm_csf_den_module, adm_csf_den_ptx));
+    CHECK_CUDA(cuModuleLoadData(&adm_cm_module, adm_cm_ptx));
 
     // Get DWT kernel function pointers check adm_dwt2.cu for __global__ templated kernels
     CHECK_CUDA(cuModuleGetFunction(&s->func_dwt_s123_combined_vert_kernel_0_0_int32_t,  adm_dwt_module, "dwt_s123_combined_vert_kernel_0_0_int32_t"));

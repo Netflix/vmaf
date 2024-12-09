@@ -144,7 +144,7 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CHECK_CUDA(cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
 
     CUmodule module;
-    CHECK_CUDA(cuModuleLoadData(&module, src_motion_score_ptx));
+    CHECK_CUDA(cuModuleLoadData(&module, motion_score_ptx));
 
     CHECK_CUDA(cuModuleGetFunction(&s->funcbpc16, module, "calculate_motion_score_kernel_16bpc"));
     CHECK_CUDA(cuModuleGetFunction(&s->funcbpc8, module, "calculate_motion_score_kernel_8bpc"));
