@@ -20,17 +20,22 @@
 #include <pthread.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "dict.h"
+#include "libvmaf/model.h"
 #include "metadata_handler.h"
 #include "feature_collector.h"
 #include "feature_name.h"
 #include "feature_extractor.h"
 #include "libvmaf/libvmaf.h"
+#include "feature/alias.h"
 #include "log.h"
 #include "predict.h"
+
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
 
 static int aggregate_vector_init(AggregateVector *aggregate_vector)
 {
@@ -367,47 +372,62 @@ int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
 
     int res = 0;
 
-    VmafCallbackItem *metadata_iter = feature_collector->metadata ?
-                                      feature_collector->metadata->head : NULL;
-    while (metadata_iter) {
-        // Check current feature name is the same as the metadata feature name
-        if (!strcmp(metadata_iter->metadata_cfg.feature_name, feature_name)) {
+    VmafPredictModel *model_iter = feature_collector->models;
 
-            // Call the callback function with the metadata feature name
-            VmafMetadata data = {
-                .feature_name = metadata_iter->metadata_cfg.feature_name,
-                .picture_index = picture_index,
-                .score = score,
-            };
-            metadata_iter->metadata_cfg.callback(metadata_iter->metadata_cfg.data, &data);
-            // Move to the next metadata
-            goto next_metadata;
-        }
+while (model_iter) {
+    VmafModel *model = model_iter->model;
+    bool needs_computation = false;
 
-        VmafPredictModel *model_iter = feature_collector->models;
+    // Check if current score needs computation
+    pthread_mutex_unlock(&(feature_collector->lock));
+    res = vmaf_feature_collector_get_score(feature_collector, model->name, &score, picture_index);
+    needs_computation = (res != 0);
+    pthread_mutex_lock(&(feature_collector->lock));
 
-        // If metadata feature name is not the same as the current feature feature_name
-        // Check if metadata feature name is the predicted feature
-        while (model_iter) {
-            VmafModel *model = model_iter->model;
+    if (needs_computation) {
+        // Compute the current frame's score
+        pthread_mutex_unlock(&(feature_collector->lock));
+        res = vmaf_predict_score_at_index(model, feature_collector, picture_index, &score, true, true, 0);
+        pthread_mutex_lock(&(feature_collector->lock));
 
-            pthread_mutex_unlock(&(feature_collector->lock));
-            res = vmaf_feature_collector_get_score(feature_collector,
-                    model->name, &score, picture_index);
-            pthread_mutex_lock(&(feature_collector->lock));
+        if (!res) {
+            // Process all pending frames up to current index in order
+            unsigned process_index = feature_collector->metadata->last_seen_lowest_index;
+            feature_collector->metadata->last_seen_highest_index = MAX(picture_index, feature_collector->metadata->last_seen_highest_index);
 
-            if (res) {
+            while (process_index <= feature_collector->metadata->last_seen_highest_index) {
+                bool frame_ready = true;
+
+                // First check if this frame's score is ready
                 pthread_mutex_unlock(&(feature_collector->lock));
-                res |= vmaf_predict_score_at_index(model, feature_collector,
-                        picture_index, &score, true, true, 0);
+                if (vmaf_feature_collector_get_score(feature_collector, model->name, &score, process_index) != 0) {
+                    frame_ready = false;
+                }
                 pthread_mutex_lock(&(feature_collector->lock));
-            }
-            model_iter = model_iter->next;
-        }
 
-    next_metadata:
-        metadata_iter = metadata_iter->next;
+                if (!frame_ready) break;  // Stop at first unready frame
+
+                // Frame is ready, trigger callbacks for all features
+                for (unsigned j = 0; j < feature_collector->cnt; j++) {
+                    VmafMetadata data = {
+                        .feature_name = feature_collector->feature_vector[j]->name,
+                        .picture_index = process_index,
+                        .score = feature_collector->feature_vector[j]->score[process_index].value,
+                    };
+
+                    // Call all metadata callbacks
+                    feature_collector->metadata->head->metadata_cfg.callback(
+                        feature_collector->metadata->head->metadata_cfg.data, &data);
+                }
+
+                process_index++;
+                feature_collector->metadata->last_seen_lowest_index = process_index;
+            }
+        }
     }
+
+    model_iter = model_iter->next;
+}
 
 unlock:
     feature_collector->timer.end = clock();

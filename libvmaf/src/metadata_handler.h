@@ -23,13 +23,13 @@
 
 typedef struct VmafCallbackItem {
     VmafMetadataConfiguration metadata_cfg;
-    void (*callback)(void *, VmafMetadata *);
-    void *data;
     struct VmafCallbackItem *next;
 } VmafCallbackItem;
 
 typedef struct  VmafCallbackList{
     VmafCallbackItem *head;
+    unsigned last_seen_highest_index;
+    unsigned last_seen_lowest_index;
 } VmafCallbackList;
 
 int vmaf_metadata_init(VmafCallbackList **const metadata);

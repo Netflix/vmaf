@@ -744,24 +744,9 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     return err;
 }
 
-int vmaf_register_metadata_handler(VmafContext *vmaf, VmafMetadataConfiguration cfg, uint64_t flags)
+int vmaf_register_metadata_handler(VmafContext *vmaf, VmafMetadataConfiguration cfg)
 {
     if (!vmaf) return -EINVAL;
-
-    if (flags & VMAF_METADATA_FLAG_FEATURE) {
-        VmafFeatureExtractor *fex = vmaf_get_feature_extractor_by_name(cfg.feature_name);
-        if (!fex) return -EINVAL;
-        int err = 0;
-        for (unsigned i = 0; fex->provided_features[i] != NULL; i++) {
-            VmafMetadataConfiguration new_cfg = { 0 };
-            new_cfg.data = cfg.data;
-            new_cfg.callback = cfg.callback;
-            new_cfg.feature_name = strdup(fex->provided_features[i]);
-            err = vmaf_feature_collector_register_metadata(vmaf->feature_collector, new_cfg);
-            if (err) return err;
-        }
-        return 0;
-    }
 
     return vmaf_feature_collector_register_metadata(vmaf->feature_collector, cfg);
 }

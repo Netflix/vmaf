@@ -322,7 +322,7 @@ enum VmafMetadataFlags {
  * @return 0 on success, or < 0 (a negative errno code) on error.
  */
 
-int vmaf_register_metadata_handler(VmafContext *vmaf, VmafMetadataConfiguration cfg, uint64_t flags);
+int vmaf_register_metadata_handler(VmafContext *vmaf, VmafMetadataConfiguration cfg);
 
 /**
  * Get the number of registered metadata handlers.
