@@ -751,14 +751,6 @@ int vmaf_register_metadata_handler(VmafContext *vmaf, VmafMetadataConfiguration 
     return vmaf_feature_collector_register_metadata(vmaf->feature_collector, cfg);
 }
 
-int vmaf_get_metadata_handler_count(VmafContext *vmaf, unsigned *count)
-{
-    if (!vmaf) return -EINVAL;
-    if (!count) return -EINVAL;
-
-    return vmaf_feature_collector_get_metadata_count(vmaf->feature_collector, count);
-}
-
 int vmaf_feature_score_at_index(VmafContext *vmaf, const char *feature_name,
                                 double *score, unsigned index)
 {
