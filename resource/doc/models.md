@@ -10,7 +10,7 @@ This model is trained using subjective data collected in a lab experiment, based
 
 The raw subjective scores collected are then cleaned up using the MLE methodology, as described in [SUREAL](https://github.com/Netflix/sureal). The aggregate subjective scores after clean-up are mapped to a score in the VMAF score, where "bad" is mapped to roughly score 20, and "excellent" to 100.
 
-## Predict Quality on a Cellular Phone Screen
+## Predict Quality on a Cellular Phone Screen 
 
 The default VMAF model (`model/vmaf_v0.6.1.json`) also offers a custom model for cellular phone screen viewing. This model can be invoked by adding `--phone-model` option in the commands `run_vmaf`, `run_vmaf_in_batch`, and `run_testing` e.g.:
 
