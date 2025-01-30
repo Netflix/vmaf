@@ -855,17 +855,9 @@ static void integer_compute_adm_cuda(VmafFeatureExtractor *fex, AdmStateCuda *s,
             h = (h + 1) / 2;
 
             // This event ensures the input buffer is consumed
-            CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
-
             CHECK_CUDA(cuStreamWaitEvent(s->str, s->dis_event, CU_EVENT_WAIT_DEFAULT));
-            CHECK_CUDA(cuEventDestroy(s->dis_event));
-            CHECK_CUDA(cuEventCreate(&s->dis_event, CU_EVENT_DEFAULT));
-
             CHECK_CUDA(cuStreamWaitEvent(s->str, s->ref_event, CU_EVENT_WAIT_DEFAULT));
-            CHECK_CUDA(cuEventDestroy(s->ref_event));
-            CHECK_CUDA(cuEventCreate(&s->ref_event, CU_EVENT_DEFAULT));
-
-            CHECK_CUDA(cuCtxPopCurrent(NULL));
+            
             // consumes buf->ref_dwt2 , buf->dis_dwt2
             // produces buf->decouple_r , buf->decouple_a
             adm_decouple_device(s, buf, w, h, buf_stride, &p, s->str);
@@ -1154,12 +1146,7 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
     (void) dist_pic_90;
 
     // this is done to ensure that the CPU does not overwrite the buffer params for 'write_scores
-    CHECK_CUDA(cuStreamSynchronize(s->str));
-    // CHECK_CUDA(cuEventSynchronize(s->finished));
-    CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
-    CHECK_CUDA(cuEventDestroy(s->finished));
-    CHECK_CUDA(cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
-    CHECK_CUDA(cuCtxPopCurrent(NULL));
+    CHECK_CUDA(cuEventSynchronize(s->finished));
 
     // current implementation is limited by the 16-bit data pipeline, thus
     // cannot handle an angular frequency smaller than 1080p * 3H
