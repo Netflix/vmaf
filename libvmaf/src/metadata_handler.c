@@ -31,6 +31,8 @@ int vmaf_metadata_init(VmafCallbackList **const metadata)
     if (!metadata_s) goto fail;
 
     metadata_s->head = NULL;
+    metadata_s->last_seen_highest_index = 0;
+    metadata_s->last_seen_lowest_index = 0;
 
     return 0;
 

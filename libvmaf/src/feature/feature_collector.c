@@ -355,7 +355,7 @@ int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
 
     VmafPredictModel *model_iter = feature_collector->models;
 
-    while(model_iter) {
+    while (model_iter) {
         VmafModel *model = model_iter->model;
         bool needs_computation = false;
 
@@ -370,51 +370,44 @@ int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
             pthread_mutex_unlock(&(feature_collector->lock));
             res = vmaf_predict_score_at_index(model, feature_collector, picture_index, &score, true, true, 0);
             pthread_mutex_lock(&(feature_collector->lock));
-        }
-        model_iter = model_iter->next;
-    }
 
-    VmafCallbackItem *metadata_iter = feature_collector->metadata ?
-                       feature_collector->metadata->head : NULL;
+            if (!res) {
+                // Process all pending frames up to current index in order
+                unsigned process_index = feature_collector->metadata->last_seen_lowest_index;
+                feature_collector->metadata->last_seen_highest_index = MAX(picture_index, feature_collector->metadata->last_seen_highest_index);
 
-    while(metadata_iter) {
-        // Process all pending frames up to current index in order
-        unsigned process_index = metadata_iter->last_seen_lowest_index;
-        metadata_iter->last_seen_highest_index = MAX(picture_index, metadata_iter->last_seen_highest_index);
+                while (process_index <= feature_collector->metadata->last_seen_highest_index) {
+                    bool frame_ready = true;
 
-        while (process_index <= metadata_iter->last_seen_highest_index) {
-            bool frame_ready = true;
+                    // First check if this frame's score is ready
+                    pthread_mutex_unlock(&(feature_collector->lock));
+                    if (vmaf_feature_collector_get_score(feature_collector, model->name, &score, process_index) != 0) {
+                        frame_ready = false;
+                    }
+                    pthread_mutex_lock(&(feature_collector->lock));
 
-            VmafPredictModel *model_iter = feature_collector->models;
-            while(model_iter && frame_ready) {
-                // First check if this frame's score is ready
-                pthread_mutex_unlock(&(feature_collector->lock));
-                if (vmaf_feature_collector_get_score(feature_collector, model_iter->model->name, &score, process_index) != 0) {
-                    frame_ready = false;
+                    if (!frame_ready) break;  // Stop at first unready frame
+
+                    // Frame is ready, trigger callbacks for all features
+                    for (unsigned j = 0; j < feature_collector->cnt; j++) {
+                        VmafMetadata data = {
+                            .feature_name = feature_collector->feature_vector[j]->name,
+                            .picture_index = process_index,
+                            .score = feature_collector->feature_vector[j]->score[process_index].value,
+                        };
+
+                        // Call all metadata callbacks
+                        feature_collector->metadata->head->metadata_cfg.callback(
+                            feature_collector->metadata->head->metadata_cfg.data, &data);
+                    }
+
+                    process_index++;
+                    feature_collector->metadata->last_seen_lowest_index = process_index;
                 }
-                pthread_mutex_lock(&(feature_collector->lock));
-                model_iter = model_iter->next;
             }
-
-            if (!frame_ready) break;  // Stop at first unready frame
-
-            // Frame is ready, trigger callbacks for all features
-            for (unsigned j = 0; j < feature_collector->cnt; j++) {
-                VmafMetadata data = {
-                    .feature_name = feature_collector->feature_vector[j]->name,
-                    .picture_index = process_index,
-                    .score = feature_collector->feature_vector[j]->score[process_index].value,
-                };
-
-                // Call all metadata callbacks
-                metadata_iter->metadata_cfg.callback(
-                    metadata_iter->metadata_cfg.data, &data);
-            }
-
-            process_index++;
-            metadata_iter->last_seen_lowest_index = process_index;
         }
-        metadata_iter = metadata_iter->next;
+
+        model_iter = model_iter->next;
     }
 
 unlock:
