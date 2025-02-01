@@ -291,7 +291,6 @@ int vmaf_feature_collector_register_metadata(VmafFeatureCollector *feature_colle
                                              VmafMetadataConfiguration metadata_cfg)
 {
     if (!feature_collector) return -EINVAL;
-    if (!metadata_cfg.feature_name) return -EINVAL;
     if (!metadata_cfg.callback) return -EINVAL;
 
     VmafCallbackList *metadata = feature_collector->metadata;

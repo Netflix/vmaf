@@ -128,7 +128,6 @@ static char* test_propagate_metadata()
     };
 
     VmafMetadataConfiguration m = {
-        .feature_name = "vmaf",
         .callback = set_meta,
         .data     = &meta_data,
     };
@@ -167,7 +166,6 @@ static char* test_propagate_metadata()
     vmaf_feature_collector_destroy(feature_collector);
 
     m.data = NULL;
-    m.feature_name = "vmaf";
     err = vmaf_feature_collector_init(&feature_collector);
     mu_assert("problem during vmaf_feature_collector_init", !err);
 
@@ -183,7 +181,6 @@ static char* test_propagate_metadata()
     vmaf_feature_collector_destroy(feature_collector);
 
     m.callback = NULL;
-    m.feature_name = "vmaf";
     err = vmaf_feature_collector_init(&feature_collector);
     mu_assert("problem during vmaf_feature_collector_init", !err);
 
@@ -213,7 +210,6 @@ static char *test_propagate_metadata_non_monotonic()
     };
 
     VmafMetadataConfiguration m = {
-        .feature_name = strdup("vmaf"),
         .callback = test_non_monotonic_callback,
         .data = &meta_data,
     };
@@ -318,13 +314,11 @@ static char *test_multiple_callbacks()
     };
 
     VmafMetadataConfiguration m1 = {
-        .feature_name = "vmaf",
         .callback = multi_callback,
         .data = &cb_data1,
     };
 
     VmafMetadataConfiguration m2 = {
-        .feature_name = "vmaf",
         .callback = multi_callback,
         .data = &cb_data2,
     };
@@ -397,13 +391,11 @@ static char *test_multiple_callbacks_non_monotonic()
     };
 
     VmafMetadataConfiguration m1 = {
-        .feature_name = "vmaf",
         .callback = multi_callback,
         .data = &cb_data1,
     };
 
     VmafMetadataConfiguration m2 = {
-        .feature_name = "vmaf",
         .callback = multi_callback,
         .data = &cb_data2,
     };
