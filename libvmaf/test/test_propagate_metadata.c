@@ -16,14 +16,13 @@
  *
  */
 
+#include "dict.h"
 #include "test.h"
 #include "metadata_handler.h"
 #include "feature/feature_collector.h"
-#include "predict.h"
 #include "predict.c"
 
 #include <libvmaf/model.h>
-#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -202,13 +201,11 @@ static char *test_propagate_metadata_non_monotonic()
 {
     int err;
 
-    // Reset global counters
     g_callback_count = 0;
     for (int i = 0; i < 4; i++) {
         g_callback_order[i] = -1;
     }
 
-    // Setup dictionary to store callback results
     VmafDictionary *dict = NULL;
     MetaStruct meta_data = {
         .metadata = &dict,
@@ -221,7 +218,6 @@ static char *test_propagate_metadata_non_monotonic()
         .data = &meta_data,
     };
 
-    // Initialize feature collector
     VmafFeatureCollector *feature_collector;
     err = vmaf_feature_collector_init(&feature_collector);
     mu_assert("problem during vmaf_feature_collector_init", !err);
@@ -229,7 +225,6 @@ static char *test_propagate_metadata_non_monotonic()
     err = vmaf_feature_collector_register_metadata(feature_collector, m);
     mu_assert("problem during vmaf_feature_collector_register_metadata", !err);
 
-    // Load VMAF model
     VmafModel *model;
     VmafModelConfig cfg = {
         .name = "vmaf",
@@ -264,7 +259,6 @@ static char *test_propagate_metadata_non_monotonic()
         mu_assert("problem appending frame 1", !err);
     }
 
-    // Verify callback order is monotonic regardless of computation order
     mu_assert("Frame 0 callback not first", g_callback_order[0] == 0);
     mu_assert("Frame 1 callback not second", g_callback_order[1] == 1);
     mu_assert("Frame 2 callback not third", g_callback_order[2] == 2);
@@ -283,7 +277,6 @@ static char *test_propagate_metadata_non_monotonic()
     return NULL;
 }
 
-// Structure to track callback invocations for multiple callbacks
 typedef struct {
     int callback_id;
     int call_count;
@@ -302,8 +295,9 @@ static void multi_callback(void *data, VmafMetadata *metadata)
              metadata->picture_index);
     snprintf(value, sizeof(value), "%f", metadata->score);
     cb_data->call_count++;
-    vmaf_dictionary_set(cb_data->metadata, key, value, 0);
+    vmaf_dictionary_set(cb_data->metadata, key, value, 1);
 }
+
 
 static char *test_multiple_callbacks()
 {
@@ -311,7 +305,6 @@ static char *test_multiple_callbacks()
     VmafDictionary *dict1 = NULL;
     VmafDictionary *dict2 = NULL;
 
-    // Setup two different callback data structures
     MultiCallbackData cb_data1 = {
         .callback_id = 1,
         .call_count = 0,
@@ -324,7 +317,6 @@ static char *test_multiple_callbacks()
         .metadata = &dict2
     };
 
-    // Register two different callbacks
     VmafMetadataConfiguration m1 = {
         .feature_name = "vmaf",
         .callback = multi_callback,
@@ -476,6 +468,184 @@ static char *test_multiple_callbacks_non_monotonic()
     return NULL;
 }
 
+
+static char *test_multiple_models_metadata()
+{
+    int err;
+    VmafDictionary *dict = NULL;
+
+    // Setup callback data
+    MultiCallbackData cb_data = {
+        .callback_id = 1,
+        .call_count = 0,
+        .metadata = &dict
+    };
+
+    VmafMetadataConfiguration m = {
+        .callback = multi_callback,
+        .data = &cb_data,
+    };
+
+    VmafFeatureCollector *feature_collector;
+    err = vmaf_feature_collector_init(&feature_collector);
+    mu_assert("problem during feature collector init", !err);
+
+    err = vmaf_feature_collector_register_metadata(feature_collector, m);
+    mu_assert("problem registering metadata callback", !err);
+
+    VmafModel *model1;
+    VmafModelConfig cfg1 = {
+        .name = "vmaf_0",
+        .flags = VMAF_MODEL_FLAGS_DEFAULT,
+    };
+    err = vmaf_model_load(&model1, &cfg1, "vmaf_v0.6.1");
+    mu_assert("problem loading first model", !err);
+
+    err = vmaf_feature_collector_mount_model(feature_collector, model1);
+    mu_assert("problem mounting first model", !err);
+
+    VmafModel *model2;
+    VmafModelConfig cfg2 = {
+        .name = "vmaf_1",
+        .flags = VMAF_MODEL_FLAGS_DEFAULT,
+    };
+    err = vmaf_model_load(&model2, &cfg2, "vmaf_v0.6.1");
+    mu_assert("problem loading second model", !err);
+
+    err = vmaf_feature_collector_mount_model(feature_collector, model2);
+    mu_assert("problem mounting second model", !err);
+
+    for (unsigned frame = 0; frame < 4; frame++) {
+        for (unsigned i = 0; i < model1->n_features; i++) {
+            err = vmaf_feature_collector_append(feature_collector,
+                                              model1->feature[i].name,
+                                              60.0 + frame * 10.0,
+                                              frame);
+            mu_assert("problem appending features", !err);
+        }
+    }
+
+    const char *model_names[] = {"vmaf_0", "vmaf_1"};
+
+    for (unsigned frame = 0; frame < 4; frame++) {
+        for (unsigned i = 0; i < 2; i++) {
+            char key[128];
+            snprintf(key, sizeof(key), "cb1_%s_%d", model_names[i], frame);
+            VmafDictionaryEntry *e = vmaf_dictionary_get(&dict, key, 0);
+            mu_assert("missing model score callback", e != NULL);
+        }
+    }
+
+    vmaf_feature_collector_destroy(feature_collector);
+    vmaf_model_destroy(model1);
+    vmaf_model_destroy(model2);
+    return NULL;
+}
+
+static char *test_multiple_models_multiple_metadata_configs()
+{
+    int err;
+    VmafDictionary *dict1 = NULL;
+    VmafDictionary *dict2 = NULL;
+    VmafDictionary *dict3 = NULL;
+
+    MultiCallbackData cb_data1 = {
+        .callback_id = 1,
+        .call_count = 0,
+        .metadata = &dict1
+    };
+
+    MultiCallbackData cb_data2 = {
+        .callback_id = 2,
+        .call_count = 0,
+        .metadata = &dict2
+    };
+
+    MultiCallbackData cb_data3 = {
+        .callback_id = 3,
+        .call_count = 0,
+        .metadata = &dict3
+    };
+
+    VmafMetadataConfiguration m1 = {
+        .callback = multi_callback,
+        .data = &cb_data1,
+    };
+
+    VmafMetadataConfiguration m2 = {
+        .callback = multi_callback,
+        .data = &cb_data2,
+    };
+
+    VmafMetadataConfiguration m3 = {
+        .callback = multi_callback,
+        .data = &cb_data3,
+    };
+
+    VmafFeatureCollector *feature_collector;
+    err = vmaf_feature_collector_init(&feature_collector);
+    mu_assert("problem during init", !err);
+
+    err = vmaf_feature_collector_register_metadata(feature_collector, m1);
+    mu_assert("problem registering first metadata config", !err);
+
+    err = vmaf_feature_collector_register_metadata(feature_collector, m2);
+    mu_assert("problem registering second metadata config", !err);
+
+    err = vmaf_feature_collector_register_metadata(feature_collector, m3);
+    mu_assert("problem registering third metadata config", !err);
+
+    VmafModel *models[3];
+    const char *names[] = {"vmaf-0", "vmaf-1", "vmaf-2"};
+
+    for (int i = 0; i < 3; i++) {
+        VmafModelConfig cfg = {
+            .name = names[i],
+            .flags = VMAF_MODEL_FLAGS_DEFAULT,
+        };
+        err = vmaf_model_load(&models[i], &cfg, "vmaf_v0.6.1");
+        mu_assert("problem loading model", !err);
+
+        err = vmaf_feature_collector_mount_model(feature_collector, models[i]);
+        mu_assert("problem mounting model", !err);
+    }
+
+    for (unsigned frame = 0; frame < 4; frame++) {
+        for (unsigned i = 0; i < models[0]->n_features; i++) {
+            err = vmaf_feature_collector_append(feature_collector,
+                                              models[0]->feature[i].name,
+                                              60.0,
+                                              frame);
+            mu_assert("problem appending features", !err);
+        }
+    }
+
+    VmafDictionary *dicts[] = {dict1, dict2, dict3};
+    for (unsigned frame = 0; frame < 4; frame++) {
+        for (int model = 0; model < 3; model++) {
+            char key[128];
+            snprintf(key, sizeof(key), "cb%d_%s_%d", model + 1, names[model], frame);
+            printf("key: %s %p %p\n", key, &dicts[model], dicts[model]);
+            VmafDictionaryEntry *e = vmaf_dictionary_get(&dicts[model], key, 0);
+            printf("e: %p\n", e);
+            mu_assert("missing metadata for model", e != NULL);
+        }
+    }
+
+    mu_assert("callback count mismatch for first config",
+              cb_data1.call_count > 0);
+    mu_assert("callback count mismatch for second config",
+              cb_data2.call_count > 0);
+    mu_assert("callback count mismatch for third config",
+              cb_data3.call_count > 0);
+
+    for (int i = 0; i < 3; i++) {
+        vmaf_model_destroy(models[i]);
+    }
+    vmaf_feature_collector_destroy(feature_collector);
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_propagate_metadata_init);
@@ -485,5 +655,7 @@ char *run_tests()
     mu_run_test(test_propagate_metadata_non_monotonic);
     mu_run_test(test_multiple_callbacks);
     mu_run_test(test_multiple_callbacks_non_monotonic);
+    mu_run_test(test_multiple_models_metadata);
+    mu_run_test(test_multiple_models_multiple_metadata_configs);
     return NULL;
 }

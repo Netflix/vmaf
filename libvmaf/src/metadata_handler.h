@@ -28,6 +28,7 @@ typedef struct VmafCallbackItem {
 
 typedef struct  VmafCallbackList{
     VmafCallbackItem *head;
+    unsigned cnt;
 } VmafCallbackList;
 
 int vmaf_metadata_init(VmafCallbackList **const metadata);
