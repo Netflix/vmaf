@@ -29,21 +29,37 @@ elif host_machine.system() == 'darwin'
 endif
 
 # Header checks
-stdatomic_dependency = []
-if not cc.check_header('stdatomic.h')
-    if cc.get_id() == 'msvc'
-        # we have a custom replacement for MSVC
-        stdatomic_dependency = declare_dependency(
-            include_directories : include_directories('src/compat/msvc'),
-        )
-    elif cc.compiles('''int main() { int v = 0; return __atomic_fetch_add(&v, 1, __ATOMIC_SEQ_CST); }''',
-                     name : 'GCC-style atomics', args : test_args)
-        stdatomic_dependency = declare_dependency(
-            include_directories : include_directories('src/compat/gcc'),
-        )
+if cc.has_header('stdatomic.h', args: test_args)
+    if cc.check_header('stdatomic.h', args: test_args)
+        stdatomic_dependency = declare_dependency(compile_args: '-DHAVE_STDATOMIC_H')
+    elif cc.get_id() == 'msvc'
+        # If stdatomic.h exists but isn't usable under MSVC it may be because recent (VS2022) MSVC
+        # has added support for lock-free atomics where (sizeof(T) <= sizeof(intptr_t))
+        # Note that __STDC_NO_ATOMICS__ remains defined due to lack of locking atomics
+        test_args += '/experimental:c11atomics'
+
+        if not cc.check_header('stdatomic.h', args: test_args)
+            error('stdatomic.h exists but could not be made usable under MSVC with /experimental:c11atomics')
+        endif
+
+        add_project_arguments(['/experimental:c11atomics', '-DHAVE_STDATOMIC_H'], language: 'c')
     else
-        error('Atomics not supported')
+        error('stdatomic.h was found but is not usable for some reason; check whether the compiler needs extension flags')
     endif
+elif cc.get_id() == 'msvc'
+    # we have a custom replacement for MSVC before /experimental:c11atomics was added
+    stdatomic_dependency = declare_dependency(
+        compile_args : '-DHAVE_STDATOMIC_H',
+        include_directories : include_directories('src/compat/msvc'),
+    )
+elif cc.compiles('''int main() { int v = 0; return __atomic_fetch_add(&v, 1, __ATOMIC_SEQ_CST); }''',
+                 name : 'GCC-style atomics', args : test_args)
+    stdatomic_dependency = declare_dependency(
+        compile_args : '-DHAVE_STDATOMIC_H',
+        include_directories : include_directories('src/compat/gcc'),
+    )
+else
+    error('Atomics not supported')
 endif
 
 subdir('include')

@@ -20,7 +20,11 @@
 #define __VMAF_FRAME_SYNC_H__
 
 #include <pthread.h>
+#ifdef HAVE_STDATOMIC_H
 #include <stdatomic.h>
+#else
+#error "Meson target is missing stdatomic_depedency"
+#endif
 #include <stdint.h>
 #include <stdlib.h>
 #include "libvmaf/libvmaf.h"

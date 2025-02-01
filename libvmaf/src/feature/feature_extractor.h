@@ -19,7 +19,11 @@
 #ifndef __VMAF_FEATURE_EXTRACTOR_H__
 #define __VMAF_FEATURE_EXTRACTOR_H__
 
+#ifdef HAVE_STDATOMIC_H
 #include <stdatomic.h>
+#else
+#error "Meson target is missing stdatomic_depedency"
+#endif
 #include <stdint.h>
 #include <stdlib.h>
 
