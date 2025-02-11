@@ -159,27 +159,27 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
 
     s->buf.ref = data; data += frame_size;
     s->buf.dis = data; data += frame_size;
-    s->buf.mu1 = data; data += h * s->buf.stride_16;
-    s->buf.mu2 = data; data += h * s->buf.stride_16;
-    s->buf.mu1_32 = data; data += h * s->buf.stride_32;
-    s->buf.mu2_32 = data; data += h * s->buf.stride_32;
-    s->buf.ref_sq = data; data += h * s->buf.stride_32;
-    s->buf.dis_sq = data; data += h * s->buf.stride_32;
-    s->buf.ref_dis = data; data += h * s->buf.stride_32;
-    s->buf.tmp.mu1 = data; data += s->buf.stride_tmp * h;
-    s->buf.tmp.mu2 = data; data += s->buf.stride_tmp * h;
-    s->buf.tmp.ref = data; data += s->buf.stride_tmp * h;
-    s->buf.tmp.dis = data; data += s->buf.stride_tmp * h;
-    s->buf.tmp.ref_dis = data; data += s->buf.stride_tmp * h;
-    s->buf.tmp.ref_convol = data; data += s->buf.stride_tmp  * h;
-    s->buf.tmp.dis_convol = data; data += s->buf.stride_tmp  * h;
-    s->buf.tmp.padding = data; data += s->buf.stride_tmp  * h;
+    s->buf.mu1 = (uint16_t*)data; data += h * s->buf.stride_16;
+    s->buf.mu2 = (uint16_t*)data; data += h * s->buf.stride_16;
+    s->buf.mu1_32 = (uint32_t*)data; data += h * s->buf.stride_32;
+    s->buf.mu2_32 = (uint32_t*)data; data += h * s->buf.stride_32;
+    s->buf.ref_sq = (uint32_t*)data; data += h * s->buf.stride_32;
+    s->buf.dis_sq = (uint32_t*)data; data += h * s->buf.stride_32;
+    s->buf.ref_dis = (uint32_t*)data; data += h * s->buf.stride_32;
+    s->buf.tmp.mu1 = (uint32_t*)data; data += s->buf.stride_tmp * h;
+    s->buf.tmp.mu2 = (uint32_t*)data; data += s->buf.stride_tmp * h;
+    s->buf.tmp.ref = (uint32_t*)data; data += s->buf.stride_tmp * h;
+    s->buf.tmp.dis = (uint32_t*)data; data += s->buf.stride_tmp * h;
+    s->buf.tmp.ref_dis = (uint32_t*)data; data += s->buf.stride_tmp * h;
+    s->buf.tmp.ref_convol = (uint32_t*)data; data += s->buf.stride_tmp  * h;
+    s->buf.tmp.dis_convol = (uint32_t*)data; data += s->buf.stride_tmp  * h;
+    s->buf.tmp.padding = (uint32_t*)data; data += s->buf.stride_tmp  * h;
 
     CUdeviceptr data_accum;
     ret = vmaf_cuda_buffer_get_dptr(s->buf.accum_data, &data_accum);
     if (ret) goto free_ref;
 
-    s->buf.accum = data_accum;
+    s->buf.accum = (uint64_t*)data_accum;
 
     s->buf.cpu_param_buf = malloc(sizeof(write_score_parameters_vif));
     write_score_parameters_vif *data_p = s->buf.cpu_param_buf;
@@ -496,7 +496,7 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
     write_score_parameters_vif *data = s->buf.cpu_param_buf;
     data->feature_collector = feature_collector;
     data->index = index;
-    CHECK_CUDA(cuLaunchHostFunc(s->str, write_scores, data));
+    CHECK_CUDA(cuLaunchHostFunc(s->str, (CUhostFn)write_scores, data));
     return 0;
 }
 

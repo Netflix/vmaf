@@ -173,7 +173,7 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     if (ret) goto free_ref;
     ret |= vmaf_cuda_buffer_alloc(fex->cu_state, &s->sad, sizeof(uint64_t));
     if (ret) goto free_ref;
-    ret |= vmaf_cuda_buffer_host_alloc(fex->cu_state, &s->sad_host, sizeof(uint64_t));
+    ret |= vmaf_cuda_buffer_host_alloc(fex->cu_state, (void**)&s->sad_host, sizeof(uint64_t));
     if (ret) goto free_ref;
 
     s->feature_name_dict =
@@ -315,7 +315,7 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
     params->h = ref_pic->h[0];
     params->w = ref_pic->w[0];
     params->index = index;
-    CHECK_CUDA(cuLaunchHostFunc(s->host_stream, write_scores, s->write_score_parameters));
+    CHECK_CUDA(cuLaunchHostFunc(s->host_stream, (CUhostFn)write_scores, s->write_score_parameters));
     return 0;
 }
 
