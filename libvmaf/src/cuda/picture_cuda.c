@@ -22,6 +22,7 @@
 #include "picture_cuda.h"
 #include "common.h"
 #include "log.h"
+#include "ref.h"
 
 #include <cuda.h>
 #include <errno.h>
@@ -41,7 +42,7 @@ int vmaf_cuda_picture_download_async(VmafPicture *cuda_pic, VmafPicture *pic,
 
     VmafPicturePrivate *cuda_priv = cuda_pic->priv;
     for (int i = 0; i < 3; i++) {
-        m.srcDevice = cuda_pic->data[i];
+        m.srcDevice = (CUdeviceptr)cuda_pic->data[i];
         m.srcPitch = cuda_pic->stride[i];
         m.dstHost = pic->data[i];
         m.dstPitch = pic->stride[i];
@@ -68,7 +69,7 @@ int vmaf_cuda_picture_upload_async(VmafPicture *cuda_pic,
     for (int i = 0; i < 3; i++) {
         m.srcHost = pic->data[i];
         m.srcPitch = pic->stride[i];
-        m.dstDevice = cuda_pic->data[i];
+        m.dstDevice = (CUdeviceptr)cuda_pic->data[i];
         m.dstPitch = cuda_pic->stride[i];
         m.WidthInBytes = cuda_pic->w[i] * ((pic->bpc + 7) / 8);
         m.Height = cuda_pic->h[i];
@@ -84,6 +85,7 @@ int vmaf_cuda_picture_upload_async(VmafPicture *cuda_pic,
 
 static int default_release_pinned_picture(VmafPicture *pic, void *cookie)
 {
+    (void)cookie;
     if (!pic) return -EINVAL;
 
     VmafPicturePrivate* priv = pic->priv;
@@ -197,7 +199,7 @@ int vmaf_cuda_picture_alloc(VmafPicture *pic, void *cookie)
             pic->data[1] = pic->data[2] = NULL;
             break;
         }
-        CHECK_CUDA(cuMemAllocPitch(&pic->data[i], &pic->stride[i],
+        CHECK_CUDA(cuMemAllocPitch((CUdeviceptr*)&pic->data[i], &pic->stride[i],
                     pic->w[i] * ((pic->bpc + 7) / 8), pic->h[i],
                     8 << hbd));
     }
@@ -223,7 +225,7 @@ int vmaf_cuda_picture_free(VmafPicture *pic, void *cookie)
 
     for (int i = 0; i < 3; i++) {
 	    if (pic->data[i])
-		    CHECK_CUDA(cuMemFreeAsync(pic->data[i], priv->cuda.str));
+		    CHECK_CUDA(cuMemFreeAsync((CUdeviceptr)pic->data[i], priv->cuda.str));
     }
 
     CHECK_CUDA(cuEventDestroy(priv->cuda.finished));
