@@ -8,7 +8,7 @@
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
-static FORCE_INLINE inline void
+static FORCE_INLINE void
 pad_top_and_bottom(VifBuffer buf, unsigned h, int fwidth)
 {
     const unsigned fwidth_half = fwidth / 2;
@@ -27,7 +27,7 @@ pad_top_and_bottom(VifBuffer buf, unsigned h, int fwidth)
     }
 }
 
-static FORCE_INLINE inline void
+static FORCE_INLINE void
 decimate_and_pad(VifBuffer buf, unsigned w, unsigned h, int scale)
 {
     uint16_t *ref = buf.ref;

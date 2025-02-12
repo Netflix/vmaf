@@ -24,7 +24,7 @@
 #include "macros.h"
 #include <stdbool.h>
 
-FORCE_INLINE inline float convolution_edge_s(bool horizontal, const float *filter, int filter_width, const float *src, int width, int height, int stride, int i, int j)
+FORCE_INLINE float convolution_edge_s(bool horizontal, const float *filter, int filter_width, const float *src, int width, int height, int stride, int i, int j)
 {
 	int radius = filter_width / 2;
 
@@ -51,7 +51,7 @@ FORCE_INLINE inline float convolution_edge_s(bool horizontal, const float *filte
 	return accum;
 }
 
-FORCE_INLINE inline float convolution_edge_sq_s(bool horizontal, const float *filter, int filter_width, const float *src, int width, int height, int stride, int i, int j)
+FORCE_INLINE float convolution_edge_sq_s(bool horizontal, const float *filter, int filter_width, const float *src, int width, int height, int stride, int i, int j)
 {
 	int radius = filter_width / 2;
 
@@ -80,7 +80,7 @@ FORCE_INLINE inline float convolution_edge_sq_s(bool horizontal, const float *fi
 	return accum;
 }
 
-FORCE_INLINE inline float convolution_edge_xy_s(bool horizontal, const float *filter, int filter_width, const float *src1, const float *src2, int width, int height, int stride1, int stride2, int i, int j)
+FORCE_INLINE float convolution_edge_xy_s(bool horizontal, const float *filter, int filter_width, const float *src1, const float *src2, int width, int height, int stride1, int stride2, int i, int j)
 {
 	int radius = filter_width / 2;
 
