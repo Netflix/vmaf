@@ -104,7 +104,7 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
 
     // make this static
     CUmodule filter1d_module;
-    CHECK_CUDA(cuModuleLoadData(&filter1d_module, src_filter1d_ptx));
+    CHECK_CUDA(cuModuleLoadData(&filter1d_module, filter1d_ptx));
     CHECK_CUDA(cuModuleGetFunction(&s->func_filter1d_8_vertical_kernel_uint32_t_17_9,
                 filter1d_module, "filter1d_8_vertical_kernel_uint32_t_17_9"));
     CHECK_CUDA(cuModuleGetFunction(&s->func_filter1d_8_horizontal_kernel_2_17_9,
