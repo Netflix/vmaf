@@ -366,7 +366,13 @@ if is_cuda_enabled
     common_cuda_objects += cuda_static_lib.extract_all_objects()
 endif
 
-thread_lib = dependency('threads')
+if host_machine.system() == 'windows' and cc.get_id() == 'msvc'
+  # We require pthreads-win32, not native threading via kernel32.dll, which is what dependency('threads') gives us.
+  # The dirs must be added to %LIB% and %INCLUDE%
+  thread_lib = cc.find_library('pthread_static_lib', has_headers: ['pthread.h'], required : true)
+else
+  thread_lib = dependency('threads')
+endif
 math_lib = cc.find_library('m', required : false)
 
 vmaf_include = include_directories(
