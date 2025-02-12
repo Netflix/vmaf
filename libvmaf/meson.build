@@ -22,10 +22,10 @@ libvmaf_inc = include_directories(['include'])
 test_args = []
 if host_machine.system() == 'linux' or host_machine.system() == 'windows'
     test_args += '-D_GNU_SOURCE'
-    add_project_arguments('-D_GNU_SOURCE', language: 'c')
+    add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
 elif host_machine.system() == 'darwin'
     test_args += '-D_DARWIN_C_SOURCE'
-    add_project_arguments('-D_DARWIN_C_SOURCE', language: 'c')
+    add_project_arguments('-D_DARWIN_C_SOURCE', language: ['c', 'cpp'])
 endif
 
 # Header checks
