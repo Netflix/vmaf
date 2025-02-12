@@ -20,9 +20,11 @@
 #define MACROS_H_
 
 #if defined(_MSC_VER)
-#define FORCE_INLINE	__forceinline
+#define FORCE_INLINE __forceinline
+#define UNUSED_FUNCTION /**/
 #else
 #define FORCE_INLINE __attribute__((always_inline))
+#define UNUSED_FUNCTION __attribute__((unused))
 #endif
 #define RESTRICT __restrict
 
