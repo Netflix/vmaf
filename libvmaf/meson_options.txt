@@ -37,3 +37,9 @@ option('enable_nvtx',
     type: 'boolean',
     value: false,
     description: 'Enable NVTX range support')
+
+option('enable_sast_resizer',
+       type: 'boolean',
+       value: false,
+       description: 'Compile the SAST resizer from FUNQUE into the library')
+
