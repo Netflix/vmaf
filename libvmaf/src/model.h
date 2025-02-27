@@ -83,6 +83,16 @@ typedef struct VmafModelCollection {
     const char *name;
 } VmafModelCollection;
 
+/**
+ * Iterate through all built in vmaf models
+ * 
+ * @param prev previous model. NULL to get the first model
+ * 
+ * @return next model or NULL after the last model
+ * 
+*/
+const VmafModelDescriptor *vmaf_model_descriptor_next(const VmafModelDescriptor *prev);
+
 char *vmaf_model_generate_name(VmafModelConfig *cfg);
 
 int vmaf_model_collection_append(VmafModelCollection **model_collection,
