@@ -151,7 +151,7 @@ if built_in_models_enabled
                     output : model_file,
                     copy: true
                   ),
-                  command : [xxd, '--include', '@INPUT@', '@OUTPUT@'],
+                  command : [xxd, '-i', '@INPUT@', '@OUTPUT@'],
             )
         endforeach
 
@@ -340,7 +340,7 @@ if is_cuda_enabled
             build_by_default: true,
             output : ['@PLAINNAME@.c'],
             input : _ptx,
-            command : [xxd_exe, '--include','@INPUT@', '@OUTPUT@'],
+            command : [xxd_exe, '-i','@INPUT@', '@OUTPUT@'],
         )
         ptx_arrays += t
     endforeach
