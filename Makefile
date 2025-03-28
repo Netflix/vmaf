@@ -6,7 +6,7 @@ VENV := .venv
 VIRTUAL_ENV_PATH := $(VENV)/bin
 
 # Build tools configured in the virtual environment
-PYTHON_INTERPRETER := python3.10
+PYTHON_INTERPRETER := python3.12
 VENV_PIP := $(VIRTUAL_ENV_PATH)/pip
 VENV_PYTHON := $(VIRTUAL_ENV_PATH)/python
 MESON := $(VIRTUAL_ENV_PATH)/meson
