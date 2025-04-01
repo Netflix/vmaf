@@ -18,7 +18,9 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <stdlib.h>
+#ifdef _WIN32
+#include <synchapi.h> // Sleep()
+#endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
