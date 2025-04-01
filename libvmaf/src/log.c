@@ -19,7 +19,7 @@
 #include "libvmaf/libvmaf.h"
 
 #include <stdarg.h>
-#ifdef _WIN32
+#ifdef HAVE_CORECRT_IO_H
 #include <corecrt_io.h> // isatty()
 #endif
 #if HAVE_UNISTD_H

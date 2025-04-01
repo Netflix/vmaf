@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#ifdef _WIN32
+#ifdef HAVE_CORECRT_IO_H
 #include <corecrt_io.h> // isatty()
 #endif
 #ifdef HAVE_MALLOC_H
