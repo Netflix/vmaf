@@ -67,7 +67,7 @@ if cc.has_type('struct timespec', prefix: '#include <time.h>')
     # Used by pthreads-win32 <pthread.h>
     add_project_arguments('-DHAVE_STRUCT_TIMESPEC', language: ['c', 'cpp'])
 endif
-if cc.has_type('mode_t', prefix: 'include <sys/types.h>')
+if cc.has_type('mode_t', prefix: '#include <sys/types.h>')
     add_project_arguments('-DHAVE_MODE_T', language: ['c', 'cpp'])
 endif
 
