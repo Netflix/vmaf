@@ -375,7 +375,7 @@ static char *test_model_set_flags()
 static char* test_version_next(){
     void* next = NULL;
     char* version = NULL;
-    while(next = vmaf_version_next(next, &version)){
+    while(next = vmaf_model_version_next(next, &version)){
         VmafBuiltInModel* m = next;
         mu_assert("Model versions must match",m->version == version);
     }

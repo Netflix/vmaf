@@ -322,7 +322,7 @@ exit:
     return err;
 }
 
-const void* vmaf_version_next(const void* prev, const char** name){
+const void* vmaf_model_version_next(const void* prev, const char** name){
     VmafBuiltInModel* prev_model = prev;
     VmafBuiltInModel* out_model = NULL;
     if (!prev_model){
