@@ -371,6 +371,17 @@ static char *test_model_set_flags()
     return NULL;
 }
 
+
+static char* test_version_next(){
+    void* next = NULL;
+    char* version = NULL;
+    while(next = vmaf_version_next(next, &version)){
+        VmafBuiltInModel* m = next;
+        mu_assert("Model versions must match",m->version == version);
+    }
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_json_model);
@@ -382,5 +393,6 @@ char *run_tests()
     mu_run_test(test_model_check_default_behavior_set_flags);
     mu_run_test(test_model_set_flags);
     mu_run_test(test_model_feature);
+    mu_run_test(test_version_next);
     return NULL;
 }
