@@ -91,7 +91,7 @@ void vmaf_model_collection_destroy(VmafModelCollection *model_collection);
 /// @param prev previous model. NULL to get the first model
 /// @param name OUT var - name of next model. If last model, this function does not modify name
 /// @return next model or NULL after the last model
-const void* vmaf_version_next(const void* prev, const char** name);
+const void* vmaf_model_version_next(const void* prev, const char** name);
 
 #ifdef __cplusplus
 }
