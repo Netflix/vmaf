@@ -322,7 +322,7 @@ exit:
     return err;
 }
 
-const void* vmaf_model_version_next(const void* prev, const char** name){
+const void* vmaf_model_version_next(const void* prev, const char** version){
     VmafBuiltInModel* prev_model = prev;
     VmafBuiltInModel* out_model = NULL;
     if (!prev_model){
@@ -331,8 +331,8 @@ const void* vmaf_model_version_next(const void* prev, const char** name){
     if(prev_model - built_in_models < BUILT_IN_MODEL_CNT){
         out_model = prev_model + 1;
     }
-    if (name && out_model){
-        *name = out_model->version;
+    if (version && out_model){
+        *version = out_model->version;
     }
     return out_model;
 }
