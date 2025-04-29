@@ -89,7 +89,7 @@ if is_asm_enabled
         cdata_asm.set10('PIC', true)
         config_asm_target = configure_file(output: 'config.asm', output_format: 'nasm', configuration: cdata_asm)
 
-        if host_machine.system() == 'windows'
+        if host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
             nasm_format = 'win'
         elif host_machine.system() == 'darwin'
             nasm_format = 'macho'
@@ -151,7 +151,7 @@ if built_in_models_enabled
                     output : model_file,
                     copy: true
                   ),
-                  command : [xxd, '--include', '@INPUT@', '@OUTPUT@'],
+                  command : [xxd, '-i', '@INPUT@', '@OUTPUT@'],
             )
         endforeach
 

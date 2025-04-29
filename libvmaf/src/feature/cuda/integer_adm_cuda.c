@@ -838,14 +838,14 @@ static void integer_compute_adm_cuda(VmafFeatureExtractor *fex, AdmStateCuda *s,
             // consumes reference picture
             // produces buf->ref_dwt2, buf->dis_dwt2
             if (ref_pic->bpc == 8) {
-                dwt2_8_device(s, (const uint8_t*)ref_pic->data[0], &buf->ref_dwt2, buf->i4_ref_dwt2, (int16_t*)buf->tmp_ref->data, buf, w, h, curr_ref_stride, buf_stride, &p, vmaf_cuda_picture_get_stream(ref_pic));
+                dwt2_8_device(s, (const uint8_t*)ref_pic->data[0], &buf->ref_dwt2, buf->i4_ref_dwt2, (short2*)buf->tmp_ref->data, buf, w, h, curr_ref_stride, buf_stride, &p, vmaf_cuda_picture_get_stream(ref_pic));
 
-                dwt2_8_device(s, (const uint8_t*)dis_pic->data[0], &buf->dis_dwt2, buf->i4_dis_dwt2, (int16_t*)buf->tmp_dis->data, buf, w, h, curr_dis_stride, buf_stride, &p,  vmaf_cuda_picture_get_stream(dis_pic));
+                dwt2_8_device(s, (const uint8_t*)dis_pic->data[0], &buf->dis_dwt2, buf->i4_dis_dwt2, (short2*)buf->tmp_dis->data, buf, w, h, curr_dis_stride, buf_stride, &p,  vmaf_cuda_picture_get_stream(dis_pic));
             }
             else {
-                adm_dwt2_16_device(s,(uint16_t*)ref_pic->data[0], &buf->ref_dwt2, buf->i4_ref_dwt2, (int16_t*)buf->tmp_ref->data, buf, w, h, curr_ref_stride, buf_stride, ref_pic->bpc, &p,  vmaf_cuda_picture_get_stream(ref_pic));
+                adm_dwt2_16_device(s,(uint16_t*)ref_pic->data[0], &buf->ref_dwt2, buf->i4_ref_dwt2, (short2*)buf->tmp_ref->data, buf, w, h, curr_ref_stride, buf_stride, ref_pic->bpc, &p,  vmaf_cuda_picture_get_stream(ref_pic));
 
-                adm_dwt2_16_device(s,(uint16_t*)dis_pic->data[0], &buf->dis_dwt2, buf->i4_dis_dwt2, (int16_t*)buf->tmp_dis->data, buf, w, h, curr_dis_stride, buf_stride, dis_pic->bpc, &p,  vmaf_cuda_picture_get_stream(dis_pic));
+                adm_dwt2_16_device(s,(uint16_t*)dis_pic->data[0], &buf->dis_dwt2, buf->i4_dis_dwt2, (short2*)buf->tmp_dis->data, buf, w, h, curr_dis_stride, buf_stride, dis_pic->bpc, &p,  vmaf_cuda_picture_get_stream(dis_pic));
 
             }
             CHECK_CUDA(cuEventRecord(s->ref_event,  vmaf_cuda_picture_get_stream(ref_pic)));

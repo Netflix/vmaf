@@ -329,7 +329,7 @@ static const float dwt_7_9_basis_function_amplitudes[6][4] = {
  * lambda = 0 (finest scale), 1, 2, 3 (coarsest scale);
  * theta = 0 (ll), 1 (lh - vertical), 2 (hh - diagonal), 3(hl - horizontal).
  */
-static FORCE_INLINE inline float dwt_quant_step(const struct dwt_model_params *params,
+static FORCE_INLINE float dwt_quant_step(const struct dwt_model_params *params,
         int lambda, int theta, double adm_norm_view_dist, int adm_ref_display_height)
 {
     // Formula (1), page 1165 - display visual resolution (DVR), in pixels/degree of visual angle. This should be 56.55

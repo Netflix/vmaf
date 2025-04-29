@@ -49,7 +49,7 @@ static char *init_dwt_band(adm_dwt_band_t *band, char *data_top, size_t buf_sz_o
     return data_top;
 }
 
-__attribute__((unused))
+UNUSED_FUNCTION
 static char *init_dwt_band_d(adm_dwt_band_t_d *band, char *data_top, size_t buf_sz_one)
 {
     band->band_a = (double *)data_top; data_top += buf_sz_one;
