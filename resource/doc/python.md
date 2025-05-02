@@ -357,13 +357,13 @@ Note that for the `--subj-model` option to have effect, the input dataset file m
 
 ### Cross Validation
 
-[`run_vmaf_cross_validation.py`](../../python/script/run_vmaf_cross_validation.py) provides tools for cross-validation of hyper-parameters and models. `run_vmaf_cv` runs training on a training dataset using hyper-parameters specified in a parameter file, output a trained model file, and then test the trained model on another test dataset and report testing correlation scores. `run_vmaf_kfold_cv` takes in a dataset file, a parameter file, and a data structure (list of lists) that specifies the folds based on video content's IDs, and run k-fold cross valiation on the video dataset. This can be useful for manually tuning the model parameters.
+[`run_vmaf_cross_validation.py`](../../python/vmaf/script/run_vmaf_cross_validation.py) provides tools for cross-validation of hyper-parameters and models. `run_vmaf_cv` runs training on a training dataset using hyper-parameters specified in a parameter file, output a trained model file, and then test the trained model on another test dataset and report testing correlation scores. `run_vmaf_kfold_cv` takes in a dataset file, a parameter file, and a data structure (list of lists) that specifies the folds based on video content's IDs, and run k-fold cross validation on the video dataset. This can be useful for manually tuning the model parameters.
 
 ### Creating New Features And Regressors
 
 You can also customize VMAF by plugging in third-party features or inventing new features, and specify them in a `feature_param_file`. Essentially, the "aggregate" feature type (for example: `VMAF_feature`) specified in the `feature_dict` corresponds to the `TYPE` field of a `FeatureExtractor` subclass (for example: `VmafFeatureExtractor`). All you need to do is to create a new class extending the `FeatureExtractor` base class.
 
-Similarly, you can plug in a third-party regressor or invent a new regressor and specify them in a `model_param_file`. The `model_type` (for example: `LIBSVMNUSVR`) corresponds to the `TYPE` field of a `TrainTestModel` sublass (for example: `LibsvmnusvrTrainTestModel`). All needed is to create a new class extending the `TrainTestModel` base class.
+Similarly, you can plug in a third-party regressor or invent a new regressor and specify them in a `model_param_file`. The `model_type` (for example: `LIBSVMNUSVR`) corresponds to the `TYPE` field of a `TrainTestModel` subclass (for example: `LibsvmnusvrTrainTestModel`). All needed is to create a new class extending the `TrainTestModel` base class.
 
 For instructions on how to extending the `FeatureExtractor` and `TrainTestModel` base classes, refer to [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
 
@@ -441,7 +441,7 @@ The core classes of the VMAF Python library can be depicted in the diagram below
 
 An Asset is the most basic unit with enough information to perform a task on a media. It includes basic information about a distorted video and its undistorted reference counterpart, as well as the auxiliary preprocessing information that can be understood by the `Executor` and its subclasses. For example: 
   - The frame range on which to perform a task (i.e. `dis_start_end_frame` and `ref_start_end_frame`)
-  - At what resolution to perform a task (e.g. a video frame is upscaled with a `resampling_type` method to the resolution specified by `quality_width_hight` before feature extraction)
+  - At what resolution to perform a task (e.g. a video frame is upscaled with a `resampling_type` method to the resolution specified by `quality_width_height` before feature extraction)
 
 Asset extends the `WorkdirEnabled` mixin, which comes with a thread-safe working directory to facilitate parallel execution.
 
