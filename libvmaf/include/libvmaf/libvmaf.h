@@ -280,7 +280,6 @@ typedef struct VmafMetadata {
  * @param data         User data to pass to the callback.
  */
 typedef struct VmafMetadataConfiguration {
-    char *feature_name;
     void (*callback)(void *data, VmafMetadata *metadata);
     void *data;
 } VmafMetadataConfiguration;
