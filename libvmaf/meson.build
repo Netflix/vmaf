@@ -29,6 +29,22 @@ elif host_machine.system() == 'darwin'
 endif
 
 # Header checks
+if cc.has_header('unistd.h', args: test_args)
+    add_project_arguments('-DHAVE_UNISTD_H', language: ['c', 'cpp'])
+endif
+if cc.has_header('malloc.h', args: test_args)
+    add_project_arguments('-DHAVE_MALLOC_H', language: ['c', 'cpp'])
+endif
+if cc.has_header('alloca.h', args: test_args)
+    add_project_arguments('-DHAVE_ALLOCA_H', language: ['c', 'cpp'])
+endif
+if cc.has_header('direct.h', args: test_args)
+    add_project_arguments('-DHAVE_DIRECT_H', language: ['c', 'cpp'])
+endif
+if cc.has_header('corecrt_io.h', args: test_args)
+    add_project_arguments('-DHAVE_CORECRT_IO_H', language: ['c', 'cpp'])
+endif
+
 stdatomic_dependency = []
 if not cc.check_header('stdatomic.h')
     if cc.get_id() == 'msvc'
