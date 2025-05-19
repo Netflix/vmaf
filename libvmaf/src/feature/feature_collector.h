@@ -46,6 +46,8 @@ typedef struct {
 
 typedef struct VmafPredictModel {
     VmafModel *model;
+    unsigned last_highest_seen_index;
+    unsigned last_lowest_seen_index;
     struct VmafPredictModel *next;
 } VmafPredictModel;
 

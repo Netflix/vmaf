@@ -31,6 +31,7 @@ int vmaf_metadata_init(VmafCallbackList **const metadata)
     if (!metadata_s) goto fail;
 
     metadata_s->head = NULL;
+    metadata_s->cnt = 0;
 
     return 0;
 
@@ -55,6 +56,8 @@ int vmaf_metadata_append(VmafCallbackList *metadata, const VmafMetadataConfigura
         while (iter->next) iter = iter->next;
         iter->next = node;
     }
+
+    metadata->cnt++;
 
     return 0;
 
