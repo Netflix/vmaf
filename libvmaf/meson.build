@@ -42,7 +42,8 @@ if cc.has_header('stdatomic.h', args: test_args)
             error('stdatomic.h exists but could not be made usable under MSVC with /experimental:c11atomics')
         endif
 
-        add_project_arguments(['/experimental:c11atomics', '-DHAVE_STDATOMIC_H'], language: 'c')
+        add_project_arguments('/experimental:c11atomics', language: 'c')
+        stdatomic_dependency = declare_dependency(compile_args: '-DHAVE_STDATOMIC_H')
     else
         error('stdatomic.h was found but is not usable for some reason; check whether the compiler needs extension flags')
     endif
