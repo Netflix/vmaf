@@ -32,12 +32,6 @@ endif
 if cc.has_header('unistd.h', args: test_args)
     add_project_arguments('-DHAVE_UNISTD_H', language: ['c', 'cpp'])
 endif
-if cc.has_header('malloc.h', args: test_args)
-    add_project_arguments('-DHAVE_MALLOC_H', language: ['c', 'cpp'])
-endif
-if cc.has_header('alloca.h', args: test_args)
-    add_project_arguments('-DHAVE_ALLOCA_H', language: ['c', 'cpp'])
-endif
 if cc.has_header('direct.h', args: test_args)
     add_project_arguments('-DHAVE_DIRECT_H', language: ['c', 'cpp'])
 endif
