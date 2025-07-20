@@ -12,7 +12,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#ifdef _WIN32
+#if !defined(HAVE_MODE_T)
 typedef unsigned short mode_t;
 #endif
 
