@@ -7,7 +7,7 @@
 //
 
 #ifdef HAVE_DIRECT_H
-#include <direct.h>
+#include <direct.h> // mkdir()
 #endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
