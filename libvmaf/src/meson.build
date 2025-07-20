@@ -333,14 +333,19 @@ if is_cuda_enabled
 
     message('ptx_files = @0@'.format(ptx_files))
 
-    xxd_exe = find_program('xxd')
+    # bin2c is distributed along with cuda tools. Use '--padd 0x00' to add a NULL-terminator byte
+    # to the end of the generated array.
+    bin2c_exe = find_program('bin2c')
     ptx_arrays = []
     foreach name, _ptx : ptx_files
-        t = custom_target('ptx_xxd_@0@'.format(name),
+        t = custom_target('ptx_bin2c_@0@'.format(name),
             build_by_default: true,
             output : ['@PLAINNAME@.c'],
             input : _ptx,
-            command : [xxd_exe, '-i','@INPUT@', '@OUTPUT@'],
+            capture : true,
+            command : [bin2c_exe, '--const', '--padd', '0x00',
+                '--name', '@BASENAME@_ptx', '@INPUT@',
+            ]
         )
         ptx_arrays += t
     endforeach
