@@ -30,6 +30,24 @@ if cc.symbols_have_underscore_prefix()
     cdata_asm.set10('PREFIX', true)
 endif
 
+# Check for locale handling functions
+uselocale_test = '''
+#define _GNU_SOURCE
+#include <locale.h>
+int main() {
+    locale_t loc = uselocale((locale_t)0);
+    return 0;
+}
+'''
+if cc.compiles(uselocale_test, name: 'uselocale availability')
+    cdata.set('HAVE_USELOCALE', 1)
+endif
+
+# Check for xlocale.h header (needed on some older macOS versions)
+if cc.has_header('xlocale.h')
+    cdata.set('HAVE_XLOCALE_H', 1)
+endif
+
 is_asm_enabled = get_option('enable_asm') == true
 is_cuda_enabled = get_option('enable_cuda') == true
 is_avx512_enabled = get_option('enable_avx512') == true
@@ -529,6 +547,7 @@ libvmaf_sources = [
     src_dir + 'log.c',
     src_dir + 'framesync.c',
     src_dir + 'metadata_handler.c',
+    src_dir + 'thread_locale.c',
 ]
 
 if is_cuda_enabled

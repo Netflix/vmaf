@@ -20,6 +20,7 @@
 #include "model.h"
 #include "pdjson.h"
 #include "svm.h"
+#include "thread_locale.h"
 
 #include <errno.h>
 #include <stdlib.h>
@@ -432,6 +433,7 @@ static int model_parse(json_stream *s, VmafModel *model,
 static int vmaf_read_json_model(VmafModel **model, VmafModelConfig *cfg,
                                 json_stream *s)
 {
+    int err = -EINVAL;
     VmafModel *const m = *model = malloc(sizeof(*m));
     if (!m) return -ENOMEM;
     memset(m, 0, sizeof(*m));
@@ -449,7 +451,13 @@ static int vmaf_read_json_model(VmafModel **model, VmafModelConfig *cfg,
     if (!m->score_transform.knots.list) return -ENOMEM;
     memset(m->score_transform.knots.list, 0, knots_sz);
 
-    return model_parse(s, m, cfg->flags);
+    VmafThreadLocaleState* locale_state = vmaf_thread_locale_push_c();
+
+    err = model_parse(s, m, cfg->flags);
+
+    vmaf_thread_locale_pop(locale_state);
+
+    return err;
 }
 
 int vmaf_read_json_model_from_buffer(VmafModel **model, VmafModelConfig *cfg,
