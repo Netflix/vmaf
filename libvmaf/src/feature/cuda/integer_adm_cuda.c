@@ -1123,6 +1123,10 @@ free_ref:
         ret |= vmaf_cuda_buffer_free(fex->cu_state, s->buf.tmp_ref);
         free(s->buf.tmp_ref);
     }
+    if (s->buf.tmp_dis) {
+        ret |= vmaf_cuda_buffer_free(fex->cu_state, s->buf.tmp_dis);
+        free(s->buf.tmp_dis);
+    }
     if (s->buf.tmp_accum) {
         ret |= vmaf_cuda_buffer_free(fex->cu_state, s->buf.tmp_accum);
         free(s->buf.tmp_accum);
@@ -1196,6 +1200,10 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
     if (s->buf.tmp_ref) {
         ret |= vmaf_cuda_buffer_free(fex->cu_state, s->buf.tmp_ref);
         free(s->buf.tmp_ref);
+    }
+    if (s->buf.tmp_dis) {
+        ret |= vmaf_cuda_buffer_free(fex->cu_state, s->buf.tmp_dis);
+        free(s->buf.tmp_dis);
     }
     if (s->buf.tmp_accum) {
         ret |= vmaf_cuda_buffer_free(fex->cu_state, s->buf.tmp_accum);

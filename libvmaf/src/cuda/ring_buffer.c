@@ -85,6 +85,7 @@ int vmaf_ring_buffer_close(VmafRingBuffer *ring_buffer)
     }
 
     free(ring_buffer->pic);
+    free(ring_buffer);
     return err;
 }
 

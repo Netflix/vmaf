@@ -216,7 +216,7 @@ int vmaf_cuda_picture_free(VmafPicture *pic, void *cookie)
     if (!pic) return -EINVAL;
 
     int err = vmaf_ref_load(pic->ref);
-    if (!err) -EINVAL;
+    if (!err) return -EINVAL;
     
     VmafPicturePrivate *priv = pic->priv;
     VmafCudaCookie *cuda_cookie = cookie;
@@ -232,6 +232,7 @@ int vmaf_cuda_picture_free(VmafPicture *pic, void *cookie)
     CHECK_CUDA(cuEventDestroy(priv->cuda.ready));
     CHECK_CUDA(cuStreamDestroy(priv->cuda.str));
     CHECK_CUDA(cuCtxPopCurrent(NULL));
+    vmaf_ref_close(pic->ref);
     free(priv);
     memset(pic, 0, sizeof(*pic));
 
