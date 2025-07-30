@@ -203,6 +203,9 @@ free_ref:
     if (s->buf.accum_host) {
         ret |= vmaf_cuda_buffer_host_free(fex->cu_state, s->buf.accum_host);
     }
+    if (s->buf.cpu_param_buf) {
+        free(s->buf.cpu_param_buf);
+    }
 
     return -ENOMEM;
 }
@@ -516,6 +519,9 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
     }
     if (s->buf.accum_host) {
         ret |= vmaf_cuda_buffer_host_free(fex->cu_state, s->buf.accum_host);
+    }
+    if (s->buf.cpu_param_buf) {
+        free(s->buf.cpu_param_buf);
     }
     ret |= vmaf_dictionary_free(&s->feature_name_dict);
     return ret;
