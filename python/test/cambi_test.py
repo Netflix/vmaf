@@ -30,9 +30,9 @@ class CambiFeatureExtractorTest(MyTestCase):
         results = self.fextractor.results
 
         # score: arithmetic mean score over all frames
-        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_encbd_8_score'],
                                0.25968416666666666, places=4)
-        self.assertAlmostEqual(results[1]['Cambi_feature_cambi_score'],
+        self.assertAlmostEqual(results[1]['Cambi_feature_cambi_encbd_8_score'],
                                0.00020847916666666663, places=4)
 
     def test_run_cambi_fextractor_scaled(self):
@@ -47,9 +47,9 @@ class CambiFeatureExtractorTest(MyTestCase):
         results = self.fextractor.results
 
         # score: arithmetic mean score over all frames
-        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_encbd_8_ench_270_encw_480_score'],
                                0.17871631249999997, places=4)
-        self.assertAlmostEqual(results[1]['Cambi_feature_cambi_score'],
+        self.assertAlmostEqual(results[1]['Cambi_feature_cambi_encbd_8_ench_270_encw_480_score'],
                                0.00022027083333333336, places=4)
 
     def test_run_cambi_fextractor_scaled_b(self):
@@ -64,7 +64,7 @@ class CambiFeatureExtractorTest(MyTestCase):
         results = self.fextractor.results
 
         # score: arithmetic mean score over all frames
-        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_encbd_8_ench_540_encw_960_score'],
                                0.773078, places=4)
 
     def test_run_cambi_fextractor_10b(self):
@@ -79,7 +79,7 @@ class CambiFeatureExtractorTest(MyTestCase):
         results = self.fextractor.results
 
         # score: arithmetic mean score over all frames
-        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_encbd_10_score'],
                                0.0013863333333333334, places=4)
 
     def test_run_cambi_fextractor_incorrect_enc_bitdepth(self):
@@ -95,7 +95,7 @@ class CambiFeatureExtractorTest(MyTestCase):
         results = self.fextractor.results
 
         # score: arithmetic mean score over all frames
-        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_encbd_10_score'],
                                0.0013863333333333334, places=4)
 
     def test_run_cambi_fextractor_correct_enc_bitdepth(self):
@@ -111,7 +111,7 @@ class CambiFeatureExtractorTest(MyTestCase):
         results = self.fextractor.results
 
         # score: arithmetic mean score over all frames
-        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_encbd_8_score'],
                                0.00020733333333333332, places=4)
 
     def test_run_cambi_fextractor_notyuv_correct_enc_bitdepth_8(self):
@@ -126,7 +126,7 @@ class CambiFeatureExtractorTest(MyTestCase):
         results = self.fextractor.results
 
         # score: arithmetic mean score over all frames
-        self.assertAlmostEqual(results[1]['Cambi_feature_cambi_score'],
+        self.assertAlmostEqual(results[1]['Cambi_feature_cambi_encbd_8_score'],
                                0.00020733333333333332, places=4)
 
     def test_run_cambi_fextractor_enc_bitdepth_none(self):
@@ -153,9 +153,9 @@ class CambiFeatureExtractorTest(MyTestCase):
         results = self.fextractor.results
 
         # score: arithmetic mean score over all frames
-        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_encbd_8_mlc_4_score'],
                                0.32247770833333333, places=4)
-        self.assertAlmostEqual(results[1]['Cambi_feature_cambi_score'],
+        self.assertAlmostEqual(results[1]['Cambi_feature_cambi_encbd_8_mlc_4_score'],
                                0.0002582708333333333, places=4)
 
         self.fextractor = CambiFeatureExtractor(
@@ -168,9 +168,9 @@ class CambiFeatureExtractorTest(MyTestCase):
         results = self.fextractor.results
 
         # score: arithmetic mean score over all frames
-        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_score'],
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_encbd_8_mlc_0_score'],
                                0.0024372291666666665, places=4)
-        self.assertAlmostEqual(results[1]['Cambi_feature_cambi_score'],
+        self.assertAlmostEqual(results[1]['Cambi_feature_cambi_encbd_8_mlc_0_score'],
                                0.00019045833333333336, places=4)
 
     def test_run_cambi_fextractor_full_reference(self):
@@ -184,7 +184,7 @@ class CambiFeatureExtractorTest(MyTestCase):
         results = self.fextractor.results
 
         # score: arithmetic mean score over all frames
-        self.assertAlmostEqual(results[0]['Cambi_FR_feature_cambi_score'],
+        self.assertAlmostEqual(results[0]['Cambi_FR_feature_cambi_encbd_8_score'],
                                0.25968416666666666, places=4)
         self.assertAlmostEqual(results[0]['Cambi_FR_feature_cambi_source_score'],
                                0.00020847916666666663, places=4)
@@ -203,7 +203,7 @@ class CambiFeatureExtractorTest(MyTestCase):
         results = self.fextractor.results
 
         # score: arithmetic mean score over all frames
-        self.assertAlmostEqual(results[0]['Cambi_FR_feature_cambi_score'],
+        self.assertAlmostEqual(results[0]['Cambi_FR_feature_cambi_encbd_8_srch_270_srcw_480_score'],
                                0.25968416666666666, places=4)
         self.assertAlmostEqual(results[0]['Cambi_FR_feature_cambi_source_score'],
                                0.00022027083333333336, places=4)
