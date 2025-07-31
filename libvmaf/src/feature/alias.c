@@ -96,6 +96,10 @@ static Alias alias_map[] = {
         .name = "VMAF_integer_feature_vif_scale3_score",
         .alias = "integer_vif_scale3",
     },
+    {
+        .name = "Cambi_feature_cambi_score",
+        .alias = "cambi",
+    },
 };
 
 const char *vmaf_feature_name_alias(const char *feature_name)

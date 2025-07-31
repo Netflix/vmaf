@@ -380,6 +380,7 @@ static char *test_calculate_c_values()
                                  2.6666667, 3.75, 3.0, 0.0, 2.0, 2.4, 2.0, 0.0};
     unsigned width = 4, height = 4;
     uint16_t tvi_for_diff[4] = {178, 305, 432, 559};
+    uint16_t vlt_luma = 0;
     uint16_t window_size = 3;
     const uint16_t num_diffs = 4;
     uint16_t histograms[4*1032];
@@ -396,7 +397,7 @@ static char *test_calculate_c_values()
     mu_assert("test_calculate_c_values alloc #2 error", !err);
 
     calculate_c_values(&input, &mask, combined_c_values, histograms, window_size,
-                       num_diffs, tvi_for_diff, diff_weights, all_diffs, width, height, 
+                       num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, width, height,
                        increment_range, decrement_range);
 
     for (unsigned i=0; i<16; i++) {
@@ -413,7 +414,7 @@ static char *test_calculate_c_values()
     window_size = 9;
     uint16_t histograms_8x8[8*1032];
     calculate_c_values(&input_8x8, &mask_8x8, combined_c_values_8x8, histograms_8x8,
-                       window_size, num_diffs, tvi_for_diff, diff_weights, all_diffs, 8, 8, 
+                       window_size, num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, 8, 8,
                        increment_range, decrement_range);
 
     double sum = 0;
@@ -427,6 +428,10 @@ static char *test_calculate_c_values()
     vmaf_picture_unref(&input_8x8);
     vmaf_picture_unref(&mask_8x8);
 
+    aligned_free(diffs_to_consider);
+    aligned_free(diff_weights);
+    aligned_free(all_diffs);
+
     return NULL;
 }
 
@@ -436,21 +441,27 @@ static char *test_c_value_pixel()
     uint16_t value = 2;
     int diffs[5] = {-2, -1, 0, 1, 2};
     uint16_t tvi_thresholds[2] = {2, 3};
+    uint16_t vlt_luma = 0;
     int diff_weights[2] = {1, 2};
     uint16_t num_diffs = 2;
     float c_value;
 
-    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds, 0, 1);
+    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds, vlt_luma, 0, 1);
     mu_assert("c_value_all_diffs for value=2, weights=2,3", almost_equal(c_value, 2.6666667));
 
     diff_weights[0] = 4;
     diff_weights[1] = 5;
-    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds, 0, 1);
+    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds, vlt_luma, 0, 1);
     mu_assert("c_value_all_diffs for value=2, weights=4,5", almost_equal(c_value, 6.6666667));
 
     value = 4;
-    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds, 0, 1);
+    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds, vlt_luma, 0, 1);
     mu_assert("c_value_all_diffs for value=4, weights=4,5", almost_equal(c_value, 0));
+
+    value = 2;
+    vlt_luma = 5;
+    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds, vlt_luma, 0, 1);
+    mu_assert("c_value_all_diffs for value=2, weights=4,5", almost_equal(c_value, 0));
     return NULL;
 }
 
@@ -548,49 +559,63 @@ static char *test_weight_scores_per_scale()
 
 static char *test_adjust_window_size()
 {
+    bool cambi_high_res_speedup = false;
     uint16_t window_size = 63;
-    adjust_window_size(&window_size, 3840, 2160);
+    adjust_window_size(&window_size, 3840, 2160, cambi_high_res_speedup);
     mu_assert("adjusted window size for input=(3840, 2160), ws=63", window_size==63);
 
     window_size = 63;
-    adjust_window_size(&window_size, 2560, 1440);
-    mu_assert("adjusted window size for input=(2560, 1440), ws=63", window_size==42);
+    adjust_window_size(&window_size, 2560, 1440, cambi_high_res_speedup);
+    mu_assert("adjusted window size for input=(2560, 1440), ws=63", window_size==43);
 
     window_size = 63;
-    adjust_window_size(&window_size, 1920, 1080);
+    adjust_window_size(&window_size, 1920, 1080, cambi_high_res_speedup);
     mu_assert("adjusted window size for input=(1920, 1080), ws=63", window_size==31);
 
     window_size = 63;
-    adjust_window_size(&window_size, 1280, 720);
+    adjust_window_size(&window_size, 1280, 720, cambi_high_res_speedup);
     mu_assert("adjusted window size for input=(1280, 720), ws=63", window_size==21);
 
     window_size = 63;
-    adjust_window_size(&window_size, 960, 540);
+    adjust_window_size(&window_size, 960, 540, cambi_high_res_speedup);
     mu_assert("adjusted window size for input=(960, 540), ws=63", window_size==15);
 
     window_size = 63;
-    adjust_window_size(&window_size, 640, 360);
-    mu_assert("adjusted window size for input=(640, 360), ws=63", window_size==10);
+    adjust_window_size(&window_size, 640, 360, cambi_high_res_speedup);
+    mu_assert("adjusted window size for input=(640, 360), ws=63", window_size==11);
 
     window_size = 63;
-    adjust_window_size(&window_size, 480, 270);
+    adjust_window_size(&window_size, 480, 270, cambi_high_res_speedup);
     mu_assert("adjusted window size for input=(480, 270), ws=63", window_size==7);
 
     window_size = 63;
-    adjust_window_size(&window_size, 320, 180);
+    adjust_window_size(&window_size, 320, 180, cambi_high_res_speedup);
     mu_assert("adjusted window size for input=(320, 180), ws=63", window_size==5);
 
     window_size = 63;
-    adjust_window_size(&window_size, 6000, 4000);
+    adjust_window_size(&window_size, 6000, 4000, cambi_high_res_speedup);
     mu_assert("adjusted window size for input=(6000, 4000), ws=63", window_size==105);
 
     window_size = 60;
-    adjust_window_size(&window_size, 1920, 1080);
-    mu_assert("adjusted window size for input=(1920, 1080), ws=60", window_size==30);
+    adjust_window_size(&window_size, 1920, 1080, cambi_high_res_speedup);
+    mu_assert("adjusted window size for input=(1920, 1080), ws=60", window_size==31);
 
     window_size = 31;
-    adjust_window_size(&window_size, 1280, 720);
-    mu_assert("adjusted window size for input=(1280, 720), ws=31", window_size==10);
+    adjust_window_size(&window_size, 1280, 720, cambi_high_res_speedup);
+    mu_assert("adjusted window size for input=(1280, 720), ws=31", window_size==11);
+
+    cambi_high_res_speedup = true;
+    window_size = 63;
+    adjust_window_size(&window_size, 3840, 2160, cambi_high_res_speedup);
+    mu_assert("adjusted window size for (3840, 2160), ws=63, cambi_high_res_speedup", window_size==33);
+
+    window_size = 63;
+    adjust_window_size(&window_size, 2560, 1440, cambi_high_res_speedup);
+    mu_assert("adjusted window size for (2560, 1440), ws=63, cambi_high_res_speedup", window_size==21);
+
+    window_size = 63;
+    adjust_window_size(&window_size, 6000, 4000, cambi_high_res_speedup);
+    mu_assert("adjusted window size for (6000, 4000), ws=63, cambi_high_res_speedup", window_size==53);
 
     return NULL;
 }
@@ -708,6 +733,19 @@ static char *test_tvi_hard_threshold_condition()
     return NULL;
 }
 
+static char *test_get_vlt_luma()
+{
+    VmafLumaRange range_10b_limited;
+    vmaf_luminance_init_luma_range(&range_10b_limited, 10, VMAF_PIXEL_RANGE_LIMITED);
+
+    VmafEOTF eotf_bt1886;
+    vmaf_luminance_init_eotf(&eotf_bt1886, "bt1886");
+
+    mu_assert("vlt_luma for visibility_luminance_threshold 0", get_vlt_luma(0.0, range_10b_limited, eotf_bt1886) == 0);
+    mu_assert("vlt_luma for visibility_luminance_threshold 0.06", get_vlt_luma(0.06, range_10b_limited, eotf_bt1886) == 78);
+    return NULL;
+}
+
 char *run_tests()
 {
     /* Preprocessing functions */
@@ -738,6 +776,7 @@ char *run_tests()
     mu_run_test(test_tvi_condition);
     mu_run_test(test_set_contrast_arrays);
     mu_run_test(test_tvi_hard_threshold_condition);
+    mu_run_test(test_get_vlt_luma);
 
     return NULL;
 }
