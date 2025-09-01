@@ -57,7 +57,7 @@ __global__ void calculate_motion_score_kernel_8bpc(const VmafPicture src, VmafCu
             uint32_t blurred_y = 0u;
 #pragma unroll
             for (int yf=0; yf < filter_width_d; ++yf) {
-                blurred_y += filter_d[yf] * reinterpret_cast<const uint8_t*>(src.data[0] + mirror(y-radius+yf, height) * src.stride[0])[mirror(x-radius+xf, width)];
+                blurred_y += filter_d[yf] * (reinterpret_cast<const uint8_t*>(src.data[0]) + mirror(y-radius+yf, height) * src.stride[0])[mirror(x-radius+xf, width)];
             }
             blurred += filter_d[xf]*((blurred_y + add_before_shift_y) >> shift_var_y);
         }
@@ -101,7 +101,7 @@ __global__ void calculate_motion_score_kernel_16bpc(const VmafPicture src, VmafC
             uint32_t blurred_y = 0u;
 #pragma unroll
             for (int yf=0; yf < filter_width_d; ++yf) {
-                blurred_y += filter_d[yf] * reinterpret_cast<const uint16_t*>(src.data[0] + mirror(y-radius+yf, height) * src.stride[0])[mirror(x-radius+xf, width)];
+                blurred_y += filter_d[yf] * (reinterpret_cast<const uint16_t*>(src.data[0]) + mirror(y-radius+yf, height) * src.stride[0])[mirror(x-radius+xf, width)];
             }
             blurred += filter_d[xf]*((blurred_y + add_before_shift_y) >> shift_var_y);
         }

@@ -48,7 +48,7 @@ typedef struct MotionStateCuda {
             const VmafCudaBuffer* prev_blurred, VmafCudaBuffer* sad,
             unsigned width, unsigned height,
             ptrdiff_t src_stride, ptrdiff_t blurred_stride, unsigned src_bpc,
-            CUfunction funcbpc8, CUfunction funcbpc16, CUstream stream);
+            CUfunction funcbpc8, CUfunction funcbpc16, CudaFunctions *cu_f, CUstream stream);
     VmafDictionary *feature_name_dict;
 } MotionStateCuda;
 
@@ -110,7 +110,7 @@ void calculate_motion_score(const VmafPicture* src, VmafCudaBuffer* src_blurred,
         const VmafCudaBuffer* prev_blurred, VmafCudaBuffer* sad,
         unsigned width, unsigned height,
         ptrdiff_t src_stride, ptrdiff_t blurred_stride, unsigned src_bpc,
-        CUfunction funcbpc8, CUfunction funcbpc16, CUstream stream)
+        CUfunction funcbpc8, CUfunction funcbpc16, CudaFunctions* cu_f, CUstream stream)
 {
     int block_dim_x = 16;
     int block_dim_y = 16;
@@ -120,13 +120,13 @@ void calculate_motion_score(const VmafPicture* src, VmafCudaBuffer* src_blurred,
     if (src_bpc == 8){
         void *kernelParams[] = {(void*)src,   (void*) src_blurred, (void*)prev_blurred, (void*)sad,
             &width, &height,     &src_stride,  &blurred_stride};
-        CHECK_CUDA(cuLaunchKernel(funcbpc8, grid_dim_x,
+        CHECK_CUDA(cu_f, cuLaunchKernel(funcbpc8, grid_dim_x,
                     grid_dim_y, 1, block_dim_x, block_dim_y, 1, 0,
                     stream, kernelParams, NULL));
     } else {
         void *kernelParams[] = {(void*)src,   (void*) src_blurred, (void*)prev_blurred, (void*)sad,
             &width, &height,     &src_stride,  &blurred_stride};
-        CHECK_CUDA(cuLaunchKernel(funcbpc16, grid_dim_x,
+        CHECK_CUDA(cu_f, cuLaunchKernel(funcbpc16, grid_dim_x,
                     grid_dim_y, 1, block_dim_x, block_dim_y, 1, 0,
                     stream, kernelParams, NULL));
     }
@@ -136,20 +136,21 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
         unsigned bpc, unsigned w, unsigned h)
 {
     MotionStateCuda *s = fex->priv;
+    CudaFunctions *cu_f = fex->cu_state->f;
 
-    CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
-    CHECK_CUDA(cuStreamCreateWithPriority(&s->str, CU_STREAM_NON_BLOCKING, 0));
-    CHECK_CUDA(cuStreamCreateWithPriority(&s->host_stream, CU_STREAM_NON_BLOCKING, 0));
-    CHECK_CUDA(cuEventCreate(&s->event, CU_EVENT_DEFAULT));
-    CHECK_CUDA(cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
+    CHECK_CUDA(cu_f, cuCtxPushCurrent(fex->cu_state->ctx));
+    CHECK_CUDA(cu_f, cuStreamCreateWithPriority(&s->str, CU_STREAM_NON_BLOCKING, 0));
+    CHECK_CUDA(cu_f, cuStreamCreateWithPriority(&s->host_stream, CU_STREAM_NON_BLOCKING, 0));
+    CHECK_CUDA(cu_f, cuEventCreate(&s->event, CU_EVENT_DEFAULT));
+    CHECK_CUDA(cu_f, cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
 
     CUmodule module;
-    CHECK_CUDA(cuModuleLoadData(&module, motion_score_ptx));
+    CHECK_CUDA(cu_f, cuModuleLoadData(&module, motion_score_ptx));
 
-    CHECK_CUDA(cuModuleGetFunction(&s->funcbpc16, module, "calculate_motion_score_kernel_16bpc"));
-    CHECK_CUDA(cuModuleGetFunction(&s->funcbpc8, module, "calculate_motion_score_kernel_8bpc"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->funcbpc16, module, "calculate_motion_score_kernel_16bpc"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->funcbpc8, module, "calculate_motion_score_kernel_8bpc"));
 
-    CHECK_CUDA(cuCtxPopCurrent(NULL));
+    CHECK_CUDA(cu_f, cuCtxPopCurrent(NULL));
 
     if (s->motion_force_zero) {
         fex->extract = extract_force_zero;
@@ -206,9 +207,10 @@ static int flush_fex_cuda(VmafFeatureExtractor *fex,
         VmafFeatureCollector *feature_collector)
 {
     MotionStateCuda *s = fex->priv;
+    CudaFunctions *cu_f = fex->cu_state->f;
     int ret = 0;
-    CHECK_CUDA(cuStreamSynchronize(s->str));
-    CHECK_CUDA(cuStreamSynchronize(s->host_stream));
+    CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
+    CHECK_CUDA(cu_f, cuStreamSynchronize(s->host_stream));
 
     if (s->index > 0) {
         ret = vmaf_feature_collector_append(feature_collector,
@@ -257,14 +259,13 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
                             VmafFeatureCollector *feature_collector)
 {
     MotionStateCuda *s = fex->priv;
+    CudaFunctions *cu_f = fex->cu_state->f;
 
     // this is done to ensure that the CPU does not overwrite the buffer params for 'write_scores
-    CHECK_CUDA(cuStreamSynchronize(s->str));
-    // CHECK_CUDA(cuEventSynchronize(s->finished));
-    CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
-    CHECK_CUDA(cuEventDestroy(s->finished));
-    CHECK_CUDA(cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
-    CHECK_CUDA(cuCtxPopCurrent(NULL));
+    CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
+    // CHECK_CUDA(cu_f, cuEventSynchronize(s->finished));
+    CHECK_CUDA(cu_f, cuCtxPushCurrent(fex->cu_state->ctx));
+    CHECK_CUDA(cu_f, cuCtxPopCurrent(NULL));
 
     int err = 0;
     (void) dist_pic;
@@ -276,20 +277,18 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
     const unsigned prev_blurred_idx = (index + 1) % 2;
 
     // Reset device SAD
-    CHECK_CUDA(cuMemsetD8Async(s->sad->data, 0, sizeof(uint64_t), s->str));
+    CHECK_CUDA(cu_f, cuMemsetD8Async(s->sad->data, 0, sizeof(uint64_t), s->str));
 
     // Compute motion score
-    CHECK_CUDA(cuStreamWaitEvent(vmaf_cuda_picture_get_stream(ref_pic), vmaf_cuda_picture_get_ready_event(dist_pic), CU_EVENT_WAIT_DEFAULT));
+    CHECK_CUDA(cu_f, cuStreamWaitEvent(vmaf_cuda_picture_get_stream(ref_pic), vmaf_cuda_picture_get_ready_event(dist_pic), CU_EVENT_WAIT_DEFAULT));
     s->calculate_motion_score(ref_pic, s->blur[src_blurred_idx], s->blur[prev_blurred_idx],
             s->sad, ref_pic->w[0], ref_pic->h[0], ref_pic->stride[0], sizeof(uint16_t) * ref_pic->w[0],
-            ref_pic->bpc, s->funcbpc8, s->funcbpc16, vmaf_cuda_picture_get_stream(ref_pic));
-    CHECK_CUDA(cuEventRecord(s->event, vmaf_cuda_picture_get_stream(ref_pic)));
+            ref_pic->bpc, s->funcbpc8, s->funcbpc16, cu_f, vmaf_cuda_picture_get_stream(ref_pic));
+    CHECK_CUDA(cu_f, cuEventRecord(s->event, vmaf_cuda_picture_get_stream(ref_pic)));
     // This event ensures the input buffer is consumed
-    CHECK_CUDA(cuStreamWaitEvent(s->str, s->event, CU_EVENT_WAIT_DEFAULT));
-    CHECK_CUDA(cuCtxPushCurrent(fex->cu_state->ctx));
-    CHECK_CUDA(cuEventDestroy(s->event));
-    CHECK_CUDA(cuEventCreate(&s->event, CU_EVENT_DEFAULT));
-    CHECK_CUDA(cuCtxPopCurrent(NULL));
+    CHECK_CUDA(cu_f, cuStreamWaitEvent(s->str, s->event, CU_EVENT_WAIT_DEFAULT));
+    CHECK_CUDA(cu_f, cuCtxPushCurrent(fex->cu_state->ctx));
+    CHECK_CUDA(cu_f, cuCtxPopCurrent(NULL));
 
     if (index == 0) {
         err = vmaf_feature_collector_append(feature_collector,
@@ -304,25 +303,29 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
     }
 
     // Download sad
-    CHECK_CUDA(cuStreamSynchronize(s->host_stream));
-    CHECK_CUDA(cuMemcpyDtoHAsync(s->sad_host, (CUdeviceptr)s->sad->data,
+    CHECK_CUDA(cu_f, cuStreamSynchronize(s->host_stream));
+    CHECK_CUDA(cu_f, cuMemcpyDtoHAsync(s->sad_host, (CUdeviceptr)s->sad->data,
                 sizeof(*s->sad_host), s->str));
-    CHECK_CUDA(cuEventRecord(s->finished, s->str));
-    CHECK_CUDA(cuStreamWaitEvent(s->host_stream, s->finished, CU_EVENT_WAIT_DEFAULT));
+    CHECK_CUDA(cu_f, cuEventRecord(s->finished, s->str));
+    CHECK_CUDA(cu_f, cuStreamWaitEvent(s->host_stream, s->finished, CU_EVENT_WAIT_DEFAULT));
 
     write_score_parameters_moco* params = s->write_score_parameters;
     params->feature_collector = feature_collector;
     params->h = ref_pic->h[0];
     params->w = ref_pic->w[0];
     params->index = index;
-    CHECK_CUDA(cuLaunchHostFunc(s->host_stream, (CUhostFn)write_scores, s->write_score_parameters));
+    CHECK_CUDA(cu_f, cuLaunchHostFunc(s->host_stream, (CUhostFn*)write_scores, s->write_score_parameters));
     return 0;
 }
 
 static int close_fex_cuda(VmafFeatureExtractor *fex)
 {
     MotionStateCuda *s = fex->priv;
-    CHECK_CUDA(cuStreamSynchronize(s->str));
+    CudaFunctions *cu_f = fex->cu_state->f;
+    CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
+    CHECK_CUDA(cu_f, cuEventDestroy(s->event));
+    CHECK_CUDA(cu_f, cuEventDestroy(s->finished));
+
     int ret = 0;
 
     if (s->blur[0]) {

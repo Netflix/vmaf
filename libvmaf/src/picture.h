@@ -20,7 +20,7 @@
 #define __VMAF_SRC_PICTURE_H__
 
 #ifdef HAVE_CUDA
-#include <cuda.h>
+#include <ffnvcodec/dynlink_cuda.h>
 #include "libvmaf/libvmaf_cuda.h"
 #endif
 #include "libvmaf/picture.h"
@@ -39,6 +39,7 @@ typedef struct VmafPicturePrivate {
         CUcontext ctx;
         CUevent ready, finished;
         CUstream str;
+        VmafCudaState* state;
     } cuda;
 #endif
     enum VmafPictureBufferType buf_type;
