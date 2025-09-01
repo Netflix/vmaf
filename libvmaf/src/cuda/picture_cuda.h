@@ -21,7 +21,6 @@
 #define __VMAF_SRC_CUDA_PICTURE_CUDA_H__
 
 #include "common.h"
-#include "cuda.h"
 #include "libvmaf/picture.h"
 
 typedef struct VmafCudaCookie {

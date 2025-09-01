@@ -521,11 +521,11 @@ static int flush_context(VmafContext *vmaf)
                 err |= vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
                                                             vmaf->feature_collector);
         }
-
-        err |= cuCtxPushCurrent(vmaf->cuda.state.ctx);
-        err |= cuStreamSynchronize(vmaf->cuda.state.str);
-        err |= cuCtxSynchronize();
-        err |= cuCtxPopCurrent(NULL);
+        CudaFunctions* cu_f = vmaf->cuda.state.f;
+        err |= cu_f->cuCtxPushCurrent(vmaf->cuda.state.ctx);
+        err |= cu_f->cuStreamSynchronize(vmaf->cuda.state.str);
+        err |= cu_f->cuCtxSynchronize();
+        err |= cu_f->cuCtxPopCurrent(NULL);
         if (err) {
             vmaf_log(VMAF_LOG_LEVEL_ERROR,
                     "context could not be synchronized\n");
@@ -722,15 +722,16 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     if (dist_host.priv)
         err |= vmaf_picture_unref(&dist_host);
 
+    CudaFunctions* cu_f = vmaf->cuda.state.f;
     if (ref_device.priv) {
-        CHECK_CUDA(cuEventRecord(vmaf_cuda_picture_get_finished_event(&ref_device),
+        CHECK_CUDA(cu_f, cuEventRecord(vmaf_cuda_picture_get_finished_event(&ref_device),
                                  vmaf_cuda_picture_get_stream(&ref_device)));
         //^FIXME: move to picture callback
         err |= vmaf_picture_unref(&ref_device);
     }
 
     if (dist_device.priv) {
-        CHECK_CUDA(cuEventRecord(vmaf_cuda_picture_get_finished_event(&dist_device),
+        CHECK_CUDA(cu_f, cuEventRecord(vmaf_cuda_picture_get_finished_event(&dist_device),
                                 vmaf_cuda_picture_get_stream(&dist_device)));
         //^FIXME: move to picture callback
         err |= vmaf_picture_unref(&dist_device);
