@@ -21,6 +21,7 @@ else
     ]
 endif
 
+
 cdata = configuration_data()
 cdata_asm = configuration_data()
 
@@ -36,6 +37,9 @@ is_nvtx_enabled = get_option('enable_nvtx') == true
 
 if is_nvtx_enabled    
     cdata.set10('HAVE_NVTX', is_nvtx_enabled)
+endif
+if is_cuda_enabled
+    cdata.set10('HAVE_CUDA', is_cuda_enabled)
 endif
 
 if is_asm_enabled
@@ -159,16 +163,6 @@ if built_in_models_enabled
     endif
 endif
 
-# check if cuda is present
-if is_cuda_enabled
-    is_cuda_enabled = dependency('cuda', version : '>=10', required : true).found()
-endif
-
-if is_cuda_enabled
-    add_languages('cuda')
-    cdata.set10('HAVE_CUDA', is_cuda_enabled)
-endif
-
 config_h_target = configure_file(output: 'config.h', configuration: cdata)
 
 libvmaf_cpu_sources = [
@@ -202,6 +196,7 @@ libvmaf_include = include_directories(
     src_dir,
     feature_src_dir,
     feature_src_dir + 'common',
+    is_nvtx_enabled ? '/usr/local/cuda/include' : '',
 )
 
 libvmaf_cpu_static_lib = static_library(
@@ -273,12 +268,19 @@ common_cuda_objects = []
 cuda_inc = []
 
 if is_nvtx_enabled
-    cuda_dependency += declare_dependency(link_args : ['-ldl'])
-    cuda_inc += include_directories('/usr/local/cuda/include')
+    cuda_dependency += declare_dependency(
+        link_with: shared_library('dl'),
+        include_directories: include_directories('/usr/local/cuda/include'))
 endif
 
 if is_cuda_enabled
-    cuda_inc += include_directories('/usr/local/cuda/include')
+    # Check for required CUDA headers
+    if not cc.has_header('ffnvcodec/dynlink_cuda.h')
+        error('ffnvcodec/dynlink_cuda.h not found. Please install nv-codec-headers from https://code.ffmpeg.org/FFmpeg/nv-codec-headers (commit 876af32a202d0de83bd1d36fe74ee0f7fcf86b0d or greater required).')
+    endif
+    if not cc.has_header('ffnvcodec/dynlink_loader.h')
+        error('ffnvcodec/dynlink_loader.h not found. Please install nv-codec-headers from https://code.ffmpeg.org/FFmpeg/nv-codec-headers (commit 876af32a202d0de83bd1d36fe74ee0f7fcf86b0d or greater required).')
+    endif
 
     cuda_cu_sources = {
         'adm_dwt2' : [feature_src_dir + 'cuda/integer_adm/adm_dwt2.cu'],
@@ -295,43 +297,82 @@ if is_cuda_enabled
         cuda_dir + 'picture_cuda.c',
         cuda_dir + 'ring_buffer.c',
     ]
+    gencode = []
+    if get_option('enable_nvcc')
+        cuda_lang = add_languages('cuda', required : true)
+        cuda_compiler = meson.get_compiler('cuda')
+        nvcc_exe = find_program('nvcc')
 
-    cuda_drv_api_dependency = declare_dependency(link_args : ['-lcuda'])
-    cuda_rt_api_dependency = dependency('cuda', version : '>=10')
+        gencode = [
+            '--fatbin',
+            '-gencode=arch=compute_75,code=sm_75',
+            '-gencode=arch=compute_80,code=sm_80',
+        ]
+        message('Found CUDA version = @0@'.format(cuda_compiler.version()))
+        if cuda_compiler.version().version_compare('<13')
+            gencode += '-gencode=arch=compute_50,code=compute_50'
+        endif
+        # always compile device code to enable quick startup on newer GPUs, for the last supported GPU also generate PTX for future compatibility
+        if cuda_compiler.version().version_compare('>11.8')
+            gencode += '-gencode=arch=compute_90,code=sm_90'
+            if cuda_compiler.version().version_compare('>12.8')
+                gencode += [
+                    '-gencode=arch=compute_100,code=sm_100',
+                    '-gencode=arch=compute_120,code=sm_120',
+                    '-gencode=arch=compute_120,code=compute_120'
+                ]
+            else
+                gencode += '-gencode=arch=compute_90,code=compute_90'
+            endif
+        else
+            gencode += '-gencode=arch=compute_80,code=compute_80'
+        endif
 
-    cuda_dependency += cuda_drv_api_dependency
-    cuda_dependency += cuda_rt_api_dependency
+    else
+        nvcc_exe = find_program('clang')
+        gencode = [
+            '--cuda-gpu-arch=sm_75',
+            '--cuda-device-only',
+            '-S'
+            # many complaints about device intrinsics when compiling without CTK and the ffmpeg cuda runtime header
+            #            '-nocudainc',
+            #            '-nocudalib',
+        ]
+    endif
+    message('CUDA gencode = @0@'.format(gencode))
+
 
     cuda_flags = []
-    if get_option('buildtype').startswith('debug')
-        cuda_flags += ['-DCUDA_DEBUG', '-lineinfo']
+    if get_option('buildtype') == 'debug'
+        cuda_flags += ['-DCUDA_DEBUG', '-G']
     else
         if is_nvtx_enabled
-                cuda_flags += ['-lineinfo']
-                cuda_dependency += declare_dependency(link_args : ['-lnvToolsExt'])
+            cuda_flags += ['-lineinfo']
         endif
     endif
 
-    nvcc_exe = find_program('nvcc')
     ptx_files = {}
     foreach name, _cu : cuda_cu_sources
         t = custom_target('cu_ptx_target_' + name,
             build_by_default: true,
-            output : ['@0@.ptx'.format(name)],
+            output : ['@0@.fatbin'.format(name)],
             input : _cu,
-            command : [nvcc_exe, '--ptx', '@INPUT@', '-o', '@OUTPUT@' ,
+            command : [nvcc_exe,
+                gencode,
+                '@INPUT@',
+                '-o', '@OUTPUT@' ,
                 '-I', './src',
                 '-I', '../src',
                 '-I', '../include',
                 '-I', '../src/feature',
                 '-I', '../src/' + cuda_dir,
-            ]
+                '-DDEVICE_CODE',
+            ] + cuda_flags
         )
         ptx_files += {name : [t]}
-        cuda_sources += _cu
     endforeach
 
-    message('ptx_files = @0@'.format(ptx_files))
+    message('ptx_files = @0@'.format(ptx_files.keys()))
 
     # bin2c is distributed along with cuda tools. Use '--padd 0x00' to add a NULL-terminator byte
     # to the end of the generated array.
@@ -350,12 +391,9 @@ if is_cuda_enabled
         ptx_arrays += t
     endforeach
 
-    message('ptx_arrays = @0@'.format(ptx_arrays))
-
     cuda_static_lib = static_library(
         'cuda_common_vmaf_lib',
         [cuda_sources, ptx_arrays,],
-        dependencies: [cuda_drv_api_dependency],
         include_directories : [
             libvmaf_include,
             vmaf_base_include,
@@ -472,9 +510,9 @@ libvmaf_sources = [
 
 if is_cuda_enabled
     vmaf_cflags_common += '-DHAVE_CUDA'
-    if is_nvtx_enabled
-        vmaf_cflags_common += '-DHAVE_NVTX'
-    endif
+endif
+if is_nvtx_enabled
+    vmaf_cflags_common += '-DHAVE_NVTX'
 endif
 
 if host_machine.system() == 'windows'

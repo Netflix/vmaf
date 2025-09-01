@@ -17,6 +17,8 @@ NINJA := $(VIRTUAL_ENV_PATH)/ninja
 BUILDTYPE_RELEASE := --buildtype release
 BUILDTYPE_DEBUG := --buildtype debug
 ENABLE_FLOAT := -Denable_float=true
+ENABLE_NVCC :=	true
+ENABLE_CUDA := -Denable_cuda=true -Denable_nvcc=$(ENABLE_NVCC)
 
 # Directories
 LIBVMAF_DIR := libvmaf
@@ -30,10 +32,10 @@ default: build
 all: build debug install test cythonize
 
 $(BUILD_DIR): $(MESON) $(NINJA)
-	PATH="$(VENV)/bin:$$PATH" $(MESON_SETUP) $(BUILD_DIR) $(LIBVMAF_DIR) $(BUILDTYPE_RELEASE) $(ENABLE_FLOAT)
+	PATH="$(VENV)/bin:$$PATH" $(MESON_SETUP) $(BUILD_DIR) $(LIBVMAF_DIR) $(BUILDTYPE_RELEASE) $(ENABLE_FLOAT) $(ENABLE_CUDA)
 
 $(DEBUG_DIR): $(MESON) $(NINJA)
-	PATH="$(VENV)/bin:$$PATH" $(MESON_SETUP) $(DEBUG_DIR) $(LIBVMAF_DIR) $(BUILDTYPE_DEBUG) $(ENABLE_FLOAT)
+	PATH="$(VENV)/bin:$$PATH" $(MESON_SETUP) $(DEBUG_DIR) $(LIBVMAF_DIR) $(BUILDTYPE_DEBUG) $(ENABLE_FLOAT) $(ENABLE_CUDA)
 
 cythonize: cythonize-deps
 	pushd python && ../$(VENV_PYTHON) setup.py build_ext --build-lib . && popd || exit 1
