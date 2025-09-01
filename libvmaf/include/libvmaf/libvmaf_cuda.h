@@ -19,6 +19,7 @@
 #ifndef __VMAF_CUDA_H__
 #define __VMAF_CUDA_H__
 
+#include "ffnvcodec/dynlink_cuda.h"
 #include "libvmaf/libvmaf.h"
 
 #ifdef __cplusplus

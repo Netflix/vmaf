@@ -1,0 +1,29 @@
+FROM vmaf
+
+RUN apt-get update && \
+    apt-get install -y pkg-config
+
+ARG FFMPEG_TAG=master
+ARG NVCC_FLAGS="-gencode arch=compute_75,code=sm_75 -gencode arch=compute_75,code=compute_75 -O2"
+
+# get ffmpeg
+RUN wget https://github.com/FFmpeg/FFmpeg/archive/${FFMPEG_TAG}.zip && unzip ${FFMPEG_TAG}.zip
+
+RUN cd FFmpeg-${FFMPEG_TAG} && ./configure \
+    --enable-libnpp \
+    --enable-nonfree \
+    --enable-nvdec \
+    --enable-nvenc \
+    --enable-cuvid \
+    --enable-cuda \
+    --enable-cuda-nvcc \
+    --enable-libvmaf \
+    --enable-ffnvcodec \
+    --disable-stripping \
+    --nvccflags="${NVCC_FLAGS}" && \
+    make -j && \
+    make install
+
+RUN mkdir /data
+# VMAF+decode GPU (only works for NVDec supported formats https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new)
+ENTRYPOINT ["ffmpeg"]

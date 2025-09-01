@@ -20,13 +20,6 @@
 #ifndef FEATURE_ADM_CUDA_H_
 #define FEATURE_ADM_CUDA_H_
 
-#include "mem.h"
-#include "stdio.h"
-#include <errno.h>
-#include <math.h>
-#include <stdint.h>
-#include <string.h>
-
 #include "config.h"
 #include "integer_adm.h"
 #include "common.h"
