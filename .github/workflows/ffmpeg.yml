@@ -16,15 +16,15 @@ jobs:
           - os: ubuntu-latest
             CC: gcc
             CXX: g++
-            CUDA: true
+            CUDA: "true"
           - os: ubuntu-latest
             CC: gcc
             CXX: g++
-            CUDA: false
+            CUDA: "false"
           - os: macos-latest
             CC: clang
             CXX: clang++
-            CUDA: false
+            CUDA: "false"
     runs-on: ${{ matrix.os }}
     env:
       CC: ${{ matrix.CC }}
