@@ -44,11 +44,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo -E apt-get -yq install ninja-build gcc nasm
-      - name: Install dependencies (ubuntu + CUDA)
+      - name: Setup CUDA
+        if: matrix.CUDA == 'true'
+        uses: Jimver/cuda-toolkit@v0.2.24
+        id: cuda-toolkit
+      - name: Install nv-codec-headers
         if: matrix.CUDA == 'true'
         run: |
-          sudo apt-get update
-          sudo -E apt-get -yq nvidia-cuda-toolkit wget unzip
           git clone -q --branch master --depth=1 "https://github.com/FFmpeg/nv-codec-headers" nv-codec-headers 
           cd nv-codec-headers 
           make && make install
