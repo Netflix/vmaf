@@ -24,10 +24,12 @@ jobs:
           - os: macos-latest
             CC: clang
             CXX: clang++
+            CUDA: false
     runs-on: ${{ matrix.os }}
     env:
       CC: ${{ matrix.CC }}
       CXX: ${{ matrix.CXX }}
+      CUDA: ${{ matrix.CUDA }}
     steps:
       - name: Setup python
         uses: actions/setup-python@v5
@@ -57,7 +59,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build vmaf
         run: |
-          meson setup libvmaf libvmaf/build --buildtype release -Denable_cuda=${{ matrix.CUDA }}
+          meson setup libvmaf libvmaf/build --buildtype release -Denable_cuda=$CUDA
           sudo ninja -vC libvmaf/build install
       - name: Prepare FFmpeg CUDA
         if: matrix.CUDA == 'true'
