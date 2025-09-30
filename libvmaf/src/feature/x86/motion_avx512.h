@@ -24,5 +24,13 @@
 void x_convolution_16_avx512(const uint16_t *src, uint16_t *dst, unsigned width,
                              unsigned height, ptrdiff_t src_stride,
                              ptrdiff_t dst_stride);
+void  y_convolution_8_avx512(void *src, uint16_t *dst, unsigned width,
+                            unsigned height, ptrdiff_t src_stride, ptrdiff_t dst_stride,
+                            unsigned inp_size_bits);
 
+void y_convolution_16_avx512(void *src, uint16_t *dst, unsigned width,
+                            unsigned height, ptrdiff_t src_stride,
+                            ptrdiff_t dst_stride, unsigned inp_size_bits);
+
+void sad_avx512(VmafPicture *pic_a, VmafPicture *pic_b, uint64_t *sad);
 #endif /* X86_AVX512_MOTION_H_ */

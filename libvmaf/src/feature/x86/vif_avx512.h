@@ -20,6 +20,7 @@
 #define X86_AVX512_VIF_H_
 
 #include "feature/integer_vif.h"
+#include "config.h"
 
 void vif_subsample_rd_8_avx512(VifBuffer buf, unsigned w, unsigned h);
 
