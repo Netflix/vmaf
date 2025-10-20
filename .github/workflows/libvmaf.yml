@@ -25,6 +25,9 @@ jobs:
             CC: ccache clang
             CXX: ccache clang++
             experimental: true
+          - os: ubuntu-24.04-arm
+            CC: ccache clang
+            CXX: ccache clang++
     runs-on: ${{ matrix.os }}
     env:
       CC: ${{ matrix.CC }}
