@@ -20,6 +20,7 @@
 #define __VMAF_SRC_PICTURE_H__
 
 #ifdef HAVE_CUDA
+#include <ffnvcodec/dynlink_cuda.h>
 #include "libvmaf/libvmaf_cuda.h"
 #endif
 #include "libvmaf/picture.h"
