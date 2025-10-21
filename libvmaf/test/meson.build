@@ -18,8 +18,11 @@ test_picture = executable('test_picture',
 )
 
 test_propagate_metadata = executable('test_propagate_metadata',
-    ['test.c', 'test_propagate_metadata.c', '../src/metadata_handler.c'],
+    ['test.c', 'test_propagate_metadata.c', '../src/metadata_handler.c','../src/dict.c',
+     '../src/feature/feature_collector.c', '../src/feature/alias.c', '../src/model.c', '../src/svm.cpp', '../src/log.c',
+     '../src/read_json_model.c', '../src/pdjson.c', json_model_c_sources, '../src/feature/feature_name.c', '../src/feature/feature_extractor.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf, 
 )
 
 test_feature_collector = executable('test_feature_collector',
@@ -50,8 +53,8 @@ test_model = executable('test_model',
 )
 
 test_predict = executable('test_predict',
-    ['test.c', 'test_predict.c', '../src/dict.c', '../src/metadata_handler.c',
-     '../src/feature/feature_collector.c', '../src/feature/alias.c', '../src/model.c', '../src/svm.cpp', '../src/log.c',
+    ['test.c', 'test_predict.c', '../src/dict.c', '../src/feature/feature_collector.c',
+     '../src/feature/alias.c', '../src/model.c', '../src/svm.cpp', '../src/log.c',
      '../src/read_json_model.c', '../src/pdjson.c', json_model_c_sources, '../src/feature/feature_name.c', '../src/feature/feature_extractor.c',],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
