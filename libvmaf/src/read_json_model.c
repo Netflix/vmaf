@@ -23,6 +23,12 @@
 
 #include <errno.h>
 #include <stdlib.h>
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
 #include <string.h>
 
 #define MAX_FEATURE_COUNT 64 //FIXME
@@ -493,9 +499,9 @@ static int model_collection_parse(json_stream *s, VmafModel **model,
     if (!c.name) return -ENOMEM;
 
     const size_t cfg_name_sz = strlen(name) + 5 + 1;
-    char cfg_name[cfg_name_sz];
+    char *cfg_name = alloca(cfg_name_sz);
 
-    const size_t generated_key_sz = 4 + 1;
+    enum { generated_key_sz = 4 + 1 };
     char generated_key[generated_key_sz];
 
     unsigned i = 0;
