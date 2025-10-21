@@ -361,6 +361,34 @@ if is_cuda_enabled
             cuda_flags += ['-lineinfo']
         endif
     endif
+    
+    # =============|==============|=================
+    # Generation   | Compute Code | Typical Card
+    # -------------|--------------|-----------------
+    # Maxwell      | 5.0          | GeForce GTX 750
+    # Maxwell      | 5.2          | GeForce GTX 980
+    # Pascal       | 6.1          | GeForce GTX 1080
+    # Turing       | 7.5          | GeForce RTX 2080
+    # Ampere       | 8.6          | GeForce RTX 3080
+    # Ada Lovelace | 8.9          | GeForce RTX 4090
+    # Blackwell    | 12.0         | GeForce RTX 5090
+    # =============|==============|=================
+    gencode = [
+        '--fatbin',
+        '-gencode=arch=compute_120,code=compute_120',
+        '-gencode=arch=compute_120,code=sm_120',
+        '-gencode=arch=compute_89,code=sm_89',
+        '-gencode=arch=compute_86,code=sm_86',
+        '-gencode=arch=compute_80,code=compute_80',
+        '-gencode=arch=compute_75,code=sm_75',
+        '-gencode=arch=compute_70,code=compute_70',
+        '-gencode=arch=compute_61,code=sm_61',
+        '-gencode=arch=compute_60,code=compute_60',
+        '-gencode=arch=compute_52,code=sm_52',
+        '-gencode=arch=compute_50,code=sm_50',
+        '-gencode=arch=compute_50,code=compute_50',
+        '-O3'
+    ]
 
     ptx_files = {}
     foreach name, _cu : cuda_cu_sources
