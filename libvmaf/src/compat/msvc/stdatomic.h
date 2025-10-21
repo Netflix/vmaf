@@ -27,19 +27,28 @@
 #ifndef MSCVER_STDATOMIC_H_
 #define MSCVER_STDATOMIC_H_
 
-#if !defined(__cplusplus) && defined(_MSC_VER)
+#ifdef __cplusplus
+#error "This compatibility header should not be used with C++ files (C++ has its own <stdatomic.h>)"
+#endif
+
+#ifndef _MSC_VER
+#error "This compatibility header should only be used with MSVC (clang-cl might work)"
+#endif
+
+#ifndef __STDC_NO_ATOMICS__
+#error "This compatibility header should only be used with MSVC versions that don't implement <stdatomic.h>"
+#endif
 
 #pragma warning(push)
 #pragma warning(disable:4067)    /* newline for __has_include_next */
 
 #if defined(__clang__) && __has_include_next(<stdatomic.h>)
+   /* ??? This should not happen unless system <stdatomic.h> exists but for some reason the Meson test for it failed. */
    /* use the clang stdatomic.h with clang-cl*/
 #  include_next <stdatomic.h>
-#else /* ! stdatomic.h */
+#else /* ! clang && stdatomic.h */
 
 #include <windows.h>
-
-#include "common/attributes.h"
 
 typedef volatile LONG  __declspec(align(32)) atomic_int;
 typedef volatile ULONG __declspec(align(32)) atomic_uint;
@@ -64,7 +73,5 @@ typedef enum {
 #endif /* ! stdatomic.h */
 
 #pragma warning(pop)
-
-#endif /* !defined(__cplusplus) && defined(_MSC_VER) */
 
 #endif /* MSCVER_STDATOMIC_H_ */
