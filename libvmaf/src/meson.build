@@ -128,7 +128,13 @@ cdata.set10('VMAF_FLOAT_FEATURES', float_enabled)
 
 if built_in_models_enabled
     xxd = find_program('xxd', required: false)
+
     if xxd.found()
+        xdd_supports_n = run_command(xxd, '-n', 'test', check: false).returncode() == 0
+        if meson.is_subproject () and not xdd_supports_n
+            error('xxd with support for -n option is required building as a subproject. Please install a newer version of xxd or disable built-in models.')
+        endif
+
         model_files = [
             'vmaf_v0.6.1.json',
             'vmaf_b_v0.6.3.json',
@@ -147,6 +153,11 @@ if built_in_models_enabled
         endif
 
         foreach model_file : model_files
+            if xdd_supports_n
+                command = [xxd, '-i', '-n', 'src_@PLAINNAME@', '@INPUT@', '@OUTPUT@']
+            else
+                command = [xxd, '-i', '@INPUT@', '@OUTPUT@']
+            endif
             json_model_c_sources += custom_target(
                   model_file,
                   output : '@PLAINNAME@.c',
@@ -155,7 +166,7 @@ if built_in_models_enabled
                     output : model_file,
                     copy: true
                   ),
-                  command : [xxd, '-i', '@INPUT@', '@OUTPUT@'],
+                  command : command,
             )
         endforeach
 
