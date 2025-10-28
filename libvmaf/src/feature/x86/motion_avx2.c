@@ -23,6 +23,7 @@
 
 #include "feature/integer_motion.h"
 #include "feature/common/alignment.h"
+#include "picture.h"
 
 void x_convolution_16_avx2(const uint16_t *src, uint16_t *dst, unsigned width,
                            unsigned height, ptrdiff_t src_stride,
