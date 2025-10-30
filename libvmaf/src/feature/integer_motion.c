@@ -276,6 +276,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 
     MotionState *s = fex->priv;
     int err = 0;
+    unsigned flags = vmaf_get_cpu_flags();
 
     s->feature_name_dict =
         vmaf_feature_name_dict_from_provided_features(fex->provided_features,
@@ -296,10 +297,17 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     if (err) goto fail;
 
     s->y_convolution = bpc == 8 ? y_convolution_8 : y_convolution_16;
-    s->x_convolution = x_convolution_16;
-
 #if ARCH_X86
-    unsigned flags = vmaf_get_cpu_flags();
+    if (flags & VMAF_X86_CPU_FLAG_AVX2)
+        s->y_convolution = bpc == 8 ? y_convolution_8_avx2 : y_convolution_16_avx2;
+#if HAVE_AVX512
+    if (flags & VMAF_X86_CPU_FLAG_AVX512)
+        s->y_convolution = bpc == 8 ? y_convolution_8_avx512 : y_convolution_16_avx512;
+#endif
+#endif
+
+    s->x_convolution = x_convolution_16;
+#if ARCH_X86
     if (flags & VMAF_X86_CPU_FLAG_AVX2)
         s->x_convolution = x_convolution_16_avx2;
 #if HAVE_AVX512
@@ -309,6 +317,14 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 #endif
 
     s->sad = sad_c;
+#if ARCH_X86
+    if (flags & VMAF_X86_CPU_FLAG_AVX2)
+        s->sad = sad_avx2;
+#if HAVE_AVX512
+    if (flags & VMAF_X86_CPU_FLAG_AVX512)
+        s->sad = sad_avx512;
+#endif
+#endif
     s->score = 0.;
 
     return 0;

@@ -257,6 +257,7 @@ if is_asm_enabled
         x86_avx512_sources = [
             feature_src_dir + 'x86/motion_avx512.c',
             feature_src_dir + 'x86/vif_avx512.c',
+            feature_src_dir + 'x86/adm_avx512.c',
         ]
 
         x86_avx512_static_lib = static_library(
