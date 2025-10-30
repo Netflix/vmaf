@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <locale.h>
 
 #define MAX_FEATURE_COUNT 64 //FIXME
 #define MAX_KNOT_COUNT 10 //FIXME
@@ -432,6 +433,7 @@ static int model_parse(json_stream *s, VmafModel *model,
 static int vmaf_read_json_model(VmafModel **model, VmafModelConfig *cfg,
                                 json_stream *s)
 {
+    int err = -EINVAL;
     VmafModel *const m = *model = malloc(sizeof(*m));
     if (!m) return -ENOMEM;
     memset(m, 0, sizeof(*m));
@@ -449,7 +451,18 @@ static int vmaf_read_json_model(VmafModel **model, VmafModelConfig *cfg,
     if (!m->score_transform.knots.list) return -ENOMEM;
     memset(m->score_transform.knots.list, 0, knots_sz);
 
-    return model_parse(s, m, cfg->flags);
+    char *old_locale = setlocale(LC_NUMERIC, NULL);
+    if (old_locale) {
+        old_locale = strdup(old_locale);
+    }
+    setlocale(LC_NUMERIC, "C");
+
+    err = model_parse(s, m, cfg->flags);
+
+    setlocale(LC_NUMERIC, old_locale);
+    free(old_locale);
+
+    return err;
 }
 
 int vmaf_read_json_model_from_buffer(VmafModel **model, VmafModelConfig *cfg,
