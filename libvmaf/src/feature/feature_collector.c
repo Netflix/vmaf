@@ -31,6 +31,8 @@
 #include "log.h"
 #include "predict.h"
 
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 static int aggregate_vector_init(AggregateVector *aggregate_vector)
 {
     if (!aggregate_vector) return -EINVAL;
@@ -242,17 +244,19 @@ int vmaf_feature_collector_mount_model(VmafFeatureCollector *feature_collector,
 
     VmafPredictModel *m = malloc(sizeof(VmafPredictModel));
     if (!m) return -ENOMEM;
+
     m->model = model;
     m->next = NULL;
+    m->last_highest_seen_index = 0;
+    m->last_lowest_seen_index = 0;
 
-    VmafPredictModel **head = &feature_collector->models;
-    while (*head && (*head)->next != NULL)
-        *head = (*head)->next;
-
-    if (!(*head))
-        *head = m;
-    else
-        (*head)->next = m;
+    VmafPredictModel *head = feature_collector->models;
+    if (!head) {
+        feature_collector->models = m;
+    } else {
+        while (head->next) head = head->next;
+        head->next = m;
+    }
 
     return 0;
 }
@@ -263,24 +267,30 @@ int vmaf_feature_collector_unmount_model(VmafFeatureCollector *feature_collector
     if (!feature_collector) return -EINVAL;
     if (!model) return -EINVAL;
 
-    VmafPredictModel **head = &feature_collector->models;
-    while (*head && (*head)->model != model)
-        head = &(*head)->next;
+    VmafPredictModel *head = feature_collector->models;
+    VmafPredictModel *prev = NULL;
 
-    if (!(*head)) return -EINVAL;
+    while (head) {
+        if (head->model == model) {
+            if (prev) {
+                prev->next = head->next;
+            } else {
+                feature_collector->models = head->next;
+            }
+            free(head);
+            return 0;
+        }
+        prev = head;
+        head = head->next;
+    }
 
-    VmafPredictModel *m = *head;
-    *head = m->next;
-    free(m);
-
-    return 0;
+    return -ENOENT;
 }
 
 int vmaf_feature_collector_register_metadata(VmafFeatureCollector *feature_collector,
                                              VmafMetadataConfiguration metadata_cfg)
 {
     if (!feature_collector) return -EINVAL;
-    if (!metadata_cfg.feature_name) return -EINVAL;
     if (!metadata_cfg.callback) return -EINVAL;
 
     VmafCallbackList *metadata = feature_collector->metadata;
@@ -347,30 +357,12 @@ int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
 
     int res = 0;
 
-    VmafCallbackItem *metadata_iter = feature_collector->metadata ?
-                                      feature_collector->metadata->head : NULL;
-    while (metadata_iter) {
-        // Check current feature name is the same as the metadata feature name
-        if (!strcmp(metadata_iter->metadata_cfg.feature_name, feature_name)) {
+    VmafPredictModel *model_iter = feature_collector->models;
 
-            // Call the callback function with the metadata feature name
-            VmafMetadata data = {
-                .feature_name = metadata_iter->metadata_cfg.feature_name,
-                .picture_index = picture_index,
-                .score = score,
-            };
-            metadata_iter->metadata_cfg.callback(metadata_iter->metadata_cfg.data, &data);
-            // Move to the next metadata
-            goto next_metadata;
-        }
+    while (model_iter && feature_collector->metadata->cnt) {
+        VmafModel *model = model_iter->model;
 
-        VmafPredictModel *model_iter = feature_collector->models;
-
-        // If metadata feature name is not the same as the current feature feature_name
-        // Check if metadata feature name is the predicted feature
-        while (model_iter) {
-            VmafModel *model = model_iter->model;
-
+        if (strcmp(model->name, feature_name)) {
             pthread_mutex_unlock(&(feature_collector->lock));
             res = vmaf_feature_collector_get_score(feature_collector,
                     model->name, &score, picture_index);
@@ -382,11 +374,46 @@ int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
                         picture_index, &score, true, true, 0);
                 pthread_mutex_lock(&(feature_collector->lock));
             }
-            model_iter = model_iter->next;
-        }
+        } else {
+            model_iter->last_highest_seen_index = MAX(model_iter->last_highest_seen_index, picture_index);
+            unsigned process_index = model_iter->last_lowest_seen_index;
+            double temp_score = 0.0;
+            bool frame_ready = true;
 
-    next_metadata:
-        metadata_iter = metadata_iter->next;
+            while (process_index <= model_iter->last_highest_seen_index && frame_ready) {
+                pthread_mutex_unlock(&(feature_collector->lock));
+                res = vmaf_feature_collector_get_score(feature_collector,
+                        model->name, &temp_score, process_index);
+                frame_ready = !res;
+                pthread_mutex_lock(&(feature_collector->lock));
+
+                VmafCallbackItem *metadata_iter = feature_collector->metadata->cnt ?
+                                    feature_collector->metadata->head : NULL;
+
+                while (metadata_iter && frame_ready) {
+                    VmafMetadata data = {0};
+                    for (unsigned i = 0; i < model->n_features; i++) {
+                        data.feature_name = model->feature[i].name;
+                        data.picture_index = process_index;
+                        data.score = find_feature_vector(feature_collector, model->feature[i].name)->score[process_index].value;
+
+                        metadata_iter->metadata_cfg.callback(metadata_iter->metadata_cfg.data, &data);
+                    }
+                    data.feature_name = model->name;
+                    data.picture_index = process_index;
+                    data.score = temp_score;
+                    metadata_iter->metadata_cfg.callback(metadata_iter->metadata_cfg.data, &data);
+
+                    metadata_iter = metadata_iter->next;
+                }
+
+                if (frame_ready) {
+                    process_index++;
+                    model_iter->last_lowest_seen_index = process_index;
+                }
+            }
+        }
+        model_iter = model_iter->next;
     }
 
 unlock:
