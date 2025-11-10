@@ -19,7 +19,11 @@
 #ifndef __VMAF_SRC_REF_H__
 #define __VMAF_SRC_REF_H__
 
+#ifdef HAVE_STDATOMIC_H
 #include <stdatomic.h>
+#else
+#error "Meson target is missing stdatomic_depedency"
+#endif
 
 typedef struct VmafRef {
     atomic_int cnt;
