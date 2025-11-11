@@ -499,11 +499,23 @@ libvmaf_feature_static_lib = static_library(
     objects: common_cuda_objects
 )
 
+libsvm_cpp_args = vmaf_cflags_common
+if meson.get_compiler('cpp').get_id() == 'clang' or meson.get_compiler('cpp').get_id() == 'apple-clang'
+    libsvm_cpp_args += ['-U_LIBCPP_ENABLE_ASSERTIONS']
+endif
+
+libsvm_static_lib = static_library(
+    'libsvm',
+    src_dir + 'svm.cpp',
+    include_directories : [libvmaf_include, vmaf_include],
+    dependencies : [thread_lib],
+    cpp_args : libsvm_cpp_args,
+)
+
 libvmaf_sources = [
     src_dir + 'libvmaf.c',
     src_dir + 'predict.c',
     src_dir + 'model.c',
-    src_dir + 'svm.cpp',
     src_dir + 'picture.c',
     src_dir + 'mem.c',
     src_dir + 'output.c',
@@ -537,7 +549,6 @@ libvmaf = library(
     [libvmaf_sources, rev_target, json_model_c_sources],
     include_directories : [libvmaf_inc, vmaf_include],
     c_args : vmaf_cflags_common,
-    cpp_args : vmaf_cflags_common,
     dependencies : [
       thread_lib,
       math_lib,
@@ -548,6 +559,7 @@ libvmaf = library(
         platform_specific_cpu_objects,
         libvmaf_feature_static_lib.extract_all_objects(recursive: true),
         libvmaf_cpu_static_lib.extract_all_objects(recursive: true),
+        libsvm_static_lib.extract_all_objects(recursive: true),
     ],
     version : vmaf_soname_version,
     soversion : vmaf_soversion,
