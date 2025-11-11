@@ -23,10 +23,11 @@ test_propagate_metadata = executable('test_propagate_metadata',
 )
 
 test_feature_collector = executable('test_feature_collector',
-    ['test.c', 'test_feature_collector.c', '../src/log.c', '../src/predict.c', '../src/svm.cpp', '../src/metadata_handler.c'],
+    ['test.c', 'test_feature_collector.c', '../src/log.c', '../src/predict.c', '../src/metadata_handler.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/feature/'), include_directories('../src')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
-    dependencies: cuda_dependency
+    dependencies: cuda_dependency,
+    objects : libsvm_static_lib.extract_all_objects(recursive: true),
 )
 
 test_log = executable('test_log',
@@ -41,28 +42,28 @@ test_thread_pool = executable('test_thread_pool',
 )
 
 test_model = executable('test_model',
-    ['test.c', 'test_model.c', '../src/dict.c', '../src/svm.cpp', '../src/pdjson.c', '../src/read_json_model.c', '../src/log.c', json_model_c_sources],
+    ['test.c', 'test_model.c', '../src/dict.c', '../src/pdjson.c', '../src/read_json_model.c', '../src/log.c', json_model_c_sources],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
     c_args : [vmaf_cflags_common, '-DJSON_MODEL_PATH="'+join_paths(meson.project_source_root(), '../model/')+'"'],
-    cpp_args : vmaf_cflags_common,
     dependencies : [thread_lib, cuda_dependency],
+    objects : libsvm_static_lib.extract_all_objects(recursive: true),
 )
 
 test_predict = executable('test_predict',
     ['test.c', 'test_predict.c', '../src/dict.c', '../src/metadata_handler.c',
-     '../src/feature/feature_collector.c', '../src/feature/alias.c', '../src/model.c', '../src/svm.cpp', '../src/log.c',
+     '../src/feature/feature_collector.c', '../src/feature/alias.c', '../src/model.c', '../src/log.c',
      '../src/read_json_model.c', '../src/pdjson.c', json_model_c_sources, '../src/feature/feature_name.c', '../src/feature/feature_extractor.c',],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
     c_args : vmaf_cflags_common,
-    cpp_args : vmaf_cflags_common,
     dependencies : [thread_lib, cuda_dependency],
+    objects : libsvm_static_lib.extract_all_objects(recursive: true),
 )
 
 test_feature_extractor = executable('test_feature_extractor',
     ['test.c', 'test_feature_extractor.c', '../src/mem.c', '../src/picture.c', '../src/ref.c',
-     '../src/dict.c', '../src/opt.c', '../src/log.c', '../src/predict.c', '../src/svm.cpp',
+     '../src/dict.c', '../src/opt.c', '../src/log.c', '../src/predict.c',
      '../src/metadata_handler.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
     dependencies : [math_lib, stdatomic_dependency, thread_lib, cuda_dependency],
@@ -71,6 +72,7 @@ test_feature_extractor = executable('test_feature_extractor',
       platform_specific_cpu_objects,
       libvmaf_feature_static_lib.extract_all_objects(recursive: true),
       libvmaf_cpu_static_lib.extract_all_objects(recursive: true),
+      libsvm_static_lib.extract_all_objects(recursive: true),
     ]
 )
 
