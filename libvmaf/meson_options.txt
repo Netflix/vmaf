@@ -37,3 +37,8 @@ option('enable_nvtx',
     type: 'boolean',
     value: false,
     description: 'Enable NVTX range support')
+
+option('enable_nvcc',
+    type: 'boolean',
+    value: true,
+    description: 'Use clang to compile CUDA code.')
