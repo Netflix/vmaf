@@ -249,11 +249,17 @@ int main(int argc, char *argv[])
 #ifdef HAVE_CUDA
     VmafCudaState *cu_state;
     VmafCudaConfiguration cuda_cfg = { 0 };
-    err = vmaf_cuda_state_init(&cu_state, cuda_cfg);
-    err |= vmaf_cuda_import_state(vmaf, cu_state);
-    if (err) {
-        fprintf(stderr, "problem during vmaf_cuda_state_init\n");
-        return -1;
+    if (c.gpumask != ((unsigned)~0)) {
+        err = vmaf_cuda_state_init(&cu_state, cuda_cfg);
+        if (err) {
+            fprintf(stderr, "problem during vmaf_cuda_state_init, using CPU\n");
+        } else {
+            err |= vmaf_cuda_import_state(vmaf, cu_state);
+            if (err) {
+                fprintf(stderr, "problem during vmaf_cuda_import_state\n");
+                return -1;
+            }
+        }
     }
 #endif
 

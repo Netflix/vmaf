@@ -27,10 +27,8 @@
 #include "log.h"
 #include "picture.h"
 
-#ifdef HAVE_CUDA
 #ifdef HAVE_NVTX
-#include "nvtx3/nvToolsExt.h"
-#endif
+#include <nvtx3/nvToolsExt.h>
 #endif
 
 #if VMAF_FLOAT_FEATURES
