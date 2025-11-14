@@ -98,7 +98,7 @@ static inline void vif_statistic_avx512(Residuals512 *out, __m512i xx, __m512i x
         // log stage
         __m512i mlog_den_stage1 = _mm512_add_epi64(msigma1, _mm512_set1_epi64(sigma_nsq));
         __m512i mnorm = _mm512_sub_epi64(_mm512_set1_epi64(48), _mm512_lzcnt_epi64(mlog_den_stage1));
-        __m512i mlog_den1 = _mm512_srlv_epi64(mlog_den_stage1, mnorm);
+        __m512i mlog_den1 = _mm512_srlv_epi64(mlog_den_stage1, mnorm);        
         // note: I'm getting 32 bit here, but I need just 16!
         __m512i mden_val = _mm512_i32gather_epi64(_mm512_cvtusepi64_epi32(mlog_den1), log2_table, sizeof(*log2_table));
         mden_val = _mm512_and_si512(mden_val, _mm512_set1_epi64(0xffff)); // we took 64 bits, we need 16
@@ -124,7 +124,7 @@ static inline void vif_statistic_avx512(Residuals512 *out, __m512i xx, __m512i x
         __m512i mnumer1_tmp_mantissa = _mm512_srlv_epi64(mnumer1_tmp, mnumer1_tmp_lz);
         __m512i mnumer1_tmp_mantissa_log = _mm512_and_si512(_mm512_set1_epi64(0xffff), _mm512_i32gather_epi64(_mm512_cvtusepi64_epi32(mnumer1_tmp_mantissa), log2_table, sizeof(*log2_table))); // we took 64 bits, we need 16
         __m512i mnumer1_tmp_log = _mm512_add_epi64(mnumer1_tmp_mantissa_log, _mm512_slli_epi64(mnumer1_tmp_lz, 11));
-
+        
         __m512i mnum_val = _mm512_sub_epi64(mnumer1_tmp_log, mnumer1_log);
 
         maccum_num_log = _mm512_mask_add_epi64(maccum_num_log, (~msigma1_mask) & msigma12_mask & msigma2_mask, maccum_num_log, mnum_val);
@@ -145,8 +145,6 @@ void vif_statistic_8_avx512(struct VifPublicState *s, float *num, float *den, un
     const unsigned fwidth = vif_filter1d_width[0];
     const uint16_t *vif_filt = vif_filter1d_table[0];
     VifBuffer buf = s->buf;
-    const uint8_t *ref = (uint8_t*)buf.ref;
-    const uint8_t *dis = (uint8_t*)buf.dis;
     const unsigned fwidth_half = fwidth >> 1;
     const uint16_t *log2_table = s->log2_table;
     double vif_enhn_gain_limit = s->vif_enhn_gain_limit;
@@ -180,46 +178,141 @@ void vif_statistic_8_avx512(struct VifPublicState *s, float *num, float *den, un
 
         // First consider all blocks of 16 elements until it's not possible anymore
         unsigned n = w >> 4;
-        for (unsigned jj = 0; jj < n << 4; jj += 16) {
-
+        for (unsigned jj = 0; jj < n << 4; jj += 32) {
             __m512i f0 = _mm512_set1_epi32(vif_filt[fwidth / 2]);
-            __m512i r0 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(ref + (buf.stride * i) + jj)));
-            __m512i d0 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(dis + (buf.stride * i) + jj)));
+            __m512i r0 = _mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)(((uint8_t*)buf.ref) + (buf.stride * i) + jj)));
+            __m512i d0 = _mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)(((uint8_t*)buf.dis) + (buf.stride * i) + jj)));
+
+            __m512i r0_lo = _mm512_unpacklo_epi16(r0, _mm512_setzero_si512());
+            __m512i r0_hi = _mm512_unpackhi_epi16(r0, _mm512_setzero_si512());
+            __m512i d0_lo = _mm512_unpacklo_epi16(d0, _mm512_setzero_si512());
+            __m512i d0_hi = _mm512_unpackhi_epi16(d0, _mm512_setzero_si512());
 
             // filtered r,d
-            __m512i accum_mu1 = _mm512_mullo_epi32(r0, f0);
-            __m512i accum_mu2 = _mm512_mullo_epi32(d0, f0);
-            __m512i accum_ref = _mm512_mullo_epi32(f0, _mm512_mullo_epi32(r0, r0));
-            __m512i accum_dis = _mm512_mullo_epi32(f0, _mm512_mullo_epi32(d0, d0));
-            __m512i accum_ref_dis = _mm512_mullo_epi32(f0, _mm512_mullo_epi32(r0, d0));
+            __m512i accum_mu1_lo = _mm512_mullo_epi32(r0_lo, f0);
+            __m512i accum_mu1_hi = _mm512_mullo_epi32(r0_hi, f0);
+            __m512i accum_mu2_lo = _mm512_mullo_epi32(d0_lo, f0);
+            __m512i accum_mu2_hi = _mm512_mullo_epi32(d0_hi, f0);
+            __m512i accum_ref_lo = _mm512_mullo_epi32(f0, _mm512_mullo_epi32(r0_lo, r0_lo));
+            __m512i accum_ref_hi = _mm512_mullo_epi32(f0, _mm512_mullo_epi32(r0_hi, r0_hi));
+            __m512i accum_dis_lo = _mm512_mullo_epi32(f0, _mm512_mullo_epi32(d0_lo, d0_lo));
+            __m512i accum_dis_hi = _mm512_mullo_epi32(f0, _mm512_mullo_epi32(d0_hi, d0_hi));
+            __m512i accum_ref_dis_lo = _mm512_mullo_epi32(f0, _mm512_mullo_epi32(r0_lo, d0_lo));
+            __m512i accum_ref_dis_hi = _mm512_mullo_epi32(f0, _mm512_mullo_epi32(r0_hi, d0_hi));
 
-            for (unsigned int tap = 0; tap < fwidth / 2; tap++) {
+            for (unsigned int tap = 0; tap < fwidth / 2; tap+=2) {
                 int ii_back = i_back + tap;
                 int ii_forward = i_forward - tap;
 
                 __m512i f0 = _mm512_set1_epi32(vif_filt[tap]);
-                __m512i r0 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(ref + (buf.stride * ii_back) + jj)));
-                __m512i d0 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(dis + (buf.stride * ii_back) + jj)));
-                __m512i r1 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(ref + (buf.stride * ii_forward) + jj)));
-                __m512i d1 = _mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)(dis + (buf.stride * ii_forward) + jj)));
+                __m512i f1 = _mm512_set1_epi32(vif_filt[tap+1]);
+                __m512i f0_1 = _mm512_set1_epi32(vif_filt[tap] + (vif_filt[tap + 1] << 16));
 
-                accum_mu1 = _mm512_add_epi32(accum_mu1, _mm512_mullo_epi32(_mm512_add_epi32(r0, r1), f0));
-                accum_mu2 = _mm512_add_epi32(accum_mu2, _mm512_mullo_epi32(_mm512_add_epi32(d0, d1), f0));
-                accum_ref = _mm512_add_epi32(accum_ref, _mm512_mullo_epi32(f0, _mm512_add_epi32(_mm512_mullo_epi32(r0, r0), _mm512_mullo_epi32(r1, r1))));
-                accum_dis = _mm512_add_epi32(accum_dis, _mm512_mullo_epi32(f0, _mm512_add_epi32(_mm512_mullo_epi32(d0, d0), _mm512_mullo_epi32(d1, d1))));
-                accum_ref_dis = _mm512_add_epi32(accum_ref_dis, _mm512_mullo_epi32(f0, _mm512_add_epi32(_mm512_mullo_epi32(d0, r0), _mm512_mullo_epi32(d1, r1))));
+                __m512i r0 = _mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)(((uint8_t*)buf.ref) + (buf.stride * ii_back) + jj)));
+                __m512i d0 = _mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)(((uint8_t*)buf.dis) + (buf.stride * ii_back) + jj)));
+                __m512i r16 = _mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)(((uint8_t*)buf.ref) + (buf.stride * ii_forward) + jj)));
+                __m512i d16 = _mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)(((uint8_t*)buf.dis) + (buf.stride * ii_forward) + jj)));
+                
+                __m512i r1 = _mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)(((uint8_t*)buf.ref) + (buf.stride * (ii_back + 1)) + jj)));
+                __m512i d1 = _mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)(((uint8_t*)buf.dis) + (buf.stride * (ii_back + 1)) + jj)));
+                __m512i r15 = _mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)(((uint8_t*)buf.ref) + (buf.stride * (ii_forward - 1)) + jj)));
+                __m512i d15 = _mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)(((uint8_t*)buf.dis) + (buf.stride * (ii_forward - 1)) + jj)));
+
+                __m512i r0p16 = _mm512_add_epi16(r0, r16);
+                __m512i r1p15 = _mm512_add_epi16(r1, r15);
+                                
+                __m512i d0p16 = _mm512_add_epi16(d0, d16);
+                __m512i d1p15 = _mm512_add_epi16(d1, d15);
+                
+                __m512i r_0p16_1p15_lo = _mm512_unpacklo_epi16(r0p16, r1p15);
+                __m512i r_0p16_1p15_hi = _mm512_unpackhi_epi16(r0p16, r1p15);
+                __m512i d_0p16_1p15_lo = _mm512_unpacklo_epi16(d0p16, d1p15);
+                __m512i d_0p16_1p15_hi = _mm512_unpackhi_epi16(d0p16, d1p15);
+
+                accum_mu1_lo = _mm512_add_epi32(accum_mu1_lo, _mm512_madd_epi16(r_0p16_1p15_lo, f0_1));
+                accum_mu1_hi = _mm512_add_epi32(accum_mu1_hi, _mm512_madd_epi16(r_0p16_1p15_hi, f0_1));
+                accum_mu2_lo = _mm512_add_epi32(accum_mu2_lo, _mm512_madd_epi16(d_0p16_1p15_lo, f0_1));
+                accum_mu2_hi = _mm512_add_epi32(accum_mu2_hi, _mm512_madd_epi16(d_0p16_1p15_hi, f0_1));
+
+                __m512i r0_r16_lo = _mm512_unpacklo_epi16(r0, r16);
+                __m512i r0_r16_hi = _mm512_unpackhi_epi16(r0, r16);
+                __m512i r1_r15_lo = _mm512_unpacklo_epi16(r1, r15);
+                __m512i r1_r15_hi = _mm512_unpackhi_epi16(r1, r15);
+
+                __m512i d0_r16_lo = _mm512_unpacklo_epi16(d0, d16);
+                __m512i d0_r16_hi = _mm512_unpackhi_epi16(d0, d16);
+                __m512i d1_r15_lo = _mm512_unpacklo_epi16(d1, d15);
+                __m512i d1_r15_hi = _mm512_unpackhi_epi16(d1, d15);
+
+                __m512i r0_16_lo_sq = _mm512_madd_epi16(r0_r16_lo, r0_r16_lo);
+                __m512i r0_16_hi_sq = _mm512_madd_epi16(r0_r16_hi, r0_r16_hi);
+                __m512i r1_15_lo_sq = _mm512_madd_epi16(r1_r15_lo, r1_r15_lo);
+                __m512i r1_15_hi_sq = _mm512_madd_epi16(r1_r15_hi, r1_r15_hi);
+
+                __m512i d0_16_lo_sq = _mm512_madd_epi16(d0_r16_lo, d0_r16_lo);
+                __m512i d0_16_hi_sq = _mm512_madd_epi16(d0_r16_hi, d0_r16_hi);
+                __m512i d1_15_lo_sq = _mm512_madd_epi16(d1_r15_lo, d1_r15_lo);
+                __m512i d1_15_hi_sq = _mm512_madd_epi16(d1_r15_hi, d1_r15_hi);
+
+                __m512i r016_d016_lo_sq = _mm512_madd_epi16(d0_r16_lo, r0_r16_lo);
+                __m512i r016_d016_hi_sq = _mm512_madd_epi16(d0_r16_hi, r0_r16_hi);
+                __m512i r115_d115_lo_sq = _mm512_madd_epi16(d1_r15_lo, r1_r15_lo);
+                __m512i r115_d115_hi_sq = _mm512_madd_epi16(d1_r15_hi, r1_r15_hi);
+
+                accum_ref_lo = _mm512_add_epi32(accum_ref_lo, _mm512_mullo_epi32(r0_16_lo_sq, f0));
+                accum_ref_hi = _mm512_add_epi32(accum_ref_hi, _mm512_mullo_epi32(r0_16_hi_sq, f0));
+                accum_dis_lo = _mm512_add_epi32(accum_dis_lo, _mm512_mullo_epi32(d0_16_lo_sq, f0));
+                accum_dis_hi = _mm512_add_epi32(accum_dis_hi, _mm512_mullo_epi32(d0_16_hi_sq, f0));
+                accum_ref_dis_lo = _mm512_add_epi32(accum_ref_dis_lo, _mm512_mullo_epi32(r016_d016_lo_sq, f0));
+                accum_ref_dis_hi = _mm512_add_epi32(accum_ref_dis_hi, _mm512_mullo_epi32(r016_d016_hi_sq, f0));
+                accum_ref_lo = _mm512_add_epi32(accum_ref_lo, _mm512_mullo_epi32(r1_15_lo_sq, f1));
+                accum_ref_hi = _mm512_add_epi32(accum_ref_hi, _mm512_mullo_epi32(r1_15_hi_sq, f1));
+                accum_dis_lo = _mm512_add_epi32(accum_dis_lo, _mm512_mullo_epi32(d1_15_lo_sq, f1));
+                accum_dis_hi = _mm512_add_epi32(accum_dis_hi, _mm512_mullo_epi32(d1_15_hi_sq, f1));
+                accum_ref_dis_lo = _mm512_add_epi32(accum_ref_dis_lo, _mm512_mullo_epi32(r115_d115_lo_sq, f1));
+                accum_ref_dis_hi = _mm512_add_epi32(accum_ref_dis_hi, _mm512_mullo_epi32(r115_d115_hi_sq, f1));
             }
-            accum_mu1 = _mm512_add_epi32(accum_mu1, round_128);
-            accum_mu2 = _mm512_add_epi32(accum_mu2, round_128);
-            accum_mu1 = _mm512_srli_epi32(accum_mu1, 0x08);
-            accum_mu2 = _mm512_srli_epi32(accum_mu2, 0x08);
 
-            _mm512_storeu_si512((__m512i*)(buf.tmp.mu1 + jj), accum_mu1);
-            _mm512_storeu_si512((__m512i*)(buf.tmp.mu2 + jj), accum_mu2);
-            _mm512_storeu_si512((__m512i*)(buf.tmp.ref + jj), accum_ref);
-            _mm512_storeu_si512((__m512i*)(buf.tmp.dis + jj), accum_dis);
-            _mm512_storeu_si512((__m512i*)(buf.tmp.ref_dis + jj), accum_ref_dis);
+            accum_mu1_lo = _mm512_add_epi32(accum_mu1_lo, round_128);
+            accum_mu1_hi = _mm512_add_epi32(accum_mu1_hi, round_128);
+            accum_mu2_lo = _mm512_add_epi32(accum_mu2_lo, round_128);
+            accum_mu2_hi = _mm512_add_epi32(accum_mu2_hi, round_128);
+            accum_mu1_lo = _mm512_srli_epi32(accum_mu1_lo, 0x08);
+            accum_mu1_hi = _mm512_srli_epi32(accum_mu1_hi, 0x08);
+            accum_mu2_lo = _mm512_srli_epi32(accum_mu2_lo, 0x08);
+            accum_mu2_hi = _mm512_srli_epi32(accum_mu2_hi, 0x08);            
+
+            __m512i perm_lo = _mm512_set_epi64(11, 10, 3, 2, 9, 8, 1, 0);
+            __m512i perm_hi = _mm512_set_epi64(15, 14, 7, 6, 13, 12, 5, 4);
+
+            __m512i tmp_mu1 = accum_mu1_lo;
+            accum_mu1_lo = _mm512_permutex2var_epi64(tmp_mu1, perm_lo, accum_mu1_hi);
+            accum_mu1_hi = _mm512_permutex2var_epi64(tmp_mu1, perm_hi, accum_mu1_hi);
+            __m512i tmp_mu2 = accum_mu2_lo;
+            accum_mu2_lo = _mm512_permutex2var_epi64(tmp_mu2, perm_lo, accum_mu2_hi);
+            accum_mu2_hi = _mm512_permutex2var_epi64(tmp_mu2, perm_hi, accum_mu2_hi);
+            __m512i tmp_mu_ref = accum_ref_lo;
+            accum_ref_lo = _mm512_permutex2var_epi64(tmp_mu_ref, perm_lo, accum_ref_hi);
+            accum_ref_hi = _mm512_permutex2var_epi64(tmp_mu_ref, perm_hi, accum_ref_hi);
+            __m512i tmp_mu_dis = accum_dis_lo;
+            accum_dis_lo = _mm512_permutex2var_epi64(tmp_mu_dis, perm_lo, accum_dis_hi);
+            accum_dis_hi = _mm512_permutex2var_epi64(tmp_mu_dis, perm_hi, accum_dis_hi);
+            __m512i tmp_ref_dis = accum_ref_dis_lo;
+            accum_ref_dis_lo = _mm512_permutex2var_epi64(tmp_ref_dis, perm_lo, accum_ref_dis_hi);
+            accum_ref_dis_hi = _mm512_permutex2var_epi64(tmp_ref_dis, perm_hi, accum_ref_dis_hi);
+
+            _mm512_storeu_si512((__m512i*)(buf.tmp.mu1 + jj), accum_mu1_lo);
+            _mm512_storeu_si512((__m512i*)(buf.tmp.mu1 + jj + 16), accum_mu1_hi);
+            _mm512_storeu_si512((__m512i*)(buf.tmp.mu2 + jj), accum_mu2_lo);
+            _mm512_storeu_si512((__m512i*)(buf.tmp.mu2 + jj + 16), accum_mu2_hi);
+            _mm512_storeu_si512((__m512i*)(buf.tmp.ref + jj), accum_ref_lo);
+            _mm512_storeu_si512((__m512i*)(buf.tmp.ref + jj + 16), accum_ref_hi);
+            _mm512_storeu_si512((__m512i*)(buf.tmp.dis + jj), accum_dis_lo);
+            _mm512_storeu_si512((__m512i*)(buf.tmp.dis + jj + 16), accum_dis_hi);
+            _mm512_storeu_si512((__m512i*)(buf.tmp.ref_dis + jj), accum_ref_dis_lo);    
+            _mm512_storeu_si512((__m512i*)(buf.tmp.ref_dis + jj + 16), accum_ref_dis_hi); 
         }
+
         // Then consider the remaining elements individually
         for (unsigned j = n << 4; j < w; ++j) {
             uint32_t accum_mu1 = 0;
@@ -232,6 +325,8 @@ void vif_statistic_8_avx512(struct VifPublicState *s, float *num, float *den, un
                 int ii = i - fwidth_half;
                 int ii_check = ii + fi;
                 const uint16_t fcoeff = vif_filt[fi];
+                const uint8_t *ref = (uint8_t*)buf.ref;
+                const uint8_t *dis = (uint8_t*)buf.dis;
                 uint16_t imgcoeff_ref = ref[ii_check * buf.stride + j];
                 uint16_t imgcoeff_dis = dis[ii_check * buf.stride + j];
                 uint32_t img_coeff_ref = fcoeff * (uint32_t)imgcoeff_ref;
