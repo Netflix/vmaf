@@ -465,7 +465,7 @@ if float_enabled
         feature_src_dir + 'float_motion.c',
         feature_src_dir + 'float_vif.c',
         feature_src_dir + 'float_moment.c',
-
+        feature_src_dir + 'speed.c',
         feature_src_dir + 'common/convolution.c',
         feature_src_dir + 'offset.c',
         feature_src_dir + 'adm.c',
