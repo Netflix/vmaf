@@ -566,11 +566,17 @@ libvmaf = library(
     install: true,
 )
 
+if compiler.get_id() == 'gcc':
+    libraries_private = ['-lstdc++']
+else compiler.get_id() == 'clang':
+    libraries_private = ['-lc++']
+
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libraries: libvmaf,
     version: meson.project_version(),
     name: 'libvmaf',
     filebase: 'libvmaf',
     description: 'VMAF, Video Multimethod Assessment Fusion',
-    subdirs: [ '.', 'libvmaf']
+    subdirs: [ '.', 'libvmaf'],
+    libraries_private: libraries_private
 )
