@@ -420,7 +420,23 @@ if is_cuda_enabled
     common_cuda_objects += cuda_static_lib.extract_all_objects()
 endif
 
-thread_lib = dependency('threads')
+if host_machine.system() == 'windows' and cc.get_id() == 'msvc'
+    # We require pthreads-win32, not native threading via kernel32.dll, which is what dependency('threads') gives us.
+    # This can be installed using 'vcpkg install pthreads'
+    # The dirs must be added to %LIB% and %INCLUDE%
+    # NOTE: Sometimes this is installed as just 'pthread.lib', but Meson silently ignores find_library('pthread', ...
+    foreach pthread_win32_lib : ['pthreadVC3', 'pthreadVC2', 'pthread_static_lib']
+        thread_lib = cc.find_library(pthread_win32_lib, has_headers: ['pthread.h'], required: false)
+        if thread_lib.found()
+            break
+        endif
+    endforeach
+    if not thread_lib.found()
+        error('Failed to find a pthread-win32/pthread4w lib. Please make sure they are added to %LIB%/%INCLUDE%.')
+    endif
+else
+    thread_lib = dependency('threads')
+endif
 math_lib = cc.find_library('m', required : false)
 
 vmaf_include = include_directories(
