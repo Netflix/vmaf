@@ -68,7 +68,7 @@ jobs:
           meson --version
           ccache --version
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Run meson
         run: |
           meson setup libvmaf libvmaf/build --buildtype release --prefix $PWD/install -Denable_float=true
