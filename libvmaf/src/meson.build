@@ -6,7 +6,7 @@ src_dir = './'
 model_dir = '../../model/'
 cuda_dir = './cuda/'
 
-vmaf_base_include = include_directories('./', './feature/common')
+vmaf_base_include = include_directories('./', './feature/common', '../include')
 
 if cc.get_id() != 'msvc'
     vmaf_cflags_common = [
